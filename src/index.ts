@@ -1,4 +1,5 @@
-export { main } from "./cli.js";
+export { main, isVersionRequest } from "./cli.js";
+export { packageVersion, resolveVersion } from "./version.js";
 export {
   loadCatalog,
   defaultModuleRoots,
@@ -17,3 +18,5 @@ export {
   formatAuthoringPack,
   parseTypeList,
 } from "./write.js";
+export { QuoinCommand } from "./base.js";
+export { FlowCommand } from "./flow-command.js";

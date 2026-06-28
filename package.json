@@ -21,6 +21,26 @@
   "bin": {
     "quoin": "bin/quoin.js"
   },
+  "oclif": {
+    "bin": "quoin",
+    "dirname": "quoin",
+    "commands": "./dist/commands",
+    "plugins": [
+      "@agent-ix/filament-plan-sync"
+    ],
+    "topicSeparator": " ",
+    "topics": {
+      "catalog": {
+        "description": "Inspect the active artifact/object catalog (list, show, validate)."
+      },
+      "module": {
+        "description": "Install and manage user/community spec modules (list, install, remove, ensure-defaults)."
+      },
+      "plugin": {
+        "description": "[DEPRECATED] Renamed to `module`; retained as a forwarding alias."
+      }
+    }
+  },
   "packageManager": "pnpm@10.33.4",
   "scripts": {
     "help": "node scripts/help.js",
@@ -57,8 +77,10 @@
     "test-results:warnings": "./node_modules/.bin/jest-results warnings"
   },
   "dependencies": {
+    "@agent-ix/filament-plan-sync": "file:../filament-plan-sync",
     "@agent-ix/ix-cli-core": ">=0.11.0",
     "@agent-ix/ts-plugin-kit": ">=0.1.3",
+    "@oclif/core": ">=4.11.4",
     "yaml": "^2.9.0"
   },
   "devDependencies": {
