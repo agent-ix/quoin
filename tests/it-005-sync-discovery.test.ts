@@ -43,7 +43,9 @@ describe("IT-005 sync command discovery (Gate G3)", () => {
     expect(plugin?.commandIDs).toContain("sync");
   });
 
-  test("the `sync` command resolves with no runtime install step", () => {
+  // @requirement TC-108 NFR-008 — fresh install -> `quoin sync` resolves with
+  // zero extra steps (preinstalled core plugin, no runtime install).
+  test("TC-108 / NFR-008: the `sync` command resolves with no runtime install step", () => {
     const cmd = config.findCommand("sync");
     expect(cmd).toBeDefined();
     // it is contributed by the core plugin, not by quoin's own command dir
