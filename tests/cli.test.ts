@@ -1,26 +1,74 @@
-import { chmodSync, mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { execSync } from "node:child_process";
+import {
+  chmodSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 
+import { settings, type Config } from "@oclif/core";
 import { stringify as stringifyYaml } from "yaml";
 
-// The CLI's catalog/write handlers call ensureDefaultModules() internally with
-// the committed default-modules.yaml, whose git-subdir sources would hit the
+import { loadConfig, run } from "@agent-ix/ix-cli-core";
+
+// The catalog/write handlers call ensureDefaultModules() internally with the
+// committed default-modules.yaml, whose git-subdir sources would hit the
 // network. Stub it to a no-op; tests supply the catalog hermetically through
-// QUOIN_MODULE_PATHS (read by loadCatalog) instead.
+// QUOIN_MODULE_PATHS (read by loadCatalog) instead. The command classes import
+// the SAME src/modules module, so this mock applies to them.
 vi.mock("../src/modules", () => ({
   ensureDefaultModules: () => {},
   defaultModulesManifest: () => ({ schemaVersion: 1, entries: [] }),
-  filamentModulesDir: (home: string) => join(home, "filament", "modules"),
 }));
 
 import { main, packageVersion } from "../src/cli";
+import CatalogIndex from "../src/commands/catalog/index";
+import CatalogList from "../src/commands/catalog/list";
+import CatalogShow from "../src/commands/catalog/show";
+import CatalogValidate from "../src/commands/catalog/validate";
+import ModuleIndex from "../src/commands/module/index";
+import ModuleList from "../src/commands/module/list";
+import ModuleInstall from "../src/commands/module/install";
+import ModuleRemove from "../src/commands/module/remove";
+import ModuleEnsureDefaults from "../src/commands/module/ensure-defaults";
+import PluginList from "../src/commands/plugin/list";
+import PluginInstall from "../src/commands/plugin/install";
+import PluginRemove from "../src/commands/plugin/remove";
+import PluginEnsureDefaults from "../src/commands/plugin/ensure-defaults";
+import Write from "../src/commands/write";
+import Review from "../src/commands/review";
+import Matrix from "../src/commands/matrix";
+
+const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
+
+// A single oclif Config rooted at the quoin package; reused so every command is
+// instantiated against the real plugin/command graph (FR-016). `Command.run`
+// uses the passed class directly, so command bodies execute from src (keeping
+// the modules mock effective) while the runner config supplies context.
+let config: Config;
+
+// oclif Command base type narrowed to its static `run`. The command classes are
+// concrete subclasses; this captures the shape we invoke in tests.
+type RunnableCommand = {
+  run: (argv: string[], opts: Config) => Promise<unknown>;
+};
+
+async function runCmd(Cmd: RunnableCommand, argv: string[]): Promise<void> {
+  await Cmd.run(argv, config);
+}
 
 function tmp(prefix: string): string {
   return mkdtempSync(join(tmpdir(), `quoin-${prefix}-`));
 }
 
 // ---- console capture helpers -------------------------------------------------
+// oclif's `this.log` routes to console.log and `this.logToStderr` to
+// console.error, so the legacy capture helpers still observe command output.
 
 function captureLog(): { lines: string[]; restore: () => void } {
   const lines: string[] = [];
@@ -81,12 +129,10 @@ function businessModule(root: string): string {
   );
 }
 
-// Two fixture module roots joined into an QUOIN_MODULE_PATHS value.
 function modulePaths(...roots: string[]): string {
   return roots.join(":");
 }
 
-// A populated catalog: returns the home dir and sets QUOIN_MODULE_PATHS.
 function populatedCatalog(): string {
   const src = tmp("src");
   process.env.QUOIN_MODULE_PATHS = modulePaths(
@@ -96,7 +142,6 @@ function populatedCatalog(): string {
   return tmp("home");
 }
 
-// A catalog with a duplicate "domain" object type across two modules.
 function duplicateCatalog(): string {
   const src = tmp("src");
   const extra = makeModule(src, "spec-objects-extra", {
@@ -116,6 +161,18 @@ const savedEnv = {
 };
 let savedExitCode: number | undefined;
 
+beforeAll(async () => {
+  // Under vitest NODE_ENV=test, oclif would auto-transpile and resolve commands
+  // from src/*.ts (whose ".js" import specifiers don't resolve via raw
+  // import()). Production loads dist/commands directly; pin that behavior so the
+  // discovery/dispatch assertions exercise the built command graph.
+  settings.enableAutoTranspile = false;
+  if (!existsSync(join(repoRoot, "dist", "commands", "update.js"))) {
+    execSync("pnpm run build", { cwd: repoRoot, stdio: "inherit" });
+  }
+  config = await loadConfig({ root: repoRoot });
+});
+
 beforeEach(() => {
   savedExitCode = process.exitCode;
 });
@@ -132,9 +189,59 @@ afterEach(() => {
   process.exitCode = savedExitCode;
 });
 
-// ---- main() dispatch ---------------------------------------------------------
+// ---- runner / dispatch parity (TC-016, TC-107) -------------------------------
 
-describe("main dispatch", () => {
+describe("oclif runner dispatch parity", () => {
+  test("the runner discovers every migrated command (no legacy dispatcher)", () => {
+    const ids = new Set(config.commandIDs);
+    for (const id of [
+      "update",
+      "write",
+      "review",
+      "matrix",
+      "to-plan",
+      "catalog",
+      "catalog:list",
+      "catalog:show",
+      "catalog:validate",
+      "module",
+      "module:list",
+      "module:install",
+      "module:remove",
+      "module:ensure-defaults",
+      "plugin",
+      "plugin:list",
+      "plugin:install",
+      "plugin:remove",
+      "plugin:ensure-defaults",
+    ]) {
+      expect(ids.has(id)).toBe(true);
+    }
+  });
+
+  test("subcommands are space-separated (topicSeparator)", () => {
+    expect(config.topicSeparator).toBe(" ");
+  });
+
+  test("the hand-rolled parseArgs dispatcher is gone from cli.ts", () => {
+    const source = readFileSync(join(repoRoot, "src", "cli.ts"), "utf8");
+    expect(source).not.toContain("function parseArgs");
+    expect(source).not.toContain("function runCatalog");
+    expect(source).not.toContain("function runPlugin");
+  });
+
+  test("an unknown command is rejected by the runner", async () => {
+    await expect(run(["bogus"], config)).rejects.toThrow();
+  });
+
+  test("an unknown subcommand is rejected by the runner", async () => {
+    await expect(run(["catalog", "bogus"], config)).rejects.toThrow();
+  });
+});
+
+// ---- version -----------------------------------------------------------------
+
+describe("version", () => {
   test("--version, -v, and the version command all print the package version", async () => {
     const c = captureLog();
     try {
@@ -151,71 +258,20 @@ describe("main dispatch", () => {
     ]);
   });
 
-  test("no command prints the top-level usage", async () => {
-    const c = captureLog();
-    try {
-      await main([]);
-    } finally {
-      c.restore();
-    }
-    expect(c.lines.join("\n")).toContain("Spec workflow and catalog CLI");
-  });
-
-  test("--help and -h print command help", async () => {
-    const c = captureLog();
-    try {
-      await main(["plugin", "--help"]);
-      await main(["write", "-h"]);
-      await main(["update", "-h"]); // helpFor -> UPDATE_USAGE
-      await main(["--help"]); // no command -> USAGE
-    } finally {
-      c.restore();
-    }
-    expect(c.lines[0]).toContain(
-      "Install and manage user/community spec modules",
-    );
-    expect(c.lines[1]).toContain("Build an authoring pack");
-    expect(c.lines[2]).toContain("quoin update");
-    expect(c.lines[3]).toContain("Spec workflow and catalog CLI");
-  });
-
-  test("help for a spec-flow command prints the workflow usage", async () => {
-    const c = captureLog();
-    try {
-      await main(["review", "--help"]);
-    } finally {
-      c.restore();
-    }
-    expect(c.lines.join("\n")).toContain("Start bundled spec review/planning");
-  });
-
-  test("--help on an unrecognized command falls back to the top-level usage", async () => {
-    // command is truthy (so the help branch runs) but matches no known command,
-    // exercising helpFor's USAGE fallthrough.
-    const c = captureLog();
-    try {
-      await main(["bogus", "--help", "--config-root", tmp("home")]);
-    } finally {
-      c.restore();
-    }
-    expect(c.lines.join("\n")).toContain("Spec workflow and catalog CLI");
-  });
-
-  test("throws on an unknown command", async () => {
-    await expect(main(["bogus", "--config-root", tmp("home")])).rejects.toThrow(
-      /unknown command bogus/,
-    );
+  test("packageVersion returns a non-empty string", () => {
+    expect(typeof packageVersion()).toBe("string");
+    expect(packageVersion().length).toBeGreaterThan(0);
   });
 });
 
 // ---- catalog -----------------------------------------------------------------
 
-describe("runCatalog", () => {
+describe("catalog", () => {
   test("list (explicit) prints one line per module", async () => {
     const home = populatedCatalog();
     const c = captureLog();
     try {
-      await main(["catalog", "list", "--config-root", home]);
+      await runCmd(CatalogList, ["--config-root", home]);
     } finally {
       c.restore();
     }
@@ -225,13 +281,10 @@ describe("runCatalog", () => {
   });
 
   test("falls back to IX_HOME when --config-root is omitted, and prints 'unknown' for a versionless module", async () => {
-    // No --config-root -> main uses ixHome() (IX_HOME). A module without a
-    // version field renders the `?? "unknown"` branch.
     const src = tmp("src-noversion");
     const noVersion = makeModule(src, "spec-objects-noversion", {
       object_types: [{ name: "thing" }],
     });
-    // Strip the version that makeModule injects.
     writeFileSync(
       join(noVersion, "manifest.yaml"),
       stringifyYaml({
@@ -243,18 +296,18 @@ describe("runCatalog", () => {
     process.env.IX_HOME = tmp("home");
     const c = captureLog();
     try {
-      await main(["catalog", "list"]);
+      await runCmd(CatalogList, []);
     } finally {
       c.restore();
     }
     expect(c.lines.join("\n")).toContain("spec-objects-noversion@unknown");
   });
 
-  test("undefined subcommand behaves like list", async () => {
+  test("the catalog index command behaves like list", async () => {
     const home = populatedCatalog();
     const c = captureLog();
     try {
-      await main(["catalog", "--config-root", home]);
+      await runCmd(CatalogIndex, ["--config-root", home]);
     } finally {
       c.restore();
     }
@@ -265,7 +318,7 @@ describe("runCatalog", () => {
     const home = populatedCatalog();
     const c = captureLog();
     try {
-      await main(["catalog", "list", "--json", "--config-root", home]);
+      await runCmd(CatalogList, ["--json", "--config-root", home]);
     } finally {
       c.restore();
     }
@@ -279,7 +332,7 @@ describe("runCatalog", () => {
     const home = populatedCatalog();
     const c = captureLog();
     try {
-      await main(["catalog", "show", "FR", "--config-root", home]);
+      await runCmd(CatalogShow, ["FR", "--config-root", home]);
     } finally {
       c.restore();
     }
@@ -290,7 +343,7 @@ describe("runCatalog", () => {
     const home = populatedCatalog();
     const c = captureLog();
     try {
-      await main(["catalog", "show", "FR", "--json", "--config-root", home]);
+      await runCmd(CatalogShow, ["FR", "--json", "--config-root", home]);
     } finally {
       c.restore();
     }
@@ -299,15 +352,15 @@ describe("runCatalog", () => {
 
   test("show without a type throws", async () => {
     const home = populatedCatalog();
-    await expect(
-      main(["catalog", "show", "--config-root", home]),
-    ).rejects.toThrow("catalog show requires <type>");
+    await expect(runCmd(CatalogShow, ["--config-root", home])).rejects.toThrow(
+      "catalog show requires <type>",
+    );
   });
 
   test("show of a missing type throws", async () => {
     const home = populatedCatalog();
     await expect(
-      main(["catalog", "show", "NOPE", "--config-root", home]),
+      runCmd(CatalogShow, ["NOPE", "--config-root", home]),
     ).rejects.toThrow("catalog type not found: NOPE");
   });
 
@@ -315,7 +368,7 @@ describe("runCatalog", () => {
     const home = populatedCatalog();
     const c = captureLog();
     try {
-      await main(["catalog", "validate", "--config-root", home]);
+      await runCmd(CatalogValidate, ["--config-root", home]);
     } finally {
       c.restore();
     }
@@ -327,7 +380,7 @@ describe("runCatalog", () => {
     const home = populatedCatalog();
     const c = captureLog();
     try {
-      await main(["catalog", "validate", "--json", "--config-root", home]);
+      await runCmd(CatalogValidate, ["--json", "--config-root", home]);
     } finally {
       c.restore();
     }
@@ -338,7 +391,7 @@ describe("runCatalog", () => {
     const home = duplicateCatalog();
     const err = captureError();
     try {
-      await main(["catalog", "validate", "--config-root", home]);
+      await runCmd(CatalogValidate, ["--config-root", home]);
     } finally {
       err.restore();
     }
@@ -347,24 +400,17 @@ describe("runCatalog", () => {
     expect(parsed.duplicates[0].name).toBe("domain");
     expect(process.exitCode).toBe(1);
   });
-
-  test("unknown catalog subcommand throws", async () => {
-    const home = populatedCatalog();
-    await expect(
-      main(["catalog", "bogus", "--config-root", home]),
-    ).rejects.toThrow("unknown catalog command bogus");
-  });
 });
 
-// ---- plugin ------------------------------------------------------------------
+// ---- module (canonical spec-module command, TC-017) --------------------------
 
-describe("runPlugin", () => {
-  test("list (explicit and undefined) prints the plugin registry as JSON", async () => {
+describe("module", () => {
+  test("list and index both print the registry as JSON", async () => {
     const home = tmp("home");
     const c = captureLog();
     try {
-      await main(["plugin", "list", "--config-root", home]);
-      await main(["plugin", "--config-root", home]);
+      await runCmd(ModuleList, ["--config-root", home]);
+      await runCmd(ModuleIndex, ["--config-root", home]);
     } finally {
       c.restore();
     }
@@ -372,12 +418,12 @@ describe("runPlugin", () => {
     expect(JSON.parse(c.lines[1])).toHaveProperty("plugins");
   });
 
-  test("install adds a plugin from a path source", async () => {
+  test("install adds a module from a path source", async () => {
     const home = tmp("home");
-    const mod = businessModule(tmp("plugin-src"));
+    const mod = businessModule(tmp("module-src"));
     const c = captureLog();
     try {
-      await main(["plugin", "install", `path:${mod}`, "--config-root", home]);
+      await runCmd(ModuleInstall, [`path:${mod}`, "--config-root", home]);
     } finally {
       c.restore();
     }
@@ -387,17 +433,15 @@ describe("runPlugin", () => {
   test("install without a source throws", async () => {
     const home = tmp("home");
     await expect(
-      main(["plugin", "install", "--config-root", home]),
-    ).rejects.toThrow("plugin install requires <source>");
+      runCmd(ModuleInstall, ["--config-root", home]),
+    ).rejects.toThrow("module install requires <source>");
   });
 
   test("ensure-defaults runs the installer and reports the registry", async () => {
     const home = tmp("home");
     const c = captureLog();
     try {
-      // ensureDefaultModules is mocked to a no-op, so this exercises the
-      // command dispatch + output contract without hitting the network.
-      await main(["plugin", "ensure-defaults", "--config-root", home]);
+      await runCmd(ModuleEnsureDefaults, ["--config-root", home]);
     } finally {
       c.restore();
     }
@@ -406,15 +450,13 @@ describe("runPlugin", () => {
     expect(Array.isArray(out.plugins)).toBe(true);
   });
 
-  test("ensure-defaults reports installed plugin names from a non-empty registry", async () => {
+  test("ensure-defaults reports installed module names from a non-empty registry", async () => {
     const home = tmp("home");
-    const mod = businessModule(tmp("plugin-src"));
+    const mod = businessModule(tmp("module-src"));
     const c = captureLog();
     try {
-      await main(["plugin", "install", `path:${mod}`, "--config-root", home]);
-      // With a plugin already in the registry, ensure-defaults exercises the
-      // `listPlugins().map((p) => p.name)` reporting path (cli.ts).
-      await main(["plugin", "ensure-defaults", "--config-root", home]);
+      await runCmd(ModuleInstall, [`path:${mod}`, "--config-root", home]);
+      await runCmd(ModuleEnsureDefaults, ["--config-root", home]);
     } finally {
       c.restore();
     }
@@ -423,15 +465,13 @@ describe("runPlugin", () => {
     expect(out.plugins).toContain("spec-objects-business");
   });
 
-  test("remove deletes a plugin and prints confirmation", async () => {
+  test("remove deletes a module and prints confirmation", async () => {
     const home = tmp("home");
-    const mod = businessModule(tmp("plugin-src"));
+    const mod = businessModule(tmp("module-src"));
     const c = captureLog();
     try {
-      await main(["plugin", "install", `path:${mod}`, "--config-root", home]);
-      await main([
-        "plugin",
-        "remove",
+      await runCmd(ModuleInstall, [`path:${mod}`, "--config-root", home]);
+      await runCmd(ModuleRemove, [
         "spec-objects-business",
         "--config-root",
         home,
@@ -444,26 +484,86 @@ describe("runPlugin", () => {
 
   test("remove without a name throws", async () => {
     const home = tmp("home");
-    await expect(
-      main(["plugin", "remove", "--config-root", home]),
-    ).rejects.toThrow("plugin remove requires <name>");
+    await expect(runCmd(ModuleRemove, ["--config-root", home])).rejects.toThrow(
+      "module remove requires <name>",
+    );
+  });
+});
+
+// ---- plugin (deprecated alias, TC-017) ---------------------------------------
+
+describe("plugin (deprecated alias)", () => {
+  test("plugin list warns to stderr and forwards to module list", async () => {
+    const home = tmp("home");
+    const out = captureLog();
+    const err = captureError();
+    try {
+      await runCmd(PluginList, ["--config-root", home]);
+    } finally {
+      out.restore();
+      err.restore();
+    }
+    expect(err.lines.join("\n")).toMatch(/deprecated/i);
+    expect(JSON.parse(out.lines.join("\n"))).toHaveProperty("plugins");
   });
 
-  test("unknown plugin subcommand throws", async () => {
+  test("plugin install warns and forwards to module install", async () => {
     const home = tmp("home");
-    await expect(
-      main(["plugin", "bogus", "--config-root", home]),
-    ).rejects.toThrow("unknown plugin command bogus");
+    const mod = businessModule(tmp("module-src"));
+    const out = captureLog();
+    const err = captureError();
+    try {
+      await runCmd(PluginInstall, [`path:${mod}`, "--config-root", home]);
+    } finally {
+      out.restore();
+      err.restore();
+    }
+    expect(err.lines.join("\n")).toMatch(/deprecated/i);
+    expect(JSON.parse(out.lines.join("\n")).name).toBe("spec-objects-business");
+  });
+
+  test("plugin remove warns and forwards to module remove", async () => {
+    const home = tmp("home");
+    const mod = businessModule(tmp("module-src"));
+    const out = captureLog();
+    const err = captureError();
+    try {
+      await runCmd(PluginInstall, [`path:${mod}`, "--config-root", home]);
+      await runCmd(PluginRemove, [
+        "spec-objects-business",
+        "--config-root",
+        home,
+      ]);
+    } finally {
+      out.restore();
+      err.restore();
+    }
+    expect(err.lines.join("\n")).toMatch(/deprecated/i);
+    expect(out.lines).toContain("removed spec-objects-business");
+  });
+
+  test("plugin ensure-defaults warns and forwards to module ensure-defaults", async () => {
+    const home = tmp("home");
+    const out = captureLog();
+    const err = captureError();
+    try {
+      await runCmd(PluginEnsureDefaults, ["--config-root", home]);
+    } finally {
+      out.restore();
+      err.restore();
+    }
+    expect(err.lines.join("\n")).toMatch(/deprecated/i);
+    expect(JSON.parse(out.lines.join("\n")).ensured).toBe(true);
   });
 });
 
 // ---- write -------------------------------------------------------------------
 
-describe("runWrite", () => {
+describe("write", () => {
   test("missing repo_dir throws", async () => {
     const home = populatedCatalog();
     await expect(
-      main(["write", "--types", "FR", "--config-root", home]),
+      runCmd(Write, ["--types", "FR", "--config-root", home]),
     ).rejects.toThrow(/write requires <repo_dir>/);
   });
 
@@ -472,8 +572,7 @@ describe("runWrite", () => {
     const repo = tmp("repo");
     const c = captureLog();
     try {
-      await main([
-        "write",
+      await runCmd(Write, [
         repo,
         "--types",
         "FR,domain",
@@ -494,8 +593,7 @@ describe("runWrite", () => {
     const repo = tmp("repo");
     const c = captureLog();
     try {
-      await main([
-        "write",
+      await runCmd(Write, [
         repo,
         "--types",
         "FR",
@@ -512,9 +610,9 @@ describe("runWrite", () => {
   });
 });
 
-// ---- spec-flow commands via main ---------------------------------------------
+// ---- spec-flow launchers -----------------------------------------------------
 
-describe("spec-flow dispatch", () => {
+describe("spec-flow launchers", () => {
   function packagedRoot(flow: "review" | "matrix" | "to-plan"): string {
     const packageSkill = {
       review: "spec-review",
@@ -541,8 +639,7 @@ describe("spec-flow dispatch", () => {
     process.env.IX_SPEC_WORKFLOWS_ROOT = packagedRoot("review");
     process.env.PATH = `${fakeIxFlowDir(0)}:${savedEnv.PATH}`;
     process.exitCode = undefined;
-    await main([
-      "review",
+    await runCmd(Review, [
       "--target",
       "spec/",
       "--target",
@@ -561,77 +658,45 @@ describe("spec-flow dispatch", () => {
     process.env.IX_SPEC_WORKFLOWS_ROOT = packagedRoot("matrix");
     process.env.PATH = `${fakeIxFlowDir(2)}:${savedEnv.PATH}`;
     process.exitCode = undefined;
-    await main(["matrix", "--config-root", home]);
+    await runCmd(Matrix, ["--config-root", home]);
     expect(process.exitCode).toBe(2);
   });
 });
 
-// ---- parseArgs edge cases ----------------------------------------------------
-// parseArgs is private; exercised through main's observable behavior.
+// ---- flag parsing (now owned by oclif) ---------------------------------------
 
-describe("parseArgs via main", () => {
-  test("long flag with = and following-value form both work", async () => {
-    // --config-root=<home> (eq form) and --types FR (following-value form).
+describe("flag parsing", () => {
+  test("--config-root=<home> (eq form) and repeated/positional flags work", async () => {
     const home = populatedCatalog();
     const repo = tmp("repo");
     const c = captureLog();
     try {
-      await main([`--config-root=${home}`, "write", repo, "--types", "FR"]);
+      await runCmd(Write, [repo, "--types", "FR", `--config-root=${home}`]);
     } finally {
       c.restore();
     }
     expect(c.lines.join("\n")).toContain("- FR (artifact)");
   });
 
-  test("boolean long flag (no value) is honored", async () => {
-    // --json with no following non-flag value is treated as boolean true.
+  test("boolean --json flag (no value) is honored", async () => {
     const home = populatedCatalog();
     const c = captureLog();
     try {
-      await main(["catalog", "list", "--config-root", home, "--json"]);
+      await runCmd(CatalogList, ["--config-root", home, "--json"]);
     } finally {
       c.restore();
     }
     expect(() => JSON.parse(c.lines.join("\n"))).not.toThrow();
   });
 
-  test("subcommand is only captured for catalog/plugin; others become positionals", async () => {
-    // For `write`, the second bareword is a positional (repo_dir), not a subcommand.
-    const home = populatedCatalog();
-    const repo = tmp("repo");
-    const c = captureLog();
-    try {
-      await main(["write", repo, "--types", "FR", "--config-root", home]);
-    } finally {
-      c.restore();
-    }
-    expect(c.lines.join("\n")).toContain(`Repo: ${repo}`);
-  });
-
-  test("--no-project-config short-circuits project config root", async () => {
-    // Exercises the parsed.flags['no-project-config'] !== true branch (set true).
+  test("--no-project-config is accepted", async () => {
     const home = populatedCatalog();
     const c = captureLog();
     try {
-      await main([
-        "catalog",
-        "list",
-        "--no-project-config",
-        "--config-root",
-        home,
-      ]);
+      await runCmd(CatalogList, ["--no-project-config", "--config-root", home]);
     } finally {
       c.restore();
     }
     expect(c.lines.join("\n")).toContain("spec-artifacts-iso");
-  });
-});
-
-// ---- packageVersion ----------------------------------------------------------
-
-describe("packageVersion", () => {
-  test("returns a non-empty version string", () => {
-    expect(typeof packageVersion()).toBe("string");
-    expect(packageVersion().length).toBeGreaterThan(0);
   });
 });

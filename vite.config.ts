@@ -47,6 +47,30 @@ export default defineConfig(({ command }) => ({
       entry: {
         index: "src/index.ts",
         cli: "src/cli.ts",
+        // oclif discovers commands as individual modules under dist/commands;
+        // each command file is therefore its own build entry (mirrors the
+        // canonical ix-cli build).
+        "commands/update": "src/commands/update.ts",
+        "commands/write": "src/commands/write.ts",
+        "commands/review": "src/commands/review.ts",
+        "commands/matrix": "src/commands/matrix.ts",
+        "commands/to-plan": "src/commands/to-plan.ts",
+        "commands/catalog/index": "src/commands/catalog/index.ts",
+        "commands/catalog/list": "src/commands/catalog/list.ts",
+        "commands/catalog/show": "src/commands/catalog/show.ts",
+        "commands/catalog/validate": "src/commands/catalog/validate.ts",
+        "commands/module/index": "src/commands/module/index.ts",
+        "commands/module/list": "src/commands/module/list.ts",
+        "commands/module/install": "src/commands/module/install.ts",
+        "commands/module/remove": "src/commands/module/remove.ts",
+        "commands/module/ensure-defaults":
+          "src/commands/module/ensure-defaults.ts",
+        "commands/plugin/index": "src/commands/plugin/index.ts",
+        "commands/plugin/list": "src/commands/plugin/list.ts",
+        "commands/plugin/install": "src/commands/plugin/install.ts",
+        "commands/plugin/remove": "src/commands/plugin/remove.ts",
+        "commands/plugin/ensure-defaults":
+          "src/commands/plugin/ensure-defaults.ts",
       },
       name: "Ixspec",
       fileName: (format, entryName) => `${entryName}.js`,
