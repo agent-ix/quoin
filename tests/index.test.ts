@@ -1,4 +1,10 @@
-import { existsSync, mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -196,4 +202,33 @@ test("ships claude plugin skills without artifact-specific write skills", () => 
     ),
   ).toBe(true);
   expect(existsSync(join(repoRoot, "skills", "spec-write-fr"))).toBe(false);
+});
+
+test("ships a Codex plugin manifest with its marketplace metadata", () => {
+  // .codex-plugin/ is listed in package.json `files`, so it ships to npm and
+  // renders in the Codex marketplace. Nothing else parses it in this repo, so
+  // a malformed or gutted manifest would otherwise reach users unnoticed.
+  const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
+  const manifestPath = join(repoRoot, ".codex-plugin", "plugin.json");
+  expect(existsSync(manifestPath)).toBe(true);
+
+  const manifest = JSON.parse(readFileSync(manifestPath, "utf8")) as Record<
+    string,
+    unknown
+  >;
+  expect(manifest.name).toBe("quoin");
+  expect(manifest.skills).toBe("./skills/");
+  expect(manifest.license).toBe("MIT");
+  for (const key of ["author", "homepage", "repository", "keywords"]) {
+    expect(manifest[key]).toBeDefined();
+  }
+
+  const ui = manifest.interface as Record<string, unknown>;
+  expect(ui.displayName).toBe("Quoin");
+  expect(Array.isArray(ui.capabilities)).toBe(true);
+  expect(Array.isArray(ui.defaultPrompt)).toBe(true);
+
+  // A packaging run once wrote a "+codex.<timestamp>" build suffix in here;
+  // the committed value must stay a plain version.
+  expect(manifest.version).toMatch(/^\d+\.\d+\.\d+$/);
 });
