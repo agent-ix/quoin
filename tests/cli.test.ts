@@ -26,7 +26,7 @@ vi.mock("../src/modules", () => ({
   defaultModulesManifest: () => ({ schemaVersion: 1, entries: [] }),
 }));
 
-import { main, packageVersion } from "../src/cli";
+import { main, packageVersion, resolveVersion } from "../src/cli";
 import CatalogIndex from "../src/commands/catalog/index";
 import CatalogList from "../src/commands/catalog/list";
 import CatalogShow from "../src/commands/catalog/show";
@@ -43,6 +43,7 @@ import PluginEnsureDefaults from "../src/commands/plugin/ensure-defaults";
 import Write from "../src/commands/write";
 import Review from "../src/commands/review";
 import Matrix from "../src/commands/matrix";
+import ToPlan from "../src/commands/to-plan";
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -261,6 +262,28 @@ describe("version", () => {
   test("packageVersion returns a non-empty string", () => {
     expect(typeof packageVersion()).toBe("string");
     expect(packageVersion().length).toBeGreaterThan(0);
+  });
+
+  // resolveVersion's fallback: the build-time define is only a string in a
+  // built artifact, so the non-string path is what runs from source.
+  test("resolveVersion falls back when no build-time version is baked in", () => {
+    expect(resolveVersion("")).toBe(packageVersion());
+    expect(typeof resolveVersion("")).toBe("string");
+  });
+});
+
+// ---- main() dispatch ---------------------------------------------------------
+
+// main() is the production entry point: it intercepts the bare version forms
+// and hands everything else to the oclif runner. The runner is exercised
+// directly above; this covers the handoff itself.
+describe("main dispatch", () => {
+  // Asserting via an unknown command rather than a successful one: a real
+  // command dispatched through the runner executes from dist/, where the
+  // src/modules mock does not apply and ensureDefaultModules would reach the
+  // network. The rejection still proves argv reached the runner.
+  test("a non-version argv is handed to the runner, whose error propagates", async () => {
+    await expect(main(["bogus"], config)).rejects.toThrow();
   });
 });
 
@@ -660,6 +683,17 @@ describe("spec-flow launchers", () => {
     process.exitCode = undefined;
     await runCmd(Matrix, ["--config-root", home]);
     expect(process.exitCode).toBe(2);
+  });
+
+  // to-plan is the third bundled flow launcher and was the one migrated command
+  // with no test of its own.
+  test("to-plan runs the flow (ix-flow exit 0)", async () => {
+    const home = tmp("home");
+    process.env.IX_SPEC_WORKFLOWS_ROOT = packagedRoot("to-plan");
+    process.env.PATH = `${fakeIxFlowDir(0)}:${savedEnv.PATH}`;
+    process.exitCode = undefined;
+    await runCmd(ToPlan, ["--target", "spec/", "--config-root", home]);
+    expect(process.exitCode).toBeUndefined();
   });
 });
 
