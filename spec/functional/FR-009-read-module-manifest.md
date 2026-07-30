@@ -40,6 +40,9 @@ lowercase-filename variant.
   the module root into a schema path when present.
 - For every type, the loader SHALL resolve a skeleton at `skeletons/<Type>.md`,
   then at the lowercase-filename variant, leaving it unset when neither exists.
+- The loader SHALL match those two filenames against the directory's actual
+  entries, so a resolved path always names a file as it exists on disk and no
+  other casing resolves, whether or not the filesystem is case-sensitive.
 
 ## Acceptance Criteria
 
@@ -48,7 +51,8 @@ lowercase-filename variant.
 | FR-009-AC-1 | A manifest without a `name` falls back to the directory basename                                   | Test (catalog.test.ts)              |
 | FR-009-AC-2 | Modules with and without `version`, and artifacts with and without a schema ref, resolve correctly | Test (catalog.test.ts)              |
 | FR-009-AC-3 | Non-array and malformed type entries are ignored                                                   | Test (catalog.test.ts)              |
-| FR-009-AC-4 | A skeleton resolves via the lowercase-filename fallback                                            | Test (write.test.ts, index.test.ts) |
+| FR-009-AC-4 | A skeleton resolves via the lowercase-filename fallback                                            | Test (write.test.ts, index.test.ts, catalog.test.ts) |
+| FR-009-AC-5 | A skeleton named with the type's own casing resolves, and a filename in any other casing does not — on a case-insensitive filesystem as on a case-sensitive one | Test (catalog.test.ts)              |
 
 ## Dependencies
 
