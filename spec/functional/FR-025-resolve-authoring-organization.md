@@ -39,15 +39,36 @@ The `quoin` CLI SHALL NOT substitute a default authoring organization.
 - The command SHALL apply the precedence `--org`, then `QUOIN_ORG`, then the
   `origin` remote, and SHALL stop at the first source that yields a non-empty
   organization.
+- The command SHALL treat a source whose value is empty or only whitespace as
+  yielding no organization, and SHALL continue to the next source.
 - The command SHALL parse the organization from both the SSH remote form
   (`git@<host>:<org>/<repo>.git`) and the HTTPS remote form
   (`https://<host>/<org>/<repo>.git`).
-- The command SHALL read `.git/config` directly, so resolution holds where no Git
-  executable is present
+- The command SHALL read the repository's Git configuration directly, so
+  resolution holds where no Git executable is present
   ([NFR-004](../non-functional/NFR-004-standalone-dependencies.md)).
+- The command SHALL locate that configuration at `<repo_root>/.git/config` for an
+  ordinary checkout, and, where `<repo_root>/.git` is a file naming a Git
+  directory, at the configuration in the common directory that Git directory
+  designates — so a worktree or submodule resolves the same organization its
+  main checkout does.
 - The command SHALL NOT invoke `git` to resolve the organization.
-- The command SHALL treat a missing `.git/config`, a configuration with no
-  `origin` remote, and a remote URL with no parsable `<org>/<repo>` tail as
+- The command SHALL NOT execute any subprocess to resolve the organization.
+- The command SHALL match the configuration's section name without regard to
+  case and the quoted remote name with regard to case, as Git itself does, so
+  `[REMOTE "origin"]` is the `origin` remote and `[remote "Origin"]` is not.
+- The command SHALL derive an organization only from a host-based remote whose
+  path carries at least an owner and a repository.
+- Where the `origin` remote names a local path — an absolute or relative
+  filesystem path, or a `file://` URL — the command SHALL yield no organization
+  rather than a segment of that path.
+- Where the `origin` remote is host-based but its path carries only a
+  repository, the command SHALL yield no organization rather than the host name.
+- Where the `origin` remote's path carries more than an owner and a repository,
+  the command SHALL qualify by the segment immediately preceding the repository,
+  so a nested namespace resolves to its innermost group.
+- The command SHALL treat a missing configuration, a configuration with no
+  `origin` remote, and a remote URL from which no organization can be derived as
   yielding no organization, and SHALL continue to the unresolved result rather
   than failing.
 - The command SHALL report an unresolved organization together with the remedy of
@@ -70,13 +91,17 @@ notice, and worse once noticed, than an absent one that stops the author and ask
 
 | ID          | Criteria                                                                                       | Verification                    |
 | ----------- | ---------------------------------------------------------------------------------------------- | ------------------------------- |
-| FR-025-AC-1 | `--org` takes precedence over `QUOIN_ORG`, which takes precedence over the `origin` remote      | Test (org.test.ts)              |
+| FR-025-AC-1 | `--org` takes precedence over `QUOIN_ORG`, which takes precedence over the `origin` remote, and an empty or whitespace-only value defers to the next source | Test (org.test.ts)              |
 | FR-025-AC-2 | The organization is parsed from an SSH remote URL                                               | Test (org.test.ts)              |
 | FR-025-AC-3 | The organization is parsed from an HTTPS remote URL                                             | Test (org.test.ts)              |
-| FR-025-AC-4 | A missing `.git/config`, an absent `origin` remote, and an unparsable remote each resolve to unresolved without failing | Test (org.test.ts)              |
+| FR-025-AC-4 | A missing configuration, an absent `origin` remote, and a remote yielding no organization each resolve to unresolved without failing | Test (org.test.ts)              |
 | FR-025-AC-5 | An unresolved organization is reported with the `--org` remedy and no substituted value         | Test (org.test.ts, write.test.ts) |
 | FR-025-AC-6 | The authoring pack carries the organization and its source in text and under `--json`           | Test (write.test.ts, cli.test.ts) |
-| FR-025-AC-7 | Resolution succeeds with no `git` executable on `PATH`                                          | Test (org.test.ts)              |
+| FR-025-AC-7 | Resolution executes no subprocess                                                               | Test (org.test.ts)              |
+| FR-025-AC-8 | A worktree or submodule, whose `.git` is a file naming a Git directory, resolves the organization its main checkout does | Test (org.test.ts)              |
+| FR-025-AC-9 | A local-path remote and a host-based remote with no owner segment each yield no organization, rather than a path segment or the host name | Test (org.test.ts)              |
+| FR-025-AC-10 | A remote path with a nested namespace qualifies by the segment immediately preceding the repository | Test (org.test.ts)             |
+| FR-025-AC-11 | The configuration's section name matches case-insensitively and the quoted remote name case-sensitively | Test (org.test.ts)             |
 
 ## Dependencies
 

@@ -183,7 +183,7 @@ function orgFromRemoteUrl(url: string): string | undefined {
   // The repo is the last segment; its owner is the one before it. Nested
   // namespaces (`org/subgroup/repo`) therefore qualify by the innermost group,
   // matching filament-ide-rs's repo_identity so both layers name a repo alike.
-  const repo = segments.pop()?.replace(/\.git$/, "");
-  const org = segments.pop();
-  return org && repo ? org : undefined;
+  // The length check above plus the empty-segment filter guarantee this is a
+  // non-empty string, so there is no impossible-state branch to guard.
+  return segments[segments.length - 2];
 }

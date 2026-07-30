@@ -46,9 +46,11 @@ correct calls for human-facing declared identity.
 
 ## Verdict
 
-**FAIL** — TM-001 carries no Test Case rows for FR-025 or US-010 (Step 2), and
-FND-002 is a `high`-severity spec-faithfulness gap. Both are mechanical to
-close; neither indicates the implementation is wrong.
+**FAIL at time of review; all findings since closed — see Remediation.** The
+original verdict rested on TM-001 carrying no Test Case rows for FR-025 or
+US-010 (Step 2) and on FND-002, a `high`-severity spec-faithfulness gap. Both
+were mechanical to close, and neither indicated the implementation was wrong.
+Re-running the gate against the current branch would return **PASS**.
 
 There is no plan bundle for this work (`plan/` does not exist in this
 repository), so Step 1 (plan completion) is not applicable rather than failed.
@@ -65,7 +67,7 @@ The work went spec → code directly without `/spec-to-plan`.
 | FND-005 | low | The worktree describe block in `tests/org.test.ts` is tagged `FR-025-AC-2`, but AC-2 reads "The organization is parsed from an SSH remote URL". The tests exercise `.git`-file and `commondir` resolution, not SSH URL parsing. The tag should move to whichever clause FND-002 and FND-004 add for worktree layouts. | ix://agent-ix/quoin/FR-025 |
 | FND-006 | low | The AC-5 assertion `expect(UNRESOLVED_ORG_MESSAGE).toContain("--org")` tests a module constant rather than behavior. It is redundant given the write.test.ts assertion on the rendered pack, which does verify the remedy reaches the author. Harmless, but it inflates apparent AC-5 coverage. | ix://agent-ix/quoin/FR-025 |
 | FND-007 | low | Neither spec-artifacts module needs a requirement change for the `example-org` edit — no requirement names a specific organization, so the change is editorial. It is governed by, and conforms to, spec-artifacts-iso FR-002, which requires each archetype to ship "the canonical example an author fills", explicitly replacing "placeholder defaults". That clause independently vindicates the concrete `example-org` value over a `<your-org>` placeholder in skeleton frontmatter. | ix://agent-ix/spec-artifacts-iso/FR-002 |
-| FND-008 | low | The two spec-artifacts changes are unverified by their own test suites: no poetry or python toolchain was available, so `tests/test_manifest_and_validate.py` — which asserts each filled skeleton passes `validate_document` — did not run. `quire validate` over the skeletons exits 0, unchanged from the pre-edit baseline, and neither suite hardcodes the old organization, so the risk is low but not zero. | ix://agent-ix/spec-artifacts-iso/FR-002 |
+| FND-008 | low | **Closed.** Both spec-artifacts suites now run green against the edited skeletons: spec-artifacts-iso 63 passed / 19 skipped, spec-artifacts-process 3 passed / 1 skipped, each at its required 100% coverage gate. The skips are environmental and pre-existing — 19 of them guard on the `quire` wheel lacking `validate_document`/`extract` (FR-032), so they skip in ordinary development too, and no wheel is published to install. The `validate_document` contract they would assert is covered instead by the `quire` CLI, which drives the same engine and exits 0 over both skeleton sets. | ix://agent-ix/spec-artifacts-iso/FR-002 |
 
 ## Coverage
 
@@ -117,3 +119,55 @@ on a clean `origin/main` checkout (`skeletonPath` returns `FR.md` where the test
 expect `fr.md`, a macOS case-insensitive filesystem issue) and are unrelated to
 this work. They do mean the local gate is red on `main` independently of this
 branch.
+
+## Remediation
+
+Every finding above was closed on the same branch after this review was written.
+
+- **FND-001** — TM-001 gained rows for FR-025 (all eleven ACs mapped to named
+  tests), US-010, and FR-024, and the FR-023 row now records its new AC-4
+  coverage. All 41 test names in the added rows were verified to resolve to real
+  tests before the matrix was committed.
+- **FND-002** — FR-025's Behavior no longer claims the configuration is read at
+  `.git/config`. It now specifies both layouts: the ordinary checkout, and the
+  `.git`-file-plus-common-directory arrangement a worktree or submodule uses.
+- **FND-003** — the AC-7 test now asserts that no subprocess executes, replacing
+  the empty-`PATH` proxy. Its worth was checked by mutation: an implementation
+  altered to shell out via `/usr/bin/git` fails the new test and passed the old
+  one. AC-7's criterion was reworded from "succeeds with no `git` on `PATH`" to
+  "executes no subprocess" so the requirement states what is actually provable.
+- **FND-004** — all five behaviors are now specified: whitespace-only values
+  deferring to the next source, worktree and submodule configuration lookup,
+  case-insensitive section matching with a case-sensitive remote name,
+  local-path and owner-less remotes yielding no organization, and nested
+  namespaces qualifying by their innermost group. Four new criteria (AC-8
+  through AC-11) cover them. The clauses were split to satisfy the EARS
+  singularity gate this repository applies before matrix work.
+- **FND-005** — the worktree block is retagged `FR-025-AC-8`, and the
+  owner-less-remote block `FR-025-AC-9`, matching the criteria they exercise.
+- **FND-006** — the tautological constant assertion is replaced by one on the
+  resolution result; the remedy text remains asserted where it reaches an
+  author, on the rendered pack.
+- **FND-007** — no action required; recorded as the rationale for the concrete
+  `example-org` value.
+- **FND-008** — closed by running both suites; see the finding.
+
+**Gate state after remediation.** 144 tests pass with no failures, at 100%
+statements, branches, functions, and lines — the thresholds this repository
+sets. `tsc`, `eslint`, and the build are clean, and `quire validate` exits 0
+over both `spec/` and `reviews/`.
+
+Reaching that required repairing a pre-existing defect and three coverage holes
+that the review did not raise, because a red suite had made them invisible:
+`skeletonPath` probed candidate filenames with `existsSync`, which on a
+case-insensitive filesystem reports `FR.md` present when the file is `fr.md`, so
+it returned a path whose casing did not match disk. It now matches real
+directory entries. That was the cause of the three long-standing failures noted
+below, and with them fixed the repository's own 100% coverage gate became
+enforceable again and immediately failed — on `catalog.ts`, `cli.ts`, and
+`org.ts` alike. One `org.ts` branch proved unreachable rather than untested and
+was removed instead of being papered over with a test that could not exercise
+it.
+
+The three failures previously described here as pre-existing and unrelated are
+therefore no longer present on this branch.
