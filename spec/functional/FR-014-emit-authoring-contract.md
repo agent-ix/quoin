@@ -50,4 +50,5 @@ neither a skeleton nor a schema as "manifest only".
   [US-001](../usecase/US-001-author-root-artifact-with-objects.md). Consumes
   [FR-013](./FR-013-resolve-requested-types.md).
 - **Downstream**: the pack also carries the validation command from
-  [FR-015](./FR-015-emit-quire-validate-command.md).
+  [FR-015](./FR-015-emit-quire-validate-command.md) and the authoring
+  organization from [FR-025](./FR-025-resolve-authoring-organization.md).
