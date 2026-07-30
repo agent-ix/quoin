@@ -26,7 +26,9 @@ export function resolveVersion(baked: string): string {
 }
 
 export function packageVersion(): string {
-  return resolveVersion(
-    typeof __QUOIN_VERSION__ === "string" ? __QUOIN_VERSION__ : "",
-  );
+  // vite.config.ts defines __QUOIN_VERSION__ unconditionally — the git describe
+  // string for a build, the empty string otherwise — so it is always a
+  // substituted literal here and needs no typeof guard. resolveVersion owns the
+  // empty case, and is tested directly for it.
+  return resolveVersion(__QUOIN_VERSION__);
 }
