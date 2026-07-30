@@ -1,7 +1,7 @@
 ---
 type: master-requirements
 name: <component-name>            # Required: repo/component name
-org: <your-org>                   # Required: owning organization
+org: <your-org>                   # Required: owning org — use the `Org:` quoin write reports
 component_type: fastapi-service   # Canonical type (fastapi-service, react-lib, etc.)
 tags:                             # Optional capabilities
   - postgres
