@@ -18,6 +18,11 @@ print command-scoped help in response to `--help` or `-h` for the `write`,
 `catalog`, `plugin`, `update`, and workflow commands, falling back to the root
 usage for an unrecognized command.
 
+Help is rendered by the oclif runner from each command class's `static`
+summary, description and examples; see
+[FR-026](./FR-026-dispatch-through-oclif-runner.md). The hand-rolled usage
+strings this requirement once described were removed with the dispatcher.
+
 ## Inputs
 
 - An empty argument vector, or `--help` / `-h` with an optional command.

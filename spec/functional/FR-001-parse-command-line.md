@@ -17,6 +17,10 @@ subcommand for the `catalog` and `plugin` commands, long flags in both
 positionals, accumulating repeated `--types` and `--target` flags into ordered
 lists.
 
+This behaviour is provided by the oclif runner rather than a parser quoin
+maintains; see [FR-026](./FR-026-dispatch-through-oclif-runner.md). The
+requirement below states what an invocation observes, not how it is parsed.
+
 ## Inputs
 
 - The process argument vector (an ordered list of strings).
