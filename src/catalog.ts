@@ -145,11 +145,19 @@ function skeletonPath(
   moduleRoot: string,
   typeName: string,
 ): string | undefined {
-  const candidates = [
-    join(moduleRoot, "skeletons", `${typeName}.md`),
-    join(moduleRoot, "skeletons", `${typeName.toLowerCase()}.md`),
-  ];
-  return candidates.find((path) => existsSync(path));
+  // Match against real directory entries rather than probing with existsSync:
+  // on a case-insensitive filesystem `FR.md` "exists" when the file on disk is
+  // `fr.md`, so probing returns a path whose casing does not match disk.
+  const dir = join(moduleRoot, "skeletons");
+  let entries: string[];
+  try {
+    entries = readdirSync(dir);
+  } catch {
+    return undefined;
+  }
+  const wanted = [`${typeName}.md`, `${typeName.toLowerCase()}.md`];
+  const name = wanted.find((candidate) => entries.includes(candidate));
+  return name ? join(dir, name) : undefined;
 }
 
 function arrayObjects(value: unknown): Array<Record<string, unknown>> {

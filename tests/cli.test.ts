@@ -166,6 +166,7 @@ describe("main dispatch", () => {
     try {
       await main(["plugin", "--help"]);
       await main(["write", "-h"]);
+      await main(["update", "-h"]); // helpFor -> UPDATE_USAGE
       await main(["--help"]); // no command -> USAGE
     } finally {
       c.restore();
@@ -174,7 +175,8 @@ describe("main dispatch", () => {
       "Install and manage user/community spec modules",
     );
     expect(c.lines[1]).toContain("Build an authoring pack");
-    expect(c.lines[2]).toContain("Spec workflow and catalog CLI");
+    expect(c.lines[2]).toContain("quoin update");
+    expect(c.lines[3]).toContain("Spec workflow and catalog CLI");
   });
 
   test("help for a spec-flow command prints the workflow usage", async () => {

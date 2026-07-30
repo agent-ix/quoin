@@ -208,6 +208,28 @@ describe("loadCatalog", () => {
   });
 });
 
+describe("skeleton resolution", () => {
+  // The lookup reads real directory entries, so a module that ships no
+  // skeletons/ directory at all must resolve to no skeleton rather than throw.
+  test("resolves no skeleton when the module ships no skeletons directory", () => {
+    const root = tmp("catalog-noskel");
+    const dir = join(root, "bare-module");
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(
+      join(dir, "manifest.yaml"),
+      stringifyYaml({
+        name: "bare-module",
+        version: "0.1.0",
+        artifact_types: [{ name: "FR" }],
+      }),
+    );
+    const catalog = loadCatalog([dir]);
+    const entry = findCatalogEntry(catalog, "FR");
+    expect(entry?.name).toBe("FR");
+    expect(entry?.skeletonPath).toBeUndefined();
+  });
+});
+
 describe("findDuplicates", () => {
   test("reports a type declared by two modules", () => {
     const root = tmp("dups");
