@@ -77,8 +77,86 @@ describe("origin remote parsing (FR-025-AC-2, FR-025-AC-3)", () => {
 
   it("parses a self-hosted https url with a port", () => {
     expect(
-      originOrg(gitConfig("https://git.example.com/acme/widgets.git")),
+      originOrg(gitConfig("https://git.example.com:8443/acme/widgets.git")),
     ).toBe("acme");
+    expect(originOrg(gitConfig("ssh://git@host:2222/acme/widgets.git"))).toBe(
+      "acme",
+    );
+  });
+
+  it("qualifies a nested namespace by its innermost group", () => {
+    // Matches filament-ide-rs repo_identity, so both layers name a repo alike.
+    expect(originOrg(gitConfig("https://gitlab.com/top/sub/widgets.git"))).toBe(
+      "sub",
+    );
+  });
+
+  it("matches the section name case-insensitively but the remote name exactly", () => {
+    expect(
+      originOrg('[REMOTE "origin"]\n\turl = git@github.com:acme/w.git\n'),
+    ).toBe("acme");
+    expect(
+      originOrg('[remote "Origin"]\n\turl = git@github.com:acme/w.git\n'),
+    ).toBeUndefined();
+  });
+});
+
+// A remote that names no owner must yield nothing rather than a best guess.
+// Taking the second-to-last path segment regardless would answer `git` for
+// /srv/git/repo.git, `..` for ../sibling, and the hostname for
+// https://host/repo.git -- a confidently-reported wrong org, the exact failure
+// FR-025 exists to prevent.
+describe("remotes that name no organization (FR-025-AC-5)", () => {
+  it.each([
+    ["a host-based url with no owner segment", "https://github.com/repo.git"],
+    ["an absolute local path", "/srv/git/myrepo.git"],
+    ["a relative local path", "../sibling-repo"],
+    ["a file:// url", "file:///srv/git/myrepo.git"],
+    ["a home-relative path", "~/repos/thing.git"],
+  ])("yields no org for %s", (_label, url) => {
+    expect(originOrg(gitConfig(url))).toBeUndefined();
+  });
+
+  it("reports unresolved rather than a wrong org for a local-path remote", () => {
+    const root = repoWithConfig(gitConfig("/srv/git/myrepo.git"));
+    expect(resolveOrg(root, { env: {} })).toEqual({ source: "none" });
+  });
+});
+
+describe("worktree and submodule checkouts (FR-025-AC-2)", () => {
+  it("resolves through a .git file pointing at a worktree gitdir", () => {
+    // Mirror git's layout: the worktree's .git is a file naming a gitdir under
+    // the main checkout, whose commondir points back at the shared .git that
+    // actually holds the config.
+    const main = mkdtempSync(join(tmpdir(), "quoin-org-main-"));
+    const commonGit = join(main, ".git");
+    const wtGitDir = join(commonGit, "worktrees", "feature");
+    mkdirSync(wtGitDir, { recursive: true });
+    writeFileSync(
+      join(commonGit, "config"),
+      gitConfig("git@github.com:acme/widgets.git"),
+    );
+    writeFileSync(join(wtGitDir, "commondir"), "../..\n");
+
+    const worktree = mkdtempSync(join(tmpdir(), "quoin-org-wt-"));
+    writeFileSync(join(worktree, ".git"), `gitdir: ${wtGitDir}\n`);
+
+    expect(resolveOrg(worktree, { env: {} })).toEqual({
+      org: "acme",
+      source: "git",
+    });
+  });
+
+  it("yields no org when the .git file points nowhere useful", () => {
+    const root = mkdtempSync(join(tmpdir(), "quoin-org-broken-"));
+    writeFileSync(join(root, ".git"), "gitdir: /nonexistent/path\n");
+    expect(resolveOrg(root, { env: {} })).toEqual({ source: "none" });
+  });
+
+  it("yields no org when .git is a file with no gitdir pointer", () => {
+    const root = mkdtempSync(join(tmpdir(), "quoin-org-nogitdir-"));
+    writeFileSync(join(root, ".git"), "not a gitdir pointer\n");
+    expect(resolveOrg(root, { env: {} })).toEqual({ source: "none" });
   });
 });
 
