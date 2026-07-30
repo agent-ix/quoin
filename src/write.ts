@@ -6,6 +6,15 @@ import {
   type SpecCatalogEntry,
   findCatalogEntry,
 } from "./catalog.js";
+import { UNRESOLVED_ORG_MESSAGE, type OrgSource, resolveOrg } from "./org.js";
+
+/** How each org source is named in the rendered pack. */
+const ORG_SOURCE_LABEL: Record<OrgSource, string> = {
+  flag: "--org",
+  env: "QUOIN_ORG",
+  git: "git remote",
+  none: "nothing",
+};
 
 export interface AuthoringContract {
   name: string;
@@ -18,6 +27,9 @@ export interface AuthoringContract {
 
 export interface AuthoringPack {
   repoRoot: string;
+  /** Authoring organization, absent when no source yielded one (FR-025). */
+  org?: string;
+  orgSource: OrgSource;
   types: AuthoringContract[];
   validation: {
     command: string;
@@ -38,6 +50,7 @@ export function createAuthoringPack(
   catalog: SpecCatalog,
   repoDir: string,
   typeNames: string[],
+  options: { org?: string } = {},
 ): AuthoringPack {
   if (typeNames.length === 0) {
     throw new Error("write requires --types <type[,type...]>");
@@ -60,8 +73,12 @@ export function createAuthoringPack(
     return toAuthoringContract(entry);
   });
 
+  const { org, source } = resolveOrg(repoRoot, { flag: options.org });
+
   return {
     repoRoot,
+    ...(org ? { org } : {}),
+    orgSource: source,
     types,
     validation: {
       command: `quire validate --scope ${shellQuote(repoRoot)} "spec/**/*.md"`,
@@ -76,6 +93,9 @@ export function formatAuthoringPack(pack: AuthoringPack): string {
     "quoin write",
     "",
     `Repo: ${pack.repoRoot}`,
+    pack.org
+      ? `Org: ${pack.org} (from ${ORG_SOURCE_LABEL[pack.orgSource]})`
+      : `Org: unresolved — ${UNRESOLVED_ORG_MESSAGE}`,
     "",
     "Authoring contracts:",
   ];
