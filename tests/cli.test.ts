@@ -48,7 +48,7 @@ import ToPlan from "../src/commands/to-plan";
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 
 // A single oclif Config rooted at the quoin package; reused so every command is
-// instantiated against the real plugin/command graph (FR-016). `Command.run`
+// instantiated against the real plugin/command graph (FR-026). `Command.run`
 // uses the passed class directly, so command bodies execute from src (keeping
 // the modules mock effective) while the runner config supplies context.
 let config: Config;

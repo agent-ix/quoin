@@ -17,6 +17,10 @@ The CLI SHALL reject an unknown command, and an unknown `catalog` or `plugin`
 subcommand, by raising an error that includes the relevant usage text, and SHALL
 exit with a non-zero status.
 
+Rejection is performed by the oclif runner; see
+[FR-026](./FR-026-dispatch-through-oclif-runner.md). The requirement below
+states the observable outcome, not the mechanism.
+
 ## Inputs
 
 - An unrecognized command, or an unrecognized `catalog`/`plugin` subcommand.
