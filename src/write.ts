@@ -12,6 +12,7 @@ import { UNRESOLVED_ORG_MESSAGE, type OrgSource, resolveOrg } from "./org.js";
 const ORG_SOURCE_LABEL: Record<OrgSource, string> = {
   flag: "--org",
   env: "QUOIN_ORG",
+  config: "stored config",
   git: "git remote",
   none: "nothing",
 };

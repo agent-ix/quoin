@@ -27,3 +27,12 @@ export {
   type OrgSource,
   type ResolvedOrg,
 } from "./org.js";
+// `ixSchema` is the named export a host's init hook looks for (ix-cli-core
+// FR-014); it must stay reachable from the package main.
+export {
+  ixSchema,
+  QuoinConfigSchema,
+  QUOIN_PLUGIN_ID,
+  QUOIN_ENV_BINDINGS,
+  type QuoinConfig,
+} from "./config-schema.js";

@@ -1,13 +1,21 @@
 import { readFileSync, statSync } from "node:fs";
 import { join, resolve } from "node:path";
 
+import { ConfigService } from "@agent-ix/ix-cli-core";
+
+import {
+  QUOIN_ENV_BINDINGS,
+  QUOIN_PLUGIN_ID,
+  QuoinConfigSchema,
+} from "./config-schema.js";
+
 /**
  * Where a resolved organization came from, or `none` when nothing yielded one.
  *
  * Reported alongside the organization itself so an author can tell an explicitly
  * stated org from one inferred off the repository's remote.
  */
-export type OrgSource = "flag" | "env" | "git" | "none";
+export type OrgSource = "flag" | "env" | "config" | "git" | "none";
 
 export interface ResolvedOrg {
   /** The organization, or `undefined` when unresolved. */
@@ -18,13 +26,22 @@ export interface ResolvedOrg {
 /** Message shown when no source yielded an organization (FR-025, NFR-003). */
 export const UNRESOLVED_ORG_MESSAGE =
   "could not determine the authoring organization: no --org flag, no QUOIN_ORG, " +
-  'and no [remote "origin"] in .git/config. Pass --org <name>.';
+  'no stored config, and no [remote "origin"] in .git/config. ' +
+  "Pass --org <name>, or store one with `quoin config set org <name>`.";
 
 /**
  * Resolve the authoring organization for a repository (FR-025).
  *
  * Precedence, first non-empty wins: the explicit `--org` value, `QUOIN_ORG`,
- * then the `origin` remote in the repository's git config.
+ * the stored config, then the `origin` remote in the repository's git config.
+ *
+ * A stored value outranks the remote because it is something a person said,
+ * where the remote is only what quoin could infer — but it does not weaken the
+ * no-substitution rule below: a config file is an explicit statement, never a
+ * value quoin picked. `QUOIN_ORG` is declared to `ConfigService` as an env
+ * binding, so it is checked here only when a caller supplies its own `env`
+ * (tests); in the normal path ConfigService layers it over the file itself,
+ * keeping one precedence rule in one place.
  *
  * Deliberately returns `source: "none"` rather than substituting a default. An
  * org qualifies a repository so same-named repos in different organizations stay
@@ -40,18 +57,73 @@ export const UNRESOLVED_ORG_MESSAGE =
  */
 export function resolveOrg(
   repoRoot: string,
-  options: { flag?: string; env?: NodeJS.ProcessEnv } = {},
+  options: {
+    flag?: string;
+    env?: NodeJS.ProcessEnv;
+    /**
+     * Project-local `.ix` layering overrides. Omit them in normal use:
+     * `BaseCommand.init` publishes the runtime context (honouring
+     * `--no-project-config`) and `ConfigService` falls back to it, so the
+     * project layer works without quoin threading anything. Supplied by tests
+     * that need a hermetic root.
+     */
+    projectConfigRoot?: string;
+    projectConfigEnabled?: boolean;
+  } = {},
 ): ResolvedOrg {
   const flag = options.flag?.trim();
   if (flag) return { org: flag, source: "flag" };
 
-  const env = (options.env ?? process.env).QUOIN_ORG?.trim();
-  if (env) return { org: env, source: "env" };
+  if (options.env) {
+    const env = options.env.QUOIN_ORG?.trim();
+    if (env) return { org: env, source: "env" };
+  } else {
+    const stored = storedOrg(options);
+    // ConfigService layers QUOIN_ORG over the file via the declared env
+    // binding, so a value here came from whichever of the two won.
+    if (stored) {
+      return {
+        org: stored,
+        source: process.env.QUOIN_ORG?.trim() === stored ? "env" : "config",
+      };
+    }
+  }
 
   const fromGit = orgFromGitConfig(repoRoot);
   if (fromGit) return { org: fromGit, source: "git" };
 
   return { source: "none" };
+}
+
+/**
+ * Read the organization from quoin's stored config, with `QUOIN_ORG` layered
+ * over it by `ConfigService` (FR-027).
+ *
+ * A malformed config must not stop an author writing specs: ConfigService
+ * already returns schema defaults and records the problem for `config doctor`
+ * rather than throwing, and any other failure here is treated the same way —
+ * no stored org, carry on to the remote.
+ */
+function storedOrg(options: {
+  projectConfigRoot?: string;
+  projectConfigEnabled?: boolean;
+}): string | undefined {
+  // No try/catch here on purpose: `get()` does not throw. ConfigService's
+  // contract is that a parse or validation failure returns schema defaults and
+  // records an incident for `config doctor`, so a bad file already resolves to
+  // "no stored org" and carries on to the remote — which the malformed- and
+  // unreadable-config tests both exercise. A guard would be unreachable.
+  return ConfigService.forPlugin(QUOIN_PLUGIN_ID, QuoinConfigSchema, {
+    envBindings: QUOIN_ENV_BINDINGS,
+    ...(options.projectConfigRoot
+      ? { projectConfigRoot: options.projectConfigRoot }
+      : {}),
+    ...(options.projectConfigEnabled === undefined
+      ? {}
+      : { projectConfigEnabled: options.projectConfigEnabled }),
+  })
+    .get()
+    .org?.trim();
 }
 
 /**

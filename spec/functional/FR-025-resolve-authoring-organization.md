@@ -15,7 +15,9 @@ relationships:
 
 The `quoin` CLI SHALL resolve the authoring organization for a repository from
 the first available of an explicit `--org` value, the `QUOIN_ORG` environment
-variable, and the `origin` remote recorded in the repository's Git configuration.
+variable, the stored configuration
+([FR-027](./FR-027-store-the-authoring-organization.md)), and the `origin`
+remote recorded in the repository's Git configuration.
 
 The `quoin` CLI SHALL report the authoring organization as unresolved when no
 source yields one.
@@ -37,8 +39,8 @@ The `quoin` CLI SHALL NOT substitute a default authoring organization.
 ## Behavior
 
 - The command SHALL apply the precedence `--org`, then `QUOIN_ORG`, then the
-  `origin` remote, and SHALL stop at the first source that yields a non-empty
-  organization.
+  stored configuration, then the `origin` remote, and SHALL stop at the first
+  source that yields a non-empty organization.
 - The command SHALL treat a source whose value is empty or only whitespace as
   yielding no organization, and SHALL continue to the next source.
 - The command SHALL parse the organization from both the SSH remote form
@@ -91,7 +93,7 @@ notice, and worse once noticed, than an absent one that stops the author and ask
 
 | ID          | Criteria                                                                                       | Verification                    |
 | ----------- | ---------------------------------------------------------------------------------------------- | ------------------------------- |
-| FR-025-AC-1 | `--org` takes precedence over `QUOIN_ORG`, which takes precedence over the `origin` remote, and an empty or whitespace-only value defers to the next source | Test (org.test.ts)              |
+| FR-025-AC-1 | `--org` takes precedence over `QUOIN_ORG`, then the stored configuration, then the `origin` remote, and an empty or whitespace-only value defers to the next source | Test (org.test.ts)              |
 | FR-025-AC-2 | The organization is parsed from an SSH remote URL                                               | Test (org.test.ts)              |
 | FR-025-AC-3 | The organization is parsed from an HTTPS remote URL                                             | Test (org.test.ts)              |
 | FR-025-AC-4 | A missing configuration, an absent `origin` remote, and a remote yielding no organization each resolve to unresolved without failing | Test (org.test.ts)              |

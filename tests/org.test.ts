@@ -235,3 +235,128 @@ describe("malformed remote entries", () => {
     ).toBeUndefined();
   });
 });
+
+// FR-027: a stored config value outranks the git remote, because it is
+// something a person said where the remote is only what quoin inferred.
+describe("stored configuration (FR-027)", () => {
+  const priorHome = process.env.XDG_CONFIG_HOME;
+  const priorOrg = process.env.QUOIN_ORG;
+  let configHome: string;
+
+  beforeEach(() => {
+    configHome = mkdtempSync(join(tmpdir(), "quoin-org-cfg-"));
+    process.env.XDG_CONFIG_HOME = configHome;
+    delete process.env.QUOIN_ORG;
+  });
+
+  afterEach(() => {
+    if (priorHome === undefined) delete process.env.XDG_CONFIG_HOME;
+    else process.env.XDG_CONFIG_HOME = priorHome;
+    if (priorOrg === undefined) delete process.env.QUOIN_ORG;
+    else process.env.QUOIN_ORG = priorOrg;
+  });
+
+  function storeOrg(org: string): void {
+    const dir = join(configHome, "ix", "config.d");
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(join(dir, "quoin.yaml"), `org: ${org}\n`);
+  }
+
+  it("prefers a stored org over the git remote", () => {
+    const root = repoWithConfig(gitConfig("git@github.com:from-git/repo.git"));
+    storeOrg("from-config");
+    expect(resolveOrg(root)).toEqual({ org: "from-config", source: "config" });
+  });
+
+  it("falls through to the git remote when nothing is stored", () => {
+    const root = repoWithConfig(gitConfig("git@github.com:from-git/repo.git"));
+    expect(resolveOrg(root)).toEqual({ org: "from-git", source: "git" });
+  });
+
+  it("prefers an explicit --org over a stored value", () => {
+    const root = repoWithConfig(gitConfig("git@github.com:from-git/repo.git"));
+    storeOrg("from-config");
+    expect(resolveOrg(root, { flag: "from-flag" })).toEqual({
+      org: "from-flag",
+      source: "flag",
+    });
+  });
+
+  it("lets QUOIN_ORG layer over the stored value, reported as env", () => {
+    const root = repoWithConfig(gitConfig("git@github.com:from-git/repo.git"));
+    storeOrg("from-config");
+    process.env.QUOIN_ORG = "from-env";
+    expect(resolveOrg(root)).toEqual({ org: "from-env", source: "env" });
+  });
+
+  it("resolves to none when nothing is stored and there is no remote", () => {
+    expect(resolveOrg(repoWithConfig())).toEqual({ source: "none" });
+  });
+
+  it("prefers a project-local org over the user-level one (FR-027-AC-9)", () => {
+    // The per-repo layer is what lets one checkout declare a different org
+    // without touching global state.
+    storeOrg("user-level");
+    const project = mkdtempSync(join(tmpdir(), "quoin-org-proj-"));
+    const projectRoot = join(project, ".ix");
+    mkdirSync(join(projectRoot, "config.d"), { recursive: true });
+    writeFileSync(
+      join(projectRoot, "config.d", "quoin.yaml"),
+      "org: project-level\n",
+    );
+
+    const root = repoWithConfig(gitConfig("git@github.com:from-git/repo.git"));
+    expect(
+      resolveOrg(root, {
+        projectConfigRoot: projectRoot,
+        projectConfigEnabled: true,
+      }),
+    ).toEqual({ org: "project-level", source: "config" });
+  });
+
+  it("ignores the project layer when the invocation disables it (FR-027-AC-9)", () => {
+    storeOrg("user-level");
+    const project = mkdtempSync(join(tmpdir(), "quoin-org-proj-off-"));
+    const projectRoot = join(project, ".ix");
+    mkdirSync(join(projectRoot, "config.d"), { recursive: true });
+    writeFileSync(
+      join(projectRoot, "config.d", "quoin.yaml"),
+      "org: project-level\n",
+    );
+
+    const root = repoWithConfig(gitConfig("git@github.com:from-git/repo.git"));
+    expect(
+      resolveOrg(root, {
+        projectConfigRoot: projectRoot,
+        projectConfigEnabled: false,
+      }),
+    ).toEqual({ org: "user-level", source: "config" });
+  });
+
+  it("ignores an unreadable config rather than failing the command", () => {
+    // ConfigService returns defaults for a malformed file, but a read that
+    // throws outright (permissions) must be absorbed the same way -- an author
+    // has to be able to keep writing specs.
+    const dir = join(configHome, "ix", "config.d");
+    mkdirSync(dir, { recursive: true });
+    const file = join(dir, "quoin.yaml");
+    writeFileSync(file, "org: from-config\n");
+    chmodSync(file, 0o000);
+    const root = repoWithConfig(gitConfig("git@github.com:from-git/repo.git"));
+    try {
+      expect(resolveOrg(root)).toEqual({ org: "from-git", source: "git" });
+    } finally {
+      chmodSync(file, 0o644);
+    }
+  });
+
+  it("ignores a malformed config rather than failing the command", () => {
+    // ConfigService records the problem for `config doctor` and returns schema
+    // defaults; an author must still be able to write specs.
+    const dir = join(configHome, "ix", "config.d");
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(join(dir, "quoin.yaml"), "org: [unterminated\n");
+    const root = repoWithConfig(gitConfig("git@github.com:from-git/repo.git"));
+    expect(resolveOrg(root)).toEqual({ org: "from-git", source: "git" });
+  });
+});
