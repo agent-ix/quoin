@@ -111,6 +111,8 @@ index; the files are authoritative.
 - [US-006](./usecase/US-006-detect-conflicting-type-definitions.md) — detect conflicting type definitions across modules.
 - [US-007](./usecase/US-007-review-into-specreview-docs.md) — review a spec into validated review docs.
 - [US-008](./usecase/US-008-create-implementation-plan.md) — create an implementation plan from accepted requirements.
+- [US-009](./usecase/US-009-install-in-any-coding-agent.md) — install quoin in the coding agent of my choice.
+- [US-010](./usecase/US-010-author-specs-for-my-own-organization.md) — author specs for my own organization.
 
 ### Functional Requirements
 
@@ -158,6 +160,8 @@ index; the files are authoritative.
 **Configuration**
 
 - [FR-023](./functional/FR-023-runtime-configuration.md) — quoin runtime configuration surface (`object: configuration`).
+- [FR-025](./functional/FR-025-resolve-authoring-organization.md) — resolve the authoring organization.
+- [FR-026](./functional/FR-026-dispatch-through-oclif-runner.md) — dispatch commands through the oclif runner.
 
 ### Non-Functional Requirements
 

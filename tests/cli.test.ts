@@ -48,7 +48,7 @@ import ToPlan from "../src/commands/to-plan";
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 
 // A single oclif Config rooted at the quoin package; reused so every command is
-// instantiated against the real plugin/command graph (FR-016). `Command.run`
+// instantiated against the real plugin/command graph (FR-026). `Command.run`
 // uses the passed class directly, so command bodies execute from src (keeping
 // the modules mock effective) while the runner config supplies context.
 let config: Config;
@@ -630,6 +630,75 @@ describe("write", () => {
     const parsed = JSON.parse(c.lines.join("\n"));
     expect(parsed.repoRoot).toBe(repo);
     expect(parsed.types[0].name).toBe("FR");
+  });
+
+  // FR-025-AC-6 / FR-023-AC-4: the --org flag has to survive oclif's own flag
+  // parsing into the pack, in both renderings. Driven through the command class
+  // rather than main(), matching the rest of this suite: dispatching through
+  // the runner would execute from dist/, where the src/modules mock does not
+  // apply and ensureDefaultModules would reach the network.
+  test("--org reaches the pack in the text rendering", async () => {
+    const home = populatedCatalog();
+    const c = captureLog();
+    try {
+      await runCmd(Write, [
+        tmp("repo"),
+        "--types",
+        "FR",
+        "--org",
+        "acme",
+        "--config-root",
+        home,
+      ]);
+    } finally {
+      c.restore();
+    }
+    expect(c.lines.join("\n")).toContain("Org: acme (from --org)");
+  });
+
+  test("--org reaches the pack under --json", async () => {
+    const home = populatedCatalog();
+    const c = captureLog();
+    try {
+      await runCmd(Write, [
+        tmp("repo"),
+        "--types",
+        "FR",
+        "--org",
+        "acme",
+        "--json",
+        "--config-root",
+        home,
+      ]);
+    } finally {
+      c.restore();
+    }
+    const parsed = JSON.parse(c.lines.join("\n"));
+    expect(parsed.org).toBe("acme");
+    expect(parsed.orgSource).toBe("flag");
+  });
+
+  test("reports an unresolved org with the --org remedy", async () => {
+    const home = populatedCatalog();
+    const prior = process.env.QUOIN_ORG;
+    delete process.env.QUOIN_ORG;
+    const c = captureLog();
+    try {
+      // tmp() dirs have no .git, so nothing can supply an org.
+      await runCmd(Write, [
+        tmp("repo"),
+        "--types",
+        "FR",
+        "--config-root",
+        home,
+      ]);
+    } finally {
+      c.restore();
+      if (prior !== undefined) process.env.QUOIN_ORG = prior;
+    }
+    const text = c.lines.join("\n");
+    expect(text).toContain("Org: unresolved");
+    expect(text).toContain("Pass --org <name>");
   });
 });
 

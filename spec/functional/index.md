@@ -31,3 +31,6 @@ description: "Index of functional requirements (FR) for quoin."
 - [FR-021: Launch workflow runs through ix-flow](./FR-021-launch-ix-flow-runs.md)
 - [FR-022: Upgrade quoin to the latest published release](./FR-022-self-update.md)
 - [FR-023: quoin runtime configuration surface](./FR-023-runtime-configuration.md)
+- [FR-024: Expose plugin and catalog operations as a stable library API](./FR-024-plugin-catalog-library-api.md)
+- [FR-025: Resolve the authoring organization](./FR-025-resolve-authoring-organization.md)
+- [FR-026: Dispatch commands through the oclif runner](./FR-026-dispatch-through-oclif-runner.md)

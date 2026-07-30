@@ -153,3 +153,62 @@ describe("formatAuthoringPack", () => {
     expect(text).not.toContain("contract: manifest only");
   });
 });
+
+// FR-025-AC-6: the pack carries the org and its source, so an agent reads a
+// concrete value instead of copying one out of a skeleton.
+describe("authoring pack organization", () => {
+  const priorOrg = process.env.QUOIN_ORG;
+
+  beforeEach(() => {
+    delete process.env.QUOIN_ORG;
+  });
+
+  afterEach(() => {
+    if (priorOrg === undefined) delete process.env.QUOIN_ORG;
+    else process.env.QUOIN_ORG = priorOrg;
+  });
+
+  test("carries an explicit --org value and its source", () => {
+    const { catalog } = buildCatalog();
+    const pack = createAuthoringPack(catalog, tmp("repo"), ["FR"], {
+      org: "acme",
+    });
+    expect(pack.org).toBe("acme");
+    expect(pack.orgSource).toBe("flag");
+    expect(formatAuthoringPack(pack)).toContain("Org: acme (from --org)");
+  });
+
+  test("carries QUOIN_ORG when no flag is given", () => {
+    process.env.QUOIN_ORG = "from-env";
+    const { catalog } = buildCatalog();
+    const pack = createAuthoringPack(catalog, tmp("repo"), ["FR"]);
+    expect(pack.org).toBe("from-env");
+    expect(pack.orgSource).toBe("env");
+    expect(formatAuthoringPack(pack)).toContain(
+      "Org: from-env (from QUOIN_ORG)",
+    );
+  });
+
+  test("reports unresolved with the remedy and no substituted value", () => {
+    const { catalog } = buildCatalog();
+    // A bare temp dir: no .git/config to read an origin remote from.
+    const pack = createAuthoringPack(catalog, tmp("repo"), ["FR"]);
+    expect(pack.org).toBeUndefined();
+    expect(pack.orgSource).toBe("none");
+    const text = formatAuthoringPack(pack);
+    expect(text).toContain("Org: unresolved");
+    expect(text).toContain("--org");
+    expect(text).not.toContain("agent-ix");
+  });
+
+  test("serializes the org into the --json rendering", () => {
+    const { catalog } = buildCatalog();
+    const pack = createAuthoringPack(catalog, tmp("repo"), ["FR"], {
+      org: "acme",
+    });
+    expect(JSON.parse(JSON.stringify(pack))).toMatchObject({
+      org: "acme",
+      orgSource: "flag",
+    });
+  });
+});

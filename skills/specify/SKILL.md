@@ -66,6 +66,11 @@ Run only the steps the request needs; stop after IT.
 2. Run `quoin write <repo_dir> --types <type[,type...]>` **once** for the full
    set. Use the returned skeletons, schemas, module roots, and examples as the
    authoring contract — the per-type rules live in the template, not your memory.
+   The pack also reports the repo's `Org:`; use that value for the `org:` field
+   and for the `ix://<org>/<repo>/…` targets you write. If it reports
+   `Org: unresolved`, ask the user which organization owns the repo — never
+   invent one, never leave a literal `<your-org>` in a file, and never copy the
+   org out of a skeleton's example values.
 3. Author each artifact as its own file (table above), in this logical order,
    skipping any type not requested:
    - `spec.md` — **REQUIRED when starting a new spec**: the

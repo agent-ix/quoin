@@ -1,7 +1,7 @@
 ---
 type: master-requirements
 name: <app-name>
-org: <your-org>
+org: <your-org> # use the `Org:` quoin write reports
 component_type: application
 tags: []
 implementation_language: null
