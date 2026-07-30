@@ -1,82 +1,77 @@
 # Default Filament module set shipped with quoin.
 #
 # Lazily installed into ~/.ix/filament/modules on first catalog access (see
-# src/modules.ts). Each entry sparse-checks out one module's data subdir from its
-# canonical repo at a pinned tag — the same git tag the Python wheel is built
-# from. This file is the canonical-ready source of truth for the module set +
-# pins (a future generator can derive the backend pyproject pins / activation
-# list from it).
+# src/modules.ts). Each entry resolves a module from its published npm package
+# (@agent-ix/<name>) at a pinned version — the package tarball root IS the module
+# (manifest.yaml at the top). This file is the canonical source of truth for the
+# module set + pins.
+#
+# NOTE: these npm pins require the corresponding @agent-ix/spec-* packages to be
+# published at the pinned versions. Bump a `version` here only after that version
+# is live on npm; otherwise lazy default reconcile fails to resolve.
 schemaVersion: 1
 name: quoin-default-modules
 entries:
   - name: spec-artifacts-iso
-    version: "0.5.0"
+    version: "0.6.0"
     defaultEnabled: true
     source:
-      type: git-subdir
-      url: agent-ix/spec-artifacts-iso
-      path: spec_artifacts_iso
-      ref: v0.5.0
+      type: npm
+      package: "@agent-ix/spec-artifacts-iso"
+      version: "0.6.0"
 
   - name: spec-artifacts-app
-    version: "0.3.0"
+    version: "0.4.0"
     defaultEnabled: true
     source:
-      type: git-subdir
-      url: agent-ix/spec-artifacts-app
-      path: spec_artifacts_app
-      ref: v0.3.0
+      type: npm
+      package: "@agent-ix/spec-artifacts-app"
+      version: "0.4.0"
 
   - name: spec-artifacts-process
+    version: "0.6.0"
+    defaultEnabled: true
+    source:
+      type: npm
+      package: "@agent-ix/spec-artifacts-process"
+      version: "0.6.0"
+
+  - name: spec-objects-business
     version: "0.5.0"
     defaultEnabled: true
     source:
-      type: git-subdir
-      url: agent-ix/spec-artifacts-process
-      path: spec_artifacts_process
-      ref: v0.5.0
-
-  - name: spec-objects-business
-    version: "0.4.0"
-    defaultEnabled: true
-    source:
-      type: git-subdir
-      url: agent-ix/spec-objects-business
-      path: spec_objects_business
-      ref: v0.4.0
+      type: npm
+      package: "@agent-ix/spec-objects-business"
+      version: "0.5.0"
 
   - name: spec-objects-architecture
-    version: "0.4.0"
+    version: "0.5.0"
     defaultEnabled: true
     source:
-      type: git-subdir
-      url: agent-ix/spec-objects-architecture
-      path: spec_objects_architecture
-      ref: v0.4.0
+      type: npm
+      package: "@agent-ix/spec-objects-architecture"
+      version: "0.5.0"
 
   - name: spec-objects-enterprise
-    version: "0.3.0"
-    defaultEnabled: true
-    source:
-      type: git-subdir
-      url: agent-ix/spec-objects-enterprise
-      path: spec_objects_enterprise
-      ref: v0.3.0
-
-  - name: spec-objects-operational
     version: "0.4.0"
     defaultEnabled: true
     source:
-      type: git-subdir
-      url: agent-ix/spec-objects-operational
-      path: spec_objects_operational
-      ref: v0.4.0
+      type: npm
+      package: "@agent-ix/spec-objects-enterprise"
+      version: "0.4.0"
 
-  - name: spec-objects-security
-    version: "0.3.0"
+  - name: spec-objects-operational
+    version: "0.5.0"
     defaultEnabled: true
     source:
-      type: git-subdir
-      url: agent-ix/spec-objects-security
-      path: spec_objects_security
-      ref: v0.3.0
+      type: npm
+      package: "@agent-ix/spec-objects-operational"
+      version: "0.5.0"
+
+  - name: spec-objects-security
+    version: "0.4.0"
+    defaultEnabled: true
+    source:
+      type: npm
+      package: "@agent-ix/spec-objects-security"
+      version: "0.4.0"

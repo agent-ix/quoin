@@ -49,9 +49,9 @@ export function parseSourceArg(arg: string): Source {
     }
     return { type: "github", repo: spec, ref };
   }
-  // `package:` is forward-declared: it maps to an npm Source, but ts-plugin-kit's
-  // resolveSource currently rejects npm (UnsupportedSourceError), so an install
-  // fails until npm support lands. Not advertised in PLUGIN_USAGE.
+  // `package:@scope/name[@version]` installs a module from an npm package whose
+  // tarball root is the module (manifest.yaml at the top) — e.g. the published
+  // @agent-ix/spec-* modules. ts-plugin-kit resolves it via `npm pack`.
   if (arg.startsWith("package:")) {
     const spec = arg.slice(8);
     const at = spec.lastIndexOf("@");
