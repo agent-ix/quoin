@@ -631,6 +631,75 @@ describe("write", () => {
     expect(parsed.repoRoot).toBe(repo);
     expect(parsed.types[0].name).toBe("FR");
   });
+
+  // FR-025-AC-6 / FR-023-AC-4: the --org flag has to survive the CLI's own
+  // parsing into the pack, in both renderings.
+  test("--org reaches the pack in the text rendering", async () => {
+    const home = populatedCatalog();
+    const c = captureLog();
+    try {
+      await main([
+        "write",
+        tmp("repo"),
+        "--types",
+        "FR",
+        "--org",
+        "acme",
+        "--config-root",
+        home,
+      ]);
+    } finally {
+      c.restore();
+    }
+    expect(c.lines.join("\n")).toContain("Org: acme (from --org)");
+  });
+
+  test("--org reaches the pack under --json", async () => {
+    const home = populatedCatalog();
+    const c = captureLog();
+    try {
+      await main([
+        "write",
+        tmp("repo"),
+        "--types",
+        "FR",
+        "--org",
+        "acme",
+        "--json",
+        "--config-root",
+        home,
+      ]);
+    } finally {
+      c.restore();
+    }
+    const parsed = JSON.parse(c.lines.join("\n"));
+    expect(parsed.org).toBe("acme");
+    expect(parsed.orgSource).toBe("flag");
+  });
+
+  test("reports an unresolved org with the --org remedy", async () => {
+    const home = populatedCatalog();
+    const prior = process.env.QUOIN_ORG;
+    delete process.env.QUOIN_ORG;
+    const c = captureLog();
+    try {
+      // tmp() dirs have no .git, so nothing can supply an org.
+      await main([
+        "write",
+        tmp("repo"),
+        "--types",
+        "FR",
+        "--config-root",
+        home,
+      ]);
+    } finally {
+      c.restore();
+      if (prior !== undefined) process.env.QUOIN_ORG = prior;
+    }
+    const text = c.lines.join("\n");
+    expect(text).toContain("Org: unresolved");
+    expect(text).toContain("Pass --org <name>");
+  });
 });
 
 // ---- spec-flow launchers -----------------------------------------------------
