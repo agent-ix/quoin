@@ -228,6 +228,53 @@ describe("skeleton resolution", () => {
     expect(entry?.name).toBe("FR");
     expect(entry?.skeletonPath).toBeUndefined();
   });
+
+  // Both naming conventions ship in practice: spec-artifacts-iso uses lowercase
+  // (`fr.md`) while spec-artifacts-process uses the type's own casing
+  // (`Feedback.md`). Each must resolve to the real on-disk name, never a
+  // fabricated one that only "exists" on a case-insensitive filesystem.
+  test.each([
+    ["the type's own casing", "Feedback", "Feedback.md"],
+    ["a lowercase filename", "FR", "fr.md"],
+  ])("resolves a skeleton named with %s", (_label, typeName, fileName) => {
+    const root = tmp("catalog-casing");
+    const dir = join(root, "cased-module");
+    mkdirSync(join(dir, "skeletons"), { recursive: true });
+    writeFileSync(
+      join(dir, "manifest.yaml"),
+      stringifyYaml({
+        name: "cased-module",
+        version: "0.1.0",
+        artifact_types: [{ name: typeName }],
+      }),
+    );
+    writeFileSync(join(dir, "skeletons", fileName), `# ${typeName}\n`);
+
+    const entry = findCatalogEntry(loadCatalog([dir]), typeName);
+    expect(entry?.skeletonPath).toBe(join(dir, "skeletons", fileName));
+  });
+
+  test("resolves no skeleton when only an unrelated casing is present", () => {
+    // `Fr.md` matches neither the type's own casing nor its lowercase form.
+    // Previously existsSync would have found it on macOS and missed it on
+    // Linux; now it misses consistently on both.
+    const root = tmp("catalog-oddcase");
+    const dir = join(root, "odd-module");
+    mkdirSync(join(dir, "skeletons"), { recursive: true });
+    writeFileSync(
+      join(dir, "manifest.yaml"),
+      stringifyYaml({
+        name: "odd-module",
+        version: "0.1.0",
+        artifact_types: [{ name: "FR" }],
+      }),
+    );
+    writeFileSync(join(dir, "skeletons", "Fr.md"), "# FR\n");
+
+    expect(
+      findCatalogEntry(loadCatalog([dir]), "FR")?.skeletonPath,
+    ).toBeUndefined();
+  });
 });
 
 describe("findDuplicates", () => {
