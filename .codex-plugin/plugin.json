@@ -2,9 +2,36 @@
   "name": "quoin",
   "version": "0.1.0",
   "description": "Spec authoring, review, matrix, and planning skills for Agent IX.",
+  "author": {
+    "name": "Agent IX",
+    "url": "https://github.com/agent-ix"
+  },
+  "homepage": "https://github.com/agent-ix/quoin",
+  "repository": "https://github.com/agent-ix/quoin",
+  "license": "MIT",
+  "keywords": [
+    "specifications",
+    "requirements",
+    "planning",
+    "agent-skills"
+  ],
   "skills": "./skills/",
   "interface": {
     "displayName": "Quoin",
-    "category": "Productivity"
+    "shortDescription": "Spec-driven development skills for Codex.",
+    "longDescription": "Quoin adds skills for authoring, reviewing, tracing, and planning software specifications.",
+    "developerName": "Agent IX",
+    "category": "Productivity",
+    "capabilities": [
+      "Skills",
+      "Planning",
+      "Review",
+      "Write"
+    ],
+    "defaultPrompt": [
+      "Specify a feature with Quoin.",
+      "Review my spec for gaps.",
+      "Turn requirements into a plan."
+    ]
   }
 }
