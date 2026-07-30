@@ -33,6 +33,9 @@
       "catalog": {
         "description": "Inspect the active artifact/object catalog (list, show, validate)."
       },
+      "config": {
+        "description": "Read and store quoin configuration (get, set, edit, doctor)."
+      },
       "module": {
         "description": "Install and manage user/community spec modules (list, install, remove, ensure-defaults)."
       },
@@ -81,7 +84,8 @@
     "@agent-ix/ix-cli-core": ">=0.11.0",
     "@agent-ix/ts-plugin-kit": ">=0.1.3",
     "@oclif/core": ">=4.11.4",
-    "yaml": "^2.9.0"
+    "yaml": "^2.9.0",
+    "zod": ">=4.4.3"
   },
   "devDependencies": {
     "@types/node": "25.9.2",

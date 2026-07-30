@@ -34,3 +34,4 @@ description: "Index of functional requirements (FR) for quoin."
 - [FR-024: Expose plugin and catalog operations as a stable library API](./FR-024-plugin-catalog-library-api.md)
 - [FR-025: Resolve the authoring organization](./FR-025-resolve-authoring-organization.md)
 - [FR-026: Dispatch commands through the oclif runner](./FR-026-dispatch-through-oclif-runner.md)
+- [FR-027: Store the authoring organization](./FR-027-store-the-authoring-organization.md)
