@@ -162,6 +162,7 @@ index; the files are authoritative.
 - [FR-023](./functional/FR-023-runtime-configuration.md) — quoin runtime configuration surface (`object: configuration`).
 - [FR-025](./functional/FR-025-resolve-authoring-organization.md) — resolve the authoring organization.
 - [FR-026](./functional/FR-026-dispatch-through-oclif-runner.md) — dispatch commands through the oclif runner.
+- [FR-027](./functional/FR-027-store-the-authoring-organization.md) — store the authoring organization.
 
 ### Non-Functional Requirements
 

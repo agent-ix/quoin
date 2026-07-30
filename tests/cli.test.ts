@@ -44,6 +44,10 @@ import Write from "../src/commands/write";
 import Review from "../src/commands/review";
 import Matrix from "../src/commands/matrix";
 import ToPlan from "../src/commands/to-plan";
+import ConfigGet from "../src/commands/config/get";
+import ConfigSet from "../src/commands/config/set";
+import ConfigDoctor from "../src/commands/config/doctor";
+import ConfigEdit from "../src/commands/config/edit";
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -699,6 +703,104 @@ describe("write", () => {
     const text = c.lines.join("\n");
     expect(text).toContain("Org: unresolved");
     expect(text).toContain("Pass --org <name>");
+  });
+});
+
+// ---- config (FR-027) ---------------------------------------------------------
+
+// Runs the real command bodies against a scratch XDG_CONFIG_HOME, so the
+// delegation to ix-cli-core's handlers is exercised rather than merely
+// asserted from source.
+describe("config", () => {
+  const priorConfigHome = process.env.XDG_CONFIG_HOME;
+  const priorOrg = process.env.QUOIN_ORG;
+
+  beforeEach(() => {
+    process.env.XDG_CONFIG_HOME = tmp("cfg-home");
+    delete process.env.QUOIN_ORG;
+  });
+
+  afterEach(() => {
+    if (priorConfigHome === undefined) delete process.env.XDG_CONFIG_HOME;
+    else process.env.XDG_CONFIG_HOME = priorConfigHome;
+    if (priorOrg === undefined) delete process.env.QUOIN_ORG;
+    else process.env.QUOIN_ORG = priorOrg;
+  });
+
+  test("set stores an org that write then resolves", async () => {
+    const home = populatedCatalog();
+    const c = captureLog();
+    try {
+      await runCmd(ConfigSet, ["org", "stored-corp", "--config-root", home]);
+      await runCmd(Write, [
+        tmp("repo"),
+        "--types",
+        "FR",
+        "--config-root",
+        home,
+      ]);
+    } finally {
+      c.restore();
+    }
+    expect(c.lines.join("\n")).toContain(
+      "Org: stored-corp (from stored config)",
+    );
+  });
+
+  test("get resolves for a stored key without erroring", async () => {
+    // The rendered output is ix-cli-core's (it writes through ix-ui-cli, not
+    // console.log), so what quoin owns here is that the key reaches the shared
+    // handler under quoin's plugin id. The value round-tripping is asserted by
+    // the write test above.
+    const home = populatedCatalog();
+    const c = captureLog();
+    try {
+      await runCmd(ConfigSet, ["org", "acme", "--config-root", home]);
+      await expect(
+        runCmd(ConfigGet, ["org", "--config-root", home]),
+      ).resolves.toBeUndefined();
+    } finally {
+      c.restore();
+    }
+  });
+
+  test("set rejects an unrecognized key", async () => {
+    const home = populatedCatalog();
+    const c = captureLog();
+    try {
+      await expect(
+        runCmd(ConfigSet, ["bogus", "x", "--config-root", home]),
+      ).rejects.toThrow();
+    } finally {
+      c.restore();
+    }
+  });
+
+  test("doctor reports on a clean config without failing", async () => {
+    const home = populatedCatalog();
+    const c = captureLog();
+    try {
+      await runCmd(ConfigDoctor, ["--config-root", home]);
+    } finally {
+      c.restore();
+    }
+    expect(process.exitCode ?? 0).toBe(0);
+  });
+
+  test("edit opens the config file through the shared handler", async () => {
+    const home = populatedCatalog();
+    const priorEditor = process.env.EDITOR;
+    // `true` exits 0 without touching the file, so the handler runs its full
+    // path without this test depending on a real editor.
+    process.env.EDITOR = "true";
+    const c = captureLog();
+    try {
+      await runCmd(ConfigEdit, ["--config-root", home]);
+    } finally {
+      c.restore();
+      if (priorEditor === undefined) delete process.env.EDITOR;
+      else process.env.EDITOR = priorEditor;
+    }
   });
 });
 
