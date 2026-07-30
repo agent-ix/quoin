@@ -632,14 +632,16 @@ describe("write", () => {
     expect(parsed.types[0].name).toBe("FR");
   });
 
-  // FR-025-AC-6 / FR-023-AC-4: the --org flag has to survive the CLI's own
-  // parsing into the pack, in both renderings.
+  // FR-025-AC-6 / FR-023-AC-4: the --org flag has to survive oclif's own flag
+  // parsing into the pack, in both renderings. Driven through the command class
+  // rather than main(), matching the rest of this suite: dispatching through
+  // the runner would execute from dist/, where the src/modules mock does not
+  // apply and ensureDefaultModules would reach the network.
   test("--org reaches the pack in the text rendering", async () => {
     const home = populatedCatalog();
     const c = captureLog();
     try {
-      await main([
-        "write",
+      await runCmd(Write, [
         tmp("repo"),
         "--types",
         "FR",
@@ -658,8 +660,7 @@ describe("write", () => {
     const home = populatedCatalog();
     const c = captureLog();
     try {
-      await main([
-        "write",
+      await runCmd(Write, [
         tmp("repo"),
         "--types",
         "FR",
@@ -684,8 +685,7 @@ describe("write", () => {
     const c = captureLog();
     try {
       // tmp() dirs have no .git, so nothing can supply an org.
-      await main([
-        "write",
+      await runCmd(Write, [
         tmp("repo"),
         "--types",
         "FR",

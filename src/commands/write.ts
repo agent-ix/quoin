@@ -20,12 +20,16 @@ Notes:
   - Type lookup is case-insensitive; FR and fr are the same type.
   - Types can be artifacts or objects from the default module set or modules.
   - Use the returned skeletons and schemas as the authoring contract.
-  - Run the returned Quire command after editing spec files.`;
+  - Run the returned Quire command after editing spec files.
+  - The org is resolved from --org, else QUOIN_ORG, else the repo's origin
+    remote. It is never defaulted: put the reported org in the frontmatter
+    "org:" field rather than copying a value from a skeleton.`;
 
   static examples = [
     "quoin write . --types FR",
     "quoin write . --types FR,domain,entity",
     "quoin write ../my-service --types fr,DOMAIN --json",
+    "quoin write . --types Spec --org acme",
   ];
 
   static args = {
@@ -36,6 +40,10 @@ Notes:
     types: Flags.string({
       description: "Artifact/object type(s), comma-separated or repeated.",
       multiple: true,
+    }),
+    org: Flags.string({
+      description:
+        "Authoring organization. Overrides QUOIN_ORG and the repo's origin remote.",
     }),
     json: Flags.boolean({ description: "Emit the authoring pack as JSON." }),
   };
@@ -50,6 +58,7 @@ Notes:
       catalog,
       repoDir,
       parseTypeList(flags.types),
+      { org: flags.org },
     );
     this.log(
       flags.json ? JSON.stringify(pack, null, 2) : formatAuthoringPack(pack),
