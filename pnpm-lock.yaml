@@ -12,14 +12,14 @@ importers:
         specifier: file:../filament-plan-sync
         version: file:../filament-plan-sync
       '@agent-ix/ix-cli-core':
-        specifier: '>=0.11.0'
-        version: 0.11.0(@oclif/core@4.11.4)
+        specifier: '>=0.12.0'
+        version: 0.12.0
       '@agent-ix/ts-plugin-kit':
         specifier: '>=0.1.3'
         version: 0.1.3
       '@oclif/core':
-        specifier: '>=4.11.4'
-        version: 4.11.4
+        specifier: '>=4.11.14'
+        version: 4.11.14
       yaml:
         specifier: ^2.9.0
         version: 2.9.0
@@ -72,10 +72,8 @@ packages:
   '@agent-ix/filament-plan-sync@file:../filament-plan-sync':
     resolution: {directory: ../filament-plan-sync, type: directory}
 
-  '@agent-ix/ix-cli-core@0.11.0':
-    resolution: {integrity: sha512-/QKQIxIroscYIzEEf8HO4xX+WtDIKjyWTarWwiCZOH252K3VFqWrPmTbric9cjZyoAWZUSZ43Dj1As/TmsDqbA==}
-    peerDependencies:
-      '@oclif/core': '>=4.11.4'
+  '@agent-ix/ix-cli-core@0.12.0':
+    resolution: {integrity: sha512-6nu7twhNUIT6u+/Q8bhQ2doArdGxIsNK5r2pkV6jjcMMUpSKu+BNhnRd23QF1u6KUEbDEjQcffoYHDalijUWfA==}
 
   '@agent-ix/ix-cli-core@file:../ix-cli-core':
     resolution: {directory: ../ix-cli-core, type: directory}
@@ -317,10 +315,6 @@ packages:
 
   '@oclif/core@4.11.14':
     resolution: {integrity: sha512-cZ5Ktd+rT0PO+o7KBH4vRFTgg+xMLf8F41WK39p8MkXEViZA/Qqe+4lzZT6102zgUxMORET1HtF9t5w8CB3tnQ==}
-    engines: {node: '>=18.0.0'}
-
-  '@oclif/core@4.11.4':
-    resolution: {integrity: sha512-URwiQ5ALx/sJ2iH4vzXEd+H4K6NAI7LRs6Jag3hrgKEpGmaE6alfRC8qjO4GIgb6A3ACaJumqP9twi/M9ywdHQ==}
     engines: {node: '>=18.0.0'}
 
   '@octokit/auth-token@5.1.2':
@@ -1771,13 +1765,13 @@ snapshots:
       - react-devtools-core
       - utf-8-validate
 
-  '@agent-ix/ix-cli-core@0.11.0(@oclif/core@4.11.4)':
+  '@agent-ix/ix-cli-core@0.12.0':
     dependencies:
       '@agent-ix/ix-ui-cli': 0.4.10
       '@agent-ix/ts-plugin-kit': 0.1.3
       '@clack/prompts': 1.5.1
       '@napi-rs/keyring': 1.3.0
-      '@oclif/core': 4.11.4
+      '@oclif/core': 4.11.14
       age-encryption: 0.3.0
       react: 19.2.7
       yaml: 2.9.0
@@ -2025,27 +2019,6 @@ snapshots:
       '@noble/hashes': 2.0.1
 
   '@oclif/core@4.11.14':
-    dependencies:
-      ansi-escapes: 4.3.2
-      ansis: 3.17.0
-      clean-stack: 3.0.1
-      cli-spinners: 2.9.2
-      debug: 4.4.3(supports-color@8.1.1)
-      ejs: 3.1.10
-      get-package-type: 0.1.0
-      indent-string: 4.0.0
-      is-wsl: 2.2.0
-      lilconfig: 3.1.3
-      minimatch: 10.2.5
-      semver: 7.8.4
-      string-width: 4.2.3
-      supports-color: 8.1.1
-      tinyglobby: 0.2.17
-      widest-line: 3.1.0
-      wordwrap: 1.0.0
-      wrap-ansi: 7.0.0
-
-  '@oclif/core@4.11.4':
     dependencies:
       ansi-escapes: 4.3.2
       ansis: 3.17.0
@@ -2910,7 +2883,7 @@ snapshots:
 
   make-dir@4.0.0:
     dependencies:
-      semver: 7.8.2
+      semver: 7.8.4
 
   make-error@1.3.6: {}
 

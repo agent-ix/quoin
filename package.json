@@ -1,6 +1,6 @@
 {
   "name": "@agent-ix/quoin",
-  "description": "Spec-driven development for Claude Code — author validated, ISO/IEC/IEEE 29148-aligned specs, then plan and build against them.",
+  "description": "Spec-driven development for Claude Code \u2014 author validated, ISO/IEC/IEEE 29148-aligned specs, then plan and build against them.",
   "version": "0.1.3",
   "license": "MIT",
   "type": "module",
@@ -78,9 +78,9 @@
   },
   "dependencies": {
     "@agent-ix/filament-plan-sync": "file:../filament-plan-sync",
-    "@agent-ix/ix-cli-core": ">=0.11.0",
+    "@agent-ix/ix-cli-core": ">=0.12.0",
     "@agent-ix/ts-plugin-kit": ">=0.1.3",
-    "@oclif/core": ">=4.11.4",
+    "@oclif/core": ">=4.11.14",
     "yaml": "^2.9.0"
   },
   "devDependencies": {
