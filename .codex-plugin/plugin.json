@@ -9,12 +9,7 @@
   "homepage": "https://github.com/agent-ix/quoin",
   "repository": "https://github.com/agent-ix/quoin",
   "license": "MIT",
-  "keywords": [
-    "specifications",
-    "requirements",
-    "planning",
-    "agent-skills"
-  ],
+  "keywords": ["specifications", "requirements", "planning", "agent-skills"],
   "skills": "./skills/",
   "interface": {
     "displayName": "Quoin",
@@ -22,12 +17,7 @@
     "longDescription": "Quoin adds skills for authoring, reviewing, tracing, and planning software specifications.",
     "developerName": "Agent IX",
     "category": "Productivity",
-    "capabilities": [
-      "Skills",
-      "Planning",
-      "Review",
-      "Write"
-    ],
+    "capabilities": ["Skills", "Planning", "Review", "Write"],
     "defaultPrompt": [
       "Specify a feature with Quoin.",
       "Review my spec for gaps.",
