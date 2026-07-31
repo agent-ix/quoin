@@ -110,5 +110,10 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/agent-ix/quoin.git"
+  },
+  "pnpm": {
+    "overrides": {
+      "brace-expansion": ">=5.0.8"
+    }
   }
 }
