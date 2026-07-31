@@ -1,6 +1,6 @@
 {
   "name": "@agent-ix/quoin",
-  "description": "Spec-driven development for Claude Code \u2014 author validated, ISO/IEC/IEEE 29148-aligned specs, then plan and build against them.",
+  "description": "Spec-driven development for Claude Code — author validated, ISO/IEC/IEEE 29148-aligned specs, then plan and build against them.",
   "version": "0.1.3",
   "license": "MIT",
   "type": "module",
