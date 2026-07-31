@@ -64,6 +64,7 @@ so quoin owns the command surface but not the mechanism that serves it.
 | FR-026-AC-4 | An unknown command, and an unknown subcommand, are each rejected by the runner                 | Test (cli.test.ts)   |
 | FR-026-AC-5 | The bare version forms are answered before dispatch; every other argv is handed to the runner  | Test (cli.test.ts)   |
 | FR-026-AC-6 | An error raised by the runner propagates to the caller                                         | Test (cli.test.ts)   |
+| FR-026-AC-7 | A package listed in `oclif.plugins` is discovered as a core plugin and its command is dispatched, with no runtime install step | Test (it-005-sync-discovery.test.ts) |
 
 ## Dependencies
 
