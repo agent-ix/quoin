@@ -1,6 +1,8 @@
 minimumReleaseAge: 14400
 minimumReleaseAgeExclude:
   - "@agent-ix/*"
+  # Security patch needed sooner than the soak window.
+  - "brace-expansion"
 
 updateConfig:
   ignoreDependencies:
