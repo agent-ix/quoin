@@ -178,7 +178,10 @@ For each artifact file (StR, US, FR, NFR):
 
 - [ ] File `spec/tests.md` exists
 - [ ] Coverage table maps every AC to at least one TC
-- [ ] TC entries include Type (Unit/Integration/E2E/Security) and Priority
+- [ ] TC entries include Type and Priority, each a single value from the
+      enforced vocabularies (see `spec-matrix/SKILL.md` § Test Case Summary —
+      `Security` is not one of them; a security test takes the Type that
+      describes how it runs)
 - [ ] Component ownership note explains which repo runs each TC
 - [ ] Constraint boundary tests section maps CON IDs to TCs
 

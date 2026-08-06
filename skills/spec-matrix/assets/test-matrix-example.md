@@ -25,7 +25,7 @@ This is an example test matrix demonstrating comprehensive test coverage for the
 |----------------|---------------------|------------|-----------------|
 | FR-001 | FR-001-AC-1 | TC-001 | ✅ Complete |
 | FR-001 | FR-001-AC-2 | TC-002 | ✅ Complete |
-| FR-001 | FR-001-AC-3 | TC-006 | ✅ Complete |
+| FR-001 | FR-001-AC-3 | TC-006, TC-022 | ✅ Complete |
 | FR-001 | FR-001-AC-4 | TC-007 | ✅ Complete |
 | FR-001 | FR-001-AC-5 | TC-008 | ✅ Complete |
 | FR-001 | FR-001-AC-6 | TC-009 | ✅ Complete |
@@ -55,8 +55,14 @@ This is an example test matrix demonstrating comprehensive test coverage for the
 | TC-017 | Malformed YAML Handling | Integration | P1 | EC-003 | ❌ Missing |
 | TC-018 | Symlinks to K8s Configs | Integration | P2 | EC-004 | ❌ Missing |
 | TC-019 | Repository Changes During Clone | Integration | P2 | EC-005 | ❌ Missing |
+| TC-022 | Resource identification is order-independent and idempotent over any generated manifest set | Property | P1 | FR-001-AC-3 | ✅ Pass |
 
 **Note**: Detailed test case definitions are in the `test-cases/` directory.
+
+**Note on `Type`**: TC-022 is `Property`, not `Unit`, because FR-001-AC-3 is
+quantified — it holds for *any* manifest set, not for one worked example. TC-006
+witnesses the criterion with a specific input; TC-022 discriminates it across a
+generated domain. Both are legitimate and they trace to the same AC.
 
 ## Option Permutation Matrix
 | Test Case | OPT-A (Shallow) | OPT-B (Full) | Expected Behavior |
@@ -94,4 +100,5 @@ This is an example test matrix demonstrating comprehensive test coverage for the
 | Unit | 3 | 3 | 0 | 0 | 100% |
 | Integration | 8 | 8 | 0 | 0 | 100% |
 | E2E | 0 | 0 | 0 | 0 | N/A |
+| Property | 1 | 1 | 0 | 0 | 100% |
 | Edge Cases | 5 | 3 | 0 | 2 | 60% |

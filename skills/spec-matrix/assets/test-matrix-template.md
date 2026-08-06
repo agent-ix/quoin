@@ -38,10 +38,16 @@ This matrix ensures comprehensive test coverage by transforming requirements int
 
 | Test ID | Title | Type | Priority | Traces To | Status |
 |---------|-------|------|----------|-----------|--------|
-| TC-001 | [Test Title] | [Unit/Integration/E2E] | [P0/P1/P2/P3] | [US-XXX-AC-X] | [✅/⚠️/❌/🚧] |
-| TC-002 | [Test Title] | [Unit/Integration/E2E] | [P0/P1/P2/P3] | [FR-XXX-AC-X] | [✅/⚠️/❌/🚧] |
+| TC-001 | [Test Title] | [Unit/Integration/E2E/Property] | [P0/P1/P2/P3/P4] | [US-XXX-AC-X] | [✅/⚠️/❌/🚧/⛔] |
+| TC-002 | [Test Title] | [Unit/Integration/E2E/Property] | [P0/P1/P2/P3/P4] | [FR-XXX-AC-X] | [✅/⚠️/❌/🚧/⛔] |
 
 **Note**: Detailed test case definitions should be in separate files in `test-cases/` directory.
+
+**`Type`** shows the four most common values inline. The full enforced set is
+`Unit`, `Integration`, `E2E`, `Property`, `Fuzz`, `Benchmark`, `Static`,
+`Compile`, `Snapshot`, `Manual` — see the `Test Case Summary` section of
+`SKILL.md` for when each applies. Use exactly one value per row; the vocabulary
+is validated, so `Unit / pg_test` and other compounds are rejected.
 
 ## Option Permutation Matrix
 | Test Case | OPT-A | OPT-B | OPT-C | Expected Behavior |
