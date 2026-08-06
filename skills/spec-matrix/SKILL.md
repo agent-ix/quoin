@@ -53,12 +53,77 @@ is advisory; this skill treats it as a quality gate for the matrix.)
     -   Map `NFR` -> `TC`.
     -   Map `C` (Constraints) -> `TC`.
 3.  Enumerate: List all Test Cases with ID, Title, Type, Priority, Status.
+    See `Test Case Summary` below for the `Type` and `Priority` vocabularies —
+    both are validated, so a value outside the set fails `quire validate`.
 4.  Define Detailed TCs (Optional):
     -   For complex tests, create at:
         -   Single Repo: `spec/test-cases/TC-XXX.md`
         -   Multi-Repo: `specs/<category>/<component>/spec/test-cases/TC-XXX.md`
 5.  Verify: Ensure all 6 rules are satisfied.
 6.  Status: Mark as ✅ Complete only when all rules are met.
+
+## Test Case Summary
+
+The `## Test Case Summary` table is structurally validated by `quire validate`
+against the `TestMatrix` archetype (`spec-artifacts-process` FR-003). Columns are
+exactly `Test ID | Title | Type | Priority | Traces To | Status`.
+
+The vocabularies below are **not owned by this skill**. The single source is
+`spec_artifacts_process/manifest.yaml` (`traceability.vocabularies.test_type`,
+mirrored into `column_choices`); if this list and the manifest ever disagree, the
+manifest wins and this section is the bug.
+
+### `Type` — exactly one value per row
+
+Pick by *what makes the test fail*, not by which framework runs it.
+
+| Value | Use when |
+|---|---|
+| `Unit` | One function/module in isolation, example-based. The default. |
+| `Integration` | Two or more components, or a real dependency (DB, service, browser). |
+| `E2E` | The whole system through its outermost interface, as a user drives it. |
+| `Property` | The criterion holds **over a domain of inputs**, and the test generates them. See below. |
+| `Fuzz` | Untargeted/mutational input generation looking for crashes, not a stated property. |
+| `Benchmark` | The criterion is a latency/throughput number; the test measures it. |
+| `Static` | Proved by analysis over the source — a lint, an audit script, an architecture check. No runtime. |
+| `Compile` | The failure mode *is* a compile error (type-level guarantee, `forbid(unsafe_code)`). |
+| `Snapshot` | Byte/DOM-identity against a stored artifact. |
+| `Manual` | Verified by a human procedure; no automated gate. |
+
+**When `Property` rather than `Unit`.** Read the acceptance criterion and ask
+whether it quantifies. A criterion that names one input and one expected output
+is a `Unit` example. A criterion that asserts something for *every* input, or
+relates two runs to each other, is property-shaped:
+
+- **Invariant** — "output is always sorted", "the count never exceeds `max_size`"
+- **Round-trip** — "parse then render returns the original bytes"
+- **Idempotence** — "applying it twice equals applying it once"
+- **Metamorphic** — "reordering the inputs does not change the result"
+- **Oracle** — "the fast path agrees with the reference implementation"
+
+Words like *always*, *never*, *for any*, *regardless of*, *preserves*,
+*round-trips*, *deterministic*, *order-independent* are the signal. Where a
+criterion is property-shaped, prefer `Property` — a generated test discriminates
+the claim, a single example only witnesses it.
+
+`Property` is a first-class value: do not downgrade a property-shaped criterion
+to `Unit` because the repo has no generator yet. Author the row, and let the
+missing generator show up as a gap.
+
+### `Priority`
+
+`P0` | `P1` | `P2` | `P3` | `P4`.
+
+### `Status`
+
+`✅` complete · `⚠️` partial · `❌` failed · `🚧` in progress · `⛔` retired.
+A marker may be followed by text (`✅ Complete`); the marker must come first.
+
+### `Traces To`
+
+Comma-separated requirement ids (`FR-012-AC-3`, `US-004-AC-1`), ranges allowed
+(`FR-012-AC-1..3`), optional trailing ` (note)`. Trace to the **criterion**, not
+the requirement, and never to another `TC`.
 
 ## React Components (Conditional)
 
@@ -100,3 +165,4 @@ Use template section `## Integration Test Matrix` with:
 -   ⚠️ Partial
 -   ❌ Missing
 -   🚧 In Progress
+-   ⛔ Retired

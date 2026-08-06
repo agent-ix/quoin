@@ -9,7 +9,7 @@ heart of gap-analysis: a matrix row marked ✅ means nothing unless a tagged tes
 Built by `spec-matrix` (`quoin/skills/spec-matrix/SKILL.md`). Key tables:
 
 - **Test Case Summary** — `Test ID | Title | Type | Priority | Traces To | Status`, where
-  `Test ID` = `TC-xxx`, `Traces To` = `FR-XXX-AC-X` etc., `Status` ∈ `✅ ⚠️ ❌ 🚧`.
+  `Test ID` = `TC-xxx`, `Traces To` = `FR-XXX-AC-X` etc., `Status` ∈ `✅ ⚠️ ❌ 🚧 ⛔`.
 - **Per-requirement coverage** — StR/US/FR/NFR → AC → TC → Status tables.
 
 ## Tracking-tag patterns in test code
