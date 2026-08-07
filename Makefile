@@ -14,8 +14,13 @@
 build:
 	pnpm run build
 
+# `test` depends on `build`: oclif resolves commands from `./dist/commands`
+# (package.json `oclif.commands`), so the dispatch-parity test sees an empty
+# command list without a build. CI runs `make install` then `make test` with no
+# build step in between, which is why that test passed locally — where a stale
+# `dist/` lingers — and failed on every clean runner.
 .PHONY: test
-test:
+test: build
 	pnpm run test
 
 .PHONY: test-json
