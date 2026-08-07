@@ -31,11 +31,12 @@ enforced, so a clean authoring pass predicts a clean validation pass.
 
 ## Validation Criteria
 
-This need is satisfied when the modules `quoin` reads to build an authoring
-contract are the same modules `quire` reads to validate, such that a file authored
-to the returned skeleton and schema validates without rule mismatch. Satisfaction
-is demonstrated by authoring an artifact from a `quoin` contract and validating it
-with `quire` against the same store.
+
+| ID | Criteria | Validation |
+|----|----------|------------|
+| StR-003-VC-1 | The modules `quoin` reads to build an authoring contract are the same modules `quire` reads to validate, such that a file authored to the returned skeleton and schema validates without rule mismatch. | Demonstration |
+
+Satisfaction is demonstrated by authoring an artifact from a `quoin` contract and validating it with `quire` against the same store.
 
 ## Stakeholders
 

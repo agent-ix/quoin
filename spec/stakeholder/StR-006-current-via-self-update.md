@@ -26,11 +26,12 @@ both public releases and local development snapshots by choice of registry.
 
 ## Validation Criteria
 
-This need is satisfied when running the update command compares the installed
-version to the latest published version and upgrades in place, while a check-only
-invocation reports availability without changing anything, and an explicit
-registry can be selected. Satisfaction is demonstrated by a check that reports an
-available upgrade and an update that installs it.
+
+| ID | Criteria | Validation |
+|----|----------|------------|
+| StR-006-VC-1 | Running the update command compares the installed version to the latest published version and upgrades in place, while a check-only invocation reports availability without changing anything, and an explicit registry can be selected. | Demonstration |
+
+Satisfaction is demonstrated by a check that reports an available upgrade and an update that installs it.
 
 ## Stakeholders
 

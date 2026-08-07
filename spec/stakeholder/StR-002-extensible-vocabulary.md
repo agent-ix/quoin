@@ -29,12 +29,12 @@ author keeps one consistent authoring and validation flow.
 
 ## Validation Criteria
 
-This need is satisfied when an author installs a module from a supported source,
-sees its types appear in the active catalog, requests those types in an authoring
-contract, and validates files authored against them — with the installed module
-treated identically to a default module. Satisfaction is demonstrated by
-installing a module from a path and from a GitHub source and authoring against
-its types.
+
+| ID | Criteria | Validation |
+|----|----------|------------|
+| StR-002-VC-1 | An author installs a module from a supported source, sees its types appear in the active catalog, requests those types in an authoring contract, and validates files authored against them — with the installed module treated identically to a default module. | Demonstration |
+
+Satisfaction is demonstrated by installing a module from a path and from a GitHub source and authoring against its types.
 
 ## Stakeholders
 
