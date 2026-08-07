@@ -50,8 +50,10 @@ surface as a non-zero exit (`flows.test.ts`), and the write tests assert the
 
 ## Acceptance Criteria
 
-The absence of external-tool version pinning is an accepted limitation, recorded
-here rather than as a metric; it is revisited if pinning becomes required.
+
+| ID | Criteria | Verification |
+|----|----------|--------------|
+| NFR-007-AC-1 | The absence of external-tool version pinning is an accepted limitation, recorded here rather than as a metric; it is revisited if pinning becomes required. | Demonstration |
 
 ## Dependencies
 
