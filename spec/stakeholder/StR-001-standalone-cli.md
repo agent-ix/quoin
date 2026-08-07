@@ -32,11 +32,12 @@ in any repo, including ones outside the IX platform.
 
 ## Validation Criteria
 
-This need is satisfied when `quoin` installs as a single package and runs its
-catalog, authoring, plugin, workflow, and update surfaces using only its own
-runtime dependencies, resolving its configuration root from a flag or a sensible
-default without any platform-wide setup. Satisfaction is demonstrated by
-installing the package alone and exercising each command surface successfully.
+
+| ID | Criteria | Validation |
+|----|----------|------------|
+| StR-001-VC-1 | `quoin` installs as a single package and runs its catalog, authoring, plugin, workflow, and update surfaces using only its own runtime dependencies, resolving its configuration root from a flag or a sensible default without any platform-wide setup. | Demonstration |
+
+Satisfaction is demonstrated by installing the package alone and exercising each command surface successfully.
 
 ## Stakeholders
 

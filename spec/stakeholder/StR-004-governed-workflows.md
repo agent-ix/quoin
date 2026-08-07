@@ -30,11 +30,12 @@ remains the single launch point an author already knows.
 
 ## Validation Criteria
 
-This need is satisfied when an author starts a review, matrix, or planning
-workflow through `quoin` and then drives its progression — resume, advance,
-acknowledge gates, inspect status — through the workflow engine, with the run's
-state persisted across invocations. Satisfaction is demonstrated by launching a
-workflow and continuing it to completion through the engine.
+
+| ID | Criteria | Validation |
+|----|----------|------------|
+| StR-004-VC-1 | An author starts a review, matrix, or planning workflow through `quoin` and then drives its progression — resume, advance, acknowledge gates, inspect status — through the workflow engine, with the run's state persisted across invocations. | Inspection |
+
+Satisfaction is demonstrated by launching a workflow and continuing it to completion through the engine.
 
 ## Stakeholders
 

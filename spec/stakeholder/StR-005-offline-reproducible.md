@@ -31,11 +31,12 @@ local.
 
 ## Validation Criteria
 
-This need is satisfied when the default module set is declared at fixed versions,
-installed once, and thereafter served from the local store with no network or
-version-resolution work on repeated catalog access — yielding identical results
-across runs. Satisfaction is demonstrated by exercising catalog and authoring
-commands repeatedly with no network activity after the first install.
+
+| ID | Criteria | Validation |
+|----|----------|------------|
+| StR-005-VC-1 | The default module set is declared at fixed versions, installed once, and thereafter served from the local store with no network or version-resolution work on repeated catalog access — yielding identical results across runs. | Inspection |
+
+Satisfaction is demonstrated by exercising catalog and authoring commands repeatedly with no network activity after the first install.
 
 ## Stakeholders
 
