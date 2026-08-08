@@ -66,6 +66,8 @@ Coverage is mapped requirement → test as `file :: "test name"`:
 
 | FR-027 | ✅ Covered | AC-1 `org.test.ts` :: "prefers a stored org over the git remote". AC-2 :: "prefers an explicit --org over a stored value". AC-3 :: "lets QUOIN_ORG layer over the stored value, reported as env". AC-4 :: "falls through to the git remote when nothing is stored"; :: "resolves to none when nothing is stored and there is no remote". AC-5 :: "ignores a malformed config rather than failing the command". AC-6 `config-schema.test.ts` :: "rejects an unrecognized key"; :: "rejects an empty org"; :: "accepts a non-empty org"; :: "accepts an absent org rather than defaulting one". AC-7 :: "declares the plugin id, schema, and env binding". AC-8 `cli.test.ts` :: "set stores an org that write then resolves"; :: "get resolves for a stored key without erroring"; :: "set rejects an unrecognized key"; :: "doctor reports on a clean config without failing"; :: "edit opens the config file through the shared handler"; `config-schema.test.ts` :: "get calls runConfigGet from the shared package"; :: "set calls runConfigSet from the shared package"; :: "edit calls runConfigEdit from the shared package"; :: "doctor calls runConfigDoctor from the shared package"; :: "each command registers quoin's schema before delegating". AC-9 `org.test.ts` :: "prefers a project-local org over the user-level one (FR-027-AC-9)"; :: "ignores the project layer when the invocation disables it (FR-027-AC-9)" |
 
+| FR-028 | 🚧 Spec-ahead-of-coverage | The `spec-correctness` skill (`skills/spec-correctness/`) is authored; its behavior is agent-facing, so it is verified at the eval layer rather than by vitest. AC-1/AC-3/AC-4 → EV-050. AC-2/AC-6/AC-7 → EV-051. AC-5 → EV-052. AC-8/AC-9/AC-11 → EV-053. AC-10/AC-12 → Inspection of `skills/spec-correctness/` (no framework name in any `spec/**` output; strategy selection keyed on `property`). **EV-050…EV-053 are defined in `spec/evals.md` but not yet implemented in `evals/scenarios/`, so this row does not yet claim coverage.** |
+
 ## Non-Functional Requirements
 
 | Requirement | Coverage   | Test / Evidence                                                                                                                                                                                                                                                              |
@@ -90,6 +92,7 @@ Coverage is mapped requirement → test as `file :: "test name"`:
 | US-005   | ✅ Covered | `flows.test.ts` launchers end-to-end (real fake `ix-flow`); `cli.test.ts` `review`/`matrix` dispatch; EV-005/EV-013                                                  |
 | US-006   | ✅ Covered | `catalog.test.ts` :: "reports a type declared by two modules"; `cli.test.ts` :: "validate reports duplicates on stderr and sets exit code 1"                         |
 | US-010   | ✅ Covered | `org.test.ts` resolution suites (precedence, both url forms, worktrees, owner-less remotes); `write.test.ts` "authoring pack organization" suite; `cli.test.ts` `--org` text/JSON/unresolved trio; `org-no-subprocess.test.ts` no-subprocess proof — see FR-025 |
+| US-011   | 🚧 Spec-ahead-of-coverage | The `spec-correctness` skill is authored; EV-050…EV-053 are defined in `spec/evals.md` but not yet implemented in `evals/scenarios/` — see FR-028 |
 
 ## Eval Coverage
 
