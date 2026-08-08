@@ -56,7 +56,7 @@ and runner.
 
 | Harness | Manifest | Generator library | Test path |
 | --- | --- | --- | --- |
-| Rust / proptest | `Cargo.toml` | `proptest`, `proptest-state-machine`, `loom`, `arbitrary` in `[dev-dependencies]` | `tests/props/fr_NNN.rs` |
+| Rust / proptest | `Cargo.toml` | `proptest`, `proptest-state-machine`, `loom`, `arbitrary` in `[dev-dependencies]` | `tests/props_fr_NNN.rs` (flat — cargo discovers only `tests/*.rs`) |
 | TypeScript / fast-check | `package.json` | `fast-check` in `devDependencies`; runner from `vitest.config.*`, `jest.config.*`, or `package.json#scripts.test` | `tests/props/fr-NNN.prop.test.ts` |
 | Python / hypothesis | `pyproject.toml`, `setup.cfg`, `requirements*.txt` | `hypothesis`; runner from `pytest.ini` / `tox.ini` / `conftest.py` | `tests/props/test_fr_NNN.py` |
 

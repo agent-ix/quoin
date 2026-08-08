@@ -30,7 +30,8 @@ already runs the matrix workflow; hand them over.
 
 `Test ID | Title | Type | Priority | Traces To | Status`
 
-- `Type` — `Property` for the 8 generatable families; `Unit` for second-pass witnesses.
+- `Type` — `Property` for the 8 generatable families; `Unit` for witnesses, whether they
+  came from the second pass or from a `singleton-domain` grounding result.
   The vocabulary is owned by `spec_artifacts_process/manifest.yaml`, not by this skill; if
   it disagrees with what you write, the manifest wins.
 - `Traces To` — the `row_id`, exactly (`FR-027-AC-1`). Never a range you invented, never

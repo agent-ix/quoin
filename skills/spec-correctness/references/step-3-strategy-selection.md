@@ -16,6 +16,21 @@ in the sentence.
 | One of the 8 generatable properties | emit **unattended** | emit → **queue** | grounded → queue; refused → step 5 |
 | `example` / `unclassified` | n/a | n/a | **step 5 only** |
 
+**Grounding outranks the table.** The lanes above assume step 2 grounded the criterion as
+the classification describes it. Where step 2 returned one of its reclassifying reasons, use
+that instead — a record can be `extraction: extractable` and still not be a property:
+
+| step-2 reason | lane |
+| --- | --- |
+| `singleton-domain` | **queue as a `Unit` witness**, never unattended |
+| `label-from-mention` | re-derive the strategy from the grounded oracle; lane unchanged |
+| `criterion-describes-its-test` | find the existing test; record *already covered*, emit nothing |
+| `static-or-demonstration` | refuse; no matrix row |
+| any other refusal | queue with the reason, or step 5 |
+
+`singleton-domain` is the common one. On a real run it moved 31 of 52 `universal` criteria
+out of the unattended lane. Routing on `extraction` alone would have emitted all 52.
+
 `candidate` means the criterion carries a metamorphic label the structural pass did not
 corroborate — the label came from a declared idiom alone, or the shape landed but no
 predicate marker supplied an oracle. It is the only field a module declaration can move,

@@ -81,7 +81,7 @@ when the residue is large (say, more than 30 records).
 | Path | What |
 | --- | --- |
 | `tests/props/<per-harness naming>` | Unattended property tests (`extraction: extractable`, grounded) |
-| `tests/props/_review/…` | Queued tests — inert until accepted |
+| `tests/props/_review/…` (Rust: `tests/props_review_fr_NNN.rs`) | Queued tests — inert until accepted |
 | `tests/props/QUEUE.md` | The review queue and the run report |
 
 > **Why the queue is not a `SpecReview`.** `SpecReview.analysis` is a closed enum in

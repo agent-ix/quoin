@@ -9,7 +9,7 @@ under `tests/props/` compiles as a helper module and never runs. See step 4.
 ## Anatomy
 
 ```rust
-// tests/props/fr_012.rs
+// tests/props_fr_012.rs
 use proptest::prelude::*;
 use quoin::catalog::{detect_duplicates, Entry};
 

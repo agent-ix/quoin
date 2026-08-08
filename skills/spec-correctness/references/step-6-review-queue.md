@@ -21,6 +21,7 @@ not a prerequisite for this skill.
 | `extraction: candidate` | Metamorphic label the structural pass did not corroborate |
 | Second-pass reclassify | An LLM read, not a deterministic one |
 | Second-pass witness | An example test, not property coverage |
+| `singleton-domain` witness | Classified `extractable`, but grounding found a one-element domain — a `Unit` test, not property coverage |
 | Grounded but harness-downgraded | e.g. Python `concurrency` |
 | Refused | No test written; the reason is the row |
 | Generator library missing | **No file written** — the proposal is a code block in the queue. An import of a missing library breaks collection even for a skipped test |
@@ -41,7 +42,9 @@ being explicit about:
 For each accepted row:
 
 1. Delete the skip marker line.
-2. Move the file from `tests/props/_review/` to `tests/props/`.
+2. Move the file out of the review location: `tests/props/_review/` → `tests/props/`
+   for TypeScript and Python, `tests/props_review_fr_NNN.rs` → `tests/props_fr_NNN.rs`
+   for Rust, whose paths are flat (step 4).
 3. Change the provenance line's `review=required` to `review=accepted`, leaving `row=` and
    `origin=` untouched.
 4. Run the suite.
