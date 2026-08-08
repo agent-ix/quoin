@@ -132,9 +132,14 @@ Language` (the harvester also reads a dedicated `Glossary` `## Terms` table) —
 > consumes `quire properties --json` (quire-rs FR-052) and generates property
 > tests. EV-050 covers the unattended lane, EV-051 the review-gated lane and the
 > byte-identical tag through acceptance, EV-052 the handoff to `gap-analysis`,
-> EV-053 the refusals and the CON-1 no-verdict rule. These four are **defined but
-> not yet implemented** in `evals/scenarios/` — until they are, FR-028 and US-011
-> are marked spec-ahead-of-coverage in `spec/matrix.md`.
+> EV-053 the refusals and the CON-1 no-verdict rule. All four are implemented in
+> `evals/scenarios/`. Their fixture is a small `codes` library plus one FR whose
+> criteria land, verified against the classifier, in the intended buckets:
+> `universal`/`ordering`/`error-case` all extractable plus one `example` witness
+> for EV-050..EV-052, and for EV-053 two criteria the classifier calls extractable
+> but grounding must refuse — one with an adjectival oracle ("actionable and
+> clear"), one naming a symbol absent from `src/`. EV-053's manifest also declares
+> no generator library, so the skill must write no test file and install nothing.
 
 > EV-040..EV-041 exercise the **EARS requirement-grammar** check (quire-rs
 > FR-042): EV-040 authors EARS-clean, EV-041 repairs an EARS-dirty FR. Both
