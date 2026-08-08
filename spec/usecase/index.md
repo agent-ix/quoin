@@ -18,3 +18,4 @@ description: "Index of artifacts in this directory."
 - [US-008: Create an implementation plan from accepted requirements](./US-008-create-implementation-plan.md)
 - [US-009: Install quoin in the coding agent of my choice](./US-009-install-in-any-coding-agent.md)
 - [US-010: Author specs for my own organization](./US-010-author-specs-for-my-own-organization.md)
+- [US-011: Generate property tests from acceptance criteria](./US-011-generate-property-tests-from-criteria.md)

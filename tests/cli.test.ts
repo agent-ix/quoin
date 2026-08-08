@@ -197,6 +197,7 @@ afterEach(() => {
 // ---- runner / dispatch parity (TC-016, TC-107) -------------------------------
 
 describe("oclif runner dispatch parity", () => {
+  // Trace: FR-026-AC-1
   test("the runner discovers every migrated command (no legacy dispatcher)", () => {
     const ids = new Set(config.commandIDs);
     for (const id of [
@@ -224,10 +225,12 @@ describe("oclif runner dispatch parity", () => {
     }
   });
 
+  // Trace: FR-026-AC-2
   test("subcommands are space-separated (topicSeparator)", () => {
     expect(config.topicSeparator).toBe(" ");
   });
 
+  // Trace: FR-026-AC-3
   test("the hand-rolled parseArgs dispatcher is gone from cli.ts", () => {
     const source = readFileSync(join(repoRoot, "src", "cli.ts"), "utf8");
     expect(source).not.toContain("function parseArgs");
@@ -235,10 +238,12 @@ describe("oclif runner dispatch parity", () => {
     expect(source).not.toContain("function runPlugin");
   });
 
+  // Trace: FR-026-AC-4
   test("an unknown command is rejected by the runner", async () => {
     await expect(run(["bogus"], config)).rejects.toThrow();
   });
 
+  // Trace: FR-026-AC-4
   test("an unknown subcommand is rejected by the runner", async () => {
     await expect(run(["catalog", "bogus"], config)).rejects.toThrow();
   });
@@ -247,6 +252,7 @@ describe("oclif runner dispatch parity", () => {
 // ---- version -----------------------------------------------------------------
 
 describe("version", () => {
+  // Trace: FR-002-AC-1, FR-026-AC-5
   test("--version, -v, and the version command all print the package version", async () => {
     const c = captureLog();
     try {
@@ -263,6 +269,7 @@ describe("version", () => {
     ]);
   });
 
+  // Trace: FR-002-AC-2
   test("packageVersion returns a non-empty string", () => {
     expect(typeof packageVersion()).toBe("string");
     expect(packageVersion().length).toBeGreaterThan(0);
@@ -286,6 +293,7 @@ describe("main dispatch", () => {
   // command dispatched through the runner executes from dist/, where the
   // src/modules mock does not apply and ensureDefaultModules would reach the
   // network. The rejection still proves argv reached the runner.
+  // Trace: FR-026-AC-5, FR-026-AC-6
   test("a non-version argv is handed to the runner, whose error propagates", async () => {
     await expect(main(["bogus"], config)).rejects.toThrow();
   });
@@ -294,6 +302,7 @@ describe("main dispatch", () => {
 // ---- catalog -----------------------------------------------------------------
 
 describe("catalog", () => {
+  // Trace: FR-011-AC-1
   test("list (explicit) prints one line per module", async () => {
     const home = populatedCatalog();
     const c = captureLog();
@@ -307,6 +316,7 @@ describe("catalog", () => {
     expect(text).toContain("spec-objects-business@0.1.0");
   });
 
+  // Trace: FR-004-AC-1, FR-004-AC-2, FR-023-AC-1
   test("falls back to IX_HOME when --config-root is omitted, and prints 'unknown' for a versionless module", async () => {
     const src = tmp("src-noversion");
     const noVersion = makeModule(src, "spec-objects-noversion", {
@@ -330,6 +340,7 @@ describe("catalog", () => {
     expect(c.lines.join("\n")).toContain("spec-objects-noversion@unknown");
   });
 
+  // Trace: FR-011-AC-2
   test("the catalog index command behaves like list", async () => {
     const home = populatedCatalog();
     const c = captureLog();
@@ -341,6 +352,7 @@ describe("catalog", () => {
     expect(c.lines.join("\n")).toContain("spec-artifacts-iso");
   });
 
+  // Trace: FR-011-AC-2
   test("list --json prints the whole catalog as JSON", async () => {
     const home = populatedCatalog();
     const c = captureLog();
@@ -355,6 +367,7 @@ describe("catalog", () => {
     );
   });
 
+  // Trace: FR-011-AC-3
   test("show prints a single entry (text)", async () => {
     const home = populatedCatalog();
     const c = captureLog();
@@ -366,6 +379,7 @@ describe("catalog", () => {
     expect(c.lines.join("\n")).toContain("artifact FR from spec-artifacts-iso");
   });
 
+  // Trace: FR-011-AC-3
   test("show --json prints the entry as JSON", async () => {
     const home = populatedCatalog();
     const c = captureLog();
@@ -377,6 +391,7 @@ describe("catalog", () => {
     expect(JSON.parse(c.lines.join("\n")).name).toBe("FR");
   });
 
+  // Trace: FR-011-AC-4
   test("show without a type throws", async () => {
     const home = populatedCatalog();
     await expect(runCmd(CatalogShow, ["--config-root", home])).rejects.toThrow(
@@ -384,6 +399,7 @@ describe("catalog", () => {
     );
   });
 
+  // Trace: FR-011-AC-4
   test("show of a missing type throws", async () => {
     const home = populatedCatalog();
     await expect(
@@ -391,6 +407,7 @@ describe("catalog", () => {
     ).rejects.toThrow("catalog type not found: NOPE");
   });
 
+  // Trace: FR-012-AC-3
   test("validate succeeds with no duplicates (text)", async () => {
     const home = populatedCatalog();
     const c = captureLog();
@@ -403,6 +420,7 @@ describe("catalog", () => {
     expect(process.exitCode).not.toBe(1);
   });
 
+  // Trace: FR-012-AC-3
   test("validate --json succeeds with no duplicates", async () => {
     const home = populatedCatalog();
     const c = captureLog();
@@ -414,6 +432,7 @@ describe("catalog", () => {
     expect(JSON.parse(c.lines.join("\n"))).toEqual({ ok: true, modules: 2 });
   });
 
+  // Trace: FR-012-AC-4
   test("validate reports duplicates on stderr and sets exit code 1", async () => {
     const home = duplicateCatalog();
     const err = captureError();
@@ -432,6 +451,7 @@ describe("catalog", () => {
 // ---- module (canonical spec-module command, TC-017) --------------------------
 
 describe("module", () => {
+  // Trace: FR-019-AC-3
   test("list and index both print the registry as JSON", async () => {
     const home = tmp("home");
     const c = captureLog();
@@ -445,6 +465,7 @@ describe("module", () => {
     expect(JSON.parse(c.lines[1])).toHaveProperty("plugins");
   });
 
+  // Trace: FR-019-AC-1
   test("install adds a module from a path source", async () => {
     const home = tmp("home");
     const mod = businessModule(tmp("module-src"));
@@ -464,6 +485,7 @@ describe("module", () => {
     ).rejects.toThrow("module install requires <source>");
   });
 
+  // Trace: FR-017-AC-2
   test("ensure-defaults runs the installer and reports the registry", async () => {
     const home = tmp("home");
     const c = captureLog();
@@ -477,6 +499,7 @@ describe("module", () => {
     expect(Array.isArray(out.plugins)).toBe(true);
   });
 
+  // Trace: FR-017-AC-3
   test("ensure-defaults reports installed module names from a non-empty registry", async () => {
     const home = tmp("home");
     const mod = businessModule(tmp("module-src"));
@@ -492,6 +515,7 @@ describe("module", () => {
     expect(out.plugins).toContain("spec-objects-business");
   });
 
+  // Trace: FR-019-AC-4
   test("remove deletes a module and prints confirmation", async () => {
     const home = tmp("home");
     const mod = businessModule(tmp("module-src"));
@@ -641,6 +665,7 @@ describe("write", () => {
   // rather than main(), matching the rest of this suite: dispatching through
   // the runner would execute from dist/, where the src/modules mock does not
   // apply and ensureDefaultModules would reach the network.
+  // Trace: FR-023-AC-4, FR-025-AC-6
   test("--org reaches the pack in the text rendering", async () => {
     const home = populatedCatalog();
     const c = captureLog();
@@ -660,6 +685,7 @@ describe("write", () => {
     expect(c.lines.join("\n")).toContain("Org: acme (from --org)");
   });
 
+  // Trace: FR-025-AC-6
   test("--org reaches the pack under --json", async () => {
     const home = populatedCatalog();
     const c = captureLog();
@@ -682,6 +708,7 @@ describe("write", () => {
     expect(parsed.orgSource).toBe("flag");
   });
 
+  // Trace: FR-023-AC-4, FR-025-AC-6
   test("reports an unresolved org with the --org remedy", async () => {
     const home = populatedCatalog();
     const prior = process.env.QUOIN_ORG;
@@ -727,6 +754,7 @@ describe("config", () => {
     else process.env.QUOIN_ORG = priorOrg;
   });
 
+  // Trace: FR-023-AC-5, FR-027-AC-8
   test("set stores an org that write then resolves", async () => {
     const home = populatedCatalog();
     const c = captureLog();
@@ -747,6 +775,7 @@ describe("config", () => {
     );
   });
 
+  // Trace: FR-027-AC-8
   test("get resolves for a stored key without erroring", async () => {
     // The rendered output is ix-cli-core's (it writes through ix-ui-cli, not
     // console.log), so what quoin owns here is that the key reaches the shared
@@ -764,6 +793,7 @@ describe("config", () => {
     }
   });
 
+  // Trace: FR-027-AC-8
   test("set rejects an unrecognized key", async () => {
     const home = populatedCatalog();
     const c = captureLog();
@@ -776,6 +806,7 @@ describe("config", () => {
     }
   });
 
+  // Trace: FR-027-AC-8
   test("doctor reports on a clean config without failing", async () => {
     const home = populatedCatalog();
     const c = captureLog();
@@ -787,6 +818,7 @@ describe("config", () => {
     expect(process.exitCode ?? 0).toBe(0);
   });
 
+  // Trace: FR-027-AC-8
   test("edit opens the config file through the shared handler", async () => {
     const home = populatedCatalog();
     const priorEditor = process.env.EDITOR;
@@ -871,6 +903,7 @@ describe("spec-flow launchers", () => {
 // ---- flag parsing (now owned by oclif) ---------------------------------------
 
 describe("flag parsing", () => {
+  // Trace: FR-001-AC-1, FR-001-AC-2, FR-001-AC-4
   test("--config-root=<home> (eq form) and repeated/positional flags work", async () => {
     const home = populatedCatalog();
     const repo = tmp("repo");
@@ -883,6 +916,7 @@ describe("flag parsing", () => {
     expect(c.lines.join("\n")).toContain("- FR (artifact)");
   });
 
+  // Trace: FR-001-AC-3
   test("boolean --json flag (no value) is honored", async () => {
     const home = populatedCatalog();
     const c = captureLog();
@@ -894,6 +928,7 @@ describe("flag parsing", () => {
     expect(() => JSON.parse(c.lines.join("\n"))).not.toThrow();
   });
 
+  // Trace: FR-004-AC-3
   test("--no-project-config is accepted", async () => {
     const home = populatedCatalog();
     const c = captureLog();

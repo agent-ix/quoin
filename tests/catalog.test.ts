@@ -62,6 +62,7 @@ describe("defaultModuleRoots", () => {
     else process.env.QUOIN_MODULE_PATHS = originalPaths;
   });
 
+  // Trace: FR-007-AC-1, FR-023-AC-2
   test("includes QUOIN_MODULE_PATHS entries and installed module dirs", () => {
     const home = tmp("home");
     const installed = filamentModulesDir(home);
@@ -76,6 +77,7 @@ describe("defaultModuleRoots", () => {
     expect(roots).toContain(join(installed, "spec-objects-business"));
   });
 
+  // Trace: FR-007-AC-3
   test("omits installed dirs when none have been installed", () => {
     delete process.env.QUOIN_MODULE_PATHS;
     const home = tmp("empty-home");
@@ -84,6 +86,7 @@ describe("defaultModuleRoots", () => {
 });
 
 describe("loadCatalog", () => {
+  // Trace: FR-006-AC-2
   test("discovers a manifest one level deep under a candidate dir", () => {
     const parent = tmp("nested");
     writeModule(join(parent, "inner"), {
@@ -97,6 +100,7 @@ describe("loadCatalog", () => {
     expect(findCatalogEntry(catalog, "domain")?.kind).toBe("object");
   });
 
+  // Trace: FR-006-AC-3
   test("skips a non-manifest child while scanning one level deep, then finds the manifest sibling", () => {
     const parent = tmp("nested-mixed");
     // A child with no manifest (loop must skip it) plus a sibling that has one.
@@ -135,6 +139,7 @@ describe("loadCatalog", () => {
     expect(() => loadCatalog([dir])).toThrow();
   });
 
+  // Trace: FR-006-AC-1, FR-009-AC-2
   test("handles modules with and without a version and artifacts with/without schemaRef", () => {
     const root = tmp("versions");
     writeModule(
@@ -186,6 +191,7 @@ describe("loadCatalog", () => {
     expect(findCatalogEntry(catalog, "entity")).toBeUndefined();
   });
 
+  // Trace: FR-009-AC-1
   test("falls back to the directory basename when manifest has no name", () => {
     const root = tmp("noname");
     writeModule(join(root, "anon-module"), {
@@ -195,6 +201,7 @@ describe("loadCatalog", () => {
     expect(catalog.modules[0]?.name).toBe("anon-module");
   });
 
+  // Trace: FR-009-AC-3
   test("ignores non-array and malformed type entries", () => {
     const root = tmp("malformed");
     writeModule(join(root, "mod"), {
@@ -211,6 +218,7 @@ describe("loadCatalog", () => {
 describe("skeleton resolution", () => {
   // The lookup reads real directory entries, so a module that ships no
   // skeletons/ directory at all must resolve to no skeleton rather than throw.
+  // Trace: FR-009-AC-5
   test("resolves no skeleton when the module ships no skeletons directory", () => {
     const root = tmp("catalog-noskel");
     const dir = join(root, "bare-module");
@@ -233,6 +241,7 @@ describe("skeleton resolution", () => {
   // (`fr.md`) while spec-artifacts-process uses the type's own casing
   // (`Feedback.md`). Each must resolve to the real on-disk name, never a
   // fabricated one that only "exists" on a case-insensitive filesystem.
+  // Trace: FR-009-AC-4, FR-009-AC-5
   test.each([
     ["the type's own casing", "Feedback", "Feedback.md"],
     ["a lowercase filename", "FR", "fr.md"],
@@ -254,6 +263,7 @@ describe("skeleton resolution", () => {
     expect(entry?.skeletonPath).toBe(join(dir, "skeletons", fileName));
   });
 
+  // Trace: FR-009-AC-5
   test("resolves no skeleton when only an unrelated casing is present", () => {
     // `Fr.md` matches neither the type's own casing nor its lowercase form.
     // Previously existsSync would have found it on macOS and missed it on

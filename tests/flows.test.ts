@@ -33,6 +33,7 @@ function fakeIxFlowDir(exitCode: number): string {
 }
 
 describe("specFlowNames", () => {
+  // Trace: FR-020-AC-1
   test("lists the bundled spec flows", () => {
     expect(specFlowNames()).toEqual(["review", "matrix", "to-plan"]);
   });
@@ -53,6 +54,7 @@ describe("startSpecFlow", () => {
     process.exitCode = savedExitCode;
   });
 
+  // Trace: FR-021-AC-1, FR-023-AC-3
   test("resolves when ix-flow exits 0; builds id/json/target args", async () => {
     process.env.IX_SPEC_WORKFLOWS_ROOT = packagedRoot("review");
     process.env.IX_HOME = tmp("home");
@@ -77,6 +79,7 @@ describe("startSpecFlow", () => {
     expect(process.exitCode).toBeUndefined();
   });
 
+  // Trace: FR-021-AC-2
   test("sets process.exitCode when ix-flow exits non-zero", async () => {
     process.env.IX_SPEC_WORKFLOWS_ROOT = packagedRoot("to-plan");
     process.env.IX_HOME = tmp("home");
@@ -86,6 +89,7 @@ describe("startSpecFlow", () => {
     expect(process.exitCode).toBe(3);
   });
 
+  // Trace: FR-021-AC-3
   test("defaults exit code to 1 when ix-flow is killed by a signal (null code)", async () => {
     // A child terminated by a signal reports close code null -> `code ?? 1`.
     const dir = tmp("bin-signal");
@@ -100,6 +104,7 @@ describe("startSpecFlow", () => {
     expect(process.exitCode).toBe(1);
   });
 
+  // Trace: FR-021-AC-4
   test("rejects when ix-flow cannot be spawned (PATH has no ix-flow)", async () => {
     process.env.IX_SPEC_WORKFLOWS_ROOT = packagedRoot("review");
     process.env.IX_HOME = tmp("home");
@@ -107,6 +112,7 @@ describe("startSpecFlow", () => {
     await expect(startSpecFlow("review")).rejects.toThrow();
   });
 
+  // Trace: FR-020-AC-2
   test("throws for an unknown flow name", async () => {
     await expect(startSpecFlow("nope")).rejects.toThrow(
       "unknown spec flow nope",

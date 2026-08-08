@@ -15,6 +15,8 @@ relationships:
     type: "covers"
   - target: "ix://agent-ix/quoin/US-008"
     type: "covers"
+  - target: "ix://agent-ix/quoin/US-011"
+    type: "covers"
 ---
 
 # quoin Authoring Eval Matrix
@@ -112,6 +114,10 @@ coverage; the metric-capture requirement for this matrix is
 | EV-041 | US-004         | Repair a seeded FR that trips the EARS requirement-grammar check.                | A structurally-valid FR seeded with three EARS defects (non-singular + vague response + non-canonical trigger). Agent reads the `[ears:…]` warnings and rewrites the Description until `quire validate --strict` passes (grammar-clean). The EARS analogue of the EV-008 repair loop. (`files` + `validate` strict)                                                                                                                          | success, latency, tool calls, tokens, validation attempts |
 | EV-042 | US-001         | Author an FR using a project term + define it in a domain's Ubiquitous Language. | Agent authors `FR-100` ("shall provide a Sprocket") AND a `domain` object whose `## Ubiquitous Language` defines Sprocket. `quire validate --strict` passes only because the harvested project term makes the otherwise-vague object concrete (FR-044 project Ubiquitous-Language). (`files` + `validate` strict)                                                                                                                            | success, latency, tool calls, tokens, validation attempts |
 | EV-043 | US-004         | Repair a flagged project term by DEFINING it (not rewording).                    | A seeded FR trips the grammar check on the project term `Sprocket`. The agent resolves it by adding the term to a `domain` object's `## Ubiquitous Language` — leaving the requirement wording intact — until `quire validate --strict` passes. Exercises the FR-044 harvest+inject repair path. (`files` + `validate` strict)                                                                                                               | success, latency, tool calls, tokens, validation attempts |
+| EV-050 | US-011         | Generate property tests from settled criteria.                                   | Given a fixture repo with fast-check installed and an FR whose criteria mix `extractable` and `example`, the agent runs spec-correctness and writes property tests under `tests/props/` for the extractable criteria only. Every emitted tag names a `row_id` present in `quire properties --json`; no unattended test exists for an `example` or `unclassified` criterion. (`files` + `fileContains` row ids + `absentFiles`)                | success, latency, tool calls, tokens                      |
+| EV-051 | US-011         | Queue a candidate criterion, then accept it.                                     | Given a criterion classified `extraction: candidate`, the agent writes its test under `tests/props/_review/` carrying the harness skip marker, and the suite reports it skipped rather than passing. On acceptance the skip is removed and the file moved, and the `Trace:`/`row=` tags are byte-identical before and after. (`files` + `fileContains` skip marker + tag equality)                                                            | success, latency, tool calls, tokens, validation attempts |
+| EV-052 | US-011, US-005 | Reconcile generated tests through gap-analysis.                                  | After spec-correctness emits tests, the agent runs gap-analysis over the same repo and its matrix verification finds every emitted `row_id` in the tag index — no unbacked row for a generated `Property` test, and no `✅` row backed by a skipped queued test. (`agentRan` + `artifacts` SpecReview + `fileContains` row ids)                                                                                                               | success, latency, tool calls, tokens, validation attempts |
+| EV-053 | US-011         | Refuse to ground, and report without a verdict.                                  | Given an FR whose criteria include an adjectival oracle ("actionable") and a symbol absent from the source, and a repo whose manifest names no generator library, the agent writes no test for the ungroundable criteria, records each refusal reason and the dependency remedy in `tests/props/QUEUE.md`, and installs nothing. The report contains no threshold, verdict, grade, or rewording suggestion. (`files` + `fileContains` reasons + excludes) | success, latency, tool calls, tokens                      |
 
 > EV-042..EV-043 exercise the **project Ubiquitous-Language** layer (quire-rs
 > FR-044): a repo's own authored terms — here a `domain` object's `## Ubiquitous
@@ -120,6 +126,20 @@ Language` (the harvester also reads a dedicated `Glossary` `## Terms` table) —
 > with the definition present, EV-043 repairs a flagged project term by defining
 > it (not rewording). The DDD UL form keeps these evals release-decoupled — they
 > need only the FR-044 engine, not the unreleased `Glossary` archetype.
+
+> EV-050..EV-053 exercise the **`spec-correctness`** skill
+> ([FR-028](./functional/FR-028-generate-property-tests-from-criteria.md)), which
+> consumes `quire properties --json` (quire-rs FR-052) and generates property
+> tests. EV-050 covers the unattended lane, EV-051 the review-gated lane and the
+> byte-identical tag through acceptance, EV-052 the handoff to `gap-analysis`,
+> EV-053 the refusals and the CON-1 no-verdict rule. All four are implemented in
+> `evals/scenarios/`. Their fixture is a small `codes` library plus one FR whose
+> criteria land, verified against the classifier, in the intended buckets:
+> `universal`/`ordering`/`error-case` all extractable plus one `example` witness
+> for EV-050..EV-052, and for EV-053 two criteria the classifier calls extractable
+> but grounding must refuse — one with an adjectival oracle ("actionable and
+> clear"), one naming a symbol absent from `src/`. EV-053's manifest also declares
+> no generator library, so the skill must write no test file and install nothing.
 
 > EV-040..EV-041 exercise the **EARS requirement-grammar** check (quire-rs
 > FR-042): EV-040 authors EARS-clean, EV-041 repairs an EARS-dirty FR. Both

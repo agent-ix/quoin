@@ -35,6 +35,7 @@ beforeAll(async () => {
 });
 
 describe("core-plugin discovery (FR-026-AC-7)", () => {
+  // Trace: FR-026-AC-7
   test("filament-plan-sync is discovered as a CORE plugin contributing `sync`", () => {
     const corePlugins = listCorePlugins(config);
     const plugin = corePlugins.find((p) => p.name === SYNC_PLUGIN);
@@ -45,6 +46,7 @@ describe("core-plugin discovery (FR-026-AC-7)", () => {
 
   // FR-026-AC-7 — fresh install -> `quoin sync` resolves with
   // zero extra steps (preinstalled core plugin, no runtime install).
+  // Trace: FR-026-AC-7
   test("the `sync` command resolves with no runtime install step", () => {
     const cmd = config.findCommand("sync");
     expect(cmd).toBeDefined();
@@ -53,6 +55,7 @@ describe("core-plugin discovery (FR-026-AC-7)", () => {
     expect(cmd?.pluginType).toBe("core");
   });
 
+  // Trace: FR-026-AC-7
   test("an existing host command (catalog) still resolves unchanged", () => {
     const cmd = config.findCommand("catalog");
     expect(cmd).toBeDefined();

@@ -13,18 +13,22 @@ import {
 // instead of writing it, and registerPluginSchema rejects a non-strict schema
 // outright.
 describe("quoin config schema (FR-027-AC-6)", () => {
+  // Trace: FR-027-AC-6
   test("accepts a non-empty org", () => {
     expect(QuoinConfigSchema.parse({ org: "acme" })).toEqual({ org: "acme" });
   });
 
+  // Trace: FR-027-AC-6
   test("accepts an absent org rather than defaulting one", () => {
     expect(QuoinConfigSchema.parse({})).toEqual({});
   });
 
+  // Trace: FR-027-AC-6
   test("rejects an empty org", () => {
     expect(() => QuoinConfigSchema.parse({ org: "" })).toThrow();
   });
 
+  // Trace: FR-027-AC-6
   test("rejects an unrecognized key", () => {
     expect(() => QuoinConfigSchema.parse({ bogus: "x" })).toThrow();
   });
@@ -32,6 +36,7 @@ describe("quoin config schema (FR-027-AC-6)", () => {
 
 // FR-027-AC-7: the host's init hook looks for this exact named export.
 describe("ixSchema convention (FR-027-AC-7)", () => {
+  // Trace: FR-027-AC-7
   test("declares the plugin id, schema, and env binding", () => {
     expect(ixSchema.id).toBe(QUOIN_PLUGIN_ID);
     expect(ixSchema.id).toBe("quoin");
@@ -51,6 +56,7 @@ describe("config commands delegate to ix-cli-core (FR-027-AC-8)", () => {
     "config",
   );
 
+  // Trace: FR-027-AC-8
   test.each([
     ["get", "runConfigGet"],
     ["set", "runConfigSet"],
@@ -62,6 +68,7 @@ describe("config commands delegate to ix-cli-core (FR-027-AC-8)", () => {
     expect(src).toContain(`${handler}(`);
   });
 
+  // Trace: FR-027-AC-8
   test("each command registers quoin's schema before delegating", () => {
     // Standalone there is no host init hook, so an unregistered id would make
     // the shared handlers raise UnknownPluginError.

@@ -11,6 +11,7 @@ vi.mock("node:fs", async () => {
 import { packageVersion } from "../src/cli";
 
 describe("packageVersion guard", () => {
+  // Trace: FR-002-AC-3
   test("throws when package.json has no string version", () => {
     expect(() => packageVersion()).toThrow("package.json version is missing");
   });

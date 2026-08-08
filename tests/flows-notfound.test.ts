@@ -23,6 +23,7 @@ describe("resolveSkillPath not-found", () => {
     else process.env.IX_HOME = savedHome;
   });
 
+  // Trace: FR-020-AC-3
   test("throws when no candidate root contains the skill", async () => {
     process.env.IX_SPEC_WORKFLOWS_ROOT = mkdtempSync(
       join(tmpdir(), "quoin-wf-none-"),

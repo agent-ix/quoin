@@ -97,12 +97,14 @@ describe("registryPath", () => {
 });
 
 describe("readModuleName", () => {
+  // Trace: FR-019-AC-2
   test("reads the name from a top-level manifest.yaml", () => {
     const dir = tmp("mod-top");
     writeManifest(dir, "spec-objects-business");
     expect(readModuleName(dir)).toBe("spec-objects-business");
   });
 
+  // Trace: FR-019-AC-2
   test("reads the name from a nested <root>/<basename>/manifest.yaml", () => {
     const parent = tmp("mod-parent");
     const base = "spec-objects-nested";
@@ -116,12 +118,14 @@ describe("readModuleName", () => {
     expect(() => readModuleName(dir)).toThrow("no manifest.yaml found under");
   });
 
+  // Trace: FR-019-AC-2
   test("throws when the manifest has no usable name", () => {
     const dir = tmp("mod-noname");
     writeManifest(dir, 123); // non-string name
     expect(() => readModuleName(dir)).toThrow(/has no name/);
   });
 
+  // Trace: FR-019-AC-2
   test("throws when the manifest name is an empty string", () => {
     const dir = tmp("mod-emptyname");
     writeManifest(dir, "");

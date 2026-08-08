@@ -261,6 +261,265 @@ function seedGapBundle(ctx, { taskDone, tc2, untraced }) {
   writeRepoFile(ctx, "tests/shorten.test.mjs", tests.join("\n"));
 }
 
+// --- Shared fixtures for the spec-correctness scenarios (EV-050..EV-053) ------
+//
+// FR-028's skill consumes `quire properties --json`, so each scenario needs a
+// repo whose criteria land in known classification buckets, plus a source file
+// the clauses can be grounded against. The fixture is a tiny "codes" library:
+// `normalizeCode` (idempotent, total) and `parseCodeList` (throws on unknown),
+// which between them give one criterion per lane the skill routes on.
+
+/** A JS library the criteria below can be grounded against. */
+function seedCorrectnessSource(ctx) {
+  writeRepoFile(
+    ctx,
+    "src/codes.js",
+    [
+      "const KNOWN = new Set(['alpha', 'bravo', 'charlie']);",
+      "",
+      "/** Lowercase and trim a code. Idempotent. */",
+      "export function normalizeCode(code) {",
+      "  return String(code).trim().toLowerCase();",
+      "}",
+      "",
+      "/** Split a comma list into known codes, sorted. Throws on an unknown one. */",
+      "export function parseCodeList(value) {",
+      "  const codes = String(value)",
+      "    .split(',')",
+      "    .map(normalizeCode)",
+      "    .filter(Boolean);",
+      "  for (const code of codes) {",
+      "    if (!KNOWN.has(code)) {",
+      "      throw new Error(`unknown code: ${code}`);",
+      "    }",
+      "  }",
+      "  return [...codes].sort();",
+      "}",
+    ].join("\n"),
+  );
+}
+
+/**
+ * An FR whose acceptance criteria span the classification buckets.
+ *
+ * `withGroundable` false swaps the groundable criteria for ones the skill must
+ * refuse — an adjectival oracle and a symbol that does not exist — which is what
+ * EV-053 exercises.
+ */
+function correctnessFr(withGroundable) {
+  const criteria = withGroundable
+    ? [
+        "| FR-001-AC-1 | A normalized code normalizes to itself | Test |",
+        "| FR-001-AC-2 | A parsed code list is returned in sorted order | Test |",
+        "| FR-001-AC-3 | An unknown code raises an error naming the code | Test |",
+        "| FR-001-AC-4 | `parseCodeList('alpha')` returns `['alpha']` | Test |",
+      ]
+    : [
+        "| FR-001-AC-1 | An error message is actionable and clear to the reader | Inspection |",
+        "| FR-001-AC-2 | A retired code is rejected by `parseRetiredCode` | Test |",
+        "| FR-001-AC-3 | `parseCodeList('alpha')` returns `['alpha']` | Test |",
+      ];
+  return [
+    "---",
+    "id: FR-001",
+    'title: "Normalize and parse codes"',
+    "type: FR",
+    "---",
+    "# [FR-001] Normalize and parse codes",
+    "",
+    "## Description",
+    "",
+    "The library shall normalize a code by trimming and lowercasing it.",
+    "",
+    "The library shall reject a code list containing an unknown code.",
+    "",
+    "## Inputs",
+    "",
+    "- A code string, and a comma-separated code list.",
+    "",
+    "## Outputs",
+    "",
+    "- The normalized code, or the sorted list of known codes, or a raised error",
+    "  naming the offending code.",
+    "",
+    "## Behavior",
+    "",
+    "- The library shall lowercase and trim a code, so normalizing an already",
+    "  normalized code returns it unchanged.",
+    "- The library shall return a parsed code list in sorted order.",
+    "- Where a code list contains a code outside the known set, the library shall",
+    "  raise an error naming that code.",
+    "",
+    "## Acceptance Criteria",
+    "",
+    "| ID | Criteria | Verification |",
+    "|----|----------|--------------|",
+    ...criteria,
+    "",
+    "## Dependencies",
+    "",
+    "- **Upstream**: none",
+    "- **Downstream**: none",
+  ].join("\n");
+}
+
+/** A package.json, with fast-check present or absent. */
+function seedCorrectnessPackage(ctx, { fastCheck }) {
+  writeRepoFile(
+    ctx,
+    "package.json",
+    JSON.stringify(
+      {
+        name: "codes",
+        version: "0.1.0",
+        type: "module",
+        scripts: { test: "vitest run" },
+        devDependencies: fastCheck
+          ? { "fast-check": "^4.9.0", vitest: "^4.1.8" }
+          : { vitest: "^4.1.8" },
+      },
+      null,
+      2,
+    ),
+  );
+}
+
+function seedCorrectness(ctx, { fastCheck = true, groundable = true } = {}) {
+  seedCorrectnessSource(ctx);
+  seedCorrectnessPackage(ctx, { fastCheck });
+  writeRepoFile(ctx, "spec/functional/FR-001.md", correctnessFr(groundable));
+}
+
+/** The skill's own guardrail: it must read the classification, not guess. */
+const CORRECTNESS_AGENT_RAN = [
+  {
+    pattern: "quire\\s+properties\\b[\\s\\S]*--json",
+    desc: "read the classification (quire properties --json)",
+  },
+];
+
+const correctnessPrompt =
+  "Use the spec-correctness skill on this repository. Classify the acceptance " +
+  "criteria in spec/ with `quire properties`, ground each one against src/, and " +
+  "emit what it settles. Write the run report and everything that needs review " +
+  "to tests/props/QUEUE.md.";
+
+function specCorrectnessScenarios() {
+  return [
+    {
+      // EV-050 — the unattended lane. fast-check is present, so the criteria the
+      // classifier settled as `extractable` become real property tests under
+      // tests/props/, each tagged with its row_id. The `example` criterion
+      // (AC-4, a single witness) must NOT produce an unattended test.
+      id: "EV-050",
+      useCase: "US-011",
+      setup(ctx) {
+        seedCorrectness(ctx, { fastCheck: true });
+      },
+      prompt: correctnessPrompt,
+      expect: {
+        agentRan: CORRECTNESS_AGENT_RAN,
+        files: ["tests/props/*.test.*", "tests/props/QUEUE.md"],
+        // Every emitted tag names a row_id that exists, in a form gap-analysis
+        // greps for. AC-4 is the witness: it may be queued, never unattended.
+        fileContains: [
+          {
+            glob: "tests/props/*.test.*",
+            includes: ["Trace: FR-001-AC-", "spec-correctness: row=FR-001-AC-"],
+            excludes: ["FR-001-AC-9", "FR-002-AC-"],
+          },
+          {
+            glob: "tests/props/QUEUE.md",
+            includes: ["FR-001-AC-4"],
+          },
+        ],
+      },
+    },
+    {
+      // EV-051 — the review-gated lane. Whatever the skill does not settle
+      // unattended lands inert: under tests/props/_review/ and carrying the
+      // harness skip marker, so an unreviewed test cannot turn a matrix row
+      // green. The tag is identical whether queued or accepted.
+      id: "EV-051",
+      useCase: "US-011",
+      setup(ctx) {
+        seedCorrectness(ctx, { fastCheck: true });
+      },
+      prompt:
+        correctnessPrompt +
+        " Anything you cannot settle unattended must go to the review queue " +
+        "under tests/props/_review/, inert (skipped) until a person accepts it.",
+      expect: {
+        agentRan: CORRECTNESS_AGENT_RAN,
+        files: ["tests/props/QUEUE.md"],
+        fileContains: [
+          {
+            glob: "tests/props/QUEUE.md",
+            // The queue names the review gate and the acceptance procedure.
+            includes: ["review", "FR-001-AC-"],
+            // A queue that declares a verdict has broken CON-1.
+            excludes: ["verdict", "reword"],
+          },
+        ],
+      },
+    },
+    {
+      // EV-052 — the handoff. After spec-correctness emits, gap-analysis must
+      // reconcile every emitted row_id by its own grep: no unbacked row for a
+      // generated test, and no ✅ row backed by a skipped queued one.
+      id: "EV-052",
+      useCase: "US-011",
+      setup(ctx) {
+        seedCorrectness(ctx, { fastCheck: true });
+      },
+      prompt:
+        correctnessPrompt +
+        " Then run the gap-analysis skill over the same repository and confirm " +
+        "its matrix verification finds every row_id you emitted. Author the " +
+        "SpecReview to reviews/.",
+      expect: {
+        agentRan: [
+          ...CORRECTNESS_AGENT_RAN,
+          { pattern: "quire\\s+validate\\b", desc: "validate with quire" },
+        ],
+        files: ["tests/props/QUEUE.md", "reviews/*.md"],
+        artifacts: { require: { SpecReview: { min: 1, dir: "reviews" } } },
+        validate: { globs: ["reviews/*.md"], shouldPass: true },
+        fileContains: [{ glob: "reviews/*.md", includes: ["FR-001-AC-"] }],
+      },
+    },
+    {
+      // EV-053 — the refusals and CON-1. Nothing here is groundable: one
+      // criterion's oracle is adjectival ("actionable and clear"), one names a
+      // symbol absent from src/, and the manifest declares no generator library.
+      // The skill must write no test file, install nothing, record each reason,
+      // and report without a verdict.
+      id: "EV-053",
+      useCase: "US-011",
+      setup(ctx) {
+        seedCorrectness(ctx, { fastCheck: false, groundable: false });
+      },
+      prompt: correctnessPrompt,
+      expect: {
+        agentRan: CORRECTNESS_AGENT_RAN,
+        files: ["tests/props/QUEUE.md"],
+        // No test file: a file importing an absent generator library would break
+        // collection even when every test in it is skipped.
+        absentFiles: ["tests/props/*.test.*", "tests/props/_review/*.test.*"],
+        fileContains: [
+          {
+            glob: "tests/props/QUEUE.md",
+            // Both refusal reasons and the dependency remedy are recorded.
+            includes: ["fast-check", "FR-001-AC-1", "FR-001-AC-2"],
+            // CON-1: no verdict, no grade, no rewording suggestion.
+            excludes: ["verdict", "reword", "rewrite the criteri"],
+          },
+        ],
+      },
+    },
+  ];
+}
+
 // Both gap-analysis guardrails: reference quoin for the template + validate with quire.
 const GAP_AGENT_RAN = [
   {
@@ -1387,6 +1646,9 @@ export const SCENARIOS = [
       validate: { globs: ["spec/**/*.md"], strict: true, shouldPass: true },
     },
   },
+
+  // --- spec-correctness (EV-050..EV-053, FR-028) ------------------------------
+  ...specCorrectnessScenarios(),
 ];
 
 export const CANARY_IDS = ["EV-001", "EV-008"];
