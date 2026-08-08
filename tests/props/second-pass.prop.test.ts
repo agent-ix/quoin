@@ -11,7 +11,7 @@
  * only the skip marker and `review=` changed.
  * See tests/props/QUEUE.md for the acceptance procedure.
  */
-import { mkdtempSync, writeFileSync } from "node:fs";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -24,6 +24,18 @@ import { parseSourceArg } from "../../src/plugins";
 import { createAuthoringPack, parseTypeList } from "../../src/write";
 
 const segment = fc.stringMatching(/^[a-z][a-z0-9-]{0,11}$/);
+
+// See fr-catalog.prop.test.ts: a per-case mkdtemp leaks without this.
+const scratch: string[] = [];
+function scratchDir(prefix: string): string {
+  const dir = mkdtempSync(join(tmpdir(), prefix));
+  scratch.push(dir);
+  return dir;
+}
+
+afterAll(() => {
+  for (const dir of scratch) rmSync(dir, { recursive: true, force: true });
+});
 
 function gitConfig(url: string, section = '[remote "origin"]'): string {
   return `[core]\n\trepositoryformatversion = 0\n${section}\n\turl = ${url}\n`;
@@ -271,9 +283,9 @@ describe("FR-013-AC-2 unusable repo directories", () => {
   const catalog = loadCatalog([]);
 
   const notADirectory = fc.oneof(
-    segment.map((name) => join(mkdtempSync(join(tmpdir(), "quoin-p2-")), name)),
+    segment.map((name) => join(scratchDir("quoin-p2-"), name)),
     segment.map((name) => {
-      const path = join(mkdtempSync(join(tmpdir(), "quoin-p2-")), name);
+      const path = join(scratchDir("quoin-p2-"), name);
       writeFileSync(path, "");
       return path;
     }),
@@ -323,7 +335,7 @@ describe("FR-007-AC-2 empty module-path entries", () => {
         ),
         (entries) => {
           process.env.QUOIN_MODULE_PATHS = entries.join(":");
-          const home = mkdtempSync(join(tmpdir(), "quoin-p2-home-"));
+          const home = scratchDir("quoin-p2-home-");
           expect(defaultModuleRoots(home)).toEqual(entries.filter(Boolean));
         },
       ),
