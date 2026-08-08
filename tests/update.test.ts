@@ -36,6 +36,7 @@ beforeAll(async () => {
 });
 
 describe("quoin update", () => {
+  // Trace: FR-022-AC-1
   it("delegates to runSelfUpdate with quoin's package coordinates", async () => {
     runSelfUpdate.mockClear();
     await Update.run(["--config-root", tmpHome()], config);
@@ -49,6 +50,7 @@ describe("quoin update", () => {
     });
   });
 
+  // Trace: FR-022-AC-3
   it("defaults the registry to public npm when no --registry is given", async () => {
     runSelfUpdate.mockClear();
     await Update.run(["--config-root", tmpHome()], config);
@@ -57,6 +59,7 @@ describe("quoin update", () => {
     );
   });
 
+  // Trace: FR-022-AC-2
   it("passes --check through", async () => {
     runSelfUpdate.mockClear();
     await Update.run(["--check", "--config-root", tmpHome()], config);
@@ -65,6 +68,7 @@ describe("quoin update", () => {
     );
   });
 
+  // Trace: FR-022-AC-3
   it("passes a custom --registry through", async () => {
     runSelfUpdate.mockClear();
     await Update.run(

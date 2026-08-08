@@ -101,16 +101,26 @@ Coverage is mapped requirement → test as `file :: "test name"`:
 `quire properties --scope . --json 'spec/**/*.md'`. They run under vitest with
 fast-check as part of `make test` and count toward the same coverage gate.
 
-Unlike every other row in this matrix, these are traced by **tracking tag**
-rather than by prose: each test carries its criterion's `row_id` in a `Trace:`
-line and in its own name, so `gap-analysis` reconciles them by grep. 17 criteria
-across FR-002, FR-005, FR-006, FR-008, FR-009, FR-010, FR-012, FR-013, FR-015,
-FR-018 and FR-025 are covered this way, in addition to — not instead of — the
-hand-written tests named in the tables above.
+**28 criteria** are covered by generated property tests: 17 emitted unattended,
+and 11 recovered by the review-gated second pass over criteria the deterministic
+classifier read as concrete examples (`tests/props/second-pass.prop.test.ts`).
+These are in addition to — not instead of — the hand-written tests named in the
+tables above.
 
-`tests/props/QUEUE.md` records the full run: what was emitted, the 31 criteria
-that are single witnesses rather than properties, the 12 verified by another
-method, and the 70 left to the second pass.
+## Tracking-tag coverage
+
+The tables above trace requirements to tests as prose. That form is readable but
+not greppable, so `gap-analysis` could not reconcile a single row against the
+suite. Every criterion whose coverage is a test now also carries a **tracking
+tag** — a `// Trace: FR-XXX-AC-N` comment, 115 of them across 15 test files.
+
+**109 of 130 criteria are reconcilable by tag.** The remaining 21 are verified by
+a method that produces no test: FR-003-AC-1/AC-3 (help rendering, delegated to
+`@oclif/core`), FR-028-AC-1…AC-12 (evals EV-050…EV-053 and inspection),
+NFR-007-AC-1 (an accepted limitation), and the six StR validation criteria
+(demonstration).
+
+`tests/props/QUEUE.md` records the full run and the per-criterion disposition.
 
 ## Eval Coverage
 

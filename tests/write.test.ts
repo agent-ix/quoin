@@ -65,6 +65,7 @@ describe("parseTypeList", () => {
 });
 
 describe("createAuthoringPack", () => {
+  // Trace: FR-013-AC-1
   test("throws when no type names are given", () => {
     const { catalog } = buildCatalog();
     expect(() => createAuthoringPack(catalog, tmp("repo"), [])).toThrow(
@@ -97,6 +98,7 @@ describe("createAuthoringPack", () => {
     );
   });
 
+  // Trace: FR-009-AC-4, FR-015-AC-1
   test("builds a pack with contracts and a non-quoted clean repo path", () => {
     const { catalog } = buildCatalog();
     const repo = tmp("repo");
@@ -124,6 +126,7 @@ describe("createAuthoringPack", () => {
 });
 
 describe("formatAuthoringPack", () => {
+  // Trace: FR-009-AC-4, FR-014-AC-1, FR-014-AC-2, FR-014-AC-3
   test("renders skeleton+schema, manifest-only, and object contracts", () => {
     const { catalog } = buildCatalog();
     const repo = tmp("repo");
@@ -168,6 +171,7 @@ describe("authoring pack organization", () => {
     else process.env.QUOIN_ORG = priorOrg;
   });
 
+  // Trace: FR-025-AC-6
   test("carries an explicit --org value and its source", () => {
     const { catalog } = buildCatalog();
     const pack = createAuthoringPack(catalog, tmp("repo"), ["FR"], {
@@ -178,6 +182,7 @@ describe("authoring pack organization", () => {
     expect(formatAuthoringPack(pack)).toContain("Org: acme (from --org)");
   });
 
+  // Trace: FR-025-AC-6
   test("carries QUOIN_ORG when no flag is given", () => {
     process.env.QUOIN_ORG = "from-env";
     const { catalog } = buildCatalog();
@@ -189,6 +194,7 @@ describe("authoring pack organization", () => {
     );
   });
 
+  // Trace: FR-025-AC-5
   test("reports unresolved with the remedy and no substituted value", () => {
     const { catalog } = buildCatalog();
     // A bare temp dir: no .git/config to read an origin remote from.
@@ -201,6 +207,7 @@ describe("authoring pack organization", () => {
     expect(text).not.toContain("agent-ix");
   });
 
+  // Trace: FR-014-AC-4, FR-025-AC-6
   test("serializes the org into the --json rendering", () => {
     const { catalog } = buildCatalog();
     const pack = createAuthoringPack(catalog, tmp("repo"), ["FR"], {

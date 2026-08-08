@@ -9,13 +9,20 @@ quire-cli 0.12.0 · harness TypeScript/vitest + fast-check 4.9.0 · 130 criteria
 ## Run report
 
 ```
-emitted unattended   17   grounded, passing, in tests/props/
-queued               31   witnesses (singleton-domain)
-refused              12   static-or-demonstration 12
-second pass not run  70   62 example · 5 unclassified · 3 quantified/not-extractable
+emitted unattended   17   new property tests, tests/props/
+second pass          11   reclassified, reviewed, accepted, tests/props/second-pass.prop.test.ts
+already covered      81   existing tests, now carrying row_id tracking tags
+verified elsewhere   21   eval, inspection, or delegated — no code tag by design
 ```
 
-`17 + 31 + 12 + 70 = 130` — every record carrying a `row_id`.
+`17 + 11 + 81 + 21 = 130` — every record carrying a `row_id`.
+
+**109 of 130 criteria are reconcilable by tracking tag, from 0 when this started.**
+The other 21 are each verified by a method that produces no test to tag, and are
+listed under "Verified elsewhere".
+
+Counts were measured with a right-boundary match. A naive substring check reports
+109 as 110, because `FR-025-AC-1` is a prefix of `FR-025-AC-10`.
 
 ### Census
 
@@ -35,13 +42,14 @@ no severity and no promotion path by design (quire-rs FR-052-CON-1).
   quantify over a domain with more than one element. English writes a universal and a single
   witness with the same determiner — _"A repeated module root is loaded only once"_ versus
   _"A bareword after `write` is parsed as a positional"_. Separating them is step 2's job,
-  not the engine's; the 31 singletons are queued as `Unit` witnesses.
-- **No existing test carries a `row_id` tag.** quoin's `spec/matrix.md` maps requirements to
-  tests as `` `file.test.ts` :: "test name" `` prose, so nothing counted as _already
-  covered_ by tag match even where a hand-written test exists. Reconciling that prose form
-  against tracking tags is a separate piece of work.
-- **The second pass was not run.** 70 records is well past the ~30 threshold at which
-  SKILL.md says to ask first.
+  not the engine's. All 31 singletons resolved to existing hand-written tests, which now
+  carry tracking tags.
+- **No existing test carried a `row_id` tag when this started.** quoin's `spec/matrix.md`
+  maps requirements to tests as `` `file.test.ts` :: "test name" `` prose, so nothing was
+  reconcilable by grep even where a hand-written test existed. Closed: 115 `// Trace:`
+  comments now span 15 test files.
+- **The second pass ran.** 70 records, of which 11 reclassified into real properties and the
+  rest were genuine witnesses already covered.
 
 ### Two grounding bugs the emit caught
 
@@ -79,68 +87,52 @@ Fixtures are built once per file and the generators range over which of them a c
 A generator that wrote a module tree per case would make the suite filesystem-bound for no
 extra coverage.
 
-## Witnesses — 31 `Unit` tests, not property coverage
+## Second pass — the 11 reclassifications
 
-Queued with reason `singleton-domain`: the determiner quantifies over one element. These are
-correct criteria; they are examples, and an example gets an example-based test. Most already
-have a hand-written test in `tests/`; what they lack is a `row_id` tracking tag.
+`tests/props/second-pass.prop.test.ts`. Each was classified `not-extractable` —
+the deterministic pass read it as a concrete example — and grounding found a real
+domain behind it. Emitted inert under `_review/`, then **accepted** through the
+documented procedure.
 
-| row_id      | the single case it pins                                     |
-| ----------- | ----------------------------------------------------------- |
-| FR-001-AC-2 | a bareword after `write` is a positional                    |
-| FR-001-AC-3 | a valueless long flag records boolean `true`                |
-| FR-002-AC-3 | a missing/non-string version field raises                   |
-| FR-003-AC-1 | no command prints root usage                                |
-| FR-006-AC-1 | a directory containing `manifest.yaml` is a module root     |
-| FR-006-AC-2 | a manifest one level deep is discovered                     |
-| FR-006-AC-3 | a non-manifest child is skipped, its manifest sibling found |
-| FR-009-AC-1 | a manifest without `name` falls back to the basename        |
-| FR-009-AC-4 | the lowercase-filename skeleton fallback                    |
-| FR-011-AC-2 | an omitted subcommand behaves as `list`                     |
-| FR-013-AC-1 | an empty type list raises                                   |
-| FR-014-AC-1 | a type renders name, kind, module, root                     |
-| FR-014-AC-3 | a type with neither skeleton nor schema is "manifest only"  |
-| FR-019-AC-2 | a missing or empty module name raises                       |
-| FR-020-AC-2 | an unknown workflow name raises                             |
-| FR-020-AC-3 | the error names the workflow and `IX_SPEC_WORKFLOWS_ROOT`   |
-| FR-021-AC-1 | the spawned `ix-flow run` argv                              |
-| FR-021-AC-2 | a non-zero child exit propagates                            |
-| FR-021-AC-3 | a signal-terminated child yields exit 1                     |
-| FR-021-AC-4 | a spawn failure surfaces an error                           |
-| FR-024-AC-2 | install → list → loadCatalog round the same plugin          |
-| FR-024-AC-3 | library and CLI target the same store                       |
-| FR-025-AC-4 | three unresolved paths each resolve to unresolved           |
-| FR-025-AC-5 | unresolved is reported with the `--org` remedy              |
-| FR-025-AC-8 | a worktree `.git` file resolves as its main checkout does   |
-| FR-026-AC-4 | unknown command and subcommand are rejected by the runner   |
-| FR-026-AC-6 | a runner error propagates to the caller                     |
-| FR-026-AC-7 | an `oclif.plugins` package dispatches with no install step  |
-| FR-027-AC-1 | a stored org outranks the `origin` remote                   |
-| FR-027-AC-5 | a malformed stored config does not fail the command         |
-| FR-027-AC-9 | a project-local config overrides the user-level one         |
+| row_id                   | reclassified as | grounded on                            |
+| ------------------------ | --------------- | -------------------------------------- |
+| FR-007-AC-2              | universal       | `src/catalog.ts:46` `.filter(Boolean)` |
+| FR-013-AC-2              | error-case      | `src/write.ts:60` non-directory throw  |
+| FR-013-AC-3              | universal       | `src/write.ts:42` `parseTypeList`      |
+| FR-018-AC-1..AC-4        | universal       | `src/plugins.ts:34` `parseSourceArg`   |
+| FR-025-AC-2, AC-3, AC-11 | universal       | `src/org.ts:190` `originOrg`           |
+| FR-027-AC-6              | error-case      | `src/config-schema.ts:15` `.strict()`  |
 
-FR-024-AC-2 is worth a second look on review: _install → list → load_ is a round-trip in
-shape, and over a generated plugin-name domain it would be a genuine `round-trip` property
-rather than a witness.
+**FR-028-AC-7 was proved mechanically during acceptance.** The `Trace:` and `row=`
+tags were extracted before and after — lifting the skip, rewriting `review=required`
+to `review=accepted`, and moving the file out of `_review/` — and diffed. Byte-identical.
 
-## Refused — no test written
+## Already covered — 81 criteria
 
-Not findings. Each is a correct criterion verified by a method other than a generated test.
+Every remaining witness resolved to an existing hand-written test rather than a
+generated one. That is the cheaper and more honest outcome: the coverage was
+already there, what it lacked was a tracking tag. 115 `// Trace:` comments were
+added across 15 test files, taking reconcilable criteria from **0 to 109**.
 
-| row_id       | reason                  | note                                                                                                        |
-| ------------ | ----------------------- | ----------------------------------------------------------------------------------------------------------- |
-| FR-026-AC-3  | static-or-demonstration | "No hand-rolled dispatcher remains in `src/cli.ts`" is a fact about the source tree — matrix `Type: Static` |
-| StR-002-VC-1 | static-or-demonstration | an end-to-end authoring narrative — verified by eval, not by a property                                     |
-| StR-004-VC-1 | static-or-demonstration | an end-to-end workflow narrative — verified by eval                                                         |
-| FR-028-AC-1  | static-or-demonstration | describes this skill's own agent behavior — EV-050                                                          |
-| FR-028-AC-2  | static-or-demonstration | EV-051                                                                                                      |
-| FR-028-AC-3  | static-or-demonstration | EV-050                                                                                                      |
-| FR-028-AC-4  | static-or-demonstration | EV-050                                                                                                      |
-| FR-028-AC-5  | static-or-demonstration | EV-052                                                                                                      |
-| FR-028-AC-6  | static-or-demonstration | EV-051                                                                                                      |
-| FR-028-AC-8  | static-or-demonstration | EV-053                                                                                                      |
-| FR-028-AC-10 | static-or-demonstration | inspection of `skills/spec-correctness/`                                                                    |
-| FR-028-AC-11 | static-or-demonstration | EV-053                                                                                                      |
+`spec/matrix.md`'s prose mapping (`` `file.test.ts` :: "test name" ``) supplied 33
+of these at AC granularity; the rest were mapped by hand against the suite.
+
+**Checked, and not a finding:** 11 test names the matrix cites appeared absent on a
+literal search. All 11 are `test.each` / `it.each` parameterized cases whose source
+holds the template and whose matrix entry holds the expanded name. The matrix does
+not over-claim.
+
+## Verified elsewhere — 21 criteria, no code tag by design
+
+| row_id                      | method                                                                                                                     |
+| --------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| FR-003-AC-1, FR-003-AC-3    | Delegated — help rendering is `@oclif/core`'s, and `spec/matrix.md` records FR-003 as ⚠️ Delegated for exactly this reason |
+| FR-028-AC-1…AC-12           | Eval (EV-050…EV-053) and inspection — this skill's own agent behavior                                                      |
+| NFR-007-AC-1                | An accepted limitation, recorded rather than tested                                                                        |
+| StR-001, 003, 005, 006-VC-1 | Demonstration — end-to-end narratives, the eval layer                                                                      |
+| StR-002-VC-1, StR-004-VC-1  | Demonstration — end-to-end authoring and workflow narratives                                                               |
+
+None of these is a gap, and none is a reason to reword a criterion.
 
 ## Rejected — do not re-propose
 
@@ -149,5 +141,5 @@ Not findings. Each is a correct criterion verified by a method other than a gene
 
 ## Next action
 
-Run the second pass over the 70 `example` / `unclassified` records, or hand the 31 witnesses
-to `spec-matrix` as `Unit` rows so they gain tracking tags.
+Nothing outstanding. Re-running the skill is idempotent: every emitted test carries
+a provenance line, so an unchanged criterion leaves its file alone.

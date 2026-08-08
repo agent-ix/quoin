@@ -19,6 +19,7 @@ function gitConfig(url: string): string {
 }
 
 describe("resolveOrg precedence (FR-025-AC-1)", () => {
+  // Trace: FR-023-AC-4, FR-025-AC-1
   it("prefers --org over QUOIN_ORG and the git remote", () => {
     const root = repoWithConfig(gitConfig("git@github.com:from-git/repo.git"));
     expect(
@@ -26,6 +27,7 @@ describe("resolveOrg precedence (FR-025-AC-1)", () => {
     ).toEqual({ org: "from-flag", source: "flag" });
   });
 
+  // Trace: FR-023-AC-4, FR-025-AC-1
   it("prefers QUOIN_ORG over the git remote when no flag is given", () => {
     const root = repoWithConfig(gitConfig("git@github.com:from-git/repo.git"));
     expect(resolveOrg(root, { env: { QUOIN_ORG: "from-env" } })).toEqual({
@@ -34,6 +36,7 @@ describe("resolveOrg precedence (FR-025-AC-1)", () => {
     });
   });
 
+  // Trace: FR-025-AC-1
   it("falls through to the git remote when neither flag nor env is set", () => {
     const root = repoWithConfig(gitConfig("git@github.com:from-git/repo.git"));
     expect(resolveOrg(root, { env: {} })).toEqual({
@@ -42,6 +45,7 @@ describe("resolveOrg precedence (FR-025-AC-1)", () => {
     });
   });
 
+  // Trace: FR-025-AC-1
   it("ignores a blank flag and a blank QUOIN_ORG rather than resolving to empty", () => {
     const root = repoWithConfig(gitConfig("git@github.com:from-git/repo.git"));
     expect(resolveOrg(root, { flag: "   ", env: { QUOIN_ORG: "  " } })).toEqual(
@@ -51,11 +55,13 @@ describe("resolveOrg precedence (FR-025-AC-1)", () => {
 });
 
 describe("origin remote parsing (FR-025-AC-2, FR-025-AC-3)", () => {
+  // Trace: FR-025-AC-2
   it("parses the org from an SSH remote url", () => {
     const root = repoWithConfig(gitConfig("git@github.com:acme/widgets.git"));
     expect(resolveOrg(root, { env: {} }).org).toBe("acme");
   });
 
+  // Trace: FR-025-AC-3
   it("parses the org from an HTTPS remote url", () => {
     const root = repoWithConfig(
       gitConfig("https://github.com/acme/widgets.git"),
@@ -63,6 +69,7 @@ describe("origin remote parsing (FR-025-AC-2, FR-025-AC-3)", () => {
     expect(resolveOrg(root, { env: {} }).org).toBe("acme");
   });
 
+  // Trace: FR-025-AC-2
   it("parses urls with no .git suffix and a trailing slash", () => {
     expect(originOrg(gitConfig("https://github.com/acme/widgets/"))).toBe(
       "acme",
@@ -70,11 +77,13 @@ describe("origin remote parsing (FR-025-AC-2, FR-025-AC-3)", () => {
     expect(originOrg(gitConfig("git@github.com:acme/widgets"))).toBe("acme");
   });
 
+  // Trace: FR-025-AC-2
   it("reads the origin remote, not another remote that precedes it", () => {
     const config = `[remote "upstream"]\n\turl = git@github.com:wrong/repo.git\n[remote "origin"]\n\turl = git@github.com:right/repo.git\n`;
     expect(originOrg(config)).toBe("right");
   });
 
+  // Trace: FR-025-AC-3
   it("parses a self-hosted https url with a port", () => {
     expect(
       originOrg(gitConfig("https://git.example.com:8443/acme/widgets.git")),
@@ -86,6 +95,7 @@ describe("origin remote parsing (FR-025-AC-2, FR-025-AC-3)", () => {
 });
 
 describe("nested namespaces (FR-025-AC-10)", () => {
+  // Trace: FR-025-AC-10
   it("qualifies by the segment immediately preceding the repository", () => {
     // Matches filament-ide-rs repo_identity, so both layers name a repo alike.
     expect(originOrg(gitConfig("https://gitlab.com/top/sub/widgets.git"))).toBe(
@@ -95,6 +105,7 @@ describe("nested namespaces (FR-025-AC-10)", () => {
 });
 
 describe("git config name matching (FR-025-AC-11)", () => {
+  // Trace: FR-025-AC-11
   it("matches the section name case-insensitively but the remote name exactly", () => {
     expect(
       originOrg('[REMOTE "origin"]\n\turl = git@github.com:acme/w.git\n'),
@@ -111,6 +122,7 @@ describe("git config name matching (FR-025-AC-11)", () => {
 // https://host/repo.git -- a confidently-reported wrong org, the exact failure
 // FR-025 exists to prevent.
 describe("remotes that name no organization (FR-025-AC-9)", () => {
+  // Trace: FR-025-AC-9
   it.each([
     ["a host-based url with no owner segment", "https://github.com/repo.git"],
     ["an absolute local path", "/srv/git/myrepo.git"],
@@ -121,6 +133,7 @@ describe("remotes that name no organization (FR-025-AC-9)", () => {
     expect(originOrg(gitConfig(url))).toBeUndefined();
   });
 
+  // Trace: FR-025-AC-9
   it("reports unresolved rather than a wrong org for a local-path remote", () => {
     const root = repoWithConfig(gitConfig("/srv/git/myrepo.git"));
     expect(resolveOrg(root, { env: {} })).toEqual({ source: "none" });
@@ -128,6 +141,7 @@ describe("remotes that name no organization (FR-025-AC-9)", () => {
 });
 
 describe("worktree and submodule checkouts (FR-025-AC-8)", () => {
+  // Trace: FR-025-AC-8
   it("resolves through a .git file pointing at a worktree gitdir", () => {
     // Mirror git's layout: the worktree's .git is a file naming a gitdir under
     // the main checkout, whose commondir points back at the shared .git that
@@ -151,12 +165,14 @@ describe("worktree and submodule checkouts (FR-025-AC-8)", () => {
     });
   });
 
+  // Trace: FR-025-AC-8
   it("yields no org when the .git file points nowhere useful", () => {
     const root = mkdtempSync(join(tmpdir(), "quoin-org-broken-"));
     writeFileSync(join(root, ".git"), "gitdir: /nonexistent/path\n");
     expect(resolveOrg(root, { env: {} })).toEqual({ source: "none" });
   });
 
+  // Trace: FR-025-AC-8
   it("yields no org when .git is a file with no gitdir pointer", () => {
     const root = mkdtempSync(join(tmpdir(), "quoin-org-nogitdir-"));
     writeFileSync(join(root, ".git"), "not a gitdir pointer\n");
@@ -165,12 +181,14 @@ describe("worktree and submodule checkouts (FR-025-AC-8)", () => {
 });
 
 describe("unresolved organization (FR-025-AC-4, FR-025-AC-5)", () => {
+  // Trace: FR-025-AC-4
   it("resolves to none when the repo has no .git/config", () => {
     expect(resolveOrg(repoWithConfig(), { env: {} })).toEqual({
       source: "none",
     });
   });
 
+  // Trace: FR-025-AC-4
   it("resolves to none when the config declares no origin remote", () => {
     const root = repoWithConfig(
       `[core]\n\trepositoryformatversion = 0\n[remote "upstream"]\n\turl = git@github.com:other/repo.git\n`,
@@ -178,11 +196,13 @@ describe("unresolved organization (FR-025-AC-4, FR-025-AC-5)", () => {
     expect(resolveOrg(root, { env: {} })).toEqual({ source: "none" });
   });
 
+  // Trace: FR-025-AC-4
   it("resolves to none when the origin url has no org/repo tail", () => {
     const root = repoWithConfig(gitConfig("https://github.com/"));
     expect(resolveOrg(root, { env: {} })).toEqual({ source: "none" });
   });
 
+  // Trace: FR-025-AC-5
   it("never substitutes a default organization", () => {
     // Every source is absent, so any org at all would be invented. The remedy
     // reaching the author is asserted on the rendered pack in write.test.ts;
@@ -262,17 +282,20 @@ describe("stored configuration (FR-027)", () => {
     writeFileSync(join(dir, "quoin.yaml"), `org: ${org}\n`);
   }
 
+  // Trace: FR-027-AC-1
   it("prefers a stored org over the git remote", () => {
     const root = repoWithConfig(gitConfig("git@github.com:from-git/repo.git"));
     storeOrg("from-config");
     expect(resolveOrg(root)).toEqual({ org: "from-config", source: "config" });
   });
 
+  // Trace: FR-027-AC-4
   it("falls through to the git remote when nothing is stored", () => {
     const root = repoWithConfig(gitConfig("git@github.com:from-git/repo.git"));
     expect(resolveOrg(root)).toEqual({ org: "from-git", source: "git" });
   });
 
+  // Trace: FR-027-AC-2
   it("prefers an explicit --org over a stored value", () => {
     const root = repoWithConfig(gitConfig("git@github.com:from-git/repo.git"));
     storeOrg("from-config");
@@ -282,6 +305,7 @@ describe("stored configuration (FR-027)", () => {
     });
   });
 
+  // Trace: FR-027-AC-3
   it("lets QUOIN_ORG layer over the stored value, reported as env", () => {
     const root = repoWithConfig(gitConfig("git@github.com:from-git/repo.git"));
     storeOrg("from-config");
@@ -289,10 +313,12 @@ describe("stored configuration (FR-027)", () => {
     expect(resolveOrg(root)).toEqual({ org: "from-env", source: "env" });
   });
 
+  // Trace: FR-027-AC-4
   it("resolves to none when nothing is stored and there is no remote", () => {
     expect(resolveOrg(repoWithConfig())).toEqual({ source: "none" });
   });
 
+  // Trace: FR-027-AC-9
   it("prefers a project-local org over the user-level one (FR-027-AC-9)", () => {
     // The per-repo layer is what lets one checkout declare a different org
     // without touching global state.
@@ -314,6 +340,7 @@ describe("stored configuration (FR-027)", () => {
     ).toEqual({ org: "project-level", source: "config" });
   });
 
+  // Trace: FR-027-AC-9
   it("ignores the project layer when the invocation disables it (FR-027-AC-9)", () => {
     storeOrg("user-level");
     const project = mkdtempSync(join(tmpdir(), "quoin-org-proj-off-"));
@@ -350,6 +377,7 @@ describe("stored configuration (FR-027)", () => {
     }
   });
 
+  // Trace: FR-027-AC-5
   it("ignores a malformed config rather than failing the command", () => {
     // ConfigService records the problem for `config doctor` and returns schema
     // defaults; an author must still be able to write specs.

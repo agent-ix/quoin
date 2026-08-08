@@ -92,10 +92,12 @@ function defaultSet(root: string): MarketplaceManifest {
   };
 }
 
+// Trace: FR-024-AC-1
 test("exports the quoin CLI entrypoint", () => {
   expect(typeof main).toBe("function");
 });
 
+// Trace: FR-017-AC-1
 test("lazily installs the default module set, then loads its artifacts and objects", () => {
   const home = tmp("home");
   ensureDefaultModules(home, defaultSet(tmp("src")));
@@ -117,6 +119,7 @@ test("lazily installs the default module set, then loads its artifacts and objec
   );
 });
 
+// Trace: FR-009-AC-4, FR-010-AC-1
 test("creates authoring packs for case-insensitive artifact and object types", () => {
   const home = tmp("write-home");
   const cwd = tmp("write-cwd");
@@ -130,6 +133,7 @@ test("creates authoring packs for case-insensitive artifact and object types", (
   expect(pack.validation.command).toContain("quire validate --scope");
 });
 
+// Trace: FR-024-AC-2, FR-024-AC-3
 test("installs, lists, and removes a plugin from a local path source", () => {
   const home = tmp("plugin-home");
   const mod = businessModule(tmp("plugin-src"));
@@ -174,6 +178,7 @@ test("parseSourceArg maps CLI prefixes to typed sources", () => {
   expect(parseSourceArg("./bare")).toEqual({ type: "path", path: "./bare" });
 });
 
+// Trace: FR-016-AC-1, FR-016-AC-2
 test("ships the committed default module set", () => {
   const manifest = defaultModulesManifest();
   expect(manifest.entries).toHaveLength(8);

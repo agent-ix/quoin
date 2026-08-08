@@ -11,6 +11,7 @@ test("build-tools help exits successfully", () => {
   expect(output).toContain("Build Tools");
 });
 
+// Trace: FR-003-AC-2
 test("catalog help explains the installed module dir", () => {
   // Help text is now oclif-generated from the command metadata; assert the
   // canonical description still documents the installed module directory.
@@ -19,6 +20,7 @@ test("catalog help explains the installed module dir", () => {
   expect(help).toContain("quoin module install");
 });
 
+// Trace: FR-003-AC-2
 test("write help explains authoring packs", () => {
   const help = `${Write.summary}\n${Write.description}`;
   expect(help).toContain("authoring pack");

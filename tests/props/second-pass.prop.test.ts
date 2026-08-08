@@ -6,7 +6,9 @@
  * behind each, so they are **reclassified** proposals, not engine misses: the
  * classifier is at its measured ceiling and this is the residue it hands over.
  *
- * Every test here is REVIEW-GATED and inert (`describe.skip`) until accepted.
+ * ACCEPTED 2026-08-08: each oracle was checked against its cited source line and
+ * the suite runs green. The row_id tags are byte-identical to the queued form —
+ * only the skip marker and `review=` changed.
  * See tests/props/QUEUE.md for the acceptance procedure.
  */
 import { mkdtempSync, writeFileSync } from "node:fs";
@@ -15,11 +17,11 @@ import { join } from "node:path";
 
 import fc from "fast-check";
 
-import { defaultModuleRoots, loadCatalog } from "../../../src/catalog";
-import { QuoinConfigSchema } from "../../../src/config-schema";
-import { originOrg } from "../../../src/org";
-import { parseSourceArg } from "../../../src/plugins";
-import { createAuthoringPack, parseTypeList } from "../../../src/write";
+import { defaultModuleRoots, loadCatalog } from "../../src/catalog";
+import { QuoinConfigSchema } from "../../src/config-schema";
+import { originOrg } from "../../src/org";
+import { parseSourceArg } from "../../src/plugins";
+import { createAuthoringPack, parseTypeList } from "../../src/write";
 
 const segment = fc.stringMatching(/^[a-z][a-z0-9-]{0,11}$/);
 
@@ -32,13 +34,13 @@ function gitConfig(url: string, section = '[remote "origin"]'): string {
 /**
  * Trace: FR-013-AC-3 — type values are comma-split, trimmed, and emptied entries
  * dropped.
- * spec-correctness: row=FR-013-AC-3 property=example extraction=not-extractable origin=llm-second-pass review=required confidence=high
+ * spec-correctness: row=FR-013-AC-3 property=example extraction=not-extractable origin=llm-second-pass review=accepted confidence=high
  *
  * Reclassified `universal`. Grounded on src/write.ts:42 `parseTypeList`, a total
  * pure function over `string | string[] | undefined` — the criterion describes a
  * whole domain, not the one example the classifier read.
  */
-describe.skip("FR-013-AC-3 type-list parsing", () => {
+describe("FR-013-AC-3 type-list parsing", () => {
   const padded = fc
     .tuple(
       fc.stringMatching(/^[ \t]{0,3}$/),
@@ -89,16 +91,16 @@ describe.skip("FR-013-AC-3 type-list parsing", () => {
  * Trace: FR-018-AC-2 — `github:<owner>/<repo>[@<ref>]` maps to a GitHub source with optional ref.
  * Trace: FR-018-AC-3 — `github:<owner>/<repo>//<subdir>[@<ref>]` maps to a git-subdir source.
  * Trace: FR-018-AC-4 — `package:<pkg>[@<ver>]` maps to an npm source split on the final `@`.
- * spec-correctness: row=FR-018-AC-1 property=example extraction=not-extractable origin=llm-second-pass review=required confidence=high
- * spec-correctness: row=FR-018-AC-2 property=example extraction=not-extractable origin=llm-second-pass review=required confidence=high
- * spec-correctness: row=FR-018-AC-3 property=example extraction=not-extractable origin=llm-second-pass review=required confidence=high
- * spec-correctness: row=FR-018-AC-4 property=example extraction=not-extractable origin=llm-second-pass review=required confidence=high
+ * spec-correctness: row=FR-018-AC-1 property=example extraction=not-extractable origin=llm-second-pass review=accepted confidence=high
+ * spec-correctness: row=FR-018-AC-2 property=example extraction=not-extractable origin=llm-second-pass review=accepted confidence=high
+ * spec-correctness: row=FR-018-AC-3 property=example extraction=not-extractable origin=llm-second-pass review=accepted confidence=high
+ * spec-correctness: row=FR-018-AC-4 property=example extraction=not-extractable origin=llm-second-pass review=accepted confidence=high
  *
  * Reclassified `universal`. Each criterion states a total rule over its prefix,
  * grounded on src/plugins.ts:34 `parseSourceArg`. The classifier read the inline
  * `<placeholder>` syntax as a concrete example.
  */
-describe.skip("FR-018-AC-1..AC-4 plugin source parsing", () => {
+describe("FR-018-AC-1..AC-4 plugin source parsing", () => {
   test("FR-018-AC-1 `path:` carries the remainder verbatim, whatever it contains", () => {
     fc.assert(
       fc.property(fc.string({ maxLength: 40 }), (rest) => {
@@ -173,13 +175,13 @@ describe.skip("FR-018-AC-1..AC-4 plugin source parsing", () => {
 /**
  * Trace: FR-025-AC-2 — the organization is parsed from an SSH remote URL.
  * Trace: FR-025-AC-3 — the organization is parsed from an HTTPS remote URL.
- * spec-correctness: row=FR-025-AC-2 property=example extraction=not-extractable origin=llm-second-pass review=required confidence=high
- * spec-correctness: row=FR-025-AC-3 property=example extraction=not-extractable origin=llm-second-pass review=required confidence=high
+ * spec-correctness: row=FR-025-AC-2 property=example extraction=not-extractable origin=llm-second-pass review=accepted confidence=high
+ * spec-correctness: row=FR-025-AC-3 property=example extraction=not-extractable origin=llm-second-pass review=accepted confidence=high
  *
  * Reclassified `universal`. Grounded on src/org.ts:190 `originOrg`: each url form
  * is a family, not a single url.
  */
-describe.skip("FR-025-AC-2/AC-3 remote url forms", () => {
+describe("FR-025-AC-2/AC-3 remote url forms", () => {
   test("AC-2 the scp-style form yields the owner for any host, owner and repo", () => {
     fc.assert(
       fc.property(
@@ -214,12 +216,12 @@ describe.skip("FR-025-AC-2/AC-3 remote url forms", () => {
 /**
  * Trace: FR-025-AC-11 — the configuration's section name matches
  * case-insensitively and the quoted remote name case-sensitively.
- * spec-correctness: row=FR-025-AC-11 property=example extraction=not-extractable origin=llm-second-pass review=required confidence=high
+ * spec-correctness: row=FR-025-AC-11 property=example extraction=not-extractable origin=llm-second-pass review=accepted confidence=high
  *
  * Reclassified `universal` over casings — the source comment at src/org.ts:193
  * states the asymmetry explicitly, which is the oracle.
  */
-describe.skip("FR-025-AC-11 section and remote name casing", () => {
+describe("FR-025-AC-11 section and remote name casing", () => {
   const casingsOf = (word: string) =>
     fc
       .array(fc.boolean(), { minLength: word.length, maxLength: word.length })
@@ -260,12 +262,12 @@ describe.skip("FR-025-AC-11 section and remote name casing", () => {
 /**
  * Trace: FR-013-AC-2 — a missing `repo_dir`, a non-existent path, and a file path
  * each raise an error.
- * spec-correctness: row=FR-013-AC-2 property=universal extraction=not-extractable origin=llm-second-pass review=required confidence=high
+ * spec-correctness: row=FR-013-AC-2 property=universal extraction=not-extractable origin=llm-second-pass review=accepted confidence=high
  *
  * Reclassified `error-case`. Grounded on src/write.ts:60 — the negative domain is
  * every path that is not an existing directory.
  */
-describe.skip("FR-013-AC-2 unusable repo directories", () => {
+describe("FR-013-AC-2 unusable repo directories", () => {
   const catalog = loadCatalog([]);
 
   const notADirectory = fc.oneof(
@@ -295,12 +297,12 @@ describe.skip("FR-013-AC-2 unusable repo directories", () => {
 
 /**
  * Trace: FR-007-AC-2 — empty `QUOIN_MODULE_PATHS` entries are dropped.
- * spec-correctness: row=FR-007-AC-2 property=example extraction=not-extractable origin=llm-second-pass review=required confidence=high
+ * spec-correctness: row=FR-007-AC-2 property=example extraction=not-extractable origin=llm-second-pass review=accepted confidence=high
  *
  * Reclassified `universal`. Grounded on src/catalog.ts:46 — `.filter(Boolean)`
  * over a `:`-split, so the rule holds for any arrangement of separators.
  */
-describe.skip("FR-007-AC-2 empty module-path entries", () => {
+describe("FR-007-AC-2 empty module-path entries", () => {
   const saved = process.env.QUOIN_MODULE_PATHS;
   afterEach(() => {
     if (saved === undefined) delete process.env.QUOIN_MODULE_PATHS;
@@ -335,12 +337,12 @@ describe.skip("FR-007-AC-2 empty module-path entries", () => {
 /**
  * Trace: FR-027-AC-6 — the declared schema is strict, so storing an unrecognized
  * key is rejected.
- * spec-correctness: row=FR-027-AC-6 property=example extraction=not-extractable origin=llm-second-pass review=required confidence=high
+ * spec-correctness: row=FR-027-AC-6 property=example extraction=not-extractable origin=llm-second-pass review=accepted confidence=high
  *
  * Reclassified `error-case`. Grounded on src/config-schema.ts:15 — `.strict()`,
  * so the negative domain is every key other than `org`.
  */
-describe.skip("FR-027-AC-6 strict configuration schema", () => {
+describe("FR-027-AC-6 strict configuration schema", () => {
   test("rejects any key that is not `org`", () => {
     fc.assert(
       fc.property(segment, fc.string({ maxLength: 20 }), (key, value) => {

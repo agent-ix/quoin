@@ -35,6 +35,7 @@ vi.mock("node:child_process", () => {
 
 const { resolveOrg } = await import("../src/org");
 
+// Trace: FR-025-AC-7
 test("resolves the org from a git remote without executing any subprocess", () => {
   const root = mkdtempSync(join(tmpdir(), "quoin-org-nosub-"));
   mkdirSync(join(root, ".git"), { recursive: true });
@@ -50,6 +51,7 @@ test("resolves the org from a git remote without executing any subprocess", () =
   expect(calls).toEqual([]);
 });
 
+// Trace: FR-025-AC-7
 test("reports unresolved without executing any subprocess", () => {
   const root = mkdtempSync(join(tmpdir(), "quoin-org-nosub-empty-"));
   expect(resolveOrg(root, { env: {} })).toEqual({ source: "none" });
