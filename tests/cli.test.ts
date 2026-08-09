@@ -793,7 +793,9 @@ describe("config", () => {
     }
   });
 
-  // Trace: FR-027-AC-8
+  // Trace: FR-027-AC-6, FR-027-AC-8
+  // AC-6 is also pinned at the schema in tests/props/second-pass.prop.test.ts;
+  // this is the `config set` surface the criterion actually names (SR-003 FND-003).
   test("set rejects an unrecognized key", async () => {
     const home = populatedCatalog();
     const c = captureLog();

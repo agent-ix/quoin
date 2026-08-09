@@ -18,7 +18,9 @@ import { fileURLToPath } from "node:url";
 import { settings, type Config } from "@oclif/core";
 import fc from "fast-check";
 
-import { loadConfig, run } from "@agent-ix/ix-cli-core";
+import { loadConfig } from "@agent-ix/ix-cli-core";
+
+import { main } from "../../src/cli";
 
 // The catalog/write handlers call ensureDefaultModules() internally, whose
 // git-subdir sources would hit the network. Same stub the CLI suite uses.
@@ -65,7 +67,7 @@ describe("FR-005-AC-1 unknown top-level commands", () => {
     await fc.assert(
       fc.asyncProperty(bareword, async (cmd) => {
         fc.pre(!topLevel.has(cmd));
-        await expect(run([cmd], config)).rejects.toThrow();
+        await expect(main([cmd], config)).rejects.toThrow();
       }),
       PROP,
     );
@@ -77,11 +79,34 @@ describe("FR-005-AC-1 unknown top-level commands", () => {
         fc.pre(!topLevel.has(cmd));
         // Containment, not a word-boundary regex: a generated bareword can end
         // in `-`, after which `\b` does not match. fast-check shrank to "a-".
-        await expect(run([cmd], config)).rejects.toThrow(
+        await expect(main([cmd], config)).rejects.toThrow(
           expect.objectContaining({
             message: expect.stringContaining(cmd),
           }) as Error,
         );
+      }),
+      PROP,
+    );
+  });
+
+  // The clause the criterion actually turns on. The original generated test
+  // asserted only the rejection and the command name, so it passed while the
+  // usage requirement went unmet — SR-003 FND-001.
+  test("include the root usage, naming every top-level command", async () => {
+    await fc.assert(
+      fc.asyncProperty(bareword, async (cmd) => {
+        fc.pre(!topLevel.has(cmd));
+        const error = await main([cmd], config).catch((e: Error) => e);
+        expect(error.message).toContain("Usage: quoin <command>");
+        // The commands a user can actually reach. Asserted as a fixed list, not
+        // recomputed from the config, so this cannot mirror the implementation
+        // into agreement with itself.
+        for (const topic of ["catalog", "config", "module", "write"]) {
+          expect(error.message).toContain(topic);
+        }
+        // The deprecated `plugin` alias is hidden, so usage must not advertise
+        // it as a way in.
+        expect(error.message).not.toMatch(/Commands:[^\n]*\bplugin\b/);
       }),
       PROP,
     );
@@ -97,7 +122,7 @@ describe("FR-005-AC-2 unknown catalog subcommands", () => {
     await fc.assert(
       fc.asyncProperty(bareword, async (sub) => {
         fc.pre(!catalogSubcommands.has(sub));
-        await expect(run(["catalog", sub], config)).rejects.toThrow();
+        await expect(main(["catalog", sub], config)).rejects.toThrow();
       }),
       PROP,
     );
@@ -113,7 +138,7 @@ describe("FR-005-AC-3 unknown plugin subcommands", () => {
     await fc.assert(
       fc.asyncProperty(bareword, async (sub) => {
         fc.pre(!pluginSubcommands.has(sub));
-        await expect(run(["plugin", sub], config)).rejects.toThrow();
+        await expect(main(["plugin", sub], config)).rejects.toThrow();
       }),
       PROP,
     );

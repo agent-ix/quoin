@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
-import { execute } from "@agent-ix/ix-cli-core";
+import { Errors } from "@oclif/core";
 
-import { isVersionRequest, packageVersion } from "../dist/cli.js";
+import { isVersionRequest, main, packageVersion } from "../dist/cli.js";
 
 const argv = process.argv.slice(2);
 
@@ -10,5 +10,15 @@ const argv = process.argv.slice(2);
 if (isVersionRequest(argv)) {
   console.log(packageVersion());
 } else {
-  await execute({ dir: import.meta.url });
+  // Route through main() rather than oclif's `execute` so the shipped CLI gets
+  // the same unknown-command usage the library path does (FR-005-AC-1). main()
+  // propagates (FR-026-AC-6), so the error handling `execute` would have done
+  // is done here instead.
+  try {
+    // `import.meta.url` is the config source oclif's own `execute({dir})` used;
+    // without it the loader resolves from dist/cli.js and finds no commands.
+    await main(argv, import.meta.url);
+  } catch (error) {
+    Errors.handle(error);
+  }
 }

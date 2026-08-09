@@ -81,6 +81,22 @@ Coverage is mapped requirement → test as `file :: "test name"`:
 | NFR-007     | ✅ Covered | `flows.test.ts` :: "rejects when ix-flow cannot be spawned (PATH has no ix-flow)"; :: "sets process.exitCode when ix-flow exits non-zero"; `write.test.ts` validation-command tests confirm `quire` is emitted, not executed. (Version pinning is an accepted gap — Review.) |
 | NFR-008     | ✅ Covered | `catalog.test.ts` :: "skips candidates that do not resolve to a module root" (missing-manifest skip); :: "aborts (strict) on a present but unparseable manifest.yaml" (strict-abort path).                                                                                   |
 
+## Stakeholder Requirement Coverage
+
+Every StR carries one validation criterion, verified by demonstration or
+inspection rather than by a unit test — so these rows carry no tracking tag by
+design (see "Tracking-tag coverage"). Added in response to SR-003 FND-002, which
+found the stakeholder layer had no rows here at all.
+
+| Stakeholder Req | Trace to US/FR         | Test/Validation                                                                                       | Coverage Status |
+| --------------- | ---------------------- | ----------------------------------------------------------------------------------------------------- | --------------- |
+| StR-001-VC-1    | US-009; FR-004, FR-023 | Demonstration — EV-001…EV-013 run the real CLI from an isolated `IX_HOME`; NFR-004 inspects the deps    | ✅ Covered      |
+| StR-002-VC-1    | US-003; FR-018, FR-019 | Demonstration — EV-003/EV-009/EV-010/EV-020 install from local, GitHub and subdir sources              | ✅ Covered      |
+| StR-003-VC-1    | US-004; FR-014, FR-015 | Demonstration — EV-001/EV-004/EV-008 author to the skeleton and validate with a real `quire`           | ✅ Covered      |
+| StR-004-VC-1    | US-005; FR-020, FR-021 | Inspection — EV-005/EV-013 start runs and inspect status; resume/advance/gate progression is untested  | ⚠️ Partial      |
+| StR-005-VC-1    | US-003; FR-016, FR-017 | Inspection — the default set is version-pinned; NFR-001 covers idempotent offline reconcile            | ✅ Covered      |
+| StR-006-VC-1    | US-009; FR-022         | Demonstration — `update.test.ts` covers delegation, `--check` and `--registry`                          | ✅ Covered      |
+
 ## Use Case Coverage
 
 | Use Case | Coverage   | Test / Evidence                                                                                                                                                      |
