@@ -42,7 +42,10 @@
     },
     "plugins": [
       "@agent-ix/filament-plan-sync"
-    ]
+    ],
+    "hooks": {
+      "command_not_found": "./dist/hooks/command-not-found"
+    }
   },
   "packageManager": "pnpm@10.33.4",
   "scripts": {

@@ -1,15 +1,22 @@
 /**
- * Unit coverage for the unknown-command usage helpers added for FR-005-AC-1
- * (SR-003 FND-001). The property test in tests/props/fr-005.prop.test.ts drives
- * these through the real runner; these cases pin the pure edges the runner path
- * cannot reach — a flags-only argv, an alias, a hidden command, and a non-Error
- * rejection.
+ * Coverage for the unknown-command usage path added for FR-005-AC-1
+ * (SR-003 FND-001).
+ *
+ * The remedy lives in oclif's own `command_not_found` hook
+ * (`src/hooks/command-not-found.ts`), which `Config.runCommand` invokes and
+ * whose failure it rethrows in place of the default `command <x> not found`.
+ * That keeps `bin/quoin.js` on `execute()` — whose `flush()` the shipped CLI
+ * needs so piped output is not truncated — instead of rerouting around it.
  */
-import { isUnknownCommand, rootUsage, withRootUsage } from "../src/cli";
+import { Errors } from "@oclif/core";
+
+import commandNotFound from "../src/hooks/command-not-found";
+import { rootUsage } from "../src/cli";
 
 const config = (
-  commands: Array<{ id: string; aliases?: string[]; hidden?: boolean }>,
-) => ({ bin: "quoin", commands });
+  commands: Array<{ id: string; hidden?: boolean }>,
+  bin = "quoin",
+) => ({ bin, commands });
 
 // Trace: FR-005-AC-1
 describe("rootUsage", () => {
@@ -34,43 +41,38 @@ describe("rootUsage", () => {
     expect(usage).toContain("Commands: write");
     expect(usage).not.toMatch(/Commands:[^\n]*\bplugin\b/);
   });
-});
 
-// Trace: FR-005-AC-1
-describe("isUnknownCommand", () => {
-  const graph = config([
-    { id: "write" },
-    { id: "catalog:list" },
-    { id: "module:list", aliases: ["plugin:list"] },
-  ]);
-
-  test("is false when argv carries no command at all", () => {
-    expect(isUnknownCommand([], graph)).toBe(false);
-    expect(isUnknownCommand(["--help", "-v"], graph)).toBe(false);
-  });
-
-  test("is false for a known command, a known topic, and a known alias", () => {
-    expect(isUnknownCommand(["write"], graph)).toBe(false);
-    expect(isUnknownCommand(["catalog", "list"], graph)).toBe(false);
-    expect(isUnknownCommand(["plugin", "list"], graph)).toBe(false);
-  });
-
-  test("is true only for a token no command or alias claims", () => {
-    expect(isUnknownCommand(["bogus"], graph)).toBe(true);
-    // Flags before the command must not shadow it.
-    expect(isUnknownCommand(["--json", "bogus"], graph)).toBe(true);
+  test("names whatever bin the config declares, rather than a baked-in string", () => {
+    expect(rootUsage(config([{ id: "write" }], "other"))).toContain(
+      "Usage: other <command>",
+    );
   });
 });
 
 // Trace: FR-005-AC-1
-describe("withRootUsage", () => {
-  test("appends the usage to an Error, preserving the original message", () => {
-    const result = withRootUsage(new Error("command x not found"), "USAGE");
-    expect((result as Error).message).toBe("command x not found\n\nUSAGE");
+describe("command_not_found hook", () => {
+  const invoke = (ctxConfig: ReturnType<typeof config>, id: string) =>
+    (
+      commandNotFound as unknown as (
+        this: { config: unknown },
+        options: { id: string; argv: string[] },
+      ) => Promise<void>
+    ).call({ config: ctxConfig }, { id, argv: [] });
+
+  test("throws a CLIError naming the command and carrying the root usage", async () => {
+    const graph = config([{ id: "write" }, { id: "catalog:list" }]);
+    const error = await invoke(graph, "bogus").catch((e: Error) => e);
+
+    expect(error).toBeInstanceOf(Errors.CLIError);
+    expect(error.message).toContain("command bogus not found");
+    expect(error.message).toContain("Usage: quoin <command> [options]");
+    expect(error.message).toContain("Commands: catalog, write");
   });
 
-  test("passes a non-Error rejection through untouched", () => {
-    const thrown = { not: "an error" };
-    expect(withRootUsage(thrown, "USAGE")).toBe(thrown);
+  test("exits 2, the code oclif uses for an unresolved command", async () => {
+    const error = (await invoke(config([{ id: "write" }]), "bogus").catch(
+      (e: Error) => e,
+    )) as Errors.CLIError;
+    expect(error.oclif.exit).toBe(2);
   });
 });

@@ -68,35 +68,35 @@ tracking tag byte-identical") was verified mechanically rather than asserted. Th
 stated oracle was neither met by the implementation nor asserted by the test that
 claimed it.
 
-**All four findings have since been resolved** (see Resolution below). The gate is
+**All five findings have since been resolved** (see Resolution below), including
+FND-005, which this review raised and which predated the work. The gate is
 retained at FAIL as the record of what the review found; re-running it against the
 current tree returns PASS.
 
 ## Resolution
 
-| ID      | Resolution                                                                                                                                                                                                                                                                                                                                                                                                             |
-| ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| FND-001 | **Fixed in the implementation, not the spec.** `src/cli.ts` gained `rootUsage`, `isUnknownCommand` and `withRootUsage`; `main()` appends the root usage to an unknown-command error, and `bin/quoin.js` now routes through `main()` so the shipped CLI behaves the same as the tested path. `quoin bogusgarbage` now lists the commands and exits 2. The property test asserts the usage clause it previously skipped. |
-| FND-002 | Fixed. `spec/matrix.md` gained a **Stakeholder Requirement Coverage** section for StR-001…StR-006. Recording them surfaced a second, smaller gap, now visible rather than hidden: **StR-004-VC-1 is ⚠️ Partial** — no eval exercises workflow resume/advance/gate-acknowledge.                                                                                                                                         |
-| FND-003 | Fixed. FR-027-AC-6 is now tagged on `cli.test.ts :: "set rejects an unrecognized key"` — the `config set` surface the criterion names — in addition to the schema-level property.                                                                                                                                                                                                                                      |
-| FND-004 | Fixed, with a caveat stated in the artifact itself. `plan/PLAN-001-spec-correctness/` now exists so the plan-completion gate can run, and its log records that it was **authored retroactively**: it documents what was built, not what was planned.                                                                                                                                                                   |
+| ID      | Resolution                                                                                                                                                                                                                                                                                                                                                                                                            |
+| ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| FND-001 | **Fixed in the implementation, not the spec**, through oclif's own `command_not_found` hook (`src/hooks/command-not-found.ts`). `Config.runCommand` invokes it when no command matches and rethrows its failure in place of the default error, so `quoin bogusgarbage` lists the commands and exits 2 on both the shipped bin and the library path. The property test asserts the usage clause it previously skipped. |
+| FND-002 | Fixed. `spec/matrix.md` gained a **Stakeholder Requirement Coverage** section for StR-001…StR-006. Recording them surfaced a second, smaller gap, now visible rather than hidden: **StR-004-VC-1 is ⚠️ Partial** — no eval exercises workflow resume/advance/gate-acknowledge.                                                                                                                                        |
+| FND-003 | Fixed. FR-027-AC-6 is now tagged on `cli.test.ts :: "set rejects an unrecognized key"` — the `config set` surface the criterion names — in addition to the schema-level property.                                                                                                                                                                                                                                     |
+| FND-004 | Fixed, with a caveat stated in the artifact itself. `plan/PLAN-001-spec-correctness/` now exists so the plan-completion gate can run, and its log records that it was **authored retroactively**: it documents what was built, not what was planned.                                                                                                                                                                  |
 
-**FND-005 is recorded, not fixed.** It surfaced while verifying the FND-002 fix
-and is pre-existing: `quire validate 'spec/**/*.md'` already exited non-zero on
-the tree before any of this work, for the same two reasons. The `TestMatrix`
-archetype requires a `## Functional Requirement Coverage` table
-(`Functional Req | Acceptance Criteria | Test Cases | Coverage Status`) and a
-`## Test Case Summary` table keyed on `TC-`/`IT-` ids. quoin's matrix has neither:
-it uses `## Functional Requirements` with a free-text
-`` `file.test.ts` :: "test name" `` column, and no test-case table at all.
+**FND-005 is fixed.** `spec/matrix.md` and `spec/evals.md` now declare the
+`Functional Requirement Coverage` and `Test Case Summary` sections the `TestMatrix`
+archetype requires, so `quire validate 'spec/**/*.md'` exits 0 — it had exited
+non-zero on this repo since before this work.
 
-Closing it means restructuring the matrix and allocating a `TC-` id per test —
-a `spec-matrix` job in its own right, with a real risk of losing the per-test
-detail the current prose carries. It was left alone deliberately rather than
-half-done: reshaping 28 rows into four fixed columns at the end of an unrelated
-change is how that detail gets dropped. **`spec/matrix.md` gained no new failure
-from this work** — the `stakeholder_coverage` table added for FND-002 was
-corrected to the archetype's declared columns and validates.
+Both new tables are **generated from the tracking tags**, not hand-written: 109
+test cases, one per criterion whose id appears in a real test, `Type: Property`
+for the 28 under `tests/props/` and `Unit` for the other 81. The existing prose
+tables are kept alongside, because the fixed four-column form cannot hold the
+`file :: "test name"` detail they carry — the concern that had made this look
+like a restructure is answered by adding rather than replacing.
+
+`spec/evals.md` uses `TC-EV-050`-style ids, so each scenario is addressable by
+the archetype's required pattern and by the `EV-` id used everywhere else,
+instead of a second numbering to keep in sync.
 
 The FND-001 fix was deliberately made on the implementation side. The criterion
 describes behavior a user benefits from — an unknown command that names the
@@ -106,13 +106,13 @@ what the code happened to do.
 
 ## Findings
 
-| ID      | Severity | Summary                                                                                                                                                                                                                                                  | Refs                                                                  |
-| ------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
-| FND-001 | high     | FR-005-AC-1 requires an unknown-command error "that includes usage"; the runner emits `command <x> not found` with no usage, and no test asserts usage                                                                                                   | FR-005-AC-1; FR-005 Behavior; FR-026; tests/props/fr-005.prop.test.ts |
-| FND-002 | medium   | StR-001…StR-006 have no rows in `spec/matrix.md`; six stakeholder requirements with validation criteria sit outside the matrix entirely                                                                                                                  | StR-001..006; TM-001                                                  |
-| FND-003 | low      | FR-027-AC-6 is verified against `QuoinConfigSchema` directly rather than through a `config set` invocation; the schema is the mechanism, not the surface                                                                                                 | FR-027-AC-6; tests/props/second-pass.prop.test.ts                     |
-| FND-004 | low      | This work has no `plan/` bundle, so Step 1 could not run; the FR-first route bypassed the plan gate                                                                                                                                                      | FR-028; US-011                                                        |
-| FND-005 | medium   | `spec/matrix.md` and `spec/evals.md` both fail `TestMatrix` structural validation: neither declares the required `Functional Requirement Coverage` or `Test Case Summary` sections, so `quire validate 'spec/**/*.md'` exits non-zero for the whole repo | TM-001; TM-002; spec-artifacts-process TestMatrix archetype           |
+| ID      | Severity | Summary                                                                                                                                                                                                                                                            | Refs                                                                  |
+| ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------- |
+| FND-001 | high     | FR-005-AC-1 requires an unknown-command error "that includes usage"; the runner emits `command <x> not found` with no usage, and no test asserts usage                                                                                                             | FR-005-AC-1; FR-005 Behavior; FR-026; tests/props/fr-005.prop.test.ts |
+| FND-002 | medium   | StR-001…StR-006 have no rows in `spec/matrix.md`; six stakeholder requirements with validation criteria sit outside the matrix entirely                                                                                                                            | StR-001..006; TM-001                                                  |
+| FND-003 | low      | FR-027-AC-6 is verified against `QuoinConfigSchema` directly rather than through a `config set` invocation; the schema is the mechanism, not the surface                                                                                                           | FR-027-AC-6; tests/props/second-pass.prop.test.ts                     |
+| FND-004 | low      | This work has no `plan/` bundle, so Step 1 could not run; the FR-first route bypassed the plan gate                                                                                                                                                                | FR-028; US-011                                                        |
+| FND-005 | medium   | (FIXED) `spec/matrix.md` and `spec/evals.md` both failed `TestMatrix` structural validation: neither declares the required `Functional Requirement Coverage` or `Test Case Summary` sections, so `quire validate 'spec/**/*.md'` exits non-zero for the whole repo | TM-001; TM-002; spec-artifacts-process TestMatrix archetype           |
 
 ## Coverage
 
