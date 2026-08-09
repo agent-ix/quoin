@@ -4,6 +4,28 @@ import { packageVersion } from "./version.js";
 
 export { packageVersion, resolveVersion } from "./version.js";
 
+/**
+ * Root usage: the bin name plus the top-level command ids oclif discovered.
+ *
+ * Built from the resolved config rather than a hand-maintained string, so a
+ * command added to `dist/commands` (or contributed by a core plugin) appears
+ * here without a second edit — the failure mode FR-003's delegation to oclif
+ * exists to avoid.
+ */
+export function rootUsage(config: {
+  bin: string;
+  commands: ReadonlyArray<{ id: string; hidden?: boolean }>;
+}): string {
+  const topics = [
+    ...new Set(
+      config.commands
+        .filter((command) => !command.hidden)
+        .map((command) => command.id.split(":")[0]),
+    ),
+  ].sort();
+  return `Usage: ${config.bin} <command> [options]\n\nCommands: ${topics.join(", ")}\n\nRun \`${config.bin} <command> --help\` for details.`;
+}
+
 // quoin bakes a truthful `git describe` version at build time and prints the
 // bare string for `--version` / `-v` / `version` (the oclif default version
 // output is decorated with the platform/node triple, which would break the

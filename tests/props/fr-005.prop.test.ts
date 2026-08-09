@@ -86,6 +86,31 @@ describe("FR-005-AC-1 unknown top-level commands", () => {
       PROP,
     );
   });
+
+  // The clause the criterion actually turns on. The original generated test
+  // asserted only the rejection and the command name, so it passed while the
+  // usage requirement went unmet — SR-003 FND-001.
+  test("include the root usage, naming every top-level command", async () => {
+    await fc.assert(
+      fc.asyncProperty(bareword, async (cmd) => {
+        fc.pre(!topLevel.has(cmd));
+        const error = (await run([cmd], config).catch(
+          (e: Error) => e,
+        )) as Error;
+        expect(error.message).toContain("Usage: quoin <command>");
+        // The commands a user can actually reach. Asserted as a fixed list, not
+        // recomputed from the config, so this cannot mirror the implementation
+        // into agreement with itself.
+        for (const topic of ["catalog", "config", "module", "write"]) {
+          expect(error.message).toContain(topic);
+        }
+        // The deprecated `plugin` alias is hidden, so usage must not advertise
+        // it as a way in.
+        expect(error.message).not.toMatch(/Commands:[^\n]*\bplugin\b/);
+      }),
+      PROP,
+    );
+  });
 });
 
 /**

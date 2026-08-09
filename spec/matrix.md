@@ -81,6 +81,179 @@ Coverage is mapped requirement → test as `file :: "test name"`:
 | NFR-007     | ✅ Covered | `flows.test.ts` :: "rejects when ix-flow cannot be spawned (PATH has no ix-flow)"; :: "sets process.exitCode when ix-flow exits non-zero"; `write.test.ts` validation-command tests confirm `quire` is emitted, not executed. (Version pinning is an accepted gap — Review.) |
 | NFR-008     | ✅ Covered | `catalog.test.ts` :: "skips candidates that do not resolve to a module root" (missing-manifest skip); :: "aborts (strict) on a present but unparseable manifest.yaml" (strict-abort path).                                                                                   |
 
+## Functional Requirement Coverage
+
+Generated from the tracking tags in the suite, not hand-maintained: every row
+below is a criterion whose id appears in a real test. The prose tables further
+down carry the per-test detail (`file :: "test name"`) this fixed-column form
+cannot hold, and are kept for that reason.
+
+Criteria absent here are verified by a method that produces no test — see
+"Tracking-tag coverage".
+
+| Functional Req | Acceptance Criteria | Test Cases | Coverage Status |
+| --- | --- | --- | --- |
+| FR-001 | FR-001-AC-1, FR-001-AC-2, FR-001-AC-3, FR-001-AC-4 | TC-001, TC-002, TC-003, TC-004 | ✅ Covered |
+| FR-002 | FR-002-AC-1, FR-002-AC-2, FR-002-AC-3, FR-002-AC-4 | TC-005, TC-006, TC-007, TC-008 | ✅ Covered |
+| FR-003 | FR-003-AC-2 | TC-009 | ✅ Covered |
+| FR-004 | FR-004-AC-1, FR-004-AC-2, FR-004-AC-3 | TC-010, TC-011, TC-012 | ✅ Covered |
+| FR-005 | FR-005-AC-1, FR-005-AC-2, FR-005-AC-3 | TC-013, TC-014, TC-015 | ✅ Covered |
+| FR-006 | FR-006-AC-1, FR-006-AC-2, FR-006-AC-3, FR-006-AC-4 | TC-016, TC-017, TC-018, TC-019 | ✅ Covered |
+| FR-007 | FR-007-AC-1, FR-007-AC-2, FR-007-AC-3 | TC-020, TC-021, TC-022 | ✅ Covered |
+| FR-008 | FR-008-AC-1, FR-008-AC-2 | TC-023, TC-024 | ✅ Covered |
+| FR-009 | FR-009-AC-1, FR-009-AC-2, FR-009-AC-3, FR-009-AC-4, FR-009-AC-5 | TC-025, TC-026, TC-027, TC-028, TC-029 | ✅ Covered |
+| FR-010 | FR-010-AC-1, FR-010-AC-2 | TC-030, TC-031 | ✅ Covered |
+| FR-011 | FR-011-AC-1, FR-011-AC-2, FR-011-AC-3, FR-011-AC-4 | TC-032, TC-033, TC-034, TC-035 | ✅ Covered |
+| FR-012 | FR-012-AC-1, FR-012-AC-2, FR-012-AC-3, FR-012-AC-4 | TC-036, TC-037, TC-038, TC-039 | ✅ Covered |
+| FR-013 | FR-013-AC-1, FR-013-AC-2, FR-013-AC-3, FR-013-AC-4 | TC-040, TC-041, TC-042, TC-043 | ✅ Covered |
+| FR-014 | FR-014-AC-1, FR-014-AC-2, FR-014-AC-3, FR-014-AC-4 | TC-044, TC-045, TC-046, TC-047 | ✅ Covered |
+| FR-015 | FR-015-AC-1, FR-015-AC-2, FR-015-AC-3 | TC-048, TC-049, TC-050 | ✅ Covered |
+| FR-016 | FR-016-AC-1, FR-016-AC-2 | TC-051, TC-052 | ✅ Covered |
+| FR-017 | FR-017-AC-1, FR-017-AC-2, FR-017-AC-3 | TC-053, TC-054, TC-055 | ✅ Covered |
+| FR-018 | FR-018-AC-1, FR-018-AC-2, FR-018-AC-3, FR-018-AC-4, FR-018-AC-5 | TC-056, TC-057, TC-058, TC-059, TC-060 | ✅ Covered |
+| FR-019 | FR-019-AC-1, FR-019-AC-2, FR-019-AC-3, FR-019-AC-4 | TC-061, TC-062, TC-063, TC-064 | ✅ Covered |
+| FR-020 | FR-020-AC-1, FR-020-AC-2, FR-020-AC-3 | TC-065, TC-066, TC-067 | ✅ Covered |
+| FR-021 | FR-021-AC-1, FR-021-AC-2, FR-021-AC-3, FR-021-AC-4 | TC-068, TC-069, TC-070, TC-071 | ✅ Covered |
+| FR-022 | FR-022-AC-1, FR-022-AC-2, FR-022-AC-3 | TC-072, TC-073, TC-074 | ✅ Covered |
+| FR-023 | FR-023-AC-1, FR-023-AC-2, FR-023-AC-3, FR-023-AC-4, FR-023-AC-5 | TC-075, TC-076, TC-077, TC-078, TC-079 | ✅ Covered |
+| FR-024 | FR-024-AC-1, FR-024-AC-2, FR-024-AC-3 | TC-080, TC-081, TC-082 | ✅ Covered |
+| FR-025 | FR-025-AC-1, FR-025-AC-2, FR-025-AC-3, FR-025-AC-4, FR-025-AC-5, FR-025-AC-6, FR-025-AC-7, FR-025-AC-8, FR-025-AC-9, FR-025-AC-10, FR-025-AC-11 | TC-083, TC-084, TC-085, TC-086, TC-087, TC-088, TC-089, TC-090, TC-091, TC-092, TC-093 | ✅ Covered |
+| FR-026 | FR-026-AC-1, FR-026-AC-2, FR-026-AC-3, FR-026-AC-4, FR-026-AC-5, FR-026-AC-6, FR-026-AC-7 | TC-094, TC-095, TC-096, TC-097, TC-098, TC-099, TC-100 | ✅ Covered |
+| FR-027 | FR-027-AC-1, FR-027-AC-2, FR-027-AC-3, FR-027-AC-4, FR-027-AC-5, FR-027-AC-6, FR-027-AC-7, FR-027-AC-8, FR-027-AC-9 | TC-101, TC-102, TC-103, TC-104, TC-105, TC-106, TC-107, TC-108, TC-109 | ✅ Covered |
+
+## Test Case Summary
+
+One test case per criterion carrying a tracking tag. `Type` is `Property` for the
+generated tests under `tests/props/` and `Unit` for the rest.
+
+| Test ID | Title | Type | Priority | Traces To | Status |
+| --- | --- | --- | --- | --- | --- |
+| TC-001 | FR-001-AC-1 covered by `cli.test.ts` | Unit | P1 | FR-001-AC-1 | ✅ |
+| TC-002 | FR-001-AC-2 covered by `cli.test.ts` | Unit | P1 | FR-001-AC-2 | ✅ |
+| TC-003 | FR-001-AC-3 covered by `cli.test.ts` | Unit | P1 | FR-001-AC-3 | ✅ |
+| TC-004 | FR-001-AC-4 covered by `cli.test.ts` | Unit | P1 | FR-001-AC-4 | ✅ |
+| TC-005 | FR-002-AC-1 covered by `cli.test.ts` | Unit | P1 | FR-002-AC-1 | ✅ |
+| TC-006 | FR-002-AC-2 covered by `cli.test.ts` | Unit | P1 | FR-002-AC-2 | ✅ |
+| TC-007 | FR-002-AC-3 covered by `cli-version-missing.test.ts` | Unit | P1 | FR-002-AC-3 | ✅ |
+| TC-008 | FR-002-AC-4 covered by `props/fr-002.prop.test.ts` | Property | P1 | FR-002-AC-4 | ✅ |
+| TC-009 | FR-003-AC-2 covered by `scripts.test.ts` | Unit | P1 | FR-003-AC-2 | ✅ |
+| TC-010 | FR-004-AC-1 covered by `cli.test.ts` | Unit | P1 | FR-004-AC-1 | ✅ |
+| TC-011 | FR-004-AC-2 covered by `cli.test.ts` | Unit | P1 | FR-004-AC-2 | ✅ |
+| TC-012 | FR-004-AC-3 covered by `cli.test.ts` | Unit | P1 | FR-004-AC-3 | ✅ |
+| TC-013 | FR-005-AC-1 covered by `cli-usage.test.ts`, `props/fr-005.prop.test.ts` | Property | P1 | FR-005-AC-1 | ✅ |
+| TC-014 | FR-005-AC-2 covered by `props/fr-005.prop.test.ts` | Property | P1 | FR-005-AC-2 | ✅ |
+| TC-015 | FR-005-AC-3 covered by `props/fr-005.prop.test.ts` | Property | P1 | FR-005-AC-3 | ✅ |
+| TC-016 | FR-006-AC-1 covered by `catalog.test.ts` | Unit | P1 | FR-006-AC-1 | ✅ |
+| TC-017 | FR-006-AC-2 covered by `catalog.test.ts` | Unit | P1 | FR-006-AC-2 | ✅ |
+| TC-018 | FR-006-AC-3 covered by `catalog.test.ts` | Unit | P1 | FR-006-AC-3 | ✅ |
+| TC-019 | FR-006-AC-4 covered by `props/fr-catalog.prop.test.ts` | Property | P1 | FR-006-AC-4 | ✅ |
+| TC-020 | FR-007-AC-1 covered by `catalog.test.ts` | Unit | P1 | FR-007-AC-1 | ✅ |
+| TC-021 | FR-007-AC-2 covered by `props/second-pass.prop.test.ts` | Property | P1 | FR-007-AC-2 | ✅ |
+| TC-022 | FR-007-AC-3 covered by `catalog.test.ts` | Unit | P1 | FR-007-AC-3 | ✅ |
+| TC-023 | FR-008-AC-1 covered by `props/fr-catalog.prop.test.ts` | Property | P1 | FR-008-AC-1 | ✅ |
+| TC-024 | FR-008-AC-2 covered by `props/fr-catalog.prop.test.ts` | Property | P1 | FR-008-AC-2 | ✅ |
+| TC-025 | FR-009-AC-1 covered by `catalog.test.ts` | Unit | P1 | FR-009-AC-1 | ✅ |
+| TC-026 | FR-009-AC-2 covered by `catalog.test.ts` | Unit | P1 | FR-009-AC-2 | ✅ |
+| TC-027 | FR-009-AC-3 covered by `catalog.test.ts` | Unit | P1 | FR-009-AC-3 | ✅ |
+| TC-028 | FR-009-AC-4 covered by `catalog.test.ts`, `index.test.ts`, `write.test.ts` | Unit | P1 | FR-009-AC-4 | ✅ |
+| TC-029 | FR-009-AC-5 covered by `catalog.test.ts`, `props/fr-catalog.prop.test.ts` | Property | P1 | FR-009-AC-5 | ✅ |
+| TC-030 | FR-010-AC-1 covered by `index.test.ts` | Unit | P1 | FR-010-AC-1 | ✅ |
+| TC-031 | FR-010-AC-2 covered by `props/fr-catalog.prop.test.ts` | Property | P1 | FR-010-AC-2 | ✅ |
+| TC-032 | FR-011-AC-1 covered by `cli.test.ts` | Unit | P1 | FR-011-AC-1 | ✅ |
+| TC-033 | FR-011-AC-2 covered by `cli.test.ts` | Unit | P1 | FR-011-AC-2 | ✅ |
+| TC-034 | FR-011-AC-3 covered by `cli.test.ts` | Unit | P1 | FR-011-AC-3 | ✅ |
+| TC-035 | FR-011-AC-4 covered by `cli.test.ts` | Unit | P1 | FR-011-AC-4 | ✅ |
+| TC-036 | FR-012-AC-1 covered by `props/fr-catalog.prop.test.ts` | Property | P1 | FR-012-AC-1 | ✅ |
+| TC-037 | FR-012-AC-2 covered by `props/fr-catalog.prop.test.ts` | Property | P1 | FR-012-AC-2 | ✅ |
+| TC-038 | FR-012-AC-3 covered by `cli.test.ts` | Unit | P1 | FR-012-AC-3 | ✅ |
+| TC-039 | FR-012-AC-4 covered by `cli.test.ts` | Unit | P1 | FR-012-AC-4 | ✅ |
+| TC-040 | FR-013-AC-1 covered by `write.test.ts` | Unit | P1 | FR-013-AC-1 | ✅ |
+| TC-041 | FR-013-AC-2 covered by `props/second-pass.prop.test.ts` | Property | P1 | FR-013-AC-2 | ✅ |
+| TC-042 | FR-013-AC-3 covered by `props/second-pass.prop.test.ts` | Property | P1 | FR-013-AC-3 | ✅ |
+| TC-043 | FR-013-AC-4 covered by `props/fr-write.prop.test.ts` | Property | P1 | FR-013-AC-4 | ✅ |
+| TC-044 | FR-014-AC-1 covered by `write.test.ts` | Unit | P1 | FR-014-AC-1 | ✅ |
+| TC-045 | FR-014-AC-2 covered by `write.test.ts` | Unit | P1 | FR-014-AC-2 | ✅ |
+| TC-046 | FR-014-AC-3 covered by `write.test.ts` | Unit | P1 | FR-014-AC-3 | ✅ |
+| TC-047 | FR-014-AC-4 covered by `write.test.ts` | Unit | P1 | FR-014-AC-4 | ✅ |
+| TC-048 | FR-015-AC-1 covered by `write.test.ts` | Unit | P1 | FR-015-AC-1 | ✅ |
+| TC-049 | FR-015-AC-2 covered by `props/fr-write.prop.test.ts` | Property | P1 | FR-015-AC-2 | ✅ |
+| TC-050 | FR-015-AC-3 covered by `props/fr-write.prop.test.ts` | Property | P1 | FR-015-AC-3 | ✅ |
+| TC-051 | FR-016-AC-1 covered by `index.test.ts` | Unit | P1 | FR-016-AC-1 | ✅ |
+| TC-052 | FR-016-AC-2 covered by `index.test.ts` | Unit | P1 | FR-016-AC-2 | ✅ |
+| TC-053 | FR-017-AC-1 covered by `index.test.ts` | Unit | P1 | FR-017-AC-1 | ✅ |
+| TC-054 | FR-017-AC-2 covered by `cli.test.ts` | Unit | P1 | FR-017-AC-2 | ✅ |
+| TC-055 | FR-017-AC-3 covered by `cli.test.ts` | Unit | P1 | FR-017-AC-3 | ✅ |
+| TC-056 | FR-018-AC-1 covered by `props/second-pass.prop.test.ts` | Property | P1 | FR-018-AC-1 | ✅ |
+| TC-057 | FR-018-AC-2 covered by `props/second-pass.prop.test.ts` | Property | P1 | FR-018-AC-2 | ✅ |
+| TC-058 | FR-018-AC-3 covered by `props/second-pass.prop.test.ts` | Property | P1 | FR-018-AC-3 | ✅ |
+| TC-059 | FR-018-AC-4 covered by `props/second-pass.prop.test.ts` | Property | P1 | FR-018-AC-4 | ✅ |
+| TC-060 | FR-018-AC-5 covered by `props/fr-018.prop.test.ts` | Property | P1 | FR-018-AC-5 | ✅ |
+| TC-061 | FR-019-AC-1 covered by `cli.test.ts` | Unit | P1 | FR-019-AC-1 | ✅ |
+| TC-062 | FR-019-AC-2 covered by `plugins.test.ts` | Unit | P1 | FR-019-AC-2 | ✅ |
+| TC-063 | FR-019-AC-3 covered by `cli.test.ts` | Unit | P1 | FR-019-AC-3 | ✅ |
+| TC-064 | FR-019-AC-4 covered by `cli.test.ts` | Unit | P1 | FR-019-AC-4 | ✅ |
+| TC-065 | FR-020-AC-1 covered by `flows.test.ts` | Unit | P1 | FR-020-AC-1 | ✅ |
+| TC-066 | FR-020-AC-2 covered by `flows.test.ts` | Unit | P1 | FR-020-AC-2 | ✅ |
+| TC-067 | FR-020-AC-3 covered by `flows-notfound.test.ts` | Unit | P1 | FR-020-AC-3 | ✅ |
+| TC-068 | FR-021-AC-1 covered by `flows.test.ts` | Unit | P1 | FR-021-AC-1 | ✅ |
+| TC-069 | FR-021-AC-2 covered by `flows.test.ts` | Unit | P1 | FR-021-AC-2 | ✅ |
+| TC-070 | FR-021-AC-3 covered by `flows.test.ts` | Unit | P1 | FR-021-AC-3 | ✅ |
+| TC-071 | FR-021-AC-4 covered by `flows.test.ts` | Unit | P1 | FR-021-AC-4 | ✅ |
+| TC-072 | FR-022-AC-1 covered by `update.test.ts` | Unit | P1 | FR-022-AC-1 | ✅ |
+| TC-073 | FR-022-AC-2 covered by `update.test.ts` | Unit | P1 | FR-022-AC-2 | ✅ |
+| TC-074 | FR-022-AC-3 covered by `update.test.ts` | Unit | P1 | FR-022-AC-3 | ✅ |
+| TC-075 | FR-023-AC-1 covered by `cli.test.ts` | Unit | P1 | FR-023-AC-1 | ✅ |
+| TC-076 | FR-023-AC-2 covered by `catalog.test.ts` | Unit | P1 | FR-023-AC-2 | ✅ |
+| TC-077 | FR-023-AC-3 covered by `flows.test.ts` | Unit | P1 | FR-023-AC-3 | ✅ |
+| TC-078 | FR-023-AC-4 covered by `cli.test.ts`, `org.test.ts` | Unit | P1 | FR-023-AC-4 | ✅ |
+| TC-079 | FR-023-AC-5 covered by `cli.test.ts` | Unit | P1 | FR-023-AC-5 | ✅ |
+| TC-080 | FR-024-AC-1 covered by `index.test.ts` | Unit | P1 | FR-024-AC-1 | ✅ |
+| TC-081 | FR-024-AC-2 covered by `index.test.ts` | Unit | P1 | FR-024-AC-2 | ✅ |
+| TC-082 | FR-024-AC-3 covered by `index.test.ts` | Unit | P1 | FR-024-AC-3 | ✅ |
+| TC-083 | FR-025-AC-1 covered by `org.test.ts` | Unit | P1 | FR-025-AC-1 | ✅ |
+| TC-084 | FR-025-AC-2 covered by `org.test.ts`, `props/second-pass.prop.test.ts` | Property | P1 | FR-025-AC-2 | ✅ |
+| TC-085 | FR-025-AC-3 covered by `org.test.ts`, `props/second-pass.prop.test.ts` | Property | P1 | FR-025-AC-3 | ✅ |
+| TC-086 | FR-025-AC-4 covered by `org.test.ts` | Unit | P1 | FR-025-AC-4 | ✅ |
+| TC-087 | FR-025-AC-5 covered by `org.test.ts`, `write.test.ts` | Unit | P1 | FR-025-AC-5 | ✅ |
+| TC-088 | FR-025-AC-6 covered by `cli.test.ts`, `write.test.ts` | Unit | P1 | FR-025-AC-6 | ✅ |
+| TC-089 | FR-025-AC-7 covered by `org-no-subprocess.test.ts` | Unit | P1 | FR-025-AC-7 | ✅ |
+| TC-090 | FR-025-AC-8 covered by `org.test.ts` | Unit | P1 | FR-025-AC-8 | ✅ |
+| TC-091 | FR-025-AC-9 covered by `org.test.ts`, `props/fr-025.prop.test.ts` | Property | P1 | FR-025-AC-9 | ✅ |
+| TC-092 | FR-025-AC-10 covered by `org.test.ts`, `props/fr-025.prop.test.ts` | Property | P1 | FR-025-AC-10 | ✅ |
+| TC-093 | FR-025-AC-11 covered by `org.test.ts`, `props/second-pass.prop.test.ts` | Property | P1 | FR-025-AC-11 | ✅ |
+| TC-094 | FR-026-AC-1 covered by `cli.test.ts` | Unit | P1 | FR-026-AC-1 | ✅ |
+| TC-095 | FR-026-AC-2 covered by `cli.test.ts` | Unit | P1 | FR-026-AC-2 | ✅ |
+| TC-096 | FR-026-AC-3 covered by `cli.test.ts` | Unit | P1 | FR-026-AC-3 | ✅ |
+| TC-097 | FR-026-AC-4 covered by `cli.test.ts` | Unit | P1 | FR-026-AC-4 | ✅ |
+| TC-098 | FR-026-AC-5 covered by `cli.test.ts` | Unit | P1 | FR-026-AC-5 | ✅ |
+| TC-099 | FR-026-AC-6 covered by `cli.test.ts` | Unit | P1 | FR-026-AC-6 | ✅ |
+| TC-100 | FR-026-AC-7 covered by `it-005-sync-discovery.test.ts` | Unit | P1 | FR-026-AC-7 | ✅ |
+| TC-101 | FR-027-AC-1 covered by `org.test.ts` | Unit | P1 | FR-027-AC-1 | ✅ |
+| TC-102 | FR-027-AC-2 covered by `org.test.ts` | Unit | P1 | FR-027-AC-2 | ✅ |
+| TC-103 | FR-027-AC-3 covered by `org.test.ts` | Unit | P1 | FR-027-AC-3 | ✅ |
+| TC-104 | FR-027-AC-4 covered by `org.test.ts` | Unit | P1 | FR-027-AC-4 | ✅ |
+| TC-105 | FR-027-AC-5 covered by `org.test.ts` | Unit | P1 | FR-027-AC-5 | ✅ |
+| TC-106 | FR-027-AC-6 covered by `cli.test.ts`, `config-schema.test.ts`, `props/second-pass.prop.test.ts` | Property | P1 | FR-027-AC-6 | ✅ |
+| TC-107 | FR-027-AC-7 covered by `config-schema.test.ts` | Unit | P1 | FR-027-AC-7 | ✅ |
+| TC-108 | FR-027-AC-8 covered by `cli.test.ts`, `config-schema.test.ts` | Unit | P1 | FR-027-AC-8 | ✅ |
+| TC-109 | FR-027-AC-9 covered by `org.test.ts` | Unit | P1 | FR-027-AC-9 | ✅ |
+
+## Stakeholder Requirement Coverage
+
+Every StR carries one validation criterion, verified by demonstration or
+inspection rather than by a unit test — so these rows carry no tracking tag by
+design (see "Tracking-tag coverage"). Added in response to SR-003 FND-002, which
+found the stakeholder layer had no rows here at all.
+
+| Stakeholder Req | Trace to US/FR         | Test/Validation                                                                                       | Coverage Status |
+| --------------- | ---------------------- | ----------------------------------------------------------------------------------------------------- | --------------- |
+| StR-001-VC-1    | US-009; FR-004, FR-023 | Demonstration — EV-001…EV-013 run the real CLI from an isolated `IX_HOME`; NFR-004 inspects the deps    | ✅ Covered      |
+| StR-002-VC-1    | US-003; FR-018, FR-019 | Demonstration — EV-003/EV-009/EV-010/EV-020 install from local, GitHub and subdir sources              | ✅ Covered      |
+| StR-003-VC-1    | US-004; FR-014, FR-015 | Demonstration — EV-001/EV-004/EV-008 author to the skeleton and validate with a real `quire`           | ✅ Covered      |
+| StR-004-VC-1    | US-005; FR-020, FR-021 | Inspection — EV-005/EV-013 start runs and inspect status; resume/advance/gate progression is untested  | ⚠️ Partial      |
+| StR-005-VC-1    | US-003; FR-016, FR-017 | Inspection — the default set is version-pinned; NFR-001 covers idempotent offline reconcile            | ✅ Covered      |
+| StR-006-VC-1    | US-009; FR-022         | Demonstration — `update.test.ts` covers delegation, `--check` and `--registry`                          | ✅ Covered      |
+
 ## Use Case Coverage
 
 | Use Case | Coverage   | Test / Evidence                                                                                                                                                      |

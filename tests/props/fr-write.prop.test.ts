@@ -6,7 +6,7 @@
  * list) and its `validation.command`, which is the only observable of the
  * unexported `shellQuote`.
  */
-import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
@@ -16,9 +16,29 @@ import { stringify as stringifyYaml } from "yaml";
 import { loadCatalog, type SpecCatalog } from "../../src/catalog";
 import { createAuthoringPack } from "../../src/write";
 
-function tmp(prefix: string): string {
-  return mkdtempSync(join(tmpdir(), `quoin-props-${prefix}-`));
+// Every scratch dir is tracked so the file can remove them all. fast-check runs
+// each property many times; an untracked mkdtemp per case leaks hundreds of
+// directories into /tmp per suite run.
+const scratch: string[] = [];
+/** The message of the error a thunk throws; fails the test if it throws nothing. */
+function messageOf(thunk: () => unknown): string {
+  try {
+    thunk();
+  } catch (error) {
+    return (error as Error).message;
+  }
+  throw new Error("expected the call to throw, but it returned");
 }
+
+function tmp(prefix: string): string {
+  const dir = mkdtempSync(join(tmpdir(), `quoin-props-${prefix}-`));
+  scratch.push(dir);
+  return dir;
+}
+
+afterAll(() => {
+  for (const dir of scratch) rmSync(dir, { recursive: true, force: true });
+});
 
 const moduleRoot = (() => {
   const dir = tmp("write");
@@ -57,12 +77,15 @@ describe("FR-013-AC-4 unknown type errors", () => {
     fc.assert(
       fc.property(fc.stringMatching(/^[a-z]{3,12}$/), (name) => {
         fc.pre(!declared.has(name));
-        let message = "";
-        try {
-          createAuthoringPack(catalog, repoDir, [name]);
-        } catch (error) {
-          message = (error as Error).message;
-        }
+        // Assert the throw explicitly: a silent try/catch would leave `message`
+        // empty and fail later with a confusing TypeError instead of "expected
+        // a throw".
+        expect(() => createAuthoringPack(catalog, repoDir, [name])).toThrow(
+          /Available types: /,
+        );
+        const message = messageOf(() =>
+          createAuthoringPack(catalog, repoDir, [name]),
+        );
         const listed = message.split("Available types: ")[1].split(", ");
         expect(listed).toEqual([...listed].sort((a, b) => a.localeCompare(b)));
       }),
@@ -73,12 +96,15 @@ describe("FR-013-AC-4 unknown type errors", () => {
     fc.assert(
       fc.property(fc.stringMatching(/^[a-z]{3,12}$/), (name) => {
         fc.pre(!declared.has(name));
-        let message = "";
-        try {
-          createAuthoringPack(catalog, repoDir, [name]);
-        } catch (error) {
-          message = (error as Error).message;
-        }
+        // Assert the throw explicitly: a silent try/catch would leave `message`
+        // empty and fail later with a confusing TypeError instead of "expected
+        // a throw".
+        expect(() => createAuthoringPack(catalog, repoDir, [name])).toThrow(
+          /Available types: /,
+        );
+        const message = messageOf(() =>
+          createAuthoringPack(catalog, repoDir, [name]),
+        );
         const listed = message.split("Available types: ")[1].split(", ");
         expect(new Set(listed)).toEqual(
           new Set(catalog.entries.map((e) => e.name)),

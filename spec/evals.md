@@ -74,6 +74,73 @@ coverage; the metric-capture requirement for this matrix is
 | Agent efficiency      | one authoring pack reused across multiple files, no repeated template fetch for same type                     |
 | Artifact completeness | request → required artifact set: new project, add US only, edit FR only, add US+FR, backport → FR artifacts   |
 
+## Functional Requirement Coverage
+
+This matrix covers **use cases**, not FRs — an eval measures whether an agent can
+carry a story out end to end, not whether a unit behaves. The archetype's column
+is named `Functional Req`; the ids below are the US ids each scenario drives.
+Per-FR coverage lives in TM-001 (`spec/matrix.md`).
+
+| Functional Req | Acceptance Criteria | Test Cases | Coverage Status |
+| --- | --- | --- | --- |
+| US-001 | US-001-AC-1 | TC-EV-001, TC-EV-006, TC-EV-014, TC-EV-015, TC-EV-016, TC-EV-017, TC-EV-018, TC-EV-021, TC-EV-022, TC-EV-024, TC-EV-025, TC-EV-040, TC-EV-042 | ✅ Covered |
+| US-002 | US-002-AC-1 | TC-EV-002, TC-EV-007, TC-EV-011, TC-EV-014, TC-EV-017, TC-EV-023 | ✅ Covered |
+| US-003 | US-003-AC-1 | TC-EV-003, TC-EV-009, TC-EV-010, TC-EV-020 | ✅ Covered |
+| US-004 | US-004-AC-1 | TC-EV-004, TC-EV-006, TC-EV-008, TC-EV-012, TC-EV-015, TC-EV-016, TC-EV-041, TC-EV-043 | ✅ Covered |
+| US-005 | US-005-AC-1 | TC-EV-005, TC-EV-013, TC-EV-026, TC-EV-030, TC-EV-031, TC-EV-032, TC-EV-033, TC-EV-052 | ✅ Covered |
+| US-008 | US-008-AC-1 | TC-EV-027, TC-EV-028, TC-EV-029 | ✅ Covered |
+| US-011 | US-011-AC-1 | TC-EV-050, TC-EV-051, TC-EV-052, TC-EV-053 | ✅ Covered |
+
+## Test Case Summary
+
+The `EV-` scenario ids are the identifiers used everywhere else in this repo and
+in `evals/scenarios/index.mjs`. The archetype requires a `TC-`/`IT-` prefixed id,
+so each row is `TC-<EV-id>` — the same scenario, addressable both ways, rather
+than a second numbering to keep in sync.
+
+| Test ID | Title | Type | Priority | Traces To | Status |
+| --- | --- | --- | --- | --- | --- |
+| TC-EV-001 | Create an FR plus `domain` and `entity` objects for a small feature | E2E | P1 | US-001 | ✅ |
+| TC-EV-002 | Edit an existing FR after discovering its authoring contract | E2E | P1 | US-002 | ✅ |
+| TC-EV-003 | Install a local fixture plugin and author one plugin-defined object | E2E | P1 | US-003 | ✅ |
+| TC-EV-004 | Validate a mixed changed set of artifact and object files | E2E | P1 | US-004 | ✅ |
+| TC-EV-005 | Start a review workflow for a spec directory and inspect status | E2E | P1 | US-005 | ✅ |
+| TC-EV-006 | Create multiple artifacts that share object templates | E2E | P1 | US-001 | ✅ |
+| TC-EV-007 | Use lowercase type names in an authoring request | E2E | P1 | US-002 | ✅ |
+| TC-EV-008 | Repair a spec file after Quire reports validation diagnostics | E2E | P1 | US-004 | ✅ |
+| TC-EV-009 | Install, list, remove, and reinstall a local plugin fixture | E2E | P1 | US-003 | ✅ |
+| TC-EV-010 | Install a GitHub/package plugin fixture and request one of its types | E2E | P1 | US-003 | ✅ |
+| TC-EV-011 | Request an unknown type in an authoring pack | E2E | P1 | US-002 | ✅ |
+| TC-EV-012 | Validate multiple globs for a changed-file subset | E2E | P1 | US-004 | ✅ |
+| TC-EV-013 | Start matrix and to-plan workflows after accepted requirements | E2E | P1 | US-005 | ✅ |
+| TC-EV-014 | Author a complete spec set from a settled conversation | E2E | P1 | US-001 | ✅ |
+| TC-EV-015 | Author with sibling development modules present | E2E | P1 | US-001 | ✅ |
+| TC-EV-016 | Author into two sibling repos in one session | E2E | P1 | US-001 | ✅ |
+| TC-EV-017 | Author a larger feature spec set with cross-references | E2E | P1 | US-001 | ✅ |
+| TC-EV-018 | Author objects drawn from three different object modules | E2E | P1 | US-001 | ✅ |
+| TC-EV-020 | Install a module from GitHub via a subdir source and author its type | E2E | P1 | US-003 | ✅ |
+| TC-EV-021 | Start a new spec from a settled idea (greenfield) | E2E | P1 | US-001 | ✅ |
+| TC-EV-022 | Add one user story to an existing spec | E2E | P1 | US-001 | ✅ |
+| TC-EV-023 | Edit an existing FR in place | E2E | P1 | US-002 | ✅ |
+| TC-EV-024 | Add a user story **and** the FR that implements it | E2E | P1 | US-001 | ✅ |
+| TC-EV-025 | Backport a spec from a small source file | E2E | P1 | US-001 | ✅ |
+| TC-EV-026 | Run a subset spec-review producing per-analysis SpecReview docs | E2E | P1 | US-005 | ✅ |
+| TC-EV-027 | Create an implementation plan as a multi-plan bundle via spec-to-plan | E2E | P1 | US-008 | ✅ |
+| TC-EV-028 | Start a second, independent plan in a project that already has one | E2E | P1 | US-008 | ✅ |
+| TC-EV-029 | Regenerate an existing plan after a spec change (update in place) | E2E | P1 | US-008 | ✅ |
+| TC-EV-030 | Gap-analysis SAD (combined) → FAIL verdict | E2E | P1 | US-005 | ✅ |
+| TC-EV-031 | Gap-analysis HAPPY → PASS verdict | E2E | P1 | US-005 | ✅ |
+| TC-EV-032 | Gap-analysis SAD (medium-only) → CONDITIONAL verdict | E2E | P1 | US-005 | ✅ |
+| TC-EV-033 | Gap-analysis OPTIONAL semantic review catches a hollow test | E2E | P1 | US-005 | ✅ |
+| TC-EV-040 | Author an FR whose requirement statements are EARS-clean from the start | E2E | P1 | US-001 | ✅ |
+| TC-EV-041 | Repair a seeded FR that trips the EARS requirement-grammar check | E2E | P1 | US-004 | ✅ |
+| TC-EV-042 | Author an FR using a project term + define it in a domain's Ubiquitous Language | E2E | P1 | US-001 | ✅ |
+| TC-EV-043 | Repair a flagged project term by DEFINING it (not rewording) | E2E | P1 | US-004 | ✅ |
+| TC-EV-050 | Generate property tests from settled criteria | E2E | P1 | US-011 | ✅ |
+| TC-EV-051 | Queue a candidate criterion, then accept it | E2E | P1 | US-011 | ✅ |
+| TC-EV-052 | Reconcile generated tests through gap-analysis | E2E | P1 | US-011 | ✅ |
+| TC-EV-053 | Refuse to ground, and report without a verdict | E2E | P1 | US-011 | ✅ |
+
 ## Scenarios
 
 | Eval   | Use Case       | Prompt                                                                           | Expected Outcome                                                                                                                                                                                                                                                                                                                                                                                                                             | Required Measurements                                     |

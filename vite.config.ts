@@ -47,6 +47,9 @@ export default defineConfig(({ command }) => ({
       entry: {
         index: "src/index.ts",
         cli: "src/cli.ts",
+        // oclif resolves `oclif.hooks` to a built module the same way it
+        // resolves commands, so the hook needs its own entry too.
+        "hooks/command-not-found": "src/hooks/command-not-found.ts",
         // oclif discovers commands as individual modules under dist/commands;
         // each command file is therefore its own build entry (mirrors the
         // canonical ix-cli build).

@@ -9,7 +9,7 @@
  * uses, so no case touches the filesystem. A generator that wrote a module tree
  * per case would make the suite filesystem-bound for no extra coverage.
  */
-import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -18,9 +18,19 @@ import { stringify as stringifyYaml } from "yaml";
 
 import { findCatalogEntry, loadCatalog } from "../../src/catalog";
 
+// Every scratch dir is tracked so the file can remove them all. fast-check runs
+// each property many times; an untracked mkdtemp per case leaks hundreds of
+// directories into /tmp per suite run.
+const scratch: string[] = [];
 function tmp(prefix: string): string {
-  return mkdtempSync(join(tmpdir(), `quoin-props-${prefix}-`));
+  const dir = mkdtempSync(join(tmpdir(), `quoin-props-${prefix}-`));
+  scratch.push(dir);
+  return dir;
 }
+
+afterAll(() => {
+  for (const dir of scratch) rmSync(dir, { recursive: true, force: true });
+});
 
 function writeModule(
   dir: string,

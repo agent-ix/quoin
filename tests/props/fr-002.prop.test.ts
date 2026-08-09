@@ -5,14 +5,20 @@
  * total function, so the property is total too.
  */
 import { readFileSync } from "node:fs";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 
 import fc from "fast-check";
 
 import { resolveVersion } from "../../src/version";
 
+// Resolve the package root the way `src/version.ts` does — from the module's own
+// location, not from `process.cwd()`. Under a different working directory the two
+// would read different files and the property would silently compare the wrong
+// version instead of failing.
+const packageRoot = dirname(dirname(dirname(fileURLToPath(import.meta.url))));
 const packageJsonVersion = (
-  JSON.parse(readFileSync(join(process.cwd(), "package.json"), "utf8")) as {
+  JSON.parse(readFileSync(join(packageRoot, "package.json"), "utf8")) as {
     version: string;
   }
 ).version;
