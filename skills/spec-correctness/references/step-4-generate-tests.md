@@ -39,10 +39,10 @@ Plus one provenance line, ignored by the reconciliation grep and read by this sk
 re-runs:
 
 ```
-spec-correctness: row=FR-027-AC-1 property=universal extraction=extractable origin=regex review=none
+spec-correctness: row=FR-027-AC-1 property=universal extraction=extractable origin=regex
 ```
 
-`origin ∈ {regex, regex-candidate, llm-second-pass}`. `review ∈ {none, required}`.
+`origin ∈ {regex, regex-candidate, llm-second-pass}`.
 For `origin=llm-second-pass`, add `confidence=<high|medium|low>`.
 
 Hard rules:
@@ -65,11 +65,14 @@ The provenance line is the key. On a re-run:
 
 ## File placement
 
-| Harness | Unattended | Queued |
-| --- | --- | --- |
-| Rust | `tests/props_fr_NNN.rs` | `tests/props_review_fr_NNN.rs` |
-| TypeScript | `tests/props/fr-NNN.prop.test.ts` | `tests/props/_review/fr-NNN.prop.test.ts` |
-| Python | `tests/props/test_fr_NNN.py` | `tests/props/_review/test_fr_NNN.py` |
+| Harness | Path |
+| --- | --- |
+| Rust | `tests/props_fr_NNN.rs` |
+| TypeScript | `tests/props/fr-NNN.prop.test.ts` |
+| Python | `tests/props/test_fr_NNN.py` |
+
+One placement, because there is one kind of emitted test. A criterion that cannot be
+grounded gets **no file at all** — it gets a finding in the review artifact (step 6).
 
 **Rust paths are flat on purpose.** Cargo auto-discovers integration tests only at
 `tests/*.rs`; a file under `tests/props/` is treated as a helper module and is never
@@ -80,25 +83,21 @@ prefix keep the grouping without the manifest edit.
 For a Rust repo that keeps `#[cfg(test)]` unit tests inline and no `tests/` dir at all,
 still write `tests/props_fr_NNN.rs` — an integration test only sees the public API, which is
 the right boundary for a criterion-derived property anyway. If the symbol under test is
-private, that is a grounding result, not a placement problem: record `symbol-not-public` and
-queue it.
+private, that is a grounding result, not a placement problem: write no test and record
+`symbol-not-public` as a finding.
 
 One file per FR, one test per `row_id`. Shared generators go in a sibling `arbitraries`
 module rather than being duplicated per test.
 
-## Inert markers for queued tests
+## Every emitted test runs
 
-A queued test must not be able to turn a matrix row green:
+No skip marker, no `#[ignore]`, no `_review/` directory. A disabled test checked into a
+repo is a dead test, and the review it was waiting for already happens in the pull request
+the test arrives in.
 
-| Harness | Marker |
-| --- | --- |
-| Rust | `#[ignore = "spec-correctness review pending"]` |
-| TypeScript | `it.skip(…)` / `describe.skip(…)` |
-| Python | `@pytest.mark.skip(reason="spec-correctness review pending")` |
-
-The tag stays byte-identical whether the test is queued or accepted — so
-`gap-analysis` reports the same identifier before and after, and acceptance is a
-one-line diff plus a move.
+Whether a matrix row reads `✅` is decided by a real run and set by `spec-matrix` — not
+pre-empted here with a marker. A criterion that is not ready to be tested is not a disabled
+test; it is a finding (step 6).
 
 ## Generator hygiene
 
@@ -108,11 +107,11 @@ one-line diff plus a move.
 - Seed generators so both branches of a partitioned domain are reachable — check the
   sibling ACs from step 2.
 - Do not set a fixed RNG seed. Do not raise the case count above the harness default
-  without a reason recorded in the queue.
+  without a reason recorded as a finding.
 
 ## After writing
 
-Run the suite. A failing **unattended** test is a grounding bug in step 2, not a spec bug
-and not a code bug — fix the grounding or move the test to the queue with a reason. Never
-weaken an assertion to make a generated test pass, and never edit the spec to match a
-generated test.
+Run the suite. A failing generated test is a grounding bug in step 2, not a spec bug
+and not a code bug — fix the grounding, or delete the test and record the reason as a
+finding. Never weaken an assertion to make a generated test pass, never disable it, and
+never edit the spec to match a generated test.

@@ -1,7 +1,6 @@
 # TypeScript / fast-check templates
 
-File: `tests/props/fr-NNN.prop.test.ts` (queued: `tests/props/_review/…`).
-Inert marker: `it.skip` / `describe.skip`.
+File: `tests/props/fr-NNN.prop.test.ts`.
 Runner: whichever the repo already uses — read `vitest.config.*`, `jest.config.*`, or
 `package.json#scripts.test`. The imports below assume vitest; swap for `@jest/globals`
 where the repo uses jest.
@@ -140,19 +139,24 @@ describe("FR-050-AC-1 concurrent writes", () => {
 `fc.scheduler()` is deterministic and shrinkable — never use real timers or `Promise.all`
 races for a concurrency property.
 
-## Queued form
+## A `candidate` record
+
+Same file, same path, and it **runs**. `extraction: candidate` means the metamorphic label
+was not corroborated structurally — something for a reviewer to read, not a reason to
+disable a test:
 
 ```ts
 describe("FR-018-AC-3 source maps to one root", () => {
   /**
    * Trace: FR-018-AC-3 — a plugin source maps to exactly one resolved root.
-   * spec-correctness: row=FR-018-AC-3 property=invariant extraction=candidate origin=regex-candidate review=required
+   * spec-correctness: row=FR-018-AC-3 property=invariant extraction=candidate origin=regex-candidate
    */
-  it.skip("spec-correctness review pending", () => { … });
+  it("holds for any plugin source", () => { … });
 });
 ```
 
-Acceptance turns `it.skip` into `it` and moves the file. The tag carriers are untouched.
+What marks it for review is a `medium` finding in the review artifact (step 6), not an
+`it.skip` in the tree.
 
 ## Notes
 

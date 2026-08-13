@@ -100,11 +100,11 @@ witness: *"A repeated module root is loaded only once"* quantifies; *"A bareword
 
 The engine cannot tell these apart without giving up determinism, and it is not supposed
 to — that is what this step is for. Ground the domain: if it has one element, the criterion
-is a witness. Route it to the queue as a `Unit` test (step 5's *witness* outcome), not as an
+is a witness. Emit it as a `Unit` test (step 5's *witness* outcome) and record a finding, not as an
 unattended property.
 
 This is a **routing** decision, not a complaint about the criterion, and never a reason to
-suggest rewording. Record it as `singleton-domain` in the queue.
+suggest rewording. Record it as a `singleton-domain` finding.
 
 ### `label-from-mention`
 

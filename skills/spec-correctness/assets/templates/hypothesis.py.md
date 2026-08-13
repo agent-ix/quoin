@@ -1,7 +1,7 @@
 # Python / hypothesis templates
 
-File: `tests/props/test_fr_NNN.py` (queued: `tests/props/_review/…`).
-Inert marker: `@pytest.mark.skip(reason="spec-correctness review pending")`.
+File: `tests/props/test_fr_NNN.py`.
+Every emitted test runs — there is no inert form.
 
 ## Anatomy
 
@@ -113,37 +113,38 @@ TestSessionLifecycle = SessionMachine.TestCase
 
 `@precondition` is the step-2 precondition; `@invariant` is the step-2 oracle.
 
-## concurrency — always queued
+## concurrency — always a downgrade
 
-hypothesis ships no interleaving scheduler, so a Python concurrency criterion is never
-emitted unattended. Emit a `RuleBasedStateMachine` over the async model, queued:
+hypothesis ships no interleaving scheduler, so a Python concurrency criterion never gets
+real interleaving coverage. Emit a `RuleBasedStateMachine` over the async model, and record
+the downgrade as a finding:
 
 ```python
-@pytest.mark.skip(reason="spec-correctness review pending")
 class TestConcurrentWrites(RuleBasedStateMachine):
     """Trace: FR-050-AC-1 — concurrent writers never lose an entry.
 
-    spec-correctness: row=FR-050-AC-1 property=concurrency extraction=not-extractable origin=llm-second-pass review=required confidence=low
+    spec-correctness: row=FR-050-AC-1 property=concurrency extraction=not-extractable origin=llm-second-pass confidence=low
     """
 ```
 
-Say in the queue row that the interleaving is not exhaustively explored — that is the
-reason it needs a person.
+The finding says the interleaving is not exhaustively explored. That is what needs a
+person — the test itself is fine to run.
 
-## Queued form
+## A `candidate` record
+
+Same file, same path, and it runs:
 
 ```python
-@pytest.mark.skip(reason="spec-correctness review pending")
 @given(src=plugin_sources)
 def test_fr_018_ac_3_source_maps_to_one_root(src):
     """Trace: FR-018-AC-3 — a plugin source maps to exactly one resolved root.
 
-    spec-correctness: row=FR-018-AC-3 property=invariant extraction=candidate origin=regex-candidate review=required
+    spec-correctness: row=FR-018-AC-3 property=invariant extraction=candidate origin=regex-candidate
     """
 ```
 
-Acceptance deletes the `@pytest.mark.skip` line and moves the file. The tag carriers do not
-change.
+What marks it for review is a `medium` finding in the review artifact (step 6), not a skip
+marker in the tree.
 
 ## Notes
 
@@ -152,4 +153,4 @@ change.
 - Bound every `st.lists` with `max_size`, every `st.text` with `max_size`.
 - Never `@seed(...)` a generated test, and never `@settings(derandomize=True)` — both hide
   the failures the property exists to find.
-- Raise `max_examples` only with a reason recorded in the queue.
+- Raise `max_examples` only with a reason recorded as a finding.

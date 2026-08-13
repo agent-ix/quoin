@@ -8,7 +8,7 @@
  *
  * `numRuns` is reduced from the fast-check default of 100: each case dispatches
  * through the real oclif runner, and the negative domain is uniform enough that
- * 30 cases exercise it. Recorded in tests/props/QUEUE.md.
+ * 30 cases exercise it.
  */
 import { execSync } from "node:child_process";
 import { existsSync } from "node:fs";

@@ -1,7 +1,7 @@
 # Rust / proptest templates
 
-File: `tests/props_fr_NNN.rs` (queued: `tests/props_review_fr_NNN.rs`).
-Inert marker: `#[ignore = "spec-correctness review pending"]`.
+File: `tests/props_fr_NNN.rs`.
+Every emitted test runs — there is no inert form.
 
 Paths are **flat**: cargo auto-discovers integration tests only at `tests/*.rs`. A file
 under `tests/props/` compiles as a helper module and never runs. See step 4.
@@ -115,20 +115,23 @@ fn fr_050_ac_1_concurrent_writes_linearizable() {
 
 Keep the loom model tiny — two threads, two ops. Interleavings explode.
 
-## Queued form
+## A `candidate` record
+
+Same file, same path, and it **runs** — `extraction: candidate` means the metamorphic label
+was not corroborated structurally, which is something for a reviewer to read, not a reason
+to disable a test:
 
 ```rust
 proptest! {
     /// Trace: FR-018-AC-3 — a plugin source maps to exactly one resolved root.
-    /// spec-correctness: row=FR-018-AC-3 property=invariant extraction=candidate origin=regex-candidate review=required
+    /// spec-correctness: row=FR-018-AC-3 property=invariant extraction=candidate origin=regex-candidate
     #[test]
-    #[ignore = "spec-correctness review pending"]
     fn fr_018_ac_3_source_maps_to_one_root(src in plugin_source()) { … }
 }
 ```
 
-Acceptance deletes the `#[ignore]` line and moves the file. The two tag carriers do not
-change.
+What marks it for review is a `medium` finding in the review artifact (step 6), not an
+`#[ignore]` in the tree.
 
 ## Notes
 
@@ -140,5 +143,5 @@ change.
 - Bound every `prop::collection::vec` — `0..32` unless the FR states a bound.
 - Prefer building a negative domain directly over `prop_filter` when the filter rejects
   most values; proptest gives up after too many rejections.
-- Do not set `ProptestConfig { cases, .. }` above the default without recording why in the
-  queue.
+- Do not set `ProptestConfig { cases, .. }` above the default without recording why as a
+  finding.

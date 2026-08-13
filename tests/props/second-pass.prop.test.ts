@@ -9,7 +9,8 @@
  * ACCEPTED 2026-08-08: each oracle was checked against its cited source line and
  * the suite runs green. The row_id tags are byte-identical to the queued form —
  * only the skip marker and `review=` changed.
- * See tests/props/QUEUE.md for the acceptance procedure.
+ * Emitted by the review-gated second pass; each test's provenance line carries
+ * `origin=llm-second-pass` and its own confidence.
  */
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";

@@ -3,9 +3,8 @@ name: spec-correctness
 description: Turn classified acceptance criteria into runnable property tests. Consumes
   `quire properties --json` per-criterion records, grounds each criterion's domain,
   precondition and oracle in the spec and the code, and emits property tests in the
-  repo's own harness (proptest / fast-check / hypothesis) keyed on `row_id`. Settled
-  criteria land unattended; candidates and the LLM second pass over example/unclassified
-  criteria land inert in a review queue.
+  repo's own harness (proptest / fast-check / hypothesis) keyed on `row_id`. Emits a
+  validated SpecReview recording every criterion it could not ground and why.
 ---
 
 # Spec Correctness
@@ -68,8 +67,8 @@ whether existing tests are good (`gap-analysis`).
    with the `row_id` tracking tags and the provenance line.
 5. **[Second pass](references/step-5-second-pass.md)**: the LLM pass over `example`,
    `unclassified`, and anything step 2 refused to ground.
-6. **[Review queue](references/step-6-review-queue.md)**: the queue file, the inert
-   markers, and the acceptance procedure.
+6. **[Review artifact](references/step-6-review-artifact.md)**: the `SpecReview` at
+   `reviews/YY-MM-DD-<slug>.md` recording what could not be grounded, and why.
 7. **[Report and handoff](references/step-7-report-and-handoff.md)**: the run report, the
    `Property` rows for `spec-matrix`, and the reconciliation check against `gap-analysis`.
 
@@ -80,14 +79,13 @@ when the residue is large (say, more than 30 records).
 
 | Path | What |
 | --- | --- |
-| `tests/props/<per-harness naming>` | Unattended property tests (`extraction: extractable`, grounded) |
-| `tests/props/_review/…` (Rust: `tests/props_review_fr_NNN.rs`) | Queued tests — inert until accepted |
-| `tests/props/QUEUE.md` | The review queue and the run report |
+| `tests/props/<per-harness naming>` | Property tests, all of them runnable |
+| `reviews/YY-MM-DD-<slug>.md` | A `SpecReview` (`analysis: spec-correctness`) recording what could not be grounded |
 
-> **Why the queue is not a `SpecReview`.** `SpecReview.analysis` is a closed enum in
-> `spec-artifacts-process` with no `spec-correctness` value, so a review file under
-> `reviews/` would fail `quire validate`. The queue lives in the test tree, outside every
-> spec validation glob. Adding the enum value upstream is a follow-up, not a prerequisite.
+Nothing else is written to the tree (FR-028-CON-1). No skipped tests, no `_review/`
+directory, no ad-hoc report file. A generated test arrives in a pull request, and that is
+what puts it under review; the artifact carries the one thing a PR does not — why a
+criterion was left ungrounded.
 
 ## Two facts that will bite if you assume otherwise
 

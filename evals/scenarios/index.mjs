@@ -401,16 +401,33 @@ const CORRECTNESS_AGENT_RAN = [
 const correctnessPrompt =
   "Use the spec-correctness skill on this repository. Classify the acceptance " +
   "criteria in spec/ with `quire properties`, ground each one against src/, and " +
-  "emit what it settles. Write the run report and everything that needs review " +
-  "to tests/props/QUEUE.md.";
+  "emit what it settles. Record everything you could not ground in the review " +
+  "artifact the skill specifies.";
 
 function specCorrectnessScenarios() {
+  // The review artifact is a `SpecReview` at reviews/, exactly as EV-026 and
+  // EV-030 assert for gap-analysis — not an ad-hoc file in the test tree. The
+  // earlier version of these scenarios required `tests/props/QUEUE.md`, so the
+  // suite would have failed an agent that behaved correctly (agent-ix/quoin#63).
+  const REVIEW_ARTIFACT = {
+    artifacts: { require: { SpecReview: { min: 1, dir: "reviews" } } },
+    validate: { globs: ["reviews/*.md"], shouldPass: true },
+  };
+  // Nothing the skill writes may be an invented format (FR-028-CON-1), and no
+  // emitted test may be disabled in the tree (FR-028-AC-6).
+  const NO_INVENTED_OUTPUT = [
+    "tests/props/QUEUE.md",
+    "tests/props/_review/*",
+    "tests/props/*.queue.md",
+  ];
+
   return [
     {
-      // EV-050 — the unattended lane. fast-check is present, so the criteria the
+      // EV-050 — the settled lane. fast-check is present, so the criteria the
       // classifier settled as `extractable` become real property tests under
       // tests/props/, each tagged with its row_id. The `example` criterion
-      // (AC-4, a single witness) must NOT produce an unattended test.
+      // (AC-4, a single witness) must NOT become a property test; it is a
+      // finding in the review artifact.
       id: "EV-050",
       useCase: "US-011",
       setup(ctx) {
@@ -419,9 +436,11 @@ function specCorrectnessScenarios() {
       prompt: correctnessPrompt,
       expect: {
         agentRan: CORRECTNESS_AGENT_RAN,
-        files: ["tests/props/*.test.*", "tests/props/QUEUE.md"],
+        files: ["tests/props/*.test.*", "reviews/*.md"],
+        absentFiles: NO_INVENTED_OUTPUT,
+        ...REVIEW_ARTIFACT,
         // Every emitted tag names a row_id that exists, in a form gap-analysis
-        // greps for. AC-4 is the witness: it may be queued, never unattended.
+        // greps for.
         fileContains: [
           {
             glob: "tests/props/*.test.*",
@@ -429,44 +448,49 @@ function specCorrectnessScenarios() {
             excludes: ["FR-001-AC-9", "FR-002-AC-"],
           },
           {
-            glob: "tests/props/QUEUE.md",
+            glob: "reviews/*.md",
             includes: ["FR-001-AC-4"],
           },
         ],
       },
     },
     {
-      // EV-051 — the review-gated lane. Whatever the skill does not settle
-      // unattended lands inert: under tests/props/_review/ and carrying the
-      // harness skip marker, so an unreviewed test cannot turn a matrix row
-      // green. The tag is identical whether queued or accepted.
+      // EV-051 — the review record. What the skill cannot settle unattended is
+      // a *finding*, not a disabled test: the artifact validates as a
+      // SpecReview, and nothing in the test tree is skipped or ignored. A
+      // generated test is reviewed in the pull request it arrives in.
       id: "EV-051",
       useCase: "US-011",
       setup(ctx) {
         seedCorrectness(ctx, { fastCheck: true });
       },
-      prompt:
-        correctnessPrompt +
-        " Anything you cannot settle unattended must go to the review queue " +
-        "under tests/props/_review/, inert (skipped) until a person accepts it.",
+      prompt: correctnessPrompt,
       expect: {
         agentRan: CORRECTNESS_AGENT_RAN,
-        files: ["tests/props/QUEUE.md"],
+        files: ["reviews/*.md"],
+        absentFiles: NO_INVENTED_OUTPUT,
+        ...REVIEW_ARTIFACT,
         fileContains: [
           {
-            glob: "tests/props/QUEUE.md",
-            // The queue names the review gate and the acceptance procedure.
-            includes: ["review", "FR-001-AC-"],
-            // A queue that declares a verdict has broken CON-1.
+            glob: "reviews/*.md",
+            // The artifact declares its analysis and names the criteria.
+            includes: ["analysis: spec-correctness", "FND-001", "FR-001-AC-"],
+            // A review that declares a verdict on the spec has broken CON-1.
             excludes: ["verdict", "reword"],
+          },
+          {
+            // FR-028-AC-6: an emitted test runs. No inert markers anywhere.
+            glob: "tests/props/*.test.*",
+            excludes: ["it.skip", "describe.skip", "test.skip"],
           },
         ],
       },
     },
     {
       // EV-052 — the handoff. After spec-correctness emits, gap-analysis must
-      // reconcile every emitted row_id by its own grep: no unbacked row for a
-      // generated test, and no ✅ row backed by a skipped queued one.
+      // reconcile every emitted row_id: no unbacked row for a generated test.
+      // Two SpecReviews now exist (spec-correctness + gap-analysis), which is
+      // the one-doc-per-analysis model working as intended.
       id: "EV-052",
       useCase: "US-011",
       setup(ctx) {
@@ -482,18 +506,20 @@ function specCorrectnessScenarios() {
           ...CORRECTNESS_AGENT_RAN,
           { pattern: "quire\\s+validate\\b", desc: "validate with quire" },
         ],
-        files: ["tests/props/QUEUE.md", "reviews/*.md"],
-        artifacts: { require: { SpecReview: { min: 1, dir: "reviews" } } },
+        files: ["reviews/*.md"],
+        absentFiles: NO_INVENTED_OUTPUT,
+        artifacts: { require: { SpecReview: { min: 2, dir: "reviews" } } },
         validate: { globs: ["reviews/*.md"], shouldPass: true },
         fileContains: [{ glob: "reviews/*.md", includes: ["FR-001-AC-"] }],
       },
     },
     {
-      // EV-053 — the refusals and CON-1. Nothing here is groundable: one
-      // criterion's oracle is adjectival ("actionable and clear"), one names a
-      // symbol absent from src/, and the manifest declares no generator library.
-      // The skill must write no test file, install nothing, record each reason,
-      // and report without a verdict.
+      // EV-053 — the refusals, CON-1, and FR-028-CON-1. Nothing here is
+      // groundable: one criterion's oracle is adjectival ("actionable and
+      // clear"), one names a symbol absent from src/, and the manifest declares
+      // no generator library. The skill must write no test file, install
+      // nothing, record each reason as a finding — and invent no output format
+      // to record them in.
       id: "EV-053",
       useCase: "US-011",
       setup(ctx) {
@@ -502,15 +528,26 @@ function specCorrectnessScenarios() {
       prompt: correctnessPrompt,
       expect: {
         agentRan: CORRECTNESS_AGENT_RAN,
-        files: ["tests/props/QUEUE.md"],
+        files: ["reviews/*.md"],
+        ...REVIEW_ARTIFACT,
         // No test file: a file importing an absent generator library would break
-        // collection even when every test in it is skipped.
-        absentFiles: ["tests/props/*.test.*", "tests/props/_review/*.test.*"],
+        // collection before a single test runs. And no invented report format —
+        // a closed enum with no fitting value is a ticket, not a new filename.
+        absentFiles: [
+          "tests/props/*.test.*",
+          "tests/props/*.py",
+          ...NO_INVENTED_OUTPUT,
+        ],
         fileContains: [
           {
-            glob: "tests/props/QUEUE.md",
+            glob: "reviews/*.md",
             // Both refusal reasons and the dependency remedy are recorded.
-            includes: ["fast-check", "FR-001-AC-1", "FR-001-AC-2"],
+            includes: [
+              "analysis: spec-correctness",
+              "fast-check",
+              "FR-001-AC-1",
+              "FR-001-AC-2",
+            ],
             // CON-1: no verdict, no grade, no rewording suggestion.
             excludes: ["verdict", "reword", "rewrite the criteri"],
           },
