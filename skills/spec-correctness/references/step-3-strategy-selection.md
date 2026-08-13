@@ -13,7 +13,7 @@ in the sentence.
 
 | | `extractable` | `candidate` | `not-extractable` |
 | --- | --- | --- | --- |
-| One of the 8 generatable properties | emit **unattended** | emit → **queue** | grounded → queue; refused → step 5 |
+| One of the 8 generatable properties | emit, no finding | emit **+ a finding** | grounded → emit + finding; refused → step 5 |
 | `example` / `unclassified` | n/a | n/a | **step 5 only** |
 
 **Grounding outranks the table.** The lanes above assume step 2 grounded the criterion as
@@ -22,14 +22,15 @@ that instead — a record can be `extraction: extractable` and still not be a pr
 
 | step-2 reason | lane |
 | --- | --- |
-| `singleton-domain` | **queue as a `Unit` witness**, never unattended |
+| `singleton-domain` | emit as a `Unit` **witness** and record a finding — it is not property coverage |
 | `label-from-mention` | re-derive the strategy from the grounded oracle; lane unchanged |
 | `criterion-describes-its-test` | find the existing test; record *already covered*, emit nothing |
 | `static-or-demonstration` | refuse; no matrix row |
-| any other refusal | queue with the reason, or step 5 |
+| any other refusal | no test; the reason becomes a finding, or goes to step 5 |
 
 `singleton-domain` is the common one. On a real run it moved 31 of 52 `universal` criteria
-out of the unattended lane. Routing on `extraction` alone would have emitted all 52.
+out of the property lane and into witnesses. Routing on `extraction` alone would have
+claimed all 52 as property coverage.
 
 `candidate` means the criterion carries a metamorphic label the structural pass did not
 corroborate — the label came from a declared idiom alone, or the shape landed but no
@@ -55,13 +56,14 @@ Full table with generator notes: [`../assets/strategy-table.md`](../assets/strat
 | `unclassified` | — | not a property. Step 5 only |
 
 `universal` is the default and the largest bucket. `round-trip` needs **two** symbols — if
-grounding found only one side of the pair, route to the queue rather than inventing the
-inverse.
+grounding found only one side of the pair, write no test and record the reason as a finding
+rather than inventing the inverse.
 
 ## Harness-specific downgrades
 
 - **`concurrency` in Python** — hypothesis ships no interleaving scheduler. Emit a
-  `RuleBasedStateMachine` sketch over the async model, always queued, never unattended.
+  `RuleBasedStateMachine` sketch over the async model, always with a finding recording the
+  downgrade.
 - **`lifecycle` anywhere** — generatable only if the states and transitions are enumerable
   from the FR's `## Behavior`. Otherwise the refusal is `no-state-machine`.
 - **`concurrency` in Rust** — prefer `loom` for exhaustive interleaving of a small model;
@@ -69,8 +71,8 @@ inverse.
 
 ## Weak assertions are a failure, not a fallback
 
-If the strategy collapses to any of these, do not emit it — queue with the grounding
-refusal instead:
+If the strategy collapses to any of these, do not emit it — record the grounding refusal as
+a finding instead:
 
 - `assert result is not None` / `expect(x).toBeDefined()` / `assert!(r.is_ok())` alone
 - a type check with no value check
@@ -79,5 +81,5 @@ refusal instead:
 
 ## Output of this step
 
-Per record: `{row_id, strategy, lane, grounding}` — where `lane ∈ {unattended, queue,
-second-pass}`.
+Per record: `{row_id, strategy, lane, grounding}` — where
+`lane ∈ {emit, emit-with-finding, finding-only, second-pass}`.

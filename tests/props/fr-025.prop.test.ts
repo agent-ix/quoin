@@ -28,12 +28,12 @@ const orglessRemote = fc.oneof(
   segment.map((repo) => `https://git.example.com/${repo}.git`),
 );
 
-/**
- * Trace: FR-025-AC-9 — a local-path remote and a host-based remote with no owner
- * segment each yield no organization, rather than a path segment or the host name.
- * spec-correctness: row=FR-025-AC-9 property=universal extraction=extractable origin=regex review=none
- */
 describe("FR-025-AC-9 remotes that name no organization", () => {
+  /**
+   * Trace: FR-025-AC-9 — a local-path remote and a host-based remote with no owner
+   * segment each yield no organization, rather than a path segment or the host name.
+   * spec-correctness: row=FR-025-AC-9 property=universal extraction=extractable origin=regex review=none
+   */
   test("never substitutes a path segment or the host name", () => {
     fc.assert(
       fc.property(orglessRemote, (url) => {
@@ -43,12 +43,12 @@ describe("FR-025-AC-9 remotes that name no organization", () => {
   });
 });
 
-/**
- * Trace: FR-025-AC-10 — a remote path with a nested namespace qualifies by the
- * segment immediately preceding the repository.
- * spec-correctness: row=FR-025-AC-10 property=universal extraction=extractable origin=regex review=none
- */
 describe("FR-025-AC-10 nested namespaces", () => {
+  /**
+   * Trace: FR-025-AC-10 — a remote path with a nested namespace qualifies by the
+   * segment immediately preceding the repository.
+   * spec-correctness: row=FR-025-AC-10 property=universal extraction=extractable origin=regex review=none
+   */
   test("qualifies by the segment immediately preceding the repository, at any depth", () => {
     fc.assert(
       fc.property(fc.array(segment, { minLength: 2, maxLength: 6 }), (path) => {

@@ -8,11 +8,11 @@ import fc from "fast-check";
 
 import { parseSourceArg } from "../../src/plugins";
 
-/**
- * Trace: FR-018-AC-5 — a bare argument maps to a path source.
- * spec-correctness: row=FR-018-AC-5 property=universal extraction=extractable origin=regex review=none
- */
 describe("FR-018-AC-5 unprefixed source arguments", () => {
+  /**
+   * Trace: FR-018-AC-5 — a bare argument maps to a path source.
+   * spec-correctness: row=FR-018-AC-5 property=universal extraction=extractable origin=regex review=none
+   */
   test("map to a path source carrying the argument verbatim", () => {
     fc.assert(
       fc.property(fc.string({ minLength: 1, maxLength: 40 }), (arg) => {

@@ -38,7 +38,7 @@ Field notes that matter:
 
 - `row_id` — the only identifier shared with the matrix and with `gap-analysis`. Never
   synthesize one, never alter one. A record with `row_id: null` cannot be tagged, so it
-  goes straight to the queue with reason `no-row-id`.
+  yields no test and one finding with reason `no-row-id`.
 - `line` is 1-based and **file**-relative. Span `start`/`end` are **statement**-relative
   byte offsets into `statement`. Do not mix them.
 - Spans are usually `null` (they reach ~4% of the ecosystem corpus). Their absence says
@@ -63,16 +63,16 @@ and runner.
 Rules:
 
 - **Manifest present, generator library absent** — install nothing, and **write no test
-  files**. A file that imports a missing generator library breaks the suite even when every
-  test in it is skipped, because the import is evaluated at collection time. Record the
-  proposals as fenced code blocks in the queue instead, and report one line:
+  files**. A file that imports a missing generator library breaks the suite at collection
+  time, before a single test runs. Record one `high` finding per affected criterion naming
+  the missing library, and report one line:
   `harness <lib> not installed — add <lib> to <dev-deps>, then re-run to emit these`.
   Adding a dependency is the user's call, not this skill's.
 - **Polyglot repo** — resolve per-FR from the AC table's `Verification` column, which names
   the test file (`Test (org.test.ts)` → TypeScript). If that column is absent, use the tree
   holding the symbol step 2 grounded. Never pick one harness repo-wide by guessing.
-- **No harness at all** — stop after steps 1 and 2. Emit the grounded strategies as prose
-  in the queue file. Write no test files.
+- **No harness at all** — stop after steps 1 and 2. Record the grounded strategies as
+  findings in the review artifact. Write no test files.
 
 ## 4. Detect the existing tag style
 

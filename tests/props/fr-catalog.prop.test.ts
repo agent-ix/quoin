@@ -94,11 +94,6 @@ const casingRoots: Record<string, string> = Object.fromEntries(
 
 // ---- FR-006 ------------------------------------------------------------------
 
-/**
- * Trace: FR-006-AC-4 — a missing path, an empty directory, and a file candidate
- * are skipped.
- * spec-correctness: row=FR-006-AC-4 property=universal extraction=extractable origin=regex review=none
- */
 describe("FR-006-AC-4 unusable module candidates", () => {
   const unusable = fc.constantFrom(
     missingCandidate,
@@ -106,6 +101,11 @@ describe("FR-006-AC-4 unusable module candidates", () => {
     fileCandidate,
   );
 
+  /**
+   * Trace: FR-006-AC-4 — a missing path, an empty directory, and a file candidate
+   * are skipped.
+   * spec-correctness: row=FR-006-AC-4 property=universal extraction=extractable origin=regex review=none
+   */
   test("are skipped, in any quantity and any order, without throwing", () => {
     fc.assert(
       fc.property(fc.array(unusable, { maxLength: 12 }), (candidates) => {
@@ -133,11 +133,11 @@ describe("FR-006-AC-4 unusable module candidates", () => {
 
 // ---- FR-008 ------------------------------------------------------------------
 
-/**
- * Trace: FR-008-AC-1 — a repeated module root is loaded only once.
- * spec-correctness: row=FR-008-AC-1 property=universal extraction=extractable origin=regex review=none
- */
 describe("FR-008-AC-1 repeated module roots", () => {
+  /**
+   * Trace: FR-008-AC-1 — a repeated module root is loaded only once.
+   * spec-correctness: row=FR-008-AC-1 property=universal extraction=extractable origin=regex review=none
+   */
   test("load once however often, and in whatever order, they repeat", () => {
     fc.assert(
       fc.property(
@@ -155,11 +155,6 @@ describe("FR-008-AC-1 repeated module roots", () => {
   });
 });
 
-/**
- * Trace: FR-008-AC-2 — a second module declaring an already-seen name is skipped,
- * including its types.
- * spec-correctness: row=FR-008-AC-2 property=universal extraction=extractable origin=regex review=none
- */
 describe("FR-008-AC-2 modules with a colliding declared name", () => {
   // Two distinct roots that both declare `name: twin`.
   const twinA = writeModule(tmp("twin-a"), {
@@ -171,6 +166,11 @@ describe("FR-008-AC-2 modules with a colliding declared name", () => {
     artifact_types: [{ name: "TwinB" }],
   });
 
+  /**
+   * Trace: FR-008-AC-2 — a second module declaring an already-seen name is skipped,
+   * including its types.
+   * spec-correctness: row=FR-008-AC-2 property=universal extraction=extractable origin=regex review=none
+   */
   test("contribute no entries, whichever of the two is seen first", () => {
     fc.assert(
       fc.property(fc.boolean(), (aFirst) => {
@@ -186,13 +186,13 @@ describe("FR-008-AC-2 modules with a colliding declared name", () => {
 
 // ---- FR-009 ------------------------------------------------------------------
 
-/**
- * Trace: FR-009-AC-5 — a skeleton named with the type's own casing resolves, and
- * a filename in any other casing does not — on a case-insensitive filesystem as
- * on a case-sensitive one.
- * spec-correctness: row=FR-009-AC-5 property=universal extraction=extractable origin=regex review=none
- */
 describe("FR-009-AC-5 skeleton filename casing", () => {
+  /**
+   * Trace: FR-009-AC-5 — a skeleton named with the type's own casing resolves, and
+   * a filename in any other casing does not — on a case-insensitive filesystem as
+   * on a case-sensitive one.
+   * spec-correctness: row=FR-009-AC-5 property=universal extraction=extractable origin=regex review=none
+   */
   test("resolves exactly the type's own casing and its lowercase form", () => {
     fc.assert(
       fc.property(fc.constantFrom(...Object.keys(casingRoots)), (filename) => {
@@ -220,14 +220,14 @@ const anyCasingOf = (name: string): fc.Arbitrary<string> =>
         .join(""),
     );
 
-/**
- * Trace: FR-010-AC-2 — a mixed-case request such as `DOMAIN` resolves the object
- * entry.
- * spec-correctness: row=FR-010-AC-2 property=universal extraction=extractable origin=regex review=none
- */
 describe("FR-010-AC-2 case-insensitive type lookup", () => {
   const catalog = loadCatalog([uniqueRoot, ...sharedTypeRoots]);
 
+  /**
+   * Trace: FR-010-AC-2 — a mixed-case request such as `DOMAIN` resolves the object
+   * entry.
+   * spec-correctness: row=FR-010-AC-2 property=universal extraction=extractable origin=regex review=none
+   */
   test("resolves a known type under any casing whatsoever", () => {
     fc.assert(
       fc.property(
@@ -256,12 +256,12 @@ describe("FR-010-AC-2 case-insensitive type lookup", () => {
 
 // ---- FR-012 ------------------------------------------------------------------
 
-/**
- * Trace: FR-012-AC-1 — a type declared by two modules is reported as a duplicate
- * with the declaring modules sorted.
- * spec-correctness: row=FR-012-AC-1 property=ordering extraction=extractable origin=regex review=none
- */
 describe("FR-012-AC-1 duplicate type reporting", () => {
+  /**
+   * Trace: FR-012-AC-1 — a type declared by two modules is reported as a duplicate
+   * with the declaring modules sorted.
+   * spec-correctness: row=FR-012-AC-1 property=ordering extraction=extractable origin=regex review=none
+   */
   test("lists the declaring modules in sorted order, whatever order the roots arrive in", () => {
     fc.assert(
       fc.property(
@@ -290,11 +290,11 @@ describe("FR-012-AC-1 duplicate type reporting", () => {
   });
 });
 
-/**
- * Trace: FR-012-AC-2 — a catalog with unique type names reports no duplicates.
- * spec-correctness: row=FR-012-AC-2 property=universal extraction=extractable origin=regex review=none
- */
 describe("FR-012-AC-2 catalogs with no collision", () => {
+  /**
+   * Trace: FR-012-AC-2 — a catalog with unique type names reports no duplicates.
+   * spec-correctness: row=FR-012-AC-2 property=universal extraction=extractable origin=regex review=none
+   */
   test("report no duplicates for any single module root", () => {
     fc.assert(
       fc.property(fc.constantFrom(uniqueRoot, ...sharedTypeRoots), (root) => {

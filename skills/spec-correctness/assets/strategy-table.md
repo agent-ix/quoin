@@ -10,7 +10,7 @@ it is the FR-047 grammar axis, not the property axis.
 
 ## `round-trip`
 
-- **Needs** two symbols, an encoder and its inverse. Only one found → queue.
+- **Needs** two symbols, an encoder and its inverse. Only one found → no test, one finding.
 - **Domain** the *inner* type — generate `x`, not the encoded form, so every value is
   reachable and shrinking is meaningful.
 - **Oracle** `dec(enc(x)) == x`.
@@ -78,7 +78,7 @@ it is the FR-047 grammar axis, not the property axis.
   parallel mode when the op set is large.
 - **TypeScript** `fc.scheduler()` — deterministic and shrinkable.
 - **Python** hypothesis has no interleaving scheduler. Emit a `RuleBasedStateMachine`
-  sketch over the async model, **always queued**, never unattended.
+  sketch over the async model, **always with a finding** recording the downgrade.
 
 ## `universal`
 
@@ -92,7 +92,7 @@ it is the FR-047 grammar axis, not the property axis.
 
 - **Not a property.** Step 5 owns it.
 - May become a reclassified property (with citations) or a `Unit` witness test. A witness
-  is queued and is **not** counted as property coverage.
+  is recorded as a finding and is **not** counted as property coverage.
 
 ## `unclassified`
 

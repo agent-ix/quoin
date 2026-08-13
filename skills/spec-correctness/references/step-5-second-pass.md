@@ -26,7 +26,7 @@ file, the sibling ACs, and the located symbol if there is one.
 
 1. **Reclassify** into one of the 8 generatable families, with a proposed domain,
    precondition and oracle, each carrying at least one `file:line` citation. → a property
-   test into the queue.
+   test, plus a finding recording that an LLM read it.
 
    Worth looking for: a criterion phrased about one concrete input that actually holds for
    a whole class ("Repeated `--types` accumulate into an ordered list" is `ordering`, not an
@@ -34,10 +34,11 @@ file, the sibling ACs, and the located symbol if there is one.
 
 2. **Witness** — the criterion genuinely describes a single case, or a small closed set of
    them ("`version`, `--version`, and `-v` each print the package version" is a 3-case
-   witness). → an example-based test, `Type: Unit`, queued, and **explicitly not counted as
-   property coverage** in the report.
+   witness). → an example-based test, `Type: Unit`, with a finding, and **explicitly not
+   counted as property coverage** in the census.
 
-3. **Nothing** — record a note with the reason. A note, not a finding, not a severity.
+3. **Nothing** — no test; the reason becomes a `medium` finding. It records what could not
+   be settled, and is not a judgement on the criterion (CON-1).
 
 ## It must refuse to
 
@@ -52,18 +53,19 @@ file, the sibling ACs, and the located symbol if there is one.
 - **Write a framework name into any spec artifact** (CON-2).
 - **Alter or synthesize a `row_id`.** Every emitted tag must be a `row_id` present in the
   classification output.
-- **Mark its own output unattended**, or promote a test out of the queue.
+- **Present its output as deterministic.** Every test from this pass carries
+  `origin=llm-second-pass` and a finding; the reviewer must be able to tell an LLM read it.
 
 ## Marking
 
 Every product of this pass:
 
 ```
-spec-correctness: row=FR-005-AC-2 property=example extraction=not-extractable origin=llm-second-pass review=required confidence=medium
+spec-correctness: row=FR-005-AC-2 property=example extraction=not-extractable origin=llm-second-pass confidence=medium
 ```
 
-filed under `tests/props/_review/`, carrying the harness's inert marker, and listed as one
-row in the queue file.
+The test is written to the normal path and **runs** like any other. Its finding in the
+review artifact is what marks it as needing a read.
 
 `extraction: candidate` records use the identical mechanism with `origin=regex-candidate`
 and no `confidence` key — they came from the deterministic pass, not from this one.
@@ -74,6 +76,6 @@ and no `confidence` key — they came from the deterministic pass, not from this
 - `medium` — the oracle was assembled from `## Behavior` plus the code, and reads as a fair
   restatement.
 - `low` — the oracle is a plausible reading among more than one. Say what the alternative
-  reading was, in the queue row.
+  reading was, in the finding's summary.
 
 Anything below `low` is proposal 3: nothing.

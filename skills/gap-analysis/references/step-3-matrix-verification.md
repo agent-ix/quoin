@@ -4,6 +4,10 @@
 test in the suite, identified by a matching **tracking tag** in the test code. This is the
 heart of gap-analysis: a matrix row marked ✅ means nothing unless a tagged test exists.
 
+**This step no longer greps.** `quire coverage` computes the reconciliation deterministically
+and reports it; this skill interprets the report and owns the judgement. Severity and verdict
+stay here — the command reports and does not judge (quire-rs FR-050-CON-1).
+
 ## The matrix shape
 
 Built by `spec-matrix` (`quoin/skills/spec-matrix/SKILL.md`). Key tables:
@@ -12,10 +16,78 @@ Built by `spec-matrix` (`quoin/skills/spec-matrix/SKILL.md`). Key tables:
   `Test ID` = `TC-xxx`, `Traces To` = `FR-XXX-AC-X` etc., `Status` ∈ `✅ ⚠️ ❌ 🚧 ⛔`.
 - **Per-requirement coverage** — StR/US/FR/NFR → AC → TC → Status tables.
 
-## Tracking-tag patterns in test code
+What each column *means* is not this skill's knowledge either: the active module declares it
+under `traceability:`, and `quire coverage` reads the same declaration the matrix contract is
+validated against, so the two cannot drift.
 
-Tests declare which requirement/test-case they cover via tags in the code. The ecosystem
-uses these forms (grep for all of them, across `.py`/`.ts`/`.rs`):
+## Run the rollup
+
+```
+quire coverage --scope <project_root> --json
+```
+
+Do **not** pass `--strict`. Whether a gap blocks is this skill's verdict rule (Step 6), not
+the command's exit code.
+
+The report carries exactly the findings this step produces:
+
+| Report field | What it is |
+| --- | --- |
+| `unbacked_rows` | A declared reference row whose trace targets have no backing `verifies` relation. Each carries `reference`, `document`, `row_id`, `target_ids`. |
+| `status_lies` | A row whose status classes as `complete` while nothing backs it. Adds the authored `status` string. |
+| `untracked_symbols` | A test carrying a trace tag that resolves to no declared row. Carries `path`, `symbol`, `trace_id`. |
+| `groups` | Per minting document: `document`, `target`, `backed`, `total`. |
+| `totals` | `backed` / `total` across the bundle. |
+
+## Reconcile, producing findings
+
+| Report field | Finding | Severity |
+| --- | --- | --- |
+| `unbacked_rows` | Matrix overclaims coverage — the row names a criterion or test id nothing backs | `high` |
+| `status_lies` | The row asserts `✅` over nothing. A subset of the above, and the worse half | `high` |
+| `untracked_symbols` | A tagged test pointing at a row that does not exist — a stale tag, or a matrix that dropped a row | `medium` |
+| Marker drift | Matrix `Status` inconsistent with a real run (`🚧` on a passing tagged test) | `low` |
+
+`Refs` for each finding is the `row_id` and `document` the report gives, or `path::symbol`
+for an untracked symbol. Do not re-derive them.
+
+Marker drift is the one judgement the report cannot make — it needs the suite to have
+actually run (step 4 below).
+
+## Two ways the report can mislead, and how to read it
+
+- **`totals.total == 0` is not full coverage.** It means the declared model matched nothing
+  in this scope — no minting document was found. Recent `quire` prints `no rows matched`
+  rather than a percentage and fails `--strict` (quire-rs FR-050-AC-14); an older build
+  printed `0/0 rows backed (100%)` and exited 0. Treat a zero denominator as **no data**,
+  say so in `## Coverage`, and fall back (below). It is not a `PASS`.
+- **An empty `unbacked_rows` proves nothing on its own.** It lists *reference rows* — cells
+  that point at trace ids. A repo whose module declares no such references has an empty list
+  regardless of how many tests are tagged. Read `groups` / `totals` alongside it.
+
+## Fallback: a repo on an older module set
+
+`quire coverage` exits non-zero with a distinct diagnostic when no active module declares a
+`traceability:` model (FR-050-AC-9). That is a real repo state, not an error to swallow —
+`spec-artifacts-process` only began declaring the model at the release carrying FR-004.
+
+When the command refuses, or reports a zero denominator, fall back to the grep index below
+and **say which path ran** in the SpecReview's `## Coverage` section:
+
+```
+Reconciliation: quire coverage (module spec-artifacts-process 0.11.0)
+Reconciliation: grep fallback — no active module declares a traceability model
+```
+
+A finding derived from the fallback is weaker and should be read as such: grep matches a tag
+wherever it sits in a file, including places the engine will not bind it. In quoin, ~15 tags
+sat above a `describe(` block, which registers no symbol — greppable, and invisible to the
+engine (agent-ix/quoin#61). **Never present a grep count as a coverage figure** without
+naming it as a fallback.
+
+### The fallback index
+
+Grep the test tree across `.py` / `.ts` / `.rs` for every form:
 
 | Form | Example |
 | --- | --- |
@@ -24,31 +96,29 @@ uses these forms (grep for all of them, across `.py`/`.ts`/`.rs`):
 | Module docstring | `"""Tests for FR-017: Context Management."""` |
 | Test-case id comment / name | `# TC-041`, or a test whose name maps to `TC-041` |
 
-## Process
+Build `{tag → [test file :: test name]}`, then reconcile against the matrix by hand for the
+same four finding kinds.
 
-1. **Parse the matrix.** Extract the set of declared Test Cases `{TC-xxx → (Traces To, Status)}`.
-2. **Index the suite.** Grep the test tree for every tracking tag form above; build
-   `{tag → [test file :: test name]}` for `TC-xxx`, `FR-xxx`, `FR-xxx-AC-x`.
-3. **Reconcile, producing findings:**
-   - **Unbacked matrix row** — a `TC-xxx` (or its `Traces To` requirement) with **no**
-     matching tag in any test → `high` finding (the matrix overclaims coverage).
-   - **Status lie** — a row marked `✅ Complete` but its test is missing, skipped
-     (`pytest.skip`), or its requirement has no tagged test → `high`.
-   - **Untracked test** — a real test that exercises behavior but carries **no** tracking
-     tag and is **absent** from the matrix → `medium` (coverage exists but isn't traced).
-   - **Marker drift** — matrix `Status` inconsistent with reality (e.g. `🚧` for a passing
-     tagged test, or `✅` for a `⚠️`-quality test) → `low`.
-4. **Optionally run the suite.** If the user wants execution evidence (not just static
-   tag-matching), run `make test` and note failures/skips against matrix rows. Don't block
-   on this if the environment can't run tests; say so.
-5. **Rollup.** Count matrix Test Cases backed-by-tagged-test / total — feeds `## Coverage`.
+## Optionally run the suite
+
+If the user wants execution evidence rather than static reconciliation, run `make test` and
+note failures and skips against matrix rows. This is what turns marker drift from a guess
+into a finding. Don't block on it if the environment can't run tests; say so.
+
+## Rollup
+
+`totals.backed` / `totals.total` feeds `## Coverage`, with the per-document breakdown from
+`groups` where it helps. Report the numbers the tool produced — do not recompute them, and
+do not quote a figure from an earlier run whose provenance you cannot state.
 
 ## Output of this step
 
-Findings (unbacked rows, status lies, untracked tests, marker drift) with `Refs` =
-`TC-xxx` / `FR-xxx` / test path, plus the backed/total count.
+Findings (unbacked rows, status lies, untracked tests, marker drift) with `Refs` from the
+report, the backed/total count, and which reconciliation path ran.
 
 ## Notes
 
-- A tag match proves *traceability*, not *correctness* — whether the test is a good test is
+- A backed row proves *traceability*, not *correctness* — whether the test is a good test is
   Step 4 (underspecified/stub) and Step 5 (semantic). Keep this step about presence + trace.
+- The command performs no network or service I/O and executes none of the code it reads
+  (FR-050-CON-2, FR-051-CON-1), so it is safe to run in any repo.

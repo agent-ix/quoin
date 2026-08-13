@@ -8,7 +8,7 @@
  *
  * `numRuns` is reduced from the fast-check default of 100: each case dispatches
  * through the real oclif runner, and the negative domain is uniform enough that
- * 30 cases exercise it. Recorded in tests/props/QUEUE.md.
+ * 30 cases exercise it.
  */
 import { execSync } from "node:child_process";
 import { existsSync } from "node:fs";
@@ -56,11 +56,11 @@ beforeAll(async () => {
   pluginSubcommands = subs("plugin");
 });
 
-/**
- * Trace: FR-005-AC-1 — an unknown command raises an error that includes usage.
- * spec-correctness: row=FR-005-AC-1 property=error-case extraction=extractable origin=regex review=none
- */
 describe("FR-005-AC-1 unknown top-level commands", () => {
+  /**
+   * Trace: FR-005-AC-1 — an unknown command raises an error that includes usage.
+   * spec-correctness: row=FR-005-AC-1 property=error-case extraction=extractable origin=regex review=none
+   */
   test("are rejected, for any bareword outside the discovered command graph", async () => {
     await fc.assert(
       fc.asyncProperty(bareword, async (cmd) => {
@@ -113,11 +113,11 @@ describe("FR-005-AC-1 unknown top-level commands", () => {
   });
 });
 
-/**
- * Trace: FR-005-AC-2 — an unknown `catalog` subcommand raises an error.
- * spec-correctness: row=FR-005-AC-2 property=error-case extraction=extractable origin=regex review=none
- */
 describe("FR-005-AC-2 unknown catalog subcommands", () => {
+  /**
+   * Trace: FR-005-AC-2 — an unknown `catalog` subcommand raises an error.
+   * spec-correctness: row=FR-005-AC-2 property=error-case extraction=extractable origin=regex review=none
+   */
   test("are rejected, for any bareword the catalog topic does not declare", async () => {
     await fc.assert(
       fc.asyncProperty(bareword, async (sub) => {
@@ -129,11 +129,11 @@ describe("FR-005-AC-2 unknown catalog subcommands", () => {
   });
 });
 
-/**
- * Trace: FR-005-AC-3 — an unknown `plugin` subcommand raises an error.
- * spec-correctness: row=FR-005-AC-3 property=error-case extraction=extractable origin=regex review=none
- */
 describe("FR-005-AC-3 unknown plugin subcommands", () => {
+  /**
+   * Trace: FR-005-AC-3 — an unknown `plugin` subcommand raises an error.
+   * spec-correctness: row=FR-005-AC-3 property=error-case extraction=extractable origin=regex review=none
+   */
   test("are rejected, for any bareword the plugin topic does not declare", async () => {
     await fc.assert(
       fc.asyncProperty(bareword, async (sub) => {

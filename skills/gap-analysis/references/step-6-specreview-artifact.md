@@ -58,11 +58,16 @@ are extra sections (allowed).
 
 ## Coverage
 
+- Reconciliation: quire coverage (module <name> <version>) | grep fallback — no active module declares a traceability model
 - Tasks done: X / Y
-- Matrix Test Cases backed by tagged test: X / Y
+- Rows backed by a tagged test: X / Y   (from `totals`; `0 / 0` means the model matched nothing, not full coverage)
 - Untraced behaviors / stubs: N
 - Semantic review: ran over N requirements | skipped
 ```
+
+The reconciliation line is not optional. A number from the engine and a number from a grep
+are not the same claim — grep matches a tag wherever it sits, including places the engine
+will not bind it — and a reader cannot tell which they are looking at unless it says so.
 
 ### Findings table contract (validated)
 

@@ -36,7 +36,7 @@ extractable" and never "consider rewriting the 59 example criteria as properties
 ## What is worth flagging (as information)
 
 - Records with `row_id: null` — they cannot be tagged, so they cannot be reconciled. Route
-  to the queue with reason `no-row-id`.
+  recorded as a finding with reason `no-row-id`.
 - Documents that produced zero criteria — usually the archetype binds no `ac` grammar
   (US and IT are unbound), which is expected, not a gap.
 - A `candidate` count above zero — rare (0.4% of the corpus). Worth naming because every
