@@ -74,9 +74,10 @@ Nothing else is written to the tree.
   owned by its review-gated second pass.
 - The skill SHALL NOT emit an unattended test for a record whose `property` is
   `example` or `unclassified`.
-- Every emitted test SHALL carry its `row_id` in a form the coverage reconciliation
-  of the `gap-analysis` skill already parses, so a generated test is reconciled by
-  the same grep as a hand-written one.
+- Every emitted test SHALL carry its `row_id` in a form the declared trace-tag
+  grammar binds, **attached to the test symbol**, so a generated test is reconciled
+  by `quire coverage` exactly as a hand-written one is. A tag that a grep finds and
+  the engine cannot bind does not satisfy this.
 - The skill SHALL NOT emit a `row_id` absent from the classification output, so a
   tracking tag can never name a criterion that does not exist.
 - A test the skill emits SHALL run in the repository's runner like any other test.
@@ -130,7 +131,7 @@ wrong, so the second pass can afford recall the deterministic pass cannot.
 | FR-028-AC-2  | A record with `extraction` of `candidate` yields a test and a finding in the review artifact naming it as requiring review | Eval (EV-051)   |
 | FR-028-AC-3  | Any record whose `property` is `example` or `unclassified` yields no unattended test                                    | Eval (EV-050)   |
 | FR-028-AC-4  | Every emitted tracking tag names a `row_id` present in the classification output                                        | Eval (EV-050)   |
-| FR-028-AC-5  | Every emitted tracking tag is matched by the coverage reconciliation grep of the `gap-analysis` skill                    | Eval (EV-052)   |
+| FR-028-AC-5  | Every emitted tracking tag is reported as backed by `quire coverage`, not merely present in the file                     | Eval (EV-052)   |
 | FR-028-AC-6  | Every test the skill emits runs in the repository's runner — no skip, ignore, or disabled marker is written             | Eval (EV-051)   |
 | FR-028-AC-7  | The run writes exactly one `SpecReview` at `reviews/YY-MM-DD-<slug>.md` with `analysis: spec-correctness`, and it passes `quire validate` | Eval (EV-051)   |
 | FR-028-AC-8  | A criterion whose domain, precondition, or oracle cannot be cited yields a recorded reason and no test                  | Eval (EV-053)   |

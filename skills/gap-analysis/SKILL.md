@@ -48,9 +48,11 @@ code, edit the plan, or change the matrix. Its only write is the SpecReview arti
     spec root, Test Matrix, and `org`/`component` for `ix://` URIs.
 1.  **[Plan completion](references/step-2-plan-completion.md)**: Assert every `Task` is
     `done`; report incomplete/blocked tasks and stale `plan.md` checkboxes.
-2.  **[Matrix verification](references/step-3-matrix-verification.md)**: For every matrix
-    Test Case, confirm a backing test with a matching tracking tag exists; flag unbacked
-    rows, untracked tests, and inconsistent status markers.
+2.  **[Matrix verification](references/step-3-matrix-verification.md)**: Run
+    `quire coverage --scope <root> --json` and interpret the report — unbacked rows, status
+    lies, untracked tests, and the backed/total rollup. The reconciliation is the engine's;
+    the severity and the verdict stay here. A repo whose module set declares no
+    `traceability:` model falls back to a grep index, declared as such.
 3.  **[Underspecified code](references/step-4-underspecified-code.md)**: Find code/behavior
     with no owning requirement (reverse gap), plus stubs masquerading as complete.
 4.  **[Semantic review](references/step-5-semantic-review.md)** *(OPTIONAL — ask first)*:
