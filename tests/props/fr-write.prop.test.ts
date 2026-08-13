@@ -67,12 +67,12 @@ const repoDir = tmp("repo");
 
 // ---- FR-013 ------------------------------------------------------------------
 
-/**
- * Trace: FR-013-AC-4 — an unknown type raises an error listing available types in
- * sorted order.
- * spec-correctness: row=FR-013-AC-4 property=ordering extraction=extractable origin=regex review=none
- */
 describe("FR-013-AC-4 unknown type errors", () => {
+  /**
+   * Trace: FR-013-AC-4 — an unknown type raises an error listing available types in
+   * sorted order.
+   * spec-correctness: row=FR-013-AC-4 property=ordering extraction=extractable origin=regex review=none
+   */
   test("list the available types in sorted order, for any unknown name", () => {
     fc.assert(
       fc.property(fc.stringMatching(/^[a-z]{3,12}$/), (name) => {
@@ -139,13 +139,13 @@ const repoDirArb = fc
     return dir;
   });
 
-/**
- * Trace: FR-015-AC-2 — a clean repo path is rendered without surrounding quotes.
- * Trace: FR-015-AC-3 — a repo path containing a space is single-quoted.
- * spec-correctness: row=FR-015-AC-2 property=universal extraction=extractable origin=regex review=none
- * spec-correctness: row=FR-015-AC-3 property=universal extraction=extractable origin=regex review=none
- */
 describe("FR-015-AC-2/AC-3 shell quoting of the repo path", () => {
+  /**
+   * Trace: FR-015-AC-2 — a clean repo path is rendered without surrounding quotes.
+   * Trace: FR-015-AC-3 — a repo path containing a space is single-quoted.
+   * spec-correctness: row=FR-015-AC-2 property=universal extraction=extractable origin=regex review=none
+   * spec-correctness: row=FR-015-AC-3 property=universal extraction=extractable origin=regex review=none
+   */
   test("quotes exactly the paths the shell-safe predicate rejects", () => {
     fc.assert(
       fc.property(repoDirArb, (dir) => {

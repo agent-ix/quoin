@@ -23,12 +23,12 @@ const packageJsonVersion = (
   }
 ).version;
 
-/**
- * Trace: FR-002-AC-4 — a non-empty baked version is reported verbatim; an empty
- * one falls back to the `package.json` version.
- * spec-correctness: row=FR-002-AC-4 property=universal extraction=extractable origin=regex review=none
- */
 describe("FR-002-AC-4 baked version resolution", () => {
+  /**
+   * Trace: FR-002-AC-4 — a non-empty baked version is reported verbatim; an empty
+   * one falls back to the `package.json` version.
+   * spec-correctness: row=FR-002-AC-4 property=universal extraction=extractable origin=regex review=none
+   */
   test("reports any non-empty baked version verbatim, and only the empty one falls back", () => {
     fc.assert(
       fc.property(fc.string(), (baked) => {

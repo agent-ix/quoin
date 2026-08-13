@@ -40,18 +40,39 @@ already runs the matrix workflow; hand them over.
   Refused criteria get **no row**; they are reported in the queue, not claimed in the
   matrix.
 
-## Reconciliation check
+## Binding check
 
-Before finishing, prove the tags are greppable by the tool that will read them:
+Before finishing, prove every emitted tag actually **binds** — not that it exists.
 
 ```
-quire validate --scope <repo> 'spec/**/*.md'
+quire coverage --scope <repo> --json
 ```
-then run `gap-analysis` step 3's index over the test tree and confirm:
 
-- every `row_id` this run emitted appears in the tag index;
+For each `row_id` this run emitted, confirm the id appears among the backed ids: its
+minting document's group must count it, and it must not appear in `untracked_symbols`.
+
+```
+quire coverage --scope <repo> --json \
+  | jq -r '.untracked_symbols[] | "\(.trace_id)\t\(.path)\t\(.symbol)"'
+```
+
+An emitted `row_id` that is *not* backed means the tag is in the file but attached to no
+test symbol — almost always TypeScript placement, a tag above `describe(` instead of above
+`it(` (step 4). Fix the placement and re-run; do not report the criterion as covered.
+
+**This check replaces a grep, deliberately.** The previous version of this step confirmed
+the tags were greppable, and a grep matches a comment wherever it sits. Six generated files
+passed that check with every tag bound to nothing (agent-ix/quoin#61). Only the engine that
+consumes the tags can tell you a tag works.
+
+Then confirm, as before:
+
 - no matrix row this run added is `✅` while its test is skipped;
 - no emitted tag names a `row_id` absent from the `quire properties` output.
+
+If `quire coverage` reports `no rows matched`, the module in scope declares no traceability
+model for this repo's layout — that is an environment gap, not a clean run. Say so rather
+than reporting the run as reconciled.
 
 A mismatch here is a bug in this run, not in `gap-analysis`.
 

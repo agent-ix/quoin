@@ -16,6 +16,25 @@ carriers**, so a single formatting change cannot break reconciliation:
 2. The test function or `describe` name containing the id —
    `fr_027_ac_1_…` in Rust/Python, `"FR-027-AC-1 …"` in TypeScript.
 
+### Where carrier 1 attaches
+
+A carrier is not free-floating text. `quire coverage` binds a tag to the **test symbol
+whose source span encloses it** — the span covering that symbol's annotation block, its
+declaration, and its body. Placement is therefore part of the contract, and it differs by
+language:
+
+| Harness | Put `Trace:` | Because |
+|---------|--------------|---------|
+| Rust | in the doc comment above `#[test] fn …` | the span starts at the annotation block |
+| Python | in the test function's docstring | the span covers the body |
+| TypeScript | **immediately above `it(` / `test(`** — never above `describe(` | `describe(…)` groups tests but registers no symbol itself |
+
+The TypeScript row is the one that bites. A tag above a `describe` block reads correctly,
+passes review, and matches a grep — and binds to nothing at all. Six generated files
+shipped that way in `@agent-ix/quoin@0.12.x` and every criterion in them scored zero
+(agent-ix/quoin#61). **Do not verify placement with grep**: grep does not care where a
+comment sits, which is exactly why the defect shipped.
+
 Plus one provenance line, ignored by the reconciliation grep and read by this skill on
 re-runs:
 
