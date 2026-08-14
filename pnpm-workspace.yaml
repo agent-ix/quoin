@@ -1,8 +1,11 @@
 minimumReleaseAge: 14400
 minimumReleaseAgeExclude:
   - "@agent-ix/*"
-  # Security patch needed sooner than the soak window.
+  # Security patches needed sooner than the soak window.
   - "brace-expansion"
+  # GHSA-2v37-7h3g-55p8, reached as `.>vite>postcss>nanoid`. postcss admits
+  # `^3.3.16`, so the soak window alone held the tree on the vulnerable 3.3.17.
+  - "nanoid"
 
 updateConfig:
   ignoreDependencies:
