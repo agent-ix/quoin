@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
 #
-# Runs inside the clean-room container. Two stages, then assertions:
-#   Stage 1  install the published CLI from PUBLIC npm (no auth, no .npmrc)
-#   Stage 2  install the Claude Code plugin and its skills/workflows
-#   assert   the CLI bin runs, the plugin installed, its skills/workflows exist
+# Runs inside the clean-room container. Three stages, then assertions:
+#   Stage 1   install the published CLI from PUBLIC npm (no auth, no .npmrc)
+#   Stage 1b  resolve the default module set from an EMPTY IX_HOME and assert it
+#             matches the shipped default-modules.yaml (see smoke/modules.mjs)
+#   Stage 2   install the Claude Code plugin and its skills/workflows
+#   assert    the CLI bin runs, the plugin installed, its skills/workflows exist
 #
 # PLUGIN_SOURCE selects where the plugin comes from:
 #   github (default)  /plugin marketplace add agent-ix/<repo>  — the real
@@ -72,6 +74,12 @@ else
 fi
 
 # ======================================================================
+# Stage 1b — the default module set, resolved from an EMPTY IX_HOME. A developer
+# machine always has these installed already, so this is the only place the
+# manifest's pins are checked the way a new user experiences them.
+node /smoke/modules.mjs; modules_rc=$?
+
+# ======================================================================
 echo
 echo "## Stage 2 — install Claude Code plugin"
 case "$PLUGIN_SOURCE" in
@@ -114,6 +122,6 @@ timeout 180 claude -p "Reply with the single word: ok" \
 
 echo
 echo "=================================================================="
-echo " Summary:  Claude Code stage rc=$claude_rc   other-agents stage rc=$agents_rc"
+echo " Summary:  modules stage rc=$modules_rc   Claude Code stage rc=$claude_rc   other-agents stage rc=$agents_rc"
 echo "=================================================================="
-[ "$claude_rc" -eq 0 ] && [ "$agents_rc" -eq 0 ]
+[ "$modules_rc" -eq 0 ] && [ "$claude_rc" -eq 0 ] && [ "$agents_rc" -eq 0 ]
