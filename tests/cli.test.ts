@@ -252,7 +252,8 @@ describe("oclif runner dispatch parity", () => {
 // ---- version -----------------------------------------------------------------
 
 describe("version", () => {
-  // Trace: FR-002-AC-1, FR-026-AC-5
+  // Trace: FR-002-AC-1
+  // Trace: FR-026-AC-5
   test("--version, -v, and the version command all print the package version", async () => {
     const c = captureLog();
     try {
@@ -293,7 +294,8 @@ describe("main dispatch", () => {
   // command dispatched through the runner executes from dist/, where the
   // src/modules mock does not apply and ensureDefaultModules would reach the
   // network. The rejection still proves argv reached the runner.
-  // Trace: FR-026-AC-5, FR-026-AC-6
+  // Trace: FR-026-AC-5
+  // Trace: FR-026-AC-6
   test("a non-version argv is handed to the runner, whose error propagates", async () => {
     await expect(main(["bogus"], config)).rejects.toThrow();
   });
@@ -316,7 +318,9 @@ describe("catalog", () => {
     expect(text).toContain("spec-objects-business@0.1.0");
   });
 
-  // Trace: FR-004-AC-1, FR-004-AC-2, FR-023-AC-1
+  // Trace: FR-004-AC-1
+  // Trace: FR-004-AC-2
+  // Trace: FR-023-AC-1
   test("falls back to IX_HOME when --config-root is omitted, and prints 'unknown' for a versionless module", async () => {
     const src = tmp("src-noversion");
     const noVersion = makeModule(src, "spec-objects-noversion", {
@@ -665,7 +669,8 @@ describe("write", () => {
   // rather than main(), matching the rest of this suite: dispatching through
   // the runner would execute from dist/, where the src/modules mock does not
   // apply and ensureDefaultModules would reach the network.
-  // Trace: FR-023-AC-4, FR-025-AC-6
+  // Trace: FR-023-AC-4
+  // Trace: FR-025-AC-6
   test("--org reaches the pack in the text rendering", async () => {
     const home = populatedCatalog();
     const c = captureLog();
@@ -708,7 +713,8 @@ describe("write", () => {
     expect(parsed.orgSource).toBe("flag");
   });
 
-  // Trace: FR-023-AC-4, FR-025-AC-6
+  // Trace: FR-023-AC-4
+  // Trace: FR-025-AC-6
   test("reports an unresolved org with the --org remedy", async () => {
     const home = populatedCatalog();
     const prior = process.env.QUOIN_ORG;
@@ -754,7 +760,8 @@ describe("config", () => {
     else process.env.QUOIN_ORG = priorOrg;
   });
 
-  // Trace: FR-023-AC-5, FR-027-AC-8
+  // Trace: FR-023-AC-5
+  // Trace: FR-027-AC-8
   test("set stores an org that write then resolves", async () => {
     const home = populatedCatalog();
     const c = captureLog();
@@ -793,7 +800,8 @@ describe("config", () => {
     }
   });
 
-  // Trace: FR-027-AC-6, FR-027-AC-8
+  // Trace: FR-027-AC-6
+  // Trace: FR-027-AC-8
   // AC-6 is also pinned at the schema in tests/props/second-pass.prop.test.ts;
   // this is the `config set` surface the criterion actually names (SR-003 FND-003).
   test("set rejects an unrecognized key", async () => {
@@ -905,7 +913,9 @@ describe("spec-flow launchers", () => {
 // ---- flag parsing (now owned by oclif) ---------------------------------------
 
 describe("flag parsing", () => {
-  // Trace: FR-001-AC-1, FR-001-AC-2, FR-001-AC-4
+  // Trace: FR-001-AC-1
+  // Trace: FR-001-AC-2
+  // Trace: FR-001-AC-4
   test("--config-root=<home> (eq form) and repeated/positional flags work", async () => {
     const home = populatedCatalog();
     const repo = tmp("repo");

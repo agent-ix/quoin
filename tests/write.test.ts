@@ -98,7 +98,8 @@ describe("createAuthoringPack", () => {
     );
   });
 
-  // Trace: FR-009-AC-4, FR-015-AC-1
+  // Trace: FR-009-AC-4
+  // Trace: FR-015-AC-1
   test("builds a pack with contracts and a non-quoted clean repo path", () => {
     const { catalog } = buildCatalog();
     const repo = tmp("repo");
@@ -126,7 +127,10 @@ describe("createAuthoringPack", () => {
 });
 
 describe("formatAuthoringPack", () => {
-  // Trace: FR-009-AC-4, FR-014-AC-1, FR-014-AC-2, FR-014-AC-3
+  // Trace: FR-009-AC-4
+  // Trace: FR-014-AC-1
+  // Trace: FR-014-AC-2
+  // Trace: FR-014-AC-3
   test("renders skeleton+schema, manifest-only, and object contracts", () => {
     const { catalog } = buildCatalog();
     const repo = tmp("repo");
@@ -207,7 +211,8 @@ describe("authoring pack organization", () => {
     expect(text).not.toContain("agent-ix");
   });
 
-  // Trace: FR-014-AC-4, FR-025-AC-6
+  // Trace: FR-014-AC-4
+  // Trace: FR-025-AC-6
   test("serializes the org into the --json rendering", () => {
     const { catalog } = buildCatalog();
     const pack = createAuthoringPack(catalog, tmp("repo"), ["FR"], {
