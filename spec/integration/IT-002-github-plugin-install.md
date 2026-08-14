@@ -79,7 +79,7 @@ only when every per-step success criterion holds.
 ## Notes
 
 This GitHub boundary is exercised at the agent-eval layer (`spec/evals.md`,
-EV-003/EV-009/EV-010/EV-020), while the unit suite covers install/list/remove only
+TC-EV-003/TC-EV-009/TC-EV-010/TC-EV-020), while the unit suite covers install/list/remove only
 through local path sources. A deterministic test that performs the real GitHub
 checkout does not yet exist in `tests/`; this IT defines that coverage and is
 recorded as a backsync gap.

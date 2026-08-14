@@ -40,6 +40,6 @@ part of the `specify` fix.
 
 ## Guard
 
-EV-021..EV-025 in `spec/evals.md` (the `artifacts` check in `evals/lib/assert.mjs`)
+TC-EV-021..TC-EV-025 in `spec/evals.md` (the `artifacts` check in `evals/lib/assert.mjs`)
 assert that spec-change requests produce the right artifact **types as discrete
 files** — a regression guard for the `specify` degradation above.

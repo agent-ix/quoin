@@ -56,5 +56,5 @@ hand all subsequent lifecycle control to `ix-flow`.
   [FR-020](./FR-020-resolve-workflow-skills.md).
 - **Downstream**: external-process invocation is constrained by
   [NFR-007](../non-functional/NFR-007-external-tool-invocation.md). The launch
-  boundary is exercised at the agent-eval layer (`spec/evals.md`, EV-005/EV-013);
+  boundary is exercised at the agent-eval layer (`spec/evals.md`, TC-EV-005/TC-EV-013);
   post-launch lifecycle is owned by `ix-flow`.

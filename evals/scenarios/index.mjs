@@ -1,4 +1,4 @@
-// Declarative eval scenarios (EV-001..EV-015 from spec/evals.md).
+// Declarative eval scenarios (TC-EV-001..TC-EV-015 from spec/evals.md).
 //
 // Each scenario: { id, useCase, prompt, expect, setup?(ctx), env?(ctx) }.
 //  - prompt:  task text for the agent (string or (ctx)=>string). The EV "Prompt" column.
@@ -10,12 +10,12 @@
 //             files, absentFiles, validate, artifacts, flow, cliRejects, plugin,
 //             resolvesTo, sentinel.
 //
-// EV-021..EV-025 are the artifact-completeness set: they drive `/specify` for
+// TC-EV-021..TC-EV-025 are the artifact-completeness set: they drive `/specify` for
 // request shapes (new project / add US / edit FR / add US+FR / backport) and use
 // the `artifacts` check to assert the EXACT artifact types were authored as
 // discrete files (an FR written only as a row in spec.md's table fails).
 //
-// The two canaries (EV-001 greenfield, EV-008 repair loop) are the cheapest, highest
+// The two canaries (TC-EV-001 greenfield, TC-EV-008 repair loop) are the cheapest, highest
 // -signal scenarios; `--canary` runs only those.
 
 import {
@@ -28,7 +28,7 @@ import {
   writeRepoFile,
 } from "../lib/fixtures.mjs";
 
-// --- Shared fixture for the gap-analysis scenarios (EV-030..EV-033) -----------
+// --- Shared fixture for the gap-analysis scenarios (TC-EV-030..TC-EV-033) -----------
 // Seeds a PLAN-001 bundle + Test Matrix + code/tests with configurable gaps so each
 // scenario exercises a different happy/sad branch of the gap-analysis skill:
 //   taskDone  - TASK-002 status: true=done, false=not_started          (Step 2 gap)
@@ -261,7 +261,7 @@ function seedGapBundle(ctx, { taskDone, tc2, untraced }) {
   writeRepoFile(ctx, "tests/shorten.test.mjs", tests.join("\n"));
 }
 
-// --- Shared fixtures for the spec-correctness scenarios (EV-050..EV-053) ------
+// --- Shared fixtures for the spec-correctness scenarios (TC-EV-050..TC-EV-053) ------
 //
 // FR-028's skill consumes `quire properties --json`, so each scenario needs a
 // repo whose criteria land in known classification buckets, plus a source file
@@ -304,7 +304,7 @@ function seedCorrectnessSource(ctx) {
  *
  * `withGroundable` false swaps the groundable criteria for ones the skill must
  * refuse — an adjectival oracle and a symbol that does not exist — which is what
- * EV-053 exercises.
+ * TC-EV-053 exercises.
  */
 function correctnessFr(withGroundable) {
   const criteria = withGroundable
@@ -405,8 +405,8 @@ const correctnessPrompt =
   "artifact the skill specifies.";
 
 function specCorrectnessScenarios() {
-  // The review artifact is a `SpecReview` at reviews/, exactly as EV-026 and
-  // EV-030 assert for gap-analysis — not an ad-hoc file in the test tree. The
+  // The review artifact is a `SpecReview` at reviews/, exactly as TC-EV-026 and
+  // TC-EV-030 assert for gap-analysis — not an ad-hoc file in the test tree. The
   // earlier version of these scenarios required `tests/props/QUEUE.md`, so the
   // suite would have failed an agent that behaved correctly (agent-ix/quoin#63).
   const REVIEW_ARTIFACT = {
@@ -423,12 +423,12 @@ function specCorrectnessScenarios() {
 
   return [
     {
-      // EV-050 — the settled lane. fast-check is present, so the criteria the
+      // TC-EV-050 — the settled lane. fast-check is present, so the criteria the
       // classifier settled as `extractable` become real property tests under
       // tests/props/, each tagged with its row_id. The `example` criterion
       // (AC-4, a single witness) must NOT become a property test; it is a
       // finding in the review artifact.
-      id: "EV-050",
+      id: "TC-EV-050",
       useCase: "US-011",
       setup(ctx) {
         seedCorrectness(ctx, { fastCheck: true });
@@ -455,11 +455,11 @@ function specCorrectnessScenarios() {
       },
     },
     {
-      // EV-051 — the review record. What the skill cannot settle unattended is
+      // TC-EV-051 — the review record. What the skill cannot settle unattended is
       // a *finding*, not a disabled test: the artifact validates as a
       // SpecReview, and nothing in the test tree is skipped or ignored. A
       // generated test is reviewed in the pull request it arrives in.
-      id: "EV-051",
+      id: "TC-EV-051",
       useCase: "US-011",
       setup(ctx) {
         seedCorrectness(ctx, { fastCheck: true });
@@ -487,11 +487,11 @@ function specCorrectnessScenarios() {
       },
     },
     {
-      // EV-052 — the handoff. After spec-correctness emits, gap-analysis must
+      // TC-EV-052 — the handoff. After spec-correctness emits, gap-analysis must
       // reconcile every emitted row_id: no unbacked row for a generated test.
       // Two SpecReviews now exist (spec-correctness + gap-analysis), which is
       // the one-doc-per-analysis model working as intended.
-      id: "EV-052",
+      id: "TC-EV-052",
       useCase: "US-011",
       setup(ctx) {
         seedCorrectness(ctx, { fastCheck: true });
@@ -514,13 +514,13 @@ function specCorrectnessScenarios() {
       },
     },
     {
-      // EV-053 — the refusals, CON-1, and FR-028-CON-1. Nothing here is
+      // TC-EV-053 — the refusals, CON-1, and FR-028-CON-1. Nothing here is
       // groundable: one criterion's oracle is adjectival ("actionable and
       // clear"), one names a symbol absent from src/, and the manifest declares
       // no generator library. The skill must write no test file, install
       // nothing, record each reason as a finding — and invent no output format
       // to record them in.
-      id: "EV-053",
+      id: "TC-EV-053",
       useCase: "US-011",
       setup(ctx) {
         seedCorrectness(ctx, { fastCheck: false, groundable: false });
@@ -584,7 +584,7 @@ const verdict = (word) => `## Verdict[\\s\\S]{0,40}\\b${word}\\b`;
 
 export const SCENARIOS = [
   {
-    id: "EV-001",
+    id: "TC-EV-001",
     useCase: "US-001",
     prompt:
       "Create a Functional Requirement (FR) plus a `domain` object and an `entity` " +
@@ -596,7 +596,7 @@ export const SCENARIOS = [
     },
   },
   {
-    id: "EV-002",
+    id: "TC-EV-002",
     useCase: "US-002",
     setup(ctx) {
       copySkeleton(ctx, "spec-artifacts-iso", "fr.md", "spec/FR-002.md");
@@ -612,7 +612,7 @@ export const SCENARIOS = [
     },
   },
   {
-    id: "EV-003",
+    id: "TC-EV-003",
     useCase: "US-003",
     setup(ctx) {
       ctx.data.pluginPath = makeLocalPlugin(
@@ -632,7 +632,7 @@ export const SCENARIOS = [
     },
   },
   {
-    id: "EV-004",
+    id: "TC-EV-004",
     useCase: "US-004",
     setup(ctx) {
       copySkeleton(ctx, "spec-artifacts-iso", "fr.md", "spec/FR-004.md");
@@ -656,7 +656,7 @@ export const SCENARIOS = [
     },
   },
   {
-    id: "EV-005",
+    id: "TC-EV-005",
     useCase: "US-005",
     setup(ctx) {
       copySkeleton(ctx, "spec-artifacts-iso", "fr.md", "spec/FR-005.md");
@@ -670,7 +670,7 @@ export const SCENARIOS = [
     },
   },
   {
-    id: "EV-006",
+    id: "TC-EV-006",
     useCase: "US-001,US-004",
     prompt:
       "Create two Functional Requirements and one `domain` object that share object " +
@@ -682,7 +682,7 @@ export const SCENARIOS = [
     },
   },
   {
-    id: "EV-007",
+    id: "TC-EV-007",
     useCase: "US-002",
     prompt:
       "Author one FR and one domain object, requesting them with LOWERCASE type names " +
@@ -694,7 +694,7 @@ export const SCENARIOS = [
     },
   },
   {
-    id: "EV-008",
+    id: "TC-EV-008",
     useCase: "US-004",
     prompt:
       "The file spec/FR-008.md currently FAILS validation. Run " +
@@ -715,7 +715,7 @@ export const SCENARIOS = [
     },
   },
   {
-    id: "EV-009",
+    id: "TC-EV-009",
     useCase: "US-003",
     setup(ctx) {
       ctx.data.pluginPath = makeLocalPlugin(
@@ -733,10 +733,10 @@ export const SCENARIOS = [
     },
   },
   {
-    id: "EV-010",
+    id: "TC-EV-010",
     useCase: "US-003",
     // Local "packaged" plugin stand-in (versioned manifest) for the install→resolve
-    // →author→validate path. EV-020 covers a REAL `github:owner/repo//subdir` install
+    // →author→validate path. TC-EV-020 covers a REAL `github:owner/repo//subdir` install
     // that clones from GitHub over the network.
     setup(ctx) {
       ctx.data.pluginPath = makeLocalPlugin(
@@ -756,7 +756,7 @@ export const SCENARIOS = [
     },
   },
   {
-    id: "EV-011",
+    id: "TC-EV-011",
     useCase: "US-002",
     prompt:
       "Attempt to create an authoring pack for an unknown type by running " +
@@ -767,7 +767,7 @@ export const SCENARIOS = [
     },
   },
   {
-    id: "EV-012",
+    id: "TC-EV-012",
     useCase: "US-004",
     setup(ctx) {
       copySkeleton(ctx, "spec-artifacts-iso", "fr.md", "spec/good/FR-012.md");
@@ -788,7 +788,7 @@ export const SCENARIOS = [
     },
   },
   {
-    id: "EV-013",
+    id: "TC-EV-013",
     useCase: "US-005",
     setup(ctx) {
       copySkeleton(ctx, "spec-artifacts-iso", "fr.md", "spec/FR-013.md");
@@ -806,7 +806,7 @@ export const SCENARIOS = [
     },
   },
   {
-    id: "EV-014",
+    id: "TC-EV-014",
     useCase: "US-001,US-002",
     // Stretch scenario: a full early-phase spec set. Some process types (Plan,
     // TestMatrix, master-requirements) ship a schema but no skeleton, so the agent
@@ -822,7 +822,7 @@ export const SCENARIOS = [
     },
   },
   {
-    id: "EV-015",
+    id: "TC-EV-015",
     useCase: "US-001,US-004",
     setup(ctx) {
       ctx.data.devModulePath = makeDevModule(ctx, {
@@ -844,10 +844,10 @@ export const SCENARIOS = [
     },
   },
 
-  // ---- Extended scenarios (beyond the original spec/evals.md EV-001..EV-015) ----
+  // ---- Extended scenarios (beyond the original spec/evals.md TC-EV-001..TC-EV-015) ----
 
   {
-    id: "EV-016",
+    id: "TC-EV-016",
     useCase: "US-001,US-004",
     // Multi-repo: author into two sibling repos in one session; cwd + validation
     // scope are repointed to the parent workspace by makeRepos().
@@ -869,7 +869,7 @@ export const SCENARIOS = [
     },
   },
   {
-    id: "EV-017",
+    id: "TC-EV-017",
     useCase: "US-001,US-002",
     // Larger, realistic feature spec set with cross-references — sustained authoring.
     prompt:
@@ -892,7 +892,7 @@ export const SCENARIOS = [
     },
   },
   {
-    id: "EV-018",
+    id: "TC-EV-018",
     useCase: "US-001",
     // Objects drawn from THREE different object modules in one spec — exercises
     // multi-module catalog resolution in a single authoring pass.
@@ -908,7 +908,7 @@ export const SCENARIOS = [
     },
   },
   {
-    id: "EV-020",
+    id: "TC-EV-020",
     useCase: "US-003",
     // REAL GitHub install: remove the operational module from the seeded home, then
     // the agent installs it from GitHub via the subdir source and authors one of its
@@ -936,9 +936,9 @@ export const SCENARIOS = [
     },
   },
 
-  // --- EV-021..EV-025: artifact-completeness for spec-change requests ---------
+  // --- TC-EV-021..TC-EV-025: artifact-completeness for spec-change requests ---------
   {
-    id: "EV-021",
+    id: "TC-EV-021",
     useCase: "US-001",
     prompt:
       "Start a new spec for a small URL-shortener service: a user submits a long " +
@@ -958,7 +958,7 @@ export const SCENARIOS = [
     },
   },
   {
-    id: "EV-022",
+    id: "TC-EV-022",
     useCase: "US-001",
     setup(ctx) {
       copySkeleton(
@@ -982,7 +982,7 @@ export const SCENARIOS = [
     },
   },
   {
-    id: "EV-023",
+    id: "TC-EV-023",
     useCase: "US-002",
     setup(ctx) {
       copySkeleton(
@@ -1008,7 +1008,7 @@ export const SCENARIOS = [
     },
   },
   {
-    id: "EV-024",
+    id: "TC-EV-024",
     useCase: "US-001",
     prompt:
       "Add a user story for a user exporting their data as a CSV file, and the " +
@@ -1025,7 +1025,7 @@ export const SCENARIOS = [
     },
   },
   {
-    id: "EV-025",
+    id: "TC-EV-025",
     useCase: "US-001",
     setup(ctx) {
       writeRepoFile(
@@ -1060,7 +1060,7 @@ export const SCENARIOS = [
   {
     // Direct-render spec-review: one validated SpecReview doc per selected
     // analysis, with the coverage gate enforcing the chosen set.
-    id: "EV-026",
+    id: "TC-EV-026",
     useCase: "US-005",
     setup(ctx) {
       copySkeleton(
@@ -1071,7 +1071,7 @@ export const SCENARIOS = [
       );
     },
     // The agent runs a subset spec-review and produces one validated SpecReview
-    // doc per selected analysis. (EV-005 separately covers the ix-flow workflow
+    // doc per selected analysis. (TC-EV-005 separately covers the ix-flow workflow
     // lifecycle.) The two `agentRan` guardrails assert the durable behaviors:
     // reference quoin for the template + validate with quire.
     //
@@ -1123,7 +1123,7 @@ export const SCENARIOS = [
     // a single "Task File Mapping" table, and tracks are described once under "Remaining
     // Work", so there is NO separate "Execution Tracks" section re-stating them. This
     // `fileContains` locks in the duplication removal the slim-template change made.
-    id: "EV-027",
+    id: "TC-EV-027",
     useCase: "US-008",
     setup(ctx) {
       copySkeleton(
@@ -1166,7 +1166,7 @@ export const SCENARIOS = [
     // Step-0 multi-plan selection: a project already holds a plan; the agent must
     // start a SECOND, independent plan (Plan-002) without disturbing the first.
     // Asserts >=2 Plan artifacts and a Plan-002 bundle, all validating.
-    id: "EV-028",
+    id: "TC-EV-028",
     useCase: "US-008",
     setup(ctx) {
       copySkeleton(
@@ -1282,7 +1282,7 @@ export const SCENARIOS = [
     // cover; the agent must regenerate the SAME plan (add a task, refresh
     // index/log) rather than spawn a second one. `Plan max:1` + `Task min:3`
     // proves the existing bundle grew; `absentFiles` rules out a second plan.
-    id: "EV-029",
+    id: "TC-EV-029",
     useCase: "US-008",
     setup(ctx) {
       copySkeleton(
@@ -1416,11 +1416,11 @@ export const SCENARIOS = [
     // `gap-analysis` to the SpecReview `analysis` enum (shipped alongside this skill).
     // Until v0.4.0 is tagged + pinned in default-modules.yaml, the seed reconciles the
     // published v0.3.0 module (enum lacks `gap-analysis`), so `quire validate` rejects
-    // the doc and this eval is RED — the same release-coupling EV-026 documents for the
+    // the doc and this eval is RED — the same release-coupling TC-EV-026 documents for the
     // SpecReview archetype itself. Proven GREEN locally (sonnet, 1/1) by temporarily
     // sourcing the module from the local working tree (`source.type: path`) before the
     // tag exists; the committed pin stays at the released v0.3.0.
-    id: "EV-030",
+    id: "TC-EV-030",
     useCase: "US-005",
     setup(ctx) {
       seedGapBundle(ctx, { taskDone: false, tc2: "none", untraced: "purge" });
@@ -1441,11 +1441,11 @@ export const SCENARIOS = [
     },
   },
   {
-    // EV-031 — HAPPY path: every task done, both matrix TCs backed by real tagged
+    // TC-EV-031 — HAPPY path: every task done, both matrix TCs backed by real tagged
     // tests, no untraced code, semantic review declined → Verdict PASS with the single
     // "no gaps" finding. Proves the PASS branch + that a clean review still validates.
-    // Shares the EV-030 v0.4.0 release-coupling (RED in CI until v0.4.0 is pinned).
-    id: "EV-031",
+    // Shares the TC-EV-030 v0.4.0 release-coupling (RED in CI until v0.4.0 is pinned).
+    id: "TC-EV-031",
     useCase: "US-005",
     setup(ctx) {
       seedGapBundle(ctx, { taskDone: true, tc2: "real", untraced: false });
@@ -1469,10 +1469,10 @@ export const SCENARIOS = [
     },
   },
   {
-    // EV-032 — SAD (medium-only) → Verdict CONDITIONAL: plan done and matrix fully
+    // TC-EV-032 — SAD (medium-only) → Verdict CONDITIONAL: plan done and matrix fully
     // backed, but the source has an untraced read-only `listCodes` API with no owning
     // requirement (Step 4). Isolates the reverse-gap path + the CONDITIONAL gate.
-    id: "EV-032",
+    id: "TC-EV-032",
     useCase: "US-005",
     setup(ctx) {
       seedGapBundle(ctx, {
@@ -1498,11 +1498,11 @@ export const SCENARIOS = [
     },
   },
   {
-    // EV-033 — OPTIONAL semantic review (Step 5): plan done, matrix TC-002 is backed
+    // TC-EV-033 — OPTIONAL semantic review (Step 5): plan done, matrix TC-002 is backed
     // by a tagged test so Step 3 passes — but that test is HOLLOW (asserts nothing
     // about resolve). Only the semantic review (which the prompt opts into) catches it.
     // The TC-002 finding is the signal that Step 5 actually ran (Steps 2-4 are clean).
-    id: "EV-033",
+    id: "TC-EV-033",
     useCase: "US-005",
     setup(ctx) {
       seedGapBundle(ctx, { taskDone: true, tc2: "hollow", untraced: false });
@@ -1531,7 +1531,7 @@ export const SCENARIOS = [
     // start. The `--strict` validate asserts the authored FR is BOTH
     // structurally valid AND grammar-clean — exercising the EARS skeleton
     // guidance + `/specify`.
-    id: "EV-040",
+    id: "TC-EV-040",
     useCase: "US-001",
     prompt:
       "Author one Functional Requirement at spec/functional/FR-100.md for this " +
@@ -1553,11 +1553,11 @@ export const SCENARIOS = [
     },
   },
   {
-    // EARS repair loop (mirrors EV-008 but for the grammar check): a
+    // EARS repair loop (mirrors TC-EV-008 but for the grammar check): a
     // structurally-valid FR with three EARS defects (non-singular + vague
     // response + non-canonical trigger). The agent reads the `[ears:…]`
     // warnings and rewrites the Description until `--strict` passes.
-    id: "EV-041",
+    id: "TC-EV-041",
     useCase: "US-004",
     prompt:
       "The requirement statement in spec/functional/FR-001.md trips the EARS " +
@@ -1614,7 +1614,7 @@ export const SCENARIOS = [
     // term suppresses the otherwise-vague `provide a <term>` (validates the
     // harvest+inject chain end-to-end through a live agent). Uses the DDD UL
     // form (a released archetype) so the eval needs only the FR-044 engine.
-    id: "EV-042",
+    id: "TC-EV-042",
     useCase: "US-001",
     prompt:
       "Author one Functional Requirement at spec/functional/FR-100.md whose " +
@@ -1637,7 +1637,7 @@ export const SCENARIOS = [
     // grammar check on a project term. The correct fix is to DEFINE the term in
     // a `domain` object's `## Ubiquitous Language` — NOT to reword the
     // requirement. After the agent adds the definition, `--strict` passes.
-    id: "EV-043",
+    id: "TC-EV-043",
     useCase: "US-004",
     prompt:
       "spec/functional/FR-001.md trips the EARS requirement-grammar check: " +
@@ -1684,11 +1684,11 @@ export const SCENARIOS = [
     },
   },
 
-  // --- spec-correctness (EV-050..EV-053, FR-028) ------------------------------
+  // --- spec-correctness (TC-EV-050..TC-EV-053, FR-028) ------------------------------
   ...specCorrectnessScenarios(),
 ];
 
-export const CANARY_IDS = ["EV-001", "EV-008"];
+export const CANARY_IDS = ["TC-EV-001", "TC-EV-008"];
 
 export function selectScenarios({ canary, all, filter }) {
   if (filter) {

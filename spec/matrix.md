@@ -66,7 +66,7 @@ Coverage is mapped requirement → test as `file :: "test name"`:
 
 | FR-027 | ✅ Covered | AC-1 `org.test.ts` :: "prefers a stored org over the git remote". AC-2 :: "prefers an explicit --org over a stored value". AC-3 :: "lets QUOIN_ORG layer over the stored value, reported as env". AC-4 :: "falls through to the git remote when nothing is stored"; :: "resolves to none when nothing is stored and there is no remote". AC-5 :: "ignores a malformed config rather than failing the command". AC-6 `config-schema.test.ts` :: "rejects an unrecognized key"; :: "rejects an empty org"; :: "accepts a non-empty org"; :: "accepts an absent org rather than defaulting one". AC-7 :: "declares the plugin id, schema, and env binding". AC-8 `cli.test.ts` :: "set stores an org that write then resolves"; :: "get resolves for a stored key without erroring"; :: "set rejects an unrecognized key"; :: "doctor reports on a clean config without failing"; :: "edit opens the config file through the shared handler"; `config-schema.test.ts` :: "get calls runConfigGet from the shared package"; :: "set calls runConfigSet from the shared package"; :: "edit calls runConfigEdit from the shared package"; :: "doctor calls runConfigDoctor from the shared package"; :: "each command registers quoin's schema before delegating". AC-9 `org.test.ts` :: "prefers a project-local org over the user-level one (FR-027-AC-9)"; :: "ignores the project layer when the invocation disables it (FR-027-AC-9)" |
 
-| FR-028 | ✅ Covered | The `spec-correctness` skill (`skills/spec-correctness/`) is agent-facing, so it is verified at the eval layer rather than by vitest — EV-050…EV-053, implemented in `evals/scenarios/index.mjs` and run by `make evals-all`. AC-1/AC-3/AC-4 → EV-050. AC-2/AC-6/AC-7 → EV-051. AC-5 → EV-052. AC-8/AC-9/AC-11/AC-13 → EV-053. AC-10/AC-12 → Inspection of `skills/spec-correctness/` (no framework name reaches any `spec/**` output; strategy selection is keyed on `property`, never on `shape`). CON-1 → EV-053 `absentFiles`. The skill's own output on this repo is `tests/props/` + a `SpecReview` under `reviews/`. |
+| FR-028 | ✅ Covered | The `spec-correctness` skill (`skills/spec-correctness/`) is agent-facing, so it is verified at the eval layer rather than by vitest — TC-EV-050…TC-EV-053, implemented in `evals/scenarios/index.mjs` and run by `make evals-all`. AC-1/AC-3/AC-4 → TC-EV-050. AC-2/AC-6/AC-7 → TC-EV-051. AC-5 → TC-EV-052. AC-8/AC-9/AC-11/AC-13 → TC-EV-053. AC-10/AC-12 → Inspection of `skills/spec-correctness/` (no framework name reaches any `spec/**` output; strategy selection is keyed on `property`, never on `shape`). CON-1 → TC-EV-053 `absentFiles`. The skill's own output on this repo is `tests/props/` + a `SpecReview` under `reviews/`. |
 
 ## Non-Functional Requirements
 
@@ -247,10 +247,10 @@ found the stakeholder layer had no rows here at all.
 
 | Stakeholder Req | Trace to US/FR         | Test/Validation                                                                                       | Coverage Status |
 | --------------- | ---------------------- | ----------------------------------------------------------------------------------------------------- | --------------- |
-| StR-001-VC-1    | US-009; FR-004, FR-023 | Demonstration — EV-001…EV-013 run the real CLI from an isolated `IX_HOME`; NFR-004 inspects the deps    | ✅ Covered      |
-| StR-002-VC-1    | US-003; FR-018, FR-019 | Demonstration — EV-003/EV-009/EV-010/EV-020 install from local, GitHub and subdir sources              | ✅ Covered      |
-| StR-003-VC-1    | US-004; FR-014, FR-015 | Demonstration — EV-001/EV-004/EV-008 author to the skeleton and validate with a real `quire`           | ✅ Covered      |
-| StR-004-VC-1    | US-005; FR-020, FR-021 | Inspection — EV-005/EV-013 start runs and inspect status; resume/advance/gate progression is untested  | ⚠️ Partial      |
+| StR-001-VC-1    | US-009; FR-004, FR-023 | Demonstration — TC-EV-001…TC-EV-013 run the real CLI from an isolated `IX_HOME`; NFR-004 inspects the deps    | ✅ Covered      |
+| StR-002-VC-1    | US-003; FR-018, FR-019 | Demonstration — TC-EV-003/TC-EV-009/TC-EV-010/TC-EV-020 install from local, GitHub and subdir sources              | ✅ Covered      |
+| StR-003-VC-1    | US-004; FR-014, FR-015 | Demonstration — TC-EV-001/TC-EV-004/TC-EV-008 author to the skeleton and validate with a real `quire`           | ✅ Covered      |
+| StR-004-VC-1    | US-005; FR-020, FR-021 | Inspection — TC-EV-005/TC-EV-013 start runs and inspect status; resume/advance/gate progression is untested  | ⚠️ Partial      |
 | StR-005-VC-1    | US-003; FR-016, FR-017 | Inspection — the default set is version-pinned; NFR-001 covers idempotent offline reconcile            | ✅ Covered      |
 | StR-006-VC-1    | US-009; FR-022         | Demonstration — `update.test.ts` covers delegation, `--check` and `--registry`                          | ✅ Covered      |
 
@@ -258,14 +258,14 @@ found the stakeholder layer had no rows here at all.
 
 | Use Case | Coverage   | Test / Evidence                                                                                                                                                      |
 | -------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| US-001   | ✅ Covered | `index.test.ts` authoring-pack test; `write.test.ts` `formatAuthoringPack` suite; EV-001/EV-006/EV-014 in `spec/evals.md`                                            |
-| US-002   | ✅ Covered | `cli.test.ts` `runCatalog` show suite; `scripts.test.ts` catalog/write help; `index.test.ts` case-insensitive lookup; EV-002/EV-007                                  |
-| US-003   | ⚠️ Partial | `plugins.test.ts` + `index.test.ts` install/list/remove (path source only). GitHub/subdir install is exercised only at the eval layer (EV-003/EV-009/EV-010/EV-020). |
-| US-004   | ✅ Covered | `write.test.ts` validation-command assertions; `index.test.ts` `validation.command`; EV-004/EV-008/EV-012                                                            |
-| US-005   | ✅ Covered | `flows.test.ts` launchers end-to-end (real fake `ix-flow`); `cli.test.ts` `review`/`matrix` dispatch; EV-005/EV-013                                                  |
+| US-001   | ✅ Covered | `index.test.ts` authoring-pack test; `write.test.ts` `formatAuthoringPack` suite; TC-EV-001/TC-EV-006/TC-EV-014 in `spec/evals.md`                                            |
+| US-002   | ✅ Covered | `cli.test.ts` `runCatalog` show suite; `scripts.test.ts` catalog/write help; `index.test.ts` case-insensitive lookup; TC-EV-002/TC-EV-007                                  |
+| US-003   | ⚠️ Partial | `plugins.test.ts` + `index.test.ts` install/list/remove (path source only). GitHub/subdir install is exercised only at the eval layer (TC-EV-003/TC-EV-009/TC-EV-010/TC-EV-020). |
+| US-004   | ✅ Covered | `write.test.ts` validation-command assertions; `index.test.ts` `validation.command`; TC-EV-004/TC-EV-008/TC-EV-012                                                            |
+| US-005   | ✅ Covered | `flows.test.ts` launchers end-to-end (real fake `ix-flow`); `cli.test.ts` `review`/`matrix` dispatch; TC-EV-005/TC-EV-013                                                  |
 | US-006   | ✅ Covered | `catalog.test.ts` :: "reports a type declared by two modules"; `cli.test.ts` :: "validate reports duplicates on stderr and sets exit code 1"                         |
 | US-010   | ✅ Covered | `org.test.ts` resolution suites (precedence, both url forms, worktrees, owner-less remotes); `write.test.ts` "authoring pack organization" suite; `cli.test.ts` `--org` text/JSON/unresolved trio; `org-no-subprocess.test.ts` no-subprocess proof — see FR-025 |
-| US-011   | ✅ Covered | EV-050…EV-053 in `evals/scenarios/index.mjs` — the settled lane, the review artifact, the gap-analysis handoff, and the refusals; see FR-028. The skill's own run on this repo is `tests/props/` (17 criteria) + a `SpecReview` under `reviews/` |
+| US-011   | ✅ Covered | TC-EV-050…TC-EV-053 in `evals/scenarios/index.mjs` — the settled lane, the review artifact, the gap-analysis handoff, and the refusals; see FR-028. The skill's own run on this repo is `tests/props/` (17 criteria) + a `SpecReview` under `reviews/` |
 
 ## Property Test Layer
 
@@ -299,12 +299,12 @@ quire coverage --scope . --json
 
 Some criteria are verified by a method that produces no test at all:
 FR-003-AC-1/AC-3 (help rendering, delegated to `@oclif/core`), FR-028-AC-1…AC-13
-(evals EV-050…EV-053 and inspection), NFR-007-AC-1 (an accepted limitation), and
+(evals TC-EV-050…TC-EV-053 and inspection), NFR-007-AC-1 (an accepted limitation), and
 the six StR validation criteria (demonstration).
 
 ## Eval Coverage
 
-The agent-facing eval set (EV-001…EV-020) is defined in `spec/evals.md`
+The agent-facing eval set (TC-EV-001…TC-EV-020) is defined in `spec/evals.md`
 (Matrix-002) and implemented by the agent-pty-driven harness in `evals/`
 (`make evals` for canaries, `make evals-all` for the full set). It drives the
 real agent through this CLI + the `/spec-*` skills and records real metrics from
@@ -320,7 +320,7 @@ boundaries are exercised non-deterministically by the agent-pty evals.
 | Integration Test | Coverage              | Evidence / Related evals                                                                                                                                                                                                 |
 | ---------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | IT-001           | ⚠️ Spec-ahead-of-code | Default-module reconcile from pinned git tags. Unit tests use path-source fixtures (`index.test.ts`) and the evals seed modules into `evals/.seed-cache/`; no deterministic live first-run-then-offline test exists yet. |
-| IT-002           | ⚠️ Spec-ahead-of-code | `github://` plugin install. Unit tests cover path sources only (`plugins.test.ts`); live GitHub install is exercised at the eval layer (EV-003/EV-009/EV-010/EV-020).                                                    |
+| IT-002           | ⚠️ Spec-ahead-of-code | `github://` plugin install. Unit tests cover path sources only (`plugins.test.ts`); live GitHub install is exercised at the eval layer (TC-EV-003/TC-EV-009/TC-EV-010/TC-EV-020).                                                    |
 
 ## Backsync Notes
 
