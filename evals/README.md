@@ -7,20 +7,20 @@ The harness drives the real `claude` agent through this CLI + the `/spec-*` skil
 [`agent-pty`](../../agent-pty) (tmux), then reads the **Claude Code session transcript**
 for real metrics (`agent-pty` itself surfaces none).
 
-Scenario definitions (EV-001..EV-015) live in [`spec/evals.md`](../spec/evals.md) and
+Scenario definitions (TC-EV-001..TC-EV-015) live in [`spec/evals.md`](../spec/evals.md) and
 are implemented as declarative data in [`scenarios/index.mjs`](scenarios/index.mjs).
 
 ## Running
 
 ```bash
-make evals                    # canaries only (EV-001 greenfield, EV-008 repair loop)
+make evals                    # canaries only (TC-EV-001 greenfield, TC-EV-008 repair loop)
 make evals-all                # all 15 (costs tokens + ~20-40 min)
 make evals MODEL=opus REPEATS=3
 
 # or directly:
 node evals/run.mjs --canary --model sonnet
 node evals/run.mjs --all     --model sonnet --repeats 3
-node evals/run.mjs --filter EV-005 --model sonnet --keep
+node evals/run.mjs --filter TC-EV-005 --model sonnet --keep
 node evals/run.mjs --rebuild   # re-derive metrics + table from the last run's transcripts (no agent runs)
 ```
 
@@ -76,7 +76,7 @@ bypassPermissions --model <m> --add-dir <repo>` under tmux, drives the startup
 
 ## Known limitations
 
-- **EV-010** (GitHub/package plugin) stands in with a versioned _local_ plugin offline;
+- **TC-EV-010** (GitHub/package plugin) stands in with a versioned _local_ plugin offline;
   swap to a real `github:` source once a public plugin repo exists.
 - `modelActiveMs` (transcript timestamp span) is secondary; `latencyMs` (harness
   wall-clock) is authoritative.

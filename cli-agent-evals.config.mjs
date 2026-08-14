@@ -14,7 +14,7 @@ export default defineSuite({
   rootDir: import.meta.dirname,
   scenarios: SCENARIOS.map((scenario) => ({
     ...scenario,
-    canary: scenario.canary ?? ["EV-001", "EV-008"].includes(scenario.id),
+    canary: scenario.canary ?? ["TC-EV-001", "TC-EV-008"].includes(scenario.id),
   })),
   workspace(scenario, suite) {
     seed ??= buildSeedOnce({

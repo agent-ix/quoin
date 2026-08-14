@@ -121,23 +121,23 @@ wrong, so the second pass can afford recall the deterministic pass cannot.
 
 | ID | Constraint | Type | Validation |
 |----|------------|------|------------|
-| FR-028-CON-1 | The skill SHALL NOT invent an output format. Everything it writes to the tree is either a test in the repository's own harness or an artifact type the module catalog declares; a review is a `SpecReview`. | Architecture | Eval (EV-053) |
+| FR-028-CON-1 | The skill SHALL NOT invent an output format. Everything it writes to the tree is either a test in the repository's own harness or an artifact type the module catalog declares; a review is a `SpecReview`. | Architecture | Eval (TC-EV-053) |
 
 ## Acceptance Criteria
 
 | ID           | Criteria                                                                                                               | Verification    |
 | ------------ | ---------------------------------------------------------------------------------------------------------------------- | --------------- |
-| FR-028-AC-1  | A record with `extraction` of `extractable` yields a test emitted unattended                                            | Eval (EV-050)   |
-| FR-028-AC-2  | A record with `extraction` of `candidate` yields a test and a finding in the review artifact naming it as requiring review | Eval (EV-051)   |
-| FR-028-AC-3  | Any record whose `property` is `example` or `unclassified` yields no unattended test                                    | Eval (EV-050)   |
-| FR-028-AC-4  | Every emitted tracking tag names a `row_id` present in the classification output                                        | Eval (EV-050)   |
-| FR-028-AC-5  | Every emitted tracking tag is reported as backed by `quire coverage`, not merely present in the file                     | Eval (EV-052)   |
-| FR-028-AC-6  | Every test the skill emits runs in the repository's runner — no skip, ignore, or disabled marker is written             | Eval (EV-051)   |
-| FR-028-AC-7  | The run writes exactly one `SpecReview` at `reviews/YY-MM-DD-<slug>.md` with `analysis: spec-correctness`, and it passes `quire validate` | Eval (EV-051)   |
-| FR-028-AC-8  | A criterion whose domain, precondition, or oracle cannot be cited yields a recorded reason and no test                  | Eval (EV-053)   |
-| FR-028-AC-9  | The census output carries no threshold, no verdict, and no rewording suggestion                                         | Eval (EV-053)   |
+| FR-028-AC-1  | A record with `extraction` of `extractable` yields a test emitted unattended                                            | Eval (TC-EV-050)   |
+| FR-028-AC-2  | A record with `extraction` of `candidate` yields a test and a finding in the review artifact naming it as requiring review | Eval (TC-EV-051)   |
+| FR-028-AC-3  | Any record whose `property` is `example` or `unclassified` yields no unattended test                                    | Eval (TC-EV-050)   |
+| FR-028-AC-4  | Every emitted tracking tag names a `row_id` present in the classification output                                        | Eval (TC-EV-050)   |
+| FR-028-AC-5  | Every emitted tracking tag is reported as backed by `quire coverage`, not merely present in the file                     | Eval (TC-EV-052)   |
+| FR-028-AC-6  | Every test the skill emits runs in the repository's runner — no skip, ignore, or disabled marker is written             | Eval (TC-EV-051)   |
+| FR-028-AC-7  | The run writes exactly one `SpecReview` at `reviews/YY-MM-DD-<slug>.md` with `analysis: spec-correctness`, and it passes `quire validate` | Eval (TC-EV-051)   |
+| FR-028-AC-8  | A criterion whose domain, precondition, or oracle cannot be cited yields a recorded reason and no test                  | Eval (TC-EV-053)   |
+| FR-028-AC-9  | The census output carries no threshold, no verdict, and no rewording suggestion                                         | Eval (TC-EV-053)   |
 | FR-028-AC-10 | No specification artifact the skill writes names a test framework, harness, or generator library                        | Inspection      |
-| FR-028-AC-11 | A repository whose manifest names no generator library yields findings naming it and a reported remedy, not an install and not a test | Eval (EV-053)   |
+| FR-028-AC-11 | A repository whose manifest names no generator library yields findings naming it and a reported remedy, not an install and not a test | Eval (TC-EV-053)   |
 | FR-028-AC-12 | Strategy selection reads `property` and is unchanged by any `shape` value                                               | Inspection      |
 
 > **CR-001 note (2026-08-13):** This requirement shipped in
