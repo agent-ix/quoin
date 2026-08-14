@@ -1,12 +1,20 @@
 name: Release Drift
 
-# Guards against source drift: code merged to main that never gets released, so the
-# published @agent-ix/quoin silently lags its source. Fails while main's src/ is ahead
-# of the latest release tag. Self-healing — it re-evaluates on tag push (goes green once
-# you tag the release) and daily, so it never gets stuck red on an old commit.
+# Guards against source drift: work merged to main that never gets released, so the
+# published @agent-ix/quoin silently lags its source.
+#
+# The watched path set is DERIVED from package.json `files` (with dist/ mapped back
+# to src/) rather than hardcoded, so it cannot go stale when the shipped file set
+# changes. That matters: v0.12.2 shipped a stale default-modules.yaml pin precisely
+# because the old guard only diffed src/.
+#
+# Self-healing — re-evaluates on tag push, so it goes green once you tag the release.
 
 on:
   workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   drift:
@@ -15,19 +23,17 @@ jobs:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0 # full history + tags so `git describe` works
-      - name: Fail if src/ changed since the latest release tag
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+      - name: Install dependencies
         run: |
-          set -euo pipefail
-          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
-          if [ -z "$LAST_TAG" ]; then
-            echo "No release tags yet; nothing to compare against."
-            exit 0
-          fi
-          if git diff --quiet "$LAST_TAG"..HEAD -- src; then
-            echo "✅ No src/ changes since $LAST_TAG — main is released."
-          else
-            echo "::error::src/ has changed since $LAST_TAG. Tag a release (vX.Y.Z) so the published package matches main."
-            echo "Changed since $LAST_TAG:"
-            git diff --name-only "$LAST_TAG"..HEAD -- src
-            exit 1
-          fi
+          corepack enable
+          pnpm install --frozen-lockfile
+      - name: Fail if release-relevant paths changed since the latest tag
+        run: node scripts/release-drift.js check
+      - name: Report default module pins against latest tags
+        # Report-only: pinning behind latest is sometimes deliberate. This step
+        # exists so the state is known, not so it can block.
+        if: always()
+        run: node scripts/release-drift.js pins

@@ -61,6 +61,8 @@
     "clean": "rm -rf node_modules dist coverage .pnpm-store",
     "install:frozen": "pnpm install --frozen-lockfile",
     "update-lock": "pnpm install --lockfile-only",
+    "drift": "node scripts/release-drift.js check",
+    "drift:pins": "node scripts/release-drift.js pins",
     "version": "node scripts/build-tools.js version",
     "info": "node scripts/build-tools.js info",
     "docker:build": "docker build -t ghcr.io/agent-ix/quoin .",
