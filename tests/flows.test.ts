@@ -54,7 +54,8 @@ describe("startSpecFlow", () => {
     process.exitCode = savedExitCode;
   });
 
-  // Trace: FR-021-AC-1, FR-023-AC-3
+  // Trace: FR-021-AC-1
+  // Trace: FR-023-AC-3
   test("resolves when ix-flow exits 0; builds id/json/target args", async () => {
     process.env.IX_SPEC_WORKFLOWS_ROOT = packagedRoot("review");
     process.env.IX_HOME = tmp("home");

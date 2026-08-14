@@ -62,7 +62,8 @@ describe("defaultModuleRoots", () => {
     else process.env.QUOIN_MODULE_PATHS = originalPaths;
   });
 
-  // Trace: FR-007-AC-1, FR-023-AC-2
+  // Trace: FR-007-AC-1
+  // Trace: FR-023-AC-2
   test("includes QUOIN_MODULE_PATHS entries and installed module dirs", () => {
     const home = tmp("home");
     const installed = filamentModulesDir(home);
@@ -139,7 +140,8 @@ describe("loadCatalog", () => {
     expect(() => loadCatalog([dir])).toThrow();
   });
 
-  // Trace: FR-006-AC-1, FR-009-AC-2
+  // Trace: FR-006-AC-1
+  // Trace: FR-009-AC-2
   test("handles modules with and without a version and artifacts with/without schemaRef", () => {
     const root = tmp("versions");
     writeModule(
@@ -241,7 +243,8 @@ describe("skeleton resolution", () => {
   // (`fr.md`) while spec-artifacts-process uses the type's own casing
   // (`Feedback.md`). Each must resolve to the real on-disk name, never a
   // fabricated one that only "exists" on a case-insensitive filesystem.
-  // Trace: FR-009-AC-4, FR-009-AC-5
+  // Trace: FR-009-AC-4
+  // Trace: FR-009-AC-5
   test.each([
     ["the type's own casing", "Feedback", "Feedback.md"],
     ["a lowercase filename", "FR", "fr.md"],

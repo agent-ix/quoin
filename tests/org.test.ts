@@ -19,7 +19,8 @@ function gitConfig(url: string): string {
 }
 
 describe("resolveOrg precedence (FR-025-AC-1)", () => {
-  // Trace: FR-023-AC-4, FR-025-AC-1
+  // Trace: FR-023-AC-4
+  // Trace: FR-025-AC-1
   it("prefers --org over QUOIN_ORG and the git remote", () => {
     const root = repoWithConfig(gitConfig("git@github.com:from-git/repo.git"));
     expect(
@@ -27,7 +28,8 @@ describe("resolveOrg precedence (FR-025-AC-1)", () => {
     ).toEqual({ org: "from-flag", source: "flag" });
   });
 
-  // Trace: FR-023-AC-4, FR-025-AC-1
+  // Trace: FR-023-AC-4
+  // Trace: FR-025-AC-1
   it("prefers QUOIN_ORG over the git remote when no flag is given", () => {
     const root = repoWithConfig(gitConfig("git@github.com:from-git/repo.git"));
     expect(resolveOrg(root, { env: { QUOIN_ORG: "from-env" } })).toEqual({
