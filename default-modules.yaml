@@ -28,13 +28,13 @@ entries:
       ref: v0.5.0
 
   - name: spec-artifacts-process
-    version: "0.11.0"
+    version: "0.12.0"
     defaultEnabled: true
     source:
       type: git-subdir
       url: agent-ix/spec-artifacts-process
       path: spec_artifacts_process
-      ref: v0.11.0
+      ref: v0.12.0
 
   - name: spec-objects-business
     version: "0.6.0"
