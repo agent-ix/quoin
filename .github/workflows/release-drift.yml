@@ -32,6 +32,12 @@ jobs:
           pnpm install --frozen-lockfile
       - name: Fail if release-relevant paths changed since the latest tag
         run: node scripts/release-drift.js check
+      - name: Fail if a plugin manifest declares a version other than the latest tag
+        # Hosts key their plugin cache on this number and read it from the
+        # branch, not from a tag or a tarball, so a frozen version leaves every
+        # installer on an old tree no matter how many releases ship.
+        if: always()
+        run: node scripts/release-drift.js manifests
       - name: Report default module pins against latest tags
         # Report-only: pinning behind latest is sometimes deliberate. This step
         # exists so the state is known, not so it can block.

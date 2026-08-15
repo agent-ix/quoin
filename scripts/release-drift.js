@@ -12,10 +12,20 @@
  *   pins   Reports each default-modules.yaml pin against that repo's latest
  *          tag. Reports only — pinning behind latest is sometimes deliberate,
  *          and the value is knowing rather than being forced.
+ *
+ *   manifests
+ *          Fails when an agent plugin manifest declares a version other than
+ *          the latest release tag. Unlike package.json — which CI stamps from
+ *          the tag and never commits back — these manifests are read straight
+ *          out of the checked-out branch by the host (Claude Code clones the
+ *          marketplace repo and materializes a cache keyed on the declared
+ *          version). A frozen version therefore means installers never see an
+ *          update: quoin shipped 32 tags while .claude-plugin/plugin.json sat
+ *          at 0.1.0, and every install stayed on the tree from the first tag.
  */
 
 import { execFileSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -29,6 +39,12 @@ const repoRoot =
 
 /** Shipped paths that are built rather than committed, and their source. */
 const BUILD_OUTPUT_SOURCES = { "dist/": "src" };
+
+/** Agent plugin manifests whose `version` the host reads from the branch. */
+const PLUGIN_MANIFESTS = [
+  ".claude-plugin/plugin.json",
+  ".codex-plugin/plugin.json",
+];
 
 /**
  * Release-relevant paths, derived from what the package actually ships.
@@ -65,6 +81,28 @@ export function comparePins(entries, latestTags) {
       state = "behind";
     }
     return { name: entry.name, url, pinned, latest: latest ?? "", state };
+  });
+}
+
+/**
+ * Compare each plugin manifest's declared version against the release tag.
+ *
+ * `manifests` maps a repo-relative path to its parsed contents, or to null when
+ * the file is absent. An absent manifest is reported rather than failed — the
+ * repo simply does not package for that host — but a present-and-stale one is a
+ * hard failure, since it silently pins every installer to an old tree.
+ */
+export function compareManifestVersions(manifests, tag) {
+  const expected = tag.replace(/^v/, "");
+  return Object.entries(manifests).map(([path, manifest]) => {
+    if (!manifest) return { path, declared: "", expected, state: "absent" };
+    const declared = manifest.version ?? "";
+    return {
+      path,
+      declared,
+      expected,
+      state: declared === expected ? "current" : "stale",
+    };
   });
 }
 
@@ -120,6 +158,26 @@ function readModules() {
   return parse(readFileSync(join(repoRoot, "default-modules.yaml"), "utf8"));
 }
 
+function readManifests() {
+  const manifests = {};
+  for (const path of PLUGIN_MANIFESTS) {
+    const absolute = join(repoRoot, path);
+    manifests[path] = existsSync(absolute)
+      ? JSON.parse(readFileSync(absolute, "utf8"))
+      : null;
+  }
+  return manifests;
+}
+
+/** The newest release tag, or "" when the repo has never been tagged. */
+function latestReleaseTag() {
+  try {
+    return git(["describe", "--tags", "--abbrev=0"], { stdio: "pipe" });
+  } catch {
+    return "";
+  }
+}
+
 const commands = {
   paths() {
     for (const path of releasePaths(readPackage())) {
@@ -129,12 +187,7 @@ const commands = {
 
   check() {
     const paths = releasePaths(readPackage());
-    let lastTag = "";
-    try {
-      lastTag = git(["describe", "--tags", "--abbrev=0"], { stdio: "pipe" });
-    } catch {
-      lastTag = "";
-    }
+    const lastTag = latestReleaseTag();
     if (!lastTag) {
       console.log("No release tags yet; nothing to compare against.");
       return 0;
@@ -161,6 +214,27 @@ const commands = {
     console.log(`Changed since ${lastTag}:`);
     console.log(changed);
     return 1;
+  },
+
+  manifests() {
+    const lastTag = latestReleaseTag();
+    if (!lastTag) {
+      console.log("No release tags yet; nothing to compare against.");
+      return 0;
+    }
+
+    const rows = compareManifestVersions(readManifests(), lastTag);
+    for (const row of rows) {
+      console.log(`${row.path}  ${row.declared || "-"}  ${row.state}`);
+    }
+
+    const stale = rows.filter((row) => row.state === "stale");
+    for (const row of stale) {
+      console.log(
+        `::error::${row.path} declares version ${row.declared || "(none)"} but the latest tag is ${lastTag}. Hosts key their plugin cache on this number, so installers stay on the old tree until it moves.`,
+      );
+    }
+    return stale.length ? 1 : 0;
   },
 
   pins() {
@@ -207,6 +281,11 @@ const commands = {
     console.log("  check   Fail if release-relevant paths changed since the");
     console.log("          latest tag (paths derived from package.json files)");
     console.log("  paths   Print the derived release-relevant path list");
+    console.log("  manifests");
+    console.log(
+      "          Fail if an agent plugin manifest declares a version",
+    );
+    console.log("          other than the latest release tag");
     console.log("  pins    Report default-modules.yaml pins vs latest tags");
     console.log("  help    Show this help message");
     return 0;
