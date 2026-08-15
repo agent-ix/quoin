@@ -45,6 +45,14 @@ function fixtureRepo() {
   );
   mkdirSync(join(root, "src"));
   writeFileSync(join(root, "src", "index.ts"), "export const x = 1;\n");
+  // Both agent plugin manifests, declaring the version of the tag below.
+  for (const dir of [".claude-plugin", ".codex-plugin"]) {
+    mkdirSync(join(root, dir));
+    writeFileSync(
+      join(root, dir, "plugin.json"),
+      JSON.stringify({ name: "fixture", version: "0.1.0" }, null, 2),
+    );
+  }
   git("add", "-A");
   git("commit", "-qm", "release");
   git("tag", "v0.1.0");
@@ -52,6 +60,16 @@ function fixtureRepo() {
   return {
     root,
     git,
+    /**
+     * Tag a later release. The commit matters: `git describe` resolves ties on
+     * a single commit arbitrarily, so a second tag needs its own commit to
+     * reliably read as the newer one.
+     */
+    tagRelease: (tag: string) => {
+      writeFileSync(join(root, "src", "index.ts"), `export const x = 2;\n`);
+      git("commit", "-qam", `release ${tag}`);
+      git("tag", tag);
+    },
     cleanup: () => rmSync(root, { recursive: true, force: true }),
   };
 }
@@ -100,6 +118,65 @@ test("a change outside the shipped file set does not trip the guard", () => {
     repo.git("commit", "-qm", "notes");
 
     expect(run(["check"], { QUOIN_DRIFT_ROOT: repo.root }).status).toBe(0);
+  } finally {
+    repo.cleanup();
+  }
+});
+
+test("plugin manifests declaring the release tag pass", () => {
+  const repo = fixtureRepo();
+  try {
+    const result = run(["manifests"], { QUOIN_DRIFT_ROOT: repo.root });
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain("current");
+    expect(result.stdout).not.toContain("::error::");
+  } finally {
+    repo.cleanup();
+  }
+});
+
+test("a manifest frozen behind the release tag fails, naming both versions", () => {
+  const repo = fixtureRepo();
+  try {
+    // The real defect: releases shipped while plugin.json stayed at 0.1.0.
+    repo.tagRelease("v0.12.3");
+
+    const result = run(["manifests"], { QUOIN_DRIFT_ROOT: repo.root });
+    expect(result.status).toBe(1);
+    expect(result.stdout).toContain("::error::");
+    expect(result.stdout).toContain("0.1.0");
+    expect(result.stdout).toContain("v0.12.3");
+  } finally {
+    repo.cleanup();
+  }
+});
+
+test("one host's manifest drifting alone still fails", () => {
+  const repo = fixtureRepo();
+  try {
+    repo.tagRelease("v0.12.3");
+    writeFileSync(
+      join(repo.root, ".claude-plugin", "plugin.json"),
+      JSON.stringify({ name: "fixture", version: "0.12.3" }, null, 2),
+    );
+
+    const result = run(["manifests"], { QUOIN_DRIFT_ROOT: repo.root });
+    expect(result.status).toBe(1);
+    expect(result.stdout).toContain("::error::.codex-plugin/plugin.json");
+    expect(result.stdout).not.toContain("::error::.claude-plugin");
+  } finally {
+    repo.cleanup();
+  }
+});
+
+test("an absent manifest is reported, not failed", () => {
+  const repo = fixtureRepo();
+  try {
+    rmSync(join(repo.root, ".codex-plugin"), { recursive: true, force: true });
+
+    const result = run(["manifests"], { QUOIN_DRIFT_ROOT: repo.root });
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain("absent");
   } finally {
     repo.cleanup();
   }
