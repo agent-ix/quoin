@@ -34,6 +34,18 @@ whose `spec/` directory is missing now exits with a diagnostic naming the missin
 root instead of silently scanning the whole repository, and a matrix outside `spec/` (a
 fixture, a `plan/` copy) mints nothing.
 
+**Check the version before relying on any of that.** The "since v0.16.0" premise is not
+enforced anywhere — nothing probes it, and a user on ≤ 0.15.0 silently gets the pre-split
+traversal semantics, where the walk covers the whole repository and a matrix outside
+`spec/` mints. One line, before the first invocation:
+
+```bash
+quire --version    # expect >= 0.16.0; on an older build the roots are not split
+```
+
+If it is older, say so in `## Coverage` rather than reading the report as if the split
+applied.
+
 Do **not** pass `--strict`. Whether a gap blocks is this skill's verdict rule (Step 6), not
 the command's exit code.
 
@@ -44,8 +56,11 @@ The report carries exactly the findings this step produces:
 | `unbacked_rows` | A declared reference row whose trace targets have no backing `verifies` relation. Each carries `reference`, `document`, `row_id`, `target_ids`. |
 | `status_lies` | A row whose status classes as `complete` while nothing backs it. Adds the authored `status` string. |
 | `untracked_symbols` | A test carrying a trace tag that resolves to no declared row. Carries `path`, `symbol`, `trace_id`. |
+| `no_symbol_rows` | An unbacked row whose **declared verification method mints no source symbol** — an eval, an inspection, a demonstration (quire-rs FR-050-AC-16 / CR-041). Carries `reference`, `document`, `row_id`, `test_type`, `target_ids`. **Read this before triaging `unbacked_rows`**: a row listed here is exempt from `status_lies` by its own method, and reporting it as an unbacked-row finding asserts something impossible. Absent from the JSON entirely when the module declares no `no_source_symbol` vocabulary. |
+| `criteria` | Per-document acceptance-criteria property counts (quire-rs FR-050-AC-13 / CR-028): `document`, `archetype`, `criteria`, `property_shaped`, `by_property`. Data for the `spec-correctness` handoff, never a verdict — a low property-shaped share describes a corpus, it does not fail one. Absent when the corpus binds no criteria. |
 | `groups` | Per minting document: `document`, `target`, `backed`, `total`. |
-| `totals` | `backed` / `total` across the bundle. |
+| `diagnostics` | Declarations that selected nothing and why (quire-rs FR-050-AC-19 / CR-054): an unreadable declared `document:`, an archetype no document has when the model minted nothing, or a model with no trace targets. Absent when every declaration selected. A non-empty list means the numbers below it are measuring less than you think. |
+| `totals` | `backed` / `total` across the bundle, plus `criteria` / `property_shaped` when the corpus binds criteria. |
 
 ## Reconcile, producing findings
 

@@ -75,9 +75,22 @@ Then confirm, as before:
 - no matrix row this run added is `✅` while its test is skipped;
 - no emitted tag names a `row_id` absent from the `quire properties` output.
 
-If `quire coverage` reports `no rows matched`, the module in scope declares no traceability
-model for this repo's layout — that is an environment gap, not a clean run. Say so rather
-than reporting the run as reconciled.
+Check `quire --version` ≥ 0.16.0 first: the two-root semantics this step assumes are
+unenforced, and an older build silently walks the whole repository instead.
+
+Two distinct states get conflated here; keep them apart (they have different causes and
+different fixes — `gap-analysis` step 3 has the same reading):
+
+- **A zero denominator.** Under the `--json` invocation this step prescribes the signal is
+  `"totals": {"total": 0}`. `no rows matched` is a **human-format-only** marker and never
+  appears in the JSON, so do not look for it there. It means the declared model matched
+  nothing in this scope — no minting document was found. Not full coverage, not a clean
+  run: report it as **no data**.
+- **No model at all.** `quire coverage` exits **non-zero** with a distinct diagnostic when
+  no active module declares a `traceability:` model (quire-rs FR-050-AC-9). That is an
+  environment gap — the module set, not the repo's rows.
+
+Say which one happened rather than reporting the run as reconciled.
 
 A mismatch here is a bug in this run, not in `gap-analysis`.
 
