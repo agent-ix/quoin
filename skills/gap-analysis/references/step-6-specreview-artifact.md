@@ -88,6 +88,12 @@ will not bind it — and a reader cannot tell which they are looking at unless i
 quire validate --scope <project_root> "reviews/**/*.md"
 ```
 
+**Always pass `--scope <project_root>` explicitly, as above.** A relative glob resolves
+under `--scope` only in scoped mode (no `--module`); with `--module` it resolves against
+the process working directory, and an omitted `--scope` defaults to `.` — either way a
+sweep launched from a parent directory silently validates the wrong tree (or nothing)
+while exiting 0 for whatever it did match.
+
 Fix any validation error (frontmatter pattern, `analysis` enum, findings headers/ids/severity)
 before reporting completion. Then tell the user the artifact path and the Verdict.
 

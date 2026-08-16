@@ -48,6 +48,11 @@ Before finishing, prove every emitted tag actually **binds** — not that it exi
 quire coverage --scope <repo> --json
 ```
 
+`--scope` is the repository root. Since quire-cli v0.16.0 (quire-rs CR-045) the command
+derives two roots from it: documents from `<repo>/spec` only, trace tags from the source
+tree excluding `spec/`. A repo with no `spec/` directory exits with a diagnostic naming
+the missing document root, and a matrix outside `spec/` mints nothing.
+
 For each `row_id` this run emitted, confirm the id appears among the backed ids: its
 minting document's group must count it, and it must not appear in `untracked_symbols`.
 
