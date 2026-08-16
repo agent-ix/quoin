@@ -26,6 +26,14 @@ validated against, so the two cannot drift.
 quire coverage --scope <project_root> --json
 ```
 
+`--scope` is the repository root, and stays so. Since quire-cli v0.16.0 (quire-rs CR-045)
+the command derives **two roots** from it and never interchanges them: spec documents are
+read from `<project_root>/spec` only, and trace tags from the source tree at
+`<project_root>` excluding `spec/`. This invocation needs no second flag — but a project
+whose `spec/` directory is missing now exits with a diagnostic naming the missing document
+root instead of silently scanning the whole repository, and a matrix outside `spec/` (a
+fixture, a `plan/` copy) mints nothing.
+
 Do **not** pass `--strict`. Whether a gap blocks is this skill's verdict rule (Step 6), not
 the command's exit code.
 
