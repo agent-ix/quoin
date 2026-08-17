@@ -129,7 +129,7 @@ function normalizeTypeName(name: string): string {
   return name.toLowerCase();
 }
 
-function locateModuleRoot(candidate: string): string | undefined {
+export function locateModuleRoot(candidate: string): string | undefined {
   const root = resolve(candidate);
   if (!existsSync(root)) return undefined;
   if (existsSync(join(root, "manifest.yaml"))) return root;
