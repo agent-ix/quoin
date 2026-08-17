@@ -96,8 +96,8 @@ clear itself on the next CI run and the detector would never fire.
 - The `record` verb SHALL report a trace id matching no derived obligation
   rather than dropping it. That is the quire-rs#72 class arriving from the other
   direction: a test claiming to verify something the spec does not state.
-- `gc` SHALL retain the latest run per suite plus anything a binding
-  references. Dir-per-suite keeps the policy local, so an expensive suite's
+- `gc` SHALL retain the **newest** run per suite — by `timestamp`, never by
+  filename — plus anything a binding references. Dir-per-suite keeps the policy local, so an expensive suite's
   retention or `.gitignore` decision touches one directory.
 - An absent store SHALL read as empty rather than as an error.
 - Every verb SHALL check the quire version premise ([FR-029](./FR-029-consume-the-quire-json-contract.md))
@@ -126,6 +126,7 @@ clear itself on the next CI run and the detector would never fire.
 | FR-030-AC-9 | An absent store reads as an empty binding graph, an empty run list and an empty collection. | Test (TC-127) |
 | FR-030-AC-10 | No obligation statement, document or method appears anywhere in the written store — only the id and hash (CON-2). | Test (TC-128) |
 | FR-030-AC-11 | A binding is keyed on `(obligation, suite)`: a second suite discharging the same obligation **appends** a binding rather than replacing the first, re-discharging the same suite merges into its own binding, and affirmation clears every suite's suspicion unless narrowed to one. The graph is cross-suite, so the file must be able to hold two. | Test (TC-129) |
+| FR-030-AC-12 | The **latest** run of a suite is the newest by `timestamp`, never the lexicographically last filename: a run filename is a commit prefix, which carries no time. `gc` retains that run, and the auditor reads it. Two runs sharing a timestamp order by commit, so a tie resolves the same way on every machine. | Test (TC-130) |
 
 ## Dependencies
 
