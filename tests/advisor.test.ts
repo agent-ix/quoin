@@ -21,12 +21,101 @@ import {
   type MethodCatalog,
 } from "../src/advisor/index.js";
 
-/** The real ecosystem catalog, read from the source tree. */
-function ecosystemCatalog(): MethodCatalog {
-  return loadMethodCatalog([
-    "/home/peter/dev/spec-artifacts-process/spec_artifacts_process",
-  ]);
-}
+/**
+ * A fixture catalog declaring the rules these tests exercise.
+ *
+ * Deliberately NOT the ecosystem's own catalog read off disk: an earlier
+ * version pointed at an absolute path under `~/dev`, which passed on the
+ * author's machine and produced an empty catalog — and six silent failures —
+ * anywhere else. These tests are about the **advisor's behaviour** given rules;
+ * the ecosystem's catalog *content* is tested where it lives
+ * (`spec-artifacts-process` TC-048..TC-055).
+ */
+const FIXTURE_CATALOG = `name: fixture-methods
+verification_catalog:
+  property-based-testing:
+    name: Property-based testing
+    class: Test
+    definition: Execute a property over generated inputs.
+    evidence_kind: Property
+    applicability:
+      property_shapes: [universal, invariant, round-trip, idempotence, ordering]
+      characteristics: [universally-quantified]
+  metamorphic-testing:
+    name: Metamorphic testing
+    class: Test
+    definition: Assert a relation between two related executions.
+    evidence_kind: Property
+    applicability:
+      property_shapes: [round-trip, idempotence, ordering]
+  deterministic-simulation:
+    name: Deterministic simulation
+    class: Test
+    definition: Run under a seeded scheduler.
+    evidence_kind: Integration
+    applicability:
+      property_shapes: [concurrency]
+      characteristics: [concurrent]
+  runtime-monitoring:
+    name: Runtime monitoring
+    class: Test
+    definition: Check a temporal property against a running system.
+    evidence_kind: Integration
+    applicability:
+      characteristics: [temporal, liveness, invariance]
+  model-checking:
+    name: Temporal model checking
+    class: Analysis
+    definition: Exhaustively check a temporal property against a model.
+    evidence_kind: Static
+    applicability:
+      characteristics: [temporal, liveness, safety]
+  fault-injection:
+    name: Fault injection
+    class: Test
+    definition: Induce a failure the system claims to tolerate.
+    evidence_kind: Integration
+    applicability:
+      characteristics: [reliability, fault-tolerance]
+  dast:
+    name: Dynamic application security testing
+    class: Test
+    definition: Probe the running system's exposed surface.
+    evidence_kind: Integration
+    applicability:
+      object_types: [attack_surface]
+      characteristics: [network-exposed, security]
+  sast:
+    name: Static application security testing
+    class: Analysis
+    definition: Match declared rules against source.
+    evidence_kind: Static
+    applicability:
+      object_types: [attack_surface]
+      characteristics: [security, injection-risk]
+  negative-abuse-testing:
+    name: Negative / abuse-case testing
+    class: Test
+    definition: Exercise the paths an adversary takes.
+    evidence_kind: Integration
+    applicability:
+      object_types: [attack_surface]
+      characteristics: [security, input-validation]
+  inspection:
+    name: Inspection
+    class: Inspection
+    definition: A person reads the artifact against the requirement.
+    evidence_kind: Manual
+    applicability:
+      characteristics: [no-executable-oracle]
+  demonstration:
+    name: Demonstration
+    class: Demonstration
+    definition: The system is operated in front of a witness.
+    evidence_kind: Manual
+    applicability:
+      characteristics: [stakeholder-acceptance, user-visible]
+`;
 
 /** A throwaway module declaring exactly the catalog a test needs. */
 function moduleWith(yaml: string): string {
@@ -36,10 +125,15 @@ function moduleWith(yaml: string): string {
   return root;
 }
 
+/** The fixture catalog, loaded through the real loader. */
+function fixtureCatalog(): MethodCatalog {
+  return loadMethodCatalog([moduleWith(FIXTURE_CATALOG)]);
+}
+
 describe("TC-129 the merged catalog is read from module data", () => {
   it("loads every declared method with its rules intact", () => {
-    const catalog = ecosystemCatalog();
-    expect(catalog.methods.length).toBeGreaterThanOrEqual(30);
+    const catalog = fixtureCatalog();
+    expect(catalog.methods.length).toBe(11);
     expect(methodClasses(catalog)).toEqual([
       "Analysis",
       "Demonstration",
@@ -71,7 +165,7 @@ describe("TC-129 the merged catalog is read from module data", () => {
 
 describe("TC-130 an attack surface reaches DAST and SAST", () => {
   it("recommends the security methods rather than defaulting to Test", () => {
-    const advice = advise(ecosystemCatalog(), {
+    const advice = advise(fixtureCatalog(), {
       id: "FR-001-AC-1",
       statement: "The endpoint rejects a request carrying an expired token.",
       objectTypes: ["attack_surface"],
@@ -86,7 +180,7 @@ describe("TC-130 an attack surface reaches DAST and SAST", () => {
 
 describe("TC-131 temporal phrasing reaches monitors and model checking", () => {
   it("recommends the methods a single execution cannot discharge", () => {
-    const advice = advise(ecosystemCatalog(), {
+    const advice = advise(fixtureCatalog(), {
       id: "NFR-006-AC-1",
       statement:
         "The scheduler always eventually drains the queue while the worker is running.",
@@ -99,7 +193,7 @@ describe("TC-131 temporal phrasing reaches monitors and model checking", () => {
 
 describe("TC-132 a reliability NFR reaches fault injection", () => {
   it("recommends inducing the failure the requirement claims to tolerate", () => {
-    const advice = advise(ecosystemCatalog(), {
+    const advice = advise(fixtureCatalog(), {
       id: "NFR-009-AC-1",
       statement:
         "The client tolerates a dropped connection and retries without losing a message.",
@@ -112,7 +206,7 @@ describe("TC-132 a reliability NFR reaches fault injection", () => {
 
 describe("TC-133 a property shape reaches the property methods", () => {
   it("routes a round-trip criterion to property-based and metamorphic testing", () => {
-    const advice = advise(ecosystemCatalog(), {
+    const advice = advise(fixtureCatalog(), {
       id: "FR-005-AC-1",
       statement:
         "Parsing then serializing a document yields the original bytes.",
@@ -124,7 +218,7 @@ describe("TC-133 a property shape reaches the property methods", () => {
   });
 
   it("ranks a method two rules agree on above one a single rule suggested", () => {
-    const advice = advise(ecosystemCatalog(), {
+    const advice = advise(fixtureCatalog(), {
       id: "FR-005-AC-2",
       statement:
         "Every concurrent write eventually converges, invariant across orderings.",
@@ -138,7 +232,7 @@ describe("TC-133 a property shape reaches the property methods", () => {
 
 describe("TC-134 a mismatch with the authored cell is flagged, advisory only", () => {
   it("flags an authored method none of the recommendations cover", () => {
-    const advice = advise(ecosystemCatalog(), {
+    const advice = advise(fixtureCatalog(), {
       id: "NFR-009-AC-1",
       statement:
         "The client tolerates a dropped connection and retries without losing a message.",
@@ -149,7 +243,7 @@ describe("TC-134 a mismatch with the authored cell is flagged, advisory only", (
   });
 
   it("accepts an authored method matching a recommended method's class", () => {
-    const advice = advise(ecosystemCatalog(), {
+    const advice = advise(fixtureCatalog(), {
       id: "NFR-009-AC-1",
       statement:
         "The client tolerates a dropped connection and retries without losing a message.",
@@ -163,7 +257,7 @@ describe("TC-134 a mismatch with the authored cell is flagged, advisory only", (
 
 describe("TC-135 silence is reported as silence, not as a recommendation", () => {
   it("is inconclusive when no rule matched, and flags no mismatch", () => {
-    const advice = advise(ecosystemCatalog(), {
+    const advice = advise(fixtureCatalog(), {
       id: "FR-001-AC-9",
       statement: "The widget count equals seven.",
       authoredMethod: "Test",
