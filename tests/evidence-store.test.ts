@@ -1,8 +1,14 @@
 /**
- * FR-030 — the evidence store (TC-119..TC-130).
+ * FR-030 — the evidence store (TC-119..TC-132).
  */
 
-import { mkdtempSync, readFileSync, existsSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { beforeEach, describe, expect, it } from "vitest";
@@ -10,6 +16,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import {
   affirm,
   bind,
+  bindingsPath,
   canonicalJson,
   gc,
   latestRun,
@@ -524,5 +531,85 @@ describe("TC-130 the latest run is the newest, not the highest filename (FR-030-
       "aaaa00000000",
       "bbbb00000000",
     ]);
+  });
+});
+
+describe("TC-131 a corrupt store file is named, not a bare SyntaxError (FR-030-AC-13)", () => {
+  // `bindings.json` and `baseline.json` are checked into git, so a merge
+  // conflict leaves `<<<<<<< HEAD` in one of them. Every store read used to
+  // throw `SyntaxError: Unexpected token '<'` naming no file
+  // (agent-ix/quoin#106).
+  const CONFLICTED = '<<<<<<< HEAD\n{"bindings": []}\n=======\n';
+
+  it("names the file and the cause when the binding graph is unreadable", () => {
+    mkdirSync(storeRoot(repo), { recursive: true });
+    writeFileSync(bindingsPath(repo), CONFLICTED, "utf8");
+    expect(() => readBindings(repo)).toThrow(
+      /bindings\.json exists but is not/,
+    );
+    expect(() => readBindings(repo)).toThrow(/merge conflict/);
+  });
+
+  it("skips one corrupt run file instead of hiding every finding", () => {
+    writeRun(repo, {
+      schemaVersion: 1,
+      suite: "SUITE-001",
+      commit: "aaaaaaaaaaaa0000",
+      tool: "cargo test",
+      timestamp: "2026-08-17T00:00:00Z",
+      entries: [{ symbol: "tests::ok", outcome: "pass" }],
+    });
+    writeFileSync(
+      runPath(repo, "SUITE-001", "bbbbbbbbbbbb0000"),
+      "{ truncated",
+      "utf8",
+    );
+
+    const skipped: string[] = [];
+    const runs = readRuns(repo, "SUITE-001", skipped);
+    // The good record still reaches the caller; the bad one is reported.
+    expect(runs.map((r) => r.commit)).toEqual(["aaaaaaaaaaaa0000"]);
+    expect(skipped).toHaveLength(1);
+    expect(skipped[0]).toContain("bbbbbbbbbbbb.json");
+  });
+});
+
+describe("TC-132 the store's byte order does not depend on the locale (FR-030-AC-14)", () => {
+  // `writeBindings` sorted with `localeCompare`, whose collation depends on the
+  // runtime's ICU data — so two machines could serialize one binding set two
+  // ways and produce a diff nobody made, in a file whose diff is meant to BE
+  // the per-PR delta (agent-ix/quoin#106).
+  it("writes an exact, pinned byte sequence", () => {
+    writeBindings(repo, {
+      schemaVersion: 1,
+      bindings: [
+        {
+          obligation: "FR-001-AC-2",
+          statementHashAtBinding: HASH_B,
+          suite: "SUITE-001",
+          commit: COMMIT,
+          symbols: ["b"],
+        },
+        {
+          obligation: "FR-001-AC-1",
+          statementHashAtBinding: HASH_A,
+          suite: "SUITE-002",
+          commit: COMMIT,
+          symbols: ["a"],
+        },
+        {
+          obligation: "FR-001-AC-1",
+          statementHashAtBinding: HASH_A,
+          suite: "SUITE-001",
+          commit: COMMIT,
+          symbols: ["a"],
+        },
+      ],
+    });
+    const written = readFileSync(bindingsPath(repo), "utf8");
+    const order = [...written.matchAll(/"suite": "([^"]+)"/g)].map((m) => m[1]);
+    // (obligation, suite): AC-1/SUITE-001, AC-1/SUITE-002, then AC-2/SUITE-001.
+    expect(order).toEqual(["SUITE-001", "SUITE-002", "SUITE-001"]);
+    expect(written.endsWith("\n")).toBe(true);
   });
 });

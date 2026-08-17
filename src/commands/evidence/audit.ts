@@ -12,7 +12,12 @@ import {
   readBindings,
 } from "../../evidence/index.js";
 import type { RunRecord } from "../../evidence/index.js";
-import { checkVersionPremise, parseCoverage } from "../../quire/index.js";
+import {
+  checkVersionPremise,
+  parseCoverage,
+  quireVersion,
+  runQuire,
+} from "../../quire/index.js";
 
 export default class EvidenceAudit extends QuoinCommand {
   static summary =
@@ -69,12 +74,7 @@ a week. Write that baseline with: quoin evidence baseline`;
 
     const args = ["coverage", "--scope", flags.repo, "--json"];
     if (flags.module) args.push("--module", flags.module);
-    const parsed = parseCoverage(
-      execFileSync("quire", args, {
-        encoding: "utf8",
-        stdio: ["ignore", "pipe", "ignore"],
-      }),
-    );
+    const parsed = parseCoverage(runQuire(args));
     if (!parsed.ok) this.error(parsed.error.message, { exit: 2 });
 
     const report = audit({
@@ -155,13 +155,5 @@ function headCommit(repo: string): string | undefined {
     }).trim();
   } catch {
     return undefined;
-  }
-}
-
-function quireVersion(): string | null {
-  try {
-    return execFileSync("quire", ["--version"], { encoding: "utf8" });
-  } catch {
-    return null;
   }
 }

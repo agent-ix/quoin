@@ -47,3 +47,5 @@ export type {
   UnbackedRow,
   UntrackedSymbol,
 } from "./types.js";
+
+export { quireVersion, runQuire } from "./exec.js";

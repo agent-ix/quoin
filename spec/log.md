@@ -8,6 +8,16 @@ description: "Chronological log of structural changes to this bundle."
 
 ## History
 
+* **2026-08-17** — **CR-009**: the store and the quire bridge stop crashing on inputs that occur in normal use, and stop discarding the diagnostic that would explain why (agent-ix/quoin#106).
+
+  **Every store read threw on malformed JSON.** `bindings.json` and `baseline.json` are checked into git, so a merge conflict leaves `<<<<<<< HEAD` in one of them and `quoin evidence audit` died with a bare `SyntaxError: Unexpected token '<'` naming no file. FR-030-AC-9 covered the *absent* store and read it as empty; nothing covered the *unreadable* one. Now a `StoreReadError` naming the path and the cause (**AC-13**). One corrupt file under `runs/**` is **skipped and reported** rather than fatal — one bad record must not hide every finding — while the binding graph and the baseline stay fatal, because silently reading an empty graph would report every obligation as undischarged.
+
+  **`loadMethodCatalog` read a manifest with no guard**, so malformed YAML took down `quoin catalog methods` — the command an operator runs *to diagnose* module problems. Now skipped and reported on the merged catalog (`unreadable`, **FR-031-AC-9**); the modules that parsed still merge, because a catalog missing one module's entries is worth having.
+
+  **quire's stderr was thrown away.** `stdio: ["ignore", "pipe", "ignore"]` at three call sites discarded exactly the sentence the operator needs — `no module in scope declares a 'traceability:' model … or pass --module` — and left `execFileSync` to throw with no explanation. `src/quire/contract.ts` goes to real trouble over the version-premise diagnostic for precisely this reason, and the subprocess path undid it one frame later. One `runQuire` helper now owns the subprocess contract and surfaces stderr on a non-zero exit (**FR-029-AC-10**).
+
+  **Ordering left `localeCompare`** in the catalog merge, completing the sweep begun in CR-006. TC-132 pins the written bytes rather than asserting a property, so a collation change is caught rather than argued about. Matrix: TC-131..TC-134.
+
 * **2026-08-17** — **CR-008**: four auditor defects, and the verb that made the ratchet usable (agent-ix/quoin#105). FR-032 gains **AC-9..AC-12**.
 
   **Conformance guessed.** `methodConformance` inferred "this was a test run" from `run.entries.length > 0`, which is true of a transcribed inspection too — so every `Inspection` or `Analysis` obligation recorded through `quoin evidence record` was flagged, guaranteed, on exactly the methods the `Inspections` archetype (spec-artifacts-process FR-006) was added to support. The comment conceded the evidence kind "is not knowable here" and then asserted it anyway. A run now declares its own `evidenceKind` (`quoin evidence record --kind`), the check compares **kind to kind** against the catalog's `evidence_kind`, and a run declaring none is not judged: an undeclared kind means the question cannot be asked, which is different from the answer being yes.

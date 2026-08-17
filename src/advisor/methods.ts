@@ -37,11 +37,18 @@ export interface VerificationMethod {
   moduleName: string;
 }
 
-/** The merged catalog plus the collisions the merge skipped. */
+/** The merged catalog plus what the merge could not use. */
 export interface MethodCatalog {
   methods: VerificationMethod[];
   /** Method ids more than one module declared, in first-wins order. */
   duplicates: Array<{ id: string; modules: string[] }>;
+  /**
+   * Module roots whose `manifest.yaml` could not be read or parsed. Reported
+   * rather than thrown: a catalog missing one module's entries is still worth
+   * having, and the command that would have crashed is the one an operator runs
+   * to diagnose the module (agent-ix/quoin#106).
+   */
+  unreadable: Array<{ moduleRoot: string; reason: string }>;
 }
 
 /**
@@ -57,15 +64,30 @@ export function loadMethodCatalog(
   const methods = new Map<string, VerificationMethod>();
   const collisions = new Map<string, string[]>();
   const seenRoots = new Set<string>();
+  const unreadable: Array<{ moduleRoot: string; reason: string }> = [];
 
   for (const candidate of moduleRoots) {
     const moduleRoot = locateModuleRoot(candidate);
     if (!moduleRoot || seenRoots.has(moduleRoot)) continue;
     seenRoots.add(moduleRoot);
 
-    const manifest = parseYaml(
-      readFileSync(join(moduleRoot, "manifest.yaml"), "utf8"),
-    ) as Record<string, unknown>;
+    // A module root that resolves but has no readable `manifest.yaml` — or one
+    // whose YAML is malformed — used to take down `quoin catalog methods`,
+    // which is the command an operator runs *to diagnose* module problems
+    // (agent-ix/quoin#106). Skipped and reported instead.
+    let manifest: Record<string, unknown>;
+    try {
+      manifest = parseYaml(
+        readFileSync(join(moduleRoot, "manifest.yaml"), "utf8"),
+      ) as Record<string, unknown>;
+    } catch (cause) {
+      unreadable.push({
+        moduleRoot,
+        reason: cause instanceof Error ? cause.message : String(cause),
+      });
+      continue;
+    }
+    if (!manifest || typeof manifest !== "object") continue;
     const moduleName = String(manifest.name ?? moduleRoot);
     const catalog = manifest.verification_catalog;
     if (!catalog || typeof catalog !== "object") continue;
@@ -96,11 +118,18 @@ export function loadMethodCatalog(
     }
   }
 
+  // Plain comparison, not `localeCompare`: the merged catalog drives advice and
+  // conformance, and ordering must not depend on the runtime's ICU data.
+  const byId = (a: { id: string }, b: { id: string }) =>
+    a.id === b.id ? 0 : a.id < b.id ? -1 : 1;
   return {
-    methods: [...methods.values()].sort((a, b) => a.id.localeCompare(b.id)),
+    methods: [...methods.values()].sort(byId),
     duplicates: [...collisions.entries()]
       .map(([id, modules]) => ({ id, modules }))
-      .sort((a, b) => a.id.localeCompare(b.id)),
+      .sort(byId),
+    unreadable: unreadable.sort((a, b) =>
+      a.moduleRoot === b.moduleRoot ? 0 : a.moduleRoot < b.moduleRoot ? -1 : 1,
+    ),
   };
 }
 

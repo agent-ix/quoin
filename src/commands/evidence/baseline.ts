@@ -13,7 +13,12 @@ import {
   writeBaseline,
 } from "../../evidence/index.js";
 import type { RunRecord } from "../../evidence/index.js";
-import { checkVersionPremise, parseCoverage } from "../../quire/index.js";
+import {
+  checkVersionPremise,
+  parseCoverage,
+  quireVersion,
+  runQuire,
+} from "../../quire/index.js";
 
 export default class EvidenceBaseline extends QuoinCommand {
   static summary = "Accept the current findings as the ratchet baseline.";
@@ -102,13 +107,6 @@ function latestRuns(repo: string): RunRecord[] {
     .filter((r): r is RunRecord => r !== null);
 }
 
-function runQuire(args: string[]): string {
-  return execFileSync("quire", args, {
-    encoding: "utf8",
-    stdio: ["ignore", "pipe", "pipe"],
-  });
-}
-
 function headCommit(repo: string): string | undefined {
   try {
     return execFileSync("git", ["-C", repo, "rev-parse", "HEAD"], {
@@ -116,13 +114,5 @@ function headCommit(repo: string): string | undefined {
     }).trim();
   } catch {
     return undefined;
-  }
-}
-
-function quireVersion(): string | null {
-  try {
-    return execFileSync("quire", ["--version"], { encoding: "utf8" });
-  } catch {
-    return null;
   }
 }
