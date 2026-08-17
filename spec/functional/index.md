@@ -36,3 +36,4 @@ description: "Index of functional requirements (FR) for quoin."
 - [FR-026: Dispatch commands through the oclif runner](./FR-026-dispatch-through-oclif-runner.md)
 - [FR-027: Store the authoring organization](./FR-027-store-the-authoring-organization.md)
 - [FR-028: Generate property tests from classified acceptance criteria](./FR-028-generate-property-tests-from-criteria.md)
+* [FR-029: Consume the published quire JSON contract](./FR-029-consume-the-quire-json-contract.md)

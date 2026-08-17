@@ -1,0 +1,191 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agent-ix.dev/quire/schemas/output/coverage-v1.schema.json",
+  "title": "quire coverage --json payload (v1)",
+  "description": "The FR-050 coverage rollup as emitted on stdout by `quire coverage --json` and by `CoverageReport::to_json`. Hand-authored: `schemars` is banned in this crate (FR-003-AC-4) precisely so this artifact is a decision rather than a derivation, and so a payload change cannot silently rewrite its own contract. FR-008-AC-5 bans a version key in the payload, so the version lives here in the `$id` and the filename.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "unbacked_rows",
+    "status_lies",
+    "untracked_symbols",
+    "groups",
+    "totals"
+  ],
+  "properties": {
+    "unbacked_rows": {
+      "type": "array",
+      "description": "FR-050-AC-3: reference rows answerable for trace ids no symbol backs.",
+      "items": { "$ref": "#/$defs/UnbackedRow" }
+    },
+    "status_lies": {
+      "type": "array",
+      "description": "FR-050-AC-4: rows whose status classes as complete while nothing backs them.",
+      "items": { "$ref": "#/$defs/StatusLie" }
+    },
+    "no_symbol_rows": {
+      "type": "array",
+      "description": "FR-050-AC-16 (CR-041): unbacked rows exempted from status_lies by a declared method that mints no source symbol. ABSENT — not empty — for a module declaring no `no_source_symbol` vocabulary, which is what keeps FR-050-AC-7 byte-identity.",
+      "items": { "$ref": "#/$defs/NoSymbolRow" }
+    },
+    "untracked_symbols": {
+      "type": "array",
+      "description": "FR-050-AC-5: source symbols whose trace tag resolves to no declared target or reference row.",
+      "items": { "$ref": "#/$defs/UntrackedSymbol" }
+    },
+    "groups": {
+      "type": "array",
+      "description": "FR-050-AC-6: backed/total counts per minting document and target kind.",
+      "items": { "$ref": "#/$defs/GroupCounts" }
+    },
+    "criteria": {
+      "type": "array",
+      "description": "FR-050-AC-13 (CR-028): per-document property-shape counts. Absent for a corpus binding no criteria.",
+      "items": { "$ref": "#/$defs/CriteriaCounts" }
+    },
+    "diagnostics": {
+      "type": "array",
+      "description": "CR-054: declarations that selected nothing, and why. Absent when every declaration selected something.",
+      "items": { "$ref": "#/$defs/CoverageDiagnostic" }
+    },
+    "obligations": {
+      "type": "array",
+      "description": "FR-053: derived obligation records, ordered by source then document then row. Absent for a model declaring no `obligations:` sources.",
+      "items": { "$ref": "#/$defs/Obligation" }
+    },
+    "totals": { "$ref": "#/$defs/CoverageTotals" }
+  },
+  "$defs": {
+    "UnbackedRow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["reference", "document", "target_ids"],
+      "properties": {
+        "reference": { "type": "string", "description": "The declaration that produced the row." },
+        "document": { "type": "string", "description": "Scope-relative path, `/`-separated on every platform." },
+        "row_id": {
+          "type": ["string", "null"],
+          "description": "The row's own id, when the declaration names a `row_id_column`."
+        },
+        "target_ids": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Trace ids the row is answerable for — its own plus the ids it references — none of which any symbol backs."
+        }
+      }
+    },
+    "StatusLie": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["reference", "document", "status", "target_ids"],
+      "properties": {
+        "reference": { "type": "string" },
+        "document": { "type": "string" },
+        "row_id": { "type": ["string", "null"] },
+        "status": { "type": "string", "description": "The authored status value, verbatim." },
+        "target_ids": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "NoSymbolRow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["reference", "document", "test_type", "target_ids"],
+      "properties": {
+        "reference": { "type": "string" },
+        "document": { "type": "string" },
+        "row_id": { "type": ["string", "null"] },
+        "test_type": { "type": "string", "description": "The declared test-type value that exempts the row." },
+        "target_ids": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "UntrackedSymbol": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "symbol", "trace_id"],
+      "properties": {
+        "path": { "type": "string" },
+        "symbol": { "type": "string" },
+        "trace_id": { "type": "string" }
+      }
+    },
+    "GroupCounts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["document", "target", "backed", "total"],
+      "properties": {
+        "document": { "type": "string" },
+        "target": { "type": "string", "description": "Declared target kind the ids belong to." },
+        "backed": { "type": "integer", "minimum": 0 },
+        "total": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "CriteriaCounts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["document", "archetype", "criteria", "property_shaped", "by_property"],
+      "properties": {
+        "document": { "type": "string" },
+        "archetype": { "type": "string" },
+        "criteria": { "type": "integer", "minimum": 0 },
+        "property_shaped": { "type": "integer", "minimum": 0 },
+        "by_property": {
+          "type": "object",
+          "additionalProperties": { "type": "integer", "minimum": 0 },
+          "description": "Criteria per property-shape label. Key order is deterministic (NFR-006)."
+        }
+      }
+    },
+    "CoverageDiagnostic": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["declaration", "reason", "message"],
+      "properties": {
+        "declaration": { "type": "string", "description": "The declaration's name, as the model authored it." },
+        "reason": {
+          "type": "string",
+          "description": "Stable machine token, shared with `quire validate`'s bundle warnings. Deliberately NOT an enum here: the reason vocabulary is engine data that grows, and a schema that closed it would reject a payload from a newer engine that a consumer could otherwise read."
+        },
+        "message": { "type": "string" },
+        "path": { "type": ["string", "null"] }
+      }
+    },
+    "Obligation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source", "id", "document", "statement", "statement_hash"],
+      "properties": {
+        "source": { "type": "string", "description": "The obligation source declaration that minted this record." },
+        "id": { "type": "string", "description": "The row's own id, or one rendered from `id_format`." },
+        "document": { "type": "string" },
+        "statement": { "type": "string", "description": "The normative statement, verbatim and untruncated." },
+        "statement_hash": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "SHA-256 of the NFC/trim/whitespace-collapsed statement. Suspect-link detection is `current != hash_at_binding` and nothing more."
+        },
+        "method": { "type": ["string", "null"], "description": "Declared verification method, trailing annotation stripped." },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": { "type": "string" },
+          "description": "Declared parameters. An absent key means the cell was empty — never defaulted."
+        },
+        "criticality": { "type": ["string", "null"] }
+      }
+    },
+    "CoverageTotals": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["backed", "total"],
+      "properties": {
+        "backed": { "type": "integer", "minimum": 0 },
+        "total": { "type": "integer", "minimum": 0 },
+        "criteria": {
+          "type": ["integer", "null"],
+          "minimum": 0,
+          "description": "All-or-nothing pair with `property_shaped`: both present for a corpus binding criteria, both absent otherwise. Zero is a real value; absent is not zero."
+        },
+        "property_shaped": { "type": ["integer", "null"], "minimum": 0 }
+      }
+    }
+  }
+}

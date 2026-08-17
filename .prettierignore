@@ -40,3 +40,11 @@ __pycache__/
 
 # Spec artifacts (quire-managed, not prettier-formatted)
 spec/
+
+# Vendored quire output schemas (FR-029). These are copies of quire-rs's
+# published artifacts and must match them BYTE FOR BYTE — their SHA-256 is
+# recorded in src/quire/contract.ts and asserted on every test run. Formatting
+# them locally rewrites the bytes and breaks the provenance check, which is
+# exactly how a vendored contract drifts by default. Refresh them with
+# scripts/refresh-quire-schemas.mjs, never with prettier.
+src/quire/schemas/

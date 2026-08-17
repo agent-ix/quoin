@@ -1,0 +1,147 @@
+/**
+ * The quire↔quoin JSON contract (FR-029).
+ *
+ * quire-rs FR-055 publishes a versioned JSON Schema for each machine-readable
+ * payload it emits. This module is the consumer side: it pins the contract
+ * version quoin was written against, vendors the published schemas, and
+ * enforces the version premise before anything reads a payload.
+ *
+ * ## Why the schemas are vendored
+ *
+ * quire-rs is a Rust crate consumed by git tag; quoin is an npm package. There
+ * is no dependency edge along which a schema file could travel, and fetching
+ * one at runtime is out of the question (quoin performs no network reads on a
+ * command path). So the artifacts are **copied in with their provenance
+ * recorded** — source tag, path and content hash — and refreshed deliberately
+ * by `scripts/refresh-quire-schemas.mjs`, whose diff is reviewed.
+ *
+ * That is a copy, and a copy can drift. What keeps it honest is that the hash
+ * is asserted on every test run and the refresh script re-derives it from a
+ * checked-out quire-rs at the pinned tag: an edit to the vendored file without
+ * a matching refresh fails immediately, rather than silently teaching quoin a
+ * contract quire does not emit.
+ */
+
+import { createHash } from "node:crypto";
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+
+/** Where the vendored schemas came from, and exactly which bytes. */
+export const QUIRE_CONTRACT = {
+  /** The quire-rs release the vendored schemas were copied from. */
+  sourceTag: "v0.29.0",
+  /** The contract version, as carried in each schema's `$id` and filename. */
+  contractVersion: "v1",
+  /**
+   * Minimum `quire` CLI that emits this contract.
+   *
+   * v0.21.0 is the first release carrying the FR-053 `obligation` field on
+   * property records and the FR-055 published schemas. An older binary emits a
+   * payload this contract does not describe — which is a diagnosable state, not
+   * a parse error to discover three frames deep.
+   */
+  minimumCli: "0.21.0",
+  /**
+   * SHA-256 of each vendored file. Asserted on every test run, so an edit
+   * without a matching refresh fails loudly.
+   */
+  hashes: {
+    "coverage-v1.schema.json":
+      "bcc79e194a2f6c1a60d5345cf4f7947913fe0fe7dcde3f31989b9d9b8cecdbc3",
+    "properties-v1.schema.json":
+      "d81f1ec85abdecd1f1664ded15e081f9aecb6c0f054d6b332b71e904cf826292",
+  },
+} as const;
+
+export type SchemaName = keyof typeof QUIRE_CONTRACT.hashes;
+
+const here = dirname(fileURLToPath(import.meta.url));
+
+/** Absolute path of a vendored schema. */
+export function schemaPath(name: SchemaName): string {
+  return join(here, "schemas", name);
+}
+
+/** Read a vendored schema as parsed JSON. */
+export function readSchema(name: SchemaName): unknown {
+  return JSON.parse(readFileSync(schemaPath(name), "utf8"));
+}
+
+/** SHA-256 of a vendored schema as it sits on disk. */
+export function schemaHash(name: SchemaName): string {
+  return createHash("sha256")
+    .update(readFileSync(schemaPath(name)))
+    .digest("hex");
+}
+
+/**
+ * A CLI version that does not satisfy the contract's premise.
+ *
+ * Carried as a distinct shape so a caller can report *which* premise failed
+ * rather than "something went wrong reading quire output" — the failure mode
+ * agent-ix/quoin#88 was filed about, where a shape drift surfaced as an
+ * unexplained mid-skill error.
+ */
+export interface VersionPremiseFailure {
+  readonly kind: "version-premise";
+  readonly found: string | null;
+  readonly required: string;
+  readonly message: string;
+}
+
+/** Parse `quire --version` output (`quire 0.21.0`) into a version string. */
+export function parseCliVersion(output: string): string | null {
+  const match = /(\d+)\.(\d+)\.(\d+)/.exec(output);
+  return match ? match[0] : null;
+}
+
+/** Numeric semver comparison. Returns <0, 0, >0. */
+export function compareVersions(a: string, b: string): number {
+  const pa = a.split(".").map((n) => Number.parseInt(n, 10));
+  const pb = b.split(".").map((n) => Number.parseInt(n, 10));
+  for (let i = 0; i < 3; i += 1) {
+    const diff = (pa[i] ?? 0) - (pb[i] ?? 0);
+    if (diff !== 0) return diff;
+  }
+  return 0;
+}
+
+/**
+ * Check a `quire --version` output against the contract's minimum.
+ *
+ * Returns `null` when the premise holds. Returns a named failure otherwise —
+ * including when the version could not be parsed at all, because "no quire on
+ * PATH" and "a quire too old to emit this shape" are both states a caller must
+ * report rather than push into a downstream parse.
+ */
+export function checkVersionPremise(
+  versionOutput: string | null,
+): VersionPremiseFailure | null {
+  const found = versionOutput ? parseCliVersion(versionOutput) : null;
+  const required = QUIRE_CONTRACT.minimumCli;
+  if (found === null) {
+    return {
+      kind: "version-premise",
+      found: null,
+      required,
+      message:
+        `could not determine the quire CLI version (expected >= ${required}). ` +
+        `Install or update quire-cli: the JSON contract quoin reads is only ` +
+        `emitted from ${required} onward.`,
+    };
+  }
+  if (compareVersions(found, required) < 0) {
+    return {
+      kind: "version-premise",
+      found,
+      required,
+      message:
+        `quire ${found} is older than the ${required} this contract requires. ` +
+        `Its JSON payloads predate the published schemas (quire-rs FR-055) and ` +
+        `the obligation records (FR-053), so quoin would misread them rather ` +
+        `than fail. Update quire-cli.`,
+    };
+  }
+  return null;
+}
