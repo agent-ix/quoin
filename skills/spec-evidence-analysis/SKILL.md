@@ -23,7 +23,22 @@ declared catalog**, and flags where the authored choice disagrees.
 - At **Matrix** time, to plan which suites the chosen methods imply.
 - Whenever a new NFR is added — NFRs are the ones most prone to a defaulted method.
 
-## Read the catalog, do not recall it
+## Run the advisor, do not recall the table
+
+```bash
+quoin advise                     # every obligation, with its recommendations
+quoin advise --mismatch-only     # only where the authored method disagrees
+quoin advise --inconclusive-only # only where no rule matched — your work list
+quoin advise --json              # for scripting
+```
+
+`quoin advise` derives the obligations from `quire coverage --json`, reads each
+criterion's FR-052 property shape from `quire properties --json`, and matches
+both against the catalog's `applicability` rules. **This is the deterministic
+half of the analysis and it is not optional** — a method you recalled is a
+method nobody can check.
+
+The catalog behind it:
 
 ```bash
 quoin catalog methods            # human-readable, grouped by class
@@ -31,28 +46,29 @@ quoin catalog methods --json     # the merged catalog, for scripting
 quoin catalog methods --class Analysis
 ```
 
-The catalog is merged first-wins across active modules, exactly as quire-rs
-merges it — so the method you are advised is the method the auditor will later
-check conformance against.
+Merged first-wins across active modules, exactly as quire-rs merges it — so the
+method you are advised is the method the auditor will later check conformance
+against.
 
 ## Process
 
-1. **Derive the obligations.** `quire coverage --json` carries them
-   (quire-rs FR-053): id, statement, statement hash, authored method,
-   criticality. Do not restate them by hand.
+1. **Run `quoin advise`.** It carries the obligations (quire-rs FR-053: id,
+   statement, hash, authored method, criticality) *and* the recommendations.
+   Do not restate either by hand.
 
 2. **Take the deterministic recommendations first.** They come from the
    catalog's `applicability` rules matched against facts about the obligation:
-   its statement's characteristics, its FR-052 property shape, the object types
-   near it, its archetype. Rules match or they do not.
+   its statement's characteristics, its FR-052 property shape, its archetype.
+   Rules match or they do not. Each recommendation names the rule and the value
+   that matched, so you can check the reasoning rather than trust it.
 
 3. **Judge only the residue, and label it.** Where the rules are inconclusive
    the advisor says so and stops rather than guessing. That is where your
    judgement belongs — and it must be recorded *as* judgement. Never present an
    LLM conclusion as a verdict (the ADR-0010 discipline).
 
-4. **Confirm or correct the authored method.** A flagged mismatch is advisory:
-   the human decides. The confirmed method lands in the spec, becomes the
+4. **Confirm or correct the authored method.** A mismatch (`⚠` in the human
+   output, `mismatch: true` in JSON) is advisory: the human decides. The confirmed method lands in the spec, becomes the
    obligation's method, and is what `quoin evidence` records discharge against.
 
 5. **Plan the suite.** A method implies an evidence kind; a suite in

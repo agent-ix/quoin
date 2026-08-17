@@ -8,6 +8,27 @@ description: "Chronological log of structural changes to this bundle."
 
 ## History
 
+* **2026-08-17** — **CR-010**: the advisor gets a command, and two commands that did not exist get built (agent-ix/quoin#103). FR-031 gains **AC-10 and AC-11**.
+
+  FR-031's eight acceptance criteria all passed, and **nothing could reach the advisor**. `grep -rn "advise\|Advice" src/commands/` returned nothing: `advise()`, `characteristicsOf()`, `matchRules()` and the 19-entry `STATEMENT_CHARACTERISTICS` table were exercised only by `tests/advisor.test.ts`, while `skills/spec-evidence-analysis/SKILL.md` still told the agent to run `quoin catalog methods` and choose by hand — the skill-local prose table the FR opens by saying it replaces. Every AC was written at the *function* boundary, so the suite could not tell "implemented" from "implemented and reachable".
+
+  **`quoin advise`** derives the obligations from `quire coverage --json`, reads each criterion's FR-052 property shape from `quire properties --json`, and emits one recommendation set per obligation with the rule and value that matched, plus `--mismatch-only`, `--inconclusive-only` and `--json`. The skill now runs it.
+
+  **Two things the dogfooding found that no test would have.**
+
+  First, `vite.config.ts` enumerates oclif's command entries **by hand**, and nothing checked the enumeration against the source tree. `quoin advise` built no module — and neither had `quoin evidence baseline`, landed in CR-008 one commit earlier. A command that exists in `src/`, passes `tsc`, passes every unit test and ships a `.d.ts` while not existing at runtime is the same shape as the defect this ticket was filed about, arriving one layer down. **TC-149** now asserts every file with a `default export class` has an entry, and that no entry names a file that is gone.
+
+  Second, `quire properties` **exits non-zero when any input document fails to resolve** while still writing a complete payload for every document that did. quire-rs' spec has two untyped files under `spec/assets/`, `execFileSync` threw, and the catch returned an empty shape map — so the entire `property_shapes` axis was lost over two files, silently. Measured over quire-rs' 583 obligations, before and after:
+
+  | | before | after |
+  |---|---|---|
+  | reasons from `property_shapes` | 0 | **813** |
+  | obligations with ≥1 recommendation | 224 | **536** |
+  | inconclusive | 359 (61.6%) | **47 (8.1%)** |
+  | mismatch | 37 | 66 |
+
+  `runQuireAllowFailure` returns the payload and lets the caller decide (**AC-11**). And when the shape map does come back empty, the command **says so** rather than advising from statement text as though no rule had matched — that silence was the whole defect. Matrix: TC-149, TC-150.
+
 * **2026-08-17** — **CR-009**: the store and the quire bridge stop crashing on inputs that occur in normal use, and stop discarding the diagnostic that would explain why (agent-ix/quoin#106).
 
   **Every store read threw on malformed JSON.** `bindings.json` and `baseline.json` are checked into git, so a merge conflict leaves `<<<<<<< HEAD` in one of them and `quoin evidence audit` died with a bare `SyntaxError: Unexpected token '<'` naming no file. FR-030-AC-9 covered the *absent* store and read it as empty; nothing covered the *unreadable* one. Now a `StoreReadError` naming the path and the cause (**AC-13**). One corrupt file under `runs/**` is **skipped and reported** rather than fatal — one bad record must not hide every finding — while the binding graph and the baseline stay fatal, because silently reading an empty graph would report every obligation as undischarged.
