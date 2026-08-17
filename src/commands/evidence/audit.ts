@@ -6,11 +6,10 @@ import { QuoinCommand } from "../../base.js";
 import { loadMethodCatalog } from "../../advisor/index.js";
 import { audit, ratchet } from "../../auditor/index.js";
 import {
+  latestRun,
   listRecordedSuites,
-  listRuns,
   readBaseline,
   readBindings,
-  readRun,
 } from "../../evidence/index.js";
 import type { RunRecord } from "../../evidence/index.js";
 import { checkVersionPremise, parseCoverage } from "../../quire/index.js";
@@ -117,17 +116,20 @@ a week.`;
   }
 }
 
-/** The newest recorded run per suite. */
+/**
+ * The newest recorded run per suite, by `timestamp`.
+ *
+ * This used to take `listRuns(...).at(-1)` — the lexicographically last
+ * `<commit12>.json`, which is uniformly random hex and so picked the newest run
+ * with probability 1/n. It drove `stale-evidence` (`run.commit !== headCommit`)
+ * and `vacuous-evidence` (which symbols the run reported), so a fresh run at
+ * HEAD could still be reported stale, and re-recording could not fix it
+ * (agent-ix/quoin#104).
+ */
 function latestRuns(repo: string): RunRecord[] {
-  const out: RunRecord[] = [];
-  for (const suite of listRecordedSuites(repo)) {
-    const files = listRuns(repo, suite);
-    const latest = files.at(-1);
-    if (!latest) continue;
-    const record = readRun(repo, suite, latest.replace(/\.json$/, ""));
-    if (record) out.push(record);
-  }
-  return out;
+  return listRecordedSuites(repo)
+    .map((suite) => latestRun(repo, suite))
+    .filter((r): r is RunRecord => r !== null);
 }
 
 function headCommit(repo: string): string | undefined {

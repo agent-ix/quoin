@@ -115,13 +115,54 @@ export function readRun(
   return readJson<RunRecord>(runPath(repo, suite, commit));
 }
 
-/** Every run recorded for a suite, newest filename last (lexicographic). */
+/**
+ * Every run file recorded for a suite, in filename order.
+ *
+ * Filename order is **not** time order — a filename is a commit prefix, which
+ * is uniformly random hex. Use [`latestRun`] when you mean the newest run;
+ * this exists for enumeration.
+ */
 export function listRuns(repo: string, suite: string): string[] {
   const dir = join(storeRoot(repo), RUNS_DIR, suite);
   if (!existsSync(dir)) return [];
   return readdirSync(dir)
     .filter((f) => f.endsWith(".json"))
     .sort();
+}
+
+/** Every run recorded for a suite, oldest first by `timestamp`. */
+export function readRuns(repo: string, suite: string): RunRecord[] {
+  return listRuns(repo, suite)
+    .map((f) => readRun(repo, suite, f.replace(/\.json$/, "")))
+    .filter((r): r is RunRecord => r !== null)
+    .sort(
+      (a, b) =>
+        compare(a.timestamp, b.timestamp) || compare(a.commit, b.commit),
+    );
+}
+
+/**
+ * The newest run of a suite, by **timestamp** — or `null` when it has none.
+ *
+ * Not `listRuns().at(-1)`. A run filename is `<commit12>.json` and a commit
+ * prefix is uniformly random hex, so the lexicographically last file is the
+ * newest run with probability 1/n. That arbitrary choice drove the auditor's
+ * freshness and vacuity checks and `gc`'s retention: record a fresh run at HEAD
+ * and, if an older run's prefix happened to sort higher, `stale-evidence` was
+ * reported against evidence that was current — and re-recording could not fix
+ * it, because the ordering is a property of the hashes and not of what you do
+ * (agent-ix/quoin#104).
+ *
+ * `RunRecord.timestamp` was there the whole time. The commit is the tiebreak,
+ * so two runs stamped identically still order deterministically.
+ */
+export function latestRun(repo: string, suite: string): RunRecord | null {
+  return readRuns(repo, suite).at(-1) ?? null;
+}
+
+/** Locale-independent string order. */
+function compare(a: string, b: string): number {
+  return a === b ? 0 : a < b ? -1 : 1;
 }
 
 /** Every suite that has at least one recorded run. */
@@ -194,11 +235,12 @@ export function gc(repo: string, dryRun = false): string[] {
   for (const suite of listRecordedSuites(repo)) {
     const runs = listRuns(repo, suite);
     const keep = new Set<string>();
-    // "Latest" is the last filename lexicographically, which is a commit
-    // prefix rather than a time — deliberately: the store holds no clock of
-    // its own, and a caller that wants time ordering has the timestamps.
-    const latest = runs.at(-1);
-    if (latest) keep.add(latest);
+    // "Latest" is the newest by `timestamp`, not the last filename. A filename
+    // is a commit prefix — uniformly random hex — so retaining `runs.at(-1)`
+    // deleted the actual newest run whenever its prefix sorted low and no
+    // binding named it (agent-ix/quoin#104).
+    const latest = latestRun(repo, suite);
+    if (latest) keep.add(`${short(latest.commit)}.json`);
     for (const run of runs) {
       if (keep.has(run) || referenced.has(`${suite}/${run}`)) continue;
       const path = join(storeRoot(repo), RUNS_DIR, suite, run);

@@ -8,6 +8,12 @@ description: "Chronological log of structural changes to this bundle."
 
 ## History
 
+* **2026-08-17** — **CR-007**: the latest run of a suite is the newest by `timestamp` (agent-ix/quoin#104). `latestRuns` and `gc` both took `listRuns(...).at(-1)` — the lexicographically last `<commit12>.json`. A commit prefix is uniformly random hex, so that picked the newest run **with probability 1/n**. The comment defending it said the store "holds no clock of its own"; `RunRecord.timestamp` had been there since FR-030 was written.
+
+  Three checks rested on it. `stale-evidence` compares `run.commit` against HEAD, so recording a fresh run at HEAD and then auditing could report the obligation stale — and re-recording could not fix it, because the ordering is a property of the hashes rather than of anything you do. `vacuous-evidence` reads which symbols the run reported, so a symbol added in the newest run read as "absent from the run" and produced a **high**-severity finding against evidence that passed. And `gc` retained `runs.at(-1)`, so the newest run was deleted whenever its prefix sorted low and no binding named it.
+
+  New `readRuns` / `latestRun` order by `timestamp` with the commit as tiebreak, so a tie resolves the same way on every machine. **FR-030-AC-12** and **TC-130** pin it with fixtures whose newest run's commit prefix sorts *first* — the only arrangement in which filename order and time order disagree, which is why the defect survived a suite that already covered `gc`.
+
 * **2026-08-17** — **CR-006**: a binding is keyed on `(obligation, suite)` (agent-ix/quoin#102), and the auditor folds over the group. `BindingsFile`'s own doc says the graph *is* cross-suite — "one obligation can be discharged by a unit test and a benchmark, and splitting the file per suite would make that relationship something to reassemble" — and `bind()` searched by obligation id alone, so the second suite's discharge **overwrote** the first. The relationship the file exists to hold was destroyed on write, silently.
 
   The consequence nobody could have hit by hand: `insufficient-multiplicity` counted the distinct suites bound to an obligation and required two, over a set no code path could ever grow past one. Every obligation whose criticality demanded two independent methods was flagged, permanently, and no amount of recording could clear it. The finding was invisible only because criticality is `null` for all 583 obligations the ecosystem derives (spec-artifacts-process CR-005) — it was one populated column away from firing on everything.

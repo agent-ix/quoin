@@ -1,5 +1,5 @@
 /**
- * FR-030 — the evidence store (TC-119..TC-129).
+ * FR-030 — the evidence store (TC-119..TC-130).
  */
 
 import { mkdtempSync, readFileSync, existsSync } from "node:fs";
@@ -12,10 +12,13 @@ import {
   bind,
   canonicalJson,
   gc,
+  latestRun,
   listRuns,
   readBindings,
   readRun,
+  readRuns,
   runPath,
+  short,
   storeRoot,
   writeBindings,
   writeRun,
@@ -454,5 +457,72 @@ describe("TC-129 a second suite appends, it does not overwrite (FR-030-AC-11)", 
     );
     expect(narrowed.bindings[0].statementHashAtBinding).toBe(HASH_A);
     expect(narrowed.bindings[1].statementHashAtBinding).toBe(HASH_B);
+  });
+});
+
+describe("TC-130 the latest run is the newest, not the highest filename (FR-030-AC-12)", () => {
+  // A run filename is `<commit12>.json` and a commit prefix is uniformly random
+  // hex, so `listRuns().at(-1)` picked the newest run with probability 1/n.
+  // These fixtures are built so the two answers DISAGREE: the newest run's
+  // commit sorts FIRST. Under the old code every assertion below inverted
+  // (agent-ix/quoin#104).
+  const OLD_HIGH = "ffffffffffff0000"; // older, but sorts last
+  const NEW_LOW = "000000000000ffff"; // newer, but sorts first
+
+  function twoRuns(): void {
+    writeRun(repo, {
+      schemaVersion: 1,
+      suite: "SUITE-001",
+      commit: OLD_HIGH,
+      tool: "cargo test",
+      timestamp: "2026-08-01T00:00:00Z",
+      entries: [{ symbol: "tests::old", outcome: "pass" }],
+    });
+    writeRun(repo, {
+      schemaVersion: 1,
+      suite: "SUITE-001",
+      commit: NEW_LOW,
+      tool: "cargo test",
+      timestamp: "2026-08-17T00:00:00Z",
+      entries: [{ symbol: "tests::new", outcome: "pass" }],
+    });
+  }
+
+  it("reads the newest by timestamp even when its filename sorts first", () => {
+    twoRuns();
+    // The premise: filename order and time order genuinely disagree here.
+    expect(listRuns(repo, "SUITE-001").at(-1)).toBe(`${short(OLD_HIGH)}.json`);
+    expect(latestRun(repo, "SUITE-001")?.commit).toBe(NEW_LOW);
+    expect(readRuns(repo, "SUITE-001").map((r) => r.commit)).toEqual([
+      OLD_HIGH,
+      NEW_LOW,
+    ]);
+  });
+
+  it("gc keeps the newest run, not the highest filename", () => {
+    twoRuns();
+    const deleted = gc(repo);
+    expect(deleted).toEqual([
+      join(storeRoot(repo), "runs", "SUITE-001", `${short(OLD_HIGH)}.json`),
+    ]);
+    expect(listRuns(repo, "SUITE-001")).toEqual([`${short(NEW_LOW)}.json`]);
+  });
+
+  it("orders by commit when two runs share a timestamp", () => {
+    for (const commit of ["bbbb00000000", "aaaa00000000"]) {
+      writeRun(repo, {
+        schemaVersion: 1,
+        suite: "SUITE-002",
+        commit,
+        tool: "cargo test",
+        timestamp: "2026-08-17T00:00:00Z",
+        entries: [],
+      });
+    }
+    // A tie must still resolve the same way on every machine.
+    expect(readRuns(repo, "SUITE-002").map((r) => r.commit)).toEqual([
+      "aaaa00000000",
+      "bbbb00000000",
+    ]);
   });
 });
