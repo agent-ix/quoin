@@ -70,6 +70,20 @@ export interface RunRecord {
   commit: string;
   /** Tool and version, as the adapter reported them. */
   tool: string;
+  /**
+   * The kind of evidence this run produced, from the declared `test_type`
+   * vocabulary (`Unit`, `Property`, `Static`, `Manual`, …) — the same
+   * vocabulary the suite registry's `Evidence Kind` column and the catalog's
+   * `evidence_kind` use.
+   *
+   * Optional, and its absence is **not** an invitation to guess. Method
+   * conformance used to infer "this was a test run" from `entries.length > 0`,
+   * which is true of a transcribed inspection too — so every `Inspection` or
+   * `Analysis` obligation recorded through `quoin evidence record` was flagged
+   * (agent-ix/quoin#105). With no kind declared the question cannot be asked,
+   * and the check says nothing rather than something wrong.
+   */
+  evidenceKind?: string;
   /** ISO-8601, supplied by the caller — never read from the clock here. */
   timestamp: string;
   entries: RunEntry[];
@@ -117,13 +131,20 @@ export interface BindingsFile {
   bindings: Binding[];
 }
 
-/** The accepted violation set a ratchet compares against. */
+/**
+ * The accepted violation set a ratchet compares against.
+ *
+ * `accepted` holds `<kind>:<obligation>` keys — **every** finding kind, not two
+ * named buckets. The original shape carried `undischarged` and `suspect` only,
+ * so `stale-evidence`, `vacuous-evidence`, `method-conformance`,
+ * `unknown-method` and `insufficient-multiplicity` could never appear in a
+ * baseline and `--ratchet` reported the entire existing backlog for all five —
+ * the outcome ratchet mode exists to prevent (agent-ix/quoin#105).
+ */
 export interface BaselineFile {
   schemaVersion: number;
   /** Commit the baseline was accepted at. */
   commit: string;
-  /** Obligation ids accepted as currently undischarged. */
-  undischarged: string[];
-  /** Obligation ids accepted as currently suspect. */
-  suspect: string[];
+  /** Accepted findings as `<kind>:<obligation>`, sorted. */
+  accepted: string[];
 }

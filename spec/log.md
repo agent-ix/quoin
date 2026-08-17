@@ -8,6 +8,18 @@ description: "Chronological log of structural changes to this bundle."
 
 ## History
 
+* **2026-08-17** — **CR-008**: four auditor defects, and the verb that made the ratchet usable (agent-ix/quoin#105). FR-032 gains **AC-9..AC-12**.
+
+  **Conformance guessed.** `methodConformance` inferred "this was a test run" from `run.entries.length > 0`, which is true of a transcribed inspection too — so every `Inspection` or `Analysis` obligation recorded through `quoin evidence record` was flagged, guaranteed, on exactly the methods the `Inspections` archetype (spec-artifacts-process FR-006) was added to support. The comment conceded the evidence kind "is not knowable here" and then asserted it anyway. A run now declares its own `evidenceKind` (`quoin evidence record --kind`), the check compares **kind to kind** against the catalog's `evidence_kind`, and a run declaring none is not judged: an undeclared kind means the question cannot be asked, which is different from the answer being yes.
+
+  **An uncatalogued method was skipped in silence.** `declaredClasses.size === 0` returned `null`, so the requirements whose verification method is *least* well defined were exactly the ones nothing questioned — 55 of 577 across the ecosystem when this landed. Now an `unknown-method` finding, mirroring quire-rs FR-054-AC-11 on the engine side.
+
+  **The catalog ignored `--module`.** `loadMethodCatalog()` defaulted to the installed roots while the coverage call beside it honoured `flags.module`, so `quoin evidence audit --module <dir>` derived obligations from one catalog and checked conformance against another — the exact disagreement `src/advisor/methods.ts` opens by warning about.
+
+  **The ratchet could baseline two kinds of six.** `BaselineFile` held `undischarged` and `suspect`, so `stale-evidence`, `vacuous-evidence`, `method-conformance`, `unknown-method` and `insufficient-multiplicity` reported the entire existing backlog forever — the outcome `ratchet`'s own comment says it exists to prevent. The baseline is now a flat set of `<kind>:<obligation>` keys. No migration: nothing ever wrote one, because **`writeBaseline` had no command** — `--ratchet` read a file no verb produced. **`quoin evidence baseline`** writes it, and its doc says plainly what re-running it means.
+
+  Also removed: the hardcoded `multiplicityRequires: ["P0"]`. No obligation source in the ecosystem declares a `criticality_column` (2,304 of 2,304 `Acceptance Criteria` tables carry no priority — spec-artifacts-process CR-005), so it was a rule that could never fire and would have fired on *everything* the moment a column appeared. It is now `--multiplicity-requires`, unset by default. Matrix: TC-146, TC-147, TC-148.
+
 * **2026-08-17** — **CR-007**: the latest run of a suite is the newest by `timestamp` (agent-ix/quoin#104). `latestRuns` and `gc` both took `listRuns(...).at(-1)` — the lexicographically last `<commit12>.json`. A commit prefix is uniformly random hex, so that picked the newest run **with probability 1/n**. The comment defending it said the store "holds no clock of its own"; `RunRecord.timestamp` had been there since FR-030 was written.
 
   Three checks rested on it. `stale-evidence` compares `run.commit` against HEAD, so recording a fresh run at HEAD and then auditing could report the obligation stale — and re-recording could not fix it, because the ordering is a property of the hashes rather than of anything you do. `vacuous-evidence` reads which symbols the run reported, so a symbol added in the newest run read as "absent from the run" and produced a **high**-severity finding against evidence that passed. And `gc` retained `runs.at(-1)`, so the newest run was deleted whenever its prefix sorted low and no binding named it.

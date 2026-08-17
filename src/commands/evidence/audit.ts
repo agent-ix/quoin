@@ -26,12 +26,13 @@ Checks:
   stale-evidence    bound to a missing run, or to a run behind HEAD
   vacuous-evidence  every bound symbol was skipped or absent from the run
   undischarged      no evidence is bound at all
-  method-conformance   a non-test method discharged by a test run
+  method-conformance   evidence of a kind the declared method does not produce
+  unknown-method       the declared method is in no catalog
   insufficient-multiplicity   criticality demands two independent suites
 
 --ratchet compares against spec/evidence/baseline.json and fails only on NEW
 violations. A gate that fails on the whole existing backlog gets disabled within
-a week.`;
+a week. Write that baseline with: quoin evidence baseline`;
 
   static examples = [
     "quoin evidence audit",
@@ -51,6 +52,13 @@ a week.`;
       description: "Exit 1 when any reported finding remains.",
     }),
     json: Flags.boolean({ description: "Emit the report as JSON." }),
+    "multiplicity-requires": Flags.string({
+      description:
+        "Criticality values demanding two independent suites. Repeatable. " +
+        "Unset by default: no obligation source in the ecosystem declares a " +
+        "criticality column, so a built-in default could never fire.",
+      multiple: true,
+    }),
   };
 
   async run(): Promise<void> {
@@ -73,11 +81,19 @@ a week.`;
       obligations: parsed.value.obligations ?? [],
       bindings: readBindings(flags.repo).bindings,
       runs: latestRuns(flags.repo),
-      catalog: loadMethodCatalog(),
+      // The SAME module the coverage call above used. Defaulting to the
+      // installed roots meant `--module <dir>` derived obligations from one
+      // catalog and checked conformance against another — the exact disagreement
+      // `src/advisor/methods.ts` opens by warning about (agent-ix/quoin#105).
+      catalog: loadMethodCatalog(flags.module ? [flags.module] : undefined),
       headCommit: headCommit(flags.repo),
-      // P0 is the ecosystem's highest priority; two independent methods is the
-      // multiplicity rule criticality buys.
-      multiplicityRequires: ["P0"],
+      // Deliberately unset. No obligation source in the ecosystem declares a
+      // `criticality_column` — measured: 2,304 of 2,304 `Acceptance Criteria`
+      // tables are `ID | Criteria | Verification` and carry no priority
+      // (spec-artifacts-process CR-005) — so a hardcoded `["P0"]` was a rule
+      // that could never fire, and would have fired on *everything* the moment
+      // a column appeared. `--multiplicity-requires` makes it a choice.
+      multiplicityRequires: flags["multiplicity-requires"],
     });
 
     const baseline = flags.ratchet ? readBaseline(flags.repo) : null;

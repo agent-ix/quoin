@@ -18,6 +18,12 @@ export interface RecordRequest {
   suite: string;
   commit: string;
   tool: string;
+  /**
+   * The kind of evidence this run produced, from the declared `test_type`
+   * vocabulary. Optional; method conformance compares kind to kind and stays
+   * silent when a run declares none, rather than inferring one.
+   */
+  evidenceKind?: string;
   /** ISO-8601. Passed in rather than read from the clock, so a record is reproducible. */
   timestamp: string;
   entries: RunEntry[];
@@ -60,6 +66,7 @@ export function recordRun(request: RecordRequest): RecordOutcome {
     suite: request.suite,
     commit: request.commit,
     tool: request.tool,
+    evidenceKind: request.evidenceKind,
     timestamp: request.timestamp,
     entries: request.entries,
   });

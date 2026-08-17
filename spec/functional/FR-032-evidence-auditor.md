@@ -114,6 +114,10 @@ violations. The per-PR delta names what a change added and resolved.
 | FR-032-AC-6 | A non-test-class method discharged by a test run is flagged; a test-class one is not; and with no catalog the question is not asked. | Test (TC-142) |
 | FR-032-AC-7 | A criticality demanding two independent methods is satisfied by two suites and not by two symbols in one, and does not apply below the threshold. | Test (TC-143) |
 | FR-032-AC-8 | Every check folds over **all** of an obligation's bindings: a suspect link is reported when any binding predates the current statement, evidence is vacuous only when every symbol in every suite was skipped or absent, and multiplicity counts the distinct suites actually bound. | Test (TC-145) |
+| FR-032-AC-9 | Method conformance compares the run's declared `evidenceKind` against the kinds the catalog gives the declared method. A run declaring no kind is not judged: an undeclared kind means the question cannot be asked, which is different from the answer being yes. | Test (TC-146) |
+| FR-032-AC-10 | A declared method matching neither a catalog method id nor a catalog class is reported as `unknown-method`, never skipped in silence. | Test (TC-146) |
+| FR-032-AC-11 | The ratchet baseline is a flat set of `<kind>:<obligation>` keys, so **every** finding kind can be accepted into it; `quoin evidence baseline` writes it from the current audit. | Test (TC-147) |
+| FR-032-AC-12 | The auditor reads the verification catalog from the **same** module the obligations were derived from, so `--module` cannot make the advisor and the auditor disagree. | Inspection (TC-148) |
 | FR-032-AC-8 | `ratchet` reports only violations absent from the baseline, and `delta` names what a change added and resolved. | Test (TC-144) |
 
 ## Dependencies

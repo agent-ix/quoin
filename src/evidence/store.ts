@@ -212,8 +212,7 @@ export function writeBaseline(repo: string, file: BaselineFile): void {
   writeCanonical(baselinePath(repo), {
     schemaVersion: STORE_SCHEMA_VERSION,
     commit: file.commit,
-    undischarged: [...file.undischarged].sort(),
-    suspect: [...file.suspect].sort(),
+    accepted: [...file.accepted].sort(compare),
   });
 }
 
