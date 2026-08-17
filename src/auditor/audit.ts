@@ -32,6 +32,7 @@ export interface Finding {
     | "vacuous-evidence"
     | "undischarged"
     | "method-conformance"
+    | "unknown-method"
     | "insufficient-multiplicity";
   obligation: string;
   severity: Severity;
@@ -236,13 +237,21 @@ function byId(a: Obligation, b: Obligation): number {
 }
 
 /**
- * An obligation whose declared method is `Analysis` is not discharged by a unit
- * test.
+ * Two questions about the declared method, both answered from the catalog.
  *
- * Checked through the catalog rather than by name matching: the authored cell
- * carries a method or a class, and only the catalog knows which class a method
- * belongs to. Without a catalog the check is skipped — an absent catalog means
- * the question cannot be asked, which is different from the answer being yes.
+ * **1. Is the method declared at all?** A `Verification` cell naming neither a
+ * catalog method id nor a catalog class used to return `null` here — a silent
+ * skip — so the requirements whose verification is *least* well defined were
+ * exactly the ones nothing questioned. Measured across the ecosystem when this
+ * landed: 55 of 577 obligations (agent-ix/quoin#105, quire-rs#152).
+ *
+ * **2. Did the evidence match the method's kind?** Compared **kind to kind**.
+ * The old test was `run.entries.length > 0` — read as "this was a test run",
+ * but true of a transcribed inspection too, so every `Inspection` or `Analysis`
+ * obligation recorded through `quoin evidence record` was flagged. A run now
+ * declares its own `evidenceKind`, and when it declares none the check says
+ * nothing: an undeclared kind means the question cannot be asked, which is a
+ * different answer from "it conformed".
  */
 function methodConformance(
   obligation: Obligation,
@@ -253,35 +262,53 @@ function methodConformance(
   if (!catalog || !obligation.method) return null;
   const declared = obligation.method.trim().toLowerCase();
 
-  const declaredClasses = new Set<string>();
-  for (const method of catalog.methods) {
-    if (method.id.toLowerCase() === declared) declaredClasses.add(method.class);
-    if (method.class.toLowerCase() === declared)
-      declaredClasses.add(method.class);
-  }
-  if (declaredClasses.size === 0) return null;
+  const matched = catalog.methods.filter(
+    (m) =>
+      m.id.toLowerCase() === declared || m.class.toLowerCase() === declared,
+  );
 
-  // The evidence kind the run actually produced, via the suite's tool is not
-  // knowable here — what IS knowable is the class the declared method belongs
-  // to. A non-Test class discharged by a test-shaped run is the conformance
-  // failure worth reporting; the reverse (a Test method discharged by a
-  // recorded inspection) is caught by the same comparison.
-  const isTestClass = declaredClasses.has("Test");
-  const ranAsTest = runs.some((run) => run.entries.length > 0);
-
-  if (!isTestClass && ranAsTest) {
+  if (matched.length === 0) {
     return {
-      kind: "method-conformance",
+      kind: "unknown-method",
       obligation: obligation.id,
       severity: "medium",
       summary:
-        `${obligation.id} declares \`${obligation.method}\` ` +
-        `(${[...declaredClasses].sort().join("/")}) but is discharged by a test ` +
-        `run in ${bindings.map((b) => b.suite).join(", ")}. A method that is ` +
-        `not a test is not discharged by one.`,
+        `${obligation.id} declares \`${obligation.method}\`, which is neither a ` +
+        `catalog method id nor a catalog class. Nothing can say what discharging ` +
+        `it means, so no conformance check can run against it.`,
     };
   }
-  return null;
+
+  // The kinds the catalog says this method produces. An entry declaring none
+  // makes the comparison unanswerable rather than failed.
+  const expected = new Set(
+    matched
+      .map((m) => m.evidenceKind)
+      .filter((k): k is string => typeof k === "string" && k.length > 0),
+  );
+  if (expected.size === 0) return null;
+
+  const mismatched = bindings.filter((b, i) => {
+    const kind = runs[i].evidenceKind;
+    return typeof kind === "string" && kind.length > 0 && !expected.has(kind);
+  });
+  if (mismatched.length === 0) return null;
+
+  return {
+    kind: "method-conformance",
+    obligation: obligation.id,
+    severity: "medium",
+    summary:
+      `${obligation.id} declares \`${obligation.method}\`, whose evidence kind is ` +
+      `${[...expected].sort(compare).join("/")}, but is discharged by ` +
+      mismatched
+        .map(
+          (b) =>
+            `a ${runs[bindings.indexOf(b)].evidenceKind} run in ${b.suite}`,
+        )
+        .join(" and ") +
+      `. A method is not discharged by evidence of another kind.`,
+  };
 }
 
 /**
@@ -317,20 +344,30 @@ function multiplicityFinding(
   };
 }
 
-/** Findings not present in the baseline — what a ratchet fails on. */
+/** The baseline key for one finding. */
+export function findingKey(finding: Finding): string {
+  return `${finding.kind}:${finding.obligation}`;
+}
+
+/**
+ * Findings not present in the baseline — what a ratchet fails on.
+ *
+ * The baseline is a flat set of `<kind>:<obligation>` keys covering **every**
+ * finding kind. It used to be two named buckets, `undischarged` and `suspect`,
+ * so `stale-evidence`, `vacuous-evidence`, `method-conformance`,
+ * `unknown-method` and `insufficient-multiplicity` could never be baselined and
+ * `--ratchet` reported the whole existing backlog for all five — which is the
+ * outcome this function's own comment says ratchet mode exists to prevent
+ * (agent-ix/quoin#105).
+ */
 export function ratchet(
   report: AuditReport,
-  baseline: { undischarged: string[]; suspect: string[] },
+  baseline: { accepted: string[] },
 ): Finding[] {
-  const accepted = new Set([
-    ...baseline.undischarged.map((id) => `undischarged:${id}`),
-    ...baseline.suspect.map((id) => `suspect-link:${id}`),
-  ]);
+  const accepted = new Set(baseline.accepted);
   // Ratchet mode exists because a gate that fails on the whole existing
   // backlog gets disabled within a week. Only NEW violations fail.
-  return report.findings.filter(
-    (f) => !accepted.has(`${f.kind}:${f.obligation}`),
-  );
+  return report.findings.filter((f) => !accepted.has(findingKey(f)));
 }
 
 /** What changed between two audits — the per-PR delta. */
@@ -338,11 +375,10 @@ export function delta(
   before: AuditReport,
   after: AuditReport,
 ): { added: Finding[]; resolved: Finding[] } {
-  const key = (f: Finding) => `${f.kind}:${f.obligation}`;
-  const beforeKeys = new Set(before.findings.map(key));
-  const afterKeys = new Set(after.findings.map(key));
+  const beforeKeys = new Set(before.findings.map(findingKey));
+  const afterKeys = new Set(after.findings.map(findingKey));
   return {
-    added: after.findings.filter((f) => !beforeKeys.has(key(f))),
-    resolved: before.findings.filter((f) => !afterKeys.has(key(f))),
+    added: after.findings.filter((f) => !beforeKeys.has(findingKey(f))),
+    resolved: before.findings.filter((f) => !afterKeys.has(findingKey(f))),
   };
 }

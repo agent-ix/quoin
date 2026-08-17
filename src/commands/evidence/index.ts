@@ -15,13 +15,17 @@ Layout, under spec/evidence/:
   runs/<SUITE-N>/<commit12>.json   one file = one run of one suite
 
 Subcommands:
-  quoin evidence record   transcribe a suite run
-  quoin evidence affirm   re-affirm a binding after its statement changed
-  quoin evidence gc       drop run records nothing references`;
+  quoin evidence record     transcribe a suite run
+  quoin evidence affirm     re-affirm a binding after its statement changed
+  quoin evidence audit      read the store and report
+  quoin evidence baseline   accept the current findings as the ratchet baseline
+  quoin evidence gc         drop run records nothing references`;
 
   static examples = [
     "quoin evidence record --suite SUITE-001 --commit $(git rev-parse HEAD) --tool 'cargo test' --results run.json",
     "quoin evidence affirm --obligation FR-001-AC-1 --who @reviewer",
+    "quoin evidence audit --ratchet --strict",
+    "quoin evidence baseline",
     "quoin evidence gc --dry-run",
   ];
 

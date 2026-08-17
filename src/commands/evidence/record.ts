@@ -45,6 +45,13 @@ Format adapters (junit, llvm-cov, cargo-mutants, SARIF) are a separate ticket
       description: "Tool and version, as it identifies itself.",
       required: true,
     }),
+    kind: Flags.string({
+      description:
+        "Evidence kind this run produced (Unit, Property, Static, Manual, …) " +
+        "— the vocabulary the catalog's `evidence_kind` and the suite " +
+        "registry's `Evidence Kind` column use. Method conformance compares " +
+        "kind to kind; without it the check stays silent rather than guessing.",
+    }),
     results: Flags.string({
       description: "Normalized run entries as JSON. `-` reads stdin.",
       required: true,
@@ -92,6 +99,7 @@ Format adapters (junit, llvm-cov, cargo-mutants, SARIF) are a separate ticket
       suite: flags.suite,
       commit: flags.commit,
       tool: flags.tool,
+      evidenceKind: flags.kind,
       timestamp: flags.timestamp ?? new Date().toISOString(),
       entries,
       obligations: obligationsFrom(parsed.value),

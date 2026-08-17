@@ -1,5 +1,5 @@
 /**
- * FR-032 — the evidence auditor (TC-137..TC-144).
+ * FR-032 — the evidence auditor (TC-137..TC-148).
  *
  * A trace link is a string match that never expires. These tests are about the
  * three ways evidence rots invisibly, and about the auditor refusing to be
@@ -168,6 +168,7 @@ describe("TC-142 method conformance", () => {
         name: "SAST",
         class: "Analysis",
         definition: "d",
+        evidenceKind: "Static",
         applicability: {},
         tooling: [],
         moduleName: "m",
@@ -177,6 +178,7 @@ describe("TC-142 method conformance", () => {
         name: "Unit",
         class: "Test",
         definition: "d",
+        evidenceKind: "Unit",
         applicability: {},
         tooling: [],
         moduleName: "m",
@@ -185,19 +187,63 @@ describe("TC-142 method conformance", () => {
     duplicates: [],
   };
 
-  it("flags an Analysis obligation discharged by a test run", () => {
+  it("compares kind to kind, not entry count", () => {
+    // The old test was `run.entries.length > 0`, read as "this was a test run"
+    // — true of a transcribed inspection too, so every Analysis obligation
+    // recorded through `quoin evidence record` was flagged (#105).
     const report = audit(
-      input({ obligations: [obligation({ method: "sast" })], catalog }),
+      input({
+        obligations: [obligation({ method: "sast" })],
+        runs: [run({ evidenceKind: "Unit" })],
+        catalog,
+      }),
     );
     const finding = report.findings.find(
       (f) => f.kind === "method-conformance",
     );
-    expect(finding?.summary).toContain("not a test is not discharged by one");
+    expect(finding?.summary).toContain("evidence kind is Static");
+    expect(finding?.summary).toContain("a Unit run in SUITE-001");
   });
 
-  it("accepts a Test obligation discharged by a test run", () => {
+  it("accepts a run whose kind IS the method's kind", () => {
     const report = audit(
-      input({ obligations: [obligation({ method: "Test" })], catalog }),
+      input({
+        obligations: [obligation({ method: "sast" })],
+        runs: [run({ evidenceKind: "Static" })],
+        catalog,
+      }),
+    );
+    expect(report.findings).toEqual([]);
+  });
+
+  it("says nothing when the run declares no kind", () => {
+    // An undeclared kind means the question cannot be asked, which is a
+    // different answer from "it conformed". Guessing here is what produced the
+    // false positive on every recorded inspection.
+    const report = audit(
+      input({ obligations: [obligation({ method: "sast" })], catalog }),
+    );
+    expect(report.findings).toEqual([]);
+  });
+
+  it("reports a method no catalog carries rather than skipping it", () => {
+    // `declaredClasses.size === 0` used to return null — a silent skip — so the
+    // requirements whose verification is LEAST well defined were exactly the
+    // ones nothing questioned. Measured: 55 of 577 across the ecosystem (#105).
+    const report = audit(
+      input({ obligations: [obligation({ method: "CI Gate" })], catalog }),
+    );
+    expect(report.findings.map((f) => f.kind)).toEqual(["unknown-method"]);
+    expect(report.findings[0].summary).toContain("CI Gate");
+  });
+
+  it("accepts a Test obligation discharged by a Unit run", () => {
+    const report = audit(
+      input({
+        obligations: [obligation({ method: "Test" })],
+        runs: [run({ evidenceKind: "Unit" })],
+        catalog,
+      }),
     );
     expect(report.findings).toEqual([]);
   });
@@ -272,11 +318,27 @@ describe("TC-144 ratchet and per-PR delta", () => {
     // A gate that fails on the whole existing backlog gets disabled within a
     // week, which is why the baseline exists.
     const remaining = ratchet(report, {
-      suspect: ["FR-001-AC-1"],
-      undischarged: [],
+      accepted: ["suspect-link:FR-001-AC-1"],
     });
     expect(remaining).toHaveLength(1);
     expect(remaining[0].obligation).toBe("FR-001-AC-2");
+  });
+
+  it("can baseline EVERY finding kind, not two named buckets", () => {
+    // `stale-evidence`, `vacuous-evidence`, `method-conformance`,
+    // `unknown-method` and `insufficient-multiplicity` could never appear in a
+    // baseline, so `--ratchet` reported the whole existing backlog for all five
+    // — the outcome ratchet mode exists to prevent (#105).
+    const report = audit(
+      input({
+        obligations: [obligation()],
+        bindings: [binding({ suite: "SUITE-404" })],
+      }),
+    );
+    expect(report.findings.map((f) => f.kind)).toEqual(["stale-evidence"]);
+    expect(
+      ratchet(report, { accepted: ["stale-evidence:FR-001-AC-1"] }),
+    ).toEqual([]);
   });
 
   it("computes what a PR added and resolved", () => {
@@ -396,5 +458,43 @@ describe("TC-145 one obligation, two suites (FR-032-AC-8)", () => {
     expect(report.findings.map((f) => f.kind)).toEqual(["vacuous-evidence"]);
     expect(report.findings[0].summary).toContain("SUITE-001:tests::tc001");
     expect(report.findings[0].summary).toContain("SUITE-002:bench::tc900");
+  });
+});
+
+describe("TC-147 every finding kind can be baselined (FR-032-AC-11)", () => {
+  // The baseline used to be two named buckets. `stale-evidence`,
+  // `vacuous-evidence`, `method-conformance`, `unknown-method` and
+  // `insufficient-multiplicity` could never appear in one, so `--ratchet`
+  // reported the whole existing backlog for five of the six kinds — the
+  // outcome ratchet mode exists to prevent (agent-ix/quoin#105).
+  it("accepts each kind by its own key", () => {
+    const kinds: Array<[string, AuditInput]> = [
+      ["undischarged", input({ bindings: [] })],
+      [
+        "suspect-link",
+        input({ obligations: [obligation({ statement_hash: HASH_B })] }),
+      ],
+      [
+        "stale-evidence",
+        input({ bindings: [binding({ suite: "SUITE-404" })] }),
+      ],
+      [
+        "vacuous-evidence",
+        input({
+          runs: [
+            run({ entries: [{ symbol: "tests::tc001", outcome: "skip" }] }),
+          ],
+        }),
+      ],
+    ];
+    for (const [kind, given] of kinds) {
+      const report = audit(given);
+      expect(report.findings.map((f) => f.kind)).toContain(kind);
+      expect(
+        ratchet(report, { accepted: [`${kind}:FR-001-AC-1`] }).map(
+          (f) => f.kind,
+        ),
+      ).not.toContain(kind);
+    }
   });
 });

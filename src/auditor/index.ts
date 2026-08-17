@@ -8,6 +8,7 @@
 export {
   audit,
   delta,
+  findingKey,
   ratchet,
   type AuditInput,
   type AuditReport,
