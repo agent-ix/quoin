@@ -67,6 +67,7 @@ export default defineConfig(({ command }) => ({
         "commands/evidence/record": "src/commands/evidence/record.ts",
         "commands/evidence/affirm": "src/commands/evidence/affirm.ts",
         "commands/evidence/gc": "src/commands/evidence/gc.ts",
+        "commands/evidence/audit": "src/commands/evidence/audit.ts",
         "commands/catalog/index": "src/commands/catalog/index.ts",
         "commands/catalog/methods": "src/commands/catalog/methods.ts",
         "commands/catalog/list": "src/commands/catalog/list.ts",

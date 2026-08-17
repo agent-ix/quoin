@@ -39,3 +39,4 @@ description: "Index of functional requirements (FR) for quoin."
 * [FR-029: Consume the published quire JSON contract](./FR-029-consume-the-quire-json-contract.md)
 * [FR-030: The evidence store as the artifact of record](./FR-030-evidence-store.md)
 * [FR-031: Catalog-driven verification-method advisor](./FR-031-catalog-driven-advisor.md)
+* [FR-032: Suspect-link, freshness and vacuous-evidence auditor](./FR-032-evidence-auditor.md)
