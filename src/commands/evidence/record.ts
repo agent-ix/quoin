@@ -1,4 +1,3 @@
-import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 
 import { Flags } from "@oclif/core";
@@ -9,7 +8,12 @@ import {
   recordRun,
   type RunEntry,
 } from "../../evidence/index.js";
-import { checkVersionPremise, parseCoverage } from "../../quire/index.js";
+import {
+  checkVersionPremise,
+  parseCoverage,
+  quireVersion,
+  runQuire,
+} from "../../quire/index.js";
 
 export default class EvidenceRecord extends QuoinCommand {
   static summary = "Transcribe one suite run into the evidence store.";
@@ -75,17 +79,14 @@ Format adapters (junit, llvm-cov, cargo-mutants, SARIF) are a separate ticket
     // The premise first: an older quire does not fail, it emits an older shape
     // that this command would misread. By the time a parse failed, the wrong
     // obligations would already have been bound.
-    const premise = checkVersionPremise(readQuireVersion());
+    const premise = checkVersionPremise(quireVersion());
     if (premise) this.error(premise.message, { exit: 2 });
 
     const entries = readEntries(flags.results);
 
     const coverageArgs = ["coverage", "--scope", flags.repo, "--json"];
     if (flags.module) coverageArgs.push("--module", flags.module);
-    const raw = execFileSync("quire", coverageArgs, {
-      encoding: "utf8",
-      stdio: ["ignore", "pipe", "ignore"],
-    });
+    const raw = runQuire(coverageArgs);
     const parsed = parseCoverage(raw);
     if (!parsed.ok) {
       this.error(
@@ -126,14 +127,6 @@ Format adapters (junit, llvm-cov, cargo-mutants, SARIF) are a separate ticket
         `  unmatched trace ids (tagged in the suite, stated by no obligation): ${outcome.unmatched.join(", ")}`,
       );
     }
-  }
-}
-
-function readQuireVersion(): string | null {
-  try {
-    return execFileSync("quire", ["--version"], { encoding: "utf8" });
-  } catch {
-    return null;
   }
 }
 

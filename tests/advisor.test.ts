@@ -1,5 +1,5 @@
 /**
- * FR-031 — the catalog-driven test-plan advisor (TC-129..TC-136).
+ * FR-031 — the catalog-driven test-plan advisor (TC-129..TC-136, TC-133).
  *
  * The proto-advisor was a skill-local prose table, so `Verification` columns
  * defaulted to `Test` by habit and nothing ever advised DAST for an attack
@@ -312,5 +312,37 @@ describe("characteristic detection is lexical and deterministic", () => {
   it("is stable across calls", () => {
     const s = "The parser rejects malformed untrusted input within 5ms.";
     expect(characteristicsOf(s)).toEqual(characteristicsOf(s));
+  });
+});
+
+describe("TC-133 an unreadable module manifest is reported, not thrown (FR-031-AC-9)", () => {
+  // `loadMethodCatalog` read `manifest.yaml` with no guard, so a manifest whose
+  // YAML is malformed took down `quoin catalog methods` — the command an
+  // operator runs *to diagnose* module problems (agent-ix/quoin#106).
+  //
+  // A root with no `manifest.yaml` at all never reaches the read:
+  // `locateModuleRoot` already returns `undefined` for it, which is why the
+  // gap was only reachable through a manifest that exists and does not parse.
+  it("skips a root with no manifest without reporting it as unreadable", () => {
+    const root = mkdtempSync(join(tmpdir(), "quoin-nomanifest-"));
+    const catalog = loadMethodCatalog([root]);
+    expect(catalog.methods).toEqual([]);
+    expect(catalog.unreadable).toEqual([]);
+  });
+
+  it("skips malformed YAML and still merges the modules that parsed", () => {
+    const bad = mkdtempSync(join(tmpdir(), "quoin-badyaml-"));
+    writeFileSync(join(bad, "manifest.yaml"), "name: m\n  bad: [indent\n");
+    const good = mkdtempSync(join(tmpdir(), "quoin-goodyaml-"));
+    writeFileSync(
+      join(good, "manifest.yaml"),
+      "name: good\nverification_catalog:\n  unit-testing:\n" +
+        "    name: Unit testing\n    class: Test\n    definition: d\n",
+    );
+
+    const catalog = loadMethodCatalog([bad, good]);
+    expect(catalog.methods.map((m) => m.id)).toEqual(["unit-testing"]);
+    expect(catalog.unreadable.map((u) => u.moduleRoot)).toEqual([bad]);
+    expect(catalog.unreadable[0].reason).toBeTruthy();
   });
 });

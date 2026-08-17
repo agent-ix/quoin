@@ -127,6 +127,8 @@ clear itself on the next CI run and the detector would never fire.
 | FR-030-AC-10 | No obligation statement, document or method appears anywhere in the written store — only the id and hash (CON-2). | Test (TC-128) |
 | FR-030-AC-11 | A binding is keyed on `(obligation, suite)`: a second suite discharging the same obligation **appends** a binding rather than replacing the first, re-discharging the same suite merges into its own binding, and affirmation clears every suite's suspicion unless narrowed to one. The graph is cross-suite, so the file must be able to hold two. | Test (TC-129) |
 | FR-030-AC-12 | The **latest** run of a suite is the newest by `timestamp`, never the lexicographically last filename: a run filename is a commit prefix, which carries no time. `gc` retains that run, and the auditor reads it. Two runs sharing a timestamp order by commit, so a tie resolves the same way on every machine. | Test (TC-130) |
+| FR-030-AC-13 | A store file that exists and is not readable JSON raises a diagnostic naming the file and the cause, never a bare `SyntaxError`. One unreadable **run** file is skipped and reported rather than fatal; the binding graph and the baseline are not, because reading an empty graph would report every obligation as undischarged. | Test (TC-131) |
+| FR-030-AC-14 | Store ordering is locale-independent: written bytes are pinned by test, so a runtime's collation data cannot change the diff of a checked-in file. | Test (TC-132) |
 
 ## Dependencies
 

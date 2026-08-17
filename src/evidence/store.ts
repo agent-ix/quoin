@@ -94,9 +94,57 @@ function writeCanonical(path: string, value: unknown): void {
   writeFileSync(path, canonicalJson(value), "utf8");
 }
 
+/**
+ * A store file that exists and cannot be read as JSON.
+ *
+ * `bindings.json` and `baseline.json` are **checked into git**, so a merge
+ * conflict leaves `<<<<<<< HEAD` in one of them. Before this, every store read
+ * threw a bare `SyntaxError: Unexpected token '<'` naming no file
+ * (agent-ix/quoin#106).
+ */
+export class StoreReadError extends Error {
+  constructor(
+    readonly path: string,
+    readonly cause: unknown,
+  ) {
+    const detail = cause instanceof Error ? cause.message : String(cause);
+    super(
+      `${path} exists but is not readable JSON: ${detail}. A merge conflict ` +
+        `in a checked-in store file is the usual cause — resolve it, or delete ` +
+        `the file to start from an empty store.`,
+    );
+    this.name = "StoreReadError";
+  }
+}
+
 function readJson<T>(path: string): T | null {
   if (!existsSync(path)) return null;
-  return JSON.parse(readFileSync(path, "utf8")) as T;
+  try {
+    return JSON.parse(readFileSync(path, "utf8")) as T;
+  } catch (cause) {
+    throw new StoreReadError(path, cause);
+  }
+}
+
+/**
+ * As {@link readJson}, but a corrupt file is **skipped and reported** rather
+ * than fatal.
+ *
+ * Used for `runs/**`, where one bad file must not hide every finding in the
+ * report. The binding graph and the baseline are different: those are the
+ * store's spine, and silently reading an empty graph because the file is
+ * unparseable would report every obligation as undischarged.
+ */
+function readJsonSkippable<T>(path: string, skipped: string[]): T | null {
+  try {
+    return readJson<T>(path);
+  } catch (error) {
+    if (error instanceof StoreReadError) {
+      skipped.push(path);
+      return null;
+    }
+    throw error;
+  }
 }
 
 /** Write one run record. Last-write-wins at the same (suite, commit). */
@@ -130,10 +178,25 @@ export function listRuns(repo: string, suite: string): string[] {
     .sort();
 }
 
-/** Every run recorded for a suite, oldest first by `timestamp`. */
-export function readRuns(repo: string, suite: string): RunRecord[] {
+/**
+ * Every run recorded for a suite, oldest first by `timestamp`.
+ *
+ * An unreadable run file is skipped and its path pushed onto `skipped` when the
+ * caller passes one — one corrupt record must not hide every finding in the
+ * report (agent-ix/quoin#106).
+ */
+export function readRuns(
+  repo: string,
+  suite: string,
+  skipped: string[] = [],
+): RunRecord[] {
   return listRuns(repo, suite)
-    .map((f) => readRun(repo, suite, f.replace(/\.json$/, "")))
+    .map((f) =>
+      readJsonSkippable<RunRecord>(
+        runPath(repo, suite, f.replace(/\.json$/, "")),
+        skipped,
+      ),
+    )
     .filter((r): r is RunRecord => r !== null)
     .sort(
       (a, b) =>
@@ -156,8 +219,12 @@ export function readRuns(repo: string, suite: string): RunRecord[] {
  * `RunRecord.timestamp` was there the whole time. The commit is the tiebreak,
  * so two runs stamped identically still order deterministically.
  */
-export function latestRun(repo: string, suite: string): RunRecord | null {
-  return readRuns(repo, suite).at(-1) ?? null;
+export function latestRun(
+  repo: string,
+  suite: string,
+  skipped: string[] = [],
+): RunRecord | null {
+  return readRuns(repo, suite, skipped).at(-1) ?? null;
 }
 
 /** Locale-independent string order. */

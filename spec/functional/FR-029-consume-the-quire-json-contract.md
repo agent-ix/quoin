@@ -107,6 +107,7 @@ names the found version, the required version, and the consequence.
 | FR-029-AC-7 | A payload omitting every optional key validates, one carrying every optional key validates, and a malformed statement hash is rejected. | Test (TC-116) |
 | FR-029-AC-8 | The eval harness's version floor equals the pinned contract minimum, so the two restatements cannot drift. | Test (TC-117) |
 | FR-029-AC-9 | A payload emitted by the installed `quire` binary validates against the vendored schema, so the contract is checked against the real emitter and not only against fixtures. | Test (TC-118) |
+| FR-029-AC-10 | When the `quire` subprocess exits non-zero, its **stderr** is surfaced in the raised diagnostic. Its own message names the cause — a missing traceability model, a bad `--module` — and discarding it undoes the care FR-029 takes over the version premise one frame later. | Inspection (TC-134) |
 
 ## Dependencies
 

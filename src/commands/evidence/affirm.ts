@@ -9,7 +9,12 @@ import {
   readBindings,
   writeBindings,
 } from "../../evidence/index.js";
-import { checkVersionPremise, parseCoverage } from "../../quire/index.js";
+import {
+  checkVersionPremise,
+  parseCoverage,
+  quireVersion,
+  runQuire,
+} from "../../quire/index.js";
 
 export default class EvidenceAffirm extends QuoinCommand {
   static summary =
@@ -60,12 +65,7 @@ clear itself on the next CI run and the detector would never fire.`;
 
     const args = ["coverage", "--scope", flags.repo, "--json"];
     if (flags.module) args.push("--module", flags.module);
-    const parsed = parseCoverage(
-      execFileSync("quire", args, {
-        encoding: "utf8",
-        stdio: ["ignore", "pipe", "ignore"],
-      }),
-    );
+    const parsed = parseCoverage(runQuire(args));
     if (!parsed.ok) this.error(parsed.error.message, { exit: 2 });
 
     const current = (parsed.value.obligations ?? []).find(
@@ -124,13 +124,5 @@ clear itself on the next CI run and the detector would never fire.`;
       `affirmed ${flags.obligation} by ${flags.who} at ${commit.slice(0, 12)} ` +
         `(hash ${current.statement_hash.slice(0, 12)}…)`,
     );
-  }
-}
-
-function quireVersion(): string | null {
-  try {
-    return execFileSync("quire", ["--version"], { encoding: "utf8" });
-  } catch {
-    return null;
   }
 }

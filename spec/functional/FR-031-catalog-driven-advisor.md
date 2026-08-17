@@ -117,6 +117,7 @@ against another.
 | FR-031-AC-6 | An authored method no recommendation covers is flagged as a mismatch, and an authored method matching a recommended method's class is not. | Test (TC-134) |
 | FR-031-AC-7 | An obligation matching no rule is reported inconclusive with no recommendations and no mismatch. | Test (TC-135) |
 | FR-031-AC-8 | A method whose rule names an axis the advisor cannot observe is still recommended on the axes it can, with only the observable reasons reported. | Test (TC-136) |
+| FR-031-AC-9 | A module whose `manifest.yaml` cannot be read or parsed is skipped and reported on the merged catalog, never thrown: a catalog missing one module's entries is still worth having, and the command that would crash is the one an operator runs to diagnose the module. | Test (TC-133) |
 
 ## Dependencies
 
