@@ -72,17 +72,24 @@ export function audit(input: AuditInput): AuditReport {
   const findings: Finding[] = [];
   const healthy: string[] = [];
 
-  const bindingByObligation = new Map(
-    input.bindings.map((b) => [b.obligation, b]),
-  );
+  // An obligation can be discharged by more than one suite — a unit suite and
+  // a mutation suite, say — so the graph is grouped, not indexed. Keying on the
+  // obligation alone was what let the second suite's binding overwrite the
+  // first (agent-ix/quoin#102).
+  const bindingsByObligation = new Map<string, Binding[]>();
+  for (const binding of input.bindings) {
+    const group = bindingsByObligation.get(binding.obligation) ?? [];
+    group.push(binding);
+    bindingsByObligation.set(binding.obligation, group);
+  }
   const runsBySuite = new Map(input.runs.map((r) => [r.suite, r]));
 
-  for (const obligation of [...input.obligations].sort((a, b) =>
-    a.id.localeCompare(b.id),
-  )) {
-    const binding = bindingByObligation.get(obligation.id);
+  for (const obligation of [...input.obligations].sort(byId)) {
+    const bindings = (bindingsByObligation.get(obligation.id) ?? [])
+      .slice()
+      .sort((a, b) => compare(a.suite, b.suite));
 
-    if (!binding) {
+    if (bindings.length === 0) {
       findings.push({
         kind: "undischarged",
         obligation: obligation.id,
@@ -95,7 +102,13 @@ export function audit(input: AuditInput): AuditReport {
     }
 
     // ── 1. Suspect link ──
-    if (binding.statementHashAtBinding !== obligation.statement_hash) {
+    // Reported when ANY binding predates the current statement. A sibling suite
+    // that re-bound after the reword does not absolve the one that did not:
+    // that binding still claims to discharge a statement it never saw.
+    const suspect = bindings.filter(
+      (b) => b.statementHashAtBinding !== obligation.statement_hash,
+    );
+    if (suspect.length > 0) {
       findings.push({
         kind: "suspect-link",
         obligation: obligation.id,
@@ -104,57 +117,80 @@ export function audit(input: AuditInput): AuditReport {
         // still reads as covered.
         severity: "high",
         summary:
-          `${obligation.id} was reworded after its evidence was bound ` +
-          `(bound against ${binding.statementHashAtBinding.slice(0, 12)}…, ` +
+          `${obligation.id} was reworded after its evidence was bound in ` +
+          `${suspect.map((b) => b.suite).join(", ")} ` +
+          `(bound against ${suspect[0].statementHashAtBinding.slice(0, 12)}…, ` +
           `now ${obligation.statement_hash.slice(0, 12)}…). Re-affirm or re-verify.`,
       });
       continue;
     }
 
-    const run = runsBySuite.get(binding.suite);
-
     // ── 2. Stale evidence ──
-    if (!run) {
+    const unrecorded = bindings.filter((b) => !runsBySuite.has(b.suite));
+    if (unrecorded.length > 0) {
       findings.push({
         kind: "stale-evidence",
         obligation: obligation.id,
         severity: "high",
         summary:
-          `${obligation.id} is bound to suite ${binding.suite}, which has no ` +
-          `recorded run. The binding claims evidence that is not in the store.`,
+          `${obligation.id} is bound to ${unrecorded.map((b) => b.suite).join(", ")}, ` +
+          `which ${unrecorded.length === 1 ? "has" : "have"} no recorded run. ` +
+          `The binding claims evidence that is not in the store.`,
       });
       continue;
     }
-    if (input.headCommit && run.commit !== input.headCommit) {
-      findings.push({
-        kind: "stale-evidence",
-        obligation: obligation.id,
-        // Medium: an older run is normal between releases. It becomes
-        // actionable at a gate, which is the consuming workflow's policy.
-        severity: "medium",
-        summary:
-          `${obligation.id} rests on a ${binding.suite} run at ` +
-          `${run.commit.slice(0, 12)}, not at HEAD (${input.headCommit.slice(0, 12)}).`,
-      });
+
+    const runs = bindings.map((b) => runsBySuite.get(b.suite)!);
+    if (input.headCommit) {
+      const behind = bindings.filter(
+        (b, i) => runs[i].commit !== input.headCommit,
+      );
+      if (behind.length > 0) {
+        findings.push({
+          kind: "stale-evidence",
+          obligation: obligation.id,
+          // Medium: an older run is normal between releases. It becomes
+          // actionable at a gate, which is the consuming workflow's policy.
+          severity: "medium",
+          summary:
+            `${obligation.id} rests on ` +
+            behind
+              .map(
+                (b) =>
+                  `a ${b.suite} run at ${runsBySuite.get(b.suite)!.commit.slice(0, 12)}`,
+              )
+              .join(" and ") +
+            `, not at HEAD (${input.headCommit.slice(0, 12)}).`,
+        });
+      }
     }
 
     // ── 3. Vacuous evidence ──
-    const vacuous = binding.symbols.filter((symbol) => {
-      const entry = run.entries.find((e) => e.symbol === symbol);
-      // A symbol the run never reported is vacuous in the strongest sense: the
-      // binding names evidence the suite did not produce.
-      if (!entry) return true;
-      return entry.outcome === "skip";
-    });
-    if (vacuous.length > 0 && vacuous.length === binding.symbols.length) {
+    // Vacuous only when EVERY symbol in EVERY suite was skipped or absent. One
+    // suite that genuinely ran is evidence; reporting the obligation as vacuous
+    // because a second suite skipped would be the false alarm that gets the
+    // check switched off.
+    const vacuous = bindings.flatMap((b, i) =>
+      b.symbols
+        .filter((symbol) => {
+          const entry = runs[i].entries.find((e) => e.symbol === symbol);
+          // A symbol the run never reported is vacuous in the strongest sense:
+          // the binding names evidence the suite did not produce.
+          if (!entry) return true;
+          return entry.outcome === "skip";
+        })
+        .map((symbol) => `${b.suite}:${symbol}`),
+    );
+    const boundSymbols = bindings.reduce((n, b) => n + b.symbols.length, 0);
+    if (vacuous.length > 0 && vacuous.length === boundSymbols) {
       findings.push({
         kind: "vacuous-evidence",
         obligation: obligation.id,
         severity: "high",
         summary:
           `every symbol bound to ${obligation.id} was skipped or absent from ` +
-          `the ${binding.suite} run: ${vacuous.sort().join(", ")}. The row reads ` +
-          `as covered and nothing was verified.`,
+          `its run: ${vacuous.sort(compare).join(", ")}. The row reads as ` +
+          `covered and nothing was verified.`,
       });
       continue;
     }
@@ -162,8 +198,8 @@ export function audit(input: AuditInput): AuditReport {
     // ── Method conformance ──
     const conformance = methodConformance(
       obligation,
-      binding,
-      run,
+      bindings,
+      runs,
       input.catalog,
     );
     if (conformance) {
@@ -172,7 +208,7 @@ export function audit(input: AuditInput): AuditReport {
     }
 
     // ── Multiplicity ──
-    const multiplicity = multiplicityFinding(obligation, binding, input);
+    const multiplicity = multiplicityFinding(obligation, bindings, input);
     if (multiplicity) {
       findings.push(multiplicity);
       continue;
@@ -181,11 +217,22 @@ export function audit(input: AuditInput): AuditReport {
     healthy.push(obligation.id);
   }
 
+  // Plain comparison, not `localeCompare`: the report is meant to be
+  // reproducible, and `localeCompare` without an explicit locale depends on the
+  // runtime's ICU data (agent-ix/quoin#106).
   findings.sort(
-    (a, b) =>
-      a.obligation.localeCompare(b.obligation) || a.kind.localeCompare(b.kind),
+    (a, b) => compare(a.obligation, b.obligation) || compare(a.kind, b.kind),
   );
-  return { findings, healthy: healthy.sort() };
+  return { findings, healthy: healthy.sort(compare) };
+}
+
+/** Locale-independent string order. */
+function compare(a: string, b: string): number {
+  return a === b ? 0 : a < b ? -1 : 1;
+}
+
+function byId(a: Obligation, b: Obligation): number {
+  return compare(a.id, b.id);
 }
 
 /**
@@ -199,8 +246,8 @@ export function audit(input: AuditInput): AuditReport {
  */
 function methodConformance(
   obligation: Obligation,
-  binding: Binding,
-  run: RunRecord,
+  bindings: Binding[],
+  runs: RunRecord[],
   catalog: MethodCatalog | undefined,
 ): Finding | null {
   if (!catalog || !obligation.method) return null;
@@ -220,7 +267,7 @@ function methodConformance(
   // failure worth reporting; the reverse (a Test method discharged by a
   // recorded inspection) is caught by the same comparison.
   const isTestClass = declaredClasses.has("Test");
-  const ranAsTest = run.entries.length > 0;
+  const ranAsTest = runs.some((run) => run.entries.length > 0);
 
   if (!isTestClass && ranAsTest) {
     return {
@@ -230,8 +277,8 @@ function methodConformance(
       summary:
         `${obligation.id} declares \`${obligation.method}\` ` +
         `(${[...declaredClasses].sort().join("/")}) but is discharged by a test ` +
-        `run in ${binding.suite}. A method that is not a test is not discharged ` +
-        `by one.`,
+        `run in ${bindings.map((b) => b.suite).join(", ")}. A method that is ` +
+        `not a test is not discharged by one.`,
     };
   }
   return null;
@@ -246,18 +293,17 @@ function methodConformance(
  */
 function multiplicityFinding(
   obligation: Obligation,
-  binding: Binding,
+  bindings: Binding[],
   input: AuditInput,
 ): Finding | null {
   const demanding = input.multiplicityRequires ?? [];
   if (demanding.length === 0 || !obligation.criticality) return null;
   if (!demanding.includes(obligation.criticality)) return null;
 
-  const suites = new Set(
-    input.bindings
-      .filter((b) => b.obligation === obligation.id)
-      .map((b) => b.suite),
-  );
+  // Now a real measurement. While `bind()` keyed on the obligation alone this
+  // set could never hold more than one suite, so the finding fired on every
+  // demanding obligation and no amount of evidence could clear it (#102).
+  const suites = new Set(bindings.map((b) => b.suite));
   if (suites.size >= 2) return null;
 
   return {
@@ -266,7 +312,8 @@ function multiplicityFinding(
     severity: "medium",
     summary:
       `${obligation.id} is criticality ${obligation.criticality}, which requires ` +
-      `two independent methods, but all its evidence comes from ${binding.suite}.`,
+      `two independent methods, but all its evidence comes from ` +
+      `${[...suites].join(", ")}.`,
   };
 }
 

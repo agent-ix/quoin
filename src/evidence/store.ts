@@ -144,11 +144,18 @@ export function readBindings(repo: string): BindingsFile {
   );
 }
 
-/** Write the binding graph, ordered by obligation id so diffs stay minimal. */
+/**
+ * Write the binding graph, ordered by `(obligation, suite)` so diffs stay
+ * minimal.
+ *
+ * Compared with plain `<`, not `localeCompare`: this file is checked in and its
+ * diff is meant to *be* the per-PR delta, and `localeCompare` without an
+ * explicit locale depends on the runtime's ICU data — so two machines could
+ * serialize the same binding set in different orders and produce a diff nobody
+ * made.
+ */
 export function writeBindings(repo: string, file: BindingsFile): void {
-  const bindings = [...file.bindings].sort((a, b) =>
-    a.obligation.localeCompare(b.obligation),
-  );
+  const bindings = [...file.bindings].sort(byObligationThenSuite);
   writeCanonical(bindingsPath(repo), {
     schemaVersion: STORE_SCHEMA_VERSION,
     bindings,
@@ -202,9 +209,26 @@ export function gc(repo: string, dryRun = false): string[] {
   return deleted.sort();
 }
 
+/** Total order over the binding graph. Locale-independent by construction. */
+function byObligationThenSuite(a: Binding, b: Binding): number {
+  if (a.obligation !== b.obligation)
+    return a.obligation < b.obligation ? -1 : 1;
+  if (a.suite === b.suite) return 0;
+  return a.suite < b.suite ? -1 : 1;
+}
+
 /**
  * Bind an obligation to the run that discharged it, stamping the statement hash
  * as it stands now.
+ *
+ * **Keyed on `(obligation, suite)`, not on the obligation alone.** The binding
+ * graph is cross-suite by design — one obligation discharged by a unit suite
+ * and a mutation suite is the case `bindings.json` exists to hold in one file —
+ * and keying on the obligation made the second suite *overwrite* the first.
+ * Two consequences, both silent: the cross-suite relationship was destroyed on
+ * write, and `insufficient-multiplicity` counted distinct suites per obligation
+ * across a set that could never hold more than one, so the finding could not be
+ * cleared by any amount of evidence (agent-ix/quoin#102).
  *
  * **Auto-bind, explicit affirmation.** First discharge binds without asking:
  * requiring a human to confirm a binding the evidence already proves would put
@@ -212,14 +236,16 @@ export function gc(repo: string, dryRun = false): string[] {
  * stays explicit is *re-affirmation* after a statement changes — that is the
  * judgement call, and it is the one worth a signature.
  *
- * Returns the binding, whether it was newly created, and (when it already
- * existed) whether it is now suspect.
+ * Returns the binding, whether it was newly created, and (when this
+ * `(obligation, suite)` already existed) whether it is now suspect.
  */
 export function bind(
   existing: Binding[],
   next: Omit<Binding, "affirmations">,
 ): { bindings: Binding[]; created: boolean; suspect: boolean } {
-  const idx = existing.findIndex((b) => b.obligation === next.obligation);
+  const idx = existing.findIndex(
+    (b) => b.obligation === next.obligation && b.suite === next.suite,
+  );
   if (idx === -1) {
     return {
       bindings: [...existing, { ...next }],
@@ -234,7 +260,6 @@ export function bind(
   const suspect = prior.statementHashAtBinding !== next.statementHashAtBinding;
   const merged: Binding = {
     ...prior,
-    suite: next.suite,
     commit: next.commit,
     symbols: next.symbols,
   };
@@ -243,7 +268,16 @@ export function bind(
   return { bindings, created: false, suspect };
 }
 
-/** Record a re-affirmation against an existing binding, clearing suspicion. */
+/**
+ * Record a re-affirmation, clearing suspicion.
+ *
+ * Affirms **every** binding for the obligation, not the first one found. The
+ * judgement being recorded is "I have read the new statement and the evidence
+ * still discharges it", and that is a judgement about the requirement rather
+ * than about one suite — affirming only the first would leave a sibling suite
+ * suspect for a reason nobody could act on. `suite` narrows it when the
+ * reviewer means only one.
+ */
 export function affirm(
   existing: Binding[],
   obligation: string,
@@ -251,17 +285,23 @@ export function affirm(
   who: string,
   commit: string,
   note?: string,
+  suite?: string,
 ): { bindings: Binding[]; found: boolean } {
-  const idx = existing.findIndex((b) => b.obligation === obligation);
-  if (idx === -1) return { bindings: existing, found: false };
-  const prior = existing[idx];
+  const matches = existing
+    .map((b, i) => [b, i] as const)
+    .filter(
+      ([b]) => b.obligation === obligation && (!suite || b.suite === suite),
+    );
+  if (matches.length === 0) return { bindings: existing, found: false };
   const bindings = [...existing];
-  bindings[idx] = {
-    ...prior,
-    // Affirming moves the hash forward: the reviewer has read the new statement
-    // and says the evidence still discharges it.
-    statementHashAtBinding: currentHash,
-    affirmations: [...(prior.affirmations ?? []), { who, commit, note }],
-  };
+  for (const [prior, idx] of matches) {
+    bindings[idx] = {
+      ...prior,
+      // Affirming moves the hash forward: the reviewer has read the new
+      // statement and says the evidence still discharges it.
+      statementHashAtBinding: currentHash,
+      affirmations: [...(prior.affirmations ?? []), { who, commit, note }],
+    };
+  }
   return { bindings, found: true };
 }

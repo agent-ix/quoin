@@ -125,6 +125,7 @@ clear itself on the next CI run and the detector would never fire.
 | FR-030-AC-8 | `gc` deletes only runs that are neither the latest for their suite nor referenced by a binding, and `--dry-run` deletes nothing. | Test (TC-126) |
 | FR-030-AC-9 | An absent store reads as an empty binding graph, an empty run list and an empty collection. | Test (TC-127) |
 | FR-030-AC-10 | No obligation statement, document or method appears anywhere in the written store — only the id and hash (CON-2). | Test (TC-128) |
+| FR-030-AC-11 | A binding is keyed on `(obligation, suite)`: a second suite discharging the same obligation **appends** a binding rather than replacing the first, re-discharging the same suite merges into its own binding, and affirmation clears every suite's suspicion unless narrowed to one. The graph is cross-suite, so the file must be able to hold two. | Test (TC-129) |
 
 ## Dependencies
 

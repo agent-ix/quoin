@@ -113,6 +113,7 @@ violations. The per-PR delta names what a change added and resolved.
 | FR-032-AC-5 | An obligation with no binding is reported undischarged at medium severity. | Test (TC-141) |
 | FR-032-AC-6 | A non-test-class method discharged by a test run is flagged; a test-class one is not; and with no catalog the question is not asked. | Test (TC-142) |
 | FR-032-AC-7 | A criticality demanding two independent methods is satisfied by two suites and not by two symbols in one, and does not apply below the threshold. | Test (TC-143) |
+| FR-032-AC-8 | Every check folds over **all** of an obligation's bindings: a suspect link is reported when any binding predates the current statement, evidence is vacuous only when every symbol in every suite was skipped or absent, and multiplicity counts the distinct suites actually bound. | Test (TC-145) |
 | FR-032-AC-8 | `ratchet` reports only violations absent from the baseline, and `delta` names what a change added and resolved. | Test (TC-144) |
 
 ## Dependencies

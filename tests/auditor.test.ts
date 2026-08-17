@@ -305,3 +305,96 @@ describe("the report is deterministic", () => {
     expect(audit(input())).toEqual(audit(input()));
   });
 });
+
+describe("TC-145 one obligation, two suites (FR-032-AC-8)", () => {
+  // While `bind()` keyed on the obligation alone, the second suite's binding
+  // OVERWROTE the first — so this set could never hold two suites, and
+  // `insufficient-multiplicity` fired on every demanding obligation with no
+  // way to clear it (agent-ix/quoin#102). The auditor now folds over the group.
+  const twoSuites = (over: Partial<Binding> = {}) => [
+    binding(),
+    binding({ suite: "SUITE-002", symbols: ["bench::tc900"], ...over }),
+  ];
+  const twoRuns = () => [
+    run(),
+    run({
+      suite: "SUITE-002",
+      entries: [{ symbol: "bench::tc900", outcome: "pass" }],
+    }),
+  ];
+
+  it("clears the multiplicity finding two independent suites satisfy", () => {
+    const report = audit(
+      input({
+        obligations: [obligation({ criticality: "P0" })],
+        bindings: twoSuites(),
+        runs: twoRuns(),
+        multiplicityRequires: ["P0"],
+      }),
+    );
+    expect(report.findings).toEqual([]);
+    expect(report.healthy).toEqual(["FR-001-AC-1"]);
+  });
+
+  it("still reports it when both bindings name the same suite", () => {
+    const report = audit(
+      input({
+        obligations: [obligation({ criticality: "P0" })],
+        multiplicityRequires: ["P0"],
+      }),
+    );
+    expect(report.findings.map((f) => f.kind)).toEqual([
+      "insufficient-multiplicity",
+    ]);
+  });
+
+  it("reports a suspect link when one suite bound before the reword", () => {
+    // A sibling that re-bound after the reword does not absolve the one that
+    // did not: that binding still claims to discharge a statement it never saw.
+    const report = audit(
+      input({
+        bindings: twoSuites({ statementHashAtBinding: HASH_B }),
+        runs: twoRuns(),
+      }),
+    );
+    expect(report.findings.map((f) => f.kind)).toEqual(["suspect-link"]);
+    expect(report.findings[0].summary).toContain("SUITE-002");
+  });
+
+  it("is not vacuous when one suite skipped and the other ran", () => {
+    const report = audit(
+      input({
+        bindings: twoSuites(),
+        runs: [
+          run({ entries: [{ symbol: "tests::tc001", outcome: "skip" }] }),
+          run({
+            suite: "SUITE-002",
+            entries: [{ symbol: "bench::tc900", outcome: "pass" }],
+          }),
+        ],
+      }),
+    );
+    // One suite that genuinely ran is evidence. Calling the obligation vacuous
+    // because a second suite skipped is the false alarm that gets a check
+    // switched off.
+    expect(report.findings).toEqual([]);
+  });
+
+  it("is vacuous only when every symbol in every suite was skipped", () => {
+    const report = audit(
+      input({
+        bindings: twoSuites(),
+        runs: [
+          run({ entries: [{ symbol: "tests::tc001", outcome: "skip" }] }),
+          run({
+            suite: "SUITE-002",
+            entries: [{ symbol: "bench::tc900", outcome: "skip" }],
+          }),
+        ],
+      }),
+    );
+    expect(report.findings.map((f) => f.kind)).toEqual(["vacuous-evidence"]);
+    expect(report.findings[0].summary).toContain("SUITE-001:tests::tc001");
+    expect(report.findings[0].summary).toContain("SUITE-002:bench::tc900");
+  });
+});
