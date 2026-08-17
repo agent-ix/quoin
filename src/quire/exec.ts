@@ -40,6 +40,42 @@ export function runQuire(args: string[]): string {
   }
 }
 
+/**
+ * As {@link runQuire}, but a non-zero exit returns what was written rather than
+ * throwing.
+ *
+ * `quire properties` exits 1 when **any** input document fails to resolve — an
+ * asset with no `type:`, say — while still writing a complete, valid payload
+ * for every document that did. Treating that as total failure threw away the
+ * whole property-shape axis over two untyped files, silently (agent-ix/quoin#103).
+ *
+ * The caller decides what a partial result is worth; this only stops the
+ * decision being made by an exception.
+ */
+export function runQuireAllowFailure(args: string[]): {
+  stdout: string;
+  stderr: string;
+  ok: boolean;
+} {
+  try {
+    return {
+      stdout: execFileSync("quire", args, {
+        encoding: "utf8",
+        stdio: ["ignore", "pipe", "pipe"],
+      }),
+      stderr: "",
+      ok: true,
+    };
+  } catch (cause) {
+    const err = cause as { stdout?: string | Buffer; stderr?: string | Buffer };
+    return {
+      stdout: String(err.stdout ?? ""),
+      stderr: String(err.stderr ?? "").trim(),
+      ok: false,
+    };
+  }
+}
+
 /** `quire --version` output, or `null` when quire is not on PATH. */
 export function quireVersion(): string | null {
   try {

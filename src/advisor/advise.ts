@@ -124,10 +124,7 @@ export function characteristicsOf(statement: string): string[] {
  * as a deterministic tiebreak, so the same input always yields the same order.
  */
 export function advise(catalog: MethodCatalog, facts: ObligationFacts): Advice {
-  const characteristics = new Set([
-    ...characteristicsOf(facts.statement),
-    ...(facts.archetype === "NFR" ? [] : []),
-  ]);
+  const characteristics = new Set(characteristicsOf(facts.statement));
   const shapes = new Set(facts.propertyShape ? [facts.propertyShape] : []);
   const objects = new Set(facts.objectTypes ?? []);
   const archetypes = new Set(facts.archetype ? [facts.archetype] : []);
@@ -151,7 +148,7 @@ export function advise(catalog: MethodCatalog, facts: ObligationFacts): Advice {
 
   recommended.sort(
     (a, b) =>
-      b.reasons.length - a.reasons.length || a.method.localeCompare(b.method),
+      b.reasons.length - a.reasons.length || compare(a.method, b.method),
   );
 
   const authored = normalizeAuthored(facts.authoredMethod);
@@ -196,7 +193,7 @@ function matchRules(
     }
   }
   return reasons.sort(
-    (a, b) => a.rule.localeCompare(b.rule) || a.value.localeCompare(b.value),
+    (a, b) => compare(a.rule, b.rule) || compare(a.value, b.value),
   );
 }
 
@@ -206,4 +203,9 @@ function normalizeAuthored(cell: string | null | undefined): string | null {
   const head = cell.includes("(") ? cell.slice(0, cell.indexOf("(")) : cell;
   const trimmed = head.trim();
   return trimmed.length > 0 ? trimmed : null;
+}
+
+/** Locale-independent string order (agent-ix/quoin#106). */
+function compare(a: string, b: string): number {
+  return a === b ? 0 : a < b ? -1 : 1;
 }
