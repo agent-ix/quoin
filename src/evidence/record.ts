@@ -90,8 +90,11 @@ export function recordRun(request: RecordRequest): RecordOutcome {
   const bound: string[] = [];
   const suspect: string[] = [];
 
+  // Plain comparison, not `localeCompare`: the outcome lists are reported and
+  // the store is written from this order, and `localeCompare` without an
+  // explicit locale depends on the runtime's ICU data (agent-ix/quoin#106).
   for (const [id, symbols] of [...discharged].sort(([a], [b]) =>
-    a.localeCompare(b),
+    a === b ? 0 : a < b ? -1 : 1,
   )) {
     const obligation = byId.get(id);
     if (!obligation) continue;

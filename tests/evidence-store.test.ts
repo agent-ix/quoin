@@ -1,5 +1,5 @@
 /**
- * FR-030 — the evidence store (TC-119..TC-128).
+ * FR-030 — the evidence store (TC-119..TC-129).
  */
 
 import { mkdtempSync, readFileSync, existsSync } from "node:fs";
@@ -42,6 +42,7 @@ function obligation(id: string, hash: string): Obligation {
 }
 
 const HASH_A = "a".repeat(64);
+const COMMIT = "abcdef0123456789";
 const HASH_B = "b".repeat(64);
 
 describe("TC-119 the store lives under spec/", () => {
@@ -358,5 +359,100 @@ describe("bind() is the one place the auto-bind rule lives", () => {
     expect(second.created).toBe(false);
     expect(second.suspect).toBe(true);
     expect(second.bindings[0].statementHashAtBinding).toBe(HASH_A);
+  });
+});
+
+describe("TC-129 a second suite appends, it does not overwrite (FR-030-AC-11)", () => {
+  // `BindingsFile`'s own doc says the graph IS cross-suite — "one obligation
+  // can be discharged by a unit test and a benchmark" — and `bind()` keyed on
+  // the obligation alone, so the second discharge replaced the first. The
+  // relationship the file exists to hold was destroyed on write, silently
+  // (agent-ix/quoin#102).
+  it("keeps both bindings and orders them by (obligation, suite)", () => {
+    const first = bind([], {
+      obligation: "FR-001-AC-1",
+      statementHashAtBinding: HASH_A,
+      suite: "SUITE-002",
+      commit: COMMIT,
+      symbols: ["bench::tc900"],
+    });
+    expect(first.created).toBe(true);
+
+    const second = bind(first.bindings, {
+      obligation: "FR-001-AC-1",
+      statementHashAtBinding: HASH_A,
+      suite: "SUITE-001",
+      commit: COMMIT,
+      symbols: ["tests::tc001"],
+    });
+    expect(second.created).toBe(true);
+    expect(second.bindings).toHaveLength(2);
+    expect(second.bindings.map((b) => b.suite).sort()).toEqual([
+      "SUITE-001",
+      "SUITE-002",
+    ]);
+
+    writeBindings(repo, { schemaVersion: 1, bindings: second.bindings });
+    // Written in (obligation, suite) order, so the diff is stable.
+    expect(readBindings(repo).bindings.map((b) => b.suite)).toEqual([
+      "SUITE-001",
+      "SUITE-002",
+    ]);
+  });
+
+  it("re-discharging the SAME suite still merges rather than appending", () => {
+    const first = bind([], {
+      obligation: "FR-001-AC-1",
+      statementHashAtBinding: HASH_A,
+      suite: "SUITE-001",
+      commit: COMMIT,
+      symbols: ["tests::tc001"],
+    });
+    const again = bind(first.bindings, {
+      obligation: "FR-001-AC-1",
+      statementHashAtBinding: HASH_A,
+      suite: "SUITE-001",
+      commit: "9999999999999999",
+      symbols: ["tests::tc001", "tests::tc002"],
+    });
+    expect(again.created).toBe(false);
+    expect(again.bindings).toHaveLength(1);
+    expect(again.bindings[0].symbols).toEqual(["tests::tc001", "tests::tc002"]);
+  });
+
+  it("affirming clears every suite's suspicion, not just the first", () => {
+    const bindings = [
+      {
+        obligation: "FR-001-AC-1",
+        statementHashAtBinding: HASH_A,
+        suite: "SUITE-001",
+        commit: COMMIT,
+        symbols: ["tests::tc001"],
+      },
+      {
+        obligation: "FR-001-AC-1",
+        statementHashAtBinding: HASH_A,
+        suite: "SUITE-002",
+        commit: COMMIT,
+        symbols: ["bench::tc900"],
+      },
+    ];
+    const out = affirm(bindings, "FR-001-AC-1", HASH_B, "peter", COMMIT);
+    expect(out.found).toBe(true);
+    expect(out.bindings.every((b) => b.statementHashAtBinding === HASH_B)).toBe(
+      true,
+    );
+    // Narrowed to one suite when the reviewer means only one.
+    const narrowed = affirm(
+      bindings,
+      "FR-001-AC-1",
+      HASH_B,
+      "peter",
+      COMMIT,
+      undefined,
+      "SUITE-002",
+    );
+    expect(narrowed.bindings[0].statementHashAtBinding).toBe(HASH_A);
+    expect(narrowed.bindings[1].statementHashAtBinding).toBe(HASH_B);
   });
 });
