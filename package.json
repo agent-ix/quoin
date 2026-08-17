@@ -33,6 +33,9 @@
       "config": {
         "description": "Read and store quoin configuration (get, set, edit, doctor)."
       },
+      "evidence": {
+        "description": "The evidence store — what actually ran, and against which statement (record, affirm, gc)."
+      },
       "module": {
         "description": "Install and manage user/community spec modules (list, install, remove, ensure-defaults)."
       },
@@ -57,7 +60,7 @@
     "lint": "eslint \"src/**/*.{ts,tsx,js,jsx}\" \"tests/**/*.{ts,tsx,js,jsx}\" && pnpm run format:check",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "build": "vite build",
+    "build": "vite build && node scripts/copy-quire-schemas.mjs",
     "clean": "rm -rf node_modules dist coverage .pnpm-store",
     "install:frozen": "pnpm install --frozen-lockfile",
     "update-lock": "pnpm install --lockfile-only",
