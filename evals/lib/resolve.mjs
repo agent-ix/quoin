@@ -66,6 +66,47 @@ export function findQuire() {
   );
 }
 
+/**
+ * The quire CLI floor this harness needs, mirroring `QUIRE_CONTRACT.minimumCli`
+ * (src/quire/contract.ts, FR-029).
+ *
+ * Restated here rather than imported because the harness runs against sources,
+ * not against `dist/`, and a build step between "run the evals" and "know which
+ * quire you need" is a step that gets skipped. `assertQuirePremise` is checked
+ * by a unit test against the TypeScript constant, so the two cannot drift
+ * silently.
+ */
+export const HARNESS_MIN_QUIRE = "0.21.0";
+
+/**
+ * Fail an eval run early when the `quire` on PATH predates the contract.
+ *
+ * The harness keys `quire validate` on exit code, which an old binary still
+ * produces — so without this an eval against a stale quire fails on the
+ * *assertion*, and the reader diagnoses the spec instead of the toolchain.
+ */
+export function assertQuirePremise(quireBin = findQuire()) {
+  const raw = quireVersion(quireBin);
+  const found = /(\d+)\.(\d+)\.(\d+)/.exec(raw)?.[0] ?? null;
+  const cmp = (a, b) => {
+    const pa = a.split(".").map(Number);
+    const pb = b.split(".").map(Number);
+    for (let i = 0; i < 3; i++) {
+      const d = (pa[i] ?? 0) - (pb[i] ?? 0);
+      if (d !== 0) return d;
+    }
+    return 0;
+  };
+  if (found === null || cmp(found, HARNESS_MIN_QUIRE) < 0) {
+    throw new Error(
+      `quire ${found ?? "(unknown)"} is older than the ${HARNESS_MIN_QUIRE} this ` +
+        `harness requires. Its JSON payloads predate the published schemas, so a ` +
+        `failing eval here would be the toolchain rather than the spec under test.`,
+    );
+  }
+  return found;
+}
+
 export function quireVersion(quireBin = findQuire()) {
   const out = spawnSync(quireBin, ["--version"], { encoding: "utf8" });
   return (out.stdout ?? "").trim() || "unknown";

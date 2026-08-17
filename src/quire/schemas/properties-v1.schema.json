@@ -1,0 +1,134 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agent-ix.dev/quire/schemas/output/properties-v1.schema.json",
+  "title": "quire properties --json payload (v1)",
+  "description": "The FR-052 per-criterion property-shape classification as emitted on stdout by `quire properties --json`. The envelope is assembled by `quire-cli`; every field inside a criterion comes from `AcClassification`, which this crate owns — so the contract is published here, in one place, and both sides conform to it rather than to each other. Hand-authored (`schemars` is banned, FR-003-AC-4). FR-008-AC-5 bans a version key in the payload, so the version lives in the `$id` and the filename.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["documents"],
+  "properties": {
+    "documents": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/Document" }
+    }
+  },
+  "$defs": {
+    "Document": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["document", "archetype", "criteria"],
+      "properties": {
+        "document": {
+          "type": "string",
+          "description": "The input label as the caller named it — a path, a glob expansion, or `-` for stdin."
+        },
+        "archetype": { "type": "string" },
+        "criteria": {
+          "type": "array",
+          "description": "Empty for a non-binding archetype (US, IT, …), which is data rather than an error.",
+          "items": { "$ref": "#/$defs/Criterion" }
+        }
+      }
+    },
+    "Criterion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "row_id",
+        "statement",
+        "line",
+        "shape",
+        "property",
+        "extractable",
+        "extraction",
+        "domain",
+        "precondition",
+        "oracle",
+        "signals",
+        "obligation"
+      ],
+      "properties": {
+        "row_id": {
+          "type": ["string", "null"],
+          "description": "The criterion's own id. Null when the binding form carries none; a downstream generator cannot emit a tracking tag without it."
+        },
+        "statement": {
+          "type": "string",
+          "description": "The UNTRUNCATED statement. Every span offset indexes this field."
+        },
+        "line": { "type": ["integer", "null"], "minimum": 1 },
+        "shape": {
+          "type": "string",
+          "description": "The FR-047 shape axis.",
+          "enum": ["assertion", "obligation", "given-when-then", "unstructured"]
+        },
+        "property": {
+          "type": "string",
+          "description": "The FR-052 property-shape axis. Closed in the engine by FR-052-CON-3: a shape with no downstream generator silently drops criteria, so extension happens by declaring idiom phrases, never by adding a shape.",
+          "enum": [
+            "round-trip",
+            "idempotence",
+            "ordering",
+            "invariant",
+            "error-case",
+            "lifecycle",
+            "concurrency",
+            "universal",
+            "example",
+            "unclassified"
+          ]
+        },
+        "extractable": { "type": "boolean" },
+        "extraction": {
+          "type": "string",
+          "description": "CR-033: what a generator may do with this criterion. Derived from `property` and `extractable` alone.",
+          "enum": ["extractable", "candidate", "not-extractable"]
+        },
+        "domain": { "$ref": "#/$defs/SpanOrNull" },
+        "precondition": { "$ref": "#/$defs/SpanOrNull" },
+        "oracle": { "$ref": "#/$defs/SpanOrNull" },
+        "signals": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Stable ids of the signals that fired, in evaluation order. There is no confidence float — a float is unreviewable and invites threshold tuning; this trail is what makes every record re-derivable from its own output."
+        },
+        "obligation": {
+          "description": "FR-053. Null for a module declaring no `obligations:` source. Carries no id, statement or document: the criterion record and its enclosing document object already have all three.",
+          "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/CriterionObligation" }]
+        }
+      }
+    },
+    "SpanOrNull": {
+      "description": "A span carries both byte offsets and its own text: offsets so a consumer can assert the decomposition partitions the statement, text because handing a UTF-16 consumer raw UTF-8 byte offsets is a defect generator.",
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["start", "end", "text"],
+          "properties": {
+            "start": { "type": "integer", "minimum": 0 },
+            "end": { "type": "integer", "minimum": 0 },
+            "text": { "type": "string" }
+          }
+        }
+      ]
+    },
+    "CriterionObligation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source", "statement_hash", "method", "criticality"],
+      "properties": {
+        "source": { "type": "string" },
+        "statement_hash": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "method": { "type": ["string", "null"] },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": { "type": "string" },
+          "description": "Omitted entirely when the source declares no parameters or every declared cell is empty."
+        },
+        "criticality": { "type": ["string", "null"] }
+      }
+    }
+  }
+}
