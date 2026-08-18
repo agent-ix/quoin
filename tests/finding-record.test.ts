@@ -8,7 +8,12 @@ import { fileURLToPath } from "node:url";
 
 import { describe, expect, it } from "vitest";
 
-import { parseCargoAudit, parseSarif } from "../src/evidence/index.js";
+import { audit } from "../src/auditor/index.js";
+import {
+  parseCargoAudit,
+  parseSarif,
+  type FindingRecord,
+} from "../src/evidence/index.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const realAudit = readFileSync(
@@ -169,5 +174,108 @@ describe("the cargo-audit adapter, against real tool output", () => {
       }),
     );
     expect(findings).toEqual([]);
+  });
+});
+
+describe("the auditor over finding-shaped scans", () => {
+  const obligation = { id: "FR-001-AC-1", statement: "s", statement_hash: "h" };
+
+  function scan(over: Partial<FindingRecord> = {}): FindingRecord {
+    return {
+      schemaVersion: 1,
+      suite: "SUITE-SCAN",
+      commit: "a".repeat(40),
+      tool: "semgrep 1.2.3",
+      timestamp: "2026-08-18T00:00:00Z",
+      findings: [],
+      ...over,
+    };
+  }
+
+  const binding = {
+    obligation: "FR-001-AC-1",
+    suite: "SUITE-SCAN",
+    symbols: [],
+    statementHashAtBinding: "h",
+    commit: "a".repeat(40),
+  };
+
+  // Trace: FR-034-AC-9
+  it("treats a clean scan as evidence, not as an undischarged obligation", () => {
+    // Zero findings with rules evaluated is a RESULT. Reporting it as
+    // undischarged would be the defect this record type exists to prevent,
+    // wearing the opposite hat.
+    const report = audit({
+      obligations: [obligation],
+      bindings: [binding],
+      runs: [],
+      scans: [scan({ rulesEvaluated: 400 })],
+    });
+    expect(report.findings.map((f) => f.kind)).not.toContain("undischarged");
+    expect(report.findings.map((f) => f.kind)).not.toContain(
+      "vacuous-evidence",
+    );
+  });
+
+  // Trace: FR-034-AC-10
+  it("reports a scan that evaluated no rules as vacuous", () => {
+    const report = audit({
+      obligations: [obligation],
+      bindings: [binding],
+      runs: [],
+      scans: [scan({ rulesEvaluated: 0 })],
+    });
+    const vacuous = report.findings.find((f) => f.kind === "vacuous-evidence");
+    expect(vacuous?.severity).toBe("high");
+    expect(vacuous?.summary).toMatch(/looked for nothing/);
+  });
+
+  // Trace: FR-034-AC-11
+  it("stays silent when the tool does not say how many rules it evaluated", () => {
+    // The question cannot be asked, so the check says nothing rather than
+    // something wrong — the posture method conformance takes for an absent
+    // evidence kind (agent-ix/quoin#105).
+    const report = audit({
+      obligations: [obligation],
+      bindings: [binding],
+      runs: [],
+      scans: [scan()],
+    });
+    expect(report.findings.map((f) => f.kind)).not.toContain(
+      "vacuous-evidence",
+    );
+  });
+
+  // Trace: FR-034-AC-12
+  it("pairs each run-shaped binding with its OWN run when a scan is also bound", () => {
+    // The regression this exists for: `runs` is built from the run-backed
+    // bindings, so any check indexing the full binding list would pair a
+    // binding with another suite's run as soon as one binding is scan-backed.
+    // Silent until scans existed, wrong from the moment they did.
+    const report = audit({
+      obligations: [obligation],
+      bindings: [
+        { ...binding, suite: "SUITE-SCAN" },
+        { ...binding, suite: "SUITE-RUN", symbols: ["tests::tc001"] },
+      ],
+      runs: [
+        {
+          schemaVersion: 1,
+          suite: "SUITE-RUN",
+          commit: "a".repeat(40),
+          tool: "cargo test",
+          timestamp: "2026-08-18T00:00:00Z",
+          entries: [{ symbol: "tests::tc001", outcome: "pass" }],
+        },
+      ],
+      scans: [scan({ rulesEvaluated: 400 })],
+    });
+    // The run's symbol passed, so nothing is vacuous. Misaligned indexing
+    // would look for `tests::tc001` in the scan-backed slot and report it
+    // absent.
+    expect(report.findings.map((f) => f.kind)).not.toContain(
+      "vacuous-evidence",
+    );
+    expect(report.healthy).toContain("FR-001-AC-1");
   });
 });

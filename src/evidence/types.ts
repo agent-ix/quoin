@@ -26,6 +26,14 @@
 /** Where a suite's run records live, relative to the store root. */
 export const RUNS_DIR = "runs";
 
+/**
+ * Where a suite's finding-shaped scan records live, relative to the store root.
+ *
+ * Separate from `runs/` because the two answer different questions and a reader
+ * must not have to open a file to learn which kind it is.
+ */
+export const SCANS_DIR = "scans";
+
 /** Schema version carried by every machine-written file in the store. */
 export const STORE_SCHEMA_VERSION = 1;
 

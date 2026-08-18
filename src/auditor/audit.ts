@@ -18,7 +18,8 @@
  */
 
 import type { Obligation } from "../quire/index.js";
-import type { Binding, RunRecord } from "../evidence/index.js";
+import { scanIsVacuous } from "../evidence/index.js";
+import type { Binding, FindingRecord, RunRecord } from "../evidence/index.js";
 import type { MethodCatalog } from "../advisor/index.js";
 
 /** Severity of one finding. Matches the SpecReview vocabulary. */
@@ -47,6 +48,16 @@ export interface AuditInput {
   bindings: Binding[];
   /** Every run record the store holds, newest per suite. */
   runs: RunRecord[];
+  /**
+   * Every finding-shaped scan record the store holds, newest per suite
+   * (FR-034).
+   *
+   * Separate from `runs` because the two answer different questions. A scan
+   * has no symbols and no pass/fail, so every check that reasons over
+   * `entries` is meaningless against it — and silently folding them together
+   * is how a scan would start reading as a run that skipped everything.
+   */
+  scans?: FindingRecord[];
   /** The merged verification-method catalog, for method conformance. */
   catalog?: MethodCatalog;
   /** Commit being audited, for freshness. */
@@ -84,6 +95,7 @@ export function audit(input: AuditInput): AuditReport {
     bindingsByObligation.set(binding.obligation, group);
   }
   const runsBySuite = new Map(input.runs.map((r) => [r.suite, r]));
+  const scansBySuite = new Map((input.scans ?? []).map((s) => [s.suite, s]));
 
   for (const obligation of [...input.obligations].sort(byId)) {
     const bindings = (bindingsByObligation.get(obligation.id) ?? [])
@@ -127,7 +139,12 @@ export function audit(input: AuditInput): AuditReport {
     }
 
     // ── 2. Stale evidence ──
-    const unrecorded = bindings.filter((b) => !runsBySuite.has(b.suite));
+    // A suite that recorded a SCAN has evidence; it simply is not run-shaped.
+    // Before FR-034 the store held no scans, so this reduces to the previous
+    // behaviour for every existing consumer.
+    const unrecorded = bindings.filter(
+      (b) => !runsBySuite.has(b.suite) && !scansBySuite.has(b.suite),
+    );
     if (unrecorded.length > 0) {
       findings.push({
         kind: "stale-evidence",
@@ -141,7 +158,41 @@ export function audit(input: AuditInput): AuditReport {
       continue;
     }
 
-    const runs = bindings.map((b) => runsBySuite.get(b.suite)!);
+    // ── Finding-shaped vacuity ──
+    // A scan that ran every rule and reported nothing is a CLEAN RESULT, and
+    // is precisely the evidence FR-034 exists to preserve. What proves nothing
+    // is a scan that evaluated NO RULES: it reports zero findings too, and from
+    // the findings list alone the two are identical.
+    //
+    // A tool that does not say how many rules it evaluated leaves the question
+    // unanswerable, and `scanIsVacuous` returns null — the check stays silent
+    // rather than guessing, the same posture method conformance takes when no
+    // evidence kind is declared (agent-ix/quoin#105).
+    const emptyScans = bindings
+      .map((b) => scansBySuite.get(b.suite))
+      .filter((s): s is FindingRecord => s !== undefined)
+      .filter((s) => scanIsVacuous(s) === true);
+    if (emptyScans.length > 0) {
+      findings.push({
+        kind: "vacuous-evidence",
+        obligation: obligation.id,
+        severity: "high",
+        summary:
+          `${obligation.id} rests on a scan that evaluated no rules: ` +
+          emptyScans
+            .map((s) => `${s.suite} (${s.tool})`)
+            .sort(compare)
+            .join(", ") +
+          `. It reported no finding because it looked for nothing.`,
+      });
+      continue;
+    }
+
+    // Every remaining check reasons over run entries, so a binding backed only
+    // by a scan has nothing more to answer here.
+    const runBindings = bindings.filter((b) => runsBySuite.has(b.suite));
+    if (runBindings.length === 0) continue;
+    const runs = runBindings.map((b) => runsBySuite.get(b.suite)!);
     if (input.headCommit) {
       const behind = bindings.filter(
         (b, i) => runs[i].commit !== input.headCommit,
@@ -171,7 +222,10 @@ export function audit(input: AuditInput): AuditReport {
     // suite that genuinely ran is evidence; reporting the obligation as vacuous
     // because a second suite skipped would be the false alarm that gets the
     // check switched off.
-    const vacuous = bindings.flatMap((b, i) =>
+    // `runBindings`, not `bindings`: `runs` was built from the former, so
+    // indexing the latter would pair a binding with another suite's run the
+    // moment any binding is scan-backed.
+    const vacuous = runBindings.flatMap((b, i) =>
       b.symbols
         .filter((symbol) => {
           const entry = runs[i].entries.find((e) => e.symbol === symbol);
@@ -182,7 +236,7 @@ export function audit(input: AuditInput): AuditReport {
         })
         .map((symbol) => `${b.suite}:${symbol}`),
     );
-    const boundSymbols = bindings.reduce((n, b) => n + b.symbols.length, 0);
+    const boundSymbols = runBindings.reduce((n, b) => n + b.symbols.length, 0);
     if (vacuous.length > 0 && vacuous.length === boundSymbols) {
       findings.push({
         kind: "vacuous-evidence",
@@ -199,7 +253,7 @@ export function audit(input: AuditInput): AuditReport {
     // ── Method conformance ──
     const conformance = methodConformance(
       obligation,
-      bindings,
+      runBindings,
       runs,
       input.catalog,
     );

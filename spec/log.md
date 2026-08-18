@@ -8,6 +8,15 @@ description: "Chronological log of structural changes to this bundle."
 
 ## History
 
+* **2026-08-18** — **CR-012**: new [FR-034](./functional/FR-034-finding-shaped-evidence.md) — **finding-shaped evidence** (agent-ix/quoin#115). Five of the eight formats quoin means to read emit findings rather than run outcomes, and forced into `RunEntry` **a clean semgrep run and a semgrep run that never executed are indistinguishable**. `FindingRecord` makes the distinction structural: the record is written only when an adapter read a real report envelope, so its existence is the proof of execution — `findings: []` is evidence, no record is not.
+
+  **Vacuity is redefined for this shape rather than left silent.** For a run it is *every bound symbol skipped*; a scan has no symbols, so that is inapplicable. A scan is vacuous when it **evaluated no rules** — it reports zero findings too, and from the findings list alone the two are identical. With no rule count reported the check stays silent rather than guessing.
+
+  **SARIF first, decided from real output** as the ticket required: SARIF is primary because semgrep, CodeQL, ESLint and ZAP converge on it, and `cargo-audit` keeps a bespoke adapter for one measured reason — it emits no SARIF at all. Its adapter is tested against `cargo audit --json` output captured from quire-rs and checked in unedited; a fixture written to match the reader only proves the reader parses itself.
+
+  Wiring the auditor exposed a latent index misalignment: `runs` is built from the run-backed bindings, so any check indexing the full binding list would pair a binding with another suite's run the moment one binding was scan-backed. Silent until scans existed, wrong from the moment they did. TC-176 pins it. TC-165..176.
+
+
 * **2026-08-18** — **CR-011**: new [FR-033](./functional/FR-033-evidence-format-adapters.md) — **evidence format adapters** (agent-ix/quoin#114). `quoin evidence record --results` parsed one hardcoded shape with no dispatch and no plugin point; it now selects an adapter by `--adapter`, else by the suite's `--tool`, else the normalized `entries` shape, which stays available so the registry is never a gate on recording evidence.
 
   Three decisions worth recording. **The shipped adapters name no evidence kind**: a JUnit file is emitted by unit, integration and e2e suites alike, so an adapter answering "Unit" would assert something the format does not contain — and would mint a *fourth* copy of a vocabulary that already exists in the catalog, the Test Matrix and the suite registry, in a repository where the tests holding those three honest cannot see it. **An unknown `--adapter` is an error**, never a silent fall back, because falling back parses a JUnit file as JSON and sends the reader to their XML instead of their typo. **lcov is deliberately absent**: `RunEntry.symbol` is a test symbol and coverage measures production code, with no `outcome` at all; forcing it needs either a threshold (verdict policy in the intake layer) or an invented outcome. It moves to #91b, with the reasoning recorded rather than the gap.
