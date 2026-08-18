@@ -8,6 +8,13 @@ description: "Chronological log of structural changes to this bundle."
 
 ## History
 
+* **2026-08-18** — **CR-011**: new [FR-033](./functional/FR-033-evidence-format-adapters.md) — **evidence format adapters** (agent-ix/quoin#114). `quoin evidence record --results` parsed one hardcoded shape with no dispatch and no plugin point; it now selects an adapter by `--adapter`, else by the suite's `--tool`, else the normalized `entries` shape, which stays available so the registry is never a gate on recording evidence.
+
+  Three decisions worth recording. **The shipped adapters name no evidence kind**: a JUnit file is emitted by unit, integration and e2e suites alike, so an adapter answering "Unit" would assert something the format does not contain — and would mint a *fourth* copy of a vocabulary that already exists in the catalog, the Test Matrix and the suite registry, in a repository where the tests holding those three honest cannot see it. **An unknown `--adapter` is an error**, never a silent fall back, because falling back parses a JUnit file as JSON and sends the reader to their XML instead of their typo. **lcov is deliberately absent**: `RunEntry.symbol` is a test symbol and coverage measures production code, with no `outcome` at all; forcing it needs either a threshold (verdict policy in the intake layer) or an invented outcome. It moves to #91b, with the reasoning recorded rather than the gap.
+
+  `cargo-mutants` is in because it is the only format with a native `score`, and designing the contract without exercising `score` designs it blind. Its entries name production functions and bind to no obligation until a requirement→production-code relation exists (agent-ix/quire-rs#171) — the honest state, not a convenient one. TC-151..164.
+
+
 * **2026-08-17** — **CR-010**: the advisor gets a command, and two commands that did not exist get built (agent-ix/quoin#103). FR-031 gains **AC-10 and AC-11**.
 
   FR-031's eight acceptance criteria all passed, and **nothing could reach the advisor**. `grep -rn "advise\|Advice" src/commands/` returned nothing: `advise()`, `characteristicsOf()`, `matchRules()` and the 19-entry `STATEMENT_CHARACTERISTICS` table were exercised only by `tests/advisor.test.ts`, while `skills/spec-evidence-analysis/SKILL.md` still told the agent to run `quoin catalog methods` and choose by hand — the skill-local prose table the FR opens by saying it replaces. Every AC was written at the *function* boundary, so the suite could not tell "implemented" from "implemented and reachable".

@@ -49,3 +49,17 @@ export {
   type RecordOutcome,
   type RecordRequest,
 } from "./record.js";
+
+export {
+  ADAPTERS,
+  ADAPTER_NAMES,
+  entriesAdapter,
+  selectAdapter,
+} from "./adapters/registry.js";
+export { junitAdapter, qualifiedName } from "./adapters/junit.js";
+export { cargoMutantsAdapter } from "./adapters/cargo-mutants.js";
+export {
+  AdapterError,
+  type AdapterResult,
+  type EvidenceAdapter,
+} from "./adapters/types.js";
