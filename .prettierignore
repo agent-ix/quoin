@@ -48,3 +48,10 @@ spec/
 # exactly how a vendored contract drifts by default. Refresh them with
 # scripts/refresh-quire-schemas.mjs, never with prettier.
 src/quire/schemas/
+
+# Real tool output, captured unedited (agent-ix/quoin#115). The ticket asked
+# for the format decisions to be made "by reading real output from each tool,
+# not from the spec of the format", so a fixture reformatted to house style is
+# no longer the thing it was captured to be. Same reasoning as the vendored
+# quire schemas above: these bytes are evidence, not source.
+tests/fixtures/evidence/
