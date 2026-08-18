@@ -53,8 +53,11 @@ export {
 export {
   ADAPTERS,
   ADAPTER_NAMES,
+  FINDING_ADAPTERS,
   entriesAdapter,
   selectAdapter,
+  selectFindingAdapter,
+  type FindingAdapter,
 } from "./adapters/registry.js";
 export { junitAdapter, qualifiedName } from "./adapters/junit.js";
 export { cargoMutantsAdapter } from "./adapters/cargo-mutants.js";

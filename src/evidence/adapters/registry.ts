@@ -1,6 +1,7 @@
 import type { RunEntry } from "../types.js";
 import { cargoMutantsAdapter } from "./cargo-mutants.js";
 import { junitAdapter } from "./junit.js";
+import { parseCargoAudit, parseSarif, type FindingResult } from "./sarif.js";
 import {
   AdapterError,
   type AdapterResult,
@@ -55,7 +56,61 @@ export const ADAPTERS: readonly EvidenceAdapter[] = [
   cargoMutantsAdapter,
 ];
 
-export const ADAPTER_NAMES: readonly string[] = ADAPTERS.map((a) => a.name);
+/**
+ * Adapters producing a {@link FindingRecord} rather than run entries.
+ *
+ * A separate registry because the two produce different record types and the
+ * command must know which it is writing BEFORE it parses — a scan written into
+ * `runs/` would lose the clean-versus-unrun distinction that FR-034 exists to
+ * make, silently and at the point of intake.
+ */
+export interface FindingAdapter {
+  readonly name: string;
+  readonly summary: string;
+  readonly tools: readonly string[];
+  parse(raw: string): FindingResult;
+}
+
+export const FINDING_ADAPTERS: readonly FindingAdapter[] = [
+  {
+    name: "sarif",
+    summary:
+      "SARIF 2.1.0 — semgrep --sarif, CodeQL, ESLint, ZAP via converter.",
+    tools: ["sarif", "semgrep", "codeql"],
+    parse: parseSarif,
+  },
+  {
+    name: "cargo-audit",
+    summary: "cargo audit --json — RUSTSEC advisories and warning kinds.",
+    tools: ["cargo-audit", "cargo audit", "cargo-deny", "cargo deny"],
+    parse: parseCargoAudit,
+  },
+];
+
+export const ADAPTER_NAMES: readonly string[] = [
+  ...ADAPTERS.map((a) => a.name),
+  ...FINDING_ADAPTERS.map((a) => a.name),
+];
+
+/**
+ * The finding-shaped adapter for these options, or `undefined` when the
+ * selection is run-shaped.
+ *
+ * Checked before {@link selectAdapter} so a `--adapter sarif` never falls
+ * through to the run path, where its output would be parsed as entries and
+ * fail with a message about JSON shape.
+ */
+export function selectFindingAdapter(options: {
+  adapter?: string;
+  tool?: string;
+}): FindingAdapter | undefined {
+  if (options.adapter !== undefined && options.adapter !== "") {
+    return FINDING_ADAPTERS.find((a) => a.name === options.adapter);
+  }
+  const tool = (options.tool ?? "").toLowerCase();
+  if (tool === "") return undefined;
+  return FINDING_ADAPTERS.find((a) => a.tools.some((c) => tool.includes(c)));
+}
 
 /**
  * Choose an adapter: an explicit `--adapter` wins, else the suite's declared

@@ -296,6 +296,9 @@ generated tests under `tests/props/` and `Unit` for the rest.
 | TC-174 | A scan that evaluated no rules is reported vacuous at high: it found nothing because it looked for nothing | Unit | P0 | FR-034-AC-10 | ✅ |
 | TC-175 | With no rule count reported the vacuity check stays silent rather than guessing | Unit | P0 | FR-034-AC-11 | ✅ |
 | TC-176 | Each run-shaped binding pairs with its OWN suite's run when a scan is bound to the same obligation — silent until scans existed, wrong from the moment they did | Unit | P0 | FR-034-AC-12 | ✅ |
+| TC-177 | `quoin evidence record --adapter sarif` writes a FindingRecord under `scans/` and nothing under `runs/` — the capability shipped unreachable and this is what reaches it | Integration | P0 | FR-034-AC-13 | ✅ |
+| TC-178 | A clean scan recorded through the command keeps `findings: []` and its rule count | Integration | P0 | FR-034-AC-14 | ✅ |
+| TC-179 | The command selects a finding adapter from `--tool` when none is named | Integration | P0 | FR-034-AC-15 | ✅ |
 | TC-129 | The merged catalog carries every declared method with its rules intact, merges first-wins, reports a colliding id rather than absorbing it, and treats an undeclared catalog as empty | Unit | P0 | FR-031-AC-1 | ✅ |
 | TC-130 | An `attack_surface` object reaches DAST, SAST and negative/abuse testing — recommendations that were unreachable while the method table was skill-local prose | Unit | P0 | FR-031-AC-2 | ✅ |
 | TC-131 | Temporal phrasing reaches runtime monitoring and model checking — the methods a single execution cannot discharge | Unit | P0 | FR-031-AC-3 | ✅ |
