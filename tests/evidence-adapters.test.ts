@@ -155,7 +155,16 @@ describe("the adapter registry", () => {
 
   // Trace: FR-033-AC-3
   it("registers adapters as data, so an external tool can be added", () => {
-    expect(ADAPTER_NAMES).toEqual(["entries", "junit", "cargo-mutants"]);
+    // Exact, not a length check: ADAPTER_NAMES is what `--adapter` accepts and
+    // what `--help` lists, so a silently added or dropped name is a change to
+    // the command's surface. Run-shaped first, then finding-shaped (FR-034).
+    expect(ADAPTER_NAMES).toEqual([
+      "entries",
+      "junit",
+      "cargo-mutants",
+      "sarif",
+      "cargo-audit",
+    ]);
     for (const adapter of ADAPTERS) {
       expect(adapter.summary.length).toBeGreaterThan(0);
       expect(typeof adapter.parse).toBe("function");

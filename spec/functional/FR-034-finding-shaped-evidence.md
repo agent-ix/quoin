@@ -92,6 +92,24 @@ The cargo-audit adapter is verified against output captured with `cargo audit --
 | FR-034-AC-10 | A scan that evaluated **no rules** is reported `vacuous-evidence` at `high`. | Test (TC-174) |
 | FR-034-AC-11 | When the tool reports no rule count the vacuity check stays silent. | Test (TC-175) |
 | FR-034-AC-12 | Every run-shaped check pairs a binding with **its own** suite's run when a scan is also bound to the same obligation. | Test (TC-176) |
+| FR-034-AC-13 | `quoin evidence record --adapter sarif --results <file>` writes a `FindingRecord` under `scans/` and writes **nothing** under `runs/`. | Test (TC-177) |
+| FR-034-AC-14 | A clean scan recorded through the command keeps `findings: []` and its rule count, so zero findings is still evidence. | Test (TC-178) |
+| FR-034-AC-15 | The command selects a finding adapter from `--tool` when none is named. | Test (TC-179) |
+
+### Reachability is part of the contract
+
+Every criterion above that describes recording SHALL be stated over
+`quoin evidence record`, not over the parse function.
+
+This is not a style preference. The first cut of this FR shipped `FindingRecord`, both adapters and
+`writeScan` with **no command that could reach any of them** — a capability nothing could use, and a
+Test Matrix reading ✅ over it. That is precisely the defect the P1 review found three times, and the
+reason `agent-ix/quoin#115` specified its acceptance shape the way it did. Caught by the Wave C
+review rather than by the tests, which is itself the finding.
+
+A finding-shaped adapter is selected **before** anything is parsed, because it writes a different
+record type: letting a scan fall through to the run path would put it in `runs/` and lose the
+clean-versus-unrun distinction at the point of intake, silently and permanently for that commit.
 
 ## Constraints
 

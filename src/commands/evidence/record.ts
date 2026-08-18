@@ -8,6 +8,8 @@ import {
   obligationsFrom,
   recordRun,
   selectAdapter,
+  selectFindingAdapter,
+  writeScan,
   type RunEntry,
 } from "../../evidence/index.js";
 import {
@@ -92,6 +94,58 @@ runs nothing and judges nothing.`;
     // obligations would already have been bound.
     const premise = checkVersionPremise(quireVersion());
     if (premise) this.error(premise.message, { exit: 2 });
+
+    // A finding-shaped adapter writes a DIFFERENT record type, so the branch is
+    // taken before anything is parsed. Letting a scan fall through to the run
+    // path would write it into `runs/` and lose the clean-versus-unrun
+    // distinction at the point of intake — silently, and permanently for that
+    // commit (FR-034).
+    const findingAdapter = selectFindingAdapter({
+      adapter: flags.adapter,
+      tool: flags.tool,
+    });
+    if (findingAdapter) {
+      const raw =
+        flags.results === "-"
+          ? readFileSync(0, "utf8")
+          : readFileSync(flags.results, "utf8");
+      const result = findingAdapter.parse(raw);
+      const path = writeScan(flags.repo, {
+        schemaVersion: 1,
+        suite: flags.suite,
+        commit: flags.commit,
+        tool: result.tool ?? flags.tool,
+        ...(flags.kind === undefined ? {} : { evidenceKind: flags.kind }),
+        timestamp: flags.timestamp ?? new Date().toISOString(),
+        ...(result.ruleset === undefined ? {} : { ruleset: result.ruleset }),
+        ...(result.rulesEvaluated === undefined
+          ? {}
+          : { rulesEvaluated: result.rulesEvaluated }),
+        findings: result.findings,
+      });
+      if (flags.json) {
+        this.log(
+          JSON.stringify(
+            { scanPath: path, findings: result.findings },
+            null,
+            2,
+          ),
+        );
+        return;
+      }
+      this.log(
+        `recorded scan ${flags.suite} @ ${flags.commit.slice(0, 12)} → ${path}`,
+      );
+      // Said explicitly, because "0 findings" is the one line a reader is most
+      // likely to mistake for "nothing ran".
+      this.log(
+        `  findings: ${result.findings.length}` +
+          (result.rulesEvaluated === undefined
+            ? " (the tool reported no rule count, so this cannot be told from a scan with no rules enabled)"
+            : ` over ${result.rulesEvaluated} rules evaluated`),
+      );
+      return;
+    }
 
     const entries = readEntries(flags.results, {
       adapter: flags.adapter,

@@ -2,11 +2,22 @@
  * FR-034 — FindingRecord and the finding-shaped adapters (TC-165..TC-172).
  */
 
-import { readFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  writeFileSync,
+} from "node:fs";
+import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { describe, expect, it } from "vitest";
+import type { Config } from "@oclif/core";
+import { loadConfig } from "@agent-ix/ix-cli-core";
+import { beforeAll, describe, expect, it } from "vitest";
+
+import EvidenceRecord from "../src/commands/evidence/record";
 
 import { audit } from "../src/auditor/index.js";
 import {
@@ -16,6 +27,23 @@ import {
 } from "../src/evidence/index.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
+const repoRoot = join(here, "..");
+let config: Config;
+
+beforeAll(async () => {
+  config = await loadConfig({ root: repoRoot });
+});
+
+/** A repository `quoin evidence record` will accept: it needs a real spec/. */
+function workspace(): string {
+  const root = mkdtempSync(join(tmpdir(), "quoin-scan-"));
+  mkdirSync(join(root, "spec", "functional"), { recursive: true });
+  writeFileSync(
+    join(root, "spec", "functional", "FR-001-a.md"),
+    "---\nid: FR-001\ntype: FR\ntitle: A requirement\n---\n\n## Description\n\nIt does.\n",
+  );
+  return root;
+}
 const realAudit = readFileSync(
   join(here, "fixtures", "evidence", "cargo-audit-real.json"),
   "utf8",
@@ -277,5 +305,132 @@ describe("the auditor over finding-shaped scans", () => {
       "vacuous-evidence",
     );
     expect(report.healthy).toContain("FR-001-AC-1");
+  });
+});
+
+describe("quoin evidence record --adapter sarif", () => {
+  // Trace: FR-034-AC-13
+  it("writes a FindingRecord, not a run, end to end through the command", async () => {
+    // The gap this test exists for: FindingRecord, the SARIF adapter and
+    // writeScan all shipped without a single command that could reach them —
+    // a capability nothing could use, which is exactly the P1 defect the
+    // ticket's acceptance shape was written to prevent.
+    const root = workspace();
+    const results = join(root, "scan.sarif");
+    writeFileSync(results, SARIF_FINDING);
+    await EvidenceRecord.run(
+      [
+        "--repo",
+        root,
+        "--suite",
+        "SUITE-SCAN",
+        "--commit",
+        "b".repeat(40),
+        "--tool",
+        "semgrep 1.2.3",
+        "--adapter",
+        "sarif",
+        "--results",
+        results,
+      ],
+      config,
+    );
+    const record = JSON.parse(
+      readFileSync(
+        join(
+          root,
+          "spec",
+          "evidence",
+          "scans",
+          "SUITE-SCAN",
+          "bbbbbbbbbbbb.json",
+        ),
+        "utf8",
+      ),
+    ) as FindingRecord;
+    expect(record.findings).toHaveLength(2);
+    expect(record.rulesEvaluated).toBe(2);
+    expect(record.tool).toBe("semgrep 1.2.3");
+    // And nothing was written to runs/ — a scan in runs/ would lose the
+    // distinction at the point of intake.
+    expect(
+      existsSync(join(root, "spec", "evidence", "runs", "SUITE-SCAN")),
+    ).toBe(false);
+  });
+
+  // Trace: FR-034-AC-14
+  it("records a clean scan as a scan, so zero findings is still evidence", async () => {
+    const root = workspace();
+    const results = join(root, "clean.sarif");
+    writeFileSync(results, SARIF_CLEAN);
+    await EvidenceRecord.run(
+      [
+        "--repo",
+        root,
+        "--suite",
+        "SUITE-SCAN",
+        "--commit",
+        "c".repeat(40),
+        "--tool",
+        "semgrep 1.2.3",
+        "--adapter",
+        "sarif",
+        "--results",
+        results,
+      ],
+      config,
+    );
+    const record = JSON.parse(
+      readFileSync(
+        join(
+          root,
+          "spec",
+          "evidence",
+          "scans",
+          "SUITE-SCAN",
+          "cccccccccccc.json",
+        ),
+        "utf8",
+      ),
+    ) as FindingRecord;
+    expect(record.findings).toEqual([]);
+    expect(record.rulesEvaluated).toBe(3);
+  });
+
+  // Trace: FR-034-AC-15
+  it("selects the finding adapter from --tool when none is named", async () => {
+    const root = workspace();
+    const results = join(root, "audit.json");
+    writeFileSync(results, realAudit);
+    await EvidenceRecord.run(
+      [
+        "--repo",
+        root,
+        "--suite",
+        "SUITE-AUDIT",
+        "--commit",
+        "d".repeat(40),
+        "--tool",
+        "cargo-audit 0.21",
+        "--results",
+        results,
+      ],
+      config,
+    );
+    const record = JSON.parse(
+      readFileSync(
+        join(
+          root,
+          "spec",
+          "evidence",
+          "scans",
+          "SUITE-AUDIT",
+          "dddddddddddd.json",
+        ),
+        "utf8",
+      ),
+    ) as FindingRecord;
+    expect(record.rulesEvaluated).toBe(1217);
+    expect(record.findings[0].ruleId).toMatch(/^RUSTSEC-/);
   });
 });
