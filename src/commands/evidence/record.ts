@@ -4,8 +4,10 @@ import { Flags } from "@oclif/core";
 
 import { QuoinCommand } from "../../base.js";
 import {
+  ADAPTER_NAMES,
   obligationsFrom,
   recordRun,
+  selectAdapter,
   type RunEntry,
 } from "../../evidence/index.js";
 import {
@@ -29,8 +31,9 @@ stopped passing is exactly what a freshness check needs to see.
 
   {"entries": [{"symbol": "tests::tc001", "outcome": "pass", "traceIds": ["FR-001-AC-1"]}]}
 
-Format adapters (junit, llvm-cov, cargo-mutants, SARIF) are a separate ticket
-(agent-ix/quoin#91); this verb owns the store, not the parsing of every tool.`;
+--adapter selects a format reader. Without it the suite's --tool picks one, and
+failing that the normalized shape above is assumed. An adapter transcribes; it
+runs nothing and judges nothing.`;
 
   static examples = [
     "quoin evidence record --suite SUITE-001 --commit $(git rev-parse HEAD) --tool 'cargo test' --results run.json",
@@ -55,6 +58,14 @@ Format adapters (junit, llvm-cov, cargo-mutants, SARIF) are a separate ticket
         "— the vocabulary the catalog's `evidence_kind` and the suite " +
         "registry's `Evidence Kind` column use. Method conformance compares " +
         "kind to kind; without it the check stays silent rather than guessing.",
+    }),
+    adapter: Flags.string({
+      description:
+        `Format reader for --results (${ADAPTER_NAMES.join(", ")}). ` +
+        "Defaults to the adapter claiming --tool, else the normalized shape. " +
+        "An unknown name is an error rather than a silent fall back, so a typo " +
+        "reports itself instead of failing later as a JSON-shape complaint.",
+      options: [...ADAPTER_NAMES],
     }),
     results: Flags.string({
       description: "Normalized run entries as JSON. `-` reads stdin.",
@@ -82,7 +93,10 @@ Format adapters (junit, llvm-cov, cargo-mutants, SARIF) are a separate ticket
     const premise = checkVersionPremise(quireVersion());
     if (premise) this.error(premise.message, { exit: 2 });
 
-    const entries = readEntries(flags.results);
+    const entries = readEntries(flags.results, {
+      adapter: flags.adapter,
+      tool: flags.tool,
+    });
 
     const coverageArgs = ["coverage", "--scope", flags.repo, "--json"];
     if (flags.module) coverageArgs.push("--module", flags.module);
@@ -130,14 +144,19 @@ Format adapters (junit, llvm-cov, cargo-mutants, SARIF) are a separate ticket
   }
 }
 
-function readEntries(source: string): RunEntry[] {
+/**
+ * Read `--results` through the selected adapter.
+ *
+ * The only place a raw tool file becomes run entries. Reading the file is the
+ * caller's side of the adapter contract: adapters are pure over text so that
+ * `quoin evidence record` remains a transcriber and can never become a test
+ * runner (ADR-0011 invariant 1).
+ */
+function readEntries(
+  source: string,
+  options: { adapter?: string; tool?: string },
+): RunEntry[] {
   const text =
     source === "-" ? readFileSync(0, "utf8") : readFileSync(source, "utf8");
-  const parsed = JSON.parse(text) as { entries?: RunEntry[] };
-  if (!Array.isArray(parsed.entries)) {
-    throw new Error(
-      '--results must be JSON of the form {"entries": [{symbol, outcome, traceIds?}]}',
-    );
-  }
-  return parsed.entries;
+  return selectAdapter(options).parse(text).entries;
 }
