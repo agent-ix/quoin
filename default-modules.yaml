@@ -80,3 +80,12 @@ entries:
       url: agent-ix/spec-objects-security
       path: spec_objects_security
       ref: v0.5.0
+
+  - name: spec-objects-safety
+    version: "0.2.0"
+    defaultEnabled: true
+    source:
+      type: git-subdir
+      url: agent-ix/spec-objects-safety
+      path: spec_objects_safety
+      ref: v0.2.0

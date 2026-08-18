@@ -184,10 +184,16 @@ test("parseSourceArg maps CLI prefixes to typed sources", () => {
 // Trace: FR-016-AC-2
 test("ships the committed default module set", () => {
   const manifest = defaultModulesManifest();
-  expect(manifest.entries).toHaveLength(8);
+  // Nine since spec-objects-safety (agent-ix/spec-objects-security#7). The
+  // count is asserted rather than a lower bound so a module arriving in the
+  // default set costs a deliberate line here — the set is installed into every
+  // consumer's ~/.ix/filament/modules, so a silent addition is a silent change
+  // to everyone's catalog.
+  expect(manifest.entries).toHaveLength(9);
   expect(manifest.entries.map((e) => e.name)).toContain(
     "spec-objects-business",
   );
+  expect(manifest.entries.map((e) => e.name)).toContain("spec-objects-safety");
 });
 
 test("ships claude plugin skills without artifact-specific write skills", () => {
