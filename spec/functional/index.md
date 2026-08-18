@@ -41,3 +41,4 @@ description: "Index of functional requirements (FR) for quoin."
 * [FR-031: Catalog-driven verification-method advisor](./FR-031-catalog-driven-advisor.md)
 * [FR-032: Suspect-link, freshness and vacuous-evidence auditor](./FR-032-evidence-auditor.md)
 * [FR-033: Evidence format adapters](./FR-033-evidence-format-adapters.md)
+* [FR-034: Finding-shaped evidence](./FR-034-finding-shaped-evidence.md)

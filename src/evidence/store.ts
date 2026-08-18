@@ -20,10 +20,12 @@ import { dirname, join } from "node:path";
 
 import {
   RUNS_DIR,
+  SCANS_DIR,
   STORE_SCHEMA_VERSION,
   type BaselineFile,
   type Binding,
   type BindingsFile,
+  type FindingRecord,
   type RunRecord,
 } from "./types.js";
 
@@ -63,6 +65,11 @@ export function baselinePath(repo: string): string {
 /** `runs/<SUITE-N>/<commit12>.json` — one file is one run of one suite. */
 export function runPath(repo: string, suite: string, commit: string): string {
   return join(storeRoot(repo), RUNS_DIR, suite, `${short(commit)}.json`);
+}
+
+/** `scans/<SUITE-N>/<commit12>.json` — one file is one scan of one suite. */
+export function scanPath(repo: string, suite: string, commit: string): string {
+  return join(storeRoot(repo), SCANS_DIR, suite, `${short(commit)}.json`);
 }
 
 /** The 12-character commit prefix the run filenames use. */
@@ -152,6 +159,91 @@ export function writeRun(repo: string, record: RunRecord): string {
   const path = runPath(repo, record.suite, record.commit);
   writeCanonical(path, { ...record, schemaVersion: STORE_SCHEMA_VERSION });
   return path;
+}
+
+/**
+ * Write one finding-shaped scan. Last-write-wins at the same (suite, commit).
+ *
+ * Writing the record IS the assertion that the scan executed, so this is only
+ * ever called with an envelope an adapter actually read (FR-034).
+ */
+export function writeScan(repo: string, record: FindingRecord): string {
+  const path = scanPath(repo, record.suite, record.commit);
+  writeCanonical(path, { ...record, schemaVersion: STORE_SCHEMA_VERSION });
+  return path;
+}
+
+/** Read one scan record, or `null` when that (suite, commit) has none. */
+export function readScan(
+  repo: string,
+  suite: string,
+  commit: string,
+): FindingRecord | null {
+  return readJson<FindingRecord>(scanPath(repo, suite, commit));
+}
+
+/** Every scan file recorded for a suite, in filename order (not time order). */
+export function listScans(repo: string, suite: string): string[] {
+  const dir = join(storeRoot(repo), SCANS_DIR, suite);
+  if (!existsSync(dir)) return [];
+  return readdirSync(dir)
+    .filter((f) => f.endsWith(".json"))
+    .sort();
+}
+
+/**
+ * Every scan recorded for a suite, oldest first by `timestamp`.
+ *
+ * Ordered exactly as `readRuns` is, and for the same reason: a filename is a
+ * commit prefix, which is uniformly random hex, so lexical order is not time
+ * order. agent-ix/quoin#104 fixed that once for runs; reintroducing it here
+ * would rebuild the same defect beside the fix.
+ */
+export function readScans(
+  repo: string,
+  suite: string,
+  skipped: string[] = [],
+): FindingRecord[] {
+  return listScans(repo, suite)
+    .map((f) =>
+      readJsonSkippable<FindingRecord>(
+        scanPath(repo, suite, f.replace(/\.json$/, "")),
+        skipped,
+      ),
+    )
+    .filter((r): r is FindingRecord => r !== null)
+    .sort(
+      (a, b) =>
+        compare(a.timestamp, b.timestamp) || compare(a.commit, b.commit),
+    );
+}
+
+/** The newest scan of a suite by timestamp, or `null` when it has none. */
+export function latestScan(
+  repo: string,
+  suite: string,
+  skipped: string[] = [],
+): FindingRecord | null {
+  return readScans(repo, suite, skipped).at(-1) ?? null;
+}
+
+/**
+ * Whether a scan proves nothing — the finding-shaped meaning of vacuity.
+ *
+ * **Not "found nothing".** A scan that ran every rule and reported no finding
+ * is a clean result and is exactly the evidence this record type exists to
+ * preserve. What proves nothing is a scan that **evaluated no rules**: it also
+ * reports zero findings, and from the findings list alone the two are
+ * identical.
+ *
+ * Returns `null` when the tool did not say how many rules it evaluated. The
+ * question cannot be asked, so the auditor says nothing rather than something
+ * wrong — the same posture `evidenceKind` takes for method conformance
+ * (agent-ix/quoin#105).
+ */
+export function scanIsVacuous(record: FindingRecord): boolean | null {
+  if (record.rulesEvaluated === undefined) return null;
+  return record.rulesEvaluated === 0;
 }
 
 /** Read one run record, or `null` when that (suite, commit) has none. */

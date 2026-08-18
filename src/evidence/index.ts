@@ -63,3 +63,18 @@ export {
   type AdapterResult,
   type EvidenceAdapter,
 } from "./adapters/types.js";
+export {
+  parseCargoAudit,
+  parseSarif,
+  type FindingResult,
+} from "./adapters/sarif.js";
+export type { Finding, FindingRecord } from "./types.js";
+export {
+  latestScan,
+  listScans,
+  readScan,
+  readScans,
+  scanIsVacuous,
+  scanPath,
+  writeScan,
+} from "./store.js";
