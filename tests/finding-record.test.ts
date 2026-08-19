@@ -471,7 +471,7 @@ describe("a scan is reachable from every side of the store", () => {
     );
   }
 
-  // Trace: FR-034-AC-16
+  // Trace: FR-034-AC-16, TC-192
   it("binds the obligations it was run to check", async () => {
     // A CLEAN scan is the strongest evidence a scanner produces and carries no
     // finding to bind from, so the obligations are stated rather than inferred.
@@ -488,7 +488,7 @@ describe("a scan is reachable from every side of the store", () => {
     );
   });
 
-  // Trace: FR-034-AC-17
+  // Trace: FR-034-AC-17, TC-193
   it("binds nothing when the scan evaluated no rules", async () => {
     // Binding on a rule-less scan would put the store's strongest claim behind
     // its weakest evidence.
@@ -531,7 +531,7 @@ describe("a scan is reachable from every side of the store", () => {
     expect(bindings).toEqual([]);
   });
 
-  // Trace: FR-034-AC-18
+  // Trace: FR-034-AC-18, TC-194
   it("enumerates a suite that recorded only scans", async () => {
     // `listRecordedSuites` read `runs/` alone, so a scan-only suite was
     // invisible to every caller that enumerates — the auditor included.
@@ -541,7 +541,7 @@ describe("a scan is reachable from every side of the store", () => {
     expect(latestScan(root, "SUITE-SCAN")?.tool).toBe("semgrep 1.2.3");
   });
 
-  // Trace: FR-034-AC-19
+  // Trace: FR-034-AC-19, TC-195
   it("collects superseded scans, so the store does not grow without bound", async () => {
     const root = workspace();
     await recordScan(root);
@@ -572,7 +572,7 @@ describe("a scan is reachable from every side of the store", () => {
   });
 });
 
-// Trace: FR-034-AC-20
+// Trace: FR-034-AC-20, TC-196
 it("tells a tool reporting ZERO rules from a tool reporting no count", () => {
   // The distinction FR-034 turns on. The adapter defaulted the counter to 0 and
   // omitted the field when it was 0, which erased exactly this: a scan

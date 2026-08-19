@@ -95,6 +95,11 @@ The cargo-audit adapter is verified against output captured with `cargo audit --
 | FR-034-AC-13 | `quoin evidence record --adapter sarif --results <file>` writes a `FindingRecord` under `scans/` and writes **nothing** under `runs/`. | Test (TC-177) |
 | FR-034-AC-14 | A clean scan recorded through the command keeps `findings: []` and its rule count, so zero findings is still evidence. | Test (TC-178) |
 | FR-034-AC-15 | The command selects a finding adapter from `--tool` when none is named. | Test (TC-179) |
+| FR-034-AC-16 | `--discharges` binds the obligations a scan was run to check. A clean scan carries no finding to bind from, so they are stated rather than inferred. | Test (TC-192) |
+| FR-034-AC-17 | A scan that evaluated **no rules** binds nothing, whatever `--discharges` names. | Test (TC-193) |
+| FR-034-AC-18 | A suite that recorded only scans is enumerated by `listRecordedSuites`. | Test (TC-194) |
+| FR-034-AC-19 | `gc` collects superseded scans, keeping the newest by timestamp. | Test (TC-195) |
+| FR-034-AC-20 | A tool reporting **zero** rules is distinguishable from a tool reporting **no** rule count. | Test (TC-196) |
 
 ### Reachability is part of the contract
 
@@ -110,6 +115,19 @@ review rather than by the tests, which is itself the finding.
 A finding-shaped adapter is selected **before** anything is parsed, because it writes a different
 record type: letting a scan fall through to the run path would put it in `runs/` and lose the
 clean-versus-unrun distinction at the point of intake, silently and permanently for that commit.
+
+### Reachable from every side, not only the write side
+
+A record type is not integrated when it can be written. It is integrated when everything that reads
+the store knows it exists.
+
+`SR-005` found FR-034 **inert end to end**: `writeScan` wrote a record that bound no obligation, the
+audit command never passed `scans`, `listRecordedSuites` read only `runs/`, and `gc` collected only
+`runs/`. The record was written and nothing else in the system could see it, so
+`vacuous-evidence` — the check this FR exists to make possible — could not fire in any real run.
+
+AC-16..20 exist because each of those paths had **no criterion at all**. The write half was stated
+over the command and passed; no criterion asked whether anything ever read what it wrote.
 
 ## Constraints
 

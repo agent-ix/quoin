@@ -312,6 +312,11 @@ generated tests under `tests/props/` and `Unit` for the rest.
 | TC-189 | An obligation whose demanded combinations all ran is healthy | Unit | P0 | FR-035-AC-10 | ✅ |
 | TC-190 | An obligation declaring no configuration space produces no combinatorial finding | Unit | P0 | FR-035-AC-11 | ✅ |
 | TC-191 | A declared space advises the combinatorial method structurally; the prose regex would miss it and ordinary prose must not match | Unit | P0 | FR-035-AC-12 | ✅ |
+| TC-192 | `--discharges` binds the obligations a scan was run to check — a clean scan is the strongest evidence a scanner produces and carries no finding to bind from | Integration | P0 | FR-034-AC-16 | ✅ |
+| TC-193 | A scan that evaluated no rules binds nothing, whatever `--discharges` names | Integration | P0 | FR-034-AC-17 | ✅ |
+| TC-194 | A suite that recorded only scans is enumerated — reading `runs/` alone made it invisible to every caller that enumerates, the auditor included | Integration | P0 | FR-034-AC-18 | ✅ |
+| TC-195 | `gc` collects superseded scans, keeping the newest by timestamp, so a scan store does not grow without bound | Integration | P1 | FR-034-AC-19 | ✅ |
+| TC-196 | A tool reporting ZERO rules is distinguishable from one reporting NO count — the distinction FR-034 turns on, erased by omitting the field when it was 0 | Unit | P0 | FR-034-AC-20 | ✅ |
 | TC-129 | The merged catalog carries every declared method with its rules intact, merges first-wins, reports a colliding id rather than absorbing it, and treats an undeclared catalog as empty | Unit | P0 | FR-031-AC-1 | ✅ |
 | TC-130 | An `attack_surface` object reaches DAST, SAST and negative/abuse testing — recommendations that were unreachable while the method table was skill-local prose | Unit | P0 | FR-031-AC-2 | ✅ |
 | TC-131 | Temporal phrasing reaches runtime monitoring and model checking — the methods a single execution cannot discharge | Unit | P0 | FR-031-AC-3 | ✅ |
