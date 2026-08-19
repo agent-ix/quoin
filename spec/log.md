@@ -8,6 +8,19 @@ description: "Chronological log of structural changes to this bundle."
 
 ## History
 
+* **2026-08-19** — **CR-020**: new [FR-041](./functional/FR-041-sbom-inventory-evidence.md) — **SBOM inventories as run evidence** (agent-ix/quoin#116). The catalog declared `sca-sbom` and nothing could discharge it.
+
+  **The deferral was the point, and it paid.** This ticket sat unstarted through Wave C with an explicit trigger: *"quoin#94 is the ticket that answers this, because it is the first consumer that has to render the claim. Building the intake before the consumer exists is how a record type gets a shape nothing needs."* FR-040 landed, and its answer is legible in what it renders — a GSN evidence leaf is **one line per obligation**, and renders no component list. So the claim an SBOM supports is *"a complete inventory was produced at this commit"*: a run record. Contents-level judgement already lands through `cargo-audit` and SARIF. **No third record type**, which is exactly what the deferral was protecting.
+
+  **One entry per component, and the reason is vacuity.** The obvious alternative — a single entry carrying the count in `score` — is wrong in an instructive way: an SBOM listing nothing would be indistinguishable from a healthy one without a new check. As entries, an empty inventory produces zero entries and `vacuous-evidence` names it with no new machinery. Model the thing so the existing checks apply, rather than summarise it and re-derive what the summary lost.
+
+  Identity is the **purl**, from wherever the format keeps it — CycloneDX at the component, SPDX in `externalRefs[referenceType = purl]`. Reading `name` would give one component two identities depending on which tool produced the document. A component carrying neither is **dropped, not given one**: a fabricated symbol binds to nothing *and* inflates the count that proves the inventory is non-empty, making an unreadable SBOM look healthier than an empty one. A document that is neither format is **refused**, because zero entries is a real finding about the consumer's build and an unreadable file must not masquerade as one.
+
+  Both fixtures are real tool output, unedited: `@cyclonedx/cyclonedx-npm` 6.0.1 over an actual `npm install`, and GitHub's dependency-graph SPDX for `sindresorhus/slugify`. TC-231..TC-236.
+
+  This closes the adapter family opened by agent-ix/quoin#91, and with it the last outstanding item of ADR-0011 Phase 2.
+
+
 * **2026-08-19** — **CR-019**: new [FR-040](./functional/FR-040-assurance-case-view.md) — the **assurance-case view**, `quoin assurance` (agent-ix/quoin#94, Wave E). A pile of green evidence is not an argument: a matrix of ✅ says every row has something attached, not why the thing anyone cares about is true. ISO 15026-2 / GSN is the shape that does, and this renders it from data the program already holds — the trace graph, quire's obligations, and the auditor's verdict on each binding.
 
   **Gaps are nodes, not omissions**, which is the whole reason to build it and the reason to build it carefully. An undischarged obligation, a suspect binding, a claim nothing traces to: each stays in the tree as an open node carrying the auditor's reason verbatim. A case narrowed to only what it can prove is indistinguishable, to a reader, from a complete one — and an assurance case is the single most tempting artefact in the system to narrow, because the narrowed version looks better and nothing anywhere would object.

@@ -1,0 +1,171 @@
+{
+  "spdxVersion": "SPDX-2.3",
+  "dataLicense": "CC0-1.0",
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "name": "com.github.sindresorhus/slugify",
+  "documentNamespace": "https://spdx.org/spdxdocs/protobom/fe95c824-1c76-4466-8729-25d63c2a53fc",
+  "creationInfo": {
+    "creators": [
+      "Tool: protobom-v0.0.0-20260817000658-24e2f6122663+dirty",
+      "Tool: GitHub.com-Dependency-Graph"
+    ],
+    "created": "2026-08-19T03:47:52Z"
+  },
+  "packages": [
+    {
+      "name": "xo",
+      "SPDXID": "SPDXRef-npm-xo-0.38.2-a41e06",
+      "versionInfo": "^0.38.2",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/xo@%5E0.38.2"
+        }
+      ]
+    },
+    {
+      "name": "@sindresorhus/transliterate",
+      "SPDXID": "SPDXRef-npm-sindresorhus-transliterate-1.0.0-a26a2c",
+      "versionInfo": "^1.0.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/%40sindresorhus/transliterate@%5E1.0.0"
+        }
+      ]
+    },
+    {
+      "name": "escape-string-regexp",
+      "SPDXID": "SPDXRef-npm-escape-string-regexp-5.0.0-3c273d",
+      "versionInfo": "^5.0.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/escape-string-regexp@%5E5.0.0"
+        }
+      ]
+    },
+    {
+      "name": "ava",
+      "SPDXID": "SPDXRef-npm-ava-3.15.0-5f22e7",
+      "versionInfo": "^3.15.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/ava@%5E3.15.0"
+        }
+      ]
+    },
+    {
+      "name": "tsd",
+      "SPDXID": "SPDXRef-npm-tsd-0.14.0-b65e86",
+      "versionInfo": "^0.14.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/tsd@%5E0.14.0"
+        }
+      ]
+    },
+    {
+      "name": "actions/setup-node",
+      "SPDXID": "SPDXRef-githubactions-actions-setup-node-5..-c65f30",
+      "versionInfo": "5.*.*",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:githubactions/actions/setup-node@5.*.*"
+        }
+      ]
+    },
+    {
+      "name": "actions/checkout",
+      "SPDXID": "SPDXRef-githubactions-actions-checkout-5..-5baf2c",
+      "versionInfo": "5.*.*",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:githubactions/actions/checkout@5.*.*"
+        }
+      ]
+    },
+    {
+      "name": "com.github.sindresorhus/slugify",
+      "SPDXID": "SPDXRef-github-sindresorhus-slugify-main-c11bc8",
+      "versionInfo": "main",
+      "downloadLocation": "git+https://github.com/sindresorhus/slugify",
+      "filesAnalyzed": false,
+      "licenseDeclared": "MIT",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:github/sindresorhus/slugify@main"
+        }
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "spdxElementId": "SPDXRef-github-sindresorhus-slugify-main-c11bc8",
+      "relatedSpdxElement": "SPDXRef-npm-xo-0.38.2-a41e06",
+      "relationshipType": "DEPENDS_ON"
+    },
+    {
+      "spdxElementId": "SPDXRef-github-sindresorhus-slugify-main-c11bc8",
+      "relatedSpdxElement": "SPDXRef-npm-sindresorhus-transliterate-1.0.0-a26a2c",
+      "relationshipType": "DEPENDS_ON"
+    },
+    {
+      "spdxElementId": "SPDXRef-github-sindresorhus-slugify-main-c11bc8",
+      "relatedSpdxElement": "SPDXRef-npm-escape-string-regexp-5.0.0-3c273d",
+      "relationshipType": "DEPENDS_ON"
+    },
+    {
+      "spdxElementId": "SPDXRef-github-sindresorhus-slugify-main-c11bc8",
+      "relatedSpdxElement": "SPDXRef-npm-ava-3.15.0-5f22e7",
+      "relationshipType": "DEPENDS_ON"
+    },
+    {
+      "spdxElementId": "SPDXRef-github-sindresorhus-slugify-main-c11bc8",
+      "relatedSpdxElement": "SPDXRef-npm-tsd-0.14.0-b65e86",
+      "relationshipType": "DEPENDS_ON"
+    },
+    {
+      "spdxElementId": "SPDXRef-github-sindresorhus-slugify-main-c11bc8",
+      "relatedSpdxElement": "SPDXRef-githubactions-actions-setup-node-5..-c65f30",
+      "relationshipType": "DEPENDS_ON"
+    },
+    {
+      "spdxElementId": "SPDXRef-github-sindresorhus-slugify-main-c11bc8",
+      "relatedSpdxElement": "SPDXRef-githubactions-actions-checkout-5..-5baf2c",
+      "relationshipType": "DEPENDS_ON"
+    },
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relatedSpdxElement": "SPDXRef-github-sindresorhus-slugify-main-c11bc8",
+      "relationshipType": "DESCRIBES"
+    }
+  ]
+}
