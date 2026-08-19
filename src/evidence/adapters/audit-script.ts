@@ -16,7 +16,7 @@ const LINE = /^([A-Za-z0-9._-]+):\s*(OK|FAIL)\b\s*(?:[—-]\s*)?(.*)$/;
  *
  * Trailing punctuation is allowed after the closing paren because the real
  * scripts write one: `check_no_schemars: FAIL — 'schemars' present in
- * Cargo.lock (FR-003-AC-4).` An anchor demanding end-of-line found nothing,
+ * Cargo.lock (quire-rs FR-003-AC-4).` An anchor demanding end-of-line found nothing,
  * and the finding lost the very criterion that makes it a discharge rather
  * than a complaint.
  */
@@ -31,7 +31,7 @@ function traceIdsOf(message: string): string[] | undefined {
 }
 
 /**
- * Architecture-conformance audit scripts → findings.
+ * Architecture-conformance audit scripts → findings (FR-036).
  *
  * **Why this is the format worth reading for architecture conformance.**
  * Specs and ADRs declare boundaries — "engine/surfaces split", "no solver dep
@@ -43,7 +43,7 @@ function traceIdsOf(message: string): string[] | undefined {
  * **The join is literal here, which it is not for most scanners.** FR-034
  * described a scanner rule id ⇄ obligation id as *"a verification method, not a
  * generic scan"*. An audit script already prints the criterion in its failure
- * line — `check_no_schemars: FAIL — 'schemars' present (FR-003-AC-4)` — so the
+ * line — `check_no_schemars: FAIL — 'schemars' present (quire-rs FR-003-AC-4)` — so the
  * obligation it discharges is stated by the tool rather than mapped after the
  * fact.
  *
