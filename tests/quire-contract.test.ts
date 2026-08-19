@@ -65,6 +65,7 @@ function propertiesPayload(): Record<string, unknown> {
 }
 
 describe("TC-110 the vendored schemas match their recorded provenance", () => {
+  // TC-110
   it("hashes exactly what contract.ts records", () => {
     for (const [name, expected] of Object.entries(QUIRE_CONTRACT.hashes)) {
       expect(
@@ -85,6 +86,7 @@ describe("TC-110 the vendored schemas match their recorded provenance", () => {
 });
 
 describe("TC-111 a conformant payload validates", () => {
+  // TC-111
   it("accepts a coverage payload", () => {
     const result = validateCoverage(coveragePayload());
     expect(result.ok, JSON.stringify(result)).toBe(true);
@@ -97,6 +99,7 @@ describe("TC-111 a conformant payload validates", () => {
 });
 
 describe("TC-112 a drifted payload is rejected with the offending path", () => {
+  // TC-112
   it("names a missing required key rather than failing later", () => {
     const payload = coveragePayload();
     delete payload.totals;
@@ -129,6 +132,7 @@ describe("TC-112 a drifted payload is rejected with the offending path", () => {
 });
 
 describe("TC-113 unreadable output is a named diagnostic, not a throw", () => {
+  // TC-113
   it("reports a JSON parse failure as a contract violation", () => {
     const result = parseCoverage("not json at all");
     expect(result.ok).toBe(false);
@@ -147,6 +151,7 @@ describe("TC-113 unreadable output is a named diagnostic, not a throw", () => {
 });
 
 describe("TC-114 the version premise is enforced with a named diagnostic", () => {
+  // TC-114
   it("passes a satisfying version", () => {
     expect(
       checkVersionPremise(`quire ${QUIRE_CONTRACT.minimumCli}`),
@@ -172,6 +177,7 @@ describe("TC-114 the version premise is enforced with a named diagnostic", () =>
 });
 
 describe("TC-115 version parsing and comparison", () => {
+  // TC-115
   it("reads the version out of the CLI banner", () => {
     expect(parseCliVersion("quire 0.21.0")).toBe("0.21.0");
     expect(parseCliVersion("nothing here")).toBeNull();
@@ -186,6 +192,7 @@ describe("TC-115 version parsing and comparison", () => {
 });
 
 describe("TC-116 optional keys are optional and absence is not emptiness", () => {
+  // TC-116
   it("accepts a payload omitting every optional key", () => {
     expect(validateCoverage(coveragePayload()).ok).toBe(true);
   });
@@ -255,6 +262,7 @@ describe("TC-116 optional keys are optional and absence is not emptiness", () =>
 });
 
 describe("TC-117 the eval harness floor tracks the contract", () => {
+  // TC-117
   it("mirrors QUIRE_CONTRACT.minimumCli", async () => {
     // The harness restates the floor because it runs against sources rather
     // than `dist/`, and a build step between "run the evals" and "know which
@@ -274,33 +282,34 @@ describe("TC-118 the contract holds against the installed quire", () => {
     }
   })();
 
-  it.skipIf(installed === null)(
-    "the installed CLI satisfies the pinned premise",
-    () => {
-      expect(checkVersionPremise(installed)).toBeNull();
-    },
-  );
+  // TC-118
+  it("the installed CLI satisfies the pinned premise", (ctx) => {
+    // `ctx.skip()` rather than `it.skipIf(cond)("title", …)`: the curried form
+    // puts the title on a line the symbol extractor never reads, so the row
+    // bound to nothing and the matrix read ✅ over it (agent-ix/quoin#124).
+    if (installed === null) return ctx.skip();
+    expect(checkVersionPremise(installed)).toBeNull();
+  });
 
-  it.skipIf(installed === null)(
-    "a real `quire properties --json` payload validates against the pinned schema",
-    () => {
-      // Deliberately end-to-end: the schema is vendored, so the one thing a
-      // unit test cannot show is that the real binary still emits this shape.
-      const out = execFileSync(
-        "quire",
-        ["properties", "--json", "--archetype", "FR", "-"],
-        {
-          encoding: "utf8",
-          input:
-            "---\nid: FR-001\ntype: FR\ntitle: t\n---\n\n" +
-            "## Acceptance Criteria\n\n" +
-            "| ID | Criteria | Verification |\n|----|----------|--------------|\n" +
-            "| FR-001-AC-1 | Every finding defaults to warning. | Test |\n",
-          stdio: ["pipe", "pipe", "ignore"],
-        },
-      );
-      const result = parseProperties(out);
-      expect(result.ok, JSON.stringify(result)).toBe(true);
-    },
-  );
+  // TC-118
+  it("a real `quire properties --json` payload validates against the pinned schema", (ctx) => {
+    if (installed === null) return ctx.skip();
+    // Deliberately end-to-end: the schema is vendored, so the one thing a
+    // unit test cannot show is that the real binary still emits this shape.
+    const out = execFileSync(
+      "quire",
+      ["properties", "--json", "--archetype", "FR", "-"],
+      {
+        encoding: "utf8",
+        input:
+          "---\nid: FR-001\ntype: FR\ntitle: t\n---\n\n" +
+          "## Acceptance Criteria\n\n" +
+          "| ID | Criteria | Verification |\n|----|----------|--------------|\n" +
+          "| FR-001-AC-1 | Every finding defaults to warning. | Test |\n",
+        stdio: ["pipe", "pipe", "ignore"],
+      },
+    );
+    const result = parseProperties(out);
+    expect(result.ok, JSON.stringify(result)).toBe(true);
+  });
 });

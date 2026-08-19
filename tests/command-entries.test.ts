@@ -38,6 +38,7 @@ function commandFiles(dir: string): string[] {
 }
 
 describe("TC-149 every command file is a vite build entry", () => {
+  // TC-149
   it("has no command that would be missing from dist/", () => {
     const config = readFileSync(join(REPO, "vite.config.ts"), "utf8");
     const declared = new Set(

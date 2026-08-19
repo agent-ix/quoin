@@ -8,6 +8,16 @@ description: "Chronological log of structural changes to this bundle."
 
 ## History
 
+* **2026-08-19** — **CR-024**: quoin's own matrix rows **bind to the tests that back them** (agent-ix/quoin#124). **What the number counts:** rows in `spec/matrix.md` marked ✅ that `quire coverage --scope .` cannot confirm, because no symbol carries their id — quire calls these *status lies*. **48 before, 0 after**; rows the engine confirms as backed went **216 → 266** of 579.
+
+  The cause was one convention, uniformly applied and uniformly dead: `describe("TC-nnn …")`. **`describe(…)` registers no symbol at all** — the TypeScript extractor treats it as a grouping construct and only `it(…)`/`test(…)` become bindable symbols — so an id in a describe title names nothing however carefully it was written. The tests were always real; 448 of them pass. It was the binding that did not exist.
+
+  **Fixed by unifying on the form that binds, not by teaching the engine a second spelling.** quire-rs's `TraceTagGrammar` can model a trace-embedding test name, and declaring one would have bound the corpus without touching a file — but this repo's own standing rule is that a rule accepting every spelling enforces nothing, so 47 tags moved onto the registrations instead.
+
+  Two rows were not a tagging problem and are worth separating. **TC-146** ("kind-to-kind conformance; `unknown-method` reported") was tested under TC-142's describe — real coverage, wrong id. **TC-148** (`--module` supplies the audit catalog) had **no test at all** and read ✅ on the strength of its `Static` verification type; this repo deliberately does not exempt `Static` from status lies, precisely so an overclaim like that surfaces. It now has both halves: a behavioural test that `loadMethodCatalog([root])` returns a method the installed roots do not carry, and a source assertion that the command hands the loader `flags.module` — the wiring no other test in the file would catch.
+
+  **One row exposed an engine gap and was worked around, not papered over.** TC-118 used vitest's curried `it.skipIf(cond)("title", …)`, whose title sits on a line the line-based extractor never reads, so the registration produced no symbol. Rewritten to `it("title", (ctx) => …)` with `ctx.skip()`. Filed upstream rather than absorbed: a repo using the modifier forms gets silent zero coverage with no diagnostic.
+
 * **2026-08-19** — the quire contract refreshes to **v0.36.0**. The vendored `coverage-v1.schema.json` is `additionalProperties: false` on `Obligation`, so once the engine began emitting `target_ids` (quire-rs CR-078) a stale copy would have made quoin **reject every coverage payload** — checked before the CLI shipped rather than after. Refreshed through `scripts/refresh-quire-schemas.mjs`, which re-records the provenance hashes TC-110 pins.
 
   `minimumCli` stays at `0.21.0`. It is a CONTRACT floor, not a capability floor, and `target_ids` is optional on the payload — an older CLI emits none and still validates.

@@ -46,6 +46,7 @@ const CATALOG: MethodCatalog = {
 };
 
 describe("TC-150 the advisor is reachable from a command (FR-031-AC-10, AC-11)", () => {
+  // TC-150
   it("exposes a command class with the flags the workflow needs", async () => {
     // The command file existing is not enough: `vite.config.ts` enumerates
     // build entries by hand, and a command with no entry builds no module.
