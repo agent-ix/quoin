@@ -5,6 +5,10 @@ org: agent-ix
 component_type: cli
 implementation_language: typescript
 title: "quoin Master Requirements Specification"
+quality_attributes_not_applicable:
+  - availability
+  - safety
+  - compliance
 standards_alignment:
   - iso-iec-ieee-29148
 relationships:
@@ -204,6 +208,19 @@ triggered by the `catalog` and `write` commands and on demand via
 in `~/.ix/filament/registry.json` and materialized into the same store. Because
 that store is the one `quire` reads, installs and validation see an identical
 catalog.
+
+## Quality Characteristics Not Applicable
+
+The ISO 25010 characteristics `spec-artifacts-iso` declares are swept by
+`quoin completeness` (FR-037). Three do not apply to this component, and a
+characteristic excused without a written reason is a `high` finding — so the
+reasons are here rather than in a bare frontmatter list.
+
+| Characteristic | Justification |
+| -------------- | ------------- |
+| availability | quoin is a command-line tool, not a service. It has no uptime, no session and no request to fail; a run either completes or exits non-zero, which reliability already governs. |
+| safety | quoin actuates nothing. Its outputs are files and an exit code, and no physical process, medical device or vehicle function reads them, so no hazard analysis has a subject. |
+| compliance | no regulatory regime governs a developer specification tool. Licensing obligations are real but are a distribution property of the package, not a quality characteristic of its behaviour. |
 
 ## References
 
