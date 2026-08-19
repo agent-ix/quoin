@@ -361,7 +361,17 @@ export function readBindings(repo: string): BindingsFile {
  * serialize the same binding set in different orders and produce a diff nobody
  * made.
  */
-export function writeBindings(repo: string, file: BindingsFile): void {
+/**
+ * `Pick<…, "bindings">` and not `BindingsFile`: the version written is always
+ * `STORE_SCHEMA_VERSION`, and `file.schemaVersion` was never read. Demanding it
+ * made callers supply a value the function discards — which one command did not,
+ * and the resulting type error stayed latent until an unrelated entry widened
+ * the build graph enough for `tsc` to reach the call site.
+ */
+export function writeBindings(
+  repo: string,
+  file: Pick<BindingsFile, "bindings">,
+): void {
   const bindings = [...file.bindings].sort(byObligationThenSuite);
   writeCanonical(bindingsPath(repo), {
     schemaVersion: STORE_SCHEMA_VERSION,

@@ -59,6 +59,7 @@ export default defineConfig(({ command }) => ({
         "commands/matrix": "src/commands/matrix.ts",
         "commands/to-plan": "src/commands/to-plan.ts",
         "commands/advise": "src/commands/advise.ts",
+        "commands/completeness": "src/commands/completeness.ts",
         "commands/config/index": "src/commands/config/index.ts",
         "commands/config/get": "src/commands/config/get.ts",
         "commands/config/set": "src/commands/config/set.ts",
