@@ -10,13 +10,13 @@ schemaVersion: 1
 name: quoin-default-modules
 entries:
   - name: spec-artifacts-iso
-    version: "0.13.0"
+    version: "0.14.0"
     defaultEnabled: true
     source:
       type: git-subdir
       url: agent-ix/spec-artifacts-iso
       path: spec_artifacts_iso
-      ref: v0.13.0
+      ref: v0.14.0
 
   - name: spec-artifacts-app
     version: "0.5.0"
