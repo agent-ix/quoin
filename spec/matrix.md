@@ -375,6 +375,7 @@ generated tests under `tests/props/` and `Unit` for the rest.
 | TC-242 | The outcome is the harness's `ok` over `repeats`, and `passRate` is kept because flaky and failing are different facts | Unit | P0 | FR-042-AC-3 | ✅ |
 | TC-243 | A report with no scenario results is refused — it proves only that the harness started | Unit | P0 | FR-042-AC-4 | ✅ |
 | TC-244 | The adapter is selected by `--adapter agent-eval` and by the harness name | Unit | P0 | FR-042-AC-5 | ✅ |
+| TC-245 | A run's trace id binds through an obligation's declared test cases — several criteria per case, a direct id winning over the indirect route, and an id nobody states still reported unmatched | Unit | P0 | FR-030-AC-15 | ✅ |
 | TC-129 | The merged catalog carries every declared method with its rules intact, merges first-wins, reports a colliding id rather than absorbing it, and treats an undeclared catalog as empty | Unit | P0 | FR-031-AC-1 | ✅ |
 | TC-130 | An `attack_surface` object reaches DAST, SAST and negative/abuse testing — recommendations that were unreachable while the method table was skill-local prose | Unit | P0 | FR-031-AC-2 | ✅ |
 | TC-131 | Temporal phrasing reaches runtime monitoring and model checking — the methods a single execution cannot discharge | Unit | P0 | FR-031-AC-3 | ✅ |

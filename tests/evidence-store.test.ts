@@ -613,3 +613,93 @@ describe("TC-132 the store's byte order does not depend on the locale (FR-030-AC
     expect(written.endsWith("\n")).toBe(true);
   });
 });
+
+describe("TC-245 a run binds through an obligation's declared test cases", () => {
+  // A tool reports the id it knows. A unit test carries the criterion's own id
+  // because the tag is written in the test; an agent-eval report — and any tool
+  // keyed on the Test Matrix — carries the TEST CASE id. Both are stated by the
+  // same criteria row, and quire-rs FR-053-AC-11 carries that join on the
+  // obligation, so the store resolves it rather than re-parsing the table.
+  //
+  // Before this, `quoin evidence record --adapter agent-eval` reported
+  // `bound: 0` and `unmatched trace ids … TC-EV-057` while `FR-038-AC-8 →
+  // TC-EV-057` sat in the FR's own table (agent-ix/quoin#144).
+  it("binds a test-case id to the criterion whose cell names it", () => {
+    const outcome = recordRun({
+      repo,
+      suite: "EVAL-001",
+      commit: COMMIT,
+      tool: "cli-agent-evals",
+      timestamp: "2026-08-17T00:00:00Z",
+      entries: [
+        { symbol: "TC-EV-057", outcome: "pass", traceIds: ["TC-EV-057"] },
+      ],
+      obligations: [
+        { ...obligation("FR-038-AC-8", HASH_A), target_ids: ["TC-EV-057"] },
+      ],
+    });
+    expect(outcome.bound).toEqual(["FR-038-AC-8"]);
+    expect(outcome.unmatched).toEqual([]);
+    expect(readBindings(repo).bindings[0].symbols).toEqual(["TC-EV-057"]);
+  });
+
+  it("binds every criterion the same test case discharges", () => {
+    // A row says each of those criteria is verified by that test case, so one
+    // run discharging it discharges all of them. Reporting only the first would
+    // leave the rest undischarged with evidence sitting right there.
+    const outcome = recordRun({
+      repo,
+      suite: "EVAL-001",
+      commit: COMMIT,
+      tool: "cli-agent-evals",
+      timestamp: "2026-08-17T00:00:00Z",
+      entries: [
+        { symbol: "TC-EV-054", outcome: "pass", traceIds: ["TC-EV-054"] },
+      ],
+      obligations: [
+        { ...obligation("FR-038-AC-1", HASH_A), target_ids: ["TC-EV-054"] },
+        { ...obligation("FR-038-AC-2", HASH_A), target_ids: ["TC-EV-054"] },
+      ],
+    });
+    expect(outcome.bound.sort()).toEqual(["FR-038-AC-1", "FR-038-AC-2"]);
+  });
+
+  it("prefers a direct obligation id over the indirect route", () => {
+    // If a criterion's cell happened to name a SIBLING criterion's id, binding
+    // through the indirect route would report a discharge nobody stated
+    // directly. The direct match wins and the indirect one is not registered.
+    const outcome = recordRun({
+      repo,
+      suite: "SUITE-001",
+      commit: COMMIT,
+      tool: "cargo test",
+      timestamp: "2026-08-17T00:00:00Z",
+      entries: [
+        { symbol: "tests::tc001", outcome: "pass", traceIds: ["FR-001-AC-2"] },
+      ],
+      obligations: [
+        { ...obligation("FR-001-AC-1", HASH_A), target_ids: ["FR-001-AC-2"] },
+        obligation("FR-001-AC-2", HASH_A),
+      ],
+    });
+    expect(outcome.bound).toEqual(["FR-001-AC-2"]);
+  });
+
+  it("still reports a trace id no obligation states, by either route", () => {
+    const outcome = recordRun({
+      repo,
+      suite: "EVAL-001",
+      commit: COMMIT,
+      tool: "cli-agent-evals",
+      timestamp: "2026-08-17T00:00:00Z",
+      entries: [
+        { symbol: "TC-EV-999", outcome: "pass", traceIds: ["TC-EV-999"] },
+      ],
+      obligations: [
+        { ...obligation("FR-038-AC-8", HASH_A), target_ids: ["TC-EV-057"] },
+      ],
+    });
+    expect(outcome.bound).toEqual([]);
+    expect(outcome.unmatched).toEqual(["TC-EV-999"]);
+  });
+});

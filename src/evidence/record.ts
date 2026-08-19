@@ -72,6 +72,31 @@ export function recordRun(request: RecordRequest): RecordOutcome {
   });
 
   const byId = new Map(request.obligations.map((o) => [o.id, o]));
+  /**
+   * Test-case id → the obligations whose method cell names it.
+   *
+   * A tool reports the id it knows. A unit test carries the criterion's own id
+   * because the tag is written in the test; an agent-eval report and any other
+   * tool keyed on the Test Matrix carries the **test case** id. Both are stated
+   * by the same criteria row — `Eval (TC-EV-057)` — and quire-rs FR-053-AC-11
+   * carries that join on the obligation, so this resolves it rather than
+   * re-parsing the table (agent-ix/quoin#144).
+   *
+   * A test case may discharge several criteria, so the value is a list. Binding
+   * one run to all of them is correct: the row says each of those criteria is
+   * verified by that test case.
+   */
+  const byTarget = new Map<string, Obligation[]>();
+  for (const obligation of request.obligations) {
+    for (const target of obligation.target_ids ?? []) {
+      // An id that is ALSO an obligation id stays an obligation id. Otherwise a
+      // criterion naming a sibling criterion would silently bind through the
+      // indirect route and report a discharge nobody stated directly.
+      if (byId.has(target)) continue;
+      byTarget.set(target, [...(byTarget.get(target) ?? []), obligation]);
+    }
+  }
+
   /** Obligation id → the symbols in this run that carry it. */
   const discharged = new Map<string, string[]>();
   const unmatched = new Set<string>();
@@ -82,14 +107,19 @@ export function recordRun(request: RecordRequest): RecordOutcome {
     // evidence that the obligation holds, and binding on it would make the
     // store agree with a red build.
     for (const id of entry.traceIds ?? []) {
-      if (!byId.has(id)) {
+      const matched = byId.has(id)
+        ? [byId.get(id) as Obligation]
+        : (byTarget.get(id) ?? []);
+      if (matched.length === 0) {
         unmatched.add(id);
         continue;
       }
       if (entry.outcome !== "pass") continue;
-      const symbols = discharged.get(id) ?? [];
-      symbols.push(entry.symbol);
-      discharged.set(id, symbols);
+      for (const obligation of matched) {
+        const symbols = discharged.get(obligation.id) ?? [];
+        symbols.push(entry.symbol);
+        discharged.set(obligation.id, symbols);
+      }
     }
   }
 

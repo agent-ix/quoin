@@ -111,6 +111,31 @@ clear itself on the next CI run and the detector would never fire.
 | FR-030-CON-2 | The store SHALL NOT persist an obligation's statement, document or method — only its id and hash. Anything re-derivable is re-derived, so the store cannot disagree with the spec. | Architecture | Test |
 | FR-030-CON-3 | The store SHALL NOT contain a database or a derived index. Files only. | Architecture | Inspection |
 
+### A tool reports the id it knows
+
+A unit test carries the criterion's own id, because the tag is written in the
+test. An **agent-eval report — and any tool keyed on the Test Matrix — carries
+the test case id**: `TC-EV-057`, not `FR-038-AC-8`.
+
+Both are stated by the same criteria row (`Eval (TC-EV-057)`), and quire-rs
+FR-053-AC-11 carries that join on the obligation. The store resolves it rather
+than re-parsing the criteria table, which is the duplication FR-050 exists to
+prevent.
+
+Before this, `quoin evidence record --adapter agent-eval` reported `bound: 0`
+and `unmatched trace ids … TC-EV-057` while the join sat in the FR's own table
+(agent-ix/quoin#144). 71 matrix rows across `spec/evals.md`, FR-028 and FR-038
+were unbacked for want of it.
+
+**A direct obligation id wins.** If a criterion's cell named a sibling
+criterion's id, binding through the indirect route would report a discharge
+nobody stated directly, so the indirect route is not registered for an id that
+is itself an obligation.
+
+**A test case discharging several criteria binds all of them.** The row says
+each is verified by that test case; binding only the first would leave the rest
+undischarged with the evidence sitting right there.
+
 ## Acceptance Criteria
 
 | ID | Criteria | Verification |
@@ -129,6 +154,7 @@ clear itself on the next CI run and the detector would never fire.
 | FR-030-AC-12 | The **latest** run of a suite is the newest by `timestamp`, never the lexicographically last filename: a run filename is a commit prefix, which carries no time. `gc` retains that run, and the auditor reads it. Two runs sharing a timestamp order by commit, so a tie resolves the same way on every machine. | Test (TC-130) |
 | FR-030-AC-13 | A store file that exists and is not readable JSON raises a diagnostic naming the file and the cause, never a bare `SyntaxError`. One unreadable **run** file is skipped and reported rather than fatal; the binding graph and the baseline are not, because reading an empty graph would report every obligation as undischarged. | Test (TC-131) |
 | FR-030-AC-14 | Store ordering is locale-independent: written bytes are pinned by test, so a runtime's collation data cannot change the diff of a checked-in file. | Test (TC-132) |
+| FR-030-AC-15 | A run's trace id binds through an obligation's declared test cases as well as its own id, so a tool keyed on the Test Matrix discharges the criteria that name it. A direct obligation id wins over the indirect route, and an id no obligation states by either route is still reported unmatched. | Test (TC-245) |
 
 ## Dependencies
 
