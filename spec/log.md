@@ -8,6 +8,14 @@ description: "Chronological log of structural changes to this bundle."
 
 ## History
 
+* **2026-08-19** — **CR-023**: a run binds through an obligation's declared **test cases**, not only its own id (FR-030-AC-15, TC-245). Closes agent-ix/quoin#144.
+
+  A tool reports the id it knows. A unit test carries the criterion's own id because the tag is written in the test; an **agent-eval report — and any tool keyed on the Test Matrix — carries the test-case id**. Both are stated by the same criteria row, `Eval (TC-EV-057)`, and quire-rs FR-053-AC-11 (v0.35.0) now carries that join on the obligation, so the store resolves it rather than re-parsing the criteria table — the duplication FR-050 exists to prevent.
+
+  Before this, `quoin evidence record --adapter agent-eval` reported `bound: 0` and `unmatched trace ids … TC-EV-057` while the join sat in the FR's own table. 71 matrix rows across `spec/evals.md`, FR-028 and FR-038 were unbacked for want of it.
+
+  Two rules the tests pin rather than leave implied. **A direct obligation id wins**: if a criterion's cell named a sibling criterion's id, the indirect route would report a discharge nobody stated directly. **A test case discharging several criteria binds all of them**, because the row says each is verified by that test case and binding only the first leaves the rest undischarged with the evidence sitting right there.
+
 * **2026-08-19** — **CR-022**: the verification cells name a **method**, not an evidence kind — closing `SR-008` FND-002 (agent-ix/quoin#142).
 
   `quire coverage` reported *"'Eval' is neither a declared verification_catalog method id nor a declared class, so nothing can say what discharging it means"* over **19 rows**, and the finding was filed proposing a new catalog entry. Checking before building it showed the proposal was wrong: `spec-artifacts-process` **already declares** `agent-behaviour-eval` — *"Drive a real agent through a scenario and score the transcript against the criterion"* — with `evidence_kind: Eval`.

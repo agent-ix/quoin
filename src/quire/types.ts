@@ -89,6 +89,17 @@ export interface Obligation {
   method?: string | null;
   parameters?: Record<string, string>;
   criticality?: string | null;
+  /**
+   * Test-case ids the criterion's method cell names — `Test (TC-707)` yields
+   * `["TC-707"]` (quire-rs FR-053-AC-11, v0.35.0).
+   *
+   * Optional because an engine before v0.35.0 emits none, and because a cell
+   * naming no test case carries none. Treat absent and empty alike: both mean
+   * "this obligation names no test case", never "the engine is old" — a
+   * consumer that branched on the difference would report a version as a
+   * finding.
+   */
+  target_ids?: string[];
 }
 
 /** Bundle-wide totals. The criteria pair is all-or-nothing. */
