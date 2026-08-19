@@ -8,6 +8,15 @@ description: "Chronological log of structural changes to this bundle."
 
 ## History
 
+* **2026-08-19** — **CR-022**: the verification cells name a **method**, not an evidence kind — closing `SR-008` FND-002 (agent-ix/quoin#142).
+
+  `quire coverage` reported *"'Eval' is neither a declared verification_catalog method id nor a declared class, so nothing can say what discharging it means"* over **19 rows**, and the finding was filed proposing a new catalog entry. Checking before building it showed the proposal was wrong: `spec-artifacts-process` **already declares** `agent-behaviour-eval` — *"Drive a real agent through a scenario and score the transcript against the criterion"* — with `evidence_kind: Eval`.
+
+  So `Eval` is an evidence **kind**, and the criteria tables were writing a kind where a method or class belongs. `Eval` remains correct in the matrix's `Type` column, which is the `test_type` vocabulary; the slip was only in `Verification`. FR-028's eleven cells and FR-038's thirteen now read `agent-behaviour-eval (TC-EV-nnn)`, and NFR-005's one `Review` metric reads `Inspection`, which is the declared class.
+
+  **Coverage diagnostics: 20 → 0.** Nothing was added to any module; the vocabulary was already there and the specs were not using it. Worth recording as the third time this program has found a "missing capability" that turned out to be a capability nobody was reaching — after quire-cli lagging five releases and `vocabulary_coverage` being declared nowhere.
+
+
 * **2026-08-19** — **CR-021**: new [FR-042](./functional/FR-042-agent-eval-evidence.md) — **agent-eval reports as run evidence**, closing the first half of `SR-008` FND-001 (agent-ix/quoin#142).
 
   An eval drives the real agent through the real CLI, which makes it the most convincing verification this project has and, until now, the least recorded. `quire coverage` reconciles matrix rows against test symbols in code; eval scenarios are data and mint none, so **71 rows** across `spec/evals.md`, `FR-028` and `FR-038` were unbacked. For FR-038 the evals had been run — four scenarios, 4/4, live, with two genuine failures found and fixed — and the harness's report was written to disk and dropped.

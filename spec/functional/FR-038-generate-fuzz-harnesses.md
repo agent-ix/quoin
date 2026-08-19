@@ -91,24 +91,24 @@ header.
 
 | ID | Criteria | Verification |
 |----|----------|--------------|
-| FR-038-AC-1 | Obligations are selected by their method's `evidence_kind: Fuzz`, read from the catalog. | Eval (TC-EV-054) |
-| FR-038-AC-2 | An emitted target calls an entry point that exists in the repository's source. | Eval (TC-EV-054) |
-| FR-038-AC-3 | An obligation whose entry point cannot be grounded yields a finding and no file. | Eval (TC-EV-055) |
-| FR-038-AC-4 | Absent fuzz tooling yields one finding per obligation and no file, and nothing is installed. | Eval (TC-EV-055) |
-| FR-038-AC-5 | Every emitted target carries both trace carriers and a provenance line. | Eval (TC-EV-054) |
-| FR-038-AC-6 | A re-run with unchanged inputs rewrites nothing. | Eval (TC-EV-056) |
-| FR-038-AC-7 | The harness is chosen from the repository's manifest, never from the requirement's language. | Eval (TC-EV-056) |
-| FR-038-AC-8 | Generated targets are reported as undischarged until a run is recorded. | Eval (TC-EV-057) |
-| FR-038-AC-9 | The skill emits no verdict, grade or threshold, and never rewords a requirement. | Eval (TC-EV-057) |
+| FR-038-AC-1 | Obligations are selected by their method's `evidence_kind: Fuzz`, read from the catalog. | agent-behaviour-eval (TC-EV-054) |
+| FR-038-AC-2 | An emitted target calls an entry point that exists in the repository's source. | agent-behaviour-eval (TC-EV-054) |
+| FR-038-AC-3 | An obligation whose entry point cannot be grounded yields a finding and no file. | agent-behaviour-eval (TC-EV-055) |
+| FR-038-AC-4 | Absent fuzz tooling yields one finding per obligation and no file, and nothing is installed. | agent-behaviour-eval (TC-EV-055) |
+| FR-038-AC-5 | Every emitted target carries both trace carriers and a provenance line. | agent-behaviour-eval (TC-EV-054) |
+| FR-038-AC-6 | A re-run with unchanged inputs rewrites nothing. | agent-behaviour-eval (TC-EV-056) |
+| FR-038-AC-7 | The harness is chosen from the repository's manifest, never from the requirement's language. | agent-behaviour-eval (TC-EV-056) |
+| FR-038-AC-8 | Generated targets are reported as undischarged until a run is recorded. | agent-behaviour-eval (TC-EV-057) |
+| FR-038-AC-9 | The skill emits no verdict, grade or threshold, and never rewords a requirement. | agent-behaviour-eval (TC-EV-057) |
 
 ## Constraints
 
 | ID | Constraint | Type | Validation |
 |----|-----------|------|------------|
-| FR-038-CON-1 | The skill SHALL NOT declare which methods are fuzz methods. That is the catalog's, read at run time. | Design | Eval (TC-EV-054) |
-| FR-038-CON-2 | The skill SHALL NOT install tooling, add a dependency, or scaffold a fuzz workspace. | Design | Eval (TC-EV-055) |
-| FR-038-CON-3 | The skill SHALL NOT treat an emitted target as evidence. Discharge requires a recorded run. | Design | Eval (TC-EV-057) |
-| FR-038-CON-4 | The skill SHALL NOT write a framework name into `spec/**` (inherited, FR-028-CON-2). | Design | Eval (TC-EV-056) |
+| FR-038-CON-1 | The skill SHALL NOT declare which methods are fuzz methods. That is the catalog's, read at run time. | Design | agent-behaviour-eval (TC-EV-054) |
+| FR-038-CON-2 | The skill SHALL NOT install tooling, add a dependency, or scaffold a fuzz workspace. | Design | agent-behaviour-eval (TC-EV-055) |
+| FR-038-CON-3 | The skill SHALL NOT treat an emitted target as evidence. Discharge requires a recorded run. | Design | agent-behaviour-eval (TC-EV-057) |
+| FR-038-CON-4 | The skill SHALL NOT write a framework name into `spec/**` (inherited, FR-028-CON-2). | Design | agent-behaviour-eval (TC-EV-056) |
 
 ## Dependencies
 
