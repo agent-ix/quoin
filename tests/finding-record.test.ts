@@ -21,6 +21,9 @@ import EvidenceRecord from "../src/commands/evidence/record";
 
 import { audit } from "../src/auditor/index.js";
 import {
+  gc,
+  latestScan,
+  listRecordedSuites,
   parseCargoAudit,
   parseSarif,
   type FindingRecord,
@@ -40,7 +43,12 @@ function workspace(): string {
   mkdirSync(join(root, "spec", "functional"), { recursive: true });
   writeFileSync(
     join(root, "spec", "functional", "FR-001-a.md"),
-    "---\nid: FR-001\ntype: FR\ntitle: A requirement\n---\n\n## Description\n\nIt does.\n",
+    "---\nid: FR-001\ntype: FR\ntitle: A requirement\n---\n\n" +
+      "## Description\n\nThe system shall do it.\n\n" +
+      "## Acceptance Criteria\n\n" +
+      "| ID | Criteria | Verification |\n" +
+      "|----|----------|--------------|\n" +
+      "| FR-001-AC-1 | It does the thing. | Test (TC-001) |\n",
   );
   return root;
 }
@@ -433,4 +441,156 @@ describe("quoin evidence record --adapter sarif", () => {
     expect(record.rulesEvaluated).toBe(1217);
     expect(record.findings[0].ruleId).toMatch(/^RUSTSEC-/);
   });
+});
+
+describe("a scan is reachable from every side of the store", () => {
+  // These exist because SR-005 found FR-034 inert end to end: the record was
+  // written and nothing else in the system could see it. Each criterion here
+  // is a path that had no test at all.
+
+  async function recordScan(root: string, args: string[] = []): Promise<void> {
+    const results = join(root, "scan.sarif");
+    writeFileSync(results, SARIF_CLEAN);
+    await EvidenceRecord.run(
+      [
+        "--repo",
+        root,
+        "--suite",
+        "SUITE-SCAN",
+        "--commit",
+        "e".repeat(40),
+        "--tool",
+        "semgrep 1.2.3",
+        "--adapter",
+        "sarif",
+        "--results",
+        results,
+        ...args,
+      ],
+      config,
+    );
+  }
+
+  // Trace: FR-034-AC-16
+  it("binds the obligations it was run to check", async () => {
+    // A CLEAN scan is the strongest evidence a scanner produces and carries no
+    // finding to bind from, so the obligations are stated rather than inferred.
+    const root = workspace();
+    await recordScan(root, ["--discharges", "FR-001-AC-1"]);
+    const bindings = JSON.parse(
+      readFileSync(join(root, "spec", "evidence", "bindings.json"), "utf8"),
+    ) as { bindings: Array<{ obligation: string; suite: string }> };
+    expect(bindings.bindings).toContainEqual(
+      expect.objectContaining({
+        obligation: "FR-001-AC-1",
+        suite: "SUITE-SCAN",
+      }),
+    );
+  });
+
+  // Trace: FR-034-AC-17
+  it("binds nothing when the scan evaluated no rules", async () => {
+    // Binding on a rule-less scan would put the store's strongest claim behind
+    // its weakest evidence.
+    const root = workspace();
+    const results = join(root, "empty.sarif");
+    writeFileSync(
+      results,
+      JSON.stringify({
+        version: "2.1.0",
+        runs: [
+          { tool: { driver: { name: "semgrep", rules: [] } }, results: [] },
+        ],
+      }),
+    );
+    await EvidenceRecord.run(
+      [
+        "--repo",
+        root,
+        "--suite",
+        "SUITE-SCAN",
+        "--commit",
+        "f".repeat(40),
+        "--tool",
+        "semgrep 1.2.3",
+        "--adapter",
+        "sarif",
+        "--results",
+        results,
+        "--discharges",
+        "FR-001-AC-1",
+      ],
+      config,
+    );
+    // Assert the claim, not the file: what must not happen is a BINDING.
+    const path = join(root, "spec", "evidence", "bindings.json");
+    const bindings = existsSync(path)
+      ? (JSON.parse(readFileSync(path, "utf8")) as { bindings: unknown[] })
+          .bindings
+      : [];
+    expect(bindings).toEqual([]);
+  });
+
+  // Trace: FR-034-AC-18
+  it("enumerates a suite that recorded only scans", async () => {
+    // `listRecordedSuites` read `runs/` alone, so a scan-only suite was
+    // invisible to every caller that enumerates — the auditor included.
+    const root = workspace();
+    await recordScan(root);
+    expect(listRecordedSuites(root)).toContain("SUITE-SCAN");
+    expect(latestScan(root, "SUITE-SCAN")?.tool).toBe("semgrep 1.2.3");
+  });
+
+  // Trace: FR-034-AC-19
+  it("collects superseded scans, so the store does not grow without bound", async () => {
+    const root = workspace();
+    await recordScan(root);
+    const results = join(root, "scan.sarif");
+    await EvidenceRecord.run(
+      [
+        "--repo",
+        root,
+        "--suite",
+        "SUITE-SCAN",
+        "--commit",
+        "1".repeat(40),
+        "--tool",
+        "semgrep 1.2.3",
+        "--adapter",
+        "sarif",
+        "--results",
+        results,
+        "--timestamp",
+        "2027-01-01T00:00:00Z",
+      ],
+      config,
+    );
+    const deleted = gc(root);
+    // The newest scan is kept; the superseded one is collected.
+    expect(deleted.some((p) => p.includes("eeeeeeeeeeee.json"))).toBe(true);
+    expect(latestScan(root, "SUITE-SCAN")?.commit).toBe("1".repeat(40));
+  });
+});
+
+// Trace: FR-034-AC-20
+it("tells a tool reporting ZERO rules from a tool reporting no count", () => {
+  // The distinction FR-034 turns on. The adapter defaulted the counter to 0 and
+  // omitted the field when it was 0, which erased exactly this: a scan
+  // declaring `rules: []` read as a tool that had said nothing, so the vacuity
+  // check stayed silent on the one input it exists to catch.
+  const declaredZero = parseSarif(
+    JSON.stringify({
+      version: "2.1.0",
+      runs: [{ tool: { driver: { name: "semgrep", rules: [] } }, results: [] }],
+    }),
+  );
+  expect(declaredZero.rulesEvaluated).toBe(0);
+
+  const saidNothing = parseSarif(
+    JSON.stringify({
+      version: "2.1.0",
+      runs: [{ tool: { driver: { name: "semgrep" } }, results: [] }],
+    }),
+  );
+  expect(saidNothing.rulesEvaluated).toBeUndefined();
 });
