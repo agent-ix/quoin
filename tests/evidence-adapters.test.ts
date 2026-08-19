@@ -163,6 +163,7 @@ describe("the adapter registry", () => {
       "junit",
       "cargo-mutants",
       "sarif",
+      "audit-script",
       "cargo-audit",
     ]);
     for (const adapter of ADAPTERS) {

@@ -43,3 +43,4 @@ description: "Index of functional requirements (FR) for quoin."
 * [FR-033: Evidence format adapters](./FR-033-evidence-format-adapters.md)
 * [FR-034: Finding-shaped evidence](./FR-034-finding-shaped-evidence.md)
 * [FR-035: t-way coverage over a declared configuration space](./FR-035-combinatorial-coverage.md)
+* [FR-036: Architecture conformance as a declared verification method](./FR-036-architecture-conformance.md)

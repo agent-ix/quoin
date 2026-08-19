@@ -81,3 +81,4 @@ export {
   scanPath,
   writeScan,
 } from "./store.js";
+export { parseAuditScript } from "./adapters/audit-script.js";

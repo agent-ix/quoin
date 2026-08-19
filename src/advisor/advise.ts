@@ -102,7 +102,19 @@ const STATEMENT_CHARACTERISTICS: Array<[string, RegExp]> = [
     "third-party-dependency",
     /\b(dependenc|third-party|vendored|licence|license)\b/i,
   ],
-  ["layering", /\b(depend on|layering|module boundary|must not import)\b/i],
+  ["layering", /\b(depend on|layering|must not import)\b/i],
+  // Distinct from `layering`, which is directional — who may depend on whom.
+  // This is about the surface itself: what is exported, what is internal, what
+  // may cross. The catalog keys `architecture-conformance` on **both**
+  // (spec-artifacts-process `verification_catalog`), and until this existed the
+  // second half of that rule could never match, because no code path minted the
+  // value. `module boundary` moved here from `layering` rather than appearing in
+  // both: one phrase, one characteristic, or the two names stop meaning
+  // different things.
+  [
+    "module-boundary",
+    /\b(module boundary|public (api|interface|surface)|encapsulat|internal(s)? (of|to)|exported? (from|by))\b/i,
+  ],
   ["user-visible", /\b(user|operator|the UI|displays|screen)\b/i],
   ["stable-output", /\b(byte-identical|identical output|serializ|snapshot)\b/i],
   ["agent-behaviour", /\b(agent|transcript|prompt)\b/i],
