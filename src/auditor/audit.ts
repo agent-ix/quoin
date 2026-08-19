@@ -484,7 +484,7 @@ function mutationFinding(
   const floor = floors[obligation.criticality];
   if (floor === undefined) return null;
 
-  const scores = scoresFor(bindings, runs);
+  const scores = scoresFor(bindings, runs, input.catalog);
   if (scores.length === 0) {
     // Distinct from `undischarged`: this obligation may be thoroughly tested and
     // still have nothing saying the tests detect anything. A demanded threshold
@@ -514,12 +514,39 @@ function mutationFinding(
   };
 }
 
-/** Every numeric score the runs bound to this obligation recorded. */
-function scoresFor(bindings: Binding[], runs: RunRecord[]): number[] {
+/**
+ * Mutation scores among the runs bound to this obligation.
+ *
+ * **Scoped by tool, and that scoping is load-bearing.** `RunEntry.score` is
+ * deliberately generic — its own contract says "a mutation score, a coverage
+ * percentage, a measured latency" — so reading every scored entry would compare
+ * a p95 latency in milliseconds against a floor of `0.8` and report the
+ * obligation as failing. The first draft did exactly that.
+ *
+ * The tool names come from the catalog's `mutation-testing` entry (`cargo-mutants`,
+ * `mutmut`, `stryker`), which is module data. Naming that one method id here is
+ * the narrowest way to ask "did a mutation tool produce this number"; the
+ * durable fix is a metric discriminator on the entry itself, filed as
+ * `agent-ix/quoin#138`. With no such catalog entry, nothing is in scope and the
+ * check says nothing rather than something wrong.
+ */
+function scoresFor(
+  bindings: Binding[],
+  runs: RunRecord[],
+  catalog: AuditInput["catalog"],
+): number[] {
   const bound = new Set(bindings.map((b) => b.suite));
+  const tools = new Set(
+    (catalog?.methods ?? [])
+      .filter((m) => m.id === "mutation-testing")
+      .flatMap((m) => m.tooling)
+      .map((t) => t.toLowerCase()),
+  );
   const out: number[] = [];
   for (const run of runs) {
     if (!bound.has(run.suite)) continue;
+    // A tool string is `cargo-mutants 25.0.0`; match on the leading name.
+    if (![...tools].some((t) => run.tool.toLowerCase().startsWith(t))) continue;
     for (const entry of run.entries) {
       // `skip` carries no measurement: a skipped symbol's absent score is not a
       // zero, and treating it as one would fail an obligation for a test nobody

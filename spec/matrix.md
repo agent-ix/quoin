@@ -347,7 +347,7 @@ generated tests under `tests/props/` and `Unit` for the rest.
 | TC-216 | `quoin completeness --strict` exits non-zero on gaps alone — same bundle, both ways round, so `--strict` is a policy and not a second code path | Integration | P0 | FR-037-AC-11 | ✅ |
 | TC-217 | A bundle whose modules declare no vocabulary reports `UNCHECKED`, never `PASS` — nothing checked is not nothing wrong | Integration | P0 | FR-037-AC-12 | ✅ |
 | TC-218 | The unowned set quoin reports equals the one the bundle read yields for the same declaration | Unit | P0 | FR-037-AC-13 | ✅ |
-| TC-219 | The mutation-score policy: silent until a floor is declared, judged on the weakest symbol not the mean, a skipped symbol's absent score is not zero, and a demanded-but-unmeasured floor is its own finding | Unit | P0 | FR-039-AC-1, FR-039-AC-2, FR-039-AC-3, FR-039-AC-4, FR-039-AC-5, FR-039-AC-6, FR-039-AC-7 | ✅ |
+| TC-219 | The mutation-score policy: silent until a floor is declared, judged on the weakest symbol not the mean, a skipped symbol's absent score is not zero, and a demanded-but-unmeasured floor is its own finding, and a latency is not a mutation score | Unit | P0 | FR-039-AC-1, FR-039-AC-2, FR-039-AC-3, FR-039-AC-4, FR-039-AC-5, FR-039-AC-6, FR-039-AC-7, FR-039-AC-10, FR-039-AC-11 | ✅ |
 | TC-220 | `--mutation-floor` parses `<criticality>=<ratio>` and refuses a percentage or a malformed pair — an ignored floor reads as a passing gate | Unit | P0 | FR-039-AC-8, FR-039-AC-9 | ✅ |
 | TC-221 | The case argues from a claim through its requirements down to their obligations | Unit | P0 | FR-040-AC-1 | ✅ |
 | TC-222 | An obligation with a finding stays in the tree as an open node carrying the auditor's reason, rather than being dropped | Unit | P0 | FR-040-AC-2 | ✅ |

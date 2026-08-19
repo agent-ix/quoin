@@ -58,6 +58,18 @@ report is the number to act on.
 Treating it as zero fails the obligation for a test **nobody ran**, rather than for a test that failed
 to discriminate. Those have different remedies, and `vacuous-evidence` already reports the first.
 
+### Only a mutation tool's number counts
+
+`RunEntry.score` is deliberately generic — its own contract says *"a mutation score, a coverage
+percentage, a measured latency"*. Reading every scored entry bound to an obligation compares a p95
+latency in milliseconds against a floor of `0.8` and reports the obligation as failing, with a
+plausible summary and no way for a reader to tell. The first draft of this check did exactly that.
+
+Scores are therefore scoped to runs whose `tool` is one the catalog declares for mutation testing,
+matched on the leading name because adapters report `cargo-mutants 25.0.0`. That names a method id
+inside the engine, which is a compromise: the durable fix is a metric discriminator on the entry
+itself, so the adapter that knows what it measured says so. Filed as `agent-ix/quoin#138`.
+
 ### A percentage is refused, not accepted
 
 `--mutation-floor P0=80` is the natural thing to type and is a floor nothing can reach. Accepted
@@ -81,6 +93,8 @@ apply is worse than no floor**, because it reads as a passing gate.
 | FR-039-AC-7 | A floor applies only to the criticality it names. | Test (TC-219) |
 | FR-039-AC-8 | `quoin evidence audit --mutation-floor P0=0.8` parses the pair and applies it. | Test (TC-220) |
 | FR-039-AC-9 | A score outside `[0, 1]`, or a malformed pair, is refused rather than ignored. | Test (TC-220) |
+| FR-039-AC-10 | A score a mutation tool did not produce — a latency, a coverage percentage — is not compared against the floor. | Test (TC-219) |
+| FR-039-AC-11 | A versioned tool string is matched on its leading name. | Test (TC-219) |
 
 ## Constraints
 

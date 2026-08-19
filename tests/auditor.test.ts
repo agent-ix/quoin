@@ -500,6 +500,28 @@ describe("TC-147 every finding kind can be baselined (FR-032-AC-11)", () => {
 });
 
 describe("TC-219 mutation score as the acceptance-criteria oracle", () => {
+  // The tool names are the CATALOG's, not this test's. `RunEntry.score` is
+  // generic — "a mutation score, a coverage percentage, a measured latency" —
+  // so the auditor scopes by tool, and a fixture with no catalog puts nothing
+  // in scope. That is the correct behaviour and this fixture is what makes the
+  // dependency visible rather than incidental.
+  const mutationCatalog: MethodCatalog = {
+    methods: [
+      {
+        id: "mutation-testing",
+        name: "Mutation testing",
+        class: "Test",
+        definition: "d",
+        evidenceKind: "Static",
+        applicability: {},
+        tooling: ["cargo-mutants", "mutmut", "stryker"],
+        moduleName: "m",
+      },
+    ],
+    collisions: [],
+    unreadable: [],
+  };
+
   const scored = (score: number, over: Partial<RunRecord> = {}) =>
     run({
       tool: "cargo-mutants",
@@ -516,6 +538,7 @@ describe("TC-219 mutation score as the acceptance-criteria oracle", () => {
       input({
         obligations: [obligation({ criticality: "P0" })],
         runs: [scored(0.1)],
+        catalog: mutationCatalog,
       }),
     );
     expect(
@@ -531,6 +554,7 @@ describe("TC-219 mutation score as the acceptance-criteria oracle", () => {
         obligations: [obligation({ criticality: "P0" })],
         runs: [scored(0.55)],
         mutationFloor: { P0: 0.8 },
+        catalog: mutationCatalog,
       }),
     );
     const finding = report.findings.find(
@@ -549,6 +573,7 @@ describe("TC-219 mutation score as the acceptance-criteria oracle", () => {
         obligations: [obligation({ criticality: "P0" })],
         runs: [scored(0.8)],
         mutationFloor: { P0: 0.8 },
+        catalog: mutationCatalog,
       }),
     );
     expect(report.healthy).toEqual(["FR-001-AC-1"]);
@@ -571,6 +596,7 @@ describe("TC-219 mutation score as the acceptance-criteria oracle", () => {
           }),
         ],
         mutationFloor: { P0: 0.8 },
+        catalog: mutationCatalog,
       }),
     );
     expect(
@@ -588,6 +614,7 @@ describe("TC-219 mutation score as the acceptance-criteria oracle", () => {
       input({
         obligations: [obligation({ criticality: "P0" })],
         mutationFloor: { P0: 0.8 },
+        catalog: mutationCatalog,
       }),
     );
     const finding = report.findings.find(
@@ -614,9 +641,61 @@ describe("TC-219 mutation score as the acceptance-criteria oracle", () => {
           }),
         ],
         mutationFloor: { P0: 0.8 },
+        catalog: mutationCatalog,
       }),
     );
     expect(report.healthy).toEqual(["FR-001-AC-1"]);
+  });
+
+  // Trace: FR-039-AC-10
+  it("does not read a latency or a coverage percentage as a mutation score", () => {
+    // `RunEntry.score` is deliberately generic. Reading every scored entry
+    // compares a p95 latency in milliseconds against a floor of 0.8 and reports
+    // the obligation as failing — which the first draft of this check did.
+    const report = audit(
+      input({
+        obligations: [obligation({ criticality: "P0" })],
+        runs: [
+          run({
+            tool: "criterion",
+            // The BOUND symbol, so the binding is satisfied and the only
+            // open question is what its score means.
+            entries: [{ symbol: "tests::tc001", outcome: "pass", score: 4.2 }],
+          }),
+        ],
+        mutationFloor: { P0: 0.8 },
+        catalog: mutationCatalog,
+      }),
+    );
+    // Not `insufficient` — nothing a MUTATION tool produced was measured.
+    expect(
+      report.findings.find((f) => f.kind.startsWith("insufficient-mutation")),
+    ).toBeUndefined();
+    expect(
+      report.findings.find((f) => f.kind === "unmeasured-mutation-score"),
+    ).toBeDefined();
+  });
+
+  // Trace: FR-039-AC-11
+  it("matches a versioned tool string", () => {
+    // Adapters report `cargo-mutants 25.0.0`, not a bare name.
+    const report = audit(
+      input({
+        obligations: [obligation({ criticality: "P0" })],
+        runs: [
+          run({
+            tool: "cargo-mutants 25.0.0",
+            entries: [{ symbol: "tests::tc001", outcome: "pass", score: 0.4 }],
+          }),
+        ],
+        mutationFloor: { P0: 0.8 },
+        catalog: mutationCatalog,
+      }),
+    );
+    expect(
+      report.findings.find((f) => f.kind === "insufficient-mutation-score")
+        ?.summary,
+    ).toContain("0.4");
   });
 
   // Trace: FR-039-AC-7
@@ -626,6 +705,7 @@ describe("TC-219 mutation score as the acceptance-criteria oracle", () => {
         obligations: [obligation({ criticality: "P2" })],
         runs: [scored(0.1)],
         mutationFloor: { P0: 0.8 },
+        catalog: mutationCatalog,
       }),
     );
     expect(report.healthy).toEqual(["FR-001-AC-1"]);
