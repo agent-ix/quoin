@@ -42,3 +42,4 @@ description: "Index of functional requirements (FR) for quoin."
 * [FR-032: Suspect-link, freshness and vacuous-evidence auditor](./FR-032-evidence-auditor.md)
 * [FR-033: Evidence format adapters](./FR-033-evidence-format-adapters.md)
 * [FR-034: Finding-shaped evidence](./FR-034-finding-shaped-evidence.md)
+* [FR-035: t-way coverage over a declared configuration space](./FR-035-combinatorial-coverage.md)

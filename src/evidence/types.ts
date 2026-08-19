@@ -56,6 +56,14 @@ export interface RunEntry {
   score?: number;
   /** Trace ids this symbol carries, as the adapter read them. */
   traceIds?: string[];
+  /**
+   * The configuration this entry was executed under — dimension name to value.
+   *
+   * Present only for a run over a declared configuration space (quire-rs
+   * FR-061). It is what lets the auditor say WHICH t-way combinations a run
+   * reached, rather than only how many entries it contained.
+   */
+  config?: Record<string, string>;
 }
 
 /**
