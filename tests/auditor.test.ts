@@ -6,6 +6,11 @@
  * fooled by evidence that merely *exists*.
  */
 
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+
 import { describe, expect, it } from "vitest";
 
 import {
@@ -67,6 +72,7 @@ function input(over: Partial<AuditInput> = {}): AuditInput {
 }
 
 describe("TC-137 healthy evidence produces no finding", () => {
+  // TC-137
   it("reports the obligation as healthy", () => {
     const report = audit(input());
     expect(report.findings).toEqual([]);
@@ -75,6 +81,7 @@ describe("TC-137 healthy evidence produces no finding", () => {
 });
 
 describe("TC-138 a suspect link is the highest-severity finding", () => {
+  // TC-138
   it("fires when the statement changed after binding, and says so", () => {
     const report = audit(
       input({ obligations: [obligation({ statement_hash: HASH_B })] }),
@@ -91,6 +98,7 @@ describe("TC-138 a suspect link is the highest-severity finding", () => {
 });
 
 describe("TC-139 stale evidence", () => {
+  // TC-139
   it("is high when the binding names a suite with no recorded run", () => {
     const report = audit(input({ runs: [] }));
     expect(report.findings[0].kind).toBe("stale-evidence");
@@ -108,6 +116,7 @@ describe("TC-139 stale evidence", () => {
 });
 
 describe("TC-140 vacuous evidence", () => {
+  // TC-140
   it("fires when every bound symbol was skipped", () => {
     const report = audit(
       input({
@@ -150,6 +159,7 @@ describe("TC-140 vacuous evidence", () => {
 });
 
 describe("TC-141 an obligation with no binding is undischarged", () => {
+  // TC-141
   it("reports it at medium, not high", () => {
     const report = audit(input({ bindings: [] }));
     const [finding] = report.findings;
@@ -187,6 +197,7 @@ describe("TC-142 method conformance", () => {
     duplicates: [],
   };
 
+  // TC-142
   it("compares kind to kind, not entry count", () => {
     // The old test was `run.entries.length > 0`, read as "this was a test run"
     // — true of a transcribed inspection too, so every Analysis obligation
@@ -226,6 +237,7 @@ describe("TC-142 method conformance", () => {
     expect(report.findings).toEqual([]);
   });
 
+  // TC-146
   it("reports a method no catalog carries rather than skipping it", () => {
     // `declaredClasses.size === 0` used to return null — a silent skip — so the
     // requirements whose verification is LEAST well defined were exactly the
@@ -261,6 +273,7 @@ describe("TC-142 method conformance", () => {
 });
 
 describe("TC-143 multiplicity", () => {
+  // TC-143
   it("flags a critical obligation whose evidence is all one suite", () => {
     const report = audit(
       input({
@@ -303,6 +316,7 @@ describe("TC-143 multiplicity", () => {
 });
 
 describe("TC-144 ratchet and per-PR delta", () => {
+  // TC-144
   it("reports only violations absent from the baseline", () => {
     const report = audit(
       input({
@@ -385,6 +399,7 @@ describe("TC-145 one obligation, two suites (FR-032-AC-8)", () => {
     }),
   ];
 
+  // TC-145
   it("clears the multiplicity finding two independent suites satisfy", () => {
     const report = audit(
       input({
@@ -467,6 +482,7 @@ describe("TC-147 every finding kind can be baselined (FR-032-AC-11)", () => {
   // `insufficient-multiplicity` could never appear in one, so `--ratchet`
   // reported the whole existing backlog for five of the six kinds — the
   // outcome ratchet mode exists to prevent (agent-ix/quoin#105).
+  // TC-147
   it("accepts each kind by its own key", () => {
     const kinds: Array<[string, AuditInput]> = [
       ["undischarged", input({ bindings: [] })],
@@ -530,6 +546,7 @@ describe("TC-219 mutation score as the acceptance-criteria oracle", () => {
     });
 
   // Trace: FR-039-AC-1
+  // TC-219
   it("says nothing until a floor is declared", () => {
     // The CR-008 lesson, applied before it could bite: a built-in floor is a
     // rule nobody chose, firing on everything the moment a criticality column
@@ -733,6 +750,7 @@ describe("TC-219 mutation score as the acceptance-criteria oracle", () => {
 
 describe("TC-220 --mutation-floor is parsed, and a bad one is refused", () => {
   // Trace: FR-039-AC-8
+  // TC-220
   it("reads <criticality>=<ratio> pairs", async () => {
     const { parseMutationFloor } =
       await import("../src/commands/evidence/audit.js");
@@ -774,5 +792,60 @@ describe("TC-220 --mutation-floor is parsed, and a bad one is refused", () => {
     };
     expect(() => parseMutationFloor(["P0"], fail)).toThrow(/expects/);
     expect(() => parseMutationFloor(["P0=high"], fail)).toThrow(/expects/);
+  });
+});
+
+describe("TC-148 the audit command reads the catalog from --module", () => {
+  // TC-148
+  it("loads only what the named module declares, not the installed roots", async () => {
+    // The disagreement this closes: obligations derived from one catalog and
+    // conformance checked against another, so a method the module declares
+    // reads as `unknown-method`. FR-032-AC-12.
+    const { loadMethodCatalog } = await import("../src/advisor/index.js");
+    const root = mkdtempSync(join(tmpdir(), "quoin-tc148-"));
+    writeFileSync(
+      join(root, "manifest.yaml"),
+      [
+        "manifest_version: 1",
+        "name: tc148-fixture",
+        "version: 0.0.0",
+        "verification_catalog:",
+        "  tc148-only-method:",
+        "    verification_class: Test",
+        "    evidence_kind: Unit",
+        "    summary: a method that exists in no installed module",
+        "",
+      ].join("\n"),
+    );
+
+    const scoped = loadMethodCatalog([root]);
+    expect(scoped.methods.map((m) => m.id)).toContain("tc148-only-method");
+
+    // And the default roots do not carry it, so the assertion above is a
+    // measurement of the flag rather than of what happens to be installed.
+    const installed = loadMethodCatalog();
+    expect(installed.methods.map((m) => m.id)).not.toContain(
+      "tc148-only-method",
+    );
+
+    rmSync(root, { recursive: true, force: true });
+  });
+
+  // TC-148
+  it("passes the flag through from the command, so the two agree", () => {
+    // The behavioural half above proves the loader honours a module root; this
+    // proves the command hands it one. Without it a wiring regression would
+    // pass every other test in this file.
+    const source = readFileSync(
+      join(
+        dirname(fileURLToPath(import.meta.url)),
+        "..",
+        "src/commands/evidence/audit.ts",
+      ),
+      "utf8",
+    );
+    expect(source).toContain(
+      "catalog: loadMethodCatalog(flags.module ? [flags.module] : undefined)",
+    );
   });
 });

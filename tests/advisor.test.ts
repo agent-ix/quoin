@@ -131,6 +131,7 @@ function fixtureCatalog(): MethodCatalog {
 }
 
 describe("TC-129 the merged catalog is read from module data", () => {
+  // TC-129
   it("loads every declared method with its rules intact", () => {
     const catalog = fixtureCatalog();
     expect(catalog.methods.length).toBe(11);
@@ -164,6 +165,7 @@ describe("TC-129 the merged catalog is read from module data", () => {
 });
 
 describe("TC-130 an attack surface reaches DAST and SAST", () => {
+  // TC-130
   it("recommends the security methods rather than defaulting to Test", () => {
     const advice = advise(fixtureCatalog(), {
       id: "FR-001-AC-1",
@@ -179,6 +181,7 @@ describe("TC-130 an attack surface reaches DAST and SAST", () => {
 });
 
 describe("TC-131 temporal phrasing reaches monitors and model checking", () => {
+  // TC-131
   it("recommends the methods a single execution cannot discharge", () => {
     const advice = advise(fixtureCatalog(), {
       id: "NFR-006-AC-1",
@@ -192,6 +195,7 @@ describe("TC-131 temporal phrasing reaches monitors and model checking", () => {
 });
 
 describe("TC-132 a reliability NFR reaches fault injection", () => {
+  // TC-132
   it("recommends inducing the failure the requirement claims to tolerate", () => {
     const advice = advise(fixtureCatalog(), {
       id: "NFR-009-AC-1",
@@ -205,6 +209,7 @@ describe("TC-132 a reliability NFR reaches fault injection", () => {
 });
 
 describe("TC-133 a property shape reaches the property methods", () => {
+  // TC-133
   it("routes a round-trip criterion to property-based and metamorphic testing", () => {
     const advice = advise(fixtureCatalog(), {
       id: "FR-005-AC-1",
@@ -231,6 +236,7 @@ describe("TC-133 a property shape reaches the property methods", () => {
 });
 
 describe("TC-134 a mismatch with the authored cell is flagged, advisory only", () => {
+  // TC-134
   it("flags an authored method none of the recommendations cover", () => {
     const advice = advise(fixtureCatalog(), {
       id: "NFR-009-AC-1",
@@ -256,6 +262,7 @@ describe("TC-134 a mismatch with the authored cell is flagged, advisory only", (
 });
 
 describe("TC-135 silence is reported as silence, not as a recommendation", () => {
+  // TC-135
   it("is inconclusive when no rule matched, and flags no mismatch", () => {
     const advice = advise(fixtureCatalog(), {
       id: "FR-001-AC-9",
@@ -271,6 +278,7 @@ describe("TC-135 silence is reported as silence, not as a recommendation", () =>
 });
 
 describe("TC-136 an unobservable axis is skipped, not failed", () => {
+  // TC-136
   it("does not reject a method whose rule names an axis the advisor cannot see", () => {
     // The engine leaves the axis set open (quire-rs FR-054-CON-2), so a module
     // may declare rules this advisor has no facts for. That is a gap in what can
@@ -323,6 +331,7 @@ describe("TC-133 an unreadable module manifest is reported, not thrown (FR-031-A
   // A root with no `manifest.yaml` at all never reaches the read:
   // `locateModuleRoot` already returns `undefined` for it, which is why the
   // gap was only reachable through a manifest that exists and does not parse.
+  // TC-133
   it("skips a root with no manifest without reporting it as unreadable", () => {
     const root = mkdtempSync(join(tmpdir(), "quoin-nomanifest-"));
     const catalog = loadMethodCatalog([root]);
