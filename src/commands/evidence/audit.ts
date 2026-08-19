@@ -35,6 +35,8 @@ Checks:
   method-conformance   evidence of a kind the declared method does not produce
   unknown-method       the declared method is in no catalog
   insufficient-multiplicity   criticality demands two independent suites
+  insufficient-mutation-score criticality demands a mutation score it misses
+  unmeasured-mutation-score   a demanded mutation score, with none recorded
 
 --ratchet compares against spec/evidence/baseline.json and fails only on NEW
 violations. A gate that fails on the whole existing backlog gets disabled within
@@ -63,6 +65,13 @@ a week. Write that baseline with: quoin evidence baseline`;
         "Criticality values demanding two independent suites. Repeatable. " +
         "Unset by default: no obligation source in the ecosystem declares a " +
         "criticality column, so a built-in default could never fire.",
+      multiple: true,
+    }),
+    "mutation-floor": Flags.string({
+      description:
+        "Minimum mutation score per criticality, as <criticality>=<0..1>. " +
+        "Repeatable. Unset by default, for the same reason as " +
+        "--multiplicity-requires: a built-in floor is a rule nobody chose.",
       multiple: true,
     }),
   };
@@ -96,6 +105,9 @@ a week. Write that baseline with: quoin evidence baseline`;
       // that could never fire, and would have fired on *everything* the moment
       // a column appeared. `--multiplicity-requires` makes it a choice.
       multiplicityRequires: flags["multiplicity-requires"],
+      mutationFloor: parseMutationFloor(flags["mutation-floor"], (message) =>
+        this.error(message, { exit: 2 }),
+      ),
     });
 
     const baseline = flags.ratchet ? readBaseline(flags.repo) : null;
@@ -171,4 +183,40 @@ function headCommit(repo: string): string | undefined {
   } catch {
     return undefined;
   }
+}
+
+/**
+ * `--mutation-floor P0=0.8` → `{ P0: 0.8 }`.
+ *
+ * Rejected rather than ignored: a malformed entry means the operator asked for
+ * a threshold and would otherwise get a clean report saying nothing was below
+ * it. A floor that silently does not apply is worse than no floor, because it
+ * reads as a passing gate.
+ */
+export function parseMutationFloor(
+  entries: string[] | undefined,
+  fail: (message: string) => never,
+): Record<string, number> | undefined {
+  if (!entries || entries.length === 0) return undefined;
+  const out: Record<string, number> = {};
+  for (const entry of entries) {
+    const [criticality, raw] = entry.split("=");
+    const score = Number(raw);
+    if (!criticality || raw === undefined || Number.isNaN(score)) {
+      fail(
+        `--mutation-floor expects <criticality>=<score>, got '${entry}'. ` +
+          `Example: --mutation-floor P0=0.8`,
+      );
+    }
+    if (score < 0 || score > 1) {
+      // A ratio, not a percentage. `--mutation-floor P0=80` would otherwise be
+      // a floor nothing can ever reach, reported as every P0 failing.
+      fail(
+        `--mutation-floor score must be a ratio in [0, 1], got '${raw}'. ` +
+          `80% is 0.8, not 80.`,
+      );
+    }
+    out[criticality] = score;
+  }
+  return out;
 }

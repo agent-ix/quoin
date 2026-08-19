@@ -3,6 +3,8 @@ id: FR-037
 title: "Declared-vocabulary completeness and its verdict policy"
 type: FR
 relationships:
+  - target: "ix://agent-ix/quoin/StR-004"
+    type: "traces_to"
   - target: "ix://agent-ix/quire-rs/FR-059"
     type: "requires"
   - target: "ix://agent-ix/quoin/FR-031"

@@ -4,6 +4,8 @@ title: "Bundle-scale commands stay within a stated time budget"
 type: NFR
 quality_attribute: performance_efficiency
 relationships:
+  - target: "ix://agent-ix/quoin/StR-004"
+    type: "traces_to"
   - target: "ix://agent-ix/quoin/FR-037"
     type: "constrains"
   - target: "ix://agent-ix/quoin/FR-032"

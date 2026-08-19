@@ -3,6 +3,8 @@ id: FR-034
 title: "Finding-shaped evidence: a clean scan and an unrun scan must not look alike"
 type: FR
 relationships:
+  - target: "ix://agent-ix/quoin/StR-004"
+    type: "traces_to"
   - target: "ix://agent-ix/quoin/FR-030"
     type: "extends"
   - target: "ix://agent-ix/quoin/FR-033"

@@ -19,6 +19,23 @@ export function writeRepoFile(ctx, repoRelTarget, content) {
   return target;
 }
 
+/**
+ * Write a file into the scenario's INSTALLED modules directory.
+ *
+ * A module written into the repo can only be reached with `--module <dir>`, and
+ * `--module` replaces the module set rather than adding to it — so a repo-local
+ * module declaring only a `verification_catalog` takes the traceability model
+ * down with it and `quire coverage` fails with "no module in scope declares a
+ * `traceability:` model". Writing here merges it with the default set, which is
+ * how a real installed module behaves.
+ */
+export function writeModuleFile(ctx, moduleRelTarget, content) {
+  const target = join(ctx.modulesDir, moduleRelTarget);
+  mkdirSync(dirname(target), { recursive: true });
+  writeFileSync(target, content);
+  return target;
+}
+
 /** Copy a module skeleton (from the snapshotted modules) into the scenario repo. */
 export function copySkeleton(ctx, moduleName, skeletonFile, repoRelTarget) {
   const src = join(ctx.modulesDir, moduleName, "skeletons", skeletonFile);

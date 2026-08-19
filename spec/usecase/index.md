@@ -19,3 +19,4 @@ description: "Index of artifacts in this directory."
 - [US-009: Install quoin in the coding agent of my choice](./US-009-install-in-any-coding-agent.md)
 - [US-010: Author specs for my own organization](./US-010-author-specs-for-my-own-organization.md)
 - [US-011: Generate property tests from acceptance criteria](./US-011-generate-property-tests-from-criteria.md)
+- [US-012: Generate fuzz harnesses for the input surfaces my spec names](./US-012-generate-fuzz-harnesses.md)

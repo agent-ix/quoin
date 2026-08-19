@@ -8,9 +8,16 @@
 // It then builds a shim PATH so the spawned agent's bare `quoin`/`quire`
 // commands resolve to exactly those, regardless of global install state.
 
-import { existsSync, mkdirSync, rmSync, symlinkSync, chmodSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  rmSync,
+  statSync,
+  symlinkSync,
+  chmodSync,
+} from "node:fs";
 import { spawnSync } from "node:child_process";
-import { dirname, join, resolve } from "node:path";
+import { delimiter, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { pathToFileURL } from "node:url";
 
@@ -56,13 +63,44 @@ export function findQuire() {
       encoding: "utf8",
     });
     if (help.status === 0 && /--scope/.test(help.stdout ?? "")) {
-      _quireCache = candidate;
-      return candidate;
+      // ALWAYS an absolute path, never the bare name. `shimDir()` symlinks this
+      // value, and `symlinkSync("quire", "<shim>/quire")` writes a link that
+      // points at ITSELF — resolved relative to the link's own directory.
+      //
+      // Bash's PATH search skips a dangling link and finds the real binary, so
+      // the agent's own `quire ...` calls worked and this looked fine. Node's
+      // `execFileSync("quire", ...)` does not: it fails ELOOP. Every quoin
+      // command that shells out to quire therefore reported
+      // "could not determine the quire CLI version" inside the sandbox, and
+      // which scenarios failed depended on whether the agent happened to take a
+      // path through one (TC-EV-056, TC-EV-057).
+      _quireCache = candidate === "quire" ? onPath("quire") : candidate;
+      return _quireCache;
     }
   }
   throw new Error(
     "no `quire` supporting `validate --scope` found (need >= 0.2.4). " +
       "Build quire-cli (`cargo build` in ../quire-cli) or install a newer quire.",
+  );
+}
+
+/**
+ * Absolute path to `name` as the OS PATH would resolve it, skipping this
+ * harness's own shim dir so a previous run's link cannot resolve to itself.
+ */
+function onPath(name) {
+  const shim = join(evalsRoot(), ".bin");
+  for (const dir of (process.env.PATH ?? "").split(delimiter)) {
+    if (!dir || resolve(dir) === resolve(shim)) continue;
+    const candidate = join(dir, name);
+    try {
+      if (statSync(candidate).isFile()) return candidate;
+    } catch {
+      // Not here, or not readable. Next.
+    }
+  }
+  throw new Error(
+    `\`${name}\` is on PATH but could not be resolved to a file.`,
   );
 }
 

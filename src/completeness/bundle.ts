@@ -48,6 +48,46 @@ export function readBundleClaims(
   declaration: VocabularyDeclaration,
 ): BundleRead {
   const documents: DocumentClaims[] = [];
+  const { documents: read, unreadable } = readBundleFrontmatter(bundleRoot);
+
+  for (const doc of read) {
+    const { path: rel, frontmatter } = doc;
+    const claims = stringsAt(frontmatter[declaration.field]);
+    const excuses = declaration.justifiedAbsenceField
+      ? stringsAt(frontmatter[declaration.justifiedAbsenceField])
+      : [];
+    if (claims.length === 0 && excuses.length === 0) continue;
+
+    documents.push({ path: rel, claims, excuses, body: doc.body });
+  }
+
+  return { documents, unreadable };
+}
+
+/** One document's frontmatter and body, as read from the bundle. */
+export interface BundleDocument {
+  /** Path, relative to the bundle root. */
+  path: string;
+  frontmatter: Record<string, unknown>;
+  body: string;
+}
+
+export interface FrontmatterRead {
+  documents: BundleDocument[];
+  unreadable: Array<{ path: string; reason: string }>;
+}
+
+/**
+ * Every document under `bundleRoot` that carries parseable frontmatter.
+ *
+ * One pass and one reader, shared by the completeness sweep (FR-037) and the
+ * assurance view (FR-040). Two readers over the same files would drift, and the
+ * second would be written by whoever needed a field the first did not expose —
+ * which is how a repository ends up with two answers to "what does this
+ * document declare".
+ */
+export function readBundleFrontmatter(bundleRoot: string): FrontmatterRead {
+  const documents: BundleDocument[] = [];
   const unreadable: Array<{ path: string; reason: string }> = [];
 
   for (const path of markdownUnder(bundleRoot)) {
@@ -60,7 +100,7 @@ export function readBundleClaims(
       continue;
     }
     const match = FRONTMATTER.exec(raw);
-    // No frontmatter is not an error here: an index or a README claims nothing.
+    // No frontmatter is not an error: an index or a README declares nothing.
     if (!match) continue;
 
     let frontmatter: Record<string, unknown>;
@@ -68,20 +108,13 @@ export function readBundleClaims(
       frontmatter = (parseYaml(match[1]) ?? {}) as Record<string, unknown>;
     } catch (cause) {
       // Reported, not skipped silently: a document whose frontmatter does not
-      // parse may be the one carrying the exclusion, and dropping it would turn
-      // a broken excuse into a clean bundle.
+      // parse may be the one carrying the exclusion or the edge, and dropping it
+      // would turn a broken declaration into a clean bundle.
       unreadable.push({ path: rel, reason: reasonOf(cause) });
       continue;
     }
     if (!frontmatter || typeof frontmatter !== "object") continue;
-
-    const claims = stringsAt(frontmatter[declaration.field]);
-    const excuses = declaration.justifiedAbsenceField
-      ? stringsAt(frontmatter[declaration.justifiedAbsenceField])
-      : [];
-    if (claims.length === 0 && excuses.length === 0) continue;
-
-    documents.push({ path: rel, claims, excuses, body: match[2] });
+    documents.push({ path: rel, frontmatter, body: match[2] });
   }
 
   return { documents, unreadable };
