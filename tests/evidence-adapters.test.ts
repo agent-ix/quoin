@@ -162,6 +162,7 @@ describe("the adapter registry", () => {
       "entries",
       "junit",
       "cargo-mutants",
+      "sbom",
       "sarif",
       "audit-script",
       "cargo-audit",
