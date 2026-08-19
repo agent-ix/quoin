@@ -77,6 +77,144 @@ forbidden user-story sections, and normative wording. Its manifest also carries
 `vacuous_predicates`, and `ambiguity_terms`. A language profile is a natural extension
 of this existing model.
 
+## Clarification: current and future rule implementation
+
+Quire is not currently “regex-only.” It has three rule mechanisms:
+
+1. **Declarative lint rules.** `table_column_values` uses exact allowed values plus
+   an optional regular expression for annotations. `section_body_pattern` uses a
+   regular expression. `forbidden_section` is structural and does not use regex.
+2. **Requirement grammar.** The EARS and acceptance-criteria grammars are Rust code.
+   They use normalization, token and sentence handling, regular expressions,
+   compiled vocabularies, and typed classifiers. Module data extends several of
+   their vocabularies.
+3. **Corpus checks.** Traceability, glossary, coverage, resolution, and bundle
+   validation are dedicated Rust algorithms over typed corpus models.
+
+`iso-24495` therefore requires a new **rule family**, not a replacement engine. A
+language rule such as sentence length cannot be expressed well as a section regex:
+it needs sentence boundaries, reader-visible Markdown blocks, exclusions, counts,
+and source locations. The future implementation should add typed prose evaluators
+under the existing lint orchestration, compile their profile once in the registry,
+and retain the current advisory/severity behavior.
+
+The boundary should remain explicit:
+
+```text
+manifest language profile → typed Rust evaluator → LintFinding
+```
+
+Free-form regex remains useful for local conventions. It should not become the
+extension mechanism for parser-dependent language analysis.
+
+## Clarification: finding and report shape
+
+The external result shape is not broadly better than Quoin's. It is better suited to
+one specific use: a deterministic text audit over a file or corpus. Its useful
+envelope contains per-file findings, rule totals, skipped entries, and a configuration
+hash. Its individual violation is intentionally small: `{rule, line, detail}`.
+
+Quoin already has a richer evidence shape. Its scanner `Finding` carries a rule id,
+tool severity, message, path, line, and trace ids. Its `FindingRecord` adds schema
+version, suite, commit, tool, timestamp, ruleset, evaluated-rule count, and the
+finding list. That is stronger for historical verification and evidence provenance.
+
+The gap is narrower and lives in live Quire lint:
+
+- `quire-rs::LintFinding` currently carries only `rule`, `severity`, and `message`;
+- it has no line, column, source span, section, or structured offending value;
+- `quire lint` can therefore report a convention problem, but a prose finding cannot
+  yet take the author directly to the sentence that caused it;
+- there is no standard language-audit envelope carrying files scanned, skipped files,
+  per-rule totals, profile version, or configuration hash.
+
+The proposed language finding should add those text-audit fields without reusing
+Quoin's historical evidence record:
+
+```text
+LintFinding {
+  rule, severity,
+  path?, line, column?, span?, section?,
+  message, offending_text?, hint?
+}
+```
+
+The batch report can then carry `profile`, `profile_version`, `config_hash`, file
+counts, skipped paths, and totals. If Quoin archives the audit as evidence, an adapter
+can map it to `Finding`/`FindingRecord`; the live lint contract should not pretend
+that an authoring warning is already a verification run.
+
+This also preserves an important external distinction: “zero findings after reading
+the selected corpus” differs from “nothing was read.” Quire's corpus diagnostics
+already model unreadable documents and skipped membership in other paths. A language
+audit should expose the same distinction rather than returning an unexplained clean
+result.
+
+## Test-quality assessment
+
+The external test set is stronger in one narrow dimension: it tests its reader-prose
+parser and heuristics as a product. It includes CommonMark-shaped reference fixtures,
+known-good documents, hostile Markdown shapes, determinism checks, skipped-entry
+behavior, and configuration-hash checks. The upstream README reports 302 recorded
+reference documents and 100% line/function coverage, while explicitly making no
+branch-coverage claim.
+
+It is not stronger overall than the current Quire/Quoin testing direction. Quire-rs
+already combines unit tests, parser parity tests, real-document tests, property tests,
+fuzz targets, corpus dogfood, coverage rollups, and dedicated quality-lint tests.
+Quoin already tests evidence adapters, finding-shaped scans, property behavior,
+combinatorial coverage, real agent-evaluation reports, and CLI integration. Those
+tests cover a wider semantic and cross-repository surface than the external project.
+
+The important missing comparison is not raw test count. It is whether the tests kill
+the failures that matter at each boundary. The ongoing test-quality campaign is a
+larger product and operating capability: it introduces test planning, standards,
+thresholds, tracking, mutation analysis, and related quality controls that Quoin and
+Quire can apply to other repositories. Quoin and Quire themselves are first-class
+consumers of that capability. Their self-dogfooding and battletesting therefore serve
+two purposes: improving those repositories' own assurance, and exposing weaknesses in
+the quality tooling and standards before applying them elsewhere.
+
+Mutation testing is one important part of that campaign: line coverage can prove that
+a branch ran, while mutation testing asks whether the test would notice that the
+branch became wrong. The same distinction should apply to the campaign's generated
+plans, thresholds, evidence records, and cross-repository reports.
+
+For the future language pack, the test plan should include:
+
+- **Parser conformance:** port representative CommonMark container cases, including
+  nested lists, quotations, continuation lines, tables, alerts, front matter, and
+  fenced code. Assert the reader-prose blocks, not only final finding counts.
+- **Rule contracts:** for every rule, test positive, negative, boundary, malformed,
+  and known-good cases. Assert rule id, location, message data, severity, and absence
+  of unrelated findings.
+- **Mutation checks:** mutate thresholds, comparison direction, scope filters,
+  exclusion predicates, rule precedence, and location calculations. Require the
+  relevant tests to kill each meaningful mutant.
+- **Non-interference:** prove that adding language rules does not change extraction,
+  structural validation, EARS findings, writeback, or traceability results.
+- **Profile semantics:** test module loading, first-wins merge behavior, built-in plus
+  project vocabulary, unknown keys, malformed profiles, severity overrides, and
+  archetype/section scope.
+- **Corpus accounting:** test clean files, finding-bearing files, unreadable files,
+  symlinks, unsupported files, empty corpora, and a report that distinguishes skipped
+  input from zero findings.
+- **Real-repository dogfood:** run against quire-rs, quire-cli, Quoin, the ISO modules,
+  and representative application repositories. Keep a finding baseline, sample each
+  rule, and record rule error versus real corpus debt.
+- **Surface parity:** compare Rust library, CLI, Python, and WASM outputs wherever the
+  language audit is exposed. The same document and profile must produce the same
+  ordered findings and configuration hash.
+
+The campaign should be treated as a platform multiplier for the language work, not
+merely as an internal test-suite improvement. It supplies the planning, standards,
+mutation, property, evidence, threshold, and tracking machinery needed to make this
+rule pack—and other repository rule packs—trustworthy. The pending full dogfood pass
+is also material: until the campaign is exercised against quire-rs, Quoin, and the
+other first-party repositories, we will not know which parts of the quality workflow
+fail in real use. Those failures are expected battletest input and should feed back
+into Quoin/Quire rather than being treated only as defects in the target repositories.
+
 ## Adoption matrix
 
 | Feature                                           | Decision                                                         | Owner                   | Priority |

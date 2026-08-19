@@ -169,7 +169,12 @@
           "additionalProperties": { "type": "string" },
           "description": "Declared parameters. An absent key means the cell was empty — never defaulted."
         },
-        "criticality": { "type": ["string", "null"] }
+        "criticality": { "type": ["string", "null"] },
+        "target_ids": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "description": "Test-case ids the method cell names, e.g. `Test (TC-707)`. Additive in v1: absent on a payload from an engine before quire-rs v0.35.0, and omitted where the cell names none. A consumer binding evidence keyed on a TEST CASE rather than on the criterion needs this join, which the engine parsed and discarded (agent-ix/quire-rs#180)."
+        }
       }
     },
     "CoverageTotals": {

@@ -8,6 +8,10 @@ description: "Chronological log of structural changes to this bundle."
 
 ## History
 
+* **2026-08-19** — the quire contract refreshes to **v0.36.0**. The vendored `coverage-v1.schema.json` is `additionalProperties: false` on `Obligation`, so once the engine began emitting `target_ids` (quire-rs CR-078) a stale copy would have made quoin **reject every coverage payload** — checked before the CLI shipped rather than after. Refreshed through `scripts/refresh-quire-schemas.mjs`, which re-records the provenance hashes TC-110 pins.
+
+  `minimumCli` stays at `0.21.0`. It is a CONTRACT floor, not a capability floor, and `target_ids` is optional on the payload — an older CLI emits none and still validates.
+
 * **2026-08-19** — **CR-023**: a run binds through an obligation's declared **test cases**, not only its own id (FR-030-AC-15, TC-245). Closes agent-ix/quoin#144.
 
   A tool reports the id it knows. A unit test carries the criterion's own id because the tag is written in the test; an **agent-eval report — and any tool keyed on the Test Matrix — carries the test-case id**. Both are stated by the same criteria row, `Eval (TC-EV-057)`, and quire-rs FR-053-AC-11 (v0.35.0) now carries that join on the obligation, so the store resolves it rather than re-parsing the criteria table — the duplication FR-050 exists to prevent.
