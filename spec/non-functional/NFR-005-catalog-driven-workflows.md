@@ -32,7 +32,7 @@ catalog keeps the vocabulary singular and maintainable.
 
 | Metric                                                              | Target | Threshold | Method |
 | ------------------------------------------------------------------- | ------ | --------- | ------ |
-| Workflow-defined doc/object types that duplicate catalog vocabulary | 0      | 0         | Review |
+| Workflow-defined doc/object types that duplicate catalog vocabulary | 0      | 0         | Inspection |
 
 ## Verification
 
