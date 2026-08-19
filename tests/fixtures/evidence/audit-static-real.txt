@@ -1,0 +1,7 @@
+check_dep_pins: OK
+check_hashmap_audit: OK
+check_no_net_deps: OK
+check_no_schemars: OK
+check_no_shared_mutable: OK — sanctioned interior mutability:
+check_no_shellout: OK
+verify_cookiecutter_inheritance: OK

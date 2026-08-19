@@ -1,6 +1,7 @@
 import type { RunEntry } from "../types.js";
 import { cargoMutantsAdapter } from "./cargo-mutants.js";
 import { junitAdapter } from "./junit.js";
+import { parseAuditScript } from "./audit-script.js";
 import { parseCargoAudit, parseSarif, type FindingResult } from "./sarif.js";
 import {
   AdapterError,
@@ -78,6 +79,19 @@ export const FINDING_ADAPTERS: readonly FindingAdapter[] = [
       "SARIF 2.1.0 — semgrep --sarif, CodeQL, ESLint, ZAP via converter.",
     tools: ["sarif", "semgrep", "codeql"],
     parse: parseSarif,
+  },
+  {
+    name: "audit-script",
+    summary:
+      "Architecture-conformance audit scripts: '<name>: OK' / '<name>: FAIL — … (AC-ID)'.",
+    tools: [
+      "audit-script",
+      "make ci",
+      "audit-static",
+      "import-linter",
+      "dependency-cruiser",
+    ],
+    parse: parseAuditScript,
   },
   {
     name: "cargo-audit",
