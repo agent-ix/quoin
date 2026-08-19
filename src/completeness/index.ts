@@ -22,7 +22,13 @@ export {
   type VocabularyDeclaration,
   type VocabularyDeclarations,
 } from "./declarations.js";
-export { readBundleClaims, type BundleRead } from "./bundle.js";
+export {
+  readBundleClaims,
+  readBundleFrontmatter,
+  type BundleDocument,
+  type BundleRead,
+  type FrontmatterRead,
+} from "./bundle.js";
 export {
   assessBundle,
   type AssessOptions,

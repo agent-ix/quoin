@@ -45,3 +45,6 @@ description: "Index of functional requirements (FR) for quoin."
 * [FR-035: t-way coverage over a declared configuration space](./FR-035-combinatorial-coverage.md)
 * [FR-036: Architecture conformance as a declared verification method](./FR-036-architecture-conformance.md)
 * [FR-037: Declared-vocabulary completeness and its verdict policy](./FR-037-declared-vocabulary-completeness.md)
+- [FR-038: Generate fuzz harnesses from Fuzz-kind obligations](./FR-038-generate-fuzz-harnesses.md)
+* [FR-039: Mutation score as a declared verification threshold](./FR-039-mutation-score-threshold.md)
+* [FR-040: Assurance case as a read-only view over the store](./FR-040-assurance-case-view.md)

@@ -3,6 +3,8 @@ id: FR-035
 title: "t-way coverage over a declared configuration space"
 type: FR
 relationships:
+  - target: "ix://agent-ix/quoin/StR-004"
+    type: "traces_to"
   - target: "ix://agent-ix/quoin/FR-032"
     type: "extends"
   - target: "ix://agent-ix/quire-rs/FR-061"

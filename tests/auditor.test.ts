@@ -498,3 +498,182 @@ describe("TC-147 every finding kind can be baselined (FR-032-AC-11)", () => {
     }
   });
 });
+
+describe("TC-219 mutation score as the acceptance-criteria oracle", () => {
+  const scored = (score: number, over: Partial<RunRecord> = {}) =>
+    run({
+      tool: "cargo-mutants",
+      entries: [{ symbol: "tests::tc001", outcome: "pass", score }],
+      ...over,
+    });
+
+  // Trace: FR-039-AC-1
+  it("says nothing until a floor is declared", () => {
+    // The CR-008 lesson, applied before it could bite: a built-in floor is a
+    // rule nobody chose, firing on everything the moment a criticality column
+    // appears. Unset means silent.
+    const report = audit(
+      input({
+        obligations: [obligation({ criticality: "P0" })],
+        runs: [scored(0.1)],
+      }),
+    );
+    expect(
+      report.findings.some((f) => f.kind.startsWith("insufficient-mutation")),
+    ).toBe(false);
+    expect(report.healthy).toEqual(["FR-001-AC-1"]);
+  });
+
+  // Trace: FR-039-AC-2
+  it("flags a bound score below the declared floor", () => {
+    const report = audit(
+      input({
+        obligations: [obligation({ criticality: "P0" })],
+        runs: [scored(0.55)],
+        mutationFloor: { P0: 0.8 },
+      }),
+    );
+    const finding = report.findings.find(
+      (f) => f.kind === "insufficient-mutation-score",
+    );
+    expect(finding?.severity).toBe("medium");
+    expect(finding?.summary).toContain("0.55");
+  });
+
+  // Trace: FR-039-AC-3
+  it("accepts a score at the floor", () => {
+    // At, not above: a floor of 0.8 that rejects exactly 0.8 is a floor of
+    // 0.8-plus-epsilon, and nobody can tell which from the flag.
+    const report = audit(
+      input({
+        obligations: [obligation({ criticality: "P0" })],
+        runs: [scored(0.8)],
+        mutationFloor: { P0: 0.8 },
+      }),
+    );
+    expect(report.healthy).toEqual(["FR-001-AC-1"]);
+  });
+
+  // Trace: FR-039-AC-4
+  it("judges on the WORST bound symbol, not the mean", () => {
+    // Averaging lets a well-tested symbol carry one whose mutants all survive,
+    // which is precisely the case the threshold exists to find.
+    const report = audit(
+      input({
+        obligations: [obligation({ criticality: "P0" })],
+        runs: [
+          run({
+            tool: "cargo-mutants",
+            entries: [
+              { symbol: "tests::tc001", outcome: "pass", score: 1 },
+              { symbol: "tests::tc002", outcome: "pass", score: 0.2 },
+            ],
+          }),
+        ],
+        mutationFloor: { P0: 0.8 },
+      }),
+    );
+    expect(
+      report.findings.find((f) => f.kind === "insufficient-mutation-score")
+        ?.summary,
+    ).toContain("0.2");
+  });
+
+  // Trace: FR-039-AC-5
+  it("reports a demanded floor that nothing measured", () => {
+    // Distinct from `undischarged`: this obligation is bound, its run passed,
+    // and nothing says the tests detect anything. A threshold that cannot be
+    // evaluated is not a threshold met.
+    const report = audit(
+      input({
+        obligations: [obligation({ criticality: "P0" })],
+        mutationFloor: { P0: 0.8 },
+      }),
+    );
+    const finding = report.findings.find(
+      (f) => f.kind === "unmeasured-mutation-score",
+    );
+    expect(finding?.summary).toContain("no run bound to it records one");
+  });
+
+  // Trace: FR-039-AC-6
+  it("does not read a skipped symbol's absent score as zero", () => {
+    // A skipped symbol carries no measurement. Treating it as 0 would fail the
+    // obligation for a test nobody ran rather than one that failed to
+    // discriminate — a different problem with a different remedy.
+    const report = audit(
+      input({
+        obligations: [obligation({ criticality: "P0" })],
+        runs: [
+          run({
+            tool: "cargo-mutants",
+            entries: [
+              { symbol: "tests::tc001", outcome: "pass", score: 0.9 },
+              { symbol: "tests::tc002", outcome: "skip" },
+            ],
+          }),
+        ],
+        mutationFloor: { P0: 0.8 },
+      }),
+    );
+    expect(report.healthy).toEqual(["FR-001-AC-1"]);
+  });
+
+  // Trace: FR-039-AC-7
+  it("applies only to the criticality the floor names", () => {
+    const report = audit(
+      input({
+        obligations: [obligation({ criticality: "P2" })],
+        runs: [scored(0.1)],
+        mutationFloor: { P0: 0.8 },
+      }),
+    );
+    expect(report.healthy).toEqual(["FR-001-AC-1"]);
+  });
+});
+
+describe("TC-220 --mutation-floor is parsed, and a bad one is refused", () => {
+  // Trace: FR-039-AC-8
+  it("reads <criticality>=<ratio> pairs", async () => {
+    const { parseMutationFloor } =
+      await import("../src/commands/evidence/audit.js");
+    const fail = (m: string): never => {
+      throw new Error(m);
+    };
+    expect(parseMutationFloor(["P0=0.8", "P1=0.6"], fail)).toEqual({
+      P0: 0.8,
+      P1: 0.6,
+    });
+    expect(parseMutationFloor(undefined, fail)).toBeUndefined();
+    expect(parseMutationFloor([], fail)).toBeUndefined();
+  });
+
+  // Trace: FR-039-AC-9
+  it("refuses a percentage, which would fail every obligation forever", async () => {
+    // `--mutation-floor P0=80` is the natural thing to type and is a floor
+    // nothing can reach. Silently accepting it reports every P0 as failing and
+    // reads like a real finding.
+    const { parseMutationFloor } =
+      await import("../src/commands/evidence/audit.js");
+    const fail = (m: string): never => {
+      throw new Error(m);
+    };
+    expect(() => parseMutationFloor(["P0=80"], fail)).toThrow(
+      /ratio in \[0, 1\]/,
+    );
+  });
+
+  // Trace: FR-039-AC-9
+  it("refuses a malformed entry rather than ignoring it", async () => {
+    // Ignoring means the operator asked for a threshold and gets a clean report
+    // saying nothing was below it. A floor that silently does not apply reads
+    // as a passing gate.
+    const { parseMutationFloor } =
+      await import("../src/commands/evidence/audit.js");
+    const fail = (m: string): never => {
+      throw new Error(m);
+    };
+    expect(() => parseMutationFloor(["P0"], fail)).toThrow(/expects/);
+    expect(() => parseMutationFloor(["P0=high"], fail)).toThrow(/expects/);
+  });
+});

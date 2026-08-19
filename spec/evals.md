@@ -16,6 +16,8 @@ relationships:
   - target: "ix://agent-ix/quoin/US-008"
     type: "covers"
   - target: "ix://agent-ix/quoin/US-011"
+    type: "references"
+  - target: "ix://agent-ix/quoin/US-012"
     type: "covers"
 ---
 
@@ -90,6 +92,7 @@ Per-FR coverage lives in TM-001 (`spec/matrix.md`).
 | US-005 | US-005-AC-1 | TC-EV-005, TC-EV-013, TC-EV-026, TC-EV-030, TC-EV-031, TC-EV-032, TC-EV-033, TC-EV-052 | ✅ Covered |
 | US-008 | US-008-AC-1 | TC-EV-027, TC-EV-028, TC-EV-029 | ✅ Covered |
 | US-011 | US-011-AC-1 | TC-EV-050, TC-EV-051, TC-EV-052, TC-EV-053 | ✅ Covered |
+| US-012 | US-012-AC-1 | TC-EV-054, TC-EV-055, TC-EV-056, TC-EV-057 | ✅ Covered |
 
 ## Test Case Summary
 
@@ -140,6 +143,10 @@ than a second numbering to keep in sync.
 | TC-EV-051 | Queue a candidate criterion, then accept it | Eval | P1 | US-011 | ✅ |
 | TC-EV-052 | Reconcile generated tests through gap-analysis | Eval | P1 | US-011 | ✅ |
 | TC-EV-053 | Refuse to ground, and report without a verdict | Eval | P1 | US-011 | ✅ |
+| TC-EV-054 | Generate fuzz targets for Fuzz-kind obligations | Eval | P1 | US-012 | ✅ |
+| TC-EV-055 | Refuse where tooling is absent or the entry point cannot be grounded | Eval | P1 | US-012 | ✅ |
+| TC-EV-056 | Re-run idempotently, and choose the harness from the manifest | Eval | P1 | US-012 | ✅ |
+| TC-EV-057 | Report generated targets as undischarged, without a verdict | Eval | P1 | US-012 | ✅ |
 
 ## Scenarios
 
@@ -185,6 +192,10 @@ than a second numbering to keep in sync.
 | TC-EV-051 | US-011         | Record a candidate criterion as a finding, not a disabled test.                  | Given a criterion classified `extraction: candidate`, the agent emits a test that **runs** and records the criterion as a finding in a `SpecReview` at `reviews/` with `analysis: spec-correctness`, which passes `quire validate`. No test in the tree carries a skip or ignore marker, and no ad-hoc report file is written. (`artifacts` + `validate` + `fileContains` + `absentFiles`)                                    | success, latency, tool calls, tokens, validation attempts |
 | TC-EV-052 | US-011, US-005 | Reconcile generated tests through gap-analysis.                                  | After spec-correctness emits tests, the agent runs gap-analysis over the same repo and its matrix verification finds every emitted `row_id` in the tag index — no unbacked row for a generated `Property` test, and no `✅` row backed by a skipped queued test. (`agentRan` + `artifacts` SpecReview + `fileContains` row ids)                                                                                                               | success, latency, tool calls, tokens, validation attempts |
 | TC-EV-053 | US-011         | Refuse to ground, and report without a verdict.                                  | Given an FR whose criteria include an adjectival oracle ("actionable") and a symbol absent from the source, and a repo whose manifest names no generator library, the agent writes no test for the ungroundable criteria, records each refusal reason and the dependency remedy as findings in the `SpecReview` under `reviews/`, and installs nothing. It invents no output format to record them in (FR-028-CON-1). The report contains no threshold, verdict, grade, or rewording suggestion. (`artifacts` + `validate` + `fileContains` reasons + `absentFiles`) | success, latency, tool calls, tokens                      |
+| TC-EV-054 | US-012         | Generate fuzz targets for the input surfaces the spec names.                     | Given a repo with a fuzz harness and obligations whose method carries `evidence_kind: Fuzz`, the agent selects them **from the catalog** rather than by method name, emits one target per obligation calling an entry point that exists in `src/`, and each target carries both trace carriers plus a `spec-fuzz:` provenance line naming harness, entry and origin. (`agentRan` + `fileContains` ids + `validate`) | success, latency, tool calls, tokens |
+| TC-EV-055 | US-012         | Refuse where the repo cannot fuzz or the surface cannot be found.                 | Given a repo whose manifest declares no fuzz tooling, the agent writes **no** target file, adds no dependency and creates no fuzz workspace, recording one finding per obligation. Given a second repo that can fuzz but whose requirement names a surface with no matching function in `src/`, it writes no file for that obligation and records what it looked for. (`artifacts` + `absentFiles` + `fileContains` reasons) | success, latency, tool calls, tokens |
+| TC-EV-056 | US-012         | Re-run without rewriting, and pick the harness from the manifest.                | Re-running with unchanged obligations, harness and entry points rewrites no file. In a repo whose requirement prose mentions another language, the harness chosen is the one the **manifest** names, and no framework name is written into `spec/**`. (`agentRan` + `fileUnchanged` + `absentFiles`) | success, latency, tool calls, tokens |
+| TC-EV-057 | US-012         | Report the targets as undischarged, without a verdict.                           | The report states plainly that generated targets discharge nothing until a run is recorded, and `quoin evidence audit` over the repo reports the obligations as undischarged rather than covered. The report contains no threshold, grade, pass/fail or rewording suggestion. (`artifacts` + `validate` + `fileContains` + `agentRan`) | success, latency, tool calls, tokens |
 
 > TC-EV-042..TC-EV-043 exercise the **project Ubiquitous-Language** layer (quire-rs
 > FR-044): a repo's own authored terms — here a `domain` object's `## Ubiquitous
@@ -207,6 +218,17 @@ Language` (the harvester also reads a dedicated `Glossary` `## Terms` table) —
 > but grounding must refuse — one with an adjectival oracle ("actionable and
 > clear"), one naming a symbol absent from `src/`. TC-EV-053's manifest also declares
 > no generator library, so the skill must write no test file and install nothing.
+
+> TC-EV-054..TC-EV-057 exercise the **`spec-fuzz`** skill
+> ([FR-038](./functional/FR-038-generate-fuzz-harnesses.md)), which consumes
+> `quoin advise --json` and emits fuzz targets. The selector is module data — an
+> obligation is in scope when its method carries `evidence_kind: Fuzz` — so
+> TC-EV-054's fixture renames one catalog method to prove the skill is not matching
+> on the name `fuzzing`. TC-EV-055 carries **two** repos, because absent tooling and
+> an ungroundable entry point are different refusals with different remedies and the
+> skill must not collapse them into "skipped". TC-EV-057 is the one that matters
+> most: a generated target that has never run discharges nothing, and the failure
+> mode is a matrix row that reads as covered because a file exists.
 
 > TC-EV-040..TC-EV-041 exercise the **EARS requirement-grammar** check (quire-rs
 > FR-042): TC-EV-040 authors EARS-clean, TC-EV-041 repairs an EARS-dirty FR. Both

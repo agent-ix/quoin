@@ -4,6 +4,8 @@ title: "Version skew across the ecosystem is reported, never absorbed"
 type: NFR
 quality_attribute: compatibility
 relationships:
+  - target: "ix://agent-ix/quoin/StR-001"
+    type: "traces_to"
   - target: "ix://agent-ix/quoin/FR-029"
     type: "constrains"
   - target: "ix://agent-ix/quoin/NFR-007"

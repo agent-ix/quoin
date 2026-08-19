@@ -36,7 +36,9 @@ export interface Finding {
     | "undischarged"
     | "method-conformance"
     | "unknown-method"
-    | "insufficient-multiplicity";
+    | "insufficient-multiplicity"
+    | "insufficient-mutation-score"
+    | "unmeasured-mutation-score";
   obligation: string;
   severity: Severity;
   summary: string;
@@ -66,6 +68,17 @@ export interface AuditInput {
   headCommit?: string;
   /** Criticality values that demand two independent methods. */
   multiplicityRequires?: string[];
+  /**
+   * Criticality value → the mutation score its obligations must reach.
+   *
+   * **Unset by default**, for the reason CR-008 removed the hardcoded
+   * `multiplicityRequires: ["P0"]`: a built-in floor is a rule that fires on
+   * everything the moment a criticality column appears, and nobody chose it.
+   *
+   * A score is a ratio in `[0, 1]` — killed mutants over viable ones, as the
+   * `cargo-mutants` adapter computes it. Unviable mutants are in neither side.
+   */
+  mutationFloor?: Record<string, number>;
 }
 
 /** The audit result, ordered so the same input yields the same report. */
@@ -306,6 +319,13 @@ export function audit(input: AuditInput): AuditReport {
       continue;
     }
 
+    // ── Mutation score ──
+    const mutation = mutationFinding(obligation, runBindings, runs, input);
+    if (mutation) {
+      findings.push(mutation);
+      continue;
+    }
+
     healthy.push(obligation.id);
   }
 
@@ -433,6 +453,83 @@ function multiplicityFinding(
       `two independent methods, but all its evidence comes from ` +
       `${[...suites].join(", ")}.`,
   };
+}
+
+/**
+ * Criticality can demand that the tests have been shown to detect faults.
+ *
+ * **Why this check exists at all.** Every other quality signal in this program
+ * is a proxy — does the criterion use a vague verb, does it name a concrete
+ * object, is it shaped as an assertion. Those are word lists over an open
+ * vocabulary, and the corpus already showed what that is worth: 1,201 distinct
+ * verb stems, of which a built-in list of 13 covered 14.5%.
+ *
+ * A mutation score is the direct answer to the question those proxies
+ * approximate — *does the test discriminate the behaviour the criterion
+ * describes?* A surviving mutant means either the tests do not check that
+ * behaviour or the criterion never demanded it, and both are findings.
+ *
+ * **quoin does not run the mutation tool** (ADR-0011: the consumer's CI does).
+ * This reads a score somebody else recorded, which is why the absence of one is
+ * reported rather than filled in.
+ */
+function mutationFinding(
+  obligation: Obligation,
+  bindings: Binding[],
+  runs: RunRecord[],
+  input: AuditInput,
+): Finding | null {
+  const floors = input.mutationFloor ?? {};
+  if (!obligation.criticality) return null;
+  const floor = floors[obligation.criticality];
+  if (floor === undefined) return null;
+
+  const scores = scoresFor(bindings, runs);
+  if (scores.length === 0) {
+    // Distinct from `undischarged`: this obligation may be thoroughly tested and
+    // still have nothing saying the tests detect anything. A demanded threshold
+    // that cannot be evaluated is not a threshold met.
+    return {
+      kind: "unmeasured-mutation-score",
+      obligation: obligation.id,
+      severity: "medium",
+      summary:
+        `${obligation.id} is criticality ${obligation.criticality}, which demands a ` +
+        `mutation score of at least ${floor}, and no run bound to it records one.`,
+    };
+  }
+
+  // The WORST score, not the mean. Averaging lets a well-tested symbol carry a
+  // symbol whose mutants all survive, which is the case the threshold exists to
+  // find.
+  const worst = Math.min(...scores);
+  if (worst >= floor) return null;
+  return {
+    kind: "insufficient-mutation-score",
+    obligation: obligation.id,
+    severity: "medium",
+    summary:
+      `${obligation.id} is criticality ${obligation.criticality}, which demands a ` +
+      `mutation score of at least ${floor}; its weakest bound symbol scores ${worst}.`,
+  };
+}
+
+/** Every numeric score the runs bound to this obligation recorded. */
+function scoresFor(bindings: Binding[], runs: RunRecord[]): number[] {
+  const bound = new Set(bindings.map((b) => b.suite));
+  const out: number[] = [];
+  for (const run of runs) {
+    if (!bound.has(run.suite)) continue;
+    for (const entry of run.entries) {
+      // `skip` carries no measurement: a skipped symbol's absent score is not a
+      // zero, and treating it as one would fail an obligation for a test nobody
+      // ran rather than for a test that failed to discriminate.
+      if (entry.score !== undefined && entry.outcome !== "skip") {
+        out.push(entry.score);
+      }
+    }
+  }
+  return out;
 }
 
 /** The baseline key for one finding. */

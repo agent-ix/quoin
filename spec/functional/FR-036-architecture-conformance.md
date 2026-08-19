@@ -3,6 +3,8 @@ id: FR-036
 title: "Architecture conformance as a declared verification method"
 type: FR
 relationships:
+  - target: "ix://agent-ix/quoin/StR-004"
+    type: "traces_to"
   - target: "ix://agent-ix/quoin/FR-033"
     type: "extends"
   - target: "ix://agent-ix/quoin/FR-034"

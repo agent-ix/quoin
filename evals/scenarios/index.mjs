@@ -25,6 +25,7 @@ import {
   makeDevModule,
   makeRepos,
   removeSeededModule,
+  writeModuleFile,
   writeRepoFile,
 } from "../lib/fixtures.mjs";
 
@@ -403,6 +404,224 @@ const correctnessPrompt =
   "criteria in spec/ with `quire properties`, ground each one against src/, and " +
   "emit what it settles. Record everything you could not ground in the review " +
   "artifact the skill specifies.";
+
+// --- Shared fixtures for the spec-fuzz scenarios (TC-EV-054..TC-EV-057) ------------
+//
+// FR-038's skill consumes `quoin advise --json` and selects obligations whose
+// verification method carries `evidence_kind: Fuzz`. The fixture is the same
+// tiny "codes" library the spec-correctness scenarios use — it already has a
+// real parser (`parseCodeList`) that throws on bad input, which is exactly the
+// shape a fuzz target needs to be groundable against.
+
+/**
+ * An FR whose criteria are about an input surface, so the advisor reaches
+ * `fuzzing` through the `parser` and `untrusted-input` characteristics.
+ *
+ * `groundable: false` swaps the surface for one no function in `src/` provides,
+ * which is the refusal TC-EV-055 exercises.
+ */
+function fuzzFr(groundable) {
+  const criteria = groundable
+    ? [
+        "| FR-002-AC-1 | The code-list parser never panics on untrusted input | Test |",
+        "| FR-002-AC-2 | Malformed input is rejected rather than crashing the parser | Test |",
+      ]
+    : [
+        "| FR-002-AC-1 | The binary frame decoder never panics on untrusted input | Test |",
+      ];
+  return [
+    "---",
+    "id: FR-002",
+    'title: "Parse untrusted code lists"',
+    "type: FR",
+    "---",
+    "",
+    "# FR-002: Parse untrusted code lists",
+    "",
+    "## Description",
+    "",
+    "The parser SHALL reject malformed input rather than crashing.",
+    "",
+    "## Inputs",
+    "",
+    groundable
+      ? "- A comma-separated code list, from an untrusted caller, read by `parseCodeList`."
+      : "- A length-prefixed binary frame, from an untrusted caller.",
+    "",
+    "## Acceptance Criteria",
+    "",
+    "| ID | Criteria | Verification |",
+    "|----|----------|--------------|",
+    ...criteria,
+    "",
+  ].join("\n");
+}
+
+/**
+ * A module renaming the catalog's fuzz method.
+ *
+ * FR-038-CON-1: the skill selects on `evidence_kind: Fuzz`, never on the name
+ * `fuzzing`. A skill that pattern-matched the name would pass every other
+ * assertion in TC-EV-054 and fail only here, which is the point of renaming it.
+ */
+function fuzzCatalogModule(ctx) {
+  writeModuleFile(
+    ctx,
+    "fuzzcat/manifest.yaml",
+    [
+      "manifest_version: 1",
+      "name: fuzzcat",
+      "version: 0.0.0",
+      "verification_catalog:",
+      "  robustness-search:",
+      "    name: Robustness search",
+      "    class: Test",
+      "    definition: >-",
+      "      Execute the input surface against generated or mutated data, looking",
+      "      for crashes and hangs rather than wrong answers.",
+      "    evidence_kind: Fuzz",
+      "    applicability:",
+      "      characteristics: [untrusted-input, parser]",
+      "    tooling: [fast-check]",
+      "",
+    ].join("\n"),
+  );
+}
+
+function seedFuzz(ctx, { harness = true, groundable = true } = {}) {
+  seedCorrectnessSource(ctx);
+  seedCorrectnessPackage(ctx, { fastCheck: harness });
+  fuzzCatalogModule(ctx);
+  writeRepoFile(ctx, "spec/functional/FR-002.md", fuzzFr(groundable));
+}
+
+const FUZZ_AGENT_RAN = [
+  {
+    pattern: "quoin\\s+advise\\b[\\s\\S]*--json",
+    desc: "read the obligations and their methods (quoin advise --json)",
+  },
+];
+
+const fuzzPrompt =
+  "Use the spec-fuzz skill on this repository. " +
+  "Select the obligations whose verification method is fuzz-kind, ground each " +
+  "one's entry point in src/, and emit what you can. Record everything you " +
+  "could not serve in the review artifact the skill specifies.";
+
+function specFuzzScenarios() {
+  const REVIEW_ARTIFACT = {
+    artifacts: { require: { SpecReview: { min: 1, dir: "reviews" } } },
+    validate: { globs: ["reviews/*.md"], shouldPass: true },
+  };
+  // Nothing that would convert the repository into a fuzzing repository
+  // (FR-038-CON-2). Each of these is a decision belonging to its owner.
+  const NO_INSTALL = [
+    "fuzz/Cargo.toml",
+    "rust-toolchain.toml",
+    "fuzz/corpus/*",
+  ];
+
+  return [
+    {
+      // TC-EV-054 — the generation lane. The catalog method is RENAMED, so a
+      // skill matching on the name `fuzzing` selects nothing and fails here
+      // while passing every other scenario.
+      id: "TC-EV-054",
+      useCase: "US-012",
+      setup(ctx) {
+        seedFuzz(ctx);
+      },
+      prompt: fuzzPrompt,
+      expect: {
+        agentRan: FUZZ_AGENT_RAN,
+        files: ["reviews/*.md"],
+        absentFiles: NO_INSTALL,
+        ...REVIEW_ARTIFACT,
+        // Both trace carriers plus the provenance line, and an entry point that
+        // exists: `parseCodeList` is in src/codes.js.
+        fileContains: [
+          {
+            glob: "**/*fuzz*.js",
+            includes: ["FR-002-AC-", "spec-fuzz:", "parseCodeList"],
+          },
+        ],
+      },
+    },
+    {
+      // TC-EV-055 — the two refusals, which are NOT the same refusal. No
+      // harness is a decision for the repo owner; an ungroundable entry point
+      // is a gap in the spec or the code. Collapsing both into "skipped" loses
+      // the remedy, so the report must name each.
+      id: "TC-EV-055",
+      useCase: "US-012",
+      setup(ctx) {
+        seedFuzz(ctx, { harness: false, groundable: false });
+      },
+      prompt: fuzzPrompt,
+      expect: {
+        agentRan: FUZZ_AGENT_RAN,
+        files: ["reviews/*.md"],
+        // No target written, and nothing installed to make one possible.
+        absentFiles: [...NO_INSTALL, "**/*fuzz*.js"],
+        ...REVIEW_ARTIFACT,
+        fileContains: [{ glob: "reviews/*.md", includes: ["FR-002-AC-1"] }],
+      },
+    },
+    {
+      // TC-EV-056 — idempotent re-run, and harness from the MANIFEST. The
+      // requirement's Inputs section says "binary frame", which reads Rust-ish;
+      // package.json says JavaScript, and the manifest is what decides
+      // (FR-038-AC-7). No framework name may reach spec/ (CON-4).
+      id: "TC-EV-056",
+      useCase: "US-012",
+      setup(ctx) {
+        seedFuzz(ctx);
+      },
+      prompt:
+        fuzzPrompt +
+        " Then run the skill a second time over the same repository without " +
+        "changing anything, and report what it rewrote.",
+      expect: {
+        agentRan: FUZZ_AGENT_RAN,
+        files: ["reviews/*.md"],
+        absentFiles: NO_INSTALL,
+        ...REVIEW_ARTIFACT,
+        // The spec must not have acquired a framework name (FR-028-CON-2,
+        // inherited as FR-038-CON-4). `excludes` on `fileContains` is the
+        // harness's spelling — an invented `fileOmits` key is accepted by the
+        // scenario loader and asserted by nothing, which is the silent-no-op
+        // shape this whole program exists to catch.
+        fileContains: [
+          {
+            glob: "spec/functional/FR-002.md",
+            excludes: ["fast-check", "cargo-fuzz", "atheris"],
+          },
+        ],
+      },
+    },
+    {
+      // TC-EV-057 — the one that matters most. A generated target that has
+      // never run discharges nothing, and the failure mode is a matrix row
+      // reading as covered because a file exists.
+      id: "TC-EV-057",
+      useCase: "US-012",
+      setup(ctx) {
+        seedFuzz(ctx);
+      },
+      prompt:
+        fuzzPrompt +
+        " Then state plainly in your report what these targets do and do not " +
+        "prove about the obligations they name.",
+      expect: {
+        agentRan: FUZZ_AGENT_RAN,
+        files: ["reviews/*.md"],
+        absentFiles: NO_INSTALL,
+        ...REVIEW_ARTIFACT,
+        fileContains: [{ glob: "reviews/*.md", includes: ["undischarged"] }],
+      },
+    },
+  ];
+}
 
 function specCorrectnessScenarios() {
   // The review artifact is a `SpecReview` at reviews/, exactly as TC-EV-026 and
@@ -1686,6 +1905,8 @@ export const SCENARIOS = [
 
   // --- spec-correctness (TC-EV-050..TC-EV-053, FR-028) ------------------------------
   ...specCorrectnessScenarios(),
+  // --- spec-fuzz (TC-EV-054..TC-EV-057, FR-038) -------------------------------------
+  ...specFuzzScenarios(),
 ];
 
 export const CANARY_IDS = ["TC-EV-001", "TC-EV-008"];
