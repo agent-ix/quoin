@@ -1,0 +1,107 @@
+{
+  "ok": true,
+  "generatedAt": "2026-08-19T03:33:15.928Z",
+  "suite": "quoin",
+  "agent": "claude",
+  "model": "claude-opus-5",
+  "repeats": 1,
+  "results": [
+    {
+      "id": "TC-EV-057",
+      "useCase": "US-012",
+      "ok": true,
+      "passRate": "1/1",
+      "aggregate": {
+        "latencyMs": {
+          "p50": 286129,
+          "p95": 286129
+        },
+        "tokensIn": {
+          "p50": 4292853,
+          "p95": 4292853
+        },
+        "tokensOut": {
+          "p50": 38933,
+          "p95": 38933
+        },
+        "toolCalls": {
+          "p50": 39,
+          "p95": 39
+        }
+      },
+      "runs": [
+        {
+          "ok": true,
+          "latencyMs": 286129,
+          "exitReason": "complete",
+          "metricStatus": "available",
+          "tokenUsage": {
+            "input": 128,
+            "output": 38933,
+            "cacheCreation": 158220,
+            "cacheRead": 4134505,
+            "contextInput": 4292853,
+            "total": 4331786
+          },
+          "toolCalls": 39,
+          "toolBreakdown": {
+            "Read": 12,
+            "Skill": 2,
+            "Bash": 20,
+            "Write": 3,
+            "Edit": 2
+          },
+          "classified": {
+            "contextFetches": 1,
+            "validationAttempts": 5,
+            "validationFailures": 3,
+            "skillInvocations": 2,
+            "edits": 5,
+            "flowOps": 0
+          },
+          "checks": {
+            "artifacts:SpecReview": {
+              "ok": true,
+              "paths": [
+                "reviews/26-08-18-fuzz-targets-fr-002.md"
+              ]
+            },
+            "fileContains:reviews/*.md": {
+              "ok": true,
+              "file": "reviews/26-08-18-fuzz-targets-fr-002.md",
+              "missing": [],
+              "unexpected": []
+            },
+            "agentRan:read the obligations and their methods (quoin advise --json)": {
+              "ran": true,
+              "succeeded": true
+            }
+          },
+          "failures": [],
+          "workDir": "/tmp/quoin-tc-ev-057-S0tX5d",
+          "sessionId": "835820b0-33d7-45a0-a04d-79c85dacd1bf",
+          "transcriptPath": "/home/peter/.claude/projects/-tmp-quoin-tc-ev-057-S0tX5d-repo/835820b0-33d7-45a0-a04d-79c85dacd1bf.jsonl"
+        }
+      ]
+    }
+  ],
+  "aggregates": {
+    "successRate": "1/1",
+    "latencyMs": {
+      "p50": 286129,
+      "p95": 286129
+    },
+    "tokensIn": {
+      "p50": 4292853,
+      "p95": 4292853
+    },
+    "tokensOut": {
+      "p50": 38933,
+      "p95": 38933
+    },
+    "toolCalls": {
+      "p50": 39,
+      "p95": 39
+    }
+  }
+}

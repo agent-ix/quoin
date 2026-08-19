@@ -8,6 +8,17 @@ description: "Chronological log of structural changes to this bundle."
 
 ## History
 
+* **2026-08-19** — **CR-021**: new [FR-042](./functional/FR-042-agent-eval-evidence.md) — **agent-eval reports as run evidence**, closing the first half of `SR-008` FND-001 (agent-ix/quoin#142).
+
+  An eval drives the real agent through the real CLI, which makes it the most convincing verification this project has and, until now, the least recorded. `quire coverage` reconciles matrix rows against test symbols in code; eval scenarios are data and mint none, so **71 rows** across `spec/evals.md`, `FR-028` and `FR-038` were unbacked. For FR-038 the evals had been run — four scenarios, 4/4, live, with two genuine failures found and fixed — and the harness's report was written to disk and dropped.
+
+  The adapter takes the harness's `ok` rather than recomputing it (a scenario passing one run of three is not a pass, and a second opinion could disagree with the report a human already read), keeps `passRate` as a score because **flaky and failing are different facts**, and refuses a report with no results — a suite that ran nothing, whose record would prove only that the harness started.
+
+  **What it does not close is stated rather than hidden.** The run records; it binds nothing. The store matches trace ids against **obligation** ids — a junit test carries `FR-001-AC-1` in its own name, so that works — while an eval report carries the **scenario** id, `TC-EV-057`, which is a Test Case row. The join from `FR-038-AC-8` to `TC-EV-057` lives in the FR's own criteria table and `quire coverage` already resolves it; the store does not read it. Verified by recording a real report: `bound: 0`, `unmatched trace ids … TC-EV-057`. Filed as agent-ix/quoin#144 with two candidate fixes. FND-002 — that `Eval` is not a declared verification method at all — is module data and stays open under #142.
+
+  The fixture is a real report, unedited; the multi-scenario, failing and empty cases are **constructed and labelled as such**, because no failing report survived to be captured and a fabricated one claiming to be real would be worse than saying which is which. TC-240..TC-244.
+
+
 * **2026-08-19** — **CR-020**: new [FR-041](./functional/FR-041-sbom-inventory-evidence.md) — **SBOM inventories as run evidence** (agent-ix/quoin#116). The catalog declared `sca-sbom` and nothing could discharge it.
 
   **The deferral was the point, and it paid.** This ticket sat unstarted through Wave C with an explicit trigger: *"quoin#94 is the ticket that answers this, because it is the first consumer that has to render the claim. Building the intake before the consumer exists is how a record type gets a shape nothing needs."* FR-040 landed, and its answer is legible in what it renders — a GSN evidence leaf is **one line per obligation**, and renders no component list. So the claim an SBOM supports is *"a complete inventory was produced at this commit"*: a run record. Contents-level judgement already lands through `cargo-audit` and SARIF. **No third record type**, which is exactly what the deferral was protecting.

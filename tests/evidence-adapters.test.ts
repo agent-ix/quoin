@@ -163,6 +163,7 @@ describe("the adapter registry", () => {
       "junit",
       "cargo-mutants",
       "sbom",
+      "agent-eval",
       "sarif",
       "audit-script",
       "cargo-audit",
