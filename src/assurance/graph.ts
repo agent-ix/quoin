@@ -130,8 +130,22 @@ export function buildCase(input: CaseInput): AssuranceCase {
   const reached = new Set<string>();
   for (const [id, doc] of byId) {
     if (!claimTypes.has(String(doc.frontmatter.type ?? ""))) continue;
+    // A fresh `ancestors` set per claim. Sharing one across claims made a
+    // requirement that refines TWO claims appear under only the first, while
+    // the second reported "no sub-claim traces to this claim" — a statement
+    // that was false, in an assurance case, about the very edge the author had
+    // written. Cycle prevention and "already rendered somewhere" are different
+    // questions and now have different sets.
     claims.push(
-      nodeFor(id, byId, children, obligationsFor, findingFor, reached),
+      nodeFor(
+        id,
+        byId,
+        children,
+        obligationsFor,
+        findingFor,
+        reached,
+        new Set(),
+      ),
     );
   }
   claims.sort((a, b) => a.id.localeCompare(b.id));
@@ -150,16 +164,29 @@ function nodeFor(
   obligationsFor: Map<string, Obligation[]>,
   findingFor: Map<string, Finding>,
   reached: Set<string>,
+  ancestors: Set<string>,
 ): CaseNode {
   reached.add(id);
+  ancestors.add(id);
   const doc = byId.get(id);
   const title = String(doc?.frontmatter.title ?? id);
 
+  // `ancestors`, not `reached`: a child already rendered under a DIFFERENT
+  // claim must still appear here, and only a child on this path would be a
+  // cycle.
   const sub = (children.get(id) ?? [])
-    .filter((child) => !reached.has(child))
+    .filter((child) => !ancestors.has(child))
     .sort()
     .map((child) =>
-      nodeFor(child, byId, children, obligationsFor, findingFor, reached),
+      nodeFor(
+        child,
+        byId,
+        children,
+        obligationsFor,
+        findingFor,
+        reached,
+        new Set(ancestors),
+      ),
     );
 
   const evidence = (obligationsFor.get(id) ?? [])

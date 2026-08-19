@@ -698,6 +698,25 @@ describe("TC-219 mutation score as the acceptance-criteria oracle", () => {
     ).toContain("0.4");
   });
 
+  // Trace: FR-039-AC-12
+  it("says nothing when no catalog declares a mutation method", () => {
+    // The question "did a mutation tool produce this number" cannot be asked
+    // without a catalog. Reporting `unmeasured` fired on every obligation with
+    // a floor — INCLUDING ones holding a real score — which is the documented
+    // behaviour's exact opposite.
+    const report = audit(
+      input({
+        obligations: [obligation({ criticality: "P0" })],
+        runs: [scored(0.95)],
+        mutationFloor: { P0: 0.8 },
+      }),
+    );
+    expect(report.findings.filter((f) => f.kind.includes("mutation"))).toEqual(
+      [],
+    );
+    expect(report.healthy).toEqual(["FR-001-AC-1"]);
+  });
+
   // Trace: FR-039-AC-7
   it("applies only to the criticality the floor names", () => {
     const report = audit(

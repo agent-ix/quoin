@@ -484,6 +484,14 @@ function mutationFinding(
   const floor = floors[obligation.criticality];
   if (floor === undefined) return null;
 
+  if (!mutationToolsIn(input.catalog)) {
+    // No catalog entry declares a mutation method, so "did a mutation tool
+    // produce this number" cannot be asked. Reporting `unmeasured` here fired
+    // on every obligation with a floor — including ones holding a real score —
+    // which is the documented behaviour's exact opposite.
+    return null;
+  }
+
   const scores = scoresFor(bindings, runs, input.catalog);
   if (scores.length === 0) {
     // Distinct from `undischarged`: this obligation may be thoroughly tested and
@@ -530,18 +538,23 @@ function mutationFinding(
  * `agent-ix/quoin#138`. With no such catalog entry, nothing is in scope and the
  * check says nothing rather than something wrong.
  */
-function scoresFor(
-  bindings: Binding[],
-  runs: RunRecord[],
-  catalog: AuditInput["catalog"],
-): number[] {
-  const bound = new Set(bindings.map((b) => b.suite));
+function mutationToolsIn(catalog: AuditInput["catalog"]): Set<string> | null {
   const tools = new Set(
     (catalog?.methods ?? [])
       .filter((m) => m.id === "mutation-testing")
       .flatMap((m) => m.tooling)
       .map((t) => t.toLowerCase()),
   );
+  return tools.size > 0 ? tools : null;
+}
+
+function scoresFor(
+  bindings: Binding[],
+  runs: RunRecord[],
+  catalog: AuditInput["catalog"],
+): number[] {
+  const bound = new Set(bindings.map((b) => b.suite));
+  const tools = mutationToolsIn(catalog) ?? new Set<string>();
   const out: number[] = [];
   for (const run of runs) {
     if (!bound.has(run.suite)) continue;

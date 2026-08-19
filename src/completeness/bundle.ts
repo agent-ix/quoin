@@ -47,9 +47,22 @@ export function readBundleClaims(
   bundleRoot: string,
   declaration: VocabularyDeclaration,
 ): BundleRead {
-  const documents: DocumentClaims[] = [];
-  const { documents: read, unreadable } = readBundleFrontmatter(bundleRoot);
+  const { documents, unreadable } = readBundleFrontmatter(bundleRoot);
+  return { documents: claimsFor(documents, declaration), unreadable };
+}
 
+/**
+ * Project already-read documents onto one declaration.
+ *
+ * Split out from {@link readBundleClaims} so a caller with several declarations
+ * walks the bundle **once**. The combined form re-read every file per
+ * declaration, which NFR-011-M-2 budgets at one pass per invocation.
+ */
+export function claimsFor(
+  read: BundleDocument[],
+  declaration: VocabularyDeclaration,
+): DocumentClaims[] {
+  const documents: DocumentClaims[] = [];
   for (const doc of read) {
     const { path: rel, frontmatter } = doc;
     const claims = stringsAt(frontmatter[declaration.field]);
@@ -60,8 +73,7 @@ export function readBundleClaims(
 
     documents.push({ path: rel, claims, excuses, body: doc.body });
   }
-
-  return { documents, unreadable };
+  return documents;
 }
 
 /** One document's frontmatter and body, as read from the bundle. */

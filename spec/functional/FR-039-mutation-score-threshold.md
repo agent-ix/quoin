@@ -65,6 +65,11 @@ percentage, a measured latency"*. Reading every scored entry bound to an obligat
 latency in milliseconds against a floor of `0.8` and reports the obligation as failing, with a
 plausible summary and no way for a reader to tell. The first draft of this check did exactly that.
 
+Where **no** catalog declares a mutation method the question cannot be asked at all, and the check
+says nothing. Returning `unmeasured` there reported every obligation with a declared floor —
+including ones holding a real score — which was the opposite of the documented behaviour (`SR-007`
+FND-002).
+
 Scores are therefore scoped to runs whose `tool` is one the catalog declares for mutation testing,
 matched on the leading name because adapters report `cargo-mutants 25.0.0`. That names a method id
 inside the engine, which is a compromise: the durable fix is a metric discriminator on the entry
@@ -95,6 +100,7 @@ apply is worse than no floor**, because it reads as a passing gate.
 | FR-039-AC-9 | A score outside `[0, 1]`, or a malformed pair, is refused rather than ignored. | Test (TC-220) |
 | FR-039-AC-10 | A score a mutation tool did not produce — a latency, a coverage percentage — is not compared against the floor. | Test (TC-219) |
 | FR-039-AC-11 | A versioned tool string is matched on its leading name. | Test (TC-219) |
+| FR-039-AC-12 | With no catalog declaring a mutation method, the check says nothing at all. | Test (TC-239) |
 
 ## Constraints
 

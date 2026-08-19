@@ -1,5 +1,5 @@
 /**
- * FR-040 — the assurance-case view (TC-221..TC-230).
+ * FR-040 — the assurance-case view (TC-221..TC-230, TC-237, TC-238).
  */
 
 import { describe, expect, it } from "vitest";
@@ -127,6 +127,49 @@ describe("building the case", () => {
       findings: [],
     });
     expect(result.unreachable).toEqual(["FR-009"]);
+  });
+
+  // Trace: FR-040-AC-11
+  it("shows a requirement that refines two claims under both", () => {
+    // Sharing one visited-set across claims put it under the first only, and
+    // the second reported "no sub-claim traces to this claim" — a FALSE
+    // statement, in an assurance case, about the very edge its author wrote.
+    // Cycle prevention and "already rendered somewhere" are different questions.
+    const documents = [
+      doc("StR-001", "StR", "One"),
+      doc("StR-002", "StR", "Two"),
+      doc("FR-001", "FR", "Shared", [
+        ["StR-001", "traces_to"],
+        ["StR-002", "traces_to"],
+      ]),
+    ];
+    const result = buildCase({
+      documents,
+      obligations: [obligation("FR-001-AC-1")],
+      findings: [],
+    });
+    expect(result.claims.map((c) => c.children.map((x) => x.id))).toEqual([
+      ["FR-001"],
+      ["FR-001"],
+    ]);
+    expect(result.claims.every((c) => c.because === undefined)).toBe(true);
+  });
+
+  // Trace: FR-040-AC-12
+  it("stops at a cycle without dropping a legitimately shared child", () => {
+    // A refines B refines A. The recursion must terminate, and it must do so by
+    // path and not by "seen anywhere", or the fix above regresses.
+    const documents = [
+      doc("StR-001", "StR", "Root"),
+      doc("FR-001", "FR", "A", [
+        ["StR-001", "traces_to"],
+        ["FR-002", "refines"],
+      ]),
+      doc("FR-002", "FR", "B", [["FR-001", "refines"]]),
+    ];
+    const result = buildCase({ documents, obligations: [], findings: [] });
+    expect(result.claims).toHaveLength(1);
+    expect(JSON.stringify(result.claims[0]).length).toBeLessThan(4000);
   });
 
   // Trace: FR-040-AC-6
