@@ -13,7 +13,7 @@ import {
   type CompletenessReport,
   type VocabularyRollup,
 } from "./assess.js";
-import { readBundleClaims } from "./bundle.js";
+import { claimsFor, readBundleFrontmatter } from "./bundle.js";
 import {
   loadVocabularyCoverage,
   type VocabularyDeclaration,
@@ -56,15 +56,23 @@ export function assessBundle(options: AssessOptions): BundleAssessment {
   const unreadable: Array<{ path: string; reason: string }> = [];
   const seen = new Set<string>();
 
+  // ONE walk, whatever the declaration count. `readBundleClaims` re-read the
+  // whole bundle per declaration, so N declarations meant N full passes — and
+  // NFR-011-M-2 states the budget as one pass per invocation. Latent at one
+  // declaration, which is why it needed catching by reading rather than by a
+  // timing that would not have moved.
+  const bundle = readBundleFrontmatter(options.bundleRoot);
+  for (const entry of bundle.unreadable) {
+    if (seen.has(entry.path)) continue;
+    seen.add(entry.path);
+    unreadable.push(entry);
+  }
+
   for (const declaration of declarations as VocabularyDeclaration[]) {
-    const read = readBundleClaims(options.bundleRoot, declaration);
-    for (const entry of read.unreadable) {
-      // The same document is unreadable once per declaration; report it once.
-      if (seen.has(entry.path)) continue;
-      seen.add(entry.path);
-      unreadable.push(entry);
-    }
-    const assessed = assessVocabulary(declaration, read.documents);
+    const assessed = assessVocabulary(
+      declaration,
+      claimsFor(bundle.documents, declaration),
+    );
     rollups.push(assessed.rollup);
     findings.push(...assessed.findings);
   }

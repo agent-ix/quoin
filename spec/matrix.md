@@ -366,6 +366,9 @@ generated tests under `tests/props/` and `Unit` for the rest.
 | TC-234 | A document that is neither format is refused — zero entries is a real finding and an unreadable file must not masquerade as one | Unit | P0 | FR-041-AC-4 | ✅ |
 | TC-235 | A component with neither purl nor name is dropped, not given an invented identity that binds to nothing and inflates the count | Unit | P0 | FR-041-AC-5 | ✅ |
 | TC-236 | The adapter is selected by `--adapter sbom` and by the tools emitting these formats | Unit | P0 | FR-041-AC-6 | ✅ |
+| TC-237 | A requirement refining two claims appears under both — one visited-set answered cycles and "rendered elsewhere" at once, and the second claim reported a statement that was false | Unit | P0 | FR-040-AC-11 | ✅ |
+| TC-238 | A cycle terminates without dropping a legitimately shared child, so the FND-001 fix cannot regress into an infinite walk | Unit | P0 | FR-040-AC-12 | ✅ |
+| TC-239 | With no catalog declaring a mutation method the check says nothing — reporting `unmeasured` fired on every obligation with a floor, including ones holding a real score | Unit | P0 | FR-039-AC-12 | ✅ |
 | TC-129 | The merged catalog carries every declared method with its rules intact, merges first-wins, reports a colliding id rather than absorbing it, and treats an undeclared catalog as empty | Unit | P0 | FR-031-AC-1 | ✅ |
 | TC-130 | An `attack_surface` object reaches DAST, SAST and negative/abuse testing — recommendations that were unreachable while the method table was skill-local prose | Unit | P0 | FR-031-AC-2 | ✅ |
 | TC-131 | Temporal phrasing reaches runtime monitoring and model checking — the methods a single execution cannot discharge | Unit | P0 | FR-031-AC-3 | ✅ |

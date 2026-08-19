@@ -23,6 +23,7 @@ export {
   type VocabularyDeclarations,
 } from "./declarations.js";
 export {
+  claimsFor,
   readBundleClaims,
   readBundleFrontmatter,
   type BundleDocument,

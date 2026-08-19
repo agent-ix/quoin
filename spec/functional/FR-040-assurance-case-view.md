@@ -66,6 +66,14 @@ for it would be a second thing to keep in agreement.
 **threat**, and that vocabulary is module data — a built-in `StR` would make this view useless to
 exactly the bundles that need an assurance case most.
 
+### A shared sub-claim belongs to both claims
+
+Cycle prevention and "already rendered somewhere" are different questions, and one visited-set cannot
+answer both. Sharing it put a requirement refining two claims under the first only, and made the
+second report *"no sub-claim and no obligation traces to this claim"* — false, in an assurance case,
+about the edge its author had written (`SR-007` FND-001). Cycles are prevented per **path**; being
+rendered elsewhere is not a reason to omit.
+
 ### Deterministic, because it is a view
 
 Re-rendering unchanged inputs produces byte-identical output, so a diff means the evidence moved and
@@ -96,6 +104,8 @@ does not expose. `agent-ix/quire-rs#179` is where this stops being necessary.
 | FR-040-AC-8 | Rendering unchanged inputs is byte-identical. | Test (TC-228) |
 | FR-040-AC-9 | Mermaid output survives punctuation in a statement — parentheses, quotes and semicolons. | Test (TC-229) |
 | FR-040-AC-10 | A bundle declaring no claim says so, rather than rendering an empty case. | Test (TC-230) |
+| FR-040-AC-11 | A requirement refining two claims appears under both. | Test (TC-237) |
+| FR-040-AC-12 | A cycle terminates without dropping a legitimately shared child. | Test (TC-238) |
 
 ## Constraints
 
