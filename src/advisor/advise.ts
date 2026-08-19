@@ -15,6 +15,7 @@
  */
 
 import type { MethodCatalog, VerificationMethod } from "./methods.js";
+import { parseSpace } from "../auditor/combinatorial.js";
 
 /** What the advisor knows about one obligation before it recommends anything. */
 export interface ObligationFacts {
@@ -108,11 +109,26 @@ const STATEMENT_CHARACTERISTICS: Array<[string, RegExp]> = [
   ["no-executable-oracle", /\b(review|judgement|readable|documented)\b/i],
 ];
 
-/** Characteristics readable from an obligation's statement. */
+/**
+ * Characteristics readable from an obligation's statement.
+ *
+ * Mostly prose regexes, plus one **structural** signal: a statement that parses
+ * as a declared configuration space (quire-rs FR-061) is a configuration matrix
+ * by construction, whatever words it happens to contain.
+ *
+ * The regex alone would miss it. A minted space reads
+ * `2-way over features(default|python|wasm) target(linux|wasm32)` — no
+ * "configuration", no "feature flag", no "combination of" — so the very
+ * obligations that most need the combinatorial method would be the ones it was
+ * never advised for. A structural test cannot false-positive on prose either,
+ * which a widened regex would.
+ */
 export function characteristicsOf(statement: string): string[] {
-  return STATEMENT_CHARACTERISTICS.filter(([, re]) => re.test(statement))
-    .map(([name]) => name)
-    .sort();
+  const matched = STATEMENT_CHARACTERISTICS.filter(([, re]) =>
+    re.test(statement),
+  ).map(([name]) => name);
+  if (parseSpace(statement) !== null) matched.push("configuration-matrix");
+  return [...new Set(matched)].sort();
 }
 
 /**

@@ -8,6 +8,15 @@ description: "Chronological log of structural changes to this bundle."
 
 ## History
 
+* **2026-08-18** — **CR-013**: new [FR-035](./functional/FR-035-combinatorial-coverage.md) — **t-way coverage over a declared configuration space** (agent-ix/quoin#90). quire-rs FR-061 mints the obligation and states the space in the obligation's own statement; this computes what a run reached and **names what it did not**. The gap list is the deliverable: a percentage says how much is missing, the list says which combinations to run.
+
+  A combinatorial obligation is recognised by `parseSpace(statement) !== null` — that IS the test, with no second flag to keep in agreement. A configuration exercising values the spec never declared covers nothing, because counting it would let a coverage number rise by testing something else.
+
+  **The advisor signal is structural, not prose.** The existing `configuration-matrix` characteristic is a regex over words like "configuration" and "feature flag"; a minted space reads `2-way over features(default|python|wasm)` and matches none of them, so the obligations that most need the combinatorial method would be exactly the ones never advised for it. A statement that parses as a space is a configuration matrix by construction — and unlike a widened regex, that cannot false-positive on prose.
+
+  TC-183 asserts quoin computes the same demanded-tuple count quire-rs does for the same space (its TC-925). Disagreement would mean an obligation is measured against a target it does not state. TC-180..191.
+
+
 * **2026-08-18** — **CR-012**: new [FR-034](./functional/FR-034-finding-shaped-evidence.md) — **finding-shaped evidence** (agent-ix/quoin#115). Five of the eight formats quoin means to read emit findings rather than run outcomes, and forced into `RunEntry` **a clean semgrep run and a semgrep run that never executed are indistinguishable**. `FindingRecord` makes the distinction structural: the record is written only when an adapter read a real report envelope, so its existence is the proof of execution — `findings: []` is evidence, no record is not.
 
   **Vacuity is redefined for this shape rather than left silent.** For a run it is *every bound symbol skipped*; a scan has no symbols, so that is inapplicable. A scan is vacuous when it **evaluated no rules** — it reports zero findings too, and from the findings list alone the two are identical. With no rule count reported the check stays silent rather than guessing.

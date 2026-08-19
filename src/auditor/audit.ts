@@ -19,6 +19,7 @@
 
 import type { Obligation } from "../quire/index.js";
 import { scanIsVacuous } from "../evidence/index.js";
+import { parseSpace, twayCoverage } from "./combinatorial.js";
 import type { Binding, FindingRecord, RunRecord } from "../evidence/index.js";
 import type { MethodCatalog } from "../advisor/index.js";
 
@@ -31,6 +32,7 @@ export interface Finding {
     | "suspect-link"
     | "stale-evidence"
     | "vacuous-evidence"
+    | "combinatorial-gap"
     | "undischarged"
     | "method-conformance"
     | "unknown-method"
@@ -248,6 +250,41 @@ export function audit(input: AuditInput): AuditReport {
           `covered and nothing was verified.`,
       });
       continue;
+    }
+
+    // ── Combinatorial coverage ──
+    // Only for an obligation whose statement declares a configuration space
+    // (quire-rs FR-061). `parseSpace` returning null IS the test for that, so
+    // there is no second flag to keep in agreement with the first.
+    const space = parseSpace(obligation.statement ?? "");
+    if (space) {
+      const configs = runs.flatMap((r) =>
+        r.entries
+          .map((e) => e.config)
+          .filter((c): c is Record<string, string> => !!c),
+      );
+      const coverage = twayCoverage(space, configs);
+      if (coverage.covered < coverage.demanded) {
+        findings.push({
+          kind: "combinatorial-gap",
+          obligation: obligation.id,
+          // Medium: an incomplete covering array is ordinary work in progress.
+          // What would be high is a run claiming completeness it does not have,
+          // which is what the gap list makes impossible to do quietly.
+          severity: "medium",
+          summary:
+            `${obligation.id} demands ${coverage.demanded} ${coverage.strength}-way ` +
+            `combinations and its runs reached ${coverage.covered}. ` +
+            // Named, not counted. A percentage says how much is missing; the
+            // list says which combinations to run, which is the difference
+            // between a number and an action.
+            `Never run: ${coverage.gaps.slice(0, 10).join("; ")}` +
+            (coverage.gaps.length > 10
+              ? ` (and ${coverage.gaps.length - 10} more)`
+              : ""),
+        });
+        continue;
+      }
     }
 
     // ── Method conformance ──
