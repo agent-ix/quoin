@@ -30,7 +30,7 @@ import { fileURLToPath } from "node:url";
 /** Where the vendored schemas came from, and exactly which bytes. */
 export const QUIRE_CONTRACT = {
   /** The quire-rs release the vendored schemas were copied from. */
-  sourceTag: "v0.29.0",
+  sourceTag: "v0.33.0",
   /** The contract version, as carried in each schema's `$id` and filename. */
   contractVersion: "v1",
   /**
@@ -42,6 +42,22 @@ export const QUIRE_CONTRACT = {
    * a parse error to discover three frames deep.
    */
   minimumCli: "0.21.0",
+  /*
+   * NOTE: `minimumCli` is a CONTRACT floor, not a CAPABILITY floor, and the
+   * two have already drifted once.
+   *
+   * 0.21.0 is still correct here: it is the first release emitting the shapes
+   * this file describes, and raising it would reject a CLI that satisfies the
+   * contract. But a consumer on 0.22.0 silently gets no FR-059 vocabulary
+   * coverage and no FR-061 combinatorial obligations — the payload parses,
+   * and simply contains less. quoin cannot tell that from a corpus that
+   * declares neither.
+   *
+   * quire-cli sat five engine releases behind for exactly this reason: every
+   * gate passed, the CLI kept working, and it answered from an older engine.
+   * A feature needing a specific capability should check for it rather than
+   * assume this number covers it.
+   */
   /**
    * SHA-256 of each vendored file. Asserted on every test run, so an edit
    * without a matching refresh fails loudly.
