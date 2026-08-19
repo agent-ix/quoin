@@ -49,3 +49,4 @@ description: "Index of functional requirements (FR) for quoin."
 * [FR-039: Mutation score as a declared verification threshold](./FR-039-mutation-score-threshold.md)
 * [FR-040: Assurance case as a read-only view over the store](./FR-040-assurance-case-view.md)
 * [FR-041: SBOM inventories as run evidence](./FR-041-sbom-inventory-evidence.md)
+* [FR-042: Agent-eval reports as run evidence](./FR-042-agent-eval-evidence.md)

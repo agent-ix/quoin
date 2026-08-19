@@ -83,3 +83,4 @@ export {
 } from "./store.js";
 export { parseAuditScript } from "./adapters/audit-script.js";
 export { parseSbom, sbomAdapter } from "./adapters/sbom.js";
+export { parseAgentEval, agentEvalAdapter } from "./adapters/agent-eval.js";

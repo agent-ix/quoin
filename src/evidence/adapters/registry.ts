@@ -2,6 +2,7 @@ import type { RunEntry } from "../types.js";
 import { cargoMutantsAdapter } from "./cargo-mutants.js";
 import { junitAdapter } from "./junit.js";
 import { parseAuditScript } from "./audit-script.js";
+import { agentEvalAdapter } from "./agent-eval.js";
 import { sbomAdapter } from "./sbom.js";
 import { parseCargoAudit, parseSarif, type FindingResult } from "./sarif.js";
 import {
@@ -57,6 +58,7 @@ export const ADAPTERS: readonly EvidenceAdapter[] = [
   junitAdapter,
   cargoMutantsAdapter,
   sbomAdapter,
+  agentEvalAdapter,
 ];
 
 /**
