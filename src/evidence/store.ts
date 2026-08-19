@@ -326,12 +326,19 @@ function compare(a: string, b: string): number {
 
 /** Every suite that has at least one recorded run. */
 export function listRecordedSuites(repo: string): string[] {
-  const dir = join(storeRoot(repo), RUNS_DIR);
-  if (!existsSync(dir)) return [];
-  return readdirSync(dir, { withFileTypes: true })
-    .filter((e) => e.isDirectory())
-    .map((e) => e.name)
-    .sort();
+  // BOTH directories. A suite that recorded only scans has evidence, and
+  // reading `runs/` alone made it invisible to every caller that enumerates —
+  // the auditor included, so its obligations read as undischarged while the
+  // evidence sat on disk (SR-005 FND-003).
+  const suites = new Set<string>();
+  for (const which of [RUNS_DIR, SCANS_DIR]) {
+    const dir = join(storeRoot(repo), which);
+    if (!existsSync(dir)) continue;
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      if (entry.isDirectory()) suites.add(entry.name);
+    }
+  }
+  return [...suites].sort();
 }
 
 /** The binding graph. An absent file reads as an empty graph, not an error. */
@@ -402,6 +409,22 @@ export function gc(repo: string, dryRun = false): string[] {
     for (const run of runs) {
       if (keep.has(run) || referenced.has(`${suite}/${run}`)) continue;
       const path = join(storeRoot(repo), RUNS_DIR, suite, run);
+      deleted.push(path);
+      if (!dryRun) rmSync(path);
+    }
+
+    // Scans, on the same rule. Walking only `runs/` left every scan record on
+    // disk forever, so a store with scan suites grew without bound while `gc`
+    // reported it had collected everything (SR-005 FND-004).
+    const scans = listScans(repo, suite);
+    const keepScan = new Set<string>();
+    const latestScanRecord = latestScan(repo, suite);
+    if (latestScanRecord) {
+      keepScan.add(`${short(latestScanRecord.commit)}.json`);
+    }
+    for (const scan of scans) {
+      if (keepScan.has(scan) || referenced.has(`${suite}/${scan}`)) continue;
+      const path = join(storeRoot(repo), SCANS_DIR, suite, scan);
       deleted.push(path);
       if (!dryRun) rmSync(path);
     }

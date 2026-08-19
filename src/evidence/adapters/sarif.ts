@@ -70,7 +70,13 @@ export function parseSarif(raw: string): FindingResult {
 
   const findings: Finding[] = [];
   const tools: string[] = [];
-  let rulesEvaluated = 0;
+  // `undefined` until some driver declares a `rules` array. The distinction
+  // between "the tool reported ZERO rules" and "the tool reported NO count" is
+  // the one FR-034 turns on: the first is a vacuous scan, the second is a
+  // question that cannot be asked. Defaulting to 0 and omitting it when 0
+  // erased exactly that difference, so a scan declaring `rules: []` read as a
+  // tool that had said nothing.
+  let rulesEvaluated: number | undefined;
   for (const run of parsed.runs) {
     const driver = run.tool?.driver;
     if (driver?.name !== undefined && driver.name !== "") {
@@ -80,7 +86,9 @@ export function parseSarif(raw: string): FindingResult {
           : `${driver.name} ${driver.version}`,
       );
     }
-    if (Array.isArray(driver?.rules)) rulesEvaluated += driver.rules.length;
+    if (Array.isArray(driver?.rules)) {
+      rulesEvaluated = (rulesEvaluated ?? 0) + driver.rules.length;
+    }
     for (const result of run.results ?? []) {
       const ruleId = result.ruleId ?? result.rule?.id;
       if (ruleId === undefined || ruleId === "") continue;
@@ -103,7 +111,7 @@ export function parseSarif(raw: string): FindingResult {
   return {
     findings,
     ...(tools.length === 0 ? {} : { tool: tools.join(", ") }),
-    ...(rulesEvaluated === 0 ? {} : { rulesEvaluated }),
+    ...(rulesEvaluated === undefined ? {} : { rulesEvaluated }),
   };
 }
 

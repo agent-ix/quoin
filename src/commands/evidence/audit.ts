@@ -7,11 +7,12 @@ import { loadMethodCatalog } from "../../advisor/index.js";
 import { audit, ratchet } from "../../auditor/index.js";
 import {
   latestRun,
+  latestScan,
   listRecordedSuites,
   readBaseline,
   readBindings,
 } from "../../evidence/index.js";
-import type { RunRecord } from "../../evidence/index.js";
+import type { FindingRecord, RunRecord } from "../../evidence/index.js";
 import {
   checkVersionPremise,
   parseCoverage,
@@ -81,6 +82,7 @@ a week. Write that baseline with: quoin evidence baseline`;
       obligations: parsed.value.obligations ?? [],
       bindings: readBindings(flags.repo).bindings,
       runs: latestRuns(flags.repo),
+      scans: latestScans(flags.repo),
       // The SAME module the coverage call above used. Defaulting to the
       // installed roots meant `--module <dir>` derived obligations from one
       // catalog and checked conformance against another — the exact disagreement
@@ -142,6 +144,19 @@ a week. Write that baseline with: quoin evidence baseline`;
  * HEAD could still be reported stale, and re-recording could not fix it
  * (agent-ix/quoin#104).
  */
+/**
+ * The newest scan of every recorded suite.
+ *
+ * Mirrors `latestRuns`. Its absence was why no `FindingRecord` ever reached
+ * the auditor: the record type, the vacuity check and the tests all existed
+ * while `audit()` was called with no `scans` at all (SR-005 FND-002).
+ */
+function latestScans(repo: string): FindingRecord[] {
+  return listRecordedSuites(repo)
+    .map((suite) => latestScan(repo, suite))
+    .filter((s): s is FindingRecord => s !== null);
+}
+
 function latestRuns(repo: string): RunRecord[] {
   return listRecordedSuites(repo)
     .map((suite) => latestRun(repo, suite))
