@@ -102,6 +102,10 @@ export default defineConfig(({ command }) => ({
   test: {
     globals: true,
     environment: "node",
+    // The command-level tests shell out to `quire coverage`, which needs an
+    // installed module declaring a `traceability:` model. Present on a
+    // developer machine, absent in CI — see tests/global-setup.ts.
+    globalSetup: ["tests/global-setup.ts"],
     coverage: {
       provider: "v8",
       include: ["src/**/*.{ts,js}"],
