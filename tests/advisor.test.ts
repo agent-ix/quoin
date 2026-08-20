@@ -403,3 +403,108 @@ describe("TC-250 high-criticality is read from the obligation, not inferred", ()
     expect(characteristicsOf(statement)).not.toContain("high-criticality");
   });
 });
+
+describe("TC-252 the spec-side triggers for concolic execution", () => {
+  // TC-252
+  it("reads a magic-value comparison, and does not read a function signature", () => {
+    // The classic wall a fuzzer cannot climb: random bytes have essentially no
+    // chance of satisfying a checksum and a solver has a certainty of it.
+    expect(
+      characteristicsOf(
+        "The parser SHALL reject a payload whose CRC-32 does not match.",
+      ),
+    ).toContain("magic-value-comparison");
+    expect(
+      characteristicsOf("The loader SHALL verify the HMAC before decoding."),
+    ).toContain("magic-value-comparison");
+
+    // `signature` is not a bare alternative. "Function signature" is everywhere
+    // in this corpus — the same trap as `path-safety` matching `safety` (#128).
+    expect(
+      characteristicsOf(
+        "The function signature SHALL remain stable across a minor release.",
+      ),
+    ).not.toContain("magic-value-comparison");
+  });
+
+  // TC-252
+  it("reads constant-time phrasing", () => {
+    expect(
+      characteristicsOf("Key comparison SHALL be constant-time."),
+    ).toContain("secret-dependent-branch");
+  });
+
+  // TC-252
+  it("separates reference equivalence from approval testing", () => {
+    // Two questions, two methods. Approval testing compares against a RECORDED
+    // output; equivalence checking proves two IMPLEMENTATIONS agree for all
+    // inputs. Collapsing the phrasings would make one method answer the other.
+    expect(
+      characteristicsOf(
+        "The rewritten parser SHALL be semantically equivalent to the previous implementation.",
+      ),
+    ).toContain("reference-equivalence");
+    expect(
+      characteristicsOf(
+        "The output SHALL be byte-identical to the recorded snapshot.",
+      ),
+    ).not.toContain("reference-equivalence");
+  });
+});
+
+describe("TC-253 the evidence-side facts", () => {
+  const statement = "The cache SHALL evict the oldest entry.";
+
+  // TC-253
+  it("reports an exercised obligation nothing has measured", () => {
+    expect(
+      characteristicsOf(statement, null, {
+        bound: true,
+        faultDetectionScores: [],
+      }),
+    ).toContain("fault-detection-unmeasured");
+  });
+
+  // TC-253
+  it("reports a seeded fault the tests missed, by the weakest bound symbol", () => {
+    // The worst score, not the mean — FR-039's rule. Averaging lets a
+    // well-tested symbol carry one whose mutants all survive, which is the case
+    // the signal exists to find.
+    const got = characteristicsOf(statement, null, {
+      bound: true,
+      faultDetectionScores: [1, 0.62],
+    });
+    expect(got).toContain("fault-detection-failed");
+    expect(got).not.toContain("fault-detection-unmeasured");
+  });
+
+  // TC-253
+  it("says nothing about an obligation nothing is bound to", () => {
+    // That is `undischarged`, which the auditor reports separately. Conflating
+    // them would recommend a solver for code nobody has tested yet.
+    const got = characteristicsOf(statement, null, {
+      bound: false,
+      faultDetectionScores: [],
+    });
+    expect(got).not.toContain("fault-detection-unmeasured");
+    expect(got).not.toContain("fault-detection-failed");
+
+    // And an absent `evidence` means "not consulted", which is different again.
+    expect(characteristicsOf(statement)).not.toContain(
+      "fault-detection-unmeasured",
+    );
+  });
+
+  // TC-253
+  it("makes concolic-execution reachable from evidence alone", () => {
+    const catalog = loadMethodCatalog();
+    const advice = advise(catalog, {
+      id: "FR-001-AC-1",
+      statement,
+      evidence: { bound: true, faultDetectionScores: [0.62] },
+    });
+    expect(advice.recommended.map((r) => r.method)).toContain(
+      "concolic-execution",
+    );
+  });
+});

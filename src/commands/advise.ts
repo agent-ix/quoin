@@ -2,7 +2,15 @@ import { Flags } from "@oclif/core";
 
 import { QuoinCommand } from "../base.js";
 import { advise, loadMethodCatalog } from "../advisor/index.js";
-import type { Advice, ObligationFacts } from "../advisor/index.js";
+import type {
+  Advice,
+  MethodCatalog,
+  ObligationEvidence,
+  ObligationFacts,
+} from "../advisor/index.js";
+import { scoresFor } from "../auditor/index.js";
+import { latestRuns, readBindings } from "../evidence/index.js";
+import type { Binding, RunRecord } from "../evidence/index.js";
 import {
   checkVersionPremise,
   parseCoverage,
@@ -96,8 +104,21 @@ residue afterwards — labelled as judgement (the FR-042 / ADR-0010 discipline).
       );
     }
 
+    // The store is read ONCE, here, and handed in. `advise` performs no I/O —
+    // an advisor that could reach the filesystem could also disagree with the
+    // auditor about what it found (ADR-0011).
+    const bindings = readBindings(flags.repo).bindings;
+    const runs = latestRuns(flags.repo);
+
     let advice = obligations.map((o) =>
-      advise(catalog, factsFor(o, shapes.get(o.id))),
+      advise(
+        catalog,
+        factsFor(
+          o,
+          shapes.get(o.id),
+          evidenceFor(o.id, bindings, runs, catalog),
+        ),
+      ),
     );
     if (flags["mismatch-only"]) advice = advice.filter((a) => a.mismatch);
     if (flags["inconclusive-only"]) {
@@ -173,9 +194,30 @@ function propertyShapes(
   return out;
 }
 
+/**
+ * What the store records about one obligation.
+ *
+ * `scoresFor` is the auditor's, reused rather than reimplemented: one
+ * definition of what a fault-detection score is, so the auditor's finding and
+ * the advisor's recommendation cannot disagree about the same run.
+ */
+function evidenceFor(
+  id: string,
+  bindings: Binding[],
+  runs: RunRecord[],
+  catalog: MethodCatalog,
+): ObligationEvidence {
+  const mine = bindings.filter((b) => b.obligation === id);
+  return {
+    bound: mine.length > 0,
+    faultDetectionScores: scoresFor(mine, runs, catalog),
+  };
+}
+
 function factsFor(
   obligation: Obligation,
   shape: { property: string; archetype: string } | undefined,
+  evidence: ObligationEvidence,
 ): ObligationFacts {
   return {
     id: obligation.id,
@@ -184,6 +226,7 @@ function factsFor(
     propertyShape: shape?.property ?? null,
     archetype: shape?.archetype ?? archetypeOf(obligation.id),
     criticality: obligation.criticality ?? null,
+    evidence,
   };
 }
 

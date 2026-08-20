@@ -51,26 +51,12 @@ const EXEMPT = new Map<string, string>([
       "shape as cross-repo-boundary: not in the sentence.",
   ],
   [
-    "suite-quality-unknown",
-    "a fact about the evidence store — this obligation has bindings but no " +
-      "run recording a mutation score. The auditor can compute it; the " +
-      "advisor is not given the store.",
-  ],
-  [
     "instrumented",
     "a fact about the test environment (is the subject running under an IAST " +
       "agent), not about the requirement.",
   ],
 
   // ── the fact lives in the code, which quoin never reads ──
-  [
-    "path-sensitive",
-    "a property of the implementation's control flow. quoin reads specs.",
-  ],
-  [
-    "hard-to-reach-branch",
-    "a property of the implementation's control flow. quoin reads specs.",
-  ],
   [
     "decidable",
     "a property of the requirement's underlying logic. No author writes the " +
@@ -97,20 +83,22 @@ const EXEMPT = new Map<string, string>([
 /**
  * Methods that cannot be recommended, each with the reason.
  *
- * Declared rather than silenced. An entry here is a catalog claim nothing can
- * satisfy, and the honest options are to give it a fact source or retire it —
- * both of which are decisions, not oversights. A method arriving in this state
- * without being listed fails the check.
+ * **Empty, and that is the whole point of the file.** It held 7 when this check
+ * was written (agent-ix/quoin#128) and 1 after that ticket — `concolic-execution`,
+ * keyed only on `path-sensitive` and `hard-to-reach-branch`, properties of the
+ * implementation's control flow that no specification states.
+ *
+ * agent-ix/quoin#158 re-keyed it on what people actually reach for it for: a
+ * magic-value comparison, grammar-shaped input, mandated path coverage,
+ * constant-time code, reference equivalence, and the two evidence-side facts.
+ * Every catalog method is now reachable by some obligation.
+ *
+ * Declared rather than silenced, if it ever fills again. An entry here is a
+ * catalog claim nothing can satisfy, and the honest options are to give it a
+ * fact source or retire it — both decisions, not oversights. A method arriving
+ * in this state without being listed fails the check.
  */
-const UNREACHABLE_METHODS = new Map<string, string>([
-  [
-    "concolic-execution",
-    "keyed only on `path-sensitive` and `hard-to-reach-branch`, both " +
-      "properties of the implementation's control flow. Nothing quoin reads " +
-      "can produce either, so this method awaits a decision: retire it, or " +
-      "key it on something a specification states.",
-  ],
-]);
+const UNREACHABLE_METHODS = new Map<string, string>();
 
 describe("the catalog and the fact set agree", () => {
   // TC-247
@@ -134,6 +122,31 @@ describe("the catalog and the fact set agree", () => {
       unreachable,
       "the catalog asks for these and no code path produces them, so the " +
         "methods listed beside each can never be recommended",
+    ).toEqual([]);
+  });
+
+  // TC-251
+  it("carries no exemption for a value the catalog no longer declares", () => {
+    // Without this the map becomes a place things go to be forgotten. A value
+    // retired from the catalog leaves its excuse behind, and the next reader
+    // finds a documented reason for something that no longer exists — which is
+    // worse than no reason at all, because it looks considered.
+    //
+    // Caught three on the day it was written: `suite-quality-unknown` (renamed
+    // to `fault-detection-unmeasured`), `path-sensitive` and
+    // `hard-to-reach-branch` (dropped when `concolic-execution` was re-keyed on
+    // things a spec states — agent-ix/quoin#158).
+    const catalog = loadMethodCatalog();
+    const declared = new Set(
+      catalog.methods.flatMap((m) => m.applicability.characteristics ?? []),
+    );
+
+    const stale = [...EXEMPT.keys()].filter((v) => !declared.has(v)).sort();
+
+    expect(
+      stale,
+      "these are exempted from the join check and no method asks for them; " +
+        "the exemption is stale and should go with the value",
     ).toEqual([]);
   });
 

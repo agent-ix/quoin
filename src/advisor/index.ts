@@ -19,6 +19,7 @@ export {
   mintableCharacteristics,
   type Advice,
   type MatchReason,
+  type ObligationEvidence,
   type ObligationFacts,
   type Recommendation,
 } from "./advise.js";

@@ -124,6 +124,55 @@ against another.
 | FR-031-AC-13 | No method keyed solely on `characteristics` is unreachable by every possible statement, unless it is declared unreachable with a reason. | Test (TC-248) |
 | FR-031-AC-14 | Characteristics are read from a statement's prose: a markdown link's **target** contributes nothing, its text does. | Test (TC-249) |
 | FR-031-AC-15 | `high-criticality` is minted from the obligation's own declared criticality value, never from a threshold the engine chose. | Test (TC-250) |
+| FR-031-AC-16 | The join check carries no exemption for a `characteristics` value the active catalog no longer declares. | Test (TC-251) |
+| FR-031-AC-17 | A statement naming a magic-value comparison, constant-time behaviour, or equivalence with a reference implementation mints the corresponding characteristic; a function signature and a recorded-snapshot comparison mint neither of the first or last. | Test (TC-252) |
+| FR-031-AC-18 | An obligation with a binding and no fault-detection score mints `fault-detection-unmeasured`; one whose weakest bound score is below 1 mints `fault-detection-failed`; one with no binding, and one whose evidence was not consulted, mint neither. | Test (TC-253) |
+
+> **CR-026 note (the advisor reads evidence — 2026-08-19):** `concolic-execution`
+> was the last catalog method no requirement could elicit (CR-025 took that from
+> 7 of 33 to 1). It was keyed on `path-sensitive` and `hard-to-reach-branch`,
+> both properties of the *implementation's* control flow, which no specification
+> states.
+>
+> **Nobody reaches for concolic execution up front.** It path-explodes and it is
+> slow. The industrial pattern is hybrid fuzzing: fuzz until the coverage curve
+> flattens, hand the stuck branches to a solver, feed the solved inputs back as
+> seeds (Driller 2016, then QSYM, SymCC, Fuzzolic). It is an escalation from a
+> stalled campaign, so the triggers had to come from somewhere other than a
+> sentence.
+>
+> **Three are stated and two are observed.** A magic-value comparison — a
+> checksum, CRC or HMAC — is the classic wall a fuzzer cannot climb and a solver
+> clears in one step. Constant-time behaviour and reference equivalence are proof
+> obligations an author writes down. And the evidence store answers the plateau
+> question directly: `fault-detection-unmeasured` when an obligation is exercised
+> and nothing measures whether the exercise discriminates,
+> `fault-detection-failed` when something measured it and a seeded fault
+> survived.
+>
+> **`advise` still performs no I/O.** The command opens the store and hands the
+> answer in, exactly as `propertyShape` and `archetype` arrive. `scoresFor` is the
+> auditor's, reused rather than reimplemented, so the auditor's finding and the
+> advisor's recommendation cannot disagree about the same run.
+>
+> **A trigger shared with a cheaper method distinguishes nothing.**
+> `structured-input` was among the triggers for one module release and was
+> removed: it is what `grammar-based-fuzzing` is keyed on, so both were
+> recommended on identical evidence with no basis to choose between them.
+> **[RAN]** over quire-rs's 640 obligations: 17 of 18 concolic recommendations
+> came from it, and dropping it took the count to **1** — the single genuine
+> `reference-equivalence` hit. The count is not the argument; the argument is
+> that the trigger separated nothing.
+>
+> **Deliberately absent: `fuzz-plateau`**, the literal Driller trigger. Nothing
+> records coverage over time and a proxy invented to stand in for it is the
+> CR-014 failure — an open set whose membership has to be judged rather than
+> read.
+>
+> **What the advisor still cannot say** is that this is an escalation. Ranking is
+> by matched-rule count, so a method of last resort ties with a unit test. Filed
+> as agent-ix/quire-rs#190; the guidance lives in the `spec-evidence-analysis` and
+> `spec-fuzz` skills until the catalog can carry it.
 
 > **CR-025 note (the catalog/fact join — 2026-08-19):** `advise` matches two
 > things written by different people in different places — the **catalog**

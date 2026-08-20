@@ -17,6 +17,8 @@ export {
   gc,
   inspectionsPath,
   latestRun,
+  latestRuns,
+  latestScans,
   listRecordedSuites,
   listRuns,
   readBaseline,

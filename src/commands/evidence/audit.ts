@@ -6,13 +6,11 @@ import { QuoinCommand } from "../../base.js";
 import { loadMethodCatalog } from "../../advisor/index.js";
 import { audit, ratchet } from "../../auditor/index.js";
 import {
-  latestRun,
-  latestScan,
-  listRecordedSuites,
+  latestRuns,
+  latestScans,
   readBaseline,
   readBindings,
 } from "../../evidence/index.js";
-import type { FindingRecord, RunRecord } from "../../evidence/index.js";
 import {
   checkVersionPremise,
   parseCoverage,
@@ -156,25 +154,6 @@ a week. Write that baseline with: quoin evidence baseline`;
  * HEAD could still be reported stale, and re-recording could not fix it
  * (agent-ix/quoin#104).
  */
-/**
- * The newest scan of every recorded suite.
- *
- * Mirrors `latestRuns`. Its absence was why no `FindingRecord` ever reached
- * the auditor: the record type, the vacuity check and the tests all existed
- * while `audit()` was called with no `scans` at all (SR-005 FND-002).
- */
-function latestScans(repo: string): FindingRecord[] {
-  return listRecordedSuites(repo)
-    .map((suite) => latestScan(repo, suite))
-    .filter((s): s is FindingRecord => s !== null);
-}
-
-function latestRuns(repo: string): RunRecord[] {
-  return listRecordedSuites(repo)
-    .map((suite) => latestRun(repo, suite))
-    .filter((r): r is RunRecord => r !== null);
-}
-
 function headCommit(repo: string): string | undefined {
   try {
     return execFileSync("git", ["-C", repo, "rev-parse", "HEAD"], {
