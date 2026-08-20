@@ -29,6 +29,16 @@ export interface ObligationFacts {
   archetype?: string | null;
   /** Object types the spec declares near this requirement, if any. */
   objectTypes?: string[];
+  /**
+   * The obligation's declared criticality, verbatim (`P0`, `high`, …).
+   *
+   * Carried rather than interpreted. `mutation-testing` is keyed on
+   * `high-criticality`, and the engine does not get to decide which values
+   * count as high — CR-008 deleted a hardcoded `["P0"]` for exactly that
+   * reason. So the characteristic is minted when the value **says so itself**,
+   * which is reading it, not judging it.
+   */
+  criticality?: string | null;
 }
 
 /** Why a method was recommended — the rule and the value that matched. */
@@ -119,6 +129,132 @@ const STATEMENT_CHARACTERISTICS: Array<[string, RegExp]> = [
   ["stable-output", /\b(byte-identical|identical output|serializ|snapshot)\b/i],
   ["agent-behaviour", /\b(agent|transcript|prompt)\b/i],
   ["no-executable-oracle", /\b(review|judgement|readable|documented)\b/i],
+
+  // ── agent-ix/quoin#128 ───────────────────────────────────────────────────
+  //
+  // The catalog declared 60 characteristics and this table produced 20, so 40
+  // were asked for and never minted — and an unmatched VALUE on a known axis
+  // fails silently, unlike an unknown axis, which `matchRules` skips by design.
+  // Seven methods were unreachable by any statement ever written, including
+  // `integration-testing` and `mutation-testing`.
+  //
+  // Only values whose fact genuinely lives IN THE SENTENCE are added here. A
+  // characteristic that is a property of the code (`path-sensitive`), of the
+  // evidence store (`suite-quality-unknown`) or of an obligation field
+  // (`high-criticality`) gets a fact source or gets retired — writing a regex
+  // for a phrase no author ever types is the CR-014 failure, where an open set
+  // whose membership had to be judged reached ~13% precision.
+  //
+  // Overlap with the entries above is expected and harmless: a statement may
+  // carry several characteristics, and two methods keyed on different ones are
+  // both worth surfacing.
+  ["complexity", /\b(complexity|cyclomatic|nesting depth|deeply nested)\b/i],
+  ["consistency", /\b(consistent|consistency|contradict|mutually exclusive)/i],
+  [
+    "cross-component",
+    /\b(cross-component|between (two |the )?(components|services|processes)|across (the|a|its) [a-z-]* ?boundary|two or more components|end-to-end)\b/i,
+  ],
+  ["degradation", /\b(degrad|graceful(ly)?\s+(fail|fall)|fall back)/i],
+  ["deserializer", /\b(deserializ|unmarshal|decoder|from_json|from_yaml)/i],
+  [
+    "distributed",
+    /\b(distributed|cluster|replica|consensus|quorum|multi-node|across nodes)\b/i,
+  ],
+  [
+    "fault-tolerance",
+    /\b(fault[- ]toleran|tolerates? (a |an )?fail|survives? [a-z ]*fail|crash recovery)/i,
+  ],
+  [
+    "feature-flags",
+    /\b(feature flag|feature toggle|cargo feature|--features?\b|opt-in flag)\b/i,
+  ],
+  [
+    "injection-risk",
+    /\b(injection|\bXSS\b|\bSQL\b|shell escape|escap(e|ing) [a-z]* ?input)\b/i,
+  ],
+  [
+    "io-boundary",
+    /\b(filesystem|file system|socket|database|to disk|from disk|over the network|subprocess|stdin|stdout)\b/i,
+  ],
+  ["licence", /\b(licence|license|SPDX|copyleft|allow-?list of licen)/i],
+  [
+    "maintainability",
+    /\b(maintainab|technical debt|code smell|dead code|duplicat(e|ion) of)/i,
+  ],
+  [
+    "memory-safety",
+    /\b(memory safety|use[- ]after[- ]free|buffer overflow|double free|dangling pointer|\bunsafe\b)/i,
+  ],
+  [
+    "network-exposed",
+    /\b(endpoint|publicly (reachable|exposed|accessible)|listens? on|inbound request|remote client|HTTP request)\b/i,
+  ],
+  [
+    "non-deterministic-subject",
+    /\b(non-?deterministic|stochastic|temperature|sampled output|model output|\bLLM\b)\b/i,
+  ],
+  [
+    "precondition-bearing",
+    /\b(precondition|postcondition|requires that|provided that|assumes that|only when)\b/i,
+  ],
+  [
+    "protocol",
+    /\b(protocol|handshake|wire format|message (format|sequence|order))\b/i,
+  ],
+  [
+    "published-interface",
+    /\b(published interface|public (api|surface)|exported (api|surface)|semver|breaking change|backward[- ]compatib)/i,
+  ],
+  [
+    "requirement-set",
+    /\b(set of requirements|across (all )?requirements|no two requirements|every requirement)\b/i,
+  ],
+  // `safety` as a bare word is NOT here. Measured: of 11 matches across the
+  // five repos, 10 were `path-safety` and none were the 25010 characteristic
+  // — this ecosystem uses the word as a suffix for memory/path/type safety,
+  // which is a different concept from freedom from harm. The words that name
+  // the characteristic itself are kept.
+  ["safety", /\b(hazard|harm to|injur|fail-safe|mitigat(e|ion) of risk)/i],
+  ["serialization", /\b(serializ|round-?trip|encode[sd]? (to|as)|to_json)/i],
+  [
+    "single-component",
+    /\b(single (function|component|module|unit)|in isolation|pure function)\b/i,
+  ],
+  [
+    "stakeholder-acceptance",
+    /\b(sign-?off|accepted by|acceptance by|demonstrat(e|ed|ion) to)\b/i,
+  ],
+  [
+    "stakeholder-facing",
+    // `business` is not here: it matched the repo name `spec-objects-business`.
+    /\b(stakeholder|end user|customer|operator-facing)\b/i,
+  ],
+  [
+    "state-machine",
+    /\b(state machine|state transition|transitions? (from|to|into)|finite state)\b/i,
+  ],
+  [
+    "structured-input",
+    /\b(grammar|structured input|well-formed|schema-valid|malformed (document|input|payload))\b/i,
+  ],
+  [
+    "supply-chain",
+    /\b(supply chain|\bSBOM\b|vendored|transitive dependenc|provenance)\b/i,
+  ],
+  [
+    "undefined-behaviour",
+    /\b(undefined behaviou?r|\bUB\b|data race|uninitializ|out[- ]of[- ]bounds)/i,
+  ],
+  [
+    "universally-quantified",
+    /\b(for (every|all) [a-z]|every input|any input|universally|holds for)\b/i,
+  ],
+  [
+    "workflow",
+    // `scenario` dropped: in this corpus it names a test case or an example,
+    // not a user-facing sequence of steps.
+    /\b(workflow|user journey|step \d|then the (user|operator))\b/i,
+  ],
 ];
 
 /**
@@ -135,12 +271,71 @@ const STATEMENT_CHARACTERISTICS: Array<[string, RegExp]> = [
  * never advised for. A structural test cannot false-positive on prose either,
  * which a widened regex would.
  */
-export function characteristicsOf(statement: string): string[] {
+/**
+ * The prose of a statement, with markdown link **targets** removed.
+ *
+ * A criterion cites its neighbours constantly —
+ * `([StR-005-AC-4](../stakeholder/StR-005-no-runtime.md))` — and the path is
+ * not something the author said about the requirement. Measured across the five
+ * repos in this ecosystem when this was added: of 13 statements matching
+ * `stakeholder`, **12 matched the directory name `../stakeholder/` inside a
+ * link target** and one was the word in prose. Every characteristic reading the
+ * raw string inherited that noise, the twenty that predate #128 included.
+ *
+ * Link *text* is kept: `[the evidence store](./FR-030.md)` is prose the author
+ * wrote. Only the destination goes.
+ */
+function prose(statement: string): string {
+  return statement.replace(/\]\([^)]*\)/g, "]");
+}
+
+export function characteristicsOf(
+  statement: string,
+  criticality?: string | null,
+): string[] {
+  const text = prose(statement);
   const matched = STATEMENT_CHARACTERISTICS.filter(([, re]) =>
-    re.test(statement),
+    re.test(text),
   ).map(([name]) => name);
   if (parseSpace(statement) !== null) matched.push("configuration-matrix");
+  // Read from the value, never inferred from a threshold this code chose.
+  // Worth stating plainly: 2,304 of 2,304 `Acceptance Criteria` tables in the
+  // ecosystem carry no criticality column, so this mints for nothing today.
+  // That is the honest state — `mutation-testing` becomes reachable in
+  // principle and stays unreached in practice until a spec declares one, and
+  // the join check now shows that rather than hiding it.
+  if (criticality && /^(p0|high|critical)$/i.test(criticality.trim())) {
+    matched.push("high-criticality");
+  }
   return [...new Set(matched)].sort();
+}
+
+/**
+ * Every `characteristics` value any code path in quoin can produce.
+ *
+ * This exists so the **join** between the catalog and the fact set is
+ * checkable. The catalog declares the values that trigger a method; this is the
+ * set that can ever be produced to match them. Nothing compared the two, and
+ * the consequence was silent: `matchRules` skips an unknown *axis* by design
+ * (FR-054-CON-2 leaves the axis set open) but an unknown *value* on a known
+ * axis simply never matches, and `inconclusive` is already a legitimate
+ * outcome. A systematically under-advising advisor was indistinguishable from a
+ * quiet one.
+ *
+ * Measured when this was added: the installed catalog declared **60** values
+ * and 20 were producible, leaving **7 methods** — `integration-testing` and
+ * `mutation-testing` among them — that no statement could ever reach
+ * (agent-ix/quoin#128).
+ *
+ * Derived from the regex table rather than hand-listed, because a hand-listed
+ * copy is the failure mode this whole check exists to catch.
+ */
+export function mintableCharacteristics(): Set<string> {
+  return new Set([
+    ...STATEMENT_CHARACTERISTICS.map(([name]) => name),
+    // Not lexical: read from the obligation's own criticality field.
+    "high-criticality",
+  ]);
 }
 
 /**
@@ -152,7 +347,9 @@ export function characteristicsOf(statement: string): string[] {
  * as a deterministic tiebreak, so the same input always yields the same order.
  */
 export function advise(catalog: MethodCatalog, facts: ObligationFacts): Advice {
-  const characteristics = new Set(characteristicsOf(facts.statement));
+  const characteristics = new Set(
+    characteristicsOf(facts.statement, facts.criticality),
+  );
   const shapes = new Set(facts.propertyShape ? [facts.propertyShape] : []);
   const objects = new Set(facts.objectTypes ?? []);
   const archetypes = new Set(facts.archetype ? [facts.archetype] : []);

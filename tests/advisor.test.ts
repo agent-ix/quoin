@@ -355,3 +355,51 @@ describe("TC-133 an unreadable module manifest is reported, not thrown (FR-031-A
     expect(catalog.unreadable[0].reason).toBeTruthy();
   });
 });
+
+describe("TC-249 characteristics are read from prose, not from link targets", () => {
+  // TC-249
+  it("ignores a link's destination and keeps its text", () => {
+    // Measured across the ecosystem: of 13 statements matching `stakeholder`,
+    // 12 matched the directory name inside `](../stakeholder/StR-005-…)` and
+    // one was the word in prose. Every characteristic reading the raw string
+    // inherited that, the twenty predating agent-ix/quoin#128 included.
+    const cited =
+      "The loader SHALL reject a malformed manifest " +
+      "([StR-004-AC-2](../stakeholder/StR-004-thin-boundary.md)).";
+    expect(characteristicsOf(cited)).not.toContain("stakeholder-facing");
+
+    // The text of a link is prose the author wrote, so it still counts.
+    const worded = "A [stakeholder](./StR-001.md) SHALL confirm the outcome.";
+    expect(characteristicsOf(worded)).toContain("stakeholder-facing");
+  });
+
+  // TC-249
+  it("does not treat `path-safety` as the safety characteristic", () => {
+    // 10 of 11 `safety` matches in this ecosystem were `path-safety`. The
+    // 25010 characteristic is freedom from harm, not memory/path/type safety.
+    expect(
+      characteristicsOf("A path-safety violation SHALL exit 1."),
+    ).not.toContain("safety");
+    expect(
+      characteristicsOf("The declared hazard SHALL have a mitigation."),
+    ).toContain("safety");
+  });
+});
+
+describe("TC-250 high-criticality is read from the obligation, not inferred", () => {
+  // TC-250
+  it("mints only when the declared value says so, and never from the statement", () => {
+    const statement = "The parser SHALL reject an invalid token.";
+    // CR-008 deleted a hardcoded `["P0"]` because a built-in threshold is a
+    // rule nobody chose. The value is read, not judged.
+    expect(characteristicsOf(statement, "P0")).toContain("high-criticality");
+    expect(characteristicsOf(statement, "high")).toContain("high-criticality");
+    expect(characteristicsOf(statement, "P3")).not.toContain(
+      "high-criticality",
+    );
+    expect(characteristicsOf(statement, null)).not.toContain(
+      "high-criticality",
+    );
+    expect(characteristicsOf(statement)).not.toContain("high-criticality");
+  });
+});

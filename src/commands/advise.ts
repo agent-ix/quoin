@@ -183,6 +183,7 @@ function factsFor(
     authoredMethod: obligation.method ?? null,
     propertyShape: shape?.property ?? null,
     archetype: shape?.archetype ?? archetypeOf(obligation.id),
+    criticality: obligation.criticality ?? null,
   };
 }
 
