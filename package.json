@@ -97,7 +97,7 @@
     "zod": ">=4.4.3"
   },
   "devDependencies": {
-    "@agent-ix/quire-cli": "^0.25.1",
+    "@agent-ix/quire-cli": "^0.26.0",
     "@types/node": "26.1.2",
     "@typescript-eslint/eslint-plugin": "8.66.0",
     "@typescript-eslint/parser": "8.66.0",
