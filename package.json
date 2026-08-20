@@ -2,7 +2,7 @@
   "name": "@agent-ix/quoin",
   "description": "Spec-driven development for Claude Code — author validated, ISO/IEC/IEEE 29148-aligned specs, then plan and build against them.",
   "version": "0.9.0",
-  "license": "MIT",
+  "license": "AGPL-3.0-or-later",
   "type": "module",
   "files": [
     "dist/",
