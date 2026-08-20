@@ -232,7 +232,7 @@ test("ships a Codex plugin manifest with its marketplace metadata", () => {
   >;
   expect(manifest.name).toBe("quoin");
   expect(manifest.skills).toBe("./skills/");
-  expect(manifest.license).toBe("MIT");
+  expect(manifest.license).toBe("AGPL-3.0-or-later");
   for (const key of ["author", "homepage", "repository", "keywords"]) {
     expect(manifest[key]).toBeDefined();
   }

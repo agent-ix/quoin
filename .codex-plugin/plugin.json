@@ -8,7 +8,7 @@
   },
   "homepage": "https://github.com/agent-ix/quoin",
   "repository": "https://github.com/agent-ix/quoin",
-  "license": "MIT",
+  "license": "AGPL-3.0-or-later",
   "keywords": ["specifications", "requirements", "planning", "agent-skills"],
   "skills": "./skills/",
   "interface": {
