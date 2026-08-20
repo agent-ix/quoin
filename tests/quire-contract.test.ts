@@ -7,6 +7,9 @@
  */
 
 import { execFileSync } from "node:child_process";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -289,6 +292,60 @@ describe("TC-118 the contract holds against the installed quire", () => {
     // bound to nothing and the matrix read ✅ over it (agent-ix/quoin#124).
     if (installed === null) return ctx.skip();
     expect(checkVersionPremise(installed)).toBeNull();
+  });
+
+  // TC-118
+  it("a real `quire coverage --json` payload validates against the pinned schema", (ctx) => {
+    if (installed === null) return ctx.skip();
+
+    // **This is the check whose absence broke every coverage-reading command.**
+    // quire-rs CR-080 added `implements` to the report; the vendored schema is
+    // `additionalProperties: false` and was pinned two releases back, so the
+    // real binary emitted a field the contract forbade and `quoin advise`,
+    // `evidence audit` and `completeness` all failed at once. Nothing caught it
+    // because the only coverage assertions in this file validate a HAND-BUILT
+    // fixture, which by construction carries whatever the schema already allows.
+    //
+    // The bundle deliberately produces an `implements` edge. A payload without
+    // one would validate against the old schema too, so the guard would pass
+    // while proving nothing — the tautology this test exists to avoid.
+    const root = mkdtempSync(join(tmpdir(), "quoin-tc118-cov-"));
+    try {
+      mkdirSync(join(root, "spec", "functional"), { recursive: true });
+      writeFileSync(
+        join(root, "spec", "functional", "FR-001-thing.md"),
+        '---\nid: FR-001\ntype: FR\ntitle: "Thing"\n---\n\n' +
+          "# FR-001: Thing\n\n## Description\n\nIt does the thing.\n\n" +
+          "## Acceptance Criteria\n\n" +
+          "| ID | Criteria | Verification |\n|----|----------|--------------|\n" +
+          "| FR-001-AC-1 | It does the thing. | Test |\n",
+      );
+      mkdirSync(join(root, "src"), { recursive: true });
+      writeFileSync(
+        join(root, "src", "lib.rs"),
+        "/// Implements: FR-001\npub fn do_the_thing() -> usize { 1 }\n",
+      );
+
+      const out = execFileSync(
+        "quire",
+        ["coverage", "--scope", root, "--json"],
+        { encoding: "utf8", stdio: ["pipe", "pipe", "ignore"] },
+      );
+
+      const result = parseCoverage(out);
+      expect(result.ok, out.slice(0, 400)).toBe(true);
+
+      // The field that broke it is present, so a future contract narrowing
+      // fails here rather than in a consumer command.
+      const payload = JSON.parse(out) as { implements?: unknown[] };
+      expect(
+        (payload.implements ?? []).length,
+        "the fixture must mint an `implements` edge, or this guard is vacuous: " +
+          out.slice(0, 600),
+      ).toBeGreaterThan(0);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
   });
 
   // TC-118
