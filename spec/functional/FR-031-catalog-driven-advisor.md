@@ -120,6 +120,67 @@ against another.
 | FR-031-AC-9 | A module whose `manifest.yaml` cannot be read or parsed is skipped and reported on the merged catalog, never thrown: a catalog missing one module's entries is still worth having, and the command that would crash is the one an operator runs to diagnose the module. | Test (TC-133) |
 | FR-031-AC-10 | The advisor is reachable from a command: `quoin advise` derives the obligations from `quire coverage --json`, reads each criterion's FR-052 property shape from `quire properties --json`, and emits one recommendation set per obligation, with `--mismatch-only`, `--inconclusive-only` and `--json`. | Test (TC-150) |
 | FR-031-AC-11 | A `quire properties` run that exits non-zero because some input document failed to resolve still contributes the shapes it did emit. Two untyped asset files must not cost the whole `property_shapes` axis. | Test (TC-150) |
+| FR-031-AC-12 | Every `characteristics` value the active catalog declares is producible by some fact source, or is listed as exempt with a reason. A value asked for and never produced fails the check by name, alongside the methods it strands. | Test (TC-247) |
+| FR-031-AC-13 | No method keyed solely on `characteristics` is unreachable by every possible statement, unless it is declared unreachable with a reason. | Test (TC-248) |
+| FR-031-AC-14 | Characteristics are read from a statement's prose: a markdown link's **target** contributes nothing, its text does. | Test (TC-249) |
+| FR-031-AC-15 | `high-criticality` is minted from the obligation's own declared criticality value, never from a threshold the engine chose. | Test (TC-250) |
+
+> **CR-025 note (the catalog/fact join — 2026-08-19):** `advise` matches two
+> things written by different people in different places — the **catalog**
+> (module data declaring the values that trigger each method) and the **fact
+> set** (engine code producing values from an obligation). **Nothing compared
+> them.**
+>
+> `matchRules` skips an unknown *axis* deliberately (FR-054-CON-2 leaves the
+> axis set open). It does not skip an unknown *value* on a known axis — that
+> value simply never matches. And `inconclusive` is already a legitimate
+> outcome, so an advisor that could never recommend `integration-testing` was
+> indistinguishable from one that had nothing to say.
+>
+> **What the numbers count.** Distinct `characteristics` values declared by the
+> installed catalog's 33 methods, against the values any quoin code path can
+> produce:
+>
+> | | |
+> |---|---|
+> | declared, never producible | **40 of 60 → 9** |
+> | methods unreachable by every statement | **7 of 33 → 1** |
+>
+> The second is the one that matters: it counts what an author actually loses.
+> `integration-testing` and `mutation-testing` were both in the seven.
+>
+> **Two false-positive causes were found by reading flagged documents, not by
+> inspecting the regexes.** Of 13 statements matching `stakeholder`, **12
+> matched the directory name inside a link target** (`../stakeholder/StR-005…`)
+> — so link targets are now stripped before matching, which cleans the twenty
+> pre-existing characteristics too. Of 11 matching `safety`, **10 were
+> `path-safety`** and none were the 25010 characteristic; this ecosystem uses
+> the word as a suffix for memory/path/type safety, a different concept from
+> freedom from harm, so the bare word is gone and `hazard`/`harm`/`injur`
+> remain. Neither narrowing was made because the count was high — both were
+> made because the regex was demonstrably naming something else.
+>
+> **`io-boundary` fires on 51 statements and that is correct.** 27 are driven by
+> `stdout`, and for a CLI, stdout *is* the I/O boundary: "produces parseable
+> JSON on stdout", "byte-identical stdout". A high count over a CLI-heavy corpus
+> is a fact about the corpus, not a bad rule.
+>
+> **The 9 that remain are declared, not silenced**, each with a reason: four are
+> facts `advise()` is never given (the trace graph, the bundle, the evidence
+> store, the test environment), four are properties of the implementation's
+> control flow or of testability that no author writes down, and one
+> (`judgement-required`) is a second spelling of the working
+> `no-executable-oracle`. `concolic-execution` remains the single unreachable
+> method and awaits a decision: retire it, or key it on something a
+> specification states.
+>
+> **`high-criticality` is honest about firing on nothing.** It is minted from
+> the obligation's own value (`P0`/`high`/`critical`) rather than from a
+> threshold this code picked — CR-008 deleted a hardcoded `["P0"]` for that
+> reason. Measured earlier in this programme: 2,304 of 2,304 `Acceptance
+> Criteria` tables carry no criticality column, so it mints for nothing today.
+> `mutation-testing` is reachable in principle and unreached in practice, and
+> the join check now shows that instead of hiding it.
 
 ## Dependencies
 

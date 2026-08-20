@@ -16,6 +16,7 @@ export {
 export {
   advise,
   characteristicsOf,
+  mintableCharacteristics,
   type Advice,
   type MatchReason,
   type ObligationFacts,
