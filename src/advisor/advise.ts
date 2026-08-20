@@ -30,6 +30,15 @@ export interface ObligationFacts {
   /** Object types the spec declares near this requirement, if any. */
   objectTypes?: string[];
   /**
+   * What the evidence store already knows about this obligation.
+   *
+   * Supplied by the caller, never read here: `advise` performs no I/O, so the
+   * command opens the store and hands the answer in — the same way
+   * `propertyShape` and `archetype` arrive. Absent means "not consulted", which
+   * is different from "consulted and empty" and must not mint anything.
+   */
+  evidence?: ObligationEvidence;
+  /**
    * The obligation's declared criticality, verbatim (`P0`, `high`, …).
    *
    * Carried rather than interpreted. `mutation-testing` is keyed on
@@ -39,6 +48,24 @@ export interface ObligationFacts {
    * which is reading it, not judging it.
    */
   criticality?: string | null;
+}
+
+/**
+ * What the evidence store records about one obligation.
+ *
+ * Only what the advisor needs to answer a single question: has anything
+ * measured that this obligation's tests would catch a fault?
+ */
+export interface ObligationEvidence {
+  /** True when at least one binding names this obligation. */
+  bound: boolean;
+  /**
+   * Fault-detection scores from runs bound to it, tool-scoped by the catalog.
+   *
+   * Empty while `bound` is true is the interesting case, not an error: the
+   * obligation is exercised and nothing says the exercise discriminates.
+   */
+  faultDetectionScores: number[];
 }
 
 /** Why a method was recommended — the rule and the value that matched. */
@@ -255,6 +282,36 @@ const STATEMENT_CHARACTERISTICS: Array<[string, RegExp]> = [
     // not a user-facing sequence of steps.
     /\b(workflow|user journey|step \d|then the (user|operator))\b/i,
   ],
+
+  // ── agent-ix/quoin#158: what makes `concolic-execution` reachable ──
+  //
+  // The method was keyed on `path-sensitive` and `hard-to-reach-branch`, which
+  // describe the IMPLEMENTATION's control flow — a thing no specification
+  // states. Re-keyed on what people actually reach for it for, three of which a
+  // requirement really does say out loud.
+  [
+    // THE classic wall a fuzzer cannot climb: random bytes have essentially no
+    // chance of satisfying a checksum and a solver has a certainty of it.
+    // `signature` is NOT a bare alternative — "function signature" is everywhere
+    // in this corpus, the same trap as `path-safety` matching `safety` (#128).
+    "magic-value-comparison",
+    /\b(checksum|CRC(-?\d+)?|magic (number|byte|value)|HMAC|digest match|version header|(digital |cryptographic )signature)\b/i,
+  ],
+  [
+    // Constant-time code. `haybale-pitchfork` exists for exactly this, and a
+    // requirement forbidding a branch on secret data is a direct instruction to
+    // run symbolic execution rather than to sample inputs.
+    "secret-dependent-branch",
+    /\b(constant[- ]time|secret[- ]dependent|timing (side[- ]channel|attack)|branch on (a )?secret)\b/i,
+  ],
+  [
+    // Deliberately narrower than `stable-output`'s `identical output`: approval
+    // testing compares against a RECORDED output, equivalence checking proves
+    // two IMPLEMENTATIONS agree for all inputs. Two questions, two methods, so
+    // the phrasings must not collapse into one another.
+    "reference-equivalence",
+    /\b(reference implementation|previous implementation|behaviou?rally identical|semantically equivalent|equivalent to the (old|existing|legacy))\b/i,
+  ],
 ];
 
 /**
@@ -292,6 +349,7 @@ function prose(statement: string): string {
 export function characteristicsOf(
   statement: string,
   criticality?: string | null,
+  evidence?: ObligationEvidence,
 ): string[] {
   const text = prose(statement);
   const matched = STATEMENT_CHARACTERISTICS.filter(([, re]) =>
@@ -307,6 +365,33 @@ export function characteristicsOf(
   if (criticality && /^(p0|high|critical)$/i.test(criticality.trim())) {
     matched.push("high-criticality");
   }
+
+  // ── Evidence-side characteristics (agent-ix/quoin#158) ──
+  //
+  // These say something about the TESTS, not about the requirement, and that is
+  // the point: concolic execution and mutation testing are escalations reached
+  // when a cheap search stalls, not choices made from a sentence.
+  //
+  // Both require a binding. An obligation nothing is bound to is `undischarged`
+  // — a finding the auditor already reports — and conflating the two would
+  // recommend a solver for code nobody has tested yet.
+  //
+  // Deliberately absent: a `fuzz-plateau` characteristic, the literal Driller
+  // trigger. Nothing records coverage over time, and a proxy invented to stand
+  // in for it is the CR-014 failure — an open set whose membership has to be
+  // judged rather than read.
+  if (evidence?.bound) {
+    if (evidence.faultDetectionScores.length === 0) {
+      // Exercised, and nothing measures whether the exercise discriminates.
+      matched.push("fault-detection-unmeasured");
+    } else if (Math.min(...evidence.faultDetectionScores) < 1) {
+      // Measured, and a seeded fault survived. The weakest bound symbol decides,
+      // for the reason FR-039 gives: averaging lets a well-tested symbol carry
+      // one whose mutants all survive, which is the case worth acting on.
+      matched.push("fault-detection-failed");
+    }
+  }
+
   return [...new Set(matched)].sort();
 }
 
@@ -335,6 +420,9 @@ export function mintableCharacteristics(): Set<string> {
     ...STATEMENT_CHARACTERISTICS.map(([name]) => name),
     // Not lexical: read from the obligation's own criticality field.
     "high-criticality",
+    // Not lexical: read from the evidence store.
+    "fault-detection-unmeasured",
+    "fault-detection-failed",
   ]);
 }
 
@@ -348,7 +436,7 @@ export function mintableCharacteristics(): Set<string> {
  */
 export function advise(catalog: MethodCatalog, facts: ObligationFacts): Advice {
   const characteristics = new Set(
-    characteristicsOf(facts.statement, facts.criticality),
+    characteristicsOf(facts.statement, facts.criticality, facts.evidence),
   );
   const shapes = new Set(facts.propertyShape ? [facts.propertyShape] : []);
   const objects = new Set(facts.objectTypes ?? []);

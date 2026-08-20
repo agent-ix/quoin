@@ -319,6 +319,28 @@ export function latestRun(
   return readRuns(repo, suite, skipped).at(-1) ?? null;
 }
 
+/**
+ * The newest recorded run of every suite that has one.
+ *
+ * Lives here rather than in a command because more than one caller needs it.
+ * It was private to `evidence audit`, and the matching `latestScans` being
+ * private *and uncalled* is exactly what SR-005 FND-002 was: the record type,
+ * the vacuity check and the tests all existed while `audit()` ran with no scans
+ * at all. A reader every consumer needs belongs beside the store it reads.
+ */
+export function latestRuns(repo: string): RunRecord[] {
+  return listRecordedSuites(repo)
+    .map((suite) => latestRun(repo, suite))
+    .filter((r): r is RunRecord => r !== null);
+}
+
+/** The newest scan of every recorded suite. Mirrors {@link latestRuns}. */
+export function latestScans(repo: string): FindingRecord[] {
+  return listRecordedSuites(repo)
+    .map((suite) => latestScan(repo, suite))
+    .filter((s): s is FindingRecord => s !== null);
+}
+
 /** Locale-independent string order. */
 function compare(a: string, b: string): number {
   return a === b ? 0 : a < b ? -1 : 1;

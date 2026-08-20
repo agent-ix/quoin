@@ -49,6 +49,36 @@ Three more:
 Not for: authoring the requirement (`specify`), choosing the method (`quoin advise`), or
 running the fuzzer. Running is the consumer's CI — quoin transcribes, it does not execute.
 
+## When fuzzing stops being the answer
+
+A fuzz campaign has a shape: coverage climbs, then flattens. **The plateau is
+the documented signal to escalate**, not to fuzz harder. Random input cannot
+satisfy a checksum, a CRC or a magic number — `if x * 3 == 51` is roughly a
+1-in-4-billion coin flip for a fuzzer and one line of algebra for a solver.
+
+The industrial pattern is **hybrid fuzzing**: fuzz until the curve flattens,
+hand the stuck branches to a solver, feed the solved inputs back to the fuzzer
+as fresh seeds. Driller (2016) did it with AFL + angr; QSYM, SymCC and Fuzzolic
+followed.
+
+The concrete hop in Rust:
+
+```
+cargo-fuzz  ──plateau──▶  Kani        bounded model checking over MIR (AWS)
+                          haybale     symbolic execution of LLVM IR, in Rust
+```
+
+`quoin advise` will point there on its own once the evidence says so — the
+catalog keys `concolic-execution` on `fault-detection-unmeasured` (exercised,
+and nothing measures whether the tests discriminate) and
+`fault-detection-failed` (measured, and a seeded fault survived). Record the
+fuzz and mutation runs and the recommendation follows.
+
+**Do not escalate before that.** Concolic execution path-explodes and is slow;
+it earns its cost only where the cheap search has demonstrably stalled. The
+catalog cannot yet express that ordering (`agent-ix/quire-rs#190`), so it is
+written here.
+
 ## Inputs
 
 - The target repository.

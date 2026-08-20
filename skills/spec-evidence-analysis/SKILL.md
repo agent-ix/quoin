@@ -58,9 +58,14 @@ against.
 
 2. **Take the deterministic recommendations first.** They come from the
    catalog's `applicability` rules matched against facts about the obligation:
-   its statement's characteristics, its FR-052 property shape, its archetype.
+   its statement's characteristics, its FR-052 property shape, its archetype,
+   its declared criticality, and what the evidence store already records.
    Rules match or they do not. Each recommendation names the rule and the value
    that matched, so you can check the reasoning rather than trust it.
+
+   **Read what matched, not just what was recommended.** A recommendation
+   matched *only* on an evidence characteristic is telling you about the tests,
+   not about the requirement — see below.
 
 3. **Judge only the residue, and label it.** Where the rules are inconclusive
    the advisor says so and stops rather than guessing. That is where your
@@ -75,6 +80,51 @@ against.
    `spec/evidence/suites.md` produces that kind. A recommended method with no
    suite that can produce its evidence is a gap in the plan, not a gap in the
    spec.
+
+## Recommendations that come from the evidence, not from the requirement
+
+`quoin advise` reads the evidence store. Two characteristics come from there
+rather than from the statement, and they mean something different from the rest.
+
+| Matched value | What it says |
+|---|---|
+| `fault-detection-unmeasured` | the obligation **is** exercised by a bound run, and nothing measures whether that exercise would catch a fault |
+| `fault-detection-failed` | something **did** measure it, and a seeded fault survived |
+
+**Both mean "escalate the existing suite", not "the requirement is unverified".**
+An obligation nothing is bound to is `undischarged`, which the auditor reports
+separately — and neither of these mints for it, deliberately, because
+recommending a solver for code nobody has tested yet is advice nobody can act
+on.
+
+So when the only reason a method was recommended is one of these two, the
+finding you write is about the tests. "This is tested and nothing says the tests
+discriminate" is a different sentence from "this requirement has no method", and
+they lead to different work.
+
+## Cost is not in the catalog yet, so it has to be here
+
+The advisor ranks by **how many rules matched**. It has no way to say what a
+method costs, so an escalation of last resort ties with a unit test and the
+output gives no hint. Filed as `agent-ix/quire-rs#190`; until it lands, this
+paragraph is the only place the ordering is written down.
+
+**`concolic-execution` is the case to watch.** Concrete + symbolic execution
+runs the code while recording the constraints on each branch, then negates one
+and asks a solver for an input that flips it — `if x * 3 == 51` is a
+1-in-4-billion coin flip for a fuzzer and one line of algebra for a solver. It
+also path-explodes and is slow. **Nobody reaches for it first.** The industrial
+pattern is hybrid fuzzing: fuzz until the coverage curve flattens, then hand the
+stuck branches to a solver (Driller, QSYM, SymCC).
+
+When it is recommended alongside a cheaper method keyed on the same evidence —
+`mutation-testing` on `fault-detection-unmeasured`, for instance — **take the
+cheaper one first.** Measuring is what tells you whether the escalation is
+warranted.
+
+This is the skill-local-prose arrangement ADR-0011 moved away from, and it is
+recorded as a debt rather than a design. When `quire-rs#190` lands, this section
+should shrink to a pointer at the catalog.
 
 ## What "inconclusive" means, and why it is not a failure
 

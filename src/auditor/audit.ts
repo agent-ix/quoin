@@ -539,16 +539,44 @@ function mutationFinding(
  * check says nothing rather than something wrong.
  */
 function mutationToolsIn(catalog: AuditInput["catalog"]): Set<string> | null {
+  return toolsFor(catalog, "mutation-testing");
+}
+
+/**
+ * The tools one catalog method declares, lowercased — or `null` when the method
+ * is absent.
+ *
+ * Generalised from `mutationToolsIn` so the advisor can ask the same question
+ * without a second copy of the lookup (agent-ix/quoin#158). Declaration-driven
+ * either way: the method id is named at the call site and the tool names stay
+ * module data, so no tool is ever hardcoded here.
+ *
+ * `null` rather than an empty set is the load-bearing part. With no entry the
+ * question "did this kind of tool produce this number" cannot be asked at all,
+ * and a caller must say nothing rather than something wrong.
+ */
+export function toolsFor(
+  catalog: AuditInput["catalog"],
+  methodId: string,
+): Set<string> | null {
   const tools = new Set(
     (catalog?.methods ?? [])
-      .filter((m) => m.id === "mutation-testing")
+      .filter((m) => m.id === methodId)
       .flatMap((m) => m.tooling)
       .map((t) => t.toLowerCase()),
   );
   return tools.size > 0 ? tools : null;
 }
 
-function scoresFor(
+/**
+ * Fault-detection scores among the runs bound to this obligation.
+ *
+ * Exported for the advisor (agent-ix/quoin#158), which needs the same answer to
+ * decide whether anything has measured that the tests discriminate. One
+ * definition, so the auditor's finding and the advisor's recommendation cannot
+ * disagree about what a score is.
+ */
+export function scoresFor(
   bindings: Binding[],
   runs: RunRecord[],
   catalog: AuditInput["catalog"],
