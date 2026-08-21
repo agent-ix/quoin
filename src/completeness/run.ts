@@ -14,6 +14,7 @@ import {
   type VocabularyRollup,
 } from "./assess.js";
 import { claimsFor, readBundleFrontmatter } from "./bundle.js";
+import type { BundleReadObserver } from "./bundle.js";
 import {
   loadVocabularyCoverage,
   type VocabularyDeclaration,
@@ -26,6 +27,8 @@ export interface AssessOptions {
   strict?: boolean;
   /** Module roots to read declarations from; defaults to the installed set. */
   moduleRoots?: string[];
+  /** Optional measurement hook for owned document-pass/read counts. */
+  observeBundleRead?: BundleReadObserver;
 }
 
 export interface BundleAssessment extends CompletenessReport {
@@ -61,7 +64,10 @@ export function assessBundle(options: AssessOptions): BundleAssessment {
   // NFR-011-M-2 states the budget as one pass per invocation. Latent at one
   // declaration, which is why it needed catching by reading rather than by a
   // timing that would not have moved.
-  const bundle = readBundleFrontmatter(options.bundleRoot);
+  const bundle = readBundleFrontmatter(
+    options.bundleRoot,
+    options.observeBundleRead,
+  );
   for (const entry of bundle.unreadable) {
     if (seen.has(entry.path)) continue;
     seen.add(entry.path);

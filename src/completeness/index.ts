@@ -28,6 +28,8 @@ export {
   readBundleFrontmatter,
   type BundleDocument,
   type BundleRead,
+  type BundleReadEvent,
+  type BundleReadObserver,
   type FrontmatterRead,
 } from "./bundle.js";
 export {

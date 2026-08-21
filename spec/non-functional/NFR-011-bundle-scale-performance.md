@@ -10,60 +10,77 @@ relationships:
     type: "constrains"
   - target: "ix://agent-ix/quoin/FR-032"
     type: "constrains"
+  - target: "ix://agent-ix/quoin/FR-031"
+    type: "constrains"
 ---
 
 # NFR-011: Bundle-scale commands stay within a stated time budget
 
 ## Statement
 
-Every `quoin` command that walks a whole spec bundle SHALL complete within **5
-seconds** on a bundle of 250 documents on ordinary developer hardware, and the
-figure SHALL come from a measurement rather than an estimate.
+For each Quoin-owned bundle-scale phase, `quoin` SHALL process 250 documents or
+derived obligations within **5 seconds** on ordinary developer hardware under
+the workload stated below.
 
 ## Scope
 
-- Applies to: `quoin completeness`, `quoin advise`, `quoin evidence audit`,
-  `quoin matrix` — the commands whose cost grows with bundle size.
+- Applies to Quoin-owned work in `quoin completeness`, `quoin advise`, and
+  `quoin evidence audit`.
 - Operational context: a CI gate and an interactive terminal run.
-- Excluded: `quire` subprocess time, which the engine's own NFRs govern.
+- Excluded: generated-fixture setup and `quire` subprocess time, which the
+  engine's own NFRs govern.
+- Excluded: `quoin matrix`, which only launches an `ix-flow` workflow and does
+  not walk the bundle in Quoin. The workflow and agent own that elapsed time.
 
 ## Rationale
 
-quoin has **no performance measurement of any kind** — no benchmark, no timing
-assertion, no threshold anywhere in the repository. That was defensible while it
-was a scaffolding tool run by hand. It is not now: `quoin evidence audit` and
-`quoin completeness` are merge gates, and a gate people wait on is a gate people
-route around.
+`quoin evidence audit` and `quoin completeness` are merge gates, and a gate
+people wait on is a gate people route around. A measured budget turns an
+order-of-magnitude regression into a failing test rather than "CI got slower".
 
 The number is a **budget, not a prediction**. Its purpose is that a change making
 a bundle walk an order of magnitude slower fails a test instead of being absorbed
 as "CI got slower". 5s over 250 documents is roughly twice the current cost of the
 most expensive command, which leaves headroom without licensing a regression.
 
-Stating it also makes the cost model explicit: these commands are **O(documents)**
-with a single pass, and any change that makes one O(documents × obligations) is a
-design change, not a tuning question.
+The filesystem constraint is narrower and directly observable: completeness
+gets one pass over the document set and one read attempt per Markdown document.
+Advisor and auditor cores accept already-derived obligations and evidence; they
+do not own a document walk after Quire produces those inputs.
 
 ## Measurement and Evaluation
 
 | Metric                                                        | Target | Threshold | Method |
 | ------------------------------------------------------------- | ------ | --------- | ------ |
-| Wall-clock for a bundle walk over 250 documents               | < 2s   | < 5s      | Test   |
-| Full passes over the document set per command invocation      | 1      | 1         | Test   |
+| Quoin-owned completeness work over 250 Markdown documents | < 2s | < 5s | Test (TC-290) |
+| Quoin-owned advisor work over 250 derived obligations | < 2s | < 5s | Test (TC-290) |
+| Quoin-owned auditor work over 250 obligations, bindings and runs | < 2s | < 5s | Test (TC-290) |
+| Completeness passes/read attempts over the document set | 1 pass / 250 reads | 1 pass / 250 reads | Test (TC-290) |
 
 ## Verification
 
-A generated bundle of 250 documents is walked by each bundle-scale command, and
-the elapsed time asserted against the threshold. The pass count is asserted by
-counting reads rather than inferred from the timing, so a regression from one
-pass to two is caught even on hardware fast enough to stay inside the budget.
+A generated bundle of 250 documents exercises the owned completeness phase. A
+read observer counts the pass and document read attempts rather than inferring
+them from timing, so a second pass fails even on hardware fast enough to stay
+inside the budget. Generated 250-obligation payloads separately exercise the
+advisor and auditor after the excluded Quire extraction boundary.
 
-**Not met at the time of writing** — no such measurement exists. Stated ahead of
-the implementation; the gap is `agent-ix/quoin#133`.
+Fixture creation occurs before each timer. The three elapsed values are
+independently asserted against the 5-second threshold.
+
+## Acceptance Criteria
+
+| ID | Criteria | Verification |
+|----|----------|--------------|
+| NFR-011-AC-1 | The owned completeness phase processes a generated 250-document bundle in less than 5 seconds. | Test (TC-290) |
+| NFR-011-AC-2 | The owned advisor and auditor phases each process 250 derived obligations/evidence records in less than 5 seconds. | Test (TC-290) |
+| NFR-011-AC-3 | Completeness emits exactly one pass event and 250 document-read events for the generated bundle. | Test (TC-290) |
+| NFR-011-AC-4 | The budget excludes Quire subprocess work and the delegated matrix workflow rather than attributing their time to Quoin. | Test (TC-290) |
 
 ## Dependencies
 
 - **Upstream**: [FR-037](../functional/FR-037-declared-vocabulary-completeness.md),
-  [FR-032](../functional/FR-032-evidence-auditor.md) — the bundle-scale commands.
+  [FR-031](../functional/FR-031-catalog-driven-advisor.md), and
+  [FR-032](../functional/FR-032-evidence-auditor.md) — the owned scale-sensitive phases.
 - **Downstream**: [NFR-012](./NFR-012-ecosystem-compatibility.md), whose corpus-wide
   sweeps multiply this cost by the repository count.

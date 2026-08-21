@@ -89,6 +89,12 @@ export interface FrontmatterRead {
   unreadable: Array<{ path: string; reason: string }>;
 }
 
+/** Instrumentation emitted by the owned bundle reader (NFR-011). */
+export type BundleReadEvent =
+  { kind: "pass"; root: string } | { kind: "document"; path: string };
+
+export type BundleReadObserver = (event: BundleReadEvent) => void;
+
 /**
  * Every document under `bundleRoot` that carries parseable frontmatter.
  *
@@ -98,12 +104,17 @@ export interface FrontmatterRead {
  * which is how a repository ends up with two answers to "what does this
  * document declare".
  */
-export function readBundleFrontmatter(bundleRoot: string): FrontmatterRead {
+export function readBundleFrontmatter(
+  bundleRoot: string,
+  observe?: BundleReadObserver,
+): FrontmatterRead {
   const documents: BundleDocument[] = [];
   const unreadable: Array<{ path: string; reason: string }> = [];
 
+  observe?.({ kind: "pass", root: bundleRoot });
   for (const path of markdownUnder(bundleRoot)) {
     const rel = relative(bundleRoot, path).split(sep).join("/");
+    observe?.({ kind: "document", path: rel });
     let raw: string;
     try {
       raw = readFileSync(path, "utf8");
