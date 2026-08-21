@@ -93,6 +93,7 @@ export default defineConfig(({ command }) => ({
           "src/commands/measurement/intervention.ts",
         "commands/measurement/operational-release":
           "src/commands/measurement/operational-release.ts",
+        "commands/graph": "src/commands/graph.ts",
         "commands/config/index": "src/commands/config/index.ts",
         "commands/config/get": "src/commands/config/get.ts",
         "commands/config/set": "src/commands/config/set.ts",
