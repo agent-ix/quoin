@@ -1,0 +1,55 @@
+{
+  "collectedAt": "2026-08-21T18:30:00Z",
+  "distribution": {
+    "count": 30,
+    "maximum": 44.8,
+    "mean": 39.7,
+    "minimum": 36.1,
+    "quantiles": [
+      {
+        "probability": 0.5,
+        "value": 39.2
+      },
+      {
+        "probability": 0.95,
+        "value": 43.9
+      }
+    ],
+    "standardDeviation": 2.1
+  },
+  "environment": {
+    "attributes": {
+      "arch": "x86_64",
+      "os": "linux"
+    },
+    "id": "ci-linux-x86_64"
+  },
+  "plan": {
+    "definitionVersion": "2",
+    "id": "MP-CLI-LATENCY"
+  },
+  "rawEvidence": {
+    "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "reference": "artifacts/hyperfine.json"
+  },
+  "sampling": {
+    "id": "warm-30-runs",
+    "sampleCount": 30
+  },
+  "schemaVersion": 1,
+  "scope": {
+    "repository": "agent-ix/quoin"
+  },
+  "sourceRevision": "abcdef0123456789abcdef0123456789abcdef01",
+  "subject": {
+    "id": "quoin catalog list --json",
+    "kind": "command"
+  },
+  "tool": {
+    "configurationDigest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "name": "hyperfine",
+    "version": "1.20.0"
+  },
+  "unit": "ms",
+  "value": 43.9
+}

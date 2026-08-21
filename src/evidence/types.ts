@@ -34,6 +34,9 @@ export const RUNS_DIR = "runs";
  */
 export const SCANS_DIR = "scans";
 
+/** Where policy-free observations live, grouped by authored plan id. */
+export const MEASUREMENTS_DIR = "measurements";
+
 /** Schema version carried by every machine-written file in the store. */
 export const STORE_SCHEMA_VERSION = 1;
 
@@ -198,6 +201,53 @@ export interface FindingRecord {
   /** Number of rules the scan actually evaluated, when the tool reports it. */
   rulesEvaluated?: number;
   findings: Finding[];
+}
+
+/** A single percentile/quantile reported by a measurement tool. */
+export interface MeasurementQuantile {
+  /** Probability strictly between zero and one; for example `0.95`. */
+  probability: number;
+  value: number;
+}
+
+/** Optional distribution detail carried alongside the record's primary value. */
+export interface MeasurementDistribution {
+  count: number;
+  minimum?: number;
+  maximum?: number;
+  mean?: number;
+  standardDeviation?: number;
+  quantiles?: MeasurementQuantile[];
+}
+
+/**
+ * One policy-free observation intended for comparison (FR-043).
+ *
+ * This is deliberately neither a RunRecord nor a FindingRecord. It does not
+ * say that a test symbol passed, that a scanner found a potential violation,
+ * or that the value is acceptable. Those meanings belong to execution,
+ * finding and comparison-policy layers respectively.
+ */
+export interface MeasurementRecord {
+  schemaVersion: 1;
+  /** Authored plan identity plus the version of the measure definition used. */
+  plan: { id: string; definitionVersion: string };
+  /** The thing observed, with an open kind vocabulary. */
+  subject: { kind: string; id: string };
+  /** Repository scope, optionally narrowed to a repo-relative path. */
+  scope: { repository: string; path?: string };
+  /** Source revision against which the observation was collected. */
+  sourceRevision: string;
+  /** Primary numeric observation. Meaning comes from the plan and `unit`. */
+  value: number;
+  unit: string;
+  distribution?: MeasurementDistribution;
+  tool: { name: string; version: string; configurationDigest: string };
+  environment: { id: string; attributes?: Record<string, string> };
+  sampling?: { id: string; sampleCount: number };
+  /** UTC ISO-8601, supplied by the caller rather than read from the clock. */
+  collectedAt: string;
+  rawEvidence: { digest: string; reference?: string };
 }
 
 /** Someone re-affirming a binding after the statement it was made against changed. */

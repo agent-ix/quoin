@@ -19,12 +19,14 @@ export {
   latestRun,
   latestRuns,
   latestScans,
+  measurementPath,
   listRecordedSuites,
   listRuns,
   readBaseline,
   readBindings,
   readRun,
   readRuns,
+  readMeasurement,
   runPath,
   short,
   storeRoot,
@@ -32,10 +34,12 @@ export {
   writeBaseline,
   writeBindings,
   writeRun,
+  writeMeasurement,
 } from "./store.js";
 
 export {
   MUTATION_SCORE_METRIC,
+  MEASUREMENTS_DIR,
   RUNS_DIR,
   STORE_SCHEMA_VERSION,
   type Affirmation,
@@ -44,7 +48,18 @@ export {
   type BindingsFile,
   type RunEntry,
   type RunRecord,
+  type MeasurementDistribution,
+  type MeasurementQuantile,
+  type MeasurementRecord,
 } from "./types.js";
+
+export {
+  MEASUREMENT_RECORD_SCHEMA,
+  MeasurementValidationError,
+  measurementSchemaPath,
+  readMeasurementSchema,
+  validateMeasurementRecord,
+} from "./measurement.js";
 
 export {
   obligationsFrom,
