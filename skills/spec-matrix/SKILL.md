@@ -129,8 +129,14 @@ missing generator show up as a gap.
 
 ### `Status`
 
-`✅` complete · `⚠️` partial · `❌` failed · `🚧` in progress · `⛔` retired.
-A marker may be followed by text (`✅ Complete`); the marker must come first.
+`✅` complete · `❌` failed · `🚧` in progress/pending · `⛔` retired.
+A marker may be followed by text (`🚧 scale evidence deferred`); the marker
+must come first — the note carries information the bare marker cannot.
+
+`⚠️` is **retired** and no longer validates. It was admitted by the contract
+and classed by the traceability model as nothing, so every row carrying it was
+exempt from the status-lie check by construction. Partial work is `🚧`; a
+second form for one meaning enforces nothing.
 
 ### `Traces To`
 
@@ -175,7 +181,6 @@ Use template section `## Integration Test Matrix` with:
 ## Markers
 
 -   ✅ Complete
--   ⚠️ Partial
 -   ❌ Missing
--   🚧 In Progress
+-   🚧 In Progress / Partial / Pending
 -   ⛔ Retired
