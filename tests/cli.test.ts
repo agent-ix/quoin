@@ -664,7 +664,7 @@ describe("write", () => {
     expect(parsed.types[0].name).toBe("FR");
   });
 
-  // FR-025-AC-6 / FR-023-AC-4: the --org flag has to survive oclif's own flag
+  // FR-025-AC-6, FR-023-AC-4: the --org flag has to survive oclif's own flag
   // parsing into the pack, in both renderings. Driven through the command class
   // rather than main(), matching the rest of this suite: dispatching through
   // the runner would execute from dist/, where the src/modules mock does not
