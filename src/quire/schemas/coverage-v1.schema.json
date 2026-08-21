@@ -28,6 +28,11 @@
       "description": "FR-050-AC-16 (CR-041): unbacked rows exempted from status_lies by a declared method that mints no source symbol. ABSENT — not empty — for a module declaring no `no_source_symbol` vocabulary, which is what keeps FR-050-AC-7 byte-identity.",
       "items": { "$ref": "#/$defs/NoSymbolRow" }
     },
+    "undeclared_statuses": {
+      "type": "array",
+      "description": "FR-050-AC-21 (CR-083): rows whose authored status value the module's `traceability.status` vocabulary classes as nothing. ABSENT — not empty — for a corpus whose every status value is declared, which is what keeps FR-050-AC-7 byte-identity. Additive under FR-055-CON-3: no existing key changes meaning, no required key is added, and a consumer written against this schema before the key existed reads an unchanged payload from a conformant corpus.",
+      "items": { "$ref": "#/$defs/UndeclaredStatus" }
+    },
     "untracked_symbols": {
       "type": "array",
       "description": "FR-050-AC-5: source symbols whose trace tag resolves to no declared target or reference row.",
@@ -89,6 +94,17 @@
         "row_id": { "type": ["string", "null"] },
         "status": { "type": "string", "description": "The authored status value, verbatim." },
         "target_ids": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "UndeclaredStatus": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["reference", "document", "status"],
+      "properties": {
+        "reference": { "type": "string", "description": "The declaration that produced the row." },
+        "document": { "type": "string", "description": "Scope-relative path, `/`-separated on every platform." },
+        "row_id": { "type": ["string", "null"] },
+        "status": { "type": "string", "description": "The authored status value, verbatim. No class is carried: having none is the finding." }
       }
     },
     "NoSymbolRow": {

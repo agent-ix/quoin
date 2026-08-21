@@ -41,6 +41,36 @@ export interface NoSymbolRow {
   target_ids: string[];
 }
 
+/**
+ * A row whose authored status the module's vocabulary classes as nothing
+ * (FR-050-AC-21, quire-rs CR-083).
+ *
+ * Carries no class, deliberately: having none is the entire finding, and two
+ * undeclared glyphs in one corpus are told apart only by the authored value.
+ */
+export interface UndeclaredStatus {
+  reference: string;
+  document: string;
+  row_id?: string | null;
+  /** The authored status value, verbatim. */
+  status: string;
+}
+
+/**
+ * One `implements` edge — requirement to production code (FR-062).
+ *
+ * **Carries no weight in `totals`.** Scope is not evidence: folding it into the
+ * backed set would let code that merely cites a requirement move a coverage
+ * number, which is the backdoor quire-rs CR-061 closed.
+ */
+export interface ImplementsRecord {
+  path: string;
+  symbol: string;
+  trace_id: string;
+  /** Name of the declared marker form that bound it. */
+  form: string;
+}
+
 /** A source symbol whose trace tag resolves to nothing declared. */
 export interface UntrackedSymbol {
   path: string;
@@ -116,11 +146,20 @@ export interface CoverageReport {
   status_lies: StatusLie[];
   /** Absent — not empty — when the module declares no exemption vocabulary. */
   no_symbol_rows?: NoSymbolRow[];
+  /** Absent — not empty — when every status value in the corpus is declared. */
+  undeclared_statuses?: UndeclaredStatus[];
   untracked_symbols: UntrackedSymbol[];
   groups: GroupCounts[];
   criteria?: CriteriaCounts[];
   diagnostics?: CoverageDiagnostic[];
   obligations?: Obligation[];
+  /**
+   * Absent when the module declares no `implements` marker forms. Present in
+   * the published schema since CR-080 and missing from this interface until
+   * CR-083 — the vendored contract and its types had drifted in the one
+   * direction the contract test does not check.
+   */
+  implements?: ImplementsRecord[];
   totals: CoverageTotals;
 }
 

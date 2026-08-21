@@ -90,6 +90,39 @@ describe("TC-110 the vendored schemas match their recorded provenance", () => {
 
 describe("TC-111 a conformant payload validates", () => {
   // TC-111
+  it("TC-116 accepts the v0.41.0 optional keys, and rejects a malformed one", () => {
+    // A vendored schema can drift from the engine in the one direction nothing
+    // notices: a NEW optional key. The payload still validates because the key
+    // is simply unknown — until `additionalProperties: false` rejects it, which
+    // is what would happen here if the refresh had not been run.
+    const withDrift = coveragePayload();
+    withDrift.undeclared_statuses = [
+      {
+        reference: "traces-to",
+        document: "spec/tests.md",
+        row_id: "TC-006",
+        status: "\u26a0\ufe0f scale evidence deferred",
+      },
+    ];
+    withDrift.implements = [
+      {
+        path: "src/lib.rs",
+        symbol: "parse",
+        trace_id: "FR-001",
+        form: "rust-implements-line",
+      },
+    ];
+    expect(validateCoverage(withDrift).ok).toBe(true);
+
+    // `status` is required, and the class is deliberately NOT carried — having
+    // none is the finding.
+    const malformed = coveragePayload();
+    malformed.undeclared_statuses = [
+      { reference: "traces-to", document: "spec/tests.md" },
+    ];
+    expect(validateCoverage(malformed).ok).toBe(false);
+  });
+
   it("accepts a coverage payload", () => {
     const result = validateCoverage(coveragePayload());
     expect(result.ok, JSON.stringify(result)).toBe(true);
