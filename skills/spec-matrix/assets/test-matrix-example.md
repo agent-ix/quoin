@@ -50,8 +50,8 @@ This is an example test matrix demonstrating comprehensive test coverage for the
 | TC-012 | Full Clone Option | Integration | P2 | FR-001-OPT-B | 🚧 In Progress |
 | TC-013 | Repository at Size Limit | Integration | P2 | FR-001-CON-1 | 🚧 In Progress |
 | TC-014 | Clone at Timeout Boundary | Integration | P2 | FR-001-CON-2 | 🚧 In Progress |
-| TC-015 | Monorepo with Multiple K8s Projects | Integration | P2 | EC-001 | 🚧 Partial |
-| TC-016 | Mixed K8s and Non-K8s YAML Files | Integration | P2 | EC-002 | 🚧 Partial |
+| TC-015 | Monorepo with Multiple K8s Projects | Integration | P2 | EC-001 | 🚧 In Progress |
+| TC-016 | Mixed K8s and Non-K8s YAML Files | Integration | P2 | EC-002 | 🚧 In Progress |
 | TC-017 | Malformed YAML Handling | Integration | P1 | EC-003 | ❌ Missing |
 | TC-018 | Symlinks to K8s Configs | Integration | P2 | EC-004 | ❌ Missing |
 | TC-019 | Repository Changes During Clone | Integration | P2 | EC-005 | ❌ Missing |

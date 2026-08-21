@@ -41,6 +41,12 @@ catalog keeps the vocabulary singular and maintainable.
 The bundled workflow definitions are reviewed to confirm they reference
 catalog-defined types and do not redefine the document or object vocabulary.
 
+## Acceptance Criteria
+
+| ID | Criteria | Verification |
+|----|----------|--------------|
+| NFR-005-AC-1 | The Status vocabulary that `skills/spec-matrix/SKILL.md` and both of its asset templates teach equals the classed status set the installed `spec-artifacts-process` manifest declares (`traceability.status`), and every taught marker is admitted by the manifest's Status column pattern; divergence in either direction fails the suite. A marker the manifest admits but classes as nothing is deliberately not required to be taught. | Test (TC-271) |
+
 ## Dependencies
 
 - **Upstream**: [FR-020](../functional/FR-020-resolve-workflow-skills.md), whose
