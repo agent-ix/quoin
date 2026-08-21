@@ -10,6 +10,8 @@ relationships:
     type: "constrains"
   - target: "ix://agent-ix/quoin/FR-022"
     type: "constrains"
+  - target: "ix://agent-ix/quoin/StR-001"
+    type: "traces_to"
 ---
 
 # NFR-007: External tools are invoked by name and surface their failures

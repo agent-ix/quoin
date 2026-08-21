@@ -10,6 +10,8 @@ relationships:
     type: "constrains"
   - target: "ix://agent-ix/quoin/FR-013"
     type: "constrains"
+  - target: "ix://agent-ix/quoin/StR-001"
+    type: "traces_to"
 ---
 
 # NFR-003: Failures surface as actionable errors

@@ -8,6 +8,8 @@ relationships:
     type: "constrains"
   - target: "ix://agent-ix/quoin/FR-008"
     type: "constrains"
+  - target: "ix://agent-ix/quoin/StR-003"
+    type: "traces_to"
 ---
 
 # NFR-002: Catalog assembly is deterministic

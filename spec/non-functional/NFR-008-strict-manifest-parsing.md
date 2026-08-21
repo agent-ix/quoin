@@ -8,6 +8,8 @@ relationships:
     type: "constrains"
   - target: "ix://agent-ix/quoin/FR-009"
     type: "constrains"
+  - target: "ix://agent-ix/quoin/StR-003"
+    type: "traces_to"
 ---
 
 # NFR-008: Corrupt manifests abort assembly rather than drop silently

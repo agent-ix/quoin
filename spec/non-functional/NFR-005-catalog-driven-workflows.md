@@ -6,6 +6,8 @@ quality_attribute: maintainability
 relationships:
   - target: "ix://agent-ix/quoin/FR-020"
     type: "constrains"
+  - target: "ix://agent-ix/quoin/StR-003"
+    type: "traces_to"
 ---
 
 # NFR-005: Workflows reference catalog-defined types

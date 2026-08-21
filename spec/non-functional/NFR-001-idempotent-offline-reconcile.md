@@ -6,6 +6,8 @@ quality_attribute: reliability
 relationships:
   - target: "ix://agent-ix/quoin/FR-017"
     type: "constrains"
+  - target: "ix://agent-ix/quoin/StR-005"
+    type: "traces_to"
 ---
 
 # NFR-001: Default-module reconciliation is idempotent and offline-safe

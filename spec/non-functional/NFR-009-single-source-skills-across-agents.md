@@ -6,6 +6,8 @@ quality_attribute: portability
 relationships:
   - target: "ix://agent-ix/quoin/US-009"
     type: "constrains"
+  - target: "ix://agent-ix/quoin/StR-001"
+    type: "traces_to"
 ---
 
 # NFR-009: Skills are authored once and consumed by every supported agent
