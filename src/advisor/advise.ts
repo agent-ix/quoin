@@ -124,7 +124,13 @@ const STATEMENT_CHARACTERISTICS: Array<[string, RegExp]> = [
   ["temporal", /\b(always|never|eventually|while|until|continuously)\b/i],
   ["liveness", /\b(eventually|makes progress|terminates)\b/i],
   ["invariance", /\b(invariant|holds for every|at all times)\b/i],
-  ["concurrent", /\b(concurrent|parallel|race|thread|simultaneous)\b/i],
+  // `thread([- ]safe(ty)?)?` so `thread-safety` matches as a WHOLE compound —
+  // under the compound-token guard a bare `thread` inside it would be
+  // rejected as a fragment, and thread safety is a concurrency property.
+  [
+    "concurrent",
+    /\b(concurrent|parallel|race|thread([- ]safe(ty)?)?|simultaneous)\b/i,
+  ],
   ["reliability", /\b(tolerat|degrad|retry|failover|resilien|recover)/i],
   // No trailing \b: the alternatives already end at their own boundary, and a
   // trailing one made `within 5ms` fail — there is no word boundary between the
@@ -150,7 +156,17 @@ const STATEMENT_CHARACTERISTICS: Array<[string, RegExp]> = [
     "third-party-dependency",
     /\b(dependenc|third-party|vendored|licence|license)\b/i,
   ],
-  ["layering", /\b(depend on|layering|must not import)\b/i],
+  // Widened from `depend on|layering|must not import` after the battle test
+  // (agent-ix/quoin#167): `architecture-conformance` was one of four catalog
+  // methods never recommended across 1,107 obligations, while a live corpus of
+  // candidates existed. Each added phrase is read off a real architectural
+  // statement in that corpus — "declares zero dependencies on", "dependency
+  // checks reject", "dependency-light and acyclic", "without Core depending
+  // back on" — not invented to fit (the CR-014 line).
+  [
+    "layering",
+    /\b(depend(s|ing)? (back )?(on|upon)|layering|layered architecture|acyclic|dependency (cycle|check)s?|(zero|no) dependenc(y|ies) on|(must|does|do|shall) not (import|depend))\b/i,
+  ],
   // Distinct from `layering`, which is directional — who may depend on whom.
   // This is about the surface itself: what is exported, what is internal, what
   // may cross. The catalog keys `architecture-conformance` on **both**
@@ -161,7 +177,14 @@ const STATEMENT_CHARACTERISTICS: Array<[string, RegExp]> = [
   // different things.
   [
     "module-boundary",
-    /\b(module boundary|public (api|interface|surface)|encapsulat|internal(s)? (of|to)|exported? (from|by))\b/i,
+    // `crate boundary`, `top-level module` and `remains absent from` joined
+    // `module boundary` for #167: FR-015-AC-4-class statements — "Domain
+    // behavior remains absent from Core and is owned by top-level modules" —
+    // are architecture-absence claims, and with no minted characteristic they
+    // drew `unit-testing` plus a spurious mismatch against a correctly
+    // authored `Inspection`. `top-level` is qualified by module/crate so
+    // "top-level claim" (the assurance-case term of art) stays out.
+    /\b((module|crate) boundar(y|ies)|top-level (module|crate)s?|(remains?|stays?) absent from|public (api|interface|surface)|encapsulat|internal(s)? (of|to)|exported? (from|by))\b/i,
   ],
   ["user-visible", /\b(user|operator|the UI|displays|screen)\b/i],
   ["stable-output", /\b(byte-identical|identical output|serializ|snapshot)\b/i],
@@ -221,7 +244,12 @@ const STATEMENT_CHARACTERISTICS: Array<[string, RegExp]> = [
   ],
   [
     "memory-safety",
-    /\b(memory safety|use[- ]after[- ]free|buffer overflow|double free|dangling pointer|\bunsafe\b)/i,
+    // `memory[- ]safe(ty)?` names the concept as a whole token, hyphenated or
+    // not. `unsafe` stays as a bare word: the compound-token guard below keeps
+    // it from matching inside `unsafe-audit`, where the obligation is a CI
+    // wall-clock budget and the word merely names one of the lane's steps
+    // (agent-ix/quoin#167 — the clearest false positive of the battle test).
+    /\b(memory[- ]safe(ty)?|use[- ]after[- ]free|buffer overflow|double free|dangling pointer|unsafe\b)/i,
   ],
   [
     "network-exposed",
@@ -357,6 +385,35 @@ function prose(statement: string): string {
   return statement.replace(/\]\([^)]*\)/g, "]");
 }
 
+/**
+ * Does the regex match anywhere OUTSIDE a hyphenated compound token?
+ *
+ * `\b` treats a hyphen as a boundary, so `\bunsafe\b` matched inside
+ * `unsafe-audit` and a CI wall-clock budget was advised as a memory-safety
+ * check (agent-ix/quoin#167). A hyphenated compound is ONE token: a match is
+ * discarded when its edge is glued by a hyphen to more word characters —
+ * i.e. when it caught a fragment of a compound rather than the whole of one.
+ *
+ * A match that *contains* its hyphens (`use-after-free`, `constant-time`,
+ * `fault-tolerant` up to its stem) is untouched: the guard looks only at the
+ * characters just outside the match. And a regex that names the whole
+ * compound (`memory[- ]safe(ty)?`, `thread[- ]safe(ty)?`) still matches it,
+ * which is how a compound earns a characteristic: by being named, not by
+ * containing a keyword.
+ */
+export function matchesOutsideCompound(re: RegExp, text: string): boolean {
+  const flags = re.flags.includes("g") ? re.flags : re.flags + "g";
+  for (const m of text.matchAll(new RegExp(re.source, flags))) {
+    const start = m.index ?? 0;
+    const end = start + m[0].length;
+    const gluedLeft =
+      text[start - 1] === "-" && /\w/.test(text[start - 2] ?? "");
+    const gluedRight = text[end] === "-" && /\w/.test(text[end + 1] ?? "");
+    if (!gluedLeft && !gluedRight) return true;
+  }
+  return false;
+}
+
 export function characteristicsOf(
   statement: string,
   criticality?: string | null,
@@ -365,7 +422,7 @@ export function characteristicsOf(
 ): string[] {
   const text = prose(statement);
   const matched = STATEMENT_CHARACTERISTICS.filter(([, re]) =>
-    re.test(text),
+    matchesOutsideCompound(re, text),
   ).map(([name]) => name);
   if (parseSpace(statement) !== null) matched.push("configuration-matrix");
   // ── Structured signal (agent-ix/quoin#166) ──

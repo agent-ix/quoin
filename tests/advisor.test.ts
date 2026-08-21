@@ -569,3 +569,152 @@ verification_catalog:
     ).not.toContain("quantified-threshold");
   });
 });
+
+describe("TC-267 compound tokens do not leak fragment characteristics (FR-031-AC-20)", () => {
+  // The regression corpus #167 asks for: hyphenated compounds are single
+  // tokens. A characteristic keyword INSIDE one is a fragment and mints
+  // nothing; a regex naming the WHOLE compound still matches it.
+
+  // TC-267
+  it("`unsafe-audit` does not mint memory-safety — the battle test's clearest false positive", () => {
+    // A wall-clock budget for a CI lane, advised as a memory-safety check
+    // because the lane's step list contains the substring "unsafe".
+    expect(
+      characteristicsOf(
+        "PR-tier CI wall clock (fmt/clippy/test/deny/unsafe-audit)",
+      ),
+    ).not.toContain("memory-safety");
+  });
+
+  // TC-267
+  it("bare `unsafe` still mints memory-safety", () => {
+    expect(
+      characteristicsOf("The crate SHALL contain no unsafe code."),
+    ).toContain("memory-safety");
+  });
+
+  // TC-267
+  it("a compound NAMED by the regex still matches: memory-safe, memory safety, use-after-free", () => {
+    expect(characteristicsOf("The parser SHALL be memory-safe.")).toContain(
+      "memory-safety",
+    );
+    expect(
+      characteristicsOf("Memory safety SHALL be preserved across the FFI."),
+    ).toContain("memory-safety");
+    // Hyphens INSIDE the match are untouched by the guard.
+    expect(
+      characteristicsOf("The allocator SHALL exhibit no use-after-free."),
+    ).toContain("memory-safety");
+  });
+
+  // TC-267
+  it("thread-safety is named whole and mints concurrent; thread-pool is a fragment and does not", () => {
+    expect(
+      characteristicsOf("The registry SHALL guarantee thread-safety."),
+    ).toContain("concurrent");
+    expect(
+      characteristicsOf("The thread-pool size SHALL default to 4."),
+    ).not.toContain("concurrent");
+  });
+
+  // TC-267
+  it("fail-safe still mints safety", () => {
+    expect(
+      characteristicsOf(
+        "The valve SHALL enter a fail-safe state on loss of power.",
+      ),
+    ).toContain("safety");
+  });
+
+  // TC-267
+  it("the NFR-022-M-12 record end to end: no memory-safety methods, performance-benchmarking instead", () => {
+    const catalog: MethodCatalog = loadMethodCatalog([
+      moduleWith(`name: fixture-167
+verification_catalog:
+  compile-time-check:
+    name: Compile-time check
+    class: Analysis
+    definition: The compiler proves the property.
+    evidence_kind: Static
+    applicability:
+      characteristics: [memory-safety]
+  dynamic-analysis-sanitizer:
+    name: Sanitizer
+    class: Test
+    definition: Run under a sanitizer.
+    evidence_kind: Dynamic
+    applicability:
+      characteristics: [memory-safety]
+  performance-benchmarking:
+    name: Performance benchmarking
+    class: Test
+    definition: Measure against a stated budget.
+    evidence_kind: Benchmark
+    applicability:
+      characteristics: [latency, throughput, quantified-threshold]
+`),
+    ]);
+    const advice = advise(catalog, {
+      id: "NFR-022-M-12",
+      statement: "PR-tier CI wall clock (fmt/clippy/test/deny/unsafe-audit)",
+      authoredMethod: "CI Measurement",
+      parameters: { target: "< 4 min", threshold: "< 5 min" },
+    });
+    const methods = advice.recommended.map((r) => r.method);
+    expect(methods).not.toContain("compile-time-check");
+    expect(methods).not.toContain("dynamic-analysis-sanitizer");
+    expect(methods).toContain("performance-benchmarking");
+  });
+});
+
+describe("TC-268 architectural statements reach architecture-conformance (FR-031-AC-21)", () => {
+  // The converse failure #167 names: `architecture-conformance` was keyed on
+  // [layering, module-boundary] and was one of four catalog methods never
+  // recommended across 1,107 obligations, because no regex minted those
+  // characteristics from the corpus's actual architectural wording. Each
+  // statement below is verbatim from that corpus (filament-ide-rs FR-015 /
+  // NFR-009).
+
+  // TC-268
+  it("an architecture-absence claim mints module-boundary (FR-015-AC-4)", () => {
+    expect(
+      characteristicsOf(
+        "Domain behavior remains absent from Core and is owned by top-level modules",
+      ),
+    ).toContain("module-boundary");
+  });
+
+  // TC-268
+  it("a zero-dependencies declaration mints layering (FR-015-AC-6)", () => {
+    expect(
+      characteristicsOf(
+        "Core declares zero dependencies on first-party top-level module crates",
+      ),
+    ).toContain("layering");
+  });
+
+  // TC-268
+  it("a dependency-check rejection mints layering (FR-015-AC-3)", () => {
+    expect(
+      characteristicsOf(
+        "Core dependency checks reject Tauri, Postgres, MCP, CLI, network, plugin, and packaging crates",
+      ),
+    ).toContain("layering");
+  });
+
+  // TC-268
+  it("an acyclicity NFR mints layering (NFR-009)", () => {
+    expect(
+      characteristicsOf(
+        "Core SHALL remain dependency-light and acyclic so every top-level module can depend on Core without Core depending back on any top-level module.",
+      ),
+    ).toContain("layering");
+  });
+
+  // TC-268
+  it("`top-level claim` — the assurance-case term of art — mints nothing", () => {
+    expect(
+      characteristicsOf("No document declares itself a top-level claim."),
+    ).not.toContain("module-boundary");
+  });
+});
