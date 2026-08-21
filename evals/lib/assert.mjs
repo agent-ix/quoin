@@ -23,6 +23,17 @@ function listFiles(root, dir = root, acc = []) {
 
 /** Glob -> RegExp supporting `**`, `*`, `?`. */
 function globToRegExp(glob) {
+  // Brace expansion is NOT supported, and silently escaping `{`/`}` compiled
+  // `*.{js,ts,mjs}` to a literal-suffix match that can never hit a real file.
+  // In `fileContains` that fails loudly; in `absentFiles` nothing matches, so
+  // nothing is "present", so an assertion written to prove a file was NOT
+  // created passes whether or not it was (agent-ix/quoin#135). A glob that
+  // cannot express what its author meant must fail at load, not pass at run.
+  if (glob.includes("{") || glob.includes("}")) {
+    throw new Error(
+      `glob braces are not supported: ${glob} — write one glob per alternative instead`,
+    );
+  }
   let re = "";
   for (let i = 0; i < glob.length; i++) {
     const c = glob[i];
