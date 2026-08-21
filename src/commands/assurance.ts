@@ -47,8 +47,10 @@ that quietly narrows to what it can prove reads exactly like a complete one.`;
     }),
     "claim-type": Flags.string({
       description:
-        "Artifact type that is a top-level claim. Repeatable. Defaults to StR; " +
-        "a safety or security bundle argues from a declared hazard or threat.",
+        "Artifact type that is a top-level claim. Repeatable; matched " +
+        "case-insensitively. REPLACES the StR default rather than adding to " +
+        "it — pass --claim-type StR as well if StRs should stay claims. A " +
+        "safety or security bundle argues from a declared hazard or threat.",
       multiple: true,
     }),
     json: Flags.boolean({ description: "Emit the case as JSON." }),

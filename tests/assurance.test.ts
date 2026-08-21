@@ -1,5 +1,6 @@
 /**
- * FR-040 — the assurance-case view (TC-221..TC-230, TC-237, TC-238).
+ * FR-040 — the assurance-case view (TC-221..TC-230, TC-237, TC-238, TC-261,
+ * TC-262).
  */
 
 import { describe, expect, it } from "vitest";
@@ -191,6 +192,64 @@ describe("building the case", () => {
     });
     expect(withHazard.claims[0].id).toBe("HAZ-001");
     expect(withHazard.claims[0].children[0].id).toBe("FR-001");
+  });
+
+  // Trace: FR-040-AC-13
+  // TC-261
+  it("carries a machine-readable reason exactly when nothing is a claim", () => {
+    // `--json` emits `buildCase`'s result verbatim, so this field is what lets
+    // a pipeline tell "the case is clean" from "nothing matched, so nothing
+    // was argued" — `claims: []` alone reads the same both ways (#170).
+    const empty = buildCase({
+      documents: bundle(),
+      obligations: [obligation("FR-001-AC-1")],
+      findings: [],
+      claimTypes: ["hazard"],
+    });
+    expect(empty.claims).toHaveLength(0);
+    expect(empty.reason).toContain("no document declares itself a top-level");
+    // The SEARCHED types, as the caller spelled them: the reader of the JSON
+    // needs to see that `hazard` is what argued nothing.
+    expect(empty.reason).toContain("hazard");
+    const json = JSON.parse(JSON.stringify(empty)) as { reason?: string };
+    expect(json.reason).toBe(empty.reason);
+
+    // And ABSENT — not empty-string — on a case with claims, so presence of
+    // the key is itself the signal.
+    const nonEmpty = buildCase({
+      documents: bundle(),
+      obligations: [],
+      findings: [],
+    });
+    expect(nonEmpty.claims).toHaveLength(1);
+    expect("reason" in nonEmpty).toBe(false);
+  });
+
+  // Trace: FR-040-AC-14
+  // TC-262
+  it("matches --claim-type case-insensitively", () => {
+    // `str`, `STR` and `Hazard` all matched nothing under `===` and exited 0
+    // with an empty case — silence indistinguishable from a clean corpus.
+    const documents = [
+      doc("HAZ-001", "hazard", "Uncommanded actuation"),
+      doc("FR-001", "FR", "Interlock", [["HAZ-001", "mitigates"]]),
+    ];
+    const upper = buildCase({
+      documents,
+      obligations: [],
+      findings: [],
+      claimTypes: ["Hazard"],
+    });
+    expect(upper.claims.map((c) => c.id)).toEqual(["HAZ-001"]);
+
+    // The default matches an authored `str` too — the vocabulary is module
+    // data, and casing is not part of what a claim type means.
+    const lowercased = buildCase({
+      documents: [doc("StR-001", "str", "The system is usable")],
+      obligations: [],
+      findings: [],
+    });
+    expect(lowercased.claims.map((c) => c.id)).toEqual(["StR-001"]);
   });
 
   // Trace: FR-040-AC-7

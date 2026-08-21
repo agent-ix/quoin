@@ -42,6 +42,14 @@ export interface AssuranceCase {
   /** Top-level claims, one tree each. */
   claims: CaseNode[];
   /**
+   * Present exactly when `claims` is empty: why there is no case, naming the
+   * claim types that were searched. The human renderer already explained this
+   * (`render.ts`); the JSON payload carried no equivalent, so a machine
+   * consumer could not tell "the assurance case is clean" from "nothing
+   * matched, so nothing was argued" (#170).
+   */
+  reason?: string;
+  /**
    * Requirements reachable from no claim.
    *
    * Not an error and not hidden: a bundle whose StRs do not reach its FRs has a
@@ -89,7 +97,11 @@ export interface CaseInput {
  * `traces_to` an StR, not the other way round.
  */
 export function buildCase(input: CaseInput): AssuranceCase {
-  const claimTypes = new Set(input.claimTypes ?? ["StR"]);
+  // Case-insensitive: `--claim-type str`, `STR` or `Hazard` used to match by
+  // `===` against the authored `type:` and silently produce an empty case —
+  // indistinguishable from a corpus that genuinely declares no claims (#170).
+  const requested = input.claimTypes ?? ["StR"];
+  const claimTypes = new Set(requested.map((t) => t.toLowerCase()));
   const byId = new Map<string, BundleDocument>();
   for (const doc of input.documents) {
     const id = idOf(doc);
@@ -129,7 +141,8 @@ export function buildCase(input: CaseInput): AssuranceCase {
   const claims: CaseNode[] = [];
   const reached = new Set<string>();
   for (const [id, doc] of byId) {
-    if (!claimTypes.has(String(doc.frontmatter.type ?? ""))) continue;
+    if (!claimTypes.has(String(doc.frontmatter.type ?? "").toLowerCase()))
+      continue;
     // A fresh `ancestors` set per claim. Sharing one across claims made a
     // requirement that refines TWO claims appear under only the first, while
     // the second reported "no sub-claim traces to this claim" — a statement
@@ -154,7 +167,21 @@ export function buildCase(input: CaseInput): AssuranceCase {
     .filter((id) => !reached.has(id) && obligationsFor.has(id))
     .sort();
 
-  return { claims, unreachable, unreadable: input.unreadable ?? [] };
+  const assurance: AssuranceCase = {
+    claims,
+    unreachable,
+    unreadable: input.unreadable ?? [],
+  };
+  if (claims.length === 0) {
+    // The human renderer's explanation, made machine-readable. Naming the
+    // SEARCHED types (as the caller spelled them) is what lets a pipeline see
+    // that `--claim-type hazard` over a hazard-free corpus argued nothing.
+    assurance.reason =
+      `no document declares itself a top-level claim ` +
+      `(searched claim types: ${requested.join(", ")}); ` +
+      `declare one or pass --claim-type`;
+  }
+  return assurance;
 }
 
 function nodeFor(

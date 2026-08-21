@@ -106,6 +106,8 @@ does not expose. `agent-ix/quire-rs#179` is where this stops being necessary.
 | FR-040-AC-10 | A bundle declaring no claim says so, rather than rendering an empty case. | Test (TC-230) |
 | FR-040-AC-11 | A requirement refining two claims appears under both. | Test (TC-237) |
 | FR-040-AC-12 | A cycle terminates without dropping a legitimately shared child. | Test (TC-238) |
+| FR-040-AC-13 | A case with no claims carries a machine-readable `reason` naming the searched claim types — present exactly when `claims` is empty — so the `--json` consumer can tell a clean case from one where nothing was argued. | Test (TC-261) |
+| FR-040-AC-14 | `--claim-type` is matched case-insensitively against the authored `type:`, and the flag REPLACES the `StR` default rather than adding to it — stated in its help. | Test (TC-262) |
 
 ## Constraints
 
