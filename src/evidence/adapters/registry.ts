@@ -3,6 +3,7 @@ import { cargoMutantsAdapter } from "./cargo-mutants.js";
 import { junitAdapter } from "./junit.js";
 import { parseAuditScript } from "./audit-script.js";
 import { agentEvalAdapter } from "./agent-eval.js";
+import { parseDependencyCruiser } from "./dependency-cruiser.js";
 import { sbomAdapter } from "./sbom.js";
 import { parseCargoAudit, parseSarif, type FindingResult } from "./sarif.js";
 import {
@@ -85,16 +86,17 @@ export const FINDING_ADAPTERS: readonly FindingAdapter[] = [
     parse: parseSarif,
   },
   {
+    name: "dependency-cruiser",
+    summary:
+      "dependency-cruiser JSON — project-owned boundary and cycle rule violations.",
+    tools: ["dependency-cruiser", "depcruise"],
+    parse: parseDependencyCruiser,
+  },
+  {
     name: "audit-script",
     summary:
       "Architecture-conformance audit scripts: '<name>: OK' / '<name>: FAIL — … (AC-ID)'.",
-    tools: [
-      "audit-script",
-      "make ci",
-      "audit-static",
-      "import-linter",
-      "dependency-cruiser",
-    ],
+    tools: ["audit-script", "make ci", "audit-static", "import-linter"],
     parse: parseAuditScript,
   },
   {

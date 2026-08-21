@@ -118,5 +118,21 @@ export {
   writeScan,
 } from "./store.js";
 export { parseAuditScript } from "./adapters/audit-script.js";
+export { parseDependencyCruiser } from "./adapters/dependency-cruiser.js";
+export {
+  MEASUREMENT_ADAPTERS,
+  MEASUREMENT_ADAPTER_NAMES,
+  gitHotAgeAdapter,
+  gitHotChurnAdapter,
+  jscpdAdapter,
+  lizardAdapter,
+  normalizedMeasurementAdapter,
+  radonAdapter,
+  rustCodeAnalysisAdapter,
+  selectMeasurementAdapter,
+  type MeasurementAdapter,
+  type MeasurementAdapterResult,
+  type MeasurementObservation,
+} from "./adapters/measurement-observations.js";
 export { parseSbom, sbomAdapter } from "./adapters/sbom.js";
 export { parseAgentEval, agentEvalAdapter } from "./adapters/agent-eval.js";

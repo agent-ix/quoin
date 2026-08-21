@@ -165,6 +165,7 @@ describe("the adapter registry", () => {
       "sbom",
       "agent-eval",
       "sarif",
+      "dependency-cruiser",
       "audit-script",
       "cargo-audit",
     ]);
