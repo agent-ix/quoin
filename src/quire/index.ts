@@ -43,6 +43,8 @@ export type {
   PropertiesReport,
   PropertyShape,
   PropertySpan,
+  SharedTraceId,
+  SharedTraceSymbol,
   StatusLie,
   UnbackedRow,
   UntrackedSymbol,

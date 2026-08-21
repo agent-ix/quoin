@@ -44,6 +44,8 @@ import type {
   ImplementsRecord,
   NoSymbolRow,
   Obligation,
+  SharedTraceId,
+  SharedTraceSymbol,
   StatusLie,
   UnbackedRow,
   UndeclaredStatus,
@@ -67,6 +69,7 @@ const unbackedRow: Required<UnbackedRow> = {
   document: "spec/tests.md",
   row_id: "TC-001",
   target_ids: ["TC-001"],
+  line: 17,
 };
 
 const statusLie: Required<StatusLie> = {
@@ -75,6 +78,7 @@ const statusLie: Required<StatusLie> = {
   row_id: "TC-002",
   status: "✅",
   target_ids: ["TC-002"],
+  line: 18,
 };
 
 const noSymbolRow: Required<NoSymbolRow> = {
@@ -83,6 +87,7 @@ const noSymbolRow: Required<NoSymbolRow> = {
   row_id: "TC-003",
   test_type: "Eval",
   target_ids: ["TC-003"],
+  line: 19,
 };
 
 const undeclaredStatus: Required<UndeclaredStatus> = {
@@ -90,6 +95,7 @@ const undeclaredStatus: Required<UndeclaredStatus> = {
   document: "spec/tests.md",
   row_id: "TC-004",
   status: "⚠️ scale evidence deferred",
+  line: 20,
 };
 
 const implementsRecord: Required<ImplementsRecord> = {
@@ -103,6 +109,20 @@ const untrackedSymbol: Required<UntrackedSymbol> = {
   path: "src/lib.rs",
   symbol: "orphan",
   trace_id: "TC-999",
+  line: 42,
+};
+
+const sharedTraceSymbol: Required<SharedTraceSymbol> = {
+  path: "tests/parse.rs",
+  symbol: "tc_001_parses",
+};
+
+const sharedTraceId: Required<SharedTraceId> = {
+  trace_id: "TC-001",
+  symbols: [
+    sharedTraceSymbol,
+    { path: "tests/parse_more.rs", symbol: "tc_001_parses_again" },
+  ],
 };
 
 const groupCounts: Required<GroupCounts> = {
@@ -166,6 +186,8 @@ const samples: Record<string, Record<string, unknown>> = {
   UndeclaredStatus: undeclaredStatus,
   ImplementsRecord: implementsRecord,
   UntrackedSymbol: untrackedSymbol,
+  SharedTraceId: sharedTraceId,
+  SharedTraceSymbol: sharedTraceSymbol,
   GroupCounts: groupCounts,
   CriteriaCounts: criteriaCounts,
   CoverageDiagnostic: coverageDiagnostic,
@@ -180,12 +202,14 @@ const report: Required<CoverageReport> = {
   no_symbol_rows: [noSymbolRow],
   undeclared_statuses: [undeclaredStatus],
   untracked_symbols: [untrackedSymbol],
+  shared_trace_ids: [sharedTraceId],
   groups: [groupCounts],
   criteria: [criteriaCounts],
   diagnostics: [coverageDiagnostic],
   obligations: [obligation],
   implements: [implementsRecord],
   vocabulary_coverage: [vocabularyValueRecord],
+  excluded_source_files: 3,
   totals: coverageTotals,
 };
 

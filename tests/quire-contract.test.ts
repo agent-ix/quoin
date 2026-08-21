@@ -269,6 +269,16 @@ describe("TC-116 optional keys are optional and absence is not emptiness", () =>
           documents: ["spec/functional/FR-001.md"],
         },
       ],
+      shared_trace_ids: [
+        {
+          trace_id: "TC-001",
+          symbols: [
+            { path: "tests/parse.rs", symbol: "tc_001_parses" },
+            { path: "tests/parse_more.rs", symbol: "tc_001_parses_again" },
+          ],
+        },
+      ],
+      excluded_source_files: 3,
       totals: { backed: 1, total: 2, criteria: 2, property_shaped: 1 },
     };
 
@@ -420,7 +430,27 @@ describe("TC-118 the contract holds against the installed quire", () => {
 
       // The field that broke it is present, so a future contract narrowing
       // fails here rather than in a consumer command.
-      const payload = JSON.parse(out) as { implements?: unknown[] };
+      const payload = JSON.parse(out) as {
+        implements?: unknown[];
+        diagnostics?: { declaration?: string; reason?: string }[];
+      };
+
+      // #174: the reconciled module set must load a traceability model that
+      // carries `trace_targets`. Under a stale engine, a manifest key the
+      // engine does not know (process v0.23.0's `source_exclude`) silently
+      // dropped the whole payload, leaving the model declared-but-empty —
+      // the engine says so with `model-mints-nothing`. Asserted by name so a
+      // recurrence fails pointing at the model, not at a missing edge.
+      const mintsNothing = (payload.diagnostics ?? []).filter(
+        (d) => d.reason === "model-mints-nothing",
+      );
+      expect(
+        mintsNothing,
+        "the reconciled module set loaded no `trace_targets` — the engine " +
+          "dropped or never read the traceability model (#174): " +
+          out.slice(0, 600),
+      ).toEqual([]);
+
       expect(
         (payload.implements ?? []).length,
         "the fixture must mint an `implements` edge, or this guard is vacuous: " +

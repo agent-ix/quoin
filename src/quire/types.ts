@@ -21,6 +21,11 @@ export interface UnbackedRow {
   document: string;
   row_id?: string | null;
   target_ids: string[];
+  /**
+   * 1-based document line of the matrix row (quire-rs #210, v0.42.0). Absent
+   * on a payload from an engine predating the field.
+   */
+  line?: number;
 }
 
 /** A row whose status classes as complete while nothing backs it. */
@@ -30,6 +35,8 @@ export interface StatusLie {
   row_id?: string | null;
   status: string;
   target_ids: string[];
+  /** 1-based document line of the matrix row (quire-rs #210, v0.42.0). */
+  line?: number;
 }
 
 /** An unbacked row exempted by a method that mints no source symbol (CR-041). */
@@ -39,6 +46,8 @@ export interface NoSymbolRow {
   row_id?: string | null;
   test_type: string;
   target_ids: string[];
+  /** 1-based document line of the matrix row (quire-rs #210, v0.42.0). */
+  line?: number;
 }
 
 /**
@@ -54,6 +63,12 @@ export interface UndeclaredStatus {
   row_id?: string | null;
   /** The authored status value, verbatim. */
   status: string;
+  /**
+   * 1-based document line of the matrix row (quire-rs #210, v0.42.0).
+   * Byte-identical duplicate rows still collapse to one record (quire-rs
+   * CR-086), which carries the first duplicate's line.
+   */
+  line?: number;
 }
 
 /**
@@ -76,6 +91,29 @@ export interface UntrackedSymbol {
   path: string;
   symbol: string;
   trace_id: string;
+  /** 1-based declaration line of the tagged symbol (quire-rs #210, v0.42.0). */
+  line?: number;
+}
+
+/** One of the distinct symbols binding a shared trace id (quire-rs CR-087). */
+export interface SharedTraceSymbol {
+  path: string;
+  symbol: string;
+}
+
+/**
+ * A trace id bound by more than one distinct source symbol (quire-rs
+ * FR-050-AC-23, CR-087).
+ *
+ * One id names one symbol; a row backed by N symbols stays green while N-1 of
+ * its tests rot. Carries no weight in `totals`, and `--strict` does not gate
+ * on it in this contract revision.
+ */
+export interface SharedTraceId {
+  /** The trace id, exactly as the binding forms yield it. */
+  trace_id: string;
+  /** The distinct binding symbols, ordered by (path, symbol); at least two. */
+  symbols: SharedTraceSymbol[];
 }
 
 /** Backed/total counts for one minting document and target kind. */
@@ -187,6 +225,12 @@ export interface CoverageReport {
   /** Absent — not empty — when every status value in the corpus is declared. */
   undeclared_statuses?: UndeclaredStatus[];
   untracked_symbols: UntrackedSymbol[];
+  /**
+   * Trace ids bound by more than one distinct symbol (quire-rs FR-050-AC-23,
+   * CR-087). ABSENT — not empty — for a corpus whose every id is uniquely
+   * bound.
+   */
+  shared_trace_ids?: SharedTraceId[];
   groups: GroupCounts[];
   criteria?: CriteriaCounts[];
   diagnostics?: CoverageDiagnostic[];
@@ -205,6 +249,14 @@ export interface CoverageReport {
    * payload from an engine predating the classification.
    */
   vocabulary_coverage?: VocabularyValueRecord[];
+  /**
+   * Source files a declared `source_exclude` glob removed from the symbol walk
+   * (quire-rs FR-050-AC-24, #215). ABSENT — never 0 — for a model declaring no
+   * `source_exclude` or one whose globs match nothing. Without it an
+   * over-broad glob silently drops legitimate backing and the report reads as
+   * a coverage regression.
+   */
+  excluded_source_files?: number;
   totals: CoverageTotals;
 }
 

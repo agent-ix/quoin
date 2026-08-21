@@ -38,6 +38,11 @@
       "description": "FR-050-AC-5: source symbols whose trace tag resolves to no declared target or reference row.",
       "items": { "$ref": "#/$defs/UntrackedSymbol" }
     },
+    "shared_trace_ids": {
+      "type": "array",
+      "description": "FR-050-AC-23 (CR-087): trace ids bound by more than one distinct source symbol. One id names one symbol; a row backed by N symbols stays green while N-1 of its tests rot. ABSENT — not empty — for a corpus whose every id is uniquely bound, which is what keeps FR-050-AC-7 byte-identity. Carries no weight in `totals`, and `--strict` does not gate on it in this revision. Additive under FR-055-CON-3.",
+      "items": { "$ref": "#/$defs/SharedTraceId" }
+    },
     "groups": {
       "type": "array",
       "description": "FR-050-AC-6: backed/total counts per minting document and target kind.",
@@ -68,6 +73,11 @@
       "description": "FR-059-AC-9 (CR-091, #179): one record per declared coverage-vocabulary value, classified owned / excused / unowned with the deciding documents. The `quire validate` warning stream reports only the unowned residue; these records let a consumer tell an owned value from an excused one without opening bundle frontmatter. ABSENT — not empty — for a module declaring no `vocabulary_coverage`, which is what keeps FR-050-AC-7 byte-identity. Additive under FR-055-CON-3.",
       "items": { "$ref": "#/$defs/VocabularyValueRecord" }
     },
+    "excluded_source_files": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "FR-050-AC-24 (#215): source files a declared `source_exclude` glob removed from the symbol walk. ABSENT — never 0 — for a model declaring no `source_exclude` or one whose globs match nothing, which is what keeps FR-050-AC-7 byte-identity. Additive under FR-055-CON-3. Without it an over-broad glob silently drops legitimate backing and the report reads as a coverage regression."
+    },
     "totals": { "$ref": "#/$defs/CoverageTotals" }
   },
   "$defs": {
@@ -86,7 +96,8 @@
           "type": "array",
           "items": { "type": "string" },
           "description": "Trace ids the row is answerable for — its own plus the ids it references — none of which any symbol backs."
-        }
+        },
+        "line": { "type": "integer", "minimum": 1, "description": "1-based document line of the matrix row (#210). Additive under FR-055-CON-3: absent on a payload from an engine predating the field." }
       }
     },
     "StatusLie": {
@@ -98,7 +109,8 @@
         "document": { "type": "string" },
         "row_id": { "type": ["string", "null"] },
         "status": { "type": "string", "description": "The authored status value, verbatim." },
-        "target_ids": { "type": "array", "items": { "type": "string" } }
+        "target_ids": { "type": "array", "items": { "type": "string" } },
+        "line": { "type": "integer", "minimum": 1, "description": "1-based document line of the matrix row (#210). Additive under FR-055-CON-3." }
       }
     },
     "UndeclaredStatus": {
@@ -109,7 +121,8 @@
         "reference": { "type": "string", "description": "The declaration that produced the row." },
         "document": { "type": "string", "description": "Scope-relative path, `/`-separated on every platform." },
         "row_id": { "type": ["string", "null"] },
-        "status": { "type": "string", "description": "The authored status value, verbatim. No class is carried: having none is the finding." }
+        "status": { "type": "string", "description": "The authored status value, verbatim. No class is carried: having none is the finding." },
+        "line": { "type": "integer", "minimum": 1, "description": "1-based document line of the matrix row (#210). Duplicate byte-identical rows still collapse to one record (CR-086), which carries the first duplicate's line. Additive under FR-055-CON-3." }
       }
     },
     "NoSymbolRow": {
@@ -121,7 +134,8 @@
         "document": { "type": "string" },
         "row_id": { "type": ["string", "null"] },
         "test_type": { "type": "string", "description": "The declared test-type value that exempts the row." },
-        "target_ids": { "type": "array", "items": { "type": "string" } }
+        "target_ids": { "type": "array", "items": { "type": "string" } },
+        "line": { "type": "integer", "minimum": 1, "description": "1-based document line of the matrix row (#210). Additive under FR-055-CON-3." }
       }
     },
     "UntrackedSymbol": {
@@ -131,7 +145,31 @@
       "properties": {
         "path": { "type": "string" },
         "symbol": { "type": "string" },
-        "trace_id": { "type": "string" }
+        "trace_id": { "type": "string" },
+        "line": { "type": "integer", "minimum": 1, "description": "1-based declaration line of the tagged symbol (#210). Additive under FR-055-CON-3." }
+      }
+    },
+    "SharedTraceId": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["trace_id", "symbols"],
+      "properties": {
+        "trace_id": { "type": "string", "minLength": 1, "description": "The trace id, exactly as the binding forms yield it." },
+        "symbols": {
+          "type": "array",
+          "minItems": 2,
+          "items": { "$ref": "#/$defs/SharedTraceSymbol" },
+          "description": "The distinct binding symbols, ordered by (path, symbol). Always at least two — a uniquely bound id mints no record."
+        }
+      }
+    },
+    "SharedTraceSymbol": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "symbol"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "symbol": { "type": "string", "minLength": 1 }
       }
     },
     "GroupCounts": {

@@ -30,7 +30,7 @@ import { fileURLToPath } from "node:url";
 /** Where the vendored schemas came from, and exactly which bytes. */
 export const QUIRE_CONTRACT = {
   /** The quire-rs release the vendored schemas were copied from. */
-  sourceTag: "v0.41.0",
+  sourceTag: "v0.42.0",
   /** The contract version, as carried in each schema's `$id` and filename. */
   contractVersion: "v1",
   /**
@@ -62,18 +62,15 @@ export const QUIRE_CONTRACT = {
    * SHA-256 of each vendored file. Asserted on every test run, so an edit
    * without a matching refresh fails loudly.
    *
-   * `coverage-v1.schema.json` is v0.41.0 **plus two additive shapes carried
-   * ahead of the tag**, taken verbatim from quire-rs `main` commit `87a1869`
-   * (CR-091, unreleased when this landed): `CoverageDiagnostic.value` and the
-   * `vocabulary_coverage` / `$defs/VocabularyValueRecord` records — the fields
-   * quoin#168's three-state advisor split reads. Additive under quire-rs
-   * FR-055-CON-3, so a v0.41.0 payload still validates unchanged. The next
-   * `refresh-quire-schemas.mjs` run at the tag that ships CR-091 supersedes
-   * the carry-ahead wholesale.
+   * v0.42.0 supersedes the CR-041 carry-ahead (the two CR-091 shapes taken
+   * ahead of the tag) with the released files wholesale, as that note said the
+   * next refresh would. Beyond CR-091 the tag adds only additive shapes under
+   * quire-rs FR-055-CON-3: `line` on the matrix-row/symbol records (#210),
+   * `shared_trace_ids` (CR-087) and `excluded_source_files` (#215).
    */
   hashes: {
     "coverage-v1.schema.json":
-      "f40cca33285370bd3c414a3fb70d13ec9bca969ddc78e23448a1833dae43ff0b",
+      "2b7a8f6d786cadf637df6461c89c92c350096cf263c1f3c5d6b3b24a490bc590",
     "properties-v1.schema.json":
       "d81f1ec85abdecd1f1664ded15e081f9aecb6c0f054d6b332b71e904cf826292",
   },
