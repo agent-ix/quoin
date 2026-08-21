@@ -1,5 +1,5 @@
 /**
- * FR-029 — the quire↔quoin JSON contract (TC-110..TC-117).
+ * FR-029 — the quire↔quoin JSON contract (TC-110..TC-118).
  *
  * The point of these is stated in quoin's own `spec/review.md` Finding 8: "no
  * contract test against quire". The shapes lived as prose in skill markdown,
@@ -90,39 +90,6 @@ describe("TC-110 the vendored schemas match their recorded provenance", () => {
 
 describe("TC-111 a conformant payload validates", () => {
   // TC-111
-  it("TC-116 accepts the v0.41.0 optional keys, and rejects a malformed one", () => {
-    // A vendored schema can drift from the engine in the one direction nothing
-    // notices: a NEW optional key. The payload still validates because the key
-    // is simply unknown — until `additionalProperties: false` rejects it, which
-    // is what would happen here if the refresh had not been run.
-    const withDrift = coveragePayload();
-    withDrift.undeclared_statuses = [
-      {
-        reference: "traces-to",
-        document: "spec/tests.md",
-        row_id: "TC-006",
-        status: "\u26a0\ufe0f scale evidence deferred",
-      },
-    ];
-    withDrift.implements = [
-      {
-        path: "src/lib.rs",
-        symbol: "parse",
-        trace_id: "FR-001",
-        form: "rust-implements-line",
-      },
-    ];
-    expect(validateCoverage(withDrift).ok).toBe(true);
-
-    // `status` is required, and the class is deliberately NOT carried — having
-    // none is the finding.
-    const malformed = coveragePayload();
-    malformed.undeclared_statuses = [
-      { reference: "traces-to", document: "spec/tests.md" },
-    ];
-    expect(validateCoverage(malformed).ok).toBe(false);
-  });
-
   it("accepts a coverage payload", () => {
     const result = validateCoverage(coveragePayload());
     expect(result.ok, JSON.stringify(result)).toBe(true);
@@ -233,6 +200,7 @@ describe("TC-116 optional keys are optional and absence is not emptiness", () =>
     expect(validateCoverage(coveragePayload()).ok).toBe(true);
   });
 
+  // TC-116
   it("accepts a payload carrying every optional key", () => {
     const full = {
       ...coveragePayload(),
@@ -243,6 +211,14 @@ describe("TC-116 optional keys are optional and absence is not emptiness", () =>
           row_id: "TC-002",
           test_type: "Eval",
           target_ids: ["TC-002"],
+        },
+      ],
+      undeclared_statuses: [
+        {
+          reference: "traces-to",
+          document: "spec/tests.md",
+          row_id: "TC-006",
+          status: "\u26a0\ufe0f scale evidence deferred",
         },
       ],
       criteria: [
@@ -274,12 +250,75 @@ describe("TC-116 optional keys are optional and absence is not emptiness", () =>
           criticality: "P1",
         },
       ],
+      implements: [
+        {
+          path: "src/lib.rs",
+          symbol: "parse",
+          trace_id: "FR-001",
+          form: "rust-implements-line",
+        },
+      ],
       totals: { backed: 1, total: 2, criteria: 2, property_shaped: 1 },
     };
+
+    // "Every" is read off the schema, not off this fixture's memory of it:
+    // when the schema gained `undeclared_statuses` and `implements` (v0.41.0),
+    // this payload kept validating while its title silently narrowed to
+    // "every optional key the fixture happened to know about" (#178). Now a
+    // new optional key fails here until the fixture actually carries it.
+    const schema = readSchema("coverage-v1.schema.json") as {
+      properties: Record<string, unknown>;
+      required: string[];
+    };
+    const optional = Object.keys(schema.properties).filter(
+      (key) => !schema.required.includes(key),
+    );
+    for (const key of optional) {
+      expect(
+        Object.keys(full),
+        `the "every optional key" payload no longer carries \`${key}\``,
+      ).toContain(key);
+    }
+
     const result = validateCoverage(full);
     expect(result.ok, JSON.stringify(result)).toBe(true);
   });
 
+  // TC-116
+  it("accepts the v0.41.0 optional keys, and rejects a malformed one", () => {
+    // A vendored schema can drift from the engine in the one direction nothing
+    // notices: a NEW optional key. The payload still validates because the key
+    // is simply unknown — until `additionalProperties: false` rejects it, which
+    // is what would happen here if the refresh had not been run.
+    const withDrift = coveragePayload();
+    withDrift.undeclared_statuses = [
+      {
+        reference: "traces-to",
+        document: "spec/tests.md",
+        row_id: "TC-006",
+        status: "\u26a0\ufe0f scale evidence deferred",
+      },
+    ];
+    withDrift.implements = [
+      {
+        path: "src/lib.rs",
+        symbol: "parse",
+        trace_id: "FR-001",
+        form: "rust-implements-line",
+      },
+    ];
+    expect(validateCoverage(withDrift).ok).toBe(true);
+
+    // `status` is required, and the class is deliberately NOT carried — having
+    // none is the finding.
+    const malformed = coveragePayload();
+    malformed.undeclared_statuses = [
+      { reference: "traces-to", document: "spec/tests.md" },
+    ];
+    expect(validateCoverage(malformed).ok).toBe(false);
+  });
+
+  // TC-116
   it("rejects a malformed statement hash", () => {
     const payload = {
       ...coveragePayload(),
