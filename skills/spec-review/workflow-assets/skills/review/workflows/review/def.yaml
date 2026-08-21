@@ -1,5 +1,5 @@
 name: review
-version: 0.2.0
+version: 0.2.1
 description: Run a composite specification review producing validated SpecReview docs.
 initialPhase: intake
 phases:
@@ -46,12 +46,12 @@ interviews:
         type: text
         required: true
       - key: review_set
-        prompt: "Review set: 'base' (skill checklist only), 'all' (the six analyses), or 'subset'."
+        prompt: "Review set: 'base' (skill checklist only), 'all' (the seven analyses), or 'subset'."
         type: enum
         options: [base, all, subset]
         required: true
       - key: selected_analyses
-        prompt: "Analyses to run as a list, drawn from: failure-domain, integrity, dependency, evidence, risk-complexity, scope-boundary. Use all six for 'all'; the chosen ones for 'subset'; leave empty for 'base'."
+        prompt: "Analyses to run as a list, drawn from: failure-domain, integrity, dependency, evidence, risk-complexity, scope-boundary, ears-conformance. Use all seven for 'all'; the chosen ones for 'subset'; leave empty for 'base'."
         type: list<text>
         required: false
 recipes:

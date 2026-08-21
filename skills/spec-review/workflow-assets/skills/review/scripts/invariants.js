@@ -1,6 +1,6 @@
 import { specInvariants } from "../../../dist/index.js";
 
-// Canonical "all" set — the six analyses named in the spec-review skill.
+// Canonical "all" set — the seven analyses named in the spec-review skill.
 const ALL_ANALYSES = [
   "failure-domain",
   "integrity",
@@ -8,6 +8,7 @@ const ALL_ANALYSES = [
   "evidence",
   "risk-complexity",
   "scope-boundary",
+  "ears-conformance",
 ];
 
 const norm = (value) =>
@@ -27,7 +28,7 @@ function findRequest(instance) {
 // Hard check (final gate): every selected analysis must have a recorded
 // `review_doc` (a rendered + quire-validated SpecReview doc on disk) before
 // the run can be accepted. 'base' selects nothing, so it passes trivially;
-// 'all' expands to the canonical six when the agent did not echo the list.
+// 'all' expands to the canonical seven when the agent did not echo the list.
 const selectedAnalysesCovered = ({ instance }) => {
   const request = findRequest(instance);
   const reviewSet = norm(request?.review_set);
