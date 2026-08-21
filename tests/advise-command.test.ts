@@ -12,11 +12,23 @@
  * `properties` run still yields the property-shape axis.
  */
 
-import { describe, expect, it } from "vitest";
+import { chmodSync, mkdtempSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 
-import { advise, loadMethodCatalog } from "../src/advisor/index.js";
+import type { Config } from "@oclif/core";
+import { loadConfig } from "@agent-ix/ix-cli-core";
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+
+import Advise from "../src/commands/advise";
+import {
+  advise,
+  loadMethodCatalog,
+  uncataloguedAuthoredMethods,
+} from "../src/advisor/index.js";
 import type { MethodCatalog } from "../src/advisor/index.js";
-import { runQuireAllowFailure } from "../src/quire/index.js";
+import { runQuireAllowFailure, validateCoverage } from "../src/quire/index.js";
 
 const CATALOG: MethodCatalog = {
   methods: [
@@ -121,5 +133,310 @@ describe("TC-150 the advisor is reachable from a command (FR-031-AC-10, AC-11)",
     // must not take down the advisor.
     const catalog = loadMethodCatalog([]);
     expect(catalog.unreadable).toEqual([]);
+  });
+});
+
+// ── The three-state split, end to end (quoin#168; TC-274..TC-276) ──────────
+//
+// quire is faked on PATH (the tests/quire-exec.test.ts pattern): the command
+// needs a version answer, one coverage payload and one properties payload, and
+// what is under test is the classification and the reporting, not the engine.
+
+const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
+
+let config: Config;
+
+beforeAll(async () => {
+  config = await loadConfig({ root: repoRoot });
+});
+
+/**
+ * The battle-test oracle (agent-ix/quoin#168): five authored values from the
+ * filament-ide-rs run, every one flagged `⚠ mismatch` by the two-state advisor
+ * although none is a catalog method id or one of the four classes.
+ */
+const BATTLE_STRINGS = [
+  "Static Analysis",
+  "Audit Script",
+  "CI Measurement",
+  "Playwright rAF sampling",
+  "Deferred",
+];
+
+/** A statement the fixture module has a rule for, so a mismatch WOULD fire. */
+const RELIABILITY =
+  "The client tolerates a dropped connection and retries without losing a message.";
+
+/**
+ * A CR-091 coverage payload: the five battle strings authored on obligations
+ * the diagnostics diagnose as uncatalogued, one genuine disagreement
+ * (`Inspection`, a declared class the engine does NOT diagnose), and one
+ * obligation no rule matches. `diagnosticValues: false` is the degraded shape
+ * an engine predating CR-091 emits — same diagnostics, no `value`.
+ */
+function battlePayload(opts: { diagnosticValues: boolean }): {
+  [key: string]: unknown;
+} {
+  const obligations = [
+    ...BATTLE_STRINGS.map((method, i) => ({
+      source: "acceptance-criteria",
+      id: `FR-00${i + 1}-AC-1`,
+      document: `spec/functional/FR-00${i + 1}.md`,
+      statement: RELIABILITY,
+      statement_hash: "a".repeat(64),
+      method,
+    })),
+    {
+      source: "acceptance-criteria",
+      id: "FR-015-AC-4",
+      document: "spec/functional/FR-015.md",
+      statement: RELIABILITY,
+      statement_hash: "a".repeat(64),
+      method: "Inspection",
+    },
+    {
+      source: "acceptance-criteria",
+      id: "FR-020-AC-9",
+      document: "spec/functional/FR-020.md",
+      statement: "The widget count equals seven.",
+      statement_hash: "a".repeat(64),
+      method: "Test",
+    },
+  ];
+  return {
+    unbacked_rows: [],
+    status_lies: [],
+    untracked_symbols: [],
+    groups: [],
+    totals: { backed: 0, total: obligations.length },
+    obligations,
+    diagnostics: BATTLE_STRINGS.map((value) => ({
+      declaration: "acceptance-criteria",
+      reason: "uncatalogued-verification-method",
+      message:
+        `'${value}' is neither a declared verification_catalog method id ` +
+        `nor a declared class, so nothing can say what discharging it means`,
+      ...(opts.diagnosticValues ? { value } : {}),
+    })),
+  };
+}
+
+/** A fake `quire` answering `--version`, `coverage` and `properties`. */
+function fakeQuireDir(payload: Record<string, unknown>): string {
+  const dir = mkdtempSync(join(tmpdir(), "quoin-fake-quire-"));
+  const bin = join(dir, "quire");
+  writeFileSync(
+    bin,
+    [
+      "#!/bin/sh",
+      'if [ "$1" = "--version" ]; then echo "quire 0.41.0"; exit 0; fi',
+      'if [ "$1" = "properties" ]; then echo \'{"documents": []}\'; exit 0; fi',
+      "cat <<'PAYLOAD'",
+      JSON.stringify(payload),
+      "PAYLOAD",
+    ].join("\n"),
+  );
+  chmodSync(bin, 0o755);
+  return dir;
+}
+
+/** A module whose catalog recommends fault-injection for RELIABILITY. */
+function moduleDir(): string {
+  const dir = mkdtempSync(join(tmpdir(), "quoin-advise-module-"));
+  writeFileSync(
+    join(dir, "manifest.yaml"),
+    [
+      "manifest_version: 1",
+      "name: tc274-fixture",
+      "version: 0.0.0",
+      "verification_catalog:",
+      "  fault-injection:",
+      "    name: Fault injection",
+      "    class: Test",
+      "    definition: d",
+      "    evidence_kind: Integration",
+      "    applicability:",
+      "      characteristics: [reliability]",
+      "",
+    ].join("\n"),
+  );
+  return dir;
+}
+
+/** Run the real command against a faked quire, capturing log and warn. */
+async function runAdvise(
+  payload: Record<string, unknown>,
+  extraArgs: string[] = [],
+): Promise<{ logged: string[]; warned: string[] }> {
+  const logged: string[] = [];
+  const warned: string[] = [];
+  vi.spyOn(Advise.prototype, "log").mockImplementation((m?: string) => {
+    logged.push(String(m ?? ""));
+  });
+  vi.spyOn(Advise.prototype, "warn").mockImplementation(((m: string) => {
+    warned.push(String(m));
+    return m;
+  }) as never);
+  const repo = mkdtempSync(join(tmpdir(), "quoin-advise-repo-"));
+  await Advise.run(
+    ["--repo", repo, "--module", moduleDir(), ...extraArgs],
+    config,
+  );
+  return { logged, warned };
+}
+
+describe("TC-274 the battle-test oracle: real uncatalogued values are not mismatches (FR-031-AC-22)", () => {
+  const savedPath = process.env.PATH;
+  afterEach(() => {
+    process.env.PATH = savedPath;
+    vi.restoreAllMocks();
+  });
+
+  // TC-274
+  it("the vendored contract accepts the CR-091 payload carrying diagnostic values", () => {
+    const result = validateCoverage(battlePayload({ diagnosticValues: true }));
+    expect(result.ok, JSON.stringify(result)).toBe(true);
+  });
+
+  // TC-274
+  it("classifies all five uncatalogued, and the Inspection disagreement mismatch", async () => {
+    process.env.PATH = `${fakeQuireDir(battlePayload({ diagnosticValues: true }))}:${savedPath}`;
+    const { logged } = await runAdvise(
+      battlePayload({ diagnosticValues: true }),
+    );
+    for (const value of BATTLE_STRINGS) {
+      const row = logged.find((line) => line.includes(`authored=${value} `));
+      expect(row, `no output row for authored=${value}`).toBeDefined();
+      expect(row).toContain("⚠ uncatalogued");
+      expect(row).not.toContain("mismatch");
+    }
+    // The one the author may genuinely want to reconsider stays a mismatch —
+    // `Inspection` IS a declared class, and no diagnostic names it.
+    const inspection = logged.find((l) => l.includes("authored=Inspection"));
+    expect(inspection).toContain("⚠ mismatch");
+    expect(inspection).not.toContain("uncatalogued");
+  });
+
+  // TC-274
+  it("carries the three states in JSON", async () => {
+    process.env.PATH = `${fakeQuireDir(battlePayload({ diagnosticValues: true }))}:${savedPath}`;
+    const { logged } = await runAdvise(
+      battlePayload({ diagnosticValues: true }),
+      ["--json"],
+    );
+    const { advice } = JSON.parse(logged.join("\n")) as {
+      advice: Array<{
+        authored: string | null;
+        mismatch: boolean;
+        uncatalogued: boolean;
+        inconclusive: boolean;
+      }>;
+    };
+    for (const value of BATTLE_STRINGS) {
+      const entry = advice.find((a) => a.authored === value);
+      expect(entry, `no advice for authored=${value}`).toBeDefined();
+      expect(entry?.uncatalogued).toBe(true);
+      expect(entry?.mismatch).toBe(false);
+    }
+    expect(advice.find((a) => a.authored === "Inspection")?.mismatch).toBe(
+      true,
+    );
+  });
+});
+
+describe("TC-275 an engine predating CR-091 degrades to two states, and says so (FR-031-AC-23)", () => {
+  const savedPath = process.env.PATH;
+  afterEach(() => {
+    process.env.PATH = savedPath;
+    vi.restoreAllMocks();
+  });
+
+  // TC-275
+  it("reads the join off the diagnostics, and reports a value-less payload as degraded", () => {
+    const classified = uncataloguedAuthoredMethods(
+      battlePayload({ diagnosticValues: true }).diagnostics as never,
+    );
+    expect([...classified.values].sort()).toEqual([...BATTLE_STRINGS].sort());
+    expect(classified.degraded).toBe(false);
+
+    const degraded = uncataloguedAuthoredMethods(
+      battlePayload({ diagnosticValues: false }).diagnostics as never,
+    );
+    expect(degraded.values.size).toBe(0);
+    expect(degraded.degraded).toBe(true);
+
+    // No diagnostics at all is NOT degraded: under an engine of either
+    // vintage it means every authored value is catalogued.
+    expect(uncataloguedAuthoredMethods(undefined).degraded).toBe(false);
+    expect(
+      uncataloguedAuthoredMethods([
+        { declaration: "d", reason: "archetype-matches-nothing", message: "m" },
+      ]).degraded,
+    ).toBe(false);
+  });
+
+  // TC-275
+  it("falls back to today's two-state report with an explicit note, not a misclassification", async () => {
+    process.env.PATH = `${fakeQuireDir(battlePayload({ diagnosticValues: false }))}:${savedPath}`;
+    const { logged, warned } = await runAdvise(
+      battlePayload({ diagnosticValues: false }),
+    );
+    expect(
+      warned.some((w) =>
+        w.includes("engine predates vocabulary classification"),
+      ),
+      warned.join("\n"),
+    ).toBe(true);
+    // Two-state behaviour, exactly as before: the five report as mismatches.
+    for (const value of BATTLE_STRINGS) {
+      const row = logged.find((line) => line.includes(`authored=${value} `));
+      expect(row).toContain("⚠ mismatch");
+      expect(row).not.toContain("uncatalogued");
+    }
+    expect(logged.join("\n")).toContain("0 uncatalogued");
+  });
+});
+
+describe("TC-276 combined --*-only filters union, and the footer tallies the full population (FR-031-AC-24)", () => {
+  const savedPath = process.env.PATH;
+  afterEach(() => {
+    process.env.PATH = savedPath;
+    vi.restoreAllMocks();
+  });
+
+  // TC-276
+  it("--mismatch-only returns only genuine disagreements", async () => {
+    process.env.PATH = `${fakeQuireDir(battlePayload({ diagnosticValues: true }))}:${savedPath}`;
+    const { logged } = await runAdvise(
+      battlePayload({ diagnosticValues: true }),
+      ["--mismatch-only"],
+    );
+    const rows = logged.filter((line) => line.includes("authored="));
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toContain("authored=Inspection");
+  });
+
+  // TC-276
+  it("--mismatch-only --inconclusive-only selects the union, not the empty intersection", async () => {
+    // Inconclusive implies no recommendations implies never mismatch, so the
+    // intersection was a GUARANTEED zero rows — and the footer then reported
+    // `0 mismatch, 0 inconclusive` over a corpus full of both (#168).
+    process.env.PATH = `${fakeQuireDir(battlePayload({ diagnosticValues: true }))}:${savedPath}`;
+    const { logged } = await runAdvise(
+      battlePayload({ diagnosticValues: true }),
+      ["--mismatch-only", "--inconclusive-only"],
+    );
+    const rows = logged.filter((line) => line.includes("authored="));
+    expect(rows).toHaveLength(2);
+    expect(rows.some((r) => r.includes("authored=Inspection"))).toBe(true);
+    expect(rows.some((r) => r.includes("FR-020-AC-9"))).toBe(true);
+    // The footer tallies the FULL population — 7 obligations, of which the
+    // filter showed 2 — not the shown rows, which understated the very totals
+    // the filter was asked about.
+    const footer = logged.at(-1) ?? "";
+    expect(footer).toContain("2 of 7 obligation(s) shown");
+    expect(footer).toContain(
+      "Of all 7: 1 mismatch, 5 uncatalogued, 1 inconclusive",
+    );
   });
 });

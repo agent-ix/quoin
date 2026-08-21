@@ -46,6 +46,7 @@ export type {
   StatusLie,
   UnbackedRow,
   UntrackedSymbol,
+  VocabularyValueRecord,
 } from "./types.js";
 
 export {

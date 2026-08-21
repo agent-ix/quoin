@@ -16,6 +16,7 @@
 
 import type { MethodCatalog, VerificationMethod } from "./methods.js";
 import { parseSpace } from "../auditor/combinatorial.js";
+import type { CoverageDiagnostic } from "../quire/index.js";
 
 /** What the advisor knows about one obligation before it recommends anything. */
 export interface ObligationFacts {
@@ -59,6 +60,20 @@ export interface ObligationFacts {
    * and the one fact it cannot get wrong by misreading a sentence.
    */
   parameters?: Record<string, string>;
+  /**
+   * True when the engine's `uncatalogued-verification-method` diagnostic names
+   * this obligation's authored method (agent-ix/quoin#168).
+   *
+   * Supplied by the caller, never derived here — the same seam as `evidence`:
+   * the command joins the coverage payload's diagnostics' `value` against
+   * `Obligation.method` by byte equality, which quire-rs CR-091 guarantees.
+   * The engine's own catalog knowledge decides what "known" means, so the
+   * advisor and the engine cannot disagree about the same value (the ADR-0011
+   * discipline). Absent means the classification was unavailable — an engine
+   * predating CR-091 — and the advisor degrades to the two-state behaviour
+   * rather than guessing.
+   */
+  uncataloguedMethod?: boolean;
 }
 
 /**
@@ -102,11 +117,27 @@ export interface Advice {
   /** The authored method, normalized. */
   authored?: string | null;
   /**
-   * Set when the authored method is not among the recommendations AND the
-   * advisor had rules to go on. Advisory: the human confirms, and the confirmed
-   * method is what the auditor later checks conformance against.
+   * Set when the authored method **is a declared method or class**, is not
+   * among the recommendations, AND the advisor had rules to go on. A genuine
+   * disagreement — *did you mean to inspect this rather than test it?* —
+   * advisory: the human confirms, and the confirmed method is what the auditor
+   * later checks conformance against.
+   *
+   * Never set for an uncatalogued value (agent-ix/quoin#168): a word the
+   * catalog has never heard of is a vocabulary problem, not a choice the
+   * advisor disagrees with, and conflating the two buried the handful of real
+   * disagreements under 90 vocabulary rows.
    */
   mismatch: boolean;
+  /**
+   * The authored value is in neither the catalog's method set nor its class
+   * set, per the engine's own `uncatalogued-verification-method` diagnostic.
+   * The fix is a vocabulary fix — add a catalog entry, or author a declared
+   * method — so it is reported as its own state, never as a mismatch.
+   * Orthogonal to `inconclusive`: the vocabulary fact does not disappear
+   * because the advisor was silent.
+   */
+  uncatalogued: boolean;
   /**
    * True when no rule matched anything. The honest outcome — an advisor that
    * recommends `Test` because it found nothing is the habit this replaces.
@@ -549,14 +580,19 @@ export function advise(catalog: MethodCatalog, facts: ObligationFacts): Advice {
 
   const authored = normalizeAuthored(facts.authoredMethod);
   const inconclusive = recommended.length === 0;
+  // The engine already diagnosed this value as a word the catalog never
+  // declared, so there is no choice here to disagree with (quoin#168).
+  const uncatalogued = authored !== null && facts.uncataloguedMethod === true;
   // A mismatch is only meaningful when the advisor had something to say. With
   // no rules matched, "the author chose Test and we recommend nothing" is not a
   // disagreement — it is silence, and reporting it as a mismatch would bury the
-  // real ones.
+  // real ones. And an uncatalogued value can never mismatch: it is outside both
+  // the method set and the closed class set, so "not among the recommendations"
+  // is vacuously true of it and says nothing about the author's intent.
   const mismatch =
     !inconclusive &&
+    !uncatalogued &&
     authored !== null &&
-    authored !== undefined &&
     !recommended.some(
       (r) =>
         r.method.toLowerCase() === authored.toLowerCase() ||
@@ -568,8 +604,49 @@ export function advise(catalog: MethodCatalog, facts: ObligationFacts): Advice {
     recommended,
     authored,
     mismatch,
+    uncatalogued,
     inconclusive,
   };
+}
+
+/** The diagnostic reason quire mints for a method the catalog never declared. */
+export const UNCATALOGUED_METHOD_REASON = "uncatalogued-verification-method";
+
+/** What the coverage payload's diagnostics say about authored-method vocabulary. */
+export interface UncataloguedMethods {
+  /**
+   * Authored methods the engine diagnosed as uncatalogued — each `value`
+   * byte-equal to the `Obligation.method` it is about (quire-rs CR-091).
+   */
+  values: Set<string>;
+  /**
+   * True when a diagnostic carried the reason but no `value`: the engine
+   * predates the CR-091 classification, so uncatalogued values cannot be told
+   * from genuine disagreements. The caller must degrade to the two-state
+   * behaviour and say so, rather than misclassify.
+   */
+  degraded: boolean;
+}
+
+/**
+ * The uncatalogued-method join, read off a coverage payload's diagnostics.
+ *
+ * No diagnostics, or none with the reason, yields an empty set with
+ * `degraded: false`: under an engine of either vintage that means every
+ * authored value is catalogued, and the three-state split degenerates to the
+ * two-state behaviour *correctly* — nothing was there to classify.
+ */
+export function uncataloguedAuthoredMethods(
+  diagnostics: CoverageDiagnostic[] | undefined,
+): UncataloguedMethods {
+  const values = new Set<string>();
+  let degraded = false;
+  for (const d of diagnostics ?? []) {
+    if (d.reason !== UNCATALOGUED_METHOD_REASON) continue;
+    if (d.value === undefined) degraded = true;
+    else values.add(d.value);
+  }
+  return { values, degraded };
 }
 
 function matchRules(

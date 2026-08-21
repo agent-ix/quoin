@@ -75,7 +75,8 @@ against another.
 ## Outputs
 
 - Per obligation: ranked recommendations with the rule and value that matched
-  each, the normalized authored method, a mismatch flag, and an inconclusive flag
+  each, the normalized authored method, a mismatch flag, an uncatalogued flag,
+  and an inconclusive flag
 - `quoin catalog methods` — the merged catalog, human-readable or JSON
 - A `SpecReview` with `analysis: evidence` carrying the obligations needing
   attention
@@ -94,6 +95,12 @@ against another.
 - The advisor SHALL emit no finding for an obligation whose authored method
   agrees. A review listing every passing obligation is a review nobody reads to
   the end.
+- The advisor SHALL distinguish a **mismatch** (the authored value is a
+  declared method or class, and not among the recommendations) from an
+  **uncatalogued** value (in neither set), reading the engine's own
+  `uncatalogued-verification-method` diagnostics rather than re-deriving
+  vocabulary membership. The two are different problems with different fixes: a
+  mismatch is a review conversation, an uncatalogued value is a vocabulary fix.
 - Characteristic detection SHALL be lexical: every rule reads a fact about the
   text, never an inference about intent.
 
@@ -130,6 +137,9 @@ against another.
 | FR-031-AC-19 | The obligation's structured `parameters` reach the advisor: a `target` or `threshold` key mints `quantified-threshold` regardless of the statement's wording, and parameters carrying neither key mint nothing. | Test (TC-266) |
 | FR-031-AC-20 | A hyphenated compound is one token: a characteristic keyword appearing as a fragment of one (`unsafe` in `unsafe-audit`) mints nothing, while a regex naming the whole compound (`memory-safe`, `thread-safety`, `use-after-free`) still matches it. | Test (TC-267) |
 | FR-031-AC-21 | A statement claiming an architectural fact in the corpus's own wording — a zero-dependencies declaration, a dependency-check rejection, an acyclicity constraint, an architecture-absence claim — mints `layering` or `module-boundary`, so `architecture-conformance` is reachable; `top-level claim` mints neither. | Test (TC-268) |
+| FR-031-AC-22 | The advisor distinguishes three states rather than two: an authored value the engine's `uncatalogued-verification-method` diagnostic names — joined by the diagnostic's `value`, byte-equal to the obligation's `method` — is reported **uncatalogued** and never as a mismatch; a declared method or class not among the recommendations remains a **mismatch**; an obligation no rule matched remains **inconclusive**, and the uncatalogued fact survives silence rather than being consumed by it. | Test (TC-273, TC-274) |
+| FR-031-AC-23 | A payload whose `uncatalogued-verification-method` diagnostics carry no `value` — an engine predating quire-rs CR-091 — degrades the advisor to the two-state behaviour with an explicit "engine predates vocabulary classification" note, never a misclassification; a payload carrying no such diagnostics at all is not degraded, because under an engine of either vintage it means every authored value is catalogued. | Test (TC-273, TC-275) |
+| FR-031-AC-24 | `--mismatch-only` returns only genuine method disagreements; combined `--*-only` filters select the union rather than the guaranteed-empty intersection; and the footer tallies mismatch, uncatalogued and inconclusive over the full obligation population, with the shown count reported separately. | Test (TC-274, TC-276) |
 
 > **CR-026 note (the advisor reads evidence — 2026-08-19):** `concolic-execution`
 > was the last catalog method no requirement could elicit (CR-025 took that from

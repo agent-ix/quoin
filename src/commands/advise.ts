@@ -1,11 +1,16 @@
 import { Flags } from "@oclif/core";
 
 import { QuoinCommand } from "../base.js";
-import { advise, loadMethodCatalog } from "../advisor/index.js";
+import {
+  advise,
+  loadMethodCatalog,
+  uncataloguedAuthoredMethods,
+} from "../advisor/index.js";
 import type {
   Advice,
   ObligationEvidence,
   ObligationFacts,
+  UncataloguedMethods,
 } from "../advisor/index.js";
 import { scoresFor } from "../auditor/index.js";
 import { latestRuns, readBindings } from "../evidence/index.js";
@@ -50,10 +55,15 @@ residue afterwards — labelled as judgement (the FR-042 / ADR-0010 discipline).
     }),
     "mismatch-only": Flags.boolean({
       description:
-        "Only obligations whose authored method is not among the recommendations.",
+        "Only genuine disagreements: the authored method is a declared " +
+        "method or class and is not among the recommendations. Uncatalogued " +
+        "values are not mismatches. Combines with --inconclusive-only as a " +
+        "union.",
     }),
     "inconclusive-only": Flags.boolean({
-      description: "Only obligations no rule matched.",
+      description:
+        "Only obligations no rule matched. Combines with --mismatch-only as " +
+        "a union.",
     }),
     json: Flags.boolean({ description: "Emit the advice as JSON." }),
   };
@@ -109,26 +119,55 @@ residue afterwards — labelled as judgement (the FR-042 / ADR-0010 discipline).
     const bindings = readBindings(flags.repo).bindings;
     const runs = latestRuns(flags.repo);
 
-    let advice = obligations.map((o) =>
+    // The uncatalogued-method join (quoin#168): quire's own diagnosis of which
+    // authored values the catalog never declared, keyed by the `value` field
+    // that is byte-equal to `Obligation.method` (quire-rs CR-091).
+    const uncatalogued = uncataloguedAuthoredMethods(
+      coverage.value.diagnostics,
+    );
+    if (uncatalogued.degraded) {
+      this.warn(
+        "engine predates vocabulary classification: this quire's " +
+          "`uncatalogued-verification-method` diagnostics carry no `value`, " +
+          "so an authored method the catalog never declared cannot be told " +
+          "from a genuine disagreement. Every disagreement is reported as a " +
+          "mismatch, as before. Update quire-cli to restore the three-state " +
+          "split (quire-rs CR-091).",
+      );
+    }
+
+    const advice = obligations.map((o) =>
       advise(
         catalog,
-        factsFor(o, shapes.get(o.id), evidenceFor(o.id, bindings, runs)),
+        factsFor(
+          o,
+          shapes.get(o.id),
+          evidenceFor(o.id, bindings, runs),
+          uncatalogued,
+        ),
       ),
     );
-    if (flags["mismatch-only"]) advice = advice.filter((a) => a.mismatch);
-    if (flags["inconclusive-only"]) {
-      advice = advice.filter((a) => a.inconclusive);
-    }
+    // `--*-only` flags combine as a UNION. Intersection made the pair
+    // `--mismatch-only --inconclusive-only` a guaranteed zero rows (a mismatch
+    // requires recommendations, inconclusive means none), which read as "all
+    // clear" over a corpus full of findings.
+    const only: Array<(a: Advice) => boolean> = [];
+    if (flags["mismatch-only"]) only.push((a) => a.mismatch);
+    if (flags["inconclusive-only"]) only.push((a) => a.inconclusive);
+    const shown =
+      only.length === 0
+        ? advice
+        : advice.filter((a) => only.some((wanted) => wanted(a)));
 
     if (flags.json) {
-      this.log(JSON.stringify({ advice }, null, 2));
+      this.log(JSON.stringify({ advice: shown }, null, 2));
       return;
     }
-    this.render(advice, obligations.length);
+    this.render(shown, advice);
   }
 
-  private render(advice: Advice[], total: number): void {
-    for (const a of advice) {
+  private render(shown: Advice[], all: Advice[]): void {
+    for (const a of shown) {
       const head = a.recommended
         .slice(0, 3)
         .map((r) => `${r.method} (${r.reasons.map((x) => x.value).join(", ")})`)
@@ -136,15 +175,20 @@ residue afterwards — labelled as judgement (the FR-042 / ADR-0010 discipline).
       this.log(
         `${a.obligation}  authored=${a.authored ?? "—"}  ` +
           (a.inconclusive ? "inconclusive" : `recommend: ${head}`) +
-          (a.mismatch ? "  ⚠ mismatch" : ""),
+          (a.mismatch ? "  ⚠ mismatch" : "") +
+          (a.uncatalogued ? "  ⚠ uncatalogued" : ""),
       );
     }
     this.log("");
-    const mismatched = advice.filter((a) => a.mismatch).length;
-    const inconclusive = advice.filter((a) => a.inconclusive).length;
+    // Tallies count the FULL population, whatever was filtered out: a footer
+    // that tallied only shown rows understated the very totals the filter was
+    // asked about (`0 of 33 shown — 0 mismatch, 0 inconclusive`).
+    const count = (state: (a: Advice) => boolean) => all.filter(state).length;
     this.log(
-      `${advice.length} of ${total} obligation(s) shown — ` +
-        `${mismatched} mismatch, ${inconclusive} inconclusive. ` +
+      `${shown.length} of ${all.length} obligation(s) shown. ` +
+        `Of all ${all.length}: ${count((a) => a.mismatch)} mismatch, ` +
+        `${count((a) => a.uncatalogued)} uncatalogued, ` +
+        `${count((a) => a.inconclusive)} inconclusive. ` +
         `Recommendations, not verdicts: confirm the method in spec review.`,
     );
   }
@@ -212,11 +256,16 @@ function factsFor(
   obligation: Obligation,
   shape: { property: string; archetype: string } | undefined,
   evidence: ObligationEvidence,
+  uncatalogued: UncataloguedMethods,
 ): ObligationFacts {
   return {
     id: obligation.id,
     statement: obligation.statement,
     authoredMethod: obligation.method ?? null,
+    // Byte equality, deliberately: CR-091 guarantees the diagnostic's `value`
+    // is the identical string, so any normalization here could only disagree.
+    uncataloguedMethod:
+      obligation.method != null && uncatalogued.values.has(obligation.method),
     propertyShape: shape?.property ?? null,
     archetype: shape?.archetype ?? archetypeOf(obligation.id),
     criticality: obligation.criticality ?? null,

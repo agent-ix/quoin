@@ -258,6 +258,17 @@ describe("TC-116 optional keys are optional and absence is not emptiness", () =>
           form: "rust-implements-line",
         },
       ],
+      vocabulary_coverage: [
+        {
+          vocabulary: "verification-methods",
+          archetype: "FR",
+          field: "verification",
+          check: "warning",
+          value: "Inspection",
+          state: "owned",
+          documents: ["spec/functional/FR-001.md"],
+        },
+      ],
       totals: { backed: 1, total: 2, criteria: 2, property_shaped: 1 },
     };
 

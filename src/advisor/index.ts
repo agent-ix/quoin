@@ -17,9 +17,12 @@ export {
   advise,
   characteristicsOf,
   mintableCharacteristics,
+  uncataloguedAuthoredMethods,
+  UNCATALOGUED_METHOD_REASON,
   type Advice,
   type MatchReason,
   type ObligationEvidence,
   type ObligationFacts,
   type Recommendation,
+  type UncataloguedMethods,
 } from "./advise.js";

@@ -102,6 +102,44 @@ export interface CoverageDiagnostic {
   reason: string;
   message: string;
   path?: string | null;
+  /**
+   * The vocabulary or catalog value the diagnostic is about, verbatim, when it
+   * is about exactly one (quire-rs FR-054-AC-12, CR-091).
+   *
+   * `uncatalogued-verification-method` carries the authored method here —
+   * byte-equal to the `Obligation` records' `method` — so the advisor's
+   * mismatch / uncatalogued split is an equality join rather than a regex over
+   * `message` prose (agent-ix/quoin#168). Absent on a payload from an engine
+   * predating the classification, and absent when the diagnostic is not about
+   * one value; a consumer must tolerate both.
+   */
+  value?: string;
+}
+
+/**
+ * One declared coverage-vocabulary value, classified (quire-rs FR-059-AC-9,
+ * CR-091).
+ *
+ * Carried ahead of the pinned `sourceTag` as an additive field (see
+ * `QUIRE_CONTRACT`): a payload from quire 0.27.0 simply omits the whole
+ * `vocabulary_coverage` array, and every consumer must treat absence as "the
+ * engine predates the classification", never as "every value is owned".
+ */
+export interface VocabularyValueRecord {
+  /** The `vocabulary_coverage` declaration's name. */
+  vocabulary: string;
+  /** The projected archetype (the declaration's `from`). */
+  archetype: string;
+  /** The frontmatter field whose schema `enum` is the vocabulary. */
+  field: string;
+  /** The declared `<check>` severity token. */
+  check: string;
+  /** The vocabulary value, verbatim from the schema enum. */
+  value: string;
+  /** Closed deliberately, unlike `CoverageDiagnostic.reason`. */
+  state: "owned" | "excused" | "unowned";
+  /** Scope-relative documents that decide the state; empty for `unowned`. */
+  documents: string[];
 }
 
 /**
@@ -160,6 +198,13 @@ export interface CoverageReport {
    * direction the contract test does not check.
    */
   implements?: ImplementsRecord[];
+  /**
+   * One record per declared coverage-vocabulary value, classified
+   * owned / excused / unowned (quire-rs FR-059-AC-9, CR-091). ABSENT — not
+   * empty — for a module declaring no `vocabulary_coverage`, and absent on any
+   * payload from an engine predating the classification.
+   */
+  vocabulary_coverage?: VocabularyValueRecord[];
   totals: CoverageTotals;
 }
 

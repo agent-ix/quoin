@@ -61,10 +61,19 @@ export const QUIRE_CONTRACT = {
   /**
    * SHA-256 of each vendored file. Asserted on every test run, so an edit
    * without a matching refresh fails loudly.
+   *
+   * `coverage-v1.schema.json` is v0.41.0 **plus two additive shapes carried
+   * ahead of the tag**, taken verbatim from quire-rs `main` commit `87a1869`
+   * (CR-091, unreleased when this landed): `CoverageDiagnostic.value` and the
+   * `vocabulary_coverage` / `$defs/VocabularyValueRecord` records — the fields
+   * quoin#168's three-state advisor split reads. Additive under quire-rs
+   * FR-055-CON-3, so a v0.41.0 payload still validates unchanged. The next
+   * `refresh-quire-schemas.mjs` run at the tag that ships CR-091 supersedes
+   * the carry-ahead wholesale.
    */
   hashes: {
     "coverage-v1.schema.json":
-      "4248b9c873957fb0b1a6fedf6fff0a233df85908a778f5acb0125394df4dc411",
+      "f40cca33285370bd3c414a3fb70d13ec9bca969ddc78e23448a1833dae43ff0b",
     "properties-v1.schema.json":
       "d81f1ec85abdecd1f1664ded15e081f9aecb6c0f054d6b332b71e904cf826292",
   },

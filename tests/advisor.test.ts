@@ -1,5 +1,6 @@
 /**
- * FR-031 — the catalog-driven test-plan advisor (TC-129..TC-136, TC-133).
+ * FR-031 — the catalog-driven test-plan advisor (TC-129..TC-136, TC-133,
+ * TC-273).
  *
  * The proto-advisor was a skill-local prose table, so `Verification` columns
  * defaulted to `Test` by habit and nothing ever advised DAST for an attack
@@ -716,5 +717,78 @@ describe("TC-268 architectural statements reach architecture-conformance (FR-031
     expect(
       characteristicsOf("No document declares itself a top-level claim."),
     ).not.toContain("module-boundary");
+  });
+});
+
+describe("TC-273 three states: mismatch, uncatalogued, inconclusive (FR-031-AC-22, AC-23)", () => {
+  // A statement the fixture catalog has a rule for, so recommendations exist
+  // and a mismatch WOULD fire — which is what makes "not a mismatch" a claim.
+  const RELIABILITY =
+    "The client tolerates a dropped connection and retries without losing a message.";
+
+  // TC-273
+  it("an engine-diagnosed uncatalogued value is uncatalogued, never a mismatch", () => {
+    const advice = advise(fixtureCatalog(), {
+      id: "NFR-009-AC-1",
+      statement: RELIABILITY,
+      authoredMethod: "Audit Script",
+      uncataloguedMethod: true,
+    });
+    expect(advice.recommended.length).toBeGreaterThan(0);
+    expect(advice.uncatalogued).toBe(true);
+    // The value is outside both the method set and the closed class set, so
+    // "not among the recommendations" is vacuously true of it and says nothing
+    // about the author's intent. Vocabulary fix, not review conversation.
+    expect(advice.mismatch).toBe(false);
+  });
+
+  // TC-273
+  it("a declared method the advisor disagrees with is still a mismatch", () => {
+    const advice = advise(fixtureCatalog(), {
+      id: "NFR-009-AC-1",
+      statement: RELIABILITY,
+      authoredMethod: "Inspection",
+      uncataloguedMethod: false,
+    });
+    expect(advice.mismatch).toBe(true);
+    expect(advice.uncatalogued).toBe(false);
+  });
+
+  // TC-273
+  it("uncatalogued and inconclusive coexist: the vocabulary fact survives silence", () => {
+    const advice = advise(fixtureCatalog(), {
+      id: "FR-001-AC-9",
+      statement: "The widget count equals seven.",
+      authoredMethod: "Deferred",
+      uncataloguedMethod: true,
+    });
+    expect(advice.inconclusive).toBe(true);
+    expect(advice.uncatalogued).toBe(true);
+    expect(advice.mismatch).toBe(false);
+  });
+
+  // TC-273
+  it("absent classification (an engine predating CR-091) degrades to two states", () => {
+    const advice = advise(fixtureCatalog(), {
+      id: "NFR-009-AC-1",
+      statement: RELIABILITY,
+      authoredMethod: "Audit Script",
+      // No `uncataloguedMethod`: the payload's diagnostics carried no `value`,
+      // so the caller could not compute the join. Today's behaviour, unchanged.
+    });
+    expect(advice.uncatalogued).toBe(false);
+    expect(advice.mismatch).toBe(true);
+  });
+
+  // TC-273
+  it("an empty authored cell is never uncatalogued, whatever the caller claims", () => {
+    const advice = advise(fixtureCatalog(), {
+      id: "NFR-009-AC-1",
+      statement: RELIABILITY,
+      authoredMethod: null,
+      uncataloguedMethod: true,
+    });
+    expect(advice.uncatalogued).toBe(false);
+    expect(advice.mismatch).toBe(false);
   });
 });

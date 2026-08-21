@@ -48,6 +48,7 @@ import type {
   UnbackedRow,
   UndeclaredStatus,
   UntrackedSymbol,
+  VocabularyValueRecord,
 } from "../src/quire/types.js";
 
 const schema = readSchema("coverage-v1.schema.json") as {
@@ -121,9 +122,21 @@ const criteriaCounts: Required<CriteriaCounts> = {
 
 const coverageDiagnostic: Required<CoverageDiagnostic> = {
   declaration: "test-case",
-  reason: "archetype-matches-nothing",
-  message: "no document of archetype TestMatrix",
+  reason: "uncatalogued-verification-method",
+  message:
+    "'Deferred' is neither a declared verification_catalog method id nor a declared class",
   path: null,
+  value: "Deferred",
+};
+
+const vocabularyValueRecord: Required<VocabularyValueRecord> = {
+  vocabulary: "verification-methods",
+  archetype: "FR",
+  field: "verification",
+  check: "warning",
+  value: "Inspection",
+  state: "owned",
+  documents: ["spec/functional/FR-001.md"],
 };
 
 const obligation: Required<Obligation> = {
@@ -156,6 +169,7 @@ const samples: Record<string, Record<string, unknown>> = {
   GroupCounts: groupCounts,
   CriteriaCounts: criteriaCounts,
   CoverageDiagnostic: coverageDiagnostic,
+  VocabularyValueRecord: vocabularyValueRecord,
   Obligation: obligation,
   CoverageTotals: coverageTotals,
 };
@@ -171,6 +185,7 @@ const report: Required<CoverageReport> = {
   diagnostics: [coverageDiagnostic],
   obligations: [obligation],
   implements: [implementsRecord],
+  vocabulary_coverage: [vocabularyValueRecord],
   totals: coverageTotals,
 };
 

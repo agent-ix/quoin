@@ -63,6 +63,11 @@
       "description": "FR-062: requirement -> production-code edges. Absent for a module declaring no `implements` marker forms. Carries no weight in `totals` — scope is not evidence.",
       "items": { "$ref": "#/$defs/ImplementsRecord" }
     },
+    "vocabulary_coverage": {
+      "type": "array",
+      "description": "FR-059-AC-9 (CR-091, #179): one record per declared coverage-vocabulary value, classified owned / excused / unowned with the deciding documents. The `quire validate` warning stream reports only the unowned residue; these records let a consumer tell an owned value from an excused one without opening bundle frontmatter. ABSENT — not empty — for a module declaring no `vocabulary_coverage`, which is what keeps FR-050-AC-7 byte-identity. Additive under FR-055-CON-3.",
+      "items": { "$ref": "#/$defs/VocabularyValueRecord" }
+    },
     "totals": { "$ref": "#/$defs/CoverageTotals" }
   },
   "$defs": {
@@ -167,7 +172,32 @@
           "description": "Stable machine token, shared with `quire validate`'s bundle warnings. Deliberately NOT an enum here: the reason vocabulary is engine data that grows, and a schema that closed it would reject a payload from a newer engine that a consumer could otherwise read."
         },
         "message": { "type": "string" },
-        "path": { "type": ["string", "null"] }
+        "path": { "type": ["string", "null"] },
+        "value": {
+          "type": "string",
+          "description": "FR-054-AC-12 (CR-091, #179): the vocabulary or catalog value the diagnostic is about, verbatim, when it is about exactly one. `uncatalogued-verification-method` carries the authored method here — the identical string the Obligation records carry in `method` — so a consumer distinguishes an uncatalogued value from a genuine method disagreement by an equality join instead of parsing the message (quoin#168). Absent when the diagnostic is not about one value. Additive under FR-055-CON-3."
+        }
+      }
+    },
+    "VocabularyValueRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["vocabulary", "archetype", "field", "check", "value", "state", "documents"],
+      "properties": {
+        "vocabulary": { "type": "string", "minLength": 1, "description": "The `vocabulary_coverage` declaration's name." },
+        "archetype": { "type": "string", "minLength": 1, "description": "The projected archetype (the declaration's `from`)." },
+        "field": { "type": "string", "minLength": 1, "description": "The frontmatter field whose schema `enum` is the vocabulary." },
+        "check": { "type": "string", "minLength": 1, "description": "The declared `<check>` severity token, joining the record to the warning stream's findings." },
+        "value": { "type": "string", "minLength": 1, "description": "The vocabulary value, verbatim from the schema enum." },
+        "state": {
+          "enum": ["owned", "excused", "unowned"],
+          "description": "owned: a projected document claims it (wins when a value is both claimed and recorded absent). excused: the declared justified-absence field records it; whether the excuse is justified is verdict policy and deliberately not stated here (FR-059-CON-2). unowned: neither. Closed deliberately, unlike CoverageDiagnostic.reason — the states are the check's own semantics, not a growing vocabulary."
+        },
+        "documents": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "description": "Scope-relative documents (`/`-separated on every platform) that decide the state: the claimants for owned, the justified-absence recorders for excused, empty for unowned."
+        }
       }
     },
     "Obligation": {
