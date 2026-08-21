@@ -6,6 +6,7 @@ import { QuoinCommand } from "../../base.js";
 import { loadMethodCatalog } from "../../advisor/index.js";
 import { audit, ratchet } from "../../auditor/index.js";
 import {
+  baselinePath,
   latestRuns,
   latestScans,
   readBaseline,
@@ -109,7 +110,16 @@ a week. Write that baseline with: quoin evidence baseline`;
     });
 
     const baseline = flags.ratchet ? readBaseline(flags.repo) : null;
+    // Whether ratcheting was ACTUALLY applied — `flags.ratchet` is only what
+    // was asked for. A missing baseline degrades the run to a full report, and
+    // labelling that full report "(new violations only)" told a day-one reader
+    // their whole backlog was new violations (#169).
+    const ratcheted = baseline !== null;
     const reported = baseline ? ratchet(report, baseline) : report.findings;
+
+    if (flags.ratchet && !ratcheted && !flags.json) {
+      this.log(missingBaselineNotice(flags.repo));
+    }
 
     if (flags.json) {
       this.log(
@@ -117,7 +127,7 @@ a week. Write that baseline with: quoin evidence baseline`;
           {
             findings: reported,
             healthy: report.healthy,
-            ratchet: flags.ratchet,
+            ratchet: ratcheted,
           },
           null,
           2,
@@ -134,7 +144,7 @@ a week. Write that baseline with: quoin evidence baseline`;
       this.log("");
       this.log(
         `${reported.length} finding(s), ${report.healthy.length} healthy` +
-          (flags.ratchet ? " (new violations only)" : ""),
+          (ratcheted ? " (new violations only)" : ""),
       );
     }
 
@@ -142,6 +152,21 @@ a week. Write that baseline with: quoin evidence baseline`;
       this.exit(1);
     }
   }
+}
+
+/**
+ * What `--ratchet` prints when there is no baseline to ratchet against.
+ *
+ * Named path, named remedy: the reader who hits this on day one has not
+ * broken anything and has not introduced the backlog they are looking at —
+ * they are one `quoin evidence baseline` away from the gate they asked for.
+ */
+export function missingBaselineNotice(repo: string): string {
+  return (
+    `--ratchet requested but ${baselinePath(repo)} does not exist; ` +
+    `reporting the full backlog, not new violations. ` +
+    `Write the baseline with: quoin evidence baseline`
+  );
 }
 
 /**
