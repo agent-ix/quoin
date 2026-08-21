@@ -41,6 +41,7 @@ export type {
   EngineProvenance,
   GroundingCounts,
   GroupCounts,
+  ImplementsRecord,
   NoSymbolRow,
   MeasuredMetric,
   Metric,

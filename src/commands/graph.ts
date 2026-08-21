@@ -20,13 +20,13 @@ import {
 
 export default class Graph extends QuoinCommand {
   static summary =
-    "Analyze trace fan-out, change impact, and requirement churn.";
+    "Analyze trace fan-out, change impact, implementation scope, and churn.";
   static description = `Read-only analyses over the authored relationship graph and evidence bindings
 (FR-045). The command runs no verification and writes nothing.
 
 fan-out counts the distinct obligations discharged by each suite. change-impact
-walks both directions: downstream documents and obligations become suspect,
-while upstream claims are review context. churn counts distinct obligation-level
+walks both directions across documents, production-code scope, obligations, and
+suites, while upstream claims are review context. churn counts distinct obligation-level
 re-affirmation events; it does not multiply one affirmation by the number of
 suites it was copied onto.
 
@@ -37,6 +37,7 @@ or relationship verbs with unknown impact direction as a complete closure.`;
   static examples = [
     "quoin graph --view fan-out",
     "quoin graph --view change-impact --changed FR-030",
+    "quoin graph --view change-impact --changed src/evidence/store.ts",
     "quoin graph --view change-impact --changed FR-030 --changed unit-tests",
     "quoin graph --view churn --json",
   ];
@@ -87,6 +88,7 @@ or relationship verbs with unknown impact direction as a complete closure.`;
       documents: bundle.documents,
       obligations: parsed.value.obligations ?? [],
       bindings,
+      implementations: parsed.value.implements ?? [],
       unreadable: bundle.unreadable,
     });
 

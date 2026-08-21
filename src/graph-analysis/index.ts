@@ -14,6 +14,7 @@ export {
   type FanOutRow,
   type GraphLimitation,
   type GraphLimitationKind,
+  type ImplementationNode,
   type ObligationNode,
   type ObligationSuiteEdge,
   type TraceGraph,

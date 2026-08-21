@@ -47,6 +47,13 @@ function renderImpact(analysis: ChangeImpactAnalysis, lines: string[]): void {
   list(lines, "Upstream documents", analysis.upstreamDocuments);
   list(lines, "Suspect obligations", analysis.suspectObligations);
   list(lines, "Affected suites", analysis.affectedSuites);
+  list(
+    lines,
+    "Affected implementation",
+    analysis.affectedImplementations.map(
+      ({ id, requirements }) => `${id} (${requirements.join(", ")})`,
+    ),
+  );
   list(lines, "Shared-suite exposure", analysis.sharedSuiteExposure);
 }
 
