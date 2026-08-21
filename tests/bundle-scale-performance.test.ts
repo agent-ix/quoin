@@ -19,6 +19,9 @@ import type { Obligation } from "../src/quire/index.js";
 
 const DOCUMENT_COUNT = 250;
 const THRESHOLD_MS = 5_000;
+const CORE_THRESHOLD_MS = 1_000;
+const SCALE_COUNTS = [250, 1_000, 5_000, 10_000] as const;
+const MAX_DOUBLING_RATIO = 3;
 const COMMIT = "a".repeat(40);
 const here = dirname(fileURLToPath(import.meta.url));
 
@@ -26,6 +29,17 @@ function timed<T>(run: () => T): { elapsedMs: number; value: T } {
   const started = performance.now();
   const value = run();
   return { elapsedMs: performance.now() - started, value };
+}
+
+function medianTimed<T>(run: () => T): { elapsedMs: number; value: T } {
+  // Warm module/JIT state isolates the owned algorithm from CLI startup, which
+  // is outside this core timer. A median rejects one scheduler interruption.
+  run();
+  const samples = Array.from({ length: 3 }, () => timed(run));
+  const elapsed = samples
+    .map((sample) => sample.elapsedMs)
+    .sort((a, b) => a - b)[Math.floor(samples.length / 2)];
+  return { elapsedMs: elapsed, value: samples.at(-1)!.value };
 }
 
 function bundleFixture(): { spec: string; moduleRoot: string } {
@@ -83,8 +97,8 @@ function bundleFixture(): { spec: string; moduleRoot: string } {
   return { spec, moduleRoot };
 }
 
-function obligations(): Obligation[] {
-  return Array.from({ length: DOCUMENT_COUNT }, (_, index) => {
+function obligations(count = DOCUMENT_COUNT): Obligation[] {
+  return Array.from({ length: count }, (_, index) => {
     const id = `NFR-${String(index + 1).padStart(3, "0")}-M-1`;
     return {
       source: "measurement-row" as const,
@@ -119,32 +133,36 @@ function catalog(): MethodCatalog {
   };
 }
 
-function evidenceFor(items: Obligation[]): {
+function sharedSuiteEvidenceFor(items: Obligation[]): {
   bindings: Binding[];
   runs: RunRecord[];
 } {
   const bindings: Binding[] = [];
-  const runs: RunRecord[] = [];
+  const entries: RunRecord["entries"] = [];
   for (const [index, obligation] of items.entries()) {
-    const suite = `SUITE-${String(index + 1).padStart(3, "0")}`;
     const symbol = `tests::scale_${index + 1}`;
     bindings.push({
       obligation: obligation.id,
       statementHashAtBinding: obligation.statement_hash,
-      suite,
+      suite: "SUITE-SHARED",
       commit: COMMIT,
       symbols: [symbol],
     });
-    runs.push({
-      schemaVersion: 1,
-      suite,
-      commit: COMMIT,
-      tool: "fixture",
-      timestamp: "2026-08-21T20:00:00Z",
-      entries: [{ symbol, outcome: "pass" }],
-    });
+    entries.push({ symbol, outcome: "pass" });
   }
-  return { bindings, runs };
+  return {
+    bindings,
+    runs: [
+      {
+        schemaVersion: 1,
+        suite: "SUITE-SHARED",
+        commit: COMMIT,
+        tool: "fixture",
+        timestamp: "2026-08-21T20:00:00Z",
+        entries,
+      },
+    ],
+  };
 }
 
 describe("TC-290 the 250-document/obligation budget", () => {
@@ -169,40 +187,53 @@ describe("TC-290 the 250-document/obligation budget", () => {
   });
 
   // Trace: NFR-011-AC-2
-  it("processes 250 advisor obligations inside the owned-work budget", () => {
+  it("keeps advisor growth bounded through 10,000 obligations", () => {
     const methods = catalog();
-    const measured = timed(() =>
-      obligations().map((obligation) =>
-        advise(methods, {
-          id: obligation.id,
-          statement: obligation.statement,
-          authoredMethod: obligation.method,
-          archetype: "NFR",
-          parameters: obligation.parameters,
-        }),
-      ),
+    const elapsed = SCALE_COUNTS.map((count) => {
+      const items = obligations(count);
+      const measured = medianTimed(() =>
+        items.map((obligation) =>
+          advise(methods, {
+            id: obligation.id,
+            statement: obligation.statement,
+            authoredMethod: obligation.method,
+            archetype: "NFR",
+            parameters: obligation.parameters,
+          }),
+        ),
+      );
+      expect(measured.value).toHaveLength(count);
+      expect(measured.value.every((item) => !item.inconclusive)).toBe(true);
+      expect(measured.elapsedMs).toBeLessThan(CORE_THRESHOLD_MS);
+      return measured.elapsedMs;
+    });
+    expect(elapsed.at(-1)! / elapsed.at(-2)!).toBeLessThanOrEqual(
+      MAX_DOUBLING_RATIO,
     );
-    expect(measured.value).toHaveLength(DOCUMENT_COUNT);
-    expect(measured.value.every((item) => !item.inconclusive)).toBe(true);
-    expect(measured.elapsedMs).toBeLessThan(THRESHOLD_MS);
-  });
+  }, 15_000);
 
   // Trace: NFR-011-AC-2
-  it("processes 250 obligations and bindings inside the audit budget", () => {
-    const items = obligations();
-    const evidence = evidenceFor(items);
-    const measured = timed(() =>
-      audit({
-        obligations: items,
-        bindings: evidence.bindings,
-        runs: evidence.runs,
-        headCommit: COMMIT,
-      }),
+  it("keeps shared-suite audit growth bounded through 10,000 obligations", () => {
+    const elapsed = SCALE_COUNTS.map((count) => {
+      const items = obligations(count);
+      const evidence = sharedSuiteEvidenceFor(items);
+      const measured = medianTimed(() =>
+        audit({
+          obligations: items,
+          bindings: evidence.bindings,
+          runs: evidence.runs,
+          headCommit: COMMIT,
+        }),
+      );
+      expect(measured.value.findings).toEqual([]);
+      expect(measured.value.healthy).toHaveLength(count);
+      expect(measured.elapsedMs).toBeLessThan(CORE_THRESHOLD_MS);
+      return measured.elapsedMs;
+    });
+    expect(elapsed.at(-1)! / elapsed.at(-2)!).toBeLessThanOrEqual(
+      MAX_DOUBLING_RATIO,
     );
-    expect(measured.value.findings).toEqual([]);
-    expect(measured.value.healthy).toHaveLength(DOCUMENT_COUNT);
-    expect(measured.elapsedMs).toBeLessThan(THRESHOLD_MS);
-  });
+  }, 15_000);
 
   // Trace: NFR-011-AC-4
   it("keeps the Quire and delegated workflow boundaries outside this timer", () => {

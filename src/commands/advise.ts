@@ -118,6 +118,13 @@ residue afterwards — labelled as judgement (the FR-042 / ADR-0010 discipline).
     // auditor about what it found (ADR-0011).
     const bindings = readBindings(flags.repo).bindings;
     const runs = latestRuns(flags.repo);
+    const bindingsByObligation = new Map<string, Binding[]>();
+    for (const binding of bindings) {
+      const group = bindingsByObligation.get(binding.obligation) ?? [];
+      group.push(binding);
+      bindingsByObligation.set(binding.obligation, group);
+    }
+    const runsBySuite = new Map(runs.map((run) => [run.suite, run]));
 
     // The uncatalogued-method join (quoin#168): quire's own diagnosis of which
     // authored values the catalog never declared, keyed by the `value` field
@@ -142,7 +149,7 @@ residue afterwards — labelled as judgement (the FR-042 / ADR-0010 discipline).
         factsFor(
           o,
           shapes.get(o.id),
-          evidenceFor(o.id, bindings, runs),
+          evidenceFor(o.id, bindingsByObligation, runsBySuite),
           uncatalogued,
         ),
       ),
@@ -242,10 +249,15 @@ function propertyShapes(
  */
 function evidenceFor(
   id: string,
-  bindings: Binding[],
-  runs: RunRecord[],
+  bindingsByObligation: Map<string, Binding[]>,
+  runsBySuite: Map<string, RunRecord>,
 ): ObligationEvidence {
-  const mine = bindings.filter((b) => b.obligation === id);
+  const mine = bindingsByObligation.get(id) ?? [];
+  const suites = new Set(mine.map((binding) => binding.suite));
+  const runs = [...suites].flatMap((suite) => {
+    const run = runsBySuite.get(suite);
+    return run ? [run] : [];
+  });
   return {
     bound: mine.length > 0,
     faultDetectionScores: scoresFor(mine, runs),

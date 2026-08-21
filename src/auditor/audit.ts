@@ -23,6 +23,8 @@ import { parseSpace, twayCoverage } from "./combinatorial.js";
 import type { Binding, FindingRecord, RunRecord } from "../evidence/index.js";
 import type { MethodCatalog } from "../advisor/index.js";
 
+type CatalogIndex = Map<string, MethodCatalog["methods"]>;
+
 /** Severity of one finding. Matches the SpecReview vocabulary. */
 export type Severity = "low" | "medium" | "high";
 
@@ -110,7 +112,21 @@ export function audit(input: AuditInput): AuditReport {
     bindingsByObligation.set(binding.obligation, group);
   }
   const runsBySuite = new Map(input.runs.map((r) => [r.suite, r]));
+  // A run can be shared by many obligations. Index its symbols once rather
+  // than linearly searching the same entry array for every binding.
+  const entriesBySuite = new Map(
+    input.runs.map((run) => {
+      const entries = new Map<string, (typeof run.entries)[number]>();
+      for (const entry of run.entries) {
+        // Preserve the former Array.find semantics if malformed legacy input
+        // repeats a symbol: the first reported outcome remains authoritative.
+        if (!entries.has(entry.symbol)) entries.set(entry.symbol, entry);
+      }
+      return [run.suite, entries];
+    }),
+  );
   const scansBySuite = new Map((input.scans ?? []).map((s) => [s.suite, s]));
+  const catalogIndex = indexCatalog(input.catalog);
 
   for (const obligation of [...input.obligations].sort(byId)) {
     const findingsBefore = findings.length;
@@ -133,7 +149,7 @@ export function audit(input: AuditInput): AuditReport {
     // obligation with an uncatalogued method is BOTH undischarged AND
     // unknown-method, and hiding either behind the other cost a reader the
     // ability to see both facts.
-    const unknown = unknownMethodFinding(obligation, input.catalog);
+    const unknown = unknownMethodFinding(obligation, catalogIndex);
     if (unknown) findings.push(unknown);
 
     if (bindings.length === 0) {
@@ -228,7 +244,7 @@ export function audit(input: AuditInput): AuditReport {
     if (runBindings.length === 0) continue;
     const runs = runBindings.map((b) => runsBySuite.get(b.suite)!);
     if (input.headCommit) {
-      const behind = bindings.filter(
+      const behind = runBindings.filter(
         (b, i) => runs[i].commit !== input.headCommit,
       );
       if (behind.length > 0) {
@@ -259,10 +275,10 @@ export function audit(input: AuditInput): AuditReport {
     // `runBindings`, not `bindings`: `runs` was built from the former, so
     // indexing the latter would pair a binding with another suite's run the
     // moment any binding is scan-backed.
-    const vacuous = runBindings.flatMap((b, i) =>
+    const vacuous = runBindings.flatMap((b) =>
       b.symbols
         .filter((symbol) => {
-          const entry = runs[i].entries.find((e) => e.symbol === symbol);
+          const entry = entriesBySuite.get(b.suite)?.get(symbol);
           // A symbol the run never reported is vacuous in the strongest sense:
           // the binding names evidence the suite did not produce.
           if (!entry) return true;
@@ -324,7 +340,7 @@ export function audit(input: AuditInput): AuditReport {
       obligation,
       runBindings,
       runs,
-      input.catalog,
+      catalogIndex,
     );
     if (conformance) {
       findings.push(conformance);
@@ -383,10 +399,10 @@ function byId(a: Obligation, b: Obligation): number {
  */
 function unknownMethodFinding(
   obligation: Obligation,
-  catalog: MethodCatalog | undefined,
+  catalogIndex: CatalogIndex | undefined,
 ): Finding | null {
-  if (!catalog || !obligation.method) return null;
-  if (catalogMethodsMatching(obligation.method, catalog).length > 0) {
+  if (!catalogIndex || !obligation.method) return null;
+  if (catalogMethodsMatching(obligation.method, catalogIndex).length > 0) {
     return null;
   }
   return {
@@ -400,13 +416,28 @@ function unknownMethodFinding(
   };
 }
 
+/** Index catalog methods by either authored spelling accepted by the model. */
+function indexCatalog(
+  catalog: MethodCatalog | undefined,
+): CatalogIndex | undefined {
+  if (!catalog) return undefined;
+  const index: CatalogIndex = new Map();
+  for (const method of catalog.methods) {
+    for (const declared of new Set([
+      method.id.trim().toLowerCase(),
+      method.class.trim().toLowerCase(),
+    ])) {
+      const matches = index.get(declared) ?? [];
+      matches.push(method);
+      index.set(declared, matches);
+    }
+  }
+  return index;
+}
+
 /** Catalog methods whose id or class matches the declared method. */
-function catalogMethodsMatching(method: string, catalog: MethodCatalog) {
-  const declared = method.trim().toLowerCase();
-  return catalog.methods.filter(
-    (m) =>
-      m.id.toLowerCase() === declared || m.class.toLowerCase() === declared,
-  );
+function catalogMethodsMatching(method: string, catalogIndex: CatalogIndex) {
+  return catalogIndex.get(method.trim().toLowerCase()) ?? [];
 }
 
 /**
@@ -426,10 +457,10 @@ function methodConformance(
   obligation: Obligation,
   bindings: Binding[],
   runs: RunRecord[],
-  catalog: MethodCatalog | undefined,
+  catalogIndex: CatalogIndex | undefined,
 ): Finding | null {
-  if (!catalog || !obligation.method) return null;
-  const matched = catalogMethodsMatching(obligation.method, catalog);
+  if (!catalogIndex || !obligation.method) return null;
+  const matched = catalogMethodsMatching(obligation.method, catalogIndex);
   if (matched.length === 0) return null;
 
   // The kinds the catalog says this method produces. An entry declaring none
@@ -441,9 +472,12 @@ function methodConformance(
   );
   if (expected.size === 0) return null;
 
-  const mismatched = bindings.filter((b, i) => {
-    const kind = runs[i].evidenceKind;
-    return typeof kind === "string" && kind.length > 0 && !expected.has(kind);
+  const mismatched = bindings.flatMap((binding, index) => {
+    const run = runs[index];
+    const kind = run.evidenceKind;
+    return typeof kind === "string" && kind.length > 0 && !expected.has(kind)
+      ? [{ binding, run }]
+      : [];
   });
   if (mismatched.length === 0) return null;
 
@@ -456,8 +490,7 @@ function methodConformance(
       `${[...expected].sort(compare).join("/")}, but is discharged by ` +
       mismatched
         .map(
-          (b) =>
-            `a ${runs[bindings.indexOf(b)].evidenceKind} run in ${b.suite}`,
+          ({ binding, run }) => `a ${run.evidenceKind} run in ${binding.suite}`,
         )
         .join(" and ") +
       `. A method is not discharged by evidence of another kind.`,
