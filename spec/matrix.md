@@ -387,6 +387,15 @@ generated tests under `tests/props/` and `Unit` for the rest.
 | TC-243 | A report with no scenario results is refused — it proves only that the harness started | Unit | P0 | FR-042-AC-4 | ✅ |
 | TC-244 | The adapter is selected by `--adapter agent-eval` and by the harness name | Unit | P0 | FR-042-AC-5 | ✅ |
 | TC-245 | A run's trace id binds through an obligation's declared test cases — several criteria per case, a direct id winning over the indirect route, and an id nobody states still reported unmatched | Unit | P0 | FR-030-AC-15 | ✅ |
+| TC-291 | Child-authored relationships are normalized to deterministic upstream → downstream edges in either authored direction; a full local `ix://` target resolves while an external target with a colliding final id stays unresolved | Unit | P0 | FR-045-AC-1 | ✅ |
+| TC-292 | Duplicate ids, unreadable documents, unresolved and unsupported relationships, orphan obligations, and orphan bindings are each named and make the graph incomplete | Unit | P0 | FR-045-AC-2, FR-045-CON-3 | ✅ |
+| TC-293 | Fan-out counts distinct obligation-to-suite edges, orders high-count suites first, and applies no hidden threshold | Unit | P0 | FR-045-AC-3, FR-045-CON-2 | ✅ |
+| TC-294 | A document change walks downstream to suspect obligations and suites, upstream to review context, and labels shared-suite exposure separately | Unit | P0 | FR-045-AC-4 | ✅ |
+| TC-295 | A changed suite makes its bound obligations suspect without declaring their sibling suites changed | Unit | P0 | FR-045-AC-5 | ✅ |
+| TC-296 | An unknown change id is explicit and makes the result incomplete instead of returning an apparently complete empty closure | Unit | P0 | FR-045-AC-6 | ✅ |
+| TC-297 | Churn deduplicates one obligation-level affirmation copied across suite bindings | Unit | P0 | FR-045-AC-7 | ✅ |
+| TC-298 | Rendering is byte-identical and labels an incomplete graph before naming its limitations | Unit | P0 | FR-045-AC-8 | ✅ |
+| TC-299 | The shipped `quoin graph` command joins live obligations, authored documents, and stored bindings into a machine-readable change-impact result | Integration | P0 | FR-045-AC-9 | ✅ |
 | TC-129 | The merged catalog carries every declared method with its rules intact, merges first-wins, reports a colliding id rather than absorbing it, and treats an undeclared catalog as empty | Unit | P0 | FR-031-AC-1 | ✅ |
 | TC-130 | An `attack_surface` object reaches DAST, SAST and negative/abuse testing — recommendations that were unreachable while the method table was skill-local prose | Unit | P0 | FR-031-AC-2 | ✅ |
 | TC-131 | Temporal phrasing reaches runtime monitoring and model checking — the methods a single execution cannot discharge | Unit | P0 | FR-031-AC-3 | ✅ |

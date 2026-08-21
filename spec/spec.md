@@ -25,7 +25,8 @@ relationships:
 `quoin` provides a standalone, installable CLI that gives a spec-authoring agent
 everything it needs to start spec work: a catalog-driven authoring contract, a
 user-extensible spec-module store, and launch points for governed
-review/matrix/planning workflows. It runs on its own, so adopting spec-driven
+  review/matrix/planning workflows; and read-only assurance and trace-graph
+  analyses. It runs on its own, so adopting spec-driven
 development requires only this one tool on `PATH`.
 
 This document is the top-level requirements artifact for the repository. It states
