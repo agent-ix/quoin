@@ -85,6 +85,16 @@ names the found version, the required version, and the consequence.
 - The eval harness SHALL assert the premise before a run. It keys on exit codes
   that an old binary still produces, so without the check a stale toolchain
   reads as a failing spec.
+- The `quire` subprocess SHALL run with an explicit `maxBuffer` sized for real
+  corpora. Node's 1 MiB default was exceeded by a measured 1,090,714-byte
+  `coverage --json` payload — 4% over — which killed all six commands that
+  shell out (#164). The payload grows with spec size, so the default failed
+  exactly on the corpora the commands exist to serve.
+- A child that never exited SHALL be reported by its cause — `err.code`
+  (`ENOBUFS`) or `err.signal` — with no exit status and no child stderr
+  appended. On a kill, stderr holds whatever the child happened to write
+  before dying (on every real repo, harmless `DuplicateArchetype` first-wins
+  warnings), and appending it frames that noise as the diagnosis.
 
 ## Constraints
 
@@ -107,7 +117,9 @@ names the found version, the required version, and the consequence.
 | FR-029-AC-7 | A payload omitting every optional key validates, one carrying every optional key validates, and a malformed statement hash is rejected. | Test (TC-116) |
 | FR-029-AC-8 | The eval harness's version floor equals the pinned contract minimum, so the two restatements cannot drift. | Test (TC-117) |
 | FR-029-AC-9 | A payload emitted by the installed `quire` binary validates against the vendored schema, so the contract is checked against the real emitter and not only against fixtures. | Test (TC-118) |
-| FR-029-AC-10 | When the `quire` subprocess exits non-zero, its **stderr** is surfaced in the raised diagnostic. Its own message names the cause — a missing traceability model, a bad `--module` — and discarding it undoes the care FR-029 takes over the version premise one frame later. | Inspection (TC-134) |
+| FR-029-AC-10 | When the `quire` subprocess exits non-zero, its **stderr** is surfaced in the raised diagnostic. Its own message names the cause — a missing traceability model, a bad `--module` — and discarding it undoes the care FR-029 takes over the version premise one frame later. | Inspection (TC-134), Test (TC-256) |
+| FR-029-AC-11 | Every `quire` subprocess call sets an explicit `maxBuffer` sized for real corpora, so a corpus whose `coverage --json` payload exceeds Node's 1 MiB default still runs every command that shells out. | Test (TC-254) |
+| FR-029-AC-12 | A child that never exited on its own — killed on a buffer overrun, killed by a signal, or never spawned — is reported by its cause (`ENOBUFS` naming the byte limit, the signal name, the spawn error code), reports no exit status, and appends no child stderr. | Test (TC-254, TC-255, TC-257) |
 
 ## Dependencies
 

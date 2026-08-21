@@ -48,4 +48,9 @@ export type {
   UntrackedSymbol,
 } from "./types.js";
 
-export { quireVersion, runQuire, runQuireAllowFailure } from "./exec.js";
+export {
+  QUIRE_MAX_BUFFER,
+  quireVersion,
+  runQuire,
+  runQuireAllowFailure,
+} from "./exec.js";

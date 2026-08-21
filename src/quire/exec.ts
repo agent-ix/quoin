@@ -8,6 +8,19 @@
 import { execFileSync } from "node:child_process";
 
 /**
+ * Node's default `maxBuffer` is 1 MiB, and a real corpus already exceeds it:
+ * filament-ide-rs (268 spec files, 1,107 obligations) emits 1,090,714 bytes of
+ * `quire coverage --json` — 4% over the default — which killed all six
+ * commands that shell out here (#164). #53 projects ~2.5x payload growth,
+ * putting the near-term ceiling around 2.7 MB; 64 MiB is ~25x that projection
+ * again, deliberately generous because `maxBuffer` is a cap on what
+ * `execFileSync` will accumulate, not an up-front allocation — headroom costs
+ * nothing until a payload actually uses it, while an exceeded cap kills the
+ * command outright.
+ */
+export const QUIRE_MAX_BUFFER = 64 * 1024 * 1024;
+
+/**
  * Run `quire` and return stdout, surfacing **stderr** when it fails.
  *
  * `stdio: ["ignore", "pipe", "ignore"]` threw away exactly the sentence the
@@ -29,12 +42,40 @@ export function runQuire(args: string[]): string {
     return execFileSync("quire", args, {
       encoding: "utf8",
       stdio: ["ignore", "pipe", "pipe"],
+      maxBuffer: QUIRE_MAX_BUFFER,
     });
   } catch (cause) {
-    const err = cause as { stderr?: string | Buffer; status?: number };
+    const err = cause as {
+      stderr?: string | Buffer;
+      status?: number | null;
+      signal?: string | null;
+      code?: string;
+    };
+    // `status == null` means the child never exited on its own: Node killed it
+    // (ENOBUFS when output outgrew maxBuffer), a signal did, or it never
+    // spawned. Its stderr is NOT the diagnosis then — appending it framed
+    // quire's harmless DuplicateArchetype warnings as the cause of an ENOBUFS
+    // death, and the warnings were investigated as the cause (#164).
+    if (err.status == null) {
+      if (err.code === "ENOBUFS") {
+        throw new Error(
+          `quire ${args.join(" ")} produced more than ${QUIRE_MAX_BUFFER} ` +
+            `bytes on one stream and was killed (ENOBUFS). The payload has ` +
+            `outgrown QUIRE_MAX_BUFFER; raise it in src/quire/exec.ts.`,
+        );
+      }
+      if (err.signal) {
+        throw new Error(
+          `quire ${args.join(" ")} was killed by ${err.signal} before it could exit.`,
+        );
+      }
+      throw new Error(
+        `quire ${args.join(" ")} could not be run (${String(err.code)}).`,
+      );
+    }
     const stderr = String(err.stderr ?? "").trim();
     throw new Error(
-      `quire ${args.join(" ")} exited ${err.status ?? "abnormally"}` +
+      `quire ${args.join(" ")} exited ${err.status}` +
         (stderr ? `:\n${stderr}` : " with no diagnostic on stderr."),
     );
   }
@@ -62,6 +103,7 @@ export function runQuireAllowFailure(args: string[]): {
       stdout: execFileSync("quire", args, {
         encoding: "utf8",
         stdio: ["ignore", "pipe", "pipe"],
+        maxBuffer: QUIRE_MAX_BUFFER,
       }),
       stderr: "",
       ok: true,
@@ -79,7 +121,10 @@ export function runQuireAllowFailure(args: string[]): {
 /** `quire --version` output, or `null` when quire is not on PATH. */
 export function quireVersion(): string | null {
   try {
-    return execFileSync("quire", ["--version"], { encoding: "utf8" });
+    return execFileSync("quire", ["--version"], {
+      encoding: "utf8",
+      maxBuffer: QUIRE_MAX_BUFFER,
+    });
   } catch {
     return null;
   }
