@@ -13,6 +13,7 @@
 import type { Obligation } from "../quire/index.js";
 import type { Finding } from "../auditor/index.js";
 import type { BundleDocument } from "../completeness/index.js";
+import type { TrustAssessment } from "../evidence/index.js";
 
 /** GSN node kinds, in the vocabulary the standard uses. */
 export type NodeKind = "goal" | "strategy" | "solution";
@@ -59,6 +60,8 @@ export interface AssuranceCase {
   unreachable: string[];
   /** Documents whose frontmatter could not be read. */
   unreadable: Array<{ path: string; reason: string }>;
+  /** Use-specific producer reliance shown as context, never claim support. */
+  producerTrust: TrustAssessment[];
 }
 
 /** The edge verbs that mean "this document elaborates that one". */
@@ -87,6 +90,7 @@ export interface CaseInput {
    */
   claimTypes?: string[];
   unreadable?: Array<{ path: string; reason: string }>;
+  producerTrust?: TrustAssessment[];
 }
 
 /**
@@ -171,6 +175,9 @@ export function buildCase(input: CaseInput): AssuranceCase {
     claims,
     unreachable,
     unreadable: input.unreadable ?? [],
+    producerTrust: [...(input.producerTrust ?? [])].sort((a, b) =>
+      a.id.localeCompare(b.id),
+    ),
   };
   if (claims.length === 0) {
     // The human renderer's explanation, made machine-readable. Naming the

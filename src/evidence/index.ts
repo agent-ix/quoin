@@ -23,14 +23,18 @@ export {
   listRuns,
   readBaseline,
   readBindings,
+  readTrustDecision,
+  readTrustDecisions,
   readRun,
   readRuns,
   runPath,
   short,
   storeRoot,
   suitesPath,
+  trustDecisionPath,
   writeBaseline,
   writeBindings,
+  writeTrustDecision,
   writeRun,
 } from "./store.js";
 
@@ -38,13 +42,21 @@ export {
   MUTATION_SCORE_METRIC,
   RUNS_DIR,
   STORE_SCHEMA_VERSION,
+  TRUST_DIR,
   type Affirmation,
   type BaselineFile,
   type Binding,
   type BindingsFile,
   type RunEntry,
   type RunRecord,
+  type ProducerContext,
+  type TrustAssessment,
+  type TrustDecision,
+  type TrustEvidenceReference,
+  type TrustTrigger,
 } from "./types.js";
+
+export { assessTrust, validateTrustDecision } from "./trust.js";
 
 export {
   obligationsFrom,

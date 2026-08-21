@@ -68,6 +68,7 @@ export default defineConfig(({ command }) => ({
         "commands/config/doctor": "src/commands/config/doctor.ts",
         "commands/evidence/index": "src/commands/evidence/index.ts",
         "commands/evidence/record": "src/commands/evidence/record.ts",
+        "commands/evidence/trust": "src/commands/evidence/trust.ts",
         "commands/evidence/affirm": "src/commands/evidence/affirm.ts",
         "commands/evidence/gc": "src/commands/evidence/gc.ts",
         "commands/evidence/audit": "src/commands/evidence/audit.ts",

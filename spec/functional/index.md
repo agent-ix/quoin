@@ -50,3 +50,4 @@ description: "Index of functional requirements (FR) for quoin."
 * [FR-040: Assurance case as a read-only view over the store](./FR-040-assurance-case-view.md)
 * [FR-041: SBOM inventories as run evidence](./FR-041-sbom-inventory-evidence.md)
 * [FR-042: Agent-eval reports as run evidence](./FR-042-agent-eval-evidence.md)
+* [FR-046: Use-specific evidence-producer trust decisions and invalidation](./FR-046-evidence-producer-trust.md)

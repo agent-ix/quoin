@@ -10,6 +10,8 @@ import {
   latestScan,
   listRecordedSuites,
   readBindings,
+  readTrustDecisions,
+  assessTrust,
 } from "../evidence/index.js";
 import type { FindingRecord, RunRecord } from "../evidence/index.js";
 import {
@@ -81,12 +83,23 @@ that quietly narrows to what it can prove reads exactly like a complete one.`;
     });
 
     const bundle = readBundleFrontmatter(`${flags.repo}/spec`);
+    const trustUnreadable: string[] = [];
+    const producerTrust = readTrustDecisions(flags.repo, trustUnreadable).map(
+      assessTrust,
+    );
     const assurance = buildCase({
       documents: bundle.documents,
       obligations,
       findings: report.findings,
       claimTypes: flags["claim-type"],
-      unreadable: bundle.unreadable,
+      unreadable: [
+        ...bundle.unreadable,
+        ...trustUnreadable.map((path) => ({
+          path,
+          reason: "trust decision is unreadable or invalid",
+        })),
+      ],
+      producerTrust,
     });
 
     this.log(
