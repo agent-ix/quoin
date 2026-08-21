@@ -22,12 +22,15 @@ import {
   RUNS_DIR,
   SCANS_DIR,
   STORE_SCHEMA_VERSION,
+  TRUST_DIR,
   type BaselineFile,
   type Binding,
   type BindingsFile,
   type FindingRecord,
   type RunRecord,
+  type TrustDecision,
 } from "./types.js";
+import { validateTrustDecision } from "./trust.js";
 
 /**
  * The store root for a repository.
@@ -60,6 +63,48 @@ export function bindingsPath(repo: string): string {
 
 export function baselinePath(repo: string): string {
   return join(storeRoot(repo), "baseline.json");
+}
+
+export function trustDecisionPath(repo: string, id: string): string {
+  if (!/^ETD-[0-9]+$/.test(id))
+    throw new Error(`invalid trust decision id '${id}'`);
+  return join(storeRoot(repo), TRUST_DIR, `${id}.json`);
+}
+
+export function writeTrustDecision(repo: string, raw: TrustDecision): string {
+  const decision = validateTrustDecision(raw);
+  const path = trustDecisionPath(repo, decision.id);
+  writeCanonical(path, { ...decision, schemaVersion: STORE_SCHEMA_VERSION });
+  return path;
+}
+
+export function readTrustDecision(
+  repo: string,
+  id: string,
+): TrustDecision | null {
+  const raw = readJson<TrustDecision>(trustDecisionPath(repo, id));
+  return raw === null ? null : validateTrustDecision(raw);
+}
+
+export function readTrustDecisions(
+  repo: string,
+  skipped: string[] = [],
+): TrustDecision[] {
+  const dir = join(storeRoot(repo), TRUST_DIR);
+  if (!existsSync(dir)) return [];
+  const decisions: TrustDecision[] = [];
+  for (const file of readdirSync(dir)
+    .filter((name) => name.endsWith(".json"))
+    .sort()) {
+    const path = join(dir, file);
+    try {
+      const raw = readJson<TrustDecision>(path);
+      if (raw) decisions.push(validateTrustDecision(raw));
+    } catch {
+      skipped.push(path);
+    }
+  }
+  return decisions;
 }
 
 /** `runs/<SUITE-N>/<commit12>.json` — one file is one run of one suite. */
