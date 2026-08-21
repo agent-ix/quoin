@@ -13,7 +13,7 @@ Layout, under spec/evidence/:
   bindings.json    obligation -> hash-at-binding -> evidence
   baseline.json    the accepted violation set the ratchet compares against
   runs/<SUITE-N>/<commit12>.json   one file = one run of one suite
-  measurements/<PLAN-ID>/<identity>.json   one policy-free observation
+  measurements/<PLAN-ID>/<identity>.json   one atomic observation collection
 
 Subcommands:
   quoin evidence record     transcribe a suite run

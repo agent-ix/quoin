@@ -19,15 +19,15 @@ export {
   latestRun,
   latestRuns,
   latestScans,
-  measurementPath,
-  listMeasurementPaths,
+  measurementCollectionPath,
+  listMeasurementCollectionPaths,
   listRecordedSuites,
   listRuns,
   readBaseline,
   readBindings,
   readRun,
   readRuns,
-  readMeasurement,
+  readMeasurementCollection,
   runPath,
   short,
   storeRoot,
@@ -35,7 +35,7 @@ export {
   writeBaseline,
   writeBindings,
   writeRun,
-  writeMeasurement,
+  writeMeasurementCollection,
 } from "./store.js";
 
 export {
@@ -67,15 +67,21 @@ export {
   type RunEntry,
   type RunRecord,
   type MeasurementDistribution,
+  type MeasurementCollection,
+  type MeasurementCollectionObservation,
   type MeasurementQuantile,
   type MeasurementRecord,
 } from "./types.js";
 
 export {
   MEASUREMENT_RECORD_SCHEMA,
+  MEASUREMENT_COLLECTION_SCHEMA,
   MeasurementValidationError,
   measurementSchemaPath,
   readMeasurementSchema,
+  readMeasurementCollectionSchema,
+  measurementRecordsFromCollection,
+  validateMeasurementCollection,
   validateMeasurementRecord,
 } from "./measurement.js";
 

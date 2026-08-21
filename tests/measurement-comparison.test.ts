@@ -9,12 +9,13 @@ import { beforeEach, describe, expect, it } from "vitest";
 
 import {
   compareMeasurementSets,
-  listMeasurementPaths,
+  listMeasurementCollectionPaths,
   measurementTrend,
   queryMeasurements,
   renderMeasurementComparisonJson,
   renderMeasurementComparisonMarkdown,
-  writeMeasurement,
+  writeMeasurementCollection,
+  type MeasurementCollection,
   type MeasurementPolicy,
   type MeasurementRecord,
 } from "../src/evidence/index.js";
@@ -42,6 +43,31 @@ function observed(
   return { ...record, sourceRevision, value, collectedAt };
 }
 
+function store(records: MeasurementRecord[]): void {
+  const [first] = records;
+  const collection: MeasurementCollection = {
+    schemaVersion: 1,
+    plan: first.plan,
+    repository: first.scope.repository,
+    sourceRevision: first.sourceRevision,
+    tool: first.tool,
+    environment: first.environment,
+    ...(first.sampling === undefined ? {} : { sampling: first.sampling }),
+    collectedAt: first.collectedAt,
+    rawEvidence: first.rawEvidence,
+    observations: records.map((record) => ({
+      subject: record.subject,
+      ...(record.scope.path === undefined ? {} : { path: record.scope.path }),
+      value: record.value,
+      unit: record.unit,
+      ...(record.distribution === undefined
+        ? {}
+        : { distribution: record.distribution }),
+    })),
+  };
+  writeMeasurementCollection(repo, collection);
+}
+
 const lowerIsBetter: MeasurementPolicy = {
   direction: "increase-is-regression",
   tolerance: { kind: "absolute", value: 0 },
@@ -58,11 +84,13 @@ describe("TC-283 stored measurements have an exact deterministic query surface",
       40,
       "2026-08-21T18:00:00Z",
     );
-    writeMeasurement(repo, later);
-    writeMeasurement(repo, complexity);
-    writeMeasurement(repo, earlier);
+    store([later]);
+    store([complexity]);
+    store([earlier]);
 
-    expect(listMeasurementPaths(repo, latency.plan.id)).toHaveLength(2);
+    expect(listMeasurementCollectionPaths(repo, latency.plan.id)).toHaveLength(
+      2,
+    );
     expect(queryMeasurements(repo, { planId: latency.plan.id })).toEqual([
       earlier,
       later,
@@ -100,14 +128,9 @@ describe("TC-283 stored measurements have an exact deterministic query surface",
       ...sameTimeB,
       plan: { ...sameTimeB.plan, definitionVersion: "other" },
     };
-    for (const record of [
-      sameTimeB,
-      sameRevisionOtherSubject,
-      sameIdentityOtherDefinition,
-      sameTimeA,
-    ]) {
-      writeMeasurement(repo, record);
-    }
+    store([sameTimeB, sameRevisionOtherSubject]);
+    store([sameIdentityOtherDefinition]);
+    store([sameTimeA]);
     expect(
       queryMeasurements(repo).map((record) => record.sourceRevision),
     ).toEqual(["a".repeat(40), "b".repeat(40), "b".repeat(40), "b".repeat(40)]);
@@ -143,9 +166,30 @@ describe("TC-285 incompatible identities are non-comparisons", () => {
       { ...latency, plan: { ...latency.plan, definitionVersion: "next" } },
     ],
     ["unit", { ...latency, unit: "seconds" }],
+    ["tool", { ...latency, tool: { ...latency.tool, version: "next" } }],
+    [
+      "configuration",
+      {
+        ...latency,
+        tool: {
+          ...latency.tool,
+          configurationDigest: `sha256:${"f".repeat(64)}`,
+        },
+      },
+    ],
     [
       "environment",
       { ...latency, environment: { ...latency.environment, id: "other" } },
+    ],
+    [
+      "environment",
+      {
+        ...latency,
+        environment: {
+          ...latency.environment,
+          attributes: { ...latency.environment.attributes, runner: "other" },
+        },
+      },
     ],
     ["sampling", { ...latency, sampling: { id: "other", sampleCount: 30 } }],
   ])("reports changed %s identity before arithmetic", (reason, candidate) => {

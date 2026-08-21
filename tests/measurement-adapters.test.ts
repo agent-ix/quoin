@@ -16,11 +16,12 @@ import {
   gitHotChurnAdapter,
   jscpdAdapter,
   lizardAdapter,
-  listMeasurementPaths,
+  listMeasurementCollectionPaths,
+  measurementRecordsFromCollection,
   normalizedMeasurementAdapter,
   parseDependencyCruiser,
   radonAdapter,
-  readMeasurement,
+  readMeasurementCollection,
   rustCodeAnalysisAdapter,
 } from "../src/evidence/index.js";
 
@@ -65,21 +66,16 @@ function rca(root: string): string {
   });
 }
 
-describe("TC-290 language-appropriate structural adapters", () => {
-  it("filters Rust aggregates/anonymous nodes and retains qualified identity", () => {
+describe("TC-290 structural adapters avoid unstable symbol identity", () => {
+  it("filters Rust aggregates/anonymous nodes and emits a file distribution", () => {
     const result = rustCodeAnalysisAdapter.parse(rca("/repo"), "/repo");
     expect(result.observations).toEqual([
       {
-        subject: { kind: "function", id: "src/lib.rs#Widget::run" },
+        subject: { kind: "source-file", id: "src/lib.rs" },
         path: "src/lib.rs",
         value: 7,
         unit: "control-flow-path-count",
-      },
-      {
-        subject: { kind: "function", id: "src/lib.rs#top_level" },
-        path: "src/lib.rs",
-        value: 3,
-        unit: "control-flow-path-count",
+        distribution: { count: 2, minimum: 3, maximum: 7, mean: 5 },
       },
     ]);
   });
@@ -108,9 +104,36 @@ describe("TC-290 language-appropriate structural adapters", () => {
       "/repo",
     );
     expect(radon.observations.map((item) => item.subject.id)).toEqual([
-      "service.py#Service::run",
-      "service.py#main",
+      "service.py",
     ]);
+    expect(radon.observations[0].distribution).toMatchObject({ count: 2 });
+  });
+
+  it("deduplicates Radon's repeated class-method projection but keeps same-named methods in different classes", () => {
+    const method = (classname: string, complexity: number) => ({
+      type: "method",
+      name: "delete",
+      classname,
+      lineno: classname === "First" ? 10 : 30,
+      complexity,
+    });
+    const first = method("First", 3);
+    const second = method("Second", 8);
+    const result = radonAdapter.parse(
+      JSON.stringify({
+        "/repo/service.py": [
+          { type: "class", name: "First", methods: [first] },
+          first,
+          { type: "class", name: "Second", methods: [second] },
+          second,
+        ],
+      }),
+      "/repo",
+    );
+    expect(result.observations[0]).toMatchObject({
+      value: 8,
+      distribution: { count: 2, minimum: 3, maximum: 8, mean: 5.5 },
+    });
   });
 });
 
@@ -164,16 +187,29 @@ describe("TC-293 collection uncertainty fails closed", () => {
     expect(result.limitations).toEqual(["parser skipped macros.rs"]);
   });
 
-  it("rejects duplicate subjects and paths outside the repository", () => {
+  it("aggregates repeated fallback names and rejects paths outside the repository", () => {
     expect(() =>
       rustCodeAnalysisAdapter.parse(rca("/outside"), "/repo"),
     ).toThrow(AdapterError);
     const duplicate =
       '1,1,1,0,1,"a@1@src/a.ts","src/a.ts","a","a()",1,1\n' +
       '1,1,1,0,1,"a@2@src/a.ts","src/a.ts","a","a()",2,2\n';
-    expect(() => lizardAdapter.parse(duplicate, "/repo")).toThrow(
-      /duplicate stable subject/,
-    );
+    expect(
+      lizardAdapter.parse(duplicate, "/repo").observations[0],
+    ).toMatchObject({
+      distribution: { count: 2 },
+    });
+    expect(() =>
+      normalizedMeasurementAdapter.parse(
+        JSON.stringify({
+          observations: [
+            { subject: { kind: "file", id: "src/a" }, value: 1, unit: "x" },
+            { subject: { kind: "file", id: "src/a" }, value: 2, unit: "x" },
+          ],
+        }),
+        "/repo",
+      ),
+    ).toThrow(/duplicate stable subject/);
   });
 });
 
@@ -254,9 +290,9 @@ describe("TC-295 the command transcribes a complete batch atomically", () => {
       "--attribute",
       "language=rust",
       "--adapter",
-      "rust-code-analysis-cyclomatic",
+      "rust-code-analysis-cyclomatic-file-distribution",
       "--expected-count",
-      "2",
+      "1",
       "--timestamp",
       "2026-08-21T12:00:00Z",
       "--results",
@@ -270,15 +306,14 @@ describe("TC-295 the command transcribes a complete batch atomically", () => {
     writeFileSync(input, rca(repo));
     await EvidenceMeasure.run(args(repo, input), config);
 
-    const paths = listMeasurementPaths(repo, "MP-001");
-    expect(paths).toHaveLength(2);
-    const records = paths.map((path) => readMeasurement(path));
-    expect(records.map((record) => record?.subject.id).sort()).toEqual([
-      "src/lib.rs#Widget::run",
-      "src/lib.rs#top_level",
-    ]);
-    expect(records[0]?.environment.attributes).toEqual({ language: "rust" });
-    expect(records[0]?.rawEvidence.digest).toMatch(/^sha256:[a-f0-9]{64}$/);
+    const paths = listMeasurementCollectionPaths(repo, "MP-001");
+    expect(paths).toHaveLength(1);
+    const stored = readMeasurementCollection(paths[0]);
+    const records = measurementRecordsFromCollection(stored!);
+    expect(records.map((record) => record.subject.id)).toEqual(["src/lib.rs"]);
+    expect(records[0].distribution).toMatchObject({ count: 2, maximum: 7 });
+    expect(records[0].environment.attributes).toEqual({ language: "rust" });
+    expect(records[0].rawEvidence.digest).toMatch(/^sha256:[a-f0-9]{64}$/);
     expect(readFileSync(paths[0], "utf8")).toMatch(/\n$/);
   });
 
@@ -287,9 +322,37 @@ describe("TC-295 the command transcribes a complete batch atomically", () => {
     const input = join(repo, "metrics.jsonl");
     writeFileSync(input, rca(repo));
     const mismatched = args(repo, input);
-    mismatched[mismatched.indexOf("2")] = "3";
+    mismatched[mismatched.indexOf("1")] = "3";
     await expect(EvidenceMeasure.run(mismatched, config)).rejects.toThrow(
-      /expected 3 observations, parsed 2/,
+      /expected 3 observations, parsed 1/,
+    );
+    expect(existsSync(join(repo, "spec", "evidence"))).toBe(false);
+  });
+
+  it("writes no file or temporary residue when a late observation is invalid", async () => {
+    const repo = root();
+    const input = join(repo, "normalized.json");
+    writeFileSync(
+      input,
+      JSON.stringify({
+        observations: [
+          { subject: { kind: "file", id: "src/a" }, value: 1, unit: "count" },
+          {
+            subject: { kind: "file", id: "src/b" },
+            value: 2,
+            unit: "count",
+            distribution: { count: 0, mean: 2 },
+          },
+        ],
+      }),
+    );
+    const normalized = args(repo, input);
+    normalized[
+      normalized.indexOf("rust-code-analysis-cyclomatic-file-distribution")
+    ] = "observations";
+    normalized[normalized.indexOf("1")] = "2";
+    await expect(EvidenceMeasure.run(normalized, config)).rejects.toThrow(
+      /measurement-collection-v1/,
     );
     expect(existsSync(join(repo, "spec", "evidence"))).toBe(false);
   });

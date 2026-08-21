@@ -4,12 +4,14 @@ import { createHash } from "node:crypto";
 import { isAbsolute, relative, sep } from "node:path";
 
 import { AdapterError } from "./types.js";
+import type { MeasurementDistribution } from "../types.js";
 
 export interface MeasurementObservation {
   subject: { kind: string; id: string };
   path?: string;
   value: number;
   unit?: string;
+  distribution?: MeasurementDistribution;
 }
 
 export interface MeasurementAdapterResult {
@@ -34,6 +36,13 @@ interface RcaSpace {
 interface RcaUnit {
   name?: unknown;
   spaces?: unknown;
+}
+
+interface DistributionAccumulator {
+  count: number;
+  minimum: number;
+  maximum: number;
+  sum: number;
 }
 
 function normalizedPath(adapter: string, value: unknown, root: string): string {
@@ -159,11 +168,25 @@ export const normalizedMeasurementAdapter: MeasurementAdapter = {
           "observation unit must be a non-empty string",
         );
       }
+      if (
+        item.distribution !== undefined &&
+        (item.distribution === null ||
+          typeof item.distribution !== "object" ||
+          Array.isArray(item.distribution))
+      ) {
+        throw new AdapterError(
+          this.name,
+          "observation distribution must be an object",
+        );
+      }
       return {
         subject: { kind: subject.kind, id: subject.id },
         ...(item.path === undefined ? {} : { path: item.path }),
         value: finite(this.name, item.value, "observation value"),
         ...(item.unit === undefined ? {} : { unit: item.unit }),
+        ...(item.distribution === undefined
+          ? {}
+          : { distribution: item.distribution as MeasurementDistribution }),
       };
     });
     unique(this.name, observations);
@@ -172,11 +195,11 @@ export const normalizedMeasurementAdapter: MeasurementAdapter = {
 };
 
 export const rustCodeAnalysisAdapter: MeasurementAdapter = {
-  name: "rust-code-analysis-cyclomatic",
+  name: "rust-code-analysis-cyclomatic-file-distribution",
   summary:
-    "rust-code-analysis JSONL; named function cyclomatic sums only (no impl/class aggregates).",
+    "rust-code-analysis JSONL; per-file distributions of named function cyclomatic sums.",
   parse(raw: string, sourceRoot: string): MeasurementAdapterResult {
-    const observations: MeasurementObservation[] = [];
+    const values = new Map<string, DistributionAccumulator>();
     for (const [index, line] of raw.split(/\r?\n/).entries()) {
       if (line.trim() === "") continue;
       let parsed: unknown;
@@ -221,24 +244,22 @@ export const rustCodeAnalysisAdapter: MeasurementAdapter = {
               metrics.cyclomatic,
               `${path}#${name} cyclomatic`,
             );
-            const qualified = nextParents.join("::");
-            observations.push({
-              subject: { kind: "function", id: `${path}#${qualified}` },
+            addValue(
+              values,
               path,
-              value: finite(
+              finite(
                 this.name,
                 cyclomatic.sum,
-                `${path}#${qualified} sum`,
+                `${path}#${nextParents.join("::")} sum`,
               ),
-              unit: "control-flow-path-count",
-            });
+            );
           }
           visit(space.spaces ?? [], nextParents);
         }
       };
       visit(unit.spaces ?? [], []);
     }
-    return unique(this.name, observations);
+    return fileDistributions(this.name, values);
   },
 };
 
@@ -276,10 +297,11 @@ function csvRows(adapter: string, raw: string): string[][] {
 }
 
 export const lizardAdapter: MeasurementAdapter = {
-  name: "lizard-cyclomatic",
-  summary: "Lizard --csv function cyclomatic observations.",
+  name: "lizard-cyclomatic-file-distribution",
+  summary: "Lizard --csv per-file function cyclomatic distributions.",
   parse(raw: string, sourceRoot: string): MeasurementAdapterResult {
-    const observations = csvRows(this.name, raw).map((row, index) => {
+    const values = new Map<string, DistributionAccumulator>();
+    for (const [index, row] of csvRows(this.name, raw).entries()) {
       if (row.length < 11) {
         throw new AdapterError(
           this.name,
@@ -295,23 +317,23 @@ export const lizardAdapter: MeasurementAdapter = {
         );
       }
       const value = Number(row[1]);
-      return {
-        subject: { kind: "function", id: `${path}#${name}` },
+      addValue(
+        values,
         path,
-        value: finite(this.name, value, `CSV row ${index + 1} complexity`),
-        unit: "control-flow-path-count",
-      };
-    });
-    return unique(this.name, observations);
+        finite(this.name, value, `CSV row ${index + 1} complexity`),
+      );
+    }
+    return fileDistributions(this.name, values);
   },
 };
 
 export const radonAdapter: MeasurementAdapter = {
-  name: "radon-cyclomatic",
-  summary: "Radon cc --json named function and method observations.",
+  name: "radon-cyclomatic-file-distribution",
+  summary: "Radon cc --json per-file function/method complexity distributions.",
   parse(raw: string, sourceRoot: string): MeasurementAdapterResult {
     const parsed = object(this.name, json(this.name, raw), "input");
-    const observations: MeasurementObservation[] = [];
+    const values = new Map<string, DistributionAccumulator>();
+    const seenBlocks = new Set<string>();
     const visit = (
       path: string,
       rawBlocks: unknown,
@@ -323,19 +345,21 @@ export const radonAdapter: MeasurementAdapter = {
         const type = typeof block.type === "string" ? block.type : "";
         const nextParents = name === "" ? parents : [...parents, name];
         if ((type === "function" || type === "method") && name !== "") {
-          observations.push({
-            subject: {
-              kind: "function",
-              id: `${path}#${nextParents.join("::")}`,
-            },
-            path,
-            value: finite(
-              this.name,
-              block.complexity,
-              `${path}#${name} complexity`,
-            ),
-            unit: "control-flow-path-count",
-          });
+          const owner =
+            typeof block.classname === "string" && block.classname !== ""
+              ? block.classname
+              : parents.join("::");
+          const line =
+            typeof block.lineno === "number" ? String(block.lineno) : "?";
+          const identity = `${path}#${owner}::${name}@${line}`;
+          if (!seenBlocks.has(identity)) {
+            addValue(
+              values,
+              path,
+              finite(this.name, block.complexity, `${path}#${name} complexity`),
+            );
+            seenBlocks.add(identity);
+          }
         }
         if (block.methods !== undefined)
           visit(path, block.methods, nextParents);
@@ -346,9 +370,51 @@ export const radonAdapter: MeasurementAdapter = {
     for (const [rawPath, blocks] of Object.entries(parsed)) {
       visit(normalizedPath(this.name, rawPath, sourceRoot), blocks, []);
     }
-    return unique(this.name, observations);
+    return fileDistributions(this.name, values);
   },
 };
+
+function addValue(
+  values: Map<string, DistributionAccumulator>,
+  path: string,
+  value: number,
+): void {
+  const current = values.get(path);
+  if (current) {
+    current.count += 1;
+    current.minimum = Math.min(current.minimum, value);
+    current.maximum = Math.max(current.maximum, value);
+    current.sum += value;
+  } else {
+    values.set(path, {
+      count: 1,
+      minimum: value,
+      maximum: value,
+      sum: value,
+    });
+  }
+}
+
+function fileDistributions(
+  adapter: string,
+  values: Map<string, DistributionAccumulator>,
+): MeasurementAdapterResult {
+  const observations = [...values.entries()]
+    .sort(([left], [right]) => (left === right ? 0 : left < right ? -1 : 1))
+    .map(([path, distribution]): MeasurementObservation => ({
+      subject: { kind: "source-file", id: path },
+      path,
+      value: distribution.maximum,
+      unit: "control-flow-path-count",
+      distribution: {
+        count: distribution.count,
+        minimum: distribution.minimum,
+        maximum: distribution.maximum,
+        mean: distribution.sum / distribution.count,
+      },
+    }));
+  return unique(adapter, observations);
+}
 
 export const gitHotChurnAdapter: MeasurementAdapter = {
   name: "git-hot-churn",

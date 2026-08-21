@@ -8,17 +8,16 @@ import { QuoinCommand } from "../../base.js";
 import {
   MEASUREMENT_ADAPTER_NAMES,
   selectMeasurementAdapter,
-  validateMeasurementRecord,
-  writeMeasurement,
+  writeMeasurementCollection,
+  type MeasurementCollection,
   type MeasurementObservation,
-  type MeasurementRecord,
 } from "../../evidence/index.js";
 
 export default class EvidenceMeasure extends QuoinCommand {
   static summary =
-    "Transcribe policy-free observations into measurement records.";
-  static description = `Reads a completed tool report and writes one generic MeasurementRecord per
-observation. This command never runs the producer and never decides whether a value is
+    "Transcribe policy-free observations into an atomic measurement collection.";
+  static description = `Reads a completed tool report and writes one atomic collection of logical
+MeasurementRecords. This command never runs the producer and never decides whether a value is
 good. The authored plan and definition version supply that meaning; comparison policy is
 a separate caller-owned decision.
 
@@ -27,7 +26,7 @@ or disagrees with --expected-count. A missing parser or empty traversal therefor
 become a clean baseline.`;
 
   static examples = [
-    "quoin evidence measure --plan MP-001 --definition rust-structure-v1 --repository agent-ix/service --revision $(git rev-parse HEAD) --tool rust-code-analysis --tool-version 0.0.25 --configuration-digest sha256:abc123 --environment linux-x64 --adapter rust-code-analysis-cyclomatic --results metrics.jsonl",
+    "quoin evidence measure --plan MP-001 --definition rust-structure-v1 --repository agent-ix/service --revision $(git rev-parse HEAD) --tool rust-code-analysis --tool-version 0.0.25 --configuration-digest sha256:abc123 --environment linux-x64 --adapter rust-code-analysis-cyclomatic-file-distribution --results metrics.jsonl",
   ];
 
   static flags = {
@@ -143,9 +142,9 @@ become a clean baseline.`;
     const attributes = parseAttributes(flags.attribute ?? []);
     const collectedAt = flags.timestamp ?? new Date().toISOString();
     const rawDigest = `sha256:${createHash("sha256").update(raw).digest("hex")}`;
-    const records = [...result.observations]
+    const observations = [...result.observations]
       .sort(compareObservations)
-      .map((observation): MeasurementRecord => {
+      .map((observation) => {
         const unit = observation.unit ?? flags.unit;
         if (!unit) {
           this.error(
@@ -155,52 +154,53 @@ become a clean baseline.`;
         }
         validateNormalizedPath(observation.path);
         return {
-          schemaVersion: 1,
-          plan: { id: flags.plan, definitionVersion: flags.definition },
           subject: observation.subject,
-          scope: {
-            repository: flags.repository,
-            ...(observation.path === undefined
-              ? {}
-              : { path: observation.path }),
-          },
-          sourceRevision: flags.revision,
+          ...(observation.path === undefined ? {} : { path: observation.path }),
           value: observation.value,
           unit,
-          tool: {
-            name: flags.tool,
-            version: flags["tool-version"],
-            configurationDigest: flags["configuration-digest"],
-          },
-          environment: {
-            id: flags.environment,
-            ...(Object.keys(attributes).length === 0 ? {} : { attributes }),
-          },
-          ...(flags.sampling === undefined
+          ...(observation.distribution === undefined
             ? {}
-            : { sampling: { id: flags.sampling, sampleCount: sampleCount! } }),
-          collectedAt,
-          rawEvidence: {
-            digest: rawDigest,
-            ...(flags.reference === undefined
-              ? {}
-              : { reference: flags.reference }),
-          },
+            : { distribution: observation.distribution }),
         };
       });
 
-    // Validate the complete batch before the first write, so a late bad subject cannot
-    // leave a partially transcribed population in the store.
-    for (const record of records) validateMeasurementRecord(record);
-    const paths = records.map((record) => writeMeasurement(flags.repo, record));
+    const collection: MeasurementCollection = {
+      schemaVersion: 1,
+      plan: { id: flags.plan, definitionVersion: flags.definition },
+      repository: flags.repository,
+      sourceRevision: flags.revision,
+      tool: {
+        name: flags.tool,
+        version: flags["tool-version"],
+        configurationDigest: flags["configuration-digest"],
+      },
+      environment: {
+        id: flags.environment,
+        ...(Object.keys(attributes).length === 0 ? {} : { attributes }),
+      },
+      ...(flags.sampling === undefined
+        ? {}
+        : { sampling: { id: flags.sampling, sampleCount: sampleCount! } }),
+      collectedAt,
+      rawEvidence: {
+        digest: rawDigest,
+        ...(flags.reference === undefined
+          ? {}
+          : { reference: flags.reference }),
+      },
+      observations,
+    };
+    const path = writeMeasurementCollection(flags.repo, collection);
     if (flags.json) {
       this.log(
-        JSON.stringify({ adapter: adapter.name, records, paths }, null, 2),
+        JSON.stringify({ adapter: adapter.name, collection, path }, null, 2),
       );
       return;
     }
-    this.log(`recorded ${records.length} observation(s) with ${adapter.name}`);
-    for (const path of paths) this.log(`  ${path}`);
+    this.log(
+      `recorded ${observations.length} observation(s) with ${adapter.name}`,
+    );
+    this.log(`  ${path}`);
   }
 }
 

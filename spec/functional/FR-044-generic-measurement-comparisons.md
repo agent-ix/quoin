@@ -32,7 +32,7 @@ Compatibility is checked before arithmetic and before policy:
 | `missing-baseline` | Candidate observations exist, but no baseline was supplied. | No |
 | `empty-population` | The candidate population is empty (including both sides empty). | No |
 | `partial-collection` | Baseline and candidate subject/scope populations differ, or the same sampling design reports different collected sample counts. | No |
-| `incompatible` | A population is ambiguous, or paired records differ in plan, definition, unit, environment, or sampling identity. | No |
+| `incompatible` | A population is ambiguous, or paired records differ in plan, definition, unit, tool/version/configuration, environment, or sampling identity. | No |
 | `comparable` | Both complete populations carry compatible identities. | Only when caller policy was supplied |
 
 These states are machine-distinct. Missing, partial, changed-definition, and
@@ -55,7 +55,9 @@ non-comparison because the ratio is undefined.
 A trend covers one subject/scope population and sorts by collection timestamp,
 source revision, and stable population key. Changes to plan, definition, unit,
 environment, or sampling identity start a visible discontinuity rather than
-joining unlike values into one continuous series.
+joining unlike values into one continuous series. Tool and configuration changes
+are likewise non-comparisons: equal numbers from changed producers are not assumed
+to implement an unchanged measure.
 
 ## Inputs
 
@@ -76,7 +78,7 @@ joining unlike values into one continuous series.
 |----|----------|--------------|
 | FR-044-AC-1 | Stored records are queryable by plan, definition version, subject, scope, and source revision in deterministic order. | Test (TC-283) |
 | FR-044-AC-2 | One comparison path produces deltas for both CLI-latency and per-function-complexity records without branching on measure or tool name. | Test (TC-284) |
-| FR-044-AC-3 | Changed definition, unit, environment, or sampling identity produces an explicit incompatibility and no arithmetic result. | Test (TC-285) |
+| FR-044-AC-3 | Changed definition, unit, tool/version/configuration, environment, or sampling identity produces an explicit incompatibility and no arithmetic result. | Test (TC-285) |
 | FR-044-AC-4 | Missing baseline, empty population, missing subjects, sampling-count mismatch, mixed revision, and duplicate subject are distinct machine states/reasons. | Test (TC-286) |
 | FR-044-AC-5 | A ratchet applies only when compatible baseline and caller policy both exist; invalid tolerance and a relative policy over zero are refused explicitly. | Test (TC-287) |
 | FR-044-AC-6 | Trends are time ordered and mark definition/identity changes as discontinuities. | Test (TC-288) |

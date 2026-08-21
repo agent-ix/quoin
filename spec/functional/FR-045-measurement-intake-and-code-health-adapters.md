@@ -16,7 +16,7 @@ relationships:
 ## Description
 
 `quoin evidence measure` SHALL transcribe an already-produced observation report into
-generic `MeasurementRecord` files. It SHALL accept a normalized open envelope and pure
+one generic measurement collection. It SHALL accept a normalized open envelope and pure
 readers for selected structural, churn, and clone-pair formats. It SHALL run no producer,
 supply no threshold, and derive no aggregate code-health verdict.
 
@@ -29,8 +29,10 @@ provenance.
 
 Language-appropriate adapters retain the producer's own definition. Values from
 different tools are not normalized merely because each calls a measure complexity.
-Rust structural intake accepts named function nodes and rejects implementation/class
-aggregates and anonymous nodes. Churn and age remain separate observations. Clone intake
+Fallback structural intake excludes implementation/class aggregates and anonymous nodes,
+then emits one stable source-file observation with the function-value distribution. It
+does not manufacture durable per-function identity from lossy names or line numbers.
+Churn and age remain separate observations. Clone intake
 uses pair plus fragment identity rather than a repository percentage grade.
 
 Quoin SHALL transcribe dependency-cruiser JSON as finding-shaped scan evidence because it
@@ -47,20 +49,20 @@ zero rules, Quoin SHALL refuse to record the result as a clean scan.
 
 ## Outputs
 
-- One canonical `MeasurementRecord` per stable observed subject
-- One atomic command outcome naming all stored paths
+- One canonical collection containing logical `MeasurementRecord` observations
+- One atomic command outcome naming the stored collection path
 - Finding-shaped dependency-rule scan records through `evidence record`
 
 ## Acceptance Criteria
 
 | ID | Criteria | Verification |
 |----|----------|--------------|
-| FR-045-AC-1 | Structural adapters preserve Rust function qualification and native/fallback numeric values while excluding aggregate and anonymous nodes that lack the selected subject definition. | Test (TC-290) |
+| FR-045-AC-1 | Fallback structural adapters exclude aggregate/anonymous nodes, deduplicate repeated analyzer projections, and emit stable per-file distributions rather than false per-function identities. | Test (TC-290) |
 | FR-045-AC-2 | Current-file churn and line age are emitted as separate observations and are never multiplied into a score. | Test (TC-291) |
 | FR-045-AC-3 | Clone reports emit one duplicated-line observation per path-pair and fragment identity rather than a repository grade. | Test (TC-292) |
 | FR-045-AC-4 | Producer limitations, duplicate subjects, and outside-repository paths are rejected or carried as incomplete input for the command to reject. | Test (TC-293) |
 | FR-045-AC-5 | dependency-cruiser rule edges become finding-shaped records with ruleset identity; zero traversed modules and zero evaluated rules are refused as vacuous. | Test (TC-294) |
-| FR-045-AC-6 | `evidence measure` validates an exact expected population and every record before atomically writing canonical files with raw-input digest and caller provenance. | Test (TC-295) |
+| FR-045-AC-6 | `evidence measure` validates an exact expected population and every observation before atomically writing one canonical collection with raw-input digest and caller provenance. | Test (TC-295) |
 | FR-045-AC-7 | The normalized envelope remains an open extension seam for measures and producers unknown to Quoin. | Test (TC-296) |
 
 ## Constraints

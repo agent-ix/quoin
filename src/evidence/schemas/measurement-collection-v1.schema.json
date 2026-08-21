@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agent-ix.dev/quoin/schemas/measurement-collection-v1.schema.json",
+  "title": "Quoin MeasurementCollection v1",
+  "description": "Atomic physical persistence for one policy-free measurement producer invocation.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "plan",
+    "repository",
+    "sourceRevision",
+    "tool",
+    "environment",
+    "collectedAt",
+    "rawEvidence",
+    "observations"
+  ],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "plan": {
+      "$ref": "measurement-record-v1.schema.json#/properties/plan"
+    },
+    "repository": { "type": "string", "minLength": 1 },
+    "sourceRevision": { "type": "string", "minLength": 1 },
+    "tool": {
+      "$ref": "measurement-record-v1.schema.json#/properties/tool"
+    },
+    "environment": {
+      "$ref": "measurement-record-v1.schema.json#/properties/environment"
+    },
+    "sampling": {
+      "$ref": "measurement-record-v1.schema.json#/properties/sampling"
+    },
+    "collectedAt": {
+      "$ref": "measurement-record-v1.schema.json#/properties/collectedAt"
+    },
+    "rawEvidence": {
+      "$ref": "measurement-record-v1.schema.json#/properties/rawEvidence"
+    },
+    "observations": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["subject", "value", "unit"],
+        "properties": {
+          "subject": {
+            "$ref": "measurement-record-v1.schema.json#/properties/subject"
+          },
+          "path": { "type": "string", "minLength": 1 },
+          "value": { "type": "number" },
+          "unit": { "type": "string", "minLength": 1 },
+          "distribution": {
+            "$ref": "measurement-record-v1.schema.json#/properties/distribution"
+          }
+        }
+      }
+    }
+  }
+}
