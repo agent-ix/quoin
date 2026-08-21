@@ -77,8 +77,27 @@ function completeGraph() {
     binding("FR-002-AC-1", "integration"),
     binding("FR-003-AC-1", "integration"),
   ];
+  const implementations = [
+    {
+      path: "src/service.ts",
+      symbol: "run",
+      trace_id: "FR-002",
+      form: "ts-implements-comment",
+    },
+    {
+      path: "src/service.ts",
+      symbol: "run",
+      trace_id: "FR-003",
+      form: "ts-implements-comment",
+    },
+  ];
   return {
-    graph: buildTraceGraph({ documents, obligations, bindings }),
+    graph: buildTraceGraph({
+      documents,
+      obligations,
+      bindings,
+      implementations,
+    }),
     bindings,
   };
 }
@@ -136,6 +155,14 @@ describe("FR-045 trace graph construction", () => {
       ],
       obligations: [obligation("FR-002-AC-1")],
       bindings: [binding("FR-999-AC-1", "old-suite")],
+      implementations: [
+        {
+          path: "src/old.ts",
+          symbol: "old",
+          trace_id: "FR-998",
+          form: "ts-implements-comment",
+        },
+      ],
       unreadable: [{ path: "broken.md", reason: "bad YAML" }],
     });
 
@@ -143,6 +170,7 @@ describe("FR-045 trace graph construction", () => {
     expect(graph.limitations.map(({ kind }) => kind)).toEqual([
       "duplicate-document-id",
       "orphan-binding",
+      "orphan-implementation",
       "orphan-obligation",
       "unreadable-document",
       "unresolved-relationship",
@@ -185,6 +213,12 @@ describe("FR-045 change-impact closure", () => {
       upstreamDocuments: ["StR-001"],
       suspectObligations: ["FR-001-AC-1", "FR-002-AC-1"],
       affectedSuites: ["integration", "unit"],
+      affectedImplementations: [
+        {
+          id: "src/service.ts#run",
+          requirements: ["FR-002", "FR-003"],
+        },
+      ],
       sharedSuiteExposure: ["FR-003-AC-1"],
     });
     expect(analyzeChangeImpact(graph, ["FR-002-AC-1"])).toMatchObject({
@@ -192,7 +226,36 @@ describe("FR-045 change-impact closure", () => {
       upstreamDocuments: ["FR-001", "StR-001"],
       suspectObligations: ["FR-002-AC-1"],
       affectedSuites: ["integration"],
+      affectedImplementations: [
+        {
+          id: "src/service.ts#run",
+          requirements: ["FR-002", "FR-003"],
+        },
+      ],
       sharedSuiteExposure: ["FR-003-AC-1"],
+    });
+  });
+
+  // Trace: FR-045-AC-10
+  it("walks from a changed production path back to requirements and evidence", () => {
+    const { graph } = completeGraph();
+    expect(analyzeChangeImpact(graph, ["src/service.ts"])).toMatchObject({
+      changed: ["src/service.ts"],
+      unknown: [],
+      downstreamDocuments: [],
+      upstreamDocuments: ["FR-001", "StR-001"],
+      suspectObligations: ["FR-002-AC-1", "FR-003-AC-1"],
+      affectedSuites: ["integration"],
+      affectedImplementations: [
+        {
+          id: "src/service.ts#run",
+          path: "src/service.ts",
+          symbol: "run",
+          forms: ["ts-implements-comment"],
+          requirements: ["FR-002", "FR-003"],
+        },
+      ],
+      sharedSuiteExposure: [],
     });
   });
 

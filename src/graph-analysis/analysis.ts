@@ -12,7 +12,7 @@
 
 import type { BundleDocument } from "../completeness/index.js";
 import type { Binding } from "../evidence/index.js";
-import type { Obligation } from "../quire/index.js";
+import type { ImplementsRecord, Obligation } from "../quire/index.js";
 import { requirementOf } from "../assurance/index.js";
 
 /** A change to the authored target can affect the source artifact. */
@@ -36,6 +36,7 @@ const SOURCE_TO_TARGET = new Set(["constrains", "satisfied_by", "specifies"]);
 export type GraphLimitationKind =
   | "duplicate-document-id"
   | "orphan-binding"
+  | "orphan-implementation"
   | "orphan-obligation"
   | "unreadable-document"
   | "unresolved-relationship"
@@ -67,11 +68,21 @@ export interface ObligationSuiteEdge {
   suite: string;
 }
 
+export interface ImplementationNode {
+  /** Stable change-impact input id: `<path>#<symbol>`. */
+  id: string;
+  path: string;
+  symbol: string;
+  forms: string[];
+  requirements: string[];
+}
+
 export interface TraceGraph {
   documents: string[];
   documentEdges: DocumentEdge[];
   obligations: ObligationNode[];
   obligationSuites: ObligationSuiteEdge[];
+  implementations: ImplementationNode[];
   limitations: GraphLimitation[];
   complete: boolean;
 }
@@ -80,6 +91,7 @@ export interface TraceGraphInput {
   documents: BundleDocument[];
   obligations: Obligation[];
   bindings: Binding[];
+  implementations?: ImplementsRecord[];
   unreadable?: Array<{ path: string; reason: string }>;
 }
 
@@ -108,6 +120,8 @@ export interface ChangeImpactAnalysis {
   suspectObligations: string[];
   /** Suites bound to a suspect obligation, or named directly as changed. */
   affectedSuites: string[];
+  /** Production symbols in the affected requirements' implementation scope. */
+  affectedImplementations: ImplementationNode[];
   /** Other obligations sharing an affected suite; exposed, not called suspect. */
   sharedSuiteExposure: string[];
   complete: boolean;
@@ -226,6 +240,20 @@ export function buildTraceGraph(input: TraceGraphInput): TraceGraph {
     }
   }
 
+  const implementations = implementationNodes(input.implementations ?? []);
+  for (const implementation of implementations) {
+    for (const requirement of implementation.requirements) {
+      if (!documents.has(requirement)) {
+        limitations.push({
+          kind: "orphan-implementation",
+          source: implementation.id,
+          target: requirement,
+          reason: `${requirement} is outside or absent from this bundle`,
+        });
+      }
+    }
+  }
+
   const graph: TraceGraph = {
     documents: sorted(documents),
     documentEdges: unique(
@@ -239,6 +267,7 @@ export function buildTraceGraph(input: TraceGraphInput): TraceGraph {
       (a, b) =>
         compare(a.suite, b.suite) || compare(a.obligation, b.obligation),
     ),
+    implementations,
     limitations: unique(limitations, limitationKey).sort(limitationOrder),
     complete: false,
   };
@@ -280,6 +309,10 @@ export function analyzeChangeImpact(
   const documentIds = new Set(graph.documents);
   const obligationIds = new Set(graph.obligations.map(({ id }) => id));
   const suiteIds = new Set(graph.obligationSuites.map(({ suite }) => suite));
+  const implementationIds = new Set(graph.implementations.map(({ id }) => id));
+  const implementationPaths = new Set(
+    graph.implementations.map(({ path }) => path),
+  );
   const downstream = adjacency(graph.documentEdges, "from", "to");
   const upstream = adjacency(graph.documentEdges, "to", "from");
   const ownerFor = new Map(
@@ -300,12 +333,22 @@ export function analyzeChangeImpact(
     ({ suite }) => suite,
     ({ obligation }) => obligation,
   );
+  const implementationsForRequirement = new Map<string, ImplementationNode[]>();
+  for (const implementation of graph.implementations) {
+    for (const requirement of implementation.requirements) {
+      const nodes = implementationsForRequirement.get(requirement) ?? [];
+      nodes.push(implementation);
+      implementationsForRequirement.set(requirement, nodes);
+    }
+  }
 
   const unknown = new Set<string>();
   const affectedDocuments = new Set<string>();
   const suspectObligations = new Set<string>();
   const obligationsRequiringAllSuites = new Set<string>();
   const affectedSuites = new Set<string>();
+  const affectedImplementationIds = new Set<string>();
+  const codeChangedRequirements = new Set<string>();
 
   for (const id of changed) {
     if (documentIds.has(id)) {
@@ -319,6 +362,13 @@ export function analyzeChangeImpact(
       affectedSuites.add(id);
       for (const obligation of obligationsForSuite.get(id) ?? [])
         suspectObligations.add(obligation);
+    } else if (implementationIds.has(id) || implementationPaths.has(id)) {
+      for (const implementation of graph.implementations) {
+        if (implementation.id !== id && implementation.path !== id) continue;
+        affectedImplementationIds.add(implementation.id);
+        for (const requirement of implementation.requirements)
+          codeChangedRequirements.add(requirement);
+      }
     } else {
       unknown.add(id);
     }
@@ -326,6 +376,21 @@ export function analyzeChangeImpact(
 
   for (const document of affectedDocuments) {
     for (const obligation of obligationsForOwner.get(document) ?? []) {
+      suspectObligations.add(obligation);
+      obligationsRequiringAllSuites.add(obligation);
+    }
+    for (const implementation of implementationsForRequirement.get(document) ??
+      [])
+      affectedImplementationIds.add(implementation.id);
+  }
+  for (const obligation of obligationsRequiringAllSuites) {
+    const owner = ownerFor.get(obligation);
+    if (!owner) continue;
+    for (const implementation of implementationsForRequirement.get(owner) ?? [])
+      affectedImplementationIds.add(implementation.id);
+  }
+  for (const requirement of codeChangedRequirements) {
+    for (const obligation of obligationsForOwner.get(requirement) ?? []) {
       suspectObligations.add(obligation);
       obligationsRequiringAllSuites.add(obligation);
     }
@@ -368,6 +433,9 @@ export function analyzeChangeImpact(
       upstreamDocuments: sorted(upstreamDocuments),
       suspectObligations: sorted(suspectObligations),
       affectedSuites: sorted(affectedSuites),
+      affectedImplementations: graph.implementations.filter(({ id }) =>
+        affectedImplementationIds.has(id),
+      ),
       sharedSuiteExposure: sorted(sharedSuiteExposure),
     }),
     // Graph completeness and query resolution are separate failure modes. A
@@ -409,6 +477,28 @@ export function analyzeChurn(
       compare(a.obligation, b.obligation),
   );
   return common(graph, { view: "churn", rows });
+}
+
+function implementationNodes(
+  records: ImplementsRecord[],
+): ImplementationNode[] {
+  const nodes = new Map<string, ImplementationNode>();
+  for (const record of records) {
+    const id = `${record.path}#${record.symbol}`;
+    const prior = nodes.get(id) ?? {
+      id,
+      path: record.path,
+      symbol: record.symbol,
+      forms: [],
+      requirements: [],
+    };
+    prior.forms = sorted(new Set([...prior.forms, record.form]));
+    prior.requirements = sorted(
+      new Set([...prior.requirements, requirementOf(record.trace_id)]),
+    );
+    nodes.set(id, prior);
+  }
+  return [...nodes.values()].sort((a, b) => compare(a.id, b.id));
 }
 
 function documentId(document: BundleDocument): string | null {

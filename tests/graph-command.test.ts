@@ -37,6 +37,14 @@ function fakeQuireDir(): string {
         statement_hash: "a".repeat(64),
       },
     ],
+    implements: [
+      {
+        path: "src/graph.ts",
+        symbol: "analyze",
+        trace_id: "FR-001",
+        form: "ts-implements-comment",
+      },
+    ],
   });
   writeFileSync(
     bin,
@@ -111,6 +119,12 @@ describe("TC-299 graph command integrates the authored and evidence graphs", () 
       changed: ["FR-001"],
       suspectObligations: ["FR-001-AC-1"],
       affectedSuites: ["unit"],
+      affectedImplementations: [
+        {
+          id: "src/graph.ts#analyze",
+          requirements: ["FR-001"],
+        },
+      ],
       complete: true,
     });
   });

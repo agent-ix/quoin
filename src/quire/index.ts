@@ -37,6 +37,7 @@ export type {
   CriterionObligation,
   Extraction,
   GroupCounts,
+  ImplementsRecord,
   NoSymbolRow,
   Obligation,
   PropertiesDocument,
