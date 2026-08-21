@@ -334,7 +334,13 @@ export function analyzeChangeImpact(
     ({ obligation }) => obligation,
   );
   const implementationsForRequirement = new Map<string, ImplementationNode[]>();
+  const implementationById = new Map<string, ImplementationNode>();
+  const implementationsByPath = new Map<string, ImplementationNode[]>();
   for (const implementation of graph.implementations) {
+    implementationById.set(implementation.id, implementation);
+    const atPath = implementationsByPath.get(implementation.path) ?? [];
+    atPath.push(implementation);
+    implementationsByPath.set(implementation.path, atPath);
     for (const requirement of implementation.requirements) {
       const nodes = implementationsForRequirement.get(requirement) ?? [];
       nodes.push(implementation);
@@ -343,6 +349,7 @@ export function analyzeChangeImpact(
   }
 
   const unknown = new Set<string>();
+  const changedDocumentSeeds = new Set<string>();
   const affectedDocuments = new Set<string>();
   const suspectObligations = new Set<string>();
   const obligationsRequiringAllSuites = new Set<string>();
@@ -352,9 +359,7 @@ export function analyzeChangeImpact(
 
   for (const id of changed) {
     if (documentIds.has(id)) {
-      affectedDocuments.add(id);
-      for (const dependent of closure([id], downstream))
-        affectedDocuments.add(dependent);
+      changedDocumentSeeds.add(id);
     } else if (obligationIds.has(id)) {
       suspectObligations.add(id);
       obligationsRequiringAllSuites.add(id);
@@ -363,8 +368,10 @@ export function analyzeChangeImpact(
       for (const obligation of obligationsForSuite.get(id) ?? [])
         suspectObligations.add(obligation);
     } else if (implementationIds.has(id) || implementationPaths.has(id)) {
-      for (const implementation of graph.implementations) {
-        if (implementation.id !== id && implementation.path !== id) continue;
+      const implementations = implementationIds.has(id)
+        ? [implementationById.get(id)!]
+        : (implementationsByPath.get(id) ?? []);
+      for (const implementation of implementations) {
         affectedImplementationIds.add(implementation.id);
         for (const requirement of implementation.requirements)
           codeChangedRequirements.add(requirement);
@@ -372,6 +379,11 @@ export function analyzeChangeImpact(
     } else {
       unknown.add(id);
     }
+  }
+
+  for (const id of changedDocumentSeeds) affectedDocuments.add(id);
+  for (const dependent of closure(changedDocumentSeeds, downstream)) {
+    affectedDocuments.add(dependent);
   }
 
   for (const document of affectedDocuments) {
@@ -401,18 +413,14 @@ export function analyzeChangeImpact(
   }
 
   const upstreamDocuments = new Set<string>();
-  for (const document of affectedDocuments) {
-    for (const prerequisite of closure([document], upstream)) {
-      if (!affectedDocuments.has(prerequisite))
-        upstreamDocuments.add(prerequisite);
-    }
-  }
+  const upstreamSeeds = new Set(affectedDocuments);
   for (const obligation of suspectObligations) {
     const owner = ownerFor.get(obligation);
-    if (!owner) continue;
-    for (const prerequisite of closure([owner], upstream)) {
-      if (!affectedDocuments.has(prerequisite))
-        upstreamDocuments.add(prerequisite);
+    if (owner) upstreamSeeds.add(owner);
+  }
+  for (const prerequisite of closure(upstreamSeeds, upstream)) {
+    if (!affectedDocuments.has(prerequisite)) {
+      upstreamDocuments.add(prerequisite);
     }
   }
 
@@ -582,9 +590,8 @@ function closure(
 ): Set<string> {
   const seen = new Set<string>();
   const queue = [...seeds];
-  while (queue.length > 0) {
-    const current = queue.shift();
-    if (!current) continue;
+  for (let cursor = 0; cursor < queue.length; cursor += 1) {
+    const current = queue[cursor];
     for (const next of edges.get(current) ?? []) {
       if (seen.has(next)) continue;
       seen.add(next);
