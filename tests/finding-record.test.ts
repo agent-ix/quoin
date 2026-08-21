@@ -314,6 +314,35 @@ describe("the auditor over finding-shaped scans", () => {
     );
     expect(report.healthy).toContain("FR-001-AC-1");
   });
+
+  it("checks freshness only against run-backed bindings in a mixed evidence set", () => {
+    // TC-176
+    // Sorting puts the scan first. The freshness check used to index the full
+    // binding list into the shorter run list, so this shape either attributed
+    // the run's commit to the scan or dereferenced an absent run.
+    const report = audit({
+      obligations: [obligation],
+      bindings: [
+        { ...binding, suite: "A-SCAN" },
+        { ...binding, suite: "Z-RUN", symbols: ["tests::tc001"] },
+      ],
+      runs: [
+        {
+          schemaVersion: 1,
+          suite: "Z-RUN",
+          commit: "b".repeat(40),
+          tool: "cargo test",
+          timestamp: "2026-08-18T00:00:00Z",
+          entries: [{ symbol: "tests::tc001", outcome: "pass" }],
+        },
+      ],
+      scans: [scan({ suite: "A-SCAN", rulesEvaluated: 400 })],
+      headCommit: "a".repeat(40),
+    });
+    const stale = report.findings.find((f) => f.kind === "stale-evidence");
+    expect(stale?.summary).toContain("Z-RUN");
+    expect(stale?.summary).not.toContain("A-SCAN");
+  });
 });
 
 describe("quoin evidence record --adapter sarif", () => {

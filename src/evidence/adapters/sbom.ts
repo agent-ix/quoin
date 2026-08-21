@@ -60,7 +60,7 @@ function cycloneDxEntries(root: Record<string, unknown>): RunEntry[] | null {
   if (String(root.bomFormat ?? "") !== "CycloneDX") return null;
   const components = Array.isArray(root.components) ? root.components : [];
   return components
-    .map((raw) => {
+    .map((raw): RunEntry | null => {
       const c = raw as Record<string, unknown>;
       // `purl` is the stable identity when present; `name@version` otherwise.
       // Neither is invented: a component with no name is a malformed entry and
@@ -84,7 +84,7 @@ function spdxEntries(root: Record<string, unknown>): RunEntry[] | null {
   if (typeof root.spdxVersion !== "string") return null;
   const packages = Array.isArray(root.packages) ? root.packages : [];
   return packages
-    .map((raw) => {
+    .map((raw): RunEntry | null => {
       const p = raw as Record<string, unknown>;
       const refs = Array.isArray(p.externalRefs) ? p.externalRefs : [];
       const purl = refs

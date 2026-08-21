@@ -95,7 +95,7 @@ Coverage is mapped requirement → test as `file :: "test name"`:
 | NFR-007     | ✅ Covered | `flows.test.ts` :: "rejects when ix-flow cannot be spawned (PATH has no ix-flow)"; :: "sets process.exitCode when ix-flow exits non-zero"; `write.test.ts` validation-command tests confirm `quire` is emitted, not executed. (Version pinning is an accepted gap — Review.) |
 | NFR-008     | ✅ Covered | `catalog.test.ts` :: "skips candidates that do not resolve to a module root" (missing-manifest skip); :: "aborts (strict) on a present but unparseable manifest.yaml" (strict-abort path).                                                                                   |
 | NFR-010     | ⚠️ Spec-ahead-of-code | Module pins record `version` and `ref` only; no resolved commit SHA is stored, so a repointed tag resolves differently under the same pin and nothing notices. Stated ahead of the implementation — `agent-ix/quoin#132`. |
-| NFR-011     | ⚠️ Spec-ahead-of-code | No performance measurement exists anywhere in the repository — no benchmark, no timing assertion, no threshold. The budget is stated so a regression fails a test rather than being absorbed as "CI got slower" — `agent-ix/quoin#133`. |
+| NFR-011     | ✅ Covered | `tests/bundle-scale-performance.test.ts` — TC-290 generates 250 Markdown documents before timing, measures the owned completeness phase under 5s, and observes exactly one pass/250 read attempts. Advisor and shared-suite auditor core workloads run at 250, 1k, 5k and 10k obligations after the explicitly excluded Quire boundary; each 10k phase is under 1s and median 5k→10k growth is at most 3×. `matrix` is excluded because Quoin delegates it directly to `ix-flow`; timing that workflow here would attribute another component's work to Quoin. |
 | NFR-012     | ⚠️ Partial | The quire half is covered: `quire-contract.test.ts` TC-114 asserts the version premise names found/required/consequence, TC-118 validates a payload from the **installed** quire. The module half is `scripts/release-drift.js pins`, which no test invokes. |
 
 ## Functional Requirement Coverage
@@ -311,7 +311,7 @@ generated tests under `tests/props/` and `Unit` for the rest.
 | TC-173 | A clean scan discharges its binding — neither undischarged nor vacuous | Unit | P0 | FR-034-AC-9 | ✅ |
 | TC-174 | A scan that evaluated no rules is reported vacuous at high: it found nothing because it looked for nothing | Unit | P0 | FR-034-AC-10 | ✅ |
 | TC-175 | With no rule count reported the vacuity check stays silent rather than guessing | Unit | P0 | FR-034-AC-11 | ✅ |
-| TC-176 | Each run-shaped binding pairs with its OWN suite's run when a scan is bound to the same obligation — silent until scans existed, wrong from the moment they did | Unit | P0 | FR-034-AC-12 | ✅ |
+| TC-176 | Each run-shaped binding pairs with its OWN suite's run, including vacuity and HEAD freshness, when a scan is bound to the same obligation — silent until scans existed, wrong from the moment they did | Unit | P0 | FR-034-AC-12 | ✅ |
 | TC-177 | `quoin evidence record --adapter sarif` writes a FindingRecord under `scans/` and nothing under `runs/` — the capability shipped unreachable and this is what reaches it | Integration | P0 | FR-034-AC-13 | ✅ |
 | TC-178 | A clean scan recorded through the command keeps `findings: []` and its rule count | Integration | P0 | FR-034-AC-14 | ✅ |
 | TC-179 | The command selects a finding adapter from `--tool` when none is named | Integration | P0 | FR-034-AC-15 | ✅ |
