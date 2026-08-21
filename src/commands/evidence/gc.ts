@@ -9,7 +9,14 @@ export default class EvidenceGc extends QuoinCommand {
 
 Dir-per-suite is what makes this local — a policy change for one expensive suite
 (mutation, DAST, fuzz) touches one directory, and a .gitignore decision can be
-made per suite rather than for the whole store.`;
+made per suite rather than for the whole store.
+
+Takes no --module, deliberately, though every sibling command does: --module
+supplies the traceability model to quire, and gc never invokes quire and never
+loads a catalog. It is a repo-scoped store operation — it walks runs/ and
+scans/ under spec/evidence/ and decides from timestamps and bindings alone,
+none of which carry catalog semantics. Should retention ever become
+module-policy-driven, the flag stops being a no-op and gets added then (#171).`;
 
   static examples = ["quoin evidence gc --dry-run", "quoin evidence gc"];
 
