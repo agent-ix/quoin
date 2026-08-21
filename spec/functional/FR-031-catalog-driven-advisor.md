@@ -127,6 +127,7 @@ against another.
 | FR-031-AC-16 | The join check carries no exemption for a `characteristics` value the active catalog no longer declares. | Test (TC-251) |
 | FR-031-AC-17 | A statement naming a magic-value comparison, constant-time behaviour, or equivalence with a reference implementation mints the corresponding characteristic; a function signature and a recorded-snapshot comparison mint neither of the first or last. | Test (TC-252) |
 | FR-031-AC-18 | An obligation with a binding and no fault-detection score mints `fault-detection-unmeasured`; one whose weakest bound score is below 1 mints `fault-detection-failed`; one with no binding, and one whose evidence was not consulted, mint neither. | Test (TC-253) |
+| FR-031-AC-19 | The obligation's structured `parameters` reach the advisor: a `target` or `threshold` key mints `quantified-threshold` regardless of the statement's wording, and parameters carrying neither key mint nothing. | Test (TC-266) |
 
 > **CR-026 note (the advisor reads evidence — 2026-08-19):** `concolic-execution`
 > was the last catalog method no requirement could elicit (CR-025 took that from

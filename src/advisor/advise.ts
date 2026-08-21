@@ -48,6 +48,17 @@ export interface ObligationFacts {
    * which is reading it, not judging it.
    */
   criticality?: string | null;
+  /**
+   * The obligation's structured `parameters`, as quire emits them —
+   * `{"target": "< 4 min", "threshold": "< 5 min"}` on an NFR measurement row.
+   *
+   * The only *structured* signal quire provides about an obligation, and it
+   * was typed, parsed and read nowhere while the advisor re-derived everything
+   * by regex over the statement prose (agent-ix/quoin#166). A quantified
+   * threshold is exactly the fact a verification-method advisor should key on,
+   * and the one fact it cannot get wrong by misreading a sentence.
+   */
+  parameters?: Record<string, string>;
 }
 
 /**
@@ -350,12 +361,21 @@ export function characteristicsOf(
   statement: string,
   criticality?: string | null,
   evidence?: ObligationEvidence,
+  parameters?: Record<string, string>,
 ): string[] {
   const text = prose(statement);
   const matched = STATEMENT_CHARACTERISTICS.filter(([, re]) =>
     re.test(text),
   ).map(([name]) => name);
   if (parseSpace(statement) !== null) matched.push("configuration-matrix");
+  // ── Structured signal (agent-ix/quoin#166) ──
+  // A `target` or `threshold` key in the obligation's own `parameters` IS a
+  // quantified threshold, whatever the statement happens to say. The regex
+  // above stays for prose-only corpora; this cannot false-positive on prose
+  // at all, the same argument `parseSpace` makes for `configuration-matrix`.
+  if (parameters && ("target" in parameters || "threshold" in parameters)) {
+    matched.push("quantified-threshold");
+  }
   // Read from the value, never inferred from a threshold this code chose.
   // Worth stating plainly: 2,304 of 2,304 `Acceptance Criteria` tables in the
   // ecosystem carry no criticality column, so this mints for nothing today.
@@ -436,7 +456,12 @@ export function mintableCharacteristics(): Set<string> {
  */
 export function advise(catalog: MethodCatalog, facts: ObligationFacts): Advice {
   const characteristics = new Set(
-    characteristicsOf(facts.statement, facts.criticality, facts.evidence),
+    characteristicsOf(
+      facts.statement,
+      facts.criticality,
+      facts.evidence,
+      facts.parameters,
+    ),
   );
   const shapes = new Set(facts.propertyShape ? [facts.propertyShape] : []);
   const objects = new Set(facts.objectTypes ?? []);

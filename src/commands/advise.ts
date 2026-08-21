@@ -226,6 +226,10 @@ function factsFor(
     propertyShape: shape?.property ?? null,
     archetype: shape?.archetype ?? archetypeOf(obligation.id),
     criticality: obligation.criticality ?? null,
+    // The one STRUCTURED signal quire emits about an obligation. It was typed
+    // and parsed and then dropped on this exact seam, so the advisor guessed
+    // from prose while `{"target": "< 4 min"}` sat unread in the record (#166).
+    parameters: obligation.parameters,
     evidence,
   };
 }

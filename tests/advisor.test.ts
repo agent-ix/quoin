@@ -508,3 +508,64 @@ describe("TC-253 the evidence-side facts", () => {
     );
   });
 });
+
+describe("TC-266 structured parameters mint quantified-threshold (FR-031-AC-19)", () => {
+  // The one STRUCTURED signal quire emits about an obligation was typed,
+  // parsed and read nowhere (#166): the advisor guessed from prose while
+  // `{"target": "< 4 min"}` sat unread in the record.
+  const catalog: MethodCatalog = loadMethodCatalog([
+    moduleWith(`name: fixture-benchmarking
+verification_catalog:
+  performance-benchmarking:
+    name: Performance benchmarking
+    class: Test
+    definition: Measure against a stated budget.
+    evidence_kind: Benchmark
+    applicability:
+      characteristics: [latency, throughput, quantified-threshold]
+`),
+  ]);
+
+  // TC-266
+  it("advises performance-benchmarking for the ticket's NFR-022-M-12 record", () => {
+    const advice = advise(catalog, {
+      id: "NFR-022-M-12",
+      statement: "PR-tier CI wall clock (fmt/clippy/test/deny/unsafe-audit)",
+      authoredMethod: "CI Measurement",
+      parameters: { target: "< 4 min", threshold: "< 5 min" },
+    });
+    const methods = advice.recommended.map((r) => r.method);
+    expect(methods).toContain("performance-benchmarking");
+    expect(
+      advice.recommended
+        .find((r) => r.method === "performance-benchmarking")
+        ?.reasons.map((x) => x.value),
+    ).toContain("quantified-threshold");
+  });
+
+  // TC-266
+  it("a parameters.target mints quantified-threshold whatever the statement says", () => {
+    expect(
+      characteristicsOf("Nothing numeric in this sentence.", null, undefined, {
+        target: "under budget",
+      }),
+    ).toContain("quantified-threshold");
+    expect(
+      characteristicsOf("Nothing numeric in this sentence.", null, undefined, {
+        threshold: "< 5 min",
+      }),
+    ).toContain("quantified-threshold");
+  });
+
+  // TC-266
+  it("parameters carrying neither key mint nothing, and absent parameters change nothing", () => {
+    expect(
+      characteristicsOf("Nothing numeric in this sentence.", null, undefined, {
+        unit: "minutes",
+      }),
+    ).not.toContain("quantified-threshold");
+    expect(
+      characteristicsOf("Nothing numeric in this sentence."),
+    ).not.toContain("quantified-threshold");
+  });
+});
