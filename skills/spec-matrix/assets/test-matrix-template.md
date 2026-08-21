@@ -38,8 +38,8 @@ This matrix ensures comprehensive test coverage by transforming requirements int
 
 | Test ID | Title | Type | Priority | Traces To | Status |
 |---------|-------|------|----------|-----------|--------|
-| TC-001 | [Test Title] | [Unit/Integration/E2E/Property] | [P0/P1/P2/P3/P4] | [US-XXX-AC-X] | [✅/⚠️/❌/🚧/⛔] |
-| TC-002 | [Test Title] | [Unit/Integration/E2E/Property] | [P0/P1/P2/P3/P4] | [FR-XXX-AC-X] | [✅/⚠️/❌/🚧/⛔] |
+| TC-001 | [Test Title] | [Unit/Integration/E2E/Property] | [P0/P1/P2/P3/P4] | [US-XXX-AC-X] | [✅/❌/🚧/⛔] |
+| TC-002 | [Test Title] | [Unit/Integration/E2E/Property] | [P0/P1/P2/P3/P4] | [FR-XXX-AC-X] | [✅/❌/🚧/⛔] |
 
 **Note**: Detailed test case definitions should be in separate files in `test-cases/` directory.
 
@@ -82,7 +82,7 @@ is validated, so `Unit / pg_test` and other compounds are rejected.
 | Integration ID | Purpose | Service | Type | Test Cases | Status |
 |----------------|---------|---------|------|------------|--------|
 | INT-010 | Data persistence | postgres.ix | database | TC-INT-010a, TC-INT-010b, TC-INT-010c | ✅ |
-| INT-011 | Cache operations | redis.ix | service | TC-INT-011, TC-INT-012 | ⚠️ |
+| INT-011 | Cache operations | redis.ix | service | TC-INT-011, TC-INT-012 | 🚧 |
 | INT-012 | Message publishing | event-bus | event | TC-INT-013, TC-INT-014, TC-INT-015 | ❌ |
 
 ### Browser/UI Integrations

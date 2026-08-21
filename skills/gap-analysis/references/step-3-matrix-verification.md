@@ -13,7 +13,7 @@ stay here — the command reports and does not judge (quire-rs FR-050-CON-1).
 Built by `spec-matrix` (`quoin/skills/spec-matrix/SKILL.md`). Key tables:
 
 - **Test Case Summary** — `Test ID | Title | Type | Priority | Traces To | Status`, where
-  `Test ID` = `TC-xxx`, `Traces To` = `FR-XXX-AC-X` etc., `Status` ∈ `✅ ⚠️ ❌ 🚧 ⛔`.
+  `Test ID` = `TC-xxx`, `Traces To` = `FR-XXX-AC-X` etc., `Status` ∈ `✅ ❌ 🚧 ⛔` (`⚠️` retired — partial work is `🚧`).
 - **Per-requirement coverage** — StR/US/FR/NFR → AC → TC → Status tables.
 
 What each column *means* is not this skill's knowledge either: the active module declares it
