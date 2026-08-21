@@ -1,12 +1,11 @@
 #!/usr/bin/env node
 /**
- * Copy the vendored quire output schemas into `dist/` (FR-030).
+ * Copy runtime JSON schemas into `dist/` (FR-029, FR-043).
  *
- * `src/quire/contract.ts` resolves them relative to its own module directory,
- * which is `src/quire/` when tests import the sources and `dist/` once the
- * bundler has flattened the chunks. The bundler moves code, not data, so the
- * JSON has to be placed beside the built output or every runtime read fails
- * with ENOENT — which is exactly how this was found.
+ * The quire contract and measurement validator resolve them relative to their
+ * own module directory, which is below `src/` when tests import sources and
+ * `dist/` once the bundler has flattened chunks. The bundler moves code, not
+ * data, so JSON has to be placed beside built output or runtime reads fail.
  */
 
 import { copyFileSync, mkdirSync, readdirSync } from "node:fs";
@@ -20,5 +19,11 @@ const to = join(repo, "dist", "schemas");
 mkdirSync(to, { recursive: true });
 for (const name of readdirSync(from)) {
   copyFileSync(join(from, name), join(to, name));
+  console.log(`dist/schemas/${name}`);
+}
+
+const evidenceSchemas = join(repo, "src", "evidence", "schemas");
+for (const name of readdirSync(evidenceSchemas)) {
+  copyFileSync(join(evidenceSchemas, name), join(to, name));
   console.log(`dist/schemas/${name}`);
 }

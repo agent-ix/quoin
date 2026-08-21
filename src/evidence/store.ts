@@ -16,16 +16,21 @@ import {
   rmSync,
   writeFileSync,
 } from "node:fs";
+import { createHash } from "node:crypto";
 import { dirname, join } from "node:path";
+
+import { validateMeasurementRecord } from "./measurement.js";
 
 import {
   RUNS_DIR,
   SCANS_DIR,
+  MEASUREMENTS_DIR,
   STORE_SCHEMA_VERSION,
   type BaselineFile,
   type Binding,
   type BindingsFile,
   type FindingRecord,
+  type MeasurementRecord,
   type RunRecord,
 } from "./types.js";
 
@@ -70,6 +75,35 @@ export function runPath(repo: string, suite: string, commit: string): string {
 /** `scans/<SUITE-N>/<commit12>.json` — one file is one scan of one suite. */
 export function scanPath(repo: string, suite: string, commit: string): string {
   return join(storeRoot(repo), SCANS_DIR, suite, `${short(commit)}.json`);
+}
+
+/**
+ * Stable path for one plan/definition/subject/scope/revision observation.
+ *
+ * Only the validated plan id reaches the path. The remaining identity is
+ * hashed so subject ids and source revisions can never become path segments.
+ */
+export function measurementPath(
+  repo: string,
+  record: MeasurementRecord,
+): string {
+  const validated = validateMeasurementRecord(record);
+  const identity = canonicalJson({
+    definitionVersion: validated.plan.definitionVersion,
+    scope: validated.scope,
+    sourceRevision: validated.sourceRevision,
+    subject: validated.subject,
+  });
+  const digest = createHash("sha256")
+    .update(identity)
+    .digest("hex")
+    .slice(0, 24);
+  return join(
+    storeRoot(repo),
+    MEASUREMENTS_DIR,
+    validated.plan.id,
+    `${digest}.json`,
+  );
 }
 
 /** The 12-character commit prefix the run filenames use. */
@@ -171,6 +205,22 @@ export function writeScan(repo: string, record: FindingRecord): string {
   const path = scanPath(repo, record.suite, record.commit);
   writeCanonical(path, { ...record, schemaVersion: STORE_SCHEMA_VERSION });
   return path;
+}
+
+/** Validate and canonically persist one policy-free observation. */
+export function writeMeasurement(
+  repo: string,
+  record: MeasurementRecord,
+): string {
+  const path = measurementPath(repo, record);
+  writeCanonical(path, record);
+  return path;
+}
+
+/** Read and validate one measurement file by its resolved path. */
+export function readMeasurement(path: string): MeasurementRecord | null {
+  const record = readJson<unknown>(path);
+  return record === null ? null : validateMeasurementRecord(record);
 }
 
 /** Read one scan record, or `null` when that (suite, commit) has none. */

@@ -1,0 +1,31 @@
+{
+  "collectedAt": "2026-08-21T18:35:00Z",
+  "environment": {
+    "id": "analysis-container-v3"
+  },
+  "plan": {
+    "definitionVersion": "1.1.0",
+    "id": "MP-CODE-STRUCTURE"
+  },
+  "rawEvidence": {
+    "digest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "reference": "artifacts/complexity.json"
+  },
+  "schemaVersion": 1,
+  "scope": {
+    "path": "src/evidence/store.ts",
+    "repository": "agent-ix/quoin"
+  },
+  "sourceRevision": "abcdef0123456789abcdef0123456789abcdef01",
+  "subject": {
+    "id": "src/evidence/store.ts#gc",
+    "kind": "function"
+  },
+  "tool": {
+    "configurationDigest": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+    "name": "complexity-observer",
+    "version": "0.4.2"
+  },
+  "unit": "decision-points",
+  "value": 8
+}
