@@ -3,12 +3,7 @@ import { execFileSync } from "node:child_process";
 import { Flags } from "@oclif/core";
 
 import { QuoinCommand } from "../../base.js";
-import {
-  STORE_SCHEMA_VERSION,
-  affirm,
-  readBindings,
-  writeBindings,
-} from "../../evidence/index.js";
+import { affirm, readBindings, writeBindings } from "../../evidence/index.js";
 import {
   checkVersionPremise,
   parseCoverage,
@@ -107,7 +102,6 @@ clear itself on the next CI run and the detector would never fire.`;
     }
 
     writeBindings(flags.repo, {
-      schemaVersion: STORE_SCHEMA_VERSION,
       bindings,
     });
     const outcome = {

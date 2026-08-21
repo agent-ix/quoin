@@ -61,6 +61,7 @@ export default defineConfig(({ command }) => ({
         "commands/advise": "src/commands/advise.ts",
         "commands/completeness": "src/commands/completeness.ts",
         "commands/assurance": "src/commands/assurance.ts",
+        "commands/graph": "src/commands/graph.ts",
         "commands/config/index": "src/commands/config/index.ts",
         "commands/config/get": "src/commands/config/get.ts",
         "commands/config/set": "src/commands/config/set.ts",
