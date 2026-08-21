@@ -35,17 +35,17 @@ review found; remediation is tracked on the tickets, not performed here.
 
 ## Findings
 
-| ID      | Severity | Summary                                                                                                | Refs                                    |
-| ------- | -------- | ------------------------------------------------------------------------------------------------------ | --------------------------------------- |
-| FND-001 | high     | #173: devDependency `@agent-ix/quire-cli` widened to `^0.28.0` — a version that does not exist on npm  | package.json:100 → #176                 |
-| FND-002 | high     | #173: `pnpm-lock.yaml` not regenerated — still resolves quire-cli 0.26.0, frozen-lockfile install fails | pnpm-lock.yaml:116 → #176               |
-| FND-003 | medium   | #173: new `TC-116` test nested under TC-111's `describe`, and the TC-116 id reused for a different oracle | tests/quire-contract.test.ts:93 → #178  |
-| FND-004 | medium   | #173: matrix row TC-116 and FR-029-AC-7 not updated for the reused id — same tag, two oracles          | spec/matrix.md:263 → #178               |
-| FND-005 | medium   | #173: `ImplementsRecord` drift caught by hand, not by a gate — interface-vs-schema still unchecked     | src/quire/types.ts:66 → #179            |
-| FND-006 | medium   | #173: intended default-modules pin bump excluded because it makes TC-118 fail — reconcile defect       | default-modules.yaml:13 → #174          |
-| FND-007 | medium   | #163: nothing couples the skills' status vocabulary to the module manifest — next drift is undetectable | skills/spec-matrix/SKILL.md:130 → #177  |
-| FND-008 | low      | #175: trace-binding semantics changed with no test of the effect; in this repo the edit is a coverage no-op | tests/cli.test.ts:667                   |
-| FND-009 | low      | #163: `🚧 Partial` in the example rows re-admits two forms for one meaning as annotation text          | skills/spec-matrix/assets/test-matrix-example.md:53 → #177 |
+| ID      | Severity | Summary                                                                                                     | Refs                                                       |
+| ------- | -------- | ----------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| FND-001 | high     | #173: devDependency `@agent-ix/quire-cli` widened to `^0.28.0` — a version that does not exist on npm       | package.json:100 → #176                                    |
+| FND-002 | high     | #173: `pnpm-lock.yaml` not regenerated — still resolves quire-cli 0.26.0, frozen-lockfile install fails     | pnpm-lock.yaml:116 → #176                                  |
+| FND-003 | medium   | #173: new `TC-116` test nested under TC-111's `describe`, and the TC-116 id reused for a different oracle   | tests/quire-contract.test.ts:93 → #178                     |
+| FND-004 | medium   | #173: matrix row TC-116 and FR-029-AC-7 not updated for the reused id — same tag, two oracles               | spec/matrix.md:263 → #178                                  |
+| FND-005 | medium   | #173: `ImplementsRecord` drift caught by hand, not by a gate — interface-vs-schema still unchecked          | src/quire/types.ts:66 → #179                               |
+| FND-006 | medium   | #173: intended default-modules pin bump excluded because it makes TC-118 fail — reconcile defect            | default-modules.yaml:13 → #174                             |
+| FND-007 | medium   | #163: nothing couples the skills' status vocabulary to the module manifest — next drift is undetectable     | skills/spec-matrix/SKILL.md:130 → #177                     |
+| FND-008 | low      | #175: trace-binding semantics changed with no test of the effect; in this repo the edit is a coverage no-op | tests/cli.test.ts:667                                      |
+| FND-009 | low      | #163: `🚧 Partial` in the example rows re-admits two forms for one meaning as annotation text               | skills/spec-matrix/assets/test-matrix-example.md:53 → #177 |
 
 ## Detail
 
@@ -143,19 +143,19 @@ skills again with nothing to notice. #177 tracks the drift gate.
 `FR-025-AC-6, FR-023-AC-4`. Fixture experiment against the installed quire (fresh scope, one
 FR with two ACs, one test):
 
-| comment form                                | backed | unbacked      |
-| ------------------------------------------- | ------ | ------------- |
-| `// FR-001-AC-1 / FR-001-AC-2: …`           | 1/2    | `FR-001-AC-2` |
-| `// FR-001-AC-1, FR-001-AC-2: …`            | 2/2    | —             |
-| `// Trace:` lines only                      | 2/2    | —             |
-| comma prose + `// Trace:` lines             | 2/2    | —             |
+| comment form                      | backed | unbacked      |
+| --------------------------------- | ------ | ------------- |
+| `// FR-001-AC-1 / FR-001-AC-2: …` | 1/2    | `FR-001-AC-2` |
+| `// FR-001-AC-1, FR-001-AC-2: …`  | 2/2    | —             |
+| `// Trace:` lines only            | 2/2    | —             |
+| comma prose + `// Trace:` lines   | 2/2    | —             |
 
 So the legacy prose form **does** mint bindings and the slash **does** drop the second id —
 the PR's mechanism claim is verified. But in quoin's actual file, explicit `// Trace:
 FR-023-AC-4` / `// Trace: FR-025-AC-6` lines (tests/cli.test.ts:672-673) sit on the **same
 test** and already bound both ids before the edit. The normalization added a duplicate binding,
 not a new one: coverage totals are unchanged, and matrix rows TC-078/TC-088 were backed before
-and after. This refines the seed finding: the *class* (a trace-binding semantic change landed
+and after. This refines the seed finding: the _class_ (a trace-binding semantic change landed
 with only the sweep's "no new untracked symbols" gate, no test of the binding itself) is the
 same one quire-cli#54 instantiated — but there the minted FR-015-AC-5 binding was novel and
 untested, while here it is redundant and harmless. Severity low; no quoin ticket warranted
@@ -165,7 +165,7 @@ beyond the ecosystem-level sweep-harness ticket (quire-rs NR-6 scope).
 
 #163 argued "a second form for one meaning enforces nothing" — and then wrote
 `🚧 Partial` into both retained example rows (test-matrix-example.md:53-54) and
-`🚧 In Progress / Partial / Pending` into the Markers list. The *marker* vocabulary is clean
+`🚧 In Progress / Partial / Pending` into the Markers list. The _marker_ vocabulary is clean
 (the module classes the marker, not the text), but the example is the thing agents copy, and
 it now teaches "Partial" as a sub-state spelled in prose — the same two-forms-one-meaning
 shape one layer down, invisible to the module by construction. Folded into #177 (it is the
@@ -177,7 +177,7 @@ second clause of that ticket).
   design (manual-only policy); the compensating control — review — did not happen. This
   artifact is the retroactive compensation.
 - #173's PR body is unusually candid: it names the TC-118 exclusion, the ImplementsRecord
-  drift direction, and the tautology trap. Every high finding here was *discoverable from the
-  PR body plus a registry check* — a pre-merge review would likely have caught FND-001/002.
+  drift direction, and the tautology trap. Every high finding here was _discoverable from the
+  PR body plus a registry check_ — a pre-merge review would likely have caught FND-001/002.
 - `npm test` was green (462/463 passing) for #163/#173 because vitest never resolves the
   devDependency range — the breakage is install-time only, which is why it survived.

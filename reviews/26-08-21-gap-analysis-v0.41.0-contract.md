@@ -32,12 +32,12 @@ now backs, and the repo's only release-lag gate cannot run. All gaps are tickete
 
 ## Findings
 
-| ID      | Severity | Summary                                                                                       | Refs                            |
-| ------- | -------- | ---------------------------------------------------------------------------------------------- | ------------------------------- |
-| FND-001 | medium   | TC-116 backs FR-029-AC-7 with two different oracles; matrix row and AC text describe only one | spec/matrix.md:263 → #178       |
-| FND-002 | medium   | TC-118's vacuity mode is live under the intended pin bump; reconcile writes a shared directory | default-modules.yaml:13 → #174  |
-| FND-003 | high     | release-drift is unrunnable on current main; the drift it guards is exactly the current state | .github/workflows/release-drift.yml:32 → #176 |
-| FND-004 | low      | The version premise floor is sound, but the installed binary's version stamp is not trustworthy | src/quire/contract.ts:44        |
+| ID      | Severity | Summary                                                                                         | Refs                                          |
+| ------- | -------- | ----------------------------------------------------------------------------------------------- | --------------------------------------------- |
+| FND-001 | medium   | TC-116 backs FR-029-AC-7 with two different oracles; matrix row and AC text describe only one   | spec/matrix.md:263 → #178                     |
+| FND-002 | medium   | TC-118's vacuity mode is live under the intended pin bump; reconcile writes a shared directory  | default-modules.yaml:13 → #174                |
+| FND-003 | high     | release-drift is unrunnable on current main; the drift it guards is exactly the current state   | .github/workflows/release-drift.yml:32 → #176 |
+| FND-004 | low      | The version premise floor is sound, but the installed binary's version stamp is not trustworthy | src/quire/contract.ts:44                      |
 
 ## Release state (recorded as fact, not finding)
 
@@ -79,7 +79,7 @@ The mismatch is threefold:
 
 - **The AC oracle is stale.** FR-029-AC-7 enumerates "every optional key", but the sentence's
   concrete rejection oracle (statement hash) belongs to the v0.39 key set. The v0.41.0 keys
-  have a *different* rejection oracle (required-key omission) that no spec text names.
+  have a _different_ rejection oracle (required-key omission) that no spec text names.
 - **The matrix cannot see it.** `quire coverage` reconciles row → tag → symbol. Both symbols
   mint `TC-116`, so the row is backed regardless of which oracle runs, and ✅ stands over an
   underspecified claim. Duplicate-id detection is a quire-rs gap (NR-5 in the QA plan; same
@@ -106,18 +106,18 @@ anti-vacuity guard (tests/quire-contract.test.ts:374-378: the fixture **must** m
 `default-modules.yaml` to iso 0.18.0 / process 0.23.0 makes it fail with
 `model-mints-nothing` — `reconcile(..., { mode: "lazy" })` materializes the changed refs into
 a module set that loads no `trace_targets`, `quire coverage` mints nothing, and a payload
-without `implements` would validate against the *old* schema too. The guard converted a
+without `implements` would validate against the _old_ schema too. The guard converted a
 would-be silent vacuity into a loud failure; #173 excluded the bump and filed #174.
 
 The gaps that remain, beyond the ticketed reconcile defect:
 
 - **Shared mutable state.** The reconcile runs in `tests/global-setup.ts` and rewrites
   `~/.ix/filament/modules` — the directory every quire/quoin invocation on the machine reads.
-  A quoin test run after a pin change can leave *every other repo's* validation running
+  A quoin test run after a pin change can leave _every other repo's_ validation running
   against a module set that loads no traceability model. Until #174 is fixed, a pin bump on a
   branch is a machine-global hazard, not a repo-local one. (Supporting evidence: coverage runs
   on this machine currently emit `DuplicateArchetype: … contributed by modules
-  ["spec-artifacts-process", "spec-artifacts-process"]; first-wins` — the shared module set
+["spec-artifacts-process", "spec-artifacts-process"]; first-wins` — the shared module set
   already carries reconcile residue of some form.)
 - **The intended state is unshipped.** Defaults still pin iso `v0.17.0` / process `v0.21.1`,
   so quoin ships module defaults that predate the `⚠️` retirement and the `source_exclude`
@@ -147,7 +147,7 @@ released, so the published @agent-ix/quoin silently lags its source." Current st
   unreachable, so the plugin-manifest version check and the module-pin report are dark too.
 
 Verification for #176's fix: `pnpm install --frozen-lockfile` green locally, then a manual
-`release-drift` dispatch green (it will correctly *fail the drift check itself* until a tag
+`release-drift` dispatch green (it will correctly _fail the drift check itself_ until a tag
 ships — that failure is the guard working, distinct from the install failure that prevents it
 from running at all).
 
@@ -164,6 +164,6 @@ binary on this machine reports **0.23.0** while actually being the quire-rs v0.4
 test never compares binary version to tag). Today that mis-stamp is harmless here (0.23.0 ≥
 0.21.0, premise passes, and the binary genuinely satisfies the contract). But any future
 raise of `minimumCli` past 0.23.0 — e.g. to the first release emitting `undeclared_statuses`
-— would make TC-118 wrongly reject or skip on a *current* binary. Sequencing consequence:
+— would make TC-118 wrongly reject or skip on a _current_ binary. Sequencing consequence:
 **quire-cli#52 must land before quoin ever raises this floor.** Recorded here so the
 dependency is visible from the quoin side; the defect and fix are quire-cli's.
