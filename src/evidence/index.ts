@@ -35,6 +35,7 @@ export {
 } from "./store.js";
 
 export {
+  MUTATION_SCORE_METRIC,
   RUNS_DIR,
   STORE_SCHEMA_VERSION,
   type Affirmation,

@@ -45,6 +45,15 @@ export const STORE_SCHEMA_VERSION = 1;
  * identity and must be mapped to it by the adapter (agent-ix/quoin#91) before a
  * record is written.
  */
+/**
+ * The `metric` value naming a mutation score — killed mutants over viable
+ * ones, in `[0, 1]`.
+ *
+ * One constant, imported by the adapter that writes it and the auditor that
+ * filters on it, so the two cannot drift into different spellings.
+ */
+export const MUTATION_SCORE_METRIC = "mutation-score";
+
 export interface RunEntry {
   /** FR-051 stable symbol identity. */
   symbol: string;
@@ -54,6 +63,21 @@ export interface RunEntry {
    * coverage percentage, a measured latency. Absent for a plain pass/fail.
    */
   score?: number;
+  /**
+   * What `score` measures — `"mutation-score"`, `"coverage"`, `"latency-ms"`,
+   * or another adapter-declared name. Open vocabulary: well-known values are
+   * documented, not enforced, the same posture as `evidenceKind`.
+   *
+   * The adapter knows — `cargo-mutants` produces a mutation score and nothing
+   * else — so the discriminator costs the adapter one field and removes the
+   * guessing entirely (agent-ix/quoin#138). Before it existed the auditor
+   * scoped mutation scores by tool name against the catalog's
+   * `mutation-testing.tooling`, which named a method id in the engine, was a
+   * tool allowlist by another name, and did not generalize to the next
+   * numeric threshold. An entry without a `metric` is not a mutation score
+   * for the purposes of a mutation floor.
+   */
+  metric?: string;
   /** Trace ids this symbol carries, as the adapter read them. */
   traceIds?: string[];
   /**

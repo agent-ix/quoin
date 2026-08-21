@@ -11,7 +11,6 @@ export {
   findingKey,
   ratchet,
   scoresFor,
-  toolsFor,
   type AuditInput,
   type AuditReport,
   type Finding,

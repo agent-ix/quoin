@@ -71,7 +71,8 @@ export interface ObligationEvidence {
   /** True when at least one binding names this obligation. */
   bound: boolean;
   /**
-   * Fault-detection scores from runs bound to it, tool-scoped by the catalog.
+   * Fault-detection scores from runs bound to it — entries whose declared
+   * `metric` says they are mutation scores (agent-ix/quoin#138).
    *
    * Empty while `bound` is true is the interesting case, not an error: the
    * obligation is exercised and nothing says the exercise discriminates.

@@ -18,7 +18,7 @@
  */
 
 import type { Obligation } from "../quire/index.js";
-import { scanIsVacuous } from "../evidence/index.js";
+import { MUTATION_SCORE_METRIC, scanIsVacuous } from "../evidence/index.js";
 import { parseSpace, twayCoverage } from "./combinatorial.js";
 import type { Binding, FindingRecord, RunRecord } from "../evidence/index.js";
 import type { MethodCatalog } from "../advisor/index.js";
@@ -526,15 +526,7 @@ function mutationFinding(
   const floor = floors[obligation.criticality];
   if (floor === undefined) return null;
 
-  if (!mutationToolsIn(input.catalog)) {
-    // No catalog entry declares a mutation method, so "did a mutation tool
-    // produce this number" cannot be asked. Reporting `unmeasured` here fired
-    // on every obligation with a floor — including ones holding a real score —
-    // which is the documented behaviour's exact opposite.
-    return null;
-  }
-
-  const scores = scoresFor(bindings, runs, input.catalog);
+  const scores = scoresFor(bindings, runs);
   if (scores.length === 0) {
     // Distinct from `undischarged`: this obligation may be thoroughly tested and
     // still have nothing saying the tests detect anything. A demanded threshold
@@ -565,72 +557,32 @@ function mutationFinding(
 }
 
 /**
- * Mutation scores among the runs bound to this obligation.
- *
- * **Scoped by tool, and that scoping is load-bearing.** `RunEntry.score` is
- * deliberately generic — its own contract says "a mutation score, a coverage
- * percentage, a measured latency" — so reading every scored entry would compare
- * a p95 latency in milliseconds against a floor of `0.8` and report the
- * obligation as failing. The first draft did exactly that.
- *
- * The tool names come from the catalog's `mutation-testing` entry (`cargo-mutants`,
- * `mutmut`, `stryker`), which is module data. Naming that one method id here is
- * the narrowest way to ask "did a mutation tool produce this number"; the
- * durable fix is a metric discriminator on the entry itself, filed as
- * `agent-ix/quoin#138`. With no such catalog entry, nothing is in scope and the
- * check says nothing rather than something wrong.
- */
-function mutationToolsIn(catalog: AuditInput["catalog"]): Set<string> | null {
-  return toolsFor(catalog, "mutation-testing");
-}
-
-/**
- * The tools one catalog method declares, lowercased — or `null` when the method
- * is absent.
- *
- * Generalised from `mutationToolsIn` so the advisor can ask the same question
- * without a second copy of the lookup (agent-ix/quoin#158). Declaration-driven
- * either way: the method id is named at the call site and the tool names stay
- * module data, so no tool is ever hardcoded here.
- *
- * `null` rather than an empty set is the load-bearing part. With no entry the
- * question "did this kind of tool produce this number" cannot be asked at all,
- * and a caller must say nothing rather than something wrong.
- */
-export function toolsFor(
-  catalog: AuditInput["catalog"],
-  methodId: string,
-): Set<string> | null {
-  const tools = new Set(
-    (catalog?.methods ?? [])
-      .filter((m) => m.id === methodId)
-      .flatMap((m) => m.tooling)
-      .map((t) => t.toLowerCase()),
-  );
-  return tools.size > 0 ? tools : null;
-}
-
-/**
  * Fault-detection scores among the runs bound to this obligation.
  *
- * Exported for the advisor (agent-ix/quoin#158), which needs the same answer to
- * decide whether anything has measured that the tests discriminate. One
+ * **Filtered on the entry's own `metric`, never on the tool name.**
+ * `RunEntry.score` is deliberately generic — its own contract says "a mutation
+ * score, a coverage percentage, a measured latency" — so reading every scored
+ * entry would compare a p95 latency in milliseconds against a floor of `0.8`
+ * and report the obligation as failing. The first draft did exactly that; the
+ * first fix scoped by tool name against the catalog's
+ * `mutation-testing.tooling`, which named a method id in the engine, was a
+ * tool allowlist by another name, and did not generalize. The adapter now
+ * names what it measured at the point of recording (agent-ix/quoin#138), and
+ * an entry without a `metric` is not a mutation score — no fallback read of
+ * the tool string.
+ *
+ * Exported for the advisor (agent-ix/quoin#158), which needs the same answer
+ * to decide whether anything has measured that the tests discriminate. One
  * definition, so the auditor's finding and the advisor's recommendation cannot
  * disagree about what a score is.
  */
-export function scoresFor(
-  bindings: Binding[],
-  runs: RunRecord[],
-  catalog: AuditInput["catalog"],
-): number[] {
+export function scoresFor(bindings: Binding[], runs: RunRecord[]): number[] {
   const bound = new Set(bindings.map((b) => b.suite));
-  const tools = mutationToolsIn(catalog) ?? new Set<string>();
   const out: number[] = [];
   for (const run of runs) {
     if (!bound.has(run.suite)) continue;
-    // A tool string is `cargo-mutants 25.0.0`; match on the leading name.
-    if (![...tools].some((t) => run.tool.toLowerCase().startsWith(t))) continue;
     for (const entry of run.entries) {
+      if (entry.metric !== MUTATION_SCORE_METRIC) continue;
       // `skip` carries no measurement: a skipped symbol's absent score is not a
       // zero, and treating it as one would fail an obligation for a test nobody
       // ran rather than for a test that failed to discriminate.

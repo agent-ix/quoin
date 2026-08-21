@@ -230,6 +230,10 @@ describe("the cargo-mutants adapter", () => {
     const harvest = entries.find((e) => e.symbol === "src/b.rs::harvest");
     expect(harvest?.score).toBe(1);
     expect(harvest?.outcome).toBe("pass");
+    // The measurement is NAMED where it is recorded (#138): the adapter knows
+    // cargo-mutants produces a mutation score and nothing else, and the
+    // auditor filters on this rather than guessing from the tool string.
+    expect(entries.every((e) => e.metric === "mutation-score")).toBe(true);
   });
 
   // Trace: FR-033-AC-9
@@ -292,6 +296,12 @@ describe("quoin evidence record --adapter", () => {
       MUTANTS,
     );
     expect(entries.map((e) => e.score)).toEqual([0.5, 1]);
+    // The discriminator survives the whole record path (#138): what lands in
+    // the store is what the auditor's mutation floor will filter on.
+    expect(entries.map((e) => e.metric)).toEqual([
+      "mutation-score",
+      "mutation-score",
+    ]);
   });
 
   // Trace: FR-033-AC-13
@@ -373,7 +383,12 @@ describe("adapter edge cases the 100% gate requires", () => {
       }),
     );
     expect(entries).toEqual([
-      { symbol: "src/a.rs::f", outcome: "fail", score: 0 },
+      {
+        symbol: "src/a.rs::f",
+        outcome: "fail",
+        score: 0,
+        metric: "mutation-score",
+      },
     ]);
   });
 

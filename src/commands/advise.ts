@@ -4,7 +4,6 @@ import { QuoinCommand } from "../base.js";
 import { advise, loadMethodCatalog } from "../advisor/index.js";
 import type {
   Advice,
-  MethodCatalog,
   ObligationEvidence,
   ObligationFacts,
 } from "../advisor/index.js";
@@ -113,11 +112,7 @@ residue afterwards — labelled as judgement (the FR-042 / ADR-0010 discipline).
     let advice = obligations.map((o) =>
       advise(
         catalog,
-        factsFor(
-          o,
-          shapes.get(o.id),
-          evidenceFor(o.id, bindings, runs, catalog),
-        ),
+        factsFor(o, shapes.get(o.id), evidenceFor(o.id, bindings, runs)),
       ),
     );
     if (flags["mismatch-only"]) advice = advice.filter((a) => a.mismatch);
@@ -205,12 +200,11 @@ function evidenceFor(
   id: string,
   bindings: Binding[],
   runs: RunRecord[],
-  catalog: MethodCatalog,
 ): ObligationEvidence {
   const mine = bindings.filter((b) => b.obligation === id);
   return {
     bound: mine.length > 0,
-    faultDetectionScores: scoresFor(mine, runs, catalog),
+    faultDetectionScores: scoresFor(mine, runs),
   };
 }
 

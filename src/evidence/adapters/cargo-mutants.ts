@@ -1,4 +1,4 @@
-import type { RunEntry } from "../types.js";
+import { MUTATION_SCORE_METRIC, type RunEntry } from "../types.js";
 import {
   AdapterError,
   type AdapterResult,
@@ -113,6 +113,11 @@ export const cargoMutantsAdapter: EvidenceAdapter = {
         // keys, so every symbol here has at least one mutant on one side. A
         // zero-guard would be a branch no input can reach.
         score: hit / viable,
+        // The measurement is named where it is recorded (agent-ix/quoin#138).
+        // cargo-mutants produces a mutation score and nothing else, so the
+        // adapter states it and the auditor never has to guess from the tool
+        // string what the number means.
+        metric: MUTATION_SCORE_METRIC,
       };
     });
 
