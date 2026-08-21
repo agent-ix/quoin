@@ -263,11 +263,19 @@ function moduleDir(): string {
   return dir;
 }
 
-/** Run the real command against a faked quire, capturing log and warn. */
+/**
+ * Run the real command against a faked quire, capturing log and warn.
+ *
+ * The fake serving `payload` goes FIRST on PATH here, from the same argument
+ * the assertions reason about — callers previously faked PATH themselves and
+ * passed the payload in as well, leaving the parameter dead and the two free
+ * to diverge silently. Each describe's `afterEach` restores PATH.
+ */
 async function runAdvise(
   payload: Record<string, unknown>,
   extraArgs: string[] = [],
 ): Promise<{ logged: string[]; warned: string[] }> {
+  process.env.PATH = `${fakeQuireDir(payload)}:${process.env.PATH}`;
   const logged: string[] = [];
   const warned: string[] = [];
   vi.spyOn(Advise.prototype, "log").mockImplementation((m?: string) => {
@@ -300,7 +308,6 @@ describe("TC-274 the battle-test oracle: real uncatalogued values are not mismat
 
   // TC-274
   it("classifies all five uncatalogued, and the Inspection disagreement mismatch", async () => {
-    process.env.PATH = `${fakeQuireDir(battlePayload({ diagnosticValues: true }))}:${savedPath}`;
     const { logged } = await runAdvise(
       battlePayload({ diagnosticValues: true }),
     );
@@ -319,7 +326,6 @@ describe("TC-274 the battle-test oracle: real uncatalogued values are not mismat
 
   // TC-274
   it("carries the three states in JSON", async () => {
-    process.env.PATH = `${fakeQuireDir(battlePayload({ diagnosticValues: true }))}:${savedPath}`;
     const { logged } = await runAdvise(
       battlePayload({ diagnosticValues: true }),
       ["--json"],
@@ -377,7 +383,6 @@ describe("TC-275 an engine predating CR-091 degrades to two states, and says so 
 
   // TC-275
   it("falls back to today's two-state report with an explicit note, not a misclassification", async () => {
-    process.env.PATH = `${fakeQuireDir(battlePayload({ diagnosticValues: false }))}:${savedPath}`;
     const { logged, warned } = await runAdvise(
       battlePayload({ diagnosticValues: false }),
     );
@@ -406,7 +411,6 @@ describe("TC-276 combined --*-only filters union, and the footer tallies the ful
 
   // TC-276
   it("--mismatch-only returns only genuine disagreements", async () => {
-    process.env.PATH = `${fakeQuireDir(battlePayload({ diagnosticValues: true }))}:${savedPath}`;
     const { logged } = await runAdvise(
       battlePayload({ diagnosticValues: true }),
       ["--mismatch-only"],
@@ -421,7 +425,6 @@ describe("TC-276 combined --*-only filters union, and the footer tallies the ful
     // Inconclusive implies no recommendations implies never mismatch, so the
     // intersection was a GUARANTEED zero rows — and the footer then reported
     // `0 mismatch, 0 inconclusive` over a corpus full of both (#168).
-    process.env.PATH = `${fakeQuireDir(battlePayload({ diagnosticValues: true }))}:${savedPath}`;
     const { logged } = await runAdvise(
       battlePayload({ diagnosticValues: true }),
       ["--mismatch-only", "--inconclusive-only"],
