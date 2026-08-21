@@ -2,9 +2,10 @@
 
 import {
   canonicalJson,
-  listMeasurementPaths,
-  readMeasurement,
+  listMeasurementCollectionPaths,
+  readMeasurementCollection,
 } from "./store.js";
+import { measurementRecordsFromCollection } from "./measurement.js";
 import type { MeasurementRecord } from "./types.js";
 
 export interface MeasurementQuery {
@@ -39,6 +40,8 @@ export interface MeasurementIncompatibility {
     | "plan-id"
     | "definition-version"
     | "unit"
+    | "tool"
+    | "configuration"
     | "environment"
     | "sampling"
     | "mixed-revision"
@@ -118,9 +121,11 @@ export function queryMeasurements(
   repo: string,
   query: MeasurementQuery = {},
 ): MeasurementRecord[] {
-  return listMeasurementPaths(repo, query.planId)
-    .map((path) => readMeasurement(path))
-    .filter((record): record is MeasurementRecord => record !== null)
+  return listMeasurementCollectionPaths(repo, query.planId)
+    .map((path) => readMeasurementCollection(path))
+    .flatMap((collection) =>
+      collection === null ? [] : measurementRecordsFromCollection(collection),
+    )
     .filter((record) => matches(record, query))
     .sort(byTimeRevisionKey);
 }
@@ -374,9 +379,23 @@ function pairIncompatibilities(
   mismatch(
     issues,
     key,
+    "tool",
+    `${baseline.tool.name}@${baseline.tool.version}`,
+    `${candidate.tool.name}@${candidate.tool.version}`,
+  );
+  mismatch(
+    issues,
+    key,
+    "configuration",
+    baseline.tool.configurationDigest,
+    candidate.tool.configurationDigest,
+  );
+  mismatch(
+    issues,
+    key,
     "environment",
-    baseline.environment.id,
-    candidate.environment.id,
+    canonicalJson(baseline.environment),
+    canonicalJson(candidate.environment),
   );
   mismatch(
     issues,

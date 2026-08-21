@@ -37,12 +37,18 @@ A metric-bearing `RunEntry` remains correct when the number is part of a test
 execution, such as a mutation score for a declared mutation suite. The same
 number is not copied into `MeasurementRecord` merely because it is numeric.
 
-### Identity and persistence
+### Logical identity and physical persistence
 
-Records live under `spec/evidence/measurements/<plan-id>/`. The filename is a
-digest of definition version, subject, scope, and source revision. The digest
-keeps arbitrary subject identities out of filesystem paths and makes the same
-observation identity last-write-wins without reading the clock.
+Logical records live inside one atomic collection file per producer invocation
+under `spec/evidence/measurements/<plan-id>/`. Common plan, repository, revision,
+tool, environment, sampling, time, and raw-evidence provenance is stored once;
+each observation retains its subject, optional path, value, unit, and distribution.
+Queries materialize the same `MeasurementRecord` shape used by comparisons.
+
+The filename hashes definition, repository, revision, producer/configuration,
+environment, and sampling identity. It does not contain a subject id, and a
+repeat collection at the same comparable identity is last-write-wins. Physical
+file count therefore grows with collections/revisions, not functions or files.
 
 The primary `value` is always present. A distribution is optional and explicit:
 sample count, summary values, and `(probability, value)` quantile pairs retain
@@ -56,7 +62,7 @@ their mathematical meaning without encoding it in names such as `p95_ms`.
 
 ## Outputs
 
-- `spec/evidence/measurements/<plan-id>/<identity-digest>.json`
+- `spec/evidence/measurements/<plan-id>/<collection-digest>.json`
 - `measurement-record-v1.schema.json`, the authoritative record contract
 
 ## Acceptance Criteria
@@ -66,7 +72,7 @@ their mathematical meaning without encoding it in names such as `p95_ms`.
 | FR-043-AC-1 | A CLI-latency distribution and a per-function complexity observation both satisfy the same open, measure-neutral schema. | Test (TC-277) |
 | FR-043-AC-2 | Missing unit, missing plan/definition identity, and empty subject or scope identity are rejected before a file is written. | Test (TC-278) |
 | FR-043-AC-3 | Every non-finite primary, distribution, or quantile value is rejected before JSON serialization can turn it into `null`. | Test (TC-279) |
-| FR-043-AC-4 | The same record writes byte-identically and resolves to the same schema-versioned path; a changed subject, scope, revision, or definition version changes that path. | Test (TC-280) |
+| FR-043-AC-4 | The same collection writes byte-identically; revision, definition, or producer-context changes change its path, while 1,000 subjects remain one physical file. | Test (TC-280) |
 | FR-043-AC-5 | Tool version, configuration digest, environment/sampling identity, collection timestamp, and raw-evidence digest/reference survive a write/read round trip. | Test (TC-281) |
 | FR-043-AC-6 | The JSON Schema is closed to undeclared fields and contains no external-standard or hard-coded measure name. | Test (TC-282) |
 

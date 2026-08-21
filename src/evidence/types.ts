@@ -250,6 +250,36 @@ export interface MeasurementRecord {
   rawEvidence: { digest: string; reference?: string };
 }
 
+/** One logical observation inside a physically batched collection. */
+export interface MeasurementCollectionObservation {
+  subject: MeasurementRecord["subject"];
+  /** Optional repository-relative path narrowing the collection scope. */
+  path?: string;
+  value: number;
+  unit: string;
+  distribution?: MeasurementDistribution;
+}
+
+/**
+ * Atomic physical persistence for one producer invocation.
+ *
+ * Common provenance is stored once and observations remain logical
+ * MeasurementRecords when queried. This keeps filesystem growth proportional
+ * to collections/revisions rather than functions/files observed.
+ */
+export interface MeasurementCollection {
+  schemaVersion: 1;
+  plan: MeasurementRecord["plan"];
+  repository: string;
+  sourceRevision: string;
+  tool: MeasurementRecord["tool"];
+  environment: MeasurementRecord["environment"];
+  sampling?: MeasurementRecord["sampling"];
+  collectedAt: string;
+  rawEvidence: MeasurementRecord["rawEvidence"];
+  observations: MeasurementCollectionObservation[];
+}
+
 /** Someone re-affirming a binding after the statement it was made against changed. */
 export interface Affirmation {
   who: string;

@@ -13,13 +13,14 @@ import {
   mkdirSync,
   readFileSync,
   readdirSync,
+  renameSync,
   rmSync,
   writeFileSync,
 } from "node:fs";
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { dirname, join } from "node:path";
 
-import { validateMeasurementRecord } from "./measurement.js";
+import { validateMeasurementCollection } from "./measurement.js";
 
 import {
   RUNS_DIR,
@@ -30,7 +31,7 @@ import {
   type Binding,
   type BindingsFile,
   type FindingRecord,
-  type MeasurementRecord,
+  type MeasurementCollection,
   type RunRecord,
 } from "./types.js";
 
@@ -78,21 +79,30 @@ export function scanPath(repo: string, suite: string, commit: string): string {
 }
 
 /**
- * Stable path for one plan/definition/subject/scope/revision observation.
+ * Stable path for one plan/definition/repository/revision/producer collection.
  *
  * Only the validated plan id reaches the path. The remaining identity is
  * hashed so subject ids and source revisions can never become path segments.
  */
-export function measurementPath(
+export function measurementCollectionPath(
   repo: string,
-  record: MeasurementRecord,
+  collection: MeasurementCollection,
 ): string {
-  const validated = validateMeasurementRecord(record);
+  const validated = validateMeasurementCollection(collection);
+  return measurementCollectionPathFromValidated(repo, validated);
+}
+
+function measurementCollectionPathFromValidated(
+  repo: string,
+  validated: MeasurementCollection,
+): string {
   const identity = canonicalJson({
     definitionVersion: validated.plan.definitionVersion,
-    scope: validated.scope,
+    repository: validated.repository,
     sourceRevision: validated.sourceRevision,
-    subject: validated.subject,
+    tool: validated.tool,
+    environment: validated.environment,
+    sampling: validated.sampling ?? null,
   });
   const digest = createHash("sha256")
     .update(identity)
@@ -133,6 +143,19 @@ function sortKeys(value: unknown): unknown {
 function writeCanonical(path: string, value: unknown): void {
   mkdirSync(dirname(path), { recursive: true });
   writeFileSync(path, canonicalJson(value), "utf8");
+}
+
+/** Write a complete collection with one same-directory atomic rename. */
+function writeCanonicalAtomic(path: string, value: unknown): void {
+  mkdirSync(dirname(path), { recursive: true });
+  const temporary = `${path}.tmp-${process.pid}-${randomUUID()}`;
+  try {
+    writeFileSync(temporary, canonicalJson(value), "utf8");
+    renameSync(temporary, path);
+  } catch (error) {
+    if (existsSync(temporary)) rmSync(temporary);
+    throw error;
+  }
 }
 
 /**
@@ -207,24 +230,30 @@ export function writeScan(repo: string, record: FindingRecord): string {
   return path;
 }
 
-/** Validate and canonically persist one policy-free observation. */
-export function writeMeasurement(
+/** Validate and atomically persist one producer collection. */
+export function writeMeasurementCollection(
   repo: string,
-  record: MeasurementRecord,
+  collection: MeasurementCollection,
 ): string {
-  const path = measurementPath(repo, record);
-  writeCanonical(path, record);
+  const validated = validateMeasurementCollection(collection);
+  const path = measurementCollectionPathFromValidated(repo, validated);
+  writeCanonicalAtomic(path, validated);
   return path;
 }
 
-/** Read and validate one measurement file by its resolved path. */
-export function readMeasurement(path: string): MeasurementRecord | null {
-  const record = readJson<unknown>(path);
-  return record === null ? null : validateMeasurementRecord(record);
+/** Read and validate one physical collection file by its resolved path. */
+export function readMeasurementCollection(
+  path: string,
+): MeasurementCollection | null {
+  const collection = readJson<unknown>(path);
+  return collection === null ? null : validateMeasurementCollection(collection);
 }
 
-/** Every measurement record path, in deterministic plan/file order. */
-export function listMeasurementPaths(repo: string, planId?: string): string[] {
+/** Every measurement collection path, in deterministic plan/file order. */
+export function listMeasurementCollectionPaths(
+  repo: string,
+  planId?: string,
+): string[] {
   const root = join(storeRoot(repo), MEASUREMENTS_DIR);
   if (!existsSync(root)) return [];
   const paths: string[] = [];

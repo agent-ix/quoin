@@ -19,15 +19,15 @@ export {
   latestRun,
   latestRuns,
   latestScans,
-  measurementPath,
-  listMeasurementPaths,
+  measurementCollectionPath,
+  listMeasurementCollectionPaths,
   listRecordedSuites,
   listRuns,
   readBaseline,
   readBindings,
   readRun,
   readRuns,
-  readMeasurement,
+  readMeasurementCollection,
   runPath,
   short,
   storeRoot,
@@ -35,7 +35,7 @@ export {
   writeBaseline,
   writeBindings,
   writeRun,
-  writeMeasurement,
+  writeMeasurementCollection,
 } from "./store.js";
 
 export {
@@ -67,15 +67,21 @@ export {
   type RunEntry,
   type RunRecord,
   type MeasurementDistribution,
+  type MeasurementCollection,
+  type MeasurementCollectionObservation,
   type MeasurementQuantile,
   type MeasurementRecord,
 } from "./types.js";
 
 export {
   MEASUREMENT_RECORD_SCHEMA,
+  MEASUREMENT_COLLECTION_SCHEMA,
   MeasurementValidationError,
   measurementSchemaPath,
   readMeasurementSchema,
+  readMeasurementCollectionSchema,
+  measurementRecordsFromCollection,
+  validateMeasurementCollection,
   validateMeasurementRecord,
 } from "./measurement.js";
 
@@ -118,5 +124,21 @@ export {
   writeScan,
 } from "./store.js";
 export { parseAuditScript } from "./adapters/audit-script.js";
+export { parseDependencyCruiser } from "./adapters/dependency-cruiser.js";
+export {
+  MEASUREMENT_ADAPTERS,
+  MEASUREMENT_ADAPTER_NAMES,
+  gitHotAgeAdapter,
+  gitHotChurnAdapter,
+  jscpdAdapter,
+  lizardAdapter,
+  normalizedMeasurementAdapter,
+  radonAdapter,
+  rustCodeAnalysisAdapter,
+  selectMeasurementAdapter,
+  type MeasurementAdapter,
+  type MeasurementAdapterResult,
+  type MeasurementObservation,
+} from "./adapters/measurement-observations.js";
 export { parseSbom, sbomAdapter } from "./adapters/sbom.js";
 export { parseAgentEval, agentEvalAdapter } from "./adapters/agent-eval.js";

@@ -1,6 +1,12 @@
 /** FR-043 — a generic, policy-free measurement record (TC-277..TC-282). */
 
-import { existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdtempSync,
+  readFileSync,
+  readdirSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -8,11 +14,14 @@ import { fileURLToPath } from "node:url";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import {
-  measurementPath,
-  readMeasurement,
+  measurementCollectionPath,
+  measurementRecordsFromCollection,
+  readMeasurementCollectionSchema,
+  readMeasurementCollection,
   readMeasurementSchema,
   validateMeasurementRecord,
-  writeMeasurement,
+  writeMeasurementCollection,
+  type MeasurementCollection,
   type MeasurementRecord,
 } from "../src/evidence/index.js";
 
@@ -26,6 +35,30 @@ const complexity = JSON.parse(
 ) as MeasurementRecord;
 
 let repo: string;
+
+function collection(...records: MeasurementRecord[]): MeasurementCollection {
+  const [first] = records;
+  return {
+    schemaVersion: 1,
+    plan: first.plan,
+    repository: first.scope.repository,
+    sourceRevision: first.sourceRevision,
+    tool: first.tool,
+    environment: first.environment,
+    ...(first.sampling === undefined ? {} : { sampling: first.sampling }),
+    collectedAt: first.collectedAt,
+    rawEvidence: first.rawEvidence,
+    observations: records.map((record) => ({
+      subject: record.subject,
+      ...(record.scope.path === undefined ? {} : { path: record.scope.path }),
+      value: record.value,
+      unit: record.unit,
+      ...(record.distribution === undefined
+        ? {}
+        : { distribution: record.distribution }),
+    })),
+  };
+}
 
 beforeEach(() => {
   repo = mkdtempSync(join(tmpdir(), "quoin-measurement-"));
@@ -62,7 +95,9 @@ describe("TC-278 definition, unit, subject and scope identity are mandatory", ()
       { ...complexity, scope: { ...complexity.scope, repository: "" } },
     ],
   ])("rejects an ambiguous or missing %s before writing", (_name, record) => {
-    expect(() => writeMeasurement(repo, record as MeasurementRecord)).toThrow();
+    expect(() =>
+      writeMeasurementCollection(repo, collection(record as MeasurementRecord)),
+    ).toThrow();
     expect(existsSync(join(repo, "spec", "evidence"))).toBe(false);
   });
 });
@@ -86,48 +121,94 @@ describe("TC-279 non-finite observations never reach JSON serialization", () => 
       },
     },
   ])("rejects $value and non-finite distribution members", (record) => {
-    expect(() => writeMeasurement(repo, record)).toThrow();
+    expect(() =>
+      writeMeasurementCollection(repo, collection(record)),
+    ).toThrow();
     expect(existsSync(join(repo, "spec", "evidence"))).toBe(false);
   });
 });
 
 describe("TC-280 measurement identity and bytes are deterministic", () => {
   // Trace: FR-043-AC-4
-  it("is byte-identical on repeat and changes path for every identity part", () => {
-    const path = writeMeasurement(repo, latency);
+  it("is byte-identical on repeat and keys paths by collection identity", () => {
+    const batch = collection(latency);
+    const path = writeMeasurementCollection(repo, batch);
     const first = readFileSync(path, "utf8");
-    expect(writeMeasurement(repo, latency)).toBe(path);
+    expect(writeMeasurementCollection(repo, batch)).toBe(path);
     expect(readFileSync(path, "utf8")).toBe(first);
     expect(JSON.parse(first).schemaVersion).toBe(1);
 
     for (const changed of [
       { ...latency, plan: { ...latency.plan, definitionVersion: "3" } },
-      { ...latency, subject: { ...latency.subject, id: "quoin --help" } },
-      { ...latency, scope: { ...latency.scope, path: "src/cli.ts" } },
       { ...latency, sourceRevision: "f".repeat(40) },
+      {
+        ...latency,
+        tool: {
+          ...latency.tool,
+          configurationDigest: `sha256:${"f".repeat(64)}`,
+        },
+      },
     ]) {
-      expect(measurementPath(repo, changed)).not.toBe(path);
+      expect(measurementCollectionPath(repo, collection(changed))).not.toBe(
+        path,
+      );
     }
+    expect(
+      measurementCollectionPath(
+        repo,
+        collection({
+          ...latency,
+          subject: { ...latency.subject, id: "quoin --help" },
+        }),
+      ),
+    ).toBe(path);
+  });
+
+  it("stores a thousand logical observations in one physical file", () => {
+    const records = Array.from({ length: 1_000 }, (_, index) => ({
+      ...latency,
+      subject: { kind: "function", id: `src/lib.rs#f${index}` },
+      scope: { ...latency.scope, path: "src/lib.rs" },
+      value: index,
+    }));
+    writeMeasurementCollection(repo, collection(...records));
+    const directory = join(
+      repo,
+      "spec",
+      "evidence",
+      "measurements",
+      latency.plan.id,
+    );
+    expect(
+      readFileSync(join(directory, readdirSync(directory)[0]), "utf8"),
+    ).toContain('"src/lib.rs#f999"');
+    expect(readdirSync(directory)).toHaveLength(1);
   });
 });
 
 describe("TC-281 provenance survives a validated write/read round trip", () => {
   // Trace: FR-043-AC-5
   it("preserves tool, environment, sampling, time and raw evidence", () => {
-    const stored = readMeasurement(writeMeasurement(repo, latency));
-    expect(stored?.tool).toEqual(latency.tool);
-    expect(stored?.environment).toEqual(latency.environment);
-    expect(stored?.sampling).toEqual(latency.sampling);
-    expect(stored?.collectedAt).toBe(latency.collectedAt);
-    expect(stored?.rawEvidence).toEqual(latency.rawEvidence);
+    const stored = readMeasurementCollection(
+      writeMeasurementCollection(repo, collection(latency)),
+    );
+    const [record] = measurementRecordsFromCollection(stored!);
+    expect(record.tool).toEqual(latency.tool);
+    expect(record.environment).toEqual(latency.environment);
+    expect(record.sampling).toEqual(latency.sampling);
+    expect(record.collectedAt).toBe(latency.collectedAt);
+    expect(record.rawEvidence).toEqual(latency.rawEvidence);
   });
 
   it("returns null for an absent record and validates a record read from disk", () => {
-    expect(readMeasurement(join(repo, "missing.json"))).toBeNull();
+    expect(readMeasurementCollection(join(repo, "missing.json"))).toBeNull();
     const path = join(repo, "invalid.json");
-    writeFileSync(path, JSON.stringify({ ...latency, threshold: 50 }));
-    expect(() => readMeasurement(path)).toThrow(
-      /<root>.*additional properties/,
+    writeFileSync(
+      path,
+      JSON.stringify({ ...collection(latency), threshold: 50 }),
+    );
+    expect(() => readMeasurementCollection(path)).toThrow(
+      /additional properties/,
     );
   });
 });
@@ -141,7 +222,10 @@ describe("TC-282 the schema is closed, policy-free and measure-neutral", () => {
       validateMeasurementRecord({ ...latency, threshold: 50 }),
     ).toThrow(/additional properties/);
 
-    const schema = JSON.stringify(readMeasurementSchema()).toLowerCase();
+    const schema = JSON.stringify([
+      readMeasurementSchema(),
+      readMeasurementCollectionSchema(),
+    ]).toLowerCase();
     for (const forbidden of [
       "threshold",
       "verdict",

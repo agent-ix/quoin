@@ -13,9 +13,11 @@ Layout, under spec/evidence/:
   bindings.json    obligation -> hash-at-binding -> evidence
   baseline.json    the accepted violation set the ratchet compares against
   runs/<SUITE-N>/<commit12>.json   one file = one run of one suite
+  measurements/<PLAN-ID>/<identity>.json   one atomic observation collection
 
 Subcommands:
   quoin evidence record     transcribe a suite run
+  quoin evidence measure    transcribe policy-free observations
   quoin evidence affirm     re-affirm a binding after its statement changed
   quoin evidence audit      read the store and report
   quoin evidence baseline   accept the current findings as the ratchet baseline
@@ -23,6 +25,7 @@ Subcommands:
 
   static examples = [
     "quoin evidence record --suite SUITE-001 --commit $(git rev-parse HEAD) --tool 'cargo test' --results run.json",
+    "quoin evidence measure --help",
     "quoin evidence affirm --obligation FR-001-AC-1 --who @reviewer",
     "quoin evidence audit --ratchet --strict",
     "quoin evidence baseline",

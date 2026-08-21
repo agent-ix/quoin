@@ -52,3 +52,4 @@ description: "Index of functional requirements (FR) for quoin."
 * [FR-042: Agent-eval reports as run evidence](./FR-042-agent-eval-evidence.md)
 * [FR-043: Generic measurement records with definition and provenance identity](./FR-043-generic-measurement-record.md)
 * [FR-044: Generic measurement queries, comparisons, trends, and ratchets](./FR-044-generic-measurement-comparisons.md)
+* [FR-045: Complete measurement intake and code-health observation adapters](./FR-045-measurement-intake-and-code-health-adapters.md)
