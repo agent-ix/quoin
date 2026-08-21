@@ -849,3 +849,70 @@ describe("TC-148 the audit command reads the catalog from --module", () => {
     );
   });
 });
+
+describe("TC-264 unknown-method fires on unbound obligations (FR-032-AC-14)", () => {
+  const catalog: MethodCatalog = {
+    methods: [
+      {
+        id: "unit-testing",
+        name: "Unit",
+        class: "Test",
+        definition: "d",
+        evidenceKind: "Unit",
+        applicability: {},
+        tooling: [],
+        moduleName: "m",
+      },
+    ],
+    duplicates: [],
+  };
+
+  // TC-264
+  it("an unbound obligation with an uncatalogued method yields BOTH undischarged and unknown-method", () => {
+    // The battle-test shape (#165): a repository with no evidence store at all
+    // — 1,107 findings, every one `undischarged`, zero `unknown-method`,
+    // against 90+ Verification values in no catalog. The one check that pays
+    // off on day one of adoption was gated behind having already adopted.
+    const report = audit(
+      input({
+        obligations: [obligation({ method: "CI Measurement" })],
+        bindings: [],
+        runs: [],
+        catalog,
+      }),
+    );
+    expect(report.findings.map((f) => f.kind)).toEqual([
+      "undischarged",
+      "unknown-method",
+    ]);
+    expect(
+      report.findings.find((f) => f.kind === "unknown-method")?.summary,
+    ).toContain("CI Measurement");
+    expect(report.healthy).toEqual([]);
+  });
+
+  // TC-264
+  it("an unbound obligation with a catalogued method is only undischarged", () => {
+    const report = audit(
+      input({
+        obligations: [obligation({ method: "unit-testing" })],
+        bindings: [],
+        runs: [],
+        catalog,
+      }),
+    );
+    expect(report.findings.map((f) => f.kind)).toEqual(["undischarged"]);
+  });
+
+  // TC-264
+  it("with no catalog the question is not asked, bound or not", () => {
+    const report = audit(
+      input({
+        obligations: [obligation({ method: "CI Measurement" })],
+        bindings: [],
+        runs: [],
+      }),
+    );
+    expect(report.findings.map((f) => f.kind)).toEqual(["undischarged"]);
+  });
+});

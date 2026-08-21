@@ -113,9 +113,28 @@ export function audit(input: AuditInput): AuditReport {
   const scansBySuite = new Map((input.scans ?? []).map((s) => [s.suite, s]));
 
   for (const obligation of [...input.obligations].sort(byId)) {
+    const findingsBefore = findings.length;
     const bindings = (bindingsByObligation.get(obligation.id) ?? [])
       .slice()
       .sort((a, b) => compare(a.suite, b.suite));
+
+    // ── 0. Unknown method ──
+    // A pure statement-vs-catalog comparison: it needs no bindings, no runs
+    // and no evidence store, so it is asked BEFORE the binding guard. Behind
+    // it, the one check that pays off on day one of adoption — "your
+    // Verification column names methods no catalog declares" — could never
+    // fire on an unadopted repository, whose every obligation is unbound
+    // (agent-ix/quoin#165: 1,107 findings, all `undischarged`, zero
+    // `unknown-method`, against 90+ uncatalogued Verification values).
+    //
+    // It does not `continue`: the evidence ladder below stays
+    // one-finding-per-obligation, and this statement-level finding coexists
+    // with whichever evidence finding the ladder reaches — an unbound
+    // obligation with an uncatalogued method is BOTH undischarged AND
+    // unknown-method, and hiding either behind the other cost a reader the
+    // ability to see both facts.
+    const unknown = unknownMethodFinding(obligation, input.catalog);
+    if (unknown) findings.push(unknown);
 
     if (bindings.length === 0) {
       findings.push({
@@ -326,7 +345,9 @@ export function audit(input: AuditInput): AuditReport {
       continue;
     }
 
-    healthy.push(obligation.id);
+    // Healthy means NOTHING was found for this obligation — including the
+    // pre-guard unknown-method check, which does not `continue`.
+    if (findings.length === findingsBefore) healthy.push(obligation.id);
   }
 
   // Plain comparison, not `localeCompare`: the report is meant to be
@@ -348,21 +369,58 @@ function byId(a: Obligation, b: Obligation): number {
 }
 
 /**
- * Two questions about the declared method, both answered from the catalog.
+ * Is the declared method declared at all?
  *
- * **1. Is the method declared at all?** A `Verification` cell naming neither a
- * catalog method id nor a catalog class used to return `null` here — a silent
- * skip — so the requirements whose verification is *least* well defined were
- * exactly the ones nothing questioned. Measured across the ecosystem when this
- * landed: 55 of 577 obligations (agent-ix/quoin#105, quire-rs#152).
+ * A `Verification` cell naming neither a catalog method id nor a catalog class
+ * used to return `null` from `methodConformance` — a silent skip — so the
+ * requirements whose verification is *least* well defined were exactly the
+ * ones nothing questioned. Measured across the ecosystem when this landed:
+ * 55 of 577 obligations (agent-ix/quoin#105, quire-rs#152).
  *
- * **2. Did the evidence match the method's kind?** Compared **kind to kind**.
- * The old test was `run.entries.length > 0` — read as "this was a test run",
- * but true of a transcribed inspection too, so every `Inspection` or `Analysis`
- * obligation recorded through `quoin evidence record` was flagged. A run now
- * declares its own `evidenceKind`, and when it declares none the check says
- * nothing: an undeclared kind means the question cannot be asked, which is a
- * different answer from "it conformed".
+ * Separate from `methodConformance` and asked before the binding guard,
+ * because this comparison needs no evidence at all — the statement and the
+ * catalog are the whole input (agent-ix/quoin#165).
+ */
+function unknownMethodFinding(
+  obligation: Obligation,
+  catalog: MethodCatalog | undefined,
+): Finding | null {
+  if (!catalog || !obligation.method) return null;
+  if (catalogMethodsMatching(obligation.method, catalog).length > 0) {
+    return null;
+  }
+  return {
+    kind: "unknown-method",
+    obligation: obligation.id,
+    severity: "medium",
+    summary:
+      `${obligation.id} declares \`${obligation.method}\`, which is neither a ` +
+      `catalog method id nor a catalog class. Nothing can say what discharging ` +
+      `it means, so no conformance check can run against it.`,
+  };
+}
+
+/** Catalog methods whose id or class matches the declared method. */
+function catalogMethodsMatching(method: string, catalog: MethodCatalog) {
+  const declared = method.trim().toLowerCase();
+  return catalog.methods.filter(
+    (m) =>
+      m.id.toLowerCase() === declared || m.class.toLowerCase() === declared,
+  );
+}
+
+/**
+ * Did the evidence match the declared method's kind? Compared **kind to
+ * kind**. The old test was `run.entries.length > 0` — read as "this was a test
+ * run", but true of a transcribed inspection too, so every `Inspection` or
+ * `Analysis` obligation recorded through `quoin evidence record` was flagged.
+ * A run now declares its own `evidenceKind`, and when it declares none the
+ * check says nothing: an undeclared kind means the question cannot be asked,
+ * which is a different answer from "it conformed".
+ *
+ * An uncatalogued method returns `null` here without a finding — that is not
+ * the old silent skip: `unknownMethodFinding` has already reported it, before
+ * the binding guard.
  */
 function methodConformance(
   obligation: Obligation,
@@ -371,24 +429,8 @@ function methodConformance(
   catalog: MethodCatalog | undefined,
 ): Finding | null {
   if (!catalog || !obligation.method) return null;
-  const declared = obligation.method.trim().toLowerCase();
-
-  const matched = catalog.methods.filter(
-    (m) =>
-      m.id.toLowerCase() === declared || m.class.toLowerCase() === declared,
-  );
-
-  if (matched.length === 0) {
-    return {
-      kind: "unknown-method",
-      obligation: obligation.id,
-      severity: "medium",
-      summary:
-        `${obligation.id} declares \`${obligation.method}\`, which is neither a ` +
-        `catalog method id nor a catalog class. Nothing can say what discharging ` +
-        `it means, so no conformance check can run against it.`,
-    };
-  }
+  const matched = catalogMethodsMatching(obligation.method, catalog);
+  if (matched.length === 0) return null;
 
   // The kinds the catalog says this method produces. An entry declaring none
   // makes the comparison unanswerable rather than failed.

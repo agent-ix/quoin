@@ -53,7 +53,7 @@ const COVERAGE_PAYLOAD = JSON.stringify({
 });
 
 /** A fake `quire` answering `--version` and `coverage --json`, first on PATH. */
-function fakeQuireDir(): string {
+function fakeQuireDir(payload: string = COVERAGE_PAYLOAD): string {
   const dir = mkdtempSync(join(tmpdir(), "quoin-fake-quire-"));
   const bin = join(dir, "quire");
   writeFileSync(
@@ -62,7 +62,7 @@ function fakeQuireDir(): string {
       "#!/bin/sh",
       'if [ "$1" = "--version" ]; then echo "quire 0.41.0"; exit 0; fi',
       `cat <<'PAYLOAD'`,
-      COVERAGE_PAYLOAD,
+      payload,
       "PAYLOAD",
     ].join("\n"),
   );
@@ -163,5 +163,73 @@ describe("evidence audit --ratchet with and without a baseline (FR-032-AC-13)", 
     // And the accepted finding is ratcheted away, so the two runs differ in
     // exactly the way the field claims.
     expect(withBaseline.findings).toHaveLength(0);
+  });
+});
+
+describe("TC-265 audit reports uncatalogued methods with no evidence store at all (FR-032-AC-14)", () => {
+  const savedPath = process.env.PATH;
+  afterEach(() => {
+    process.env.PATH = savedPath;
+  });
+
+  /** The day-one shape (#165): a Verification value in no catalog, no store. */
+  const UNCATALOGUED_PAYLOAD = JSON.stringify({
+    unbacked_rows: [],
+    status_lies: [],
+    untracked_symbols: [],
+    groups: [],
+    totals: { backed: 0, total: 1 },
+    obligations: [
+      {
+        source: "acceptance-criteria",
+        id: "NFR-022-M-12",
+        document: "spec/non-functional/NFR-022.md",
+        statement: "PR-tier CI wall clock stays under budget.",
+        statement_hash: "a".repeat(64),
+        method: "CI Measurement",
+      },
+    ],
+  });
+
+  /** A module whose catalog does NOT carry `CI Measurement`. */
+  function moduleDir(): string {
+    const dir = mkdtempSync(join(tmpdir(), "quoin-tc265-module-"));
+    writeFileSync(
+      join(dir, "manifest.yaml"),
+      [
+        "manifest_version: 1",
+        "name: tc265-fixture",
+        "version: 0.0.0",
+        "verification_catalog:",
+        "  unit-testing:",
+        "    verification_class: Test",
+        "    evidence_kind: Unit",
+        "    summary: the only method this catalog declares",
+        "",
+      ].join("\n"),
+    );
+    return dir;
+  }
+
+  // TC-265
+  it("an unadopted repository hears about its uncatalogued methods, not only that nothing is bound", async () => {
+    // Before #165 this run reported the obligation ONLY as undischarged: the
+    // unknown-method check lived past the binding guard, so the one check
+    // that pays off before any evidence exists required evidence to run.
+    process.env.PATH = `${fakeQuireDir(UNCATALOGUED_PAYLOAD)}:${savedPath}`;
+    const root = mkdtempSync(join(tmpdir(), "quoin-audit-"));
+    const { lines, restore } = captureLog();
+    try {
+      await EvidenceAudit.run(
+        ["--repo", root, "--module", moduleDir()],
+        config,
+      );
+    } finally {
+      restore();
+    }
+    const output = lines.join("\n");
+    expect(output).toContain("undischarged");
+    expect(output).toContain("unknown-method");
+    expect(output).toContain("CI Measurement");
   });
 });

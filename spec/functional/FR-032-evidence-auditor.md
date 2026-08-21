@@ -119,6 +119,7 @@ violations. The per-PR delta names what a change added and resolved.
 | FR-032-AC-11 | The ratchet baseline is a flat set of `<kind>:<obligation>` keys, so **every** finding kind can be accepted into it; `quoin evidence baseline` writes it from the current audit. | Test (TC-147) |
 | FR-032-AC-12 | The auditor reads the verification catalog from the **same** module the obligations were derived from, so `--module` cannot make the advisor and the auditor disagree. | Inspection (TC-148) |
 | FR-032-AC-13 | The `(new violations only)` label and the JSON `ratchet` field are keyed on whether a baseline was actually found and applied, never on the `--ratchet` flag alone. When `--ratchet` finds no baseline, the run says so, names the missing file, and names the command that writes it. | Test (TC-258, TC-259, TC-260) |
+| FR-032-AC-14 | `unknown-method` is evaluated **before** the binding guard — it is a pure statement-vs-catalog comparison needing no evidence — so it fires whatever the evidence state. Precedence: it neither suppresses nor is suppressed by evidence findings; an unbound obligation with an uncatalogued method is reported as **both** `undischarged` and `unknown-method`, while the evidence ladder itself stays one-finding-per-obligation. | Test (TC-264, TC-265) |
 | FR-032-AC-8 | `ratchet` reports only violations absent from the baseline, and `delta` names what a change added and resolved. | Test (TC-144) |
 
 ## Dependencies
