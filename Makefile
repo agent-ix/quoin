@@ -19,9 +19,20 @@ build:
 # command list without a build. CI runs `make install` then `make test` with no
 # build step in between, which is why that test passed locally — where a stale
 # `dist/` lingers — and failed on every clean runner.
+# `test` also depends on `validate` (quoin#183): spec docs are part of the gate.
 .PHONY: test
-test: build
+test: build validate
 	pnpm run test
+
+# Spec validation gate, mirroring quire-rs's `make validate` (quoin#183):
+# every spec/, plan/ and reviews/ document must pass `quire validate`
+# structurally, so an unadmitted matrix cell fails here instead of surfacing
+# in an unrelated session. Runs the repo-pinned @agent-ix/quire-cli
+# devDependency (not a host binary), so clean CI runners gate too.
+# Grammar warnings stay advisory (no --strict); structural failures exit 1.
+.PHONY: validate
+validate:
+	pnpm run validate
 
 .PHONY: test-json
 test-json:

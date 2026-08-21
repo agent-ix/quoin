@@ -58,6 +58,7 @@
     "test:json": "vitest run --reporter=json --outputFile=report.json || true",
     "test:evals": "node evals/run.mjs",
     "lint": "eslint \"src/**/*.{ts,tsx,js,jsx}\" \"tests/**/*.{ts,tsx,js,jsx}\" && pnpm run format:check",
+    "validate": "quire validate \"spec/**/*.md\" \"plan/**/*.md\" \"reviews/*.md\"",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "build": "vite build && node scripts/copy-quire-schemas.mjs",
