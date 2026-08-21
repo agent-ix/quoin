@@ -223,6 +223,25 @@ export function readMeasurement(path: string): MeasurementRecord | null {
   return record === null ? null : validateMeasurementRecord(record);
 }
 
+/** Every measurement record path, in deterministic plan/file order. */
+export function listMeasurementPaths(repo: string, planId?: string): string[] {
+  const root = join(storeRoot(repo), MEASUREMENTS_DIR);
+  if (!existsSync(root)) return [];
+  const paths: string[] = [];
+  for (const plan of readdirSync(root, { withFileTypes: true })) {
+    if (!plan.isDirectory() || (planId !== undefined && plan.name !== planId)) {
+      continue;
+    }
+    const dir = join(root, plan.name);
+    for (const file of readdirSync(dir, { withFileTypes: true })) {
+      if (file.isFile() && file.name.endsWith(".json")) {
+        paths.push(join(dir, file.name));
+      }
+    }
+  }
+  return paths.sort(compare);
+}
+
 /** Read one scan record, or `null` when that (suite, commit) has none. */
 export function readScan(
   repo: string,
