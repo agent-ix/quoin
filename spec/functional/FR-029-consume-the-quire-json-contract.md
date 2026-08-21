@@ -120,6 +120,7 @@ names the found version, the required version, and the consequence.
 | FR-029-AC-10 | When the `quire` subprocess exits non-zero, its **stderr** is surfaced in the raised diagnostic. Its own message names the cause — a missing traceability model, a bad `--module` — and discarding it undoes the care FR-029 takes over the version premise one frame later. | Inspection (TC-134), Test (TC-256) |
 | FR-029-AC-11 | Every `quire` subprocess call sets an explicit `maxBuffer` sized for real corpora, so a corpus whose `coverage --json` payload exceeds Node's 1 MiB default still runs every command that shells out. | Test (TC-254) |
 | FR-029-AC-12 | A child that never exited on its own — killed on a buffer overrun, killed by a signal, or never spawned — is reported by its cause (`ENOBUFS` naming the byte limit, the signal name, the spawn error code), reports no exit status, and appends no child stderr. | Test (TC-254, TC-255, TC-257) |
+| FR-029-AC-13 | The TypeScript interfaces conform to the vendored coverage schema: a typed sample per `$defs` entry, forced by `Required<Interface>` to carry every interface field, has exactly its schema entry's property keys and validates against the schema — a schema key with no interface field, or an interface field with no schema key, fails the suite. | Test (TC-272) |
 
 ## Dependencies
 
