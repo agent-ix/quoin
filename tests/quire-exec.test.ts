@@ -43,6 +43,22 @@ describe("runQuire failure reporting (FR-029-AC-10..AC-12)", () => {
   });
 
   // TC-254
+  it("returns a payload larger than Node's 1 MiB default whole — the cap is actually raised", () => {
+    // The headline #164 fix, pinned: without `maxBuffer: QUIRE_MAX_BUFFER` at
+    // the call site this payload dies ENOBUFS under Node's 1 MiB default —
+    // the filament-ide-rs corpus emitted 1,090,714 bytes, 4% over, and all
+    // six shelling commands were killed. The kill-path tests below cannot
+    // catch a reverted cap (an overrun dies the same way under either limit),
+    // so this success path is the one that fails when the raise is lost.
+    const bytes = 2 * 1024 * 1024;
+    process.env.PATH = `${fakeQuireDir(
+      `head -c ${bytes} /dev/zero | tr '\\0' 'x'`,
+    )}:${savedPath}`;
+    const stdout = runQuire(["coverage", "--json"]);
+    expect(stdout).toHaveLength(bytes);
+  });
+
+  // TC-254
   it("names the buffer overrun on an ENOBUFS death — not an exit status, not the child's stderr", () => {
     // A child whose output outgrows maxBuffer is killed by Node: status is
     // null, code is ENOBUFS. Flood one MiB past the cap; the real
