@@ -380,7 +380,7 @@ generated tests under `tests/props/` and `Unit` for the rest.
 | TC-238 | A cycle terminates without dropping a legitimately shared child, so the FND-001 fix cannot regress into an infinite walk | Unit | P0 | FR-040-AC-12 | ✅ |
 | TC-261 | A case with no claims carries a machine-readable `reason` naming the searched claim types, present exactly when `claims` is empty — `claims: []` alone cannot distinguish a clean case from one where nothing was argued (#170) | Unit | P0 | FR-040-AC-13 | ✅ |
 | TC-262 | `--claim-type` matches case-insensitively — `str`, `STR` and `Hazard` all matched nothing under `===` and exited 0 with an empty case | Unit | P0 | FR-040-AC-14 | ✅ |
-| TC-239 | Retired by #138 (CR-035): the no-catalog-silence rule it pinned is gone — the `metric` discriminator lives on the entry, so the check reads no catalog and TC-269 states the replacement behaviour | Unit | P0 | FR-039-AC-12 | ➖ Retired |
+| TC-239 | Retired by #138 (CR-035): the no-catalog-silence rule it pinned is gone — the `metric` discriminator lives on the entry, so the check reads no catalog and TC-269 states the replacement behaviour | Unit | P0 | FR-039-AC-12 | ⛔ Retired |
 | TC-240 | A real `cli-agent-evals` report yields one entry per scenario, keyed on the scenario id | Unit | P0 | FR-042-AC-1 | ✅ |
 | TC-241 | The scenario id is its own trace id — the join other adapters must construct is already stated here | Unit | P0 | FR-042-AC-2 | ✅ |
 | TC-242 | The outcome is the harness's `ok` over `repeats`, and `passRate` is kept because flaky and failing are different facts | Unit | P0 | FR-042-AC-3 | ✅ |
