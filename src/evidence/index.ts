@@ -20,6 +20,7 @@ export {
   latestRuns,
   latestScans,
   measurementPath,
+  listMeasurementPaths,
   listRecordedSuites,
   listRuns,
   readBaseline,
@@ -36,6 +37,23 @@ export {
   writeRun,
   writeMeasurement,
 } from "./store.js";
+
+export {
+  compareMeasurementSets,
+  measurementKey,
+  measurementTrend,
+  queryMeasurements,
+  renderMeasurementComparisonJson,
+  renderMeasurementComparisonMarkdown,
+  type MeasurementComparison,
+  type MeasurementDelta,
+  type MeasurementIncompatibility,
+  type MeasurementPolicy,
+  type MeasurementQuery,
+  type SamplingCountMismatch,
+  type MeasurementTrend,
+  type MeasurementTrendPoint,
+} from "./comparison.js";
 
 export {
   MUTATION_SCORE_METRIC,
