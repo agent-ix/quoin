@@ -381,6 +381,11 @@ generated tests under `tests/props/` and `Unit` for the rest.
 | TC-261 | A case with no claims carries a machine-readable `reason` naming the searched claim types, present exactly when `claims` is empty — `claims: []` alone cannot distinguish a clean case from one where nothing was argued (#170) | Unit | P0 | FR-040-AC-13 | ✅ |
 | TC-262 | `--claim-type` matches case-insensitively — `str`, `STR` and `Hazard` all matched nothing under `===` and exited 0 with an empty case | Unit | P0 | FR-040-AC-14 | ✅ |
 | TC-239 | Retired by #138 (CR-035): the no-catalog-silence rule it pinned is gone — the `metric` discriminator lives on the entry, so the check reads no catalog and TC-269 states the replacement behaviour | Unit | P0 | FR-039-AC-12 | ⛔ Retired |
+| TC-941 | Finding precision/recall is reported PER FAMILY: a tool finding every marker mismatch and no vacuous suite shows recall 1 and 0, not a respectable average (#201) | Unit | P0 | FR-043-AC-2 | ✅ |
+| TC-942 | A finding matching no label is a false positive; an unfindable label is excluded from the denominator AND reported, so a scored miss stays distinguishable from a defect nobody claimed was findable (#201) | Unit | P0 | FR-043-AC-2 | ✅ |
+| TC-943 | A family with no denominator reports `null`, not 0 — 0/0 is not 0%, and a precision of 0 claims the run was wrong (#201) | Unit | P0 | FR-043-AC-2 | ✅ |
+| TC-944 | Actionability counts findings naming a row id or a line — the property measured at 15 of 496 in pass 2 (#201) | Unit | P0 | FR-043-AC-4 | ✅ |
+| TC-945 | Cost per confirmed insight reports tokens AND tool calls, divides by CONFIRMED findings rather than emitted ones, and reports `null` per-insight when nothing was confirmed (#201) | Unit | P0 | FR-043-AC-5 | ✅ |
 | TC-936 | An obligation discharged only by a mocked stand-in for its own subject is a `medium` `mocked-confirmation` finding naming the injected identifier (#204) | Unit | P0 | FR-032-AC-15 | ✅ |
 | TC-937 | A mock unrelated to the statement's subject (`FakeClock`) is not reported — tests legitimately mock clocks, filesystems and networks (#204) | Unit | P0 | FR-032-AC-15 | ✅ |
 | TC-938 | One real suite alongside a mocked one is not reported: standing in a dependency while another suite exercises the real path is ordinary test design (#204) | Unit | P0 | FR-032-AC-15 | ✅ |
