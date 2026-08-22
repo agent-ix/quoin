@@ -120,9 +120,40 @@ violations. The per-PR delta names what a change added and resolved.
 | FR-032-AC-12 | The auditor reads the verification catalog from the **same** module the obligations were derived from, so `--module` cannot make the advisor and the auditor disagree. | Inspection (TC-148) |
 | FR-032-AC-13 | The `(new violations only)` label and the JSON `ratchet` field are keyed on whether a baseline was actually found and applied, never on the `--ratchet` flag alone. When `--ratchet` finds no baseline, the run says so, names the missing file, and names the command that writes it. | Test (TC-258, TC-259, TC-260) |
 | FR-032-AC-14 | `unknown-method` is evaluated **before** the binding guard — it is a pure statement-vs-catalog comparison needing no evidence — so it fires whatever the evidence state. Precedence: it neither suppresses nor is suppressed by evidence findings; an unbound obligation with an uncatalogued method is reported as **both** `undischarged` and `unknown-method`, while the evidence ladder itself stays one-finding-per-obligation. | Test (TC-264, TC-265) |
+| FR-032-AC-15 | A `mocked-confirmation` finding reports an obligation discharged **only** by suites injecting a stand-in whose identifier overlaps the obligation's own statement subject. Reported at `medium` and only when EVERY binding is mocked — one real suite alongside a mocked one is ordinary test design. Absent injection data yields silence, never a clean bill, and the finding ratchets through the existing `<kind>:<obligation>` key like any other. | Test (TC-936..TC-940) |
 | FR-032-AC-8 | `ratchet` reports only violations absent from the baseline, and `delta` names what a change added and resolved. | Test (TC-144) |
 
 ## Dependencies
 
 - **Upstream**: [FR-030](./FR-030-evidence-store.md) (the store it reads), [FR-031](./FR-031-catalog-driven-advisor.md) (the catalog method conformance is checked against), quire-rs [FR-053](ix://agent-ix/quire-rs/FR-053) (the obligations and hashes it compares)
 - **Downstream**: the consuming workflow decides whether a finding blocks; this command reports and, under `--strict`, exits non-zero
+
+> **CR note (#204, 2026-08-22):** AC-15 is new — the third class of finding
+> only manual review caught in battletest pass 2. Epic `agent-ix/quoin#197`.
+>
+> **The measured case.** `FR-017-AC-7`'s trusted-UI confirmation had **no
+> implementation**, and its test passed by injecting `Confirmation::allow()` —
+> mocking exactly the behaviour the criterion verifies. Green test, green
+> acceptance criterion, absent behaviour. Nothing in any tool surface said so.
+>
+> **Extended, not rebuilt**, as #204 asked: a new `Finding` kind on the existing
+> auditor, ratcheting through the existing `<kind>:<obligation>` key. A second
+> system would need its own baseline, its own gate and its own reasons to be
+> ignored.
+>
+> **The auditor reads the store, not source**, so the injections are an input
+> the caller supplies. Absent means *"nobody looked"*, never *"nothing was
+> mocked"* — the check stays silent rather than reporting a clean bill it did
+> not earn, which is the same posture `scanIsVacuous` takes when a tool does not
+> say how many rules it ran.
+>
+> **Only when every binding is mocked.** One suite standing in a dependency
+> while another exercises the real path is ordinary test design, and flagging it
+> would fire across most of the corpus for a reason unrelated to this defect.
+>
+> **`medium`, not `high`.** This is a heuristic over identifiers: a legitimate
+> mock can share a noun with the statement it appears under. The floor requires
+> half the injected identifier's words to be the statement's own — which is what
+> `Confirmation::allow` against a *trusted-UI confirmation* criterion looks
+> like, and what `FakeClock` does not.
+

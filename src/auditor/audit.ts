@@ -38,10 +38,28 @@ export interface Finding {
     | "unknown-method"
     | "insufficient-multiplicity"
     | "insufficient-mutation-score"
-    | "unmeasured-mutation-score";
+    | "unmeasured-mutation-score"
+    | "mocked-confirmation";
   obligation: string;
   severity: Severity;
   summary: string;
+}
+
+/**
+ * A stand-in a suite injects for real behaviour.
+ *
+ * Pass 2 found `FR-017-AC-7`'s trusted-UI confirmation had NO implementation,
+ * and its test passed by injecting `Confirmation::allow()` — mocking exactly
+ * the behaviour the criterion verifies. The test was green, the AC was green,
+ * and the behaviour did not exist.
+ */
+export interface MockInjection {
+  /** Suite the injection was observed in. */
+  suite: string;
+  /** Symbol doing the injecting. */
+  symbol: string;
+  /** Identifiers substituted for real behaviour — `Confirmation::allow`. */
+  injects: string[];
 }
 
 /** What the auditor was given to read. */
@@ -52,6 +70,15 @@ export interface AuditInput {
   bindings: Binding[];
   /** Every run record the store holds, newest per suite. */
   runs: RunRecord[];
+  /**
+   * What each suite's tests INJECT in place of real behaviour (#204).
+   *
+   * Supplied by the caller because the auditor reads the store, not source —
+   * and #204 asked to extend `evidence audit`, not to build a second system.
+   * An absent list means "nobody looked", never "nothing was mocked": the
+   * check stays silent, the same posture `scanIsVacuous` takes.
+   */
+  injections?: MockInjection[];
   /**
    * Every finding-shaped scan record the store holds, newest per suite
    * (FR-034).
@@ -111,6 +138,9 @@ export function audit(input: AuditInput): AuditReport {
   }
   const runsBySuite = new Map(input.runs.map((r) => [r.suite, r]));
   const scansBySuite = new Map((input.scans ?? []).map((s) => [s.suite, s]));
+  // Absent means "nobody looked", never "nothing was mocked" — the check stays
+  // silent rather than reporting a clean bill it did not earn (#204).
+  const injections = input.injections ?? [];
 
   for (const obligation of [...input.obligations].sort(byId)) {
     const findingsBefore = findings.length;
@@ -188,6 +218,38 @@ export function audit(input: AuditInput): AuditReport {
           `${obligation.id} is bound to ${unrecorded.map((b) => b.suite).join(", ")}, ` +
           `which ${unrecorded.length === 1 ? "has" : "have"} no recorded run. ` +
           `The binding claims evidence that is not in the store.`,
+      });
+      continue;
+    }
+
+    // ── Mocked confirmation (#204) ──
+    // The behaviour the criterion verifies, substituted by the test that
+    // verifies it. Pass 2's case: FR-017-AC-7's trusted-UI confirmation had NO
+    // implementation, and its test passed by injecting `Confirmation::allow()`.
+    // Green test, green AC, absent behaviour.
+    //
+    // Reported only when EVERY binding is mocked. One suite standing in a
+    // dependency while another exercises the real path is ordinary test
+    // design, and flagging it would fire on most of the corpus for a reason
+    // that has nothing to do with this defect.
+    //
+    // `medium`, not `high`: this is a heuristic over identifiers, and a
+    // legitimate mock can share a noun with the statement it appears under.
+    const mocked = mockedBindings(obligation, bindings, injections);
+    if (mocked.length > 0 && mocked.length === bindings.length) {
+      findings.push({
+        kind: "mocked-confirmation",
+        obligation: obligation.id,
+        severity: "medium",
+        summary:
+          `${obligation.id} is discharged only by tests that inject a stand-in ` +
+          `for the behaviour it verifies: ` +
+          mocked
+            .map((m) => `${m.symbol} injects ${m.injects.join(", ")}`)
+            .sort(compare)
+            .join("; ") +
+          `. A test that substitutes the behaviour under verification passes ` +
+          `whether or not that behaviour exists.`,
       });
       continue;
     }
@@ -576,6 +638,79 @@ function mutationFinding(
  * definition, so the auditor's finding and the advisor's recommendation cannot
  * disagree about what a score is.
  */
+/**
+ * How much of an injected identifier must overlap the statement's own words
+ * before the injection is read as standing in for the verified behaviour.
+ *
+ * Deliberately high. A test legitimately mocks a clock, a filesystem, a
+ * network — all of which share nothing with the statement. What this is
+ * looking for is the narrow case where the mock's NAME is the statement's
+ * subject, which is what `Confirmation::allow` against a trusted-UI
+ * confirmation criterion looks like.
+ */
+export const MOCK_SUBJECT_FLOOR = 0.5;
+
+/** Bindings whose suite injects a stand-in for this obligation's subject. */
+function mockedBindings(
+  obligation: Obligation,
+  bindings: Binding[],
+  injections: MockInjection[],
+): MockInjection[] {
+  if (injections.length === 0) return [];
+  const subject = words(obligation.statement);
+  if (subject.size === 0) return [];
+
+  const out: MockInjection[] = [];
+  for (const binding of bindings) {
+    const hit = injections
+      .filter((i) => i.suite === binding.suite)
+      .find((i) =>
+        i.injects.some((identifier) => {
+          const tokens = words(identifier);
+          if (tokens.size === 0) return false;
+          let shared = 0;
+          for (const token of tokens) if (subject.has(token)) shared += 1;
+          return shared / tokens.size >= MOCK_SUBJECT_FLOOR;
+        }),
+      );
+    if (hit) out.push(hit);
+  }
+  return out;
+}
+
+/** Lowercased word-ish tokens, minus the words every sentence shares. */
+function words(text: string): Set<string> {
+  const noise = new Set([
+    "the",
+    "a",
+    "an",
+    "and",
+    "or",
+    "of",
+    "to",
+    "for",
+    "in",
+    "is",
+    "be",
+    "shall",
+    "with",
+    "that",
+    "it",
+    "its",
+    "on",
+    "by",
+    "as",
+    "not",
+    "new",
+  ]);
+  return new Set(
+    text
+      .split(/[^A-Za-z0-9]+/)
+      .map((t) => t.toLowerCase())
+      .filter((t) => t.length > 2 && !noise.has(t)),
+  );
+}
+
 export function scoresFor(bindings: Binding[], runs: RunRecord[]): number[] {
   const bound = new Set(bindings.map((b) => b.suite));
   const out: number[] = [];

@@ -381,6 +381,11 @@ generated tests under `tests/props/` and `Unit` for the rest.
 | TC-261 | A case with no claims carries a machine-readable `reason` naming the searched claim types, present exactly when `claims` is empty — `claims: []` alone cannot distinguish a clean case from one where nothing was argued (#170) | Unit | P0 | FR-040-AC-13 | ✅ |
 | TC-262 | `--claim-type` matches case-insensitively — `str`, `STR` and `Hazard` all matched nothing under `===` and exited 0 with an empty case | Unit | P0 | FR-040-AC-14 | ✅ |
 | TC-239 | Retired by #138 (CR-035): the no-catalog-silence rule it pinned is gone — the `metric` discriminator lives on the entry, so the check reads no catalog and TC-269 states the replacement behaviour | Unit | P0 | FR-039-AC-12 | ⛔ Retired |
+| TC-936 | An obligation discharged only by a mocked stand-in for its own subject is a `medium` `mocked-confirmation` finding naming the injected identifier (#204) | Unit | P0 | FR-032-AC-15 | ✅ |
+| TC-937 | A mock unrelated to the statement's subject (`FakeClock`) is not reported — tests legitimately mock clocks, filesystems and networks (#204) | Unit | P0 | FR-032-AC-15 | ✅ |
+| TC-938 | One real suite alongside a mocked one is not reported: standing in a dependency while another suite exercises the real path is ordinary test design (#204) | Unit | P0 | FR-032-AC-15 | ✅ |
+| TC-939 | Absent injection data yields silence, never a clean bill — "nobody looked" is not "nothing was mocked" (#204) | Unit | P0 | FR-032-AC-15 | ✅ |
+| TC-940 | The finding ratchets through the existing `<kind>:<obligation>` key, so it is acceptable in a baseline like every other kind (#204) | Unit | P1 | FR-032-AC-15 | ✅ |
 | TC-926 | Every metric in the dictionary declares `unit`, `population` and `method`; one missing any of the three is rejected at load rather than reported with a gap | Unit | P0 | FR-043-AC-1 | 🚧 |
 | TC-927 | `finding_precision`/`finding_recall` are declared per defect family, each keyed on a family the corpora label, so no score is reported over an unlabelled population | Unit | P0 | FR-043-AC-2 | 🚧 |
 | TC-928 | `span_grounding_rate` is declared with the pass-2 figure (0 of 65 specific-shape records) as its starting baseline | Unit | P0 | FR-043-AC-3 | 🚧 |
