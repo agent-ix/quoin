@@ -101,9 +101,6 @@ clear itself on the next CI run and the detector would never fire.`;
       );
     }
 
-    writeBindings(flags.repo, {
-      bindings,
-    });
     writeBindings(flags.repo, { bindings });
     const outcome = {
       obligation: flags.obligation,
