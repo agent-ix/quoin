@@ -1,6 +1,11 @@
 __pycache__/
 *.pyc
 dist/
+# ...except the vendored workflow-asset bundles. They have no source in this
+# repo -- `workflow-assets/` holds only `dist/` and `skills/` -- and `skills/`
+# ships in the package, so an untracked bundle means a clean-checkout publish
+# ships skills whose scripts import a file that is not there.
+!skills/*/workflow-assets/dist/
 *.egg-info/
 .idea
 node_modules
