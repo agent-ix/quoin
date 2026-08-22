@@ -31,6 +31,19 @@ test: build validate check-version
 # reports itself (quoin#196). The class of defect this catches shipped once
 # already one repo over: quire-cli#52, where five consecutive tags shipped
 # binaries all reporting the version before them. Run it before tagging.
+# Re-pin the tier-2 answer key (quoin#200). NOT a re-measurement: the findings
+# are claims about a specific tree, and carrying them to a different commit
+# without reading it again asserts something nobody checked. This target only
+# moves the pin — the adjudication is human work, and the diff belongs in the
+# pull request. Same discipline as quire-rs's coverage_baseline.
+.PHONY: answer-key-repin
+answer-key-repin:
+	@test -n "$(SHA)" || { echo "usage: make answer-key-repin SHA=<commit>"; exit 2; }
+	@echo "Re-pinning the answer key to $(SHA)."
+	@echo "STOP: re-read the corpus at that commit and re-adjudicate every finding."
+	@echo "Moving the pin without re-adjudicating turns the recall denominator into fiction."
+	python3 -c "import json,sys; p='bench/answer-key.json'; d=json.load(open(p)); d['pinned_sha']='$(SHA)'; json.dump(d, open(p,'w'), indent=2); open(p,'a').write('\n')"
+
 .PHONY: check-version
 check-version: build
 	node scripts/check-version-agreement.mjs

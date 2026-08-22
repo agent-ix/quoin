@@ -1,0 +1,105 @@
+{
+  "$comment": "Tier-2 adjudicated answer key (agent-ix/quoin#200, FR-043-AC-8). The manual findings of battletest pass 2, made machine-readable and keyed to a pinned commit. This set is the RECALL DENOMINATOR for 'would the tools have found what humans found'. Every entry was adjudicated by reading the corpus, not inferred from tool output — which is the point, since the tools found none of them.",
+  "corpus": "agent-ix/filament-ide-rs",
+  "pinned_sha": "fc5d644",
+  "adjudicated": "2026-08-22",
+  "sources": [
+    "agent-ix/filament-ide-rs#451 (pass-2 umbrella)",
+    "SR-153, SR-154, SR-155",
+    "agent-ix/filament-ide-rs#460 (owed corpus findings)"
+  ],
+  "re_pin_policy": "Re-pinning requires RE-ADJUDICATION, not re-measurement. The findings below are claims about a specific tree; carrying them to a different commit without reading it again would assert something nobody checked. Use `make answer-key-repin`, whose diff belongs in the pull request — the same discipline as quire-rs/tests/fixtures/coverage_baseline/expected.json.",
+  "findings": [
+    {
+      "id": "AK-001",
+      "family": "marker-form-mismatch",
+      "summary": "The declared `rust-test-name-id` pattern has no separator, so `fn tc_NNN_` binds nothing.",
+      "measured": "1,292 `fn tc_NNN_` sites against 0 of the declared `fn tcNNN_` spelling. Widening the pattern took coverage from 555/2389 (23%) to 1158/2389 (48%) with no test written.",
+      "location": "declared in spec-artifacts-process; observed across 24 crates",
+      "found_by_tools_at_pass_2": false,
+      "found_by": "controlled experiment — copy the module, widen one regex, diff the census",
+      "expect_reason": "no-symbol-bound",
+      "now_detectable": true,
+      "detectable_since": "quire-rs v0.43.0 (FR-050-AC-27)",
+      "fixed_by": "agent-ix/spec-artifacts-process#65"
+    },
+    {
+      "id": "AK-002",
+      "family": "hollow-denominator",
+      "summary": "`quire coverage` published a confident 23% over a corpus whose tag patterns matched nothing, with no signal that the premise was hollow.",
+      "measured": "0 of 1,292 evidence symbols bound; 0 of 643 trace lines matched. Three published SpecReviews (SR-150/151/152) cite figures computed under it.",
+      "location": "spec/**/matrix/tests.md, all 12 module matrices",
+      "found_by_tools_at_pass_2": false,
+      "found_by": "manual — noticing that a 23% figure and a 1,292-symbol repository were inconsistent",
+      "expect_reason": "hollow-denominator",
+      "now_detectable": true,
+      "detectable_since": "quire-rs v0.43.0 (FR-063-AC-5)",
+      "fixed_by": "agent-ix/quire-rs#239"
+    },
+    {
+      "id": "AK-003",
+      "family": "catch-all-universal",
+      "summary": "The properties headline read 54% extractable; 440 of those 515 were the `universal` catch-all, so the figure for 'the tool told me what property to write' was 8%.",
+      "measured": "515/951 extractable; 78/951 specifically shaped. 65 of 67 specific-shape non-`example` records carried zero spans.",
+      "location": "274 spec files",
+      "found_by_tools_at_pass_2": false,
+      "found_by": "manual — reading the per-shape breakdown the summary line omitted",
+      "expect_metric": "coverage.specific_shaped",
+      "now_detectable": true,
+      "detectable_since": "quire-rs v0.43.0 (FR-050-AC-28)",
+      "fixed_by": "agent-ix/quire-rs#240"
+    },
+    {
+      "id": "AK-004",
+      "family": "vacuous-under-guard",
+      "summary": "A property suite asserted nothing in a measured 97.7% of samples and was green throughout.",
+      "measured": "4,000 samples: `Ok(Some)` 2.3%, `Ok(None)` 79.0%, `Err` 18.8%. The assertion was inside the `Ok(Some)` arm.",
+      "location": "TC-1596",
+      "found_by_tools_at_pass_2": false,
+      "found_by": "manual semantic review",
+      "expect_suspicion": "vacuous-under-guard",
+      "now_detectable": true,
+      "detectable_since": "quire-rs main, post v0.43.0 (FR-064-AC-1)",
+      "fixed_by": "agent-ix/quire-rs#247"
+    },
+    {
+      "id": "AK-005",
+      "family": "oracle-is-code-copy",
+      "summary": "A test oracle was a character-for-character copy of the code under test, redundant branch included.",
+      "measured": "Replacing it with a real oracle immediately exposed a genuine Windows containment gap.",
+      "location": "TC-1598",
+      "found_by_tools_at_pass_2": false,
+      "found_by": "manual semantic review — pass 2's highest-value finding",
+      "expect_suspicion": "oracle-resembles-implementation",
+      "now_detectable": "partially",
+      "detectable_since": "quire-rs main, post v0.43.0 (FR-064-AC-2) — the COMPARISON is implemented; the join from an oracle span to the implementation it judges is not wired, so this is not yet detected end to end",
+      "fixed_by": "agent-ix/quire-rs#247"
+    },
+    {
+      "id": "AK-006",
+      "family": "mocked-confirmation",
+      "summary": "An acceptance criterion with no implementation passed via a mocked confirmation.",
+      "measured": "One AC; the mock stood in for the behaviour the AC asserts.",
+      "location": "pass-2 semantic review, SR-155",
+      "found_by_tools_at_pass_2": false,
+      "found_by": "manual semantic review",
+      "now_detectable": false,
+      "detectable_since": null,
+      "fixed_by": null,
+      "tracked_by": "agent-ix/quoin#204"
+    },
+    {
+      "id": "AK-007",
+      "family": "gate-that-gates-nothing",
+      "summary": "Repository gates that gated nothing — wired, green, and asserting no condition that could fail.",
+      "measured": "Observed across the repo's own CI configuration during pass 2.",
+      "location": "pass-2 semantic review",
+      "found_by_tools_at_pass_2": false,
+      "found_by": "manual semantic review",
+      "now_detectable": false,
+      "detectable_since": null,
+      "fixed_by": null,
+      "tracked_by": "agent-ix/quoin#204"
+    }
+  ]
+}
