@@ -148,7 +148,6 @@ export function recordRun(request: RecordRequest): RecordOutcome {
   }
 
   writeBindings(request.repo, {
-    schemaVersion: STORE_SCHEMA_VERSION,
     bindings,
   });
 

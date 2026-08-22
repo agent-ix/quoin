@@ -1,6 +1,6 @@
 ---
 name: specify
-description: Create or update spec artifacts from a design or change request. Orchestrates authoring each requested requirement type (StR/US/FR/NFR/IT) as a discrete file using quoin catalog templates and Quire validation.
+description: Create or update spec artifacts from a design or change request. Authors requested requirements and, when explicitly needed, installed assurance artifacts as discrete files using quoin catalog templates and Quire validation.
 ---
 
 # Specify
@@ -11,12 +11,18 @@ each one **as its own file** using the catalog templates, and validates.
 
 ## Scope to the request
 
-Author **only the artifact types the request calls for** — nothing more.
+Author **only the artifact types the request calls for** — nothing more. Assurance
+artifacts are opt-in: a low-impact request that asks for an ordinary requirement does
+not receive an unsolicited profile, architecture description, or measurement plan.
 
 - "Add a user story for X" → one US.
 - "Add the FR that implements US-003" → one FR (traced to US-003).
 - "Add a user story and the requirement that implements it" → one US **and** one FR.
 - "Edit FR-002 to …" → edit that one FR file in place.
+- "Define the assurance profile for this recovery change" → one installed
+  `AssuranceProfile`, linked to the requirements or decisions it governs.
+- "Describe the architecture and measurement plan for this change" → one installed
+  `ArchitectureDescription` and one installed `MeasurementPlan`.
 - "Start a spec for service X" / "backport a spec from this code" → the full
   chain (`spec.md` + US + FR + NFR, and IT where there are external integrations).
 
@@ -38,6 +44,9 @@ file under the matching directory:
 | FR   | `FR`    | `spec/functional/FR-XXX-*.md`  |
 | NFR  | `NFR`   | `spec/non-functional/NFR-XXX-*.md` |
 | IT   | `IT`    | `spec/integration/IT-XXX-*.md` |
+| Assurance profile | `AssuranceProfile` | `spec/assurance/AP-XXX-*.md` |
+| Architecture description | `ArchitectureDescription` | `spec/assurance/AD-XXX-*.md` |
+| Measurement plan | `MeasurementPlan` | `spec/assurance/MP-XXX-*.md` |
 
 > If a request asks for functional requirements and you produced only table rows
 > in `spec.md`, the request is **not done** — create the `FR-XXX.md` files.
@@ -59,10 +68,14 @@ examples in [references/writing-good-requirements.md](references/writing-good-re
 
 ## Process
 
-Run only the steps the request needs; stop after IT.
+Run only the steps the request needs; stop after the requested artifact set.
 
 1. Identify the repository that owns the spec files, and which artifact types the
-   request implies (any subset of StR, US, FR, NFR, IT).
+   request implies (any subset of StR, US, FR, NFR, IT and installed assurance
+   artifact types). When the request explicitly involves assurance scope, architecture
+   decisions, or reproducible measures, read
+   [references/assurance-artifacts.md](references/assurance-artifacts.md). Do not read or
+   apply that reference for an ordinary request with no assurance need.
 2. Run `quoin write <repo_dir> --types <type[,type...]>` **once** for the full
    set. Use the returned skeletons, schemas, module roots, and examples as the
    authoring contract — the per-type rules live in the template, not your memory.
@@ -80,10 +93,13 @@ Run only the steps the request needs; stop after IT.
      (see [references/writing-good-requirements.md](references/writing-good-requirements.md)).
      Then → StR → US (INVEST, no solution-prescribing — same reference) →
      **derive FR from US** (see [references/us-to-fr.md](references/us-to-fr.md))
-     → FR (cover unhappy paths, measurable ACs — same reference)
-     → NFR → IT (see [references/integration-tests.md](references/integration-tests.md)).
+     → FR (cover unhappy paths, measurable ACs — same reference) → NFR → IT
+     (see [references/integration-tests.md](references/integration-tests.md))
+     → requested assurance artifacts.
 4. Keep traceability in frontmatter `relationships:` (e.g. a US `traces_to` its
-   FRs; an FR/NFR/IT links back to the US/FR it serves).
+   FRs; an FR/NFR/IT links back to the US/FR it serves). Link an assurance artifact
+   to the exact requirements or decisions it qualifies using only relationship verbs
+   admitted by its fetched schema; do not invent an edge.
 5. Run `quire validate <glob> [glob2 ...]` over the changed spec scope and fix
    every error before continuing.
 6. **Open in the review cockpit.** After validation passes, run
@@ -92,9 +108,9 @@ Run only the steps the request needs; stop after IT.
    clickable link as a fallback). Use the main artifact you created — the
    new/edited `FR-XXX.md`, or `spec/spec.md` when starting a spec. Skip silently if
    the `filament` command is not installed.
-7. **Stop at IT.** Then ask the user whether to build the test matrix
-   (`spec-matrix`) and run review (`spec-review`) — unless they already requested
-   them. Only run those on confirmation.
+7. **Stop after the requested artifacts.** Then ask the user whether to build the test
+   matrix (`spec-matrix`) and run review (`spec-review`) — unless they already
+   requested them. Only run those on confirmation.
 
 ## Functional requirements
 
@@ -127,6 +143,8 @@ stays in the individual service specs. Otherwise use `assets/spec-template.md`.
 - Let frontmatter identify each file. The discriminator is `type` (e.g.
   `type: FR`, `type: master-requirements`) — it names the archetype.
 - Use catalog skeletons and schemas rather than memory.
+- If an assurance type is not installed, report that boundary; do not invent its
+  frontmatter or silently substitute a generic document.
 - Keep workflow definitions out of artifact/object type vocabularies.
 - Validate every created or edited artifact with Quire before finishing.
 
@@ -149,6 +167,7 @@ spec/
 ├── functional/       # FR-XXX
 ├── non-functional/   # NFR-XXX
 ├── integration/      # IT-XXX
+├── assurance/        # requested AP/AD/MP artifacts (when their module is installed)
 ├── matrix/
 └── analysis/
 ```

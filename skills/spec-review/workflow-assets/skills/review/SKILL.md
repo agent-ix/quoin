@@ -21,12 +21,19 @@ document per analysis** under `spec/reviews/`, rather than a single freeform rep
 
 - Start from the workflow status and follow reported next actions.
 - **intake — offer the review set.** Before advancing, present the choice to the user and
-  record it in the `request` interview as `review_set` plus `selected_analyses`:
+  inspect the requested scope for an applicable installed `AssuranceProfile`. Record its
+  path, `review_selection.mode`, and profile analyses when present, then record
+  `review_set` plus `selected_analyses`:
   - `base` — the skill checklist only (ID formats, US/FR/TC quality, the six coverage
     rules). No analysis skills. `selected_analyses` is empty.
   - `all` — `base` plus all seven analyses: `failure-domain`, `integrity`, `dependency`,
     `evidence`, `risk-complexity`, `scope-boundary`, `ears-conformance`.
   - `subset` — `base` plus the analyses the user picks from those seven.
+  - A profile `recommend` selection is a default the user may change. A profile `require`
+    selection must use `subset` with `selected_analyses` exactly equal to
+    `profile_analyses`; the intake invariant rejects any bypass.
+  - If the profile names an analysis outside the installed seven-value contract, stop
+    and report the unavailable schema/skill dependency. Do not author an invalid review.
 - **analyses_run — run the selected set, one SpecReview doc each.** Run each selected
   analysis (the matching `spec-*-analysis` skill). Prefer running them **in parallel** —
   each writes its own file, so there is no contention.
@@ -82,6 +89,9 @@ The final `validated → accepted` transition enforces `selected_analyses_covere
 cannot be accepted until every selected analysis has a recorded `review_doc`. If it reports
 `selected_analyses_not_run` with a `missing` list, render + validate + record those analyses
 before retrying acceptance. `base` passes with no analyses required.
+The intake transition separately enforces `review_selection_consistent`, including exact
+all-set expansion and required-profile selection. A recommendation never silently
+becomes enforcement.
 
 ## Acceptance Criteria
 
