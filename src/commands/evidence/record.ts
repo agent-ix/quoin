@@ -7,6 +7,7 @@ import {
   ADAPTER_NAMES,
   bind,
   obligationsFrom,
+  readEvidenceLineage,
   readBindings,
   writeBindings,
   recordRun,
@@ -64,6 +65,12 @@ runs nothing and judges nothing.`;
         "registry's `Evidence Kind` column use. Method conformance compares " +
         "kind to kind; without it the check stays silent rather than guessing.",
     }),
+    lineage: Flags.string({
+      description:
+        "JSON file naming profile-relevant evidence lineage: actor, " +
+        "implementationToolchain, technique, dataSource, and/or reviewPath. " +
+        "These are relationship facts, not an independence verdict.",
+    }),
     discharges: Flags.string({
       description:
         "Obligation ids this scan discharges, comma-separated. Finding-shaped " +
@@ -105,6 +112,13 @@ runs nothing and judges nothing.`;
         "--tool must include an immutable version (for example `vitest 3.2.4` or `scanner git:<full-sha>`)",
         { exit: 2 },
       );
+    }
+
+    let lineage;
+    try {
+      lineage = flags.lineage ? readEvidenceLineage(flags.lineage) : undefined;
+    } catch (cause) {
+      this.error((cause as Error).message, { exit: 2 });
     }
 
     // The premise first: an older quire does not fail, it emits an older shape
@@ -195,6 +209,7 @@ runs nothing and judges nothing.`;
             commit: flags.commit,
             // A scan binds no symbol: it has none. The record is the evidence.
             symbols: [],
+            lineage,
           });
           bindings = outcome.bindings;
           if (outcome.created) bound.push(id);
@@ -252,6 +267,7 @@ runs nothing and judges nothing.`;
       commit: flags.commit,
       tool: flags.tool,
       evidenceKind: flags.kind,
+      lineage,
       timestamp: flags.timestamp ?? new Date().toISOString(),
       entries,
       obligations: obligationsFrom(parsed.value),

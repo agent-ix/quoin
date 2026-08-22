@@ -10,8 +10,10 @@ import {
   latestRuns,
   latestScans,
   mockInspectionInput,
+  readIndependencePolicy,
   readBaseline,
   readBindings,
+  requireKnownPolicyObligations,
 } from "../../evidence/index.js";
 import {
   checkVersionPremise,
@@ -37,6 +39,7 @@ Checks:
   insufficient-multiplicity   criticality demands two independent suites
   insufficient-mutation-score criticality demands a mutation score it misses
   unmeasured-mutation-score   a demanded mutation score, with none recorded
+  insufficient-independence  profile-selected evidence separation is absent
 
 --ratchet compares against spec/evidence/baseline.json and fails only on NEW
 violations. A gate that fails on the whole existing backlog gets disabled within
@@ -78,6 +81,11 @@ a week. Write that baseline with: quoin evidence baseline`;
         "--multiplicity-requires: a built-in floor is a rule nobody chose.",
       multiple: true,
     }),
+    "independence-policy": Flags.string({
+      description:
+        "Normalized JSON projection of exact obligation/dimension requirements " +
+        "selected by an AssuranceProfile. Unset means no independence policy.",
+    }),
   };
 
   async run(): Promise<void> {
@@ -95,11 +103,26 @@ a week. Write that baseline with: quoin evidence baseline`;
     for (const root of modules) args.push("--module", root);
     const parsed = parseCoverage(runQuire(args));
     if (!parsed.ok) this.error(parsed.error.message, { exit: 2 });
+    const obligations = parsed.value.obligations ?? [];
+    let independencePolicy;
+    try {
+      independencePolicy = flags["independence-policy"]
+        ? readIndependencePolicy(flags["independence-policy"])
+        : undefined;
+      if (independencePolicy) {
+        requireKnownPolicyObligations(
+          independencePolicy,
+          obligations.map((obligation) => obligation.id),
+        );
+      }
+    } catch (cause) {
+      this.error((cause as Error).message, { exit: 2 });
+    }
 
     const head = headCommit(flags.repo);
     const mockInspections = mockInspectionInput(flags.repo, head);
     const report = audit({
-      obligations: parsed.value.obligations ?? [],
+      obligations,
       bindings: readBindings(flags.repo).bindings,
       runs: latestRuns(flags.repo),
       scans: latestScans(flags.repo),
@@ -121,6 +144,7 @@ a week. Write that baseline with: quoin evidence baseline`;
       mutationFloor: parseMutationFloor(flags["mutation-floor"], (message) =>
         this.error(message, { exit: 2 }),
       ),
+      independencePolicy,
     });
 
     const baseline = flags.ratchet ? readBaseline(flags.repo) : null;
@@ -143,6 +167,9 @@ a week. Write that baseline with: quoin evidence baseline`;
             healthy: report.healthy,
             unevaluated: report.unevaluated,
             ratchet: ratcheted,
+            ...(report.independence
+              ? { independence: report.independence }
+              : {}),
           },
           null,
           2,
@@ -167,6 +194,16 @@ a week. Write that baseline with: quoin evidence baseline`;
           `${report.healthy.length} healthy` +
           (ratcheted ? " (new violations only)" : ""),
       );
+    }
+
+    if (!flags.json && report.independence) {
+      this.log("");
+      this.log("Profile-selected evidence independence:");
+      for (const assessment of report.independence) {
+        this.log(
+          `  [${assessment.status}] ${assessment.obligation}: ${assessment.summary}`,
+        );
+      }
     }
 
     if (

@@ -18,12 +18,18 @@
  */
 
 import type { Obligation } from "../quire/index.js";
-import { MUTATION_SCORE_METRIC, scanIsVacuous } from "../evidence/index.js";
+import {
+  MUTATION_SCORE_METRIC,
+  assessIndependence,
+  scanIsVacuous,
+} from "../evidence/index.js";
 import { parseSpace, twayCoverage } from "./combinatorial.js";
 import type {
   Binding,
   FindingRecord,
   MockInjection,
+  IndependenceAssessment,
+  IndependencePolicy,
   RunRecord,
 } from "../evidence/index.js";
 import type { MethodCatalog } from "../advisor/index.js";
@@ -41,6 +47,7 @@ export interface Finding {
     | "undischarged"
     | "method-conformance"
     | "unknown-method"
+    | "insufficient-independence"
     | "insufficient-multiplicity"
     | "insufficient-mutation-score"
     | "unmeasured-mutation-score"
@@ -107,6 +114,8 @@ export interface AuditInput {
    * `cargo-mutants` adapter computes it. Unviable mutants are in neither side.
    */
   mutationFloor?: Record<string, number>;
+  /** Exact obligations and separation axes selected by an AssuranceProfile. */
+  independencePolicy?: IndependencePolicy;
 }
 
 /** The audit result, ordered so the same input yields the same report. */
@@ -123,6 +132,8 @@ export interface UnevaluatedCheck {
   obligation: string;
   suites: string[];
   reason: string;
+  /** Present only when a profile supplied independence requirements. */
+  independence?: IndependenceAssessment[];
 }
 
 /**
@@ -136,6 +147,7 @@ export function audit(input: AuditInput): AuditReport {
   const findings: Finding[] = [];
   const healthy: string[] = [];
   const unevaluated: UnevaluatedCheck[] = [];
+  const independence: IndependenceAssessment[] = [];
 
   // An obligation can be discharged by more than one suite — a unit suite and
   // a mutation suite, say — so the graph is grouped, not indexed. Keying on the
@@ -155,6 +167,11 @@ export function audit(input: AuditInput): AuditReport {
   const inspectedSuites = new Set(
     input.mockInspectionSuites ??
       injections.map((injection) => injection.suite),
+  const independenceByObligation = new Map(
+    (input.independencePolicy?.requirements ?? []).map((requirement) => [
+      requirement.obligation,
+      requirement,
+    ]),
   );
 
   for (const obligation of [...input.obligations].sort(byId)) {
@@ -344,6 +361,29 @@ export function audit(input: AuditInput): AuditReport {
       continue;
     }
 
+    // ── Profile-selected independence ──
+    // This is a property of the obligation→evidence relationships, not a
+    // guessed property of roles, method names, or tool vendors. It is asked
+    // only for exact obligations the profile projected into the policy.
+    const independenceRequirement = independenceByObligation.get(obligation.id);
+    if (independenceRequirement && input.independencePolicy) {
+      const assessment = assessIndependence(
+        input.independencePolicy.profile,
+        independenceRequirement,
+        bindings,
+      );
+      independence.push(assessment);
+      if (assessment.status === "insufficient") {
+        findings.push({
+          kind: "insufficient-independence",
+          obligation: obligation.id,
+          severity: "medium",
+          summary: assessment.summary,
+        });
+        continue;
+      }
+    }
+
     // Every remaining check reasons over run entries, so a binding backed only
     // by a scan has nothing more to answer here.
     const runBindings = bindings.filter((b) => runsBySuite.has(b.suite));
@@ -487,6 +527,26 @@ export function audit(input: AuditInput): AuditReport {
     (a, b) => compare(a.obligation, b.obligation) || compare(a.check, b.check),
   );
   return { findings, healthy: healthy.sort(compare), unevaluated };
+  if (input.independencePolicy) {
+    const assessed = new Set(independence.map((item) => item.requirement));
+    for (const requirement of input.independencePolicy.requirements) {
+      if (assessed.has(requirement.id)) continue;
+      independence.push(
+        assessIndependence(
+          input.independencePolicy.profile,
+          requirement,
+          bindingsByObligation.get(requirement.obligation) ?? [],
+        ),
+      );
+    }
+  }
+  const report: AuditReport = { findings, healthy: healthy.sort(compare) };
+  if (input.independencePolicy) {
+    report.independence = independence.sort((a, b) =>
+      compare(a.obligation, b.obligation),
+    );
+  }
+  return report;
 }
 
 /** Locale-independent string order. */
