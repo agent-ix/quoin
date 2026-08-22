@@ -386,6 +386,8 @@ generated tests under `tests/props/` and `Unit` for the rest.
 | TC-943 | A family with no denominator reports `null`, not 0 — 0/0 is not 0%, and a precision of 0 claims the run was wrong (#201) | Unit | P0 | FR-043-AC-2 | ✅ |
 | TC-944 | Actionability counts findings naming a row id or a line — the property measured at 15 of 496 in pass 2 (#201) | Unit | P0 | FR-043-AC-4 | ✅ |
 | TC-945 | Cost per confirmed insight reports tokens AND tool calls, divides by CONFIRMED findings rather than emitted ones, and reports `null` per-insight when nothing was confirmed (#201) | Unit | P0 | FR-043-AC-5 | ✅ |
+| TC-946 | The score pairs a finding to a label by LOCATION where both name one: two right-family findings at the same place, against two labels seeded at different places, score precision 0.50 not 1.00; both in the right places score 1.00; a label naming a file with no line matches a finding in that file (#201) | Unit | P0 | FR-043-AC-2, FR-043-AC-7 | ✅ |
+| TC-947 | An answer-key entry declaring `expect_metric` with no usable `expect_value` is malformed and fails, never scoring as a permanent miss — AK-003 shipped in that state (#200) | Unit | P0 | FR-043-AC-11 | ✅ |
 | TC-936 | An obligation discharged only by a mocked stand-in for its own subject is a `medium` `mocked-confirmation` finding naming the injected identifier (#204) | Unit | P0 | FR-032-AC-15 | ✅ |
 | TC-937 | A mock unrelated to the statement's subject (`FakeClock`) is not reported — tests legitimately mock clocks, filesystems and networks (#204) | Unit | P0 | FR-032-AC-15 | ✅ |
 | TC-938 | One real suite alongside a mocked one is not reported: standing in a dependency while another suite exercises the real path is ordinary test design (#204) | Unit | P0 | FR-032-AC-15 | ✅ |

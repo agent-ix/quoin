@@ -21,6 +21,73 @@ const labels = [
 ];
 
 describe("finding precision and recall", () => {
+  it("TC-946 scores by location when both sides name one", () => {
+    // TC-946
+    // The failure SR-014 FND-001 describes: two defects of ONE family seeded
+    // at different places, and a tool reporting the right family twice at the
+    // SAME place. Matching on family alone scored both true -- precision 1.00
+    // where the truth is 0.50 -- which is the overstatement FR-043-AC-2 exists
+    // to prevent.
+    const twoOfAFamily = [
+      {
+        id: "MM-1",
+        family: "marker-form-mismatch",
+        findable: true,
+        location: "src/lib.rs:5",
+      },
+      {
+        id: "MM-2",
+        family: "marker-form-mismatch",
+        findable: true,
+        location: "src/other.rs:40",
+      },
+    ];
+    const { families, positional } = scoreFindings(
+      [
+        { family: "marker-form-mismatch", path: "src/lib.rs", line: 5 },
+        { family: "marker-form-mismatch", path: "src/lib.rs", line: 5 },
+      ],
+      twoOfAFamily,
+    );
+    const mm = families.find((f) => f.family === "marker-form-mismatch")!;
+    expect(mm.truePositives).toBe(1);
+    expect(mm.falsePositives).toBe(1);
+    expect(mm.precision).toBe(0.5);
+    expect(mm.misses).toBe(1);
+    expect(positional).toBe(1);
+
+    // Both findings in the right places score 1.00 honestly, so the test
+    // measures the location rule rather than a cap on true positives.
+    const honest = scoreFindings(
+      [
+        { family: "marker-form-mismatch", path: "src/lib.rs", line: 5 },
+        { family: "marker-form-mismatch", path: "src/other.rs", line: 40 },
+      ],
+      twoOfAFamily,
+    );
+    const both = honest.families.find(
+      (f) => f.family === "marker-form-mismatch",
+    )!;
+    expect(both.precision).toBe(1);
+    expect(both.recall).toBe(1);
+    expect(honest.positional).toBe(2);
+
+    // A label naming a FILE with no line is a claim about the file: a finding
+    // in it matches without inventing a line the label never asserted.
+    const fileOnly = scoreFindings(
+      [{ family: "missing-usecase", path: "spec/FR-001.md", line: 12 }],
+      [
+        {
+          id: "MU-1",
+          family: "missing-usecase",
+          findable: true,
+          location: "spec/FR-001.md",
+        },
+      ],
+    );
+    expect(fileOnly.families[0].truePositives).toBe(1);
+  });
+
   it("TC-941 is reported per family, because an average hides a hole", () => {
     // TC-941
     // A tool that finds every marker mismatch and no vacuous suite has a

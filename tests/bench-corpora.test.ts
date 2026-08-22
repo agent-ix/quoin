@@ -156,6 +156,22 @@ describe("tier-2 adjudicated answer key", () => {
     }
   });
 
+  test("TC-947 an entry declaring expect_metric also declares expect_value", () => {
+    // TC-947
+    // Without this, `Number(undefined)` is NaN, every comparison is false, and
+    // the finding scores MISSED forever rather than being reported as a
+    // malformed key. AK-003 shipped in exactly that state and was caught only
+    // because a test happened to assert its detection (SR-014 FND-002).
+    for (const f of key.findings) {
+      if (f.expect_metric === undefined) continue;
+      expect(
+        f.expect_value,
+        `${f.id} declares expect_metric "${f.expect_metric}" with no expect_value`,
+      ).toBeDefined();
+      expect(Number.isNaN(Number(f.expect_value))).toBe(false);
+    }
+  });
+
   test("finding ids are unique", () => {
     const ids = key.findings.map((f: { id: string }) => f.id);
     expect(new Set(ids).size).toBe(ids.length);
