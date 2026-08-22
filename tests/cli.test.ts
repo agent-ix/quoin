@@ -26,7 +26,12 @@ vi.mock("../src/modules", () => ({
   defaultModulesManifest: () => ({ schemaVersion: 1, entries: [] }),
 }));
 
-import { main, packageVersion, resolveVersion } from "../src/cli";
+import {
+  main,
+  packageVersion,
+  resolveVersion,
+  versionedConfig,
+} from "../src/cli";
 import CatalogIndex from "../src/commands/catalog/index";
 import CatalogList from "../src/commands/catalog/list";
 import CatalogShow from "../src/commands/catalog/show";
@@ -282,7 +287,39 @@ describe("version", () => {
     expect(resolveVersion("")).toBe(packageVersion());
     expect(typeof resolveVersion("")).toBe("string");
   });
+
+  // #196: `--version` printed the baked `git describe` string while `--help`
+  // printed package.json's `0.9.0` — the placeholder the CI tag rewrite
+  // replaces. A locally installed build therefore reported two different
+  // versions depending on which flag you asked, and neither matched what npm
+  // served. Version provenance is load-bearing: every SpecReview records the
+  // tool version it measured with.
+  test("the oclif config carries the same version --version prints", async () => {
+    const config = await versionedConfig(binEntryUrl());
+    expect(config.version).toBe(packageVersion());
+    // `userAgent` is what the help header renders, and it is composed at load
+    // time from `version` — which is why injecting through the load options is
+    // the fix and mutating a loaded Config is not.
+    expect(config.userAgent).toContain(packageVersion());
+    expect(config.userAgent).toContain(config.name);
+  });
+
+  // The specific failure that made the first attempt look like it worked:
+  // `Config.load` rebuilds from `opts.options` and re-runs `load()`, so a
+  // version written onto an already-loaded Config is silently discarded. The
+  // injected option survives that round trip; this asserts the round trip.
+  test("the injected version survives the reload run/execute perform", async () => {
+    const { Config } = await import("@oclif/core");
+    const reloaded = await Config.load(await versionedConfig(binEntryUrl()));
+    expect(reloaded.version).toBe(packageVersion());
+    expect(reloaded.userAgent).toContain(packageVersion());
+  });
 });
+
+/** The bin script's own location — the load root the shipped entry point uses. */
+function binEntryUrl(): string {
+  return new URL("../bin/quoin.js", import.meta.url).href;
+}
 
 // ---- main() dispatch ---------------------------------------------------------
 

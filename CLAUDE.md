@@ -12,7 +12,42 @@ make add-packages p=<name>      # add runtime dependency
 make add-dev-packages p=<name>  # add dev dependency
 make use-local p=<name>         # switch dep to local package
 make use-upstream p=<name>      # switch dep back to upstream
+make check-version              # every version surface agrees; a clean tag reports itself
 ```
+
+## Dogfooding an unreleased quoin
+
+**There is no local-publish path, and that is a deliberate choice rather than
+something to discover (quoin#196).** `ts-build-chain` classifies quoin as an app
+(it ships a `bin`, not a library entry), so a single-node chain runs green and
+publishes nothing:
+
+```
+$ ts-build-chain start --skip-registry-audit quoin quoin
+✔ Build
+✔ Test
+❯ Publish
+↓ Publish [SKIPPED: Not a library (no publish target)]
+```
+
+To run unreleased `main`:
+
+```bash
+make build
+npm i -g .        # or: node bin/quoin.js <command>
+```
+
+The only path to a registry is a **git tag plus CI**. That matters when `main`
+carries unreleased fixes: npm serves the last tag, so anyone installing the
+normal way gets a build without them. Check what you are actually running —
+`quoin --version` reports the build-time `git describe`, so a
+`-<n>-g<sha>` suffix means the binary is ahead of its tag.
+
+**Version provenance is load-bearing.** Every SpecReview records the tool
+version it measured with, and three reviews in `agent-ix/filament-ide-rs` cite
+numbers from a binary whose self-reported version was wrong. `make check-version`
+asserts that `--version` and `--help` agree and that a clean tag reports itself;
+run it before tagging.
 
 ## Adding or improving a spec check
 
