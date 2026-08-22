@@ -38,10 +38,49 @@ export function scoreFindings(found, labels) {
 
   const expected = labels.filter((l) => l.findable !== false);
   const matched = new Set();
+  const claimed = new Set();
+  let positional = 0;
 
+  // Pass 1 — positional. A finding that names WHERE is paired to the label at
+  // that place. Run first so a locus-less finding cannot consume the label a
+  // positioned one should have taken (FR-043-AC-7).
   for (const finding of found) {
+    const locus = locusOf(finding);
+    if (!locus) continue;
     const hit = expected.find(
-      (l) => !matched.has(l.id) && l.family === finding.family,
+      (l) =>
+        !matched.has(l.id) &&
+        l.family === finding.family &&
+        locusMatches(locus, labelLocus(l)),
+    );
+    if (hit) {
+      matched.add(hit.id);
+      claimed.add(finding);
+      positional += 1;
+      bucket(hit.family).truePositives += 1;
+    }
+  }
+
+  // Pass 2 — family only, where there is no position to compare on.
+  //
+  // Matching on family alone was the ONLY rule before, and it laundered
+  // duplicates: two findings of one family both scored true even when one
+  // pointed somewhere no defect was seeded, reporting a toolchain as more
+  // precise than it is.
+  //
+  // So a finding that DID name a place and matched no label there is a false
+  // positive, and may only fall back to labels that name no place themselves —
+  // otherwise pass 2 hands it the very label pass 1 refused it. A finding with
+  // no locus is unconstrained, because it made no positional claim to be wrong
+  // about.
+  for (const finding of found) {
+    if (claimed.has(finding)) continue;
+    const positioned = locusOf(finding) !== null;
+    const hit = expected.find(
+      (l) =>
+        !matched.has(l.id) &&
+        l.family === finding.family &&
+        !(positioned && labelLocus(l) !== null),
     );
     if (hit) {
       matched.add(hit.id);
@@ -65,7 +104,51 @@ export function scoreFindings(found, labels) {
   // Labels declared unfindable are reported, not silently dropped: an
   // excluded denominator nobody sees is a denominator nobody can question.
   const excluded = labels.filter((l) => l.findable === false).map((l) => l.id);
-  return { families: rows, excluded };
+  // How much of the score was positional. A precision figure built entirely
+  // from family-only matches is weaker evidence than the same figure built
+  // from findings that named where, and the reader should be able to tell.
+  return { families: rows, excluded, positional };
+}
+
+/** Where a FINDING points, or `null` when it names no place. */
+function locusOf(finding) {
+  const path = finding.path ?? finding.document ?? finding.file ?? null;
+  if (!path) return null;
+  return {
+    path: String(path),
+    line: typeof finding.line === "number" ? finding.line : null,
+  };
+}
+
+/** Where a LABEL says the defect is: `path:line`, or a bare path. */
+function labelLocus(label) {
+  if (!label.location) return null;
+  const at = /^(.*):(\d+)$/.exec(String(label.location));
+  return at
+    ? { path: at[1], line: Number(at[2]) }
+    : { path: String(label.location), line: null };
+}
+
+/**
+ * Same place, tolerant of one side carrying a longer path prefix and of a
+ * label that names a file without a line.
+ *
+ * A line is compared only when BOTH sides carry one: a label pinned to
+ * `spec/FR-001.md` with no line is a claim about the file, and demanding a
+ * line the label never made would turn every such label into a miss.
+ */
+function locusMatches(finding, label) {
+  if (!finding || !label) return false;
+  if (
+    !finding.path.endsWith(label.path) &&
+    !label.path.endsWith(finding.path)
+  ) {
+    return false;
+  }
+  if (finding.line !== null && label.line !== null) {
+    return finding.line === label.line;
+  }
+  return true;
 }
 
 /**

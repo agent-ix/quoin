@@ -78,6 +78,22 @@ export function scoreAgainstKey(payload, key) {
         finding.id,
       );
     } else if (finding.expect_metric) {
+      // A key entry naming a metric with no expected value is MALFORMED, not
+      // missed. `Number(undefined)` is NaN, every comparison against it is
+      // false, and the finding scored missed forever -- reading as a toolchain
+      // regression rather than a typo. AK-003 shipped in exactly that state.
+      if (
+        finding.expect_value === undefined ||
+        finding.expect_value === null ||
+        Number.isNaN(Number(finding.expect_value))
+      ) {
+        throw new Error(
+          `answer key ${finding.id}: declares expect_metric ` +
+            `"${finding.expect_metric}" with no usable expect_value ` +
+            `(got ${JSON.stringify(finding.expect_value)}). A malformed entry ` +
+            `must fail the run, never score as a miss.`,
+        );
+      }
       const metric = metrics.get(finding.expect_metric);
       const hit =
         metric && Number(metric.value) === Number(finding.expect_value);

@@ -88,11 +88,12 @@ Unchanged from this repository's standing posture. The benchmark is expensive �
 | FR-043-AC-3 | The dictionary defines `span_grounding_rate` — of the criteria carrying a specific property shape, the fraction whose `domain`, `precondition` and `oracle` are all present — with the pass-2 figure (0 of 65) recorded as the baseline it starts from. | Test (TC-928) |
 | FR-043-AC-4 | The dictionary defines `actionability_rate` — of emitted findings, the fraction carrying a row id — with the pass-2 figure (15 of 496) recorded as its baseline. | Test (TC-929) |
 | FR-043-AC-5 | The dictionary defines `cost_per_confirmed_insight` in tokens **and** tool calls per true-positive finding, extending the FR-042 eval report metrics rather than introducing a second accounting. | Test (TC-930) |
-| FR-043-AC-6 | The **silent-zero sentinel** is declared as a gate rather than a score: a metric emitted with `matched = 0` over a non-zero population and no accompanying diagnostic fails the run, and the declared expected value is exactly `0` with no tolerance. | Test (TC-931) |
-| FR-043-AC-7 | A tier-1 corpus entry declares its seeded defects in a `labels.json` carrying, per defect, its family, its location, and whether the toolchain is expected to find it — so a scored miss is distinguishable from a defect nobody claimed was findable. | Test (TC-932) |
+| FR-043-AC-6 | The **silent-zero sentinel** is declared as a gate rather than a score: a **ratio-shaped** metric emitted with `matched = 0` over a non-zero population and no accompanying diagnostic fails the run, and the declared expected value is exactly `0` with no tolerance. A **count-shaped** metric is exempt — `matched` and its value are the same fact, so a zero reports that none was found, not that none was read. | Test (TC-931) |
+| FR-043-AC-7 | A tier-1 corpus entry declares its seeded defects in a `labels.json` carrying, per defect, its family, its location, and whether the toolchain is expected to find it — so a scored miss is distinguishable from a defect nobody claimed was findable. The score **pairs a finding to a label by that location** where both carry one, so a right-family wrong-place finding scores as a false positive; a finding naming no place may still pair on family alone, and the report states how many pairings were positional. | Test (TC-932, TC-946) |
 | FR-043-AC-8 | A tier-2 corpus entry declares a **pinned commit SHA** and an adjudicated answer key; a benchmark run against a different SHA is refused with a diagnostic naming both, never scored against the key. | Test (TC-933) |
 | FR-043-AC-9 | The score report is a declared schema carrying, per metric, the enveloped value and the baseline it was compared against, and per corpus the tier and the identity it was run at. Two runs over identical inputs produce byte-identical reports. | Test (TC-934) |
 | FR-043-AC-10 | Ratchet semantics: a score better than its baseline rewrites the baseline and passes; a score worse fails, naming the metric, both values, and the corpus; a score equal passes and rewrites nothing. Baseline regeneration is a deliberate act with a reviewable diff, never a side effect of a run. | Test (TC-935) |
+| FR-043-AC-11 | An answer-key entry declaring `expect_metric` without a usable `expect_value` **fails the run as malformed**, never scores as a miss: `Number(undefined)` is `NaN`, so every comparison is false and the finding would read as a permanent toolchain regression rather than a typo. | Test (TC-947) |
 
 ## Dependencies
 
@@ -106,3 +107,38 @@ Unchanged from this repository's standing posture. The benchmark is expensive �
 | FR-043-CON-1 | The benchmark scores the toolchain; it never edits it. No corpus fixture is repaired, and no check is retuned, as part of a benchmark run. | Design | Inspection of the runner: no write path into `~/dev` outside the report and baseline directories |
 | FR-043-CON-2 | CI runs the benchmark on `workflow_dispatch` only. The enforcing gate is local `make`. | Process | Inspection of `.github/workflows/` — no `push` or `pull_request` trigger on the benchmark job |
 | FR-043-CON-3 | A tier-2 corpus is read at its pinned SHA and never written to. | Design | Test (TC-933) — a run at a different SHA is refused rather than scored |
+
+> **CR-098 note (2026-08-22):** `agent-ix/quoin#198`, `#201`, reopened. Three
+> corrections to criteria that shipped, each found by review rather than by a
+> failing test (SR-014, SR-015).
+>
+> **AC-6 was green by accident.** It excuses a metric with `matched = 0` when a
+> diagnostic accompanies it — and the diagnostic doing the excusing was
+> `quire`'s own false-positive `hollow-denominator`, which fired on every
+> **count**-shaped metric reading an honest zero. Two defects cancelling:
+> `sentinel.silent_zero` read `0` because both were wrong. AC-6 now exempts
+> counts by shape, and ships with `agent-ix/quire-rs#229`. Neither half is safe
+> alone.
+>
+> **AC-7 declared a field the score never read.** It required `labels.json` to
+> carry a `location` per defect *"so a scored miss is distinguishable from a
+> defect nobody claimed was findable"*, and then no criterion required the
+> scorer to consume it. `scoreFindings` paired on family alone, so two findings
+> of one family both scored true even when one pointed where no defect was
+> seeded: **precision 1.00 where the truth is 0.50**. A test validating AC-7 as
+> written passed over a location-blind scorer, because the criterion stopped one
+> step short of its own stated intent.
+>
+> A positioned finding that matches no label at that place is now a false
+> positive, and may fall back to family-only *only* against labels that name no
+> place — otherwise the second pass hands it the label the first refused it,
+> which is the laundering the fix exists to stop. The count of positional
+> pairings is reported, because a precision figure built entirely from
+> family-only matches is weaker evidence than the same figure built from
+> findings that named where.
+>
+> **AC-11 is new.** An entry declaring `expect_metric` with no `expect_value`
+> scored **missed forever**: `Number(undefined)` is `NaN` and every comparison
+> against it is false. `AK-003` shipped in that state and was caught only
+> because a test happened to assert its detection. Malformed keys now fail the
+> run.
