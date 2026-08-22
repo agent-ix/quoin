@@ -94,8 +94,16 @@ check-version: build
 # in an unrelated session. Runs the repo-pinned @agent-ix/quire-cli
 # devDependency (not a host binary), so clean CI runners gate too.
 # Grammar warnings stay advisory (no --strict); structural failures exit 1.
+#
+# The modules come first, and from THIS build. `quire validate` falls back to
+# `quoin module ensure-defaults` when `~/.ix` holds no modules, and reaches for
+# a `quoin` on PATH — which a clean runner does not have, so every CI run since
+# 2026-08-21 died with "quoin not found on PATH" while a developer machine with
+# a populated `~/.ix` passed. Installing them with the CLI the repo just built
+# also means a module set is never validated against a stale host binary.
 .PHONY: validate
-validate:
+validate: build
+	node bin/quoin.js module ensure-defaults
 	pnpm run validate
 
 .PHONY: test-json
