@@ -53,11 +53,12 @@ export function makeScenarioWorkspace(id) {
   const ixHome = join(work, "ix-home");
   mkdirSync(join(repo, "spec"), { recursive: true });
   mkdirSync(ixHome, { recursive: true });
-  // Project-scoped skills: the agent (cwd = repo) loads the working-tree
-  // `/specify` etc. instead of the globally-installed plugin copy. `.claude` is a
-  // dotdir, so it is skipped by file/artifact assertions and quire's spec globs.
+  // Project-scoped skills: each harness loads the working-tree `/specify` etc.
+  // instead of a globally-installed plugin copy. Both directories are dotdirs,
+  // so file/artifact assertions and quire's spec globs skip them.
   if (existsSync(REPO_SKILLS)) {
     cpSync(REPO_SKILLS, join(repo, ".claude", "skills"), { recursive: true });
+    cpSync(REPO_SKILLS, join(repo, ".agents", "skills"), { recursive: true });
   }
   const modulesDir = snapshotInto(ixHome);
   const sessionId = randomUUID();

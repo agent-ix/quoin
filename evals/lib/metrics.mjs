@@ -47,6 +47,20 @@ function bashCommand(block) {
   return typeof cmd === "string" ? cmd : undefined;
 }
 
+function* codexCommandExecutions(lines) {
+  for (const line of lines) {
+    if (line.type !== "event_msg" || line.payload?.type !== "item_completed") {
+      continue;
+    }
+    const item = line.payload?.item;
+    if (item?.type !== "CommandExecution") continue;
+    const command = Array.isArray(item.command)
+      ? item.command.filter((part) => typeof part === "string").join(" ")
+      : "";
+    yield { command, exitCode: item.exit_code };
+  }
+}
+
 /** Map tool_use id -> its result ({ text, isError }) from the user tool_result lines. */
 function toolResultsById(lines) {
   const map = new Map();
@@ -120,6 +134,11 @@ export function findCommand(path, patternStr) {
     const failed =
       res?.isError || /(^|\n)Exit code [1-9]/.test(res?.text ?? "");
     if (!failed) succeeded = true;
+  }
+  for (const execution of codexCommandExecutions(lines)) {
+    if (!new RegExp(patternStr).test(execution.command)) continue;
+    ran = true;
+    if (execution.exitCode === 0) succeeded = true;
   }
   return { ran, succeeded };
 }
