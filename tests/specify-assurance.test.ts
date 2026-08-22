@@ -6,6 +6,8 @@ import { fileURLToPath } from "node:url";
 
 import { describe, expect, it } from "vitest";
 
+import { SCENARIOS } from "../evals/scenarios/index.mjs";
+
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const skill = readFileSync(join(repoRoot, "skills/specify/SKILL.md"), "utf8");
 const reference = readFileSync(
@@ -41,5 +43,11 @@ describe("assurance-aware specify contract", () => {
     );
     expect(normalizedSkill).toContain("Stop after the requested artifacts");
     expect(reference).toContain("do not launch reviews");
+  });
+
+  // Trace: FR-043-AC-2 / TC-278
+  it("keeps the negative-control fixture independent of org discovery", () => {
+    const scenario = SCENARIOS.find(({ id }) => id === "TC-EV-059");
+    expect(scenario?.env?.({})).toEqual({ QUOIN_ORG: "agent-ix" });
   });
 });
