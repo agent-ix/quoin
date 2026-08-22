@@ -15,6 +15,46 @@ make use-upstream p=<name>      # switch dep back to upstream
 make check-version              # every version surface agrees; a clean tag reports itself
 ```
 
+## Agent worktrees
+
+**Never as a sibling in the dev root.** `/home/peter/dev` is the scan path for
+`ts-build-chain` (`IX_DEV`), so a worktree there carries a second
+`package.json` claiming `@agent-ix/quoin` and every chain command fails before
+it starts:
+
+```
+Package name collision (user-fix class): @agent-ix/quoin is claimed by multiple repositories:
+  /home/peter/dev/quoin
+  /home/peter/dev/quoin-ea004
+Remove or rename the duplicate before continuing.
+```
+
+`trace-chain`, `check-updates` and `audit-registry` are all blocked by it, for
+every repo in the chain and not just this one. Eight such trees were left
+behind during EA-ticket work (quoin#195).
+
+Put them **under the repo**, where no package scan reaches:
+
+```bash
+git worktree add .worktrees/<name> -b <branch> origin/main
+```
+
+Claude Code's own `EnterWorktree` already does this — it nests under
+`<repo>/.claude/worktrees/<name>`.
+
+**Teardown is part of the work.** A worktree is not small: the eight above held
+316 MB, one of them 202 MB. When the branch is pushed, remove it:
+
+```bash
+git worktree remove .worktrees/<name>
+```
+
+If a tree is being kept, say so and why. `ticket-runner` is the model — its
+`removeWorkspace()` runs `git worktree remove --force` gated by
+`keepWorkspaces` (default `false`), for the stated reason that _"worktrees are
+not small, and an unattended fleet left running will fill a disk."_ Same class
+as quoin#184, where `mkdtempSync` fixtures were created with no teardown path.
+
 ## Dogfooding an unreleased quoin
 
 **There is no local-publish path, and that is a deliberate choice rather than
