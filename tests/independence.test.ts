@@ -13,6 +13,7 @@ import {
   assessIndependence,
   bind,
   readBindings,
+  readEvidenceLineage,
   readIndependencePolicy,
   recordRun,
   requireKnownPolicyObligations,
@@ -127,6 +128,24 @@ describe("TC-303 strict lineage and policy boundaries", () => {
         ],
       }),
     ).toThrow(/duplicate dimensions/);
+
+    const duplicated = policy();
+    duplicated.requirements.push({
+      ...duplicated.requirements[0],
+      id: "IR-2",
+    });
+    expect(() => validateIndependencePolicy(duplicated)).toThrow(
+      /duplicates another obligation requirement/,
+    );
+
+    duplicated.requirements[1] = {
+      ...duplicated.requirements[1],
+      id: "IR-1",
+      obligation: "FR-002-AC-1",
+    };
+    expect(() => validateIndependencePolicy(duplicated)).toThrow(
+      /duplicates another requirement id/,
+    );
   });
 
   // Trace: FR-047-AC-2
@@ -141,6 +160,26 @@ describe("TC-303 strict lineage and policy boundaries", () => {
     expect(() =>
       requireKnownPolicyObligations(selected, ["FR-999-AC-1"]),
     ).toThrow(OBLIGATION);
+
+    const twoStale = policy();
+    twoStale.requirements = [
+      { ...twoStale.requirements[0], obligation: "FR-003-AC-1" },
+      {
+        ...twoStale.requirements[0],
+        id: "IR-2",
+        obligation: "FR-002-AC-1",
+      },
+    ];
+    expect(() => requireKnownPolicyObligations(twoStale, [])).toThrow(
+      /FR-002-AC-1, FR-003-AC-1/,
+    );
+
+    const lineagePath = join(root, "lineage.json");
+    writeFileSync(lineagePath, JSON.stringify(lineageA));
+    expect(readEvidenceLineage(lineagePath)).toEqual(lineageA);
+
+    writeFileSync(lineagePath, "not-json");
+    expect(() => readEvidenceLineage(lineagePath)).toThrow(/not readable JSON/);
   });
 });
 
@@ -158,6 +197,44 @@ describe("TC-304..TC-307 relationship independence", () => {
     ]);
     expect(two.status).toBe("satisfied");
     expect(two.satisfiedBy).toEqual(["SUITE-A", "SUITE-B"]);
+
+    const sameSuite = assessIndependence("AP-001", policy().requirements[0], [
+      binding("SUITE-A", lineageA),
+      binding("SUITE-A", lineageB),
+    ]);
+    expect(sameSuite.status).toBe("insufficient");
+
+    const actorRequirement = policy(["actor"]).requirements[0];
+    const missingFirst = assessIndependence("AP-001", actorRequirement, [
+      binding("SUITE-A", { technique: "inspection" }),
+      binding("SUITE-B", lineageB),
+    ]);
+    const missingSecond = assessIndependence("AP-001", actorRequirement, [
+      binding("SUITE-A", lineageA),
+      binding("SUITE-B", { technique: "inspection" }),
+    ]);
+    const sharedActor = assessIndependence("AP-001", actorRequirement, [
+      binding("SUITE-A", lineageA),
+      binding("SUITE-B", { ...lineageB, actor: lineageA.actor }),
+    ]);
+    expect([
+      missingFirst.status,
+      missingSecond.status,
+      sharedActor.status,
+    ]).toEqual(["insufficient", "insufficient", "insufficient"]);
+
+    const allDimensions = assessIndependence(
+      "AP-001",
+      policy([
+        "actor",
+        "implementation-toolchain",
+        "technique",
+        "data-source",
+        "review-path",
+      ]).requirements[0],
+      [binding("SUITE-A", lineageA), binding("SUITE-B", lineageB)],
+    );
+    expect(allDimensions.status).toBe("satisfied");
   });
 
   // Trace: FR-047-AC-4
