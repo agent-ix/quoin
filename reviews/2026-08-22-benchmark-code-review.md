@@ -25,11 +25,11 @@ programme exists to make trustworthy.
 
 ## Findings
 
-| ID      | Severity | Summary                                                                 | Refs                            |
-| ------- | -------- | ----------------------------------------------------------------------- | ------------------------------- |
-| FND-001 | medium   | `scoreFindings` matches by family alone and ignores `location`, so a right-family wrong-place finding scores as a true positive | evals/lib/quality.mjs:38        |
-| FND-002 | medium   | An answer-key entry with `expect_metric` and no `expect_value` becomes a permanent silent miss, and nothing guards it | scripts/battletest.mjs:78       |
-| FND-003 | low      | `test_the_report_is_deterministic_and_carries_provenance` cannot fail against the current implementation | scripts/tests/test_bench.py:73  |
+| ID      | Severity | Summary                                                                                                                         | Refs                           |
+| ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------- | ------------------------------ |
+| FND-001 | medium   | `scoreFindings` matches by family alone and ignores `location`, so a right-family wrong-place finding scores as a true positive | evals/lib/quality.mjs:38       |
+| FND-002 | medium   | An answer-key entry with `expect_metric` and no `expect_value` becomes a permanent silent miss, and nothing guards it           | scripts/battletest.mjs:78      |
+| FND-003 | low      | `test_the_report_is_deterministic_and_carries_provenance` cannot fail against the current implementation                        | scripts/tests/test_bench.py:73 |
 
 ## Detail
 
@@ -38,11 +38,13 @@ programme exists to make trustworthy.
 `scoreFindings` pairs a reported finding to a label on `family` only:
 
 ```js
-const hit = expected.find((l) => !matched.has(l.id) && l.family === finding.family);
+const hit = expected.find(
+  (l) => !matched.has(l.id) && l.family === finding.family,
+);
 ```
 
 `labels.json` carries a `location` for every seeded defect, and it is never
-read. Any finding of the right *kind* consumes a label of that kind regardless
+read. Any finding of the right _kind_ consumes a label of that kind regardless
 of where it points.
 
 **Failure scenario.** A tier-1 corpus seeds two `marker-form-mismatch` defects,
@@ -99,8 +101,8 @@ assert first == second
 an unordered map. Nothing that could be changed inside it makes this assertion
 fail short of deliberately injecting non-determinism.
 
-`rust-review` §4 asks of every assertion: *what change to the source makes this
-fail?* Here the honest answer is "adding a timestamp", which is the guard's
+`rust-review` §4 asks of every assertion: _what change to the source makes this
+fail?_ Here the honest answer is "adding a timestamp", which is the guard's
 stated purpose and is worth keeping — but as written it is a tripwire, not a
 test, and should say so.
 
@@ -115,7 +117,7 @@ inferring it from two equal calls.
   files, so every one exercises real code.
 - **Mock boundary** — the `mocked-confirmation` check takes injections as
   caller-supplied input rather than reaching into source, and treats absent
-  data as *"nobody looked"* rather than a clean bill. That is the right seam.
+  data as _"nobody looked"_ rather than a clean bill. That is the right seam.
 - **Metric shape** — `scoreCost` reads `metrics.tokenUsage.total` and
   `metrics.toolCalls`; both match what `evals/lib/metrics.mjs` actually
   returns. Verified against the emitting code, not assumed.

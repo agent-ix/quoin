@@ -21,7 +21,8 @@ const labels = [
 ];
 
 describe("finding precision and recall", () => {
-  it("is reported per family, because an average hides a hole", () => {
+  it("TC-941 is reported per family, because an average hides a hole", () => {
+    // TC-941
     // A tool that finds every marker mismatch and no vacuous suite has a
     // respectable average — and the average is exactly what hides it.
     const { families } = scoreFindings(
@@ -34,7 +35,8 @@ describe("finding precision and recall", () => {
     expect(byFamily["vacuous-under-guard"].misses).toBe(1);
   });
 
-  it("counts a finding matching no label as a false positive", () => {
+  it("TC-942 counts a finding matching no label as a false positive", () => {
+    // TC-942
     const { families } = scoreFindings(
       [
         { family: "marker-form-mismatch", rowId: "TC-001" },
@@ -59,7 +61,8 @@ describe("finding precision and recall", () => {
     );
   });
 
-  it("reports null, not zero, when a family has no denominator", () => {
+  it("TC-943 reports null, not zero, when a family has no denominator", () => {
+    // TC-943
     // 0/0 is not 0%. A precision of 0 claims the run was wrong; null says it
     // emitted nothing to be right or wrong about.
     const { families } = scoreFindings([], labels);
@@ -70,7 +73,8 @@ describe("finding precision and recall", () => {
 });
 
 describe("actionability", () => {
-  it("counts findings that name where, which is what 15 of 496 measured", () => {
+  it("TC-944 counts findings that name where, which is what 15 of 496 measured", () => {
+    // TC-944
     // Pass 2: 481 findings named neither the row they came from nor a line
     // that distinguished them. A finding you cannot act on is a finding nobody
     // acts on, whatever its precision.
@@ -92,7 +96,8 @@ describe("actionability", () => {
 });
 
 describe("cost per confirmed insight", () => {
-  it("reports tokens AND tool calls, which are different costs", () => {
+  it("TC-945 reports tokens AND tool calls, which are different costs", () => {
+    // TC-945
     // Tokens are the context budget; tool calls are wall-clock and blast
     // radius. A run that reads the corpus once and one that greps it forty
     // times can spend the same tokens.

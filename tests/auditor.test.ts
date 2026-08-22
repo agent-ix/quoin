@@ -990,7 +990,8 @@ describe("mocked confirmation (#204)", () => {
     entries: [{ symbol: "tests::confirms", outcome: "pass" as const }],
   };
 
-  it("an obligation discharged only by a mocked stand-in is reported", () => {
+  it("TC-936 an obligation discharged only by a mocked stand-in is reported", () => {
+    // TC-936
     // The measured case: the trusted-UI confirmation had NO implementation,
     // and the test passed by injecting `Confirmation::allow()` — mocking
     // exactly the behaviour the criterion verifies.
@@ -1016,7 +1017,8 @@ describe("mocked confirmation (#204)", () => {
     expect(found[0].summary).toContain("whether or not that behaviour exists");
   });
 
-  it("a mock unrelated to the statement's subject is not reported", () => {
+  it("TC-937 a mock unrelated to the statement's subject is not reported", () => {
+    // TC-937
     // Tests legitimately mock clocks, filesystems and networks. What this is
     // looking for is the narrow case where the mock's NAME is the statement's
     // subject.
@@ -1037,7 +1039,8 @@ describe("mocked confirmation (#204)", () => {
     ).toHaveLength(0);
   });
 
-  it("one real suite alongside a mocked one is not reported", () => {
+  it("TC-938 one real suite alongside a mocked one is not reported", () => {
+    // TC-938
     // Ordinary test design: a suite stands in a dependency while another
     // exercises the real path. Flagging it would fire across most of the
     // corpus for a reason unrelated to this defect.
@@ -1059,7 +1062,8 @@ describe("mocked confirmation (#204)", () => {
     ).toHaveLength(0);
   });
 
-  it("no injection data means silence, not a clean bill", () => {
+  it("TC-939 no injection data means silence, not a clean bill", () => {
+    // TC-939
     // Absent means "nobody looked". Reporting healthy here would be the
     // silent-zero defect this whole programme is about.
     const report = audit({
@@ -1072,7 +1076,8 @@ describe("mocked confirmation (#204)", () => {
     ).toHaveLength(0);
   });
 
-  it("the finding ratchets through the existing key form", () => {
+  it("TC-940 the finding ratchets through the existing key form", () => {
+    // TC-940
     // #204 asked to extend `evidence audit`, not to build a second system, so
     // the finding must be acceptable in a baseline like every other kind.
     const report = audit({
