@@ -562,6 +562,10 @@ export function bind(
     ...prior,
     commit: next.commit,
     symbols: next.symbols,
+    // Lineage describes the CURRENT evidence relationship. Omission on a new
+    // record clears it rather than silently carrying an old independence claim
+    // into evidence that did not state one.
+    lineage: next.lineage,
   };
   const bindings = [...existing];
   bindings[idx] = merged;

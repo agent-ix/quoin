@@ -51,3 +51,4 @@ description: "Index of functional requirements (FR) for quoin."
 * [FR-041: SBOM inventories as run evidence](./FR-041-sbom-inventory-evidence.md)
 * [FR-042: Agent-eval reports as run evidence](./FR-042-agent-eval-evidence.md)
 * [FR-046: Use-specific evidence-producer trust decisions and invalidation](./FR-046-evidence-producer-trust.md)
+* [FR-047: Profile-selected evidence independence](./FR-047-profile-selected-evidence-independence.md)

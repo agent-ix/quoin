@@ -47,6 +47,12 @@ export {
   type BaselineFile,
   type Binding,
   type BindingsFile,
+  type EvidenceLineage,
+  type IndependenceAssessment,
+  type IndependenceDimension,
+  type IndependenceDimensionAssessment,
+  type IndependencePolicy,
+  type IndependenceRequirement,
   type RunEntry,
   type RunRecord,
   type ProducerContext,
@@ -57,6 +63,14 @@ export {
 } from "./types.js";
 
 export { assessTrust, validateTrustDecision } from "./trust.js";
+export {
+  assessIndependence,
+  readEvidenceLineage,
+  readIndependencePolicy,
+  requireKnownPolicyObligations,
+  validateEvidenceLineage,
+  validateIndependencePolicy,
+} from "./independence.js";
 
 export {
   obligationsFrom,
