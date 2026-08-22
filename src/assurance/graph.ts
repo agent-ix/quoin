@@ -13,7 +13,10 @@
 import type { Obligation } from "../quire/index.js";
 import type { Finding } from "../auditor/index.js";
 import type { BundleDocument } from "../completeness/index.js";
-import type { TrustAssessment } from "../evidence/index.js";
+import type {
+  IndependenceAssessment,
+  TrustAssessment,
+} from "../evidence/index.js";
 
 /** GSN node kinds, in the vocabulary the standard uses. */
 export type NodeKind = "goal" | "strategy" | "solution";
@@ -62,6 +65,8 @@ export interface AssuranceCase {
   unreadable: Array<{ path: string; reason: string }>;
   /** Use-specific producer reliance shown as context, never claim support. */
   producerTrust: TrustAssessment[];
+  /** Profile-selected separation results, shown as context and claim findings. */
+  evidenceIndependence?: IndependenceAssessment[];
 }
 
 /** The edge verbs that mean "this document elaborates that one". */
@@ -91,6 +96,7 @@ export interface CaseInput {
   claimTypes?: string[];
   unreadable?: Array<{ path: string; reason: string }>;
   producerTrust?: TrustAssessment[];
+  evidenceIndependence?: IndependenceAssessment[];
 }
 
 /**
@@ -179,6 +185,11 @@ export function buildCase(input: CaseInput): AssuranceCase {
       a.id.localeCompare(b.id),
     ),
   };
+  if (input.evidenceIndependence !== undefined) {
+    assurance.evidenceIndependence = [...input.evidenceIndependence].sort(
+      (a, b) => a.obligation.localeCompare(b.obligation),
+    );
+  }
   if (claims.length === 0) {
     // The human renderer's explanation, made machine-readable. Naming the
     // SEARCHED types (as the caller spelled them) is what lets a pipeline see

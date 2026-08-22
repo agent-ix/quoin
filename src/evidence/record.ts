@@ -10,7 +10,12 @@
 
 import type { CoverageReport, Obligation } from "../quire/index.js";
 import { bind, readBindings, writeBindings, writeRun } from "./store.js";
-import { STORE_SCHEMA_VERSION, type Binding, type RunEntry } from "./types.js";
+import {
+  STORE_SCHEMA_VERSION,
+  type Binding,
+  type EvidenceLineage,
+  type RunEntry,
+} from "./types.js";
 
 /** What a caller supplies to record one run. */
 export interface RecordRequest {
@@ -24,6 +29,8 @@ export interface RecordRequest {
    * silent when a run declares none, rather than inferring one.
    */
   evidenceKind?: string;
+  /** Profile-relevant separation facts for each binding this run creates. */
+  lineage?: EvidenceLineage;
   /** ISO-8601. Passed in rather than read from the clock, so a record is reproducible. */
   timestamp: string;
   entries: RunEntry[];
@@ -141,6 +148,7 @@ export function recordRun(request: RecordRequest): RecordOutcome {
       suite: request.suite,
       commit: request.commit,
       symbols: [...symbols].sort(),
+      lineage: request.lineage,
     });
     bindings = result.bindings;
     if (result.created) bound.push(id);
@@ -148,7 +156,6 @@ export function recordRun(request: RecordRequest): RecordOutcome {
   }
 
   writeBindings(request.repo, {
-    schemaVersion: STORE_SCHEMA_VERSION,
     bindings,
   });
 

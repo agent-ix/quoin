@@ -229,8 +229,62 @@ export interface Binding {
   commit: string;
   /** Symbols within that suite that carry the obligation's trace id. */
   symbols: string[];
+  /**
+   * Lineage of this obligation→suite relationship for profile-selected
+   * independence checks. Optional for ordinary evidence; absence stays visible
+   * when a policy asks for a dimension and never becomes an inferred value.
+   */
+  lineage?: EvidenceLineage;
   /** Re-affirmations recorded after a statement changed. */
   affirmations?: Affirmation[];
+}
+
+/** Separation facts carried by one evidence relationship. */
+export interface EvidenceLineage {
+  actor?: string;
+  implementationToolchain?: string;
+  technique?: string;
+  dataSource?: string;
+  reviewPath?: string;
+}
+
+export type IndependenceDimension =
+  | "actor"
+  | "implementation-toolchain"
+  | "technique"
+  | "data-source"
+  | "review-path";
+
+/** One exact obligation for which a profile requests two separated lines. */
+export interface IndependenceRequirement {
+  id: string;
+  obligation: string;
+  dimensions: IndependenceDimension[];
+  rationale: string;
+}
+
+/** Normalized projection of profile-selected independence requirements. */
+export interface IndependencePolicy {
+  schemaVersion: 1;
+  profile: string;
+  requirements: IndependenceRequirement[];
+}
+
+export interface IndependenceDimensionAssessment {
+  dimension: IndependenceDimension;
+  values: string[];
+  missingSuites: string[];
+}
+
+/** Explainable result for one requested obligation, successful or not. */
+export interface IndependenceAssessment {
+  profile: string;
+  requirement: string;
+  obligation: string;
+  status: "satisfied" | "insufficient";
+  dimensions: IndependenceDimensionAssessment[];
+  satisfiedBy?: [string, string];
+  summary: string;
 }
 
 /**

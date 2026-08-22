@@ -9,8 +9,10 @@ import {
   latestRun,
   latestScan,
   listRecordedSuites,
+  readIndependencePolicy,
   readBindings,
   readTrustDecisions,
+  requireKnownPolicyObligations,
   assessTrust,
 } from "../evidence/index.js";
 import type { FindingRecord, RunRecord } from "../evidence/index.js";
@@ -55,6 +57,11 @@ that quietly narrows to what it can prove reads exactly like a complete one.`;
         "safety or security bundle argues from a declared hazard or threat.",
       multiple: true,
     }),
+    "independence-policy": Flags.string({
+      description:
+        "Normalized JSON projection of exact obligation/dimension requirements " +
+        "selected by an AssuranceProfile.",
+    }),
     json: Flags.boolean({ description: "Emit the case as JSON." }),
   };
 
@@ -69,6 +76,20 @@ that quietly narrows to what it can prove reads exactly like a complete one.`;
     const parsed = parseCoverage(runQuire(args));
     if (!parsed.ok) this.error(parsed.error.message, { exit: 2 });
     const obligations = parsed.value.obligations ?? [];
+    let independencePolicy;
+    try {
+      independencePolicy = flags["independence-policy"]
+        ? readIndependencePolicy(flags["independence-policy"])
+        : undefined;
+      if (independencePolicy) {
+        requireKnownPolicyObligations(
+          independencePolicy,
+          obligations.map((obligation) => obligation.id),
+        );
+      }
+    } catch (cause) {
+      this.error((cause as Error).message, { exit: 2 });
+    }
 
     // The auditor's verdict is what makes an evidence leaf supported or open.
     // Re-deriving "is this fresh" here would be a second answer to a question
@@ -80,6 +101,7 @@ that quietly narrows to what it can prove reads exactly like a complete one.`;
       runs: latestRuns(flags.repo),
       scans: latestScans(flags.repo),
       catalog: loadMethodCatalog(flags.module ? [flags.module] : undefined),
+      independencePolicy,
     });
 
     const bundle = readBundleFrontmatter(`${flags.repo}/spec`);
@@ -100,6 +122,7 @@ that quietly narrows to what it can prove reads exactly like a complete one.`;
         })),
       ],
       producerTrust,
+      evidenceIndependence: report.independence,
     });
 
     this.log(
