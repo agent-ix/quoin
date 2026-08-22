@@ -18,6 +18,10 @@
 // The two canaries (TC-EV-001 greenfield, TC-EV-008 repair loop) are the cheapest, highest
 // -signal scenarios; `--canary` runs only those.
 
+import { cpSync, existsSync } from "node:fs";
+import { join } from "node:path";
+import { fileURLToPath } from "node:url";
+
 import {
   copySkeleton,
   removeSection,
@@ -28,6 +32,59 @@ import {
   writeModuleFile,
   writeRepoFile,
 } from "../lib/fixtures.mjs";
+
+const ASSURANCE_MODULE_ROOT =
+  process.env.ENGINEERING_ASSURANCE_ROOT ??
+  fileURLToPath(
+    new URL(
+      "../../../engineering-assurance/engineering_assurance/",
+      import.meta.url,
+    ),
+  );
+
+function installEngineeringAssurance(ctx) {
+  if (!existsSync(join(ASSURANCE_MODULE_ROOT, "manifest.yaml"))) {
+    throw new Error(
+      `engineering-assurance module not found at ${ASSURANCE_MODULE_ROOT}; ` +
+        "set ENGINEERING_ASSURANCE_ROOT to its module directory",
+    );
+  }
+  cpSync(ASSURANCE_MODULE_ROOT, join(ctx.modulesDir, "engineering-assurance"), {
+    recursive: true,
+  });
+}
+
+function seedAssuranceRequirement(ctx) {
+  writeRepoFile(
+    ctx,
+    "spec/functional/FR-001.md",
+    [
+      "---",
+      "id: FR-001",
+      'title: "Recover interrupted work"',
+      "type: FR",
+      "relationships: []",
+      "---",
+      "# FR-001: Recover interrupted work",
+      "",
+      "## Description",
+      "",
+      "When a worker restarts after interruption, the service SHALL resume from the last acknowledged checkpoint.",
+      "",
+      "## Acceptance Criteria",
+      "",
+      "| ID | Criteria | Verification |",
+      "| --- | --- | --- |",
+      "| FR-001-AC-1 | A restarted worker resumes from the last acknowledged checkpoint | Test |",
+      "",
+      "## Dependencies",
+      "",
+      "- **Upstream**: none",
+      "- **Downstream**: none",
+      "",
+    ].join("\n"),
+  );
+}
 
 // --- Shared fixture for the gap-analysis scenarios (TC-EV-030..TC-EV-033) -----------
 // Seeds a PLAN-001 bundle + Test Matrix + code/tests with configurable gaps so each
@@ -1900,6 +1957,78 @@ export const SCENARIOS = [
     expect: {
       files: ["spec/objects/gateway-domain.md"],
       validate: { globs: ["spec/**/*.md"], strict: true, shouldPass: true },
+    },
+  },
+
+  // Assurance-aware /specify battle pair. Both scenarios install the same local
+  // module; only the explicit request is allowed to create an assurance artifact.
+  {
+    id: "TC-EV-058",
+    useCase: "US-001",
+    setup(ctx) {
+      installEngineeringAssurance(ctx);
+      seedAssuranceRequirement(ctx);
+    },
+    prompt:
+      "Use the specify skill to author exactly one AssuranceProfile at " +
+      "spec/assurance/AP-001.md for the recovery behavior in FR-001. Fetch its live " +
+      "contract once with `quoin write . --types AssuranceProfile`. Set status to " +
+      "proposed, give it an accountable owner and bounded recovery scope, and link it " +
+      "to ix://agent-ix/eval/FR-001 with a schema-admitted relationship. Recommend " +
+      "failure-domain and evidence analyses with a rationale. Do not create an " +
+      "ArchitectureDescription, MeasurementPlan, or review document. Validate the " +
+      "changed spec scope, then stop without launching a review.",
+    expect: {
+      agentRan: [
+        {
+          pattern: "quoin\\s+write\\b[\\s\\S]*AssuranceProfile",
+          desc: "fetch the installed AssuranceProfile authoring contract",
+        },
+      ],
+      artifacts: {
+        require: {
+          AssuranceProfile: { min: 1, max: 1, dir: "spec/assurance" },
+        },
+        absent: ["ArchitectureDescription", "MeasurementPlan", "SpecReview"],
+      },
+      fileContains: [
+        {
+          glob: "spec/assurance/*.md",
+          includes: [
+            "mode:\\s*recommend",
+            "failure-domain",
+            "evidence",
+            "ix://agent-ix/eval/FR-001",
+          ],
+        },
+      ],
+      validate: { globs: ["spec/**/*.md"], shouldPass: true },
+    },
+  },
+  {
+    id: "TC-EV-059",
+    useCase: "US-001",
+    setup(ctx) {
+      installEngineeringAssurance(ctx);
+    },
+    prompt:
+      "Use the specify skill to author exactly one ordinary Functional Requirement " +
+      "at spec/functional/FR-001.md: the settings service returns the stored locale " +
+      "for an authenticated user. Include concrete acceptance criteria and validate " +
+      "the changed spec scope. This is a contained behavior request with no assurance, " +
+      "architecture, or measurement artifact requested. Stop after the FR and do not " +
+      "launch a review.",
+    expect: {
+      artifacts: {
+        require: { FR: { min: 1, max: 1, dir: "spec/functional" } },
+        absent: [
+          "AssuranceProfile",
+          "ArchitectureDescription",
+          "MeasurementPlan",
+          "SpecReview",
+        ],
+      },
+      validate: { globs: ["spec/**/*.md"], shouldPass: true },
     },
   },
 
