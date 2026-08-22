@@ -1,6 +1,6 @@
 {
   "name": "@agent-ix/quoin",
-  "description": "Spec-driven development for Claude Code — author validated, ISO/IEC/IEEE 29148-aligned specs, then plan and build against them.",
+  "description": "Spec-driven development for Claude Code \u2014 author validated, ISO/IEC/IEEE 29148-aligned specs, then plan and build against them.",
   "version": "0.9.0",
   "license": "AGPL-3.0-or-later",
   "type": "module",
@@ -34,7 +34,7 @@
         "description": "Read and store quoin configuration (get, set, edit, doctor)."
       },
       "evidence": {
-        "description": "The evidence store — what actually ran, and against which statement (record, affirm, gc)."
+        "description": "The evidence store \u2014 what actually ran, and against which statement (record, affirm, gc)."
       },
       "module": {
         "description": "Install and manage user/community spec modules (list, install, remove, ensure-defaults)."
@@ -57,7 +57,7 @@
     "test:coverage": "vitest run --coverage",
     "test:json": "vitest run --reporter=json --outputFile=report.json || true",
     "test:evals": "node evals/run.mjs",
-    "lint": "eslint \"src/**/*.{ts,tsx,js,jsx}\" \"tests/**/*.{ts,tsx,js,jsx}\" && pnpm run format:check",
+    "lint": "pnpm run typecheck && eslint \"src/**/*.{ts,tsx,js,jsx}\" \"tests/**/*.{ts,tsx,js,jsx}\" && pnpm run format:check",
     "validate": "quire validate \"spec/**/*.md\" \"plan/**/*.md\" \"reviews/*.md\"",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
@@ -86,7 +86,8 @@
     "test-results:find": "./node_modules/.bin/jest-results find",
     "test-results:failed": "./node_modules/.bin/jest-results failed",
     "test-results:errors": "./node_modules/.bin/jest-results errors",
-    "test-results:warnings": "./node_modules/.bin/jest-results warnings"
+    "test-results:warnings": "./node_modules/.bin/jest-results warnings",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
     "@agent-ix/filament-plan-sync": ">=0.1.0",
