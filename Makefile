@@ -36,6 +36,29 @@ test: build validate check-version
 # without reading it again asserts something nobody checked. This target only
 # moves the pin — the adjudication is human work, and the diff belongs in the
 # pull request. Same discipline as quire-rs's coverage_baseline.
+# quoin dogfoods its own evidence store (quoin#206). It shipped one (FR-030)
+# and did not use it on itself, while quire-rs dogfoods aggressively — and a
+# store nobody runs against its own repository is a store whose failure modes
+# nobody meets.
+#
+# `--ratchet` against the committed baseline: the 341 undischarged obligations
+# are the accepted floor, so this can only improve. Not `--strict` in the
+# default gate, because the floor is the whole backlog and failing on it would
+# make the target useless on day one.
+EVIDENCE_MODULE ?= $(HOME)/dev/spec-artifacts-process/spec_artifacts_process
+.PHONY: evidence-audit
+evidence-audit:
+	node bin/quoin.js evidence audit --repo . --module $(EVIDENCE_MODULE) --ratchet
+
+# Re-transcribe this repository's own suite run into the store.
+.PHONY: evidence-record
+evidence-record:
+	mkdir -p reports
+	npx vitest run --reporter=junit --outputFile=reports/junit.xml
+	node bin/quoin.js evidence record --suite SUITE-001 \
+	  --commit "$$(git rev-parse HEAD)" --tool vitest --adapter junit \
+	  --results reports/junit.xml --kind Unit --repo . --module $(EVIDENCE_MODULE)
+
 .PHONY: answer-key-repin
 answer-key-repin:
 	@test -n "$(SHA)" || { echo "usage: make answer-key-repin SHA=<commit>"; exit 2; }
