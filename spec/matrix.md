@@ -381,6 +381,16 @@ generated tests under `tests/props/` and `Unit` for the rest.
 | TC-261 | A case with no claims carries a machine-readable `reason` naming the searched claim types, present exactly when `claims` is empty — `claims: []` alone cannot distinguish a clean case from one where nothing was argued (#170) | Unit | P0 | FR-040-AC-13 | ✅ |
 | TC-262 | `--claim-type` matches case-insensitively — `str`, `STR` and `Hazard` all matched nothing under `===` and exited 0 with an empty case | Unit | P0 | FR-040-AC-14 | ✅ |
 | TC-239 | Retired by #138 (CR-035): the no-catalog-silence rule it pinned is gone — the `metric` discriminator lives on the entry, so the check reads no catalog and TC-269 states the replacement behaviour | Unit | P0 | FR-039-AC-12 | ⛔ Retired |
+| TC-926 | Every metric in the dictionary declares `unit`, `population` and `method`; one missing any of the three is rejected at load rather than reported with a gap | Unit | P0 | FR-043-AC-1 | 🚧 |
+| TC-927 | `finding_precision`/`finding_recall` are declared per defect family, each keyed on a family the corpora label, so no score is reported over an unlabelled population | Unit | P0 | FR-043-AC-2 | 🚧 |
+| TC-928 | `span_grounding_rate` is declared with the pass-2 figure (0 of 65 specific-shape records) as its starting baseline | Unit | P0 | FR-043-AC-3 | 🚧 |
+| TC-929 | `actionability_rate` is declared with the pass-2 figure (15 of 496 findings carrying a row id) as its starting baseline | Unit | P0 | FR-043-AC-4 | 🚧 |
+| TC-930 | `cost_per_confirmed_insight` is declared in tokens AND tool calls per true positive, extending FR-042's eval metrics rather than opening a second accounting | Unit | P1 | FR-043-AC-5 | 🚧 |
+| TC-931 | The silent-zero sentinel is a gate, not a score: expected exactly 0, no tolerance, and a metric with `matched = 0` over a non-zero population and no diagnostic fails the run | Unit | P0 | FR-043-AC-6 | 🚧 |
+| TC-932 | A tier-1 entry's `labels.json` carries each seeded defect's family, location and whether it is expected to be found — so a scored miss is distinguishable from a defect nobody claimed was findable | Unit | P0 | FR-043-AC-7 | 🚧 |
+| TC-933 | A tier-2 entry declares a pinned SHA; a run against a different SHA is refused with a diagnostic naming both, and is never scored against the key | Unit | P0 | FR-043-AC-8 | 🚧 |
+| TC-934 | The score report carries, per metric, the enveloped value and the baseline compared against, and per corpus its tier and identity; two runs over identical inputs are byte-identical | Unit | P0 | FR-043-AC-9 | 🚧 |
+| TC-935 | Ratchet: better rewrites the baseline and passes, worse fails naming metric/values/corpus, equal passes and rewrites nothing; regeneration is deliberate and reviewable | Unit | P0 | FR-043-AC-10 | 🚧 |
 | TC-240 | A real `cli-agent-evals` report yields one entry per scenario, keyed on the scenario id | Unit | P0 | FR-042-AC-1 | ✅ |
 | TC-241 | The scenario id is its own trace id — the join other adapters must construct is already stated here | Unit | P0 | FR-042-AC-2 | ✅ |
 | TC-242 | The outcome is the harness's `ok` over `repeats`, and `passRate` is kept because flaky and failing are different facts | Unit | P0 | FR-042-AC-3 | ✅ |
