@@ -23,7 +23,7 @@ relationships:
 
 The bundled `spec-review` workflow (launched via `quoin review`, driven by
 `ix-flow`) lets the author choose a review set — `base`, `all`, or a `subset` of
-the six analyses — and produces one `SpecReview` document per selected analysis
+the seven analyses — and produces one `SpecReview` document per selected analysis
 under `spec/reviews/`. Each doc is a validated artifact: a `## Summary` plus a
 `## Findings` table whose `Severity` column is constrained to `low|medium|high`.
 The author keeps direct authoring, but two guardrails keep quality stable over
@@ -53,6 +53,12 @@ These examples clarify expectations; they are illustrative, not verification cri
 - **Given** a findings row whose `Severity` is `catastrophic`
 - **When** the doc is validated
 - **Then** validation fails because `Severity` must be one of `low|medium|high`
+
+### US-007-EX-4: The all review set includes EARS conformance
+
+- **Given** the author selects the `all` review set
+- **When** the workflow expands and checks the selected analyses
+- **Then** `ears-conformance` is required alongside the other six focused analyses and acceptance remains blocked until its validated review document is recorded
 
 ## Options (Exploratory)
 

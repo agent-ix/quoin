@@ -20,9 +20,20 @@ build:
 # build step in between, which is why that test passed locally — where a stale
 # `dist/` lingers — and failed on every clean runner.
 # `test` also depends on `validate` (quoin#183): spec docs are part of the gate.
+# `test` also depends on `check-version` (quoin#196): the two version surfaces
+# disagreed for every locally built binary, and only a BUILT artifact can show
+# it — the source has no baked version to disagree with package.json.
 .PHONY: test
-test: build validate
+test: build validate check-version
 	pnpm run test
+
+# Every surface that reports a version reports the same one, and a clean tag
+# reports itself (quoin#196). The class of defect this catches shipped once
+# already one repo over: quire-cli#52, where five consecutive tags shipped
+# binaries all reporting the version before them. Run it before tagging.
+.PHONY: check-version
+check-version: build
+	node scripts/check-version-agreement.mjs
 
 # Spec validation gate, mirroring quire-rs's `make validate` (quoin#183):
 # every spec/, plan/ and reviews/ document must pass `quire validate`

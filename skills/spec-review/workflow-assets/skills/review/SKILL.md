@@ -24,9 +24,9 @@ document per analysis** under `spec/reviews/`, rather than a single freeform rep
   record it in the `request` interview as `review_set` plus `selected_analyses`:
   - `base` — the skill checklist only (ID formats, US/FR/TC quality, the six coverage
     rules). No analysis skills. `selected_analyses` is empty.
-  - `all` — `base` plus all six analyses: `failure-domain`, `integrity`, `dependency`,
-    `evidence`, `risk-complexity`, `scope-boundary`.
-  - `subset` — `base` plus the analyses the user picks from those six.
+  - `all` — `base` plus all seven analyses: `failure-domain`, `integrity`, `dependency`,
+    `evidence`, `risk-complexity`, `scope-boundary`, `ears-conformance`.
+  - `subset` — `base` plus the analyses the user picks from those seven.
 - **analyses_run — run the selected set, one SpecReview doc each.** Run each selected
   analysis (the matching `spec-*-analysis` skill). Prefer running them **in parallel** —
   each writes its own file, so there is no contention.
@@ -55,7 +55,7 @@ hand-copy). The structure below is a reference for what that skeleton contains �
 id: SR-001
 title: "<analysis> review of <scope>"
 type: SpecReview
-analysis: <failure-domain|integrity|dependency|evidence|risk-complexity|scope-boundary|base>
+analysis: <failure-domain|integrity|dependency|evidence|risk-complexity|scope-boundary|ears-conformance|base>
 scope: <spec paths / ids>
 review_set: <base|all|subset>
 ---
