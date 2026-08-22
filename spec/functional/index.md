@@ -102,4 +102,4 @@ description: "Index of functional requirements (FR) for quoin."
 - [FR-092: Stay advisory and read-only over the corpus](./FR-092-stay-advisory-and-read-only.md)
 * [FR-093: Use-specific evidence-producer trust decisions and invalidation](./FR-093-evidence-producer-trust.md)
 * [FR-046: Use-specific evidence-producer trust decisions and invalidation](./FR-046-evidence-producer-trust.md)
-* [FR-047: Profile-selected evidence independence](./FR-047-profile-selected-evidence-independence.md)
+* [FR-094: Profile-selected evidence independence](./FR-094-profile-selected-evidence-independence.md)

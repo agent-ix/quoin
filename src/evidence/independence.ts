@@ -1,4 +1,4 @@
-/** Profile-selected evidence lineage and independence policy (FR-047). */
+/** Profile-selected evidence lineage and independence policy (FR-094). */
 
 import { readFileSync } from "node:fs";
 

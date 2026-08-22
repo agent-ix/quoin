@@ -125,6 +125,8 @@ export interface AuditReport {
   healthy: string[];
   /** Checks that could not run, separate from both findings and clean results. */
   unevaluated: UnevaluatedCheck[];
+  /** Present only when a profile supplied independence requirements. */
+  independence?: IndependenceAssessment[];
 }
 
 export interface UnevaluatedCheck {
@@ -132,8 +134,6 @@ export interface UnevaluatedCheck {
   obligation: string;
   suites: string[];
   reason: string;
-  /** Present only when a profile supplied independence requirements. */
-  independence?: IndependenceAssessment[];
 }
 
 /**
@@ -167,6 +167,7 @@ export function audit(input: AuditInput): AuditReport {
   const inspectedSuites = new Set(
     input.mockInspectionSuites ??
       injections.map((injection) => injection.suite),
+  );
   const independenceByObligation = new Map(
     (input.independencePolicy?.requirements ?? []).map((requirement) => [
       requirement.obligation,
@@ -526,7 +527,6 @@ export function audit(input: AuditInput): AuditReport {
   unevaluated.sort(
     (a, b) => compare(a.obligation, b.obligation) || compare(a.check, b.check),
   );
-  return { findings, healthy: healthy.sort(compare), unevaluated };
   if (input.independencePolicy) {
     const assessed = new Set(independence.map((item) => item.requirement));
     for (const requirement of input.independencePolicy.requirements) {
@@ -540,7 +540,11 @@ export function audit(input: AuditInput): AuditReport {
       );
     }
   }
-  const report: AuditReport = { findings, healthy: healthy.sort(compare) };
+  const report: AuditReport = {
+    findings,
+    healthy: healthy.sort(compare),
+    unevaluated,
+  };
   if (input.independencePolicy) {
     report.independence = independence.sort((a, b) =>
       compare(a.obligation, b.obligation),
