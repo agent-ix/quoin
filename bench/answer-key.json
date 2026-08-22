@@ -47,7 +47,9 @@
       "expect_metric": "coverage.specific_shaped",
       "now_detectable": true,
       "detectable_since": "quire-rs v0.43.0 (FR-050-AC-28)",
-      "fixed_by": "agent-ix/quire-rs#240"
+      "fixed_by": "agent-ix/quire-rs#240",
+      "expect_value": 78,
+      "$expect_note": "78 is the ADJUDICATED figure at the pinned SHA — the specifically-shaped criteria of 951. The detection signal is that the split is reported at all; the value is what it was measured to be, so a change in either is a change worth seeing."
     },
     {
       "id": "AK-004",

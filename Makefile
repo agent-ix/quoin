@@ -46,6 +46,23 @@ test: build validate check-version
 # default gate, because the floor is the whole backlog and failing on it would
 # make the target useless on day one.
 EVIDENCE_MODULE ?= $(HOME)/dev/spec-artifacts-process/spec_artifacts_process
+# Pass 3 is a command, not a day (quoin#203). Runs the tool suite against the
+# PINNED tier-2 corpus, scores it against the adjudicated answer key, and diffs
+# against the checked-in baseline. A finding LOST is the failure; a finding
+# gained is news.
+#
+# It does not replace the human pass. Every conclusion-changing finding of pass
+# 2 came from somebody reading code, and a runner claiming otherwise would be
+# the overclaim this programme exists to end. It replaces the RE-RUN.
+BENCH_CORPUS ?= ../filament-ide-rs
+.PHONY: battletest
+battletest:
+	node scripts/battletest.mjs --corpus $(BENCH_CORPUS) --module $(EVIDENCE_MODULE)
+
+.PHONY: battletest-update
+battletest-update:
+	node scripts/battletest.mjs --update --corpus $(BENCH_CORPUS) --module $(EVIDENCE_MODULE)
+
 .PHONY: evidence-audit
 evidence-audit:
 	node bin/quoin.js evidence audit --repo . --module $(EVIDENCE_MODULE) --ratchet
