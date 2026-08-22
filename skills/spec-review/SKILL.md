@@ -82,3 +82,11 @@ defined in the workflow skill (`workflow-assets/skills/review/SKILL.md`).
 -   Missing Errors: Only happy path. -> Add error modes.
 -   No Coverage: AC without TC. -> Add tests.
 -   Inconsistent IDs: `US-1` instead of `US-001`. -> Fix formatting.
+
+## Output contract
+
+The `SpecReview` this skill emits carries `analysis: base` — the generic review value — this skill runs the analysis lenses and writes one document per lens, so it is the default rather than a lens of its own.
+
+Stated here because nothing checked it (quoin#202): a skill and its declared
+output were unlinked, so drift between them was invisible until a document
+failed validation in an unrelated session.
