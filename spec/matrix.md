@@ -418,6 +418,8 @@ generated tests under `tests/props/` and `Unit` for the rest.
 | TC-282 | A required profile analysis absent from `review_doc` is named by the final coverage gate and prevents acceptance | Unit | P0 | FR-043-AC-6 | ✅ |
 | TC-283 | Direct skill, workflow documentation, intake, invariant, and installed `SpecReview.analysis` schema remain aligned; a profile value outside that set is refused as unsupported | Unit | P0 | FR-043-AC-7 | ✅ |
 | TC-284 | With no applicable profile, the base review path retains the existing empty selected set and passes | Unit | P0 | FR-043-AC-8 | ✅ |
+| TC-EV-058 | In both Claude and Codex harnesses, an explicit assurance-profile request fetches the installed authoring contract once, produces exactly one linked and validated profile, creates no other assurance/review artifact, and stops before review | Eval | P0 | FR-043-AC-1, FR-043-AC-2 | 🚧 live run pending |
+| TC-EV-059 | In both Claude and Codex harnesses, an ordinary contained FR request with the assurance module installed produces exactly one validated FR and no unsolicited assurance/review artifact | Eval | P0 | FR-043-AC-2 | 🚧 live run pending |
 | TC-137 | An obligation whose hash matches, whose suite ran at HEAD, and whose symbols passed produces no finding and is reported healthy | Unit | P0 | FR-032-AC-1 | ✅ |
 | TC-138 | A statement reworded after binding produces a **high**-severity suspect-link naming both hashes — the requirement moved and the evidence did not follow, while the matrix still read as covered | Unit | P0 | FR-032-AC-2 | ✅ |
 | TC-139 | A binding naming a suite with no recorded run is high (it claims evidence not in the store); a run merely behind HEAD is medium | Unit | P0 | FR-032-AC-3 | ✅ |
