@@ -16,6 +16,7 @@ import { describe, expect, it } from "vitest";
 import {
   audit,
   delta,
+  findingKey,
   ratchet,
   type AuditInput,
 } from "../src/auditor/index.js";
@@ -962,5 +963,133 @@ describe("TC-264 unknown-method fires on unbound obligations (FR-032-AC-14)", ()
       }),
     );
     expect(report.findings.map((f) => f.kind)).toEqual(["undischarged"]);
+  });
+});
+
+describe("mocked confirmation (#204)", () => {
+  const obligation = {
+    source: "acceptance-criterion",
+    id: "FR-017-AC-7",
+    document: "spec/functional/FR-017.md",
+    statement:
+      "A destructive action shall require a trusted-UI confirmation before it proceeds.",
+    statement_hash: "h1",
+  };
+  const binding = {
+    obligation: "FR-017-AC-7",
+    statementHashAtBinding: "h1",
+    suite: "SUITE-001",
+    commit: "abc",
+    symbols: ["tests::confirms"],
+  };
+  const run = {
+    schemaVersion: 1,
+    suite: "SUITE-001",
+    commit: "abc",
+    tool: "cargo-test 1.0",
+    entries: [{ symbol: "tests::confirms", outcome: "pass" as const }],
+  };
+
+  it("an obligation discharged only by a mocked stand-in is reported", () => {
+    // The measured case: the trusted-UI confirmation had NO implementation,
+    // and the test passed by injecting `Confirmation::allow()` — mocking
+    // exactly the behaviour the criterion verifies.
+    const report = audit({
+      obligations: [obligation],
+      bindings: [binding],
+      runs: [run],
+      injections: [
+        {
+          suite: "SUITE-001",
+          symbol: "tests::confirms",
+          injects: ["Confirmation::allow"],
+        },
+      ],
+    });
+    const found = report.findings.filter(
+      (f) => f.kind === "mocked-confirmation",
+    );
+    expect(found).toHaveLength(1);
+    expect(found[0].obligation).toBe("FR-017-AC-7");
+    expect(found[0].severity).toBe("medium");
+    expect(found[0].summary).toContain("Confirmation::allow");
+    expect(found[0].summary).toContain("whether or not that behaviour exists");
+  });
+
+  it("a mock unrelated to the statement's subject is not reported", () => {
+    // Tests legitimately mock clocks, filesystems and networks. What this is
+    // looking for is the narrow case where the mock's NAME is the statement's
+    // subject.
+    const report = audit({
+      obligations: [obligation],
+      bindings: [binding],
+      runs: [run],
+      injections: [
+        {
+          suite: "SUITE-001",
+          symbol: "tests::confirms",
+          injects: ["FakeClock"],
+        },
+      ],
+    });
+    expect(
+      report.findings.filter((f) => f.kind === "mocked-confirmation"),
+    ).toHaveLength(0);
+  });
+
+  it("one real suite alongside a mocked one is not reported", () => {
+    // Ordinary test design: a suite stands in a dependency while another
+    // exercises the real path. Flagging it would fire across most of the
+    // corpus for a reason unrelated to this defect.
+    const second = { ...binding, suite: "SUITE-002" };
+    const report = audit({
+      obligations: [obligation],
+      bindings: [binding, second],
+      runs: [run, { ...run, suite: "SUITE-002" }],
+      injections: [
+        {
+          suite: "SUITE-001",
+          symbol: "tests::confirms",
+          injects: ["Confirmation::allow"],
+        },
+      ],
+    });
+    expect(
+      report.findings.filter((f) => f.kind === "mocked-confirmation"),
+    ).toHaveLength(0);
+  });
+
+  it("no injection data means silence, not a clean bill", () => {
+    // Absent means "nobody looked". Reporting healthy here would be the
+    // silent-zero defect this whole programme is about.
+    const report = audit({
+      obligations: [obligation],
+      bindings: [binding],
+      runs: [run],
+    });
+    expect(
+      report.findings.filter((f) => f.kind === "mocked-confirmation"),
+    ).toHaveLength(0);
+  });
+
+  it("the finding ratchets through the existing key form", () => {
+    // #204 asked to extend `evidence audit`, not to build a second system, so
+    // the finding must be acceptable in a baseline like every other kind.
+    const report = audit({
+      obligations: [obligation],
+      bindings: [binding],
+      runs: [run],
+      injections: [
+        {
+          suite: "SUITE-001",
+          symbol: "tests::confirms",
+          injects: ["Confirmation::allow"],
+        },
+      ],
+    });
+    const found = report.findings.find(
+      (f) => f.kind === "mocked-confirmation",
+    )!;
+    expect(findingKey(found)).toBe("mocked-confirmation:FR-017-AC-7");
   });
 });
