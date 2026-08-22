@@ -2011,6 +2011,12 @@ export const SCENARIOS = [
     setup(ctx) {
       installEngineeringAssurance(ctx);
     },
+    // Keep the battle pair focused on assurance opt-in. The isolated repo has no
+    // git remote or master spec, so without an explicit owner `quoin write`
+    // correctly reports Org: unresolved and /specify pauses for human input.
+    env() {
+      return { QUOIN_ORG: "agent-ix" };
+    },
     prompt:
       "Use the specify skill to author exactly one ordinary Functional Requirement " +
       "at spec/functional/FR-001.md: the settings service returns the stored locale " +
