@@ -1,0 +1,2174 @@
+{
+  "commit": "5eb727e3198669aa571f18ffa45998a17a2071c7",
+  "entries": [
+    {
+      "outcome": "pass",
+      "symbol": "tests/advise-command::test::ts::TC-150 the advisor is reachable from a command (FR-031-AC-10, AC-11) > exposes a command class with the flags the workflow needs"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/advise-command::test::ts::TC-150 the advisor is reachable from a command (FR-031-AC-10, AC-11) > advises from the property shape when quire supplies one"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/advise-command::test::ts::TC-150 the advisor is reachable from a command (FR-031-AC-10, AC-11) > still advises an NFR metric row, which has no property shape"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/advise-command::test::ts::TC-150 the advisor is reachable from a command (FR-031-AC-10, AC-11) > a run that exits non-zero still yields its payload"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/advise-command::test::ts::TC-150 the advisor is reachable from a command (FR-031-AC-10, AC-11) > reports an unreadable module instead of throwing"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/advise-command::test::ts::TC-274 the battle-test oracle: real uncatalogued values are not mismatches (FR-031-AC-22) > the vendored contract accepts the CR-091 payload carrying diagnostic values"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/advise-command::test::ts::TC-274 the battle-test oracle: real uncatalogued values are not mismatches (FR-031-AC-22) > classifies all five uncatalogued, and the Inspection disagreement mismatch"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/advise-command::test::ts::TC-274 the battle-test oracle: real uncatalogued values are not mismatches (FR-031-AC-22) > carries the three states in JSON"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/advise-command::test::ts::TC-275 an engine predating CR-091 degrades to two states, and says so (FR-031-AC-23) > reads the join off the diagnostics, and reports a value-less payload as degraded"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/advise-command::test::ts::TC-275 an engine predating CR-091 degrades to two states, and says so (FR-031-AC-23) > falls back to today's two-state report with an explicit note, not a misclassification"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/advise-command::test::ts::TC-276 combined --*-only filters union, and the footer tallies the full population (FR-031-AC-24) > --mismatch-only returns only genuine disagreements"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/advise-command::test::ts::TC-276 combined --*-only filters union, and the footer tallies the full population (FR-031-AC-24) > --mismatch-only --inconclusive-only selects the union, not the empty intersection"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/advisor::test::ts::TC-129 the merged catalog is read from module data > loads every declared method with its rules intact"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/advisor::test::ts::TC-129 the merged catalog is read from module data > merges first-wins and reports a collision rather than absorbing it"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/advisor::test::ts::TC-129 the merged catalog is read from module data > treats an undeclared catalog as empty rather than an error"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/advisor::test::ts::TC-130 an attack surface reaches DAST and SAST > recommends the security methods rather than defaulting to Test"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/advisor::test::ts::TC-131 temporal phrasing reaches monitors and model checking > recommends the methods a single execution cannot discharge"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/advisor::test::ts::TC-132 a reliability NFR reaches fault injection > recommends inducing the failure the requirement claims to tolerate"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/advisor::test::ts::TC-133 a property shape reaches the property methods > routes a round-trip criterion to property-based and metamorphic testing"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/advisor::test::ts::TC-133 a property shape reaches the property methods > ranks a method two rules agree on above one a single rule suggested"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/advisor::test::ts::TC-134 a mismatch with the authored cell is flagged, advisory only > flags an authored method none of the recommendations cover"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/advisor::test::ts::TC-134 a mismatch with the authored cell is flagged, advisory only > accepts an authored method matching a recommended method's class"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/advisor::test::ts::TC-135 silence is reported as silence, not as a recommendation > is inconclusive when no rule matched, and flags no mismatch"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/advisor::test::ts::TC-136 an unobservable axis is skipped, not failed > does not reject a method whose rule names an axis the advisor cannot see"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/advisor::test::ts::characteristic detection is lexical and deterministic > reads facts about the text, never intent"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/advisor::test::ts::characteristic detection is lexical and deterministic > is stable across calls"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/advisor::test::ts::TC-133 an unreadable module manifest is reported, not thrown (FR-031-AC-9) > skips a root with no manifest without reporting it as unreadable"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/advisor::test::ts::TC-133 an unreadable module manifest is reported, not thrown (FR-031-AC-9) > skips malformed YAML and still merges the modules that parsed"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/advisor::test::ts::TC-249 characteristics are read from prose, not from link targets > ignores a link's destination and keeps its text"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/advisor::test::ts::TC-249 characteristics are read from prose, not from link targets > does not treat `path-safety` as the safety characteristic"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/advisor::test::ts::TC-250 high-criticality is read from the obligation, not inferred > mints only when the declared value says so, and never from the statement"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/advisor::test::ts::TC-252 the spec-side triggers for concolic execution > reads a magic-value comparison, and does not read a function signature"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/advisor::test::ts::TC-252 the spec-side triggers for concolic execution > reads constant-time phrasing"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/advisor::test::ts::TC-252 the spec-side triggers for concolic execution > separates reference equivalence from approval testing"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/advisor::test::ts::TC-253 the evidence-side facts > reports an exercised obligation nothing has measured"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/advisor::test::ts::TC-253 the evidence-side facts > reports a seeded fault the tests missed, by the weakest bound symbol"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/advisor::test::ts::TC-253 the evidence-side facts > says nothing about an obligation nothing is bound to"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/advisor::test::ts::TC-253 the evidence-side facts > makes concolic-execution reachable from evidence alone"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/advisor::test::ts::TC-266 structured parameters mint quantified-threshold (FR-031-AC-19) > advises performance-benchmarking for the ticket's NFR-022-M-12 record"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/advisor::test::ts::TC-266 structured parameters mint quantified-threshold (FR-031-AC-19) > a parameters.target mints quantified-threshold whatever the statement says"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/advisor::test::ts::TC-266 structured parameters mint quantified-threshold (FR-031-AC-19) > parameters carrying neither key mint nothing, and absent parameters change nothing"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/advisor::test::ts::TC-267 compound tokens do not leak fragment characteristics (FR-031-AC-20) > `unsafe-audit` does not mint memory-safety — the battle test's clearest false positive"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/advisor::test::ts::TC-267 compound tokens do not leak fragment characteristics (FR-031-AC-20) > bare `unsafe` still mints memory-safety"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/advisor::test::ts::TC-267 compound tokens do not leak fragment characteristics (FR-031-AC-20) > a compound NAMED by the regex still matches: memory-safe, memory safety, use-after-free"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/advisor::test::ts::TC-267 compound tokens do not leak fragment characteristics (FR-031-AC-20) > thread-safety is named whole and mints concurrent; thread-pool is a fragment and does not"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/advisor::test::ts::TC-267 compound tokens do not leak fragment characteristics (FR-031-AC-20) > fail-safe still mints safety"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/advisor::test::ts::TC-267 compound tokens do not leak fragment characteristics (FR-031-AC-20) > the NFR-022-M-12 record end to end: no memory-safety methods, performance-benchmarking instead"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/advisor::test::ts::TC-268 architectural statements reach architecture-conformance (FR-031-AC-21) > an architecture-absence claim mints module-boundary (FR-015-AC-4)"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/advisor::test::ts::TC-268 architectural statements reach architecture-conformance (FR-031-AC-21) > a zero-dependencies declaration mints layering (FR-015-AC-6)"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/advisor::test::ts::TC-268 architectural statements reach architecture-conformance (FR-031-AC-21) > a dependency-check rejection mints layering (FR-015-AC-3)"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/advisor::test::ts::TC-268 architectural statements reach architecture-conformance (FR-031-AC-21) > an acyclicity NFR mints layering (NFR-009)"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/advisor::test::ts::TC-268 architectural statements reach architecture-conformance (FR-031-AC-21) > `top-level claim` — the assurance-case term of art — mints nothing"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/advisor::test::ts::TC-273 three states: mismatch, uncatalogued, inconclusive (FR-031-AC-22, AC-23) > an engine-diagnosed uncatalogued value is uncatalogued, never a mismatch"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/advisor::test::ts::TC-273 three states: mismatch, uncatalogued, inconclusive (FR-031-AC-22, AC-23) > a declared method the advisor disagrees with is still a mismatch"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/advisor::test::ts::TC-273 three states: mismatch, uncatalogued, inconclusive (FR-031-AC-22, AC-23) > uncatalogued and inconclusive coexist: the vocabulary fact survives silence"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/advisor::test::ts::TC-273 three states: mismatch, uncatalogued, inconclusive (FR-031-AC-22, AC-23) > absent classification (an engine predating CR-091) degrades to two states"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/advisor::test::ts::TC-273 three states: mismatch, uncatalogued, inconclusive (FR-031-AC-22, AC-23) > an empty authored cell is never uncatalogued, whatever the caller claims"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/agent-eval::test::ts::the agent-eval adapter > reads a real report as one entry per scenario"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/agent-eval::test::ts::the agent-eval adapter > uses the scenario id as its own trace id"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/agent-eval::test::ts::the agent-eval adapter > takes the harness's verdict rather than recomputing it"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/agent-eval::test::ts::the agent-eval adapter > refuses a report with no scenario results"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/agent-eval::test::ts::the agent-eval adapter > is selected by --adapter and by the harness name"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/arch-boundaries::test::ts::quoin's declared boundaries > no library module imports from src/commands/"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/arch-boundaries::test::ts::quoin's declared boundaries > executes only git, quire and ix-flow"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/arch-conformance::test::ts::the audit-script adapter > reads a real all-passing run as rules that ran and found nothing"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/arch-conformance::test::ts::the audit-script adapter > turns a FAIL line into a finding carrying the criterion it audits"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/arch-conformance::test::ts::the audit-script adapter > counts OK lines as rules evaluated, so a clean run is not vacuous"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/arch-conformance::test::ts::the audit-script adapter > rejects output carrying no audit line at all"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/arch-conformance::test::ts::the audit-script adapter > is selected by --tool for the tools that emit this shape"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/arch-conformance::test::ts::advising architecture conformance > mints both characteristics the catalog's rule is keyed on"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/arch-conformance::test::ts::advising architecture conformance > recommends the method for an architectural statement, end to end"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/assurance::test::ts::building the case > argues from the claim down to its evidence"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/assurance::test::ts::building the case > keeps an obligation with a finding in the tree, as an open node"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/assurance::test::ts::building the case > propagates open upward, so a claim is not supported by a broken branch"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/assurance::test::ts::building the case > marks a claim nothing traces to as undeveloped, not as met"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/assurance::test::ts::building the case > reports requirements no claim reaches instead of rendering around them"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/assurance::test::ts::building the case > shows a requirement that refines two claims under both"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/assurance::test::ts::building the case > stops at a cycle without dropping a legitimately shared child"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/assurance::test::ts::building the case > reads the claim type from the caller, never a constant"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/assurance::test::ts::building the case > carries a machine-readable reason exactly when nothing is a claim"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/assurance::test::ts::building the case > matches --claim-type case-insensitively"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/assurance::test::ts::building the case > derives an obligation's owner from its id"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/assurance::test::ts::rendering the case > is byte-identical over unchanged inputs"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/assurance::test::ts::rendering the case > emits mermaid that cannot be broken by a statement's punctuation"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/assurance::test::ts::rendering the case > says there is no case rather than rendering an empty one"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/auditor::test::ts::TC-137 healthy evidence produces no finding > reports the obligation as healthy"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/auditor::test::ts::TC-138 a suspect link is the highest-severity finding > fires when the statement changed after binding, and says so"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/auditor::test::ts::TC-139 stale evidence > is high when the binding names a suite with no recorded run"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/auditor::test::ts::TC-139 stale evidence > is medium when the run is merely behind HEAD"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/auditor::test::ts::TC-140 vacuous evidence > fires when every bound symbol was skipped"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/auditor::test::ts::TC-140 vacuous evidence > fires when a bound symbol is absent from the run entirely"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/auditor::test::ts::TC-140 vacuous evidence > does not fire when at least one bound symbol actually passed"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/auditor::test::ts::TC-141 an obligation with no binding is undischarged > reports it at medium, not high"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/auditor::test::ts::TC-142 method conformance > compares kind to kind, not entry count"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/auditor::test::ts::TC-142 method conformance > accepts a run whose kind IS the method's kind"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/auditor::test::ts::TC-142 method conformance > says nothing when the run declares no kind"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/auditor::test::ts::TC-142 method conformance > reports a method no catalog carries rather than skipping it"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/auditor::test::ts::TC-142 method conformance > accepts a Test obligation discharged by a Unit run"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/auditor::test::ts::TC-142 method conformance > asks nothing when no catalog is available"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/auditor::test::ts::TC-143 multiplicity > flags a critical obligation whose evidence is all one suite"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/auditor::test::ts::TC-143 multiplicity > accepts two bindings from two different suites"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/auditor::test::ts::TC-143 multiplicity > does not apply when criticality is below the threshold"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/auditor::test::ts::TC-144 ratchet and per-PR delta > reports only violations absent from the baseline"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/auditor::test::ts::TC-144 ratchet and per-PR delta > can baseline EVERY finding kind, not two named buckets"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/auditor::test::ts::TC-144 ratchet and per-PR delta > computes what a PR added and resolved"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/auditor::test::ts::the report is deterministic > orders findings by obligation then kind"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/auditor::test::ts::TC-145 one obligation, two suites (FR-032-AC-8) > clears the multiplicity finding two independent suites satisfy"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/auditor::test::ts::TC-145 one obligation, two suites (FR-032-AC-8) > still reports it when both bindings name the same suite"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/auditor::test::ts::TC-145 one obligation, two suites (FR-032-AC-8) > reports a suspect link when one suite bound before the reword"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/auditor::test::ts::TC-145 one obligation, two suites (FR-032-AC-8) > is not vacuous when one suite skipped and the other ran"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/auditor::test::ts::TC-145 one obligation, two suites (FR-032-AC-8) > is vacuous only when every symbol in every suite was skipped"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/auditor::test::ts::TC-147 every finding kind can be baselined (FR-032-AC-11) > accepts each kind by its own key"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/auditor::test::ts::TC-219 mutation score as the acceptance-criteria oracle > says nothing until a floor is declared"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/auditor::test::ts::TC-219 mutation score as the acceptance-criteria oracle > flags a bound score below the declared floor"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/auditor::test::ts::TC-219 mutation score as the acceptance-criteria oracle > accepts a score at the floor"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/auditor::test::ts::TC-219 mutation score as the acceptance-criteria oracle > judges on the WORST bound symbol, not the mean"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/auditor::test::ts::TC-219 mutation score as the acceptance-criteria oracle > reports a demanded floor that nothing measured"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/auditor::test::ts::TC-219 mutation score as the acceptance-criteria oracle > does not read a skipped symbol's absent score as zero"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/auditor::test::ts::TC-219 mutation score as the acceptance-criteria oracle > does not read a latency or an unlabelled score as a mutation score"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/auditor::test::ts::TC-219 mutation score as the acceptance-criteria oracle > applies only to the criticality the floor names"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/auditor::test::ts::TC-219 mutation score as the acceptance-criteria oracle > judges a labelled score from a tool no catalog lists"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/auditor::test::ts::TC-219 mutation score as the acceptance-criteria oracle > needs no catalog: the entry's declared metric is the whole answer"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/auditor::test::ts::TC-219 mutation score as the acceptance-criteria oracle > an unlabelled score is not a mutation score — no fallback read of the tool name"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/auditor::test::ts::TC-220 --mutation-floor is parsed, and a bad one is refused > reads <criticality>=<ratio> pairs"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/auditor::test::ts::TC-220 --mutation-floor is parsed, and a bad one is refused > refuses a percentage, which would fail every obligation forever"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/auditor::test::ts::TC-220 --mutation-floor is parsed, and a bad one is refused > refuses a malformed entry rather than ignoring it"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/auditor::test::ts::TC-148 the audit command reads the catalog from --module > loads only what the named module declares, not the installed roots"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/auditor::test::ts::TC-148 the audit command reads the catalog from --module > passes the flag through from the command, so the two agree"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/auditor::test::ts::TC-264 unknown-method fires on unbound obligations (FR-032-AC-14) > an unbound obligation with an uncatalogued method yields BOTH undischarged and unknown-method"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/auditor::test::ts::TC-264 unknown-method fires on unbound obligations (FR-032-AC-14) > an unbound obligation with a catalogued method is only undischarged"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/auditor::test::ts::TC-264 unknown-method fires on unbound obligations (FR-032-AC-14) > with no catalog the question is not asked, bound or not"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/auditor::test::ts::mocked confirmation (#204) > an obligation discharged only by a mocked stand-in is reported"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/auditor::test::ts::mocked confirmation (#204) > a mock unrelated to the statement's subject is not reported"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/auditor::test::ts::mocked confirmation (#204) > one real suite alongside a mocked one is not reported"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/auditor::test::ts::mocked confirmation (#204) > no injection data means silence, not a clean bill"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/auditor::test::ts::mocked confirmation (#204) > the finding ratchets through the existing key form"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/bench-corpora::test::ts::tier-1 seeded corpora > every corpus isolates ONE defect family"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/bench-corpora::test::ts::tier-1 seeded corpora > there is a clean control with no seeded defect"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/bench-corpora::test::ts::tier-1 seeded corpora > every seeded defect is fully labelled"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/bench-corpora::test::ts::tier-1 seeded corpora > defect ids are unique across the whole corpus set"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/bench-corpora::test::ts::tier-1 seeded corpora > the build is deterministic and writes labels.json"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/bench-corpora::test::ts::tier-1 seeded corpora > every named battletest failure family has a corpus"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/bench-corpora::test::ts::tier-2 adjudicated answer key > it is pinned to a commit and says why re-pinning is not free"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/bench-corpora::test::ts::tier-2 adjudicated answer key > every finding records how it was found, and it was not the tools"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/bench-corpora::test::ts::tier-2 adjudicated answer key > a finding that is not yet detectable says so and names its ticket"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/bench-corpora::test::ts::tier-2 adjudicated answer key > finding ids are unique"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/catalog-fact-join::test::ts::the catalog and the fact set agree > declares no characteristic that nothing can produce"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/catalog-fact-join::test::ts::the catalog and the fact set agree > carries no exemption for a value the catalog no longer declares"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/catalog-fact-join::test::ts::the catalog and the fact set agree > leaves no method unreachable by every statement"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/catalog::test::ts::ixHome > uses IX_HOME when set and non-empty"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/catalog::test::ts::ixHome > falls back to ~/.ix when IX_HOME is unset"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/catalog::test::ts::ixHome > falls back to ~/.ix when IX_HOME is empty"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/catalog::test::ts::defaultModuleRoots > includes QUOIN_MODULE_PATHS entries and installed module dirs"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/catalog::test::ts::defaultModuleRoots > omits installed dirs when none have been installed"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/catalog::test::ts::loadCatalog > discovers a manifest one level deep under a candidate dir"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/catalog::test::ts::loadCatalog > skips a non-manifest child while scanning one level deep, then finds the manifest sibling"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/catalog::test::ts::loadCatalog > skips candidates that do not resolve to a module root"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/catalog::test::ts::loadCatalog > skips a candidate that is a file, not a directory"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/catalog::test::ts::loadCatalog > aborts (strict) on a present but unparseable manifest.yaml"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/catalog::test::ts::loadCatalog > handles modules with and without a version and artifacts with/without schemaRef"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/catalog::test::ts::loadCatalog > deduplicates repeated module roots and module names"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/catalog::test::ts::loadCatalog > falls back to the directory basename when manifest has no name"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/catalog::test::ts::loadCatalog > ignores non-array and malformed type entries"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/catalog::test::ts::skeleton resolution > resolves no skeleton when the module ships no skeletons directory"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/catalog::test::ts::skeleton resolution > resolves a skeleton named with the type's own casing"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/catalog::test::ts::skeleton resolution > resolves a skeleton named with a lowercase filename"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/catalog::test::ts::skeleton resolution > resolves no skeleton when only an unrelated casing is present"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/catalog::test::ts::findDuplicates > reports a type declared by two modules"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/catalog::test::ts::findDuplicates > reports no duplicates when type names are unique"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/cli-usage::test::ts::rootUsage > lists visible top-level commands, sorted and de-duplicated"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/cli-usage::test::ts::rootUsage > omits hidden commands, so usage never advertises a deprecated way in"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/cli-usage::test::ts::rootUsage > names whatever bin the config declares, rather than a baked-in string"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/cli-usage::test::ts::command_not_found hook > throws a CLIError naming the command and carrying the root usage"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/cli-usage::test::ts::command_not_found hook > exits 2, the code oclif uses for an unresolved command"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/cli-version-missing::test::ts::packageVersion guard > throws when package.json has no string version"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/cli::test::ts::oclif runner dispatch parity > the runner discovers every migrated command (no legacy dispatcher)"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/cli::test::ts::oclif runner dispatch parity > subcommands are space-separated (topicSeparator)"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/cli::test::ts::oclif runner dispatch parity > the hand-rolled parseArgs dispatcher is gone from cli.ts"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/cli::test::ts::oclif runner dispatch parity > an unknown command is rejected by the runner"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/cli::test::ts::oclif runner dispatch parity > an unknown subcommand is rejected by the runner"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/cli::test::ts::version > --version, -v, and the version command all print the package version"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/cli::test::ts::version > packageVersion returns a non-empty string"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/cli::test::ts::version > resolveVersion falls back when no build-time version is baked in"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/cli::test::ts::version > the oclif config carries the same version --version prints"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/cli::test::ts::version > the injected version survives the reload run/execute perform"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/cli::test::ts::main dispatch > a non-version argv is handed to the runner, whose error propagates"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/cli::test::ts::catalog > list (explicit) prints one line per module"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/cli::test::ts::catalog > falls back to IX_HOME when --config-root is omitted, and prints 'unknown' for a versionless module"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/cli::test::ts::catalog > the catalog index command behaves like list"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/cli::test::ts::catalog > list --json prints the whole catalog as JSON"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/cli::test::ts::catalog > show prints a single entry (text)"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/cli::test::ts::catalog > show --json prints the entry as JSON"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/cli::test::ts::catalog > show without a type throws"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/cli::test::ts::catalog > show of a missing type throws"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/cli::test::ts::catalog > validate succeeds with no duplicates (text)"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/cli::test::ts::catalog > validate --json succeeds with no duplicates"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/cli::test::ts::catalog > validate reports duplicates on stderr and sets exit code 1"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/cli::test::ts::module > list and index both print the registry as JSON"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/cli::test::ts::module > install adds a module from a path source"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/cli::test::ts::module > install without a source throws"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/cli::test::ts::module > ensure-defaults runs the installer and reports the registry"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/cli::test::ts::module > ensure-defaults reports installed module names from a non-empty registry"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/cli::test::ts::module > remove deletes a module and prints confirmation"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/cli::test::ts::module > remove without a name throws"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/cli::test::ts::plugin (deprecated alias) > plugin list warns to stderr and forwards to module list"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/cli::test::ts::plugin (deprecated alias) > plugin install warns and forwards to module install"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/cli::test::ts::plugin (deprecated alias) > plugin remove warns and forwards to module remove"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/cli::test::ts::plugin (deprecated alias) > plugin ensure-defaults warns and forwards to module ensure-defaults"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/cli::test::ts::write > missing repo_dir throws"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/cli::test::ts::write > renders an authoring pack as text"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/cli::test::ts::write > renders an authoring pack as JSON with --json"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/cli::test::ts::write > --org reaches the pack in the text rendering"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/cli::test::ts::write > --org reaches the pack under --json"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/cli::test::ts::write > reports an unresolved org with the --org remedy"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/cli::test::ts::config > set stores an org that write then resolves"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/cli::test::ts::config > get resolves for a stored key without erroring"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/cli::test::ts::config > set rejects an unrecognized key"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/cli::test::ts::config > doctor reports on a clean config without failing"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/cli::test::ts::config > edit opens the config file through the shared handler"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/cli::test::ts::spec-flow launchers > review with --target/--json/--id runs the flow (ix-flow exit 0)"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/cli::test::ts::spec-flow launchers > matrix runs the flow and propagates a non-zero exit code"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/cli::test::ts::spec-flow launchers > to-plan runs the flow (ix-flow exit 0)"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/cli::test::ts::flag parsing > --config-root=<home> (eq form) and repeated/positional flags work"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/cli::test::ts::flag parsing > boolean --json flag (no value) is honored"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/cli::test::ts::flag parsing > --no-project-config is accepted"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/combinatorial-coverage::test::ts::parsing a configuration space back out of the statement > reads strength, dimensions and values"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/combinatorial-coverage::test::ts::parsing a configuration space back out of the statement > returns null for any statement that is not a configuration space"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/combinatorial-coverage::test::ts::parsing a configuration space back out of the statement > reads exclusions without mistaking them for dimensions"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/combinatorial-coverage::test::ts::what the space demands > counts every t-way tuple, and agrees with the engine's number"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/combinatorial-coverage::test::ts::what the space demands > does not demand a forbidden combination"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/combinatorial-coverage::test::ts::what a run reached > names the combinations that never ran, not just how many"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/combinatorial-coverage::test::ts::what a run reached > ignores a configuration exercising values the spec never declared"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/combinatorial-coverage::test::ts::what a run reached > reports full coverage as no gap at all"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/combinatorial-coverage::test::ts::the auditor over a combinatorial obligation > reports the missing combinations by name"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/combinatorial-coverage::test::ts::the auditor over a combinatorial obligation > reports no gap when every demanded combination ran"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/combinatorial-coverage::test::ts::the auditor over a combinatorial obligation > says nothing about an obligation that declares no configuration space"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/combinatorial-coverage::test::ts::the advisor over a declared configuration space > advises the combinatorial method structurally, not from prose"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/command-entries::test::ts::TC-149 every command file is a vite build entry > has no command that would be missing from dist/"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/command-entries::test::ts::TC-149 every command file is a vite build entry > declares no entry for a command file that does not exist"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/completeness::test::ts::reading the declared vocabulary > reads the values from module data rather than minting a list"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/completeness::test::ts::reading the declared vocabulary > reports a vocabulary it cannot resolve instead of dropping it"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/completeness::test::ts::the verdict policy > reports a value no document claims as an unowned gap, at medium"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/completeness::test::ts::the verdict policy > rates an exclusion with no written reason above an admitted gap"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/completeness::test::ts::the verdict policy > names an exclusion whose value is not in the vocabulary"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/completeness::test::ts::the verdict policy > accepts a table row naming the value with a real reason"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/completeness::test::ts::the verdict policy > does not accept a non-answer as a reason"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/completeness::test::ts::the verdict policy > fails on a high finding and only escalates a gap under --strict"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/completeness::test::ts::quoin completeness > reports the gaps over a real bundle and exits 0 while advisory"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/completeness::test::ts::quoin completeness > exits non-zero on an unjustified exclusion, without --strict"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/completeness::test::ts::quoin completeness > exits non-zero under --strict on gaps alone"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/completeness::test::ts::quoin completeness > says nothing was checked when no module declares a vocabulary"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/completeness::test::ts::agreement with the engine > counts the same unowned values the bundle read reports"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/config-schema::test::ts::quoin config schema (FR-027-AC-6) > accepts a non-empty org"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/config-schema::test::ts::quoin config schema (FR-027-AC-6) > accepts an absent org rather than defaulting one"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/config-schema::test::ts::quoin config schema (FR-027-AC-6) > rejects an empty org"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/config-schema::test::ts::quoin config schema (FR-027-AC-6) > rejects an unrecognized key"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/config-schema::test::ts::ixSchema convention (FR-027-AC-7) > declares the plugin id, schema, and env binding"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/config-schema::test::ts::config commands delegate to ix-cli-core (FR-027-AC-8) > get calls runConfigGet from the shared package"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/config-schema::test::ts::config commands delegate to ix-cli-core (FR-027-AC-8) > set calls runConfigSet from the shared package"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/config-schema::test::ts::config commands delegate to ix-cli-core (FR-027-AC-8) > edit calls runConfigEdit from the shared package"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/config-schema::test::ts::config commands delegate to ix-cli-core (FR-027-AC-8) > doctor calls runConfigDoctor from the shared package"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/config-schema::test::ts::config commands delegate to ix-cli-core (FR-027-AC-8) > each command registers quoin's schema before delegating"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/eval-assert::test::ts::TC-270 an inexpressible glob is a load error, not a vacuous pass > rejects a brace glob instead of compiling it to match nothing"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/eval-assert::test::ts::TC-270 an inexpressible glob is a load error, not a vacuous pass > fails a scenario carrying a brace glob in absentFiles at load"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/eval-assert::test::ts::TC-270 an inexpressible glob is a load error, not a vacuous pass > still fails absentFiles honestly when a supported glob matches"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/eval-assert::test::ts::TC-270 an inexpressible glob is a load error, not a vacuous pass > keeps supported globs matching, case-insensitively"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/evidence-adapters::test::ts::the adapter registry > selects by --adapter, then by --tool, then falls back to entries"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/evidence-adapters::test::ts::the adapter registry > rejects an unknown --adapter instead of silently using the default"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/evidence-adapters::test::ts::the adapter registry > registers adapters as data, so an external tool can be added"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/evidence-adapters::test::ts::the junit adapter > maps classname + name to the qualified name the extractor emits"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/evidence-adapters::test::ts::the junit adapter > reads every outcome class and the declared trace ids"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/evidence-adapters::test::ts::the junit adapter > names no evidence kind, because JUnit does not carry one"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/evidence-adapters::test::ts::the junit adapter > rejects input carrying no testcase rather than recording an empty run"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/evidence-adapters::test::ts::the cargo-mutants adapter > carries a native score, which is why this format is in scope"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/evidence-adapters::test::ts::the cargo-mutants adapter > reports the tool's own classification, not a threshold"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/evidence-adapters::test::ts::the cargo-mutants adapter > rejects malformed and empty reports"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/evidence-adapters::test::ts::quoin evidence record --adapter > records a JUnit file end to end, through the command"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/evidence-adapters::test::ts::quoin evidence record --adapter > records a cargo-mutants report end to end, preserving score"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/evidence-adapters::test::ts::quoin evidence record --adapter > selects the adapter from --tool when none is named"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/evidence-adapters::test::ts::quoin evidence record --adapter > still accepts the normalized shape with no adapter at all"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/evidence-adapters::test::ts::adapter edge cases the 100% gate requires > decodes XML entities and ignores properties it does not recognise"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/evidence-adapters::test::ts::adapter edge cases the 100% gate requires > reads a self-closing testcase as a pass and skips a nameless one"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/evidence-adapters::test::ts::adapter edge cases the 100% gate requires > does not double a classname that already ends with the member"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/evidence-adapters::test::ts::adapter edge cases the 100% gate requires > counts a timed-out mutant as survived, not as absent"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/evidence-adapters::test::ts::adapter edge cases the 100% gate requires > skips an outcome whose scenario is neither Baseline nor a Mutant"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/evidence-adapters::test::ts::adapter edge cases the 100% gate requires > reports a malformed normalized payload against the entries adapter"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/evidence-adapters::test::ts::junit attribute and separator edges > handles a testcase with no classname attribute at all"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/evidence-adapters::test::ts::junit attribute and separator edges > drops empty ids produced by trailing or repeated separators"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/evidence-adapters::test::ts::skips a testcase carrying neither classname nor name"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/evidence-audit-command::test::ts::evidence audit --ratchet with and without a baseline (FR-032-AC-13) > day one: names the missing baseline and does not claim '(new violations only)'"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/evidence-audit-command::test::ts::evidence audit --ratchet with and without a baseline (FR-032-AC-13) > with a baseline present, ratchets and says so — and prints no missing-baseline notice"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/evidence-audit-command::test::ts::evidence audit --ratchet with and without a baseline (FR-032-AC-13) > JSON `ratchet` reflects whether ratcheting was applied, not what was asked for"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/evidence-audit-command::test::ts::TC-265 audit reports uncatalogued methods with no evidence store at all (FR-032-AC-14) > an unadopted repository hears about its uncatalogued methods, not only that nothing is bound"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/evidence-gc-command::test::ts::TC-263 evidence gc through the command (FR-030-AC-8) > declares exactly repo, dry-run and json — no --module, deliberately"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/evidence-gc-command::test::ts::TC-263 evidence gc through the command (FR-030-AC-8) > --dry-run --json lists what would go and deletes nothing"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/evidence-gc-command::test::ts::TC-263 evidence gc through the command (FR-030-AC-8) > deletes the unreferenced older run and reports each path"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/evidence-gc-command::test::ts::TC-263 evidence gc through the command (FR-030-AC-8) > says 'nothing to collect' over an absent store"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/evidence-store::test::ts::TC-119 the store lives under spec/ > places the store inside the walked document root"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/evidence-store::test::ts::TC-119 the store lives under spec/ > names a run file by suite and 12-char commit prefix"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/evidence-store::test::ts::TC-120 writes are canonical, so a diff of the store is the delta > sorts keys at every level and ends with a newline"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/evidence-store::test::ts::TC-120 writes are canonical, so a diff of the store is the delta > serializes the same record identically twice"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/evidence-store::test::ts::TC-121 the suite is the atomic unit of evidence > keeps one file per (suite, commit) and does not merge suites"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/evidence-store::test::ts::TC-121 the suite is the atomic unit of evidence > is last-write-wins at the same commit"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/evidence-store::test::ts::TC-122 first discharge auto-binds and stamps the hash > binds a passing symbol's obligation with the hash as it stands now"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/evidence-store::test::ts::TC-122 first discharge auto-binds and stamps the hash > does not bind on a failing or skipped symbol"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/evidence-store::test::ts::TC-123 a reworded statement makes a binding suspect > reports suspicion and does NOT overwrite the hash"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/evidence-store::test::ts::TC-124 affirmation is the explicit act > moves the hash forward and records who, at which commit"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/evidence-store::test::ts::TC-124 affirmation is the explicit act > reports an unknown obligation rather than inventing a binding"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/evidence-store::test::ts::TC-125 a trace id no obligation states is reported > names it rather than dropping it"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/evidence-store::test::ts::TC-126 gc keeps the latest run and anything a binding references > deletes only unreferenced older runs"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/evidence-store::test::ts::TC-126 gc keeps the latest run and anything a binding references > changes nothing under --dry-run"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/evidence-store::test::ts::TC-127 an absent store reads as empty, not as an error > returns an empty binding graph before anything has been recorded"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/evidence-store::test::ts::TC-128 no obligation is ever stored > keeps only the hash, never the statement"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/evidence-store::test::ts::bind() is the one place the auto-bind rule lives > creates on first sight and reports suspicion on a changed hash"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/evidence-store::test::ts::TC-129 a second suite appends, it does not overwrite (FR-030-AC-11) > keeps both bindings and orders them by (obligation, suite)"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/evidence-store::test::ts::TC-129 a second suite appends, it does not overwrite (FR-030-AC-11) > re-discharging the SAME suite still merges rather than appending"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/evidence-store::test::ts::TC-129 a second suite appends, it does not overwrite (FR-030-AC-11) > affirming clears every suite's suspicion, not just the first"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/evidence-store::test::ts::TC-130 the latest run is the newest, not the highest filename (FR-030-AC-12) > reads the newest by timestamp even when its filename sorts first"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/evidence-store::test::ts::TC-130 the latest run is the newest, not the highest filename (FR-030-AC-12) > gc keeps the newest run, not the highest filename"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/evidence-store::test::ts::TC-130 the latest run is the newest, not the highest filename (FR-030-AC-12) > orders by commit when two runs share a timestamp"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/evidence-store::test::ts::TC-131 a corrupt store file is named, not a bare SyntaxError (FR-030-AC-13) > names the file and the cause when the binding graph is unreadable"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/evidence-store::test::ts::TC-131 a corrupt store file is named, not a bare SyntaxError (FR-030-AC-13) > skips one corrupt run file instead of hiding every finding"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/evidence-store::test::ts::TC-132 the store's byte order does not depend on the locale (FR-030-AC-14) > writes an exact, pinned byte sequence"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/evidence-store::test::ts::TC-245 a run binds through an obligation's declared test cases > binds a test-case id to the criterion whose cell names it"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/evidence-store::test::ts::TC-245 a run binds through an obligation's declared test cases > binds every criterion the same test case discharges"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/evidence-store::test::ts::TC-245 a run binds through an obligation's declared test cases > prefers a direct obligation id over the indirect route"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/evidence-store::test::ts::TC-245 a run binds through an obligation's declared test cases > still reports a trace id no obligation states, by either route"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/finding-record::test::ts::a clean scan and an unrun scan must not look alike > reads a SARIF run with no results as a scan that HAPPENED"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/finding-record::test::ts::a clean scan and an unrun scan must not look alike > rejects a SARIF log carrying no run at all"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/finding-record::test::ts::the SARIF adapter > reads rule id, level, message and location"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/finding-record::test::ts::the SARIF adapter > accepts the nested rule.id form and skips a result with no rule at all"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/finding-record::test::ts::the SARIF adapter > rejects malformed input and a log with no runs array"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/finding-record::test::ts::the cargo-audit adapter, against real tool output > parses output captured from `cargo audit --json`, not a hand-written fixture"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/finding-record::test::ts::the cargo-audit adapter, against real tool output > keeps each warning kind as its own severity rather than flattening"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/finding-record::test::ts::the cargo-audit adapter, against real tool output > rejects malformed input and output that is not cargo-audit's"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/finding-record::test::ts::the auditor over finding-shaped scans > treats a clean scan as evidence, not as an undischarged obligation"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/finding-record::test::ts::the auditor over finding-shaped scans > reports a scan that evaluated no rules as vacuous"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/finding-record::test::ts::the auditor over finding-shaped scans > stays silent when the tool does not say how many rules it evaluated"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/finding-record::test::ts::the auditor over finding-shaped scans > pairs each run-shaped binding with its OWN run when a scan is also bound"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/finding-record::test::ts::quoin evidence record --adapter sarif > writes a FindingRecord, not a run, end to end through the command"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/finding-record::test::ts::quoin evidence record --adapter sarif > records a clean scan as a scan, so zero findings is still evidence"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/finding-record::test::ts::quoin evidence record --adapter sarif > selects the finding adapter from --tool when none is named"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/finding-record::test::ts::a scan is reachable from every side of the store > binds the obligations it was run to check"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/finding-record::test::ts::a scan is reachable from every side of the store > binds nothing when the scan evaluated no rules"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/finding-record::test::ts::a scan is reachable from every side of the store > enumerates a suite that recorded only scans"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/finding-record::test::ts::a scan is reachable from every side of the store > collects superseded scans, so the store does not grow without bound"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/finding-record::test::ts::tells a tool reporting ZERO rules from a tool reporting no count"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/flows-notfound::test::ts::resolveSkillPath not-found > throws when no candidate root contains the skill"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/flows::test::ts::specFlowNames > lists the bundled spec flows"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/flows::test::ts::startSpecFlow > resolves when ix-flow exits 0; builds id/json/target args"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/flows::test::ts::startSpecFlow > resolves with no optional opts (default empty target)"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/flows::test::ts::startSpecFlow > sets process.exitCode when ix-flow exits non-zero"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/flows::test::ts::startSpecFlow > defaults exit code to 1 when ix-flow is killed by a signal (null code)"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/flows::test::ts::startSpecFlow > rejects when ix-flow cannot be spawned (PATH has no ix-flow)"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/flows::test::ts::startSpecFlow > throws for an unknown flow name"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/index::test::ts::exports the quoin CLI entrypoint"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/index::test::ts::lazily installs the default module set, then loads its artifacts and objects"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/index::test::ts::creates authoring packs for case-insensitive artifact and object types"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/index::test::ts::installs, lists, and removes a plugin from a local path source"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/index::test::ts::parseSourceArg maps CLI prefixes to typed sources"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/index::test::ts::ships the committed default module set"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/index::test::ts::ships claude plugin skills without artifact-specific write skills"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/index::test::ts::ships a Codex plugin manifest with its marketplace metadata"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/it-005-sync-discovery::test::ts::core-plugin discovery (FR-026-AC-7) > filament-plan-sync is discovered as a CORE plugin contributing `sync`"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/it-005-sync-discovery::test::ts::core-plugin discovery (FR-026-AC-7) > the `sync` command resolves with no runtime install step"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/it-005-sync-discovery::test::ts::core-plugin discovery (FR-026-AC-7) > an existing host command (catalog) still resolves unchanged"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/org-no-subprocess::test::ts::resolves the org from a git remote without executing any subprocess"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/org-no-subprocess::test::ts::reports unresolved without executing any subprocess"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/org::test::ts::resolveOrg precedence (FR-025-AC-1) > prefers --org over QUOIN_ORG and the git remote"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/org::test::ts::resolveOrg precedence (FR-025-AC-1) > prefers QUOIN_ORG over the git remote when no flag is given"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/org::test::ts::resolveOrg precedence (FR-025-AC-1) > falls through to the git remote when neither flag nor env is set"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/org::test::ts::resolveOrg precedence (FR-025-AC-1) > ignores a blank flag and a blank QUOIN_ORG rather than resolving to empty"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/org::test::ts::origin remote parsing (FR-025-AC-2, FR-025-AC-3) > parses the org from an SSH remote url"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/org::test::ts::origin remote parsing (FR-025-AC-2, FR-025-AC-3) > parses the org from an HTTPS remote url"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/org::test::ts::origin remote parsing (FR-025-AC-2, FR-025-AC-3) > parses urls with no .git suffix and a trailing slash"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/org::test::ts::origin remote parsing (FR-025-AC-2, FR-025-AC-3) > reads the origin remote, not another remote that precedes it"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/org::test::ts::origin remote parsing (FR-025-AC-2, FR-025-AC-3) > parses a self-hosted https url with a port"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/org::test::ts::nested namespaces (FR-025-AC-10) > qualifies by the segment immediately preceding the repository"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/org::test::ts::git config name matching (FR-025-AC-11) > matches the section name case-insensitively but the remote name exactly"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/org::test::ts::remotes that name no organization (FR-025-AC-9) > yields no org for a host-based url with no owner segment"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/org::test::ts::remotes that name no organization (FR-025-AC-9) > yields no org for an absolute local path"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/org::test::ts::remotes that name no organization (FR-025-AC-9) > yields no org for a relative local path"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/org::test::ts::remotes that name no organization (FR-025-AC-9) > yields no org for a file:// url"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/org::test::ts::remotes that name no organization (FR-025-AC-9) > yields no org for a home-relative path"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/org::test::ts::remotes that name no organization (FR-025-AC-9) > reports unresolved rather than a wrong org for a local-path remote"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/org::test::ts::worktree and submodule checkouts (FR-025-AC-8) > resolves through a .git file pointing at a worktree gitdir"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/org::test::ts::worktree and submodule checkouts (FR-025-AC-8) > yields no org when the .git file points nowhere useful"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/org::test::ts::worktree and submodule checkouts (FR-025-AC-8) > yields no org when .git is a file with no gitdir pointer"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/org::test::ts::unresolved organization (FR-025-AC-4, FR-025-AC-5) > resolves to none when the repo has no .git/config"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/org::test::ts::unresolved organization (FR-025-AC-4, FR-025-AC-5) > resolves to none when the config declares no origin remote"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/org::test::ts::unresolved organization (FR-025-AC-4, FR-025-AC-5) > resolves to none when the origin url has no org/repo tail"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/org::test::ts::unresolved organization (FR-025-AC-4, FR-025-AC-5) > never substitutes a default organization"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/org::test::ts::unreadable git metadata > yields no org when the .git file stats but cannot be read"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/org::test::ts::malformed remote entries > ignores a url key that is not an assignment"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/org::test::ts::malformed remote entries > yields no org for a scheme url with no path at all"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/org::test::ts::malformed remote entries > yields no org for a bare host with no colon and no scheme"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/org::test::ts::malformed remote entries > yields no org when the path has an owner but an empty repo"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/org::test::ts::stored configuration (FR-027) > prefers a stored org over the git remote"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/org::test::ts::stored configuration (FR-027) > falls through to the git remote when nothing is stored"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/org::test::ts::stored configuration (FR-027) > prefers an explicit --org over a stored value"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/org::test::ts::stored configuration (FR-027) > lets QUOIN_ORG layer over the stored value, reported as env"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/org::test::ts::stored configuration (FR-027) > resolves to none when nothing is stored and there is no remote"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/org::test::ts::stored configuration (FR-027) > prefers a project-local org over the user-level one (FR-027-AC-9)"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/org::test::ts::stored configuration (FR-027) > ignores the project layer when the invocation disables it (FR-027-AC-9)"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/org::test::ts::stored configuration (FR-027) > ignores an unreadable config rather than failing the command"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/org::test::ts::stored configuration (FR-027) > ignores a malformed config rather than failing the command"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/plugins::test::ts::parseSourceArg > path: prefix"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/plugins::test::ts::parseSourceArg > github: with @ref"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/plugins::test::ts::parseSourceArg > github: without ref leaves ref undefined"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/plugins::test::ts::parseSourceArg > github: with //subdir maps to a git-subdir source (with ref)"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/plugins::test::ts::parseSourceArg > github: with //subdir and no ref leaves ref undefined"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/plugins::test::ts::parseSourceArg > package: npm with @version"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/plugins::test::ts::parseSourceArg > package: npm without version"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/plugins::test::ts::parseSourceArg > scoped package: npm keeps the scope @, splits on the last @"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/plugins::test::ts::parseSourceArg > bare argument falls back to a path source"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/plugins::test::ts::registryPath > derives registry.json under the home filament dir"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/plugins::test::ts::readModuleName > reads the name from a top-level manifest.yaml"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/plugins::test::ts::readModuleName > reads the name from a nested <root>/<basename>/manifest.yaml"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/plugins::test::ts::readModuleName > throws when no manifest.yaml exists"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/plugins::test::ts::readModuleName > throws when the manifest has no usable name"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/plugins::test::ts::readModuleName > throws when the manifest name is an empty string"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/plugins::test::ts::installPlugin / listPlugins / removePlugin > installs, lists, then removes a plugin and its target dir + registry entry"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/quire-contract::test::ts::TC-110 the vendored schemas match their recorded provenance > hashes exactly what contract.ts records"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/quire-contract::test::ts::TC-110 the vendored schemas match their recorded provenance > carries a `$id` naming the pinned contract version"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/quire-contract::test::ts::TC-111 a conformant payload validates > accepts a coverage payload"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/quire-contract::test::ts::TC-111 a conformant payload validates > accepts a properties payload"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/quire-contract::test::ts::TC-112 a drifted payload is rejected with the offending path > names a missing required key rather than failing later"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/quire-contract::test::ts::TC-112 a drifted payload is rejected with the offending path > rejects an added field, so the contract stays closed"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/quire-contract::test::ts::TC-112 a drifted payload is rejected with the offending path > rejects a value outside a closed engine enum"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/quire-contract::test::ts::TC-113 unreadable output is a named diagnostic, not a throw > reports a JSON parse failure as a contract violation"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/quire-contract::test::ts::TC-113 unreadable output is a named diagnostic, not a throw > parses and validates in one step so no caller holds an unvalidated payload"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/quire-contract::test::ts::TC-114 the version premise is enforced with a named diagnostic > passes a satisfying version"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/quire-contract::test::ts::TC-114 the version premise is enforced with a named diagnostic > names the found and required versions when too old"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/quire-contract::test::ts::TC-114 the version premise is enforced with a named diagnostic > treats an absent version as a premise failure, not a pass"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/quire-contract::test::ts::TC-115 version parsing and comparison > reads the version out of the CLI banner"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/quire-contract::test::ts::TC-115 version parsing and comparison > compares numerically, not lexically"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/quire-contract::test::ts::TC-116 optional keys are optional and absence is not emptiness > accepts a payload omitting every optional key"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/quire-contract::test::ts::TC-116 optional keys are optional and absence is not emptiness > accepts a payload carrying every optional key"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/quire-contract::test::ts::TC-116 optional keys are optional and absence is not emptiness > accepts the v0.41.0 optional keys, and rejects a malformed one"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/quire-contract::test::ts::TC-116 optional keys are optional and absence is not emptiness > rejects a malformed statement hash"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/quire-contract::test::ts::TC-117 the eval harness floor tracks the contract > mirrors QUIRE_CONTRACT.minimumCli"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/quire-contract::test::ts::TC-118 the contract holds against the installed quire > the installed CLI satisfies the pinned premise"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/quire-contract::test::ts::TC-118 the contract holds against the installed quire > a real `quire coverage --json` payload validates against the pinned schema"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/quire-contract::test::ts::TC-118 the contract holds against the installed quire > a real `quire properties --json` payload validates against the pinned schema"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/quire-exec::test::ts::runQuire failure reporting (FR-029-AC-10..AC-12) > returns a payload larger than Node's 1 MiB default whole — the cap is actually raised"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/quire-exec::test::ts::runQuire failure reporting (FR-029-AC-10..AC-12) > names the buffer overrun on an ENOBUFS death — not an exit status, not the child's stderr"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/quire-exec::test::ts::runQuire failure reporting (FR-029-AC-10..AC-12) > names the signal on a signal death, and does not append unrelated stderr"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/quire-exec::test::ts::runQuire failure reporting (FR-029-AC-10..AC-12) > still surfaces the child's own stderr when the child itself exited non-zero"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/quire-exec::test::ts::runQuire failure reporting (FR-029-AC-10..AC-12) > reports a binary that could not be run at all, by its cause"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/quire-types-conformance::test::ts::TC-272 the interfaces and the vendored coverage schema agree > covers every $defs entry with a typed sample"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/quire-types-conformance::test::ts::TC-272 the interfaces and the vendored coverage schema agree > each sample's keys equal its $defs entry's keys, both directions"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/quire-types-conformance::test::ts::TC-272 the interfaces and the vendored coverage schema agree > the report's top-level keys equal the schema's, both directions"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/quire-types-conformance::test::ts::TC-272 the interfaces and the vendored coverage schema agree > the fully-populated typed report validates against the schema"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/quire-types-conformance::test::ts::TC-272 the interfaces and the vendored coverage schema agree > this file typechecks, so the Required<Interface> half is enforced"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/release-drift::test::ts::release paths are derived from the shipped file set, not hardcoded"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/release-drift::test::ts::a pin-only change since the last tag trips the guard"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/release-drift::test::ts::a change outside the shipped file set does not trip the guard"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/release-drift::test::ts::plugin manifests declaring the release tag pass"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/release-drift::test::ts::a manifest frozen behind the release tag fails, naming both versions"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/release-drift::test::ts::one host's manifest drifting alone still fails"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/release-drift::test::ts::an absent manifest is reported, not failed"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/release-drift::test::ts::pins reports behind, current and unresolved without failing"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/sbom::test::ts::the SBOM adapter > reads a real CycloneDX document as one entry per component"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/sbom::test::ts::the SBOM adapter > reads a real SPDX document from its purl external refs"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/sbom::test::ts::the SBOM adapter > produces no entries for an inventory that lists nothing"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/sbom::test::ts::the SBOM adapter > rejects a document it does not recognise, rather than reading it as empty"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/sbom::test::ts::the SBOM adapter > drops a component with no identity instead of inventing one"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/sbom::test::ts::the SBOM adapter > is selected by --adapter and by the tools that emit these formats"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/scripts::test::ts::build-tools help exits successfully"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/scripts::test::ts::catalog help explains the installed module dir"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/scripts::test::ts::write help explains authoring packs"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/scripts::test::ts::version flag prints package version"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/skills-vocab-drift::test::ts::TC-271 the spec-matrix vocabulary cannot drift from the module manifest > SKILL.md's declared Status vocabulary equals the manifest's classed set"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/skills-vocab-drift::test::ts::TC-271 the spec-matrix vocabulary cannot drift from the module manifest > every taught marker is admitted by the manifest's Status column pattern"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/skills-vocab-drift::test::ts::TC-271 the spec-matrix vocabulary cannot drift from the module manifest > the `## Markers` list restates exactly the declared vocabulary"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/skills-vocab-drift::test::ts::TC-271 the spec-matrix vocabulary cannot drift from the module manifest > the template's Status cells use exactly the declared vocabulary"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/skills-vocab-drift::test::ts::TC-271 the spec-matrix vocabulary cannot drift from the module manifest > the example's Status cells stay within the declared vocabulary"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/spec-review-vocab-drift::test::ts::spec-review analysis vocabulary > keeps the direct skill, workflow docs, intake, gate, and schema aligned"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/spec-review-vocab-drift::test::ts::spec-review analysis vocabulary > blocks an all-set review until the EARS review document is recorded"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/update::test::ts::quoin update > delegates to runSelfUpdate with quoin's package coordinates"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/update::test::ts::quoin update > defaults the registry to public npm when no --registry is given"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/update::test::ts::quoin update > passes --check through"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/update::test::ts::quoin update > passes a custom --registry through"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/version::test::ts::resolveVersion > returns the baked version verbatim when present"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/version::test::ts::resolveVersion > falls back to the package.json version when nothing is baked in"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/write::test::ts::parseTypeList > undefined yields an empty list"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/write::test::ts::parseTypeList > a single string is split on commas and trimmed"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/write::test::ts::parseTypeList > an array is flattened, comma-split, trimmed, and empties filtered"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/write::test::ts::createAuthoringPack > throws when no type names are given"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/write::test::ts::createAuthoringPack > throws when repo_dir is not a directory"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/write::test::ts::createAuthoringPack > throws when repo_dir is a file (exists but not a directory)"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/write::test::ts::createAuthoringPack > throws with available type list when a type is not found"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/write::test::ts::createAuthoringPack > builds a pack with contracts and a non-quoted clean repo path"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/write::test::ts::createAuthoringPack > quotes a repo path containing a space (shellQuote quoting branch)"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/write::test::ts::formatAuthoringPack > renders skeleton+schema, manifest-only, and object contracts"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/write::test::ts::formatAuthoringPack > does not emit a manifest-only line when a contract has artifacts"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/write::test::ts::authoring pack organization > carries an explicit --org value and its source"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/write::test::ts::authoring pack organization > carries QUOIN_ORG when no flag is given"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/write::test::ts::authoring pack organization > reports unresolved with the remedy and no substituted value"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/write::test::ts::authoring pack organization > serializes the org into the --json rendering"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/props/fr-002::prop::test::ts::FR-002-AC-4 baked version resolution > reports any non-empty baked version verbatim, and only the empty one falls back"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/props/fr-002::prop::test::ts::FR-002-AC-4 baked version resolution > never rewrites, trims, or normalizes a baked version"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/props/fr-005::prop::test::ts::FR-005-AC-1 unknown top-level commands > are rejected, for any bareword outside the discovered command graph"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/props/fr-005::prop::test::ts::FR-005-AC-1 unknown top-level commands > are rejected by name — the error names the command that was not found"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/props/fr-005::prop::test::ts::FR-005-AC-1 unknown top-level commands > include the root usage, naming every top-level command"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/props/fr-005::prop::test::ts::FR-005-AC-2 unknown catalog subcommands > are rejected, for any bareword the catalog topic does not declare"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/props/fr-005::prop::test::ts::FR-005-AC-3 unknown plugin subcommands > are rejected, for any bareword the plugin topic does not declare"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/props/fr-018::prop::test::ts::FR-018-AC-5 unprefixed source arguments > map to a path source carrying the argument verbatim"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/props/fr-018::prop::test::ts::FR-018-AC-5 unprefixed source arguments > keeps a prefix that is not one of the three known ones"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/props/fr-025::prop::test::ts::FR-025-AC-9 remotes that name no organization > never substitutes a path segment or the host name"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/props/fr-025::prop::test::ts::FR-025-AC-10 nested namespaces > qualifies by the segment immediately preceding the repository, at any depth"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/props/fr-025::prop::test::ts::FR-025-AC-10 nested namespaces > holds for the scp-style form as it does for the https form"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/props/fr-catalog::prop::test::ts::FR-006-AC-4 unusable module candidates > are skipped, in any quantity and any order, without throwing"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/props/fr-catalog::prop::test::ts::FR-006-AC-4 unusable module candidates > never suppress a usable module they are mixed with"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/props/fr-catalog::prop::test::ts::FR-008-AC-1 repeated module roots > load once however often, and in whatever order, they repeat"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/props/fr-catalog::prop::test::ts::FR-008-AC-2 modules with a colliding declared name > contribute no entries, whichever of the two is seen first"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/props/fr-catalog::prop::test::ts::FR-009-AC-5 skeleton filename casing > resolves exactly the type's own casing and its lowercase form"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/props/fr-catalog::prop::test::ts::FR-010-AC-2 case-insensitive type lookup > resolves a known type under any casing whatsoever"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/props/fr-catalog::prop::test::ts::FR-010-AC-2 case-insensitive type lookup > resolves nothing for a name no casing of which is declared"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/props/fr-catalog::prop::test::ts::FR-012-AC-1 duplicate type reporting > lists the declaring modules in sorted order, whatever order the roots arrive in"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/props/fr-catalog::prop::test::ts::FR-012-AC-1 duplicate type reporting > reports the shared type once, naming every declaring module"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/props/fr-catalog::prop::test::ts::FR-012-AC-2 catalogs with no collision > report no duplicates for any single module root"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/props/fr-write::prop::test::ts::FR-013-AC-4 unknown type errors > list the available types in sorted order, for any unknown name"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/props/fr-write::prop::test::ts::FR-013-AC-4 unknown type errors > name every declared type, whichever unknown name was requested"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/props/fr-write::prop::test::ts::FR-015-AC-2/AC-3 shell quoting of the repo path > quotes exactly the paths the shell-safe predicate rejects"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/props/fr-write::prop::test::ts::FR-015-AC-2/AC-3 shell quoting of the repo path > round-trips the path: unquoting the rendering yields the resolved path"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/props/second-pass::prop::test::ts::FR-013-AC-3 type-list parsing > yields exactly the non-empty trimmed names, for any comma list"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/props/second-pass::prop::test::ts::FR-013-AC-3 type-list parsing > drops every empty entry however many separators there are"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/props/second-pass::prop::test::ts::FR-013-AC-3 type-list parsing > treats an array argument as the concatenation of its comma lists"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/props/second-pass::prop::test::ts::FR-018-AC-1..AC-4 plugin source parsing > FR-018-AC-1 `path:` carries the remainder verbatim, whatever it contains"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/props/second-pass::prop::test::ts::FR-018-AC-1..AC-4 plugin source parsing > FR-018-AC-2 `github:` yields owner/repo, and the ref only when one is given"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/props/second-pass::prop::test::ts::FR-018-AC-1..AC-4 plugin source parsing > FR-018-AC-3 a `//` in the spec always yields git-subdir, split at the first `//`"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/props/second-pass::prop::test::ts::FR-018-AC-1..AC-4 plugin source parsing > FR-018-AC-4 `package:` splits on the FINAL `@`, so a scoped package keeps its scope"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/props/second-pass::prop::test::ts::FR-025-AC-2/AC-3 remote url forms > AC-2 the scp-style form yields the owner for any host, owner and repo"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/props/second-pass::prop::test::ts::FR-025-AC-2/AC-3 remote url forms > AC-3 the https form yields the owner, with or without a port or `.git`"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/props/second-pass::prop::test::ts::FR-025-AC-11 section and remote name casing > any casing of the section name `remote` still resolves the org"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/props/second-pass::prop::test::ts::FR-025-AC-11 section and remote name casing > any casing of the remote name other than `origin` resolves nothing"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/props/second-pass::prop::test::ts::FR-013-AC-2 unusable repo directories > raise, naming the offending path, for any path that is not a directory"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/props/second-pass::prop::test::ts::FR-007-AC-2 empty module-path entries > are dropped, leaving exactly the non-empty ones in order"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/props/second-pass::prop::test::ts::FR-027-AC-6 strict configuration schema > rejects any key that is not `org`"
+    },
+    {
+      "outcome": "pass",
+      "symbol": "tests/props/second-pass::prop::test::ts::FR-027-AC-6 strict configuration schema > accepts any non-empty org, and rejects the empty one"
+    }
+  ],
+  "evidenceKind": "Unit",
+  "schemaVersion": 1,
+  "suite": "SUITE-001",
+  "timestamp": "2026-08-22T18:24:14.311Z",
+  "tool": "vitest"
+}

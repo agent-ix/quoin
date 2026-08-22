@@ -11,3 +11,4 @@ evals/.seed-cache/
 evals/.bin/
 .npmrc
 builtin-modules/
+reports/
