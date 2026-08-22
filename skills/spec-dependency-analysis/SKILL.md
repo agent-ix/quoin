@@ -73,3 +73,18 @@ None detected.
 - Every edge in the graph corresponds to an explicit prerequisite — no "soft" dependencies.
 - No cycles.
 - Topological order respects: all enablement before any feature that depends on it.
+
+## Output contract
+
+This skill emits one **`SpecReview`** under `reviews/YY-MM-DD-<slug>.md` with
+`analysis: dependency` in its frontmatter.
+
+Stated here because nothing checked it. The module declares an `analysis`
+vocabulary of eleven values; five of them named a skill that never said it
+emitted under them, so a skill and its declared output were unlinked and drift
+between the two was invisible. `tests/skill-contracts.test.ts` now asserts the
+pairing in both directions.
+
+The document must carry a `## Summary` and a `## Findings` table — the two
+sections `SpecReview`'s `body_extraction` requires — and must pass
+`quire validate`.

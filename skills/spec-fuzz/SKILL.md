@@ -122,3 +122,11 @@ that guessed would produce targets that do not compile.
 
 `quoin advise` supplies the mechanical half as JSON. This skill is the judgement half, and
 it records which is which in the provenance line so a reviewer can tell them apart.
+
+## Output contract
+
+The `SpecReview` this skill emits carries `analysis: evidence` — the fuzz report records what a harness could and could not serve, which is an evidence claim.
+
+Stated here because nothing checked it (quoin#202): a skill and its declared
+output were unlinked, so drift between them was invisible until a document
+failed validation in an unrelated session.

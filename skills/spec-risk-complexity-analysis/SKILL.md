@@ -75,3 +75,18 @@ See `spec-failure-domain-analysis` deliverable. Open gaps: none / list FR IDs.
 - Every High on either axis has a named mitigation.
 - The "Top hazards" section names the 3–5 items the team should review live before plan generation.
 - Cross-reference to `spec-failure-domain-analysis` deliverable is present and current.
+
+## Output contract
+
+This skill emits one **`SpecReview`** under `reviews/YY-MM-DD-<slug>.md` with
+`analysis: risk-complexity` in its frontmatter.
+
+Stated here because nothing checked it. The module declares an `analysis`
+vocabulary of eleven values; five of them named a skill that never said it
+emitted under them, so a skill and its declared output were unlinked and drift
+between the two was invisible. `tests/skill-contracts.test.ts` now asserts the
+pairing in both directions.
+
+The document must carry a `## Summary` and a `## Findings` table — the two
+sections `SpecReview`'s `body_extraction` requires — and must pass
+`quire validate`.
