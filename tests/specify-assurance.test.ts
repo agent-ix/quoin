@@ -1,4 +1,4 @@
-/** FR-043 — assurance-aware specification authoring (TC-277..TC-278). */
+/** FR-095 — assurance-aware specification authoring (TC-277..TC-278). */
 
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -17,7 +17,7 @@ const reference = readFileSync(
 const normalizedSkill = skill.replace(/\s+/g, " ");
 
 describe("assurance-aware specify contract", () => {
-  // Trace: FR-043-AC-1 / TC-277
+  // Trace: FR-095-AC-1 / TC-277
   it("authors requested installed assurance types through the live quoin contract", () => {
     for (const type of [
       "AssuranceProfile",
@@ -35,7 +35,7 @@ describe("assurance-aware specify contract", () => {
     );
   });
 
-  // Trace: FR-043-AC-2 / TC-278
+  // Trace: FR-095-AC-2 / TC-278
   it("keeps assurance artifacts opt-in and preserves the confirmation boundary", () => {
     expect(normalizedSkill).toMatch(/Assurance artifacts are opt-in/i);
     expect(normalizedSkill).toContain(
@@ -45,7 +45,7 @@ describe("assurance-aware specify contract", () => {
     expect(reference).toContain("do not launch reviews");
   });
 
-  // Trace: FR-043-AC-2 / TC-278
+  // Trace: FR-095-AC-2 / TC-278
   it("keeps the negative-control fixture independent of org discovery", () => {
     const scenario = SCENARIOS.find(({ id }) => id === "TC-EV-059");
     expect(scenario?.env?.({})).toEqual({ QUOIN_ORG: "agent-ix" });
