@@ -1,0 +1,67 @@
+{
+  "$comment": "The quality benchmark's metric dictionary (FR-043-AC-1..AC-6, CR-098; agent-ix/quoin#198). NORMATIVE: a metric that does not declare unit, population and method is not one this benchmark emits, and `loadMetrics` refuses the file rather than reporting a gap. This is the same rule agent-ix/quire-rs FR-063 applies to the engine's own numbers, applied one layer up to the thing that scores the engine. Distinct from quire-rs's `bench/manifest.json`, which scores ENGINE coverage figures; this scores the toolchain's FINDING quality.",
+  "families": [
+    "catch-all-universal",
+    "gate-that-gates-nothing",
+    "hollow-denominator",
+    "marker-form-mismatch",
+    "mocked-confirmation",
+    "oracle-is-code-copy",
+    "undeclared-type-value",
+    "vacuous-under-guard"
+  ],
+  "metrics": {
+    "finding_precision": {
+      "unit": "fraction of reported findings",
+      "population": "findings the toolchain reported for one labelled defect family",
+      "method": "truePositives / (truePositives + falsePositives) per family, from evals/lib/quality.mjs scoreFindings. A finding is paired to a label by LOCATION where both name one, so a right-family wrong-place finding is a false positive (CR-098); a family with no denominator reports null, never 0, because 0/0 is not 0% and a precision of 0 claims the run was wrong",
+      "direction": "higher-is-better",
+      "per_family": true,
+      "baseline": null,
+      "baseline_note": "No tier-1 run has been scored against a toolchain yet. null is the honest starting state and is NOT a zero: recording 0 would claim a measured failure."
+    },
+    "finding_recall": {
+      "unit": "fraction of seeded defects",
+      "population": "labelled defects in one family that the corpus declares findable; a label marked findable:false is excluded from the denominator AND reported",
+      "method": "truePositives / (truePositives + misses) per family, from scoreFindings. Reported PER FAMILY and never averaged: a tool that finds every marker mismatch and no vacuous suite has a respectable average and a hole, and the average is what hides it",
+      "direction": "higher-is-better",
+      "per_family": true,
+      "baseline": null,
+      "baseline_note": "The tier-2 answer key records 7 findings, 0 of which the tools found at battletest pass 2. That 0-of-7 is the recall this programme exists to move."
+    },
+    "span_grounding_rate": {
+      "unit": "percent of specific-shape criteria",
+      "population": "acceptance criteria the FR-052 classifier gives a specific property shape",
+      "method": "criteria whose domain, precondition AND oracle spans are all present, over criteria carrying a specific shape. NOT YET COMPUTED: no runner reads `quire properties --json` for this, tracked as agent-ix/quoin#219. Declared here because the dictionary is the contract and a metric nobody declared is a metric nobody can ask for",
+      "direction": "higher-is-better",
+      "baseline": 0,
+      "baseline_note": "Battletest pass 2 measured 0 of 65 specific-shape records carrying all three spans. Zero is the measured starting point, not an absence."
+    },
+    "actionability_rate": {
+      "unit": "percent of emitted findings",
+      "population": "findings the toolchain emitted across the corpus entry",
+      "method": "findings naming a row id or a document line, over findings emitted, from scoreActionability. A finding you cannot act on is a finding nobody acts on, whatever its precision",
+      "direction": "higher-is-better",
+      "baseline": 3.02,
+      "baseline_note": "Battletest pass 2 measured 15 of 496 findings carrying a row id — 3.02%."
+    },
+    "cost_per_confirmed_insight": {
+      "unit": "tokens and tool calls per true positive",
+      "population": "findings CONFIRMED as true positives, not findings emitted",
+      "method": "tokenUsage.total / truePositives and toolCalls / truePositives, from scoreCost, extending the FR-042 eval report metrics rather than opening a second accounting. Both numbers, because they are different costs: tokens are the context budget and tool calls are wall-clock and blast radius. Reports null per-insight when nothing was confirmed — dividing by emitted output would reward a run for producing more of it",
+      "direction": "lower-is-better",
+      "baseline": null,
+      "baseline_note": "No scored tier-1 run yet."
+    },
+    "sentinel.silent_zero": {
+      "unit": "metric",
+      "population": "metrics emitted across every corpus entry in the run",
+      "method": "ratio-shaped metrics with matched = 0 over a non-zero population and NO accompanying diagnostic. A count-shaped metric is exempt (CR-098): matched and its value are the same fact, so a zero reports that none was found, not that none was read. This is the shape of `555/2389 (23%)` published over a corpus the binder could not read",
+      "direction": "gate-zero",
+      "expected": 0,
+      "tolerance": 0,
+      "baseline": 0,
+      "baseline_note": "A GATE, not a score. Expected exactly 0 with no tolerance, and it never ratchets: a benchmark that let this score 0.98 and pass would be measuring the wrong thing."
+    }
+  }
+}

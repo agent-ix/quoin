@@ -13,6 +13,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { buildBenchCorpora, CORPORA } from "../evals/fixtures/bench/build.mjs";
+import { diff, render, scoreAgainstKey } from "../scripts/battletest.mjs";
 
 function build() {
   const root = mkdtempSync(join(tmpdir(), "quoin-bench-"));
@@ -40,7 +41,8 @@ describe("tier-1 seeded corpora", () => {
     for (const c of clean) expect(c.family).toBe("none");
   });
 
-  test("every seeded defect is fully labelled", () => {
+  test("TC-932 every seeded defect is fully labelled, family location and findability", () => {
+    // TC-932
     for (const corpus of CORPORA) {
       for (const defect of corpus.defects) {
         expect(defect.id).toMatch(/^[A-Z]{2}-\d+$/);
@@ -115,7 +117,8 @@ describe("tier-2 adjudicated answer key", () => {
     readFileSync(join(__dirname, "..", "bench", "answer-key.json"), "utf8"),
   );
 
-  test("it is pinned to a commit and says why re-pinning is not free", () => {
+  test("TC-933 it is pinned to a commit and says why re-pinning is not free", () => {
+    // TC-933
     // A tier-2 score is only a measurement because the corpus cannot move
     // under it. Re-pinning requires RE-ADJUDICATION, not re-measurement:
     // carrying these findings to a different tree would assert something
@@ -175,5 +178,61 @@ describe("tier-2 adjudicated answer key", () => {
   test("finding ids are unique", () => {
     const ids = key.findings.map((f: { id: string }) => f.id);
     expect(new Set(ids).size).toBe(ids.length);
+  });
+});
+
+describe("battletest scoring and ratchet", () => {
+  const key = JSON.parse(
+    readFileSync(join(__dirname, "..", "bench", "answer-key.json"), "utf8"),
+  );
+  const payload = {
+    diagnostics: [{ reason: "hollow-denominator" }],
+    suspicions: [{ kind: "vacuous-under-guard" }],
+    metrics: [{ name: "coverage.specific_shaped", value: 78 }],
+  };
+
+  test("TC-934 the score report is byte-identical over identical inputs and carries its identity", () => {
+    // TC-934
+    // FR-043-AC-9. Not two calls compared for equality -- `scoreAgainstKey` is
+    // pure, so that could not fail (the SR-014 FND-003 shape). This asserts the
+    // report carries no time-varying field, which is the property the
+    // byte-comparison depends on.
+    const first = scoreAgainstKey(payload, key);
+    expect(JSON.stringify(first, Object.keys(first).sort())).toBe(
+      JSON.stringify(scoreAgainstKey(payload, key), Object.keys(first).sort()),
+    );
+    const stamped = Object.keys(first).filter((k) =>
+      /time|date|stamp|now|generated/i.test(k),
+    );
+    expect(stamped).toEqual([]);
+
+    // Per-finding accounting, not one number: every key finding lands in
+    // exactly one bucket, so a miss cannot hide inside a rounded recall.
+    const total =
+      first.detected.length + first.missed.length + first.notMechanized.length;
+    expect(total).toBe(key.findings.length);
+  });
+
+  test("TC-935 the ratchet names what was gained and what was LOST", () => {
+    // TC-935
+    // FR-043-AC-10. A regression must name the finding that stopped being
+    // surfaced -- a recall percentage that drops by one seventh says nothing
+    // about which detector rotted.
+    const before = { detected: ["AK-001", "AK-002"], recall: 0.5 };
+    const after = { detected: ["AK-002", "AK-005"], recall: 0.5 };
+    const delta = diff(before, after);
+    expect(delta.gained).toEqual(["AK-005"]);
+    expect(delta.lost).toEqual(["AK-001"]);
+
+    // Equal recall on both sides, so a scalar comparison would have reported
+    // "no change" over a real regression. The rendered report says LOST.
+    expect(delta.recallBefore).toBe(delta.recallAfter);
+    expect(render({ ...after, missed: [], notMechanized: [] }, delta)).toMatch(
+      /LOST:\s+\(AK-001\)/,
+    );
+
+    // No baseline is "everything is new", never a silent pass.
+    expect(diff(null, after).gained).toEqual(["AK-002", "AK-005"]);
+    expect(diff(null, after).recallBefore).toBeNull();
   });
 });
