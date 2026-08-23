@@ -137,6 +137,33 @@ Unchanged from this repository's standing posture. The benchmark is expensive �
 > family-only matches is weaker evidence than the same figure built from
 > findings that named where.
 >
+> **The dictionary itself did not exist.** AC-1 through AC-6 each say the
+> dictionary *declares* or *defines* something, and there was no dictionary:
+> `span_grounding_rate`, `actionability_rate` and `cost_per_confirmed_insight`
+> appeared only in this document's prose. All ten of FR-043's criteria shipped
+> with no tagged test, which is what SR-015 FND-002 recorded — the deeper truth
+> being that half of them were unimplemented.
+>
+> `bench/metrics.json` and `evals/lib/dictionary.mjs` are that dictionary and
+> its loader. An entry missing unit, population, method or direction is refused
+> **at load**, not reported as a gap downstream where it would be one warning
+> among many; a `gate-zero` metric carrying tolerance is refused too, because a
+> gate with tolerance is a score wearing a gate's name; and a `per_family`
+> metric over no labelled families is refused, which is AC-2's "cannot be
+> reported over an unlabelled population" made mechanical.
+>
+> `span_grounding_rate` is declared with its measured 0-of-65 baseline and is
+> **not computed** — no runner reads `quire properties --json` for it. Declared
+> anyway, because a metric nobody declared is a metric nobody can ask for, and
+> the gap is tracked as `agent-ix/quoin#219` rather than left implicit.
+>
+> AC-7 through AC-10 were already implemented in `scripts/battletest.mjs` and
+> the corpora builder, and needed tests rather than code. TC-934 asserts the
+> report carries no time-varying field rather than calling a pure function
+> twice, and TC-935 pins the property a scalar recall cannot express: gained
+> and LOST are named per finding, so a regression that leaves recall unchanged
+> still reports which detector rotted.
+>
 > **AC-11 is new.** An entry declaring `expect_metric` with no `expect_value`
 > scored **missed forever**: `Number(undefined)` is `NaN` and every comparison
 > against it is false. `AK-003` shipped in that state and was caught only
