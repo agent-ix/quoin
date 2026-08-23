@@ -76,8 +76,8 @@
       "reason": "hollow-denominator"
     }
   ],
-  "positional": 2,
-  "finding_localisation_rate": 0.4,
+  "positional": 4,
+  "finding_localisation_rate": 0.8,
   "actionability": {
     "actionable": 2,
     "total": 7,

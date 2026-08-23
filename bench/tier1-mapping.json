@@ -1,9 +1,9 @@
 {
-  "$comment": "The tier-1 payload→family mapping (agent-ix/quoin#199, FR-043-AC-2). NORMATIVE and REVIEWABLE: this table is the contract between what a tool emits and what the benchmark calls a finding, and it belongs in the repository rather than in a script's head. A family the scorer reads out of a payload section this file does not name is a family nobody agreed on, and `scripts/bench-tier1.mjs` refuses a payload signal it cannot map rather than dropping it — an unmapped signal is a scoring hole, and a silent one reads exactly like a tool that found nothing.",
+  "$comment": "The tier-1 payload\u2192family mapping (agent-ix/quoin#199, FR-043-AC-2). NORMATIVE and REVIEWABLE: this table is the contract between what a tool emits and what the benchmark calls a finding, and it belongs in the repository rather than in a script's head. A family the scorer reads out of a payload section this file does not name is a family nobody agreed on, and `scripts/bench-tier1.mjs` refuses a payload signal it cannot map rather than dropping it \u2014 an unmapped signal is a scoring hole, and a silent one reads exactly like a tool that found nothing.",
   "sources": {
     "coverage.diagnostics": "quire coverage --json, `diagnostics[]`. Keyed on `reason`. Carries `path` sometimes and never a line.",
     "coverage.suspicions": "quire coverage --json, `suspicions[]`. Keyed on `kind`. Carries `path` and `line`.",
-    "coverage.metrics": "quire coverage --json, `metrics[]`. Keyed on `name`, matched against the label's `expect_value`. Carries no locus at all — a metric is a number about a corpus, not a place.",
+    "coverage.metrics": "quire coverage --json, `metrics[]`. Keyed on `name`, matched against the label's `expect_value`. Carries no locus at all \u2014 a metric is a number about a corpus, not a place.",
     "validate.findings": "quire validate --diagnostics-format json, one NDJSON object per finding. Keyed on the bracketed reason at the end of `message`. See `parse_fragility` below.",
     "audit.findings": "quoin evidence audit --json, `findings[]`. Keyed on `kind`. Carries an obligation id and NO locus."
   },
@@ -29,9 +29,10 @@
       "locus": "path-line"
     },
     "catch-all-universal": {
-      "source": "coverage.metrics",
-      "key": "coverage.specific_shaped",
-      "locus": "none"
+      "source": "coverage.diagnostics",
+      "key": "catch-all-universal",
+      "locus": "path",
+      "$note": "Was `coverage.metrics` / `coverage.specific_shaped`, which pairs on family alone and contributes nothing to `finding_localisation_rate` \u2014 a number that moved with nowhere to put a cursor. quire-rs#261 makes it a located diagnostic naming a criterion at `path:line`, so it now scores positionally like every other family whose finding says where."
     },
     "vacuous-under-guard": {
       "source": "coverage.suspicions",
@@ -42,13 +43,13 @@
       "source": "coverage.suspicions",
       "key": "oracle-resembles-implementation",
       "locus": "path-line",
-      "$note": "The comparison ships in quire-rs `src/skeptic.rs` and has NO production caller — `oracle_copies` is reached only by its own unit tests. Mapped anyway: the contract is what a detector must emit, and declaring it before the detector exists is what lets the detector be built against something. Recall reads 0 until agent-ix/quire-rs#236."
+      "$note": "The comparison ships in quire-rs `src/skeptic.rs` and has NO production caller \u2014 `oracle_copies` is reached only by its own unit tests. Mapped anyway: the contract is what a detector must emit, and declaring it before the detector exists is what lets the detector be built against something. Recall reads 0 until agent-ix/quire-rs#236."
     },
     "mocked-confirmation": {
       "source": "audit.findings",
       "key": "mocked-confirmation",
       "locus": "none",
-      "$note": "quoin's own auditor, not quire — `quire coverage` and `quire properties` cannot see this family, which is why the runner calls a third command. The detector additionally cannot fire: `AuditInput.injections` is never supplied by any caller (agent-ix/quoin#204, reopened)."
+      "$note": "quoin's own auditor, not quire \u2014 `quire coverage` and `quire properties` cannot see this family, which is why the runner calls a third command. The detector additionally cannot fire: `AuditInput.injections` is never supplied by any caller (agent-ix/quoin#204, reopened)."
     },
     "gate-that-gates-nothing": {
       "source": "none",
