@@ -403,6 +403,9 @@ generated tests under `tests/props/` and `Unit` for the rest.
 | TC-960 | A family the baseline scored and a run does not report AT ALL is a regression with the baseline kept — deleting a corpus must not read as a clean run (#199) | Unit | P0 | FR-043-AC-10 | ✅ |
 | TC-936 | An obligation discharged only by a mocked stand-in for its own subject is a `medium` `mocked-confirmation` finding naming the injected identifier (#204) | Unit | P0 | FR-032-AC-15 | ✅ |
 | TC-937 | A mock unrelated to the statement's subject (`FakeClock`) is not reported — tests legitimately mock clocks, filesystems and networks (#204) | Unit | P0 | FR-032-AC-15 | ✅ |
+| TC-961 | Every answer-key finding records HOW STRONGLY it is detected — located, aggregate or none — and the strength agrees with `now_detectable`, so "a number moved" is not counted as "here is the file" (#200) | Unit | P0 | FR-043-AC-8 | ✅ |
+| TC-962 | A finding recorded as not detectable claims no `detectable_since` and no `fixed_by`: a capability nothing can reach has no date it arrived and no PR that delivered it (#200) | Unit | P0 | FR-043-AC-8 | ✅ |
+| TC-963 | Each undetectable finding names its OWN tracking ticket, so closing one family's work cannot silently close another's (#200) | Unit | P0 | FR-043-AC-8 | ✅ |
 | TC-938 | One real suite alongside a mocked one is not reported: standing in a dependency while another suite exercises the real path is ordinary test design (#204) | Unit | P0 | FR-032-AC-15 | ✅ |
 | TC-939 | Absent injection data yields silence, never a clean bill — "nobody looked" is not "nothing was mocked" (#204) | Unit | P0 | FR-032-AC-15 | ✅ |
 | TC-940 | The finding ratchets through the existing `<kind>:<obligation>` key, so it is acceptable in a baseline like every other kind (#204) | Unit | P1 | FR-032-AC-15 | ✅ |

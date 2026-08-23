@@ -250,6 +250,61 @@ describe("tier-2 adjudicated answer key", () => {
     }
   });
 
+  test("TC-961 every finding records how strongly it is detected, not just whether", () => {
+    // TC-961
+    // `now_detectable: true` was flattening two different states: AK-003 is "a
+    // number moved somewhere in 274 spec files" and AK-001 is "here is the
+    // file". Counting them as one overstates the toolchain, and it is the same
+    // conflation `finding_localisation_rate` exists to expose — measured at 40%
+    // on the first scored tier-1 run.
+    const scale = Object.keys(key.detection_strength_scale).filter(
+      (k: string) => !k.startsWith("$"),
+    );
+    expect(scale.sort()).toEqual(["aggregate", "located", "none"]);
+    for (const f of key.findings) {
+      expect(scale, `${f.id} declares no detection_strength`).toContain(
+        f.detection_strength,
+      );
+      // The two must agree. A finding nothing reports cannot be `located`, and
+      // a finding something reports cannot be `none` — a disagreement here is
+      // exactly how the recall denominator becomes fiction.
+      if (f.now_detectable === false) {
+        expect(f.detection_strength, `${f.id}`).toBe("none");
+      } else {
+        expect(f.detection_strength, `${f.id}`).not.toBe("none");
+      }
+      // Why this strength, checked against the code rather than carried over.
+      expect(f.$strength_note, `${f.id} states no reason`).toBeTruthy();
+    }
+  });
+
+  test("TC-962 an undetectable finding claims no date and no fix", () => {
+    // TC-962
+    // AK-005 carried `now_detectable: "partially"` with both a
+    // `detectable_since` and a `fixed_by`, for a detector with no production
+    // caller. Every one of those errors flattered the toolchain, which is the
+    // direction that matters: a capability nothing can reach has no date it
+    // became available and no PR that delivered it.
+    for (const f of key.findings) {
+      if (f.now_detectable !== false) continue;
+      expect(f.detectable_since, `${f.id}`).toBeNull();
+      expect(f.fixed_by ?? null, `${f.id}`).toBeNull();
+      expect(f.tracked_by, `${f.id}`).toMatch(/#\d+$/);
+    }
+  });
+
+  test("TC-963 every untracked family has its OWN ticket", () => {
+    // TC-963
+    // AK-007 (`gate-that-gates-nothing`) pointed at quoin#204 — the
+    // mocked-confirmation ticket — from the day it was written, so the family
+    // had no owner and nobody could tell. Two findings sharing a ticket means
+    // closing it closes both, and only one of them was ever worked.
+    const tickets = key.findings
+      .filter((f: { now_detectable: unknown }) => f.now_detectable === false)
+      .map((f: { tracked_by: string }) => f.tracked_by);
+    expect(new Set(tickets).size).toBe(tickets.length);
+  });
+
   test("finding ids are unique", () => {
     const ids = key.findings.map((f: { id: string }) => f.id);
     expect(new Set(ids).size).toBe(ids.length);
