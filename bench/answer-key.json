@@ -1,14 +1,15 @@
 {
-  "$comment": "Tier-2 adjudicated answer key (agent-ix/quoin#200, FR-043-AC-8). The manual findings of battletest pass 2, made machine-readable and keyed to a pinned commit. This set is the RECALL DENOMINATOR for 'would the tools have found what humans found'. Every entry was adjudicated by reading the corpus, not inferred from tool output — which is the point, since the tools found none of them.",
+  "$comment": "Tier-2 adjudicated answer key (agent-ix/quoin#200, FR-043-AC-8). The manual findings of battletest pass 2, made machine-readable and keyed to a pinned commit. This set is the RECALL DENOMINATOR for 'would the tools have found what humans found'. Every entry was adjudicated by reading the corpus, not inferred from tool output \u2014 which is the point, since the tools found none of them. RE-ADJUDICATED 2026-08-23 against the code as it stands, not against the notes: every `now_detectable` claim was checked by locating the detector and its caller, and two were wrong.",
   "corpus": "agent-ix/filament-ide-rs",
   "pinned_sha": "fc5d644",
-  "adjudicated": "2026-08-22",
+  "adjudicated": "2026-08-23",
   "sources": [
     "agent-ix/filament-ide-rs#451 (pass-2 umbrella)",
-    "SR-153, SR-154, SR-155",
-    "agent-ix/filament-ide-rs#460 (owed corpus findings)"
+    "SR-153, SR-154, SR-155 \u2014 renumbered to SR-175, SR-176, SR-177 on merge (filament-ide-rs#505); main had published the original ids to unrelated work",
+    "agent-ix/filament-ide-rs#460 (owed corpus findings)",
+    "SR-016 through SR-019 (quoin#199) \u2014 the tier-1 evidence this re-adjudication is checked against"
   ],
-  "re_pin_policy": "Re-pinning requires RE-ADJUDICATION, not re-measurement. The findings below are claims about a specific tree; carrying them to a different commit without reading it again would assert something nobody checked. Use `make answer-key-repin`, whose diff belongs in the pull request — the same discipline as quire-rs/tests/fixtures/coverage_baseline/expected.json.",
+  "re_pin_policy": "Re-pinning requires RE-ADJUDICATION, not re-measurement. The findings below are claims about a specific tree; carrying them to a different commit without reading it again would assert something nobody checked. Use `make answer-key-repin`, whose diff belongs in the pull request \u2014 the same discipline as quire-rs/tests/fixtures/coverage_baseline/expected.json.",
   "findings": [
     {
       "id": "AK-001",
@@ -17,11 +18,13 @@
       "measured": "1,292 `fn tc_NNN_` sites against 0 of the declared `fn tcNNN_` spelling. Widening the pattern took coverage from 555/2389 (23%) to 1158/2389 (48%) with no test written.",
       "location": "declared in spec-artifacts-process; observed across 24 crates",
       "found_by_tools_at_pass_2": false,
-      "found_by": "controlled experiment — copy the module, widen one regex, diff the census",
+      "found_by": "controlled experiment \u2014 copy the module, widen one regex, diff the census",
       "expect_reason": "no-symbol-bound",
       "now_detectable": true,
       "detectable_since": "quire-rs v0.43.0 (FR-050-AC-27)",
-      "fixed_by": "agent-ix/spec-artifacts-process#65"
+      "fixed_by": "agent-ix/spec-artifacts-process#65",
+      "detection_strength": "located",
+      "$strength_note": "`no-symbol-bound` carries a `path` and names the declared forms to check. Confirmed on the tier-1 `marker-mismatch` corpus: precision 1.00, recall 1.00. It does NOT name the marker's line \u2014 the value is the language, `rust` \u2014 so it is located to a file and no further, which is one of the three misses behind the 40% localisation rate."
     },
     {
       "id": "AK-002",
@@ -30,11 +33,13 @@
       "measured": "0 of 1,292 evidence symbols bound; 0 of 643 trace lines matched. Three published SpecReviews (SR-150/151/152) cite figures computed under it.",
       "location": "spec/**/matrix/tests.md, all 12 module matrices",
       "found_by_tools_at_pass_2": false,
-      "found_by": "manual — noticing that a 23% figure and a 1,292-symbol repository were inconsistent",
+      "found_by": "manual \u2014 noticing that a 23% figure and a 1,292-symbol repository were inconsistent",
       "expect_reason": "hollow-denominator",
       "now_detectable": true,
       "detectable_since": "quire-rs v0.43.0 (FR-063-AC-5)",
-      "fixed_by": "agent-ix/quire-rs#239"
+      "fixed_by": "agent-ix/quire-rs#239",
+      "detection_strength": "aggregate",
+      "$strength_note": "The diagnostic names the METRIC (`coverage.backed`) and carries `path: null`. Confirmed on the tier-1 `hollow-metric` corpus: detected, precision 1.00, and contributing nothing to the localisation rate. Downgraded from the implicit `located` the old `now_detectable: true` suggested."
     },
     {
       "id": "AK-003",
@@ -43,13 +48,15 @@
       "measured": "515/951 extractable; 78/951 specifically shaped. 65 of 67 specific-shape non-`example` records carried zero spans.",
       "location": "274 spec files",
       "found_by_tools_at_pass_2": false,
-      "found_by": "manual — reading the per-shape breakdown the summary line omitted",
+      "found_by": "manual \u2014 reading the per-shape breakdown the summary line omitted",
       "expect_metric": "coverage.specific_shaped",
       "now_detectable": true,
       "detectable_since": "quire-rs v0.43.0 (FR-050-AC-28)",
       "fixed_by": "agent-ix/quire-rs#240",
       "expect_value": 78,
-      "$expect_note": "78 is the ADJUDICATED figure at the pinned SHA — the specifically-shaped criteria of 951. The detection signal is that the split is reported at all; the value is what it was measured to be, so a change in either is a change worth seeing."
+      "$expect_note": "78 is the ADJUDICATED figure at the pinned SHA \u2014 the specifically-shaped criteria of 951. The detection signal is that the split is reported at all; the value is what it was measured to be, so a change in either is a change worth seeing.",
+      "detection_strength": "aggregate",
+      "$strength_note": "Detectable ONLY as a number moving. `coverage.specific_shaped` is a ratio over the whole corpus; no criterion is named, so a reader who sees the metric fall still has 274 spec files to search. This is the distinct, weaker state the re-adjudication was for. Making it a located finding is quoin#197 workstream 4."
     },
     {
       "id": "AK-004",
@@ -62,7 +69,9 @@
       "expect_suspicion": "vacuous-under-guard",
       "now_detectable": true,
       "detectable_since": "quire-rs main, post v0.43.0 (FR-064-AC-1)",
-      "fixed_by": "agent-ix/quire-rs#247"
+      "fixed_by": "agent-ix/quire-rs#247",
+      "detection_strength": "located",
+      "$strength_note": "`vacuous-under-guard` carries `path` AND `line` \u2014 confirmed at `src/lib.rs:7` on the tier-1 corpus. One of the two findings behind the 40% localisation rate."
     },
     {
       "id": "AK-005",
@@ -71,11 +80,14 @@
       "measured": "Replacing it with a real oracle immediately exposed a genuine Windows containment gap.",
       "location": "TC-1598",
       "found_by_tools_at_pass_2": false,
-      "found_by": "manual semantic review — pass 2's highest-value finding",
+      "found_by": "manual semantic review \u2014 pass 2's highest-value finding",
       "expect_suspicion": "oracle-resembles-implementation",
-      "now_detectable": "partially",
-      "detectable_since": "quire-rs main, post v0.43.0 (FR-064-AC-2) — the COMPARISON is implemented; the join from an oracle span to the implementation it judges is not wired, so this is not yet detected end to end",
-      "fixed_by": "agent-ix/quire-rs#247"
+      "now_detectable": false,
+      "detectable_since": null,
+      "fixed_by": null,
+      "detection_strength": "none",
+      "tracked_by": "agent-ix/quire-rs#236",
+      "$strength_note": "Was `now_detectable: \"partially\"` with a `detectable_since` and a `fixed_by`. All three were wrong, and they were wrong in the direction that flatters the toolchain. The COMPARISON ships and is unit-tested (`quire-rs/src/skeptic.rs`, FR-064-AC-2); the join from an oracle span to the implementation it judges is not wired, and `grep -rn oracle_copies src/` returns the definition and two unit tests \u2014 no production caller. Confirmed on the tier-1 `oracle-copy` corpus: the engine reports nothing. `partially` read as 'some of it fires', and none of it does, so `detectable_since` and `fixed_by` are null: a capability nothing can reach has no date it became available and no PR that delivered it. agent-ix/quire-rs#236 owns the join."
     },
     {
       "id": "AK-006",
@@ -88,12 +100,14 @@
       "now_detectable": false,
       "detectable_since": null,
       "fixed_by": null,
-      "tracked_by": "agent-ix/quoin#204"
+      "tracked_by": "agent-ix/quoin#204",
+      "detection_strength": "none",
+      "$strength_note": "`now_detectable: false` was right and its RECORDED REASON was wrong: this was written before quoin#204 shipped a detector, and nobody re-checked afterwards. The detector now exists at `src/auditor/audit.ts:241` and still cannot fire \u2014 `mockedBindings` returns [] on every production call because `AuditInput.injections` is optional, no caller supplies it, and nothing in the tree produces a `MockInjection`. The 8 unit tests build `injections` inline, which is why a green suite sat over a dead path. #204 reopened."
     },
     {
       "id": "AK-007",
       "family": "gate-that-gates-nothing",
-      "summary": "Repository gates that gated nothing — wired, green, and asserting no condition that could fail.",
+      "summary": "Repository gates that gated nothing \u2014 wired, green, and asserting no condition that could fail.",
       "measured": "Observed across the repo's own CI configuration during pass 2.",
       "location": "pass-2 semantic review",
       "found_by_tools_at_pass_2": false,
@@ -101,7 +115,15 @@
       "now_detectable": false,
       "detectable_since": null,
       "fixed_by": null,
-      "tracked_by": "agent-ix/quoin#204"
+      "tracked_by": "agent-ix/quoin#224",
+      "detection_strength": "none",
+      "$strength_note": "Pointed at quoin#204 \u2014 the mocked-confirmation ticket \u2014 since it was written, so this family has never had an owner. quoin#224 filed in the re-adjudication. No detector exists anywhere in the ecosystem, and the tier-1 mapping declares `source: none` so the recall of 0 is a stated fact rather than an inferred absence."
     }
-  ]
+  ],
+  "detection_strength_scale": {
+    "$comment": "How strongly a finding is detected, distinct from WHETHER it is. Added in the re-adjudication because `now_detectable: true` was flattening two different states: AK-003 is 'a number moved' and AK-001 is 'here is the file and the line'. Counting them as one overstates the toolchain, and `finding_localisation_rate` \u2014 measured at 40% on the first scored tier-1 run \u2014 exists precisely because they are not the same.",
+    "located": "the finding names a path, and a line where the payload carries one",
+    "aggregate": "a declared metric moves; no criterion, row or line is named",
+    "none": "nothing in the toolchain reports it"
+  }
 }
