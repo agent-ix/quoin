@@ -86,3 +86,50 @@ export function validateDictionary(doc, path = "<inline>") {
   }
   return { families, metrics };
 }
+
+/**
+ * Every declared family has a corpus, and every corpus has a declared family
+ * (#199).
+ *
+ * The gap this closes: `families` was a bare string list nothing cross-checked.
+ * The dictionary declared 8 and `CORPORA` seeded 4, so `finding_precision` and
+ * `finding_recall` were structurally unmeasurable for half the dictionary and
+ * NOTHING said so — the four missing ones simply never appeared in a score, and
+ * an absent row reads exactly like a family with nothing to report.
+ *
+ * Both directions, because each catches a different mistake: a declared family
+ * with no corpus is a metric nobody can compute, and a corpus whose family the
+ * dictionary never declared is a score nobody asked for and no metric governs.
+ *
+ * `control` is the corpus family for the clean control, which seeds no defect
+ * by definition and is therefore exempt from the first direction only.
+ */
+export function crossCheckFamilies(
+  declared,
+  corpusFamilies,
+  { control = "none", path = "<inline>" } = {},
+) {
+  const seeded = new Set(corpusFamilies.filter((f) => f !== control));
+  const known = new Set(declared);
+
+  const unseeded = declared.filter((f) => !seeded.has(f)).sort();
+  if (unseeded.length > 0) {
+    throw new DictionaryError(
+      `${path}: declared famil${unseeded.length === 1 ? "y" : "ies"} with no ` +
+        `corpus: ${unseeded.join(", ")}. Precision and recall are not ` +
+        `computable for a family nothing seeds, and an absent score row is ` +
+        `indistinguishable from a family with nothing to report.`,
+    );
+  }
+
+  const undeclared = [...seeded].filter((f) => !known.has(f)).sort();
+  if (undeclared.length > 0) {
+    throw new DictionaryError(
+      `${path}: corpus famil${undeclared.length === 1 ? "y" : "ies"} the ` +
+        `dictionary does not declare: ${undeclared.join(", ")}. Add it to ` +
+        `\`families\` or the corpus scores against no metric.`,
+    );
+  }
+
+  return { seeded: [...seeded].sort() };
+}

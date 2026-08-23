@@ -13,6 +13,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { buildBenchCorpora, CORPORA } from "../evals/fixtures/bench/build.mjs";
+import { crossCheckFamilies } from "../evals/lib/dictionary.mjs";
 import { diff, render, scoreAgainstKey } from "../scripts/battletest.mjs";
 
 function build() {
@@ -94,20 +95,94 @@ describe("tier-1 seeded corpora", () => {
     }
   });
 
-  test("every named battletest failure family has a corpus", () => {
-    // The families #197 enumerates. `stale-name-correct-trace` and
-    // `oracle=code-copy` are deliberately absent here and covered as
-    // declarative cases in quire-rs (tests/fixtures/corpus_cases), where the
-    // engine can be driven directly — duplicating them would give two places
-    // to update and one to forget.
-    const covered = new Set(CORPORA.map((c) => c.family));
-    for (const family of [
-      "marker-form-mismatch",
-      "undeclared-type-value",
-      "catch-all-universal",
-      "vacuous-under-guard",
-    ]) {
-      expect(covered).toContain(family);
+  test("TC-948 every family the dictionary declares has a corpus, and vice versa", () => {
+    // TC-948
+    // The gap that let four families sit unseeded from the day the dictionary
+    // shipped: `bench/metrics.json` declared 8, `CORPORA` seeded 4, and
+    // nothing compared the two lists. `finding_precision` and
+    // `finding_recall` were structurally unmeasurable for half the dictionary
+    // and no test, gate or report said so.
+    //
+    // This is the enforcement, not a restatement of the seeded list — a
+    // hardcoded array here would have to be edited in lockstep with both
+    // files, which is the third place to forget.
+    const dictionary = JSON.parse(
+      readFileSync(join(__dirname, "..", "bench", "metrics.json"), "utf8"),
+    );
+    expect(() =>
+      crossCheckFamilies(
+        dictionary.families,
+        CORPORA.map((c) => c.family),
+        { path: "bench/metrics.json" },
+      ),
+    ).not.toThrow();
+  });
+
+  test("TC-949 the cross-check fails in BOTH directions", () => {
+    // TC-949
+    // A guard that cannot fail is the defect it exists to prevent, and this
+    // whole programme exists because one shipped. Each direction catches a
+    // different mistake, so each is mutated separately.
+    const corpusFamilies = CORPORA.map((c) => c.family);
+    const declared: string[] = JSON.parse(
+      readFileSync(join(__dirname, "..", "bench", "metrics.json"), "utf8"),
+    ).families;
+
+    // A family the dictionary declares that nothing seeds — the state that
+    // shipped, for four families at once.
+    expect(() =>
+      crossCheckFamilies(
+        [...declared, "a-family-nothing-seeds"],
+        corpusFamilies,
+      ),
+    ).toThrow(/no corpus/);
+
+    // A corpus family the dictionary never declared — a score no metric
+    // governs. Dropping one DECLARED name makes its corpus undeclared, so the
+    // no-corpus direction cannot fire first and mask this one.
+    expect(() =>
+      crossCheckFamilies(
+        declared.filter((f) => f !== "hollow-denominator"),
+        corpusFamilies,
+      ),
+    ).toThrow(/does not declare/);
+  });
+
+  test("TC-950 declared collateral names a family and a reason", () => {
+    // TC-950
+    // Collateral suppresses a finding from the precision denominator, so a
+    // loose declaration is a licence to launder false positives. It must name
+    // BOTH the family and the reason: family alone would absorb any finding of
+    // that family, including one pointing where no defect was seeded — the
+    // exact laundering CR-098's positional pairing was added to stop.
+    const declared = CORPORA.flatMap((c) =>
+      c.defects.flatMap((d: { collateral?: unknown[] }) => d.collateral ?? []),
+    ) as Array<{ family?: string; reason?: string; note?: string }>;
+    expect(declared.length).toBeGreaterThan(0);
+    for (const entry of declared) {
+      expect(entry.family).toBeTruthy();
+      expect(entry.reason).toBeTruthy();
+      // Why this finding is a consequence and not a second seeded defect.
+      expect(entry.note).toBeTruthy();
+    }
+  });
+
+  test("TC-951 a family with no working detector says so in its label", () => {
+    // TC-951
+    // Three families score recall 0 today for three different reasons, and the
+    // difference matters: `oracle-is-code-copy` has a detector with no caller
+    // (quire-rs#236), `mocked-confirmation` has one with no producer
+    // (quoin#204), `gate-that-gates-nothing` has none at all. A 0 that does
+    // not say which is a number nobody can act on — the failure this
+    // benchmark exists to end, reproduced inside the benchmark.
+    for (const corpus of CORPORA) {
+      for (const defect of corpus.defects as Array<{
+        confirmed_at: string;
+        needs_engine?: string;
+      }>) {
+        if (!/not detected/i.test(defect.confirmed_at)) continue;
+        expect(defect.needs_engine).toBeTruthy();
+      }
     }
   });
 });

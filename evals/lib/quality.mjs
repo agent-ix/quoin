@@ -41,10 +41,57 @@ export function scoreFindings(found, labels) {
   const claimed = new Set();
   let positional = 0;
 
+  // Pass 0 — declared collateral (#199).
+  //
+  // Some seeded defects necessarily produce a SECOND, correct finding of a
+  // different family. `hollow-denominator` is the measured case: a corpus
+  // whose evidence symbols bind nothing makes `coverage.backed` a ratio over
+  // an unread population AND makes the binder report `no-symbol-bound`, and
+  // the engine cannot separate the two causes at all — `coverage.backed` is
+  // the only ratio metric that can go hollow, and its one cause already has a
+  // bespoke diagnostic.
+  //
+  // Scoring that second finding as a false positive would punish the toolchain
+  // for being right, and it would be a claim about a family this corpus does
+  // not seed. Excluding it silently would be worse: an unscored finding nobody
+  // sees is a finding nobody can question. So it is set aside BEFORE either
+  // pass and reported by name, on the same footing as `excluded`.
+  //
+  // A collateral declaration is narrow on purpose: it names the family and the
+  // reason, so it cannot quietly absorb an unrelated false positive that
+  // happens to fire on the same corpus.
+  // ONE finding per declaration, consumed like a label. Without this a single
+  // `no-symbol-bound` declaration would absorb every `no-symbol-bound` finding
+  // the run emitted — so a toolchain reporting the same consequence five times
+  // would score identically to one reporting it once, and four duplicates
+  // would vanish from the precision denominator. That is the laundering
+  // CR-098's positional pairing was added to stop, reintroduced through a side
+  // door.
+  const declaredCollateral = labels.flatMap((l) => l.collateral ?? []);
+  const spent = new Set();
+  const collateral = [];
+  const setAside = new Set();
+  for (const finding of found) {
+    const index = declaredCollateral.findIndex(
+      (c, i) =>
+        !spent.has(i) &&
+        c.family === finding.family &&
+        (c.reason === undefined || c.reason === findingReason(finding)),
+    );
+    if (index === -1) continue;
+    spent.add(index);
+    setAside.add(finding);
+    collateral.push({
+      family: finding.family,
+      reason: findingReason(finding),
+    });
+  }
+  const scored = found.filter((f) => !setAside.has(f));
+
   // Pass 1 — positional. A finding that names WHERE is paired to the label at
   // that place. Run first so a locus-less finding cannot consume the label a
   // positioned one should have taken (FR-043-AC-7).
-  for (const finding of found) {
+  for (const finding of scored) {
     const locus = locusOf(finding);
     if (!locus) continue;
     const hit = expected.find(
@@ -73,7 +120,7 @@ export function scoreFindings(found, labels) {
   // otherwise pass 2 hands it the very label pass 1 refused it. A finding with
   // no locus is unconstrained, because it made no positional claim to be wrong
   // about.
-  for (const finding of found) {
+  for (const finding of scored) {
     if (claimed.has(finding)) continue;
     const positioned = locusOf(finding) !== null;
     const hit = expected.find(
@@ -107,7 +154,12 @@ export function scoreFindings(found, labels) {
   // How much of the score was positional. A precision figure built entirely
   // from family-only matches is weaker evidence than the same figure built
   // from findings that named where, and the reader should be able to tell.
-  return { families: rows, excluded, positional };
+  return { families: rows, excluded, positional, collateral };
+}
+
+/** The reason a finding carries, under either of the two payload spellings. */
+function findingReason(finding) {
+  return finding.reason ?? finding.kind ?? null;
 }
 
 /** Where a FINDING points, or `null` when it names no place. */
