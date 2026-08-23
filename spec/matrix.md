@@ -393,6 +393,14 @@ generated tests under `tests/props/` and `Unit` for the rest.
 | TC-950 | Declared collateral names a family, a reason and a note, and consumes ONE finding per declaration — so a consequence of the seeded defect is not scored as a false positive, and a duplicate cannot hide behind the same declaration (#199) | Unit | P0 | FR-043-AC-2, FR-043-AC-7 | ✅ |
 | TC-951 | A label whose family has no working detector records which of the three reasons applies and names its ticket, so a recall of 0 says whether the tool looked and missed or never looked (#199) | Unit | P0 | FR-043-AC-7 | ✅ |
 | TC-952 | Declared collateral is set aside from scoring, reported by name, and SPENT once per declaration — a second identical consequence is a false positive, and a declaration whose reason does not match absorbs nothing (#199) | Unit | P0 | FR-043-AC-2 | ✅ |
+| TC-953 | `labels.json`'s per-corpus wrapper is flattened into the array `scoreFindings` consumes, in one place, carrying the corpus name — the shape mismatch that kept `buildBenchCorpora` and the scorer from ever meeting (#199) | Unit | P0 | FR-043-AC-7 | ✅ |
+| TC-954 | `finding_localisation_rate` is positional pairings over true positives, and `null` — never 0 — when nothing was confirmed (#199) | Unit | P0 | FR-043-AC-4 | ✅ |
+| TC-955 | The ratchet is one-way: a regression keeps the OLD baseline in both directions, so a bad run can never lower the bar (#199) | Unit | P0 | FR-043-AC-10 | ✅ |
+| TC-956 | A missing baseline scores `new` — neither a pass by default nor a failure — and the observed value is proposed, not written (#199) | Unit | P0 | FR-043-AC-10 | ✅ |
+| TC-957 | `gate-zero` carries no baseline and no tolerance, and its proposed baseline is forced to 0 so `--update` cannot launder a non-zero value (#199) | Unit | P0 | FR-043-AC-6 | ✅ |
+| TC-958 | Every family the dictionary declares is mapped to a real payload source and key, and no mapping names a family nothing declares (#199) | Unit | P0 | FR-043-AC-2 | ✅ |
+| TC-959 | A family with no detector declares `source: none` with a note rather than being omitted, so a recall of 0 says whether anything looked (#199) | Unit | P0 | FR-043-AC-7 | ✅ |
+| TC-960 | A family the baseline scored and a run does not report AT ALL is a regression with the baseline kept — deleting a corpus must not read as a clean run (#199) | Unit | P0 | FR-043-AC-10 | ✅ |
 | TC-936 | An obligation discharged only by a mocked stand-in for its own subject is a `medium` `mocked-confirmation` finding naming the injected identifier (#204) | Unit | P0 | FR-032-AC-15 | ✅ |
 | TC-937 | A mock unrelated to the statement's subject (`FakeClock`) is not reported — tests legitimately mock clocks, filesystems and networks (#204) | Unit | P0 | FR-032-AC-15 | ✅ |
 | TC-938 | One real suite alongside a mocked one is not reported: standing in a dependency while another suite exercises the real path is ordinary test design (#204) | Unit | P0 | FR-032-AC-15 | ✅ |

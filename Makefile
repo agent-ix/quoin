@@ -63,6 +63,23 @@ battletest:
 battletest-update:
 	node scripts/battletest.mjs --update --corpus $(BENCH_CORPUS) --module $(EVIDENCE_MODULE)
 
+# TIER 1: the seeded corpora, built, scanned and scored on every run. Cheap
+# enough to gate on, unlike `battletest`, which needs a pinned external tree.
+#
+# The ratchet is one-way and quire-rs `scripts/bench.py`'s: a regression keeps
+# the OLD baseline, so a bad run can never lower the bar, and `--update` is the
+# only way a number moves. `QUIRE` overrides the binary — point it at a local
+# build to score an engine that is not the installed one, which is the whole
+# reason three SpecReviews once cited figures from a binary nobody checked.
+QUIRE ?= quire
+.PHONY: bench-tier1
+bench-tier1:
+	node scripts/bench-tier1.mjs --quire $(QUIRE)
+
+.PHONY: bench-tier1-update
+bench-tier1-update:
+	node scripts/bench-tier1.mjs --update --quire $(QUIRE)
+
 .PHONY: evidence-audit
 evidence-audit:
 	node bin/quoin.js evidence audit --repo . --module $(EVIDENCE_MODULE) --ratchet
