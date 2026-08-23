@@ -88,6 +88,84 @@ describe("finding precision and recall", () => {
     expect(fileOnly.families[0].truePositives).toBe(1);
   });
 
+  it("TC-952 declared collateral is set aside, reported, and spent once", () => {
+    // TC-952
+    // The behaviour, not the declaration's shape (TC-950 covers that). A
+    // seeded `hollow-denominator` necessarily also produces `no-symbol-bound`,
+    // and the engine cannot separate the two causes — `coverage.backed` is the
+    // only ratio metric that can go hollow and its one cause already has a
+    // bespoke diagnostic. Scoring that second, CORRECT finding as a false
+    // positive punishes the toolchain for being right.
+    const seeded = [
+      {
+        id: "HD-1",
+        family: "hollow-denominator",
+        findable: true,
+        location: "src/lib.rs",
+        collateral: [
+          { family: "marker-form-mismatch", reason: "no-symbol-bound" },
+        ],
+      },
+    ];
+
+    const one = scoreFindings(
+      [
+        { family: "hollow-denominator", reason: "hollow-denominator" },
+        { family: "marker-form-mismatch", reason: "no-symbol-bound" },
+      ],
+      seeded,
+    );
+    // The seeded defect scores; the consequence is neither a true nor a false
+    // positive, and `marker-form-mismatch` gets no row at all — this corpus
+    // makes no claim about that family.
+    expect(one.families).toEqual([
+      {
+        family: "hollow-denominator",
+        truePositives: 1,
+        falsePositives: 0,
+        misses: 0,
+        precision: 1,
+        recall: 1,
+      },
+    ]);
+    // Reported by name, never silently dropped: an unscored finding nobody
+    // sees is a finding nobody can question.
+    expect(one.collateral).toEqual([
+      { family: "marker-form-mismatch", reason: "no-symbol-bound" },
+    ]);
+
+    // A declaration is SPENT once, like a label. Otherwise one declaration
+    // absorbs every matching finding, and a toolchain reporting the same
+    // consequence three times scores identically to one reporting it once --
+    // the duplicate laundering CR-098's positional pairing exists to stop,
+    // re-entering through a side door.
+    const three = scoreFindings(
+      [
+        { family: "hollow-denominator", reason: "hollow-denominator" },
+        { family: "marker-form-mismatch", reason: "no-symbol-bound" },
+        { family: "marker-form-mismatch", reason: "no-symbol-bound" },
+        { family: "marker-form-mismatch", reason: "no-symbol-bound" },
+      ],
+      seeded,
+    );
+    expect(three.collateral).toHaveLength(1);
+    const mm = three.families.find((f) => f.family === "marker-form-mismatch");
+    expect(mm?.falsePositives).toBe(2);
+
+    // The reason is load-bearing. A declaration naming only the family would
+    // absorb any finding of that family, including one at a place no defect
+    // was seeded.
+    const wrongReason = scoreFindings(
+      [{ family: "marker-form-mismatch", reason: "stale-name-correct-trace" }],
+      seeded,
+    );
+    expect(wrongReason.collateral).toEqual([]);
+    expect(
+      wrongReason.families.find((f) => f.family === "marker-form-mismatch")
+        ?.falsePositives,
+    ).toBe(1);
+  });
+
   it("TC-941 is reported per family, because an average hides a hole", () => {
     // TC-941
     // A tool that finds every marker mismatch and no vacuous suite has a
