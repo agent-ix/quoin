@@ -1,0 +1,60 @@
+{
+  "$comment": "The tier-1 payload→family mapping (agent-ix/quoin#199, FR-043-AC-2). NORMATIVE and REVIEWABLE: this table is the contract between what a tool emits and what the benchmark calls a finding, and it belongs in the repository rather than in a script's head. A family the scorer reads out of a payload section this file does not name is a family nobody agreed on, and `scripts/bench-tier1.mjs` refuses a payload signal it cannot map rather than dropping it — an unmapped signal is a scoring hole, and a silent one reads exactly like a tool that found nothing.",
+  "sources": {
+    "coverage.diagnostics": "quire coverage --json, `diagnostics[]`. Keyed on `reason`. Carries `path` sometimes and never a line.",
+    "coverage.suspicions": "quire coverage --json, `suspicions[]`. Keyed on `kind`. Carries `path` and `line`.",
+    "coverage.metrics": "quire coverage --json, `metrics[]`. Keyed on `name`, matched against the label's `expect_value`. Carries no locus at all — a metric is a number about a corpus, not a place.",
+    "validate.findings": "quire validate --diagnostics-format json, one NDJSON object per finding. Keyed on the bracketed reason at the end of `message`. See `parse_fragility` below.",
+    "audit.findings": "quoin evidence audit --json, `findings[]`. Keyed on `kind`. Carries an obligation id and NO locus."
+  },
+  "parse_fragility": {
+    "what": "`validate` has no `--json` payload. `--diagnostics-format json` emits `{kind, message, severity}` and embeds the path, the line and the reason INSIDE the message string, so the runner parses them with a regex.",
+    "why_it_matters": "A message-format change silently stops every `validate`-sourced family scoring, and a family that stops scoring looks like a family with nothing to report. The runner therefore refuses a `ValidationError` whose message it cannot parse, rather than skipping it.",
+    "tracked_by": "agent-ix/quire-cli#65"
+  },
+  "families": {
+    "marker-form-mismatch": {
+      "source": "coverage.diagnostics",
+      "key": "no-symbol-bound",
+      "locus": "path"
+    },
+    "hollow-denominator": {
+      "source": "coverage.diagnostics",
+      "key": "hollow-denominator",
+      "locus": "none"
+    },
+    "undeclared-type-value": {
+      "source": "validate.findings",
+      "key": "assert",
+      "locus": "path-line"
+    },
+    "catch-all-universal": {
+      "source": "coverage.metrics",
+      "key": "coverage.specific_shaped",
+      "locus": "none"
+    },
+    "vacuous-under-guard": {
+      "source": "coverage.suspicions",
+      "key": "vacuous-under-guard",
+      "locus": "path-line"
+    },
+    "oracle-is-code-copy": {
+      "source": "coverage.suspicions",
+      "key": "oracle-resembles-implementation",
+      "locus": "path-line",
+      "$note": "The comparison ships in quire-rs `src/skeptic.rs` and has NO production caller — `oracle_copies` is reached only by its own unit tests. Mapped anyway: the contract is what a detector must emit, and declaring it before the detector exists is what lets the detector be built against something. Recall reads 0 until agent-ix/quire-rs#236."
+    },
+    "mocked-confirmation": {
+      "source": "audit.findings",
+      "key": "mocked-confirmation",
+      "locus": "none",
+      "$note": "quoin's own auditor, not quire — `quire coverage` and `quire properties` cannot see this family, which is why the runner calls a third command. The detector additionally cannot fire: `AuditInput.injections` is never supplied by any caller (agent-ix/quoin#204, reopened)."
+    },
+    "gate-that-gates-nothing": {
+      "source": "none",
+      "key": "gate-that-gates-nothing",
+      "locus": "none",
+      "$note": "No detector exists anywhere in the ecosystem. `source: none` is a DECLARED hole, not an omission: it makes the recall of 0 a fact this file states rather than an absence a reader has to infer. agent-ix/quoin#197 workstream 4."
+    }
+  }
+}

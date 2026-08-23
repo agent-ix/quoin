@@ -75,6 +75,23 @@ const fr = (criteria) =>
     .map((c, i) => `| FR-001-AC-${i + 1} | ${c} | Test (TC-00${i + 1}) |\n`)
     .join("");
 
+/**
+ * A criterion the FR-052 classifier gives a SPECIFIC shape (`idempotence`).
+ *
+ * Every corpus but `catch-all-properties` carries it, and the reason is a
+ * measurement: the first tier-1 run scored `catch-all-universal` at precision
+ * **11%** — 1 true positive and 8 false ones. Those 8 were not the tool being
+ * wrong. Every corpus's only criterion was `universal`-shaped, so
+ * `coverage.specific_shaped` read 0 across all nine and the family's signal was
+ * a CONSTANT, present in the clean control too.
+ *
+ * A control that carries the defect is not a control, and a check that cannot
+ * stay silent on healthy input is not a check. This is the same rule
+ * `clean-control` exists to enforce, applied one level down to a single family.
+ */
+const SPECIFIC_CRITERION =
+  "Applying the normalizer twice shall give the same result as applying it once.";
+
 const matrix = (rows) =>
   `---\nid: TM-001\ntype: TestMatrix\n---\n\n## Test Cases\n\n` +
   `| ID | Traces To | Type | Status |\n|----|-----------|------|--------|\n` +
@@ -94,7 +111,10 @@ export const CORPORA = [
       "1,292 such symbols in filament-ide-rs bound nothing and the report said 23%.",
     files: {
       "module/manifest.yaml": MODULE,
-      "spec/FR-001.md": fr(["Every finding shall default to warning."]),
+      "spec/FR-001.md": fr([
+        "Every finding shall default to warning.",
+        SPECIFIC_CRITERION,
+      ]),
       "spec/tests.md": matrix(["TC-001 | FR-001-AC-1 | Unit | \u{1F6A7}"]),
       "src/lib.rs":
         '//! seeded\n\n#[cfg(test)]\nmod tests {\n    #[tracks("TC-001")]\n' +
@@ -110,6 +130,26 @@ export const CORPORA = [
         expect_reason: "no-symbol-bound",
         note: "the module declares `#[trace(...)]`; the source writes `#[tracks(...)]`",
         confirmed_at: "quire-rs v0.43.0",
+        // The mirror of `hollow-metric`'s declaration, and the first tier-1
+        // run is what proved it necessary: this corpus scored
+        // `hollow-denominator` precision at 50% — one true positive from the
+        // corpus that seeds it, one "false" positive from here.
+        //
+        // Both are correct. A marker the binder cannot read makes
+        // `coverage.backed` a ratio over an unread population, so the
+        // relationship holds in BOTH directions and both corpora have to say
+        // so. One-sided collateral is how a symmetric consequence gets scored
+        // as an error against whichever corpus forgot to declare it.
+        collateral: [
+          {
+            family: "hollow-denominator",
+            reason: "hollow-denominator",
+            note:
+              "an unread marker IS a hollow denominator; `coverage.backed` is " +
+              "the only ratio metric that can go hollow and this is its only " +
+              "cause, so the two findings are one fact seen twice",
+          },
+        ],
       },
     ],
   },
@@ -122,7 +162,10 @@ export const CORPORA = [
       "reported as status lies because no declared type said what they are.",
     files: {
       "module/manifest.yaml": MODULE,
-      "spec/FR-001.md": fr(["Every finding shall default to warning."]),
+      "spec/FR-001.md": fr([
+        "Every finding shall default to warning.",
+        SPECIFIC_CRITERION,
+      ]),
       "spec/tests.md": matrix(["TC-001 | FR-001-AC-1 | Demonstration | ✅"]),
       "src/lib.rs":
         '//! seeded\n\n#[cfg(test)]\nmod tests {\n    #[trace("TC-001")]\n' +
@@ -201,7 +244,10 @@ export const CORPORA = [
       "of its samples.",
     files: {
       "module/manifest.yaml": MODULE,
-      "spec/FR-001.md": fr(["Every finding shall default to warning."]),
+      "spec/FR-001.md": fr([
+        "Every finding shall default to warning.",
+        SPECIFIC_CRITERION,
+      ]),
       "spec/tests.md": matrix(["TC-001 | FR-001-AC-1 | Unit | ✅"]),
       "src/lib.rs":
         '//! seeded\n\n#[cfg(test)]\nmod tests {\n    #[trace("TC-001")]\n' +
@@ -234,7 +280,10 @@ export const CORPORA = [
       "evidence symbols, and three SpecReviews cite figures computed under it.",
     files: {
       "module/manifest.yaml": MODULE,
-      "spec/FR-001.md": fr(["Every finding shall default to warning."]),
+      "spec/FR-001.md": fr([
+        "Every finding shall default to warning.",
+        SPECIFIC_CRITERION,
+      ]),
       "spec/tests.md": matrix(["TC-001 | FR-001-AC-1 | Unit | \u{1F6A7}"]),
       // A real test, no marker at all — the binder walks one candidate and
       // binds none, so `coverage.backed` is a ratio over a corpus it could
@@ -296,6 +345,7 @@ export const CORPORA = [
       "module/manifest.yaml": MODULE,
       "spec/FR-001.md": fr([
         "Every path shall be relative and free of dot segments.",
+        SPECIFIC_CRITERION,
       ]),
       "spec/tests.md": matrix(["TC-001 | FR-001-AC-1 | Unit | ✅"]),
       // The oracle restates the implementation's own rules, token for token.
@@ -349,6 +399,7 @@ export const CORPORA = [
       "module/manifest.yaml": MODULE,
       "spec/FR-001.md": fr([
         "The shell shall obtain the user's confirmation before granting a root.",
+        SPECIFIC_CRITERION,
       ]),
       "spec/tests.md": matrix(["TC-001 | FR-001-AC-1 | Unit | ✅"]),
       // The only binding for the criterion injects a stand-in for the exact
@@ -408,7 +459,10 @@ export const CORPORA = [
       "a human, and detected by nothing anywhere in the ecosystem.",
     files: {
       "module/manifest.yaml": MODULE,
-      "spec/FR-001.md": fr(["No production symbol shall call `unwrap`."]),
+      "spec/FR-001.md": fr([
+        "No production symbol shall call `unwrap`.",
+        SPECIFIC_CRITERION,
+      ]),
       "spec/tests.md": matrix(["TC-001 | FR-001-AC-1 | Inspection | ✅"]),
       // The gate the matrix row claims verifies FR-001-AC-1. It greps, it
       // exits 0, and it exits 0 whatever the grep finds: the pipeline's status
@@ -459,7 +513,10 @@ export const CORPORA = [
       "a constant.",
     files: {
       "module/manifest.yaml": MODULE,
-      "spec/FR-001.md": fr(["Every finding shall default to warning."]),
+      "spec/FR-001.md": fr([
+        "Every finding shall default to warning.",
+        SPECIFIC_CRITERION,
+      ]),
       "spec/tests.md": matrix(["TC-001 | FR-001-AC-1 | Unit | ✅"]),
       "src/lib.rs":
         '//! seeded\n\n#[cfg(test)]\nmod tests {\n    #[trace("TC-001")]\n' +

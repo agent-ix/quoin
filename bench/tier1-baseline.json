@@ -1,0 +1,88 @@
+{
+  "families": [
+    {
+      "family": "catch-all-universal",
+      "truePositives": 1,
+      "falsePositives": 0,
+      "misses": 0,
+      "precision": 1,
+      "recall": 1
+    },
+    {
+      "family": "gate-that-gates-nothing",
+      "truePositives": 0,
+      "falsePositives": 0,
+      "misses": 1,
+      "precision": null,
+      "recall": 0
+    },
+    {
+      "family": "hollow-denominator",
+      "truePositives": 1,
+      "falsePositives": 0,
+      "misses": 0,
+      "precision": 1,
+      "recall": 1
+    },
+    {
+      "family": "marker-form-mismatch",
+      "truePositives": 1,
+      "falsePositives": 0,
+      "misses": 0,
+      "precision": 1,
+      "recall": 1
+    },
+    {
+      "family": "mocked-confirmation",
+      "truePositives": 0,
+      "falsePositives": 0,
+      "misses": 1,
+      "precision": null,
+      "recall": 0
+    },
+    {
+      "family": "oracle-is-code-copy",
+      "truePositives": 0,
+      "falsePositives": 0,
+      "misses": 1,
+      "precision": null,
+      "recall": 0
+    },
+    {
+      "family": "undeclared-type-value",
+      "truePositives": 1,
+      "falsePositives": 0,
+      "misses": 0,
+      "precision": 1,
+      "recall": 1
+    },
+    {
+      "family": "vacuous-under-guard",
+      "truePositives": 1,
+      "falsePositives": 0,
+      "misses": 0,
+      "precision": 1,
+      "recall": 1
+    }
+  ],
+  "excluded": [],
+  "collateral": [
+    {
+      "family": "marker-form-mismatch",
+      "reason": "no-symbol-bound"
+    },
+    {
+      "family": "hollow-denominator",
+      "reason": "hollow-denominator"
+    }
+  ],
+  "positional": 2,
+  "finding_localisation_rate": 0.4,
+  "actionability": {
+    "actionable": 2,
+    "total": 7,
+    "rate": 0.286
+  },
+  "corpora": 9,
+  "findings": 7
+}
