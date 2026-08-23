@@ -68,8 +68,8 @@
       "population": "true positives from a scored tier-1 run",
       "method": "positional pairings over true positives, from evals/lib/quality.mjs scoreFindings. A finding pairs positionally only when it and its label BOTH name a place and the places agree, so this is the share of confirmed findings that said where. It is the metric that encodes the actual requirement \u2014 an alert nobody can locate is an alert nobody acts on \u2014 and it is deliberately not per-family: the question is about the toolchain's output, not about one detector",
       "direction": "higher-is-better",
-      "baseline": 0.4,
-      "baseline_note": "First scored tier-1 run (2026-08-23): 2 of 5 true positives named where. The three that did not are `hollow-denominator` (the diagnostic carries no path \u2014 it names a metric), `catch-all-universal` (an aggregate metric, not a located finding) and `marker-form-mismatch` (`no-symbol-bound` names the LANGUAGE, `rust`, not the marker's line). All three are quoin#197 workstream 4."
+      "baseline": 0.8,
+      "baseline_note": "0.40 on the first scored tier-1 run (2026-08-23): 2 of 5 true positives named where. 0.60 after quire-rs#256 gave `no-symbol-bound` an unbound symbol to name instead of a language. 0.80 after quire-rs#261 made `catch-all-universal` a located diagnostic instead of a moving aggregate. The one remaining miss is `hollow-denominator`, whose diagnostic names a METRIC and carries no path \u2014 arguably correct, since a hollow ratio is a fact about a corpus rather than about a file, and the label records that."
     }
   }
 }
