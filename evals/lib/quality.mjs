@@ -22,7 +22,7 @@
  * whole reason for existing: a scored miss must be distinguishable from a
  * defect nobody claimed was findable.
  */
-export function scoreFindings(found, labels) {
+export function scoreFindings(found, labels, shapes = {}) {
   const families = new Map();
   const bucket = (family) => {
     if (!families.has(family)) {
@@ -143,7 +143,23 @@ export function scoreFindings(found, labels) {
   const rows = [...families.values()]
     .map((f) => ({
       ...f,
-      precision: ratio(f.truePositives, f.truePositives + f.falsePositives),
+      // An ADVISORY family reports no precision. It is a corpus-level
+      // observation — one finding per corpus whenever a shape holds — so it
+      // fires on nearly every fixture, correctly, and the defect-shaped FP
+      // definition ("a finding on a case that does not seed this family")
+      // counts each correct firing against it.
+      //
+      // Measured before this: `catch-all-universal` fired on 10 of 21 cases,
+      // every one verified correct, and scored precision 0.167 — a number that
+      // read as "wrong five times in six" while being wrong zero times in
+      // twelve. `null`, never 0, for the same reason a 0/0 ratio is null
+      // elsewhere here: not-measured and zero are different claims
+      // (agent-ix/quoin#234).
+      precision:
+        shapes[f.family] === "advisory"
+          ? null
+          : ratio(f.truePositives, f.truePositives + f.falsePositives),
+      shape: shapes[f.family] ?? "defect",
       recall: ratio(f.truePositives, f.truePositives + f.misses),
     }))
     .sort((a, b) => a.family.localeCompare(b.family));

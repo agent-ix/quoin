@@ -34,7 +34,9 @@
       "source": "coverage.diagnostics",
       "key": "catch-all-universal",
       "locus": "path",
-      "$note": "Was `coverage.metrics` / `coverage.specific_shaped`, which pairs on family alone and contributes nothing to `finding_localisation_rate` \u2014 a number that moved with nowhere to put a cursor. quire-rs#261 makes it a located diagnostic naming a criterion at `path:line`, so it now scores positionally like every other family whose finding says where."
+      "$note": "Was `coverage.metrics` / `coverage.specific_shaped`, which pairs on family alone and contributes nothing to `finding_localisation_rate` \u2014 a number that moved with nowhere to put a cursor. quire-rs#261 makes it a located diagnostic naming a criterion at `path:line`, so it now scores positionally like every other family whose finding says where.",
+      "shape": "advisory",
+      "shape_note": "A CORPUS-LEVEL advisory, not a defect-shaped finding: one per corpus, fired whenever a document's criteria are all the catch-all. Precision is not a meaningful quantity over a population where the finding is expected almost everywhere \u2014 measured, it fired on 10 of 21 cases and EVERY ONE was correct (`by_property: {universal: 1}` on each), yet scored 0.167. That number read as 'wrong five times in six' while being wrong zero times in twelve. Scored on recall and localisation only (agent-ix/quoin#234)."
     },
     "vacuous-under-guard": {
       "source": "coverage.suspicions",
