@@ -5,7 +5,8 @@
       "truePositives": 2,
       "falsePositives": 10,
       "misses": 0,
-      "precision": 0.167,
+      "precision": null,
+      "shape": "advisory",
       "recall": 1
     },
     {
@@ -14,14 +15,16 @@
       "falsePositives": 0,
       "misses": 1,
       "precision": null,
+      "shape": "defect",
       "recall": 0
     },
     {
       "family": "hollow-denominator",
       "truePositives": 1,
-      "falsePositives": 1,
+      "falsePositives": 0,
       "misses": 0,
-      "precision": 0.5,
+      "precision": 1,
+      "shape": "defect",
       "recall": 1
     },
     {
@@ -30,6 +33,7 @@
       "falsePositives": 0,
       "misses": 0,
       "precision": 1,
+      "shape": "defect",
       "recall": 1
     },
     {
@@ -38,6 +42,7 @@
       "falsePositives": 0,
       "misses": 1,
       "precision": null,
+      "shape": "defect",
       "recall": 0
     },
     {
@@ -46,6 +51,7 @@
       "falsePositives": 0,
       "misses": 1,
       "precision": null,
+      "shape": "defect",
       "recall": 0
     },
     {
@@ -54,6 +60,7 @@
       "falsePositives": 0,
       "misses": 0,
       "precision": 1,
+      "shape": "defect",
       "recall": 1
     },
     {
@@ -62,6 +69,7 @@
       "falsePositives": 0,
       "misses": 0,
       "precision": 1,
+      "shape": "defect",
       "recall": 1
     }
   ],
@@ -70,6 +78,10 @@
     {
       "family": "marker-form-mismatch",
       "reason": "no-symbol-bound"
+    },
+    {
+      "family": "hollow-denominator",
+      "reason": "hollow-denominator"
     },
     {
       "family": "hollow-denominator",

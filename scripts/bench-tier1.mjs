@@ -298,6 +298,39 @@ function defectsFrom(meta, expect, mapping) {
         findable: meta.findable !== false,
         expect_reason: reason,
         confirmed_at: "derived from the case's own expect.yaml",
+        // The REMAINING expected reasons are collateral, not second seeded
+        // defects. Making one fire makes the others fire by construction — an
+        // unreadable marker makes `coverage.backed` a ratio over an unread
+        // population, so `no-symbol-bound` and `hollow-denominator` are one
+        // situation seen through two lenses. Dropping them (the first fix for
+        // the one-family-per-case violation) left each correct collateral
+        // firing counted as a false positive.
+        collateral: (expect.diagnostic_reasons ?? [])
+          .filter((r) => r !== reason)
+          .map((r) => {
+            const e = Object.entries(mapping?.families ?? {}).find(
+              ([, m]) => m.key === r,
+            );
+            return e
+              ? {
+                  family: e[0],
+                  reason: r,
+                  // Required by TC-950: collateral suppresses a finding from
+                  // the precision denominator, so a declaration with no stated
+                  // reason is a licence to launder false positives. This one is
+                  // DERIVED rather than adjudicated, and says so — the case
+                  // states both reasons in its own `expect.yaml`, so both are
+                  // expected consequences of the one situation it seeds, but
+                  // nobody has written down why they co-occur.
+                  note:
+                    `derived: the case's own expect.yaml expects both ` +
+                    `\`${reason}\` and \`${r}\`, so this is a consequence of ` +
+                    `the one defect it seeds, not a second seeded defect. Not ` +
+                    `separately adjudicated.`,
+                }
+              : null;
+          })
+          .filter(Boolean),
         note:
           "Derived, not adjudicated: the corpus states in `expect.yaml` what " +
           "should be found, and an unlabelled failure case is NOT healthy " +
@@ -495,7 +528,16 @@ function main() {
     (f) => f.metric === undefined || expectedValues.get(f.metric) === f.value,
   );
 
-  const score = scoreFindings(scoredFindings, flat);
+  // The shape a family is scored under is declared in the mapping, beside the
+  // key it reads — not inferred here, so a reader of the table can see why a
+  // family reports no precision without tracing the scorer.
+  const shapes = Object.fromEntries(
+    Object.entries(mapping.families).map(([family, m]) => [
+      family,
+      m.shape ?? "defect",
+    ]),
+  );
+  const score = scoreFindings(scoredFindings, flat, shapes);
   report = {
     families: score.families,
     excluded: score.excluded,

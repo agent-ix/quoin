@@ -126,6 +126,12 @@ describe("finding precision and recall", () => {
         misses: 0,
         precision: 1,
         recall: 1,
+        // Every row now carries the shape it was scored under, defaulting to
+        // `defect`. An ADVISORY family reports no precision — it fires on
+        // nearly every corpus by construction, so the defect-shaped false
+        // positive definition counts each correct firing against it
+        // (agent-ix/quoin#234).
+        shape: "defect",
       },
     ]);
     // Reported by name, never silently dropped: an unscored finding nobody
