@@ -2,10 +2,10 @@
   "families": [
     {
       "family": "catch-all-universal",
-      "truePositives": 1,
-      "falsePositives": 11,
+      "truePositives": 2,
+      "falsePositives": 10,
       "misses": 0,
-      "precision": 0.083,
+      "precision": 0.167,
       "recall": 1
     },
     {
@@ -26,10 +26,10 @@
     },
     {
       "family": "marker-form-mismatch",
-      "truePositives": 1,
-      "falsePositives": 1,
+      "truePositives": 2,
+      "falsePositives": 0,
       "misses": 0,
-      "precision": 0.5,
+      "precision": 1,
       "recall": 1
     },
     {
@@ -51,9 +51,9 @@
     {
       "family": "undeclared-type-value",
       "truePositives": 1,
-      "falsePositives": 11,
+      "falsePositives": 0,
       "misses": 0,
-      "precision": 0.083,
+      "precision": 1,
       "recall": 1
     },
     {
@@ -76,13 +76,19 @@
       "reason": "hollow-denominator"
     }
   ],
-  "positional": 4,
-  "finding_localisation_rate": 0.8,
+  "positional": 6,
+  "finding_localisation_rate": 0.857,
   "actionability": {
-    "actionable": 13,
-    "total": 31,
-    "rate": 0.419
+    "actionable": 2,
+    "total": 20,
+    "rate": 0.1
   },
   "corpora": 21,
-  "findings": 31
+  "pending": [
+    {
+      "case": "section-name-mismatch",
+      "ticket": "agent-ix/quire-rs#270"
+    }
+  ],
+  "findings": 20
 }
