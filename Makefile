@@ -71,7 +71,11 @@ battletest-update:
 # only way a number moves. `QUIRE` overrides the binary — point it at a local
 # build to score an engine that is not the installed one, which is the whole
 # reason three SpecReviews once cited figures from a binary nobody checked.
-QUIRE ?= quire
+# NOT a PATH lookup (agent-ix/quire-rs#265). The installed `quire` is
+# whatever somebody put there — 0.29.0 here, predating `binding_census` —
+# and scoring with it reported recall 0 on every coverage family, which
+# reads as a corpus regression rather than a stale binary.
+QUIRE ?= ../quire-cli/target/debug/quire
 .PHONY: bench-tier1
 bench-tier1:
 	node scripts/bench-tier1.mjs --quire $(QUIRE)
