@@ -26,7 +26,9 @@
     "undeclared-type-value": {
       "source": "validate.findings",
       "key": "assert",
-      "locus": "path-line"
+      "locus": "path-line",
+      "contains": "is not one of",
+      "note": "`assert` is the validator's CATEGORY, not this defect. Every ecosystem-bound fixture emits three shared structural `assert` findings (missing title, missing functional_coverage, column mismatch), so matching the category alone attributed eleven of twelve to this family: the reported precision measured the MAPPING's coarseness, not the detector. Fixing the Type-cell rejection would not have moved the number, and breaking it entirely would barely have moved it. `contains` narrows to the rejection itself (agent-ix/quoin#227 review)."
     },
     "catch-all-universal": {
       "source": "coverage.diagnostics",

@@ -185,6 +185,12 @@ function findingsFor(quire, corpusRoot, module, mapping) {
     }
     const { path, line, reason } = parsed.groups;
     if (!wanted.has(reason)) continue;
+    // A family MAY narrow past the reason token with `contains`. `assert` is
+    // the validator's CATEGORY and every ecosystem-bound fixture emits three
+    // shared structural ones; without this the family absorbs all of them and
+    // its precision measures this table rather than the detector.
+    const narrow = mapping.families[familyOfReason.get(reason)]?.contains;
+    if (narrow && !record.message.includes(narrow)) continue;
     out.push({
       family: familyOfReason.get(reason),
       reason,
@@ -204,7 +210,14 @@ function findingsFor(quire, corpusRoot, module, mapping) {
  * defect — the clean control — and is still SCORED, because a detector that
  * fires on healthy input is exactly what precision is for.
  */
-export function loadCorpus(root = join(ROOT, "corpus")) {
+export function loadCorpus(mapping = null, root = join(ROOT, "corpus")) {
+  // The mapping resolves a diagnostic reason to the family it belongs to, so a
+  // case's own `expect.yaml` can state ground truth without restating the
+  // family. Optional so a caller that only wants the case list (a test
+  // asserting corpus shape) need not load it.
+  mapping ??= existsSync(MAPPING)
+    ? JSON.parse(readFileSync(MAPPING, "utf8"))
+    : { families: {} };
   const casesRoot = join(root, "cases");
   if (!existsSync(casesRoot)) {
     throw new Error(
@@ -224,11 +237,16 @@ export function loadCorpus(root = join(ROOT, "corpus")) {
       const label = existsSync(labelPath)
         ? parseYaml(readFileSync(labelPath, "utf8"))
         : null;
+      const expectPath = join(dir, "expect.yaml");
+      const expect = existsSync(expectPath)
+        ? (parseYaml(readFileSync(expectPath, "utf8")) ?? {})
+        : {};
+
       corpora.push({
         name: meta.id,
-        family: label?.family ?? "none",
+        family: label?.family ?? familyOf(meta, expect, mapping),
         summary: label?.summary ?? meta.comment ?? "",
-        defects: label?.defects ?? [],
+        defects: label?.defects ?? defectsFrom(meta, expect, mapping),
         input: join(dir, "input"),
         module: join(root, "modules", meta.module),
         pending: meta.pending ?? null,
@@ -236,6 +254,97 @@ export function loadCorpus(root = join(ROOT, "corpus")) {
     }
   }
   return { corpora };
+}
+
+/**
+ * The ground truth a case states about itself, for a case with no label file.
+ *
+ * THE DEFECT THIS FIXES: the first version treated "no label file" as "seeds no
+ * defect", so every case quoin had not separately adjudicated was scored as
+ * healthy input — and every CORRECT detection on it counted as a false
+ * positive. Fourteen of twenty-two cases were unlabelled and **eight of those
+ * declare `kind: failure`**, with an `expect.yaml` naming the exact diagnostics
+ * quire emits. The reported precision collapse (1.0 -> 0.083) was the benchmark
+ * penalising the engine for being right, against ground truth sitting unread in
+ * the same submodule.
+ *
+ * `case.yaml`'s `kind`/`findable` and `expect.yaml`'s `diagnostic_reasons` are
+ * the corpus's own statement of what should be found. A separate `labels/` file
+ * adds quoin's finer adjudication — location, collateral, `expect_metric` — and
+ * wins where it exists.
+ */
+function defectsFrom(meta, expect, mapping) {
+  if (meta.kind !== "failure") return [];
+  // ONE defect per case, not one per expected reason. A case isolates a single
+  // family by construction (a mini-repo mixing three defects cannot tell you
+  // which one a finding was about) — and the SECOND reason a seeded defect
+  // produces is COLLATERAL, which the runner already models. Deriving both as
+  // seeded defects broke the corpus's own isolation property, which is what
+  // `every corpus isolates ONE defect family` caught.
+  for (const reason of expect.diagnostic_reasons ?? []) {
+    const entry = Object.entries(mapping?.families ?? {}).find(
+      ([, m]) => m.key === reason,
+    );
+    if (!entry) continue;
+    return [
+      {
+        // The corpus's id convention — two initials and an ordinal — made
+        // unique across the whole set, which `defect ids are unique across the
+        // whole corpus set` caught: `marker-form-mismatch` and
+        // `marker-form-declared` both initialise to `MF`.
+        id: `${initials(meta.id)}-${ordinal(meta.id)}`,
+        family: entry[0],
+        location: expect.diagnostic_paths?.[reason] ?? null,
+        findable: meta.findable !== false,
+        expect_reason: reason,
+        confirmed_at: "derived from the case's own expect.yaml",
+        note:
+          "Derived, not adjudicated: the corpus states in `expect.yaml` what " +
+          "should be found, and an unlabelled failure case is NOT healthy " +
+          "input. Treating it as such counted every correct detection on it " +
+          "as a false positive (agent-ix/quoin#227 review).",
+      },
+    ];
+  }
+  return [];
+}
+
+/**
+ * A stable ordinal for a case id, so two cases sharing initials do not share a
+ * defect id. Derived from the id rather than a counter: a counter depends on
+ * walk order, and two runners walking differently would disagree about which
+ * defect is which.
+ */
+function ordinal(id) {
+  let hash = 0;
+  for (const ch of id) hash = (hash * 31 + ch.charCodeAt(0)) % 997;
+  return hash;
+}
+
+/** `marker-form-mismatch` -> `MF`. The corpus's defect-id convention. */
+function initials(id) {
+  const parts = id.split(/[^a-z0-9]+/i).filter(Boolean);
+  const letters = (parts[0]?.[0] ?? "X") + (parts[1]?.[0] ?? parts[0]?.[1] ?? "X");
+  return letters.toUpperCase();
+}
+
+/**
+ * The family a case belongs to, when quoin has no label file for it.
+ *
+ * Taken from the first of its own expected reasons the mapping recognises.
+ * `none` for a control, and for a failure case whose expectations name nothing
+ * any family claims — the honest answer, since a family this benchmark does not
+ * govern is one it cannot score.
+ */
+function familyOf(meta, expect, mapping) {
+  if (meta.kind !== "failure") return "none";
+  for (const reason of expect.diagnostic_reasons ?? []) {
+    const entry = Object.entries(mapping?.families ?? {}).find(
+      ([, m]) => m.key === reason,
+    );
+    if (entry) return entry[0];
+  }
+  return "none";
 }
 
 /** Flatten the labels into the flat array scoring takes. */
@@ -324,7 +433,7 @@ function main() {
   const mapping = JSON.parse(readFileSync(MAPPING, "utf8"));
   const dictionary = loadMetrics(METRICS);
 
-  const corpus = loadCorpus();
+  const corpus = loadCorpus(mapping);
   let report;
   // Cases the corpus marks `pending` assert behaviour the engine does not
   // have yet. Scoring them counts a known-missing detector as a miss on every
@@ -337,6 +446,26 @@ function main() {
     console.error(
       `bench-tier1: ${pending.length} case(s) excluded as pending a fix: ` +
         pending.map((c) => `${c.name} (${c.pending})`).join(", "),
+    );
+  }
+
+  // FR-065: "The runner SHALL fail the run when a case declaring `pending`
+  // passes." Excluding a pending case from SCORING is right — a known-missing
+  // detector counted as a miss on every run turns a deliberate red into
+  // permanent noise. Excluding it from CHECKING is not: without this, the fix
+  // lands, the marker goes stale, and no score ever moves to say so.
+  const stale = pending.filter((c) => {
+    const want = c.defects.map((d) => d.expect_reason).filter(Boolean);
+    if (!want.length) return false;
+    const found = findingsFor(quire, c.input, c.module, mapping);
+    return want.every((r) => found.some((f) => f.reason === r));
+  });
+  if (stale.length) {
+    throw new Error(
+      `bench-tier1: ${stale.length} pending case(s) now PASS — ` +
+        stale.map((c) => `${c.name} (${c.pending})`).join(", ") +
+        `. The fix appears to have landed; remove \`pending:\` from case.yaml ` +
+        `so the case is scored.`,
     );
   }
 
@@ -375,6 +504,10 @@ function main() {
     finding_localisation_rate: localisationRate(score),
     actionability: scoreActionability(scoredFindings),
     corpora: labels.corpora.length,
+    // In the REPORT, not only on stderr: a consumer piping stdout would
+    // otherwise read a corpus count with nothing recording that a case exists
+    // and was deliberately dropped.
+    pending: pending.map((c) => ({ case: c.name, ticket: c.pending })),
     findings: scoredFindings.length,
   };
 

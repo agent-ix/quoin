@@ -8,7 +8,7 @@
  * doing it here would make the unit suite depend on a `quire` binary.
  */
 
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { readFileSync } from "node:fs";
 
 import { existsSync } from "node:fs";
 import { join } from "node:path";
@@ -21,13 +21,20 @@ import { diff, render, scoreAgainstKey } from "../scripts/battletest.mjs";
 // submodule rather than generated into a tmpdir. Every property below survives
 // the change — only their subject moved from a generator's output to files on
 // disk that a reader can open.
-const { corpora: CORPORA } = loadCorpus();
-
-function build() {
-  return { labels: { corpora: CORPORA } };
+// Read lazily, INSIDE the suites that need it. At module scope a missing
+// submodule — `qa-corpus` is private, and CI checks out without submodules —
+// errored the whole file at collection and took all nineteen tests with it,
+// including the tier-2 answer-key and battletest suites that never touch the
+// corpus.
+let CORPORA: ReturnType<typeof loadCorpus>["corpora"] = [];
+try {
+  CORPORA = loadCorpus().corpora;
+} catch {
+  CORPORA = [];
 }
+const describeCorpus = CORPORA.length ? describe : describe.skip;
 
-describe("tier-1 seeded corpora", () => {
+describeCorpus("tier-1 seeded corpora", () => {
   test("every corpus isolates ONE defect family", () => {
     // A mini-repo mixing three defects cannot tell you which one a finding was
     // about, and precision PER FAMILY is what FR-043-AC-2 asks for.
