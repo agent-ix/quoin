@@ -6,10 +6,19 @@
 // `bench/metrics.json` that depends on them carried `baseline: null` with the
 // note "No tier-1 run has been scored against a toolchain yet."
 //
-// This is that runner. It materializes the seeded corpora, runs the real tools
-// over each, maps their payloads to findings through the committed table in
-// `bench/tier1-mapping.json`, and scores them against the labels the corpora
-// carry.
+// This is that runner. It reads STATIC cases from the `agent-ix/qa-corpus`
+// submodule at `corpus/`, runs the real tools over each in place, maps their
+// payloads to findings through the committed table in
+// `bench/tier1-mapping.json`, and scores them against the labels in
+// `corpus/labels/`.
+//
+// It used to GENERATE the corpora into a tmpdir from 550 lines of JavaScript
+// (agent-ix/quoin#227). Nothing was on disk to inspect, diff or `cd` into, and
+// the generator declared its own synthetic module — `section: Test Cases` where
+// the ecosystem declares `Test Case Summary`. A corpus whose manifest heading
+// always matches CANNOT EXHIBIT the defect that accounts for 3,514 unminted TC
+// ids across 88 repositories, which is why tier 1 never caught the dominant
+// ecosystem failure mode. That was a correctness defect in the benchmark.
 //
 //   node scripts/bench-tier1.mjs                  # score and diff
 //   node scripts/bench-tier1.mjs --update         # deliberate re-baseline
@@ -21,18 +30,11 @@
 // an unreadable metric OMITTED rather than reported as 0.
 
 import { execFileSync } from "node:child_process";
-import {
-  existsSync,
-  mkdtempSync,
-  readFileSync,
-  rmSync,
-  writeFileSync,
-} from "node:fs";
-import { tmpdir } from "node:os";
+import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { buildBenchCorpora } from "../evals/fixtures/bench/build.mjs";
+import { parse as parseYaml } from "yaml";
 import { crossCheckFamilies, loadMetrics } from "../evals/lib/dictionary.mjs";
 import { scoreActionability, scoreFindings } from "../evals/lib/quality.mjs";
 
@@ -56,12 +58,13 @@ const VALIDATE_LINE =
   /^(?<path>.+?): line (?<line>\d+): (?<rest>.*) \[(?<reason>[a-z-]+)\]$/;
 
 /** Run a command, returning stdout, stderr and whether it exited zero. */
-function run(bin, args) {
+function run(bin, args, extraEnv) {
   try {
     const stdout = execFileSync(bin, args, {
       encoding: "utf8",
       maxBuffer: 64 * 1024 * 1024,
       stdio: ["ignore", "pipe", "pipe"],
+      env: extraEnv ? { ...process.env, ...extraEnv } : process.env,
     });
     return { ok: true, stdout, stderr: "" };
   } catch (error) {
@@ -76,21 +79,26 @@ function run(bin, args) {
 }
 
 /** Every finding one corpus produced, already mapped to a family. */
-function findingsFor(quire, corpusRoot, mapping) {
-  const module = join(corpusRoot, "module");
+function findingsFor(quire, corpusRoot, module, mapping) {
   const out = [];
   const bySource = (name) =>
     Object.entries(mapping.families).filter(([, m]) => m.source === name);
 
   // ── quire coverage ──
-  const cov = run(quire, [
-    "coverage",
-    "--scope",
-    corpusRoot,
-    "--module",
-    module,
-    "--json",
-  ]);
+  //
+  // A module id names either ONE module (`manifest.yaml` directly) or a module
+  // PATH — a directory of module directories. The ecosystem declaration is the
+  // second: `spec-artifacts-process` carries the traceability model and
+  // `spec-artifacts-iso` declares FR/NFR/TestMatrix, and loading only the first
+  // leaves criteria classification silently producing nothing while the totals
+  // look identical (agent-ix/quire-rs#292). `--module` takes one directory, so
+  // a path goes through the search-path env var.
+  const single = existsSync(join(module, "manifest.yaml"));
+  const args = single
+    ? ["coverage", "--scope", corpusRoot, "--module", module, "--json"]
+    : ["coverage", "--scope", corpusRoot, "--json"];
+  const env = single ? undefined : { IX_FILAMENT_MODULES_PATH: module };
+  const cov = run(quire, args, env);
   let payload = null;
   try {
     payload = JSON.parse(cov.stdout);
@@ -137,16 +145,15 @@ function findingsFor(quire, corpusRoot, mapping) {
   }
 
   // ── quire validate ──
-  const val = run(quire, [
-    "validate",
-    "--diagnostics-format",
-    "json",
-    "--scope",
-    corpusRoot,
-    "--module",
-    module,
-    "spec/*.md",
-  ]);
+  const val = run(
+    quire,
+    single
+      ? ["validate", "--diagnostics-format", "json", "--scope", corpusRoot,
+         "--module", module, "spec/*.md"]
+      : ["validate", "--diagnostics-format", "json", "--scope", corpusRoot,
+         "spec/*.md"],
+    env,
+  );
   const wanted = new Set(bySource("validate.findings").map(([, m]) => m.key));
   const familyOfReason = new Map(
     bySource("validate.findings").map(([family, m]) => [m.key, family]),
@@ -189,7 +196,49 @@ function findingsFor(quire, corpusRoot, mapping) {
   return out;
 }
 
-/** Flatten `labels.json`'s `{corpora:[{defects}]}` into the flat array scoring takes. */
+/**
+ * Every labelled case in the corpus: its `case.yaml`, its input directory, and
+ * the adjudicated defects from `corpus/labels/<id>.yaml`.
+ *
+ * Read from disk, in place. A case with no label file is a case that seeds no
+ * defect — the clean control — and is still SCORED, because a detector that
+ * fires on healthy input is exactly what precision is for.
+ */
+export function loadCorpus(root = join(ROOT, "corpus")) {
+  const casesRoot = join(root, "cases");
+  if (!existsSync(casesRoot)) {
+    throw new Error(
+      `bench-tier1: the corpus submodule is not checked out at ${root}. ` +
+        `Run \`git submodule update --init\`.`,
+    );
+  }
+  const corpora = [];
+  for (const mode of readdirSync(casesRoot).sort()) {
+    const modeDir = join(casesRoot, mode);
+    for (const name of readdirSync(modeDir).sort()) {
+      const dir = join(modeDir, name);
+      const caseYaml = join(dir, "case.yaml");
+      if (!existsSync(caseYaml)) continue;
+      const meta = parseYaml(readFileSync(caseYaml, "utf8"));
+      const labelPath = join(root, "labels", `${meta.id}.yaml`);
+      const label = existsSync(labelPath)
+        ? parseYaml(readFileSync(labelPath, "utf8"))
+        : null;
+      corpora.push({
+        name: meta.id,
+        family: label?.family ?? "none",
+        summary: label?.summary ?? meta.comment ?? "",
+        defects: label?.defects ?? [],
+        input: join(dir, "input"),
+        module: join(root, "modules", meta.module),
+        pending: meta.pending ?? null,
+      });
+    }
+  }
+  return { corpora };
+}
+
+/** Flatten the labels into the flat array scoring takes. */
 export function flattenLabels(labels) {
   // The shape mismatch that kept `buildBenchCorpora` and `scoreFindings` from
   // ever meeting: the builder writes a wrapper keyed by corpus, the scorer
@@ -234,60 +283,100 @@ export function compare(direction, observed, baseline) {
   return ["regressed", baseline];
 }
 
+/**
+ * Refuse a binary that cannot say what it is, or lacks what the mapping reads.
+ *
+ * The `engine` provenance block arrived with agent-ix/quire-cli#68 precisely so
+ * a saved number can name the build that produced it. A binary without one
+ * predates it and cannot be scored against.
+ */
+function assertEngine(quire) {
+  const probe = run(quire, ["--version"]);
+  const line = (probe.stdout || "").trim();
+  if (!line.includes("engine")) {
+    throw new Error(
+      `bench-tier1: ${quire} reports "${line}" — no engine version, so it ` +
+        `predates agent-ix/quire-cli#68 and cannot say which engine it links. ` +
+        `Refusing to score.`,
+    );
+  }
+  console.error(`bench-tier1: engine ${line}`);
+}
+
 function main() {
   const update = process.argv.includes("--update");
   const asJson = process.argv.includes("--json");
-  const quire = argOf("--quire") ?? "quire";
+  // NOT a PATH lookup. `quire` on PATH is whatever somebody installed —
+  // measured at 0.29.0 here, which pins engine v0.42.0 and predates
+  // `binding_census`. Scored with it, EVERY coverage family reported recall 0
+  // and the run looked like a corpus regression rather than a stale binary.
+  // That is agent-ix/quire-rs#265's defect, a third repository over.
+  const quire = argOf("--quire") ?? process.env.QUIRE;
+  if (!quire) {
+    throw new Error(
+      "bench-tier1: pass --quire <path> or set QUIRE. Deliberately not a PATH " +
+        "lookup: scoring a benchmark with an unidentified binary is the defect " +
+        "this benchmark exists to catch.",
+    );
+  }
+  assertEngine(quire);
 
   const mapping = JSON.parse(readFileSync(MAPPING, "utf8"));
   const dictionary = loadMetrics(METRICS);
 
-  const root = mkdtempSync(join(tmpdir(), "quoin-tier1-"));
+  const corpus = loadCorpus();
   let report;
-  try {
-    const labels = buildBenchCorpora(root);
-    const flat = flattenLabels(labels);
-
-    // Both directions, before anything is scored: a declared family with no
-    // corpus and a corpus family no metric governs are each a hole in the
-    // score, and finding them after a run wastes the run.
-    crossCheckFamilies(
-      dictionary.families,
-      labels.corpora.map((c) => c.family),
-      { path: "bench/metrics.json" },
+  // Cases the corpus marks `pending` assert behaviour the engine does not
+  // have yet. Scoring them counts a known-missing detector as a miss on every
+  // run, which turns a deliberate red fixture into permanent noise in the
+  // benchmark. They are excluded and NAMED, never silently dropped.
+  const pending = corpus.corpora.filter((c) => c.pending);
+  const labels = { corpora: corpus.corpora.filter((c) => !c.pending) };
+  const flat = flattenLabels(labels);
+  if (pending.length) {
+    console.error(
+      `bench-tier1: ${pending.length} case(s) excluded as pending a fix: ` +
+        pending.map((c) => `${c.name} (${c.pending})`).join(", "),
     );
-
-    const found = [];
-    for (const corpus of labels.corpora) {
-      found.push(...findingsFor(quire, join(root, corpus.name), mapping));
-    }
-
-    // A metric-sourced finding counts only at the value its label expects; the
-    // metric merely EXISTING says nothing. Filtered here rather than inside
-    // `findingsFor` so the mapping stage stays a pure payload read.
-    const expectedValues = new Map(
-      flat
-        .filter((l) => l.expect_metric !== undefined)
-        .map((l) => [l.expect_metric, Number(l.expect_value)]),
-    );
-    const scoredFindings = found.filter(
-      (f) => f.metric === undefined || expectedValues.get(f.metric) === f.value,
-    );
-
-    const score = scoreFindings(scoredFindings, flat);
-    report = {
-      families: score.families,
-      excluded: score.excluded,
-      collateral: score.collateral,
-      positional: score.positional,
-      finding_localisation_rate: localisationRate(score),
-      actionability: scoreActionability(scoredFindings),
-      corpora: labels.corpora.length,
-      findings: scoredFindings.length,
-    };
-  } finally {
-    rmSync(root, { recursive: true, force: true });
   }
+
+  // Both directions, before anything is scored: a declared family with no
+  // corpus and a corpus family no metric governs are each a hole in the
+  // score, and finding them after a run wastes the run.
+  crossCheckFamilies(
+    dictionary.families,
+    labels.corpora.map((c) => c.family),
+    { path: "bench/metrics.json" },
+  );
+
+  const found = [];
+  for (const corpus of labels.corpora) {
+    found.push(...findingsFor(quire, corpus.input, corpus.module, mapping));
+  }
+
+  // A metric-sourced finding counts only at the value its label expects; the
+  // metric merely EXISTING says nothing. Filtered here rather than inside
+  // `findingsFor` so the mapping stage stays a pure payload read.
+  const expectedValues = new Map(
+    flat
+      .filter((l) => l.expect_metric !== undefined)
+      .map((l) => [l.expect_metric, Number(l.expect_value)]),
+  );
+  const scoredFindings = found.filter(
+    (f) => f.metric === undefined || expectedValues.get(f.metric) === f.value,
+  );
+
+  const score = scoreFindings(scoredFindings, flat);
+  report = {
+    families: score.families,
+    excluded: score.excluded,
+    collateral: score.collateral,
+    positional: score.positional,
+    finding_localisation_rate: localisationRate(score),
+    actionability: scoreActionability(scoredFindings),
+    corpora: labels.corpora.length,
+    findings: scoredFindings.length,
+  };
 
   const previous = existsSync(BASELINE)
     ? JSON.parse(readFileSync(BASELINE, "utf8"))

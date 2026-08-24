@@ -3,9 +3,9 @@
     {
       "family": "catch-all-universal",
       "truePositives": 1,
-      "falsePositives": 0,
+      "falsePositives": 11,
       "misses": 0,
-      "precision": 1,
+      "precision": 0.083,
       "recall": 1
     },
     {
@@ -19,17 +19,17 @@
     {
       "family": "hollow-denominator",
       "truePositives": 1,
-      "falsePositives": 0,
+      "falsePositives": 1,
       "misses": 0,
-      "precision": 1,
+      "precision": 0.5,
       "recall": 1
     },
     {
       "family": "marker-form-mismatch",
       "truePositives": 1,
-      "falsePositives": 0,
+      "falsePositives": 1,
       "misses": 0,
-      "precision": 1,
+      "precision": 0.5,
       "recall": 1
     },
     {
@@ -51,9 +51,9 @@
     {
       "family": "undeclared-type-value",
       "truePositives": 1,
-      "falsePositives": 0,
+      "falsePositives": 11,
       "misses": 0,
-      "precision": 1,
+      "precision": 0.083,
       "recall": 1
     },
     {
@@ -79,10 +79,10 @@
   "positional": 4,
   "finding_localisation_rate": 0.8,
   "actionability": {
-    "actionable": 2,
-    "total": 7,
-    "rate": 0.286
+    "actionable": 13,
+    "total": 31,
+    "rate": 0.419
   },
-  "corpora": 9,
-  "findings": 7
+  "corpora": 21,
+  "findings": 31
 }

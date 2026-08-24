@@ -9,17 +9,22 @@
  */
 
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
-import { tmpdir } from "node:os";
+
+import { existsSync } from "node:fs";
 import { join } from "node:path";
 
-import { buildBenchCorpora, CORPORA } from "../evals/fixtures/bench/build.mjs";
+import { loadCorpus } from "../scripts/bench-tier1.mjs";
 import { crossCheckFamilies } from "../evals/lib/dictionary.mjs";
 import { diff, render, scoreAgainstKey } from "../scripts/battletest.mjs";
 
+// The corpus is STATIC now (agent-ix/quoin#227): read from the `qa-corpus`
+// submodule rather than generated into a tmpdir. Every property below survives
+// the change — only their subject moved from a generator's output to files on
+// disk that a reader can open.
+const { corpora: CORPORA } = loadCorpus();
+
 function build() {
-  const root = mkdtempSync(join(tmpdir(), "quoin-bench-"));
-  const labels = buildBenchCorpora(root);
-  return { root, labels };
+  return { labels: { corpora: CORPORA } };
 }
 
 describe("tier-1 seeded corpora", () => {
@@ -72,26 +77,20 @@ describe("tier-1 seeded corpora", () => {
     expect(new Set(ids).size).toBe(ids.length);
   });
 
-  test("the build is deterministic and writes labels.json", () => {
-    const a = build();
-    const b = build();
-    try {
-      expect(a.labels).toEqual(b.labels);
-      const onDisk = JSON.parse(
-        readFileSync(join(a.root, "labels.json"), "utf8"),
-      );
-      expect(onDisk).toEqual(a.labels);
-      // Every corpus materializes its module, spec and source.
-      for (const corpus of CORPORA) {
-        for (const rel of Object.keys(corpus.files)) {
-          expect(
-            readFileSync(join(a.root, corpus.name, rel), "utf8").length,
-          ).toBeGreaterThan(0);
-        }
-      }
-    } finally {
-      rmSync(a.root, { recursive: true, force: true });
-      rmSync(b.root, { recursive: true, force: true });
+  test("the corpus is read from disk, in place, and every case has an input", () => {
+    // Was "the build is deterministic and writes labels.json". There is no
+    // build: the cases are static files in the `qa-corpus` submodule, so the
+    // property worth asserting moved from "generating twice agrees" to
+    // "reading finds real files a reader can open" (agent-ix/quoin#227).
+    expect(loadCorpus()).toEqual(loadCorpus());
+
+    for (const corpus of CORPORA) {
+      expect(existsSync(corpus.input)).toBe(true);
+      // The declaration a case binds must exist — `module:` naming one thing
+      // while another loads is the defect agent-ix/quire-rs#266 recorded.
+      const single = existsSync(join(corpus.module, "manifest.yaml"));
+      const asPath = existsSync(corpus.module);
+      expect(single || asPath).toBe(true);
     }
   });
 
