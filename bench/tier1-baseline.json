@@ -1,7 +1,7 @@
 {
   "provenance": {
     "engine": "quire 0.30.2 (engine e5a6ccc)",
-    "corpus": "518fd24bee21c2591f96409e412481846f854ae4",
+    "corpus": "a6ce22cb2a6bb207cf8afa0ce98949bdbb3cdd98",
     "declaration": {
       "root": "corpus/modules",
       "digest": "sha256:819807f757c7c6468be257c82c2d23bd5210f451eb3811c63b5ff5fa8d04b403",
