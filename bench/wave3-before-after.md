@@ -1,5 +1,14 @@
 # Wave 3 before/after: the tier-1 benchmark, measured
 
+> **Superseded as a result, kept as a record.** This run's null verdict was
+> correct for the corpus it had and is reproduced exactly at the real epic tip
+> (`816e187`, not the squash-orphaned `26af2c8` used here). The holes it names —
+> the unmapped `section-matches-nothing`, the inert stale-`pending` guard, and a
+> corpus that was 22 of 22 Rust — are closed in `agent-ix/quoin#236`, and the
+> measurement is repeated over a 34-case, three-language corpus in
+> [`wave3-before-after-multilang.md`](wave3-before-after-multilang.md), where two
+> families move.
+
 **EPIC `agent-ix/quire-rs#264`.** This is the first before/after the tier-1
 benchmark has ever been run for, and its headline is a null result: **Wave 3
 moved nothing this benchmark scores, and the reason is a hole in the benchmark

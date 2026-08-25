@@ -1,9 +1,13 @@
 {
+  "provenance": {
+    "engine": "quire 0.30.2 (engine 816e187)",
+    "corpus": "42fdcaece936243772c08b1069534eb65363ca10"
+  },
   "families": [
     {
       "family": "catch-all-universal",
       "truePositives": 2,
-      "falsePositives": 10,
+      "falsePositives": 23,
       "misses": 0,
       "precision": null,
       "shape": "advisory",
@@ -29,7 +33,7 @@
     },
     {
       "family": "marker-form-mismatch",
-      "truePositives": 2,
+      "truePositives": 5,
       "falsePositives": 0,
       "misses": 0,
       "precision": 1,
@@ -55,6 +59,15 @@
       "recall": 0
     },
     {
+      "family": "section-matches-nothing",
+      "truePositives": 3,
+      "falsePositives": 0,
+      "misses": 0,
+      "precision": 1,
+      "shape": "defect",
+      "recall": 1
+    },
+    {
       "family": "undeclared-type-value",
       "truePositives": 1,
       "falsePositives": 0,
@@ -76,31 +89,199 @@
   "excluded": [],
   "collateral": [
     {
+      "family": "hollow-denominator",
+      "reason": "hollow-denominator"
+    },
+    {
+      "family": "hollow-denominator",
+      "reason": "hollow-denominator"
+    },
+    {
+      "family": "hollow-denominator",
+      "reason": "hollow-denominator"
+    },
+    {
+      "family": "hollow-denominator",
+      "reason": "hollow-denominator"
+    },
+    {
+      "family": "hollow-denominator",
+      "reason": "hollow-denominator"
+    },
+    {
       "family": "marker-form-mismatch",
       "reason": "no-symbol-bound"
-    },
-    {
-      "family": "hollow-denominator",
-      "reason": "hollow-denominator"
-    },
-    {
-      "family": "hollow-denominator",
-      "reason": "hollow-denominator"
     }
   ],
-  "positional": 6,
-  "finding_localisation_rate": 0.857,
+  "positional": 12,
+  "finding_localisation_rate": 0.923,
+  "minting.section_hit_rate": {
+    "rate": 0.956,
+    "matched": 65,
+    "examined": 68,
+    "cases_reporting": 34
+  },
   "actionability": {
     "actionable": 2,
-    "total": 20,
-    "rate": 0.1
+    "total": 42,
+    "rate": 0.048
   },
-  "corpora": 21,
-  "pending": [
+  "corpora": 34,
+  "by_language": [
     {
-      "case": "section-name-mismatch",
-      "ticket": "agent-ix/quire-rs#270"
+      "language": "python",
+      "corpora": 6,
+      "families": [
+        {
+          "family": "catch-all-universal",
+          "truePositives": 0,
+          "falsePositives": 6,
+          "misses": 0,
+          "precision": null,
+          "shape": "advisory",
+          "recall": null
+        },
+        {
+          "family": "marker-form-mismatch",
+          "truePositives": 2,
+          "falsePositives": 0,
+          "misses": 0,
+          "precision": 1,
+          "shape": "defect",
+          "recall": 1
+        },
+        {
+          "family": "section-matches-nothing",
+          "truePositives": 1,
+          "falsePositives": 0,
+          "misses": 0,
+          "precision": 1,
+          "shape": "defect",
+          "recall": 1
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "corpora": 22,
+      "families": [
+        {
+          "family": "catch-all-universal",
+          "truePositives": 2,
+          "falsePositives": 11,
+          "misses": 0,
+          "precision": null,
+          "shape": "advisory",
+          "recall": 1
+        },
+        {
+          "family": "gate-that-gates-nothing",
+          "truePositives": 0,
+          "falsePositives": 0,
+          "misses": 1,
+          "precision": null,
+          "shape": "defect",
+          "recall": 0
+        },
+        {
+          "family": "hollow-denominator",
+          "truePositives": 1,
+          "falsePositives": 0,
+          "misses": 0,
+          "precision": 1,
+          "shape": "defect",
+          "recall": 1
+        },
+        {
+          "family": "marker-form-mismatch",
+          "truePositives": 2,
+          "falsePositives": 0,
+          "misses": 0,
+          "precision": 1,
+          "shape": "defect",
+          "recall": 1
+        },
+        {
+          "family": "mocked-confirmation",
+          "truePositives": 0,
+          "falsePositives": 0,
+          "misses": 1,
+          "precision": null,
+          "shape": "defect",
+          "recall": 0
+        },
+        {
+          "family": "oracle-is-code-copy",
+          "truePositives": 0,
+          "falsePositives": 0,
+          "misses": 1,
+          "precision": null,
+          "shape": "defect",
+          "recall": 0
+        },
+        {
+          "family": "section-matches-nothing",
+          "truePositives": 1,
+          "falsePositives": 0,
+          "misses": 0,
+          "precision": 1,
+          "shape": "defect",
+          "recall": 1
+        },
+        {
+          "family": "undeclared-type-value",
+          "truePositives": 1,
+          "falsePositives": 0,
+          "misses": 0,
+          "precision": 1,
+          "shape": "defect",
+          "recall": 1
+        },
+        {
+          "family": "vacuous-under-guard",
+          "truePositives": 1,
+          "falsePositives": 0,
+          "misses": 0,
+          "precision": 1,
+          "shape": "defect",
+          "recall": 1
+        }
+      ]
+    },
+    {
+      "language": "typescript",
+      "corpora": 6,
+      "families": [
+        {
+          "family": "catch-all-universal",
+          "truePositives": 0,
+          "falsePositives": 6,
+          "misses": 0,
+          "precision": null,
+          "shape": "advisory",
+          "recall": null
+        },
+        {
+          "family": "marker-form-mismatch",
+          "truePositives": 1,
+          "falsePositives": 0,
+          "misses": 0,
+          "precision": 1,
+          "shape": "defect",
+          "recall": 1
+        },
+        {
+          "family": "section-matches-nothing",
+          "truePositives": 1,
+          "falsePositives": 0,
+          "misses": 0,
+          "precision": 1,
+          "shape": "defect",
+          "recall": 1
+        }
+      ]
     }
   ],
-  "findings": 20
+  "pending": [],
+  "findings": 42
 }
