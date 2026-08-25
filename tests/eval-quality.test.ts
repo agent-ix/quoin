@@ -172,6 +172,71 @@ describe("finding precision and recall", () => {
     ).toBe(1);
   });
 
+  it("TC-967 a declaration on one case cannot absorb another case's finding", () => {
+    // TC-967
+    // agent-ix/quoin#238. Spending a declaration ONCE (TC-952) was not enough:
+    // the pairing was on family and reason only, so a collateral declaration
+    // on case A consumed a correct finding from case B and that finding
+    // vanished from scoring entirely — neither true positive nor false
+    // positive.
+    //
+    // Measured over the 34-case tier-1 corpus: five cases declared
+    // `hollow-denominator` collateral, the run emitted exactly five
+    // `hollow-denominator` findings, and one of them was the SEEDED, labelled
+    // defect of a sixth case. All five were absorbed. That family scored
+    // recall 0.00 for the whole run while the per-language cut of the same run
+    // scored 1.00 — two contradictory numbers out of one score.
+    const labels = [
+      {
+        id: "MF-1",
+        family: "marker-form-mismatch",
+        corpus: "marker-case",
+        findable: true,
+        location: "src/lib.rs",
+        collateral: [
+          { family: "hollow-denominator", reason: "hollow-denominator" },
+        ],
+      },
+      {
+        id: "HD-1",
+        family: "hollow-denominator",
+        corpus: "hollow-case",
+        findable: true,
+        location: null,
+      },
+    ];
+    const score = scoreFindings(
+      [
+        {
+          family: "marker-form-mismatch",
+          reason: "no-symbol-bound",
+          corpus: "marker-case",
+          path: "src/lib.rs",
+        },
+        {
+          family: "hollow-denominator",
+          reason: "hollow-denominator",
+          corpus: "marker-case",
+        },
+        {
+          family: "hollow-denominator",
+          reason: "hollow-denominator",
+          corpus: "hollow-case",
+        },
+      ],
+      labels,
+    );
+    // Only the marker case's own consequence is set aside.
+    expect(score.collateral).toHaveLength(1);
+    // And the hollow case's seeded defect still scores.
+    const hollow = score.families.find(
+      (f) => f.family === "hollow-denominator",
+    );
+    expect(hollow?.truePositives).toBe(1);
+    expect(hollow?.misses).toBe(0);
+    expect(hollow?.recall).toBe(1);
+  });
+
   it("TC-941 is reported per family, because an average hides a hole", () => {
     // TC-941
     // A tool that finds every marker mismatch and no vacuous suite has a

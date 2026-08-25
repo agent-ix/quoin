@@ -67,7 +67,18 @@ export function scoreFindings(found, labels, shapes = {}) {
   // would vanish from the precision denominator. That is the laundering
   // CR-098's positional pairing was added to stop, reintroduced through a side
   // door.
-  const declaredCollateral = labels.flatMap((l) => l.collateral ?? []);
+  //
+  // ONE finding per declaration was not enough: it must also be ONE CASE.
+  // Measured over a 34-case corpus (agent-ix/quoin#238), five cases declared
+  // `hollow-denominator` collateral and the run emitted exactly five
+  // `hollow-denominator` findings — one of which was the seeded, labelled
+  // defect of a SIXTH case. All five were absorbed, and that family scored
+  // recall 0.00 for the whole run while the per-language cut of the same run
+  // scored 1.00. The declaring case is carried onto the entry here so the
+  // predicate can require it.
+  const declaredCollateral = labels.flatMap((l) =>
+    (l.collateral ?? []).map((c) => ({ ...c, corpus: l.corpus })),
+  );
   const spent = new Set();
   const collateral = [];
   const setAside = new Set();
@@ -76,7 +87,14 @@ export function scoreFindings(found, labels, shapes = {}) {
       (c, i) =>
         !spent.has(i) &&
         c.family === finding.family &&
-        (c.reason === undefined || c.reason === findingReason(finding)),
+        (c.reason === undefined || c.reason === findingReason(finding)) &&
+        // Compared only when BOTH sides name a case. A caller that scores a
+        // flat finding list with no corpus attribution — the eval harness
+        // does — keeps the old, looser pairing rather than losing collateral
+        // suppression entirely.
+        (c.corpus === undefined ||
+          finding.corpus === undefined ||
+          c.corpus === finding.corpus),
     );
     if (index === -1) continue;
     spent.add(index);
