@@ -75,7 +75,17 @@ battletest-update:
 # whatever somebody put there — 0.29.0 here, predating `binding_census` —
 # and scoring with it reported recall 0 on every coverage family, which
 # reads as a corpus regression rather than a stale binary.
-QUIRE ?= ../quire-cli/target/debug/quire
+#
+# CARGO_TARGET_DIR MOVES THE ARTIFACT AND THIS DEFAULT DID NOT FOLLOW IT. With
+# it set, `cargo build` in quire-cli writes to `$CARGO_TARGET_DIR/debug/quire`
+# and `../quire-cli/target/` keeps whatever was there before the variable was
+# set. Measured on this machine: the in-repo path held an Aug-20 binary
+# reporting `quire 0.23.0` while the real build reported
+# `quire 0.30.2 (engine 00644b7)` — four days and one engine apart, and the
+# default pointed at the stale one. Caught by quire-cli#68's provenance guard
+# refusing a binary that cannot name its engine, which is the case for
+# refusing rather than warning.
+QUIRE ?= $(if $(CARGO_TARGET_DIR),$(CARGO_TARGET_DIR),../quire-cli/target)/debug/quire
 #
 # `MODULES` overrides the DECLARATION the cases bind, which is the second axis
 # (agent-ix/quoin#240). Empty means the corpus's own vendored `modules/`, so an

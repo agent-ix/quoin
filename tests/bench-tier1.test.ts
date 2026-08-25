@@ -11,6 +11,7 @@
  */
 
 import {
+  existsSync,
   mkdtempSync,
   mkdirSync,
   readFileSync,
@@ -178,6 +179,15 @@ describe("a case whose ground truth maps to nothing", () => {
       join(root, "modules", "m", "manifest.yaml"),
       "archetypes: []\n",
     );
+    // The case schema comes from the DECLARATION (quoin#242). A reader that
+    // enforces nothing when its rule is missing is indistinguishable from one
+    // that enforced it and found nothing, so `loadCorpus` refuses a corpus
+    // root carrying no `corpus.yaml`.
+    writeFileSync(
+      join(root, "corpus.yaml"),
+      "case_schema:\n  variant_forbidden:\n  - case\n  - mode\n  - module\n" +
+        "  - kind\n  - pending\n",
+    );
     return root;
   };
   const CASE =
@@ -280,6 +290,14 @@ describe("the declaration axis", () => {
       join(root, "ecosystem", "a-module", "manifest.yaml"),
       manifestBody,
     );
+    // The modules the table NAMES have to be here. A row is recognised by its
+    // first cell resolving to a directory in the same tree (quoin#240), which
+    // is what separates a data row from the header and the `|---|` rule
+    // without matching on their spelling — and additionally catches a
+    // provenance file naming a module the copy does not carry.
+    for (const m of ["spec-artifacts-process", "spec-artifacts-iso"]) {
+      mkdirSync(join(root, "ecosystem", m), { recursive: true });
+    }
     if (vendored !== null) {
       writeFileSync(join(root, "ecosystem", "VENDORED.md"), vendored);
     }
@@ -343,6 +361,46 @@ describe("the declaration axis", () => {
     ).toBeNull();
   });
 
+  test("TC-981 an unreadable SHA on ONE row of a table fails the run, and an annotated SHA is read rather than dropped", () => {
+    // TC-981
+    // agent-ix/quoin#240, REOPENED. The guard was `if (!rows)` — all-or-nothing
+    // — so a table of two dropped the unreadable row the moment the other one
+    // parsed. Measured on `qa-corpus@41c6224` while re-pinning for #242: the
+    // report printed `sources: {spec-artifacts-iso}` and `spec-artifacts-process`
+    // was simply gone. That is the module carrying the traceability model,
+    // whose five lines decide whether a TypeScript test's own title binds, and
+    // it is exactly the "confident `sources` beside numbers nobody could join
+    // to a commit" this function exists to refuse — arriving one row at a time.
+    const twoRows = (second: string) =>
+      "| Module | Source path | Pinned SHA |\n|---|---|---|\n" +
+      "| `spec-artifacts-iso` | `iso/manifest.yaml` " +
+      "| `3d871962b66db99a1854f40466e94ebabc7a6115` |\n" +
+      `| \`spec-artifacts-process\` | \`process/manifest.yaml\` | ${second} |\n`;
+
+    expect(() =>
+      declarationProvenance(
+        declarationRoot("archetypes: []\n", twoRows("`not-a-sha`")),
+        [],
+      ),
+    ).toThrow(/records module `spec-artifacts-process` with `not-a-sha`/);
+
+    // An ANNOTATED sha is read, not refused. The corpus deliberately records a
+    // branch head as ``62d691f` (`feat/68-typescript-test-name-form`)` so a
+    // reader knows the pin is not on `main`; the hash is the first token and
+    // the rest is provenance prose.
+    const annotated = declarationProvenance(
+      declarationRoot(
+        "archetypes: []\n",
+        twoRows("`62d691f` (`feat/68-typescript-test-name-form`)"),
+      ),
+      [],
+    );
+    expect(annotated.sources).toEqual({
+      "spec-artifacts-iso": "3d871962b66db99a1854f40466e94ebabc7a6115",
+      "spec-artifacts-process": "62d691f",
+    });
+  });
+
   test("TC-970 cases resolve their module under an overridden root, and an id resolving to nothing fails the run", () => {
     // TC-970
     // The axis itself: the same cases, scored against another declaration with
@@ -359,6 +417,10 @@ describe("the declaration axis", () => {
     const dir = join(corpusRoot, "cases", "minting", "a-case");
     mkdirSync(join(dir, "input"), { recursive: true });
     writeFileSync(join(dir, "case.yaml"), CASE);
+    writeFileSync(
+      join(corpusRoot, "corpus.yaml"),
+      "case_schema:\n  variant_forbidden:\n  - case\n",
+    );
     const declaration = declarationRoot("archetypes: []\n", TABLE);
 
     const { corpora, modulesRoot } = loadCorpus(
@@ -531,5 +593,208 @@ describe("the committed mapping table", () => {
     for (const [, m] of holes as Array<[string, { $note?: string }]>) {
       expect(m.$note).toBeTruthy();
     }
+  });
+});
+
+describe("the two on-disk layouts", () => {
+  // agent-ix/quoin#242. This reader walked exactly two levels —
+  // `cases/<mode>/<case>/case.yaml` — and the corpus has since moved
+  // multi-language cases to LANGUAGE SETS three levels deep. Measured against
+  // `qa-corpus@41c6224` before the fix: 45 cases loaded, of which 17 reported
+  // `language: "unknown"` and pointed at an `input/` that does not exist. Every
+  // language set collapsed to one phantom case and its real variants were never
+  // visited. After: 77 cases, 0 missing inputs, 0 unknown — independently
+  // matching `bounds.py`'s own count of 77 fixtures.
+  const roots: string[] = [];
+  const SCHEMA =
+    "case_schema:\n  variant_forbidden:\n  - case\n  - mode\n  - module\n" +
+    "  - kind\n  - pending\n";
+  const SHARED =
+    "id: a-case\nmode: minting\nmodule: m\nkind: failure\nfindable: true\n";
+
+  /** A corpus root with one case directory the caller shapes. */
+  const corpus = (shape: (caseDir: string) => void, schema = SCHEMA) => {
+    const root = mkdtempSync(join(tmpdir(), "quoin-layout-"));
+    roots.push(root);
+    const dir = join(root, "cases", "minting", "a-case");
+    mkdirSync(dir, { recursive: true });
+    mkdirSync(join(root, "modules", "m"), { recursive: true });
+    writeFileSync(
+      join(root, "modules", "m", "manifest.yaml"),
+      "archetypes: []\n",
+    );
+    writeFileSync(join(root, "corpus.yaml"), schema);
+    shape(dir);
+    return root;
+  };
+
+  afterAll(() => {
+    for (const root of roots) rmSync(root, { recursive: true, force: true });
+  });
+
+  test("TC-974 a language set yields one scorable case per language, each with its own id and input tree", () => {
+    // TC-974
+    const root = corpus((dir) => {
+      writeFileSync(join(dir, "case.yaml"), SHARED);
+      for (const language of ["python", "rust", "typescript"]) {
+        mkdirSync(join(dir, language, "input"), { recursive: true });
+        writeFileSync(
+          join(dir, language, "case.yaml"),
+          `reproduce: quire coverage --scope ${language}\n`,
+        );
+      }
+    });
+    const { corpora } = loadCorpus({ families: {} }, root);
+    expect(corpora.map((c) => c.name).sort()).toEqual([
+      "a-case-python",
+      "a-case-rust",
+      "a-case-typescript",
+    ]);
+    expect(corpora.map((c) => c.language).sort()).toEqual([
+      "python",
+      "rust",
+      "typescript",
+    ]);
+    // The id is the JOIN KEY across runners — a pending marker, a baseline row.
+    // Three variants sharing one id are indistinguishable in every one of them.
+    expect(new Set(corpora.map((c) => c.name)).size).toBe(3);
+    for (const c of corpora) {
+      expect(existsSync(c.input)).toBe(true);
+      expect(c.input.endsWith(join(c.language, "input"))).toBe(true);
+    }
+  });
+
+  test("TC-975 a case in BOTH layouts fails the run naming the directory, rather than being read as one of them", () => {
+    // TC-975
+    // Both readers took the `input/` branch and moved on, so a half-migrated
+    // case would have had its language variants disappear without a word.
+    const root = corpus((dir) => {
+      writeFileSync(join(dir, "case.yaml"), `${SHARED}language: rust\n`);
+      mkdirSync(join(dir, "input"), { recursive: true });
+      mkdirSync(join(dir, "python", "input"), { recursive: true });
+    });
+    expect(() => loadCorpus({ families: {} }, root)).toThrow(
+      /carries both an `input\/` and \["python"\]/,
+    );
+  });
+
+  test("TC-976 a case in NEITHER layout fails the run, because a fixture that scores nothing and a fixture that is not there are not the same fact", () => {
+    // TC-976
+    const root = corpus((dir) => {
+      writeFileSync(join(dir, "case.yaml"), `${SHARED}language: rust\n`);
+    });
+    expect(() => loadCorpus({ families: {} }, root)).toThrow(
+      /neither an `input\/` nor any `<language>\/input\/`/,
+    );
+  });
+
+  test("TC-977 a language variant may not re-point WHICH case it is, and the rule comes from the declaration rather than a literal in this file", () => {
+    // TC-977
+    // PRESENCE, not disagreement: requiring the fields to conflict lets a
+    // variant inject one the shared file omitted. Measured in the corpus, one
+    // such line turned a control into an expected failure with every gate green.
+    const withVariantKey = (key: string) =>
+      corpus((dir) => {
+        writeFileSync(join(dir, "case.yaml"), SHARED);
+        mkdirSync(join(dir, "rust", "input"), { recursive: true });
+        writeFileSync(join(dir, "rust", "case.yaml"), `${key}: something\n`);
+      });
+    expect(() => loadCorpus({ families: {} }, withVariantKey("mode"))).toThrow(
+      /declares \["mode"\]/,
+    );
+    // READ, not restated. Shrinking the declaration must shrink what is
+    // enforced — otherwise this reader carries a second copy of the rule and
+    // the two are free to drift, which is agent-ix/quire-rs#342 one repo over.
+    const narrowed = "case_schema:\n  variant_forbidden:\n  - case\n";
+    const root = mkdtempSync(join(tmpdir(), "quoin-layout-"));
+    roots.push(root);
+    const dir = join(root, "cases", "minting", "a-case");
+    mkdirSync(join(dir, "rust", "input"), { recursive: true });
+    mkdirSync(join(root, "modules", "m"), { recursive: true });
+    writeFileSync(
+      join(root, "modules", "m", "manifest.yaml"),
+      "archetypes: []\n",
+    );
+    writeFileSync(join(root, "corpus.yaml"), narrowed);
+    writeFileSync(join(dir, "case.yaml"), SHARED);
+    writeFileSync(join(dir, "rust", "case.yaml"), "mode: something\n");
+    expect(loadCorpus({ families: {} }, root).corpora).toHaveLength(1);
+  });
+
+  test("TC-978 a corpus declaring no `variant_forbidden` fails rather than enforcing nothing", () => {
+    // TC-978
+    // A reader that enforces nothing when its rule is missing is
+    // indistinguishable from one that enforced it and found nothing.
+    const empty = corpus((dir) => {
+      writeFileSync(join(dir, "case.yaml"), `${SHARED}language: rust\n`);
+      mkdirSync(join(dir, "input"), { recursive: true });
+    }, "case_schema: {}\n");
+    expect(() => loadCorpus({ families: {} }, empty)).toThrow(
+      /declares no `case_schema\.variant_forbidden`/,
+    );
+  });
+
+  test("TC-979 a pending case's expiry signal is read from `expect-pending.yaml`, never from the live block", () => {
+    // TC-979
+    // The old rule demanded the future reason under `diagnostic_reasons:` in
+    // `expect.yaml` — where stating it would be FALSE, because the reason does
+    // not fire today, which is the whole point of the marker. All ten pending
+    // cases in the corpus state it correctly in the forward block and this
+    // runner read neither.
+    const root = corpus((dir) => {
+      writeFileSync(
+        join(dir, "case.yaml"),
+        `${SHARED}language: rust\npending: agent-ix/quire-rs#312\n`,
+      );
+      mkdirSync(join(dir, "input"), { recursive: true });
+      // The live block asserts the reason is ABSENT — true today.
+      writeFileSync(
+        join(dir, "expect.yaml"),
+        "absent_diagnostic_reasons:\n  - tag-on-non-binding-symbol\n",
+      );
+      writeFileSync(
+        join(dir, "expect-pending.yaml"),
+        "diagnostic_reasons:\n  - tag-on-non-binding-symbol\n",
+      );
+    });
+    const [c] = loadCorpus({ families: {} }, root).corpora;
+    expect(c.pending).toBe("agent-ix/quire-rs#312");
+    expect(c.pendingReasons).toEqual(["tag-on-non-binding-symbol"]);
+    expect(c.hasPendingBlock).toBe(true);
+    // A reason no family claims must still reach the check: the token does not
+    // exist in the engine yet and so can have no scoring family, and routing
+    // staleness through the family mapping is how quoin#236 happened.
+    expect(c.defects.map((d) => d.expect_reason).filter(Boolean)).toEqual([]);
+  });
+
+  test("TC-980 a pending case with no forward block at all is distinguishable from one this runner merely cannot evaluate", () => {
+    // TC-980
+    const noBlock = corpus((dir) => {
+      writeFileSync(
+        join(dir, "case.yaml"),
+        `${SHARED}language: rust\npending: agent-ix/quire-rs#273\n`,
+      );
+      mkdirSync(join(dir, "input"), { recursive: true });
+    });
+    const [a] = loadCorpus({ families: {} }, noBlock).corpora;
+    expect(a.hasPendingBlock).toBe(false);
+    expect(a.pendingReasons).toEqual([]);
+
+    // A forward block stating a PAYLOAD change rather than a diagnostic:
+    // quire-rs#273 registers `describe()` as a Container so the tag starts
+    // binding (`backed` 0 -> 2) and adds no reason token at all. Grading a
+    // payload is what `verify.py` and the Rust harness already do over the same
+    // file; a third implementation is the drift two readers exist to expose.
+    const payloadOnly = corpus((dir) => {
+      writeFileSync(
+        join(dir, "case.yaml"),
+        `${SHARED}language: rust\npending: agent-ix/quire-rs#273\n`,
+      );
+      mkdirSync(join(dir, "input"), { recursive: true });
+      writeFileSync(join(dir, "expect-pending.yaml"), "total: 4\nbacked: 2\n");
+    });
+    const [b] = loadCorpus({ families: {} }, payloadOnly).corpora;
+    expect(b.hasPendingBlock).toBe(true);
+    expect(b.pendingReasons).toEqual([]);
   });
 });

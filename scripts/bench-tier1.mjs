@@ -287,6 +287,10 @@ export function loadCorpus(
         `Run \`git submodule update --init\`.`,
     );
   }
+  // `variant_forbidden` from the DECLARATION, never a literal here. A second
+  // hand-written copy of a rule the corpus already states is the defect
+  // agent-ix/quire-rs#342 records one reader over.
+  const protectedKeys = variantForbidden(root);
   const corpora = [];
   for (const mode of readdirSync(casesRoot).sort()) {
     const modeDir = join(casesRoot, mode);
@@ -294,35 +298,224 @@ export function loadCorpus(
       const dir = join(modeDir, name);
       const caseYaml = join(dir, "case.yaml");
       if (!existsSync(caseYaml)) continue;
-      const meta = parseYaml(readFileSync(caseYaml, "utf8"));
-      const labelPath = join(root, "labels", `${meta.id}.yaml`);
-      const label = existsSync(labelPath)
-        ? parseYaml(readFileSync(labelPath, "utf8"))
-        : null;
-      const expectPath = join(dir, "expect.yaml");
-      const expect = existsSync(expectPath)
-        ? (parseYaml(readFileSync(expectPath, "utf8")) ?? {})
-        : {};
-      assertReasonsMapped(meta, expect, mapping, join("cases", mode, name));
+      const shared = parseYaml(readFileSync(caseYaml, "utf8"));
+      const rel = join("cases", mode, name);
+      for (const leaf of leavesOf(dir, rel, shared, protectedKeys)) {
+        const { meta, inputDir, expectPath, where } = leaf;
+        const labelPath = join(root, "labels", `${meta.id}.yaml`);
+        const label = existsSync(labelPath)
+          ? parseYaml(readFileSync(labelPath, "utf8"))
+          : null;
+        const expect = existsSync(expectPath)
+          ? (parseYaml(readFileSync(expectPath, "utf8")) ?? {})
+          : {};
+        assertReasonsMapped(meta, expect, mapping, where);
+        // THE FORWARD BLOCK, which this runner has never read
+        // (agent-ix/quoin#242). A `pending` case's `expect.yaml` states what is
+        // true TODAY — and for these cases the defect IS the silence, so the
+        // reason the fix will turn on appears there under
+        // `absent_diagnostic_reasons` beside reasons that must stay absent
+        // afterwards, indistinguishable from them. `expect-pending.yaml` is
+        // where the corpus says which one expires: FR-065's "must not hold
+        // yet". All ten pending cases carry one; the stale-pending check was
+        // demanding the reason in the one file where stating it would be false.
+        const pendingPath = join(dirname(expectPath), "expect-pending.yaml");
+        const pendingExpect = existsSync(pendingPath)
+          ? (parseYaml(readFileSync(pendingPath, "utf8")) ?? {})
+          : {};
+        // DELIBERATELY NOT `assertReasonsMapped`. A forward reason names a
+        // token that does not exist yet — `tag-on-non-binding-symbol` and
+        // `untracked-id-near-miss` are in quire-rs `src/` nowhere — so it has
+        // no scorable family and cannot get one: `bench/metrics.json` refuses
+        // a declared family with no corpus, and these families' only cases are
+        // the pending ones that scoring excludes. The staleness check therefore
+        // reads the RAW payload instead of going through the family mapping,
+        // which is also the more correct question: staleness is "did this
+        // token appear", independent of whether anything scores it.
 
-      corpora.push({
-        name: meta.id,
-        family: label?.family ?? familyOf(meta, expect, mapping),
-        summary: label?.summary ?? meta.comment ?? "",
-        defects: label?.defects ?? defectsFrom(meta, expect, mapping),
-        input: join(dir, "input"),
-        module: assertModule(join(modulesRoot, meta.module), meta, modulesRoot),
-        // The corpus's own declaration of what language the case is written
-        // in, carried into the report so a `held` verdict cannot be read as
-        // "verified in every language". At pin 088771b all 22 cases said
-        // `rust`, and two of Wave 3's six fixes were for the other two
-        // (agent-ix/quoin#236).
-        language: meta.language ?? "unknown",
-        pending: meta.pending ?? null,
-      });
+        corpora.push({
+          name: meta.id,
+          family: label?.family ?? familyOf(meta, expect, mapping),
+          summary: label?.summary ?? meta.comment ?? "",
+          defects: label?.defects ?? defectsFrom(meta, expect, mapping),
+          input: inputDir,
+          module: assertModule(
+            join(modulesRoot, meta.module),
+            meta,
+            modulesRoot,
+          ),
+          // The corpus's own declaration of what language the case is written
+          // in, carried into the report so a `held` verdict cannot be read as
+          // "verified in every language". At pin 088771b all 22 cases said
+          // `rust`, and two of Wave 3's six fixes were for the other two
+          // (agent-ix/quoin#236).
+          //
+          // For a LANGUAGE SET the field is the directory name and no file
+          // declares it, so `meta.language ?? "unknown"` reported `unknown` for
+          // every one of them — measured, 17 of 45 (agent-ix/quoin#242).
+          language: meta.language ?? "unknown",
+          pending: meta.pending ?? null,
+          // What the ticket must make fire. Empty for a case that is not
+          // pending; the guard below refuses a pending case where it is empty.
+          pendingReasons: meta.pending
+            ? (pendingExpect.diagnostic_reasons ?? [])
+            : [],
+          hasPendingBlock: existsSync(pendingPath),
+        });
+      }
     }
   }
   return { corpora, modulesRoot };
+}
+
+/**
+ * The `case_schema.variant_forbidden` names, read from the corpus declaration.
+ *
+ * Absent is a HARD FAILURE, not an empty set: a reader that enforces nothing
+ * when its rule is missing is indistinguishable from one that enforced it and
+ * found nothing. `bounds.py:167-173` refuses on the same grounds.
+ */
+function variantForbidden(root) {
+  const declPath = join(root, "corpus.yaml");
+  if (!existsSync(declPath)) {
+    throw new Error(
+      `bench-tier1: no corpus.yaml at ${declPath}. The case schema lives ` +
+        `there and this reader is held to it.`,
+    );
+  }
+  const decl = parseYaml(readFileSync(declPath, "utf8")) ?? {};
+  const names = decl.case_schema?.variant_forbidden;
+  if (!Array.isArray(names) || names.length === 0) {
+    throw new Error(
+      `bench-tier1: corpus.yaml declares no ` +
+        `\`case_schema.variant_forbidden\`, so a language variant could ` +
+        `re-point which case it is and nothing would fire ` +
+        `(FR-065-AC-22, agent-ix/quire-rs#342).`,
+    );
+  }
+  return names;
+}
+
+/**
+ * The scorable leaves of one case directory — one per language for a LANGUAGE
+ * SET, or the directory itself for a single-language case.
+ *
+ * TWO LAYOUTS EXIST AND THIS READER KNEW ONLY ONE (agent-ix/quoin#242). A
+ * language set is `cases/<mode>/<case>/<language>/input/`, with the metadata in
+ * the shared `case.yaml` at the case root and only what varies in the
+ * per-language one. This walk was two levels deep, so against `qa-corpus@main`
+ * it loaded 45 cases of which **17 reported `language: unknown` and pointed at
+ * an `input/` that does not exist** — every language set collapsed to one
+ * phantom case and its real variants were never visited.
+ *
+ * The resolution is `bounds.py:176-253`'s, deliberately, rather than a second
+ * rule: same merge order, same derived id, same two refusals.
+ */
+function leavesOf(dir, rel, shared, protectedKeys) {
+  const hasOwnInput = existsSync(join(dir, "input"));
+  const languages = readdirSync(dir, { withFileTypes: true })
+    .filter((e) => e.isDirectory() && existsSync(join(dir, e.name, "input")))
+    .map((e) => e.name)
+    .sort();
+
+  // BOTH layouts is rejected rather than silently read as one of them. Taking
+  // the `input/` branch and moving on would make a half-migrated case's
+  // language variants disappear from the population without a word.
+  if (hasOwnInput && languages.length) {
+    throw new Error(
+      `bench-tier1: ${rel} carries both an \`input/\` and ` +
+        `${JSON.stringify(languages)} — a case is one layout or the other, ` +
+        `and reading it as one silently drops the other.`,
+    );
+  }
+  if (hasOwnInput) {
+    return [
+      {
+        meta: shared,
+        inputDir: join(dir, "input"),
+        expectPath: join(dir, "expect.yaml"),
+        where: rel,
+      },
+    ];
+  }
+  // NEITHER layout is rejected too. A half-authored fixture read as an absent
+  // one makes the scored population mean something other than what it says.
+  if (!languages.length) {
+    throw new Error(
+      `bench-tier1: ${rel} has neither an \`input/\` nor any ` +
+        `\`<language>/input/\`. Refusing to skip it — a fixture that scores ` +
+        `nothing and a fixture that is not there are not the same fact.`,
+    );
+  }
+
+  return languages.map((language) => {
+    const leafYaml = join(dir, language, "case.yaml");
+    const perCase = existsSync(leafYaml)
+      ? (parseYaml(readFileSync(leafYaml, "utf8")) ?? {})
+      : {};
+    // A variant may vary its EXPECTATIONS and its invocation, not WHICH case
+    // it is. PRESENCE, not disagreement: requiring the fields to conflict lets
+    // a variant inject one the shared file omitted, and one such line converted
+    // a control into an expected failure with every gate still green.
+    const declared = protectedKeys.filter((k) => k in perCase).sort();
+    if (declared.length) {
+      throw new Error(
+        `bench-tier1: ${rel}/${language} declares ` +
+          `${JSON.stringify(declared)} — those say which case this is, and ` +
+          `the shared \`case.yaml\` is where that claim lives ` +
+          `(FR-065-AC-22).`,
+      );
+    }
+    const merged = { ...shared, ...perCase, language };
+    // Always suffixed, matching the Rust harness and `bounds.py` exactly. The
+    // id is the join key across runners — a pending marker, a baseline row —
+    // so three variants sharing one id are indistinguishable in every one.
+    const base = merged.id ?? dir.split(sep).filter(Boolean).pop();
+    return {
+      meta: { ...merged, case: merged.case ?? base, id: `${base}-${language}` },
+      inputDir: join(dir, language, "input"),
+      expectPath: join(dir, language, "expect.yaml"),
+      where: `${rel}/${language}`,
+    };
+  });
+}
+
+/**
+ * Every diagnostic reason and suspicion kind one corpus emitted, unfiltered.
+ *
+ * NOT `findingsFor`, deliberately. That function maps a payload signal to a
+ * scoring family and drops what no family claims — right for scoring, wrong for
+ * the stale-pending check, whose whole subject is a token that has no family
+ * *because it does not exist yet*. Routing staleness through the mapping is how
+ * agent-ix/quoin#236 happened one layer down: `section-name-mismatch`'s fix
+ * shipped, the marker went stale, and the guard written to catch exactly that
+ * returned early because the reason mapped to nothing.
+ */
+function rawReasons(quire, corpusRoot, module) {
+  const single = existsSync(join(module, "manifest.yaml"));
+  const cov = run(
+    quire,
+    single
+      ? ["coverage", "--scope", corpusRoot, "--module", module, "--json"]
+      : ["coverage", "--scope", corpusRoot, "--json"],
+    single ? undefined : { IX_FILAMENT_MODULES_PATH: module },
+  );
+  let payload;
+  try {
+    payload = JSON.parse(cov.stdout);
+  } catch {
+    throw new Error(
+      `bench-tier1: \`quire coverage\` produced no JSON for ${corpusRoot} ` +
+        `while checking whether its \`pending:\` marker is stale. An ` +
+        `unreadable run and a run emitting nothing are the same silence, and ` +
+        `reading it as the second would keep the marker forever.` +
+        `\n${cov.stderr.trim()}`,
+    );
+  }
+  return new Set([
+    ...(payload.diagnostics ?? []).map((d) => d.reason),
+    ...(payload.suspicions ?? []).map((s) => s.kind),
+  ]);
 }
 
 /**
@@ -410,8 +603,38 @@ function vendoredSources(modulesRoot) {
             .slice(1, -1)
             .map((c) => c.trim().replace(/`/g, ""));
           if (cells.length !== 3) continue;
-          if (!/^[0-9a-f]{7,40}$/.test(cells[2])) continue;
-          out[cells[0]] = cells[2];
+          // A DATA ROW IS ONE WHOSE FIRST CELL NAMES A MODULE THAT IS ACTUALLY
+          // HERE — a fact about the tree, not a guess about the prose. That is
+          // what separates a row from the header and the `|---|` rule without
+          // matching on their spelling, and it additionally catches a
+          // provenance file naming a module the directory does not carry.
+          if (!existsSync(join(dir, cells[0]))) continue;
+          // The SHA cell may carry an annotation after the hash — the corpus
+          // writes ``62d691f` (`feat/68-typescript-test-name-form`)`` to record
+          // that a pin is a branch head rather than a `main` commit — so the
+          // hash is the FIRST TOKEN, and the rest is provenance prose.
+          const sha = cells[2].split(/\s+/)[0];
+          if (!/^[0-9a-f]{7,40}$/.test(sha)) {
+            // PER-ROW, not all-or-nothing. `if (!rows)` passed as soon as ANY
+            // row read, so a table of two dropped the unreadable one in
+            // silence — measured on `qa-corpus@41c6224`, where
+            // `spec-artifacts-process` fell out and only `spec-artifacts-iso`
+            // was recorded. The module that fell out is the one carrying the
+            // traceability model, whose five lines decide whether a TypeScript
+            // test's own title binds. That is precisely the "confident
+            // `sources` beside numbers nobody could join to a commit" this
+            // function exists to refuse, arriving one row at a time
+            // (agent-ix/quoin#240, reopened).
+            throw new Error(
+              `bench-tier1: ${full} records module \`${cells[0]}\` with ` +
+                `\`${cells[2]}\` where a SHA belongs. Refusing to score a ` +
+                `declaration one of whose modules has no upstream commit to ` +
+                `join to — dropping the row would leave a confident ` +
+                `\`sources\` naming the modules that happened to parse ` +
+                `(agent-ix/quoin#240).`,
+            );
+          }
+          out[cells[0]] = sha;
           rows += 1;
         }
         if (!rows) {
@@ -846,21 +1069,51 @@ function main() {
   // passed a case whose fix had already shipped. A `pending:` marker with no
   // runnable expectation cannot expire, and a marker that cannot expire is
   // permanent.
+  //
+  // THE EXPIRY SIGNAL COMES FROM `expect-pending.yaml`, not from `expect.yaml`
+  // (agent-ix/quoin#242). The old rule asked for the future reason under
+  // `diagnostic_reasons:` in the live block, where stating it would be FALSE —
+  // the reason does not fire today, which is the whole point of the marker.
+  // Every one of the ten pending cases states it correctly in the forward
+  // block, and this runner read neither.
+  const deferred = [];
   for (const c of pending) {
-    if (c.defects.some((d) => d.expect_reason)) continue;
-    throw new Error(
-      `bench-tier1: pending case ${c.name} (${c.pending}) names no ` +
-        `\`expect_reason\`, so the FR-065 stale-pending check has nothing to ` +
-        `run and would pass it forever. State the diagnostic reason the ` +
-        `ticket will make fire — in the case's own \`expect.yaml\` under ` +
-        `\`diagnostic_reasons:\`, or in its \`labels/\` entry — or drop the ` +
-        `\`pending:\` marker (agent-ix/quoin#236).`,
+    if (c.pendingReasons.length) continue;
+    // NO FORWARD BLOCK AT ALL is refused: nothing anywhere can expire the
+    // marker, and a marker that cannot expire is permanent.
+    if (!c.hasPendingBlock) {
+      throw new Error(
+        `bench-tier1: pending case ${c.name} (${c.pending}) has no ` +
+          `\`expect-pending.yaml\`, so no reader can ever say the fix landed ` +
+          `and the marker would stand forever. State what the ticket makes ` +
+          `true in the forward block — not in \`expect.yaml\`, where it ` +
+          `would be a false claim about today — or drop the \`pending:\` ` +
+          `marker (agent-ix/quoin#242).`,
+      );
+    }
+    // A FORWARD BLOCK THIS RUNNER CANNOT EVALUATE is deferred and NAMED, not
+    // passed. A pending case may expire on a payload change rather than a new
+    // diagnostic — `tag-on-describe-header` is exactly that: quire-rs#273
+    // registers `describe()` as a Container so the tag starts binding
+    // (`backed` 0 -> 2) and adds no reason token at all. This runner reads
+    // findings, not payloads. Grading a payload is what `verify.py` and the
+    // Rust harness already do, over the same file, and a THIRD implementation
+    // of that comparison is the drift the two-reader design exists to expose.
+    deferred.push(c);
+  }
+  if (deferred.length) {
+    console.error(
+      `bench-tier1: ${deferred.length} pending case(s) expire on a payload ` +
+        `change, not a diagnostic, so their staleness is checked by the ` +
+        `corpus's own graders and not here: ` +
+        deferred.map((c) => `${c.name} (${c.pending})`).join(", ") +
+        `. Run \`make ci\` in agent-ix/qa-corpus for those.`,
     );
   }
   const stale = pending.filter((c) => {
-    const want = c.defects.map((d) => d.expect_reason).filter(Boolean);
-    const { findings } = findingsFor(quire, c.input, c.module, mapping);
-    return want.every((r) => findings.some((f) => f.reason === r));
+    if (!c.pendingReasons.length) return false;
+    const emitted = rawReasons(quire, c.input, c.module);
+    return c.pendingReasons.every((r) => emitted.has(r));
   });
   if (stale.length) {
     throw new Error(

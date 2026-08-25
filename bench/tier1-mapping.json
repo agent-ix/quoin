@@ -1,9 +1,9 @@
 {
-  "$comment": "The tier-1 payload\u2192family mapping (agent-ix/quoin#199, FR-043-AC-2). NORMATIVE and REVIEWABLE: this table is the contract between what a tool emits and what the benchmark calls a finding, and it belongs in the repository rather than in a script's head. A family the scorer reads out of a payload section this file does not name is a family nobody agreed on, and `scripts/bench-tier1.mjs` refuses a payload signal it cannot map rather than dropping it \u2014 an unmapped signal is a scoring hole, and a silent one reads exactly like a tool that found nothing.",
+  "$comment": "The tier-1 payload→family mapping (agent-ix/quoin#199, FR-043-AC-2). NORMATIVE and REVIEWABLE: this table is the contract between what a tool emits and what the benchmark calls a finding, and it belongs in the repository rather than in a script's head. A family the scorer reads out of a payload section this file does not name is a family nobody agreed on, and `scripts/bench-tier1.mjs` refuses a payload signal it cannot map rather than dropping it — an unmapped signal is a scoring hole, and a silent one reads exactly like a tool that found nothing.",
   "sources": {
     "coverage.diagnostics": "quire coverage --json, `diagnostics[]`. Keyed on `reason`. Carries `path` sometimes and never a line.",
     "coverage.suspicions": "quire coverage --json, `suspicions[]`. Keyed on `kind`. Carries `path` and `line`.",
-    "coverage.metrics": "quire coverage --json, `metrics[]`. Keyed on `name`, matched against the label's `expect_value`. Carries no locus at all \u2014 a metric is a number about a corpus, not a place.",
+    "coverage.metrics": "quire coverage --json, `metrics[]`. Keyed on `name`, matched against the label's `expect_value`. Carries no locus at all — a metric is a number about a corpus, not a place.",
     "validate.findings": "quire validate --diagnostics-format json, one NDJSON object per finding. Keyed on the bracketed reason at the end of `message`. See `parse_fragility` below.",
     "audit.findings": "quoin evidence audit --json, `findings[]`. Keyed on `kind`. Carries an obligation id and NO locus."
   },
@@ -34,15 +34,21 @@
       "source": "coverage.diagnostics",
       "key": "catch-all-universal",
       "locus": "path",
-      "$note": "Was `coverage.metrics` / `coverage.specific_shaped`, which pairs on family alone and contributes nothing to `finding_localisation_rate` \u2014 a number that moved with nowhere to put a cursor. quire-rs#261 makes it a located diagnostic naming a criterion at `path:line`, so it now scores positionally like every other family whose finding says where.",
+      "$note": "Was `coverage.metrics` / `coverage.specific_shaped`, which pairs on family alone and contributes nothing to `finding_localisation_rate` — a number that moved with nowhere to put a cursor. quire-rs#261 makes it a located diagnostic naming a criterion at `path:line`, so it now scores positionally like every other family whose finding says where.",
       "shape": "advisory",
-      "shape_note": "A CORPUS-LEVEL advisory, not a defect-shaped finding: one per corpus, fired whenever a document's criteria are all the catch-all. Precision is not a meaningful quantity over a population where the finding is expected almost everywhere \u2014 measured, it fired on 10 of 21 cases and EVERY ONE was correct (`by_property: {universal: 1}` on each), yet scored 0.167. That number read as 'wrong five times in six' while being wrong zero times in twelve. Scored on recall and localisation only (agent-ix/quoin#234)."
+      "shape_note": "A CORPUS-LEVEL advisory, not a defect-shaped finding: one per corpus, fired whenever a document's criteria are all the catch-all. Precision is not a meaningful quantity over a population where the finding is expected almost everywhere — measured, it fired on 10 of 21 cases and EVERY ONE was correct (`by_property: {universal: 1}` on each), yet scored 0.167. That number read as 'wrong five times in six' while being wrong zero times in twelve. Scored on recall and localisation only (agent-ix/quoin#234)."
     },
     "section-matches-nothing": {
       "source": "coverage.diagnostics",
       "key": "section-matches-nothing",
       "locus": "path",
       "$note": "The archetype matched and the declared section did not, so the declared table is never reached and every id under it is stranded. Sized at 3,514 unminted TC ids across 88 repositories — the dominant ecosystem failure mode, and the one this table could not see. agent-ix/quire-rs#270 added the diagnostic in `a6a1144`; it fired on `cases/minting/section-name-mismatch` from that commit onward and NO family carried the key, so the payload signal mapped to nothing and the tier-1 score did not move (agent-ix/quoin#236). The runner now REFUSES a case whose `expect.yaml` names a reason no family claims, which is the guard that should have caught this and was inert."
+    },
+    "id-column-matches-nothing": {
+      "source": "coverage.diagnostics",
+      "key": "id-column-matches-nothing",
+      "locus": "path",
+      "$note": "`section-matches-nothing`'s SIBLING, and this table claimed only one of the pair. agent-ix/quire-rs#270 shipped both diagnostics together in `a6a1144`: the archetype matched and the declared section did not, or the section matched and the declared id column did not. The corpus has carried `cases/minting/id-column-mismatch` in three languages since the language-set migration, each `expect.yaml` naming this reason, and no family claimed the key — so tier 1 measured half of #270 while reporting on it. Found by agent-ix/quoin#242 when the reader learned to walk a language set and #236's refusal fired on the first case it had never reached. `agent-ix/quire-rs#318` sizes the reach: `TraceTarget.id_column` is one column name, stranding 5,732 TC ids across 120 repositories."
     },
     "vacuous-under-guard": {
       "source": "coverage.suspicions",
@@ -53,13 +59,13 @@
       "source": "coverage.suspicions",
       "key": "oracle-resembles-implementation",
       "locus": "path-line",
-      "$note": "The comparison ships in quire-rs `src/skeptic.rs` and has NO production caller \u2014 `oracle_copies` is reached only by its own unit tests. Mapped anyway: the contract is what a detector must emit, and declaring it before the detector exists is what lets the detector be built against something. Recall reads 0 until agent-ix/quire-rs#236."
+      "$note": "The comparison ships in quire-rs `src/skeptic.rs` and has NO production caller — `oracle_copies` is reached only by its own unit tests. Mapped anyway: the contract is what a detector must emit, and declaring it before the detector exists is what lets the detector be built against something. Recall reads 0 until agent-ix/quire-rs#236."
     },
     "mocked-confirmation": {
       "source": "audit.findings",
       "key": "mocked-confirmation",
       "locus": "none",
-      "$note": "quoin's own auditor, not quire \u2014 `quire coverage` and `quire properties` cannot see this family, which is why the runner calls a third command. The detector additionally cannot fire: `AuditInput.injections` is never supplied by any caller (agent-ix/quoin#204, reopened)."
+      "$note": "quoin's own auditor, not quire — `quire coverage` and `quire properties` cannot see this family, which is why the runner calls a third command. The detector additionally cannot fire: `AuditInput.injections` is never supplied by any caller (agent-ix/quoin#204, reopened)."
     },
     "gate-that-gates-nothing": {
       "source": "none",
