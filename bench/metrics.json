@@ -9,6 +9,7 @@
     "mocked-confirmation",
     "oracle-is-code-copy",
     "section-matches-nothing",
+    "tag-on-non-binding-symbol",
     "undeclared-type-value",
     "vacuous-under-guard"
   ],

@@ -1,7 +1,7 @@
 {
   "provenance": {
-    "engine": "quire 0.30.2 (engine 00644b7)",
-    "corpus": "41c622450689ea12edba877d4a9af1294f28e887",
+    "engine": "quire 0.30.2 (engine ca5e5d3)",
+    "corpus": "377b567a77d18f8c4904496277b41cbae34416ad",
     "declaration": {
       "root": "corpus/modules",
       "digest": "sha256:819807f757c7c6468be257c82c2d23bd5210f451eb3811c63b5ff5fa8d04b403",
@@ -19,7 +19,7 @@
     {
       "family": "catch-all-universal",
       "truePositives": 2,
-      "falsePositives": 56,
+      "falsePositives": 61,
       "misses": 0,
       "precision": null,
       "shape": "advisory",
@@ -89,6 +89,15 @@
       "recall": 1
     },
     {
+      "family": "tag-on-non-binding-symbol",
+      "truePositives": 5,
+      "falsePositives": 0,
+      "misses": 0,
+      "precision": 1,
+      "shape": "defect",
+      "recall": 1
+    },
+    {
       "family": "undeclared-type-value",
       "truePositives": 1,
       "falsePositives": 0,
@@ -134,29 +143,29 @@
       "reason": "no-symbol-bound"
     }
   ],
-  "positional": 18,
-  "finding_localisation_rate": 0.947,
+  "positional": 23,
+  "finding_localisation_rate": 0.958,
   "minting.section_hit_rate": {
-    "rate": 0.955,
-    "matched": 128,
-    "examined": 134,
-    "cases_reporting": 67
+    "rate": 0.958,
+    "matched": 138,
+    "examined": 144,
+    "cases_reporting": 72
   },
   "actionability": {
     "actionable": 2,
-    "total": 81,
-    "rate": 0.025
+    "total": 91,
+    "rate": 0.022
   },
-  "corpora": 67,
+  "corpora": 72,
   "by_language": [
     {
       "language": "python",
-      "corpora": 15,
+      "corpora": 17,
       "families": [
         {
           "family": "catch-all-universal",
           "truePositives": 0,
-          "falsePositives": 15,
+          "falsePositives": 17,
           "misses": 0,
           "precision": null,
           "shape": "advisory",
@@ -188,17 +197,26 @@
           "precision": 1,
           "shape": "defect",
           "recall": 1
+        },
+        {
+          "family": "tag-on-non-binding-symbol",
+          "truePositives": 2,
+          "falsePositives": 0,
+          "misses": 0,
+          "precision": 1,
+          "shape": "defect",
+          "recall": 1
         }
       ]
     },
     {
       "language": "rust",
-      "corpora": 36,
+      "corpora": 37,
       "families": [
         {
           "family": "catch-all-universal",
           "truePositives": 2,
-          "falsePositives": 25,
+          "falsePositives": 26,
           "misses": 0,
           "precision": null,
           "shape": "advisory",
@@ -268,6 +286,15 @@
           "recall": 1
         },
         {
+          "family": "tag-on-non-binding-symbol",
+          "truePositives": 1,
+          "falsePositives": 0,
+          "misses": 0,
+          "precision": 1,
+          "shape": "defect",
+          "recall": 1
+        },
+        {
           "family": "undeclared-type-value",
           "truePositives": 1,
           "falsePositives": 0,
@@ -289,12 +316,12 @@
     },
     {
       "language": "typescript",
-      "corpora": 16,
+      "corpora": 18,
       "families": [
         {
           "family": "catch-all-universal",
           "truePositives": 0,
-          "falsePositives": 16,
+          "falsePositives": 18,
           "misses": 0,
           "precision": null,
           "shape": "advisory",
@@ -326,34 +353,23 @@
           "precision": 1,
           "shape": "defect",
           "recall": 1
+        },
+        {
+          "family": "tag-on-non-binding-symbol",
+          "truePositives": 2,
+          "falsePositives": 0,
+          "misses": 0,
+          "precision": 1,
+          "shape": "defect",
+          "recall": 1
         }
       ]
     }
   ],
   "pending": [
     {
-      "case": "tag-at-module-scope-python",
-      "ticket": "agent-ix/quire-rs#312"
-    },
-    {
-      "case": "tag-at-module-scope-typescript",
-      "ticket": "agent-ix/quire-rs#312"
-    },
-    {
       "case": "tag-on-describe-header",
       "ticket": "agent-ix/quire-rs#273"
-    },
-    {
-      "case": "tag-on-non-test-function-python",
-      "ticket": "agent-ix/quire-rs#312"
-    },
-    {
-      "case": "tag-on-non-test-function-rust",
-      "ticket": "agent-ix/quire-rs#312"
-    },
-    {
-      "case": "tag-on-non-test-function-typescript",
-      "ticket": "agent-ix/quire-rs#312"
     },
     {
       "case": "test-name-id-in-fn-name",
@@ -372,5 +388,5 @@
       "ticket": "agent-ix/quire-rs#304"
     }
   ],
-  "findings": 81
+  "findings": 91
 }

@@ -50,6 +50,12 @@
       "locus": "path",
       "$note": "`section-matches-nothing`'s SIBLING, and this table claimed only one of the pair. agent-ix/quire-rs#270 shipped both diagnostics together in `a6a1144`: the archetype matched and the declared section did not, or the section matched and the declared id column did not. The corpus has carried `cases/minting/id-column-mismatch` in three languages since the language-set migration, each `expect.yaml` naming this reason, and no family claimed the key — so tier 1 measured half of #270 while reporting on it. Found by agent-ix/quoin#242 when the reader learned to walk a language set and #236's refusal fired on the first case it had never reached. `agent-ix/quire-rs#318` sizes the reach: `TraceTarget.id_column` is one column name, stranding 5,732 TC ids across 120 repositories."
     },
+    "tag-on-non-binding-symbol": {
+      "source": "coverage.diagnostics",
+      "key": "tag-on-non-binding-symbol",
+      "locus": "path",
+      "$note": "agent-ix/quire-rs#312, landed in `89388a4` (CR-134): a trace id written on a symbol whose kind cannot bind it. The tag reached NO channel — `verifies` refuses it by kind, `implements` wants the literal keyword the comment does not carry, and `binding_census` omits it from the DENOMINATOR rather than counting it unbound, so `no-symbol-bound` and `low-symbol-binding` both read a census the defect had been removed from and a repository whose tags are all in the wrong place reported a flawless 100%. Declared here the same day the token started being emitted, rather than after a run reported nothing: an unmapped signal is a scoring hole and a silent one reads exactly like a tool that found nothing, which is what #236 records. Five corpus fixtures seed it (`tag-on-non-test-function` in three languages, `tag-at-module-scope` in two) and five controls assert it silent."
+    },
     "vacuous-under-guard": {
       "source": "coverage.suspicions",
       "key": "vacuous-under-guard",
