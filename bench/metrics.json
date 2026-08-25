@@ -1,6 +1,7 @@
 {
   "$comment": "The quality benchmark's metric dictionary (FR-043-AC-1..AC-6, CR-098; agent-ix/quoin#198). NORMATIVE: a metric that does not declare unit, population and method is not one this benchmark emits, and `loadMetrics` refuses the file rather than reporting a gap. This is the same rule agent-ix/quire-rs FR-063 applies to the engine's own numbers, applied one layer up to the thing that scores the engine. Distinct from quire-rs's `bench/manifest.json`, which scores ENGINE coverage figures; this scores the toolchain's FINDING quality.",
   "families": [
+    "archetype-matches-nothing",
     "catch-all-universal",
     "gate-that-gates-nothing",
     "hollow-denominator",

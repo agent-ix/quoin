@@ -26,6 +26,12 @@ import { diff, render, scoreAgainstKey } from "../scripts/battletest.mjs";
 // errored the whole file at collection and took all nineteen tests with it,
 // including the tier-2 answer-key and battletest suites that never touch the
 // corpus.
+const MAPPING = JSON.parse(
+  readFileSync(
+    join(import.meta.dirname, "../bench/tier1-mapping.json"),
+    "utf8",
+  ),
+);
 let CORPORA: ReturnType<typeof loadCorpus>["corpora"] = [];
 try {
   CORPORA = loadCorpus().corpora;
@@ -60,7 +66,16 @@ describeCorpus("tier-1 seeded corpora", () => {
       for (const defect of corpus.defects) {
         expect(defect.id).toMatch(/^[A-Z]{2}-\d+$/);
         expect(defect.family).toBe(corpus.family);
-        expect(defect.location).toBeTruthy();
+        // A LOCATION UNLESS THE FAMILY DECLARES IT HAS NONE. `locus: none` is
+        // the mapping saying this finding has no document to open — the fault
+        // is the declaration's, not any one file's — so requiring a location
+        // for those families asserts something the mapping already says is
+        // impossible. `archetype-matches-nothing` is the case that made this
+        // concrete (agent-ix/quire-rs#304): the declared archetype names no
+        // document, so there is nothing to point at by construction.
+        if (MAPPING.families[defect.family]?.locus !== "none") {
+          expect(defect.location).toBeTruthy();
+        }
         // `findable` distinguishes a scored MISS from a defect nobody claimed
         // was findable — FR-043-AC-7's whole point.
         expect(typeof defect.findable).toBe("boolean");

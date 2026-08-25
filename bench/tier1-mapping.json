@@ -56,6 +56,14 @@
       "locus": "path",
       "$note": "agent-ix/quire-rs#312, landed in `89388a4` (CR-134): a trace id written on a symbol whose kind cannot bind it. The tag reached NO channel — `verifies` refuses it by kind, `implements` wants the literal keyword the comment does not carry, and `binding_census` omits it from the DENOMINATOR rather than counting it unbound, so `no-symbol-bound` and `low-symbol-binding` both read a census the defect had been removed from and a repository whose tags are all in the wrong place reported a flawless 100%. Declared here the same day the token started being emitted, rather than after a run reported nothing: an unmapped signal is a scoring hole and a silent one reads exactly like a tool that found nothing, which is what #236 records. Five corpus fixtures seed it (`tag-on-non-test-function` in three languages, `tag-at-module-scope` in two) and five controls assert it silent."
     },
+    "archetype-matches-nothing": {
+      "source": "coverage.diagnostics",
+      "key": "archetype-matches-nothing",
+      "locus": "none",
+      "$note": "agent-ix/quire-rs#304, landed in `ff0abd0` (CR-135): a declared TRACE TARGET whose archetype names no document in the corpus. Computed correctly all along and thrown away by a model-wide gate — `into_diagnostics(minted_anything)` dropped every one as soon as ANY declaration minted, so a repository with no TestMatrix reported `groups` holding only `acceptance-criterion`, the whole `test-case` target missing from the payload rather than present and zero. `locus: none` because there is no document to open: the fault is the declaration's. Measured across 245 ecosystem repositories once ungated: 741 findings over 243 of them, of which `inspection` and `suite` are 484 — a declaration-side fact filed as `agent-ix/spec-artifacts-process#75`, not 484 defects.",
+      "shape": "advisory",
+      "shape_note": "A CORPUS-LEVEL advisory, exactly the shape `catch-all-universal` is and for the reason agent-ix/quoin#234 gives: precision is not a meaningful quantity over a population where the finding is expected almost everywhere. MEASURED as a defect-shaped family over 75 corpora: 3 true positives and 296 false positives, 1% precision — and every one of the 296 is CORRECT. A three-file fixture declaring the real ecosystem model has no NFR, no StR, no suite and no inspection document, so four declarations legitimately match nothing in each. That number measured the fixture SIZE, not the detector. The same fact at ecosystem scale is 741 findings over 243 of 245 repositories, 484 of them `inspection` and `suite` (agent-ix/spec-artifacts-process#75). Scored on recall and localisation only; the seeded cases are found, which is what this family can honestly be asked."
+    },
     "vacuous-under-guard": {
       "source": "coverage.suspicions",
       "key": "vacuous-under-guard",

@@ -1,7 +1,7 @@
 {
   "provenance": {
-    "engine": "quire 0.30.2 (engine ca5e5d3)",
-    "corpus": "377b567a77d18f8c4904496277b41cbae34416ad",
+    "engine": "quire 0.30.2 (engine ff0abd0)",
+    "corpus": "84c00380d20a5fcb0a61e805f17045200c3136eb",
     "declaration": {
       "root": "corpus/modules",
       "digest": "sha256:819807f757c7c6468be257c82c2d23bd5210f451eb3811c63b5ff5fa8d04b403",
@@ -17,9 +17,18 @@
   },
   "families": [
     {
+      "family": "archetype-matches-nothing",
+      "truePositives": 3,
+      "falsePositives": 296,
+      "misses": 0,
+      "precision": null,
+      "shape": "advisory",
+      "recall": 1
+    },
+    {
       "family": "catch-all-universal",
       "truePositives": 2,
-      "falsePositives": 61,
+      "falsePositives": 64,
       "misses": 0,
       "precision": null,
       "shape": "advisory",
@@ -144,28 +153,37 @@
     }
   ],
   "positional": 23,
-  "finding_localisation_rate": 0.958,
+  "finding_localisation_rate": 0.852,
   "minting.section_hit_rate": {
-    "rate": 0.958,
-    "matched": 138,
-    "examined": 144,
-    "cases_reporting": 72
+    "rate": 0.959,
+    "matched": 141,
+    "examined": 147,
+    "cases_reporting": 75
   },
   "actionability": {
     "actionable": 2,
-    "total": 91,
-    "rate": 0.022
+    "total": 393,
+    "rate": 0.005
   },
-  "corpora": 72,
+  "corpora": 75,
   "by_language": [
     {
       "language": "python",
-      "corpora": 17,
+      "corpora": 18,
       "families": [
+        {
+          "family": "archetype-matches-nothing",
+          "truePositives": 1,
+          "falsePositives": 72,
+          "misses": 0,
+          "precision": null,
+          "shape": "advisory",
+          "recall": 1
+        },
         {
           "family": "catch-all-universal",
           "truePositives": 0,
-          "falsePositives": 17,
+          "falsePositives": 18,
           "misses": 0,
           "precision": null,
           "shape": "advisory",
@@ -211,12 +229,21 @@
     },
     {
       "language": "rust",
-      "corpora": 37,
+      "corpora": 38,
       "families": [
+        {
+          "family": "archetype-matches-nothing",
+          "truePositives": 1,
+          "falsePositives": 148,
+          "misses": 0,
+          "precision": null,
+          "shape": "advisory",
+          "recall": 1
+        },
         {
           "family": "catch-all-universal",
           "truePositives": 2,
-          "falsePositives": 26,
+          "falsePositives": 27,
           "misses": 0,
           "precision": null,
           "shape": "advisory",
@@ -316,12 +343,21 @@
     },
     {
       "language": "typescript",
-      "corpora": 18,
+      "corpora": 19,
       "families": [
+        {
+          "family": "archetype-matches-nothing",
+          "truePositives": 1,
+          "falsePositives": 76,
+          "misses": 0,
+          "precision": null,
+          "shape": "advisory",
+          "recall": 1
+        },
         {
           "family": "catch-all-universal",
           "truePositives": 0,
-          "falsePositives": 18,
+          "falsePositives": 19,
           "misses": 0,
           "precision": null,
           "shape": "advisory",
@@ -374,19 +410,7 @@
     {
       "case": "test-name-id-in-fn-name",
       "ticket": "agent-ix/quire-rs#307"
-    },
-    {
-      "case": "no-testmatrix-document-python",
-      "ticket": "agent-ix/quire-rs#304"
-    },
-    {
-      "case": "no-testmatrix-document-rust",
-      "ticket": "agent-ix/quire-rs#304"
-    },
-    {
-      "case": "no-testmatrix-document-typescript",
-      "ticket": "agent-ix/quire-rs#304"
     }
   ],
-  "findings": 91
+  "findings": 393
 }

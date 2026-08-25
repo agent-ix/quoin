@@ -684,8 +684,18 @@ export function declarationProvenance(modulesRoot, bound = []) {
 
 /** The family that claims a diagnostic reason, or `null`. */
 function familyForReason(mapping, reason) {
+  // A corpus expectation may be spelled `reason` or `declaration/reason`. The
+  // scoped form is the PRECISE one — `agent-ix/quire-rs#304` made
+  // `archetype-matches-nothing` fire for several declarations at once, so a
+  // fixture that means "the `test-case` target matched no document" has to say
+  // which declaration — and this table is keyed on the reason alone. Both
+  // corpus graders resolve the scope the same way; a third reader that did not
+  // read a precisely-written fixture as claiming no token at all.
+  const key = reason.includes("/")
+    ? reason.slice(reason.indexOf("/") + 1)
+    : reason;
   const entry = Object.entries(mapping?.families ?? {}).find(
-    ([, m]) => m.key === reason,
+    ([, m]) => m.key === key,
   );
   return entry ? entry[0] : null;
 }
