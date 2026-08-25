@@ -1,7 +1,7 @@
 {
   "provenance": {
     "engine": "quire 0.30.2 (engine e5a6ccc)",
-    "corpus": "0be99d8febeae2eb2c0c07432a0b96f589ac4b95",
+    "corpus": "873e66522166569a2b49b8ed8db503573319e9ad",
     "declaration": {
       "root": "corpus/modules",
       "digest": "sha256:819807f757c7c6468be257c82c2d23bd5210f451eb3811c63b5ff5fa8d04b403",
@@ -19,7 +19,7 @@
     {
       "family": "archetype-matches-nothing",
       "truePositives": 3,
-      "falsePositives": 300,
+      "falsePositives": 304,
       "misses": 0,
       "precision": null,
       "shape": "advisory",
@@ -28,7 +28,7 @@
     {
       "family": "catch-all-universal",
       "truePositives": 2,
-      "falsePositives": 65,
+      "falsePositives": 66,
       "misses": 0,
       "precision": null,
       "shape": "advisory",
@@ -99,7 +99,7 @@
     },
     {
       "family": "tag-on-non-binding-symbol",
-      "truePositives": 5,
+      "truePositives": 6,
       "falsePositives": 0,
       "misses": 0,
       "precision": 1,
@@ -161,20 +161,20 @@
       "reason": "no-symbol-bound"
     }
   ],
-  "positional": 24,
-  "finding_localisation_rate": 0.857,
+  "positional": 25,
+  "finding_localisation_rate": 0.862,
   "minting.section_hit_rate": {
     "rate": 0.96,
-    "matched": 143,
-    "examined": 149,
-    "cases_reporting": 76
+    "matched": 145,
+    "examined": 151,
+    "cases_reporting": 77
   },
   "actionability": {
     "actionable": 2,
-    "total": 399,
+    "total": 405,
     "rate": 0.005
   },
-  "corpora": 76,
+  "corpora": 77,
   "by_language": [
     {
       "language": "python",
@@ -361,12 +361,12 @@
     },
     {
       "language": "typescript",
-      "corpora": 19,
+      "corpora": 20,
       "families": [
         {
           "family": "archetype-matches-nothing",
           "truePositives": 1,
-          "falsePositives": 76,
+          "falsePositives": 80,
           "misses": 0,
           "precision": null,
           "shape": "advisory",
@@ -375,7 +375,7 @@
         {
           "family": "catch-all-universal",
           "truePositives": 0,
-          "falsePositives": 19,
+          "falsePositives": 20,
           "misses": 0,
           "precision": null,
           "shape": "advisory",
@@ -410,7 +410,7 @@
         },
         {
           "family": "tag-on-non-binding-symbol",
-          "truePositives": 2,
+          "truePositives": 3,
           "falsePositives": 0,
           "misses": 0,
           "precision": 1,
@@ -420,11 +420,6 @@
       ]
     }
   ],
-  "pending": [
-    {
-      "case": "tag-on-describe-header",
-      "ticket": "agent-ix/quire-rs#273"
-    }
-  ],
-  "findings": 399
+  "pending": [],
+  "findings": 405
 }
