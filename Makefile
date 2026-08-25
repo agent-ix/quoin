@@ -76,13 +76,23 @@ battletest-update:
 # and scoring with it reported recall 0 on every coverage family, which
 # reads as a corpus regression rather than a stale binary.
 QUIRE ?= ../quire-cli/target/debug/quire
+#
+# `MODULES` overrides the DECLARATION the cases bind, which is the second axis
+# (agent-ix/quoin#240). Empty means the corpus's own vendored `modules/`, so an
+# ordinary run is unchanged. Two of Wave 3's six fixes are declaration-side and
+# an engine-only before/after scores them `held` by construction — the same word
+# it prints for a family that genuinely did not move.
+#
+#   make bench-tier1 QUIRE=<binary> MODULES=/path/to/pre-fix/modules
+#
+MODULES ?=
 .PHONY: bench-tier1
 bench-tier1:
-	node scripts/bench-tier1.mjs --quire $(QUIRE)
+	node scripts/bench-tier1.mjs --quire $(QUIRE) $(if $(MODULES),--modules $(MODULES))
 
 .PHONY: bench-tier1-update
 bench-tier1-update:
-	node scripts/bench-tier1.mjs --update --quire $(QUIRE)
+	node scripts/bench-tier1.mjs --update --quire $(QUIRE) $(if $(MODULES),--modules $(MODULES))
 
 .PHONY: evidence-audit
 evidence-audit:

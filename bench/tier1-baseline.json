@@ -1,7 +1,20 @@
 {
   "provenance": {
     "engine": "quire 0.30.2 (engine 816e187)",
-    "corpus": "42fdcaece936243772c08b1069534eb65363ca10"
+    "corpus": "42fdcaece936243772c08b1069534eb65363ca10",
+    "declaration": {
+      "root": "corpus/modules",
+      "digest": "sha256:a3be35ec594d89f7af7a9978fdc00277e7775b23e34efdd40ecbbbde82207026",
+      "modules": {
+        "ecosystem": "sha256:86ebdcc0d9ae29f240fbc2cdae993f3397ea37a8a064f14dd5535045114ee69b",
+        "variants/bench-legacy": "sha256:36c653b94d66141a2f53941b4db6544c4c03a10821665868b80ee2c84c0b72f2",
+        "variants/bench-no-symbol-vocab": "sha256:84a0eb4426ce218feade98bb6be5307d195fed2be3f66399c8a77f01113ae4b6"
+      },
+      "sources": {
+        "spec-artifacts-process": "c197b1c0a10148164620ca0626d82ca5edd032bd",
+        "spec-artifacts-iso": "3d871962b66db99a1854f40466e94ebabc7a6115"
+      }
+    }
   },
   "families": [
     {

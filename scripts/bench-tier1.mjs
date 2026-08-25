@@ -23,6 +23,17 @@
 //   node scripts/bench-tier1.mjs                  # score and diff
 //   node scripts/bench-tier1.mjs --update         # deliberate re-baseline
 //   node scripts/bench-tier1.mjs --json           # the score, machine-readable
+//   node scripts/bench-tier1.mjs --modules <dir>  # score against ANOTHER declaration
+//
+// THE DECLARATION IS AN AXIS, NOT A FIXED INPUT (agent-ix/quoin#240). This
+// runner used to vary exactly one thing — the binary passed to `--quire` — and
+// the traceability declaration every case binds was whatever the corpus
+// vendored at its pinned SHA. Two of EPIC quire-rs#264's Wave 3 fixes are
+// declaration-side (`spec-artifacts-process` #68 and #69), so an engine-only
+// before/after reports them `held` BY CONSTRUCTION, in the same word it prints
+// for a family that genuinely did not move. `--modules` holds the engine fixed
+// and moves the declaration; `provenance.declaration` records which one every
+// number was scored against.
 //
 // Ratchet semantics are quire-rs `scripts/bench.py`'s, deliberately: a closed
 // metric dictionary that refuses an undeclared name, a one-way compare where a
@@ -30,8 +41,15 @@
 // an unreadable metric OMITTED rather than reported as 0.
 
 import { execFileSync } from "node:child_process";
-import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
+import { createHash } from "node:crypto";
+import {
+  existsSync,
+  readdirSync,
+  readFileSync,
+  statSync,
+  writeFileSync,
+} from "node:fs";
+import { dirname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { parse as parseYaml } from "yaml";
@@ -244,7 +262,17 @@ function findingsFor(quire, corpusRoot, module, mapping) {
  * defect — the clean control — and is still SCORED, because a detector that
  * fires on healthy input is exactly what precision is for.
  */
-export function loadCorpus(mapping = null, root = join(ROOT, "corpus")) {
+export function loadCorpus(
+  mapping = null,
+  root = join(ROOT, "corpus"),
+  modulesRoot = null,
+) {
+  // THE DECLARATION AXIS (agent-ix/quoin#240). A case names a module by a
+  // relative id (`ecosystem`, `variants/bench-legacy`); which TREE that id
+  // resolves in is a variable of the run, so the same 34 cases can be scored
+  // against a pre-fix and a post-fix declaration with the engine held fixed.
+  // Defaults to the corpus's own `modules/`, so an ordinary run is unchanged.
+  modulesRoot ??= join(root, "modules");
   // The mapping resolves a diagnostic reason to the family it belongs to, so a
   // case's own `expect.yaml` can state ground truth without restating the
   // family. Optional so a caller that only wants the case list (a test
@@ -283,7 +311,7 @@ export function loadCorpus(mapping = null, root = join(ROOT, "corpus")) {
         summary: label?.summary ?? meta.comment ?? "",
         defects: label?.defects ?? defectsFrom(meta, expect, mapping),
         input: join(dir, "input"),
-        module: join(root, "modules", meta.module),
+        module: assertModule(join(modulesRoot, meta.module), meta, modulesRoot),
         // The corpus's own declaration of what language the case is written
         // in, carried into the report so a `held` verdict cannot be read as
         // "verified in every language". At pin 088771b all 22 cases said
@@ -294,7 +322,141 @@ export function loadCorpus(mapping = null, root = join(ROOT, "corpus")) {
       });
     }
   }
-  return { corpora };
+  return { corpora, modulesRoot };
+}
+
+/**
+ * Refuse a module id that resolves to nothing in the declaration root in use.
+ *
+ * WITHOUT THIS, A MISTYPED `--modules` IS A SILENT ZERO. `findingsFor` decides
+ * between `--module <dir>` and `IX_FILAMENT_MODULES_PATH=<dir>` by asking
+ * whether the directory holds a `manifest.yaml`; a directory that does not
+ * exist answers "no", the env var points at nothing, the engine registers no
+ * archetype, and every case reports an empty payload. The run then looks like a
+ * total detection collapse rather than a wrong path — the exact confusion
+ * agent-ix/quire-rs#292 records, where vendoring one module of two left
+ * criteria classification silently producing nothing.
+ */
+function assertModule(dir, meta, modulesRoot) {
+  const usable =
+    existsSync(join(dir, "manifest.yaml")) ||
+    (existsSync(dir) &&
+      readdirSync(dir).some((child) =>
+        existsSync(join(dir, child, "manifest.yaml")),
+      ));
+  if (usable) return dir;
+  throw new Error(
+    `bench-tier1: case \`${meta.id}\` binds module \`${meta.module}\`, which ` +
+      `resolves to ${dir} under the declaration root ${modulesRoot} and holds ` +
+      `no \`manifest.yaml\` — neither directly nor in any child. Refusing to ` +
+      `score: the engine would register no archetype, every case would report ` +
+      `an empty payload, and the run would read as a detection collapse ` +
+      `rather than a missing declaration (agent-ix/quoin#240).`,
+  );
+}
+
+/** Every file under `dir`, as paths relative to it, in a stable order. */
+function walkFiles(dir, base = dir) {
+  const out = [];
+  for (const name of readdirSync(dir).sort()) {
+    if (name === ".git" || name === "__pycache__") continue;
+    const full = join(dir, name);
+    if (statSync(full).isDirectory()) out.push(...walkFiles(full, base));
+    else out.push(relative(base, full).split(sep).join("/"));
+  }
+  return out;
+}
+
+/** A content digest over a declaration tree: path and bytes, nothing else. */
+function digestOf(dir) {
+  const hash = createHash("sha256");
+  for (const rel of walkFiles(dir)) {
+    hash.update(rel);
+    hash.update("\0");
+    hash.update(
+      createHash("sha256")
+        .update(readFileSync(join(dir, rel)))
+        .digest(),
+    );
+    hash.update("\n");
+  }
+  return `sha256:${hash.digest("hex")}`;
+}
+
+/**
+ * The upstream SHAs a vendored declaration records for itself.
+ *
+ * The corpus vendors COPIES of the ecosystem's declaring modules and records
+ * where each came from in a `VENDORED.md` table — that file is the corpus's own
+ * provenance and the only place the upstream SHA exists, since a copy carries no
+ * git identity of its own. Parsed rather than assumed, and a `VENDORED.md` that
+ * yields no row is an ERROR: a provenance file that has silently stopped being
+ * readable is worse than none, because the report would keep printing a
+ * confident `sources: {}` beside numbers nobody could join to a commit.
+ */
+function vendoredSources(modulesRoot) {
+  const out = {};
+  let files = 0;
+  const visit = (dir, depth) => {
+    if (depth > 2 || !existsSync(dir)) return;
+    for (const name of readdirSync(dir).sort()) {
+      const full = join(dir, name);
+      if (name === "VENDORED.md") {
+        files += 1;
+        let rows = 0;
+        for (const line of readFileSync(full, "utf8").split("\n")) {
+          const cells = line
+            .split("|")
+            .slice(1, -1)
+            .map((c) => c.trim().replace(/`/g, ""));
+          if (cells.length !== 3) continue;
+          if (!/^[0-9a-f]{7,40}$/.test(cells[2])) continue;
+          out[cells[0]] = cells[2];
+          rows += 1;
+        }
+        if (!rows) {
+          throw new Error(
+            `bench-tier1: ${full} records no \`| module | path | sha |\` row ` +
+              `this runner can read, so the declaration's upstream SHA cannot ` +
+              `be recorded. Refusing to score a declaration whose provenance ` +
+              `file is present and unreadable (agent-ix/quoin#240).`,
+          );
+        }
+      } else if (statSync(full).isDirectory()) visit(full, depth + 1);
+    }
+  };
+  visit(modulesRoot, 0);
+  return files ? out : null;
+}
+
+/**
+ * WHAT DECLARATION THIS RUN WAS SCORED AGAINST (agent-ix/quoin#240).
+ *
+ * The report already said which ENGINE and which CORPUS produced it. The third
+ * input was invisible, and it is the one two of Wave 3's six fixes live in — so
+ * two reports taken either side of a declaration change were silently
+ * comparable, and a declaration-side fix scored `held` in the same word used
+ * for a fix that did nothing.
+ *
+ * `digest` is measured from the bytes and is the comparable key; `sources` is
+ * the upstream SHA the corpus records for each vendored module, which is what a
+ * reader needs to fetch the diff. Both, because a digest cannot be looked up
+ * and a recorded SHA cannot be verified.
+ */
+export function declarationProvenance(modulesRoot, bound = []) {
+  const inRepo = !relative(ROOT, modulesRoot).startsWith("..");
+  const paths = {};
+  for (const id of [...new Set(bound)].sort()) {
+    paths[id] = digestOf(join(modulesRoot, id));
+  }
+  return {
+    root: inRepo
+      ? relative(ROOT, modulesRoot).split(sep).join("/")
+      : modulesRoot,
+    digest: digestOf(modulesRoot),
+    modules: paths,
+    sources: vendoredSources(modulesRoot),
+  };
 }
 
 /** The family that claims a diagnostic reason, or `null`. */
@@ -542,6 +704,57 @@ export function compare(direction, observed, baseline) {
 }
 
 /**
+ * Whether two reports are over LIKE inputs, and which field says they are not.
+ *
+ * THE COMPARISON THIS REFUSES ALMOST GOT PUBLISHED. The previous pass scored
+ * engine `84740d4` over a 34-case corpus against a baseline written over 21
+ * cases; every family read `regressed`, and nothing in the output said the
+ * population had grown by 13. That is EPIC exit criterion 6's "refuses deltas
+ * across unlike definitions or populations" and agent-ix/quoin#231's
+ * unimplemented clause, and quoin#240 adds the third field it has to cover.
+ *
+ * The ENGINE is deliberately not a reason: varying the engine and comparing is
+ * what this benchmark is for. The CORPUS, the DECLARATION and the POPULATION
+ * are the inputs a delta is only meaningful when they are held.
+ *
+ * A baseline that records nothing for a field cannot make a run incomparable —
+ * it is UNKNOWN, and returned separately so the run can say so out loud rather
+ * than either refusing every legacy baseline or quietly assuming it matched.
+ */
+export function comparability(report, previous) {
+  const reasons = [];
+  const unknown = [];
+  const check = (field, mine, theirs) => {
+    if (theirs === undefined || theirs === null) return unknown.push(field);
+    const a = JSON.stringify(mine);
+    const b = JSON.stringify(theirs);
+    if (a !== b) reasons.push({ field, baseline: theirs, observed: mine });
+  };
+  const languages = (r) =>
+    Object.fromEntries(
+      (r.by_language ?? []).map((l) => [l.language, l.corpora]),
+    );
+  if (!previous) return { comparable: true, reasons, unknown };
+  check(
+    "provenance.declaration.digest",
+    report.provenance?.declaration?.digest ?? null,
+    previous.provenance?.declaration?.digest ?? null,
+  );
+  check(
+    "provenance.corpus",
+    report.provenance?.corpus ?? null,
+    previous.provenance?.corpus ?? null,
+  );
+  check("corpora", report.corpora ?? null, previous.corpora ?? null);
+  check(
+    "by_language",
+    languages(report),
+    previous.by_language ? languages(previous) : null,
+  );
+  return { comparable: reasons.length === 0, reasons, unknown };
+}
+
+/**
  * Refuse a binary that cannot say what it is, or lacks what the mapping reads.
  *
  * The `engine` provenance block arrived with agent-ix/quire-cli#68 precisely so
@@ -591,18 +804,26 @@ function main() {
     );
   }
   const engine = assertEngine(quire);
+  // The DECLARATION axis. Absolute or relative to the working directory, and
+  // absent means the corpus's own vendored `modules/` — so the gate is
+  // unchanged and only a run that asks scores a different declaration.
+  const modules = argOf("--modules") ?? process.env.MODULES ?? null;
 
   const mapping = JSON.parse(readFileSync(MAPPING, "utf8"));
   const dictionary = loadMetrics(METRICS);
 
-  const corpus = loadCorpus(mapping);
+  const loaded = loadCorpus(
+    mapping,
+    join(ROOT, "corpus"),
+    modules ? resolve(modules) : null,
+  );
   let report;
   // Cases the corpus marks `pending` assert behaviour the engine does not
   // have yet. Scoring them counts a known-missing detector as a miss on every
   // run, which turns a deliberate red fixture into permanent noise in the
   // benchmark. They are excluded and NAMED, never silently dropped.
-  const pending = corpus.corpora.filter((c) => c.pending);
-  const labels = { corpora: corpus.corpora.filter((c) => !c.pending) };
+  const pending = loaded.corpora.filter((c) => c.pending);
+  const labels = { corpora: loaded.corpora.filter((c) => !c.pending) };
   const flat = flattenLabels(labels);
   if (pending.length) {
     console.error(
@@ -719,7 +940,20 @@ function main() {
     // the join agent-ix/quoin#229 is about, and it is the whole of it that a
     // report can supply on its own. Deterministic on purpose: no timestamp, so
     // two runs of the same engine over the same corpus are byte-identical.
-    provenance: { engine, corpus: corpusRevision() },
+    provenance: {
+      engine,
+      corpus: corpusRevision(),
+      // THE THIRD INPUT, previously invisible (agent-ix/quoin#240). Without it
+      // two reports taken either side of a `spec-artifacts-process` change are
+      // silently comparable, and the declaration-side half of Wave 3 scores
+      // `held` in the same word used for a fix that changed nothing.
+      declaration: declarationProvenance(
+        loaded.modulesRoot,
+        labels.corpora.map((c) =>
+          relative(loaded.modulesRoot, c.module).split(sep).join("/"),
+        ),
+      ),
+    },
     families: score.families,
     excluded: score.excluded,
     collateral: score.collateral,
@@ -756,6 +990,17 @@ function main() {
     ? JSON.parse(readFileSync(BASELINE, "utf8"))
     : null;
   const verdicts = ratchet(report, previous, dictionary);
+  // An UNKNOWN field is said out loud rather than assumed to have matched. A
+  // baseline written before quoin#240 records no declaration, so a comparison
+  // against it is resting on an assumption nobody stated — which is the whole
+  // of what this ticket is about, one file over.
+  const { unknown } = comparability(report, previous);
+  if (unknown.length) {
+    console.error(
+      `bench-tier1: the baseline records no ${unknown.join(", ")}; this ` +
+        `comparison ASSUMES those inputs did not move, and cannot check it.`,
+    );
+  }
 
   if (asJson) {
     console.log(JSON.stringify({ ...report, verdicts }, null, 2));
@@ -768,7 +1013,16 @@ function main() {
     console.error(`bench-tier1: baseline rewritten at ${BASELINE}`);
     return 0;
   }
-  return verdicts.some((v) => v.verdict === "regressed") ? 1 : 0;
+  // `incomparable` exits non-zero for the same reason `regressed` does: the
+  // gate has not been met. It is NOT a claim that anything got worse — nothing
+  // was compared — and the only way past it is a deliberate re-baseline, which
+  // is what makes bumping the corpus or the declaration a reviewable act rather
+  // than a silent change of subject.
+  return verdicts.some(
+    (v) => v.verdict === "regressed" || v.verdict === "incomparable",
+  )
+    ? 1
+    : 0;
 }
 
 /** Per-family precision and recall against the baseline, one-way. */
@@ -829,19 +1083,66 @@ export function ratchet(report, previous, dictionary) {
       verdict,
     });
   }
-  return out;
+
+  // NO DELTA ACROSS UNLIKE INPUTS. Computed after the verdicts rather than
+  // instead of them, so the two numbers stay visible and only the CLAIM that
+  // one moved is withdrawn: `improved` and `regressed` are statements about a
+  // change, and a run over a different corpus, a different declaration or a
+  // different population did not observe one.
+  const { comparable, reasons } = comparability(report, previous);
+  if (comparable) return out;
+  const why =
+    "not compared: " +
+    reasons
+      .map(
+        (r) =>
+          `${r.field} moved (baseline ${short(r.baseline)}, this run ${short(r.observed)})`,
+      )
+      .join("; ");
+  return out.map((v) => ({ ...v, verdict: "incomparable", why }));
 }
 
-const MARK = { improved: "++", held: "ok", new: "**", regressed: "!!" };
+/** A digest or a language census, short enough to sit in a verdict line. */
+function short(value) {
+  if (typeof value === "string" && value.startsWith("sha256:")) {
+    return `sha256:${value.slice(7, 19)}…`;
+  }
+  if (typeof value === "string" && /^[0-9a-f]{40}$/.test(value)) {
+    return `${value.slice(0, 12)}…`;
+  }
+  return typeof value === "object" && value !== null
+    ? JSON.stringify(value)
+    : String(value);
+}
+
+const MARK = {
+  improved: "++",
+  held: "ok",
+  new: "**",
+  regressed: "!!",
+  incomparable: "??",
+};
 
 function render(report, verdicts) {
   const pct = (v) =>
     v === null ? "  n/a" : `${Math.round(v * 100)}%`.padStart(5);
+  const declaration = report.provenance.declaration;
   const lines = [
     `tier-1: ${report.corpora} corpora, ${report.findings} findings mapped` +
       ` (${report.by_language
         .map((l) => `${l.language} ${l.corpora}`)
         .join(", ")})`,
+    // WHICH DECLARATION, on the same footing as which engine. Two of Wave 3's
+    // six fixes changed nothing but this, and a reader of the score had no way
+    // to tell which of the three inputs a run had moved (agent-ix/quoin#240).
+    `engine      ${report.provenance.engine}`,
+    `corpus      ${short(report.provenance.corpus)}`,
+    `declaration ${declaration.root} ${short(declaration.digest)}` +
+      (declaration.sources
+        ? ` (${Object.entries(declaration.sources)
+            .map(([name, sha]) => `${name} ${short(sha)}`)
+            .join(", ")})`
+        : " (no VENDORED.md: no upstream SHA recorded)"),
     "",
     "family                     TP  FP  miss   prec  recall",
   ];
@@ -893,14 +1194,35 @@ function render(report, verdicts) {
     lines.push(`excluded as not findable: ${report.excluded.join(", ")}`);
   }
   lines.push("", "ratchet:");
+  // An `incomparable` run carries ONE reason, and printing it on all fifteen
+  // rows buries the numbers it is there to protect. The rows say `not
+  // compared`, the banner says why, and the JSON carries `why` per verdict so a
+  // row read on its own is still self-describing.
+  const wholeRun = verdicts.every((v) => v.verdict === "incomparable");
   for (const v of verdicts) {
     const name = v.family ? `${v.metric}[${v.family}]` : v.metric;
+    const why = wholeRun && v.verdict === "incomparable" ? null : v.why;
     lines.push(
       `  ${MARK[v.verdict]} ${name.padEnd(40)} ${v.observed} (baseline ${v.baseline})` +
-        (v.why ? ` — ${v.why}` : ""),
+        (why
+          ? ` — ${why}`
+          : v.verdict === "incomparable"
+            ? " — not compared"
+            : ""),
     );
   }
-  if (verdicts.some((v) => v.verdict === "regressed")) {
+  if (verdicts.some((v) => v.verdict === "incomparable")) {
+    lines.push(
+      "",
+      "INCOMPARABLE — this run and the baseline are over unlike inputs, so NO",
+      "DELTA WAS COMPUTED. Both values are printed above; neither `improved`",
+      "nor `regressed` is claimed, because a change was not observed — the",
+      "subject changed.",
+      `  ${verdicts.find((v) => v.verdict === "incomparable").why}`,
+      "Re-baseline deliberately with `make bench-tier1-update` once the new",
+      "inputs are the ones the gate should track.",
+    );
+  } else if (verdicts.some((v) => v.verdict === "regressed")) {
     lines.push(
       "",
       "REGRESSED — the baseline is kept, never lowered by a bad run.",

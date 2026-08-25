@@ -94,6 +94,8 @@ Unchanged from this repository's standing posture. The benchmark is expensive �
 | FR-043-AC-9 | The score report is a declared schema carrying, per metric, the enveloped value and the baseline it was compared against, and per corpus the tier and the identity it was run at. Two runs over identical inputs produce byte-identical reports. | Test (TC-934) |
 | FR-043-AC-10 | Ratchet semantics: a score better than its baseline rewrites the baseline and passes; a score worse fails, naming the metric, both values, and the corpus; a score equal passes and rewrites nothing. Baseline regeneration is a deliberate act with a reviewable diff, never a side effect of a run. | Test (TC-935) |
 | FR-043-AC-11 | An answer-key entry declaring `expect_metric` without a usable `expect_value` **fails the run as malformed**, never scores as a miss: `Number(undefined)` is `NaN`, so every comparison is false and the finding would read as a permanent toolchain regression rather than a typo. | Test (TC-947) |
+| FR-043-AC-12 | A tier-1 report records the **declaration** it was scored against — a content digest over the module tree, a digest per module the corpora bind, and the upstream SHA the corpus records for each vendored module — on the same footing as the engine and the corpus revision. The declaration is a **run-time variable**: the same corpus can be scored with the engine held fixed and the declaration moved, which is the only way a declaration-side fix is distinguishable from a fix that had no effect. A module id resolving to no manifest under the declaration root fails the run; a `VENDORED.md` present and unparseable fails the run; a declaration root carrying none records `sources: null`. | Test (TC-968, TC-969, TC-970) |
+| FR-043-AC-13 | The ratchet **refuses a delta across unlike inputs**. Two reports differing in corpus revision, declaration digest, or scored population — count or per-language mix — are `incomparable`: both values are reported, neither `improved` nor `regressed` is claimed, and the run exits non-zero so moving an input is a deliberate, reviewable re-baseline. The **engine** is deliberately not such a field — varying it and comparing is what the benchmark is for. A baseline recording nothing for one of those fields is reported as **unknown** rather than assumed to match. | Test (TC-971, TC-972, TC-973) |
 
 ## Dependencies
 
@@ -169,3 +171,34 @@ Unchanged from this repository's standing posture. The benchmark is expensive �
 > against it is false. `AK-003` shipped in that state and was caught only
 > because a test happened to assert its detection. Malformed keys now fail the
 > run.
+
+> **CR-099 note (2026-08-24):** `agent-ix/quoin#240`. **AC-12 and AC-13 are
+> new**, and they close the last of the three inputs this benchmark varies
+> without saying so.
+>
+> **The runner varied one thing: the binary.** The traceability declaration
+> every case binds was whatever the corpus vendored at its pinned SHA, and it is
+> an input the toolchain's behaviour depends on as directly as the engine's:
+> `spec-artifacts-process#68` is **five non-comment lines** of manifest
+> (`git diff fa56ced 2ed3bb9 -- spec_artifacts_process/manifest.yaml` is +101
+> −0, of which 96 are comment or blank), and those five lines decide whether a
+> TypeScript test's own title can bind at all. Two of EPIC
+> `agent-ix/quire-rs#264`'s six Wave 3 fixes live there, so an engine-only
+> before/after reported them `held` **by construction**, in the same word the
+> runner prints for a family that genuinely did not move.
+>
+> Measured, engine held fixed and the declaration moved between
+> `spec-artifacts-process` `fa56ced` (pre-#68) and `c197b1c` (the vendored pin),
+> over the same 34 cases: `hollow-denominator` precision **1.00 → 0.33** and
+> `marker-form-mismatch` precision **1.00 → 0.71**, identically on engine
+> `84740d4` and engine `816e187`. Exactly two of 34 cases move and both are
+> TypeScript; the other 32 are byte-identical, which is the half of the result
+> that says the declaration change is TypeScript-only rather than a general
+> perturbation.
+>
+> **AC-13 is the refusal the last pass needed and did not have.** The `84740d4`
+> leg of the previous before/after read `regressed` on every family because the
+> scored population had gone 21 → 34, and nothing in the output said so. That is
+> EPIC exit criterion 6's *"refuses deltas across unlike definitions or
+> populations"* and `agent-ix/quoin#231`'s unimplemented clause. The engine is
+> deliberately excluded — varying it and comparing is what the benchmark is for.

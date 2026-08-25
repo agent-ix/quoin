@@ -22,7 +22,9 @@ import { join } from "node:path";
 
 import {
   byLanguage,
+  comparability,
   compare,
+  declarationProvenance,
   flattenLabels,
   loadCorpus,
   localisationRate,
@@ -168,6 +170,14 @@ describe("a case whose ground truth maps to nothing", () => {
     mkdirSync(join(dir, "input"), { recursive: true });
     writeFileSync(join(dir, "case.yaml"), caseYaml);
     writeFileSync(join(dir, "expect.yaml"), expectYaml);
+    // The declaration the case binds has to EXIST (quoin#240): a module id
+    // resolving to nothing would leave the engine registering no archetype and
+    // every case reporting an empty payload, so `loadCorpus` refuses it.
+    mkdirSync(join(root, "modules", "m"), { recursive: true });
+    writeFileSync(
+      join(root, "modules", "m", "manifest.yaml"),
+      "archetypes: []\n",
+    );
     return root;
   };
   const CASE =
@@ -255,6 +265,226 @@ describe("the score cut by language", () => {
         expect.objectContaining({ family: "f", truePositives: 1, misses: 0 }),
       ]);
     }
+  });
+});
+
+describe("the declaration axis", () => {
+  // Torn down in `afterAll` for quoin#184's reason: a fixture tree with no
+  // teardown path is the same class of defect as a worktree nobody removes.
+  const roots: string[] = [];
+  const declarationRoot = (manifestBody: string, vendored: string | null) => {
+    const root = mkdtempSync(join(tmpdir(), "quoin-decl-"));
+    roots.push(root);
+    mkdirSync(join(root, "ecosystem", "a-module"), { recursive: true });
+    writeFileSync(
+      join(root, "ecosystem", "a-module", "manifest.yaml"),
+      manifestBody,
+    );
+    if (vendored !== null) {
+      writeFileSync(join(root, "ecosystem", "VENDORED.md"), vendored);
+    }
+    return root;
+  };
+  const TABLE =
+    "| Module | Source path | Pinned SHA |\n|---|---|---|\n" +
+    "| `spec-artifacts-process` | `spec_artifacts_process/manifest.yaml` " +
+    "| `c197b1c0a10148164620ca0626d82ca5edd032bd` |\n";
+  const CASE =
+    "id: a-case\nmode: minting\nlanguage: typescript\nmodule: ecosystem\n" +
+    "kind: failure\n";
+
+  afterAll(() => {
+    for (const root of roots) rmSync(root, { recursive: true, force: true });
+  });
+
+  test("TC-968 the report records WHICH declaration it scored against, by content and by upstream SHA", () => {
+    // TC-968
+    // agent-ix/quoin#240. The report named the engine and the corpus and not
+    // the third input — and two of Wave 3's six fixes changed nothing else, so
+    // `spec-artifacts-process#68` scored `held` in the same word the runner
+    // prints for a family that genuinely did not move.
+    //
+    // BOTH keys, because they answer different questions. The digest is
+    // measured from the bytes and is what makes two reports comparable or not;
+    // the SHA is the corpus's own record of where the copy came from and is the
+    // only way a reader can fetch the diff. A vendored copy carries no git
+    // identity of its own, so neither can be derived from the other.
+    const before = declarationRoot("archetypes: []\n", TABLE);
+    const after = declarationRoot("archetypes: []\n# one comment\n", TABLE);
+    const same = declarationRoot("archetypes: []\n", TABLE);
+
+    const p = declarationProvenance(before, ["ecosystem"]);
+    expect(p.digest).toMatch(/^sha256:[0-9a-f]{64}$/);
+    expect(p.sources).toEqual({
+      "spec-artifacts-process": "c197b1c0a10148164620ca0626d82ca5edd032bd",
+    });
+    expect(p.modules).toHaveProperty("ecosystem");
+
+    // One byte of one manifest moves the digest; identical bytes do not. A
+    // digest that did not move on a manifest edit would make the refusal below
+    // unable to fire on exactly the change it exists for.
+    expect(declarationProvenance(after, []).digest).not.toBe(p.digest);
+    expect(declarationProvenance(same, []).digest).toBe(p.digest);
+  });
+
+  test("TC-969 a VENDORED.md present and unreadable fails the run rather than reporting no source", () => {
+    // TC-969
+    // A provenance file that has silently stopped parsing is WORSE than none:
+    // the report keeps printing a confident `sources` beside numbers nobody can
+    // join to a commit, which is the defect quoin#229 records one file over.
+    // Absent is a different claim and is allowed — a declaration built by hand
+    // for a one-off comparison has no upstream SHA to record.
+    const broken = declarationRoot("archetypes: []\n", "no table here\n");
+    expect(() => declarationProvenance(broken, [])).toThrow(
+      /records no .* row this runner can read/s,
+    );
+    expect(
+      declarationProvenance(declarationRoot("a: 1\n", null), []).sources,
+    ).toBeNull();
+  });
+
+  test("TC-970 cases resolve their module under an overridden root, and an id resolving to nothing fails the run", () => {
+    // TC-970
+    // The axis itself: the same cases, scored against another declaration with
+    // the engine held fixed. That is the only way a declaration-side fix is
+    // distinguishable from a fix that had no effect.
+    //
+    // And the failure mode it opens. `findingsFor` decides between `--module`
+    // and `IX_FILAMENT_MODULES_PATH` by asking whether the directory holds a
+    // `manifest.yaml`; a directory that does not exist answers "no", the engine
+    // registers no archetype, every case reports an empty payload, and a
+    // mistyped path reads as a total detection collapse.
+    const corpusRoot = mkdtempSync(join(tmpdir(), "quoin-tier1-"));
+    roots.push(corpusRoot);
+    const dir = join(corpusRoot, "cases", "minting", "a-case");
+    mkdirSync(join(dir, "input"), { recursive: true });
+    writeFileSync(join(dir, "case.yaml"), CASE);
+    const declaration = declarationRoot("archetypes: []\n", TABLE);
+
+    const { corpora, modulesRoot } = loadCorpus(
+      { families: {} },
+      corpusRoot,
+      declaration,
+    );
+    expect(modulesRoot).toBe(declaration);
+    expect(corpora[0].module).toBe(join(declaration, "ecosystem"));
+
+    const empty = mkdtempSync(join(tmpdir(), "quoin-decl-empty-"));
+    roots.push(empty);
+    expect(() => loadCorpus({ families: {} }, corpusRoot, empty)).toThrow(
+      /holds no `manifest\.yaml`/,
+    );
+  });
+});
+
+describe("a delta across unlike inputs", () => {
+  const report = {
+    provenance: { engine: "e2", corpus: "c1", declaration: { digest: "d1" } },
+    corpora: 34,
+    by_language: [{ language: "rust", corpora: 34 }],
+    families: [
+      {
+        family: "f",
+        truePositives: 1,
+        falsePositives: 0,
+        misses: 0,
+        precision: 0.5,
+        recall: 1,
+      },
+    ],
+    finding_localisation_rate: null,
+  };
+  const previous = {
+    provenance: { engine: "e1", corpus: "c1", declaration: { digest: "d1" } },
+    corpora: 34,
+    by_language: [{ language: "rust", corpora: 34 }],
+    families: [{ family: "f", precision: 1, recall: 1 }],
+    finding_localisation_rate: null,
+  };
+
+  test("TC-971 the ENGINE may move and still be compared; the corpus, the declaration and the population may not", () => {
+    // TC-971
+    // agent-ix/quoin#231 and #240's second half. Varying the engine and
+    // comparing is what this benchmark is FOR, so it is deliberately not a
+    // reason. The other three are the inputs a delta is only meaningful while
+    // they are held — and the last pass nearly published a spurious result on
+    // exactly this: the `84740d4` leg read `regressed` on every family because
+    // the scored population had gone 21 -> 34, and nothing in the output said
+    // so.
+    expect(comparability(report, previous).comparable).toBe(true);
+
+    const moved = (patch: object) =>
+      comparability({ ...report, ...patch }, previous);
+    expect(
+      moved({
+        provenance: { ...report.provenance, declaration: { digest: "d2" } },
+      }).reasons[0].field,
+    ).toBe("provenance.declaration.digest");
+    expect(
+      moved({ provenance: { ...report.provenance, corpus: "c2" } }).reasons[0]
+        .field,
+    ).toBe("provenance.corpus");
+    expect(moved({ corpora: 21 }).reasons[0].field).toBe("corpora");
+    // The count can hold while the MIX changes — swap a rust case for a python
+    // one and `corpora` says 34 either way.
+    expect(
+      moved({ by_language: [{ language: "python", corpora: 34 }] }).reasons[0]
+        .field,
+    ).toBe("by_language");
+  });
+
+  test("TC-972 an incomparable run withdraws the CLAIM, keeps both numbers, and is not called a regression", () => {
+    // TC-972
+    // The distinction that makes this usable: `improved` and `regressed` are
+    // statements about a CHANGE, and a run over another declaration did not
+    // observe one — the subject changed. Reporting it as a regression would
+    // blame the toolchain for the operator moving an input, which is what
+    // happened to the `84740d4` leg last pass. Both values stay printed,
+    // because withholding them would make the axis unmeasurable.
+    const verdicts = ratchet(
+      {
+        ...report,
+        provenance: { ...report.provenance, declaration: { digest: "d2" } },
+      },
+      previous,
+      {
+        metrics: {
+          finding_precision: { direction: "higher-is-better" },
+          finding_recall: { direction: "higher-is-better" },
+        },
+      },
+    );
+    expect(verdicts).toHaveLength(2);
+    for (const v of verdicts) expect(v.verdict).toBe("incomparable");
+    const precision = verdicts.find((v) => v.metric === "finding_precision");
+    expect(precision?.observed).toBe(0.5);
+    expect(precision?.baseline).toBe(1);
+    expect(precision?.why).toMatch(/provenance\.declaration\.digest moved/);
+    // Without the guard this run reads `regressed` — the assertion that the
+    // refusal is doing work rather than restating a verdict already reached.
+    expect(
+      ratchet(report, previous, {
+        metrics: {
+          finding_precision: { direction: "higher-is-better" },
+          finding_recall: { direction: "higher-is-better" },
+        },
+      }).find((v) => v.metric === "finding_precision")?.verdict,
+    ).toBe("regressed");
+  });
+
+  test("TC-973 a baseline that records nothing for a field is UNKNOWN, not a match", () => {
+    // TC-973
+    // The legacy baseline. It records no declaration, so a comparison against
+    // it rests on an assumption nobody stated — and the two available answers,
+    // refusing every old baseline or quietly assuming it matched, are both
+    // wrong. It is reported as unknown and the run says so out loud.
+    const legacy = {
+      ...previous,
+      provenance: { engine: "e1", corpus: "c1" },
+    };
+    const { comparable, unknown } = comparability(report, legacy);
+    expect(comparable).toBe(true);
+    expect(unknown).toContain("provenance.declaration.digest");
   });
 });
 
