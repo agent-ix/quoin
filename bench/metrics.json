@@ -12,6 +12,7 @@
     "section-matches-nothing",
     "tag-on-non-binding-symbol",
     "undeclared-type-value",
+    "untracked-id-near-miss",
     "vacuous-under-guard"
   ],
   "metrics": {

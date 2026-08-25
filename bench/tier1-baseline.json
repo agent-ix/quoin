@@ -1,7 +1,7 @@
 {
   "provenance": {
-    "engine": "quire 0.30.2 (engine ff0abd0)",
-    "corpus": "84c00380d20a5fcb0a61e805f17045200c3136eb",
+    "engine": "quire 0.30.2 (engine e5a6ccc)",
+    "corpus": "0be99d8febeae2eb2c0c07432a0b96f589ac4b95",
     "declaration": {
       "root": "corpus/modules",
       "digest": "sha256:819807f757c7c6468be257c82c2d23bd5210f451eb3811c63b5ff5fa8d04b403",
@@ -19,7 +19,7 @@
     {
       "family": "archetype-matches-nothing",
       "truePositives": 3,
-      "falsePositives": 296,
+      "falsePositives": 300,
       "misses": 0,
       "precision": null,
       "shape": "advisory",
@@ -28,7 +28,7 @@
     {
       "family": "catch-all-universal",
       "truePositives": 2,
-      "falsePositives": 64,
+      "falsePositives": 65,
       "misses": 0,
       "precision": null,
       "shape": "advisory",
@@ -116,6 +116,15 @@
       "recall": 1
     },
     {
+      "family": "untracked-id-near-miss",
+      "truePositives": 1,
+      "falsePositives": 0,
+      "misses": 0,
+      "precision": 1,
+      "shape": "defect",
+      "recall": 1
+    },
+    {
       "family": "vacuous-under-guard",
       "truePositives": 1,
       "falsePositives": 0,
@@ -152,20 +161,20 @@
       "reason": "no-symbol-bound"
     }
   ],
-  "positional": 23,
-  "finding_localisation_rate": 0.852,
+  "positional": 24,
+  "finding_localisation_rate": 0.857,
   "minting.section_hit_rate": {
-    "rate": 0.959,
-    "matched": 141,
-    "examined": 147,
-    "cases_reporting": 75
+    "rate": 0.96,
+    "matched": 143,
+    "examined": 149,
+    "cases_reporting": 76
   },
   "actionability": {
     "actionable": 2,
-    "total": 393,
+    "total": 399,
     "rate": 0.005
   },
-  "corpora": 75,
+  "corpora": 76,
   "by_language": [
     {
       "language": "python",
@@ -229,12 +238,12 @@
     },
     {
       "language": "rust",
-      "corpora": 38,
+      "corpora": 39,
       "families": [
         {
           "family": "archetype-matches-nothing",
           "truePositives": 1,
-          "falsePositives": 148,
+          "falsePositives": 152,
           "misses": 0,
           "precision": null,
           "shape": "advisory",
@@ -243,7 +252,7 @@
         {
           "family": "catch-all-universal",
           "truePositives": 2,
-          "falsePositives": 27,
+          "falsePositives": 28,
           "misses": 0,
           "precision": null,
           "shape": "advisory",
@@ -331,6 +340,15 @@
           "recall": 1
         },
         {
+          "family": "untracked-id-near-miss",
+          "truePositives": 1,
+          "falsePositives": 0,
+          "misses": 0,
+          "precision": 1,
+          "shape": "defect",
+          "recall": 1
+        },
+        {
           "family": "vacuous-under-guard",
           "truePositives": 1,
           "falsePositives": 0,
@@ -406,11 +424,7 @@
     {
       "case": "tag-on-describe-header",
       "ticket": "agent-ix/quire-rs#273"
-    },
-    {
-      "case": "test-name-id-in-fn-name",
-      "ticket": "agent-ix/quire-rs#307"
     }
   ],
-  "findings": 393
+  "findings": 399
 }

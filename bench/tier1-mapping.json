@@ -64,6 +64,12 @@
       "shape": "advisory",
       "shape_note": "A CORPUS-LEVEL advisory, exactly the shape `catch-all-universal` is and for the reason agent-ix/quoin#234 gives: precision is not a meaningful quantity over a population where the finding is expected almost everywhere. MEASURED as a defect-shaped family over 75 corpora: 3 true positives and 296 false positives, 1% precision — and every one of the 296 is CORRECT. A three-file fixture declaring the real ecosystem model has no NFR, no StR, no suite and no inspection document, so four declarations legitimately match nothing in each. That number measured the fixture SIZE, not the detector. The same fact at ecosystem scale is 741 findings over 243 of 245 repositories, 484 of them `inspection` and `suite` (agent-ix/spec-artifacts-process#75). Scored on recall and localisation only; the seeded cases are found, which is what this family can honestly be asked."
     },
+    "untracked-id-near-miss": {
+      "source": "coverage.diagnostics",
+      "key": "untracked-id-near-miss",
+      "locus": "path",
+      "$note": "agent-ix/quire-rs#307, landed in `e5a6ccc` (CR-136): an id in `untracked_symbols` and an id in `unbacked_rows` differing only by zero-padding, case or separator — one id written twice. The engine held both halves and joined neither, and neither older diagnostic could fire: `no-symbol-bound` needs `bound == 0` and `hollow-denominator` needs `matched == 0`, and on the fixture both are 1, because the tag bound fine — to the wrong id. So the repository reported a flawless census beside a zero backing ratio with nothing explaining the gap. Declared the day the token started being emitted rather than after a run reported nothing (quoin#236)."
+    },
     "vacuous-under-guard": {
       "source": "coverage.suspicions",
       "key": "vacuous-under-guard",
