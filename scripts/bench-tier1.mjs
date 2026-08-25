@@ -44,6 +44,16 @@ const METRICS = join(ROOT, "bench", "metrics.json");
 const BASELINE = join(ROOT, "bench", "tier1-baseline.json");
 
 /**
+ * The engine metric quire-rs#270 added, declared in `bench/metrics.json`.
+ *
+ * Named here rather than inlined because its ABSENCE is the signal that
+ * matters: an engine that predates #270 emits no such metric, and the report
+ * must say `null` for it rather than 0 — not-measured and zero are different
+ * claims about the same run.
+ */
+const SECTION_HIT_RATE = "minting.section_hit_rate";
+
+/**
  * The bracketed reason a `validate` finding ends with, and the path and line it
  * opens with.
  *
@@ -78,7 +88,17 @@ function run(bin, args, extraEnv) {
   }
 }
 
-/** Every finding one corpus produced, already mapped to a family. */
+/**
+ * Every finding one corpus produced, already mapped to a family — and the raw
+ * `metrics[]` block the same `quire coverage` run emitted.
+ *
+ * The metrics come back UNFILTERED alongside the findings because a metric can
+ * matter to the benchmark without belonging to a family. `minting.section_hit_rate`
+ * is the measured case: quire-rs#270 added it to every case's payload and the
+ * runner had nowhere to put it, so the one Wave 3 signal that reached this
+ * corpus was read, dropped, and reported as "nothing changed"
+ * (agent-ix/quoin#236).
+ */
 function findingsFor(quire, corpusRoot, module, mapping) {
   const out = [];
   const bySource = (name) =>
@@ -213,7 +233,7 @@ function findingsFor(quire, corpusRoot, module, mapping) {
     });
   }
 
-  return out;
+  return { findings: out, metrics: payload.metrics ?? [] };
 }
 
 /**
@@ -255,6 +275,7 @@ export function loadCorpus(mapping = null, root = join(ROOT, "corpus")) {
       const expect = existsSync(expectPath)
         ? (parseYaml(readFileSync(expectPath, "utf8")) ?? {})
         : {};
+      assertReasonsMapped(meta, expect, mapping, join("cases", mode, name));
 
       corpora.push({
         name: meta.id,
@@ -263,11 +284,66 @@ export function loadCorpus(mapping = null, root = join(ROOT, "corpus")) {
         defects: label?.defects ?? defectsFrom(meta, expect, mapping),
         input: join(dir, "input"),
         module: join(root, "modules", meta.module),
+        // The corpus's own declaration of what language the case is written
+        // in, carried into the report so a `held` verdict cannot be read as
+        // "verified in every language". At pin 088771b all 22 cases said
+        // `rust`, and two of Wave 3's six fixes were for the other two
+        // (agent-ix/quoin#236).
+        language: meta.language ?? "unknown",
         pending: meta.pending ?? null,
       });
     }
   }
   return { corpora };
+}
+
+/** The family that claims a diagnostic reason, or `null`. */
+function familyForReason(mapping, reason) {
+  const entry = Object.entries(mapping?.families ?? {}).find(
+    ([, m]) => m.key === reason,
+  );
+  return entry ? entry[0] : null;
+}
+
+/**
+ * Refuse a case whose own `expect.yaml` names a reason no family claims.
+ *
+ * THE DEFECT THIS FIXES (agent-ix/quoin#236): `defectsFrom` used to `continue`
+ * past an unrecognised reason, so `cases/minting/section-name-mismatch` —
+ * whose only expectation is `section-matches-nothing` — derived ZERO defects.
+ * It was also marked `pending: agent-ix/quire-rs#270`, and the FR-065 check
+ * that must fail when a pending case starts passing reads those derived
+ * defects: with none to read it returned before running the engine. The fix
+ * landed in quire-rs `a6a1144`, the engine emitted the diagnostic on every run
+ * from then on, the marker went stale, and the benchmark's own guard said
+ * nothing. Three silent skips in a row, each individually defensible.
+ *
+ * Checked for EVERY case, not only unlabelled ones: a `labels/` file supplies
+ * `defects` and short-circuits `defectsFrom` entirely, so validating inside it
+ * would leave the labelled half of the corpus unguarded.
+ *
+ * The escape hatch is the one the table already has. A reason no detector
+ * produces yet gets a family with `source: none`, the way
+ * `gate-that-gates-nothing` does — a DECLARED hole, reviewable in the mapping,
+ * rather than an absence a reader has to infer from a row that never appears.
+ */
+function assertReasonsMapped(meta, expect, mapping, where) {
+  const unmapped = (expect.diagnostic_reasons ?? []).filter(
+    (reason) => !familyForReason(mapping, reason),
+  );
+  if (!unmapped.length) return;
+  throw new Error(
+    `bench-tier1: ${where} (${meta.id}) expects diagnostic reason` +
+      `${unmapped.length === 1 ? "" : "s"} ` +
+      unmapped.map((r) => `\`${r}\``).join(", ") +
+      ` that no family in bench/tier1-mapping.json claims. Refusing to score ` +
+      `a case whose own ground truth maps to nothing: the finding would be ` +
+      `read out of the payload, matched against no family, and vanish — and ` +
+      `a family that silently stops scoring reads exactly like a family with ` +
+      `nothing to report. Declare an owning family (use \`source: none\` when ` +
+      `no detector exists yet, as \`gate-that-gates-nothing\` does), or drop ` +
+      `the reason from expect.yaml (agent-ix/quoin#236).`,
+  );
 }
 
 /**
@@ -296,10 +372,10 @@ function defectsFrom(meta, expect, mapping) {
   // seeded defects broke the corpus's own isolation property, which is what
   // `every corpus isolates ONE defect family` caught.
   for (const reason of expect.diagnostic_reasons ?? []) {
-    const entry = Object.entries(mapping?.families ?? {}).find(
-      ([, m]) => m.key === reason,
-    );
-    if (!entry) continue;
+    // `assertReasonsMapped` has already refused the case if any reason here
+    // maps to nothing, so this cannot be null — and it USED to be a silent
+    // `continue`, which is the whole of agent-ix/quoin#236.
+    const family = familyForReason(mapping, reason);
     return [
       {
         // The corpus's id convention — two initials and an ordinal — made
@@ -307,7 +383,7 @@ function defectsFrom(meta, expect, mapping) {
         // whole corpus set` caught: `marker-form-mismatch` and
         // `marker-form-declared` both initialise to `MF`.
         id: `${initials(meta.id)}-${ordinal(meta.id)}`,
-        family: entry[0],
+        family,
         location: expect.diagnostic_paths?.[reason] ?? null,
         findable: meta.findable !== false,
         expect_reason: reason,
@@ -322,12 +398,10 @@ function defectsFrom(meta, expect, mapping) {
         collateral: (expect.diagnostic_reasons ?? [])
           .filter((r) => r !== reason)
           .map((r) => {
-            const e = Object.entries(mapping?.families ?? {}).find(
-              ([, m]) => m.key === r,
-            );
-            return e
+            const collateralFamily = familyForReason(mapping, r);
+            return collateralFamily
               ? {
-                  family: e[0],
+                  family: collateralFamily,
                   reason: r,
                   // Required by TC-950: collateral suppresses a finding from
                   // the precision denominator, so a declaration with no stated
@@ -387,10 +461,8 @@ function initials(id) {
 function familyOf(meta, expect, mapping) {
   if (meta.kind !== "failure") return "none";
   for (const reason of expect.diagnostic_reasons ?? []) {
-    const entry = Object.entries(mapping?.families ?? {}).find(
-      ([, m]) => m.key === reason,
-    );
-    if (entry) return entry[0];
+    const family = familyForReason(mapping, reason);
+    if (family) return family;
   }
   return "none";
 }
@@ -417,6 +489,35 @@ export function localisationRate(score) {
   const truePositives = score.families.reduce((n, f) => n + f.truePositives, 0);
   if (truePositives === 0) return null;
   return Number((score.positional / truePositives).toFixed(3));
+}
+
+/**
+ * The same score, cut by the language each case declares (agent-ix/quoin#236).
+ *
+ * Not a second measurement: the findings and labels are the ones the whole-run
+ * score already used, partitioned by the case they came from. So the per-language
+ * rows always sum to the corpus the headline was computed over, and a reader can
+ * see WHICH language a family's recall came from.
+ *
+ * This exists because "held" was read as "verified" over a corpus that was 22
+ * of 22 Rust. A family at recall 1.00 in Rust and with no case at all in Python
+ * is not a family that works; it is a family nobody has asked the question of,
+ * and the two look identical in a single table.
+ */
+export function byLanguage(corpora, findings, labels, shapes) {
+  const languages = [...new Set(corpora.map((c) => c.language))].sort();
+  return languages.map((language) => {
+    const names = new Set(
+      corpora.filter((c) => c.language === language).map((c) => c.name),
+    );
+    const mine = findings.filter((f) => names.has(f.corpus));
+    const theirs = labels.filter((l) => names.has(l.corpus));
+    return {
+      language,
+      corpora: names.size,
+      families: scoreFindings(mine, theirs, shapes).families,
+    };
+  });
 }
 
 /**
@@ -458,6 +559,19 @@ function assertEngine(quire) {
     );
   }
   console.error(`bench-tier1: engine ${line}`);
+  return line;
+}
+
+/**
+ * The corpus revision this run read, or `null`.
+ *
+ * `null` and never a guess: a baseline that names the wrong corpus is worse
+ * than one that names none, because the second cannot be believed and the
+ * first can.
+ */
+function corpusRevision(root = join(ROOT, "corpus")) {
+  const probe = run("git", ["-C", root, "rev-parse", "HEAD"]);
+  return probe.ok ? probe.stdout.trim() : null;
 }
 
 function main() {
@@ -476,7 +590,7 @@ function main() {
         "this benchmark exists to catch.",
     );
   }
-  assertEngine(quire);
+  const engine = assertEngine(quire);
 
   const mapping = JSON.parse(readFileSync(MAPPING, "utf8"));
   const dictionary = loadMetrics(METRICS);
@@ -502,11 +616,30 @@ function main() {
   // detector counted as a miss on every run turns a deliberate red into
   // permanent noise. Excluding it from CHECKING is not: without this, the fix
   // lands, the marker goes stale, and no score ever moves to say so.
+  //
+  // A pending case that states nothing the check can run is REFUSED, not
+  // skipped. `if (!want.length) return false` was the second half of
+  // agent-ix/quoin#236: `section-name-mismatch` derived no defects because its
+  // one expected reason mapped to no family, so this returned before the
+  // engine was ever invoked — the guard written for exactly this situation
+  // passed a case whose fix had already shipped. A `pending:` marker with no
+  // runnable expectation cannot expire, and a marker that cannot expire is
+  // permanent.
+  for (const c of pending) {
+    if (c.defects.some((d) => d.expect_reason)) continue;
+    throw new Error(
+      `bench-tier1: pending case ${c.name} (${c.pending}) names no ` +
+        `\`expect_reason\`, so the FR-065 stale-pending check has nothing to ` +
+        `run and would pass it forever. State the diagnostic reason the ` +
+        `ticket will make fire — in the case's own \`expect.yaml\` under ` +
+        `\`diagnostic_reasons:\`, or in its \`labels/\` entry — or drop the ` +
+        `\`pending:\` marker (agent-ix/quoin#236).`,
+    );
+  }
   const stale = pending.filter((c) => {
     const want = c.defects.map((d) => d.expect_reason).filter(Boolean);
-    if (!want.length) return false;
-    const found = findingsFor(quire, c.input, c.module, mapping);
-    return want.every((r) => found.some((f) => f.reason === r));
+    const { findings } = findingsFor(quire, c.input, c.module, mapping);
+    return want.every((r) => findings.some((f) => f.reason === r));
   });
   if (stale.length) {
     throw new Error(
@@ -527,8 +660,33 @@ function main() {
   );
 
   const found = [];
+  // `matched` and `examined` summed across cases, NOT a mean of per-case
+  // rates: a mean over cases weights a one-document case the same as a
+  // twenty-document one, and this metric's denominator is documents.
+  const sectionHit = { matched: 0, examined: 0, cases: 0 };
   for (const corpus of labels.corpora) {
-    found.push(...findingsFor(quire, corpus.input, corpus.module, mapping));
+    const { findings, metrics } = findingsFor(
+      quire,
+      corpus.input,
+      corpus.module,
+      mapping,
+    );
+    // The case a finding came from, and the language that case is written in.
+    // Carried on the finding so the score can be cut per language without a
+    // second run — `scoreFindings` ignores fields it does not read.
+    found.push(
+      ...findings.map((f) => ({
+        ...f,
+        corpus: corpus.name,
+        language: corpus.language,
+      })),
+    );
+    const hit = metrics.find((m) => m.name === SECTION_HIT_RATE);
+    if (hit && hit.state === "measured") {
+      sectionHit.cases += 1;
+      sectionHit.matched += Number(hit.matched ?? 0);
+      sectionHit.examined += Number(hit.examined ?? 0);
+    }
   }
 
   // A metric-sourced finding counts only at the value its label expects; the
@@ -554,13 +712,39 @@ function main() {
   );
   const score = scoreFindings(scoredFindings, flat, shapes);
   report = {
+    // WHAT PRODUCED THIS. `bench/tier1-baseline.json` carried no engine and no
+    // corpus revision, so which binary wrote any of its five git revisions had
+    // to be reconstructed from `quire-cli`'s pin history by timestamp and then
+    // confirmed by rebuilding — for a number the file states as fact. That is
+    // the join agent-ix/quoin#229 is about, and it is the whole of it that a
+    // report can supply on its own. Deterministic on purpose: no timestamp, so
+    // two runs of the same engine over the same corpus are byte-identical.
+    provenance: { engine, corpus: corpusRevision() },
     families: score.families,
     excluded: score.excluded,
     collateral: score.collateral,
     positional: score.positional,
     finding_localisation_rate: localisationRate(score),
+    // Declared in bench/metrics.json, REPORTED and never ratcheted: its value
+    // is a property of the corpus population, so it would move when a fixture
+    // was authored. `null` — not 0 — when no case reports it, which is what an
+    // engine predating quire-rs#270 looks like.
+    "minting.section_hit_rate": sectionHit.examined
+      ? {
+          rate: Number((sectionHit.matched / sectionHit.examined).toFixed(3)),
+          matched: sectionHit.matched,
+          examined: sectionHit.examined,
+          cases_reporting: sectionHit.cases,
+        }
+      : null,
     actionability: scoreActionability(scoredFindings),
     corpora: labels.corpora.length,
+    // The score, cut by the language each case declares. A single `held` table
+    // over a corpus that is 100% one language reads as "verified everywhere"
+    // and is not: at qa-corpus 088771b every one of the 22 cases said `rust`,
+    // and Wave 3's python and TypeScript fixes could not be exercised at all
+    // (agent-ix/quoin#236).
+    by_language: byLanguage(labels.corpora, scoredFindings, flat, shapes),
     // In the REPORT, not only on stderr: a consumer piping stdout would
     // otherwise read a corpus count with nothing recording that a case exists
     // and was deliberately dropped.
@@ -654,7 +838,10 @@ function render(report, verdicts) {
   const pct = (v) =>
     v === null ? "  n/a" : `${Math.round(v * 100)}%`.padStart(5);
   const lines = [
-    `tier-1: ${report.corpora} corpora, ${report.findings} findings mapped`,
+    `tier-1: ${report.corpora} corpora, ${report.findings} findings mapped` +
+      ` (${report.by_language
+        .map((l) => `${l.language} ${l.corpora}`)
+        .join(", ")})`,
     "",
     "family                     TP  FP  miss   prec  recall",
   ];
@@ -671,7 +858,30 @@ function render(report, verdicts) {
       `(${report.positional} of ${report.families.reduce((n, f) => n + f.truePositives, 0)} true positives named where)`,
     `actionability_rate         ${pct(report.actionability.rate)} ` +
       `(${report.actionability.actionable} of ${report.actionability.total} findings name a row or a line)`,
+    `minting.section_hit_rate   ${
+      report[SECTION_HIT_RATE] === null
+        ? "  n/a (no case reports it — this engine predates quire-rs#270)"
+        : `${pct(report[SECTION_HIT_RATE].rate)} (${report[SECTION_HIT_RATE].matched}` +
+          ` of ${report[SECTION_HIT_RATE].examined} declared minting documents` +
+          ` reached their section, over ${report[SECTION_HIT_RATE].cases_reporting} cases)`
+    }`,
   );
+  // Per language, because one table over a single-language corpus reads as a
+  // statement about the toolchain and is a statement about Rust.
+  lines.push("", "by language:");
+  for (const lang of report.by_language) {
+    lines.push(`  ${lang.language} (${lang.corpora} corpora)`);
+    for (const f of lang.families) {
+      lines.push(
+        `    ${f.family.padEnd(24)} ${String(f.truePositives).padStart(2)}  ` +
+          `${String(f.falsePositives).padStart(2)}  ${String(f.misses).padStart(4)}  ` +
+          `${pct(f.precision)}  ${pct(f.recall)}`,
+      );
+    }
+    if (!lang.families.length) {
+      lines.push("    (no family scored a finding or a label here)");
+    }
+  }
   if (report.collateral.length) {
     lines.push(
       "",

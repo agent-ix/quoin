@@ -10,12 +10,21 @@
  * it here would make the unit suite depend on a `quire` binary.
  */
 
-import { readFileSync } from "node:fs";
+import {
+  mkdtempSync,
+  mkdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import {
+  byLanguage,
   compare,
   flattenLabels,
+  loadCorpus,
   localisationRate,
   ratchet,
 } from "../scripts/bench-tier1.mjs";
@@ -144,6 +153,108 @@ describe("a vanished family", () => {
     // The baseline is kept, so `--update` after a deletion cannot ratify it.
     expect(gone?.baseline).toBe(1);
     expect(gone?.why).toMatch(/did not report it at all/);
+  });
+});
+
+describe("a case whose ground truth maps to nothing", () => {
+  // Torn down in `afterAll`: quoin#184 was `mkdtempSync` fixtures with no
+  // teardown path, and a test suite that leaves temp trees behind is the same
+  // class of defect as a worktree nobody removes.
+  const roots: string[] = [];
+  const corpusWith = (expectYaml: string, caseYaml: string) => {
+    const root = mkdtempSync(join(tmpdir(), "quoin-tier1-"));
+    roots.push(root);
+    const dir = join(root, "cases", "minting", "a-case");
+    mkdirSync(join(dir, "input"), { recursive: true });
+    writeFileSync(join(dir, "case.yaml"), caseYaml);
+    writeFileSync(join(dir, "expect.yaml"), expectYaml);
+    return root;
+  };
+  const CASE =
+    "id: a-case\nmode: minting\nlanguage: rust\nmodule: m\nkind: failure\n";
+  const MAPPING = {
+    families: {
+      "known-family": { source: "coverage.diagnostics", key: "known-reason" },
+    },
+  };
+
+  afterAll(() => {
+    for (const root of roots) rmSync(root, { recursive: true, force: true });
+  });
+
+  test("TC-964 an expect.yaml reason no family claims fails the run, and is never skipped", () => {
+    // TC-964
+    // agent-ix/quoin#236. `defectsFrom` used to `continue` past a reason the
+    // family table did not recognise, so a case whose ONLY expectation was
+    // unmapped derived zero defects — and derived zero silently. That is how
+    // `section-matches-nothing` reached the corpus, the engine emitted it on
+    // every run, and no tier-1 number moved: quire-rs#270 is the fix for
+    // 3,514 unminted TC ids across 88 repositories, and the benchmark could
+    // not see it land.
+    const root = corpusWith("diagnostic_reasons:\n  - unmapped-reason\n", CASE);
+    expect(() => loadCorpus(MAPPING, root)).toThrow(
+      /no family in bench\/tier1-mapping\.json claims/,
+    );
+    // And the message must name the escape hatch, or the next author deletes
+    // the expectation to make the error go away.
+    expect(() => loadCorpus(MAPPING, root)).toThrow(/source: none/);
+  });
+
+  test("TC-965 a recognised reason still loads, so the guard refuses only the hole", () => {
+    // TC-965
+    // The counterpart assertion. A guard that refuses everything is not a
+    // guard, and this is what distinguishes "the table does not claim this"
+    // from "the table is unreadable".
+    const root = corpusWith("diagnostic_reasons:\n  - known-reason\n", CASE);
+    const { corpora } = loadCorpus(MAPPING, root);
+    expect(corpora).toHaveLength(1);
+    expect(corpora[0].family).toBe("known-family");
+    expect(corpora[0].defects[0].expect_reason).toBe("known-reason");
+    // The language the case declares rides along, so a `held` verdict over a
+    // single-language corpus cannot read as "verified in every language".
+    expect(corpora[0].language).toBe("rust");
+  });
+});
+
+describe("the score cut by language", () => {
+  test("TC-966 per-language rows partition the same findings the headline used", () => {
+    // TC-966
+    // The corpus was 22 of 22 `language: rust` when Wave 3's before/after
+    // reported every family `held`, and two of the six fixes were for the
+    // other two languages. One table over one language reads as a statement
+    // about the toolchain and is a statement about Rust (quoin#236).
+    const corpora = [
+      { name: "r1", language: "rust" },
+      { name: "p1", language: "python" },
+    ];
+    const findings = [
+      { family: "f", reason: "x", corpus: "r1", path: "src/lib.rs" },
+      { family: "f", reason: "x", corpus: "p1", path: "src/lib.py" },
+    ];
+    const labels = [
+      {
+        id: "R-1",
+        family: "f",
+        corpus: "r1",
+        location: "src/lib.rs",
+        findable: true,
+      },
+      {
+        id: "P-1",
+        family: "f",
+        corpus: "p1",
+        location: "src/lib.py",
+        findable: true,
+      },
+    ];
+    const cut = byLanguage(corpora, findings, labels, {});
+    expect(cut.map((l) => l.language)).toEqual(["python", "rust"]);
+    for (const row of cut) {
+      expect(row.corpora).toBe(1);
+      expect(row.families).toEqual([
+        expect.objectContaining({ family: "f", truePositives: 1, misses: 0 }),
+      ]);
+    }
   });
 });
 

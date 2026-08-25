@@ -38,6 +38,12 @@
       "shape": "advisory",
       "shape_note": "A CORPUS-LEVEL advisory, not a defect-shaped finding: one per corpus, fired whenever a document's criteria are all the catch-all. Precision is not a meaningful quantity over a population where the finding is expected almost everywhere \u2014 measured, it fired on 10 of 21 cases and EVERY ONE was correct (`by_property: {universal: 1}` on each), yet scored 0.167. That number read as 'wrong five times in six' while being wrong zero times in twelve. Scored on recall and localisation only (agent-ix/quoin#234)."
     },
+    "section-matches-nothing": {
+      "source": "coverage.diagnostics",
+      "key": "section-matches-nothing",
+      "locus": "path",
+      "$note": "The archetype matched and the declared section did not, so the declared table is never reached and every id under it is stranded. Sized at 3,514 unminted TC ids across 88 repositories — the dominant ecosystem failure mode, and the one this table could not see. agent-ix/quire-rs#270 added the diagnostic in `a6a1144`; it fired on `cases/minting/section-name-mismatch` from that commit onward and NO family carried the key, so the payload signal mapped to nothing and the tier-1 score did not move (agent-ix/quoin#236). The runner now REFUSES a case whose `expect.yaml` names a reason no family claims, which is the guard that should have caught this and was inert."
+    },
     "vacuous-under-guard": {
       "source": "coverage.suspicions",
       "key": "vacuous-under-guard",

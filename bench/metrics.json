@@ -7,6 +7,7 @@
     "marker-form-mismatch",
     "mocked-confirmation",
     "oracle-is-code-copy",
+    "section-matches-nothing",
     "undeclared-type-value",
     "vacuous-under-guard"
   ],
@@ -62,6 +63,14 @@
       "tolerance": 0,
       "baseline": 0,
       "baseline_note": "A GATE, not a score. Expected exactly 0 with no tolerance, and it never ratchets: a benchmark that let this score 0.98 and pass would be measuring the wrong thing."
+    },
+    "minting.section_hit_rate": {
+      "unit": "fraction of (trace target, minting document) pairs",
+      "population": "the pairs `quire coverage` reports over the SCORED cases of the tier-1 corpus — a trace target's `archetype:` selects a document and its `exclude:` keeps it. Pending cases are excluded, the same population every other tier-1 number is drawn from",
+      "method": "`matched` summed over `examined` summed, across every scored case whose `quire coverage --json` payload carries the metric in state `measured`. `null` — never 0 — when NO case reports it, which is exactly what an engine predating agent-ix/quire-rs#270 looks like: absent and zero are different claims. REPORTED, NOT RATCHETED: the value is a property of the corpus POPULATION, since a seeded section mismatch lowers it and its control raises it, so ratcheting it would score fixture authorship rather than the toolchain. What it is here for is the ENGINE axis — the metric's presence is the signal that #270 landed",
+      "direction": "higher-is-better",
+      "baseline": null,
+      "baseline_note": "No baseline, deliberately: see `method`. Measured 2026-08-24 over the expanded corpus — `null` at engine `84740d4` (no case reports the metric; it does not exist) and measured at engine `816e187`. This metric appearing on every case was ONE of the two Wave 3 payload signals the tier-1 runner did not read, and the reason `bench/wave3-before-after.md` scored every family `held` (agent-ix/quoin#236)."
     },
     "finding_localisation_rate": {
       "unit": "fraction of confirmed findings",
