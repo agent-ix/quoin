@@ -148,10 +148,24 @@ function findingsFor(quire, corpusRoot, module, mapping) {
   const val = run(
     quire,
     single
-      ? ["validate", "--diagnostics-format", "json", "--scope", corpusRoot,
-         "--module", module, "spec/*.md"]
-      : ["validate", "--diagnostics-format", "json", "--scope", corpusRoot,
-         "spec/*.md"],
+      ? [
+          "validate",
+          "--diagnostics-format",
+          "json",
+          "--scope",
+          corpusRoot,
+          "--module",
+          module,
+          "spec/*.md",
+        ]
+      : [
+          "validate",
+          "--diagnostics-format",
+          "json",
+          "--scope",
+          corpusRoot,
+          "spec/*.md",
+        ],
     env,
   );
   const wanted = new Set(bySource("validate.findings").map(([, m]) => m.key));
@@ -357,7 +371,8 @@ function ordinal(id) {
 /** `marker-form-mismatch` -> `MF`. The corpus's defect-id convention. */
 function initials(id) {
   const parts = id.split(/[^a-z0-9]+/i).filter(Boolean);
-  const letters = (parts[0]?.[0] ?? "X") + (parts[1]?.[0] ?? parts[0]?.[1] ?? "X");
+  const letters =
+    (parts[0]?.[0] ?? "X") + (parts[1]?.[0] ?? parts[0]?.[1] ?? "X");
   return letters.toUpperCase();
 }
 

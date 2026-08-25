@@ -41,6 +41,16 @@ __pycache__/
 # Spec artifacts (quire-managed, not prettier-formatted)
 spec/
 
+# The agent-ix/qa-corpus submodule (agent-ix/quoin#237). Another repository's
+# tree, pinned by SHA and read IN PLACE — `cd corpus/cases/<mode>/<case>/input
+# && quire coverage --scope .` is the exact reproduction CI runs. Formatting it
+# rewrites bytes quoin does not own, dirties the submodule working tree, and
+# makes this repo's lint gate depend on qa-corpus's house style. Same reasoning
+# as the two entries below: these bytes are evidence, not source. Landing the
+# submodule without this entry left `make lint` red for three commits, two of
+# which reported it clean.
+corpus/
+
 # Vendored quire output schemas (FR-029). These are copies of quire-rs's
 # published artifacts and must match them BYTE FOR BYTE — their SHA-256 is
 # recorded in src/quire/contract.ts and asserted on every test run. Formatting
