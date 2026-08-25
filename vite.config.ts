@@ -102,6 +102,15 @@ export default defineConfig(({ command }) => ({
   test: {
     globals: true,
     environment: "node",
+    // `corpus/` is the qa-corpus submodule: miniature repositories that are
+    // DATA, run by `quire`, never by vitest. Its TypeScript fixtures are named
+    // `*.test.ts` because that is what a TypeScript evidence file is called and
+    // the fixture must look like the thing it stands for — so vitest collected
+    // them, executed them, and failed on `trace is not defined`, which is the
+    // undeclared marker one of them exists to seed. This is the same class as
+    // the ecosystem manifest's `source_exclude`: a fixture tree that carries
+    // real-looking evidence has to be excluded by the tools that walk it.
+    exclude: ["node_modules/**", "dist/**", "corpus/**"],
     // The command-level tests shell out to `quire coverage`, which needs an
     // installed module declaring a `traceability:` model. Present on a
     // developer machine, absent in CI — see tests/global-setup.ts.
