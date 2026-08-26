@@ -1,8 +1,8 @@
 {
   "provenance": {
     "engine": "quire 0.30.2 (engine 5a68ceb)",
-    "corpus": "624dadb5724a426dacc6cdcb875f4262460a541f",
-    "corpus_input": "sha256:a3e720736173643ef7dcfeb75ee276c2654e0d5964662ba6a112085cb96451da",
+    "corpus": "70957a6f64a66ec5a4df77ca86de6c40eb7a2267",
+    "corpus_input": "sha256:39707d9f4f5bf170fe7615b50a4bba21811c5fd8f264577e5e4ebfbea86fda34",
     "declaration": {
       "root": "corpus/modules",
       "digest": "sha256:d8ca08f94af83403fee5649f4efd17ccb9f6f0a3e2c8f98e1312b69080a95049",
@@ -21,10 +21,10 @@
     }
   },
   "bounds": {
-    "gap_count": 24,
+    "gap_count": 23,
     "covered_count": 58,
     "covered_pending_count": 0,
-    "out_of_scope_count": 14,
+    "out_of_scope_count": 15,
     "declared_cells": 96,
     "matrix": [
       {
@@ -165,7 +165,8 @@
         "source": "162 occurrences / 18 roots against 1,004 above an it/test (CR-119 re-measure;",
         "cells": {
           "python": {
-            "state": "GAP"
+            "state": "out-of-scope",
+            "reason": "`symbols/python.rs` emits declarations, not JavaScript-style registration calls, so it has no `describe()` header symbol for this defect. A tag above a top-level call attaches to the file container and is covered by `attachment/tag-at-module-scope` instead."
           },
           "rust": {
             "state": "out-of-scope",
@@ -591,7 +592,7 @@
       "reached": 3,
       "population": 4,
       "rate": 0.75,
-      "gap_count": 24,
+      "gap_count": 23,
       "misses": ["tag-inside-string-literal-python"]
     },
     {
@@ -601,7 +602,7 @@
       "reached": 3,
       "population": 4,
       "rate": 0.75,
-      "gap_count": 24,
+      "gap_count": 23,
       "misses": ["tag-inside-string-literal-python"]
     },
     {
@@ -611,7 +612,7 @@
       "reached": 3,
       "population": 4,
       "rate": 0.75,
-      "gap_count": 24,
+      "gap_count": 23,
       "misses": ["tag-inside-string-literal-python"]
     },
     {
@@ -621,7 +622,7 @@
       "reached": 3,
       "population": 3,
       "rate": 1,
-      "gap_count": 24,
+      "gap_count": 23,
       "misses": []
     },
     {
@@ -631,7 +632,7 @@
       "reached": 3,
       "population": 3,
       "rate": 1,
-      "gap_count": 24,
+      "gap_count": 23,
       "misses": []
     },
     {
@@ -641,7 +642,7 @@
       "reached": 2,
       "population": 3,
       "rate": 0.667,
-      "gap_count": 24,
+      "gap_count": 23,
       "misses": ["marker-mismatch"]
     },
     {
@@ -651,7 +652,7 @@
       "reached": 4,
       "population": 5,
       "rate": 0.8,
-      "gap_count": 24,
+      "gap_count": 23,
       "misses": ["tag-inside-string-literal-typescript"]
     },
     {
@@ -661,7 +662,7 @@
       "reached": 4,
       "population": 5,
       "rate": 0.8,
-      "gap_count": 24,
+      "gap_count": 23,
       "misses": ["tag-inside-string-literal-typescript"]
     },
     {
@@ -671,7 +672,7 @@
       "reached": 4,
       "population": 5,
       "rate": 0.8,
-      "gap_count": 24,
+      "gap_count": 23,
       "misses": ["tag-inside-string-literal-typescript"]
     },
     {
@@ -681,7 +682,7 @@
       "reached": 4,
       "population": 4,
       "rate": 1,
-      "gap_count": 24,
+      "gap_count": 23,
       "misses": []
     },
     {
@@ -691,7 +692,7 @@
       "reached": 2,
       "population": 4,
       "rate": 0.5,
-      "gap_count": 24,
+      "gap_count": 23,
       "misses": ["model-mints-nothing", "undeclared-coverage-vocabulary"]
     },
     {
@@ -701,7 +702,7 @@
       "reached": 2,
       "population": 4,
       "rate": 0.5,
-      "gap_count": 24,
+      "gap_count": 23,
       "misses": ["model-mints-nothing", "undeclared-coverage-vocabulary"]
     },
     {
@@ -711,7 +712,7 @@
       "reached": 5,
       "population": 5,
       "rate": 1,
-      "gap_count": 24,
+      "gap_count": 23,
       "misses": []
     },
     {
@@ -721,7 +722,7 @@
       "reached": 5,
       "population": 5,
       "rate": 1,
-      "gap_count": 24,
+      "gap_count": 23,
       "misses": []
     },
     {
@@ -731,7 +732,7 @@
       "reached": 3,
       "population": 5,
       "rate": 0.6,
-      "gap_count": 24,
+      "gap_count": 23,
       "misses": ["catch-all-properties", "stale-name-correct-trace"]
     },
     {
@@ -741,7 +742,7 @@
       "reached": 1,
       "population": 1,
       "rate": 1,
-      "gap_count": 24,
+      "gap_count": 23,
       "misses": []
     },
     {
@@ -751,7 +752,7 @@
       "reached": 1,
       "population": 1,
       "rate": 1,
-      "gap_count": 24,
+      "gap_count": 23,
       "misses": []
     },
     {
@@ -761,7 +762,7 @@
       "reached": 1,
       "population": 1,
       "rate": 1,
-      "gap_count": 24,
+      "gap_count": 23,
       "misses": []
     },
     {
@@ -771,7 +772,7 @@
       "reached": 1,
       "population": 2,
       "rate": 0.5,
-      "gap_count": 24,
+      "gap_count": 23,
       "misses": ["greenfield-no-symbols"]
     },
     {
@@ -781,7 +782,7 @@
       "reached": 1,
       "population": 2,
       "rate": 0.5,
-      "gap_count": 24,
+      "gap_count": 23,
       "misses": ["greenfield-no-symbols"]
     },
     {
@@ -791,7 +792,7 @@
       "reached": 1,
       "population": 2,
       "rate": 0.5,
-      "gap_count": 24,
+      "gap_count": 23,
       "misses": ["greenfield-no-symbols"]
     },
     {
@@ -801,7 +802,7 @@
       "reached": 1,
       "population": 1,
       "rate": 1,
-      "gap_count": 24,
+      "gap_count": 23,
       "misses": []
     },
     {
@@ -811,7 +812,7 @@
       "reached": 1,
       "population": 1,
       "rate": 1,
-      "gap_count": 24,
+      "gap_count": 23,
       "misses": []
     },
     {
@@ -821,7 +822,7 @@
       "reached": 1,
       "population": 1,
       "rate": 1,
-      "gap_count": 24,
+      "gap_count": 23,
       "misses": []
     },
     {
@@ -831,7 +832,7 @@
       "reached": 3,
       "population": 3,
       "rate": 1,
-      "gap_count": 24,
+      "gap_count": 23,
       "misses": []
     },
     {
@@ -841,7 +842,7 @@
       "reached": 3,
       "population": 3,
       "rate": 1,
-      "gap_count": 24,
+      "gap_count": 23,
       "misses": []
     },
     {
@@ -851,7 +852,7 @@
       "reached": 0,
       "population": 3,
       "rate": 0,
-      "gap_count": 24,
+      "gap_count": 23,
       "misses": [
         "tag-names-bare-fr-python",
         "tag-names-undeclared-section-python",
@@ -865,7 +866,7 @@
       "reached": 3,
       "population": 3,
       "rate": 1,
-      "gap_count": 24,
+      "gap_count": 23,
       "misses": []
     },
     {
@@ -875,7 +876,7 @@
       "reached": 3,
       "population": 3,
       "rate": 1,
-      "gap_count": 24,
+      "gap_count": 23,
       "misses": []
     },
     {
@@ -885,7 +886,7 @@
       "reached": 0,
       "population": 3,
       "rate": 0,
-      "gap_count": 24,
+      "gap_count": 23,
       "misses": [
         "tag-names-bare-fr-rust",
         "tag-names-undeclared-section-rust",
@@ -899,7 +900,7 @@
       "reached": 3,
       "population": 3,
       "rate": 1,
-      "gap_count": 24,
+      "gap_count": 23,
       "misses": []
     },
     {
@@ -909,7 +910,7 @@
       "reached": 3,
       "population": 3,
       "rate": 1,
-      "gap_count": 24,
+      "gap_count": 23,
       "misses": []
     },
     {
@@ -919,7 +920,7 @@
       "reached": 0,
       "population": 3,
       "rate": 0,
-      "gap_count": 24,
+      "gap_count": 23,
       "misses": [
         "tag-names-bare-fr-typescript",
         "tag-names-undeclared-section-typescript",
@@ -933,7 +934,7 @@
       "reached": 5,
       "population": 5,
       "rate": 1,
-      "gap_count": 24,
+      "gap_count": 23,
       "misses": []
     },
     {
@@ -943,7 +944,7 @@
       "reached": 4,
       "population": 5,
       "rate": 0.8,
-      "gap_count": 24,
+      "gap_count": 23,
       "misses": ["no-testmatrix-document-python"]
     },
     {
@@ -953,7 +954,7 @@
       "reached": 4,
       "population": 5,
       "rate": 0.8,
-      "gap_count": 24,
+      "gap_count": 23,
       "misses": ["no-testmatrix-document-python"]
     },
     {
@@ -963,7 +964,7 @@
       "reached": 6,
       "population": 7,
       "rate": 0.857,
-      "gap_count": 24,
+      "gap_count": 23,
       "misses": ["no-symbol-method-in-the-verification-column"]
     },
     {
@@ -973,7 +974,7 @@
       "reached": 5,
       "population": 7,
       "rate": 0.714,
-      "gap_count": 24,
+      "gap_count": 23,
       "misses": [
         "no-symbol-method-in-the-verification-column",
         "no-testmatrix-document-rust"
@@ -986,7 +987,7 @@
       "reached": 5,
       "population": 7,
       "rate": 0.714,
-      "gap_count": 24,
+      "gap_count": 23,
       "misses": [
         "no-symbol-method-in-the-verification-column",
         "no-testmatrix-document-rust"
@@ -999,7 +1000,7 @@
       "reached": 5,
       "population": 5,
       "rate": 1,
-      "gap_count": 24,
+      "gap_count": 23,
       "misses": []
     },
     {
@@ -1009,7 +1010,7 @@
       "reached": 4,
       "population": 5,
       "rate": 0.8,
-      "gap_count": 24,
+      "gap_count": 23,
       "misses": ["no-testmatrix-document-typescript"]
     },
     {
@@ -1019,7 +1020,7 @@
       "reached": 4,
       "population": 5,
       "rate": 0.8,
-      "gap_count": 24,
+      "gap_count": 23,
       "misses": ["no-testmatrix-document-typescript"]
     },
     {
@@ -1029,7 +1030,7 @@
       "reached": 1,
       "population": 1,
       "rate": 1,
-      "gap_count": 24,
+      "gap_count": 23,
       "misses": []
     },
     {
@@ -1039,7 +1040,7 @@
       "reached": 0,
       "population": 1,
       "rate": 0,
-      "gap_count": 24,
+      "gap_count": 23,
       "misses": ["hollow-metric"]
     },
     {
@@ -1049,7 +1050,7 @@
       "reached": 0,
       "population": 1,
       "rate": 0,
-      "gap_count": 24,
+      "gap_count": 23,
       "misses": ["hollow-metric"]
     },
     {
@@ -1059,7 +1060,7 @@
       "reached": 1,
       "population": 4,
       "rate": 0.25,
-      "gap_count": 24,
+      "gap_count": 23,
       "misses": [
         "gate-that-gates-nothing",
         "mocked-confirmation",
@@ -1073,7 +1074,7 @@
       "reached": 1,
       "population": 4,
       "rate": 0.25,
-      "gap_count": 24,
+      "gap_count": 23,
       "misses": [
         "gate-that-gates-nothing",
         "mocked-confirmation",
@@ -1087,7 +1088,7 @@
       "reached": 1,
       "population": 4,
       "rate": 0.25,
-      "gap_count": 24,
+      "gap_count": 23,
       "misses": [
         "gate-that-gates-nothing",
         "mocked-confirmation",
