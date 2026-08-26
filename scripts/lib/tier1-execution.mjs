@@ -283,20 +283,6 @@ export function createTier1Executor() {
         corpusRoot,
       ).stdout.trim();
 
-      const results = join(scratch, "run.json");
-      writeFileSync(
-        results,
-        JSON.stringify({
-          entries: [
-            {
-              symbol: "tier1::controlled_fixture",
-              outcome: "pass",
-              traceIds: obligations.map((obligation) => obligation.id),
-            },
-          ],
-        }),
-      );
-
       // Quoin intentionally resolves `quire` by name. Put the explicitly
       // selected benchmark binary at that name so the audit leg cannot drift
       // to a different installed engine.
@@ -315,6 +301,52 @@ export function createTier1Executor() {
           name,
           corpusRoot,
         );
+
+      // Bind the symbols the production source inspector actually observed.
+      // A suite-wide placeholder would let one mock contaminate unrelated
+      // bindings and make the controlled benchmark reward a false positive.
+      const inspected = invoke(
+        [
+          "evidence",
+          "inspect-mocks",
+          "--repo",
+          repo,
+          "--suite",
+          "SUITE-TIER1",
+          "--commit",
+          head,
+          "--dry-run",
+          "--json",
+        ],
+        "quoin evidence inspect-mocks --dry-run",
+      );
+      let inspection;
+      try {
+        inspection = JSON.parse(inspected.stdout);
+      } catch {
+        throw new Error(
+          `bench-tier1: quoin evidence inspect-mocks produced no JSON for ${corpusRoot}`,
+        );
+      }
+      const inspectedSymbols = [
+        ...new Set(
+          (inspection.injections ?? []).map((injection) => injection.symbol),
+        ),
+      ].sort();
+      const results = join(scratch, "run.json");
+      writeFileSync(
+        results,
+        JSON.stringify({
+          entries: (inspectedSymbols.length > 0
+            ? inspectedSymbols
+            : ["tier1::controlled_fixture"]
+          ).map((symbol) => ({
+            symbol,
+            outcome: "pass",
+            traceIds: obligations.map((obligation) => obligation.id),
+          })),
+        }),
+      );
 
       invoke(
         [

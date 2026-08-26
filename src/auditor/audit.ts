@@ -713,7 +713,13 @@ function mockedBindings(
   const out: MockInjection[] = [];
   for (const binding of bindings) {
     const hit = injections
-      .filter((i) => i.suite === binding.suite)
+      .filter(
+        (injection) =>
+          injection.suite === binding.suite &&
+          binding.symbols.some((symbol) =>
+            sameTestSymbol(symbol, injection.symbol),
+          ),
+      )
       .find((i) =>
         i.injects.some((identifier) => {
           const tokens = words(identifier);
@@ -726,6 +732,23 @@ function mockedBindings(
     if (hit) out.push(hit);
   }
   return out;
+}
+
+/**
+ * Join source inspection to the test result that established the binding.
+ *
+ * Cargo-style result adapters commonly qualify a test as
+ * `module::test_name`, while source inspection can only see `test_name`.
+ * Accept that exact terminal qualification, but never substring or suite-only
+ * matches: a stand-in in one test must not accuse every obligation discharged
+ * by a large workspace suite.
+ */
+function sameTestSymbol(recorded: string, inspected: string): boolean {
+  return (
+    recorded === inspected ||
+    recorded.endsWith(`::${inspected}`) ||
+    inspected.endsWith(`::${recorded}`)
+  );
 }
 
 /** Lowercased word-ish tokens, minus the words every sentence shares. */

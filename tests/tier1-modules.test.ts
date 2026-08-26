@@ -225,6 +225,7 @@ if (args.join(" ").includes("evidence audit")) {
         message: "located",
       },
     ]);
-    expect(execution.toolCalls()).toBe(9);
+    // Symbol discovery adds one production inspect-mocks dry run.
+    expect(execution.toolCalls()).toBe(10);
   });
 });

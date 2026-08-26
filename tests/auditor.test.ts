@@ -1064,6 +1064,44 @@ describe("mocked confirmation (#204)", () => {
     ).toHaveLength(0);
   });
 
+  it("TC-1075 an unrelated mock in the same suite is not joined", () => {
+    // A workspace suite can contain thousands of tests. Suite identity alone
+    // is not evidence that this particular binding used the stand-in.
+    const report = audit({
+      obligations: [obligation],
+      bindings: [binding],
+      runs: [run],
+      injections: [
+        {
+          suite: "SUITE-001",
+          symbol: "tests::unrelated_confirmation_test",
+          injects: ["Confirmation::allow"],
+        },
+      ],
+    });
+    expect(
+      report.findings.filter((f) => f.kind === "mocked-confirmation"),
+    ).toHaveLength(0);
+  });
+
+  it("TC-1076 source symbols join module-qualified result symbols", () => {
+    const report = audit({
+      obligations: [obligation],
+      bindings: [binding],
+      runs: [run],
+      injections: [
+        {
+          suite: "SUITE-001",
+          symbol: "confirms",
+          injects: ["Confirmation::allow"],
+        },
+      ],
+    });
+    expect(
+      report.findings.filter((f) => f.kind === "mocked-confirmation"),
+    ).toHaveLength(1);
+  });
+
   it("TC-939 no injection data means silence, not a clean bill", () => {
     // TC-939
     // Absent means "nobody looked". Reporting healthy here would be the

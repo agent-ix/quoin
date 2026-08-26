@@ -128,7 +128,15 @@ function testMarkers(source: string, extension: string): TestMarker[] {
           ];
   for (const pattern of patterns) {
     for (const match of source.matchAll(pattern)) {
-      const at = match.index ?? 0;
+      const matchAt = match.index ?? 0;
+      // The Python pattern consumes the preceding newline. Starting the span
+      // there makes pythonFunctionEnd see that same newline as the end of the
+      // signature and terminate before the function body. Anchor on the
+      // captured function name instead.
+      const at =
+        extension === ".py"
+          ? matchAt + match[0].lastIndexOf(match[1])
+          : matchAt;
       const end =
         extension === ".py"
           ? pythonFunctionEnd(source, at)

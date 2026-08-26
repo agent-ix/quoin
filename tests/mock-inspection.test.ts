@@ -31,7 +31,7 @@ describe("mock injection inspection producer (agent-ix/quoin#204)", () => {
     write(
       root,
       "python/test_shell.py",
-      `def test_confirms():\n    assert grant_root(Confirmation.allow())\n`,
+      `class Confirmation:\n    pass\n\ndef test_confirms():\n    assert grant_root(Confirmation.allow())\n`,
     );
     write(
       root,
@@ -47,7 +47,7 @@ describe("mock injection inspection producer (agent-ix/quoin#204)", () => {
       "Confirmation.allow",
     ]);
     expect(found.map((item) => `${item.path}:${item.line}`)).toEqual([
-      "python/test_shell.py:2",
+      "python/test_shell.py:5",
       "rust/src/lib.rs:4",
       "typescript/shell.test.ts:1",
     ]);
