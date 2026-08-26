@@ -1,16 +1,16 @@
 {
   "provenance": {
     "engine": "quire 0.30.2 (engine 5a68ceb)",
-    "corpus": "e897576643938c0c8a1288d54288398d90bbd75a",
-    "corpus_input": "sha256:b0c05893272d5ed4038e70faa49fd31d5ba4cbebe8140ab449c0a50813703c64",
+    "corpus": "94cd4e8af67d4bdd3f9e85d6130afe6f3fc6b237",
+    "corpus_input": "sha256:ae0b99d7d81bb4b4e605c79c78b5039b6d5ce021125c7a462aef49eea5828729",
     "declaration": {
       "root": "corpus/modules",
-      "digest": "sha256:d8ca08f94af83403fee5649f4efd17ccb9f6f0a3e2c8f98e1312b69080a95049",
+      "digest": "sha256:fba2468b01d6b4c5ce5e580195ace46d8322923436d5cfecb5a72a6186bd6a84",
       "modules": {
         "ecosystem": "sha256:829e7343fd73ffd65ec6fee8653228f37f919d236f01e6219b40cc1ee559c140",
         "variants/dead-coverage-vocabulary": "sha256:02b809f935173c9caf70736a238313e242a713bf9003894cd55a93d2f70034cf",
         "variants/live-coverage-vocabulary": "sha256:92e0a54c19855ca4e9cd2417cb8f356b7766e4e0d1fa0256eba82be5694cd5c7",
-        "variants/no-implements-declaration": "sha256:b2928e02205acfe202489f508065be134fb829ddecf01a4a883caf9467ac28dd",
+        "variants/no-implements-declaration": "sha256:1a11fc62ef36bc6bf34887e848cf02b7c19e19a985c2c71358a68f8b798aa190",
         "variants/no-trace-targets": "sha256:7327dd6ee367cad8c000be26ba5bd99a5495d7a014693e6f40cce113ee593ba0",
         "variants/one-trace-target": "sha256:cbbce295481d128c68ec4637435843634ca3e2ff1dd0f248445a245379176ebf"
       },
@@ -21,10 +21,10 @@
     }
   },
   "bounds": {
-    "gap_count": 20,
-    "covered_count": 61,
+    "gap_count": 16,
+    "covered_count": 63,
     "covered_pending_count": 0,
-    "out_of_scope_count": 15,
+    "out_of_scope_count": 17,
     "declared_cells": 96,
     "matrix": [
       {
@@ -457,14 +457,16 @@
         "source": "agent-ix/quire-rs#226",
         "cells": {
           "python": {
-            "state": "GAP"
+            "state": "out-of-scope",
+            "reason": "`implements-never-asked-python` tests variant declaration `variants/no-implements-declaration`: The absent implements declaration is the measured condition; the ecosystem declaration intentionally cannot exhibit not_computed."
           },
           "rust": {
             "state": "out-of-scope",
-            "reason": "`implements-never-asked` tests variant declaration `variants/no-implements-declaration`: The absent implements declaration is the measured condition; the ecosystem declaration intentionally cannot exhibit not_computed."
+            "reason": "`implements-never-asked-rust` tests variant declaration `variants/no-implements-declaration`: The absent implements declaration is the measured condition; the ecosystem declaration intentionally cannot exhibit not_computed."
           },
           "typescript": {
-            "state": "GAP"
+            "state": "out-of-scope",
+            "reason": "`implements-never-asked-typescript` tests variant declaration `variants/no-implements-declaration`: The absent implements declaration is the measured condition; the ecosystem declaration intentionally cannot exhibit not_computed."
           }
         }
       },
@@ -474,13 +476,13 @@
         "source": "agent-ix/quire-rs#267",
         "cells": {
           "python": {
-            "state": "GAP"
+            "state": "covered"
           },
           "rust": {
             "state": "covered"
           },
           "typescript": {
-            "state": "GAP"
+            "state": "covered"
           }
         }
       },
@@ -592,7 +594,7 @@
       "reached": 3,
       "population": 4,
       "rate": 0.75,
-      "gap_count": 20,
+      "gap_count": 16,
       "misses": [
         "tag-inside-string-literal-python"
       ]
@@ -604,7 +606,7 @@
       "reached": 3,
       "population": 4,
       "rate": 0.75,
-      "gap_count": 20,
+      "gap_count": 16,
       "misses": [
         "tag-inside-string-literal-python"
       ]
@@ -616,7 +618,7 @@
       "reached": 3,
       "population": 4,
       "rate": 0.75,
-      "gap_count": 20,
+      "gap_count": 16,
       "misses": [
         "tag-inside-string-literal-python"
       ]
@@ -628,7 +630,7 @@
       "reached": 3,
       "population": 4,
       "rate": 0.75,
-      "gap_count": 20,
+      "gap_count": 16,
       "misses": [
         "tag-inside-string-literal-rust"
       ]
@@ -640,7 +642,7 @@
       "reached": 3,
       "population": 4,
       "rate": 0.75,
-      "gap_count": 20,
+      "gap_count": 16,
       "misses": [
         "tag-inside-string-literal-rust"
       ]
@@ -652,7 +654,7 @@
       "reached": 2,
       "population": 4,
       "rate": 0.5,
-      "gap_count": 20,
+      "gap_count": 16,
       "misses": [
         "marker-mismatch",
         "tag-inside-string-literal-rust"
@@ -665,7 +667,7 @@
       "reached": 4,
       "population": 5,
       "rate": 0.8,
-      "gap_count": 20,
+      "gap_count": 16,
       "misses": [
         "tag-inside-string-literal-typescript"
       ]
@@ -677,7 +679,7 @@
       "reached": 4,
       "population": 5,
       "rate": 0.8,
-      "gap_count": 20,
+      "gap_count": 16,
       "misses": [
         "tag-inside-string-literal-typescript"
       ]
@@ -689,7 +691,7 @@
       "reached": 4,
       "population": 5,
       "rate": 0.8,
-      "gap_count": 20,
+      "gap_count": 16,
       "misses": [
         "tag-inside-string-literal-typescript"
       ]
@@ -701,7 +703,7 @@
       "reached": 4,
       "population": 4,
       "rate": 1,
-      "gap_count": 20,
+      "gap_count": 16,
       "misses": []
     },
     {
@@ -711,7 +713,7 @@
       "reached": 2,
       "population": 4,
       "rate": 0.5,
-      "gap_count": 20,
+      "gap_count": 16,
       "misses": [
         "model-mints-nothing",
         "undeclared-coverage-vocabulary"
@@ -724,7 +726,7 @@
       "reached": 2,
       "population": 4,
       "rate": 0.5,
-      "gap_count": 20,
+      "gap_count": 16,
       "misses": [
         "model-mints-nothing",
         "undeclared-coverage-vocabulary"
@@ -737,7 +739,7 @@
       "reached": 5,
       "population": 5,
       "rate": 1,
-      "gap_count": 20,
+      "gap_count": 16,
       "misses": []
     },
     {
@@ -747,7 +749,7 @@
       "reached": 5,
       "population": 5,
       "rate": 1,
-      "gap_count": 20,
+      "gap_count": 16,
       "misses": []
     },
     {
@@ -757,7 +759,7 @@
       "reached": 3,
       "population": 5,
       "rate": 0.6,
-      "gap_count": 20,
+      "gap_count": 16,
       "misses": [
         "catch-all-properties",
         "stale-name-correct-trace"
@@ -770,7 +772,7 @@
       "reached": 1,
       "population": 1,
       "rate": 1,
-      "gap_count": 20,
+      "gap_count": 16,
       "misses": []
     },
     {
@@ -780,7 +782,7 @@
       "reached": 1,
       "population": 1,
       "rate": 1,
-      "gap_count": 20,
+      "gap_count": 16,
       "misses": []
     },
     {
@@ -790,7 +792,7 @@
       "reached": 1,
       "population": 1,
       "rate": 1,
-      "gap_count": 20,
+      "gap_count": 16,
       "misses": []
     },
     {
@@ -800,7 +802,7 @@
       "reached": 1,
       "population": 2,
       "rate": 0.5,
-      "gap_count": 20,
+      "gap_count": 16,
       "misses": [
         "greenfield-no-symbols"
       ]
@@ -812,7 +814,7 @@
       "reached": 1,
       "population": 2,
       "rate": 0.5,
-      "gap_count": 20,
+      "gap_count": 16,
       "misses": [
         "greenfield-no-symbols"
       ]
@@ -824,7 +826,7 @@
       "reached": 1,
       "population": 2,
       "rate": 0.5,
-      "gap_count": 20,
+      "gap_count": 16,
       "misses": [
         "greenfield-no-symbols"
       ]
@@ -836,7 +838,7 @@
       "reached": 1,
       "population": 1,
       "rate": 1,
-      "gap_count": 20,
+      "gap_count": 16,
       "misses": []
     },
     {
@@ -846,7 +848,7 @@
       "reached": 1,
       "population": 1,
       "rate": 1,
-      "gap_count": 20,
+      "gap_count": 16,
       "misses": []
     },
     {
@@ -856,7 +858,7 @@
       "reached": 1,
       "population": 1,
       "rate": 1,
-      "gap_count": 20,
+      "gap_count": 16,
       "misses": []
     },
     {
@@ -866,7 +868,7 @@
       "reached": 3,
       "population": 3,
       "rate": 1,
-      "gap_count": 20,
+      "gap_count": 16,
       "misses": []
     },
     {
@@ -876,7 +878,7 @@
       "reached": 3,
       "population": 3,
       "rate": 1,
-      "gap_count": 20,
+      "gap_count": 16,
       "misses": []
     },
     {
@@ -886,7 +888,7 @@
       "reached": 0,
       "population": 3,
       "rate": 0,
-      "gap_count": 20,
+      "gap_count": 16,
       "misses": [
         "tag-names-bare-fr-python",
         "tag-names-undeclared-section-python",
@@ -900,7 +902,7 @@
       "reached": 3,
       "population": 3,
       "rate": 1,
-      "gap_count": 20,
+      "gap_count": 16,
       "misses": []
     },
     {
@@ -910,7 +912,7 @@
       "reached": 3,
       "population": 3,
       "rate": 1,
-      "gap_count": 20,
+      "gap_count": 16,
       "misses": []
     },
     {
@@ -920,7 +922,7 @@
       "reached": 0,
       "population": 3,
       "rate": 0,
-      "gap_count": 20,
+      "gap_count": 16,
       "misses": [
         "tag-names-bare-fr-rust",
         "tag-names-undeclared-section-rust",
@@ -934,7 +936,7 @@
       "reached": 3,
       "population": 3,
       "rate": 1,
-      "gap_count": 20,
+      "gap_count": 16,
       "misses": []
     },
     {
@@ -944,7 +946,7 @@
       "reached": 3,
       "population": 3,
       "rate": 1,
-      "gap_count": 20,
+      "gap_count": 16,
       "misses": []
     },
     {
@@ -954,7 +956,7 @@
       "reached": 0,
       "population": 3,
       "rate": 0,
-      "gap_count": 20,
+      "gap_count": 16,
       "misses": [
         "tag-names-bare-fr-typescript",
         "tag-names-undeclared-section-typescript",
@@ -968,7 +970,7 @@
       "reached": 6,
       "population": 6,
       "rate": 1,
-      "gap_count": 20,
+      "gap_count": 16,
       "misses": []
     },
     {
@@ -978,7 +980,7 @@
       "reached": 5,
       "population": 6,
       "rate": 0.833,
-      "gap_count": 20,
+      "gap_count": 16,
       "misses": [
         "no-testmatrix-document-python"
       ]
@@ -990,7 +992,7 @@
       "reached": 5,
       "population": 6,
       "rate": 0.833,
-      "gap_count": 20,
+      "gap_count": 16,
       "misses": [
         "no-testmatrix-document-python"
       ]
@@ -1002,7 +1004,7 @@
       "reached": 6,
       "population": 7,
       "rate": 0.857,
-      "gap_count": 20,
+      "gap_count": 16,
       "misses": [
         "no-symbol-method-in-the-verification-column"
       ]
@@ -1014,7 +1016,7 @@
       "reached": 5,
       "population": 7,
       "rate": 0.714,
-      "gap_count": 20,
+      "gap_count": 16,
       "misses": [
         "no-symbol-method-in-the-verification-column",
         "no-testmatrix-document-rust"
@@ -1027,7 +1029,7 @@
       "reached": 5,
       "population": 7,
       "rate": 0.714,
-      "gap_count": 20,
+      "gap_count": 16,
       "misses": [
         "no-symbol-method-in-the-verification-column",
         "no-testmatrix-document-rust"
@@ -1040,7 +1042,7 @@
       "reached": 6,
       "population": 6,
       "rate": 1,
-      "gap_count": 20,
+      "gap_count": 16,
       "misses": []
     },
     {
@@ -1050,7 +1052,7 @@
       "reached": 5,
       "population": 6,
       "rate": 0.833,
-      "gap_count": 20,
+      "gap_count": 16,
       "misses": [
         "no-testmatrix-document-typescript"
       ]
@@ -1062,7 +1064,7 @@
       "reached": 5,
       "population": 6,
       "rate": 0.833,
-      "gap_count": 20,
+      "gap_count": 16,
       "misses": [
         "no-testmatrix-document-typescript"
       ]
@@ -1074,7 +1076,7 @@
       "reached": 1,
       "population": 1,
       "rate": 1,
-      "gap_count": 20,
+      "gap_count": 16,
       "misses": []
     },
     {
@@ -1084,7 +1086,7 @@
       "reached": 0,
       "population": 1,
       "rate": 0,
-      "gap_count": 20,
+      "gap_count": 16,
       "misses": [
         "hollow-metric"
       ]
@@ -1096,7 +1098,7 @@
       "reached": 0,
       "population": 1,
       "rate": 0,
-      "gap_count": 20,
+      "gap_count": 16,
       "misses": [
         "hollow-metric"
       ]
@@ -1108,7 +1110,7 @@
       "reached": 1,
       "population": 4,
       "rate": 0.25,
-      "gap_count": 20,
+      "gap_count": 16,
       "misses": [
         "gate-that-gates-nothing",
         "mocked-confirmation",
@@ -1122,7 +1124,7 @@
       "reached": 1,
       "population": 4,
       "rate": 0.25,
-      "gap_count": 20,
+      "gap_count": 16,
       "misses": [
         "gate-that-gates-nothing",
         "mocked-confirmation",
@@ -1136,7 +1138,7 @@
       "reached": 1,
       "population": 4,
       "rate": 0.25,
-      "gap_count": 20,
+      "gap_count": 16,
       "misses": [
         "gate-that-gates-nothing",
         "mocked-confirmation",
@@ -1148,24 +1150,24 @@
     {
       "family": "archetype-matches-nothing",
       "truePositives": 3,
-      "falsePositives": 452,
+      "falsePositives": 460,
       "misses": 0,
       "precision": 1,
       "shape": "advisory",
       "recall": 1,
       "precision_basis": {
         "precision": 1,
-        "truePositives": 451,
+        "truePositives": 459,
         "falsePositives": 0,
         "unadjudicated": 4,
-        "byStanding": 448,
-        "rulings": 477
+        "byStanding": 456,
+        "rulings": 493
       }
     },
     {
       "family": "catch-all-universal",
       "truePositives": 2,
-      "falsePositives": 90,
+      "falsePositives": 94,
       "misses": 0,
       "precision": 1,
       "shape": "advisory",
@@ -1174,7 +1176,7 @@
         "precision": 1,
         "truePositives": 2,
         "falsePositives": 0,
-        "unadjudicated": 90,
+        "unadjudicated": 94,
         "byStanding": 0,
         "rulings": 4
       }
@@ -1371,22 +1373,22 @@
   "positional": 35,
   "finding_localisation_rate": 0.854,
   "minting.section_hit_rate": {
-    "rate": 0.973,
-    "matched": 216,
-    "examined": 222,
-    "cases_reporting": 116
+    "rate": 0.974,
+    "matched": 224,
+    "examined": 230,
+    "cases_reporting": 120
   },
   "actionability": {
-    "actionable": 112,
-    "total": 591,
-    "rate": 0.19
+    "actionable": 116,
+    "total": 603,
+    "rate": 0.192
   },
   "cost_per_confirmed_insight": {
     "tokens": null,
-    "toolCalls": 237,
+    "toolCalls": 245,
     "truePositives": 41,
     "tokensPer": null,
-    "toolCallsPer": 5.78
+    "toolCallsPer": 5.98
   },
   "sentinel.silent_zero": {
     "count": 0,
@@ -1464,7 +1466,7 @@
       }
     ]
   },
-  "corpora": 117,
+  "corpora": 121,
   "by_language": [
     {
       "language": "n/a",
@@ -1484,7 +1486,7 @@
             "falsePositives": 0,
             "unadjudicated": 4,
             "byStanding": 16,
-            "rulings": 477
+            "rulings": 493
           }
         },
         {
@@ -1527,29 +1529,29 @@
     },
     {
       "language": "python",
-      "corpora": 28,
+      "corpora": 30,
       "families": [
         {
           "family": "archetype-matches-nothing",
           "truePositives": 1,
-          "falsePositives": 112,
+          "falsePositives": 116,
           "misses": 0,
           "precision": 1,
           "shape": "advisory",
           "recall": 1,
           "precision_basis": {
             "precision": 1,
-            "truePositives": 113,
+            "truePositives": 117,
             "falsePositives": 0,
             "unadjudicated": 0,
-            "byStanding": 112,
-            "rulings": 477
+            "byStanding": 116,
+            "rulings": 493
           }
         },
         {
           "family": "catch-all-universal",
           "truePositives": 0,
-          "falsePositives": 26,
+          "falsePositives": 28,
           "misses": 0,
           "precision": null,
           "shape": "advisory",
@@ -1558,7 +1560,7 @@
             "precision": null,
             "truePositives": 0,
             "falsePositives": 0,
-            "unadjudicated": 26,
+            "unadjudicated": 28,
             "byStanding": 0,
             "rulings": 4
           }
@@ -1637,7 +1639,7 @@
             "falsePositives": 0,
             "unadjudicated": 0,
             "byStanding": 200,
-            "rulings": 477
+            "rulings": 493
           }
         },
         {
@@ -1778,29 +1780,29 @@
     },
     {
       "language": "typescript",
-      "corpora": 30,
+      "corpora": 32,
       "families": [
         {
           "family": "archetype-matches-nothing",
           "truePositives": 1,
-          "falsePositives": 120,
+          "falsePositives": 124,
           "misses": 0,
           "precision": 1,
           "shape": "advisory",
           "recall": 1,
           "precision_basis": {
             "precision": 1,
-            "truePositives": 121,
+            "truePositives": 125,
             "falsePositives": 0,
             "unadjudicated": 0,
-            "byStanding": 120,
-            "rulings": 477
+            "byStanding": 124,
+            "rulings": 493
           }
         },
         {
           "family": "catch-all-universal",
           "truePositives": 0,
-          "falsePositives": 28,
+          "falsePositives": 30,
           "misses": 0,
           "precision": null,
           "shape": "advisory",
@@ -1809,7 +1811,7 @@
             "precision": null,
             "truePositives": 0,
             "falsePositives": 0,
-            "unadjudicated": 28,
+            "unadjudicated": 30,
             "byStanding": 0,
             "rulings": 4
           }
@@ -1872,5 +1874,5 @@
     }
   ],
   "pending": [],
-  "findings": 591
+  "findings": 603
 }
