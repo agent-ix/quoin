@@ -114,6 +114,59 @@ describe("detection.recall", () => {
     );
   });
 
+  it("counts exact located payload observations when no diagnostic family exists", () => {
+    const observed = {
+      name: "unminted",
+      mode: "join",
+      language: "python",
+      kind: "failure",
+      findable: true,
+      defects: [],
+      observations: {
+        untracked_symbols: [
+          { symbol: "test_warns", trace_id: "TC-999", path: "src/test.py" },
+        ],
+      },
+    };
+    const rows = detectionRecall([observed], [], 2, [
+      {
+        name: "unminted",
+        untrackedSymbols: [
+          {
+            symbol: "test_warns",
+            trace_id: "TC-999",
+            path: "src/test.py",
+            line: 4,
+          },
+        ],
+      },
+    ]);
+
+    expect(rows.map((row) => [row.level, row.rate])).toEqual([
+      ["L1", 1],
+      ["L2", 1],
+      ["L3", 0],
+    ]);
+
+    const wrongLocus = detectionRecall([observed], [], 2, [
+      {
+        name: "unminted",
+        untrackedSymbols: [
+          {
+            symbol: "test_warns",
+            trace_id: "TC-999",
+            path: "src/other.py",
+          },
+        ],
+      },
+    ]);
+    expect(wrongLocus.map((row) => [row.level, row.rate])).toEqual([
+      ["L1", 1],
+      ["L2", 0],
+      ["L3", 0],
+    ]);
+  });
+
   it("ratchets one partition without averaging it into another", () => {
     const baseline = [
       {

@@ -335,13 +335,14 @@ function main() {
   const sectionHit = { matched: 0, examined: 0, cases: 0 };
   const payloads = [];
   for (const corpus of labels.corpora) {
-    const { findings, metrics, diagnostics } = execution.findingsFor(
-      quire,
-      corpus.input,
-      corpus.module,
-      mapping,
-    );
-    payloads.push({ name: corpus.name, metrics, diagnostics });
+    const { findings, metrics, diagnostics, untrackedSymbols } =
+      execution.findingsFor(quire, corpus.input, corpus.module, mapping);
+    payloads.push({
+      name: corpus.name,
+      metrics,
+      diagnostics,
+      untrackedSymbols,
+    });
     found.push(
       ...findings.map((f) => ({
         ...f,
@@ -401,6 +402,7 @@ function main() {
       labels.corpora,
       scoredFindings,
       bounds.gap_count,
+      payloads,
     ),
     families: score.families,
     excluded: score.excluded,

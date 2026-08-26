@@ -1,12 +1,17 @@
 /** Detection recall over seeded failures, partitioned by level, mode and language. */
-export function detectionRecall(corpora, findings, gapCount) {
+export function detectionRecall(corpora, findings, gapCount, payloads = []) {
   const groups = new Map();
   const keyOf = (corpus) => `${corpus.mode}\0${corpus.language}`;
+  const payloadByCorpus = new Map(payloads.map((item) => [item.name, item]));
 
   for (const corpus of corpora) {
     if (corpus.kind !== "failure" || corpus.findable === false) continue;
     const declared = corpus.defects.filter(
       (defect) => defect.findable !== false,
+    );
+    const observation = directObservation(
+      corpus.observations,
+      payloadByCorpus.get(corpus.name),
     );
     // A findable failure with no positive detector label is an honest L1 miss,
     // not an absent denominator. This is the exact shape of the known
@@ -30,6 +35,23 @@ export function detectionRecall(corpora, findings, gapCount) {
       reached: { L1: 0, L2: 0, L3: 0 },
       misses: { L1: [], L2: [], L3: [] },
     };
+
+    // Some payload channels are already located findings but are not
+    // diagnostic families. Count the exact assertion the corpus grades rather
+    // than turning it into an unlabeled L1 miss.
+    if (declared.length === 0 && observation) {
+      group.population += 1;
+      for (const [level, reached] of [
+        ["L1", observation.l1],
+        ["L2", observation.l2],
+        ["L3", false],
+      ]) {
+        if (reached) group.reached[level] += 1;
+        else group.misses[level].push(corpus.name);
+      }
+      groups.set(key, group);
+      continue;
+    }
 
     for (const label of labels) {
       group.population += 1;
@@ -84,6 +106,23 @@ export function detectionRecall(corpora, findings, gapCount) {
         misses: [...new Set(group.misses[level])].sort(),
       })),
     );
+}
+
+function directObservation(expected = {}, payload = {}) {
+  const expectedUntracked = expected?.untracked_symbols ?? [];
+  if (expectedUntracked.length) {
+    const actual = (payload?.untrackedSymbols ?? []).map((item) => ({
+      symbol: item.symbol,
+      trace_id: item.trace_id,
+      path: item.path,
+    }));
+    return {
+      l1: actual.length > 0,
+      l2: JSON.stringify(actual) === JSON.stringify(expectedUntracked),
+    };
+  }
+
+  return null;
 }
 
 /** One-way ratchet: lower recall regresses; higher recall asks for re-baseline. */

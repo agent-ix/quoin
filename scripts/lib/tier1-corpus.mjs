@@ -65,6 +65,9 @@ export function loadCorpusData({ mapping, root, modulesRoot, inventory }) {
       family: label?.family ?? familyOf(meta, expect, mapping),
       summary: label?.summary ?? meta.comment ?? "",
       defects,
+      observations: {
+        untracked_symbols: expect.untracked_symbols ?? [],
+      },
       input: inputPath,
       module: resolveModule(join(modulesRoot, meta.module), meta, modulesRoot),
       language: meta.language,

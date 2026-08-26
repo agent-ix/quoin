@@ -158,6 +158,7 @@ export function createTier1Executor() {
       findings,
       metrics: payload.metrics ?? [],
       diagnostics: payload.diagnostics ?? [],
+      untrackedSymbols: payload.untracked_symbols ?? [],
     };
   };
 
