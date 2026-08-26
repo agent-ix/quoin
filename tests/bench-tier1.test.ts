@@ -20,6 +20,7 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { check as prettierCheck } from "prettier";
 
 import {
   byLanguage,
@@ -28,6 +29,7 @@ import {
   compare,
   declarationProvenance,
   flattenLabels,
+  formatTier1Json,
   loadCorpus,
   localisationRate,
   measurementRecord,
@@ -35,6 +37,16 @@ import {
   silentZeros,
   validateCanonicalInventory,
 } from "../scripts/bench-tier1.mjs";
+
+test("TC-1077 generated Tier-1 baselines satisfy the repository format gate", async () => {
+  const filepath = join(process.cwd(), "bench", "tier1-baseline.json");
+  const generated = await formatTier1Json(
+    { rows: [{ misses: ["one", "two"] }] },
+    filepath,
+  );
+  expect(await prettierCheck(generated, { filepath })).toBe(true);
+  expect(generated.endsWith("\n")).toBe(true);
+});
 
 describe("the silent-zero sentinel", () => {
   const ratio = (over: Record<string, unknown>) => ({

@@ -16,6 +16,7 @@ import {
 } from "node:fs";
 import { dirname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
+import { format as prettierFormat } from "prettier";
 
 import { crossCheckFamilies, loadMetrics } from "../evals/lib/dictionary.mjs";
 import {
@@ -245,7 +246,7 @@ function corpusInputDigest(root = join(ROOT, "corpus")) {
   return `sha256:${hash.digest("hex")}`;
 }
 
-function main() {
+async function main() {
   const update = process.argv.includes("--update");
   const asJson = process.argv.includes("--json");
   // Require an explicit binary so engine identity is reviewable.
@@ -495,7 +496,7 @@ function main() {
     const recordPath = persistMeasurement(
       measurementRecord(report, new Date().toISOString()),
     );
-    writeFileSync(BASELINE, JSON.stringify(report, null, 2) + "\n");
+    writeFileSync(BASELINE, await formatTier1Json(report, BASELINE));
     // The ratchet lives inside the corpus, so rewriting it solely because its
     // own commit changed would create an endless self-revision cycle. Only a
     // measured score or GAP movement rewrites it; corpus_input excludes this
@@ -508,7 +509,7 @@ function main() {
     if (recallMoved) {
       writeFileSync(
         RECALL_BASELINE,
-        JSON.stringify(
+        await formatTier1Json(
           {
             definition_version: "detection-recall-v1",
             runner: "quoin",
@@ -516,9 +517,8 @@ function main() {
             gap_count: report.bounds.gap_count,
             rows: report.detection_recall,
           },
-          null,
-          2,
-        ) + "\n",
+          RECALL_BASELINE,
+        ),
       );
     }
     console.error(
@@ -538,6 +538,11 @@ function main() {
     : 0;
 }
 
+/** Emit generated JSON in the same form the repository gate enforces. */
+export async function formatTier1Json(value, filepath) {
+  return prettierFormat(JSON.stringify(value), { filepath });
+}
+
 function argOf(flag) {
   const i = process.argv.indexOf(flag);
   return i === -1 ? null : process.argv[i + 1];
@@ -546,5 +551,5 @@ function argOf(flag) {
 if (
   resolve(process.argv[1] ?? "") === resolve(fileURLToPath(import.meta.url))
 ) {
-  process.exit(main());
+  process.exit(await main());
 }

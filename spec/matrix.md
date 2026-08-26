@@ -473,6 +473,7 @@ generated tests under `tests/props/` and `Unit` for the rest.
 | TC-1074 | The Tier-2 registry executes Quire coverage and Quoin validate, and names evidence audit as not evaluated when the pinned store has no suite-to-obligation join (#203) | Integration | P0 | FR-043-AC-21 | ✅ |
 | TC-1075 | A stand-in in an unrelated test symbol within the same workspace suite does not accuse the obligation; suite-only joining is forbidden (#204) | Unit | P0 | FR-032-AC-15, FR-032-AC-16 | ✅ |
 | TC-1076 | An inspector's unqualified source symbol joins an exact or terminally module-qualified result symbol, preserving the common Cargo adapter shape without substring matching (#204) | Unit | P0 | FR-032-AC-15, FR-032-AC-16 | ✅ |
+| TC-1077 | The supported Tier-1 update emits baseline JSON in the same format the repository gate enforces; updating a ratchet cannot make the next gate fail on style alone (#244) | Unit | P0 | FR-043-AC-17 | ✅ |
 | TC-926 | Every metric in the dictionary declares `unit`, `population` and `method`; one missing any of the three is rejected at load rather than reported with a gap | Unit | P0 | FR-043-AC-1 | ✅ |
 | TC-927 | `finding_precision`/`finding_recall` are declared per defect family, each keyed on a family the corpora label, so no score is reported over an unlabelled population | Unit | P0 | FR-043-AC-2 | ✅ |
 | TC-928 | `span_grounding_rate` is declared with the pass-2 figure (0 of 65 specific-shape records) as its starting baseline | Unit | P0 | FR-043-AC-3 | ✅ |
