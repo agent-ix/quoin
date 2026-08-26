@@ -1,8 +1,8 @@
 {
   "provenance": {
     "engine": "quire 0.30.2 (engine 5a68ceb)",
-    "corpus": "f1559af2b4685d634a609299dec2fe9ff3a36ada",
-    "corpus_input": "sha256:93d5e66c9b27db0d6e20e2be1f7350c70d977f2bdeb8c7f4c4ecfdf474c7878a",
+    "corpus": "bdf7f26cc27ba85668c58bf4b6c84e5b0e1ec746",
+    "corpus_input": "sha256:325a3581d223b00fab7d867fca1a2d2321c2c5dd5752b507c59a2a48b8c51336",
     "declaration": {
       "root": "corpus/modules",
       "digest": "sha256:d8ca08f94af83403fee5649f4efd17ccb9f6f0a3e2c8f98e1312b69080a95049",
@@ -21,8 +21,8 @@
     }
   },
   "bounds": {
-    "gap_count": 31,
-    "covered_count": 51,
+    "gap_count": 29,
+    "covered_count": 53,
     "covered_pending_count": 0,
     "out_of_scope_count": 14,
     "declared_cells": 96,
@@ -376,13 +376,13 @@
         "source": "agent-ix/spec-artifacts-process#59",
         "cells": {
           "python": {
-            "state": "GAP"
+            "state": "covered"
           },
           "rust": {
             "state": "covered"
           },
           "typescript": {
-            "state": "GAP"
+            "state": "covered"
           }
         }
       },
@@ -588,30 +588,30 @@
       "mode": "attachment",
       "language": "python",
       "level": "L1",
-      "reached": 2,
-      "population": 3,
-      "rate": 0.667,
-      "gap_count": 31,
+      "reached": 3,
+      "population": 4,
+      "rate": 0.75,
+      "gap_count": 29,
       "misses": ["tag-inside-string-literal-python"]
     },
     {
       "mode": "attachment",
       "language": "python",
       "level": "L2",
-      "reached": 2,
-      "population": 3,
-      "rate": 0.667,
-      "gap_count": 31,
+      "reached": 3,
+      "population": 4,
+      "rate": 0.75,
+      "gap_count": 29,
       "misses": ["tag-inside-string-literal-python"]
     },
     {
       "mode": "attachment",
       "language": "python",
       "level": "L3",
-      "reached": 2,
-      "population": 3,
-      "rate": 0.667,
-      "gap_count": 31,
+      "reached": 3,
+      "population": 4,
+      "rate": 0.75,
+      "gap_count": 29,
       "misses": ["tag-inside-string-literal-python"]
     },
     {
@@ -621,7 +621,7 @@
       "reached": 3,
       "population": 3,
       "rate": 1,
-      "gap_count": 31,
+      "gap_count": 29,
       "misses": []
     },
     {
@@ -631,7 +631,7 @@
       "reached": 3,
       "population": 3,
       "rate": 1,
-      "gap_count": 31,
+      "gap_count": 29,
       "misses": []
     },
     {
@@ -641,37 +641,37 @@
       "reached": 2,
       "population": 3,
       "rate": 0.667,
-      "gap_count": 31,
+      "gap_count": 29,
       "misses": ["marker-mismatch"]
     },
     {
       "mode": "attachment",
       "language": "typescript",
       "level": "L1",
-      "reached": 3,
-      "population": 4,
-      "rate": 0.75,
-      "gap_count": 31,
+      "reached": 4,
+      "population": 5,
+      "rate": 0.8,
+      "gap_count": 29,
       "misses": ["tag-inside-string-literal-typescript"]
     },
     {
       "mode": "attachment",
       "language": "typescript",
       "level": "L2",
-      "reached": 3,
-      "population": 4,
-      "rate": 0.75,
-      "gap_count": 31,
+      "reached": 4,
+      "population": 5,
+      "rate": 0.8,
+      "gap_count": 29,
       "misses": ["tag-inside-string-literal-typescript"]
     },
     {
       "mode": "attachment",
       "language": "typescript",
       "level": "L3",
-      "reached": 3,
-      "population": 4,
-      "rate": 0.75,
-      "gap_count": 31,
+      "reached": 4,
+      "population": 5,
+      "rate": 0.8,
+      "gap_count": 29,
       "misses": ["tag-inside-string-literal-typescript"]
     },
     {
@@ -681,7 +681,7 @@
       "reached": 4,
       "population": 4,
       "rate": 1,
-      "gap_count": 31,
+      "gap_count": 29,
       "misses": []
     },
     {
@@ -691,7 +691,7 @@
       "reached": 2,
       "population": 4,
       "rate": 0.5,
-      "gap_count": 31,
+      "gap_count": 29,
       "misses": ["model-mints-nothing", "undeclared-coverage-vocabulary"]
     },
     {
@@ -701,7 +701,7 @@
       "reached": 2,
       "population": 4,
       "rate": 0.5,
-      "gap_count": 31,
+      "gap_count": 29,
       "misses": ["model-mints-nothing", "undeclared-coverage-vocabulary"]
     },
     {
@@ -711,7 +711,7 @@
       "reached": 4,
       "population": 5,
       "rate": 0.8,
-      "gap_count": 31,
+      "gap_count": 29,
       "misses": ["stale-name-correct-trace"]
     },
     {
@@ -721,7 +721,7 @@
       "reached": 4,
       "population": 5,
       "rate": 0.8,
-      "gap_count": 31,
+      "gap_count": 29,
       "misses": ["stale-name-correct-trace"]
     },
     {
@@ -731,7 +731,7 @@
       "reached": 3,
       "population": 5,
       "rate": 0.6,
-      "gap_count": 31,
+      "gap_count": 29,
       "misses": ["catch-all-properties", "stale-name-correct-trace"]
     },
     {
@@ -741,7 +741,7 @@
       "reached": 1,
       "population": 1,
       "rate": 1,
-      "gap_count": 31,
+      "gap_count": 29,
       "misses": []
     },
     {
@@ -751,7 +751,7 @@
       "reached": 1,
       "population": 1,
       "rate": 1,
-      "gap_count": 31,
+      "gap_count": 29,
       "misses": []
     },
     {
@@ -761,7 +761,7 @@
       "reached": 1,
       "population": 1,
       "rate": 1,
-      "gap_count": 31,
+      "gap_count": 29,
       "misses": []
     },
     {
@@ -771,7 +771,7 @@
       "reached": 1,
       "population": 2,
       "rate": 0.5,
-      "gap_count": 31,
+      "gap_count": 29,
       "misses": ["greenfield-no-symbols"]
     },
     {
@@ -781,7 +781,7 @@
       "reached": 1,
       "population": 2,
       "rate": 0.5,
-      "gap_count": 31,
+      "gap_count": 29,
       "misses": ["greenfield-no-symbols"]
     },
     {
@@ -791,7 +791,7 @@
       "reached": 1,
       "population": 2,
       "rate": 0.5,
-      "gap_count": 31,
+      "gap_count": 29,
       "misses": ["greenfield-no-symbols"]
     },
     {
@@ -801,7 +801,7 @@
       "reached": 1,
       "population": 1,
       "rate": 1,
-      "gap_count": 31,
+      "gap_count": 29,
       "misses": []
     },
     {
@@ -811,7 +811,7 @@
       "reached": 1,
       "population": 1,
       "rate": 1,
-      "gap_count": 31,
+      "gap_count": 29,
       "misses": []
     },
     {
@@ -821,7 +821,7 @@
       "reached": 1,
       "population": 1,
       "rate": 1,
-      "gap_count": 31,
+      "gap_count": 29,
       "misses": []
     },
     {
@@ -831,7 +831,7 @@
       "reached": 0,
       "population": 2,
       "rate": 0,
-      "gap_count": 31,
+      "gap_count": 29,
       "misses": [
         "tag-names-bare-fr-python",
         "tag-names-undeclared-section-python"
@@ -844,7 +844,7 @@
       "reached": 0,
       "population": 2,
       "rate": 0,
-      "gap_count": 31,
+      "gap_count": 29,
       "misses": [
         "tag-names-bare-fr-python",
         "tag-names-undeclared-section-python"
@@ -857,7 +857,7 @@
       "reached": 0,
       "population": 2,
       "rate": 0,
-      "gap_count": 31,
+      "gap_count": 29,
       "misses": [
         "tag-names-bare-fr-python",
         "tag-names-undeclared-section-python"
@@ -870,7 +870,7 @@
       "reached": 0,
       "population": 2,
       "rate": 0,
-      "gap_count": 31,
+      "gap_count": 29,
       "misses": ["tag-names-bare-fr-rust", "tag-names-undeclared-section-rust"]
     },
     {
@@ -880,7 +880,7 @@
       "reached": 0,
       "population": 2,
       "rate": 0,
-      "gap_count": 31,
+      "gap_count": 29,
       "misses": ["tag-names-bare-fr-rust", "tag-names-undeclared-section-rust"]
     },
     {
@@ -890,7 +890,7 @@
       "reached": 0,
       "population": 2,
       "rate": 0,
-      "gap_count": 31,
+      "gap_count": 29,
       "misses": ["tag-names-bare-fr-rust", "tag-names-undeclared-section-rust"]
     },
     {
@@ -900,7 +900,7 @@
       "reached": 0,
       "population": 2,
       "rate": 0,
-      "gap_count": 31,
+      "gap_count": 29,
       "misses": [
         "tag-names-bare-fr-typescript",
         "tag-names-undeclared-section-typescript"
@@ -913,7 +913,7 @@
       "reached": 0,
       "population": 2,
       "rate": 0,
-      "gap_count": 31,
+      "gap_count": 29,
       "misses": [
         "tag-names-bare-fr-typescript",
         "tag-names-undeclared-section-typescript"
@@ -926,7 +926,7 @@
       "reached": 0,
       "population": 2,
       "rate": 0,
-      "gap_count": 31,
+      "gap_count": 29,
       "misses": [
         "tag-names-bare-fr-typescript",
         "tag-names-undeclared-section-typescript"
@@ -939,7 +939,7 @@
       "reached": 4,
       "population": 4,
       "rate": 1,
-      "gap_count": 31,
+      "gap_count": 29,
       "misses": []
     },
     {
@@ -949,7 +949,7 @@
       "reached": 3,
       "population": 4,
       "rate": 0.75,
-      "gap_count": 31,
+      "gap_count": 29,
       "misses": ["no-testmatrix-document-python"]
     },
     {
@@ -959,7 +959,7 @@
       "reached": 3,
       "population": 4,
       "rate": 0.75,
-      "gap_count": 31,
+      "gap_count": 29,
       "misses": ["no-testmatrix-document-python"]
     },
     {
@@ -969,7 +969,7 @@
       "reached": 6,
       "population": 7,
       "rate": 0.857,
-      "gap_count": 31,
+      "gap_count": 29,
       "misses": ["no-symbol-method-in-the-verification-column"]
     },
     {
@@ -979,7 +979,7 @@
       "reached": 5,
       "population": 7,
       "rate": 0.714,
-      "gap_count": 31,
+      "gap_count": 29,
       "misses": [
         "no-symbol-method-in-the-verification-column",
         "no-testmatrix-document-rust"
@@ -992,7 +992,7 @@
       "reached": 5,
       "population": 7,
       "rate": 0.714,
-      "gap_count": 31,
+      "gap_count": 29,
       "misses": [
         "no-symbol-method-in-the-verification-column",
         "no-testmatrix-document-rust"
@@ -1005,7 +1005,7 @@
       "reached": 4,
       "population": 4,
       "rate": 1,
-      "gap_count": 31,
+      "gap_count": 29,
       "misses": []
     },
     {
@@ -1015,7 +1015,7 @@
       "reached": 3,
       "population": 4,
       "rate": 0.75,
-      "gap_count": 31,
+      "gap_count": 29,
       "misses": ["no-testmatrix-document-typescript"]
     },
     {
@@ -1025,7 +1025,7 @@
       "reached": 3,
       "population": 4,
       "rate": 0.75,
-      "gap_count": 31,
+      "gap_count": 29,
       "misses": ["no-testmatrix-document-typescript"]
     },
     {
@@ -1035,7 +1035,7 @@
       "reached": 1,
       "population": 1,
       "rate": 1,
-      "gap_count": 31,
+      "gap_count": 29,
       "misses": []
     },
     {
@@ -1045,7 +1045,7 @@
       "reached": 0,
       "population": 1,
       "rate": 0,
-      "gap_count": 31,
+      "gap_count": 29,
       "misses": ["hollow-metric"]
     },
     {
@@ -1055,7 +1055,7 @@
       "reached": 0,
       "population": 1,
       "rate": 0,
-      "gap_count": 31,
+      "gap_count": 29,
       "misses": ["hollow-metric"]
     },
     {
@@ -1065,7 +1065,7 @@
       "reached": 1,
       "population": 4,
       "rate": 0.25,
-      "gap_count": 31,
+      "gap_count": 29,
       "misses": [
         "gate-that-gates-nothing",
         "mocked-confirmation",
@@ -1079,7 +1079,7 @@
       "reached": 1,
       "population": 4,
       "rate": 0.25,
-      "gap_count": 31,
+      "gap_count": 29,
       "misses": [
         "gate-that-gates-nothing",
         "mocked-confirmation",
@@ -1093,7 +1093,7 @@
       "reached": 1,
       "population": 4,
       "rate": 0.25,
-      "gap_count": 31,
+      "gap_count": 29,
       "misses": [
         "gate-that-gates-nothing",
         "mocked-confirmation",
@@ -1105,24 +1105,24 @@
     {
       "family": "archetype-matches-nothing",
       "truePositives": 3,
-      "falsePositives": 372,
+      "falsePositives": 388,
       "misses": 0,
       "precision": 1,
       "shape": "advisory",
       "recall": 1,
       "precision_basis": {
         "precision": 1,
-        "truePositives": 371,
+        "truePositives": 387,
         "falsePositives": 0,
         "unadjudicated": 4,
-        "byStanding": 368,
-        "rulings": 397
+        "byStanding": 384,
+        "rulings": 413
       }
     },
     {
       "family": "catch-all-universal",
       "truePositives": 2,
-      "falsePositives": 74,
+      "falsePositives": 78,
       "misses": 0,
       "precision": 1,
       "shape": "advisory",
@@ -1131,7 +1131,7 @@
         "precision": 1,
         "truePositives": 2,
         "falsePositives": 0,
-        "unadjudicated": 74,
+        "unadjudicated": 78,
         "byStanding": 0,
         "rulings": 4
       }
@@ -1174,7 +1174,7 @@
     },
     {
       "family": "marker-form-mismatch",
-      "truePositives": 5,
+      "truePositives": 7,
       "falsePositives": 0,
       "misses": 0,
       "precision": 1,
@@ -1313,29 +1313,37 @@
       "reason": "hollow-denominator"
     },
     {
+      "family": "hollow-denominator",
+      "reason": "hollow-denominator"
+    },
+    {
+      "family": "hollow-denominator",
+      "reason": "hollow-denominator"
+    },
+    {
       "family": "marker-form-mismatch",
       "reason": "no-symbol-bound"
     }
   ],
-  "positional": 29,
-  "finding_localisation_rate": 0.829,
+  "positional": 31,
+  "finding_localisation_rate": 0.838,
   "minting.section_hit_rate": {
-    "rate": 0.967,
-    "matched": 176,
-    "examined": 182,
-    "cases_reporting": 96
+    "rate": 0.968,
+    "matched": 184,
+    "examined": 190,
+    "cases_reporting": 100
   },
   "actionability": {
-    "actionable": 92,
-    "total": 487,
-    "rate": 0.189
+    "actionable": 98,
+    "total": 511,
+    "rate": 0.192
   },
   "cost_per_confirmed_insight": {
     "tokens": null,
-    "toolCalls": 197,
-    "truePositives": 35,
+    "toolCalls": 205,
+    "truePositives": 37,
     "tokensPer": null,
-    "toolCallsPer": 5.63
+    "toolCallsPer": 5.54
   },
   "sentinel.silent_zero": {
     "count": 0,
@@ -1413,7 +1421,7 @@
       }
     ]
   },
-  "corpora": 97,
+  "corpora": 101,
   "by_language": [
     {
       "language": "n/a",
@@ -1433,7 +1441,7 @@
             "falsePositives": 0,
             "unadjudicated": 4,
             "byStanding": 16,
-            "rulings": 397
+            "rulings": 413
           }
         },
         {
@@ -1476,29 +1484,29 @@
     },
     {
       "language": "python",
-      "corpora": 20,
+      "corpora": 22,
       "families": [
         {
           "family": "archetype-matches-nothing",
           "truePositives": 1,
-          "falsePositives": 80,
+          "falsePositives": 88,
           "misses": 0,
           "precision": 1,
           "shape": "advisory",
           "recall": 1,
           "precision_basis": {
             "precision": 1,
-            "truePositives": 81,
+            "truePositives": 89,
             "falsePositives": 0,
             "unadjudicated": 0,
-            "byStanding": 80,
-            "rulings": 397
+            "byStanding": 88,
+            "rulings": 413
           }
         },
         {
           "family": "catch-all-universal",
           "truePositives": 0,
-          "falsePositives": 20,
+          "falsePositives": 22,
           "misses": 0,
           "precision": null,
           "shape": "advisory",
@@ -1507,7 +1515,7 @@
             "precision": null,
             "truePositives": 0,
             "falsePositives": 0,
-            "unadjudicated": 20,
+            "unadjudicated": 22,
             "byStanding": 0,
             "rulings": 4
           }
@@ -1523,7 +1531,7 @@
         },
         {
           "family": "marker-form-mismatch",
-          "truePositives": 1,
+          "truePositives": 2,
           "falsePositives": 0,
           "misses": 0,
           "precision": 1,
@@ -1568,7 +1576,7 @@
             "falsePositives": 0,
             "unadjudicated": 0,
             "byStanding": 184,
-            "rulings": 397
+            "rulings": 413
           }
         },
         {
@@ -1709,29 +1717,29 @@
     },
     {
       "language": "typescript",
-      "corpora": 22,
+      "corpora": 24,
       "families": [
         {
           "family": "archetype-matches-nothing",
           "truePositives": 1,
-          "falsePositives": 88,
+          "falsePositives": 96,
           "misses": 0,
           "precision": 1,
           "shape": "advisory",
           "recall": 1,
           "precision_basis": {
             "precision": 1,
-            "truePositives": 89,
+            "truePositives": 97,
             "falsePositives": 0,
             "unadjudicated": 0,
-            "byStanding": 88,
-            "rulings": 397
+            "byStanding": 96,
+            "rulings": 413
           }
         },
         {
           "family": "catch-all-universal",
           "truePositives": 0,
-          "falsePositives": 22,
+          "falsePositives": 24,
           "misses": 0,
           "precision": null,
           "shape": "advisory",
@@ -1740,7 +1748,7 @@
             "precision": null,
             "truePositives": 0,
             "falsePositives": 0,
-            "unadjudicated": 22,
+            "unadjudicated": 24,
             "byStanding": 0,
             "rulings": 4
           }
@@ -1756,7 +1764,7 @@
         },
         {
           "family": "marker-form-mismatch",
-          "truePositives": 1,
+          "truePositives": 2,
           "falsePositives": 0,
           "misses": 0,
           "precision": 1,
@@ -1785,5 +1793,5 @@
     }
   ],
   "pending": [],
-  "findings": 487
+  "findings": 511
 }
