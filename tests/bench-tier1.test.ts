@@ -1207,6 +1207,36 @@ describe("the canonical qa-corpus inventory", () => {
     }
   });
 
+  test("a language variant inherits the canonical case label", () => {
+    const root = corpus((dir) => {
+      mkdirSync(join(dir, "rust", "input"), { recursive: true });
+      writeFileSync(join(dir, "rust", "expect.yaml"), "{}\n");
+    });
+    mkdirSync(join(root, "labels"), { recursive: true });
+    writeFileSync(
+      join(root, "labels", "a-case.yaml"),
+      "family: structural\ndefects:\n- id: S-1\n  family: structural\n  location: spec/tests.md\n",
+    );
+
+    const [variant] = loadCorpus(
+      { families: {} },
+      root,
+      null,
+      inventory([
+        entry({
+          id: "a-case-rust",
+          case: "a-case",
+          dir: "cases/minting/a-case/rust",
+          expect: "cases/minting/a-case/rust/expect.yaml",
+        }),
+      ]),
+    ).corpora;
+    expect(variant.family).toBe("structural");
+    expect(variant.defects).toEqual([
+      expect.objectContaining({ id: "S-1-rust", family: "structural" }),
+    ]);
+  });
+
   test("TC-975 the runner consumes the authoritative inventory instead of re-reading layouts", () => {
     // qa-corpus's Python and Rust readers own layout validation. This consumer
     // receives their resolved ids, languages, directories and expectations.

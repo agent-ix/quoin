@@ -43,13 +43,21 @@ export function loadCorpusData({ mapping, root, modulesRoot, inventory }) {
     }
     const expect = parseYaml(readFileSync(expectPath, "utf8")) ?? {};
     assertReasonsMapped(meta, expect, mapping, meta.dir);
-    const labelPath = join(root, "labels", `${meta.id}.yaml`);
-    const label = existsSync(labelPath)
-      ? parseYaml(readFileSync(labelPath, "utf8"))
+    const exactLabelPath = join(root, "labels", `${meta.id}.yaml`);
+    const inheritedLabelPath = meta.case
+      ? join(root, "labels", `${meta.case}.yaml`)
       : null;
+    const labelPath = existsSync(exactLabelPath)
+      ? exactLabelPath
+      : inheritedLabelPath && existsSync(inheritedLabelPath)
+        ? inheritedLabelPath
+        : null;
+    const inheritedLabel = labelPath !== null && labelPath !== exactLabelPath;
+    const label = labelPath ? parseYaml(readFileSync(labelPath, "utf8")) : null;
     const defects = (label?.defects ?? defectsFrom(meta, expect, mapping)).map(
       (defect) => ({
         ...defect,
+        id: inheritedLabel ? `${defect.id}-${meta.language}` : defect.id,
         actionable_fragments: actionableFragments(defect, expect),
       }),
     );
