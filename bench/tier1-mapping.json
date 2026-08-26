@@ -16,7 +16,32 @@
     "marker-form-mismatch": {
       "source": "coverage.diagnostics",
       "key": "no-symbol-bound",
+      "locus": "path-line"
+    },
+    "low-symbol-binding": {
+      "source": "coverage.diagnostics",
+      "key": "low-symbol-binding",
+      "locus": "path-line"
+    },
+    "model-mints-nothing": {
+      "source": "coverage.diagnostics",
+      "key": "model-mints-nothing",
+      "locus": "none"
+    },
+    "obligation-row-states-nothing": {
+      "source": "coverage.diagnostics",
+      "key": "obligation-row-states-nothing",
       "locus": "path"
+    },
+    "uncatalogued-verification-method": {
+      "source": "coverage.diagnostics",
+      "key": "uncatalogued-verification-method",
+      "locus": "path"
+    },
+    "undeclared-coverage-vocabulary": {
+      "source": "coverage.diagnostics",
+      "key": "undeclared-coverage-vocabulary",
+      "locus": "none"
     },
     "hollow-denominator": {
       "source": "coverage.diagnostics",

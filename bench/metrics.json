@@ -6,13 +6,18 @@
     "gate-that-gates-nothing",
     "hollow-denominator",
     "id-column-matches-nothing",
+    "low-symbol-binding",
     "marker-form-mismatch",
+    "model-mints-nothing",
     "mocked-confirmation",
+    "obligation-row-states-nothing",
     "oracle-is-code-copy",
     "section-holds-no-table",
     "section-matches-nothing",
     "tag-on-non-binding-symbol",
+    "uncatalogued-verification-method",
     "undeclared-type-value",
+    "undeclared-coverage-vocabulary",
     "untracked-id-near-miss",
     "vacuous-under-guard"
   ],
@@ -63,7 +68,7 @@
       "method": "findings naming a row id or a document line, over findings emitted, from scoreActionability. A finding you cannot act on is a finding nobody acts on, whatever its precision",
       "direction": "higher-is-better",
       "baseline": 3.02,
-      "baseline_note": "Battletest pass 2 measured 15 of 496 findings carrying a row id \u2014 3.02%. Tier 1's first scored run reads 2 of 7 (29%): a small, clean corpus flatters the figure, which is why the tier-2 number is the one to move and both are kept."
+      "baseline_note": "Battletest pass 2 measured 15 of 496 (3.02%). Tier 1 measured 2/20 (10.0%) over 21 scored cases, 2/42 (4.8%) over 34, and 92/487 (18.9%) over the current 97-case corpus after structured diagnostic lines were preserved. These populations are recorded separately, never presented as one trend (quoin#239)."
     },
     "cost_per_confirmed_insight": {
       "measurement_plan": "spec/assurance/MP-206-confirmed-insight-cost.md",

@@ -1,13 +1,17 @@
 {
   "provenance": {
-    "engine": "quire 0.30.2 (engine f18abe3)",
-    "corpus": "1f84c7a39d5fcf80da22debf59ecad1bedbf9d1f",
+    "engine": "quire 0.30.2 (engine 0.33.0)",
+    "corpus": "b01a6ba174d3659fee99bd84412093e536a5a394",
     "declaration": {
       "root": "corpus/modules",
-      "digest": "sha256:819807f757c7c6468be257c82c2d23bd5210f451eb3811c63b5ff5fa8d04b403",
+      "digest": "sha256:d8ca08f94af83403fee5649f4efd17ccb9f6f0a3e2c8f98e1312b69080a95049",
       "modules": {
         "ecosystem": "sha256:829e7343fd73ffd65ec6fee8653228f37f919d236f01e6219b40cc1ee559c140",
-        "variants/no-implements-declaration": "sha256:9faf3f56d877a478b8cd69b41528abbcf6f1ed6c59fe531732a39901fdf2b694"
+        "variants/dead-coverage-vocabulary": "sha256:02b809f935173c9caf70736a238313e242a713bf9003894cd55a93d2f70034cf",
+        "variants/live-coverage-vocabulary": "sha256:92e0a54c19855ca4e9cd2417cb8f356b7766e4e0d1fa0256eba82be5694cd5c7",
+        "variants/no-implements-declaration": "sha256:b2928e02205acfe202489f508065be134fb829ddecf01a4a883caf9467ac28dd",
+        "variants/no-trace-targets": "sha256:7327dd6ee367cad8c000be26ba5bd99a5495d7a014693e6f40cce113ee593ba0",
+        "variants/one-trace-target": "sha256:cbbce295481d128c68ec4637435843634ca3e2ff1dd0f248445a245379176ebf"
       },
       "sources": {
         "spec-artifacts-process": "62d691f",
@@ -16,11 +20,11 @@
     }
   },
   "bounds": {
-    "gap_count": 32,
-    "covered_count": 48,
+    "gap_count": 31,
+    "covered_count": 51,
     "covered_pending_count": 0,
-    "out_of_scope_count": 11,
-    "declared_cells": 91,
+    "out_of_scope_count": 14,
+    "declared_cells": 96,
     "matrix": [
       {
         "mode": "minting",
@@ -303,6 +307,58 @@
         }
       },
       {
+        "mode": "detection",
+        "case": "low-symbol-binding",
+        "source": "agent-ix/quire-rs#359 — one of 21 candidates binds, below the declared 5% observation floor",
+        "cells": {
+          "rust": {
+            "state": "covered"
+          }
+        }
+      },
+      {
+        "mode": "detection",
+        "case": "obligation-row-states-nothing",
+        "source": "agent-ix/quire-rs#359 — the ecosystem obligation declaration reads an empty Criteria cell",
+        "cells": {
+          "n/a": {
+            "state": "covered"
+          }
+        }
+      },
+      {
+        "mode": "detection",
+        "case": "uncatalogued-verification-method",
+        "source": "agent-ix/quire-rs#359 — a real obligation names a method absent from the ecosystem catalog",
+        "cells": {
+          "n/a": {
+            "state": "covered"
+          }
+        }
+      },
+      {
+        "mode": "detection",
+        "case": "model-mints-nothing",
+        "source": "agent-ix/quire-rs#359 — a declared traceability model has no trace targets",
+        "cells": {
+          "n/a": {
+            "state": "out-of-scope",
+            "reason": "`model-mints-nothing` tests variant declaration `variants/no-trace-targets`: The absence of trace_targets is the condition this fixture measures."
+          }
+        }
+      },
+      {
+        "mode": "detection",
+        "case": "undeclared-coverage-vocabulary",
+        "source": "agent-ix/quire-rs#359 — a vocabulary declaration names no schema field",
+        "cells": {
+          "n/a": {
+            "state": "out-of-scope",
+            "reason": "`undeclared-coverage-vocabulary` tests variant declaration `variants/dead-coverage-vocabulary`: The declared field is absent from the archetype schema."
+          }
+        }
+      },
+      {
         "mode": "provenance",
         "case": "engine-lacks-capability",
         "source": "the 0.29.0 failure — census must abort",
@@ -402,8 +458,8 @@
             "state": "GAP"
           },
           "rust": {
-            "state": "GAP",
-            "reason": "`implements-never-asked` ships but binds `variants/no-implements-declaration` rather than the ecosystem declaration, so it exercises no ecosystem mode (agent-ix/quire-rs#330)"
+            "state": "out-of-scope",
+            "reason": "`implements-never-asked` tests variant declaration `variants/no-implements-declaration`: The absent implements declaration is the measured condition; the ecosystem declaration intentionally cannot exhibit not_computed."
           },
           "typescript": {
             "state": "GAP"
@@ -530,24 +586,24 @@
     {
       "family": "archetype-matches-nothing",
       "truePositives": 3,
-      "falsePositives": 344,
+      "falsePositives": 372,
       "misses": 0,
       "precision": 1,
       "shape": "advisory",
       "recall": 1,
       "precision_basis": {
         "precision": 1,
-        "truePositives": 347,
+        "truePositives": 371,
         "falsePositives": 0,
-        "unadjudicated": 0,
-        "byStanding": 344,
-        "rulings": 357
+        "unadjudicated": 4,
+        "byStanding": 368,
+        "rulings": 397
       }
     },
     {
       "family": "catch-all-universal",
       "truePositives": 2,
-      "falsePositives": 72,
+      "falsePositives": 74,
       "misses": 0,
       "precision": 1,
       "shape": "advisory",
@@ -556,7 +612,7 @@
         "precision": 1,
         "truePositives": 2,
         "falsePositives": 0,
-        "unadjudicated": 72,
+        "unadjudicated": 74,
         "byStanding": 0,
         "rulings": 4
       }
@@ -589,6 +645,15 @@
       "recall": 1
     },
     {
+      "family": "low-symbol-binding",
+      "truePositives": 1,
+      "falsePositives": 0,
+      "misses": 0,
+      "precision": 1,
+      "shape": "defect",
+      "recall": 1
+    },
+    {
       "family": "marker-form-mismatch",
       "truePositives": 5,
       "falsePositives": 0,
@@ -605,6 +670,24 @@
       "precision": null,
       "shape": "defect",
       "recall": 0
+    },
+    {
+      "family": "model-mints-nothing",
+      "truePositives": 1,
+      "falsePositives": 0,
+      "misses": 0,
+      "precision": 1,
+      "shape": "defect",
+      "recall": 1
+    },
+    {
+      "family": "obligation-row-states-nothing",
+      "truePositives": 1,
+      "falsePositives": 0,
+      "misses": 0,
+      "precision": 1,
+      "shape": "defect",
+      "recall": 1
     },
     {
       "family": "oracle-is-code-copy",
@@ -636,6 +719,24 @@
     {
       "family": "tag-on-non-binding-symbol",
       "truePositives": 6,
+      "falsePositives": 0,
+      "misses": 0,
+      "precision": 1,
+      "shape": "defect",
+      "recall": 1
+    },
+    {
+      "family": "uncatalogued-verification-method",
+      "truePositives": 1,
+      "falsePositives": 0,
+      "misses": 0,
+      "precision": 1,
+      "shape": "defect",
+      "recall": 1
+    },
+    {
+      "family": "undeclared-coverage-vocabulary",
+      "truePositives": 1,
       "falsePositives": 0,
       "misses": 0,
       "precision": 1,
@@ -697,25 +798,25 @@
       "reason": "no-symbol-bound"
     }
   ],
-  "positional": 26,
-  "finding_localisation_rate": 0.867,
+  "positional": 29,
+  "finding_localisation_rate": 0.829,
   "minting.section_hit_rate": {
-    "rate": 0.965,
-    "matched": 165,
-    "examined": 171,
-    "cases_reporting": 87
+    "rate": 0.967,
+    "matched": 176,
+    "examined": 182,
+    "cases_reporting": 96
   },
   "actionability": {
-    "actionable": 2,
-    "total": 452,
-    "rate": 0.004
+    "actionable": 92,
+    "total": 487,
+    "rate": 0.189
   },
   "cost_per_confirmed_insight": {
     "tokens": null,
-    "toolCalls": 177,
-    "truePositives": 30,
+    "toolCalls": 197,
+    "truePositives": 35,
     "tokensPer": null,
-    "toolCallsPer": 5.9
+    "toolCallsPer": 5.63
   },
   "sentinel.silent_zero": {
     "count": 0,
@@ -726,6 +827,55 @@
         "metric": "coverage.backed",
         "value": 0,
         "population": 4,
+        "examined": 0
+      },
+      {
+        "corpus": "model-mints-nothing-control",
+        "metric": "coverage.backed",
+        "value": 0,
+        "population": 1,
+        "examined": 0
+      },
+      {
+        "corpus": "obligation-row-states-nothing",
+        "metric": "coverage.backed",
+        "value": 0,
+        "population": 1,
+        "examined": 0
+      },
+      {
+        "corpus": "obligation-row-states-nothing-control",
+        "metric": "coverage.backed",
+        "value": 0,
+        "population": 1,
+        "examined": 0
+      },
+      {
+        "corpus": "uncatalogued-verification-method",
+        "metric": "coverage.backed",
+        "value": 0,
+        "population": 1,
+        "examined": 0
+      },
+      {
+        "corpus": "uncatalogued-verification-method-control",
+        "metric": "coverage.backed",
+        "value": 0,
+        "population": 1,
+        "examined": 0
+      },
+      {
+        "corpus": "undeclared-coverage-vocabulary",
+        "metric": "coverage.backed",
+        "value": 0,
+        "population": 1,
+        "examined": 0
+      },
+      {
+        "corpus": "undeclared-coverage-vocabulary-control",
+        "metric": "coverage.backed",
+        "value": 0,
+        "population": 1,
         "examined": 0
       },
       {
@@ -744,8 +894,67 @@
       }
     ]
   },
-  "corpora": 87,
+  "corpora": 97,
   "by_language": [
+    {
+      "language": "n/a",
+      "corpora": 8,
+      "families": [
+        {
+          "family": "archetype-matches-nothing",
+          "truePositives": 0,
+          "falsePositives": 20,
+          "misses": 0,
+          "precision": 1,
+          "shape": "advisory",
+          "recall": null,
+          "precision_basis": {
+            "precision": 1,
+            "truePositives": 16,
+            "falsePositives": 0,
+            "unadjudicated": 4,
+            "byStanding": 16,
+            "rulings": 397
+          }
+        },
+        {
+          "family": "model-mints-nothing",
+          "truePositives": 1,
+          "falsePositives": 0,
+          "misses": 0,
+          "precision": 1,
+          "shape": "defect",
+          "recall": 1
+        },
+        {
+          "family": "obligation-row-states-nothing",
+          "truePositives": 1,
+          "falsePositives": 0,
+          "misses": 0,
+          "precision": 1,
+          "shape": "defect",
+          "recall": 1
+        },
+        {
+          "family": "uncatalogued-verification-method",
+          "truePositives": 1,
+          "falsePositives": 0,
+          "misses": 0,
+          "precision": 1,
+          "shape": "defect",
+          "recall": 1
+        },
+        {
+          "family": "undeclared-coverage-vocabulary",
+          "truePositives": 1,
+          "falsePositives": 0,
+          "misses": 0,
+          "precision": 1,
+          "shape": "defect",
+          "recall": 1
+        }
+      ]
+    },
     {
       "language": "python",
       "corpora": 20,
@@ -764,7 +973,7 @@
             "falsePositives": 0,
             "unadjudicated": 0,
             "byStanding": 80,
-            "rulings": 357
+            "rulings": 397
           }
         },
         {
@@ -824,29 +1033,29 @@
     },
     {
       "language": "rust",
-      "corpora": 45,
+      "corpora": 47,
       "families": [
         {
           "family": "archetype-matches-nothing",
           "truePositives": 1,
-          "falsePositives": 176,
+          "falsePositives": 184,
           "misses": 0,
           "precision": 1,
           "shape": "advisory",
           "recall": 1,
           "precision_basis": {
             "precision": 1,
-            "truePositives": 177,
+            "truePositives": 185,
             "falsePositives": 0,
             "unadjudicated": 0,
-            "byStanding": 176,
-            "rulings": 357
+            "byStanding": 184,
+            "rulings": 397
           }
         },
         {
           "family": "catch-all-universal",
           "truePositives": 2,
-          "falsePositives": 30,
+          "falsePositives": 32,
           "misses": 0,
           "precision": 1,
           "shape": "advisory",
@@ -855,7 +1064,7 @@
             "precision": 1,
             "truePositives": 2,
             "falsePositives": 0,
-            "unadjudicated": 30,
+            "unadjudicated": 32,
             "byStanding": 0,
             "rulings": 4
           }
@@ -880,6 +1089,15 @@
         },
         {
           "family": "id-column-matches-nothing",
+          "truePositives": 1,
+          "falsePositives": 0,
+          "misses": 0,
+          "precision": 1,
+          "shape": "defect",
+          "recall": 1
+        },
+        {
+          "family": "low-symbol-binding",
           "truePositives": 1,
           "falsePositives": 0,
           "misses": 0,
@@ -988,7 +1206,7 @@
             "falsePositives": 0,
             "unadjudicated": 0,
             "byStanding": 88,
-            "rulings": 357
+            "rulings": 397
           }
         },
         {
@@ -1048,5 +1266,5 @@
     }
   ],
   "pending": [],
-  "findings": 452
+  "findings": 487
 }

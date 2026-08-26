@@ -23,6 +23,7 @@ import { join } from "node:path";
 
 import {
   byLanguage,
+  canonicalCorpusInventory,
   comparability,
   compare,
   declarationProvenance,
@@ -32,6 +33,7 @@ import {
   measurementRecord,
   ratchet,
   silentZeros,
+  validateCanonicalInventory,
 } from "../scripts/bench-tier1.mjs";
 
 describe("the silent-zero sentinel", () => {
@@ -632,7 +634,23 @@ describe("a case whose ground truth maps to nothing", () => {
       "case_schema:\n  variant_forbidden:\n  - case\n  - mode\n  - module\n" +
         "  - kind\n  - pending\n",
     );
-    return root;
+    return {
+      root,
+      inventory: {
+        bounds: { gap_count: 0 },
+        cases: [
+          {
+            id: "a-case",
+            mode: "minting",
+            language: "rust",
+            module: "m",
+            kind: "failure",
+            dir: "cases/minting/a-case",
+            expect: "cases/minting/a-case/expect.yaml",
+          },
+        ],
+      },
+    };
   };
   const CASE =
     "id: a-case\nmode: minting\nlanguage: rust\nmodule: m\nkind: failure\n";
@@ -655,13 +673,18 @@ describe("a case whose ground truth maps to nothing", () => {
     // every run, and no tier-1 number moved: quire-rs#270 is the fix for
     // 3,514 unminted TC ids across 88 repositories, and the benchmark could
     // not see it land.
-    const root = corpusWith("diagnostic_reasons:\n  - unmapped-reason\n", CASE);
-    expect(() => loadCorpus(MAPPING, root)).toThrow(
+    const { root, inventory } = corpusWith(
+      "diagnostic_reasons:\n  - unmapped-reason\n",
+      CASE,
+    );
+    expect(() => loadCorpus(MAPPING, root, null, inventory)).toThrow(
       /no family in bench\/tier1-mapping\.json claims/,
     );
     // And the message must name the escape hatch, or the next author deletes
     // the expectation to make the error go away.
-    expect(() => loadCorpus(MAPPING, root)).toThrow(/source: none/);
+    expect(() => loadCorpus(MAPPING, root, null, inventory)).toThrow(
+      /source: none/,
+    );
   });
 
   test("TC-965 a recognised reason still loads, so the guard refuses only the hole", () => {
@@ -669,8 +692,11 @@ describe("a case whose ground truth maps to nothing", () => {
     // The counterpart assertion. A guard that refuses everything is not a
     // guard, and this is what distinguishes "the table does not claim this"
     // from "the table is unreadable".
-    const root = corpusWith("diagnostic_reasons:\n  - known-reason\n", CASE);
-    const { corpora } = loadCorpus(MAPPING, root);
+    const { root, inventory } = corpusWith(
+      "diagnostic_reasons:\n  - known-reason\n",
+      CASE,
+    );
+    const { corpora } = loadCorpus(MAPPING, root, null, inventory);
     expect(corpora).toHaveLength(1);
     expect(corpora[0].family).toBe("known-family");
     expect(corpora[0].defects[0].expect_reason).toBe("known-reason");
@@ -865,21 +891,37 @@ describe("the declaration axis", () => {
       join(corpusRoot, "corpus.yaml"),
       "case_schema:\n  variant_forbidden:\n  - case\n",
     );
+    writeFileSync(join(dir, "expect.yaml"), "{}\n");
+    const inventory = {
+      bounds: { gap_count: 0 },
+      cases: [
+        {
+          id: "a-case",
+          mode: "minting",
+          language: "rust",
+          module: "ecosystem",
+          kind: "failure",
+          dir: "cases/minting/a-case",
+          expect: "cases/minting/a-case/expect.yaml",
+        },
+      ],
+    };
     const declaration = declarationRoot("archetypes: []\n", TABLE);
 
     const { corpora, modulesRoot } = loadCorpus(
       { families: {} },
       corpusRoot,
       declaration,
+      inventory,
     );
     expect(modulesRoot).toBe(declaration);
     expect(corpora[0].module).toBe(join(declaration, "ecosystem"));
 
     const empty = mkdtempSync(join(tmpdir(), "quoin-decl-empty-"));
     roots.push(empty);
-    expect(() => loadCorpus({ families: {} }, corpusRoot, empty)).toThrow(
-      /holds no `manifest\.yaml`/,
-    );
+    expect(() =>
+      loadCorpus({ families: {} }, corpusRoot, empty, inventory),
+    ).toThrow(/holds no `manifest\.yaml`/);
   });
 });
 
@@ -966,6 +1008,26 @@ describe("a delta across unlike inputs", () => {
     expect(precision?.observed).toBe(0.5);
     expect(precision?.baseline).toBe(1);
     expect(precision?.why).toMatch(/provenance\.declaration\.digest moved/);
+    const improved = ratchet(
+      {
+        ...report,
+        provenance: { ...report.provenance, declaration: { digest: "d2" } },
+        actionability: { rate: 0.188 },
+      },
+      { ...previous, actionability: { rate: 0.004 } },
+      {
+        metrics: {
+          finding_precision: { direction: "higher-is-better" },
+          finding_recall: { direction: "higher-is-better" },
+          actionability_rate: { direction: "higher-is-better" },
+        },
+      },
+    ).find((v) => v.metric === "actionability_rate");
+    expect(improved).toMatchObject({
+      verdict: "incomparable",
+      observed: 0.188,
+      baseline: 0.004,
+    });
     // Without the guard this run reads `regressed` — the assertion that the
     // refusal is doing work rather than restating a verdict already reached.
     expect(
@@ -1040,21 +1102,27 @@ describe("the committed mapping table", () => {
   });
 });
 
-describe("the two on-disk layouts", () => {
-  // agent-ix/quoin#242. This reader walked exactly two levels —
-  // `cases/<mode>/<case>/case.yaml` — and the corpus has since moved
-  // multi-language cases to LANGUAGE SETS three levels deep. Measured against
-  // `qa-corpus@41c6224` before the fix: 45 cases loaded, of which 17 reported
-  // `language: "unknown"` and pointed at an `input/` that does not exist. Every
-  // language set collapsed to one phantom case and its real variants were never
-  // visited. After: 77 cases, 0 missing inputs, 0 unknown — independently
-  // matching `bounds.py`'s own count of 77 fixtures.
+describe("the canonical qa-corpus inventory", () => {
   const roots: string[] = [];
   const SCHEMA =
     "case_schema:\n  variant_forbidden:\n  - case\n  - mode\n  - module\n" +
     "  - kind\n  - pending\n";
   const SHARED =
     "id: a-case\nmode: minting\nmodule: m\nkind: failure\nfindable: true\n";
+  const inventory = (cases: Array<Record<string, unknown>>) => ({
+    bounds: { gap_count: 0 },
+    cases,
+  });
+  const entry = (overrides: Record<string, unknown> = {}) => ({
+    id: "a-case",
+    mode: "minting",
+    language: "rust",
+    module: "m",
+    kind: "failure",
+    dir: "cases/minting/a-case",
+    expect: "cases/minting/a-case/expect.yaml",
+    ...overrides,
+  });
 
   /** A corpus root with one case directory the caller shapes. */
   const corpus = (shape: (caseDir: string) => void, schema = SCHEMA) => {
@@ -1086,9 +1154,23 @@ describe("the two on-disk layouts", () => {
           join(dir, language, "case.yaml"),
           `reproduce: quire coverage --scope ${language}\n`,
         );
+        writeFileSync(join(dir, language, "expect.yaml"), "{}\n");
       }
     });
-    const { corpora } = loadCorpus({ families: {} }, root);
+    const cases = ["python", "rust", "typescript"].map((language) =>
+      entry({
+        id: `a-case-${language}`,
+        language,
+        dir: `cases/minting/a-case/${language}`,
+        expect: `cases/minting/a-case/${language}/expect.yaml`,
+      }),
+    );
+    const { corpora } = loadCorpus(
+      { families: {} },
+      root,
+      null,
+      inventory(cases),
+    );
     expect(corpora.map((c) => c.name).sort()).toEqual([
       "a-case-python",
       "a-case-rust",
@@ -1108,74 +1190,46 @@ describe("the two on-disk layouts", () => {
     }
   });
 
-  test("TC-975 a case in BOTH layouts fails the run naming the directory, rather than being read as one of them", () => {
-    // TC-975
-    // Both readers took the `input/` branch and moved on, so a half-migrated
-    // case would have had its language variants disappear without a word.
+  test("TC-975 the runner consumes the authoritative inventory instead of re-reading layouts", () => {
+    // qa-corpus's Python and Rust readers own layout validation. This consumer
+    // receives their resolved ids, languages, directories and expectations.
+    const root = join(__dirname, "..", "corpus");
+    const canonical = canonicalCorpusInventory(root);
+    const loaded = loadCorpus(null, root, null, canonical);
+    expect(loaded.corpora).toHaveLength(canonical.cases.length);
+    expect(loaded.bounds).toEqual(canonical.bounds);
+    expect(loaded.corpora.every((c) => c.language !== "unknown")).toBe(true);
+  });
+
+  test("TC-976 an unreadable canonical envelope fails instead of becoming an empty corpus", () => {
+    expect(() => validateCanonicalInventory({ bounds: {} })).toThrow(
+      /must carry cases and numeric bounds/,
+    );
+    expect(() =>
+      validateCanonicalInventory({ bounds: { gap_count: 0 }, cases: [{}] }),
+    ).toThrow(/case 0 lacks id, dir, expect, module, language/);
+  });
+
+  test("TC-977 raw case metadata is not interpreted by this third consumer", () => {
     const root = corpus((dir) => {
-      writeFileSync(join(dir, "case.yaml"), `${SHARED}language: rust\n`);
       mkdirSync(join(dir, "input"), { recursive: true });
-      mkdirSync(join(dir, "python", "input"), { recursive: true });
+      writeFileSync(join(dir, "expect.yaml"), "{}\n");
+      // Deliberately no case.yaml: the validated inventory is the interface.
     });
-    expect(() => loadCorpus({ families: {} }, root)).toThrow(
-      /carries both an `input\/` and \["python"\]/,
+    const loaded = loadCorpus(
+      { families: {} },
+      root,
+      null,
+      inventory([entry()]),
     );
+    expect(loaded.corpora.map((c) => c.name)).toEqual(["a-case"]);
   });
 
-  test("TC-976 a case in NEITHER layout fails the run, because a fixture that scores nothing and a fixture that is not there are not the same fact", () => {
-    // TC-976
-    const root = corpus((dir) => {
-      writeFileSync(join(dir, "case.yaml"), `${SHARED}language: rust\n`);
-    });
-    expect(() => loadCorpus({ families: {} }, root)).toThrow(
-      /neither an `input\/` nor any `<language>\/input\/`/,
-    );
-  });
-
-  test("TC-977 a language variant may not re-point WHICH case it is, and the rule comes from the declaration rather than a literal in this file", () => {
-    // TC-977
-    // PRESENCE, not disagreement: requiring the fields to conflict lets a
-    // variant inject one the shared file omitted. Measured in the corpus, one
-    // such line turned a control into an expected failure with every gate green.
-    const withVariantKey = (key: string) =>
-      corpus((dir) => {
-        writeFileSync(join(dir, "case.yaml"), SHARED);
-        mkdirSync(join(dir, "rust", "input"), { recursive: true });
-        writeFileSync(join(dir, "rust", "case.yaml"), `${key}: something\n`);
-      });
-    expect(() => loadCorpus({ families: {} }, withVariantKey("mode"))).toThrow(
-      /declares \["mode"\]/,
-    );
-    // READ, not restated. Shrinking the declaration must shrink what is
-    // enforced — otherwise this reader carries a second copy of the rule and
-    // the two are free to drift, which is agent-ix/quire-rs#342 one repo over.
-    const narrowed = "case_schema:\n  variant_forbidden:\n  - case\n";
-    const root = mkdtempSync(join(tmpdir(), "quoin-layout-"));
-    roots.push(root);
-    const dir = join(root, "cases", "minting", "a-case");
-    mkdirSync(join(dir, "rust", "input"), { recursive: true });
-    mkdirSync(join(root, "modules", "m"), { recursive: true });
-    writeFileSync(
-      join(root, "modules", "m", "manifest.yaml"),
-      "archetypes: []\n",
-    );
-    writeFileSync(join(root, "corpus.yaml"), narrowed);
-    writeFileSync(join(dir, "case.yaml"), SHARED);
-    writeFileSync(join(dir, "rust", "case.yaml"), "mode: something\n");
-    expect(loadCorpus({ families: {} }, root).corpora).toHaveLength(1);
-  });
-
-  test("TC-978 a corpus declaring no `variant_forbidden` fails rather than enforcing nothing", () => {
-    // TC-978
-    // A reader that enforces nothing when its rule is missing is
-    // indistinguishable from one that enforced it and found nothing.
-    const empty = corpus((dir) => {
-      writeFileSync(join(dir, "case.yaml"), `${SHARED}language: rust\n`);
-      mkdirSync(join(dir, "input"), { recursive: true });
-    }, "case_schema: {}\n");
-    expect(() => loadCorpus({ families: {} }, empty)).toThrow(
-      /declares no `case_schema\.variant_forbidden`/,
-    );
+  test("TC-978 a canonical entry resolving to no fixture fails by case id", () => {
+    const root = corpus(() => {});
+    expect(() =>
+      loadCorpus({ families: {} }, root, null, inventory([entry()])),
+    ).toThrow(/canonical case a-case resolves to missing input/);
   });
 
   test("TC-979 a pending case's expiry signal is read from `expect-pending.yaml`, never from the live block", () => {
@@ -1201,7 +1255,13 @@ describe("the two on-disk layouts", () => {
         "diagnostic_reasons:\n  - tag-on-non-binding-symbol\n",
       );
     });
-    const [c] = loadCorpus({ families: {} }, root).corpora;
+    const pending = "agent-ix/quire-rs#312";
+    const [c] = loadCorpus(
+      { families: {} },
+      root,
+      null,
+      inventory([entry({ pending })]),
+    ).corpora;
     expect(c.pending).toBe("agent-ix/quire-rs#312");
     expect(c.pendingReasons).toEqual(["tag-on-non-binding-symbol"]);
     expect(c.hasPendingBlock).toBe(true);
@@ -1219,8 +1279,15 @@ describe("the two on-disk layouts", () => {
         `${SHARED}language: rust\npending: agent-ix/quire-rs#273\n`,
       );
       mkdirSync(join(dir, "input"), { recursive: true });
+      writeFileSync(join(dir, "expect.yaml"), "total: 1\n");
     });
-    const [a] = loadCorpus({ families: {} }, noBlock).corpora;
+    const pending = "agent-ix/quire-rs#273";
+    const [a] = loadCorpus(
+      { families: {} },
+      noBlock,
+      null,
+      inventory([entry({ pending })]),
+    ).corpora;
     expect(a.hasPendingBlock).toBe(false);
     expect(a.pendingReasons).toEqual([]);
 
@@ -1235,9 +1302,15 @@ describe("the two on-disk layouts", () => {
         `${SHARED}language: rust\npending: agent-ix/quire-rs#273\n`,
       );
       mkdirSync(join(dir, "input"), { recursive: true });
+      writeFileSync(join(dir, "expect.yaml"), "total: 1\n");
       writeFileSync(join(dir, "expect-pending.yaml"), "total: 4\nbacked: 2\n");
     });
-    const [b] = loadCorpus({ families: {} }, payloadOnly).corpora;
+    const [b] = loadCorpus(
+      { families: {} },
+      payloadOnly,
+      null,
+      inventory([entry({ pending })]),
+    ).corpora;
     expect(b.hasPendingBlock).toBe(true);
     expect(b.pendingReasons).toEqual([]);
   });
