@@ -29,6 +29,7 @@ import {
   flattenLabels,
   loadCorpus,
   localisationRate,
+  measurementRecord,
   ratchet,
   silentZeros,
 } from "../scripts/bench-tier1.mjs";
@@ -218,6 +219,73 @@ describe("the silent-zero sentinel", () => {
     // Named, never a bare count: a gate that says "3" and not which three is a
     // gate nobody can discharge.
     expect(v?.why).toMatch(/a\/coverage\.backed/);
+  });
+});
+
+describe("the measurement series", () => {
+  const report = {
+    corpora: 80,
+    findings: 417,
+    by_language: [
+      { language: "rust", corpora: 42 },
+      { language: "python", corpora: 18 },
+    ],
+    provenance: {
+      engine: "quire 0.30.2 (engine e5a6ccc)",
+      corpus: "a6ce22cb2a6bb207cf8afa0ce98949bdbb3cdd98",
+      declaration: { digest: "sha256:819807f757c7" },
+    },
+    families: [{ family: "hollow-denominator", precision: 1, recall: 1 }],
+  };
+
+  test("TC-997 tool version and config digest come from the payload, not from an operator", () => {
+    // TC-997
+    // The two fields that would have PREVENTED the defect this EPIC exists to
+    // fix. The installed `quire` was CLI 0.29.0 pinning engine v0.42.0, sixteen
+    // releases behind and unable to emit `binding_census` at all, and every
+    // recent ecosystem figure came from it. `quire --version` reports the CLI
+    // crate version, so a current CLI linking a stale engine is invisible to
+    // anything that trusts a typed string (agent-ix/quoin#228).
+    const record = measurementRecord(report, "2026-08-25T00:00:00.000Z");
+    expect(record.tool_version).toBe("quire 0.30.2 (engine e5a6ccc)");
+    expect(record.config_digest).toBe("sha256:819807f757c7");
+    expect(record.corpus_revision).toBe(report.provenance.corpus);
+    // The POPULATION, because a delta across a moved population is not a delta:
+    // quire-rs#272 adds ~3,514 rows to the denominator, and a record that does
+    // not carry its population lets that read as a regression.
+    expect(record.scope).toMatchObject({ corpora: 80, findings: 417 });
+    expect(record.scope.by_language).toEqual({ rust: 42, python: 18 });
+  });
+
+  test("TC-998 the raw report is ATTACHED, never transcribed into the record's own fields", () => {
+    // TC-998
+    // Three published SpecReviews cited hand-typed figures from a binary whose
+    // self-reported version was wrong. The whole payload rides along so a later
+    // reader re-derives rather than re-types (agent-ix/quoin#228).
+    const record = measurementRecord(report, "2026-08-25T00:00:00.000Z");
+    expect(record.evidence).toBe(report);
+    expect(record.at).toBe("2026-08-25T00:00:00.000Z");
+    expect(record.units).toBe("bench/metrics.json");
+  });
+
+  test("TC-1000 every record in the committed series carries the four join fields", () => {
+    // A record missing any of these cannot be compared with another: the
+    // engine, the declaration, the corpus and the scorer are the four inputs a
+    // delta is only meaningful when they are known (agent-ix/quoin#229).
+    const path = join(__dirname, "..", "bench", "measurements.jsonl");
+    if (!existsSync(path)) return;
+    const records = readFileSync(path, "utf8")
+      .split("\n")
+      .filter(Boolean)
+      .map((l) => JSON.parse(l));
+    expect(records.length).toBeGreaterThan(0);
+    for (const r of records) {
+      expect(r.tool_version).toBeTruthy();
+      expect(r.config_digest).toBeTruthy();
+      expect(r.corpus_revision).toBeTruthy();
+      expect(r.definition_version).toBeTruthy();
+      expect(r.at).toBeTruthy();
+    }
   });
 });
 
