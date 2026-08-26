@@ -7,6 +7,7 @@ export {
   findCatalogEntry,
 } from "./catalog.js";
 export { ensureDefaultModules, defaultModulesManifest } from "./modules.js";
+export * from "./measurement/index.js";
 export {
   installPlugin,
   listPlugins,

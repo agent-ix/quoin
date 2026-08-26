@@ -18,6 +18,7 @@
   ],
   "metrics": {
     "finding_precision": {
+      "measurement_plan": "spec/assurance/MP-201-finding-precision.md",
       "unit": "fraction of reported findings",
       "population": "findings the toolchain reported for one labelled defect family",
       "method": "truePositives / (truePositives + falsePositives) per family, from evals/lib/quality.mjs scoreFindings. A finding is paired to a label by LOCATION where both name one, so a right-family wrong-place finding is a false positive (CR-098); a family with no denominator reports null, never 0, because 0/0 is not 0% and a precision of 0 claims the run was wrong",
@@ -27,6 +28,7 @@
       "baseline_note": "Per-family, so the numbers live in `bench/tier1-baseline.json` rather than here \u2014 one scalar cannot hold eight families, and averaging them is the exact hiding this metric exists to prevent. First scored run (2026-08-23, quire built from quire-rs@8c4928a): five families at 1.00, three with no denominator because nothing fired on them. `null` here still means no single figure is declared, NOT zero."
     },
     "finding_recall": {
+      "measurement_plan": "spec/assurance/MP-202-finding-recall.md",
       "unit": "fraction of seeded defects",
       "population": "labelled defects in one family that the corpus declares findable; a label marked findable:false is excluded from the denominator AND reported",
       "method": "truePositives / (truePositives + misses) per family, from scoreFindings. Reported PER FAMILY and never averaged: a tool that finds every marker mismatch and no vacuous suite has a respectable average and a hole, and the average is what hides it",
@@ -36,6 +38,7 @@
       "baseline_note": "Per-family, in `bench/tier1-baseline.json`. First scored run (2026-08-23): catch-all-universal, hollow-denominator, marker-form-mismatch, undeclared-type-value and vacuous-under-guard at 1.00; gate-that-gates-nothing, mocked-confirmation and oracle-is-code-copy at 0.00 for three DIFFERENT reasons \u2014 no detector, a detector with no producer (quoin#204), and a detector with no caller (quire-rs#236). The tier-2 key records 7 findings, 0 of which the tools found at battletest pass 2; that 0-of-7 is the recall this programme exists to move."
     },
     "finding_precision.unadjudicated": {
+      "measurement_plan": "spec/assurance/MP-203-unadjudicated-findings.md",
       "unit": "findings",
       "population": "findings of one ADVISORY family, on corpus cases whose `expect.yaml` names that family's reason in neither `diagnostic_reasons` nor `absent_diagnostic_reasons`",
       "method": "counted per family by evals/lib/quality.mjs scopedPrecision, from the rulings bench-tier1.mjs adjudicationOf reads out of each case's own expect.yaml. THE NUMBER AN ADVISORY ACTUALLY REPORTS. Its precision RATE cannot fall independently of agent-ix/qa-corpus's own `make ci` \u2014 a firing on a case that declared the reason absent turns that gate red first \u2014 so a rate of 1.00 is not evidence the detector is right. This is: it is the number of times the toolchain fired and nobody has ruled on whether it should have. Ratcheted lower-is-better, so an advisory that starts firing more widely costs something and the corpus adjudication work has a number to move",
@@ -45,6 +48,7 @@
       "baseline_note": "Per-family, so the counts live in `bench/tier1-baseline.json` under each advisory family's `precision_basis`. Introduced by agent-ix/quoin#245 after the run that opened it measured 313 unadjudicated of 316 firings for `archetype-matches-nothing` and 64 of 66 for `catch-all-universal` \u2014 377 findings on which the benchmark held no opinion and said nothing. `null` here means no single figure is declared, NOT zero."
     },
     "span_grounding_rate": {
+      "measurement_plan": "spec/assurance/MP-204-span-grounding.md",
       "unit": "percent of specific-shape criteria",
       "population": "acceptance criteria the FR-052 classifier gives a specific property shape",
       "method": "criteria whose domain, precondition AND oracle spans are all present, over criteria carrying a specific shape. NOT YET COMPUTED: no runner reads `quire properties --json` for this, tracked as agent-ix/quoin#219. Declared here because the dictionary is the contract and a metric nobody declared is a metric nobody can ask for",
@@ -53,6 +57,7 @@
       "baseline_note": "Battletest pass 2 measured 0 of 65 specific-shape records carrying all three spans. Zero is the measured starting point, not an absence."
     },
     "actionability_rate": {
+      "measurement_plan": "spec/assurance/MP-205-actionability.md",
       "unit": "percent of emitted findings",
       "population": "findings the toolchain emitted across the corpus entry",
       "method": "findings naming a row id or a document line, over findings emitted, from scoreActionability. A finding you cannot act on is a finding nobody acts on, whatever its precision",
@@ -61,6 +66,7 @@
       "baseline_note": "Battletest pass 2 measured 15 of 496 findings carrying a row id \u2014 3.02%. Tier 1's first scored run reads 2 of 7 (29%): a small, clean corpus flatters the figure, which is why the tier-2 number is the one to move and both are kept."
     },
     "cost_per_confirmed_insight": {
+      "measurement_plan": "spec/assurance/MP-206-confirmed-insight-cost.md",
       "unit": "tokens and tool calls per true positive",
       "population": "findings CONFIRMED as true positives, not findings emitted",
       "method": "tokenUsage.total / truePositives and toolCalls / truePositives, from scoreCost, extending the FR-042 eval report metrics rather than opening a second accounting. Both numbers, because they are different costs: tokens are the context budget and tool calls are wall-clock and blast radius. Reports null per-insight when nothing was confirmed \u2014 dividing by emitted output would reward a run for producing more of it",
@@ -69,6 +75,7 @@
       "baseline_note": "COMPUTED SINCE agent-ix/quoin#243. `scoreCost` was complete in `evals/lib/quality.mjs` and reached by nothing but its own unit tests; `scripts/bench-tier1.mjs` imported only `scoreActionability` and `scoreFindings`. For a TIER-1 run `tokens` is `null` and not 0: this runner shells out to `quire` and `quoin` and calls no model, so the token cost is not measured here rather than measured at zero \u2014 the tokens half belongs to the FR-042 eval harness, which is an agent run. The tool-call half IS this benchmark's cost and is counted exactly. Per-family baselines are not meaningful for a cost; the figure lives in `bench/tier1-baseline.json` beside the run that spent it."
     },
     "sentinel.silent_zero": {
+      "measurement_plan": "spec/assurance/MP-207-silent-zero.md",
       "unit": "metric",
       "population": "metrics emitted across every corpus entry in the run",
       "method": "ratio-shaped metrics with matched = 0 over a non-zero population and NO accompanying diagnostic. A count-shaped metric is exempt (CR-098): matched and its value are the same fact, so a zero reports that none was found, not that none was read. This is the shape of `555/2389 (23%)` published over a corpus the binder could not read",
@@ -79,6 +86,7 @@
       "baseline_note": "A GATE, not a score. Expected exactly 0 with no tolerance, and it never ratchets: a benchmark that let this score 0.98 and pass would be measuring the wrong thing. COMPUTED SINCE agent-ix/quoin#243 \u2014 declared here from the beginning and evaluated by no code until then, so a reader of this file saw seven governed metrics and four producers. The condition is `matched == 0` over a NON-ZERO `examined`, which is the engine's own wording in `coverage.backed`'s `method`; `examined == 0` is a population the instrument had nothing to walk, not one it failed to read, and is reported under `unread_population` rather than gated. Gating on the looser reading fired on three fixtures \u2014 `catch-all-properties`, `greenfield-no-symbols`, `gate-that-gates-nothing` \u2014 every one of which seeds a symbol-less tree on purpose. First measured run: 0 violations, 3 unread populations (agent-ix/quire-rs#271)."
     },
     "minting.section_hit_rate": {
+      "measurement_plan": "spec/assurance/MP-208-minting-section-hit.md",
       "unit": "fraction of (trace target, minting document) pairs",
       "population": "the pairs `quire coverage` reports over the SCORED cases of the tier-1 corpus \u2014 a trace target's `archetype:` selects a document and its `exclude:` keeps it. Pending cases are excluded, the same population every other tier-1 number is drawn from",
       "method": "`matched` summed over `examined` summed, across every scored case whose `quire coverage --json` payload carries the metric in state `measured`. `null` \u2014 never 0 \u2014 when NO case reports it, which is exactly what an engine predating agent-ix/quire-rs#270 looks like: absent and zero are different claims. REPORTED, NOT RATCHETED: the value is a property of the corpus POPULATION, since a seeded section mismatch lowers it and its control raises it, so ratcheting it would score fixture authorship rather than the toolchain. What it is here for is the ENGINE axis \u2014 the metric's presence is the signal that #270 landed",
@@ -87,6 +95,7 @@
       "baseline_note": "No baseline, deliberately: see `method`. Measured 2026-08-24 over the expanded corpus \u2014 `null` at engine `84740d4` (no case reports the metric; it does not exist) and measured at engine `816e187`. This metric appearing on every case was ONE of the two Wave 3 payload signals the tier-1 runner did not read, and the reason `bench/wave3-before-after.md` scored every family `held` (agent-ix/quoin#236)."
     },
     "finding_localisation_rate": {
+      "measurement_plan": "spec/assurance/MP-209-finding-localisation.md",
       "unit": "fraction of confirmed findings",
       "population": "true positives from a scored tier-1 run",
       "method": "positional pairings over true positives, from evals/lib/quality.mjs scoreFindings. A finding pairs positionally only when it and its label BOTH name a place and the places agree, so this is the share of confirmed findings that said where. It is the metric that encodes the actual requirement \u2014 an alert nobody can locate is an alert nobody acts on \u2014 and it is deliberately not per-family: the question is about the toolchain's output, not about one detector",

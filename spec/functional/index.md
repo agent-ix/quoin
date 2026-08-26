@@ -51,3 +51,4 @@ description: "Index of functional requirements (FR) for quoin."
 * [FR-041: SBOM inventories as run evidence](./FR-041-sbom-inventory-evidence.md)
 * [FR-042: Agent-eval reports as run evidence](./FR-042-agent-eval-evidence.md)
 * [FR-043: The quality benchmark](./FR-043-quality-benchmark.md)
+* [FR-044: Plan-governed measurement store and report](./FR-044-plan-governed-measurements.md)

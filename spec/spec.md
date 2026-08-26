@@ -198,7 +198,7 @@ Three layers verify this specification, each named in the requirements above:
 
 ## Module Store
 
-`quoin` declares its default `spec-artifacts-*` and `spec-objects-*` modules in
+`quoin` declares its default `engineering-assurance`, `spec-artifacts-*`, and `spec-objects-*` modules in
 the committed `default-modules.yaml` as pinned `git-subdir` sources, and installs
 that set on first catalog access into `~/.ix/filament/modules/<name>/` — lazily,
 idempotently, and (once pinned and installed) entirely offline. The install is

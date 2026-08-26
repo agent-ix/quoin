@@ -36,6 +36,9 @@
       "evidence": {
         "description": "The evidence store \u2014 what actually ran, and against which statement (record, affirm, gc)."
       },
+      "measurement": {
+        "description": "Record plan-validated QA measurements as atomic producer collections."
+      },
       "module": {
         "description": "Install and manage user/community spec modules (list, install, remove, ensure-defaults)."
       },

@@ -247,9 +247,9 @@ describe("the measurement series", () => {
     // crate version, so a current CLI linking a stale engine is invisible to
     // anything that trusts a typed string (agent-ix/quoin#228).
     const record = measurementRecord(report, "2026-08-25T00:00:00.000Z");
-    expect(record.tool_version).toBe("quire 0.30.2 (engine e5a6ccc)");
-    expect(record.config_digest).toBe("sha256:819807f757c7");
-    expect(record.corpus_revision).toBe(report.provenance.corpus);
+    expect(record.toolVersion).toBe("quire 0.30.2 (engine e5a6ccc)");
+    expect(record.configDigest).toBe("sha256:819807f757c7");
+    expect(record.corpusRevision).toBe(report.provenance.corpus);
     // The POPULATION, because a delta across a moved population is not a delta:
     // quire-rs#272 adds ~3,514 rows to the denominator, and a record that does
     // not carry its population lets that read as a regression.
@@ -263,15 +263,14 @@ describe("the measurement series", () => {
     // self-reported version was wrong. The whole payload rides along so a later
     // reader re-derives rather than re-types (agent-ix/quoin#228).
     const record = measurementRecord(report, "2026-08-25T00:00:00.000Z");
-    expect(record.evidence).toBe(report);
-    expect(record.at).toBe("2026-08-25T00:00:00.000Z");
-    expect(record.units).toBe("bench/metrics.json");
+    expect(record.rawEvidence).toBe(report);
+    expect(record.timestamp).toBe("2026-08-25T00:00:00.000Z");
+    expect(record.observations.length).toBeGreaterThan(0);
   });
 
-  test("TC-1000 every record in the committed series carries the four join fields", () => {
-    // A record missing any of these cannot be compared with another: the
-    // engine, the declaration, the corpus and the scorer are the four inputs a
-    // delta is only meaningful when they are known (agent-ix/quoin#229).
+  test("TC-1000 the superseded JSONL series remains readable as legacy evidence", () => {
+    // These observations predate MeasurementPlans. Preserve them, but do not
+    // silently treat them as active plan-governed collections.
     const path = join(__dirname, "..", "bench", "measurements.jsonl");
     if (!existsSync(path)) return;
     const records = readFileSync(path, "utf8")
@@ -285,6 +284,7 @@ describe("the measurement series", () => {
       expect(r.corpus_revision).toBeTruthy();
       expect(r.definition_version).toBeTruthy();
       expect(r.at).toBeTruthy();
+      expect(r.schemaVersion).toBeUndefined();
     }
   });
 });

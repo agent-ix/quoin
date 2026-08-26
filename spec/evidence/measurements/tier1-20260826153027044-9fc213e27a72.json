@@ -1,0 +1,1966 @@
+{
+  "collectionId": "tier1-20260826153027044-9fc213e27a72",
+  "configDigest": "sha256:819807f757c7c6468be257c82c2d23bd5210f451eb3811c63b5ff5fa8d04b403",
+  "corpusRevision": "1f84c7a39d5fcf80da22debf59ecad1bedbf9d1f",
+  "environment": {
+    "languages": "python,rust,typescript",
+    "runner": "tier-1",
+    "scorerDigest": "sha256:7f08edfddac276aa863d0dfc675b72f97dd2d0935f6455752dbe1ddffdc889f8"
+  },
+  "observations": [
+    {
+      "definitionVersion": "finding.precision-v1",
+      "dimensions": {
+        "family": "archetype-matches-nothing"
+      },
+      "metric": "finding_precision",
+      "planId": "MP-201",
+      "population": {
+        "complete": true,
+        "examined": 347,
+        "identity": {
+          "family": "archetype-matches-nothing"
+        },
+        "matched": 347
+      },
+      "shape": "ratio",
+      "state": "measured",
+      "unit": "fraction of reported findings",
+      "value": 1
+    },
+    {
+      "definitionVersion": "finding.recall-v1",
+      "dimensions": {
+        "family": "archetype-matches-nothing"
+      },
+      "metric": "finding_recall",
+      "planId": "MP-202",
+      "population": {
+        "complete": true,
+        "examined": 3,
+        "identity": {
+          "family": "archetype-matches-nothing"
+        },
+        "matched": 3
+      },
+      "shape": "ratio",
+      "state": "measured",
+      "unit": "fraction of seeded defects",
+      "value": 1
+    },
+    {
+      "definitionVersion": "finding.unadjudicated-v1",
+      "dimensions": {
+        "family": "archetype-matches-nothing"
+      },
+      "metric": "finding_precision.unadjudicated",
+      "planId": "MP-203",
+      "population": {
+        "identity": {
+          "family": "archetype-matches-nothing"
+        }
+      },
+      "shape": "count",
+      "state": "measured",
+      "unit": "findings",
+      "value": 0
+    },
+    {
+      "definitionVersion": "finding.precision-v1",
+      "dimensions": {
+        "family": "catch-all-universal"
+      },
+      "metric": "finding_precision",
+      "planId": "MP-201",
+      "population": {
+        "complete": true,
+        "examined": 2,
+        "identity": {
+          "family": "catch-all-universal"
+        },
+        "matched": 2
+      },
+      "shape": "ratio",
+      "state": "measured",
+      "unit": "fraction of reported findings",
+      "value": 1
+    },
+    {
+      "definitionVersion": "finding.recall-v1",
+      "dimensions": {
+        "family": "catch-all-universal"
+      },
+      "metric": "finding_recall",
+      "planId": "MP-202",
+      "population": {
+        "complete": true,
+        "examined": 2,
+        "identity": {
+          "family": "catch-all-universal"
+        },
+        "matched": 2
+      },
+      "shape": "ratio",
+      "state": "measured",
+      "unit": "fraction of seeded defects",
+      "value": 1
+    },
+    {
+      "definitionVersion": "finding.unadjudicated-v1",
+      "dimensions": {
+        "family": "catch-all-universal"
+      },
+      "metric": "finding_precision.unadjudicated",
+      "planId": "MP-203",
+      "population": {
+        "identity": {
+          "family": "catch-all-universal"
+        }
+      },
+      "shape": "count",
+      "state": "measured",
+      "unit": "findings",
+      "value": 72
+    },
+    {
+      "definitionVersion": "finding.precision-v1",
+      "dimensions": {
+        "family": "gate-that-gates-nothing"
+      },
+      "metric": "finding_precision",
+      "planId": "MP-201",
+      "population": {
+        "complete": true,
+        "examined": 0,
+        "identity": {
+          "family": "gate-that-gates-nothing"
+        },
+        "matched": 0
+      },
+      "reason": "producer did not compute this metric",
+      "shape": "ratio",
+      "state": "not_computed",
+      "unit": "fraction of reported findings",
+      "value": null
+    },
+    {
+      "definitionVersion": "finding.recall-v1",
+      "dimensions": {
+        "family": "gate-that-gates-nothing"
+      },
+      "metric": "finding_recall",
+      "planId": "MP-202",
+      "population": {
+        "complete": true,
+        "examined": 1,
+        "identity": {
+          "family": "gate-that-gates-nothing"
+        },
+        "matched": 0
+      },
+      "shape": "ratio",
+      "state": "measured",
+      "unit": "fraction of seeded defects",
+      "value": 0
+    },
+    {
+      "definitionVersion": "finding.unadjudicated-v1",
+      "dimensions": {
+        "family": "gate-that-gates-nothing"
+      },
+      "metric": "finding_precision.unadjudicated",
+      "planId": "MP-203",
+      "population": {
+        "identity": {
+          "family": "gate-that-gates-nothing"
+        }
+      },
+      "shape": "count",
+      "state": "measured",
+      "unit": "findings",
+      "value": 0
+    },
+    {
+      "definitionVersion": "finding.precision-v1",
+      "dimensions": {
+        "family": "hollow-denominator"
+      },
+      "metric": "finding_precision",
+      "planId": "MP-201",
+      "population": {
+        "complete": true,
+        "examined": 1,
+        "identity": {
+          "family": "hollow-denominator"
+        },
+        "matched": 1
+      },
+      "shape": "ratio",
+      "state": "measured",
+      "unit": "fraction of reported findings",
+      "value": 1
+    },
+    {
+      "definitionVersion": "finding.recall-v1",
+      "dimensions": {
+        "family": "hollow-denominator"
+      },
+      "metric": "finding_recall",
+      "planId": "MP-202",
+      "population": {
+        "complete": true,
+        "examined": 1,
+        "identity": {
+          "family": "hollow-denominator"
+        },
+        "matched": 1
+      },
+      "shape": "ratio",
+      "state": "measured",
+      "unit": "fraction of seeded defects",
+      "value": 1
+    },
+    {
+      "definitionVersion": "finding.unadjudicated-v1",
+      "dimensions": {
+        "family": "hollow-denominator"
+      },
+      "metric": "finding_precision.unadjudicated",
+      "planId": "MP-203",
+      "population": {
+        "identity": {
+          "family": "hollow-denominator"
+        }
+      },
+      "shape": "count",
+      "state": "measured",
+      "unit": "findings",
+      "value": 0
+    },
+    {
+      "definitionVersion": "finding.precision-v1",
+      "dimensions": {
+        "family": "id-column-matches-nothing"
+      },
+      "metric": "finding_precision",
+      "planId": "MP-201",
+      "population": {
+        "complete": true,
+        "examined": 3,
+        "identity": {
+          "family": "id-column-matches-nothing"
+        },
+        "matched": 3
+      },
+      "shape": "ratio",
+      "state": "measured",
+      "unit": "fraction of reported findings",
+      "value": 1
+    },
+    {
+      "definitionVersion": "finding.recall-v1",
+      "dimensions": {
+        "family": "id-column-matches-nothing"
+      },
+      "metric": "finding_recall",
+      "planId": "MP-202",
+      "population": {
+        "complete": true,
+        "examined": 3,
+        "identity": {
+          "family": "id-column-matches-nothing"
+        },
+        "matched": 3
+      },
+      "shape": "ratio",
+      "state": "measured",
+      "unit": "fraction of seeded defects",
+      "value": 1
+    },
+    {
+      "definitionVersion": "finding.unadjudicated-v1",
+      "dimensions": {
+        "family": "id-column-matches-nothing"
+      },
+      "metric": "finding_precision.unadjudicated",
+      "planId": "MP-203",
+      "population": {
+        "identity": {
+          "family": "id-column-matches-nothing"
+        }
+      },
+      "shape": "count",
+      "state": "measured",
+      "unit": "findings",
+      "value": 0
+    },
+    {
+      "definitionVersion": "finding.precision-v1",
+      "dimensions": {
+        "family": "marker-form-mismatch"
+      },
+      "metric": "finding_precision",
+      "planId": "MP-201",
+      "population": {
+        "complete": true,
+        "examined": 5,
+        "identity": {
+          "family": "marker-form-mismatch"
+        },
+        "matched": 5
+      },
+      "shape": "ratio",
+      "state": "measured",
+      "unit": "fraction of reported findings",
+      "value": 1
+    },
+    {
+      "definitionVersion": "finding.recall-v1",
+      "dimensions": {
+        "family": "marker-form-mismatch"
+      },
+      "metric": "finding_recall",
+      "planId": "MP-202",
+      "population": {
+        "complete": true,
+        "examined": 5,
+        "identity": {
+          "family": "marker-form-mismatch"
+        },
+        "matched": 5
+      },
+      "shape": "ratio",
+      "state": "measured",
+      "unit": "fraction of seeded defects",
+      "value": 1
+    },
+    {
+      "definitionVersion": "finding.unadjudicated-v1",
+      "dimensions": {
+        "family": "marker-form-mismatch"
+      },
+      "metric": "finding_precision.unadjudicated",
+      "planId": "MP-203",
+      "population": {
+        "identity": {
+          "family": "marker-form-mismatch"
+        }
+      },
+      "shape": "count",
+      "state": "measured",
+      "unit": "findings",
+      "value": 0
+    },
+    {
+      "definitionVersion": "finding.precision-v1",
+      "dimensions": {
+        "family": "mocked-confirmation"
+      },
+      "metric": "finding_precision",
+      "planId": "MP-201",
+      "population": {
+        "complete": true,
+        "examined": 0,
+        "identity": {
+          "family": "mocked-confirmation"
+        },
+        "matched": 0
+      },
+      "reason": "producer did not compute this metric",
+      "shape": "ratio",
+      "state": "not_computed",
+      "unit": "fraction of reported findings",
+      "value": null
+    },
+    {
+      "definitionVersion": "finding.recall-v1",
+      "dimensions": {
+        "family": "mocked-confirmation"
+      },
+      "metric": "finding_recall",
+      "planId": "MP-202",
+      "population": {
+        "complete": true,
+        "examined": 1,
+        "identity": {
+          "family": "mocked-confirmation"
+        },
+        "matched": 0
+      },
+      "shape": "ratio",
+      "state": "measured",
+      "unit": "fraction of seeded defects",
+      "value": 0
+    },
+    {
+      "definitionVersion": "finding.unadjudicated-v1",
+      "dimensions": {
+        "family": "mocked-confirmation"
+      },
+      "metric": "finding_precision.unadjudicated",
+      "planId": "MP-203",
+      "population": {
+        "identity": {
+          "family": "mocked-confirmation"
+        }
+      },
+      "shape": "count",
+      "state": "measured",
+      "unit": "findings",
+      "value": 0
+    },
+    {
+      "definitionVersion": "finding.precision-v1",
+      "dimensions": {
+        "family": "oracle-is-code-copy"
+      },
+      "metric": "finding_precision",
+      "planId": "MP-201",
+      "population": {
+        "complete": true,
+        "examined": 0,
+        "identity": {
+          "family": "oracle-is-code-copy"
+        },
+        "matched": 0
+      },
+      "reason": "producer did not compute this metric",
+      "shape": "ratio",
+      "state": "not_computed",
+      "unit": "fraction of reported findings",
+      "value": null
+    },
+    {
+      "definitionVersion": "finding.recall-v1",
+      "dimensions": {
+        "family": "oracle-is-code-copy"
+      },
+      "metric": "finding_recall",
+      "planId": "MP-202",
+      "population": {
+        "complete": true,
+        "examined": 1,
+        "identity": {
+          "family": "oracle-is-code-copy"
+        },
+        "matched": 0
+      },
+      "shape": "ratio",
+      "state": "measured",
+      "unit": "fraction of seeded defects",
+      "value": 0
+    },
+    {
+      "definitionVersion": "finding.unadjudicated-v1",
+      "dimensions": {
+        "family": "oracle-is-code-copy"
+      },
+      "metric": "finding_precision.unadjudicated",
+      "planId": "MP-203",
+      "population": {
+        "identity": {
+          "family": "oracle-is-code-copy"
+        }
+      },
+      "shape": "count",
+      "state": "measured",
+      "unit": "findings",
+      "value": 0
+    },
+    {
+      "definitionVersion": "finding.precision-v1",
+      "dimensions": {
+        "family": "section-holds-no-table"
+      },
+      "metric": "finding_precision",
+      "planId": "MP-201",
+      "population": {
+        "complete": true,
+        "examined": 1,
+        "identity": {
+          "family": "section-holds-no-table"
+        },
+        "matched": 1
+      },
+      "shape": "ratio",
+      "state": "measured",
+      "unit": "fraction of reported findings",
+      "value": 1
+    },
+    {
+      "definitionVersion": "finding.recall-v1",
+      "dimensions": {
+        "family": "section-holds-no-table"
+      },
+      "metric": "finding_recall",
+      "planId": "MP-202",
+      "population": {
+        "complete": true,
+        "examined": 1,
+        "identity": {
+          "family": "section-holds-no-table"
+        },
+        "matched": 1
+      },
+      "shape": "ratio",
+      "state": "measured",
+      "unit": "fraction of seeded defects",
+      "value": 1
+    },
+    {
+      "definitionVersion": "finding.unadjudicated-v1",
+      "dimensions": {
+        "family": "section-holds-no-table"
+      },
+      "metric": "finding_precision.unadjudicated",
+      "planId": "MP-203",
+      "population": {
+        "identity": {
+          "family": "section-holds-no-table"
+        }
+      },
+      "shape": "count",
+      "state": "measured",
+      "unit": "findings",
+      "value": 0
+    },
+    {
+      "definitionVersion": "finding.precision-v1",
+      "dimensions": {
+        "family": "section-matches-nothing"
+      },
+      "metric": "finding_precision",
+      "planId": "MP-201",
+      "population": {
+        "complete": true,
+        "examined": 6,
+        "identity": {
+          "family": "section-matches-nothing"
+        },
+        "matched": 6
+      },
+      "shape": "ratio",
+      "state": "measured",
+      "unit": "fraction of reported findings",
+      "value": 1
+    },
+    {
+      "definitionVersion": "finding.recall-v1",
+      "dimensions": {
+        "family": "section-matches-nothing"
+      },
+      "metric": "finding_recall",
+      "planId": "MP-202",
+      "population": {
+        "complete": true,
+        "examined": 6,
+        "identity": {
+          "family": "section-matches-nothing"
+        },
+        "matched": 6
+      },
+      "shape": "ratio",
+      "state": "measured",
+      "unit": "fraction of seeded defects",
+      "value": 1
+    },
+    {
+      "definitionVersion": "finding.unadjudicated-v1",
+      "dimensions": {
+        "family": "section-matches-nothing"
+      },
+      "metric": "finding_precision.unadjudicated",
+      "planId": "MP-203",
+      "population": {
+        "identity": {
+          "family": "section-matches-nothing"
+        }
+      },
+      "shape": "count",
+      "state": "measured",
+      "unit": "findings",
+      "value": 0
+    },
+    {
+      "definitionVersion": "finding.precision-v1",
+      "dimensions": {
+        "family": "tag-on-non-binding-symbol"
+      },
+      "metric": "finding_precision",
+      "planId": "MP-201",
+      "population": {
+        "complete": true,
+        "examined": 6,
+        "identity": {
+          "family": "tag-on-non-binding-symbol"
+        },
+        "matched": 6
+      },
+      "shape": "ratio",
+      "state": "measured",
+      "unit": "fraction of reported findings",
+      "value": 1
+    },
+    {
+      "definitionVersion": "finding.recall-v1",
+      "dimensions": {
+        "family": "tag-on-non-binding-symbol"
+      },
+      "metric": "finding_recall",
+      "planId": "MP-202",
+      "population": {
+        "complete": true,
+        "examined": 6,
+        "identity": {
+          "family": "tag-on-non-binding-symbol"
+        },
+        "matched": 6
+      },
+      "shape": "ratio",
+      "state": "measured",
+      "unit": "fraction of seeded defects",
+      "value": 1
+    },
+    {
+      "definitionVersion": "finding.unadjudicated-v1",
+      "dimensions": {
+        "family": "tag-on-non-binding-symbol"
+      },
+      "metric": "finding_precision.unadjudicated",
+      "planId": "MP-203",
+      "population": {
+        "identity": {
+          "family": "tag-on-non-binding-symbol"
+        }
+      },
+      "shape": "count",
+      "state": "measured",
+      "unit": "findings",
+      "value": 0
+    },
+    {
+      "definitionVersion": "finding.precision-v1",
+      "dimensions": {
+        "family": "undeclared-type-value"
+      },
+      "metric": "finding_precision",
+      "planId": "MP-201",
+      "population": {
+        "complete": true,
+        "examined": 1,
+        "identity": {
+          "family": "undeclared-type-value"
+        },
+        "matched": 1
+      },
+      "shape": "ratio",
+      "state": "measured",
+      "unit": "fraction of reported findings",
+      "value": 1
+    },
+    {
+      "definitionVersion": "finding.recall-v1",
+      "dimensions": {
+        "family": "undeclared-type-value"
+      },
+      "metric": "finding_recall",
+      "planId": "MP-202",
+      "population": {
+        "complete": true,
+        "examined": 1,
+        "identity": {
+          "family": "undeclared-type-value"
+        },
+        "matched": 1
+      },
+      "shape": "ratio",
+      "state": "measured",
+      "unit": "fraction of seeded defects",
+      "value": 1
+    },
+    {
+      "definitionVersion": "finding.unadjudicated-v1",
+      "dimensions": {
+        "family": "undeclared-type-value"
+      },
+      "metric": "finding_precision.unadjudicated",
+      "planId": "MP-203",
+      "population": {
+        "identity": {
+          "family": "undeclared-type-value"
+        }
+      },
+      "shape": "count",
+      "state": "measured",
+      "unit": "findings",
+      "value": 0
+    },
+    {
+      "definitionVersion": "finding.precision-v1",
+      "dimensions": {
+        "family": "untracked-id-near-miss"
+      },
+      "metric": "finding_precision",
+      "planId": "MP-201",
+      "population": {
+        "complete": true,
+        "examined": 1,
+        "identity": {
+          "family": "untracked-id-near-miss"
+        },
+        "matched": 1
+      },
+      "shape": "ratio",
+      "state": "measured",
+      "unit": "fraction of reported findings",
+      "value": 1
+    },
+    {
+      "definitionVersion": "finding.recall-v1",
+      "dimensions": {
+        "family": "untracked-id-near-miss"
+      },
+      "metric": "finding_recall",
+      "planId": "MP-202",
+      "population": {
+        "complete": true,
+        "examined": 1,
+        "identity": {
+          "family": "untracked-id-near-miss"
+        },
+        "matched": 1
+      },
+      "shape": "ratio",
+      "state": "measured",
+      "unit": "fraction of seeded defects",
+      "value": 1
+    },
+    {
+      "definitionVersion": "finding.unadjudicated-v1",
+      "dimensions": {
+        "family": "untracked-id-near-miss"
+      },
+      "metric": "finding_precision.unadjudicated",
+      "planId": "MP-203",
+      "population": {
+        "identity": {
+          "family": "untracked-id-near-miss"
+        }
+      },
+      "shape": "count",
+      "state": "measured",
+      "unit": "findings",
+      "value": 0
+    },
+    {
+      "definitionVersion": "finding.precision-v1",
+      "dimensions": {
+        "family": "vacuous-under-guard"
+      },
+      "metric": "finding_precision",
+      "planId": "MP-201",
+      "population": {
+        "complete": true,
+        "examined": 1,
+        "identity": {
+          "family": "vacuous-under-guard"
+        },
+        "matched": 1
+      },
+      "shape": "ratio",
+      "state": "measured",
+      "unit": "fraction of reported findings",
+      "value": 1
+    },
+    {
+      "definitionVersion": "finding.recall-v1",
+      "dimensions": {
+        "family": "vacuous-under-guard"
+      },
+      "metric": "finding_recall",
+      "planId": "MP-202",
+      "population": {
+        "complete": true,
+        "examined": 1,
+        "identity": {
+          "family": "vacuous-under-guard"
+        },
+        "matched": 1
+      },
+      "shape": "ratio",
+      "state": "measured",
+      "unit": "fraction of seeded defects",
+      "value": 1
+    },
+    {
+      "definitionVersion": "finding.unadjudicated-v1",
+      "dimensions": {
+        "family": "vacuous-under-guard"
+      },
+      "metric": "finding_precision.unadjudicated",
+      "planId": "MP-203",
+      "population": {
+        "identity": {
+          "family": "vacuous-under-guard"
+        }
+      },
+      "shape": "count",
+      "state": "measured",
+      "unit": "findings",
+      "value": 0
+    },
+    {
+      "definitionVersion": "property.span-grounding-v1",
+      "metric": "span_grounding_rate",
+      "planId": "MP-204",
+      "reason": "tier-1 has no properties-payload producer",
+      "shape": "ratio",
+      "state": "not_computed",
+      "unit": "percent of specific-shape criteria",
+      "value": null
+    },
+    {
+      "definitionVersion": "finding.actionability-v1",
+      "metric": "actionability_rate",
+      "planId": "MP-205",
+      "population": {
+        "complete": true,
+        "examined": 452,
+        "matched": 2
+      },
+      "shape": "ratio",
+      "state": "measured",
+      "unit": "percent of emitted findings",
+      "value": 0.4
+    },
+    {
+      "definitionVersion": "finding.confirmed-cost-v1",
+      "dimensions": {
+        "component": "tool_calls"
+      },
+      "metric": "cost_per_confirmed_insight",
+      "planId": "MP-206",
+      "shape": "scalar",
+      "state": "measured",
+      "unit": "tool calls per confirmed insight",
+      "value": 5.9
+    },
+    {
+      "definitionVersion": "finding.confirmed-cost-v1",
+      "dimensions": {
+        "component": "tokens"
+      },
+      "metric": "cost_per_confirmed_insight",
+      "planId": "MP-206",
+      "reason": "tier-1 calls no model",
+      "shape": "scalar",
+      "state": "not_computed",
+      "unit": "tokens per confirmed insight",
+      "value": null
+    },
+    {
+      "definitionVersion": "benchmark.silent-zero-v1",
+      "metric": "sentinel.silent_zero",
+      "planId": "MP-207",
+      "shape": "count",
+      "state": "measured",
+      "unit": "metric",
+      "value": 0
+    },
+    {
+      "definitionVersion": "minting.section-hit-v1",
+      "metric": "minting.section_hit_rate",
+      "planId": "MP-208",
+      "population": {
+        "complete": true,
+        "examined": 171,
+        "matched": 165
+      },
+      "shape": "ratio",
+      "state": "measured",
+      "unit": "fraction of (trace target, minting document) pairs",
+      "value": 0.965
+    },
+    {
+      "definitionVersion": "finding.localisation-v1",
+      "metric": "finding_localisation_rate",
+      "planId": "MP-209",
+      "population": {
+        "complete": true,
+        "examined": 30,
+        "matched": 26
+      },
+      "shape": "ratio",
+      "state": "measured",
+      "unit": "fraction of confirmed findings",
+      "value": 0.867
+    }
+  ],
+  "rawEvidence": {
+    "actionability": {
+      "actionable": 2,
+      "rate": 0.004,
+      "total": 452
+    },
+    "bounds": {
+      "covered_count": 48,
+      "covered_pending_count": 0,
+      "declared_cells": 91,
+      "gap_count": 32,
+      "matrix": [
+        {
+          "case": "section-name-mismatch",
+          "cells": {
+            "python": {
+              "state": "covered"
+            },
+            "rust": {
+              "state": "covered"
+            },
+            "typescript": {
+              "state": "covered"
+            }
+          },
+          "mode": "minting",
+          "source": "88 repos / 3,514 TC ids (candidate census; section fix measured +83 rows, CR-118)"
+        },
+        {
+          "case": "id-column-mismatch",
+          "cells": {
+            "python": {
+              "state": "covered"
+            },
+            "rust": {
+              "state": "covered"
+            },
+            "typescript": {
+              "state": "covered"
+            }
+          },
+          "mode": "minting",
+          "source": "agent-ix/identity"
+        },
+        {
+          "case": "section-and-id-column",
+          "cells": {
+            "python": {
+              "state": "covered"
+            },
+            "rust": {
+              "state": "covered"
+            },
+            "typescript": {
+              "state": "covered"
+            }
+          },
+          "mode": "minting",
+          "source": "identity — section-only diagnosis is insufficient"
+        },
+        {
+          "case": "rows-across-many-headings",
+          "cells": {
+            "python": {
+              "state": "covered"
+            },
+            "rust": {
+              "state": "covered"
+            },
+            "typescript": {
+              "state": "covered"
+            }
+          },
+          "mode": "minting",
+          "source": "identity (~30 headings)"
+        },
+        {
+          "case": "section-holds-no-table",
+          "cells": {
+            "python": {
+              "state": "GAP"
+            },
+            "rust": {
+              "state": "covered"
+            },
+            "typescript": {
+              "state": "GAP"
+            }
+          },
+          "mode": "minting",
+          "source": "agent-ix/quire-rs#320 — found by adversarial review of"
+        },
+        {
+          "case": "no-testmatrix-document",
+          "cells": {
+            "python": {
+              "state": "covered"
+            },
+            "rust": {
+              "state": "covered"
+            },
+            "typescript": {
+              "state": "covered"
+            }
+          },
+          "mode": "minting",
+          "source": "47 repos"
+        },
+        {
+          "case": "test-name-id-in-call-title",
+          "cells": {
+            "python": {
+              "reason": "the declaration declares NO python test-name-id form. `manifest.yaml` carries `rust-test-name-id` and `typescript-test-name-id` and no python sibling, so there is no form for a python fixture to write the defect in.",
+              "state": "out-of-scope"
+            },
+            "rust": {
+              "reason": "`rust-test-name-id` reads the FUNCTION NAME, not a call title — Rust has no registration call to put a title in. The Rust shape of this defect is `detection/test-name-id-in-fn-name`, which is its own row.",
+              "state": "out-of-scope"
+            },
+            "typescript": {
+              "state": "covered"
+            }
+          },
+          "mode": "detection",
+          "source": "spec-artifacts-process#68, 81% of a repo"
+        },
+        {
+          "case": "test-name-id-in-fn-name",
+          "cells": {
+            "python": {
+              "reason": "the declaration declares no python test-name-id form at all — see the same exclusion on `test-name-id-in-call-title`.",
+              "state": "out-of-scope"
+            },
+            "rust": {
+              "state": "covered"
+            },
+            "typescript": {
+              "reason": "`typescript-test-name-id` reads the CALL TITLE, not a function name, which is the sibling row `detection/test-name-id-in-call-title`.",
+              "state": "out-of-scope"
+            }
+          },
+          "mode": "detection",
+          "source": "CR-034 (LANDED, cf7b4e2) — regression pin, 3952/3960 sites bind"
+        },
+        {
+          "case": "tag-on-describe-header",
+          "cells": {
+            "python": {
+              "state": "GAP"
+            },
+            "rust": {
+              "reason": "`symbols/rust.rs` mints a `Container` for `mod`, `struct`, `enum` and `trait` and has no registration-call form at all — there is no `describe()` for a tag to sit above. The Rust shape closest to this is a tag above a `mod`, which is `attachment/tag-at-module-scope`, and that row excludes Rust for its own measured reason.",
+              "state": "out-of-scope"
+            },
+            "typescript": {
+              "state": "covered"
+            }
+          },
+          "mode": "attachment",
+          "source": "162 occurrences / 18 roots against 1,004 above an it/test (CR-119 re-measure;"
+        },
+        {
+          "case": "tag-inside-string-literal",
+          "cells": {
+            "python": {
+              "state": "covered"
+            },
+            "rust": {
+              "state": "GAP"
+            },
+            "typescript": {
+              "state": "covered"
+            }
+          },
+          "mode": "attachment",
+          "source": "agent-ix/quire-rs#323 — Rust masked, Python and TypeScript did not"
+        },
+        {
+          "case": "tag-at-module-scope",
+          "cells": {
+            "python": {
+              "state": "covered"
+            },
+            "rust": {
+              "reason": "`symbols/rust.rs` emits NO file-level container, so a column-0 comment there sits inside no symbol at all and there is nothing for the tag to attach to wrongly. The defect requires a container that exists and cannot bind, which Rust does not have at file scope.",
+              "state": "out-of-scope"
+            },
+            "typescript": {
+              "state": "covered"
+            }
+          },
+          "mode": "attachment",
+          "source": "125 occurrences / 23 repos — python 96/18, typescript 4/3 (rust excluded, see above)"
+        },
+        {
+          "case": "tag-on-non-test-function",
+          "cells": {
+            "python": {
+              "state": "covered"
+            },
+            "rust": {
+              "state": "covered"
+            },
+            "typescript": {
+              "state": "covered"
+            }
+          },
+          "mode": "attachment",
+          "source": "1,677 occurrences / 86 repos — python 497/47, rust 943/6, typescript 237/36"
+        },
+        {
+          "case": "triple-quote-scope-desync",
+          "cells": {
+            "python": {
+              "state": "covered"
+            },
+            "rust": {
+              "reason": "neither language has a triple-quoted string literal, so the scope-stack inversion this pins cannot be written in it. `symbols/rust.rs` tracks braces; the defect was a quoting state machine.",
+              "state": "out-of-scope"
+            },
+            "typescript": {
+              "reason": "neither language has a triple-quoted string literal. A TypeScript template literal is a different construct and, if it desynchronises the scanner, is its own case with its own measurement.",
+              "state": "out-of-scope"
+            }
+          },
+          "mode": "parser",
+          "source": "symbols/python.rs — FIXED by #274; regression pin. Recovery measured on the real ecosystem: py-project 102 to 151 python binding candidates, filament-parser-lib 311 to 395, and repos with no triple-quoted assignment unchanged (quire-rs 125, sqlmodel-fixtures 74), so the gain is recovery rather than inflation."
+        },
+        {
+          "case": "tag-names-undeclared-section",
+          "cells": {
+            "python": {
+              "state": "covered"
+            },
+            "rust": {
+              "state": "covered"
+            },
+            "typescript": {
+              "state": "covered"
+            }
+          },
+          "mode": "join",
+          "source": "1 entry / 1 repo (identity/tests/test_tenant_auth_policy.py:195) — the surviving prefix of the four `tag-names-con-inv-sc-vc` bundled; CON 155/28 decided-to-mint and gated on quire-rs#327, SC 124/7 is quire-rs#244, VC 0/0 minted since CR-037 and tagged by nobody"
+        },
+        {
+          "case": "tag-names-bare-fr",
+          "cells": {
+            "python": {
+              "state": "covered"
+            },
+            "rust": {
+              "state": "covered"
+            },
+            "typescript": {
+              "state": "covered"
+            }
+          },
+          "mode": "join",
+          "source": "714 occurrences / 50 repos in test files — python 504/38, rust 179/3, typescript 31/10"
+        },
+        {
+          "case": "tag-names-unminted-tc",
+          "cells": {
+            "python": {
+              "state": "GAP"
+            },
+            "rust": {
+              "state": "GAP"
+            },
+            "typescript": {
+              "state": "GAP"
+            }
+          },
+          "mode": "join",
+          "source": "455 tags"
+        },
+        {
+          "case": "real-tests-zero-tags",
+          "cells": {
+            "python": {
+              "state": "covered"
+            },
+            "rust": {
+              "state": "covered"
+            },
+            "typescript": {
+              "state": "covered"
+            }
+          },
+          "mode": "disposition",
+          "source": "150 of 234 repos with test files carry no binding tag in any test"
+        },
+        {
+          "case": "engine-lacks-capability",
+          "cells": {
+            "n/a": {
+              "reason": "provenance is a property of the toolchain, not of a source language; the case is language-neutral",
+              "state": "out-of-scope"
+            }
+          },
+          "mode": "provenance",
+          "source": "the 0.29.0 failure — census must abort"
+        },
+        {
+          "case": "marker-form-mismatch",
+          "cells": {
+            "python": {
+              "state": "GAP"
+            },
+            "rust": {
+              "state": "covered"
+            },
+            "typescript": {
+              "state": "GAP"
+            }
+          },
+          "mode": "attachment",
+          "source": "agent-ix/spec-artifacts-process#59"
+        },
+        {
+          "case": "catch-all-headline",
+          "cells": {
+            "python": {
+              "state": "GAP"
+            },
+            "rust": {
+              "state": "covered"
+            },
+            "typescript": {
+              "state": "GAP"
+            }
+          },
+          "mode": "detection",
+          "source": "agent-ix/quire-rs#230"
+        },
+        {
+          "case": "stale-name-correct-trace",
+          "cells": {
+            "python": {
+              "state": "GAP"
+            },
+            "rust": {
+              "state": "covered"
+            },
+            "typescript": {
+              "state": "GAP"
+            }
+          },
+          "mode": "detection",
+          "source": "agent-ix/quire-rs#227"
+        },
+        {
+          "case": "greenfield-no-symbols",
+          "cells": {
+            "python": {
+              "state": "GAP"
+            },
+            "rust": {
+              "state": "covered"
+            },
+            "typescript": {
+              "state": "GAP"
+            }
+          },
+          "mode": "disposition",
+          "source": "agent-ix/quire-rs#229"
+        },
+        {
+          "case": "no-symbol-method-in-the-verification-column",
+          "cells": {
+            "python": {
+              "state": "GAP"
+            },
+            "rust": {
+              "state": "covered"
+            },
+            "typescript": {
+              "state": "GAP"
+            }
+          },
+          "mode": "minting",
+          "source": "agent-ix/quire-rs#259"
+        },
+        {
+          "case": "implements-never-asked",
+          "cells": {
+            "python": {
+              "state": "GAP"
+            },
+            "rust": {
+              "reason": "`implements-never-asked` ships but binds `variants/no-implements-declaration` rather than the ecosystem declaration, so it exercises no ecosystem mode (agent-ix/quire-rs#330)",
+              "state": "GAP"
+            },
+            "typescript": {
+              "state": "GAP"
+            }
+          },
+          "mode": "provenance",
+          "source": "agent-ix/quire-rs#226"
+        },
+        {
+          "case": "tests-directory-topology",
+          "cells": {
+            "python": {
+              "state": "GAP"
+            },
+            "rust": {
+              "state": "covered"
+            },
+            "typescript": {
+              "state": "GAP"
+            }
+          },
+          "mode": "attachment",
+          "source": "agent-ix/quire-rs#267"
+        },
+        {
+          "case": "wrong-type-cell",
+          "cells": {
+            "python": {
+              "state": "GAP"
+            },
+            "rust": {
+              "state": "covered"
+            },
+            "typescript": {
+              "state": "GAP"
+            }
+          },
+          "mode": "minting",
+          "source": "agent-ix/quoin#227 — a Type cell outside the declared vocabulary"
+        },
+        {
+          "case": "vacuous-property-suite",
+          "cells": {
+            "python": {
+              "reason": "the detector CANNOT FIRE here by deliberate decision. `narrowing_guards_for` returns `NO_MEASURED_GUARDS` — empty — for Python and TypeScript (CR-102): neither has a binding-and-testing construct like `if let`, and what the equivalent shape is has not been measured. A fixture would assert a silence that means nothing about the defect.",
+              "state": "out-of-scope"
+            },
+            "rust": {
+              "state": "covered"
+            },
+            "typescript": {
+              "reason": "same, and it is the measured half. Sharing Rust's guard list made `=> {` — a match arm in Rust, an ARROW FUNCTION in TypeScript — open a guard on every `it(\"…\", () => {…})` body: 549 suspicions from 551 candidates on `agent-ix/quoin`, sampled three, all rule, none real. The narrowing is justified independently of the count.",
+              "state": "out-of-scope"
+            }
+          },
+          "mode": "skeptic",
+          "source": "agent-ix/quoin#227 — every assertion behind a narrowing guard"
+        },
+        {
+          "case": "oracle-copy",
+          "cells": {
+            "python": {
+              "state": "GAP"
+            },
+            "rust": {
+              "state": "covered"
+            },
+            "typescript": {
+              "state": "GAP"
+            }
+          },
+          "mode": "skeptic",
+          "source": "agent-ix/quoin#227 — the oracle is a copy of the code under test"
+        },
+        {
+          "case": "mocked-confirmation",
+          "cells": {
+            "python": {
+              "state": "GAP"
+            },
+            "rust": {
+              "state": "covered"
+            },
+            "typescript": {
+              "state": "GAP"
+            }
+          },
+          "mode": "skeptic",
+          "source": "agent-ix/quoin#227 — the test confirms its own mock"
+        },
+        {
+          "case": "gate-that-gates-nothing",
+          "cells": {
+            "python": {
+              "state": "GAP"
+            },
+            "rust": {
+              "state": "covered"
+            },
+            "typescript": {
+              "state": "GAP"
+            }
+          },
+          "mode": "skeptic",
+          "source": "agent-ix/quoin#227 — a gate that cannot fail"
+        },
+        {
+          "case": "hollow-metric",
+          "cells": {
+            "python": {
+              "state": "GAP"
+            },
+            "rust": {
+              "state": "covered"
+            },
+            "typescript": {
+              "state": "GAP"
+            }
+          },
+          "mode": "provenance",
+          "source": "agent-ix/quoin#227 — a ratio over input the binder could not read"
+        }
+      ],
+      "out_of_scope_count": 11
+    },
+    "by_language": [
+      {
+        "corpora": 20,
+        "families": [
+          {
+            "falsePositives": 80,
+            "family": "archetype-matches-nothing",
+            "misses": 0,
+            "precision": 1,
+            "precision_basis": {
+              "byStanding": 80,
+              "falsePositives": 0,
+              "precision": 1,
+              "rulings": 357,
+              "truePositives": 81,
+              "unadjudicated": 0
+            },
+            "recall": 1,
+            "shape": "advisory",
+            "truePositives": 1
+          },
+          {
+            "falsePositives": 20,
+            "family": "catch-all-universal",
+            "misses": 0,
+            "precision": null,
+            "precision_basis": {
+              "byStanding": 0,
+              "falsePositives": 0,
+              "precision": null,
+              "rulings": 4,
+              "truePositives": 0,
+              "unadjudicated": 20
+            },
+            "recall": null,
+            "shape": "advisory",
+            "truePositives": 0
+          },
+          {
+            "falsePositives": 0,
+            "family": "id-column-matches-nothing",
+            "misses": 0,
+            "precision": 1,
+            "recall": 1,
+            "shape": "defect",
+            "truePositives": 1
+          },
+          {
+            "falsePositives": 0,
+            "family": "marker-form-mismatch",
+            "misses": 0,
+            "precision": 1,
+            "recall": 1,
+            "shape": "defect",
+            "truePositives": 1
+          },
+          {
+            "falsePositives": 0,
+            "family": "section-matches-nothing",
+            "misses": 0,
+            "precision": 1,
+            "recall": 1,
+            "shape": "defect",
+            "truePositives": 2
+          },
+          {
+            "falsePositives": 0,
+            "family": "tag-on-non-binding-symbol",
+            "misses": 0,
+            "precision": 1,
+            "recall": 1,
+            "shape": "defect",
+            "truePositives": 2
+          }
+        ],
+        "language": "python"
+      },
+      {
+        "corpora": 45,
+        "families": [
+          {
+            "falsePositives": 176,
+            "family": "archetype-matches-nothing",
+            "misses": 0,
+            "precision": 1,
+            "precision_basis": {
+              "byStanding": 176,
+              "falsePositives": 0,
+              "precision": 1,
+              "rulings": 357,
+              "truePositives": 177,
+              "unadjudicated": 0
+            },
+            "recall": 1,
+            "shape": "advisory",
+            "truePositives": 1
+          },
+          {
+            "falsePositives": 30,
+            "family": "catch-all-universal",
+            "misses": 0,
+            "precision": 1,
+            "precision_basis": {
+              "byStanding": 0,
+              "falsePositives": 0,
+              "precision": 1,
+              "rulings": 4,
+              "truePositives": 2,
+              "unadjudicated": 30
+            },
+            "recall": 1,
+            "shape": "advisory",
+            "truePositives": 2
+          },
+          {
+            "falsePositives": 0,
+            "family": "gate-that-gates-nothing",
+            "misses": 1,
+            "precision": null,
+            "recall": 0,
+            "shape": "defect",
+            "truePositives": 0
+          },
+          {
+            "falsePositives": 0,
+            "family": "hollow-denominator",
+            "misses": 0,
+            "precision": 1,
+            "recall": 1,
+            "shape": "defect",
+            "truePositives": 1
+          },
+          {
+            "falsePositives": 0,
+            "family": "id-column-matches-nothing",
+            "misses": 0,
+            "precision": 1,
+            "recall": 1,
+            "shape": "defect",
+            "truePositives": 1
+          },
+          {
+            "falsePositives": 0,
+            "family": "marker-form-mismatch",
+            "misses": 0,
+            "precision": 1,
+            "recall": 1,
+            "shape": "defect",
+            "truePositives": 3
+          },
+          {
+            "falsePositives": 0,
+            "family": "mocked-confirmation",
+            "misses": 1,
+            "precision": null,
+            "recall": 0,
+            "shape": "defect",
+            "truePositives": 0
+          },
+          {
+            "falsePositives": 0,
+            "family": "oracle-is-code-copy",
+            "misses": 1,
+            "precision": null,
+            "recall": 0,
+            "shape": "defect",
+            "truePositives": 0
+          },
+          {
+            "falsePositives": 0,
+            "family": "section-holds-no-table",
+            "misses": 0,
+            "precision": 1,
+            "recall": 1,
+            "shape": "defect",
+            "truePositives": 1
+          },
+          {
+            "falsePositives": 0,
+            "family": "section-matches-nothing",
+            "misses": 0,
+            "precision": 1,
+            "recall": 1,
+            "shape": "defect",
+            "truePositives": 2
+          },
+          {
+            "falsePositives": 0,
+            "family": "tag-on-non-binding-symbol",
+            "misses": 0,
+            "precision": 1,
+            "recall": 1,
+            "shape": "defect",
+            "truePositives": 1
+          },
+          {
+            "falsePositives": 0,
+            "family": "undeclared-type-value",
+            "misses": 0,
+            "precision": 1,
+            "recall": 1,
+            "shape": "defect",
+            "truePositives": 1
+          },
+          {
+            "falsePositives": 0,
+            "family": "untracked-id-near-miss",
+            "misses": 0,
+            "precision": 1,
+            "recall": 1,
+            "shape": "defect",
+            "truePositives": 1
+          },
+          {
+            "falsePositives": 0,
+            "family": "vacuous-under-guard",
+            "misses": 0,
+            "precision": 1,
+            "recall": 1,
+            "shape": "defect",
+            "truePositives": 1
+          }
+        ],
+        "language": "rust"
+      },
+      {
+        "corpora": 22,
+        "families": [
+          {
+            "falsePositives": 88,
+            "family": "archetype-matches-nothing",
+            "misses": 0,
+            "precision": 1,
+            "precision_basis": {
+              "byStanding": 88,
+              "falsePositives": 0,
+              "precision": 1,
+              "rulings": 357,
+              "truePositives": 89,
+              "unadjudicated": 0
+            },
+            "recall": 1,
+            "shape": "advisory",
+            "truePositives": 1
+          },
+          {
+            "falsePositives": 22,
+            "family": "catch-all-universal",
+            "misses": 0,
+            "precision": null,
+            "precision_basis": {
+              "byStanding": 0,
+              "falsePositives": 0,
+              "precision": null,
+              "rulings": 4,
+              "truePositives": 0,
+              "unadjudicated": 22
+            },
+            "recall": null,
+            "shape": "advisory",
+            "truePositives": 0
+          },
+          {
+            "falsePositives": 0,
+            "family": "id-column-matches-nothing",
+            "misses": 0,
+            "precision": 1,
+            "recall": 1,
+            "shape": "defect",
+            "truePositives": 1
+          },
+          {
+            "falsePositives": 0,
+            "family": "marker-form-mismatch",
+            "misses": 0,
+            "precision": 1,
+            "recall": 1,
+            "shape": "defect",
+            "truePositives": 1
+          },
+          {
+            "falsePositives": 0,
+            "family": "section-matches-nothing",
+            "misses": 0,
+            "precision": 1,
+            "recall": 1,
+            "shape": "defect",
+            "truePositives": 2
+          },
+          {
+            "falsePositives": 0,
+            "family": "tag-on-non-binding-symbol",
+            "misses": 0,
+            "precision": 1,
+            "recall": 1,
+            "shape": "defect",
+            "truePositives": 3
+          }
+        ],
+        "language": "typescript"
+      }
+    ],
+    "collateral": [
+      {
+        "family": "hollow-denominator",
+        "reason": "hollow-denominator"
+      },
+      {
+        "family": "hollow-denominator",
+        "reason": "hollow-denominator"
+      },
+      {
+        "family": "hollow-denominator",
+        "reason": "hollow-denominator"
+      },
+      {
+        "family": "hollow-denominator",
+        "reason": "hollow-denominator"
+      },
+      {
+        "family": "hollow-denominator",
+        "reason": "hollow-denominator"
+      },
+      {
+        "family": "marker-form-mismatch",
+        "reason": "no-symbol-bound"
+      }
+    ],
+    "corpora": 87,
+    "cost_per_confirmed_insight": {
+      "tokens": null,
+      "tokensPer": null,
+      "toolCalls": 177,
+      "toolCallsPer": 5.9,
+      "truePositives": 30
+    },
+    "excluded": [],
+    "families": [
+      {
+        "falsePositives": 344,
+        "family": "archetype-matches-nothing",
+        "misses": 0,
+        "precision": 1,
+        "precision_basis": {
+          "byStanding": 344,
+          "falsePositives": 0,
+          "precision": 1,
+          "rulings": 357,
+          "truePositives": 347,
+          "unadjudicated": 0
+        },
+        "recall": 1,
+        "shape": "advisory",
+        "truePositives": 3
+      },
+      {
+        "falsePositives": 72,
+        "family": "catch-all-universal",
+        "misses": 0,
+        "precision": 1,
+        "precision_basis": {
+          "byStanding": 0,
+          "falsePositives": 0,
+          "precision": 1,
+          "rulings": 4,
+          "truePositives": 2,
+          "unadjudicated": 72
+        },
+        "recall": 1,
+        "shape": "advisory",
+        "truePositives": 2
+      },
+      {
+        "falsePositives": 0,
+        "family": "gate-that-gates-nothing",
+        "misses": 1,
+        "precision": null,
+        "recall": 0,
+        "shape": "defect",
+        "truePositives": 0
+      },
+      {
+        "falsePositives": 0,
+        "family": "hollow-denominator",
+        "misses": 0,
+        "precision": 1,
+        "recall": 1,
+        "shape": "defect",
+        "truePositives": 1
+      },
+      {
+        "falsePositives": 0,
+        "family": "id-column-matches-nothing",
+        "misses": 0,
+        "precision": 1,
+        "recall": 1,
+        "shape": "defect",
+        "truePositives": 3
+      },
+      {
+        "falsePositives": 0,
+        "family": "marker-form-mismatch",
+        "misses": 0,
+        "precision": 1,
+        "recall": 1,
+        "shape": "defect",
+        "truePositives": 5
+      },
+      {
+        "falsePositives": 0,
+        "family": "mocked-confirmation",
+        "misses": 1,
+        "precision": null,
+        "recall": 0,
+        "shape": "defect",
+        "truePositives": 0
+      },
+      {
+        "falsePositives": 0,
+        "family": "oracle-is-code-copy",
+        "misses": 1,
+        "precision": null,
+        "recall": 0,
+        "shape": "defect",
+        "truePositives": 0
+      },
+      {
+        "falsePositives": 0,
+        "family": "section-holds-no-table",
+        "misses": 0,
+        "precision": 1,
+        "recall": 1,
+        "shape": "defect",
+        "truePositives": 1
+      },
+      {
+        "falsePositives": 0,
+        "family": "section-matches-nothing",
+        "misses": 0,
+        "precision": 1,
+        "recall": 1,
+        "shape": "defect",
+        "truePositives": 6
+      },
+      {
+        "falsePositives": 0,
+        "family": "tag-on-non-binding-symbol",
+        "misses": 0,
+        "precision": 1,
+        "recall": 1,
+        "shape": "defect",
+        "truePositives": 6
+      },
+      {
+        "falsePositives": 0,
+        "family": "undeclared-type-value",
+        "misses": 0,
+        "precision": 1,
+        "recall": 1,
+        "shape": "defect",
+        "truePositives": 1
+      },
+      {
+        "falsePositives": 0,
+        "family": "untracked-id-near-miss",
+        "misses": 0,
+        "precision": 1,
+        "recall": 1,
+        "shape": "defect",
+        "truePositives": 1
+      },
+      {
+        "falsePositives": 0,
+        "family": "vacuous-under-guard",
+        "misses": 0,
+        "precision": 1,
+        "recall": 1,
+        "shape": "defect",
+        "truePositives": 1
+      }
+    ],
+    "finding_localisation_rate": 0.867,
+    "findings": 452,
+    "minting.section_hit_rate": {
+      "cases_reporting": 87,
+      "examined": 171,
+      "matched": 165,
+      "rate": 0.965
+    },
+    "pending": [],
+    "positional": 26,
+    "provenance": {
+      "corpus": "1f84c7a39d5fcf80da22debf59ecad1bedbf9d1f",
+      "declaration": {
+        "digest": "sha256:819807f757c7c6468be257c82c2d23bd5210f451eb3811c63b5ff5fa8d04b403",
+        "modules": {
+          "ecosystem": "sha256:829e7343fd73ffd65ec6fee8653228f37f919d236f01e6219b40cc1ee559c140",
+          "variants/no-implements-declaration": "sha256:9faf3f56d877a478b8cd69b41528abbcf6f1ed6c59fe531732a39901fdf2b694"
+        },
+        "root": "corpus/modules",
+        "sources": {
+          "spec-artifacts-iso": "3d871962b66db99a1854f40466e94ebabc7a6115",
+          "spec-artifacts-process": "62d691f"
+        }
+      },
+      "engine": "quire 0.30.2 (engine f18abe3)"
+    },
+    "sentinel.silent_zero": {
+      "count": 0,
+      "instances": [],
+      "unread_population": [
+        {
+          "corpus": "catch-all-properties",
+          "examined": 0,
+          "metric": "coverage.backed",
+          "population": 4,
+          "value": 0
+        },
+        {
+          "corpus": "greenfield-no-symbols",
+          "examined": 0,
+          "metric": "coverage.backed",
+          "population": 2,
+          "value": 0
+        },
+        {
+          "corpus": "gate-that-gates-nothing",
+          "examined": 0,
+          "metric": "coverage.backed",
+          "population": 3,
+          "value": 0
+        }
+      ]
+    }
+  },
+  "schemaVersion": 1,
+  "scope": {
+    "by_language": {
+      "python": 20,
+      "rust": 45,
+      "typescript": 22
+    },
+    "corpora": 87,
+    "findings": 452
+  },
+  "sourceRevision": "6fd03f98aed06e97ed27458a0a0de617ca7caa9f+working-tree:7f08edfddac276aa",
+  "subject": "tier-1 controlled corpus",
+  "timestamp": "2026-08-26T15:30:27.044Z",
+  "toolIdentity": "quoin bench-tier1",
+  "toolVersion": "quire 0.30.2 (engine f18abe3)"
+}

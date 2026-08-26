@@ -43,7 +43,6 @@
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import {
-  appendFileSync,
   existsSync,
   readdirSync,
   readFileSync,
@@ -60,16 +59,15 @@ import {
   scoreCost,
   scoreFindings,
 } from "../evals/lib/quality.mjs";
+import {
+  createMeasurementRecord,
+  persistMeasurement as persistMeasurementCollection,
+} from "./lib/tier1-measurement.mjs";
 
 const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 const MAPPING = join(ROOT, "bench", "tier1-mapping.json");
 const METRICS = join(ROOT, "bench", "metrics.json");
 const BASELINE = join(ROOT, "bench", "tier1-baseline.json");
-// THE SOURCE OF TRUTH, append-only. `tier1-baseline.json` is the latest record
-// flattened for the ratchet to read; this is every record there has been
-// (agent-ix/quoin#229). JSONL rather than one JSON array so an append is one
-// whole line and never a rewrite of the file it is extending.
-const SERIES = join(ROOT, "bench", "measurements.jsonl");
 
 /**
  * The engine metric quire-rs#270 added, declared in `bench/metrics.json`.
@@ -830,68 +828,31 @@ export function declarationProvenance(modulesRoot, bound = []) {
   };
 }
 
-/**
- * One producer invocation, as a MeasurementRecord (agent-ix/quoin#228/#229).
- *
- * THE DEFECT THIS FIXES: `--update` overwrote `bench/tier1-baseline.json` in
- * place, so history was destroyed on every update. The ratchet worked — it
- * compares the run to the baseline and fails on a regression — but the baseline
- * was a single SNAPSHOT, not a series. After an update the prior value existed
- * only in the git history of a JSON blob, which is not queryable and is not
- * joined to the run that produced it. Both Wave 3 before/after documents were
- * assembled by hand from two terminals for exactly this reason.
- *
- * Two fields here would have prevented the defect this whole EPIC exists to
- * fix, and that is why they are not optional:
- *
- *   tool_version   the installed `quire` was CLI 0.29.0 pinning engine v0.42.0,
- *                  sixteen releases behind and unable to emit `binding_census`
- *                  at all. Every recent ecosystem figure came from it.
- *   config_digest  the declared module IS the configuration. A manifest change
- *                  silently changes what every number means.
- *
- * Both are read from the payload envelope, never from an operator-supplied
- * string — `quire --version` reports the CLI crate version, so a current CLI
- * linking a stale engine is invisible to anything that trusts a typed value.
- *
- * NOT YET REFUSED: a record whose subject has no `MeasurementPlan` should be
- * rejected rather than stored untyped (#228's fifth acceptance box). That needs
- * the artifact set promoted out of the pilot, which is agent-ix/quire-rs#275 and
- * is open. Recorded on the ticket rather than quietly skipped.
- */
+function scorerDigest() {
+  const hash = createHash("sha256");
+  for (const path of [
+    join(ROOT, "scripts"),
+    join(ROOT, "evals", "lib"),
+    join(ROOT, "bench"),
+  ]) {
+    hash.update(digestOf(path));
+  }
+  return `sha256:${hash.digest("hex")}`;
+}
+
+/** Build a plan-governed collection for one Tier-1 invocation. */
 export function measurementRecord(report, at) {
-  return {
-    // WHAT DEFINES THE NUMBERS. A record carrying values whose dictionary has
-    // moved is two different measurements wearing one name, which is the
-    // three-numbers-one-name defect at the top of EPIC quire-rs#264.
-    definition_version: digestOf(join(ROOT, "bench")),
-    subject: "tier-1 controlled corpus",
-    scope: {
-      corpora: report.corpora,
-      by_language: Object.fromEntries(
-        (report.by_language ?? []).map((l) => [l.language, l.corpora]),
-      ),
-      findings: report.findings,
-    },
-    tool_identity: "quoin bench-tier1",
-    tool_version: report.provenance.engine,
-    config_digest: report.provenance.declaration?.digest ?? null,
-    corpus_revision: report.provenance.corpus,
-    // The repository the runner itself came from. The engine and the corpus
-    // were already recorded; the scorer was not, and a scoring change moves
-    // every number in the file it writes.
-    source_revision: (() => {
-      const probe = run("git", ["-C", ROOT, "rev-parse", "HEAD"]);
-      return probe.ok ? probe.stdout.trim() : null;
-    })(),
-    units: "bench/metrics.json",
-    at,
-    // RAW OUTPUT STAYS ATTACHED, never transcribed. Three published SpecReviews
-    // cited hand-typed figures from a binary whose self-reported version was
-    // wrong; the whole report rides along so a later reader re-derives rather
-    // than re-types.
-    evidence: report,
-  };
+  return createMeasurementRecord(report, at, {
+    root: ROOT,
+    metricsPath: METRICS,
+    sectionHitRate: SECTION_HIT_RATE,
+    execute: run,
+    scorerDigest,
+  });
+}
+
+function persistMeasurement(collection) {
+  return persistMeasurementCollection(collection, ROOT);
 }
 
 /** The family that claims a diagnostic reason, or `null`. */
@@ -1319,6 +1280,21 @@ function corpusRevision(root = join(ROOT, "corpus")) {
   return probe.ok ? probe.stdout.trim() : null;
 }
 
+/** Canonical qa-corpus bounds view, including named GAP cells. */
+function corpusBounds(root = join(ROOT, "corpus")) {
+  const result = run("python3", [join(root, "bounds.py"), "--json"]);
+  if (!result.ok) {
+    throw new Error(`bench-tier1: qa-corpus bounds failed: ${result.stderr}`);
+  }
+  const parsed = JSON.parse(result.stdout);
+  if (typeof parsed?.bounds?.gap_count !== "number") {
+    throw new Error(
+      "bench-tier1: qa-corpus bounds payload has no numeric gap_count",
+    );
+  }
+  return parsed.bounds;
+}
+
 function main() {
   const update = process.argv.includes("--update");
   const asJson = process.argv.includes("--json");
@@ -1506,6 +1482,7 @@ function main() {
   );
   const score = scoreFindings(scoredFindings, flat, shapes, adjudication);
   const silentZeroes = silentZeros(payloads);
+  const bounds = corpusBounds();
   report = {
     // WHAT PRODUCED THIS. `bench/tier1-baseline.json` carried no engine and no
     // corpus revision, so which binary wrote any of its five git revisions had
@@ -1528,6 +1505,7 @@ function main() {
         ),
       ),
     },
+    bounds,
     families: score.families,
     excluded: score.excluded,
     collateral: score.collateral,
@@ -1618,28 +1596,16 @@ function main() {
   }
 
   if (update) {
-    // THE SERIES FIRST, the snapshot second. `bench/measurements.jsonl` is the
-    // source of truth and `bench/tier1-baseline.json` is a derived convenience
-    // file the ratchet reads — which is the inversion agent-ix/quoin#229 asks
-    // for. Append before overwrite, so a crash between the two loses the
-    // convenience file and never the history.
-    //
-    // ONE LINE PER PRODUCER INVOCATION, written whole in one call: a run is the
-    // unit, not an observation, and half-written runs are the shape that makes
-    // a series lie. Written only here, after the whole run succeeded — a run
-    // that threw never reaches this line, so a partial run does not land.
-    //
-    // A repeated identical run appends a repeated record on purpose. Two runs
-    // are two observations, and a second one matching the first is evidence of
-    // reproducibility rather than noise to suppress.
-    appendFileSync(
-      SERIES,
-      JSON.stringify(measurementRecord(report, new Date().toISOString())) +
-        "\n",
+    // Persist the complete invocation through Quoin's generic measurement
+    // store first. It validates every observation against an active plan and
+    // lands the collection by atomic rename. Only then update the derived
+    // convenience baseline used by the existing ratchet.
+    const recordPath = persistMeasurement(
+      measurementRecord(report, new Date().toISOString()),
     );
     writeFileSync(BASELINE, JSON.stringify(report, null, 2) + "\n");
     console.error(
-      `bench-tier1: record appended to ${SERIES}; derived baseline rewritten ` +
+      `bench-tier1: collection written to ${recordPath}; derived baseline rewritten ` +
         `at ${BASELINE}`,
     );
     return 0;
@@ -1884,8 +1850,15 @@ const MARK = {
 };
 
 function render(report, verdicts) {
-  const pct = (v) =>
-    v === null ? "  n/a" : `${Math.round(v * 100)}%`.padStart(5);
+  const pct = (v) => {
+    if (v === null) return "  n/a";
+    const percent = v * 100;
+    const shown =
+      percent !== 0 && Math.abs(percent) < 1
+        ? percent.toFixed(1)
+        : String(Math.round(percent));
+    return `${shown}%`.padStart(5);
+  };
   const declaration = report.provenance.declaration;
   const lines = [
     `tier-1: ${report.corpora} corpora, ${report.findings} findings mapped` +
@@ -1903,6 +1876,7 @@ function render(report, verdicts) {
             .map(([name, sha]) => `${name} ${short(sha)}`)
             .join(", ")})`
         : " (no VENDORED.md: no upstream SHA recorded)"),
+    `corpus gaps ${report.bounds?.gap_count ?? "not_computed"} of ${report.bounds?.declared_cells ?? "?"} declared mode-language cells`,
     "",
     "family                     TP  FP  miss   prec  recall",
   ];

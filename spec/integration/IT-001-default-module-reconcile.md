@@ -38,8 +38,8 @@ present with its pinned sources.
 
 ## Inputs
 
-The committed `default-modules.yaml` manifest — eight modules, each a `git-subdir`
-source pinned to a release tag (for example `spec-artifacts-iso` at `v0.4.0`).
+The committed `default-modules.yaml` manifest — ten modules, each a `git-subdir`
+source pinned to an immutable release reference or commit.
 
 ## Test Procedure
 
@@ -51,7 +51,7 @@ list`).
      `<config-root>/filament/modules/<name>/` with a readable `manifest.yaml` at
      its pinned version.
 2. Inspect the assembled catalog.
-   - IT-001-SC-02: the catalog lists all eight default modules and resolves a
+   - IT-001-SC-02: the catalog lists all ten default modules and resolves a
      known type (for example `FR`) to `spec-artifacts-iso`.
 3. Remove network access and repeat the catalog access.
    - IT-001-SC-03: the command succeeds with no git or network activity and
