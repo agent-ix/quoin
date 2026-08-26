@@ -54,7 +54,11 @@ import { fileURLToPath } from "node:url";
 
 import { parse as parseYaml } from "yaml";
 import { crossCheckFamilies, loadMetrics } from "../evals/lib/dictionary.mjs";
-import { scoreActionability, scoreFindings } from "../evals/lib/quality.mjs";
+import {
+  scoreActionability,
+  scoreCost,
+  scoreFindings,
+} from "../evals/lib/quality.mjs";
 
 const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 const MAPPING = join(ROOT, "bench", "tier1-mapping.json");
@@ -85,8 +89,16 @@ const SECTION_HIT_RATE = "minting.section_hit_rate";
 const VALIDATE_LINE =
   /^(?<path>.+?): line (?<line>\d+): (?<rest>.*) \[(?<reason>[a-z-]+)\]$/;
 
+// THE TIER-1 TOOL-CALL COUNT, which is the half of
+// `cost_per_confirmed_insight` this runner can actually measure. Tier 1 calls
+// no model, so its token cost is not zero — it is absent, and `scoreCost` says
+// so. Its subprocess count is a real cost all the same: wall-clock and blast
+// radius (agent-ix/quoin#243).
+let toolCalls = 0;
+
 /** Run a command, returning stdout, stderr and whether it exited zero. */
 function run(bin, args, extraEnv) {
+  toolCalls += 1;
   try {
     const stdout = execFileSync(bin, args, {
       encoding: "utf8",
@@ -266,7 +278,92 @@ function findingsFor(quire, corpusRoot, module, mapping) {
     });
   }
 
-  return { findings: out, metrics: payload.metrics ?? [] };
+  // The RAW diagnostics ride along beside the mapped findings. The silent-zero
+  // sentinel asks whether a hollow ratio was ACCOMPANIED, and the answer lives
+  // in diagnostics this table does not claim — `hollow-denominator` is mapped,
+  // but a future engine could accompany a ratio with a token no family owns,
+  // and a sentinel reading only the mapped view would call that silent
+  // (agent-ix/quoin#243).
+  return {
+    findings: out,
+    metrics: payload.metrics ?? [],
+    diagnostics: payload.diagnostics ?? [],
+  };
+}
+
+/**
+ * The silent-zero sentinel (FR-043-AC-6), a GATE and not a score.
+ *
+ * A **ratio-shaped** metric published with `matched = 0` over a non-zero
+ * population, and nothing saying so, is arithmetic over a corpus the instrument
+ * could not read. That is the exact shape of `555/2389 (23%)` — the number that
+ * made three reviews wrong and opened agent-ix/quire-rs#264.
+ *
+ * A **count-shaped** metric is exempt (CR-098): `matched` and its value are the
+ * same fact there, so a zero reports that none was found, not that none was
+ * read. The engine's own envelope declares which it is, so this reads `shape`
+ * rather than guessing from the name.
+ *
+ * ACCOMPANIED means a diagnostic in the same payload NAMES the metric — either
+ * carrying it in `value`, the way `catch-all-universal` names
+ * `coverage.specific_shaped`, or naming it in the message, the way
+ * `hollow-denominator` names `` `coverage.backed` ``. Any-diagnostic-at-all
+ * would not do: every ecosystem-bound fixture emits four
+ * `archetype-matches-nothing`, so "the payload had a diagnostic" is true of
+ * every case in this corpus and would excuse every hollow ratio in it.
+ *
+ * Declared in `bench/metrics.json` since the dictionary was written, and
+ * computed by nothing until now: a reader of that file saw seven governed
+ * metrics and four producers (agent-ix/quoin#243).
+ */
+export function silentZeros(cases) {
+  const violations = [];
+  const unread = [];
+  for (const c of cases) {
+    for (const m of c.metrics ?? []) {
+      if (m.shape !== "ratio") continue;
+      // `state` is the envelope's own word for whether the number was arrived
+      // at. An absent or unreadable metric is not a silent zero; it is an
+      // absence, and quire-rs FR-063 already reports it as one.
+      if (m.state !== "measured") continue;
+      if (Number(m.matched ?? 0) !== 0) continue;
+      if (Number(m.population ?? 0) === 0) continue;
+      const named = (c.diagnostics ?? []).some(
+        (d) => d.value === m.name || String(d.message ?? "").includes(m.name),
+      );
+      if (named) continue;
+      const where = {
+        corpus: c.name,
+        metric: m.name,
+        value: m.value ?? null,
+        population: Number(m.population),
+        examined: Number(m.examined ?? 0),
+      };
+      // TWO DIFFERENT CLAIMS, and the first draft of this gate conflated them.
+      //
+      // `examined > 0, matched 0` is the defect: the instrument WALKED a
+      // population and read none of it, and published a ratio anyway. The
+      // engine's own envelope says so in `coverage.backed`'s `method` — "matched
+      // 0 of a NON-ZERO examined is a ratio computed over a corpus the binder
+      // could not read" — and `hollow-denominator` fires on exactly that shape.
+      //
+      // `examined == 0` is not that. Nothing was walked because nothing was
+      // there: a greenfield repository with no evidence symbols honestly backs
+      // 0 of its rows, and no reading was missed. Gating on it fired on three
+      // corpus cases — `catch-all-properties`, `greenfield-no-symbols`,
+      // `gate-that-gates-nothing` — every one of which seeds exactly that
+      // situation on purpose. Bad rule, not bad corpus.
+      //
+      // It is still worth counting. The engine says NOTHING on those three
+      // about there being no evidence symbols to read, which is authoring
+      // absence reported as if it were a measured zero — the distinction
+      // `agent-ix/quire-rs#271` exists to draw. Reported, not gated, until that
+      // lands and there is a diagnostic to be accompanied by.
+      if (where.examined > 0) violations.push(where);
+      else unread.push(where);
+    }
+  }
+  return { violations, unread };
 }
 
 /**
@@ -1224,13 +1321,15 @@ function main() {
   // rates: a mean over cases weights a one-document case the same as a
   // twenty-document one, and this metric's denominator is documents.
   const sectionHit = { matched: 0, examined: 0, cases: 0 };
+  const payloads = [];
   for (const corpus of labels.corpora) {
-    const { findings, metrics } = findingsFor(
+    const { findings, metrics, diagnostics } = findingsFor(
       quire,
       corpus.input,
       corpus.module,
       mapping,
     );
+    payloads.push({ name: corpus.name, metrics, diagnostics });
     // The case a finding came from, and the language that case is written in.
     // Carried on the finding so the score can be cut per language without a
     // second run — `scoreFindings` ignores fields it does not read.
@@ -1276,6 +1375,7 @@ function main() {
   // (agent-ix/quoin#245).
   const adjudication = adjudicationOf(labels.corpora, mapping);
   const score = scoreFindings(scoredFindings, flat, shapes, adjudication);
+  const silentZeroes = silentZeros(payloads);
   report = {
     // WHAT PRODUCED THIS. `bench/tier1-baseline.json` carried no engine and no
     // corpus revision, so which binary wrote any of its five git revisions had
@@ -1316,6 +1416,35 @@ function main() {
         }
       : null,
     actionability: scoreActionability(scoredFindings),
+    // Declared in `bench/metrics.json` since the dictionary was written, with
+    // `scoreCost` complete in `evals/lib/quality.mjs` and reached by nothing but
+    // its own unit tests (agent-ix/quoin#243). `tokens` is `null`, not 0: this
+    // runner calls no model, so the token cost is not measured here rather than
+    // measured at zero. The tool calls ARE this benchmark's cost, and they are
+    // counted exactly.
+    cost_per_confirmed_insight: scoreCost(
+      { toolCalls },
+      score.families.reduce((n, f) => n + f.truePositives, 0),
+    ),
+    // A GATE, not a score: expected exactly 0, no tolerance, and it never
+    // ratchets. Declared in `bench/metrics.json` since the dictionary was
+    // written and computed by nothing until agent-ix/quoin#243 — the one entry
+    // that calls itself a gate was the one nothing evaluated.
+    "sentinel.silent_zero": {
+      count: silentZeroes.violations.length,
+      // BY NAME, never a bare count. A gate that says "3" and not which three
+      // is a gate nobody can discharge, which is the same class of defect as
+      // the ratio it exists to catch.
+      instances: silentZeroes.violations,
+      // REPORTED, NOT GATED. A ratio over a population the engine walked NONE
+      // of because there was none to walk — a greenfield tree with no evidence
+      // symbols. Not the silent-zero defect: no reading was missed. But the
+      // engine says nothing about it either, so authoring absence and a
+      // measured zero still arrive looking identical, which is
+      // `agent-ix/quire-rs#271`. Counted here so that stays visible rather than
+      // being the thing a narrowed gate quietly stopped looking at.
+      unread_population: silentZeroes.unread,
+    },
     corpora: labels.corpora.length,
     // The score, cut by the language each case declares. A single `held` table
     // over a corpus that is 100% one language reads as "verified everywhere"
@@ -1480,6 +1609,60 @@ export function ratchet(report, previous, dictionary) {
     });
   }
 
+  // ACTIONABILITY, ratcheted at last (agent-ix/quoin#239). It has been in the
+  // report and in the dictionary and in NO verdict, and it has fallen 3.02 ->
+  // 0.10 -> 0.048 -> 0.005 across four populations with a numerator that never
+  // left 2. No run has ever failed because of it.
+  //
+  // The root cause is upstream and is not fixed by ratcheting: coverage
+  // findings carry a path and no line (agent-ix/quire-cli#51,
+  // agent-ix/quire-rs#210), so the two findings that name a row are the only
+  // two that can. Ratcheting it stops the number falling further while that is
+  // true, rather than standing in for having fixed it.
+  if (report.actionability && report.actionability.rate !== null) {
+    const [verdict, kept] = compare(
+      dictionary.metrics.actionability_rate.direction,
+      report.actionability.rate,
+      previous?.actionability?.rate ?? null,
+    );
+    out.push({
+      metric: "actionability_rate",
+      family: null,
+      observed: report.actionability.rate,
+      baseline: kept,
+      verdict,
+    });
+  }
+
+  // THE GATE. `gate-zero` carries no baseline and no tolerance, so `--update`
+  // cannot launder it: `compare` ignores the previous value entirely and reads
+  // the observed count against 0. Emitted even at 0, because a gate that
+  // appears in the output only when it fires is a gate a reader cannot tell
+  // from one nobody wired up — which is exactly what this metric was, declared
+  // and computed by nothing, until agent-ix/quoin#243.
+  const sentinel = report["sentinel.silent_zero"];
+  if (sentinel) {
+    const declared = dictionary.metrics["sentinel.silent_zero"];
+    const [verdict, kept] = compare(declared.direction, sentinel.count, null);
+    out.push({
+      metric: "sentinel.silent_zero",
+      family: null,
+      observed: sentinel.count,
+      baseline: kept,
+      verdict,
+      ...(sentinel.count
+        ? {
+            why:
+              `ratio-shaped metrics published over a non-zero population ` +
+              `with nothing saying the instrument read none of it: ` +
+              sentinel.instances
+                .map((i) => `${i.corpus}/${i.metric}`)
+                .join(", "),
+          }
+        : {}),
+    });
+  }
+
   // NO DELTA ACROSS UNLIKE INPUTS. Computed after the verdicts rather than
   // instead of them, so the two numbers stay visible and only the CLAIM that
   // one moved is withdrawn: `improved` and `regressed` are statements about a
@@ -1582,7 +1765,32 @@ function render(report, verdicts) {
           ` of ${report[SECTION_HIT_RATE].examined} declared minting documents` +
           ` reached their section, over ${report[SECTION_HIT_RATE].cases_reporting} cases)`
     }`,
+    `cost_per_confirmed_insight ${String(
+      report.cost_per_confirmed_insight?.toolCallsPer ?? "n/a",
+    ).padStart(5)} tool calls per true positive (${
+      report.cost_per_confirmed_insight?.toolCalls ?? "n/a"
+    } calls, ${report.cost_per_confirmed_insight?.truePositives ?? 0} confirmed;` +
+      ` tokens n/a — tier 1 calls no model)`,
+    `sentinel.silent_zero       ${String(
+      report["sentinel.silent_zero"]?.count ?? 0,
+    ).padStart(5)} (GATE: ratio-shaped metrics reading none of a non-zero` +
+      ` population, with nothing saying so)`,
   );
+  for (const i of report["sentinel.silent_zero"]?.instances ?? []) {
+    lines.push(
+      `  ${i.corpus}: ${i.metric} walked ${i.examined} and matched none,` +
+        ` over ${i.population}, unaccompanied`,
+    );
+  }
+  const unread = report["sentinel.silent_zero"]?.unread_population ?? [];
+  if (unread.length) {
+    lines.push(
+      `  reported, not gated — ${unread.length} ratio${unread.length === 1 ? "" : "s"}` +
+        ` over a population the engine walked NONE of, and said nothing about` +
+        ` (quire-rs#271): ` +
+        unread.map((i) => `${i.corpus}/${i.metric}`).join(", "),
+    );
+  }
   // Per language, because one table over a single-language corpus reads as a
   // statement about the toolchain and is a statement about Rust.
   lines.push("", "by language:");

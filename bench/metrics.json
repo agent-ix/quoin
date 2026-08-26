@@ -65,7 +65,7 @@
       "method": "tokenUsage.total / truePositives and toolCalls / truePositives, from scoreCost, extending the FR-042 eval report metrics rather than opening a second accounting. Both numbers, because they are different costs: tokens are the context budget and tool calls are wall-clock and blast radius. Reports null per-insight when nothing was confirmed — dividing by emitted output would reward a run for producing more of it",
       "direction": "lower-is-better",
       "baseline": null,
-      "baseline_note": "No scored tier-1 run yet."
+      "baseline_note": "COMPUTED SINCE agent-ix/quoin#243. `scoreCost` was complete in `evals/lib/quality.mjs` and reached by nothing but its own unit tests; `scripts/bench-tier1.mjs` imported only `scoreActionability` and `scoreFindings`. For a TIER-1 run `tokens` is `null` and not 0: this runner shells out to `quire` and `quoin` and calls no model, so the token cost is not measured here rather than measured at zero — the tokens half belongs to the FR-042 eval harness, which is an agent run. The tool-call half IS this benchmark's cost and is counted exactly. Per-family baselines are not meaningful for a cost; the figure lives in `bench/tier1-baseline.json` beside the run that spent it."
     },
     "sentinel.silent_zero": {
       "unit": "metric",
@@ -75,7 +75,7 @@
       "expected": 0,
       "tolerance": 0,
       "baseline": 0,
-      "baseline_note": "A GATE, not a score. Expected exactly 0 with no tolerance, and it never ratchets: a benchmark that let this score 0.98 and pass would be measuring the wrong thing."
+      "baseline_note": "A GATE, not a score. Expected exactly 0 with no tolerance, and it never ratchets: a benchmark that let this score 0.98 and pass would be measuring the wrong thing. COMPUTED SINCE agent-ix/quoin#243 — declared here from the beginning and evaluated by no code until then, so a reader of this file saw seven governed metrics and four producers. The condition is `matched == 0` over a NON-ZERO `examined`, which is the engine's own wording in `coverage.backed`'s `method`; `examined == 0` is a population the instrument had nothing to walk, not one it failed to read, and is reported under `unread_population` rather than gated. Gating on the looser reading fired on three fixtures — `catch-all-properties`, `greenfield-no-symbols`, `gate-that-gates-nothing` — every one of which seeds a symbol-less tree on purpose. First measured run: 0 violations, 3 unread populations (agent-ix/quire-rs#271)."
     },
     "minting.section_hit_rate": {
       "unit": "fraction of (trace target, minting document) pairs",

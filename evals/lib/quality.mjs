@@ -357,26 +357,31 @@ function hasLocus(finding) {
  * precisely backwards.
  */
 export function scoreCost(metrics, truePositives) {
-  const tokens = metrics?.tokenUsage?.total ?? 0;
-  const toolCalls = metrics?.toolCalls ?? 0;
-  if (truePositives === 0) {
-    // Not Infinity and not 0. A run that confirmed nothing has no cost PER
-    // insight, and reporting either number would be a claim about efficiency
-    // that the run does not support.
-    return {
-      tokens,
-      toolCalls,
-      truePositives: 0,
-      tokensPer: null,
-      toolCallsPer: null,
-    };
-  }
+  // ABSENT IS NOT ZERO. `?? 0` here published "0 tokens" for a runner that
+  // spends none because it runs no model at all — tier 1 shells out to `quire`
+  // and `quoin` and never calls one. A zero is a measurement claiming the run
+  // was free; `null` says nobody counted, which is the same rule `ratio` is
+  // held to two functions down (agent-ix/quoin#243).
+  const tokens = metrics?.tokenUsage?.total ?? null;
+  const toolCalls = metrics?.toolCalls ?? null;
+  // THE TWO HALVES ARE COMPUTED SEPARATELY. Tier 1 knows its tool calls exactly
+  // and has no token count at all, and an all-or-nothing return threw away the
+  // half it could report. Each side is null only when its own input is.
+  //
+  // Not Infinity and not 0 when nothing was confirmed: a run that confirmed
+  // nothing has no cost PER insight, and either number would be a claim about
+  // efficiency the run does not support.
+  const per = (total) =>
+    total === null || truePositives === 0 ? null : total / truePositives;
+  const tokensPer = per(tokens);
+  const toolCallsPer = per(toolCalls);
   return {
     tokens,
     toolCalls,
     truePositives,
-    tokensPer: Math.round(tokens / truePositives),
-    toolCallsPer: Number((toolCalls / truePositives).toFixed(2)),
+    tokensPer: tokensPer === null ? null : Math.round(tokensPer),
+    toolCallsPer:
+      toolCallsPer === null ? null : Number(toolCallsPer.toFixed(2)),
   };
 }
 

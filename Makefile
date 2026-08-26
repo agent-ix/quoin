@@ -104,6 +104,22 @@ bench-tier1:
 bench-tier1-update:
 	node scripts/bench-tier1.mjs --update --quire $(QUIRE) $(if $(MODULES),--modules $(MODULES))
 
+# THE LOCAL GREEN BAR. `bench-tier1` was invoked by nothing (agent-ix/quoin#244)
+# -- not `test`, not any vitest case against the committed baseline, and CI is
+# off by design during active development, so CI is not the answer. The ratchet
+# ran when a human typed it, which between Wave 3 and Wave 4 was twice.
+#
+# `bench-tier1` LAST, because it is the slow leg: a lint or unit failure should
+# come back in seconds rather than behind a two-minute corpus sweep.
+#
+# It names the engine it measured with. `quire --version` reports the CLI crate
+# version, not the engine, and the installed 0.29.0 predates `binding_census` --
+# it would score recall 0 on every coverage family and look like a collapse.
+.PHONY: gate
+gate: lint test
+	@echo "gate: bench-tier1 against $(QUIRE)"
+	@$(MAKE) bench-tier1
+
 .PHONY: evidence-audit
 evidence-audit:
 	node bin/quoin.js evidence audit --repo . --module $(EVIDENCE_MODULE) --ratchet

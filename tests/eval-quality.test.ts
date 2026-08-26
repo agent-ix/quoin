@@ -415,6 +415,20 @@ describe("cost per confirmed insight", () => {
     expect(dearAndRight.tokensPer).toBeLessThan(cheapAndWrong.tokensPer!);
   });
 
+  it("TC-994 an absent cost is null, never 0, and the half it knows is still reported", () => {
+    // TC-994
+    // `?? 0` published "0 tokens" for tier 1, which calls no model at all — a
+    // measurement claiming the run was free. And an all-or-nothing return threw
+    // away the half it COULD report: tier 1 knows its subprocess count exactly.
+    // Absent and zero are different claims (agent-ix/quoin#243).
+    const tierOne = scoreCost({ toolCalls: 240 }, 29);
+    expect(tierOne.tokens).toBeNull();
+    expect(tierOne.tokensPer).toBeNull();
+    expect(tierOne.toolCalls).toBe(240);
+    expect(tierOne.toolCallsPer).toBe(8.28);
+    expect(tierOne.truePositives).toBe(29);
+  });
+
   it("reports null per-insight cost when nothing was confirmed", () => {
     // Not Infinity and not 0 — a run that confirmed nothing has no cost per
     // insight, and either number would be a claim the run does not support.

@@ -30,7 +30,251 @@ import {
   loadCorpus,
   localisationRate,
   ratchet,
+  silentZeros,
 } from "../scripts/bench-tier1.mjs";
+
+describe("the silent-zero sentinel", () => {
+  const ratio = (over: Record<string, unknown>) => ({
+    name: "coverage.backed",
+    shape: "ratio",
+    state: "measured",
+    value: 0,
+    population: 2389,
+    examined: 2389,
+    matched: 0,
+    ...over,
+  });
+
+  test("TC-988 a ratio reading none of a non-zero population, unaccompanied, is a violation", () => {
+    // TC-988
+    // `555/2389 (23%)` — arithmetic over a corpus the binder could not read,
+    // published with nothing saying so. The number that made three reviews
+    // wrong and opened agent-ix/quire-rs#264. The dictionary has declared this
+    // gate since it was written; nothing computed it (agent-ix/quoin#243).
+    const { violations } = silentZeros([
+      { name: "a-case", metrics: [ratio({})], diagnostics: [] },
+    ]);
+    expect(violations).toHaveLength(1);
+    expect(violations[0]).toMatchObject({
+      corpus: "a-case",
+      metric: "coverage.backed",
+      population: 2389,
+    });
+  });
+
+  test("TC-989 a COUNT-shaped metric reading zero is exempt", () => {
+    // TC-989
+    // CR-098. For a count, `matched` and the value are the same fact: a zero
+    // reports that none was found, not that none was read. Failing on it would
+    // make every clean corpus a gate violation.
+    const { violations, unread } = silentZeros([
+      {
+        name: "a-case",
+        metrics: [ratio({ name: "coverage.implements", shape: "count" })],
+        diagnostics: [],
+      },
+    ]);
+    expect(violations).toEqual([]);
+    expect(unread).toEqual([]);
+  });
+
+  test("TC-990 accompanied means a diagnostic NAMES the metric, not that one exists", () => {
+    // TC-990
+    // Every ecosystem-bound fixture in this corpus emits four
+    // `archetype-matches-nothing`, so "the payload carried a diagnostic" is
+    // true of every case here and would excuse every hollow ratio in it. The
+    // accompanying diagnostic has to name the metric — in `value`, the way
+    // `catch-all-universal` names `coverage.specific_shaped`, or in the
+    // message, the way `hollow-denominator` names `coverage.backed`.
+    const unrelated = silentZeros([
+      {
+        name: "a-case",
+        metrics: [ratio({})],
+        diagnostics: [
+          {
+            reason: "archetype-matches-nothing",
+            message: "declaration 'suite' declares archetype 'SuiteRegistry'",
+          },
+        ],
+      },
+    ]);
+    expect(unrelated.violations).toHaveLength(1);
+
+    const byMessage = silentZeros([
+      {
+        name: "a-case",
+        metrics: [ratio({})],
+        diagnostics: [
+          {
+            reason: "hollow-denominator",
+            message: "`coverage.backed` published a ratio over 4 matrix rows",
+          },
+        ],
+      },
+    ]);
+    expect(byMessage.violations).toEqual([]);
+
+    const byValue = silentZeros([
+      {
+        name: "a-case",
+        metrics: [ratio({})],
+        diagnostics: [
+          { reason: "catch-all-universal", value: "coverage.backed" },
+        ],
+      },
+    ]);
+    expect(byValue.violations).toEqual([]);
+  });
+
+  test("TC-991 an unmeasured metric is an absence, not a silent zero", () => {
+    // TC-991
+    // quire-rs FR-063 already reports a metric it could not arrive at as
+    // `state != measured`. Counting that as a hollow ratio would fail the gate
+    // for the engine correctly saying it did not know.
+    expect(
+      silentZeros([
+        {
+          name: "a-case",
+          metrics: [ratio({ state: "unavailable" })],
+          diagnostics: [],
+        },
+      ]),
+    ).toEqual({ violations: [], unread: [] });
+    // A ratio over a ZERO population is 0/0 — nothing was there to read, which
+    // is a different claim from reading none of what was.
+    expect(
+      silentZeros([
+        {
+          name: "a-case",
+          metrics: [ratio({ population: 0, examined: 0 })],
+          diagnostics: [],
+        },
+      ]),
+    ).toEqual({ violations: [], unread: [] });
+  });
+
+  test("TC-993 walking NONE of a population is reported, not gated — it is a different claim", () => {
+    // TC-993
+    // THE FIRST DRAFT OF THIS GATE FIRED ON THREE CORPUS CASES, and every one
+    // was correct input: `catch-all-properties`, `greenfield-no-symbols` and
+    // `gate-that-gates-nothing` each seed a tree with no evidence symbols at
+    // all, so `coverage.backed` honestly backs 0 of its rows and no reading was
+    // missed. Bad rule, not bad corpus.
+    //
+    // The engine's own envelope draws the line: `coverage.backed`'s `method`
+    // says "matched 0 of a NON-ZERO examined is a ratio computed over a corpus
+    // the binder could not read", and `hollow-denominator` fires on exactly
+    // that. `examined == 0` is authoring absence, not instrument failure.
+    //
+    // Still counted, because the engine says nothing about it either — which is
+    // `agent-ix/quire-rs#271`. Narrowing a gate must not be the same act as
+    // ceasing to look.
+    const { violations, unread } = silentZeros([
+      {
+        name: "greenfield",
+        metrics: [ratio({ population: 2, examined: 0 })],
+        diagnostics: [],
+      },
+      {
+        name: "read-none-of-two",
+        metrics: [ratio({ population: 4, examined: 2 })],
+        diagnostics: [],
+      },
+    ]);
+    expect(violations.map((v) => v.corpus)).toEqual(["read-none-of-two"]);
+    expect(unread.map((v) => v.corpus)).toEqual(["greenfield"]);
+  });
+
+  test("TC-992 the gate reads against 0 and ignores the baseline, so --update cannot launder it", () => {
+    // TC-992
+    // A gate is not a score: `compare`'s `gate-zero` branch never consults the
+    // previous value, so a run that wrote a baseline with three violations in
+    // it still fails the next run.
+    const verdicts = ratchet(
+      {
+        families: [],
+        finding_localisation_rate: null,
+        "sentinel.silent_zero": {
+          count: 3,
+          instances: [
+            { corpus: "a", metric: "coverage.backed" },
+            { corpus: "b", metric: "coverage.backed" },
+            { corpus: "c", metric: "coverage.property_shaped" },
+          ],
+        },
+      },
+      { families: [], "sentinel.silent_zero": { count: 3, instances: [] } },
+      {
+        metrics: {
+          finding_precision: { direction: "higher-is-better" },
+          finding_recall: { direction: "higher-is-better" },
+          "sentinel.silent_zero": { direction: "gate-zero" },
+        },
+      },
+    );
+    const v = verdicts.find((x) => x.metric === "sentinel.silent_zero");
+    expect(v?.verdict).toBe("regressed");
+    expect(v?.baseline).toBe(0);
+    // Named, never a bare count: a gate that says "3" and not which three is a
+    // gate nobody can discharge.
+    expect(v?.why).toMatch(/a\/coverage\.backed/);
+  });
+});
+
+describe("the committed baseline and the committed scorer", () => {
+  test("TC-995 the real baseline compared against itself holds on every verdict", () => {
+    // TC-995
+    // `make bench-tier1` is invoked by nothing (agent-ix/quoin#244) and the
+    // ratchet tests all ran against hand-built synthetic objects, so
+    // `bench/tier1-baseline.json` was a committed file no automated run ever
+    // read. A hand-edit into a shape the scorer cannot parse would have been
+    // contradicted by nothing until the next time a human typed the command.
+    //
+    // This needs no `quire` binary: a baseline compared against ITSELF must
+    // produce no `regressed` and no `new`. `new` means the scorer looked for a
+    // field the baseline does not carry, which is the drift worth catching.
+    const baseline = JSON.parse(
+      readFileSync(
+        join(__dirname, "..", "bench", "tier1-baseline.json"),
+        "utf8",
+      ),
+    );
+    const dictionary = JSON.parse(
+      readFileSync(join(__dirname, "..", "bench", "metrics.json"), "utf8"),
+    );
+    const verdicts = ratchet(baseline, baseline, dictionary);
+    expect(verdicts.length).toBeGreaterThan(0);
+    const notHeld = verdicts.filter((v) => v.verdict !== "held");
+    expect(
+      notHeld.map((v) => `${v.metric}[${v.family ?? "-"}]=${v.verdict}`),
+    ).toEqual([]);
+  });
+
+  test("TC-996 every family the baseline scored is one the mapping still claims", () => {
+    // TC-996
+    // A family dropped from `bench/tier1-mapping.json` while its row stays in
+    // the baseline is a score against a contract nobody holds. `ratchet` already
+    // fails a family that vanishes from a RUN; nothing held the two committed
+    // files to each other.
+    const baseline = JSON.parse(
+      readFileSync(
+        join(__dirname, "..", "bench", "tier1-baseline.json"),
+        "utf8",
+      ),
+    );
+    const mapping = JSON.parse(
+      readFileSync(
+        join(__dirname, "..", "bench", "tier1-mapping.json"),
+        "utf8",
+      ),
+    );
+    const claimed = new Set(Object.keys(mapping.families));
+    const orphans = baseline.families
+      .map((f: { family: string }) => f.family)
+      .filter((f: string) => !claimed.has(f));
+    expect(orphans).toEqual([]);
+  });
+});
 
 describe("tier-1 label flattening", () => {
   test("TC-953 the builder's wrapper becomes the flat array scoring consumes", () => {

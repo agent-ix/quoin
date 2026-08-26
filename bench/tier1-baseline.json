@@ -188,6 +188,40 @@
     "total": 417,
     "rate": 0.005
   },
+  "cost_per_confirmed_insight": {
+    "tokens": null,
+    "toolCalls": 162,
+    "truePositives": 29,
+    "tokensPer": null,
+    "toolCallsPer": 5.59
+  },
+  "sentinel.silent_zero": {
+    "count": 0,
+    "instances": [],
+    "unread_population": [
+      {
+        "corpus": "catch-all-properties",
+        "metric": "coverage.backed",
+        "value": 0,
+        "population": 4,
+        "examined": 0
+      },
+      {
+        "corpus": "greenfield-no-symbols",
+        "metric": "coverage.backed",
+        "value": 0,
+        "population": 2,
+        "examined": 0
+      },
+      {
+        "corpus": "gate-that-gates-nothing",
+        "metric": "coverage.backed",
+        "value": 0,
+        "population": 3,
+        "examined": 0
+      }
+    ]
+  },
   "corpora": 80,
   "by_language": [
     {
