@@ -305,6 +305,7 @@ describe("the auditor over finding-shaped scans", () => {
         },
       ],
       scans: [scan({ rulesEvaluated: 400 })],
+      mockInspectionSuites: ["SUITE-RUN"],
     });
     // The run's symbol passed, so nothing is vacuous. Misaligned indexing
     // would look for `tests::tc001` in the scan-backed slot and report it
@@ -312,6 +313,7 @@ describe("the auditor over finding-shaped scans", () => {
     expect(report.findings.map((f) => f.kind)).not.toContain(
       "vacuous-evidence",
     );
+    expect(report.unevaluated).toEqual([]);
     expect(report.healthy).toContain("FR-001-AC-1");
   });
 });

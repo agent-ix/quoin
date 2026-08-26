@@ -64,7 +64,12 @@ describeCorpus("tier-1 seeded corpora", () => {
     // TC-932
     for (const corpus of CORPORA) {
       for (const defect of corpus.defects) {
-        expect(defect.id).toMatch(/^[A-Z]{2}-\d+$/);
+        // Explicit language labels use a compact language token (GN-PY),
+        // while an inherited language-set label receives the canonical
+        // inventory suffix (WT-1-python). Both remain stable, reviewable ids.
+        expect(defect.id).toMatch(
+          /^[A-Z]{2}-(?:\d+|PY|RS|TS)(?:-(?:python|rust|typescript))?$/,
+        );
         expect(defect.family).toBe(corpus.family);
         // A LOCATION UNLESS THE FAMILY DECLARES IT HAS NONE. `locus: none` is
         // the mapping saying this finding has no document to open — the fault

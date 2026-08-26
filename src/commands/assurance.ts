@@ -1,3 +1,5 @@
+import { execFileSync } from "node:child_process";
+
 import { Flags } from "@oclif/core";
 
 import { QuoinCommand } from "../base.js";
@@ -9,6 +11,7 @@ import {
   latestRun,
   latestScan,
   listRecordedSuites,
+  mockInspectionInput,
   readBindings,
 } from "../evidence/index.js";
 import type { FindingRecord, RunRecord } from "../evidence/index.js";
@@ -72,11 +75,15 @@ that quietly narrows to what it can prove reads exactly like a complete one.`;
     // Re-deriving "is this fresh" here would be a second answer to a question
     // FR-032 already answers, and the two would disagree the first time either
     // changed.
+    const head = headCommit(flags.repo);
+    const mockInspections = mockInspectionInput(flags.repo, head);
     const report = audit({
       obligations,
       bindings: readBindings(flags.repo).bindings,
       runs: latestRuns(flags.repo),
       scans: latestScans(flags.repo),
+      injections: mockInspections.injections,
+      mockInspectionSuites: mockInspections.suites,
       catalog: loadMethodCatalog(flags.module ? [flags.module] : undefined),
     });
 
@@ -92,6 +99,16 @@ that quietly narrows to what it can prove reads exactly like a complete one.`;
     this.log(
       flags.json ? JSON.stringify(assurance, null, 2) : renderCase(assurance),
     );
+  }
+}
+
+function headCommit(repo: string): string | undefined {
+  try {
+    return execFileSync("git", ["-C", repo, "rev-parse", "HEAD"], {
+      encoding: "utf8",
+    }).trim();
+  } catch {
+    return undefined;
   }
 }
 

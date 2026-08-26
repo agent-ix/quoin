@@ -36,18 +36,25 @@ import { describe, expect, it } from "vitest";
 
 import { readSchema, validateCoverage } from "../src/quire/index.js";
 import type {
+  BindingCensus,
+  CatchAllCriterion,
   CoverageDiagnostic,
   CoverageReport,
   CoverageTotals,
   CriteriaCounts,
+  EngineProvenance,
+  GroundingCounts,
   GroupCounts,
   ImplementsRecord,
+  MeasuredMetric,
   NoSymbolRow,
   Obligation,
   SharedTraceId,
   SharedTraceSymbol,
   StatusLie,
+  Suspicion,
   UnbackedRow,
+  UnboundSymbol,
   UndeclaredStatus,
   UntrackedSymbol,
   VocabularyValueRecord,
@@ -55,7 +62,13 @@ import type {
 
 const schema = readSchema("coverage-v1.schema.json") as {
   properties: Record<string, unknown>;
-  $defs: Record<string, { properties: Record<string, unknown> }>;
+  $defs: Record<
+    string,
+    {
+      properties?: Record<string, unknown>;
+      oneOf?: { properties: Record<string, unknown> }[];
+    }
+  >;
 };
 
 // ── One sample per $defs entry, typed Required<Interface> ──
@@ -138,6 +151,30 @@ const criteriaCounts: Required<CriteriaCounts> = {
   criteria: 2,
   property_shaped: 1,
   by_property: { universal: 1, example: 1 },
+  specific_shaped: 1,
+  grounding: {
+    invariant: {
+      records: 1,
+      domain: 1,
+      precondition: 1,
+      oracle: 1,
+      all_three: 1,
+    },
+  },
+  catch_all_example: { row_id: "FR-001-AC-2", line: 18 },
+};
+
+const groundingCounts: Required<GroundingCounts> = {
+  records: 1,
+  domain: 1,
+  precondition: 1,
+  oracle: 1,
+  all_three: 1,
+};
+
+const catchAllCriterion: Required<CatchAllCriterion> = {
+  row_id: "FR-001-AC-2",
+  line: 18,
 };
 
 const coverageDiagnostic: Required<CoverageDiagnostic> = {
@@ -146,6 +183,7 @@ const coverageDiagnostic: Required<CoverageDiagnostic> = {
   message:
     "'Deferred' is neither a declared verification_catalog method id nor a declared class",
   path: null,
+  line: 21,
   value: "Deferred",
 };
 
@@ -176,10 +214,56 @@ const coverageTotals: Required<CoverageTotals> = {
   total: 2,
   criteria: 2,
   property_shaped: 1,
+  specific_shaped: 1,
+};
+
+const unboundSymbol: Required<UnboundSymbol> = {
+  path: "tests/parse.rs",
+  line: 44,
+  symbol: "parse_without_marker",
+};
+
+const bindingCensus: Required<BindingCensus> = {
+  language: "rust",
+  candidates: 2,
+  tagged: 1,
+  bound: 1,
+  forms: ["rust-verifies-line"],
+  unbound_example: unboundSymbol,
+  unmatched_example: unboundSymbol,
+};
+
+const engineProvenance: Required<EngineProvenance> = {
+  cli: "0.30.2",
+  engine: "a14dcb2",
+  capabilities: ["binding_census"],
+};
+
+const metric: Required<MeasuredMetric> = {
+  name: "coverage.backed",
+  unit: "matrix row",
+  method: "backed matrix rows divided by all matrix rows",
+  shape: "ratio",
+  state: "measured",
+  value: 1,
+  population: 2,
+  examined: 2,
+  matched: 1,
+};
+
+const suspicion: Required<Suspicion> = {
+  kind: "vacuous-under-guard",
+  path: "tests/parse.rs",
+  symbol: "all_inputs",
+  line: 50,
+  message: "every assertion is guarded",
+  evidence: "1 of 42 samples entered the assertion",
 };
 
 /** Sample per `$defs` entry, keyed by the schema's own def names. */
-const samples: Record<string, Record<string, unknown>> = {
+const samples: Record<string, unknown> = {
+  BindingCensus: bindingCensus,
+  CatchAllCriterion: catchAllCriterion,
   UnbackedRow: unbackedRow,
   StatusLie: statusLie,
   NoSymbolRow: noSymbolRow,
@@ -194,6 +278,15 @@ const samples: Record<string, Record<string, unknown>> = {
   VocabularyValueRecord: vocabularyValueRecord,
   Obligation: obligation,
   CoverageTotals: coverageTotals,
+  EngineProvenance: engineProvenance,
+  GroundingCounts: groundingCounts,
+  Metric: metric,
+  MetricMethod: metric.method,
+  MetricName: metric.name,
+  MetricShape: metric.shape,
+  MetricUnit: metric.unit,
+  Suspicion: suspicion,
+  UnboundSymbol: unboundSymbol,
 };
 
 const report: Required<CoverageReport> = {
@@ -206,10 +299,15 @@ const report: Required<CoverageReport> = {
   groups: [groupCounts],
   criteria: [criteriaCounts],
   diagnostics: [coverageDiagnostic],
+  diagnostic_reason_registry: ["uncatalogued-verification-method"],
   obligations: [obligation],
   implements: [implementsRecord],
   vocabulary_coverage: [vocabularyValueRecord],
   excluded_source_files: 3,
+  binding_census: [bindingCensus],
+  metrics: [metric],
+  suspicions: [suspicion],
+  engine: engineProvenance,
   totals: coverageTotals,
 };
 
@@ -226,10 +324,19 @@ describe("TC-272 the interfaces and the vendored coverage schema agree", () => {
   // TC-272
   it("each sample's keys equal its $defs entry's keys, both directions", () => {
     for (const [name, sample] of Object.entries(samples)) {
+      if (typeof sample !== "object" || sample === null) continue;
+      const definition = schema.$defs[name];
+      const properties =
+        definition.properties ??
+        definition.oneOf?.find((branch) => {
+          const state = branch.properties.state as { const?: unknown };
+          return state?.const === (sample as { state?: unknown }).state;
+        })?.properties;
+      expect(properties, `${name}: no matching object schema`).toBeDefined();
       expect(
         sorted(Object.keys(sample)),
         `${name}: interface and schema declare different keys`,
-      ).toEqual(sorted(Object.keys(schema.$defs[name].properties)));
+      ).toEqual(sorted(Object.keys(properties ?? {})));
     }
   });
 

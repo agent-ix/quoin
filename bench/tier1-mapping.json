@@ -5,7 +5,8 @@
     "coverage.suspicions": "quire coverage --json, `suspicions[]`. Keyed on `kind`. Carries `path` and `line`.",
     "coverage.metrics": "quire coverage --json, `metrics[]`. Keyed on `name`, matched against the label's `expect_value`. Carries no locus at all \u2014 a metric is a number about a corpus, not a place.",
     "validate.findings": "quire validate --diagnostics-format json, one NDJSON object per finding. Keyed on the bracketed reason at the end of `message`. See `parse_fragility` below.",
-    "audit.findings": "quoin evidence audit --json, `findings[]`. Keyed on `kind`. Carries an obligation id and NO locus."
+    "audit.findings": "quoin evidence audit --json, `findings[]`. Keyed on `kind`; source-backed findings carry path, line and symbol.",
+    "quoin.validate": "quoin validate --json, `findings[]`. Keyed on `kind`; repository validators carry an exact repair locus and actionable summary."
   },
   "parse_fragility": {
     "what": "`validate` has no `--json` payload. `--diagnostics-format json` emits `{kind, message, severity}` and embeds the path, the line and the reason INSIDE the message string, so the runner parses them with a regex.",
@@ -109,14 +110,14 @@
     "mocked-confirmation": {
       "source": "audit.findings",
       "key": "mocked-confirmation",
-      "locus": "none",
-      "$note": "quoin's own auditor, not quire \u2014 `quire coverage` and `quire properties` cannot see this family, which is why the runner calls a third command. The detector additionally cannot fire: `AuditInput.injections` is never supplied by any caller (agent-ix/quoin#204, reopened)."
+      "locus": "path-line",
+      "$note": "quoin's own auditor, not quire. Tier 1 materializes a temporary git-backed evidence store from the controlled fixture, records the current source inspection, and calls `quoin evidence audit --json`; production callers read the same exact-HEAD record path (agent-ix/quoin#204)."
     },
     "gate-that-gates-nothing": {
-      "source": "none",
+      "source": "quoin.validate",
       "key": "gate-that-gates-nothing",
-      "locus": "none",
-      "$note": "No detector exists anywhere in the ecosystem. `source: none` is a DECLARED hole, not an omission: it makes the recall of 0 a fact this file states rather than an absence a reader has to infer. agent-ix/quoin#197 workstream 4."
+      "locus": "path-line",
+      "$note": "`quoin validate` joins three facts before reporting: an explicit gate claim naming an obligation, Make/CI wiring that gives the script a gate role, and a forbidden-pattern count whose value is never asserted. The join is the precision boundary: agent-ix/quoin#224 measured a text-only prototype at 0 real findings out of 4 distinct flags because report/provisioning scripts can have the same shell shape."
     },
     "section-holds-no-table": {
       "source": "coverage.diagnostics",

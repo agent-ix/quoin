@@ -16,224 +16,704 @@
     "unbacked_rows": {
       "type": "array",
       "description": "FR-050-AC-3: reference rows answerable for trace ids no symbol backs.",
-      "items": { "$ref": "#/$defs/UnbackedRow" }
+      "items": {
+        "$ref": "#/$defs/UnbackedRow"
+      }
     },
     "status_lies": {
       "type": "array",
       "description": "FR-050-AC-4: rows whose status classes as complete while nothing backs them.",
-      "items": { "$ref": "#/$defs/StatusLie" }
+      "items": {
+        "$ref": "#/$defs/StatusLie"
+      }
     },
     "no_symbol_rows": {
       "type": "array",
-      "description": "FR-050-AC-16 (CR-041): unbacked rows exempted from status_lies by a declared method that mints no source symbol. ABSENT — not empty — for a module declaring no `no_source_symbol` vocabulary, which is what keeps FR-050-AC-7 byte-identity.",
-      "items": { "$ref": "#/$defs/NoSymbolRow" }
+      "description": "FR-050-AC-16 (CR-041): unbacked rows exempted from status_lies by a declared method that mints no source symbol. ABSENT \u2014 not empty \u2014 for a module declaring no `no_source_symbol` vocabulary, which is what keeps FR-050-AC-7 byte-identity.",
+      "items": {
+        "$ref": "#/$defs/NoSymbolRow"
+      }
     },
     "undeclared_statuses": {
       "type": "array",
-      "description": "FR-050-AC-21 (CR-083): rows whose authored status value the module's `traceability.status` vocabulary classes as nothing. ABSENT — not empty — for a corpus whose every status value is declared, which is what keeps FR-050-AC-7 byte-identity. Additive under FR-055-CON-3: no existing key changes meaning, no required key is added, and a consumer written against this schema before the key existed reads an unchanged payload from a conformant corpus.",
-      "items": { "$ref": "#/$defs/UndeclaredStatus" }
+      "description": "FR-050-AC-21 (CR-083): rows whose authored status value the module's `traceability.status` vocabulary classes as nothing. ABSENT \u2014 not empty \u2014 for a corpus whose every status value is declared, which is what keeps FR-050-AC-7 byte-identity. Additive under FR-055-CON-3: no existing key changes meaning, no required key is added, and a consumer written against this schema before the key existed reads an unchanged payload from a conformant corpus.",
+      "items": {
+        "$ref": "#/$defs/UndeclaredStatus"
+      }
     },
     "untracked_symbols": {
       "type": "array",
       "description": "FR-050-AC-5: source symbols whose trace tag resolves to no declared target or reference row.",
-      "items": { "$ref": "#/$defs/UntrackedSymbol" }
+      "items": {
+        "$ref": "#/$defs/UntrackedSymbol"
+      }
     },
     "shared_trace_ids": {
       "type": "array",
-      "description": "FR-050-AC-23 (CR-087): trace ids bound by more than one distinct source symbol. One id names one symbol; a row backed by N symbols stays green while N-1 of its tests rot. ABSENT — not empty — for a corpus whose every id is uniquely bound, which is what keeps FR-050-AC-7 byte-identity. Carries no weight in `totals`, and `--strict` does not gate on it in this revision. Additive under FR-055-CON-3.",
-      "items": { "$ref": "#/$defs/SharedTraceId" }
+      "description": "FR-050-AC-23 (CR-087): trace ids bound by more than one distinct source symbol. One id names one symbol; a row backed by N symbols stays green while N-1 of its tests rot. ABSENT \u2014 not empty \u2014 for a corpus whose every id is uniquely bound, which is what keeps FR-050-AC-7 byte-identity. Carries no weight in `totals`, and `--strict` does not gate on it in this revision. Additive under FR-055-CON-3.",
+      "items": {
+        "$ref": "#/$defs/SharedTraceId"
+      }
     },
     "groups": {
       "type": "array",
       "description": "FR-050-AC-6: backed/total counts per minting document and target kind.",
-      "items": { "$ref": "#/$defs/GroupCounts" }
+      "items": {
+        "$ref": "#/$defs/GroupCounts"
+      }
     },
     "criteria": {
       "type": "array",
       "description": "FR-050-AC-13 (CR-028): per-document property-shape counts. Absent for a corpus binding no criteria.",
-      "items": { "$ref": "#/$defs/CriteriaCounts" }
+      "items": {
+        "$ref": "#/$defs/CriteriaCounts"
+      }
     },
     "diagnostics": {
       "type": "array",
       "description": "CR-054: declarations that selected nothing, and why. Absent when every declaration selected something.",
-      "items": { "$ref": "#/$defs/CoverageDiagnostic" }
+      "items": {
+        "$ref": "#/$defs/CoverageDiagnostic"
+      }
+    },
+    "diagnostic_reason_registry": {
+      "type": "array",
+      "description": "agent-ix/quire-rs#300: every stable reason token this engine can emit in diagnostics, in deterministic registry order. Always emitted by current engines; optional in v1 so payloads from older engines remain readable under FR-055-CON-3.",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
     },
     "obligations": {
       "type": "array",
       "description": "FR-053: derived obligation records, ordered by source then document then row. Absent for a model declaring no `obligations:` sources.",
-      "items": { "$ref": "#/$defs/Obligation" }
+      "items": {
+        "$ref": "#/$defs/Obligation"
+      }
     },
     "implements": {
       "type": "array",
-      "description": "FR-062: requirement -> production-code edges. Absent for a module declaring no `implements` marker forms. Carries no weight in `totals` — scope is not evidence.",
-      "items": { "$ref": "#/$defs/ImplementsRecord" }
+      "description": "FR-062: requirement -> production-code edges. Absent for a module declaring no `implements` marker forms. Carries no weight in `totals` \u2014 scope is not evidence.",
+      "items": {
+        "$ref": "#/$defs/ImplementsRecord"
+      }
     },
     "vocabulary_coverage": {
       "type": "array",
-      "description": "FR-059-AC-9 (CR-091, #179): one record per declared coverage-vocabulary value, classified owned / excused / unowned with the deciding documents. The `quire validate` warning stream reports only the unowned residue; these records let a consumer tell an owned value from an excused one without opening bundle frontmatter. ABSENT — not empty — for a module declaring no `vocabulary_coverage`, which is what keeps FR-050-AC-7 byte-identity. Additive under FR-055-CON-3.",
-      "items": { "$ref": "#/$defs/VocabularyValueRecord" }
+      "description": "FR-059-AC-9 (CR-091, #179): one record per declared coverage-vocabulary value, classified owned / excused / unowned with the deciding documents. The `quire validate` warning stream reports only the unowned residue; these records let a consumer tell an owned value from an excused one without opening bundle frontmatter. ABSENT \u2014 not empty \u2014 for a module declaring no `vocabulary_coverage`, which is what keeps FR-050-AC-7 byte-identity. Additive under FR-055-CON-3.",
+      "items": {
+        "$ref": "#/$defs/VocabularyValueRecord"
+      }
     },
     "excluded_source_files": {
       "type": "integer",
       "minimum": 1,
-      "description": "FR-050-AC-24 (#215): source files a declared `source_exclude` glob removed from the symbol walk. ABSENT — never 0 — for a model declaring no `source_exclude` or one whose globs match nothing, which is what keeps FR-050-AC-7 byte-identity. Additive under FR-055-CON-3. Without it an over-broad glob silently drops legitimate backing and the report reads as a coverage regression."
+      "description": "FR-050-AC-24 (#215): source files a declared `source_exclude` glob removed from the symbol walk. ABSENT \u2014 never 0 \u2014 for a model declaring no `source_exclude` or one whose globs match nothing, which is what keeps FR-050-AC-7 byte-identity. Additive under FR-055-CON-3. Without it an over-broad glob silently drops legitimate backing and the report reads as a coverage regression."
     },
-    "totals": { "$ref": "#/$defs/CoverageTotals" }
+    "binding_census": {
+      "type": "array",
+      "description": "FR-050-AC-27 / FR-051-AC-19 (CR-093, #227): what the trace binder examined and what bound, per language. Unlike every other list here this is not a defect list \u2014 it is the premise the backed/total ratio rests on, so it is present whenever the code walk found an evidence symbol, whether or not anything bound. `1292 candidates, 0 bound` is the shape that produced a confident 23% over a corpus the binder could not read; `1292 candidates, 1290 bound` is a reassurance no earlier payload could give. ABSENT only when no language yielded an evidence symbol. Additive under FR-055-CON-3.",
+      "items": {
+        "$ref": "#/$defs/BindingCensus"
+      }
+    },
+    "metrics": {
+      "type": "array",
+      "description": "FR-063 (CR-094, #229): every headline number this payload emits, with its unit, population, method and match count. The generalization of `binding_census` \u2014 that field names the one premise `backed/total` happens to rest on; this makes stating the premise a property of every ratio, so a percentage cannot be emitted without the counts that say whether it measured anything. Always emitted by the engine; OPTIONAL here so a payload from an engine predating the field still conforms (FR-055-CON-3).",
+      "items": {
+        "$ref": "#/$defs/Metric"
+      }
+    },
+    "totals": {
+      "$ref": "#/$defs/CoverageTotals"
+    },
+    "suspicions": {
+      "type": "array",
+      "description": "FR-064 (CR-100, #235/#236): things that look wrong, with the measurement that made them look wrong. ADVISORY ALWAYS \u2014 a suspicion is a claim about a shape, not a verdict; it affects no total and no exit code. These are the finding classes only manual review caught in battletest pass 2. ABSENT for a corpus whose suites all check every sample, which keeps FR-050-AC-7 byte-identity.",
+      "items": {
+        "$ref": "#/$defs/Suspicion"
+      }
+    },
+    "engine": {
+      "$ref": "#/$defs/EngineProvenance"
+    }
   },
   "$defs": {
+    "EngineProvenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["cli", "engine", "capabilities"],
+      "description": "Which instrument produced this payload (agent-ix/quire-cli#68, CR-104). Assembled by `quire-cli`, which is the only layer that knows both versions; ABSENT from a payload built by calling `CoverageReport::to_json` in-process, and absent from any CLI predating the field. NOT the contract version \u2014 that stays in the `$id` and the filename, and FR-055-CON-2 still forbids a payload key naming it. This is provenance of the MEASUREMENT: a current CLI can link a stale engine, and every number in this payload is only as trustworthy as the engine that computed it.",
+      "properties": {
+        "cli": {
+          "type": "string",
+          "description": "The `quire-cli` crate version."
+        },
+        "engine": {
+          "type": "string",
+          "description": "The resolved `quire-rs` version actually linked, read from the consuming crate's lockfile entry \u2014 specifically the `?tag=` / `?rev=` / `?branch=` locator in that entry's `source` field, or the commit sha where the locator is absent. NOT the entry's `version` field: for a git dependency that field is the dependency's own manifest constant, and this crate's manifest has read `0.33.0` at every tag from v0.42.0 through v0.45.0, so reading it would restate the defect one layer down. A `-<n>-g<sha>` suffix, a bare rev, or a branch name is carried VERBATIM and never rounded to the nearest tag: the whole defect is a binary claiming a version it does not have."
+        },
+        "capabilities": {
+          "type": "array",
+          "uniqueItems": true,
+          "description": "What this build can emit, as tokens. DELIBERATELY OPEN, and deliberately not version arithmetic: a consumer asserts it needs `binding_census`, not that the engine is `>= 0.43.0`, because a version comparison in a consumer is a second place the contract lives. A newer CLI adding a token must not break a consumer written against an older one.",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "Metric": {
+      "type": "object",
+      "description": "One emitted number and its provenance. `state` discriminates: a measurement that RAN carries value/population/matched; one that did not carries `because` and no numbers at all, so 'not computed' can never be read as a zero (#226).",
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "name",
+            "unit",
+            "method",
+            "shape",
+            "state",
+            "value",
+            "population",
+            "examined",
+            "matched"
+          ],
+          "properties": {
+            "name": {
+              "$ref": "#/$defs/MetricName"
+            },
+            "unit": {
+              "$ref": "#/$defs/MetricUnit"
+            },
+            "method": {
+              "$ref": "#/$defs/MetricMethod"
+            },
+            "shape": {
+              "$ref": "#/$defs/MetricShape"
+            },
+            "state": {
+              "const": "measured"
+            },
+            "value": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "The numerator, in `unit`."
+            },
+            "population": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "The denominator, in `unit`. Zero is legitimate \u2014 measuring nothing and saying so is honest (FR-050-AC-14)."
+            },
+            "examined": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "How many INPUTS the measurement was offered, in whatever unit `method` names \u2014 source symbols walked, criteria reaching the classifier, rows reconciled."
+            },
+            "matched": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "How many of those inputs it successfully read. Paired with `examined` because their difference is the point: matched 0 of examined 0 means there was nothing to read and the zero is honest; matched 0 of examined 1292 means the measurement was handed its input and could not read any of it \u2014 the shape that produced a confident 23% over a corpus the binder could not parse."
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "name",
+            "unit",
+            "method",
+            "shape",
+            "state",
+            "because"
+          ],
+          "properties": {
+            "name": {
+              "$ref": "#/$defs/MetricName"
+            },
+            "unit": {
+              "$ref": "#/$defs/MetricUnit"
+            },
+            "method": {
+              "$ref": "#/$defs/MetricMethod"
+            },
+            "shape": {
+              "$ref": "#/$defs/MetricShape"
+            },
+            "state": {
+              "const": "not_computed"
+            },
+            "because": {
+              "type": "string",
+              "minLength": 1,
+              "description": "The condition that decided it, in the engine's own vocabulary \u2014 'the module declares no `implements` marker forms', not 'no data'."
+            }
+          }
+        }
+      ]
+    },
+    "MetricName": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+$",
+      "description": "Stable dotted token \u2014 `coverage.backed`. Machine-joinable, never rendered prose."
+    },
+    "MetricUnit": {
+      "type": "string",
+      "minLength": 1,
+      "description": "What ONE of `value` is: `matrix row`, `acceptance criterion`, `production symbol`. Singular, so a reader can say '555 matrix rows'."
+    },
+    "MetricMethod": {
+      "type": "string",
+      "minLength": 1,
+      "description": "How the number was arrived at, and what `matched` counts for it \u2014 written for somebody deciding whether to trust the ratio."
+    },
+    "MetricShape": {
+      "type": "string",
+      "enum": [
+        "ratio",
+        "count"
+      ],
+      "description": "Whether `value` is a share of `population` or a tally in its own right (CR-102, #229). HOLLOWNESS IS A PROPERTY OF RATIOS ONLY: for a `count`, `matched` and `value` are the same fact, so `matched: 0` reports the finding rather than a failure to look. `coverage.implements` read 0 of 42 production symbols on agent-ix/spec-artifacts-process and was reported as arithmetic over nothing; the honest report is '0 of 42'. Additive under FR-055-CON-3."
+    },
+    "BindingCensus": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "language",
+        "candidates",
+        "tagged",
+        "bound",
+        "forms"
+      ],
+      "properties": {
+        "language": {
+          "type": "string",
+          "enum": [
+            "rust",
+            "python",
+            "typescript"
+          ],
+          "description": "The stable language label the symbol identities use."
+        },
+        "candidates": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Evidence symbols examined \u2014 those whose kind admits a trace tag (test function, benchmark, fuzz target). A container or a production function is never a candidate (CR-061), so this is not a count of all symbols."
+        },
+        "tagged": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Candidates whose attached annotation block carries a generic id-shaped token, whether or not the declared grammar can read it. Bound candidates always count as tagged, preserving bound <= tagged <= candidates."
+        },
+        "bound": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Candidates that minted at least one `verifies` relation. Counts SYMBOLS, not relations: a test carrying five ids counts once, so a handful of heavily-tagged tests cannot hide a thousand unreadable ones."
+        },
+        "forms": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Every declared form consulted for this language, marker names before legacy \u2014 the list to check when `bound` is 0 and `candidates` is not."
+        },
+        "unbound_example": {
+          "$ref": "#/$defs/UnboundSymbol",
+          "description": "ABSENT when every candidate bound \u2014 which is also when no binding diagnostic fires \u2014 so a report over a fully-bound corpus keeps the shape an engine predating this field emitted (FR-050-AC-7). Additive under FR-055-CON-3."
+        },
+        "unmatched_example": {
+          "$ref": "#/$defs/UnboundSymbol",
+          "description": "One deterministic path and line whose evidence symbol carries an id-shaped token but minted no verifies relation. Absent when no authored tag was missed."
+        }
+      }
+    },
     "UnbackedRow": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["reference", "document", "target_ids"],
+      "required": [
+        "reference",
+        "document",
+        "target_ids"
+      ],
       "properties": {
-        "reference": { "type": "string", "description": "The declaration that produced the row." },
-        "document": { "type": "string", "description": "Scope-relative path, `/`-separated on every platform." },
+        "reference": {
+          "type": "string",
+          "description": "The declaration that produced the row."
+        },
+        "document": {
+          "type": "string",
+          "description": "Scope-relative path, `/`-separated on every platform."
+        },
         "row_id": {
-          "type": ["string", "null"],
+          "type": [
+            "string",
+            "null"
+          ],
           "description": "The row's own id, when the declaration names a `row_id_column`."
         },
         "target_ids": {
           "type": "array",
-          "items": { "type": "string" },
-          "description": "Trace ids the row is answerable for — its own plus the ids it references — none of which any symbol backs."
+          "items": {
+            "type": "string"
+          },
+          "description": "Trace ids the row is answerable for \u2014 its own plus the ids it references \u2014 none of which any symbol backs."
         },
-        "line": { "type": "integer", "minimum": 1, "description": "1-based document line of the matrix row (#210). Additive under FR-055-CON-3: absent on a payload from an engine predating the field." }
+        "line": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "1-based document line of the matrix row (#210). Additive under FR-055-CON-3: absent on a payload from an engine predating the field."
+        }
       }
     },
     "StatusLie": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["reference", "document", "status", "target_ids"],
+      "required": [
+        "reference",
+        "document",
+        "status",
+        "target_ids"
+      ],
       "properties": {
-        "reference": { "type": "string" },
-        "document": { "type": "string" },
-        "row_id": { "type": ["string", "null"] },
-        "status": { "type": "string", "description": "The authored status value, verbatim." },
-        "target_ids": { "type": "array", "items": { "type": "string" } },
-        "line": { "type": "integer", "minimum": 1, "description": "1-based document line of the matrix row (#210). Additive under FR-055-CON-3." }
+        "reference": {
+          "type": "string"
+        },
+        "document": {
+          "type": "string"
+        },
+        "row_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "status": {
+          "type": "string",
+          "description": "The authored status value, verbatim."
+        },
+        "target_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "line": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "1-based document line of the matrix row (#210). Additive under FR-055-CON-3."
+        }
       }
     },
     "UndeclaredStatus": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["reference", "document", "status"],
+      "required": [
+        "reference",
+        "document",
+        "status"
+      ],
       "properties": {
-        "reference": { "type": "string", "description": "The declaration that produced the row." },
-        "document": { "type": "string", "description": "Scope-relative path, `/`-separated on every platform." },
-        "row_id": { "type": ["string", "null"] },
-        "status": { "type": "string", "description": "The authored status value, verbatim. No class is carried: having none is the finding." },
-        "line": { "type": "integer", "minimum": 1, "description": "1-based document line of the matrix row (#210). Duplicate byte-identical rows still collapse to one record (CR-086), which carries the first duplicate's line. Additive under FR-055-CON-3." }
+        "reference": {
+          "type": "string",
+          "description": "The declaration that produced the row."
+        },
+        "document": {
+          "type": "string",
+          "description": "Scope-relative path, `/`-separated on every platform."
+        },
+        "row_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "status": {
+          "type": "string",
+          "description": "The authored status value, verbatim. No class is carried: having none is the finding."
+        },
+        "line": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "1-based document line of the matrix row (#210). Duplicate byte-identical rows still collapse to one record (CR-086), which carries the first duplicate's line. Additive under FR-055-CON-3."
+        }
       }
     },
     "NoSymbolRow": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["reference", "document", "test_type", "target_ids"],
+      "required": [
+        "reference",
+        "document",
+        "test_type",
+        "target_ids"
+      ],
       "properties": {
-        "reference": { "type": "string" },
-        "document": { "type": "string" },
-        "row_id": { "type": ["string", "null"] },
-        "test_type": { "type": "string", "description": "The declared test-type value that exempts the row." },
-        "target_ids": { "type": "array", "items": { "type": "string" } },
-        "line": { "type": "integer", "minimum": 1, "description": "1-based document line of the matrix row (#210). Additive under FR-055-CON-3." }
+        "reference": {
+          "type": "string"
+        },
+        "document": {
+          "type": "string"
+        },
+        "row_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "test_type": {
+          "type": "string",
+          "description": "The declared test-type value that exempts the row."
+        },
+        "target_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "line": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "1-based document line of the matrix row (#210). Additive under FR-055-CON-3."
+        }
       }
     },
     "UntrackedSymbol": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["path", "symbol", "trace_id"],
+      "required": [
+        "path",
+        "symbol",
+        "trace_id"
+      ],
       "properties": {
-        "path": { "type": "string" },
-        "symbol": { "type": "string" },
-        "trace_id": { "type": "string" },
-        "line": { "type": "integer", "minimum": 1, "description": "1-based declaration line of the tagged symbol (#210). Additive under FR-055-CON-3." }
+        "path": {
+          "type": "string"
+        },
+        "symbol": {
+          "type": "string"
+        },
+        "trace_id": {
+          "type": "string"
+        },
+        "line": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "1-based declaration line of the tagged symbol (#210). Additive under FR-055-CON-3."
+        }
       }
     },
     "SharedTraceId": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["trace_id", "symbols"],
+      "required": [
+        "trace_id",
+        "symbols"
+      ],
       "properties": {
-        "trace_id": { "type": "string", "minLength": 1, "description": "The trace id, exactly as the binding forms yield it." },
+        "trace_id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The trace id, exactly as the binding forms yield it."
+        },
         "symbols": {
           "type": "array",
           "minItems": 2,
-          "items": { "$ref": "#/$defs/SharedTraceSymbol" },
-          "description": "The distinct binding symbols, ordered by (path, symbol). Always at least two — a uniquely bound id mints no record."
+          "items": {
+            "$ref": "#/$defs/SharedTraceSymbol"
+          },
+          "description": "The distinct binding symbols, ordered by (path, symbol). Always at least two \u2014 a uniquely bound id mints no record."
         }
       }
     },
     "SharedTraceSymbol": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["path", "symbol"],
+      "required": [
+        "path",
+        "symbol"
+      ],
       "properties": {
-        "path": { "type": "string", "minLength": 1 },
-        "symbol": { "type": "string", "minLength": 1 }
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "symbol": {
+          "type": "string",
+          "minLength": 1
+        }
       }
     },
     "GroupCounts": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["document", "target", "backed", "total"],
+      "required": [
+        "document",
+        "target",
+        "backed",
+        "total"
+      ],
       "properties": {
-        "document": { "type": "string" },
-        "target": { "type": "string", "description": "Declared target kind the ids belong to." },
-        "backed": { "type": "integer", "minimum": 0 },
-        "total": { "type": "integer", "minimum": 0 }
+        "document": {
+          "type": "string"
+        },
+        "target": {
+          "type": "string",
+          "description": "Declared target kind the ids belong to."
+        },
+        "backed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "total": {
+          "type": "integer",
+          "minimum": 0
+        }
       }
     },
     "CriteriaCounts": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["document", "archetype", "criteria", "property_shaped", "by_property"],
+      "required": [
+        "document",
+        "archetype",
+        "criteria",
+        "property_shaped",
+        "by_property"
+      ],
       "properties": {
-        "document": { "type": "string" },
-        "archetype": { "type": "string" },
-        "criteria": { "type": "integer", "minimum": 0 },
-        "property_shaped": { "type": "integer", "minimum": 0 },
+        "document": {
+          "type": "string"
+        },
+        "archetype": {
+          "type": "string"
+        },
+        "criteria": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "property_shaped": {
+          "type": "integer",
+          "minimum": 0
+        },
         "by_property": {
           "type": "object",
-          "additionalProperties": { "type": "integer", "minimum": 0 },
+          "additionalProperties": {
+            "type": "integer",
+            "minimum": 0
+          },
           "description": "Criteria per property-shape label. Key order is deterministic (NFR-006)."
+        },
+        "specific_shaped": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "FR-050-AC-28 (CR-095, #230): extractable criteria whose shape names WHAT property to write \u2014 every shape but the `universal` catch-all, `example` and `unclassified`. ABSENT \u2014 never 0 \u2014 for a document whose every extractable criterion is `universal`, which keeps FR-050-AC-7 byte-identity. Not a quality ranking: a `universal` criterion is often the right thing to write."
+        },
+        "grounding": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/GroundingCounts"
+          },
+          "description": "FR-050-AC-28 (CR-095, #230): per shape label, how many of its records carry the domain/precondition/oracle spans a generator needs. The shapes that say the most carried the least \u2014 65 of 67 specific-shape non-`example` records had zero spans \u2014 so `spec-correctness` could not be driven from the very records that named a property worth writing. Key order is deterministic (NFR-006)."
+        },
+        "catch_all_example": {
+          "$ref": "#/$defs/CatchAllCriterion",
+          "description": "ABSENT unless this document has extractable criteria and a specific shape for NONE of them \u2014 which is also the only time anything reads it \u2014 so a document with any specifically-shaped criterion keeps the bytes an engine predating the field emitted (FR-050-AC-7). Additive under FR-055-CON-3."
         }
       }
     },
     "CoverageDiagnostic": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["declaration", "reason", "message"],
+      "required": [
+        "declaration",
+        "reason",
+        "message"
+      ],
       "properties": {
-        "declaration": { "type": "string", "description": "The declaration's name, as the model authored it." },
+        "declaration": {
+          "type": "string",
+          "description": "The declaration's name, as the model authored it."
+        },
         "reason": {
           "type": "string",
           "description": "Stable machine token, shared with `quire validate`'s bundle warnings. Deliberately NOT an enum here: the reason vocabulary is engine data that grows, and a schema that closed it would reject a payload from a newer engine that a consumer could otherwise read."
         },
-        "message": { "type": "string" },
-        "path": { "type": ["string", "null"] },
+        "message": {
+          "type": "string"
+        },
+        "path": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "line": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "agent-ix/quoin#239: one-based source line at the smallest repair locus, when the engine computed one. Absent when the diagnostic is genuinely document- or model-scoped."
+        },
         "value": {
           "type": "string",
-          "description": "FR-054-AC-12 (CR-091, #179): the vocabulary or catalog value the diagnostic is about, verbatim, when it is about exactly one. `uncatalogued-verification-method` carries the authored method here — the identical string the Obligation records carry in `method` — so a consumer distinguishes an uncatalogued value from a genuine method disagreement by an equality join instead of parsing the message (quoin#168). Absent when the diagnostic is not about one value. Additive under FR-055-CON-3."
+          "description": "FR-054-AC-12 (CR-091, #179): the vocabulary or catalog value the diagnostic is about, verbatim, when it is about exactly one. `uncatalogued-verification-method` carries the authored method here \u2014 the identical string the Obligation records carry in `method` \u2014 so a consumer distinguishes an uncatalogued value from a genuine method disagreement by an equality join instead of parsing the message (quoin#168). Absent when the diagnostic is not about one value. Additive under FR-055-CON-3."
         }
       }
     },
     "VocabularyValueRecord": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["vocabulary", "archetype", "field", "check", "value", "state", "documents"],
+      "required": [
+        "vocabulary",
+        "archetype",
+        "field",
+        "check",
+        "value",
+        "state",
+        "documents"
+      ],
       "properties": {
-        "vocabulary": { "type": "string", "minLength": 1, "description": "The `vocabulary_coverage` declaration's name." },
-        "archetype": { "type": "string", "minLength": 1, "description": "The projected archetype (the declaration's `from`)." },
-        "field": { "type": "string", "minLength": 1, "description": "The frontmatter field whose schema `enum` is the vocabulary." },
-        "check": { "type": "string", "minLength": 1, "description": "The declared `<check>` severity token, joining the record to the warning stream's findings." },
-        "value": { "type": "string", "minLength": 1, "description": "The vocabulary value, verbatim from the schema enum." },
+        "vocabulary": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The `vocabulary_coverage` declaration's name."
+        },
+        "archetype": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The projected archetype (the declaration's `from`)."
+        },
+        "field": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The frontmatter field whose schema `enum` is the vocabulary."
+        },
+        "check": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The declared `<check>` severity token, joining the record to the warning stream's findings."
+        },
+        "value": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The vocabulary value, verbatim from the schema enum."
+        },
         "state": {
-          "enum": ["owned", "excused", "unowned"],
-          "description": "owned: a projected document claims it (wins when a value is both claimed and recorded absent). excused: the declared justified-absence field records it; whether the excuse is justified is verdict policy and deliberately not stated here (FR-059-CON-2). unowned: neither. Closed deliberately, unlike CoverageDiagnostic.reason — the states are the check's own semantics, not a growing vocabulary."
+          "enum": [
+            "owned",
+            "excused",
+            "unowned"
+          ],
+          "description": "owned: a projected document claims it (wins when a value is both claimed and recorded absent). excused: the declared justified-absence field records it; whether the excuse is justified is verdict policy and deliberately not stated here (FR-059-CON-2). unowned: neither. Closed deliberately, unlike CoverageDiagnostic.reason \u2014 the states are the check's own semantics, not a growing vocabulary."
         },
         "documents": {
           "type": "array",
-          "items": { "type": "string", "minLength": 1 },
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
           "description": "Scope-relative documents (`/`-separated on every platform) that decide the state: the claimants for owned, the justified-absence recorders for excused, empty for unowned."
         }
       }
@@ -241,27 +721,60 @@
     "Obligation": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["source", "id", "document", "statement", "statement_hash"],
+      "required": [
+        "source",
+        "id",
+        "document",
+        "statement",
+        "statement_hash"
+      ],
       "properties": {
-        "source": { "type": "string", "description": "The obligation source declaration that minted this record." },
-        "id": { "type": "string", "description": "The row's own id, or one rendered from `id_format`." },
-        "document": { "type": "string" },
-        "statement": { "type": "string", "description": "The normative statement, verbatim and untruncated." },
+        "source": {
+          "type": "string",
+          "description": "The obligation source declaration that minted this record."
+        },
+        "id": {
+          "type": "string",
+          "description": "The row's own id, or one rendered from `id_format`."
+        },
+        "document": {
+          "type": "string"
+        },
+        "statement": {
+          "type": "string",
+          "description": "The normative statement, verbatim and untruncated."
+        },
         "statement_hash": {
           "type": "string",
           "pattern": "^[0-9a-f]{64}$",
           "description": "SHA-256 of the NFC/trim/whitespace-collapsed statement. Suspect-link detection is `current != hash_at_binding` and nothing more."
         },
-        "method": { "type": ["string", "null"], "description": "Declared verification method, trailing annotation stripped." },
+        "method": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Declared verification method, trailing annotation stripped."
+        },
         "parameters": {
           "type": "object",
-          "additionalProperties": { "type": "string" },
-          "description": "Declared parameters. An absent key means the cell was empty — never defaulted."
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Declared parameters. An absent key means the cell was empty \u2014 never defaulted."
         },
-        "criticality": { "type": ["string", "null"] },
+        "criticality": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
         "target_ids": {
           "type": "array",
-          "items": { "type": "string", "minLength": 1 },
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
           "description": "Test-case ids the method cell names, e.g. `Test (TC-707)`. Additive in v1: absent on a payload from an engine before quire-rs v0.35.0, and omitted where the cell names none. A consumer binding evidence keyed on a TEST CASE rather than on the criterion needs this join, which the engine parsed and discarded (agent-ix/quire-rs#180)."
         }
       }
@@ -269,28 +782,188 @@
     "ImplementsRecord": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["path", "symbol", "trace_id", "form"],
+      "required": [
+        "path",
+        "symbol",
+        "trace_id",
+        "form"
+      ],
       "properties": {
-        "path": { "type": "string", "minLength": 1 },
-        "symbol": { "type": "string", "minLength": 1 },
-        "trace_id": { "type": "string", "minLength": 1 },
-        "form": { "type": "string", "minLength": 1 }
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "symbol": {
+          "type": "string",
+          "minLength": 1
+        },
+        "trace_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "form": {
+          "type": "string",
+          "minLength": 1
+        }
       },
-      "description": "FR-062: one requirement -> production-code edge. SCOPE, not evidence — which requirement a production symbol is about. A consumer must not fold this into a backed set or a coverage total; doing so lets unverified code claim coverage, which is the backdoor CR-061 closed."
+      "description": "FR-062: one requirement -> production-code edge. SCOPE, not evidence \u2014 which requirement a production symbol is about. A consumer must not fold this into a backed set or a coverage total; doing so lets unverified code claim coverage, which is the backdoor CR-061 closed."
     },
     "CoverageTotals": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["backed", "total"],
+      "required": [
+        "backed",
+        "total"
+      ],
       "properties": {
-        "backed": { "type": "integer", "minimum": 0 },
-        "total": { "type": "integer", "minimum": 0 },
+        "backed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "total": {
+          "type": "integer",
+          "minimum": 0
+        },
         "criteria": {
-          "type": ["integer", "null"],
+          "type": [
+            "integer",
+            "null"
+          ],
           "minimum": 0,
           "description": "All-or-nothing pair with `property_shaped`: both present for a corpus binding criteria, both absent otherwise. Zero is a real value; absent is not zero."
         },
-        "property_shaped": { "type": ["integer", "null"], "minimum": 0 }
+        "property_shaped": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "specific_shaped": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0,
+          "description": "FR-050-AC-28 (CR-095, #230): the honest half of the headline, present alongside `criteria` and `property_shaped`. `515/951 extractable (54%)` reads as 'half this specification is property-testable'; 440 of those 515 were the `universal` catch-all and the figure for 'the classifier said what property to write' was 78/951 \u2014 8%. Both true; only one is what a reader repeats."
+        }
+      }
+    },
+    "GroundingCounts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "records",
+        "domain",
+        "precondition",
+        "oracle",
+        "all_three"
+      ],
+      "properties": {
+        "records": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Records of this shape."
+        },
+        "domain": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "precondition": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "oracle": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "all_three": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Records carrying all three \u2014 the set `spec-correctness` can actually be driven from."
+        }
+      }
+    },
+    "Suspicion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "path",
+        "symbol",
+        "line",
+        "message",
+        "evidence"
+      ],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "vacuous-under-guard",
+            "oracle-resembles-implementation"
+          ],
+          "description": "`vacuous-under-guard`: every assertion sits behind a narrowing guard, so an input that does not enter it passes unchecked \u2014 the shape of a suite measured green while checking 2.3% of its samples. `oracle-resembles-implementation`: the oracle closely resembles the code it judges, so it asserts only that the code equals itself."
+        },
+        "path": {
+          "type": "string"
+        },
+        "symbol": {
+          "type": "string"
+        },
+        "line": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1
+        },
+        "evidence": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The numbers behind the claim, rendered. Not decoration: a suspicion a reader cannot check in one look is one they learn to scroll past, which is how an advisory check becomes noise rather than a skeptic."
+        }
+      }
+    },
+    "UnboundSymbol": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "line",
+        "symbol"
+      ],
+      "description": "One evidence symbol that bound nothing, so `no-symbol-bound` names a place instead of a language (#256). The lowest `(path, line)` among the unbound, so it is deterministic under NFR-006 and does not move when a file is renamed. ONE example, not all of them: the finding is about the language's convention, and a diagnostic carrying a thousand paths is a diagnostic nobody reads.",
+      "properties": {
+        "path": {
+          "type": "string",
+          "description": "Repo-relative, `/`-separated, matching every other path in this payload."
+        },
+        "line": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "1-based line of the symbol's ANNOTATION block, not its declaration line: a marker that failed to match is written where the annotation is, and that is the line the reader has to edit."
+        },
+        "symbol": {
+          "type": "string",
+          "description": "Qualified name, so a reader can confirm the same symbol after a file moves."
+        }
+      }
+    },
+    "CatchAllCriterion": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "One extractable criterion the classifier gave the `universal` catch-all, so `catch-all-universal` names a place instead of only a ratio (#261). The lowest-lined such criterion of a document that has no specifically-shaped one.",
+      "properties": {
+        "row_id": {
+          "type": "string",
+          "description": "The criterion's own id, ABSENT when the table declares no id column \u2014 never guessed."
+        },
+        "line": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "1-based document line of the criterion."
+        }
       }
     }
   }

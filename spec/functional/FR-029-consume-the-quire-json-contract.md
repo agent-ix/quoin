@@ -36,11 +36,13 @@ offending path rather than as an `undefined` three frames later.
 
 ### The schemas are vendored, with recorded provenance
 
-quire-rs is a Rust crate consumed by git tag; quoin is an npm package. There is
+quire-rs is a Rust crate consumed from git; quoin is an npm package. There is
 no dependency edge along which a schema file could travel, and quoin performs no
 network reads on a command path. So the artifacts are copied in with their
-source tag, path and **content hash** recorded, and refreshed by a script that
-refuses to run against a checkout not at the pinned tag.
+exact 40-character source revision, path and **content hash** recorded. The
+refresh script reads the files from that git object rather than from the source
+checkout's working tree, so unrelated tracking-branch edits cannot alter the
+contract being recorded.
 
 That is a copy, and a copy can drift. What keeps it honest is that the hash is
 asserted on every test run: an edit to a vendored file without a matching
@@ -121,6 +123,7 @@ names the found version, the required version, and the consequence.
 | FR-029-AC-11 | Every `quire` subprocess call sets an explicit `maxBuffer` sized for real corpora, so a corpus whose `coverage --json` payload exceeds Node's 1 MiB default still runs every command that shells out. | Test (TC-254) |
 | FR-029-AC-12 | A child that never exited on its own — killed on a buffer overrun, killed by a signal, or never spawned — is reported by its cause (`ENOBUFS` naming the byte limit, the signal name, the spawn error code), reports no exit status, and appends no child stderr. | Test (TC-254, TC-255, TC-257) |
 | FR-029-AC-13 | The TypeScript interfaces conform to the vendored coverage schema: a typed sample per `$defs` entry, forced by `Required<Interface>` to carry every interface field, has exactly its schema entry's property keys and validates against the schema — a schema key with no interface field, or an interface field with no schema key, fails the suite. | Test (TC-272) |
+| FR-029-AC-14 | Vendored schema provenance names an exact 40-character quire-rs commit. Refresh resolves that commit and reads each published schema from the git object, never from the source checkout's current branch or dirty working tree; an unavailable or ambiguously resolved revision is refused. | Test (TC-110), Inspection |
 
 ## Dependencies
 

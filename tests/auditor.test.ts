@@ -68,6 +68,7 @@ function input(over: Partial<AuditInput> = {}): AuditInput {
     bindings: [binding()],
     runs: [run()],
     headCommit: COMMIT,
+    mockInspectionSuites: ["SUITE-001"],
     ...over,
   };
 }
@@ -407,6 +408,7 @@ describe("TC-145 one obligation, two suites (FR-032-AC-8)", () => {
         obligations: [obligation({ criticality: "P0" })],
         bindings: twoSuites(),
         runs: twoRuns(),
+        mockInspectionSuites: ["SUITE-001", "SUITE-002"],
         multiplicityRequires: ["P0"],
       }),
     );
@@ -1074,6 +1076,14 @@ describe("mocked confirmation (#204)", () => {
     expect(
       report.findings.filter((f) => f.kind === "mocked-confirmation"),
     ).toHaveLength(0);
+    expect(report.healthy).toEqual([]);
+    expect(report.unevaluated).toEqual([
+      expect.objectContaining({
+        check: "mocked-confirmation",
+        obligation: "FR-017-AC-7",
+        suites: ["SUITE-001"],
+      }),
+    ]);
   });
 
   it("TC-940 the finding ratchets through the existing key form", () => {

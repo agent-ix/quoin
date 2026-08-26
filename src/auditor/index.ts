@@ -15,4 +15,6 @@ export {
   type AuditReport,
   type Finding,
   type Severity,
+  type UnevaluatedCheck,
 } from "./audit.js";
+export type { MockInjection } from "../evidence/index.js";

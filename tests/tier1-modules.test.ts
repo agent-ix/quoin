@@ -171,4 +171,60 @@ fi
       }).cases,
     ).toHaveLength(1);
   });
+
+  test("TC-1066 audit-sourced families execute the store-backed command path and preserve its locus", () => {
+    const root = mkdtempSync(join(tmpdir(), "quoin-tier1-audit-exec-"));
+    roots.push(root);
+    const quire = join(root, "quire");
+    writeFileSync(
+      quire,
+      `#!/bin/sh
+if [ "$1" = "coverage" ]; then
+  printf '%s\n' '{"diagnostics":[],"metrics":[],"obligations":[{"id":"FR-001-AC-1"}]}'
+else
+  exit 0
+fi
+`,
+    );
+    chmodSync(quire, 0o755);
+    writeFileSync(join(root, "manifest.yaml"), "archetypes: []\n");
+    writeFileSync(join(root, "source.rs"), "#[test]\nfn confirms() {}\n");
+    const quoin = join(root, "quoin.mjs");
+    writeFileSync(
+      quoin,
+      `const args = process.argv.slice(2);
+if (args.join(" ").includes("evidence audit")) {
+  console.log(JSON.stringify({findings:[{kind:"mocked-confirmation",path:"src/lib.rs",line:4,summary:"located"}],healthy:[],unevaluated:[]}));
+} else {
+  console.log(JSON.stringify({ok:true}));
+}
+`,
+    );
+
+    const execution = createTier1Executor();
+    const result = execution.findingsFor(
+      quire,
+      root,
+      root,
+      {
+        families: {
+          mocked: {
+            source: "audit.findings",
+            key: "mocked-confirmation",
+          },
+        },
+      },
+      quoin,
+    );
+    expect(result.findings).toEqual([
+      {
+        family: "mocked",
+        reason: "mocked-confirmation",
+        path: "src/lib.rs",
+        line: 4,
+        message: "located",
+      },
+    ]);
+    expect(execution.toolCalls()).toBe(9);
+  });
 });

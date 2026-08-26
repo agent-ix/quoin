@@ -1,6 +1,15 @@
 import { execFileSync } from "node:child_process";
-import { existsSync } from "node:fs";
-import { join } from "node:path";
+import {
+  cpSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from "node:fs";
+import { tmpdir } from "node:os";
+import { dirname, join, resolve } from "node:path";
 
 const VALIDATE_LINE =
   /^(?<path>.+?): line (?<line>\d+): (?<rest>.*) \[(?<reason>[a-z-]+)\]$/;
@@ -45,7 +54,7 @@ export function createTier1Executor() {
     }
   };
 
-  const findingsFor = (quire, corpusRoot, module, mapping) => {
+  const findingsFor = (quire, corpusRoot, module, mapping, quoin) => {
     const findings = [];
     const bySource = (source) =>
       Object.entries(mapping.families).filter(
@@ -93,6 +102,76 @@ export function createTier1Executor() {
         metric: definition.key,
         value: Number(metric.value),
       });
+    }
+
+    const auditFamilies = bySource("audit.findings");
+    if (auditFamilies.length > 0) {
+      if (!quoin) {
+        throw new Error(
+          "bench-tier1: the mapping declares audit.findings but no quoin CLI was supplied",
+        );
+      }
+      const audit = auditFixture({
+        quire,
+        quoin,
+        corpusRoot,
+        module,
+        single,
+        env,
+        obligations: payload.obligations ?? [],
+      });
+      for (const [family, definition] of auditFamilies) {
+        for (const finding of audit.findings ?? []) {
+          if (finding.kind !== definition.key) continue;
+          findings.push({
+            family,
+            reason: finding.kind,
+            path: finding.path ?? null,
+            line: typeof finding.line === "number" ? finding.line : null,
+            message: finding.summary ?? "",
+          });
+        }
+      }
+    }
+
+    const quoinValidateFamilies = bySource("quoin.validate");
+    if (quoinValidateFamilies.length > 0) {
+      if (!quoin) {
+        throw new Error(
+          "bench-tier1: the mapping declares quoin.validate but no quoin CLI was supplied",
+        );
+      }
+      const result = must(
+        execute(process.execPath, [
+          quoin,
+          "validate",
+          "--repo",
+          corpusRoot,
+          "--json",
+        ]),
+        "quoin validate",
+        corpusRoot,
+      );
+      let validated;
+      try {
+        validated = JSON.parse(result.stdout);
+      } catch {
+        throw new Error(
+          `bench-tier1: quoin validate produced no JSON for ${corpusRoot}`,
+        );
+      }
+      for (const [family, definition] of quoinValidateFamilies) {
+        for (const finding of validated.findings ?? []) {
+          if (finding.kind !== definition.key) continue;
+          findings.push({
+            family,
+            reason: finding.kind,
+            path: finding.path ?? null,
+            line: typeof finding.line === "number" ? finding.line : null,
+            message: finding.summary ?? "",
+          });
+        }
+      }
     }
 
     const validateArgs = single
@@ -160,6 +239,141 @@ export function createTier1Executor() {
       diagnostics: payload.diagnostics ?? [],
       untrackedSymbols: payload.untracked_symbols ?? [],
     };
+  };
+
+  /**
+   * Exercise source inspection through the same store-backed command path a
+   * consumer CI uses. The run result is a controlled-fixture premise, not a
+   * claim about the corpus repository: it exists only inside this temporary
+   * git repository and is derived from the obligations Quire just emitted.
+   */
+  const auditFixture = ({
+    quire,
+    quoin,
+    corpusRoot,
+    module,
+    single,
+    env,
+    obligations,
+  }) => {
+    const scratch = mkdtempSync(join(tmpdir(), "quoin-tier1-audit-"));
+    const repo = join(scratch, "repo");
+    try {
+      cpSync(corpusRoot, repo, { recursive: true });
+      must(execute("git", ["init", "-q", repo]), "git init", corpusRoot);
+      must(execute("git", ["-C", repo, "add", "."]), "git add", corpusRoot);
+      must(
+        execute("git", [
+          "-C",
+          repo,
+          "-c",
+          "user.name=Quoin Tier 1",
+          "-c",
+          "user.email=tier1@example.invalid",
+          "commit",
+          "-qm",
+          "controlled fixture",
+        ]),
+        "git commit",
+        corpusRoot,
+      );
+      const head = must(
+        execute("git", ["-C", repo, "rev-parse", "HEAD"]),
+        "git rev-parse",
+        corpusRoot,
+      ).stdout.trim();
+
+      const results = join(scratch, "run.json");
+      writeFileSync(
+        results,
+        JSON.stringify({
+          entries: [
+            {
+              symbol: "tier1::controlled_fixture",
+              outcome: "pass",
+              traceIds: obligations.map((obligation) => obligation.id),
+            },
+          ],
+        }),
+      );
+
+      // Quoin intentionally resolves `quire` by name. Put the explicitly
+      // selected benchmark binary at that name so the audit leg cannot drift
+      // to a different installed engine.
+      const toolBin = join(scratch, "bin");
+      mkdirSync(toolBin);
+      symlinkSync(resolve(quire), join(toolBin, "quire"));
+      const commandEnv = {
+        ...(env ?? {}),
+        CI: "1",
+        PATH: `${toolBin}:${process.env.PATH ?? ""}`,
+      };
+      const moduleArgs = single ? ["--module", module] : [];
+      const invoke = (args, name) =>
+        must(
+          execute(process.execPath, [quoin, ...args], commandEnv),
+          name,
+          corpusRoot,
+        );
+
+      invoke(
+        [
+          "evidence",
+          "record",
+          "--repo",
+          repo,
+          "--suite",
+          "SUITE-TIER1",
+          "--commit",
+          head,
+          "--tool",
+          "tier1 controlled fixture",
+          "--timestamp",
+          "2000-01-01T00:00:00Z",
+          "--results",
+          results,
+          ...moduleArgs,
+          "--json",
+        ],
+        "quoin evidence record",
+      );
+      invoke(
+        [
+          "evidence",
+          "inspect-mocks",
+          "--repo",
+          repo,
+          "--suite",
+          "SUITE-TIER1",
+          "--commit",
+          head,
+          "--timestamp",
+          "2000-01-01T00:00:00Z",
+          "--json",
+        ],
+        "quoin evidence inspect-mocks",
+      );
+      const audited = invoke(
+        ["evidence", "audit", "--repo", repo, ...moduleArgs, "--json"],
+        "quoin evidence audit",
+      );
+      try {
+        return JSON.parse(audited.stdout);
+      } catch {
+        throw new Error(
+          `bench-tier1: quoin evidence audit produced no JSON for ${corpusRoot}`,
+        );
+      }
+    } finally {
+      rmSync(scratch, { recursive: true, force: true });
+    }
+  };
+
+  const must = (result, operation, corpusRoot) => {
+    if (result.ok) return result;
+    throw new Error(
+      `bench-tier1: ${operation} failed for ${corpusRoot}\n${result.stderr.trim()}`,
+    );
   };
 
   const rawReasons = (quire, corpusRoot, module) => {

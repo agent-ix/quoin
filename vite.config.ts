@@ -62,6 +62,7 @@ export default defineConfig(({ command }) => ({
         "commands/completeness": "src/commands/completeness.ts",
         "commands/assurance": "src/commands/assurance.ts",
         "commands/report": "src/commands/report.ts",
+        "commands/validate": "src/commands/validate.ts",
         "commands/measurement/index": "src/commands/measurement/index.ts",
         "commands/measurement/record": "src/commands/measurement/record.ts",
         "commands/config/index": "src/commands/config/index.ts",
@@ -75,6 +76,8 @@ export default defineConfig(({ command }) => ({
         "commands/evidence/gc": "src/commands/evidence/gc.ts",
         "commands/evidence/audit": "src/commands/evidence/audit.ts",
         "commands/evidence/baseline": "src/commands/evidence/baseline.ts",
+        "commands/evidence/inspect-mocks":
+          "src/commands/evidence/inspect-mocks.ts",
         "commands/catalog/index": "src/commands/catalog/index.ts",
         "commands/catalog/methods": "src/commands/catalog/methods.ts",
         "commands/catalog/list": "src/commands/catalog/list.ts",

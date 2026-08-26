@@ -9,6 +9,7 @@ import {
   baselinePath,
   latestRun,
   listRecordedSuites,
+  mockInspectionInput,
   readBindings,
   writeBaseline,
 } from "../../evidence/index.js";
@@ -61,16 +62,20 @@ releases is the gate quietly being disabled one entry at a time.`;
     const parsed = parseCoverage(runQuire(args));
     if (!parsed.ok) this.error(parsed.error.message, { exit: 2 });
 
+    const head = headCommit(flags.repo);
+    const mockInspections = mockInspectionInput(flags.repo, head);
     const report = audit({
       obligations: parsed.value.obligations ?? [],
       bindings: readBindings(flags.repo).bindings,
       runs: latestRuns(flags.repo),
+      injections: mockInspections.injections,
+      mockInspectionSuites: mockInspections.suites,
       catalog: loadMethodCatalog(flags.module ? [flags.module] : undefined),
-      headCommit: headCommit(flags.repo),
+      headCommit: head,
     });
 
     const accepted = report.findings.map(findingKey).sort();
-    const commit = headCommit(flags.repo) ?? "";
+    const commit = head ?? "";
 
     if (!flags["dry-run"]) {
       writeBaseline(flags.repo, { schemaVersion: 1, commit, accepted });

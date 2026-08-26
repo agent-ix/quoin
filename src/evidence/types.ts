@@ -34,6 +34,9 @@ export const RUNS_DIR = "runs";
  */
 export const SCANS_DIR = "scans";
 
+/** Where source-level mock inspection records live, relative to the store. */
+export const MOCK_INSPECTIONS_DIR = "mock-inspections";
+
 /** Schema version carried by every machine-written file in the store. */
 export const STORE_SCHEMA_VERSION = 1;
 
@@ -198,6 +201,37 @@ export interface FindingRecord {
   /** Number of rules the scan actually evaluated, when the tool reports it. */
   rulesEvaluated?: number;
   findings: Finding[];
+}
+
+/** One test symbol observed substituting a stand-in for real behaviour. */
+export interface MockInjection {
+  /** Suite whose source was inspected. */
+  suite: string;
+  /** Test symbol containing the substitution. */
+  symbol: string;
+  /** Identifiers substituted for real behaviour, for example `Confirmation::allow`. */
+  injects: string[];
+  /** Repo-relative source location, when the inspection can name it. */
+  path?: string;
+  line?: number;
+}
+
+/**
+ * One completed source inspection for mock substitutions.
+ *
+ * The record may contain no injections. Its existence is still material: an
+ * empty completed inspection means "looked and found none"; no record means
+ * "nobody looked" (agent-ix/quoin#204).
+ */
+export interface MockInspectionRecord {
+  schemaVersion: number;
+  suite: string;
+  /** Full commit sha whose source was inspected. */
+  commit: string;
+  tool: string;
+  /** ISO-8601, supplied by the caller. */
+  timestamp: string;
+  injections: MockInjection[];
 }
 
 /** Someone re-affirming a binding after the statement it was made against changed. */

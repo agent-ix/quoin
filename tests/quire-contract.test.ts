@@ -69,6 +69,10 @@ function propertiesPayload(): Record<string, unknown> {
 
 describe("TC-110 the vendored schemas match their recorded provenance", () => {
   // TC-110
+  it("pins an exact source commit rather than a moving tag or branch", () => {
+    expect(QUIRE_CONTRACT.sourceRevision).toMatch(/^[0-9a-f]{40}$/);
+  });
+
   it("hashes exactly what contract.ts records", () => {
     for (const [name, expected] of Object.entries(QUIRE_CONTRACT.hashes)) {
       expect(
@@ -236,8 +240,10 @@ describe("TC-116 optional keys are optional and absence is not emptiness", () =>
           reason: "archetype-matches-nothing",
           message: "no document of archetype TestMatrix",
           path: null,
+          line: 12,
         },
       ],
+      diagnostic_reason_registry: ["archetype-matches-nothing"],
       obligations: [
         {
           source: "acceptance-criterion",
@@ -279,7 +285,60 @@ describe("TC-116 optional keys are optional and absence is not emptiness", () =>
         },
       ],
       excluded_source_files: 3,
-      totals: { backed: 1, total: 2, criteria: 2, property_shaped: 1 },
+      binding_census: [
+        {
+          language: "rust",
+          candidates: 2,
+          tagged: 1,
+          bound: 1,
+          forms: ["rust-verifies-line"],
+          unbound_example: {
+            path: "tests/parse.rs",
+            line: 30,
+            symbol: "parse_without_marker",
+          },
+          unmatched_example: {
+            path: "tests/parse.rs",
+            line: 30,
+            symbol: "parse_without_marker",
+          },
+        },
+      ],
+      metrics: [
+        {
+          name: "coverage.backed",
+          unit: "matrix row",
+          method: "backed rows divided by all rows",
+          shape: "ratio",
+          state: "measured",
+          value: 1,
+          population: 2,
+          examined: 2,
+          matched: 1,
+        },
+      ],
+      suspicions: [
+        {
+          kind: "vacuous-under-guard",
+          path: "tests/parse.rs",
+          symbol: "all_inputs",
+          line: 50,
+          message: "every assertion is guarded",
+          evidence: "1 of 42 samples entered the assertion",
+        },
+      ],
+      engine: {
+        cli: "0.30.2",
+        engine: "a14dcb2",
+        capabilities: ["binding_census"],
+      },
+      totals: {
+        backed: 1,
+        total: 2,
+        criteria: 2,
+        property_shaped: 1,
+        specific_shaped: 1,
+      },
     };
 
     // "Every" is read off the schema, not off this fixture's memory of it:

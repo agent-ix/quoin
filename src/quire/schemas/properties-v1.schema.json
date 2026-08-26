@@ -10,9 +10,34 @@
     "documents": {
       "type": "array",
       "items": { "$ref": "#/$defs/Document" }
+    },
+    "engine": {
+      "$ref": "#/$defs/EngineProvenance"
     }
   },
   "$defs": {
+    "EngineProvenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["cli", "engine", "capabilities"],
+      "description": "Which instrument produced this payload (agent-ix/quire-cli#68, CR-104). Identical in shape and meaning to the definition in `coverage-v1.schema.json`; both are hand-authored per FR-055-CON-1, so the duplication is two artifacts stating one contract rather than one deriving from the other. NOT the contract version — that stays in the `$id` and the filename (FR-055-CON-2). This is provenance of the MEASUREMENT.",
+      "properties": {
+        "cli": {
+          "type": "string",
+          "description": "The `quire-cli` crate version."
+        },
+        "engine": {
+          "type": "string",
+          "description": "The resolved `quire-rs` version actually linked, read from the `?tag=` / `?rev=` / `?branch=` locator of the consuming crate's lockfile entry, or the commit sha where the locator is absent — not that entry's `version` field, which for a git dependency is the dependency's own stale manifest constant. A `-<n>-g<sha>` suffix, a bare rev, or a branch name is carried VERBATIM and never rounded to the nearest tag."
+        },
+        "capabilities": {
+          "type": "array",
+          "uniqueItems": true,
+          "description": "What this build can emit, as tokens. Deliberately open, and deliberately not version arithmetic.",
+          "items": { "type": "string" }
+        }
+      }
+    },
     "Document": {
       "type": "object",
       "additionalProperties": false,

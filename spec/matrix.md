@@ -401,7 +401,7 @@ generated tests under `tests/props/` and `Unit` for the rest.
 | TC-956 | A missing baseline scores `new` — neither a pass by default nor a failure — and the observed value is proposed, not written (#199) | Unit | P0 | FR-043-AC-10 | ✅ |
 | TC-957 | `gate-zero` carries no baseline and no tolerance, and its proposed baseline is forced to 0 so `--update` cannot launder a non-zero value (#199) | Unit | P0 | FR-043-AC-6 | ✅ |
 | TC-958 | Every family the dictionary declares is mapped to a real payload source and key, and no mapping names a family nothing declares (#199) | Unit | P0 | FR-043-AC-2 | ✅ |
-| TC-959 | A family with no detector declares `source: none` with a note rather than being omitted, so a recall of 0 says whether anything looked (#199) | Unit | P0 | FR-043-AC-7 | ✅ |
+| TC-959 | The completed corpus plan leaves no family on the supported `source: none` escape hatch; every declared family now names a production source (#199, #224) | Unit | P0 | FR-043-AC-7 | ✅ |
 | TC-960 | A family the baseline scored and a run does not report AT ALL is a regression with the baseline kept — deleting a corpus must not read as a clean run (#199) | Unit | P0 | FR-043-AC-10 | ✅ |
 | TC-964 | A case whose `expect.yaml` names a diagnostic reason no family claims FAILS the run rather than deriving zero defects in silence, and the message names `source: none` as the way to declare a hole (#236) | Unit | P0 | FR-043-AC-2 | ✅ |
 | TC-965 | A recognised reason still loads and carries its family, its `expect_reason` and the language the case declares, so the guard refuses only the hole (#236) | Unit | P0 | FR-043-AC-2 | ✅ |
@@ -458,6 +458,16 @@ generated tests under `tests/props/` and `Unit` for the rest.
 | TC-938 | One real suite alongside a mocked one is not reported: standing in a dependency while another suite exercises the real path is ordinary test design (#204) | Unit | P0 | FR-032-AC-15 | ✅ |
 | TC-939 | Absent injection data yields silence, never a clean bill — "nobody looked" is not "nothing was mocked" (#204) | Unit | P0 | FR-032-AC-15 | ✅ |
 | TC-940 | The finding ratchets through the existing `<kind>:<obligation>` key, so it is acceptable in a baseline like every other kind (#204) | Unit | P1 | FR-032-AC-15 | ✅ |
+| TC-1062 | The mock-inspection producer locates the same explicit permissive stand-in in Rust, Python and TypeScript test source (#204) | Unit | P0 | FR-032-AC-16 | ✅ |
+| TC-1063 | The producer ignores production-only calls and ordinary constructors while retaining unrelated explicit mocks for the auditor's independent statement-overlap decision (#204) | Unit | P0 | FR-032-AC-16 | ✅ |
+| TC-1064 | A completed empty mock inspection is stored as evidence that the suite was examined, and only the exact full commit is consumed (#204) | Unit | P0 | FR-030-AC-16, FR-032-AC-16 | ✅ |
+| TC-1065 | Through real commands, `evidence inspect-mocks` records a three-language-capable source observation and `evidence audit` reports the seeded obligation with path, line, symbol and injected identifier (#204) | Integration | P0 | FR-030-AC-16, FR-032-AC-15, FR-032-AC-16 | ✅ |
+| TC-1066 | Tier 1 materializes the controlled premise and executes the real record → inspect → audit command path for `audit.findings`, preserving the reported path and line in scoring (#204) | Unit | P0 | FR-032-AC-16, FR-043-AC-19 | ✅ |
+| TC-1067 | A gate finding requires and joins an explicit negative obligation claim, real build/CI wiring and an unasserted forbidden-pattern count, and names the exact repair locus (#224) | Unit | P0 | FR-043-AC-20 | ✅ |
+| TC-1068 | An unwired report with identical shell text remains silent because script text alone does not give it a gate role (#224) | Unit | P0 | FR-043-AC-20 | ✅ |
+| TC-1069 | A wired gate with an explicit non-zero failure path remains silent (#224) | Unit | P0 | FR-043-AC-20 | ✅ |
+| TC-1070 | A wired counting script with no explicit requirement claim remains silent (#224) | Unit | P0 | FR-043-AC-20 | ✅ |
+| TC-1071 | The shipped `quoin validate --json` command emits the same located finding as the validator and remains advisory unless `--strict` is selected (#224) | Integration | P0 | FR-043-AC-20 | ✅ |
 | TC-926 | Every metric in the dictionary declares `unit`, `population` and `method`; one missing any of the three is rejected at load rather than reported with a gap | Unit | P0 | FR-043-AC-1 | ✅ |
 | TC-927 | `finding_precision`/`finding_recall` are declared per defect family, each keyed on a family the corpora label, so no score is reported over an unlabelled population | Unit | P0 | FR-043-AC-2 | ✅ |
 | TC-928 | `span_grounding_rate` is declared with the pass-2 figure (0 of 65 specific-shape records) as its starting baseline | Unit | P0 | FR-043-AC-3 | ✅ |

@@ -1103,19 +1103,17 @@ describe("the committed mapping table", () => {
     }
   });
 
-  test("TC-959 a family with no detector declares `source: none` rather than being omitted", () => {
+  test("TC-959 the completed plan leaves no family on the declared `source: none` escape hatch", () => {
     // TC-959
     // The difference between "we looked and the tool said nothing" and "nothing
     // looks for this" is the whole substance of a recall of 0. An omitted
-    // family reads as an oversight; `source: none` reads as a declared hole,
-    // and it is the state `gate-that-gates-nothing` is genuinely in.
+    // family reads as an oversight; `source: none` reads as a declared hole.
+    // The escape hatch remains supported for a future honest gap, but the
+    // completed corpus plan has burned its final use down to zero.
     const holes = Object.entries(mapping.families).filter(
       ([, m]: [string, { source: string }]) => m.source === "none",
     );
-    expect(holes.length).toBeGreaterThan(0);
-    for (const [, m] of holes as Array<[string, { $note?: string }]>) {
-      expect(m.$note).toBeTruthy();
-    }
+    expect(holes).toEqual([]);
   });
 });
 

@@ -596,9 +596,7 @@
       "population": 4,
       "rate": 0.75,
       "gap_count": 6,
-      "misses": [
-        "tag-inside-string-literal-python"
-      ]
+      "misses": ["tag-inside-string-literal-python"]
     },
     {
       "mode": "attachment",
@@ -608,9 +606,7 @@
       "population": 4,
       "rate": 0.75,
       "gap_count": 6,
-      "misses": [
-        "tag-inside-string-literal-python"
-      ]
+      "misses": ["tag-inside-string-literal-python"]
     },
     {
       "mode": "attachment",
@@ -620,9 +616,7 @@
       "population": 4,
       "rate": 0.75,
       "gap_count": 6,
-      "misses": [
-        "tag-inside-string-literal-python"
-      ]
+      "misses": ["tag-inside-string-literal-python"]
     },
     {
       "mode": "attachment",
@@ -632,9 +626,7 @@
       "population": 4,
       "rate": 0.75,
       "gap_count": 6,
-      "misses": [
-        "tag-inside-string-literal-rust"
-      ]
+      "misses": ["tag-inside-string-literal-rust"]
     },
     {
       "mode": "attachment",
@@ -644,9 +636,7 @@
       "population": 4,
       "rate": 0.75,
       "gap_count": 6,
-      "misses": [
-        "tag-inside-string-literal-rust"
-      ]
+      "misses": ["tag-inside-string-literal-rust"]
     },
     {
       "mode": "attachment",
@@ -656,10 +646,7 @@
       "population": 4,
       "rate": 0.5,
       "gap_count": 6,
-      "misses": [
-        "marker-mismatch",
-        "tag-inside-string-literal-rust"
-      ]
+      "misses": ["marker-mismatch", "tag-inside-string-literal-rust"]
     },
     {
       "mode": "attachment",
@@ -669,9 +656,7 @@
       "population": 5,
       "rate": 0.8,
       "gap_count": 6,
-      "misses": [
-        "tag-inside-string-literal-typescript"
-      ]
+      "misses": ["tag-inside-string-literal-typescript"]
     },
     {
       "mode": "attachment",
@@ -681,9 +666,7 @@
       "population": 5,
       "rate": 0.8,
       "gap_count": 6,
-      "misses": [
-        "tag-inside-string-literal-typescript"
-      ]
+      "misses": ["tag-inside-string-literal-typescript"]
     },
     {
       "mode": "attachment",
@@ -693,9 +676,7 @@
       "population": 5,
       "rate": 0.8,
       "gap_count": 6,
-      "misses": [
-        "tag-inside-string-literal-typescript"
-      ]
+      "misses": ["tag-inside-string-literal-typescript"]
     },
     {
       "mode": "detection",
@@ -715,10 +696,7 @@
       "population": 4,
       "rate": 0.5,
       "gap_count": 6,
-      "misses": [
-        "model-mints-nothing",
-        "undeclared-coverage-vocabulary"
-      ]
+      "misses": ["model-mints-nothing", "undeclared-coverage-vocabulary"]
     },
     {
       "mode": "detection",
@@ -728,10 +706,7 @@
       "population": 4,
       "rate": 0.5,
       "gap_count": 6,
-      "misses": [
-        "model-mints-nothing",
-        "undeclared-coverage-vocabulary"
-      ]
+      "misses": ["model-mints-nothing", "undeclared-coverage-vocabulary"]
     },
     {
       "mode": "detection",
@@ -791,10 +766,7 @@
       "population": 5,
       "rate": 0.6,
       "gap_count": 6,
-      "misses": [
-        "catch-all-properties",
-        "stale-name-correct-trace-rust"
-      ]
+      "misses": ["catch-all-properties", "stale-name-correct-trace-rust"]
     },
     {
       "mode": "detection",
@@ -824,9 +796,7 @@
       "population": 2,
       "rate": 0.5,
       "gap_count": 6,
-      "misses": [
-        "stale-name-correct-trace-typescript"
-      ]
+      "misses": ["stale-name-correct-trace-typescript"]
     },
     {
       "mode": "disposition",
@@ -836,9 +806,7 @@
       "population": 2,
       "rate": 0.5,
       "gap_count": 6,
-      "misses": [
-        "greenfield-no-symbols-python"
-      ]
+      "misses": ["greenfield-no-symbols-python"]
     },
     {
       "mode": "disposition",
@@ -848,9 +816,7 @@
       "population": 2,
       "rate": 0.5,
       "gap_count": 6,
-      "misses": [
-        "greenfield-no-symbols-python"
-      ]
+      "misses": ["greenfield-no-symbols-python"]
     },
     {
       "mode": "disposition",
@@ -860,9 +826,7 @@
       "population": 2,
       "rate": 0.5,
       "gap_count": 6,
-      "misses": [
-        "greenfield-no-symbols-python"
-      ]
+      "misses": ["greenfield-no-symbols-python"]
     },
     {
       "mode": "disposition",
@@ -872,9 +836,7 @@
       "population": 2,
       "rate": 0.5,
       "gap_count": 6,
-      "misses": [
-        "greenfield-no-symbols-rust"
-      ]
+      "misses": ["greenfield-no-symbols-rust"]
     },
     {
       "mode": "disposition",
@@ -884,9 +846,7 @@
       "population": 2,
       "rate": 0.5,
       "gap_count": 6,
-      "misses": [
-        "greenfield-no-symbols-rust"
-      ]
+      "misses": ["greenfield-no-symbols-rust"]
     },
     {
       "mode": "disposition",
@@ -896,9 +856,7 @@
       "population": 2,
       "rate": 0.5,
       "gap_count": 6,
-      "misses": [
-        "greenfield-no-symbols-rust"
-      ]
+      "misses": ["greenfield-no-symbols-rust"]
     },
     {
       "mode": "disposition",
@@ -908,9 +866,7 @@
       "population": 2,
       "rate": 0.5,
       "gap_count": 6,
-      "misses": [
-        "greenfield-no-symbols-typescript"
-      ]
+      "misses": ["greenfield-no-symbols-typescript"]
     },
     {
       "mode": "disposition",
@@ -920,9 +876,7 @@
       "population": 2,
       "rate": 0.5,
       "gap_count": 6,
-      "misses": [
-        "greenfield-no-symbols-typescript"
-      ]
+      "misses": ["greenfield-no-symbols-typescript"]
     },
     {
       "mode": "disposition",
@@ -932,9 +886,7 @@
       "population": 2,
       "rate": 0.5,
       "gap_count": 6,
-      "misses": [
-        "greenfield-no-symbols-typescript"
-      ]
+      "misses": ["greenfield-no-symbols-typescript"]
     },
     {
       "mode": "join",
@@ -1046,9 +998,7 @@
       "population": 7,
       "rate": 0.857,
       "gap_count": 6,
-      "misses": [
-        "no-symbol-method-in-the-verification-column-python"
-      ]
+      "misses": ["no-symbol-method-in-the-verification-column-python"]
     },
     {
       "mode": "minting",
@@ -1084,9 +1034,7 @@
       "population": 7,
       "rate": 0.857,
       "gap_count": 6,
-      "misses": [
-        "no-symbol-method-in-the-verification-column-rust"
-      ]
+      "misses": ["no-symbol-method-in-the-verification-column-rust"]
     },
     {
       "mode": "minting",
@@ -1122,9 +1070,7 @@
       "population": 7,
       "rate": 0.857,
       "gap_count": 6,
-      "misses": [
-        "no-symbol-method-in-the-verification-column-typescript"
-      ]
+      "misses": ["no-symbol-method-in-the-verification-column-typescript"]
     },
     {
       "mode": "minting",
@@ -1170,9 +1116,7 @@
       "population": 1,
       "rate": 0,
       "gap_count": 6,
-      "misses": [
-        "hollow-metric-python"
-      ]
+      "misses": ["hollow-metric-python"]
     },
     {
       "mode": "provenance",
@@ -1182,9 +1126,7 @@
       "population": 1,
       "rate": 0,
       "gap_count": 6,
-      "misses": [
-        "hollow-metric-python"
-      ]
+      "misses": ["hollow-metric-python"]
     },
     {
       "mode": "provenance",
@@ -1204,9 +1146,7 @@
       "population": 1,
       "rate": 0,
       "gap_count": 6,
-      "misses": [
-        "hollow-metric-rust"
-      ]
+      "misses": ["hollow-metric-rust"]
     },
     {
       "mode": "provenance",
@@ -1216,9 +1156,7 @@
       "population": 1,
       "rate": 0,
       "gap_count": 6,
-      "misses": [
-        "hollow-metric-rust"
-      ]
+      "misses": ["hollow-metric-rust"]
     },
     {
       "mode": "provenance",
@@ -1238,9 +1176,7 @@
       "population": 1,
       "rate": 0,
       "gap_count": 6,
-      "misses": [
-        "hollow-metric-typescript"
-      ]
+      "misses": ["hollow-metric-typescript"]
     },
     {
       "mode": "provenance",
@@ -1250,9 +1186,7 @@
       "population": 1,
       "rate": 0,
       "gap_count": 6,
-      "misses": [
-        "hollow-metric-typescript"
-      ]
+      "misses": ["hollow-metric-typescript"]
     },
     {
       "mode": "skeptic",

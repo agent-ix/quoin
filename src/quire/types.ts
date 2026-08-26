@@ -131,6 +131,24 @@ export interface CriteriaCounts {
   criteria: number;
   property_shaped: number;
   by_property: Record<string, number>;
+  specific_shaped?: number;
+  grounding?: Record<string, GroundingCounts>;
+  catch_all_example?: CatchAllCriterion;
+}
+
+/** Span availability for one property-shape population. */
+export interface GroundingCounts {
+  records: number;
+  domain: number;
+  precondition: number;
+  oracle: number;
+  all_three: number;
+}
+
+/** One located criterion illustrating catch-all classification. */
+export interface CatchAllCriterion {
+  row_id?: string;
+  line?: number;
 }
 
 /** A declaration that selected nothing, and why (CR-054). */
@@ -140,6 +158,8 @@ export interface CoverageDiagnostic {
   reason: string;
   message: string;
   path?: string | null;
+  /** One-based line at the smallest repair locus, when one exists. */
+  line?: number;
   /**
    * The vocabulary or catalog value the diagnostic is about, verbatim, when it
    * is about exactly one (quire-rs FR-054-AC-12, CR-091).
@@ -158,7 +178,7 @@ export interface CoverageDiagnostic {
  * One declared coverage-vocabulary value, classified (quire-rs FR-059-AC-9,
  * CR-091).
  *
- * Carried ahead of the pinned `sourceTag` as an additive field (see
+ * Carried ahead of the previously pinned release as an additive field (see
  * `QUIRE_CONTRACT`): a payload from quire 0.27.0 simply omits the whole
  * `vocabulary_coverage` array, and every consumer must treat absence as "the
  * engine predates the classification", never as "every value is owned".
@@ -214,6 +234,68 @@ export interface CoverageTotals {
   total: number;
   criteria?: number | null;
   property_shaped?: number | null;
+  specific_shaped?: number | null;
+}
+
+/** One source symbol the binder examined but did not bind. */
+export interface UnboundSymbol {
+  path: string;
+  line: number;
+  symbol: string;
+}
+
+/** The trace binder's measured premise for one language. */
+export interface BindingCensus {
+  language: "rust" | "python" | "typescript";
+  candidates: number;
+  tagged: number;
+  bound: number;
+  forms: string[];
+  unbound_example?: UnboundSymbol;
+  unmatched_example?: UnboundSymbol;
+}
+
+/** Which executable and engine produced a payload. */
+export interface EngineProvenance {
+  cli: string;
+  engine: string;
+  capabilities: string[];
+}
+
+export type MetricShape = "ratio" | "count";
+
+interface MetricBase {
+  name: string;
+  unit: string;
+  method: string;
+  shape: MetricShape;
+}
+
+/** A measurement that ran and carries its complete population premise. */
+export interface MeasuredMetric extends MetricBase {
+  state: "measured";
+  value: number;
+  population: number;
+  examined: number;
+  matched: number;
+}
+
+/** A measurement the engine could not compute, with the deciding reason. */
+export interface NotComputedMetric extends MetricBase {
+  state: "not_computed";
+  because: string;
+}
+
+export type Metric = MeasuredMetric | NotComputedMetric;
+
+/** Advisory evidence that a test may be vacuous or self-confirming. */
+export interface Suspicion {
+  kind: "vacuous-under-guard" | "oracle-resembles-implementation";
+  path: string;
+  symbol: string;
+  line: number;
+  message: string;
+  evidence: string;
 }
 
 /** The `quire coverage --json` payload (v1). */
@@ -234,6 +316,8 @@ export interface CoverageReport {
   groups: GroupCounts[];
   criteria?: CriteriaCounts[];
   diagnostics?: CoverageDiagnostic[];
+  /** Stable reason tokens the producing engine can emit. */
+  diagnostic_reason_registry?: string[];
   obligations?: Obligation[];
   /**
    * Absent when the module declares no `implements` marker forms. Present in
@@ -257,6 +341,13 @@ export interface CoverageReport {
    * a coverage regression.
    */
   excluded_source_files?: number;
+  binding_census?: BindingCensus[];
+  /** Headline measurements with explicit populations and methods. */
+  metrics?: Metric[];
+  /** Advisory test-quality findings; never folded into coverage totals. */
+  suspicions?: Suspicion[];
+  /** Instrument provenance added by quire-cli. */
+  engine?: EngineProvenance;
   totals: CoverageTotals;
 }
 
@@ -327,4 +418,6 @@ export interface PropertiesDocument {
 /** The `quire properties --json` payload (v1). */
 export interface PropertiesReport {
   documents: PropertiesDocument[];
+  /** Instrument provenance added by quire-cli. */
+  engine?: EngineProvenance;
 }

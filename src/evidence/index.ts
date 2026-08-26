@@ -16,25 +16,33 @@ export {
   canonicalJson,
   gc,
   inspectionsPath,
+  latestMockInspection,
+  latestMockInspections,
   latestRun,
   latestRuns,
   latestScans,
   listRecordedSuites,
+  listMockInspections,
   listRuns,
   readBaseline,
   readBindings,
+  readMockInspection,
+  readMockInspections,
   readRun,
   readRuns,
   runPath,
+  mockInspectionPath,
   short,
   storeRoot,
   suitesPath,
   writeBaseline,
   writeBindings,
+  writeMockInspection,
   writeRun,
 } from "./store.js";
 
 export {
+  MOCK_INSPECTIONS_DIR,
   MUTATION_SCORE_METRIC,
   RUNS_DIR,
   STORE_SCHEMA_VERSION,
@@ -42,6 +50,8 @@ export {
   type BaselineFile,
   type Binding,
   type BindingsFile,
+  type MockInjection,
+  type MockInspectionRecord,
   type RunEntry,
   type RunRecord,
 } from "./types.js";
@@ -87,3 +97,7 @@ export {
 export { parseAuditScript } from "./adapters/audit-script.js";
 export { parseSbom, sbomAdapter } from "./adapters/sbom.js";
 export { parseAgentEval, agentEvalAdapter } from "./adapters/agent-eval.js";
+export {
+  inspectMockInjections,
+  mockInspectionInput,
+} from "./mock-inspection.js";

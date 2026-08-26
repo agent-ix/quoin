@@ -169,6 +169,7 @@ describe("the auditor over a combinatorial obligation", () => {
           { a: "2", b: "y" },
         ]),
       ],
+      mockInspectionSuites: ["SUITE-CFG"],
     });
     expect(report.findings.map((f) => f.kind)).not.toContain(
       "combinatorial-gap",

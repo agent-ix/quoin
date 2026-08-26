@@ -336,7 +336,13 @@ function main() {
   const payloads = [];
   for (const corpus of labels.corpora) {
     const { findings, metrics, diagnostics, untrackedSymbols } =
-      execution.findingsFor(quire, corpus.input, corpus.module, mapping);
+      execution.findingsFor(
+        quire,
+        corpus.input,
+        corpus.module,
+        mapping,
+        join(ROOT, "bin", "quoin.js"),
+      );
     payloads.push({
       name: corpus.name,
       metrics,
