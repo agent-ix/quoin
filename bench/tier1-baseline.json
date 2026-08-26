@@ -1,8 +1,8 @@
 {
   "provenance": {
     "engine": "quire 0.30.2 (engine 5a68ceb)",
-    "corpus": "bcef1fda2fb9795f868e0cee8a898d69fc155cc1",
-    "corpus_input": "sha256:504fb86547d8c6549965c3ee84c20b046d2c94fd5205381ff9c5983cc29170cd",
+    "corpus": "e897576643938c0c8a1288d54288398d90bbd75a",
+    "corpus_input": "sha256:b0c05893272d5ed4038e70faa49fd31d5ba4cbebe8140ab449c0a50813703c64",
     "declaration": {
       "root": "corpus/modules",
       "digest": "sha256:d8ca08f94af83403fee5649f4efd17ccb9f6f0a3e2c8f98e1312b69080a95049",
@@ -21,8 +21,8 @@
     }
   },
   "bounds": {
-    "gap_count": 21,
-    "covered_count": 60,
+    "gap_count": 20,
+    "covered_count": 61,
     "covered_pending_count": 0,
     "out_of_scope_count": 15,
     "declared_cells": 96,
@@ -186,7 +186,7 @@
             "state": "covered"
           },
           "rust": {
-            "state": "GAP"
+            "state": "covered"
           },
           "typescript": {
             "state": "covered"
@@ -592,8 +592,10 @@
       "reached": 3,
       "population": 4,
       "rate": 0.75,
-      "gap_count": 21,
-      "misses": ["tag-inside-string-literal-python"]
+      "gap_count": 20,
+      "misses": [
+        "tag-inside-string-literal-python"
+      ]
     },
     {
       "mode": "attachment",
@@ -602,8 +604,10 @@
       "reached": 3,
       "population": 4,
       "rate": 0.75,
-      "gap_count": 21,
-      "misses": ["tag-inside-string-literal-python"]
+      "gap_count": 20,
+      "misses": [
+        "tag-inside-string-literal-python"
+      ]
     },
     {
       "mode": "attachment",
@@ -612,38 +616,47 @@
       "reached": 3,
       "population": 4,
       "rate": 0.75,
-      "gap_count": 21,
-      "misses": ["tag-inside-string-literal-python"]
+      "gap_count": 20,
+      "misses": [
+        "tag-inside-string-literal-python"
+      ]
     },
     {
       "mode": "attachment",
       "language": "rust",
       "level": "L1",
       "reached": 3,
-      "population": 3,
-      "rate": 1,
-      "gap_count": 21,
-      "misses": []
+      "population": 4,
+      "rate": 0.75,
+      "gap_count": 20,
+      "misses": [
+        "tag-inside-string-literal-rust"
+      ]
     },
     {
       "mode": "attachment",
       "language": "rust",
       "level": "L2",
       "reached": 3,
-      "population": 3,
-      "rate": 1,
-      "gap_count": 21,
-      "misses": []
+      "population": 4,
+      "rate": 0.75,
+      "gap_count": 20,
+      "misses": [
+        "tag-inside-string-literal-rust"
+      ]
     },
     {
       "mode": "attachment",
       "language": "rust",
       "level": "L3",
       "reached": 2,
-      "population": 3,
-      "rate": 0.667,
-      "gap_count": 21,
-      "misses": ["marker-mismatch"]
+      "population": 4,
+      "rate": 0.5,
+      "gap_count": 20,
+      "misses": [
+        "marker-mismatch",
+        "tag-inside-string-literal-rust"
+      ]
     },
     {
       "mode": "attachment",
@@ -652,8 +665,10 @@
       "reached": 4,
       "population": 5,
       "rate": 0.8,
-      "gap_count": 21,
-      "misses": ["tag-inside-string-literal-typescript"]
+      "gap_count": 20,
+      "misses": [
+        "tag-inside-string-literal-typescript"
+      ]
     },
     {
       "mode": "attachment",
@@ -662,8 +677,10 @@
       "reached": 4,
       "population": 5,
       "rate": 0.8,
-      "gap_count": 21,
-      "misses": ["tag-inside-string-literal-typescript"]
+      "gap_count": 20,
+      "misses": [
+        "tag-inside-string-literal-typescript"
+      ]
     },
     {
       "mode": "attachment",
@@ -672,8 +689,10 @@
       "reached": 4,
       "population": 5,
       "rate": 0.8,
-      "gap_count": 21,
-      "misses": ["tag-inside-string-literal-typescript"]
+      "gap_count": 20,
+      "misses": [
+        "tag-inside-string-literal-typescript"
+      ]
     },
     {
       "mode": "detection",
@@ -682,7 +701,7 @@
       "reached": 4,
       "population": 4,
       "rate": 1,
-      "gap_count": 21,
+      "gap_count": 20,
       "misses": []
     },
     {
@@ -692,8 +711,11 @@
       "reached": 2,
       "population": 4,
       "rate": 0.5,
-      "gap_count": 21,
-      "misses": ["model-mints-nothing", "undeclared-coverage-vocabulary"]
+      "gap_count": 20,
+      "misses": [
+        "model-mints-nothing",
+        "undeclared-coverage-vocabulary"
+      ]
     },
     {
       "mode": "detection",
@@ -702,8 +724,11 @@
       "reached": 2,
       "population": 4,
       "rate": 0.5,
-      "gap_count": 21,
-      "misses": ["model-mints-nothing", "undeclared-coverage-vocabulary"]
+      "gap_count": 20,
+      "misses": [
+        "model-mints-nothing",
+        "undeclared-coverage-vocabulary"
+      ]
     },
     {
       "mode": "detection",
@@ -712,7 +737,7 @@
       "reached": 5,
       "population": 5,
       "rate": 1,
-      "gap_count": 21,
+      "gap_count": 20,
       "misses": []
     },
     {
@@ -722,7 +747,7 @@
       "reached": 5,
       "population": 5,
       "rate": 1,
-      "gap_count": 21,
+      "gap_count": 20,
       "misses": []
     },
     {
@@ -732,8 +757,11 @@
       "reached": 3,
       "population": 5,
       "rate": 0.6,
-      "gap_count": 21,
-      "misses": ["catch-all-properties", "stale-name-correct-trace"]
+      "gap_count": 20,
+      "misses": [
+        "catch-all-properties",
+        "stale-name-correct-trace"
+      ]
     },
     {
       "mode": "disposition",
@@ -742,7 +770,7 @@
       "reached": 1,
       "population": 1,
       "rate": 1,
-      "gap_count": 21,
+      "gap_count": 20,
       "misses": []
     },
     {
@@ -752,7 +780,7 @@
       "reached": 1,
       "population": 1,
       "rate": 1,
-      "gap_count": 21,
+      "gap_count": 20,
       "misses": []
     },
     {
@@ -762,7 +790,7 @@
       "reached": 1,
       "population": 1,
       "rate": 1,
-      "gap_count": 21,
+      "gap_count": 20,
       "misses": []
     },
     {
@@ -772,8 +800,10 @@
       "reached": 1,
       "population": 2,
       "rate": 0.5,
-      "gap_count": 21,
-      "misses": ["greenfield-no-symbols"]
+      "gap_count": 20,
+      "misses": [
+        "greenfield-no-symbols"
+      ]
     },
     {
       "mode": "disposition",
@@ -782,8 +812,10 @@
       "reached": 1,
       "population": 2,
       "rate": 0.5,
-      "gap_count": 21,
-      "misses": ["greenfield-no-symbols"]
+      "gap_count": 20,
+      "misses": [
+        "greenfield-no-symbols"
+      ]
     },
     {
       "mode": "disposition",
@@ -792,8 +824,10 @@
       "reached": 1,
       "population": 2,
       "rate": 0.5,
-      "gap_count": 21,
-      "misses": ["greenfield-no-symbols"]
+      "gap_count": 20,
+      "misses": [
+        "greenfield-no-symbols"
+      ]
     },
     {
       "mode": "disposition",
@@ -802,7 +836,7 @@
       "reached": 1,
       "population": 1,
       "rate": 1,
-      "gap_count": 21,
+      "gap_count": 20,
       "misses": []
     },
     {
@@ -812,7 +846,7 @@
       "reached": 1,
       "population": 1,
       "rate": 1,
-      "gap_count": 21,
+      "gap_count": 20,
       "misses": []
     },
     {
@@ -822,7 +856,7 @@
       "reached": 1,
       "population": 1,
       "rate": 1,
-      "gap_count": 21,
+      "gap_count": 20,
       "misses": []
     },
     {
@@ -832,7 +866,7 @@
       "reached": 3,
       "population": 3,
       "rate": 1,
-      "gap_count": 21,
+      "gap_count": 20,
       "misses": []
     },
     {
@@ -842,7 +876,7 @@
       "reached": 3,
       "population": 3,
       "rate": 1,
-      "gap_count": 21,
+      "gap_count": 20,
       "misses": []
     },
     {
@@ -852,7 +886,7 @@
       "reached": 0,
       "population": 3,
       "rate": 0,
-      "gap_count": 21,
+      "gap_count": 20,
       "misses": [
         "tag-names-bare-fr-python",
         "tag-names-undeclared-section-python",
@@ -866,7 +900,7 @@
       "reached": 3,
       "population": 3,
       "rate": 1,
-      "gap_count": 21,
+      "gap_count": 20,
       "misses": []
     },
     {
@@ -876,7 +910,7 @@
       "reached": 3,
       "population": 3,
       "rate": 1,
-      "gap_count": 21,
+      "gap_count": 20,
       "misses": []
     },
     {
@@ -886,7 +920,7 @@
       "reached": 0,
       "population": 3,
       "rate": 0,
-      "gap_count": 21,
+      "gap_count": 20,
       "misses": [
         "tag-names-bare-fr-rust",
         "tag-names-undeclared-section-rust",
@@ -900,7 +934,7 @@
       "reached": 3,
       "population": 3,
       "rate": 1,
-      "gap_count": 21,
+      "gap_count": 20,
       "misses": []
     },
     {
@@ -910,7 +944,7 @@
       "reached": 3,
       "population": 3,
       "rate": 1,
-      "gap_count": 21,
+      "gap_count": 20,
       "misses": []
     },
     {
@@ -920,7 +954,7 @@
       "reached": 0,
       "population": 3,
       "rate": 0,
-      "gap_count": 21,
+      "gap_count": 20,
       "misses": [
         "tag-names-bare-fr-typescript",
         "tag-names-undeclared-section-typescript",
@@ -934,7 +968,7 @@
       "reached": 6,
       "population": 6,
       "rate": 1,
-      "gap_count": 21,
+      "gap_count": 20,
       "misses": []
     },
     {
@@ -944,8 +978,10 @@
       "reached": 5,
       "population": 6,
       "rate": 0.833,
-      "gap_count": 21,
-      "misses": ["no-testmatrix-document-python"]
+      "gap_count": 20,
+      "misses": [
+        "no-testmatrix-document-python"
+      ]
     },
     {
       "mode": "minting",
@@ -954,8 +990,10 @@
       "reached": 5,
       "population": 6,
       "rate": 0.833,
-      "gap_count": 21,
-      "misses": ["no-testmatrix-document-python"]
+      "gap_count": 20,
+      "misses": [
+        "no-testmatrix-document-python"
+      ]
     },
     {
       "mode": "minting",
@@ -964,8 +1002,10 @@
       "reached": 6,
       "population": 7,
       "rate": 0.857,
-      "gap_count": 21,
-      "misses": ["no-symbol-method-in-the-verification-column"]
+      "gap_count": 20,
+      "misses": [
+        "no-symbol-method-in-the-verification-column"
+      ]
     },
     {
       "mode": "minting",
@@ -974,7 +1014,7 @@
       "reached": 5,
       "population": 7,
       "rate": 0.714,
-      "gap_count": 21,
+      "gap_count": 20,
       "misses": [
         "no-symbol-method-in-the-verification-column",
         "no-testmatrix-document-rust"
@@ -987,7 +1027,7 @@
       "reached": 5,
       "population": 7,
       "rate": 0.714,
-      "gap_count": 21,
+      "gap_count": 20,
       "misses": [
         "no-symbol-method-in-the-verification-column",
         "no-testmatrix-document-rust"
@@ -1000,7 +1040,7 @@
       "reached": 6,
       "population": 6,
       "rate": 1,
-      "gap_count": 21,
+      "gap_count": 20,
       "misses": []
     },
     {
@@ -1010,8 +1050,10 @@
       "reached": 5,
       "population": 6,
       "rate": 0.833,
-      "gap_count": 21,
-      "misses": ["no-testmatrix-document-typescript"]
+      "gap_count": 20,
+      "misses": [
+        "no-testmatrix-document-typescript"
+      ]
     },
     {
       "mode": "minting",
@@ -1020,8 +1062,10 @@
       "reached": 5,
       "population": 6,
       "rate": 0.833,
-      "gap_count": 21,
-      "misses": ["no-testmatrix-document-typescript"]
+      "gap_count": 20,
+      "misses": [
+        "no-testmatrix-document-typescript"
+      ]
     },
     {
       "mode": "provenance",
@@ -1030,7 +1074,7 @@
       "reached": 1,
       "population": 1,
       "rate": 1,
-      "gap_count": 21,
+      "gap_count": 20,
       "misses": []
     },
     {
@@ -1040,8 +1084,10 @@
       "reached": 0,
       "population": 1,
       "rate": 0,
-      "gap_count": 21,
-      "misses": ["hollow-metric"]
+      "gap_count": 20,
+      "misses": [
+        "hollow-metric"
+      ]
     },
     {
       "mode": "provenance",
@@ -1050,8 +1096,10 @@
       "reached": 0,
       "population": 1,
       "rate": 0,
-      "gap_count": 21,
-      "misses": ["hollow-metric"]
+      "gap_count": 20,
+      "misses": [
+        "hollow-metric"
+      ]
     },
     {
       "mode": "skeptic",
@@ -1060,7 +1108,7 @@
       "reached": 1,
       "population": 4,
       "rate": 0.25,
-      "gap_count": 21,
+      "gap_count": 20,
       "misses": [
         "gate-that-gates-nothing",
         "mocked-confirmation",
@@ -1074,7 +1122,7 @@
       "reached": 1,
       "population": 4,
       "rate": 0.25,
-      "gap_count": 21,
+      "gap_count": 20,
       "misses": [
         "gate-that-gates-nothing",
         "mocked-confirmation",
@@ -1088,7 +1136,7 @@
       "reached": 1,
       "population": 4,
       "rate": 0.25,
-      "gap_count": 21,
+      "gap_count": 20,
       "misses": [
         "gate-that-gates-nothing",
         "mocked-confirmation",
@@ -1100,24 +1148,24 @@
     {
       "family": "archetype-matches-nothing",
       "truePositives": 3,
-      "falsePositives": 444,
+      "falsePositives": 452,
       "misses": 0,
       "precision": 1,
       "shape": "advisory",
       "recall": 1,
       "precision_basis": {
         "precision": 1,
-        "truePositives": 443,
+        "truePositives": 451,
         "falsePositives": 0,
         "unadjudicated": 4,
-        "byStanding": 440,
-        "rulings": 469
+        "byStanding": 448,
+        "rulings": 477
       }
     },
     {
       "family": "catch-all-universal",
       "truePositives": 2,
-      "falsePositives": 88,
+      "falsePositives": 90,
       "misses": 0,
       "precision": 1,
       "shape": "advisory",
@@ -1126,7 +1174,7 @@
         "precision": 1,
         "truePositives": 2,
         "falsePositives": 0,
-        "unadjudicated": 88,
+        "unadjudicated": 90,
         "byStanding": 0,
         "rulings": 4
       }
@@ -1323,22 +1371,22 @@
   "positional": 35,
   "finding_localisation_rate": 0.854,
   "minting.section_hit_rate": {
-    "rate": 0.972,
-    "matched": 212,
-    "examined": 218,
-    "cases_reporting": 114
+    "rate": 0.973,
+    "matched": 216,
+    "examined": 222,
+    "cases_reporting": 116
   },
   "actionability": {
-    "actionable": 110,
-    "total": 581,
-    "rate": 0.189
+    "actionable": 112,
+    "total": 591,
+    "rate": 0.19
   },
   "cost_per_confirmed_insight": {
     "tokens": null,
-    "toolCalls": 233,
+    "toolCalls": 237,
     "truePositives": 41,
     "tokensPer": null,
-    "toolCallsPer": 5.68
+    "toolCallsPer": 5.78
   },
   "sentinel.silent_zero": {
     "count": 0,
@@ -1416,7 +1464,7 @@
       }
     ]
   },
-  "corpora": 115,
+  "corpora": 117,
   "by_language": [
     {
       "language": "n/a",
@@ -1436,7 +1484,7 @@
             "falsePositives": 0,
             "unadjudicated": 4,
             "byStanding": 16,
-            "rulings": 469
+            "rulings": 477
           }
         },
         {
@@ -1495,7 +1543,7 @@
             "falsePositives": 0,
             "unadjudicated": 0,
             "byStanding": 112,
-            "rulings": 469
+            "rulings": 477
           }
         },
         {
@@ -1573,29 +1621,29 @@
     },
     {
       "language": "rust",
-      "corpora": 49,
+      "corpora": 51,
       "families": [
         {
           "family": "archetype-matches-nothing",
           "truePositives": 1,
-          "falsePositives": 192,
+          "falsePositives": 200,
           "misses": 0,
           "precision": 1,
           "shape": "advisory",
           "recall": 1,
           "precision_basis": {
             "precision": 1,
-            "truePositives": 193,
+            "truePositives": 201,
             "falsePositives": 0,
             "unadjudicated": 0,
-            "byStanding": 192,
-            "rulings": 469
+            "byStanding": 200,
+            "rulings": 477
           }
         },
         {
           "family": "catch-all-universal",
           "truePositives": 2,
-          "falsePositives": 34,
+          "falsePositives": 36,
           "misses": 0,
           "precision": 1,
           "shape": "advisory",
@@ -1604,7 +1652,7 @@
             "precision": 1,
             "truePositives": 2,
             "falsePositives": 0,
-            "unadjudicated": 34,
+            "unadjudicated": 36,
             "byStanding": 0,
             "rulings": 4
           }
@@ -1746,7 +1794,7 @@
             "falsePositives": 0,
             "unadjudicated": 0,
             "byStanding": 120,
-            "rulings": 469
+            "rulings": 477
           }
         },
         {
@@ -1824,5 +1872,5 @@
     }
   ],
   "pending": [],
-  "findings": 581
+  "findings": 591
 }
