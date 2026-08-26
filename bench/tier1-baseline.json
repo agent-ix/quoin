@@ -1,8 +1,8 @@
 {
   "provenance": {
     "engine": "quire 0.30.2 (engine 5a68ceb)",
-    "corpus": "94cd4e8af67d4bdd3f9e85d6130afe6f3fc6b237",
-    "corpus_input": "sha256:ae0b99d7d81bb4b4e605c79c78b5039b6d5ce021125c7a462aef49eea5828729",
+    "corpus": "70e20db26a7de76abbb6b9be4a67d343e22ee7b5",
+    "corpus_input": "sha256:c5d284547013e6d26b783201cbcf0d9db1768030d150b92efdf2142fb620feb8",
     "declaration": {
       "root": "corpus/modules",
       "digest": "sha256:fba2468b01d6b4c5ce5e580195ace46d8322923436d5cfecb5a72a6186bd6a84",
@@ -21,10 +21,10 @@
     }
   },
   "bounds": {
-    "gap_count": 16,
-    "covered_count": 63,
+    "gap_count": 6,
+    "covered_count": 72,
     "covered_pending_count": 0,
-    "out_of_scope_count": 17,
+    "out_of_scope_count": 18,
     "declared_cells": 96,
     "matrix": [
       {
@@ -393,13 +393,13 @@
         "source": "agent-ix/quire-rs#230",
         "cells": {
           "python": {
-            "state": "GAP"
+            "state": "covered"
           },
           "rust": {
             "state": "covered"
           },
           "typescript": {
-            "state": "GAP"
+            "state": "covered"
           }
         }
       },
@@ -409,13 +409,14 @@
         "source": "agent-ix/quire-rs#227",
         "cells": {
           "python": {
-            "state": "GAP"
+            "state": "out-of-scope",
+            "reason": "The ecosystem declares test-name id forms for Rust function names and TypeScript registration titles, but no Python function-name form. A Python name cannot produce the stale-name condition."
           },
           "rust": {
             "state": "covered"
           },
           "typescript": {
-            "state": "GAP"
+            "state": "covered"
           }
         }
       },
@@ -425,13 +426,13 @@
         "source": "agent-ix/quire-rs#229",
         "cells": {
           "python": {
-            "state": "GAP"
+            "state": "covered"
           },
           "rust": {
             "state": "covered"
           },
           "typescript": {
-            "state": "GAP"
+            "state": "covered"
           }
         }
       },
@@ -441,13 +442,13 @@
         "source": "agent-ix/quire-rs#259",
         "cells": {
           "python": {
-            "state": "GAP"
+            "state": "covered"
           },
           "rust": {
             "state": "covered"
           },
           "typescript": {
-            "state": "GAP"
+            "state": "covered"
           }
         }
       },
@@ -574,13 +575,13 @@
         "source": "agent-ix/quoin#227 — a ratio over input the binder could not read",
         "cells": {
           "python": {
-            "state": "GAP"
+            "state": "covered"
           },
           "rust": {
             "state": "covered"
           },
           "typescript": {
-            "state": "GAP"
+            "state": "covered"
           }
         }
       }
@@ -594,7 +595,7 @@
       "reached": 3,
       "population": 4,
       "rate": 0.75,
-      "gap_count": 16,
+      "gap_count": 6,
       "misses": [
         "tag-inside-string-literal-python"
       ]
@@ -606,7 +607,7 @@
       "reached": 3,
       "population": 4,
       "rate": 0.75,
-      "gap_count": 16,
+      "gap_count": 6,
       "misses": [
         "tag-inside-string-literal-python"
       ]
@@ -618,7 +619,7 @@
       "reached": 3,
       "population": 4,
       "rate": 0.75,
-      "gap_count": 16,
+      "gap_count": 6,
       "misses": [
         "tag-inside-string-literal-python"
       ]
@@ -630,7 +631,7 @@
       "reached": 3,
       "population": 4,
       "rate": 0.75,
-      "gap_count": 16,
+      "gap_count": 6,
       "misses": [
         "tag-inside-string-literal-rust"
       ]
@@ -642,7 +643,7 @@
       "reached": 3,
       "population": 4,
       "rate": 0.75,
-      "gap_count": 16,
+      "gap_count": 6,
       "misses": [
         "tag-inside-string-literal-rust"
       ]
@@ -654,7 +655,7 @@
       "reached": 2,
       "population": 4,
       "rate": 0.5,
-      "gap_count": 16,
+      "gap_count": 6,
       "misses": [
         "marker-mismatch",
         "tag-inside-string-literal-rust"
@@ -667,7 +668,7 @@
       "reached": 4,
       "population": 5,
       "rate": 0.8,
-      "gap_count": 16,
+      "gap_count": 6,
       "misses": [
         "tag-inside-string-literal-typescript"
       ]
@@ -679,7 +680,7 @@
       "reached": 4,
       "population": 5,
       "rate": 0.8,
-      "gap_count": 16,
+      "gap_count": 6,
       "misses": [
         "tag-inside-string-literal-typescript"
       ]
@@ -691,7 +692,7 @@
       "reached": 4,
       "population": 5,
       "rate": 0.8,
-      "gap_count": 16,
+      "gap_count": 6,
       "misses": [
         "tag-inside-string-literal-typescript"
       ]
@@ -703,7 +704,7 @@
       "reached": 4,
       "population": 4,
       "rate": 1,
-      "gap_count": 16,
+      "gap_count": 6,
       "misses": []
     },
     {
@@ -713,7 +714,7 @@
       "reached": 2,
       "population": 4,
       "rate": 0.5,
-      "gap_count": 16,
+      "gap_count": 6,
       "misses": [
         "model-mints-nothing",
         "undeclared-coverage-vocabulary"
@@ -726,11 +727,41 @@
       "reached": 2,
       "population": 4,
       "rate": 0.5,
-      "gap_count": 16,
+      "gap_count": 6,
       "misses": [
         "model-mints-nothing",
         "undeclared-coverage-vocabulary"
       ]
+    },
+    {
+      "mode": "detection",
+      "language": "python",
+      "level": "L1",
+      "reached": 1,
+      "population": 1,
+      "rate": 1,
+      "gap_count": 6,
+      "misses": []
+    },
+    {
+      "mode": "detection",
+      "language": "python",
+      "level": "L2",
+      "reached": 1,
+      "population": 1,
+      "rate": 1,
+      "gap_count": 6,
+      "misses": []
+    },
+    {
+      "mode": "detection",
+      "language": "python",
+      "level": "L3",
+      "reached": 1,
+      "population": 1,
+      "rate": 1,
+      "gap_count": 6,
+      "misses": []
     },
     {
       "mode": "detection",
@@ -739,7 +770,7 @@
       "reached": 5,
       "population": 5,
       "rate": 1,
-      "gap_count": 16,
+      "gap_count": 6,
       "misses": []
     },
     {
@@ -749,7 +780,7 @@
       "reached": 5,
       "population": 5,
       "rate": 1,
-      "gap_count": 16,
+      "gap_count": 6,
       "misses": []
     },
     {
@@ -759,10 +790,42 @@
       "reached": 3,
       "population": 5,
       "rate": 0.6,
-      "gap_count": 16,
+      "gap_count": 6,
       "misses": [
         "catch-all-properties",
-        "stale-name-correct-trace"
+        "stale-name-correct-trace-rust"
+      ]
+    },
+    {
+      "mode": "detection",
+      "language": "typescript",
+      "level": "L1",
+      "reached": 2,
+      "population": 2,
+      "rate": 1,
+      "gap_count": 6,
+      "misses": []
+    },
+    {
+      "mode": "detection",
+      "language": "typescript",
+      "level": "L2",
+      "reached": 2,
+      "population": 2,
+      "rate": 1,
+      "gap_count": 6,
+      "misses": []
+    },
+    {
+      "mode": "detection",
+      "language": "typescript",
+      "level": "L3",
+      "reached": 1,
+      "population": 2,
+      "rate": 0.5,
+      "gap_count": 6,
+      "misses": [
+        "stale-name-correct-trace-typescript"
       ]
     },
     {
@@ -770,30 +833,36 @@
       "language": "python",
       "level": "L1",
       "reached": 1,
-      "population": 1,
-      "rate": 1,
-      "gap_count": 16,
-      "misses": []
+      "population": 2,
+      "rate": 0.5,
+      "gap_count": 6,
+      "misses": [
+        "greenfield-no-symbols-python"
+      ]
     },
     {
       "mode": "disposition",
       "language": "python",
       "level": "L2",
       "reached": 1,
-      "population": 1,
-      "rate": 1,
-      "gap_count": 16,
-      "misses": []
+      "population": 2,
+      "rate": 0.5,
+      "gap_count": 6,
+      "misses": [
+        "greenfield-no-symbols-python"
+      ]
     },
     {
       "mode": "disposition",
       "language": "python",
       "level": "L3",
       "reached": 1,
-      "population": 1,
-      "rate": 1,
-      "gap_count": 16,
-      "misses": []
+      "population": 2,
+      "rate": 0.5,
+      "gap_count": 6,
+      "misses": [
+        "greenfield-no-symbols-python"
+      ]
     },
     {
       "mode": "disposition",
@@ -802,9 +871,9 @@
       "reached": 1,
       "population": 2,
       "rate": 0.5,
-      "gap_count": 16,
+      "gap_count": 6,
       "misses": [
-        "greenfield-no-symbols"
+        "greenfield-no-symbols-rust"
       ]
     },
     {
@@ -814,9 +883,9 @@
       "reached": 1,
       "population": 2,
       "rate": 0.5,
-      "gap_count": 16,
+      "gap_count": 6,
       "misses": [
-        "greenfield-no-symbols"
+        "greenfield-no-symbols-rust"
       ]
     },
     {
@@ -826,9 +895,9 @@
       "reached": 1,
       "population": 2,
       "rate": 0.5,
-      "gap_count": 16,
+      "gap_count": 6,
       "misses": [
-        "greenfield-no-symbols"
+        "greenfield-no-symbols-rust"
       ]
     },
     {
@@ -836,30 +905,36 @@
       "language": "typescript",
       "level": "L1",
       "reached": 1,
-      "population": 1,
-      "rate": 1,
-      "gap_count": 16,
-      "misses": []
+      "population": 2,
+      "rate": 0.5,
+      "gap_count": 6,
+      "misses": [
+        "greenfield-no-symbols-typescript"
+      ]
     },
     {
       "mode": "disposition",
       "language": "typescript",
       "level": "L2",
       "reached": 1,
-      "population": 1,
-      "rate": 1,
-      "gap_count": 16,
-      "misses": []
+      "population": 2,
+      "rate": 0.5,
+      "gap_count": 6,
+      "misses": [
+        "greenfield-no-symbols-typescript"
+      ]
     },
     {
       "mode": "disposition",
       "language": "typescript",
       "level": "L3",
       "reached": 1,
-      "population": 1,
-      "rate": 1,
-      "gap_count": 16,
-      "misses": []
+      "population": 2,
+      "rate": 0.5,
+      "gap_count": 6,
+      "misses": [
+        "greenfield-no-symbols-typescript"
+      ]
     },
     {
       "mode": "join",
@@ -868,7 +943,7 @@
       "reached": 3,
       "population": 3,
       "rate": 1,
-      "gap_count": 16,
+      "gap_count": 6,
       "misses": []
     },
     {
@@ -878,7 +953,7 @@
       "reached": 3,
       "population": 3,
       "rate": 1,
-      "gap_count": 16,
+      "gap_count": 6,
       "misses": []
     },
     {
@@ -888,7 +963,7 @@
       "reached": 0,
       "population": 3,
       "rate": 0,
-      "gap_count": 16,
+      "gap_count": 6,
       "misses": [
         "tag-names-bare-fr-python",
         "tag-names-undeclared-section-python",
@@ -902,7 +977,7 @@
       "reached": 3,
       "population": 3,
       "rate": 1,
-      "gap_count": 16,
+      "gap_count": 6,
       "misses": []
     },
     {
@@ -912,7 +987,7 @@
       "reached": 3,
       "population": 3,
       "rate": 1,
-      "gap_count": 16,
+      "gap_count": 6,
       "misses": []
     },
     {
@@ -922,7 +997,7 @@
       "reached": 0,
       "population": 3,
       "rate": 0,
-      "gap_count": 16,
+      "gap_count": 6,
       "misses": [
         "tag-names-bare-fr-rust",
         "tag-names-undeclared-section-rust",
@@ -936,7 +1011,7 @@
       "reached": 3,
       "population": 3,
       "rate": 1,
-      "gap_count": 16,
+      "gap_count": 6,
       "misses": []
     },
     {
@@ -946,7 +1021,7 @@
       "reached": 3,
       "population": 3,
       "rate": 1,
-      "gap_count": 16,
+      "gap_count": 6,
       "misses": []
     },
     {
@@ -956,7 +1031,7 @@
       "reached": 0,
       "population": 3,
       "rate": 0,
-      "gap_count": 16,
+      "gap_count": 6,
       "misses": [
         "tag-names-bare-fr-typescript",
         "tag-names-undeclared-section-typescript",
@@ -968,20 +1043,23 @@
       "language": "python",
       "level": "L1",
       "reached": 6,
-      "population": 6,
-      "rate": 1,
-      "gap_count": 16,
-      "misses": []
+      "population": 7,
+      "rate": 0.857,
+      "gap_count": 6,
+      "misses": [
+        "no-symbol-method-in-the-verification-column-python"
+      ]
     },
     {
       "mode": "minting",
       "language": "python",
       "level": "L2",
       "reached": 5,
-      "population": 6,
-      "rate": 0.833,
-      "gap_count": 16,
+      "population": 7,
+      "rate": 0.714,
+      "gap_count": 6,
       "misses": [
+        "no-symbol-method-in-the-verification-column-python",
         "no-testmatrix-document-python"
       ]
     },
@@ -990,10 +1068,11 @@
       "language": "python",
       "level": "L3",
       "reached": 5,
-      "population": 6,
-      "rate": 0.833,
-      "gap_count": 16,
+      "population": 7,
+      "rate": 0.714,
+      "gap_count": 6,
       "misses": [
+        "no-symbol-method-in-the-verification-column-python",
         "no-testmatrix-document-python"
       ]
     },
@@ -1004,9 +1083,9 @@
       "reached": 6,
       "population": 7,
       "rate": 0.857,
-      "gap_count": 16,
+      "gap_count": 6,
       "misses": [
-        "no-symbol-method-in-the-verification-column"
+        "no-symbol-method-in-the-verification-column-rust"
       ]
     },
     {
@@ -1016,9 +1095,9 @@
       "reached": 5,
       "population": 7,
       "rate": 0.714,
-      "gap_count": 16,
+      "gap_count": 6,
       "misses": [
-        "no-symbol-method-in-the-verification-column",
+        "no-symbol-method-in-the-verification-column-rust",
         "no-testmatrix-document-rust"
       ]
     },
@@ -1029,9 +1108,9 @@
       "reached": 5,
       "population": 7,
       "rate": 0.714,
-      "gap_count": 16,
+      "gap_count": 6,
       "misses": [
-        "no-symbol-method-in-the-verification-column",
+        "no-symbol-method-in-the-verification-column-rust",
         "no-testmatrix-document-rust"
       ]
     },
@@ -1040,20 +1119,23 @@
       "language": "typescript",
       "level": "L1",
       "reached": 6,
-      "population": 6,
-      "rate": 1,
-      "gap_count": 16,
-      "misses": []
+      "population": 7,
+      "rate": 0.857,
+      "gap_count": 6,
+      "misses": [
+        "no-symbol-method-in-the-verification-column-typescript"
+      ]
     },
     {
       "mode": "minting",
       "language": "typescript",
       "level": "L2",
       "reached": 5,
-      "population": 6,
-      "rate": 0.833,
-      "gap_count": 16,
+      "population": 7,
+      "rate": 0.714,
+      "gap_count": 6,
       "misses": [
+        "no-symbol-method-in-the-verification-column-typescript",
         "no-testmatrix-document-typescript"
       ]
     },
@@ -1062,11 +1144,46 @@
       "language": "typescript",
       "level": "L3",
       "reached": 5,
-      "population": 6,
-      "rate": 0.833,
-      "gap_count": 16,
+      "population": 7,
+      "rate": 0.714,
+      "gap_count": 6,
       "misses": [
+        "no-symbol-method-in-the-verification-column-typescript",
         "no-testmatrix-document-typescript"
+      ]
+    },
+    {
+      "mode": "provenance",
+      "language": "python",
+      "level": "L1",
+      "reached": 1,
+      "population": 1,
+      "rate": 1,
+      "gap_count": 6,
+      "misses": []
+    },
+    {
+      "mode": "provenance",
+      "language": "python",
+      "level": "L2",
+      "reached": 0,
+      "population": 1,
+      "rate": 0,
+      "gap_count": 6,
+      "misses": [
+        "hollow-metric-python"
+      ]
+    },
+    {
+      "mode": "provenance",
+      "language": "python",
+      "level": "L3",
+      "reached": 0,
+      "population": 1,
+      "rate": 0,
+      "gap_count": 6,
+      "misses": [
+        "hollow-metric-python"
       ]
     },
     {
@@ -1076,7 +1193,7 @@
       "reached": 1,
       "population": 1,
       "rate": 1,
-      "gap_count": 16,
+      "gap_count": 6,
       "misses": []
     },
     {
@@ -1086,9 +1203,9 @@
       "reached": 0,
       "population": 1,
       "rate": 0,
-      "gap_count": 16,
+      "gap_count": 6,
       "misses": [
-        "hollow-metric"
+        "hollow-metric-rust"
       ]
     },
     {
@@ -1098,9 +1215,43 @@
       "reached": 0,
       "population": 1,
       "rate": 0,
-      "gap_count": 16,
+      "gap_count": 6,
       "misses": [
-        "hollow-metric"
+        "hollow-metric-rust"
+      ]
+    },
+    {
+      "mode": "provenance",
+      "language": "typescript",
+      "level": "L1",
+      "reached": 1,
+      "population": 1,
+      "rate": 1,
+      "gap_count": 6,
+      "misses": []
+    },
+    {
+      "mode": "provenance",
+      "language": "typescript",
+      "level": "L2",
+      "reached": 0,
+      "population": 1,
+      "rate": 0,
+      "gap_count": 6,
+      "misses": [
+        "hollow-metric-typescript"
+      ]
+    },
+    {
+      "mode": "provenance",
+      "language": "typescript",
+      "level": "L3",
+      "reached": 0,
+      "population": 1,
+      "rate": 0,
+      "gap_count": 6,
+      "misses": [
+        "hollow-metric-typescript"
       ]
     },
     {
@@ -1110,7 +1261,7 @@
       "reached": 1,
       "population": 4,
       "rate": 0.25,
-      "gap_count": 16,
+      "gap_count": 6,
       "misses": [
         "gate-that-gates-nothing",
         "mocked-confirmation",
@@ -1124,7 +1275,7 @@
       "reached": 1,
       "population": 4,
       "rate": 0.25,
-      "gap_count": 16,
+      "gap_count": 6,
       "misses": [
         "gate-that-gates-nothing",
         "mocked-confirmation",
@@ -1138,7 +1289,7 @@
       "reached": 1,
       "population": 4,
       "rate": 0.25,
-      "gap_count": 16,
+      "gap_count": 6,
       "misses": [
         "gate-that-gates-nothing",
         "mocked-confirmation",
@@ -1150,35 +1301,35 @@
     {
       "family": "archetype-matches-nothing",
       "truePositives": 3,
-      "falsePositives": 460,
+      "falsePositives": 532,
       "misses": 0,
       "precision": 1,
       "shape": "advisory",
       "recall": 1,
       "precision_basis": {
         "precision": 1,
-        "truePositives": 459,
+        "truePositives": 531,
         "falsePositives": 0,
         "unadjudicated": 4,
-        "byStanding": 456,
-        "rulings": 493
+        "byStanding": 528,
+        "rulings": 565
       }
     },
     {
       "family": "catch-all-universal",
-      "truePositives": 2,
-      "falsePositives": 94,
+      "truePositives": 4,
+      "falsePositives": 104,
       "misses": 0,
       "precision": 1,
       "shape": "advisory",
       "recall": 1,
       "precision_basis": {
         "precision": 1,
-        "truePositives": 2,
+        "truePositives": 4,
         "falsePositives": 0,
-        "unadjudicated": 94,
+        "unadjudicated": 104,
         "byStanding": 0,
-        "rulings": 4
+        "rulings": 8
       }
     },
     {
@@ -1192,7 +1343,7 @@
     },
     {
       "family": "hollow-denominator",
-      "truePositives": 1,
+      "truePositives": 3,
       "falsePositives": 0,
       "misses": 0,
       "precision": 1,
@@ -1368,27 +1519,35 @@
     {
       "family": "marker-form-mismatch",
       "reason": "no-symbol-bound"
+    },
+    {
+      "family": "marker-form-mismatch",
+      "reason": "no-symbol-bound"
+    },
+    {
+      "family": "marker-form-mismatch",
+      "reason": "no-symbol-bound"
     }
   ],
-  "positional": 35,
-  "finding_localisation_rate": 0.854,
+  "positional": 37,
+  "finding_localisation_rate": 0.822,
   "minting.section_hit_rate": {
-    "rate": 0.974,
-    "matched": 224,
-    "examined": 230,
-    "cases_reporting": 120
+    "rate": 0.977,
+    "matched": 260,
+    "examined": 266,
+    "cases_reporting": 138
   },
   "actionability": {
-    "actionable": 116,
-    "total": 603,
-    "rate": 0.192
+    "actionable": 130,
+    "total": 691,
+    "rate": 0.188
   },
   "cost_per_confirmed_insight": {
     "tokens": null,
-    "toolCalls": 245,
-    "truePositives": 41,
+    "toolCalls": 281,
+    "truePositives": 45,
     "tokensPer": null,
-    "toolCallsPer": 5.98
+    "toolCallsPer": 6.24
   },
   "sentinel.silent_zero": {
     "count": 0,
@@ -1451,7 +1610,21 @@
         "examined": 0
       },
       {
-        "corpus": "greenfield-no-symbols",
+        "corpus": "greenfield-no-symbols-python",
+        "metric": "coverage.backed",
+        "value": 0,
+        "population": 2,
+        "examined": 0
+      },
+      {
+        "corpus": "greenfield-no-symbols-rust",
+        "metric": "coverage.backed",
+        "value": 0,
+        "population": 2,
+        "examined": 0
+      },
+      {
+        "corpus": "greenfield-no-symbols-typescript",
         "metric": "coverage.backed",
         "value": 0,
         "population": 2,
@@ -1466,7 +1639,7 @@
       }
     ]
   },
-  "corpora": 121,
+  "corpora": 139,
   "by_language": [
     {
       "language": "n/a",
@@ -1486,7 +1659,7 @@
             "falsePositives": 0,
             "unadjudicated": 4,
             "byStanding": 16,
-            "rulings": 493
+            "rulings": 565
           }
         },
         {
@@ -1529,41 +1702,50 @@
     },
     {
       "language": "python",
-      "corpora": 30,
+      "corpora": 38,
       "families": [
         {
           "family": "archetype-matches-nothing",
           "truePositives": 1,
-          "falsePositives": 116,
+          "falsePositives": 148,
           "misses": 0,
           "precision": 1,
           "shape": "advisory",
           "recall": 1,
           "precision_basis": {
             "precision": 1,
-            "truePositives": 117,
+            "truePositives": 149,
             "falsePositives": 0,
             "unadjudicated": 0,
-            "byStanding": 116,
-            "rulings": 493
+            "byStanding": 148,
+            "rulings": 565
           }
         },
         {
           "family": "catch-all-universal",
-          "truePositives": 0,
-          "falsePositives": 28,
+          "truePositives": 1,
+          "falsePositives": 32,
           "misses": 0,
-          "precision": null,
+          "precision": 1,
           "shape": "advisory",
-          "recall": null,
+          "recall": 1,
           "precision_basis": {
-            "precision": null,
-            "truePositives": 0,
+            "precision": 1,
+            "truePositives": 1,
             "falsePositives": 0,
-            "unadjudicated": 28,
+            "unadjudicated": 32,
             "byStanding": 0,
-            "rulings": 4
+            "rulings": 8
           }
+        },
+        {
+          "family": "hollow-denominator",
+          "truePositives": 1,
+          "falsePositives": 0,
+          "misses": 0,
+          "precision": 1,
+          "shape": "defect",
+          "recall": 1
         },
         {
           "family": "id-column-matches-nothing",
@@ -1639,7 +1821,7 @@
             "falsePositives": 0,
             "unadjudicated": 0,
             "byStanding": 200,
-            "rulings": 493
+            "rulings": 565
           }
         },
         {
@@ -1656,7 +1838,7 @@
             "falsePositives": 0,
             "unadjudicated": 36,
             "byStanding": 0,
-            "rulings": 4
+            "rulings": 8
           }
         },
         {
@@ -1780,41 +1962,50 @@
     },
     {
       "language": "typescript",
-      "corpora": 32,
+      "corpora": 42,
       "families": [
         {
           "family": "archetype-matches-nothing",
           "truePositives": 1,
-          "falsePositives": 124,
+          "falsePositives": 164,
           "misses": 0,
           "precision": 1,
           "shape": "advisory",
           "recall": 1,
           "precision_basis": {
             "precision": 1,
-            "truePositives": 125,
+            "truePositives": 165,
             "falsePositives": 0,
             "unadjudicated": 0,
-            "byStanding": 124,
-            "rulings": 493
+            "byStanding": 164,
+            "rulings": 565
           }
         },
         {
           "family": "catch-all-universal",
-          "truePositives": 0,
-          "falsePositives": 30,
+          "truePositives": 1,
+          "falsePositives": 36,
           "misses": 0,
-          "precision": null,
+          "precision": 1,
           "shape": "advisory",
-          "recall": null,
+          "recall": 1,
           "precision_basis": {
-            "precision": null,
-            "truePositives": 0,
+            "precision": 1,
+            "truePositives": 1,
             "falsePositives": 0,
-            "unadjudicated": 30,
+            "unadjudicated": 36,
             "byStanding": 0,
-            "rulings": 4
+            "rulings": 8
           }
+        },
+        {
+          "family": "hollow-denominator",
+          "truePositives": 1,
+          "falsePositives": 0,
+          "misses": 0,
+          "precision": 1,
+          "shape": "defect",
+          "recall": 1
         },
         {
           "family": "id-column-matches-nothing",
@@ -1874,5 +2065,5 @@
     }
   ],
   "pending": [],
-  "findings": 603
+  "findings": 691
 }
