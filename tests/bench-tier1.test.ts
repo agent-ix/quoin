@@ -157,6 +157,138 @@ describe("a vanished family", () => {
     expect(gone?.baseline).toBe(1);
     expect(gone?.why).toMatch(/did not report it at all/);
   });
+
+  test("TC-984 a family the baseline measured and this run reports null is regressed, not skipped", () => {
+    // TC-984
+    // THE ESCAPE HATCH. `shape: advisory` in `bench/tier1-mapping.json` turns a
+    // family's precision to null, and the old `if (family[metric] === null)
+    // continue` then emitted no verdict at all — so a bad number could be
+    // deleted, in silence, for the cost of editing one string in one JSON file.
+    // It was used twice: #234 on `catch-all-universal` at 0.167, and CR-102
+    // (`be60e57`) on `archetype-matches-nothing` at 3 TP / 296 FP = 0.01
+    // (agent-ix/quoin#245).
+    const verdicts = ratchet(
+      {
+        families: [
+          {
+            family: "reclassified",
+            truePositives: 3,
+            falsePositives: 296,
+            misses: 0,
+            precision: null,
+            recall: 1,
+          },
+        ],
+        finding_localisation_rate: null,
+      },
+      {
+        families: [{ family: "reclassified", precision: 0.01, recall: 1 }],
+        finding_localisation_rate: null,
+      },
+      {
+        metrics: {
+          finding_precision: { direction: "higher-is-better" },
+          finding_recall: { direction: "higher-is-better" },
+        },
+      },
+    );
+    const v = verdicts.find((x) => x.metric === "finding_precision");
+    expect(v?.verdict).toBe("regressed");
+    expect(v?.observed).toBeNull();
+    // The baseline is KEPT, so `--update` cannot ratify the deletion either.
+    expect(v?.baseline).toBe(0.01);
+    expect(v?.why).toMatch(/stopped being measured/);
+  });
+
+  test("TC-985 a family that never had a precision is still skipped, not failed", () => {
+    // TC-985
+    // The other half of TC-984, and the reason the old `continue` existed:
+    // `gate-that-gates-nothing` has no detector anywhere, so it reports null
+    // every run. Failing the build for a family nothing ever fired on would
+    // make the gate permanently red and therefore permanently ignored.
+    const verdicts = ratchet(
+      {
+        families: [
+          {
+            family: "never-measured",
+            truePositives: 0,
+            falsePositives: 0,
+            misses: 1,
+            precision: null,
+            recall: 0,
+          },
+        ],
+        finding_localisation_rate: null,
+      },
+      {
+        families: [{ family: "never-measured", precision: null, recall: 0 }],
+        finding_localisation_rate: null,
+      },
+      {
+        metrics: {
+          finding_precision: { direction: "higher-is-better" },
+          finding_recall: { direction: "higher-is-better" },
+        },
+      },
+    );
+    expect(verdicts.some((v) => v.metric === "finding_precision")).toBe(false);
+    expect(verdicts.find((v) => v.metric === "finding_recall")?.verdict).toBe(
+      "held",
+    );
+  });
+
+  test("TC-986 an advisory's unadjudicated count is ratcheted lower-is-better", () => {
+    // TC-986
+    // An advisory's precision RATE cannot fall independently of qa-corpus's own
+    // `make ci` — a firing on a case that declared the reason absent turns that
+    // gate red first. So the rate is not the evidence; the count of firings
+    // nobody has ruled on is, and it must cost something to grow.
+    const verdicts = ratchet(
+      {
+        families: [
+          {
+            family: "advisory-family",
+            truePositives: 3,
+            falsePositives: 316,
+            misses: 0,
+            precision: 1,
+            recall: 1,
+            precision_basis: {
+              precision: 1,
+              truePositives: 3,
+              falsePositives: 0,
+              unadjudicated: 400,
+              rulings: 6,
+            },
+          },
+        ],
+        finding_localisation_rate: null,
+      },
+      {
+        families: [
+          {
+            family: "advisory-family",
+            precision: 1,
+            recall: 1,
+            precision_basis: { unadjudicated: 313 },
+          },
+        ],
+        finding_localisation_rate: null,
+      },
+      {
+        metrics: {
+          finding_precision: { direction: "higher-is-better" },
+          finding_recall: { direction: "higher-is-better" },
+        },
+      },
+    );
+    const v = verdicts.find(
+      (x) => x.metric === "finding_precision.unadjudicated",
+    );
+    expect(v?.verdict).toBe("regressed");
+    expect(v?.observed).toBe(400);
+    expect(v?.baseline).toBe(313);
+  });
 });
 
 describe("a case whose ground truth maps to nothing", () => {

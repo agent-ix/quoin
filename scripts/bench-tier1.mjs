@@ -151,7 +151,22 @@ function findingsFor(quire, corpusRoot, module, mapping) {
   for (const [family, m] of bySource("coverage.diagnostics")) {
     for (const d of payload.diagnostics ?? []) {
       if (d.reason !== m.key) continue;
-      out.push({ family, reason: d.reason, path: d.path ?? null, line: null });
+      out.push({
+        family,
+        reason: d.reason,
+        path: d.path ?? null,
+        line: null,
+        // WHICH DECLARATION RAISED IT. `agent-ix/quire-rs#304` made
+        // `archetype-matches-nothing` fire for several declarations at once, so
+        // the bare token is no longer the whole claim: on a three-file fixture
+        // it fires legitimately for `inspection`, `suite`,
+        // `nfr-acceptance-criterion` and `stakeholder-validation-criterion`,
+        // none of which that fixture is about. A control therefore rules on
+        // `test-case/archetype-matches-nothing`, scoped, and without this field
+        // the scope is unreadable here and four correct firings score as false
+        // positives (agent-ix/quoin#245).
+        declaration: d.declaration ?? null,
+      });
     }
   }
   for (const [family, m] of bySource("coverage.suspicions")) {
@@ -355,6 +370,21 @@ export function loadCorpus(
           // every one of them — measured, 17 of 45 (agent-ix/quoin#242).
           language: meta.language ?? "unknown",
           pending: meta.pending ?? null,
+          // WHAT THIS CASE RULES ON, verbatim from its own `expect.yaml`.
+          // `diagnostic_reasons` is "must fire here" and
+          // `absent_diagnostic_reasons` is "must stay silent here", and for an
+          // ADVISORY family those two lists are the only thing the corpus says
+          // about it at all. Carried through so `scopedPrecision` can separate
+          // a firing the corpus ruled wrong from a firing nobody ruled on —
+          // the distinction agent-ix/quoin#245 was opened to make visible.
+          //
+          // Read for every case, not only failure cases: a CONTROL's silence
+          // assertion is exactly the evidence an advisory's precision needs,
+          // and controls are where `absent_diagnostic_reasons` mostly lives.
+          rules: {
+            present: expect.diagnostic_reasons ?? [],
+            absent: expect.absent_diagnostic_reasons ?? [],
+          },
           // What the ticket must make fire. Empty for a case that is not
           // pending; the guard below refuses a pending case where it is empty.
           pendingReasons: meta.pending
@@ -862,6 +892,52 @@ function familyOf(meta, expect, mapping) {
   return "none";
 }
 
+/**
+ * Which cases have ruled on which family, from the corpus's own `expect.yaml`s.
+ *
+ * `{ [family]: { present: [caseName], absent: [caseName] } }` — the two lists
+ * `scopedPrecision` needs to tell a firing the corpus called WRONG apart from
+ * one nobody has called at all (agent-ix/quoin#245).
+ *
+ * Resolved through `familyForReason`, so a fixture writing the scoped form
+ * `test-case/archetype-matches-nothing` rules on the same family as one writing
+ * the bare token — the resolution both corpus graders already use, and the one
+ * a third reader got wrong by treating a precisely-written fixture as claiming
+ * no token at all.
+ */
+export function adjudicationOf(corpora, mapping) {
+  const out = {};
+  const add = (side, reason, name) => {
+    const family = familyForReason(mapping, reason);
+    // An unmappable reason is NOT silently dropped here — `assertReasonsMapped`
+    // has already refused the case for the `present` side. The `absent` side is
+    // deliberately not refused: a control may assert the silence of a token no
+    // family claims yet, which is a legitimate thing for a fixture to say and
+    // not a scoring hole, because nothing is being scored on it.
+    if (!family) return;
+    // THE SCOPE IS PART OF THE RULING, not decoration on the way to the family.
+    // `test-case/archetype-matches-nothing` says the `test-case` declaration
+    // must be silent here; it says NOTHING about `suite` or `inspection`, which
+    // fire correctly on the same tree. Dropping the scope turned four correct
+    // firings into false positives and published `archetype-matches-nothing` at
+    // precision 0.556 — a fabricated number, caught before it reached a
+    // baseline (agent-ix/quoin#245).
+    const scope = reason.includes("/")
+      ? reason.slice(0, reason.indexOf("/"))
+      : null;
+    out[family] ??= { present: [], absent: [] };
+    const already = out[family][side].some(
+      (r) => r.corpus === name && r.scope === scope,
+    );
+    if (!already) out[family][side].push({ corpus: name, scope });
+  };
+  for (const c of corpora) {
+    for (const reason of c.rules?.present ?? []) add("present", reason, c.name);
+    for (const reason of c.rules?.absent ?? []) add("absent", reason, c.name);
+  }
+  return out;
+}
+
 /** Flatten the labels into the flat array scoring takes. */
 export function flattenLabels(labels) {
   // The shape mismatch that kept `buildBenchCorpora` and `scoreFindings` from
@@ -899,7 +975,7 @@ export function localisationRate(score) {
  * is not a family that works; it is a family nobody has asked the question of,
  * and the two look identical in a single table.
  */
-export function byLanguage(corpora, findings, labels, shapes) {
+export function byLanguage(corpora, findings, labels, shapes, adjudication) {
   const languages = [...new Set(corpora.map((c) => c.language))].sort();
   return languages.map((language) => {
     const names = new Set(
@@ -910,7 +986,7 @@ export function byLanguage(corpora, findings, labels, shapes) {
     return {
       language,
       corpora: names.size,
-      families: scoreFindings(mine, theirs, shapes).families,
+      families: scoreFindings(mine, theirs, shapes, adjudication).families,
     };
   });
 }
@@ -1194,7 +1270,12 @@ function main() {
       m.shape ?? "defect",
     ]),
   );
-  const score = scoreFindings(scoredFindings, flat, shapes);
+  // WHICH CASES HAVE RULED ON WHICH FAMILY. An advisory's precision is scored
+  // over these and nothing else; every other firing is counted as
+  // `unadjudicated` and published rather than folded into a blank null
+  // (agent-ix/quoin#245).
+  const adjudication = adjudicationOf(labels.corpora, mapping);
+  const score = scoreFindings(scoredFindings, flat, shapes, adjudication);
   report = {
     // WHAT PRODUCED THIS. `bench/tier1-baseline.json` carried no engine and no
     // corpus revision, so which binary wrote any of its five git revisions had
@@ -1241,7 +1322,13 @@ function main() {
     // and is not: at qa-corpus 088771b every one of the 22 cases said `rust`,
     // and Wave 3's python and TypeScript fixes could not be exercised at all
     // (agent-ix/quoin#236).
-    by_language: byLanguage(labels.corpora, scoredFindings, flat, shapes),
+    by_language: byLanguage(
+      labels.corpora,
+      scoredFindings,
+      flat,
+      shapes,
+      adjudication,
+    ),
     // In the REPORT, not only on stderr: a consumer piping stdout would
     // otherwise read a corpus count with nothing recording that a case exists
     // and was deliberately dropped.
@@ -1295,19 +1382,65 @@ export function ratchet(report, previous, dictionary) {
   for (const family of report.families) {
     for (const metric of ["precision", "recall"]) {
       const declared = dictionary.metrics[`finding_${metric}`];
+      const baselineValue = before.get(family.family)?.[metric] ?? null;
       // A metric this run could not read is OMITTED, never reported as 0 —
       // `null` precision means no denominator, and calling that a regression
       // would fail the build for a family nothing fired on.
-      if (family[metric] === null) continue;
+      //
+      // UNLESS THE BASELINE HAD A NUMBER. A family that was measured and is
+      // now unmeasured has not held; it has stopped being scored, and the old
+      // `continue` made that free and silent. It was used twice — #234 turned
+      // `catch-all-universal` 0.167 into null, and CR-102 (`be60e57`) turned
+      // `archetype-matches-nothing` 3 TP / 296 FP = 0.01 into null — for the
+      // cost of one string in `bench/tier1-mapping.json`, with no verdict
+      // either time. Reclassifying now costs a deliberate baseline update with
+      // a stated reason (agent-ix/quoin#245).
+      if (family[metric] === null) {
+        if (baselineValue === null || baselineValue === undefined) continue;
+        out.push({
+          metric: `finding_${metric}`,
+          family: family.family,
+          observed: null,
+          baseline: baselineValue,
+          verdict: "regressed",
+          why:
+            `the baseline measured this family at ${baselineValue} and this ` +
+            `run reports no denominator. A metric that stopped being measured ` +
+            `has not held`,
+        });
+        continue;
+      }
       const [verdict, kept] = compare(
         declared.direction,
         family[metric],
-        before.get(family.family)?.[metric] ?? null,
+        baselineValue,
       );
       out.push({
         metric: `finding_${metric}`,
         family: family.family,
         observed: family[metric],
+        baseline: kept,
+        verdict,
+      });
+    }
+    // THE NUMBER AN ADVISORY ACTUALLY REPORTS. Its precision rate cannot fall
+    // independently of `qa-corpus`'s own `make ci` — a firing on a case that
+    // declared the reason absent turns that gate red first — so the rate is
+    // not the evidence here. The count of firings NOBODY HAS RULED ON is, and
+    // ratcheting it `lower-is-better` is what makes an advisory that starts
+    // firing more widely cost something, and gives the corpus adjudication
+    // work a number to move (agent-ix/quoin#245).
+    const unadjudicated = family.precision_basis?.unadjudicated;
+    if (unadjudicated !== undefined) {
+      const [verdict, kept] = compare(
+        "lower-is-better",
+        unadjudicated,
+        before.get(family.family)?.precision_basis?.unadjudicated ?? null,
+      );
+      out.push({
+        metric: "finding_precision.unadjudicated",
+        family: family.family,
+        observed: unadjudicated,
         baseline: kept,
         verdict,
       });
@@ -1365,6 +1498,32 @@ export function ratchet(report, previous, dictionary) {
   return out.map((v) => ({ ...v, verdict: "incomparable", why }));
 }
 
+/**
+ * One family's row.
+ *
+ * The `TP`/`FP` columns are the DEFECT-SHAPED counts, which is what `recall` is
+ * computed from. For an ADVISORY family those are not what `prec` is computed
+ * from, and printing `3 TP, 316 FP, 100%` on one line without saying so is a
+ * row that contradicts itself. So an advisory row states its own basis: the
+ * rulings the precision was drawn from, and the firings nobody has ruled on —
+ * which is the number that actually says how much is known (quoin#245).
+ */
+function familyRow(f, indent) {
+  const pct = (v) =>
+    v === null ? "  n/a" : `${Math.round(v * 100)}%`.padStart(5);
+  const row =
+    `${indent}${f.family.padEnd(24)} ${String(f.truePositives).padStart(2)}  ` +
+    `${String(f.falsePositives).padStart(2)}  ${String(f.misses).padStart(4)}  ` +
+    `${pct(f.precision)}  ${pct(f.recall)}`;
+  const basis = f.precision_basis;
+  if (!basis) return row;
+  return (
+    `${row}   advisory: prec over ${basis.truePositives + basis.falsePositives}` +
+    ` ruled firing${basis.truePositives + basis.falsePositives === 1 ? "" : "s"}` +
+    `, ${basis.unadjudicated} UNADJUDICATED`
+  );
+}
+
 /** A digest or a language census, short enough to sit in a verdict line. */
 function short(value) {
   if (typeof value === "string" && value.startsWith("sha256:")) {
@@ -1409,13 +1568,7 @@ function render(report, verdicts) {
     "",
     "family                     TP  FP  miss   prec  recall",
   ];
-  for (const f of report.families) {
-    lines.push(
-      `  ${f.family.padEnd(24)} ${String(f.truePositives).padStart(2)}  ` +
-        `${String(f.falsePositives).padStart(2)}  ${String(f.misses).padStart(4)}  ` +
-        `${pct(f.precision)}  ${pct(f.recall)}`,
-    );
-  }
+  for (const f of report.families) lines.push(familyRow(f, "  "));
   lines.push(
     "",
     `finding_localisation_rate  ${pct(report.finding_localisation_rate)} ` +
@@ -1435,13 +1588,7 @@ function render(report, verdicts) {
   lines.push("", "by language:");
   for (const lang of report.by_language) {
     lines.push(`  ${lang.language} (${lang.corpora} corpora)`);
-    for (const f of lang.families) {
-      lines.push(
-        `    ${f.family.padEnd(24)} ${String(f.truePositives).padStart(2)}  ` +
-          `${String(f.falsePositives).padStart(2)}  ${String(f.misses).padStart(4)}  ` +
-          `${pct(f.precision)}  ${pct(f.recall)}`,
-      );
-    }
+    for (const f of lang.families) lines.push(familyRow(f, "    "));
     if (!lang.families.length) {
       lines.push("    (no family scored a finding or a label here)");
     }

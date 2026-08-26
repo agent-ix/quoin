@@ -277,6 +277,85 @@ describe("finding precision and recall", () => {
     );
   });
 
+  it("TC-982 a SCOPED ruling governs only the declaration it names", () => {
+    // TC-982
+    // THE FABRICATED NUMBER THIS STOPS. `agent-ix/quire-rs#304` made
+    // `archetype-matches-nothing` fire for several declarations at once, so on
+    // a three-file fixture it fires correctly for `inspection`, `suite`,
+    // `nfr-acceptance-criterion` and `stakeholder-validation-criterion` — none
+    // of which the fixture is about. The control therefore rules on
+    // `test-case/archetype-matches-nothing`, SCOPED.
+    //
+    // The first implementation stripped the scope on the way to the family, so
+    // those four correct firings were read as violations of a ruling that never
+    // covered them, and the run published precision 0.556. Measured, caught
+    // before it reached a baseline, and pinned here (agent-ix/quoin#245).
+    const findings = [
+      { family: "adv", corpus: "control", declaration: "inspection" },
+      { family: "adv", corpus: "control", declaration: "suite" },
+      { family: "adv", corpus: "control", declaration: "test-case" },
+    ];
+    const { families } = scoreFindings(
+      findings,
+      [],
+      { adv: "advisory" },
+      {
+        adv: {
+          present: [],
+          absent: [{ corpus: "control", scope: "test-case" }],
+        },
+      },
+    );
+    const adv = families.find((f) => f.family === "adv")!;
+    // ONE false positive — the `test-case` firing the control ruled out. The
+    // other two are outside the ruling's scope and unknown, not wrong.
+    expect(adv.precision_basis!.falsePositives).toBe(1);
+    expect(adv.precision_basis!.truePositives).toBe(0);
+    expect(adv.precision_basis!.unadjudicated).toBe(2);
+    expect(adv.precision).toBe(0);
+  });
+
+  it("TC-983 an UNSCOPED ruling governs every firing of its family on that case", () => {
+    // TC-983
+    // The counterpart to TC-982: a fixture that writes the bare token means the
+    // whole family, and scoping the match by declaration must not quietly turn
+    // that into a ruling on nothing.
+    const findings = [
+      { family: "adv", corpus: "c", declaration: "suite" },
+      { family: "adv", corpus: "c", declaration: "test-case" },
+    ];
+    const { families } = scoreFindings(
+      findings,
+      [],
+      { adv: "advisory" },
+      { adv: { present: [{ corpus: "c", scope: null }], absent: [] } },
+    );
+    const adv = families.find((f) => f.family === "adv")!;
+    expect(adv.precision_basis!.truePositives).toBe(2);
+    expect(adv.precision_basis!.unadjudicated).toBe(0);
+  });
+
+  it("TC-987 a firing nobody ruled on is counted and published, never folded into the null", () => {
+    // TC-987
+    // What #234 shipped was a bare `null`, which reads as "nothing to see". The
+    // state it was actually describing is 316 firings on which this benchmark
+    // holds no opinion. Not-measured and zero are different claims, and so are
+    // not-measured and not-asked.
+    const { families } = scoreFindings(
+      [
+        { family: "adv", corpus: "a", declaration: "suite" },
+        { family: "adv", corpus: "b", declaration: "suite" },
+      ],
+      [],
+      { adv: "advisory" },
+      {},
+    );
+    const adv = families.find((f) => f.family === "adv")!;
+    expect(adv.precision).toBeNull();
+    expect(adv.precision_basis!.unadjudicated).toBe(2);
+    expect(adv.precision_basis!.rulings).toBe(0);
+  });
+
   it("TC-943 reports null, not zero, when a family has no denominator", () => {
     // TC-943
     // 0/0 is not 0%. A precision of 0 claims the run was wrong; null says it

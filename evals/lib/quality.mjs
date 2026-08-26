@@ -22,7 +22,7 @@
  * whole reason for existing: a scored miss must be distinguishable from a
  * defect nobody claimed was findable.
  */
-export function scoreFindings(found, labels, shapes = {}) {
+export function scoreFindings(found, labels, shapes = {}, adjudication = {}) {
   const families = new Map();
   const bucket = (family) => {
     if (!families.has(family)) {
@@ -159,27 +159,41 @@ export function scoreFindings(found, labels, shapes = {}) {
   }
 
   const rows = [...families.values()]
-    .map((f) => ({
-      ...f,
-      // An ADVISORY family reports no precision. It is a corpus-level
-      // observation — one finding per corpus whenever a shape holds — so it
-      // fires on nearly every fixture, correctly, and the defect-shaped FP
-      // definition ("a finding on a case that does not seed this family")
-      // counts each correct firing against it.
+    .map((f) => {
+      // An ADVISORY family is not scored by the defect-shaped FP definition.
+      // It is a corpus-level observation — one finding per corpus whenever a
+      // shape holds — so it fires on nearly every fixture, correctly, and
+      // "a finding on a case that does not seed this family" counts each
+      // correct firing against it.
       //
       // Measured before this: `catch-all-universal` fired on 10 of 21 cases,
       // every one verified correct, and scored precision 0.167 — a number that
       // read as "wrong five times in six" while being wrong zero times in
-      // twelve. `null`, never 0, for the same reason a 0/0 ratio is null
-      // elsewhere here: not-measured and zero are different claims
-      // (agent-ix/quoin#234).
-      precision:
-        shapes[f.family] === "advisory"
-          ? null
+      // twelve (agent-ix/quoin#234).
+      //
+      // What #234 shipped was a bare `null`, and `ratchet()` skips a null
+      // metric — so reclassifying a family to `advisory` deleted its precision
+      // in silence, for the cost of one string in one JSON file. That was then
+      // done a SECOND time, to `archetype-matches-nothing` at 3 TP / 296 FP =
+      // 0.01, and no run objected (agent-ix/quoin#245).
+      //
+      // So the null is now SCOPED and ACCOUNTED. Precision is computed over
+      // the cases the corpus has actually ruled on, and every firing nobody
+      // ruled on is counted and published rather than folded into a blank.
+      const advisory = shapes[f.family] === "advisory";
+      const scoped = advisory
+        ? scopedPrecision(f.family, scored, adjudication)
+        : null;
+      return {
+        ...f,
+        precision: advisory
+          ? scoped.precision
           : ratio(f.truePositives, f.truePositives + f.falsePositives),
-      shape: shapes[f.family] ?? "defect",
-      recall: ratio(f.truePositives, f.truePositives + f.misses),
-    }))
+        shape: shapes[f.family] ?? "defect",
+        recall: ratio(f.truePositives, f.truePositives + f.misses),
+        ...(advisory ? { precision_basis: scoped } : {}),
+      };
+    })
     .sort((a, b) => a.family.localeCompare(b.family));
 
   // Labels declared unfindable are reported, not silently dropped: an
@@ -189,6 +203,75 @@ export function scoreFindings(found, labels, shapes = {}) {
   // from family-only matches is weaker evidence than the same figure built
   // from findings that named where, and the reader should be able to tell.
   return { families: rows, excluded, positional, collateral };
+}
+
+/**
+ * Precision for an ADVISORY family, over the cases the corpus has ruled on.
+ *
+ * A case's `expect.yaml` states a reason under `diagnostic_reasons` (it must
+ * fire here) or `absent_diagnostic_reasons` (it must stay silent here). Those
+ * are the only two places this corpus says anything about an advisory. So:
+ *
+ *   true positive   fired on a case that declared the reason PRESENT
+ *   false positive  fired on a case that declared the reason ABSENT
+ *   unadjudicated   fired on a case that declared neither
+ *
+ * A ruling may be SCOPED to one declaration — `test-case/...` — and then it
+ * governs only findings that declaration raised. `agent-ix/quire-rs#304` made
+ * `archetype-matches-nothing` fire for several declarations at once, so on a
+ * three-file fixture it fires correctly for `inspection`, `suite`,
+ * `nfr-acceptance-criterion` and `stakeholder-validation-criterion` — none of
+ * which the fixture is about. Reading a scoped ruling as a ruling on the bare
+ * token counted those four as false positives and produced a precision of
+ * 0.556 that no reading of the corpus supports.
+ *
+ * READ THE COVERAGE, NOT THE RATE. `absent_diagnostic_reasons` is graded by
+ * `qa-corpus`'s own `make ci`, so a false positive here would already have
+ * turned that gate red — which means this rate cannot fall independently of a
+ * gate one repository over, and a 1.00 is not evidence the detector is right.
+ * What this function actually reports is `unadjudicated`: the number of times
+ * the toolchain fired and nobody has ruled on whether it should have. On the
+ * baseline that opened agent-ix/quoin#245 that count was 313 of 316 for
+ * `archetype-matches-nothing`, and it was invisible.
+ *
+ * `null`, never 0, when nothing has been adjudicated: not-measured and zero are
+ * different claims, and a family nobody has ruled on has no precision at all.
+ */
+function scopedPrecision(family, scored, adjudication) {
+  const ruling = adjudication[family] ?? { present: [], absent: [] };
+  // A ruling governs a finding when they name the same case AND the ruling is
+  // either unscoped or names the declaration that raised it.
+  const governs = (rules, finding) =>
+    rules.some(
+      (r) =>
+        r.corpus === finding.corpus &&
+        (r.scope === null || r.scope === finding.declaration),
+    );
+  let truePositives = 0;
+  let falsePositives = 0;
+  let unadjudicated = 0;
+  for (const finding of scored) {
+    if (finding.family !== family) continue;
+    // A finding with no case attribution cannot be ruled on at all. Counted as
+    // unadjudicated rather than dropped: an unscored finding nobody sees is a
+    // finding nobody can question, which is the rule the collateral pass is
+    // held to a few lines up.
+    if (finding.corpus === undefined) unadjudicated += 1;
+    else if (governs(ruling.absent ?? [], finding)) falsePositives += 1;
+    else if (governs(ruling.present ?? [], finding)) truePositives += 1;
+    else unadjudicated += 1;
+  }
+  return {
+    precision: ratio(truePositives, truePositives + falsePositives),
+    truePositives,
+    falsePositives,
+    unadjudicated,
+    // The rulings that exist AT ALL, whether or not the family fired under
+    // them. A family can be adjudicated on ten cases and fire under none of
+    // them, and that is a different state from one nobody has written a rule
+    // for.
+    rulings: (ruling.present ?? []).length + (ruling.absent ?? []).length,
+  };
 }
 
 /** The reason a finding carries, under either of the two payload spellings. */

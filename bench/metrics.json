@@ -34,6 +34,15 @@
       "baseline": null,
       "baseline_note": "Per-family, in `bench/tier1-baseline.json`. First scored run (2026-08-23): catch-all-universal, hollow-denominator, marker-form-mismatch, undeclared-type-value and vacuous-under-guard at 1.00; gate-that-gates-nothing, mocked-confirmation and oracle-is-code-copy at 0.00 for three DIFFERENT reasons — no detector, a detector with no producer (quoin#204), and a detector with no caller (quire-rs#236). The tier-2 key records 7 findings, 0 of which the tools found at battletest pass 2; that 0-of-7 is the recall this programme exists to move."
     },
+    "finding_precision.unadjudicated": {
+      "unit": "findings",
+      "population": "findings of one ADVISORY family, on corpus cases whose `expect.yaml` names that family's reason in neither `diagnostic_reasons` nor `absent_diagnostic_reasons`",
+      "method": "counted per family by evals/lib/quality.mjs scopedPrecision, from the rulings bench-tier1.mjs adjudicationOf reads out of each case's own expect.yaml. THE NUMBER AN ADVISORY ACTUALLY REPORTS. Its precision RATE cannot fall independently of agent-ix/qa-corpus's own `make ci` — a firing on a case that declared the reason absent turns that gate red first — so a rate of 1.00 is not evidence the detector is right. This is: it is the number of times the toolchain fired and nobody has ruled on whether it should have. Ratcheted lower-is-better, so an advisory that starts firing more widely costs something and the corpus adjudication work has a number to move",
+      "direction": "lower-is-better",
+      "per_family": true,
+      "baseline": null,
+      "baseline_note": "Per-family, so the counts live in `bench/tier1-baseline.json` under each advisory family's `precision_basis`. Introduced by agent-ix/quoin#245 after the run that opened it measured 313 unadjudicated of 316 firings for `archetype-matches-nothing` and 64 of 66 for `catch-all-universal` — 377 findings on which the benchmark held no opinion and said nothing. `null` here means no single figure is declared, NOT zero."
+    },
     "span_grounding_rate": {
       "unit": "percent of specific-shape criteria",
       "population": "acceptance criteria the FR-052 classifier gives a specific property shape",

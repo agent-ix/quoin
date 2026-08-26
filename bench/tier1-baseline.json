@@ -21,18 +21,32 @@
       "truePositives": 3,
       "falsePositives": 316,
       "misses": 0,
-      "precision": null,
+      "precision": 1,
       "shape": "advisory",
-      "recall": 1
+      "recall": 1,
+      "precision_basis": {
+        "precision": 1,
+        "truePositives": 3,
+        "falsePositives": 0,
+        "unadjudicated": 316,
+        "rulings": 9
+      }
     },
     {
       "family": "catch-all-universal",
       "truePositives": 2,
       "falsePositives": 66,
       "misses": 0,
-      "precision": null,
+      "precision": 1,
       "shape": "advisory",
-      "recall": 1
+      "recall": 1,
+      "precision_basis": {
+        "precision": 1,
+        "truePositives": 2,
+        "falsePositives": 0,
+        "unadjudicated": 66,
+        "rulings": 4
+      }
     },
     {
       "family": "gate-that-gates-nothing",
@@ -185,9 +199,16 @@
           "truePositives": 1,
           "falsePositives": 72,
           "misses": 0,
-          "precision": null,
+          "precision": 1,
           "shape": "advisory",
-          "recall": 1
+          "recall": 1,
+          "precision_basis": {
+            "precision": 1,
+            "truePositives": 1,
+            "falsePositives": 0,
+            "unadjudicated": 72,
+            "rulings": 9
+          }
         },
         {
           "family": "catch-all-universal",
@@ -196,7 +217,14 @@
           "misses": 0,
           "precision": null,
           "shape": "advisory",
-          "recall": null
+          "recall": null,
+          "precision_basis": {
+            "precision": null,
+            "truePositives": 0,
+            "falsePositives": 0,
+            "unadjudicated": 18,
+            "rulings": 4
+          }
         },
         {
           "family": "id-column-matches-nothing",
@@ -245,18 +273,32 @@
           "truePositives": 1,
           "falsePositives": 164,
           "misses": 0,
-          "precision": null,
+          "precision": 1,
           "shape": "advisory",
-          "recall": 1
+          "recall": 1,
+          "precision_basis": {
+            "precision": 1,
+            "truePositives": 1,
+            "falsePositives": 0,
+            "unadjudicated": 164,
+            "rulings": 9
+          }
         },
         {
           "family": "catch-all-universal",
           "truePositives": 2,
           "falsePositives": 28,
           "misses": 0,
-          "precision": null,
+          "precision": 1,
           "shape": "advisory",
-          "recall": 1
+          "recall": 1,
+          "precision_basis": {
+            "precision": 1,
+            "truePositives": 2,
+            "falsePositives": 0,
+            "unadjudicated": 28,
+            "rulings": 4
+          }
         },
         {
           "family": "gate-that-gates-nothing",
@@ -368,9 +410,16 @@
           "truePositives": 1,
           "falsePositives": 80,
           "misses": 0,
-          "precision": null,
+          "precision": 1,
           "shape": "advisory",
-          "recall": 1
+          "recall": 1,
+          "precision_basis": {
+            "precision": 1,
+            "truePositives": 1,
+            "falsePositives": 0,
+            "unadjudicated": 80,
+            "rulings": 9
+          }
         },
         {
           "family": "catch-all-universal",
@@ -379,7 +428,14 @@
           "misses": 0,
           "precision": null,
           "shape": "advisory",
-          "recall": null
+          "recall": null,
+          "precision_basis": {
+            "precision": null,
+            "truePositives": 0,
+            "falsePositives": 0,
+            "unadjudicated": 20,
+            "rulings": 4
+          }
         },
         {
           "family": "id-column-matches-nothing",
