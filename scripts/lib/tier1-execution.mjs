@@ -62,6 +62,7 @@ export function createTier1Executor() {
           path: diagnostic.path ?? null,
           line: typeof diagnostic.line === "number" ? diagnostic.line : null,
           declaration: diagnostic.declaration ?? null,
+          message: diagnostic.message ?? "",
         });
       }
     }
@@ -73,6 +74,8 @@ export function createTier1Executor() {
           reason: suspicion.kind,
           path: suspicion.path ?? null,
           line: typeof suspicion.line === "number" ? suspicion.line : null,
+          message: suspicion.message ?? "",
+          evidence: suspicion.evidence ?? "",
         });
       }
     }
@@ -142,7 +145,13 @@ export function createTier1Executor() {
       if (!family) continue;
       const contains = mapping.families[family]?.contains;
       if (contains && !record.message.includes(contains)) continue;
-      findings.push({ family, reason, path, line: Number(line) });
+      findings.push({
+        family,
+        reason,
+        path,
+        line: Number(line),
+        message: record.message,
+      });
     }
 
     return {

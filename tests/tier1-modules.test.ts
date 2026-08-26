@@ -99,12 +99,14 @@ fi
         path: "spec/a.md",
         line: 7,
         declaration: null,
+        message: "",
       },
       {
         family: "validate",
         reason: "validated",
         path: "spec/a.md",
         line: 9,
+        message: "spec/a.md: line 9: bad [validated]",
       },
     ]);
     expect(execution.toolCalls()).toBe(2);

@@ -927,7 +927,12 @@ describe("the declaration axis", () => {
 
 describe("a delta across unlike inputs", () => {
   const report = {
-    provenance: { engine: "e2", corpus: "c1", declaration: { digest: "d1" } },
+    provenance: {
+      engine: "e2",
+      corpus: "c1",
+      corpus_input: "i1",
+      declaration: { digest: "d1" },
+    },
     corpora: 34,
     by_language: [{ language: "rust", corpora: 34 }],
     families: [
@@ -943,7 +948,12 @@ describe("a delta across unlike inputs", () => {
     finding_localisation_rate: null,
   };
   const previous = {
-    provenance: { engine: "e1", corpus: "c1", declaration: { digest: "d1" } },
+    provenance: {
+      engine: "e1",
+      corpus: "c0",
+      corpus_input: "i1",
+      declaration: { digest: "d1" },
+    },
     corpora: 34,
     by_language: [{ language: "rust", corpora: 34 }],
     families: [{ family: "f", precision: 1, recall: 1 }],
@@ -968,10 +978,16 @@ describe("a delta across unlike inputs", () => {
         provenance: { ...report.provenance, declaration: { digest: "d2" } },
       }).reasons[0].field,
     ).toBe("provenance.declaration.digest");
+    // A baseline commit changes the corpus SHA but not the scored input. The
+    // content identity excludes baselines so the ratchet cannot invalidate
+    // itself forever merely by being committed beside the cases.
     expect(
-      moved({ provenance: { ...report.provenance, corpus: "c2" } }).reasons[0]
-        .field,
-    ).toBe("provenance.corpus");
+      moved({ provenance: { ...report.provenance, corpus: "c2" } }).comparable,
+    ).toBe(true);
+    expect(
+      moved({ provenance: { ...report.provenance, corpus_input: "i2" } })
+        .reasons[0].field,
+    ).toBe("provenance.corpus_input");
     expect(moved({ corpora: 21 }).reasons[0].field).toBe("corpora");
     // The count can hold while the MIX changes — swap a rust case for a python
     // one and `corpora` says 34 either way.
@@ -1052,6 +1068,7 @@ describe("a delta across unlike inputs", () => {
     };
     const { comparable, unknown } = comparability(report, legacy);
     expect(comparable).toBe(true);
+    expect(unknown).toContain("provenance.corpus_input");
     expect(unknown).toContain("provenance.declaration.digest");
   });
 });

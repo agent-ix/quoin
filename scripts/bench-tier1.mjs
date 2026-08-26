@@ -38,6 +38,11 @@ import {
 import { createTier1Executor } from "./lib/tier1-execution.mjs";
 import { renderTier1 } from "./lib/tier1-render.mjs";
 import {
+  detectionRecall,
+  recallGateFails,
+  recallVerdicts,
+} from "./lib/tier1-recall.mjs";
+import {
   loadCorpusData,
   standingAdjudications,
   validateCanonicalInventory,
@@ -56,7 +61,9 @@ export { validateCanonicalInventory } from "./lib/tier1-corpus.mjs";
 const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 const MAPPING = join(ROOT, "bench", "tier1-mapping.json");
 const METRICS = join(ROOT, "bench", "metrics.json");
+const CORPUS_METRICS = join(ROOT, "corpus", "config", "metrics.json");
 const BASELINE = join(ROOT, "bench", "tier1-baseline.json");
+const RECALL_BASELINE = join(ROOT, "corpus", "baselines", "quoin.json");
 const execution = createTier1Executor();
 
 /** An absent engine metric is reported as not measured, never zero. */
@@ -203,6 +210,11 @@ export function measurementRecord(report, at) {
   return createMeasurementRecord(report, at, {
     root: ROOT,
     metricsPath: METRICS,
+    corpusMetricsPath: CORPUS_METRICS,
+    corpusPlanOverrides: {
+      "detection.recall": "spec/assurance/MP-210-detection-recall.md",
+      "bounds.gap_count": "spec/assurance/MP-211-corpus-gap-count.md",
+    },
     sectionHitRate: SECTION_HIT_RATE,
     execute: execution.execute,
     scorerDigest,
@@ -217,6 +229,20 @@ function persistMeasurement(collection) {
 function corpusRevision(root = join(ROOT, "corpus")) {
   const probe = execution.execute("git", ["-C", root, "rev-parse", "HEAD"]);
   return probe.ok ? probe.stdout.trim() : null;
+}
+
+/** Content identity of scored inputs, excluding ratchets stored beside them. */
+function corpusInputDigest(root = join(ROOT, "corpus")) {
+  const hash = createHash("sha256");
+  for (const rel of walkFiles(root).filter(
+    (path) => path !== "baselines/README.md" && !path.startsWith("baselines/"),
+  )) {
+    hash.update(rel);
+    hash.update("\0");
+    hash.update(readFileSync(join(root, rel)));
+    hash.update("\n");
+  }
+  return `sha256:${hash.digest("hex")}`;
 }
 
 function main() {
@@ -238,6 +264,7 @@ function main() {
 
   const mapping = JSON.parse(readFileSync(MAPPING, "utf8"));
   const dictionary = loadMetrics(METRICS);
+  loadMetrics(CORPUS_METRICS);
 
   const loaded = loadCorpus(
     mapping,
@@ -361,6 +388,7 @@ function main() {
     provenance: {
       engine,
       corpus: corpusRevision(),
+      corpus_input: corpusInputDigest(),
       declaration: declarationProvenance(
         loaded.modulesRoot,
         labels.corpora.map((c) =>
@@ -369,6 +397,11 @@ function main() {
       ),
     },
     bounds,
+    detection_recall: detectionRecall(
+      labels.corpora,
+      scoredFindings,
+      bounds.gap_count,
+    ),
     families: score.families,
     excluded: score.excluded,
     collateral: score.collateral,
@@ -412,7 +445,28 @@ function main() {
   const previous = existsSync(BASELINE)
     ? JSON.parse(readFileSync(BASELINE, "utf8"))
     : null;
-  const verdicts = ratchet(report, previous, dictionary);
+  const recallBaseline = existsSync(RECALL_BASELINE)
+    ? JSON.parse(readFileSync(RECALL_BASELINE, "utf8"))
+    : null;
+  if (!update && recallBaseline === null) {
+    throw new Error(
+      `bench-tier1: ${RECALL_BASELINE} is missing; run the explicit ` +
+        "bench update to create a measured recall ratchet, rather than " +
+        "treating an absent baseline as zero",
+    );
+  }
+  const recall = recallVerdicts(
+    report.detection_recall,
+    recallBaseline?.rows ?? [],
+  );
+  const verdicts = [
+    ...ratchet(report, previous, dictionary),
+    ...recall.map((verdict) => ({
+      metric: "detection.recall",
+      ...verdict,
+      observed: verdict.rate,
+    })),
+  ];
   // Unknown comparability inputs are never assumed to match silently.
   const { unknown } = comparability(report, previous);
   if (unknown.length) {
@@ -434,16 +488,44 @@ function main() {
       measurementRecord(report, new Date().toISOString()),
     );
     writeFileSync(BASELINE, JSON.stringify(report, null, 2) + "\n");
+    // The ratchet lives inside the corpus, so rewriting it solely because its
+    // own commit changed would create an endless self-revision cycle. Only a
+    // measured score or GAP movement rewrites it; corpus_input excludes this
+    // directory for the same reason.
+    const recallMoved =
+      recallBaseline === null ||
+      recallBaseline.gap_count !== report.bounds.gap_count ||
+      JSON.stringify(recallBaseline.rows) !==
+        JSON.stringify(report.detection_recall);
+    if (recallMoved) {
+      writeFileSync(
+        RECALL_BASELINE,
+        JSON.stringify(
+          {
+            definition_version: "detection-recall-v1",
+            runner: "quoin",
+            corpus_revision: report.provenance.corpus,
+            gap_count: report.bounds.gap_count,
+            rows: report.detection_recall,
+          },
+          null,
+          2,
+        ) + "\n",
+      );
+    }
     console.error(
       `bench-tier1: collection written to ${recordPath}; derived baseline rewritten ` +
         `at ${BASELINE}`,
     );
     return 0;
   }
-  // Incomparable inputs require a deliberate re-baseline.
-  return verdicts.some(
-    (v) => v.verdict === "regressed" || v.verdict === "incomparable",
-  )
+  // A new or improved recall partition is useful only after the update
+  // workflow retains it as the new floor. Regressions and incomparable runs
+  // also refuse the gate.
+  return recallGateFails(recall) ||
+    verdicts.some(
+      (v) => v.verdict === "regressed" || v.verdict === "incomparable",
+    )
     ? 1
     : 0;
 }

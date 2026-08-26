@@ -26,6 +26,7 @@ export function renderTier1(report, verdicts) {
         .join(", ")})`,
     `engine      ${report.provenance.engine}`,
     `corpus      ${short(report.provenance.corpus)}`,
+    `corpus input ${short(report.provenance.corpus_input)}`,
     `declaration ${declaration.root} ${short(declaration.digest)}` +
       (declaration.sources
         ? ` (${Object.entries(declaration.sources)
@@ -61,6 +62,14 @@ export function renderTier1(report, verdicts) {
     ).padStart(5)} (GATE: ratio-shaped metrics reading none of a non-zero` +
       " population, with nothing saying so)",
   );
+  lines.push("", "detection.recall (every row carries the corpus GAP count):");
+  for (const row of report.detection_recall ?? []) {
+    lines.push(
+      `  ${row.mode.padEnd(12)} ${row.language.padEnd(10)} ${row.level} ` +
+        `${pct(row.rate)} (${row.reached}/${row.population}; GAP ${row.gap_count})` +
+        (row.misses.length ? ` — missed ${row.misses.join(", ")}` : ""),
+    );
+  }
   for (const instance of report["sentinel.silent_zero"]?.instances ?? []) {
     lines.push(
       `  ${instance.corpus}: ${instance.metric} walked ${instance.examined} and matched none,` +
@@ -101,9 +110,12 @@ export function renderTier1(report, verdicts) {
     (verdict) => verdict.verdict === "incomparable",
   );
   for (const verdict of verdicts) {
+    const dimensions = verdict.mode
+      ? `[${verdict.level}/${verdict.mode}/${verdict.language}]`
+      : "";
     const name = verdict.family
       ? `${verdict.metric}[${verdict.family}]`
-      : verdict.metric;
+      : `${verdict.metric}${dimensions}`;
     const why =
       wholeRun && verdict.verdict === "incomparable" ? null : verdict.why;
     lines.push(

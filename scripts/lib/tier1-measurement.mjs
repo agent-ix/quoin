@@ -18,14 +18,42 @@ function loadPlan(path) {
 }
 
 export function createMeasurementRecord(report, at, options) {
-  const { root, metricsPath, sectionHitRate, execute, scorerDigest } = options;
-  const dictionary = JSON.parse(readFileSync(metricsPath, "utf8"));
-  const plans = Object.fromEntries(
-    Object.entries(dictionary.metrics).map(([metric, declaration]) => [
-      metric,
-      loadPlan(join(root, declaration.measurement_plan)),
-    ]),
-  );
+  const {
+    root,
+    metricsPath,
+    corpusMetricsPath,
+    corpusPlanOverrides = {},
+    sectionHitRate,
+    execute,
+    scorerDigest,
+  } = options;
+  const ownDictionary = JSON.parse(readFileSync(metricsPath, "utf8"));
+  const corpusDictionary = corpusMetricsPath
+    ? JSON.parse(readFileSync(corpusMetricsPath, "utf8"))
+    : { metrics: {} };
+  const dictionary = {
+    metrics: { ...ownDictionary.metrics, ...corpusDictionary.metrics },
+  };
+  const plans = {
+    ...Object.fromEntries(
+      Object.entries(ownDictionary.metrics).map(([metric, declaration]) => [
+        metric,
+        loadPlan(join(root, declaration.measurement_plan)),
+      ]),
+    ),
+    ...Object.fromEntries(
+      Object.entries(corpusDictionary.metrics).map(([metric, declaration]) => [
+        metric,
+        loadPlan(
+          join(
+            root,
+            corpusPlanOverrides[metric] ??
+              join("corpus", declaration.measurement_plan),
+          ),
+        ),
+      ]),
+    ),
+  };
   const revision = execute("git", ["-C", root, "rev-parse", "HEAD"]);
   const status = execute("git", ["-C", root, "status", "--porcelain"]);
   const sourceRevision = !revision.ok
@@ -165,6 +193,36 @@ export function createMeasurementRecord(report, at, options) {
       },
     }),
   );
+  for (const row of report.detection_recall ?? []) {
+    observations.push(
+      observation("detection.recall", row.rate, {
+        dimensions: {
+          level: row.level,
+          mode: row.mode,
+          language: row.language,
+        },
+        population: {
+          examined: row.population,
+          matched: row.reached,
+          complete: true,
+          identity: {
+            level: row.level,
+            mode: row.mode,
+            language: row.language,
+          },
+        },
+      }),
+      observation("bounds.gap_count", row.gap_count, {
+        shape: "count",
+        dimensions: {
+          beside: "detection.recall",
+          level: row.level,
+          mode: row.mode,
+          language: row.language,
+        },
+      }),
+    );
+  }
 
   const collectionId = `tier1-${at.replace(/[^0-9]/g, "").slice(0, 17)}-${createHash(
     "sha256",

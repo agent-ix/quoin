@@ -47,15 +47,24 @@ export function loadCorpusData({ mapping, root, modulesRoot, inventory }) {
     const label = existsSync(labelPath)
       ? parseYaml(readFileSync(labelPath, "utf8"))
       : null;
+    const defects = (label?.defects ?? defectsFrom(meta, expect, mapping)).map(
+      (defect) => ({
+        ...defect,
+        actionable_fragments: actionableFragments(defect, expect),
+      }),
+    );
     const pendingPath = join(dirname(expectPath), "expect-pending.yaml");
     const pendingExpect = existsSync(pendingPath)
       ? (parseYaml(readFileSync(pendingPath, "utf8")) ?? {})
       : {};
     corpora.push({
       name: meta.id,
+      mode: meta.mode,
+      kind: meta.kind,
+      findable: meta.findable,
       family: label?.family ?? familyOf(meta, expect, mapping),
       summary: label?.summary ?? meta.comment ?? "",
-      defects: label?.defects ?? defectsFrom(meta, expect, mapping),
+      defects,
       input: inputPath,
       module: resolveModule(join(modulesRoot, meta.module), meta, modulesRoot),
       language: meta.language,
@@ -71,6 +80,21 @@ export function loadCorpusData({ mapping, root, modulesRoot, inventory }) {
     });
   }
   return { corpora, modulesRoot, bounds: inventory.bounds };
+}
+
+function actionableFragments(defect, expect) {
+  const reason = defect.expect_reason ?? defect.expect_suspicion ?? null;
+  if (reason) {
+    const direct =
+      expect.diagnostic_message_contains?.[reason] ??
+      expect.diagnostic_message_contains?.[reason.split("/").at(-1)];
+    if (Array.isArray(direct)) return direct;
+    const suspicion = (expect.suspicions ?? []).find(
+      (item) => item.kind === reason,
+    );
+    if (suspicion?.message_contains?.length) return suspicion.message_contains;
+  }
+  return defect.command === "validate" ? (expect.validate_contains ?? []) : [];
 }
 
 /** Corpus-wide advisory rulings, authored once in corpus.yaml. */

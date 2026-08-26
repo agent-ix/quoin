@@ -34,9 +34,11 @@ export function comparability(report, previous) {
     previous.provenance?.declaration?.digest ?? null,
   );
   check(
-    "provenance.corpus",
-    report.provenance?.corpus ?? null,
-    previous.provenance?.corpus ?? null,
+    "provenance.corpus_input",
+    report.provenance?.corpus_input ?? report.provenance?.corpus ?? null,
+    report.provenance?.corpus_input
+      ? previous.provenance?.corpus_input
+      : previous.provenance?.corpus,
   );
   check("corpora", report.corpora ?? null, previous.corpora ?? null);
   check(
