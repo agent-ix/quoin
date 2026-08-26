@@ -68,7 +68,7 @@
       "method": "findings naming a row id or a document line, over findings emitted, from scoreActionability. A finding you cannot act on is a finding nobody acts on, whatever its precision",
       "direction": "higher-is-better",
       "baseline": 3.02,
-      "baseline_note": "Battletest pass 2 measured 15 of 496 (3.02%). Tier 1 measured 2/20 (10.0%) over 21 scored cases, 2/42 (4.8%) over 34, and 92/487 (18.9%) over the current 97-case corpus after structured diagnostic lines were preserved. These populations are recorded separately, never presented as one trend (quoin#239)."
+      "baseline_note": "Battletest pass 2 measured 15 of 496 (3.02%). Tier 1 measured 2/20 (10.0%) over 21 scored cases, 2/42 (4.8%) over 34, 92/487 (18.9%) over 97 after structured diagnostic lines were preserved, and 139/760 (18.3%) over the current 154-case corpus. These populations are recorded separately, never presented as one trend (quoin#239)."
     },
     "cost_per_confirmed_insight": {
       "measurement_plan": "spec/assurance/MP-206-confirmed-insight-cost.md",
