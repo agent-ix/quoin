@@ -1,7 +1,7 @@
 {
   "provenance": {
-    "engine": "quire 0.30.2 (engine e5a6ccc)",
-    "corpus": "a6ce22cb2a6bb207cf8afa0ce98949bdbb3cdd98",
+    "engine": "quire 0.30.2 (engine f18abe3)",
+    "corpus": "1f84c7a39d5fcf80da22debf59ecad1bedbf9d1f",
     "declaration": {
       "root": "corpus/modules",
       "digest": "sha256:819807f757c7c6468be257c82c2d23bd5210f451eb3811c63b5ff5fa8d04b403",
@@ -19,23 +19,24 @@
     {
       "family": "archetype-matches-nothing",
       "truePositives": 3,
-      "falsePositives": 316,
+      "falsePositives": 344,
       "misses": 0,
       "precision": 1,
       "shape": "advisory",
       "recall": 1,
       "precision_basis": {
         "precision": 1,
-        "truePositives": 3,
+        "truePositives": 347,
         "falsePositives": 0,
-        "unadjudicated": 316,
-        "rulings": 9
+        "unadjudicated": 0,
+        "byStanding": 344,
+        "rulings": 357
       }
     },
     {
       "family": "catch-all-universal",
       "truePositives": 2,
-      "falsePositives": 66,
+      "falsePositives": 72,
       "misses": 0,
       "precision": 1,
       "shape": "advisory",
@@ -44,7 +45,8 @@
         "precision": 1,
         "truePositives": 2,
         "falsePositives": 0,
-        "unadjudicated": 66,
+        "unadjudicated": 72,
+        "byStanding": 0,
         "rulings": 4
       }
     },
@@ -101,6 +103,15 @@
       "precision": null,
       "shape": "defect",
       "recall": 0
+    },
+    {
+      "family": "section-holds-no-table",
+      "truePositives": 1,
+      "falsePositives": 0,
+      "misses": 0,
+      "precision": 1,
+      "shape": "defect",
+      "recall": 1
     },
     {
       "family": "section-matches-nothing",
@@ -175,25 +186,25 @@
       "reason": "no-symbol-bound"
     }
   ],
-  "positional": 25,
-  "finding_localisation_rate": 0.862,
+  "positional": 26,
+  "finding_localisation_rate": 0.867,
   "minting.section_hit_rate": {
-    "rate": 0.962,
-    "matched": 151,
-    "examined": 157,
-    "cases_reporting": 80
+    "rate": 0.965,
+    "matched": 165,
+    "examined": 171,
+    "cases_reporting": 87
   },
   "actionability": {
     "actionable": 2,
-    "total": 417,
-    "rate": 0.005
+    "total": 452,
+    "rate": 0.004
   },
   "cost_per_confirmed_insight": {
     "tokens": null,
-    "toolCalls": 162,
-    "truePositives": 29,
+    "toolCalls": 176,
+    "truePositives": 30,
     "tokensPer": null,
-    "toolCallsPer": 5.59
+    "toolCallsPer": 5.87
   },
   "sentinel.silent_zero": {
     "count": 0,
@@ -222,32 +233,33 @@
       }
     ]
   },
-  "corpora": 80,
+  "corpora": 87,
   "by_language": [
     {
       "language": "python",
-      "corpora": 18,
+      "corpora": 20,
       "families": [
         {
           "family": "archetype-matches-nothing",
           "truePositives": 1,
-          "falsePositives": 72,
+          "falsePositives": 80,
           "misses": 0,
           "precision": 1,
           "shape": "advisory",
           "recall": 1,
           "precision_basis": {
             "precision": 1,
-            "truePositives": 1,
+            "truePositives": 81,
             "falsePositives": 0,
-            "unadjudicated": 72,
-            "rulings": 9
+            "unadjudicated": 0,
+            "byStanding": 80,
+            "rulings": 357
           }
         },
         {
           "family": "catch-all-universal",
           "truePositives": 0,
-          "falsePositives": 18,
+          "falsePositives": 20,
           "misses": 0,
           "precision": null,
           "shape": "advisory",
@@ -256,7 +268,8 @@
             "precision": null,
             "truePositives": 0,
             "falsePositives": 0,
-            "unadjudicated": 18,
+            "unadjudicated": 20,
+            "byStanding": 0,
             "rulings": 4
           }
         },
@@ -300,28 +313,29 @@
     },
     {
       "language": "rust",
-      "corpora": 42,
+      "corpora": 45,
       "families": [
         {
           "family": "archetype-matches-nothing",
           "truePositives": 1,
-          "falsePositives": 164,
+          "falsePositives": 176,
           "misses": 0,
           "precision": 1,
           "shape": "advisory",
           "recall": 1,
           "precision_basis": {
             "precision": 1,
-            "truePositives": 1,
+            "truePositives": 177,
             "falsePositives": 0,
-            "unadjudicated": 164,
-            "rulings": 9
+            "unadjudicated": 0,
+            "byStanding": 176,
+            "rulings": 357
           }
         },
         {
           "family": "catch-all-universal",
           "truePositives": 2,
-          "falsePositives": 28,
+          "falsePositives": 30,
           "misses": 0,
           "precision": 1,
           "shape": "advisory",
@@ -330,7 +344,8 @@
             "precision": 1,
             "truePositives": 2,
             "falsePositives": 0,
-            "unadjudicated": 28,
+            "unadjudicated": 30,
+            "byStanding": 0,
             "rulings": 4
           }
         },
@@ -389,6 +404,15 @@
           "recall": 0
         },
         {
+          "family": "section-holds-no-table",
+          "truePositives": 1,
+          "falsePositives": 0,
+          "misses": 0,
+          "precision": 1,
+          "shape": "defect",
+          "recall": 1
+        },
+        {
           "family": "section-matches-nothing",
           "truePositives": 2,
           "falsePositives": 0,
@@ -437,28 +461,29 @@
     },
     {
       "language": "typescript",
-      "corpora": 20,
+      "corpora": 22,
       "families": [
         {
           "family": "archetype-matches-nothing",
           "truePositives": 1,
-          "falsePositives": 80,
+          "falsePositives": 88,
           "misses": 0,
           "precision": 1,
           "shape": "advisory",
           "recall": 1,
           "precision_basis": {
             "precision": 1,
-            "truePositives": 1,
+            "truePositives": 89,
             "falsePositives": 0,
-            "unadjudicated": 80,
-            "rulings": 9
+            "unadjudicated": 0,
+            "byStanding": 88,
+            "rulings": 357
           }
         },
         {
           "family": "catch-all-universal",
           "truePositives": 0,
-          "falsePositives": 20,
+          "falsePositives": 22,
           "misses": 0,
           "precision": null,
           "shape": "advisory",
@@ -467,7 +492,8 @@
             "precision": null,
             "truePositives": 0,
             "falsePositives": 0,
-            "unadjudicated": 20,
+            "unadjudicated": 22,
+            "byStanding": 0,
             "rulings": 4
           }
         },
@@ -511,5 +537,5 @@
     }
   ],
   "pending": [],
-  "findings": 417
+  "findings": 452
 }

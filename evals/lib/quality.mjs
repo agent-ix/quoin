@@ -241,8 +241,8 @@ function scopedPrecision(family, scored, adjudication) {
   const ruling = adjudication[family] ?? { present: [], absent: [] };
   // A ruling governs a finding when they name the same case AND the ruling is
   // either unscoped or names the declaration that raised it.
-  const governs = (rules, finding) =>
-    rules.some(
+  const matching = (rules, finding) =>
+    rules.find(
       (r) =>
         r.corpus === finding.corpus &&
         (r.scope === null || r.scope === finding.declaration),
@@ -250,22 +250,42 @@ function scopedPrecision(family, scored, adjudication) {
   let truePositives = 0;
   let falsePositives = 0;
   let unadjudicated = 0;
+  // Of the true positives, how many were ruled by a STANDING sentence about
+  // the whole corpus rather than by the fixture's own `expect.yaml`. Reported
+  // because they are different strengths of evidence: the first measurement
+  // after `archetype-matches-nothing` gained a standing ruling read precision
+  // 1.00 over 323 firings, of which 3 were per-case and 320 came from one
+  // sentence. Averaging those into a single figure is how a rate stops meaning
+  // what its name says.
+  let byStanding = 0;
   for (const finding of scored) {
     if (finding.family !== family) continue;
     // A finding with no case attribution cannot be ruled on at all. Counted as
     // unadjudicated rather than dropped: an unscored finding nobody sees is a
     // finding nobody can question, which is the rule the collateral pass is
     // held to a few lines up.
-    if (finding.corpus === undefined) unadjudicated += 1;
-    else if (governs(ruling.absent ?? [], finding)) falsePositives += 1;
-    else if (governs(ruling.present ?? [], finding)) truePositives += 1;
-    else unadjudicated += 1;
+    if (finding.corpus === undefined) {
+      unadjudicated += 1;
+      continue;
+    }
+    if (matching(ruling.absent ?? [], finding)) {
+      falsePositives += 1;
+      continue;
+    }
+    const hit = matching(ruling.present ?? [], finding);
+    if (hit) {
+      truePositives += 1;
+      if (hit.standing) byStanding += 1;
+    } else {
+      unadjudicated += 1;
+    }
   }
   return {
     precision: ratio(truePositives, truePositives + falsePositives),
     truePositives,
     falsePositives,
     unadjudicated,
+    byStanding,
     // The rulings that exist AT ALL, whether or not the family fired under
     // them. A family can be adjudicated on ten cases and fire under none of
     // them, and that is a different state from one nobody has written a rule

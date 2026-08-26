@@ -335,6 +335,75 @@ describe("finding precision and recall", () => {
     expect(adv.precision_basis!.unadjudicated).toBe(0);
   });
 
+  it("TC-1001 a STANDING ruling covers only the declarations it names", () => {
+    // TC-1001
+    // The first measurement of `unadjudicated` read 316 of 319 for
+    // `archetype-matches-nothing`, and the obvious way to move that number is
+    // wrong: adding the token to seventy-six `expect.yaml` files would be 300
+    // edits made to satisfy a counter. The fact is ONE fact — this corpus binds
+    // the real ecosystem declaration, which declares `Inspections`,
+    // `SuiteRegistry`, `NFR` and `StR` targets that no three-file fixture
+    // carries — so `corpus.yaml` states it once and the runner reads it.
+    //
+    // SCOPED, never a wildcard. `test-case` is deliberately outside the ruling:
+    // it is the declaration quire-rs#304 is about, so a firing there is still
+    // something somebody has to rule on, and must stay counted.
+    const findings = [
+      { family: "adv", corpus: "a", declaration: "suite" },
+      { family: "adv", corpus: "a", declaration: "inspection" },
+      { family: "adv", corpus: "a", declaration: "test-case" },
+    ];
+    const standing = {
+      adv: {
+        present: [
+          { corpus: "a", scope: "suite" },
+          { corpus: "a", scope: "inspection" },
+        ],
+        absent: [],
+      },
+    };
+    const { families } = scoreFindings(
+      findings,
+      [],
+      { adv: "advisory" },
+      standing,
+    );
+    const adv = families.find((f) => f.family === "adv")!;
+    expect(adv.precision_basis!.truePositives).toBe(2);
+    expect(adv.precision_basis!.falsePositives).toBe(0);
+    // The `test-case` firing survives the ruling and stays counted.
+    expect(adv.precision_basis!.unadjudicated).toBe(1);
+  });
+
+  it("TC-1002 a standing ruling is counted separately from a per-case one", () => {
+    // TC-1002
+    // Different strengths of evidence. The first run after
+    // `archetype-matches-nothing` gained a standing ruling read precision 1.00
+    // over 323 firings — of which 3 were the fixtures' own `expect.yaml` and
+    // 320 came from ONE sentence in `corpus.yaml`. A single figure over both
+    // reads as "right 323 times", which is not the claim the ruling makes.
+    const { families } = scoreFindings(
+      [
+        { family: "adv", corpus: "a", declaration: "suite" },
+        { family: "adv", corpus: "a", declaration: "test-case" },
+      ],
+      [],
+      { adv: "advisory" },
+      {
+        adv: {
+          present: [
+            { corpus: "a", scope: "suite", standing: true },
+            { corpus: "a", scope: "test-case" },
+          ],
+          absent: [],
+        },
+      },
+    );
+    const basis = families.find((f) => f.family === "adv")!.precision_basis!;
+    expect(basis.truePositives).toBe(2);
+    expect(basis.byStanding).toBe(1);
+  });
+
   it("TC-987 a firing nobody ruled on is counted and published, never folded into the null", () => {
     // TC-987
     // What #234 shipped was a bare `null`, which reads as "nothing to see". The

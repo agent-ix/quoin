@@ -508,6 +508,21 @@ export function loadCorpus(
  * when its rule is missing is indistinguishable from one that enforced it and
  * found nothing. `bounds.py:167-173` refuses on the same grounds.
  */
+function standingAdjudications(root) {
+  // Read from the CORPUS declaration, not restated here. A ruling about the
+  // corpus belongs in the corpus, and a second copy in the consumer is the
+  // drift `variantForbidden` was written to avoid one function down.
+  //
+  // ABSENT IS EMPTY, not a hard failure — unlike `variant_forbidden`, whose
+  // absence means a rule is silently unenforced. A corpus that has ruled on
+  // nothing has ruled on nothing, and every firing stays counted as
+  // unadjudicated, which is the honest default and the loud one.
+  const declPath = join(root, "corpus.yaml");
+  if (!existsSync(declPath)) return [];
+  const decl = parseYaml(readFileSync(declPath, "utf8")) ?? {};
+  return decl.standing_adjudications ?? [];
+}
+
 function variantForbidden(root) {
   const declPath = join(root, "corpus.yaml");
   if (!existsSync(declPath)) {
@@ -1072,8 +1087,29 @@ function familyOf(meta, expect, mapping) {
  * a third reader got wrong by treating a precisely-written fixture as claiming
  * no token at all.
  */
-export function adjudicationOf(corpora, mapping) {
+export function adjudicationOf(corpora, mapping, standing = []) {
   const out = {};
+  // STANDING RULINGS — one sentence about the whole corpus, rather than the
+  // same edit made in seventy-six files (agent-ix/quoin#245).
+  //
+  // The first measurement of `unadjudicated` read 316 of 319 for
+  // `archetype-matches-nothing`, and the obvious way to move that number is
+  // wrong: adding the token to every `expect.yaml` would be 300 edits made to
+  // satisfy a counter. The fact is one fact — this corpus binds the REAL
+  // ecosystem declaration, which declares `Inspections`, `SuiteRegistry`, `NFR`
+  // and `StR` targets that no three-file fixture carries — so the corpus states
+  // it once, in `corpus.yaml`, and this reads it.
+  //
+  // SCOPED, never a wildcard. `test-case` is deliberately not in that list: it
+  // is the declaration quire-rs#304 is about, so a firing there is still
+  // something somebody has to rule on, and still counted.
+  const ruled = new Map();
+  for (const rule of standing) {
+    if (rule?.verdict !== "correct" || !rule?.reason) continue;
+    const family = familyForReason(mapping, rule.reason);
+    if (!family) continue;
+    ruled.set(family, new Set(rule.declarations ?? []));
+  }
   const add = (side, reason, name) => {
     const family = familyForReason(mapping, reason);
     // An unmappable reason is NOT silently dropped here — `assertReasonsMapped`
@@ -1101,6 +1137,26 @@ export function adjudicationOf(corpora, mapping) {
   for (const c of corpora) {
     for (const reason of c.rules?.present ?? []) add("present", reason, c.name);
     for (const reason of c.rules?.absent ?? []) add("absent", reason, c.name);
+    // A standing ruling applies to EVERY case, scoped to the declarations it
+    // names — recorded per case so the resulting `truePositives` count says how
+    // many firings it actually covered, rather than being an invisible subtraction.
+    for (const [family, declarations] of ruled) {
+      for (const scope of declarations) {
+        out[family] ??= { present: [], absent: [] };
+        if (
+          !out[family].present.some(
+            (r) => r.corpus === c.name && r.scope === scope,
+          )
+        ) {
+          // MARKED as standing. A ruling made once about the whole corpus and
+          // a ruling written into one fixture's `expect.yaml` are different
+          // strengths of evidence, and a precision of 1.00 over 323 firings
+          // reads as "right 323 times" when 320 of them came from one
+          // sentence. The report separates them rather than averaging them.
+          out[family].present.push({ corpus: c.name, scope, standing: true });
+        }
+      }
+    }
   }
   return out;
 }
@@ -1443,7 +1499,11 @@ function main() {
   // over these and nothing else; every other firing is counted as
   // `unadjudicated` and published rather than folded into a blank null
   // (agent-ix/quoin#245).
-  const adjudication = adjudicationOf(labels.corpora, mapping);
+  const adjudication = adjudicationOf(
+    labels.corpora,
+    mapping,
+    standingAdjudications(join(ROOT, "corpus")),
+  );
   const score = scoreFindings(scoredFindings, flat, shapes, adjudication);
   const silentZeroes = silentZeros(payloads);
   report = {
@@ -1792,9 +1852,12 @@ function familyRow(f, indent) {
     `${pct(f.precision)}  ${pct(f.recall)}`;
   const basis = f.precision_basis;
   if (!basis) return row;
+  const ruled = basis.truePositives + basis.falsePositives;
   return (
-    `${row}   advisory: prec over ${basis.truePositives + basis.falsePositives}` +
-    ` ruled firing${basis.truePositives + basis.falsePositives === 1 ? "" : "s"}` +
+    `${row}   advisory: prec over ${ruled} ruled firing${ruled === 1 ? "" : "s"}` +
+    (basis.byStanding
+      ? ` (${basis.byStanding} by a standing ruling, ${ruled - basis.byStanding} per case)`
+      : "") +
     `, ${basis.unadjudicated} UNADJUDICATED`
   );
 }
