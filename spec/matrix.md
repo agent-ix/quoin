@@ -468,6 +468,9 @@ generated tests under `tests/props/` and `Unit` for the rest.
 | TC-1069 | A wired gate with an explicit non-zero failure path remains silent (#224) | Unit | P0 | FR-043-AC-20 | ✅ |
 | TC-1070 | A wired counting script with no explicit requirement claim remains silent (#224) | Unit | P0 | FR-043-AC-20 | ✅ |
 | TC-1071 | The shipped `quoin validate --json` command emits the same located finding as the validator and remains advisory unless `--strict` is selected (#224) | Integration | P0 | FR-043-AC-20 | ✅ |
+| TC-1072 | Every Tier-2 answer-key entry names one production source and signal; an evaluated source returning no match scores as a miss (#203) | Unit | P0 | FR-043-AC-21 | ✅ |
+| TC-1073 | An unavailable Tier-2 source is reported by entry, source and missing premise; it is neither a miss nor a clean result (#203) | Unit | P0 | FR-043-AC-21 | ✅ |
+| TC-1074 | The Tier-2 registry executes Quire coverage and Quoin validate, and names evidence audit as not evaluated when the pinned store has no suite-to-obligation join (#203) | Integration | P0 | FR-043-AC-21 | ✅ |
 | TC-926 | Every metric in the dictionary declares `unit`, `population` and `method`; one missing any of the three is rejected at load rather than reported with a gap | Unit | P0 | FR-043-AC-1 | ✅ |
 | TC-927 | `finding_precision`/`finding_recall` are declared per defect family, each keyed on a family the corpora label, so no score is reported over an unlabelled population | Unit | P0 | FR-043-AC-2 | ✅ |
 | TC-928 | `span_grounding_rate` is declared with the pass-2 figure (0 of 65 specific-shape records) as its starting baseline | Unit | P0 | FR-043-AC-3 | ✅ |

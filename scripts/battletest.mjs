@@ -20,12 +20,14 @@
 
 import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
+import { delimiter, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 const ANSWER_KEY = join(ROOT, "bench", "answer-key.json");
 const BASELINE = join(ROOT, "bench", "battletest-baseline.json");
+const QUOIN = join(ROOT, "bin", "quoin.js");
+const COVERAGE_SOURCE = "quire.coverage";
 
 /** `quire coverage --json` over one scope, or a stated reason it could not run. */
 function coverage(quire, scope, module) {
@@ -57,20 +59,49 @@ function coverage(quire, scope, module) {
  * A finding counts as detected when the payload carries the signal the key
  * says it should — `expect_reason` in diagnostics, `expect_suspicion` in
  * suspicions, `expect_metric` at its expected value. A key entry that declares
- * no signal is UNDETECTABLE BY CONSTRUCTION and is reported as such, never
- * counted as a miss: AK-006 and AK-007 have no mechanized detector yet, and
- * scoring them as failures would make the number move when nothing changed.
+ * no signal is NOT EVALUATED BY THIS RUNNER and is reported as such, never
+ * counted as a miss. That state says nothing about whether another production
+ * command can detect the family (agent-ix/quoin#203).
  */
-export function scoreAgainstKey(payload, key) {
-  const reasons = new Set((payload.diagnostics ?? []).map((d) => d.reason));
-  const suspicions = new Set((payload.suspicions ?? []).map((s) => s.kind));
-  const metrics = new Map((payload.metrics ?? []).map((m) => [m.name, m]));
-
+export function scoreAgainstSources(sources, key) {
   const detected = [];
   const missed = [];
   const notMechanized = [];
+  const notEvaluated = [];
 
   for (const finding of key.findings) {
+    if (
+      finding.expect_metric &&
+      (finding.expect_value === undefined ||
+        finding.expect_value === null ||
+        Number.isNaN(Number(finding.expect_value)))
+    ) {
+      throw new Error(
+        `answer key ${finding.id}: declares expect_metric ` +
+          `"${finding.expect_metric}" with no usable expect_value ` +
+          `(got ${JSON.stringify(finding.expect_value)}). A malformed entry ` +
+          `must fail the run, never score as a miss.`,
+      );
+    }
+
+    const sourceName = finding.source ?? COVERAGE_SOURCE;
+    const source = sources[sourceName];
+    if (!source?.ok) {
+      notMechanized.push(finding.id);
+      notEvaluated.push({
+        id: finding.id,
+        source: sourceName,
+        reason: source?.reason ?? "the answer key names no runnable source",
+      });
+      continue;
+    }
+
+    const payload = source.payload;
+    const reasons = new Set((payload.diagnostics ?? []).map((d) => d.reason));
+    const suspicions = new Set((payload.suspicions ?? []).map((s) => s.kind));
+    const metrics = new Map((payload.metrics ?? []).map((m) => [m.name, m]));
+    const findings = new Set((payload.findings ?? []).map((f) => f.kind));
+
     if (finding.expect_reason) {
       (reasons.has(finding.expect_reason) ? detected : missed).push(finding.id);
     } else if (finding.expect_suspicion) {
@@ -78,28 +109,21 @@ export function scoreAgainstKey(payload, key) {
         finding.id,
       );
     } else if (finding.expect_metric) {
-      // A key entry naming a metric with no expected value is MALFORMED, not
-      // missed. `Number(undefined)` is NaN, every comparison against it is
-      // false, and the finding scored missed forever -- reading as a toolchain
-      // regression rather than a typo. AK-003 shipped in exactly that state.
-      if (
-        finding.expect_value === undefined ||
-        finding.expect_value === null ||
-        Number.isNaN(Number(finding.expect_value))
-      ) {
-        throw new Error(
-          `answer key ${finding.id}: declares expect_metric ` +
-            `"${finding.expect_metric}" with no usable expect_value ` +
-            `(got ${JSON.stringify(finding.expect_value)}). A malformed entry ` +
-            `must fail the run, never score as a miss.`,
-        );
-      }
       const metric = metrics.get(finding.expect_metric);
       const hit =
         metric && Number(metric.value) === Number(finding.expect_value);
       (hit ? detected : missed).push(finding.id);
+    } else if (finding.expect_finding) {
+      (findings.has(finding.expect_finding) ? detected : missed).push(
+        finding.id,
+      );
     } else {
       notMechanized.push(finding.id);
+      notEvaluated.push({
+        id: finding.id,
+        source: sourceName,
+        reason: "the answer key declares no signal to score",
+      });
     }
   }
   const denominator = detected.length + missed.length;
@@ -107,12 +131,18 @@ export function scoreAgainstKey(payload, key) {
     detected: detected.sort(),
     missed: missed.sort(),
     notMechanized: notMechanized.sort(),
+    notEvaluated: notEvaluated.sort((a, b) => compare(a.id, b.id)),
     // `null`, not 0, when nothing is mechanized — 0/0 is not 0% recall.
     recall:
       denominator === 0
         ? null
         : Number((detected.length / denominator).toFixed(3)),
   };
+}
+
+/** Backward-compatible coverage-only scorer used by focused unit tests. */
+export function scoreAgainstKey(payload, key) {
+  return scoreAgainstSources({ [COVERAGE_SOURCE]: { ok: true, payload } }, key);
 }
 
 /** Compare a run against the baseline. A regression is a finding LOST. */
@@ -128,13 +158,17 @@ export function diff(previous, current) {
 }
 
 export function render(score, delta) {
+  const notEvaluated = score.notEvaluated ?? [];
   const lines = [
     `answer-key findings: ${score.detected.length + score.missed.length + score.notMechanized.length}`,
     `  detected      ${score.detected.length} ${fmt(score.detected)}`,
     `  missed        ${score.missed.length} ${fmt(score.missed)}`,
-    `  not mechanized ${score.notMechanized.length} ${fmt(score.notMechanized)} — no detector exists; not counted as a miss`,
+    `  not evaluated  ${score.notMechanized.length} ${fmt(score.notMechanized)} — source premise unavailable; not counted as a miss`,
     `  recall        ${score.recall === null ? "n/a" : `${Math.round(score.recall * 100)}%`} (over the mechanized set)`,
   ];
+  for (const item of notEvaluated) {
+    lines.push(`  NOT EVALUATED ${item.id} via ${item.source}: ${item.reason}`);
+  }
   if (delta) {
     if (delta.gained.length) lines.push(`  gained: ${fmt(delta.gained)}`);
     if (delta.lost.length) {
@@ -180,12 +214,8 @@ function main() {
     return 2;
   }
 
-  const run = coverage(quire, corpus, module);
-  if (!run.ok) {
-    console.error(`battletest: ${run.reason}`);
-    return 2;
-  }
-  const score = scoreAgainstKey(run.payload, key);
+  const sources = collectTier2Sources({ quire, corpus, module });
+  const score = scoreAgainstSources(sources, key);
   const previous = existsSync(BASELINE)
     ? JSON.parse(readFileSync(BASELINE, "utf8"))
     : null;
@@ -193,6 +223,12 @@ function main() {
   console.log(render(score, delta));
 
   if (update) {
+    if (score.notEvaluated.length > 0) {
+      console.error(
+        "\nrefusing to baseline a Tier-2 run with unevaluated answer-key entries",
+      );
+      return 2;
+    }
     mkdirSync(dirname(BASELINE), { recursive: true });
     writeFileSync(
       BASELINE,
@@ -201,7 +237,74 @@ function main() {
     console.log(`\nbaseline rewritten: bench/battletest-baseline.json`);
     return 0;
   }
-  return delta.lost.length > 0 ? 1 : 0;
+  return delta.lost.length > 0 || score.notEvaluated.length > 0 ? 1 : 0;
+}
+
+export function collectTier2Sources({
+  quire,
+  corpus,
+  module = null,
+  quoin = QUOIN,
+}) {
+  return {
+    [COVERAGE_SOURCE]: coverage(quire, corpus, module),
+    "quoin.validate": quoinValidate(quoin, corpus),
+    "quoin.evidence-audit": evidenceAudit(quoin, quire, corpus, module),
+  };
+}
+
+function quoinValidate(quoin, corpus) {
+  return jsonCommand(
+    process.execPath,
+    [quoin, "validate", "--repo", corpus, "--json"],
+    "quoin validate",
+  );
+}
+
+function evidenceAudit(quoin, quire, corpus, module) {
+  const bindings = join(corpus, "spec", "evidence", "bindings.json");
+  if (!existsSync(bindings)) {
+    return {
+      ok: false,
+      reason:
+        "spec/evidence/bindings.json is absent, so no suite-to-obligation join exists",
+    };
+  }
+  const args = [quoin, "evidence", "audit", "--repo", corpus, "--json"];
+  if (module) args.push("--module", module);
+  return jsonCommand(process.execPath, args, "quoin evidence audit", {
+    ...process.env,
+    PATH: `${dirname(resolve(quire))}${delimiter}${process.env.PATH ?? ""}`,
+  });
+}
+
+function jsonCommand(executable, args, label, env = process.env) {
+  try {
+    return {
+      ok: true,
+      payload: JSON.parse(
+        execFileSync(executable, args, {
+          encoding: "utf8",
+          env,
+          maxBuffer: 256 * 1024 * 1024,
+          stdio: ["ignore", "pipe", "pipe"],
+        }),
+      ),
+    };
+  } catch (error) {
+    const detail = String(error.stderr ?? error.message)
+      .trim()
+      .split("\n")
+      .pop();
+    return {
+      ok: false,
+      reason: `${label} failed: ${detail?.slice(0, 200) ?? "unknown"}`,
+    };
+  }
+}
+
+function compare(a, b) {
+  return a === b ? 0 : a < b ? -1 : 1;
 }
 
 function argOf(flag) {

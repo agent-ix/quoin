@@ -19,6 +19,7 @@
       "location": "declared in spec-artifacts-process; observed across 24 crates",
       "found_by_tools_at_pass_2": false,
       "found_by": "controlled experiment \u2014 copy the module, widen one regex, diff the census",
+      "source": "quire.coverage",
       "expect_reason": "no-symbol-bound",
       "now_detectable": true,
       "detectable_since": "quire-rs v0.43.0 (FR-050-AC-27)",
@@ -34,6 +35,7 @@
       "location": "spec/**/matrix/tests.md, all 12 module matrices",
       "found_by_tools_at_pass_2": false,
       "found_by": "manual \u2014 noticing that a 23% figure and a 1,292-symbol repository were inconsistent",
+      "source": "quire.coverage",
       "expect_reason": "hollow-denominator",
       "now_detectable": true,
       "detectable_since": "quire-rs v0.43.0 (FR-063-AC-5)",
@@ -49,6 +51,7 @@
       "location": "274 spec files",
       "found_by_tools_at_pass_2": false,
       "found_by": "manual \u2014 reading the per-shape breakdown the summary line omitted",
+      "source": "quire.coverage",
       "expect_metric": "coverage.specific_shaped",
       "now_detectable": true,
       "detectable_since": "quire-rs v0.43.0 (FR-050-AC-28)",
@@ -66,6 +69,7 @@
       "location": "TC-1596",
       "found_by_tools_at_pass_2": false,
       "found_by": "manual semantic review",
+      "source": "quire.coverage",
       "expect_suspicion": "vacuous-under-guard",
       "now_detectable": true,
       "detectable_since": "quire-rs main, post v0.43.0 (FR-064-AC-1)",
@@ -81,13 +85,14 @@
       "location": "TC-1598",
       "found_by_tools_at_pass_2": false,
       "found_by": "manual semantic review \u2014 pass 2's highest-value finding",
+      "source": "quire.coverage",
       "expect_suspicion": "oracle-resembles-implementation",
       "now_detectable": false,
       "detectable_since": null,
       "fixed_by": null,
       "detection_strength": "none",
       "tracked_by": "agent-ix/quire-rs#236",
-      "$strength_note": "Was `now_detectable: \"partially\"` with a `detectable_since` and a `fixed_by`. All three were wrong, and they were wrong in the direction that flatters the toolchain. The COMPARISON ships and is unit-tested (`quire-rs/src/skeptic.rs`, FR-064-AC-2); the join from an oracle span to the implementation it judges is not wired, and `grep -rn oracle_copies src/` returns the definition and two unit tests \u2014 no production caller. Confirmed on the tier-1 `oracle-copy` corpus: the engine reports nothing. `partially` read as 'some of it fires', and none of it does, so `detectable_since` and `fixed_by` are null: a capability nothing can reach has no date it became available and no PR that delivered it. agent-ix/quire-rs#236 owns the join."
+      "$strength_note": "The production detector now fires on the three-language controlled oracle-copy family at engine a14dcb2. That does not make this adjudicated finding detected: a real battletest run against the pinned filament-ide-rs fc5d644 tree missed AK-005 while detecting another suspicion, so the channel was read and this locus was absent. `now_detectable`, `detectable_since`, `fixed_by` and strength remain false/null/null/none for the specific answer-key finding; agent-ix/quire-rs#236 was reopened on that measured distinction."
     },
     {
       "id": "AK-006",
@@ -97,12 +102,14 @@
       "location": "pass-2 semantic review, SR-155",
       "found_by_tools_at_pass_2": false,
       "found_by": "manual semantic review",
+      "source": "quoin.evidence-audit",
+      "expect_finding": "mocked-confirmation",
       "now_detectable": false,
       "detectable_since": null,
       "fixed_by": null,
       "tracked_by": "agent-ix/quoin#204",
       "detection_strength": "none",
-      "$strength_note": "`now_detectable: false` was right and its RECORDED REASON was wrong: this was written before quoin#204 shipped a detector, and nobody re-checked afterwards. The detector now exists at `src/auditor/audit.ts:241` and still cannot fire \u2014 `mockedBindings` returns [] on every production call because `AuditInput.injections` is optional, no caller supplies it, and nothing in the tree produces a `MockInjection`. The 8 unit tests build `injections` inline, which is why a green suite sat over a dead path. #204 reopened."
+      "$strength_note": "Quoin 1f5fdec supplies the previously missing source producer and exact-HEAD evidence-store path, and Tier 1 detects the controlled family in Rust, Python and TypeScript. The multi-source Tier-2 runner now selects that production source, but reports AK-006 not evaluated because the pinned repository carries no Quoin suite-to-obligation bindings to join its Confirmation::allow observations to FR-017-AC-7. Missing evidence is not scored as a miss or a clean result; #204 remains the family owner."
     },
     {
       "id": "AK-007",
@@ -112,12 +119,14 @@
       "location": "pass-2 semantic review",
       "found_by_tools_at_pass_2": false,
       "found_by": "manual semantic review",
+      "source": "quoin.validate",
+      "expect_finding": "gate-that-gates-nothing",
       "now_detectable": false,
       "detectable_since": null,
       "fixed_by": null,
       "tracked_by": "agent-ix/quoin#224",
       "detection_strength": "none",
-      "$strength_note": "Pointed at quoin#204 \u2014 the mocked-confirmation ticket \u2014 since it was written, so this family has never had an owner. quoin#224 filed in the re-adjudication. No detector exists anywhere in the ecosystem, and the tier-1 mapping declares `source: none` so the recall of 0 is a stated fact rather than an inferred absence."
+      "$strength_note": "Quoin 1f5fdec ships a located advisory validator and the three-language controlled family now has a real source rather than `source: none`. The Tier-2 runner executes that production command against the pinned tree and receives zero findings, so AK-007 is an observed miss rather than an unmechanized omission. #224 remains the family owner."
     }
   ],
   "detection_strength_scale": {

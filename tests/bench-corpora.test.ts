@@ -245,6 +245,29 @@ describe("tier-2 adjudicated answer key", () => {
     }
   });
 
+  test("TC-1072 every Tier-2 finding names one production source and signal", () => {
+    const sources = new Set([
+      "quire.coverage",
+      "quoin.validate",
+      "quoin.evidence-audit",
+    ]);
+    for (const finding of key.findings) {
+      expect(sources, `${finding.id} names no runnable source`).toContain(
+        finding.source,
+      );
+      const signals = [
+        "expect_reason",
+        "expect_suspicion",
+        "expect_metric",
+        "expect_finding",
+      ].filter((field) => finding[field] !== undefined);
+      expect(
+        signals,
+        `${finding.id} must declare exactly one signal`,
+      ).toHaveLength(1);
+    }
+  });
+
   test("a finding that is not yet detectable says so and names its ticket", () => {
     // The honest half. Claiming detection the toolchain does not have would
     // make the recall number a fiction, which is the exact failure this

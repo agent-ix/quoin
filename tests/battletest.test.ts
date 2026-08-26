@@ -10,10 +10,23 @@
  * RE-RUN: checking whether what was found before is still found.
  */
 
-import { readFileSync } from "node:fs";
+import {
+  chmodSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  writeFileSync,
+} from "node:fs";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { diff, render, scoreAgainstKey } from "../scripts/battletest.mjs";
+import {
+  collectTier2Sources,
+  diff,
+  render,
+  scoreAgainstKey,
+  scoreAgainstSources,
+} from "../scripts/battletest.mjs";
 
 const key = JSON.parse(
   readFileSync(join(__dirname, "..", "bench", "answer-key.json"), "utf8"),
@@ -37,15 +50,12 @@ describe("scoring against the adjudicated answer key", () => {
   });
 
   it("does not count an unmechanized finding as a miss", () => {
-    // AK-006 and AK-007 have no detector yet. Scoring them as failures would
-    // make the number move when nothing changed, and would understate recall
-    // over the set the tools can actually be judged on.
-    const score = scoreAgainstKey({}, key);
-    expect(score.notMechanized.length).toBeGreaterThan(0);
-    for (const id of score.notMechanized) {
-      expect(score.missed).not.toContain(id);
-      expect(score.detected).not.toContain(id);
-    }
+    // This is a runner-mapping state, not a claim that no production detector
+    // exists. Keep the semantic test independent of today's answer key.
+    const score = scoreAgainstKey({}, { findings: [{ id: "AK-999" }] });
+    expect(score.notMechanized).toEqual(["AK-999"]);
+    expect(score.missed).toEqual([]);
+    expect(score.detected).toEqual([]);
   });
 
   it("reports recall over the mechanized set, and null when there is none", () => {
@@ -66,6 +76,75 @@ describe("scoring against the adjudicated answer key", () => {
     );
     expect(wrong.detected).not.toContain("AK-003");
     expect(wrong.missed).toContain("AK-003");
+  });
+
+  it("TC-1072 scores an evaluated production source with no finding as a miss", () => {
+    const score = scoreAgainstSources(
+      { "quoin.validate": { ok: true, payload: { findings: [] } } },
+      {
+        findings: [
+          {
+            id: "AK-999",
+            source: "quoin.validate",
+            expect_finding: "gate-that-gates-nothing",
+          },
+        ],
+      },
+    );
+    expect(score.missed).toEqual(["AK-999"]);
+    expect(score.notEvaluated).toEqual([]);
+  });
+
+  it("TC-1073 names an unavailable source and does not coerce it to a miss", () => {
+    const score = scoreAgainstSources(
+      {
+        "quoin.evidence-audit": {
+          ok: false,
+          reason: "no suite-to-obligation join exists",
+        },
+      },
+      {
+        findings: [
+          {
+            id: "AK-998",
+            source: "quoin.evidence-audit",
+            expect_finding: "mocked-confirmation",
+          },
+        ],
+      },
+    );
+    expect(score.missed).toEqual([]);
+    expect(score.notMechanized).toEqual(["AK-998"]);
+    expect(render(score, null)).toContain(
+      "NOT EVALUATED AK-998 via quoin.evidence-audit: no suite-to-obligation join exists",
+    );
+  });
+
+  it("TC-1074 executes the declared Tier-2 source registry", () => {
+    const root = mkdtempSync(join(tmpdir(), "quoin-tier2-sources-"));
+    const corpus = join(root, "corpus");
+    mkdirSync(corpus);
+    const quire = join(root, "quire");
+    writeFileSync(
+      quire,
+      `#!/bin/sh\nprintf '%s' '{"diagnostics":[],"suspicions":[],"metrics":[]}'\n`,
+    );
+    chmodSync(quire, 0o755);
+    const quoin = join(root, "quoin.mjs");
+    writeFileSync(
+      quoin,
+      `process.stdout.write(JSON.stringify({findings:[{kind:"gate-that-gates-nothing"}]}));\n`,
+    );
+
+    const sources = collectTier2Sources({ quire, quoin, corpus });
+    expect(sources["quire.coverage"].ok).toBe(true);
+    expect(sources["quoin.validate"].payload.findings).toEqual([
+      { kind: "gate-that-gates-nothing" },
+    ]);
+    expect(sources["quoin.evidence-audit"]).toMatchObject({
+      ok: false,
+      reason: expect.stringContaining("bindings.json is absent"),
+    });
   });
 });
 
