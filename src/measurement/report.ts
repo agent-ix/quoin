@@ -1,11 +1,12 @@
 import { canonicalJson } from "../evidence/store.js";
 import { compareMeasurementCollections } from "./compare.js";
 import { loadMeasurementPlans } from "./plans.js";
-import { readMeasurementCollections } from "./store.js";
+import { measurementPath, readMeasurementCollections } from "./store.js";
 import type {
   MeasurementCollection,
   MeasurementComparison,
   MeasurementObservation,
+  MeasurementPlan,
 } from "./types.js";
 
 export interface MeasurementReport {
@@ -13,25 +14,41 @@ export interface MeasurementReport {
   current: Array<{
     metric: string;
     planId: string;
+    planPath: string;
+    planDefinitionVersion: string;
     stage: string;
     observation: MeasurementObservation | null;
-    collection: Pick<
-      MeasurementCollection,
-      | "collectionId"
-      | "timestamp"
-      | "toolIdentity"
-      | "toolVersion"
-      | "configDigest"
-      | "sourceRevision"
-      | "corpusRevision"
-    > | null;
+    collection:
+      | (Pick<
+          MeasurementCollection,
+          | "collectionId"
+          | "timestamp"
+          | "toolIdentity"
+          | "toolVersion"
+          | "configDigest"
+          | "sourceRevision"
+          | "corpusRevision"
+        > & { path: string })
+      | null;
   }>;
   corpusGaps: number | null;
 }
 
 export function buildMeasurementReport(repo: string): MeasurementReport {
-  const plans = loadMeasurementPlans(repo);
-  const collections = readMeasurementCollections(repo);
+  return buildMeasurementReportFrom(
+    repo,
+    loadMeasurementPlans(repo),
+    readMeasurementCollections(repo),
+  );
+}
+
+/** Build every view from one already-loaded plan and collection snapshot. */
+export function buildMeasurementReportFrom(
+  repo: string,
+  allPlans: MeasurementPlan[],
+  collections: MeasurementCollection[],
+): MeasurementReport {
+  const plans = allPlans.filter((plan) => plan.status === "active");
   const current = plans.flatMap((plan) => {
     const collection = [...collections]
       .reverse()
@@ -48,6 +65,8 @@ export function buildMeasurementReport(repo: string): MeasurementReport {
     return rows.map((observation) => ({
       metric: plan.metric,
       planId: plan.id,
+      planPath: plan.path,
+      planDefinitionVersion: plan.definitionVersion,
       stage: plan.stage,
       observation,
       collection: collection
@@ -59,6 +78,7 @@ export function buildMeasurementReport(repo: string): MeasurementReport {
             configDigest: collection.configDigest,
             sourceRevision: collection.sourceRevision,
             corpusRevision: collection.corpusRevision,
+            path: measurementPath(repo, collection.collectionId),
           }
         : null,
     }));
@@ -86,11 +106,15 @@ export function renderMeasurementReport(report: MeasurementReport): string {
         .join(", ");
       const metric = dimensions ? `${row.metric} [${dimensions}]` : row.metric;
       const value = row.observation
-        ? row.observation.state === "measured"
-          ? `${row.observation.value} ${row.observation.unit}`
-          : `not_computed: ${row.observation.reason ?? "producer did not compute it"}`
+        ? row.observation.definitionVersion !== row.planDefinitionVersion
+          ? `incomparable: definition ${row.observation.definitionVersion}; active plan ${row.planDefinitionVersion}`
+          : row.observation.state === "measured"
+            ? `${row.observation.value} ${row.observation.unit}`
+            : `not_computed: ${row.observation.reason ?? "producer did not compute it"}`
         : "not_computed: no record";
-      lines.push(`| ${metric} | ${row.planId} | ${row.stage} | ${value} |`);
+      lines.push(
+        `| ${metric} | ${row.planId} (${row.planPath}) | ${row.stage} | ${value} |`,
+      );
     }
     lines.push("");
   }
@@ -138,6 +162,10 @@ export function renderMeasurementReport(report: MeasurementReport): string {
     if (observation.state === "not_computed") {
       attention.push(
         `${name}: not computed — ${observation.reason ?? "no reason supplied"}.`,
+      );
+    } else if (observation.definitionVersion !== row.planDefinitionVersion) {
+      attention.push(
+        `${name}: stored definition ${observation.definitionVersion} does not match active plan ${row.planDefinitionVersion}; do not compare the value.`,
       );
     } else if (row.metric === "finding_recall" && observation.value === 0) {
       attention.push(

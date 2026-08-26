@@ -17,6 +17,38 @@ export function validateMeasurementCollection(
   value: unknown,
   plans: MeasurementPlan[],
 ): asserts value is MeasurementCollection {
+  validateStoredMeasurementCollection(value);
+
+  const byMetric = new Map(plans.map((plan) => [plan.metric, plan]));
+  for (const observation of value.observations) {
+    const plan = byMetric.get(observation.metric);
+    if (!plan) {
+      fail(
+        `metric \`${observation.metric}\` has no MeasurementPlan under spec/assurance; record refused`,
+      );
+    }
+    if (plan.status !== "active") {
+      fail(
+        `metric \`${observation.metric}\` plan ${plan.id} is ${plan.status}, not active`,
+      );
+    }
+    if (observation.planId !== plan.id) {
+      fail(
+        `metric \`${observation.metric}\` names plan ${observation.planId}; active plan is ${plan.id}`,
+      );
+    }
+    if (observation.definitionVersion !== plan.definitionVersion) {
+      fail(
+        `metric \`${observation.metric}\` definition ${observation.definitionVersion} does not match ${plan.definitionVersion}`,
+      );
+    }
+  }
+}
+
+/** Validate a historical stored envelope without rewriting it to the current plan. */
+export function validateStoredMeasurementCollection(
+  value: unknown,
+): asserts value is MeasurementCollection {
   if (!isObject(value)) fail("collection must be an object");
   if (value.schemaVersion !== MEASUREMENT_SCHEMA_VERSION) {
     fail(`schemaVersion must be ${MEASUREMENT_SCHEMA_VERSION}`);
@@ -42,31 +74,9 @@ export function validateMeasurementCollection(
   if (!("rawEvidence" in value))
     fail("collection requires attached `rawEvidence`");
 
-  const byMetric = new Map(plans.map((plan) => [plan.metric, plan]));
   const seen = new Set<string>();
   for (const observation of value.observations) {
     validateObservation(observation);
-    const plan = byMetric.get(observation.metric);
-    if (!plan) {
-      fail(
-        `metric \`${observation.metric}\` has no MeasurementPlan under spec/assurance; record refused`,
-      );
-    }
-    if (plan.status !== "active") {
-      fail(
-        `metric \`${observation.metric}\` plan ${plan.id} is ${plan.status}, not active`,
-      );
-    }
-    if (observation.planId !== plan.id) {
-      fail(
-        `metric \`${observation.metric}\` names plan ${observation.planId}; active plan is ${plan.id}`,
-      );
-    }
-    if (observation.definitionVersion !== plan.definitionVersion) {
-      fail(
-        `metric \`${observation.metric}\` definition ${observation.definitionVersion} does not match ${plan.definitionVersion}`,
-      );
-    }
     const key = `${observation.metric}\0${dimensionsKey(observation)}`;
     if (seen.has(key))
       fail(

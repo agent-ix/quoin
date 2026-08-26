@@ -1,7 +1,20 @@
 export { compareMeasurementCollections } from "./compare.js";
 export { loadMeasurementPlans } from "./plans.js";
 export {
+  loadActiveAssuranceProfiles,
+  type AssuranceProfileSummary,
+} from "./profiles.js";
+export {
+  buildPortfolioReport,
+  PORTFOLIO_STALE_AFTER_DAYS,
+  renderPortfolioReport,
+  renderPortfolioReportJson,
+  type PortfolioReport,
+  type PortfolioRepositoryReport,
+} from "./portfolio.js";
+export {
   buildMeasurementReport,
+  buildMeasurementReportFrom,
   comparisonFor,
   renderMeasurementComparison,
   renderMeasurementReport,
@@ -26,4 +39,5 @@ export {
 export {
   MeasurementValidationError,
   validateMeasurementCollection,
+  validateStoredMeasurementCollection,
 } from "./validate.js";

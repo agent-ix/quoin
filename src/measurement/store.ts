@@ -11,9 +11,12 @@ import {
 import { dirname, join } from "node:path";
 
 import { canonicalJson, storeRoot } from "../evidence/store.js";
-import { loadMeasurementPlans } from "./plans.js";
 import type { MeasurementCollection } from "./types.js";
-import { validateMeasurementCollection } from "./validate.js";
+import {
+  validateMeasurementCollection,
+  validateStoredMeasurementCollection,
+} from "./validate.js";
+import { loadMeasurementPlans } from "./plans.js";
 
 export function measurementsRoot(repo: string): string {
   return join(storeRoot(repo), "measurements");
@@ -59,8 +62,16 @@ export function readMeasurementCollections(
     .sort(compare)
     .map((name) => {
       const path = join(root, name);
-      const value = JSON.parse(readFileSync(path, "utf8")) as unknown;
-      validateMeasurementCollection(value, loadMeasurementPlans(repo));
+      let value: unknown;
+      try {
+        value = JSON.parse(readFileSync(path, "utf8")) as unknown;
+        validateStoredMeasurementCollection(value);
+      } catch (error) {
+        const detail = error instanceof Error ? error.message : String(error);
+        throw new Error(
+          `${path}: unreadable measurement collection: ${detail}`,
+        );
+      }
       return value;
     })
     .sort(

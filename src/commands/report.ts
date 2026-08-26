@@ -4,7 +4,10 @@ import { QuoinCommand } from "../base.js";
 import { canonicalJson } from "../evidence/store.js";
 import {
   buildMeasurementReport,
+  buildPortfolioReport,
   comparisonFor,
+  renderPortfolioReport,
+  renderPortfolioReportJson,
   renderMeasurementComparison,
   renderMeasurementReport,
   renderMeasurementReportJson,
@@ -19,9 +22,14 @@ measurement producer. Plans with no records remain visible as not_computed.`;
     "quoin report",
     "quoin report --since abc123 --format json",
     "quoin report --series finding_recall --format json",
+    "quoin report --portfolio ../quoin --portfolio ../quire-rs",
   ];
   static flags = {
     repo: Flags.string({ description: "Repository root.", default: "." }),
+    portfolio: Flags.string({
+      description: "Repository root to include; repeat for a portfolio view.",
+      multiple: true,
+    }),
     since: Flags.string({
       description: "Compare the named source revision to latest.",
     }),
@@ -39,6 +47,21 @@ measurement producer. Plans with no records remain visible as not_computed.`;
       this.error("--since and --series are mutually exclusive", { exit: 2 });
     }
     try {
+      if (flags.portfolio?.length) {
+        if (flags.since || flags.series) {
+          this.error(
+            "--portfolio cannot be combined with --since or --series",
+            { exit: 2 },
+          );
+        }
+        const portfolio = buildPortfolioReport(flags.portfolio);
+        this.log(
+          flags.format === "json"
+            ? renderPortfolioReportJson(portfolio).trimEnd()
+            : renderPortfolioReport(portfolio),
+        );
+        return;
+      }
       if (flags.series) {
         const value = seriesFor(flags.repo, flags.series);
         this.log(
