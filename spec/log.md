@@ -8,6 +8,18 @@ description: "Chronological log of structural changes to this bundle."
 
 ## History
 
+* **2026-08-26** — **CR-122**: the controlled `population-changed` report no
+  longer publishes the retracted `24.63% → 22.89%` prediction as evidence for
+  `agent-ix/quire-rs#272` (`agent-ix/qa-corpus#1`, independently re-measured in
+  `agent-ix/quire-rs#351`). Its stored counts are now **5,054/19,957 →
+  5,055/20,040**, or **25.32% → 25.22%**, and the canonical report keeps the
+  non-blocking `population_changed` warning. The reporting grader also checks
+  that this fixture's displayed percentage agrees with its own counted
+  population, so another hand-typed headline cannot contradict the record that
+  supposedly supports it. The Tier-1 corpus-input move is re-baselined with all
+  detection scores unchanged; the false record remains visible in git history,
+  not in the governed current corpus.
+
 * **2026-08-26** — **CR-121**: Tier 1 scores Quire's actionable
   `untracked-id-has-minted-children` diagnostic as the distinct, located
   `unminted-id-guidance` family (`agent-ix/quoin#253`,
