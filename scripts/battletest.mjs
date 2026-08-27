@@ -19,9 +19,15 @@
 // found, cheaply enough to do every time.
 
 import { execFileSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { delimiter, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+
+import {
+  compareTier2Baseline,
+  createTier2Baseline,
+} from "./lib/tier2-baseline.mjs";
 
 const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 const ANSWER_KEY = join(ROOT, "bench", "answer-key.json");
@@ -33,9 +39,12 @@ const COVERAGE_SOURCE = "quire.coverage";
 function coverage(quire, scope, module) {
   const args = ["coverage", "--scope", scope, "--json"];
   if (module) args.push("--module", module);
+  const command = canonicalCommand("QUIRE", args, { scope, module });
   try {
     return {
       ok: true,
+      state: "evaluated",
+      command,
       payload: JSON.parse(
         execFileSync(quire, args, {
           encoding: "utf8",
@@ -49,7 +58,12 @@ function coverage(quire, scope, module) {
       .trim()
       .split("\n")
       .pop();
-    return { ok: false, reason: stderr?.slice(0, 200) ?? "unknown" };
+    return {
+      ok: false,
+      state: "failed",
+      command,
+      reason: stderr?.slice(0, 200) ?? "unknown",
+    };
   }
 }
 
@@ -196,13 +210,9 @@ function main() {
     );
     return 2;
   }
-  const head = execFileSync(
-    "git",
-    ["-C", corpus, "rev-parse", "--short", "HEAD"],
-    {
-      encoding: "utf8",
-    },
-  ).trim();
+  const head = execFileSync("git", ["-C", corpus, "rev-parse", "HEAD"], {
+    encoding: "utf8",
+  }).trim();
   if (!head.startsWith(key.pinned_sha) && !key.pinned_sha.startsWith(head)) {
     console.error(
       `battletest: the answer key is pinned at ${key.pinned_sha} and the corpus ` +
@@ -213,31 +223,52 @@ function main() {
     );
     return 2;
   }
+  const dirty = execFileSync("git", ["-C", corpus, "status", "--porcelain"], {
+    encoding: "utf8",
+  }).trim();
+  if (dirty) {
+    console.error(
+      "battletest: the pinned corpus checkout is dirty — refusing to retain or compare output from bytes the recorded SHA does not identify.",
+    );
+    return 2;
+  }
 
   const sources = collectTier2Sources({ quire, corpus, module });
   const score = scoreAgainstSources(sources, key);
+  const candidate = createTier2Baseline({
+    provenance: tier2Provenance({ quire, corpus, module, head }),
+    sources,
+    score,
+  });
   const previous = existsSync(BASELINE)
     ? JSON.parse(readFileSync(BASELINE, "utf8"))
     : null;
-  const delta = diff(previous, score);
+  const delta = diff(previous?.score ?? previous, score);
+  const comparison = compareTier2Baseline(previous, candidate);
   console.log(render(score, delta));
+  console.log(renderBaselineComparison(comparison));
 
   if (update) {
-    if (score.notEvaluated.length > 0) {
+    const failed = Object.entries(sources).filter(
+      ([, source]) => source.state === "failed",
+    );
+    if (failed.length > 0) {
       console.error(
-        "\nrefusing to baseline a Tier-2 run with unevaluated answer-key entries",
+        `\nrefusing to baseline failed Tier-2 source(s): ${failed.map(([name]) => name).join(", ")}`,
       );
       return 2;
     }
     mkdirSync(dirname(BASELINE), { recursive: true });
-    writeFileSync(
-      BASELINE,
-      JSON.stringify({ ...score, pinned_sha: head }, null, 2) + "\n",
-    );
+    writeFileSync(BASELINE, JSON.stringify(candidate, null, 2) + "\n");
     console.log(`\nbaseline rewritten: bench/battletest-baseline.json`);
     return 0;
   }
-  return delta.lost.length > 0 || score.notEvaluated.length > 0 ? 1 : 0;
+  return !comparison.comparable ||
+    comparison.lost.length > 0 ||
+    comparison.source_regressions.length > 0 ||
+    Object.values(sources).some((source) => source.state === "failed")
+    ? 1
+    : 0;
 }
 
 export function collectTier2Sources({
@@ -258,30 +289,67 @@ function quoinValidate(quoin, corpus) {
     process.execPath,
     [quoin, "validate", "--repo", corpus, "--json"],
     "quoin validate",
+    process.env,
+    canonicalCommand("NODE", [
+      "QUOIN",
+      "validate",
+      "--repo",
+      "CORPUS",
+      "--json",
+    ]),
   );
 }
 
 function evidenceAudit(quoin, quire, corpus, module) {
   const bindings = join(corpus, "spec", "evidence", "bindings.json");
+  const command = canonicalCommand(
+    "NODE",
+    [
+      "QUOIN",
+      "evidence",
+      "audit",
+      "--repo",
+      "CORPUS",
+      "--json",
+      ...(module ? ["--module", "MODULE"] : []),
+    ],
+    { pathPrepend: "QUIRE_DIR" },
+  );
   if (!existsSync(bindings)) {
     return {
       ok: false,
+      state: "unavailable",
+      command,
       reason:
         "spec/evidence/bindings.json is absent, so no suite-to-obligation join exists",
     };
   }
   const args = [quoin, "evidence", "audit", "--repo", corpus, "--json"];
   if (module) args.push("--module", module);
-  return jsonCommand(process.execPath, args, "quoin evidence audit", {
-    ...process.env,
-    PATH: `${dirname(resolve(quire))}${delimiter}${process.env.PATH ?? ""}`,
-  });
+  return jsonCommand(
+    process.execPath,
+    args,
+    "quoin evidence audit",
+    {
+      ...process.env,
+      PATH: `${dirname(resolve(quire))}${delimiter}${process.env.PATH ?? ""}`,
+    },
+    command,
+  );
 }
 
-function jsonCommand(executable, args, label, env = process.env) {
+function jsonCommand(
+  executable,
+  args,
+  label,
+  env = process.env,
+  command = { executable, args },
+) {
   try {
     return {
       ok: true,
+      state: "evaluated",
+      command,
       payload: JSON.parse(
         execFileSync(executable, args, {
           encoding: "utf8",
@@ -298,9 +366,116 @@ function jsonCommand(executable, args, label, env = process.env) {
       .pop();
     return {
       ok: false,
+      state: "failed",
+      command,
       reason: `${label} failed: ${detail?.slice(0, 200) ?? "unknown"}`,
     };
   }
+}
+
+function tier2Provenance({ quire, corpus, module, head }) {
+  const quirePath = resolve(quire);
+  const moduleRoot = module ? resolve(module) : join(ROOT, "corpus", "modules");
+  return {
+    answer_key_digest: fileDigest(ANSWER_KEY),
+    corpus: {
+      repository: "agent-ix/filament-ide-rs",
+      revision: head,
+      checkout: "isolated-clean-worktree",
+    },
+    declaration: gitProvenance(moduleRoot),
+    tools: {
+      quire: {
+        version: execFileSync(quirePath, ["--version"], {
+          encoding: "utf8",
+        }).trim(),
+        digest: fileDigest(quirePath),
+      },
+      quoin: {
+        version: execFileSync(
+          process.execPath,
+          [join(ROOT, "bin", "quoin.js"), "--version"],
+          { encoding: "utf8" },
+        ).trim(),
+        revision: gitProvenance(ROOT).revision,
+        digest: treeDigest(join(ROOT, "dist")),
+      },
+    },
+    environment: {
+      node: process.version,
+      platform: process.platform,
+      arch: process.arch,
+    },
+  };
+}
+
+function canonicalCommand(executable, args, options = {}) {
+  const replacements = new Map([
+    [options.scope, "CORPUS"],
+    [options.module, "MODULE"],
+  ]);
+  return {
+    executable,
+    args: args.map((arg) => replacements.get(arg) ?? arg),
+    ...(options.pathPrepend
+      ? { environment: { PATH_prepend: options.pathPrepend } }
+      : {}),
+  };
+}
+
+function gitProvenance(path) {
+  const revision = execFileSync("git", ["-C", path, "rev-parse", "HEAD"], {
+    encoding: "utf8",
+  }).trim();
+  const dirty = execFileSync("git", ["-C", path, "status", "--porcelain"], {
+    encoding: "utf8",
+  }).trim();
+  return { revision, dirty: dirty !== "" };
+}
+
+function fileDigest(path) {
+  return `sha256:${createHash("sha256").update(readFileSync(path)).digest("hex")}`;
+}
+
+function treeDigest(path) {
+  const output = execFileSync("find", [path, "-type", "f", "-print0"], {
+    encoding: "buffer",
+  });
+  const files = output.toString("utf8").split("\0").filter(Boolean).sort();
+  const hash = createHash("sha256");
+  for (const file of files) {
+    hash.update(file.slice(path.length));
+    hash.update("\0");
+    hash.update(readFileSync(file));
+    hash.update("\n");
+  }
+  return `sha256:${hash.digest("hex")}`;
+}
+
+function renderBaselineComparison(comparison) {
+  const lines = [
+    `baseline comparable: ${comparison.comparable ? "yes" : "no"}`,
+  ];
+  if (comparison.input_mismatches.length) {
+    lines.push(
+      `  incomparable inputs: ${comparison.input_mismatches.join(", ")}`,
+    );
+  }
+  if (comparison.source_regressions.length) {
+    for (const item of comparison.source_regressions) {
+      lines.push(
+        `  SOURCE REGRESSION ${item.source}: ${item.before} -> ${item.after} (${item.reason})`,
+      );
+    }
+  }
+  if (comparison.source_changes.length) {
+    lines.push(
+      `  source output changed: ${comparison.source_changes.map((item) => item.source).join(", ")}`,
+    );
+  } else {
+    lines.push("  source outputs byte-identical within v1 canonical ordering");
+  }
+  return lines.join("\n");
 }
 
 function compare(a, b) {

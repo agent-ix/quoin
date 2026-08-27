@@ -27,6 +27,10 @@ import {
   scoreAgainstKey,
   scoreAgainstSources,
 } from "../scripts/battletest.mjs";
+import {
+  compareTier2Baseline,
+  createTier2Baseline,
+} from "../scripts/lib/tier2-baseline.mjs";
 
 const key = JSON.parse(
   readFileSync(join(__dirname, "..", "bench", "answer-key.json"), "utf8"),
@@ -199,5 +203,162 @@ describe("diffing against the baseline", () => {
     expect(
       render(score, diff({ detected: ["AK-001"], recall: 1 }, score)),
     ).toContain("no change against the baseline");
+  });
+});
+
+describe("retained multi-source Tier-2 baseline", () => {
+  const provenance = {
+    answer_key_digest: "sha256:key",
+    corpus: { revision: "fc5d644" },
+    declaration: { revision: "module-sha" },
+    tools: {
+      quire: { digest: "sha256:quire" },
+      quoin: { digest: "sha256:quoin" },
+    },
+    environment: { node: "v22", platform: "linux", arch: "x64" },
+  };
+
+  it("TC-1101 retains raw and normalized output for every supported producer", () => {
+    const record = createTier2Baseline({
+      provenance,
+      sources: {
+        "quire.coverage": {
+          ok: true,
+          state: "evaluated",
+          command: { executable: "QUIRE", args: ["coverage"] },
+          payload: {
+            diagnostics: [
+              { reason: "no-symbol-bound", path: "spec/FR-001.md" },
+            ],
+            suspicions: [],
+            metrics: [{ name: "coverage.backed", value: 0 }],
+          },
+        },
+        "quoin.validate": {
+          ok: true,
+          state: "evaluated",
+          command: { executable: "NODE", args: ["QUOIN", "validate"] },
+          payload: {
+            findings: [
+              {
+                kind: "gate-that-gates-nothing",
+                path: "Makefile",
+                line: 5,
+              },
+            ],
+          },
+        },
+        "quoin.evidence-audit": {
+          ok: false,
+          state: "unavailable",
+          command: { executable: "NODE", args: ["QUOIN", "evidence"] },
+          reason: "no suite-to-obligation join exists",
+        },
+      },
+      score: {
+        detected: ["AK-001"],
+        missed: ["AK-007"],
+        notMechanized: ["AK-006"],
+        notEvaluated: [{ id: "AK-006", source: "quoin.evidence-audit" }],
+        recall: 0.5,
+      },
+    });
+    expect(record.sources["quire.coverage"].raw.diagnostics).toHaveLength(1);
+    expect(
+      record.sources["quire.coverage"].normalized.findings[0].schemaVersion,
+    ).toBe("finding-envelope-v2");
+    expect(record.sources["quoin.validate"].normalized.findings).toHaveLength(
+      1,
+    );
+    expect(record.sources["quoin.evidence-audit"]).toMatchObject({
+      state: "unavailable",
+      raw: null,
+      normalized: {
+        state: "unavailable",
+        reason: "no suite-to-obligation join exists",
+      },
+    });
+  });
+
+  it("TC-1102 keeps expected unavailability outside clean and missed states", () => {
+    const baseline = createTier2Baseline({
+      provenance,
+      sources: {
+        evidence: {
+          ok: false,
+          state: "unavailable",
+          command: { executable: "NODE", args: [] },
+          reason: "bindings absent",
+        },
+      },
+      score: {
+        detected: [],
+        missed: [],
+        notMechanized: ["AK-006"],
+        notEvaluated: [{ id: "AK-006", source: "evidence" }],
+        recall: null,
+      },
+    });
+    const snapshot = structuredClone(baseline);
+    const comparison = compareTier2Baseline(
+      baseline,
+      structuredClone(baseline),
+    );
+    expect(comparison.comparable).toBe(true);
+    expect(comparison.lost).toEqual([]);
+    expect(comparison.source_regressions).toEqual([]);
+    expect(comparison.source_changes).toEqual([]);
+    expect(baseline).toEqual(snapshot);
+  });
+
+  it("TC-1103 candidate comparison reports unavailable regressions and never rewrites the baseline", () => {
+    const evaluated = createTier2Baseline({
+      provenance,
+      sources: {
+        evidence: {
+          ok: true,
+          state: "evaluated",
+          command: { executable: "NODE", args: [] },
+          payload: { findings: [] },
+        },
+      },
+      score: {
+        detected: ["AK-006"],
+        missed: [],
+        notMechanized: [],
+        notEvaluated: [],
+        recall: 1,
+      },
+    });
+    const unavailable = createTier2Baseline({
+      provenance,
+      sources: {
+        evidence: {
+          ok: false,
+          state: "unavailable",
+          command: { executable: "NODE", args: [] },
+          reason: "bindings absent",
+        },
+      },
+      score: {
+        detected: [],
+        missed: [],
+        notMechanized: ["AK-006"],
+        notEvaluated: [{ id: "AK-006", source: "evidence" }],
+        recall: null,
+      },
+    });
+    const before = JSON.stringify(evaluated);
+    const comparison = compareTier2Baseline(evaluated, unavailable);
+    expect(comparison.lost).toEqual(["AK-006"]);
+    expect(comparison.source_regressions).toEqual([
+      {
+        source: "evidence",
+        before: "evaluated",
+        after: "unavailable",
+        reason: "bindings absent",
+      },
+    ]);
+    expect(JSON.stringify(evaluated)).toBe(before);
   });
 });
