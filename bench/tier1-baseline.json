@@ -1,8 +1,8 @@
 {
   "provenance": {
     "engine": "quire 0.30.2 (engine 9126463)",
-    "corpus": "5962b694857a7ff86e04a7f0bd803e1bfab220a6",
-    "corpus_input": "sha256:d21c5a084e8977fea4fd5a2552decea7387a307730e3f13815246d0fe8d70442",
+    "corpus": "c359c1a2030a8c39579c9be2661775f728c9dff4",
+    "corpus_input": "sha256:5cd185bde9333ce3789fbfd4c09d4028d0dab6dd6cb1aab939f00659fc539291",
     "declaration": {
       "root": "corpus/modules",
       "digest": "sha256:3bc7c9ef24937e81e02286e8724755fe5596a30d1d14296b446fa2bd64fc3d3b",
