@@ -1,13 +1,13 @@
 {
   "provenance": {
     "engine": "quire 0.30.2 (engine 9126463)",
-    "corpus": "c432b0c30d2e796135b49393156ee683bd41f944",
-    "corpus_input": "sha256:5ba83a5b97f7f55161468f807cc2d9dfe01d426ceacdade40815c1d09d83296a",
+    "corpus": "5962b694857a7ff86e04a7f0bd803e1bfab220a6",
+    "corpus_input": "sha256:d21c5a084e8977fea4fd5a2552decea7387a307730e3f13815246d0fe8d70442",
     "declaration": {
       "root": "corpus/modules",
-      "digest": "sha256:ee889a91c46de7dc6beed616014cbcc1e5dc3c5de014266c679ddca533ffd7b0",
+      "digest": "sha256:3bc7c9ef24937e81e02286e8724755fe5596a30d1d14296b446fa2bd64fc3d3b",
       "modules": {
-        "ecosystem": "sha256:829e7343fd73ffd65ec6fee8653228f37f919d236f01e6219b40cc1ee559c140",
+        "ecosystem": "sha256:1e4ac802a01f9923033e1f63ecdf5c48e0f8ba477cbe168914230f03630dff97",
         "variants/dead-coverage-vocabulary": "sha256:02b809f935173c9caf70736a238313e242a713bf9003894cd55a93d2f70034cf",
         "variants/live-coverage-vocabulary": "sha256:92e0a54c19855ca4e9cd2417cb8f356b7766e4e0d1fa0256eba82be5694cd5c7",
         "variants/no-implements-declaration": "sha256:1a11fc62ef36bc6bf34887e848cf02b7c19e19a985c2c71358a68f8b798aa190",
@@ -17,8 +17,8 @@
         "variants/reference-postures": "sha256:d8b3e219d7e93bf8149807c3316a4ca87e56212e4fe36103db83d363fca0f3cb"
       },
       "sources": {
-        "spec-artifacts-process": "62d691f",
-        "spec-artifacts-iso": "3d871962b66db99a1854f40466e94ebabc7a6115"
+        "spec-artifacts-process": "995288d609a47ab5a25f300ac0fa600d390b348c",
+        "spec-artifacts-iso": "a6b1c70be8c22e9f7cb432e4410b7a3a280d0217"
       }
     }
   },
@@ -1184,17 +1184,17 @@
     {
       "family": "archetype-matches-nothing",
       "truePositives": 3,
-      "falsePositives": 593,
+      "falsePositives": 299,
       "misses": 0,
       "precision": 1,
       "shape": "advisory",
       "recall": 1,
       "precision_basis": {
         "precision": 1,
-        "truePositives": 592,
+        "truePositives": 298,
         "falsePositives": 0,
         "unadjudicated": 4,
-        "byStanding": 589,
+        "byStanding": 295,
         "rulings": 799
       }
     },
@@ -1399,7 +1399,7 @@
     "examined": 298,
     "cases_reporting": 157
   },
-  "actionability": { "actionable": 145, "total": 767, "rate": 0.189 },
+  "actionability": { "actionable": 145, "total": 473, "rate": 0.307 },
   "cost_per_confirmed_insight": {
     "tokens": null,
     "toolCalls": 1741,
@@ -1555,17 +1555,17 @@
         {
           "family": "archetype-matches-nothing",
           "truePositives": 0,
-          "falsePositives": 21,
+          "falsePositives": 13,
           "misses": 0,
           "precision": 1,
           "shape": "advisory",
           "recall": null,
           "precision_basis": {
             "precision": 1,
-            "truePositives": 17,
+            "truePositives": 9,
             "falsePositives": 0,
             "unadjudicated": 4,
-            "byStanding": 17,
+            "byStanding": 9,
             "rulings": 799
           }
         },
@@ -1614,17 +1614,17 @@
         {
           "family": "archetype-matches-nothing",
           "truePositives": 1,
-          "falsePositives": 172,
+          "falsePositives": 86,
           "misses": 0,
           "precision": 1,
           "shape": "advisory",
           "recall": 1,
           "precision_basis": {
             "precision": 1,
-            "truePositives": 173,
+            "truePositives": 87,
             "falsePositives": 0,
             "unadjudicated": 0,
-            "byStanding": 172,
+            "byStanding": 86,
             "rulings": 799
           }
         },
@@ -1753,17 +1753,17 @@
         {
           "family": "archetype-matches-nothing",
           "truePositives": 1,
-          "falsePositives": 212,
+          "falsePositives": 106,
           "misses": 0,
           "precision": 1,
           "shape": "advisory",
           "recall": 1,
           "precision_basis": {
             "precision": 1,
-            "truePositives": 213,
+            "truePositives": 107,
             "falsePositives": 0,
             "unadjudicated": 0,
-            "byStanding": 212,
+            "byStanding": 106,
             "rulings": 799
           }
         },
@@ -1919,17 +1919,17 @@
         {
           "family": "archetype-matches-nothing",
           "truePositives": 1,
-          "falsePositives": 188,
+          "falsePositives": 94,
           "misses": 0,
           "precision": 1,
           "shape": "advisory",
           "recall": 1,
           "precision_basis": {
             "precision": 1,
-            "truePositives": 189,
+            "truePositives": 95,
             "falsePositives": 0,
             "unadjudicated": 0,
-            "byStanding": 188,
+            "byStanding": 94,
             "rulings": 799
           }
         },
@@ -2053,5 +2053,5 @@
     }
   ],
   "pending": [],
-  "findings": 767
+  "findings": 473
 }
