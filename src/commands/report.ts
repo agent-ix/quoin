@@ -111,7 +111,9 @@ function renderSeries(
     lines.push(
       `- ${String(row.timestamp)} ${String(observation.state)} ` +
         `${String(observation.value)} ${String(observation.unit)} ` +
-        `(source ${String(row.sourceRevision)}, tool ${String(row.toolVersion)})`,
+        `(source ${String(row.sourceRevision)}, tool ${String(row.toolIdentity)} ` +
+        `${String(row.toolVersion)}, corpus ${String(row.corpusRevision)}, ` +
+        `gaps ${String(row.corpusGaps)}, config ${String(row.configDigest)})`,
     );
   }
   lines.push("");

@@ -10,6 +10,7 @@ import { join } from "node:path";
 
 import {
   buildMeasurementReport,
+  comparisonFor,
   compareMeasurementCollections,
   readMeasurementCollections,
   renderMeasurementComparison,
@@ -189,8 +190,30 @@ describe("generic MeasurementRecords", () => {
     expect(first).toContain("not_computed: no record");
     expect(first).toContain("Corpus gaps: not_computed");
     const comparison = renderMeasurementComparison({
-      before: "run-001",
-      after: "run-002",
+      status: "compared",
+      reason: null,
+      before: {
+        collectionId: "run-001",
+        timestamp: "2026-08-26T00:00:00Z",
+        toolIdentity: "fixture",
+        toolVersion: "1",
+        configDigest: "config-a",
+        sourceRevision: "before",
+        corpusRevision: "corpus-a",
+        corpusGaps: 0,
+        path: "/repo/run-001.json",
+      },
+      after: {
+        collectionId: "run-002",
+        timestamp: "2026-08-26T01:00:00Z",
+        toolIdentity: "fixture",
+        toolVersion: "2",
+        configDigest: "config-a",
+        sourceRevision: "after",
+        corpusRevision: "corpus-a",
+        corpusGaps: 0,
+        path: "/repo/run-002.json",
+      },
       comparisons: [
         {
           metric: "quality.example",
@@ -206,6 +229,29 @@ describe("generic MeasurementRecords", () => {
     expect(comparison).toContain("# QA measurement comparison");
     expect(comparison).toContain(
       "| quality.example | comparable | 0.5 | 0.75 | 0.25 |",
+    );
+    expect(comparison).toContain(
+      "fixture 2; source after; corpus corpus-a; gaps 0; config config-a",
+    );
+  });
+
+  test("TC-1009 a missing baseline is rendered as not_computed with current provenance", () => {
+    const root = repo();
+    writeMeasurementCollection(root, collection());
+    const report = comparisonFor(root, "missing");
+    expect(report).toMatchObject({
+      status: "not_computed",
+      reason: "no baseline measurement collection for source revision missing",
+      before: null,
+      after: {
+        collectionId: "run-001",
+        toolIdentity: "fixture producer",
+        corpusRevision: "cccccccccccccccc",
+      },
+      comparisons: [],
+    });
+    expect(renderMeasurementComparison(report)).toContain(
+      "Before: not_computed — no baseline",
     );
   });
 });

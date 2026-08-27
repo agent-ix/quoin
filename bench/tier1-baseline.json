@@ -1,8 +1,8 @@
 {
   "provenance": {
     "engine": "quire 0.30.2 (engine a14dcb2)",
-    "corpus": "f2320ed145d5c19cf8e40fdb2d6b3e4ee28e3af9",
-    "corpus_input": "sha256:33b9ce10f889478ee2b03551e87ad098ed110836c40ce6cc79abff48249fb073",
+    "corpus": "c5adeccb1a4b1bd09cbb1a0f6970fae5f011dbbc",
+    "corpus_input": "sha256:2e5b799af473bcb74614c8013b86e7de9e40f794882429168bcc4dcc4edeaecb",
     "declaration": {
       "root": "corpus/modules",
       "digest": "sha256:fba2468b01d6b4c5ce5e580195ace46d8322923436d5cfecb5a72a6186bd6a84",
@@ -22,25 +22,19 @@
   },
   "bounds": {
     "gap_count": 0,
-    "covered_count": 78,
+    "covered_count": 86,
     "covered_pending_count": 0,
     "out_of_scope_count": 18,
-    "declared_cells": 96,
+    "declared_cells": 104,
     "matrix": [
       {
         "mode": "minting",
         "case": "section-name-mismatch",
         "source": "88 repos / 3,514 TC ids (candidate census; section fix measured +83 rows, CR-118)",
         "cells": {
-          "python": {
-            "state": "covered"
-          },
-          "rust": {
-            "state": "covered"
-          },
-          "typescript": {
-            "state": "covered"
-          }
+          "python": { "state": "covered" },
+          "rust": { "state": "covered" },
+          "typescript": { "state": "covered" }
         }
       },
       {
@@ -48,15 +42,9 @@
         "case": "id-column-mismatch",
         "source": "agent-ix/identity",
         "cells": {
-          "python": {
-            "state": "covered"
-          },
-          "rust": {
-            "state": "covered"
-          },
-          "typescript": {
-            "state": "covered"
-          }
+          "python": { "state": "covered" },
+          "rust": { "state": "covered" },
+          "typescript": { "state": "covered" }
         }
       },
       {
@@ -64,15 +52,9 @@
         "case": "section-and-id-column",
         "source": "identity — section-only diagnosis is insufficient",
         "cells": {
-          "python": {
-            "state": "covered"
-          },
-          "rust": {
-            "state": "covered"
-          },
-          "typescript": {
-            "state": "covered"
-          }
+          "python": { "state": "covered" },
+          "rust": { "state": "covered" },
+          "typescript": { "state": "covered" }
         }
       },
       {
@@ -80,15 +62,9 @@
         "case": "rows-across-many-headings",
         "source": "identity (~30 headings)",
         "cells": {
-          "python": {
-            "state": "covered"
-          },
-          "rust": {
-            "state": "covered"
-          },
-          "typescript": {
-            "state": "covered"
-          }
+          "python": { "state": "covered" },
+          "rust": { "state": "covered" },
+          "typescript": { "state": "covered" }
         }
       },
       {
@@ -96,15 +72,9 @@
         "case": "section-holds-no-table",
         "source": "agent-ix/quire-rs#320 — found by adversarial review of",
         "cells": {
-          "python": {
-            "state": "covered"
-          },
-          "rust": {
-            "state": "covered"
-          },
-          "typescript": {
-            "state": "covered"
-          }
+          "python": { "state": "covered" },
+          "rust": { "state": "covered" },
+          "typescript": { "state": "covered" }
         }
       },
       {
@@ -112,15 +82,9 @@
         "case": "no-testmatrix-document",
         "source": "47 repos",
         "cells": {
-          "python": {
-            "state": "covered"
-          },
-          "rust": {
-            "state": "covered"
-          },
-          "typescript": {
-            "state": "covered"
-          }
+          "python": { "state": "covered" },
+          "rust": { "state": "covered" },
+          "typescript": { "state": "covered" }
         }
       },
       {
@@ -136,9 +100,7 @@
             "state": "out-of-scope",
             "reason": "`rust-test-name-id` reads the FUNCTION NAME, not a call title — Rust has no registration call to put a title in. The Rust shape of this defect is `detection/test-name-id-in-fn-name`, which is its own row."
           },
-          "typescript": {
-            "state": "covered"
-          }
+          "typescript": { "state": "covered" }
         }
       },
       {
@@ -150,9 +112,7 @@
             "state": "out-of-scope",
             "reason": "the declaration declares no python test-name-id form at all — see the same exclusion on `test-name-id-in-call-title`."
           },
-          "rust": {
-            "state": "covered"
-          },
+          "rust": { "state": "covered" },
           "typescript": {
             "state": "out-of-scope",
             "reason": "`typescript-test-name-id` reads the CALL TITLE, not a function name, which is the sibling row `detection/test-name-id-in-call-title`."
@@ -172,9 +132,7 @@
             "state": "out-of-scope",
             "reason": "`symbols/rust.rs` mints a `Container` for `mod`, `struct`, `enum` and `trait` and has no registration-call form at all — there is no `describe()` for a tag to sit above. The Rust shape closest to this is a tag above a `mod`, which is `attachment/tag-at-module-scope`, and that row excludes Rust for its own measured reason."
           },
-          "typescript": {
-            "state": "covered"
-          }
+          "typescript": { "state": "covered" }
         }
       },
       {
@@ -182,15 +140,9 @@
         "case": "tag-inside-string-literal",
         "source": "agent-ix/quire-rs#323 — Rust masked, Python and TypeScript did not",
         "cells": {
-          "python": {
-            "state": "covered"
-          },
-          "rust": {
-            "state": "covered"
-          },
-          "typescript": {
-            "state": "covered"
-          }
+          "python": { "state": "covered" },
+          "rust": { "state": "covered" },
+          "typescript": { "state": "covered" }
         }
       },
       {
@@ -198,16 +150,12 @@
         "case": "tag-at-module-scope",
         "source": "125 occurrences / 23 repos — python 96/18, typescript 4/3 (rust excluded, see above)",
         "cells": {
-          "python": {
-            "state": "covered"
-          },
+          "python": { "state": "covered" },
           "rust": {
             "state": "out-of-scope",
             "reason": "`symbols/rust.rs` emits NO file-level container, so a column-0 comment there sits inside no symbol at all and there is nothing for the tag to attach to wrongly. The defect requires a container that exists and cannot bind, which Rust does not have at file scope."
           },
-          "typescript": {
-            "state": "covered"
-          }
+          "typescript": { "state": "covered" }
         }
       },
       {
@@ -215,15 +163,9 @@
         "case": "tag-on-non-test-function",
         "source": "1,677 occurrences / 86 repos — python 497/47, rust 943/6, typescript 237/36",
         "cells": {
-          "python": {
-            "state": "covered"
-          },
-          "rust": {
-            "state": "covered"
-          },
-          "typescript": {
-            "state": "covered"
-          }
+          "python": { "state": "covered" },
+          "rust": { "state": "covered" },
+          "typescript": { "state": "covered" }
         }
       },
       {
@@ -231,9 +173,7 @@
         "case": "triple-quote-scope-desync",
         "source": "symbols/python.rs — FIXED by #274; regression pin. Recovery measured on the real ecosystem: py-project 102 to 151 python binding candidates, filament-parser-lib 311 to 395, and repos with no triple-quoted assignment unchanged (quire-rs 125, sqlmodel-fixtures 74), so the gain is recovery rather than inflation.",
         "cells": {
-          "python": {
-            "state": "covered"
-          },
+          "python": { "state": "covered" },
           "rust": {
             "state": "out-of-scope",
             "reason": "neither language has a triple-quoted string literal, so the scope-stack inversion this pins cannot be written in it. `symbols/rust.rs` tracks braces; the defect was a quoting state machine."
@@ -249,15 +189,9 @@
         "case": "tag-names-undeclared-section",
         "source": "1 entry / 1 repo (identity/tests/test_tenant_auth_policy.py:195) — the surviving prefix of the four `tag-names-con-inv-sc-vc` bundled; CON 155/28 decided-to-mint and gated on quire-rs#327, SC 124/7 is quire-rs#244, VC 0/0 minted since CR-037 and tagged by nobody",
         "cells": {
-          "python": {
-            "state": "covered"
-          },
-          "rust": {
-            "state": "covered"
-          },
-          "typescript": {
-            "state": "covered"
-          }
+          "python": { "state": "covered" },
+          "rust": { "state": "covered" },
+          "typescript": { "state": "covered" }
         }
       },
       {
@@ -265,15 +199,9 @@
         "case": "tag-names-bare-fr",
         "source": "714 occurrences / 50 repos in test files — python 504/38, rust 179/3, typescript 31/10",
         "cells": {
-          "python": {
-            "state": "covered"
-          },
-          "rust": {
-            "state": "covered"
-          },
-          "typescript": {
-            "state": "covered"
-          }
+          "python": { "state": "covered" },
+          "rust": { "state": "covered" },
+          "typescript": { "state": "covered" }
         }
       },
       {
@@ -281,15 +209,9 @@
         "case": "tag-names-unminted-tc",
         "source": "455 tags",
         "cells": {
-          "python": {
-            "state": "covered"
-          },
-          "rust": {
-            "state": "covered"
-          },
-          "typescript": {
-            "state": "covered"
-          }
+          "python": { "state": "covered" },
+          "rust": { "state": "covered" },
+          "typescript": { "state": "covered" }
         }
       },
       {
@@ -297,46 +219,28 @@
         "case": "real-tests-zero-tags",
         "source": "150 of 234 repos with test files carry no binding tag in any test",
         "cells": {
-          "python": {
-            "state": "covered"
-          },
-          "rust": {
-            "state": "covered"
-          },
-          "typescript": {
-            "state": "covered"
-          }
+          "python": { "state": "covered" },
+          "rust": { "state": "covered" },
+          "typescript": { "state": "covered" }
         }
       },
       {
         "mode": "detection",
         "case": "low-symbol-binding",
         "source": "agent-ix/quire-rs#359 — one of 21 candidates binds, below the declared 5% observation floor",
-        "cells": {
-          "rust": {
-            "state": "covered"
-          }
-        }
+        "cells": { "rust": { "state": "covered" } }
       },
       {
         "mode": "detection",
         "case": "obligation-row-states-nothing",
         "source": "agent-ix/quire-rs#359 — the ecosystem obligation declaration reads an empty Criteria cell",
-        "cells": {
-          "n/a": {
-            "state": "covered"
-          }
-        }
+        "cells": { "n/a": { "state": "covered" } }
       },
       {
         "mode": "detection",
         "case": "uncatalogued-verification-method",
         "source": "agent-ix/quire-rs#359 — a real obligation names a method absent from the ecosystem catalog",
-        "cells": {
-          "n/a": {
-            "state": "covered"
-          }
-        }
+        "cells": { "n/a": { "state": "covered" } }
       },
       {
         "mode": "detection",
@@ -376,15 +280,9 @@
         "case": "marker-form-mismatch",
         "source": "agent-ix/spec-artifacts-process#59",
         "cells": {
-          "python": {
-            "state": "covered"
-          },
-          "rust": {
-            "state": "covered"
-          },
-          "typescript": {
-            "state": "covered"
-          }
+          "python": { "state": "covered" },
+          "rust": { "state": "covered" },
+          "typescript": { "state": "covered" }
         }
       },
       {
@@ -392,15 +290,9 @@
         "case": "catch-all-headline",
         "source": "agent-ix/quire-rs#230",
         "cells": {
-          "python": {
-            "state": "covered"
-          },
-          "rust": {
-            "state": "covered"
-          },
-          "typescript": {
-            "state": "covered"
-          }
+          "python": { "state": "covered" },
+          "rust": { "state": "covered" },
+          "typescript": { "state": "covered" }
         }
       },
       {
@@ -412,12 +304,8 @@
             "state": "out-of-scope",
             "reason": "The ecosystem declares test-name id forms for Rust function names and TypeScript registration titles, but no Python function-name form. A Python name cannot produce the stale-name condition."
           },
-          "rust": {
-            "state": "covered"
-          },
-          "typescript": {
-            "state": "covered"
-          }
+          "rust": { "state": "covered" },
+          "typescript": { "state": "covered" }
         }
       },
       {
@@ -425,15 +313,9 @@
         "case": "greenfield-no-symbols",
         "source": "agent-ix/quire-rs#229",
         "cells": {
-          "python": {
-            "state": "covered"
-          },
-          "rust": {
-            "state": "covered"
-          },
-          "typescript": {
-            "state": "covered"
-          }
+          "python": { "state": "covered" },
+          "rust": { "state": "covered" },
+          "typescript": { "state": "covered" }
         }
       },
       {
@@ -441,15 +323,9 @@
         "case": "no-symbol-method-in-the-verification-column",
         "source": "agent-ix/quire-rs#259",
         "cells": {
-          "python": {
-            "state": "covered"
-          },
-          "rust": {
-            "state": "covered"
-          },
-          "typescript": {
-            "state": "covered"
-          }
+          "python": { "state": "covered" },
+          "rust": { "state": "covered" },
+          "typescript": { "state": "covered" }
         }
       },
       {
@@ -476,15 +352,9 @@
         "case": "tests-directory-topology",
         "source": "agent-ix/quire-rs#267",
         "cells": {
-          "python": {
-            "state": "covered"
-          },
-          "rust": {
-            "state": "covered"
-          },
-          "typescript": {
-            "state": "covered"
-          }
+          "python": { "state": "covered" },
+          "rust": { "state": "covered" },
+          "typescript": { "state": "covered" }
         }
       },
       {
@@ -492,15 +362,9 @@
         "case": "wrong-type-cell",
         "source": "agent-ix/quoin#227 — a Type cell outside the declared vocabulary",
         "cells": {
-          "python": {
-            "state": "covered"
-          },
-          "rust": {
-            "state": "covered"
-          },
-          "typescript": {
-            "state": "covered"
-          }
+          "python": { "state": "covered" },
+          "rust": { "state": "covered" },
+          "typescript": { "state": "covered" }
         }
       },
       {
@@ -512,9 +376,7 @@
             "state": "out-of-scope",
             "reason": "the detector CANNOT FIRE here by deliberate decision. `narrowing_guards_for` returns `NO_MEASURED_GUARDS` — empty — for Python and TypeScript (CR-102): neither has a binding-and-testing construct like `if let`, and what the equivalent shape is has not been measured. A fixture would assert a silence that means nothing about the defect."
           },
-          "rust": {
-            "state": "covered"
-          },
+          "rust": { "state": "covered" },
           "typescript": {
             "state": "out-of-scope",
             "reason": "same, and it is the measured half. Sharing Rust's guard list made `=> {` — a match arm in Rust, an ARROW FUNCTION in TypeScript — open a guard on every `it(\"…\", () => {…})` body: 549 suspicions from 551 candidates on `agent-ix/quoin`, sampled three, all rule, none real. The narrowing is justified independently of the count."
@@ -526,15 +388,9 @@
         "case": "oracle-copy",
         "source": "agent-ix/quoin#227 — the oracle is a copy of the code under test",
         "cells": {
-          "python": {
-            "state": "covered"
-          },
-          "rust": {
-            "state": "covered"
-          },
-          "typescript": {
-            "state": "covered"
-          }
+          "python": { "state": "covered" },
+          "rust": { "state": "covered" },
+          "typescript": { "state": "covered" }
         }
       },
       {
@@ -542,15 +398,9 @@
         "case": "mocked-confirmation",
         "source": "agent-ix/quoin#227 — the test confirms its own mock",
         "cells": {
-          "python": {
-            "state": "covered"
-          },
-          "rust": {
-            "state": "covered"
-          },
-          "typescript": {
-            "state": "covered"
-          }
+          "python": { "state": "covered" },
+          "rust": { "state": "covered" },
+          "typescript": { "state": "covered" }
         }
       },
       {
@@ -558,15 +408,9 @@
         "case": "gate-that-gates-nothing",
         "source": "agent-ix/quoin#224 — a declared, wired gate that never asserts its count",
         "cells": {
-          "python": {
-            "state": "covered"
-          },
-          "rust": {
-            "state": "covered"
-          },
-          "typescript": {
-            "state": "covered"
-          }
+          "python": { "state": "covered" },
+          "rust": { "state": "covered" },
+          "typescript": { "state": "covered" }
         }
       },
       {
@@ -574,16 +418,58 @@
         "case": "hollow-metric",
         "source": "agent-ix/quoin#227 — a ratio over input the binder could not read",
         "cells": {
-          "python": {
-            "state": "covered"
-          },
-          "rust": {
-            "state": "covered"
-          },
-          "typescript": {
-            "state": "covered"
-          }
+          "python": { "state": "covered" },
+          "rust": { "state": "covered" },
+          "typescript": { "state": "covered" }
         }
+      },
+      {
+        "mode": "reporting",
+        "case": "definition-version-changed",
+        "source": "agent-ix/quire-rs#276",
+        "cells": { "data": { "state": "covered" } }
+      },
+      {
+        "mode": "reporting",
+        "case": "config-digest-changed",
+        "source": "agent-ix/quire-rs#276",
+        "cells": { "data": { "state": "covered" } }
+      },
+      {
+        "mode": "reporting",
+        "case": "population-changed",
+        "source": "agent-ix/quire-rs#276 / agent-ix/quire-rs#272",
+        "cells": { "data": { "state": "covered" } }
+      },
+      {
+        "mode": "reporting",
+        "case": "metric-stopped-being-computed",
+        "source": "agent-ix/quire-rs#276",
+        "cells": { "data": { "state": "covered" } }
+      },
+      {
+        "mode": "reporting",
+        "case": "tool-version-differs",
+        "source": "agent-ix/quire-rs#276",
+        "cells": { "data": { "state": "covered" } }
+      },
+      {
+        "mode": "reporting",
+        "case": "incomplete-population",
+        "source": "agent-ix/quire-rs#276",
+        "cells": { "data": { "state": "covered" } }
+      },
+      {
+        "mode": "reporting",
+        "case": "identical-inputs-rerendered",
+        "source": "agent-ix/quire-rs#276",
+        "cells": { "data": { "state": "covered" } }
+      },
+      {
+        "mode": "reporting",
+        "case": "no-prior-record",
+        "source": "agent-ix/quire-rs#276",
+        "cells": { "data": { "state": "covered" } }
       }
     ]
   },
@@ -1473,46 +1359,16 @@
   ],
   "excluded": [],
   "collateral": [
-    {
-      "family": "hollow-denominator",
-      "reason": "hollow-denominator"
-    },
-    {
-      "family": "hollow-denominator",
-      "reason": "hollow-denominator"
-    },
-    {
-      "family": "hollow-denominator",
-      "reason": "hollow-denominator"
-    },
-    {
-      "family": "hollow-denominator",
-      "reason": "hollow-denominator"
-    },
-    {
-      "family": "hollow-denominator",
-      "reason": "hollow-denominator"
-    },
-    {
-      "family": "hollow-denominator",
-      "reason": "hollow-denominator"
-    },
-    {
-      "family": "hollow-denominator",
-      "reason": "hollow-denominator"
-    },
-    {
-      "family": "marker-form-mismatch",
-      "reason": "no-symbol-bound"
-    },
-    {
-      "family": "marker-form-mismatch",
-      "reason": "no-symbol-bound"
-    },
-    {
-      "family": "marker-form-mismatch",
-      "reason": "no-symbol-bound"
-    }
+    { "family": "hollow-denominator", "reason": "hollow-denominator" },
+    { "family": "hollow-denominator", "reason": "hollow-denominator" },
+    { "family": "hollow-denominator", "reason": "hollow-denominator" },
+    { "family": "hollow-denominator", "reason": "hollow-denominator" },
+    { "family": "hollow-denominator", "reason": "hollow-denominator" },
+    { "family": "hollow-denominator", "reason": "hollow-denominator" },
+    { "family": "hollow-denominator", "reason": "hollow-denominator" },
+    { "family": "marker-form-mismatch", "reason": "no-symbol-bound" },
+    { "family": "marker-form-mismatch", "reason": "no-symbol-bound" },
+    { "family": "marker-form-mismatch", "reason": "no-symbol-bound" }
   ],
   "positional": 46,
   "finding_localisation_rate": 0.852,
@@ -1522,11 +1378,7 @@
     "examined": 296,
     "cases_reporting": 153
   },
-  "actionability": {
-    "actionable": 139,
-    "total": 760,
-    "rate": 0.183
-  },
+  "actionability": { "actionable": 139, "total": 760, "rate": 0.183 },
   "cost_per_confirmed_insight": {
     "tokens": null,
     "toolCalls": 1697,

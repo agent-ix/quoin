@@ -32,7 +32,9 @@ export function loadCorpusData({ mapping, root, modulesRoot, inventory }) {
   modulesRoot ??= join(root, "modules");
   inventory = validateCanonicalInventory(inventory);
   const corpora = [];
-  for (const meta of inventory.cases) {
+  for (const meta of inventory.cases.filter(
+    (candidate) => candidate.mode !== "reporting",
+  )) {
     const expectPath = join(root, meta.expect);
     const inputPath = join(root, meta.dir, "input");
     if (!existsSync(expectPath) || !existsSync(inputPath)) {

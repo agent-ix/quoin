@@ -208,15 +208,32 @@ export function seriesFor(repo: string, metric: string): unknown {
         timestamp: collection.timestamp,
         sourceRevision: collection.sourceRevision,
         toolVersion: collection.toolVersion,
+        toolIdentity: collection.toolIdentity,
         configDigest: collection.configDigest,
+        corpusRevision: collection.corpusRevision ?? null,
+        corpusGaps: gapCount(collection),
         observation,
       })),
   );
 }
 
+export interface MeasurementCollectionReference {
+  collectionId: string;
+  timestamp: string;
+  toolIdentity: string;
+  toolVersion: string;
+  configDigest: string;
+  sourceRevision: string;
+  corpusRevision: string | null;
+  corpusGaps: number | null;
+  path: string;
+}
+
 export interface MeasurementComparisonReport {
-  before: string;
-  after: string;
+  status: "compared" | "not_computed";
+  reason: string | null;
+  before: MeasurementCollectionReference | null;
+  after: MeasurementCollectionReference | null;
   comparisons: MeasurementComparison[];
 }
 
@@ -229,14 +246,29 @@ export function comparisonFor(
     .reverse()
     .find((c) => c.sourceRevision.startsWith(beforeRevision));
   const after = collections.at(-1);
-  if (!before)
-    throw new Error(
-      `no measurement collection for source revision ${beforeRevision}`,
-    );
-  if (!after) throw new Error("no measurement collections recorded");
+  if (!after) {
+    return {
+      status: "not_computed",
+      reason: "no current measurement collection is recorded",
+      before: null,
+      after: null,
+      comparisons: [],
+    };
+  }
+  if (!before) {
+    return {
+      status: "not_computed",
+      reason: `no baseline measurement collection for source revision ${beforeRevision}`,
+      before: null,
+      after: collectionReference(repo, after),
+      comparisons: [],
+    };
+  }
   return {
-    before: before.collectionId,
-    after: after.collectionId,
+    status: "compared",
+    reason: null,
+    before: collectionReference(repo, before),
+    after: collectionReference(repo, after),
     comparisons: compareMeasurementCollections(before, after),
   };
 }
@@ -247,12 +279,22 @@ export function renderMeasurementComparison(
   const lines = [
     "# QA measurement comparison",
     "",
-    `Before: ${report.before}`,
-    `After: ${report.after}`,
+    `Status: ${report.status}`,
     "",
+  ];
+  if (report.before) lines.push(`Before: ${renderReference(report.before)}`);
+  else lines.push("Before: not_computed — no baseline");
+  if (report.after) lines.push(`After: ${renderReference(report.after)}`);
+  else lines.push("After: not_computed — no current record");
+  lines.push("");
+  if (report.reason) {
+    lines.push(`not_computed: ${report.reason}`, "");
+    return lines.join("\n");
+  }
+  lines.push(
     "| Metric | Status | Before | After | Delta |",
     "| --- | --- | ---: | ---: | ---: |",
-  ];
+  );
   for (const comparison of report.comparisons) {
     const dimensions = Object.entries(comparison.dimensions)
       .map(([key, value]) => `${key}=${value}`)
@@ -274,12 +316,45 @@ export function renderMeasurementComparison(
   return lines.join("\n");
 }
 
+function collectionReference(
+  repo: string,
+  collection: MeasurementCollection,
+): MeasurementCollectionReference {
+  return {
+    collectionId: collection.collectionId,
+    timestamp: collection.timestamp,
+    toolIdentity: collection.toolIdentity,
+    toolVersion: collection.toolVersion,
+    configDigest: collection.configDigest,
+    sourceRevision: collection.sourceRevision,
+    corpusRevision: collection.corpusRevision ?? null,
+    corpusGaps: gapCount(collection),
+    path: measurementPath(repo, collection.collectionId),
+  };
+}
+
+function renderReference(reference: MeasurementCollectionReference): string {
+  return (
+    `${reference.collectionId} — ${reference.toolIdentity} ${reference.toolVersion}; ` +
+    `source ${reference.sourceRevision}; corpus ${reference.corpusRevision ?? "n/a"}; ` +
+    `gaps ${reference.corpusGaps ?? "not_computed"}; config ${reference.configDigest}; ` +
+    `record ${reference.path}`
+  );
+}
+
+function gapCount(collection: MeasurementCollection): number | null {
+  const raw = collection.rawEvidence as {
+    bounds?: { gap_count?: unknown };
+  } | null;
+  return typeof raw?.bounds?.gap_count === "number"
+    ? raw.bounds.gap_count
+    : null;
+}
+
 function latestGapCount(collections: MeasurementCollection[]): number | null {
   for (const collection of [...collections].reverse()) {
-    const raw = collection.rawEvidence as {
-      bounds?: { gap_count?: unknown };
-    } | null;
-    if (typeof raw?.bounds?.gap_count === "number") return raw.bounds.gap_count;
+    const gaps = gapCount(collection);
+    if (gaps !== null) return gaps;
   }
   return null;
 }

@@ -1253,7 +1253,13 @@ describe("the canonical qa-corpus inventory", () => {
     const root = join(__dirname, "..", "corpus");
     const canonical = canonicalCorpusInventory(root);
     const loaded = loadCorpus(null, root, null, canonical);
-    expect(loaded.corpora).toHaveLength(canonical.cases.length);
+    const detection = canonical.cases.filter(
+      (candidate) => candidate.mode !== "reporting",
+    );
+    expect(loaded.corpora).toHaveLength(detection.length);
+    expect(loaded.corpora.map((candidate) => candidate.name)).not.toContain(
+      "definition-version-changed",
+    );
     expect(loaded.bounds).toEqual(canonical.bounds);
     expect(loaded.corpora.every((c) => c.language !== "unknown")).toBe(true);
   });
