@@ -97,6 +97,18 @@ describe("the metric dictionary", () => {
     expect(m.baseline_note).toMatch(/0 of 65/);
   });
 
+  it("TC-1094 defines correctness and safe refusal independently of presence", () => {
+    const correctness = metrics.span_correctness_rate;
+    const refusal = metrics.span_safe_refusal_rate;
+    expect(correctness.population).toMatch(/expected.*loci/i);
+    expect(correctness.method).toMatch(/Presence without exact equality/);
+    expect(correctness.per_family).toBe(true);
+    expect(refusal.population).toMatch(/unsupported/);
+    expect(refusal.method).toMatch(/expected structured refusal signal/);
+    expect(refusal.per_family).toBe(true);
+    expect(correctness.measurement_plan).not.toBe(refusal.measurement_plan);
+  });
+
   it("TC-929 defines actionability_rate with the 15-of-496 baseline", () => {
     // TC-929
     const m = metrics.actionability_rate;

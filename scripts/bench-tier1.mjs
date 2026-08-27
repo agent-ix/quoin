@@ -25,6 +25,7 @@ import {
   scoreActionabilityV2,
   scoreCost,
   scoreFindings,
+  scoreGroundingQuality,
   scoreSpanGrounding,
 } from "../evals/lib/quality.mjs";
 import {
@@ -68,6 +69,8 @@ const METRICS = join(ROOT, "bench", "metrics.json");
 const CORPUS_METRICS = join(ROOT, "corpus", "config", "metrics.json");
 const BASELINE = join(ROOT, "bench", "tier1-baseline.json");
 const RECALL_BASELINE = join(ROOT, "corpus", "baselines", "quoin.json");
+const GROUNDING_LABELS = join(ROOT, "bench", "span-grounding-labels.json");
+const GROUNDING_FIXTURE = join(ROOT, "bench", "fixtures", "span-grounding");
 const execution = createTier1Executor();
 
 /** An absent engine metric is reported as not measured, never zero. */
@@ -378,6 +381,12 @@ async function main() {
       sectionHit.examined += Number(hit.examined ?? 0);
     }
   }
+  const groundingLabels = JSON.parse(readFileSync(GROUNDING_LABELS, "utf8"));
+  const groundingPayload = execution.properties(
+    quire,
+    GROUNDING_FIXTURE,
+    join(loaded.modulesRoot, "ecosystem"),
+  );
 
   // A metric-sourced finding counts only at the value its label expects.
   const expectedValues = new Map(
@@ -445,6 +454,8 @@ async function main() {
     actionability_v2: scoreActionabilityV2(scoredFindings),
     span_grounding: scoreSpanGrounding(propertyPayloads),
     property_payloads: propertyPayloads,
+    grounding_quality: scoreGroundingQuality(groundingPayload, groundingLabels),
+    grounding_quality_payload: groundingPayload,
     // Tier 1 calls no model, so token cost is not measured; tool calls are.
     cost_per_confirmed_insight: scoreCost(
       { toolCalls: execution.toolCalls() },

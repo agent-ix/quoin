@@ -11,6 +11,7 @@ import {
   scoreActionability,
   scoreCost,
   scoreFindings,
+  scoreGroundingQuality,
   scoreScenario,
   scoreSpanGrounding,
 } from "../evals/lib/quality.mjs";
@@ -542,6 +543,126 @@ describe("span grounding", () => {
       malformed: [{ case: "broken" }],
     });
     expect(scoreScenario({ properties }).spanGrounding).toEqual(direct);
+  });
+});
+
+describe("grounding correctness and safe refusal", () => {
+  it("TC-1092 keeps presence, exact correctness, and justified refusal distinct", () => {
+    const statement = "A finding defaults to warning";
+    const span = (text: string, start = statement.indexOf(text)) => ({
+      start,
+      end: start + text.length,
+      text,
+    });
+    const scored = scoreGroundingQuality(
+      {
+        engine: { cli: "test-cli", engine: "test-engine" },
+        documents: [
+          {
+            criteria: [
+              {
+                row_id: "AC-1",
+                statement,
+                domain: span("finding"),
+                precondition: null,
+                oracle: span("defaults to warning"),
+                signals: ["span:domain", "span:oracle"],
+              },
+              {
+                row_id: "AC-2",
+                statement,
+                domain: span("finding", 0),
+                precondition: null,
+                oracle: span("defaults to warning"),
+                signals: ["span:domain", "span:oracle"],
+              },
+              {
+                row_id: "AC-3",
+                statement: "Each cached entry expires",
+                domain: null,
+                precondition: null,
+                oracle: null,
+                signals: ["span:refused-weak-boundary"],
+              },
+              {
+                row_id: "AC-4",
+                statement: "Each cached entry expires",
+                domain: { start: 5, end: 17, text: "cached entry" },
+                precondition: null,
+                oracle: null,
+                signals: [],
+              },
+            ],
+          },
+        ],
+      },
+      {
+        cases: [
+          {
+            id: "exact",
+            family: "positive",
+            rowId: "AC-1",
+            expected: {
+              domain: "finding",
+              precondition: null,
+              oracle: "defaults to warning",
+            },
+          },
+          {
+            id: "present-but-wrong",
+            family: "wrong-subject",
+            rowId: "AC-2",
+            expected: {
+              domain: "finding",
+              precondition: null,
+              oracle: "defaults to warning",
+            },
+          },
+          {
+            id: "safe",
+            family: "justified-refusal",
+            rowId: "AC-3",
+            expectedRefusal: "span:refused-weak-boundary",
+          },
+          {
+            id: "unsafe",
+            family: "justified-refusal",
+            rowId: "AC-4",
+            expectedRefusal: "span:refused-weak-boundary",
+          },
+        ],
+      },
+    );
+
+    expect(scored).toMatchObject({
+      correctness: {
+        numerator: 1,
+        denominator: 2,
+        rate: 0.5,
+        namedMisses: [
+          expect.objectContaining({
+            id: "present-but-wrong",
+            outcome: "wrong-span",
+          }),
+        ],
+      },
+      safeRefusal: {
+        numerator: 1,
+        denominator: 2,
+        rate: 0.5,
+        namedMisses: [
+          expect.objectContaining({ id: "unsafe", outcome: "unsafe-emission" }),
+        ],
+      },
+      tradeoff: {
+        correctSpans: 1,
+        wrongSpans: 1,
+        safeRefusals: 1,
+        unexpectedRefusals: 0,
+        unsafeEmissions: 1,
+      },
+      producerVersions: ["test-cli (engine test-engine)"],
+    });
   });
 });
 

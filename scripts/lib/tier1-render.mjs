@@ -50,6 +50,15 @@ export function renderTier1(report, verdicts) {
     `span_grounding_rate        ${pct(report.span_grounding?.rate ?? null)} ` +
       `(${report.span_grounding?.numerator ?? 0} of ${report.span_grounding?.denominator ?? 0} specific-shape criteria carry domain, precondition, and oracle; ` +
       `${report.span_grounding?.namedMisses?.length ?? 0} named misses)`,
+    `span_correctness_rate      ${pct(report.grounding_quality?.correctness?.rate ?? null)} ` +
+      `(${report.grounding_quality?.correctness?.numerator ?? 0} of ${report.grounding_quality?.correctness?.denominator ?? 0} controlled expected loci match exactly; ` +
+      `${report.grounding_quality?.correctness?.namedMisses?.length ?? 0} named misses)`,
+    `span_safe_refusal_rate     ${pct(report.grounding_quality?.safeRefusal?.rate ?? null)} ` +
+      `(${report.grounding_quality?.safeRefusal?.numerator ?? 0} of ${report.grounding_quality?.safeRefusal?.denominator ?? 0} controlled refusals are explicit)`,
+    `span tradeoff              ${report.grounding_quality?.tradeoff?.wrongSpans ?? 0} wrong spans, ` +
+      `${report.grounding_quality?.tradeoff?.unexpectedRefusals ?? 0} unexpected refusals, ` +
+      `${report.grounding_quality?.tradeoff?.safeRefusals ?? 0} safe refusals, ` +
+      `${report.grounding_quality?.tradeoff?.unsafeEmissions ?? 0} unsafe emissions`,
     `minting.section_hit_rate   ${
       report[SECTION_HIT_RATE] === null
         ? "  n/a (no case reports it — this engine predates quire-rs#270)"

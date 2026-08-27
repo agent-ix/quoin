@@ -565,6 +565,207 @@ export function scoreSpanGrounding(inputs) {
   };
 }
 
+/** Exact controlled-locus scoring, kept separate from span presence. */
+export function scoreGroundingQuality(payload, labelSet) {
+  const malformed = [];
+  const criteria = new Map();
+  for (const document of payload?.documents ?? []) {
+    for (const criterion of document?.criteria ?? []) {
+      if (!criterion?.row_id) continue;
+      if (criteria.has(criterion.row_id)) {
+        malformed.push({
+          rowId: criterion.row_id,
+          reason: "duplicate controlled criterion row id",
+        });
+      } else {
+        criteria.set(criterion.row_id, criterion);
+      }
+    }
+  }
+
+  const correctness = qualityAxis("property.span-correctness-v1");
+  const safeRefusal = qualityAxis("property.safe-refusal-v1");
+  const tradeoff = {
+    correctSpans: 0,
+    wrongSpans: 0,
+    safeRefusals: 0,
+    unexpectedRefusals: 0,
+    unsafeEmissions: 0,
+  };
+
+  for (const label of labelSet?.cases ?? []) {
+    const criterion = criteria.get(label.rowId) ?? null;
+    if (label.expectedRefusal) {
+      safeRefusal.denominator += 1;
+      const family = familyAxis(safeRefusal, label.family);
+      family.denominator += 1;
+      const observed = observedSpans(criterion);
+      const emitted = Object.values(observed).some((span) => span !== null);
+      const reasons = Array.isArray(criterion?.signals)
+        ? criterion.signals
+        : [];
+      const passed =
+        criterion !== null &&
+        !emitted &&
+        reasons.includes(label.expectedRefusal);
+      if (passed) {
+        safeRefusal.numerator += 1;
+        family.numerator += 1;
+        tradeoff.safeRefusals += 1;
+      } else {
+        if (emitted) tradeoff.unsafeEmissions += 1;
+        const miss = {
+          id: label.id,
+          family: label.family,
+          rowId: label.rowId,
+          expected: { refusal: label.expectedRefusal },
+          observed: { spans: observed, signals: reasons },
+          outcome: emitted ? "unsafe-emission" : "unjustified-refusal",
+        };
+        safeRefusal.namedMisses.push(miss);
+        family.namedMisses.push(miss);
+      }
+      continue;
+    }
+
+    correctness.denominator += 1;
+    const family = familyAxis(correctness, label.family);
+    family.denominator += 1;
+    const expected = expectedSpans(criterion, label, malformed);
+    const observed = observedSpans(criterion);
+    const emitted = Object.values(observed).some((span) => span !== null);
+    const passed =
+      expected !== null &&
+      ["domain", "precondition", "oracle"].every((field) =>
+        sameSpan(expected[field], observed[field]),
+      );
+    if (passed) {
+      correctness.numerator += 1;
+      family.numerator += 1;
+      tradeoff.correctSpans += 1;
+    } else {
+      if (emitted) tradeoff.wrongSpans += 1;
+      else tradeoff.unexpectedRefusals += 1;
+      const miss = {
+        id: label.id,
+        family: label.family,
+        rowId: label.rowId,
+        expected,
+        observed,
+        outcome: emitted ? "wrong-span" : "unexpected-refusal",
+      };
+      correctness.namedMisses.push(miss);
+      family.namedMisses.push(miss);
+    }
+  }
+
+  finishQualityAxis(correctness);
+  finishQualityAxis(safeRefusal);
+  return {
+    definitionVersion:
+      labelSet?.definitionVersion ?? "property.grounding-loci-v1",
+    correctness,
+    safeRefusal,
+    tradeoff,
+    malformed,
+    producerVersions: payload?.engine
+      ? [
+          `${payload.engine.cli ?? "unknown-cli"} (engine ${payload.engine.engine ?? "unknown"})`,
+        ]
+      : [],
+  };
+}
+
+function qualityAxis(definitionVersion) {
+  return {
+    definitionVersion,
+    numerator: 0,
+    denominator: 0,
+    rate: null,
+    namedMisses: [],
+    families: [],
+    _families: new Map(),
+  };
+}
+
+function familyAxis(axis, name) {
+  if (!axis._families.has(name)) {
+    const family = {
+      family: name,
+      numerator: 0,
+      denominator: 0,
+      rate: null,
+      namedMisses: [],
+    };
+    axis._families.set(name, family);
+    axis.families.push(family);
+  }
+  return axis._families.get(name);
+}
+
+function finishQualityAxis(axis) {
+  axis.rate = ratio(axis.numerator, axis.denominator);
+  axis.families.sort((a, b) => a.family.localeCompare(b.family));
+  for (const family of axis.families) {
+    family.rate = ratio(family.numerator, family.denominator);
+  }
+  delete axis._families;
+}
+
+function expectedSpans(criterion, label, malformed) {
+  if (!criterion || typeof criterion.statement !== "string") {
+    malformed.push({
+      id: label.id,
+      rowId: label.rowId,
+      reason: "controlled criterion or statement is unavailable",
+    });
+    return null;
+  }
+  const out = {};
+  for (const field of ["domain", "precondition", "oracle"]) {
+    const text = label.expected?.[field] ?? null;
+    if (text === null) {
+      out[field] = null;
+      continue;
+    }
+    const start = criterion.statement.indexOf(text);
+    const repeated =
+      start >= 0 && criterion.statement.indexOf(text, start + 1) >= 0;
+    if (start < 0 || repeated) {
+      malformed.push({
+        id: label.id,
+        rowId: label.rowId,
+        field,
+        reason:
+          start < 0
+            ? "expected span text is absent from the statement"
+            : "expected span text is not unique in the statement",
+      });
+      return null;
+    }
+    out[field] = { start, end: start + text.length, text };
+  }
+  return out;
+}
+
+function observedSpans(criterion) {
+  return Object.fromEntries(
+    ["domain", "precondition", "oracle"].map((field) => [
+      field,
+      criterion?.[field] ?? null,
+    ]),
+  );
+}
+
+function sameSpan(expected, observed) {
+  if (expected === null || observed === null) return expected === observed;
+  return (
+    expected.start === observed.start &&
+    expected.end === observed.end &&
+    expected.text === observed.text
+  );
+}
+
 function classifySpan(criterion, field) {
   if (!Object.hasOwn(criterion, field)) {
     return { state: "missing", reason: `criterion has no ${field} field` };

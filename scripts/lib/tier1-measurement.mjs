@@ -154,6 +154,52 @@ export function createMeasurementRecord(report, at, options) {
       },
     ),
     observation(
+      "span_correctness_rate",
+      report.grounding_quality?.correctness?.rate == null
+        ? null
+        : Number((report.grounding_quality.correctness.rate * 100).toFixed(3)),
+      {
+        population: {
+          examined: report.grounding_quality?.correctness?.denominator ?? 0,
+          matched: report.grounding_quality?.correctness?.numerator ?? 0,
+          complete: (report.grounding_quality?.malformed?.length ?? 0) === 0,
+          identity: {
+            namedMisses:
+              report.grounding_quality?.correctness?.namedMisses ?? [],
+            tradeoff: report.grounding_quality?.tradeoff ?? {},
+          },
+        },
+        dimensions: {
+          producerVersions: (
+            report.grounding_quality?.producerVersions ?? []
+          ).join(", "),
+        },
+      },
+    ),
+    observation(
+      "span_safe_refusal_rate",
+      report.grounding_quality?.safeRefusal?.rate == null
+        ? null
+        : Number((report.grounding_quality.safeRefusal.rate * 100).toFixed(3)),
+      {
+        population: {
+          examined: report.grounding_quality?.safeRefusal?.denominator ?? 0,
+          matched: report.grounding_quality?.safeRefusal?.numerator ?? 0,
+          complete: (report.grounding_quality?.malformed?.length ?? 0) === 0,
+          identity: {
+            namedMisses:
+              report.grounding_quality?.safeRefusal?.namedMisses ?? [],
+            tradeoff: report.grounding_quality?.tradeoff ?? {},
+          },
+        },
+        dimensions: {
+          producerVersions: (
+            report.grounding_quality?.producerVersions ?? []
+          ).join(", "),
+        },
+      },
+    ),
+    observation(
       "actionability_rate",
       (report.actionability_v1 ?? report.actionability)?.rate == null
         ? null
@@ -238,6 +284,28 @@ export function createMeasurementRecord(report, at, options) {
       },
     }),
   );
+  for (const [axis, metric] of [
+    ["correctness", "span_correctness_rate"],
+    ["safeRefusal", "span_safe_refusal_rate"],
+  ]) {
+    for (const family of report.grounding_quality?.[axis]?.families ?? []) {
+      observations.push(
+        observation(
+          metric,
+          family.rate == null ? null : Number((family.rate * 100).toFixed(3)),
+          {
+            dimensions: { family: family.family },
+            population: {
+              examined: family.denominator,
+              matched: family.numerator,
+              complete: true,
+              identity: { namedMisses: family.namedMisses },
+            },
+          },
+        ),
+      );
+    }
+  }
   for (const row of report.detection_recall ?? []) {
     observations.push(
       observation("detection.recall", row.rate, {

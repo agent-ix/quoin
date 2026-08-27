@@ -1,0 +1,51 @@
+{
+  "definitionVersion": "property.grounding-loci-v1",
+  "cases": [
+    {
+      "id": "exact-positive",
+      "family": "positive",
+      "rowId": "FR-001-AC-1",
+      "expected": {
+        "domain": "finding",
+        "precondition": "whose key is absent from the merged map",
+        "oracle": "defaults to warning."
+      }
+    },
+    {
+      "id": "hyphen-boundary",
+      "family": "boundary-error",
+      "rowId": "FR-001-AC-2",
+      "expected": {
+        "domain": "draft",
+        "precondition": "that is frontmatter-less",
+        "oracle": "loads exactly one warning."
+      }
+    },
+    {
+      "id": "partitive-subject",
+      "family": "wrong-subject",
+      "rowId": "FR-001-AC-3",
+      "expected": {
+        "domain": "Locator primitives",
+        "precondition": null,
+        "oracle": "is exercised by a unit test."
+      }
+    },
+    {
+      "id": "late-filter",
+      "family": "boundary-error",
+      "rowId": "FR-001-AC-4",
+      "expected": {
+        "domain": "section body pattern rule",
+        "precondition": null,
+        "oracle": "produces no finding when the named section matches, and one finding when it is present."
+      }
+    },
+    {
+      "id": "weak-only-refusal",
+      "family": "justified-refusal",
+      "rowId": "FR-001-AC-5",
+      "expectedRefusal": "span:refused-weak-boundary"
+    }
+  ]
+}

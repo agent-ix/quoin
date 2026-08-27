@@ -62,6 +62,26 @@
       "baseline": 0,
       "baseline_note": "Battletest pass 2 measured 0 of 65 specific-shape records carrying all three spans. Zero remains the historical starting point, not an absence; the retained Tier-1 report now carries the computed population and accepted ratchet."
     },
+    "span_correctness_rate": {
+      "measurement_plan": "spec/assurance/MP-213-span-correctness.md",
+      "unit": "percent of controlled expected loci",
+      "population": "controlled criteria with exact expected domain, precondition, and oracle loci",
+      "method": "criteria whose emitted span text and statement-relative start/end coordinates exactly equal every controlled expected locus, over controlled span-positive criteria. Presence without exact equality is a named miss; an unexpected refusal is distinct from a wrong span. Reported overall and per failure-shape family",
+      "direction": "higher-is-better",
+      "per_family": true,
+      "baseline": null,
+      "baseline_note": "The first retained controlled-locus run establishes the overall and per-family ratchets without reinterpreting span_grounding_rate."
+    },
+    "span_safe_refusal_rate": {
+      "measurement_plan": "spec/assurance/MP-214-safe-span-refusal.md",
+      "unit": "percent of controlled refusal cases",
+      "population": "controlled criteria labelled as unsupported for trustworthy decomposition",
+      "method": "criteria emitting no domain, precondition, or oracle span and carrying the expected structured refusal signal, over controlled justified-refusal criteria. Silence without the expected reason is not safe refusal; emitting a span is an unsafe emission",
+      "direction": "higher-is-better",
+      "per_family": true,
+      "baseline": null,
+      "baseline_note": "The first retained justified-refusal run establishes this ratchet separately from correctness and presence."
+    },
     "actionability_rate": {
       "measurement_plan": "spec/assurance/MP-205-actionability.md",
       "unit": "percent of emitted findings",

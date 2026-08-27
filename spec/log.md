@@ -8,6 +8,21 @@ description: "Chronological log of structural changes to this bundle."
 
 ## History
 
+* **2026-08-27** — **CR-125**: span presence, correctness, and safe refusal
+  are now three separately versioned measurements (`agent-ix/quoin#256`,
+  following `agent-ix/quire-rs#241`). A controlled producer fixture covers an
+  exact positive, two boundary-error shapes, a wrong-subject shape, and a
+  justified weak-boundary refusal. `property.span-correctness-v1` compares both
+  text and statement-relative coordinates against exact expected loci and
+  starts at **4/4 (100%)**; `property.safe-refusal-v1` requires absent spans
+  plus the expected structured reason and starts at **1/1 (100%)**. The broad
+  presence population remains independently visible at **0/38**. Reports and
+  retained evidence place **0 wrong spans, 0 unexpected refusals, 1 safe
+  refusal, and 0 unsafe emissions** beside one another; overall and per-family
+  named-miss ratchets prevent presence from earning correctness silently.
+  Quire 0.30.2 (engine 0.33.0); MP-213/MP-214; FR-043 AC-26; Matrix:
+  TC-1092..TC-1095.
+
 * **2026-08-27** — **CR-124**: Tier 1 now invokes the structured
   `quire properties --json` producer for every controlled corpus case and
   computes `property.span-grounding-v1` directly from its criteria

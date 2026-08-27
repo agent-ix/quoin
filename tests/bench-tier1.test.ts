@@ -386,6 +386,43 @@ describe("the committed baseline and the committed scorer", () => {
       .filter((f: string) => !claimed.has(f));
     expect(orphans).toEqual([]);
   });
+
+  test("TC-1095 retains the controlled grounding tradeoff and all failure-shape families", () => {
+    const baseline = JSON.parse(
+      readFileSync(
+        join(__dirname, "..", "bench", "tier1-baseline.json"),
+        "utf8",
+      ),
+    );
+    const labels = JSON.parse(
+      readFileSync(
+        join(__dirname, "..", "bench", "span-grounding-labels.json"),
+        "utf8",
+      ),
+    );
+    expect(
+      new Set(labels.cases.map((entry: { family: string }) => entry.family)),
+    ).toEqual(
+      new Set([
+        "positive",
+        "boundary-error",
+        "wrong-subject",
+        "justified-refusal",
+      ]),
+    );
+    expect(baseline.grounding_quality).toMatchObject({
+      correctness: { numerator: 4, denominator: 4, rate: 1 },
+      safeRefusal: { numerator: 1, denominator: 1, rate: 1 },
+      tradeoff: {
+        correctSpans: 4,
+        wrongSpans: 0,
+        safeRefusals: 1,
+        unexpectedRefusals: 0,
+        unsafeEmissions: 0,
+      },
+      producerVersions: ["0.30.2 (engine 0.33.0)"],
+    });
+  });
 });
 
 describe("tier-1 label flattening", () => {
@@ -1142,6 +1179,63 @@ describe("span-grounding ratchet", () => {
       observed: 0.25,
       baseline: 0.5,
       verdict: "regressed",
+    });
+  });
+
+  test("TC-1093 ratchets exact loci per failure-shape family and names each miss", () => {
+    const base = {
+      provenance: {
+        corpus_input: "same",
+        declaration: { digest: "same" },
+      },
+      corpora: 1,
+      by_language: [{ language: "rust", corpora: 1 }],
+      families: [],
+      finding_localisation_rate: null,
+      grounding_quality: {
+        correctness: {
+          rate: 1,
+          families: [
+            {
+              family: "wrong-subject",
+              rate: 1,
+              namedMisses: [],
+            },
+          ],
+        },
+        safeRefusal: { rate: 1, families: [] },
+      },
+    };
+    const current = structuredClone(base);
+    current.grounding_quality.correctness = {
+      rate: 0.5,
+      families: [
+        {
+          family: "wrong-subject",
+          rate: 0,
+          namedMisses: [{ id: "partitive-subject", outcome: "wrong-span" }],
+        },
+      ],
+    };
+    const verdicts = ratchet(current, base, {
+      metrics: {
+        finding_precision: { direction: "higher-is-better" },
+        finding_recall: { direction: "higher-is-better" },
+        span_correctness_rate: { direction: "higher-is-better" },
+        span_safe_refusal_rate: { direction: "higher-is-better" },
+      },
+    });
+    expect(
+      verdicts.find(
+        (row) =>
+          row.metric === "span_correctness_rate" &&
+          row.family === "wrong-subject",
+      ),
+    ).toMatchObject({
+      observed: 0,
+      baseline: 1,
+      verdict: "regressed",
+      why: "partitive-subject:wrong-span",
     });
   });
 });

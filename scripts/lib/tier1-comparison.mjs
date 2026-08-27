@@ -180,6 +180,51 @@ export function ratchet(report, previous, dictionary) {
     });
   }
 
+  for (const [axis, metric] of [
+    ["correctness", "span_correctness_rate"],
+    ["safeRefusal", "span_safe_refusal_rate"],
+  ]) {
+    const current = report.grounding_quality?.[axis];
+    if (!current || current.rate === null) continue;
+    const prior = previous?.grounding_quality?.[axis];
+    const [verdict, kept] = compare(
+      dictionary.metrics[metric].direction,
+      current.rate,
+      prior?.rate ?? dictionary.metrics[metric].baseline ?? null,
+    );
+    out.push({
+      metric,
+      family: null,
+      observed: current.rate,
+      baseline: kept,
+      verdict,
+    });
+    const priorFamilies = new Map(
+      (prior?.families ?? []).map((family) => [family.family, family]),
+    );
+    for (const family of current.families ?? []) {
+      const [familyVerdict, familyKept] = compare(
+        dictionary.metrics[metric].direction,
+        family.rate,
+        priorFamilies.get(family.family)?.rate ?? null,
+      );
+      out.push({
+        metric,
+        family: family.family,
+        observed: family.rate,
+        baseline: familyKept,
+        verdict: familyVerdict,
+        ...(family.namedMisses.length
+          ? {
+              why: family.namedMisses
+                .map((miss) => `${miss.id}:${miss.outcome}`)
+                .join(", "),
+            }
+          : {}),
+      });
+    }
+  }
+
   const sentinel = report["sentinel.silent_zero"];
   if (sentinel) {
     const [verdict, kept] = compare(
@@ -238,6 +283,22 @@ export function ratchet(report, previous, dictionary) {
     }
     if (verdict.metric === "span_grounding_rate") {
       return previous?.span_grounding?.rate ?? null;
+    }
+    if (verdict.metric === "span_correctness_rate") {
+      const prior = previous?.grounding_quality?.correctness;
+      return verdict.family === null
+        ? (prior?.rate ?? null)
+        : ((prior?.families ?? []).find(
+            (family) => family.family === verdict.family,
+          )?.rate ?? null);
+    }
+    if (verdict.metric === "span_safe_refusal_rate") {
+      const prior = previous?.grounding_quality?.safeRefusal;
+      return verdict.family === null
+        ? (prior?.rate ?? null)
+        : ((prior?.families ?? []).find(
+            (family) => family.family === verdict.family,
+          )?.rate ?? null);
     }
     if (verdict.metric === "sentinel.silent_zero") return 0;
     return verdict.baseline;
