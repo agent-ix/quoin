@@ -78,7 +78,12 @@ export function adjudicationOf(corpora, mapping, standing = []) {
   for (const rule of standing) {
     if (rule?.verdict !== "correct" || !rule?.reason) continue;
     const family = familyForReason(mapping, rule.reason);
-    if (family) standingByFamily.set(family, new Set(rule.declarations ?? []));
+    if (!family) continue;
+    const declarations = standingByFamily.get(family) ?? new Set();
+    for (const declaration of rule.declarations ?? []) {
+      declarations.add(declaration);
+    }
+    standingByFamily.set(family, declarations);
   }
 
   const add = (side, reason, corpus, extra = {}) => {

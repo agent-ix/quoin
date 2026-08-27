@@ -124,6 +124,31 @@ describe("TC-112 a drifted payload is rejected with the offending path", () => {
     expect(validateCoverage(payload).ok).toBe(false);
   });
 
+  it("rejects malformed minted-target and unmatched-tag records", () => {
+    const malformedTarget = coveragePayload();
+    malformedTarget.minted_targets = [
+      {
+        id: "TC-001",
+        target: "test-case",
+        document: "spec/tests.md",
+        line: 0,
+        backed: true,
+      },
+    ];
+    expect(validateCoverage(malformedTarget).ok).toBe(false);
+
+    const malformedTag = coveragePayload();
+    malformedTag.unmatched_tags = [
+      {
+        trace_id: "TC-999",
+        language: "rust",
+        path: "tests/parse.rs",
+        line: 42,
+      },
+    ];
+    expect(validateCoverage(malformedTag).ok).toBe(false);
+  });
+
   it("rejects a value outside a closed engine enum", () => {
     const payload = propertiesPayload();
     // `property` is closed by quire-rs FR-052-CON-3, so a value outside it is a
@@ -223,6 +248,24 @@ describe("TC-116 optional keys are optional and absence is not emptiness", () =>
           document: "spec/tests.md",
           row_id: "TC-006",
           status: "\u26a0\ufe0f scale evidence deferred",
+        },
+      ],
+      minted_targets: [
+        {
+          id: "TC-001",
+          target: "test-case",
+          document: "spec/tests.md",
+          line: 17,
+          backed: true,
+        },
+      ],
+      unmatched_tags: [
+        {
+          trace_id: "TC-999",
+          language: "rust",
+          path: "tests/parse.rs",
+          line: 42,
+          symbol: "parse_without_declared_form",
         },
       ],
       criteria: [
@@ -428,10 +471,11 @@ describe("TC-117 the eval harness floor tracks the contract", () => {
   });
 });
 
-describe("TC-118 the contract holds against the installed quire", () => {
+describe("TC-118 the contract holds against the selected quire", () => {
+  const quire = process.env.QUIRE ?? "quire";
   const installed = (() => {
     try {
-      return execFileSync("quire", ["--version"], { encoding: "utf8" });
+      return execFileSync(quire, ["--version"], { encoding: "utf8" });
     } catch {
       return null;
     }
@@ -475,14 +519,16 @@ describe("TC-118 the contract holds against the installed quire", () => {
       mkdirSync(join(root, "src"), { recursive: true });
       writeFileSync(
         join(root, "src", "lib.rs"),
-        "/// Implements: FR-001\npub fn do_the_thing() -> usize { 1 }\n",
+        "/// Implements: FR-001\npub fn do_the_thing() -> usize { 1 }\n\n" +
+          "#[cfg(test)]\nmod tests {\n" +
+          '    #[tracks("TC-999")]\n    #[test]\n' +
+          "    fn unmatched_marker() {}\n}\n",
       );
 
-      const out = execFileSync(
-        "quire",
-        ["coverage", "--scope", root, "--json"],
-        { encoding: "utf8", stdio: ["pipe", "pipe", "ignore"] },
-      );
+      const out = execFileSync(quire, ["coverage", "--scope", root, "--json"], {
+        encoding: "utf8",
+        stdio: ["pipe", "pipe", "ignore"],
+      });
 
       const result = parseCoverage(out);
       expect(result.ok, out.slice(0, 400)).toBe(true);
@@ -491,6 +537,8 @@ describe("TC-118 the contract holds against the installed quire", () => {
       // fails here rather than in a consumer command.
       const payload = JSON.parse(out) as {
         implements?: unknown[];
+        minted_targets?: unknown[];
+        unmatched_tags?: unknown[];
         diagnostics?: { declaration?: string; reason?: string }[];
       };
 
@@ -515,6 +563,16 @@ describe("TC-118 the contract holds against the installed quire", () => {
         "the fixture must mint an `implements` edge, or this guard is vacuous: " +
           out.slice(0, 600),
       ).toBeGreaterThan(0);
+      expect(
+        (payload.minted_targets ?? []).length,
+        "the fixture must mint a target, or additive row-contract drift is invisible: " +
+          out.slice(0, 600),
+      ).toBeGreaterThan(0);
+      expect(
+        (payload.unmatched_tags ?? []).length,
+        "the fixture must emit an unmatched tag, or annotation-contract drift is invisible: " +
+          out.slice(0, 600),
+      ).toBeGreaterThan(0);
     } finally {
       rmSync(root, { recursive: true, force: true });
     }
@@ -526,7 +584,7 @@ describe("TC-118 the contract holds against the installed quire", () => {
     // Deliberately end-to-end: the schema is vendored, so the one thing a
     // unit test cannot show is that the real binary still emits this shape.
     const out = execFileSync(
-      "quire",
+      quire,
       ["properties", "--json", "--archetype", "FR", "-"],
       {
         encoding: "utf8",

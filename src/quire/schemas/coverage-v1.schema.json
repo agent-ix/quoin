@@ -62,6 +62,13 @@
         "$ref": "#/$defs/GroupCounts"
       }
     },
+    "minted_targets": {
+      "type": "array",
+      "description": "FR-050-AC-38 (#361): row-level identity and backed state behind groups and totals. ABSENT only when the model minted no rows; additive under FR-055-CON-3.",
+      "items": {
+        "$ref": "#/$defs/MintedTargetRecord"
+      }
+    },
     "criteria": {
       "type": "array",
       "description": "FR-050-AC-13 (CR-028): per-document property-shape counts. Absent for a corpus binding no criteria.",
@@ -116,6 +123,13 @@
       "description": "FR-050-AC-27 / FR-051-AC-19 (CR-093, #227): what the trace binder examined and what bound, per language. Unlike every other list here this is not a defect list \u2014 it is the premise the backed/total ratio rests on, so it is present whenever the code walk found an evidence symbol, whether or not anything bound. `1292 candidates, 0 bound` is the shape that produced a confident 23% over a corpus the binder could not read; `1292 candidates, 1290 bound` is a reassurance no earlier payload could give. ABSENT only when no language yielded an evidence symbol. Additive under FR-055-CON-3.",
       "items": {
         "$ref": "#/$defs/BindingCensus"
+      }
+    },
+    "unmatched_tags": {
+      "type": "array",
+      "description": "FR-050-AC-39 (#362): generic trace-id tokens in evidence-symbol annotation blocks that no declared form bound on that symbol. Each record is row-addressable and engine-parsed, so consumers do not duplicate adapter boundaries or mistake id-shaped test-body data for a tag. ABSENT when empty; additive under FR-055-CON-3.",
+      "items": {
+        "$ref": "#/$defs/UnmatchedTag"
       }
     },
     "metrics": {
@@ -329,6 +343,21 @@
           "$ref": "#/$defs/UnboundSymbol",
           "description": "One deterministic path and line whose evidence symbol carries an id-shaped token but minted no verifies relation. Absent when no authored tag was missed."
         }
+      }
+    },
+    "UnmatchedTag": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["trace_id", "language", "path", "line", "symbol"],
+      "properties": {
+        "trace_id": {"type": "string", "minLength": 1},
+        "language": {
+          "type": "string",
+          "enum": ["rust", "python", "typescript"]
+        },
+        "path": {"type": "string", "minLength": 1},
+        "line": {"type": "integer", "minimum": 1},
+        "symbol": {"type": "string", "minLength": 1}
       }
     },
     "UnbackedRow": {
@@ -572,6 +601,18 @@
           "type": "integer",
           "minimum": 0
         }
+      }
+    },
+    "MintedTargetRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "target", "document", "line", "backed"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "target": {"type": "string", "minLength": 1},
+        "document": {"type": "string", "minLength": 1},
+        "line": {"type": "integer", "minimum": 1},
+        "backed": {"type": "boolean"}
       }
     },
     "CriteriaCounts": {

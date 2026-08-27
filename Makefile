@@ -25,7 +25,7 @@ build:
 # it — the source has no baked version to disagree with package.json.
 .PHONY: test
 test: build validate check-version
-	pnpm run test
+	QUIRE="$(abspath $(QUIRE))" pnpm run test
 
 # Every surface that reports a version reports the same one, and a clean tag
 # reports itself (quoin#196). The class of defect this catches shipped once
@@ -85,7 +85,7 @@ battletest-update:
 # default pointed at the stale one. Caught by quire-cli#68's provenance guard
 # refusing a binary that cannot name its engine, which is the case for
 # refusing rather than warning.
-QUIRE ?= $(if $(CARGO_TARGET_DIR),$(CARGO_TARGET_DIR),../quire-cli/target)/debug/quire
+QUIRE ?= $(abspath $(if $(CARGO_TARGET_DIR),$(CARGO_TARGET_DIR),../quire-cli/target)/debug/quire)
 #
 # `MODULES` overrides the DECLARATION the cases bind, which is the second axis
 # (agent-ix/quoin#240). Empty means the corpus's own vendored `modules/`, so an

@@ -95,6 +95,24 @@ export interface UntrackedSymbol {
   line?: number;
 }
 
+/** One minted source-evidence row and its resolved backed state (FR-050-AC-38). */
+export interface MintedTargetRecord {
+  id: string;
+  target: string;
+  document: string;
+  line: number;
+  backed: boolean;
+}
+
+/** An authored annotation token that no declared form bound (FR-050-AC-39). */
+export interface UnmatchedTag {
+  trace_id: string;
+  language: "rust" | "python" | "typescript";
+  path: string;
+  line: number;
+  symbol: string;
+}
+
 /** One of the distinct symbols binding a shared trace id (quire-rs CR-087). */
 export interface SharedTraceSymbol {
   path: string;
@@ -307,6 +325,10 @@ export interface CoverageReport {
   /** Absent — not empty — when every status value in the corpus is declared. */
   undeclared_statuses?: UndeclaredStatus[];
   untracked_symbols: UntrackedSymbol[];
+  /** Absent when the traceability model minted no source-evidence rows. */
+  minted_targets?: MintedTargetRecord[];
+  /** Absent when every authored annotation token matched a declared form. */
+  unmatched_tags?: UnmatchedTag[];
   /**
    * Trace ids bound by more than one distinct symbol (quire-rs FR-050-AC-23,
    * CR-087). ABSENT — not empty — for a corpus whose every id is uniquely

@@ -47,6 +47,7 @@ import type {
   GroupCounts,
   ImplementsRecord,
   MeasuredMetric,
+  MintedTargetRecord,
   NoSymbolRow,
   Obligation,
   SharedTraceId,
@@ -57,6 +58,7 @@ import type {
   UnboundSymbol,
   UndeclaredStatus,
   UntrackedSymbol,
+  UnmatchedTag,
   VocabularyValueRecord,
 } from "../src/quire/types.js";
 
@@ -123,6 +125,22 @@ const untrackedSymbol: Required<UntrackedSymbol> = {
   symbol: "orphan",
   trace_id: "TC-999",
   line: 42,
+};
+
+const mintedTargetRecord: Required<MintedTargetRecord> = {
+  id: "TC-001",
+  target: "test-case",
+  document: "spec/tests.md",
+  line: 17,
+  backed: true,
+};
+
+const unmatchedTag: Required<UnmatchedTag> = {
+  trace_id: "TC-999",
+  language: "rust",
+  path: "tests/parse.rs",
+  line: 42,
+  symbol: "parse_without_declared_form",
 };
 
 const sharedTraceSymbol: Required<SharedTraceSymbol> = {
@@ -270,6 +288,8 @@ const samples: Record<string, unknown> = {
   UndeclaredStatus: undeclaredStatus,
   ImplementsRecord: implementsRecord,
   UntrackedSymbol: untrackedSymbol,
+  MintedTargetRecord: mintedTargetRecord,
+  UnmatchedTag: unmatchedTag,
   SharedTraceId: sharedTraceId,
   SharedTraceSymbol: sharedTraceSymbol,
   GroupCounts: groupCounts,
@@ -295,6 +315,8 @@ const report: Required<CoverageReport> = {
   no_symbol_rows: [noSymbolRow],
   undeclared_statuses: [undeclaredStatus],
   untracked_symbols: [untrackedSymbol],
+  minted_targets: [mintedTargetRecord],
+  unmatched_tags: [unmatchedTag],
   shared_trace_ids: [sharedTraceId],
   groups: [groupCounts],
   criteria: [criteriaCounts],

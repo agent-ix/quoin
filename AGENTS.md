@@ -33,3 +33,12 @@ looks like; it does not fit the specs that exist. Where two forms mean the same
 thing, prefer unifying the corpus on one and flagging the rest over accepting
 both. Report the precision split as a number, and say which conclusion you
 reached and why.
+
+## Banking a finding
+
+Follow `corpus/CONTRIBUTING.md` (the `qa-corpus` submodule) for every census or
+dogfood finding: bank the case
+before the fix, cover every applicable language or record a reasoned exclusion,
+and provide a language-matched healthy control. If reproduction needs a full
+real tree, use its Tier-2 snapshot and pin-move procedure; do not paraphrase the
+failure into a smaller shape that no longer reproduces it.

@@ -1,18 +1,19 @@
 {
   "provenance": {
-    "engine": "quire 0.30.2 (engine a14dcb2)",
-    "corpus": "c5adeccb1a4b1bd09cbb1a0f6970fae5f011dbbc",
-    "corpus_input": "sha256:2e5b799af473bcb74614c8013b86e7de9e40f794882429168bcc4dcc4edeaecb",
+    "engine": "quire 0.30.2 (engine 92cecb2)",
+    "corpus": "5123f2a15d413dfde69c639ec6fd3611d15cc941",
+    "corpus_input": "sha256:740437285cdc555a0b407381c06165ce6a0b5f8add37ba2ee1ba6b1c4134b5b8",
     "declaration": {
       "root": "corpus/modules",
-      "digest": "sha256:fba2468b01d6b4c5ce5e580195ace46d8322923436d5cfecb5a72a6186bd6a84",
+      "digest": "sha256:47c39841678e63cc4046011d0865a8920fab2d624d25e60443de75370808d00b",
       "modules": {
         "ecosystem": "sha256:829e7343fd73ffd65ec6fee8653228f37f919d236f01e6219b40cc1ee559c140",
         "variants/dead-coverage-vocabulary": "sha256:02b809f935173c9caf70736a238313e242a713bf9003894cd55a93d2f70034cf",
         "variants/live-coverage-vocabulary": "sha256:92e0a54c19855ca4e9cd2417cb8f356b7766e4e0d1fa0256eba82be5694cd5c7",
         "variants/no-implements-declaration": "sha256:1a11fc62ef36bc6bf34887e848cf02b7c19e19a985c2c71358a68f8b798aa190",
         "variants/no-trace-targets": "sha256:7327dd6ee367cad8c000be26ba5bd99a5495d7a014693e6f40cce113ee593ba0",
-        "variants/one-trace-target": "sha256:cbbce295481d128c68ec4637435843634ca3e2ff1dd0f248445a245379176ebf"
+        "variants/one-trace-target": "sha256:cbbce295481d128c68ec4637435843634ca3e2ff1dd0f248445a245379176ebf",
+        "variants/reference-postures": "sha256:d8b3e219d7e93bf8149807c3316a4ca87e56212e4fe36103db83d363fca0f3cb"
       },
       "sources": {
         "spec-artifacts-process": "62d691f",
@@ -24,9 +25,20 @@
     "gap_count": 0,
     "covered_count": 86,
     "covered_pending_count": 0,
-    "out_of_scope_count": 18,
-    "declared_cells": 104,
+    "out_of_scope_count": 19,
+    "declared_cells": 105,
     "matrix": [
+      {
+        "mode": "minting",
+        "case": "reference-only-target",
+        "source": "agent-ix/quire-rs#363 — SUITE rows were reference registries misreported as repository authoring backlog",
+        "cells": {
+          "n/a": {
+            "state": "out-of-scope",
+            "reason": "`reference-only-target` tests variant declaration `variants/reference-postures`: A trace target explicitly declares evidence reference-only."
+          }
+        }
+      },
       {
         "mode": "minting",
         "case": "section-name-mismatch",
@@ -1172,18 +1184,18 @@
     {
       "family": "archetype-matches-nothing",
       "truePositives": 3,
-      "falsePositives": 592,
+      "falsePositives": 593,
       "misses": 0,
       "precision": 1,
       "shape": "advisory",
       "recall": 1,
       "precision_basis": {
         "precision": 1,
-        "truePositives": 591,
+        "truePositives": 592,
         "falsePositives": 0,
         "unadjudicated": 4,
-        "byStanding": 588,
-        "rulings": 625
+        "byStanding": 589,
+        "rulings": 789
       }
     },
     {
@@ -1374,17 +1386,17 @@
   "finding_localisation_rate": 0.852,
   "minting.section_hit_rate": {
     "rate": 0.98,
-    "matched": 290,
-    "examined": 296,
-    "cases_reporting": 153
+    "matched": 291,
+    "examined": 297,
+    "cases_reporting": 155
   },
-  "actionability": { "actionable": 139, "total": 760, "rate": 0.183 },
+  "actionability": { "actionable": 139, "total": 761, "rate": 0.183 },
   "cost_per_confirmed_insight": {
     "tokens": null,
-    "toolCalls": 1697,
+    "toolCalls": 1719,
     "truePositives": 54,
     "tokensPer": null,
-    "toolCallsPer": 31.43
+    "toolCallsPer": 31.83
   },
   "sentinel.silent_zero": {
     "count": 0,
@@ -1468,6 +1480,13 @@
         "examined": 0
       },
       {
+        "corpus": "reference-only-target-control",
+        "metric": "coverage.backed",
+        "value": 0,
+        "population": 1,
+        "examined": 0
+      },
+      {
         "corpus": "gate-that-gates-nothing-python",
         "metric": "coverage.backed",
         "value": 0,
@@ -1511,27 +1530,27 @@
       }
     ]
   },
-  "corpora": 154,
+  "corpora": 156,
   "by_language": [
     {
       "language": "n/a",
-      "corpora": 8,
+      "corpora": 10,
       "families": [
         {
           "family": "archetype-matches-nothing",
           "truePositives": 0,
-          "falsePositives": 20,
+          "falsePositives": 21,
           "misses": 0,
           "precision": 1,
           "shape": "advisory",
           "recall": null,
           "precision_basis": {
             "precision": 1,
-            "truePositives": 16,
+            "truePositives": 17,
             "falsePositives": 0,
             "unadjudicated": 4,
-            "byStanding": 16,
-            "rulings": 625
+            "byStanding": 17,
+            "rulings": 789
           }
         },
         {
@@ -1590,7 +1609,7 @@
             "falsePositives": 0,
             "unadjudicated": 0,
             "byStanding": 172,
-            "rulings": 625
+            "rulings": 789
           }
         },
         {
@@ -1720,7 +1739,7 @@
             "falsePositives": 0,
             "unadjudicated": 0,
             "byStanding": 212,
-            "rulings": 625
+            "rulings": 789
           }
         },
         {
@@ -1877,7 +1896,7 @@
             "falsePositives": 0,
             "unadjudicated": 0,
             "byStanding": 188,
-            "rulings": 625
+            "rulings": 789
           }
         },
         {
@@ -1991,5 +2010,5 @@
     }
   ],
   "pending": [],
-  "findings": 760
+  "findings": 761
 }

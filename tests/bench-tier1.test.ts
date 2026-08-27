@@ -23,6 +23,7 @@ import { join } from "node:path";
 import { check as prettierCheck } from "prettier";
 
 import {
+  adjudicationOf,
   byLanguage,
   canonicalCorpusInventory,
   comparability,
@@ -37,6 +38,35 @@ import {
   silentZeros,
   validateCanonicalInventory,
 } from "../scripts/bench-tier1.mjs";
+
+test("TC-1078 standing rulings for one family are unioned", () => {
+  const adjudication = adjudicationOf(
+    [{ name: "case-a", rules: { present: [], absent: [] } }],
+    {
+      families: {
+        advisory: { key: "archetype-matches-nothing" },
+      },
+    },
+    [
+      {
+        reason: "archetype-matches-nothing",
+        verdict: "correct",
+        declarations: ["suite", "inspection"],
+      },
+      {
+        reason: "archetype-matches-nothing",
+        verdict: "correct",
+        declarations: ["source-id"],
+      },
+    ],
+  );
+
+  expect(adjudication.advisory.present).toEqual([
+    { corpus: "case-a", scope: "suite", standing: true },
+    { corpus: "case-a", scope: "inspection", standing: true },
+    { corpus: "case-a", scope: "source-id", standing: true },
+  ]);
+});
 
 test("TC-1077 generated Tier-1 baselines satisfy the repository format gate", async () => {
   const filepath = join(process.cwd(), "bench", "tier1-baseline.json");
