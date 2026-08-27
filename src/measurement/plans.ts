@@ -15,14 +15,19 @@ const STAGES = new Set<MeasurementPlan["stage"]>([
   "gate",
 ]);
 
-/** Load MeasurementPlans below a repository's `spec/assurance` directory. */
+/** Load MeasurementPlans from either supported repository assurance root. */
 export function loadMeasurementPlans(repo: string): MeasurementPlan[] {
-  const root = join(repo, "spec", "assurance");
-  if (!existsSync(root)) return [];
-  return markdownFiles(root)
+  return assuranceFiles(repo)
     .map((path) => planFrom(path, repo))
     .filter((plan): plan is MeasurementPlan => plan !== null)
     .sort((a, b) => compare(a.metric, b.metric) || compare(a.id, b.id));
+}
+
+function assuranceFiles(repo: string): string[] {
+  return [join(repo, "spec", "assurance"), join(repo, "assurance")]
+    .filter(existsSync)
+    .flatMap(markdownFiles)
+    .sort(compare);
 }
 
 function planFrom(path: string, repo: string): MeasurementPlan | null {

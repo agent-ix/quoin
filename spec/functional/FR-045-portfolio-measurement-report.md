@@ -31,7 +31,7 @@ easy to overlook and invites unlike populations to be summarized as one score.
 
 | ID | Criteria | Verification |
 | --- | --- | --- |
-| FR-045-AC-1 | One command accepts repeated repository locations and shows each readable repository's active AssuranceProfiles, active MeasurementPlans, latest collection provenance, corpus gaps, observations, and explicit `not_computed` rows. It accepts no observation value. | Test (TC-1013) |
+| FR-045-AC-1 | One command accepts repeated repository locations and shows each readable repository's active AssuranceProfiles and MeasurementPlans from either `spec/assurance` or the corpus-oriented root `assurance` layout, latest collection provenance, corpus gaps, observations, and explicit `not_computed` rows. It accepts no observation value. | Test (TC-1013, TC-1014) |
 | FR-045-AC-2 | Missing repositories, unreadable collections, missing stores, and repositories whose latest collection is more than 30 days behind the newest portfolio collection are named independently. A missing or unreadable value is never zero. | Test (TC-1011) |
 | FR-045-AC-3 | Each observation names its plan path and collection path. Latest-pair comparisons reuse FR-044 compatibility results, including changed definitions, without combining values across repositories or assigning a verdict. | Test (TC-1011, TC-1012) |
 | FR-045-AC-4 | Human and canonical JSON output render the same loaded report object deterministically, and the human view explicitly states that it computes no cross-repository aggregate. | Test (TC-1012) |

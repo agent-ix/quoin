@@ -24,7 +24,7 @@ export function validateMeasurementCollection(
     const plan = byMetric.get(observation.metric);
     if (!plan) {
       fail(
-        `metric \`${observation.metric}\` has no MeasurementPlan under spec/assurance; record refused`,
+        `metric \`${observation.metric}\` has no MeasurementPlan under spec/assurance or assurance; record refused`,
       );
     }
     if (plan.status !== "active") {

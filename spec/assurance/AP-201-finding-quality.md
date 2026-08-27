@@ -58,6 +58,13 @@ Retain the active plans, source and corpus revisions, tool and engine identity,
 configuration digest, full raw payload, per-family counts, gap count, comparison
 reasons, and tickets created from confirmed findings.
 
+## Measurement Ownership
+
+Quoin owns MP-201 through MP-211 and the `bench-tier1` producer that records
+them under `spec/evidence/measurements`. It does not store Quire engine-health
+or qa-corpus inventory measurements on their behalf; the portfolio joins those
+repositories without collapsing their producer or population boundaries.
+
 ## Tool Reliance and Independence
 
 Quoin's own tests establish conformance, not semantic correctness. Corpus labels,

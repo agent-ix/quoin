@@ -10,19 +10,24 @@ export interface AssuranceProfileSummary {
   path: string;
 }
 
-/** Load active assurance profiles from the repository assurance directory. */
+/** Load active profiles from either supported repository assurance root. */
 export function loadActiveAssuranceProfiles(
   repo: string,
 ): AssuranceProfileSummary[] {
-  const root = join(repo, "spec", "assurance");
-  if (!existsSync(root)) return [];
-  return markdownFiles(root)
+  return assuranceFiles(repo)
     .map((path) => profileFrom(path, repo))
     .filter(
       (profile): profile is AssuranceProfileSummary =>
         profile !== null && profile.status === "active",
     )
     .sort((a, b) => compare(a.id, b.id) || compare(a.path, b.path));
+}
+
+function assuranceFiles(repo: string): string[] {
+  return [join(repo, "spec", "assurance"), join(repo, "assurance")]
+    .filter(existsSync)
+    .flatMap(markdownFiles)
+    .sort(compare);
 }
 
 function profileFrom(

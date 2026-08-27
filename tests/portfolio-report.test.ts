@@ -242,4 +242,25 @@ describe("portfolio measurement report", () => {
     ).toEqual(["first", "second"]);
     expect(Object.keys(ReportCommand.flags)).not.toContain("value");
   });
+
+  test("TC-1014 a corpus-oriented root assurance directory is a governed store", () => {
+    const root = repo("root-assurance", false);
+    const rootAssurance = join(root, "assurance");
+    mkdirSync(rootAssurance, { recursive: true });
+    writeFileSync(join(rootAssurance, "AP-001.md"), PROFILE);
+    writeFileSync(join(rootAssurance, "MP-001.md"), plan("quality.fixture-v1"));
+    writeMeasurementCollection(
+      root,
+      collection("root-run", "2026-08-27T00:00:00.000Z"),
+    );
+
+    const repository = buildPortfolioReport([root]).repositories[0];
+    expect(repository.profiles).toEqual([
+      expect.objectContaining({ id: "AP-001", path: "assurance/AP-001.md" }),
+    ]);
+    expect(repository.plans).toEqual([
+      expect.objectContaining({ id: "MP-001", path: "assurance/MP-001.md" }),
+    ]);
+    expect(repository.latestCollection?.id).toBe("root-run");
+  });
 });
