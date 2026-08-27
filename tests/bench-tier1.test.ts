@@ -1157,6 +1157,15 @@ describe("the committed mapping table", () => {
     );
     expect(holes).toEqual([]);
   });
+
+  test("TC-1079 actionable unminted-id guidance is its own located family", () => {
+    expect(mapping.families["unminted-id-guidance"]).toEqual({
+      source: "coverage.diagnostics",
+      key: "untracked-id-has-minted-children",
+      locus: "path-line",
+      $note: expect.stringContaining("not typo correction"),
+    });
+  });
 });
 
 describe("the canonical qa-corpus inventory", () => {

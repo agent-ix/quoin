@@ -96,6 +96,12 @@
       "locus": "path",
       "$note": "agent-ix/quire-rs#307, landed in `e5a6ccc` (CR-136): an id in `untracked_symbols` and an id in `unbacked_rows` differing only by zero-padding, case or separator \u2014 one id written twice. The engine held both halves and joined neither, and neither older diagnostic could fire: `no-symbol-bound` needs `bound == 0` and `hollow-denominator` needs `matched == 0`, and on the fixture both are 1, because the tag bound fine \u2014 to the wrong id. So the repository reported a flawless census beside a zero backing ratio with nothing explaining the gap. Declared the day the token started being emitted rather than after a run reported nothing (quoin#236)."
     },
+    "unminted-id-guidance": {
+      "source": "coverage.diagnostics",
+      "key": "untracked-id-has-minted-children",
+      "locus": "path-line",
+      "$note": "agent-ix/quire-rs#328: an authored id is not itself minted, but the active model mints exact ids beneath it or its nearest ancestor. This is guidance, not typo correction: a direct parent names usable child ids, while a nested undeclared class says not to substitute a sibling merely to clear coverage. Kept separate from `untracked-id-near-miss`, which compares two spellings of one id. Six language-matched failures and controls seed the family; agent-ix/quoin#253 records the consumer integration."
+    },
     "vacuous-under-guard": {
       "source": "coverage.suspicions",
       "key": "vacuous-under-guard",

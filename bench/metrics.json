@@ -18,6 +18,7 @@
     "uncatalogued-verification-method",
     "undeclared-type-value",
     "undeclared-coverage-vocabulary",
+    "unminted-id-guidance",
     "untracked-id-near-miss",
     "vacuous-under-guard"
   ],

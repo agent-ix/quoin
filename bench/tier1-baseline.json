@@ -1,11 +1,11 @@
 {
   "provenance": {
-    "engine": "quire 0.30.2 (engine 92cecb2)",
-    "corpus": "5123f2a15d413dfde69c639ec6fd3611d15cc941",
-    "corpus_input": "sha256:740437285cdc555a0b407381c06165ce6a0b5f8add37ba2ee1ba6b1c4134b5b8",
+    "engine": "quire 0.30.2 (engine 9126463)",
+    "corpus": "257d2aeb5e677ff8a477e5d49cdaaa278c93d14c",
+    "corpus_input": "sha256:a6272929fef37502a1227d5dcea7fcdbce12bdfa61711cde6e5a119c9f03cbcd",
     "declaration": {
       "root": "corpus/modules",
-      "digest": "sha256:47c39841678e63cc4046011d0865a8920fab2d624d25e60443de75370808d00b",
+      "digest": "sha256:ee889a91c46de7dc6beed616014cbcc1e5dc3c5de014266c679ddca533ffd7b0",
       "modules": {
         "ecosystem": "sha256:829e7343fd73ffd65ec6fee8653228f37f919d236f01e6219b40cc1ee559c140",
         "variants/dead-coverage-vocabulary": "sha256:02b809f935173c9caf70736a238313e242a713bf9003894cd55a93d2f70034cf",
@@ -13,6 +13,7 @@
         "variants/no-implements-declaration": "sha256:1a11fc62ef36bc6bf34887e848cf02b7c19e19a985c2c71358a68f8b798aa190",
         "variants/no-trace-targets": "sha256:7327dd6ee367cad8c000be26ba5bd99a5495d7a014693e6f40cce113ee593ba0",
         "variants/one-trace-target": "sha256:cbbce295481d128c68ec4637435843634ca3e2ff1dd0f248445a245379176ebf",
+        "variants/optional-target-section": "sha256:1a801dd51c8af35c159216eeeb166fd4d602c4e9a64c8ff13a77067c0cd5b20f",
         "variants/reference-postures": "sha256:d8b3e219d7e93bf8149807c3316a4ca87e56212e4fe36103db83d363fca0f3cb"
       },
       "sources": {
@@ -25,9 +26,20 @@
     "gap_count": 0,
     "covered_count": 86,
     "covered_pending_count": 0,
-    "out_of_scope_count": 19,
-    "declared_cells": 105,
+    "out_of_scope_count": 20,
+    "declared_cells": 106,
     "matrix": [
+      {
+        "mode": "minting",
+        "case": "optional-target-section",
+        "source": "agent-ix/quire-rs#327 — optional minting sections produced 1,160 false section findings",
+        "cells": {
+          "n/a": {
+            "state": "out-of-scope",
+            "reason": "`optional-target-section-control` tests variant declaration `variants/optional-target-section`: optional minting sections"
+          }
+        }
+      },
       {
         "mode": "minting",
         "case": "reference-only-target",
@@ -810,15 +822,11 @@
       "mode": "join",
       "language": "python",
       "level": "L3",
-      "reached": 0,
+      "reached": 2,
       "population": 3,
-      "rate": 0,
+      "rate": 0.667,
       "gap_count": 0,
-      "misses": [
-        "tag-names-bare-fr-python",
-        "tag-names-undeclared-section-python",
-        "tag-names-unminted-tc-python"
-      ]
+      "misses": ["tag-names-unminted-tc-python"]
     },
     {
       "mode": "join",
@@ -844,15 +852,11 @@
       "mode": "join",
       "language": "rust",
       "level": "L3",
-      "reached": 0,
+      "reached": 2,
       "population": 3,
-      "rate": 0,
+      "rate": 0.667,
       "gap_count": 0,
-      "misses": [
-        "tag-names-bare-fr-rust",
-        "tag-names-undeclared-section-rust",
-        "tag-names-unminted-tc-rust"
-      ]
+      "misses": ["tag-names-unminted-tc-rust"]
     },
     {
       "mode": "join",
@@ -878,15 +882,11 @@
       "mode": "join",
       "language": "typescript",
       "level": "L3",
-      "reached": 0,
+      "reached": 2,
       "population": 3,
-      "rate": 0,
+      "rate": 0.667,
       "gap_count": 0,
-      "misses": [
-        "tag-names-bare-fr-typescript",
-        "tag-names-undeclared-section-typescript",
-        "tag-names-unminted-tc-typescript"
-      ]
+      "misses": ["tag-names-unminted-tc-typescript"]
     },
     {
       "mode": "minting",
@@ -1195,7 +1195,7 @@
         "falsePositives": 0,
         "unadjudicated": 4,
         "byStanding": 589,
-        "rulings": 789
+        "rulings": 799
       }
     },
     {
@@ -1351,6 +1351,15 @@
       "recall": 1
     },
     {
+      "family": "unminted-id-guidance",
+      "truePositives": 6,
+      "falsePositives": 0,
+      "misses": 0,
+      "precision": 1,
+      "shape": "defect",
+      "recall": 1
+    },
+    {
       "family": "untracked-id-near-miss",
       "truePositives": 1,
       "falsePositives": 0,
@@ -1382,21 +1391,21 @@
     { "family": "marker-form-mismatch", "reason": "no-symbol-bound" },
     { "family": "marker-form-mismatch", "reason": "no-symbol-bound" }
   ],
-  "positional": 46,
-  "finding_localisation_rate": 0.852,
+  "positional": 52,
+  "finding_localisation_rate": 0.867,
   "minting.section_hit_rate": {
     "rate": 0.98,
-    "matched": 291,
-    "examined": 297,
-    "cases_reporting": 155
+    "matched": 292,
+    "examined": 298,
+    "cases_reporting": 157
   },
-  "actionability": { "actionable": 139, "total": 761, "rate": 0.183 },
+  "actionability": { "actionable": 145, "total": 767, "rate": 0.189 },
   "cost_per_confirmed_insight": {
     "tokens": null,
-    "toolCalls": 1719,
-    "truePositives": 54,
+    "toolCalls": 1741,
+    "truePositives": 60,
     "tokensPer": null,
-    "toolCallsPer": 31.83
+    "toolCallsPer": 29.02
   },
   "sentinel.silent_zero": {
     "count": 0,
@@ -1480,6 +1489,13 @@
         "examined": 0
       },
       {
+        "corpus": "optional-target-section-control",
+        "metric": "coverage.backed",
+        "value": 0,
+        "population": 1,
+        "examined": 0
+      },
+      {
         "corpus": "reference-only-target-control",
         "metric": "coverage.backed",
         "value": 0,
@@ -1530,11 +1546,11 @@
       }
     ]
   },
-  "corpora": 156,
+  "corpora": 158,
   "by_language": [
     {
       "language": "n/a",
-      "corpora": 10,
+      "corpora": 12,
       "families": [
         {
           "family": "archetype-matches-nothing",
@@ -1550,7 +1566,7 @@
             "falsePositives": 0,
             "unadjudicated": 4,
             "byStanding": 17,
-            "rulings": 789
+            "rulings": 799
           }
         },
         {
@@ -1609,7 +1625,7 @@
             "falsePositives": 0,
             "unadjudicated": 0,
             "byStanding": 172,
-            "rulings": 789
+            "rulings": 799
           }
         },
         {
@@ -1718,6 +1734,15 @@
           "precision": 1,
           "shape": "defect",
           "recall": 1
+        },
+        {
+          "family": "unminted-id-guidance",
+          "truePositives": 2,
+          "falsePositives": 0,
+          "misses": 0,
+          "precision": 1,
+          "shape": "defect",
+          "recall": 1
         }
       ]
     },
@@ -1739,7 +1764,7 @@
             "falsePositives": 0,
             "unadjudicated": 0,
             "byStanding": 212,
-            "rulings": 789
+            "rulings": 799
           }
         },
         {
@@ -1859,6 +1884,15 @@
           "recall": 1
         },
         {
+          "family": "unminted-id-guidance",
+          "truePositives": 2,
+          "falsePositives": 0,
+          "misses": 0,
+          "precision": 1,
+          "shape": "defect",
+          "recall": 1
+        },
+        {
           "family": "untracked-id-near-miss",
           "truePositives": 1,
           "falsePositives": 0,
@@ -1896,7 +1930,7 @@
             "falsePositives": 0,
             "unadjudicated": 0,
             "byStanding": 188,
-            "rulings": 789
+            "rulings": 799
           }
         },
         {
@@ -2005,10 +2039,19 @@
           "precision": 1,
           "shape": "defect",
           "recall": 1
+        },
+        {
+          "family": "unminted-id-guidance",
+          "truePositives": 2,
+          "falsePositives": 0,
+          "misses": 0,
+          "precision": 1,
+          "shape": "defect",
+          "recall": 1
         }
       ]
     }
   ],
   "pending": [],
-  "findings": 761
+  "findings": 767
 }

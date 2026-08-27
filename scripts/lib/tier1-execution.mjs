@@ -325,7 +325,10 @@ export function createTier1Executor() {
         inspection = JSON.parse(inspected.stdout);
       } catch {
         throw new Error(
-          `bench-tier1: quoin evidence inspect-mocks produced no JSON for ${corpusRoot}`,
+          `bench-tier1: quoin evidence inspect-mocks produced no JSON for ${corpusRoot}\n` +
+            `exit: ${inspected.ok ? "0" : "non-zero"}\n` +
+            `stdout: ${inspected.stdout.trim() || "<empty>"}\n` +
+            `stderr: ${inspected.stderr.trim() || "<empty>"}`,
         );
       }
       const inspectedSymbols = [

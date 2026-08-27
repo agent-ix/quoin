@@ -8,6 +8,19 @@ description: "Chronological log of structural changes to this bundle."
 
 ## History
 
+* **2026-08-26** — **CR-121**: Tier 1 scores Quire's actionable
+  `untracked-id-has-minted-children` diagnostic as the distinct, located
+  `unminted-id-guidance` family (`agent-ix/quoin#253`,
+  `agent-ix/quire-rs#328`). The fail-closed reason guard found the missing
+  consumer mapping on the first real repin. The first governed run then found
+  the proposed remedy was only **3 TP / 3 FP (50% precision)**: it correctly
+  guided bare FR parents, but told nested invariant ids to substitute AC
+  siblings and thereby manufacture false evidence. Quire now distinguishes
+  those cases, and the six three-language failures plus their controls measure
+  both remedies separately from spelling near misses. The rejected measurement
+  remains in the evidence store rather than being hidden by the corrected
+  baseline. FR-043 AC-22; Matrix: TC-1079.
+
 * **2026-08-26** — **CR-120**: multiple standing advisory rulings for one family are unioned instead of last-entry-wins (`agent-ix/quoin#252`, found during the governed #278 corpus repin). A one-declaration `source-id` ruling had silently erased four existing declaration scopes: ruled-by-standing fell 588 → 1 and unadjudicated jumped 4 → 592, while the deliberate population move made the ratchet incomparable and allowed an update. `adjudicationOf` now accumulates declaration sets and TC-1078 reproduces the two-entry overwrite. FR-043 AC-16; Matrix: TC-1078.
 
 * **2026-08-26** — **CR-119**: Quoin refreshes its closed Quire output contract to verified engine `92cecb2` after the real Tier-1 gate rejected the additive `minted_targets` and `unmatched_tags` fields (`agent-ix/quoin#251`, found while repinning qa-corpus for `agent-ix/quire-rs#278`). Both records now have typed consumer shapes and malformed-record tests. TC-118 no longer trusts whichever `quire` happens to be on PATH: `make test` passes the same explicit `QUIRE` binary as Tier 1, and its live bundle must emit `implements`, a minted target, and an unmatched tag so another additive drift cannot hide behind an unexercised optional field. FR-029 AC-7/9; Matrix: TC-116, TC-118, TC-272.
