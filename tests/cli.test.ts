@@ -53,6 +53,7 @@ import ConfigGet from "../src/commands/config/get";
 import ConfigSet from "../src/commands/config/set";
 import ConfigDoctor from "../src/commands/config/doctor";
 import ConfigEdit from "../src/commands/config/edit";
+import MeasurementIndex from "../src/commands/measurement/index";
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -202,6 +203,13 @@ afterEach(() => {
 // ---- runner / dispatch parity (TC-016, TC-107) -------------------------------
 
 describe("oclif runner dispatch parity", () => {
+  test("the test process keeps production dist command discovery", () => {
+    // Regression for #247: this used to be set in this file's beforeAll, after
+    // other parallel test files had already called loadConfig and emitted a
+    // screenful of ERR_UNKNOWN_FILE_EXTENSION warnings.
+    expect(settings.enableAutoTranspile).toBe(false);
+  });
+
   // Trace: FR-026-AC-1
   test("the runner discovers every migrated command (no legacy dispatcher)", () => {
     const ids = new Set(config.commandIDs);
@@ -220,6 +228,8 @@ describe("oclif runner dispatch parity", () => {
       "module:install",
       "module:remove",
       "module:ensure-defaults",
+      "measurement",
+      "measurement:record",
       "plugin",
       "plugin:list",
       "plugin:install",
@@ -228,6 +238,18 @@ describe("oclif runner dispatch parity", () => {
     ]) {
       expect(ids.has(id)).toBe(true);
     }
+  });
+
+  test("a measurement topic renders without an optional help plugin", async () => {
+    const c = captureLog();
+    try {
+      await runCmd(MeasurementIndex, []);
+    } finally {
+      c.restore();
+    }
+    expect(c.lines.join("\n")).toContain(
+      "Measurement collections connect raw producer output",
+    );
   });
 
   // Trace: FR-026-AC-2

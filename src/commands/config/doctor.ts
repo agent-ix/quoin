@@ -9,6 +9,7 @@ export default class ConfigDoctor extends QuoinCommand {
 problem is recorded instead. This is where those records surface.`;
 
   async run(): Promise<void> {
+    await this.parse(ConfigDoctor);
     registerQuoinSchema();
     // Adopt the handler's code unconditionally: a doctor run's result is the
     // invocation's result, and assigning 0 on a clean run is what the process

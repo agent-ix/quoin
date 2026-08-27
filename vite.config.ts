@@ -117,6 +117,11 @@ export default defineConfig(({ command }) => ({
     // the ecosystem manifest's `source_exclude`: a fixture tree that carries
     // real-looking evidence has to be excluded by the tools that walk it.
     exclude: ["node_modules/**", "dist/**", "corpus/**"],
+    // Oclif enables source auto-transpilation whenever NODE_ENV=test. That
+    // makes Config.load prefer src/commands/*.ts over the built command tree,
+    // even though dispatch tests deliberately exercise dist/. Configure the
+    // process before every test module imports a command loader.
+    setupFiles: ["tests/setup.ts"],
     // The command-level tests shell out to `quire coverage`, which needs an
     // installed module declaring a `traceability:` model. Present on a
     // developer machine, absent in CI — see tests/global-setup.ts.
