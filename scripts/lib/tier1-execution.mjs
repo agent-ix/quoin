@@ -66,12 +66,16 @@ export function createTier1Executor() {
       for (const diagnostic of payload.diagnostics ?? []) {
         if (diagnostic.reason !== definition.key) continue;
         findings.push({
+          sourceClass: "quire",
+          producer: "quire",
+          channel: "coverage.diagnostics",
           family,
           reason: diagnostic.reason,
           path: diagnostic.path ?? null,
           line: typeof diagnostic.line === "number" ? diagnostic.line : null,
           declaration: diagnostic.declaration ?? null,
           message: diagnostic.message ?? "",
+          rawProducerOutput: diagnostic,
         });
       }
     }
@@ -79,12 +83,16 @@ export function createTier1Executor() {
       for (const suspicion of payload.suspicions ?? []) {
         if (suspicion.kind !== definition.key) continue;
         findings.push({
+          sourceClass: "quire",
+          producer: "quire",
+          channel: "coverage.suspicions",
           family,
           reason: suspicion.kind,
           path: suspicion.path ?? null,
           line: typeof suspicion.line === "number" ? suspicion.line : null,
           message: suspicion.message ?? "",
           evidence: suspicion.evidence ?? "",
+          rawProducerOutput: suspicion,
         });
       }
     }
@@ -95,12 +103,16 @@ export function createTier1Executor() {
       const metric = metrics.get(definition.key);
       if (!metric || metric.state !== "measured") continue;
       findings.push({
+        sourceClass: "quire",
+        producer: "quire",
+        channel: "coverage.metrics",
         family,
         reason: definition.key,
         path: null,
         line: null,
         metric: definition.key,
         value: Number(metric.value),
+        rawProducerOutput: metric,
       });
     }
 
@@ -124,11 +136,15 @@ export function createTier1Executor() {
         for (const finding of audit.findings ?? []) {
           if (finding.kind !== definition.key) continue;
           findings.push({
+            sourceClass: "quoin",
+            producer: "quoin",
+            channel: "evidence.audit",
             family,
             reason: finding.kind,
             path: finding.path ?? null,
             line: typeof finding.line === "number" ? finding.line : null,
             message: finding.summary ?? "",
+            rawProducerOutput: finding,
           });
         }
       }
@@ -164,11 +180,15 @@ export function createTier1Executor() {
         for (const finding of validated.findings ?? []) {
           if (finding.kind !== definition.key) continue;
           findings.push({
+            sourceClass: "quoin",
+            producer: "quoin",
+            channel: "validate",
             family,
             reason: finding.kind,
             path: finding.path ?? null,
             line: typeof finding.line === "number" ? finding.line : null,
             message: finding.summary ?? "",
+            rawProducerOutput: finding,
           });
         }
       }
@@ -225,11 +245,15 @@ export function createTier1Executor() {
       const contains = mapping.families[family]?.contains;
       if (contains && !record.message.includes(contains)) continue;
       findings.push({
+        sourceClass: "quire",
+        producer: "quire",
+        channel: "validate.findings",
         family,
         reason,
         path,
         line: Number(line),
         message: record.message,
+        rawProducerOutput: record,
       });
     }
 

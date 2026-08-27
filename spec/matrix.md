@@ -476,6 +476,10 @@ generated tests under `tests/props/` and `Unit` for the rest.
 | TC-1077 | The supported Tier-1 update emits baseline JSON in the same format the repository gate enforces; updating a ratchet cannot make the next gate fail on style alone (#244) | Unit | P0 | FR-043-AC-17 | ✅ |
 | TC-1078 | Multiple standing-adjudication entries for one advisory family are unioned by declaration; a later narrow ruling cannot silently erase an earlier ruling (#252) | Unit | P0 | FR-043-AC-16 | ✅ |
 | TC-1079 | `untracked-id-has-minted-children` maps to a distinct located unminted-ID family rather than being folded into spelling near misses (#253) | Unit | P0 | FR-043-AC-22 | ✅ |
+| TC-1080 | Quire, Quoin, and external-observation adapters preserve producer attribution and raw output without inventing missing evidence (#255) | Unit | P0 | FR-043-AC-23 | ✅ |
+| TC-1081 | The finding-envelope reader refuses missing producers, malformed availability states, and unknown versions (#255) | Unit | P0 | FR-043-AC-23 | ✅ |
+| TC-1082 | Actionability v2 scores positive, negative, unavailable, and not-applicable records with explicit counts, misses, and exclusions (#254) | Unit | P0 | FR-043-AC-24 | ✅ |
+| TC-1083 | Historical actionability v1 remains reproducible while finding/locality grading consumes normalized envelopes (#254, #255) | Unit | P0 | FR-043-AC-24 | ✅ |
 | TC-926 | Every metric in the dictionary declares `unit`, `population` and `method`; one missing any of the three is rejected at load rather than reported with a gap | Unit | P0 | FR-043-AC-1 | ✅ |
 | TC-927 | `finding_precision`/`finding_recall` are declared per defect family, each keyed on a family the corpora label, so no score is reported over an unlabelled population | Unit | P0 | FR-043-AC-2 | ✅ |
 | TC-928 | `span_grounding_rate` is declared with the pass-2 figure (0 of 65 specific-shape records) as its starting baseline | Unit | P0 | FR-043-AC-3 | ✅ |

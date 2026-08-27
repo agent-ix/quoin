@@ -128,16 +128,34 @@ export function ratchet(report, previous, dictionary) {
     });
   }
 
-  if (report.actionability && report.actionability.rate !== null) {
+  const actionabilityV1 = report.actionability_v1 ?? report.actionability;
+  const previousActionabilityV1 =
+    previous?.actionability_v1 ?? previous?.actionability;
+  if (actionabilityV1 && actionabilityV1.rate !== null) {
     const [verdict, kept] = compare(
       dictionary.metrics.actionability_rate.direction,
-      report.actionability.rate,
-      previous?.actionability?.rate ?? null,
+      actionabilityV1.rate,
+      previousActionabilityV1?.rate ?? null,
     );
     out.push({
       metric: "actionability_rate",
       family: null,
-      observed: report.actionability.rate,
+      observed: actionabilityV1.rate,
+      baseline: kept,
+      verdict,
+    });
+  }
+
+  if (report.actionability_v2 && report.actionability_v2.rate !== null) {
+    const [verdict, kept] = compare(
+      dictionary.metrics.actionability_v2_rate.direction,
+      report.actionability_v2.rate,
+      previous?.actionability_v2?.rate ?? null,
+    );
+    out.push({
+      metric: "actionability_v2_rate",
+      family: null,
+      observed: report.actionability_v2.rate,
       baseline: kept,
       verdict,
     });
@@ -190,7 +208,14 @@ export function ratchet(report, previous, dictionary) {
       return previous?.finding_localisation_rate ?? null;
     }
     if (verdict.metric === "actionability_rate") {
-      return previous?.actionability?.rate ?? null;
+      return (
+        previous?.actionability_v1?.rate ??
+        previous?.actionability?.rate ??
+        null
+      );
+    }
+    if (verdict.metric === "actionability_v2_rate") {
+      return previous?.actionability_v2?.rate ?? null;
     }
     if (verdict.metric === "sentinel.silent_zero") return 0;
     return verdict.baseline;

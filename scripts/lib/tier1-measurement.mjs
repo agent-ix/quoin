@@ -131,14 +131,35 @@ export function createMeasurementRecord(report, at, options) {
     }),
     observation(
       "actionability_rate",
-      report.actionability?.rate == null
+      (report.actionability_v1 ?? report.actionability)?.rate == null
         ? null
-        : Number((report.actionability.rate * 100).toFixed(3)),
+        : Number(
+            (
+              (report.actionability_v1 ?? report.actionability).rate * 100
+            ).toFixed(3),
+          ),
       {
         population: {
-          examined: report.actionability?.total ?? 0,
-          matched: report.actionability?.actionable ?? 0,
+          examined:
+            (report.actionability_v1 ?? report.actionability)?.total ?? 0,
+          matched:
+            (report.actionability_v1 ?? report.actionability)?.actionable ?? 0,
           complete: true,
+        },
+      },
+    ),
+    observation(
+      "actionability_v2_rate",
+      report.actionability_v2?.rate == null
+        ? null
+        : Number((report.actionability_v2.rate * 100).toFixed(3)),
+      {
+        population: {
+          examined: report.actionability_v2?.denominator ?? 0,
+          matched: report.actionability_v2?.numerator ?? 0,
+          complete: true,
+          exclusions: report.actionability_v2?.exclusions ?? [],
+          namedMisses: report.actionability_v2?.namedMisses ?? [],
         },
       },
     ),

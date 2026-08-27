@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { normalizeQuireFinding } from "../evals/lib/finding-envelope.mjs";
 import {
   detectionRecall,
   recallGateFails,
@@ -43,6 +44,22 @@ describe("detection.recall", () => {
     ];
 
     const rows = detectionRecall(corpora, findings, 31);
+    const normalizedRows = detectionRecall(
+      corpora,
+      findings.map((finding) =>
+        normalizeQuireFinding(
+          { reason: "section", ...finding },
+          {
+            producer: "quire",
+            channel: "coverage.diagnostics",
+            family: finding.family,
+            corpus: finding.corpus,
+          },
+        ),
+      ),
+      31,
+    );
+    expect(normalizedRows).toEqual(rows);
     expect(rows).toEqual([
       expect.objectContaining({
         language: "python",

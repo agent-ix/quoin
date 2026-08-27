@@ -71,6 +71,15 @@
       "baseline": 3.02,
       "baseline_note": "Battletest pass 2 measured 15 of 496 (3.02%). Tier 1 measured 2/20 (10.0%) over 21 scored cases, 2/42 (4.8%) over 34, 92/487 (18.9%) over 97 after structured diagnostic lines were preserved, and 139/760 (18.3%) over the current 154-case corpus. These populations are recorded separately, never presented as one trend (quoin#239)."
     },
+    "actionability_v2_rate": {
+      "measurement_plan": "spec/assurance/MP-212-actionability-v2.md",
+      "unit": "percent of applicable emitted findings",
+      "population": "normalized finding-envelope-v2 records for which actionability is applicable",
+      "method": "findings carrying an affected subject or locus, causal evidence, a concrete change target, and either a remedy or safe next diagnostic step, over applicable normalized findings. unavailable fields are named misses; not_applicable fields are named exclusions",
+      "direction": "higher-is-better",
+      "baseline": null,
+      "baseline_note": "The retained Tier-1 baseline records this beside, and never in place of, finding.actionability-v1. The first accepted run establishes the ratchet."
+    },
     "cost_per_confirmed_insight": {
       "measurement_plan": "spec/assurance/MP-206-confirmed-insight-cost.md",
       "unit": "tokens and tool calls per true positive",

@@ -9,6 +9,11 @@
 // findings currently scores better than an expensive run producing right ones,
 // and nothing in the report says so.
 
+import {
+  isFindingEnvelope,
+  validateFindingEnvelope,
+} from "./finding-envelope.mjs";
+
 /**
  * Finding precision and recall against a labelled corpus (FR-043-AC-2).
  *
@@ -86,21 +91,21 @@ export function scoreFindings(found, labels, shapes = {}, adjudication = {}) {
     const index = declaredCollateral.findIndex(
       (c, i) =>
         !spent.has(i) &&
-        c.family === finding.family &&
+        c.family === findingFamily(finding) &&
         (c.reason === undefined || c.reason === findingReason(finding)) &&
         // Compared only when BOTH sides name a case. A caller that scores a
         // flat finding list with no corpus attribution — the eval harness
         // does — keeps the old, looser pairing rather than losing collateral
         // suppression entirely.
         (c.corpus === undefined ||
-          finding.corpus === undefined ||
-          c.corpus === finding.corpus),
+          findingCase(finding) === undefined ||
+          c.corpus === findingCase(finding)),
     );
     if (index === -1) continue;
     spent.add(index);
     setAside.add(finding);
     collateral.push({
-      family: finding.family,
+      family: findingFamily(finding),
       reason: findingReason(finding),
     });
   }
@@ -115,7 +120,7 @@ export function scoreFindings(found, labels, shapes = {}, adjudication = {}) {
     const hit = expected.find(
       (l) =>
         !matched.has(l.id) &&
-        l.family === finding.family &&
+        l.family === findingFamily(finding) &&
         locusMatches(locus, labelLocus(l)),
     );
     if (hit) {
@@ -144,14 +149,14 @@ export function scoreFindings(found, labels, shapes = {}, adjudication = {}) {
     const hit = expected.find(
       (l) =>
         !matched.has(l.id) &&
-        l.family === finding.family &&
+        l.family === findingFamily(finding) &&
         !(positioned && labelLocus(l) !== null),
     );
     if (hit) {
       matched.add(hit.id);
       bucket(hit.family).truePositives += 1;
     } else {
-      bucket(finding.family).falsePositives += 1;
+      bucket(findingFamily(finding)).falsePositives += 1;
     }
   }
   for (const label of expected) {
@@ -244,8 +249,8 @@ function scopedPrecision(family, scored, adjudication) {
   const matching = (rules, finding) =>
     rules.find(
       (r) =>
-        r.corpus === finding.corpus &&
-        (r.scope === null || r.scope === finding.declaration),
+        r.corpus === findingCase(finding) &&
+        (r.scope === null || r.scope === findingDeclaration(finding)),
     );
   let truePositives = 0;
   let falsePositives = 0;
@@ -259,12 +264,12 @@ function scopedPrecision(family, scored, adjudication) {
   // what its name says.
   let byStanding = 0;
   for (const finding of scored) {
-    if (finding.family !== family) continue;
+    if (findingFamily(finding) !== family) continue;
     // A finding with no case attribution cannot be ruled on at all. Counted as
     // unadjudicated rather than dropped: an unscored finding nobody sees is a
     // finding nobody can question, which is the rule the collateral pass is
     // held to a few lines up.
-    if (finding.corpus === undefined) {
+    if (findingCase(finding) === undefined) {
       unadjudicated += 1;
       continue;
     }
@@ -296,11 +301,35 @@ function scopedPrecision(family, scored, adjudication) {
 
 /** The reason a finding carries, under either of the two payload spellings. */
 function findingReason(finding) {
-  return finding.reason ?? finding.kind ?? null;
+  return finding.kind ?? finding.reason ?? null;
+}
+
+function findingFamily(finding) {
+  return isFindingEnvelope(finding) ? finding.identity?.family : finding.family;
+}
+
+function findingCase(finding) {
+  return isFindingEnvelope(finding) ? finding.identity?.case : finding.corpus;
+}
+
+function findingDeclaration(finding) {
+  return isFindingEnvelope(finding)
+    ? finding.identity?.declaration
+    : finding.declaration;
 }
 
 /** Where a FINDING points, or `null` when it names no place. */
 function locusOf(finding) {
+  if (isFindingEnvelope(finding)) {
+    const locus = finding.locus;
+    if (locus.state !== "available") return null;
+    const path = locus.value?.path;
+    if (!path) return null;
+    return {
+      path: String(path),
+      line: typeof locus.value?.line === "number" ? locus.value.line : null,
+    };
+  }
   const path = finding.path ?? finding.document ?? finding.file ?? null;
   if (!path) return null;
   return {
@@ -351,18 +380,108 @@ function locusMatches(finding, label) {
 export function scoreActionability(found) {
   const actionable = found.filter((f) => hasLocus(f)).length;
   return {
+    definitionVersion: "finding.actionability-v1",
+    numerator: actionable,
+    denominator: found.length,
+    exclusions: [],
+    namedMisses: [],
     actionable,
     total: found.length,
     rate: ratio(actionable, found.length),
   };
 }
 
+/**
+ * Actionability v2: correct subject/locus, causal evidence, a concrete change
+ * target, and either a remedy or a safe next diagnostic step (#254).
+ *
+ * `not_applicable` removes a record from this metric and remains named in the
+ * exclusions. `unavailable` stays in the denominator and is a named miss: not
+ * emitted is evidence about the producer, not permission to shrink the score.
+ */
+export function scoreActionabilityV2(found) {
+  const namedMisses = [];
+  const exclusions = [];
+  let numerator = 0;
+  let denominator = 0;
+
+  found.forEach((finding, index) => {
+    validateFindingEnvelope(finding);
+    const id = findingIdentity(finding, index);
+    const subjectOrLocus =
+      finding.subject.state === "available" ||
+      finding.locus.state === "available";
+    const required = [
+      ["causal_evidence", finding.causalEvidence],
+      ["change_target", finding.changeTarget],
+      ["next_move", finding.nextMove],
+    ];
+    const notApplicable = required
+      .filter(([, value]) => value.state === "not_applicable")
+      .map(([field, value]) => ({ field, reason: value.reason }));
+    const locusNotApplicable =
+      finding.subject.state === "not_applicable" &&
+      finding.locus.state === "not_applicable";
+    if (locusNotApplicable) {
+      notApplicable.unshift({
+        field: "subject_or_locus",
+        reason: `${finding.subject.reason}; ${finding.locus.reason}`,
+      });
+    }
+    if (notApplicable.length > 0) {
+      exclusions.push({ id, fields: notApplicable });
+      return;
+    }
+
+    denominator += 1;
+    const missing = [];
+    if (!subjectOrLocus) {
+      missing.push({
+        field: "subject_or_locus",
+        state: "unavailable",
+        reason: `${finding.subject.reason}; ${finding.locus.reason}`,
+      });
+    }
+    for (const [field, value] of required) {
+      if (value.state !== "available") {
+        missing.push({ field, state: value.state, reason: value.reason });
+      }
+    }
+    if (missing.length === 0) numerator += 1;
+    else namedMisses.push({ id, missing });
+  });
+
+  return {
+    definitionVersion: "finding.actionability-v2",
+    numerator,
+    denominator,
+    exclusions,
+    namedMisses,
+    rate: ratio(numerator, denominator),
+  };
+}
+
 /** A finding is actionable when it names WHERE — a row id or a document line. */
 function hasLocus(finding) {
+  if (isFindingEnvelope(finding)) {
+    if (finding.locus.state !== "available") return false;
+    return Boolean(finding.locus.value?.rowId || finding.locus.value?.line);
+  }
   return Boolean(
     (finding.rowId && String(finding.rowId).trim()) ||
     (typeof finding.line === "number" && finding.line > 0),
   );
+}
+
+function findingIdentity(finding, index) {
+  const parts = [
+    finding.source.producer,
+    finding.source.channel,
+    finding.identity?.case,
+    finding.identity?.family,
+    finding.kind,
+  ].filter(Boolean);
+  return parts.length > 0 ? parts.join(":") : `finding-${index + 1}`;
 }
 
 /**

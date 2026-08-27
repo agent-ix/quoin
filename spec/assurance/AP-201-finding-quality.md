@@ -60,10 +60,30 @@ reasons, and tickets created from confirmed findings.
 
 ## Measurement Ownership
 
-Quoin owns MP-201 through MP-211 and the `bench-tier1` producer that records
+Quoin owns MP-201 through MP-212 and the `bench-tier1` producer that records
 them under `spec/evidence/measurements`. It does not store Quire engine-health
 or qa-corpus inventory measurements on their behalf; the portfolio joins those
 repositories without collapsing their producer or population boundaries.
+
+## Normalized Finding Envelope
+
+`finding-envelope-v2` is the evaluation boundary shared by Quire findings,
+Quoin findings, and retained external observations. It does not change a
+producer's public payload. Every envelope records the producer class, producer,
+channel and optional version; kind and evaluation identity; subject, locus,
+causal evidence, change target, and next move; and the unmodified producer
+record beside the normalized fields.
+
+Each finding field is explicitly `available` with its producer-supplied value,
+`unavailable` with a reason, or `not_applicable` with a reason. Adapters may copy
+explicit fields and coordinates. They do not derive causal evidence from a
+kind, turn a locus into a change target, or attribute an external observation
+to Quire or Quoin.
+
+Adding optional fields is backward-compatible within v2. Removing or
+reinterpreting a field, state, or scoring meaning requires a new envelope and
+metric definition version. Readers reject unknown versions and malformed
+availability slots.
 
 ## Tool Reliance and Independence
 

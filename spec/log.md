@@ -8,6 +8,19 @@ description: "Chronological log of structural changes to this bundle."
 
 ## History
 
+* **2026-08-27** — **CR-123**: findings from Quire, Quoin, and retained
+  external observations share the versioned `finding-envelope-v2` evaluation
+  boundary (`agent-ix/quoin#254`, `#255`). Availability is explicit for subject,
+  locus, causal evidence, change target, and next move; adapters retain raw
+  producer output and do not infer missing evidence. The historical
+  `finding.actionability-v1` locus score reproduces at **145/473 (30.7%)**.
+  `finding.actionability-v2` starts separately at **0/473**, with every missing
+  component named; the zero is an honest repair backlog, not a reinterpretation
+  of v1. The controlled 158-case run retains all prior precision, recall,
+  locality, and L1/L2/L3 values while the graders consume normalized records.
+  MP-212 and a one-way v2 ratchet prevent the definition or floor changing
+  silently. FR-043 AC-23/24; Matrix: TC-1080..TC-1083.
+
 * **2026-08-26** — **CR-122**: the controlled `population-changed` report no
   longer publishes the retracted `24.63% → 22.89%` prediction as evidence for
   `agent-ix/quire-rs#272` (`agent-ix/qa-corpus#1`, independently re-measured in

@@ -1,3 +1,5 @@
+import { isFindingEnvelope } from "../../evals/lib/finding-envelope.mjs";
+
 /** Detection recall over seeded failures, partitioned by level, mode and language. */
 export function detectionRecall(corpora, findings, gapCount, payloads = []) {
   const groups = new Map();
@@ -57,7 +59,8 @@ export function detectionRecall(corpora, findings, gapCount, payloads = []) {
       group.population += 1;
       const candidates = findings.filter(
         (finding) =>
-          finding.corpus === corpus.name && finding.family === label.family,
+          findingCase(finding) === corpus.name &&
+          findingFamily(finding) === label.family,
       );
       const l1 = candidates.length > 0;
       const l2 =
@@ -72,9 +75,7 @@ export function detectionRecall(corpora, findings, gapCount, payloads = []) {
           (finding) =>
             lociMatch(finding, label.location) &&
             fragments.every((fragment) =>
-              `${finding.message ?? ""}\n${finding.evidence ?? ""}`.includes(
-                fragment,
-              ),
+              findingText(finding).includes(fragment),
             ),
         );
       for (const [level, reached] of [
@@ -163,7 +164,16 @@ function lociMatch(finding, expected) {
   const match = /^(.*):(\d+)$/.exec(String(expected));
   const expectedPath = match ? match[1] : String(expected);
   const expectedLine = match ? Number(match[2]) : null;
-  const actualPath = finding.path ?? finding.document ?? finding.file ?? null;
+  const normalizedLocus = isFindingEnvelope(finding)
+    ? finding.locus.state === "available"
+      ? finding.locus.value
+      : {}
+    : finding;
+  const actualPath =
+    normalizedLocus.path ??
+    normalizedLocus.document ??
+    normalizedLocus.file ??
+    null;
   if (!actualPath) return false;
   if (
     !String(actualPath).endsWith(expectedPath) &&
@@ -173,9 +183,28 @@ function lociMatch(finding, expected) {
   }
   return (
     expectedLine === null ||
-    typeof finding.line !== "number" ||
-    finding.line === expectedLine
+    typeof normalizedLocus.line !== "number" ||
+    normalizedLocus.line === expectedLine
   );
+}
+
+function findingCase(finding) {
+  return isFindingEnvelope(finding) ? finding.identity?.case : finding.corpus;
+}
+
+function findingFamily(finding) {
+  return isFindingEnvelope(finding) ? finding.identity?.family : finding.family;
+}
+
+function findingText(finding) {
+  if (!isFindingEnvelope(finding)) {
+    return `${finding.message ?? ""}\n${finding.evidence ?? ""}`;
+  }
+  return finding.causalEvidence.state === "available"
+    ? typeof finding.causalEvidence.value === "string"
+      ? finding.causalEvidence.value
+      : JSON.stringify(finding.causalEvidence.value)
+    : "";
 }
 
 function ratio(numerator, denominator) {

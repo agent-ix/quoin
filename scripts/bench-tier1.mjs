@@ -19,8 +19,10 @@ import { fileURLToPath } from "node:url";
 import { format as prettierFormat } from "prettier";
 
 import { crossCheckFamilies, loadMetrics } from "../evals/lib/dictionary.mjs";
+import { normalizeFinding } from "../evals/lib/finding-envelope.mjs";
 import {
   scoreActionability,
+  scoreActionabilityV2,
   scoreCost,
   scoreFindings,
 } from "../evals/lib/quality.mjs";
@@ -351,11 +353,17 @@ async function main() {
       untrackedSymbols,
     });
     found.push(
-      ...findings.map((f) => ({
-        ...f,
-        corpus: corpus.name,
-        language: corpus.language,
-      })),
+      ...findings.map((f) =>
+        normalizeFinding(f, {
+          sourceClass: f.sourceClass,
+          producer: f.producer,
+          channel: f.channel,
+          family: f.family,
+          corpus: corpus.name,
+          language: corpus.language,
+          declaration: f.declaration,
+        }),
+      ),
     );
     const hit = metrics.find((m) => m.name === SECTION_HIT_RATE);
     if (hit && hit.state === "measured") {
@@ -372,7 +380,9 @@ async function main() {
       .map((l) => [l.expect_metric, Number(l.expect_value)]),
   );
   const scoredFindings = found.filter(
-    (f) => f.metric === undefined || expectedValues.get(f.metric) === f.value,
+    (f) =>
+      f.evaluation.metric === undefined ||
+      expectedValues.get(f.evaluation.metric) === f.evaluation.value,
   );
 
   // Family scoring shape is declared in the mapping.
@@ -425,7 +435,8 @@ async function main() {
           cases_reporting: sectionHit.cases,
         }
       : null,
-    actionability: scoreActionability(scoredFindings),
+    actionability_v1: scoreActionability(scoredFindings),
+    actionability_v2: scoreActionabilityV2(scoredFindings),
     // Tier 1 calls no model, so token cost is not measured; tool calls are.
     cost_per_confirmed_insight: scoreCost(
       { toolCalls: execution.toolCalls() },
@@ -449,6 +460,7 @@ async function main() {
     // Preserve excluded pending cases in machine-readable output.
     pending: pending.map((c) => ({ case: c.name, ticket: c.pending })),
     findings: scoredFindings.length,
+    finding_records: scoredFindings,
   };
 
   const previous = existsSync(BASELINE)

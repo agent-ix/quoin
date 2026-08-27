@@ -1,3 +1,4 @@
+import { isFindingEnvelope } from "../../evals/lib/finding-envelope.mjs";
 import { scoreFindings } from "../../evals/lib/quality.mjs";
 
 /** Find ratio metrics that read none of a non-zero population without explanation. */
@@ -62,7 +63,13 @@ export function byLanguage(corpora, findings, labels, shapes, adjudication) {
       language,
       corpora: names.size,
       families: scoreFindings(
-        findings.filter((finding) => names.has(finding.corpus)),
+        findings.filter((finding) =>
+          names.has(
+            isFindingEnvelope(finding)
+              ? finding.identity?.case
+              : finding.corpus,
+          ),
+        ),
         labels.filter((label) => names.has(label.corpus)),
         shapes,
         adjudication,

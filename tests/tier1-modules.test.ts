@@ -92,7 +92,7 @@ fi
       },
     });
 
-    expect(result.findings).toEqual([
+    expect(result.findings).toMatchObject([
       {
         family: "coverage",
         reason: "located",
@@ -109,6 +109,12 @@ fi
         message: "spec/a.md: line 9: bad [validated]",
       },
     ]);
+    expect(result.findings[0]).toMatchObject({
+      sourceClass: "quire",
+      producer: "quire",
+      channel: "coverage.diagnostics",
+      rawProducerOutput: { reason: "located", path: "spec/a.md", line: 7 },
+    });
     expect(execution.toolCalls()).toBe(2);
   });
 
@@ -216,7 +222,7 @@ if (args.join(" ").includes("evidence audit")) {
       },
       quoin,
     );
-    expect(result.findings).toEqual([
+    expect(result.findings).toMatchObject([
       {
         family: "mocked",
         reason: "mocked-confirmation",
@@ -225,6 +231,12 @@ if (args.join(" ").includes("evidence audit")) {
         message: "located",
       },
     ]);
+    expect(result.findings[0]).toMatchObject({
+      sourceClass: "quoin",
+      producer: "quoin",
+      channel: "evidence.audit",
+      rawProducerOutput: { kind: "mocked-confirmation" },
+    });
     // Symbol discovery adds one production inspect-mocks dry run.
     expect(execution.toolCalls()).toBe(10);
   });

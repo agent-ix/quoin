@@ -42,8 +42,11 @@ export function renderTier1(report, verdicts) {
     "",
     `finding_localisation_rate  ${pct(report.finding_localisation_rate)} ` +
       `(${report.positional} of ${report.families.reduce((sum, family) => sum + family.truePositives, 0)} true positives named where)`,
-    `actionability_rate         ${pct(report.actionability.rate)} ` +
-      `(${report.actionability.actionable} of ${report.actionability.total} findings name a row or a line)`,
+    `actionability_v1_rate      ${pct((report.actionability_v1 ?? report.actionability).rate)} ` +
+      `(${(report.actionability_v1 ?? report.actionability).actionable} of ${(report.actionability_v1 ?? report.actionability).total} findings name a row or a line)`,
+    `actionability_v2_rate      ${pct(report.actionability_v2?.rate ?? null)} ` +
+      `(${report.actionability_v2?.numerator ?? 0} of ${report.actionability_v2?.denominator ?? 0} findings carry subject/locus, evidence, target, and next move; ` +
+      `${report.actionability_v2?.exclusions?.length ?? 0} excluded)`,
     `minting.section_hit_rate   ${
       report[SECTION_HIT_RATE] === null
         ? "  n/a (no case reports it — this engine predates quire-rs#270)"
