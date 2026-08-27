@@ -12,6 +12,7 @@ import {
   scoreCost,
   scoreFindings,
   scoreScenario,
+  scoreSpanGrounding,
 } from "../evals/lib/quality.mjs";
 
 const labels = [
@@ -456,6 +457,91 @@ describe("actionability", () => {
 
   it("has no rate when there were no findings", () => {
     expect(scoreActionability([]).rate).toBeNull();
+  });
+});
+
+describe("span grounding", () => {
+  const span = (text: string) => ({ start: 0, end: text.length, text });
+
+  it("TC-1084 separates present, missing, unavailable, malformed, and not-applicable spans", () => {
+    const scored = scoreSpanGrounding([
+      {
+        case: "grounding",
+        payload: {
+          engine: { cli: "0.30.2", engine: "abc123" },
+          documents: [
+            {
+              document: "spec/FR-001.md",
+              criteria: [
+                {
+                  row_id: "FR-001-AC-1",
+                  line: 10,
+                  property: "invariant",
+                  domain: span("request"),
+                  precondition: span("when valid"),
+                  oracle: span("is accepted"),
+                },
+                {
+                  row_id: "FR-001-AC-2",
+                  line: 11,
+                  property: "round-trip",
+                  domain: null,
+                  oracle: { start: 9, end: 2, text: "broken" },
+                },
+                {
+                  row_id: "FR-001-AC-3",
+                  line: 12,
+                  property: "universal",
+                  domain: null,
+                  precondition: null,
+                  oracle: span("holds"),
+                },
+              ],
+            },
+          ],
+        },
+      },
+    ]);
+
+    expect(scored).toMatchObject({
+      numerator: 1,
+      denominator: 2,
+      rate: 0.5,
+      producerVersions: ["0.30.2 (engine abc123)"],
+      spanStates: {
+        domain: { available: 1, unavailable: 1 },
+        precondition: { available: 1, missing: 1 },
+        oracle: { available: 1, malformed: 1 },
+      },
+    });
+    expect(scored.namedMisses).toEqual([
+      expect.objectContaining({
+        id: expect.stringContaining("FR-001-AC-2"),
+        spans: {
+          domain: expect.objectContaining({ state: "unavailable" }),
+          precondition: expect.objectContaining({ state: "missing" }),
+          oracle: expect.objectContaining({ state: "malformed" }),
+        },
+      }),
+    ]);
+    expect(scored.exclusions).toEqual([
+      expect.objectContaining({
+        id: expect.stringContaining("FR-001-AC-3"),
+        state: "not_applicable",
+      }),
+    ]);
+  });
+
+  it("TC-1085 names malformed producer payloads and scoreScenario consumes the same scorer", () => {
+    const properties = [{ case: "broken", payload: { documents: null } }];
+    const direct = scoreSpanGrounding(properties);
+    expect(direct).toMatchObject({
+      numerator: 0,
+      denominator: 0,
+      rate: null,
+      malformed: [{ case: "broken" }],
+    });
+    expect(scoreScenario({ properties }).spanGrounding).toEqual(direct);
   });
 });
 

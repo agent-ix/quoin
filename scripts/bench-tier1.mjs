@@ -25,6 +25,7 @@ import {
   scoreActionabilityV2,
   scoreCost,
   scoreFindings,
+  scoreSpanGrounding,
 } from "../evals/lib/quality.mjs";
 import {
   createMeasurementRecord,
@@ -337,6 +338,7 @@ async function main() {
   // Aggregate section hits by document, not by mean case rate.
   const sectionHit = { matched: 0, examined: 0, cases: 0 };
   const payloads = [];
+  const propertyPayloads = [];
   for (const corpus of labels.corpora) {
     const { findings, metrics, diagnostics, untrackedSymbols } =
       execution.findingsFor(
@@ -351,6 +353,10 @@ async function main() {
       metrics,
       diagnostics,
       untrackedSymbols,
+    });
+    propertyPayloads.push({
+      case: corpus.name,
+      payload: execution.properties(quire, corpus.input, corpus.module),
     });
     found.push(
       ...findings.map((f) =>
@@ -437,6 +443,8 @@ async function main() {
       : null,
     actionability_v1: scoreActionability(scoredFindings),
     actionability_v2: scoreActionabilityV2(scoredFindings),
+    span_grounding: scoreSpanGrounding(propertyPayloads),
+    property_payloads: propertyPayloads,
     // Tier 1 calls no model, so token cost is not measured; tool calls are.
     cost_per_confirmed_insight: scoreCost(
       { toolCalls: execution.toolCalls() },

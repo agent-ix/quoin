@@ -4,7 +4,7 @@ title: Property span-grounding rate
 type: MeasurementPlan
 status: active
 owner: quoin-maintainers
-stage: observe
+stage: ratchet
 metric: span_grounding_rate
 definition_version: property.span-grounding-v1
 relationships: []
@@ -24,8 +24,13 @@ corpus entry.
 
 ## Measure Definition
 
-Count records carrying all three spans over specific-shaped records, definition
-`property.span-grounding-v1`. A missing producer is `not_computed`.
+Count records carrying all three spans over records classified as round-trip,
+idempotence, ordering, invariant, error-case, lifecycle, or concurrency,
+definition `property.span-grounding-v1`. A missing producer is `not_computed`.
+For a specific-shaped record, an absent key is `missing`, a null span is
+`unavailable`, and an invalid span object is `malformed`; all remain named
+denominator misses. Non-specific property shapes are retained as
+`not_applicable` exclusions.
 
 ## Collection and Provenance
 
@@ -42,5 +47,5 @@ Grounded spans make analysis possible; they do not establish semantic alignment.
 
 ## Comparison and Enforcement
 
-Remain at `observe` until a real producer and repeated records exist. No gate is
-authorized.
+The retained Tier-1 baseline is a one-way non-regression ratchet. Compare only
+like corpus, declaration, and population inputs.

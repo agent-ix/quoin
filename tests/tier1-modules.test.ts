@@ -75,6 +75,8 @@ describe("Tier-1 module contracts", () => {
       `#!/bin/sh
 if [ "$1" = "coverage" ]; then
   printf '%s\\n' '{"diagnostics":[{"reason":"located","path":"spec/a.md","line":7}],"metrics":[]}'
+elif [ "$1" = "properties" ]; then
+  printf '%s\\n' '{"documents":[{"document":"spec/a.md","archetype":"FR","criteria":[]}],"engine":{"cli":"test","engine":"test"}}'
 else
   printf '%s\\n' '{"kind":"ValidationError","message":"spec/a.md: line 9: bad [validated]"}' >&2
   exit 1
@@ -115,7 +117,11 @@ fi
       channel: "coverage.diagnostics",
       rawProducerOutput: { reason: "located", path: "spec/a.md", line: 7 },
     });
-    expect(execution.toolCalls()).toBe(2);
+    expect(execution.properties(quire, root, root)).toMatchObject({
+      documents: [{ document: "spec/a.md" }],
+      engine: { cli: "test", engine: "test" },
+    });
+    expect(execution.toolCalls()).toBe(3);
   });
 
   test("TC-1010 modules are acyclic and rendering is deterministic from one report", () => {

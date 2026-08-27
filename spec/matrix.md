@@ -480,6 +480,9 @@ generated tests under `tests/props/` and `Unit` for the rest.
 | TC-1081 | The finding-envelope reader refuses missing producers, malformed availability states, and unknown versions (#255) | Unit | P0 | FR-043-AC-23 | ✅ |
 | TC-1082 | Actionability v2 scores positive, negative, unavailable, and not-applicable records with explicit counts, misses, and exclusions (#254) | Unit | P0 | FR-043-AC-24 | ✅ |
 | TC-1083 | Historical actionability v1 remains reproducible while finding/locality grading consumes normalized envelopes (#254, #255) | Unit | P0 | FR-043-AC-24 | ✅ |
+| TC-1084 | Span grounding distinguishes present, missing, unavailable, malformed, and non-specific/not-applicable records while retaining producer version and named misses (#219) | Unit | P0 | FR-043-AC-25 | ✅ |
+| TC-1085 | A malformed properties payload is named rather than scored as zero, and `scoreScenario` consumes the same span-grounding scorer (#219) | Unit | P0 | FR-043-AC-25 | ✅ |
+| TC-1086 | The computed span-grounding rate is a one-way ratchet that keeps the accepted floor on regression (#219) | Unit | P0 | FR-043-AC-25 | ✅ |
 | TC-926 | Every metric in the dictionary declares `unit`, `population` and `method`; one missing any of the three is rejected at load rather than reported with a gap | Unit | P0 | FR-043-AC-1 | ✅ |
 | TC-927 | `finding_precision`/`finding_recall` are declared per defect family, each keyed on a family the corpora label, so no score is reported over an unlabelled population | Unit | P0 | FR-043-AC-2 | ✅ |
 | TC-928 | `span_grounding_rate` is declared with the pass-2 figure (0 of 65 specific-shape records) as its starting baseline | Unit | P0 | FR-043-AC-3 | ✅ |

@@ -57,10 +57,10 @@
       "measurement_plan": "spec/assurance/MP-204-span-grounding.md",
       "unit": "percent of specific-shape criteria",
       "population": "acceptance criteria the FR-052 classifier gives a specific property shape",
-      "method": "criteria whose domain, precondition AND oracle spans are all present, over criteria carrying a specific shape. NOT YET COMPUTED: no runner reads `quire properties --json` for this, tracked as agent-ix/quoin#219. Declared here because the dictionary is the contract and a metric nobody declared is a metric nobody can ask for",
+      "method": "criteria whose domain, precondition AND oracle spans are all present, over criteria carrying one of the seven specific property shapes, from structured `quire properties --json` records. Missing, null/unavailable, malformed, and non-specific/not-applicable spans remain distinct; every denominator miss is named",
       "direction": "higher-is-better",
       "baseline": 0,
-      "baseline_note": "Battletest pass 2 measured 0 of 65 specific-shape records carrying all three spans. Zero is the measured starting point, not an absence."
+      "baseline_note": "Battletest pass 2 measured 0 of 65 specific-shape records carrying all three spans. Zero remains the historical starting point, not an absence; the retained Tier-1 report now carries the computed population and accepted ratchet."
     },
     "actionability_rate": {
       "measurement_plan": "spec/assurance/MP-205-actionability.md",

@@ -461,6 +461,146 @@ export function scoreActionabilityV2(found) {
   };
 }
 
+const SPECIFIC_PROPERTIES = new Set([
+  "round-trip",
+  "idempotence",
+  "ordering",
+  "invariant",
+  "error-case",
+  "lifecycle",
+  "concurrency",
+]);
+
+/** Span-presence grounding over structured `quire properties --json` output. */
+export function scoreSpanGrounding(inputs) {
+  const namedMisses = [];
+  const exclusions = [];
+  const malformed = [];
+  const producerVersions = new Set();
+  const spanStates = Object.fromEntries(
+    ["domain", "precondition", "oracle"].map((field) => [
+      field,
+      { available: 0, unavailable: 0, missing: 0, malformed: 0 },
+    ]),
+  );
+  let numerator = 0;
+  let denominator = 0;
+
+  for (const input of inputs) {
+    const payload = input?.payload;
+    const producerVersion =
+      input?.producerVersion ??
+      (payload?.engine
+        ? `${payload.engine.cli ?? "unknown-cli"} (engine ${payload.engine.engine ?? "unknown"})`
+        : null);
+    if (producerVersion) producerVersions.add(producerVersion);
+    if (!payload || !Array.isArray(payload.documents)) {
+      malformed.push({
+        case: input?.case ?? "unknown-case",
+        reason: "properties payload has no documents array",
+      });
+      continue;
+    }
+
+    payload.documents.forEach((document, documentIndex) => {
+      if (!Array.isArray(document?.criteria)) {
+        malformed.push({
+          case: input?.case ?? "unknown-case",
+          document: document?.document ?? `document-${documentIndex + 1}`,
+          reason: "properties document has no criteria array",
+        });
+        return;
+      }
+      document.criteria.forEach((criterion, criterionIndex) => {
+        const id = criterionIdentity(
+          input,
+          document,
+          criterion,
+          criterionIndex,
+        );
+        if (!SPECIFIC_PROPERTIES.has(criterion?.property)) {
+          exclusions.push({
+            id,
+            state: "not_applicable",
+            reason: `property ${JSON.stringify(criterion?.property ?? null)} is outside the specific-shape population`,
+          });
+          return;
+        }
+
+        denominator += 1;
+        const spans = Object.fromEntries(
+          ["domain", "precondition", "oracle"].map((field) => {
+            const observed = classifySpan(criterion, field);
+            spanStates[field][observed.state] += 1;
+            return [field, observed];
+          }),
+        );
+        if (Object.values(spans).every((span) => span.state === "available")) {
+          numerator += 1;
+        } else {
+          namedMisses.push({
+            id,
+            case: input?.case ?? null,
+            document: document.document ?? null,
+            rowId: criterion.row_id ?? null,
+            line: criterion.line ?? null,
+            property: criterion.property,
+            spans,
+          });
+        }
+      });
+    });
+  }
+
+  return {
+    definitionVersion: "property.span-grounding-v1",
+    numerator,
+    denominator,
+    exclusions,
+    namedMisses,
+    malformed,
+    spanStates,
+    producerVersions: [...producerVersions].sort(),
+    rate: ratio(numerator, denominator),
+  };
+}
+
+function classifySpan(criterion, field) {
+  if (!Object.hasOwn(criterion, field)) {
+    return { state: "missing", reason: `criterion has no ${field} field` };
+  }
+  const value = criterion[field];
+  if (value === null) {
+    return {
+      state: "unavailable",
+      reason: `producer emitted no ${field} span`,
+    };
+  }
+  if (
+    !value ||
+    typeof value !== "object" ||
+    !Number.isInteger(value.start) ||
+    !Number.isInteger(value.end) ||
+    value.start < 0 ||
+    value.end < value.start ||
+    typeof value.text !== "string"
+  ) {
+    return {
+      state: "malformed",
+      reason: `producer emitted malformed ${field} span`,
+    };
+  }
+  return { state: "available", value };
+}
+
+function criterionIdentity(input, document, criterion, index) {
+  return [
+    input?.case ?? "unknown-case",
+    document?.document ?? "unknown-document",
+    criterion?.row_id ?? criterion?.line ?? `criterion-${index + 1}`,
+  ].join(":");
+}
+
 /** A finding is actionable when it names WHERE — a row id or a document line. */
 function hasLocus(finding) {
   if (isFindingEnvelope(finding)) {
@@ -525,7 +665,12 @@ export function scoreCost(metrics, truePositives) {
 }
 
 /** Every quality dimension for one scenario, ready to sit beside the cost columns. */
-export function scoreScenario({ found = [], labels = [], metrics = {} }) {
+export function scoreScenario({
+  found = [],
+  labels = [],
+  metrics = {},
+  properties = [],
+}) {
   const findings = scoreFindings(found, labels);
   const truePositives = findings.families.reduce(
     (n, f) => n + f.truePositives,
@@ -534,6 +679,7 @@ export function scoreScenario({ found = [], labels = [], metrics = {} }) {
   return {
     findings,
     actionability: scoreActionability(found),
+    spanGrounding: scoreSpanGrounding(properties),
     cost: scoreCost(metrics, truePositives),
   };
 }

@@ -8,6 +8,18 @@ description: "Chronological log of structural changes to this bundle."
 
 ## History
 
+* **2026-08-27** — **CR-124**: Tier 1 now invokes the structured
+  `quire properties --json` producer for every controlled corpus case and
+  computes `property.span-grounding-v1` directly from its criteria
+  (`agent-ix/quoin#219`). The governed population is the 38 criteria whose
+  property shape is round-trip, idempotence, ordering, invariant, error-case,
+  lifecycle, or concurrency; 192 universal criteria are retained as explicit
+  `not_applicable` exclusions. The first run is **0/38 (0%)**: Quire 0.30.2
+  (engine 9126463) explicitly reported domain, precondition, and oracle spans
+  unavailable for all 38 criteria. Every miss and span state is named, malformed
+  or missing producer data cannot become a zero, and MP-204 now enforces a
+  one-way ratchet. FR-043 AC-25; Matrix: TC-1084..TC-1086.
+
 * **2026-08-27** — **CR-123**: findings from Quire, Quoin, and retained
   external observations share the versioned `finding-envelope-v2` evaluation
   boundary (`agent-ix/quoin#254`, `#255`). Availability is explicit for subject,

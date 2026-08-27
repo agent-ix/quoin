@@ -1115,6 +1115,37 @@ describe("a delta across unlike inputs", () => {
   });
 });
 
+describe("span-grounding ratchet", () => {
+  test("TC-1086 compares the computed rate and keeps the accepted floor on regression", () => {
+    const base = {
+      provenance: {
+        corpus_input: "same",
+        declaration: { digest: "same" },
+      },
+      corpora: 1,
+      by_language: [{ language: "rust", corpora: 1 }],
+      families: [],
+      finding_localisation_rate: null,
+      span_grounding: { rate: 0.5 },
+    };
+    const verdict = ratchet({ ...base, span_grounding: { rate: 0.25 } }, base, {
+      metrics: {
+        finding_precision: { direction: "higher-is-better" },
+        finding_recall: { direction: "higher-is-better" },
+        span_grounding_rate: {
+          direction: "higher-is-better",
+          baseline: 0,
+        },
+      },
+    }).find((row) => row.metric === "span_grounding_rate");
+    expect(verdict).toMatchObject({
+      observed: 0.25,
+      baseline: 0.5,
+      verdict: "regressed",
+    });
+  });
+});
+
 describe("the committed mapping table", () => {
   const mapping = JSON.parse(
     readFileSync(join(__dirname, "..", "bench", "tier1-mapping.json"), "utf8"),

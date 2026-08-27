@@ -54,6 +54,23 @@ export function createTier1Executor() {
     }
   };
 
+  const properties = (quire, corpusRoot, module) => {
+    const single = existsSync(join(module, "manifest.yaml"));
+    const args = ["properties", "--scope", corpusRoot];
+    if (single) args.push("--module", module);
+    args.push("--json", "spec/**/*.md");
+    const env = single ? undefined : { IX_FILAMENT_MODULES_PATH: module };
+    const result = execute(quire, args, env);
+    try {
+      return JSON.parse(result.stdout);
+    } catch {
+      throw new Error(
+        `bench-tier1: \`quire properties\` produced no JSON for ${corpusRoot}; ` +
+          `refusing to read an unavailable producer as zero grounding\n${result.stderr.trim()}`,
+      );
+    }
+  };
+
   const findingsFor = (quire, corpusRoot, module, mapping, quoin) => {
     const findings = [];
     const bySource = (source) =>
@@ -457,6 +474,7 @@ export function createTier1Executor() {
   return {
     execute,
     findingsFor,
+    properties,
     rawReasons,
     assertEngine,
     toolCalls: () => toolCalls,

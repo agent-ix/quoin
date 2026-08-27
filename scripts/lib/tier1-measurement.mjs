@@ -126,9 +126,33 @@ export function createMeasurementRecord(report, at, options) {
   }
 
   observations.push(
-    observation("span_grounding_rate", null, {
-      reason: "tier-1 has no properties-payload producer",
-    }),
+    observation(
+      "span_grounding_rate",
+      report.span_grounding?.rate == null
+        ? null
+        : Number((report.span_grounding.rate * 100).toFixed(3)),
+      {
+        population: {
+          examined: report.span_grounding?.denominator ?? 0,
+          matched: report.span_grounding?.numerator ?? 0,
+          complete: (report.span_grounding?.malformed?.length ?? 0) === 0,
+          identity: {
+            spanStates: report.span_grounding?.spanStates ?? {},
+            exclusions: report.span_grounding?.exclusions ?? [],
+            namedMisses: report.span_grounding?.namedMisses ?? [],
+          },
+        },
+        dimensions: {
+          producerVersions: (
+            report.span_grounding?.producerVersions ?? []
+          ).join(", "),
+        },
+        reason:
+          report.span_grounding?.malformed?.length > 0
+            ? "one or more properties payloads were malformed"
+            : undefined,
+      },
+    ),
     observation(
       "actionability_rate",
       (report.actionability_v1 ?? report.actionability)?.rate == null
