@@ -116,6 +116,7 @@ function headCommit(repo: string): string | undefined {
   try {
     return execFileSync("git", ["-C", repo, "rev-parse", "HEAD"], {
       encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"],
     }).trim();
   } catch {
     return undefined;
