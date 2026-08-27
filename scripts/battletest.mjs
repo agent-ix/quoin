@@ -27,7 +27,9 @@ import { fileURLToPath } from "node:url";
 import {
   compareTier2Baseline,
   createTier2Baseline,
+  retainTier2Sources,
 } from "./lib/tier2-baseline.mjs";
+import { validateFindingEnvelope } from "../evals/lib/finding-envelope.mjs";
 
 const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 const ANSWER_KEY = join(ROOT, "bench", "answer-key.json");
@@ -78,6 +80,11 @@ function coverage(quire, scope, module) {
  * command can detect the family (agent-ix/quoin#203).
  */
 export function scoreAgainstSources(sources, key) {
+  return scoreAgainstRetainedSources(retainTier2Sources(sources), key);
+}
+
+/** Score only the normalized cross-producer view retained in the baseline. */
+export function scoreAgainstRetainedSources(sources, key) {
   const detected = [];
   const missed = [];
   const notMechanized = [];
@@ -100,7 +107,7 @@ export function scoreAgainstSources(sources, key) {
 
     const sourceName = finding.source ?? COVERAGE_SOURCE;
     const source = sources[sourceName];
-    if (!source?.ok) {
+    if (source?.state !== "evaluated") {
       notMechanized.push(finding.id);
       notEvaluated.push({
         id: finding.id,
@@ -110,11 +117,17 @@ export function scoreAgainstSources(sources, key) {
       continue;
     }
 
-    const payload = source.payload;
-    const reasons = new Set((payload.diagnostics ?? []).map((d) => d.reason));
-    const suspicions = new Set((payload.suspicions ?? []).map((s) => s.kind));
-    const metrics = new Map((payload.metrics ?? []).map((m) => [m.name, m]));
-    const findings = new Set((payload.findings ?? []).map((f) => f.kind));
+    const normalizedFindings = source.normalized?.findings ?? [];
+    for (const record of normalizedFindings) validateFindingEnvelope(record);
+    const reasons = findingFamilies(normalizedFindings, "coverage.diagnostics");
+    const suspicions = findingFamilies(
+      normalizedFindings,
+      "coverage.suspicions",
+    );
+    const metrics = new Map(
+      (source.normalized?.metrics ?? []).map((metric) => [metric.name, metric]),
+    );
+    const findings = findingFamilies(normalizedFindings);
 
     if (finding.expect_reason) {
       (reasons.has(finding.expect_reason) ? detected : missed).push(finding.id);
@@ -152,6 +165,16 @@ export function scoreAgainstSources(sources, key) {
         ? null
         : Number((detected.length / denominator).toFixed(3)),
   };
+}
+
+function findingFamilies(findings, channel = null) {
+  return new Set(
+    findings
+      .filter(
+        (finding) => channel === null || finding.source.channel === channel,
+      )
+      .map((finding) => finding.identity?.family ?? finding.kind),
+  );
 }
 
 /** Backward-compatible coverage-only scorer used by focused unit tests. */

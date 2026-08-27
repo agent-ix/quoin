@@ -25,6 +25,7 @@ import {
   diff,
   render,
   scoreAgainstKey,
+  scoreAgainstRetainedSources,
   scoreAgainstSources,
 } from "../scripts/battletest.mjs";
 import {
@@ -149,6 +150,42 @@ describe("scoring against the adjudicated answer key", () => {
       ok: false,
       reason: expect.stringContaining("bindings.json is absent"),
     });
+  });
+
+  it("TC-1104 scores retained finding envelopes rather than raw producer arrays", () => {
+    const retained = createTier2Baseline({
+      provenance: {},
+      sources: {
+        "quoin.validate": {
+          ok: true,
+          state: "evaluated",
+          command: { executable: "NODE", args: [] },
+          payload: {
+            findings: [{ kind: "gate-that-gates-nothing", path: "Makefile" }],
+          },
+        },
+      },
+      score: {},
+    }).sources;
+    const answerKey = {
+      findings: [
+        {
+          id: "AK-NORMALIZED",
+          source: "quoin.validate",
+          expect_finding: "gate-that-gates-nothing",
+        },
+      ],
+    };
+
+    retained["quoin.validate"].raw.findings[0].kind = "raw-only-value";
+    expect(scoreAgainstRetainedSources(retained, answerKey).detected).toEqual([
+      "AK-NORMALIZED",
+    ]);
+
+    retained["quoin.validate"].normalized.findings = [];
+    expect(scoreAgainstRetainedSources(retained, answerKey).missed).toEqual([
+      "AK-NORMALIZED",
+    ]);
   });
 });
 
