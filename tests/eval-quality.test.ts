@@ -15,6 +15,10 @@ import {
   scoreScenario,
   scoreSpanGrounding,
 } from "../evals/lib/quality.mjs";
+import {
+  findingEnvelopeDigest,
+  normalizeQuireFinding,
+} from "../evals/lib/finding-envelope.mjs";
 
 const labels = [
   { id: "MM-1", family: "marker-form-mismatch", findable: true },
@@ -425,6 +429,79 @@ describe("finding precision and recall", () => {
     expect(adv.precision).toBeNull();
     expect(adv.precision_basis!.unadjudicated).toBe(2);
     expect(adv.precision_basis!.rulings).toBe(0);
+  });
+
+  it("TC-1098 exact retained rulings score only compatible finding envelopes", () => {
+    const ruled = normalizeQuireFinding(
+      {
+        reason: "catch-all-universal",
+        path: "spec/FR-001.md",
+        line: 10,
+        message: "one extractable criterion has no specific property shape",
+      },
+      {
+        producer: "quire",
+        channel: "coverage.diagnostics",
+        family: "adv",
+        corpus: "case-a",
+        language: "python",
+        declaration: "criteria",
+      },
+    );
+    const unresolved = normalizeQuireFinding(
+      {
+        reason: "catch-all-universal",
+        path: "spec/FR-002.md",
+        line: 20,
+        message: "a different finding",
+      },
+      {
+        producer: "quire",
+        channel: "coverage.diagnostics",
+        family: "adv",
+        corpus: "case-b",
+        language: "rust",
+        declaration: "criteria",
+      },
+    );
+    const id = findingEnvelopeDigest(ruled);
+    const result = scoreFindings(
+      [ruled, unresolved],
+      [],
+      { adv: "advisory" },
+      {
+        __metricVersion: "finding.precision.advisory-v1",
+        adv: {
+          present: [],
+          absent: [],
+          findings: [{ id, disposition: "incorrect" }],
+        },
+      },
+    );
+    const basis = result.families[0].precision_basis!;
+    expect(basis.metricVersion).toBe("finding.precision.advisory-v1");
+    expect(basis.falsePositives).toBe(1);
+    expect(basis.unadjudicated).toBe(1);
+    expect(basis.retainedRulings).toBe(1);
+
+    const disputed = scoreFindings(
+      [ruled],
+      [],
+      { adv: "advisory" },
+      {
+        __metricVersion: "finding.precision.advisory-v1",
+        adv: {
+          present: [],
+          absent: [],
+          findings: [{ id, disposition: "ambiguous" }],
+        },
+      },
+    ).families[0].precision_basis!;
+    expect(disputed.precision).toBeNull();
+    expect(disputed.truePositives).toBe(0);
+    expect(disputed.falsePositives).toBe(0);
+    expect(disputed.unadjudicated).toBe(1);
+    expect(disputed.ambiguous).toEqual([id]);
   });
 
   it("TC-943 reports null, not zero, when a family has no denominator", () => {

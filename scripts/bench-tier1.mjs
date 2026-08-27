@@ -40,6 +40,7 @@ import {
   localisationRate,
   silentZeros,
 } from "./lib/tier1-scoring.mjs";
+import { loadAdvisoryAdjudication } from "./lib/advisory-adjudication.mjs";
 import { createTier1Executor } from "./lib/tier1-execution.mjs";
 import { renderTier1 } from "./lib/tier1-render.mjs";
 import {
@@ -72,6 +73,11 @@ const BASELINE = join(ROOT, "bench", "tier1-baseline.json");
 const RECALL_BASELINE = join(ROOT, "corpus", "baselines", "quoin.json");
 const GROUNDING_LABELS = join(ROOT, "bench", "span-grounding-labels.json");
 const GROUNDING_FIXTURE = join(ROOT, "bench", "fixtures", "span-grounding");
+const ADVISORY_ADJUDICATION = join(
+  ROOT,
+  "bench",
+  "advisory-adjudication-v1.json",
+);
 const execution = createTier1Executor();
 
 /** An absent engine metric is reported as not measured, never zero. */
@@ -413,11 +419,13 @@ async function main() {
       m.shape ?? "defect",
     ]),
   );
+  const retainedAdjudication = loadAdvisoryAdjudication(ADVISORY_ADJUDICATION);
   // Advisory precision uses ruled cases; other firings remain unadjudicated.
   const adjudication = adjudicationOf(
     labels.corpora,
     mapping,
     standingAdjudications(join(ROOT, "corpus")),
+    retainedAdjudication,
   );
   const score = scoreFindings(scoredFindings, flat, shapes, adjudication);
   const silentZeroes = silentZeros(payloads);
@@ -448,6 +456,12 @@ async function main() {
       payloads,
     ),
     families: score.families,
+    advisory_adjudication: {
+      metric_version: retainedAdjudication.metricVersion,
+      rubric_version: retainedAdjudication.rubricVersion,
+      population: retainedAdjudication.population,
+      dispositions: retainedAdjudication.counts,
+    },
     excluded: score.excluded,
     collateral: score.collateral,
     positional: score.positional,

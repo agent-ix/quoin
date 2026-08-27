@@ -8,6 +8,22 @@ description: "Chronological log of structural changes to this bundle."
 
 ## History
 
+* **2026-08-27** — **CR-127**: the **108** advisory findings named by
+  `agent-ix/quoin#258` are now a content-addressed, row-level adjudication rather
+  than an implicit bucket. The source run is Quoin `73b0d5d`, qa-corpus
+  `c359c1a`, Quire 0.30.2 engine `9126463`; the exact report digest is
+  `a4799ec9…dcca` and the selected population digest is `dd953334…ac2c`.
+  Every row retains its normalized producer record, ruling, rationale,
+  reviewer, `advisory-finding-rubric-v1`, disagreements, defect owner, and
+  follow-up. Review confirms **108 correct, 0 incorrect, 0 ambiguous, 0
+  unresolved**: 104 shared fixture criteria genuinely name no specific property
+  shape, and four case/control corpora genuinely give the `test-case`
+  declaration no `TestMatrix` document. All 108 are routed to the corpus
+  follow-up; the product follow-up is an explicit zero-row result, so no matcher
+  tuning ships. Reports accept only exact `finding-envelope-v2` identities under
+  `finding.precision.advisory-v1`; changed or incompatible rows remain
+  unadjudicated. FR-043 AC-28; Matrix: TC-1098..TC-1100.
+
 * **2026-08-27** — **CR-126**: Tier-1 L1/L2/L3 recall now ratchets by
   **mode, language, and finding family** (`agent-ix/quoin#257`). The opening
   74-case baseline is retained in prior measurements at **65/74 L1, 57/74 L2,

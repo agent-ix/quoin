@@ -10,9 +10,12 @@
 // and nothing in the report says so.
 
 import {
+  findingEnvelopeDigest,
   isFindingEnvelope,
   validateFindingEnvelope,
 } from "./finding-envelope.mjs";
+
+export const ADVISORY_PRECISION_VERSION = "finding.precision.advisory-v1";
 
 /**
  * Finding precision and recall against a labelled corpus (FR-043-AC-2).
@@ -244,6 +247,9 @@ export function scoreFindings(found, labels, shapes = {}, adjudication = {}) {
  */
 function scopedPrecision(family, scored, adjudication) {
   const ruling = adjudication[family] ?? { present: [], absent: [] };
+  const exact = new Map(
+    (ruling.findings ?? []).map((entry) => [entry.id, entry]),
+  );
   // A ruling governs a finding when they name the same case AND the ruling is
   // either unscoped or names the declaration that raised it.
   const matching = (rules, finding) =>
@@ -255,6 +261,10 @@ function scopedPrecision(family, scored, adjudication) {
   let truePositives = 0;
   let falsePositives = 0;
   let unadjudicated = 0;
+  let retainedRulings = 0;
+  const ambiguous = [];
+  const unresolved = [];
+  const unadjudicatedFindingIds = [];
   // Of the true positives, how many were ruled by a STANDING sentence about
   // the whole corpus rather than by the fixture's own `expect.yaml`. Reported
   // because they are different strengths of evidence: the first measurement
@@ -265,12 +275,32 @@ function scopedPrecision(family, scored, adjudication) {
   let byStanding = 0;
   for (const finding of scored) {
     if (findingFamily(finding) !== family) continue;
+    const findingId = isFindingEnvelope(finding)
+      ? findingEnvelopeDigest(finding)
+      : null;
+    const retained = findingId === null ? null : exact.get(findingId);
+    if (retained) {
+      retainedRulings += 1;
+      if (retained.disposition === "correct") {
+        truePositives += 1;
+      } else if (retained.disposition === "incorrect") {
+        falsePositives += 1;
+      } else {
+        unadjudicated += 1;
+        unadjudicatedFindingIds.push(findingId);
+        (retained.disposition === "ambiguous" ? ambiguous : unresolved).push(
+          findingId,
+        );
+      }
+      continue;
+    }
     // A finding with no case attribution cannot be ruled on at all. Counted as
     // unadjudicated rather than dropped: an unscored finding nobody sees is a
     // finding nobody can question, which is the rule the collateral pass is
     // held to a few lines up.
     if (findingCase(finding) === undefined) {
       unadjudicated += 1;
+      if (findingId) unadjudicatedFindingIds.push(findingId);
       continue;
     }
     if (matching(ruling.absent ?? [], finding)) {
@@ -283,14 +313,20 @@ function scopedPrecision(family, scored, adjudication) {
       if (hit.standing) byStanding += 1;
     } else {
       unadjudicated += 1;
+      if (findingId) unadjudicatedFindingIds.push(findingId);
     }
   }
   return {
+    metricVersion: adjudication.__metricVersion ?? ADVISORY_PRECISION_VERSION,
     precision: ratio(truePositives, truePositives + falsePositives),
     truePositives,
     falsePositives,
     unadjudicated,
     byStanding,
+    retainedRulings,
+    ambiguous,
+    unresolved,
+    unadjudicatedFindingIds: unadjudicatedFindingIds.sort(),
     // The rulings that exist AT ALL, whether or not the family fired under
     // them. A family can be adjudicated on ten cases and fire under none of
     // them, and that is a different state from one nobody has written a rule

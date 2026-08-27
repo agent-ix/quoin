@@ -79,7 +79,12 @@ export function byLanguage(corpora, findings, labels, shapes, adjudication) {
 }
 
 /** Build the explicit positive/negative rulings used for advisory precision. */
-export function adjudicationOf(corpora, mapping, standing = []) {
+export function adjudicationOf(
+  corpora,
+  mapping,
+  standing = [],
+  retained = null,
+) {
   const out = {};
   const standingByFamily = new Map();
   for (const rule of standing) {
@@ -127,6 +132,13 @@ export function adjudicationOf(corpora, mapping, standing = []) {
           },
         );
       }
+    }
+  }
+  if (retained) {
+    out.__metricVersion = retained.metricVersion;
+    for (const [family, findings] of Object.entries(retained.byFamily ?? {})) {
+      out[family] ??= { present: [], absent: [] };
+      out[family].findings = structuredClone(findings);
     }
   }
   return out;

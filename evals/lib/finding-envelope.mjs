@@ -5,6 +5,8 @@
  * therefore represented as unavailable; it is never reconstructed from a
  * message, a neighbouring coordinate, or benchmark knowledge.
  */
+import { createHash } from "node:crypto";
+
 export const FINDING_ENVELOPE_VERSION = "finding-envelope-v2";
 
 const SOURCE_CLASSES = new Set(["quire", "quoin", "external-observation"]);
@@ -150,6 +152,25 @@ export function validateFindingEnvelope(value) {
 
 export function isFindingEnvelope(value) {
   return value?.schemaVersion === FINDING_ENVELOPE_VERSION;
+}
+
+/** Content identity for one normalized finding, independent of array order. */
+export function findingEnvelopeDigest(value) {
+  validateFindingEnvelope(value);
+  return `sha256:${createHash("sha256").update(canonicalJson(value)).digest("hex")}`;
+}
+
+function canonicalJson(value) {
+  if (Array.isArray(value)) {
+    return `[${value.map(canonicalJson).join(",")}]`;
+  }
+  if (value && typeof value === "object") {
+    return `{${Object.keys(value)
+      .sort()
+      .map((key) => `${JSON.stringify(key)}:${canonicalJson(value[key])}`)
+      .join(",")}}`;
+  }
+  return JSON.stringify(value);
 }
 
 function slot(value, missingReason) {

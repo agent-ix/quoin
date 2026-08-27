@@ -101,7 +101,18 @@ export function createMeasurementRecord(report, at, options) {
             (precisionPopulation.falsePositives ?? 0),
           matched: precisionPopulation.truePositives ?? 0,
           complete: true,
-          identity: { family: family.family },
+          identity: {
+            family: family.family,
+            ...(family.precision_basis
+              ? {
+                  metricVersion: family.precision_basis.metricVersion,
+                  retainedPopulation:
+                    report.advisory_adjudication?.population?.digest,
+                  ambiguous: family.precision_basis.ambiguous,
+                  unresolved: family.precision_basis.unresolved,
+                }
+              : {}),
+          },
         },
       }),
       observation("finding_recall", family.recall, {
@@ -119,7 +130,20 @@ export function createMeasurementRecord(report, at, options) {
         {
           shape: "count",
           dimensions: { family: family.family },
-          population: { identity: { family: family.family } },
+          population: {
+            identity: {
+              family: family.family,
+              ...(family.precision_basis
+                ? {
+                    metricVersion: family.precision_basis.metricVersion,
+                    retainedPopulation:
+                      report.advisory_adjudication?.population?.digest,
+                    unadjudicatedFindingIds:
+                      family.precision_basis.unadjudicatedFindingIds,
+                  }
+                : {}),
+            },
+          },
         },
       ),
     );

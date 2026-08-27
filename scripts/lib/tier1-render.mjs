@@ -179,12 +179,23 @@ function familyRow(family, indent) {
   const basis = family.precision_basis;
   if (!basis) return row;
   const ruled = basis.truePositives + basis.falsePositives;
+  const byStanding = basis.byStanding ?? 0;
+  const retainedRulings = basis.retainedRulings ?? 0;
+  const ambiguous = basis.ambiguous ?? [];
+  const unresolved = basis.unresolved ?? [];
+  const perCase = ruled - byStanding - retainedRulings;
+  const sources = [
+    byStanding ? `${byStanding} standing` : null,
+    perCase ? `${perCase} per case` : null,
+    retainedRulings ? `${retainedRulings} retained exact` : null,
+  ].filter(Boolean);
   return (
     `${row}   advisory: prec over ${ruled} ruled firing${ruled === 1 ? "" : "s"}` +
-    (basis.byStanding
-      ? ` (${basis.byStanding} by a standing ruling, ${ruled - basis.byStanding} per case)`
-      : "") +
-    `, ${basis.unadjudicated} UNADJUDICATED`
+    (sources.length ? ` (${sources.join(", ")})` : "") +
+    `, ${basis.unadjudicated} UNADJUDICATED` +
+    (ambiguous.length || unresolved.length
+      ? ` (${ambiguous.length} ambiguous, ${unresolved.length} unresolved)`
+      : "")
   );
 }
 
