@@ -1,8 +1,8 @@
 {
   "provenance": {
     "engine": "quire 0.30.2 (engine 0.33.0)",
-    "corpus": "b2596339bcef1653d272ca8b96bcc43c8e14d813",
-    "corpus_input": "sha256:5cd185bde9333ce3789fbfd4c09d4028d0dab6dd6cb1aab939f00659fc539291",
+    "corpus": "bff5c0eec36a2067e731e56f79017a6b0bb9ebb5",
+    "corpus_input": "sha256:d70201b49512f9a41b2b445252b6a239de43c1f043e7ba65254ae03c3b53988a",
     "declaration": {
       "root": "corpus/modules",
       "digest": "sha256:3bc7c9ef24937e81e02286e8724755fe5596a30d1d14296b446fa2bd64fc3d3b",
@@ -24,11 +24,17 @@
   },
   "bounds": {
     "gap_count": 0,
-    "covered_count": 86,
+    "covered_count": 88,
     "covered_pending_count": 0,
-    "out_of_scope_count": 20,
-    "declared_cells": 106,
+    "out_of_scope_count": 22,
+    "declared_cells": 110,
     "matrix": [
+      {
+        "mode": "minting",
+        "case": "status-column-mismatch",
+        "source": "agent-ix/quire-rs#341 — Coverage Status silently bypassed configured Status classification",
+        "cells": { "n/a": { "state": "covered" } }
+      },
       {
         "mode": "minting",
         "case": "optional-target-section",
@@ -419,6 +425,22 @@
       },
       {
         "mode": "skeptic",
+        "case": "oracle-helper-copy",
+        "source": "agent-ix/filament-ide-rs@59a180a7 TC-1598 — a copied helper oracle with no expected binding",
+        "cells": {
+          "python": {
+            "state": "out-of-scope",
+            "reason": "This regression is the Rust `prop_assert_eq!` helper-oracle path retained from TC-1598. Python has no invocation of that macro, and the existing language-neutral expected-binding family remains covered separately."
+          },
+          "rust": { "state": "covered" },
+          "typescript": {
+            "state": "out-of-scope",
+            "reason": "This regression is the Rust `prop_assert_eq!` helper-oracle path retained from TC-1598. TypeScript has no invocation of that macro, and the existing language-neutral expected-binding family remains covered separately."
+          }
+        }
+      },
+      {
+        "mode": "skeptic",
         "case": "mocked-confirmation",
         "source": "agent-ix/quoin#227 — the test confirms its own mock",
         "cells": {
@@ -501,126 +523,205 @@
     {
       "mode": "attachment",
       "language": "python",
+      "family": "marker-form-mismatch",
       "level": "L1",
-      "reached": 3,
-      "population": 4,
-      "rate": 0.75,
+      "reached": 1,
+      "population": 1,
+      "rate": 1,
       "gap_count": 0,
-      "misses": ["tag-inside-string-literal-python"]
+      "misses": []
     },
     {
       "mode": "attachment",
       "language": "python",
+      "family": "marker-form-mismatch",
       "level": "L2",
-      "reached": 3,
-      "population": 4,
-      "rate": 0.75,
+      "reached": 1,
+      "population": 1,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "attachment",
+      "language": "python",
+      "family": "marker-form-mismatch",
+      "level": "L3",
+      "reached": 1,
+      "population": 1,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "attachment",
+      "language": "python",
+      "family": "tag-on-non-binding-symbol",
+      "level": "L1",
+      "reached": 2,
+      "population": 2,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "attachment",
+      "language": "python",
+      "family": "tag-on-non-binding-symbol",
+      "level": "L2",
+      "reached": 2,
+      "population": 2,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "attachment",
+      "language": "python",
+      "family": "tag-on-non-binding-symbol",
+      "level": "L3",
+      "reached": 2,
+      "population": 2,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "attachment",
+      "language": "python",
+      "family": "unclaimed",
+      "level": "L1",
+      "reached": 0,
+      "population": 1,
+      "rate": 0,
       "gap_count": 0,
       "misses": ["tag-inside-string-literal-python"]
     },
     {
       "mode": "attachment",
       "language": "python",
+      "family": "unclaimed",
+      "level": "L2",
+      "reached": 0,
+      "population": 1,
+      "rate": 0,
+      "gap_count": 0,
+      "misses": ["tag-inside-string-literal-python"]
+    },
+    {
+      "mode": "attachment",
+      "language": "python",
+      "family": "unclaimed",
       "level": "L3",
-      "reached": 3,
-      "population": 4,
-      "rate": 0.75,
+      "reached": 0,
+      "population": 1,
+      "rate": 0,
       "gap_count": 0,
       "misses": ["tag-inside-string-literal-python"]
     },
     {
       "mode": "attachment",
       "language": "rust",
+      "family": "marker-form-mismatch",
       "level": "L1",
-      "reached": 3,
-      "population": 4,
-      "rate": 0.75,
+      "reached": 2,
+      "population": 2,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "attachment",
+      "language": "rust",
+      "family": "marker-form-mismatch",
+      "level": "L2",
+      "reached": 2,
+      "population": 2,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "attachment",
+      "language": "rust",
+      "family": "marker-form-mismatch",
+      "level": "L3",
+      "reached": 1,
+      "population": 2,
+      "rate": 0.5,
+      "gap_count": 0,
+      "misses": ["marker-mismatch"]
+    },
+    {
+      "mode": "attachment",
+      "language": "rust",
+      "family": "tag-on-non-binding-symbol",
+      "level": "L1",
+      "reached": 1,
+      "population": 1,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "attachment",
+      "language": "rust",
+      "family": "tag-on-non-binding-symbol",
+      "level": "L2",
+      "reached": 1,
+      "population": 1,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "attachment",
+      "language": "rust",
+      "family": "tag-on-non-binding-symbol",
+      "level": "L3",
+      "reached": 1,
+      "population": 1,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "attachment",
+      "language": "rust",
+      "family": "unclaimed",
+      "level": "L1",
+      "reached": 0,
+      "population": 1,
+      "rate": 0,
       "gap_count": 0,
       "misses": ["tag-inside-string-literal-rust"]
     },
     {
       "mode": "attachment",
       "language": "rust",
+      "family": "unclaimed",
       "level": "L2",
-      "reached": 3,
-      "population": 4,
-      "rate": 0.75,
+      "reached": 0,
+      "population": 1,
+      "rate": 0,
       "gap_count": 0,
       "misses": ["tag-inside-string-literal-rust"]
     },
     {
       "mode": "attachment",
       "language": "rust",
+      "family": "unclaimed",
       "level": "L3",
-      "reached": 2,
-      "population": 4,
-      "rate": 0.5,
+      "reached": 0,
+      "population": 1,
+      "rate": 0,
       "gap_count": 0,
-      "misses": ["marker-mismatch", "tag-inside-string-literal-rust"]
+      "misses": ["tag-inside-string-literal-rust"]
     },
     {
       "mode": "attachment",
       "language": "typescript",
-      "level": "L1",
-      "reached": 4,
-      "population": 5,
-      "rate": 0.8,
-      "gap_count": 0,
-      "misses": ["tag-inside-string-literal-typescript"]
-    },
-    {
-      "mode": "attachment",
-      "language": "typescript",
-      "level": "L2",
-      "reached": 4,
-      "population": 5,
-      "rate": 0.8,
-      "gap_count": 0,
-      "misses": ["tag-inside-string-literal-typescript"]
-    },
-    {
-      "mode": "attachment",
-      "language": "typescript",
-      "level": "L3",
-      "reached": 4,
-      "population": 5,
-      "rate": 0.8,
-      "gap_count": 0,
-      "misses": ["tag-inside-string-literal-typescript"]
-    },
-    {
-      "mode": "detection",
-      "language": "n/a",
-      "level": "L1",
-      "reached": 4,
-      "population": 4,
-      "rate": 1,
-      "gap_count": 0,
-      "misses": []
-    },
-    {
-      "mode": "detection",
-      "language": "n/a",
-      "level": "L2",
-      "reached": 2,
-      "population": 4,
-      "rate": 0.5,
-      "gap_count": 0,
-      "misses": ["model-mints-nothing", "undeclared-coverage-vocabulary"]
-    },
-    {
-      "mode": "detection",
-      "language": "n/a",
-      "level": "L3",
-      "reached": 2,
-      "population": 4,
-      "rate": 0.5,
-      "gap_count": 0,
-      "misses": ["model-mints-nothing", "undeclared-coverage-vocabulary"]
-    },
-    {
-      "mode": "detection",
-      "language": "python",
+      "family": "marker-form-mismatch",
       "level": "L1",
       "reached": 1,
       "population": 1,
@@ -629,8 +730,9 @@
       "misses": []
     },
     {
-      "mode": "detection",
-      "language": "python",
+      "mode": "attachment",
+      "language": "typescript",
+      "family": "marker-form-mismatch",
       "level": "L2",
       "reached": 1,
       "population": 1,
@@ -639,8 +741,9 @@
       "misses": []
     },
     {
-      "mode": "detection",
-      "language": "python",
+      "mode": "attachment",
+      "language": "typescript",
+      "family": "marker-form-mismatch",
       "level": "L3",
       "reached": 1,
       "population": 1,
@@ -649,38 +752,240 @@
       "misses": []
     },
     {
-      "mode": "detection",
-      "language": "rust",
+      "mode": "attachment",
+      "language": "typescript",
+      "family": "tag-on-non-binding-symbol",
       "level": "L1",
-      "reached": 5,
-      "population": 5,
+      "reached": 3,
+      "population": 3,
       "rate": 1,
       "gap_count": 0,
       "misses": []
     },
     {
-      "mode": "detection",
-      "language": "rust",
+      "mode": "attachment",
+      "language": "typescript",
+      "family": "tag-on-non-binding-symbol",
       "level": "L2",
-      "reached": 5,
-      "population": 5,
+      "reached": 3,
+      "population": 3,
       "rate": 1,
       "gap_count": 0,
       "misses": []
     },
     {
-      "mode": "detection",
-      "language": "rust",
+      "mode": "attachment",
+      "language": "typescript",
+      "family": "tag-on-non-binding-symbol",
       "level": "L3",
       "reached": 3,
-      "population": 5,
-      "rate": 0.6,
+      "population": 3,
+      "rate": 1,
       "gap_count": 0,
-      "misses": ["catch-all-properties", "stale-name-correct-trace-rust"]
+      "misses": []
+    },
+    {
+      "mode": "attachment",
+      "language": "typescript",
+      "family": "unclaimed",
+      "level": "L1",
+      "reached": 0,
+      "population": 1,
+      "rate": 0,
+      "gap_count": 0,
+      "misses": ["tag-inside-string-literal-typescript"]
+    },
+    {
+      "mode": "attachment",
+      "language": "typescript",
+      "family": "unclaimed",
+      "level": "L2",
+      "reached": 0,
+      "population": 1,
+      "rate": 0,
+      "gap_count": 0,
+      "misses": ["tag-inside-string-literal-typescript"]
+    },
+    {
+      "mode": "attachment",
+      "language": "typescript",
+      "family": "unclaimed",
+      "level": "L3",
+      "reached": 0,
+      "population": 1,
+      "rate": 0,
+      "gap_count": 0,
+      "misses": ["tag-inside-string-literal-typescript"]
     },
     {
       "mode": "detection",
-      "language": "typescript",
+      "language": "n/a",
+      "family": "model-mints-nothing",
+      "level": "L1",
+      "reached": 1,
+      "population": 1,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "detection",
+      "language": "n/a",
+      "family": "model-mints-nothing",
+      "level": "L2",
+      "reached": 0,
+      "population": 1,
+      "rate": 0,
+      "gap_count": 0,
+      "misses": ["model-mints-nothing"]
+    },
+    {
+      "mode": "detection",
+      "language": "n/a",
+      "family": "model-mints-nothing",
+      "level": "L3",
+      "reached": 0,
+      "population": 1,
+      "rate": 0,
+      "gap_count": 0,
+      "misses": ["model-mints-nothing"]
+    },
+    {
+      "mode": "detection",
+      "language": "n/a",
+      "family": "obligation-row-states-nothing",
+      "level": "L1",
+      "reached": 1,
+      "population": 1,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "detection",
+      "language": "n/a",
+      "family": "obligation-row-states-nothing",
+      "level": "L2",
+      "reached": 1,
+      "population": 1,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "detection",
+      "language": "n/a",
+      "family": "obligation-row-states-nothing",
+      "level": "L3",
+      "reached": 1,
+      "population": 1,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "detection",
+      "language": "n/a",
+      "family": "uncatalogued-verification-method",
+      "level": "L1",
+      "reached": 1,
+      "population": 1,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "detection",
+      "language": "n/a",
+      "family": "uncatalogued-verification-method",
+      "level": "L2",
+      "reached": 1,
+      "population": 1,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "detection",
+      "language": "n/a",
+      "family": "uncatalogued-verification-method",
+      "level": "L3",
+      "reached": 1,
+      "population": 1,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "detection",
+      "language": "n/a",
+      "family": "undeclared-coverage-vocabulary",
+      "level": "L1",
+      "reached": 1,
+      "population": 1,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "detection",
+      "language": "n/a",
+      "family": "undeclared-coverage-vocabulary",
+      "level": "L2",
+      "reached": 0,
+      "population": 1,
+      "rate": 0,
+      "gap_count": 0,
+      "misses": ["undeclared-coverage-vocabulary"]
+    },
+    {
+      "mode": "detection",
+      "language": "n/a",
+      "family": "undeclared-coverage-vocabulary",
+      "level": "L3",
+      "reached": 0,
+      "population": 1,
+      "rate": 0,
+      "gap_count": 0,
+      "misses": ["undeclared-coverage-vocabulary"]
+    },
+    {
+      "mode": "detection",
+      "language": "python",
+      "family": "catch-all-universal",
+      "level": "L1",
+      "reached": 1,
+      "population": 1,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "detection",
+      "language": "python",
+      "family": "catch-all-universal",
+      "level": "L2",
+      "reached": 1,
+      "population": 1,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "detection",
+      "language": "python",
+      "family": "catch-all-universal",
+      "level": "L3",
+      "reached": 1,
+      "population": 1,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "detection",
+      "language": "rust",
+      "family": "catch-all-universal",
       "level": "L1",
       "reached": 2,
       "population": 2,
@@ -690,7 +995,8 @@
     },
     {
       "mode": "detection",
-      "language": "typescript",
+      "language": "rust",
+      "family": "catch-all-universal",
       "level": "L2",
       "reached": 2,
       "population": 2,
@@ -700,110 +1006,385 @@
     },
     {
       "mode": "detection",
-      "language": "typescript",
+      "language": "rust",
+      "family": "catch-all-universal",
       "level": "L3",
       "reached": 1,
       "population": 2,
       "rate": 0.5,
+      "gap_count": 0,
+      "misses": ["catch-all-properties"]
+    },
+    {
+      "mode": "detection",
+      "language": "rust",
+      "family": "direct-observation",
+      "level": "L1",
+      "reached": 1,
+      "population": 1,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "detection",
+      "language": "rust",
+      "family": "direct-observation",
+      "level": "L2",
+      "reached": 1,
+      "population": 1,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "detection",
+      "language": "rust",
+      "family": "direct-observation",
+      "level": "L3",
+      "reached": 0,
+      "population": 1,
+      "rate": 0,
+      "gap_count": 0,
+      "misses": ["stale-name-correct-trace-rust"]
+    },
+    {
+      "mode": "detection",
+      "language": "rust",
+      "family": "low-symbol-binding",
+      "level": "L1",
+      "reached": 1,
+      "population": 1,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "detection",
+      "language": "rust",
+      "family": "low-symbol-binding",
+      "level": "L2",
+      "reached": 1,
+      "population": 1,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "detection",
+      "language": "rust",
+      "family": "low-symbol-binding",
+      "level": "L3",
+      "reached": 1,
+      "population": 1,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "detection",
+      "language": "rust",
+      "family": "untracked-id-near-miss",
+      "level": "L1",
+      "reached": 1,
+      "population": 1,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "detection",
+      "language": "rust",
+      "family": "untracked-id-near-miss",
+      "level": "L2",
+      "reached": 1,
+      "population": 1,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "detection",
+      "language": "rust",
+      "family": "untracked-id-near-miss",
+      "level": "L3",
+      "reached": 1,
+      "population": 1,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "detection",
+      "language": "typescript",
+      "family": "catch-all-universal",
+      "level": "L1",
+      "reached": 1,
+      "population": 1,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "detection",
+      "language": "typescript",
+      "family": "catch-all-universal",
+      "level": "L2",
+      "reached": 1,
+      "population": 1,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "detection",
+      "language": "typescript",
+      "family": "catch-all-universal",
+      "level": "L3",
+      "reached": 1,
+      "population": 1,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "detection",
+      "language": "typescript",
+      "family": "direct-observation",
+      "level": "L1",
+      "reached": 1,
+      "population": 1,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "detection",
+      "language": "typescript",
+      "family": "direct-observation",
+      "level": "L2",
+      "reached": 1,
+      "population": 1,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "detection",
+      "language": "typescript",
+      "family": "direct-observation",
+      "level": "L3",
+      "reached": 0,
+      "population": 1,
+      "rate": 0,
       "gap_count": 0,
       "misses": ["stale-name-correct-trace-typescript"]
     },
     {
       "mode": "disposition",
       "language": "python",
+      "family": "marker-form-mismatch",
       "level": "L1",
       "reached": 1,
-      "population": 2,
-      "rate": 0.5,
+      "population": 1,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "disposition",
+      "language": "python",
+      "family": "marker-form-mismatch",
+      "level": "L2",
+      "reached": 1,
+      "population": 1,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "disposition",
+      "language": "python",
+      "family": "marker-form-mismatch",
+      "level": "L3",
+      "reached": 1,
+      "population": 1,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "disposition",
+      "language": "python",
+      "family": "unclaimed",
+      "level": "L1",
+      "reached": 0,
+      "population": 1,
+      "rate": 0,
       "gap_count": 0,
       "misses": ["greenfield-no-symbols-python"]
     },
     {
       "mode": "disposition",
       "language": "python",
+      "family": "unclaimed",
       "level": "L2",
-      "reached": 1,
-      "population": 2,
-      "rate": 0.5,
+      "reached": 0,
+      "population": 1,
+      "rate": 0,
       "gap_count": 0,
       "misses": ["greenfield-no-symbols-python"]
     },
     {
       "mode": "disposition",
       "language": "python",
+      "family": "unclaimed",
       "level": "L3",
-      "reached": 1,
-      "population": 2,
-      "rate": 0.5,
+      "reached": 0,
+      "population": 1,
+      "rate": 0,
       "gap_count": 0,
       "misses": ["greenfield-no-symbols-python"]
     },
     {
       "mode": "disposition",
       "language": "rust",
+      "family": "marker-form-mismatch",
       "level": "L1",
       "reached": 1,
-      "population": 2,
-      "rate": 0.5,
+      "population": 1,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "disposition",
+      "language": "rust",
+      "family": "marker-form-mismatch",
+      "level": "L2",
+      "reached": 1,
+      "population": 1,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "disposition",
+      "language": "rust",
+      "family": "marker-form-mismatch",
+      "level": "L3",
+      "reached": 1,
+      "population": 1,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "disposition",
+      "language": "rust",
+      "family": "unclaimed",
+      "level": "L1",
+      "reached": 0,
+      "population": 1,
+      "rate": 0,
       "gap_count": 0,
       "misses": ["greenfield-no-symbols-rust"]
     },
     {
       "mode": "disposition",
       "language": "rust",
+      "family": "unclaimed",
       "level": "L2",
-      "reached": 1,
-      "population": 2,
-      "rate": 0.5,
+      "reached": 0,
+      "population": 1,
+      "rate": 0,
       "gap_count": 0,
       "misses": ["greenfield-no-symbols-rust"]
     },
     {
       "mode": "disposition",
       "language": "rust",
+      "family": "unclaimed",
       "level": "L3",
-      "reached": 1,
-      "population": 2,
-      "rate": 0.5,
+      "reached": 0,
+      "population": 1,
+      "rate": 0,
       "gap_count": 0,
       "misses": ["greenfield-no-symbols-rust"]
     },
     {
       "mode": "disposition",
       "language": "typescript",
+      "family": "marker-form-mismatch",
       "level": "L1",
       "reached": 1,
-      "population": 2,
-      "rate": 0.5,
+      "population": 1,
+      "rate": 1,
       "gap_count": 0,
-      "misses": ["greenfield-no-symbols-typescript"]
+      "misses": []
     },
     {
       "mode": "disposition",
       "language": "typescript",
+      "family": "marker-form-mismatch",
       "level": "L2",
       "reached": 1,
-      "population": 2,
-      "rate": 0.5,
+      "population": 1,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "disposition",
+      "language": "typescript",
+      "family": "marker-form-mismatch",
+      "level": "L3",
+      "reached": 1,
+      "population": 1,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "disposition",
+      "language": "typescript",
+      "family": "unclaimed",
+      "level": "L1",
+      "reached": 0,
+      "population": 1,
+      "rate": 0,
       "gap_count": 0,
       "misses": ["greenfield-no-symbols-typescript"]
     },
     {
       "mode": "disposition",
       "language": "typescript",
+      "family": "unclaimed",
+      "level": "L2",
+      "reached": 0,
+      "population": 1,
+      "rate": 0,
+      "gap_count": 0,
+      "misses": ["greenfield-no-symbols-typescript"]
+    },
+    {
+      "mode": "disposition",
+      "language": "typescript",
+      "family": "unclaimed",
       "level": "L3",
-      "reached": 1,
-      "population": 2,
-      "rate": 0.5,
+      "reached": 0,
+      "population": 1,
+      "rate": 0,
       "gap_count": 0,
       "misses": ["greenfield-no-symbols-typescript"]
     },
     {
       "mode": "join",
       "language": "python",
+      "family": "direct-observation",
       "level": "L1",
-      "reached": 3,
-      "population": 3,
+      "reached": 1,
+      "population": 1,
       "rate": 1,
       "gap_count": 0,
       "misses": []
@@ -811,9 +1392,10 @@
     {
       "mode": "join",
       "language": "python",
+      "family": "direct-observation",
       "level": "L2",
-      "reached": 3,
-      "population": 3,
+      "reached": 1,
+      "population": 1,
       "rate": 1,
       "gap_count": 0,
       "misses": []
@@ -821,184 +1403,810 @@
     {
       "mode": "join",
       "language": "python",
+      "family": "direct-observation",
       "level": "L3",
-      "reached": 2,
-      "population": 3,
-      "rate": 0.667,
+      "reached": 0,
+      "population": 1,
+      "rate": 0,
       "gap_count": 0,
       "misses": ["tag-names-unminted-tc-python"]
     },
     {
       "mode": "join",
-      "language": "rust",
+      "language": "python",
+      "family": "unminted-id-guidance",
       "level": "L1",
-      "reached": 3,
-      "population": 3,
+      "reached": 2,
+      "population": 2,
       "rate": 1,
       "gap_count": 0,
       "misses": []
     },
     {
       "mode": "join",
-      "language": "rust",
+      "language": "python",
+      "family": "unminted-id-guidance",
       "level": "L2",
-      "reached": 3,
-      "population": 3,
+      "reached": 2,
+      "population": 2,
       "rate": 1,
       "gap_count": 0,
       "misses": []
     },
     {
       "mode": "join",
-      "language": "rust",
+      "language": "python",
+      "family": "unminted-id-guidance",
       "level": "L3",
       "reached": 2,
-      "population": 3,
-      "rate": 0.667,
+      "population": 2,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "join",
+      "language": "rust",
+      "family": "direct-observation",
+      "level": "L1",
+      "reached": 1,
+      "population": 1,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "join",
+      "language": "rust",
+      "family": "direct-observation",
+      "level": "L2",
+      "reached": 1,
+      "population": 1,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "join",
+      "language": "rust",
+      "family": "direct-observation",
+      "level": "L3",
+      "reached": 0,
+      "population": 1,
+      "rate": 0,
       "gap_count": 0,
       "misses": ["tag-names-unminted-tc-rust"]
     },
     {
       "mode": "join",
-      "language": "typescript",
+      "language": "rust",
+      "family": "unminted-id-guidance",
       "level": "L1",
-      "reached": 3,
-      "population": 3,
+      "reached": 2,
+      "population": 2,
       "rate": 1,
       "gap_count": 0,
       "misses": []
     },
     {
       "mode": "join",
-      "language": "typescript",
+      "language": "rust",
+      "family": "unminted-id-guidance",
       "level": "L2",
-      "reached": 3,
-      "population": 3,
+      "reached": 2,
+      "population": 2,
       "rate": 1,
       "gap_count": 0,
       "misses": []
     },
     {
       "mode": "join",
-      "language": "typescript",
+      "language": "rust",
+      "family": "unminted-id-guidance",
       "level": "L3",
       "reached": 2,
-      "population": 3,
-      "rate": 0.667,
+      "population": 2,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "join",
+      "language": "typescript",
+      "family": "direct-observation",
+      "level": "L1",
+      "reached": 1,
+      "population": 1,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "join",
+      "language": "typescript",
+      "family": "direct-observation",
+      "level": "L2",
+      "reached": 1,
+      "population": 1,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "join",
+      "language": "typescript",
+      "family": "direct-observation",
+      "level": "L3",
+      "reached": 0,
+      "population": 1,
+      "rate": 0,
       "gap_count": 0,
       "misses": ["tag-names-unminted-tc-typescript"]
     },
     {
+      "mode": "join",
+      "language": "typescript",
+      "family": "unminted-id-guidance",
+      "level": "L1",
+      "reached": 2,
+      "population": 2,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "join",
+      "language": "typescript",
+      "family": "unminted-id-guidance",
+      "level": "L2",
+      "reached": 2,
+      "population": 2,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "join",
+      "language": "typescript",
+      "family": "unminted-id-guidance",
+      "level": "L3",
+      "reached": 2,
+      "population": 2,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "minting",
+      "language": "n/a",
+      "family": "status-column-matches-nothing",
+      "level": "L1",
+      "reached": 1,
+      "population": 1,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "minting",
+      "language": "n/a",
+      "family": "status-column-matches-nothing",
+      "level": "L2",
+      "reached": 1,
+      "population": 1,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "minting",
+      "language": "n/a",
+      "family": "status-column-matches-nothing",
+      "level": "L3",
+      "reached": 1,
+      "population": 1,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
       "mode": "minting",
       "language": "python",
+      "family": "archetype-matches-nothing",
       "level": "L1",
-      "reached": 6,
-      "population": 7,
-      "rate": 0.857,
+      "reached": 1,
+      "population": 1,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "minting",
+      "language": "python",
+      "family": "archetype-matches-nothing",
+      "level": "L2",
+      "reached": 0,
+      "population": 1,
+      "rate": 0,
+      "gap_count": 0,
+      "misses": ["no-testmatrix-document-python"]
+    },
+    {
+      "mode": "minting",
+      "language": "python",
+      "family": "archetype-matches-nothing",
+      "level": "L3",
+      "reached": 0,
+      "population": 1,
+      "rate": 0,
+      "gap_count": 0,
+      "misses": ["no-testmatrix-document-python"]
+    },
+    {
+      "mode": "minting",
+      "language": "python",
+      "family": "id-column-matches-nothing",
+      "level": "L1",
+      "reached": 1,
+      "population": 1,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "minting",
+      "language": "python",
+      "family": "id-column-matches-nothing",
+      "level": "L2",
+      "reached": 1,
+      "population": 1,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "minting",
+      "language": "python",
+      "family": "id-column-matches-nothing",
+      "level": "L3",
+      "reached": 1,
+      "population": 1,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "minting",
+      "language": "python",
+      "family": "section-holds-no-table",
+      "level": "L1",
+      "reached": 1,
+      "population": 1,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "minting",
+      "language": "python",
+      "family": "section-holds-no-table",
+      "level": "L2",
+      "reached": 1,
+      "population": 1,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "minting",
+      "language": "python",
+      "family": "section-holds-no-table",
+      "level": "L3",
+      "reached": 1,
+      "population": 1,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "minting",
+      "language": "python",
+      "family": "section-matches-nothing",
+      "level": "L1",
+      "reached": 2,
+      "population": 2,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "minting",
+      "language": "python",
+      "family": "section-matches-nothing",
+      "level": "L2",
+      "reached": 2,
+      "population": 2,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "minting",
+      "language": "python",
+      "family": "section-matches-nothing",
+      "level": "L3",
+      "reached": 2,
+      "population": 2,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "minting",
+      "language": "python",
+      "family": "unclaimed",
+      "level": "L1",
+      "reached": 0,
+      "population": 1,
+      "rate": 0,
       "gap_count": 0,
       "misses": ["no-symbol-method-in-the-verification-column-python"]
     },
     {
       "mode": "minting",
       "language": "python",
+      "family": "unclaimed",
       "level": "L2",
-      "reached": 5,
-      "population": 7,
-      "rate": 0.714,
+      "reached": 0,
+      "population": 1,
+      "rate": 0,
       "gap_count": 0,
-      "misses": [
-        "no-symbol-method-in-the-verification-column-python",
-        "no-testmatrix-document-python"
-      ]
+      "misses": ["no-symbol-method-in-the-verification-column-python"]
     },
     {
       "mode": "minting",
       "language": "python",
+      "family": "unclaimed",
       "level": "L3",
-      "reached": 5,
-      "population": 7,
-      "rate": 0.714,
+      "reached": 0,
+      "population": 1,
+      "rate": 0,
       "gap_count": 0,
-      "misses": [
-        "no-symbol-method-in-the-verification-column-python",
-        "no-testmatrix-document-python"
-      ]
+      "misses": ["no-symbol-method-in-the-verification-column-python"]
+    },
+    {
+      "mode": "minting",
+      "language": "python",
+      "family": "undeclared-type-value",
+      "level": "L1",
+      "reached": 1,
+      "population": 1,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "minting",
+      "language": "python",
+      "family": "undeclared-type-value",
+      "level": "L2",
+      "reached": 1,
+      "population": 1,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "minting",
+      "language": "python",
+      "family": "undeclared-type-value",
+      "level": "L3",
+      "reached": 1,
+      "population": 1,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
     },
     {
       "mode": "minting",
       "language": "rust",
+      "family": "archetype-matches-nothing",
       "level": "L1",
-      "reached": 6,
-      "population": 7,
-      "rate": 0.857,
+      "reached": 1,
+      "population": 1,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "minting",
+      "language": "rust",
+      "family": "archetype-matches-nothing",
+      "level": "L2",
+      "reached": 0,
+      "population": 1,
+      "rate": 0,
+      "gap_count": 0,
+      "misses": ["no-testmatrix-document-rust"]
+    },
+    {
+      "mode": "minting",
+      "language": "rust",
+      "family": "archetype-matches-nothing",
+      "level": "L3",
+      "reached": 0,
+      "population": 1,
+      "rate": 0,
+      "gap_count": 0,
+      "misses": ["no-testmatrix-document-rust"]
+    },
+    {
+      "mode": "minting",
+      "language": "rust",
+      "family": "id-column-matches-nothing",
+      "level": "L1",
+      "reached": 1,
+      "population": 1,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "minting",
+      "language": "rust",
+      "family": "id-column-matches-nothing",
+      "level": "L2",
+      "reached": 1,
+      "population": 1,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "minting",
+      "language": "rust",
+      "family": "id-column-matches-nothing",
+      "level": "L3",
+      "reached": 1,
+      "population": 1,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "minting",
+      "language": "rust",
+      "family": "section-holds-no-table",
+      "level": "L1",
+      "reached": 1,
+      "population": 1,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "minting",
+      "language": "rust",
+      "family": "section-holds-no-table",
+      "level": "L2",
+      "reached": 1,
+      "population": 1,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "minting",
+      "language": "rust",
+      "family": "section-holds-no-table",
+      "level": "L3",
+      "reached": 1,
+      "population": 1,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "minting",
+      "language": "rust",
+      "family": "section-matches-nothing",
+      "level": "L1",
+      "reached": 2,
+      "population": 2,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "minting",
+      "language": "rust",
+      "family": "section-matches-nothing",
+      "level": "L2",
+      "reached": 2,
+      "population": 2,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "minting",
+      "language": "rust",
+      "family": "section-matches-nothing",
+      "level": "L3",
+      "reached": 2,
+      "population": 2,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "minting",
+      "language": "rust",
+      "family": "unclaimed",
+      "level": "L1",
+      "reached": 0,
+      "population": 1,
+      "rate": 0,
       "gap_count": 0,
       "misses": ["no-symbol-method-in-the-verification-column-rust"]
     },
     {
       "mode": "minting",
       "language": "rust",
+      "family": "unclaimed",
       "level": "L2",
-      "reached": 5,
-      "population": 7,
-      "rate": 0.714,
+      "reached": 0,
+      "population": 1,
+      "rate": 0,
       "gap_count": 0,
-      "misses": [
-        "no-symbol-method-in-the-verification-column-rust",
-        "no-testmatrix-document-rust"
-      ]
+      "misses": ["no-symbol-method-in-the-verification-column-rust"]
     },
     {
       "mode": "minting",
       "language": "rust",
+      "family": "unclaimed",
       "level": "L3",
-      "reached": 5,
-      "population": 7,
-      "rate": 0.714,
+      "reached": 0,
+      "population": 1,
+      "rate": 0,
       "gap_count": 0,
-      "misses": [
-        "no-symbol-method-in-the-verification-column-rust",
-        "no-testmatrix-document-rust"
-      ]
+      "misses": ["no-symbol-method-in-the-verification-column-rust"]
+    },
+    {
+      "mode": "minting",
+      "language": "rust",
+      "family": "undeclared-type-value",
+      "level": "L1",
+      "reached": 1,
+      "population": 1,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "minting",
+      "language": "rust",
+      "family": "undeclared-type-value",
+      "level": "L2",
+      "reached": 1,
+      "population": 1,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "minting",
+      "language": "rust",
+      "family": "undeclared-type-value",
+      "level": "L3",
+      "reached": 1,
+      "population": 1,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
     },
     {
       "mode": "minting",
       "language": "typescript",
+      "family": "archetype-matches-nothing",
       "level": "L1",
-      "reached": 6,
-      "population": 7,
-      "rate": 0.857,
+      "reached": 1,
+      "population": 1,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "minting",
+      "language": "typescript",
+      "family": "archetype-matches-nothing",
+      "level": "L2",
+      "reached": 0,
+      "population": 1,
+      "rate": 0,
+      "gap_count": 0,
+      "misses": ["no-testmatrix-document-typescript"]
+    },
+    {
+      "mode": "minting",
+      "language": "typescript",
+      "family": "archetype-matches-nothing",
+      "level": "L3",
+      "reached": 0,
+      "population": 1,
+      "rate": 0,
+      "gap_count": 0,
+      "misses": ["no-testmatrix-document-typescript"]
+    },
+    {
+      "mode": "minting",
+      "language": "typescript",
+      "family": "id-column-matches-nothing",
+      "level": "L1",
+      "reached": 1,
+      "population": 1,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "minting",
+      "language": "typescript",
+      "family": "id-column-matches-nothing",
+      "level": "L2",
+      "reached": 1,
+      "population": 1,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "minting",
+      "language": "typescript",
+      "family": "id-column-matches-nothing",
+      "level": "L3",
+      "reached": 1,
+      "population": 1,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "minting",
+      "language": "typescript",
+      "family": "section-holds-no-table",
+      "level": "L1",
+      "reached": 1,
+      "population": 1,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "minting",
+      "language": "typescript",
+      "family": "section-holds-no-table",
+      "level": "L2",
+      "reached": 1,
+      "population": 1,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "minting",
+      "language": "typescript",
+      "family": "section-holds-no-table",
+      "level": "L3",
+      "reached": 1,
+      "population": 1,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "minting",
+      "language": "typescript",
+      "family": "section-matches-nothing",
+      "level": "L1",
+      "reached": 2,
+      "population": 2,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "minting",
+      "language": "typescript",
+      "family": "section-matches-nothing",
+      "level": "L2",
+      "reached": 2,
+      "population": 2,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "minting",
+      "language": "typescript",
+      "family": "section-matches-nothing",
+      "level": "L3",
+      "reached": 2,
+      "population": 2,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "minting",
+      "language": "typescript",
+      "family": "unclaimed",
+      "level": "L1",
+      "reached": 0,
+      "population": 1,
+      "rate": 0,
       "gap_count": 0,
       "misses": ["no-symbol-method-in-the-verification-column-typescript"]
     },
     {
       "mode": "minting",
       "language": "typescript",
+      "family": "unclaimed",
       "level": "L2",
-      "reached": 5,
-      "population": 7,
-      "rate": 0.714,
+      "reached": 0,
+      "population": 1,
+      "rate": 0,
       "gap_count": 0,
-      "misses": [
-        "no-symbol-method-in-the-verification-column-typescript",
-        "no-testmatrix-document-typescript"
-      ]
+      "misses": ["no-symbol-method-in-the-verification-column-typescript"]
     },
     {
       "mode": "minting",
       "language": "typescript",
+      "family": "unclaimed",
       "level": "L3",
-      "reached": 5,
-      "population": 7,
-      "rate": 0.714,
+      "reached": 0,
+      "population": 1,
+      "rate": 0,
       "gap_count": 0,
-      "misses": [
-        "no-symbol-method-in-the-verification-column-typescript",
-        "no-testmatrix-document-typescript"
-      ]
+      "misses": ["no-symbol-method-in-the-verification-column-typescript"]
+    },
+    {
+      "mode": "minting",
+      "language": "typescript",
+      "family": "undeclared-type-value",
+      "level": "L1",
+      "reached": 1,
+      "population": 1,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "minting",
+      "language": "typescript",
+      "family": "undeclared-type-value",
+      "level": "L2",
+      "reached": 1,
+      "population": 1,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "minting",
+      "language": "typescript",
+      "family": "undeclared-type-value",
+      "level": "L3",
+      "reached": 1,
+      "population": 1,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
     },
     {
       "mode": "provenance",
       "language": "python",
+      "family": "hollow-denominator",
       "level": "L1",
       "reached": 1,
       "population": 1,
@@ -1009,6 +2217,7 @@
     {
       "mode": "provenance",
       "language": "python",
+      "family": "hollow-denominator",
       "level": "L2",
       "reached": 0,
       "population": 1,
@@ -1019,6 +2228,7 @@
     {
       "mode": "provenance",
       "language": "python",
+      "family": "hollow-denominator",
       "level": "L3",
       "reached": 0,
       "population": 1,
@@ -1029,6 +2239,7 @@
     {
       "mode": "provenance",
       "language": "rust",
+      "family": "hollow-denominator",
       "level": "L1",
       "reached": 1,
       "population": 1,
@@ -1039,6 +2250,7 @@
     {
       "mode": "provenance",
       "language": "rust",
+      "family": "hollow-denominator",
       "level": "L2",
       "reached": 0,
       "population": 1,
@@ -1049,6 +2261,7 @@
     {
       "mode": "provenance",
       "language": "rust",
+      "family": "hollow-denominator",
       "level": "L3",
       "reached": 0,
       "population": 1,
@@ -1059,6 +2272,7 @@
     {
       "mode": "provenance",
       "language": "typescript",
+      "family": "hollow-denominator",
       "level": "L1",
       "reached": 1,
       "population": 1,
@@ -1069,6 +2283,7 @@
     {
       "mode": "provenance",
       "language": "typescript",
+      "family": "hollow-denominator",
       "level": "L2",
       "reached": 0,
       "population": 1,
@@ -1079,6 +2294,7 @@
     {
       "mode": "provenance",
       "language": "typescript",
+      "family": "hollow-denominator",
       "level": "L3",
       "reached": 0,
       "population": 1,
@@ -1089,9 +2305,10 @@
     {
       "mode": "skeptic",
       "language": "python",
+      "family": "gate-that-gates-nothing",
       "level": "L1",
-      "reached": 3,
-      "population": 3,
+      "reached": 1,
+      "population": 1,
       "rate": 1,
       "gap_count": 0,
       "misses": []
@@ -1099,9 +2316,10 @@
     {
       "mode": "skeptic",
       "language": "python",
+      "family": "gate-that-gates-nothing",
       "level": "L2",
-      "reached": 3,
-      "population": 3,
+      "reached": 1,
+      "population": 1,
       "rate": 1,
       "gap_count": 0,
       "misses": []
@@ -1109,19 +2327,87 @@
     {
       "mode": "skeptic",
       "language": "python",
+      "family": "gate-that-gates-nothing",
+      "level": "L3",
+      "reached": 0,
+      "population": 1,
+      "rate": 0,
+      "gap_count": 0,
+      "misses": ["gate-that-gates-nothing-python"]
+    },
+    {
+      "mode": "skeptic",
+      "language": "python",
+      "family": "mocked-confirmation",
+      "level": "L1",
+      "reached": 1,
+      "population": 1,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "skeptic",
+      "language": "python",
+      "family": "mocked-confirmation",
+      "level": "L2",
+      "reached": 1,
+      "population": 1,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "skeptic",
+      "language": "python",
+      "family": "mocked-confirmation",
+      "level": "L3",
+      "reached": 0,
+      "population": 1,
+      "rate": 0,
+      "gap_count": 0,
+      "misses": ["mocked-confirmation-python"]
+    },
+    {
+      "mode": "skeptic",
+      "language": "python",
+      "family": "oracle-is-code-copy",
+      "level": "L1",
+      "reached": 1,
+      "population": 1,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "skeptic",
+      "language": "python",
+      "family": "oracle-is-code-copy",
+      "level": "L2",
+      "reached": 1,
+      "population": 1,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "skeptic",
+      "language": "python",
+      "family": "oracle-is-code-copy",
       "level": "L3",
       "reached": 1,
-      "population": 3,
-      "rate": 0.333,
+      "population": 1,
+      "rate": 1,
       "gap_count": 0,
-      "misses": ["gate-that-gates-nothing-python", "mocked-confirmation-python"]
+      "misses": []
     },
     {
       "mode": "skeptic",
       "language": "rust",
+      "family": "gate-that-gates-nothing",
       "level": "L1",
-      "reached": 4,
-      "population": 4,
+      "reached": 1,
+      "population": 1,
       "rate": 1,
       "gap_count": 0,
       "misses": []
@@ -1129,9 +2415,10 @@
     {
       "mode": "skeptic",
       "language": "rust",
+      "family": "gate-that-gates-nothing",
       "level": "L2",
-      "reached": 4,
-      "population": 4,
+      "reached": 1,
+      "population": 1,
       "rate": 1,
       "gap_count": 0,
       "misses": []
@@ -1139,69 +2426,717 @@
     {
       "mode": "skeptic",
       "language": "rust",
+      "family": "gate-that-gates-nothing",
+      "level": "L3",
+      "reached": 0,
+      "population": 1,
+      "rate": 0,
+      "gap_count": 0,
+      "misses": ["gate-that-gates-nothing-rust"]
+    },
+    {
+      "mode": "skeptic",
+      "language": "rust",
+      "family": "mocked-confirmation",
+      "level": "L1",
+      "reached": 1,
+      "population": 1,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "skeptic",
+      "language": "rust",
+      "family": "mocked-confirmation",
+      "level": "L2",
+      "reached": 1,
+      "population": 1,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "skeptic",
+      "language": "rust",
+      "family": "mocked-confirmation",
+      "level": "L3",
+      "reached": 0,
+      "population": 1,
+      "rate": 0,
+      "gap_count": 0,
+      "misses": ["mocked-confirmation-rust"]
+    },
+    {
+      "mode": "skeptic",
+      "language": "rust",
+      "family": "oracle-is-code-copy",
+      "level": "L1",
+      "reached": 2,
+      "population": 2,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "skeptic",
+      "language": "rust",
+      "family": "oracle-is-code-copy",
+      "level": "L2",
+      "reached": 2,
+      "population": 2,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "skeptic",
+      "language": "rust",
+      "family": "oracle-is-code-copy",
       "level": "L3",
       "reached": 2,
-      "population": 4,
-      "rate": 0.5,
+      "population": 2,
+      "rate": 1,
       "gap_count": 0,
-      "misses": ["gate-that-gates-nothing-rust", "mocked-confirmation-rust"]
+      "misses": []
     },
     {
       "mode": "skeptic",
-      "language": "typescript",
+      "language": "rust",
+      "family": "vacuous-under-guard",
       "level": "L1",
-      "reached": 3,
-      "population": 3,
+      "reached": 1,
+      "population": 1,
       "rate": 1,
       "gap_count": 0,
       "misses": []
     },
     {
       "mode": "skeptic",
-      "language": "typescript",
+      "language": "rust",
+      "family": "vacuous-under-guard",
       "level": "L2",
-      "reached": 3,
-      "population": 3,
+      "reached": 1,
+      "population": 1,
       "rate": 1,
       "gap_count": 0,
       "misses": []
     },
     {
       "mode": "skeptic",
-      "language": "typescript",
+      "language": "rust",
+      "family": "vacuous-under-guard",
       "level": "L3",
       "reached": 1,
-      "population": 3,
-      "rate": 0.333,
+      "population": 1,
+      "rate": 1,
       "gap_count": 0,
-      "misses": [
-        "gate-that-gates-nothing-typescript",
-        "mocked-confirmation-typescript"
-      ]
+      "misses": []
+    },
+    {
+      "mode": "skeptic",
+      "language": "typescript",
+      "family": "gate-that-gates-nothing",
+      "level": "L1",
+      "reached": 1,
+      "population": 1,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "skeptic",
+      "language": "typescript",
+      "family": "gate-that-gates-nothing",
+      "level": "L2",
+      "reached": 1,
+      "population": 1,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "skeptic",
+      "language": "typescript",
+      "family": "gate-that-gates-nothing",
+      "level": "L3",
+      "reached": 0,
+      "population": 1,
+      "rate": 0,
+      "gap_count": 0,
+      "misses": ["gate-that-gates-nothing-typescript"]
+    },
+    {
+      "mode": "skeptic",
+      "language": "typescript",
+      "family": "mocked-confirmation",
+      "level": "L1",
+      "reached": 1,
+      "population": 1,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "skeptic",
+      "language": "typescript",
+      "family": "mocked-confirmation",
+      "level": "L2",
+      "reached": 1,
+      "population": 1,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "skeptic",
+      "language": "typescript",
+      "family": "mocked-confirmation",
+      "level": "L3",
+      "reached": 0,
+      "population": 1,
+      "rate": 0,
+      "gap_count": 0,
+      "misses": ["mocked-confirmation-typescript"]
+    },
+    {
+      "mode": "skeptic",
+      "language": "typescript",
+      "family": "oracle-is-code-copy",
+      "level": "L1",
+      "reached": 1,
+      "population": 1,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "skeptic",
+      "language": "typescript",
+      "family": "oracle-is-code-copy",
+      "level": "L2",
+      "reached": 1,
+      "population": 1,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    },
+    {
+      "mode": "skeptic",
+      "language": "typescript",
+      "family": "oracle-is-code-copy",
+      "level": "L3",
+      "reached": 1,
+      "population": 1,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": []
+    }
+  ],
+  "locality_miss_inventory": [
+    {
+      "id": "catch-all-properties:CA-1",
+      "case": "catch-all-properties",
+      "mode": "detection",
+      "language": "rust",
+      "family": "catch-all-universal",
+      "producer": ["quire:coverage.diagnostics"],
+      "expectedLocus": "spec/FR-001.md",
+      "observedLocus": ["spec/FR-001.md:10"],
+      "missingLevels": ["L3"],
+      "rootCause": "the located finding omitted one or more controlled causal fragments",
+      "disposition": {
+        "state": "deferred",
+        "reason": "retained after the #236/#341 implementation slice; no additional producer repair is claimed by #257"
+      }
+    },
+    {
+      "id": "gate-that-gates-nothing-python:GN-PY",
+      "case": "gate-that-gates-nothing-python",
+      "mode": "skeptic",
+      "language": "python",
+      "family": "gate-that-gates-nothing",
+      "producer": ["quoin:validate"],
+      "expectedLocus": "scripts/check_dangerous_eval.sh:4",
+      "observedLocus": ["scripts/check_dangerous_eval.sh:4"],
+      "missingLevels": ["L3"],
+      "rootCause": "the located finding omitted one or more controlled causal fragments",
+      "disposition": {
+        "state": "deferred",
+        "reason": "retained after the #236/#341 implementation slice; no additional producer repair is claimed by #257"
+      }
+    },
+    {
+      "id": "gate-that-gates-nothing-rust:GN-RS",
+      "case": "gate-that-gates-nothing-rust",
+      "mode": "skeptic",
+      "language": "rust",
+      "family": "gate-that-gates-nothing",
+      "producer": ["quoin:validate"],
+      "expectedLocus": "scripts/check_unwrap.sh:4",
+      "observedLocus": ["scripts/check_unwrap.sh:4"],
+      "missingLevels": ["L3"],
+      "rootCause": "the located finding omitted one or more controlled causal fragments",
+      "disposition": {
+        "state": "deferred",
+        "reason": "retained after the #236/#341 implementation slice; no additional producer repair is claimed by #257"
+      }
+    },
+    {
+      "id": "gate-that-gates-nothing-typescript:GN-TS",
+      "case": "gate-that-gates-nothing-typescript",
+      "mode": "skeptic",
+      "language": "typescript",
+      "family": "gate-that-gates-nothing",
+      "producer": ["quoin:validate"],
+      "expectedLocus": "scripts/check_dangerous_eval.sh:4",
+      "observedLocus": ["scripts/check_dangerous_eval.sh:4"],
+      "missingLevels": ["L3"],
+      "rootCause": "the located finding omitted one or more controlled causal fragments",
+      "disposition": {
+        "state": "deferred",
+        "reason": "retained after the #236/#341 implementation slice; no additional producer repair is claimed by #257"
+      }
+    },
+    {
+      "id": "greenfield-no-symbols-python:greenfield-no-symbols-python-unclaimed",
+      "case": "greenfield-no-symbols-python",
+      "mode": "disposition",
+      "language": "python",
+      "family": "unclaimed",
+      "producer": [],
+      "expectedLocus": null,
+      "observedLocus": [],
+      "missingLevels": ["L1", "L2", "L3"],
+      "rootCause": "the producer emitted no finding in the expected family",
+      "disposition": {
+        "state": "deferred",
+        "reason": "retained after the #236/#341 implementation slice; no additional producer repair is claimed by #257"
+      }
+    },
+    {
+      "id": "greenfield-no-symbols-rust:greenfield-no-symbols-rust-unclaimed",
+      "case": "greenfield-no-symbols-rust",
+      "mode": "disposition",
+      "language": "rust",
+      "family": "unclaimed",
+      "producer": [],
+      "expectedLocus": null,
+      "observedLocus": [],
+      "missingLevels": ["L1", "L2", "L3"],
+      "rootCause": "the producer emitted no finding in the expected family",
+      "disposition": {
+        "state": "deferred",
+        "reason": "retained after the #236/#341 implementation slice; no additional producer repair is claimed by #257"
+      }
+    },
+    {
+      "id": "greenfield-no-symbols-typescript:greenfield-no-symbols-typescript-unclaimed",
+      "case": "greenfield-no-symbols-typescript",
+      "mode": "disposition",
+      "language": "typescript",
+      "family": "unclaimed",
+      "producer": [],
+      "expectedLocus": null,
+      "observedLocus": [],
+      "missingLevels": ["L1", "L2", "L3"],
+      "rootCause": "the producer emitted no finding in the expected family",
+      "disposition": {
+        "state": "deferred",
+        "reason": "retained after the #236/#341 implementation slice; no additional producer repair is claimed by #257"
+      }
+    },
+    {
+      "id": "hollow-metric-python:HD-1-python",
+      "case": "hollow-metric-python",
+      "mode": "provenance",
+      "language": "python",
+      "family": "hollow-denominator",
+      "producer": ["quire:coverage.diagnostics"],
+      "expectedLocus": "src/lib.rs",
+      "observedLocus": [],
+      "missingLevels": ["L2", "L3"],
+      "rootCause": "the family finding did not match the controlled expected locus",
+      "disposition": {
+        "state": "deferred",
+        "reason": "retained after the #236/#341 implementation slice; no additional producer repair is claimed by #257"
+      }
+    },
+    {
+      "id": "hollow-metric-rust:HD-1-rust",
+      "case": "hollow-metric-rust",
+      "mode": "provenance",
+      "language": "rust",
+      "family": "hollow-denominator",
+      "producer": ["quire:coverage.diagnostics"],
+      "expectedLocus": "src/lib.rs",
+      "observedLocus": [],
+      "missingLevels": ["L2", "L3"],
+      "rootCause": "the family finding did not match the controlled expected locus",
+      "disposition": {
+        "state": "deferred",
+        "reason": "retained after the #236/#341 implementation slice; no additional producer repair is claimed by #257"
+      }
+    },
+    {
+      "id": "hollow-metric-typescript:HD-1-typescript",
+      "case": "hollow-metric-typescript",
+      "mode": "provenance",
+      "language": "typescript",
+      "family": "hollow-denominator",
+      "producer": ["quire:coverage.diagnostics"],
+      "expectedLocus": "src/lib.rs",
+      "observedLocus": [],
+      "missingLevels": ["L2", "L3"],
+      "rootCause": "the family finding did not match the controlled expected locus",
+      "disposition": {
+        "state": "deferred",
+        "reason": "retained after the #236/#341 implementation slice; no additional producer repair is claimed by #257"
+      }
+    },
+    {
+      "id": "marker-mismatch:MM-1",
+      "case": "marker-mismatch",
+      "mode": "attachment",
+      "language": "rust",
+      "family": "marker-form-mismatch",
+      "producer": ["quire:coverage.diagnostics"],
+      "expectedLocus": "src/lib.rs:5",
+      "observedLocus": ["src/lib.rs:5"],
+      "missingLevels": ["L3"],
+      "rootCause": "the located finding omitted one or more controlled causal fragments",
+      "disposition": {
+        "state": "deferred",
+        "reason": "retained after the #236/#341 implementation slice; no additional producer repair is claimed by #257"
+      }
+    },
+    {
+      "id": "mocked-confirmation-python:MC-PY",
+      "case": "mocked-confirmation-python",
+      "mode": "skeptic",
+      "language": "python",
+      "family": "mocked-confirmation",
+      "producer": ["quoin:evidence.audit"],
+      "expectedLocus": "src/test_shell.py:13",
+      "observedLocus": ["src/test_shell.py:13"],
+      "missingLevels": ["L3"],
+      "rootCause": "the located finding omitted one or more controlled causal fragments",
+      "disposition": {
+        "state": "deferred",
+        "reason": "retained after the #236/#341 implementation slice; no additional producer repair is claimed by #257"
+      }
+    },
+    {
+      "id": "mocked-confirmation-rust:MC-RS",
+      "case": "mocked-confirmation-rust",
+      "mode": "skeptic",
+      "language": "rust",
+      "family": "mocked-confirmation",
+      "producer": ["quoin:evidence.audit"],
+      "expectedLocus": "src/lib.rs:22",
+      "observedLocus": ["src/lib.rs:22"],
+      "missingLevels": ["L3"],
+      "rootCause": "the located finding omitted one or more controlled causal fragments",
+      "disposition": {
+        "state": "deferred",
+        "reason": "retained after the #236/#341 implementation slice; no additional producer repair is claimed by #257"
+      }
+    },
+    {
+      "id": "mocked-confirmation-typescript:MC-TS",
+      "case": "mocked-confirmation-typescript",
+      "mode": "skeptic",
+      "language": "typescript",
+      "family": "mocked-confirmation",
+      "producer": ["quoin:evidence.audit"],
+      "expectedLocus": "src/shell.test.ts:13",
+      "observedLocus": ["src/shell.test.ts:13"],
+      "missingLevels": ["L3"],
+      "rootCause": "the located finding omitted one or more controlled causal fragments",
+      "disposition": {
+        "state": "deferred",
+        "reason": "retained after the #236/#341 implementation slice; no additional producer repair is claimed by #257"
+      }
+    },
+    {
+      "id": "model-mints-nothing:MM-656",
+      "case": "model-mints-nothing",
+      "mode": "detection",
+      "language": "n/a",
+      "family": "model-mints-nothing",
+      "producer": ["quire:coverage.diagnostics"],
+      "expectedLocus": null,
+      "observedLocus": [],
+      "missingLevels": ["L2", "L3"],
+      "rootCause": "the family finding did not match the controlled expected locus",
+      "disposition": {
+        "state": "deferred",
+        "reason": "retained after the #236/#341 implementation slice; no additional producer repair is claimed by #257"
+      }
+    },
+    {
+      "id": "no-symbol-method-in-the-verification-column-python:no-symbol-method-in-the-verification-column-python-unclaimed",
+      "case": "no-symbol-method-in-the-verification-column-python",
+      "mode": "minting",
+      "language": "python",
+      "family": "unclaimed",
+      "producer": [],
+      "expectedLocus": null,
+      "observedLocus": [],
+      "missingLevels": ["L1", "L2", "L3"],
+      "rootCause": "the producer emitted no finding in the expected family",
+      "disposition": {
+        "state": "deferred",
+        "reason": "retained after the #236/#341 implementation slice; no additional producer repair is claimed by #257"
+      }
+    },
+    {
+      "id": "no-symbol-method-in-the-verification-column-rust:no-symbol-method-in-the-verification-column-rust-unclaimed",
+      "case": "no-symbol-method-in-the-verification-column-rust",
+      "mode": "minting",
+      "language": "rust",
+      "family": "unclaimed",
+      "producer": [],
+      "expectedLocus": null,
+      "observedLocus": [],
+      "missingLevels": ["L1", "L2", "L3"],
+      "rootCause": "the producer emitted no finding in the expected family",
+      "disposition": {
+        "state": "deferred",
+        "reason": "retained after the #236/#341 implementation slice; no additional producer repair is claimed by #257"
+      }
+    },
+    {
+      "id": "no-symbol-method-in-the-verification-column-typescript:no-symbol-method-in-the-verification-column-typescript-unclaimed",
+      "case": "no-symbol-method-in-the-verification-column-typescript",
+      "mode": "minting",
+      "language": "typescript",
+      "family": "unclaimed",
+      "producer": [],
+      "expectedLocus": null,
+      "observedLocus": [],
+      "missingLevels": ["L1", "L2", "L3"],
+      "rootCause": "the producer emitted no finding in the expected family",
+      "disposition": {
+        "state": "deferred",
+        "reason": "retained after the #236/#341 implementation slice; no additional producer repair is claimed by #257"
+      }
+    },
+    {
+      "id": "no-testmatrix-document-python:NT-538",
+      "case": "no-testmatrix-document-python",
+      "mode": "minting",
+      "language": "python",
+      "family": "archetype-matches-nothing",
+      "producer": ["quire:coverage.diagnostics"],
+      "expectedLocus": null,
+      "observedLocus": [],
+      "missingLevels": ["L2", "L3"],
+      "rootCause": "the family finding did not match the controlled expected locus",
+      "disposition": {
+        "state": "deferred",
+        "reason": "retained after the #236/#341 implementation slice; no additional producer repair is claimed by #257"
+      }
+    },
+    {
+      "id": "no-testmatrix-document-rust:NT-940",
+      "case": "no-testmatrix-document-rust",
+      "mode": "minting",
+      "language": "rust",
+      "family": "archetype-matches-nothing",
+      "producer": ["quire:coverage.diagnostics"],
+      "expectedLocus": null,
+      "observedLocus": [],
+      "missingLevels": ["L2", "L3"],
+      "rootCause": "the family finding did not match the controlled expected locus",
+      "disposition": {
+        "state": "deferred",
+        "reason": "retained after the #236/#341 implementation slice; no additional producer repair is claimed by #257"
+      }
+    },
+    {
+      "id": "no-testmatrix-document-typescript:NT-656",
+      "case": "no-testmatrix-document-typescript",
+      "mode": "minting",
+      "language": "typescript",
+      "family": "archetype-matches-nothing",
+      "producer": ["quire:coverage.diagnostics"],
+      "expectedLocus": null,
+      "observedLocus": [],
+      "missingLevels": ["L2", "L3"],
+      "rootCause": "the family finding did not match the controlled expected locus",
+      "disposition": {
+        "state": "deferred",
+        "reason": "retained after the #236/#341 implementation slice; no additional producer repair is claimed by #257"
+      }
+    },
+    {
+      "id": "stale-name-correct-trace-rust:direct-observation",
+      "case": "stale-name-correct-trace-rust",
+      "mode": "detection",
+      "language": "rust",
+      "family": "direct-observation",
+      "producer": ["quire:coverage.untracked_symbols"],
+      "expectedLocus": ["src/lib.rs"],
+      "observedLocus": ["src/lib.rs"],
+      "missingLevels": ["L3"],
+      "rootCause": "the direct observation has no controlled actionable-fragment contract",
+      "disposition": {
+        "state": "deferred",
+        "reason": "retained after the #236/#341 implementation slice; no additional producer repair is claimed by #257"
+      }
+    },
+    {
+      "id": "stale-name-correct-trace-typescript:direct-observation",
+      "case": "stale-name-correct-trace-typescript",
+      "mode": "detection",
+      "language": "typescript",
+      "family": "direct-observation",
+      "producer": ["quire:coverage.untracked_symbols"],
+      "expectedLocus": ["src/coverage.test.ts"],
+      "observedLocus": ["src/coverage.test.ts"],
+      "missingLevels": ["L3"],
+      "rootCause": "the direct observation has no controlled actionable-fragment contract",
+      "disposition": {
+        "state": "deferred",
+        "reason": "retained after the #236/#341 implementation slice; no additional producer repair is claimed by #257"
+      }
+    },
+    {
+      "id": "tag-inside-string-literal-python:tag-inside-string-literal-python-unclaimed",
+      "case": "tag-inside-string-literal-python",
+      "mode": "attachment",
+      "language": "python",
+      "family": "unclaimed",
+      "producer": [],
+      "expectedLocus": null,
+      "observedLocus": [],
+      "missingLevels": ["L1", "L2", "L3"],
+      "rootCause": "the producer emitted no finding in the expected family",
+      "disposition": {
+        "state": "deferred",
+        "reason": "retained after the #236/#341 implementation slice; no additional producer repair is claimed by #257"
+      }
+    },
+    {
+      "id": "tag-inside-string-literal-rust:tag-inside-string-literal-rust-unclaimed",
+      "case": "tag-inside-string-literal-rust",
+      "mode": "attachment",
+      "language": "rust",
+      "family": "unclaimed",
+      "producer": [],
+      "expectedLocus": null,
+      "observedLocus": [],
+      "missingLevels": ["L1", "L2", "L3"],
+      "rootCause": "the producer emitted no finding in the expected family",
+      "disposition": {
+        "state": "deferred",
+        "reason": "retained after the #236/#341 implementation slice; no additional producer repair is claimed by #257"
+      }
+    },
+    {
+      "id": "tag-inside-string-literal-typescript:tag-inside-string-literal-typescript-unclaimed",
+      "case": "tag-inside-string-literal-typescript",
+      "mode": "attachment",
+      "language": "typescript",
+      "family": "unclaimed",
+      "producer": [],
+      "expectedLocus": null,
+      "observedLocus": [],
+      "missingLevels": ["L1", "L2", "L3"],
+      "rootCause": "the producer emitted no finding in the expected family",
+      "disposition": {
+        "state": "deferred",
+        "reason": "retained after the #236/#341 implementation slice; no additional producer repair is claimed by #257"
+      }
+    },
+    {
+      "id": "tag-names-unminted-tc-python:direct-observation",
+      "case": "tag-names-unminted-tc-python",
+      "mode": "join",
+      "language": "python",
+      "family": "direct-observation",
+      "producer": ["quire:coverage.untracked_symbols"],
+      "expectedLocus": ["src/test_coverage.py"],
+      "observedLocus": ["src/test_coverage.py"],
+      "missingLevels": ["L3"],
+      "rootCause": "the direct observation has no controlled actionable-fragment contract",
+      "disposition": {
+        "state": "deferred",
+        "reason": "retained after the #236/#341 implementation slice; no additional producer repair is claimed by #257"
+      }
+    },
+    {
+      "id": "tag-names-unminted-tc-rust:direct-observation",
+      "case": "tag-names-unminted-tc-rust",
+      "mode": "join",
+      "language": "rust",
+      "family": "direct-observation",
+      "producer": ["quire:coverage.untracked_symbols"],
+      "expectedLocus": ["src/lib.rs"],
+      "observedLocus": ["src/lib.rs"],
+      "missingLevels": ["L3"],
+      "rootCause": "the direct observation has no controlled actionable-fragment contract",
+      "disposition": {
+        "state": "deferred",
+        "reason": "retained after the #236/#341 implementation slice; no additional producer repair is claimed by #257"
+      }
+    },
+    {
+      "id": "tag-names-unminted-tc-typescript:direct-observation",
+      "case": "tag-names-unminted-tc-typescript",
+      "mode": "join",
+      "language": "typescript",
+      "family": "direct-observation",
+      "producer": ["quire:coverage.untracked_symbols"],
+      "expectedLocus": ["src/coverage.test.ts"],
+      "observedLocus": ["src/coverage.test.ts"],
+      "missingLevels": ["L3"],
+      "rootCause": "the direct observation has no controlled actionable-fragment contract",
+      "disposition": {
+        "state": "deferred",
+        "reason": "retained after the #236/#341 implementation slice; no additional producer repair is claimed by #257"
+      }
+    },
+    {
+      "id": "undeclared-coverage-vocabulary:UC-134",
+      "case": "undeclared-coverage-vocabulary",
+      "mode": "detection",
+      "language": "n/a",
+      "family": "undeclared-coverage-vocabulary",
+      "producer": ["quire:coverage.diagnostics"],
+      "expectedLocus": null,
+      "observedLocus": [],
+      "missingLevels": ["L2", "L3"],
+      "rootCause": "the family finding did not match the controlled expected locus",
+      "disposition": {
+        "state": "deferred",
+        "reason": "retained after the #236/#341 implementation slice; no additional producer repair is claimed by #257"
+      }
     }
   ],
   "families": [
     {
       "family": "archetype-matches-nothing",
       "truePositives": 3,
-      "falsePositives": 299,
+      "falsePositives": 307,
       "misses": 0,
       "precision": 1,
       "shape": "advisory",
       "recall": 1,
       "precision_basis": {
         "precision": 1,
-        "truePositives": 298,
+        "truePositives": 306,
         "falsePositives": 0,
         "unadjudicated": 4,
-        "byStanding": 295,
-        "rulings": 799
+        "byStanding": 303,
+        "rulings": 819
       }
     },
     {
       "family": "catch-all-universal",
       "truePositives": 4,
-      "falsePositives": 104,
+      "falsePositives": 106,
       "misses": 0,
       "precision": 1,
       "shape": "advisory",
@@ -1210,7 +3145,7 @@
         "precision": 1,
         "truePositives": 4,
         "falsePositives": 0,
-        "unadjudicated": 104,
+        "unadjudicated": 106,
         "byStanding": 0,
         "rulings": 8
       }
@@ -1289,7 +3224,7 @@
     },
     {
       "family": "oracle-is-code-copy",
-      "truePositives": 3,
+      "truePositives": 4,
       "falsePositives": 0,
       "misses": 0,
       "precision": 1,
@@ -1308,6 +3243,15 @@
     {
       "family": "section-matches-nothing",
       "truePositives": 6,
+      "falsePositives": 0,
+      "misses": 0,
+      "precision": 1,
+      "shape": "defect",
+      "recall": 1
+    },
+    {
+      "family": "status-column-matches-nothing",
+      "truePositives": 1,
       "falsePositives": 0,
       "misses": 0,
       "precision": 1,
@@ -1391,28 +3335,28 @@
     { "family": "marker-form-mismatch", "reason": "no-symbol-bound" },
     { "family": "marker-form-mismatch", "reason": "no-symbol-bound" }
   ],
-  "positional": 52,
-  "finding_localisation_rate": 0.867,
+  "positional": 54,
+  "finding_localisation_rate": 0.871,
   "minting.section_hit_rate": {
     "rate": 0.98,
-    "matched": 292,
-    "examined": 298,
-    "cases_reporting": 157
+    "matched": 300,
+    "examined": 306,
+    "cases_reporting": 161
   },
   "actionability_v1": {
     "definitionVersion": "finding.actionability-v1",
-    "numerator": 145,
-    "denominator": 473,
+    "numerator": 149,
+    "denominator": 485,
     "exclusions": [],
     "namedMisses": [],
-    "actionable": 145,
-    "total": 473,
+    "actionable": 149,
+    "total": 485,
     "rate": 0.307
   },
   "actionability_v2": {
     "definitionVersion": "finding.actionability-v2",
     "numerator": 0,
-    "denominator": 473,
+    "denominator": 485,
     "exclusions": [],
     "namedMisses": [
       {
@@ -8401,6 +10345,131 @@
         ]
       },
       {
+        "id": "quire:coverage.diagnostics:status-column-control:catch-all-universal:catch-all-universal",
+        "missing": [
+          {
+            "field": "change_target",
+            "state": "unavailable",
+            "reason": "producer emitted no change target"
+          },
+          {
+            "field": "next_move",
+            "state": "unavailable",
+            "reason": "producer emitted no remedy or diagnostic step"
+          }
+        ]
+      },
+      {
+        "id": "quire:coverage.diagnostics:status-column-control:archetype-matches-nothing:archetype-matches-nothing",
+        "missing": [
+          {
+            "field": "subject_or_locus",
+            "state": "unavailable",
+            "reason": "producer emitted no affected subject; producer emitted no locus"
+          },
+          {
+            "field": "change_target",
+            "state": "unavailable",
+            "reason": "producer emitted no change target"
+          },
+          {
+            "field": "next_move",
+            "state": "unavailable",
+            "reason": "producer emitted no remedy or diagnostic step"
+          }
+        ]
+      },
+      {
+        "id": "quire:coverage.diagnostics:status-column-control:archetype-matches-nothing:archetype-matches-nothing",
+        "missing": [
+          {
+            "field": "subject_or_locus",
+            "state": "unavailable",
+            "reason": "producer emitted no affected subject; producer emitted no locus"
+          },
+          {
+            "field": "change_target",
+            "state": "unavailable",
+            "reason": "producer emitted no change target"
+          },
+          {
+            "field": "next_move",
+            "state": "unavailable",
+            "reason": "producer emitted no remedy or diagnostic step"
+          }
+        ]
+      },
+      {
+        "id": "quire:coverage.diagnostics:status-column-mismatch:catch-all-universal:catch-all-universal",
+        "missing": [
+          {
+            "field": "change_target",
+            "state": "unavailable",
+            "reason": "producer emitted no change target"
+          },
+          {
+            "field": "next_move",
+            "state": "unavailable",
+            "reason": "producer emitted no remedy or diagnostic step"
+          }
+        ]
+      },
+      {
+        "id": "quire:coverage.diagnostics:status-column-mismatch:status-column-matches-nothing:status-column-matches-nothing",
+        "missing": [
+          {
+            "field": "change_target",
+            "state": "unavailable",
+            "reason": "producer emitted no change target"
+          },
+          {
+            "field": "next_move",
+            "state": "unavailable",
+            "reason": "producer emitted no remedy or diagnostic step"
+          }
+        ]
+      },
+      {
+        "id": "quire:coverage.diagnostics:status-column-mismatch:archetype-matches-nothing:archetype-matches-nothing",
+        "missing": [
+          {
+            "field": "subject_or_locus",
+            "state": "unavailable",
+            "reason": "producer emitted no affected subject; producer emitted no locus"
+          },
+          {
+            "field": "change_target",
+            "state": "unavailable",
+            "reason": "producer emitted no change target"
+          },
+          {
+            "field": "next_move",
+            "state": "unavailable",
+            "reason": "producer emitted no remedy or diagnostic step"
+          }
+        ]
+      },
+      {
+        "id": "quire:coverage.diagnostics:status-column-mismatch:archetype-matches-nothing:archetype-matches-nothing",
+        "missing": [
+          {
+            "field": "subject_or_locus",
+            "state": "unavailable",
+            "reason": "producer emitted no affected subject; producer emitted no locus"
+          },
+          {
+            "field": "change_target",
+            "state": "unavailable",
+            "reason": "producer emitted no change target"
+          },
+          {
+            "field": "next_move",
+            "state": "unavailable",
+            "reason": "producer emitted no remedy or diagnostic step"
+          }
+        ]
+      },
+      {
         "id": "quire:coverage.diagnostics:wrong-type-cell-python:archetype-matches-nothing:archetype-matches-nothing",
         "missing": [
           {
@@ -9986,6 +12055,101 @@
         ]
       },
       {
+        "id": "quire:coverage.diagnostics:oracle-helper-copy-rust:archetype-matches-nothing:archetype-matches-nothing",
+        "missing": [
+          {
+            "field": "subject_or_locus",
+            "state": "unavailable",
+            "reason": "producer emitted no affected subject; producer emitted no locus"
+          },
+          {
+            "field": "change_target",
+            "state": "unavailable",
+            "reason": "producer emitted no change target"
+          },
+          {
+            "field": "next_move",
+            "state": "unavailable",
+            "reason": "producer emitted no remedy or diagnostic step"
+          }
+        ]
+      },
+      {
+        "id": "quire:coverage.diagnostics:oracle-helper-copy-rust:archetype-matches-nothing:archetype-matches-nothing",
+        "missing": [
+          {
+            "field": "subject_or_locus",
+            "state": "unavailable",
+            "reason": "producer emitted no affected subject; producer emitted no locus"
+          },
+          {
+            "field": "change_target",
+            "state": "unavailable",
+            "reason": "producer emitted no change target"
+          },
+          {
+            "field": "next_move",
+            "state": "unavailable",
+            "reason": "producer emitted no remedy or diagnostic step"
+          }
+        ]
+      },
+      {
+        "id": "quire:coverage.suspicions:oracle-helper-copy-rust:oracle-is-code-copy:oracle-resembles-implementation",
+        "missing": [
+          {
+            "field": "change_target",
+            "state": "unavailable",
+            "reason": "producer emitted no change target"
+          },
+          {
+            "field": "next_move",
+            "state": "unavailable",
+            "reason": "producer emitted no remedy or diagnostic step"
+          }
+        ]
+      },
+      {
+        "id": "quire:coverage.diagnostics:oracle-helper-copy-control-rust:archetype-matches-nothing:archetype-matches-nothing",
+        "missing": [
+          {
+            "field": "subject_or_locus",
+            "state": "unavailable",
+            "reason": "producer emitted no affected subject; producer emitted no locus"
+          },
+          {
+            "field": "change_target",
+            "state": "unavailable",
+            "reason": "producer emitted no change target"
+          },
+          {
+            "field": "next_move",
+            "state": "unavailable",
+            "reason": "producer emitted no remedy or diagnostic step"
+          }
+        ]
+      },
+      {
+        "id": "quire:coverage.diagnostics:oracle-helper-copy-control-rust:archetype-matches-nothing:archetype-matches-nothing",
+        "missing": [
+          {
+            "field": "subject_or_locus",
+            "state": "unavailable",
+            "reason": "producer emitted no affected subject; producer emitted no locus"
+          },
+          {
+            "field": "change_target",
+            "state": "unavailable",
+            "reason": "producer emitted no change target"
+          },
+          {
+            "field": "next_move",
+            "state": "unavailable",
+            "reason": "producer emitted no remedy or diagnostic step"
+          }
+        ]
+      },
+      {
         "id": "quire:coverage.diagnostics:vacuous-property-suite:archetype-matches-nothing:archetype-matches-nothing",
         "missing": [
           {
@@ -10869,6 +13033,16 @@
         "reason": "property \"universal\" is outside the specific-shape population"
       },
       {
+        "id": "status-column-control:/home/peter/dev/quoin/corpus/cases/minting/status-column-control/input/spec/FR-001.md:FR-001-AC-1",
+        "state": "not_applicable",
+        "reason": "property \"universal\" is outside the specific-shape population"
+      },
+      {
+        "id": "status-column-mismatch:/home/peter/dev/quoin/corpus/cases/minting/status-column-mismatch/input/spec/FR-001.md:FR-001-AC-1",
+        "state": "not_applicable",
+        "reason": "property \"universal\" is outside the specific-shape population"
+      },
+      {
         "id": "wrong-type-cell-python:/home/peter/dev/quoin/corpus/cases/minting/wrong-type-cell/python/input/spec/FR-001.md:FR-001-AC-1",
         "state": "not_applicable",
         "reason": "property \"universal\" is outside the specific-shape population"
@@ -11037,6 +13211,16 @@
         "id": "oracle-copy-control-typescript:/home/peter/dev/quoin/corpus/cases/skeptic/oracle-copy-control/typescript/input/spec/FR-001.md:FR-001-AC-1",
         "state": "not_applicable",
         "reason": "property \"universal\" is outside the specific-shape population"
+      },
+      {
+        "id": "oracle-helper-copy-rust:/home/peter/dev/quoin/corpus/cases/skeptic/oracle-helper-copy/rust/input/spec/FR-001.md:FR-001-AC-1",
+        "state": "not_applicable",
+        "reason": "property \"example\" is outside the specific-shape population"
+      },
+      {
+        "id": "oracle-helper-copy-control-rust:/home/peter/dev/quoin/corpus/cases/skeptic/oracle-helper-copy-control/rust/input/spec/FR-001.md:FR-001-AC-1",
+        "state": "not_applicable",
+        "reason": "property \"example\" is outside the specific-shape population"
       },
       {
         "id": "vacuous-property-suite:/home/peter/dev/quoin/corpus/cases/skeptic/vacuous-property-suite/input/spec/FR-001.md:FR-001-AC-1",
@@ -19987,6 +22171,124 @@
       }
     },
     {
+      "case": "status-column-control",
+      "payload": {
+        "documents": [
+          {
+            "archetype": "FR",
+            "criteria": [
+              {
+                "domain": { "end": 13, "start": 6, "text": "finding" },
+                "extractable": true,
+                "extraction": "extractable",
+                "line": 10,
+                "obligation": {
+                  "criticality": null,
+                  "method": "Test",
+                  "source": "acceptance-criterion",
+                  "statement_hash": "12671017989d8c835aa0db9c69678949108d9afdeb764813b7810d3c031b77b3"
+                },
+                "oracle": {
+                  "end": 46,
+                  "start": 14,
+                  "text": "shall name a safe repair target."
+                },
+                "precondition": null,
+                "property": "universal",
+                "row_id": "FR-001-AC-1",
+                "shape": "obligation",
+                "signals": [
+                  "universal:determiner",
+                  "span:domain",
+                  "span:oracle"
+                ],
+                "statement": "Every finding shall name a safe repair target."
+              }
+            ],
+            "document": "/home/peter/dev/quoin/corpus/cases/minting/status-column-control/input/spec/FR-001.md"
+          },
+          {
+            "archetype": "TestMatrix",
+            "criteria": [],
+            "document": "/home/peter/dev/quoin/corpus/cases/minting/status-column-control/input/spec/tests.md"
+          }
+        ],
+        "engine": {
+          "cli": "0.30.2",
+          "engine": "0.33.0",
+          "capabilities": [
+            "binding_census",
+            "binding_census.tagged",
+            "metrics_envelope",
+            "minted_targets",
+            "reference_only_targets",
+            "unmatched_tags",
+            "suspicions",
+            "specific_shaped"
+          ]
+        }
+      }
+    },
+    {
+      "case": "status-column-mismatch",
+      "payload": {
+        "documents": [
+          {
+            "archetype": "FR",
+            "criteria": [
+              {
+                "domain": { "end": 13, "start": 6, "text": "finding" },
+                "extractable": true,
+                "extraction": "extractable",
+                "line": 10,
+                "obligation": {
+                  "criticality": null,
+                  "method": "Test",
+                  "source": "acceptance-criterion",
+                  "statement_hash": "12671017989d8c835aa0db9c69678949108d9afdeb764813b7810d3c031b77b3"
+                },
+                "oracle": {
+                  "end": 46,
+                  "start": 14,
+                  "text": "shall name a safe repair target."
+                },
+                "precondition": null,
+                "property": "universal",
+                "row_id": "FR-001-AC-1",
+                "shape": "obligation",
+                "signals": [
+                  "universal:determiner",
+                  "span:domain",
+                  "span:oracle"
+                ],
+                "statement": "Every finding shall name a safe repair target."
+              }
+            ],
+            "document": "/home/peter/dev/quoin/corpus/cases/minting/status-column-mismatch/input/spec/FR-001.md"
+          },
+          {
+            "archetype": "TestMatrix",
+            "criteria": [],
+            "document": "/home/peter/dev/quoin/corpus/cases/minting/status-column-mismatch/input/spec/tests.md"
+          }
+        ],
+        "engine": {
+          "cli": "0.30.2",
+          "engine": "0.33.0",
+          "capabilities": [
+            "binding_census",
+            "binding_census.tagged",
+            "metrics_envelope",
+            "minted_targets",
+            "reference_only_targets",
+            "unmatched_tags",
+            "suspicions",
+            "specific_shaped"
+          ]
+        }
+      }
+    },
+    {
       "case": "wrong-type-cell-python",
       "payload": {
         "documents": [
@@ -22524,6 +24826,108 @@
       }
     },
     {
+      "case": "oracle-helper-copy-rust",
+      "payload": {
+        "documents": [
+          {
+            "archetype": "FR",
+            "criteria": [
+              {
+                "domain": null,
+                "extractable": false,
+                "extraction": "not-extractable",
+                "line": 10,
+                "obligation": {
+                  "criticality": null,
+                  "method": "Test",
+                  "source": "acceptance-criterion",
+                  "statement_hash": "f0435e8437fedf296bc08399d6876e2b1092bf99b546f31b514ebebfe6e3d00e"
+                },
+                "oracle": null,
+                "precondition": null,
+                "property": "example",
+                "row_id": "FR-001-AC-1",
+                "shape": "obligation",
+                "signals": ["example:specific-scenario"],
+                "statement": "Artifact acceptance shall agree with an independent containment oracle."
+              }
+            ],
+            "document": "/home/peter/dev/quoin/corpus/cases/skeptic/oracle-helper-copy/rust/input/spec/FR-001.md"
+          },
+          {
+            "archetype": "TestMatrix",
+            "criteria": [],
+            "document": "/home/peter/dev/quoin/corpus/cases/skeptic/oracle-helper-copy/rust/input/spec/tests.md"
+          }
+        ],
+        "engine": {
+          "cli": "0.30.2",
+          "engine": "0.33.0",
+          "capabilities": [
+            "binding_census",
+            "binding_census.tagged",
+            "metrics_envelope",
+            "minted_targets",
+            "reference_only_targets",
+            "unmatched_tags",
+            "suspicions",
+            "specific_shaped"
+          ]
+        }
+      }
+    },
+    {
+      "case": "oracle-helper-copy-control-rust",
+      "payload": {
+        "documents": [
+          {
+            "archetype": "FR",
+            "criteria": [
+              {
+                "domain": null,
+                "extractable": false,
+                "extraction": "not-extractable",
+                "line": 10,
+                "obligation": {
+                  "criticality": null,
+                  "method": "Test",
+                  "source": "acceptance-criterion",
+                  "statement_hash": "f0435e8437fedf296bc08399d6876e2b1092bf99b546f31b514ebebfe6e3d00e"
+                },
+                "oracle": null,
+                "precondition": null,
+                "property": "example",
+                "row_id": "FR-001-AC-1",
+                "shape": "obligation",
+                "signals": ["example:specific-scenario"],
+                "statement": "Artifact acceptance shall agree with an independent containment oracle."
+              }
+            ],
+            "document": "/home/peter/dev/quoin/corpus/cases/skeptic/oracle-helper-copy-control/rust/input/spec/FR-001.md"
+          },
+          {
+            "archetype": "TestMatrix",
+            "criteria": [],
+            "document": "/home/peter/dev/quoin/corpus/cases/skeptic/oracle-helper-copy-control/rust/input/spec/tests.md"
+          }
+        ],
+        "engine": {
+          "cli": "0.30.2",
+          "engine": "0.33.0",
+          "capabilities": [
+            "binding_census",
+            "binding_census.tagged",
+            "metrics_envelope",
+            "minted_targets",
+            "reference_only_targets",
+            "unmatched_tags",
+            "suspicions",
+            "specific_shaped"
+          ]
+        }
+      }
+    },
+    {
       "case": "vacuous-property-suite",
       "payload": {
         "documents": [
@@ -22897,10 +25301,10 @@
   },
   "cost_per_confirmed_insight": {
     "tokens": null,
-    "toolCalls": 1900,
-    "truePositives": 60,
+    "toolCalls": 1948,
+    "truePositives": 62,
     "tokensPer": null,
-    "toolCallsPer": 31.67
+    "toolCallsPer": 31.42
   },
   "sentinel.silent_zero": {
     "count": 0,
@@ -22998,6 +25402,20 @@
         "examined": 0
       },
       {
+        "corpus": "status-column-control",
+        "metric": "coverage.backed",
+        "value": 0,
+        "population": 2,
+        "examined": 0
+      },
+      {
+        "corpus": "status-column-mismatch",
+        "metric": "coverage.backed",
+        "value": 0,
+        "population": 2,
+        "examined": 0
+      },
+      {
         "corpus": "gate-that-gates-nothing-python",
         "metric": "coverage.backed",
         "value": 0,
@@ -23041,27 +25459,44 @@
       }
     ]
   },
-  "corpora": 158,
+  "corpora": 162,
   "by_language": [
     {
       "language": "n/a",
-      "corpora": 12,
+      "corpora": 14,
       "families": [
         {
           "family": "archetype-matches-nothing",
           "truePositives": 0,
-          "falsePositives": 13,
+          "falsePositives": 17,
           "misses": 0,
           "precision": 1,
           "shape": "advisory",
           "recall": null,
           "precision_basis": {
             "precision": 1,
-            "truePositives": 9,
+            "truePositives": 13,
             "falsePositives": 0,
             "unadjudicated": 4,
-            "byStanding": 9,
-            "rulings": 799
+            "byStanding": 13,
+            "rulings": 819
+          }
+        },
+        {
+          "family": "catch-all-universal",
+          "truePositives": 0,
+          "falsePositives": 2,
+          "misses": 0,
+          "precision": null,
+          "shape": "advisory",
+          "recall": null,
+          "precision_basis": {
+            "precision": null,
+            "truePositives": 0,
+            "falsePositives": 0,
+            "unadjudicated": 2,
+            "byStanding": 0,
+            "rulings": 8
           }
         },
         {
@@ -23075,6 +25510,15 @@
         },
         {
           "family": "obligation-row-states-nothing",
+          "truePositives": 1,
+          "falsePositives": 0,
+          "misses": 0,
+          "precision": 1,
+          "shape": "defect",
+          "recall": 1
+        },
+        {
+          "family": "status-column-matches-nothing",
           "truePositives": 1,
           "falsePositives": 0,
           "misses": 0,
@@ -23120,7 +25564,7 @@
             "falsePositives": 0,
             "unadjudicated": 0,
             "byStanding": 86,
-            "rulings": 799
+            "rulings": 819
           }
         },
         {
@@ -23243,23 +25687,23 @@
     },
     {
       "language": "rust",
-      "corpora": 54,
+      "corpora": 56,
       "families": [
         {
           "family": "archetype-matches-nothing",
           "truePositives": 1,
-          "falsePositives": 106,
+          "falsePositives": 110,
           "misses": 0,
           "precision": 1,
           "shape": "advisory",
           "recall": 1,
           "precision_basis": {
             "precision": 1,
-            "truePositives": 107,
+            "truePositives": 111,
             "falsePositives": 0,
             "unadjudicated": 0,
-            "byStanding": 106,
-            "rulings": 799
+            "byStanding": 110,
+            "rulings": 819
           }
         },
         {
@@ -23335,7 +25779,7 @@
         },
         {
           "family": "oracle-is-code-copy",
-          "truePositives": 1,
+          "truePositives": 2,
           "falsePositives": 0,
           "misses": 0,
           "precision": 1,
@@ -23425,7 +25869,7 @@
             "falsePositives": 0,
             "unadjudicated": 0,
             "byStanding": 94,
-            "rulings": 799
+            "rulings": 819
           }
         },
         {
@@ -23548,7 +25992,7 @@
     }
   ],
   "pending": [],
-  "findings": 473,
+  "findings": 485,
   "finding_records": [
     {
       "schemaVersion": "finding-envelope-v2",
@@ -39656,6 +42100,301 @@
         "producer": "quire",
         "channel": "coverage.diagnostics"
       },
+      "kind": "catch-all-universal",
+      "identity": {
+        "family": "catch-all-universal",
+        "case": "status-column-control",
+        "language": "n/a",
+        "declaration": "criteria"
+      },
+      "evaluation": {},
+      "subject": {
+        "state": "unavailable",
+        "reason": "producer emitted no affected subject"
+      },
+      "locus": {
+        "state": "available",
+        "value": { "path": "spec/FR-001.md", "line": 10 }
+      },
+      "causalEvidence": {
+        "state": "available",
+        "value": "1 of 1 documents binding extractable criteria named a specific property shape for none of them — for example `FR-001-AC-1` at spec/FR-001.md:10; the extractable headline counts what a generator could quantify over, and this is the part it could not tell you what to write"
+      },
+      "changeTarget": {
+        "state": "unavailable",
+        "reason": "producer emitted no change target"
+      },
+      "nextMove": {
+        "state": "unavailable",
+        "reason": "producer emitted no remedy or diagnostic step"
+      },
+      "raw": {
+        "declaration": "criteria",
+        "reason": "catch-all-universal",
+        "message": "1 of 1 documents binding extractable criteria named a specific property shape for none of them — for example `FR-001-AC-1` at spec/FR-001.md:10; the extractable headline counts what a generator could quantify over, and this is the part it could not tell you what to write",
+        "path": "spec/FR-001.md",
+        "line": 10,
+        "value": "coverage.specific_shaped"
+      }
+    },
+    {
+      "schemaVersion": "finding-envelope-v2",
+      "source": {
+        "class": "quire",
+        "producer": "quire",
+        "channel": "coverage.diagnostics"
+      },
+      "kind": "archetype-matches-nothing",
+      "identity": {
+        "family": "archetype-matches-nothing",
+        "case": "status-column-control",
+        "language": "n/a",
+        "declaration": "nfr-acceptance-criterion"
+      },
+      "evaluation": {},
+      "subject": {
+        "state": "unavailable",
+        "reason": "producer emitted no affected subject"
+      },
+      "locus": {
+        "state": "unavailable",
+        "reason": "producer emitted no locus"
+      },
+      "causalEvidence": {
+        "state": "available",
+        "value": "declaration 'nfr-acceptance-criterion' declares archetype 'NFR', which no document in the corpus has — it scans nothing and mints no rows"
+      },
+      "changeTarget": {
+        "state": "unavailable",
+        "reason": "producer emitted no change target"
+      },
+      "nextMove": {
+        "state": "unavailable",
+        "reason": "producer emitted no remedy or diagnostic step"
+      },
+      "raw": {
+        "declaration": "nfr-acceptance-criterion",
+        "reason": "archetype-matches-nothing",
+        "message": "declaration 'nfr-acceptance-criterion' declares archetype 'NFR', which no document in the corpus has — it scans nothing and mints no rows"
+      }
+    },
+    {
+      "schemaVersion": "finding-envelope-v2",
+      "source": {
+        "class": "quire",
+        "producer": "quire",
+        "channel": "coverage.diagnostics"
+      },
+      "kind": "archetype-matches-nothing",
+      "identity": {
+        "family": "archetype-matches-nothing",
+        "case": "status-column-control",
+        "language": "n/a",
+        "declaration": "stakeholder-validation-criterion"
+      },
+      "evaluation": {},
+      "subject": {
+        "state": "unavailable",
+        "reason": "producer emitted no affected subject"
+      },
+      "locus": {
+        "state": "unavailable",
+        "reason": "producer emitted no locus"
+      },
+      "causalEvidence": {
+        "state": "available",
+        "value": "declaration 'stakeholder-validation-criterion' declares archetype 'StR', which no document in the corpus has — it scans nothing and mints no rows"
+      },
+      "changeTarget": {
+        "state": "unavailable",
+        "reason": "producer emitted no change target"
+      },
+      "nextMove": {
+        "state": "unavailable",
+        "reason": "producer emitted no remedy or diagnostic step"
+      },
+      "raw": {
+        "declaration": "stakeholder-validation-criterion",
+        "reason": "archetype-matches-nothing",
+        "message": "declaration 'stakeholder-validation-criterion' declares archetype 'StR', which no document in the corpus has — it scans nothing and mints no rows"
+      }
+    },
+    {
+      "schemaVersion": "finding-envelope-v2",
+      "source": {
+        "class": "quire",
+        "producer": "quire",
+        "channel": "coverage.diagnostics"
+      },
+      "kind": "catch-all-universal",
+      "identity": {
+        "family": "catch-all-universal",
+        "case": "status-column-mismatch",
+        "language": "n/a",
+        "declaration": "criteria"
+      },
+      "evaluation": {},
+      "subject": {
+        "state": "unavailable",
+        "reason": "producer emitted no affected subject"
+      },
+      "locus": {
+        "state": "available",
+        "value": { "path": "spec/FR-001.md", "line": 10 }
+      },
+      "causalEvidence": {
+        "state": "available",
+        "value": "1 of 1 documents binding extractable criteria named a specific property shape for none of them — for example `FR-001-AC-1` at spec/FR-001.md:10; the extractable headline counts what a generator could quantify over, and this is the part it could not tell you what to write"
+      },
+      "changeTarget": {
+        "state": "unavailable",
+        "reason": "producer emitted no change target"
+      },
+      "nextMove": {
+        "state": "unavailable",
+        "reason": "producer emitted no remedy or diagnostic step"
+      },
+      "raw": {
+        "declaration": "criteria",
+        "reason": "catch-all-universal",
+        "message": "1 of 1 documents binding extractable criteria named a specific property shape for none of them — for example `FR-001-AC-1` at spec/FR-001.md:10; the extractable headline counts what a generator could quantify over, and this is the part it could not tell you what to write",
+        "path": "spec/FR-001.md",
+        "line": 10,
+        "value": "coverage.specific_shaped"
+      }
+    },
+    {
+      "schemaVersion": "finding-envelope-v2",
+      "source": {
+        "class": "quire",
+        "producer": "quire",
+        "channel": "coverage.diagnostics"
+      },
+      "kind": "status-column-matches-nothing",
+      "identity": {
+        "family": "status-column-matches-nothing",
+        "case": "status-column-mismatch",
+        "language": "n/a",
+        "declaration": "traces-to"
+      },
+      "evaluation": {},
+      "subject": {
+        "state": "unavailable",
+        "reason": "producer emitted no affected subject"
+      },
+      "locus": {
+        "state": "available",
+        "value": { "path": "spec/tests.md", "line": 8 }
+      },
+      "causalEvidence": {
+        "state": "available",
+        "value": "declaration 'traces-to' uses configured status column 'Status', which the table under 'Test Case Summary' in spec/tests.md does not have — the columns it has are 'Test ID', 'Traces To', 'Coverage Status'. Status classification was skipped, so complete-but-unbacked rows could not be checked. Align `traceability.status.column` with the authored header or rename the document column; the engine will not guess between those change targets"
+      },
+      "changeTarget": {
+        "state": "unavailable",
+        "reason": "producer emitted no change target"
+      },
+      "nextMove": {
+        "state": "unavailable",
+        "reason": "producer emitted no remedy or diagnostic step"
+      },
+      "raw": {
+        "declaration": "traces-to",
+        "reason": "status-column-matches-nothing",
+        "message": "declaration 'traces-to' uses configured status column 'Status', which the table under 'Test Case Summary' in spec/tests.md does not have — the columns it has are 'Test ID', 'Traces To', 'Coverage Status'. Status classification was skipped, so complete-but-unbacked rows could not be checked. Align `traceability.status.column` with the authored header or rename the document column; the engine will not guess between those change targets",
+        "path": "spec/tests.md",
+        "line": 8
+      }
+    },
+    {
+      "schemaVersion": "finding-envelope-v2",
+      "source": {
+        "class": "quire",
+        "producer": "quire",
+        "channel": "coverage.diagnostics"
+      },
+      "kind": "archetype-matches-nothing",
+      "identity": {
+        "family": "archetype-matches-nothing",
+        "case": "status-column-mismatch",
+        "language": "n/a",
+        "declaration": "nfr-acceptance-criterion"
+      },
+      "evaluation": {},
+      "subject": {
+        "state": "unavailable",
+        "reason": "producer emitted no affected subject"
+      },
+      "locus": {
+        "state": "unavailable",
+        "reason": "producer emitted no locus"
+      },
+      "causalEvidence": {
+        "state": "available",
+        "value": "declaration 'nfr-acceptance-criterion' declares archetype 'NFR', which no document in the corpus has — it scans nothing and mints no rows"
+      },
+      "changeTarget": {
+        "state": "unavailable",
+        "reason": "producer emitted no change target"
+      },
+      "nextMove": {
+        "state": "unavailable",
+        "reason": "producer emitted no remedy or diagnostic step"
+      },
+      "raw": {
+        "declaration": "nfr-acceptance-criterion",
+        "reason": "archetype-matches-nothing",
+        "message": "declaration 'nfr-acceptance-criterion' declares archetype 'NFR', which no document in the corpus has — it scans nothing and mints no rows"
+      }
+    },
+    {
+      "schemaVersion": "finding-envelope-v2",
+      "source": {
+        "class": "quire",
+        "producer": "quire",
+        "channel": "coverage.diagnostics"
+      },
+      "kind": "archetype-matches-nothing",
+      "identity": {
+        "family": "archetype-matches-nothing",
+        "case": "status-column-mismatch",
+        "language": "n/a",
+        "declaration": "stakeholder-validation-criterion"
+      },
+      "evaluation": {},
+      "subject": {
+        "state": "unavailable",
+        "reason": "producer emitted no affected subject"
+      },
+      "locus": {
+        "state": "unavailable",
+        "reason": "producer emitted no locus"
+      },
+      "causalEvidence": {
+        "state": "available",
+        "value": "declaration 'stakeholder-validation-criterion' declares archetype 'StR', which no document in the corpus has — it scans nothing and mints no rows"
+      },
+      "changeTarget": {
+        "state": "unavailable",
+        "reason": "producer emitted no change target"
+      },
+      "nextMove": {
+        "state": "unavailable",
+        "reason": "producer emitted no remedy or diagnostic step"
+      },
+      "raw": {
+        "declaration": "stakeholder-validation-criterion",
+        "reason": "archetype-matches-nothing",
+        "message": "declaration 'stakeholder-validation-criterion' declares archetype 'StR', which no document in the corpus has — it scans nothing and mints no rows"
+      }
+    },
+    {
+      "schemaVersion": "finding-envelope-v2",
+      "source": {
+        "class": "quire",
+        "producer": "quire",
+        "channel": "coverage.diagnostics"
+      },
       "kind": "archetype-matches-nothing",
       "identity": {
         "family": "archetype-matches-nothing",
@@ -42629,7 +45368,10 @@
       },
       "causalEvidence": {
         "state": "available",
-        "value": "token similarity 1.00 (floor 0.75); compared `expected` with `src/test_containment.py::is_contained`"
+        "value": {
+          "message": "the `expected` oracle closely resembles `is_contained` in src/test_containment.py; replace the copied calculation with an independent expectation",
+          "evidence": "token similarity 1.00 (floor 0.75); compared `expected` with `src/test_containment.py::is_contained`"
+        }
       },
       "changeTarget": {
         "state": "unavailable",
@@ -42754,7 +45496,10 @@
       },
       "causalEvidence": {
         "state": "available",
-        "value": "token similarity 1.00 (floor 0.75); compared `expected` with `src/lib.rs::is_contained`"
+        "value": {
+          "message": "the `expected` oracle closely resembles `is_contained` in src/lib.rs; replace the copied calculation with an independent expectation",
+          "evidence": "token similarity 1.00 (floor 0.75); compared `expected` with `src/lib.rs::is_contained`"
+        }
       },
       "changeTarget": {
         "state": "unavailable",
@@ -42879,7 +45624,10 @@
       },
       "causalEvidence": {
         "state": "available",
-        "value": "token similarity 1.00 (floor 0.75); compared `expected` with `src/containment.test.ts::isContained`"
+        "value": {
+          "message": "the `expected` oracle closely resembles `isContained` in src/containment.test.ts; replace the copied calculation with an independent expectation",
+          "evidence": "token similarity 1.00 (floor 0.75); compared `expected` with `src/containment.test.ts::isContained`"
+        }
       },
       "changeTarget": {
         "state": "unavailable",
@@ -43154,6 +45902,216 @@
       "kind": "archetype-matches-nothing",
       "identity": {
         "family": "archetype-matches-nothing",
+        "case": "oracle-helper-copy-rust",
+        "language": "rust",
+        "declaration": "nfr-acceptance-criterion"
+      },
+      "evaluation": {},
+      "subject": {
+        "state": "unavailable",
+        "reason": "producer emitted no affected subject"
+      },
+      "locus": {
+        "state": "unavailable",
+        "reason": "producer emitted no locus"
+      },
+      "causalEvidence": {
+        "state": "available",
+        "value": "declaration 'nfr-acceptance-criterion' declares archetype 'NFR', which no document in the corpus has — it scans nothing and mints no rows"
+      },
+      "changeTarget": {
+        "state": "unavailable",
+        "reason": "producer emitted no change target"
+      },
+      "nextMove": {
+        "state": "unavailable",
+        "reason": "producer emitted no remedy or diagnostic step"
+      },
+      "raw": {
+        "declaration": "nfr-acceptance-criterion",
+        "reason": "archetype-matches-nothing",
+        "message": "declaration 'nfr-acceptance-criterion' declares archetype 'NFR', which no document in the corpus has — it scans nothing and mints no rows"
+      }
+    },
+    {
+      "schemaVersion": "finding-envelope-v2",
+      "source": {
+        "class": "quire",
+        "producer": "quire",
+        "channel": "coverage.diagnostics"
+      },
+      "kind": "archetype-matches-nothing",
+      "identity": {
+        "family": "archetype-matches-nothing",
+        "case": "oracle-helper-copy-rust",
+        "language": "rust",
+        "declaration": "stakeholder-validation-criterion"
+      },
+      "evaluation": {},
+      "subject": {
+        "state": "unavailable",
+        "reason": "producer emitted no affected subject"
+      },
+      "locus": {
+        "state": "unavailable",
+        "reason": "producer emitted no locus"
+      },
+      "causalEvidence": {
+        "state": "available",
+        "value": "declaration 'stakeholder-validation-criterion' declares archetype 'StR', which no document in the corpus has — it scans nothing and mints no rows"
+      },
+      "changeTarget": {
+        "state": "unavailable",
+        "reason": "producer emitted no change target"
+      },
+      "nextMove": {
+        "state": "unavailable",
+        "reason": "producer emitted no remedy or diagnostic step"
+      },
+      "raw": {
+        "declaration": "stakeholder-validation-criterion",
+        "reason": "archetype-matches-nothing",
+        "message": "declaration 'stakeholder-validation-criterion' declares archetype 'StR', which no document in the corpus has — it scans nothing and mints no rows"
+      }
+    },
+    {
+      "schemaVersion": "finding-envelope-v2",
+      "source": {
+        "class": "quire",
+        "producer": "quire",
+        "channel": "coverage.suspicions"
+      },
+      "kind": "oracle-resembles-implementation",
+      "identity": {
+        "family": "oracle-is-code-copy",
+        "case": "oracle-helper-copy-rust",
+        "language": "rust"
+      },
+      "evaluation": {},
+      "subject": {
+        "state": "unavailable",
+        "reason": "producer emitted no affected subject"
+      },
+      "locus": {
+        "state": "available",
+        "value": { "path": "tests/property_suite.rs", "line": 16 }
+      },
+      "causalEvidence": {
+        "state": "available",
+        "value": {
+          "message": "the `escapes_the_root` oracle helper closely resembles `validate_artifact_path` in src/open.rs; replace the copied helper with an independent expectation",
+          "evidence": "token similarity 1.00 (floor 0.75); compared helper `tests/property_suite.rs::escapes_the_root` with `src/open.rs::validate_artifact_path`"
+        }
+      },
+      "changeTarget": {
+        "state": "unavailable",
+        "reason": "producer emitted no change target"
+      },
+      "nextMove": {
+        "state": "unavailable",
+        "reason": "producer emitted no remedy or diagnostic step"
+      },
+      "raw": {
+        "kind": "oracle-resembles-implementation",
+        "path": "tests/property_suite.rs",
+        "symbol": "tc1598_artifact_acceptance_matches_the_containment_rule",
+        "line": 16,
+        "message": "the `escapes_the_root` oracle helper closely resembles `validate_artifact_path` in src/open.rs; replace the copied helper with an independent expectation",
+        "evidence": "token similarity 1.00 (floor 0.75); compared helper `tests/property_suite.rs::escapes_the_root` with `src/open.rs::validate_artifact_path`"
+      }
+    },
+    {
+      "schemaVersion": "finding-envelope-v2",
+      "source": {
+        "class": "quire",
+        "producer": "quire",
+        "channel": "coverage.diagnostics"
+      },
+      "kind": "archetype-matches-nothing",
+      "identity": {
+        "family": "archetype-matches-nothing",
+        "case": "oracle-helper-copy-control-rust",
+        "language": "rust",
+        "declaration": "nfr-acceptance-criterion"
+      },
+      "evaluation": {},
+      "subject": {
+        "state": "unavailable",
+        "reason": "producer emitted no affected subject"
+      },
+      "locus": {
+        "state": "unavailable",
+        "reason": "producer emitted no locus"
+      },
+      "causalEvidence": {
+        "state": "available",
+        "value": "declaration 'nfr-acceptance-criterion' declares archetype 'NFR', which no document in the corpus has — it scans nothing and mints no rows"
+      },
+      "changeTarget": {
+        "state": "unavailable",
+        "reason": "producer emitted no change target"
+      },
+      "nextMove": {
+        "state": "unavailable",
+        "reason": "producer emitted no remedy or diagnostic step"
+      },
+      "raw": {
+        "declaration": "nfr-acceptance-criterion",
+        "reason": "archetype-matches-nothing",
+        "message": "declaration 'nfr-acceptance-criterion' declares archetype 'NFR', which no document in the corpus has — it scans nothing and mints no rows"
+      }
+    },
+    {
+      "schemaVersion": "finding-envelope-v2",
+      "source": {
+        "class": "quire",
+        "producer": "quire",
+        "channel": "coverage.diagnostics"
+      },
+      "kind": "archetype-matches-nothing",
+      "identity": {
+        "family": "archetype-matches-nothing",
+        "case": "oracle-helper-copy-control-rust",
+        "language": "rust",
+        "declaration": "stakeholder-validation-criterion"
+      },
+      "evaluation": {},
+      "subject": {
+        "state": "unavailable",
+        "reason": "producer emitted no affected subject"
+      },
+      "locus": {
+        "state": "unavailable",
+        "reason": "producer emitted no locus"
+      },
+      "causalEvidence": {
+        "state": "available",
+        "value": "declaration 'stakeholder-validation-criterion' declares archetype 'StR', which no document in the corpus has — it scans nothing and mints no rows"
+      },
+      "changeTarget": {
+        "state": "unavailable",
+        "reason": "producer emitted no change target"
+      },
+      "nextMove": {
+        "state": "unavailable",
+        "reason": "producer emitted no remedy or diagnostic step"
+      },
+      "raw": {
+        "declaration": "stakeholder-validation-criterion",
+        "reason": "archetype-matches-nothing",
+        "message": "declaration 'stakeholder-validation-criterion' declares archetype 'StR', which no document in the corpus has — it scans nothing and mints no rows"
+      }
+    },
+    {
+      "schemaVersion": "finding-envelope-v2",
+      "source": {
+        "class": "quire",
+        "producer": "quire",
+        "channel": "coverage.diagnostics"
+      },
+      "kind": "archetype-matches-nothing",
+      "identity": {
+        "family": "archetype-matches-nothing",
         "case": "vacuous-property-suite",
         "language": "rust",
         "declaration": "nfr-acceptance-criterion"
@@ -43250,7 +46208,10 @@
       },
       "causalEvidence": {
         "state": "available",
-        "value": "1 of 1 assertions guarded, 0 unguarded"
+        "value": {
+          "message": "every assertion sits behind a narrowing guard, so an input that does not enter it passes unchecked — the shape of a suite that was green while checking 2.3% of its samples",
+          "evidence": "1 of 1 assertions guarded, 0 unguarded"
+        }
       },
       "changeTarget": {
         "state": "unavailable",

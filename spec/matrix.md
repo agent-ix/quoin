@@ -487,6 +487,8 @@ generated tests under `tests/props/` and `Unit` for the rest.
 | TC-1093 | Exact-locus and safe-refusal scores ratchet overall and per failure-shape family, with each regressed family naming its misses (#256) | Unit | P0 | FR-043-AC-26 | ✅ |
 | TC-1094 | The metric dictionary declares correctness and safe refusal independently of presence and maps each to its own active MeasurementPlan (#256) | Unit | P0 | FR-043-AC-26 | ✅ |
 | TC-1095 | The retained controlled producer run covers positive, boundary-error, wrong-subject, and justified-refusal cases and exposes the wrong-span versus safe-refusal tradeoff (#256) | Integration | P0 | FR-043-AC-26 | ✅ |
+| TC-1096 | Two families in one mode-language partition receive independent L1/L2/L3 rows and ratchets, so a gain in one cannot hide a regression in the other (#257) | Unit | P0 | FR-043-AC-27 | ✅ |
+| TC-1097 | Every current L2/L3 miss is retained by case and family with producer, expected/observed locus, structural root cause, and explicit disposition; the report and measurement identity link to the same inventory (#257) | Integration | P0 | FR-043-AC-27 | ✅ |
 | TC-926 | Every metric in the dictionary declares `unit`, `population` and `method`; one missing any of the three is rejected at load rather than reported with a gap | Unit | P0 | FR-043-AC-1 | ✅ |
 | TC-927 | `finding_precision`/`finding_recall` are declared per defect family, each keyed on a family the corpora label, so no score is reported over an unlabelled population | Unit | P0 | FR-043-AC-2 | ✅ |
 | TC-928 | `span_grounding_rate` is declared with the pass-2 figure (0 of 65 specific-shape records) as its starting baseline | Unit | P0 | FR-043-AC-3 | ✅ |

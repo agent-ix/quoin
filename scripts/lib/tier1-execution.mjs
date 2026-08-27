@@ -109,6 +109,10 @@ export function createTier1Executor() {
           line: typeof suspicion.line === "number" ? suspicion.line : null,
           message: suspicion.message ?? "",
           evidence: suspicion.evidence ?? "",
+          causalEvidence: {
+            message: suspicion.message ?? "",
+            evidence: suspicion.evidence ?? "",
+          },
           rawProducerOutput: suspicion,
         });
       }

@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { normalizeQuireFinding } from "../evals/lib/finding-envelope.mjs";
 import {
   detectionRecall,
+  localityMissInventory,
   recallGateFails,
   recallVerdicts,
 } from "../scripts/lib/tier1-recall.mjs";
@@ -110,6 +111,93 @@ describe("detection.recall", () => {
     expect(rows.every((row) => row.misses.includes("silent"))).toBe(true);
   });
 
+  it("ratchets families independently inside one mode-language partition", () => {
+    const first = corpus("first", "rust", {
+      family: "section",
+      location: "spec/tests.md:9",
+      actionable_fragments: ["section"],
+    });
+    const second = corpus("second", "rust", {
+      family: "column",
+      location: "spec/tests.md:12",
+      actionable_fragments: ["column"],
+    });
+    const rows = detectionRecall(
+      [first, second],
+      [
+        {
+          corpus: "first",
+          family: "section",
+          path: "spec/tests.md",
+          line: 9,
+          message: "section",
+        },
+      ],
+      0,
+    );
+
+    expect(rows).toHaveLength(6);
+    expect(
+      rows.filter((row) => row.family === "section").map((row) => row.rate),
+    ).toEqual([1, 1, 1]);
+    expect(
+      rows.filter((row) => row.family === "column").map((row) => row.rate),
+    ).toEqual([0, 0, 0]);
+  });
+
+  it("retains every locality miss with producer, loci, cause, and disposition", () => {
+    const corpora = [
+      corpus("wrong-place", "rust", {
+        location: "spec/tests.md:9",
+        actionable_fragments: ["repair target"],
+      }),
+      corpus("silent", "rust", {
+        location: "spec/tests.md:12",
+        actionable_fragments: ["repair target"],
+      }),
+    ];
+    const findings = [
+      normalizeQuireFinding(
+        {
+          reason: "section",
+          path: "spec/other.md",
+          line: 4,
+          message: "section did not match",
+        },
+        {
+          producer: "quire",
+          channel: "coverage.diagnostics",
+          family: "section",
+          corpus: "wrong-place",
+        },
+      ),
+    ];
+
+    expect(localityMissInventory(corpora, findings)).toEqual([
+      expect.objectContaining({
+        case: "silent",
+        family: "section",
+        producer: [],
+        expectedLocus: "spec/tests.md:12",
+        observedLocus: [],
+        missingLevels: ["L1", "L2", "L3"],
+        rootCause: "the producer emitted no finding in the expected family",
+        disposition: expect.objectContaining({ state: "deferred" }),
+      }),
+      expect.objectContaining({
+        case: "wrong-place",
+        family: "section",
+        producer: ["quire:coverage.diagnostics"],
+        expectedLocus: "spec/tests.md:9",
+        observedLocus: ["spec/other.md:4"],
+        missingLevels: ["L2", "L3"],
+        rootCause:
+          "the family finding did not match the controlled expected locus",
+        disposition: expect.objectContaining({ state: "deferred" }),
+      }),
+    ]);
+  });
+
   it("counts a findable case with no detector label as a miss, not an omitted denominator", () => {
     const rows = detectionRecall(
       [
@@ -163,6 +251,34 @@ describe("detection.recall", () => {
       ["L1", 1],
       ["L2", 1],
       ["L3", 0],
+    ]);
+    expect(
+      localityMissInventory(
+        [observed],
+        [],
+        [
+          {
+            name: "unminted",
+            untrackedSymbols: [
+              {
+                symbol: "test_warns",
+                trace_id: "TC-999",
+                path: "src/test.py",
+                line: 4,
+              },
+            ],
+          },
+        ],
+      ),
+    ).toEqual([
+      expect.objectContaining({
+        case: "unminted",
+        family: "direct-observation",
+        missingLevels: ["L3"],
+        rootCause:
+          "the direct observation has no controlled actionable-fragment contract",
+        disposition: expect.objectContaining({ state: "deferred" }),
+      }),
     ]);
 
     const wrongLocus = detectionRecall([observed], [], 2, [

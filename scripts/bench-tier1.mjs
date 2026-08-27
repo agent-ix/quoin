@@ -44,6 +44,7 @@ import { createTier1Executor } from "./lib/tier1-execution.mjs";
 import { renderTier1 } from "./lib/tier1-render.mjs";
 import {
   detectionRecall,
+  localityMissInventory,
   recallGateFails,
   recallVerdicts,
 } from "./lib/tier1-recall.mjs";
@@ -342,7 +343,12 @@ async function main() {
   const sectionHit = { matched: 0, examined: 0, cases: 0 };
   const payloads = [];
   const propertyPayloads = [];
-  for (const corpus of labels.corpora) {
+  for (const [index, corpus] of labels.corpora.entries()) {
+    if (process.env.QUOIN_TIER1_PROGRESS === "1") {
+      console.error(
+        `bench-tier1: case ${index + 1}/${labels.corpora.length} ${corpus.name}`,
+      );
+    }
     const { findings, metrics, diagnostics, untrackedSymbols } =
       execution.findingsFor(
         quire,
@@ -434,6 +440,11 @@ async function main() {
       labels.corpora,
       scoredFindings,
       bounds.gap_count,
+      payloads,
+    ),
+    locality_miss_inventory: localityMissInventory(
+      labels.corpora,
+      scoredFindings,
       payloads,
     ),
     families: score.families,

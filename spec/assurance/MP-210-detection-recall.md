@@ -14,24 +14,27 @@ relationships: []
 
 ## Decision Objective
 
-Prevent a strong aggregate from hiding a blind grading level, failure mode, or
-language in the validator toolchain.
+Prevent a strong aggregate from hiding a blind grading level, failure mode,
+language, or finding family in the validator toolchain.
 
 ## Population and Scope
 
 Use every findable failure case in the pinned `qa-corpus`. Report L1, L2, and
-L3 independently for every mode-language partition.
+L3 independently for every mode-language-family partition.
 
 ## Measure Definition
 
 Adopt `qa-corpus/assurance/MP-202-detection-recall.md` definition
 `detection-recall-v1`. Store reached and examined counts, exact missed case ids,
-and the adjacent corpus GAP count.
+and the adjacent corpus GAP count. Separately retain every L2/L3 miss with its
+producer, expected and observed locus, structural root cause, and disposition.
 
 ## Collection and Provenance
 
 The Tier-1 producer records engine, corpus, declaration and scorer revisions,
-the complete raw report, and one typed observation per partition.
+the complete raw report, and one typed observation per family partition. The
+raw report's `locality_miss_inventory` is the named repair inventory referenced
+by the aggregate rendering.
 
 ## Environment and Sampling
 

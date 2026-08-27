@@ -8,6 +8,23 @@ description: "Chronological log of structural changes to this bundle."
 
 ## History
 
+* **2026-08-27** — **CR-126**: Tier-1 L1/L2/L3 recall now ratchets by
+  **mode, language, and finding family** (`agent-ix/quoin#257`). The opening
+  74-case baseline is retained in prior measurements at **65/74 L1, 57/74 L2,
+  and 44/74 L3**. The governed 76-case failure population adds the controlled
+  `status-column-matches-nothing` and Rust helper-oracle repairs at all three
+  levels, reaching **67/76 L1, 59/76 L2, and 46/76 L3** with corpus GAP still
+  zero and every scored family's precision and recall still 100%. Every one of
+  the 30 remaining L2/L3 misses now carries case, family, producer,
+  expected/observed locus, structural root cause, and explicit deferral in
+  `locality_miss_inventory`; the aggregate output names that inventory and
+  measurement observations retain family plus exact missed ids. A first
+  governed collection exposed Quoin dropping the repair-bearing suspicion
+  message while retaining only its evidence, leaving helper-oracle L3 at 1/2;
+  the adapter now preserves both producer fields without inference, and the
+  passing-after collection moves that family to 2/2. FR-043 AC-27; Matrix:
+  TC-1096/TC-1097.
+
 * **2026-08-27** — **CR-125**: span presence, correctness, and safe refusal
   are now three separately versioned measurements (`agent-ix/quoin#256`,
   following `agent-ix/quire-rs#241`). A controlled producer fixture covers an

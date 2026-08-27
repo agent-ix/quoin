@@ -58,6 +58,20 @@ function report() {
       truePositives: 1,
     },
     "sentinel.silent_zero": { count: 0, instances: [], unread_population: [] },
+    locality_miss_inventory: [{ id: "case:defect" }],
+    detection_recall: [
+      {
+        mode: "minting",
+        language: "rust",
+        family: "status-column-matches-nothing",
+        level: "L2",
+        rate: 1,
+        reached: 1,
+        population: 1,
+        gap_count: 0,
+        misses: [],
+      },
+    ],
     corpora: 1,
     by_language: [{ language: "rust", corpora: 1, families: [] }],
     pending: [],
@@ -74,7 +88,7 @@ describe("Tier-1 module contracts", () => {
       quire,
       `#!/bin/sh
 if [ "$1" = "coverage" ]; then
-  printf '%s\\n' '{"diagnostics":[{"reason":"located","path":"spec/a.md","line":7}],"metrics":[]}'
+  printf '%s\\n' '{"diagnostics":[{"reason":"located","path":"spec/a.md","line":7}],"suspicions":[{"kind":"copied","path":"tests/a.rs","line":11,"message":"replace with an independent expectation","evidence":"similarity 1.00"}],"metrics":[]}'
 elif [ "$1" = "properties" ]; then
   printf '%s\\n' '{"documents":[{"document":"spec/a.md","archetype":"FR","criteria":[]}],"engine":{"cli":"test","engine":"test"}}'
 else
@@ -90,6 +104,7 @@ fi
     const result = execution.findingsFor(quire, root, root, {
       families: {
         coverage: { source: "coverage.diagnostics", key: "located" },
+        suspicion: { source: "coverage.suspicions", key: "copied" },
         validate: { source: "validate.findings", key: "validated" },
       },
     });
@@ -102,6 +117,16 @@ fi
         line: 7,
         declaration: null,
         message: "",
+      },
+      {
+        family: "suspicion",
+        reason: "copied",
+        path: "tests/a.rs",
+        line: 11,
+        causalEvidence: {
+          message: "replace with an independent expectation",
+          evidence: "similarity 1.00",
+        },
       },
       {
         family: "validate",
@@ -164,7 +189,10 @@ fi
         "sentinel.silent_zero": { direction: "gate-zero" },
       },
     });
-    expect(renderTier1(value, verdicts)).toBe(renderTier1(value, verdicts));
+    const rendered = renderTier1(value, verdicts);
+    expect(rendered).toBe(renderTier1(value, verdicts));
+    expect(rendered).toContain("1 named L2/L3 misses");
+    expect(rendered).toContain("status-column-matches-nothing");
     expect(localisationRate({ positional: 1, families: value.families })).toBe(
       1,
     );

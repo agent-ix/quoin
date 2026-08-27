@@ -313,6 +313,7 @@ export function createMeasurementRecord(report, at, options) {
           level: row.level,
           mode: row.mode,
           language: row.language,
+          family: row.family,
         },
         population: {
           examined: row.population,
@@ -322,6 +323,8 @@ export function createMeasurementRecord(report, at, options) {
             level: row.level,
             mode: row.mode,
             language: row.language,
+            family: row.family,
+            misses: row.misses,
           },
         },
       }),
@@ -332,6 +335,7 @@ export function createMeasurementRecord(report, at, options) {
           level: row.level,
           mode: row.mode,
           language: row.language,
+          family: row.family,
         },
       }),
     );

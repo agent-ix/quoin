@@ -42,6 +42,8 @@ export function renderTier1(report, verdicts) {
     "",
     `finding_localisation_rate  ${pct(report.finding_localisation_rate)} ` +
       `(${report.positional} of ${report.families.reduce((sum, family) => sum + family.truePositives, 0)} true positives named where)`,
+    `locality_miss_inventory    ${report.locality_miss_inventory?.length ?? 0} named L2/L3 misses ` +
+      `(report.locality_miss_inventory)`,
     `actionability_v1_rate      ${pct((report.actionability_v1 ?? report.actionability).rate)} ` +
       `(${(report.actionability_v1 ?? report.actionability).actionable} of ${(report.actionability_v1 ?? report.actionability).total} findings name a row or a line)`,
     `actionability_v2_rate      ${pct(report.actionability_v2?.rate ?? null)} ` +
@@ -80,7 +82,7 @@ export function renderTier1(report, verdicts) {
   lines.push("", "detection.recall (every row carries the corpus GAP count):");
   for (const row of report.detection_recall ?? []) {
     lines.push(
-      `  ${row.mode.padEnd(12)} ${row.language.padEnd(10)} ${row.level} ` +
+      `  ${row.mode.padEnd(12)} ${row.language.padEnd(10)} ${(row.family ?? "legacy-group").padEnd(38)} ${row.level} ` +
         `${pct(row.rate)} (${row.reached}/${row.population}; GAP ${row.gap_count})` +
         (row.misses.length ? ` — missed ${row.misses.join(", ")}` : ""),
     );
