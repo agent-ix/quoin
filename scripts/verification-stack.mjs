@@ -347,21 +347,19 @@ function assertToolProvenance(binary, lock) {
   return provenance;
 }
 
-function submoduleRevision() {
-  const row = run("git", [
-    "-C",
-    ROOT,
-    "submodule",
-    "status",
-    "--",
-    "corpus",
-  ]).trim();
-  if (!/^ [0-9a-f]{40} corpus(?: |$)/.test(row)) {
+export function parseSubmoduleRevision(row) {
+  const match = row.trim().match(/^([0-9a-f]{40}) corpus(?: |$)/);
+  if (!match) {
     throw new Error(
-      `qa-corpus submodule is uninitialized or mismatched: ${row}`,
+      `qa-corpus submodule is uninitialized or mismatched: ${row.trim()}`,
     );
   }
-  return row.slice(1, 41);
+  return match[1];
+}
+
+function submoduleRevision() {
+  const row = run("git", ["-C", ROOT, "submodule", "status", "--", "corpus"]);
+  return parseSubmoduleRevision(row);
 }
 
 export function lockDigest(lockPath) {

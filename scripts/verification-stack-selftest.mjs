@@ -8,6 +8,7 @@ import { join } from "node:path";
 import {
   assertRepository,
   cliSelectsEngine,
+  parseSubmoduleRevision,
   validateLockShape,
 } from "./verification-stack.mjs";
 
@@ -86,6 +87,20 @@ try {
   passed += 1;
 }
 
+if (parseSubmoduleRevision(` ${A} corpus (heads/main)`) !== A) {
+  throw new Error("exact submodule revision was not preserved");
+}
+passed += 1;
+for (const marker of ["+", "-"]) {
+  try {
+    parseSubmoduleRevision(`${marker}${A} corpus`);
+    throw new Error(`${marker} submodule mismatch was accepted`);
+  } catch (error) {
+    if (!/uninitialized or mismatched/.test(String(error.message))) throw error;
+    passed += 1;
+  }
+}
+
 const root = mkdtempSync(join(tmpdir(), "quoin-stack-selftest-"));
 const git = (...args) => {
   const done = spawnSync("git", ["-C", root, ...args], { encoding: "utf8" });
@@ -146,5 +161,5 @@ try {
 }
 
 console.log(
-  `verification-stack-selftest: ${passed}/${shapeMutations.length + 4} invariants verified`,
+  `verification-stack-selftest: ${passed}/${shapeMutations.length + 7} invariants verified`,
 );
