@@ -3,19 +3,19 @@
   "repositories": {
     "quoin": {
       "remote": "https://github.com/agent-ix/quoin",
-      "revision": "334843c61fa427e779e44e50cf2a6cb0069d1557"
+      "revision": "7dddfa3a36006c97a177b6d2b05e541ba2bef7d2"
     },
     "quire": {
       "remote": "https://github.com/agent-ix/quire-rs",
-      "revision": "506e936af5787e072a297965926547f4cd9b437b"
+      "revision": "c71f3cb661d152a09df8e916ea06d8e80124762c"
     },
     "quire-cli": {
       "remote": "https://github.com/agent-ix/quire-cli",
-      "revision": "572819aeffc94cb513ae5b1ff8957a2fe4508d2a"
+      "revision": "90c003685ee7484b3ec86cd6b0add5ad06ff76fe"
     },
     "qa-corpus": {
       "remote": "https://github.com/agent-ix/qa-corpus",
-      "revision": "ceadef531c64536d3a8417677c887033b088ea0b"
+      "revision": "944aa63f653d7e48b9b16b411745d4a96f9836b1"
     },
     "filament-ide-rs": {
       "remote": "https://github.com/agent-ix/filament-ide-rs",
@@ -24,6 +24,10 @@
     "spec-artifacts-process": {
       "remote": "https://github.com/agent-ix/spec-artifacts-process",
       "revision": "61a20e010d5e758f52864ad3152ccdb304a39d27"
+    },
+    "spec-artifacts-iso": {
+      "remote": "https://github.com/agent-ix/spec-artifacts-iso",
+      "revision": "a6b1c70be8c22e9f7cb432e4410b7a3a280d0217"
     }
   },
   "cohorts": {
@@ -35,6 +39,7 @@
   "requiredCapabilities": [
     "action_guidance.structured",
     "binding_census",
+    "binding_census.self_named",
     "binding_census.tagged",
     "declaration_origins",
     "metrics_envelope",
@@ -56,16 +61,16 @@
     "package.json": "sha256:f646237dfdfef87bdb70c2e5bdc1b8d78d3a93a45bc01868ba4e72a79e682979",
     "pnpm-lock.yaml": "sha256:9f64ad2d3873918bb1520c6412046f15f82b1defab706ca4df351134c3d429fd",
     "bench/metrics.json": "sha256:5876512767852fd9ee5a848de90e34c9626926bb768db87c2eaf28deb2d05764",
-    "bench/tier1-mapping.json": "sha256:d0dfe1b935096425655d586b4170bb0898680b928d00b1dc2e0834b534cfeb85",
+    "bench/tier1-mapping.json": "sha256:186e282f4197894f96e51e2dfe9fc6420f222512159abfd84be8be7c5c6ea90a",
     "bench/guidance-evaluator-contract-v1.json": "sha256:fe7857bfa58cfcab75be4e90c850debe43b266daa9dea1c01f10f035d822697a",
     "bench/guidance-independent-review-v1.json": "sha256:ba0157850d4f33eab0e4612322dc3d33bf6c6b54bec7e0918bc181091495e077",
     "bench/span-grounding-labels.json": "sha256:897ef28979f5a3f607fdb27e740f1508b736ae5d9ce3dd91c7813f09f841c000",
     "bench/span-grounding-v2-labels.json": "sha256:4e10f34488c87439e7253668ea34773adb432b16bce574b1cc93fbf0343e2650",
-    "bench/span-breadth-v1-labels.json": "sha256:a4a303349991d1b47b85008f809f8010bf7cf72b09a5b0b7cd8694323a645798",
-    "bench/answer-key.json": "sha256:ec9de8603d339c9a5a1600d3330a27a25d09e0068870d3b0cc97c7fd196e6226",
+    "bench/span-breadth-v1-labels.json": "sha256:ad2956f35789e7c6b472ef8a2e9a989bfbeb0db9df5adedeebc32efac3332c90",
+    "bench/answer-key.json": "sha256:ece1a7f5d254623cf79beff1113021f4f71359ac9a3c703d07cff0f8a45e9532",
     "bench/advisory-adjudication-v1.json": "sha256:87c575b6ca0c0886d874f609144f907f3ac270e08c2091bb2bb1ead725713e43",
     "corpus/config/metrics.json": "sha256:69ab8e5b8fc14e07408e034f0b791c3dd3356c9db78e1ac0dc961bcc0b47c0d7",
-    "corpus/config/duplicate-census.json": "sha256:23f016aa7d3c23a3b489a6d6b9dc6904d1a0b72b08fc79d5f546e0e9d3d186ac",
+    "corpus/config/duplicate-census.json": "sha256:f03ddf12b1e166a680ff74c9bde3d66563b006901b91134945846823a7953a1e",
     "corpus/config/external-channel.json": "sha256:74103cf74e7eceb69d3bb993074a7929025e7cff0cff4c993be3c7e4873050b5"
   },
   "timeouts": {

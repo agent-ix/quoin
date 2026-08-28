@@ -1,8 +1,107 @@
 {
   "provenance": {
-    "engine": "quire 0.30.2 (engine 0.33.0)",
-    "corpus": "d4a6ba13324b8d27e83ef928fcbbc4746a4fd10e",
-    "corpus_input": "sha256:111c43f017996a09389da0d76feb3c0e336ab490a48c7ee694e18d2ede7f495f",
+    "engine": "quire 0.30.2 (cli 572819ae, engine 0.46.0@506e936a)",
+    "tool": {
+      "schemaVersion": "quire-tool-provenance-v1",
+      "cli": {
+        "version": "0.30.2",
+        "sourceRevision": "572819aeffc94cb513ae5b1ff8957a2fe4508d2a",
+        "sourceState": "clean"
+      },
+      "engine": {
+        "version": "0.46.0",
+        "sourceRevision": "506e936af5787e072a297965926547f4cd9b437b",
+        "sourceState": "clean"
+      },
+      "capabilities": [
+        "action_guidance.structured",
+        "binding_census",
+        "binding_census.tagged",
+        "declaration_origins",
+        "metrics_envelope",
+        "minted_targets",
+        "property_spans.safe_refusal",
+        "reference_only_targets",
+        "specific_shaped",
+        "suspicions",
+        "unmatched_tags"
+      ]
+    },
+    "verification_stack": {
+      "schemaVersion": "verification-stack-attestation-v1",
+      "lockDigest": "sha256:28654d5878354717795083ec31ee9c823ca7030d7418307d2db8347107438450",
+      "executableDigest": "sha256:a3263753e3a831bcd2fbf035e93c70c8fb68f7e91232e312569f3f89479a4476",
+      "sources": {
+        "quire": {
+          "revision": "506e936af5787e072a297965926547f4cd9b437b",
+          "sourceState": "clean",
+          "remote": "https://github.com/agent-ix/quire-rs"
+        },
+        "quire-cli": {
+          "revision": "572819aeffc94cb513ae5b1ff8957a2fe4508d2a",
+          "sourceState": "clean",
+          "remote": "https://github.com/agent-ix/quire-cli"
+        },
+        "qa-corpus": {
+          "revision": "ceadef531c64536d3a8417677c887033b088ea0b",
+          "sourceState": "clean",
+          "remote": "https://github.com/agent-ix/qa-corpus"
+        },
+        "filament-ide-rs": {
+          "revision": "546e7943ee5a8fe552242cbb19d12aa902536652",
+          "sourceState": "clean",
+          "remote": "https://github.com/agent-ix/filament-ide-rs"
+        },
+        "spec-artifacts-process": {
+          "revision": "61a20e010d5e758f52864ad3152ccdb304a39d27",
+          "sourceState": "clean",
+          "remote": "https://github.com/agent-ix/spec-artifacts-process"
+        },
+        "quoin": {
+          "revision": "334843c61fa427e779e44e50cf2a6cb0069d1557",
+          "sourceState": "clean",
+          "remote": "https://github.com/agent-ix/quoin"
+        },
+        "quoin-qa-external": {
+          "revision": "d3ed56a9f89710ed55ef72bf0e37d090bf994fad",
+          "sourceState": "clean",
+          "remote": "https://github.com/agent-ix/quoin"
+        }
+      },
+      "capabilities": [
+        "action_guidance.structured",
+        "binding_census",
+        "binding_census.tagged",
+        "declaration_origins",
+        "metrics_envelope",
+        "minted_targets",
+        "property_spans.safe_refusal",
+        "reference_only_targets",
+        "specific_shaped",
+        "suspicions",
+        "unmatched_tags"
+      ],
+      "artifacts": {
+        ".node-version": "sha256:e1677620f62097e30fac6695180333d8eb9ead4fe5b1d1d6e01b76e049780059",
+        ".npmrc": "sha256:cde76ca04e048c3eba070a2c0dfcf5b723cf6014eab177157096b924f24ec4ca",
+        "package.json": "sha256:f646237dfdfef87bdb70c2e5bdc1b8d78d3a93a45bc01868ba4e72a79e682979",
+        "pnpm-lock.yaml": "sha256:9f64ad2d3873918bb1520c6412046f15f82b1defab706ca4df351134c3d429fd",
+        "bench/metrics.json": "sha256:5876512767852fd9ee5a848de90e34c9626926bb768db87c2eaf28deb2d05764",
+        "bench/tier1-mapping.json": "sha256:d0dfe1b935096425655d586b4170bb0898680b928d00b1dc2e0834b534cfeb85",
+        "bench/guidance-evaluator-contract-v1.json": "sha256:fe7857bfa58cfcab75be4e90c850debe43b266daa9dea1c01f10f035d822697a",
+        "bench/guidance-independent-review-v1.json": "sha256:ba0157850d4f33eab0e4612322dc3d33bf6c6b54bec7e0918bc181091495e077",
+        "bench/span-grounding-labels.json": "sha256:897ef28979f5a3f607fdb27e740f1508b736ae5d9ce3dd91c7813f09f841c000",
+        "bench/span-grounding-v2-labels.json": "sha256:4e10f34488c87439e7253668ea34773adb432b16bce574b1cc93fbf0343e2650",
+        "bench/span-breadth-v1-labels.json": "sha256:a4a303349991d1b47b85008f809f8010bf7cf72b09a5b0b7cd8694323a645798",
+        "bench/answer-key.json": "sha256:ec9de8603d339c9a5a1600d3330a27a25d09e0068870d3b0cc97c7fd196e6226",
+        "bench/advisory-adjudication-v1.json": "sha256:87c575b6ca0c0886d874f609144f907f3ac270e08c2091bb2bb1ead725713e43",
+        "corpus/config/metrics.json": "sha256:69ab8e5b8fc14e07408e034f0b791c3dd3356c9db78e1ac0dc961bcc0b47c0d7",
+        "corpus/config/duplicate-census.json": "sha256:23f016aa7d3c23a3b489a6d6b9dc6904d1a0b72b08fc79d5f546e0e9d3d186ac",
+        "corpus/config/external-channel.json": "sha256:74103cf74e7eceb69d3bb993074a7929025e7cff0cff4c993be3c7e4873050b5"
+      }
+    },
+    "corpus": "ceadef531c64536d3a8417677c887033b088ea0b",
+    "corpus_input": "sha256:afedd930d6e54f92510942edd4c9f2fc7a3dc17ac9b4dba06411d5aac8111519",
     "declaration": {
       "root": "corpus/modules",
       "digest": "sha256:3bc7c9ef24937e81e02286e8724755fe5596a30d1d14296b446fa2bd64fc3d3b",
@@ -3707,6 +3806,32 @@
     ],
     "rate": 1
   },
+  "guidance_quality": {
+    "contractDigest": "sha256:8fdf28a49f4b18eca384cba2f168c831271b7cc749d16aca6a79c841809660aa",
+    "evidenceDigest": "sha256:da4f3a842c2a150af7bb1186e5024a1113807894e39b097abd246d64b66696fd",
+    "selectedRecords": 65,
+    "correctness": {
+      "definitionVersion": "guidance.correctness-v1",
+      "numerator": 65,
+      "denominator": 65,
+      "rate": 1,
+      "namedMisses": []
+    },
+    "repairSuccess": {
+      "definitionVersion": "guidance.repair-success-v1",
+      "numerator": 31,
+      "denominator": 31,
+      "rate": 1,
+      "namedMisses": []
+    },
+    "diagnosticYield": {
+      "definitionVersion": "guidance.diagnostic-yield-v1",
+      "numerator": 34,
+      "denominator": 34,
+      "rate": 1,
+      "namedMisses": []
+    }
+  },
   "span_grounding": {
     "definitionVersion": "property.span-grounding-v1",
     "numerator": 0,
@@ -5552,7 +5677,9 @@
         "malformed": 0
       }
     },
-    "producerVersions": ["0.30.2 (engine 0.33.0)"],
+    "producerVersions": [
+      "0.30.2 (engine 506e936af5787e072a297965926547f4cd9b437b)"
+    ],
     "rate": 0
   },
   "span_grounding_v2": {
@@ -5578,7 +5705,38 @@
         "observedMatches": 38
       }
     ],
-    "producerVersions": ["0.30.2 (engine 0.33.0)"]
+    "producerVersions": [
+      "0.30.2 (engine 506e936af5787e072a297965926547f4cd9b437b)"
+    ]
+  },
+  "span_breadth": {
+    "definitionVersion": "property.span-breadth-v1",
+    "numerator": 60,
+    "denominator": 60,
+    "rate": 1,
+    "outcomes": { "exact": 30, "safeRefusal": 30 },
+    "uniqueNormalizedStatements": 60,
+    "propertyShapes": [
+      "concurrency",
+      "error-case",
+      "idempotence",
+      "invariant",
+      "lifecycle",
+      "ordering",
+      "round-trip",
+      "universal"
+    ],
+    "repositories": ["filament-ide-rs", "quire-rs", "quoin"],
+    "challenges": [
+      "coordinated",
+      "hyphenated",
+      "justified-refusal",
+      "nested",
+      "overbroad",
+      "truncated",
+      "wrong-subject"
+    ],
+    "namedMisses": []
   },
   "property_payloads": [
     {
@@ -5626,16 +5784,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -5685,16 +5846,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -5744,16 +5908,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -5803,16 +5970,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -5862,16 +6032,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -5921,16 +6094,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -5980,16 +6156,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -6062,16 +6241,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -6144,16 +6326,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -6230,16 +6415,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -6316,16 +6504,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -6402,16 +6593,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -6488,16 +6682,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -6547,16 +6744,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -6606,16 +6806,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -6665,16 +6868,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -6724,16 +6930,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -6783,16 +6992,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -6842,16 +7054,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -6928,16 +7143,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -7014,16 +7232,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -7100,16 +7321,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -7186,16 +7410,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -7272,16 +7499,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -7358,16 +7588,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -7444,16 +7677,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -7530,16 +7766,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -7589,16 +7828,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -7648,16 +7890,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -7707,16 +7952,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -7766,16 +8014,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -7825,16 +8076,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -7884,16 +8138,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -7966,16 +8223,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -8048,16 +8308,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -8130,16 +8393,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -8216,16 +8482,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -8298,16 +8567,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -8357,16 +8629,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -8416,16 +8691,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -8442,16 +8720,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -8468,16 +8749,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -8494,16 +8778,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -8540,16 +8827,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -8599,16 +8889,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -8658,16 +8951,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -8717,16 +9013,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -8776,16 +9075,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -8835,16 +9137,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -8894,16 +9199,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -8953,16 +9261,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -8999,16 +9310,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -9045,16 +9359,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -9071,16 +9388,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -9097,16 +9417,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -9156,16 +9479,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -9215,16 +9541,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -9274,16 +9603,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -9333,16 +9665,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -9392,16 +9727,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -9451,16 +9789,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -9537,16 +9878,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -9623,16 +9967,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -9709,16 +10056,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -9795,16 +10145,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -9881,16 +10234,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -9967,16 +10323,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -10053,16 +10412,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -10139,16 +10501,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -10225,16 +10590,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -10311,16 +10679,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -10397,16 +10768,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -10483,16 +10857,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -10569,16 +10946,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -10655,16 +11035,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -10741,16 +11124,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -10827,16 +11213,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -10913,16 +11302,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -10999,16 +11391,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -11085,16 +11480,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -11171,16 +11569,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -11257,16 +11658,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -11343,16 +11747,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -11429,16 +11836,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -11515,16 +11925,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -11574,16 +11987,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -11633,16 +12049,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -11692,16 +12111,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -11751,16 +12173,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -11810,16 +12235,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -11869,16 +12297,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -11947,16 +12378,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -12025,16 +12459,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -12103,16 +12540,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -12181,16 +12621,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -12259,16 +12702,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -12337,16 +12783,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -12391,16 +12840,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -12445,16 +12897,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -12499,16 +12954,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -12525,16 +12983,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -12551,16 +13012,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -12577,16 +13041,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -12603,16 +13070,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -12662,16 +13132,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -12721,16 +13194,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -12780,16 +13256,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -12839,16 +13318,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -12898,16 +13380,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -12957,16 +13442,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -13016,16 +13504,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -13075,16 +13566,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -13134,16 +13628,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -13193,16 +13690,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -13252,16 +13752,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -13311,16 +13814,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -13370,16 +13876,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -13429,16 +13938,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -13488,16 +14000,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -13547,16 +14062,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -13606,16 +14124,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -13665,16 +14186,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -13724,16 +14248,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -13783,16 +14310,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -13865,16 +14395,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -13947,16 +14480,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -14029,16 +14565,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -14111,16 +14650,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -14193,16 +14735,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -14275,16 +14820,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -14334,16 +14882,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -14416,16 +14967,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -14498,16 +15052,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -14580,16 +15137,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -14662,16 +15222,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -14744,16 +15307,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -14826,16 +15392,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -14880,16 +15449,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -14934,16 +15506,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -14988,16 +15563,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -15074,16 +15652,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -15160,16 +15741,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -15246,16 +15830,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -15332,16 +15919,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -15418,16 +16008,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -15504,16 +16097,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -15578,16 +16174,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -15652,16 +16251,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -15726,16 +16328,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -15800,16 +16405,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -15874,16 +16482,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -15948,16 +16559,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -16030,16 +16644,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -16112,16 +16729,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -16194,16 +16814,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -16276,16 +16899,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -16358,16 +16984,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -16440,16 +17069,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -16491,16 +17123,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -16542,16 +17177,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -16624,16 +17262,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -16706,16 +17347,19 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "0.33.0",
+          "engine": "506e936af5787e072a297965926547f4cd9b437b",
           "capabilities": [
+            "action_guidance.structured",
             "binding_census",
             "binding_census.tagged",
+            "declaration_origins",
             "metrics_envelope",
             "minted_targets",
+            "property_spans.safe_refusal",
             "reference_only_targets",
-            "unmatched_tags",
+            "specific_shaped",
             "suspicions",
-            "specific_shaped"
+            "unmatched_tags"
           ]
         }
       }
@@ -16777,7 +17421,9 @@
       "unsafeEmissions": 0
     },
     "malformed": [],
-    "producerVersions": ["0.30.2 (engine 0.33.0)"]
+    "producerVersions": [
+      "0.30.2 (engine 506e936af5787e072a297965926547f4cd9b437b)"
+    ]
   },
   "grounding_quality_payload": {
     "documents": [
@@ -16923,25 +17569,28 @@
     ],
     "engine": {
       "cli": "0.30.2",
-      "engine": "0.33.0",
+      "engine": "506e936af5787e072a297965926547f4cd9b437b",
       "capabilities": [
+        "action_guidance.structured",
         "binding_census",
         "binding_census.tagged",
+        "declaration_origins",
         "metrics_envelope",
         "minted_targets",
+        "property_spans.safe_refusal",
         "reference_only_targets",
-        "unmatched_tags",
+        "specific_shaped",
         "suspicions",
-        "specific_shaped"
+        "unmatched_tags"
       ]
     }
   },
   "cost_per_confirmed_insight": {
     "tokens": null,
-    "toolCalls": 1948,
+    "toolCalls": 1950,
     "truePositives": 62,
     "tokensPer": null,
-    "toolCallsPer": 31.42
+    "toolCallsPer": 31.45
   },
   "sentinel.silent_zero": {
     "count": 0,
