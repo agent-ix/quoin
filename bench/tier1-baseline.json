@@ -3409,6 +3409,302 @@
     "denominator": 485,
     "exclusions": [],
     "namedMisses": [],
+    "partitions": [
+      {
+        "id": "quire/quire/coverage.diagnostics/archetype-matches-nothing",
+        "source": {
+          "class": "quire",
+          "producer": "quire",
+          "channel": "coverage.diagnostics"
+        },
+        "family": "archetype-matches-nothing",
+        "numerator": 310,
+        "denominator": 310,
+        "exclusions": [],
+        "namedMisses": [],
+        "rate": 1
+      },
+      {
+        "id": "quire/quire/coverage.diagnostics/catch-all-universal",
+        "source": {
+          "class": "quire",
+          "producer": "quire",
+          "channel": "coverage.diagnostics"
+        },
+        "family": "catch-all-universal",
+        "numerator": 110,
+        "denominator": 110,
+        "exclusions": [],
+        "namedMisses": [],
+        "rate": 1
+      },
+      {
+        "id": "quire/quire/coverage.diagnostics/hollow-denominator",
+        "source": {
+          "class": "quire",
+          "producer": "quire",
+          "channel": "coverage.diagnostics"
+        },
+        "family": "hollow-denominator",
+        "numerator": 10,
+        "denominator": 10,
+        "exclusions": [],
+        "namedMisses": [],
+        "rate": 1
+      },
+      {
+        "id": "quire/quire/coverage.diagnostics/id-column-matches-nothing",
+        "source": {
+          "class": "quire",
+          "producer": "quire",
+          "channel": "coverage.diagnostics"
+        },
+        "family": "id-column-matches-nothing",
+        "numerator": 3,
+        "denominator": 3,
+        "exclusions": [],
+        "namedMisses": [],
+        "rate": 1
+      },
+      {
+        "id": "quire/quire/coverage.diagnostics/low-symbol-binding",
+        "source": {
+          "class": "quire",
+          "producer": "quire",
+          "channel": "coverage.diagnostics"
+        },
+        "family": "low-symbol-binding",
+        "numerator": 1,
+        "denominator": 1,
+        "exclusions": [],
+        "namedMisses": [],
+        "rate": 1
+      },
+      {
+        "id": "quire/quire/coverage.diagnostics/marker-form-mismatch",
+        "source": {
+          "class": "quire",
+          "producer": "quire",
+          "channel": "coverage.diagnostics"
+        },
+        "family": "marker-form-mismatch",
+        "numerator": 10,
+        "denominator": 10,
+        "exclusions": [],
+        "namedMisses": [],
+        "rate": 1
+      },
+      {
+        "id": "quire/quire/coverage.diagnostics/model-mints-nothing",
+        "source": {
+          "class": "quire",
+          "producer": "quire",
+          "channel": "coverage.diagnostics"
+        },
+        "family": "model-mints-nothing",
+        "numerator": 1,
+        "denominator": 1,
+        "exclusions": [],
+        "namedMisses": [],
+        "rate": 1
+      },
+      {
+        "id": "quire/quire/coverage.diagnostics/obligation-row-states-nothing",
+        "source": {
+          "class": "quire",
+          "producer": "quire",
+          "channel": "coverage.diagnostics"
+        },
+        "family": "obligation-row-states-nothing",
+        "numerator": 1,
+        "denominator": 1,
+        "exclusions": [],
+        "namedMisses": [],
+        "rate": 1
+      },
+      {
+        "id": "quire/quire/coverage.diagnostics/section-holds-no-table",
+        "source": {
+          "class": "quire",
+          "producer": "quire",
+          "channel": "coverage.diagnostics"
+        },
+        "family": "section-holds-no-table",
+        "numerator": 3,
+        "denominator": 3,
+        "exclusions": [],
+        "namedMisses": [],
+        "rate": 1
+      },
+      {
+        "id": "quire/quire/coverage.diagnostics/section-matches-nothing",
+        "source": {
+          "class": "quire",
+          "producer": "quire",
+          "channel": "coverage.diagnostics"
+        },
+        "family": "section-matches-nothing",
+        "numerator": 6,
+        "denominator": 6,
+        "exclusions": [],
+        "namedMisses": [],
+        "rate": 1
+      },
+      {
+        "id": "quire/quire/coverage.diagnostics/status-column-matches-nothing",
+        "source": {
+          "class": "quire",
+          "producer": "quire",
+          "channel": "coverage.diagnostics"
+        },
+        "family": "status-column-matches-nothing",
+        "numerator": 1,
+        "denominator": 1,
+        "exclusions": [],
+        "namedMisses": [],
+        "rate": 1
+      },
+      {
+        "id": "quire/quire/coverage.diagnostics/tag-on-non-binding-symbol",
+        "source": {
+          "class": "quire",
+          "producer": "quire",
+          "channel": "coverage.diagnostics"
+        },
+        "family": "tag-on-non-binding-symbol",
+        "numerator": 6,
+        "denominator": 6,
+        "exclusions": [],
+        "namedMisses": [],
+        "rate": 1
+      },
+      {
+        "id": "quire/quire/coverage.diagnostics/uncatalogued-verification-method",
+        "source": {
+          "class": "quire",
+          "producer": "quire",
+          "channel": "coverage.diagnostics"
+        },
+        "family": "uncatalogued-verification-method",
+        "numerator": 1,
+        "denominator": 1,
+        "exclusions": [],
+        "namedMisses": [],
+        "rate": 1
+      },
+      {
+        "id": "quire/quire/coverage.diagnostics/undeclared-coverage-vocabulary",
+        "source": {
+          "class": "quire",
+          "producer": "quire",
+          "channel": "coverage.diagnostics"
+        },
+        "family": "undeclared-coverage-vocabulary",
+        "numerator": 1,
+        "denominator": 1,
+        "exclusions": [],
+        "namedMisses": [],
+        "rate": 1
+      },
+      {
+        "id": "quire/quire/coverage.diagnostics/unminted-id-guidance",
+        "source": {
+          "class": "quire",
+          "producer": "quire",
+          "channel": "coverage.diagnostics"
+        },
+        "family": "unminted-id-guidance",
+        "numerator": 6,
+        "denominator": 6,
+        "exclusions": [],
+        "namedMisses": [],
+        "rate": 1
+      },
+      {
+        "id": "quire/quire/coverage.diagnostics/untracked-id-near-miss",
+        "source": {
+          "class": "quire",
+          "producer": "quire",
+          "channel": "coverage.diagnostics"
+        },
+        "family": "untracked-id-near-miss",
+        "numerator": 1,
+        "denominator": 1,
+        "exclusions": [],
+        "namedMisses": [],
+        "rate": 1
+      },
+      {
+        "id": "quire/quire/coverage.suspicions/oracle-is-code-copy",
+        "source": {
+          "class": "quire",
+          "producer": "quire",
+          "channel": "coverage.suspicions"
+        },
+        "family": "oracle-is-code-copy",
+        "numerator": 4,
+        "denominator": 4,
+        "exclusions": [],
+        "namedMisses": [],
+        "rate": 1
+      },
+      {
+        "id": "quire/quire/coverage.suspicions/vacuous-under-guard",
+        "source": {
+          "class": "quire",
+          "producer": "quire",
+          "channel": "coverage.suspicions"
+        },
+        "family": "vacuous-under-guard",
+        "numerator": 1,
+        "denominator": 1,
+        "exclusions": [],
+        "namedMisses": [],
+        "rate": 1
+      },
+      {
+        "id": "quire/quire/validate.findings/undeclared-type-value",
+        "source": {
+          "class": "quire",
+          "producer": "quire",
+          "channel": "validate.findings"
+        },
+        "family": "undeclared-type-value",
+        "numerator": 3,
+        "denominator": 3,
+        "exclusions": [],
+        "namedMisses": [],
+        "rate": 1
+      },
+      {
+        "id": "quoin/quoin/evidence.audit/mocked-confirmation",
+        "source": {
+          "class": "quoin",
+          "producer": "quoin",
+          "channel": "evidence.audit"
+        },
+        "family": "mocked-confirmation",
+        "numerator": 3,
+        "denominator": 3,
+        "exclusions": [],
+        "namedMisses": [],
+        "rate": 1
+      },
+      {
+        "id": "quoin/quoin/validate/gate-that-gates-nothing",
+        "source": {
+          "class": "quoin",
+          "producer": "quoin",
+          "channel": "validate"
+        },
+        "family": "gate-that-gates-nothing",
+        "numerator": 3,
+        "denominator": 3,
+        "exclusions": [],
+        "namedMisses": [],
+        "rate": 1
+      }
+    ],
     "rate": 1
   },
   "span_grounding": {
@@ -5259,6 +5555,31 @@
     "producerVersions": ["0.30.2 (engine 0.33.0)"],
     "rate": 0
   },
+  "span_grounding_v2": {
+    "definitionVersion": "property.span-grounding-v2",
+    "numerator": 38,
+    "denominator": 38,
+    "rate": 1,
+    "outcomes": {
+      "exactSpans": 0,
+      "safeRefusals": 38,
+      "wrongSpans": 0,
+      "unexpectedRefusals": 0,
+      "unjustifiedRefusals": 0,
+      "unsafeEmissions": 0
+    },
+    "namedMisses": [],
+    "exclusions": [],
+    "malformed": [],
+    "labels": [
+      {
+        "id": "corpus-idempotence-without-explicit-domain",
+        "expectedMatches": 38,
+        "observedMatches": 38
+      }
+    ],
+    "producerVersions": ["0.30.2 (engine 0.33.0)"]
+  },
   "property_payloads": [
     {
       "case": "marker-form-declared-python",
@@ -5723,7 +6044,11 @@
                 "property": "idempotence",
                 "row_id": "FR-001-AC-2",
                 "shape": "obligation",
-                "signals": ["idempotence:repetition", "idempotence:equality"],
+                "signals": [
+                  "idempotence:repetition",
+                  "idempotence:equality",
+                  "span:refused-no-explicit-domain"
+                ],
                 "statement": "Applying the normalizer twice shall give the same result as applying it once."
               }
             ],
@@ -5801,7 +6126,11 @@
                 "property": "idempotence",
                 "row_id": "FR-001-AC-2",
                 "shape": "obligation",
-                "signals": ["idempotence:repetition", "idempotence:equality"],
+                "signals": [
+                  "idempotence:repetition",
+                  "idempotence:equality",
+                  "span:refused-no-explicit-domain"
+                ],
                 "statement": "Applying the normalizer twice shall give the same result as applying it once."
               }
             ],
@@ -7619,7 +7948,11 @@
                 "property": "idempotence",
                 "row_id": "FR-001-AC-2",
                 "shape": "obligation",
-                "signals": ["idempotence:repetition", "idempotence:equality"],
+                "signals": [
+                  "idempotence:repetition",
+                  "idempotence:equality",
+                  "span:refused-no-explicit-domain"
+                ],
                 "statement": "Applying the normalizer twice shall give the same result as applying it once."
               }
             ],
@@ -7697,7 +8030,11 @@
                 "property": "idempotence",
                 "row_id": "FR-001-AC-2",
                 "shape": "obligation",
-                "signals": ["idempotence:repetition", "idempotence:equality"],
+                "signals": [
+                  "idempotence:repetition",
+                  "idempotence:equality",
+                  "span:refused-no-explicit-domain"
+                ],
                 "statement": "Applying the normalizer twice shall give the same result as applying it once."
               }
             ],
@@ -7775,7 +8112,11 @@
                 "property": "idempotence",
                 "row_id": "FR-001-AC-2",
                 "shape": "obligation",
-                "signals": ["idempotence:repetition", "idempotence:equality"],
+                "signals": [
+                  "idempotence:repetition",
+                  "idempotence:equality",
+                  "span:refused-no-explicit-domain"
+                ],
                 "statement": "Applying the normalizer twice shall give the same result as applying it once."
               }
             ],
@@ -7939,7 +8280,11 @@
                 "property": "idempotence",
                 "row_id": "FR-001-AC-2",
                 "shape": "obligation",
-                "signals": ["idempotence:repetition", "idempotence:equality"],
+                "signals": [
+                  "idempotence:repetition",
+                  "idempotence:equality",
+                  "span:refused-no-explicit-domain"
+                ],
                 "statement": "Applying the normalizer twice shall give the same result as applying it once."
               }
             ],
@@ -13502,7 +13847,11 @@
                 "property": "idempotence",
                 "row_id": "FR-001-AC-2",
                 "shape": "obligation",
-                "signals": ["idempotence:repetition", "idempotence:equality"],
+                "signals": [
+                  "idempotence:repetition",
+                  "idempotence:equality",
+                  "span:refused-no-explicit-domain"
+                ],
                 "statement": "Applying the normalizer twice shall give the same result as applying it once."
               }
             ],
@@ -13580,7 +13929,11 @@
                 "property": "idempotence",
                 "row_id": "FR-001-AC-2",
                 "shape": "obligation",
-                "signals": ["idempotence:repetition", "idempotence:equality"],
+                "signals": [
+                  "idempotence:repetition",
+                  "idempotence:equality",
+                  "span:refused-no-explicit-domain"
+                ],
                 "statement": "Applying the normalizer twice shall give the same result as applying it once."
               }
             ],
@@ -13658,7 +14011,11 @@
                 "property": "idempotence",
                 "row_id": "FR-001-AC-2",
                 "shape": "obligation",
-                "signals": ["idempotence:repetition", "idempotence:equality"],
+                "signals": [
+                  "idempotence:repetition",
+                  "idempotence:equality",
+                  "span:refused-no-explicit-domain"
+                ],
                 "statement": "Applying the normalizer twice shall give the same result as applying it once."
               }
             ],
@@ -13736,7 +14093,11 @@
                 "property": "idempotence",
                 "row_id": "FR-001-AC-2",
                 "shape": "obligation",
-                "signals": ["idempotence:repetition", "idempotence:equality"],
+                "signals": [
+                  "idempotence:repetition",
+                  "idempotence:equality",
+                  "span:refused-no-explicit-domain"
+                ],
                 "statement": "Applying the normalizer twice shall give the same result as applying it once."
               }
             ],
@@ -13814,7 +14175,11 @@
                 "property": "idempotence",
                 "row_id": "FR-001-AC-2",
                 "shape": "obligation",
-                "signals": ["idempotence:repetition", "idempotence:equality"],
+                "signals": [
+                  "idempotence:repetition",
+                  "idempotence:equality",
+                  "span:refused-no-explicit-domain"
+                ],
                 "statement": "Applying the normalizer twice shall give the same result as applying it once."
               }
             ],
@@ -13892,7 +14257,11 @@
                 "property": "idempotence",
                 "row_id": "FR-001-AC-2",
                 "shape": "obligation",
-                "signals": ["idempotence:repetition", "idempotence:equality"],
+                "signals": [
+                  "idempotence:repetition",
+                  "idempotence:equality",
+                  "span:refused-no-explicit-domain"
+                ],
                 "statement": "Applying the normalizer twice shall give the same result as applying it once."
               }
             ],
@@ -14029,7 +14398,11 @@
                 "property": "idempotence",
                 "row_id": "FR-001-AC-2",
                 "shape": "obligation",
-                "signals": ["idempotence:repetition", "idempotence:equality"],
+                "signals": [
+                  "idempotence:repetition",
+                  "idempotence:equality",
+                  "span:refused-no-explicit-domain"
+                ],
                 "statement": "Applying the normalizer twice shall give the same result as applying it once."
               }
             ],
@@ -14107,7 +14480,11 @@
                 "property": "idempotence",
                 "row_id": "FR-001-AC-2",
                 "shape": "obligation",
-                "signals": ["idempotence:repetition", "idempotence:equality"],
+                "signals": [
+                  "idempotence:repetition",
+                  "idempotence:equality",
+                  "span:refused-no-explicit-domain"
+                ],
                 "statement": "Applying the normalizer twice shall give the same result as applying it once."
               }
             ],
@@ -14185,7 +14562,11 @@
                 "property": "idempotence",
                 "row_id": "FR-001-AC-2",
                 "shape": "obligation",
-                "signals": ["idempotence:repetition", "idempotence:equality"],
+                "signals": [
+                  "idempotence:repetition",
+                  "idempotence:equality",
+                  "span:refused-no-explicit-domain"
+                ],
                 "statement": "Applying the normalizer twice shall give the same result as applying it once."
               }
             ],
@@ -14263,7 +14644,11 @@
                 "property": "idempotence",
                 "row_id": "FR-001-AC-2",
                 "shape": "obligation",
-                "signals": ["idempotence:repetition", "idempotence:equality"],
+                "signals": [
+                  "idempotence:repetition",
+                  "idempotence:equality",
+                  "span:refused-no-explicit-domain"
+                ],
                 "statement": "Applying the normalizer twice shall give the same result as applying it once."
               }
             ],
@@ -14341,7 +14726,11 @@
                 "property": "idempotence",
                 "row_id": "FR-001-AC-2",
                 "shape": "obligation",
-                "signals": ["idempotence:repetition", "idempotence:equality"],
+                "signals": [
+                  "idempotence:repetition",
+                  "idempotence:equality",
+                  "span:refused-no-explicit-domain"
+                ],
                 "statement": "Applying the normalizer twice shall give the same result as applying it once."
               }
             ],
@@ -14419,7 +14808,11 @@
                 "property": "idempotence",
                 "row_id": "FR-001-AC-2",
                 "shape": "obligation",
-                "signals": ["idempotence:repetition", "idempotence:equality"],
+                "signals": [
+                  "idempotence:repetition",
+                  "idempotence:equality",
+                  "span:refused-no-explicit-domain"
+                ],
                 "statement": "Applying the normalizer twice shall give the same result as applying it once."
               }
             ],
@@ -14663,7 +15056,11 @@
                 "property": "idempotence",
                 "row_id": "FR-001-AC-2",
                 "shape": "obligation",
-                "signals": ["idempotence:repetition", "idempotence:equality"],
+                "signals": [
+                  "idempotence:repetition",
+                  "idempotence:equality",
+                  "span:refused-no-explicit-domain"
+                ],
                 "statement": "Applying the normalizer twice shall give the same result as applying it once."
               }
             ],
@@ -14745,7 +15142,11 @@
                 "property": "idempotence",
                 "row_id": "FR-001-AC-2",
                 "shape": "obligation",
-                "signals": ["idempotence:repetition", "idempotence:equality"],
+                "signals": [
+                  "idempotence:repetition",
+                  "idempotence:equality",
+                  "span:refused-no-explicit-domain"
+                ],
                 "statement": "Applying the normalizer twice shall give the same result as applying it once."
               }
             ],
@@ -14827,7 +15228,11 @@
                 "property": "idempotence",
                 "row_id": "FR-001-AC-2",
                 "shape": "obligation",
-                "signals": ["idempotence:repetition", "idempotence:equality"],
+                "signals": [
+                  "idempotence:repetition",
+                  "idempotence:equality",
+                  "span:refused-no-explicit-domain"
+                ],
                 "statement": "Applying the normalizer twice shall give the same result as applying it once."
               }
             ],
@@ -14909,7 +15314,11 @@
                 "property": "idempotence",
                 "row_id": "FR-001-AC-2",
                 "shape": "obligation",
-                "signals": ["idempotence:repetition", "idempotence:equality"],
+                "signals": [
+                  "idempotence:repetition",
+                  "idempotence:equality",
+                  "span:refused-no-explicit-domain"
+                ],
                 "statement": "Applying the normalizer twice shall give the same result as applying it once."
               }
             ],
@@ -14991,7 +15400,11 @@
                 "property": "idempotence",
                 "row_id": "FR-001-AC-2",
                 "shape": "obligation",
-                "signals": ["idempotence:repetition", "idempotence:equality"],
+                "signals": [
+                  "idempotence:repetition",
+                  "idempotence:equality",
+                  "span:refused-no-explicit-domain"
+                ],
                 "statement": "Applying the normalizer twice shall give the same result as applying it once."
               }
             ],
@@ -15073,7 +15486,11 @@
                 "property": "idempotence",
                 "row_id": "FR-001-AC-2",
                 "shape": "obligation",
-                "signals": ["idempotence:repetition", "idempotence:equality"],
+                "signals": [
+                  "idempotence:repetition",
+                  "idempotence:equality",
+                  "span:refused-no-explicit-domain"
+                ],
                 "statement": "Applying the normalizer twice shall give the same result as applying it once."
               }
             ],
@@ -15143,7 +15560,11 @@
                 "property": "idempotence",
                 "row_id": "FR-001-AC-2",
                 "shape": "obligation",
-                "signals": ["idempotence:repetition", "idempotence:equality"],
+                "signals": [
+                  "idempotence:repetition",
+                  "idempotence:equality",
+                  "span:refused-no-explicit-domain"
+                ],
                 "statement": "Applying the normalizer twice shall give the same result as applying it once."
               }
             ],
@@ -15213,7 +15634,11 @@
                 "property": "idempotence",
                 "row_id": "FR-001-AC-2",
                 "shape": "obligation",
-                "signals": ["idempotence:repetition", "idempotence:equality"],
+                "signals": [
+                  "idempotence:repetition",
+                  "idempotence:equality",
+                  "span:refused-no-explicit-domain"
+                ],
                 "statement": "Applying the normalizer twice shall give the same result as applying it once."
               }
             ],
@@ -15283,7 +15708,11 @@
                 "property": "idempotence",
                 "row_id": "FR-001-AC-2",
                 "shape": "obligation",
-                "signals": ["idempotence:repetition", "idempotence:equality"],
+                "signals": [
+                  "idempotence:repetition",
+                  "idempotence:equality",
+                  "span:refused-no-explicit-domain"
+                ],
                 "statement": "Applying the normalizer twice shall give the same result as applying it once."
               }
             ],
@@ -15353,7 +15782,11 @@
                 "property": "idempotence",
                 "row_id": "FR-001-AC-2",
                 "shape": "obligation",
-                "signals": ["idempotence:repetition", "idempotence:equality"],
+                "signals": [
+                  "idempotence:repetition",
+                  "idempotence:equality",
+                  "span:refused-no-explicit-domain"
+                ],
                 "statement": "Applying the normalizer twice shall give the same result as applying it once."
               }
             ],
@@ -15423,7 +15856,11 @@
                 "property": "idempotence",
                 "row_id": "FR-001-AC-2",
                 "shape": "obligation",
-                "signals": ["idempotence:repetition", "idempotence:equality"],
+                "signals": [
+                  "idempotence:repetition",
+                  "idempotence:equality",
+                  "span:refused-no-explicit-domain"
+                ],
                 "statement": "Applying the normalizer twice shall give the same result as applying it once."
               }
             ],
@@ -15493,7 +15930,11 @@
                 "property": "idempotence",
                 "row_id": "FR-001-AC-2",
                 "shape": "obligation",
-                "signals": ["idempotence:repetition", "idempotence:equality"],
+                "signals": [
+                  "idempotence:repetition",
+                  "idempotence:equality",
+                  "span:refused-no-explicit-domain"
+                ],
                 "statement": "Applying the normalizer twice shall give the same result as applying it once."
               }
             ],
@@ -15571,7 +16012,11 @@
                 "property": "idempotence",
                 "row_id": "FR-001-AC-2",
                 "shape": "obligation",
-                "signals": ["idempotence:repetition", "idempotence:equality"],
+                "signals": [
+                  "idempotence:repetition",
+                  "idempotence:equality",
+                  "span:refused-no-explicit-domain"
+                ],
                 "statement": "Applying the normalizer twice shall give the same result as applying it once."
               }
             ],
@@ -15649,7 +16094,11 @@
                 "property": "idempotence",
                 "row_id": "FR-001-AC-2",
                 "shape": "obligation",
-                "signals": ["idempotence:repetition", "idempotence:equality"],
+                "signals": [
+                  "idempotence:repetition",
+                  "idempotence:equality",
+                  "span:refused-no-explicit-domain"
+                ],
                 "statement": "Applying the normalizer twice shall give the same result as applying it once."
               }
             ],
@@ -15727,7 +16176,11 @@
                 "property": "idempotence",
                 "row_id": "FR-001-AC-2",
                 "shape": "obligation",
-                "signals": ["idempotence:repetition", "idempotence:equality"],
+                "signals": [
+                  "idempotence:repetition",
+                  "idempotence:equality",
+                  "span:refused-no-explicit-domain"
+                ],
                 "statement": "Applying the normalizer twice shall give the same result as applying it once."
               }
             ],
@@ -15805,7 +16258,11 @@
                 "property": "idempotence",
                 "row_id": "FR-001-AC-2",
                 "shape": "obligation",
-                "signals": ["idempotence:repetition", "idempotence:equality"],
+                "signals": [
+                  "idempotence:repetition",
+                  "idempotence:equality",
+                  "span:refused-no-explicit-domain"
+                ],
                 "statement": "Applying the normalizer twice shall give the same result as applying it once."
               }
             ],
@@ -15883,7 +16340,11 @@
                 "property": "idempotence",
                 "row_id": "FR-001-AC-2",
                 "shape": "obligation",
-                "signals": ["idempotence:repetition", "idempotence:equality"],
+                "signals": [
+                  "idempotence:repetition",
+                  "idempotence:equality",
+                  "span:refused-no-explicit-domain"
+                ],
                 "statement": "Applying the normalizer twice shall give the same result as applying it once."
               }
             ],
@@ -15961,7 +16422,11 @@
                 "property": "idempotence",
                 "row_id": "FR-001-AC-2",
                 "shape": "obligation",
-                "signals": ["idempotence:repetition", "idempotence:equality"],
+                "signals": [
+                  "idempotence:repetition",
+                  "idempotence:equality",
+                  "span:refused-no-explicit-domain"
+                ],
                 "statement": "Applying the normalizer twice shall give the same result as applying it once."
               }
             ],
@@ -16141,7 +16606,11 @@
                 "property": "idempotence",
                 "row_id": "FR-001-AC-2",
                 "shape": "obligation",
-                "signals": ["idempotence:repetition", "idempotence:equality"],
+                "signals": [
+                  "idempotence:repetition",
+                  "idempotence:equality",
+                  "span:refused-no-explicit-domain"
+                ],
                 "statement": "Applying the normalizer twice shall give the same result as applying it once."
               }
             ],
@@ -16219,7 +16688,11 @@
                 "property": "idempotence",
                 "row_id": "FR-001-AC-2",
                 "shape": "obligation",
-                "signals": ["idempotence:repetition", "idempotence:equality"],
+                "signals": [
+                  "idempotence:repetition",
+                  "idempotence:equality",
+                  "span:refused-no-explicit-domain"
+                ],
                 "statement": "Applying the normalizer twice shall give the same result as applying it once."
               }
             ],
