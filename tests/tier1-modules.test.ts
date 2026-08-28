@@ -92,7 +92,7 @@ if [ "$1" = "coverage" ]; then
 elif [ "$1" = "properties" ]; then
   printf '%s\\n' '{"documents":[{"document":"spec/a.md","archetype":"FR","criteria":[]}],"engine":{"cli":"test","engine":"test"}}'
 else
-  printf '%s\\n' '{"kind":"ValidationError","message":"spec/a.md: line 9: bad [validated]"}' >&2
+  printf '%s\\n' '{"kind":"ValidationError","reason":"validated","path":"spec/a.md","line":9,"message":"bad","subject":"FR validation of spec/a.md","change_target":"spec/a.md:9","remedy":"repair the cited value"}' >&2
   exit 1
 fi
 `,
@@ -139,7 +139,10 @@ fi
         reason: "validated",
         path: "spec/a.md",
         line: 9,
-        message: "spec/a.md: line 9: bad [validated]",
+        message: "bad",
+        subject: "FR validation of spec/a.md",
+        changeTarget: "spec/a.md:9",
+        remedy: "repair the cited value",
       },
     ]);
     expect(result.findings[0]).toMatchObject({

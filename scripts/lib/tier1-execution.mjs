@@ -267,16 +267,31 @@ export function createTier1Executor() {
         continue;
       }
       if (record.kind !== "ValidationError") continue;
-      const parsed = VALIDATE_LINE.exec(record.message);
-      if (!parsed) {
-        if (/^.+: line \d+:/.test(record.message)) {
-          throw new Error(
-            `bench-tier1: could not parse a validate finding from ${record.message}`,
-          );
+      let path;
+      let line;
+      let reason;
+      if (
+        typeof record.path === "string" &&
+        Number.isInteger(record.line) &&
+        typeof record.reason === "string"
+      ) {
+        ({ path, line, reason } = record);
+      } else {
+        // Compatibility with released Quire versions predating
+        // quire-cli#65. New producers publish these facts as fields; only old
+        // payloads need the prose parser.
+        const parsed = VALIDATE_LINE.exec(record.message);
+        if (!parsed) {
+          if (/^.+: line \d+:/.test(record.message)) {
+            throw new Error(
+              `bench-tier1: could not parse a validate finding from ${record.message}`,
+            );
+          }
+          continue;
         }
-        continue;
+        ({ path, line, reason } = parsed.groups);
+        line = Number(line);
       }
-      const { path, line, reason } = parsed.groups;
       const family = byReason.get(reason);
       if (!family) continue;
       const contains = mapping.families[family]?.contains;
@@ -288,8 +303,13 @@ export function createTier1Executor() {
         family,
         reason,
         path,
-        line: Number(line),
+        line,
         message: record.message,
+        subject: record.subject,
+        changeTarget: record.change_target ?? record.changeTarget,
+        remedy: record.remedy,
+        nextDiagnosticStep:
+          record.next_diagnostic_step ?? record.nextDiagnosticStep,
         rawProducerOutput: record,
       });
     }
