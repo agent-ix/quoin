@@ -3,19 +3,19 @@
   "repositories": {
     "quoin": {
       "remote": "https://github.com/agent-ix/quoin",
-      "revision": "9dc215c2a809900fc6b81d4a3562a724d80a97db"
+      "revision": "005fd2ec0352e112c32634d28845b180a5ef70c8"
     },
     "quire": {
       "remote": "https://github.com/agent-ix/quire-rs",
-      "revision": "c71f3cb661d152a09df8e916ea06d8e80124762c"
+      "revision": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c"
     },
     "quire-cli": {
       "remote": "https://github.com/agent-ix/quire-cli",
-      "revision": "90c003685ee7484b3ec86cd6b0add5ad06ff76fe"
+      "revision": "55fe749550955c39cb9bb6ef1c6180079386a283"
     },
     "qa-corpus": {
       "remote": "https://github.com/agent-ix/qa-corpus",
-      "revision": "944aa63f653d7e48b9b16b411745d4a96f9836b1"
+      "revision": "2b550987857893ef6e0140b359a364b4350e8ba8"
     },
     "filament-ide-rs": {
       "remote": "https://github.com/agent-ix/filament-ide-rs",
