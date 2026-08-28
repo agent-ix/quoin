@@ -672,7 +672,8 @@ export function scoreSpanGroundingV2(inputs, labelSet) {
           exclusions.push({
             id,
             state: "not_applicable",
-            reason: "specific-shape criterion is outside the labeled v2 population",
+            reason:
+              "specific-shape criterion is outside the labeled v2 population",
           });
           return;
         }

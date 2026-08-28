@@ -24,7 +24,9 @@ import {
   collectTier2Sources,
   diff,
   render,
+  scoreAgainstCohorts,
   scoreAgainstKey,
+  scoreAgainstRetainedCohorts,
   scoreAgainstRetainedSources,
   scoreAgainstSources,
 } from "../scripts/battletest.mjs";
@@ -44,7 +46,13 @@ describe("scoring against the adjudicated answer key", () => {
         { reason: "no-symbol-bound" },
         { reason: "hollow-denominator" },
       ],
-      suspicions: [{ kind: "vacuous-under-guard" }],
+      suspicions: [
+        {
+          kind: "vacuous-under-guard",
+          path: "crates/filament-shell/tests/property_suite.rs",
+          line: 91,
+        },
+      ],
       metrics: [{ name: "coverage.specific_shaped", value: 78 }],
     };
     const score = scoreAgainstKey(payload, key);
@@ -143,6 +151,13 @@ describe("scoring against the adjudicated answer key", () => {
 
     const sources = collectTier2Sources({ quire, quoin, corpus });
     expect(sources["quire.coverage"].ok).toBe(true);
+    expect(
+      sources["quoin.validate"],
+      JSON.stringify(sources["quoin.validate"]),
+    ).toMatchObject({
+      ok: true,
+      state: "evaluated",
+    });
     expect(sources["quoin.validate"].payload.findings).toEqual([
       { kind: "gate-that-gates-nothing" },
     ]);
@@ -155,18 +170,25 @@ describe("scoring against the adjudicated answer key", () => {
   it("TC-1104 scores retained finding envelopes rather than raw producer arrays", () => {
     const retained = createTier2Baseline({
       provenance: {},
-      sources: {
-        "quoin.validate": {
-          ok: true,
-          state: "evaluated",
-          command: { executable: "NODE", args: [] },
-          payload: {
-            findings: [{ kind: "gate-that-gates-nothing", path: "Makefile" }],
+      cohorts: {
+        defect: {
+          provenance: {},
+          sources: {
+            "quoin.validate": {
+              ok: true,
+              state: "evaluated",
+              command: { executable: "NODE", args: [] },
+              payload: {
+                findings: [
+                  { kind: "gate-that-gates-nothing", path: "Makefile" },
+                ],
+              },
+            },
           },
         },
       },
       score: {},
-    }).sources;
+    }).cohorts.defect.sources;
     const answerKey = {
       findings: [
         {
@@ -185,6 +207,139 @@ describe("scoring against the adjudicated answer key", () => {
     retained["quoin.validate"].normalized.findings = [];
     expect(scoreAgainstRetainedSources(retained, answerKey).missed).toEqual([
       "AK-NORMALIZED",
+    ]);
+  });
+
+  it("TC-1116 requires an exact defect locus and a clean pinned control", () => {
+    const payload = (line: number | null) => ({
+      diagnostics: [],
+      metrics: [],
+      suspicions:
+        line === null
+          ? []
+          : [
+              {
+                kind: "oracle-resembles-implementation",
+                path: "tests/property_suite.rs",
+                line,
+              },
+            ],
+    });
+    const answerKey = {
+      findings: [
+        {
+          id: "AK-EXACT",
+          cohort: "defect",
+          source: "quire.coverage",
+          declaration: { state: "pinned-by-cohort" },
+          evidence_sidecar: { state: "not-required" },
+          reproduction_command: { executable: "QUIRE", args: [] },
+          locus: { state: "exact" },
+          expected_locus: { path: "tests/property_suite.rs", line: 72 },
+          healthy_control: {
+            state: "pinned",
+            cohort: "control",
+            source: "quire.coverage",
+          },
+          expect_suspicion: "oracle-resembles-implementation",
+        },
+      ],
+    };
+    const score = scoreAgainstCohorts(
+      {
+        defect: {
+          sources: { "quire.coverage": { ok: true, payload: payload(72) } },
+        },
+        control: {
+          sources: { "quire.coverage": { ok: true, payload: payload(null) } },
+        },
+      },
+      answerKey,
+    );
+    expect(score.detected).toEqual(["AK-EXACT"]);
+    expect(score.controlFailures).toEqual([]);
+  });
+
+  it("TC-1117 distinguishes unavailable, invalid-key, and healthy-control failure", () => {
+    const retained = (findings: object[]) =>
+      createTier2Baseline({
+        provenance: {},
+        cohorts: {
+          one: {
+            provenance: {},
+            sources: {
+              "quoin.validate": {
+                ok: true,
+                state: "evaluated",
+                command: { executable: "NODE", args: [] },
+                payload: { findings },
+              },
+              "quoin.evidence-audit": {
+                ok: false,
+                state: "unavailable",
+                command: { executable: "NODE", args: [] },
+                reason: "immutable binding absent",
+              },
+            },
+          },
+          control: {
+            provenance: {},
+            sources: {
+              "quoin.validate": {
+                ok: true,
+                state: "evaluated",
+                command: { executable: "NODE", args: [] },
+                payload: { findings },
+              },
+            },
+          },
+        },
+        score: {},
+      }).cohorts;
+    const fields = {
+      declaration: { state: "pinned-by-cohort" },
+      evidence_sidecar: { state: "not-required" },
+      reproduction_command: { executable: "NODE", args: [] },
+      locus: { state: "exact" },
+    };
+    const score = scoreAgainstRetainedCohorts(
+      retained([{ kind: "gate-that-gates-nothing", path: "Makefile" }]),
+      {
+        findings: [
+          {
+            id: "AK-CONTROL",
+            cohort: "one",
+            source: "quoin.validate",
+            ...fields,
+            expect_finding: "gate-that-gates-nothing",
+            healthy_control: { state: "pinned", cohort: "control" },
+          },
+          {
+            id: "AK-UNAVAILABLE",
+            cohort: "one",
+            source: "quoin.evidence-audit",
+            ...fields,
+            expect_finding: "mocked-confirmation",
+            healthy_control: { state: "unavailable" },
+          },
+          {
+            id: "AK-INVALID",
+            answer_key_state: "invalid",
+            invalid_reason: "exact snapshot absent",
+          },
+        ],
+      },
+    );
+    expect(score.detected).toEqual([]);
+    expect(score.missed).toEqual(["AK-CONTROL"]);
+    expect(score.unavailable).toEqual([
+      expect.objectContaining({ id: "AK-UNAVAILABLE" }),
+    ]);
+    expect(score.invalidAnswerKey).toEqual([
+      { id: "AK-INVALID", reason: "exact snapshot absent" },
+    ]);
+    expect(score.controlFailures).toEqual([
+      expect.objectContaining({ id: "AK-CONTROL", cohort: "control" }),
     ]);
   });
 });
@@ -246,51 +401,97 @@ describe("diffing against the baseline", () => {
 describe("retained multi-source Tier-2 baseline", () => {
   const provenance = {
     answer_key_digest: "sha256:key",
-    corpus: { revision: "fc5d644" },
-    declaration: { revision: "module-sha" },
+    cohort_manifest_digest: "sha256:cohorts",
     tools: {
       quire: { digest: "sha256:quire" },
       quoin: { digest: "sha256:quoin" },
     },
     environment: { node: "v22", platform: "linux", arch: "x64" },
   };
+  const cohort = (sources: object) => ({
+    provenance: {
+      corpus: { revision: "corpus-sha" },
+      declaration: { revision: "module-sha" },
+    },
+    sources,
+  });
+
+  it("TC-1119 retains the committed v2 cohort states and exact score buckets", () => {
+    const baseline = JSON.parse(
+      readFileSync(
+        join(__dirname, "..", "bench", "battletest-baseline.json"),
+        "utf8",
+      ),
+    );
+    expect(baseline.schema_version).toBe("tier2-finding-quality-v2");
+    expect(baseline.score).toMatchObject({
+      detected: ["AK-004", "AK-005"],
+      missed: ["AK-001", "AK-002", "AK-003"],
+      notMechanized: ["AK-006"],
+      invalidAnswerKey: [expect.objectContaining({ id: "AK-007" })],
+      controlFailures: [],
+      recall: 0.4,
+    });
+    expect(
+      baseline.cohorts["semantic-review-defect"].sources["quire.coverage"]
+        .state,
+    ).toBe("evaluated");
+    expect(
+      baseline.cohorts["semantic-review-control"].sources["quire.coverage"]
+        .state,
+    ).toBe("evaluated");
+    expect(
+      baseline.cohorts["semantic-review-defect"].sources["quoin.evidence-audit"]
+        .state,
+    ).toBe("unavailable");
+    expect(
+      compareTier2Baseline(baseline, structuredClone(baseline)),
+    ).toMatchObject({
+      comparable: true,
+      lost: [],
+      source_regressions: [],
+      source_changes: [],
+    });
+  });
 
   it("TC-1101 retains raw and normalized output for every supported producer", () => {
     const record = createTier2Baseline({
       provenance,
-      sources: {
-        "quire.coverage": {
-          ok: true,
-          state: "evaluated",
-          command: { executable: "QUIRE", args: ["coverage"] },
-          payload: {
-            diagnostics: [
-              { reason: "no-symbol-bound", path: "spec/FR-001.md" },
-            ],
-            suspicions: [],
-            metrics: [{ name: "coverage.backed", value: 0 }],
+      cohorts: {
+        defect: cohort({
+          "quire.coverage": {
+            ok: true,
+            state: "evaluated",
+            command: { executable: "QUIRE", args: ["coverage"] },
+            payload: {
+              diagnostics: [
+                { reason: "no-symbol-bound", path: "spec/FR-001.md" },
+              ],
+              suspicions: [],
+              metrics: [{ name: "coverage.backed", value: 0 }],
+            },
           },
-        },
-        "quoin.validate": {
-          ok: true,
-          state: "evaluated",
-          command: { executable: "NODE", args: ["QUOIN", "validate"] },
-          payload: {
-            findings: [
-              {
-                kind: "gate-that-gates-nothing",
-                path: "Makefile",
-                line: 5,
-              },
-            ],
+          "quoin.validate": {
+            ok: true,
+            state: "evaluated",
+            command: { executable: "NODE", args: ["QUOIN", "validate"] },
+            payload: {
+              findings: [
+                {
+                  kind: "gate-that-gates-nothing",
+                  path: "Makefile",
+                  line: 5,
+                },
+              ],
+            },
           },
-        },
-        "quoin.evidence-audit": {
-          ok: false,
-          state: "unavailable",
-          command: { executable: "NODE", args: ["QUOIN", "evidence"] },
-          reason: "no suite-to-obligation join exists",
-        },
+          "quoin.evidence-audit": {
+            ok: false,
+            state: "unavailable",
+            command: { executable: "NODE", args: ["QUOIN", "evidence"] },
+            reason: "no suite-to-obligation join exists",
+          },
+        }),
       },
       score: {
         detected: ["AK-001"],
@@ -300,14 +501,13 @@ describe("retained multi-source Tier-2 baseline", () => {
         recall: 0.5,
       },
     });
-    expect(record.sources["quire.coverage"].raw.diagnostics).toHaveLength(1);
-    expect(
-      record.sources["quire.coverage"].normalized.findings[0].schemaVersion,
-    ).toBe("finding-envelope-v2");
-    expect(record.sources["quoin.validate"].normalized.findings).toHaveLength(
-      1,
+    const sources = record.cohorts.defect.sources;
+    expect(sources["quire.coverage"].raw.diagnostics).toHaveLength(1);
+    expect(sources["quire.coverage"].normalized.findings[0].schemaVersion).toBe(
+      "finding-envelope-v2",
     );
-    expect(record.sources["quoin.evidence-audit"]).toMatchObject({
+    expect(sources["quoin.validate"].normalized.findings).toHaveLength(1);
+    expect(sources["quoin.evidence-audit"]).toMatchObject({
       state: "unavailable",
       raw: null,
       normalized: {
@@ -320,13 +520,15 @@ describe("retained multi-source Tier-2 baseline", () => {
   it("TC-1102 keeps expected unavailability outside clean and missed states", () => {
     const baseline = createTier2Baseline({
       provenance,
-      sources: {
-        evidence: {
-          ok: false,
-          state: "unavailable",
-          command: { executable: "NODE", args: [] },
-          reason: "bindings absent",
-        },
+      cohorts: {
+        defect: cohort({
+          evidence: {
+            ok: false,
+            state: "unavailable",
+            command: { executable: "NODE", args: [] },
+            reason: "bindings absent",
+          },
+        }),
       },
       score: {
         detected: [],
@@ -351,13 +553,15 @@ describe("retained multi-source Tier-2 baseline", () => {
   it("TC-1103 candidate comparison reports unavailable regressions and never rewrites the baseline", () => {
     const evaluated = createTier2Baseline({
       provenance,
-      sources: {
-        evidence: {
-          ok: true,
-          state: "evaluated",
-          command: { executable: "NODE", args: [] },
-          payload: { findings: [] },
-        },
+      cohorts: {
+        defect: cohort({
+          evidence: {
+            ok: true,
+            state: "evaluated",
+            command: { executable: "NODE", args: [] },
+            payload: { findings: [] },
+          },
+        }),
       },
       score: {
         detected: ["AK-006"],
@@ -369,13 +573,15 @@ describe("retained multi-source Tier-2 baseline", () => {
     });
     const unavailable = createTier2Baseline({
       provenance,
-      sources: {
-        evidence: {
-          ok: false,
-          state: "unavailable",
-          command: { executable: "NODE", args: [] },
-          reason: "bindings absent",
-        },
+      cohorts: {
+        defect: cohort({
+          evidence: {
+            ok: false,
+            state: "unavailable",
+            command: { executable: "NODE", args: [] },
+            reason: "bindings absent",
+          },
+        }),
       },
       score: {
         detected: [],
@@ -390,6 +596,7 @@ describe("retained multi-source Tier-2 baseline", () => {
     expect(comparison.lost).toEqual(["AK-006"]);
     expect(comparison.source_regressions).toEqual([
       {
+        cohort: "defect",
         source: "evidence",
         before: "evaluated",
         after: "unavailable",

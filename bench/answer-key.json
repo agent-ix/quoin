@@ -1,8 +1,57 @@
 {
-  "$comment": "Tier-2 adjudicated answer key (agent-ix/quoin#200, FR-043-AC-8). The manual findings of battletest pass 2, made machine-readable and keyed to a pinned commit. This set is the RECALL DENOMINATOR for 'would the tools have found what humans found'. Every entry was adjudicated by reading the corpus, not inferred from tool output \u2014 which is the point, since the tools found none of them. RE-ADJUDICATED 2026-08-23 against the code as it stands, not against the notes: every `now_detectable` claim was checked by locating the detector and its caller, and two were wrong.",
+  "$comment": "Tier-2 adjudicated answer key (agent-ix/quoin#200, FR-043-AC-8). V2 binds each valid finding to an immutable defect cohort, declaration revision, evidence-sidecar state, reproduction command, locus state, and healthy-control state. Invalid or unavailable entries are explicit and remain outside the recall denominator.",
+  "schema_version": "tier2-answer-key-v2",
   "corpus": "agent-ix/filament-ide-rs",
   "pinned_sha": "fc5d644",
+  "$pinned_sha_note": "Historical v1 global pin retained for reproducibility. V2 scoring uses the exact full-SHA cohorts below.",
   "adjudicated": "2026-08-23",
+  "cohorts": {
+    "pass2-global": {
+      "role": "historical pass-2 global corpus",
+      "retained_sources": ["quire.coverage", "quoin.validate"],
+      "repository": "agent-ix/filament-ide-rs",
+      "revision": "fc5d644bea81219e84ce5d391345f147ee85b6ba",
+      "declaration": {
+        "repository": "agent-ix/spec-artifacts-process",
+        "revision": "61a20e010d5e758f52864ad3152ccdb304a39d27"
+      },
+      "evidence_sidecar": {
+        "state": "unavailable",
+        "path": "spec/evidence/bindings.json",
+        "reason": "the file is absent at the pinned commit"
+      }
+    },
+    "semantic-review-defect": {
+      "role": "actual pre-fix semantic-review cohort containing TC-1596, TC-1598, and the mocked-confirmation defect",
+      "retained_sources": ["quire.coverage", "quoin.evidence-audit"],
+      "repository": "agent-ix/filament-ide-rs",
+      "revision": "e8ba2717ebaa2636f06fc118c130ed29ff9834f7",
+      "declaration": {
+        "repository": "agent-ix/spec-artifacts-process",
+        "revision": "61a20e010d5e758f52864ad3152ccdb304a39d27"
+      },
+      "evidence_sidecar": {
+        "state": "unavailable",
+        "path": "spec/evidence/bindings.json",
+        "reason": "no immutable suite-to-obligation binding exists in this commit or anywhere in repository history"
+      }
+    },
+    "semantic-review-control": {
+      "role": "first post-fix healthy control for TC-1596 and TC-1598",
+      "retained_sources": ["quire.coverage"],
+      "repository": "agent-ix/filament-ide-rs",
+      "revision": "3bb7797be86adf5c762d47bb5d4d5848dc0716eb",
+      "declaration": {
+        "repository": "agent-ix/spec-artifacts-process",
+        "revision": "61a20e010d5e758f52864ad3152ccdb304a39d27"
+      },
+      "evidence_sidecar": {
+        "state": "unavailable",
+        "path": "spec/evidence/bindings.json",
+        "reason": "the file is absent at the pinned control commit"
+      }
+    }
+  },
   "sources": [
     "agent-ix/filament-ide-rs#451 (pass-2 umbrella)",
     "SR-153, SR-154, SR-155 \u2014 renumbered to SR-175, SR-176, SR-177 on merge (filament-ide-rs#505); main had published the original ids to unrelated work",
@@ -19,7 +68,32 @@
       "location": "declared in spec-artifacts-process; observed across 24 crates",
       "found_by_tools_at_pass_2": false,
       "found_by": "controlled experiment \u2014 copy the module, widen one regex, diff the census",
+      "cohort": "pass2-global",
       "source": "quire.coverage",
+      "declaration": { "state": "pinned-by-cohort" },
+      "evidence_sidecar": {
+        "state": "not-required",
+        "reason": "quire.coverage consumes the declaration module and corpus, not Quoin evidence bindings"
+      },
+      "reproduction_command": {
+        "executable": "QUIRE",
+        "args": [
+          "coverage",
+          "--scope",
+          "CORPUS",
+          "--json",
+          "--module",
+          "MODULE"
+        ]
+      },
+      "locus": {
+        "state": "declared-language",
+        "value": "rust-test-name-id in the pinned declaration module; observed across 24 corpus crates"
+      },
+      "healthy_control": {
+        "state": "not-required",
+        "reason": "the adjudicated signal is an exact no-symbol-bound diagnostic on the pinned corpus/declaration pair"
+      },
       "expect_reason": "no-symbol-bound",
       "now_detectable": true,
       "detectable_since": "quire-rs v0.43.0 (FR-050-AC-27)",
@@ -35,7 +109,32 @@
       "location": "spec/**/matrix/tests.md, all 12 module matrices",
       "found_by_tools_at_pass_2": false,
       "found_by": "manual \u2014 noticing that a 23% figure and a 1,292-symbol repository were inconsistent",
+      "cohort": "pass2-global",
       "source": "quire.coverage",
+      "declaration": { "state": "pinned-by-cohort" },
+      "evidence_sidecar": {
+        "state": "not-required",
+        "reason": "quire.coverage consumes the declaration module and corpus, not Quoin evidence bindings"
+      },
+      "reproduction_command": {
+        "executable": "QUIRE",
+        "args": [
+          "coverage",
+          "--scope",
+          "CORPUS",
+          "--json",
+          "--module",
+          "MODULE"
+        ]
+      },
+      "locus": {
+        "state": "aggregate",
+        "value": "all 12 module matrices; the diagnostic intentionally has no single path"
+      },
+      "healthy_control": {
+        "state": "not-required",
+        "reason": "the signal is the exact hollow-denominator diagnostic on the immutable pass-2 cohort"
+      },
       "expect_reason": "hollow-denominator",
       "now_detectable": true,
       "detectable_since": "quire-rs v0.43.0 (FR-063-AC-5)",
@@ -51,7 +150,32 @@
       "location": "274 spec files",
       "found_by_tools_at_pass_2": false,
       "found_by": "manual \u2014 reading the per-shape breakdown the summary line omitted",
+      "cohort": "pass2-global",
       "source": "quire.coverage",
+      "declaration": { "state": "pinned-by-cohort" },
+      "evidence_sidecar": {
+        "state": "not-required",
+        "reason": "quire.coverage consumes the declaration module and corpus, not Quoin evidence bindings"
+      },
+      "reproduction_command": {
+        "executable": "QUIRE",
+        "args": [
+          "coverage",
+          "--scope",
+          "CORPUS",
+          "--json",
+          "--module",
+          "MODULE"
+        ]
+      },
+      "locus": {
+        "state": "aggregate",
+        "value": "coverage.specific_shaped over 274 pinned spec files"
+      },
+      "healthy_control": {
+        "state": "not-required",
+        "reason": "the answer-key signal is the exact adjudicated metric value, not mere metric presence"
+      },
       "expect_metric": "coverage.specific_shaped",
       "now_detectable": true,
       "detectable_since": "quire-rs v0.43.0 (FR-050-AC-28)",
@@ -69,7 +193,40 @@
       "location": "TC-1596",
       "found_by_tools_at_pass_2": false,
       "found_by": "manual semantic review",
+      "cohort": "semantic-review-defect",
       "source": "quire.coverage",
+      "declaration": { "state": "pinned-by-cohort" },
+      "evidence_sidecar": {
+        "state": "not-required",
+        "reason": "quire.coverage consumes the declaration module and corpus, not Quoin evidence bindings"
+      },
+      "reproduction_command": {
+        "executable": "QUIRE",
+        "args": [
+          "coverage",
+          "--scope",
+          "CORPUS",
+          "--json",
+          "--module",
+          "MODULE"
+        ]
+      },
+      "locus": {
+        "state": "exact",
+        "path": "crates/filament-shell/tests/property_suite.rs",
+        "line": 91,
+        "symbol": "tc1596_from_url_is_total_over_arbitrary_input"
+      },
+      "expected_locus": {
+        "path": "crates/filament-shell/tests/property_suite.rs",
+        "line": 91
+      },
+      "healthy_control": {
+        "state": "pinned",
+        "cohort": "semantic-review-control",
+        "source": "quire.coverage",
+        "expectation": "the exact vacuous-under-guard signal is absent at the corrected TC-1596 locus"
+      },
       "expect_suspicion": "vacuous-under-guard",
       "now_detectable": true,
       "detectable_since": "quire-rs main, post v0.43.0 (FR-064-AC-1)",
@@ -85,14 +242,47 @@
       "location": "TC-1598",
       "found_by_tools_at_pass_2": false,
       "found_by": "manual semantic review \u2014 pass 2's highest-value finding",
+      "cohort": "semantic-review-defect",
       "source": "quire.coverage",
+      "declaration": { "state": "pinned-by-cohort" },
+      "evidence_sidecar": {
+        "state": "not-required",
+        "reason": "quire.coverage consumes the declaration module and corpus, not Quoin evidence bindings"
+      },
+      "reproduction_command": {
+        "executable": "QUIRE",
+        "args": [
+          "coverage",
+          "--scope",
+          "CORPUS",
+          "--json",
+          "--module",
+          "MODULE"
+        ]
+      },
+      "locus": {
+        "state": "exact",
+        "path": "crates/filament-shell/tests/property_suite.rs",
+        "line": 154,
+        "symbol": "tc1598_artifact_acceptance_matches_the_containment_rule"
+      },
+      "expected_locus": {
+        "path": "crates/filament-shell/tests/property_suite.rs",
+        "line": 154
+      },
+      "healthy_control": {
+        "state": "pinned",
+        "cohort": "semantic-review-control",
+        "source": "quire.coverage",
+        "expectation": "oracle-resembles-implementation is absent after the oracle becomes independent"
+      },
       "expect_suspicion": "oracle-resembles-implementation",
-      "now_detectable": false,
-      "detectable_since": null,
-      "fixed_by": null,
-      "detection_strength": "none",
+      "now_detectable": true,
+      "detectable_since": "quire-rs main, engine 0.33.0 (agent-ix/quire-rs#236)",
+      "fixed_by": "agent-ix/quire-rs#236",
+      "detection_strength": "located",
       "tracked_by": "agent-ix/quire-rs#236",
-      "$strength_note": "The production detector now fires on the three-language controlled oracle-copy family at engine a14dcb2. That does not make this adjudicated finding detected: a real battletest run against the pinned filament-ide-rs fc5d644 tree missed AK-005 while detecting another suspicion, so the channel was read and this locus was absent. `now_detectable`, `detectable_since`, `fixed_by` and strength remain false/null/null/none for the specific answer-key finding; agent-ix/quire-rs#236 was reopened on that measured distinction."
+      "$strength_note": "The v1 global pin predated the defect-bearing semantic-review snapshot and therefore could not answer AK-005. V2 runs the production detector on the actual pre-fix e8ba2717 cohort, requires the exact TC-1598 locus, and verifies absence on the first corrected 3bb7797b control."
     },
     {
       "id": "AK-006",
@@ -102,7 +292,40 @@
       "location": "pass-2 semantic review, SR-155",
       "found_by_tools_at_pass_2": false,
       "found_by": "manual semantic review",
+      "cohort": "semantic-review-defect",
       "source": "quoin.evidence-audit",
+      "declaration": { "state": "pinned-by-cohort" },
+      "evidence_sidecar": {
+        "state": "unavailable",
+        "path": "spec/evidence/bindings.json",
+        "reason": "the defect snapshot contains TC-420 and FR-017-AC-7, but no immutable suite-to-obligation binding exists at any repository commit"
+      },
+      "reproduction_command": {
+        "executable": "NODE",
+        "args": [
+          "QUOIN",
+          "evidence",
+          "audit",
+          "--repo",
+          "CORPUS",
+          "--json",
+          "--module",
+          "MODULE"
+        ],
+        "environment": { "PATH_prepend": "QUIRE_DIR" }
+      },
+      "locus": {
+        "state": "exact-source-only",
+        "production_path": "crates/filament-app/src/open_session.rs",
+        "production_line": 246,
+        "test": "TC-420",
+        "criterion": "FR-017-AC-7",
+        "reason": "the source loci are known, but the missing immutable evidence binding prevents production scoring"
+      },
+      "healthy_control": {
+        "state": "unavailable",
+        "reason": "no evaluated defect cohort exists until immutable evidence bindings can join TC-420 to FR-017-AC-7"
+      },
       "expect_finding": "mocked-confirmation",
       "now_detectable": false,
       "detectable_since": null,
@@ -119,14 +342,27 @@
       "location": "pass-2 semantic review",
       "found_by_tools_at_pass_2": false,
       "found_by": "manual semantic review",
+      "answer_key_state": "invalid",
+      "invalid_reason": "the pass-2 note does not identify an exact defect-bearing snapshot and locus; Epic #261 requires AK-007 to remain outside the denominator unless that evidence is recovered",
       "source": "quoin.validate",
+      "declaration": { "state": "not-applicable" },
+      "evidence_sidecar": { "state": "not-applicable" },
+      "reproduction_command": null,
+      "locus": {
+        "state": "invalid",
+        "reason": "no exact path, workflow, or line was retained by the original answer key"
+      },
+      "healthy_control": {
+        "state": "not-applicable",
+        "reason": "a control cannot be pinned without a defect-bearing snapshot"
+      },
       "expect_finding": "gate-that-gates-nothing",
       "now_detectable": false,
       "detectable_since": null,
       "fixed_by": null,
       "tracked_by": "agent-ix/quoin#224",
       "detection_strength": "none",
-      "$strength_note": "Quoin 1f5fdec ships a located advisory validator and the three-language controlled family now has a real source rather than `source: none`. The Tier-2 runner executes that production command against the pinned tree and receives zero findings, so AK-007 is an observed miss rather than an unmechanized omission. #224 remains the family owner."
+      "$strength_note": "Quoin ships a located advisory validator for the controlled family, but the original Tier-2 answer-key entry retained neither an exact defect-bearing commit nor a locus. Treating an arbitrary clean run as a miss would answer a different question. V2 therefore records AK-007 as invalid-answer-key and outside recall until the exact snapshot is recovered."
     }
   ],
   "detection_strength_scale": {

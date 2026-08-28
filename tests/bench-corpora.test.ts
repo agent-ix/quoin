@@ -358,6 +358,48 @@ describe("tier-2 adjudicated answer key", () => {
     const ids = key.findings.map((f: { id: string }) => f.id);
     expect(new Set(ids).size).toBe(ids.length);
   });
+
+  test("TC-1118 every valid Tier-2 finding is reproducible from immutable cohort inputs", () => {
+    expect(key.schema_version).toBe("tier2-answer-key-v2");
+    for (const [id, cohort] of Object.entries(key.cohorts) as Array<
+      [
+        string,
+        {
+          revision: string;
+          declaration: { revision: string };
+          evidence_sidecar: { state: string };
+          retained_sources: string[];
+        },
+      ]
+    >) {
+      expect(cohort.revision, id).toMatch(/^[0-9a-f]{40}$/);
+      expect(cohort.declaration.revision, id).toMatch(/^[0-9a-f]{40}$/);
+      expect(cohort.evidence_sidecar.state, id).toMatch(
+        /^(bound|unavailable)$/,
+      );
+      expect(cohort.retained_sources.length, id).toBeGreaterThan(0);
+    }
+    for (const finding of key.findings) {
+      if (finding.answer_key_state === "invalid") {
+        expect(finding.invalid_reason, finding.id).toBeTruthy();
+        expect(finding.locus.state, finding.id).toBe("invalid");
+        continue;
+      }
+      expect(key.cohorts[finding.cohort], finding.id).toBeDefined();
+      expect(finding.source, finding.id).toBeTruthy();
+      expect(finding.declaration.state, finding.id).toBe("pinned-by-cohort");
+      expect(finding.evidence_sidecar.state, finding.id).toBeTruthy();
+      expect(finding.reproduction_command.executable, finding.id).toBeTruthy();
+      expect(finding.locus.state, finding.id).toBeTruthy();
+      expect(finding.healthy_control.state, finding.id).toBeTruthy();
+      if (finding.healthy_control.state === "pinned") {
+        expect(
+          key.cohorts[finding.healthy_control.cohort],
+          finding.id,
+        ).toBeDefined();
+      }
+    }
+  });
 });
 
 describe("battletest scoring and ratchet", () => {
@@ -388,7 +430,10 @@ describe("battletest scoring and ratchet", () => {
     // Per-finding accounting, not one number: every key finding lands in
     // exactly one bucket, so a miss cannot hide inside a rounded recall.
     const total =
-      first.detected.length + first.missed.length + first.notMechanized.length;
+      first.detected.length +
+      first.missed.length +
+      first.notMechanized.length +
+      first.invalidAnswerKey.length;
     expect(total).toBe(key.findings.length);
   });
 

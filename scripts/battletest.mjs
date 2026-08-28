@@ -20,7 +20,15 @@
 
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
+import { tmpdir } from "node:os";
 import { delimiter, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -89,8 +97,18 @@ export function scoreAgainstRetainedSources(sources, key) {
   const missed = [];
   const notMechanized = [];
   const notEvaluated = [];
+  const invalidAnswerKey = [];
 
   for (const finding of key.findings) {
+    if (finding.answer_key_state === "invalid") {
+      invalidAnswerKey.push({
+        id: finding.id,
+        reason:
+          finding.invalid_reason ??
+          "the answer-key entry is explicitly invalid",
+      });
+      continue;
+    }
     if (
       finding.expect_metric &&
       (finding.expect_value === undefined ||
@@ -117,40 +135,16 @@ export function scoreAgainstRetainedSources(sources, key) {
       continue;
     }
 
-    const normalizedFindings = source.normalized?.findings ?? [];
-    for (const record of normalizedFindings) validateFindingEnvelope(record);
-    const reasons = findingFamilies(normalizedFindings, "coverage.diagnostics");
-    const suspicions = findingFamilies(
-      normalizedFindings,
-      "coverage.suspicions",
-    );
-    const metrics = new Map(
-      (source.normalized?.metrics ?? []).map((metric) => [metric.name, metric]),
-    );
-    const findings = findingFamilies(normalizedFindings);
-
-    if (finding.expect_reason) {
-      (reasons.has(finding.expect_reason) ? detected : missed).push(finding.id);
-    } else if (finding.expect_suspicion) {
-      (suspicions.has(finding.expect_suspicion) ? detected : missed).push(
-        finding.id,
-      );
-    } else if (finding.expect_metric) {
-      const metric = metrics.get(finding.expect_metric);
-      const hit =
-        metric && Number(metric.value) === Number(finding.expect_value);
-      (hit ? detected : missed).push(finding.id);
-    } else if (finding.expect_finding) {
-      (findings.has(finding.expect_finding) ? detected : missed).push(
-        finding.id,
-      );
-    } else {
+    const result = scoreFinding(source, finding);
+    if (result === null) {
       notMechanized.push(finding.id);
       notEvaluated.push({
         id: finding.id,
         source: sourceName,
         reason: "the answer key declares no signal to score",
       });
+    } else {
+      (result ? detected : missed).push(finding.id);
     }
   }
   const denominator = detected.length + missed.length;
@@ -159,6 +153,8 @@ export function scoreAgainstRetainedSources(sources, key) {
     missed: missed.sort(),
     notMechanized: notMechanized.sort(),
     notEvaluated: notEvaluated.sort((a, b) => compare(a.id, b.id)),
+    unavailable: [...notEvaluated].sort((a, b) => compare(a.id, b.id)),
+    invalidAnswerKey: invalidAnswerKey.sort((a, b) => compare(a.id, b.id)),
     // `null`, not 0, when nothing is mechanized — 0/0 is not 0% recall.
     recall:
       denominator === 0
@@ -167,14 +163,172 @@ export function scoreAgainstRetainedSources(sources, key) {
   };
 }
 
-function findingFamilies(findings, channel = null) {
-  return new Set(
-    findings
-      .filter(
-        (finding) => channel === null || finding.source.channel === channel,
-      )
-      .map((finding) => finding.identity?.family ?? finding.kind),
+/** Score findings against their exact retained defect and healthy-control cohorts. */
+export function scoreAgainstCohorts(cohorts, key) {
+  const retained = Object.fromEntries(
+    Object.entries(cohorts).map(([id, cohort]) => [
+      id,
+      { ...cohort, sources: retainTier2Sources(cohort.sources ?? {}) },
+    ]),
   );
+  return scoreAgainstRetainedCohorts(retained, key);
+}
+
+export function scoreAgainstRetainedCohorts(cohorts, key) {
+  const detected = [];
+  const missed = [];
+  const unavailable = [];
+  const invalidAnswerKey = [];
+  const controlFailures = [];
+
+  for (const finding of key.findings) {
+    if (finding.answer_key_state === "invalid") {
+      invalidAnswerKey.push({
+        id: finding.id,
+        reason:
+          finding.invalid_reason ??
+          "the answer-key entry is explicitly invalid",
+      });
+      continue;
+    }
+    validateFindingDefinition(finding);
+    const cohort = cohorts[finding.cohort];
+    const source = cohort?.sources?.[finding.source ?? COVERAGE_SOURCE];
+    if (source?.state !== "evaluated") {
+      unavailable.push({
+        id: finding.id,
+        cohort: finding.cohort,
+        source: finding.source ?? COVERAGE_SOURCE,
+        reason:
+          source?.reason ?? "the pinned defect cohort/source is unavailable",
+      });
+      continue;
+    }
+    const hit = scoreFinding(source, finding);
+    if (hit === null) {
+      throw new Error(
+        `answer key ${finding.id}: valid entries must declare an exact signal`,
+      );
+    }
+    if (!hit) {
+      missed.push(finding.id);
+      continue;
+    }
+
+    const control = finding.healthy_control;
+    if (control?.state === "pinned") {
+      const controlSource =
+        cohorts[control.cohort]?.sources?.[
+          control.source ?? finding.source ?? COVERAGE_SOURCE
+        ];
+      if (controlSource?.state !== "evaluated") {
+        unavailable.push({
+          id: finding.id,
+          cohort: control.cohort,
+          source: control.source ?? finding.source ?? COVERAGE_SOURCE,
+          reason:
+            controlSource?.reason ??
+            "the pinned healthy-control source is unavailable",
+        });
+        continue;
+      }
+      if (scoreFinding(controlSource, finding)) {
+        missed.push(finding.id);
+        controlFailures.push({
+          id: finding.id,
+          cohort: control.cohort,
+          reason: "the finding also fires on its pinned healthy control",
+        });
+        continue;
+      }
+    }
+    detected.push(finding.id);
+  }
+
+  const denominator = detected.length + missed.length;
+  const sortedUnavailable = unavailable.sort((a, b) => compare(a.id, b.id));
+  return {
+    detected: detected.sort(),
+    missed: missed.sort(),
+    unavailable: sortedUnavailable,
+    invalidAnswerKey: invalidAnswerKey.sort((a, b) => compare(a.id, b.id)),
+    controlFailures: controlFailures.sort((a, b) => compare(a.id, b.id)),
+    // Compatibility names remain while v2 exposes the distinct states directly.
+    notMechanized: sortedUnavailable.map((item) => item.id).sort(),
+    notEvaluated: sortedUnavailable,
+    recall:
+      denominator === 0
+        ? null
+        : Number((detected.length / denominator).toFixed(3)),
+  };
+}
+
+function scoreFinding(source, finding) {
+  const normalizedFindings = source.normalized?.findings ?? [];
+  for (const record of normalizedFindings) validateFindingEnvelope(record);
+  const metrics = new Map(
+    (source.normalized?.metrics ?? []).map((metric) => [metric.name, metric]),
+  );
+  if (finding.expect_metric) {
+    const metric = metrics.get(finding.expect_metric);
+    return Boolean(
+      metric && Number(metric.value) === Number(finding.expect_value),
+    );
+  }
+  const expected =
+    finding.expect_reason ?? finding.expect_suspicion ?? finding.expect_finding;
+  if (!expected) return null;
+  const channel = finding.expect_reason
+    ? "coverage.diagnostics"
+    : finding.expect_suspicion
+      ? "coverage.suspicions"
+      : null;
+  return normalizedFindings.some(
+    (record) =>
+      (channel === null || record.source.channel === channel) &&
+      (record.identity?.family ?? record.kind) === expected &&
+      matchesExpectedLocus(record, finding.expected_locus),
+  );
+}
+
+function matchesExpectedLocus(record, expected) {
+  if (!expected) return true;
+  if (record.locus?.state !== "available") return false;
+  return Object.entries(expected).every(
+    ([field, value]) => record.locus.value?.[field] === value,
+  );
+}
+
+function validateFindingDefinition(finding) {
+  if (!finding.cohort) {
+    throw new Error(`answer key ${finding.id}: valid entry has no cohort pin`);
+  }
+  if (!finding.source) {
+    throw new Error(`answer key ${finding.id}: valid entry has no source`);
+  }
+  if (!finding.declaration?.state) {
+    throw new Error(
+      `answer key ${finding.id}: valid entry has no declaration state`,
+    );
+  }
+  if (!finding.evidence_sidecar?.state) {
+    throw new Error(
+      `answer key ${finding.id}: valid entry has no evidence-sidecar state`,
+    );
+  }
+  if (!finding.reproduction_command) {
+    throw new Error(
+      `answer key ${finding.id}: valid entry has no reproduction command`,
+    );
+  }
+  if (!finding.locus) {
+    throw new Error(`answer key ${finding.id}: valid entry has no locus state`);
+  }
+  if (!finding.healthy_control?.state) {
+    throw new Error(
+      `answer key ${finding.id}: valid entry has no healthy-control state`,
+    );
+  }
 }
 
 /** Backward-compatible coverage-only scorer used by focused unit tests. */
@@ -196,15 +350,25 @@ export function diff(previous, current) {
 
 export function render(score, delta) {
   const notEvaluated = score.notEvaluated ?? [];
+  const invalidAnswerKey = score.invalidAnswerKey ?? [];
   const lines = [
-    `answer-key findings: ${score.detected.length + score.missed.length + score.notMechanized.length}`,
+    `answer-key findings: ${score.detected.length + score.missed.length + score.notMechanized.length + invalidAnswerKey.length}`,
     `  detected      ${score.detected.length} ${fmt(score.detected)}`,
     `  missed        ${score.missed.length} ${fmt(score.missed)}`,
-    `  not evaluated  ${score.notMechanized.length} ${fmt(score.notMechanized)} — source premise unavailable; not counted as a miss`,
+    `  unavailable   ${score.notMechanized.length} ${fmt(score.notMechanized)} — source premise unavailable; not counted as a miss`,
+    `  invalid key   ${invalidAnswerKey.length} ${fmt(invalidAnswerKey.map((item) => item.id))} — exact defect-bearing snapshot/locus absent; outside recall denominator`,
     `  recall        ${score.recall === null ? "n/a" : `${Math.round(score.recall * 100)}%`} (over the mechanized set)`,
   ];
   for (const item of notEvaluated) {
     lines.push(`  NOT EVALUATED ${item.id} via ${item.source}: ${item.reason}`);
+  }
+  for (const item of invalidAnswerKey) {
+    lines.push(`  INVALID ANSWER KEY ${item.id}: ${item.reason}`);
+  }
+  for (const item of score.controlFailures ?? []) {
+    lines.push(
+      `  CONTROL FAILURE ${item.id} via ${item.cohort}: ${item.reason}`,
+    );
   }
   if (delta) {
     if (delta.gained.length) lines.push(`  gained: ${fmt(delta.gained)}`);
@@ -233,19 +397,6 @@ function main() {
     );
     return 2;
   }
-  const head = execFileSync("git", ["-C", corpus, "rev-parse", "HEAD"], {
-    encoding: "utf8",
-  }).trim();
-  if (!head.startsWith(key.pinned_sha) && !key.pinned_sha.startsWith(head)) {
-    console.error(
-      `battletest: the answer key is pinned at ${key.pinned_sha} and the corpus ` +
-        `is at ${head}. Refusing to score — the findings were adjudicated against ` +
-        `the pinned tree, and carrying them to another one asserts something ` +
-        `nobody checked. Check the corpus out at the pin, or re-adjudicate with ` +
-        `\`make answer-key-repin\`.`,
-    );
-    return 2;
-  }
   const dirty = execFileSync("git", ["-C", corpus, "status", "--porcelain"], {
     encoding: "utf8",
   }).trim();
@@ -256,11 +407,12 @@ function main() {
     return 2;
   }
 
-  const sources = collectTier2Sources({ quire, corpus, module });
-  const score = scoreAgainstSources(sources, key);
+  validateCohortManifest(key, module);
+  const cohorts = collectTier2Cohorts({ quire, corpus, module, key });
+  const score = scoreAgainstCohorts(cohorts, key);
   const candidate = createTier2Baseline({
-    provenance: tier2Provenance({ quire, corpus, module, head }),
-    sources,
+    provenance: tier2Provenance({ quire, module, key }),
+    cohorts,
     score,
   });
   const previous = existsSync(BASELINE)
@@ -272,12 +424,14 @@ function main() {
   console.log(renderBaselineComparison(comparison));
 
   if (update) {
-    const failed = Object.entries(sources).filter(
-      ([, source]) => source.state === "failed",
+    const failed = Object.entries(cohorts).flatMap(([cohort, record]) =>
+      Object.entries(record.sources).flatMap(([source, result]) =>
+        result.state === "failed" ? [{ cohort, source }] : [],
+      ),
     );
     if (failed.length > 0) {
       console.error(
-        `\nrefusing to baseline failed Tier-2 source(s): ${failed.map(([name]) => name).join(", ")}`,
+        `\nrefusing to baseline failed Tier-2 source(s): ${failed.map((item) => `${item.cohort}/${item.source}`).join(", ")}`,
       );
       return 2;
     }
@@ -289,9 +443,95 @@ function main() {
   return !comparison.comparable ||
     comparison.lost.length > 0 ||
     comparison.source_regressions.length > 0 ||
-    Object.values(sources).some((source) => source.state === "failed")
+    Object.values(cohorts).some((cohort) =>
+      Object.values(cohort.sources).some((source) => source.state === "failed"),
+    )
     ? 1
     : 0;
+}
+
+/** Materialize every immutable cohort as an isolated worktree and retain its sources. */
+export function collectTier2Cohorts({
+  quire,
+  corpus,
+  module = null,
+  quoin = QUOIN,
+  key,
+}) {
+  const root = mkdtempSync(join(tmpdir(), "quoin-tier2-cohorts-"));
+  const materialized = [];
+  const out = {};
+  try {
+    for (const [id, cohort] of Object.entries(key.cohorts).sort(([a], [b]) =>
+      a.localeCompare(b),
+    )) {
+      verifyCommitExists(corpus, cohort.revision, id);
+      const checkout = join(root, safePathSegment(id));
+      execFileSync(
+        "git",
+        [
+          "-C",
+          corpus,
+          "worktree",
+          "add",
+          "--detach",
+          checkout,
+          cohort.revision,
+        ],
+        { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] },
+      );
+      materialized.push(checkout);
+      const revision = execFileSync(
+        "git",
+        ["-C", checkout, "rev-parse", "HEAD"],
+        { encoding: "utf8" },
+      ).trim();
+      if (revision !== cohort.revision) {
+        throw new Error(
+          `answer-key cohort ${id}: expected ${cohort.revision}, materialized ${revision}`,
+        );
+      }
+      verifyEvidenceSidecar(checkout, cohort.evidence_sidecar, id);
+      const sourceNames = sourcesForCohort(key, id);
+      out[id] = {
+        provenance: {
+          corpus: {
+            repository: cohort.repository ?? key.corpus,
+            revision,
+            checkout: "isolated-clean-worktree",
+          },
+          declaration: cohort.declaration,
+          evidence_sidecar: cohort.evidence_sidecar,
+          role: cohort.role,
+        },
+        sources: collectTier2Sources({
+          quire,
+          quoin,
+          corpus: checkout,
+          module,
+          sourceNames,
+        }),
+      };
+    }
+    validateReproductionCommands(out, key);
+    return out;
+  } finally {
+    for (const checkout of materialized.reverse()) {
+      try {
+        execFileSync(
+          "git",
+          ["-C", corpus, "worktree", "remove", "--force", checkout],
+          {
+            stdio: ["ignore", "pipe", "pipe"],
+          },
+        );
+      } catch {
+        // The parent temp directory is runner-owned; cleanup below is safe and
+        // git's next worktree operation prunes any stale administrative entry.
+      }
+    }
+    rmSync(root, { recursive: true, force: true });
+  }
 }
 
 export function collectTier2Sources({
@@ -299,12 +539,19 @@ export function collectTier2Sources({
   corpus,
   module = null,
   quoin = QUOIN,
+  sourceNames = [COVERAGE_SOURCE, "quoin.validate", "quoin.evidence-audit"],
 }) {
-  return {
-    [COVERAGE_SOURCE]: coverage(quire, corpus, module),
-    "quoin.validate": quoinValidate(quoin, corpus),
-    "quoin.evidence-audit": evidenceAudit(quoin, quire, corpus, module),
+  const registry = {
+    [COVERAGE_SOURCE]: () => coverage(quire, corpus, module),
+    "quoin.validate": () => quoinValidate(quoin, corpus),
+    "quoin.evidence-audit": () => evidenceAudit(quoin, quire, corpus, module),
   };
+  return Object.fromEntries(
+    [...new Set(sourceNames)].sort().map((name) => {
+      if (!registry[name]) throw new Error(`unsupported Tier-2 source ${name}`);
+      return [name, registry[name]()];
+    }),
+  );
 }
 
 function quoinValidate(quoin, corpus) {
@@ -396,17 +643,13 @@ function jsonCommand(
   }
 }
 
-function tier2Provenance({ quire, corpus, module, head }) {
+function tier2Provenance({ quire, module, key }) {
   const quirePath = resolve(quire);
   const moduleRoot = module ? resolve(module) : join(ROOT, "corpus", "modules");
   return {
     answer_key_digest: fileDigest(ANSWER_KEY),
-    corpus: {
-      repository: "agent-ix/filament-ide-rs",
-      revision: head,
-      checkout: "isolated-clean-worktree",
-    },
-    declaration: gitProvenance(moduleRoot),
+    cohort_manifest_digest: valueDigest(key.cohorts),
+    declaration_checkout: gitProvenance(moduleRoot),
     tools: {
       quire: {
         version: execFileSync(quirePath, ["--version"], {
@@ -430,6 +673,147 @@ function tier2Provenance({ quire, corpus, module, head }) {
       arch: process.arch,
     },
   };
+}
+
+function validateCohortManifest(key, module) {
+  if (key.schema_version !== "tier2-answer-key-v2") {
+    throw new Error(
+      `battletest: unsupported answer-key schema ${JSON.stringify(key.schema_version)}`,
+    );
+  }
+  if (!key.cohorts || Object.keys(key.cohorts).length === 0) {
+    throw new Error("battletest: answer key declares no immutable cohorts");
+  }
+  const moduleRoot = module ? resolve(module) : join(ROOT, "corpus", "modules");
+  const declaration = gitProvenance(moduleRoot);
+  if (declaration.dirty) {
+    throw new Error(
+      "battletest: declaration checkout is dirty; its bytes are not identified by the answer key",
+    );
+  }
+  for (const [id, cohort] of Object.entries(key.cohorts)) {
+    if (!/^[0-9a-f]{40}$/.test(cohort.revision ?? "")) {
+      throw new Error(
+        `answer-key cohort ${id}: revision must be a full immutable commit SHA`,
+      );
+    }
+    if (cohort.declaration?.revision !== declaration.revision) {
+      throw new Error(
+        `answer-key cohort ${id}: declaration is pinned at ${cohort.declaration?.revision ?? "nothing"}, checkout is ${declaration.revision}`,
+      );
+    }
+    if (!cohort.evidence_sidecar?.state) {
+      throw new Error(
+        `answer-key cohort ${id}: evidence-sidecar availability is undeclared`,
+      );
+    }
+  }
+  for (const finding of key.findings) {
+    if (finding.answer_key_state === "invalid") continue;
+    validateFindingDefinition(finding);
+    if (!key.cohorts[finding.cohort]) {
+      throw new Error(
+        `answer key ${finding.id}: unknown defect cohort ${finding.cohort}`,
+      );
+    }
+    if (
+      finding.healthy_control?.state === "pinned" &&
+      !key.cohorts[finding.healthy_control.cohort]
+    ) {
+      throw new Error(
+        `answer key ${finding.id}: unknown control cohort ${finding.healthy_control.cohort}`,
+      );
+    }
+  }
+}
+
+function sourcesForCohort(key, cohortId) {
+  const names = new Set(key.cohorts[cohortId]?.retained_sources ?? []);
+  for (const finding of key.findings) {
+    if (finding.answer_key_state === "invalid") continue;
+    if (finding.cohort === cohortId) names.add(finding.source);
+    if (
+      finding.healthy_control?.state === "pinned" &&
+      finding.healthy_control.cohort === cohortId
+    ) {
+      names.add(finding.healthy_control.source ?? finding.source);
+    }
+  }
+  return [...names];
+}
+
+function validateReproductionCommands(cohorts, key) {
+  for (const finding of key.findings) {
+    if (finding.answer_key_state === "invalid") continue;
+    const source = cohorts[finding.cohort]?.sources?.[finding.source];
+    if (
+      canonicalJson(source?.command) !==
+      canonicalJson(finding.reproduction_command)
+    ) {
+      throw new Error(
+        `answer key ${finding.id}: reproduction command does not match the retained production source command`,
+      );
+    }
+    if (finding.healthy_control?.state === "pinned") {
+      const controlSource =
+        cohorts[finding.healthy_control.cohort]?.sources?.[
+          finding.healthy_control.source ?? finding.source
+        ];
+      if (
+        canonicalJson(controlSource?.command) !==
+        canonicalJson(finding.reproduction_command)
+      ) {
+        throw new Error(
+          `answer key ${finding.id}: healthy-control command differs from its defect reproduction command`,
+        );
+      }
+    }
+  }
+}
+
+function verifyCommitExists(repository, revision, cohortId) {
+  try {
+    execFileSync(
+      "git",
+      ["-C", repository, "cat-file", "-e", `${revision}^{commit}`],
+      {
+        stdio: ["ignore", "pipe", "pipe"],
+      },
+    );
+  } catch {
+    throw new Error(
+      `answer-key cohort ${cohortId}: commit ${revision} is unavailable in the supplied repository history`,
+    );
+  }
+}
+
+function verifyEvidenceSidecar(checkout, sidecar, cohortId) {
+  const path = join(checkout, sidecar?.path ?? "spec/evidence/bindings.json");
+  if (sidecar?.state === "unavailable") {
+    if (existsSync(path)) {
+      throw new Error(
+        `answer-key cohort ${cohortId}: evidence sidecar is declared unavailable but exists at ${sidecar.path}`,
+      );
+    }
+    return;
+  }
+  if (sidecar?.state !== "bound" || !sidecar.digest) {
+    throw new Error(
+      `answer-key cohort ${cohortId}: sidecar must be unavailable or bound with a digest`,
+    );
+  }
+  if (!existsSync(path) || fileDigest(path) !== sidecar.digest) {
+    throw new Error(
+      `answer-key cohort ${cohortId}: immutable evidence sidecar is absent or its digest changed`,
+    );
+  }
+}
+
+function safePathSegment(value) {
+  if (!/^[a-z0-9][a-z0-9._-]*$/i.test(value)) {
+    throw new Error(`unsafe answer-key cohort id ${JSON.stringify(value)}`);
+  }
+  return value;
 }
 
 function canonicalCommand(executable, args, options = {}) {
@@ -460,6 +844,21 @@ function fileDigest(path) {
   return `sha256:${createHash("sha256").update(readFileSync(path)).digest("hex")}`;
 }
 
+function valueDigest(value) {
+  return `sha256:${createHash("sha256").update(canonicalJson(value)).digest("hex")}`;
+}
+
+function canonicalJson(value) {
+  if (Array.isArray(value)) return `[${value.map(canonicalJson).join(",")}]`;
+  if (value && typeof value === "object") {
+    return `{${Object.keys(value)
+      .sort()
+      .map((key) => `${JSON.stringify(key)}:${canonicalJson(value[key])}`)
+      .join(",")}}`;
+  }
+  return JSON.stringify(value);
+}
+
 function treeDigest(path) {
   const output = execFileSync("find", [path, "-type", "f", "-print0"], {
     encoding: "buffer",
@@ -487,16 +886,16 @@ function renderBaselineComparison(comparison) {
   if (comparison.source_regressions.length) {
     for (const item of comparison.source_regressions) {
       lines.push(
-        `  SOURCE REGRESSION ${item.source}: ${item.before} -> ${item.after} (${item.reason})`,
+        `  SOURCE REGRESSION ${item.cohort}/${item.source}: ${item.before} -> ${item.after} (${item.reason})`,
       );
     }
   }
   if (comparison.source_changes.length) {
     lines.push(
-      `  source output changed: ${comparison.source_changes.map((item) => item.source).join(", ")}`,
+      `  source output changed: ${comparison.source_changes.map((item) => `${item.cohort}/${item.source}`).join(", ")}`,
     );
   } else {
-    lines.push("  source outputs byte-identical within v1 canonical ordering");
+    lines.push("  source outputs byte-identical within v2 canonical ordering");
   }
   return lines.join("\n");
 }

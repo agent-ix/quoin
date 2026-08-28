@@ -5,7 +5,7 @@ import {
   normalizeQuoinFinding,
 } from "../../evals/lib/finding-envelope.mjs";
 
-export const TIER2_BASELINE_VERSION = "tier2-finding-quality-v1";
+export const TIER2_BASELINE_VERSION = "tier2-finding-quality-v2";
 
 /** Retain raw producer output beside one cross-producer normalized view. */
 export function retainTier2Sources(sources) {
@@ -16,14 +16,26 @@ export function retainTier2Sources(sources) {
   );
 }
 
-export function createTier2Baseline({ provenance, sources, score }) {
-  const retained = retainTier2Sources(sources);
+export function createTier2Baseline({ provenance, cohorts, score }) {
+  const retained = Object.fromEntries(
+    Object.entries(cohorts)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([id, cohort]) => {
+        const sources = retainTier2Sources(cohort.sources ?? {});
+        const record = {
+          provenance: cohort.provenance,
+          sources,
+          source_digest: digest(sources),
+        };
+        return [id, record];
+      }),
+  );
   return {
     schema_version: TIER2_BASELINE_VERSION,
     provenance,
-    sources: retained,
+    cohorts: retained,
     score,
-    source_digest: digest(retained),
+    cohort_digest: digest(retained),
   };
 }
 
@@ -41,8 +53,7 @@ export function compareTier2Baseline(previous, current) {
   }
   const inputFields = [
     ["answer key", "answer_key_digest"],
-    ["corpus", "corpus.revision"],
-    ["declaration", "declaration.revision"],
+    ["cohort manifest", "cohort_manifest_digest"],
     ["Quire binary", "tools.quire.digest"],
     ["Quoin build", "tools.quoin.digest"],
     ["Node", "environment.node"],
@@ -57,29 +68,37 @@ export function compareTier2Baseline(previous, current) {
     .map(([label]) => label);
   const before = new Set(previous.score?.detected ?? []);
   const after = new Set(current.score?.detected ?? []);
-  const sourceNames = new Set([
-    ...Object.keys(previous.sources ?? {}),
-    ...Object.keys(current.sources ?? {}),
+  const cohortIds = new Set([
+    ...Object.keys(previous.cohorts ?? {}),
+    ...Object.keys(current.cohorts ?? {}),
   ]);
   const sourceRegressions = [];
   const sourceChanges = [];
-  for (const name of [...sourceNames].sort()) {
-    const prior = previous.sources?.[name];
-    const candidate = current.sources?.[name];
-    if (prior?.state === "evaluated" && candidate?.state !== "evaluated") {
-      sourceRegressions.push({
-        source: name,
-        before: prior.state,
-        after: candidate?.state ?? "missing",
-        reason: candidate?.reason ?? "source missing from candidate",
-      });
-    }
-    if (prior?.digest !== candidate?.digest) {
-      sourceChanges.push({
-        source: name,
-        before: prior?.state ?? "missing",
-        after: candidate?.state ?? "missing",
-      });
+  for (const cohort of [...cohortIds].sort()) {
+    const sourceNames = new Set([
+      ...Object.keys(previous.cohorts?.[cohort]?.sources ?? {}),
+      ...Object.keys(current.cohorts?.[cohort]?.sources ?? {}),
+    ]);
+    for (const name of [...sourceNames].sort()) {
+      const prior = previous.cohorts?.[cohort]?.sources?.[name];
+      const candidate = current.cohorts?.[cohort]?.sources?.[name];
+      if (prior?.state === "evaluated" && candidate?.state !== "evaluated") {
+        sourceRegressions.push({
+          cohort,
+          source: name,
+          before: prior.state,
+          after: candidate?.state ?? "missing",
+          reason: candidate?.reason ?? "source missing from candidate",
+        });
+      }
+      if (prior?.digest !== candidate?.digest) {
+        sourceChanges.push({
+          cohort,
+          source: name,
+          before: prior?.state ?? "missing",
+          after: candidate?.state ?? "missing",
+        });
+      }
     }
   }
   return {
