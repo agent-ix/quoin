@@ -323,6 +323,14 @@ describe("scoring against the adjudicated answer key", () => {
             healthy_control: { state: "unavailable" },
           },
           {
+            id: "AK-NOT-EVALUATED",
+            cohort: "one",
+            source: "producer.without-retained-run",
+            ...fields,
+            expect_finding: "some-signal",
+            healthy_control: { state: "not-required" },
+          },
+          {
             id: "AK-INVALID",
             answer_key_state: "invalid",
             invalid_reason: "exact snapshot absent",
@@ -334,6 +342,9 @@ describe("scoring against the adjudicated answer key", () => {
     expect(score.missed).toEqual(["AK-CONTROL"]);
     expect(score.unavailable).toEqual([
       expect.objectContaining({ id: "AK-UNAVAILABLE" }),
+    ]);
+    expect(score.notEvaluated).toEqual([
+      expect.objectContaining({ id: "AK-NOT-EVALUATED" }),
     ]);
     expect(score.invalidAnswerKey).toEqual([
       { id: "AK-INVALID", reason: "exact snapshot absent" },
@@ -428,6 +439,8 @@ describe("retained multi-source Tier-2 baseline", () => {
       detected: ["AK-004", "AK-005"],
       missed: ["AK-001", "AK-002", "AK-003"],
       notMechanized: ["AK-006"],
+      unavailable: [expect.objectContaining({ id: "AK-006" })],
+      notEvaluated: [],
       invalidAnswerKey: [expect.objectContaining({ id: "AK-007" })],
       controlFailures: [],
       recall: 0.4,

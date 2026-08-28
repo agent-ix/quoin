@@ -97,6 +97,7 @@ export function scoreAgainstRetainedSources(sources, key) {
   const missed = [];
   const notMechanized = [];
   const notEvaluated = [];
+  const unavailable = [];
   const invalidAnswerKey = [];
 
   for (const finding of key.findings) {
@@ -127,11 +128,12 @@ export function scoreAgainstRetainedSources(sources, key) {
     const source = sources[sourceName];
     if (source?.state !== "evaluated") {
       notMechanized.push(finding.id);
-      notEvaluated.push({
+      const item = {
         id: finding.id,
         source: sourceName,
         reason: source?.reason ?? "the answer key names no runnable source",
-      });
+      };
+      (source?.state === "unavailable" ? unavailable : notEvaluated).push(item);
       continue;
     }
 
@@ -153,7 +155,7 @@ export function scoreAgainstRetainedSources(sources, key) {
     missed: missed.sort(),
     notMechanized: notMechanized.sort(),
     notEvaluated: notEvaluated.sort((a, b) => compare(a.id, b.id)),
-    unavailable: [...notEvaluated].sort((a, b) => compare(a.id, b.id)),
+    unavailable: unavailable.sort((a, b) => compare(a.id, b.id)),
     invalidAnswerKey: invalidAnswerKey.sort((a, b) => compare(a.id, b.id)),
     // `null`, not 0, when nothing is mechanized — 0/0 is not 0% recall.
     recall:
@@ -178,6 +180,7 @@ export function scoreAgainstRetainedCohorts(cohorts, key) {
   const detected = [];
   const missed = [];
   const unavailable = [];
+  const notEvaluated = [];
   const invalidAnswerKey = [];
   const controlFailures = [];
 
@@ -195,13 +198,14 @@ export function scoreAgainstRetainedCohorts(cohorts, key) {
     const cohort = cohorts[finding.cohort];
     const source = cohort?.sources?.[finding.source ?? COVERAGE_SOURCE];
     if (source?.state !== "evaluated") {
-      unavailable.push({
+      const item = {
         id: finding.id,
         cohort: finding.cohort,
         source: finding.source ?? COVERAGE_SOURCE,
         reason:
           source?.reason ?? "the pinned defect cohort/source is unavailable",
-      });
+      };
+      (source?.state === "unavailable" ? unavailable : notEvaluated).push(item);
       continue;
     }
     const hit = scoreFinding(source, finding);
@@ -222,14 +226,18 @@ export function scoreAgainstRetainedCohorts(cohorts, key) {
           control.source ?? finding.source ?? COVERAGE_SOURCE
         ];
       if (controlSource?.state !== "evaluated") {
-        unavailable.push({
+        const item = {
           id: finding.id,
           cohort: control.cohort,
           source: control.source ?? finding.source ?? COVERAGE_SOURCE,
           reason:
             controlSource?.reason ??
             "the pinned healthy-control source is unavailable",
-        });
+        };
+        (controlSource?.state === "unavailable"
+          ? unavailable
+          : notEvaluated
+        ).push(item);
         continue;
       }
       if (scoreFinding(controlSource, finding)) {
@@ -247,6 +255,7 @@ export function scoreAgainstRetainedCohorts(cohorts, key) {
 
   const denominator = detected.length + missed.length;
   const sortedUnavailable = unavailable.sort((a, b) => compare(a.id, b.id));
+  const sortedNotEvaluated = notEvaluated.sort((a, b) => compare(a.id, b.id));
   return {
     detected: detected.sort(),
     missed: missed.sort(),
@@ -254,8 +263,10 @@ export function scoreAgainstRetainedCohorts(cohorts, key) {
     invalidAnswerKey: invalidAnswerKey.sort((a, b) => compare(a.id, b.id)),
     controlFailures: controlFailures.sort((a, b) => compare(a.id, b.id)),
     // Compatibility names remain while v2 exposes the distinct states directly.
-    notMechanized: sortedUnavailable.map((item) => item.id).sort(),
-    notEvaluated: sortedUnavailable,
+    notMechanized: [...sortedUnavailable, ...sortedNotEvaluated]
+      .map((item) => item.id)
+      .sort(),
+    notEvaluated: sortedNotEvaluated,
     recall:
       denominator === 0
         ? null
@@ -350,15 +361,20 @@ export function diff(previous, current) {
 
 export function render(score, delta) {
   const notEvaluated = score.notEvaluated ?? [];
+  const unavailable = score.unavailable ?? [];
   const invalidAnswerKey = score.invalidAnswerKey ?? [];
   const lines = [
-    `answer-key findings: ${score.detected.length + score.missed.length + score.notMechanized.length + invalidAnswerKey.length}`,
+    `answer-key findings: ${score.detected.length + score.missed.length + unavailable.length + notEvaluated.length + invalidAnswerKey.length}`,
     `  detected      ${score.detected.length} ${fmt(score.detected)}`,
     `  missed        ${score.missed.length} ${fmt(score.missed)}`,
-    `  unavailable   ${score.notMechanized.length} ${fmt(score.notMechanized)} — source premise unavailable; not counted as a miss`,
+    `  unavailable   ${unavailable.length} ${fmt(unavailable.map((item) => item.id))} — required immutable input absent; outside recall denominator`,
+    `  not evaluated ${notEvaluated.length} ${fmt(notEvaluated.map((item) => item.id))} — runnable evaluation did not complete; outside recall denominator`,
     `  invalid key   ${invalidAnswerKey.length} ${fmt(invalidAnswerKey.map((item) => item.id))} — exact defect-bearing snapshot/locus absent; outside recall denominator`,
     `  recall        ${score.recall === null ? "n/a" : `${Math.round(score.recall * 100)}%`} (over the mechanized set)`,
   ];
+  for (const item of unavailable) {
+    lines.push(`  UNAVAILABLE ${item.id} via ${item.source}: ${item.reason}`);
+  }
   for (const item of notEvaluated) {
     lines.push(`  NOT EVALUATED ${item.id} via ${item.source}: ${item.reason}`);
   }
