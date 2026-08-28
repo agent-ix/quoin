@@ -1017,6 +1017,14 @@ describe("mocked confirmation (#204)", () => {
     expect(found[0].severity).toBe("medium");
     expect(found[0].summary).toContain("Confirmation::allow");
     expect(found[0].summary).toContain("whether or not that behaviour exists");
+    expect(found[0]).toMatchObject({
+      subject: "FR-017-AC-7 evidence",
+      changeTarget: "tests::confirms",
+      nextDiagnosticStep: expect.stringContaining(
+        "add or bind an independent test",
+      ),
+    });
+    expect(found[0].remedy).toBeUndefined();
   });
 
   it("TC-937 a mock unrelated to the statement's subject is not reported", () => {

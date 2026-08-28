@@ -329,7 +329,13 @@ describe("mocked-confirmation production command path (agent-ix/quoin#204)", () 
       output.restore();
     }
     const report = JSON.parse(output.lines.join("\n")) as {
-      findings: Array<{ kind: string; summary: string }>;
+      findings: Array<{
+        kind: string;
+        summary: string;
+        subject?: string;
+        changeTarget?: string;
+        nextDiagnosticStep?: string;
+      }>;
       unevaluated: unknown[];
     };
     expect(report.unevaluated).toEqual([]);
@@ -338,6 +344,11 @@ describe("mocked-confirmation production command path (agent-ix/quoin#204)", () 
         kind: "mocked-confirmation",
         summary: expect.stringContaining(
           "src/lib.rs:4 confirms injects Confirmation::allow",
+        ),
+        subject: "FR-001-AC-1 evidence",
+        changeTarget: "src/lib.rs:4 in confirms",
+        nextDiagnosticStep: expect.stringContaining(
+          "add or bind an independent test",
         ),
       }),
     ]);

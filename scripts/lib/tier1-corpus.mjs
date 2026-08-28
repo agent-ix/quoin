@@ -132,6 +132,17 @@ function validateGradingContract(entry, index) {
 }
 
 function actionableFragments(defect, expect) {
+  if (Array.isArray(defect.actionable_fragments)) {
+    const fragments = defect.actionable_fragments.filter(
+      (fragment) => typeof fragment === "string" && fragment.trim(),
+    );
+    if (fragments.length !== defect.actionable_fragments.length) {
+      throw new Error(
+        `bench-tier1: defect ${defect.id ?? "<unnamed>"} has a blank or non-string actionable fragment`,
+      );
+    }
+    return fragments;
+  }
   const reason = defect.expect_reason ?? defect.expect_suspicion ?? null;
   if (reason) {
     const direct =

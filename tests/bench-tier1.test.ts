@@ -783,6 +783,30 @@ describe("a case whose ground truth maps to nothing", () => {
     // single-language corpus cannot read as "verified in every language".
     expect(corpora[0].language).toBe("rust");
   });
+
+  test("TC-1084 external-producer labels carry explicit action fragments", () => {
+    const { root, inventory } = corpusWith(
+      "diagnostic_reasons:\n  - known-reason\n",
+      CASE,
+    );
+    mkdirSync(join(root, "labels"), { recursive: true });
+    writeFileSync(
+      join(root, "labels", "a-case.yaml"),
+      "family: known-family\n" +
+        "defects:\n" +
+        "- id: external-1\n" +
+        "  family: known-family\n" +
+        "  findable: true\n" +
+        "  expect_reason: known-reason\n" +
+        "  actionable_fragments:\n" +
+        "  - inspect the producer-owned target\n",
+    );
+
+    const { corpora } = loadCorpus(MAPPING, root, null, inventory);
+    expect(corpora[0].defects[0].actionable_fragments).toEqual([
+      "inspect the producer-owned target",
+    ]);
+  });
 });
 
 describe("the score cut by language", () => {

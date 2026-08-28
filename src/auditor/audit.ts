@@ -52,6 +52,13 @@ export interface Finding {
   path?: string;
   line?: number;
   symbol?: string;
+  /** Structured action fields are additive; only producers with sufficient
+   * evidence populate them. The JSON finding contract requires a target and
+   * exactly one remedy or safe diagnostic step when subject is present. */
+  subject?: string;
+  changeTarget?: string;
+  remedy?: string;
+  nextDiagnosticStep?: string;
 }
 
 /** What the auditor was given to read. */
@@ -279,6 +286,17 @@ export function audit(input: AuditInput): AuditReport {
         ...(located.path ? { path: located.path } : {}),
         ...(located.line ? { line: located.line } : {}),
         symbol: located.symbol,
+        subject: `${obligation.id} evidence`,
+        changeTarget:
+          located.path && located.line
+            ? `${located.path}:${located.line} in ${located.symbol}`
+            : located.path
+              ? `${located.path} in ${located.symbol}`
+              : located.symbol,
+        nextDiagnosticStep:
+          `inspect whether the real behaviour for ${obligation.id} exists; ` +
+          `add or bind an independent test that exercises it without ` +
+          `substituting the behaviour under verification`,
         summary:
           `${obligation.id} is discharged only by tests that inject a stand-in ` +
           `for the behaviour it verifies: ` +

@@ -54,6 +54,9 @@ describe("gate capability validator (agent-ix/quoin#224)", () => {
         path: "scripts/check_unwrap.sh",
         line: 4,
         wiredBy: "Makefile",
+        subject: "gate for FR-001-AC-1",
+        changeTarget: "scripts/check_unwrap.sh:4",
+        remedy: expect.stringContaining("compare the count"),
       }),
     ]);
     expect(inspectEmptyGates(root)[0].summary).toContain(
@@ -111,7 +114,13 @@ describe("gate capability validator (agent-ix/quoin#224)", () => {
     }
     const payload = JSON.parse(lines.join("\n")) as { findings: unknown[] };
     expect(payload.findings).toEqual([
-      expect.objectContaining({ kind: "gate-that-gates-nothing", line: 4 }),
+      expect.objectContaining({
+        kind: "gate-that-gates-nothing",
+        line: 4,
+        subject: "gate for FR-001-AC-1",
+        changeTarget: "scripts/check_unwrap.sh:4",
+        remedy: expect.stringContaining("exit non-zero"),
+      }),
     ]);
 
     const human: string[] = [];

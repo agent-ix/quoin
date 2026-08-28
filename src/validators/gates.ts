@@ -17,6 +17,9 @@ export interface EmptyGateFinding {
   line: number;
   wiredBy: string;
   summary: string;
+  subject: string;
+  changeTarget: string;
+  remedy: string;
 }
 
 /**
@@ -48,6 +51,11 @@ export function inspectEmptyGates(repo: string): EmptyGateFinding[] {
         path: repoPath,
         line: index + 1,
         wiredBy: wirePath,
+        subject: `gate for ${claim.obligation}`,
+        changeTarget: `${repoPath}:${index + 1}`,
+        remedy:
+          `compare the count for “${pattern}” to zero or make the match ` +
+          `command exit non-zero when forbidden text is present`,
         summary:
           `${claim.obligation} claims “${claim.statement}”, and ${wirePath} ` +
           `wires ${repoPath}, but line ${index + 1} only counts matches for ` +

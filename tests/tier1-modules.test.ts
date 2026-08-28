@@ -240,7 +240,9 @@ fi
       quoin,
       `const args = process.argv.slice(2);
 if (args.join(" ").includes("evidence audit")) {
-  console.log(JSON.stringify({findings:[{kind:"mocked-confirmation",path:"src/lib.rs",line:4,summary:"located"}],healthy:[],unevaluated:[]}));
+  console.log(JSON.stringify({findings:[{kind:"mocked-confirmation",path:"src/lib.rs",line:4,summary:"located",subject:"FR-1 evidence",changeTarget:"src/lib.rs:4",nextDiagnosticStep:"exercise the real behaviour"}],healthy:[],unevaluated:[]}));
+} else if (args[0] === "validate") {
+  console.log(JSON.stringify({findings:[{kind:"gate-that-gates-nothing",path:"scripts/gate.sh",line:5,summary:"located gate",subject:"gate for FR-2",changeTarget:"scripts/gate.sh:5",remedy:"compare the count to zero"}]}));
 } else {
   console.log(JSON.stringify({ok:true}));
 }
@@ -258,6 +260,10 @@ if (args.join(" ").includes("evidence audit")) {
             source: "audit.findings",
             key: "mocked-confirmation",
           },
+          gate: {
+            source: "quoin.validate",
+            key: "gate-that-gates-nothing",
+          },
         },
       },
       quoin,
@@ -269,6 +275,19 @@ if (args.join(" ").includes("evidence audit")) {
         path: "src/lib.rs",
         line: 4,
         message: "located",
+        subject: "FR-1 evidence",
+        changeTarget: "src/lib.rs:4",
+        nextDiagnosticStep: "exercise the real behaviour",
+      },
+      {
+        family: "gate",
+        reason: "gate-that-gates-nothing",
+        path: "scripts/gate.sh",
+        line: 5,
+        message: "located gate",
+        subject: "gate for FR-2",
+        changeTarget: "scripts/gate.sh:5",
+        remedy: "compare the count to zero",
       },
     ]);
     expect(result.findings[0]).toMatchObject({
@@ -278,6 +297,6 @@ if (args.join(" ").includes("evidence audit")) {
       rawProducerOutput: { kind: "mocked-confirmation" },
     });
     // Symbol discovery adds one production inspect-mocks dry run.
-    expect(execution.toolCalls()).toBe(10);
+    expect(execution.toolCalls()).toBe(11);
   });
 });

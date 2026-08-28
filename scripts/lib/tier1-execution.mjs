@@ -173,6 +173,10 @@ export function createTier1Executor() {
             path: finding.path ?? null,
             line: typeof finding.line === "number" ? finding.line : null,
             message: finding.summary ?? "",
+            subject: finding.subject,
+            changeTarget: finding.changeTarget,
+            remedy: finding.remedy,
+            nextDiagnosticStep: finding.nextDiagnosticStep,
             rawProducerOutput: finding,
           });
         }
@@ -217,6 +221,10 @@ export function createTier1Executor() {
             path: finding.path ?? null,
             line: typeof finding.line === "number" ? finding.line : null,
             message: finding.summary ?? "",
+            subject: finding.subject,
+            changeTarget: finding.changeTarget,
+            remedy: finding.remedy,
+            nextDiagnosticStep: finding.nextDiagnosticStep,
             rawProducerOutput: finding,
           });
         }
