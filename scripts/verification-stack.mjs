@@ -619,7 +619,13 @@ async function main() {
       "--span-breadth",
       spanResultPath,
     ];
-    if (process.argv.includes("--update")) benchmarkArgs.push("--update");
+    if (process.argv.includes("--update")) {
+      benchmarkArgs.push(
+        "--update",
+        "--recall-baseline-out",
+        join(scratch, "qa-recall-baseline.json"),
+      );
+    }
     run(process.execPath, benchmarkArgs, {
       cwd: ROOT,
       env,

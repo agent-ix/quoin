@@ -332,6 +332,7 @@ async function main() {
   const guidanceCandidateOnly = process.argv.includes(
     "--guidance-candidate-only",
   );
+  const recallBaselineOut = argOf("--recall-baseline-out");
   if (experimental && update) {
     throw new Error(
       "bench-tier1: a noncanonical experimental run cannot update governed evidence",
@@ -727,8 +728,11 @@ async function main() {
       JSON.stringify(recallBaseline.rows) !==
         JSON.stringify(report.detection_recall);
     if (recallMoved) {
+      const output = recallBaselineOut
+        ? resolve(recallBaselineOut)
+        : RECALL_BASELINE;
       writeFileSync(
-        RECALL_BASELINE,
+        output,
         await formatTier1Json(
           {
             definition_version: "detection-recall-v1",
@@ -737,9 +741,10 @@ async function main() {
             gap_count: report.bounds.gap_count,
             rows: report.detection_recall,
           },
-          RECALL_BASELINE,
+          output,
         ),
       );
+      console.error(`bench-tier1: recall baseline written to ${output}`);
     }
     console.error(
       `bench-tier1: collection written to ${recordPath}; derived baseline rewritten ` +
