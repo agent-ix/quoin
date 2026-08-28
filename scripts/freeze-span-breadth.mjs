@@ -7,6 +7,7 @@ import { basename, dirname, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
+const FULL_SHA = /^[0-9a-f]{40}$/;
 const QUIRE = resolve(process.env.QUIRE ?? "");
 if (!process.env.QUIRE || !QUIRE.startsWith("/")) {
   throw new Error(
@@ -32,10 +33,6 @@ function run(command, args, cwd) {
     );
   }
   return done.stdout.trim();
-}
-
-function revisionOf(repo) {
-  return repo.revision || run("git", ["rev-parse", "HEAD"], repo.root);
 }
 
 function normalize(statement) {
@@ -80,6 +77,22 @@ function select(candidates, count, seen) {
 const seen = new Set();
 const labels = [];
 for (const repo of repositories) {
+  const status = run(
+    "git",
+    ["status", "--porcelain=v1", "--untracked-files=all"],
+    repo.root,
+  );
+  if (status)
+    throw new Error(`freeze-span-breadth: ${repo.name} checkout is dirty`);
+  const head = run("git", ["rev-parse", "HEAD"], repo.root);
+  if (!FULL_SHA.test(head))
+    throw new Error(`freeze-span-breadth: ${repo.name} HEAD is not a full SHA`);
+  if (repo.revision && repo.revision !== head) {
+    throw new Error(
+      `freeze-span-breadth: ${repo.name} declared revision ${repo.revision} != HEAD ${head}`,
+    );
+  }
+  repo.revision = head;
   const payload = JSON.parse(
     run(
       QUIRE,
@@ -151,7 +164,7 @@ const output = {
     repositories.map((repo) => [
       repo.name,
       {
-        revision: revisionOf(repo),
+        revision: repo.revision,
         remote: run("git", ["remote", "get-url", "origin"], repo.root)
           .replace(/^git@github\.com:/, "https://github.com/")
           .replace(/\.git$/, ""),
