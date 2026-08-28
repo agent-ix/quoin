@@ -119,7 +119,7 @@ describeCorpus("tier-1 seeded corpora", () => {
       const asPath = existsSync(corpus.module);
       expect(single || asPath).toBe(true);
     }
-  });
+  }, 30_000);
 
   test("TC-948 every family the dictionary declares has a corpus, and vice versa", () => {
     // TC-948

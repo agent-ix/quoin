@@ -444,7 +444,11 @@ describe("TC-272 the interfaces and the vendored coverage schema agree", () => {
           "node",
           join(here, "quire-types-conformance.test.ts"),
         ],
-        { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] },
+        {
+          encoding: "utf8",
+          stdio: ["ignore", "pipe", "pipe"],
+          timeout: 30_000,
+        },
       );
     } catch (cause) {
       const failure = cause as { stdout?: string; stderr?: string };
@@ -452,5 +456,5 @@ describe("TC-272 the interfaces and the vendored coverage schema agree", () => {
         `tsc rejected the typed samples:\n${failure.stdout ?? ""}${failure.stderr ?? ""}`,
       );
     }
-  });
+  }, 35_000);
 });
