@@ -1,0 +1,82 @@
+{
+  "schemaVersion": "verification-stack-attestation-v1",
+  "lockDigest": "sha256:71bd270703abc6689cd099edcb57e7f334b78c1627f00ba6fc9e92c63236a800",
+  "executableDigest": "sha256:e9193666a99c73d19a5be989bfb4941c7b0ed3d43f21cb0b7739c749f14bf864",
+  "sources": {
+    "quire": {
+      "revision": "c71f3cb661d152a09df8e916ea06d8e80124762c",
+      "sourceState": "clean",
+      "remote": "https://github.com/agent-ix/quire-rs"
+    },
+    "quire-cli": {
+      "revision": "90c003685ee7484b3ec86cd6b0add5ad06ff76fe",
+      "sourceState": "clean",
+      "remote": "https://github.com/agent-ix/quire-cli"
+    },
+    "qa-corpus": {
+      "revision": "944aa63f653d7e48b9b16b411745d4a96f9836b1",
+      "sourceState": "clean",
+      "remote": "https://github.com/agent-ix/qa-corpus"
+    },
+    "filament-ide-rs": {
+      "revision": "546e7943ee5a8fe552242cbb19d12aa902536652",
+      "sourceState": "clean",
+      "remote": "https://github.com/agent-ix/filament-ide-rs"
+    },
+    "spec-artifacts-process": {
+      "revision": "61a20e010d5e758f52864ad3152ccdb304a39d27",
+      "sourceState": "clean",
+      "remote": "https://github.com/agent-ix/spec-artifacts-process"
+    },
+    "spec-artifacts-iso": {
+      "revision": "a6b1c70be8c22e9f7cb432e4410b7a3a280d0217",
+      "sourceState": "clean",
+      "remote": "https://github.com/agent-ix/spec-artifacts-iso"
+    },
+    "quoin": {
+      "revision": "9dc215c2a809900fc6b81d4a3562a724d80a97db",
+      "sourceState": "clean",
+      "remote": "https://github.com/agent-ix/quoin"
+    },
+    "quoin-qa-external": {
+      "revision": "d3ed56a9f89710ed55ef72bf0e37d090bf994fad",
+      "sourceState": "clean",
+      "remote": "https://github.com/agent-ix/quoin"
+    }
+  },
+  "capabilities": [
+    "action_guidance.structured",
+    "binding_census",
+    "binding_census.self_named",
+    "binding_census.tagged",
+    "declaration_origins",
+    "metrics_envelope",
+    "minted_targets",
+    "property_spans.safe_refusal",
+    "reference_only_targets",
+    "specific_shaped",
+    "suspicions",
+    "unmatched_tags"
+  ],
+  "artifacts": {
+    ".node-version": "sha256:e1677620f62097e30fac6695180333d8eb9ead4fe5b1d1d6e01b76e049780059",
+    ".npmrc": "sha256:cde76ca04e048c3eba070a2c0dfcf5b723cf6014eab177157096b924f24ec4ca",
+    "package.json": "sha256:f646237dfdfef87bdb70c2e5bdc1b8d78d3a93a45bc01868ba4e72a79e682979",
+    "pnpm-lock.yaml": "sha256:9f64ad2d3873918bb1520c6412046f15f82b1defab706ca4df351134c3d429fd",
+    "src/quire/contract.ts": "sha256:507c8d0f599ffc32d97a14f7eb43b714b3028e78323b4c22c1a4de9cb7905062",
+    "src/quire/schemas/coverage-v1.schema.json": "sha256:f0cdbb9457ca7ca76b642c11fd5b6f41273909c894458c31f58c9c50fdbcdb38",
+    "src/quire/schemas/properties-v1.schema.json": "sha256:cc687773c35b3e71e82fc336e887ecc688a28b03e970e349b2921b8624e4d11c",
+    "bench/metrics.json": "sha256:5876512767852fd9ee5a848de90e34c9626926bb768db87c2eaf28deb2d05764",
+    "bench/tier1-mapping.json": "sha256:186e282f4197894f96e51e2dfe9fc6420f222512159abfd84be8be7c5c6ea90a",
+    "bench/guidance-evaluator-contract-v1.json": "sha256:db39241434f9069cacd743b6d5c7606592a6459b85c7f0da3dc556ebaacc1417",
+    "bench/guidance-independent-review-v1.json": "sha256:7d9bf500c731b41a0f0c3a315115acb6e9ae910148da95dae63740bec822ce0f",
+    "bench/span-grounding-labels.json": "sha256:897ef28979f5a3f607fdb27e740f1508b736ae5d9ce3dd91c7813f09f841c000",
+    "bench/span-grounding-v2-labels.json": "sha256:4e10f34488c87439e7253668ea34773adb432b16bce574b1cc93fbf0343e2650",
+    "bench/span-breadth-v1-labels.json": "sha256:1412e80beb3cee50189c9e6935b1397742c81ea5a40553c21db888ca7df067bc",
+    "bench/answer-key.json": "sha256:ece1a7f5d254623cf79beff1113021f4f71359ac9a3c703d07cff0f8a45e9532",
+    "bench/advisory-adjudication-v1.json": "sha256:87c575b6ca0c0886d874f609144f907f3ac270e08c2091bb2bb1ead725713e43",
+    "corpus/config/metrics.json": "sha256:69ab8e5b8fc14e07408e034f0b791c3dd3356c9db78e1ac0dc961bcc0b47c0d7",
+    "corpus/config/duplicate-census.json": "sha256:f03ddf12b1e166a680ff74c9bde3d66563b006901b91134945846823a7953a1e",
+    "corpus/config/external-channel.json": "sha256:74103cf74e7eceb69d3bb993074a7929025e7cff0cff4c993be3c7e4873050b5"
+  }
+}
