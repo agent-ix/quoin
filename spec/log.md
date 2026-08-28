@@ -8,6 +8,26 @@ description: "Chronological log of structural changes to this bundle."
 
 ## History
 
+* **2026-08-28** — **CR-128**: Tier 2 now replays the declaration bytes that
+  produced the pass-2 findings instead of applying today's single process
+  module to every historical corpus (`agent-ix/quoin#263`, discovered while
+  rechecking epic #261). The pass-2 global cohort pins process
+  `de8bf25f` **and** ISO `88ce642d`; a corrected process `cf7b4e29` over the
+  same corpus is the healthy control for AK-001/002. Every declaration
+  repository has an explicit route, clean identity check, full remotely
+  reachable SHA, and isolated detached worktree. Commands consume the complete
+  set through `IX_FILAMENT_MODULES_PATH`; no ambient checkout or single
+  `--module` can substitute. AK-001 now binds the located
+  `marker-form-mismatch` at `it_011.rs:377`, AK-002 binds specifically to the
+  hollow `coverage.self_named_binding.rust` denominator (0/1293), and AK-003
+  binds the located `catch-all-universal` at FR-097 line 37 instead of freezing
+  the old engine's 78/951 count (the final engine measures 73/936). The exact
+  replay detects AK-001..005, misses none, retains AK-006 as unavailable and
+  AK-007 as invalid, and reports 100% recall over the mechanized set. The stack
+  lock now requires spec-artifacts-iso and the final Quire/CLI/QA revisions;
+  deleting any required repository or historical remote reachability fails a
+  guard. FR-043 AC-31; Matrix: TC-1074, TC-1116, TC-1118, TC-1121, TC-1122.
+
 * **2026-08-27** — **CR-127**: the **108** advisory findings named by
   `agent-ix/quoin#258` are now a content-addressed, row-level adjudication rather
   than an implicit bucket. The source run is Quoin `73b0d5d`, qa-corpus

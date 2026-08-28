@@ -185,8 +185,8 @@ function familyForReason(mapping, reason) {
     ? reason.slice(reason.indexOf("/") + 1)
     : reason;
   return (
-    Object.entries(mapping?.families ?? {}).find(
-      ([, value]) => value.key === key,
+    Object.entries(mapping?.families ?? {}).find(([, value]) =>
+      [value.key, ...(value.aliases ?? [])].includes(key),
     )?.[0] ?? null
   );
 }

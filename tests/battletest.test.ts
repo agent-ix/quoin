@@ -15,8 +15,10 @@ import {
   mkdirSync,
   mkdtempSync,
   readFileSync,
+  rmSync,
   writeFileSync,
 } from "node:fs";
+import { execFileSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -30,6 +32,7 @@ import {
   scoreAgainstRetainedCohorts,
   scoreAgainstRetainedSources,
   scoreAgainstSources,
+  validateCohortManifest,
 } from "../scripts/battletest.mjs";
 import {
   compareTier2Baseline,
@@ -64,8 +67,22 @@ describe("scoring against the adjudicated answer key", () => {
   it("counts a finding as detected when the payload carries its signal", () => {
     const payload = {
       diagnostics: [
-        { reason: "no-symbol-bound" },
-        { reason: "hollow-denominator" },
+        {
+          reason: "marker-form-mismatch",
+          path: "crates/filament-agent/tests/it_011.rs",
+          line: 377,
+          value: "rust",
+        },
+        {
+          reason: "hollow-denominator",
+          value: "coverage.self_named_binding.rust",
+        },
+        {
+          reason: "catch-all-universal",
+          path: "spec/backend/functional/FR-097-session-binding.md",
+          line: 37,
+          value: "coverage.specific_shaped",
+        },
       ],
       suspicions: [
         {
@@ -74,12 +91,12 @@ describe("scoring against the adjudicated answer key", () => {
           line: 91,
         },
       ],
-      metrics: [{ name: "coverage.specific_shaped", value: 78 }],
+      metrics: [{ name: "coverage.specific_shaped", value: 73 }],
     };
     const score = scoreAgainstKey(payload, key);
-    expect(score.detected).toContain("AK-001"); // no-symbol-bound
+    expect(score.detected).toContain("AK-001"); // marker-form-mismatch
     expect(score.detected).toContain("AK-002"); // hollow-denominator
-    expect(score.detected).toContain("AK-003"); // specific_shaped === 0
+    expect(score.detected).toContain("AK-003"); // located catch-all-universal
     expect(score.detected).toContain("AK-004"); // vacuous-under-guard
   });
 
@@ -100,16 +117,17 @@ describe("scoring against the adjudicated answer key", () => {
     expect(empty.recall).toBeNull();
   });
 
-  it("requires the metric to match its expected VALUE, not merely exist", () => {
-    // A metric present but wrong is not a detection. The key carries the
-    // ADJUDICATED figure (78 of 951); a different number is a different
-    // corpus state, not evidence of the finding.
+  it("requires a diagnostic to match its semantic VALUE, not merely its family", () => {
     const wrong = scoreAgainstKey(
-      { metrics: [{ name: "coverage.specific_shaped", value: 5 }] },
+      {
+        diagnostics: [
+          { reason: "hollow-denominator", value: "coverage.backed" },
+        ],
+      },
       key,
     );
-    expect(wrong.detected).not.toContain("AK-003");
-    expect(wrong.missed).toContain("AK-003");
+    expect(wrong.detected).not.toContain("AK-002");
+    expect(wrong.missed).toContain("AK-002");
   });
 
   it("TC-1072 scores an evaluated production source with no finding as a miss", () => {
@@ -161,7 +179,7 @@ describe("scoring against the adjudicated answer key", () => {
     const quire = join(root, "quire");
     writeFileSync(
       quire,
-      `#!/bin/sh\nprintf '%s' '{"diagnostics":[],"suspicions":[],"metrics":[]}'\n`,
+      `#!/bin/sh\nprintf '{"module_path":"%s","diagnostics":[],"suspicions":[],"metrics":[]}' "$IX_FILAMENT_MODULES_PATH"\n`,
     );
     chmodSync(quire, 0o755);
     const quoin = join(root, "quoin.mjs");
@@ -170,8 +188,24 @@ describe("scoring against the adjudicated answer key", () => {
       `process.stdout.write(JSON.stringify({findings:[{kind:"gate-that-gates-nothing"}]}));\n`,
     );
 
-    const sources = collectTier2Sources({ quire, quoin, corpus });
+    const declarations = [join(root, "process"), join(root, "iso")];
+    const sources = collectTier2Sources({
+      quire,
+      quoin,
+      corpus,
+      declarationRoots: declarations,
+    });
     expect(sources["quire.coverage"].ok).toBe(true);
+    expect(sources["quire.coverage"].payload.module_path).toBe(
+      declarations.join(":"),
+    );
+    expect(sources["quire.coverage"].command).toEqual({
+      executable: "QUIRE",
+      args: ["coverage", "--scope", "CORPUS", "--json"],
+      environment: {
+        IX_FILAMENT_MODULES_PATH: "DECLARATION_ROOTS",
+      },
+    });
     expect(
       sources["quoin.validate"],
       JSON.stringify(sources["quoin.validate"]),
@@ -186,6 +220,85 @@ describe("scoring against the adjudicated answer key", () => {
       ok: false,
       reason: expect.stringContaining("bindings.json is absent"),
     });
+  });
+
+  it("TC-1121 requires every declaration commit to be remotely reachable", () => {
+    const root = mkdtempSync(join(tmpdir(), "quoin-tier2-declarations-"));
+    const repositories: Record<string, string> = {};
+    const declarations = [];
+    try {
+      for (const name of ["spec-artifacts-process", "spec-artifacts-iso"]) {
+        const repository = `agent-ix/${name}`;
+        const checkout = join(root, name);
+        mkdirSync(checkout);
+        execFileSync("git", ["-C", checkout, "init", "-q"]);
+        execFileSync("git", [
+          "-C",
+          checkout,
+          "config",
+          "user.email",
+          "tier2@example.invalid",
+        ]);
+        execFileSync("git", [
+          "-C",
+          checkout,
+          "config",
+          "user.name",
+          "tier2 fixture",
+        ]);
+        writeFileSync(join(checkout, "manifest.yaml"), `name: ${name}\n`);
+        execFileSync("git", ["-C", checkout, "add", "manifest.yaml"]);
+        execFileSync("git", ["-C", checkout, "commit", "-qm", "fixture"]);
+        const revision = execFileSync(
+          "git",
+          ["-C", checkout, "rev-parse", "HEAD"],
+          { encoding: "utf8" },
+        ).trim();
+        execFileSync("git", [
+          "-C",
+          checkout,
+          "remote",
+          "add",
+          "origin",
+          `https://github.com/${repository}.git`,
+        ]);
+        execFileSync("git", [
+          "-C",
+          checkout,
+          "update-ref",
+          "refs/remotes/origin/main",
+          revision,
+        ]);
+        repositories[repository] = checkout;
+        declarations.push({ repository, revision });
+      }
+      const manifest = {
+        schema_version: "tier2-answer-key-v3",
+        cohorts: {
+          defect: {
+            revision: "a".repeat(40),
+            declarations,
+            evidence_sidecar: { state: "unavailable" },
+          },
+        },
+        findings: [],
+      };
+      expect(() =>
+        validateCohortManifest(manifest, repositories),
+      ).not.toThrow();
+      execFileSync("git", [
+        "-C",
+        repositories["agent-ix/spec-artifacts-iso"],
+        "update-ref",
+        "-d",
+        "refs/remotes/origin/main",
+      ]);
+      expect(() => validateCohortManifest(manifest, repositories)).toThrow(
+        /not reachable from a remote-tracking ref/,
+      );
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
   });
 
   it("TC-1104 scores retained finding envelopes rather than raw producer arrays", () => {
@@ -457,15 +570,18 @@ describe("retained multi-source Tier-2 baseline", () => {
     );
     expect(baseline.schema_version).toBe("tier2-finding-quality-v2");
     expect(baseline.score).toMatchObject({
-      detected: ["AK-004", "AK-005"],
-      missed: ["AK-001", "AK-002", "AK-003"],
+      detected: ["AK-001", "AK-002", "AK-003", "AK-004", "AK-005"],
+      missed: [],
       notMechanized: ["AK-006"],
       unavailable: [expect.objectContaining({ id: "AK-006" })],
       notEvaluated: [],
       invalidAnswerKey: [expect.objectContaining({ id: "AK-007" })],
       controlFailures: [],
-      recall: 0.4,
+      recall: 1,
     });
+    expect(
+      baseline.cohorts["pass2-global-control"].sources["quire.coverage"].state,
+    ).toBe("evaluated");
     expect(
       baseline.cohorts["semantic-review-defect"].sources["quire.coverage"]
         .state,
@@ -485,6 +601,44 @@ describe("retained multi-source Tier-2 baseline", () => {
       lost: [],
       source_regressions: [],
       source_changes: [],
+    });
+  });
+
+  it("TC-1122 retains exact multi-repository declarations and environment-only commands", () => {
+    const baseline = JSON.parse(
+      readFileSync(
+        join(__dirname, "..", "bench", "battletest-baseline.json"),
+        "utf8",
+      ),
+    );
+    expect(baseline.cohorts["pass2-global"].provenance.declarations).toEqual([
+      {
+        repository: "agent-ix/spec-artifacts-process",
+        revision: "de8bf25fbff68157040172ecff73f7107317d497",
+        checkout: "isolated-clean-worktree",
+      },
+      {
+        repository: "agent-ix/spec-artifacts-iso",
+        revision: "88ce642d670b8a641ec0a3d707b102a1bc2ce12a",
+        checkout: "isolated-clean-worktree",
+      },
+    ]);
+    const command =
+      baseline.cohorts["pass2-global"].sources["quire.coverage"].command;
+    expect(command.args).toEqual(["coverage", "--scope", "CORPUS", "--json"]);
+    expect(command.environment).toEqual({
+      IX_FILAMENT_MODULES_PATH: "DECLARATION_ROOTS",
+    });
+    expect(command.args).not.toContain("--module");
+    expect(baseline.provenance.declaration_checkouts).toEqual({
+      "agent-ix/spec-artifacts-iso": {
+        revision: "a6b1c70be8c22e9f7cb432e4410b7a3a280d0217",
+        dirty: false,
+      },
+      "agent-ix/spec-artifacts-process": {
+        revision: "61a20e010d5e758f52864ad3152ccdb304a39d27",
+        dirty: false,
+      },
     });
   });
 

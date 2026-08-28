@@ -1,6 +1,6 @@
 {
   "$comment": "Tier-2 adjudicated answer key (agent-ix/quoin#200, FR-043-AC-8). V2 binds each valid finding to an immutable defect cohort, declaration revision, evidence-sidecar state, reproduction command, locus state, and healthy-control state. Invalid or unavailable entries are explicit and remain outside the recall denominator.",
-  "schema_version": "tier2-answer-key-v2",
+  "schema_version": "tier2-answer-key-v3",
   "corpus": "agent-ix/filament-ide-rs",
   "pinned_sha": "fc5d644",
   "$pinned_sha_note": "Historical v1 global pin retained for reproducibility. V2 scoring uses the exact full-SHA cohorts below.",
@@ -11,14 +11,41 @@
       "retained_sources": ["quire.coverage", "quoin.validate"],
       "repository": "agent-ix/filament-ide-rs",
       "revision": "fc5d644bea81219e84ce5d391345f147ee85b6ba",
-      "declaration": {
-        "repository": "agent-ix/spec-artifacts-process",
-        "revision": "61a20e010d5e758f52864ad3152ccdb304a39d27"
-      },
+      "declarations": [
+        {
+          "repository": "agent-ix/spec-artifacts-process",
+          "revision": "de8bf25fbff68157040172ecff73f7107317d497"
+        },
+        {
+          "repository": "agent-ix/spec-artifacts-iso",
+          "revision": "88ce642d670b8a641ec0a3d707b102a1bc2ce12a"
+        }
+      ],
       "evidence_sidecar": {
         "state": "unavailable",
         "path": "spec/evidence/bindings.json",
         "reason": "the file is absent at the pinned commit"
+      }
+    },
+    "pass2-global-control": {
+      "role": "first corrected declaration control over the historical pass-2 corpus",
+      "retained_sources": ["quire.coverage"],
+      "repository": "agent-ix/filament-ide-rs",
+      "revision": "fc5d644bea81219e84ce5d391345f147ee85b6ba",
+      "declarations": [
+        {
+          "repository": "agent-ix/spec-artifacts-process",
+          "revision": "cf7b4e29e915302d9582c0f29320e864e27cf735"
+        },
+        {
+          "repository": "agent-ix/spec-artifacts-iso",
+          "revision": "88ce642d670b8a641ec0a3d707b102a1bc2ce12a"
+        }
+      ],
+      "evidence_sidecar": {
+        "state": "unavailable",
+        "path": "spec/evidence/bindings.json",
+        "reason": "the file is absent at the pinned corpus commit"
       }
     },
     "semantic-review-defect": {
@@ -26,10 +53,12 @@
       "retained_sources": ["quire.coverage", "quoin.evidence-audit"],
       "repository": "agent-ix/filament-ide-rs",
       "revision": "e8ba2717ebaa2636f06fc118c130ed29ff9834f7",
-      "declaration": {
-        "repository": "agent-ix/spec-artifacts-process",
-        "revision": "61a20e010d5e758f52864ad3152ccdb304a39d27"
-      },
+      "declarations": [
+        {
+          "repository": "agent-ix/spec-artifacts-process",
+          "revision": "61a20e010d5e758f52864ad3152ccdb304a39d27"
+        }
+      ],
       "evidence_sidecar": {
         "state": "unavailable",
         "path": "spec/evidence/bindings.json",
@@ -41,10 +70,12 @@
       "retained_sources": ["quire.coverage"],
       "repository": "agent-ix/filament-ide-rs",
       "revision": "3bb7797be86adf5c762d47bb5d4d5848dc0716eb",
-      "declaration": {
-        "repository": "agent-ix/spec-artifacts-process",
-        "revision": "61a20e010d5e758f52864ad3152ccdb304a39d27"
-      },
+      "declarations": [
+        {
+          "repository": "agent-ix/spec-artifacts-process",
+          "revision": "61a20e010d5e758f52864ad3152ccdb304a39d27"
+        }
+      ],
       "evidence_sidecar": {
         "state": "unavailable",
         "path": "spec/evidence/bindings.json",
@@ -64,7 +95,7 @@
       "id": "AK-001",
       "family": "marker-form-mismatch",
       "summary": "The declared `rust-test-name-id` pattern has no separator, so `fn tc_NNN_` binds nothing.",
-      "measured": "1,292 `fn tc_NNN_` sites against 0 of the declared `fn tcNNN_` spelling. Widening the pattern took coverage from 555/2389 (23%) to 1158/2389 (48%) with no test written.",
+      "measured": "The original review counted 1,292 `fn tc_NNN_` sites against 0 of the declared `fn tcNNN_` spelling; the final engine's syntax census reads 1,293 Rust self-named evidence symbols, 0 bound. Widening the pattern took coverage from 555/2389 (23%) to 1158/2389 (48%) with no test written.",
       "location": "declared in spec-artifacts-process; observed across 24 crates",
       "found_by_tools_at_pass_2": false,
       "found_by": "controlled experiment \u2014 copy the module, widen one regex, diff the census",
@@ -77,35 +108,40 @@
       },
       "reproduction_command": {
         "executable": "QUIRE",
-        "args": [
-          "coverage",
-          "--scope",
-          "CORPUS",
-          "--json",
-          "--module",
-          "MODULE"
-        ]
+        "args": ["coverage", "--scope", "CORPUS", "--json"],
+        "environment": {
+          "IX_FILAMENT_MODULES_PATH": "DECLARATION_ROOTS"
+        }
       },
       "locus": {
-        "state": "declared-language",
-        "value": "rust-test-name-id in the pinned declaration module; observed across 24 corpus crates"
+        "state": "exact",
+        "path": "crates/filament-agent/tests/it_011.rs",
+        "line": 377,
+        "symbol": "tc_407_generated_document_minimal_and_scope_bound"
+      },
+      "expected_locus": {
+        "path": "crates/filament-agent/tests/it_011.rs",
+        "line": 377
       },
       "healthy_control": {
-        "state": "not-required",
-        "reason": "the adjudicated signal is an exact no-symbol-bound diagnostic on the pinned corpus/declaration pair"
+        "state": "pinned",
+        "cohort": "pass2-global-control",
+        "source": "quire.coverage",
+        "expectation": "the declaration-form mismatch is absent after the exact separator-aware declaration fix"
       },
-      "expect_reason": "no-symbol-bound",
+      "expect_reason": "marker-form-mismatch",
+      "expect_value": "rust",
       "now_detectable": true,
-      "detectable_since": "quire-rs v0.43.0 (FR-050-AC-27)",
+      "detectable_since": "quire-rs v0.46.0, post-release (FR-050-AC-44)",
       "fixed_by": "agent-ix/spec-artifacts-process#65",
       "detection_strength": "located",
-      "$strength_note": "`no-symbol-bound` carries a `path` and names the declared forms to check. Confirmed on the tier-1 `marker-mismatch` corpus: precision 1.00, recall 1.00. It does NOT name the marker's line \u2014 the value is the language, `rust` \u2014 so it is located to a file and no further, which is one of the three misses behind the 40% localisation rate."
+      "$strength_note": "`marker-form-mismatch` is computed from the evidence symbol's own declaration name, so a nearby comment or attribute cannot mask the broken name form. The exact historical locus is pinned below and the corrected declaration cohort must remain clean."
     },
     {
       "id": "AK-002",
       "family": "hollow-denominator",
       "summary": "`quire coverage` published a confident 23% over a corpus whose tag patterns matched nothing, with no signal that the premise was hollow.",
-      "measured": "0 of 1,292 evidence symbols bound; 0 of 643 trace lines matched. Three published SpecReviews (SR-150/151/152) cite figures computed under it.",
+      "measured": "The original review counted 0 of 1,292 evidence symbols bound; the final syntax census measures 0 of 1,293 Rust self-named symbols bound. Three published SpecReviews (SR-150/151/152) cite figures computed under the broken premise.",
       "location": "spec/**/matrix/tests.md, all 12 module matrices",
       "found_by_tools_at_pass_2": false,
       "found_by": "manual \u2014 noticing that a 23% figure and a 1,292-symbol repository were inconsistent",
@@ -118,29 +154,28 @@
       },
       "reproduction_command": {
         "executable": "QUIRE",
-        "args": [
-          "coverage",
-          "--scope",
-          "CORPUS",
-          "--json",
-          "--module",
-          "MODULE"
-        ]
+        "args": ["coverage", "--scope", "CORPUS", "--json"],
+        "environment": {
+          "IX_FILAMENT_MODULES_PATH": "DECLARATION_ROOTS"
+        }
       },
       "locus": {
         "state": "aggregate",
         "value": "all 12 module matrices; the diagnostic intentionally has no single path"
       },
       "healthy_control": {
-        "state": "not-required",
-        "reason": "the signal is the exact hollow-denominator diagnostic on the immutable pass-2 cohort"
+        "state": "pinned",
+        "cohort": "pass2-global-control",
+        "source": "quire.coverage",
+        "expectation": "the self-named Rust binding denominator is no longer hollow after the exact declaration fix"
       },
       "expect_reason": "hollow-denominator",
+      "expect_value": "coverage.self_named_binding.rust",
       "now_detectable": true,
-      "detectable_since": "quire-rs v0.43.0 (FR-063-AC-5)",
+      "detectable_since": "quire-rs v0.46.0, post-release (FR-050-AC-44)",
       "fixed_by": "agent-ix/quire-rs#239",
       "detection_strength": "aggregate",
-      "$strength_note": "The diagnostic names the METRIC (`coverage.backed`) and carries `path: null`. Confirmed on the tier-1 `hollow-metric` corpus: detected, precision 1.00, and contributing nothing to the localisation rate. Downgraded from the implicit `located` the old `now_detectable: true` suggested."
+      "$strength_note": "The diagnostic is keyed specifically to `coverage.self_named_binding.rust` (0/1293 on the final engine), rather than any unrelated hollow aggregate. It is deliberately aggregate and is paired with an exact healthy declaration control."
     },
     {
       "id": "AK-003",
@@ -159,31 +194,32 @@
       },
       "reproduction_command": {
         "executable": "QUIRE",
-        "args": [
-          "coverage",
-          "--scope",
-          "CORPUS",
-          "--json",
-          "--module",
-          "MODULE"
-        ]
+        "args": ["coverage", "--scope", "CORPUS", "--json"],
+        "environment": {
+          "IX_FILAMENT_MODULES_PATH": "DECLARATION_ROOTS"
+        }
       },
       "locus": {
-        "state": "aggregate",
-        "value": "coverage.specific_shaped over 274 pinned spec files"
+        "state": "exact",
+        "path": "spec/backend/functional/FR-097-session-binding.md",
+        "line": 37
+      },
+      "expected_locus": {
+        "path": "spec/backend/functional/FR-097-session-binding.md",
+        "line": 37
       },
       "healthy_control": {
         "state": "not-required",
-        "reason": "the answer-key signal is the exact adjudicated metric value, not mere metric presence"
+        "reason": "the located catch-all diagnostic is itself the semantic signal; a separate clean corpus control is not part of the retained pass-2 evidence"
       },
-      "expect_metric": "coverage.specific_shaped",
+      "expect_reason": "catch-all-universal",
+      "expect_value": "coverage.specific_shaped",
       "now_detectable": true,
       "detectable_since": "quire-rs v0.43.0 (FR-050-AC-28)",
       "fixed_by": "agent-ix/quire-rs#240",
-      "expect_value": 78,
-      "$expect_note": "78 is the ADJUDICATED figure at the pinned SHA \u2014 the specifically-shaped criteria of 951. The detection signal is that the split is reported at all; the value is what it was measured to be, so a change in either is a change worth seeing.",
-      "detection_strength": "aggregate",
-      "$strength_note": "Detectable ONLY as a number moving. `coverage.specific_shaped` is a ratio over the whole corpus; no criterion is named, so a reader who sees the metric fall still has 274 spec files to search. This is the distinct, weaker state the re-adjudication was for. Making it a located finding is quoin#197 workstream 4."
+      "$expect_note": "The original pass-2 engine measured 78/951. The final engine classifies 73/936, so the immutable semantic signal is the located catch-all criterion, not an engine-version-specific total.",
+      "detection_strength": "located",
+      "$strength_note": "`catch-all-universal` names the exact criterion at the pinned file and line, converting the old aggregate-only observation into a stable actionable finding."
     },
     {
       "id": "AK-004",
@@ -202,14 +238,10 @@
       },
       "reproduction_command": {
         "executable": "QUIRE",
-        "args": [
-          "coverage",
-          "--scope",
-          "CORPUS",
-          "--json",
-          "--module",
-          "MODULE"
-        ]
+        "args": ["coverage", "--scope", "CORPUS", "--json"],
+        "environment": {
+          "IX_FILAMENT_MODULES_PATH": "DECLARATION_ROOTS"
+        }
       },
       "locus": {
         "state": "exact",
@@ -251,14 +283,10 @@
       },
       "reproduction_command": {
         "executable": "QUIRE",
-        "args": [
-          "coverage",
-          "--scope",
-          "CORPUS",
-          "--json",
-          "--module",
-          "MODULE"
-        ]
+        "args": ["coverage", "--scope", "CORPUS", "--json"],
+        "environment": {
+          "IX_FILAMENT_MODULES_PATH": "DECLARATION_ROOTS"
+        }
       },
       "locus": {
         "state": "exact",
@@ -302,17 +330,11 @@
       },
       "reproduction_command": {
         "executable": "NODE",
-        "args": [
-          "QUOIN",
-          "evidence",
-          "audit",
-          "--repo",
-          "CORPUS",
-          "--json",
-          "--module",
-          "MODULE"
-        ],
-        "environment": { "PATH_prepend": "QUIRE_DIR" }
+        "args": ["QUOIN", "evidence", "audit", "--repo", "CORPUS", "--json"],
+        "environment": {
+          "PATH_prepend": "QUIRE_DIR",
+          "IX_FILAMENT_MODULES_PATH": "DECLARATION_ROOTS"
+        }
       },
       "locus": {
         "state": "exact-source-only",

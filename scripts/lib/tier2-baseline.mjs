@@ -54,6 +54,7 @@ export function compareTier2Baseline(previous, current) {
   const inputFields = [
     ["answer key", "answer_key_digest"],
     ["cohort manifest", "cohort_manifest_digest"],
+    ["declaration repositories", "declaration_repository_digest"],
     ["Quire binary", "tools.quire.digest"],
     ["Quoin build", "tools.quoin.digest"],
     ["Node", "environment.node"],

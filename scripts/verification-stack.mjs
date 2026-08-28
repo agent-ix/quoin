@@ -28,7 +28,15 @@ export function validateLockShape(lock) {
   if (lock?.schemaVersion !== "quoin-verification-stack-lock-v1") {
     throw new Error("verification lock has unsupported schemaVersion");
   }
-  const required = ["quoin", "quire", "quire-cli", "qa-corpus"];
+  const required = [
+    "quoin",
+    "quire",
+    "quire-cli",
+    "qa-corpus",
+    "filament-ide-rs",
+    "spec-artifacts-process",
+    "spec-artifacts-iso",
+  ];
   for (const name of required) {
     const source = lock.repositories?.[name];
     if (!source || !FULL_SHA.test(source.revision ?? "")) {
@@ -383,6 +391,10 @@ async function main() {
       process.env.SPEC_ARTIFACTS_PROCESS_ROOT ??
         join(ROOT, "..", "spec-artifacts-process"),
     ),
+    "spec-artifacts-iso": resolve(
+      process.env.SPEC_ARTIFACTS_ISO_ROOT ??
+        join(ROOT, "..", "spec-artifacts-iso"),
+    ),
   };
   const sources = {};
   for (const name of Object.keys(lock.repositories).filter(
@@ -540,8 +552,10 @@ async function main() {
       binary,
       "--corpus",
       roots["filament-ide-rs"],
-      "--module",
-      join(roots["spec-artifacts-process"], "spec_artifacts_process"),
+      "--declaration-repo",
+      `agent-ix/spec-artifacts-process=${roots["spec-artifacts-process"]}`,
+      "--declaration-repo",
+      `agent-ix/spec-artifacts-iso=${roots["spec-artifacts-iso"]}`,
     ];
     if (process.argv.includes("--update")) tier2Args.push("--update");
     run(process.execPath, tier2Args, {

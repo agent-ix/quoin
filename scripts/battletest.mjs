@@ -44,12 +44,16 @@ const ANSWER_KEY = join(ROOT, "bench", "answer-key.json");
 const BASELINE = join(ROOT, "bench", "battletest-baseline.json");
 const QUOIN = join(ROOT, "bin", "quoin.js");
 const COVERAGE_SOURCE = "quire.coverage";
+const FULL_SHA = /^[0-9a-f]{40}$/;
 
-/** `quire coverage --json` over one scope, or a stated reason it could not run. */
-function coverage(quire, scope, module) {
+/** `quire coverage --json` over one scope and exact declaration set. */
+function coverage(quire, scope, declarationRoots = []) {
   const args = ["coverage", "--scope", scope, "--json"];
-  if (module) args.push("--module", module);
-  const command = canonicalCommand("QUIRE", args, { scope, module });
+  const env = declarationEnvironment(declarationRoots);
+  const command = canonicalCommand("QUIRE", args, {
+    scope,
+    declarationRoots: declarationRoots.length > 0,
+  });
   try {
     return {
       ok: true,
@@ -58,6 +62,7 @@ function coverage(quire, scope, module) {
       payload: JSON.parse(
         execFileSync(quire, args, {
           encoding: "utf8",
+          env: { ...process.env, ...env },
           maxBuffer: 256 * 1024 * 1024,
           stdio: ["ignore", "pipe", "pipe"],
         }),
@@ -326,6 +331,8 @@ function scoreFinding(source, finding) {
     (record) =>
       (channel === null || record.source.channel === channel) &&
       (record.identity?.family ?? record.kind) === expected &&
+      (finding.expect_value === undefined ||
+        record.evaluation?.value === finding.expect_value) &&
       matchesExpectedLocus(record, finding.expected_locus),
   );
 }
@@ -431,7 +438,9 @@ const fmt = (ids) => (ids.length ? `(${ids.join(", ")})` : "");
 function main() {
   const update = process.argv.includes("--update");
   const quire = argOf("--quire") ?? "quire";
-  const module = argOf("--module") ?? null;
+  const declarationRepositories = declarationRepositoryArgs(
+    argsOf("--declaration-repo"),
+  );
   const key = JSON.parse(readFileSync(ANSWER_KEY, "utf8"));
 
   const corpus = resolve(ROOT, argOf("--corpus") ?? "../filament-ide-rs");
@@ -441,6 +450,7 @@ function main() {
     );
     return 2;
   }
+  verifyRepositoryIdentity(corpus, key.corpus, "tier-2 corpus");
   const dirty = execFileSync("git", ["-C", corpus, "status", "--porcelain"], {
     encoding: "utf8",
   }).trim();
@@ -451,12 +461,17 @@ function main() {
     return 2;
   }
 
-  validateCohortManifest(key, module);
-  const cohorts = collectTier2Cohorts({ quire, corpus, module, key });
+  validateCohortManifest(key, declarationRepositories);
+  const cohorts = collectTier2Cohorts({
+    quire,
+    corpus,
+    declarationRepositories,
+    key,
+  });
   const score = scoreAgainstCohorts(cohorts, key);
   assertPromotionDisposition(score);
   const candidate = createTier2Baseline({
-    provenance: tier2Provenance({ quire, module, key }),
+    provenance: tier2Provenance({ quire, declarationRepositories, key }),
     cohorts,
     score,
   });
@@ -499,18 +514,20 @@ function main() {
 export function collectTier2Cohorts({
   quire,
   corpus,
-  module = null,
+  declarationRepositories,
   quoin = QUOIN,
   key,
 }) {
   const root = mkdtempSync(join(tmpdir(), "quoin-tier2-cohorts-"));
-  const materialized = [];
+  const materializedCorpora = [];
+  const materializedDeclarations = [];
   const out = {};
   try {
     for (const [id, cohort] of Object.entries(key.cohorts).sort(([a], [b]) =>
       a.localeCompare(b),
     )) {
       verifyCommitExists(corpus, cohort.revision, id);
+      verifyCommitRemoteReachable(corpus, cohort.revision, id);
       const checkout = join(root, safePathSegment(id));
       execFileSync(
         "git",
@@ -525,7 +542,7 @@ export function collectTier2Cohorts({
         ],
         { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] },
       );
-      materialized.push(checkout);
+      materializedCorpora.push(checkout);
       const revision = execFileSync(
         "git",
         ["-C", checkout, "rev-parse", "HEAD"],
@@ -537,6 +554,54 @@ export function collectTier2Cohorts({
         );
       }
       verifyEvidenceSidecar(checkout, cohort.evidence_sidecar, id);
+      const declarationRoots = [];
+      const declarations = [];
+      for (const [index, declaration] of cohort.declarations.entries()) {
+        const sourceRoot = declarationRepositories[declaration.repository];
+        verifyCommitExists(
+          sourceRoot,
+          declaration.revision,
+          `${id} declaration ${declaration.repository}`,
+        );
+        verifyCommitRemoteReachable(
+          sourceRoot,
+          declaration.revision,
+          `${id} declaration ${declaration.repository}`,
+        );
+        const declarationCheckout = join(
+          root,
+          "declarations",
+          `${safePathSegment(id)}-${index}`,
+        );
+        execFileSync(
+          "git",
+          [
+            "-C",
+            sourceRoot,
+            "worktree",
+            "add",
+            "--detach",
+            declarationCheckout,
+            declaration.revision,
+          ],
+          { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] },
+        );
+        materializedDeclarations.push({
+          sourceRoot,
+          checkout: declarationCheckout,
+        });
+        const actual = gitProvenance(declarationCheckout);
+        if (actual.revision !== declaration.revision || actual.dirty) {
+          throw new Error(
+            `answer-key cohort ${id}: declaration ${declaration.repository} did not materialize as the pinned clean commit`,
+          );
+        }
+        declarationRoots.push(declarationCheckout);
+        declarations.push({
+          ...declaration,
+          checkout: "isolated-clean-worktree",
+        });
+      }
       const sourceNames = sourcesForCohort(key, id);
       out[id] = {
         provenance: {
@@ -545,7 +610,7 @@ export function collectTier2Cohorts({
             revision,
             checkout: "isolated-clean-worktree",
           },
-          declaration: cohort.declaration,
+          declarations,
           evidence_sidecar: cohort.evidence_sidecar,
           role: cohort.role,
         },
@@ -553,7 +618,7 @@ export function collectTier2Cohorts({
           quire,
           quoin,
           corpus: checkout,
-          module,
+          declarationRoots,
           sourceNames,
         }),
       };
@@ -561,7 +626,25 @@ export function collectTier2Cohorts({
     validateReproductionCommands(out, key);
     return out;
   } finally {
-    for (const checkout of materialized.reverse()) {
+    for (const item of materializedDeclarations.reverse()) {
+      try {
+        execFileSync(
+          "git",
+          [
+            "-C",
+            item.sourceRoot,
+            "worktree",
+            "remove",
+            "--force",
+            item.checkout,
+          ],
+          { stdio: ["ignore", "pipe", "pipe"] },
+        );
+      } catch {
+        // Runner-owned temporary paths are removed below.
+      }
+    }
+    for (const checkout of materializedCorpora.reverse()) {
       try {
         execFileSync(
           "git",
@@ -582,14 +665,15 @@ export function collectTier2Cohorts({
 export function collectTier2Sources({
   quire,
   corpus,
-  module = null,
+  declarationRoots = [],
   quoin = QUOIN,
   sourceNames = [COVERAGE_SOURCE, "quoin.validate", "quoin.evidence-audit"],
 }) {
   const registry = {
-    [COVERAGE_SOURCE]: () => coverage(quire, corpus, module),
-    "quoin.validate": () => quoinValidate(quoin, corpus),
-    "quoin.evidence-audit": () => evidenceAudit(quoin, quire, corpus, module),
+    [COVERAGE_SOURCE]: () => coverage(quire, corpus, declarationRoots),
+    "quoin.validate": () => quoinValidate(quoin, corpus, declarationRoots),
+    "quoin.evidence-audit": () =>
+      evidenceAudit(quoin, quire, corpus, declarationRoots),
   };
   return Object.fromEntries(
     [...new Set(sourceNames)].sort().map((name) => {
@@ -599,36 +683,29 @@ export function collectTier2Sources({
   );
 }
 
-function quoinValidate(quoin, corpus) {
+function quoinValidate(quoin, corpus, declarationRoots) {
   return jsonCommand(
     process.execPath,
     [quoin, "validate", "--repo", corpus, "--json"],
     "quoin validate",
-    process.env,
-    canonicalCommand("NODE", [
-      "QUOIN",
-      "validate",
-      "--repo",
-      "CORPUS",
-      "--json",
-    ]),
+    { ...process.env, ...declarationEnvironment(declarationRoots) },
+    canonicalCommand(
+      "NODE",
+      ["QUOIN", "validate", "--repo", "CORPUS", "--json"],
+      { declarationRoots: declarationRoots.length > 0 },
+    ),
   );
 }
 
-function evidenceAudit(quoin, quire, corpus, module) {
+function evidenceAudit(quoin, quire, corpus, declarationRoots) {
   const bindings = join(corpus, "spec", "evidence", "bindings.json");
   const command = canonicalCommand(
     "NODE",
-    [
-      "QUOIN",
-      "evidence",
-      "audit",
-      "--repo",
-      "CORPUS",
-      "--json",
-      ...(module ? ["--module", "MODULE"] : []),
-    ],
-    { pathPrepend: "QUIRE_DIR" },
+    ["QUOIN", "evidence", "audit", "--repo", "CORPUS", "--json"],
+    {
+      pathPrepend: "QUIRE_DIR",
+      declarationRoots: declarationRoots.length > 0,
+    },
   );
   if (!existsSync(bindings)) {
     return {
@@ -640,7 +717,6 @@ function evidenceAudit(quoin, quire, corpus, module) {
     };
   }
   const args = [quoin, "evidence", "audit", "--repo", corpus, "--json"];
-  if (module) args.push("--module", module);
   return jsonCommand(
     process.execPath,
     args,
@@ -648,6 +724,7 @@ function evidenceAudit(quoin, quire, corpus, module) {
     {
       ...process.env,
       PATH: `${dirname(resolve(quire))}${delimiter}${process.env.PATH ?? ""}`,
+      ...declarationEnvironment(declarationRoots),
     },
     command,
   );
@@ -688,13 +765,18 @@ function jsonCommand(
   }
 }
 
-function tier2Provenance({ quire, module, key }) {
+function tier2Provenance({ quire, declarationRepositories, key }) {
   const quirePath = resolve(quire);
-  const moduleRoot = module ? resolve(module) : join(ROOT, "corpus", "modules");
+  const declarationCheckouts = Object.fromEntries(
+    Object.entries(declarationRepositories)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([repository, root]) => [repository, gitProvenance(root)]),
+  );
   return {
     answer_key_digest: fileDigest(ANSWER_KEY),
     cohort_manifest_digest: valueDigest(key.cohorts),
-    declaration_checkout: gitProvenance(moduleRoot),
+    declaration_checkouts: declarationCheckouts,
+    declaration_repository_digest: valueDigest(declarationCheckouts),
     tools: {
       quire: {
         version: execFileSync(quirePath, ["--version"], {
@@ -722,8 +804,8 @@ function tier2Provenance({ quire, module, key }) {
   };
 }
 
-function validateCohortManifest(key, module) {
-  if (key.schema_version !== "tier2-answer-key-v2") {
+export function validateCohortManifest(key, declarationRepositories) {
+  if (key.schema_version !== "tier2-answer-key-v3") {
     throw new Error(
       `battletest: unsupported answer-key schema ${JSON.stringify(key.schema_version)}`,
     );
@@ -731,12 +813,14 @@ function validateCohortManifest(key, module) {
   if (!key.cohorts || Object.keys(key.cohorts).length === 0) {
     throw new Error("battletest: answer key declares no immutable cohorts");
   }
-  const moduleRoot = module ? resolve(module) : join(ROOT, "corpus", "modules");
-  const declaration = gitProvenance(moduleRoot);
-  if (declaration.dirty) {
-    throw new Error(
-      "battletest: declaration checkout is dirty; its bytes are not identified by the answer key",
-    );
+  for (const [repository, root] of Object.entries(declarationRepositories)) {
+    verifyRepositoryIdentity(root, repository, "declaration route");
+    const declaration = gitProvenance(root);
+    if (declaration.dirty) {
+      throw new Error(
+        `battletest: declaration checkout ${repository} is dirty; its bytes are not identified by a commit`,
+      );
+    }
   }
   for (const [id, cohort] of Object.entries(key.cohorts)) {
     if (!/^[0-9a-f]{40}$/.test(cohort.revision ?? "")) {
@@ -744,9 +828,36 @@ function validateCohortManifest(key, module) {
         `answer-key cohort ${id}: revision must be a full immutable commit SHA`,
       );
     }
-    if (cohort.declaration?.revision !== declaration.revision) {
-      throw new Error(
-        `answer-key cohort ${id}: declaration is pinned at ${cohort.declaration?.revision ?? "nothing"}, checkout is ${declaration.revision}`,
+    if (
+      !Array.isArray(cohort.declarations) ||
+      cohort.declarations.length === 0
+    ) {
+      throw new Error(`answer-key cohort ${id}: no declaration set is pinned`);
+    }
+    const repositories = new Set();
+    for (const declaration of cohort.declarations) {
+      if (!declaration.repository || repositories.has(declaration.repository)) {
+        throw new Error(
+          `answer-key cohort ${id}: declaration repositories must be named and unique`,
+        );
+      }
+      repositories.add(declaration.repository);
+      if (!FULL_SHA.test(declaration.revision ?? "")) {
+        throw new Error(
+          `answer-key cohort ${id}: declaration revision must be a full immutable commit SHA`,
+        );
+      }
+      const root = declarationRepositories[declaration.repository];
+      if (!root) {
+        throw new Error(
+          `answer-key cohort ${id}: no checkout route for declaration repository ${declaration.repository}`,
+        );
+      }
+      verifyCommitExists(root, declaration.revision, `${id} declaration`);
+      verifyCommitRemoteReachable(
+        root,
+        declaration.revision,
+        `${id} declaration`,
       );
     }
     if (!cohort.evidence_sidecar?.state) {
@@ -834,6 +945,44 @@ function verifyCommitExists(repository, revision, cohortId) {
   }
 }
 
+function verifyCommitRemoteReachable(repository, revision, cohortId) {
+  const refs = execFileSync(
+    "git",
+    [
+      "-C",
+      repository,
+      "for-each-ref",
+      "--format=%(refname)",
+      "--contains",
+      revision,
+      "refs/remotes",
+    ],
+    { encoding: "utf8" },
+  ).trim();
+  if (!refs) {
+    throw new Error(
+      `answer-key cohort ${cohortId}: commit ${revision} is not reachable from a remote-tracking ref`,
+    );
+  }
+}
+
+function verifyRepositoryIdentity(root, repository, label) {
+  const observed = execFileSync(
+    "git",
+    ["-C", root, "remote", "get-url", "origin"],
+    { encoding: "utf8" },
+  )
+    .trim()
+    .replace(/\.git$/, "")
+    .replace(/^git@github\.com:/, "https://github.com/");
+  const expected = `https://github.com/${repository}`;
+  if (observed !== expected) {
+    throw new Error(
+      `battletest: ${label} ${repository} is routed to ${observed}, expected ${expected}`,
+    );
+  }
+}
+
 function verifyEvidenceSidecar(checkout, sidecar, cohortId) {
   const path = join(checkout, sidecar?.path ?? "spec/evidence/bindings.json");
   if (sidecar?.state === "unavailable") {
@@ -864,17 +1013,42 @@ function safePathSegment(value) {
 }
 
 function canonicalCommand(executable, args, options = {}) {
-  const replacements = new Map([
-    [options.scope, "CORPUS"],
-    [options.module, "MODULE"],
-  ]);
+  const replacements = new Map([[options.scope, "CORPUS"]]);
+  const environment = {
+    ...(options.pathPrepend ? { PATH_prepend: options.pathPrepend } : {}),
+    ...(options.declarationRoots
+      ? { IX_FILAMENT_MODULES_PATH: "DECLARATION_ROOTS" }
+      : {}),
+  };
   return {
     executable,
     args: args.map((arg) => replacements.get(arg) ?? arg),
-    ...(options.pathPrepend
-      ? { environment: { PATH_prepend: options.pathPrepend } }
-      : {}),
+    ...(Object.keys(environment).length > 0 ? { environment } : {}),
   };
+}
+
+function declarationEnvironment(declarationRoots) {
+  return declarationRoots.length > 0
+    ? { IX_FILAMENT_MODULES_PATH: declarationRoots.join(delimiter) }
+    : {};
+}
+
+function declarationRepositoryArgs(values) {
+  const repositories = {};
+  for (const value of values) {
+    const equals = value.indexOf("=");
+    if (equals <= 0 || equals === value.length - 1) {
+      throw new Error(
+        `battletest: --declaration-repo must be REPOSITORY=/absolute/checkout, got ${JSON.stringify(value)}`,
+      );
+    }
+    const repository = value.slice(0, equals);
+    if (repositories[repository]) {
+      throw new Error(`battletest: duplicate declaration route ${repository}`);
+    }
+    repositories[repository] = resolve(value.slice(equals + 1));
+  }
+  return repositories;
 }
 
 function gitProvenance(path) {
@@ -954,6 +1128,12 @@ function compare(a, b) {
 function argOf(flag) {
   const i = process.argv.indexOf(flag);
   return i >= 0 ? process.argv[i + 1] : undefined;
+}
+
+function argsOf(flag) {
+  return process.argv.flatMap((value, index) =>
+    value === flag && process.argv[index + 1] ? [process.argv[index + 1]] : [],
+  );
 }
 
 if (process.argv[1] && process.argv[1].endsWith("battletest.mjs")) {

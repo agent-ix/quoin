@@ -17,6 +17,7 @@
     "marker-form-mismatch": {
       "source": "coverage.diagnostics",
       "key": "no-symbol-bound",
+      "aliases": ["marker-form-mismatch"],
       "locus": "path-line"
     },
     "low-symbol-binding": {

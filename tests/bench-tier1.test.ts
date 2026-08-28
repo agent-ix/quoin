@@ -1301,11 +1301,22 @@ describe("the committed mapping table", () => {
       ).toBeDefined();
       expect(sources).toContain(mapping.families[family].source);
       expect(mapping.families[family].key).toBeTruthy();
+      expect(mapping.families[family].aliases ?? []).toEqual(
+        [...new Set(mapping.families[family].aliases ?? [])].sort(),
+      );
     }
     // And no mapping for a family nothing declares.
     for (const family of Object.keys(mapping.families)) {
       expect(dictionary.families).toContain(family);
     }
+    const claims = Object.entries(mapping.families).flatMap(
+      ([family, definition]: [string, { key: string; aliases?: string[] }]) =>
+        [definition.key, ...(definition.aliases ?? [])].map((key) => ({
+          family,
+          key,
+        })),
+    );
+    expect(new Set(claims.map((claim) => claim.key)).size).toBe(claims.length);
   });
 
   test("TC-959 the completed plan leaves no family on the declared `source: none` escape hatch", () => {

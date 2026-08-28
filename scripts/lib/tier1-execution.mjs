@@ -92,7 +92,7 @@ export function createTier1Executor() {
 
     for (const [family, definition] of bySource("coverage.diagnostics")) {
       for (const diagnostic of payload.diagnostics ?? []) {
-        if (diagnostic.reason !== definition.key) continue;
+        if (!definitionKeys(definition).includes(diagnostic.reason)) continue;
         findings.push({
           sourceClass: "quire",
           producer: "quire",
@@ -113,7 +113,7 @@ export function createTier1Executor() {
     }
     for (const [family, definition] of bySource("coverage.suspicions")) {
       for (const suspicion of payload.suspicions ?? []) {
-        if (suspicion.kind !== definition.key) continue;
+        if (!definitionKeys(definition).includes(suspicion.kind)) continue;
         findings.push({
           sourceClass: "quire",
           producer: "quire",
@@ -140,17 +140,19 @@ export function createTier1Executor() {
       (payload.metrics ?? []).map((metric) => [metric.name, metric]),
     );
     for (const [family, definition] of bySource("coverage.metrics")) {
-      const metric = metrics.get(definition.key);
+      const metric = definitionKeys(definition)
+        .map((key) => metrics.get(key))
+        .find((candidate) => candidate?.state === "measured");
       if (!metric || metric.state !== "measured") continue;
       findings.push({
         sourceClass: "quire",
         producer: "quire",
         channel: "coverage.metrics",
         family,
-        reason: definition.key,
+        reason: metric.name,
         path: null,
         line: null,
-        metric: definition.key,
+        metric: metric.name,
         value: Number(metric.value),
         rawProducerOutput: metric,
       });
@@ -174,7 +176,7 @@ export function createTier1Executor() {
       });
       for (const [family, definition] of auditFamilies) {
         for (const finding of audit.findings ?? []) {
-          if (finding.kind !== definition.key) continue;
+          if (!definitionKeys(definition).includes(finding.kind)) continue;
           findings.push({
             sourceClass: "quoin",
             producer: "quoin",
@@ -222,7 +224,7 @@ export function createTier1Executor() {
       }
       for (const [family, definition] of quoinValidateFamilies) {
         for (const finding of validated.findings ?? []) {
-          if (finding.kind !== definition.key) continue;
+          if (!definitionKeys(definition).includes(finding.kind)) continue;
           findings.push({
             sourceClass: "quoin",
             producer: "quoin",
@@ -263,10 +265,9 @@ export function createTier1Executor() {
         ];
     const validated = execute(quire, validateArgs, env);
     const byReason = new Map(
-      bySource("validate.findings").map(([family, definition]) => [
-        definition.key,
-        family,
-      ]),
+      bySource("validate.findings").flatMap(([family, definition]) =>
+        definitionKeys(definition).map((key) => [key, family]),
+      ),
     );
     for (const raw of validated.stderr.split("\n")) {
       const text = raw.trim();
@@ -553,6 +554,7 @@ export function createTier1Executor() {
     const required = [
       "action_guidance.structured",
       "binding_census",
+      "binding_census.self_named",
       "declaration_origins",
       "metrics_envelope",
       "property_spans.safe_refusal",
@@ -587,4 +589,8 @@ export function createTier1Executor() {
     engineProvenance: () => structuredClone(selectedProvenance),
     toolCalls: () => toolCalls,
   };
+}
+
+function definitionKeys(definition) {
+  return [definition.key, ...(definition.aliases ?? [])];
 }

@@ -18,7 +18,15 @@ const digest = `sha256:${"c".repeat(64)}`;
 const base = {
   schemaVersion: "quoin-verification-stack-lock-v1",
   repositories: Object.fromEntries(
-    ["quoin", "quire", "quire-cli", "qa-corpus"].map((name) => [
+    [
+      "quoin",
+      "quire",
+      "quire-cli",
+      "qa-corpus",
+      "filament-ide-rs",
+      "spec-artifacts-process",
+      "spec-artifacts-iso",
+    ].map((name) => [
       name,
       { remote: `https://github.com/agent-ix/${name}`, revision: A },
     ]),
@@ -60,6 +68,11 @@ const shapeMutations = [
     /full sha256/,
   ],
   ["missing capabilities", (v) => (v.requiredCapabilities = []), /capability/],
+  [
+    "missing declaration repository",
+    (v) => delete v.repositories["spec-artifacts-iso"],
+    /spec-artifacts-iso must be locked/,
+  ],
 ];
 
 let passed = 0;

@@ -46,6 +46,8 @@ test: build validate check-version
 # default gate, because the floor is the whole backlog and failing on it would
 # make the target useless on day one.
 EVIDENCE_MODULE ?= $(HOME)/dev/spec-artifacts-process/spec_artifacts_process
+SPEC_ARTIFACTS_PROCESS_ROOT ?= ../spec-artifacts-process
+SPEC_ARTIFACTS_ISO_ROOT ?= ../spec-artifacts-iso
 # Pass 3 is a command, not a day (quoin#203). Runs the tool suite against the
 # PINNED tier-2 corpus, scores it against the adjudicated answer key, and diffs
 # against the checked-in baseline. A finding LOST is the failure; a finding
@@ -58,12 +60,16 @@ BENCH_CORPUS ?= ../filament-ide-rs
 .PHONY: battletest
 battletest:
 	@test -n "$(QUIRE)" || { echo "battletest requires QUIRE=/absolute/path/to/quire"; exit 2; }
-	node scripts/battletest.mjs --quire $(QUIRE) --corpus $(BENCH_CORPUS) --module $(EVIDENCE_MODULE)
+	node scripts/battletest.mjs --quire $(QUIRE) --corpus $(BENCH_CORPUS) \
+	  --declaration-repo agent-ix/spec-artifacts-process=$(SPEC_ARTIFACTS_PROCESS_ROOT) \
+	  --declaration-repo agent-ix/spec-artifacts-iso=$(SPEC_ARTIFACTS_ISO_ROOT)
 
 .PHONY: battletest-update
 battletest-update:
 	@test -n "$(QUIRE)" || { echo "battletest-update requires QUIRE=/absolute/path/to/quire"; exit 2; }
-	node scripts/battletest.mjs --update --quire $(QUIRE) --corpus $(BENCH_CORPUS) --module $(EVIDENCE_MODULE)
+	node scripts/battletest.mjs --update --quire $(QUIRE) --corpus $(BENCH_CORPUS) \
+	  --declaration-repo agent-ix/spec-artifacts-process=$(SPEC_ARTIFACTS_PROCESS_ROOT) \
+	  --declaration-repo agent-ix/spec-artifacts-iso=$(SPEC_ARTIFACTS_ISO_ROOT)
 
 # TIER 1: the seeded corpora, built, scanned and scored on every run. Cheap
 # enough to gate on, unlike `battletest`, which needs a pinned external tree.

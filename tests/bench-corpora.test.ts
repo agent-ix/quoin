@@ -360,20 +360,29 @@ describe("tier-2 adjudicated answer key", () => {
   });
 
   test("TC-1118 every valid Tier-2 finding is reproducible from immutable cohort inputs", () => {
-    expect(key.schema_version).toBe("tier2-answer-key-v2");
+    expect(key.schema_version).toBe("tier2-answer-key-v3");
     for (const [id, cohort] of Object.entries(key.cohorts) as Array<
       [
         string,
         {
           revision: string;
-          declaration: { revision: string };
+          declarations: Array<{ repository: string; revision: string }>;
           evidence_sidecar: { state: string };
           retained_sources: string[];
         },
       ]
     >) {
       expect(cohort.revision, id).toMatch(/^[0-9a-f]{40}$/);
-      expect(cohort.declaration.revision, id).toMatch(/^[0-9a-f]{40}$/);
+      expect(cohort.declarations.length, id).toBeGreaterThan(0);
+      expect(
+        new Set(cohort.declarations.map((item) => item.repository)).size,
+      ).toBe(cohort.declarations.length);
+      for (const declaration of cohort.declarations) {
+        expect(declaration.repository, id).toMatch(
+          /^agent-ix\/spec-artifacts-/,
+        );
+        expect(declaration.revision, id).toMatch(/^[0-9a-f]{40}$/);
+      }
       expect(cohort.evidence_sidecar.state, id).toMatch(
         /^(bound|unavailable)$/,
       );
@@ -407,9 +416,26 @@ describe("battletest scoring and ratchet", () => {
     readFileSync(join(__dirname, "..", "bench", "answer-key.json"), "utf8"),
   );
   const payload = {
-    diagnostics: [{ reason: "hollow-denominator" }],
+    diagnostics: [
+      {
+        reason: "marker-form-mismatch",
+        path: "crates/filament-agent/tests/it_011.rs",
+        line: 377,
+        value: "rust",
+      },
+      {
+        reason: "hollow-denominator",
+        value: "coverage.self_named_binding.rust",
+      },
+      {
+        reason: "catch-all-universal",
+        path: "spec/backend/functional/FR-097-session-binding.md",
+        line: 37,
+        value: "coverage.specific_shaped",
+      },
+    ],
     suspicions: [{ kind: "vacuous-under-guard" }],
-    metrics: [{ name: "coverage.specific_shaped", value: 78 }],
+    metrics: [{ name: "coverage.specific_shaped", value: 73 }],
   };
 
   test("TC-934 the score report is byte-identical over identical inputs and carries its identity", () => {
