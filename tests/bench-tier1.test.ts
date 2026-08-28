@@ -1435,6 +1435,23 @@ describe("the canonical qa-corpus inventory", () => {
     expect(() =>
       validateCanonicalInventory({ bounds: { gap_count: 0 }, cases: [{}] }),
     ).toThrow(/case 0 lacks id, dir, expect, module, language/);
+    expect(() =>
+      validateCanonicalInventory({
+        bounds: { gap_count: 0 },
+        cases: [
+          {
+            id: "one",
+            dir: "cases/one",
+            expect: "cases/one/expect.yaml",
+            module: "m",
+            language: "rust",
+            mode: "minting",
+            kind: "failure",
+            findable: true,
+          },
+        ],
+      }),
+    ).toThrow(/case 0 lacks grading_contract/);
   });
 
   test("TC-977 raw case metadata is not interpreted by this third consumer", () => {

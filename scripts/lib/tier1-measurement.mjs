@@ -349,6 +349,7 @@ export function createMeasurementRecord(report, at, options) {
             language: row.language,
             family: row.family,
             misses: row.misses,
+            exclusions: row.exclusions ?? [],
           },
         },
       }),

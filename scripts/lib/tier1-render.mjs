@@ -84,7 +84,12 @@ export function renderTier1(report, verdicts) {
     lines.push(
       `  ${row.mode.padEnd(12)} ${row.language.padEnd(10)} ${(row.family ?? "legacy-group").padEnd(38)} ${row.level} ` +
         `${pct(row.rate)} (${row.reached}/${row.population}; GAP ${row.gap_count})` +
-        (row.misses.length ? ` — missed ${row.misses.join(", ")}` : ""),
+        (row.misses.length ? ` — missed ${row.misses.join(", ")}` : "") +
+        ((row.exclusions ?? []).length
+          ? ` — excluded ${(row.exclusions ?? [])
+              .map((item) => `${item.case} (${item.reason})`)
+              .join(", ")}`
+          : ""),
     );
   }
   for (const instance of report["sentinel.silent_zero"]?.instances ?? []) {

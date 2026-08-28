@@ -23,6 +23,13 @@ export function validateCanonicalInventory(payload) {
         `bench-tier1: qa-corpus inventory case ${index} lacks ${missing.join(", ")}`,
       );
     }
+    if (
+      entry.kind === "failure" &&
+      entry.findable === true &&
+      entry.mode !== "reporting"
+    ) {
+      validateGradingContract(entry, index);
+    }
   }
   return payload;
 }
@@ -82,6 +89,7 @@ export function loadCorpusData({ mapping, root, modulesRoot, inventory }) {
       module: resolveModule(join(modulesRoot, meta.module), meta, modulesRoot),
       language: meta.language,
       pending: meta.pending ?? null,
+      gradingContract: meta.grading_contract,
       rules: {
         present: expect.diagnostic_reasons ?? [],
         absent: expect.absent_diagnostic_reasons ?? [],
@@ -93,6 +101,34 @@ export function loadCorpusData({ mapping, root, modulesRoot, inventory }) {
     });
   }
   return { corpora, modulesRoot, bounds: inventory.bounds };
+}
+
+function validateGradingContract(entry, index) {
+  const contract = entry.grading_contract;
+  const prefix = `bench-tier1: qa-corpus inventory case ${index}`;
+  if (!contract || typeof contract !== "object" || Array.isArray(contract)) {
+    throw new Error(`${prefix} lacks grading_contract`);
+  }
+  if (
+    !["finding", "direct-observation", "behavior"].includes(contract.channel)
+  ) {
+    throw new Error(`${prefix} has invalid grading_contract.channel`);
+  }
+  for (const level of ["L1", "L2", "L3"]) {
+    const state = contract.levels?.[level]?.state;
+    if (!["required", "not_applicable"].includes(state)) {
+      throw new Error(`${prefix} has invalid grading_contract ${level} state`);
+    }
+    if (
+      state === "not_applicable" &&
+      !(
+        typeof contract.levels[level].reason === "string" &&
+        contract.levels[level].reason.trim()
+      )
+    ) {
+      throw new Error(`${prefix} excludes ${level} without a reason`);
+    }
+  }
 }
 
 function actionableFragments(defect, expect) {

@@ -18,6 +18,14 @@ const corpus = (
   language,
   kind: "failure",
   findable: true,
+  gradingContract: {
+    channel: "finding",
+    levels: {
+      L1: { state: "required" },
+      L2: { state: "required" },
+      L3: { state: "required" },
+    },
+  },
   defects: [{ id: `${name}-1`, family: "section", findable: true, ...defect }],
 });
 
@@ -207,6 +215,14 @@ describe("detection.recall", () => {
           language: "rust",
           kind: "failure",
           findable: true,
+          gradingContract: {
+            channel: "finding",
+            levels: {
+              L1: { state: "required" },
+              L2: { state: "required" },
+              L3: { state: "required" },
+            },
+          },
           defects: [],
         },
       ],
@@ -226,6 +242,17 @@ describe("detection.recall", () => {
       language: "python",
       kind: "failure",
       findable: true,
+      gradingContract: {
+        channel: "direct-observation",
+        levels: {
+          L1: { state: "required" },
+          L2: { state: "required" },
+          L3: {
+            state: "not_applicable",
+            reason: "direct payload has no finding guidance",
+          },
+        },
+      },
       defects: [],
       observations: {
         untracked_symbols: [
@@ -250,7 +277,7 @@ describe("detection.recall", () => {
     expect(rows.map((row) => [row.level, row.rate])).toEqual([
       ["L1", 1],
       ["L2", 1],
-      ["L3", 0],
+      ["L3", null],
     ]);
     expect(
       localityMissInventory(
@@ -270,16 +297,7 @@ describe("detection.recall", () => {
           },
         ],
       ),
-    ).toEqual([
-      expect.objectContaining({
-        case: "unminted",
-        family: "direct-observation",
-        missingLevels: ["L3"],
-        rootCause:
-          "the direct observation has no controlled actionable-fragment contract",
-        disposition: expect.objectContaining({ state: "deferred" }),
-      }),
-    ]);
+    ).toEqual([]);
 
     const wrongLocus = detectionRecall([observed], [], 2, [
       {
@@ -296,8 +314,87 @@ describe("detection.recall", () => {
     expect(wrongLocus.map((row) => [row.level, row.rate])).toEqual([
       ["L1", 1],
       ["L2", 0],
-      ["L3", 0],
+      ["L3", null],
     ]);
+  });
+
+  it("excludes behavior cases and reports every exclusion by level", () => {
+    const behavior = {
+      name: "honest-empty-population",
+      mode: "disposition",
+      language: "rust",
+      kind: "failure",
+      findable: true,
+      defects: [],
+      gradingContract: {
+        channel: "behavior",
+        levels: Object.fromEntries(
+          ["L1", "L2", "L3"].map((level) => [
+            level,
+            { state: "not_applicable", reason: "no finding is expected" },
+          ]),
+        ),
+      },
+    };
+
+    const rows = detectionRecall([behavior], [], 0);
+    expect(rows).toHaveLength(3);
+    expect(rows.every((row) => row.population === 0 && row.rate === null)).toBe(
+      true,
+    );
+    expect(
+      rows.every(
+        (row) =>
+          row.exclusions.length === 1 &&
+          row.exclusions[0].case === "honest-empty-population",
+      ),
+    ).toBe(true);
+    expect(rows.map((row) => row.exclusions[0].reason)).toEqual([
+      "no finding is expected",
+      "no finding is expected",
+      "no finding is expected",
+    ]);
+    expect(localityMissInventory([behavior], [])).toEqual([]);
+  });
+
+  it("grades actionable guidance independently when a locus is not applicable", () => {
+    const aggregate = corpus("aggregate", "n/a", {
+      location: null,
+      actionable_fragments: ["inspect the binding census"],
+    });
+    aggregate.gradingContract.levels.L2 = {
+      state: "not_applicable",
+      reason: "aggregate finding has no unique source line",
+    };
+    const rows = detectionRecall(
+      [aggregate],
+      [
+        {
+          corpus: "aggregate",
+          family: "section",
+          message: "inspect the binding census",
+        },
+      ],
+      0,
+    );
+
+    expect(rows.map((row) => [row.level, row.population, row.rate])).toEqual([
+      ["L1", 1, 1],
+      ["L2", 0, null],
+      ["L3", 1, 1],
+    ]);
+    expect(
+      localityMissInventory(
+        [aggregate],
+        [
+          {
+            corpus: "aggregate",
+            family: "section",
+            message: "inspect the binding census",
+          },
+        ],
+      ),
+    ).toEqual([]);
   });
 
   it("ratchets one partition without averaging it into another", () => {
