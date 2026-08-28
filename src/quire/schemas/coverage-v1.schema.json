@@ -700,8 +700,53 @@
         "value": {
           "type": "string",
           "description": "FR-054-AC-12 (CR-091, #179): the vocabulary or catalog value the diagnostic is about, verbatim, when it is about exactly one. `uncatalogued-verification-method` carries the authored method here \u2014 the identical string the Obligation records carry in `method` \u2014 so a consumer distinguishes an uncatalogued value from a genuine method disagreement by an equality join instead of parsing the message (quoin#168). Absent when the diagnostic is not about one value. Additive under FR-055-CON-3."
+        },
+        "subject": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The affected row, declaration, metric, criterion, or symbol. Additive under FR-055-CON-3; current producers emit the complete guidance group."
+        },
+        "change_target": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The source or configuration surface an operator should inspect or change."
+        },
+        "remedy": {
+          "type": "string",
+          "minLength": 1,
+          "description": "A prescribed repair when the producer has enough evidence to recommend one safely. Mutually exclusive with next_diagnostic_step."
+        },
+        "next_diagnostic_step": {
+          "type": "string",
+          "minLength": 1,
+          "description": "A safe investigation step when the producer cannot choose a trustworthy repair. Mutually exclusive with remedy."
         }
-      }
+      },
+      "oneOf": [
+        {
+          "not": {
+            "anyOf": [
+              { "required": ["subject"] },
+              { "required": ["change_target"] },
+              { "required": ["remedy"] },
+              { "required": ["next_diagnostic_step"] }
+            ]
+          }
+        },
+        {
+          "required": ["subject", "change_target"],
+          "oneOf": [
+            {
+              "required": ["remedy"],
+              "not": { "required": ["next_diagnostic_step"] }
+            },
+            {
+              "required": ["next_diagnostic_step"],
+              "not": { "required": ["remedy"] }
+            }
+          ]
+        }
+      ]
     },
     "VocabularyValueRecord": {
       "type": "object",
@@ -963,8 +1008,49 @@
           "type": "string",
           "minLength": 1,
           "description": "The numbers behind the claim, rendered. Not decoration: a suspicion a reader cannot check in one look is one they learn to scroll past, which is how an advisory check becomes noise rather than a skeptic."
+        },
+        "subject": {
+          "type": "string",
+          "minLength": 1
+        },
+        "change_target": {
+          "type": "string",
+          "minLength": 1
+        },
+        "remedy": {
+          "type": "string",
+          "minLength": 1
+        },
+        "next_diagnostic_step": {
+          "type": "string",
+          "minLength": 1
         }
-      }
+      },
+      "oneOf": [
+        {
+          "not": {
+            "anyOf": [
+              { "required": ["subject"] },
+              { "required": ["change_target"] },
+              { "required": ["remedy"] },
+              { "required": ["next_diagnostic_step"] }
+            ]
+          }
+        },
+        {
+          "required": ["subject", "change_target"],
+          "oneOf": [
+            {
+              "required": ["remedy"],
+              "not": { "required": ["next_diagnostic_step"] }
+            },
+            {
+              "required": ["next_diagnostic_step"],
+              "not": { "required": ["remedy"] }
+            }
+          ]
+        }
+      ]
     },
     "UnboundSymbol": {
       "type": "object",

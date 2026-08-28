@@ -88,7 +88,7 @@ describe("Tier-1 module contracts", () => {
       quire,
       `#!/bin/sh
 if [ "$1" = "coverage" ]; then
-  printf '%s\\n' '{"diagnostics":[{"reason":"located","path":"spec/a.md","line":7}],"suspicions":[{"kind":"copied","path":"tests/a.rs","line":11,"message":"replace with an independent expectation","evidence":"similarity 1.00"}],"metrics":[]}'
+  printf '%s\\n' '{"diagnostics":[{"reason":"located","path":"spec/a.md","line":7,"subject":"criterion FR-1","change_target":"spec/a.md:7","remedy":"repair the row"}],"suspicions":[{"kind":"copied","path":"tests/a.rs","line":11,"message":"replace with an independent expectation","evidence":"similarity 1.00","subject":"test symbol copied","change_target":"tests/a.rs:11","next_diagnostic_step":"inspect the reported evidence"}],"metrics":[]}'
 elif [ "$1" = "properties" ]; then
   printf '%s\\n' '{"documents":[{"document":"spec/a.md","archetype":"FR","criteria":[]}],"engine":{"cli":"test","engine":"test"}}'
 else
@@ -117,6 +117,9 @@ fi
         line: 7,
         declaration: null,
         message: "",
+        subject: "criterion FR-1",
+        changeTarget: "spec/a.md:7",
+        remedy: "repair the row",
       },
       {
         family: "suspicion",
@@ -127,6 +130,9 @@ fi
           message: "replace with an independent expectation",
           evidence: "similarity 1.00",
         },
+        subject: "test symbol copied",
+        changeTarget: "tests/a.rs:11",
+        nextDiagnosticStep: "inspect the reported evidence",
       },
       {
         family: "validate",

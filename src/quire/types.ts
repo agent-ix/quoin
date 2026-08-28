@@ -190,6 +190,14 @@ export interface CoverageDiagnostic {
    * one value; a consumer must tolerate both.
    */
   value?: string;
+  /** Affected row, declaration, metric, criterion, or symbol (quire-rs#364). */
+  subject?: string;
+  /** Source or configuration surface to inspect or change. */
+  change_target?: string;
+  /** Prescribed repair; the JSON contract excludes next_diagnostic_step. */
+  remedy?: string;
+  /** Safe investigation step; the JSON contract excludes remedy. */
+  next_diagnostic_step?: string;
 }
 
 /**
@@ -314,6 +322,10 @@ export interface Suspicion {
   line: number;
   message: string;
   evidence: string;
+  subject?: string;
+  change_target?: string;
+  remedy?: string;
+  next_diagnostic_step?: string;
 }
 
 /** The `quire coverage --json` payload (v1). */

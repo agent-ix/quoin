@@ -195,7 +195,7 @@ const catchAllCriterion: Required<CatchAllCriterion> = {
   line: 18,
 };
 
-const coverageDiagnostic: Required<CoverageDiagnostic> = {
+const coverageDiagnosticSurface: Required<CoverageDiagnostic> = {
   declaration: "test-case",
   reason: "uncatalogued-verification-method",
   message:
@@ -203,6 +203,23 @@ const coverageDiagnostic: Required<CoverageDiagnostic> = {
   path: null,
   line: 21,
   value: "Deferred",
+  subject: "verification method `Deferred`",
+  change_target: "spec/functional/FR-001.md:21",
+  remedy: "add the method to the verification catalog",
+  next_diagnostic_step: "inspect the authored method and catalog",
+};
+
+const coverageDiagnostic: CoverageDiagnostic = {
+  declaration: "test-case",
+  reason: "uncatalogued-verification-method",
+  message:
+    "'Deferred' is neither a declared verification_catalog method id nor a declared class",
+  path: null,
+  line: 21,
+  value: "Deferred",
+  subject: "verification method `Deferred`",
+  change_target: "spec/functional/FR-001.md:21",
+  next_diagnostic_step: "inspect the authored method and catalog",
 };
 
 const vocabularyValueRecord: Required<VocabularyValueRecord> = {
@@ -269,13 +286,29 @@ const metric: Required<MeasuredMetric> = {
   matched: 1,
 };
 
-const suspicion: Required<Suspicion> = {
+const suspicionSurface: Required<Suspicion> = {
   kind: "vacuous-under-guard",
   path: "tests/parse.rs",
   symbol: "all_inputs",
   line: 50,
   message: "every assertion is guarded",
   evidence: "1 of 42 samples entered the assertion",
+  subject: "test symbol `all_inputs`",
+  change_target: "tests/parse.rs:50",
+  remedy: "add an unconditional oracle",
+  next_diagnostic_step: "inspect inputs that bypass the narrowing guard",
+};
+
+const suspicion: Suspicion = {
+  kind: "vacuous-under-guard",
+  path: "tests/parse.rs",
+  symbol: "all_inputs",
+  line: 50,
+  message: "every assertion is guarded",
+  evidence: "1 of 42 samples entered the assertion",
+  subject: "test symbol `all_inputs`",
+  change_target: "tests/parse.rs:50",
+  next_diagnostic_step: "inspect inputs that bypass the narrowing guard",
 };
 
 /** Sample per `$defs` entry, keyed by the schema's own def names. */
@@ -294,7 +327,7 @@ const samples: Record<string, unknown> = {
   SharedTraceSymbol: sharedTraceSymbol,
   GroupCounts: groupCounts,
   CriteriaCounts: criteriaCounts,
-  CoverageDiagnostic: coverageDiagnostic,
+  CoverageDiagnostic: coverageDiagnosticSurface,
   VocabularyValueRecord: vocabularyValueRecord,
   Obligation: obligation,
   CoverageTotals: coverageTotals,
@@ -305,7 +338,7 @@ const samples: Record<string, unknown> = {
   MetricName: metric.name,
   MetricShape: metric.shape,
   MetricUnit: metric.unit,
-  Suspicion: suspicion,
+  Suspicion: suspicionSurface,
   UnboundSymbol: unboundSymbol,
 };
 

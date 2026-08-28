@@ -92,6 +92,10 @@ export function createTier1Executor() {
           line: typeof diagnostic.line === "number" ? diagnostic.line : null,
           declaration: diagnostic.declaration ?? null,
           message: diagnostic.message ?? "",
+          subject: diagnostic.subject,
+          changeTarget: diagnostic.change_target,
+          remedy: diagnostic.remedy,
+          nextDiagnosticStep: diagnostic.next_diagnostic_step,
           rawProducerOutput: diagnostic,
         });
       }
@@ -113,6 +117,10 @@ export function createTier1Executor() {
             message: suspicion.message ?? "",
             evidence: suspicion.evidence ?? "",
           },
+          subject: suspicion.subject,
+          changeTarget: suspicion.change_target,
+          remedy: suspicion.remedy,
+          nextDiagnosticStep: suspicion.next_diagnostic_step,
           rawProducerOutput: suspicion,
         });
       }
