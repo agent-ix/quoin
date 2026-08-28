@@ -57,6 +57,20 @@ export function validateLockShape(lock) {
   if (!FULL_SHA.test(lock.cohorts?.qaExternalQuoin?.revision ?? "")) {
     throw new Error("qaExternalQuoin must be locked to one full commit SHA");
   }
+  const qaCounts = lock.cohorts?.qaCorpus;
+  for (const field of ["executableCases", "reportingCases", "totalCases"]) {
+    if (!Number.isInteger(qaCounts?.[field]) || qaCounts[field] < 0) {
+      throw new Error(`qaCorpus.${field} must be a non-negative integer`);
+    }
+  }
+  if (
+    qaCounts.executableCases + qaCounts.reportingCases !==
+    qaCounts.totalCases
+  ) {
+    throw new Error(
+      "qaCorpus case counts must partition totalCases into executable and reporting cases",
+    );
+  }
   if (
     !Array.isArray(lock.requiredCapabilities) ||
     lock.requiredCapabilities.length === 0
@@ -70,7 +84,66 @@ export function validateLockShape(lock) {
   if (Object.keys(lock.artifacts ?? {}).length === 0) {
     throw new Error("verification lock requires artifact digests");
   }
+  for (const field of [
+    "caseMilliseconds",
+    "corpusMilliseconds",
+    "tier1Milliseconds",
+    "tier2Milliseconds",
+    "installMilliseconds",
+    "quoinMilliseconds",
+    "spanMilliseconds",
+  ]) {
+    if (
+      !Number.isInteger(lock.timeouts?.[field]) ||
+      lock.timeouts[field] < 1000
+    ) {
+      throw new Error(
+        `timeouts.${field} must be an integer of at least 1000ms`,
+      );
+    }
+  }
+  const tier1WorstCase =
+    qaCounts.executableCases * lock.timeouts.caseMilliseconds;
+  if (lock.timeouts.tier1Milliseconds < tier1WorstCase) {
+    throw new Error(
+      `timeouts.tier1Milliseconds must cover the locked per-case budget ` +
+        `(${qaCounts.executableCases} * ${lock.timeouts.caseMilliseconds} = ${tier1WorstCase}ms)`,
+    );
+  }
   return lock;
+}
+
+export function qaCorpusCounts(inventory) {
+  if (!Array.isArray(inventory?.cases)) {
+    throw new Error("qa-corpus bounds did not emit a cases array");
+  }
+  const reportingCases = inventory.cases.filter(
+    (entry) => entry?.mode === "reporting",
+  ).length;
+  return {
+    executableCases: inventory.cases.length - reportingCases,
+    reportingCases,
+    totalCases: inventory.cases.length,
+  };
+}
+
+function assertQaCorpusCounts(lock, root) {
+  const inventory = JSON.parse(
+    run("python3", [join(root, "bounds.py"), "--json"], {
+      cwd: root,
+      timeout: lock.timeouts.corpusMilliseconds,
+    }),
+  );
+  const observed = qaCorpusCounts(inventory);
+  const expected = lock.cohorts.qaCorpus;
+  for (const field of ["executableCases", "reportingCases", "totalCases"]) {
+    if (observed[field] !== expected[field]) {
+      throw new Error(
+        `qa-corpus ${field} drift: expected ${expected[field]}, observed ${observed[field]}`,
+      );
+    }
+  }
+  return observed;
 }
 
 function run(command, args, options = {}) {
@@ -527,6 +600,12 @@ async function main() {
         timeout: lock.timeouts.corpusMilliseconds,
         stdio: "inherit",
       },
+    );
+    const qaCounts = assertQaCorpusCounts(lock, roots["qa-corpus"]);
+    console.error(
+      `verification-stack: locked QA inventory ` +
+        `${qaCounts.executableCases} executable + ` +
+        `${qaCounts.reportingCases} reporting = ${qaCounts.totalCases}`,
     );
     console.error("verification-stack: Quoin Tier-1 canonical gate");
     const benchmarkArgs = [

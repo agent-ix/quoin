@@ -9,6 +9,7 @@ import {
   assertRepository,
   cliSelectsEngine,
   parseSubmoduleRevision,
+  qaCorpusCounts,
   validateLockShape,
 } from "./verification-stack.mjs";
 
@@ -31,9 +32,21 @@ const base = {
       { remote: `https://github.com/agent-ix/${name}`, revision: A },
     ]),
   ),
-  cohorts: { qaExternalQuoin: { revision: B } },
+  cohorts: {
+    qaExternalQuoin: { revision: B },
+    qaCorpus: { executableCases: 2, reportingCases: 1, totalCases: 3 },
+  },
   requiredCapabilities: ["metrics_envelope"],
   artifacts: { "bench/metrics.json": digest },
+  timeouts: {
+    caseMilliseconds: 1000,
+    corpusMilliseconds: 1000,
+    tier1Milliseconds: 2000,
+    tier2Milliseconds: 1000,
+    installMilliseconds: 1000,
+    quoinMilliseconds: 1000,
+    spanMilliseconds: 1000,
+  },
 };
 
 const shapeMutations = [
@@ -73,6 +86,21 @@ const shapeMutations = [
     (v) => delete v.repositories["spec-artifacts-iso"],
     /spec-artifacts-iso must be locked/,
   ],
+  [
+    "qa case-count partition",
+    (v) => (v.cohorts.qaCorpus.totalCases = 4),
+    /partition totalCases/,
+  ],
+  [
+    "missing timeout",
+    (v) => delete v.timeouts.corpusMilliseconds,
+    /timeouts.corpusMilliseconds/,
+  ],
+  [
+    "undersized Tier-1 campaign timeout",
+    (v) => (v.timeouts.tier1Milliseconds = 1000),
+    /cover the locked per-case budget/,
+  ],
 ];
 
 let passed = 0;
@@ -87,6 +115,18 @@ for (const [name, mutate, expected] of shapeMutations) {
     passed += 1;
   }
 }
+
+const counts = qaCorpusCounts({
+  cases: [{ mode: "detection" }, { mode: "attachment" }, { mode: "reporting" }],
+});
+if (
+  counts.executableCases !== 2 ||
+  counts.reportingCases !== 1 ||
+  counts.totalCases !== 3
+) {
+  throw new Error("qa-corpus case counts were not partitioned exactly");
+}
+passed += 1;
 
 try {
   cliSelectsEngine(
@@ -180,5 +220,5 @@ try {
 }
 
 console.log(
-  `verification-stack-selftest: ${passed}/${shapeMutations.length + 8} invariants verified`,
+  `verification-stack-selftest: ${passed}/${shapeMutations.length + 9} invariants verified`,
 );
