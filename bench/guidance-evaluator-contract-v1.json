@@ -1,5 +1,36 @@
 {
   "schemaVersion": "guidance-evaluator-contract-v1",
+  "populationSource": {
+    "corpusRevision": "944aa63f653d7e48b9b16b411745d4a96f9836b1",
+    "corpusInputDigest": "sha256:d0775b5209a1745d74f51896f827fb866a731b186c71abe8d74583335b12a7a8",
+    "producer": {
+      "schemaVersion": "quire-tool-provenance-v1",
+      "cli": {
+        "version": "0.30.2",
+        "sourceRevision": "90c003685ee7484b3ec86cd6b0add5ad06ff76fe",
+        "sourceState": "clean"
+      },
+      "engine": {
+        "version": "0.46.0",
+        "sourceRevision": "c71f3cb661d152a09df8e916ea06d8e80124762c",
+        "sourceState": "clean"
+      },
+      "capabilities": [
+        "action_guidance.structured",
+        "binding_census",
+        "binding_census.self_named",
+        "binding_census.tagged",
+        "declaration_origins",
+        "metrics_envelope",
+        "minted_targets",
+        "property_spans.safe_refusal",
+        "reference_only_targets",
+        "specific_shaped",
+        "suspicions",
+        "unmatched_tags"
+      ]
+    }
+  },
   "metricVersions": [
     "guidance.correctness-v1",
     "guidance.repair-success-v1",
@@ -19,8 +50,8 @@
   "partitions": [
     {
       "id": "quire/quire/coverage.diagnostics/archetype-matches-nothing",
-      "denominator": 310,
-      "populationDigest": "sha256:400fa09ebb92f5f070c7f84566e1e7549187baceaa525efcd1762e008245277d",
+      "denominator": 314,
+      "populationDigest": "sha256:f8407293c1fa04005ed817d98704939749c01d6a38cf3a2eca10f48262b0e397",
       "templateDigests": [
         "sha256:f6780e65ca1c31ffe03286b158e27dd9c7de051e9c7d0316a8b646bd1976af7b"
       ],
@@ -35,8 +66,8 @@
     },
     {
       "id": "quire/quire/coverage.diagnostics/catch-all-universal",
-      "denominator": 110,
-      "populationDigest": "sha256:52c540f7d5aee1a1ebbcc05dacb60c075ca3c281ce6a2835c3c4c0aaab0b5b81",
+      "denominator": 112,
+      "populationDigest": "sha256:db71580bb240528db17589bebec6c7b53c4930cc083a2150600053d36cd142a9",
       "templateDigests": [
         "sha256:edff4689670c4d607d8eaaa6330637e7dae30e1eff98dcdb3eb3998ceb649e2d"
       ],
@@ -51,8 +82,8 @@
     },
     {
       "id": "quire/quire/coverage.diagnostics/hollow-denominator",
-      "denominator": 10,
-      "populationDigest": "sha256:83b9f6643158495add380ac46d96c5580fde390980baa45a3c73d90b0fea1534",
+      "denominator": 13,
+      "populationDigest": "sha256:bc659d0fc8360af148dcb57b083ab3cc570826801fdb60ae915eb922fc635330",
       "templateDigests": [
         "sha256:179c56992a19d5a821dc8ef72413551c1e765a1019cd0f1c1cc1485ffeb77d73"
       ],
@@ -90,17 +121,20 @@
     },
     {
       "id": "quire/quire/coverage.diagnostics/marker-form-mismatch",
-      "denominator": 10,
-      "populationDigest": "sha256:8afef7f3be1ca85514cf3309aef0fff7f9fd15fae87468ad743656c242895866",
+      "denominator": 13,
+      "populationDigest": "sha256:ee8cd654f5f65f4f44b11430fcac9d2f1a1aae251d3b19463cf42bf4bc2ed12e",
       "templateDigests": [
-        "sha256:7aecebb9a7550f69508e82d82103e04f66ed02206dce265aea7f391850a4d093"
+        "sha256:7aecebb9a7550f69508e82d82103e04f66ed02206dce265aea7f391850a4d093",
+        "sha256:995c1c37e7115e238888cca31e1a5d4307564492c53538a08202cc28bdde9327"
       ],
       "selectedRecordIds": [
         "sha256:27f3645c16ad4b833fe8a0cc157621d91b04a0721329701faf8a0d79cbf4d25f",
         "sha256:51882fdce86cbd52019469ddf9eb404fd91baa358a912eb15e004c6712a9d4b4",
         "sha256:7713b7ad69bf3dc168ea467c7d85afc714abc626463d3d4919577f180ee599ec",
         "sha256:970bb50c01b686c8ac0f71d6eeb37b875be4898df28c5a2593133d8971009a79",
-        "sha256:a98f43dab1411d6c419ee5df31439c9ffc0da1f8ad1fd29e5bf69da40df36e43"
+        "sha256:a51f0b884a2573a5ac29d299a9fecb9d10a381184938c4ca493976bd8d69a05f",
+        "sha256:a98f43dab1411d6c419ee5df31439c9ffc0da1f8ad1fd29e5bf69da40df36e43",
+        "sha256:c8d0adb23c0ff6b53aedc32f7e2f2de5e09fb6e3110e490dbe2fd5276243cd55"
       ]
     },
     {

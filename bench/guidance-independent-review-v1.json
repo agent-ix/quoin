@@ -1,5 +1,36 @@
 {
   "schemaVersion": "guidance-independent-review-v1",
+  "populationSource": {
+    "corpusRevision": "944aa63f653d7e48b9b16b411745d4a96f9836b1",
+    "corpusInputDigest": "sha256:d0775b5209a1745d74f51896f827fb866a731b186c71abe8d74583335b12a7a8",
+    "producer": {
+      "schemaVersion": "quire-tool-provenance-v1",
+      "cli": {
+        "version": "0.30.2",
+        "sourceRevision": "90c003685ee7484b3ec86cd6b0add5ad06ff76fe",
+        "sourceState": "clean"
+      },
+      "engine": {
+        "version": "0.46.0",
+        "sourceRevision": "c71f3cb661d152a09df8e916ea06d8e80124762c",
+        "sourceState": "clean"
+      },
+      "capabilities": [
+        "action_guidance.structured",
+        "binding_census",
+        "binding_census.self_named",
+        "binding_census.tagged",
+        "declaration_origins",
+        "metrics_envelope",
+        "minted_targets",
+        "property_spans.safe_refusal",
+        "reference_only_targets",
+        "specific_shaped",
+        "suspicions",
+        "unmatched_tags"
+      ]
+    }
+  },
   "reviewer": "OpenAI Codex, independent consumer review",
   "reviewedAt": "2026-08-28",
   "reviewRule": "Every selected record and every distinct action template was read against its raw producer evidence and controlled fixture contract.",
@@ -113,6 +144,13 @@
       "templateDigest": "sha256:90f6659f9fdccdc68e71423b7f6a5ac3d6d2883560b79970fcaf91e318824f28",
       "kind": "remedy",
       "text": "compare the count for “unwrap()” to zero or make the match command exit non-zero when forbidden text is present",
+      "outcome": "pass",
+      "rationale": "The action changes the cause-bearing target named by the finding and does not claim that changing an unrelated control is a repair."
+    },
+    {
+      "templateDigest": "sha256:995c1c37e7115e238888cca31e1a5d4307564492c53538a08202cc28bdde9327",
+      "kind": "remedy",
+      "text": "align the declared test-name form with the authored symbol-name convention, without widening unrelated annotation channels",
       "outcome": "pass",
       "rationale": "The action changes the cause-bearing target named by the finding and does not claim that changing an unrelated control is a repair."
     },
@@ -1439,6 +1477,35 @@
       }
     },
     {
+      "recordId": "sha256:a51f0b884a2573a5ac29d299a9fecb9d10a381184938c4ca493976bd8d69a05f",
+      "partition": "quire/quire/coverage.diagnostics/marker-form-mismatch",
+      "identity": {
+        "family": "marker-form-mismatch",
+        "case": "low-symbol-binding-control",
+        "language": "rust",
+        "declaration": "traceability.trace_tags"
+      },
+      "templateDigest": "sha256:995c1c37e7115e238888cca31e1a5d4307564492c53538a08202cc28bdde9327",
+      "correctness": "pass",
+      "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
+      "executableProof": {
+        "kind": "repair",
+        "outcome": "pass",
+        "method": "The controlled corpus replays the defective fixture and its language-matched repaired control; the expected family is present only before repair while corpus verification remains green.",
+        "retainedFinding": {
+          "declaration": "traceability.trace_tags",
+          "reason": "marker-form-mismatch",
+          "message": "21 rust evidence symbols carry an id in their own name and no declared name form read one; for example `tests::case_01` at src/lib.rs:5 (declared forms: rust-trace-attribute, rust-trace-line, rust-comment-id, rust-test-name-id, rust-doc-comment-id). Other tag forms may bind in the same language, so the aggregate binding census cannot clear this subpopulation",
+          "path": "src/lib.rs",
+          "line": 5,
+          "value": "rust",
+          "subject": "rust self-named evidence-symbol binding",
+          "change_target": "src/lib.rs:5",
+          "remedy": "align the declared test-name form with the authored symbol-name convention, without widening unrelated annotation channels"
+        }
+      }
+    },
+    {
       "recordId": "sha256:a6171669c4a3a12c4f0d299f4216fb34f6cb7468fee7e63631f9156a276a5c85",
       "partition": "quire/quire/coverage.diagnostics/section-matches-nothing",
       "identity": {
@@ -1605,6 +1672,35 @@
           "subject": "trace id `FR-001`",
           "change_target": "src/coverage.test.ts:14",
           "next_diagnostic_step": "choose the exact minted child that this evidence verifies, or correct the authored id/declaration; do not substitute a sibling merely to clear coverage"
+        }
+      }
+    },
+    {
+      "recordId": "sha256:c8d0adb23c0ff6b53aedc32f7e2f2de5e09fb6e3110e490dbe2fd5276243cd55",
+      "partition": "quire/quire/coverage.diagnostics/marker-form-mismatch",
+      "identity": {
+        "family": "marker-form-mismatch",
+        "case": "low-symbol-binding",
+        "language": "rust",
+        "declaration": "traceability.trace_tags"
+      },
+      "templateDigest": "sha256:995c1c37e7115e238888cca31e1a5d4307564492c53538a08202cc28bdde9327",
+      "correctness": "pass",
+      "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
+      "executableProof": {
+        "kind": "repair",
+        "outcome": "pass",
+        "method": "The controlled corpus replays the defective fixture and its language-matched repaired control; the expected family is present only before repair while corpus verification remains green.",
+        "retainedFinding": {
+          "declaration": "traceability.trace_tags",
+          "reason": "marker-form-mismatch",
+          "message": "21 rust evidence symbols carry an id in their own name and no declared name form read one; for example `tests::case_01` at src/lib.rs:5 (declared forms: rust-trace-attribute, rust-trace-line, rust-comment-id, rust-test-name-id, rust-doc-comment-id). Other tag forms may bind in the same language, so the aggregate binding census cannot clear this subpopulation",
+          "path": "src/lib.rs",
+          "line": 5,
+          "value": "rust",
+          "subject": "rust self-named evidence-symbol binding",
+          "change_target": "src/lib.rs:5",
+          "remedy": "align the declared test-name form with the authored symbol-name convention, without widening unrelated annotation channels"
         }
       }
     },

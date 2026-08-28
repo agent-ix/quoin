@@ -3,7 +3,7 @@
   "repositories": {
     "quoin": {
       "remote": "https://github.com/agent-ix/quoin",
-      "revision": "1657f9e62ac97e98dec83fe8e05cea9069bf85f9"
+      "revision": "d3220351813cb8936e3f18018e5b9f94893c9553"
     },
     "quire": {
       "remote": "https://github.com/agent-ix/quire-rs",
@@ -70,11 +70,11 @@
     "src/quire/schemas/properties-v1.schema.json": "sha256:cc687773c35b3e71e82fc336e887ecc688a28b03e970e349b2921b8624e4d11c",
     "bench/metrics.json": "sha256:5876512767852fd9ee5a848de90e34c9626926bb768db87c2eaf28deb2d05764",
     "bench/tier1-mapping.json": "sha256:186e282f4197894f96e51e2dfe9fc6420f222512159abfd84be8be7c5c6ea90a",
-    "bench/guidance-evaluator-contract-v1.json": "sha256:fe7857bfa58cfcab75be4e90c850debe43b266daa9dea1c01f10f035d822697a",
-    "bench/guidance-independent-review-v1.json": "sha256:ba0157850d4f33eab0e4612322dc3d33bf6c6b54bec7e0918bc181091495e077",
+    "bench/guidance-evaluator-contract-v1.json": "sha256:db39241434f9069cacd743b6d5c7606592a6459b85c7f0da3dc556ebaacc1417",
+    "bench/guidance-independent-review-v1.json": "sha256:7d9bf500c731b41a0f0c3a315115acb6e9ae910148da95dae63740bec822ce0f",
     "bench/span-grounding-labels.json": "sha256:897ef28979f5a3f607fdb27e740f1508b736ae5d9ce3dd91c7813f09f841c000",
     "bench/span-grounding-v2-labels.json": "sha256:4e10f34488c87439e7253668ea34773adb432b16bce574b1cc93fbf0343e2650",
-    "bench/span-breadth-v1-labels.json": "sha256:d618732f12fed542c62fd502e1b1b71eebe5ebb8065b39bf48704c8135fa1407",
+    "bench/span-breadth-v1-labels.json": "sha256:8885aa0c7dda7975f296e822922c160e1bcd0665301e4bdb42db61bf20b37815",
     "bench/answer-key.json": "sha256:ece1a7f5d254623cf79beff1113021f4f71359ac9a3c703d07cff0f8a45e9532",
     "bench/advisory-adjudication-v1.json": "sha256:87c575b6ca0c0886d874f609144f907f3ac270e08c2091bb2bb1ead725713e43",
     "corpus/config/metrics.json": "sha256:69ab8e5b8fc14e07408e034f0b791c3dd3356c9db78e1ac0dc961bcc0b47c0d7",
