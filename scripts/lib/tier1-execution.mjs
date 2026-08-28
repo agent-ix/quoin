@@ -17,23 +17,10 @@ const VALIDATE_LINE =
   /^(?<path>.+?): line (?<line>\d+): (?<rest>.*) \[(?<reason>[a-z-]+)\]$/;
 const FULL_SHA = /^[0-9a-f]{40}$/;
 
-function controlledFixtureToolIdentity(quoin, execute) {
+function controlledFixtureToolIdentity(quoin) {
   const lockedRevision = process.env.QUOIN_LOCKED_SOURCE_REVISION;
   if (FULL_SHA.test(lockedRevision ?? "")) {
     return `tier1-controlled-fixture git:${lockedRevision}`;
-  }
-  const quoinRoot = dirname(dirname(resolve(quoin)));
-  const revision = execute("git", ["-C", quoinRoot, "rev-parse", "HEAD"]);
-  const status = execute("git", [
-    "-C",
-    quoinRoot,
-    "status",
-    "--porcelain=v1",
-    "--untracked-files=all",
-  ]);
-  if (revision.ok && status.ok && !status.stdout.trim()) {
-    const value = revision.stdout.trim();
-    if (FULL_SHA.test(value)) return `tier1-controlled-fixture git:${value}`;
   }
   const digest = createHash("sha256").update(readFileSync(quoin)).digest("hex");
   return `tier1-controlled-fixture sha256:${digest}`;
@@ -413,7 +400,7 @@ export function createTier1Executor() {
         PATH: `${toolBin}:${process.env.PATH ?? ""}`,
       };
       const moduleArgs = single ? ["--module", module] : [];
-      const fixtureTool = controlledFixtureToolIdentity(quoin, execute);
+      const fixtureTool = controlledFixtureToolIdentity(quoin);
       const invoke = (args, name) =>
         must(
           execute(process.execPath, [quoin, ...args], commandEnv),
