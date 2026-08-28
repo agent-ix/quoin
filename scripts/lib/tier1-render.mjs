@@ -52,6 +52,11 @@ export function renderTier1(report, verdicts) {
     `span_grounding_rate        ${pct(report.span_grounding?.rate ?? null)} ` +
       `(${report.span_grounding?.numerator ?? 0} of ${report.span_grounding?.denominator ?? 0} specific-shape criteria carry domain, precondition, and oracle; ` +
       `${report.span_grounding?.namedMisses?.length ?? 0} named misses)`,
+    `span_grounding_v2_rate     ${pct(report.span_grounding_v2?.rate ?? null)} ` +
+      `(${report.span_grounding_v2?.numerator ?? 0} of ${report.span_grounding_v2?.denominator ?? 0} labeled criteria have exact spans or justified refusal; ` +
+      `${report.span_grounding_v2?.outcomes?.exactSpans ?? 0} exact, ` +
+      `${report.span_grounding_v2?.outcomes?.safeRefusals ?? 0} safe refusals, ` +
+      `${report.span_grounding_v2?.namedMisses?.length ?? 0} named misses)`,
     `span_correctness_rate      ${pct(report.grounding_quality?.correctness?.rate ?? null)} ` +
       `(${report.grounding_quality?.correctness?.numerator ?? 0} of ${report.grounding_quality?.correctness?.denominator ?? 0} controlled expected loci match exactly; ` +
       `${report.grounding_quality?.correctness?.namedMisses?.length ?? 0} named misses)`,

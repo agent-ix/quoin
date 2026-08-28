@@ -178,6 +178,34 @@ export function createMeasurementRecord(report, at, options) {
       },
     ),
     observation(
+      "span_grounding_v2_rate",
+      report.span_grounding_v2?.rate == null
+        ? null
+        : Number((report.span_grounding_v2.rate * 100).toFixed(3)),
+      {
+        population: {
+          examined: report.span_grounding_v2?.denominator ?? 0,
+          matched: report.span_grounding_v2?.numerator ?? 0,
+          complete: (report.span_grounding_v2?.malformed?.length ?? 0) === 0,
+          identity: {
+            labels: report.span_grounding_v2?.labels ?? [],
+            outcomes: report.span_grounding_v2?.outcomes ?? {},
+            exclusions: report.span_grounding_v2?.exclusions ?? [],
+            namedMisses: report.span_grounding_v2?.namedMisses ?? [],
+          },
+        },
+        dimensions: {
+          producerVersions: (
+            report.span_grounding_v2?.producerVersions ?? []
+          ).join(", "),
+        },
+        reason:
+          report.span_grounding_v2?.malformed?.length > 0
+            ? "the labeled span-v2 population changed or a properties payload was malformed"
+            : undefined,
+      },
+    ),
+    observation(
       "span_correctness_rate",
       report.grounding_quality?.correctness?.rate == null
         ? null

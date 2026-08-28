@@ -27,6 +27,7 @@ import {
   scoreFindings,
   scoreGroundingQuality,
   scoreSpanGrounding,
+  scoreSpanGroundingV2,
 } from "../evals/lib/quality.mjs";
 import {
   createMeasurementRecord,
@@ -72,6 +73,11 @@ const CORPUS_METRICS = join(ROOT, "corpus", "config", "metrics.json");
 const BASELINE = join(ROOT, "bench", "tier1-baseline.json");
 const RECALL_BASELINE = join(ROOT, "corpus", "baselines", "quoin.json");
 const GROUNDING_LABELS = join(ROOT, "bench", "span-grounding-labels.json");
+const GROUNDING_V2_LABELS = join(
+  ROOT,
+  "bench",
+  "span-grounding-v2-labels.json",
+);
 const GROUNDING_FIXTURE = join(ROOT, "bench", "fixtures", "span-grounding");
 const ADVISORY_ADJUDICATION = join(
   ROOT,
@@ -394,6 +400,9 @@ async function main() {
     }
   }
   const groundingLabels = JSON.parse(readFileSync(GROUNDING_LABELS, "utf8"));
+  const groundingV2Labels = JSON.parse(
+    readFileSync(GROUNDING_V2_LABELS, "utf8"),
+  );
   const groundingPayload = execution.properties(
     quire,
     GROUNDING_FIXTURE,
@@ -478,6 +487,10 @@ async function main() {
     actionability_v1: scoreActionability(scoredFindings),
     actionability_v2: scoreActionabilityV2(scoredFindings),
     span_grounding: scoreSpanGrounding(propertyPayloads),
+    span_grounding_v2: scoreSpanGroundingV2(
+      propertyPayloads,
+      groundingV2Labels,
+    ),
     property_payloads: propertyPayloads,
     grounding_quality: scoreGroundingQuality(groundingPayload, groundingLabels),
     grounding_quality_payload: groundingPayload,

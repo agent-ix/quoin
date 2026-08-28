@@ -63,6 +63,15 @@
       "baseline": 0,
       "baseline_note": "Battletest pass 2 measured 0 of 65 specific-shape records carrying all three spans. Zero remains the historical starting point, not an absence; the retained Tier-1 report now carries the computed population and accepted ratchet."
     },
+    "span_grounding_v2_rate": {
+      "measurement_plan": "spec/assurance/MP-204-span-grounding.md",
+      "unit": "percent of labeled span outcomes",
+      "population": "specific-shape criteria matched by an exact retained statement/property label with pinned multiplicity",
+      "method": "criteria whose domain/precondition/oracle boundaries exactly equal the label, or that emit no spans and carry the label's explicit justified-refusal signal. Exact spans and safe refusals remain separately counted; wrong spans, unexpected refusals, unjustified refusals, unsafe emissions, and changed label multiplicity are named failures",
+      "direction": "higher-is-better",
+      "baseline": null,
+      "baseline_note": "V2 preserves the historical presence-only span_grounding_rate and adds the Epic #261 completion contract: every labeled criterion must yield exact boundaries or an explicit justified refusal without inventing an unstated domain."
+    },
     "span_correctness_rate": {
       "measurement_plan": "spec/assurance/MP-213-span-correctness.md",
       "unit": "percent of controlled expected loci",

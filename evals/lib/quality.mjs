@@ -601,6 +601,182 @@ export function scoreSpanGrounding(inputs) {
   };
 }
 
+/**
+ * Labeled span outcome v2 (#261).
+ *
+ * The historical v1 metric above asks only whether all three fields are
+ * populated. V2 asks the useful question: did the producer emit the exact
+ * labeled boundaries, or did it explicitly refuse for the labeled safe reason?
+ * Rules match an exact statement and property so a denominator cannot be
+ * manufactured by a fuzzy classifier. `expectedMatches` pins multiplicity;
+ * losing repeated corpus cases is therefore a malformed run, not an apparent
+ * improvement.
+ */
+export function scoreSpanGroundingV2(inputs, labelSet) {
+  const rules = Array.isArray(labelSet?.rules) ? labelSet.rules : [];
+  const matches = new Map(rules.map((rule) => [rule.id, 0]));
+  const namedMisses = [];
+  const exclusions = [];
+  const malformed = [];
+  const outcomes = {
+    exactSpans: 0,
+    safeRefusals: 0,
+    wrongSpans: 0,
+    unexpectedRefusals: 0,
+    unjustifiedRefusals: 0,
+    unsafeEmissions: 0,
+  };
+  const producerVersions = new Set();
+  let numerator = 0;
+  let denominator = 0;
+
+  for (const input of inputs) {
+    const payload = input?.payload;
+    const producerVersion =
+      input?.producerVersion ??
+      (payload?.engine
+        ? `${payload.engine.cli ?? "unknown-cli"} (engine ${payload.engine.engine ?? "unknown"})`
+        : null);
+    if (producerVersion) producerVersions.add(producerVersion);
+    if (!payload || !Array.isArray(payload.documents)) {
+      malformed.push({
+        case: input?.case ?? "unknown-case",
+        reason: "properties payload has no documents array",
+      });
+      continue;
+    }
+
+    payload.documents.forEach((document, documentIndex) => {
+      if (!Array.isArray(document?.criteria)) {
+        malformed.push({
+          case: input?.case ?? "unknown-case",
+          document: document?.document ?? `document-${documentIndex + 1}`,
+          reason: "properties document has no criteria array",
+        });
+        return;
+      }
+      document.criteria.forEach((criterion, criterionIndex) => {
+        if (!SPECIFIC_PROPERTIES.has(criterion?.property)) return;
+        const id = criterionIdentity(
+          input,
+          document,
+          criterion,
+          criterionIndex,
+        );
+        const matching = rules.filter(
+          (rule) =>
+            rule.statement === criterion?.statement &&
+            rule.property === criterion?.property,
+        );
+        if (matching.length === 0) {
+          exclusions.push({
+            id,
+            state: "not_applicable",
+            reason: "specific-shape criterion is outside the labeled v2 population",
+          });
+          return;
+        }
+        if (matching.length > 1) {
+          malformed.push({
+            id,
+            reason: "criterion matches more than one span-v2 label rule",
+            rules: matching.map((rule) => rule.id),
+          });
+          return;
+        }
+
+        const rule = matching[0];
+        matches.set(rule.id, (matches.get(rule.id) ?? 0) + 1);
+        denominator += 1;
+        const observed = observedSpans(criterion);
+        const emitted = Object.values(observed).some((span) => span !== null);
+        const signals = Array.isArray(criterion?.signals)
+          ? criterion.signals
+          : [];
+
+        if (rule.expectedRefusal) {
+          const passed = !emitted && signals.includes(rule.expectedRefusal);
+          if (passed) {
+            numerator += 1;
+            outcomes.safeRefusals += 1;
+          } else {
+            if (emitted) outcomes.unsafeEmissions += 1;
+            else outcomes.unjustifiedRefusals += 1;
+            namedMisses.push({
+              id,
+              rule: rule.id,
+              expected: { refusal: rule.expectedRefusal },
+              observed: { spans: observed, signals },
+              outcome: emitted ? "unsafe-emission" : "unjustified-refusal",
+            });
+          }
+          return;
+        }
+
+        const expected = expectedSpans(
+          criterion,
+          { ...rule, rowId: criterion.row_id },
+          malformed,
+        );
+        const passed =
+          expected !== null &&
+          ["domain", "precondition", "oracle"].every((field) =>
+            sameSpan(expected[field], observed[field]),
+          );
+        if (passed) {
+          numerator += 1;
+          outcomes.exactSpans += 1;
+        } else {
+          if (emitted) outcomes.wrongSpans += 1;
+          else outcomes.unexpectedRefusals += 1;
+          namedMisses.push({
+            id,
+            rule: rule.id,
+            expected,
+            observed,
+            outcome: emitted ? "wrong-span" : "unexpected-refusal",
+          });
+        }
+      });
+    });
+  }
+
+  for (const rule of rules) {
+    const observed = matches.get(rule.id) ?? 0;
+    if (!Number.isInteger(rule.expectedMatches) || rule.expectedMatches < 1) {
+      malformed.push({
+        rule: rule.id,
+        reason: "label rule must declare a positive integer expectedMatches",
+      });
+    } else if (observed !== rule.expectedMatches) {
+      malformed.push({
+        rule: rule.id,
+        reason: "labeled population multiplicity changed",
+        expectedMatches: rule.expectedMatches,
+        observedMatches: observed,
+      });
+    }
+  }
+
+  return {
+    definitionVersion:
+      labelSet?.definitionVersion ?? "property.span-grounding-v2",
+    numerator,
+    denominator,
+    rate: ratio(numerator, denominator),
+    outcomes,
+    namedMisses,
+    exclusions,
+    malformed,
+    labels: rules.map((rule) => ({
+      id: rule.id,
+      expectedMatches: rule.expectedMatches,
+      observedMatches: matches.get(rule.id) ?? 0,
+    })),
+    producerVersions: [...producerVersions].sort(),
+  };
+}
+
 /** Exact controlled-locus scoring, kept separate from span presence. */
 export function scoreGroundingQuality(payload, labelSet) {
   const malformed = [];

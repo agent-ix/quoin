@@ -1,0 +1,13 @@
+{
+  "$comment": "Epic #261 labeled span-v2 population. The retained Tier-1 corpus contains this exact criterion 38 times. It states an idempotence oracle but no generator/input domain; emitting guessed boundaries would overclaim, so the pinned correct outcome is an explicit no-domain safe refusal.",
+  "definitionVersion": "property.span-grounding-v2",
+  "rules": [
+    {
+      "id": "corpus-idempotence-without-explicit-domain",
+      "property": "idempotence",
+      "statement": "Applying the normalizer twice shall give the same result as applying it once.",
+      "expectedMatches": 38,
+      "expectedRefusal": "span:refused-no-explicit-domain"
+    }
+  ]
+}

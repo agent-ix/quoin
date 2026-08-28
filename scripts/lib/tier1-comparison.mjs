@@ -180,6 +180,23 @@ export function ratchet(report, previous, dictionary) {
     });
   }
 
+  if (report.span_grounding_v2 && report.span_grounding_v2.rate !== null) {
+    const [verdict, kept] = compare(
+      dictionary.metrics.span_grounding_v2_rate.direction,
+      report.span_grounding_v2.rate,
+      previous?.span_grounding_v2?.rate ??
+        dictionary.metrics.span_grounding_v2_rate.baseline ??
+        null,
+    );
+    out.push({
+      metric: "span_grounding_v2_rate",
+      family: null,
+      observed: report.span_grounding_v2.rate,
+      baseline: kept,
+      verdict,
+    });
+  }
+
   for (const [axis, metric] of [
     ["correctness", "span_correctness_rate"],
     ["safeRefusal", "span_safe_refusal_rate"],
@@ -283,6 +300,9 @@ export function ratchet(report, previous, dictionary) {
     }
     if (verdict.metric === "span_grounding_rate") {
       return previous?.span_grounding?.rate ?? null;
+    }
+    if (verdict.metric === "span_grounding_v2_rate") {
+      return previous?.span_grounding_v2?.rate ?? null;
     }
     if (verdict.metric === "span_correctness_rate") {
       const prior = previous?.grounding_quality?.correctness;

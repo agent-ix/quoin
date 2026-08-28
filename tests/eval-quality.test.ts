@@ -14,6 +14,7 @@ import {
   scoreGroundingQuality,
   scoreScenario,
   scoreSpanGrounding,
+  scoreSpanGroundingV2,
 } from "../evals/lib/quality.mjs";
 import {
   findingEnvelopeDigest,
@@ -620,6 +621,116 @@ describe("span grounding", () => {
       malformed: [{ case: "broken" }],
     });
     expect(scoreScenario({ properties }).spanGrounding).toEqual(direct);
+  });
+});
+
+describe("labeled span grounding v2", () => {
+  it("counts exact spans and justified refusals without requiring an invented precondition", () => {
+    const exactStatement =
+      "Every normalizer applied twice gives the same result as applying it once";
+    const span = (statement: string, text: string) => {
+      const start = statement.indexOf(text);
+      return { start, end: start + text.length, text };
+    };
+    const refusalStatement =
+      "Applying the normalizer twice shall give the same result as applying it once.";
+    const inputs = [
+      {
+        case: "controlled",
+        payload: {
+          engine: { cli: "0.30.2", engine: "0.33.0" },
+          documents: [
+            {
+              document: "spec/FR-001.md",
+              criteria: [
+                {
+                  row_id: "FR-001-AC-1",
+                  statement: exactStatement,
+                  property: "idempotence",
+                  domain: span(exactStatement, "normalizer"),
+                  precondition: null,
+                  oracle: span(
+                    exactStatement,
+                    "gives the same result as applying it once",
+                  ),
+                  signals: ["span:domain", "span:oracle"],
+                },
+                {
+                  row_id: "FR-001-AC-2",
+                  statement: refusalStatement,
+                  property: "idempotence",
+                  domain: null,
+                  precondition: null,
+                  oracle: null,
+                  signals: ["span:refused-no-explicit-domain"],
+                },
+              ],
+            },
+          ],
+        },
+      },
+    ];
+    const labels = {
+      definitionVersion: "property.span-grounding-v2",
+      rules: [
+        {
+          id: "exact-idempotence",
+          property: "idempotence",
+          statement: exactStatement,
+          expectedMatches: 1,
+          expected: {
+            domain: "normalizer",
+            precondition: null,
+            oracle: "gives the same result as applying it once",
+          },
+        },
+        {
+          id: "implicit-domain-refusal",
+          property: "idempotence",
+          statement: refusalStatement,
+          expectedMatches: 1,
+          expectedRefusal: "span:refused-no-explicit-domain",
+        },
+      ],
+    };
+
+    expect(scoreSpanGroundingV2(inputs, labels)).toMatchObject({
+      numerator: 2,
+      denominator: 2,
+      rate: 1,
+      outcomes: {
+        exactSpans: 1,
+        safeRefusals: 1,
+        wrongSpans: 0,
+        unexpectedRefusals: 0,
+        unjustifiedRefusals: 0,
+        unsafeEmissions: 0,
+      },
+      namedMisses: [],
+      malformed: [],
+    });
+  });
+
+  it("fails closed when the labeled multiplicity shrinks", () => {
+    const scored = scoreSpanGroundingV2([], {
+      definitionVersion: "property.span-grounding-v2",
+      rules: [
+        {
+          id: "retained-population",
+          property: "idempotence",
+          statement: "Applying twice gives the same result",
+          expectedMatches: 38,
+          expectedRefusal: "span:refused-no-explicit-domain",
+        },
+      ],
+    });
+    expect(scored.malformed).toEqual([
+      expect.objectContaining({
+        rule: "retained-population",
+        expectedMatches: 38,
+        observedMatches: 0,
+      }),
+    ]);
   });
 });
 
