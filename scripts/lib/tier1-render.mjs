@@ -50,6 +50,12 @@ export function renderTier1(report, verdicts) {
       `(${report.actionability_v2?.numerator ?? 0} of ${report.actionability_v2?.denominator ?? 0} findings carry subject/locus, evidence, target, and next move; ` +
       `${report.actionability_v2?.exclusions?.length ?? 0} excluded; ` +
       `${report.actionability_v2?.partitions?.length ?? 0} producer/family partitions)`,
+    `guidance correctness       ${pct(report.guidance_quality?.correctness?.rate ?? null)} ` +
+      `(${report.guidance_quality?.correctness?.numerator ?? 0} of ${report.guidance_quality?.correctness?.denominator ?? 0} independently reviewed records)`,
+    `guidance repair success    ${pct(report.guidance_quality?.repairSuccess?.rate ?? null)} ` +
+      `(${report.guidance_quality?.repairSuccess?.numerator ?? 0} of ${report.guidance_quality?.repairSuccess?.denominator ?? 0} remedy records)`,
+    `guidance diagnostic yield  ${pct(report.guidance_quality?.diagnosticYield?.rate ?? null)} ` +
+      `(${report.guidance_quality?.diagnosticYield?.numerator ?? 0} of ${report.guidance_quality?.diagnosticYield?.denominator ?? 0} diagnostic records)`,
     `span_grounding_rate        ${pct(report.span_grounding?.rate ?? null)} ` +
       `(${report.span_grounding?.numerator ?? 0} of ${report.span_grounding?.denominator ?? 0} specific-shape criteria carry domain, precondition, and oracle; ` +
       `${report.span_grounding?.namedMisses?.length ?? 0} named misses)`,
@@ -58,6 +64,9 @@ export function renderTier1(report, verdicts) {
       `${report.span_grounding_v2?.outcomes?.exactSpans ?? 0} exact, ` +
       `${report.span_grounding_v2?.outcomes?.safeRefusals ?? 0} safe refusals, ` +
       `${report.span_grounding_v2?.namedMisses?.length ?? 0} named misses)`,
+    `span_breadth_rate          ${pct(report.span_breadth?.rate ?? null)} ` +
+      `(${report.span_breadth?.outcomes?.exact ?? 0} exact, ${report.span_breadth?.outcomes?.safeRefusal ?? 0} safe refusals; ` +
+      `${report.span_breadth?.uniqueNormalizedStatements ?? 0} unique statements, ${report.span_breadth?.propertyShapes?.length ?? 0} shapes, ${report.span_breadth?.repositories?.length ?? 0} repositories)`,
     `span_correctness_rate      ${pct(report.grounding_quality?.correctness?.rate ?? null)} ` +
       `(${report.grounding_quality?.correctness?.numerator ?? 0} of ${report.grounding_quality?.correctness?.denominator ?? 0} controlled expected loci match exactly; ` +
       `${report.grounding_quality?.correctness?.namedMisses?.length ?? 0} named misses)`,

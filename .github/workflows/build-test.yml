@@ -5,7 +5,7 @@ on:
 
 jobs:
   ci:
-    uses: agent-ix/nodejs-actions/.github/workflows/build-test.yml@main
+    uses: agent-ix/nodejs-actions/.github/workflows/build-test.yml@5f1eb92b20aaac54dc8dff180e3d19adfd1a08ea
     with:
       npm_registry: https://registry.npmjs.org
       trusted_publish: true

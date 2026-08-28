@@ -63,6 +63,7 @@ export type {
 
 export {
   QUIRE_MAX_BUFFER,
+  quireExecutable,
   quireVersion,
   runQuire,
   runQuireAllowFailure,

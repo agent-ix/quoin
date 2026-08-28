@@ -176,6 +176,34 @@ export function scoreAgainstCohorts(cohorts, key) {
   return scoreAgainstRetainedCohorts(retained, key);
 }
 
+/** Epic #261's honest Tier-2 promotion disposition. IDs never change meaning. */
+export function assertPromotionDisposition(score) {
+  const ids = (items) => (items ?? []).map((item) => item.id ?? item).sort();
+  const expected = {
+    detected: ["AK-001", "AK-002", "AK-003", "AK-004", "AK-005"],
+    unavailable: ["AK-006"],
+    invalidAnswerKey: ["AK-007"],
+    controlFailures: [],
+  };
+  for (const [state, wanted] of Object.entries(expected)) {
+    const observed = ids(score[state]);
+    if (JSON.stringify(observed) !== JSON.stringify(wanted)) {
+      throw new Error(
+        `battletest: promotion disposition ${state} is ${JSON.stringify(observed)}, expected ${JSON.stringify(wanted)}`,
+      );
+    }
+  }
+  if (
+    (score.missed ?? []).length > 0 ||
+    (score.notEvaluated ?? []).length > 0
+  ) {
+    throw new Error(
+      "battletest: promotion leaves a valid Tier-2 key missed or not evaluated",
+    );
+  }
+  return true;
+}
+
 export function scoreAgainstRetainedCohorts(cohorts, key) {
   const detected = [];
   const missed = [];
@@ -426,6 +454,7 @@ function main() {
   validateCohortManifest(key, module);
   const cohorts = collectTier2Cohorts({ quire, corpus, module, key });
   const score = scoreAgainstCohorts(cohorts, key);
+  assertPromotionDisposition(score);
   const candidate = createTier2Baseline({
     provenance: tier2Provenance({ quire, module, key }),
     cohorts,
@@ -679,7 +708,9 @@ function tier2Provenance({ quire, module, key }) {
           [join(ROOT, "bin", "quoin.js"), "--version"],
           { encoding: "utf8" },
         ).trim(),
-        revision: gitProvenance(ROOT).revision,
+        revision:
+          process.env.QUOIN_LOCKED_SOURCE_REVISION ??
+          gitProvenance(ROOT).revision,
         digest: treeDigest(join(ROOT, "dist")),
       },
     },

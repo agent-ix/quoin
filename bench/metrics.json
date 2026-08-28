@@ -72,6 +72,17 @@
       "baseline": null,
       "baseline_note": "V2 preserves the historical presence-only span_grounding_rate and adds the Epic #261 completion contract: every labeled criterion must yield exact boundaries or an explicit justified refusal without inventing an unstated domain."
     },
+    "span_breadth_rate": {
+      "measurement_plan": "spec/assurance/MP-219-span-breadth.md",
+      "unit": "percent of broad labeled span outcomes",
+      "population": "at least 60 unique normalized statements across at least five property shapes and three clean full-SHA real repositories",
+      "method": "exact expected domain/precondition/oracle boundaries or the label's explicit justified safe refusal; duplicate normalized statements contribute once and every miss remains named",
+      "direction": "gate-100",
+      "expected": 100,
+      "tolerance": 0,
+      "baseline": 100,
+      "baseline_note": "This broad real-repository population complements, and does not rewrite, the retained controlled and historical span metrics."
+    },
     "span_correctness_rate": {
       "measurement_plan": "spec/assurance/MP-213-span-correctness.md",
       "unit": "percent of controlled expected loci",
@@ -109,6 +120,39 @@
       "direction": "higher-is-better",
       "baseline": null,
       "baseline_note": "The retained Tier-1 baseline records this beside, and never in place of, finding.actionability-v1. The first accepted run establishes the ratchet."
+    },
+    "guidance.correctness": {
+      "measurement_plan": "spec/assurance/MP-216-guidance-correctness.md",
+      "unit": "percent of independently reviewed guidance records",
+      "population": "the frozen deterministic sample and every distinct action template in each producer/channel/family partition",
+      "method": "independent consumer review of the action against retained subject, causal evidence, change target, and raw producer output under guidance-evaluator-contract-v1",
+      "direction": "gate-100",
+      "expected": 100,
+      "tolerance": 0,
+      "baseline": 100,
+      "baseline_note": "Promotion requires every applicable reviewed record to pass; presence-only actionability-v2 remains a separate historical metric."
+    },
+    "guidance.repair_success": {
+      "measurement_plan": "spec/assurance/MP-217-guidance-repair-success.md",
+      "unit": "percent of reviewed remedy records",
+      "population": "independently reviewed records whose structured next move is a remedy",
+      "method": "replay the defective fixture and its language-matched repaired control; require the family before repair, its absence after repair, and a green controlled corpus",
+      "direction": "gate-100",
+      "expected": 100,
+      "tolerance": 0,
+      "baseline": 100,
+      "baseline_note": "A remedy that merely sounds plausible does not pass."
+    },
+    "guidance.diagnostic_yield": {
+      "measurement_plan": "spec/assurance/MP-218-guidance-diagnostic-yield.md",
+      "unit": "percent of reviewed diagnostic records",
+      "population": "independently reviewed records whose structured next move is a diagnostic step",
+      "method": "execute the canonical producer replay and require the cited census, configuration, header, bypass, or causal channel to yield evidence that distinguishes the named causes",
+      "direction": "gate-100",
+      "expected": 100,
+      "tolerance": 0,
+      "baseline": 100,
+      "baseline_note": "A generic instruction to investigate earns no credit."
     },
     "cost_per_confirmed_insight": {
       "measurement_plan": "spec/assurance/MP-206-confirmed-insight-cost.md",

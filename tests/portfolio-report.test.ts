@@ -75,7 +75,7 @@ describe("portfolio measurement report", () => {
     value = 0.5,
   ): MeasurementCollection {
     return {
-      schemaVersion: 1,
+      schemaVersion: 2,
       collectionId: id,
       subject: "fixture",
       scope: { cases: 2 },
@@ -86,6 +86,20 @@ describe("portfolio measurement report", () => {
       sourceRevision: `${id}-source`,
       corpusRevision: `${id}-corpus`,
       environment: { runner: "test" },
+      verificationStack: {
+        schemaVersion: "verification-stack-attestation-v1",
+        lockDigest: `sha256:${"1".repeat(64)}`,
+        executableDigest: `sha256:${"2".repeat(64)}`,
+        sources: {
+          fixture: {
+            revision: "a".repeat(40),
+            sourceState: "clean",
+            remote: "https://example.invalid/fixture",
+          },
+        },
+        capabilities: ["fixture.capability"],
+        artifacts: { config: `sha256:${"3".repeat(64)}` },
+      },
       observations: [
         {
           metric: "quality.fixture",

@@ -71,7 +71,7 @@ describe("generic MeasurementRecords", () => {
     over: Partial<MeasurementCollection> = {},
   ): MeasurementCollection {
     return {
-      schemaVersion: 1,
+      schemaVersion: 2,
       collectionId: "run-001",
       subject: "fixture",
       scope: { cases: 1 },
@@ -82,6 +82,20 @@ describe("generic MeasurementRecords", () => {
       sourceRevision: "aaaaaaaaaaaaaaaa",
       corpusRevision: "cccccccccccccccc",
       environment: { runner: "test" },
+      verificationStack: {
+        schemaVersion: "verification-stack-attestation-v1",
+        lockDigest: `sha256:${"1".repeat(64)}`,
+        executableDigest: `sha256:${"2".repeat(64)}`,
+        sources: {
+          fixture: {
+            revision: "a".repeat(40),
+            sourceState: "clean",
+            remote: "https://example.invalid/fixture",
+          },
+        },
+        capabilities: ["fixture.capability"],
+        artifacts: { config: `sha256:${"3".repeat(64)}` },
+      },
       observations: [
         {
           metric: "quality.example",

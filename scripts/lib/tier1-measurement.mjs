@@ -61,6 +61,12 @@ export function createMeasurementRecord(report, at, options) {
     : !status.ok || status.stdout.trim() === ""
       ? revision.stdout.trim()
       : `${revision.stdout.trim()}+working-tree:${scorerDigest().slice(7, 23)}`;
+  const verificationStack = report.provenance?.verification_stack;
+  if (!verificationStack) {
+    throw new Error(
+      "tier-1 measurement v2 requires a canonical verification-stack attestation",
+    );
+  }
 
   const observation = (metric, value, observationOptions = {}) => {
     const plan = plans[metric];
@@ -206,6 +212,27 @@ export function createMeasurementRecord(report, at, options) {
       },
     ),
     observation(
+      "span_breadth_rate",
+      report.span_breadth?.rate == null
+        ? null
+        : Number((report.span_breadth.rate * 100).toFixed(3)),
+      {
+        population: {
+          examined: report.span_breadth?.denominator ?? 0,
+          matched: report.span_breadth?.numerator ?? 0,
+          complete: (report.span_breadth?.namedMisses?.length ?? 0) === 0,
+          identity: {
+            repositories: report.span_breadth?.repositories ?? [],
+            propertyShapes: report.span_breadth?.propertyShapes ?? [],
+            challenges: report.span_breadth?.challenges ?? [],
+            uniqueNormalizedStatements:
+              report.span_breadth?.uniqueNormalizedStatements ?? 0,
+            outcomes: report.span_breadth?.outcomes ?? {},
+          },
+        },
+      },
+    ),
+    observation(
       "span_correctness_rate",
       report.grounding_quality?.correctness?.rate == null
         ? null
@@ -288,6 +315,37 @@ export function createMeasurementRecord(report, at, options) {
         },
       },
     ),
+    ...[
+      ["guidance.correctness", "guidance.correctness-v1", "correctness"],
+      [
+        "guidance.repair_success",
+        "guidance.repair-success-v1",
+        "repairSuccess",
+      ],
+      [
+        "guidance.diagnostic_yield",
+        "guidance.diagnostic-yield-v1",
+        "diagnosticYield",
+      ],
+    ].map(([metric, , key]) => {
+      const result = report.guidance_quality?.[key];
+      return observation(
+        metric,
+        result?.rate == null ? null : Number((result.rate * 100).toFixed(3)),
+        {
+          population: {
+            examined: result?.denominator ?? 0,
+            matched: result?.numerator ?? 0,
+            complete: true,
+            identity: {
+              contractDigest: report.guidance_quality?.contractDigest,
+              evidenceDigest: report.guidance_quality?.evidenceDigest,
+              namedMisses: result?.namedMisses ?? [],
+            },
+          },
+        },
+      );
+    }),
     observation(
       "cost_per_confirmed_insight",
       report.cost_per_confirmed_insight?.toolCallsPer ?? null,
@@ -405,7 +463,7 @@ export function createMeasurementRecord(report, at, options) {
     .slice(0, 12)}`;
 
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     collectionId,
     subject: "tier-1 controlled corpus",
     scope: {
@@ -430,6 +488,7 @@ export function createMeasurementRecord(report, at, options) {
         .sort()
         .join(","),
     },
+    verificationStack,
     observations,
     rawEvidence: report,
   };

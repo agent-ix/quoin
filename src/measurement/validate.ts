@@ -18,6 +18,11 @@ export function validateMeasurementCollection(
   plans: MeasurementPlan[],
 ): asserts value is MeasurementCollection {
   validateStoredMeasurementCollection(value);
+  if (value.schemaVersion !== MEASUREMENT_SCHEMA_VERSION) {
+    fail(
+      `new collections must use schemaVersion ${MEASUREMENT_SCHEMA_VERSION}; v1 is read-only historical evidence`,
+    );
+  }
 
   const byMetric = new Map(plans.map((plan) => [plan.metric, plan]));
   for (const observation of value.observations) {
@@ -50,8 +55,8 @@ export function validateStoredMeasurementCollection(
   value: unknown,
 ): asserts value is MeasurementCollection {
   if (!isObject(value)) fail("collection must be an object");
-  if (value.schemaVersion !== MEASUREMENT_SCHEMA_VERSION) {
-    fail(`schemaVersion must be ${MEASUREMENT_SCHEMA_VERSION}`);
+  if (value.schemaVersion !== 1 && value.schemaVersion !== 2) {
+    fail(`schemaVersion must be 1 or ${MEASUREMENT_SCHEMA_VERSION}`);
   }
   for (const key of [
     "collectionId",
@@ -73,6 +78,8 @@ export function validateStoredMeasurementCollection(
   if (!("scope" in value)) fail("collection requires `scope`");
   if (!("rawEvidence" in value))
     fail("collection requires attached `rawEvidence`");
+  if (value.schemaVersion === 2)
+    validateVerificationStack(value.verificationStack);
 
   const seen = new Set<string>();
   for (const observation of value.observations) {
@@ -83,6 +90,47 @@ export function validateStoredMeasurementCollection(
         `duplicate observation for \`${observation.metric}\` and its dimensions`,
       );
     seen.add(key);
+  }
+}
+
+function validateVerificationStack(value: unknown): void {
+  if (!isObject(value)) fail("schemaVersion 2 requires `verificationStack`");
+  if (value.schemaVersion !== "verification-stack-attestation-v1") {
+    fail("verificationStack has unsupported schemaVersion");
+  }
+  for (const key of ["lockDigest", "executableDigest"]) {
+    if (!/^sha256:[0-9a-f]{64}$/.test(String(value[key] ?? ""))) {
+      fail(`verificationStack.${key} must be a full sha256 digest`);
+    }
+  }
+  if (!isObject(value.sources) || Object.keys(value.sources).length === 0) {
+    fail("verificationStack.sources must be a non-empty object");
+  }
+  for (const [name, source] of Object.entries(value.sources)) {
+    if (
+      !isObject(source) ||
+      !/^[0-9a-f]{40}$/.test(String(source.revision ?? "")) ||
+      source.sourceState !== "clean" ||
+      typeof source.remote !== "string" ||
+      source.remote.length === 0
+    ) {
+      fail(`verificationStack.sources.${name} is not a clean full-SHA source`);
+    }
+  }
+  if (
+    !Array.isArray(value.capabilities) ||
+    value.capabilities.length === 0 ||
+    value.capabilities.some((item) => typeof item !== "string" || !item)
+  ) {
+    fail("verificationStack.capabilities must be a non-empty string array");
+  }
+  if (!isObject(value.artifacts) || Object.keys(value.artifacts).length === 0) {
+    fail("verificationStack.artifacts must be a non-empty object");
+  }
+  for (const [name, digest] of Object.entries(value.artifacts)) {
+    if (!/^sha256:[0-9a-f]{64}$/.test(String(digest))) {
+      fail(`verificationStack.artifacts.${name} must be a full sha256 digest`);
+    }
   }
 }
 

@@ -17,6 +17,13 @@ const VALIDATE_LINE =
 /** Stateful subprocess boundary for one Tier-1 invocation. */
 export function createTier1Executor() {
   let toolCalls = 0;
+  let selectedProvenance = null;
+  const timeout = Number(process.env.QUOIN_TIER1_CASE_TIMEOUT_MS ?? "60000");
+  if (!Number.isInteger(timeout) || timeout < 1000) {
+    throw new Error(
+      "QUOIN_TIER1_CASE_TIMEOUT_MS must be an integer of at least 1000",
+    );
+  }
 
   const execute = (bin, args, extraEnv) => {
     toolCalls += 1;
@@ -26,13 +33,17 @@ export function createTier1Executor() {
         maxBuffer: 64 * 1024 * 1024,
         stdio: ["ignore", "pipe", "pipe"],
         env: extraEnv ? { ...process.env, ...extraEnv } : process.env,
+        timeout,
       });
       return { ok: true, stdout, stderr: "" };
     } catch (error) {
       return {
         ok: false,
         stdout: String(error.stdout ?? ""),
-        stderr: String(error.stderr ?? error.message ?? ""),
+        stderr:
+          error.code === "ETIMEDOUT"
+            ? `${bin} ${args.join(" ")} exceeded ${timeout}ms`
+            : String(error.stderr ?? error.message ?? ""),
       };
     }
   };
@@ -501,6 +512,62 @@ export function createTier1Executor() {
   };
 
   const assertEngine = (quire) => {
+    const attested = execute(quire, ["provenance", "--json"]);
+    let provenance;
+    try {
+      provenance = JSON.parse(attested.stdout);
+    } catch {
+      throw new Error(
+        `bench-tier1: ${quire} emitted no readable provenance-v1 payload`,
+      );
+    }
+    if (provenance.schemaVersion !== "quire-tool-provenance-v1") {
+      throw new Error(
+        `bench-tier1: ${quire} emitted unsupported provenance schema ${JSON.stringify(provenance.schemaVersion)}`,
+      );
+    }
+    for (const layer of ["cli", "engine"]) {
+      const source = provenance[layer];
+      if (!source || !/^[0-9a-f]{40}$/.test(source.sourceRevision ?? "")) {
+        throw new Error(
+          `bench-tier1: ${quire} ${layer} provenance has no full source revision`,
+        );
+      }
+      if (source.sourceState !== "clean") {
+        throw new Error(
+          `bench-tier1: ${quire} ${layer} source state is ${JSON.stringify(source.sourceState)}, not clean`,
+        );
+      }
+    }
+    const expected = {
+      cli: process.env.QUOIN_EXPECTED_CLI_REVISION,
+      engine: process.env.QUOIN_EXPECTED_ENGINE_REVISION,
+    };
+    for (const [layer, revision] of Object.entries(expected)) {
+      if (revision && provenance[layer].sourceRevision !== revision) {
+        throw new Error(
+          `bench-tier1: ${layer} revision mismatch: expected ${revision}, observed ${provenance[layer].sourceRevision}`,
+        );
+      }
+    }
+    const required = [
+      "action_guidance.structured",
+      "binding_census",
+      "declaration_origins",
+      "metrics_envelope",
+      "property_spans.safe_refusal",
+      "suspicions",
+    ];
+    const capabilities = new Set(provenance.capabilities ?? []);
+    const missing = required.filter(
+      (capability) => !capabilities.has(capability),
+    );
+    if (missing.length > 0) {
+      throw new Error(
+        `bench-tier1: ${quire} lacks required capabilities: ${missing.join(", ")}`,
+      );
+    }
+    selectedProvenance = provenance;
     const probe = execute(quire, ["--version"]);
     const version = probe.stdout.trim();
     if (!version.includes("engine")) {
@@ -517,6 +584,7 @@ export function createTier1Executor() {
     properties,
     rawReasons,
     assertEngine,
+    engineProvenance: () => structuredClone(selectedProvenance),
     toolCalls: () => toolCalls,
   };
 }

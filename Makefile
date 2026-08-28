@@ -57,11 +57,13 @@ EVIDENCE_MODULE ?= $(HOME)/dev/spec-artifacts-process/spec_artifacts_process
 BENCH_CORPUS ?= ../filament-ide-rs
 .PHONY: battletest
 battletest:
-	node scripts/battletest.mjs --corpus $(BENCH_CORPUS) --module $(EVIDENCE_MODULE)
+	@test -n "$(QUIRE)" || { echo "battletest requires QUIRE=/absolute/path/to/quire"; exit 2; }
+	node scripts/battletest.mjs --quire $(QUIRE) --corpus $(BENCH_CORPUS) --module $(EVIDENCE_MODULE)
 
 .PHONY: battletest-update
 battletest-update:
-	node scripts/battletest.mjs --update --corpus $(BENCH_CORPUS) --module $(EVIDENCE_MODULE)
+	@test -n "$(QUIRE)" || { echo "battletest-update requires QUIRE=/absolute/path/to/quire"; exit 2; }
+	node scripts/battletest.mjs --update --quire $(QUIRE) --corpus $(BENCH_CORPUS) --module $(EVIDENCE_MODULE)
 
 # TIER 1: the seeded corpora, built, scanned and scored on every run. Cheap
 # enough to gate on, unlike `battletest`, which needs a pinned external tree.
@@ -85,7 +87,9 @@ battletest-update:
 # default pointed at the stale one. Caught by quire-cli#68's provenance guard
 # refusing a binary that cannot name its engine, which is the case for
 # refusing rather than warning.
-QUIRE ?= $(abspath $(if $(CARGO_TARGET_DIR),$(CARGO_TARGET_DIR),../quire-cli/target)/debug/quire)
+# Interactive convenience only. Governed evidence never consumes this default:
+# `verification-stack.mjs` builds, snapshots, hashes, and passes its own binary.
+QUIRE ?= $(shell command -v quire 2>/dev/null)
 #
 # `MODULES` overrides the DECLARATION the cases bind, which is the second axis
 # (agent-ix/quoin#240). Empty means the corpus's own vendored `modules/`, so an
@@ -98,11 +102,20 @@ QUIRE ?= $(abspath $(if $(CARGO_TARGET_DIR),$(CARGO_TARGET_DIR),../quire-cli/tar
 MODULES ?=
 .PHONY: bench-tier1
 bench-tier1:
-	node scripts/bench-tier1.mjs --quire $(QUIRE) $(if $(MODULES),--modules $(MODULES))
+	node scripts/verification-stack.mjs
 
 .PHONY: bench-tier1-update
 bench-tier1-update:
-	node scripts/bench-tier1.mjs --update --quire $(QUIRE) $(if $(MODULES),--modules $(MODULES))
+	node scripts/verification-stack.mjs --update
+
+.PHONY: bench-tier1-experimental
+bench-tier1-experimental:
+	@test -n "$(QUIRE)" || { echo "usage: make bench-tier1-experimental QUIRE=/absolute/path/to/quire"; exit 2; }
+	node scripts/bench-tier1.mjs --experimental --quire $(QUIRE) $(if $(MODULES),--modules $(MODULES))
+
+.PHONY: verification-preflight
+verification-preflight:
+	node scripts/verification-stack.mjs --preflight
 
 # THE LOCAL GREEN BAR. `bench-tier1` was invoked by nothing (agent-ix/quoin#244)
 # -- not `test`, not any vitest case against the committed baseline, and CI is
@@ -128,7 +141,7 @@ evidence-audit:
 .PHONY: evidence-record
 evidence-record:
 	mkdir -p reports
-	npx vitest run --reporter=junit --outputFile=reports/junit.xml
+	pnpm exec vitest run --reporter=junit --outputFile=reports/junit.xml
 	node bin/quoin.js evidence record --suite SUITE-001 \
 	  --commit "$$(git rev-parse HEAD)" --tool vitest --adapter junit \
 	  --results reports/junit.xml --kind Unit --repo . --module $(EVIDENCE_MODULE)
@@ -160,8 +173,9 @@ check-version: build
 # also means a module set is never validated against a stale host binary.
 .PHONY: validate
 validate: build
+	@test -n "$(QUIRE)" || { echo "validate requires QUIRE=/absolute/path/to/quire"; exit 2; }
 	node bin/quoin.js module ensure-defaults
-	pnpm run validate
+	$(QUIRE) validate "spec/**/*.md" "plan/**/*.md" "reviews/*.md"
 
 .PHONY: test-json
 test-json:
@@ -193,6 +207,12 @@ install-smoke:
 .PHONY: lint
 lint:
 	pnpm run lint
+
+.PHONY: audit-tool-drift
+audit-tool-drift:
+	pnpm run audit:tool-drift
+	pnpm run test:tool-drift
+	pnpm run test:verification-stack
 
 .PHONY: format
 format:
@@ -232,9 +252,10 @@ add-dev-packages:
 update-packages:
 	pnpm run pkg:update
 
-.PHONY: update-packages-latest
-update-packages-latest:
-	pnpm run pkg:update-latest
+.PHONY: experimental-update-packages-latest
+experimental-update-packages-latest:
+	@echo "NONCANONICAL: this deliberately resolves moving package versions and cannot produce governed evidence."
+	pnpm run experimental:pkg:update-latest
 
 .PHONY: use-local
 use-local:

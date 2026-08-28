@@ -12,11 +12,12 @@ import { readFileSync } from "node:fs";
 /** Fields every metric must declare. */
 const REQUIRED = ["unit", "population", "method", "direction"];
 
-/** Directions a metric may declare. `gate-zero` never ratchets. */
+/** Directions a metric may declare. Exact gates never ratchet. */
 const DIRECTIONS = new Set([
   "higher-is-better",
   "lower-is-better",
   "gate-zero",
+  "gate-100",
 ]);
 
 export class DictionaryError extends Error {}
@@ -67,12 +68,13 @@ export function validateDictionary(doc, path = "<inline>") {
     }
     // A gate is not a score: it carries no tolerance to spend, and the
     // expected value is exact (FR-043-AC-6).
+    const exactGate = { "gate-zero": 0, "gate-100": 100 }[spec.direction];
     if (
-      spec.direction === "gate-zero" &&
-      (spec.expected !== 0 || spec.tolerance !== 0)
+      exactGate !== undefined &&
+      (spec.expected !== exactGate || spec.tolerance !== 0)
     ) {
       throw new DictionaryError(
-        `${path}: gate \`${name}\` must declare expected 0 and tolerance 0; a gate ` +
+        `${path}: gate \`${name}\` must declare expected ${exactGate} and tolerance 0; a gate ` +
           `with tolerance is a score wearing a gate's name`,
       );
     }

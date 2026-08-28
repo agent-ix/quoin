@@ -8,10 +8,10 @@
 #
 # The package + Claude Code plugin are installed at RUNTIME (entrypoint), not at
 # build time, so bumping PKG_VERSION needs no rebuild.
-FROM node:24-bookworm-slim
+FROM node:24-bookworm-slim@sha256:ba849c60be29959425b8734d57b8b4b7d56f98edd9504c9af091d5281095a71e
 
-ARG CLAUDE_VERSION=latest
-ARG CODEX_VERSION=latest
+ARG CLAUDE_VERSION=2.1.220
+ARG CODEX_VERSION=0.149.1
 
 # Base tools + the GitHub CLI from GitHub's official apt repo (>= 2.90 for
 # `gh skill`, which installs the opencode/Copilot skill bundles). Claude Code

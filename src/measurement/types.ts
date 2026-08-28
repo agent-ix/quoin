@@ -1,4 +1,5 @@
-export const MEASUREMENT_SCHEMA_VERSION = 1;
+export const MEASUREMENT_SCHEMA_VERSION = 2;
+export const HISTORICAL_MEASUREMENT_SCHEMA_VERSIONS = [1] as const;
 
 export type MeasurementState = "measured" | "not_computed";
 export type MeasurementShape = "scalar" | "ratio" | "count";
@@ -36,9 +37,23 @@ export interface MeasurementCollection {
   sourceRevision: string;
   corpusRevision?: string;
   environment: Record<string, string>;
+  /** Required in v2: immutable identity of every input that produced evidence. */
+  verificationStack?: VerificationStackAttestation;
   observations: MeasurementObservation[];
   /** Complete producer output; report views derive rather than transcribe. */
   rawEvidence: unknown;
+}
+
+export interface VerificationStackAttestation {
+  schemaVersion: "verification-stack-attestation-v1";
+  lockDigest: string;
+  executableDigest: string;
+  sources: Record<
+    string,
+    { revision: string; sourceState: "clean"; remote: string }
+  >;
+  capabilities: string[];
+  artifacts: Record<string, string>;
 }
 
 export interface MeasurementPlan {

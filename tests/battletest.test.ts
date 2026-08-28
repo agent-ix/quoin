@@ -22,6 +22,7 @@ import { join } from "node:path";
 
 import {
   collectTier2Sources,
+  assertPromotionDisposition,
   diff,
   render,
   scoreAgainstCohorts,
@@ -40,6 +41,26 @@ const key = JSON.parse(
 );
 
 describe("scoring against the adjudicated answer key", () => {
+  it("pins the promotion disposition without relabeling historical keys", () => {
+    expect(() =>
+      assertPromotionDisposition({
+        detected: ["AK-001", "AK-002", "AK-003", "AK-004", "AK-005"],
+        missed: [],
+        unavailable: [{ id: "AK-006" }],
+        invalidAnswerKey: [{ id: "AK-007" }],
+        controlFailures: [],
+        notEvaluated: [],
+      }),
+    ).not.toThrow();
+    expect(() =>
+      assertPromotionDisposition({
+        detected: ["AK-001", "AK-002", "AK-003", "AK-004", "AK-007"],
+        unavailable: [{ id: "AK-006" }],
+        invalidAnswerKey: [],
+        controlFailures: [],
+      }),
+    ).toThrow(/detected/);
+  });
   it("counts a finding as detected when the payload carries its signal", () => {
     const payload = {
       diagnostics: [

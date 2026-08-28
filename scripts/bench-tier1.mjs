@@ -43,6 +43,7 @@ import {
 } from "./lib/tier1-scoring.mjs";
 import { loadAdvisoryAdjudication } from "./lib/advisory-adjudication.mjs";
 import { createTier1Executor } from "./lib/tier1-execution.mjs";
+import { evaluateGuidanceProof } from "./lib/guidance-proof.mjs";
 import { renderTier1 } from "./lib/tier1-render.mjs";
 import {
   detectionRecall,
@@ -83,6 +84,16 @@ const ADVISORY_ADJUDICATION = join(
   ROOT,
   "bench",
   "advisory-adjudication-v1.json",
+);
+const GUIDANCE_CONTRACT = join(
+  ROOT,
+  "bench",
+  "guidance-evaluator-contract-v1.json",
+);
+const GUIDANCE_REVIEW = join(
+  ROOT,
+  "bench",
+  "guidance-independent-review-v1.json",
 );
 const execution = createTier1Executor();
 
@@ -225,6 +236,54 @@ function scorerDigest() {
   return `sha256:${hash.digest("hex")}`;
 }
 
+function digestFile(path) {
+  return `sha256:${createHash("sha256").update(readFileSync(path)).digest("hex")}`;
+}
+
+/** Fail before corpus execution when a canonical stack attestation moved. */
+export function validateVerificationAttestation(value, quire, tool, corpus) {
+  if (value?.schemaVersion !== "verification-stack-attestation-v1") {
+    throw new Error(
+      "bench-tier1: canonical runs require verification-stack-attestation-v1",
+    );
+  }
+  for (const key of ["lockDigest", "executableDigest"]) {
+    if (!/^sha256:[0-9a-f]{64}$/.test(value[key] ?? "")) {
+      throw new Error(
+        `bench-tier1: attestation ${key} is not a full sha256 digest`,
+      );
+    }
+  }
+  const observedExecutable = digestFile(quire);
+  if (observedExecutable !== value.executableDigest) {
+    throw new Error(
+      `bench-tier1: executable moved after attestation: expected ${value.executableDigest}, observed ${observedExecutable}`,
+    );
+  }
+  const expectedSources = {
+    "quire-cli": tool.cli.sourceRevision,
+    quire: tool.engine.sourceRevision,
+    "qa-corpus": corpus,
+  };
+  for (const [name, revision] of Object.entries(expectedSources)) {
+    const source = value.sources?.[name];
+    if (source?.revision !== revision || source?.sourceState !== "clean") {
+      throw new Error(
+        `bench-tier1: attested ${name} does not match the selected clean source ${revision}`,
+      );
+    }
+  }
+  const attestedCapabilities = new Set(value.capabilities ?? []);
+  for (const capability of tool.capabilities ?? []) {
+    if (!attestedCapabilities.has(capability)) {
+      throw new Error(
+        `bench-tier1: attestation omits selected capability ${capability}`,
+      );
+    }
+  }
+  return structuredClone(value);
+}
+
 /** Build a plan-governed collection for one Tier-1 invocation. */
 export function measurementRecord(report, at) {
   return createMeasurementRecord(report, at, {
@@ -268,6 +327,12 @@ function corpusInputDigest(root = join(ROOT, "corpus")) {
 async function main() {
   const update = process.argv.includes("--update");
   const asJson = process.argv.includes("--json");
+  const experimental = process.argv.includes("--experimental");
+  if (experimental && update) {
+    throw new Error(
+      "bench-tier1: a noncanonical experimental run cannot update governed evidence",
+    );
+  }
   // Require an explicit binary so engine identity is reviewable.
   const quire = argOf("--quire") ?? process.env.QUIRE;
   if (!quire) {
@@ -279,6 +344,34 @@ async function main() {
   }
   const engine = execution.assertEngine(quire);
   console.error(`bench-tier1: engine ${engine}`);
+  let verificationStack = null;
+  if (!experimental) {
+    const attestationPath = argOf("--attestation");
+    if (!attestationPath) {
+      throw new Error(
+        "bench-tier1: canonical runs require --attestation <path>; use --experimental for an explicitly noncanonical run that cannot compare or update baselines",
+      );
+    }
+    verificationStack = validateVerificationAttestation(
+      JSON.parse(readFileSync(resolve(attestationPath), "utf8")),
+      resolve(quire),
+      execution.engineProvenance(),
+      corpusRevision(),
+    );
+  } else {
+    console.error(
+      "bench-tier1: NONCANONICAL experimental run; comparison and baseline updates are disabled",
+    );
+  }
+  const spanBreadthPath = argOf("--span-breadth");
+  if (!experimental && !spanBreadthPath) {
+    throw new Error(
+      "bench-tier1: canonical runs require --span-breadth <result>",
+    );
+  }
+  const spanBreadth = spanBreadthPath
+    ? JSON.parse(readFileSync(resolve(spanBreadthPath), "utf8"))
+    : null;
   // An absent declaration override selects the corpus's vendored modules.
   const modules = argOf("--modules") ?? process.env.MODULES ?? null;
 
@@ -356,11 +449,9 @@ async function main() {
   const payloads = [];
   const propertyPayloads = [];
   for (const [index, corpus] of labels.corpora.entries()) {
-    if (process.env.QUOIN_TIER1_PROGRESS === "1") {
-      console.error(
-        `bench-tier1: case ${index + 1}/${labels.corpora.length} ${corpus.name}`,
-      );
-    }
+    console.error(
+      `bench-tier1: case ${index + 1}/${labels.corpora.length} ${corpus.name}`,
+    );
     const { findings, metrics, diagnostics, untrackedSymbols } =
       execution.findingsFor(
         quire,
@@ -437,12 +528,19 @@ async function main() {
     retainedAdjudication,
   );
   const score = scoreFindings(scoredFindings, flat, shapes, adjudication);
+  const guidanceQuality = evaluateGuidanceProof(
+    scoredFindings,
+    JSON.parse(readFileSync(GUIDANCE_CONTRACT, "utf8")),
+    JSON.parse(readFileSync(GUIDANCE_REVIEW, "utf8")),
+  );
   const silentZeroes = silentZeros(payloads);
   const bounds = loaded.bounds;
   report = {
     // No timestamp: identical inputs produce byte-identical reports.
     provenance: {
       engine,
+      tool: execution.engineProvenance(),
+      verification_stack: verificationStack,
       corpus: corpusRevision(),
       corpus_input: corpusInputDigest(),
       declaration: declarationProvenance(
@@ -486,11 +584,13 @@ async function main() {
       : null,
     actionability_v1: scoreActionability(scoredFindings),
     actionability_v2: scoreActionabilityV2(scoredFindings),
+    guidance_quality: guidanceQuality,
     span_grounding: scoreSpanGrounding(propertyPayloads),
     span_grounding_v2: scoreSpanGroundingV2(
       propertyPayloads,
       groundingV2Labels,
     ),
+    span_breadth: spanBreadth,
     property_payloads: propertyPayloads,
     grounding_quality: scoreGroundingQuality(groundingPayload, groundingLabels),
     grounding_quality_payload: groundingPayload,
@@ -520,38 +620,63 @@ async function main() {
     finding_records: scoredFindings,
   };
 
-  const previous = existsSync(BASELINE)
-    ? JSON.parse(readFileSync(BASELINE, "utf8"))
-    : null;
-  const recallBaseline = existsSync(RECALL_BASELINE)
-    ? JSON.parse(readFileSync(RECALL_BASELINE, "utf8"))
-    : null;
-  if (!update && recallBaseline === null) {
+  const previous =
+    !experimental && existsSync(BASELINE)
+      ? JSON.parse(readFileSync(BASELINE, "utf8"))
+      : null;
+  const recallBaseline =
+    !experimental && existsSync(RECALL_BASELINE)
+      ? JSON.parse(readFileSync(RECALL_BASELINE, "utf8"))
+      : null;
+  if (!experimental && !update && recallBaseline === null) {
     throw new Error(
       `bench-tier1: ${RECALL_BASELINE} is missing; run the explicit ` +
         "bench update to create a measured recall ratchet, rather than " +
         "treating an absent baseline as zero",
     );
   }
-  const recall = recallVerdicts(
-    report.detection_recall,
-    recallBaseline?.rows ?? [],
-  );
-  const verdicts = [
-    ...ratchet(report, previous, dictionary),
-    ...recall.map((verdict) => ({
-      metric: "detection.recall",
-      ...verdict,
-      observed: verdict.rate,
-    })),
-  ];
+  const recall = experimental
+    ? []
+    : recallVerdicts(report.detection_recall, recallBaseline?.rows ?? []);
+  const verdicts = experimental
+    ? []
+    : [
+        ...ratchet(report, previous, dictionary),
+        ...recall.map((verdict) => ({
+          metric: "detection.recall",
+          ...verdict,
+          observed: verdict.rate,
+        })),
+      ];
   // Unknown comparability inputs are never assumed to match silently.
-  const { unknown } = comparability(report, previous);
+  const { unknown } = experimental
+    ? { unknown: [] }
+    : comparability(report, previous);
   if (unknown.length) {
     console.error(
       `bench-tier1: the baseline records no ${unknown.join(", ")}; this ` +
         `comparison ASSUMES those inputs did not move, and cannot check it.`,
     );
+  }
+  if (!experimental) {
+    if (
+      report.span_breadth?.rate !== 1 ||
+      report.span_breadth?.namedMisses?.length
+    ) {
+      throw new Error(
+        "bench-tier1: broad span grounding is not 100% exact or safely refused",
+      );
+    }
+    for (const [name, result] of Object.entries(report.guidance_quality).filter(
+      ([name]) =>
+        ["correctness", "repairSuccess", "diagnosticYield"].includes(name),
+    )) {
+      if (result.rate !== 1) {
+        throw new Error(
+          `bench-tier1: guidance ${name} must be 100%, observed ${result.numerator}/${result.denominator}`,
+        );
+      }
+    }
   }
 
   if (asJson) {
@@ -596,6 +721,7 @@ async function main() {
     );
     return 0;
   }
+  if (experimental) return 0;
   // A new or improved recall partition is useful only after the update
   // workflow retains it as the new floor. Regressions and incomparable runs
   // also refuse the gate.

@@ -171,4 +171,26 @@ describe("the metric dictionary", () => {
       }),
     ).toThrow(/tolerance/);
   });
+
+  it("exact-100 gates require 100 with no tolerance", () => {
+    expect(metrics["guidance.correctness"]).toMatchObject({
+      direction: "gate-100",
+      expected: 100,
+      tolerance: 0,
+    });
+    expect(() =>
+      validateDictionary({
+        metrics: {
+          loose: {
+            unit: "percent",
+            population: "records",
+            method: "review",
+            direction: "gate-100",
+            expected: 99,
+            tolerance: 1,
+          },
+        },
+      }),
+    ).toThrow(/expected 100 and tolerance 0/);
+  });
 });

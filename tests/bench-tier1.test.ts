@@ -278,6 +278,20 @@ describe("the measurement series", () => {
       engine: "quire 0.30.2 (engine e5a6ccc)",
       corpus: "a6ce22cb2a6bb207cf8afa0ce98949bdbb3cdd98",
       declaration: { digest: "sha256:819807f757c7" },
+      verification_stack: {
+        schemaVersion: "verification-stack-attestation-v1",
+        lockDigest: `sha256:${"1".repeat(64)}`,
+        executableDigest: `sha256:${"2".repeat(64)}`,
+        sources: {
+          quire: {
+            revision: "a".repeat(40),
+            sourceState: "clean",
+            remote: "https://example.invalid/quire",
+          },
+        },
+        capabilities: ["metrics_envelope"],
+        artifacts: { metrics: `sha256:${"3".repeat(64)}` },
+      },
     },
     families: [{ family: "hollow-denominator", precision: 1, recall: 1 }],
   };

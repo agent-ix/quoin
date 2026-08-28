@@ -1,0 +1,2001 @@
+{
+  "schemaVersion": "guidance-independent-review-v1",
+  "reviewer": "OpenAI Codex, independent consumer review",
+  "reviewedAt": "2026-08-28",
+  "reviewRule": "Every selected record and every distinct action template was read against its raw producer evidence and controlled fixture contract.",
+  "templates": [
+    {
+      "templateDigest": "sha256:101c3afc4871ec307a44e7433e77373e361bf3acb8b89f0c03f24f6ac3097f56",
+      "kind": "diagnostic",
+      "text": "compare the configured status column with the observed table headers; rename the document column or change the configuration, and do not guess when both are plausible",
+      "outcome": "pass",
+      "rationale": "The action asks for the exact census, configuration, header, or bypass evidence needed to distinguish the causes named by the finding; it does not prescribe a repair before that distinction is made."
+    },
+    {
+      "templateDigest": "sha256:179c56992a19d5a821dc8ef72413551c1e765a1019cd0f1c1cc1485ffeb77d73",
+      "kind": "diagnostic",
+      "text": "inspect the binding census, its unbound example, and the declared trace-tag forms before trusting or repairing the ratio",
+      "outcome": "pass",
+      "rationale": "The action asks for the exact census, configuration, header, or bypass evidence needed to distinguish the causes named by the finding; it does not prescribe a repair before that distinction is made."
+    },
+    {
+      "templateDigest": "sha256:2c55ad05961f0c932937b5d7a1890aa549061758c9a175e2a1e5d816ba480757",
+      "kind": "diagnostic",
+      "text": "inspect the unbound example and declared trace-tag forms to distinguish sparse tagging from a marker-form mismatch",
+      "outcome": "pass",
+      "rationale": "The action asks for the exact census, configuration, header, or bypass evidence needed to distinguish the causes named by the finding; it does not prescribe a repair before that distinction is made."
+    },
+    {
+      "templateDigest": "sha256:3df3ba6726d07bdf20d5cbafe6cc3e3c414a16c159680ddb9650004950dfcd0d",
+      "kind": "remedy",
+      "text": "declare at least one trace target, or remove the misleading traceability model if no ids should be minted",
+      "outcome": "pass",
+      "rationale": "The action changes the cause-bearing target named by the finding and does not claim that changing an unrelated control is a repair."
+    },
+    {
+      "templateDigest": "sha256:41ca545e7e8a52f921f83f7812637d0967369447ae11407d986dc805b8355895",
+      "kind": "remedy",
+      "text": "change the annotation to the exact minted row id",
+      "outcome": "pass",
+      "rationale": "The action changes the cause-bearing target named by the finding and does not claim that changing an unrelated control is a repair."
+    },
+    {
+      "templateDigest": "sha256:456c1858f305ab4850ec3f48119d7f4a4f50a6a42de70b79642c2eed55d4c761",
+      "kind": "remedy",
+      "text": "move the trace id to an evidence symbol, or use an Implements marker when the production symbol is the intended subject",
+      "outcome": "pass",
+      "rationale": "The action changes the cause-bearing target named by the finding and does not claim that changing an unrelated control is a repair."
+    },
+    {
+      "templateDigest": "sha256:5478870649044bacb30c8be0b0f5dca0f211ec9a7441da496b32494024841aca",
+      "kind": "remedy",
+      "text": "align the document heading with the declared section selector",
+      "outcome": "pass",
+      "rationale": "The action changes the cause-bearing target named by the finding and does not claim that changing an unrelated control is a repair."
+    },
+    {
+      "templateDigest": "sha256:57cae873778a6505e0b9b76076685960ad45a5165f100ef3749353da49721e39",
+      "kind": "remedy",
+      "text": "compare the count for “dangerous_eval” to zero or make the match command exit non-zero when forbidden text is present",
+      "outcome": "pass",
+      "rationale": "The action changes the cause-bearing target named by the finding and does not claim that changing an unrelated control is a repair."
+    },
+    {
+      "templateDigest": "sha256:61275b93402b6217c38c50e817305b88e3380d43f3c63fb2493580a7b62ffc37",
+      "kind": "remedy",
+      "text": "compare the count for “dangerousEval” to zero or make the match command exit non-zero when forbidden text is present",
+      "outcome": "pass",
+      "rationale": "The action changes the cause-bearing target named by the finding and does not claim that changing an unrelated control is a repair."
+    },
+    {
+      "templateDigest": "sha256:735892152c76b2b26437c61623fb0e6934c95ad5ffba65c2668337e79fb471b7",
+      "kind": "remedy",
+      "text": "add the expected table under the matched section or correct the declaration's section selector",
+      "outcome": "pass",
+      "rationale": "The action changes the cause-bearing target named by the finding and does not claim that changing an unrelated control is a repair."
+    },
+    {
+      "templateDigest": "sha256:7968a1a8d6515660ea1ef341d10cdafb1b1460840516d1f368f995eb7a0e7936",
+      "kind": "diagnostic",
+      "text": "inspect inputs that bypass the narrowing guard; add an unconditional oracle or constrain the generator when those inputs are invalid",
+      "outcome": "pass",
+      "rationale": "The action asks for the exact census, configuration, header, or bypass evidence needed to distinguish the causes named by the finding; it does not prescribe a repair before that distinction is made."
+    },
+    {
+      "templateDigest": "sha256:7aecebb9a7550f69508e82d82103e04f66ed02206dce265aea7f391850a4d093",
+      "kind": "diagnostic",
+      "text": "compare the example annotation with the declared trace-tag forms; correct the annotation or the declaration according to authored intent",
+      "outcome": "pass",
+      "rationale": "The action asks for the exact census, configuration, header, or bypass evidence needed to distinguish the causes named by the finding; it does not prescribe a repair before that distinction is made."
+    },
+    {
+      "templateDigest": "sha256:8b5a2cbc6d704f576da5d404b5b0e45f2d33500cc2a895ef50624ee6931f910f",
+      "kind": "remedy",
+      "text": "correct the declared field/archetype or declare the referenced schema enum",
+      "outcome": "pass",
+      "rationale": "The action changes the cause-bearing target named by the finding and does not claim that changing an unrelated control is a repair."
+    },
+    {
+      "templateDigest": "sha256:8f19c6f5bdd78f3bbc6e3544294e5d3d2027529d6a6be311a2979e2ae24137e9",
+      "kind": "remedy",
+      "text": "align the declared id_column with the table's actual identifier header",
+      "outcome": "pass",
+      "rationale": "The action changes the cause-bearing target named by the finding and does not claim that changing an unrelated control is a repair."
+    },
+    {
+      "templateDigest": "sha256:8f8d87e50a7365c7236421ef3e02ee92da8641dc30de275efe5e14abf77f3b42",
+      "kind": "remedy",
+      "text": "add the method to the verification catalog or write an already declared method in the cell",
+      "outcome": "pass",
+      "rationale": "The action changes the cause-bearing target named by the finding and does not claim that changing an unrelated control is a repair."
+    },
+    {
+      "templateDigest": "sha256:90f6659f9fdccdc68e71423b7f6a5ac3d6d2883560b79970fcaf91e318824f28",
+      "kind": "remedy",
+      "text": "compare the count for “unwrap()” to zero or make the match command exit non-zero when forbidden text is present",
+      "outcome": "pass",
+      "rationale": "The action changes the cause-bearing target named by the finding and does not claim that changing an unrelated control is a repair."
+    },
+    {
+      "templateDigest": "sha256:aa3b6d58e0407b1d8c898b1adfad6681049e9559330da656693bde0e10313a82",
+      "kind": "diagnostic",
+      "text": "inspect whether the real behaviour for FR-001-AC-1 exists; add or bind an independent test that exercises it without substituting the behaviour under verification",
+      "outcome": "pass",
+      "rationale": "The action asks for the exact census, configuration, header, or bypass evidence needed to distinguish the causes named by the finding; it does not prescribe a repair before that distinction is made."
+    },
+    {
+      "templateDigest": "sha256:d451bb5c643c3ed1b2f85d975af6a02d6ff34e4b8a4539b12d356049ef6bedaa",
+      "kind": "remedy",
+      "text": "change the cited value or structure so it satisfies the named archetype assertion",
+      "outcome": "pass",
+      "rationale": "The action changes the cause-bearing target named by the finding and does not claim that changing an unrelated control is a repair."
+    },
+    {
+      "templateDigest": "sha256:e16837f02f534c7ef930f689cf934c9be5ba8d19195dc90628974ca76cf78f02",
+      "kind": "diagnostic",
+      "text": "choose the exact minted child that this evidence verifies, or correct the authored id/declaration; do not substitute a sibling merely to clear coverage",
+      "outcome": "pass",
+      "rationale": "The action asks for the exact census, configuration, header, or bypass evidence needed to distinguish the causes named by the finding; it does not prescribe a repair before that distinction is made."
+    },
+    {
+      "templateDigest": "sha256:e91e68ff1871b52019f38b328b4761a146744aefd977f6c0fee4c42a5bff8fb1",
+      "kind": "remedy",
+      "text": "fill the declared statement cell or remove the row if it states no obligation",
+      "outcome": "pass",
+      "rationale": "The action changes the cause-bearing target named by the finding and does not claim that changing an unrelated control is a repair."
+    },
+    {
+      "templateDigest": "sha256:eddbe03b904b06722d98afaff6a3040ba620b0eba8a757ae784c2a228b16eed5",
+      "kind": "remedy",
+      "text": "replace the copied calculation or helper with an independent expectation",
+      "outcome": "pass",
+      "rationale": "The action changes the cause-bearing target named by the finding and does not claim that changing an unrelated control is a repair."
+    },
+    {
+      "templateDigest": "sha256:edff4689670c4d607d8eaaa6330637e7dae30e1eff98dcdb3eb3998ceb649e2d",
+      "kind": "diagnostic",
+      "text": "review whether the criterion is intentionally universal; otherwise name a concrete supported property shape",
+      "outcome": "pass",
+      "rationale": "The action asks for the exact census, configuration, header, or bypass evidence needed to distinguish the causes named by the finding; it does not prescribe a repair before that distinction is made."
+    },
+    {
+      "templateDigest": "sha256:f6780e65ca1c31ffe03286b158e27dd9c7de051e9c7d0316a8b646bd1976af7b",
+      "kind": "diagnostic",
+      "text": "confirm whether the missing document is intentional; otherwise add the document or correct the declared archetype",
+      "outcome": "pass",
+      "rationale": "The action asks for the exact census, configuration, header, or bypass evidence needed to distinguish the causes named by the finding; it does not prescribe a repair before that distinction is made."
+    }
+  ],
+  "records": [
+    {
+      "recordId": "sha256:020c64cc0b345b997841229800ca18118681a3b6e6ff8a052ee03d7ac095619e",
+      "partition": "quire/quire/validate.findings/undeclared-type-value",
+      "identity": {
+        "family": "undeclared-type-value",
+        "case": "wrong-type-cell-typescript",
+        "language": "typescript"
+      },
+      "templateDigest": "sha256:d451bb5c643c3ed1b2f85d975af6a02d6ff34e4b8a4539b12d356049ef6bedaa",
+      "correctness": "pass",
+      "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
+      "executableProof": {
+        "kind": "repair",
+        "outcome": "pass",
+        "method": "The controlled corpus replays the defective fixture and its language-matched repaired control; the expected family is present only before repair while corpus verification remains green.",
+        "retainedFinding": {
+          "kind": "ValidationError",
+          "message": "/home/peter/dev/quoin/corpus/cases/minting/wrong-type-cell/typescript/input/spec/tests.md: line 10: [TestMatrix] 'test_cases': TC-001: column 'Type' cell 'Telepathy' is not one of [\"Unit\", \"Integration\", \"E2E\", \"Property\", \"Fuzz\", \"Benchmark\", \"Static\", \"Compile\", \"Snapshot\", \"Manual\", \"Eval\", \"Inspection\", \"Analysis\", \"Demonstration\"] [assert]",
+          "severity": "error",
+          "reason": "assert",
+          "path": "/home/peter/dev/quoin/corpus/cases/minting/wrong-type-cell/typescript/input/spec/tests.md",
+          "line": 10,
+          "subject": "document validation of /home/peter/dev/quoin/corpus/cases/minting/wrong-type-cell/typescript/input/spec/tests.md",
+          "change_target": "/home/peter/dev/quoin/corpus/cases/minting/wrong-type-cell/typescript/input/spec/tests.md:10",
+          "remedy": "change the cited value or structure so it satisfies the named archetype assertion"
+        }
+      }
+    },
+    {
+      "recordId": "sha256:04bcc494c3a71f6299b5a0c923dc198a71c8bbcdd49de9035826688988a81b54",
+      "partition": "quire/quire/coverage.diagnostics/archetype-matches-nothing",
+      "identity": {
+        "family": "archetype-matches-nothing",
+        "case": "oracle-copy-control-typescript",
+        "language": "typescript",
+        "declaration": "nfr-acceptance-criterion"
+      },
+      "templateDigest": "sha256:f6780e65ca1c31ffe03286b158e27dd9c7de051e9c7d0316a8b646bd1976af7b",
+      "correctness": "pass",
+      "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
+      "executableProof": {
+        "kind": "diagnostic",
+        "outcome": "pass",
+        "method": "The canonical producer replay emits the cited causal channel and its controlled comparison retains the evidence needed to distinguish the named causes.",
+        "retainedFinding": {
+          "declaration": "nfr-acceptance-criterion",
+          "reason": "archetype-matches-nothing",
+          "message": "declaration 'nfr-acceptance-criterion' declares archetype 'NFR', which no document in the corpus has — it scans nothing and mints no rows",
+          "path": "/home/peter/dev/quoin/corpus/modules/ecosystem/spec-artifacts-process/manifest.yaml",
+          "line": 685,
+          "subject": "declaration `nfr-acceptance-criterion`",
+          "change_target": "the trace-target archetype in the module manifest",
+          "next_diagnostic_step": "confirm whether the missing document is intentional; otherwise add the document or correct the declared archetype"
+        }
+      }
+    },
+    {
+      "recordId": "sha256:0a2de819474d71fb5ab5148a15919b602af820bdc1f2d48ef377232fb42ac974",
+      "partition": "quire/quire/coverage.diagnostics/untracked-id-near-miss",
+      "identity": {
+        "family": "untracked-id-near-miss",
+        "case": "test-name-id-in-fn-name",
+        "language": "rust",
+        "declaration": "traceability.trace_tags"
+      },
+      "templateDigest": "sha256:41ca545e7e8a52f921f83f7812637d0967369447ae11407d986dc805b8355895",
+      "correctness": "pass",
+      "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
+      "executableProof": {
+        "kind": "repair",
+        "outcome": "pass",
+        "method": "The controlled corpus replays the defective fixture and its language-matched repaired control; the expected family is present only before repair while corpus verification remains green.",
+        "retainedFinding": {
+          "declaration": "traceability.trace_tags",
+          "reason": "untracked-id-near-miss",
+          "message": "`TC-1` is written on `tests::tc_1_every_finding_defaults_to_warning` at src/lib.rs and matches no minted row, while `TC-001` in spec/tests.md is reported unbacked — the two differ only in zero-padding, case or separator, so they are the same id written twice. Both halves were already in this payload and nothing joined them; the census reads healthy because the tag bound fine, to the wrong id",
+          "path": "src/lib.rs",
+          "line": 12,
+          "value": "TC-1",
+          "subject": "trace id `TC-1`",
+          "change_target": "src/lib.rs:12",
+          "remedy": "change the annotation to the exact minted row id"
+        }
+      }
+    },
+    {
+      "recordId": "sha256:0d31711dedd750fec974466b02dda584e1d07426d2e018e0044500d35df6e04f",
+      "partition": "quoin/quoin/validate/gate-that-gates-nothing",
+      "identity": {
+        "family": "gate-that-gates-nothing",
+        "case": "gate-that-gates-nothing-python",
+        "language": "python"
+      },
+      "templateDigest": "sha256:57cae873778a6505e0b9b76076685960ad45a5165f100ef3749353da49721e39",
+      "correctness": "pass",
+      "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
+      "executableProof": {
+        "kind": "repair",
+        "outcome": "pass",
+        "method": "The controlled corpus replays the defective fixture and its language-matched repaired control; the expected family is present only before repair while corpus verification remains green.",
+        "retainedFinding": {
+          "kind": "gate-that-gates-nothing",
+          "obligation": "FR-001-AC-1",
+          "path": "scripts/check_dangerous_eval.sh",
+          "line": 4,
+          "wiredBy": "Makefile",
+          "subject": "gate for FR-001-AC-1",
+          "changeTarget": "scripts/check_dangerous_eval.sh:4",
+          "remedy": "compare the count for “dangerous_eval” to zero or make the match command exit non-zero when forbidden text is present",
+          "summary": "FR-001-AC-1 claims “no production symbol shall call `dangerous_eval`.”, and Makefile wires scripts/check_dangerous_eval.sh, but line 4 only counts matches for “dangerous_eval” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero."
+        }
+      }
+    },
+    {
+      "recordId": "sha256:0db101ff5990229184d57f721b50d063c9535da63b8e28dc8a3122321e1ace98",
+      "partition": "quire/quire/coverage.diagnostics/catch-all-universal",
+      "identity": {
+        "family": "catch-all-universal",
+        "case": "tag-names-bare-fr-control-python",
+        "language": "python",
+        "declaration": "criteria"
+      },
+      "templateDigest": "sha256:edff4689670c4d607d8eaaa6330637e7dae30e1eff98dcdb3eb3998ceb649e2d",
+      "correctness": "pass",
+      "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
+      "executableProof": {
+        "kind": "diagnostic",
+        "outcome": "pass",
+        "method": "The canonical producer replay emits the cited causal channel and its controlled comparison retains the evidence needed to distinguish the named causes.",
+        "retainedFinding": {
+          "declaration": "criteria",
+          "reason": "catch-all-universal",
+          "message": "1 of 1 documents binding extractable criteria named a specific property shape for none of them — for example `FR-001-AC-1` at spec/FR-001.md:10; the extractable headline counts what a generator could quantify over, and this is the part it could not tell you what to write",
+          "path": "spec/FR-001.md",
+          "line": 10,
+          "value": "coverage.specific_shaped",
+          "subject": "criterion represented by `coverage.specific_shaped` at spec/FR-001.md:10",
+          "change_target": "spec/FR-001.md:10",
+          "next_diagnostic_step": "review whether the criterion is intentionally universal; otherwise name a concrete supported property shape"
+        }
+      }
+    },
+    {
+      "recordId": "sha256:12090cdd69585b04a546ba835552ddbc7fea01cb03b91fc7b40b00fab1ef49c6",
+      "partition": "quire/quire/coverage.diagnostics/archetype-matches-nothing",
+      "identity": {
+        "family": "archetype-matches-nothing",
+        "case": "section-and-id-column-rust",
+        "language": "rust",
+        "declaration": "nfr-acceptance-criterion"
+      },
+      "templateDigest": "sha256:f6780e65ca1c31ffe03286b158e27dd9c7de051e9c7d0316a8b646bd1976af7b",
+      "correctness": "pass",
+      "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
+      "executableProof": {
+        "kind": "diagnostic",
+        "outcome": "pass",
+        "method": "The canonical producer replay emits the cited causal channel and its controlled comparison retains the evidence needed to distinguish the named causes.",
+        "retainedFinding": {
+          "declaration": "nfr-acceptance-criterion",
+          "reason": "archetype-matches-nothing",
+          "message": "declaration 'nfr-acceptance-criterion' declares archetype 'NFR', which no document in the corpus has — it scans nothing and mints no rows",
+          "path": "/home/peter/dev/quoin/corpus/modules/ecosystem/spec-artifacts-process/manifest.yaml",
+          "line": 685,
+          "subject": "declaration `nfr-acceptance-criterion`",
+          "change_target": "the trace-target archetype in the module manifest",
+          "next_diagnostic_step": "confirm whether the missing document is intentional; otherwise add the document or correct the declared archetype"
+        }
+      }
+    },
+    {
+      "recordId": "sha256:1c6f0e4621665ffe8efb4c2db1882cf30e48a106940775f6241793bb95667974",
+      "partition": "quire/quire/coverage.suspicions/vacuous-under-guard",
+      "identity": {
+        "family": "vacuous-under-guard",
+        "case": "vacuous-property-suite",
+        "language": "rust"
+      },
+      "templateDigest": "sha256:7968a1a8d6515660ea1ef341d10cdafb1b1460840516d1f368f995eb7a0e7936",
+      "correctness": "pass",
+      "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
+      "executableProof": {
+        "kind": "diagnostic",
+        "outcome": "pass",
+        "method": "The canonical producer replay emits the cited causal channel and its controlled comparison retains the evidence needed to distinguish the named causes.",
+        "retainedFinding": {
+          "kind": "vacuous-under-guard",
+          "path": "src/lib.rs",
+          "symbol": "tests::covers",
+          "line": 7,
+          "message": "every assertion sits behind a narrowing guard, so an input that does not enter it passes unchecked — the shape of a suite that was green while checking 2.3% of its samples",
+          "evidence": "1 of 1 assertions guarded, 0 unguarded",
+          "subject": "test symbol `tests::covers`",
+          "change_target": "src/lib.rs:7 in `tests::covers`",
+          "next_diagnostic_step": "inspect inputs that bypass the narrowing guard; add an unconditional oracle or constrain the generator when those inputs are invalid"
+        }
+      }
+    },
+    {
+      "recordId": "sha256:20441731fc72542931d37e19c31010ff9c50242ed246f398475cc873bc831551",
+      "partition": "quoin/quoin/evidence.audit/mocked-confirmation",
+      "identity": {
+        "family": "mocked-confirmation",
+        "case": "mocked-confirmation-typescript",
+        "language": "typescript"
+      },
+      "templateDigest": "sha256:aa3b6d58e0407b1d8c898b1adfad6681049e9559330da656693bde0e10313a82",
+      "correctness": "pass",
+      "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
+      "executableProof": {
+        "kind": "diagnostic",
+        "outcome": "pass",
+        "method": "The canonical producer replay emits the cited causal channel and its controlled comparison retains the evidence needed to distinguish the named causes.",
+        "retainedFinding": {
+          "kind": "mocked-confirmation",
+          "obligation": "FR-001-AC-1",
+          "severity": "medium",
+          "path": "src/shell.test.ts",
+          "line": 13,
+          "symbol": "covers",
+          "subject": "FR-001-AC-1 evidence",
+          "changeTarget": "src/shell.test.ts:13 in covers",
+          "nextDiagnosticStep": "inspect whether the real behaviour for FR-001-AC-1 exists; add or bind an independent test that exercises it without substituting the behaviour under verification",
+          "summary": "FR-001-AC-1 is discharged only by tests that inject a stand-in for the behaviour it verifies: src/shell.test.ts:13 covers injects Confirmation.allow. A test that substitutes the behaviour under verification passes whether or not that behaviour exists."
+        }
+      }
+    },
+    {
+      "recordId": "sha256:23b00e4973f5b5005b74c4e469580dc76cce8018f786b1a2aa3f966062556a2c",
+      "partition": "quire/quire/validate.findings/undeclared-type-value",
+      "identity": {
+        "family": "undeclared-type-value",
+        "case": "wrong-type-cell-python",
+        "language": "python"
+      },
+      "templateDigest": "sha256:d451bb5c643c3ed1b2f85d975af6a02d6ff34e4b8a4539b12d356049ef6bedaa",
+      "correctness": "pass",
+      "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
+      "executableProof": {
+        "kind": "repair",
+        "outcome": "pass",
+        "method": "The controlled corpus replays the defective fixture and its language-matched repaired control; the expected family is present only before repair while corpus verification remains green.",
+        "retainedFinding": {
+          "kind": "ValidationError",
+          "message": "/home/peter/dev/quoin/corpus/cases/minting/wrong-type-cell/python/input/spec/tests.md: line 10: [TestMatrix] 'test_cases': TC-001: column 'Type' cell 'Telepathy' is not one of [\"Unit\", \"Integration\", \"E2E\", \"Property\", \"Fuzz\", \"Benchmark\", \"Static\", \"Compile\", \"Snapshot\", \"Manual\", \"Eval\", \"Inspection\", \"Analysis\", \"Demonstration\"] [assert]",
+          "severity": "error",
+          "reason": "assert",
+          "path": "/home/peter/dev/quoin/corpus/cases/minting/wrong-type-cell/python/input/spec/tests.md",
+          "line": 10,
+          "subject": "document validation of /home/peter/dev/quoin/corpus/cases/minting/wrong-type-cell/python/input/spec/tests.md",
+          "change_target": "/home/peter/dev/quoin/corpus/cases/minting/wrong-type-cell/python/input/spec/tests.md:10",
+          "remedy": "change the cited value or structure so it satisfies the named archetype assertion"
+        }
+      }
+    },
+    {
+      "recordId": "sha256:26e32174e4ce3e579f7e7927a02f834febfb9b2e21d33521939fa9e9527529b9",
+      "partition": "quire/quire/coverage.diagnostics/section-holds-no-table",
+      "identity": {
+        "family": "section-holds-no-table",
+        "case": "section-holds-no-table-typescript",
+        "language": "typescript",
+        "declaration": "test-case"
+      },
+      "templateDigest": "sha256:735892152c76b2b26437c61623fb0e6934c95ad5ffba65c2668337e79fb471b7",
+      "correctness": "pass",
+      "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
+      "executableProof": {
+        "kind": "repair",
+        "outcome": "pass",
+        "method": "The controlled corpus replays the defective fixture and its language-matched repaired control; the expected family is present only before repair while corpus verification remains green.",
+        "retainedFinding": {
+          "declaration": "test-case",
+          "reason": "section-holds-no-table",
+          "message": "declaration 'test-case' found 'Test Case Summary' in spec/tests.md — every section it                  declares that this document has — and not one of them holds a table.                  The declared sections are '*Test Case Summary*', 'Integration Test Matrix'. So the document mints nothing, and the two                  diagnostics that would say so both stand down: the section WAS found,                  and there is no table to read an id column from. A heading whose rows                  live under its sub-headings is the usual cause — declare those                  sub-headings, or the pattern that reaches them",
+          "path": "spec/tests.md",
+          "subject": "declaration `test-case`",
+          "change_target": "spec/tests.md",
+          "remedy": "add the expected table under the matched section or correct the declaration's section selector"
+        }
+      }
+    },
+    {
+      "recordId": "sha256:27f3645c16ad4b833fe8a0cc157621d91b04a0721329701faf8a0d79cbf4d25f",
+      "partition": "quire/quire/coverage.diagnostics/marker-form-mismatch",
+      "identity": {
+        "family": "marker-form-mismatch",
+        "case": "marker-form-mismatch-typescript",
+        "language": "typescript",
+        "declaration": "traceability.trace_tags"
+      },
+      "templateDigest": "sha256:7aecebb9a7550f69508e82d82103e04f66ed02206dce265aea7f391850a4d093",
+      "correctness": "pass",
+      "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
+      "executableProof": {
+        "kind": "diagnostic",
+        "outcome": "pass",
+        "method": "The canonical producer replay emits the cited causal channel and its controlled comparison retains the evidence needed to distinguish the named causes.",
+        "retainedFinding": {
+          "declaration": "traceability.trace_tags",
+          "reason": "no-symbol-bound",
+          "message": "1 typescript evidence symbols were examined and none carried a tag any declared form matched (forms: ts-trace-helper, typescript-trace-line, typescript-comment-id, typescript-test-name-id, typescript-doc-comment-id) — for example `defaults every finding to warning` at src/lib.test.ts:5, whose annotation carries no matching form; every row those symbols verify is reported unbacked, which is indistinguishable from a missing test",
+          "path": "src/lib.test.ts",
+          "line": 5,
+          "value": "typescript",
+          "subject": "typescript evidence-symbol binding",
+          "change_target": "src/lib.test.ts:5",
+          "next_diagnostic_step": "compare the example annotation with the declared trace-tag forms; correct the annotation or the declaration according to authored intent"
+        }
+      }
+    },
+    {
+      "recordId": "sha256:2b41200fe0b9f4b0316905662f618303714ab04c47c5998b5dd214e9f808e4e2",
+      "partition": "quire/quire/coverage.diagnostics/section-matches-nothing",
+      "identity": {
+        "family": "section-matches-nothing",
+        "case": "section-and-id-column-python",
+        "language": "python",
+        "declaration": "test-case"
+      },
+      "templateDigest": "sha256:5478870649044bacb30c8be0b0f5dca0f211ec9a7441da496b32494024841aca",
+      "correctness": "pass",
+      "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
+      "executableProof": {
+        "kind": "repair",
+        "outcome": "pass",
+        "method": "The controlled corpus replays the defective fixture and its language-matched repaired control; the expected family is present only before repair while corpus verification remains green.",
+        "retainedFinding": {
+          "declaration": "test-case",
+          "reason": "section-matches-nothing",
+          "message": "declaration 'test-case' selected spec/tests.md by archetype 'TestMatrix' and found no section matching '*Test Case Summary*', 'Integration Test Matrix' in it — the headings the document has are 'Test Cases'. The declared table is never reached, so every id under it is stranded and the document mints nothing. The declared id column 'Test ID' could NOT be checked either: fix the heading first, then confirm that column exists, or the same rows come back unminted for the second reason",
+          "path": "spec/tests.md",
+          "subject": "declaration `test-case`",
+          "change_target": "spec/tests.md",
+          "remedy": "align the document heading with the declared section selector"
+        }
+      }
+    },
+    {
+      "recordId": "sha256:2e404109ee155d659943cef6d82b4fe06550dd6830ef2b72e7e254bddaee1428",
+      "partition": "quire/quire/coverage.diagnostics/id-column-matches-nothing",
+      "identity": {
+        "family": "id-column-matches-nothing",
+        "case": "id-column-mismatch-python",
+        "language": "python",
+        "declaration": "test-case"
+      },
+      "templateDigest": "sha256:8f19c6f5bdd78f3bbc6e3544294e5d3d2027529d6a6be311a2979e2ae24137e9",
+      "correctness": "pass",
+      "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
+      "executableProof": {
+        "kind": "repair",
+        "outcome": "pass",
+        "method": "The controlled corpus replays the defective fixture and its language-matched repaired control; the expected family is present only before repair while corpus verification remains green.",
+        "retainedFinding": {
+          "declaration": "test-case",
+          "reason": "id-column-matches-nothing",
+          "message": "declaration 'test-case' declares id column 'Test ID', which the table under 'Test Case Summary' in spec/tests.md does not have — the columns it has are 'Test Case ID', 'Traces To', 'Status'. The rows are read and none of them yields an id, so the document mints nothing and every row it should have minted reports with no identity",
+          "path": "spec/tests.md",
+          "subject": "declaration `test-case`",
+          "change_target": "spec/tests.md",
+          "remedy": "align the declared id_column with the table's actual identifier header"
+        }
+      }
+    },
+    {
+      "recordId": "sha256:2f265bf60eb00121b67db78066b34bae57e320e3fe992e3ad1efceb63413351c",
+      "partition": "quire/quire/coverage.diagnostics/hollow-denominator",
+      "identity": {
+        "family": "hollow-denominator",
+        "case": "hollow-metric-python",
+        "language": "python",
+        "declaration": "metrics"
+      },
+      "templateDigest": "sha256:179c56992a19d5a821dc8ef72413551c1e765a1019cd0f1c1cc1485ffeb77d73",
+      "correctness": "pass",
+      "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
+      "executableProof": {
+        "kind": "diagnostic",
+        "outcome": "pass",
+        "method": "The canonical producer replay emits the cited causal channel and its controlled comparison retains the evidence needed to distinguish the named causes.",
+        "retainedFinding": {
+          "declaration": "metrics",
+          "reason": "hollow-denominator",
+          "message": "`coverage.backed` published a ratio over 3 matrix rows but read none of the 1 it walked, so the number is arithmetic over nothing; rows of the declared reference tables whose trace target is bound by at least one source symbol; `matched` counts the evidence symbols that bound a trace id out of the `examined` evidence symbols walked, so matched 0 of a non-zero examined is a ratio computed over a corpus the binder could not read",
+          "value": "coverage.backed",
+          "subject": "metric `coverage.backed`",
+          "change_target": "the source binding census or declared trace-tag forms",
+          "next_diagnostic_step": "inspect the binding census, its unbound example, and the declared trace-tag forms before trusting or repairing the ratio"
+        }
+      }
+    },
+    {
+      "recordId": "sha256:33902fe450554cd9068ac343ae96447a3f1bc6448aed3adfc848f859df808f92",
+      "partition": "quire/quire/coverage.diagnostics/catch-all-universal",
+      "identity": {
+        "family": "catch-all-universal",
+        "case": "section-holds-no-table-rust",
+        "language": "rust",
+        "declaration": "criteria"
+      },
+      "templateDigest": "sha256:edff4689670c4d607d8eaaa6330637e7dae30e1eff98dcdb3eb3998ceb649e2d",
+      "correctness": "pass",
+      "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
+      "executableProof": {
+        "kind": "diagnostic",
+        "outcome": "pass",
+        "method": "The canonical producer replay emits the cited causal channel and its controlled comparison retains the evidence needed to distinguish the named causes.",
+        "retainedFinding": {
+          "declaration": "criteria",
+          "reason": "catch-all-universal",
+          "message": "1 of 1 documents binding extractable criteria named a specific property shape for none of them — for example `FR-001-AC-1` at spec/FR-001.md:10; the extractable headline counts what a generator could quantify over, and this is the part it could not tell you what to write",
+          "path": "spec/FR-001.md",
+          "line": 10,
+          "value": "coverage.specific_shaped",
+          "subject": "criterion represented by `coverage.specific_shaped` at spec/FR-001.md:10",
+          "change_target": "spec/FR-001.md:10",
+          "next_diagnostic_step": "review whether the criterion is intentionally universal; otherwise name a concrete supported property shape"
+        }
+      }
+    },
+    {
+      "recordId": "sha256:33f36a57ccfbe2d15ea83e11fdacf927689bb060a053653b1d8bc88ebf2a96c0",
+      "partition": "quoin/quoin/validate/gate-that-gates-nothing",
+      "identity": {
+        "family": "gate-that-gates-nothing",
+        "case": "gate-that-gates-nothing-rust",
+        "language": "rust"
+      },
+      "templateDigest": "sha256:90f6659f9fdccdc68e71423b7f6a5ac3d6d2883560b79970fcaf91e318824f28",
+      "correctness": "pass",
+      "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
+      "executableProof": {
+        "kind": "repair",
+        "outcome": "pass",
+        "method": "The controlled corpus replays the defective fixture and its language-matched repaired control; the expected family is present only before repair while corpus verification remains green.",
+        "retainedFinding": {
+          "kind": "gate-that-gates-nothing",
+          "obligation": "FR-001-AC-1",
+          "path": "scripts/check_unwrap.sh",
+          "line": 4,
+          "wiredBy": "Makefile",
+          "subject": "gate for FR-001-AC-1",
+          "changeTarget": "scripts/check_unwrap.sh:4",
+          "remedy": "compare the count for “unwrap()” to zero or make the match command exit non-zero when forbidden text is present",
+          "summary": "FR-001-AC-1 claims “no production `unwrap`.”, and Makefile wires scripts/check_unwrap.sh, but line 4 only counts matches for “unwrap()” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero."
+        }
+      }
+    },
+    {
+      "recordId": "sha256:35dd383444c5fd1dbef0871ee058a2d86b7829f8d24358549c813dd7c4a31578",
+      "partition": "quire/quire/coverage.diagnostics/catch-all-universal",
+      "identity": {
+        "family": "catch-all-universal",
+        "case": "greenfield-no-symbols-control-rust",
+        "language": "rust",
+        "declaration": "criteria"
+      },
+      "templateDigest": "sha256:edff4689670c4d607d8eaaa6330637e7dae30e1eff98dcdb3eb3998ceb649e2d",
+      "correctness": "pass",
+      "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
+      "executableProof": {
+        "kind": "diagnostic",
+        "outcome": "pass",
+        "method": "The canonical producer replay emits the cited causal channel and its controlled comparison retains the evidence needed to distinguish the named causes.",
+        "retainedFinding": {
+          "declaration": "criteria",
+          "reason": "catch-all-universal",
+          "message": "1 of 1 documents binding extractable criteria named a specific property shape for none of them — for example `FR-001-AC-1` at spec/FR-001.md:10; the extractable headline counts what a generator could quantify over, and this is the part it could not tell you what to write",
+          "path": "spec/FR-001.md",
+          "line": 10,
+          "value": "coverage.specific_shaped",
+          "subject": "criterion represented by `coverage.specific_shaped` at spec/FR-001.md:10",
+          "change_target": "spec/FR-001.md:10",
+          "next_diagnostic_step": "review whether the criterion is intentionally universal; otherwise name a concrete supported property shape"
+        }
+      }
+    },
+    {
+      "recordId": "sha256:406301c52b70b28e2ff3d5bfed5f6e45abb64b056001bb135c2f0fe2c07263db",
+      "partition": "quire/quire/coverage.diagnostics/undeclared-coverage-vocabulary",
+      "identity": {
+        "family": "undeclared-coverage-vocabulary",
+        "case": "undeclared-coverage-vocabulary",
+        "language": "n/a",
+        "declaration": "quality-characteristics"
+      },
+      "templateDigest": "sha256:8b5a2cbc6d704f576da5d404b5b0e45f2d33500cc2a895ef50624ee6931f910f",
+      "correctness": "pass",
+      "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
+      "executableProof": {
+        "kind": "repair",
+        "outcome": "pass",
+        "method": "The controlled corpus replays the defective fixture and its language-matched repaired control; the expected family is present only before repair while corpus verification remains green.",
+        "retainedFinding": {
+          "declaration": "quality-characteristics",
+          "reason": "undeclared-coverage-vocabulary",
+          "message": "vocabulary_coverage 'quality-characteristics' reads 'missing_quality_attribute' on archetype 'NFR', which declares no such enum — the check can never report anything",
+          "path": "/home/peter/dev/quoin/corpus/modules/variants/dead-coverage-vocabulary/manifest.yaml",
+          "line": 15,
+          "subject": "declaration `quality-characteristics`",
+          "change_target": "the vocabulary_coverage field/archetype declaration in the module manifest",
+          "remedy": "correct the declared field/archetype or declare the referenced schema enum"
+        }
+      }
+    },
+    {
+      "recordId": "sha256:40a814a7569f008354f21361d27d6a1cfef845ce1a4f12370cf1eeeca0401c3d",
+      "partition": "quire/quire/coverage.diagnostics/archetype-matches-nothing",
+      "identity": {
+        "family": "archetype-matches-nothing",
+        "case": "wrong-type-cell-control-python",
+        "language": "python",
+        "declaration": "nfr-acceptance-criterion"
+      },
+      "templateDigest": "sha256:f6780e65ca1c31ffe03286b158e27dd9c7de051e9c7d0316a8b646bd1976af7b",
+      "correctness": "pass",
+      "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
+      "executableProof": {
+        "kind": "diagnostic",
+        "outcome": "pass",
+        "method": "The canonical producer replay emits the cited causal channel and its controlled comparison retains the evidence needed to distinguish the named causes.",
+        "retainedFinding": {
+          "declaration": "nfr-acceptance-criterion",
+          "reason": "archetype-matches-nothing",
+          "message": "declaration 'nfr-acceptance-criterion' declares archetype 'NFR', which no document in the corpus has — it scans nothing and mints no rows",
+          "path": "/home/peter/dev/quoin/corpus/modules/ecosystem/spec-artifacts-process/manifest.yaml",
+          "line": 685,
+          "subject": "declaration `nfr-acceptance-criterion`",
+          "change_target": "the trace-target archetype in the module manifest",
+          "next_diagnostic_step": "confirm whether the missing document is intentional; otherwise add the document or correct the declared archetype"
+        }
+      }
+    },
+    {
+      "recordId": "sha256:40b8b0ce71d0f9804cfbf56a2d770efc3bbe4c0f5fea0aa6d055b58559ccabf3",
+      "partition": "quire/quire/coverage.diagnostics/unminted-id-guidance",
+      "identity": {
+        "family": "unminted-id-guidance",
+        "case": "tag-names-bare-fr-python",
+        "language": "python",
+        "declaration": "traceability.trace_tags"
+      },
+      "templateDigest": "sha256:e16837f02f534c7ef930f689cf934c9be5ba8d19195dc90628974ca76cf78f02",
+      "correctness": "pass",
+      "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
+      "executableProof": {
+        "kind": "diagnostic",
+        "outcome": "pass",
+        "method": "The canonical producer replay emits the cited causal channel and its controlled comparison retains the evidence needed to distinguish the named causes.",
+        "retainedFinding": {
+          "declaration": "traceability.trace_tags",
+          "reason": "untracked-id-has-minted-children",
+          "message": "`FR-001` on `test_defaults_every_finding_to_warning` is not a minted trace target. Under `FR-001`, the active model mints `FR-001-AC-1`, `FR-001-AC-2`; tag the exact child id that states the obligation this evidence verifies. Nothing is joined automatically because one coarse or unrelated tag cannot back every child",
+          "path": "src/test_coverage.py",
+          "line": 13,
+          "value": "FR-001",
+          "subject": "trace id `FR-001`",
+          "change_target": "src/test_coverage.py:13",
+          "next_diagnostic_step": "choose the exact minted child that this evidence verifies, or correct the authored id/declaration; do not substitute a sibling merely to clear coverage"
+        }
+      }
+    },
+    {
+      "recordId": "sha256:41495b531c058302e193cd468484ee5e4b0f526e65a8cc8cc95ac05feddd6915",
+      "partition": "quire/quire/coverage.diagnostics/archetype-matches-nothing",
+      "identity": {
+        "family": "archetype-matches-nothing",
+        "case": "no-symbol-method-in-the-verification-column-rust",
+        "language": "rust",
+        "declaration": "stakeholder-validation-criterion"
+      },
+      "templateDigest": "sha256:f6780e65ca1c31ffe03286b158e27dd9c7de051e9c7d0316a8b646bd1976af7b",
+      "correctness": "pass",
+      "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
+      "executableProof": {
+        "kind": "diagnostic",
+        "outcome": "pass",
+        "method": "The canonical producer replay emits the cited causal channel and its controlled comparison retains the evidence needed to distinguish the named causes.",
+        "retainedFinding": {
+          "declaration": "stakeholder-validation-criterion",
+          "reason": "archetype-matches-nothing",
+          "message": "declaration 'stakeholder-validation-criterion' declares archetype 'StR', which no document in the corpus has — it scans nothing and mints no rows",
+          "path": "/home/peter/dev/quoin/corpus/modules/ecosystem/spec-artifacts-process/manifest.yaml",
+          "line": 723,
+          "subject": "declaration `stakeholder-validation-criterion`",
+          "change_target": "the trace-target archetype in the module manifest",
+          "next_diagnostic_step": "confirm whether the missing document is intentional; otherwise add the document or correct the declared archetype"
+        }
+      }
+    },
+    {
+      "recordId": "sha256:426440a9b68e0108ca06a2008b7b23c449700a4b1066b36bad106743ff9298aa",
+      "partition": "quire/quire/coverage.diagnostics/unminted-id-guidance",
+      "identity": {
+        "family": "unminted-id-guidance",
+        "case": "tag-names-undeclared-section-python",
+        "language": "python",
+        "declaration": "traceability.trace_tags"
+      },
+      "templateDigest": "sha256:e16837f02f534c7ef930f689cf934c9be5ba8d19195dc90628974ca76cf78f02",
+      "correctness": "pass",
+      "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
+      "executableProof": {
+        "kind": "diagnostic",
+        "outcome": "pass",
+        "method": "The canonical producer replay emits the cited causal channel and its controlled comparison retains the evidence needed to distinguish the named causes.",
+        "retainedFinding": {
+          "declaration": "traceability.trace_tags",
+          "reason": "untracked-id-has-minted-children",
+          "message": "`FR-001-INV-1` on `test_carries_the_declared_severity` is not a minted trace target. Under `FR-001`, the active model mints `FR-001-AC-1`, `FR-001-AC-2`; `FR-001-INV-1` is not their parent, so do not substitute one merely to clear coverage; correct the authored id or declare a trace target for its class. Nothing is joined automatically because one coarse or unrelated tag cannot back every child",
+          "path": "src/test_coverage.py",
+          "line": 15,
+          "value": "FR-001-INV-1",
+          "subject": "trace id `FR-001-INV-1`",
+          "change_target": "src/test_coverage.py:15",
+          "next_diagnostic_step": "choose the exact minted child that this evidence verifies, or correct the authored id/declaration; do not substitute a sibling merely to clear coverage"
+        }
+      }
+    },
+    {
+      "recordId": "sha256:47bc1c06faa32a63e10d6b936a5fe96542906d3239fe644465ec96011db32a84",
+      "partition": "quire/quire/coverage.diagnostics/tag-on-non-binding-symbol",
+      "identity": {
+        "family": "tag-on-non-binding-symbol",
+        "case": "tag-on-describe-header",
+        "language": "typescript",
+        "declaration": "traceability.trace_tags"
+      },
+      "templateDigest": "sha256:456c1858f305ab4850ec3f48119d7f4a4f50a6a42de70b79642c2eed55d4c761",
+      "correctness": "pass",
+      "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
+      "executableProof": {
+        "kind": "repair",
+        "outcome": "pass",
+        "method": "The controlled corpus replays the defective fixture and its language-matched repaired control; the expected family is present only before repair while corpus verification remains green.",
+        "retainedFinding": {
+          "declaration": "traceability.trace_tags",
+          "reason": "tag-on-non-binding-symbol",
+          "message": "trace id `TC-001` is written on `warning default` at src/coverage.test.ts:7, a container — a kind that does not bind trace ids (CR-061), so the tag reached no channel and the row it names is reported unbacked, indistinguishable from a test nobody wrote. The form `typescript-comment-id` matched, so this is an authored tag rather than prose. A production symbol records what it is about with `Implements:`; a trace id binds on an evidence symbol — a test, a benchmark or a fuzz target",
+          "path": "src/coverage.test.ts",
+          "line": 7,
+          "value": "TC-001",
+          "subject": "trace id `TC-001`",
+          "change_target": "src/coverage.test.ts:7",
+          "remedy": "move the trace id to an evidence symbol, or use an Implements marker when the production symbol is the intended subject"
+        }
+      }
+    },
+    {
+      "recordId": "sha256:50a681691985e37d56d6372fc4944fd22495ffcb5d30c0e3d37d81ae2924c6bb",
+      "partition": "quire/quire/coverage.diagnostics/model-mints-nothing",
+      "identity": {
+        "family": "model-mints-nothing",
+        "case": "model-mints-nothing",
+        "language": "n/a",
+        "declaration": "traceability"
+      },
+      "templateDigest": "sha256:3df3ba6726d07bdf20d5cbafe6cc3e3c414a16c159680ddb9650004950dfcd0d",
+      "correctness": "pass",
+      "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
+      "executableProof": {
+        "kind": "repair",
+        "outcome": "pass",
+        "method": "The controlled corpus replays the defective fixture and its language-matched repaired control; the expected family is present only before repair while corpus verification remains green.",
+        "retainedFinding": {
+          "declaration": "traceability",
+          "reason": "model-mints-nothing",
+          "message": "the declared traceability model has no trace_targets, so it mints no ids and every count is over an empty denominator",
+          "path": "/home/peter/dev/quoin/corpus/modules/variants/no-trace-targets/manifest.yaml",
+          "line": 6,
+          "subject": "the traceability model",
+          "change_target": "traceability.trace_targets in the module manifest",
+          "remedy": "declare at least one trace target, or remove the misleading traceability model if no ids should be minted"
+        }
+      }
+    },
+    {
+      "recordId": "sha256:51882fdce86cbd52019469ddf9eb404fd91baa358a912eb15e004c6712a9d4b4",
+      "partition": "quire/quire/coverage.diagnostics/marker-form-mismatch",
+      "identity": {
+        "family": "marker-form-mismatch",
+        "case": "hollow-metric-rust",
+        "language": "rust",
+        "declaration": "traceability.trace_tags"
+      },
+      "templateDigest": "sha256:7aecebb9a7550f69508e82d82103e04f66ed02206dce265aea7f391850a4d093",
+      "correctness": "pass",
+      "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
+      "executableProof": {
+        "kind": "diagnostic",
+        "outcome": "pass",
+        "method": "The canonical producer replay emits the cited causal channel and its controlled comparison retains the evidence needed to distinguish the named causes.",
+        "retainedFinding": {
+          "declaration": "traceability.trace_tags",
+          "reason": "no-symbol-bound",
+          "message": "1 rust evidence symbols were examined and none carried a tag any declared form matched (forms: rust-trace-attribute, rust-trace-line, rust-comment-id, rust-test-name-id, rust-doc-comment-id) — for example `tests::covers` at src/lib.rs:5, whose annotation carries no matching form; every row those symbols verify is reported unbacked, which is indistinguishable from a missing test",
+          "path": "src/lib.rs",
+          "line": 5,
+          "value": "rust",
+          "subject": "rust evidence-symbol binding",
+          "change_target": "src/lib.rs:5",
+          "next_diagnostic_step": "compare the example annotation with the declared trace-tag forms; correct the annotation or the declaration according to authored intent"
+        }
+      }
+    },
+    {
+      "recordId": "sha256:51ff44bdb451c9dad2f92874b9095bfb96f7d5d3f4bdab172a57a255ceaba284",
+      "partition": "quire/quire/coverage.diagnostics/hollow-denominator",
+      "identity": {
+        "family": "hollow-denominator",
+        "case": "real-tests-zero-tags-rust",
+        "language": "rust",
+        "declaration": "metrics"
+      },
+      "templateDigest": "sha256:179c56992a19d5a821dc8ef72413551c1e765a1019cd0f1c1cc1485ffeb77d73",
+      "correctness": "pass",
+      "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
+      "executableProof": {
+        "kind": "diagnostic",
+        "outcome": "pass",
+        "method": "The canonical producer replay emits the cited causal channel and its controlled comparison retains the evidence needed to distinguish the named causes.",
+        "retainedFinding": {
+          "declaration": "metrics",
+          "reason": "hollow-denominator",
+          "message": "`coverage.backed` published a ratio over 4 matrix rows but read none of the 2 it walked, so the number is arithmetic over nothing; rows of the declared reference tables whose trace target is bound by at least one source symbol; `matched` counts the evidence symbols that bound a trace id out of the `examined` evidence symbols walked, so matched 0 of a non-zero examined is a ratio computed over a corpus the binder could not read",
+          "value": "coverage.backed",
+          "subject": "metric `coverage.backed`",
+          "change_target": "the source binding census or declared trace-tag forms",
+          "next_diagnostic_step": "inspect the binding census, its unbound example, and the declared trace-tag forms before trusting or repairing the ratio"
+        }
+      }
+    },
+    {
+      "recordId": "sha256:57f135351965987db91b6617361918c336e785ec84fbd5e641f347fa2fe13ac6",
+      "partition": "quire/quire/coverage.diagnostics/uncatalogued-verification-method",
+      "identity": {
+        "family": "uncatalogued-verification-method",
+        "case": "uncatalogued-verification-method",
+        "language": "n/a",
+        "declaration": "acceptance-criterion"
+      },
+      "templateDigest": "sha256:8f8d87e50a7365c7236421ef3e02ee92da8641dc30de275efe5e14abf77f3b42",
+      "correctness": "pass",
+      "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
+      "executableProof": {
+        "kind": "repair",
+        "outcome": "pass",
+        "method": "The controlled corpus replays the defective fixture and its language-matched repaired control; the expected family is present only before repair while corpus verification remains green.",
+        "retainedFinding": {
+          "declaration": "acceptance-criterion",
+          "reason": "uncatalogued-verification-method",
+          "message": "'Telepathy' is neither a declared verification_catalog method id nor a declared class, so nothing can say what discharging it means (1 row(s), first in 'spec/FR-001.md'). Add a catalog entry, or write a declared method in the cell",
+          "path": "spec/FR-001.md",
+          "value": "Telepathy",
+          "subject": "verification method `Telepathy`",
+          "change_target": "spec/FR-001.md",
+          "remedy": "add the method to the verification catalog or write an already declared method in the cell"
+        }
+      }
+    },
+    {
+      "recordId": "sha256:5cf18ce737c65d5688a11d156e3ac634cd198f769d806acba959740b8638d11b",
+      "partition": "quire/quire/coverage.diagnostics/section-matches-nothing",
+      "identity": {
+        "family": "section-matches-nothing",
+        "case": "section-name-mismatch-python",
+        "language": "python",
+        "declaration": "test-case"
+      },
+      "templateDigest": "sha256:5478870649044bacb30c8be0b0f5dca0f211ec9a7441da496b32494024841aca",
+      "correctness": "pass",
+      "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
+      "executableProof": {
+        "kind": "repair",
+        "outcome": "pass",
+        "method": "The controlled corpus replays the defective fixture and its language-matched repaired control; the expected family is present only before repair while corpus verification remains green.",
+        "retainedFinding": {
+          "declaration": "test-case",
+          "reason": "section-matches-nothing",
+          "message": "declaration 'test-case' selected spec/tests.md by archetype 'TestMatrix' and found no section matching '*Test Case Summary*', 'Integration Test Matrix' in it — the headings the document has are 'Test Cases'. The declared table is never reached, so every id under it is stranded and the document mints nothing. The declared id column 'Test ID' could NOT be checked either: fix the heading first, then confirm that column exists, or the same rows come back unminted for the second reason",
+          "path": "spec/tests.md",
+          "subject": "declaration `test-case`",
+          "change_target": "spec/tests.md",
+          "remedy": "align the document heading with the declared section selector"
+        }
+      }
+    },
+    {
+      "recordId": "sha256:5ee21ef72a5793b4323ec14c2d30ab7e917f83092a8379514157747e396b4a58",
+      "partition": "quire/quire/coverage.diagnostics/unminted-id-guidance",
+      "identity": {
+        "family": "unminted-id-guidance",
+        "case": "tag-names-undeclared-section-rust",
+        "language": "rust",
+        "declaration": "traceability.trace_tags"
+      },
+      "templateDigest": "sha256:e16837f02f534c7ef930f689cf934c9be5ba8d19195dc90628974ca76cf78f02",
+      "correctness": "pass",
+      "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
+      "executableProof": {
+        "kind": "diagnostic",
+        "outcome": "pass",
+        "method": "The canonical producer replay emits the cited causal channel and its controlled comparison retains the evidence needed to distinguish the named causes.",
+        "retainedFinding": {
+          "declaration": "traceability.trace_tags",
+          "reason": "untracked-id-has-minted-children",
+          "message": "`FR-001-INV-1` on `tests::carries_the_declared_severity` is not a minted trace target. Under `FR-001`, the active model mints `FR-001-AC-1`, `FR-001-AC-2`; `FR-001-INV-1` is not their parent, so do not substitute one merely to clear coverage; correct the authored id or declare a trace target for its class. Nothing is joined automatically because one coarse or unrelated tag cannot back every child",
+          "path": "src/lib.rs",
+          "line": 17,
+          "value": "FR-001-INV-1",
+          "subject": "trace id `FR-001-INV-1`",
+          "change_target": "src/lib.rs:17",
+          "next_diagnostic_step": "choose the exact minted child that this evidence verifies, or correct the authored id/declaration; do not substitute a sibling merely to clear coverage"
+        }
+      }
+    },
+    {
+      "recordId": "sha256:5f599c28a6b18cb265c54ef27378e316debe57590e6c0b5b867f1f2ec924f0d0",
+      "partition": "quire/quire/coverage.suspicions/oracle-is-code-copy",
+      "identity": {
+        "family": "oracle-is-code-copy",
+        "case": "oracle-helper-copy-rust",
+        "language": "rust"
+      },
+      "templateDigest": "sha256:eddbe03b904b06722d98afaff6a3040ba620b0eba8a757ae784c2a228b16eed5",
+      "correctness": "pass",
+      "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
+      "executableProof": {
+        "kind": "repair",
+        "outcome": "pass",
+        "method": "The controlled corpus replays the defective fixture and its language-matched repaired control; the expected family is present only before repair while corpus verification remains green.",
+        "retainedFinding": {
+          "kind": "oracle-resembles-implementation",
+          "path": "tests/property_suite.rs",
+          "symbol": "tc1598_artifact_acceptance_matches_the_containment_rule",
+          "line": 16,
+          "message": "the `escapes_the_root` oracle helper closely resembles `validate_artifact_path` in src/open.rs; replace the copied helper with an independent expectation",
+          "evidence": "token similarity 1.00 (floor 0.75); compared helper `tests/property_suite.rs::escapes_the_root` with `src/open.rs::validate_artifact_path`",
+          "subject": "test symbol `tc1598_artifact_acceptance_matches_the_containment_rule`",
+          "change_target": "tests/property_suite.rs:16 in `tc1598_artifact_acceptance_matches_the_containment_rule`",
+          "remedy": "replace the copied calculation or helper with an independent expectation"
+        }
+      }
+    },
+    {
+      "recordId": "sha256:686ba725df1cfd5dbec51f5906994d3d7238cc444c4f63947e9abfa31aa3d9ea",
+      "partition": "quire/quire/validate.findings/undeclared-type-value",
+      "identity": {
+        "family": "undeclared-type-value",
+        "case": "wrong-type-cell-rust",
+        "language": "rust"
+      },
+      "templateDigest": "sha256:d451bb5c643c3ed1b2f85d975af6a02d6ff34e4b8a4539b12d356049ef6bedaa",
+      "correctness": "pass",
+      "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
+      "executableProof": {
+        "kind": "repair",
+        "outcome": "pass",
+        "method": "The controlled corpus replays the defective fixture and its language-matched repaired control; the expected family is present only before repair while corpus verification remains green.",
+        "retainedFinding": {
+          "kind": "ValidationError",
+          "message": "/home/peter/dev/quoin/corpus/cases/minting/wrong-type-cell/rust/input/spec/tests.md: line 10: [TestMatrix] 'test_cases': TC-001: column 'Type' cell 'Telepathy' is not one of [\"Unit\", \"Integration\", \"E2E\", \"Property\", \"Fuzz\", \"Benchmark\", \"Static\", \"Compile\", \"Snapshot\", \"Manual\", \"Eval\", \"Inspection\", \"Analysis\", \"Demonstration\"] [assert]",
+          "severity": "error",
+          "reason": "assert",
+          "path": "/home/peter/dev/quoin/corpus/cases/minting/wrong-type-cell/rust/input/spec/tests.md",
+          "line": 10,
+          "subject": "document validation of /home/peter/dev/quoin/corpus/cases/minting/wrong-type-cell/rust/input/spec/tests.md",
+          "change_target": "/home/peter/dev/quoin/corpus/cases/minting/wrong-type-cell/rust/input/spec/tests.md:10",
+          "remedy": "change the cited value or structure so it satisfies the named archetype assertion"
+        }
+      }
+    },
+    {
+      "recordId": "sha256:69535f6bcd8e2b9945c262780d4e9baae1339893e1c796ef3d113733c896541d",
+      "partition": "quire/quire/coverage.diagnostics/unminted-id-guidance",
+      "identity": {
+        "family": "unminted-id-guidance",
+        "case": "tag-names-bare-fr-rust",
+        "language": "rust",
+        "declaration": "traceability.trace_tags"
+      },
+      "templateDigest": "sha256:e16837f02f534c7ef930f689cf934c9be5ba8d19195dc90628974ca76cf78f02",
+      "correctness": "pass",
+      "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
+      "executableProof": {
+        "kind": "diagnostic",
+        "outcome": "pass",
+        "method": "The canonical producer replay emits the cited causal channel and its controlled comparison retains the evidence needed to distinguish the named causes.",
+        "retainedFinding": {
+          "declaration": "traceability.trace_tags",
+          "reason": "untracked-id-has-minted-children",
+          "message": "`FR-001` on `tests::defaults_every_finding_to_warning` is not a minted trace target. Under `FR-001`, the active model mints `FR-001-AC-1`, `FR-001-AC-2`; tag the exact child id that states the obligation this evidence verifies. Nothing is joined automatically because one coarse or unrelated tag cannot back every child",
+          "path": "src/lib.rs",
+          "line": 15,
+          "value": "FR-001",
+          "subject": "trace id `FR-001`",
+          "change_target": "src/lib.rs:15",
+          "next_diagnostic_step": "choose the exact minted child that this evidence verifies, or correct the authored id/declaration; do not substitute a sibling merely to clear coverage"
+        }
+      }
+    },
+    {
+      "recordId": "sha256:6e7cde0163bc7a1d8de424f051800028de69772ff434063318a085d6c7048624",
+      "partition": "quire/quire/coverage.diagnostics/hollow-denominator",
+      "identity": {
+        "family": "hollow-denominator",
+        "case": "marker-mismatch",
+        "language": "rust",
+        "declaration": "metrics"
+      },
+      "templateDigest": "sha256:179c56992a19d5a821dc8ef72413551c1e765a1019cd0f1c1cc1485ffeb77d73",
+      "correctness": "pass",
+      "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
+      "executableProof": {
+        "kind": "diagnostic",
+        "outcome": "pass",
+        "method": "The canonical producer replay emits the cited causal channel and its controlled comparison retains the evidence needed to distinguish the named causes.",
+        "retainedFinding": {
+          "declaration": "metrics",
+          "reason": "hollow-denominator",
+          "message": "`coverage.backed` published a ratio over 3 matrix rows but read none of the 1 it walked, so the number is arithmetic over nothing; rows of the declared reference tables whose trace target is bound by at least one source symbol; `matched` counts the evidence symbols that bound a trace id out of the `examined` evidence symbols walked, so matched 0 of a non-zero examined is a ratio computed over a corpus the binder could not read",
+          "value": "coverage.backed",
+          "subject": "metric `coverage.backed`",
+          "change_target": "the source binding census or declared trace-tag forms",
+          "next_diagnostic_step": "inspect the binding census, its unbound example, and the declared trace-tag forms before trusting or repairing the ratio"
+        }
+      }
+    },
+    {
+      "recordId": "sha256:7713b7ad69bf3dc168ea467c7d85afc714abc626463d3d4919577f180ee599ec",
+      "partition": "quire/quire/coverage.diagnostics/marker-form-mismatch",
+      "identity": {
+        "family": "marker-form-mismatch",
+        "case": "hollow-metric-python",
+        "language": "python",
+        "declaration": "traceability.trace_tags"
+      },
+      "templateDigest": "sha256:7aecebb9a7550f69508e82d82103e04f66ed02206dce265aea7f391850a4d093",
+      "correctness": "pass",
+      "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
+      "executableProof": {
+        "kind": "diagnostic",
+        "outcome": "pass",
+        "method": "The canonical producer replay emits the cited causal channel and its controlled comparison retains the evidence needed to distinguish the named causes.",
+        "retainedFinding": {
+          "declaration": "traceability.trace_tags",
+          "reason": "no-symbol-bound",
+          "message": "1 python evidence symbols were examined and none carried a tag any declared form matched (forms: pytest-trace-marker, python-trace-line, python-comment-id, python-docstring-id) — for example `test_covers` at src/test_coverage.py:1, whose annotation carries no matching form; every row those symbols verify is reported unbacked, which is indistinguishable from a missing test",
+          "path": "src/test_coverage.py",
+          "line": 1,
+          "value": "python",
+          "subject": "python evidence-symbol binding",
+          "change_target": "src/test_coverage.py:1",
+          "next_diagnostic_step": "compare the example annotation with the declared trace-tag forms; correct the annotation or the declaration according to authored intent"
+        }
+      }
+    },
+    {
+      "recordId": "sha256:78c8d9e68ad90a9e31c3e29a7c2dd9387fb12c2a51f6f27dcd331580e502616b",
+      "partition": "quire/quire/coverage.diagnostics/catch-all-universal",
+      "identity": {
+        "family": "catch-all-universal",
+        "case": "tag-at-module-scope-control-python",
+        "language": "python",
+        "declaration": "criteria"
+      },
+      "templateDigest": "sha256:edff4689670c4d607d8eaaa6330637e7dae30e1eff98dcdb3eb3998ceb649e2d",
+      "correctness": "pass",
+      "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
+      "executableProof": {
+        "kind": "diagnostic",
+        "outcome": "pass",
+        "method": "The canonical producer replay emits the cited causal channel and its controlled comparison retains the evidence needed to distinguish the named causes.",
+        "retainedFinding": {
+          "declaration": "criteria",
+          "reason": "catch-all-universal",
+          "message": "1 of 1 documents binding extractable criteria named a specific property shape for none of them — for example `FR-001-AC-1` at spec/FR-001.md:10; the extractable headline counts what a generator could quantify over, and this is the part it could not tell you what to write",
+          "path": "spec/FR-001.md",
+          "line": 10,
+          "value": "coverage.specific_shaped",
+          "subject": "criterion represented by `coverage.specific_shaped` at spec/FR-001.md:10",
+          "change_target": "spec/FR-001.md:10",
+          "next_diagnostic_step": "review whether the criterion is intentionally universal; otherwise name a concrete supported property shape"
+        }
+      }
+    },
+    {
+      "recordId": "sha256:7be12acbde8fabb5481de5dbe7f11b060905e7218e451cfc0a932cc004f4109e",
+      "partition": "quire/quire/coverage.diagnostics/low-symbol-binding",
+      "identity": {
+        "family": "low-symbol-binding",
+        "case": "low-symbol-binding",
+        "language": "rust",
+        "declaration": "traceability.trace_tags"
+      },
+      "templateDigest": "sha256:2c55ad05961f0c932937b5d7a1890aa549061758c9a175e2a1e5d816ba480757",
+      "correctness": "pass",
+      "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
+      "executableProof": {
+        "kind": "diagnostic",
+        "outcome": "pass",
+        "method": "The canonical producer replay emits the cited causal channel and its controlled comparison retains the evidence needed to distinguish the named causes.",
+        "retainedFinding": {
+          "declaration": "traceability.trace_tags",
+          "reason": "low-symbol-binding",
+          "message": "1 of 21 rust evidence symbols bound a trace id (forms: rust-trace-attribute, rust-trace-line, rust-comment-id, rust-test-name-id, rust-doc-comment-id) — for example `tests::case_02` at src/lib.rs:6, whose annotation carries no matching form; below 5% this observation cannot distinguish sparse tagging from a marker-form mismatch; inspect the unbound examples and declared forms",
+          "path": "src/lib.rs",
+          "line": 6,
+          "value": "rust",
+          "subject": "rust evidence-symbol binding",
+          "change_target": "src/lib.rs:6",
+          "next_diagnostic_step": "inspect the unbound example and declared trace-tag forms to distinguish sparse tagging from a marker-form mismatch"
+        }
+      }
+    },
+    {
+      "recordId": "sha256:85e0f9dc4ee1b6f8ed762dd7e46578de072c1427a23e60931a4d776cd02aba20",
+      "partition": "quire/quire/coverage.diagnostics/tag-on-non-binding-symbol",
+      "identity": {
+        "family": "tag-on-non-binding-symbol",
+        "case": "tag-on-non-test-function-typescript",
+        "language": "typescript",
+        "declaration": "traceability.trace_tags"
+      },
+      "templateDigest": "sha256:456c1858f305ab4850ec3f48119d7f4a4f50a6a42de70b79642c2eed55d4c761",
+      "correctness": "pass",
+      "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
+      "executableProof": {
+        "kind": "repair",
+        "outcome": "pass",
+        "method": "The controlled corpus replays the defective fixture and its language-matched repaired control; the expected family is present only before repair while corpus verification remains green.",
+        "retainedFinding": {
+          "declaration": "traceability.trace_tags",
+          "reason": "tag-on-non-binding-symbol",
+          "message": "trace id `TC-001` is written on `severityOf` at src/coverage.ts:14, a function — a kind that does not bind trace ids (CR-061), so the tag reached no channel and the row it names is reported unbacked, indistinguishable from a test nobody wrote. The form `typescript-comment-id` matched, so this is an authored tag rather than prose. A production symbol records what it is about with `Implements:`; a trace id binds on an evidence symbol — a test, a benchmark or a fuzz target",
+          "path": "src/coverage.ts",
+          "line": 14,
+          "value": "TC-001",
+          "subject": "trace id `TC-001`",
+          "change_target": "src/coverage.ts:14",
+          "remedy": "move the trace id to an evidence symbol, or use an Implements marker when the production symbol is the intended subject"
+        }
+      }
+    },
+    {
+      "recordId": "sha256:8e0df7cc227bc74b5d8db6dd2b8c9ae09301569a89a5b4e36834d42b9a077372",
+      "partition": "quire/quire/coverage.suspicions/oracle-is-code-copy",
+      "identity": {
+        "family": "oracle-is-code-copy",
+        "case": "oracle-copy-rust",
+        "language": "rust"
+      },
+      "templateDigest": "sha256:eddbe03b904b06722d98afaff6a3040ba620b0eba8a757ae784c2a228b16eed5",
+      "correctness": "pass",
+      "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
+      "executableProof": {
+        "kind": "repair",
+        "outcome": "pass",
+        "method": "The controlled corpus replays the defective fixture and its language-matched repaired control; the expected family is present only before repair while corpus verification remains green.",
+        "retainedFinding": {
+          "kind": "oracle-resembles-implementation",
+          "path": "src/lib.rs",
+          "symbol": "tests::covers",
+          "line": 15,
+          "message": "the `expected` oracle closely resembles `is_contained` in src/lib.rs; replace the copied calculation with an independent expectation",
+          "evidence": "token similarity 1.00 (floor 0.75); compared `expected` with `src/lib.rs::is_contained`",
+          "subject": "test symbol `tests::covers`",
+          "change_target": "src/lib.rs:15 in `tests::covers`",
+          "remedy": "replace the copied calculation or helper with an independent expectation"
+        }
+      }
+    },
+    {
+      "recordId": "sha256:8f02741edef39231f094468c786e2a31cdd3377cb6e4510de810b6169c385fa9",
+      "partition": "quoin/quoin/evidence.audit/mocked-confirmation",
+      "identity": {
+        "family": "mocked-confirmation",
+        "case": "mocked-confirmation-rust",
+        "language": "rust"
+      },
+      "templateDigest": "sha256:aa3b6d58e0407b1d8c898b1adfad6681049e9559330da656693bde0e10313a82",
+      "correctness": "pass",
+      "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
+      "executableProof": {
+        "kind": "diagnostic",
+        "outcome": "pass",
+        "method": "The canonical producer replay emits the cited causal channel and its controlled comparison retains the evidence needed to distinguish the named causes.",
+        "retainedFinding": {
+          "kind": "mocked-confirmation",
+          "obligation": "FR-001-AC-1",
+          "severity": "medium",
+          "path": "src/lib.rs",
+          "line": 22,
+          "symbol": "covers",
+          "subject": "FR-001-AC-1 evidence",
+          "changeTarget": "src/lib.rs:22 in covers",
+          "nextDiagnosticStep": "inspect whether the real behaviour for FR-001-AC-1 exists; add or bind an independent test that exercises it without substituting the behaviour under verification",
+          "summary": "FR-001-AC-1 is discharged only by tests that inject a stand-in for the behaviour it verifies: src/lib.rs:22 covers injects Confirmation::allow. A test that substitutes the behaviour under verification passes whether or not that behaviour exists."
+        }
+      }
+    },
+    {
+      "recordId": "sha256:8fa0e2222fc5c339933780f44e617ace5bbc597e7246e08ad3d1348fda51aba4",
+      "partition": "quoin/quoin/validate/gate-that-gates-nothing",
+      "identity": {
+        "family": "gate-that-gates-nothing",
+        "case": "gate-that-gates-nothing-typescript",
+        "language": "typescript"
+      },
+      "templateDigest": "sha256:61275b93402b6217c38c50e817305b88e3380d43f3c63fb2493580a7b62ffc37",
+      "correctness": "pass",
+      "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
+      "executableProof": {
+        "kind": "repair",
+        "outcome": "pass",
+        "method": "The controlled corpus replays the defective fixture and its language-matched repaired control; the expected family is present only before repair while corpus verification remains green.",
+        "retainedFinding": {
+          "kind": "gate-that-gates-nothing",
+          "obligation": "FR-001-AC-1",
+          "path": "scripts/check_dangerous_eval.sh",
+          "line": 4,
+          "wiredBy": "Makefile",
+          "subject": "gate for FR-001-AC-1",
+          "changeTarget": "scripts/check_dangerous_eval.sh:4",
+          "remedy": "compare the count for “dangerousEval” to zero or make the match command exit non-zero when forbidden text is present",
+          "summary": "FR-001-AC-1 claims “no production symbol shall call `dangerousEval`.”, and Makefile wires scripts/check_dangerous_eval.sh, but line 4 only counts matches for “dangerousEval” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero."
+        }
+      }
+    },
+    {
+      "recordId": "sha256:9085e2ce7ee36fa22fe0c75383be93ca1e0c5a7f13f409a0dc779cbebad2d253",
+      "partition": "quire/quire/coverage.diagnostics/tag-on-non-binding-symbol",
+      "identity": {
+        "family": "tag-on-non-binding-symbol",
+        "case": "tag-at-module-scope-python",
+        "language": "python",
+        "declaration": "traceability.trace_tags"
+      },
+      "templateDigest": "sha256:456c1858f305ab4850ec3f48119d7f4a4f50a6a42de70b79642c2eed55d4c761",
+      "correctness": "pass",
+      "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
+      "executableProof": {
+        "kind": "repair",
+        "outcome": "pass",
+        "method": "The controlled corpus replays the defective fixture and its language-matched repaired control; the expected family is present only before repair while corpus verification remains green.",
+        "retainedFinding": {
+          "declaration": "traceability.trace_tags",
+          "reason": "tag-on-non-binding-symbol",
+          "message": "trace id `TC-001` is written on `src.test_coverage` at src/test_coverage.py:1, a container — a kind that does not bind trace ids (CR-061), so the tag reached no channel and the row it names is reported unbacked, indistinguishable from a test nobody wrote. The form `python-comment-id` matched, so this is an authored tag rather than prose. A production symbol records what it is about with `Implements:`; a trace id binds on an evidence symbol — a test, a benchmark or a fuzz target",
+          "path": "src/test_coverage.py",
+          "line": 1,
+          "value": "TC-001",
+          "subject": "trace id `TC-001`",
+          "change_target": "src/test_coverage.py:1",
+          "remedy": "move the trace id to an evidence symbol, or use an Implements marker when the production symbol is the intended subject"
+        }
+      }
+    },
+    {
+      "recordId": "sha256:9284d7d23f994bf5387fcdf5d80e1efb14a527cc34ffb58882e0a2377c3f6667",
+      "partition": "quire/quire/coverage.diagnostics/section-holds-no-table",
+      "identity": {
+        "family": "section-holds-no-table",
+        "case": "section-holds-no-table-python",
+        "language": "python",
+        "declaration": "test-case"
+      },
+      "templateDigest": "sha256:735892152c76b2b26437c61623fb0e6934c95ad5ffba65c2668337e79fb471b7",
+      "correctness": "pass",
+      "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
+      "executableProof": {
+        "kind": "repair",
+        "outcome": "pass",
+        "method": "The controlled corpus replays the defective fixture and its language-matched repaired control; the expected family is present only before repair while corpus verification remains green.",
+        "retainedFinding": {
+          "declaration": "test-case",
+          "reason": "section-holds-no-table",
+          "message": "declaration 'test-case' found 'Test Case Summary' in spec/tests.md — every section it                  declares that this document has — and not one of them holds a table.                  The declared sections are '*Test Case Summary*', 'Integration Test Matrix'. So the document mints nothing, and the two                  diagnostics that would say so both stand down: the section WAS found,                  and there is no table to read an id column from. A heading whose rows                  live under its sub-headings is the usual cause — declare those                  sub-headings, or the pattern that reaches them",
+          "path": "spec/tests.md",
+          "subject": "declaration `test-case`",
+          "change_target": "spec/tests.md",
+          "remedy": "add the expected table under the matched section or correct the declaration's section selector"
+        }
+      }
+    },
+    {
+      "recordId": "sha256:96b119c45fbb3af17c9b6fbe422901962e7b83710e662b91604b0ba145fc66fd",
+      "partition": "quire/quire/coverage.diagnostics/unminted-id-guidance",
+      "identity": {
+        "family": "unminted-id-guidance",
+        "case": "tag-names-undeclared-section-typescript",
+        "language": "typescript",
+        "declaration": "traceability.trace_tags"
+      },
+      "templateDigest": "sha256:e16837f02f534c7ef930f689cf934c9be5ba8d19195dc90628974ca76cf78f02",
+      "correctness": "pass",
+      "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
+      "executableProof": {
+        "kind": "diagnostic",
+        "outcome": "pass",
+        "method": "The canonical producer replay emits the cited causal channel and its controlled comparison retains the evidence needed to distinguish the named causes.",
+        "retainedFinding": {
+          "declaration": "traceability.trace_tags",
+          "reason": "untracked-id-has-minted-children",
+          "message": "`FR-001-INV-1` on `carries the declared severity` is not a minted trace target. Under `FR-001`, the active model mints `FR-001-AC-1`, `FR-001-AC-2`; `FR-001-INV-1` is not their parent, so do not substitute one merely to clear coverage; correct the authored id or declare a trace target for its class. Nothing is joined automatically because one coarse or unrelated tag cannot back every child",
+          "path": "src/coverage.test.ts",
+          "line": 15,
+          "value": "FR-001-INV-1",
+          "subject": "trace id `FR-001-INV-1`",
+          "change_target": "src/coverage.test.ts:15",
+          "next_diagnostic_step": "choose the exact minted child that this evidence verifies, or correct the authored id/declaration; do not substitute a sibling merely to clear coverage"
+        }
+      }
+    },
+    {
+      "recordId": "sha256:970bb50c01b686c8ac0f71d6eeb37b875be4898df28c5a2593133d8971009a79",
+      "partition": "quire/quire/coverage.diagnostics/marker-form-mismatch",
+      "identity": {
+        "family": "marker-form-mismatch",
+        "case": "hollow-metric-typescript",
+        "language": "typescript",
+        "declaration": "traceability.trace_tags"
+      },
+      "templateDigest": "sha256:7aecebb9a7550f69508e82d82103e04f66ed02206dce265aea7f391850a4d093",
+      "correctness": "pass",
+      "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
+      "executableProof": {
+        "kind": "diagnostic",
+        "outcome": "pass",
+        "method": "The canonical producer replay emits the cited causal channel and its controlled comparison retains the evidence needed to distinguish the named causes.",
+        "retainedFinding": {
+          "declaration": "traceability.trace_tags",
+          "reason": "no-symbol-bound",
+          "message": "1 typescript evidence symbols were examined and none carried a tag any declared form matched (forms: ts-trace-helper, typescript-trace-line, typescript-comment-id, typescript-test-name-id, typescript-doc-comment-id) — for example `covers` at src/coverage.test.ts:1, whose annotation carries no matching form; every row those symbols verify is reported unbacked, which is indistinguishable from a missing test",
+          "path": "src/coverage.test.ts",
+          "line": 1,
+          "value": "typescript",
+          "subject": "typescript evidence-symbol binding",
+          "change_target": "src/coverage.test.ts:1",
+          "next_diagnostic_step": "compare the example annotation with the declared trace-tag forms; correct the annotation or the declaration according to authored intent"
+        }
+      }
+    },
+    {
+      "recordId": "sha256:9f4aa88aa97514e22d28f0efb5b0f6d2b6df282214a1b9f0159309b05634f60d",
+      "partition": "quire/quire/coverage.diagnostics/hollow-denominator",
+      "identity": {
+        "family": "hollow-denominator",
+        "case": "marker-form-mismatch-typescript",
+        "language": "typescript",
+        "declaration": "metrics"
+      },
+      "templateDigest": "sha256:179c56992a19d5a821dc8ef72413551c1e765a1019cd0f1c1cc1485ffeb77d73",
+      "correctness": "pass",
+      "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
+      "executableProof": {
+        "kind": "diagnostic",
+        "outcome": "pass",
+        "method": "The canonical producer replay emits the cited causal channel and its controlled comparison retains the evidence needed to distinguish the named causes.",
+        "retainedFinding": {
+          "declaration": "metrics",
+          "reason": "hollow-denominator",
+          "message": "`coverage.backed` published a ratio over 2 matrix rows but read none of the 1 it walked, so the number is arithmetic over nothing; rows of the declared reference tables whose trace target is bound by at least one source symbol; `matched` counts the evidence symbols that bound a trace id out of the `examined` evidence symbols walked, so matched 0 of a non-zero examined is a ratio computed over a corpus the binder could not read",
+          "value": "coverage.backed",
+          "subject": "metric `coverage.backed`",
+          "change_target": "the source binding census or declared trace-tag forms",
+          "next_diagnostic_step": "inspect the binding census, its unbound example, and the declared trace-tag forms before trusting or repairing the ratio"
+        }
+      }
+    },
+    {
+      "recordId": "sha256:a6171669c4a3a12c4f0d299f4216fb34f6cb7468fee7e63631f9156a276a5c85",
+      "partition": "quire/quire/coverage.diagnostics/section-matches-nothing",
+      "identity": {
+        "family": "section-matches-nothing",
+        "case": "section-and-id-column-typescript",
+        "language": "typescript",
+        "declaration": "test-case"
+      },
+      "templateDigest": "sha256:5478870649044bacb30c8be0b0f5dca0f211ec9a7441da496b32494024841aca",
+      "correctness": "pass",
+      "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
+      "executableProof": {
+        "kind": "repair",
+        "outcome": "pass",
+        "method": "The controlled corpus replays the defective fixture and its language-matched repaired control; the expected family is present only before repair while corpus verification remains green.",
+        "retainedFinding": {
+          "declaration": "test-case",
+          "reason": "section-matches-nothing",
+          "message": "declaration 'test-case' selected spec/tests.md by archetype 'TestMatrix' and found no section matching '*Test Case Summary*', 'Integration Test Matrix' in it — the headings the document has are 'Test Cases'. The declared table is never reached, so every id under it is stranded and the document mints nothing. The declared id column 'Test ID' could NOT be checked either: fix the heading first, then confirm that column exists, or the same rows come back unminted for the second reason",
+          "path": "spec/tests.md",
+          "subject": "declaration `test-case`",
+          "change_target": "spec/tests.md",
+          "remedy": "align the document heading with the declared section selector"
+        }
+      }
+    },
+    {
+      "recordId": "sha256:a8797348ed75e6783c18a6b5d049b70d17e1c85ccacd48db0f9bd1a6ef45b103",
+      "partition": "quire/quire/coverage.diagnostics/catch-all-universal",
+      "identity": {
+        "family": "catch-all-universal",
+        "case": "low-symbol-binding",
+        "language": "rust",
+        "declaration": "criteria"
+      },
+      "templateDigest": "sha256:edff4689670c4d607d8eaaa6330637e7dae30e1eff98dcdb3eb3998ceb649e2d",
+      "correctness": "pass",
+      "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
+      "executableProof": {
+        "kind": "diagnostic",
+        "outcome": "pass",
+        "method": "The canonical producer replay emits the cited causal channel and its controlled comparison retains the evidence needed to distinguish the named causes.",
+        "retainedFinding": {
+          "declaration": "criteria",
+          "reason": "catch-all-universal",
+          "message": "1 of 1 documents binding extractable criteria named a specific property shape for none of them — for example `FR-001-AC-1` at spec/FR-001.md:10; the extractable headline counts what a generator could quantify over, and this is the part it could not tell you what to write",
+          "path": "spec/FR-001.md",
+          "line": 10,
+          "value": "coverage.specific_shaped",
+          "subject": "criterion represented by `coverage.specific_shaped` at spec/FR-001.md:10",
+          "change_target": "spec/FR-001.md:10",
+          "next_diagnostic_step": "review whether the criterion is intentionally universal; otherwise name a concrete supported property shape"
+        }
+      }
+    },
+    {
+      "recordId": "sha256:a98f43dab1411d6c419ee5df31439c9ffc0da1f8ad1fd29e5bf69da40df36e43",
+      "partition": "quire/quire/coverage.diagnostics/marker-form-mismatch",
+      "identity": {
+        "family": "marker-form-mismatch",
+        "case": "real-tests-zero-tags-python",
+        "language": "python",
+        "declaration": "traceability.trace_tags"
+      },
+      "templateDigest": "sha256:7aecebb9a7550f69508e82d82103e04f66ed02206dce265aea7f391850a4d093",
+      "correctness": "pass",
+      "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
+      "executableProof": {
+        "kind": "diagnostic",
+        "outcome": "pass",
+        "method": "The canonical producer replay emits the cited causal channel and its controlled comparison retains the evidence needed to distinguish the named causes.",
+        "retainedFinding": {
+          "declaration": "traceability.trace_tags",
+          "reason": "no-symbol-bound",
+          "message": "2 python evidence symbols were examined and none carried a tag any declared form matched (forms: pytest-trace-marker, python-trace-line, python-comment-id, python-docstring-id) — for example `test_defaults_every_finding_to_warning` at src/test_coverage.py:18, whose annotation carries no matching form; every row those symbols verify is reported unbacked, which is indistinguishable from a missing test",
+          "path": "src/test_coverage.py",
+          "line": 18,
+          "value": "python",
+          "subject": "python evidence-symbol binding",
+          "change_target": "src/test_coverage.py:18",
+          "next_diagnostic_step": "compare the example annotation with the declared trace-tag forms; correct the annotation or the declaration according to authored intent"
+        }
+      }
+    },
+    {
+      "recordId": "sha256:b7aa422e8b505dd19fe90d5cdf0cc782585d5bd4d7ed68b26e87f0af27a9ccf5",
+      "partition": "quire/quire/coverage.diagnostics/tag-on-non-binding-symbol",
+      "identity": {
+        "family": "tag-on-non-binding-symbol",
+        "case": "tag-on-non-test-function-python",
+        "language": "python",
+        "declaration": "traceability.trace_tags"
+      },
+      "templateDigest": "sha256:456c1858f305ab4850ec3f48119d7f4a4f50a6a42de70b79642c2eed55d4c761",
+      "correctness": "pass",
+      "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
+      "executableProof": {
+        "kind": "repair",
+        "outcome": "pass",
+        "method": "The controlled corpus replays the defective fixture and its language-matched repaired control; the expected family is present only before repair while corpus verification remains green.",
+        "retainedFinding": {
+          "declaration": "traceability.trace_tags",
+          "reason": "tag-on-non-binding-symbol",
+          "message": "trace id `TC-001` is written on `normalize_severity` at src/coverage.py:19, a function — a kind that does not bind trace ids (CR-061), so the tag reached no channel and the row it names is reported unbacked, indistinguishable from a test nobody wrote. The form `python-comment-id` matched, so this is an authored tag rather than prose. A production symbol records what it is about with `Implements:`; a trace id binds on an evidence symbol — a test, a benchmark or a fuzz target",
+          "path": "src/coverage.py",
+          "line": 19,
+          "value": "TC-001",
+          "subject": "trace id `TC-001`",
+          "change_target": "src/coverage.py:19",
+          "remedy": "move the trace id to an evidence symbol, or use an Implements marker when the production symbol is the intended subject"
+        }
+      }
+    },
+    {
+      "recordId": "sha256:bdec69b8d8feed7bd0b06787d1a48ae637fb69f2900b1ca33991fc8a9e539123",
+      "partition": "quire/quire/coverage.diagnostics/id-column-matches-nothing",
+      "identity": {
+        "family": "id-column-matches-nothing",
+        "case": "id-column-mismatch-typescript",
+        "language": "typescript",
+        "declaration": "test-case"
+      },
+      "templateDigest": "sha256:8f19c6f5bdd78f3bbc6e3544294e5d3d2027529d6a6be311a2979e2ae24137e9",
+      "correctness": "pass",
+      "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
+      "executableProof": {
+        "kind": "repair",
+        "outcome": "pass",
+        "method": "The controlled corpus replays the defective fixture and its language-matched repaired control; the expected family is present only before repair while corpus verification remains green.",
+        "retainedFinding": {
+          "declaration": "test-case",
+          "reason": "id-column-matches-nothing",
+          "message": "declaration 'test-case' declares id column 'Test ID', which the table under 'Test Case Summary' in spec/tests.md does not have — the columns it has are 'Test Case ID', 'Traces To', 'Status'. The rows are read and none of them yields an id, so the document mints nothing and every row it should have minted reports with no identity",
+          "path": "spec/tests.md",
+          "subject": "declaration `test-case`",
+          "change_target": "spec/tests.md",
+          "remedy": "align the declared id_column with the table's actual identifier header"
+        }
+      }
+    },
+    {
+      "recordId": "sha256:c063221cb05e82df46d7586b27ab89f1efdf829443f2b871142fc9988ea23f99",
+      "partition": "quire/quire/coverage.diagnostics/unminted-id-guidance",
+      "identity": {
+        "family": "unminted-id-guidance",
+        "case": "tag-names-bare-fr-typescript",
+        "language": "typescript",
+        "declaration": "traceability.trace_tags"
+      },
+      "templateDigest": "sha256:e16837f02f534c7ef930f689cf934c9be5ba8d19195dc90628974ca76cf78f02",
+      "correctness": "pass",
+      "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
+      "executableProof": {
+        "kind": "diagnostic",
+        "outcome": "pass",
+        "method": "The canonical producer replay emits the cited causal channel and its controlled comparison retains the evidence needed to distinguish the named causes.",
+        "retainedFinding": {
+          "declaration": "traceability.trace_tags",
+          "reason": "untracked-id-has-minted-children",
+          "message": "`FR-001` on `defaults every finding to warning` is not a minted trace target. Under `FR-001`, the active model mints `FR-001-AC-1`, `FR-001-AC-2`; tag the exact child id that states the obligation this evidence verifies. Nothing is joined automatically because one coarse or unrelated tag cannot back every child",
+          "path": "src/coverage.test.ts",
+          "line": 14,
+          "value": "FR-001",
+          "subject": "trace id `FR-001`",
+          "change_target": "src/coverage.test.ts:14",
+          "next_diagnostic_step": "choose the exact minted child that this evidence verifies, or correct the authored id/declaration; do not substitute a sibling merely to clear coverage"
+        }
+      }
+    },
+    {
+      "recordId": "sha256:ce6b6034ad54d9f134fe66517c642672c4251671a84430fd0f99738308ba42ec",
+      "partition": "quire/quire/coverage.diagnostics/archetype-matches-nothing",
+      "identity": {
+        "family": "archetype-matches-nothing",
+        "case": "greenfield-no-symbols-rust",
+        "language": "rust",
+        "declaration": "nfr-acceptance-criterion"
+      },
+      "templateDigest": "sha256:f6780e65ca1c31ffe03286b158e27dd9c7de051e9c7d0316a8b646bd1976af7b",
+      "correctness": "pass",
+      "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
+      "executableProof": {
+        "kind": "diagnostic",
+        "outcome": "pass",
+        "method": "The canonical producer replay emits the cited causal channel and its controlled comparison retains the evidence needed to distinguish the named causes.",
+        "retainedFinding": {
+          "declaration": "nfr-acceptance-criterion",
+          "reason": "archetype-matches-nothing",
+          "message": "declaration 'nfr-acceptance-criterion' declares archetype 'NFR', which no document in the corpus has — it scans nothing and mints no rows",
+          "path": "/home/peter/dev/quoin/corpus/modules/ecosystem/spec-artifacts-process/manifest.yaml",
+          "line": 685,
+          "subject": "declaration `nfr-acceptance-criterion`",
+          "change_target": "the trace-target archetype in the module manifest",
+          "next_diagnostic_step": "confirm whether the missing document is intentional; otherwise add the document or correct the declared archetype"
+        }
+      }
+    },
+    {
+      "recordId": "sha256:cf172c8e98314b56be10907defc2d09fccb1574dd818f10cdd8a03782db2c78c",
+      "partition": "quire/quire/coverage.diagnostics/section-holds-no-table",
+      "identity": {
+        "family": "section-holds-no-table",
+        "case": "section-holds-no-table-rust",
+        "language": "rust",
+        "declaration": "test-case"
+      },
+      "templateDigest": "sha256:735892152c76b2b26437c61623fb0e6934c95ad5ffba65c2668337e79fb471b7",
+      "correctness": "pass",
+      "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
+      "executableProof": {
+        "kind": "repair",
+        "outcome": "pass",
+        "method": "The controlled corpus replays the defective fixture and its language-matched repaired control; the expected family is present only before repair while corpus verification remains green.",
+        "retainedFinding": {
+          "declaration": "test-case",
+          "reason": "section-holds-no-table",
+          "message": "declaration 'test-case' found 'Test Case Summary' in spec/tests.md — every section it                  declares that this document has — and not one of them holds a table.                  The declared sections are '*Test Case Summary*', 'Integration Test Matrix'. So the document mints nothing, and the two                  diagnostics that would say so both stand down: the section WAS found,                  and there is no table to read an id column from. A heading whose rows                  live under its sub-headings is the usual cause — declare those                  sub-headings, or the pattern that reaches them",
+          "path": "spec/tests.md",
+          "subject": "declaration `test-case`",
+          "change_target": "spec/tests.md",
+          "remedy": "add the expected table under the matched section or correct the declaration's section selector"
+        }
+      }
+    },
+    {
+      "recordId": "sha256:cfd5a5abf0e1ab7c644f143629dcd54640b4ed0883e839426c7b0b4f51460f83",
+      "partition": "quire/quire/coverage.diagnostics/section-matches-nothing",
+      "identity": {
+        "family": "section-matches-nothing",
+        "case": "section-name-mismatch-rust",
+        "language": "rust",
+        "declaration": "test-case"
+      },
+      "templateDigest": "sha256:5478870649044bacb30c8be0b0f5dca0f211ec9a7441da496b32494024841aca",
+      "correctness": "pass",
+      "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
+      "executableProof": {
+        "kind": "repair",
+        "outcome": "pass",
+        "method": "The controlled corpus replays the defective fixture and its language-matched repaired control; the expected family is present only before repair while corpus verification remains green.",
+        "retainedFinding": {
+          "declaration": "test-case",
+          "reason": "section-matches-nothing",
+          "message": "declaration 'test-case' selected spec/tests.md by archetype 'TestMatrix' and found no section matching '*Test Case Summary*', 'Integration Test Matrix' in it — the headings the document has are 'Test Cases'. The declared table is never reached, so every id under it is stranded and the document mints nothing. The declared id column 'Test ID' could NOT be checked either: fix the heading first, then confirm that column exists, or the same rows come back unminted for the second reason",
+          "path": "spec/tests.md",
+          "subject": "declaration `test-case`",
+          "change_target": "spec/tests.md",
+          "remedy": "align the document heading with the declared section selector"
+        }
+      }
+    },
+    {
+      "recordId": "sha256:d13f52b53d3c2061e5b01e42105f29883f6c59cd9a69a544d0ffa9ff226f9a80",
+      "partition": "quire/quire/coverage.diagnostics/obligation-row-states-nothing",
+      "identity": {
+        "family": "obligation-row-states-nothing",
+        "case": "obligation-row-states-nothing",
+        "language": "n/a",
+        "declaration": "acceptance-criterion"
+      },
+      "templateDigest": "sha256:e91e68ff1871b52019f38b328b4761a146744aefd977f6c0fee4c42a5bff8fb1",
+      "correctness": "pass",
+      "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
+      "executableProof": {
+        "kind": "repair",
+        "outcome": "pass",
+        "method": "The controlled corpus replays the defective fixture and its language-matched repaired control; the expected family is present only before repair while corpus verification remains green.",
+        "retainedFinding": {
+          "declaration": "acceptance-criterion",
+          "reason": "obligation-row-states-nothing",
+          "message": "row 1 of 'spec/FR-001.md' states no obligation: the source's statement column is empty, so the row mints no record",
+          "path": "spec/FR-001.md",
+          "subject": "declaration `acceptance-criterion`",
+          "change_target": "spec/FR-001.md",
+          "remedy": "fill the declared statement cell or remove the row if it states no obligation"
+        }
+      }
+    },
+    {
+      "recordId": "sha256:e04121ff1f202fed1c3fdcc64eb4eb603fb761eb596ff5db73f3f5a29d742a3e",
+      "partition": "quire/quire/coverage.diagnostics/tag-on-non-binding-symbol",
+      "identity": {
+        "family": "tag-on-non-binding-symbol",
+        "case": "tag-at-module-scope-typescript",
+        "language": "typescript",
+        "declaration": "traceability.trace_tags"
+      },
+      "templateDigest": "sha256:456c1858f305ab4850ec3f48119d7f4a4f50a6a42de70b79642c2eed55d4c761",
+      "correctness": "pass",
+      "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
+      "executableProof": {
+        "kind": "repair",
+        "outcome": "pass",
+        "method": "The controlled corpus replays the defective fixture and its language-matched repaired control; the expected family is present only before repair while corpus verification remains green.",
+        "retainedFinding": {
+          "declaration": "traceability.trace_tags",
+          "reason": "tag-on-non-binding-symbol",
+          "message": "trace id `TC-001` is written on `src/coverage.test` at src/coverage.test.ts:1, a container — a kind that does not bind trace ids (CR-061), so the tag reached no channel and the row it names is reported unbacked, indistinguishable from a test nobody wrote. The form `typescript-comment-id` matched, so this is an authored tag rather than prose. A production symbol records what it is about with `Implements:`; a trace id binds on an evidence symbol — a test, a benchmark or a fuzz target",
+          "path": "src/coverage.test.ts",
+          "line": 1,
+          "value": "TC-001",
+          "subject": "trace id `TC-001`",
+          "change_target": "src/coverage.test.ts:1",
+          "remedy": "move the trace id to an evidence symbol, or use an Implements marker when the production symbol is the intended subject"
+        }
+      }
+    },
+    {
+      "recordId": "sha256:e28661e13dc9b0e1f83702d3c9585cdb04aaf8133eef6e6268ca42afdec809ce",
+      "partition": "quire/quire/coverage.diagnostics/archetype-matches-nothing",
+      "identity": {
+        "family": "archetype-matches-nothing",
+        "case": "catch-all-headline-control-python",
+        "language": "python",
+        "declaration": "nfr-acceptance-criterion"
+      },
+      "templateDigest": "sha256:f6780e65ca1c31ffe03286b158e27dd9c7de051e9c7d0316a8b646bd1976af7b",
+      "correctness": "pass",
+      "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
+      "executableProof": {
+        "kind": "diagnostic",
+        "outcome": "pass",
+        "method": "The canonical producer replay emits the cited causal channel and its controlled comparison retains the evidence needed to distinguish the named causes.",
+        "retainedFinding": {
+          "declaration": "nfr-acceptance-criterion",
+          "reason": "archetype-matches-nothing",
+          "message": "declaration 'nfr-acceptance-criterion' declares archetype 'NFR', which no document in the corpus has — it scans nothing and mints no rows",
+          "path": "/home/peter/dev/quoin/corpus/modules/ecosystem/spec-artifacts-process/manifest.yaml",
+          "line": 685,
+          "subject": "declaration `nfr-acceptance-criterion`",
+          "change_target": "the trace-target archetype in the module manifest",
+          "next_diagnostic_step": "confirm whether the missing document is intentional; otherwise add the document or correct the declared archetype"
+        }
+      }
+    },
+    {
+      "recordId": "sha256:e28e5cb9b241c5aa69cd798931c9db1a5bdc7b957534163e996d01da71912acd",
+      "partition": "quoin/quoin/evidence.audit/mocked-confirmation",
+      "identity": {
+        "family": "mocked-confirmation",
+        "case": "mocked-confirmation-python",
+        "language": "python"
+      },
+      "templateDigest": "sha256:aa3b6d58e0407b1d8c898b1adfad6681049e9559330da656693bde0e10313a82",
+      "correctness": "pass",
+      "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
+      "executableProof": {
+        "kind": "diagnostic",
+        "outcome": "pass",
+        "method": "The canonical producer replay emits the cited causal channel and its controlled comparison retains the evidence needed to distinguish the named causes.",
+        "retainedFinding": {
+          "kind": "mocked-confirmation",
+          "obligation": "FR-001-AC-1",
+          "severity": "medium",
+          "path": "src/test_shell.py",
+          "line": 13,
+          "symbol": "test_covers",
+          "subject": "FR-001-AC-1 evidence",
+          "changeTarget": "src/test_shell.py:13 in test_covers",
+          "nextDiagnosticStep": "inspect whether the real behaviour for FR-001-AC-1 exists; add or bind an independent test that exercises it without substituting the behaviour under verification",
+          "summary": "FR-001-AC-1 is discharged only by tests that inject a stand-in for the behaviour it verifies: src/test_shell.py:13 test_covers injects Confirmation.allow. A test that substitutes the behaviour under verification passes whether or not that behaviour exists."
+        }
+      }
+    },
+    {
+      "recordId": "sha256:e371320ac68f5170aac6a509faf574c4bee8f9e7afe4ce060e858c499a9dd730",
+      "partition": "quire/quire/coverage.diagnostics/catch-all-universal",
+      "identity": {
+        "family": "catch-all-universal",
+        "case": "catch-all-headline-python",
+        "language": "python",
+        "declaration": "criteria"
+      },
+      "templateDigest": "sha256:edff4689670c4d607d8eaaa6330637e7dae30e1eff98dcdb3eb3998ceb649e2d",
+      "correctness": "pass",
+      "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
+      "executableProof": {
+        "kind": "diagnostic",
+        "outcome": "pass",
+        "method": "The canonical producer replay emits the cited causal channel and its controlled comparison retains the evidence needed to distinguish the named causes.",
+        "retainedFinding": {
+          "declaration": "criteria",
+          "reason": "catch-all-universal",
+          "message": "1 of 1 documents binding extractable criteria named a specific property shape for none of them — for example `FR-001-AC-1` at spec/FR-001.md:10; the extractable headline counts what a generator could quantify over, and this is the part it could not tell you what to write",
+          "path": "spec/FR-001.md",
+          "line": 10,
+          "value": "coverage.specific_shaped",
+          "subject": "criterion represented by `coverage.specific_shaped` at spec/FR-001.md:10",
+          "change_target": "spec/FR-001.md:10",
+          "next_diagnostic_step": "review whether the criterion is intentionally universal; otherwise name a concrete supported property shape"
+        }
+      }
+    },
+    {
+      "recordId": "sha256:e75fcbeb3a693eb35a12b6d3005cb4f4533cdfd7c5727ec2df76f2abe68edb1d",
+      "partition": "quire/quire/coverage.diagnostics/status-column-matches-nothing",
+      "identity": {
+        "family": "status-column-matches-nothing",
+        "case": "status-column-mismatch",
+        "language": "n/a",
+        "declaration": "traces-to"
+      },
+      "templateDigest": "sha256:101c3afc4871ec307a44e7433e77373e361bf3acb8b89f0c03f24f6ac3097f56",
+      "correctness": "pass",
+      "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
+      "executableProof": {
+        "kind": "diagnostic",
+        "outcome": "pass",
+        "method": "The canonical producer replay emits the cited causal channel and its controlled comparison retains the evidence needed to distinguish the named causes.",
+        "retainedFinding": {
+          "declaration": "traces-to",
+          "reason": "status-column-matches-nothing",
+          "message": "declaration 'traces-to' uses configured status column 'Status', which the table under 'Test Case Summary' in spec/tests.md does not have — the columns it has are 'Test ID', 'Traces To', 'Coverage Status'. Status classification was skipped, so complete-but-unbacked rows could not be checked. Align `traceability.status.column` with the authored header or rename the document column; the engine will not guess between those change targets",
+          "path": "spec/tests.md",
+          "line": 8,
+          "subject": "declaration `traces-to`",
+          "change_target": "spec/tests.md:8",
+          "next_diagnostic_step": "compare the configured status column with the observed table headers; rename the document column or change the configuration, and do not guess when both are plausible"
+        }
+      }
+    },
+    {
+      "recordId": "sha256:ec6699b1e5e040084231aaaaa6f54b40350b0e844f08f4c3ca6c48c8fc169691",
+      "partition": "quire/quire/coverage.diagnostics/section-matches-nothing",
+      "identity": {
+        "family": "section-matches-nothing",
+        "case": "section-name-mismatch-typescript",
+        "language": "typescript",
+        "declaration": "test-case"
+      },
+      "templateDigest": "sha256:5478870649044bacb30c8be0b0f5dca0f211ec9a7441da496b32494024841aca",
+      "correctness": "pass",
+      "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
+      "executableProof": {
+        "kind": "repair",
+        "outcome": "pass",
+        "method": "The controlled corpus replays the defective fixture and its language-matched repaired control; the expected family is present only before repair while corpus verification remains green.",
+        "retainedFinding": {
+          "declaration": "test-case",
+          "reason": "section-matches-nothing",
+          "message": "declaration 'test-case' selected spec/tests.md by archetype 'TestMatrix' and found no section matching '*Test Case Summary*', 'Integration Test Matrix' in it — the headings the document has are 'Test Cases'. The declared table is never reached, so every id under it is stranded and the document mints nothing. The declared id column 'Test ID' could NOT be checked either: fix the heading first, then confirm that column exists, or the same rows come back unminted for the second reason",
+          "path": "spec/tests.md",
+          "subject": "declaration `test-case`",
+          "change_target": "spec/tests.md",
+          "remedy": "align the document heading with the declared section selector"
+        }
+      }
+    },
+    {
+      "recordId": "sha256:ed2b4c1ab0fc536f61d199d16b39ba667288fdcdea1b2a365240f3b17cc4a13f",
+      "partition": "quire/quire/coverage.suspicions/oracle-is-code-copy",
+      "identity": {
+        "family": "oracle-is-code-copy",
+        "case": "oracle-copy-python",
+        "language": "python"
+      },
+      "templateDigest": "sha256:eddbe03b904b06722d98afaff6a3040ba620b0eba8a757ae784c2a228b16eed5",
+      "correctness": "pass",
+      "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
+      "executableProof": {
+        "kind": "repair",
+        "outcome": "pass",
+        "method": "The controlled corpus replays the defective fixture and its language-matched repaired control; the expected family is present only before repair while corpus verification remains green.",
+        "retainedFinding": {
+          "kind": "oracle-resembles-implementation",
+          "path": "src/test_containment.py",
+          "symbol": "test_covers",
+          "line": 8,
+          "message": "the `expected` oracle closely resembles `is_contained` in src/test_containment.py; replace the copied calculation with an independent expectation",
+          "evidence": "token similarity 1.00 (floor 0.75); compared `expected` with `src/test_containment.py::is_contained`",
+          "subject": "test symbol `test_covers`",
+          "change_target": "src/test_containment.py:8 in `test_covers`",
+          "remedy": "replace the copied calculation or helper with an independent expectation"
+        }
+      }
+    },
+    {
+      "recordId": "sha256:f1c9afc9d52f87dd3552a80178884ce17666922d7b64973412ec4d6775f94427",
+      "partition": "quire/quire/coverage.diagnostics/id-column-matches-nothing",
+      "identity": {
+        "family": "id-column-matches-nothing",
+        "case": "id-column-mismatch-rust",
+        "language": "rust",
+        "declaration": "test-case"
+      },
+      "templateDigest": "sha256:8f19c6f5bdd78f3bbc6e3544294e5d3d2027529d6a6be311a2979e2ae24137e9",
+      "correctness": "pass",
+      "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
+      "executableProof": {
+        "kind": "repair",
+        "outcome": "pass",
+        "method": "The controlled corpus replays the defective fixture and its language-matched repaired control; the expected family is present only before repair while corpus verification remains green.",
+        "retainedFinding": {
+          "declaration": "test-case",
+          "reason": "id-column-matches-nothing",
+          "message": "declaration 'test-case' declares id column 'Test ID', which the table under 'Test Case Summary' in spec/tests.md does not have — the columns it has are 'Test Case ID', 'Traces To', 'Status'. The rows are read and none of them yields an id, so the document mints nothing and every row it should have minted reports with no identity",
+          "path": "spec/tests.md",
+          "subject": "declaration `test-case`",
+          "change_target": "spec/tests.md",
+          "remedy": "align the declared id_column with the table's actual identifier header"
+        }
+      }
+    },
+    {
+      "recordId": "sha256:f2e0eccac80eb60c5e6fe7a5c4448c6796b6cd36f5de959c4946763e1e489e13",
+      "partition": "quire/quire/coverage.diagnostics/hollow-denominator",
+      "identity": {
+        "family": "hollow-denominator",
+        "case": "marker-form-mismatch-python",
+        "language": "python",
+        "declaration": "metrics"
+      },
+      "templateDigest": "sha256:179c56992a19d5a821dc8ef72413551c1e765a1019cd0f1c1cc1485ffeb77d73",
+      "correctness": "pass",
+      "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
+      "executableProof": {
+        "kind": "diagnostic",
+        "outcome": "pass",
+        "method": "The canonical producer replay emits the cited causal channel and its controlled comparison retains the evidence needed to distinguish the named causes.",
+        "retainedFinding": {
+          "declaration": "metrics",
+          "reason": "hollow-denominator",
+          "message": "`coverage.backed` published a ratio over 2 matrix rows but read none of the 1 it walked, so the number is arithmetic over nothing; rows of the declared reference tables whose trace target is bound by at least one source symbol; `matched` counts the evidence symbols that bound a trace id out of the `examined` evidence symbols walked, so matched 0 of a non-zero examined is a ratio computed over a corpus the binder could not read",
+          "value": "coverage.backed",
+          "subject": "metric `coverage.backed`",
+          "change_target": "the source binding census or declared trace-tag forms",
+          "next_diagnostic_step": "inspect the binding census, its unbound example, and the declared trace-tag forms before trusting or repairing the ratio"
+        }
+      }
+    },
+    {
+      "recordId": "sha256:f4bbf19af465bbb4bf335390b71d8bdefca6868be31300fc791b3c55b1b9896a",
+      "partition": "quire/quire/coverage.suspicions/oracle-is-code-copy",
+      "identity": {
+        "family": "oracle-is-code-copy",
+        "case": "oracle-copy-typescript",
+        "language": "typescript"
+      },
+      "templateDigest": "sha256:eddbe03b904b06722d98afaff6a3040ba620b0eba8a757ae784c2a228b16eed5",
+      "correctness": "pass",
+      "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
+      "executableProof": {
+        "kind": "repair",
+        "outcome": "pass",
+        "method": "The controlled corpus replays the defective fixture and its language-matched repaired control; the expected family is present only before repair while corpus verification remains green.",
+        "retainedFinding": {
+          "kind": "oracle-resembles-implementation",
+          "path": "src/containment.test.ts",
+          "symbol": "covers",
+          "line": 8,
+          "message": "the `expected` oracle closely resembles `isContained` in src/containment.test.ts; replace the copied calculation with an independent expectation",
+          "evidence": "token similarity 1.00 (floor 0.75); compared `expected` with `src/containment.test.ts::isContained`",
+          "subject": "test symbol `covers`",
+          "change_target": "src/containment.test.ts:8 in `covers`",
+          "remedy": "replace the copied calculation or helper with an independent expectation"
+        }
+      }
+    }
+  ]
+}

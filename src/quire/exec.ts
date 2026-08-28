@@ -6,6 +6,9 @@
  */
 
 import { execFileSync } from "node:child_process";
+import { createHash } from "node:crypto";
+import { accessSync, constants, readFileSync, realpathSync } from "node:fs";
+import { delimiter, isAbsolute, join } from "node:path";
 
 /**
  * Node's default `maxBuffer` is 1 MiB, and a real corpus already exceeds it:
@@ -19,6 +22,73 @@ import { execFileSync } from "node:child_process";
  * command outright.
  */
 export const QUIRE_MAX_BUFFER = 64 * 1024 * 1024;
+
+/**
+ * Resolve the producer once per invocation, never once per installation.
+ *
+ * `QUOIN_QUIRE` is the governed surface used by the verification-stack runner.
+ * Ordinary interactive use may still resolve `quire` from PATH, but the result
+ * is converted to an absolute real path before execution. When
+ * `QUOIN_EXPECTED_QUIRE_SHA256` is present the exact bytes are checked on every
+ * call, so replacing a file at the same path cannot move a canonical run.
+ */
+export function quireExecutable(): string {
+  const selected = process.env.QUOIN_QUIRE;
+  const executable = selected
+    ? resolveExplicitExecutable(selected)
+    : resolveOnPath("quire");
+  const expected = process.env.QUOIN_EXPECTED_QUIRE_SHA256;
+  if (expected) {
+    if (!/^sha256:[0-9a-f]{64}$/.test(expected)) {
+      throw new Error(
+        "QUOIN_EXPECTED_QUIRE_SHA256 must be a full lowercase sha256 digest",
+      );
+    }
+    const observed = `sha256:${createHash("sha256")
+      .update(readFileSync(executable))
+      .digest("hex")}`;
+    if (observed !== expected) {
+      throw new Error(
+        `quire executable digest mismatch: expected ${expected}, observed ${observed} at ${executable}`,
+      );
+    }
+  }
+  return executable;
+}
+
+function resolveExplicitExecutable(value: string): string {
+  if (!isAbsolute(value)) {
+    throw new Error(`QUOIN_QUIRE must be an absolute path, got ${value}`);
+  }
+  try {
+    accessSync(value, constants.X_OK);
+    return realpathSync(value);
+  } catch {
+    throw new Error(`QUOIN_QUIRE is not an executable file: ${value}`);
+  }
+}
+
+function resolveOnPath(name: string): string {
+  const extensions =
+    process.platform === "win32"
+      ? (process.env.PATHEXT ?? ".EXE;.CMD;.BAT").split(";")
+      : [""];
+  for (const directory of (process.env.PATH ?? "").split(delimiter)) {
+    if (!directory) continue;
+    for (const extension of extensions) {
+      const candidate = join(directory, `${name}${extension}`);
+      try {
+        accessSync(candidate, constants.X_OK);
+        return realpathSync(candidate);
+      } catch {
+        // Continue to the next PATH entry.
+      }
+    }
+  }
+  throw Object.assign(new Error(`${name} is not executable on PATH`), {
+    code: "ENOENT",
+  });
+}
 
 /**
  * Run `quire` and return stdout, surfacing **stderr** when it fails.
@@ -39,7 +109,7 @@ export const QUIRE_MAX_BUFFER = 64 * 1024 * 1024;
  */
 export function runQuire(args: string[]): string {
   try {
-    return execFileSync("quire", args, {
+    return execFileSync(quireExecutable(), args, {
       encoding: "utf8",
       stdio: ["ignore", "pipe", "pipe"],
       maxBuffer: QUIRE_MAX_BUFFER,
@@ -100,7 +170,7 @@ export function runQuireAllowFailure(args: string[]): {
 } {
   try {
     return {
-      stdout: execFileSync("quire", args, {
+      stdout: execFileSync(quireExecutable(), args, {
         encoding: "utf8",
         stdio: ["ignore", "pipe", "pipe"],
         maxBuffer: QUIRE_MAX_BUFFER,
@@ -121,7 +191,7 @@ export function runQuireAllowFailure(args: string[]): {
 /** `quire --version` output, or `null` when quire is not on PATH. */
 export function quireVersion(): string | null {
   try {
-    return execFileSync("quire", ["--version"], {
+    return execFileSync(quireExecutable(), ["--version"], {
       encoding: "utf8",
       maxBuffer: QUIRE_MAX_BUFFER,
     });
