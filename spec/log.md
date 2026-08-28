@@ -26,7 +26,12 @@ description: "Chronological log of structural changes to this bundle."
   AK-007 as invalid, and reports 100% recall over the mechanized set. The stack
   lock now requires spec-artifacts-iso and the final Quire/CLI/QA revisions;
   deleting any required repository or historical remote reachability fails a
-  guard. FR-043 AC-31; Matrix: TC-1074, TC-1116, TC-1118, TC-1121, TC-1122.
+  guard. The first full-stack replay then stopped at case 39 because Quoin's
+  vendored `coverage-v1` schema rejected the engine's new self-named census
+  fields. The contract is now refreshed from the exact locked Quire commit and
+  TC-111 carries all three new fields, making this producer/consumer drift a
+  direct fixture failure as well as a live integration failure. FR-029 AC-7,
+  FR-043 AC-31; Matrix: TC-111, TC-1074, TC-1116, TC-1118, TC-1121, TC-1122.
 
 * **2026-08-27** — **CR-127**: the **108** advisory findings named by
   `agent-ix/quoin#258` are now a content-addressed, row-level adjudication rather

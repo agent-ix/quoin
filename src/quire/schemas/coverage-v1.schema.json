@@ -328,6 +328,16 @@
           "minimum": 0,
           "description": "Candidates that minted at least one `verifies` relation. Counts SYMBOLS, not relations: a test carrying five ids counts once, so a handful of heavily-tagged tests cannot hide a thousand unreadable ones."
         },
+        "self_named": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Evidence symbols whose own declaration name carries a separator-delimited id such as tc_391 or tc-391. ABSENT when zero. This subpopulation prevents bindings through comments or attributes from masking a broken test-name form (#367)."
+        },
+        "self_named_bound": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Self-named evidence symbols whose declaration line was read by a declared legacy name form. ABSENT when zero; comment and attribute bindings do not increment it."
+        },
         "forms": {
           "type": "array",
           "items": {
@@ -342,6 +352,10 @@
         "unmatched_example": {
           "$ref": "#/$defs/UnboundSymbol",
           "description": "One deterministic path and line whose evidence symbol carries an id-shaped token but minted no verifies relation. Absent when no authored tag was missed."
+        },
+        "self_named_unbound_example": {
+          "$ref": "#/$defs/UnboundSymbol",
+          "description": "One deterministic self-named evidence symbol no declared name form read. Absent when every self-named symbol bound or no such symbol exists."
         }
       }
     },

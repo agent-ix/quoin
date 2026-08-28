@@ -334,6 +334,8 @@ describe("TC-116 optional keys are optional and absence is not emptiness", () =>
           candidates: 2,
           tagged: 1,
           bound: 1,
+          self_named: 1,
+          self_named_bound: 1,
           forms: ["rust-verifies-line"],
           unbound_example: {
             path: "tests/parse.rs",
@@ -344,6 +346,11 @@ describe("TC-116 optional keys are optional and absence is not emptiness", () =>
             path: "tests/parse.rs",
             line: 30,
             symbol: "parse_without_marker",
+          },
+          self_named_unbound_example: {
+            path: "tests/parse.rs",
+            line: 30,
+            symbol: "tc_001_parse_without_marker",
           },
         },
       ],

@@ -276,9 +276,12 @@ export interface BindingCensus {
   candidates: number;
   tagged: number;
   bound: number;
+  self_named?: number;
+  self_named_bound?: number;
   forms: string[];
   unbound_example?: UnboundSymbol;
   unmatched_example?: UnboundSymbol;
+  self_named_unbound_example?: UnboundSymbol;
 }
 
 /** Which executable and engine produced a payload. */

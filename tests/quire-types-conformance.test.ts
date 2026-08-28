@@ -263,9 +263,12 @@ const bindingCensus: Required<BindingCensus> = {
   candidates: 2,
   tagged: 1,
   bound: 1,
+  self_named: 1,
+  self_named_bound: 1,
   forms: ["rust-verifies-line"],
   unbound_example: unboundSymbol,
   unmatched_example: unboundSymbol,
+  self_named_unbound_example: unboundSymbol,
 };
 
 const engineProvenance: Required<EngineProvenance> = {
