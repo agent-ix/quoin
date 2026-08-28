@@ -328,9 +328,18 @@ async function main() {
   const update = process.argv.includes("--update");
   const asJson = process.argv.includes("--json");
   const experimental = process.argv.includes("--experimental");
+  const guidanceCandidateOut = argOf("--guidance-candidate-out");
+  const guidanceCandidateOnly = process.argv.includes(
+    "--guidance-candidate-only",
+  );
   if (experimental && update) {
     throw new Error(
       "bench-tier1: a noncanonical experimental run cannot update governed evidence",
+    );
+  }
+  if (guidanceCandidateOnly && (!experimental || !guidanceCandidateOut)) {
+    throw new Error(
+      "bench-tier1: --guidance-candidate-only requires --experimental and --guidance-candidate-out <path>",
     );
   }
   // Require an explicit binary so engine identity is reviewable.
@@ -528,6 +537,23 @@ async function main() {
     retainedAdjudication,
   );
   const score = scoreFindings(scoredFindings, flat, shapes, adjudication);
+  if (guidanceCandidateOut) {
+    const candidate = {
+      schemaVersion: "guidance-candidate-v1",
+      corpusRevision: corpusRevision(),
+      corpusInputDigest: corpusInputDigest(),
+      producer: execution.engineProvenance(),
+      findingRecords: scoredFindings,
+    };
+    writeFileSync(
+      resolve(guidanceCandidateOut),
+      await formatTier1Json(candidate, resolve(guidanceCandidateOut)),
+    );
+    console.error(
+      `bench-tier1: guidance candidate written to ${resolve(guidanceCandidateOut)}`,
+    );
+    if (guidanceCandidateOnly) return 0;
+  }
   const guidanceQuality = evaluateGuidanceProof(
     scoredFindings,
     JSON.parse(readFileSync(GUIDANCE_CONTRACT, "utf8")),

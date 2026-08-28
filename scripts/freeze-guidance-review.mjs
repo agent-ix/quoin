@@ -1,18 +1,59 @@
 #!/usr/bin/env node
 
 import { readFileSync, writeFileSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { guidancePopulation } from "./lib/guidance-proof.mjs";
 
 const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
-const baseline = JSON.parse(
-  readFileSync(join(ROOT, "bench", "tier1-baseline.json"), "utf8"),
-);
-const partitions = guidancePopulation(baseline.finding_records ?? []);
+const candidateFlag = process.argv.indexOf("--candidate");
+if (candidateFlag === -1 || !process.argv[candidateFlag + 1]) {
+  throw new Error(
+    "freeze-guidance-review: pass --candidate <path> from an explicit bench-tier1 candidate-only run",
+  );
+}
+const candidatePath = resolve(process.argv[candidateFlag + 1]);
+const candidate = JSON.parse(readFileSync(candidatePath, "utf8"));
+if (
+  candidate?.schemaVersion !== "guidance-candidate-v1" ||
+  !Array.isArray(candidate.findingRecords) ||
+  candidate.findingRecords.length === 0
+) {
+  throw new Error(
+    "freeze-guidance-review: candidate must be a non-empty guidance-candidate-v1",
+  );
+}
+for (const layer of ["cli", "engine"]) {
+  const source = candidate.producer?.[layer];
+  if (
+    source?.sourceState !== "clean" ||
+    !/^[0-9a-f]{40}$/.test(source.sourceRevision ?? "")
+  ) {
+    throw new Error(
+      `freeze-guidance-review: candidate ${layer} provenance is not clean and immutable`,
+    );
+  }
+}
+if (!/^[0-9a-f]{40}$/.test(candidate.corpusRevision ?? "")) {
+  throw new Error(
+    "freeze-guidance-review: candidate corpus revision is not a full SHA",
+  );
+}
+if (!/^sha256:[0-9a-f]{64}$/.test(candidate.corpusInputDigest ?? "")) {
+  throw new Error(
+    "freeze-guidance-review: candidate corpus input digest is not immutable",
+  );
+}
+const populationSource = {
+  corpusRevision: candidate.corpusRevision,
+  corpusInputDigest: candidate.corpusInputDigest,
+  producer: candidate.producer,
+};
+const partitions = guidancePopulation(candidate.findingRecords);
 const contract = {
   schemaVersion: "guidance-evaluator-contract-v1",
+  populationSource,
   metricVersions: [
     "guidance.correctness-v1",
     "guidance.repair-success-v1",
@@ -72,6 +113,7 @@ for (const partition of partitions) {
 }
 const evidence = {
   schemaVersion: "guidance-independent-review-v1",
+  populationSource,
   reviewer: "OpenAI Codex, independent consumer review",
   reviewedAt: "2026-08-28",
   reviewRule:

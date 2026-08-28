@@ -126,7 +126,10 @@ export function evaluateGuidanceProof(records, contract, evidence) {
       throw new Error(`guidance contract omits partition ${partition.id}`);
     for (const key of ["denominator", "populationDigest"]) {
       if (frozen[key] !== partition[key]) {
-        throw new Error(`guidance partition ${partition.id} ${key} drifted`);
+        throw new Error(
+          `guidance partition ${partition.id} ${key} drifted: ` +
+            `expected ${frozen[key]}, observed ${partition[key]}`,
+        );
       }
     }
     if (
