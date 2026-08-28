@@ -212,7 +212,7 @@ function defectsFrom(meta, expect, mapping) {
       {
         id: `${initials(meta.id)}-${ordinal(meta.id)}`,
         family: familyForReason(mapping, reason),
-        location: expect.diagnostic_paths?.[reason] ?? null,
+        location: diagnosticLocation(expect, reason),
         findable: meta.findable !== false,
         expect_reason: reason,
         confirmed_at: "derived from the case's own expect.yaml",
@@ -236,6 +236,12 @@ function defectsFrom(meta, expect, mapping) {
     ];
   }
   return [];
+}
+
+function diagnosticLocation(expect, reason) {
+  const path = expect.diagnostic_paths?.[reason] ?? null;
+  const line = expect.diagnostic_lines?.[reason] ?? null;
+  return path && Number.isInteger(line) ? `${path}:${line}` : path;
 }
 
 function familyOf(meta, expect, mapping) {

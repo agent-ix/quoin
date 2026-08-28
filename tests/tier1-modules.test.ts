@@ -1,5 +1,6 @@
 import {
   chmodSync,
+  mkdirSync,
   mkdtempSync,
   readFileSync,
   rmSync,
@@ -12,7 +13,10 @@ import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, test } from "vitest";
 
 import { ratchet } from "../scripts/lib/tier1-comparison.mjs";
-import { validateCanonicalInventory } from "../scripts/lib/tier1-corpus.mjs";
+import {
+  loadCorpusData,
+  validateCanonicalInventory,
+} from "../scripts/lib/tier1-corpus.mjs";
 import { createTier1Executor } from "../scripts/lib/tier1-execution.mjs";
 import { renderTier1 } from "../scripts/lib/tier1-render.mjs";
 import { localisationRate } from "../scripts/lib/tier1-scoring.mjs";
@@ -80,6 +84,67 @@ function report() {
 }
 
 describe("Tier-1 module contracts", () => {
+  test("declaration locality requires and combines typed path and line", () => {
+    const root = mkdtempSync(join(tmpdir(), "quoin-tier1-corpus-"));
+    roots.push(root);
+    mkdirSync(join(root, "cases", "one", "input"), { recursive: true });
+    mkdirSync(join(root, "modules", "m"), { recursive: true });
+    writeFileSync(
+      join(root, "cases", "one", "expect.yaml"),
+      [
+        "diagnostic_reasons: [model-mints-nothing]",
+        "diagnostic_paths:",
+        "  model-mints-nothing: modules/m/manifest.yaml",
+        "diagnostic_lines:",
+        "  model-mints-nothing: 6",
+      ].join("\n"),
+    );
+    writeFileSync(
+      join(root, "modules", "m", "manifest.yaml"),
+      "archetypes: []\n",
+    );
+
+    const data = loadCorpusData({
+      root,
+      modulesRoot: join(root, "modules"),
+      mapping: {
+        families: {
+          model: {
+            source: "coverage.diagnostics",
+            key: "model-mints-nothing",
+          },
+        },
+      },
+      inventory: {
+        bounds: { gap_count: 0 },
+        cases: [
+          {
+            id: "one",
+            dir: "cases/one",
+            expect: "cases/one/expect.yaml",
+            module: "m",
+            language: "rust",
+            mode: "detection",
+            kind: "failure",
+            findable: true,
+            grading_contract: {
+              channel: "finding",
+              levels: {
+                L1: { state: "required" },
+                L2: { state: "required" },
+                L3: { state: "required" },
+              },
+            },
+          },
+        ],
+      },
+    });
+
+    expect(data.corpora[0].defects[0].location).toBe(
+      "modules/m/manifest.yaml:6",
+    );
+  });
+
   test("TC-1009 execution preserves structured locations and counts subprocesses", () => {
     const root = mkdtempSync(join(tmpdir(), "quoin-tier1-exec-"));
     roots.push(root);
