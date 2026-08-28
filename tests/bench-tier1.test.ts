@@ -434,7 +434,9 @@ describe("the committed baseline and the committed scorer", () => {
         unexpectedRefusals: 0,
         unsafeEmissions: 0,
       },
-      producerVersions: ["0.30.2 (engine 0.33.0)"],
+      producerVersions: [
+        `0.30.2 (engine ${baseline.provenance.tool.engine.sourceRevision})`,
+      ],
     });
   });
 });
