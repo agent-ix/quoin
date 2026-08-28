@@ -64,7 +64,7 @@
       "baseline_note": "Battletest pass 2 measured 0 of 65 specific-shape records carrying all three spans. Zero remains the historical starting point, not an absence; the retained Tier-1 report now carries the computed population and accepted ratchet."
     },
     "span_grounding_v2_rate": {
-      "measurement_plan": "spec/assurance/MP-204-span-grounding.md",
+      "measurement_plan": "spec/assurance/MP-215-span-grounding-v2.md",
       "unit": "percent of labeled span outcomes",
       "population": "specific-shape criteria matched by an exact retained statement/property label with pinned multiplicity",
       "method": "criteria whose domain/precondition/oracle boundaries exactly equal the label, or that emit no spans and carry the label's explicit justified-refusal signal. Exact spans and safe refusals remain separately counted; wrong spans, unexpected refusals, unjustified refusals, unsafe emissions, and changed label multiplicity are named failures",
@@ -105,7 +105,7 @@
       "measurement_plan": "spec/assurance/MP-212-actionability-v2.md",
       "unit": "percent of applicable emitted findings",
       "population": "normalized finding-envelope-v2 records for which actionability is applicable",
-      "method": "findings carrying an affected subject or locus, causal evidence, a concrete change target, and either a remedy or safe next diagnostic step, over applicable normalized findings. unavailable fields are named misses; not_applicable fields are named exclusions",
+      "method": "findings carrying an affected subject or locus, causal evidence, a concrete change target, and either a remedy or safe next diagnostic step, over applicable normalized findings, reported overall and by producer/channel/family partition. unavailable fields are named misses; not_applicable fields are named exclusions",
       "direction": "higher-is-better",
       "baseline": null,
       "baseline_note": "The retained Tier-1 baseline records this beside, and never in place of, finding.actionability-v1. The first accepted run establishes the ratchet."

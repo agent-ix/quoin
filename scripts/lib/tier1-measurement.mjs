@@ -282,6 +282,9 @@ export function createMeasurementRecord(report, at, options) {
           complete: true,
           exclusions: report.actionability_v2?.exclusions ?? [],
           namedMisses: report.actionability_v2?.namedMisses ?? [],
+          identity: {
+            partitions: report.actionability_v2?.partitions ?? [],
+          },
         },
       },
     ),

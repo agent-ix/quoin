@@ -127,6 +127,31 @@ describe("finding-envelope-v2", () => {
       scored.namedMisses[0].missing.map((m: { field: string }) => m.field),
     ).toEqual(["causal_evidence", "change_target", "next_move"]);
     expect(scored.exclusions).toHaveLength(1);
+    expect(scored.partitions).toEqual([
+      expect.objectContaining({
+        id: "external-observation/reviewer/ruling/observation",
+        numerator: 0,
+        denominator: 0,
+        rate: null,
+        exclusions: [expect.objectContaining({ id: expect.any(String) })],
+      }),
+      expect.objectContaining({
+        id: "quire/quire/coverage.diagnostics/column",
+        numerator: 1,
+        denominator: 1,
+        rate: 1,
+      }),
+      expect.objectContaining({
+        id: "quoin/quoin/validate/validation",
+        numerator: 0,
+        denominator: 2,
+        rate: 0,
+        namedMisses: [
+          expect.objectContaining({ id: expect.any(String) }),
+          expect.objectContaining({ id: expect.any(String) }),
+        ],
+      }),
+    ]);
   });
 
   it("TC-1083 keeps v1 reproducible while L1/L2/L3-family scoring consumes envelopes", () => {

@@ -7,6 +7,7 @@
  * this is those five plus the sentinel's declaration.
  */
 
+import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import {
@@ -107,6 +108,21 @@ describe("the metric dictionary", () => {
     expect(refusal.method).toMatch(/expected structured refusal signal/);
     expect(refusal.per_family).toBe(true);
     expect(correctness.measurement_plan).not.toBe(refusal.measurement_plan);
+  });
+
+  it("TC-1120 gives labeled span v2 its own active MeasurementPlan", () => {
+    const historical = metrics.span_grounding_rate;
+    const labeled = metrics.span_grounding_v2_rate;
+    expect(historical.measurement_plan).toMatch(/MP-204/);
+    expect(labeled.measurement_plan).toMatch(/MP-215/);
+    expect(labeled.measurement_plan).not.toBe(historical.measurement_plan);
+    const plan = readFileSync(
+      join(__dirname, "..", labeled.measurement_plan),
+      "utf8",
+    );
+    expect(plan).toMatch(/status: active/);
+    expect(plan).toMatch(/metric: span_grounding_v2_rate/);
+    expect(plan).toMatch(/definition_version: property\.span-grounding-v2/);
   });
 
   it("TC-929 defines actionability_rate with the 15-of-496 baseline", () => {

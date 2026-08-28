@@ -496,6 +496,13 @@ generated tests under `tests/props/` and `Unit` for the rest.
 | TC-1102 | Repeating a candidate with the same inputs and expected unavailable premise produces no source change or regression, and comparison leaves the baseline object unchanged (#259) | Unit | P0 | FR-043-AC-29 | ✅ |
 | TC-1103 | An evaluated source becoming unavailable loses its detected finding and is a named source regression without rewriting the retained baseline (#259) | Unit | P0 | FR-043-AC-29 | ✅ |
 | TC-1104 | Tier-2 finding detection consumes the retained `finding-envelope-v2` view: changing only raw producer arrays cannot change a score, while removing the normalized finding does (#255, #259) | Unit | P0 | FR-043-AC-23, FR-043-AC-29 | ✅ |
+| TC-1110 | Labeled span v2 independently accepts exact boundaries and an explicit no-domain safe refusal without inventing a missing precondition; all outcome classes remain separately counted (#261) | Unit | P0 | FR-043-AC-30 | ✅ |
+| TC-1111 | A changed labeled-population multiplicity is malformed and cannot silently shrink the denominator (#261) | Unit | P0 | FR-043-AC-30 | ✅ |
+| TC-1116 | Tier-2 detection requires the exact defect locus and absence on the pinned healthy-control cohort (#261) | Unit | P0 | FR-043-AC-29 | ✅ |
+| TC-1117 | Tier-2 scoring keeps unavailable, invalid-answer-key, and healthy-control-failure states distinct from misses and detections (#261) | Unit | P0 | FR-043-AC-29 | ✅ |
+| TC-1118 | Every valid Tier-2 answer-key finding binds a full-SHA cohort, declaration, evidence-sidecar state, production source, reproduction command, locus state, and healthy-control state (#261) | Unit | P0 | FR-043-AC-29 | ✅ |
+| TC-1119 | The committed Tier-2 v2 baseline retains the exact cohort/source states and score buckets and compares byte-identically against itself (#261) | Unit | P0 | FR-043-AC-29 | ✅ |
+| TC-1120 | `span_grounding_v2_rate` maps to its own active `property.span-grounding-v2` MeasurementPlan while historical span-grounding v1 keeps MP-204 (#261) | Unit | P0 | FR-043-AC-30 | ✅ |
 | TC-926 | Every metric in the dictionary declares `unit`, `population` and `method`; one missing any of the three is rejected at load rather than reported with a gap | Unit | P0 | FR-043-AC-1 | ✅ |
 | TC-927 | `finding_precision`/`finding_recall` are declared per defect family, each keyed on a family the corpora label, so no score is reported over an unlabelled population | Unit | P0 | FR-043-AC-2 | ✅ |
 | TC-928 | `span_grounding_rate` is declared with the pass-2 figure (0 of 65 specific-shape records) as its starting baseline | Unit | P0 | FR-043-AC-3 | ✅ |

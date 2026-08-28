@@ -625,7 +625,7 @@ describe("span grounding", () => {
 });
 
 describe("labeled span grounding v2", () => {
-  it("counts exact spans and justified refusals without requiring an invented precondition", () => {
+  it("TC-1110 counts exact spans and justified refusals without requiring an invented precondition", () => {
     const exactStatement =
       "Every normalizer applied twice gives the same result as applying it once";
     const span = (statement: string, text: string) => {
@@ -711,7 +711,7 @@ describe("labeled span grounding v2", () => {
     });
   });
 
-  it("fails closed when the labeled multiplicity shrinks", () => {
+  it("TC-1111 fails closed when the labeled multiplicity shrinks", () => {
     const scored = scoreSpanGroundingV2([], {
       definitionVersion: "property.span-grounding-v2",
       rules: [

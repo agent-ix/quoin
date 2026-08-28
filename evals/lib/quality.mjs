@@ -438,12 +438,14 @@ export function scoreActionability(found) {
 export function scoreActionabilityV2(found) {
   const namedMisses = [];
   const exclusions = [];
+  const partitionMap = new Map();
   let numerator = 0;
   let denominator = 0;
 
   found.forEach((finding, index) => {
     validateFindingEnvelope(finding);
     const id = findingIdentity(finding, index);
+    const partition = actionabilityPartition(partitionMap, finding);
     const subjectOrLocus =
       finding.subject.state === "available" ||
       finding.locus.state === "available";
@@ -465,11 +467,14 @@ export function scoreActionabilityV2(found) {
       });
     }
     if (notApplicable.length > 0) {
-      exclusions.push({ id, fields: notApplicable });
+      const exclusion = { id, fields: notApplicable };
+      exclusions.push(exclusion);
+      partition.exclusions.push(exclusion);
       return;
     }
 
     denominator += 1;
+    partition.denominator += 1;
     const missing = [];
     if (!subjectOrLocus) {
       missing.push({
@@ -483,9 +488,22 @@ export function scoreActionabilityV2(found) {
         missing.push({ field, state: value.state, reason: value.reason });
       }
     }
-    if (missing.length === 0) numerator += 1;
-    else namedMisses.push({ id, missing });
+    if (missing.length === 0) {
+      numerator += 1;
+      partition.numerator += 1;
+    } else {
+      const miss = { id, missing };
+      namedMisses.push(miss);
+      partition.namedMisses.push(miss);
+    }
   });
+
+  const partitions = [...partitionMap.values()]
+    .map((partition) => ({
+      ...partition,
+      rate: ratio(partition.numerator, partition.denominator),
+    }))
+    .sort((a, b) => a.id.localeCompare(b.id));
 
   return {
     definitionVersion: "finding.actionability-v2",
@@ -493,8 +511,31 @@ export function scoreActionabilityV2(found) {
     denominator,
     exclusions,
     namedMisses,
+    partitions,
     rate: ratio(numerator, denominator),
   };
+}
+
+function actionabilityPartition(partitions, finding) {
+  const family = finding.identity?.family ?? finding.kind;
+  const id = [
+    finding.source.class,
+    finding.source.producer,
+    finding.source.channel,
+    family,
+  ].join("/");
+  if (!partitions.has(id)) {
+    partitions.set(id, {
+      id,
+      source: structuredClone(finding.source),
+      family,
+      numerator: 0,
+      denominator: 0,
+      exclusions: [],
+      namedMisses: [],
+    });
+  }
+  return partitions.get(id);
 }
 
 const SPECIFIC_PROPERTIES = new Set([

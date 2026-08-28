@@ -34,7 +34,9 @@ The numerator is findings carrying all of:
 
 An `unavailable` required field is a named miss and stays in the denominator.
 Presence alone does not establish correctness; span correctness is measured
-separately.
+separately. Report the same numerator, denominator, rate, exclusions, and named
+misses for every producer/channel/family partition so an overall value cannot
+hide a weak producer or family.
 
 ## Collection and Provenance
 
@@ -71,6 +73,8 @@ Concrete examples:
 ## Comparison and Enforcement
 
 Compare only like populations and `finding.actionability-v2` definitions. The
-accepted baseline is a one-way non-regression ratchet. Keep historical
+accepted baseline is a one-way non-regression ratchet. The Epic #261 completion
+gate requires 100% in every applicable producer/channel/family partition and
+requires every exclusion to remain enumerated. Keep historical
 `finding.actionability-v1` observations under their original locus-presence
 definition.

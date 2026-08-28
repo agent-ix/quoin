@@ -48,7 +48,8 @@ export function renderTier1(report, verdicts) {
       `(${(report.actionability_v1 ?? report.actionability).actionable} of ${(report.actionability_v1 ?? report.actionability).total} findings name a row or a line)`,
     `actionability_v2_rate      ${pct(report.actionability_v2?.rate ?? null)} ` +
       `(${report.actionability_v2?.numerator ?? 0} of ${report.actionability_v2?.denominator ?? 0} findings carry subject/locus, evidence, target, and next move; ` +
-      `${report.actionability_v2?.exclusions?.length ?? 0} excluded)`,
+      `${report.actionability_v2?.exclusions?.length ?? 0} excluded; ` +
+      `${report.actionability_v2?.partitions?.length ?? 0} producer/family partitions)`,
     `span_grounding_rate        ${pct(report.span_grounding?.rate ?? null)} ` +
       `(${report.span_grounding?.numerator ?? 0} of ${report.span_grounding?.denominator ?? 0} specific-shape criteria carry domain, precondition, and oracle; ` +
       `${report.span_grounding?.namedMisses?.length ?? 0} named misses)`,
