@@ -487,6 +487,8 @@ async function main() {
       "quality/verification-stack-lock.json",
       "quality/verification-evidence.json",
       "bench/span-breadth-v1-labels.json",
+      "bench/guidance-evaluator-contract-v1.json",
+      "bench/guidance-independent-review-v1.json",
       "spec/evidence/measurements",
       "bench/tier1-baseline.json",
       "bench/battletest-baseline.json",
