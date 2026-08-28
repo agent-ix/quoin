@@ -473,6 +473,8 @@ generated tests under `tests/props/` and `Unit` for the rest.
 | TC-1074 | The Tier-2 registry executes Quire coverage and Quoin validate, and names evidence audit as not evaluated when the pinned store has no suite-to-obligation join (#203) | Integration | P0 | FR-043-AC-21 | ✅ |
 | TC-1075 | A stand-in in an unrelated test symbol within the same workspace suite does not accuse the obligation; suite-only joining is forbidden (#204) | Unit | P0 | FR-032-AC-15, FR-032-AC-16 | ✅ |
 | TC-1076 | An inspector's unqualified source symbol joins an exact or terminally module-qualified result symbol, preserving the common Cargo adapter shape without substring matching (#204) | Unit | P0 | FR-032-AC-15, FR-032-AC-16 | ✅ |
+| TC-1123 | Evidence intake accepts an exact semantic version, source SHA, or executable digest and rejects bare or mutable tool identities (#274) | Unit | P0 | FR-030-AC-17 | ✅ |
+| TC-1124 | The first-party mock-inspection command records the exact Quoin package version in its stored tool identity (#274) | Integration | P0 | FR-030-AC-17, FR-032-AC-16 | ✅ |
 | TC-1077 | The supported Tier-1 update emits baseline JSON in the same format the repository gate enforces; updating a ratchet cannot make the next gate fail on style alone (#244) | Unit | P0 | FR-043-AC-17 | ✅ |
 | TC-1078 | Multiple standing-adjudication entries for one advisory family are unioned by declaration; a later narrow ruling cannot silently erase an earlier ruling (#252) | Unit | P0 | FR-043-AC-16 | ✅ |
 | TC-1079 | `untracked-id-has-minted-children` maps to a distinct located unminted-ID family rather than being folded into spelling near misses (#253) | Unit | P0 | FR-043-AC-22 | ✅ |

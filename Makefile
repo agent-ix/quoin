@@ -149,7 +149,7 @@ evidence-record:
 	mkdir -p reports
 	pnpm exec vitest run --reporter=junit --outputFile=reports/junit.xml
 	node bin/quoin.js evidence record --suite SUITE-001 \
-	  --commit "$$(git rev-parse HEAD)" --tool vitest --adapter junit \
+	  --commit "$$(git rev-parse HEAD)" --tool "vitest $$(pnpm exec vitest --version)" --adapter junit \
 	  --results reports/junit.xml --kind Unit --repo . --module $(EVIDENCE_MODULE)
 
 .PHONY: answer-key-repin

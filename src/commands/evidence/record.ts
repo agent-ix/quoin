@@ -41,7 +41,7 @@ failing that the normalized shape above is assumed. An adapter transcribes; it
 runs nothing and judges nothing.`;
 
   static examples = [
-    "quoin evidence record --suite SUITE-001 --commit $(git rev-parse HEAD) --tool 'cargo test' --results run.json",
+    "quoin evidence record --suite SUITE-001 --commit $(git rev-parse HEAD) --tool 'cargo test 1.94.1' --results run.json",
   ];
 
   static flags = {
@@ -100,6 +100,12 @@ runs nothing and judges nothing.`;
 
   async run(): Promise<void> {
     const { flags } = await this.parse(EvidenceRecord);
+    if (!isVersionedToolIdentity(flags.tool)) {
+      this.error(
+        "--tool must include an immutable version (for example `vitest 3.2.4` or `scanner git:<full-sha>`)",
+        { exit: 2 },
+      );
+    }
 
     // The premise first: an older quire does not fail, it emits an older shape
     // that this command would misread. By the time a parse failed, the wrong
@@ -136,11 +142,22 @@ runs nothing and judges nothing.`;
           ? readFileSync(0, "utf8")
           : readFileSync(flags.results, "utf8");
       const result = findingAdapter.parse(raw);
+      const reportedTool = result.tool;
+      if (
+        reportedTool !== undefined &&
+        reportedTool !== flags.tool &&
+        reportedTool !== toolName(flags.tool)
+      ) {
+        this.error(
+          `result tool identity ${JSON.stringify(reportedTool)} does not match --tool ${JSON.stringify(flags.tool)}`,
+          { exit: 2 },
+        );
+      }
       const path = writeScan(flags.repo, {
         schemaVersion: 1,
         suite: flags.suite,
         commit: flags.commit,
-        tool: result.tool ?? flags.tool,
+        tool: flags.tool,
         ...(flags.kind === undefined ? {} : { evidenceKind: flags.kind }),
         timestamp: flags.timestamp ?? new Date().toISOString(),
         ...(result.ruleset === undefined ? {} : { ruleset: result.ruleset }),
@@ -261,6 +278,16 @@ runs nothing and judges nothing.`;
       );
     }
   }
+}
+
+export function isVersionedToolIdentity(value: string): boolean {
+  return /(?:^|[\s/@])(?:v?\d+(?:\.\d+)+(?:[-+][0-9A-Za-z.-]+)?|git:[0-9a-f]{40}|sha256:[0-9a-f]{64})(?:$|[\s,)])/i.test(
+    value,
+  );
+}
+
+function toolName(value: string): string {
+  return value.trim().split(/\s+/, 1)[0];
 }
 
 /**

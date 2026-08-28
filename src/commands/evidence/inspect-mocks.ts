@@ -6,6 +6,7 @@ import {
   inspectMockInjections,
   writeMockInspection,
 } from "../../evidence/index.js";
+import { packageVersion } from "../../version.js";
 
 export default class EvidenceInspectMocks extends QuoinCommand {
   static summary =
@@ -50,7 +51,7 @@ found no relevant injections" from "nobody looked" (agent-ix/quoin#204).`;
           schemaVersion: STORE_SCHEMA_VERSION,
           suite: flags.suite,
           commit: flags.commit,
-          tool: "quoin mock-inspection",
+          tool: `quoin mock-inspection ${packageVersion()}`,
           timestamp: flags.timestamp ?? new Date().toISOString(),
           injections,
         });

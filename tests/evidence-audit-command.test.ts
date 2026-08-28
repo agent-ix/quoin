@@ -14,7 +14,13 @@
  */
 
 import { execFileSync } from "node:child_process";
-import { chmodSync, mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import {
+  chmodSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -32,6 +38,7 @@ import {
   writeRun,
 } from "../src/evidence/index.js";
 import { STORE_SCHEMA_VERSION } from "../src/evidence/types.js";
+import { packageVersion } from "../src/version.js";
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -247,7 +254,7 @@ describe("mocked-confirmation production command path (agent-ix/quoin#204)", () 
     process.env.PATH = savedPath;
   });
 
-  it("TC-1065 inspect-mocks record -> evidence audit reports a located finding", async () => {
+  it("TC-1065 TC-1124 inspect-mocks records its version and audit reports a located finding", async () => {
     process.env.PATH = `${fakeQuireDir(
       JSON.stringify({
         unbacked_rows: [],
@@ -322,6 +329,17 @@ describe("mocked-confirmation production command path (agent-ix/quoin#204)", () 
       ],
       config,
     );
+    const inspectionPath = join(
+      root,
+      "spec",
+      "evidence",
+      "mock-inspections",
+      "SUITE-001",
+      `${commit.slice(0, 12)}.json`,
+    );
+    expect(JSON.parse(readFileSync(inspectionPath, "utf8"))).toMatchObject({
+      tool: `quoin mock-inspection ${packageVersion()}`,
+    });
     const output = captureLog();
     try {
       await EvidenceAudit.run(["--repo", root, "--json"], config);
