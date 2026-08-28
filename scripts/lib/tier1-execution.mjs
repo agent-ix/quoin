@@ -1,9 +1,11 @@
 import { execFileSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import {
   cpSync,
   existsSync,
   mkdirSync,
   mkdtempSync,
+  readFileSync,
   rmSync,
   symlinkSync,
   writeFileSync,
@@ -13,6 +15,29 @@ import { dirname, join, resolve } from "node:path";
 
 const VALIDATE_LINE =
   /^(?<path>.+?): line (?<line>\d+): (?<rest>.*) \[(?<reason>[a-z-]+)\]$/;
+const FULL_SHA = /^[0-9a-f]{40}$/;
+
+function controlledFixtureToolIdentity(quoin, execute) {
+  const lockedRevision = process.env.QUOIN_LOCKED_SOURCE_REVISION;
+  if (FULL_SHA.test(lockedRevision ?? "")) {
+    return `tier1-controlled-fixture git:${lockedRevision}`;
+  }
+  const quoinRoot = dirname(dirname(resolve(quoin)));
+  const revision = execute("git", ["-C", quoinRoot, "rev-parse", "HEAD"]);
+  const status = execute("git", [
+    "-C",
+    quoinRoot,
+    "status",
+    "--porcelain=v1",
+    "--untracked-files=all",
+  ]);
+  if (revision.ok && status.ok && !status.stdout.trim()) {
+    const value = revision.stdout.trim();
+    if (FULL_SHA.test(value)) return `tier1-controlled-fixture git:${value}`;
+  }
+  const digest = createHash("sha256").update(readFileSync(quoin)).digest("hex");
+  return `tier1-controlled-fixture sha256:${digest}`;
+}
 
 /** Stateful subprocess boundary for one Tier-1 invocation. */
 export function createTier1Executor() {
@@ -388,6 +413,7 @@ export function createTier1Executor() {
         PATH: `${toolBin}:${process.env.PATH ?? ""}`,
       };
       const moduleArgs = single ? ["--module", module] : [];
+      const fixtureTool = controlledFixtureToolIdentity(quoin, execute);
       const invoke = (args, name) =>
         must(
           execute(process.execPath, [quoin, ...args], commandEnv),
@@ -455,7 +481,7 @@ export function createTier1Executor() {
           "--commit",
           head,
           "--tool",
-          "tier1 controlled fixture",
+          fixtureTool,
           "--timestamp",
           "2000-01-01T00:00:00Z",
           "--results",
