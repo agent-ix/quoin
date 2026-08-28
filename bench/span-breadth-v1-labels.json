@@ -1,0 +1,1427 @@
+{
+  "schemaVersion": "property.span-breadth-v1",
+  "reviewer": "OpenAI Codex independent span review",
+  "reviewedAt": "2026-08-28",
+  "producer": {
+    "schemaVersion": "quire-tool-provenance-v1",
+    "cli": {
+      "version": "0.30.2",
+      "sourceRevision": "572819aeffc94cb513ae5b1ff8957a2fe4508d2a",
+      "sourceState": "clean"
+    },
+    "engine": {
+      "version": "0.46.0",
+      "sourceRevision": "506e936af5787e072a297965926547f4cd9b437b",
+      "sourceState": "clean"
+    },
+    "capabilities": [
+      "action_guidance.structured",
+      "binding_census",
+      "binding_census.tagged",
+      "declaration_origins",
+      "metrics_envelope",
+      "minted_targets",
+      "property_spans.safe_refusal",
+      "reference_only_targets",
+      "specific_shaped",
+      "suspicions",
+      "unmatched_tags"
+    ]
+  },
+  "repositories": {
+    "quoin": {
+      "revision": "8bd900043202e640591f567f97e2684788bb83a5",
+      "remote": "https://github.com/agent-ix/quoin"
+    },
+    "quire-rs": {
+      "revision": "506e936af5787e072a297965926547f4cd9b437b",
+      "remote": "https://github.com/agent-ix/quire-rs"
+    },
+    "filament-ide-rs": {
+      "revision": "546e7943ee5a8fe552242cbb19d12aa902536652",
+      "remote": "https://github.com/agent-ix/filament-ide-rs"
+    }
+  },
+  "labels": [
+    {
+      "id": "quoin-FR-029-AC-12-4e0d1f4732",
+      "repository": "quoin",
+      "document": "spec/functional/FR-029-consume-the-quire-json-contract.md",
+      "rowId": "FR-029-AC-12",
+      "property": "invariant",
+      "statement": "A child that never exited on its own — killed on a buffer overrun, killed by a signal, or never spawned — is reported by its cause (`ENOBUFS` naming the byte limit, the signal name, the spawn error code), reports no exit status, and appends no child stderr.",
+      "normalizedStatement": "a child that never exited on its own — killed on a buffer overrun, killed by a signal, or never spawned — is reported by its cause (`enobufs` naming the byte limit, the signal name, the spawn error code), reports no exit status, and appends no child stderr.",
+      "challenge": "nested",
+      "expectedSpans": {
+        "domain": {
+          "end": 7,
+          "start": 2,
+          "text": "child"
+        },
+        "precondition": {
+          "end": 40,
+          "start": 8,
+          "text": "that never exited on its own —"
+        },
+        "oracle": {
+          "end": 261,
+          "start": 41,
+          "text": "killed on a buffer overrun, killed by a signal, or never spawned — is reported by its cause (`ENOBUFS` naming the byte limit, the signal name, the spawn error code), reports no exit status, and appends no child stderr."
+        }
+      },
+      "review": {
+        "outcome": "pass",
+        "rationale": "Each retained boundary is a statement-relative exact substring and names the criterion's subject, condition, and required result without crossing into a neighboring clause."
+      }
+    },
+    {
+      "id": "quoin-FR-001-AC-3-920d0c3552",
+      "repository": "quoin",
+      "document": "spec/functional/FR-001-parse-command-line.md",
+      "rowId": "FR-001-AC-3",
+      "property": "universal",
+      "statement": "A long flag with no following value is recorded as boolean `true`",
+      "normalizedStatement": "a long flag with no following value is recorded as boolean `true`",
+      "challenge": "overbroad",
+      "expectedSpans": {
+        "domain": {
+          "end": 11,
+          "start": 2,
+          "text": "long flag"
+        },
+        "precondition": {
+          "end": 38,
+          "start": 12,
+          "text": "with no following value is"
+        },
+        "oracle": {
+          "end": 65,
+          "start": 39,
+          "text": "recorded as boolean `true`"
+        }
+      },
+      "review": {
+        "outcome": "pass",
+        "rationale": "Each retained boundary is a statement-relative exact substring and names the criterion's subject, condition, and required result without crossing into a neighboring clause."
+      }
+    },
+    {
+      "id": "quoin-FR-030-AC-13-a7c4298e61",
+      "repository": "quoin",
+      "document": "spec/functional/FR-030-evidence-store.md",
+      "rowId": "FR-030-AC-13",
+      "property": "invariant",
+      "statement": "A store file that exists and is not readable JSON raises a diagnostic naming the file and the cause, never a bare `SyntaxError`. One unreadable **run** file is skipped and reported rather than fatal; the binding graph and the baseline are not, because reading an empty graph would report every obligation as undischarged.",
+      "normalizedStatement": "a store file that exists and is not readable json raises a diagnostic naming the file and the cause, never a bare `syntaxerror`. one unreadable **run** file is skipped and reported rather than fatal; the binding graph and the baseline are not, because reading an empty graph would report every obligation as undischarged.",
+      "challenge": "coordinated",
+      "expectedSpans": {
+        "domain": {
+          "end": 12,
+          "start": 2,
+          "text": "store file"
+        },
+        "precondition": {
+          "end": 49,
+          "start": 13,
+          "text": "that exists and is not readable JSON"
+        },
+        "oracle": {
+          "end": 321,
+          "start": 50,
+          "text": "raises a diagnostic naming the file and the cause, never a bare `SyntaxError`. One unreadable **run** file is skipped and reported rather than fatal; the binding graph and the baseline are not, because reading an empty graph would report every obligation as undischarged."
+        }
+      },
+      "review": {
+        "outcome": "pass",
+        "rationale": "Each retained boundary is a statement-relative exact substring and names the criterion's subject, condition, and required result without crossing into a neighboring clause."
+      }
+    },
+    {
+      "id": "quoin-FR-014-AC-3-105ebc382c",
+      "repository": "quoin",
+      "document": "spec/functional/FR-014-emit-authoring-contract.md",
+      "rowId": "FR-014-AC-3",
+      "property": "universal",
+      "statement": "A type with neither skeleton nor schema is marked \"manifest only\"",
+      "normalizedStatement": "a type with neither skeleton nor schema is marked \"manifest only\"",
+      "challenge": "truncated",
+      "expectedSpans": {
+        "domain": {
+          "end": 6,
+          "start": 2,
+          "text": "type"
+        },
+        "precondition": {
+          "end": 42,
+          "start": 7,
+          "text": "with neither skeleton nor schema is"
+        },
+        "oracle": {
+          "end": 65,
+          "start": 43,
+          "text": "marked \"manifest only\""
+        }
+      },
+      "review": {
+        "outcome": "pass",
+        "rationale": "Each retained boundary is a statement-relative exact substring and names the criterion's subject, condition, and required result without crossing into a neighboring clause."
+      }
+    },
+    {
+      "id": "quoin-FR-031-AC-9-297fc9793c",
+      "repository": "quoin",
+      "document": "spec/functional/FR-031-catalog-driven-advisor.md",
+      "rowId": "FR-031-AC-9",
+      "property": "invariant",
+      "statement": "A module whose `manifest.yaml` cannot be read or parsed is skipped and reported on the merged catalog, never thrown: a catalog missing one module's entries is still worth having, and the command that would crash is the one an operator runs to diagnose the module.",
+      "normalizedStatement": "a module whose `manifest.yaml` cannot be read or parsed is skipped and reported on the merged catalog, never thrown: a catalog missing one module's entries is still worth having, and the command that would crash is the one an operator runs to diagnose the module.",
+      "challenge": "coordinated",
+      "expectedSpans": {
+        "domain": {
+          "end": 8,
+          "start": 2,
+          "text": "module"
+        },
+        "precondition": {
+          "end": 37,
+          "start": 9,
+          "text": "whose `manifest.yaml` cannot"
+        },
+        "oracle": {
+          "end": 263,
+          "start": 38,
+          "text": "be read or parsed is skipped and reported on the merged catalog, never thrown: a catalog missing one module's entries is still worth having, and the command that would crash is the one an operator runs to diagnose the module."
+        }
+      },
+      "review": {
+        "outcome": "pass",
+        "rationale": "Each retained boundary is a statement-relative exact substring and names the criterion's subject, condition, and required result without crossing into a neighboring clause."
+      }
+    },
+    {
+      "id": "quoin-FR-025-AC-8-e47ab28daa",
+      "repository": "quoin",
+      "document": "spec/functional/FR-025-resolve-authoring-organization.md",
+      "rowId": "FR-025-AC-8",
+      "property": "universal",
+      "statement": "A worktree or submodule, whose `.git` is a file naming a Git directory, resolves the organization its main checkout does",
+      "normalizedStatement": "a worktree or submodule, whose `.git` is a file naming a git directory, resolves the organization its main checkout does",
+      "challenge": "coordinated",
+      "expectedSpans": {
+        "domain": {
+          "end": 23,
+          "start": 2,
+          "text": "worktree or submodule"
+        },
+        "precondition": {
+          "end": 47,
+          "start": 25,
+          "text": "whose `.git` is a file"
+        },
+        "oracle": {
+          "end": 120,
+          "start": 48,
+          "text": "naming a Git directory, resolves the organization its main checkout does"
+        }
+      },
+      "review": {
+        "outcome": "pass",
+        "rationale": "Each retained boundary is a statement-relative exact substring and names the criterion's subject, condition, and required result without crossing into a neighboring clause."
+      }
+    },
+    {
+      "id": "quoin-FR-031-AC-23-a69def5430",
+      "repository": "quoin",
+      "document": "spec/functional/FR-031-catalog-driven-advisor.md",
+      "rowId": "FR-031-AC-23",
+      "property": "invariant",
+      "statement": "A payload whose `uncatalogued-verification-method` diagnostics carry no `value` — an engine predating quire-rs CR-091 — degrades the advisor to the two-state behaviour with an explicit \"engine predates vocabulary classification\" note, never a misclassification; a payload carrying no such diagnostics at all is not degraded, because under an engine of either vintage it means every authored value is catalogued.",
+      "normalizedStatement": "a payload whose `uncatalogued-verification-method` diagnostics carry no `value` — an engine predating quire-rs cr-091 — degrades the advisor to the two-state behaviour with an explicit \"engine predates vocabulary classification\" note, never a misclassification; a payload carrying no such diagnostics at all is not degraded, because under an engine of either vintage it means every authored value is catalogued.",
+      "challenge": "hyphenated",
+      "expectedSpans": {
+        "domain": {
+          "end": 9,
+          "start": 2,
+          "text": "payload"
+        },
+        "precondition": {
+          "end": 93,
+          "start": 10,
+          "text": "whose `uncatalogued-verification-method` diagnostics carry no `value` — an engine"
+        },
+        "oracle": {
+          "end": 415,
+          "start": 94,
+          "text": "predating quire-rs CR-091 — degrades the advisor to the two-state behaviour with an explicit \"engine predates vocabulary classification\" note, never a misclassification; a payload carrying no such diagnostics at all is not degraded, because under an engine of either vintage it means every authored value is catalogued."
+        }
+      },
+      "review": {
+        "outcome": "pass",
+        "rationale": "Each retained boundary is a statement-relative exact substring and names the criterion's subject, condition, and required result without crossing into a neighboring clause."
+      }
+    },
+    {
+      "id": "quoin-FR-028-AC-3-0a3904a4a2",
+      "repository": "quoin",
+      "document": "spec/functional/FR-028-generate-property-tests-from-criteria.md",
+      "rowId": "FR-028-AC-3",
+      "property": "universal",
+      "statement": "Any record whose `property` is `example` or `unclassified` yields no unattended test",
+      "normalizedStatement": "any record whose `property` is `example` or `unclassified` yields no unattended test",
+      "challenge": "nested",
+      "expectedSpans": {
+        "domain": {
+          "end": 10,
+          "start": 4,
+          "text": "record"
+        },
+        "precondition": {
+          "end": 58,
+          "start": 11,
+          "text": "whose `property` is `example` or `unclassified`"
+        },
+        "oracle": {
+          "end": 84,
+          "start": 59,
+          "text": "yields no unattended test"
+        }
+      },
+      "review": {
+        "outcome": "pass",
+        "rationale": "Each retained boundary is a statement-relative exact substring and names the criterion's subject, condition, and required result without crossing into a neighboring clause."
+      }
+    },
+    {
+      "id": "quoin-FR-028-AC-8-d2d3238c64",
+      "repository": "quoin",
+      "document": "spec/functional/FR-028-generate-property-tests-from-criteria.md",
+      "rowId": "FR-028-AC-8",
+      "property": "universal",
+      "statement": "A criterion whose domain, precondition, or oracle cannot be cited yields a recorded reason and no test",
+      "normalizedStatement": "a criterion whose domain, precondition, or oracle cannot be cited yields a recorded reason and no test",
+      "challenge": "coordinated",
+      "expectedSpans": {
+        "domain": {
+          "end": 11,
+          "start": 2,
+          "text": "criterion"
+        },
+        "precondition": {
+          "end": 56,
+          "start": 12,
+          "text": "whose domain, precondition, or oracle cannot"
+        },
+        "oracle": {
+          "end": 102,
+          "start": 57,
+          "text": "be cited yields a recorded reason and no test"
+        }
+      },
+      "review": {
+        "outcome": "pass",
+        "rationale": "Each retained boundary is a statement-relative exact substring and names the criterion's subject, condition, and required result without crossing into a neighboring clause."
+      }
+    },
+    {
+      "id": "quoin-FR-031-AC-2-9533368264",
+      "repository": "quoin",
+      "document": "spec/functional/FR-031-catalog-driven-advisor.md",
+      "rowId": "FR-031-AC-2",
+      "property": "universal",
+      "statement": "An obligation whose spec declares an `attack_surface` object is recommended DAST, SAST and negative/abuse testing rather than defaulting to Test.",
+      "normalizedStatement": "an obligation whose spec declares an `attack_surface` object is recommended dast, sast and negative/abuse testing rather than defaulting to test.",
+      "challenge": "coordinated",
+      "expectedSpans": {
+        "domain": {
+          "end": 13,
+          "start": 3,
+          "text": "obligation"
+        },
+        "precondition": {
+          "end": 60,
+          "start": 14,
+          "text": "whose spec declares an `attack_surface` object"
+        },
+        "oracle": {
+          "end": 145,
+          "start": 61,
+          "text": "is recommended DAST, SAST and negative/abuse testing rather than defaulting to Test."
+        }
+      },
+      "review": {
+        "outcome": "pass",
+        "rationale": "Each retained boundary is a statement-relative exact substring and names the criterion's subject, condition, and required result without crossing into a neighboring clause."
+      }
+    },
+    {
+      "id": "quoin-FR-002-AC-3-aed0a0e503",
+      "repository": "quoin",
+      "document": "spec/functional/FR-002-print-package-version.md",
+      "rowId": "FR-002-AC-3",
+      "property": "error-case",
+      "statement": "A missing or non-string version field raises an error",
+      "normalizedStatement": "a missing or non-string version field raises an error",
+      "challenge": "justified-refusal",
+      "expectedRefusal": "span:refused-weak-boundary",
+      "review": {
+        "outcome": "pass",
+        "rationale": "The statement does not expose all three boundaries without inventing an unstated subject or condition; explicit refusal is safer than a guessed span."
+      }
+    },
+    {
+      "id": "quoin-FR-030-AC-3-28682eefb9",
+      "repository": "quoin",
+      "document": "spec/functional/FR-030-evidence-store.md",
+      "rowId": "FR-030-AC-3",
+      "property": "idempotence",
+      "statement": "Two suites at one commit produce two files, and a re-run at the same commit is last-write-wins with one file retained.",
+      "normalizedStatement": "two suites at one commit produce two files, and a re-run at the same commit is last-write-wins with one file retained.",
+      "challenge": "justified-refusal",
+      "expectedRefusal": "span:refused-no-explicit-domain",
+      "review": {
+        "outcome": "pass",
+        "rationale": "The statement does not expose all three boundaries without inventing an unstated subject or condition; explicit refusal is safer than a guessed span."
+      }
+    },
+    {
+      "id": "quoin-FR-029-AC-14-5d6f45d3cf",
+      "repository": "quoin",
+      "document": "spec/functional/FR-029-consume-the-quire-json-contract.md",
+      "rowId": "FR-029-AC-14",
+      "property": "invariant",
+      "statement": "Vendored schema provenance names an exact 40-character quire-rs commit. Refresh resolves that commit and reads each published schema from the git object, never from the source checkout's current branch or dirty working tree; an unavailable or ambiguously resolved revision is refused.",
+      "normalizedStatement": "vendored schema provenance names an exact 40-character quire-rs commit. refresh resolves that commit and reads each published schema from the git object, never from the source checkout's current branch or dirty working tree; an unavailable or ambiguously resolved revision is refused.",
+      "challenge": "justified-refusal",
+      "expectedRefusal": "span:refused-no-explicit-domain",
+      "review": {
+        "outcome": "pass",
+        "rationale": "The statement does not expose all three boundaries without inventing an unstated subject or condition; explicit refusal is safer than a guessed span."
+      }
+    },
+    {
+      "id": "quoin-FR-013-AC-4-f0f645ad39",
+      "repository": "quoin",
+      "document": "spec/functional/FR-013-resolve-requested-types.md",
+      "rowId": "FR-013-AC-4",
+      "property": "ordering",
+      "statement": "An unknown type raises an error listing available types in sorted order",
+      "normalizedStatement": "an unknown type raises an error listing available types in sorted order",
+      "challenge": "justified-refusal",
+      "expectedRefusal": "span:refused-weak-boundary",
+      "review": {
+        "outcome": "pass",
+        "rationale": "The statement does not expose all three boundaries without inventing an unstated subject or condition; explicit refusal is safer than a guessed span."
+      }
+    },
+    {
+      "id": "quoin-FR-003-AC-1-865884c064",
+      "repository": "quoin",
+      "document": "spec/functional/FR-003-print-usage-and-help.md",
+      "rowId": "FR-003-AC-1",
+      "property": "universal",
+      "statement": "No command prints the root usage",
+      "normalizedStatement": "no command prints the root usage",
+      "challenge": "justified-refusal",
+      "expectedRefusal": "span:refused-weak-boundary",
+      "review": {
+        "outcome": "pass",
+        "rationale": "The statement does not expose all three boundaries without inventing an unstated subject or condition; explicit refusal is safer than a guessed span."
+      }
+    },
+    {
+      "id": "quoin-FR-005-AC-1-786fc6615d",
+      "repository": "quoin",
+      "document": "spec/functional/FR-005-reject-unknown-commands.md",
+      "rowId": "FR-005-AC-1",
+      "property": "error-case",
+      "statement": "An unknown command raises an error that includes usage",
+      "normalizedStatement": "an unknown command raises an error that includes usage",
+      "challenge": "justified-refusal",
+      "expectedRefusal": "span:refused-weak-boundary",
+      "review": {
+        "outcome": "pass",
+        "rationale": "The statement does not expose all three boundaries without inventing an unstated subject or condition; explicit refusal is safer than a guessed span."
+      }
+    },
+    {
+      "id": "quoin-FR-030-AC-8-8154829c83",
+      "repository": "quoin",
+      "document": "spec/functional/FR-030-evidence-store.md",
+      "rowId": "FR-030-AC-8",
+      "property": "invariant",
+      "statement": "`gc` deletes only runs that are neither the latest for their suite nor referenced by a binding, and `--dry-run` deletes nothing. The command declares no `--module` — gc never invokes quire and never loads a catalog — and its help says why.",
+      "normalizedStatement": "`gc` deletes only runs that are neither the latest for their suite nor referenced by a binding, and `--dry-run` deletes nothing. the command declares no `--module` — gc never invokes quire and never loads a catalog — and its help says why.",
+      "challenge": "justified-refusal",
+      "expectedRefusal": "span:refused-no-explicit-domain",
+      "review": {
+        "outcome": "pass",
+        "rationale": "The statement does not expose all three boundaries without inventing an unstated subject or condition; explicit refusal is safer than a guessed span."
+      }
+    },
+    {
+      "id": "quoin-FR-031-AC-1-b104dfa07d",
+      "repository": "quoin",
+      "document": "spec/functional/FR-031-catalog-driven-advisor.md",
+      "rowId": "FR-031-AC-1",
+      "property": "ordering",
+      "statement": "The merged catalog carries every declared method with its applicability rules intact, merges first-wins, reports a colliding id, and treats an undeclared catalog as empty.",
+      "normalizedStatement": "the merged catalog carries every declared method with its applicability rules intact, merges first-wins, reports a colliding id, and treats an undeclared catalog as empty.",
+      "challenge": "justified-refusal",
+      "expectedRefusal": "span:refused-no-explicit-domain",
+      "review": {
+        "outcome": "pass",
+        "rationale": "The statement does not expose all three boundaries without inventing an unstated subject or condition; explicit refusal is safer than a guessed span."
+      }
+    },
+    {
+      "id": "quoin-FR-005-AC-2-70b01685d8",
+      "repository": "quoin",
+      "document": "spec/functional/FR-005-reject-unknown-commands.md",
+      "rowId": "FR-005-AC-2",
+      "property": "error-case",
+      "statement": "An unknown `catalog` subcommand raises an error",
+      "normalizedStatement": "an unknown `catalog` subcommand raises an error",
+      "challenge": "justified-refusal",
+      "expectedRefusal": "span:refused-weak-boundary",
+      "review": {
+        "outcome": "pass",
+        "rationale": "The statement does not expose all three boundaries without inventing an unstated subject or condition; explicit refusal is safer than a guessed span."
+      }
+    },
+    {
+      "id": "quoin-FR-030-AC-12-d6dcb241a8",
+      "repository": "quoin",
+      "document": "spec/functional/FR-030-evidence-store.md",
+      "rowId": "FR-030-AC-12",
+      "property": "invariant",
+      "statement": "The **latest** run of a suite is the newest by `timestamp`, never the lexicographically last filename: a run filename is a commit prefix, which carries no time. `gc` retains that run, and the auditor reads it. Two runs sharing a timestamp order by commit, so a tie resolves the same way on every machine.",
+      "normalizedStatement": "the **latest** run of a suite is the newest by `timestamp`, never the lexicographically last filename: a run filename is a commit prefix, which carries no time. `gc` retains that run, and the auditor reads it. two runs sharing a timestamp order by commit, so a tie resolves the same way on every machine.",
+      "challenge": "justified-refusal",
+      "expectedRefusal": "span:refused-no-explicit-domain",
+      "review": {
+        "outcome": "pass",
+        "rationale": "The statement does not expose all three boundaries without inventing an unstated subject or condition; explicit refusal is safer than a guessed span."
+      }
+    },
+    {
+      "id": "quire-rs-FR-050-AC-14-3b8b7b2477",
+      "repository": "quire-rs",
+      "document": "spec/functional/FR-050-declarative-coverage-computation.md",
+      "rowId": "FR-050-AC-14",
+      "property": "invariant",
+      "statement": "A declared model that mints zero trace targets is reported distinctly from full coverage — never as `100%` — and `quire coverage --strict` exits non-zero on it.",
+      "normalizedStatement": "a declared model that mints zero trace targets is reported distinctly from full coverage — never as `100%` — and `quire coverage --strict` exits non-zero on it.",
+      "challenge": "hyphenated",
+      "expectedSpans": {
+        "domain": {
+          "end": 16,
+          "start": 2,
+          "text": "declared model"
+        },
+        "precondition": {
+          "end": 46,
+          "start": 17,
+          "text": "that mints zero trace targets"
+        },
+        "oracle": {
+          "end": 164,
+          "start": 47,
+          "text": "is reported distinctly from full coverage — never as `100%` — and `quire coverage --strict` exits non-zero on it."
+        }
+      },
+      "review": {
+        "outcome": "pass",
+        "rationale": "Each retained boundary is a statement-relative exact substring and names the criterion's subject, condition, and required result without crossing into a neighboring clause."
+      }
+    },
+    {
+      "id": "quire-rs-FR-063-AC-2-daccd44754",
+      "repository": "quire-rs",
+      "document": "spec/functional/FR-063-metric-provenance-envelope.md",
+      "rowId": "FR-063-AC-2",
+      "property": "round-trip",
+      "statement": "A measurement that did not run serializes with a distinct state and a stated reason, carries no `value`, `population`, `examined` or `matched`, is unequal to the same metric measured as zero, and round-trips through the contract.",
+      "normalizedStatement": "a measurement that did not run serializes with a distinct state and a stated reason, carries no `value`, `population`, `examined` or `matched`, is unequal to the same metric measured as zero, and round-trips through the contract.",
+      "challenge": "hyphenated",
+      "expectedSpans": {
+        "domain": {
+          "end": 13,
+          "start": 2,
+          "text": "measurement"
+        },
+        "precondition": {
+          "end": 83,
+          "start": 14,
+          "text": "that did not run serializes with a distinct state and a stated reason"
+        },
+        "oracle": {
+          "end": 229,
+          "start": 85,
+          "text": "carries no `value`, `population`, `examined` or `matched`, is unequal to the same metric measured as zero, and round-trips through the contract."
+        }
+      },
+      "review": {
+        "outcome": "pass",
+        "rationale": "Each retained boundary is a statement-relative exact substring and names the criterion's subject, condition, and required result without crossing into a neighboring clause."
+      }
+    },
+    {
+      "id": "quire-rs-FR-002-AC-2-2ae46bce99",
+      "repository": "quire-rs",
+      "document": "spec/functional/FR-002-schema-validation-pipeline.md",
+      "rowId": "FR-002-AC-2",
+      "property": "universal",
+      "statement": "Given a current with `title: \"valid\"` and a patch `{ \"title\": \"\" }` against a schema requiring `title` `minLength: 1`, the merged-validated call returns `SchemaViolation` with field path `title` — caught because the merge produced an invalid `title`, even though the patch alone has the field set.",
+      "normalizedStatement": "given a current with `title: \"valid\"` and a patch `{ \"title\": \"\" }` against a schema requiring `title` `minlength: 1`, the merged-validated call returns `schemaviolation` with field path `title` — caught because the merge produced an invalid `title`, even though the patch alone has the field set.",
+      "challenge": "hyphenated",
+      "expectedSpans": {
+        "domain": {
+          "end": 15,
+          "start": 8,
+          "text": "current"
+        },
+        "precondition": {
+          "end": 144,
+          "start": 16,
+          "text": "with `title: \"valid\"` and a patch `{ \"title\": \"\" }` against a schema requiring `title` `minLength: 1`, the merged-validated call"
+        },
+        "oracle": {
+          "end": 299,
+          "start": 145,
+          "text": "returns `SchemaViolation` with field path `title` — caught because the merge produced an invalid `title`, even though the patch alone has the field set."
+        }
+      },
+      "review": {
+        "outcome": "pass",
+        "rationale": "Each retained boundary is a statement-relative exact substring and names the criterion's subject, condition, and required result without crossing into a neighboring clause."
+      }
+    },
+    {
+      "id": "quire-rs-FR-050-AC-18-85ad5f0054",
+      "repository": "quire-rs",
+      "document": "spec/functional/FR-050-declarative-coverage-computation.md",
+      "rowId": "FR-050-AC-18",
+      "property": "invariant",
+      "statement": "During coverage computation, a corpus document whose archetype no trace target, document reference, or grammar binding names has its body left unmaterialised; a declared archetype's body is parsed; selection is decided on the header tier and never by filename; a module declaring no `traceability:` model still errors (`ModelUndeclared`) before any selection; and the report is byte-identical to a full-parse engine's (CR-049).",
+      "normalizedStatement": "during coverage computation, a corpus document whose archetype no trace target, document reference, or grammar binding names has its body left unmaterialised; a declared archetype's body is parsed; selection is decided on the header tier and never by filename; a module declaring no `traceability:` model still errors (`modelundeclared`) before any selection; and the report is byte-identical to a full-parse engine's (cr-049).",
+      "challenge": "hyphenated",
+      "expectedSpans": {
+        "domain": {
+          "end": 46,
+          "start": 31,
+          "text": "corpus document"
+        },
+        "precondition": {
+          "end": 118,
+          "start": 47,
+          "text": "whose archetype no trace target, document reference, or grammar binding"
+        },
+        "oracle": {
+          "end": 427,
+          "start": 119,
+          "text": "names has its body left unmaterialised; a declared archetype's body is parsed; selection is decided on the header tier and never by filename; a module declaring no `traceability:` model still errors (`ModelUndeclared`) before any selection; and the report is byte-identical to a full-parse engine's (CR-049)."
+        }
+      },
+      "review": {
+        "outcome": "pass",
+        "rationale": "Each retained boundary is a statement-relative exact substring and names the criterion's subject, condition, and required result without crossing into a neighboring clause."
+      }
+    },
+    {
+      "id": "quire-rs-FR-011-AC-6-710aa03a0c",
+      "repository": "quire-rs",
+      "document": "spec/functional/FR-011-body-extraction-dsl.md",
+      "rowId": "FR-011-AC-6",
+      "property": "universal",
+      "statement": "A DSL with both `match` and `iterate_over` set under `yield_pattern` produces `QuireError::ArchetypeLoadError` at load time, NOT at evaluation time.",
+      "normalizedStatement": "a dsl with both `match` and `iterate_over` set under `yield_pattern` produces `quireerror::archetypeloaderror` at load time, not at evaluation time.",
+      "challenge": "nested",
+      "expectedSpans": {
+        "domain": {
+          "end": 5,
+          "start": 2,
+          "text": "DSL"
+        },
+        "precondition": {
+          "end": 68,
+          "start": 6,
+          "text": "with both `match` and `iterate_over` set under `yield_pattern`"
+        },
+        "oracle": {
+          "end": 148,
+          "start": 69,
+          "text": "produces `QuireError::ArchetypeLoadError` at load time, NOT at evaluation time."
+        }
+      },
+      "review": {
+        "outcome": "pass",
+        "rationale": "Each retained boundary is a statement-relative exact substring and names the criterion's subject, condition, and required result without crossing into a neighboring clause."
+      }
+    },
+    {
+      "id": "quire-rs-FR-050-AC-19-4dd16e775c",
+      "repository": "quire-rs",
+      "document": "spec/functional/FR-050-declarative-coverage-computation.md",
+      "rowId": "FR-050-AC-19",
+      "property": "invariant",
+      "statement": "A declaration that selects nothing is reported in `CoverageReport.diagnostics` and as a `quire validate` warning, never in silence: a declared `archetype:` no corpus document has is reported when the model minted no id at all, and a model declaring no `trace_targets` is reported as minting nothing. `quire coverage` and `quire validate` report the same machine token for the same finding. The list is empty — and the key absent — for a model whose declarations select, so FR-050-AC-7 byte-identity holds (CR-054, amended CR-059, narrowed CR-062).",
+      "normalizedStatement": "a declaration that selects nothing is reported in `coveragereport.diagnostics` and as a `quire validate` warning, never in silence: a declared `archetype:` no corpus document has is reported when the model minted no id at all, and a model declaring no `trace_targets` is reported as minting nothing. `quire coverage` and `quire validate` report the same machine token for the same finding. the list is empty — and the key absent — for a model whose declarations select, so fr-050-ac-7 byte-identity holds (cr-054, amended cr-059, narrowed cr-062).",
+      "challenge": "hyphenated",
+      "expectedSpans": {
+        "domain": {
+          "end": 13,
+          "start": 2,
+          "text": "declaration"
+        },
+        "precondition": {
+          "end": 34,
+          "start": 14,
+          "text": "that selects nothing"
+        },
+        "oracle": {
+          "end": 551,
+          "start": 35,
+          "text": "is reported in `CoverageReport.diagnostics` and as a `quire validate` warning, never in silence: a declared `archetype:` no corpus document has is reported when the model minted no id at all, and a model declaring no `trace_targets` is reported as minting nothing. `quire coverage` and `quire validate` report the same machine token for the same finding. The list is empty — and the key absent — for a model whose declarations select, so FR-050-AC-7 byte-identity holds (CR-054, amended CR-059, narrowed CR-062)."
+        }
+      },
+      "review": {
+        "outcome": "pass",
+        "rationale": "Each retained boundary is a statement-relative exact substring and names the criterion's subject, condition, and required result without crossing into a neighboring clause."
+      }
+    },
+    {
+      "id": "quire-rs-FR-011-AC-15-3fc85d408c",
+      "repository": "quire-rs",
+      "document": "spec/functional/FR-011-body-extraction-dsl.md",
+      "rowId": "FR-011-AC-15",
+      "property": "universal",
+      "statement": "A locator with `regex: '(\\d+)'` projects capture group 1 from its resolved value; with `regex: '\\d+'` (no group) it projects group 0 (the whole match); a value that does not match drops the key (`required:false`) or returns `MissingField` (`required:true`); and an invalid (uncompilable) `regex` yields an empty projected value (the locator contributes nothing, no panic).",
+      "normalizedStatement": "a locator with `regex: '(\\d+)'` projects capture group 1 from its resolved value; with `regex: '\\d+'` (no group) it projects group 0 (the whole match); a value that does not match drops the key (`required:false`) or returns `missingfield` (`required:true`); and an invalid (uncompilable) `regex` yields an empty projected value (the locator contributes nothing, no panic).",
+      "challenge": "nested",
+      "expectedSpans": {
+        "domain": {
+          "end": 9,
+          "start": 2,
+          "text": "locator"
+        },
+        "precondition": {
+          "end": 115,
+          "start": 10,
+          "text": "with `regex: '(\\d+)'` projects capture group 1 from its resolved value; with `regex: '\\d+'` (no group) it"
+        },
+        "oracle": {
+          "end": 372,
+          "start": 116,
+          "text": "projects group 0 (the whole match); a value that does not match drops the key (`required:false`) or returns `MissingField` (`required:true`); and an invalid (uncompilable) `regex` yields an empty projected value (the locator contributes nothing, no panic)."
+        }
+      },
+      "review": {
+        "outcome": "pass",
+        "rationale": "Each retained boundary is a statement-relative exact substring and names the criterion's subject, condition, and required result without crossing into a neighboring clause."
+      }
+    },
+    {
+      "id": "quire-rs-FR-050-AC-23-eb4976d1b7",
+      "repository": "quire-rs",
+      "document": "spec/functional/FR-050-declarative-coverage-computation.md",
+      "rowId": "FR-050-AC-23",
+      "property": "invariant",
+      "statement": "A trace id that is the row id of a **status-carrying** reference row and is bound by more than one distinct source symbol — distinctness is the `(path, symbol)` pair — is reported in `CoverageReport.shared_trace_ids` with the id and every binding symbol, deterministically ordered by id and inside each record by `(path, symbol)`. An id whose rows carry no status (an acceptance criterion verified by several tests) is never reported. A corpus whose every status-row id is uniquely bound reports an empty list, the key is absent from the JSON, and the payload is byte-identical to a report from an engine predating the field. The list does not affect `totals`, and `--strict` does not gate on it (CR-087).",
+      "normalizedStatement": "a trace id that is the row id of a **status-carrying** reference row and is bound by more than one distinct source symbol — distinctness is the `(path, symbol)` pair — is reported in `coveragereport.shared_trace_ids` with the id and every binding symbol, deterministically ordered by id and inside each record by `(path, symbol)`. an id whose rows carry no status (an acceptance criterion verified by several tests) is never reported. a corpus whose every status-row id is uniquely bound reports an empty list, the key is absent from the json, and the payload is byte-identical to a report from an engine predating the field. the list does not affect `totals`, and `--strict` does not gate on it (cr-087).",
+      "challenge": "hyphenated",
+      "expectedSpans": {
+        "domain": {
+          "end": 10,
+          "start": 2,
+          "text": "trace id"
+        },
+        "precondition": {
+          "end": 72,
+          "start": 11,
+          "text": "that is the row id of a **status-carrying** reference row and"
+        },
+        "oracle": {
+          "end": 709,
+          "start": 73,
+          "text": "is bound by more than one distinct source symbol — distinctness is the `(path, symbol)` pair — is reported in `CoverageReport.shared_trace_ids` with the id and every binding symbol, deterministically ordered by id and inside each record by `(path, symbol)`. An id whose rows carry no status (an acceptance criterion verified by several tests) is never reported. A corpus whose every status-row id is uniquely bound reports an empty list, the key is absent from the JSON, and the payload is byte-identical to a report from an engine predating the field. The list does not affect `totals`, and `--strict` does not gate on it (CR-087)."
+        }
+      },
+      "review": {
+        "outcome": "pass",
+        "rationale": "Each retained boundary is a statement-relative exact substring and names the criterion's subject, condition, and required result without crossing into a neighboring clause."
+      }
+    },
+    {
+      "id": "quire-rs-FR-011-AC-16-0db532dac8",
+      "repository": "quire-rs",
+      "document": "spec/functional/FR-011-body-extraction-dsl.md",
+      "rowId": "FR-011-AC-16",
+      "property": "universal",
+      "statement": "A `table_row` locator with `under_section: None` resolves against the joined section bodies of the whole document and uses the first table found (first-then-any for a required column); a `list_item`/`code_block` locator with `under_section: None` likewise reads the joined-body substrate.",
+      "normalizedStatement": "a `table_row` locator with `under_section: none` resolves against the joined section bodies of the whole document and uses the first table found (first-then-any for a required column); a `list_item`/`code_block` locator with `under_section: none` likewise reads the joined-body substrate.",
+      "challenge": "hyphenated",
+      "expectedSpans": {
+        "domain": {
+          "end": 21,
+          "start": 2,
+          "text": "`table_row` locator"
+        },
+        "precondition": {
+          "end": 84,
+          "start": 22,
+          "text": "with `under_section: None` resolves against the joined section"
+        },
+        "oracle": {
+          "end": 288,
+          "start": 85,
+          "text": "bodies of the whole document and uses the first table found (first-then-any for a required column); a `list_item`/`code_block` locator with `under_section: None` likewise reads the joined-body substrate."
+        }
+      },
+      "review": {
+        "outcome": "pass",
+        "rationale": "Each retained boundary is a statement-relative exact substring and names the criterion's subject, condition, and required result without crossing into a neighboring clause."
+      }
+    },
+    {
+      "id": "quire-rs-FR-052-AC-16-2cbf3263a7",
+      "repository": "quire-rs",
+      "document": "spec/functional/FR-052-acceptance-criteria-property-classification.md",
+      "rowId": "FR-052-AC-16",
+      "property": "invariant",
+      "statement": "A criterion whose `extractable` is true reports `extraction: extractable`; a criterion whose `extractable` is false and whose `property` is one of the four metamorphic shapes reports `extraction: candidate`; every other criterion reports `extraction: not-extractable`, so an `Example` or `Unclassified` criterion is never a candidate.",
+      "normalizedStatement": "a criterion whose `extractable` is true reports `extraction: extractable`; a criterion whose `extractable` is false and whose `property` is one of the four metamorphic shapes reports `extraction: candidate`; every other criterion reports `extraction: not-extractable`, so an `example` or `unclassified` criterion is never a candidate.",
+      "challenge": "hyphenated",
+      "expectedSpans": {
+        "domain": {
+          "end": 11,
+          "start": 2,
+          "text": "criterion"
+        },
+        "precondition": {
+          "end": 39,
+          "start": 12,
+          "text": "whose `extractable` is true"
+        },
+        "oracle": {
+          "end": 334,
+          "start": 40,
+          "text": "reports `extraction: extractable`; a criterion whose `extractable` is false and whose `property` is one of the four metamorphic shapes reports `extraction: candidate`; every other criterion reports `extraction: not-extractable`, so an `Example` or `Unclassified` criterion is never a candidate."
+        }
+      },
+      "review": {
+        "outcome": "pass",
+        "rationale": "Each retained boundary is a statement-relative exact substring and names the criterion's subject, condition, and required result without crossing into a neighboring clause."
+      }
+    },
+    {
+      "id": "quire-rs-FR-004-AC-2-e352dfdefb",
+      "repository": "quire-rs",
+      "document": "spec/functional/FR-004-minijinja-strict-environment.md",
+      "rowId": "FR-004-AC-2",
+      "property": "concurrency",
+      "statement": "(RETIRED) A test constructs a `Renderer`, calls `render` from N=64 threads concurrently for 10000 iterations total, and asserts no panic, no race, byte-identical outputs.",
+      "normalizedStatement": "(retired) a test constructs a `renderer`, calls `render` from n=64 threads concurrently for 10000 iterations total, and asserts no panic, no race, byte-identical outputs.",
+      "challenge": "justified-refusal",
+      "expectedRefusal": "span:refused-no-explicit-domain",
+      "review": {
+        "outcome": "pass",
+        "rationale": "The statement does not expose all three boundaries without inventing an unstated subject or condition; explicit refusal is safer than a guessed span."
+      }
+    },
+    {
+      "id": "quire-rs-FR-039-AC-5-1dd9304d49",
+      "repository": "quire-rs",
+      "document": "spec/functional/FR-039-unlinked-reference-detection.md",
+      "rowId": "FR-039-AC-5",
+      "property": "idempotence",
+      "statement": "A token already inside a Markdown link — as link text `[FR-008](./FR-008-….md)` or inside an [FR-008](./FR-008-byte-exact-slicing.md) destination — yields no finding; re-running `unlinked_references` after applying all `AutoFix` suggestions yields no `AutoFix` finding for the converted tokens (idempotence).",
+      "normalizedStatement": "a token already inside a markdown link — as link text `[fr-008](./fr-008-....md)` or inside an [fr-008](./fr-008-byte-exact-slicing.md) destination — yields no finding; re-running `unlinked_references` after applying all `autofix` suggestions yields no `autofix` finding for the converted tokens (idempotence).",
+      "challenge": "justified-refusal",
+      "expectedRefusal": "span:refused-weak-boundary",
+      "review": {
+        "outcome": "pass",
+        "rationale": "The statement does not expose all three boundaries without inventing an unstated subject or condition; explicit refusal is safer than a guessed span."
+      }
+    },
+    {
+      "id": "quire-rs-FR-002-AC-4-1c81f1a9a5",
+      "repository": "quire-rs",
+      "document": "spec/functional/FR-002-schema-validation-pipeline.md",
+      "rowId": "FR-002-AC-4",
+      "property": "invariant",
+      "statement": "A proptest fuzzes patches across all archetypes in the test corpus and confirms `apply_patch` returns a valid `Value` (per schema) or a typed error — never a panic.",
+      "normalizedStatement": "a proptest fuzzes patches across all archetypes in the test corpus and confirms `apply_patch` returns a valid `value` (per schema) or a typed error — never a panic.",
+      "challenge": "justified-refusal",
+      "expectedRefusal": "span:refused-weak-boundary",
+      "review": {
+        "outcome": "pass",
+        "rationale": "The statement does not expose all three boundaries without inventing an unstated subject or condition; explicit refusal is safer than a guessed span."
+      }
+    },
+    {
+      "id": "quire-rs-StR-006-VC-4-9983d7b2c5",
+      "repository": "quire-rs",
+      "document": "spec/stakeholder/StR-006-whole-spec-corpus.md",
+      "rowId": "StR-006-VC-4",
+      "property": "lifecycle",
+      "statement": "The corpus value is `Send + Sync` and immutable after construction, mirroring the `Registry` lifecycle, so it can be shared across threads for read-only analysis.",
+      "normalizedStatement": "the corpus value is `send + sync` and immutable after construction, mirroring the `registry` lifecycle, so it can be shared across threads for read-only analysis.",
+      "challenge": "justified-refusal",
+      "expectedRefusal": "span:refused-no-explicit-domain",
+      "review": {
+        "outcome": "pass",
+        "rationale": "The statement does not expose all three boundaries without inventing an unstated subject or condition; explicit refusal is safer than a guessed span."
+      }
+    },
+    {
+      "id": "quire-rs-FR-011-AC-21-7c4830ee91",
+      "repository": "quire-rs",
+      "document": "spec/functional/FR-011-body-extraction-dsl.md",
+      "rowId": "FR-011-AC-21",
+      "property": "ordering",
+      "statement": "(CR-006) A locator with `multiple: true` yields every resolved value as a JSON array, in document order — a `code_block(mermaid under Workflow)` locator against a section holding two mermaid blocks yields both. Without the flag the same locator yields only the first (unchanged first-wins contract). In a fallback chain the flag is read from the hit primitive; under multi-yield each iteration unit keeps its own full list.",
+      "normalizedStatement": "(cr-006) a locator with `multiple: true` yields every resolved value as a json array, in document order — a `code_block(mermaid under workflow)` locator against a section holding two mermaid blocks yields both. without the flag the same locator yields only the first (unchanged first-wins contract). in a fallback chain the flag is read from the hit primitive; under multi-yield each iteration unit keeps its own full list.",
+      "challenge": "justified-refusal",
+      "expectedRefusal": "span:refused-no-explicit-domain",
+      "review": {
+        "outcome": "pass",
+        "rationale": "The statement does not expose all three boundaries without inventing an unstated subject or condition; explicit refusal is safer than a guessed span."
+      }
+    },
+    {
+      "id": "quire-rs-FR-022-AC-6-888f9deb29",
+      "repository": "quire-rs",
+      "document": "spec/functional/FR-022-writeback-primitives.md",
+      "rowId": "FR-022-AC-6",
+      "property": "round-trip",
+      "statement": "Replacing a section's content with **its own current content** returns the document byte-identical, for every section including an **empty** one — a heading immediately followed by the next heading, or by end of file. A speculative rewrite is therefore a no-op rather than a source of churn.",
+      "normalizedStatement": "replacing a section's content with **its own current content** returns the document byte-identical, for every section including an **empty** one — a heading immediately followed by the next heading, or by end of file. a speculative rewrite is therefore a no-op rather than a source of churn.",
+      "challenge": "justified-refusal",
+      "expectedRefusal": "span:refused-no-explicit-domain",
+      "review": {
+        "outcome": "pass",
+        "rationale": "The statement does not expose all three boundaries without inventing an unstated subject or condition; explicit refusal is safer than a guessed span."
+      }
+    },
+    {
+      "id": "quire-rs-FR-002-AC-3-dbb547e8b8",
+      "repository": "quire-rs",
+      "document": "spec/functional/FR-002-schema-validation-pipeline.md",
+      "rowId": "FR-002-AC-3",
+      "property": "universal",
+      "statement": "A patch introducing an unknown key on an object where the schema sets `additionalProperties: false` raises `SchemaViolation` naming the unknown key.",
+      "normalizedStatement": "a patch introducing an unknown key on an object where the schema sets `additionalproperties: false` raises `schemaviolation` naming the unknown key.",
+      "challenge": "justified-refusal",
+      "expectedRefusal": "span:refused-weak-boundary",
+      "review": {
+        "outcome": "pass",
+        "rationale": "The statement does not expose all three boundaries without inventing an unstated subject or condition; explicit refusal is safer than a guessed span."
+      }
+    },
+    {
+      "id": "quire-rs-FR-014-AC-5-c2f16a8fe5",
+      "repository": "quire-rs",
+      "document": "spec/functional/FR-014-module-activation.md",
+      "rowId": "FR-014-AC-5",
+      "property": "concurrency",
+      "statement": "A test loads `spec-artifacts-iso` + `spec-artifacts-app` + `spec-artifacts-process` simultaneously and asserts the registry contains exactly the union of their archetypes (17 at v1 baseline) with no collisions.",
+      "normalizedStatement": "a test loads `spec-artifacts-iso` + `spec-artifacts-app` + `spec-artifacts-process` simultaneously and asserts the registry contains exactly the union of their archetypes (17 at v1 baseline) with no collisions.",
+      "challenge": "justified-refusal",
+      "expectedRefusal": "span:refused-weak-boundary",
+      "review": {
+        "outcome": "pass",
+        "rationale": "The statement does not expose all three boundaries without inventing an unstated subject or condition; explicit refusal is safer than a guessed span."
+      }
+    },
+    {
+      "id": "quire-rs-NFR-020-AC-2-f0663d1fab",
+      "repository": "quire-rs",
+      "document": "spec/non-functional/NFR-020-filament-extraction-boundary.md",
+      "rowId": "NFR-020-AC-2",
+      "property": "idempotence",
+      "statement": "A deterministic fixture suite runs the same extraction input repeatedly and observes identical output ordering and record ids.",
+      "normalizedStatement": "a deterministic fixture suite runs the same extraction input repeatedly and observes identical output ordering and record ids.",
+      "challenge": "justified-refusal",
+      "expectedRefusal": "span:refused-weak-boundary",
+      "review": {
+        "outcome": "pass",
+        "rationale": "The statement does not expose all three boundaries without inventing an unstated subject or condition; explicit refusal is safer than a guessed span."
+      }
+    },
+    {
+      "id": "quire-rs-FR-014-AC-1-831757d3c7",
+      "repository": "quire-rs",
+      "document": "spec/functional/FR-014-module-activation.md",
+      "rowId": "FR-014-AC-1",
+      "property": "ordering",
+      "statement": "Loading two paths each containing a different `spec-artifacts-*` module produces a registry whose `module_names()` iterator yields both module names in deterministic order (sorted by load order).",
+      "normalizedStatement": "loading two paths each containing a different `spec-artifacts-*` module produces a registry whose `module_names()` iterator yields both module names in deterministic order (sorted by load order).",
+      "challenge": "justified-refusal",
+      "expectedRefusal": "span:refused-no-explicit-domain",
+      "review": {
+        "outcome": "pass",
+        "rationale": "The statement does not expose all three boundaries without inventing an unstated subject or condition; explicit refusal is safer than a guessed span."
+      }
+    },
+    {
+      "id": "filament-ide-rs-FR-095-AC-6-858285860e",
+      "repository": "filament-ide-rs",
+      "document": "spec/core/functional/FR-095-projection-container-binding.md",
+      "rowId": "FR-095-AC-6",
+      "property": "concurrency",
+      "statement": "A binding whose container record does not yet exist creates it and serves the caller without a prior index run, and two callers creating the same container concurrently converge on one record",
+      "normalizedStatement": "a binding whose container record does not yet exist creates it and serves the caller without a prior index run, and two callers creating the same container concurrently converge on one record",
+      "challenge": "coordinated",
+      "expectedSpans": {
+        "domain": {
+          "end": 9,
+          "start": 2,
+          "text": "binding"
+        },
+        "precondition": {
+          "end": 51,
+          "start": 10,
+          "text": "whose container record does not yet exist"
+        },
+        "oracle": {
+          "end": 191,
+          "start": 52,
+          "text": "creates it and serves the caller without a prior index run, and two callers creating the same container concurrently converge on one record"
+        }
+      },
+      "review": {
+        "outcome": "pass",
+        "rationale": "Each retained boundary is a statement-relative exact substring and names the criterion's subject, condition, and required result without crossing into a neighboring clause."
+      }
+    },
+    {
+      "id": "filament-ide-rs-FR-049-AC-6-11d5ab089c",
+      "repository": "filament-ide-rs",
+      "document": "spec/plan-sync/functional/FR-049-target-driver-trait.md",
+      "rowId": "FR-049-AC-6",
+      "property": "error-case",
+      "statement": "A pull that cannot enumerate its scope completely returns an error and the engine aborts the run before merge, emitting no tombstone for the unenumerated nodes",
+      "normalizedStatement": "a pull that cannot enumerate its scope completely returns an error and the engine aborts the run before merge, emitting no tombstone for the unenumerated nodes",
+      "challenge": "coordinated",
+      "expectedSpans": {
+        "domain": {
+          "end": 6,
+          "start": 2,
+          "text": "pull"
+        },
+        "precondition": {
+          "end": 28,
+          "start": 7,
+          "text": "that cannot enumerate"
+        },
+        "oracle": {
+          "end": 159,
+          "start": 29,
+          "text": "its scope completely returns an error and the engine aborts the run before merge, emitting no tombstone for the unenumerated nodes"
+        }
+      },
+      "review": {
+        "outcome": "pass",
+        "rationale": "Each retained boundary is a statement-relative exact substring and names the criterion's subject, condition, and required result without crossing into a neighboring clause."
+      }
+    },
+    {
+      "id": "filament-ide-rs-FR-098-AC-10-4aa24e7173",
+      "repository": "filament-ide-rs",
+      "document": "spec/backend/functional/FR-098-deployment-and-discovery.md",
+      "rowId": "FR-098-AC-10",
+      "property": "invariant",
+      "statement": "An unhealthy owner that does not release the endpoint within the bounded wait is refused to, with an error naming its pid; it is never `SIGKILL`ed",
+      "normalizedStatement": "an unhealthy owner that does not release the endpoint within the bounded wait is refused to, with an error naming its pid; it is never `sigkill`ed",
+      "challenge": "wrong-subject",
+      "expectedSpans": {
+        "domain": {
+          "end": 18,
+          "start": 3,
+          "text": "unhealthy owner"
+        },
+        "precondition": {
+          "end": 77,
+          "start": 19,
+          "text": "that does not release the endpoint within the bounded wait"
+        },
+        "oracle": {
+          "end": 146,
+          "start": 78,
+          "text": "is refused to, with an error naming its pid; it is never `SIGKILL`ed"
+        }
+      },
+      "review": {
+        "outcome": "pass",
+        "rationale": "Each retained boundary is a statement-relative exact substring and names the criterion's subject, condition, and required result without crossing into a neighboring clause."
+      }
+    },
+    {
+      "id": "filament-ide-rs-FR-080-AC-19-79ca7ff6dc",
+      "repository": "filament-ide-rs",
+      "document": "spec/platform-shell/functional/FR-080-bounded-neighborhood-graph-rendering.md",
+      "rowId": "FR-080-AC-19",
+      "property": "ordering",
+      "statement": "An object type absent from the sorted vocabulary, or whose swatch token resolves empty, is drawn in the themed default accent, never unstyled or blank",
+      "normalizedStatement": "an object type absent from the sorted vocabulary, or whose swatch token resolves empty, is drawn in the themed default accent, never unstyled or blank",
+      "challenge": "coordinated",
+      "expectedSpans": {
+        "domain": {
+          "end": 14,
+          "start": 3,
+          "text": "object type"
+        },
+        "precondition": {
+          "end": 86,
+          "start": 15,
+          "text": "absent from the sorted vocabulary, or whose swatch token resolves empty"
+        },
+        "oracle": {
+          "end": 150,
+          "start": 88,
+          "text": "is drawn in the themed default accent, never unstyled or blank"
+        }
+      },
+      "review": {
+        "outcome": "pass",
+        "rationale": "Each retained boundary is a statement-relative exact substring and names the criterion's subject, condition, and required result without crossing into a neighboring clause."
+      }
+    },
+    {
+      "id": "filament-ide-rs-FR-098-AC-4-d2eeb9a33c",
+      "repository": "filament-ide-rs",
+      "document": "spec/backend/functional/FR-098-deployment-and-discovery.md",
+      "rowId": "FR-098-AC-4",
+      "property": "universal",
+      "statement": "An endpoint with nothing behind it is refused with `SVC_BACKEND_UNAVAILABLE`",
+      "normalizedStatement": "an endpoint with nothing behind it is refused with `svc_backend_unavailable`",
+      "challenge": "overbroad",
+      "expectedSpans": {
+        "domain": {
+          "end": 11,
+          "start": 3,
+          "text": "endpoint"
+        },
+        "precondition": {
+          "end": 37,
+          "start": 12,
+          "text": "with nothing behind it is"
+        },
+        "oracle": {
+          "end": 76,
+          "start": 38,
+          "text": "refused with `SVC_BACKEND_UNAVAILABLE`"
+        }
+      },
+      "review": {
+        "outcome": "pass",
+        "rationale": "Each retained boundary is a statement-relative exact substring and names the criterion's subject, condition, and required result without crossing into a neighboring clause."
+      }
+    },
+    {
+      "id": "filament-ide-rs-FR-025-AC-9-9607c5a219",
+      "repository": "filament-ide-rs",
+      "document": "spec/data/functional/FR-025-index-run-consistency.md",
+      "rowId": "FR-025-AC-9",
+      "property": "invariant",
+      "statement": "A `running` row whose liveness heartbeat is older than the stale lease is reclaimed by the next run start — the orphan marked `interrupted`, the new run proceeding — while a row heartbeating within the lease is never stolen (the contender waits and surfaces the scope diagnostic)",
+      "normalizedStatement": "a `running` row whose liveness heartbeat is older than the stale lease is reclaimed by the next run start — the orphan marked `interrupted`, the new run proceeding — while a row heartbeating within the lease is never stolen (the contender waits and surfaces the scope diagnostic)",
+      "challenge": "nested",
+      "expectedSpans": {
+        "domain": {
+          "end": 15,
+          "start": 2,
+          "text": "`running` row"
+        },
+        "precondition": {
+          "end": 40,
+          "start": 16,
+          "text": "whose liveness heartbeat"
+        },
+        "oracle": {
+          "end": 283,
+          "start": 41,
+          "text": "is older than the stale lease is reclaimed by the next run start — the orphan marked `interrupted`, the new run proceeding — while a row heartbeating within the lease is never stolen (the contender waits and surfaces the scope diagnostic)"
+        }
+      },
+      "review": {
+        "outcome": "pass",
+        "rationale": "Each retained boundary is a statement-relative exact substring and names the criterion's subject, condition, and required result without crossing into a neighboring clause."
+      }
+    },
+    {
+      "id": "filament-ide-rs-FR-104-AC-4-1fee549214",
+      "repository": "filament-ide-rs",
+      "document": "spec/backend/functional/FR-104-daemon-work-dir-registry.md",
+      "rowId": "FR-104-AC-4",
+      "property": "universal",
+      "statement": "A persisted legacy `dev_dir` with no `workspace_roots` list is read as the single-entry registry containing it, matching the FR-070 migration",
+      "normalizedStatement": "a persisted legacy `dev_dir` with no `workspace_roots` list is read as the single-entry registry containing it, matching the fr-070 migration",
+      "challenge": "hyphenated",
+      "expectedSpans": {
+        "domain": {
+          "end": 28,
+          "start": 2,
+          "text": "persisted legacy `dev_dir`"
+        },
+        "precondition": {
+          "end": 62,
+          "start": 29,
+          "text": "with no `workspace_roots` list is"
+        },
+        "oracle": {
+          "end": 141,
+          "start": 63,
+          "text": "read as the single-entry registry containing it, matching the FR-070 migration"
+        }
+      },
+      "review": {
+        "outcome": "pass",
+        "rationale": "Each retained boundary is a statement-relative exact substring and names the criterion's subject, condition, and required result without crossing into a neighboring clause."
+      }
+    },
+    {
+      "id": "filament-ide-rs-FR-056-AC-9-c01965daea",
+      "repository": "filament-ide-rs",
+      "document": "spec/plan-sync/functional/FR-056-github-issues-driver.md",
+      "rowId": "FR-056-AC-9",
+      "property": "invariant",
+      "statement": "A mapped issue whose body yields no well-formed marker block is quarantined with an open integrity conflict, excluded from remote-deletion inference, and never tombstoned by absence",
+      "normalizedStatement": "a mapped issue whose body yields no well-formed marker block is quarantined with an open integrity conflict, excluded from remote-deletion inference, and never tombstoned by absence",
+      "challenge": "hyphenated",
+      "expectedSpans": {
+        "domain": {
+          "end": 14,
+          "start": 2,
+          "text": "mapped issue"
+        },
+        "precondition": {
+          "end": 60,
+          "start": 15,
+          "text": "whose body yields no well-formed marker block"
+        },
+        "oracle": {
+          "end": 181,
+          "start": 61,
+          "text": "is quarantined with an open integrity conflict, excluded from remote-deletion inference, and never tombstoned by absence"
+        }
+      },
+      "review": {
+        "outcome": "pass",
+        "rationale": "Each retained boundary is a statement-relative exact substring and names the criterion's subject, condition, and required result without crossing into a neighboring clause."
+      }
+    },
+    {
+      "id": "filament-ide-rs-FR-105-AC-6-f25c949184",
+      "repository": "filament-ide-rs",
+      "document": "spec/backend/functional/FR-105-always-served-work-dirs.md",
+      "rowId": "FR-105-AC-6",
+      "property": "universal",
+      "statement": "A project whose watch cannot be established is recorded with a stable error code in the watcher status while the remaining projects stay watched",
+      "normalizedStatement": "a project whose watch cannot be established is recorded with a stable error code in the watcher status while the remaining projects stay watched",
+      "challenge": "wrong-subject",
+      "expectedSpans": {
+        "domain": {
+          "end": 9,
+          "start": 2,
+          "text": "project"
+        },
+        "precondition": {
+          "end": 28,
+          "start": 10,
+          "text": "whose watch cannot"
+        },
+        "oracle": {
+          "end": 144,
+          "start": 29,
+          "text": "be established is recorded with a stable error code in the watcher status while the remaining projects stay watched"
+        }
+      },
+      "review": {
+        "outcome": "pass",
+        "rationale": "Each retained boundary is a statement-relative exact substring and names the criterion's subject, condition, and required result without crossing into a neighboring clause."
+      }
+    },
+    {
+      "id": "filament-ide-rs-FR-068-AC-11-3257b3915d",
+      "repository": "filament-ide-rs",
+      "document": "spec/platform-shell/functional/FR-068-unified-workspace-graph-indexing.md",
+      "rowId": "FR-068-AC-11",
+      "property": "invariant",
+      "statement": "A link whose target cannot be resolved to a projection node is recorded as an unresolved-edge entry surfaced through the reindex summary — never silently dropped and never guessed onto a same-code artifact in a repository the link did not name — and a later run in which the target becomes resolvable produces the edge and clears the record without re-extracting the source",
+      "normalizedStatement": "a link whose target cannot be resolved to a projection node is recorded as an unresolved-edge entry surfaced through the reindex summary — never silently dropped and never guessed onto a same-code artifact in a repository the link did not name — and a later run in which the target becomes resolvable produces the edge and clears the record without re-extracting the source",
+      "challenge": "hyphenated",
+      "expectedSpans": {
+        "domain": {
+          "end": 6,
+          "start": 2,
+          "text": "link"
+        },
+        "precondition": {
+          "end": 26,
+          "start": 7,
+          "text": "whose target cannot"
+        },
+        "oracle": {
+          "end": 377,
+          "start": 27,
+          "text": "be resolved to a projection node is recorded as an unresolved-edge entry surfaced through the reindex summary — never silently dropped and never guessed onto a same-code artifact in a repository the link did not name — and a later run in which the target becomes resolvable produces the edge and clears the record without re-extracting the source"
+        }
+      },
+      "review": {
+        "outcome": "pass",
+        "rationale": "Each retained boundary is a statement-relative exact substring and names the criterion's subject, condition, and required result without crossing into a neighboring clause."
+      }
+    },
+    {
+      "id": "filament-ide-rs-FR-038-AC-2-090a028d99",
+      "repository": "filament-ide-rs",
+      "document": "spec/cli-mcp-agent/functional/FR-038-mcp-server-tool-surface.md",
+      "rowId": "FR-038-AC-2",
+      "property": "error-case",
+      "statement": "With markup granted, the `markup` tool is enumerated and serves FR-014 markup operations; with markup not granted, it is absent from enumeration and calling it returns an error without any service dispatch",
+      "normalizedStatement": "with markup granted, the `markup` tool is enumerated and serves fr-014 markup operations; with markup not granted, it is absent from enumeration and calling it returns an error without any service dispatch",
+      "challenge": "justified-refusal",
+      "expectedRefusal": "span:refused-no-explicit-domain",
+      "review": {
+        "outcome": "pass",
+        "rationale": "The statement does not expose all three boundaries without inventing an unstated subject or condition; explicit refusal is safer than a guessed span."
+      }
+    },
+    {
+      "id": "filament-ide-rs-FR-021-AC-1-0cb87764ef",
+      "repository": "filament-ide-rs",
+      "document": "spec/core/functional/FR-021-identity-and-scope-primitives.md",
+      "rowId": "FR-021-AC-1",
+      "property": "idempotence",
+      "statement": "Opening the same project root twice, including via differently spelled but equivalent paths, yields equal project scopes with the same `scope_id`",
+      "normalizedStatement": "opening the same project root twice, including via differently spelled but equivalent paths, yields equal project scopes with the same `scope_id`",
+      "challenge": "justified-refusal",
+      "expectedRefusal": "span:refused-no-explicit-domain",
+      "review": {
+        "outcome": "pass",
+        "rationale": "The statement does not expose all three boundaries without inventing an unstated subject or condition; explicit refusal is safer than a guessed span."
+      }
+    },
+    {
+      "id": "filament-ide-rs-FR-099-AC-7-61dbdbda37",
+      "repository": "filament-ide-rs",
+      "document": "spec/backend/functional/FR-099-admin-operations.md",
+      "rowId": "FR-099-AC-7",
+      "property": "invariant",
+      "statement": "Health reports a reachable database as reachable with no detail, and an unreachable one as unreachable with a leading diagnostic-code detail — never free text with a connection string at its head",
+      "normalizedStatement": "health reports a reachable database as reachable with no detail, and an unreachable one as unreachable with a leading diagnostic-code detail — never free text with a connection string at its head",
+      "challenge": "justified-refusal",
+      "expectedRefusal": "span:refused-no-explicit-domain",
+      "review": {
+        "outcome": "pass",
+        "rationale": "The statement does not expose all three boundaries without inventing an unstated subject or condition; explicit refusal is safer than a guessed span."
+      }
+    },
+    {
+      "id": "filament-ide-rs-FR-002-AC-7-5bc65d58e0",
+      "repository": "filament-ide-rs",
+      "document": "spec/data/functional/FR-002-persist-core-projection.md",
+      "rowId": "FR-002-AC-7",
+      "property": "lifecycle",
+      "statement": "Every reindex records an index-run row that reaches a terminal lifecycle state",
+      "normalizedStatement": "every reindex records an index-run row that reaches a terminal lifecycle state",
+      "challenge": "justified-refusal",
+      "expectedRefusal": "span:refused-weak-boundary",
+      "review": {
+        "outcome": "pass",
+        "rationale": "The statement does not expose all three boundaries without inventing an unstated subject or condition; explicit refusal is safer than a guessed span."
+      }
+    },
+    {
+      "id": "filament-ide-rs-FR-096-AC-1-1178c1e47a",
+      "repository": "filament-ide-rs",
+      "document": "spec/backend/functional/FR-096-backend-contract.md",
+      "rowId": "FR-096-AC-1",
+      "property": "round-trip",
+      "statement": "Every operation round-trips: a serialized envelope deserializes to an equal value",
+      "normalizedStatement": "every operation round-trips: a serialized envelope deserializes to an equal value",
+      "challenge": "justified-refusal",
+      "expectedRefusal": "span:refused-weak-boundary",
+      "review": {
+        "outcome": "pass",
+        "rationale": "The statement does not expose all three boundaries without inventing an unstated subject or condition; explicit refusal is safer than a guessed span."
+      }
+    },
+    {
+      "id": "filament-ide-rs-FR-096-AC-6-41c61ac8ee",
+      "repository": "filament-ide-rs",
+      "document": "spec/backend/functional/FR-096-backend-contract.md",
+      "rowId": "FR-096-AC-6",
+      "property": "universal",
+      "statement": "A client and backend at different contract revisions refuse at handshake rather than coercing",
+      "normalizedStatement": "a client and backend at different contract revisions refuse at handshake rather than coercing",
+      "challenge": "justified-refusal",
+      "expectedRefusal": "span:refused-weak-boundary",
+      "review": {
+        "outcome": "pass",
+        "rationale": "The statement does not expose all three boundaries without inventing an unstated subject or condition; explicit refusal is safer than a guessed span."
+      }
+    },
+    {
+      "id": "filament-ide-rs-FR-010-AC-1-d033d8034b",
+      "repository": "filament-ide-rs",
+      "document": "spec/markups/functional/FR-010-legacy-feedback-import.md",
+      "rowId": "FR-010-AC-1",
+      "property": "idempotence",
+      "statement": "Import is idempotent for unchanged legacy sources, reconciling per [FR-027](./FR-027-import-reconciliation-semantics.md)",
+      "normalizedStatement": "import is idempotent for unchanged legacy sources, reconciling per [fr-027](./fr-027-import-reconciliation-semantics.md)",
+      "challenge": "justified-refusal",
+      "expectedRefusal": "span:refused-no-explicit-domain",
+      "review": {
+        "outcome": "pass",
+        "rationale": "The statement does not expose all three boundaries without inventing an unstated subject or condition; explicit refusal is safer than a guessed span."
+      }
+    },
+    {
+      "id": "filament-ide-rs-FR-105-AC-1-3fab81346d",
+      "repository": "filament-ide-rs",
+      "document": "spec/backend/functional/FR-105-always-served-work-dirs.md",
+      "rowId": "FR-105-AC-1",
+      "property": "invariant",
+      "statement": "With a daemon serving and no client ever connected, editing a Markdown artifact under a configured root results in a completed workspace reindex whose graph reflects the edit, observable by a CLI query afterward — the desktop application never runs",
+      "normalizedStatement": "with a daemon serving and no client ever connected, editing a markdown artifact under a configured root results in a completed workspace reindex whose graph reflects the edit, observable by a cli query afterward — the desktop application never runs",
+      "challenge": "justified-refusal",
+      "expectedRefusal": "span:refused-no-explicit-domain",
+      "review": {
+        "outcome": "pass",
+        "rationale": "The statement does not expose all three boundaries without inventing an unstated subject or condition; explicit refusal is safer than a guessed span."
+      }
+    },
+    {
+      "id": "filament-ide-rs-FR-036-AC-6-2650e597e7",
+      "repository": "filament-ide-rs",
+      "document": "spec/distribution/functional/FR-036-postgres-sidecar-lifecycle.md",
+      "rowId": "FR-036-AC-6",
+      "property": "lifecycle",
+      "statement": "An injected startup failure emits a stable error code, message, and remedy — a `DIST_` registry code for sidecar lifecycle failures, or the Data module's `DATA_MIGRATION_` code surfaced unchanged for migration failures",
+      "normalizedStatement": "an injected startup failure emits a stable error code, message, and remedy — a `dist_` registry code for sidecar lifecycle failures, or the data module's `data_migration_` code surfaced unchanged for migration failures",
+      "challenge": "justified-refusal",
+      "expectedRefusal": "span:refused-weak-boundary",
+      "review": {
+        "outcome": "pass",
+        "rationale": "The statement does not expose all three boundaries without inventing an unstated subject or condition; explicit refusal is safer than a guessed span."
+      }
+    },
+    {
+      "id": "filament-ide-rs-FR-040-AC-1-0fc3b314c5",
+      "repository": "filament-ide-rs",
+      "document": "spec/cli-mcp-agent/functional/FR-040-agent-session-runtime.md",
+      "rowId": "FR-040-AC-1",
+      "property": "round-trip",
+      "statement": "A launch yields a `created` session; attach transitions it to `attached`; a typed input round-trips through the PTY and returns as a typed output event",
+      "normalizedStatement": "a launch yields a `created` session; attach transitions it to `attached`; a typed input round-trips through the pty and returns as a typed output event",
+      "challenge": "justified-refusal",
+      "expectedRefusal": "span:refused-weak-boundary",
+      "review": {
+        "outcome": "pass",
+        "rationale": "The statement does not expose all three boundaries without inventing an unstated subject or condition; explicit refusal is safer than a guessed span."
+      }
+    }
+  ]
+}
