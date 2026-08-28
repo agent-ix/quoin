@@ -13,9 +13,9 @@
         "digest": "sha256:24aeeff8f4b76c511e97a1b2642309f9dd5f5b75a99d96ddb963647b09dc5703"
       },
       "quoin": {
-        "version": "0.21.9-70-g4618ecc",
-        "revision": "4618ecc43de1b30043b7bd803ae930137639ebde",
-        "digest": "sha256:b6bf39229747f2a1eef449e1f87a6efef06422a905c53c4409bbce843ac041c1"
+        "version": "0.21.9-73-gbfdf3fc",
+        "revision": "bfdf3fc8b90fdbfc94941bf9225c38b37fb222b8",
+        "digest": "sha256:ae2132d1619555852dc00fc9b460f7a291957ad1bd2207fde4ebd494304e7e86"
       }
     },
     "environment": {
