@@ -14,7 +14,7 @@
       },
       "quoin": {
         "version": "0.21.9-73-gbfdf3fc",
-        "revision": "bfdf3fc8b90fdbfc94941bf9225c38b37fb222b8",
+        "revision": "4fa6d3b5c7c45a5401af198204497b090a8cbaf0",
         "digest": "sha256:ae2132d1619555852dc00fc9b460f7a291957ad1bd2207fde4ebd494304e7e86"
       }
     },
@@ -193201,14 +193201,7 @@
     ],
     "controlFailures": [],
     "notMechanized": ["AK-006"],
-    "notEvaluated": [
-      {
-        "id": "AK-006",
-        "cohort": "semantic-review-defect",
-        "source": "quoin.evidence-audit",
-        "reason": "spec/evidence/bindings.json is absent, so no suite-to-obligation join exists"
-      }
-    ],
+    "notEvaluated": [],
     "recall": 0.4
   },
   "cohort_digest": "sha256:b9aea0a0977161b736945d19fe9dafc0264a47b1ea3e884056205ad60e57bb3a"
