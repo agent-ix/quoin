@@ -108,12 +108,8 @@ export function assertRepository(name, root, locked, options = {}) {
         `${name} HEAD ${head} does not equal locked ${locked.revision}`,
       );
     }
-    const ancestry = spawnSync(
-      "git",
-      ["-C", root, "merge-base", "--is-ancestor", locked.revision, head],
-      { encoding: "utf8" },
-    );
-    if (ancestry.status !== 0) {
+    const commonAncestor = git(root, "merge-base", locked.revision, head);
+    if (commonAncestor !== locked.revision) {
       throw new Error(
         `${name} evidence overlay ${head} does not descend from locked code ${locked.revision}`,
       );
