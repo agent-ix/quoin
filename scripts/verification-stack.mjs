@@ -212,7 +212,7 @@ function assertToolchains(lock) {
 export function cliSelectsEngine(manifest, lockfile, engineRevision) {
   const blocks = lockfile
     .split("[[package]]")
-    .filter((block) => /\nname = "quire"\n/.test(block));
+    .filter((block) => /\nname = "quire-rs"\n/.test(block));
   if (blocks.length !== 1 || !blocks[0].includes(`#${engineRevision}`)) {
     throw new Error(
       `quire-cli Cargo.lock does not select locked Quire ${engineRevision}`,

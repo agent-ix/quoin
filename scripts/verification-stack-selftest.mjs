@@ -78,7 +78,7 @@ for (const [name, mutate, expected] of shapeMutations) {
 try {
   cliSelectsEngine(
     `[dependencies]\nquire = { git = "https://example/quire", rev = "${A}" }\n`,
-    `[[package]]\nname = "quire"\nsource = "git+https://example/quire?rev=${A}#${B}"\n`,
+    `[[package]]\nname = "quire-rs"\nsource = "git+https://example/quire?rev=${A}#${B}"\n`,
     A,
   );
   throw new Error("Cargo resolution mismatch was accepted");
@@ -86,6 +86,12 @@ try {
   if (!/does not select locked Quire/.test(String(error.message))) throw error;
   passed += 1;
 }
+cliSelectsEngine(
+  `[dependencies]\nquire-rs = { git = "https://example/quire", rev = "${A}" }\n`,
+  `[[package]]\nname = "quire-rs"\nsource = "git+https://example/quire?rev=${A}#${A}"\n`,
+  A,
+);
+passed += 1;
 
 if (parseSubmoduleRevision(` ${A} corpus (heads/main)`) !== A) {
   throw new Error("exact submodule revision was not preserved");
@@ -161,5 +167,5 @@ try {
 }
 
 console.log(
-  `verification-stack-selftest: ${passed}/${shapeMutations.length + 7} invariants verified`,
+  `verification-stack-selftest: ${passed}/${shapeMutations.length + 8} invariants verified`,
 );
