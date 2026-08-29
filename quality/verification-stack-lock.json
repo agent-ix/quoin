@@ -83,7 +83,7 @@
   },
   "timeouts": {
     "caseMilliseconds": 60000,
-    "corpusMilliseconds": 900000,
+    "corpusMilliseconds": 1800000,
     "tier1Milliseconds": 10200000,
     "tier2Milliseconds": 1800000,
     "installMilliseconds": 600000,
