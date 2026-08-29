@@ -295,7 +295,6 @@ export function measurementRecord(report, at) {
       "bounds.gap_count": "spec/assurance/MP-211-corpus-gap-count.md",
     },
     sectionHitRate: SECTION_HIT_RATE,
-    execute: execution.execute,
     scorerDigest,
   });
 }

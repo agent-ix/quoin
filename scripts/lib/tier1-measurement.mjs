@@ -6,6 +6,19 @@ import { tmpdir } from "node:os";
 
 import { parse as parseYaml } from "yaml";
 
+export function canonicalMeasurementSourceRevision(verificationStack) {
+  const source = verificationStack?.sources?.quoin;
+  if (
+    !/^[0-9a-f]{40}$/.test(source?.revision ?? "") ||
+    source?.sourceState !== "clean"
+  ) {
+    throw new Error(
+      "tier-1 measurement v2 requires an attested clean full Quoin source revision",
+    );
+  }
+  return source.revision;
+}
+
 function loadPlan(path) {
   const text = readFileSync(path, "utf8");
   const match = /^---\r?\n([\s\S]*?)\r?\n---/.exec(text);
@@ -24,7 +37,6 @@ export function createMeasurementRecord(report, at, options) {
     corpusMetricsPath,
     corpusPlanOverrides = {},
     sectionHitRate,
-    execute,
     scorerDigest,
   } = options;
   const ownDictionary = JSON.parse(readFileSync(metricsPath, "utf8"));
@@ -54,19 +66,13 @@ export function createMeasurementRecord(report, at, options) {
       ]),
     ),
   };
-  const revision = execute("git", ["-C", root, "rev-parse", "HEAD"]);
-  const status = execute("git", ["-C", root, "status", "--porcelain"]);
-  const sourceRevision = !revision.ok
-    ? "unknown-source-revision"
-    : !status.ok || status.stdout.trim() === ""
-      ? revision.stdout.trim()
-      : `${revision.stdout.trim()}+working-tree:${scorerDigest().slice(7, 23)}`;
   const verificationStack = report.provenance?.verification_stack;
   if (!verificationStack) {
     throw new Error(
       "tier-1 measurement v2 requires a canonical verification-stack attestation",
     );
   }
+  const sourceRevision = canonicalMeasurementSourceRevision(verificationStack);
 
   const observation = (metric, value, observationOptions = {}) => {
     const plan = plans[metric];

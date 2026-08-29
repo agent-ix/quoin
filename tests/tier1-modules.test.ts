@@ -18,6 +18,7 @@ import {
   validateCanonicalInventory,
 } from "../scripts/lib/tier1-corpus.mjs";
 import { createTier1Executor } from "../scripts/lib/tier1-execution.mjs";
+import { canonicalMeasurementSourceRevision } from "../scripts/lib/tier1-measurement.mjs";
 import { renderTier1 } from "../scripts/lib/tier1-render.mjs";
 import { localisationRate } from "../scripts/lib/tier1-scoring.mjs";
 
@@ -26,6 +27,28 @@ const roots: string[] = [];
 
 afterEach(() => {
   for (const root of roots.splice(0)) rmSync(root, { recursive: true });
+});
+
+describe("canonical Tier-1 measurement source identity", () => {
+  const revision = "b38a555228fb9053158baa89c8e487a5b7054e51";
+
+  test("uses the attested clean Quoin code revision, not evidence HEAD", () => {
+    expect(
+      canonicalMeasurementSourceRevision({
+        sources: { quoin: { revision, sourceState: "clean" } },
+      }),
+    ).toBe(revision);
+  });
+
+  test.each([
+    { revision: "main", sourceState: "clean" },
+    { revision, sourceState: "dirty" },
+    { revision: undefined, sourceState: "clean" },
+  ])("rejects mutable, dirty, or absent identity (%j)", (quoin) => {
+    expect(() =>
+      canonicalMeasurementSourceRevision({ sources: { quoin } }),
+    ).toThrow("attested clean full Quoin source revision");
+  });
 });
 
 function report() {
