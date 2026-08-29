@@ -176,6 +176,30 @@ describe("authored assurance arguments", () => {
         asOf: "2026-08-15T00:00:00.000Z",
       }),
     ).toThrow("does not match the authored participant");
+    expect(() =>
+      buildAuthoredArgumentView({
+        argument,
+        decisions: [
+          {
+            ...decision,
+            inventedScore: 100,
+          } as unknown as SufficiencyDecision,
+        ],
+        asOf: "2026-08-15T00:00:00.000Z",
+      }),
+    ).toThrow("unknown field inventedScore");
+    expect(() =>
+      buildAuthoredArgumentView({
+        argument: {
+          ...argument,
+          assumptions: [
+            { ...argument.assumptions[0], id: argument.top_claim.id },
+          ],
+        },
+        decisions: [decision],
+        asOf: "2026-08-15T00:00:00.000Z",
+      }),
+    ).toThrow("top claim, reasoning, and assumption ids must be unique");
   });
 
   // Trace: FR-047-AC-6

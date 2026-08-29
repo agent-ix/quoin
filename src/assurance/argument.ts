@@ -133,9 +133,11 @@ export function buildAuthoredArgumentView(
 ): AuthoredArgumentView {
   const argument = parseAssuranceArgument(request.argument);
   const asOf = instant("asOf", request.asOf);
+  const parsedDecisions = request.decisions.map((value) =>
+    parseSufficiencyDecision(value),
+  );
   const decisions = new Map<string, SufficiencyDecision>();
-  for (const decision of request.decisions) {
-    validateDecision(decision);
+  for (const decision of parsedDecisions) {
     const participant = argument.participants.find(
       (candidate) => candidate.id === decision.decidedBy,
     );
@@ -274,7 +276,7 @@ export function buildAuthoredArgumentView(
       ...relationship,
     })),
     ...(request.discharge ? { discharge: request.discharge } : {}),
-    unusedDecisions: request.decisions
+    unusedDecisions: parsedDecisions
       .filter(
         (decision) =>
           !used.has(decisionKey(decision.reasoningId, decision.criterion)),
@@ -446,6 +448,14 @@ export function parseAssuranceArgument(
   uniqueIds("challenges", challenges);
 
   const topClaimId = stringAt(top, "id");
+  const nodeIds = [
+    topClaimId,
+    ...reasoning.map((item) => item.id),
+    ...assumptions.map((item) => item.id),
+  ];
+  if (new Set(nodeIds).size !== nodeIds.length) {
+    throw new Error("top claim, reasoning, and assumption ids must be unique");
+  }
   const reasoningById = new Map(reasoning.map((item) => [item.id, item]));
   for (const reason of reasoning) {
     let cursor = reason;
@@ -586,29 +596,58 @@ function evaluateChallenge(
   };
 }
 
-function validateDecision(decision: SufficiencyDecision): void {
-  for (const [name, value] of [
-    ["reasoningId", decision.reasoningId],
-    ["criterion", decision.criterion],
-    ["decidedBy", decision.decidedBy],
-    ["authority", decision.authority],
-    ["sourceRevision", decision.sourceRevision],
-  ] as const) {
-    nonEmpty(name, value);
-  }
-  literal(decision.state, "decision state", ["satisfied", "open"] as const);
-  if (decision.state === "satisfied") {
-    nonEmptyStrings("evidenceRefs", decision.evidenceRefs);
-  } else if (!Array.isArray(decision.evidenceRefs)) {
-    throw new Error("evidenceRefs must be an array");
-  }
-  instant("decidedAt", decision.decidedAt);
-  instant("expiresAt", decision.expiresAt);
-  if (!/^sha256:[0-9a-f]{64}$/.test(decision.evidenceDigest)) {
+function parseSufficiencyDecision(value: unknown): SufficiencyDecision {
+  const decision = record("sufficiency decision", value);
+  exactShape(
+    decision,
+    "sufficiency decision",
+    [
+      "reasoningId",
+      "criterion",
+      "state",
+      "evidenceRefs",
+      "decidedBy",
+      "authority",
+      "decidedAt",
+      "expiresAt",
+      "sourceRevision",
+      "evidenceDigest",
+    ],
+    ["rationale"],
+  );
+  const state = literal(decision.state, "decision state", [
+    "satisfied",
+    "open",
+  ] as const);
+  const evidenceRefs = stringArray(
+    "evidenceRefs",
+    decision.evidenceRefs,
+    state === "satisfied",
+  );
+  const decidedAt = stringAt(decision, "decidedAt");
+  const expiresAt = stringAt(decision, "expiresAt");
+  instant("decidedAt", decidedAt);
+  instant("expiresAt", expiresAt);
+  const evidenceDigest = stringAt(decision, "evidenceDigest");
+  if (!/^sha256:[0-9a-f]{64}$/.test(evidenceDigest)) {
     throw new Error(
       "decision evidenceDigest must be sha256:<64 lowercase hex>",
     );
   }
+  const rationale = optionalStringAt(decision, "rationale");
+  return {
+    reasoningId: stringAt(decision, "reasoningId"),
+    criterion: stringAt(decision, "criterion"),
+    state,
+    evidenceRefs,
+    decidedBy: stringAt(decision, "decidedBy"),
+    authority: stringAt(decision, "authority"),
+    decidedAt,
+    expiresAt,
+    sourceRevision: stringAt(decision, "sourceRevision"),
+    evidenceDigest,
+    ...(rationale ? { rationale } : {}),
+  };
 }
 
 function currentDecision(
@@ -679,9 +718,34 @@ function exactKeys(
   }
 }
 
+function exactShape(
+  object: Record<string, unknown>,
+  name: string,
+  required: string[],
+  optional: string[] = [],
+): void {
+  const allowed = new Set([...required, ...optional]);
+  for (const key of Object.keys(object)) {
+    if (!allowed.has(key)) throw new Error(`${name} has unknown field ${key}`);
+  }
+  for (const key of required) {
+    if (!(key in object)) throw new Error(`${name} is missing ${key}`);
+  }
+}
+
 function nonEmptyStrings(name: string, value: unknown): string[] {
-  if (!Array.isArray(value) || value.length === 0) {
-    throw new Error(`${name} must be a non-empty array`);
+  return stringArray(name, value, true);
+}
+
+function stringArray(
+  name: string,
+  value: unknown,
+  requireValue: boolean,
+): string[] {
+  if (!Array.isArray(value) || (requireValue && value.length === 0)) {
+    throw new Error(
+      `${name} must be ${requireValue ? "a non-empty" : "an"} array`,
+    );
   }
   const strings = value.map((item) => {
     if (typeof item !== "string")

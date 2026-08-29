@@ -199,6 +199,32 @@ describe("clause discharge", () => {
         asOf: "2026-08-15T00:00:00.000Z",
       }),
     ).toThrow("authority must not be empty");
+
+    expect(() =>
+      buildDischargeReport({
+        binding,
+        facts: [
+          {
+            ...direct,
+            kind: "invented",
+          } as unknown as DischargeFact,
+        ],
+        asOf: "2026-08-15T00:00:00.000Z",
+      }),
+    ).toThrow("kind must be one of direct, disposition");
+
+    expect(() =>
+      buildDischargeReport({
+        binding,
+        facts: [
+          {
+            ...direct,
+            inventedScore: 100,
+          } as unknown as DischargeFact,
+        ],
+        asOf: "2026-08-15T00:00:00.000Z",
+      }),
+    ).toThrow("unknown field inventedScore");
   });
 
   // Trace: FR-046-AC-6
