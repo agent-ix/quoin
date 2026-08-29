@@ -27,7 +27,7 @@ import {
   adjudicationOf,
   byLanguage,
   canonicalCorpusInventory,
-  canonicalizeCorpusPaths,
+  canonicalizeCheckoutPaths,
   corpusInputDigest,
   comparability,
   compare,
@@ -40,21 +40,27 @@ import {
   ratchet,
   silentZeros,
   assertCanonicalCorpus,
+  assertPortableTier1Report,
   validateCanonicalInventory,
 } from "../scripts/bench-tier1.mjs";
 
 test("TC-1121 retained Tier-1 producer paths are checkout-independent", () => {
-  const root = join(tmpdir(), "machine-specific-checkout", "corpus");
+  const root = join(tmpdir(), "machine-specific-checkout");
   const source = {
-    path: join(root, "cases", "one", "input", "spec", "FR-001.md"),
-    message: `read ${join(root, "modules", "suite", "manifest.yaml")}`,
+    path: join(root, "corpus", "cases", "one", "input", "spec", "FR-001.md"),
+    message: `read ${join(root, "bench", "fixtures", "span", "FR-001.md")}`,
     outside: "/another/repository/spec.md",
   };
-  expect(canonicalizeCorpusPaths(source, root)).toEqual({
+  const canonical = canonicalizeCheckoutPaths(source, root);
+  expect(canonical).toEqual({
     path: "corpus/cases/one/input/spec/FR-001.md",
-    message: "read corpus/modules/suite/manifest.yaml",
+    message: "read bench/fixtures/span/FR-001.md",
     outside: "/another/repository/spec.md",
   });
+  expect(assertPortableTier1Report(canonical, root)).toBe(true);
+  expect(() => assertPortableTier1Report(source, root)).toThrow(
+    /leaks machine-local checkout paths/,
+  );
   expect(source.path).toContain("machine-specific-checkout");
 });
 

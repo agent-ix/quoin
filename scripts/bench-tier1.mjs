@@ -387,18 +387,16 @@ export function canonicalCorpusIdentity(root = join(ROOT, "corpus")) {
 }
 
 /**
- * Replace machine-local corpus roots before producer output enters scoring or
- * retained evidence. The case path remains explicit, but is rooted at the
- * stable `corpus/` boundary instead of whichever checkout ran the campaign.
+ * Replace the machine-local checkout root before producer output enters
+ * scoring or retained evidence. Paths remain explicit and repository-relative.
  */
-export function canonicalizeCorpusPaths(value, root = join(ROOT, "corpus")) {
+export function canonicalizeCheckoutPaths(value, root = ROOT) {
   const absoluteRoot = resolve(root);
   const localPrefix = `${absoluteRoot}${sep}`;
-  const canonicalPrefix = "corpus/";
   const visit = (item) => {
     if (typeof item === "string") {
-      if (item === absoluteRoot) return "corpus";
-      return item.split(localPrefix).join(canonicalPrefix);
+      if (item === absoluteRoot) return ".";
+      return item.split(localPrefix).join("");
     }
     if (Array.isArray(item)) return item.map(visit);
     if (item && typeof item === "object") {
@@ -409,6 +407,30 @@ export function canonicalizeCorpusPaths(value, root = join(ROOT, "corpus")) {
     return item;
   };
   return visit(value);
+}
+
+/** Fail a canonical run if any retained field still names this checkout. */
+export function assertPortableTier1Report(value, root = ROOT) {
+  const localPrefix = `${resolve(root)}${sep}`;
+  const leaked = [];
+  const visit = (item, path) => {
+    if (typeof item === "string" && item.includes(localPrefix)) {
+      leaked.push(path);
+    } else if (Array.isArray(item)) {
+      item.forEach((nested, index) => visit(nested, `${path}[${index}]`));
+    } else if (item && typeof item === "object") {
+      Object.entries(item).forEach(([key, nested]) =>
+        visit(nested, path ? `${path}.${key}` : key),
+      );
+    }
+  };
+  visit(value, "");
+  if (leaked.length > 0) {
+    throw new Error(
+      `bench-tier1: retained report leaks machine-local checkout paths at ${leaked.slice(0, 5).join(", ")}`,
+    );
+  }
+  return true;
 }
 
 async function main() {
@@ -559,7 +581,7 @@ async function main() {
       `bench-tier1: case ${index + 1}/${labels.corpora.length} ${corpus.name}`,
     );
     const { findings, metrics, diagnostics, untrackedSymbols } =
-      canonicalizeCorpusPaths(
+      canonicalizeCheckoutPaths(
         execution.findingsFor(
           quire,
           corpus.input,
@@ -576,7 +598,7 @@ async function main() {
     });
     propertyPayloads.push({
       case: corpus.name,
-      payload: canonicalizeCorpusPaths(
+      payload: canonicalizeCheckoutPaths(
         execution.properties(quire, corpus.input, corpus.module),
       ),
     });
@@ -604,10 +626,12 @@ async function main() {
   const groundingV2Labels = JSON.parse(
     readFileSync(GROUNDING_V2_LABELS, "utf8"),
   );
-  const groundingPayload = execution.properties(
-    quire,
-    GROUNDING_FIXTURE,
-    join(loaded.modulesRoot, "ecosystem"),
+  const groundingPayload = canonicalizeCheckoutPaths(
+    execution.properties(
+      quire,
+      GROUNDING_FIXTURE,
+      join(loaded.modulesRoot, "ecosystem"),
+    ),
   );
 
   // A metric-sourced finding counts only at the value its label expects.
@@ -761,6 +785,7 @@ async function main() {
     findings: scoredFindings.length,
     finding_records: scoredFindings,
   };
+  if (!experimental) assertPortableTier1Report(report);
 
   const previous =
     !experimental && existsSync(BASELINE)
