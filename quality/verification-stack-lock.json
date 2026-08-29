@@ -3,7 +3,7 @@
   "repositories": {
     "quoin": {
       "remote": "https://github.com/agent-ix/quoin",
-      "revision": "464ca965d5c0dbc5db86c38ddc4634c483aa6d0c"
+      "revision": "c802f2e12b2fc9cbc7af049debf267eaa8ca4856"
     },
     "quire": {
       "remote": "https://github.com/agent-ix/quire-rs",
@@ -15,7 +15,7 @@
     },
     "qa-corpus": {
       "remote": "https://github.com/agent-ix/qa-corpus",
-      "revision": "2b550987857893ef6e0140b359a364b4350e8ba8"
+      "revision": "165baeba7aca9de9665c0d476647726f7468d181"
     },
     "filament-ide-rs": {
       "remote": "https://github.com/agent-ix/filament-ide-rs",
@@ -70,11 +70,11 @@
     "src/quire/schemas/properties-v1.schema.json": "sha256:cc687773c35b3e71e82fc336e887ecc688a28b03e970e349b2921b8624e4d11c",
     "bench/metrics.json": "sha256:5876512767852fd9ee5a848de90e34c9626926bb768db87c2eaf28deb2d05764",
     "bench/tier1-mapping.json": "sha256:186e282f4197894f96e51e2dfe9fc6420f222512159abfd84be8be7c5c6ea90a",
-    "bench/guidance-evaluator-contract-v1.json": "sha256:919a9e1c655d25ddabdeed8229006571321112efe32e674851aa23c59445cbe3",
-    "bench/guidance-independent-review-v1.json": "sha256:988df9774031b273df181c7886f77f1a6a06f625cea7748c50cc277a32f70da4",
+    "bench/guidance-evaluator-contract-v1.json": "sha256:65d30cd8a1387a85ace601bec823cb320acb1d1c574da34a6cac8337bf407811",
+    "bench/guidance-independent-review-v1.json": "sha256:eb7c7aa96059600dca2febb297fa70ea0774ce39bc4726190e0bc653496113c2",
     "bench/span-grounding-labels.json": "sha256:897ef28979f5a3f607fdb27e740f1508b736ae5d9ce3dd91c7813f09f841c000",
     "bench/span-grounding-v2-labels.json": "sha256:4e10f34488c87439e7253668ea34773adb432b16bce574b1cc93fbf0343e2650",
-    "bench/span-breadth-v1-labels.json": "sha256:883be139a6c38bd6ac21c210037717bc68e4692b1927c3e12b710c356b91e71b",
+    "bench/span-breadth-v1-labels.json": "sha256:365e222d96239d3c553aa768d2d52f786fc1f869f28a27cd422c6b247e2389ab",
     "bench/answer-key.json": "sha256:ece1a7f5d254623cf79beff1113021f4f71359ac9a3c703d07cff0f8a45e9532",
     "bench/advisory-adjudication-v1.json": "sha256:87c575b6ca0c0886d874f609144f907f3ac270e08c2091bb2bb1ead725713e43",
     "corpus/config/metrics.json": "sha256:69ab8e5b8fc14e07408e034f0b791c3dd3356c9db78e1ac0dc961bcc0b47c0d7",
