@@ -1,7 +1,7 @@
 {
   "schemaVersion": "verification-stack-attestation-v1",
-  "lockDigest": "sha256:a141a65fd2dc17d9eb1ab02bdd8217c2258730400f62171ca2f233cea8515198",
-  "executableDigest": "sha256:15233e1baab48ff34bcb1bfa3b0bbe79b891874476b6d7da0cfdfd6885c2d1da",
+  "lockDigest": "sha256:b4fbb2a3726860376e3a98278cf2cf04e7dc419213865e0e8d2edb97492d4131",
+  "executableDigest": "sha256:26e535219e9981b8d525b4843c3192e19326887d5925dd199cf32861e3a169d9",
   "buildProfile": "release",
   "toolchains": {
     "node": "22.15.0",
@@ -10,17 +10,17 @@
   },
   "sources": {
     "quire": {
-      "revision": "e31680720233ca1efb0f95eeb90658bbcb5ebcf7",
+      "revision": "26397156f8676911bcd311d42538c1f6b49eb111",
       "sourceState": "clean",
       "remote": "https://github.com/agent-ix/quire-rs"
     },
     "quire-cli": {
-      "revision": "6a71790fad39f90a77e8ee894b17ab00095df024",
+      "revision": "0b396e8905da4b2993a129434b7ac9fd642d73e5",
       "sourceState": "clean",
       "remote": "https://github.com/agent-ix/quire-cli"
     },
     "qa-corpus": {
-      "revision": "8669070d307ac8f401c668fe3a892bdd12f8127d",
+      "revision": "7b81343ee05b3ef3a618839f64a5997fa16efd5c",
       "sourceState": "clean",
       "remote": "https://github.com/agent-ix/qa-corpus"
     },
@@ -40,7 +40,7 @@
       "remote": "https://github.com/agent-ix/spec-artifacts-iso"
     },
     "quoin": {
-      "revision": "4159b72dbfcfe3de061a6f969515debdb158b2b9",
+      "revision": "2f2841c661dcb2fbc1acfa625d4588c9f3b124b8",
       "sourceState": "clean",
       "remote": "https://github.com/agent-ix/quoin"
     },
@@ -75,21 +75,21 @@
     "package.json": "sha256:d664e658d594d71614fae6b435c0c1b6e4306bdb616a658550afbc1ad66001f3",
     "pnpm-lock.yaml": "sha256:7b8e18508dc953412732112931b9010d0d27f76cff111cb77df1ee7c96ed4b42",
     "Makefile": "sha256:92f3b903bd0b13e6c610616648ab03e70c72a27f51673b38a7ece9d857873efb",
-    ".github/workflows/build-test.yml": "sha256:fc3c9da0d8bbe6829baa85e0741f4c69dd53129298fd5a3db51eea5be66d5b9e",
-    "scripts/check-tool-drift.mjs": "sha256:6f9497ae8350fcf94e8544d61ec2f71d579f3568c7cc12e102ff9744558ae728",
-    "scripts/check-tool-drift-selftest.mjs": "sha256:79fb155016b09ba2cd29a3cba981a04bf1a4412adbf36aa2ebb1d7f828c7f4a5",
-    "scripts/verification-stack.mjs": "sha256:c45f22cd5c71da30ec0c8e5cf7a87a5224a9a79de0773859d6f7321ba2a880d7",
+    ".github/workflows/build-test.yml": "sha256:8a9e438aabc518f2fa1ebe5984622863c74e742811f4e77fcdd539b16d7e0801",
+    "scripts/check-tool-drift.mjs": "sha256:407234cf3528be7051aa57d9b567b005e2cdfaac0e9331cda7378c0139edbb23",
+    "scripts/check-tool-drift-selftest.mjs": "sha256:833fa1157718bc0bd57fd74d856a09fa0cf5393d6f49db056c8a92faf145db8d",
+    "scripts/verification-stack.mjs": "sha256:b78f9c309e5ffbb895a20834baaf5f9b4c6ab2751e8604a6d9c984ab707813d0",
     "scripts/bench-tier1.mjs": "sha256:521cc0b746a6bec6a50d614b1bfc67f5268237a22ef3228e172639c82ed8fd3e",
-    "src/quire/contract.ts": "sha256:ecdc4112bee5e91fe3b9c1c6277dac964a21198f0b494cc5b7b59e2ac30262eb",
+    "src/quire/contract.ts": "sha256:98ad27226cd70b24725fd602a5113c6d3096ff7995e731df177b10006ca8163f",
     "src/quire/schemas/coverage-v1.schema.json": "sha256:f0cdbb9457ca7ca76b642c11fd5b6f41273909c894458c31f58c9c50fdbcdb38",
     "src/quire/schemas/properties-v1.schema.json": "sha256:cc687773c35b3e71e82fc336e887ecc688a28b03e970e349b2921b8624e4d11c",
     "bench/metrics.json": "sha256:5876512767852fd9ee5a848de90e34c9626926bb768db87c2eaf28deb2d05764",
     "bench/tier1-mapping.json": "sha256:186e282f4197894f96e51e2dfe9fc6420f222512159abfd84be8be7c5c6ea90a",
-    "bench/guidance-evaluator-contract-v1.json": "sha256:5aa5f7e7f4958c7c7b2d66c68bc8de4d6a2f482e820707d6f930bc540b6aa75c",
-    "bench/guidance-independent-review-v1.json": "sha256:5213f2da24450efa4b665fe08ef73ffa91261ed496e73bf88b8e7fe954d618a3",
+    "bench/guidance-evaluator-contract-v1.json": "sha256:97805f4c194d849287bd0065d23fd1c5f30426d06e7bb3333a4b7312646bf7fe",
+    "bench/guidance-independent-review-v1.json": "sha256:77c329fd7b602a8cb1f0b030b79a13fbc9534507fadf86bcebfadc6f402b29a6",
     "bench/span-grounding-labels.json": "sha256:897ef28979f5a3f607fdb27e740f1508b736ae5d9ce3dd91c7813f09f841c000",
     "bench/span-grounding-v2-labels.json": "sha256:4e10f34488c87439e7253668ea34773adb432b16bce574b1cc93fbf0343e2650",
-    "bench/span-breadth-v1-labels.json": "sha256:278f850e716bc514c6f25ae4e1b3f62f660d398d5e5661a4a81d68bc7b415b11",
+    "bench/span-breadth-v1-labels.json": "sha256:afdd9e45676e4a2aaaf85c1ba630ef0654417e7f1c9d61ec09d5e479a5d2fc23",
     "bench/answer-key.json": "sha256:ece1a7f5d254623cf79beff1113021f4f71359ac9a3c703d07cff0f8a45e9532",
     "bench/advisory-adjudication-v1.json": "sha256:87c575b6ca0c0886d874f609144f907f3ac270e08c2091bb2bb1ead725713e43",
     "corpus/config/metrics.json": "sha256:69ab8e5b8fc14e07408e034f0b791c3dd3356c9db78e1ac0dc961bcc0b47c0d7",
