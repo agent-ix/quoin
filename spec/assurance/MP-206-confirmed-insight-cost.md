@@ -12,11 +12,11 @@ relationships: []
 
 # Cost per confirmed insight
 
-## Decision Objective
+## Decision Use
 
 Describe the tool calls and model tokens spent for each confirmed true positive.
 
-## Population and Scope
+## Population
 
 Include completed runs with confirmed findings. Keep agent and deterministic
 benchmark environments separate.
@@ -27,7 +27,7 @@ Report tool calls and model tokens divided by confirmed true positives,
 definition `finding.confirmed-cost-v1`. Unobserved tokens and zero confirmations
 are `not_computed`, never zero.
 
-## Collection and Provenance
+## Collection Procedure
 
 Retain harness/model identity, tool calls, token envelope, findings and rulings,
 scope, revisions, configuration, raw evidence, and timestamp.
@@ -36,7 +36,7 @@ scope, revisions, configuration, raw evidence, and timestamp.
 
 Record model, context, host, corpus, and task shape because they confound cost.
 
-## Interpretation and Limitations
+## Interpretation
 
 Lower cost is not better if recall or correctness falls. Do not use this metric
 for individual performance assessment.

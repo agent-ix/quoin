@@ -12,12 +12,12 @@ relationships: []
 
 # Per-family finding precision
 
-## Decision Objective
+## Decision Use
 
 Determine whether a change makes reported findings more or less correct within
 each labelled defect family.
 
-## Population and Scope
+## Population
 
 Include findings emitted for one family over the pinned labelled corpus. Keep
 families separate and report unadjudicated findings.
@@ -27,7 +27,7 @@ families separate and report unadjudicated findings.
 `true_positives / (true_positives + false_positives)`, definition
 `finding.precision-v1`; a zero denominator is `not_computed`, never zero.
 
-## Collection and Provenance
+## Collection Procedure
 
 Retain finding loci, labels, raw outputs, scorer revision, tools, engine,
 declaration digest, corpus revision, configuration, and timestamp.
@@ -37,7 +37,7 @@ declaration digest, corpus revision, configuration, and timestamp.
 Use the pinned corpus and unchanged label set. Live-repository samples are
 reported separately with adjudication coverage.
 
-## Interpretation and Limitations
+## Interpretation
 
 Corpus precision does not estimate live precision when the live population is
 unadjudicated. A correct-family wrong-location finding is false positive.

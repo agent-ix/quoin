@@ -12,12 +12,12 @@ relationships: []
 
 # Property span-grounding rate
 
-## Decision Objective
+## Decision Use
 
 Determine whether specific-shaped criteria expose source spans for domain,
 precondition, and oracle analysis.
 
-## Population and Scope
+## Population
 
 Include criteria classified with a specific property shape in the pinned
 corpus entry.
@@ -32,7 +32,7 @@ For a specific-shaped record, an absent key is `missing`, a null span is
 denominator misses. Non-specific property shapes are retained as
 `not_applicable` exclusions.
 
-## Collection and Provenance
+## Collection Procedure
 
 Retain the raw properties payload, tool and engine versions, definitions,
 source and corpus revisions, configuration, and timestamp.
@@ -41,7 +41,7 @@ source and corpus revisions, configuration, and timestamp.
 
 Keep property idioms and corpus fixed. Include known absent and present controls.
 
-## Interpretation and Limitations
+## Interpretation
 
 Grounded spans make analysis possible; they do not establish semantic alignment.
 

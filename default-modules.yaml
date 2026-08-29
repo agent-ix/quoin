@@ -11,16 +11,19 @@ name: quoin-default-modules
 entries:
   # Assurance artifacts are available by default but remain opt-in: installing
   # their vocabulary does not require a repository to author any assurance
-  # document. Pin the immutable first-integration revision until a release tag
-  # carrying the same module exists (agent-ix/quire-rs#275).
+  # document. Pin an exact reachable revision until a release tag carrying the
+  # module exists (agent-ix/quire-rs#275). The first-integration pin 2a66359
+  # was orphaned when upstream history was rebuilt — upload-pack refuses it, so
+  # clean-room installs failed while already-installed dev machines stayed
+  # green (agent-ix/quoin#308, caught by the v0.22.1 release run).
   - name: engineering-assurance
-    version: "0.1.0+2a66359"
+    version: "0.2.0+4e6522f"
     defaultEnabled: true
     source:
       type: git-subdir
       url: agent-ix/engineering-assurance
       path: engineering_assurance
-      ref: 2a663590a993ac4b58c078b6bcb52358f29f10e4
+      ref: 4e6522fc32f82cac82a3489a4192e17a94f539c3
 
   - name: spec-artifacts-iso
     version: "0.18.0"
