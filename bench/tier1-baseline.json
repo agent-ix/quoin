@@ -30,7 +30,7 @@
     },
     "verification_stack": {
       "schemaVersion": "verification-stack-attestation-v1",
-      "lockDigest": "sha256:c03487fc57d2349a8e03e944c5ad43cd60e23c6e1e5245185ae65e9984d3c136",
+      "lockDigest": "sha256:bbce165c1acf7c48d9cad0b707e422be49399a572745362b95d93ff8dfa2597a",
       "executableDigest": "sha256:e4a6d63326b8aca39bf6923c08d7cd1d85f1cf808fa06d30049e7ea71f2745ca",
       "sources": {
         "quire": {
@@ -44,7 +44,7 @@
           "remote": "https://github.com/agent-ix/quire-cli"
         },
         "qa-corpus": {
-          "revision": "2b550987857893ef6e0140b359a364b4350e8ba8",
+          "revision": "165baeba7aca9de9665c0d476647726f7468d181",
           "sourceState": "clean",
           "remote": "https://github.com/agent-ix/qa-corpus"
         },
@@ -64,7 +64,7 @@
           "remote": "https://github.com/agent-ix/spec-artifacts-iso"
         },
         "quoin": {
-          "revision": "464ca965d5c0dbc5db86c38ddc4634c483aa6d0c",
+          "revision": "c802f2e12b2fc9cbc7af049debf267eaa8ca4856",
           "sourceState": "clean",
           "remote": "https://github.com/agent-ix/quoin"
         },
@@ -98,11 +98,11 @@
         "src/quire/schemas/properties-v1.schema.json": "sha256:cc687773c35b3e71e82fc336e887ecc688a28b03e970e349b2921b8624e4d11c",
         "bench/metrics.json": "sha256:5876512767852fd9ee5a848de90e34c9626926bb768db87c2eaf28deb2d05764",
         "bench/tier1-mapping.json": "sha256:186e282f4197894f96e51e2dfe9fc6420f222512159abfd84be8be7c5c6ea90a",
-        "bench/guidance-evaluator-contract-v1.json": "sha256:919a9e1c655d25ddabdeed8229006571321112efe32e674851aa23c59445cbe3",
-        "bench/guidance-independent-review-v1.json": "sha256:988df9774031b273df181c7886f77f1a6a06f625cea7748c50cc277a32f70da4",
+        "bench/guidance-evaluator-contract-v1.json": "sha256:65d30cd8a1387a85ace601bec823cb320acb1d1c574da34a6cac8337bf407811",
+        "bench/guidance-independent-review-v1.json": "sha256:eb7c7aa96059600dca2febb297fa70ea0774ce39bc4726190e0bc653496113c2",
         "bench/span-grounding-labels.json": "sha256:897ef28979f5a3f607fdb27e740f1508b736ae5d9ce3dd91c7813f09f841c000",
         "bench/span-grounding-v2-labels.json": "sha256:4e10f34488c87439e7253668ea34773adb432b16bce574b1cc93fbf0343e2650",
-        "bench/span-breadth-v1-labels.json": "sha256:883be139a6c38bd6ac21c210037717bc68e4692b1927c3e12b710c356b91e71b",
+        "bench/span-breadth-v1-labels.json": "sha256:365e222d96239d3c553aa768d2d52f786fc1f869f28a27cd422c6b247e2389ab",
         "bench/answer-key.json": "sha256:ece1a7f5d254623cf79beff1113021f4f71359ac9a3c703d07cff0f8a45e9532",
         "bench/advisory-adjudication-v1.json": "sha256:87c575b6ca0c0886d874f609144f907f3ac270e08c2091bb2bb1ead725713e43",
         "corpus/config/metrics.json": "sha256:69ab8e5b8fc14e07408e034f0b791c3dd3356c9db78e1ac0dc961bcc0b47c0d7",
@@ -110,8 +110,8 @@
         "corpus/config/external-channel.json": "sha256:74103cf74e7eceb69d3bb993074a7929025e7cff0cff4c993be3c7e4873050b5"
       }
     },
-    "corpus": "2b550987857893ef6e0140b359a364b4350e8ba8",
-    "corpus_input": "sha256:c3bc935cf5a5208be4b66769386ae731400907b7a04e307de8a8e63b396d399d",
+    "corpus": "165baeba7aca9de9665c0d476647726f7468d181",
+    "corpus_input": "sha256:4373451110c55c9f67bb933610dfa815e0c56dd89c4910f301f480d3cfd3fc07",
     "declaration": {
       "root": "corpus/modules",
       "digest": "sha256:3bc7c9ef24937e81e02286e8724755fe5596a30d1d14296b446fa2bd64fc3d3b",
@@ -3862,8 +3862,8 @@
     "rate": 1
   },
   "guidance_quality": {
-    "contractDigest": "sha256:74d9f205d45749a6f9bfe67e8502f401d8923562097a94e7baee84d0aa31b9ab",
-    "evidenceDigest": "sha256:5bcdf95243eaca88f266944ed070ebf1044912923a0057f9c7d82ca483ad73cb",
+    "contractDigest": "sha256:fa1e23ba0c9719b62ab99ddb41b9967036ef68b31cc865a9f8455a9933def402",
+    "evidenceDigest": "sha256:443158eac7c5405a54ffd95a4a48c5034b312b722915e7b24bf22cb19e4d1195",
     "selectedRecords": 67,
     "correctness": {
       "definitionVersion": "guidance.correctness-v1",
