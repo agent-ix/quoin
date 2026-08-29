@@ -1,5 +1,5 @@
 /// <reference types="vitest" />
-import { execSync } from "node:child_process";
+import { execFileSync } from "node:child_process";
 import { builtinModules } from "node:module";
 
 import { defineConfig } from "vite";
@@ -12,14 +12,38 @@ import dts from "vite-plugin-dts";
 // would dirty the tree and mislabel a clean release as `-dirty`. Only computed for
 // `vite build` — under vitest (serve) it stays "" so packageVersion() exercises its
 // package.json fallback. Empty on a no-git build (e.g. tarball) too.
+export function resolveBuildRevision(
+  lockedRevision: string | undefined,
+): string {
+  if (lockedRevision === undefined) return "HEAD";
+  if (!/^[0-9a-f]{40}$/.test(lockedRevision)) {
+    throw new Error(
+      "QUOIN_LOCKED_SOURCE_REVISION must be a full lowercase Git SHA",
+    );
+  }
+  return lockedRevision;
+}
+
 function gitVersion(): string {
+  const lockedRevision = process.env.QUOIN_LOCKED_SOURCE_REVISION;
+  const revision = resolveBuildRevision(lockedRevision);
   try {
-    return execSync("git describe --tags --always", {
+    return execFileSync("git", ["describe", "--tags", "--always", revision], {
       encoding: "utf8",
     })
       .trim()
       .replace(/^v/, "");
-  } catch {
+  } catch (error) {
+    // Canonical verification has already proved that the locked revision is a
+    // clean, remotely reachable commit. Falling back to package.json here
+    // would erase that identity and let a stale/missing checkout masquerade as
+    // a valid build, so a requested lock must fail closed.
+    if (lockedRevision !== undefined) {
+      throw new Error(
+        `cannot derive Quoin build version from locked revision ${lockedRevision}`,
+        { cause: error },
+      );
+    }
     return "";
   }
 }
