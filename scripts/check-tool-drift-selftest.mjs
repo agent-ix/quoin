@@ -101,6 +101,22 @@ const mutations = [
     /separate the Quoin benchmark corpus identity/,
   ],
   [
+    "unguarded Quire evidence overlay",
+    "scripts/verification-stack.mjs",
+    (s) => s.replace('quire: ["spec/evidence/measurements"]', 'quire: [""]'),
+    /quire verification source must allow only governed measurement overlays/,
+  ],
+  [
+    "unguarded QA evidence overlay",
+    "scripts/verification-stack.mjs",
+    (s) =>
+      s.replace(
+        '"qa-corpus": ["spec/evidence/measurements"]',
+        '"qa-corpus": [""]',
+      ),
+    /qa-corpus verification source must allow only governed measurement overlays/,
+  ],
+  [
     "debug canonical build",
     "scripts/verification-stack.mjs",
     (s) => s.replace('      "--release",\n', ""),

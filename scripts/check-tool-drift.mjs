@@ -156,6 +156,17 @@ export function auditToolDrift(files) {
       "canonical attestation must separate the Quoin benchmark corpus identity",
     );
   }
+  for (const producer of ["quire", "qa-corpus"]) {
+    const declaration =
+      producer === "quire"
+        ? 'quire: ["spec/evidence/measurements"]'
+        : '"qa-corpus": ["spec/evidence/measurements"]';
+    if (!files["scripts/verification-stack.mjs"].includes(declaration)) {
+      errors.push(
+        `${producer} verification source must allow only governed measurement overlays`,
+      );
+    }
+  }
   if (
     !files["scripts/bench-tier1.mjs"].includes(
       "canonical runs require --quoin <isolated executable>",

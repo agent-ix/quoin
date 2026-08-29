@@ -485,15 +485,23 @@ async function main() {
     ),
   };
   const sources = {};
+  const producerEvidenceOverlays = {
+    quire: ["spec/evidence/measurements"],
+    "qa-corpus": ["spec/evidence/measurements"],
+  };
   for (const name of Object.keys(lock.repositories).filter(
     (name) => name !== "quoin",
   )) {
     if (!roots[name])
       throw new Error(`verification lock has no checkout route for ${name}`);
+    const allowedOverlayPaths = producerEvidenceOverlays[name];
     sources[name] = assertRepository(
       name,
       roots[name],
       lock.repositories[name],
+      allowedOverlayPaths
+        ? { allowEvidenceOverlay: true, allowedOverlayPaths }
+        : {},
     );
   }
   sources.quoin = assertRepository("quoin", ROOT, lock.repositories.quoin, {
