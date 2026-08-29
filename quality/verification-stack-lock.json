@@ -3,7 +3,7 @@
   "repositories": {
     "quoin": {
       "remote": "https://github.com/agent-ix/quoin",
-      "revision": "8efc91234b1e400daf91cbbd7d393784a6be3e09"
+      "revision": "4cfcb432e1789597640663ad782dc2cde96143fa"
     },
     "quire": {
       "remote": "https://github.com/agent-ix/quire-rs",
@@ -67,8 +67,10 @@
     "pnpm-lock.yaml": "sha256:7b8e18508dc953412732112931b9010d0d27f76cff111cb77df1ee7c96ed4b42",
     "Makefile": "sha256:92f3b903bd0b13e6c610616648ab03e70c72a27f51673b38a7ece9d857873efb",
     ".github/workflows/build-test.yml": "sha256:7a6d27b95c58416f35422e47fd56a8763bae6641e77f56b7bd5c29836496c7d6",
-    "scripts/check-tool-drift.mjs": "sha256:ac7bfc7c8d02821d182aee93b5eef9d9b4a21062c171e5738cde547ec5d22bbe",
-    "scripts/check-tool-drift-selftest.mjs": "sha256:f0242117e712e5a87f0788b3da5fff76d7b695187ffe20d34f443dcc8bb26307",
+    "scripts/check-tool-drift.mjs": "sha256:9452d9cf8c89b174d84dd2213469c3359d445665299986396d0a449e52bede8d",
+    "scripts/check-tool-drift-selftest.mjs": "sha256:85b611c228e6a67a1f0bb03bfd98a18c97daf7424081e3a73b262909ec7cc13b",
+    "scripts/verification-stack.mjs": "sha256:e285b9c715942247a82f06f1844c19117bfe661613641af365aa08f845432fef",
+    "scripts/bench-tier1.mjs": "sha256:c8dd2943dfb8854704ef11f2a7f47dabb96d6e4712104a099a39860ba864b549",
     "src/quire/contract.ts": "sha256:9d44490e147092e0ecfcd6760f6e531d2a5ae4098c43b4e1fffd2af497f8e61b",
     "src/quire/schemas/coverage-v1.schema.json": "sha256:f0cdbb9457ca7ca76b642c11fd5b6f41273909c894458c31f58c9c50fdbcdb38",
     "src/quire/schemas/properties-v1.schema.json": "sha256:cc687773c35b3e71e82fc336e887ecc688a28b03e970e349b2921b8624e4d11c",
@@ -78,7 +80,7 @@
     "bench/guidance-independent-review-v1.json": "sha256:e5e89772279edc2fecc776916c19891cb4bd700b70e1d3284b36d7b6a475be0d",
     "bench/span-grounding-labels.json": "sha256:897ef28979f5a3f607fdb27e740f1508b736ae5d9ce3dd91c7813f09f841c000",
     "bench/span-grounding-v2-labels.json": "sha256:4e10f34488c87439e7253668ea34773adb432b16bce574b1cc93fbf0343e2650",
-    "bench/span-breadth-v1-labels.json": "sha256:356023313c6c52852be63d702095b24ddc62a724aaa22ae56bdfc9babaf69b72",
+    "bench/span-breadth-v1-labels.json": "sha256:0d85eafb6aeadbed1072a74e5235291e9f509d7e84920bad58834fa3e423ceea",
     "bench/answer-key.json": "sha256:ece1a7f5d254623cf79beff1113021f4f71359ac9a3c703d07cff0f8a45e9532",
     "bench/advisory-adjudication-v1.json": "sha256:87c575b6ca0c0886d874f609144f907f3ac270e08c2091bb2bb1ead725713e43",
     "corpus/config/metrics.json": "sha256:69ab8e5b8fc14e07408e034f0b791c3dd3356c9db78e1ac0dc961bcc0b47c0d7",

@@ -31,7 +31,7 @@
   },
   "repositories": {
     "quoin": {
-      "revision": "8efc91234b1e400daf91cbbd7d393784a6be3e09",
+      "revision": "4cfcb432e1789597640663ad782dc2cde96143fa",
       "remote": "https://github.com/agent-ix/quoin"
     },
     "quire-rs": {
