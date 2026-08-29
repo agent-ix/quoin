@@ -40,7 +40,7 @@ const bareword = fc.stringMatching(/^[a-z][a-z-]{0,11}$/);
 beforeAll(async () => {
   settings.enableAutoTranspile = false;
   if (!existsSync(join(repoRoot, "dist", "commands", "update.js"))) {
-    execSync("pnpm run build", { cwd: repoRoot, stdio: "inherit" });
+    execSync("corepack pnpm run build", { cwd: repoRoot, stdio: "inherit" });
   }
   config = await loadConfig({ root: repoRoot });
 

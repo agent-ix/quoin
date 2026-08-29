@@ -1,4 +1,9 @@
 # =============================================================================
+
+# Always honor package.json's exact packageManager declaration. A host-installed
+# pnpm can have the same-looking version while resolving through a different
+# installation/state path; Corepack selects the declared distribution.
+PNPM := corepack pnpm
 # quoin Makefile
 # =============================================================================
 # This Makefile provides backwards compatibility by delegating to pnpm scripts.
@@ -12,7 +17,7 @@
 
 .PHONY: build
 build:
-	pnpm run build
+	$(PNPM) run build
 
 # `test` depends on `build`: oclif resolves commands from `./dist/commands`
 # (package.json `oclif.commands`), so the dispatch-parity test sees an empty
@@ -25,7 +30,7 @@ build:
 # it — the source has no baked version to disagree with package.json.
 .PHONY: test
 test: build validate check-version
-	QUIRE="$(abspath $(QUIRE))" pnpm run test
+	QUIRE="$(abspath $(QUIRE))" $(PNPM) run test
 
 # Every surface that reports a version reports the same one, and a clean tag
 # reports itself (quoin#196). The class of defect this catches shipped once
@@ -147,9 +152,9 @@ evidence-audit:
 .PHONY: evidence-record
 evidence-record:
 	mkdir -p reports
-	pnpm exec vitest run --reporter=junit --outputFile=reports/junit.xml
+	$(PNPM) exec vitest run --reporter=junit --outputFile=reports/junit.xml
 	node bin/quoin.js evidence record --suite SUITE-001 \
-	  --commit "$$(git rev-parse HEAD)" --tool "vitest $$(pnpm exec vitest --version)" --adapter junit \
+	  --commit "$$(git rev-parse HEAD)" --tool "vitest $$($(PNPM) exec vitest --version)" --adapter junit \
 	  --results reports/junit.xml --kind Unit --repo . --module $(EVIDENCE_MODULE)
 
 .PHONY: answer-key-repin
@@ -185,7 +190,7 @@ validate: build
 
 .PHONY: test-json
 test-json:
-	pnpm run test:json
+	$(PNPM) run test:json
 
 # Agent-pty evals (drive the REAL claude agent; cost tokens + minutes — opt-in).
 # MODEL pins the agent model so token counts compare; REPEATS aggregates noise.
@@ -194,12 +199,12 @@ REPEATS ?= 1
 
 .PHONY: evals
 evals:
-	pnpm --dir ../cli-agent-evals run build
+	$(PNPM) --dir ../cli-agent-evals run build
 	node ../cli-agent-evals/bin/cli-evals.js run --suite ./cli-agent-evals.config.mjs --canary --agent claude --model $(MODEL) --repeats $(REPEATS)
 
 .PHONY: evals-all
 evals-all:
-	pnpm --dir ../cli-agent-evals run build
+	$(PNPM) --dir ../cli-agent-evals run build
 	node ../cli-agent-evals/bin/cli-evals.js run --suite ./cli-agent-evals.config.mjs --all --agent claude --model $(MODEL) --repeats $(REPEATS)
 
 # Community install smoke test (clean-room Docker: public npm + agent plugins).
@@ -212,25 +217,25 @@ install-smoke:
 
 .PHONY: lint
 lint:
-	pnpm run lint
+	$(PNPM) run lint
 
 .PHONY: audit-tool-drift
 audit-tool-drift:
-	pnpm run audit:tool-drift
-	pnpm run test:tool-drift
-	pnpm run test:verification-stack
+	$(PNPM) run audit:tool-drift
+	$(PNPM) run test:tool-drift
+	$(PNPM) run test:verification-stack
 
 .PHONY: format
 format:
-	pnpm run format
+	$(PNPM) run format
 
 .PHONY: format-check
 format-check:
-	pnpm run format:check
+	$(PNPM) run format:check
 
 .PHONY: clean
 clean:
-	pnpm run clean
+	$(PNPM) run clean
 
 # =============================================================================
 # Package Management
@@ -238,44 +243,44 @@ clean:
 
 .PHONY: install
 install:
-	pnpm install
+	$(PNPM) install
 
 .PHONY: update-lock
 update-lock:
-	pnpm run update-lock
+	$(PNPM) run update-lock
 
 .PHONY: add-packages
 add-packages:
 	@echo "Adding packages: $(PACKAGES)"
-	pnpm run pkg:add $(PACKAGES)
+	$(PNPM) run pkg:add $(PACKAGES)
 
 .PHONY: add-dev-packages
 add-dev-packages:
 	@echo "Adding dev packages: $(PACKAGES)"
-	pnpm run pkg:add-dev $(PACKAGES)
+	$(PNPM) run pkg:add-dev $(PACKAGES)
 
 .PHONY: update-packages
 update-packages:
-	pnpm run pkg:update
+	$(PNPM) run pkg:update
 
 .PHONY: experimental-update-packages-latest
 experimental-update-packages-latest:
 	@echo "NONCANONICAL: this deliberately resolves moving package versions and cannot produce governed evidence."
-	pnpm run experimental:pkg:update-latest
+	$(PNPM) run experimental:pkg:update-latest
 
 .PHONY: use-local
 use-local:
 	@echo "Switching $(p) to local..."
-	pnpm run pkg:use-local $(p)
+	$(PNPM) run pkg:use-local $(p)
 
 .PHONY: use-upstream
 use-upstream:
 	@echo "Switching $(p) to upstream..."
-	pnpm run pkg:use-upstream $(p)
+	$(PNPM) run pkg:use-upstream $(p)
 
 .PHONY: refresh-local
 refresh-local:
-	pnpm run pkg:refresh-local
+	$(PNPM) run pkg:refresh-local
 
 # =============================================================================
 # Versioning & Info
@@ -283,11 +288,11 @@ refresh-local:
 
 .PHONY: version
 version:
-	@pnpm run version
+	@$(PNPM) run version
 
 .PHONY: info
 info:
-	@pnpm run info
+	@$(PNPM) run info
 
 # =============================================================================
 # Docker & Publishing
@@ -295,12 +300,12 @@ info:
 
 .PHONY: docker-build
 docker-build:
-	pnpm run docker:build
+	$(PNPM) run docker:build
 
 
 .PHONY: tags
 tags:
-	@pnpm run tags
+	@$(PNPM) run tags
 
 # =============================================================================
 # Test Results CLI
@@ -317,31 +322,31 @@ REPORT ?= report.json
 
 .PHONY: test-results-summary
 test-results-summary:
-	pnpm run test-results:summary $(REPORT)
+	$(PNPM) run test-results:summary $(REPORT)
 
 .PHONY: test-results-groups
 test-results-groups:
-	pnpm run test-results:groups $(REPORT)
+	$(PNPM) run test-results:groups $(REPORT)
 
 .PHONY: test-results-detail
 test-results-detail:
-	pnpm run test-results:detail $(REPORT) "$(TEST)"
+	$(PNPM) run test-results:detail $(REPORT) "$(TEST)"
 
 .PHONY: test-results-find
 test-results-find:
-	pnpm run test-results:find $(REPORT) "$(PATTERN)"
+	$(PNPM) run test-results:find $(REPORT) "$(PATTERN)"
 
 .PHONY: test-results-failed
 test-results-failed:
-	pnpm run test-results:failed $(REPORT)
+	$(PNPM) run test-results:failed $(REPORT)
 
 .PHONY: test-results-errors
 test-results-errors:
-	pnpm run test-results:errors $(REPORT)
+	$(PNPM) run test-results:errors $(REPORT)
 
 .PHONY: test-results-warnings
 test-results-warnings:
-	pnpm run test-results:warnings $(REPORT)
+	$(PNPM) run test-results:warnings $(REPORT)
 
 # =============================================================================
 # Help

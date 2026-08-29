@@ -17,6 +17,12 @@ const mutations = [
     /lock specifier drift/,
   ],
   [
+    "ambient Make pnpm",
+    "Makefile",
+    (s) => `${s}\nambient-pnpm:\n\tpnpm run build\n`,
+    /may not execute ambient pnpm/,
+  ],
+  [
     "moving action",
     ".github/workflows/install-smoke.yml",
     (s) => s.replace(/actions\/checkout@[0-9a-f]{40}/, "actions/checkout@v7"),

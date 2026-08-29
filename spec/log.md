@@ -24,7 +24,12 @@ description: "Chronological log of structural changes to this bundle."
   rather than failing later as an ambiguous Git error. The tool-drift auditor
   couples the workflow's repeated CLI, Node, pnpm, and Rust values to the
   verification-stack lock and repository declarations, so immutable-but-wrong
-  pins cannot diverge silently.
+  pins cannot diverge silently. A subsequent local rehearsal also proved that
+  bare `pnpm` was still an ambient selector: the host binary and Corepack both
+  reported 11.20.0, yet the host installation used a broken state database
+  while Corepack executed the declared package manager successfully. Every
+  Make recipe and test subprocess now enters through `corepack pnpm`, and the
+  auditor rejects a reintroduced ambient Make invocation.
 
 * **2026-08-28** — **CR-128**: Tier 2 now replays the declaration bytes that
   produced the pass-2 findings instead of applying today's single process

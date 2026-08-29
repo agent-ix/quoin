@@ -34,6 +34,12 @@ export function auditToolDrift(files) {
   if (!/save-exact=true/.test(files[".npmrc"])) {
     errors.push(".npmrc must enforce save-exact=true");
   }
+  if (!/^PNPM := corepack pnpm$/m.test(files["Makefile"])) {
+    errors.push("Makefile must resolve pnpm through Corepack");
+  }
+  if (/^\s*@?pnpm\s/m.test(files["Makefile"])) {
+    errors.push("Makefile recipes may not execute ambient pnpm");
+  }
 
   const pnpmLock = parseYaml(files["pnpm-lock.yaml"]);
   const importer = pnpmLock?.importers?.["."] ?? {};

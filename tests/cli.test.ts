@@ -179,7 +179,7 @@ beforeAll(async () => {
   // discovery/dispatch assertions exercise the built command graph.
   settings.enableAutoTranspile = false;
   if (!existsSync(join(repoRoot, "dist", "commands", "update.js"))) {
-    execSync("pnpm run build", { cwd: repoRoot, stdio: "inherit" });
+    execSync("corepack pnpm run build", { cwd: repoRoot, stdio: "inherit" });
   }
   config = await loadConfig({ root: repoRoot });
 });
