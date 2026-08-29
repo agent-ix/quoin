@@ -69,6 +69,26 @@ const mutations = [
     /Rust version must equal/,
   ],
   [
+    "vendored contract provenance disagreement",
+    "src/quire/contract.ts",
+    (s) =>
+      s.replace(
+        /sourceRevision: "[0-9a-f]{40}"/,
+        'sourceRevision: "0000000000000000000000000000000000000000"',
+      ),
+    /vendored Quire contract source revision must equal/,
+  ],
+  [
+    "reviewed evidence provenance disagreement",
+    "bench/span-breadth-v1-labels.json",
+    (s) =>
+      s.replace(
+        /"sourceRevision": "[0-9a-f]{40}"/,
+        '"sourceRevision": "0000000000000000000000000000000000000000"',
+      ),
+    /CLI provenance must equal/,
+  ],
+  [
     "moving image",
     "Dockerfile",
     (s) => s.replace(/@sha256:[0-9a-f]{64}/, ""),

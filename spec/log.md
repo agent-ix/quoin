@@ -29,7 +29,14 @@ description: "Chronological log of structural changes to this bundle."
   reported 11.20.0, yet the host installation used a broken state database
   while Corepack executed the declared package manager successfully. Every
   Make recipe and test subprocess now enters through `corepack pnpm`, and the
-  auditor rejects a reintroduced ambient Make invocation.
+  auditor rejects a reintroduced ambient Make invocation. The broad-span gate
+  then found that three independently reviewed evidence files and the vendored
+  contract still named the previous CLI/engine commits. The final engine delta
+  contains no `src/` change and the CLI delta contains no CLI source change, so
+  the reviewed labels remain valid; their provenance advances to the final
+  commits. The auditor now couples all four copies (including their repository
+  cohort pins) to the stack lock, turning the next stale provenance edit into a
+  direct failure before the expensive span run.
 
 * **2026-08-28** — **CR-128**: Tier 2 now replays the declaration bytes that
   produced the pass-2 findings instead of applying today's single process

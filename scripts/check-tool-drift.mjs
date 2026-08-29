@@ -94,6 +94,53 @@ export function auditToolDrift(files) {
       );
     }
   }
+
+  if (
+    !files["src/quire/contract.ts"].includes(
+      `sourceRevision: "${stackLock.repositories.quire.revision}"`,
+    )
+  ) {
+    errors.push(
+      "vendored Quire contract source revision must equal verification-stack engine revision",
+    );
+  }
+  for (const path of [
+    "bench/span-breadth-v1-labels.json",
+    "bench/guidance-evaluator-contract-v1.json",
+    "bench/guidance-independent-review-v1.json",
+  ]) {
+    const reviewed = JSON.parse(files[path]);
+    if (
+      reviewed.producer?.cli?.sourceRevision !==
+      stackLock.repositories["quire-cli"].revision
+    ) {
+      errors.push(`${path} CLI provenance must equal verification-stack lock`);
+    }
+    if (
+      reviewed.producer?.engine?.sourceRevision !==
+      stackLock.repositories.quire.revision
+    ) {
+      errors.push(
+        `${path} engine provenance must equal verification-stack lock`,
+      );
+    }
+    if (
+      reviewed.repositories?.["quire-rs"]?.revision !==
+      stackLock.repositories.quire.revision
+    ) {
+      errors.push(
+        `${path} Quire repository must equal verification-stack lock`,
+      );
+    }
+    if (
+      reviewed.repositories?.quoin?.revision !==
+      stackLock.repositories.quoin.revision
+    ) {
+      errors.push(
+        `${path} Quoin repository must equal verification-stack lock`,
+      );
+    }
+  }
   for (const step of buildSteps.filter((candidate) =>
     String(candidate?.uses ?? "").startsWith("actions/setup-node@"),
   )) {
@@ -167,6 +214,10 @@ export function repositoryFiles(root = ROOT) {
     "smoke/run.sh",
     "smoke/entrypoint.sh",
     "src/quire/exec.ts",
+    "src/quire/contract.ts",
+    "bench/span-breadth-v1-labels.json",
+    "bench/guidance-evaluator-contract-v1.json",
+    "bench/guidance-independent-review-v1.json",
     ".github/workflows/build-test.yml",
     ".github/workflows/codeql.yml",
     ".github/workflows/install-smoke.yml",
