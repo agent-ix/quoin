@@ -53,10 +53,12 @@ description: "Chronological log of structural changes to this bundle."
   Tier-1 attempt reached case 164 before a concurrent workspace relink made
   root `node_modules` temporarily unavailable to the Quoin validation channel.
   Canonical Tier 1 no longer executes that mutable workspace runtime: after the
-  frozen build it deploys a production-only Quoin tree into the campaign's
-  private scratch directory, verifies its version against the built source,
-  and passes its absolute executable explicitly. The drift self-test removes
-  that selector and proves the canonical gate rejects a return to shared state.
+  frozen root gates it checks out the exact locked Quoin source into a detached
+  private worktree, installs and builds there, then deploys a production-only
+  runtime into campaign scratch. It verifies that runtime's version against the
+  gated build and passes its absolute executable explicitly. The drift
+  self-test removes that selector and proves the canonical gate rejects a
+  return to shared state.
 
 * **2026-08-28** — **CR-130**: added a rights-safe, project-owned assurance
   path without embedding restricted source material or claiming an external

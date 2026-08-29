@@ -90,6 +90,8 @@ describe("portfolio measurement report", () => {
         schemaVersion: "verification-stack-attestation-v1",
         lockDigest: `sha256:${"1".repeat(64)}`,
         executableDigest: `sha256:${"2".repeat(64)}`,
+        buildProfile: "release",
+        toolchains: { node: "22.15.0", rust: "1.94.1", python: "3.10.12" },
         sources: {
           fixture: {
             revision: "a".repeat(40),

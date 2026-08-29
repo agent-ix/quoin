@@ -16,6 +16,7 @@ import {
   renderMeasurementComparison,
   renderMeasurementReport,
   validateMeasurementCollection,
+  validateStoredMeasurementCollection,
   writeMeasurementCollection,
   type MeasurementCollection,
 } from "../src/measurement/index.js";
@@ -86,6 +87,8 @@ describe("generic MeasurementRecords", () => {
         schemaVersion: "verification-stack-attestation-v1",
         lockDigest: `sha256:${"1".repeat(64)}`,
         executableDigest: `sha256:${"2".repeat(64)}`,
+        buildProfile: "release",
+        toolchains: { node: "22.15.0", rust: "1.94.1", python: "3.10.12" },
         sources: {
           fixture: {
             revision: "a".repeat(40),
@@ -121,6 +124,43 @@ describe("generic MeasurementRecords", () => {
   test("TC-1003 refuses an observation with no authored MeasurementPlan", () => {
     expect(() => validateMeasurementCollection(collection(), [])).toThrow(
       /has no MeasurementPlan.*record refused/,
+    );
+  });
+
+  test("schema-v2 refuses an attestation with no toolchain identities", () => {
+    const drifted = collection();
+    (
+      drifted.verificationStack as unknown as Record<string, unknown>
+    ).toolchains = undefined;
+    expect(() => validateMeasurementCollection(drifted, [])).toThrow(
+      /toolchains must pin node, rust, and python/,
+    );
+  });
+
+  test.each(["debug", undefined])(
+    "schema-v2 refuses noncanonical new executable build profile %s",
+    (profile) => {
+      const drifted = collection();
+      (
+        drifted.verificationStack as unknown as Record<string, unknown>
+      ).buildProfile = profile;
+      expect(() => validateMeasurementCollection(drifted, [])).toThrow(
+        /buildProfile must be release for new collections/,
+      );
+    },
+  );
+
+  test("historical schema-v2 evidence remains readable before profile/toolchain fields", () => {
+    const historical = collection();
+    const stack = historical.verificationStack as unknown as Record<
+      string,
+      unknown
+    >;
+    delete stack.buildProfile;
+    delete stack.toolchains;
+    expect(() => validateStoredMeasurementCollection(historical)).not.toThrow();
+    expect(() => validateMeasurementCollection(historical, [])).toThrow(
+      /buildProfile must be release for new collections/,
     );
   });
 

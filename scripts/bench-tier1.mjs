@@ -254,6 +254,21 @@ export function validateVerificationAttestation(value, quire, tool, corpus) {
       );
     }
   }
+  if (value.buildProfile !== "release") {
+    throw new Error(
+      "bench-tier1: attestation buildProfile must be canonical release",
+    );
+  }
+  for (const name of ["node", "rust", "python"]) {
+    if (
+      typeof value.toolchains?.[name] !== "string" ||
+      !value.toolchains[name]
+    ) {
+      throw new Error(
+        "bench-tier1: attestation must pin node, rust, and python toolchains",
+      );
+    }
+  }
   const observedExecutable = digestFile(quire);
   if (observedExecutable !== value.executableDigest) {
     throw new Error(

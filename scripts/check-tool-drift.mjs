@@ -14,6 +14,9 @@ export function auditToolDrift(files) {
   const errors = [];
   const pkg = JSON.parse(files["package.json"]);
   const stackLock = JSON.parse(files["quality/verification-stack-lock.json"]);
+  if (!FULL_SHA.test(stackLock.cohorts?.quireBenchmarkQuoin?.revision ?? "")) {
+    errors.push("Quire benchmark Quoin corpus must be locked to a full SHA");
+  }
   if (!/^pnpm@\d+\.\d+\.\d+$/.test(pkg.packageManager ?? "")) {
     errors.push("packageManager must pin an exact pnpm version");
   }
@@ -117,6 +120,80 @@ export function auditToolDrift(files) {
     errors.push(
       "canonical Tier-1 must deploy and select a frozen isolated Quoin runtime",
     );
+  }
+  if (
+    !files["scripts/verification-stack.mjs"].includes(
+      "toolchains: structuredClone(lock.toolchains)",
+    )
+  ) {
+    errors.push("canonical attestation must carry locked toolchain identities");
+  }
+  if (
+    !files["scripts/verification-stack.mjs"].includes(
+      '"build",\n      "--release",\n      "--locked",',
+    )
+  ) {
+    errors.push(
+      "canonical Quire build must use release profile and locked resolution",
+    );
+  }
+  if (
+    !files["scripts/verification-stack.mjs"].includes(
+      'buildProfile: "release"',
+    ) ||
+    !files["scripts/bench-tier1.mjs"].includes(
+      'value.buildProfile !== "release"',
+    )
+  ) {
+    errors.push(
+      "canonical attestation and Tier-1 must agree on release build profile",
+    );
+  }
+  if (
+    !files["scripts/verification-stack.mjs"].includes(
+      'sources["quoin-benchmark-corpus"]',
+    )
+  ) {
+    errors.push(
+      "canonical attestation must separate the Quoin benchmark corpus identity",
+    );
+  }
+  for (const producer of ["quire", "qa-corpus"]) {
+    const declaration =
+      producer === "quire"
+        ? 'quire: ["spec/evidence/measurements"]'
+        : '"qa-corpus": ["spec/evidence/measurements"]';
+    if (!files["scripts/verification-stack.mjs"].includes(declaration)) {
+      errors.push(
+        `${producer} verification source must allow only governed measurement overlays`,
+      );
+    }
+  }
+  if (
+    !files["scripts/verify-span-breadth.mjs"].includes(
+      'allowedOverlayPaths: ["spec/evidence/measurements"]',
+    )
+  ) {
+    errors.push(
+      "span-breadth Quire source must allow only governed measurement overlays",
+    );
+  }
+  for (const path of [
+    "scripts/verify-span-breadth.mjs",
+    "scripts/verification-stack-selftest.mjs",
+    "scripts/battletest.mjs",
+    "scripts/lib/tier2-baseline.mjs",
+  ]) {
+    if (!stackLock.artifacts?.[path]) {
+      errors.push(`${path} must be artifact-digest guarded`);
+    }
+  }
+  if (
+    !files["scripts/verification-stack.mjs"].includes(
+      '["pnpm", "run", "test:verification-stack"]',
+    )
+  ) {
+    errors.push("canonical campaign must run verification-stack selftests");
   }
   if (
     !files["scripts/bench-tier1.mjs"].includes(
@@ -245,6 +322,10 @@ export function repositoryFiles(root = ROOT) {
     "src/quire/contract.ts",
     "scripts/verification-stack.mjs",
     "scripts/bench-tier1.mjs",
+    "scripts/verify-span-breadth.mjs",
+    "scripts/verification-stack-selftest.mjs",
+    "scripts/battletest.mjs",
+    "scripts/lib/tier2-baseline.mjs",
     "bench/span-breadth-v1-labels.json",
     "bench/guidance-evaluator-contract-v1.json",
     "bench/guidance-independent-review-v1.json",

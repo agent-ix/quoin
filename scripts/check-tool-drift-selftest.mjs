@@ -99,6 +99,118 @@ const mutations = [
     /CLI provenance must equal/,
   ],
   [
+    "missing benchmark corpus cohort",
+    "quality/verification-stack-lock.json",
+    (s) => s.replace('"quireBenchmarkQuoin"', '"unguardedQuoin"'),
+    /benchmark Quoin corpus must be locked/,
+  ],
+  [
+    "collapsed benchmark corpus identity",
+    "scripts/verification-stack.mjs",
+    (s) => s.replace('sources["quoin-benchmark-corpus"]', "sources.quoin"),
+    /separate the Quoin benchmark corpus identity/,
+  ],
+  [
+    "unguarded Quire evidence overlay",
+    "scripts/verification-stack.mjs",
+    (s) => s.replace('quire: ["spec/evidence/measurements"]', 'quire: [""]'),
+    /quire verification source must allow only governed measurement overlays/,
+  ],
+  [
+    "unguarded QA evidence overlay",
+    "scripts/verification-stack.mjs",
+    (s) =>
+      s.replace(
+        '"qa-corpus": ["spec/evidence/measurements"]',
+        '"qa-corpus": [""]',
+      ),
+    /qa-corpus verification source must allow only governed measurement overlays/,
+  ],
+  [
+    "unguarded span-breadth evidence overlay",
+    "scripts/verify-span-breadth.mjs",
+    (s) =>
+      s.replace(
+        'allowedOverlayPaths: ["spec/evidence/measurements"]',
+        'allowedOverlayPaths: [""]',
+      ),
+    /span-breadth Quire source must allow only governed measurement overlays/,
+  ],
+  [
+    "unhashed span-breadth verifier",
+    "quality/verification-stack-lock.json",
+    (s) =>
+      s.replace(
+        '"scripts/verify-span-breadth.mjs"',
+        '"unguarded-span-verifier"',
+      ),
+    /scripts\/verify-span-breadth\.mjs must be artifact-digest guarded/,
+  ],
+  [
+    "unhashed verification-stack selftest",
+    "quality/verification-stack-lock.json",
+    (s) =>
+      s.replace(
+        '"scripts/verification-stack-selftest.mjs"',
+        '"unguarded-stack-selftest"',
+      ),
+    /scripts\/verification-stack-selftest\.mjs must be artifact-digest guarded/,
+  ],
+  [
+    "unhashed Tier-2 runner",
+    "quality/verification-stack-lock.json",
+    (s) => s.replace('"scripts/battletest.mjs"', '"unguarded-tier2-runner"'),
+    /scripts\/battletest\.mjs must be artifact-digest guarded/,
+  ],
+  [
+    "unhashed Tier-2 baseline library",
+    "quality/verification-stack-lock.json",
+    (s) =>
+      s.replace(
+        '"scripts/lib/tier2-baseline.mjs"',
+        '"unguarded-tier2-baseline"',
+      ),
+    /scripts\/lib\/tier2-baseline\.mjs must be artifact-digest guarded/,
+  ],
+  [
+    "skipped verification-stack selftest",
+    "scripts/verification-stack.mjs",
+    (s) =>
+      s.replace(
+        '["pnpm", "run", "test:verification-stack"]',
+        '["pnpm", "run", "skipped:verification-stack"]',
+      ),
+    /canonical campaign must run verification-stack selftests/,
+  ],
+  [
+    "debug canonical build",
+    "scripts/verification-stack.mjs",
+    (s) => s.replace('      "--release",\n', ""),
+    /release profile and locked resolution/,
+  ],
+  [
+    "unlocked canonical build",
+    "scripts/verification-stack.mjs",
+    (s) => s.replace('      "--locked",\n', ""),
+    /release profile and locked resolution/,
+  ],
+  [
+    "missing attested build profile",
+    "scripts/verification-stack.mjs",
+    (s) => s.replace('      buildProfile: "release",\n', ""),
+    /attestation and Tier-1 must agree on release build profile/,
+  ],
+  [
+    "Tier-1 ignores build profile",
+    "scripts/bench-tier1.mjs",
+    (s) =>
+      s.replace(
+        'value.buildProfile !== "release"',
+        'value.ignoredProfile !== "release"',
+      ),
+    /attestation and Tier-1 must agree on release build profile/,
+  ],
+  [
     "shared-workspace Tier-1 runtime",
     "scripts/verification-stack.mjs",
     (s) => s.replace('"--quoin",\n      isolatedQuoin,', ""),

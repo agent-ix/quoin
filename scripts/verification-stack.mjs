@@ -57,6 +57,11 @@ export function validateLockShape(lock) {
   if (!FULL_SHA.test(lock.cohorts?.qaExternalQuoin?.revision ?? "")) {
     throw new Error("qaExternalQuoin must be locked to one full commit SHA");
   }
+  if (!FULL_SHA.test(lock.cohorts?.quireBenchmarkQuoin?.revision ?? "")) {
+    throw new Error(
+      "quireBenchmarkQuoin must be locked to one full commit SHA",
+    );
+  }
   const qaCounts = lock.cohorts?.qaCorpus;
   for (const field of ["executableCases", "reportingCases", "totalCases"]) {
     if (!Number.isInteger(qaCounts?.[field]) || qaCounts[field] < 0) {
@@ -319,7 +324,12 @@ function buildCli(cliRoot, scratch) {
   const target = join(scratch, "cargo-target");
   const output = run(
     "cargo",
-    ["build", "--locked", "--message-format=json-render-diagnostics"],
+    [
+      "build",
+      "--release",
+      "--locked",
+      "--message-format=json-render-diagnostics",
+    ],
     {
       cwd: cliRoot,
       env: { ...process.env, CARGO_TARGET_DIR: target },
@@ -356,19 +366,7 @@ function buildCli(cliRoot, scratch) {
 function buildExternalQuoin(lock, scratch) {
   const cohort = lock.cohorts.qaExternalQuoin;
   const checkout = join(scratch, "qa-external-quoin");
-  run("git", ["-C", ROOT, "cat-file", "-e", `${cohort.revision}^{commit}`]);
-  const refs = git(
-    ROOT,
-    "for-each-ref",
-    "--format=%(refname)",
-    "--contains",
-    cohort.revision,
-    "refs/remotes",
-  );
-  if (!refs)
-    throw new Error(
-      `qaExternalQuoin ${cohort.revision} is not remotely reachable`,
-    );
+  assertRemoteRevision("qaExternalQuoin", ROOT, cohort.revision);
   run("git", [
     "-C",
     ROOT,
@@ -398,6 +396,23 @@ function buildExternalQuoin(lock, scratch) {
     );
   }
   return { checkout, executable };
+}
+
+export function assertRemoteRevision(label, root, revision) {
+  try {
+    git(root, "cat-file", "-e", `${revision}^{commit}`);
+  } catch {
+    throw new Error(`${label} ${revision} is not a local commit`);
+  }
+  const refs = git(
+    root,
+    "for-each-ref",
+    "--format=%(refname)",
+    "--contains",
+    revision,
+    "refs/remotes",
+  );
+  if (!refs) throw new Error(`${label} ${revision} is not remotely reachable`);
 }
 
 function assertToolProvenance(binary, lock) {
@@ -470,15 +485,23 @@ async function main() {
     ),
   };
   const sources = {};
+  const producerEvidenceOverlays = {
+    quire: ["spec/evidence/measurements"],
+    "qa-corpus": ["spec/evidence/measurements"],
+  };
   for (const name of Object.keys(lock.repositories).filter(
     (name) => name !== "quoin",
   )) {
     if (!roots[name])
       throw new Error(`verification lock has no checkout route for ${name}`);
+    const allowedOverlayPaths = producerEvidenceOverlays[name];
     sources[name] = assertRepository(
       name,
       roots[name],
       lock.repositories[name],
+      allowedOverlayPaths
+        ? { allowEvidenceOverlay: true, allowedOverlayPaths }
+        : {},
     );
   }
   sources.quoin = assertRepository("quoin", ROOT, lock.repositories.quoin, {
@@ -504,21 +527,39 @@ async function main() {
 
   const scratch = mkdtempSync(join(tmpdir(), "quoin-stack-"));
   let externalQuoin = null;
+  let isolatedQuoinCheckout = null;
   try {
     const binary = buildCli(roots["quire-cli"], scratch);
     const provenance = assertToolProvenance(binary, lock);
-    const attestation = {
-      schemaVersion: "verification-stack-attestation-v1",
-      lockDigest: lockDigest(lockPath),
-      executableDigest: sha256(readFileSync(binary)),
-      sources,
-      capabilities: [...provenance.capabilities].sort(),
-      artifacts: structuredClone(lock.artifacts),
+    assertRemoteRevision(
+      "quireBenchmarkQuoin",
+      ROOT,
+      lock.cohorts.quireBenchmarkQuoin.revision,
+    );
+    assertRemoteRevision(
+      "qaExternalQuoin",
+      ROOT,
+      lock.cohorts.qaExternalQuoin.revision,
+    );
+    sources["quoin-benchmark-corpus"] = {
+      revision: lock.cohorts.quireBenchmarkQuoin.revision,
+      sourceState: "clean",
+      remote: lock.repositories.quoin.remote,
     };
     sources["quoin-qa-external"] = {
       revision: lock.cohorts.qaExternalQuoin.revision,
       sourceState: "clean",
       remote: lock.repositories.quoin.remote,
+    };
+    const attestation = {
+      schemaVersion: "verification-stack-attestation-v1",
+      lockDigest: lockDigest(lockPath),
+      executableDigest: sha256(readFileSync(binary)),
+      buildProfile: "release",
+      toolchains: structuredClone(lock.toolchains),
+      sources,
+      capabilities: [...provenance.capabilities].sort(),
+      artifacts: structuredClone(lock.artifacts),
     };
     const attestationPath = join(scratch, "attestation.json");
     writeFileSync(attestationPath, `${JSON.stringify(attestation, null, 2)}\n`);
@@ -556,8 +597,44 @@ async function main() {
       env,
       stdio: "inherit",
     });
+    run("corepack", ["pnpm", "run", "test:verification-stack"], {
+      cwd: ROOT,
+      env,
+      stdio: "inherit",
+    });
     run("corepack", ["pnpm", "run", "lint"], {
       cwd: ROOT,
+      env,
+      timeout: lock.timeouts.quoinMilliseconds,
+      stdio: "inherit",
+    });
+    const testEnv = { ...env };
+    delete testEnv.QUOIN_QUIRE;
+    delete testEnv.QUOIN_EXPECTED_QUIRE_SHA256;
+    run("make", ["test", `QUIRE=${binary}`], {
+      cwd: ROOT,
+      env: testEnv,
+      timeout: lock.timeouts.quoinMilliseconds,
+      stdio: "inherit",
+    });
+    isolatedQuoinCheckout = join(scratch, "quoin-runtime-source");
+    run("git", [
+      "-C",
+      ROOT,
+      "worktree",
+      "add",
+      "--detach",
+      isolatedQuoinCheckout,
+      lock.repositories.quoin.revision,
+    ]);
+    run("corepack", ["pnpm", "install", "--frozen-lockfile"], {
+      cwd: isolatedQuoinCheckout,
+      env,
+      timeout: lock.timeouts.installMilliseconds,
+      stdio: "inherit",
+    });
+    run("corepack", ["pnpm", "run", "build"], {
+      cwd: isolatedQuoinCheckout,
       env,
       timeout: lock.timeouts.quoinMilliseconds,
       stdio: "inherit",
@@ -576,7 +653,7 @@ async function main() {
         quoinRuntime,
       ],
       {
-        cwd: ROOT,
+        cwd: isolatedQuoinCheckout,
         env,
         timeout: lock.timeouts.installMilliseconds,
         stdio: "inherit",
@@ -596,15 +673,6 @@ async function main() {
         `isolated Quoin ${isolatedVersion} does not equal built source ${sourceVersion}`,
       );
     }
-    const testEnv = { ...env };
-    delete testEnv.QUOIN_QUIRE;
-    delete testEnv.QUOIN_EXPECTED_QUIRE_SHA256;
-    run("make", ["test", `QUIRE=${binary}`], {
-      cwd: ROOT,
-      env: testEnv,
-      timeout: lock.timeouts.quoinMilliseconds,
-      stdio: "inherit",
-    });
     console.error("verification-stack: broad span-grounding gate");
     const spanResult = run(
       process.execPath,
@@ -694,6 +762,21 @@ async function main() {
         `${JSON.stringify(attestation, null, 2)}\n`,
       );
   } finally {
+    if (isolatedQuoinCheckout && existsSync(isolatedQuoinCheckout)) {
+      try {
+        run("git", [
+          "-C",
+          ROOT,
+          "worktree",
+          "remove",
+          "--force",
+          isolatedQuoinCheckout,
+        ]);
+      } catch {
+        // Scratch removal below is authoritative; stale worktree metadata can
+        // be pruned if this cleanup itself is interrupted.
+      }
+    }
     if (externalQuoin?.checkout && existsSync(externalQuoin.checkout)) {
       try {
         run("git", [

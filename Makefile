@@ -188,6 +188,8 @@ check-version: build
 validate: build
 	@test -n "$(QUIRE)" || { echo "validate requires QUIRE=/absolute/path/to/quire"; exit 2; }
 	node bin/quoin.js module ensure-defaults
+	$(QUIRE) validate "spec/assurance/*.md" \
+		--module "$(abspath tests/fixtures/modules/engineering-assurance-fixture)"
 	IX_FILAMENT_MODULES_PATH="$(abspath tests/fixtures/modules)" \
 		$(QUIRE) validate "spec/**/*.md" "plan/**/*.md" "reviews/*.md"
 
