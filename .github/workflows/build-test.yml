@@ -39,6 +39,7 @@ jobs:
       - name: Build exact governed Quire source
         env:
           REGISTRY_TOKEN: ${{ secrets.REGISTRY_TOKEN }}
+          CARGO_NET_GIT_FETCH_WITH_CLI: true
           GIT_CONFIG_COUNT: 1
           GIT_CONFIG_KEY_0: url.https://x-access-token:${{ secrets.REGISTRY_TOKEN }}@github.com/.insteadOf
           GIT_CONFIG_VALUE_0: https://github.com/
