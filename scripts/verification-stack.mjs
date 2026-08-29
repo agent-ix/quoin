@@ -57,6 +57,11 @@ export function validateLockShape(lock) {
   if (!FULL_SHA.test(lock.cohorts?.qaExternalQuoin?.revision ?? "")) {
     throw new Error("qaExternalQuoin must be locked to one full commit SHA");
   }
+  if (!FULL_SHA.test(lock.cohorts?.quireBenchmarkQuoin?.revision ?? "")) {
+    throw new Error(
+      "quireBenchmarkQuoin must be locked to one full commit SHA",
+    );
+  }
   const qaCounts = lock.cohorts?.qaCorpus;
   for (const field of ["executableCases", "reportingCases", "totalCases"]) {
     if (!Number.isInteger(qaCounts?.[field]) || qaCounts[field] < 0) {
@@ -356,19 +361,7 @@ function buildCli(cliRoot, scratch) {
 function buildExternalQuoin(lock, scratch) {
   const cohort = lock.cohorts.qaExternalQuoin;
   const checkout = join(scratch, "qa-external-quoin");
-  run("git", ["-C", ROOT, "cat-file", "-e", `${cohort.revision}^{commit}`]);
-  const refs = git(
-    ROOT,
-    "for-each-ref",
-    "--format=%(refname)",
-    "--contains",
-    cohort.revision,
-    "refs/remotes",
-  );
-  if (!refs)
-    throw new Error(
-      `qaExternalQuoin ${cohort.revision} is not remotely reachable`,
-    );
+  assertRemoteRevision("qaExternalQuoin", ROOT, cohort.revision);
   run("git", [
     "-C",
     ROOT,
@@ -398,6 +391,23 @@ function buildExternalQuoin(lock, scratch) {
     );
   }
   return { checkout, executable };
+}
+
+export function assertRemoteRevision(label, root, revision) {
+  try {
+    git(root, "cat-file", "-e", `${revision}^{commit}`);
+  } catch {
+    throw new Error(`${label} ${revision} is not a local commit`);
+  }
+  const refs = git(
+    root,
+    "for-each-ref",
+    "--format=%(refname)",
+    "--contains",
+    revision,
+    "refs/remotes",
+  );
+  if (!refs) throw new Error(`${label} ${revision} is not remotely reachable`);
 }
 
 function assertToolProvenance(binary, lock) {
@@ -508,6 +518,26 @@ async function main() {
   try {
     const binary = buildCli(roots["quire-cli"], scratch);
     const provenance = assertToolProvenance(binary, lock);
+    assertRemoteRevision(
+      "quireBenchmarkQuoin",
+      ROOT,
+      lock.cohorts.quireBenchmarkQuoin.revision,
+    );
+    assertRemoteRevision(
+      "qaExternalQuoin",
+      ROOT,
+      lock.cohorts.qaExternalQuoin.revision,
+    );
+    sources["quoin-benchmark-corpus"] = {
+      revision: lock.cohorts.quireBenchmarkQuoin.revision,
+      sourceState: "clean",
+      remote: lock.repositories.quoin.remote,
+    };
+    sources["quoin-qa-external"] = {
+      revision: lock.cohorts.qaExternalQuoin.revision,
+      sourceState: "clean",
+      remote: lock.repositories.quoin.remote,
+    };
     const attestation = {
       schemaVersion: "verification-stack-attestation-v1",
       lockDigest: lockDigest(lockPath),
@@ -516,11 +546,6 @@ async function main() {
       sources,
       capabilities: [...provenance.capabilities].sort(),
       artifacts: structuredClone(lock.artifacts),
-    };
-    sources["quoin-qa-external"] = {
-      revision: lock.cohorts.qaExternalQuoin.revision,
-      sourceState: "clean",
-      remote: lock.repositories.quoin.remote,
     };
     const attestationPath = join(scratch, "attestation.json");
     writeFileSync(attestationPath, `${JSON.stringify(attestation, null, 2)}\n`);

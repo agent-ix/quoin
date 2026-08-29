@@ -7,6 +7,7 @@ import { join } from "node:path";
 
 import {
   assertRepository,
+  assertRemoteRevision,
   cliSelectsEngine,
   parseSubmoduleRevision,
   qaCorpusCounts,
@@ -33,6 +34,7 @@ const base = {
     ]),
   ),
   cohorts: {
+    quireBenchmarkQuoin: { revision: A },
     qaExternalQuoin: { revision: B },
     qaCorpus: { executableCases: 2, reportingCases: 1, totalCases: 3 },
   },
@@ -85,6 +87,11 @@ const shapeMutations = [
     "missing declaration repository",
     (v) => delete v.repositories["spec-artifacts-iso"],
     /spec-artifacts-iso must be locked/,
+  ],
+  [
+    "missing Quire benchmark cohort",
+    (v) => delete v.cohorts.quireBenchmarkQuoin,
+    /quireBenchmarkQuoin must be locked/,
   ],
   [
     "qa case-count partition",
@@ -176,6 +183,14 @@ try {
   const first = git("rev-parse", "HEAD");
   git("remote", "add", "origin", "https://github.com/agent-ix/selftest");
   git("update-ref", "refs/remotes/origin/main", first);
+  assertRemoteRevision("fixture cohort", root, first);
+  try {
+    assertRemoteRevision("fixture cohort", root, B);
+    throw new Error("missing cohort commit was accepted");
+  } catch (error) {
+    if (!/not a local commit/.test(String(error.message))) throw error;
+    passed += 1;
+  }
   const locked = {
     remote: "https://github.com/agent-ix/selftest",
     revision: first,
@@ -220,5 +235,5 @@ try {
 }
 
 console.log(
-  `verification-stack-selftest: ${passed}/${shapeMutations.length + 9} invariants verified`,
+  `verification-stack-selftest: ${passed}/${shapeMutations.length + 10} invariants verified`,
 );

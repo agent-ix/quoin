@@ -31,6 +31,7 @@ import {
 import { tmpdir } from "node:os";
 import { delimiter, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { format as prettierFormat } from "prettier";
 
 import {
   compareTier2Baseline,
@@ -435,7 +436,7 @@ export function render(score, delta) {
 
 const fmt = (ids) => (ids.length ? `(${ids.join(", ")})` : "");
 
-function main() {
+async function main() {
   const update = process.argv.includes("--update");
   const quire = argOf("--quire") ?? "quire";
   const declarationRepositories = declarationRepositoryArgs(
@@ -496,7 +497,7 @@ function main() {
       return 2;
     }
     mkdirSync(dirname(BASELINE), { recursive: true });
-    writeFileSync(BASELINE, JSON.stringify(candidate, null, 2) + "\n");
+    writeFileSync(BASELINE, await formatTier2Json(candidate, BASELINE));
     console.log(`\nbaseline rewritten: bench/battletest-baseline.json`);
     return 0;
   }
@@ -508,6 +509,11 @@ function main() {
     )
     ? 1
     : 0;
+}
+
+/** Emit the generated Tier-2 baseline in the form the repository gate enforces. */
+export async function formatTier2Json(value, filepath) {
+  return prettierFormat(JSON.stringify(value), { filepath });
 }
 
 /** Materialize every immutable cohort as an isolated worktree and retain its sources. */
@@ -1137,5 +1143,5 @@ function argsOf(flag) {
 }
 
 if (process.argv[1] && process.argv[1].endsWith("battletest.mjs")) {
-  process.exit(main());
+  process.exit(await main());
 }

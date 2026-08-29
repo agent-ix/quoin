@@ -14,6 +14,9 @@ export function auditToolDrift(files) {
   const errors = [];
   const pkg = JSON.parse(files["package.json"]);
   const stackLock = JSON.parse(files["quality/verification-stack-lock.json"]);
+  if (!FULL_SHA.test(stackLock.cohorts?.quireBenchmarkQuoin?.revision ?? "")) {
+    errors.push("Quire benchmark Quoin corpus must be locked to a full SHA");
+  }
   if (!/^pnpm@\d+\.\d+\.\d+$/.test(pkg.packageManager ?? "")) {
     errors.push("packageManager must pin an exact pnpm version");
   }
@@ -122,6 +125,15 @@ export function auditToolDrift(files) {
     )
   ) {
     errors.push("canonical attestation must carry locked toolchain identities");
+  }
+  if (
+    !files["scripts/verification-stack.mjs"].includes(
+      'sources["quoin-benchmark-corpus"]',
+    )
+  ) {
+    errors.push(
+      "canonical attestation must separate the Quoin benchmark corpus identity",
+    );
   }
   if (
     !files["scripts/bench-tier1.mjs"].includes(

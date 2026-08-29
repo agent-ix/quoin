@@ -89,6 +89,18 @@ const mutations = [
     /CLI provenance must equal/,
   ],
   [
+    "missing benchmark corpus cohort",
+    "quality/verification-stack-lock.json",
+    (s) => s.replace('"quireBenchmarkQuoin"', '"unguardedQuoin"'),
+    /benchmark Quoin corpus must be locked/,
+  ],
+  [
+    "collapsed benchmark corpus identity",
+    "scripts/verification-stack.mjs",
+    (s) => s.replace('sources["quoin-benchmark-corpus"]', "sources.quoin"),
+    /separate the Quoin benchmark corpus identity/,
+  ],
+  [
     "shared-workspace Tier-1 runtime",
     "scripts/verification-stack.mjs",
     (s) => s.replace('"--quoin",\n      isolatedQuoin,', ""),

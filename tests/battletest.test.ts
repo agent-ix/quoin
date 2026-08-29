@@ -21,11 +21,13 @@ import {
 import { execFileSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { check as prettierCheck } from "prettier";
 
 import {
   collectTier2Sources,
   assertPromotionDisposition,
   diff,
+  formatTier2Json,
   render,
   scoreAgainstCohorts,
   scoreAgainstKey,
@@ -42,6 +44,15 @@ import {
 const key = JSON.parse(
   readFileSync(join(__dirname, "..", "bench", "answer-key.json"), "utf8"),
 );
+
+it("generated Tier-2 JSON satisfies the repository format gate", async () => {
+  const filepath = join(__dirname, "..", "bench", "battletest-baseline.json");
+  const generated = await formatTier2Json(
+    { rows: [["a", "b", "c", "d"]] },
+    filepath,
+  );
+  expect(await prettierCheck(generated, { filepath })).toBe(true);
+});
 
 describe("scoring against the adjudicated answer key", () => {
   it("pins the promotion disposition without relabeling historical keys", () => {
