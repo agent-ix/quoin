@@ -30,7 +30,7 @@ import { fileURLToPath } from "node:url";
 /** Where the vendored schemas came from, and exactly which bytes. */
 export const QUIRE_CONTRACT = {
   /** Exact quire-rs commit whose schemas were copied. */
-  sourceRevision: "26397156f8676911bcd311d42538c1f6b49eb111",
+  sourceRevision: "ca7362d4dacecb96f01d74d1d971327118c25917",
   /** The contract version, as carried in each schema's `$id` and filename. */
   contractVersion: "v1",
   /**
