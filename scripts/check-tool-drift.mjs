@@ -43,6 +43,62 @@ export function auditToolDrift(files) {
   if (/^\s*@?pnpm\s/m.test(files["Makefile"])) {
     errors.push("Makefile recipes may not execute ambient pnpm");
   }
+  if (/command\s+-v\s+quire|^QUIRE\s*\?=/m.test(files["Makefile"])) {
+    errors.push("Makefile may not discover or default Quire through PATH");
+  }
+  if (
+    !/^test:\n\tnode scripts\/verification-stack\.mjs$/m.test(files["Makefile"])
+  ) {
+    errors.push("bare make test must run the canonical verification stack");
+  }
+  if (
+    !/^test-with-quire: require-quire build validate check-version$/m.test(
+      files["Makefile"],
+    )
+  ) {
+    errors.push(
+      "the inner test gate must require an explicit absolute Quire path",
+    );
+  }
+  if (
+    !/test -x "\$\(QUIRE\)"/.test(files["Makefile"]) ||
+    !/\*\/quire\) ;; \*\) echo "QUIRE must name an executable called quire/.test(
+      files["Makefile"],
+    )
+  ) {
+    errors.push("the explicit Quire path must be executable and named quire");
+  }
+  if (
+    !/PATH="\$\(dir \$\(QUIRE\)\):\$\$PATH" QUIRE="\$\(QUIRE\)" \$\(PNPM\) run test/.test(
+      files["Makefile"],
+    )
+  ) {
+    errors.push(
+      "the inner test gate must default Quoin and contract tests to one Quire binary",
+    );
+  }
+  for (const target of [
+    "battletest",
+    "battletest-update",
+    "bench-tier1-experimental",
+    "evidence-audit",
+    "validate",
+  ]) {
+    if (
+      !new RegExp(`^${target}:.*\\brequire-quire\\b`, "m").test(
+        files["Makefile"],
+      )
+    ) {
+      errors.push(`${target} must fail closed without an explicit Quire path`);
+    }
+  }
+  if (
+    !/QUOIN_QUIRE="\$\(QUIRE\)" node bin\/quoin\.js evidence audit/.test(
+      files["Makefile"],
+    )
+  ) {
+    errors.push("evidence-audit must pass its explicit Quire path to Quoin");
+  }
 
   const pnpmLock = parseYaml(files["pnpm-lock.yaml"]);
   const importer = pnpmLock?.importers?.["."] ?? {};
@@ -79,6 +135,14 @@ export function auditToolDrift(files) {
   const governedCliCheckout = buildSteps.find(
     (step) => step?.with?.repository === "agent-ix/quire-cli",
   );
+  const governedTestStep = buildSteps.find(
+    (step) => step?.name === "Test with exact governed Quire",
+  );
+  if (!String(governedTestStep?.run ?? "").includes("make test-with-quire")) {
+    errors.push(
+      "build-test must use the explicit non-recursive Quire test gate",
+    );
+  }
   if (
     governedCliCheckout?.with?.ref !==
     stackLock.repositories?.["quire-cli"]?.revision
@@ -192,6 +256,13 @@ export function auditToolDrift(files) {
     )
   ) {
     errors.push("canonical campaign must run verification-stack selftests");
+  }
+  if (
+    !files["scripts/verification-stack.mjs"].includes(
+      '["test-with-quire", `QUIRE=${binary}`]',
+    )
+  ) {
+    errors.push("canonical campaign must enter the explicit Quire test gate");
   }
   if (
     !files["scripts/bench-tier1.mjs"].includes(

@@ -19,7 +19,24 @@ PNPM := corepack pnpm
 build:
 	$(PNPM) run build
 
-# `test` depends on `build`: oclif resolves commands from `./dist/commands`
+# Bare `make test` is the governed local green bar. It must not inherit a
+# same-looking CLI from PATH or substitute the npm wrapper for the exact engine
+# source: both defects have occurred (#280). The verification stack builds,
+# authenticates, and hashes the locked Quire source, then enters the explicit
+# inner target below.
+.PHONY: test
+test:
+	node scripts/verification-stack.mjs
+
+.PHONY: require-quire
+require-quire:
+	@test -n "$(QUIRE)" || { echo "this target requires QUIRE=/absolute/path/to/quire"; exit 2; }
+	@case "$(QUIRE)" in /*) ;; *) echo "QUIRE must be an absolute path, got: $(QUIRE)"; exit 2 ;; esac
+	@test -x "$(QUIRE)" || { echo "QUIRE is not executable: $(QUIRE)"; exit 2; }
+	@case "$(QUIRE)" in */quire) ;; *) echo "QUIRE must name an executable called quire: $(QUIRE)"; exit 2 ;; esac
+
+# `test-with-quire` depends on `build`: oclif resolves commands from
+# `./dist/commands`
 # (package.json `oclif.commands`), so the dispatch-parity test sees an empty
 # command list without a build. CI runs `make install` then `make test` with no
 # build step in between, which is why that test passed locally — where a stale
@@ -28,9 +45,9 @@ build:
 # `test` also depends on `check-version` (quoin#196): the two version surfaces
 # disagreed for every locally built binary, and only a BUILT artifact can show
 # it — the source has no baked version to disagree with package.json.
-.PHONY: test
-test: build validate check-version
-	QUIRE="$(abspath $(QUIRE))" $(PNPM) run test
+.PHONY: test-with-quire
+test-with-quire: require-quire build validate check-version
+	PATH="$(dir $(QUIRE)):$$PATH" QUIRE="$(QUIRE)" $(PNPM) run test
 
 # Every surface that reports a version reports the same one, and a clean tag
 # reports itself (quoin#196). The class of defect this catches shipped once
@@ -63,15 +80,13 @@ SPEC_ARTIFACTS_ISO_ROOT ?= ../spec-artifacts-iso
 # the overclaim this programme exists to end. It replaces the RE-RUN.
 BENCH_CORPUS ?= ../filament-ide-rs
 .PHONY: battletest
-battletest:
-	@test -n "$(QUIRE)" || { echo "battletest requires QUIRE=/absolute/path/to/quire"; exit 2; }
+battletest: require-quire
 	node scripts/battletest.mjs --quire $(QUIRE) --corpus $(BENCH_CORPUS) \
 	  --declaration-repo agent-ix/spec-artifacts-process=$(SPEC_ARTIFACTS_PROCESS_ROOT) \
 	  --declaration-repo agent-ix/spec-artifacts-iso=$(SPEC_ARTIFACTS_ISO_ROOT)
 
 .PHONY: battletest-update
-battletest-update:
-	@test -n "$(QUIRE)" || { echo "battletest-update requires QUIRE=/absolute/path/to/quire"; exit 2; }
+battletest-update: require-quire
 	node scripts/battletest.mjs --update --quire $(QUIRE) --corpus $(BENCH_CORPUS) \
 	  --declaration-repo agent-ix/spec-artifacts-process=$(SPEC_ARTIFACTS_PROCESS_ROOT) \
 	  --declaration-repo agent-ix/spec-artifacts-iso=$(SPEC_ARTIFACTS_ISO_ROOT)
@@ -98,9 +113,10 @@ battletest-update:
 # default pointed at the stale one. Caught by quire-cli#68's provenance guard
 # refusing a binary that cannot name its engine, which is the case for
 # refusing rather than warning.
-# Interactive convenience only. Governed evidence never consumes this default:
-# `verification-stack.mjs` builds, snapshots, hashes, and passes its own binary.
-QUIRE ?= $(shell command -v quire 2>/dev/null)
+# There is deliberately no default. A PATH lookup selected 0.29.0 during the
+# final Phase-3 fresh-main gate, while the npm package reported 0.30.2 but
+# carried an incompatible engine contract (#280). Exact source identity, not
+# CLI semver or install location, is the governing fact.
 #
 # `MODULES` overrides the DECLARATION the cases bind, which is the second axis
 # (agent-ix/quoin#240). Empty means the corpus's own vendored `modules/`, so an
@@ -120,8 +136,7 @@ bench-tier1-update:
 	node scripts/verification-stack.mjs --update
 
 .PHONY: bench-tier1-experimental
-bench-tier1-experimental:
-	@test -n "$(QUIRE)" || { echo "usage: make bench-tier1-experimental QUIRE=/absolute/path/to/quire"; exit 2; }
+bench-tier1-experimental: require-quire
 	node scripts/bench-tier1.mjs --experimental --quire $(QUIRE) $(if $(MODULES),--modules $(MODULES))
 
 .PHONY: verification-preflight
@@ -140,13 +155,12 @@ verification-preflight:
 # version, not the engine, and the installed 0.29.0 predates `binding_census` --
 # it would score recall 0 on every coverage family and look like a collapse.
 .PHONY: gate
-gate: lint test
-	@echo "gate: bench-tier1 against $(QUIRE)"
-	@$(MAKE) bench-tier1
+gate: test
+	@echo "gate: canonical verification stack passed"
 
 .PHONY: evidence-audit
-evidence-audit:
-	node bin/quoin.js evidence audit --repo . --module $(EVIDENCE_MODULE) --ratchet
+evidence-audit: require-quire
+	QUOIN_QUIRE="$(QUIRE)" node bin/quoin.js evidence audit --repo . --module $(EVIDENCE_MODULE) --ratchet
 
 # Re-transcribe this repository's own suite run into the store.
 .PHONY: evidence-record
@@ -183,8 +197,7 @@ check-version: build
 # a populated `~/.ix` passed. Installing them with the CLI the repo just built
 # also means a module set is never validated against a stale host binary.
 .PHONY: validate
-validate: build
-	@test -n "$(QUIRE)" || { echo "validate requires QUIRE=/absolute/path/to/quire"; exit 2; }
+validate: require-quire build
 	node bin/quoin.js module ensure-defaults
 	$(QUIRE) validate "spec/**/*.md" "plan/**/*.md" "reviews/*.md"
 
@@ -361,7 +374,8 @@ help:
 	@echo ""
 	@echo "Common targets:"
 	@echo "  make build              - Build TypeScript"
-	@echo "  make test               - Run tests"
+	@echo "  make test               - Run the exact-source canonical verification stack"
+	@echo "  make test-with-quire QUIRE=/absolute/path - Run the explicit inner test gate"
 	@echo "  make lint               - Run linter"
 	@echo "  make format             - Format code"
 	@echo "  make clean              - Remove build artifacts"

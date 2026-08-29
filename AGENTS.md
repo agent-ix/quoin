@@ -4,7 +4,8 @@
 
 ```bash
 make build                      # build library
-make test                       # run jest
+make test                       # exact-source canonical verification stack
+make test-with-quire QUIRE=/absolute/path/to/quire  # explicit inner test gate
 make lint                       # eslint + prettier check
 make format                     # prettier format
 make update-lock                # update pnpm-lock.yaml

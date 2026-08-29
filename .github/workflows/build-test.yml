@@ -45,7 +45,7 @@ jobs:
       # wrapper predates source provenance and fails the current contract even
       # though its package version looks current.
       - name: Test with exact governed Quire
-        run: make test QUIRE="$GITHUB_WORKSPACE/.ci/quire-cli/target/release/quire"
+        run: make test-with-quire QUIRE="$GITHUB_WORKSPACE/.ci/quire-cli/target/release/quire"
 
   lint:
     name: Lint
