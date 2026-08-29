@@ -37,10 +37,11 @@ const mutations = [
   [
     "wrong governed CLI revision",
     ".github/workflows/build-test.yml",
-    (s) => s.replace(
-      /ref: [0-9a-f]{40}/,
-      "ref: 0000000000000000000000000000000000000000",
-    ),
+    (s) =>
+      s.replace(
+        /ref: [0-9a-f]{40}/,
+        "ref: 0000000000000000000000000000000000000000",
+      ),
     /must equal verification-stack quire-cli revision/,
   ],
   [
