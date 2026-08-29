@@ -101,6 +101,34 @@ const mutations = [
     /separate the Quoin benchmark corpus identity/,
   ],
   [
+    "debug canonical build",
+    "scripts/verification-stack.mjs",
+    (s) => s.replace('      "--release",\n', ""),
+    /release profile and locked resolution/,
+  ],
+  [
+    "unlocked canonical build",
+    "scripts/verification-stack.mjs",
+    (s) => s.replace('      "--locked",\n', ""),
+    /release profile and locked resolution/,
+  ],
+  [
+    "missing attested build profile",
+    "scripts/verification-stack.mjs",
+    (s) => s.replace('      buildProfile: "release",\n', ""),
+    /attestation and Tier-1 must agree on release build profile/,
+  ],
+  [
+    "Tier-1 ignores build profile",
+    "scripts/bench-tier1.mjs",
+    (s) =>
+      s.replace(
+        'value.buildProfile !== "release"',
+        'value.ignoredProfile !== "release"',
+      ),
+    /attestation and Tier-1 must agree on release build profile/,
+  ],
+  [
     "shared-workspace Tier-1 runtime",
     "scripts/verification-stack.mjs",
     (s) => s.replace('"--quoin",\n      isolatedQuoin,', ""),

@@ -103,6 +103,9 @@ function validateVerificationStack(value: unknown): void {
       fail(`verificationStack.${key} must be a full sha256 digest`);
     }
   }
+  if (value.buildProfile !== "release") {
+    fail("verificationStack.buildProfile must be release");
+  }
   if (!isObject(value.toolchains)) {
     fail("verificationStack.toolchains must pin node, rust, and python");
   }

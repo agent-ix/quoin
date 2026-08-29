@@ -128,6 +128,27 @@ export function auditToolDrift(files) {
   }
   if (
     !files["scripts/verification-stack.mjs"].includes(
+      '"build",\n      "--release",\n      "--locked",',
+    )
+  ) {
+    errors.push(
+      "canonical Quire build must use release profile and locked resolution",
+    );
+  }
+  if (
+    !files["scripts/verification-stack.mjs"].includes(
+      'buildProfile: "release"',
+    ) ||
+    !files["scripts/bench-tier1.mjs"].includes(
+      'value.buildProfile !== "release"',
+    )
+  ) {
+    errors.push(
+      "canonical attestation and Tier-1 must agree on release build profile",
+    );
+  }
+  if (
+    !files["scripts/verification-stack.mjs"].includes(
       'sources["quoin-benchmark-corpus"]',
     )
   ) {

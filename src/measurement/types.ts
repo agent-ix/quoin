@@ -48,6 +48,7 @@ export interface VerificationStackAttestation {
   schemaVersion: "verification-stack-attestation-v1";
   lockDigest: string;
   executableDigest: string;
+  buildProfile: "release";
   toolchains: { node: string; rust: string; python: string };
   sources: Record<
     string,

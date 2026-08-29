@@ -324,7 +324,12 @@ function buildCli(cliRoot, scratch) {
   const target = join(scratch, "cargo-target");
   const output = run(
     "cargo",
-    ["build", "--locked", "--message-format=json-render-diagnostics"],
+    [
+      "build",
+      "--release",
+      "--locked",
+      "--message-format=json-render-diagnostics",
+    ],
     {
       cwd: cliRoot,
       env: { ...process.env, CARGO_TARGET_DIR: target },
@@ -542,6 +547,7 @@ async function main() {
       schemaVersion: "verification-stack-attestation-v1",
       lockDigest: lockDigest(lockPath),
       executableDigest: sha256(readFileSync(binary)),
+      buildProfile: "release",
       toolchains: structuredClone(lock.toolchains),
       sources,
       capabilities: [...provenance.capabilities].sort(),
