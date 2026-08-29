@@ -1,16 +1,16 @@
 {
   "provenance": {
-    "engine": "quire 0.30.2 (cli 55fe7495, engine 0.46.0@7b46f896)",
+    "engine": "quire 0.30.2 (cli 7334077b, engine 0.46.0@be56a91c)",
     "tool": {
       "schemaVersion": "quire-tool-provenance-v1",
       "cli": {
         "version": "0.30.2",
-        "sourceRevision": "55fe749550955c39cb9bb6ef1c6180079386a283",
+        "sourceRevision": "7334077baf3526edf2c8857a2720fc95b1b68f8d",
         "sourceState": "clean"
       },
       "engine": {
         "version": "0.46.0",
-        "sourceRevision": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+        "sourceRevision": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
         "sourceState": "clean"
       },
       "capabilities": [
@@ -30,16 +30,16 @@
     },
     "verification_stack": {
       "schemaVersion": "verification-stack-attestation-v1",
-      "lockDigest": "sha256:a4b7d69ff08e0aa0194e25f4393c0c3650e83b5c1041a790157e0ba0066ffae1",
-      "executableDigest": "sha256:d884726dbb69ffc72b259b5cf439cccdc83be9c7ea2894172da1110832347123",
+      "lockDigest": "sha256:c03487fc57d2349a8e03e944c5ad43cd60e23c6e1e5245185ae65e9984d3c136",
+      "executableDigest": "sha256:e4a6d63326b8aca39bf6923c08d7cd1d85f1cf808fa06d30049e7ea71f2745ca",
       "sources": {
         "quire": {
-          "revision": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "revision": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "sourceState": "clean",
           "remote": "https://github.com/agent-ix/quire-rs"
         },
         "quire-cli": {
-          "revision": "55fe749550955c39cb9bb6ef1c6180079386a283",
+          "revision": "7334077baf3526edf2c8857a2720fc95b1b68f8d",
           "sourceState": "clean",
           "remote": "https://github.com/agent-ix/quire-cli"
         },
@@ -64,7 +64,7 @@
           "remote": "https://github.com/agent-ix/spec-artifacts-iso"
         },
         "quoin": {
-          "revision": "a6d777c5bf5b7f7a7468a05610af8451dfafbb45",
+          "revision": "464ca965d5c0dbc5db86c38ddc4634c483aa6d0c",
           "sourceState": "clean",
           "remote": "https://github.com/agent-ix/quoin"
         },
@@ -93,16 +93,16 @@
         ".npmrc": "sha256:cde76ca04e048c3eba070a2c0dfcf5b723cf6014eab177157096b924f24ec4ca",
         "package.json": "sha256:f646237dfdfef87bdb70c2e5bdc1b8d78d3a93a45bc01868ba4e72a79e682979",
         "pnpm-lock.yaml": "sha256:9f64ad2d3873918bb1520c6412046f15f82b1defab706ca4df351134c3d429fd",
-        "src/quire/contract.ts": "sha256:3646c5ab393be789f459d30c188bb23c818b7b0f64919d4855f38d2b95ee4fae",
+        "src/quire/contract.ts": "sha256:628f4bffd4203f6193458ff29981af623ee4ab85598ad2a675ad4afc839fc453",
         "src/quire/schemas/coverage-v1.schema.json": "sha256:f0cdbb9457ca7ca76b642c11fd5b6f41273909c894458c31f58c9c50fdbcdb38",
         "src/quire/schemas/properties-v1.schema.json": "sha256:cc687773c35b3e71e82fc336e887ecc688a28b03e970e349b2921b8624e4d11c",
         "bench/metrics.json": "sha256:5876512767852fd9ee5a848de90e34c9626926bb768db87c2eaf28deb2d05764",
         "bench/tier1-mapping.json": "sha256:186e282f4197894f96e51e2dfe9fc6420f222512159abfd84be8be7c5c6ea90a",
-        "bench/guidance-evaluator-contract-v1.json": "sha256:cf027fe79bc5c12b2969e0b2b880318570d966b3168011ffe18ad35072947cb1",
-        "bench/guidance-independent-review-v1.json": "sha256:6a8cb2d6314d8ad831e847b4e0b584cef334db48ef7fa0d1dcfee6968321660b",
+        "bench/guidance-evaluator-contract-v1.json": "sha256:919a9e1c655d25ddabdeed8229006571321112efe32e674851aa23c59445cbe3",
+        "bench/guidance-independent-review-v1.json": "sha256:988df9774031b273df181c7886f77f1a6a06f625cea7748c50cc277a32f70da4",
         "bench/span-grounding-labels.json": "sha256:897ef28979f5a3f607fdb27e740f1508b736ae5d9ce3dd91c7813f09f841c000",
         "bench/span-grounding-v2-labels.json": "sha256:4e10f34488c87439e7253668ea34773adb432b16bce574b1cc93fbf0343e2650",
-        "bench/span-breadth-v1-labels.json": "sha256:d4a39c457978b0a0404ab2a70e9a4ffc3a748499d769e0804db18f0088fa8a89",
+        "bench/span-breadth-v1-labels.json": "sha256:883be139a6c38bd6ac21c210037717bc68e4692b1927c3e12b710c356b91e71b",
         "bench/answer-key.json": "sha256:ece1a7f5d254623cf79beff1113021f4f71359ac9a3c703d07cff0f8a45e9532",
         "bench/advisory-adjudication-v1.json": "sha256:87c575b6ca0c0886d874f609144f907f3ac270e08c2091bb2bb1ead725713e43",
         "corpus/config/metrics.json": "sha256:69ab8e5b8fc14e07408e034f0b791c3dd3356c9db78e1ac0dc961bcc0b47c0d7",
@@ -3862,8 +3862,8 @@
     "rate": 1
   },
   "guidance_quality": {
-    "contractDigest": "sha256:4c70245966c341f7153a511cc7b721500218a19d8e56d8799f2fe0a551f1e11b",
-    "evidenceDigest": "sha256:8e5305a145b9a5ce2cedbba8c28356165b5b21a272bd2f81bbd85ad111997e65",
+    "contractDigest": "sha256:74d9f205d45749a6f9bfe67e8502f401d8923562097a94e7baee84d0aa31b9ab",
+    "evidenceDigest": "sha256:5bcdf95243eaca88f266944ed070ebf1044912923a0057f9c7d82ca483ad73cb",
     "selectedRecords": 67,
     "correctness": {
       "definitionVersion": "guidance.correctness-v1",
@@ -5743,7 +5743,7 @@
       }
     },
     "producerVersions": [
-      "0.30.2 (engine 7b46f89692e1fcd63de41ab3f9ecdb601ff0453c)"
+      "0.30.2 (engine be56a91c8de7923ce9fba7dd690ea1199e28bce0)"
     ],
     "rate": 0
   },
@@ -5771,7 +5771,7 @@
       }
     ],
     "producerVersions": [
-      "0.30.2 (engine 7b46f89692e1fcd63de41ab3f9ecdb601ff0453c)"
+      "0.30.2 (engine be56a91c8de7923ce9fba7dd690ea1199e28bce0)"
     ]
   },
   "span_breadth": {
@@ -5849,7 +5849,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -5912,7 +5912,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -5975,7 +5975,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -6038,7 +6038,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -6101,7 +6101,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -6164,7 +6164,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -6227,7 +6227,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -6313,7 +6313,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -6399,7 +6399,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -6489,7 +6489,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -6579,7 +6579,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -6669,7 +6669,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -6759,7 +6759,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -6822,7 +6822,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -6885,7 +6885,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -6948,7 +6948,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -7011,7 +7011,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -7074,7 +7074,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -7137,7 +7137,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -7227,7 +7227,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -7317,7 +7317,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -7407,7 +7407,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -7497,7 +7497,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -7587,7 +7587,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -7677,7 +7677,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -7767,7 +7767,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -7857,7 +7857,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -7920,7 +7920,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -7983,7 +7983,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -8046,7 +8046,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -8109,7 +8109,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -8172,7 +8172,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -8235,7 +8235,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -8321,7 +8321,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -8407,7 +8407,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -8493,7 +8493,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -8583,7 +8583,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -8669,7 +8669,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -8732,7 +8732,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -8795,7 +8795,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -8825,7 +8825,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -8855,7 +8855,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -8885,7 +8885,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -8935,7 +8935,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -8998,7 +8998,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -9061,7 +9061,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -9124,7 +9124,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -9187,7 +9187,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -9250,7 +9250,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -9313,7 +9313,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -9376,7 +9376,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -9439,7 +9439,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -9502,7 +9502,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -9552,7 +9552,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -9602,7 +9602,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -9632,7 +9632,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -9662,7 +9662,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -9725,7 +9725,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -9788,7 +9788,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -9851,7 +9851,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -9914,7 +9914,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -9977,7 +9977,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -10040,7 +10040,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -10130,7 +10130,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -10220,7 +10220,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -10310,7 +10310,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -10400,7 +10400,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -10490,7 +10490,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -10580,7 +10580,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -10670,7 +10670,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -10760,7 +10760,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -10850,7 +10850,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -10940,7 +10940,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -11030,7 +11030,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -11120,7 +11120,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -11210,7 +11210,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -11300,7 +11300,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -11390,7 +11390,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -11480,7 +11480,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -11570,7 +11570,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -11660,7 +11660,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -11750,7 +11750,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -11840,7 +11840,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -11930,7 +11930,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -12020,7 +12020,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -12110,7 +12110,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -12200,7 +12200,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -12263,7 +12263,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -12326,7 +12326,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -12389,7 +12389,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -12452,7 +12452,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -12515,7 +12515,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -12578,7 +12578,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -12660,7 +12660,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -12742,7 +12742,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -12824,7 +12824,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -12906,7 +12906,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -12988,7 +12988,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -13070,7 +13070,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -13128,7 +13128,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -13186,7 +13186,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -13244,7 +13244,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -13274,7 +13274,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -13304,7 +13304,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -13334,7 +13334,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -13364,7 +13364,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -13427,7 +13427,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -13490,7 +13490,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -13553,7 +13553,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -13616,7 +13616,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -13679,7 +13679,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -13742,7 +13742,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -13805,7 +13805,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -13868,7 +13868,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -13931,7 +13931,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -13994,7 +13994,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -14057,7 +14057,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -14120,7 +14120,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -14183,7 +14183,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -14246,7 +14246,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -14309,7 +14309,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -14372,7 +14372,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -14435,7 +14435,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -14498,7 +14498,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -14561,7 +14561,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -14624,7 +14624,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -14710,7 +14710,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -14796,7 +14796,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -14882,7 +14882,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -14968,7 +14968,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -15054,7 +15054,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -15140,7 +15140,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -15203,7 +15203,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -15289,7 +15289,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -15375,7 +15375,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -15461,7 +15461,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -15547,7 +15547,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -15633,7 +15633,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -15719,7 +15719,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -15777,7 +15777,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -15835,7 +15835,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -15893,7 +15893,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -15983,7 +15983,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -16073,7 +16073,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -16163,7 +16163,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -16253,7 +16253,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -16343,7 +16343,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -16433,7 +16433,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -16511,7 +16511,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -16589,7 +16589,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -16667,7 +16667,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -16745,7 +16745,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -16823,7 +16823,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -16901,7 +16901,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -16987,7 +16987,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -17073,7 +17073,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -17159,7 +17159,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -17245,7 +17245,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -17331,7 +17331,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -17417,7 +17417,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -17472,7 +17472,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -17527,7 +17527,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -17613,7 +17613,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -17699,7 +17699,7 @@
         ],
         "engine": {
           "cli": "0.30.2",
-          "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+          "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
           "capabilities": [
             "action_guidance.structured",
             "binding_census",
@@ -17775,7 +17775,7 @@
     },
     "malformed": [],
     "producerVersions": [
-      "0.30.2 (engine 7b46f89692e1fcd63de41ab3f9ecdb601ff0453c)"
+      "0.30.2 (engine be56a91c8de7923ce9fba7dd690ea1199e28bce0)"
     ]
   },
   "grounding_quality_payload": {
@@ -17922,7 +17922,7 @@
     ],
     "engine": {
       "cli": "0.30.2",
-      "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+      "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
       "capabilities": [
         "action_guidance.structured",
         "binding_census",

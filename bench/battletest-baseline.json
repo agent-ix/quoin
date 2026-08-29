@@ -16,13 +16,13 @@
     "declaration_repository_digest": "sha256:d5369c02d4134006bc614517b13cf7e5c6b3effa810ecffe34ff027502b6ff24",
     "tools": {
       "quire": {
-        "version": "quire 0.30.2 (cli 55fe7495, engine 0.46.0@7b46f896)",
-        "digest": "sha256:d884726dbb69ffc72b259b5cf439cccdc83be9c7ea2894172da1110832347123"
+        "version": "quire 0.30.2 (cli 7334077b, engine 0.46.0@be56a91c)",
+        "digest": "sha256:e4a6d63326b8aca39bf6923c08d7cd1d85f1cf808fa06d30049e7ea71f2745ca"
       },
       "quoin": {
-        "version": "0.21.9-117-ga6d777c",
-        "revision": "a6d777c5bf5b7f7a7468a05610af8451dfafbb45",
-        "digest": "sha256:c3480ca560a01e7fedd8f04b6527f4ebfc27a8b42c9840723adf19d2809e633a"
+        "version": "0.21.9-120-g464ca96",
+        "revision": "464ca965d5c0dbc5db86c38ddc4634c483aa6d0c",
+        "digest": "sha256:29763ab1b1cdfe5d92f6a2a0441808e9559a6063710a7576f8385bb0b2544485"
       }
     },
     "environment": {
@@ -39530,7 +39530,7 @@
                 "declaration": "inspection",
                 "reason": "archetype-matches-nothing",
                 "message": "declaration 'inspection' declares archetype 'Inspections', which no document in the corpus has — it scans nothing and mints no rows",
-                "path": "/tmp/quoin-tier2-cohorts-ifOIN5/declarations/pass2-global-0/spec_artifacts_process/manifest.yaml",
+                "path": "/tmp/quoin-tier2-cohorts-5qIMqS/declarations/pass2-global-0/spec_artifacts_process/manifest.yaml",
                 "line": 576,
                 "subject": "declaration `inspection`",
                 "change_target": "the trace-target archetype in the module manifest",
@@ -40008,7 +40008,7 @@
                 "declaration": "suite",
                 "reason": "archetype-matches-nothing",
                 "message": "declaration 'suite' declares archetype 'SuiteRegistry', which no document in the corpus has — it scans nothing and mints no rows",
-                "path": "/tmp/quoin-tier2-cohorts-ifOIN5/declarations/pass2-global-0/spec_artifacts_process/manifest.yaml",
+                "path": "/tmp/quoin-tier2-cohorts-5qIMqS/declarations/pass2-global-0/spec_artifacts_process/manifest.yaml",
                 "line": 568,
                 "subject": "declaration `suite`",
                 "change_target": "the trace-target archetype in the module manifest",
@@ -76443,7 +76443,7 @@
             },
             "engine": {
               "cli": "0.30.2",
-              "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+              "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
               "capabilities": [
                 "action_guidance.structured",
                 "binding_census",
@@ -78988,7 +78988,7 @@
                 "locus": {
                   "state": "available",
                   "value": {
-                    "path": "/tmp/quoin-tier2-cohorts-ifOIN5/declarations/pass2-global-0/spec_artifacts_process/manifest.yaml",
+                    "path": "/tmp/quoin-tier2-cohorts-5qIMqS/declarations/pass2-global-0/spec_artifacts_process/manifest.yaml",
                     "line": 576
                   }
                 },
@@ -79011,7 +79011,7 @@
                   "declaration": "inspection",
                   "reason": "archetype-matches-nothing",
                   "message": "declaration 'inspection' declares archetype 'Inspections', which no document in the corpus has — it scans nothing and mints no rows",
-                  "path": "/tmp/quoin-tier2-cohorts-ifOIN5/declarations/pass2-global-0/spec_artifacts_process/manifest.yaml",
+                  "path": "/tmp/quoin-tier2-cohorts-5qIMqS/declarations/pass2-global-0/spec_artifacts_process/manifest.yaml",
                   "line": 576,
                   "subject": "declaration `inspection`",
                   "change_target": "the trace-target archetype in the module manifest",
@@ -81534,7 +81534,7 @@
                 "locus": {
                   "state": "available",
                   "value": {
-                    "path": "/tmp/quoin-tier2-cohorts-ifOIN5/declarations/pass2-global-0/spec_artifacts_process/manifest.yaml",
+                    "path": "/tmp/quoin-tier2-cohorts-5qIMqS/declarations/pass2-global-0/spec_artifacts_process/manifest.yaml",
                     "line": 568
                   }
                 },
@@ -81557,7 +81557,7 @@
                   "declaration": "suite",
                   "reason": "archetype-matches-nothing",
                   "message": "declaration 'suite' declares archetype 'SuiteRegistry', which no document in the corpus has — it scans nothing and mints no rows",
-                  "path": "/tmp/quoin-tier2-cohorts-ifOIN5/declarations/pass2-global-0/spec_artifacts_process/manifest.yaml",
+                  "path": "/tmp/quoin-tier2-cohorts-5qIMqS/declarations/pass2-global-0/spec_artifacts_process/manifest.yaml",
                   "line": 568,
                   "subject": "declaration `suite`",
                   "change_target": "the trace-target archetype in the module manifest",
@@ -93269,7 +93269,7 @@
               }
             ]
           },
-          "digest": "sha256:4d4fc2958f3bd68f310c0fa9036a43b5f0ea2f52f217fc1e5f064950a63ec61e"
+          "digest": "sha256:68f2b27e7ac3b8441f655435d3c53c43aee59b033ec15f1343f45b38c0cf877e"
         },
         "quoin.validate": {
           "state": "evaluated",
@@ -93289,7 +93289,7 @@
           "digest": "sha256:00c0f4cca2bf6302ffb788e8866edf7f57b6f840a2b3a1f59768afeb3f8ebf6f"
         }
       },
-      "source_digest": "sha256:e883bfb05633858e25029e99111488a3f03624699bde3c06b667e285543ea6d9"
+      "source_digest": "sha256:5921afc8ea4f4c999dcbd290266cafc0a6255dae157249d115276294b1a59f83"
     },
     "pass2-global-control": {
       "provenance": {
@@ -123225,7 +123225,7 @@
                 "declaration": "inspection",
                 "reason": "archetype-matches-nothing",
                 "message": "declaration 'inspection' declares archetype 'Inspections', which no document in the corpus has — it scans nothing and mints no rows",
-                "path": "/tmp/quoin-tier2-cohorts-ifOIN5/declarations/pass2-global-control-0/spec_artifacts_process/manifest.yaml",
+                "path": "/tmp/quoin-tier2-cohorts-5qIMqS/declarations/pass2-global-control-0/spec_artifacts_process/manifest.yaml",
                 "line": 576,
                 "subject": "declaration `inspection`",
                 "change_target": "the trace-target archetype in the module manifest",
@@ -123703,7 +123703,7 @@
                 "declaration": "suite",
                 "reason": "archetype-matches-nothing",
                 "message": "declaration 'suite' declares archetype 'SuiteRegistry', which no document in the corpus has — it scans nothing and mints no rows",
-                "path": "/tmp/quoin-tier2-cohorts-ifOIN5/declarations/pass2-global-control-0/spec_artifacts_process/manifest.yaml",
+                "path": "/tmp/quoin-tier2-cohorts-5qIMqS/declarations/pass2-global-control-0/spec_artifacts_process/manifest.yaml",
                 "line": 568,
                 "subject": "declaration `suite`",
                 "change_target": "the trace-target archetype in the module manifest",
@@ -155143,7 +155143,7 @@
             },
             "engine": {
               "cli": "0.30.2",
-              "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+              "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
               "capabilities": [
                 "action_guidance.structured",
                 "binding_census",
@@ -157587,7 +157587,7 @@
                 "locus": {
                   "state": "available",
                   "value": {
-                    "path": "/tmp/quoin-tier2-cohorts-ifOIN5/declarations/pass2-global-control-0/spec_artifacts_process/manifest.yaml",
+                    "path": "/tmp/quoin-tier2-cohorts-5qIMqS/declarations/pass2-global-control-0/spec_artifacts_process/manifest.yaml",
                     "line": 576
                   }
                 },
@@ -157610,7 +157610,7 @@
                   "declaration": "inspection",
                   "reason": "archetype-matches-nothing",
                   "message": "declaration 'inspection' declares archetype 'Inspections', which no document in the corpus has — it scans nothing and mints no rows",
-                  "path": "/tmp/quoin-tier2-cohorts-ifOIN5/declarations/pass2-global-control-0/spec_artifacts_process/manifest.yaml",
+                  "path": "/tmp/quoin-tier2-cohorts-5qIMqS/declarations/pass2-global-control-0/spec_artifacts_process/manifest.yaml",
                   "line": 576,
                   "subject": "declaration `inspection`",
                   "change_target": "the trace-target archetype in the module manifest",
@@ -160133,7 +160133,7 @@
                 "locus": {
                   "state": "available",
                   "value": {
-                    "path": "/tmp/quoin-tier2-cohorts-ifOIN5/declarations/pass2-global-control-0/spec_artifacts_process/manifest.yaml",
+                    "path": "/tmp/quoin-tier2-cohorts-5qIMqS/declarations/pass2-global-control-0/spec_artifacts_process/manifest.yaml",
                     "line": 568
                   }
                 },
@@ -160156,7 +160156,7 @@
                   "declaration": "suite",
                   "reason": "archetype-matches-nothing",
                   "message": "declaration 'suite' declares archetype 'SuiteRegistry', which no document in the corpus has — it scans nothing and mints no rows",
-                  "path": "/tmp/quoin-tier2-cohorts-ifOIN5/declarations/pass2-global-control-0/spec_artifacts_process/manifest.yaml",
+                  "path": "/tmp/quoin-tier2-cohorts-5qIMqS/declarations/pass2-global-control-0/spec_artifacts_process/manifest.yaml",
                   "line": 568,
                   "subject": "declaration `suite`",
                   "change_target": "the trace-target archetype in the module manifest",
@@ -171232,10 +171232,10 @@
               }
             ]
           },
-          "digest": "sha256:d76cb0b6ca9022ee79cc071b9ba0809d5928ee23dd04ed935aff5e0f9310e39d"
+          "digest": "sha256:e8959ba26eb801f202e998c1ad8aeb3dd539912d0547580d07e8917141385e91"
         }
       },
-      "source_digest": "sha256:66f02882fc0064a89a45bbb1cdc2c7da627c3675f44d40021c27e5debff271da"
+      "source_digest": "sha256:9055427075cc554464cf3672dd6a1584062dff00d3e698865e090e90b1822b9c"
     },
     "semantic-review-control": {
       "provenance": {
@@ -226218,7 +226218,7 @@
             },
             "engine": {
               "cli": "0.30.2",
-              "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+              "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
               "capabilities": [
                 "action_guidance.structured",
                 "binding_census",
@@ -235270,10 +235270,10 @@
               }
             ]
           },
-          "digest": "sha256:eff2fe9fb1f457ffde3b5593ac963bbe7844ebbcaf19942a0f9fd4f11b20b262"
+          "digest": "sha256:0ed625bf373084bc4cca543fed3f58b2f5aaee8fb60ff63b166bf4d856b24df5"
         }
       },
-      "source_digest": "sha256:7fe43e0ed02472f93c47276e3aefc97cbb632dce11abfe6251148532bd566392"
+      "source_digest": "sha256:14ee4011e62c525720b813c9e7ccbdc978587b4fbaa77303da018ccd09424d5f"
     },
     "semantic-review-defect": {
       "provenance": {
@@ -290246,7 +290246,7 @@
             },
             "engine": {
               "cli": "0.30.2",
-              "engine": "7b46f89692e1fcd63de41ab3f9ecdb601ff0453c",
+              "engine": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
               "capabilities": [
                 "action_guidance.structured",
                 "binding_census",
@@ -299348,7 +299348,7 @@
               }
             ]
           },
-          "digest": "sha256:fbaa058581d93423b85267bdaa8e59b40a0a1eb22e9815b8d85052a82307d0c5"
+          "digest": "sha256:c0e30e43e3c3c6ac37da228735a8799aecf15bd8bf0f6fc91b8c7fd62026e464"
         },
         "quoin.evidence-audit": {
           "state": "unavailable",
@@ -299376,7 +299376,7 @@
           "digest": "sha256:33c63fb38cfeaf5517a17dd111a6307528cf9bc66784105c86933fcef55547ff"
         }
       },
-      "source_digest": "sha256:83d69d931b5e95e104a8dfeccb823d79565c0a9b0a9d82dbe604beeabdb5aaa7"
+      "source_digest": "sha256:263371170e47bd7b3acb6caf5cb721ba7ebb170b555b7f9b6c193c35f5f1b665"
     }
   },
   "score": {
@@ -299401,5 +299401,5 @@
     "notEvaluated": [],
     "recall": 1
   },
-  "cohort_digest": "sha256:35a1466b6cb0094cf4c62dd8130337d7af9733888b0b14d3d8747a377a300c75"
+  "cohort_digest": "sha256:2fa393f6031bc6359e3fb59ea6e26584b57c07445f5596e7ecc07639da96d57d"
 }
