@@ -24,6 +24,7 @@ import { join } from "node:path";
 import { check as prettierCheck } from "prettier";
 
 import {
+  canonicalizeTier2ScratchPaths,
   collectTier2Sources,
   assertPromotionDisposition,
   diff,
@@ -52,6 +53,28 @@ it("generated Tier-2 JSON satisfies the repository format gate", async () => {
     filepath,
   );
   expect(await prettierCheck(generated, { filepath })).toBe(true);
+});
+
+it("canonicalizes runner-owned Tier-2 paths before persistence", () => {
+  const first = canonicalizeTier2ScratchPaths(
+    {
+      path: "/tmp/quoin-tier2-cohorts-first/declarations/defect-0/manifest.yaml",
+      nested: ["at /tmp/quoin-tier2-cohorts-first/defect/spec/FR-001.md"],
+    },
+    "/tmp/quoin-tier2-cohorts-first",
+  );
+  const second = canonicalizeTier2ScratchPaths(
+    {
+      path: "/tmp/quoin-tier2-cohorts-second/declarations/defect-0/manifest.yaml",
+      nested: ["at /tmp/quoin-tier2-cohorts-second/defect/spec/FR-001.md"],
+    },
+    "/tmp/quoin-tier2-cohorts-second",
+  );
+  expect(first).toEqual(second);
+  expect(first).toEqual({
+    path: "<tier2-worktree>/declarations/defect-0/manifest.yaml",
+    nested: ["at <tier2-worktree>/defect/spec/FR-001.md"],
+  });
 });
 
 describe("scoring against the adjudicated answer key", () => {

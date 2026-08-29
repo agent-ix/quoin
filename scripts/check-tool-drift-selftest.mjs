@@ -147,6 +147,22 @@ const mutations = [
     /scripts\/verification-stack-selftest\.mjs must be artifact-digest guarded/,
   ],
   [
+    "unhashed Tier-2 runner",
+    "quality/verification-stack-lock.json",
+    (s) => s.replace('"scripts/battletest.mjs"', '"unguarded-tier2-runner"'),
+    /scripts\/battletest\.mjs must be artifact-digest guarded/,
+  ],
+  [
+    "unhashed Tier-2 baseline library",
+    "quality/verification-stack-lock.json",
+    (s) =>
+      s.replace(
+        '"scripts/lib/tier2-baseline.mjs"',
+        '"unguarded-tier2-baseline"',
+      ),
+    /scripts\/lib\/tier2-baseline\.mjs must be artifact-digest guarded/,
+  ],
+  [
     "skipped verification-stack selftest",
     "scripts/verification-stack.mjs",
     (s) =>

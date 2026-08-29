@@ -620,13 +620,16 @@ export function collectTier2Cohorts({
           evidence_sidecar: cohort.evidence_sidecar,
           role: cohort.role,
         },
-        sources: collectTier2Sources({
-          quire,
-          quoin,
-          corpus: checkout,
-          declarationRoots,
-          sourceNames,
-        }),
+        sources: canonicalizeTier2ScratchPaths(
+          collectTier2Sources({
+            quire,
+            quoin,
+            corpus: checkout,
+            declarationRoots,
+            sourceNames,
+          }),
+          root,
+        ),
       };
     }
     validateReproductionCommands(out, key);
@@ -666,6 +669,26 @@ export function collectTier2Cohorts({
     }
     rmSync(root, { recursive: true, force: true });
   }
+}
+
+/** Replace runner-owned absolute paths before hashing or persisting evidence. */
+export function canonicalizeTier2ScratchPaths(value, scratchRoot) {
+  const prefix = resolve(scratchRoot);
+  if (typeof value === "string") {
+    return value.replaceAll(prefix, "<tier2-worktree>");
+  }
+  if (Array.isArray(value)) {
+    return value.map((item) => canonicalizeTier2ScratchPaths(item, prefix));
+  }
+  if (value && typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value).map(([key, item]) => [
+        key,
+        canonicalizeTier2ScratchPaths(item, prefix),
+      ]),
+    );
+  }
+  return value;
 }
 
 export function collectTier2Sources({

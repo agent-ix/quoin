@@ -179,6 +179,8 @@ export function auditToolDrift(files) {
   for (const path of [
     "scripts/verify-span-breadth.mjs",
     "scripts/verification-stack-selftest.mjs",
+    "scripts/battletest.mjs",
+    "scripts/lib/tier2-baseline.mjs",
   ]) {
     if (!stackLock.artifacts?.[path]) {
       errors.push(`${path} must be artifact-digest guarded`);
@@ -315,6 +317,8 @@ export function repositoryFiles(root = ROOT) {
     "scripts/bench-tier1.mjs",
     "scripts/verify-span-breadth.mjs",
     "scripts/verification-stack-selftest.mjs",
+    "scripts/battletest.mjs",
+    "scripts/lib/tier2-baseline.mjs",
     "bench/span-breadth-v1-labels.json",
     "bench/guidance-evaluator-contract-v1.json",
     "bench/guidance-independent-review-v1.json",
