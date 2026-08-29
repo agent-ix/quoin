@@ -27,6 +27,7 @@ import {
   adjudicationOf,
   byLanguage,
   canonicalCorpusInventory,
+  canonicalizeCorpusPaths,
   corpusInputDigest,
   comparability,
   compare,
@@ -41,6 +42,21 @@ import {
   assertCanonicalCorpus,
   validateCanonicalInventory,
 } from "../scripts/bench-tier1.mjs";
+
+test("TC-1121 retained Tier-1 producer paths are checkout-independent", () => {
+  const root = join(tmpdir(), "machine-specific-checkout", "corpus");
+  const source = {
+    path: join(root, "cases", "one", "input", "spec", "FR-001.md"),
+    message: `read ${join(root, "modules", "suite", "manifest.yaml")}`,
+    outside: "/another/repository/spec.md",
+  };
+  expect(canonicalizeCorpusPaths(source, root)).toEqual({
+    path: "corpus/cases/one/input/spec/FR-001.md",
+    message: "read corpus/modules/suite/manifest.yaml",
+    outside: "/another/repository/spec.md",
+  });
+  expect(source.path).toContain("machine-specific-checkout");
+});
 
 test("TC-1120 canonical corpus identity excludes ignored tool state and rejects dirty inputs", () => {
   const root = mkdtempSync(join(tmpdir(), "quoin-corpus-identity-"));

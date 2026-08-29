@@ -386,6 +386,31 @@ export function canonicalCorpusIdentity(root = join(ROOT, "corpus")) {
   };
 }
 
+/**
+ * Replace machine-local corpus roots before producer output enters scoring or
+ * retained evidence. The case path remains explicit, but is rooted at the
+ * stable `corpus/` boundary instead of whichever checkout ran the campaign.
+ */
+export function canonicalizeCorpusPaths(value, root = join(ROOT, "corpus")) {
+  const absoluteRoot = resolve(root);
+  const localPrefix = `${absoluteRoot}${sep}`;
+  const canonicalPrefix = "corpus/";
+  const visit = (item) => {
+    if (typeof item === "string") {
+      if (item === absoluteRoot) return "corpus";
+      return item.split(localPrefix).join(canonicalPrefix);
+    }
+    if (Array.isArray(item)) return item.map(visit);
+    if (item && typeof item === "object") {
+      return Object.fromEntries(
+        Object.entries(item).map(([key, nested]) => [key, visit(nested)]),
+      );
+    }
+    return item;
+  };
+  return visit(value);
+}
+
 async function main() {
   const update = process.argv.includes("--update");
   const asJson = process.argv.includes("--json");
@@ -534,7 +559,15 @@ async function main() {
       `bench-tier1: case ${index + 1}/${labels.corpora.length} ${corpus.name}`,
     );
     const { findings, metrics, diagnostics, untrackedSymbols } =
-      execution.findingsFor(quire, corpus.input, corpus.module, mapping, quoin);
+      canonicalizeCorpusPaths(
+        execution.findingsFor(
+          quire,
+          corpus.input,
+          corpus.module,
+          mapping,
+          quoin,
+        ),
+      );
     payloads.push({
       name: corpus.name,
       metrics,
@@ -543,7 +576,9 @@ async function main() {
     });
     propertyPayloads.push({
       case: corpus.name,
-      payload: execution.properties(quire, corpus.input, corpus.module),
+      payload: canonicalizeCorpusPaths(
+        execution.properties(quire, corpus.input, corpus.module),
+      ),
     });
     found.push(
       ...findings.map((f) =>
