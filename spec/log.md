@@ -45,6 +45,21 @@ description: "Chronological log of structural changes to this bundle."
   and passes its absolute executable explicitly. The drift self-test removes
   that selector and proves the canonical gate rejects a return to shared state.
 
+* **2026-08-28** — **CR-130**: added a rights-safe, project-owned assurance
+  path without embedding restricted source material or claiming an external
+  argument notation. Quoin now vendors the exact Quire ClauseSet binding/diff
+  contracts at engine `c625e2f9`, validates `clause-binding-v1`, and partitions
+  binding clauses into direct evidence, approved dispositions, and open work;
+  unresolved applicability stays separate and no score is manufactured.
+  `quoin assurance --argument` preserves the module-authored claim and requires
+  current, participant-authorized sufficiency decisions while exposing
+  assumptions, independence, challenges, accepted risks, and expiries. New
+  experiment and operational evidence records carry a closed producer tuple,
+  derive identity from canonical content, publish atomically, and refuse to
+  overwrite immutable paths. The accepted provenance boundary is explicit:
+  measurement collections and these new records carry their declared tuples;
+  FR-030 run records remain unchanged. FR-046..FR-048; Matrix: TC-1125..TC-1143.
+
 * **2026-08-28** — **CR-128**: Tier 2 now replays the declaration bytes that
   produced the pass-2 findings instead of applying today's single process
   module to every historical corpus (`agent-ix/quoin#263`, discovered while

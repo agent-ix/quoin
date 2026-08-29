@@ -291,6 +291,40 @@ export interface EngineProvenance {
   capabilities: string[];
 }
 
+/** Exact identity of a module-supplied clause set (quire-rs FR-067). */
+export interface ClauseSetKey {
+  authority: string;
+  id: string;
+  version: string;
+}
+
+export type ClauseForce = "mandatory" | "recommended" | "permitted";
+export type ClauseBindingOutcome = "binding" | "not_binding" | "unresolved";
+
+export interface ClauseBindingReason {
+  code: string;
+  dimension?: string;
+  message: string;
+}
+
+export interface ClauseBinding {
+  clauseId: string;
+  force: ClauseForce;
+  outcome: ClauseBindingOutcome;
+  reasons: ClauseBindingReason[];
+  expectedOutputs: string[];
+}
+
+/** Validated output of `quire clauses evaluate --format json`. */
+export interface ClauseBindingReport {
+  schemaVersion: "clause-binding-v1";
+  clauseSet: ClauseSetKey;
+  clauseSetDigest: string;
+  context: Record<string, string>;
+  clauses: ClauseBinding[];
+  engine?: EngineProvenance;
+}
+
 export type MetricShape = "ratio" | "count";
 
 interface MetricBase {

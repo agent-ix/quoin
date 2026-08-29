@@ -12,7 +12,11 @@ import { Ajv2020 } from "ajv/dist/2020.js";
 import type { ErrorObject, ValidateFunction } from "ajv";
 
 import { readSchema, type SchemaName } from "./contract.js";
-import type { CoverageReport, PropertiesReport } from "./types.js";
+import type {
+  ClauseBindingReport,
+  CoverageReport,
+  PropertiesReport,
+} from "./types.js";
 
 /** A payload that did not satisfy the published contract. */
 export interface ContractViolation {
@@ -90,6 +94,16 @@ export function validateProperties(
   return validate<PropertiesReport>("properties-v1.schema.json", payload);
 }
 
+/** Validate a `quire clauses evaluate --format json` payload. */
+export function validateClauseBinding(
+  payload: unknown,
+): ValidationResult<ClauseBindingReport> {
+  return validate<ClauseBindingReport>(
+    "clause-binding-v1.schema.json",
+    payload,
+  );
+}
+
 /**
  * Parse and validate in one step, so a caller never holds an unvalidated
  * payload it could accidentally use.
@@ -108,6 +122,17 @@ export function parseProperties(
   text: string,
 ): ValidationResult<PropertiesReport> {
   return parseThen(text, "properties-v1.schema.json", validateProperties);
+}
+
+/** Parse and validate one clause binding payload. */
+export function parseClauseBinding(
+  text: string,
+): ValidationResult<ClauseBindingReport> {
+  return parseThen(
+    text,
+    "clause-binding-v1.schema.json",
+    validateClauseBinding,
+  );
 }
 
 function parseThen<T>(

@@ -52,3 +52,6 @@ description: "Index of functional requirements (FR) for quoin."
 * [FR-042: Agent-eval reports as run evidence](./FR-042-agent-eval-evidence.md)
 * [FR-043: The quality benchmark](./FR-043-quality-benchmark.md)
 * [FR-044: Plan-governed measurement store and report](./FR-044-plan-governed-measurements.md)
+- [FR-046: Explicit clause discharge accounting](./FR-046-clause-discharge.md)
+- [FR-047: Authored assurance arguments and explicit sufficiency decisions](./FR-047-authored-assurance-arguments.md)
+- [FR-048: Append-only experiment and operational evidence](./FR-048-append-only-assurance-evidence.md)

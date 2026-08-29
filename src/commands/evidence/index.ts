@@ -13,9 +13,13 @@ Layout, under spec/evidence/:
   bindings.json    obligation -> hash-at-binding -> evidence
   baseline.json    the accepted violation set the ratchet compares against
   runs/<SUITE-N>/<commit12>.json   one file = one run of one suite
+  experiments/sha256-<digest>.json content-addressed experiment records
+  operational/sha256-<digest>.json content-addressed operational evidence
 
 Subcommands:
   quoin evidence record     transcribe a suite run
+  quoin evidence record-experiment  publish an immutable experiment record
+  quoin evidence record-operational publish immutable operational evidence
   quoin evidence affirm     re-affirm a binding after its statement changed
   quoin evidence audit      read the store and report
   quoin evidence baseline   accept the current findings as the ratchet baseline

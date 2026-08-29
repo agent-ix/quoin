@@ -105,9 +105,9 @@ describe("building the case", () => {
 
   // Trace: FR-040-AC-4
   it("marks a claim nothing traces to as undeveloped, not as met", () => {
-    // A goal with no sub-goal and no evidence is GSN-undeveloped. Rendering it
-    // supported would assure a claim on the strength of nobody having written
-    // anything against it.
+    // A goal with no sub-goal and no evidence is open. Rendering it supported
+    // would assure a claim on the strength of nobody having written anything
+    // against it.
     const result = buildCase({
       documents: [doc("StR-002", "StR", "Nothing argues for this")],
       obligations: [],
