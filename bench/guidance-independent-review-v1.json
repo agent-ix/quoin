@@ -7,12 +7,12 @@
       "schemaVersion": "quire-tool-provenance-v1",
       "cli": {
         "version": "0.30.2",
-        "sourceRevision": "7334077baf3526edf2c8857a2720fc95b1b68f8d",
+        "sourceRevision": "d309fbefd7d92ac8b8c9173a98d0b47a578d6a35",
         "sourceState": "clean"
       },
       "engine": {
         "version": "0.46.0",
-        "sourceRevision": "be56a91c8de7923ce9fba7dd690ea1199e28bce0",
+        "sourceRevision": "da0cf8a029aa99ad79a2f52c8e3e42b9fae9c887",
         "sourceState": "clean"
       },
       "capabilities": [
