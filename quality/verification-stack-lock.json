@@ -3,7 +3,7 @@
   "repositories": {
     "quoin": {
       "remote": "https://github.com/agent-ix/quoin",
-      "revision": "d78b7b1115df8e6b0fccc34f7beccf0ceb1fc525"
+      "revision": "10e270058030986cac468f830ed07f23536e109c"
     },
     "quire": {
       "remote": "https://github.com/agent-ix/quire-rs",
@@ -65,9 +65,10 @@
     ".npmrc": "sha256:cde76ca04e048c3eba070a2c0dfcf5b723cf6014eab177157096b924f24ec4ca",
     "package.json": "sha256:d664e658d594d71614fae6b435c0c1b6e4306bdb616a658550afbc1ad66001f3",
     "pnpm-lock.yaml": "sha256:7b8e18508dc953412732112931b9010d0d27f76cff111cb77df1ee7c96ed4b42",
+    "Makefile": "sha256:92f3b903bd0b13e6c610616648ab03e70c72a27f51673b38a7ece9d857873efb",
     ".github/workflows/build-test.yml": "sha256:7a6d27b95c58416f35422e47fd56a8763bae6641e77f56b7bd5c29836496c7d6",
-    "scripts/check-tool-drift.mjs": "sha256:df486fc90c456de9245f6e8a39a5b94d1abc4666b061694a6d8cbc3d57b01c91",
-    "scripts/check-tool-drift-selftest.mjs": "sha256:5649af6442ffdda6553ce62f1f6429b4f61177d81c2518e5c53a029d94f39ec0",
+    "scripts/check-tool-drift.mjs": "sha256:228006045ffbb46ff19a1e23eae7530d69bdc47de144444d76e3f42f5b90dfa5",
+    "scripts/check-tool-drift-selftest.mjs": "sha256:ffc8e612ce434aefd5d6d9f64a7a338aaaab1db135f01a90ebe7e3dc48c6f883",
     "src/quire/contract.ts": "sha256:628f4bffd4203f6193458ff29981af623ee4ab85598ad2a675ad4afc839fc453",
     "src/quire/schemas/coverage-v1.schema.json": "sha256:f0cdbb9457ca7ca76b642c11fd5b6f41273909c894458c31f58c9c50fdbcdb38",
     "src/quire/schemas/properties-v1.schema.json": "sha256:cc687773c35b3e71e82fc336e887ecc688a28b03e970e349b2921b8624e4d11c",
