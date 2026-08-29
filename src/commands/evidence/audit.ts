@@ -9,6 +9,7 @@ import {
   baselinePath,
   latestRuns,
   latestScans,
+  mockInspectionInput,
   readBaseline,
   readBindings,
 } from "../../evidence/index.js";
@@ -86,17 +87,21 @@ a week. Write that baseline with: quoin evidence baseline`;
     const parsed = parseCoverage(runQuire(args));
     if (!parsed.ok) this.error(parsed.error.message, { exit: 2 });
 
+    const head = headCommit(flags.repo);
+    const mockInspections = mockInspectionInput(flags.repo, head);
     const report = audit({
       obligations: parsed.value.obligations ?? [],
       bindings: readBindings(flags.repo).bindings,
       runs: latestRuns(flags.repo),
       scans: latestScans(flags.repo),
+      injections: mockInspections.injections,
+      mockInspectionSuites: mockInspections.suites,
       // The SAME module the coverage call above used. Defaulting to the
       // installed roots meant `--module <dir>` derived obligations from one
       // catalog and checked conformance against another — the exact disagreement
       // `src/advisor/methods.ts` opens by warning about (agent-ix/quoin#105).
       catalog: loadMethodCatalog(flags.module ? [flags.module] : undefined),
-      headCommit: headCommit(flags.repo),
+      headCommit: head,
       // Deliberately unset. No obligation source in the ecosystem declares a
       // `criticality_column` — measured: 2,304 of 2,304 `Acceptance Criteria`
       // tables are `ID | Criteria | Verification` and carry no priority
@@ -127,13 +132,14 @@ a week. Write that baseline with: quoin evidence baseline`;
           {
             findings: reported,
             healthy: report.healthy,
+            unevaluated: report.unevaluated,
             ratchet: ratcheted,
           },
           null,
           2,
         ),
       );
-    } else if (reported.length === 0) {
+    } else if (reported.length === 0 && report.unevaluated.length === 0) {
       this.log(
         `${report.healthy.length} obligation(s) with healthy evidence; nothing to report`,
       );
@@ -141,14 +147,23 @@ a week. Write that baseline with: quoin evidence baseline`;
       for (const finding of reported) {
         this.log(`[${finding.severity}] ${finding.kind}: ${finding.summary}`);
       }
+      for (const check of report.unevaluated) {
+        this.log(
+          `[not-evaluated] ${check.check}: ${check.obligation}: ${check.reason}`,
+        );
+      }
       this.log("");
       this.log(
-        `${reported.length} finding(s), ${report.healthy.length} healthy` +
+        `${reported.length} finding(s), ${report.unevaluated.length} check(s) not evaluated, ` +
+          `${report.healthy.length} healthy` +
           (ratcheted ? " (new violations only)" : ""),
       );
     }
 
-    if (flags.strict && reported.length > 0) {
+    if (
+      flags.strict &&
+      (reported.length > 0 || report.unevaluated.length > 0)
+    ) {
       this.exit(1);
     }
   }
@@ -183,6 +198,7 @@ function headCommit(repo: string): string | undefined {
   try {
     return execFileSync("git", ["-C", repo, "rev-parse", "HEAD"], {
       encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"],
     }).trim();
   } catch {
     return undefined;

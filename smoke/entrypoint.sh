@@ -27,7 +27,7 @@ set -uo pipefail
 : "${REPO:?REPO not set}"
 : "${PLUGIN:?PLUGIN not set}"
 : "${MARKETPLACE:?MARKETPLACE not set}"
-PKG_VERSION="${PKG_VERSION:-latest}"
+PKG_VERSION="${PKG_VERSION:-0.21.9}"
 PLUGIN_SOURCE="${PLUGIN_SOURCE:-github}"
 PUBLIC_REGISTRY="https://registry.npmjs.org/"
 export HOME="${HOME:-/root}"

@@ -27,7 +27,7 @@ beforeAll(async () => {
   // exercised against the built graph (mirrors cli.test.ts).
   settings.enableAutoTranspile = false;
   if (!existsSync(join(repoRoot, "dist", "commands", "update.js"))) {
-    execSync("pnpm run build", { cwd: repoRoot, stdio: "inherit" });
+    execSync("corepack pnpm run build", { cwd: repoRoot, stdio: "inherit" });
   }
   // A single loadConfig() — there is deliberately NO install/link step here:
   // the plugin must already be discoverable because it ships as a dependency.

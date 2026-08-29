@@ -133,6 +133,18 @@ describe("quoin's declared boundaries", () => {
           const [first] = node.arguments;
           if (first && ts.isStringLiteral(first)) {
             executed.add(first.text);
+          } else if (
+            file.rel === "src/quire/exec.ts" &&
+            first &&
+            ts.isCallExpression(first) &&
+            ts.isIdentifier(first.expression) &&
+            first.expression.text === "quireExecutable" &&
+            first.arguments.length === 0
+          ) {
+            // Quire is resolved once to an absolute, real path and can be
+            // digest-locked by QUOIN_EXPECTED_QUIRE_SHA256. Keep this narrow:
+            // no other computed executable or call site is admitted.
+            executed.add("quire");
           } else {
             // A computed binary is not readable here and therefore must not
             // pass: the check would be asserting over a set it cannot see.

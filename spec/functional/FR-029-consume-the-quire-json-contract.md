@@ -36,11 +36,13 @@ offending path rather than as an `undefined` three frames later.
 
 ### The schemas are vendored, with recorded provenance
 
-quire-rs is a Rust crate consumed by git tag; quoin is an npm package. There is
+quire-rs is a Rust crate consumed from git; quoin is an npm package. There is
 no dependency edge along which a schema file could travel, and quoin performs no
 network reads on a command path. So the artifacts are copied in with their
-source tag, path and **content hash** recorded, and refreshed by a script that
-refuses to run against a checkout not at the pinned tag.
+exact 40-character source revision, path and **content hash** recorded. The
+refresh script reads the files from that git object rather than from the source
+checkout's working tree, so unrelated tracking-branch edits cannot alter the
+contract being recorded.
 
 That is a copy, and a copy can drift. What keeps it honest is that the hash is
 asserted on every test run: an edit to a vendored file without a matching
@@ -114,13 +116,14 @@ names the found version, the required version, and the consequence.
 | FR-029-AC-4 | Unreadable output is reported as a named contract violation rather than thrown, and the message names the likeliest cause. | Test (TC-113) |
 | FR-029-AC-5 | A CLI older than the pinned minimum fails the premise with the found version, the required version and the consequence; an unreadable version is a failure rather than a pass. | Test (TC-114) |
 | FR-029-AC-6 | Version comparison is numeric, so `0.21.0` ranks above `0.9.0`. | Test (TC-115) |
-| FR-029-AC-7 | A payload omitting every optional key validates; one carrying every optional key validates, with "every" read off the schema's optional-key list so a schema refresh that adds a key fails the fixture until it carries the new key; and a malformed optional-key entry is rejected — an `undeclared_statuses` row missing its required `status`, and a malformed obligation statement hash. | Test (TC-116) |
+| FR-029-AC-7 | A payload omitting every optional key validates; one carrying every optional key validates, with "every" read off the schema's optional-key list so a schema refresh that adds a key fails the fixture until it carries the new key. The full binding-census fixture carries the optional self-named population, bound count, and unbound example, so a producer adding any of those fields before the vendored schema is refreshed fails the consumer test. Malformed optional records are rejected, including status, obligation, minted-target and unmatched-tag records. | Test (TC-111, TC-116) |
 | FR-029-AC-8 | The eval harness's version floor equals the pinned contract minimum, so the two restatements cannot drift. | Test (TC-117) |
-| FR-029-AC-9 | A payload emitted by the installed `quire` binary validates against the vendored schema, so the contract is checked against the real emitter and not only against fixtures. | Test (TC-118) |
+| FR-029-AC-9 | Payloads emitted by the explicitly selected `QUIRE` binary validate against the vendored schemas, so the contract is checked against the same real emitter as the gate and not only against fixtures. The live coverage bundle emits an `implements` edge, a minted-target record and an unmatched-tag record; absence of any witness fails the test as vacuous. | Test (TC-118) |
 | FR-029-AC-10 | When the `quire` subprocess exits non-zero, its **stderr** is surfaced in the raised diagnostic. Its own message names the cause — a missing traceability model, a bad `--module` — and discarding it undoes the care FR-029 takes over the version premise one frame later. | Inspection (TC-134), Test (TC-256) |
 | FR-029-AC-11 | Every `quire` subprocess call sets an explicit `maxBuffer` sized for real corpora, so a corpus whose `coverage --json` payload exceeds Node's 1 MiB default still runs every command that shells out. | Test (TC-254) |
 | FR-029-AC-12 | A child that never exited on its own — killed on a buffer overrun, killed by a signal, or never spawned — is reported by its cause (`ENOBUFS` naming the byte limit, the signal name, the spawn error code), reports no exit status, and appends no child stderr. | Test (TC-254, TC-255, TC-257) |
 | FR-029-AC-13 | The TypeScript interfaces conform to the vendored coverage schema: a typed sample per `$defs` entry, forced by `Required<Interface>` to carry every interface field, has exactly its schema entry's property keys and validates against the schema — a schema key with no interface field, or an interface field with no schema key, fails the suite. | Test (TC-272) |
+| FR-029-AC-14 | Vendored schema provenance names an exact 40-character quire-rs commit. Refresh resolves that commit and reads each published schema from the git object, never from the source checkout's current branch or dirty working tree; an unavailable or ambiguously resolved revision is refused. | Test (TC-110), Inspection |
 
 ## Dependencies
 

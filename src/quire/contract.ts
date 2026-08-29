@@ -12,12 +12,12 @@
  * is no dependency edge along which a schema file could travel, and fetching
  * one at runtime is out of the question (quoin performs no network reads on a
  * command path). So the artifacts are **copied in with their provenance
- * recorded** — source tag, path and content hash — and refreshed deliberately
+ * recorded** — source revision, path and content hash — and refreshed deliberately
  * by `scripts/refresh-quire-schemas.mjs`, whose diff is reviewed.
  *
  * That is a copy, and a copy can drift. What keeps it honest is that the hash
- * is asserted on every test run and the refresh script re-derives it from a
- * checked-out quire-rs at the pinned tag: an edit to the vendored file without
+ * is asserted on every test run and the refresh script re-derives it from the
+ * exact pinned quire-rs git object: an edit to the vendored file without
  * a matching refresh fails immediately, rather than silently teaching quoin a
  * contract quire does not emit.
  */
@@ -29,8 +29,8 @@ import { fileURLToPath } from "node:url";
 
 /** Where the vendored schemas came from, and exactly which bytes. */
 export const QUIRE_CONTRACT = {
-  /** The quire-rs release the vendored schemas were copied from. */
-  sourceTag: "v0.42.0",
+  /** Exact quire-rs commit whose schemas were copied. */
+  sourceRevision: "ca7362d4dacecb96f01d74d1d971327118c25917",
   /** The contract version, as carried in each schema's `$id` and filename. */
   contractVersion: "v1",
   /**
@@ -62,17 +62,16 @@ export const QUIRE_CONTRACT = {
    * SHA-256 of each vendored file. Asserted on every test run, so an edit
    * without a matching refresh fails loudly.
    *
-   * v0.42.0 supersedes the CR-041 carry-ahead (the two CR-091 shapes taken
-   * ahead of the tag) with the released files wholesale, as that note said the
-   * next refresh would. Beyond CR-091 the tag adds only additive shapes under
-   * quire-rs FR-055-CON-3: `line` on the matrix-row/symbol records (#210),
-   * `shared_trace_ids` (CR-087) and `excluded_source_files` (#215).
+   * The revision is pinned rather than described as a release because the QA
+   * program intentionally runs both projects from their tracking branches.
+   * The refresh helper reads the files from that git object, so unrelated
+   * working-tree changes cannot alter the recorded contract.
    */
   hashes: {
     "coverage-v1.schema.json":
-      "2b7a8f6d786cadf637df6461c89c92c350096cf263c1f3c5d6b3b24a490bc590",
+      "f0cdbb9457ca7ca76b642c11fd5b6f41273909c894458c31f58c9c50fdbcdb38",
     "properties-v1.schema.json":
-      "d81f1ec85abdecd1f1664ded15e081f9aecb6c0f054d6b332b71e904cf826292",
+      "cc687773c35b3e71e82fc336e887ecc688a28b03e970e349b2921b8624e4d11c",
   },
 } as const;
 

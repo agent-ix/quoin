@@ -1,4 +1,9 @@
 # =============================================================================
+
+# Always honor package.json's exact packageManager declaration. A host-installed
+# pnpm can have the same-looking version while resolving through a different
+# installation/state path; Corepack selects the declared distribution.
+PNPM := corepack pnpm
 # quoin Makefile
 # =============================================================================
 # This Makefile provides backwards compatibility by delegating to pnpm scripts.
@@ -12,7 +17,7 @@
 
 .PHONY: build
 build:
-	pnpm run build
+	$(PNPM) run build
 
 # `test` depends on `build`: oclif resolves commands from `./dist/commands`
 # (package.json `oclif.commands`), so the dispatch-parity test sees an empty
@@ -25,7 +30,7 @@ build:
 # it — the source has no baked version to disagree with package.json.
 .PHONY: test
 test: build validate check-version
-	pnpm run test
+	QUIRE="$(abspath $(QUIRE))" $(PNPM) run test
 
 # Every surface that reports a version reports the same one, and a clean tag
 # reports itself (quoin#196). The class of defect this catches shipped once
@@ -46,6 +51,8 @@ test: build validate check-version
 # default gate, because the floor is the whole backlog and failing on it would
 # make the target useless on day one.
 EVIDENCE_MODULE ?= $(HOME)/dev/spec-artifacts-process/spec_artifacts_process
+SPEC_ARTIFACTS_PROCESS_ROOT ?= ../spec-artifacts-process
+SPEC_ARTIFACTS_ISO_ROOT ?= ../spec-artifacts-iso
 # Pass 3 is a command, not a day (quoin#203). Runs the tool suite against the
 # PINNED tier-2 corpus, scores it against the adjudicated answer key, and diffs
 # against the checked-in baseline. A finding LOST is the failure; a finding
@@ -57,11 +64,17 @@ EVIDENCE_MODULE ?= $(HOME)/dev/spec-artifacts-process/spec_artifacts_process
 BENCH_CORPUS ?= ../filament-ide-rs
 .PHONY: battletest
 battletest:
-	node scripts/battletest.mjs --corpus $(BENCH_CORPUS) --module $(EVIDENCE_MODULE)
+	@test -n "$(QUIRE)" || { echo "battletest requires QUIRE=/absolute/path/to/quire"; exit 2; }
+	node scripts/battletest.mjs --quire $(QUIRE) --corpus $(BENCH_CORPUS) \
+	  --declaration-repo agent-ix/spec-artifacts-process=$(SPEC_ARTIFACTS_PROCESS_ROOT) \
+	  --declaration-repo agent-ix/spec-artifacts-iso=$(SPEC_ARTIFACTS_ISO_ROOT)
 
 .PHONY: battletest-update
 battletest-update:
-	node scripts/battletest.mjs --update --corpus $(BENCH_CORPUS) --module $(EVIDENCE_MODULE)
+	@test -n "$(QUIRE)" || { echo "battletest-update requires QUIRE=/absolute/path/to/quire"; exit 2; }
+	node scripts/battletest.mjs --update --quire $(QUIRE) --corpus $(BENCH_CORPUS) \
+	  --declaration-repo agent-ix/spec-artifacts-process=$(SPEC_ARTIFACTS_PROCESS_ROOT) \
+	  --declaration-repo agent-ix/spec-artifacts-iso=$(SPEC_ARTIFACTS_ISO_ROOT)
 
 # TIER 1: the seeded corpora, built, scanned and scored on every run. Cheap
 # enough to gate on, unlike `battletest`, which needs a pinned external tree.
@@ -71,14 +84,65 @@ battletest-update:
 # only way a number moves. `QUIRE` overrides the binary — point it at a local
 # build to score an engine that is not the installed one, which is the whole
 # reason three SpecReviews once cited figures from a binary nobody checked.
-QUIRE ?= quire
+# NOT a PATH lookup (agent-ix/quire-rs#265). The installed `quire` is
+# whatever somebody put there — 0.29.0 here, predating `binding_census` —
+# and scoring with it reported recall 0 on every coverage family, which
+# reads as a corpus regression rather than a stale binary.
+#
+# CARGO_TARGET_DIR MOVES THE ARTIFACT AND THIS DEFAULT DID NOT FOLLOW IT. With
+# it set, `cargo build` in quire-cli writes to `$CARGO_TARGET_DIR/debug/quire`
+# and `../quire-cli/target/` keeps whatever was there before the variable was
+# set. Measured on this machine: the in-repo path held an Aug-20 binary
+# reporting `quire 0.23.0` while the real build reported
+# `quire 0.30.2 (engine 00644b7)` — four days and one engine apart, and the
+# default pointed at the stale one. Caught by quire-cli#68's provenance guard
+# refusing a binary that cannot name its engine, which is the case for
+# refusing rather than warning.
+# Interactive convenience only. Governed evidence never consumes this default:
+# `verification-stack.mjs` builds, snapshots, hashes, and passes its own binary.
+QUIRE ?= $(shell command -v quire 2>/dev/null)
+#
+# `MODULES` overrides the DECLARATION the cases bind, which is the second axis
+# (agent-ix/quoin#240). Empty means the corpus's own vendored `modules/`, so an
+# ordinary run is unchanged. Two of Wave 3's six fixes are declaration-side and
+# an engine-only before/after scores them `held` by construction — the same word
+# it prints for a family that genuinely did not move.
+#
+#   make bench-tier1 QUIRE=<binary> MODULES=/path/to/pre-fix/modules
+#
+MODULES ?=
 .PHONY: bench-tier1
 bench-tier1:
-	node scripts/bench-tier1.mjs --quire $(QUIRE)
+	node scripts/verification-stack.mjs
 
 .PHONY: bench-tier1-update
 bench-tier1-update:
-	node scripts/bench-tier1.mjs --update --quire $(QUIRE)
+	node scripts/verification-stack.mjs --update
+
+.PHONY: bench-tier1-experimental
+bench-tier1-experimental:
+	@test -n "$(QUIRE)" || { echo "usage: make bench-tier1-experimental QUIRE=/absolute/path/to/quire"; exit 2; }
+	node scripts/bench-tier1.mjs --experimental --quire $(QUIRE) $(if $(MODULES),--modules $(MODULES))
+
+.PHONY: verification-preflight
+verification-preflight:
+	node scripts/verification-stack.mjs --preflight
+
+# THE LOCAL GREEN BAR. `bench-tier1` was invoked by nothing (agent-ix/quoin#244)
+# -- not `test`, not any vitest case against the committed baseline, and CI is
+# off by design during active development, so CI is not the answer. The ratchet
+# ran when a human typed it, which between Wave 3 and Wave 4 was twice.
+#
+# `bench-tier1` LAST, because it is the slow leg: a lint or unit failure should
+# come back in seconds rather than behind a two-minute corpus sweep.
+#
+# It names the engine it measured with. `quire --version` reports the CLI crate
+# version, not the engine, and the installed 0.29.0 predates `binding_census` --
+# it would score recall 0 on every coverage family and look like a collapse.
+.PHONY: gate
+gate: lint test
+	@echo "gate: bench-tier1 against $(QUIRE)"
+	@$(MAKE) bench-tier1
 
 .PHONY: evidence-audit
 evidence-audit:
@@ -88,9 +152,9 @@ evidence-audit:
 .PHONY: evidence-record
 evidence-record:
 	mkdir -p reports
-	npx vitest run --reporter=junit --outputFile=reports/junit.xml
+	$(PNPM) exec vitest run --reporter=junit --outputFile=reports/junit.xml
 	node bin/quoin.js evidence record --suite SUITE-001 \
-	  --commit "$$(git rev-parse HEAD)" --tool vitest --adapter junit \
+	  --commit "$$(git rev-parse HEAD)" --tool "vitest $$($(PNPM) exec vitest --version)" --adapter junit \
 	  --results reports/junit.xml --kind Unit --repo . --module $(EVIDENCE_MODULE)
 
 .PHONY: answer-key-repin
@@ -120,12 +184,13 @@ check-version: build
 # also means a module set is never validated against a stale host binary.
 .PHONY: validate
 validate: build
+	@test -n "$(QUIRE)" || { echo "validate requires QUIRE=/absolute/path/to/quire"; exit 2; }
 	node bin/quoin.js module ensure-defaults
-	pnpm run validate
+	$(QUIRE) validate "spec/**/*.md" "plan/**/*.md" "reviews/*.md"
 
 .PHONY: test-json
 test-json:
-	pnpm run test:json
+	$(PNPM) run test:json
 
 # Agent-pty evals (drive the REAL claude agent; cost tokens + minutes — opt-in).
 # MODEL pins the agent model so token counts compare; REPEATS aggregates noise.
@@ -134,12 +199,12 @@ REPEATS ?= 1
 
 .PHONY: evals
 evals:
-	pnpm --dir ../cli-agent-evals run build
+	$(PNPM) --dir ../cli-agent-evals run build
 	node ../cli-agent-evals/bin/cli-evals.js run --suite ./cli-agent-evals.config.mjs --canary --agent claude --model $(MODEL) --repeats $(REPEATS)
 
 .PHONY: evals-all
 evals-all:
-	pnpm --dir ../cli-agent-evals run build
+	$(PNPM) --dir ../cli-agent-evals run build
 	node ../cli-agent-evals/bin/cli-evals.js run --suite ./cli-agent-evals.config.mjs --all --agent claude --model $(MODEL) --repeats $(REPEATS)
 
 # Community install smoke test (clean-room Docker: public npm + agent plugins).
@@ -152,19 +217,25 @@ install-smoke:
 
 .PHONY: lint
 lint:
-	pnpm run lint
+	$(PNPM) run lint
+
+.PHONY: audit-tool-drift
+audit-tool-drift:
+	$(PNPM) run audit:tool-drift
+	$(PNPM) run test:tool-drift
+	$(PNPM) run test:verification-stack
 
 .PHONY: format
 format:
-	pnpm run format
+	$(PNPM) run format
 
 .PHONY: format-check
 format-check:
-	pnpm run format:check
+	$(PNPM) run format:check
 
 .PHONY: clean
 clean:
-	pnpm run clean
+	$(PNPM) run clean
 
 # =============================================================================
 # Package Management
@@ -172,43 +243,44 @@ clean:
 
 .PHONY: install
 install:
-	pnpm install
+	$(PNPM) install
 
 .PHONY: update-lock
 update-lock:
-	pnpm run update-lock
+	$(PNPM) run update-lock
 
 .PHONY: add-packages
 add-packages:
 	@echo "Adding packages: $(PACKAGES)"
-	pnpm run pkg:add $(PACKAGES)
+	$(PNPM) run pkg:add $(PACKAGES)
 
 .PHONY: add-dev-packages
 add-dev-packages:
 	@echo "Adding dev packages: $(PACKAGES)"
-	pnpm run pkg:add-dev $(PACKAGES)
+	$(PNPM) run pkg:add-dev $(PACKAGES)
 
 .PHONY: update-packages
 update-packages:
-	pnpm run pkg:update
+	$(PNPM) run pkg:update
 
-.PHONY: update-packages-latest
-update-packages-latest:
-	pnpm run pkg:update-latest
+.PHONY: experimental-update-packages-latest
+experimental-update-packages-latest:
+	@echo "NONCANONICAL: this deliberately resolves moving package versions and cannot produce governed evidence."
+	$(PNPM) run experimental:pkg:update-latest
 
 .PHONY: use-local
 use-local:
 	@echo "Switching $(p) to local..."
-	pnpm run pkg:use-local $(p)
+	$(PNPM) run pkg:use-local $(p)
 
 .PHONY: use-upstream
 use-upstream:
 	@echo "Switching $(p) to upstream..."
-	pnpm run pkg:use-upstream $(p)
+	$(PNPM) run pkg:use-upstream $(p)
 
 .PHONY: refresh-local
 refresh-local:
-	pnpm run pkg:refresh-local
+	$(PNPM) run pkg:refresh-local
 
 # =============================================================================
 # Versioning & Info
@@ -216,11 +288,11 @@ refresh-local:
 
 .PHONY: version
 version:
-	@pnpm run version
+	@$(PNPM) run version
 
 .PHONY: info
 info:
-	@pnpm run info
+	@$(PNPM) run info
 
 # =============================================================================
 # Docker & Publishing
@@ -228,12 +300,12 @@ info:
 
 .PHONY: docker-build
 docker-build:
-	pnpm run docker:build
+	$(PNPM) run docker:build
 
 
 .PHONY: tags
 tags:
-	@pnpm run tags
+	@$(PNPM) run tags
 
 # =============================================================================
 # Test Results CLI
@@ -250,31 +322,31 @@ REPORT ?= report.json
 
 .PHONY: test-results-summary
 test-results-summary:
-	pnpm run test-results:summary $(REPORT)
+	$(PNPM) run test-results:summary $(REPORT)
 
 .PHONY: test-results-groups
 test-results-groups:
-	pnpm run test-results:groups $(REPORT)
+	$(PNPM) run test-results:groups $(REPORT)
 
 .PHONY: test-results-detail
 test-results-detail:
-	pnpm run test-results:detail $(REPORT) "$(TEST)"
+	$(PNPM) run test-results:detail $(REPORT) "$(TEST)"
 
 .PHONY: test-results-find
 test-results-find:
-	pnpm run test-results:find $(REPORT) "$(PATTERN)"
+	$(PNPM) run test-results:find $(REPORT) "$(PATTERN)"
 
 .PHONY: test-results-failed
 test-results-failed:
-	pnpm run test-results:failed $(REPORT)
+	$(PNPM) run test-results:failed $(REPORT)
 
 .PHONY: test-results-errors
 test-results-errors:
-	pnpm run test-results:errors $(REPORT)
+	$(PNPM) run test-results:errors $(REPORT)
 
 .PHONY: test-results-warnings
 test-results-warnings:
-	pnpm run test-results:warnings $(REPORT)
+	$(PNPM) run test-results:warnings $(REPORT)
 
 # =============================================================================
 # Help

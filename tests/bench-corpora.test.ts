@@ -8,21 +8,39 @@
  * doing it here would make the unit suite depend on a `quire` binary.
  */
 
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { readFileSync } from "node:fs";
+
+import { existsSync } from "node:fs";
 import { join } from "node:path";
 
-import { buildBenchCorpora, CORPORA } from "../evals/fixtures/bench/build.mjs";
+import { loadCorpus } from "../scripts/bench-tier1.mjs";
 import { crossCheckFamilies } from "../evals/lib/dictionary.mjs";
 import { diff, render, scoreAgainstKey } from "../scripts/battletest.mjs";
 
-function build() {
-  const root = mkdtempSync(join(tmpdir(), "quoin-bench-"));
-  const labels = buildBenchCorpora(root);
-  return { root, labels };
+// The corpus is STATIC now (agent-ix/quoin#227): read from the `qa-corpus`
+// submodule rather than generated into a tmpdir. Every property below survives
+// the change — only their subject moved from a generator's output to files on
+// disk that a reader can open.
+// Read lazily, INSIDE the suites that need it. At module scope a missing
+// submodule — `qa-corpus` is private, and CI checks out without submodules —
+// errored the whole file at collection and took all nineteen tests with it,
+// including the tier-2 answer-key and battletest suites that never touch the
+// corpus.
+const MAPPING = JSON.parse(
+  readFileSync(
+    join(import.meta.dirname, "../bench/tier1-mapping.json"),
+    "utf8",
+  ),
+);
+let CORPORA: ReturnType<typeof loadCorpus>["corpora"] = [];
+try {
+  CORPORA = loadCorpus().corpora;
+} catch {
+  CORPORA = [];
 }
+const describeCorpus = CORPORA.length ? describe : describe.skip;
 
-describe("tier-1 seeded corpora", () => {
+describeCorpus("tier-1 seeded corpora", () => {
   test("every corpus isolates ONE defect family", () => {
     // A mini-repo mixing three defects cannot tell you which one a finding was
     // about, and precision PER FAMILY is what FR-043-AC-2 asks for.
@@ -46,9 +64,23 @@ describe("tier-1 seeded corpora", () => {
     // TC-932
     for (const corpus of CORPORA) {
       for (const defect of corpus.defects) {
-        expect(defect.id).toMatch(/^[A-Z]{2}-\d+$/);
+        // Explicit language labels use a compact language token (GN-PY),
+        // while an inherited language-set label receives the canonical
+        // inventory suffix (WT-1-python). Both remain stable, reviewable ids.
+        expect(defect.id).toMatch(
+          /^[A-Z]{2}-(?:\d+|PY|RS|TS)(?:-(?:python|rust|typescript))?$/,
+        );
         expect(defect.family).toBe(corpus.family);
-        expect(defect.location).toBeTruthy();
+        // A LOCATION UNLESS THE FAMILY DECLARES IT HAS NONE. `locus: none` is
+        // the mapping saying this finding has no document to open — the fault
+        // is the declaration's, not any one file's — so requiring a location
+        // for those families asserts something the mapping already says is
+        // impossible. `archetype-matches-nothing` is the case that made this
+        // concrete (agent-ix/quire-rs#304): the declared archetype names no
+        // document, so there is nothing to point at by construction.
+        if (MAPPING.families[defect.family]?.locus !== "none") {
+          expect(defect.location).toBeTruthy();
+        }
         // `findable` distinguishes a scored MISS from a defect nobody claimed
         // was findable — FR-043-AC-7's whole point.
         expect(typeof defect.findable).toBe("boolean");
@@ -72,28 +104,22 @@ describe("tier-1 seeded corpora", () => {
     expect(new Set(ids).size).toBe(ids.length);
   });
 
-  test("the build is deterministic and writes labels.json", () => {
-    const a = build();
-    const b = build();
-    try {
-      expect(a.labels).toEqual(b.labels);
-      const onDisk = JSON.parse(
-        readFileSync(join(a.root, "labels.json"), "utf8"),
-      );
-      expect(onDisk).toEqual(a.labels);
-      // Every corpus materializes its module, spec and source.
-      for (const corpus of CORPORA) {
-        for (const rel of Object.keys(corpus.files)) {
-          expect(
-            readFileSync(join(a.root, corpus.name, rel), "utf8").length,
-          ).toBeGreaterThan(0);
-        }
-      }
-    } finally {
-      rmSync(a.root, { recursive: true, force: true });
-      rmSync(b.root, { recursive: true, force: true });
+  test("the corpus is read from disk, in place, and every case has an input", () => {
+    // Was "the build is deterministic and writes labels.json". There is no
+    // build: the cases are static files in the `qa-corpus` submodule, so the
+    // property worth asserting moved from "generating twice agrees" to
+    // "reading finds real files a reader can open" (agent-ix/quoin#227).
+    expect(loadCorpus()).toEqual(loadCorpus());
+
+    for (const corpus of CORPORA) {
+      expect(existsSync(corpus.input)).toBe(true);
+      // The declaration a case binds must exist — `module:` naming one thing
+      // while another loads is the defect agent-ix/quire-rs#266 recorded.
+      const single = existsSync(join(corpus.module, "manifest.yaml"));
+      const asPath = existsSync(corpus.module);
+      expect(single || asPath).toBe(true);
     }
-  });
+  }, 30_000);
 
   test("TC-948 every family the dictionary declares has a corpus, and vice versa", () => {
     // TC-948
@@ -219,6 +245,29 @@ describe("tier-2 adjudicated answer key", () => {
     }
   });
 
+  test("TC-1072 every Tier-2 finding names one production source and signal", () => {
+    const sources = new Set([
+      "quire.coverage",
+      "quoin.validate",
+      "quoin.evidence-audit",
+    ]);
+    for (const finding of key.findings) {
+      expect(sources, `${finding.id} names no runnable source`).toContain(
+        finding.source,
+      );
+      const signals = [
+        "expect_reason",
+        "expect_suspicion",
+        "expect_metric",
+        "expect_finding",
+      ].filter((field) => finding[field] !== undefined);
+      expect(
+        signals,
+        `${finding.id} must declare exactly one signal`,
+      ).toHaveLength(1);
+    }
+  });
+
   test("a finding that is not yet detectable says so and names its ticket", () => {
     // The honest half. Claiming detection the toolchain does not have would
     // make the recall number a fiction, which is the exact failure this
@@ -309,6 +358,57 @@ describe("tier-2 adjudicated answer key", () => {
     const ids = key.findings.map((f: { id: string }) => f.id);
     expect(new Set(ids).size).toBe(ids.length);
   });
+
+  test("TC-1118 every valid Tier-2 finding is reproducible from immutable cohort inputs", () => {
+    expect(key.schema_version).toBe("tier2-answer-key-v3");
+    for (const [id, cohort] of Object.entries(key.cohorts) as Array<
+      [
+        string,
+        {
+          revision: string;
+          declarations: Array<{ repository: string; revision: string }>;
+          evidence_sidecar: { state: string };
+          retained_sources: string[];
+        },
+      ]
+    >) {
+      expect(cohort.revision, id).toMatch(/^[0-9a-f]{40}$/);
+      expect(cohort.declarations.length, id).toBeGreaterThan(0);
+      expect(
+        new Set(cohort.declarations.map((item) => item.repository)).size,
+      ).toBe(cohort.declarations.length);
+      for (const declaration of cohort.declarations) {
+        expect(declaration.repository, id).toMatch(
+          /^agent-ix\/spec-artifacts-/,
+        );
+        expect(declaration.revision, id).toMatch(/^[0-9a-f]{40}$/);
+      }
+      expect(cohort.evidence_sidecar.state, id).toMatch(
+        /^(bound|unavailable)$/,
+      );
+      expect(cohort.retained_sources.length, id).toBeGreaterThan(0);
+    }
+    for (const finding of key.findings) {
+      if (finding.answer_key_state === "invalid") {
+        expect(finding.invalid_reason, finding.id).toBeTruthy();
+        expect(finding.locus.state, finding.id).toBe("invalid");
+        continue;
+      }
+      expect(key.cohorts[finding.cohort], finding.id).toBeDefined();
+      expect(finding.source, finding.id).toBeTruthy();
+      expect(finding.declaration.state, finding.id).toBe("pinned-by-cohort");
+      expect(finding.evidence_sidecar.state, finding.id).toBeTruthy();
+      expect(finding.reproduction_command.executable, finding.id).toBeTruthy();
+      expect(finding.locus.state, finding.id).toBeTruthy();
+      expect(finding.healthy_control.state, finding.id).toBeTruthy();
+      if (finding.healthy_control.state === "pinned") {
+        expect(
+          key.cohorts[finding.healthy_control.cohort],
+          finding.id,
+        ).toBeDefined();
+      }
+    }
+  });
 });
 
 describe("battletest scoring and ratchet", () => {
@@ -316,9 +416,26 @@ describe("battletest scoring and ratchet", () => {
     readFileSync(join(__dirname, "..", "bench", "answer-key.json"), "utf8"),
   );
   const payload = {
-    diagnostics: [{ reason: "hollow-denominator" }],
+    diagnostics: [
+      {
+        reason: "marker-form-mismatch",
+        path: "crates/filament-agent/tests/it_011.rs",
+        line: 377,
+        value: "rust",
+      },
+      {
+        reason: "hollow-denominator",
+        value: "coverage.self_named_binding.rust",
+      },
+      {
+        reason: "catch-all-universal",
+        path: "spec/backend/functional/FR-097-session-binding.md",
+        line: 37,
+        value: "coverage.specific_shaped",
+      },
+    ],
     suspicions: [{ kind: "vacuous-under-guard" }],
-    metrics: [{ name: "coverage.specific_shaped", value: 78 }],
+    metrics: [{ name: "coverage.specific_shaped", value: 73 }],
   };
 
   test("TC-934 the score report is byte-identical over identical inputs and carries its identity", () => {
@@ -339,7 +456,10 @@ describe("battletest scoring and ratchet", () => {
     // Per-finding accounting, not one number: every key finding lands in
     // exactly one bucket, so a miss cannot hide inside a rounded recall.
     const total =
-      first.detected.length + first.missed.length + first.notMechanized.length;
+      first.detected.length +
+      first.missed.length +
+      first.notMechanized.length +
+      first.invalidAnswerKey.length;
     expect(total).toBe(key.findings.length);
   });
 

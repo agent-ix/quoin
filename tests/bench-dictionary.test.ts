@@ -7,6 +7,7 @@
  * this is those five plus the sentinel's declaration.
  */
 
+import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import {
@@ -97,6 +98,33 @@ describe("the metric dictionary", () => {
     expect(m.baseline_note).toMatch(/0 of 65/);
   });
 
+  it("TC-1094 defines correctness and safe refusal independently of presence", () => {
+    const correctness = metrics.span_correctness_rate;
+    const refusal = metrics.span_safe_refusal_rate;
+    expect(correctness.population).toMatch(/expected.*loci/i);
+    expect(correctness.method).toMatch(/Presence without exact equality/);
+    expect(correctness.per_family).toBe(true);
+    expect(refusal.population).toMatch(/unsupported/);
+    expect(refusal.method).toMatch(/expected structured refusal signal/);
+    expect(refusal.per_family).toBe(true);
+    expect(correctness.measurement_plan).not.toBe(refusal.measurement_plan);
+  });
+
+  it("TC-1120 gives labeled span v2 its own active MeasurementPlan", () => {
+    const historical = metrics.span_grounding_rate;
+    const labeled = metrics.span_grounding_v2_rate;
+    expect(historical.measurement_plan).toMatch(/MP-204/);
+    expect(labeled.measurement_plan).toMatch(/MP-215/);
+    expect(labeled.measurement_plan).not.toBe(historical.measurement_plan);
+    const plan = readFileSync(
+      join(__dirname, "..", labeled.measurement_plan),
+      "utf8",
+    );
+    expect(plan).toMatch(/status: active/);
+    expect(plan).toMatch(/metric: span_grounding_v2_rate/);
+    expect(plan).toMatch(/definition_version: property\.span-grounding-v2/);
+  });
+
   it("TC-929 defines actionability_rate with the 15-of-496 baseline", () => {
     // TC-929
     const m = metrics.actionability_rate;
@@ -142,5 +170,27 @@ describe("the metric dictionary", () => {
         },
       }),
     ).toThrow(/tolerance/);
+  });
+
+  it("exact-100 gates require 100 with no tolerance", () => {
+    expect(metrics["guidance.correctness"]).toMatchObject({
+      direction: "gate-100",
+      expected: 100,
+      tolerance: 0,
+    });
+    expect(() =>
+      validateDictionary({
+        metrics: {
+          loose: {
+            unit: "percent",
+            population: "records",
+            method: "review",
+            direction: "gate-100",
+            expected: 99,
+            tolerance: 1,
+          },
+        },
+      }),
+    ).toThrow(/expected 100 and tolerance 0/);
   });
 });

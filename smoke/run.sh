@@ -8,8 +8,8 @@
 # filesystem-only checks.
 #
 # Env knobs:
-#   PKG_VERSION     published version to install from npm (default: latest)
-#   CLAUDE_VERSION  Claude Code version in the image (default: latest)
+#   PKG_VERSION     exact published version to install (default pinned below)
+#   CLAUDE_VERSION  exact Claude Code version in the image (default pinned below)
 #   PLUGIN_SOURCE   github (default; real community path) | local (this checkout)
 #
 # Examples:
@@ -21,9 +21,9 @@ set -euo pipefail
 SMOKE_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "$SMOKE_DIR/.." && pwd)"
 IMAGE="quoin-install-smoke"
-PKG_VERSION="${PKG_VERSION:-latest}"
-CLAUDE_VERSION="${CLAUDE_VERSION:-latest}"
-CODEX_VERSION="${CODEX_VERSION:-latest}"
+PKG_VERSION="${PKG_VERSION:-0.21.9}"
+CLAUDE_VERSION="${CLAUDE_VERSION:-2.1.220}"
+CODEX_VERSION="${CODEX_VERSION:-0.149.1}"
 PLUGIN_SOURCE="${PLUGIN_SOURCE:-github}"
 
 echo ">> build $IMAGE (CLAUDE_VERSION=$CLAUDE_VERSION CODEX_VERSION=$CODEX_VERSION)"

@@ -9,6 +9,14 @@
 // findings currently scores better than an expensive run producing right ones,
 // and nothing in the report says so.
 
+import {
+  findingEnvelopeDigest,
+  isFindingEnvelope,
+  validateFindingEnvelope,
+} from "./finding-envelope.mjs";
+
+export const ADVISORY_PRECISION_VERSION = "finding.precision.advisory-v1";
+
 /**
  * Finding precision and recall against a labelled corpus (FR-043-AC-2).
  *
@@ -22,7 +30,7 @@
  * whole reason for existing: a scored miss must be distinguishable from a
  * defect nobody claimed was findable.
  */
-export function scoreFindings(found, labels) {
+export function scoreFindings(found, labels, shapes = {}, adjudication = {}) {
   const families = new Map();
   const bucket = (family) => {
     if (!families.has(family)) {
@@ -67,7 +75,18 @@ export function scoreFindings(found, labels) {
   // would vanish from the precision denominator. That is the laundering
   // CR-098's positional pairing was added to stop, reintroduced through a side
   // door.
-  const declaredCollateral = labels.flatMap((l) => l.collateral ?? []);
+  //
+  // ONE finding per declaration was not enough: it must also be ONE CASE.
+  // Measured over a 34-case corpus (agent-ix/quoin#238), five cases declared
+  // `hollow-denominator` collateral and the run emitted exactly five
+  // `hollow-denominator` findings — one of which was the seeded, labelled
+  // defect of a SIXTH case. All five were absorbed, and that family scored
+  // recall 0.00 for the whole run while the per-language cut of the same run
+  // scored 1.00. The declaring case is carried onto the entry here so the
+  // predicate can require it.
+  const declaredCollateral = labels.flatMap((l) =>
+    (l.collateral ?? []).map((c) => ({ ...c, corpus: l.corpus })),
+  );
   const spent = new Set();
   const collateral = [];
   const setAside = new Set();
@@ -75,14 +94,21 @@ export function scoreFindings(found, labels) {
     const index = declaredCollateral.findIndex(
       (c, i) =>
         !spent.has(i) &&
-        c.family === finding.family &&
-        (c.reason === undefined || c.reason === findingReason(finding)),
+        c.family === findingFamily(finding) &&
+        (c.reason === undefined || c.reason === findingReason(finding)) &&
+        // Compared only when BOTH sides name a case. A caller that scores a
+        // flat finding list with no corpus attribution — the eval harness
+        // does — keeps the old, looser pairing rather than losing collateral
+        // suppression entirely.
+        (c.corpus === undefined ||
+          findingCase(finding) === undefined ||
+          c.corpus === findingCase(finding)),
     );
     if (index === -1) continue;
     spent.add(index);
     setAside.add(finding);
     collateral.push({
-      family: finding.family,
+      family: findingFamily(finding),
       reason: findingReason(finding),
     });
   }
@@ -97,7 +123,7 @@ export function scoreFindings(found, labels) {
     const hit = expected.find(
       (l) =>
         !matched.has(l.id) &&
-        l.family === finding.family &&
+        l.family === findingFamily(finding) &&
         locusMatches(locus, labelLocus(l)),
     );
     if (hit) {
@@ -126,14 +152,14 @@ export function scoreFindings(found, labels) {
     const hit = expected.find(
       (l) =>
         !matched.has(l.id) &&
-        l.family === finding.family &&
+        l.family === findingFamily(finding) &&
         !(positioned && labelLocus(l) !== null),
     );
     if (hit) {
       matched.add(hit.id);
       bucket(hit.family).truePositives += 1;
     } else {
-      bucket(finding.family).falsePositives += 1;
+      bucket(findingFamily(finding)).falsePositives += 1;
     }
   }
   for (const label of expected) {
@@ -141,11 +167,41 @@ export function scoreFindings(found, labels) {
   }
 
   const rows = [...families.values()]
-    .map((f) => ({
-      ...f,
-      precision: ratio(f.truePositives, f.truePositives + f.falsePositives),
-      recall: ratio(f.truePositives, f.truePositives + f.misses),
-    }))
+    .map((f) => {
+      // An ADVISORY family is not scored by the defect-shaped FP definition.
+      // It is a corpus-level observation — one finding per corpus whenever a
+      // shape holds — so it fires on nearly every fixture, correctly, and
+      // "a finding on a case that does not seed this family" counts each
+      // correct firing against it.
+      //
+      // Measured before this: `catch-all-universal` fired on 10 of 21 cases,
+      // every one verified correct, and scored precision 0.167 — a number that
+      // read as "wrong five times in six" while being wrong zero times in
+      // twelve (agent-ix/quoin#234).
+      //
+      // What #234 shipped was a bare `null`, and `ratchet()` skips a null
+      // metric — so reclassifying a family to `advisory` deleted its precision
+      // in silence, for the cost of one string in one JSON file. That was then
+      // done a SECOND time, to `archetype-matches-nothing` at 3 TP / 296 FP =
+      // 0.01, and no run objected (agent-ix/quoin#245).
+      //
+      // So the null is now SCOPED and ACCOUNTED. Precision is computed over
+      // the cases the corpus has actually ruled on, and every firing nobody
+      // ruled on is counted and published rather than folded into a blank.
+      const advisory = shapes[f.family] === "advisory";
+      const scoped = advisory
+        ? scopedPrecision(f.family, scored, adjudication)
+        : null;
+      return {
+        ...f,
+        precision: advisory
+          ? scoped.precision
+          : ratio(f.truePositives, f.truePositives + f.falsePositives),
+        shape: shapes[f.family] ?? "defect",
+        recall: ratio(f.truePositives, f.truePositives + f.misses),
+        ...(advisory ? { precision_basis: scoped } : {}),
+      };
+    })
     .sort((a, b) => a.family.localeCompare(b.family));
 
   // Labels declared unfindable are reported, not silently dropped: an
@@ -157,13 +213,159 @@ export function scoreFindings(found, labels) {
   return { families: rows, excluded, positional, collateral };
 }
 
+/**
+ * Precision for an ADVISORY family, over the cases the corpus has ruled on.
+ *
+ * A case's `expect.yaml` states a reason under `diagnostic_reasons` (it must
+ * fire here) or `absent_diagnostic_reasons` (it must stay silent here). Those
+ * are the only two places this corpus says anything about an advisory. So:
+ *
+ *   true positive   fired on a case that declared the reason PRESENT
+ *   false positive  fired on a case that declared the reason ABSENT
+ *   unadjudicated   fired on a case that declared neither
+ *
+ * A ruling may be SCOPED to one declaration — `test-case/...` — and then it
+ * governs only findings that declaration raised. `agent-ix/quire-rs#304` made
+ * `archetype-matches-nothing` fire for several declarations at once, so on a
+ * three-file fixture it fires correctly for `inspection`, `suite`,
+ * `nfr-acceptance-criterion` and `stakeholder-validation-criterion` — none of
+ * which the fixture is about. Reading a scoped ruling as a ruling on the bare
+ * token counted those four as false positives and produced a precision of
+ * 0.556 that no reading of the corpus supports.
+ *
+ * READ THE COVERAGE, NOT THE RATE. `absent_diagnostic_reasons` is graded by
+ * `qa-corpus`'s own `make ci`, so a false positive here would already have
+ * turned that gate red — which means this rate cannot fall independently of a
+ * gate one repository over, and a 1.00 is not evidence the detector is right.
+ * What this function actually reports is `unadjudicated`: the number of times
+ * the toolchain fired and nobody has ruled on whether it should have. On the
+ * baseline that opened agent-ix/quoin#245 that count was 313 of 316 for
+ * `archetype-matches-nothing`, and it was invisible.
+ *
+ * `null`, never 0, when nothing has been adjudicated: not-measured and zero are
+ * different claims, and a family nobody has ruled on has no precision at all.
+ */
+function scopedPrecision(family, scored, adjudication) {
+  const ruling = adjudication[family] ?? { present: [], absent: [] };
+  const exact = new Map(
+    (ruling.findings ?? []).map((entry) => [entry.id, entry]),
+  );
+  // A ruling governs a finding when they name the same case AND the ruling is
+  // either unscoped or names the declaration that raised it.
+  const matching = (rules, finding) =>
+    rules.find(
+      (r) =>
+        r.corpus === findingCase(finding) &&
+        (r.scope === null || r.scope === findingDeclaration(finding)),
+    );
+  let truePositives = 0;
+  let falsePositives = 0;
+  let unadjudicated = 0;
+  let retainedRulings = 0;
+  const ambiguous = [];
+  const unresolved = [];
+  const unadjudicatedFindingIds = [];
+  // Of the true positives, how many were ruled by a STANDING sentence about
+  // the whole corpus rather than by the fixture's own `expect.yaml`. Reported
+  // because they are different strengths of evidence: the first measurement
+  // after `archetype-matches-nothing` gained a standing ruling read precision
+  // 1.00 over 323 firings, of which 3 were per-case and 320 came from one
+  // sentence. Averaging those into a single figure is how a rate stops meaning
+  // what its name says.
+  let byStanding = 0;
+  for (const finding of scored) {
+    if (findingFamily(finding) !== family) continue;
+    const findingId = isFindingEnvelope(finding)
+      ? findingEnvelopeDigest(finding)
+      : null;
+    const retained = findingId === null ? null : exact.get(findingId);
+    if (retained) {
+      retainedRulings += 1;
+      if (retained.disposition === "correct") {
+        truePositives += 1;
+      } else if (retained.disposition === "incorrect") {
+        falsePositives += 1;
+      } else {
+        unadjudicated += 1;
+        unadjudicatedFindingIds.push(findingId);
+        (retained.disposition === "ambiguous" ? ambiguous : unresolved).push(
+          findingId,
+        );
+      }
+      continue;
+    }
+    // A finding with no case attribution cannot be ruled on at all. Counted as
+    // unadjudicated rather than dropped: an unscored finding nobody sees is a
+    // finding nobody can question, which is the rule the collateral pass is
+    // held to a few lines up.
+    if (findingCase(finding) === undefined) {
+      unadjudicated += 1;
+      if (findingId) unadjudicatedFindingIds.push(findingId);
+      continue;
+    }
+    if (matching(ruling.absent ?? [], finding)) {
+      falsePositives += 1;
+      continue;
+    }
+    const hit = matching(ruling.present ?? [], finding);
+    if (hit) {
+      truePositives += 1;
+      if (hit.standing) byStanding += 1;
+    } else {
+      unadjudicated += 1;
+      if (findingId) unadjudicatedFindingIds.push(findingId);
+    }
+  }
+  return {
+    metricVersion: adjudication.__metricVersion ?? ADVISORY_PRECISION_VERSION,
+    precision: ratio(truePositives, truePositives + falsePositives),
+    truePositives,
+    falsePositives,
+    unadjudicated,
+    byStanding,
+    retainedRulings,
+    ambiguous,
+    unresolved,
+    unadjudicatedFindingIds: unadjudicatedFindingIds.sort(),
+    // The rulings that exist AT ALL, whether or not the family fired under
+    // them. A family can be adjudicated on ten cases and fire under none of
+    // them, and that is a different state from one nobody has written a rule
+    // for.
+    rulings: (ruling.present ?? []).length + (ruling.absent ?? []).length,
+  };
+}
+
 /** The reason a finding carries, under either of the two payload spellings. */
 function findingReason(finding) {
-  return finding.reason ?? finding.kind ?? null;
+  return finding.kind ?? finding.reason ?? null;
+}
+
+function findingFamily(finding) {
+  return isFindingEnvelope(finding) ? finding.identity?.family : finding.family;
+}
+
+function findingCase(finding) {
+  return isFindingEnvelope(finding) ? finding.identity?.case : finding.corpus;
+}
+
+function findingDeclaration(finding) {
+  return isFindingEnvelope(finding)
+    ? finding.identity?.declaration
+    : finding.declaration;
 }
 
 /** Where a FINDING points, or `null` when it names no place. */
 function locusOf(finding) {
+  if (isFindingEnvelope(finding)) {
+    const locus = finding.locus;
+    if (locus.state !== "available") return null;
+    const path = locus.value?.path;
+    if (!path) return null;
+    return {
+      path: String(path),
+      line: typeof locus.value?.line === "number" ? locus.value.line : null,
+    };
+  }
   const path = finding.path ?? finding.document ?? finding.file ?? null;
   if (!path) return null;
   return {
@@ -214,18 +416,667 @@ function locusMatches(finding, label) {
 export function scoreActionability(found) {
   const actionable = found.filter((f) => hasLocus(f)).length;
   return {
+    definitionVersion: "finding.actionability-v1",
+    numerator: actionable,
+    denominator: found.length,
+    exclusions: [],
+    namedMisses: [],
     actionable,
     total: found.length,
     rate: ratio(actionable, found.length),
   };
 }
 
+/**
+ * Actionability v2: correct subject/locus, causal evidence, a concrete change
+ * target, and either a remedy or a safe next diagnostic step (#254).
+ *
+ * `not_applicable` removes a record from this metric and remains named in the
+ * exclusions. `unavailable` stays in the denominator and is a named miss: not
+ * emitted is evidence about the producer, not permission to shrink the score.
+ */
+export function scoreActionabilityV2(found) {
+  const namedMisses = [];
+  const exclusions = [];
+  const partitionMap = new Map();
+  let numerator = 0;
+  let denominator = 0;
+
+  found.forEach((finding, index) => {
+    validateFindingEnvelope(finding);
+    const id = findingIdentity(finding, index);
+    const partition = actionabilityPartition(partitionMap, finding);
+    const subjectOrLocus =
+      finding.subject.state === "available" ||
+      finding.locus.state === "available";
+    const required = [
+      ["causal_evidence", finding.causalEvidence],
+      ["change_target", finding.changeTarget],
+      ["next_move", finding.nextMove],
+    ];
+    const notApplicable = required
+      .filter(([, value]) => value.state === "not_applicable")
+      .map(([field, value]) => ({ field, reason: value.reason }));
+    const locusNotApplicable =
+      finding.subject.state === "not_applicable" &&
+      finding.locus.state === "not_applicable";
+    if (locusNotApplicable) {
+      notApplicable.unshift({
+        field: "subject_or_locus",
+        reason: `${finding.subject.reason}; ${finding.locus.reason}`,
+      });
+    }
+    if (notApplicable.length > 0) {
+      const exclusion = { id, fields: notApplicable };
+      exclusions.push(exclusion);
+      partition.exclusions.push(exclusion);
+      return;
+    }
+
+    denominator += 1;
+    partition.denominator += 1;
+    const missing = [];
+    if (!subjectOrLocus) {
+      missing.push({
+        field: "subject_or_locus",
+        state: "unavailable",
+        reason: `${finding.subject.reason}; ${finding.locus.reason}`,
+      });
+    }
+    for (const [field, value] of required) {
+      if (value.state !== "available") {
+        missing.push({ field, state: value.state, reason: value.reason });
+      }
+    }
+    if (missing.length === 0) {
+      numerator += 1;
+      partition.numerator += 1;
+    } else {
+      const miss = { id, missing };
+      namedMisses.push(miss);
+      partition.namedMisses.push(miss);
+    }
+  });
+
+  const partitions = [...partitionMap.values()]
+    .map((partition) => ({
+      ...partition,
+      rate: ratio(partition.numerator, partition.denominator),
+    }))
+    .sort((a, b) => a.id.localeCompare(b.id));
+
+  return {
+    definitionVersion: "finding.actionability-v2",
+    numerator,
+    denominator,
+    exclusions,
+    namedMisses,
+    partitions,
+    rate: ratio(numerator, denominator),
+  };
+}
+
+function actionabilityPartition(partitions, finding) {
+  const family = finding.identity?.family ?? finding.kind;
+  const id = [
+    finding.source.class,
+    finding.source.producer,
+    finding.source.channel,
+    family,
+  ].join("/");
+  if (!partitions.has(id)) {
+    partitions.set(id, {
+      id,
+      source: structuredClone(finding.source),
+      family,
+      numerator: 0,
+      denominator: 0,
+      exclusions: [],
+      namedMisses: [],
+    });
+  }
+  return partitions.get(id);
+}
+
+const SPECIFIC_PROPERTIES = new Set([
+  "round-trip",
+  "idempotence",
+  "ordering",
+  "invariant",
+  "error-case",
+  "lifecycle",
+  "concurrency",
+]);
+
+/** Span-presence grounding over structured `quire properties --json` output. */
+export function scoreSpanGrounding(inputs) {
+  const namedMisses = [];
+  const exclusions = [];
+  const malformed = [];
+  const producerVersions = new Set();
+  const spanStates = Object.fromEntries(
+    ["domain", "precondition", "oracle"].map((field) => [
+      field,
+      { available: 0, unavailable: 0, missing: 0, malformed: 0 },
+    ]),
+  );
+  let numerator = 0;
+  let denominator = 0;
+
+  for (const input of inputs) {
+    const payload = input?.payload;
+    const producerVersion =
+      input?.producerVersion ??
+      (payload?.engine
+        ? `${payload.engine.cli ?? "unknown-cli"} (engine ${payload.engine.engine ?? "unknown"})`
+        : null);
+    if (producerVersion) producerVersions.add(producerVersion);
+    if (!payload || !Array.isArray(payload.documents)) {
+      malformed.push({
+        case: input?.case ?? "unknown-case",
+        reason: "properties payload has no documents array",
+      });
+      continue;
+    }
+
+    payload.documents.forEach((document, documentIndex) => {
+      if (!Array.isArray(document?.criteria)) {
+        malformed.push({
+          case: input?.case ?? "unknown-case",
+          document: document?.document ?? `document-${documentIndex + 1}`,
+          reason: "properties document has no criteria array",
+        });
+        return;
+      }
+      document.criteria.forEach((criterion, criterionIndex) => {
+        const id = criterionIdentity(
+          input,
+          document,
+          criterion,
+          criterionIndex,
+        );
+        if (!SPECIFIC_PROPERTIES.has(criterion?.property)) {
+          exclusions.push({
+            id,
+            state: "not_applicable",
+            reason: `property ${JSON.stringify(criterion?.property ?? null)} is outside the specific-shape population`,
+          });
+          return;
+        }
+
+        denominator += 1;
+        const spans = Object.fromEntries(
+          ["domain", "precondition", "oracle"].map((field) => {
+            const observed = classifySpan(criterion, field);
+            spanStates[field][observed.state] += 1;
+            return [field, observed];
+          }),
+        );
+        if (Object.values(spans).every((span) => span.state === "available")) {
+          numerator += 1;
+        } else {
+          namedMisses.push({
+            id,
+            case: input?.case ?? null,
+            document: document.document ?? null,
+            rowId: criterion.row_id ?? null,
+            line: criterion.line ?? null,
+            property: criterion.property,
+            spans,
+          });
+        }
+      });
+    });
+  }
+
+  return {
+    definitionVersion: "property.span-grounding-v1",
+    numerator,
+    denominator,
+    exclusions,
+    namedMisses,
+    malformed,
+    spanStates,
+    producerVersions: [...producerVersions].sort(),
+    rate: ratio(numerator, denominator),
+  };
+}
+
+/**
+ * Labeled span outcome v2 (#261).
+ *
+ * The historical v1 metric above asks only whether all three fields are
+ * populated. V2 asks the useful question: did the producer emit the exact
+ * labeled boundaries, or did it explicitly refuse for the labeled safe reason?
+ * Rules match an exact statement and property so a denominator cannot be
+ * manufactured by a fuzzy classifier. `expectedMatches` pins multiplicity;
+ * losing repeated corpus cases is therefore a malformed run, not an apparent
+ * improvement.
+ */
+export function scoreSpanGroundingV2(inputs, labelSet) {
+  const rules = Array.isArray(labelSet?.rules) ? labelSet.rules : [];
+  const matches = new Map(rules.map((rule) => [rule.id, 0]));
+  const namedMisses = [];
+  const exclusions = [];
+  const malformed = [];
+  const outcomes = {
+    exactSpans: 0,
+    safeRefusals: 0,
+    wrongSpans: 0,
+    unexpectedRefusals: 0,
+    unjustifiedRefusals: 0,
+    unsafeEmissions: 0,
+  };
+  const producerVersions = new Set();
+  let numerator = 0;
+  let denominator = 0;
+
+  for (const input of inputs) {
+    const payload = input?.payload;
+    const producerVersion =
+      input?.producerVersion ??
+      (payload?.engine
+        ? `${payload.engine.cli ?? "unknown-cli"} (engine ${payload.engine.engine ?? "unknown"})`
+        : null);
+    if (producerVersion) producerVersions.add(producerVersion);
+    if (!payload || !Array.isArray(payload.documents)) {
+      malformed.push({
+        case: input?.case ?? "unknown-case",
+        reason: "properties payload has no documents array",
+      });
+      continue;
+    }
+
+    payload.documents.forEach((document, documentIndex) => {
+      if (!Array.isArray(document?.criteria)) {
+        malformed.push({
+          case: input?.case ?? "unknown-case",
+          document: document?.document ?? `document-${documentIndex + 1}`,
+          reason: "properties document has no criteria array",
+        });
+        return;
+      }
+      document.criteria.forEach((criterion, criterionIndex) => {
+        if (!SPECIFIC_PROPERTIES.has(criterion?.property)) return;
+        const id = criterionIdentity(
+          input,
+          document,
+          criterion,
+          criterionIndex,
+        );
+        const matching = rules.filter(
+          (rule) =>
+            rule.statement === criterion?.statement &&
+            rule.property === criterion?.property,
+        );
+        if (matching.length === 0) {
+          exclusions.push({
+            id,
+            state: "not_applicable",
+            reason:
+              "specific-shape criterion is outside the labeled v2 population",
+          });
+          return;
+        }
+        if (matching.length > 1) {
+          malformed.push({
+            id,
+            reason: "criterion matches more than one span-v2 label rule",
+            rules: matching.map((rule) => rule.id),
+          });
+          return;
+        }
+
+        const rule = matching[0];
+        matches.set(rule.id, (matches.get(rule.id) ?? 0) + 1);
+        denominator += 1;
+        const observed = observedSpans(criterion);
+        const emitted = Object.values(observed).some((span) => span !== null);
+        const signals = Array.isArray(criterion?.signals)
+          ? criterion.signals
+          : [];
+
+        if (rule.expectedRefusal) {
+          const passed = !emitted && signals.includes(rule.expectedRefusal);
+          if (passed) {
+            numerator += 1;
+            outcomes.safeRefusals += 1;
+          } else {
+            if (emitted) outcomes.unsafeEmissions += 1;
+            else outcomes.unjustifiedRefusals += 1;
+            namedMisses.push({
+              id,
+              rule: rule.id,
+              expected: { refusal: rule.expectedRefusal },
+              observed: { spans: observed, signals },
+              outcome: emitted ? "unsafe-emission" : "unjustified-refusal",
+            });
+          }
+          return;
+        }
+
+        const expected = expectedSpans(
+          criterion,
+          { ...rule, rowId: criterion.row_id },
+          malformed,
+        );
+        const passed =
+          expected !== null &&
+          ["domain", "precondition", "oracle"].every((field) =>
+            sameSpan(expected[field], observed[field]),
+          );
+        if (passed) {
+          numerator += 1;
+          outcomes.exactSpans += 1;
+        } else {
+          if (emitted) outcomes.wrongSpans += 1;
+          else outcomes.unexpectedRefusals += 1;
+          namedMisses.push({
+            id,
+            rule: rule.id,
+            expected,
+            observed,
+            outcome: emitted ? "wrong-span" : "unexpected-refusal",
+          });
+        }
+      });
+    });
+  }
+
+  for (const rule of rules) {
+    const observed = matches.get(rule.id) ?? 0;
+    if (!Number.isInteger(rule.expectedMatches) || rule.expectedMatches < 1) {
+      malformed.push({
+        rule: rule.id,
+        reason: "label rule must declare a positive integer expectedMatches",
+      });
+    } else if (observed !== rule.expectedMatches) {
+      malformed.push({
+        rule: rule.id,
+        reason: "labeled population multiplicity changed",
+        expectedMatches: rule.expectedMatches,
+        observedMatches: observed,
+      });
+    }
+  }
+
+  return {
+    definitionVersion:
+      labelSet?.definitionVersion ?? "property.span-grounding-v2",
+    numerator,
+    denominator,
+    rate: ratio(numerator, denominator),
+    outcomes,
+    namedMisses,
+    exclusions,
+    malformed,
+    labels: rules.map((rule) => ({
+      id: rule.id,
+      expectedMatches: rule.expectedMatches,
+      observedMatches: matches.get(rule.id) ?? 0,
+    })),
+    producerVersions: [...producerVersions].sort(),
+  };
+}
+
+/** Exact controlled-locus scoring, kept separate from span presence. */
+export function scoreGroundingQuality(payload, labelSet) {
+  const malformed = [];
+  const criteria = new Map();
+  for (const document of payload?.documents ?? []) {
+    for (const criterion of document?.criteria ?? []) {
+      if (!criterion?.row_id) continue;
+      if (criteria.has(criterion.row_id)) {
+        malformed.push({
+          rowId: criterion.row_id,
+          reason: "duplicate controlled criterion row id",
+        });
+      } else {
+        criteria.set(criterion.row_id, criterion);
+      }
+    }
+  }
+
+  const correctness = qualityAxis("property.span-correctness-v1");
+  const safeRefusal = qualityAxis("property.safe-refusal-v1");
+  const tradeoff = {
+    correctSpans: 0,
+    wrongSpans: 0,
+    safeRefusals: 0,
+    unexpectedRefusals: 0,
+    unsafeEmissions: 0,
+  };
+
+  for (const label of labelSet?.cases ?? []) {
+    const criterion = criteria.get(label.rowId) ?? null;
+    if (label.expectedRefusal) {
+      safeRefusal.denominator += 1;
+      const family = familyAxis(safeRefusal, label.family);
+      family.denominator += 1;
+      const observed = observedSpans(criterion);
+      const emitted = Object.values(observed).some((span) => span !== null);
+      const reasons = Array.isArray(criterion?.signals)
+        ? criterion.signals
+        : [];
+      const passed =
+        criterion !== null &&
+        !emitted &&
+        reasons.includes(label.expectedRefusal);
+      if (passed) {
+        safeRefusal.numerator += 1;
+        family.numerator += 1;
+        tradeoff.safeRefusals += 1;
+      } else {
+        if (emitted) tradeoff.unsafeEmissions += 1;
+        const miss = {
+          id: label.id,
+          family: label.family,
+          rowId: label.rowId,
+          expected: { refusal: label.expectedRefusal },
+          observed: { spans: observed, signals: reasons },
+          outcome: emitted ? "unsafe-emission" : "unjustified-refusal",
+        };
+        safeRefusal.namedMisses.push(miss);
+        family.namedMisses.push(miss);
+      }
+      continue;
+    }
+
+    correctness.denominator += 1;
+    const family = familyAxis(correctness, label.family);
+    family.denominator += 1;
+    const expected = expectedSpans(criterion, label, malformed);
+    const observed = observedSpans(criterion);
+    const emitted = Object.values(observed).some((span) => span !== null);
+    const passed =
+      expected !== null &&
+      ["domain", "precondition", "oracle"].every((field) =>
+        sameSpan(expected[field], observed[field]),
+      );
+    if (passed) {
+      correctness.numerator += 1;
+      family.numerator += 1;
+      tradeoff.correctSpans += 1;
+    } else {
+      if (emitted) tradeoff.wrongSpans += 1;
+      else tradeoff.unexpectedRefusals += 1;
+      const miss = {
+        id: label.id,
+        family: label.family,
+        rowId: label.rowId,
+        expected,
+        observed,
+        outcome: emitted ? "wrong-span" : "unexpected-refusal",
+      };
+      correctness.namedMisses.push(miss);
+      family.namedMisses.push(miss);
+    }
+  }
+
+  finishQualityAxis(correctness);
+  finishQualityAxis(safeRefusal);
+  return {
+    definitionVersion:
+      labelSet?.definitionVersion ?? "property.grounding-loci-v1",
+    correctness,
+    safeRefusal,
+    tradeoff,
+    malformed,
+    producerVersions: payload?.engine
+      ? [
+          `${payload.engine.cli ?? "unknown-cli"} (engine ${payload.engine.engine ?? "unknown"})`,
+        ]
+      : [],
+  };
+}
+
+function qualityAxis(definitionVersion) {
+  return {
+    definitionVersion,
+    numerator: 0,
+    denominator: 0,
+    rate: null,
+    namedMisses: [],
+    families: [],
+    _families: new Map(),
+  };
+}
+
+function familyAxis(axis, name) {
+  if (!axis._families.has(name)) {
+    const family = {
+      family: name,
+      numerator: 0,
+      denominator: 0,
+      rate: null,
+      namedMisses: [],
+    };
+    axis._families.set(name, family);
+    axis.families.push(family);
+  }
+  return axis._families.get(name);
+}
+
+function finishQualityAxis(axis) {
+  axis.rate = ratio(axis.numerator, axis.denominator);
+  axis.families.sort((a, b) => a.family.localeCompare(b.family));
+  for (const family of axis.families) {
+    family.rate = ratio(family.numerator, family.denominator);
+  }
+  delete axis._families;
+}
+
+function expectedSpans(criterion, label, malformed) {
+  if (!criterion || typeof criterion.statement !== "string") {
+    malformed.push({
+      id: label.id,
+      rowId: label.rowId,
+      reason: "controlled criterion or statement is unavailable",
+    });
+    return null;
+  }
+  const out = {};
+  for (const field of ["domain", "precondition", "oracle"]) {
+    const text = label.expected?.[field] ?? null;
+    if (text === null) {
+      out[field] = null;
+      continue;
+    }
+    const start = criterion.statement.indexOf(text);
+    const repeated =
+      start >= 0 && criterion.statement.indexOf(text, start + 1) >= 0;
+    if (start < 0 || repeated) {
+      malformed.push({
+        id: label.id,
+        rowId: label.rowId,
+        field,
+        reason:
+          start < 0
+            ? "expected span text is absent from the statement"
+            : "expected span text is not unique in the statement",
+      });
+      return null;
+    }
+    out[field] = { start, end: start + text.length, text };
+  }
+  return out;
+}
+
+function observedSpans(criterion) {
+  return Object.fromEntries(
+    ["domain", "precondition", "oracle"].map((field) => [
+      field,
+      criterion?.[field] ?? null,
+    ]),
+  );
+}
+
+function sameSpan(expected, observed) {
+  if (expected === null || observed === null) return expected === observed;
+  return (
+    expected.start === observed.start &&
+    expected.end === observed.end &&
+    expected.text === observed.text
+  );
+}
+
+function classifySpan(criterion, field) {
+  if (!Object.hasOwn(criterion, field)) {
+    return { state: "missing", reason: `criterion has no ${field} field` };
+  }
+  const value = criterion[field];
+  if (value === null) {
+    return {
+      state: "unavailable",
+      reason: `producer emitted no ${field} span`,
+    };
+  }
+  if (
+    !value ||
+    typeof value !== "object" ||
+    !Number.isInteger(value.start) ||
+    !Number.isInteger(value.end) ||
+    value.start < 0 ||
+    value.end < value.start ||
+    typeof value.text !== "string"
+  ) {
+    return {
+      state: "malformed",
+      reason: `producer emitted malformed ${field} span`,
+    };
+  }
+  return { state: "available", value };
+}
+
+function criterionIdentity(input, document, criterion, index) {
+  return [
+    input?.case ?? "unknown-case",
+    document?.document ?? "unknown-document",
+    criterion?.row_id ?? criterion?.line ?? `criterion-${index + 1}`,
+  ].join(":");
+}
+
 /** A finding is actionable when it names WHERE — a row id or a document line. */
 function hasLocus(finding) {
+  if (isFindingEnvelope(finding)) {
+    if (finding.locus.state !== "available") return false;
+    return Boolean(finding.locus.value?.rowId || finding.locus.value?.line);
+  }
   return Boolean(
     (finding.rowId && String(finding.rowId).trim()) ||
     (typeof finding.line === "number" && finding.line > 0),
   );
+}
+
+function findingIdentity(finding, index) {
+  const parts = [
+    finding.source.producer,
+    finding.source.channel,
+    finding.identity?.case,
+    finding.identity?.family,
+    finding.kind,
+  ].filter(Boolean);
+  return parts.length > 0 ? parts.join(":") : `finding-${index + 1}`;
 }
 
 /**
@@ -240,31 +1091,41 @@ function hasLocus(finding) {
  * precisely backwards.
  */
 export function scoreCost(metrics, truePositives) {
-  const tokens = metrics?.tokenUsage?.total ?? 0;
-  const toolCalls = metrics?.toolCalls ?? 0;
-  if (truePositives === 0) {
-    // Not Infinity and not 0. A run that confirmed nothing has no cost PER
-    // insight, and reporting either number would be a claim about efficiency
-    // that the run does not support.
-    return {
-      tokens,
-      toolCalls,
-      truePositives: 0,
-      tokensPer: null,
-      toolCallsPer: null,
-    };
-  }
+  // ABSENT IS NOT ZERO. `?? 0` here published "0 tokens" for a runner that
+  // spends none because it runs no model at all — tier 1 shells out to `quire`
+  // and `quoin` and never calls one. A zero is a measurement claiming the run
+  // was free; `null` says nobody counted, which is the same rule `ratio` is
+  // held to two functions down (agent-ix/quoin#243).
+  const tokens = metrics?.tokenUsage?.total ?? null;
+  const toolCalls = metrics?.toolCalls ?? null;
+  // THE TWO HALVES ARE COMPUTED SEPARATELY. Tier 1 knows its tool calls exactly
+  // and has no token count at all, and an all-or-nothing return threw away the
+  // half it could report. Each side is null only when its own input is.
+  //
+  // Not Infinity and not 0 when nothing was confirmed: a run that confirmed
+  // nothing has no cost PER insight, and either number would be a claim about
+  // efficiency the run does not support.
+  const per = (total) =>
+    total === null || truePositives === 0 ? null : total / truePositives;
+  const tokensPer = per(tokens);
+  const toolCallsPer = per(toolCalls);
   return {
     tokens,
     toolCalls,
     truePositives,
-    tokensPer: Math.round(tokens / truePositives),
-    toolCallsPer: Number((toolCalls / truePositives).toFixed(2)),
+    tokensPer: tokensPer === null ? null : Math.round(tokensPer),
+    toolCallsPer:
+      toolCallsPer === null ? null : Number(toolCallsPer.toFixed(2)),
   };
 }
 
 /** Every quality dimension for one scenario, ready to sit beside the cost columns. */
-export function scoreScenario({ found = [], labels = [], metrics = {} }) {
+export function scoreScenario({
+  found = [],
+  labels = [],
+  metrics = {},
+  properties = [],
+}) {
   const findings = scoreFindings(found, labels);
   const truePositives = findings.families.reduce(
     (n, f) => n + f.truePositives,
@@ -273,6 +1134,7 @@ export function scoreScenario({ found = [], labels = [], metrics = {} }) {
   return {
     findings,
     actionability: scoreActionability(found),
+    spanGrounding: scoreSpanGrounding(properties),
     cost: scoreCost(metrics, truePositives),
   };
 }

@@ -10,14 +10,14 @@
  * Usage:
  *   node scripts/refresh-quire-schemas.mjs [--source <quire-rs checkout>]
  *
- * The source must be checked out at the tag `QUIRE_CONTRACT.sourceTag` names,
- * or this refuses: copying from an arbitrary working tree is how a contract
- * ends up pinned to something that was never released.
+ * The source must contain `QUIRE_CONTRACT.sourceRevision`. Files are read from
+ * that git object, not from the working tree, so the copied bytes are exactly
+ * reproducible while tracking-branch work is in progress.
  */
 
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { copyFileSync, readFileSync, writeFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -35,44 +35,50 @@ function arg(name, fallback) {
 
 const source = resolve(arg("--source", join(repo, "..", "quire-rs")));
 const contract = readFileSync(contractFile, "utf8");
-const expectedTag = /sourceTag:\s*"([^"]+)"/.exec(contract)?.[1];
-if (!expectedTag) {
-  console.error("could not read `sourceTag` from src/quire/contract.ts");
+const expectedRevision = /sourceRevision:\s*"([0-9a-f]{40})"/.exec(
+  contract,
+)?.[1];
+if (!expectedRevision) {
+  console.error("could not read `sourceRevision` from src/quire/contract.ts");
   process.exit(1);
 }
 
-let describe;
+let resolvedRevision;
 try {
-  describe = execFileSync(
+  resolvedRevision = execFileSync(
     "git",
-    ["-C", source, "describe", "--tags", "--exact-match"],
+    ["-C", source, "rev-parse", `${expectedRevision}^{commit}`],
     {
       encoding: "utf8",
     },
   ).trim();
-} catch {
+} catch (cause) {
   console.error(
-    `${source} is not checked out at a tag. Check out ${expectedTag} (or pass ` +
-      `--source) — copying from an arbitrary working tree pins the contract to ` +
-      `something that was never released.`,
+    `${source} does not contain pinned quire-rs revision ${expectedRevision}. ` +
+      `Fetch it or pass --source with a checkout that contains it. ` +
+      `(${cause instanceof Error ? cause.message : String(cause)})`,
   );
   process.exit(1);
 }
 
-if (describe !== expectedTag) {
+if (resolvedRevision !== expectedRevision) {
   console.error(
-    `${source} is at ${describe} but contract.ts pins ${expectedTag}. Either ` +
-      `check out ${expectedTag}, or update sourceTag first and re-run — the two ` +
-      `must move together or the recorded provenance is a fiction.`,
+    `${source} resolved ${expectedRevision} to ${resolvedRevision}; refusing ` +
+      `to record ambiguous provenance.`,
   );
   process.exit(1);
 }
 
 const hashes = {};
 for (const name of SCHEMAS) {
-  const from = join(source, "schemas", "output", name);
   const to = join(vendorDir, name);
-  copyFileSync(from, to);
+  const bytes = execFileSync("git", [
+    "-C",
+    source,
+    "show",
+    `${expectedRevision}:schemas/output/${name}`,
+  ]);
+  writeFileSync(to, bytes);
   hashes[name] = createHash("sha256").update(readFileSync(to)).digest("hex");
   console.log(`copied ${name}  ${hashes[name].slice(0, 12)}…`);
 }

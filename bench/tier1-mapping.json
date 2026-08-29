@@ -5,7 +5,8 @@
     "coverage.suspicions": "quire coverage --json, `suspicions[]`. Keyed on `kind`. Carries `path` and `line`.",
     "coverage.metrics": "quire coverage --json, `metrics[]`. Keyed on `name`, matched against the label's `expect_value`. Carries no locus at all \u2014 a metric is a number about a corpus, not a place.",
     "validate.findings": "quire validate --diagnostics-format json, one NDJSON object per finding. Keyed on the bracketed reason at the end of `message`. See `parse_fragility` below.",
-    "audit.findings": "quoin evidence audit --json, `findings[]`. Keyed on `kind`. Carries an obligation id and NO locus."
+    "audit.findings": "quoin evidence audit --json, `findings[]`. Keyed on `kind`; source-backed findings carry path, line and symbol.",
+    "quoin.validate": "quoin validate --json, `findings[]`. Keyed on `kind`; repository validators carry an exact repair locus and actionable summary."
   },
   "parse_fragility": {
     "what": "`validate` has no `--json` payload. `--diagnostics-format json` emits `{kind, message, severity}` and embeds the path, the line and the reason INSIDE the message string, so the runner parses them with a regex.",
@@ -16,7 +17,33 @@
     "marker-form-mismatch": {
       "source": "coverage.diagnostics",
       "key": "no-symbol-bound",
+      "aliases": ["marker-form-mismatch"],
+      "locus": "path-line"
+    },
+    "low-symbol-binding": {
+      "source": "coverage.diagnostics",
+      "key": "low-symbol-binding",
+      "locus": "path-line"
+    },
+    "model-mints-nothing": {
+      "source": "coverage.diagnostics",
+      "key": "model-mints-nothing",
+      "locus": "none"
+    },
+    "obligation-row-states-nothing": {
+      "source": "coverage.diagnostics",
+      "key": "obligation-row-states-nothing",
       "locus": "path"
+    },
+    "uncatalogued-verification-method": {
+      "source": "coverage.diagnostics",
+      "key": "uncatalogued-verification-method",
+      "locus": "path"
+    },
+    "undeclared-coverage-vocabulary": {
+      "source": "coverage.diagnostics",
+      "key": "undeclared-coverage-vocabulary",
+      "locus": "none"
     },
     "hollow-denominator": {
       "source": "coverage.diagnostics",
@@ -26,13 +53,61 @@
     "undeclared-type-value": {
       "source": "validate.findings",
       "key": "assert",
-      "locus": "path-line"
+      "locus": "path-line",
+      "contains": "is not one of",
+      "note": "`assert` is the validator's CATEGORY, not this defect. Every ecosystem-bound fixture emits three shared structural `assert` findings (missing title, missing functional_coverage, column mismatch), so matching the category alone attributed eleven of twelve to this family: the reported precision measured the MAPPING's coarseness, not the detector. Fixing the Type-cell rejection would not have moved the number, and breaking it entirely would barely have moved it. `contains` narrows to the rejection itself (agent-ix/quoin#227 review)."
     },
     "catch-all-universal": {
       "source": "coverage.diagnostics",
       "key": "catch-all-universal",
       "locus": "path",
-      "$note": "Was `coverage.metrics` / `coverage.specific_shaped`, which pairs on family alone and contributes nothing to `finding_localisation_rate` \u2014 a number that moved with nowhere to put a cursor. quire-rs#261 makes it a located diagnostic naming a criterion at `path:line`, so it now scores positionally like every other family whose finding says where."
+      "$note": "Was `coverage.metrics` / `coverage.specific_shaped`, which pairs on family alone and contributes nothing to `finding_localisation_rate` \u2014 a number that moved with nowhere to put a cursor. quire-rs#261 makes it a located diagnostic naming a criterion at `path:line`, so it now scores positionally like every other family whose finding says where.",
+      "shape": "advisory",
+      "shape_note": "A CORPUS-LEVEL advisory, not a defect-shaped finding: one per corpus, fired whenever a document's criteria are all the catch-all. Precision is not a meaningful quantity over a population where the finding is expected almost everywhere \u2014 measured, it fired on 10 of 21 cases and EVERY ONE was correct (`by_property: {universal: 1}` on each), yet scored 0.167. That number read as 'wrong five times in six' while being wrong zero times in twelve. Scored on recall and localisation only (agent-ix/quoin#234)."
+    },
+    "section-matches-nothing": {
+      "source": "coverage.diagnostics",
+      "key": "section-matches-nothing",
+      "locus": "path",
+      "$note": "The archetype matched and the declared section did not, so the declared table is never reached and every id under it is stranded. Sized at 3,514 unminted TC ids across 88 repositories \u2014 the dominant ecosystem failure mode, and the one this table could not see. agent-ix/quire-rs#270 added the diagnostic in `a6a1144`; it fired on `cases/minting/section-name-mismatch` from that commit onward and NO family carried the key, so the payload signal mapped to nothing and the tier-1 score did not move (agent-ix/quoin#236). The runner now REFUSES a case whose `expect.yaml` names a reason no family claims, which is the guard that should have caught this and was inert."
+    },
+    "id-column-matches-nothing": {
+      "source": "coverage.diagnostics",
+      "key": "id-column-matches-nothing",
+      "locus": "path",
+      "$note": "`section-matches-nothing`'s SIBLING, and this table claimed only one of the pair. agent-ix/quire-rs#270 shipped both diagnostics together in `a6a1144`: the archetype matched and the declared section did not, or the section matched and the declared id column did not. The corpus has carried `cases/minting/id-column-mismatch` in three languages since the language-set migration, each `expect.yaml` naming this reason, and no family claimed the key \u2014 so tier 1 measured half of #270 while reporting on it. Found by agent-ix/quoin#242 when the reader learned to walk a language set and #236's refusal fired on the first case it had never reached. `agent-ix/quire-rs#318` sizes the reach: `TraceTarget.id_column` is one column name, stranding 5,732 TC ids across 120 repositories."
+    },
+    "status-column-matches-nothing": {
+      "source": "coverage.diagnostics",
+      "key": "status-column-matches-nothing",
+      "locus": "path-line",
+      "$note": "agent-ix/quire-rs#341: the selected reference table exposes a status-shaped header that does not equal configured `traceability.status.column`. Before the producer finding, the row was read while status classification silently stood down. The controlled failure and exact-header control retain the repair at the table header; agent-ix/quoin#257 owns the consumer mapping and per-family ratchet."
+    },
+    "tag-on-non-binding-symbol": {
+      "source": "coverage.diagnostics",
+      "key": "tag-on-non-binding-symbol",
+      "locus": "path",
+      "$note": "agent-ix/quire-rs#312, landed in `89388a4` (CR-134): a trace id written on a symbol whose kind cannot bind it. The tag reached NO channel \u2014 `verifies` refuses it by kind, `implements` wants the literal keyword the comment does not carry, and `binding_census` omits it from the DENOMINATOR rather than counting it unbound, so `no-symbol-bound` and `low-symbol-binding` both read a census the defect had been removed from and a repository whose tags are all in the wrong place reported a flawless 100%. Declared here the same day the token started being emitted, rather than after a run reported nothing: an unmapped signal is a scoring hole and a silent one reads exactly like a tool that found nothing, which is what #236 records. Five corpus fixtures seed it (`tag-on-non-test-function` in three languages, `tag-at-module-scope` in two) and five controls assert it silent."
+    },
+    "archetype-matches-nothing": {
+      "source": "coverage.diagnostics",
+      "key": "archetype-matches-nothing",
+      "locus": "none",
+      "$note": "agent-ix/quire-rs#304, landed in `ff0abd0` (CR-135): a declared TRACE TARGET whose archetype names no document in the corpus. Computed correctly all along and thrown away by a model-wide gate \u2014 `into_diagnostics(minted_anything)` dropped every one as soon as ANY declaration minted, so a repository with no TestMatrix reported `groups` holding only `acceptance-criterion`, the whole `test-case` target missing from the payload rather than present and zero. `locus: none` because there is no document to open: the fault is the declaration's. Measured across 245 ecosystem repositories once ungated: 741 findings over 243 of them, of which `inspection` and `suite` are 484 \u2014 a declaration-side fact filed as `agent-ix/spec-artifacts-process#75`, not 484 defects.",
+      "shape": "advisory",
+      "shape_note": "A CORPUS-LEVEL advisory, exactly the shape `catch-all-universal` is and for the reason agent-ix/quoin#234 gives: precision is not a meaningful quantity over a population where the finding is expected almost everywhere. MEASURED as a defect-shaped family over 75 corpora: 3 true positives and 296 false positives, 1% precision \u2014 and every one of the 296 is CORRECT. A three-file fixture declaring the real ecosystem model has no NFR, no StR, no suite and no inspection document, so four declarations legitimately match nothing in each. That number measured the fixture SIZE, not the detector. The same fact at ecosystem scale is 741 findings over 243 of 245 repositories, 484 of them `inspection` and `suite` (agent-ix/spec-artifacts-process#75). Scored on recall and localisation only; the seeded cases are found, which is what this family can honestly be asked."
+    },
+    "untracked-id-near-miss": {
+      "source": "coverage.diagnostics",
+      "key": "untracked-id-near-miss",
+      "locus": "path",
+      "$note": "agent-ix/quire-rs#307, landed in `e5a6ccc` (CR-136): an id in `untracked_symbols` and an id in `unbacked_rows` differing only by zero-padding, case or separator \u2014 one id written twice. The engine held both halves and joined neither, and neither older diagnostic could fire: `no-symbol-bound` needs `bound == 0` and `hollow-denominator` needs `matched == 0`, and on the fixture both are 1, because the tag bound fine \u2014 to the wrong id. So the repository reported a flawless census beside a zero backing ratio with nothing explaining the gap. Declared the day the token started being emitted rather than after a run reported nothing (quoin#236)."
+    },
+    "unminted-id-guidance": {
+      "source": "coverage.diagnostics",
+      "key": "untracked-id-has-minted-children",
+      "locus": "path-line",
+      "$note": "agent-ix/quire-rs#328: an authored id is not itself minted, but the active model mints exact ids beneath it or its nearest ancestor. This is guidance, not typo correction: a direct parent names usable child ids, while a nested undeclared class says not to substitute a sibling merely to clear coverage. Kept separate from `untracked-id-near-miss`, which compares two spellings of one id. Six language-matched failures and controls seed the family; agent-ix/quoin#253 records the consumer integration."
     },
     "vacuous-under-guard": {
       "source": "coverage.suspicions",
@@ -43,19 +118,25 @@
       "source": "coverage.suspicions",
       "key": "oracle-resembles-implementation",
       "locus": "path-line",
-      "$note": "The comparison ships in quire-rs `src/skeptic.rs` and has NO production caller \u2014 `oracle_copies` is reached only by its own unit tests. Mapped anyway: the contract is what a detector must emit, and declaring it before the detector exists is what lets the detector be built against something. Recall reads 0 until agent-ix/quire-rs#236."
+      "$note": "agent-ix/quire-rs#236: explicit `expected`/`oracle` bindings and the retained Rust TC-1598 same-file helper shape emit one located suspicion only when the oracle decision uniquely resembles a production decision. Independent, unused and ambiguous controls remain quiet; agent-ix/quoin#257 retains the resulting family-specific recall floor."
     },
     "mocked-confirmation": {
       "source": "audit.findings",
       "key": "mocked-confirmation",
-      "locus": "none",
-      "$note": "quoin's own auditor, not quire \u2014 `quire coverage` and `quire properties` cannot see this family, which is why the runner calls a third command. The detector additionally cannot fire: `AuditInput.injections` is never supplied by any caller (agent-ix/quoin#204, reopened)."
+      "locus": "path-line",
+      "$note": "quoin's own auditor, not quire. Tier 1 materializes a temporary git-backed evidence store from the controlled fixture, records the current source inspection, and calls `quoin evidence audit --json`; production callers read the same exact-HEAD record path (agent-ix/quoin#204)."
     },
     "gate-that-gates-nothing": {
-      "source": "none",
+      "source": "quoin.validate",
       "key": "gate-that-gates-nothing",
-      "locus": "none",
-      "$note": "No detector exists anywhere in the ecosystem. `source: none` is a DECLARED hole, not an omission: it makes the recall of 0 a fact this file states rather than an absence a reader has to infer. agent-ix/quoin#197 workstream 4."
+      "locus": "path-line",
+      "$note": "`quoin validate` joins three facts before reporting: an explicit gate claim naming an obligation, Make/CI wiring that gives the script a gate role, and a forbidden-pattern count whose value is never asserted. The join is the precision boundary: agent-ix/quoin#224 measured a text-only prototype at 0 real findings out of 4 distinct flags because report/provisioning scripts can have the same shell shape."
+    },
+    "section-holds-no-table": {
+      "source": "coverage.diagnostics",
+      "key": "section-holds-no-table",
+      "locus": "path",
+      "$note": "agent-ix/quire-rs#320, landed in `204dca4` (CR-120): the archetype matched, the declared SECTION matched, and the section's body is prose \u2014 so the target reaches exactly what it asked for and mints nothing, while both diagnostics that would explain the silence stand down by construction. `section-matches-nothing` is satisfied because the section WAS found; `id-column-matches-nothing` because there is no table for a column to be missing from. FOUND BY ADVERSARIAL REVIEW OF #272 while `make ci` was green and 17/17 corpus cases passed \u2014 a regression the widening introduced that the corpus could not see. Declared here when its fixture landed, and the guard this table carries is what forced it: `assertReasonsMapped` refused the whole run rather than reading the finding out of the payload, matching it against no family, and letting it vanish (agent-ix/quoin#236). That guard has now caught a real unmapped token twice."
     }
   }
 }

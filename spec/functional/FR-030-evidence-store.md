@@ -102,6 +102,10 @@ clear itself on the next CI run and the detector would never fire.
 - An absent store SHALL read as empty rather than as an error.
 - Every verb SHALL check the quire version premise ([FR-029](./FR-029-consume-the-quire-json-contract.md))
   before reading a payload.
+- Every newly recorded run or scan SHALL carry an immutable tool version. A
+  bare name or mutable label is refused before evidence intake, and a
+  finding-format payload naming a different tool is refused rather than
+  silently replacing the caller's attested identity.
 
 ## Constraints
 
@@ -155,6 +159,8 @@ undischarged with the evidence sitting right there.
 | FR-030-AC-13 | A store file that exists and is not readable JSON raises a diagnostic naming the file and the cause, never a bare `SyntaxError`. One unreadable **run** file is skipped and reported rather than fatal; the binding graph and the baseline are not, because reading an empty graph would report every obligation as undischarged. | Test (TC-131) |
 | FR-030-AC-14 | Store ordering is locale-independent: written bytes are pinned by test, so a runtime's collation data cannot change the diff of a checked-in file. | Test (TC-132) |
 | FR-030-AC-15 | A run's trace id binds through an obligation's declared test cases as well as its own id, so a tool keyed on the Test Matrix discharges the criteria that name it. A direct obligation id wins over the indirect route, and an id no obligation states by either route is still reported unmatched. | Test (TC-245) |
+| FR-030-AC-16 | A completed source-level mock inspection is recorded at `mock-inspections/<SUITE-N>/<commit12>.json`, including an empty result. Readers select the exact full commit being audited: an empty current record means the suite was inspected and no stand-in was observed; no current record means the check was not evaluated. | Test (TC-1064, TC-1065) |
+| FR-030-AC-17 | `evidence record` refuses a bare or mutable `--tool` identity and accepts an exact semantic version, full source SHA, or full executable digest. First-party Vitest and mock-inspection records include the version they actually ran. | Test (TC-1123, TC-1124) |
 
 ## Dependencies
 

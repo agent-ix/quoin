@@ -68,6 +68,7 @@ function input(over: Partial<AuditInput> = {}): AuditInput {
     bindings: [binding()],
     runs: [run()],
     headCommit: COMMIT,
+    mockInspectionSuites: ["SUITE-001"],
     ...over,
   };
 }
@@ -407,6 +408,7 @@ describe("TC-145 one obligation, two suites (FR-032-AC-8)", () => {
         obligations: [obligation({ criticality: "P0" })],
         bindings: twoSuites(),
         runs: twoRuns(),
+        mockInspectionSuites: ["SUITE-001", "SUITE-002"],
         multiplicityRequires: ["P0"],
       }),
     );
@@ -1015,6 +1017,14 @@ describe("mocked confirmation (#204)", () => {
     expect(found[0].severity).toBe("medium");
     expect(found[0].summary).toContain("Confirmation::allow");
     expect(found[0].summary).toContain("whether or not that behaviour exists");
+    expect(found[0]).toMatchObject({
+      subject: "FR-017-AC-7 evidence",
+      changeTarget: "tests::confirms",
+      nextDiagnosticStep: expect.stringContaining(
+        "add or bind an independent test",
+      ),
+    });
+    expect(found[0].remedy).toBeUndefined();
   });
 
   it("TC-937 a mock unrelated to the statement's subject is not reported", () => {
@@ -1062,6 +1072,44 @@ describe("mocked confirmation (#204)", () => {
     ).toHaveLength(0);
   });
 
+  it("TC-1075 an unrelated mock in the same suite is not joined", () => {
+    // A workspace suite can contain thousands of tests. Suite identity alone
+    // is not evidence that this particular binding used the stand-in.
+    const report = audit({
+      obligations: [obligation],
+      bindings: [binding],
+      runs: [run],
+      injections: [
+        {
+          suite: "SUITE-001",
+          symbol: "tests::unrelated_confirmation_test",
+          injects: ["Confirmation::allow"],
+        },
+      ],
+    });
+    expect(
+      report.findings.filter((f) => f.kind === "mocked-confirmation"),
+    ).toHaveLength(0);
+  });
+
+  it("TC-1076 source symbols join module-qualified result symbols", () => {
+    const report = audit({
+      obligations: [obligation],
+      bindings: [binding],
+      runs: [run],
+      injections: [
+        {
+          suite: "SUITE-001",
+          symbol: "confirms",
+          injects: ["Confirmation::allow"],
+        },
+      ],
+    });
+    expect(
+      report.findings.filter((f) => f.kind === "mocked-confirmation"),
+    ).toHaveLength(1);
+  });
+
   it("TC-939 no injection data means silence, not a clean bill", () => {
     // TC-939
     // Absent means "nobody looked". Reporting healthy here would be the
@@ -1074,6 +1122,14 @@ describe("mocked confirmation (#204)", () => {
     expect(
       report.findings.filter((f) => f.kind === "mocked-confirmation"),
     ).toHaveLength(0);
+    expect(report.healthy).toEqual([]);
+    expect(report.unevaluated).toEqual([
+      expect.objectContaining({
+        check: "mocked-confirmation",
+        obligation: "FR-017-AC-7",
+        suites: ["SUITE-001"],
+      }),
+    ]);
   });
 
   it("TC-940 the finding ratchets through the existing key form", () => {

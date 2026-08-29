@@ -32,7 +32,9 @@ import {
   qualifiedName,
   selectAdapter,
 } from "../src/evidence/index.js";
-import EvidenceRecord from "../src/commands/evidence/record";
+import EvidenceRecord, {
+  isVersionedToolIdentity,
+} from "../src/commands/evidence/record";
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 let config: Config;
@@ -132,6 +134,17 @@ async function record(
 }
 
 describe("the adapter registry", () => {
+  it("TC-1123 requires an immutable tool version before evidence intake", () => {
+    expect(isVersionedToolIdentity("vitest 3.2.4")).toBe(true);
+    expect(isVersionedToolIdentity(`scanner git:${"a".repeat(40)}`)).toBe(true);
+    expect(isVersionedToolIdentity(`scanner sha256:${"b".repeat(64)}`)).toBe(
+      true,
+    );
+    expect(isVersionedToolIdentity("vitest")).toBe(false);
+    expect(isVersionedToolIdentity("cargo test")).toBe(false);
+    expect(isVersionedToolIdentity("scanner latest")).toBe(false);
+  });
+
   // Trace: FR-033-AC-1
   it("selects by --adapter, then by --tool, then falls back to entries", () => {
     expect(selectAdapter({ adapter: "junit" }).name).toBe("junit");

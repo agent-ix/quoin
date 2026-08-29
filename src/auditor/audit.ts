@@ -20,7 +20,12 @@
 import type { Obligation } from "../quire/index.js";
 import { MUTATION_SCORE_METRIC, scanIsVacuous } from "../evidence/index.js";
 import { parseSpace, twayCoverage } from "./combinatorial.js";
-import type { Binding, FindingRecord, RunRecord } from "../evidence/index.js";
+import type {
+  Binding,
+  FindingRecord,
+  MockInjection,
+  RunRecord,
+} from "../evidence/index.js";
 import type { MethodCatalog } from "../advisor/index.js";
 
 /** Severity of one finding. Matches the SpecReview vocabulary. */
@@ -43,23 +48,17 @@ export interface Finding {
   obligation: string;
   severity: Severity;
   summary: string;
-}
-
-/**
- * A stand-in a suite injects for real behaviour.
- *
- * Pass 2 found `FR-017-AC-7`'s trusted-UI confirmation had NO implementation,
- * and its test passed by injecting `Confirmation::allow()` — mocking exactly
- * the behaviour the criterion verifies. The test was green, the AC was green,
- * and the behaviour did not exist.
- */
-export interface MockInjection {
-  /** Suite the injection was observed in. */
-  suite: string;
-  /** Symbol doing the injecting. */
-  symbol: string;
-  /** Identifiers substituted for real behaviour — `Confirmation::allow`. */
-  injects: string[];
+  /** Repo-relative source locus when the producer names one. */
+  path?: string;
+  line?: number;
+  symbol?: string;
+  /** Structured action fields are additive; only producers with sufficient
+   * evidence populate them. The JSON finding contract requires a target and
+   * exactly one remedy or safe diagnostic step when subject is present. */
+  subject?: string;
+  changeTarget?: string;
+  remedy?: string;
+  nextDiagnosticStep?: string;
 }
 
 /** What the auditor was given to read. */
@@ -76,9 +75,11 @@ export interface AuditInput {
    * Supplied by the caller because the auditor reads the store, not source —
    * and #204 asked to extend `evidence audit`, not to build a second system.
    * An absent list means "nobody looked", never "nothing was mocked": the
-   * check stays silent, the same posture `scanIsVacuous` takes.
+   * result is recorded under `unevaluated`, not counted as healthy.
    */
   injections?: MockInjection[];
+  /** Suites with a current completed inspection, including clean inspections. */
+  mockInspectionSuites?: string[];
   /**
    * Every finding-shaped scan record the store holds, newest per suite
    * (FR-034).
@@ -113,6 +114,15 @@ export interface AuditReport {
   findings: Finding[];
   /** Obligations with a binding whose hash still matches. */
   healthy: string[];
+  /** Checks that could not run, separate from both findings and clean results. */
+  unevaluated: UnevaluatedCheck[];
+}
+
+export interface UnevaluatedCheck {
+  check: "mocked-confirmation";
+  obligation: string;
+  suites: string[];
+  reason: string;
 }
 
 /**
@@ -125,6 +135,7 @@ export interface AuditReport {
 export function audit(input: AuditInput): AuditReport {
   const findings: Finding[] = [];
   const healthy: string[] = [];
+  const unevaluated: UnevaluatedCheck[] = [];
 
   // An obligation can be discharged by more than one suite — a unit suite and
   // a mutation suite, say — so the graph is grouped, not indexed. Keying on the
@@ -138,12 +149,17 @@ export function audit(input: AuditInput): AuditReport {
   }
   const runsBySuite = new Map(input.runs.map((r) => [r.suite, r]));
   const scansBySuite = new Map((input.scans ?? []).map((s) => [s.suite, s]));
-  // Absent means "nobody looked", never "nothing was mocked" — the check stays
-  // silent rather than reporting a clean bill it did not earn (#204).
+  // Absent means "nobody looked", never "nothing was mocked". The check is
+  // reported as unevaluated rather than granting a clean bill (#204).
   const injections = input.injections ?? [];
+  const inspectedSuites = new Set(
+    input.mockInspectionSuites ??
+      injections.map((injection) => injection.suite),
+  );
 
   for (const obligation of [...input.obligations].sort(byId)) {
     const findingsBefore = findings.length;
+    const unevaluatedBefore = unevaluated.length;
     const bindings = (bindingsByObligation.get(obligation.id) ?? [])
       .slice()
       .sort((a, b) => compare(a.suite, b.suite));
@@ -236,16 +252,60 @@ export function audit(input: AuditInput): AuditReport {
     // `medium`, not `high`: this is a heuristic over identifiers, and a
     // legitimate mock can share a noun with the statement it appears under.
     const mocked = mockedBindings(obligation, bindings, injections);
+    const uninspected = [
+      ...new Set(
+        bindings
+          // Finding-shaped scans do not execute test source and therefore
+          // cannot inject the behavior under verification.
+          .filter((binding) => runsBySuite.has(binding.suite))
+          .map((binding) => binding.suite)
+          .filter((suite) => !inspectedSuites.has(suite)),
+      ),
+    ].sort(compare);
+    if (uninspected.length > 0) {
+      unevaluated.push({
+        check: "mocked-confirmation",
+        obligation: obligation.id,
+        suites: uninspected,
+        reason:
+          `no current mock inspection exists for ${uninspected.join(", ")}. ` +
+          `Run quoin evidence inspect-mocks for each suite at HEAD.`,
+      });
+    }
     if (mocked.length > 0 && mocked.length === bindings.length) {
+      const located = [...mocked].sort(
+        (a, b) =>
+          compare(a.path ?? "", b.path ?? "") ||
+          (a.line ?? 0) - (b.line ?? 0) ||
+          compare(a.symbol, b.symbol),
+      )[0];
       findings.push({
         kind: "mocked-confirmation",
         obligation: obligation.id,
         severity: "medium",
+        ...(located.path ? { path: located.path } : {}),
+        ...(located.line ? { line: located.line } : {}),
+        symbol: located.symbol,
+        subject: `${obligation.id} evidence`,
+        changeTarget:
+          located.path && located.line
+            ? `${located.path}:${located.line} in ${located.symbol}`
+            : located.path
+              ? `${located.path} in ${located.symbol}`
+              : located.symbol,
+        nextDiagnosticStep:
+          `inspect whether the real behaviour for ${obligation.id} exists; ` +
+          `add or bind an independent test that exercises it without ` +
+          `substituting the behaviour under verification`,
         summary:
           `${obligation.id} is discharged only by tests that inject a stand-in ` +
           `for the behaviour it verifies: ` +
           mocked
-            .map((m) => `${m.symbol} injects ${m.injects.join(", ")}`)
+            .map(
+              (m) =>
+                `${m.path ? `${m.path}${m.line ? `:${m.line}` : ""} ` : ""}` +
+                `${m.symbol} injects ${m.injects.join(", ")}`,
+            )
             .sort(compare)
             .join("; ") +
           `. A test that substitutes the behaviour under verification passes ` +
@@ -409,7 +469,12 @@ export function audit(input: AuditInput): AuditReport {
 
     // Healthy means NOTHING was found for this obligation — including the
     // pre-guard unknown-method check, which does not `continue`.
-    if (findings.length === findingsBefore) healthy.push(obligation.id);
+    if (
+      findings.length === findingsBefore &&
+      unevaluated.length === unevaluatedBefore
+    ) {
+      healthy.push(obligation.id);
+    }
   }
 
   // Plain comparison, not `localeCompare`: the report is meant to be
@@ -418,7 +483,10 @@ export function audit(input: AuditInput): AuditReport {
   findings.sort(
     (a, b) => compare(a.obligation, b.obligation) || compare(a.kind, b.kind),
   );
-  return { findings, healthy: healthy.sort(compare) };
+  unevaluated.sort(
+    (a, b) => compare(a.obligation, b.obligation) || compare(a.check, b.check),
+  );
+  return { findings, healthy: healthy.sort(compare), unevaluated };
 }
 
 /** Locale-independent string order. */
@@ -663,7 +731,13 @@ function mockedBindings(
   const out: MockInjection[] = [];
   for (const binding of bindings) {
     const hit = injections
-      .filter((i) => i.suite === binding.suite)
+      .filter(
+        (injection) =>
+          injection.suite === binding.suite &&
+          binding.symbols.some((symbol) =>
+            sameTestSymbol(symbol, injection.symbol),
+          ),
+      )
       .find((i) =>
         i.injects.some((identifier) => {
           const tokens = words(identifier);
@@ -676,6 +750,23 @@ function mockedBindings(
     if (hit) out.push(hit);
   }
   return out;
+}
+
+/**
+ * Join source inspection to the test result that established the binding.
+ *
+ * Cargo-style result adapters commonly qualify a test as
+ * `module::test_name`, while source inspection can only see `test_name`.
+ * Accept that exact terminal qualification, but never substring or suite-only
+ * matches: a stand-in in one test must not accuse every obligation discharged
+ * by a large workspace suite.
+ */
+function sameTestSymbol(recorded: string, inspected: string): boolean {
+  return (
+    recorded === inspected ||
+    recorded.endsWith(`::${inspected}`) ||
+    inspected.endsWith(`::${recorded}`)
+  );
 }
 
 /** Lowercased word-ish tokens, minus the words every sentence shares. */

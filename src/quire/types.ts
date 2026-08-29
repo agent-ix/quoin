@@ -95,6 +95,24 @@ export interface UntrackedSymbol {
   line?: number;
 }
 
+/** One minted source-evidence row and its resolved backed state (FR-050-AC-38). */
+export interface MintedTargetRecord {
+  id: string;
+  target: string;
+  document: string;
+  line: number;
+  backed: boolean;
+}
+
+/** An authored annotation token that no declared form bound (FR-050-AC-39). */
+export interface UnmatchedTag {
+  trace_id: string;
+  language: "rust" | "python" | "typescript";
+  path: string;
+  line: number;
+  symbol: string;
+}
+
 /** One of the distinct symbols binding a shared trace id (quire-rs CR-087). */
 export interface SharedTraceSymbol {
   path: string;
@@ -131,6 +149,24 @@ export interface CriteriaCounts {
   criteria: number;
   property_shaped: number;
   by_property: Record<string, number>;
+  specific_shaped?: number;
+  grounding?: Record<string, GroundingCounts>;
+  catch_all_example?: CatchAllCriterion;
+}
+
+/** Span availability for one property-shape population. */
+export interface GroundingCounts {
+  records: number;
+  domain: number;
+  precondition: number;
+  oracle: number;
+  all_three: number;
+}
+
+/** One located criterion illustrating catch-all classification. */
+export interface CatchAllCriterion {
+  row_id?: string;
+  line?: number;
 }
 
 /** A declaration that selected nothing, and why (CR-054). */
@@ -140,6 +176,8 @@ export interface CoverageDiagnostic {
   reason: string;
   message: string;
   path?: string | null;
+  /** One-based line at the smallest repair locus, when one exists. */
+  line?: number;
   /**
    * The vocabulary or catalog value the diagnostic is about, verbatim, when it
    * is about exactly one (quire-rs FR-054-AC-12, CR-091).
@@ -152,13 +190,21 @@ export interface CoverageDiagnostic {
    * one value; a consumer must tolerate both.
    */
   value?: string;
+  /** Affected row, declaration, metric, criterion, or symbol (quire-rs#364). */
+  subject?: string;
+  /** Source or configuration surface to inspect or change. */
+  change_target?: string;
+  /** Prescribed repair; the JSON contract excludes next_diagnostic_step. */
+  remedy?: string;
+  /** Safe investigation step; the JSON contract excludes remedy. */
+  next_diagnostic_step?: string;
 }
 
 /**
  * One declared coverage-vocabulary value, classified (quire-rs FR-059-AC-9,
  * CR-091).
  *
- * Carried ahead of the pinned `sourceTag` as an additive field (see
+ * Carried ahead of the previously pinned release as an additive field (see
  * `QUIRE_CONTRACT`): a payload from quire 0.27.0 simply omits the whole
  * `vocabulary_coverage` array, and every consumer must treat absence as "the
  * engine predates the classification", never as "every value is owned".
@@ -214,6 +260,75 @@ export interface CoverageTotals {
   total: number;
   criteria?: number | null;
   property_shaped?: number | null;
+  specific_shaped?: number | null;
+}
+
+/** One source symbol the binder examined but did not bind. */
+export interface UnboundSymbol {
+  path: string;
+  line: number;
+  symbol: string;
+}
+
+/** The trace binder's measured premise for one language. */
+export interface BindingCensus {
+  language: "rust" | "python" | "typescript";
+  candidates: number;
+  tagged: number;
+  bound: number;
+  self_named?: number;
+  self_named_bound?: number;
+  forms: string[];
+  unbound_example?: UnboundSymbol;
+  unmatched_example?: UnboundSymbol;
+  self_named_unbound_example?: UnboundSymbol;
+}
+
+/** Which executable and engine produced a payload. */
+export interface EngineProvenance {
+  cli: string;
+  engine: string;
+  capabilities: string[];
+}
+
+export type MetricShape = "ratio" | "count";
+
+interface MetricBase {
+  name: string;
+  unit: string;
+  method: string;
+  shape: MetricShape;
+}
+
+/** A measurement that ran and carries its complete population premise. */
+export interface MeasuredMetric extends MetricBase {
+  state: "measured";
+  value: number;
+  population: number;
+  examined: number;
+  matched: number;
+}
+
+/** A measurement the engine could not compute, with the deciding reason. */
+export interface NotComputedMetric extends MetricBase {
+  state: "not_computed";
+  because: string;
+}
+
+export type Metric = MeasuredMetric | NotComputedMetric;
+
+/** Advisory evidence that a test may be vacuous or self-confirming. */
+export interface Suspicion {
+  kind: "vacuous-under-guard" | "oracle-resembles-implementation";
+  path: string;
+  symbol: string;
+  line: number;
+  message: string;
+  evidence: string;
+  subject?: string;
+  change_target?: string;
+  remedy?: string;
+  next_diagnostic_step?: string;
 }
 
 /** The `quire coverage --json` payload (v1). */
@@ -225,6 +340,10 @@ export interface CoverageReport {
   /** Absent — not empty — when every status value in the corpus is declared. */
   undeclared_statuses?: UndeclaredStatus[];
   untracked_symbols: UntrackedSymbol[];
+  /** Absent when the traceability model minted no source-evidence rows. */
+  minted_targets?: MintedTargetRecord[];
+  /** Absent when every authored annotation token matched a declared form. */
+  unmatched_tags?: UnmatchedTag[];
   /**
    * Trace ids bound by more than one distinct symbol (quire-rs FR-050-AC-23,
    * CR-087). ABSENT — not empty — for a corpus whose every id is uniquely
@@ -234,6 +353,8 @@ export interface CoverageReport {
   groups: GroupCounts[];
   criteria?: CriteriaCounts[];
   diagnostics?: CoverageDiagnostic[];
+  /** Stable reason tokens the producing engine can emit. */
+  diagnostic_reason_registry?: string[];
   obligations?: Obligation[];
   /**
    * Absent when the module declares no `implements` marker forms. Present in
@@ -257,6 +378,13 @@ export interface CoverageReport {
    * a coverage regression.
    */
   excluded_source_files?: number;
+  binding_census?: BindingCensus[];
+  /** Headline measurements with explicit populations and methods. */
+  metrics?: Metric[];
+  /** Advisory test-quality findings; never folded into coverage totals. */
+  suspicions?: Suspicion[];
+  /** Instrument provenance added by quire-cli. */
+  engine?: EngineProvenance;
   totals: CoverageTotals;
 }
 
@@ -327,4 +455,6 @@ export interface PropertiesDocument {
 /** The `quire properties --json` payload (v1). */
 export interface PropertiesReport {
   documents: PropertiesDocument[];
+  /** Instrument provenance added by quire-cli. */
+  engine?: EngineProvenance;
 }

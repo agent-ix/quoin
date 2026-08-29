@@ -13,7 +13,14 @@
  * the reporting, not the engine.
  */
 
-import { chmodSync, mkdtempSync, writeFileSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import {
+  chmodSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -23,8 +30,15 @@ import { loadConfig } from "@agent-ix/ix-cli-core";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 import EvidenceAudit from "../src/commands/evidence/audit";
-import { baselinePath, writeBaseline } from "../src/evidence/index.js";
+import EvidenceInspectMocks from "../src/commands/evidence/inspect-mocks";
+import {
+  baselinePath,
+  writeBaseline,
+  writeBindings,
+  writeRun,
+} from "../src/evidence/index.js";
 import { STORE_SCHEMA_VERSION } from "../src/evidence/types.js";
+import { packageVersion } from "../src/version.js";
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -231,5 +245,130 @@ describe("TC-265 audit reports uncatalogued methods with no evidence store at al
     expect(output).toContain("undischarged");
     expect(output).toContain("unknown-method");
     expect(output).toContain("CI Measurement");
+  });
+});
+
+describe("mocked-confirmation production command path (agent-ix/quoin#204)", () => {
+  const savedPath = process.env.PATH;
+  afterEach(() => {
+    process.env.PATH = savedPath;
+  });
+
+  it("TC-1065 TC-1124 inspect-mocks records its version and audit reports a located finding", async () => {
+    process.env.PATH = `${fakeQuireDir(
+      JSON.stringify({
+        unbacked_rows: [],
+        status_lies: [],
+        untracked_symbols: [],
+        groups: [],
+        totals: { backed: 1, total: 1 },
+        obligations: [
+          {
+            source: "acceptance-criteria",
+            id: "FR-001-AC-1",
+            document: "spec/FR-001.md",
+            statement:
+              "The shell shall obtain the user's confirmation before granting a root.",
+            statement_hash: "a".repeat(64),
+          },
+        ],
+      }),
+    )}:${savedPath}`;
+    const root = mkdtempSync(join(tmpdir(), "quoin-mock-command-"));
+    mkdirSync(join(root, "src"), { recursive: true });
+    writeFileSync(
+      join(root, "src", "lib.rs"),
+      `#[cfg(test)] mod tests {\n#[test]\nfn confirms() {\n  assert!(grant_root(Confirmation::allow()));\n}\n}`,
+    );
+    execFileSync("git", ["init", "-q", root]);
+    execFileSync("git", [
+      "-C",
+      root,
+      "config",
+      "user.email",
+      "test@example.com",
+    ]);
+    execFileSync("git", ["-C", root, "config", "user.name", "Test"]);
+    execFileSync("git", ["-C", root, "add", "src/lib.rs"]);
+    execFileSync("git", ["-C", root, "commit", "-qm", "fixture"]);
+    const commit = execFileSync("git", ["-C", root, "rev-parse", "HEAD"], {
+      encoding: "utf8",
+    }).trim();
+
+    writeRun(root, {
+      schemaVersion: 1,
+      suite: "SUITE-001",
+      commit,
+      tool: "cargo test",
+      timestamp: "2026-08-26T00:00:00Z",
+      entries: [{ symbol: "confirms", outcome: "pass" }],
+    });
+    writeBindings(root, {
+      bindings: [
+        {
+          obligation: "FR-001-AC-1",
+          statementHashAtBinding: "a".repeat(64),
+          suite: "SUITE-001",
+          commit,
+          symbols: ["confirms"],
+        },
+      ],
+    });
+
+    await EvidenceInspectMocks.run(
+      [
+        "--repo",
+        root,
+        "--suite",
+        "SUITE-001",
+        "--commit",
+        commit,
+        "--timestamp",
+        "2026-08-26T00:00:00Z",
+        "--json",
+      ],
+      config,
+    );
+    const inspectionPath = join(
+      root,
+      "spec",
+      "evidence",
+      "mock-inspections",
+      "SUITE-001",
+      `${commit.slice(0, 12)}.json`,
+    );
+    expect(JSON.parse(readFileSync(inspectionPath, "utf8"))).toMatchObject({
+      tool: `quoin mock-inspection ${packageVersion()}`,
+    });
+    const output = captureLog();
+    try {
+      await EvidenceAudit.run(["--repo", root, "--json"], config);
+    } finally {
+      output.restore();
+    }
+    const report = JSON.parse(output.lines.join("\n")) as {
+      findings: Array<{
+        kind: string;
+        summary: string;
+        subject?: string;
+        changeTarget?: string;
+        nextDiagnosticStep?: string;
+      }>;
+      unevaluated: unknown[];
+    };
+    expect(report.unevaluated).toEqual([]);
+    expect(report.findings).toEqual([
+      expect.objectContaining({
+        kind: "mocked-confirmation",
+        summary: expect.stringContaining(
+          "src/lib.rs:4 confirms injects Confirmation::allow",
+        ),
+        subject: "FR-001-AC-1 evidence",
+        changeTarget: "src/lib.rs:4 in confirms",
+        nextDiagnosticStep: expect.stringContaining(
+          "add or bind an independent test",
+        ),
+      }),
+    ]);
   });
 });

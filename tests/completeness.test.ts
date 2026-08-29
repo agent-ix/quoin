@@ -9,9 +9,12 @@
 
 import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { Config } from "@oclif/core";
+import { loadConfig } from "@agent-ix/ix-cli-core";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import Completeness from "../src/commands/completeness.js";
 import {
@@ -96,6 +99,19 @@ const document = (over: Partial<DocumentClaims> = {}): DocumentClaims => ({
 
 let logged: string[];
 let warned: string[];
+let config: Config;
+
+beforeAll(async () => {
+  // Command.run without an app Config asks @oclif/core to treat its own package
+  // as the CLI root. Core's development-only help/plugins entries then emit
+  // repeated missing-plugin errors even though the command succeeds (#247).
+  const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
+  config = await loadConfig({ root: repoRoot });
+});
+
+async function runCompleteness(argv: string[]): Promise<unknown> {
+  return Completeness.run(argv, config);
+}
 
 beforeEach(() => {
   logged = [];
@@ -273,13 +289,7 @@ describe("quoin completeness", () => {
   // Trace: FR-037-AC-9
   it("reports the gaps over a real bundle and exits 0 while advisory", async () => {
     const repo = bundleWith({ "NFR-001-a.md": NFR("reliability") });
-    await Completeness.run([
-      "--repo",
-      repo,
-      "--module",
-      moduleWith(),
-      "--json",
-    ]);
+    await runCompleteness(["--repo", repo, "--module", moduleWith(), "--json"]);
     const report = JSON.parse(logged.join("\n"));
     expect(report.verdict).toBe("CONDITIONAL");
     expect(report.rollups[0]).toMatchObject({ owned: 1, unowned: 2 });
@@ -297,7 +307,7 @@ describe("quoin completeness", () => {
       "NFR-001-a.md": NFR("reliability"),
     });
     await expect(
-      Completeness.run(["--repo", repo, "--module", moduleWith()]),
+      runCompleteness(["--repo", repo, "--module", moduleWith()]),
     ).rejects.toMatchObject({ oclif: { exit: 1 } });
     expect(logged.join("\n")).toMatch(/FAIL — 1 high/);
   });
@@ -308,10 +318,10 @@ describe("quoin completeness", () => {
     const module = moduleWith();
     // Same bundle, both ways round: advisory passes, strict does not. Asserting
     // the pair is what makes --strict a policy rather than a second code path.
-    await Completeness.run(["--repo", repo, "--module", module]);
+    await runCompleteness(["--repo", repo, "--module", module]);
     expect(logged.join("\n")).toMatch(/CONDITIONAL/);
     await expect(
-      Completeness.run(["--repo", repo, "--module", module, "--strict"]),
+      runCompleteness(["--repo", repo, "--module", module, "--strict"]),
     ).rejects.toMatchObject({ oclif: { exit: 1 } });
   });
 
@@ -325,7 +335,7 @@ describe("quoin completeness", () => {
       join(empty, "manifest.yaml"),
       "manifest_version: 1\nname: empty\n",
     );
-    await Completeness.run(["--repo", repo, "--module", empty]);
+    await runCompleteness(["--repo", repo, "--module", empty]);
     expect(warned.join("\n")).toMatch(/nothing was checked/);
     expect(logged.join("\n")).toMatch(/UNCHECKED/);
     expect(logged.join("\n")).not.toMatch(/PASS/);
@@ -333,7 +343,7 @@ describe("quoin completeness", () => {
     // installing quoin; one that asked for strict completeness is told it
     // cannot be known.
     await expect(
-      Completeness.run(["--repo", repo, "--module", empty, "--strict"]),
+      runCompleteness(["--repo", repo, "--module", empty, "--strict"]),
     ).rejects.toMatchObject({ oclif: { exit: 1 } });
   });
 });

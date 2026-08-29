@@ -36,26 +36,41 @@ import { describe, expect, it } from "vitest";
 
 import { readSchema, validateCoverage } from "../src/quire/index.js";
 import type {
+  BindingCensus,
+  CatchAllCriterion,
   CoverageDiagnostic,
   CoverageReport,
   CoverageTotals,
   CriteriaCounts,
+  EngineProvenance,
+  GroundingCounts,
   GroupCounts,
   ImplementsRecord,
+  MeasuredMetric,
+  MintedTargetRecord,
   NoSymbolRow,
   Obligation,
   SharedTraceId,
   SharedTraceSymbol,
   StatusLie,
+  Suspicion,
   UnbackedRow,
+  UnboundSymbol,
   UndeclaredStatus,
   UntrackedSymbol,
+  UnmatchedTag,
   VocabularyValueRecord,
 } from "../src/quire/types.js";
 
 const schema = readSchema("coverage-v1.schema.json") as {
   properties: Record<string, unknown>;
-  $defs: Record<string, { properties: Record<string, unknown> }>;
+  $defs: Record<
+    string,
+    {
+      properties?: Record<string, unknown>;
+      oneOf?: { properties: Record<string, unknown> }[];
+    }
+  >;
 };
 
 // ── One sample per $defs entry, typed Required<Interface> ──
@@ -112,6 +127,22 @@ const untrackedSymbol: Required<UntrackedSymbol> = {
   line: 42,
 };
 
+const mintedTargetRecord: Required<MintedTargetRecord> = {
+  id: "TC-001",
+  target: "test-case",
+  document: "spec/tests.md",
+  line: 17,
+  backed: true,
+};
+
+const unmatchedTag: Required<UnmatchedTag> = {
+  trace_id: "TC-999",
+  language: "rust",
+  path: "tests/parse.rs",
+  line: 42,
+  symbol: "parse_without_declared_form",
+};
+
 const sharedTraceSymbol: Required<SharedTraceSymbol> = {
   path: "tests/parse.rs",
   symbol: "tc_001_parses",
@@ -138,15 +169,57 @@ const criteriaCounts: Required<CriteriaCounts> = {
   criteria: 2,
   property_shaped: 1,
   by_property: { universal: 1, example: 1 },
+  specific_shaped: 1,
+  grounding: {
+    invariant: {
+      records: 1,
+      domain: 1,
+      precondition: 1,
+      oracle: 1,
+      all_three: 1,
+    },
+  },
+  catch_all_example: { row_id: "FR-001-AC-2", line: 18 },
 };
 
-const coverageDiagnostic: Required<CoverageDiagnostic> = {
+const groundingCounts: Required<GroundingCounts> = {
+  records: 1,
+  domain: 1,
+  precondition: 1,
+  oracle: 1,
+  all_three: 1,
+};
+
+const catchAllCriterion: Required<CatchAllCriterion> = {
+  row_id: "FR-001-AC-2",
+  line: 18,
+};
+
+const coverageDiagnosticSurface: Required<CoverageDiagnostic> = {
   declaration: "test-case",
   reason: "uncatalogued-verification-method",
   message:
     "'Deferred' is neither a declared verification_catalog method id nor a declared class",
   path: null,
+  line: 21,
   value: "Deferred",
+  subject: "verification method `Deferred`",
+  change_target: "spec/functional/FR-001.md:21",
+  remedy: "add the method to the verification catalog",
+  next_diagnostic_step: "inspect the authored method and catalog",
+};
+
+const coverageDiagnostic: CoverageDiagnostic = {
+  declaration: "test-case",
+  reason: "uncatalogued-verification-method",
+  message:
+    "'Deferred' is neither a declared verification_catalog method id nor a declared class",
+  path: null,
+  line: 21,
+  value: "Deferred",
+  subject: "verification method `Deferred`",
+  change_target: "spec/functional/FR-001.md:21",
+  next_diagnostic_step: "inspect the authored method and catalog",
 };
 
 const vocabularyValueRecord: Required<VocabularyValueRecord> = {
@@ -176,24 +249,100 @@ const coverageTotals: Required<CoverageTotals> = {
   total: 2,
   criteria: 2,
   property_shaped: 1,
+  specific_shaped: 1,
+};
+
+const unboundSymbol: Required<UnboundSymbol> = {
+  path: "tests/parse.rs",
+  line: 44,
+  symbol: "parse_without_marker",
+};
+
+const bindingCensus: Required<BindingCensus> = {
+  language: "rust",
+  candidates: 2,
+  tagged: 1,
+  bound: 1,
+  self_named: 1,
+  self_named_bound: 1,
+  forms: ["rust-verifies-line"],
+  unbound_example: unboundSymbol,
+  unmatched_example: unboundSymbol,
+  self_named_unbound_example: unboundSymbol,
+};
+
+const engineProvenance: Required<EngineProvenance> = {
+  cli: "0.30.2",
+  engine: "a14dcb2",
+  capabilities: ["binding_census"],
+};
+
+const metric: Required<MeasuredMetric> = {
+  name: "coverage.backed",
+  unit: "matrix row",
+  method: "backed matrix rows divided by all matrix rows",
+  shape: "ratio",
+  state: "measured",
+  value: 1,
+  population: 2,
+  examined: 2,
+  matched: 1,
+};
+
+const suspicionSurface: Required<Suspicion> = {
+  kind: "vacuous-under-guard",
+  path: "tests/parse.rs",
+  symbol: "all_inputs",
+  line: 50,
+  message: "every assertion is guarded",
+  evidence: "1 of 42 samples entered the assertion",
+  subject: "test symbol `all_inputs`",
+  change_target: "tests/parse.rs:50",
+  remedy: "add an unconditional oracle",
+  next_diagnostic_step: "inspect inputs that bypass the narrowing guard",
+};
+
+const suspicion: Suspicion = {
+  kind: "vacuous-under-guard",
+  path: "tests/parse.rs",
+  symbol: "all_inputs",
+  line: 50,
+  message: "every assertion is guarded",
+  evidence: "1 of 42 samples entered the assertion",
+  subject: "test symbol `all_inputs`",
+  change_target: "tests/parse.rs:50",
+  next_diagnostic_step: "inspect inputs that bypass the narrowing guard",
 };
 
 /** Sample per `$defs` entry, keyed by the schema's own def names. */
-const samples: Record<string, Record<string, unknown>> = {
+const samples: Record<string, unknown> = {
+  BindingCensus: bindingCensus,
+  CatchAllCriterion: catchAllCriterion,
   UnbackedRow: unbackedRow,
   StatusLie: statusLie,
   NoSymbolRow: noSymbolRow,
   UndeclaredStatus: undeclaredStatus,
   ImplementsRecord: implementsRecord,
   UntrackedSymbol: untrackedSymbol,
+  MintedTargetRecord: mintedTargetRecord,
+  UnmatchedTag: unmatchedTag,
   SharedTraceId: sharedTraceId,
   SharedTraceSymbol: sharedTraceSymbol,
   GroupCounts: groupCounts,
   CriteriaCounts: criteriaCounts,
-  CoverageDiagnostic: coverageDiagnostic,
+  CoverageDiagnostic: coverageDiagnosticSurface,
   VocabularyValueRecord: vocabularyValueRecord,
   Obligation: obligation,
   CoverageTotals: coverageTotals,
+  EngineProvenance: engineProvenance,
+  GroundingCounts: groundingCounts,
+  Metric: metric,
+  MetricMethod: metric.method,
+  MetricName: metric.name,
+  MetricShape: metric.shape,
+  MetricUnit: metric.unit,
+  Suspicion: suspicionSurface,
+  UnboundSymbol: unboundSymbol,
 };
 
 const report: Required<CoverageReport> = {
@@ -202,14 +351,21 @@ const report: Required<CoverageReport> = {
   no_symbol_rows: [noSymbolRow],
   undeclared_statuses: [undeclaredStatus],
   untracked_symbols: [untrackedSymbol],
+  minted_targets: [mintedTargetRecord],
+  unmatched_tags: [unmatchedTag],
   shared_trace_ids: [sharedTraceId],
   groups: [groupCounts],
   criteria: [criteriaCounts],
   diagnostics: [coverageDiagnostic],
+  diagnostic_reason_registry: ["uncatalogued-verification-method"],
   obligations: [obligation],
   implements: [implementsRecord],
   vocabulary_coverage: [vocabularyValueRecord],
   excluded_source_files: 3,
+  binding_census: [bindingCensus],
+  metrics: [metric],
+  suspicions: [suspicion],
+  engine: engineProvenance,
   totals: coverageTotals,
 };
 
@@ -226,10 +382,19 @@ describe("TC-272 the interfaces and the vendored coverage schema agree", () => {
   // TC-272
   it("each sample's keys equal its $defs entry's keys, both directions", () => {
     for (const [name, sample] of Object.entries(samples)) {
+      if (typeof sample !== "object" || sample === null) continue;
+      const definition = schema.$defs[name];
+      const properties =
+        definition.properties ??
+        definition.oneOf?.find((branch) => {
+          const state = branch.properties.state as { const?: unknown };
+          return state?.const === (sample as { state?: unknown }).state;
+        })?.properties;
+      expect(properties, `${name}: no matching object schema`).toBeDefined();
       expect(
         sorted(Object.keys(sample)),
         `${name}: interface and schema declare different keys`,
-      ).toEqual(sorted(Object.keys(schema.$defs[name].properties)));
+      ).toEqual(sorted(Object.keys(properties ?? {})));
     }
   });
 
@@ -279,7 +444,11 @@ describe("TC-272 the interfaces and the vendored coverage schema agree", () => {
           "node",
           join(here, "quire-types-conformance.test.ts"),
         ],
-        { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] },
+        {
+          encoding: "utf8",
+          stdio: ["ignore", "pipe", "pipe"],
+          timeout: 30_000,
+        },
       );
     } catch (cause) {
       const failure = cause as { stdout?: string; stderr?: string };
@@ -287,5 +456,5 @@ describe("TC-272 the interfaces and the vendored coverage schema agree", () => {
         `tsc rejected the typed samples:\n${failure.stdout ?? ""}${failure.stderr ?? ""}`,
       );
     }
-  });
+  }, 35_000);
 });

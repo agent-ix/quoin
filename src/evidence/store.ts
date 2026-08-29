@@ -19,6 +19,7 @@ import {
 import { dirname, join } from "node:path";
 
 import {
+  MOCK_INSPECTIONS_DIR,
   RUNS_DIR,
   SCANS_DIR,
   STORE_SCHEMA_VERSION,
@@ -26,6 +27,7 @@ import {
   type Binding,
   type BindingsFile,
   type FindingRecord,
+  type MockInspectionRecord,
   type RunRecord,
 } from "./types.js";
 
@@ -70,6 +72,20 @@ export function runPath(repo: string, suite: string, commit: string): string {
 /** `scans/<SUITE-N>/<commit12>.json` — one file is one scan of one suite. */
 export function scanPath(repo: string, suite: string, commit: string): string {
   return join(storeRoot(repo), SCANS_DIR, suite, `${short(commit)}.json`);
+}
+
+/** `mock-inspections/<SUITE-N>/<commit12>.json`. */
+export function mockInspectionPath(
+  repo: string,
+  suite: string,
+  commit: string,
+): string {
+  return join(
+    storeRoot(repo),
+    MOCK_INSPECTIONS_DIR,
+    suite,
+    `${short(commit)}.json`,
+  );
 }
 
 /** The 12-character commit prefix the run filenames use. */
@@ -171,6 +187,61 @@ export function writeScan(repo: string, record: FindingRecord): string {
   const path = scanPath(repo, record.suite, record.commit);
   writeCanonical(path, { ...record, schemaVersion: STORE_SCHEMA_VERSION });
   return path;
+}
+
+/** Write one completed mock inspection, including a legitimately empty one. */
+export function writeMockInspection(
+  repo: string,
+  record: MockInspectionRecord,
+): string {
+  const path = mockInspectionPath(repo, record.suite, record.commit);
+  writeCanonical(path, { ...record, schemaVersion: STORE_SCHEMA_VERSION });
+  return path;
+}
+
+export function readMockInspection(
+  repo: string,
+  suite: string,
+  commit: string,
+): MockInspectionRecord | null {
+  return readJson<MockInspectionRecord>(
+    mockInspectionPath(repo, suite, commit),
+  );
+}
+
+export function listMockInspections(repo: string, suite: string): string[] {
+  const dir = join(storeRoot(repo), MOCK_INSPECTIONS_DIR, suite);
+  if (!existsSync(dir)) return [];
+  return readdirSync(dir)
+    .filter((f) => f.endsWith(".json"))
+    .sort();
+}
+
+export function readMockInspections(
+  repo: string,
+  suite: string,
+  skipped: string[] = [],
+): MockInspectionRecord[] {
+  return listMockInspections(repo, suite)
+    .map((f) =>
+      readJsonSkippable<MockInspectionRecord>(
+        mockInspectionPath(repo, suite, f.replace(/\.json$/, "")),
+        skipped,
+      ),
+    )
+    .filter((r): r is MockInspectionRecord => r !== null)
+    .sort(
+      (a, b) =>
+        compare(a.timestamp, b.timestamp) || compare(a.commit, b.commit),
+    );
+}
+
+export function latestMockInspection(
+  repo: string,
+  suite: string,
+  skipped: string[] = [],
+): MockInspectionRecord | null {
+  return readMockInspections(repo, suite, skipped).at(-1) ?? null;
 }
 
 /** Read one scan record, or `null` when that (suite, commit) has none. */
@@ -341,6 +412,13 @@ export function latestScans(repo: string): FindingRecord[] {
     .filter((s): s is FindingRecord => s !== null);
 }
 
+/** The newest mock inspection of every recorded suite. */
+export function latestMockInspections(repo: string): MockInspectionRecord[] {
+  return listRecordedSuites(repo)
+    .map((suite) => latestMockInspection(repo, suite))
+    .filter((r): r is MockInspectionRecord => r !== null);
+}
+
 /** Locale-independent string order. */
 function compare(a: string, b: string): number {
   return a === b ? 0 : a < b ? -1 : 1;
@@ -353,7 +431,7 @@ export function listRecordedSuites(repo: string): string[] {
   // the auditor included, so its obligations read as undischarged while the
   // evidence sat on disk (SR-005 FND-003).
   const suites = new Set<string>();
-  for (const which of [RUNS_DIR, SCANS_DIR]) {
+  for (const which of [RUNS_DIR, SCANS_DIR, MOCK_INSPECTIONS_DIR]) {
     const dir = join(storeRoot(repo), which);
     if (!existsSync(dir)) continue;
     for (const entry of readdirSync(dir, { withFileTypes: true })) {

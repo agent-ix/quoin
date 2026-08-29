@@ -11,8 +11,15 @@ import {
   scoreActionability,
   scoreCost,
   scoreFindings,
+  scoreGroundingQuality,
   scoreScenario,
+  scoreSpanGrounding,
+  scoreSpanGroundingV2,
 } from "../evals/lib/quality.mjs";
+import {
+  findingEnvelopeDigest,
+  normalizeQuireFinding,
+} from "../evals/lib/finding-envelope.mjs";
 
 const labels = [
   { id: "MM-1", family: "marker-form-mismatch", findable: true },
@@ -126,6 +133,12 @@ describe("finding precision and recall", () => {
         misses: 0,
         precision: 1,
         recall: 1,
+        // Every row now carries the shape it was scored under, defaulting to
+        // `defect`. An ADVISORY family reports no precision — it fires on
+        // nearly every corpus by construction, so the defect-shaped false
+        // positive definition counts each correct firing against it
+        // (agent-ix/quoin#234).
+        shape: "defect",
       },
     ]);
     // Reported by name, never silently dropped: an unscored finding nobody
@@ -164,6 +177,71 @@ describe("finding precision and recall", () => {
       wrongReason.families.find((f) => f.family === "marker-form-mismatch")
         ?.falsePositives,
     ).toBe(1);
+  });
+
+  it("TC-967 a declaration on one case cannot absorb another case's finding", () => {
+    // TC-967
+    // agent-ix/quoin#238. Spending a declaration ONCE (TC-952) was not enough:
+    // the pairing was on family and reason only, so a collateral declaration
+    // on case A consumed a correct finding from case B and that finding
+    // vanished from scoring entirely — neither true positive nor false
+    // positive.
+    //
+    // Measured over the 34-case tier-1 corpus: five cases declared
+    // `hollow-denominator` collateral, the run emitted exactly five
+    // `hollow-denominator` findings, and one of them was the SEEDED, labelled
+    // defect of a sixth case. All five were absorbed. That family scored
+    // recall 0.00 for the whole run while the per-language cut of the same run
+    // scored 1.00 — two contradictory numbers out of one score.
+    const labels = [
+      {
+        id: "MF-1",
+        family: "marker-form-mismatch",
+        corpus: "marker-case",
+        findable: true,
+        location: "src/lib.rs",
+        collateral: [
+          { family: "hollow-denominator", reason: "hollow-denominator" },
+        ],
+      },
+      {
+        id: "HD-1",
+        family: "hollow-denominator",
+        corpus: "hollow-case",
+        findable: true,
+        location: null,
+      },
+    ];
+    const score = scoreFindings(
+      [
+        {
+          family: "marker-form-mismatch",
+          reason: "no-symbol-bound",
+          corpus: "marker-case",
+          path: "src/lib.rs",
+        },
+        {
+          family: "hollow-denominator",
+          reason: "hollow-denominator",
+          corpus: "marker-case",
+        },
+        {
+          family: "hollow-denominator",
+          reason: "hollow-denominator",
+          corpus: "hollow-case",
+        },
+      ],
+      labels,
+    );
+    // Only the marker case's own consequence is set aside.
+    expect(score.collateral).toHaveLength(1);
+    // And the hollow case's seeded defect still scores.
+    const hollow = score.families.find(
+      (f) => f.family === "hollow-denominator",
+    );
+    expect(hollow?.truePositives).toBe(1);
+    expect(hollow?.misses).toBe(0);
+    expect(hollow?.recall).toBe(1);
   });
 
   it("TC-941 is reported per family, because an average hides a hole", () => {
@@ -206,6 +284,227 @@ describe("finding precision and recall", () => {
     );
   });
 
+  it("TC-982 a SCOPED ruling governs only the declaration it names", () => {
+    // TC-982
+    // THE FABRICATED NUMBER THIS STOPS. `agent-ix/quire-rs#304` made
+    // `archetype-matches-nothing` fire for several declarations at once, so on
+    // a three-file fixture it fires correctly for `inspection`, `suite`,
+    // `nfr-acceptance-criterion` and `stakeholder-validation-criterion` — none
+    // of which the fixture is about. The control therefore rules on
+    // `test-case/archetype-matches-nothing`, SCOPED.
+    //
+    // The first implementation stripped the scope on the way to the family, so
+    // those four correct firings were read as violations of a ruling that never
+    // covered them, and the run published precision 0.556. Measured, caught
+    // before it reached a baseline, and pinned here (agent-ix/quoin#245).
+    const findings = [
+      { family: "adv", corpus: "control", declaration: "inspection" },
+      { family: "adv", corpus: "control", declaration: "suite" },
+      { family: "adv", corpus: "control", declaration: "test-case" },
+    ];
+    const { families } = scoreFindings(
+      findings,
+      [],
+      { adv: "advisory" },
+      {
+        adv: {
+          present: [],
+          absent: [{ corpus: "control", scope: "test-case" }],
+        },
+      },
+    );
+    const adv = families.find((f) => f.family === "adv")!;
+    // ONE false positive — the `test-case` firing the control ruled out. The
+    // other two are outside the ruling's scope and unknown, not wrong.
+    expect(adv.precision_basis!.falsePositives).toBe(1);
+    expect(adv.precision_basis!.truePositives).toBe(0);
+    expect(adv.precision_basis!.unadjudicated).toBe(2);
+    expect(adv.precision).toBe(0);
+  });
+
+  it("TC-983 an UNSCOPED ruling governs every firing of its family on that case", () => {
+    // TC-983
+    // The counterpart to TC-982: a fixture that writes the bare token means the
+    // whole family, and scoping the match by declaration must not quietly turn
+    // that into a ruling on nothing.
+    const findings = [
+      { family: "adv", corpus: "c", declaration: "suite" },
+      { family: "adv", corpus: "c", declaration: "test-case" },
+    ];
+    const { families } = scoreFindings(
+      findings,
+      [],
+      { adv: "advisory" },
+      { adv: { present: [{ corpus: "c", scope: null }], absent: [] } },
+    );
+    const adv = families.find((f) => f.family === "adv")!;
+    expect(adv.precision_basis!.truePositives).toBe(2);
+    expect(adv.precision_basis!.unadjudicated).toBe(0);
+  });
+
+  it("TC-1001 a STANDING ruling covers only the declarations it names", () => {
+    // TC-1001
+    // The first measurement of `unadjudicated` read 316 of 319 for
+    // `archetype-matches-nothing`, and the obvious way to move that number is
+    // wrong: adding the token to seventy-six `expect.yaml` files would be 300
+    // edits made to satisfy a counter. The fact is ONE fact — this corpus binds
+    // the real ecosystem declaration, which declares `Inspections`,
+    // `SuiteRegistry`, `NFR` and `StR` targets that no three-file fixture
+    // carries — so `corpus.yaml` states it once and the runner reads it.
+    //
+    // SCOPED, never a wildcard. `test-case` is deliberately outside the ruling:
+    // it is the declaration quire-rs#304 is about, so a firing there is still
+    // something somebody has to rule on, and must stay counted.
+    const findings = [
+      { family: "adv", corpus: "a", declaration: "suite" },
+      { family: "adv", corpus: "a", declaration: "inspection" },
+      { family: "adv", corpus: "a", declaration: "test-case" },
+    ];
+    const standing = {
+      adv: {
+        present: [
+          { corpus: "a", scope: "suite" },
+          { corpus: "a", scope: "inspection" },
+        ],
+        absent: [],
+      },
+    };
+    const { families } = scoreFindings(
+      findings,
+      [],
+      { adv: "advisory" },
+      standing,
+    );
+    const adv = families.find((f) => f.family === "adv")!;
+    expect(adv.precision_basis!.truePositives).toBe(2);
+    expect(adv.precision_basis!.falsePositives).toBe(0);
+    // The `test-case` firing survives the ruling and stays counted.
+    expect(adv.precision_basis!.unadjudicated).toBe(1);
+  });
+
+  it("TC-1002 a standing ruling is counted separately from a per-case one", () => {
+    // TC-1002
+    // Different strengths of evidence. The first run after
+    // `archetype-matches-nothing` gained a standing ruling read precision 1.00
+    // over 323 firings — of which 3 were the fixtures' own `expect.yaml` and
+    // 320 came from ONE sentence in `corpus.yaml`. A single figure over both
+    // reads as "right 323 times", which is not the claim the ruling makes.
+    const { families } = scoreFindings(
+      [
+        { family: "adv", corpus: "a", declaration: "suite" },
+        { family: "adv", corpus: "a", declaration: "test-case" },
+      ],
+      [],
+      { adv: "advisory" },
+      {
+        adv: {
+          present: [
+            { corpus: "a", scope: "suite", standing: true },
+            { corpus: "a", scope: "test-case" },
+          ],
+          absent: [],
+        },
+      },
+    );
+    const basis = families.find((f) => f.family === "adv")!.precision_basis!;
+    expect(basis.truePositives).toBe(2);
+    expect(basis.byStanding).toBe(1);
+  });
+
+  it("TC-987 a firing nobody ruled on is counted and published, never folded into the null", () => {
+    // TC-987
+    // What #234 shipped was a bare `null`, which reads as "nothing to see". The
+    // state it was actually describing is 316 firings on which this benchmark
+    // holds no opinion. Not-measured and zero are different claims, and so are
+    // not-measured and not-asked.
+    const { families } = scoreFindings(
+      [
+        { family: "adv", corpus: "a", declaration: "suite" },
+        { family: "adv", corpus: "b", declaration: "suite" },
+      ],
+      [],
+      { adv: "advisory" },
+      {},
+    );
+    const adv = families.find((f) => f.family === "adv")!;
+    expect(adv.precision).toBeNull();
+    expect(adv.precision_basis!.unadjudicated).toBe(2);
+    expect(adv.precision_basis!.rulings).toBe(0);
+  });
+
+  it("TC-1098 exact retained rulings score only compatible finding envelopes", () => {
+    const ruled = normalizeQuireFinding(
+      {
+        reason: "catch-all-universal",
+        path: "spec/FR-001.md",
+        line: 10,
+        message: "one extractable criterion has no specific property shape",
+      },
+      {
+        producer: "quire",
+        channel: "coverage.diagnostics",
+        family: "adv",
+        corpus: "case-a",
+        language: "python",
+        declaration: "criteria",
+      },
+    );
+    const unresolved = normalizeQuireFinding(
+      {
+        reason: "catch-all-universal",
+        path: "spec/FR-002.md",
+        line: 20,
+        message: "a different finding",
+      },
+      {
+        producer: "quire",
+        channel: "coverage.diagnostics",
+        family: "adv",
+        corpus: "case-b",
+        language: "rust",
+        declaration: "criteria",
+      },
+    );
+    const id = findingEnvelopeDigest(ruled);
+    const result = scoreFindings(
+      [ruled, unresolved],
+      [],
+      { adv: "advisory" },
+      {
+        __metricVersion: "finding.precision.advisory-v1",
+        adv: {
+          present: [],
+          absent: [],
+          findings: [{ id, disposition: "incorrect" }],
+        },
+      },
+    );
+    const basis = result.families[0].precision_basis!;
+    expect(basis.metricVersion).toBe("finding.precision.advisory-v1");
+    expect(basis.falsePositives).toBe(1);
+    expect(basis.unadjudicated).toBe(1);
+    expect(basis.retainedRulings).toBe(1);
+
+    const disputed = scoreFindings(
+      [ruled],
+      [],
+      { adv: "advisory" },
+      {
+        __metricVersion: "finding.precision.advisory-v1",
+        adv: {
+          present: [],
+          absent: [],
+          findings: [{ id, disposition: "ambiguous" }],
+        },
+      },
+    ).families[0].precision_basis!;
+    expect(disputed.precision).toBeNull();
+    expect(disputed.truePositives).toBe(0);
+    expect(disputed.falsePositives).toBe(0);
+    expect(disputed.unadjudicated).toBe(1);
+    expect(disputed.ambiguous).toEqual([id]);
+  });
+
   it("TC-943 reports null, not zero, when a family has no denominator", () => {
     // TC-943
     // 0/0 is not 0%. A precision of 0 claims the run was wrong; null says it
@@ -240,6 +539,321 @@ describe("actionability", () => {
   });
 });
 
+describe("span grounding", () => {
+  const span = (text: string) => ({ start: 0, end: text.length, text });
+
+  it("TC-1084 separates present, missing, unavailable, malformed, and not-applicable spans", () => {
+    const scored = scoreSpanGrounding([
+      {
+        case: "grounding",
+        payload: {
+          engine: { cli: "0.30.2", engine: "abc123" },
+          documents: [
+            {
+              document: "spec/FR-001.md",
+              criteria: [
+                {
+                  row_id: "FR-001-AC-1",
+                  line: 10,
+                  property: "invariant",
+                  domain: span("request"),
+                  precondition: span("when valid"),
+                  oracle: span("is accepted"),
+                },
+                {
+                  row_id: "FR-001-AC-2",
+                  line: 11,
+                  property: "round-trip",
+                  domain: null,
+                  oracle: { start: 9, end: 2, text: "broken" },
+                },
+                {
+                  row_id: "FR-001-AC-3",
+                  line: 12,
+                  property: "universal",
+                  domain: null,
+                  precondition: null,
+                  oracle: span("holds"),
+                },
+              ],
+            },
+          ],
+        },
+      },
+    ]);
+
+    expect(scored).toMatchObject({
+      numerator: 1,
+      denominator: 2,
+      rate: 0.5,
+      producerVersions: ["0.30.2 (engine abc123)"],
+      spanStates: {
+        domain: { available: 1, unavailable: 1 },
+        precondition: { available: 1, missing: 1 },
+        oracle: { available: 1, malformed: 1 },
+      },
+    });
+    expect(scored.namedMisses).toEqual([
+      expect.objectContaining({
+        id: expect.stringContaining("FR-001-AC-2"),
+        spans: {
+          domain: expect.objectContaining({ state: "unavailable" }),
+          precondition: expect.objectContaining({ state: "missing" }),
+          oracle: expect.objectContaining({ state: "malformed" }),
+        },
+      }),
+    ]);
+    expect(scored.exclusions).toEqual([
+      expect.objectContaining({
+        id: expect.stringContaining("FR-001-AC-3"),
+        state: "not_applicable",
+      }),
+    ]);
+  });
+
+  it("TC-1085 names malformed producer payloads and scoreScenario consumes the same scorer", () => {
+    const properties = [{ case: "broken", payload: { documents: null } }];
+    const direct = scoreSpanGrounding(properties);
+    expect(direct).toMatchObject({
+      numerator: 0,
+      denominator: 0,
+      rate: null,
+      malformed: [{ case: "broken" }],
+    });
+    expect(scoreScenario({ properties }).spanGrounding).toEqual(direct);
+  });
+});
+
+describe("labeled span grounding v2", () => {
+  it("TC-1110 counts exact spans and justified refusals without requiring an invented precondition", () => {
+    const exactStatement =
+      "Every normalizer applied twice gives the same result as applying it once";
+    const span = (statement: string, text: string) => {
+      const start = statement.indexOf(text);
+      return { start, end: start + text.length, text };
+    };
+    const refusalStatement =
+      "Applying the normalizer twice shall give the same result as applying it once.";
+    const inputs = [
+      {
+        case: "controlled",
+        payload: {
+          engine: { cli: "0.30.2", engine: "0.33.0" },
+          documents: [
+            {
+              document: "spec/FR-001.md",
+              criteria: [
+                {
+                  row_id: "FR-001-AC-1",
+                  statement: exactStatement,
+                  property: "idempotence",
+                  domain: span(exactStatement, "normalizer"),
+                  precondition: null,
+                  oracle: span(
+                    exactStatement,
+                    "gives the same result as applying it once",
+                  ),
+                  signals: ["span:domain", "span:oracle"],
+                },
+                {
+                  row_id: "FR-001-AC-2",
+                  statement: refusalStatement,
+                  property: "idempotence",
+                  domain: null,
+                  precondition: null,
+                  oracle: null,
+                  signals: ["span:refused-no-explicit-domain"],
+                },
+              ],
+            },
+          ],
+        },
+      },
+    ];
+    const labels = {
+      definitionVersion: "property.span-grounding-v2",
+      rules: [
+        {
+          id: "exact-idempotence",
+          property: "idempotence",
+          statement: exactStatement,
+          expectedMatches: 1,
+          expected: {
+            domain: "normalizer",
+            precondition: null,
+            oracle: "gives the same result as applying it once",
+          },
+        },
+        {
+          id: "implicit-domain-refusal",
+          property: "idempotence",
+          statement: refusalStatement,
+          expectedMatches: 1,
+          expectedRefusal: "span:refused-no-explicit-domain",
+        },
+      ],
+    };
+
+    expect(scoreSpanGroundingV2(inputs, labels)).toMatchObject({
+      numerator: 2,
+      denominator: 2,
+      rate: 1,
+      outcomes: {
+        exactSpans: 1,
+        safeRefusals: 1,
+        wrongSpans: 0,
+        unexpectedRefusals: 0,
+        unjustifiedRefusals: 0,
+        unsafeEmissions: 0,
+      },
+      namedMisses: [],
+      malformed: [],
+    });
+  });
+
+  it("TC-1111 fails closed when the labeled multiplicity shrinks", () => {
+    const scored = scoreSpanGroundingV2([], {
+      definitionVersion: "property.span-grounding-v2",
+      rules: [
+        {
+          id: "retained-population",
+          property: "idempotence",
+          statement: "Applying twice gives the same result",
+          expectedMatches: 38,
+          expectedRefusal: "span:refused-no-explicit-domain",
+        },
+      ],
+    });
+    expect(scored.malformed).toEqual([
+      expect.objectContaining({
+        rule: "retained-population",
+        expectedMatches: 38,
+        observedMatches: 0,
+      }),
+    ]);
+  });
+});
+
+describe("grounding correctness and safe refusal", () => {
+  it("TC-1092 keeps presence, exact correctness, and justified refusal distinct", () => {
+    const statement = "A finding defaults to warning";
+    const span = (text: string, start = statement.indexOf(text)) => ({
+      start,
+      end: start + text.length,
+      text,
+    });
+    const scored = scoreGroundingQuality(
+      {
+        engine: { cli: "test-cli", engine: "test-engine" },
+        documents: [
+          {
+            criteria: [
+              {
+                row_id: "AC-1",
+                statement,
+                domain: span("finding"),
+                precondition: null,
+                oracle: span("defaults to warning"),
+                signals: ["span:domain", "span:oracle"],
+              },
+              {
+                row_id: "AC-2",
+                statement,
+                domain: span("finding", 0),
+                precondition: null,
+                oracle: span("defaults to warning"),
+                signals: ["span:domain", "span:oracle"],
+              },
+              {
+                row_id: "AC-3",
+                statement: "Each cached entry expires",
+                domain: null,
+                precondition: null,
+                oracle: null,
+                signals: ["span:refused-weak-boundary"],
+              },
+              {
+                row_id: "AC-4",
+                statement: "Each cached entry expires",
+                domain: { start: 5, end: 17, text: "cached entry" },
+                precondition: null,
+                oracle: null,
+                signals: [],
+              },
+            ],
+          },
+        ],
+      },
+      {
+        cases: [
+          {
+            id: "exact",
+            family: "positive",
+            rowId: "AC-1",
+            expected: {
+              domain: "finding",
+              precondition: null,
+              oracle: "defaults to warning",
+            },
+          },
+          {
+            id: "present-but-wrong",
+            family: "wrong-subject",
+            rowId: "AC-2",
+            expected: {
+              domain: "finding",
+              precondition: null,
+              oracle: "defaults to warning",
+            },
+          },
+          {
+            id: "safe",
+            family: "justified-refusal",
+            rowId: "AC-3",
+            expectedRefusal: "span:refused-weak-boundary",
+          },
+          {
+            id: "unsafe",
+            family: "justified-refusal",
+            rowId: "AC-4",
+            expectedRefusal: "span:refused-weak-boundary",
+          },
+        ],
+      },
+    );
+
+    expect(scored).toMatchObject({
+      correctness: {
+        numerator: 1,
+        denominator: 2,
+        rate: 0.5,
+        namedMisses: [
+          expect.objectContaining({
+            id: "present-but-wrong",
+            outcome: "wrong-span",
+          }),
+        ],
+      },
+      safeRefusal: {
+        numerator: 1,
+        denominator: 2,
+        rate: 0.5,
+        namedMisses: [
+          expect.objectContaining({ id: "unsafe", outcome: "unsafe-emission" }),
+        ],
+      },
+      tradeoff: {
+        correctSpans: 1,
+        wrongSpans: 1,
+        safeRefusals: 1,
+        unexpectedRefusals: 0,
+        unsafeEmissions: 1,
+      },
+      producerVersions: ["test-cli (engine test-engine)"],
+    });
+  });
+});
+
 describe("cost per confirmed insight", () => {
   it("TC-945 reports tokens AND tool calls, which are different costs", () => {
     // TC-945
@@ -263,6 +877,20 @@ describe("cost per confirmed insight", () => {
       5,
     );
     expect(dearAndRight.tokensPer).toBeLessThan(cheapAndWrong.tokensPer!);
+  });
+
+  it("TC-994 an absent cost is null, never 0, and the half it knows is still reported", () => {
+    // TC-994
+    // `?? 0` published "0 tokens" for tier 1, which calls no model at all — a
+    // measurement claiming the run was free. And an all-or-nothing return threw
+    // away the half it COULD report: tier 1 knows its subprocess count exactly.
+    // Absent and zero are different claims (agent-ix/quoin#243).
+    const tierOne = scoreCost({ toolCalls: 240 }, 29);
+    expect(tierOne.tokens).toBeNull();
+    expect(tierOne.tokensPer).toBeNull();
+    expect(tierOne.toolCalls).toBe(240);
+    expect(tierOne.toolCallsPer).toBe(8.28);
+    expect(tierOne.truePositives).toBe(29);
   });
 
   it("reports null per-insight cost when nothing was confirmed", () => {

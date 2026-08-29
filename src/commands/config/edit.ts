@@ -9,6 +9,7 @@ export default class ConfigEdit extends QuoinCommand {
   static examples = ["quoin config edit"];
 
   async run(): Promise<void> {
+    await this.parse(ConfigEdit);
     registerQuoinSchema();
     await runConfigEdit(QUOIN_PLUGIN_ID);
   }

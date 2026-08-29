@@ -29,6 +29,8 @@ export {
 
 export type {
   AcShape,
+  BindingCensus,
+  CatchAllCriterion,
   CoverageDiagnostic,
   CoverageReport,
   CoverageTotals,
@@ -36,8 +38,14 @@ export type {
   CriteriaCounts,
   CriterionObligation,
   Extraction,
+  EngineProvenance,
+  GroundingCounts,
   GroupCounts,
   NoSymbolRow,
+  MeasuredMetric,
+  Metric,
+  MetricShape,
+  NotComputedMetric,
   Obligation,
   PropertiesDocument,
   PropertiesReport,
@@ -46,13 +54,16 @@ export type {
   SharedTraceId,
   SharedTraceSymbol,
   StatusLie,
+  Suspicion,
   UnbackedRow,
+  UnboundSymbol,
   UntrackedSymbol,
   VocabularyValueRecord,
 } from "./types.js";
 
 export {
   QUIRE_MAX_BUFFER,
+  quireExecutable,
   quireVersion,
   runQuire,
   runQuireAllowFailure,

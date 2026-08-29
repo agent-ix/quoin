@@ -68,3 +68,22 @@ stated rather than left as an absence somebody rediscovers.
 This elevates `agent-ix/quoin#48` (mutation scoring) from backlog into the
 benchmark programme: `cargo-mutants` stops being a tool somebody might run and
 becomes the **independent oracle the coverage metric is validated against**.
+
+## Advisory families are not defect-rate estimates
+
+`catch-all-universal` is retained as a corpus-level advisory. It answers
+whether a document relies entirely on a catch-all property; it does not claim
+that such reliance is wrong. Treating every legitimate firing as a false
+positive made precision measure fixture prevalence instead of detector
+correctness, so the governed score uses seeded recall and localisation while
+reporting precision only over adjudicated rulings. Unadjudicated advisory
+firings remain a separate, ratcheted count and cannot disappear into either the
+numerator or denominator.
+
+The current Tier-1 collection finds all seeded `catch-all-universal` cases with
+the expected loci. Its adjudicated precision basis is 4 true positives, 0 false
+positives, and 104 explicitly unadjudicated firings; this is reported as 1.0
+over adjudicated rulings, not as a claim that all 108 firings are defects. That
+decision and the same treatment for `archetype-matches-nothing` are declared in
+`tier1-mapping.json`; changing either family back to defect-shaped scoring
+requires a new definition version and comparative evidence.

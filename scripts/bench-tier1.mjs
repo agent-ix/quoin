@@ -1,428 +1,787 @@
 #!/usr/bin/env node
-// The tier-1 benchmark runner (agent-ix/quoin#199, FR-043-AC-2/AC-7).
-//
-// `buildBenchCorpora` had no production caller. The corpora were built only by
-// a unit test, into a temp directory, and scored by nobody — so every metric in
-// `bench/metrics.json` that depends on them carried `baseline: null` with the
-// note "No tier-1 run has been scored against a toolchain yet."
-//
-// This is that runner. It materializes the seeded corpora, runs the real tools
-// over each, maps their payloads to findings through the committed table in
-// `bench/tier1-mapping.json`, and scores them against the labels the corpora
-// carry.
+// Tier-1 scores the validated qa-corpus inventory with a real Quire engine.
 //
 //   node scripts/bench-tier1.mjs                  # score and diff
 //   node scripts/bench-tier1.mjs --update         # deliberate re-baseline
 //   node scripts/bench-tier1.mjs --json           # the score, machine-readable
-//
-// Ratchet semantics are quire-rs `scripts/bench.py`'s, deliberately: a closed
-// metric dictionary that refuses an undeclared name, a one-way compare where a
-// regression keeps the OLD baseline so a bad run can never lower the bar, and
-// an unreadable metric OMITTED rather than reported as 0.
+//   node scripts/bench-tier1.mjs --modules <dir>  # vary the declaration
 
-import { execFileSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import {
   existsSync,
-  mkdtempSync,
+  readdirSync,
   readFileSync,
-  rmSync,
+  statSync,
   writeFileSync,
 } from "node:fs";
-import { tmpdir } from "node:os";
-import { dirname, join, resolve } from "node:path";
+import { dirname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
+import { format as prettierFormat } from "prettier";
 
-import { buildBenchCorpora } from "../evals/fixtures/bench/build.mjs";
 import { crossCheckFamilies, loadMetrics } from "../evals/lib/dictionary.mjs";
-import { scoreActionability, scoreFindings } from "../evals/lib/quality.mjs";
+import { normalizeFinding } from "../evals/lib/finding-envelope.mjs";
+import {
+  scoreActionability,
+  scoreActionabilityV2,
+  scoreCost,
+  scoreFindings,
+  scoreGroundingQuality,
+  scoreSpanGrounding,
+  scoreSpanGroundingV2,
+} from "../evals/lib/quality.mjs";
+import {
+  createMeasurementRecord,
+  persistMeasurement as persistMeasurementCollection,
+} from "./lib/tier1-measurement.mjs";
+import { comparability, compare, ratchet } from "./lib/tier1-comparison.mjs";
+import {
+  adjudicationOf,
+  byLanguage,
+  flattenLabels,
+  localisationRate,
+  silentZeros,
+} from "./lib/tier1-scoring.mjs";
+import { loadAdvisoryAdjudication } from "./lib/advisory-adjudication.mjs";
+import { createTier1Executor } from "./lib/tier1-execution.mjs";
+import { evaluateGuidanceProof } from "./lib/guidance-proof.mjs";
+import { renderTier1 } from "./lib/tier1-render.mjs";
+import {
+  detectionRecall,
+  localityMissInventory,
+  recallGateFails,
+  recallVerdicts,
+} from "./lib/tier1-recall.mjs";
+import {
+  loadCorpusData,
+  standingAdjudications,
+  validateCanonicalInventory,
+} from "./lib/tier1-corpus.mjs";
+
+export { comparability, compare, ratchet } from "./lib/tier1-comparison.mjs";
+export {
+  adjudicationOf,
+  byLanguage,
+  flattenLabels,
+  localisationRate,
+  silentZeros,
+} from "./lib/tier1-scoring.mjs";
+export { validateCanonicalInventory } from "./lib/tier1-corpus.mjs";
 
 const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 const MAPPING = join(ROOT, "bench", "tier1-mapping.json");
 const METRICS = join(ROOT, "bench", "metrics.json");
+const CORPUS_METRICS = join(ROOT, "corpus", "config", "metrics.json");
 const BASELINE = join(ROOT, "bench", "tier1-baseline.json");
+const RECALL_BASELINE = join(ROOT, "corpus", "baselines", "quoin.json");
+const GROUNDING_LABELS = join(ROOT, "bench", "span-grounding-labels.json");
+const GROUNDING_V2_LABELS = join(
+  ROOT,
+  "bench",
+  "span-grounding-v2-labels.json",
+);
+const GROUNDING_FIXTURE = join(ROOT, "bench", "fixtures", "span-grounding");
+const ADVISORY_ADJUDICATION = join(
+  ROOT,
+  "bench",
+  "advisory-adjudication-v1.json",
+);
+const GUIDANCE_CONTRACT = join(
+  ROOT,
+  "bench",
+  "guidance-evaluator-contract-v1.json",
+);
+const GUIDANCE_REVIEW = join(
+  ROOT,
+  "bench",
+  "guidance-independent-review-v1.json",
+);
+const execution = createTier1Executor();
 
-/**
- * The bracketed reason a `validate` finding ends with, and the path and line it
- * opens with.
- *
- * Parsed rather than read from a field because `validate` has no JSON payload —
- * `--diagnostics-format json` wraps the whole human string in `message`. The
- * fragility is declared in `bench/tier1-mapping.json` and tracked as
- * agent-ix/quire-cli#65; a message this cannot parse is an ERROR here, never a
- * skip, because a family that silently stops scoring looks identical to a
- * family with nothing to report.
- */
-const VALIDATE_LINE =
-  /^(?<path>.+?): line (?<line>\d+): (?<rest>.*) \[(?<reason>[a-z-]+)\]$/;
+/** An absent engine metric is reported as not measured, never zero. */
+const SECTION_HIT_RATE = "minting.section_hit_rate";
 
-/** Run a command, returning stdout, stderr and whether it exited zero. */
-function run(bin, args) {
-  try {
-    const stdout = execFileSync(bin, args, {
-      encoding: "utf8",
-      maxBuffer: 64 * 1024 * 1024,
-      stdio: ["ignore", "pipe", "pipe"],
-    });
-    return { ok: true, stdout, stderr: "" };
-  } catch (error) {
-    // A non-zero exit is normal here: `validate` exits 1 when a document fails,
-    // which is exactly the case being measured. The output is what matters.
-    return {
-      ok: false,
-      stdout: String(error.stdout ?? ""),
-      stderr: String(error.stderr ?? error.message ?? ""),
-    };
-  }
+/** Load scorer inputs from qa-corpus's canonical validated inventory. */
+export function loadCorpus(
+  mapping = null,
+  root = join(ROOT, "corpus"),
+  modulesRoot = null,
+  inventory = null,
+) {
+  mapping ??= existsSync(MAPPING)
+    ? JSON.parse(readFileSync(MAPPING, "utf8"))
+    : { families: {} };
+  return loadCorpusData({
+    mapping,
+    root,
+    modulesRoot,
+    inventory: inventory ?? canonicalCorpusInventory(root),
+  });
 }
 
-/** Every finding one corpus produced, already mapped to a family. */
-function findingsFor(quire, corpusRoot, mapping) {
-  const module = join(corpusRoot, "module");
-  const out = [];
-  const bySource = (name) =>
-    Object.entries(mapping.families).filter(([, m]) => m.source === name);
-
-  // ── quire coverage ──
-  const cov = run(quire, [
-    "coverage",
-    "--scope",
-    corpusRoot,
-    "--module",
-    module,
+/** The validated case inventory emitted by qa-corpus's authoritative reader. */
+export function canonicalCorpusInventory(root = join(ROOT, "corpus")) {
+  const result = execution.execute("python3", [
+    join(root, "bounds.py"),
     "--json",
   ]);
-  let payload = null;
-  try {
-    payload = JSON.parse(cov.stdout);
-  } catch {
+  if (!result.ok) {
     throw new Error(
-      `bench-tier1: \`quire coverage\` produced no JSON for ${corpusRoot}. ` +
-        `Refusing to score a corpus whose payload could not be read — an ` +
-        `unreadable run and a clean run are the same zero.\n${cov.stderr.trim()}`,
+      `bench-tier1: qa-corpus inventory failed: ${result.stderr}`,
     );
   }
+  return validateCanonicalInventory(JSON.parse(result.stdout));
+}
 
-  for (const [family, m] of bySource("coverage.diagnostics")) {
-    for (const d of payload.diagnostics ?? []) {
-      if (d.reason !== m.key) continue;
-      out.push({ family, reason: d.reason, path: d.path ?? null, line: null });
-    }
+/** Every file under `dir`, as paths relative to it, in a stable order. */
+function walkFiles(dir, base = dir) {
+  const out = [];
+  for (const name of readdirSync(dir).sort()) {
+    if (name === ".git" || name === "__pycache__") continue;
+    const full = join(dir, name);
+    if (statSync(full).isDirectory()) out.push(...walkFiles(full, base));
+    else out.push(relative(base, full).split(sep).join("/"));
   }
-  for (const [family, m] of bySource("coverage.suspicions")) {
-    for (const s of payload.suspicions ?? []) {
-      if (s.kind !== m.key) continue;
-      out.push({
-        family,
-        reason: s.kind,
-        path: s.path ?? null,
-        line: typeof s.line === "number" ? s.line : null,
-      });
-    }
-  }
-  // A metric is a finding only when it sits at the value a label expects. The
-  // metric MOVING is the signal, so the expectation lives on the label and this
-  // stage carries the observed value for the caller to compare.
-  const metrics = new Map((payload.metrics ?? []).map((m) => [m.name, m]));
-  for (const [family, m] of bySource("coverage.metrics")) {
-    const metric = metrics.get(m.key);
-    if (!metric || metric.state !== "measured") continue;
-    out.push({
-      family,
-      reason: m.key,
-      path: null,
-      line: null,
-      metric: m.key,
-      value: Number(metric.value),
-    });
-  }
-
-  // ── quire validate ──
-  const val = run(quire, [
-    "validate",
-    "--diagnostics-format",
-    "json",
-    "--scope",
-    corpusRoot,
-    "--module",
-    module,
-    "spec/*.md",
-  ]);
-  const wanted = new Set(bySource("validate.findings").map(([, m]) => m.key));
-  const familyOfReason = new Map(
-    bySource("validate.findings").map(([family, m]) => [m.key, family]),
-  );
-  for (const raw of val.stderr.split("\n")) {
-    const text = raw.trim();
-    if (!text.startsWith("{")) continue;
-    let record;
-    try {
-      record = JSON.parse(text);
-    } catch {
-      continue;
-    }
-    if (record.kind !== "ValidationError") continue;
-    const parsed = VALIDATE_LINE.exec(record.message);
-    if (!parsed) {
-      // Not a locatable finding (the run summary is a ValidationError too).
-      // Only refuse when it LOOKS like a finding: `<path>: line N:`.
-      if (/^.+: line \d+:/.test(record.message)) {
-        throw new Error(
-          `bench-tier1: could not parse a validate finding's path, line and ` +
-            `reason from:\n  ${record.message}\n` +
-            `The message format is the only place they exist ` +
-            `(agent-ix/quire-cli#65). Refusing to skip it — a family that ` +
-            `silently stops scoring reads as a family with nothing to report.`,
-        );
-      }
-      continue;
-    }
-    const { path, line, reason } = parsed.groups;
-    if (!wanted.has(reason)) continue;
-    out.push({
-      family: familyOfReason.get(reason),
-      reason,
-      path,
-      line: Number(line),
-    });
-  }
-
   return out;
 }
 
-/** Flatten `labels.json`'s `{corpora:[{defects}]}` into the flat array scoring takes. */
-export function flattenLabels(labels) {
-  // The shape mismatch that kept `buildBenchCorpora` and `scoreFindings` from
-  // ever meeting: the builder writes a wrapper keyed by corpus, the scorer
-  // consumes a flat list. Converted in ONE place so the two cannot drift.
-  return labels.corpora.flatMap((c) =>
-    c.defects.map((d) => ({ ...d, corpus: c.name })),
-  );
-}
-
-/**
- * The fraction of true positives whose reported location matches the label's.
- *
- * The metric that encodes the actual requirement: an alert must say WHERE.
- * `scoreFindings` already counts positional pairings; this is their share of
- * the confirmed findings, and `null` — never 0 — when nothing was confirmed,
- * because 0/0 is not 0%.
- */
-export function localisationRate(score) {
-  const truePositives = score.families.reduce((n, f) => n + f.truePositives, 0);
-  if (truePositives === 0) return null;
-  return Number((score.positional / truePositives).toFixed(3));
-}
-
-/**
- * quire-rs `bench.py`'s `compare`, in JS and with its semantics intact.
- *
- * A regression keeps the OLD baseline, so a bad run can never implicitly lower
- * the bar; `gate-zero` carries no baseline and no tolerance, so `--update`
- * cannot launder it; a missing baseline is `new`, never a pass by default.
- */
-export function compare(direction, observed, baseline) {
-  if (direction === "gate-zero") {
-    return [observed === 0 ? "held" : "regressed", 0];
+/** A content digest over a declaration tree: path and bytes, nothing else. */
+function digestOf(dir) {
+  const hash = createHash("sha256");
+  for (const rel of walkFiles(dir)) {
+    hash.update(rel);
+    hash.update("\0");
+    hash.update(
+      createHash("sha256")
+        .update(readFileSync(join(dir, rel)))
+        .digest(),
+    );
+    hash.update("\n");
   }
-  if (baseline === null || baseline === undefined) return ["new", observed];
-  const better =
-    direction === "higher-is-better"
-      ? observed > baseline
-      : observed < baseline;
-  if (better) return ["improved", observed];
-  if (observed === baseline) return ["held", baseline];
-  return ["regressed", baseline];
+  return `sha256:${hash.digest("hex")}`;
 }
 
-function main() {
+/** Read upstream SHAs from vendored declarations; reject partial provenance. */
+function vendoredSources(modulesRoot) {
+  const out = {};
+  let files = 0;
+  const visit = (dir, depth) => {
+    if (depth > 2 || !existsSync(dir)) return;
+    for (const name of readdirSync(dir).sort()) {
+      const full = join(dir, name);
+      if (name === "VENDORED.md") {
+        files += 1;
+        let rows = 0;
+        for (const line of readFileSync(full, "utf8").split("\n")) {
+          const cells = line
+            .split("|")
+            .slice(1, -1)
+            .map((c) => c.trim().replace(/`/g, ""));
+          if (cells.length !== 3) continue;
+          // A data row names a module that exists beside the provenance file.
+          if (!existsSync(join(dir, cells[0]))) continue;
+          // The SHA may be followed by an annotation; only its first token is data.
+          const sha = cells[2].split(/\s+/)[0];
+          if (!/^[0-9a-f]{7,40}$/.test(sha)) {
+            throw new Error(
+              `bench-tier1: ${full} records module \`${cells[0]}\` with ` +
+                `\`${cells[2]}\` where a SHA belongs. Refusing to score a ` +
+                `declaration one of whose modules has no upstream commit to ` +
+                `join to.`,
+            );
+          }
+          out[cells[0]] = sha;
+          rows += 1;
+        }
+        if (!rows) {
+          throw new Error(
+            `bench-tier1: ${full} records no \`| module | path | sha |\` row ` +
+              `this runner can read, so the declaration's upstream SHA cannot ` +
+              `be recorded. Refusing to score a declaration whose provenance ` +
+              `file is present and unreadable.`,
+          );
+        }
+      } else if (statSync(full).isDirectory()) visit(full, depth + 1);
+    }
+  };
+  visit(modulesRoot, 0);
+  return files ? out : null;
+}
+
+/** Record declaration content and upstream identity as benchmark inputs. */
+export function declarationProvenance(modulesRoot, bound = []) {
+  const inRepo = !relative(ROOT, modulesRoot).startsWith("..");
+  const paths = {};
+  for (const id of [...new Set(bound)].sort()) {
+    paths[id] = digestOf(join(modulesRoot, id));
+  }
+  return {
+    root: inRepo
+      ? relative(ROOT, modulesRoot).split(sep).join("/")
+      : modulesRoot,
+    digest: digestOf(modulesRoot),
+    modules: paths,
+    sources: vendoredSources(modulesRoot),
+  };
+}
+
+function scorerDigest() {
+  const hash = createHash("sha256");
+  for (const path of [
+    join(ROOT, "scripts"),
+    join(ROOT, "evals", "lib"),
+    join(ROOT, "bench"),
+  ]) {
+    hash.update(digestOf(path));
+  }
+  return `sha256:${hash.digest("hex")}`;
+}
+
+function digestFile(path) {
+  return `sha256:${createHash("sha256").update(readFileSync(path)).digest("hex")}`;
+}
+
+/** Fail before corpus execution when a canonical stack attestation moved. */
+export function validateVerificationAttestation(value, quire, tool, corpus) {
+  if (value?.schemaVersion !== "verification-stack-attestation-v1") {
+    throw new Error(
+      "bench-tier1: canonical runs require verification-stack-attestation-v1",
+    );
+  }
+  for (const key of ["lockDigest", "executableDigest"]) {
+    if (!/^sha256:[0-9a-f]{64}$/.test(value[key] ?? "")) {
+      throw new Error(
+        `bench-tier1: attestation ${key} is not a full sha256 digest`,
+      );
+    }
+  }
+  if (value.buildProfile !== "release") {
+    throw new Error(
+      "bench-tier1: attestation buildProfile must be canonical release",
+    );
+  }
+  for (const name of ["node", "rust", "python"]) {
+    if (
+      typeof value.toolchains?.[name] !== "string" ||
+      !value.toolchains[name]
+    ) {
+      throw new Error(
+        "bench-tier1: attestation must pin node, rust, and python toolchains",
+      );
+    }
+  }
+  const observedExecutable = digestFile(quire);
+  if (observedExecutable !== value.executableDigest) {
+    throw new Error(
+      `bench-tier1: executable moved after attestation: expected ${value.executableDigest}, observed ${observedExecutable}`,
+    );
+  }
+  const expectedSources = {
+    "quire-cli": tool.cli.sourceRevision,
+    quire: tool.engine.sourceRevision,
+    "qa-corpus": corpus,
+  };
+  for (const [name, revision] of Object.entries(expectedSources)) {
+    const source = value.sources?.[name];
+    if (source?.revision !== revision || source?.sourceState !== "clean") {
+      throw new Error(
+        `bench-tier1: attested ${name} does not match the selected clean source ${revision}`,
+      );
+    }
+  }
+  const attestedCapabilities = new Set(value.capabilities ?? []);
+  for (const capability of tool.capabilities ?? []) {
+    if (!attestedCapabilities.has(capability)) {
+      throw new Error(
+        `bench-tier1: attestation omits selected capability ${capability}`,
+      );
+    }
+  }
+  return structuredClone(value);
+}
+
+/** Build a plan-governed collection for one Tier-1 invocation. */
+export function measurementRecord(report, at) {
+  return createMeasurementRecord(report, at, {
+    root: ROOT,
+    metricsPath: METRICS,
+    corpusMetricsPath: CORPUS_METRICS,
+    corpusPlanOverrides: {
+      "detection.recall": "spec/assurance/MP-210-detection-recall.md",
+      "bounds.gap_count": "spec/assurance/MP-211-corpus-gap-count.md",
+    },
+    sectionHitRate: SECTION_HIT_RATE,
+    scorerDigest,
+  });
+}
+
+function persistMeasurement(collection) {
+  return persistMeasurementCollection(collection, ROOT);
+}
+
+/** The corpus revision this run read, or `null` when unavailable. */
+function corpusRevision(root = join(ROOT, "corpus")) {
+  const probe = execution.execute("git", ["-C", root, "rev-parse", "HEAD"]);
+  return probe.ok ? probe.stdout.trim() : null;
+}
+
+/** Content identity of scored inputs, excluding ratchets stored beside them. */
+function corpusInputDigest(root = join(ROOT, "corpus")) {
+  const hash = createHash("sha256");
+  for (const rel of walkFiles(root).filter(
+    (path) => path !== "baselines/README.md" && !path.startsWith("baselines/"),
+  )) {
+    hash.update(rel);
+    hash.update("\0");
+    hash.update(readFileSync(join(root, rel)));
+    hash.update("\n");
+  }
+  return `sha256:${hash.digest("hex")}`;
+}
+
+async function main() {
   const update = process.argv.includes("--update");
   const asJson = process.argv.includes("--json");
-  const quire = argOf("--quire") ?? "quire";
+  const experimental = process.argv.includes("--experimental");
+  const guidanceCandidateOut = argOf("--guidance-candidate-out");
+  const guidanceCandidateOnly = process.argv.includes(
+    "--guidance-candidate-only",
+  );
+  const recallBaselineOut = argOf("--recall-baseline-out");
+  if (experimental && update) {
+    throw new Error(
+      "bench-tier1: a noncanonical experimental run cannot update governed evidence",
+    );
+  }
+  if (guidanceCandidateOnly && (!experimental || !guidanceCandidateOut)) {
+    throw new Error(
+      "bench-tier1: --guidance-candidate-only requires --experimental and --guidance-candidate-out <path>",
+    );
+  }
+  // Require an explicit binary so engine identity is reviewable.
+  const quire = argOf("--quire") ?? process.env.QUIRE;
+  if (!quire) {
+    throw new Error(
+      "bench-tier1: pass --quire <path> or set QUIRE. Deliberately not a PATH " +
+        "lookup: scoring a benchmark with an unidentified binary is the defect " +
+        "this benchmark exists to catch.",
+    );
+  }
+  const engine = execution.assertEngine(quire);
+  console.error(`bench-tier1: engine ${engine}`);
+  const quoinArg = argOf("--quoin");
+  if (!experimental && !quoinArg) {
+    throw new Error(
+      "bench-tier1: canonical runs require --quoin <isolated executable>",
+    );
+  }
+  const quoin = resolve(quoinArg ?? join(ROOT, "bin", "quoin.js"));
+  let verificationStack = null;
+  if (!experimental) {
+    const attestationPath = argOf("--attestation");
+    if (!attestationPath) {
+      throw new Error(
+        "bench-tier1: canonical runs require --attestation <path>; use --experimental for an explicitly noncanonical run that cannot compare or update baselines",
+      );
+    }
+    verificationStack = validateVerificationAttestation(
+      JSON.parse(readFileSync(resolve(attestationPath), "utf8")),
+      resolve(quire),
+      execution.engineProvenance(),
+      corpusRevision(),
+    );
+  } else {
+    console.error(
+      "bench-tier1: NONCANONICAL experimental run; comparison and baseline updates are disabled",
+    );
+  }
+  const spanBreadthPath = argOf("--span-breadth");
+  if (!experimental && !spanBreadthPath) {
+    throw new Error(
+      "bench-tier1: canonical runs require --span-breadth <result>",
+    );
+  }
+  const spanBreadth = spanBreadthPath
+    ? JSON.parse(readFileSync(resolve(spanBreadthPath), "utf8"))
+    : null;
+  // An absent declaration override selects the corpus's vendored modules.
+  const modules = argOf("--modules") ?? process.env.MODULES ?? null;
 
   const mapping = JSON.parse(readFileSync(MAPPING, "utf8"));
   const dictionary = loadMetrics(METRICS);
+  loadMetrics(CORPUS_METRICS);
 
-  const root = mkdtempSync(join(tmpdir(), "quoin-tier1-"));
+  const loaded = loadCorpus(
+    mapping,
+    join(ROOT, "corpus"),
+    modules ? resolve(modules) : null,
+  );
   let report;
-  try {
-    const labels = buildBenchCorpora(root);
-    const flat = flattenLabels(labels);
-
-    // Both directions, before anything is scored: a declared family with no
-    // corpus and a corpus family no metric governs are each a hole in the
-    // score, and finding them after a run wastes the run.
-    crossCheckFamilies(
-      dictionary.families,
-      labels.corpora.map((c) => c.family),
-      { path: "bench/metrics.json" },
+  // Pending cases are excluded from scores but remain checked for expiry.
+  const pending = loaded.corpora.filter((c) => c.pending);
+  const labels = { corpora: loaded.corpora.filter((c) => !c.pending) };
+  const flat = flattenLabels(labels);
+  if (pending.length) {
+    console.error(
+      `bench-tier1: ${pending.length} case(s) excluded as pending a fix: ` +
+        pending.map((c) => `${c.name} (${c.pending})`).join(", "),
     );
-
-    const found = [];
-    for (const corpus of labels.corpora) {
-      found.push(...findingsFor(quire, join(root, corpus.name), mapping));
-    }
-
-    // A metric-sourced finding counts only at the value its label expects; the
-    // metric merely EXISTING says nothing. Filtered here rather than inside
-    // `findingsFor` so the mapping stage stays a pure payload read.
-    const expectedValues = new Map(
-      flat
-        .filter((l) => l.expect_metric !== undefined)
-        .map((l) => [l.expect_metric, Number(l.expect_value)]),
-    );
-    const scoredFindings = found.filter(
-      (f) => f.metric === undefined || expectedValues.get(f.metric) === f.value,
-    );
-
-    const score = scoreFindings(scoredFindings, flat);
-    report = {
-      families: score.families,
-      excluded: score.excluded,
-      collateral: score.collateral,
-      positional: score.positional,
-      finding_localisation_rate: localisationRate(score),
-      actionability: scoreActionability(scoredFindings),
-      corpora: labels.corpora.length,
-      findings: scoredFindings.length,
-    };
-  } finally {
-    rmSync(root, { recursive: true, force: true });
   }
 
-  const previous = existsSync(BASELINE)
-    ? JSON.parse(readFileSync(BASELINE, "utf8"))
-    : null;
-  const verdicts = ratchet(report, previous, dictionary);
+  // A pending marker must carry an expiry signal in expect-pending.yaml.
+  const deferred = [];
+  for (const c of pending) {
+    if (c.pendingReasons.length) continue;
+    if (!c.hasPendingBlock) {
+      throw new Error(
+        `bench-tier1: pending case ${c.name} (${c.pending}) has no ` +
+          `\`expect-pending.yaml\`, so no reader can ever say the fix landed ` +
+          `and the marker would stand forever. State what the ticket makes ` +
+          `true in the forward block — not in \`expect.yaml\`, where it ` +
+          `would be a false claim about today — or drop the \`pending:\` ` +
+          `marker (agent-ix/quoin#242).`,
+      );
+    }
+    // Payload-only expiry stays with qa-corpus's authoritative graders.
+    deferred.push(c);
+  }
+  if (deferred.length) {
+    console.error(
+      `bench-tier1: ${deferred.length} pending case(s) expire on a payload ` +
+        `change, not a diagnostic, so their staleness is checked by the ` +
+        `corpus's own graders and not here: ` +
+        deferred.map((c) => `${c.name} (${c.pending})`).join(", ") +
+        `. Run \`make ci\` in agent-ix/qa-corpus for those.`,
+    );
+  }
+  const stale = pending.filter((c) => {
+    if (!c.pendingReasons.length) return false;
+    const emitted = execution.rawReasons(quire, c.input, c.module);
+    return c.pendingReasons.every((r) => emitted.has(r));
+  });
+  if (stale.length) {
+    throw new Error(
+      `bench-tier1: ${stale.length} pending case(s) now PASS — ` +
+        stale.map((c) => `${c.name} (${c.pending})`).join(", ") +
+        `. The fix appears to have landed; remove \`pending:\` from case.yaml ` +
+        `so the case is scored.`,
+    );
+  }
+
+  // Refuse declared-but-unseeded and seeded-but-undeclared families.
+  crossCheckFamilies(
+    dictionary.families,
+    labels.corpora.map((c) => c.family),
+    { path: "bench/metrics.json" },
+  );
+
+  const found = [];
+  // Aggregate section hits by document, not by mean case rate.
+  const sectionHit = { matched: 0, examined: 0, cases: 0 };
+  const payloads = [];
+  const propertyPayloads = [];
+  for (const [index, corpus] of labels.corpora.entries()) {
+    console.error(
+      `bench-tier1: case ${index + 1}/${labels.corpora.length} ${corpus.name}`,
+    );
+    const { findings, metrics, diagnostics, untrackedSymbols } =
+      execution.findingsFor(quire, corpus.input, corpus.module, mapping, quoin);
+    payloads.push({
+      name: corpus.name,
+      metrics,
+      diagnostics,
+      untrackedSymbols,
+    });
+    propertyPayloads.push({
+      case: corpus.name,
+      payload: execution.properties(quire, corpus.input, corpus.module),
+    });
+    found.push(
+      ...findings.map((f) =>
+        normalizeFinding(f, {
+          sourceClass: f.sourceClass,
+          producer: f.producer,
+          channel: f.channel,
+          family: f.family,
+          corpus: corpus.name,
+          language: corpus.language,
+          declaration: f.declaration,
+        }),
+      ),
+    );
+    const hit = metrics.find((m) => m.name === SECTION_HIT_RATE);
+    if (hit && hit.state === "measured") {
+      sectionHit.cases += 1;
+      sectionHit.matched += Number(hit.matched ?? 0);
+      sectionHit.examined += Number(hit.examined ?? 0);
+    }
+  }
+  const groundingLabels = JSON.parse(readFileSync(GROUNDING_LABELS, "utf8"));
+  const groundingV2Labels = JSON.parse(
+    readFileSync(GROUNDING_V2_LABELS, "utf8"),
+  );
+  const groundingPayload = execution.properties(
+    quire,
+    GROUNDING_FIXTURE,
+    join(loaded.modulesRoot, "ecosystem"),
+  );
+
+  // A metric-sourced finding counts only at the value its label expects.
+  const expectedValues = new Map(
+    flat
+      .filter((l) => l.expect_metric !== undefined)
+      .map((l) => [l.expect_metric, Number(l.expect_value)]),
+  );
+  const scoredFindings = found.filter(
+    (f) =>
+      f.evaluation.metric === undefined ||
+      expectedValues.get(f.evaluation.metric) === f.evaluation.value,
+  );
+
+  // Family scoring shape is declared in the mapping.
+  const shapes = Object.fromEntries(
+    Object.entries(mapping.families).map(([family, m]) => [
+      family,
+      m.shape ?? "defect",
+    ]),
+  );
+  const retainedAdjudication = loadAdvisoryAdjudication(ADVISORY_ADJUDICATION);
+  // Advisory precision uses ruled cases; other firings remain unadjudicated.
+  const adjudication = adjudicationOf(
+    labels.corpora,
+    mapping,
+    standingAdjudications(join(ROOT, "corpus")),
+    retainedAdjudication,
+  );
+  const score = scoreFindings(scoredFindings, flat, shapes, adjudication);
+  if (guidanceCandidateOut) {
+    const candidate = {
+      schemaVersion: "guidance-candidate-v1",
+      corpusRevision: corpusRevision(),
+      corpusInputDigest: corpusInputDigest(),
+      producer: execution.engineProvenance(),
+      findingRecords: scoredFindings,
+    };
+    writeFileSync(
+      resolve(guidanceCandidateOut),
+      await formatTier1Json(candidate, resolve(guidanceCandidateOut)),
+    );
+    console.error(
+      `bench-tier1: guidance candidate written to ${resolve(guidanceCandidateOut)}`,
+    );
+    if (guidanceCandidateOnly) return 0;
+  }
+  const guidanceQuality = evaluateGuidanceProof(
+    scoredFindings,
+    JSON.parse(readFileSync(GUIDANCE_CONTRACT, "utf8")),
+    JSON.parse(readFileSync(GUIDANCE_REVIEW, "utf8")),
+  );
+  const silentZeroes = silentZeros(payloads);
+  const bounds = loaded.bounds;
+  report = {
+    // No timestamp: identical inputs produce byte-identical reports.
+    provenance: {
+      engine,
+      tool: execution.engineProvenance(),
+      verification_stack: verificationStack,
+      corpus: corpusRevision(),
+      corpus_input: corpusInputDigest(),
+      declaration: declarationProvenance(
+        loaded.modulesRoot,
+        labels.corpora.map((c) =>
+          relative(loaded.modulesRoot, c.module).split(sep).join("/"),
+        ),
+      ),
+    },
+    bounds,
+    detection_recall: detectionRecall(
+      labels.corpora,
+      scoredFindings,
+      bounds.gap_count,
+      payloads,
+    ),
+    locality_miss_inventory: localityMissInventory(
+      labels.corpora,
+      scoredFindings,
+      payloads,
+    ),
+    families: score.families,
+    advisory_adjudication: {
+      metric_version: retainedAdjudication.metricVersion,
+      rubric_version: retainedAdjudication.rubricVersion,
+      population: retainedAdjudication.population,
+      dispositions: retainedAdjudication.counts,
+    },
+    excluded: score.excluded,
+    collateral: score.collateral,
+    positional: score.positional,
+    finding_localisation_rate: localisationRate(score),
+    // Population property: report it, but do not ratchet it.
+    "minting.section_hit_rate": sectionHit.examined
+      ? {
+          rate: Number((sectionHit.matched / sectionHit.examined).toFixed(3)),
+          matched: sectionHit.matched,
+          examined: sectionHit.examined,
+          cases_reporting: sectionHit.cases,
+        }
+      : null,
+    actionability_v1: scoreActionability(scoredFindings),
+    actionability_v2: scoreActionabilityV2(scoredFindings),
+    guidance_quality: guidanceQuality,
+    span_grounding: scoreSpanGrounding(propertyPayloads),
+    span_grounding_v2: scoreSpanGroundingV2(
+      propertyPayloads,
+      groundingV2Labels,
+    ),
+    span_breadth: spanBreadth,
+    property_payloads: propertyPayloads,
+    grounding_quality: scoreGroundingQuality(groundingPayload, groundingLabels),
+    grounding_quality_payload: groundingPayload,
+    // Tier 1 calls no model, so token cost is not measured; tool calls are.
+    cost_per_confirmed_insight: scoreCost(
+      { toolCalls: execution.toolCalls() },
+      score.families.reduce((n, f) => n + f.truePositives, 0),
+    ),
+    // Exact-zero gate; instances make failures actionable.
+    "sentinel.silent_zero": {
+      count: silentZeroes.violations.length,
+      instances: silentZeroes.violations,
+      // Empty populations are visible but are not silent-zero violations.
+      unread_population: silentZeroes.unread,
+    },
+    corpora: labels.corpora.length,
+    by_language: byLanguage(
+      labels.corpora,
+      scoredFindings,
+      flat,
+      shapes,
+      adjudication,
+    ),
+    // Preserve excluded pending cases in machine-readable output.
+    pending: pending.map((c) => ({ case: c.name, ticket: c.pending })),
+    findings: scoredFindings.length,
+    finding_records: scoredFindings,
+  };
+
+  const previous =
+    !experimental && existsSync(BASELINE)
+      ? JSON.parse(readFileSync(BASELINE, "utf8"))
+      : null;
+  const recallBaseline =
+    !experimental && existsSync(RECALL_BASELINE)
+      ? JSON.parse(readFileSync(RECALL_BASELINE, "utf8"))
+      : null;
+  if (!experimental && !update && recallBaseline === null) {
+    throw new Error(
+      `bench-tier1: ${RECALL_BASELINE} is missing; run the explicit ` +
+        "bench update to create a measured recall ratchet, rather than " +
+        "treating an absent baseline as zero",
+    );
+  }
+  const recall = experimental
+    ? []
+    : recallVerdicts(report.detection_recall, recallBaseline?.rows ?? []);
+  const verdicts = experimental
+    ? []
+    : [
+        ...ratchet(report, previous, dictionary),
+        ...recall.map((verdict) => ({
+          metric: "detection.recall",
+          ...verdict,
+          observed: verdict.rate,
+        })),
+      ];
+  // Unknown comparability inputs are never assumed to match silently.
+  const { unknown } = experimental
+    ? { unknown: [] }
+    : comparability(report, previous);
+  if (unknown.length) {
+    console.error(
+      `bench-tier1: the baseline records no ${unknown.join(", ")}; this ` +
+        `comparison ASSUMES those inputs did not move, and cannot check it.`,
+    );
+  }
+  if (!experimental) {
+    if (
+      report.span_breadth?.rate !== 1 ||
+      report.span_breadth?.namedMisses?.length
+    ) {
+      throw new Error(
+        "bench-tier1: broad span grounding is not 100% exact or safely refused",
+      );
+    }
+    for (const [name, result] of Object.entries(report.guidance_quality).filter(
+      ([name]) =>
+        ["correctness", "repairSuccess", "diagnosticYield"].includes(name),
+    )) {
+      if (result.rate !== 1) {
+        throw new Error(
+          `bench-tier1: guidance ${name} must be 100%, observed ${result.numerator}/${result.denominator}`,
+        );
+      }
+    }
+  }
 
   if (asJson) {
     console.log(JSON.stringify({ ...report, verdicts }, null, 2));
   } else {
-    console.log(render(report, verdicts));
+    console.log(renderTier1(report, verdicts));
   }
 
   if (update) {
-    writeFileSync(BASELINE, JSON.stringify(report, null, 2) + "\n");
-    console.error(`bench-tier1: baseline rewritten at ${BASELINE}`);
+    // Persist the source-of-truth collection before its derived baseline.
+    const recordPath = persistMeasurement(
+      measurementRecord(report, new Date().toISOString()),
+    );
+    writeFileSync(BASELINE, await formatTier1Json(report, BASELINE));
+    // The ratchet lives inside the corpus, so rewriting it solely because its
+    // own commit changed would create an endless self-revision cycle. Only a
+    // measured score or GAP movement rewrites it; corpus_input excludes this
+    // directory for the same reason.
+    const recallMoved =
+      recallBaseline === null ||
+      recallBaseline.gap_count !== report.bounds.gap_count ||
+      JSON.stringify(recallBaseline.rows) !==
+        JSON.stringify(report.detection_recall);
+    if (recallMoved) {
+      const output = recallBaselineOut
+        ? resolve(recallBaselineOut)
+        : RECALL_BASELINE;
+      writeFileSync(
+        output,
+        await formatTier1Json(
+          {
+            definition_version: "detection-recall-v1",
+            runner: "quoin",
+            corpus_revision: report.provenance.corpus,
+            gap_count: report.bounds.gap_count,
+            rows: report.detection_recall,
+          },
+          output,
+        ),
+      );
+      console.error(`bench-tier1: recall baseline written to ${output}`);
+    }
+    console.error(
+      `bench-tier1: collection written to ${recordPath}; derived baseline rewritten ` +
+        `at ${BASELINE}`,
+    );
     return 0;
   }
-  return verdicts.some((v) => v.verdict === "regressed") ? 1 : 0;
+  if (experimental) return 0;
+  // A new or improved recall partition is useful only after the update
+  // workflow retains it as the new floor. Regressions and incomparable runs
+  // also refuse the gate.
+  return recallGateFails(recall) ||
+    verdicts.some(
+      (v) => v.verdict === "regressed" || v.verdict === "incomparable",
+    )
+    ? 1
+    : 0;
 }
 
-/** Per-family precision and recall against the baseline, one-way. */
-export function ratchet(report, previous, dictionary) {
-  const out = [];
-  const before = new Map((previous?.families ?? []).map((f) => [f.family, f]));
-  for (const family of report.families) {
-    for (const metric of ["precision", "recall"]) {
-      const declared = dictionary.metrics[`finding_${metric}`];
-      // A metric this run could not read is OMITTED, never reported as 0 —
-      // `null` precision means no denominator, and calling that a regression
-      // would fail the build for a family nothing fired on.
-      if (family[metric] === null) continue;
-      const [verdict, kept] = compare(
-        declared.direction,
-        family[metric],
-        before.get(family.family)?.[metric] ?? null,
-      );
-      out.push({
-        metric: `finding_${metric}`,
-        family: family.family,
-        observed: family[metric],
-        baseline: kept,
-        verdict,
-      });
-    }
-  }
-  // A family the baseline scored and this run does not report AT ALL — its
-  // corpus deleted, its mapping dropped, its label removed. Without this the
-  // family simply vanishes from the table and the ratchet says nothing, so
-  // deleting a corpus reads as a clean run. That is the same shape as a check
-  // that cannot fail: the absence of a row is indistinguishable from an
-  // absence of news.
-  const now = new Set(report.families.map((f) => f.family));
-  for (const f of previous?.families ?? []) {
-    if (now.has(f.family)) continue;
-    out.push({
-      metric: "finding_recall",
-      family: f.family,
-      observed: null,
-      baseline: f.recall,
-      verdict: "regressed",
-      why: "the baseline scored this family and this run did not report it at all",
-    });
-  }
-
-  if (report.finding_localisation_rate !== null) {
-    const [verdict, kept] = compare(
-      "higher-is-better",
-      report.finding_localisation_rate,
-      previous?.finding_localisation_rate ?? null,
-    );
-    out.push({
-      metric: "finding_localisation_rate",
-      family: null,
-      observed: report.finding_localisation_rate,
-      baseline: kept,
-      verdict,
-    });
-  }
-  return out;
-}
-
-const MARK = { improved: "++", held: "ok", new: "**", regressed: "!!" };
-
-function render(report, verdicts) {
-  const pct = (v) =>
-    v === null ? "  n/a" : `${Math.round(v * 100)}%`.padStart(5);
-  const lines = [
-    `tier-1: ${report.corpora} corpora, ${report.findings} findings mapped`,
-    "",
-    "family                     TP  FP  miss   prec  recall",
-  ];
-  for (const f of report.families) {
-    lines.push(
-      `  ${f.family.padEnd(24)} ${String(f.truePositives).padStart(2)}  ` +
-        `${String(f.falsePositives).padStart(2)}  ${String(f.misses).padStart(4)}  ` +
-        `${pct(f.precision)}  ${pct(f.recall)}`,
-    );
-  }
-  lines.push(
-    "",
-    `finding_localisation_rate  ${pct(report.finding_localisation_rate)} ` +
-      `(${report.positional} of ${report.families.reduce((n, f) => n + f.truePositives, 0)} true positives named where)`,
-    `actionability_rate         ${pct(report.actionability.rate)} ` +
-      `(${report.actionability.actionable} of ${report.actionability.total} findings name a row or a line)`,
-  );
-  if (report.collateral.length) {
-    lines.push(
-      "",
-      "declared collateral, set aside from scoring:",
-      ...report.collateral.map((c) => `  ${c.family} (${c.reason})`),
-    );
-  }
-  if (report.excluded.length) {
-    lines.push(`excluded as not findable: ${report.excluded.join(", ")}`);
-  }
-  lines.push("", "ratchet:");
-  for (const v of verdicts) {
-    const name = v.family ? `${v.metric}[${v.family}]` : v.metric;
-    lines.push(
-      `  ${MARK[v.verdict]} ${name.padEnd(40)} ${v.observed} (baseline ${v.baseline})` +
-        (v.why ? ` — ${v.why}` : ""),
-    );
-  }
-  if (verdicts.some((v) => v.verdict === "regressed")) {
-    lines.push(
-      "",
-      "REGRESSED — the baseline is kept, never lowered by a bad run.",
-    );
-  } else if (verdicts.some((v) => v.verdict === "improved")) {
-    lines.push(
-      "",
-      "improved — run `make bench-tier1-update` to move the baseline.",
-    );
-  }
-  return lines.join("\n");
+/** Emit generated JSON in the same form the repository gate enforces. */
+export async function formatTier1Json(value, filepath) {
+  return prettierFormat(JSON.stringify(value), { filepath });
 }
 
 function argOf(flag) {
@@ -433,5 +792,5 @@ function argOf(flag) {
 if (
   resolve(process.argv[1] ?? "") === resolve(fileURLToPath(import.meta.url))
 ) {
-  process.exit(main());
+  process.exit(await main());
 }
