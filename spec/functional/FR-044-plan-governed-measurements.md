@@ -51,4 +51,6 @@ delta across changed definitions or configurations is confident misinformation.
 
 - FR-030 defines the evidence-store integrity and atomic-write behavior reused here.
 - FR-043 defines the finding-shaped analysis consumed by the report.
-- The installed engineering-assurance module defines `AssuranceProfile` and `MeasurementPlan`.
+- The separately installed private engineering-assurance module defines
+  `AssuranceProfile` and `MeasurementPlan`; Quoin's public default installer
+  does not fetch it.

@@ -19,8 +19,10 @@ export {
 } from "./contract.js";
 
 export {
+  parseClauseBinding,
   parseCoverage,
   parseProperties,
+  validateClauseBinding,
   validateCoverage,
   validateProperties,
   type ContractViolation,
@@ -31,6 +33,12 @@ export type {
   AcShape,
   BindingCensus,
   CatchAllCriterion,
+  ClauseBinding,
+  ClauseBindingOutcome,
+  ClauseBindingReason,
+  ClauseBindingReport,
+  ClauseForce,
+  ClauseSetKey,
   CoverageDiagnostic,
   CoverageReport,
   CoverageTotals,

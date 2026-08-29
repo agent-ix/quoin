@@ -12,12 +12,12 @@ relationships: []
 
 # Finding actionability rate
 
-## Decision Objective
+## Decision Use
 
 Determine whether emitted findings identify enough location information for a
 reader to begin a repair.
 
-## Population and Scope
+## Population
 
 Include every finding emitted for one corpus entry and retain family and source
 dimensions.
@@ -27,7 +27,7 @@ dimensions.
 Findings naming a row id or document line over emitted findings, definition
 `finding.actionability-v1`; store both counts.
 
-## Collection and Provenance
+## Collection Procedure
 
 Retain each finding and locus, raw output, scorer, tools, engine, corpus and
 source revisions, configuration, and timestamp.
@@ -36,7 +36,7 @@ source revisions, configuration, and timestamp.
 
 Report tier-1 and live/battletest populations separately.
 
-## Interpretation and Limitations
+## Interpretation
 
 A locus is necessary but not sufficient: it does not prove the explanation or
 remediation is correct. Use L3 corpus assertions for that stronger claim.

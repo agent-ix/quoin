@@ -71,7 +71,7 @@ is specified by
 | ID          | Criteria                                                                               | Verification         |
 | ----------- | -------------------------------------------------------------------------------------- | -------------------- |
 | FR-016-AC-1 | `default-modules.yaml` validates as a `ts-plugin-kit` marketplace manifest             | Test (index.test.ts) |
-| FR-016-AC-2 | The committed file declares the ten default modules, each with a typed pinned source | Test (index.test.ts) |
+| FR-016-AC-2 | The committed file declares exactly nine public default modules, each with a typed pinned source, and excludes private opt-in modules | Test (index.test.ts) |
 
 ## Dependencies
 

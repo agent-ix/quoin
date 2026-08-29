@@ -175,6 +175,8 @@ check-version: build
 # in an unrelated session. Runs the repo-pinned @agent-ix/quire-cli
 # devDependency (not a host binary), so clean CI runners gate too.
 # Grammar warnings stay advisory (no --strict); structural failures exit 1.
+# The local assurance fixture registers only Quoin's two authored type names.
+# It deliberately contains no private module schema and makes no network read.
 #
 # The modules come first, and from THIS build. `quire validate` falls back to
 # `quoin module ensure-defaults` when `~/.ix` holds no modules, and reaches for
@@ -186,7 +188,10 @@ check-version: build
 validate: build
 	@test -n "$(QUIRE)" || { echo "validate requires QUIRE=/absolute/path/to/quire"; exit 2; }
 	node bin/quoin.js module ensure-defaults
-	$(QUIRE) validate "spec/**/*.md" "plan/**/*.md" "reviews/*.md"
+	$(QUIRE) validate "spec/assurance/*.md" \
+		--module "$(abspath tests/fixtures/modules/engineering-assurance-fixture)"
+	IX_FILAMENT_MODULES_PATH="$(abspath tests/fixtures/modules)" \
+		$(QUIRE) validate "spec/**/*.md" "plan/**/*.md" "reviews/*.md"
 
 .PHONY: test-json
 test-json:

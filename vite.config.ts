@@ -85,6 +85,7 @@ export default defineConfig(({ command }) => ({
         "commands/advise": "src/commands/advise.ts",
         "commands/completeness": "src/commands/completeness.ts",
         "commands/assurance": "src/commands/assurance.ts",
+        "commands/discharge": "src/commands/discharge.ts",
         "commands/report": "src/commands/report.ts",
         "commands/validate": "src/commands/validate.ts",
         "commands/measurement/index": "src/commands/measurement/index.ts",
@@ -96,6 +97,10 @@ export default defineConfig(({ command }) => ({
         "commands/config/doctor": "src/commands/config/doctor.ts",
         "commands/evidence/index": "src/commands/evidence/index.ts",
         "commands/evidence/record": "src/commands/evidence/record.ts",
+        "commands/evidence/record-experiment":
+          "src/commands/evidence/record-experiment.ts",
+        "commands/evidence/record-operational":
+          "src/commands/evidence/record-operational.ts",
         "commands/evidence/affirm": "src/commands/evidence/affirm.ts",
         "commands/evidence/gc": "src/commands/evidence/gc.ts",
         "commands/evidence/audit": "src/commands/evidence/audit.ts",

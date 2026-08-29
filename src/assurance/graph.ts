@@ -1,9 +1,9 @@
 /**
  * The assurance case as a graph (FR-040).
  *
- * ISO 15026-2 / GSN: a **claim** is argued by a **strategy** over sub-claims,
- * and the leaves are **evidence**. A pile of green obligations is not an
- * argument; the argument is the shape.
+ * A **claim** is argued by explicit reasoning over sub-claims, and the leaves
+ * are **evidence**. A pile of green obligations is not an argument; the
+ * argument is the authored reasoning and its visible gaps.
  *
  * **This is strictly a view.** It collects nothing, computes no coverage and
  * writes nothing to the store. Where the case cannot be built, that is a finding
@@ -14,7 +14,7 @@ import type { Obligation } from "../quire/index.js";
 import type { Finding } from "../auditor/index.js";
 import type { BundleDocument } from "../completeness/index.js";
 
-/** GSN node kinds, in the vocabulary the standard uses. */
+/** Internal node kinds for the legacy derived view; not an external format. */
 export type NodeKind = "goal" | "strategy" | "solution";
 
 /**
@@ -226,9 +226,9 @@ function nodeFor(
     id,
     kind: "goal",
     statement: title,
-    // A goal with no sub-goals and no evidence is UNDEVELOPED, which GSN has a
-    // symbol for and a reader must see. Rendering it as supported would assure
-    // a claim on the strength of nobody having written anything.
+    // A goal with no sub-goals and no evidence is open, which a reader must
+    // see. Rendering it as supported would assure a claim on the strength of
+    // nobody having written anything.
     status:
       parts.length === 0 || parts.some((p) => p.status === "open")
         ? "open"

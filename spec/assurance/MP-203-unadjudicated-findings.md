@@ -12,12 +12,12 @@ relationships: []
 
 # Unadjudicated advisory finding count
 
-## Decision Objective
+## Decision Use
 
 Make visible how many advisory firings the corpus has not ruled correct or
 incorrect.
 
-## Population and Scope
+## Population
 
 Include advisory findings governed by neither a case/standing ruling nor an
 exact retained ruling compatible with `finding.precision.advisory-v1`, per
@@ -28,7 +28,7 @@ family. Ambiguous and unresolved exact rulings stay in this population.
 Count unadjudicated findings, definition `finding.unadjudicated-v1`. It is a
 count, not a precision estimate.
 
-## Collection and Provenance
+## Collection Procedure
 
 Retain normalized finding envelopes, content digests, expectation digests,
 raw output, scorer and corpus revisions, tool configuration, timestamp, rubric
@@ -42,7 +42,7 @@ Use the complete pinned controlled corpus and fixed adjudication rules. A
 historical adjudication keeps its own source-report digest; it is never silently
 re-applied to a different normalized finding.
 
-## Interpretation and Limitations
+## Interpretation
 
 A lower count can mean adjudication or fewer firings; report both. Zero says
 the corpus ruled on its firings, not that the detector is correct. Correct and

@@ -73,6 +73,9 @@ Coverage is mapped requirement → test as `file :: "test name"`:
 | FR-042 | ✅ Covered | `tests/agent-eval.test.ts` — TC-240..TC-244. `agent-eval-real.json` is a real `cli-agent-evals` report, unedited — the TC-EV-057 run of the spec-fuzz scenarios. The multi-scenario, failing and empty cases are **constructed and labelled as such**: no failing report survived to be captured, and a fabricated one claiming to be real would be worse than saying which is which. CON-1/CON-3 → inspection of `src/evidence/adapters/agent-eval.ts` (no subprocess; an unmatched trace id is reported, never assumed). CON-2 → TC-242. |
 | FR-044 | ✅ Covered | `tests/measurement.test.ts` — TC-1003 (unplanned records refused), TC-1004 (atomic/idempotent collection), TC-1005 (definition/config refusal names both), TC-1006 (population movement beside delta; no severity), TC-1007 (missing metric is `not_computed`), TC-1008 (byte-identical report retains plans without records). Tier-1 envelope provenance/raw attachment and explicit legacy history remain TC-997/TC-998/TC-1000. |
 | FR-045 | ✅ Covered | `tests/portfolio-report.test.ts` — TC-1011 (mixed definitions, missing/unreadable stores, relative staleness), TC-1012 (plan/collection links, same-object deterministic human/JSON views, no aggregate), TC-1013 (one command accepts repeated repository paths and no values). |
+| FR-046 | ✅ Covered | `tests/discharge.test.ts` — TC-1125..TC-1130 (pinned binding contract, complete partition, unresolved separation, expiry, validation, deterministic rendering). Command discovery and production build verify the `quoin discharge` boundary. |
+| FR-047 | ✅ Covered | `tests/authored-argument.test.ts` — TC-1131..TC-1136 (claim preservation, explicit decisions, expiry/review, challenges, closed contract and authority, deterministic rendering with no score). |
+| FR-048 | ✅ Covered | `tests/assurance-records.test.ts` — TC-1137..TC-1142 (producer provenance, content identity, pre-publication validation, no overwrite, operational windows, tamper detection and FR-030 separation); `tests/assurance-record-commands.test.ts` — TC-1143 (file/stdin CLI boundary). |
 | FR-041 | ✅ Covered | `tests/sbom.test.ts` — TC-231..TC-236. Both fixtures are **real tool output, unedited**: `cyclonedx-real.json` from `@cyclonedx/cyclonedx-npm` 6.0.1 over a real `npm install`, and `spdx-real.json` from GitHub's dependency-graph SBOM for `sindresorhus/slugify`. A fixture written to match the reader only proves the reader parses itself. CON-1/CON-2/CON-3 → inspection of `src/evidence/adapters/sbom.ts` (no subprocess, no new record type, no verdict). CON-4 → TC-231. |
 | FR-040 | ✅ Covered | `tests/assurance.test.ts` — TC-221..TC-230, TC-261 (empty case carries a machine-readable `reason`), TC-262 (`--claim-type` matched case-insensitively). TC-224 and TC-225 are the ones that matter: a claim nothing argues for is `open`, and a requirement no claim reaches gets reported. Both were written before the code and both failed it. TC-225 earned itself on the first real run — 15 requirements over this repository, 7 of them added during this program and fixed, 8 pre-existing (`agent-ix/quoin#136`). CON-1/CON-3/CON-4 → inspection of `src/assurance/` (no subprocess, no write, the auditor's verdict used as given). CON-2 → TC-224 and TC-225. |
 | FR-039 | ✅ Covered | `tests/auditor.test.ts` — TC-219 (the seven policy cases plus the mislabelled-score case), TC-269 (the `metric` discriminator: a labelled score from an uncatalogued tool is judged, no catalog is read, and an unlabelled score is not a mutation score) and TC-220 (the flag, including the two refusals). TC-220 states AC-8/AC-9 over `quoin evidence audit --mutation-floor`, not over the auditor function, because the flag is where a percentage typed as `80` would otherwise become a floor nothing can reach. CON-1 → inspection of `src/auditor/` (no subprocess). CON-2 → TC-219's unset-floor case. CON-3 → TC-219's skipped-symbol and unmeasured cases. |
@@ -139,6 +142,9 @@ Criteria absent here are verified by a method that produces no test — see
 | FR-025 | FR-025-AC-1, FR-025-AC-2, FR-025-AC-3, FR-025-AC-4, FR-025-AC-5, FR-025-AC-6, FR-025-AC-7, FR-025-AC-8, FR-025-AC-9, FR-025-AC-10, FR-025-AC-11 | TC-083, TC-084, TC-085, TC-086, TC-087, TC-088, TC-089, TC-090, TC-091, TC-092, TC-093 | ✅ Covered |
 | FR-026 | FR-026-AC-1, FR-026-AC-2, FR-026-AC-3, FR-026-AC-4, FR-026-AC-5, FR-026-AC-6, FR-026-AC-7 | TC-094, TC-095, TC-096, TC-097, TC-098, TC-099, TC-100 | ✅ Covered |
 | FR-027 | FR-027-AC-1, FR-027-AC-2, FR-027-AC-3, FR-027-AC-4, FR-027-AC-5, FR-027-AC-6, FR-027-AC-7, FR-027-AC-8, FR-027-AC-9 | TC-101, TC-102, TC-103, TC-104, TC-105, TC-106, TC-107, TC-108, TC-109 | ✅ Covered |
+| FR-046 | FR-046-AC-1, FR-046-AC-2, FR-046-AC-3, FR-046-AC-4, FR-046-AC-5, FR-046-AC-6 | TC-1125, TC-1126, TC-1127, TC-1128, TC-1129, TC-1130 | ✅ Covered |
+| FR-047 | FR-047-AC-1, FR-047-AC-2, FR-047-AC-3, FR-047-AC-4, FR-047-AC-5, FR-047-AC-6 | TC-1131, TC-1132, TC-1133, TC-1134, TC-1135, TC-1136 | ✅ Covered |
+| FR-048 | FR-048-AC-1, FR-048-AC-2, FR-048-AC-3, FR-048-AC-4, FR-048-AC-5, FR-048-AC-6, FR-048-AC-7 | TC-1137, TC-1138, TC-1139, TC-1140, TC-1141, TC-1142, TC-1143 | ✅ Covered |
 
 ## Test Case Summary
 
@@ -562,6 +568,25 @@ generated tests under `tests/props/` and `Unit` for the rest.
 | TC-264 | `unknown-method` fires on an obligation with no bindings at all — it is a statement-vs-catalog comparison and is asked before the binding guard, so an unbound obligation with an uncatalogued method yields BOTH `undischarged` and `unknown-method`, a catalogued method yields only `undischarged`, and no catalog means the question is not asked (#165: 1,107 findings all undischarged, 90+ uncatalogued Verification values, zero unknown-method) | Unit | P0 | FR-032-AC-14 | ✅ |
 | TC-265 | `quoin evidence audit` against a repository with no `spec/evidence/` store reports its uncatalogued methods, not only that nothing is bound — the one check that pays off on day one of adoption no longer requires having already adopted | Unit | P0 | FR-032-AC-14 | ✅ |
 | TC-144 | `ratchet` reports only violations absent from the baseline — a gate that fails on the whole backlog gets disabled within a week — and `delta` names what a change added and resolved | Unit | P0 | FR-032-AC-8 | ✅ |
+| TC-1125 | A clause-binding payload must satisfy the pinned runtime schema before discharge accounting consumes it | Unit | P0 | FR-046-AC-1 | ✅ |
+| TC-1126 | Every binding clause is partitioned exactly once as direct evidence, approved disposition, or open, with no aggregate score | Unit | P0 | FR-046-AC-2 | ✅ |
+| TC-1127 | Unresolved applicability stays outside the binding population and a supplied fact for it is reported unused | Unit | P0 | FR-046-AC-3 | ✅ |
+| TC-1128 | An expired attestation reopens its binding clause with a visible reason | Unit | P0 | FR-046-AC-4 | ✅ |
+| TC-1129 | Duplicate discharge facts and incomplete attestations are rejected | Unit | P0 | FR-046-AC-5 | ✅ |
+| TC-1130 | Discharge rendering includes every population deterministically and never invents a score | Unit | P1 | FR-046-AC-6 | ✅ |
+| TC-1131 | The authored view preserves the claim, subject, participants, authority, and independence without a score | Unit | P0 | FR-047-AC-1 | ✅ |
+| TC-1132 | A criterion with no explicit sufficiency decision remains open rather than inheriting evidence status | Unit | P0 | FR-047-AC-2 | ✅ |
+| TC-1133 | Expired decisions and assumptions due for review reopen their branches and the top claim | Unit | P0 | FR-047-AC-3 | ✅ |
+| TC-1134 | Challenge resolution requires evidence references and accepted risk additionally requires a current expiry | Unit | P0 | FR-047-AC-4 | ✅ |
+| TC-1135 | The closed argument contract rejects unknown fields, duplicate decisions, and authority that differs from the authored participant | Unit | P0 | FR-047-AC-5 | ✅ |
+| TC-1136 | The authored Markdown view is deterministic and retains open reasons and participant authority | Unit | P1 | FR-047-AC-6 | ✅ |
+| TC-1137 | Each assurance evidence record binds the complete producer-provenance tuple | Unit | P0 | FR-048-AC-1 | ✅ |
+| TC-1138 | Canonical content determines immutable identity and identical publication is byte-stable and idempotent | Unit | P0 | FR-048-AC-2 | ✅ |
+| TC-1139 | Invalid producer provenance is rejected before any record is published | Unit | P0 | FR-048-AC-3 | ✅ |
+| TC-1140 | Different bytes at an immutable content path are reported and never overwritten | Unit | P0 | FR-048-AC-4 | ✅ |
+| TC-1141 | Operational records preserve their ordered window, environment, observations, evidence, and outcome | Unit | P0 | FR-048-AC-5 | ✅ |
+| TC-1142 | Reads detect content tampering and the new writers do not touch FR-030 run-record paths | Unit | P0 | FR-048-AC-6 | ✅ |
+| TC-1143 | The built CLI records an experiment from stdin and operational evidence from a file, returning immutable ids and publication state | Integration | P0 | FR-048-AC-7 | ✅ |
 
 ## Stakeholder Requirement Coverage
 

@@ -1,0 +1,7 @@
+manifest_version: 1.0.0
+name: quoin-assurance-fixture
+version: 0.1.0
+description: Fictional local type registry for public Quoin validation
+artifact_types:
+  - name: AssuranceProfile
+  - name: MeasurementPlan

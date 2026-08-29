@@ -29,6 +29,7 @@ set -uo pipefail
 : "${PLUGIN:?PLUGIN not set}"
 : "${MARKETPLACE:?MARKETPLACE not set}"
 PLUGIN_SOURCE="${PLUGIN_SOURCE:-github}"
+SKILL_PIN="${SKILL_PIN:-}"
 export HOME="${HOME:-/root}"
 fail=0
 
@@ -56,14 +57,16 @@ case "$PLUGIN_SOURCE" in
   *) echo "   FAIL  unknown PLUGIN_SOURCE=$PLUGIN_SOURCE"; exit 2 ;;
 esac
 
-# opencode & GitHub Copilot add NO repo-specific files — they install the
-# existing skills/ tree with the exact `gh skill install <repo>` command users
-# run, and that tree is identical on the published branch. So these stages always
-# install from the published $REPO regardless of PLUGIN_SOURCE. (`gh skill
-# --from-local` recursively re-discovers nested workflow-asset skills as
-# duplicate names; the published-repo path uses the shallow skills/*/SKILL.md
-# convention — what users actually invoke.)
+# opencode & GitHub Copilot add no repo-specific files. They use the remote
+# repository because `--from-local` recursively re-discovers nested workflow
+# assets as duplicate skill names. In local/CI mode, `--pin` binds that remote
+# read to the exact mounted checkout commit instead of silently testing the
+# default branch.
 GH_SRC="$REPO"
+GH_PIN_ARGS=()
+if [ -n "$SKILL_PIN" ]; then
+  GH_PIN_ARGS=(--pin "$SKILL_PIN")
+fi
 
 # assert every expected skill has a SKILL.md somewhere under $1
 assert_skills_in() {
@@ -98,7 +101,7 @@ if [ -n "${GH_TOKEN:-}" ] || gh auth status >/dev/null 2>&1; then
   echo
   echo "## Stage 3b — opencode        (gh skill install $GH_SRC --all --agent opencode)"
   rm -rf /tmp/smoke-opencode
-  if gh skill install "$GH_SRC" --all --agent opencode --dir /tmp/smoke-opencode >/tmp/opencode.log 2>&1; then
+  if gh skill install "$GH_SRC" --all "${GH_PIN_ARGS[@]}" --agent opencode --dir /tmp/smoke-opencode >/tmp/opencode.log 2>&1; then
     assert_skills_in /tmp/smoke-opencode opencode || fail=1
   else
     echo "   FAIL  [opencode] gh skill install failed:"; sed 's/^/         /' /tmp/opencode.log | tail -20; fail=1
@@ -108,7 +111,7 @@ if [ -n "${GH_TOKEN:-}" ] || gh auth status >/dev/null 2>&1; then
   echo
   echo "## Stage 3c — GitHub Copilot  (gh skill install $GH_SRC --all --agent github-copilot)"
   rm -rf /tmp/smoke-copilot
-  if gh skill install "$GH_SRC" --all --agent github-copilot --dir /tmp/smoke-copilot >/tmp/copilot.log 2>&1; then
+  if gh skill install "$GH_SRC" --all "${GH_PIN_ARGS[@]}" --agent github-copilot --dir /tmp/smoke-copilot >/tmp/copilot.log 2>&1; then
     assert_skills_in /tmp/smoke-copilot github-copilot || fail=1
   else
     echo "   FAIL  [github-copilot] gh skill install failed:"; sed 's/^/         /' /tmp/copilot.log | tail -20; fail=1

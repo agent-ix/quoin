@@ -14,6 +14,7 @@
 
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
+import { parse as parseYaml } from "yaml";
 
 const SKILLS_DIR = join(__dirname, "..", "skills");
 const MODULE_SCHEMA = join(
@@ -62,8 +63,10 @@ describe("skill definitions", () => {
     expect(dirs.length).toBeGreaterThanOrEqual(18);
     for (const dir of dirs) {
       const fm = frontmatter(skillText(dir));
-      expect(/^name:\s*(\S+)/m.exec(fm)?.[1]).toBe(dir);
-      expect(/^description:\s*\S/m.test(fm)).toBe(true);
+      const metadata = parseYaml(fm) as Record<string, unknown>;
+      expect(metadata.name).toBe(dir);
+      expect(typeof metadata.description).toBe("string");
+      expect(String(metadata.description).trim()).not.toBe("");
     }
   });
 

@@ -25,6 +25,11 @@ PKG_VERSION="${PKG_VERSION:-0.21.9}"
 CLAUDE_VERSION="${CLAUDE_VERSION:-2.1.220}"
 CODEX_VERSION="${CODEX_VERSION:-0.149.1}"
 PLUGIN_SOURCE="${PLUGIN_SOURCE:-github}"
+SKILL_PIN="${SKILL_PIN:-${GITHUB_SHA:-}}"
+
+if [ "$PLUGIN_SOURCE" = "local" ] && [ -z "$SKILL_PIN" ]; then
+  SKILL_PIN="$(git -C "$REPO_ROOT" rev-parse HEAD)"
+fi
 
 echo ">> build $IMAGE (CLAUDE_VERSION=$CLAUDE_VERSION CODEX_VERSION=$CODEX_VERSION)"
 docker build -t "$IMAGE" \
@@ -32,6 +37,11 @@ docker build -t "$IMAGE" \
   --build-arg CODEX_VERSION="$CODEX_VERSION" "$SMOKE_DIR"
 
 args=(--rm -e PKG_VERSION="$PKG_VERSION" -e PLUGIN_SOURCE="$PLUGIN_SOURCE")
+
+if [ -n "$SKILL_PIN" ]; then
+  args+=(-e SKILL_PIN="$SKILL_PIN")
+  echo ">> gh skill source pin: $SKILL_PIN"
+fi
 
 # gh skill install (opencode / GitHub Copilot stages) authenticates with GH_TOKEN.
 GH_TOKEN_VALUE="${GH_TOKEN:-${GITHUB_TOKEN:-$(gh auth token 2>/dev/null || true)}}"

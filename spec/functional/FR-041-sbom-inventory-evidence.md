@@ -28,7 +28,7 @@ consumer that did not exist:
 > freshness record and barely needs an adapter. If the answer is *"the assurance case argues over the
 > SBOM's contents"*, the evidence is the cross-product of the SBOM and an advisory scan.
 
-FR-040 is that consumer, and its answer is legible in what it renders. **A GSN evidence leaf is one
+FR-040 is that consumer, and its answer is legible in what it renders. **An argument evidence leaf is one
 line per obligation** — statement, supported-or-open, and the auditor's reason. It renders no
 component list, and could not usefully: an assurance case is read by a person, and a thousand-row
 inventory inside an argument is not an argument.

@@ -7,15 +7,16 @@ owner: quoin quality
 stage: gate
 metric: guidance.repair_success
 definition_version: guidance.repair-success-v1
+relationships: []
 ---
 
 # Executable guidance repair success
 
-## Decision Objective
+## Decision Use
 
 Decide whether each reviewed remedy actually removes its finding without breaking the controlled verification.
 
-## Population and Scope
+## Population
 
 Selected reviewed records whose structured next move is `remedy`.
 
@@ -23,7 +24,7 @@ Selected reviewed records whose structured next move is `remedy`.
 
 Remedies whose failure fixture reports the family, repaired control does not, and corpus verification remains green, divided by reviewed remedy records.
 
-## Collection and Provenance
+## Collection Procedure
 
 The exact failure/control identities and producer stack are retained in review evidence and measurement v2.
 
@@ -31,7 +32,7 @@ The exact failure/control identities and producer stack are retained in review e
 
 The canonical QA and Tier-1 replays use the immutable verification-stack lock.
 
-## Interpretation and Limitations
+## Interpretation
 
 The proof establishes the banked repair, not every possible user edit.
 

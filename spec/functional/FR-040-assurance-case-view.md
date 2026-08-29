@@ -18,9 +18,12 @@ relationships:
 **A pile of green evidence is not an argument.** A matrix of ✅ says every row has something attached
 to it; it does not say why the thing anyone actually cares about is true.
 
-ISO 15026-2 assurance cases, in GSN form, are the shape that does: a **claim** is argued by a
-**strategy** over sub-claims, whose leaves are **evidence**. *"StR-004 holds because these
+The internal structured argument view does: a **claim** is supported by explicit reasoning over
+sub-claims, whose leaves are **evidence**. *"StR-004 holds because these
 requirements refine it, each verified by a stated method, with evidence that is fresh."*
+
+This is a project-owned representation. It does not claim conformance with or
+export to an external assurance-argument notation.
 
 `quoin assurance` renders that from data the program already holds — the trace graph, the obligations
 `quire` mints, and the auditor's verdict on each binding. It is **strictly a view**: it runs nothing,
@@ -31,7 +34,7 @@ collects nothing, and writes nothing to the store.
 This is the whole reason to build it, and the reason it is dangerous to build carelessly.
 
 An undischarged obligation, a suspect binding, a claim nothing traces to — each stays in the tree as
-an **open node** (GSN's undeveloped goal), carrying the auditor's reason verbatim. A case that
+an **open node**, carrying the auditor's reason verbatim. A case that
 narrows to only what it can prove is indistinguishable, to a reader, from a case that is complete.
 
 An assurance case is the single most tempting artefact in the system to quietly narrow, because the

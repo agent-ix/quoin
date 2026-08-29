@@ -8,6 +8,19 @@ description: "Chronological log of structural changes to this bundle."
 
 ## History
 
+* **2026-08-29** — **CR-132**: removed the private
+  `engineering-assurance` repository from Quoin's public default installer.
+  The committed default set now contains exactly nine public modules; it has
+  no private source locator or deleted-history pin. Public validation uses a
+  fictional local fixture that registers only the two artifact type names
+  Quoin authors and deliberately vendors no private schema. Quoin's owned
+  profile and measurement plans now conform to the clean private module's
+  current frontmatter and required section contracts, while their existing
+  metric and definition identities remain explicit. Authorized users install
+  the private module separately; public commands and CI never fetch it.
+  FR-016 AC-2, FR-044, FR-047; Matrix: `index.test.ts` default-set and fixture
+  boundary tests.
+
 * **2026-08-29** — **CR-129**: the canonical CI path is now locally explicit
   and content-addressed after the Phase-3 promotion rehearsal exposed three
   independent forms of apparently pinned drift (`agent-ix/quoin#260`, epic
@@ -46,6 +59,28 @@ description: "Chronological log of structural changes to this bundle."
   gated build and passes its absolute executable explicitly. The drift
   self-test removes that selector and proves the canonical gate rejects a
   return to shared state.
+
+* **2026-08-28** — **CR-130**: added a rights-safe, project-owned assurance
+  path without embedding restricted source material or claiming an external
+  argument notation. Quoin now vendors the exact Quire ClauseSet binding/diff
+  contracts at engine `c625e2f9`, validates `clause-binding-v1`, and partitions
+  binding clauses into direct evidence, approved dispositions, and open work;
+  unresolved applicability stays separate and no score is manufactured.
+  `quoin assurance --argument` preserves the module-authored claim and requires
+  current, participant-authorized sufficiency decisions while exposing
+  assumptions, independence, challenges, accepted risks, and expiries. New
+  experiment and operational evidence records carry a closed producer tuple,
+  derive identity from canonical content, publish atomically, and refuse to
+  overwrite immutable paths. The accepted provenance boundary is explicit:
+  measurement collections and these new records carry their declared tuples;
+  FR-030 run records remain unchanged. FR-046..FR-048; Matrix: TC-1125..TC-1143.
+
+* **2026-08-29** — **CR-131**: separated the vendored Quire consumer-contract
+  pins from the canonical measurement-producer stack lock. CI now builds the
+  exact clause-capable CLI recorded by `QUIRE_CONTRACT`, while historical
+  benchmark labels remain bound to the producer revisions that created them.
+  The drift gate rejects moving or inconsistent contract pins without
+  relabelling reviewed evidence that has not been regenerated.
 
 * **2026-08-28** — **CR-128**: Tier 2 now replays the declaration bytes that
   produced the pass-2 findings instead of applying today's single process

@@ -12,12 +12,12 @@ relationships: []
 
 # Per-family detection recall
 
-## Decision Objective
+## Decision Use
 
 Expose defect families, levels, modes, or languages that the toolchain cannot
 detect so a green aggregate cannot hide a hole.
 
-## Population and Scope
+## Population
 
 Include labelled, findable seeded defects in the pinned corpus. Preserve family,
 detection level, mode, and language dimensions; exclusions remain visible.
@@ -27,7 +27,7 @@ detection level, mode, and language dimensions; exclusions remain visible.
 `true_positives / (true_positives + misses)`, definition `finding.recall-v1`,
 reported per family and never macro-averaged.
 
-## Collection and Provenance
+## Collection Procedure
 
 Retain case and control identities, labels, raw outputs, scorer, tool and engine
 versions, declaration digest, corpus revision, configuration, and timestamp.
@@ -36,7 +36,7 @@ versions, declaration digest, corpus revision, configuration, and timestamp.
 
 Run the complete controlled matrix and publish `bounds.gap_count` beside recall.
 
-## Interpretation and Limitations
+## Interpretation
 
 Perfect recall can come from firing on everything; healthy-control precision is
 required. A GAP is unmeasured, not a miss or a pass.

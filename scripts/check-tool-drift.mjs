@@ -79,12 +79,23 @@ export function auditToolDrift(files) {
   const governedCliCheckout = buildSteps.find(
     (step) => step?.with?.repository === "agent-ix/quire-cli",
   );
-  if (
-    governedCliCheckout?.with?.ref !==
-    stackLock.repositories?.["quire-cli"]?.revision
-  ) {
+  const contractSource = /sourceRevision:\s*"([0-9a-f]{40})"/.exec(
+    files["src/quire/contract.ts"],
+  )?.[1];
+  const contractCliSource = /cliSourceRevision:\s*"([0-9a-f]{40})"/.exec(
+    files["src/quire/contract.ts"],
+  )?.[1];
+  if (!contractSource) {
     errors.push(
-      "build-test governed Quire checkout must equal verification-stack quire-cli revision",
+      "vendored Quire contract source revision must be an exact commit",
+    );
+  }
+  if (!contractCliSource) {
+    errors.push("vendored Quire contract CLI revision must be an exact commit");
+  }
+  if (governedCliCheckout?.with?.ref !== contractCliSource) {
+    errors.push(
+      "build-test governed Quire checkout must equal vendored contract CLI revision",
     );
   }
   const declaredPnpm = pkg.packageManager?.replace(/^pnpm@/, "");
@@ -98,15 +109,6 @@ export function auditToolDrift(files) {
     }
   }
 
-  if (
-    !files["src/quire/contract.ts"].includes(
-      `sourceRevision: "${stackLock.repositories.quire.revision}"`,
-    )
-  ) {
-    errors.push(
-      "vendored Quire contract source revision must equal verification-stack engine revision",
-    );
-  }
   if (
     !files["scripts/verification-stack.mjs"].includes(
       '"deploy",\n        "--prod",\n        "--legacy",\n        "--frozen-lockfile"',
@@ -200,6 +202,11 @@ export function auditToolDrift(files) {
   ) {
     errors.push("canonical Tier-1 must require an explicit Quoin executable");
   }
+
+  // The vendored consumer contract and the canonical measurement producer are
+  // deliberately separate pins. A new schema may be consumed before the
+  // independently reviewed benchmark cohort is regenerated. Coupling them
+  // would either block the consumer or invite relabelling historical evidence.
   for (const path of [
     "bench/span-breadth-v1-labels.json",
     "bench/guidance-evaluator-contract-v1.json",
