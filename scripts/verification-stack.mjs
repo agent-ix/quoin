@@ -504,6 +504,7 @@ async function main() {
 
   const scratch = mkdtempSync(join(tmpdir(), "quoin-stack-"));
   let externalQuoin = null;
+  let isolatedQuoinCheckout = null;
   try {
     const binary = buildCli(roots["quire-cli"], scratch);
     const provenance = assertToolProvenance(binary, lock);
@@ -562,6 +563,37 @@ async function main() {
       timeout: lock.timeouts.quoinMilliseconds,
       stdio: "inherit",
     });
+    const testEnv = { ...env };
+    delete testEnv.QUOIN_QUIRE;
+    delete testEnv.QUOIN_EXPECTED_QUIRE_SHA256;
+    run("make", ["test", `QUIRE=${binary}`], {
+      cwd: ROOT,
+      env: testEnv,
+      timeout: lock.timeouts.quoinMilliseconds,
+      stdio: "inherit",
+    });
+    isolatedQuoinCheckout = join(scratch, "quoin-runtime-source");
+    run("git", [
+      "-C",
+      ROOT,
+      "worktree",
+      "add",
+      "--detach",
+      isolatedQuoinCheckout,
+      lock.repositories.quoin.revision,
+    ]);
+    run("corepack", ["pnpm", "install", "--frozen-lockfile"], {
+      cwd: isolatedQuoinCheckout,
+      env,
+      timeout: lock.timeouts.installMilliseconds,
+      stdio: "inherit",
+    });
+    run("corepack", ["pnpm", "run", "build"], {
+      cwd: isolatedQuoinCheckout,
+      env,
+      timeout: lock.timeouts.quoinMilliseconds,
+      stdio: "inherit",
+    });
     const quoinRuntime = join(scratch, "quoin-runtime");
     run(
       "corepack",
@@ -576,7 +608,7 @@ async function main() {
         quoinRuntime,
       ],
       {
-        cwd: ROOT,
+        cwd: isolatedQuoinCheckout,
         env,
         timeout: lock.timeouts.installMilliseconds,
         stdio: "inherit",
@@ -596,15 +628,6 @@ async function main() {
         `isolated Quoin ${isolatedVersion} does not equal built source ${sourceVersion}`,
       );
     }
-    const testEnv = { ...env };
-    delete testEnv.QUOIN_QUIRE;
-    delete testEnv.QUOIN_EXPECTED_QUIRE_SHA256;
-    run("make", ["test", `QUIRE=${binary}`], {
-      cwd: ROOT,
-      env: testEnv,
-      timeout: lock.timeouts.quoinMilliseconds,
-      stdio: "inherit",
-    });
     console.error("verification-stack: broad span-grounding gate");
     const spanResult = run(
       process.execPath,
@@ -694,6 +717,21 @@ async function main() {
         `${JSON.stringify(attestation, null, 2)}\n`,
       );
   } finally {
+    if (isolatedQuoinCheckout && existsSync(isolatedQuoinCheckout)) {
+      try {
+        run("git", [
+          "-C",
+          ROOT,
+          "worktree",
+          "remove",
+          "--force",
+          isolatedQuoinCheckout,
+        ]);
+      } catch {
+        // Scratch removal below is authoritative; stale worktree metadata can
+        // be pruned if this cleanup itself is interrupted.
+      }
+    }
     if (externalQuoin?.checkout && existsSync(externalQuoin.checkout)) {
       try {
         run("git", [
