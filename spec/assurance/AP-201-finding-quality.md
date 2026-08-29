@@ -11,9 +11,15 @@ impact_assessments:
   - id: concealed-measurement-gap
     severity: material
     scenario: an aggregate or report conceals an unmeasured family, changed population, or unusable finding, and a green summary is accepted while a defect family has zero recall or most findings lack a repair locus
+    verifiability:
+      class: probabilistic
+      stochastic_dependency: verifier
+    detect_before_harm:
+      expected: true
+      control_ref: ix://agent-ix/quoin/FR-043
 review_policy:
   mode: require
-  operations: [spec-review, code-review]
+  operations: [spec-review, code-review, gap-analysis]
 relationships: []
 ---
 
@@ -25,7 +31,7 @@ This profile governs Quoin's quality benchmark, measurement store, comparison
 rules, gates, and deterministic report views. It does not make `/gap-analysis`
 or any agent review a universal executable gate.
 
-## Applicability and Impact
+## Impact Scenarios
 
 Apply it across development, review, release, and maintenance, whenever code
 changes what is collected, scored, persisted, compared, or rendered. These

@@ -9,7 +9,7 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { stringify as stringifyYaml } from "yaml";
+import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
 import type { MarketplaceManifest } from "@agent-ix/ts-plugin-kit";
 
 import {
@@ -184,19 +184,39 @@ test("parseSourceArg maps CLI prefixes to typed sources", () => {
 // Trace: FR-016-AC-2
 test("ships the committed default module set", () => {
   const manifest = defaultModulesManifest();
-  // Ten with the opt-in engineering-assurance vocabulary (#275). The
-  // count is asserted rather than a lower bound so a module arriving in the
-  // default set costs a deliberate line here — the set is installed into every
-  // consumer's ~/.ix/filament/modules, so a silent addition is a silent change
-  // to everyone's catalog.
-  expect(manifest.entries).toHaveLength(10);
-  expect(manifest.entries.map((e) => e.name)).toContain(
+  // The count is asserted rather than a lower bound so a module arriving in
+  // the public default set costs a deliberate line here. Private opt-in
+  // modules must never become an implicit network dependency.
+  expect(manifest.entries).toHaveLength(9);
+  expect(manifest.entries.map((e) => e.name)).not.toContain(
     "engineering-assurance",
   );
   expect(manifest.entries.map((e) => e.name)).toContain(
     "spec-objects-business",
   );
   expect(manifest.entries.map((e) => e.name)).toContain("spec-objects-safety");
+});
+
+test("public assurance fixture registers types without vendoring contracts", () => {
+  const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
+  const fixture = parseYaml(
+    readFileSync(
+      join(
+        repoRoot,
+        "tests",
+        "fixtures",
+        "modules",
+        "engineering-assurance-fixture",
+        "manifest.yaml",
+      ),
+      "utf8",
+    ),
+  ) as { artifact_types: Array<{ name: string }> };
+  expect(fixture.artifact_types.map((entry) => entry.name)).toEqual([
+    "AssuranceProfile",
+    "MeasurementPlan",
+  ]);
+  expect(JSON.stringify(fixture)).not.toContain("schema_ref");
 });
 
 test("ships claude plugin skills without artifact-specific write skills", () => {

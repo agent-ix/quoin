@@ -208,6 +208,8 @@ check-version: build
 # in an unrelated session. Runs the repo-pinned @agent-ix/quire-cli
 # devDependency (not a host binary), so clean CI runners gate too.
 # Grammar warnings stay advisory (no --strict); structural failures exit 1.
+# The local assurance fixture registers only Quoin's two authored type names.
+# It deliberately contains no private module schema and makes no network read.
 #
 # The modules come first, and from THIS build. `quire validate` falls back to
 # `quoin module ensure-defaults` when `~/.ix` holds no modules, and reaches for
