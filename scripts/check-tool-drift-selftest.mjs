@@ -35,6 +35,33 @@ const mutations = [
     /non-exact Node/,
   ],
   [
+    "wrong governed CLI revision",
+    ".github/workflows/build-test.yml",
+    (s) => s.replace(
+      /ref: [0-9a-f]{40}/,
+      "ref: 0000000000000000000000000000000000000000",
+    ),
+    /must equal verification-stack quire-cli revision/,
+  ],
+  [
+    "workflow pnpm disagreement",
+    ".github/workflows/build-test.yml",
+    (s) => s.replace("version: 11.20.0", "version: 11.19.0"),
+    /pnpm version must equal/,
+  ],
+  [
+    "workflow Node disagreement",
+    ".github/workflows/build-test.yml",
+    (s) => s.replace("node-version: 22.15.0", "node-version: 22.14.0"),
+    /Node version must equal/,
+  ],
+  [
+    "workflow Rust disagreement",
+    ".github/workflows/build-test.yml",
+    (s) => s.replace("toolchain: 1.94.1", "toolchain: 1.93.1"),
+    /Rust version must equal/,
+  ],
+  [
     "moving image",
     "Dockerfile",
     (s) => s.replace(/@sha256:[0-9a-f]{64}/, ""),

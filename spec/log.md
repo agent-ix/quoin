@@ -8,6 +8,24 @@ description: "Chronological log of structural changes to this bundle."
 
 ## History
 
+* **2026-08-29** — **CR-129**: the canonical CI path is now locally explicit
+  and content-addressed after the Phase-3 promotion rehearsal exposed three
+  independent forms of apparently pinned drift (`agent-ix/quoin#260`, epic
+  `agent-ix/quire-rs#261`). The reused workflow itself had an exact commit, but
+  that workflow delegated through moving action refs and did not provide the
+  required Quire executable. Replacing it pins the runner, every action, Node,
+  pnpm, frozen install, and Rust toolchain. The public
+  `@agent-ix/quire-cli@0.30.2` package then proved that a current package label
+  is not a source identity: its bundled binary predates CLI/engine provenance
+  and fails the 720-case live contract. The package dependency advances from
+  exact 0.29.0 to exact 0.30.2 for the ordinary npm surface, while canonical CI
+  separately checks out and builds the exact governed CLI source with Cargo's
+  locked resolver; the private transitive dependency token is required by name
+  rather than failing later as an ambiguous Git error. The tool-drift auditor
+  couples the workflow's repeated CLI, Node, pnpm, and Rust values to the
+  verification-stack lock and repository declarations, so immutable-but-wrong
+  pins cannot diverge silently.
+
 * **2026-08-28** — **CR-128**: Tier 2 now replays the declaration bytes that
   produced the pass-2 findings instead of applying today's single process
   module to every historical corpus (`agent-ix/quoin#263`, discovered while

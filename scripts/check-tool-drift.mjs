@@ -13,6 +13,7 @@ const OCI = /@sha256:[0-9a-f]{64}$/;
 export function auditToolDrift(files) {
   const errors = [];
   const pkg = JSON.parse(files["package.json"]);
+  const stackLock = JSON.parse(files["quality/verification-stack-lock.json"]);
   if (!/^pnpm@\d+\.\d+\.\d+$/.test(pkg.packageManager ?? "")) {
     errors.push("packageManager must pin an exact pnpm version");
   }
@@ -62,6 +63,50 @@ export function auditToolDrift(files) {
     }
   }
 
+  const buildWorkflow = parseYaml(files[".github/workflows/build-test.yml"]);
+  const buildSteps = Object.values(buildWorkflow?.jobs ?? {}).flatMap(
+    (job) => job?.steps ?? [],
+  );
+  const governedCliCheckout = buildSteps.find(
+    (step) => step?.with?.repository === "agent-ix/quire-cli",
+  );
+  if (
+    governedCliCheckout?.with?.ref !==
+    stackLock.repositories?.["quire-cli"]?.revision
+  ) {
+    errors.push(
+      "build-test governed Quire checkout must equal verification-stack quire-cli revision",
+    );
+  }
+  const declaredPnpm = pkg.packageManager?.replace(/^pnpm@/, "");
+  for (const step of buildSteps.filter((candidate) =>
+    String(candidate?.uses ?? "").startsWith("pnpm/action-setup@"),
+  )) {
+    if (String(step?.with?.version) !== declaredPnpm) {
+      errors.push(
+        "build-test pnpm version must equal package.json packageManager",
+      );
+    }
+  }
+  for (const step of buildSteps.filter((candidate) =>
+    String(candidate?.uses ?? "").startsWith("actions/setup-node@"),
+  )) {
+    if (String(step?.with?.["node-version"]) !== stackLock.toolchains?.node) {
+      errors.push(
+        "build-test Node version must equal verification-stack toolchain",
+      );
+    }
+  }
+  for (const step of buildSteps.filter((candidate) =>
+    String(candidate?.uses ?? "").startsWith("dtolnay/rust-toolchain@"),
+  )) {
+    if (String(step?.with?.toolchain) !== stackLock.toolchains?.rust) {
+      errors.push(
+        "build-test Rust version must equal verification-stack toolchain",
+      );
+    }
+  }
+
   for (const path of ["Dockerfile", "smoke/Dockerfile"]) {
     for (const line of files[path]
       .split("\n")
@@ -106,6 +151,7 @@ export function auditToolDrift(files) {
 export function repositoryFiles(root = ROOT) {
   const paths = [
     "package.json",
+    "quality/verification-stack-lock.json",
     "pnpm-lock.yaml",
     ".node-version",
     ".npmrc",
