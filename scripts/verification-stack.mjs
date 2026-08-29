@@ -181,6 +181,50 @@ function normalizedRemote(value) {
     .replace(/^git@github\.com:/, "https://github.com/");
 }
 
+function remoteTrackingRefsContaining(root, revision) {
+  return git(
+    root,
+    "for-each-ref",
+    "--format=%(refname)",
+    "--contains",
+    revision,
+    "refs/remotes",
+  );
+}
+
+function evidenceHeadForCheckout(name, root, lockedRevision, head, options) {
+  const row = git(root, "rev-list", "--parents", "-n", "1", head)
+    .split(/\s+/)
+    .filter(Boolean);
+  const parents = row.slice(1);
+  if (parents.length <= 1) return head;
+  if (!options.allowTerminalPromotionMerge || parents.length !== 2) {
+    throw new Error(
+      `${name} evidence overlay ${head} is not a linear chain or one permitted terminal promotion merge from locked code ${lockedRevision}`,
+    );
+  }
+  const [baseParent, evidenceParent] = parents;
+  if (git(root, "merge-base", baseParent, evidenceParent) !== baseParent) {
+    throw new Error(
+      `${name} terminal promotion first parent is not an ancestor of its evidence parent`,
+    );
+  }
+  if (
+    git(root, "rev-parse", `${head}^{tree}`) !==
+    git(root, "rev-parse", `${evidenceParent}^{tree}`)
+  ) {
+    throw new Error(
+      `${name} terminal promotion tree differs from its evidence parent`,
+    );
+  }
+  if (!remoteTrackingRefsContaining(root, head)) {
+    throw new Error(
+      `${name} terminal promotion ${head} is not reachable from a remote-tracking ref`,
+    );
+  }
+  return evidenceParent;
+}
+
 export function assertRepository(name, root, locked, options = {}) {
   if (!existsSync(join(root, ".git")) && !existsSync(root)) {
     throw new Error(`${name} checkout is missing at ${root}`);
@@ -194,23 +238,35 @@ export function assertRepository(name, root, locked, options = {}) {
         `${name} HEAD ${head} does not equal locked ${locked.revision}`,
       );
     }
-    const commonAncestor = git(root, "merge-base", locked.revision, head);
+    const evidenceHead = evidenceHeadForCheckout(
+      name,
+      root,
+      locked.revision,
+      head,
+      options,
+    );
+    const commonAncestor = git(
+      root,
+      "merge-base",
+      locked.revision,
+      evidenceHead,
+    );
     if (commonAncestor !== locked.revision) {
       throw new Error(
-        `${name} evidence overlay ${head} does not descend from locked code ${locked.revision}`,
+        `${name} evidence overlay ${evidenceHead} does not descend from locked code ${locked.revision}`,
       );
     }
     const overlayCommits = git(
       root,
       "rev-list",
       "--parents",
-      `${locked.revision}..${head}`,
+      `${locked.revision}..${evidenceHead}`,
     )
       .split("\n")
       .filter(Boolean);
     if (overlayCommits.some((line) => line.trim().split(/\s+/).length !== 2)) {
       throw new Error(
-        `${name} evidence overlay ${head} is not a linear, merge-free chain from locked code ${locked.revision}`,
+        `${name} evidence overlay ${evidenceHead} contains a merge before terminal promotion from locked code ${locked.revision}`,
       );
     }
     const changed = git(root, "diff", "--name-only", locked.revision, head)
@@ -236,14 +292,7 @@ export function assertRepository(name, root, locked, options = {}) {
     );
   }
   run("git", ["-C", root, "cat-file", "-e", `${locked.revision}^{commit}`]);
-  const refs = git(
-    root,
-    "for-each-ref",
-    "--format=%(refname)",
-    "--contains",
-    locked.revision,
-    "refs/remotes",
-  );
+  const refs = remoteTrackingRefsContaining(root, locked.revision);
   if (!refs) {
     throw new Error(
       `${name} locked commit ${locked.revision} is not reachable from a remote-tracking ref`,
@@ -506,6 +555,7 @@ async function main() {
   }
   sources.quoin = assertRepository("quoin", ROOT, lock.repositories.quoin, {
     allowEvidenceOverlay: true,
+    allowTerminalPromotionMerge: true,
     allowedOverlayPaths: [
       "quality/verification-stack-lock.json",
       "quality/verification-evidence.json",

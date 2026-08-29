@@ -200,14 +200,185 @@ try {
   writeFileSync(join(root, "evidence.json"), "one\n");
   git("add", "evidence.json");
   git("commit", "-m", "evidence one");
+  const evidenceOne = git("rev-parse", "HEAD");
   writeFileSync(join(root, "evidence.json"), "two\n");
   git("add", "evidence.json");
   git("commit", "-m", "evidence two");
+  const evidenceTip = git("rev-parse", "HEAD");
   assertRepository("fixture", root, locked, {
     allowEvidenceOverlay: true,
     allowedOverlayPaths: ["evidence.json"],
   });
   passed += 1;
+
+  git("branch", "evidence-tip", evidenceTip);
+  git("checkout", "-b", "promotion-base", first);
+  git("merge", "--no-ff", "evidence-tip", "-m", "terminal promotion");
+  const promotion = git("rev-parse", "HEAD");
+  git("update-ref", "refs/remotes/origin/main", promotion);
+  try {
+    assertRepository("fixture", root, locked, {
+      allowEvidenceOverlay: true,
+      allowedOverlayPaths: ["evidence.json"],
+    });
+    throw new Error("terminal promotion was accepted without permission");
+  } catch (error) {
+    if (!/one permitted terminal promotion merge/.test(String(error.message)))
+      throw error;
+    passed += 1;
+  }
+  assertRepository("fixture", root, locked, {
+    allowEvidenceOverlay: true,
+    allowTerminalPromotionMerge: true,
+    allowedOverlayPaths: ["evidence.json"],
+  });
+  passed += 1;
+
+  const evidenceTree = git("rev-parse", `${evidenceTip}^{tree}`);
+  const lockedTree = git("rev-parse", `${first}^{tree}`);
+  writeFileSync(join(root, "tampered.txt"), "tampered\n");
+  git("add", "tampered.txt");
+  const tamperedTree = git("write-tree");
+  git("reset", "--hard", promotion);
+  const changedPromotion = git(
+    "commit-tree",
+    tamperedTree,
+    "-p",
+    first,
+    "-p",
+    evidenceTip,
+    "-m",
+    "changed promotion tree",
+  );
+  git("update-ref", "refs/remotes/origin/main", changedPromotion);
+  git("checkout", "--detach", changedPromotion);
+  try {
+    assertRepository("fixture", root, locked, {
+      allowEvidenceOverlay: true,
+      allowTerminalPromotionMerge: true,
+      allowedOverlayPaths: ["evidence.json"],
+    });
+    throw new Error("tree-changing terminal promotion was accepted");
+  } catch (error) {
+    if (!/promotion tree differs/.test(String(error.message))) throw error;
+    passed += 1;
+  }
+
+  const firstParentEvidence = git(
+    "commit-tree",
+    lockedTree,
+    "-p",
+    evidenceTip,
+    "-p",
+    first,
+    "-m",
+    "first-parent evidence substitution",
+  );
+  git("update-ref", "refs/remotes/origin/main", firstParentEvidence);
+  git("checkout", "--detach", firstParentEvidence);
+  try {
+    assertRepository("fixture", root, locked, {
+      allowEvidenceOverlay: true,
+      allowTerminalPromotionMerge: true,
+      allowedOverlayPaths: ["evidence.json"],
+    });
+    throw new Error("first-parent evidence substitution was accepted");
+  } catch (error) {
+    if (!/first parent is not an ancestor/.test(String(error.message)))
+      throw error;
+    passed += 1;
+  }
+
+  const octopusPromotion = git(
+    "commit-tree",
+    evidenceTree,
+    "-p",
+    first,
+    "-p",
+    evidenceTip,
+    "-p",
+    evidenceOne,
+    "-m",
+    "octopus promotion",
+  );
+  git("update-ref", "refs/remotes/origin/main", octopusPromotion);
+  git("checkout", "--detach", octopusPromotion);
+  try {
+    assertRepository("fixture", root, locked, {
+      allowEvidenceOverlay: true,
+      allowTerminalPromotionMerge: true,
+      allowedOverlayPaths: ["evidence.json"],
+    });
+    throw new Error("octopus terminal promotion was accepted");
+  } catch (error) {
+    if (!/one permitted terminal promotion merge/.test(String(error.message)))
+      throw error;
+    passed += 1;
+  }
+
+  const nestedEvidenceMerge = git(
+    "commit-tree",
+    evidenceTree,
+    "-p",
+    evidenceTip,
+    "-p",
+    evidenceOne,
+    "-m",
+    "nested evidence merge",
+  );
+  const nestedPromotion = git(
+    "commit-tree",
+    evidenceTree,
+    "-p",
+    first,
+    "-p",
+    nestedEvidenceMerge,
+    "-m",
+    "promotion of nested evidence",
+  );
+  git("update-ref", "refs/remotes/origin/main", nestedPromotion);
+  git("checkout", "--detach", nestedPromotion);
+  try {
+    assertRepository("fixture", root, locked, {
+      allowEvidenceOverlay: true,
+      allowTerminalPromotionMerge: true,
+      allowedOverlayPaths: ["evidence.json"],
+    });
+    throw new Error("nested evidence merge was accepted");
+  } catch (error) {
+    if (
+      !/contains a merge before terminal promotion/.test(String(error.message))
+    )
+      throw error;
+    passed += 1;
+  }
+
+  const unpublishedPromotion = git(
+    "commit-tree",
+    evidenceTree,
+    "-p",
+    first,
+    "-p",
+    evidenceTip,
+    "-m",
+    "unpublished terminal promotion",
+  );
+  git("update-ref", "refs/remotes/origin/main", promotion);
+  git("checkout", "--detach", unpublishedPromotion);
+  try {
+    assertRepository("fixture", root, locked, {
+      allowEvidenceOverlay: true,
+      allowTerminalPromotionMerge: true,
+      allowedOverlayPaths: ["evidence.json"],
+    });
+    throw new Error("unpublished terminal promotion was accepted");
+  } catch (error) {
+    if (!/not reachable from a remote-tracking ref/.test(String(error.message)))
+      throw error;
+    passed += 1;
+  }
+
+  git("checkout", "evidence-tip");
 
   writeFileSync(join(root, "dirty.txt"), "dirty\n");
   try {
@@ -245,5 +416,5 @@ try {
 }
 
 console.log(
-  `verification-stack-selftest: ${passed}/${shapeMutations.length + 11} invariants verified`,
+  `verification-stack-selftest: ${passed}/${shapeMutations.length + 18} invariants verified`,
 );

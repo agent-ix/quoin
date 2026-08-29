@@ -240,6 +240,21 @@ export function auditToolDrift(files) {
       "span-breadth Quire source must allow only governed measurement overlays",
     );
   }
+  if (
+    !files["scripts/verification-stack.mjs"].includes(
+      "allowTerminalPromotionMerge: true",
+    ) ||
+    ![
+      "terminal promotion first parent is not an ancestor",
+      "terminal promotion tree differs from its evidence parent",
+      "terminal promotion ${head} is not reachable from a remote-tracking ref",
+      "contains a merge before terminal promotion",
+    ].every((guard) => files["scripts/verification-stack.mjs"].includes(guard))
+  ) {
+    errors.push(
+      "main promotion must authenticate topology, tree identity, publication, and a merge-free evidence parent",
+    );
+  }
   for (const path of [
     "scripts/verify-span-breadth.mjs",
     "scripts/verification-stack-selftest.mjs",

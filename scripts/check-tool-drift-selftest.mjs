@@ -175,6 +175,16 @@ const mutations = [
     /span-breadth Quire source must allow only governed measurement overlays/,
   ],
   [
+    "terminal promotion support disabled",
+    "scripts/verification-stack.mjs",
+    (s) =>
+      s.replace(
+        "allowTerminalPromotionMerge: true",
+        "allowTerminalPromotionMerge: false",
+      ),
+    /main promotion must authenticate topology, tree identity, publication, and a merge-free evidence parent/,
+  ],
+  [
     "unhashed span-breadth verifier",
     "quality/verification-stack-lock.json",
     (s) =>
