@@ -23,6 +23,18 @@ export function validateMeasurementCollection(
       `new collections must use schemaVersion ${MEASUREMENT_SCHEMA_VERSION}; v1 is read-only historical evidence`,
     );
   }
+  if (value.verificationStack?.buildProfile !== "release") {
+    fail("verificationStack.buildProfile must be release for new collections");
+  }
+  const toolchains = value.verificationStack.toolchains;
+  if (
+    !isObject(toolchains) ||
+    (["node", "rust", "python"] as const).some(
+      (name) => typeof toolchains[name] !== "string" || !toolchains[name],
+    )
+  ) {
+    fail("verificationStack.toolchains must pin node, rust, and python");
+  }
 
   const byMetric = new Map(plans.map((plan) => [plan.metric, plan]));
   for (const observation of value.observations) {
@@ -103,15 +115,24 @@ function validateVerificationStack(value: unknown): void {
       fail(`verificationStack.${key} must be a full sha256 digest`);
     }
   }
-  if (value.buildProfile !== "release") {
-    fail("verificationStack.buildProfile must be release");
+  if (
+    value.buildProfile !== undefined &&
+    value.buildProfile !== "debug" &&
+    value.buildProfile !== "release"
+  ) {
+    fail("verificationStack.buildProfile must be debug, release, or absent");
   }
-  if (!isObject(value.toolchains)) {
-    fail("verificationStack.toolchains must pin node, rust, and python");
-  }
-  for (const name of ["node", "rust", "python"]) {
-    if (typeof value.toolchains[name] !== "string" || !value.toolchains[name]) {
+  if (value.toolchains !== undefined) {
+    if (!isObject(value.toolchains)) {
       fail("verificationStack.toolchains must pin node, rust, and python");
+    }
+    for (const name of ["node", "rust", "python"]) {
+      if (
+        typeof value.toolchains[name] !== "string" ||
+        !value.toolchains[name]
+      ) {
+        fail("verificationStack.toolchains must pin node, rust, and python");
+      }
     }
   }
   if (!isObject(value.sources) || Object.keys(value.sources).length === 0) {

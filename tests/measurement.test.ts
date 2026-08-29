@@ -16,6 +16,7 @@ import {
   renderMeasurementComparison,
   renderMeasurementReport,
   validateMeasurementCollection,
+  validateStoredMeasurementCollection,
   writeMeasurementCollection,
   type MeasurementCollection,
 } from "../src/measurement/index.js";
@@ -136,13 +137,30 @@ describe("generic MeasurementRecords", () => {
     );
   });
 
-  test("schema-v2 refuses a noncanonical executable build profile", () => {
-    const drifted = collection();
-    (
-      drifted.verificationStack as unknown as Record<string, unknown>
-    ).buildProfile = "debug";
-    expect(() => validateMeasurementCollection(drifted, [])).toThrow(
-      /buildProfile must be release/,
+  test.each(["debug", undefined])(
+    "schema-v2 refuses noncanonical new executable build profile %s",
+    (profile) => {
+      const drifted = collection();
+      (
+        drifted.verificationStack as unknown as Record<string, unknown>
+      ).buildProfile = profile;
+      expect(() => validateMeasurementCollection(drifted, [])).toThrow(
+        /buildProfile must be release for new collections/,
+      );
+    },
+  );
+
+  test("historical schema-v2 evidence remains readable before profile/toolchain fields", () => {
+    const historical = collection();
+    const stack = historical.verificationStack as unknown as Record<
+      string,
+      unknown
+    >;
+    delete stack.buildProfile;
+    delete stack.toolchains;
+    expect(() => validateStoredMeasurementCollection(historical)).not.toThrow();
+    expect(() => validateMeasurementCollection(historical, [])).toThrow(
+      /buildProfile must be release for new collections/,
     );
   });
 
