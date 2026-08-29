@@ -90,8 +90,8 @@ export function buildDischargeReport(
 ): DischargeReport {
   const asOf = instant("asOf", request.asOf);
   const facts = new Map<string, DischargeFact>();
-  for (const fact of request.facts) {
-    validateFact(fact);
+  const parsedFacts = request.facts.map((value) => parseFact(value));
+  for (const fact of parsedFacts) {
     if (facts.has(fact.clauseId)) {
       throw new Error(`duplicate discharge fact for clause ${fact.clauseId}`);
     }
@@ -148,7 +148,7 @@ export function buildDischargeReport(
     }
   }
 
-  for (const fact of request.facts) {
+  for (const fact of parsedFacts) {
     if (!known.has(fact.clauseId)) {
       unusedFacts.push({
         clauseId: fact.clauseId,
@@ -217,29 +217,84 @@ function reasonFor(clause: ClauseBinding): string {
     : clause.reasons.map((reason) => reason.message).join("; ");
 }
 
-function validateFact(fact: DischargeFact): void {
-  nonEmpty("clauseId", fact.clauseId);
-  const attestation = fact.attestation;
-  for (const [name, value] of [
-    ["attestedBy", attestation.attestedBy],
-    ["authority", attestation.authority],
-    ["sourceRevision", attestation.sourceRevision],
-  ] as const) {
-    nonEmpty(name, value);
+function parseFact(value: unknown): DischargeFact {
+  const fact = object("discharge fact", value);
+  const kind = oneOf(fact.kind, "kind", ["direct", "disposition"] as const);
+  const clauseId = stringValue("clauseId", fact.clauseId);
+  const attestation = parseAttestation(fact.attestation);
+  if (kind === "direct") {
+    exact(fact, "direct discharge fact", [
+      "kind",
+      "clauseId",
+      "evidenceRefs",
+      "attestation",
+    ]);
+    return {
+      kind,
+      clauseId,
+      evidenceRefs: nonEmptyList("evidenceRefs", fact.evidenceRefs),
+      attestation,
+    };
   }
-  instant("attestedAt", attestation.attestedAt);
-  instant("expiresAt", attestation.expiresAt);
-  if (!/^sha256:[0-9a-f]{64}$/.test(attestation.evidenceDigest)) {
+  exact(fact, "disposition discharge fact", [
+    "kind",
+    "clauseId",
+    "decision",
+    "rationale",
+    "approvalRef",
+    "attestation",
+  ]);
+  return {
+    kind,
+    clauseId,
+    decision: oneOf(fact.decision, "decision", [
+      "accepted_risk",
+      "temporary_exception",
+      "delegated",
+    ] as const),
+    rationale: stringValue("rationale", fact.rationale),
+    approvalRef: stringValue("approvalRef", fact.approvalRef),
+    attestation,
+  };
+}
+
+function parseAttestation(value: unknown): DischargeAttestation {
+  const attestation = object("attestation", value);
+  exact(attestation, "attestation", [
+    "attestedBy",
+    "authority",
+    "attestedAt",
+    "expiresAt",
+    "sourceRevision",
+    "evidenceDigest",
+  ]);
+  const attestedBy = stringValue("attestedBy", attestation.attestedBy);
+  const authority = stringValue("authority", attestation.authority);
+  const sourceRevision = stringValue(
+    "sourceRevision",
+    attestation.sourceRevision,
+  );
+  const attestedAt = stringValue("attestedAt", attestation.attestedAt);
+  const expiresAt = stringValue("expiresAt", attestation.expiresAt);
+  instant("attestedAt", attestedAt);
+  instant("expiresAt", expiresAt);
+  const evidenceDigest = stringValue(
+    "evidenceDigest",
+    attestation.evidenceDigest,
+  );
+  if (!/^sha256:[0-9a-f]{64}$/.test(evidenceDigest)) {
     throw new Error(
       "attestation evidenceDigest must be sha256:<64 lowercase hex>",
     );
   }
-  if (fact.kind === "direct") {
-    nonEmptyList("evidenceRefs", fact.evidenceRefs);
-  } else {
-    nonEmpty("rationale", fact.rationale);
-    nonEmpty("approvalRef", fact.approvalRef);
-  }
+  return {
+    attestedBy,
+    authority,
+    attestedAt,
+    expiresAt,
+    sourceRevision,
+    evidenceDigest,
+  };
 }
 
 function currentAttestation(
@@ -269,17 +324,54 @@ function instant(name: string, value: string): number {
   return parsed;
 }
 
-function nonEmpty(name: string, value: string): void {
-  if (value.trim().length === 0) throw new Error(`${name} must not be empty`);
+function object(name: string, value: unknown): Record<string, unknown> {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    throw new Error(`${name} must be an object`);
+  }
+  return value as Record<string, unknown>;
 }
 
-function nonEmptyList(name: string, values: string[]): void {
-  if (
-    values.length === 0 ||
-    values.some((value) => value.trim().length === 0)
-  ) {
+function exact(
+  value: Record<string, unknown>,
+  name: string,
+  fields: string[],
+): void {
+  const expected = new Set(fields);
+  for (const key of Object.keys(value)) {
+    if (!expected.has(key)) throw new Error(`${name} has unknown field ${key}`);
+  }
+  for (const field of fields) {
+    if (!(field in value)) throw new Error(`${name} is missing ${field}`);
+  }
+}
+
+function stringValue(name: string, value: unknown): string {
+  if (typeof value !== "string" || value.trim().length === 0) {
+    throw new Error(`${name} must not be empty`);
+  }
+  return value;
+}
+
+function nonEmptyList(name: string, value: unknown): string[] {
+  if (!Array.isArray(value) || value.length === 0) {
     throw new Error(`${name} must contain non-empty values`);
   }
+  const values = value.map((item) => stringValue(name, item));
+  if (new Set(values).size !== values.length) {
+    throw new Error(`${name} must contain unique values`);
+  }
+  return values;
+}
+
+function oneOf<const T extends readonly string[]>(
+  value: unknown,
+  name: string,
+  allowed: T,
+): T[number] {
+  if (typeof value !== "string" || !allowed.includes(value)) {
+    throw new Error(`${name} must be one of ${allowed.join(", ")}`);
+  }
+  return value;
 }
 
 function section(
