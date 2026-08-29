@@ -21,7 +21,7 @@ set -euo pipefail
 SMOKE_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "$SMOKE_DIR/.." && pwd)"
 IMAGE="quoin-install-smoke"
-PKG_VERSION="${PKG_VERSION:-0.21.9}"
+PKG_VERSION="${PKG_VERSION:-0.22.5}"
 CLAUDE_VERSION="${CLAUDE_VERSION:-2.1.220}"
 CODEX_VERSION="${CODEX_VERSION:-0.149.1}"
 PLUGIN_SOURCE="${PLUGIN_SOURCE:-github}"
