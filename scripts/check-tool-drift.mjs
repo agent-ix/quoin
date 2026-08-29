@@ -110,31 +110,33 @@ export function auditToolDrift(files) {
     "bench/guidance-independent-review-v1.json",
   ]) {
     const reviewed = JSON.parse(files[path]);
+    const producer = reviewed.producer ?? reviewed.populationSource?.producer;
     if (
-      reviewed.producer?.cli?.sourceRevision !==
+      producer?.cli?.sourceRevision !==
       stackLock.repositories["quire-cli"].revision
     ) {
       errors.push(`${path} CLI provenance must equal verification-stack lock`);
     }
     if (
-      reviewed.producer?.engine?.sourceRevision !==
-      stackLock.repositories.quire.revision
+      producer?.engine?.sourceRevision !== stackLock.repositories.quire.revision
     ) {
       errors.push(
         `${path} engine provenance must equal verification-stack lock`,
       );
     }
     if (
+      reviewed.repositories &&
       reviewed.repositories?.["quire-rs"]?.revision !==
-      stackLock.repositories.quire.revision
+        stackLock.repositories.quire.revision
     ) {
       errors.push(
         `${path} Quire repository must equal verification-stack lock`,
       );
     }
     if (
+      reviewed.repositories &&
       reviewed.repositories?.quoin?.revision !==
-      stackLock.repositories.quoin.revision
+        stackLock.repositories.quoin.revision
     ) {
       errors.push(
         `${path} Quoin repository must equal verification-stack lock`,
