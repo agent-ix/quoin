@@ -20,12 +20,10 @@ export {
 
 export {
   parseAssurance,
-  parseCoverage,
-  parseProperties,
-  validateAssurance,
   parseClauseBinding,
   parseCoverage,
   parseProperties,
+  validateAssurance,
   validateClauseBinding,
   validateCoverage,
   validateProperties,

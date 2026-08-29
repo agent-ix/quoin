@@ -74,6 +74,7 @@ that quietly narrows to what it can prove reads exactly like a complete one.`;
       description:
         "Normalized JSON projection of exact obligation/dimension requirements " +
         "selected by an AssuranceProfile.",
+    }),
     argument: Flags.string({
       description:
         "Render the authored AssuranceArgument with this frontmatter id. " +
