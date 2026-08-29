@@ -521,6 +521,11 @@ async function main() {
   if (submoduleRevision() !== lock.repositories["qa-corpus"].revision) {
     throw new Error("qa-corpus submodule does not equal the locked revision");
   }
+  assertRepository(
+    "qa-corpus submodule",
+    join(ROOT, "corpus"),
+    lock.repositories["qa-corpus"],
+  );
   assertArtifactDigests(lock);
   assertToolchains(lock);
   assertCliSelectsEngine(roots["quire-cli"], lock.repositories.quire.revision);

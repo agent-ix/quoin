@@ -18,6 +18,7 @@ import {
   rmSync,
   writeFileSync,
 } from "node:fs";
+import { spawnSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { check as prettierCheck } from "prettier";
@@ -26,6 +27,8 @@ import {
   adjudicationOf,
   byLanguage,
   canonicalCorpusInventory,
+  canonicalizeCheckoutPaths,
+  corpusInputDigest,
   comparability,
   compare,
   declarationProvenance,
@@ -36,8 +39,70 @@ import {
   measurementRecord,
   ratchet,
   silentZeros,
+  assertCanonicalCorpus,
+  assertPortableTier1Report,
   validateCanonicalInventory,
 } from "../scripts/bench-tier1.mjs";
+
+test("TC-1121 retained Tier-1 producer paths are checkout-independent", () => {
+  const root = join(tmpdir(), "machine-specific-checkout");
+  const source = {
+    path: join(root, "corpus", "cases", "one", "input", "spec", "FR-001.md"),
+    message: `read ${join(root, "bench", "fixtures", "span", "FR-001.md")}`,
+    outside: "/another/repository/spec.md",
+  };
+  const canonical = canonicalizeCheckoutPaths(source, root);
+  expect(canonical).toEqual({
+    path: "corpus/cases/one/input/spec/FR-001.md",
+    message: "read bench/fixtures/span/FR-001.md",
+    outside: "/another/repository/spec.md",
+  });
+  expect(assertPortableTier1Report(canonical, root)).toBe(true);
+  expect(() => assertPortableTier1Report(source, root)).toThrow(
+    /leaks machine-local checkout paths/,
+  );
+  expect(source.path).toContain("machine-specific-checkout");
+});
+
+test("TC-1120 canonical corpus identity excludes ignored tool state and rejects dirty inputs", () => {
+  const root = mkdtempSync(join(tmpdir(), "quoin-corpus-identity-"));
+  const git = (...args: string[]) => {
+    const done = spawnSync("git", ["-C", root, ...args], {
+      encoding: "utf8",
+    });
+    if (done.status !== 0) throw new Error(done.stderr);
+    return done.stdout.trim();
+  };
+  try {
+    git("init");
+    git("config", "user.email", "corpus-identity@example.invalid");
+    git("config", "user.name", "corpus identity selftest");
+    writeFileSync(join(root, ".gitignore"), ".venv/\n__pycache__/\n");
+    writeFileSync(join(root, "case.yaml"), "name: one\n");
+    git("add", ".gitignore", "case.yaml");
+    git("commit", "-m", "fixture");
+
+    const clean = corpusInputDigest(root);
+    mkdirSync(join(root, ".venv"));
+    writeFileSync(join(root, ".venv", "tool-state"), "local only\n");
+    expect(corpusInputDigest(root)).toBe(clean);
+    expect(assertCanonicalCorpus(root)).toMatch(/^[0-9a-f]{40}$/);
+
+    writeFileSync(join(root, "case.yaml"), "name: changed\n");
+    expect(() => assertCanonicalCorpus(root)).toThrow(
+      /corpus checkout is dirty/,
+    );
+    expect(corpusInputDigest(root)).not.toBe(clean);
+
+    git("restore", "case.yaml");
+    writeFileSync(join(root, "extra.yaml"), "name: untracked\n");
+    expect(() => assertCanonicalCorpus(root)).toThrow(
+      /corpus checkout is dirty/,
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
 
 test("TC-1078 standing rulings for one family are unioned", () => {
   const adjudication = adjudicationOf(

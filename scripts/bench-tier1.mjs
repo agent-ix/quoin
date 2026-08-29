@@ -324,18 +324,113 @@ function corpusRevision(root = join(ROOT, "corpus")) {
   return probe.ok ? probe.stdout.trim() : null;
 }
 
-/** Content identity of scored inputs, excluding ratchets stored beside them. */
-function corpusInputDigest(root = join(ROOT, "corpus")) {
+/** Reject a canonical run whose selected corpus is not its exact Git tree. */
+export function assertCanonicalCorpus(root = join(ROOT, "corpus")) {
+  const revision = corpusRevision(root);
+  if (!/^[0-9a-f]{40}$/.test(revision ?? "")) {
+    throw new Error("bench-tier1: canonical corpus is not a Git checkout");
+  }
+  const status = execution.execute("git", [
+    "-C",
+    root,
+    "status",
+    "--porcelain=v1",
+    "--untracked-files=all",
+  ]);
+  if (!status.ok) {
+    throw new Error(
+      `bench-tier1: cannot inspect canonical corpus state: ${status.stderr.trim()}`,
+    );
+  }
+  if (status.stdout.trim()) {
+    throw new Error(
+      `bench-tier1: canonical corpus checkout is dirty:\n${status.stdout.trim()}`,
+    );
+  }
+  return revision;
+}
+
+/**
+ * Content identity of versioned scored inputs, excluding governed ratchets.
+ *
+ * Walking the worktree admitted ignored local state such as `.venv/` into a
+ * supposedly immutable identity. Git's tracked-file set is the reviewed input
+ * boundary; canonical runs separately require that boundary to be clean.
+ */
+export function corpusInputDigest(root = join(ROOT, "corpus")) {
+  const tracked = execution.execute("git", ["-C", root, "ls-files", "-z"]);
+  if (!tracked.ok) {
+    throw new Error(
+      `bench-tier1: cannot enumerate canonical corpus inputs: ${tracked.stderr.trim()}`,
+    );
+  }
   const hash = createHash("sha256");
-  for (const rel of walkFiles(root).filter(
-    (path) => path !== "baselines/README.md" && !path.startsWith("baselines/"),
-  )) {
+  for (const rel of tracked.stdout
+    .split("\0")
+    .filter(Boolean)
+    .sort()
+    .filter((path) => !path.startsWith("baselines/"))) {
     hash.update(rel);
     hash.update("\0");
     hash.update(readFileSync(join(root, rel)));
     hash.update("\n");
   }
   return `sha256:${hash.digest("hex")}`;
+}
+
+/** Snapshot the clean canonical identity at both sides of a long run. */
+export function canonicalCorpusIdentity(root = join(ROOT, "corpus")) {
+  return {
+    revision: assertCanonicalCorpus(root),
+    inputDigest: corpusInputDigest(root),
+  };
+}
+
+/**
+ * Replace the machine-local checkout root before producer output enters
+ * scoring or retained evidence. Paths remain explicit and repository-relative.
+ */
+export function canonicalizeCheckoutPaths(value, root = ROOT) {
+  const absoluteRoot = resolve(root);
+  const localPrefix = `${absoluteRoot}${sep}`;
+  const visit = (item) => {
+    if (typeof item === "string") {
+      if (item === absoluteRoot) return ".";
+      return item.split(localPrefix).join("");
+    }
+    if (Array.isArray(item)) return item.map(visit);
+    if (item && typeof item === "object") {
+      return Object.fromEntries(
+        Object.entries(item).map(([key, nested]) => [key, visit(nested)]),
+      );
+    }
+    return item;
+  };
+  return visit(value);
+}
+
+/** Fail a canonical run if any retained field still names this checkout. */
+export function assertPortableTier1Report(value, root = ROOT) {
+  const localPrefix = `${resolve(root)}${sep}`;
+  const leaked = [];
+  const visit = (item, path) => {
+    if (typeof item === "string" && item.includes(localPrefix)) {
+      leaked.push(path);
+    } else if (Array.isArray(item)) {
+      item.forEach((nested, index) => visit(nested, `${path}[${index}]`));
+    } else if (item && typeof item === "object") {
+      Object.entries(item).forEach(([key, nested]) =>
+        visit(nested, path ? `${path}.${key}` : key),
+      );
+    }
+  };
+  visit(value, "");
+  if (leaked.length > 0) {
+    throw new Error(
+      `bench-tier1: retained report leaks machine-local checkout paths at ${leaked.slice(0, 5).join(", ")}`,
+    );
+  }
+  return true;
 }
 
 async function main() {
@@ -383,11 +478,12 @@ async function main() {
         "bench-tier1: canonical runs require --attestation <path>; use --experimental for an explicitly noncanonical run that cannot compare or update baselines",
       );
     }
+    const corpus = assertCanonicalCorpus();
     verificationStack = validateVerificationAttestation(
       JSON.parse(readFileSync(resolve(attestationPath), "utf8")),
       resolve(quire),
       execution.engineProvenance(),
-      corpusRevision(),
+      corpus,
     );
   } else {
     console.error(
@@ -405,6 +501,7 @@ async function main() {
     : null;
   // An absent declaration override selects the corpus's vendored modules.
   const modules = argOf("--modules") ?? process.env.MODULES ?? null;
+  const initialCorpusIdentity = experimental ? null : canonicalCorpusIdentity();
 
   const mapping = JSON.parse(readFileSync(MAPPING, "utf8"));
   const dictionary = loadMetrics(METRICS);
@@ -484,7 +581,15 @@ async function main() {
       `bench-tier1: case ${index + 1}/${labels.corpora.length} ${corpus.name}`,
     );
     const { findings, metrics, diagnostics, untrackedSymbols } =
-      execution.findingsFor(quire, corpus.input, corpus.module, mapping, quoin);
+      canonicalizeCheckoutPaths(
+        execution.findingsFor(
+          quire,
+          corpus.input,
+          corpus.module,
+          mapping,
+          quoin,
+        ),
+      );
     payloads.push({
       name: corpus.name,
       metrics,
@@ -493,7 +598,9 @@ async function main() {
     });
     propertyPayloads.push({
       case: corpus.name,
-      payload: execution.properties(quire, corpus.input, corpus.module),
+      payload: canonicalizeCheckoutPaths(
+        execution.properties(quire, corpus.input, corpus.module),
+      ),
     });
     found.push(
       ...findings.map((f) =>
@@ -519,10 +626,12 @@ async function main() {
   const groundingV2Labels = JSON.parse(
     readFileSync(GROUNDING_V2_LABELS, "utf8"),
   );
-  const groundingPayload = execution.properties(
-    quire,
-    GROUNDING_FIXTURE,
-    join(loaded.modulesRoot, "ecosystem"),
+  const groundingPayload = canonicalizeCheckoutPaths(
+    execution.properties(
+      quire,
+      GROUNDING_FIXTURE,
+      join(loaded.modulesRoot, "ecosystem"),
+    ),
   );
 
   // A metric-sourced finding counts only at the value its label expects.
@@ -577,14 +686,29 @@ async function main() {
   );
   const silentZeroes = silentZeros(payloads);
   const bounds = loaded.bounds;
+  const finalCorpusIdentity = experimental
+    ? {
+        revision: corpusRevision(),
+        inputDigest: corpusInputDigest(),
+      }
+    : canonicalCorpusIdentity();
+  if (
+    initialCorpusIdentity &&
+    (finalCorpusIdentity.revision !== initialCorpusIdentity.revision ||
+      finalCorpusIdentity.inputDigest !== initialCorpusIdentity.inputDigest)
+  ) {
+    throw new Error(
+      "bench-tier1: canonical corpus changed while the benchmark was running",
+    );
+  }
   report = {
     // No timestamp: identical inputs produce byte-identical reports.
     provenance: {
       engine,
       tool: execution.engineProvenance(),
       verification_stack: verificationStack,
-      corpus: corpusRevision(),
-      corpus_input: corpusInputDigest(),
+      corpus: finalCorpusIdentity.revision,
+      corpus_input: finalCorpusIdentity.inputDigest,
       declaration: declarationProvenance(
         loaded.modulesRoot,
         labels.corpora.map((c) =>
@@ -661,6 +785,7 @@ async function main() {
     findings: scoredFindings.length,
     finding_records: scoredFindings,
   };
+  if (!experimental) assertPortableTier1Report(report);
 
   const previous =
     !experimental && existsSync(BASELINE)
