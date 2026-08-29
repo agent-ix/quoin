@@ -86,6 +86,7 @@ describe("generic MeasurementRecords", () => {
         schemaVersion: "verification-stack-attestation-v1",
         lockDigest: `sha256:${"1".repeat(64)}`,
         executableDigest: `sha256:${"2".repeat(64)}`,
+        toolchains: { node: "22.15.0", rust: "1.94.1", python: "3.10.12" },
         sources: {
           fixture: {
             revision: "a".repeat(40),
@@ -121,6 +122,16 @@ describe("generic MeasurementRecords", () => {
   test("TC-1003 refuses an observation with no authored MeasurementPlan", () => {
     expect(() => validateMeasurementCollection(collection(), [])).toThrow(
       /has no MeasurementPlan.*record refused/,
+    );
+  });
+
+  test("schema-v2 refuses an attestation with no toolchain identities", () => {
+    const drifted = collection();
+    (
+      drifted.verificationStack as unknown as Record<string, unknown>
+    ).toolchains = undefined;
+    expect(() => validateMeasurementCollection(drifted, [])).toThrow(
+      /toolchains must pin node, rust, and python/,
     );
   });
 

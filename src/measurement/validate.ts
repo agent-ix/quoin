@@ -103,6 +103,14 @@ function validateVerificationStack(value: unknown): void {
       fail(`verificationStack.${key} must be a full sha256 digest`);
     }
   }
+  if (!isObject(value.toolchains)) {
+    fail("verificationStack.toolchains must pin node, rust, and python");
+  }
+  for (const name of ["node", "rust", "python"]) {
+    if (typeof value.toolchains[name] !== "string" || !value.toolchains[name]) {
+      fail("verificationStack.toolchains must pin node, rust, and python");
+    }
+  }
   if (!isObject(value.sources) || Object.keys(value.sources).length === 0) {
     fail("verificationStack.sources must be a non-empty object");
   }

@@ -117,6 +117,13 @@ export function auditToolDrift(files) {
     );
   }
   if (
+    !files["scripts/verification-stack.mjs"].includes(
+      "toolchains: structuredClone(lock.toolchains)",
+    )
+  ) {
+    errors.push("canonical attestation must carry locked toolchain identities");
+  }
+  if (
     !files["scripts/bench-tier1.mjs"].includes(
       "canonical runs require --quoin <isolated executable>",
     )

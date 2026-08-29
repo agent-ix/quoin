@@ -512,6 +512,7 @@ async function main() {
       schemaVersion: "verification-stack-attestation-v1",
       lockDigest: lockDigest(lockPath),
       executableDigest: sha256(readFileSync(binary)),
+      toolchains: structuredClone(lock.toolchains),
       sources,
       capabilities: [...provenance.capabilities].sort(),
       artifacts: structuredClone(lock.artifacts),
