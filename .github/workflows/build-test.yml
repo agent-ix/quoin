@@ -12,6 +12,9 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          submodules: recursive
+          persist-credentials: false
       - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
         with:
           version: 11.20.0
@@ -32,9 +35,12 @@ jobs:
         env:
           REGISTRY_TOKEN: ${{ secrets.REGISTRY_TOKEN }}
         run: test -n "$REGISTRY_TOKEN" || { echo "::error::REGISTRY_TOKEN must read private ix-trace-rs"; exit 1; }
-      - name: Authenticate private Cargo sources
-        run: git config --global url."https://x-access-token:${{ secrets.REGISTRY_TOKEN }}@github.com/".insteadOf "https://github.com/"
       - name: Build exact governed Quire source
+        env:
+          REGISTRY_TOKEN: ${{ secrets.REGISTRY_TOKEN }}
+          GIT_CONFIG_COUNT: 1
+          GIT_CONFIG_KEY_0: url.https://x-access-token:${{ secrets.REGISTRY_TOKEN }}@github.com/.insteadOf
+          GIT_CONFIG_VALUE_0: https://github.com/
         run: cargo build --locked --release --manifest-path .ci/quire-cli/Cargo.toml
       - name: Report governed Quire identity
         run: .ci/quire-cli/target/release/quire --version
