@@ -283,6 +283,11 @@ describe("the measurement series", () => {
         lockDigest: `sha256:${"1".repeat(64)}`,
         executableDigest: `sha256:${"2".repeat(64)}`,
         sources: {
+          quoin: {
+            revision: "b".repeat(40),
+            sourceState: "clean",
+            remote: "https://example.invalid/quoin",
+          },
           quire: {
             revision: "a".repeat(40),
             sourceState: "clean",
@@ -308,6 +313,7 @@ describe("the measurement series", () => {
     expect(record.toolVersion).toBe("quire 0.30.2 (engine e5a6ccc)");
     expect(record.configDigest).toBe("sha256:819807f757c7");
     expect(record.corpusRevision).toBe(report.provenance.corpus);
+    expect(record.sourceRevision).toBe("b".repeat(40));
     // The POPULATION, because a delta across a moved population is not a delta:
     // quire-rs#272 adds ~3,514 rows to the denominator, and a record that does
     // not carry its population lets that read as a regression.
