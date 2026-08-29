@@ -151,6 +151,25 @@ export function auditToolDrift(files) {
       "build-test governed Quire checkout must equal verification-stack quire-cli revision",
     );
   }
+  const contractSource = /sourceRevision:\s*"([0-9a-f]{40})"/.exec(
+    files["src/quire/contract.ts"],
+  )?.[1];
+  const contractCliSource = /cliSourceRevision:\s*"([0-9a-f]{40})"/.exec(
+    files["src/quire/contract.ts"],
+  )?.[1];
+  if (!contractSource) {
+    errors.push(
+      "vendored Quire contract source revision must be an exact commit",
+    );
+  }
+  if (!contractCliSource) {
+    errors.push("vendored Quire contract CLI revision must be an exact commit");
+  }
+  if (governedCliCheckout?.with?.ref !== contractCliSource) {
+    errors.push(
+      "build-test governed Quire checkout must equal vendored contract CLI revision",
+    );
+  }
   const declaredPnpm = pkg.packageManager?.replace(/^pnpm@/, "");
   for (const step of buildSteps.filter((candidate) =>
     String(candidate?.uses ?? "").startsWith("pnpm/action-setup@"),
@@ -294,6 +313,11 @@ export function auditToolDrift(files) {
   ) {
     errors.push("canonical Tier-1 must require an explicit Quoin executable");
   }
+
+  // The vendored consumer contract and the canonical measurement producer are
+  // deliberately separate pins. A new schema may be consumed before the
+  // independently reviewed benchmark cohort is regenerated. Coupling them
+  // would either block the consumer or invite relabelling historical evidence.
   for (const path of [
     "bench/span-breadth-v1-labels.json",
     "bench/guidance-evaluator-contract-v1.json",
