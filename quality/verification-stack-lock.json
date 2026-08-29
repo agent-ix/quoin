@@ -3,15 +3,15 @@
   "repositories": {
     "quoin": {
       "remote": "https://github.com/agent-ix/quoin",
-      "revision": "c802f2e12b2fc9cbc7af049debf267eaa8ca4856"
+      "revision": "a537bace75011f2eb7845b68c2ae06c06edb510a"
     },
     "quire": {
       "remote": "https://github.com/agent-ix/quire-rs",
-      "revision": "be56a91c8de7923ce9fba7dd690ea1199e28bce0"
+      "revision": "da0cf8a029aa99ad79a2f52c8e3e42b9fae9c887"
     },
     "quire-cli": {
       "remote": "https://github.com/agent-ix/quire-cli",
-      "revision": "7334077baf3526edf2c8857a2720fc95b1b68f8d"
+      "revision": "d309fbefd7d92ac8b8c9173a98d0b47a578d6a35"
     },
     "qa-corpus": {
       "remote": "https://github.com/agent-ix/qa-corpus",
@@ -63,8 +63,11 @@
   "artifacts": {
     ".node-version": "sha256:e1677620f62097e30fac6695180333d8eb9ead4fe5b1d1d6e01b76e049780059",
     ".npmrc": "sha256:cde76ca04e048c3eba070a2c0dfcf5b723cf6014eab177157096b924f24ec4ca",
-    "package.json": "sha256:f646237dfdfef87bdb70c2e5bdc1b8d78d3a93a45bc01868ba4e72a79e682979",
-    "pnpm-lock.yaml": "sha256:9f64ad2d3873918bb1520c6412046f15f82b1defab706ca4df351134c3d429fd",
+    "package.json": "sha256:d664e658d594d71614fae6b435c0c1b6e4306bdb616a658550afbc1ad66001f3",
+    "pnpm-lock.yaml": "sha256:7b8e18508dc953412732112931b9010d0d27f76cff111cb77df1ee7c96ed4b42",
+    ".github/workflows/build-test.yml": "sha256:7a6d27b95c58416f35422e47fd56a8763bae6641e77f56b7bd5c29836496c7d6",
+    "scripts/check-tool-drift.mjs": "sha256:df486fc90c456de9245f6e8a39a5b94d1abc4666b061694a6d8cbc3d57b01c91",
+    "scripts/check-tool-drift-selftest.mjs": "sha256:fd1105f911e89c78be10f83b1799424e2c5db4d343d69b39e000ff7ef82421fb",
     "src/quire/contract.ts": "sha256:628f4bffd4203f6193458ff29981af623ee4ab85598ad2a675ad4afc839fc453",
     "src/quire/schemas/coverage-v1.schema.json": "sha256:f0cdbb9457ca7ca76b642c11fd5b6f41273909c894458c31f58c9c50fdbcdb38",
     "src/quire/schemas/properties-v1.schema.json": "sha256:cc687773c35b3e71e82fc336e887ecc688a28b03e970e349b2921b8624e4d11c",
