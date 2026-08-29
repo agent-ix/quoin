@@ -224,6 +224,16 @@ try {
   git("commit", "-m", "two");
   const second = git("rev-parse", "HEAD");
   try {
+    assertRepository("fixture", root, locked, {
+      allowEvidenceOverlay: true,
+      allowedOverlayPaths: ["evidence.json"],
+    });
+    throw new Error("code-changing evidence overlay was accepted");
+  } catch (error) {
+    if (!/changes code/.test(String(error.message))) throw error;
+    passed += 1;
+  }
+  try {
     assertRepository("fixture", root, { ...locked, revision: second });
     throw new Error("remote-unreachable commit was accepted");
   } catch (error) {
@@ -235,5 +245,5 @@ try {
 }
 
 console.log(
-  `verification-stack-selftest: ${passed}/${shapeMutations.length + 10} invariants verified`,
+  `verification-stack-selftest: ${passed}/${shapeMutations.length + 11} invariants verified`,
 );

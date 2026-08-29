@@ -597,6 +597,11 @@ async function main() {
       env,
       stdio: "inherit",
     });
+    run("corepack", ["pnpm", "run", "test:verification-stack"], {
+      cwd: ROOT,
+      env,
+      stdio: "inherit",
+    });
     run("corepack", ["pnpm", "run", "lint"], {
       cwd: ROOT,
       env,

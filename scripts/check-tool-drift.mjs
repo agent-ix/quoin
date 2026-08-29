@@ -168,6 +168,30 @@ export function auditToolDrift(files) {
     }
   }
   if (
+    !files["scripts/verify-span-breadth.mjs"].includes(
+      'allowedOverlayPaths: ["spec/evidence/measurements"]',
+    )
+  ) {
+    errors.push(
+      "span-breadth Quire source must allow only governed measurement overlays",
+    );
+  }
+  for (const path of [
+    "scripts/verify-span-breadth.mjs",
+    "scripts/verification-stack-selftest.mjs",
+  ]) {
+    if (!stackLock.artifacts?.[path]) {
+      errors.push(`${path} must be artifact-digest guarded`);
+    }
+  }
+  if (
+    !files["scripts/verification-stack.mjs"].includes(
+      '["pnpm", "run", "test:verification-stack"]',
+    )
+  ) {
+    errors.push("canonical campaign must run verification-stack selftests");
+  }
+  if (
     !files["scripts/bench-tier1.mjs"].includes(
       "canonical runs require --quoin <isolated executable>",
     )
@@ -289,6 +313,8 @@ export function repositoryFiles(root = ROOT) {
     "src/quire/contract.ts",
     "scripts/verification-stack.mjs",
     "scripts/bench-tier1.mjs",
+    "scripts/verify-span-breadth.mjs",
+    "scripts/verification-stack-selftest.mjs",
     "bench/span-breadth-v1-labels.json",
     "bench/guidance-evaluator-contract-v1.json",
     "bench/guidance-independent-review-v1.json",

@@ -5,6 +5,8 @@ import { readFileSync } from "node:fs";
 import { dirname, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { assertRepository } from "./verification-stack.mjs";
+
 const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 const labelPath = resolve(ROOT, "bench", "span-breadth-v1-labels.json");
 
@@ -146,17 +148,17 @@ async function main() {
             process.env[`${name.toUpperCase().replaceAll("-", "_")}_ROOT`] ??
               resolve(ROOT, "..", name),
           );
-    const status = run(
-      "git",
-      ["status", "--porcelain=v1", "--untracked-files=all"],
-      root,
-    );
-    if (status)
-      throw new Error(`verify-span-breadth: ${name} checkout is dirty`);
-    const head = run("git", ["rev-parse", "HEAD"], root);
-    if (name !== "quoin" && head !== source.revision) {
-      throw new Error(
-        `verify-span-breadth: ${name} revision ${head} != ${source.revision}`,
+    if (name !== "quoin") {
+      assertRepository(
+        name,
+        root,
+        source,
+        name === "quire-rs"
+          ? {
+              allowEvidenceOverlay: true,
+              allowedOverlayPaths: ["spec/evidence/measurements"],
+            }
+          : {},
       );
     }
     const raw = run(

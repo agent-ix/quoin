@@ -117,6 +117,46 @@ const mutations = [
     /qa-corpus verification source must allow only governed measurement overlays/,
   ],
   [
+    "unguarded span-breadth evidence overlay",
+    "scripts/verify-span-breadth.mjs",
+    (s) =>
+      s.replace(
+        'allowedOverlayPaths: ["spec/evidence/measurements"]',
+        'allowedOverlayPaths: [""]',
+      ),
+    /span-breadth Quire source must allow only governed measurement overlays/,
+  ],
+  [
+    "unhashed span-breadth verifier",
+    "quality/verification-stack-lock.json",
+    (s) =>
+      s.replace(
+        '"scripts/verify-span-breadth.mjs"',
+        '"unguarded-span-verifier"',
+      ),
+    /scripts\/verify-span-breadth\.mjs must be artifact-digest guarded/,
+  ],
+  [
+    "unhashed verification-stack selftest",
+    "quality/verification-stack-lock.json",
+    (s) =>
+      s.replace(
+        '"scripts/verification-stack-selftest.mjs"',
+        '"unguarded-stack-selftest"',
+      ),
+    /scripts\/verification-stack-selftest\.mjs must be artifact-digest guarded/,
+  ],
+  [
+    "skipped verification-stack selftest",
+    "scripts/verification-stack.mjs",
+    (s) =>
+      s.replace(
+        '["pnpm", "run", "test:verification-stack"]',
+        '["pnpm", "run", "skipped:verification-stack"]',
+      ),
+    /canonical campaign must run verification-stack selftests/,
+  ],
+  [
     "debug canonical build",
     "scripts/verification-stack.mjs",
     (s) => s.replace('      "--release",\n', ""),
