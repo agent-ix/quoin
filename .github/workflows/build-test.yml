@@ -42,14 +42,21 @@ jobs:
         run: cargo build --locked --release --manifest-path .ci/quire-cli/Cargo.toml
       - name: Report governed Quire identity
         run: .ci/quire-cli/target/release/quire --version
+      - name: Install frozen dependency graph
+        run: pnpm install --frozen-lockfile
+      # Default modules include the private engineering-assurance repo, so the
+      # one networked install must happen while the rewrite is active. The
+      # in-gate reconcile is then offline by contract (NFR-001, IT-001-SC-03).
+      - name: Install pinned default modules
+        run: |
+          make build
+          node bin/quoin.js module ensure-defaults
       # battletest's declaration-route guard demands exact https://github.com/
       # routes; leaving the credential rewrite active fails it by design.
       - name: Drop the credential rewrite before governed tests
         env:
           REGISTRY_TOKEN: ${{ secrets.REGISTRY_TOKEN }}
         run: git config --global --remove-section url."https://x-access-token:${REGISTRY_TOKEN}@github.com/"
-      - name: Install frozen dependency graph
-        run: pnpm install --frozen-lockfile
       # Make's validation and contract gates intentionally refuse a PATH-only
       # Quire. Build the exact source revision above: the published npm 0.30.2
       # wrapper predates source provenance and fails the current contract even
