@@ -31,6 +31,8 @@ import { fileURLToPath } from "node:url";
 export const QUIRE_CONTRACT = {
   /** Exact quire-rs commit whose schemas were copied. */
   sourceRevision: "c625e2f99a113fb284e63a0ec04a68bbf6f00ca9",
+  /** Exact quire-cli commit exercised by CI for this consumer contract. */
+  cliSourceRevision: "f3baa7b33b06a6afd1ee9a102b56ea3f04aefdf9",
   /** The contract version, as carried in each schema's `$id` and filename. */
   contractVersion: "v1",
   /**

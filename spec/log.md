@@ -60,6 +60,13 @@ description: "Chronological log of structural changes to this bundle."
   measurement collections and these new records carry their declared tuples;
   FR-030 run records remain unchanged. FR-046..FR-048; Matrix: TC-1125..TC-1143.
 
+* **2026-08-29** — **CR-131**: separated the vendored Quire consumer-contract
+  pins from the canonical measurement-producer stack lock. CI now builds the
+  exact clause-capable CLI recorded by `QUIRE_CONTRACT`, while historical
+  benchmark labels remain bound to the producer revisions that created them.
+  The drift gate rejects moving or inconsistent contract pins without
+  relabelling reviewed evidence that has not been regenerated.
+
 * **2026-08-28** — **CR-128**: Tier 2 now replays the declaration bytes that
   produced the pass-2 findings instead of applying today's single process
   module to every historical corpus (`agent-ix/quoin#263`, discovered while

@@ -48,7 +48,7 @@ const mutations = [
         /ref: [0-9a-f]{40}/,
         "ref: 0000000000000000000000000000000000000000",
       ),
-    /must equal verification-stack quire-cli revision/,
+    /must equal vendored contract CLI revision/,
   ],
   [
     "workflow pnpm disagreement",
@@ -74,9 +74,19 @@ const mutations = [
     (s) =>
       s.replace(
         /sourceRevision: "[0-9a-f]{40}"/,
-        'sourceRevision: "0000000000000000000000000000000000000000"',
+        'sourceRevision: "not-a-revision"',
       ),
-    /vendored Quire contract source revision must equal/,
+    /vendored Quire contract source revision must be an exact commit/,
+  ],
+  [
+    "vendored contract CLI provenance disagreement",
+    "src/quire/contract.ts",
+    (s) =>
+      s.replace(
+        /cliSourceRevision: "[0-9a-f]{40}"/,
+        'cliSourceRevision: "not-a-revision"',
+      ),
+    /vendored Quire contract CLI revision must be an exact commit/,
   ],
   [
     "reviewed evidence provenance disagreement",
