@@ -562,6 +562,40 @@ async function main() {
       timeout: lock.timeouts.quoinMilliseconds,
       stdio: "inherit",
     });
+    const quoinRuntime = join(scratch, "quoin-runtime");
+    run(
+      "corepack",
+      [
+        "pnpm",
+        "--filter",
+        "@agent-ix/quoin",
+        "deploy",
+        "--prod",
+        "--legacy",
+        "--frozen-lockfile",
+        quoinRuntime,
+      ],
+      {
+        cwd: ROOT,
+        env,
+        timeout: lock.timeouts.installMilliseconds,
+        stdio: "inherit",
+      },
+    );
+    const isolatedQuoin = join(quoinRuntime, "bin", "quoin.js");
+    const sourceVersion = run(process.execPath, [
+      join(ROOT, "bin", "quoin.js"),
+      "--version",
+    ]).trim();
+    const isolatedVersion = run(process.execPath, [
+      isolatedQuoin,
+      "--version",
+    ]).trim();
+    if (isolatedVersion !== sourceVersion) {
+      throw new Error(
+        `isolated Quoin ${isolatedVersion} does not equal built source ${sourceVersion}`,
+      );
+    }
     const testEnv = { ...env };
     delete testEnv.QUOIN_QUIRE;
     delete testEnv.QUOIN_EXPECTED_QUIRE_SHA256;
@@ -614,6 +648,8 @@ async function main() {
       join(ROOT, "scripts", "bench-tier1.mjs"),
       "--quire",
       binary,
+      "--quoin",
+      isolatedQuoin,
       "--attestation",
       attestationPath,
       "--span-breadth",

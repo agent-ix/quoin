@@ -36,7 +36,14 @@ description: "Chronological log of structural changes to this bundle."
   the reviewed labels remain valid; their provenance advances to the final
   commits. The auditor now couples all four copies (including their repository
   cohort pins) to the stack lock, turning the next stale provenance edit into a
-  direct failure before the expensive span run.
+  direct failure before the expensive span run. Finally, the first complete
+  Tier-1 attempt reached case 164 before a concurrent workspace relink made
+  root `node_modules` temporarily unavailable to the Quoin validation channel.
+  Canonical Tier 1 no longer executes that mutable workspace runtime: after the
+  frozen build it deploys a production-only Quoin tree into the campaign's
+  private scratch directory, verifies its version against the built source,
+  and passes its absolute executable explicitly. The drift self-test removes
+  that selector and proves the canonical gate rejects a return to shared state.
 
 * **2026-08-28** — **CR-128**: Tier 2 now replays the declaration bytes that
   produced the pass-2 findings instead of applying today's single process

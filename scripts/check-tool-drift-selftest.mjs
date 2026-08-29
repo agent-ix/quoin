@@ -89,6 +89,12 @@ const mutations = [
     /CLI provenance must equal/,
   ],
   [
+    "shared-workspace Tier-1 runtime",
+    "scripts/verification-stack.mjs",
+    (s) => s.replace('"--quoin",\n      isolatedQuoin,', ""),
+    /deploy and select a frozen isolated Quoin runtime/,
+  ],
+  [
     "moving image",
     "Dockerfile",
     (s) => s.replace(/@sha256:[0-9a-f]{64}/, ""),

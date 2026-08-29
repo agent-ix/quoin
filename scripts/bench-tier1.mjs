@@ -353,6 +353,13 @@ async function main() {
   }
   const engine = execution.assertEngine(quire);
   console.error(`bench-tier1: engine ${engine}`);
+  const quoinArg = argOf("--quoin");
+  if (!experimental && !quoinArg) {
+    throw new Error(
+      "bench-tier1: canonical runs require --quoin <isolated executable>",
+    );
+  }
+  const quoin = resolve(quoinArg ?? join(ROOT, "bin", "quoin.js"));
   let verificationStack = null;
   if (!experimental) {
     const attestationPath = argOf("--attestation");
@@ -462,13 +469,7 @@ async function main() {
       `bench-tier1: case ${index + 1}/${labels.corpora.length} ${corpus.name}`,
     );
     const { findings, metrics, diagnostics, untrackedSymbols } =
-      execution.findingsFor(
-        quire,
-        corpus.input,
-        corpus.module,
-        mapping,
-        join(ROOT, "bin", "quoin.js"),
-      );
+      execution.findingsFor(quire, corpus.input, corpus.module, mapping, quoin);
     payloads.push({
       name: corpus.name,
       metrics,

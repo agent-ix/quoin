@@ -104,6 +104,25 @@ export function auditToolDrift(files) {
       "vendored Quire contract source revision must equal verification-stack engine revision",
     );
   }
+  if (
+    !files["scripts/verification-stack.mjs"].includes(
+      '"deploy",\n        "--prod",\n        "--legacy",\n        "--frozen-lockfile"',
+    ) ||
+    !files["scripts/verification-stack.mjs"].includes(
+      '"--quoin",\n      isolatedQuoin',
+    )
+  ) {
+    errors.push(
+      "canonical Tier-1 must deploy and select a frozen isolated Quoin runtime",
+    );
+  }
+  if (
+    !files["scripts/bench-tier1.mjs"].includes(
+      "canonical runs require --quoin <isolated executable>",
+    )
+  ) {
+    errors.push("canonical Tier-1 must require an explicit Quoin executable");
+  }
   for (const path of [
     "bench/span-breadth-v1-labels.json",
     "bench/guidance-evaluator-contract-v1.json",
@@ -217,6 +236,8 @@ export function repositoryFiles(root = ROOT) {
     "smoke/entrypoint.sh",
     "src/quire/exec.ts",
     "src/quire/contract.ts",
+    "scripts/verification-stack.mjs",
+    "scripts/bench-tier1.mjs",
     "bench/span-breadth-v1-labels.json",
     "bench/guidance-evaluator-contract-v1.json",
     "bench/guidance-independent-review-v1.json",
