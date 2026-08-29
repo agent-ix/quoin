@@ -23,6 +23,54 @@ const mutations = [
     /may not execute ambient pnpm/,
   ],
   [
+    "ambient Make Quire",
+    "Makefile",
+    (s) => `${s}\nQUIRE ?= $(shell command -v quire 2>/dev/null)\n`,
+    /may not discover or default Quire through PATH/,
+  ],
+  [
+    "bare test bypasses canonical stack",
+    "Makefile",
+    (s) =>
+      s.replace(
+        "test:\n\tnode scripts/verification-stack.mjs",
+        "test:\n\tcorepack pnpm run test",
+      ),
+    /bare make test must run the canonical verification stack/,
+  ],
+  [
+    "inner test accepts implicit Quire",
+    "Makefile",
+    (s) =>
+      s.replace(
+        "test-with-quire: require-quire build validate check-version",
+        "test-with-quire: build validate check-version",
+      ),
+    /inner test gate must require an explicit absolute Quire path/,
+  ],
+  [
+    "explicit Quire need not be executable",
+    "Makefile",
+    (s) => s.replace('\t@test -x "$(QUIRE)"', '\t@test -e "$(QUIRE)"'),
+    /explicit Quire path must be executable and named quire/,
+  ],
+  [
+    "inner test leaves Quoin on PATH",
+    "Makefile",
+    (s) => s.replace('PATH="$(dir $(QUIRE)):$$PATH" ', ""),
+    /inner test gate must default Quoin and contract tests to one Quire binary/,
+  ],
+  [
+    "evidence audit drops explicit Quire",
+    "Makefile",
+    (s) =>
+      s.replace(
+        'evidence-audit: require-quire\n\tQUOIN_QUIRE="$(QUIRE)" ',
+        "evidence-audit: require-quire\n\t",
+      ),
+    /evidence-audit must pass its explicit Quire path/,
+  ],
+  [
     "moving action",
     ".github/workflows/install-smoke.yml",
     (s) => s.replace(/actions\/checkout@[0-9a-f]{40}/, "actions/checkout@v7"),
@@ -171,6 +219,12 @@ const mutations = [
         '["pnpm", "run", "skipped:verification-stack"]',
       ),
     /canonical campaign must run verification-stack selftests/,
+  ],
+  [
+    "canonical stack re-enters bare test",
+    "scripts/verification-stack.mjs",
+    (s) => s.replace('["test-with-quire", `QUIRE=${binary}`]', '["test"]'),
+    /canonical campaign must enter the explicit Quire test gate/,
   ],
   [
     "debug canonical build",

@@ -614,9 +614,13 @@ async function main() {
       stdio: "inherit",
     });
     const testEnv = { ...env };
+    // The suite deliberately substitutes fake `quire` executables through
+    // PATH to grade subprocess failures. The Make target prepends the exact,
+    // already-hashed binary as the default; individual fixtures may still
+    // override it without inheriting a digest that belongs to another file.
     delete testEnv.QUOIN_QUIRE;
     delete testEnv.QUOIN_EXPECTED_QUIRE_SHA256;
-    run("make", ["test", `QUIRE=${binary}`], {
+    run("make", ["test-with-quire", `QUIRE=${binary}`], {
       cwd: ROOT,
       env: testEnv,
       timeout: lock.timeouts.quoinMilliseconds,
