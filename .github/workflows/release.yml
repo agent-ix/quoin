@@ -123,9 +123,11 @@ jobs:
           node-version: 22.15.0
           registry-url: https://registry.npmjs.org
           cache: pnpm
-      # Trusted Publishing (OIDC) needs npm >= 11.5.1; runner images lag.
+      # Trusted Publishing (OIDC) needs npm >= 11.5.1; runner images lag, and
+      # npm@latest is npm 12, which requires node >= 22.22.2 — newer than the
+      # exact pinned node. Pin the newest npm 11 (engines: node >= 22.9.0).
       - name: Upgrade npm for Trusted Publishing
-        run: npm install -g npm@latest
+        run: npm install -g npm@11.19.1
       - name: Install frozen dependency graph
         run: pnpm install --frozen-lockfile
       - name: Build
