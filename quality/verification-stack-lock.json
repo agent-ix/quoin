@@ -3,7 +3,7 @@
   "repositories": {
     "quoin": {
       "remote": "https://github.com/agent-ix/quoin",
-      "revision": "4cfcb432e1789597640663ad782dc2cde96143fa"
+      "revision": "090f731ceb21f88a48136a363444b1a6a2bb62cf"
     },
     "quire": {
       "remote": "https://github.com/agent-ix/quire-rs",
@@ -69,7 +69,7 @@
     ".github/workflows/build-test.yml": "sha256:7a6d27b95c58416f35422e47fd56a8763bae6641e77f56b7bd5c29836496c7d6",
     "scripts/check-tool-drift.mjs": "sha256:9452d9cf8c89b174d84dd2213469c3359d445665299986396d0a449e52bede8d",
     "scripts/check-tool-drift-selftest.mjs": "sha256:85b611c228e6a67a1f0bb03bfd98a18c97daf7424081e3a73b262909ec7cc13b",
-    "scripts/verification-stack.mjs": "sha256:e285b9c715942247a82f06f1844c19117bfe661613641af365aa08f845432fef",
+    "scripts/verification-stack.mjs": "sha256:4ef6367e3a649d2a081dafc1e717741d3358710860d7a5e8efc2eb584b20a676",
     "scripts/bench-tier1.mjs": "sha256:c8dd2943dfb8854704ef11f2a7f47dabb96d6e4712104a099a39860ba864b549",
     "src/quire/contract.ts": "sha256:9d44490e147092e0ecfcd6760f6e531d2a5ae4098c43b4e1fffd2af497f8e61b",
     "src/quire/schemas/coverage-v1.schema.json": "sha256:f0cdbb9457ca7ca76b642c11fd5b6f41273909c894458c31f58c9c50fdbcdb38",
@@ -80,7 +80,7 @@
     "bench/guidance-independent-review-v1.json": "sha256:e5e89772279edc2fecc776916c19891cb4bd700b70e1d3284b36d7b6a475be0d",
     "bench/span-grounding-labels.json": "sha256:897ef28979f5a3f607fdb27e740f1508b736ae5d9ce3dd91c7813f09f841c000",
     "bench/span-grounding-v2-labels.json": "sha256:4e10f34488c87439e7253668ea34773adb432b16bce574b1cc93fbf0343e2650",
-    "bench/span-breadth-v1-labels.json": "sha256:0d85eafb6aeadbed1072a74e5235291e9f509d7e84920bad58834fa3e423ceea",
+    "bench/span-breadth-v1-labels.json": "sha256:d0f9ecd299197c1b4d8209dc3d4c548b8ea23b95e6a003fe43cf42cf5427ab87",
     "bench/answer-key.json": "sha256:ece1a7f5d254623cf79beff1113021f4f71359ac9a3c703d07cff0f8a45e9532",
     "bench/advisory-adjudication-v1.json": "sha256:87c575b6ca0c0886d874f609144f907f3ac270e08c2091bb2bb1ead725713e43",
     "corpus/config/metrics.json": "sha256:69ab8e5b8fc14e07408e034f0b791c3dd3356c9db78e1ac0dc961bcc0b47c0d7",
