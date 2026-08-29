@@ -20,9 +20,9 @@
         "digest": "sha256:29f6e742bfed80bc584fb6115f5ce0c035eddb25f3f0c7da0989edac363e634a"
       },
       "quoin": {
-        "version": "0.21.9-164-g252a845",
-        "revision": "252a84587c3b4e3d4a081a0797bc489f60b9dd9e",
-        "digest": "sha256:96886a2694000c8a53def0e82273730013ca9bd5c009cb63af66336ba71e6469"
+        "version": "0.21.9-172-g35a379b",
+        "revision": "35a379b4d1675678861890721d65896dc9a44231",
+        "digest": "sha256:7e6894f600cb0304d28d316dd3aac0a23b57db8543ece3e9776ad11042c3d8b0"
       }
     },
     "environment": { "node": "v22.15.0", "platform": "linux", "arch": "x64" }
