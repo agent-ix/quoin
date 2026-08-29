@@ -6,12 +6,12 @@
     "schemaVersion": "quire-tool-provenance-v1",
     "cli": {
       "version": "0.30.2",
-      "sourceRevision": "d309fbefd7d92ac8b8c9173a98d0b47a578d6a35",
+      "sourceRevision": "6c01a865710a8dfc89d6a60d52a7b037c05c46d0",
       "sourceState": "clean"
     },
     "engine": {
       "version": "0.46.0",
-      "sourceRevision": "da0cf8a029aa99ad79a2f52c8e3e42b9fae9c887",
+      "sourceRevision": "627af6c4bc0b7a91706db8a50397c2dd943fab42",
       "sourceState": "clean"
     },
     "capabilities": [
@@ -31,11 +31,11 @@
   },
   "repositories": {
     "quoin": {
-      "revision": "090f731ceb21f88a48136a363444b1a6a2bb62cf",
+      "revision": "6e30a279ba1c10c5fc786c214439adb63d8300ac",
       "remote": "https://github.com/agent-ix/quoin"
     },
     "quire-rs": {
-      "revision": "da0cf8a029aa99ad79a2f52c8e3e42b9fae9c887",
+      "revision": "627af6c4bc0b7a91706db8a50397c2dd943fab42",
       "remote": "https://github.com/agent-ix/quire-rs"
     },
     "filament-ide-rs": {
