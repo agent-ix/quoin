@@ -57,10 +57,11 @@ and no aggregate score is emitted.
 
 ## 3. Render an authored argument
 
-Author an `AssuranceArgument` document under `spec/` using the
-engineering-assurance module. The top claim, reasoning, sufficiency criteria,
-assumptions, participants, authority, independence, challenges, and expiries
-are authored facts; Quoin does not invent them.
+After explicitly installing the private engineering-assurance module from an
+authorized checkout, author an `AssuranceArgument` document under `spec/`.
+The top claim, reasoning, sufficiency criteria, assumptions, participants,
+authority, independence, challenges, and expiries are authored facts; Quoin
+does not invent them. The public default installer never fetches this module.
 
 Each criterion needs a decision whose `decidedBy` participant and `authority`
 exactly match the authored participant:

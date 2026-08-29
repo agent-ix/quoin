@@ -198,16 +198,17 @@ Three layers verify this specification, each named in the requirements above:
 
 ## Module Store
 
-`quoin` declares its default `engineering-assurance`, `spec-artifacts-*`, and `spec-objects-*` modules in
-the committed `default-modules.yaml` as pinned `git-subdir` sources, and installs
-that set on first catalog access into `~/.ix/filament/modules/<name>/` — lazily,
-idempotently, and (once pinned and installed) entirely offline. The install is
-triggered by the `catalog` and `write` commands and on demand via
+`quoin` declares its public default `spec-artifacts-*` and `spec-objects-*`
+modules in the committed `default-modules.yaml` as pinned `git-subdir` sources,
+and installs that set on first catalog access into the Filament module store —
+lazily, idempotently, and (once pinned and installed) entirely offline. The
+install is triggered by the `catalog` and `write` commands and on demand via
 `quoin plugin ensure-defaults`, the explicit entry point external tools such as
-`quire validate` use to bootstrap the set. User and community plugins are recorded
-in `~/.ix/filament/registry.json` and materialized into the same store. Because
-that store is the one `quire` reads, installs and validation see an identical
-catalog.
+`quire validate` use to bootstrap the set. Private modules, including
+`engineering-assurance`, require an explicit authorized installation and are
+never fetched by default. User and community plugins are recorded in the local
+registry and materialized into the same store. Because that store is the one
+`quire` reads, installs and validation see an identical catalog.
 
 ## Quality Characteristics Not Applicable
 

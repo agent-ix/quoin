@@ -12,12 +12,12 @@ relationships: []
 
 # Benchmark silent-zero sentinel
 
-## Decision Objective
+## Decision Use
 
 Prevent the benchmark from accepting ratio output from an instrument that read
 none of a non-empty population without saying so.
 
-## Population and Scope
+## Population
 
 Include all ratio metrics emitted by every completed producer in a benchmark
 run. Exclude count metrics and genuinely empty populations.
@@ -27,7 +27,7 @@ run. Exclude count metrics and genuinely empty populations.
 Count metrics with non-zero examined, zero matched, and no diagnostic,
 definition `benchmark.silent-zero-v1`.
 
-## Collection and Provenance
+## Collection Procedure
 
 Use complete raw payloads and retain verified capabilities, tool and engine
 versions, declaration and corpus digests, configuration, and timestamp.
@@ -37,7 +37,7 @@ versions, declaration and corpus digests, configuration, and timestamp.
 Mutation tests must demonstrate rejection when the diagnostic or capability is
 removed.
 
-## Interpretation and Limitations
+## Interpretation
 
 This proves a narrow instrument-integrity property, not finding correctness.
 

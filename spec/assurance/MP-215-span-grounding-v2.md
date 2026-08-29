@@ -12,13 +12,13 @@ relationships: []
 
 # Labeled property span outcomes
 
-## Decision Objective
+## Decision Use
 
 Determine whether every criterion in the retained labeled population produces
 exact statement-relative property boundaries or an explicit, justified refusal
 when the statement does not supply enough information to name those boundaries.
 
-## Population and Scope
+## Population
 
 Include only specific-shape criteria matched by exact statement text and
 property shape in `bench/span-grounding-v2-labels.json`. Each rule pins its
@@ -35,7 +35,7 @@ Report exact spans and safe refusals separately. Wrong spans, unexpected
 refusals, unjustified refusals, unsafe emissions, and malformed multiplicity are
 named failures. Definition `property.span-grounding-v2`.
 
-## Collection and Provenance
+## Collection Procedure
 
 Retain label identities and multiplicities, raw `quire properties --json`
 payloads, producer versions, exact outcome counts, named misses, exclusions,
@@ -47,7 +47,7 @@ historical `property.span-grounding-v1` observation unchanged beside v2.
 Run the full pinned Tier-1 corpus with its pinned declaration modules and one
 identified producer binary. Do not sample or fuzzy-match statements.
 
-## Interpretation and Limitations
+## Interpretation
 
 A safe refusal is correct only for the reason pinned by the label. It prevents
 invented boundaries; it does not claim that the producer extracted spans. This

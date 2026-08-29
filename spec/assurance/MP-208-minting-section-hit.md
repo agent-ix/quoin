@@ -12,12 +12,12 @@ relationships: []
 
 # Minting section-hit rate
 
-## Decision Objective
+## Decision Use
 
 Show whether trace-target declarations find the document sections they claim to
 read.
 
-## Population and Scope
+## Population
 
 Include trace-target and minting-document pairs in scored controlled cases;
 exclude pending cases visibly.
@@ -27,7 +27,7 @@ exclude pending cases visibly.
 Sum matched over examined pairs, definition `minting.section-hit-v1`, retaining
 case, mode, and language dimensions.
 
-## Collection and Provenance
+## Collection Procedure
 
 Retain raw coverage payloads, case inventory, declaration digest, engine,
 scorer and corpus revisions, configuration, and timestamp.
@@ -36,7 +36,7 @@ scorer and corpus revisions, configuration, and timestamp.
 
 Use the pinned corpus and declared modules; include absent-section controls.
 
-## Interpretation and Limitations
+## Interpretation
 
 Finding a section does not establish that the correct table or ids were minted.
 

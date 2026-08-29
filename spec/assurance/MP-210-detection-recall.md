@@ -12,12 +12,12 @@ relationships: []
 
 # Controlled-corpus detection recall
 
-## Decision Objective
+## Decision Use
 
 Prevent a strong aggregate from hiding a blind grading level, failure mode,
 language, or finding family in the validator toolchain.
 
-## Population and Scope
+## Population
 
 Use every findable failure case in the pinned `qa-corpus`. Report L1, L2, and
 L3 independently for every mode-language-family partition.
@@ -29,7 +29,7 @@ Adopt `qa-corpus/assurance/MP-202-detection-recall.md` definition
 and the adjacent corpus GAP count. Separately retain every L2/L3 miss with its
 producer, expected and observed locus, structural root cause, and disposition.
 
-## Collection and Provenance
+## Collection Procedure
 
 The Tier-1 producer records engine, corpus, declaration and scorer revisions,
 the complete raw report, and one typed observation per family partition. The
@@ -41,7 +41,7 @@ by the aggregate rendering.
 Run every static case with the explicitly named Quire binary and vendored
 declarations. Do not sample or average partitions.
 
-## Interpretation and Limitations
+## Interpretation
 
 Recall does not establish precision; controlled pairs and their differential
 gate constrain false positives. A zero is a measured miss list, never an absent

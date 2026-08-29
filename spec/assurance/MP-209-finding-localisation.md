@@ -12,11 +12,11 @@ relationships: []
 
 # Confirmed finding localisation rate
 
-## Decision Objective
+## Decision Use
 
 Determine whether confirmed findings name the correct defect locus.
 
-## Population and Scope
+## Population
 
 Include confirmed findings whose labels declare an expected path and, where
 available, line. Keep families and languages separate.
@@ -26,7 +26,7 @@ available, line. Keep families and languages separate.
 Confirmed findings at the expected locus over confirmed findings with a labelled
 locus, definition `finding.localisation-v1`.
 
-## Collection and Provenance
+## Collection Procedure
 
 Retain emitted and expected loci, raw outputs, labels, scorer, tools, engine,
 declaration and corpus revisions, configuration, and timestamp.
@@ -36,7 +36,7 @@ declaration and corpus revisions, configuration, and timestamp.
 Use pinned labelled cases and preserve labels with no exact line as a distinct
 population.
 
-## Interpretation and Limitations
+## Interpretation
 
 Correct location does not prove the explanation or proposed remedy is correct.
 

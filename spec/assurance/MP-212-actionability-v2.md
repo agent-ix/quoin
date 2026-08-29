@@ -12,12 +12,12 @@ relationships: []
 
 # Finding actionability v2 rate
 
-## Decision Objective
+## Decision Use
 
 Determine whether a finding says what is affected, why it fired, and what a
 reader can safely change or inspect next.
 
-## Population and Scope
+## Population
 
 Consume only `finding-envelope-v2` records. Include every finding for which
 actionability is applicable. Retain records carrying a `not_applicable` field
@@ -38,7 +38,7 @@ separately. Report the same numerator, denominator, rate, exclusions, and named
 misses for every producer/channel/family partition so an overall value cannot
 hide a weak producer or family.
 
-## Collection and Provenance
+## Collection Procedure
 
 Retain the raw producer record beside its normalized envelope, producer class,
 channel and version, counts, exclusions, and each named miss. Record scorer,
@@ -48,7 +48,7 @@ tool, corpus, configuration, and source revisions with the collection.
 
 Report controlled Tier-1 and pinned Tier-2 populations separately.
 
-## Interpretation and Limitations
+## Interpretation
 
 This metric grades whether the producer supplied actionable material. It does
 not infer missing evidence from prose and does not claim that supplied advice

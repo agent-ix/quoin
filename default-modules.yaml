@@ -9,19 +9,6 @@
 schemaVersion: 1
 name: quoin-default-modules
 entries:
-  # Assurance artifacts are available by default but remain opt-in: installing
-  # their vocabulary does not require a repository to author any assurance
-  # document. Pin the immutable first-integration revision until a release tag
-  # carrying the same module exists (agent-ix/quire-rs#275).
-  - name: engineering-assurance
-    version: "0.1.0+2a66359"
-    defaultEnabled: true
-    source:
-      type: git-subdir
-      url: agent-ix/engineering-assurance
-      path: engineering_assurance
-      ref: 2a663590a993ac4b58c078b6bcb52358f29f10e4
-
   - name: spec-artifacts-iso
     version: "0.18.0"
     defaultEnabled: true

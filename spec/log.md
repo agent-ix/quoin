@@ -8,6 +8,19 @@ description: "Chronological log of structural changes to this bundle."
 
 ## History
 
+* **2026-08-29** — **CR-132**: removed the private
+  `engineering-assurance` repository from Quoin's public default installer.
+  The committed default set now contains exactly nine public modules; it has
+  no private source locator or deleted-history pin. Public validation uses a
+  fictional local fixture that registers only the two artifact type names
+  Quoin authors and deliberately vendors no private schema. Quoin's owned
+  profile and measurement plans now conform to the clean private module's
+  current frontmatter and required section contracts, while their existing
+  metric and definition identities remain explicit. Authorized users install
+  the private module separately; public commands and CI never fetch it.
+  FR-016 AC-2, FR-044, FR-047; Matrix: `index.test.ts` default-set and fixture
+  boundary tests.
+
 * **2026-08-29** — **CR-129**: the canonical CI path is now locally explicit
   and content-addressed after the Phase-3 promotion rehearsal exposed three
   independent forms of apparently pinned drift (`agent-ix/quoin#260`, epic

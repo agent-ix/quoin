@@ -12,12 +12,12 @@ relationships: []
 
 # Property span correctness
 
-## Decision Objective
+## Decision Use
 
 Determine whether emitted property spans identify the intended subject and
 clause boundaries, independently of whether spans are merely present.
 
-## Population and Scope
+## Population
 
 Include controlled criteria carrying exact expected domain, precondition, and
 oracle loci. The fixture covers an exact positive, hyphen-boundary errors,
@@ -31,7 +31,7 @@ observed null agree for a clause the criterion does not contain. A present but
 different span is `wrong-span`; no spans where loci are expected is
 `unexpected-refusal`. Definition `property.span-correctness-v1`.
 
-## Collection and Provenance
+## Collection Procedure
 
 Retain the controlled labels, raw `quire properties --json` payload, producer
 version, named expected-versus-observed misses, source revision, and timestamp.
@@ -41,7 +41,7 @@ version, named expected-versus-observed misses, source revision, and timestamp.
 Keep the fixture, declaration modules, and producer fixed. Report overall and
 per failure-shape family; do not average families.
 
-## Interpretation and Limitations
+## Interpretation
 
 This controlled set is a regression contract, not an estimate of ecosystem
 precision. Presence alone earns no correctness credit.

@@ -12,12 +12,12 @@ relationships: []
 
 # Safe property-span refusal
 
-## Decision Objective
+## Decision Use
 
 Determine whether the producer declines unsupported decomposition explicitly
 instead of emitting a precise-looking wrong span.
 
-## Population and Scope
+## Population
 
 Include controlled criteria labelled with an expected structured refusal
 reason. This denominator is separate from span presence and correctness.
@@ -29,7 +29,7 @@ expected refusal signal. An absent span without that reason is an
 `unjustified-refusal`; any emitted span is an `unsafe-emission`. Definition
 `property.safe-refusal-v1`.
 
-## Collection and Provenance
+## Collection Procedure
 
 Retain expected and observed reasons, raw producer payload, producer version,
 named misses, source revision, and timestamp.
@@ -40,7 +40,7 @@ Keep the refusal fixture, declaration modules, and producer fixed. Report the
 wrong-span, unexpected-refusal, safe-refusal, and unsafe-emission counts beside
 one another.
 
-## Interpretation and Limitations
+## Interpretation
 
 A safe refusal preserves uncertainty; it does not improve span presence and is
 not counted as correctness on a case whose expected loci are known.

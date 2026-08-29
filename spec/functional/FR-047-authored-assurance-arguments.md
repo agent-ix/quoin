@@ -40,7 +40,8 @@ score or claim compatibility with an external argument notation.
 
 - A test result or coverage result is evidence, not a sufficiency decision.
 - The evaluator reads no wall clock; callers provide the `asOf` instant.
-- The authored contract remains owned by the engineering-assurance module.
+- The authored contract remains owned by the separately installed private
+  engineering-assurance module.
 - No external argument notation is emitted or claimed.
 
 ## Dependencies

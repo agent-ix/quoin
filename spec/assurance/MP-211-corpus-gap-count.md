@@ -12,11 +12,11 @@ relationships: []
 
 # Controlled-corpus bounds gap count
 
-## Decision Objective
+## Decision Use
 
 Keep unrepresented corpus cells visible beside every detection-recall score.
 
-## Population and Scope
+## Population
 
 Adopt every declared bounds cell in the pinned `qa-corpus`.
 
@@ -25,7 +25,7 @@ Adopt every declared bounds cell in the pinned `qa-corpus`.
 Adopt `qa-corpus/assurance/MP-201-gap-count.md` definition
 `bounds.gap-count-v1`: count cells in state GAP, never a ratio.
 
-## Collection and Provenance
+## Collection Procedure
 
 Tier 1 derives the count from `bounds.py --json`, retains the raw matrix and
 repeats the count as a typed observation beside each recall partition.
@@ -35,7 +35,7 @@ repeats the count as a typed observation beside each recall partition.
 Use the complete validated inventory. Missing or unreadable cases fail before
 measurement.
 
-## Interpretation and Limitations
+## Interpretation
 
 A lower count means fewer declared holes, not better detection. Out-of-scope is
 a reviewed disposition carrying a written reason.
