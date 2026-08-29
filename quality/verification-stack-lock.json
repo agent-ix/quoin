@@ -3,7 +3,7 @@
   "repositories": {
     "quoin": {
       "remote": "https://github.com/agent-ix/quoin",
-      "revision": "842795e9b347917726531de148953700b664283d"
+      "revision": "aef2d2af56002f20250969ecadb4761263a1c527"
     },
     "quire": {
       "remote": "https://github.com/agent-ix/quire-rs",
@@ -70,12 +70,14 @@
     "pnpm-lock.yaml": "sha256:7b8e18508dc953412732112931b9010d0d27f76cff111cb77df1ee7c96ed4b42",
     "Makefile": "sha256:92f3b903bd0b13e6c610616648ab03e70c72a27f51673b38a7ece9d857873efb",
     ".github/workflows/build-test.yml": "sha256:8a9e438aabc518f2fa1ebe5984622863c74e742811f4e77fcdd539b16d7e0801",
-    "scripts/check-tool-drift.mjs": "sha256:3d3d28f093f938ab53d749e09b2240f2c4e42f7d658035a84145b9a6846e167f",
-    "scripts/check-tool-drift-selftest.mjs": "sha256:8162f77c1f8e5f5d839b36aa24b475347d32405c3cdc9d33986ead78a1f35bbf",
+    "scripts/check-tool-drift.mjs": "sha256:9e12b5802d4e41a41882ed24214352b2fb984db57e1c7d1a1195ce906de72736",
+    "scripts/check-tool-drift-selftest.mjs": "sha256:3509a232c6dd19e9a340b8e979c3d12c025eca42793bd52718b2d4aa8c50696e",
     "scripts/verification-stack.mjs": "sha256:5ee6b69e6da78d5b8925d687ac3fa94bbd96f770039a84a0dbc5c4c4a3816c3c",
     "scripts/verification-stack-selftest.mjs": "sha256:d7be91c703f4d54a9ef9adedb311dd9dc6c12a06116ec9ad0424f60608dea142",
     "scripts/verify-span-breadth.mjs": "sha256:4ab0f359688e093c48414bdfec6e4d3915f8580ee652a31f796e4cc7c81e8869",
     "scripts/bench-tier1.mjs": "sha256:521cc0b746a6bec6a50d614b1bfc67f5268237a22ef3228e172639c82ed8fd3e",
+    "scripts/battletest.mjs": "sha256:3737ea8c096ede3dd19cf22bdac6d52ac6d36d772e5a0045541be2dbb6caab61",
+    "scripts/lib/tier2-baseline.mjs": "sha256:5331db28179a1d14da68ed9213664cce3188432ca5b77bdd85b9fedfaeedf8ee",
     "src/quire/contract.ts": "sha256:98ad27226cd70b24725fd602a5113c6d3096ff7995e731df177b10006ca8163f",
     "src/quire/schemas/coverage-v1.schema.json": "sha256:f0cdbb9457ca7ca76b642c11fd5b6f41273909c894458c31f58c9c50fdbcdb38",
     "src/quire/schemas/properties-v1.schema.json": "sha256:cc687773c35b3e71e82fc336e887ecc688a28b03e970e349b2921b8624e4d11c",
@@ -85,7 +87,7 @@
     "bench/guidance-independent-review-v1.json": "sha256:77c329fd7b602a8cb1f0b030b79a13fbc9534507fadf86bcebfadc6f402b29a6",
     "bench/span-grounding-labels.json": "sha256:897ef28979f5a3f607fdb27e740f1508b736ae5d9ce3dd91c7813f09f841c000",
     "bench/span-grounding-v2-labels.json": "sha256:4e10f34488c87439e7253668ea34773adb432b16bce574b1cc93fbf0343e2650",
-    "bench/span-breadth-v1-labels.json": "sha256:a98860a6f35b6dc4effe6f900dcfffa57e69aba648a2e5872d328fa4c2c5c3fc",
+    "bench/span-breadth-v1-labels.json": "sha256:68e9a6de07259ff3d62e9693b39a36df0b1cd4516ad883c48cdc0f2a73f18f8c",
     "bench/answer-key.json": "sha256:ece1a7f5d254623cf79beff1113021f4f71359ac9a3c703d07cff0f8a45e9532",
     "bench/advisory-adjudication-v1.json": "sha256:87c575b6ca0c0886d874f609144f907f3ac270e08c2091bb2bb1ead725713e43",
     "corpus/config/metrics.json": "sha256:69ab8e5b8fc14e07408e034f0b791c3dd3356c9db78e1ac0dc961bcc0b47c0d7",
