@@ -15,3 +15,29 @@ export {
   type NodeStatus,
 } from "./graph.js";
 export { renderCase } from "./render.js";
+export {
+  buildAuthoredArgumentView,
+  parseAssuranceArgument,
+  renderAuthoredArgument,
+  type AssuranceArgumentDefinition,
+  type AssumptionView,
+  type AuthoredArgumentView,
+  type BuildAuthoredArgumentRequest,
+  type ChallengeView,
+  type CriterionView,
+  type ReasoningView,
+  type SufficiencyDecision,
+} from "./argument.js";
+export {
+  buildDischargeReport,
+  renderDischargeReport,
+  type BuildDischargeRequest,
+  type ClauseDischarge,
+  type DirectDischargeFact,
+  type DischargeAttestation,
+  type DischargeFact,
+  type DischargeReport,
+  type DischargeState,
+  type DispositionFact,
+  type UnusedDischargeFact,
+} from "./discharge.js";

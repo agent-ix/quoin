@@ -30,6 +30,10 @@ const SCHEMAS = [
   "assurance-v1.schema.json",
   "coverage-v1.schema.json",
   "properties-v1.schema.json",
+  "coverage-v1.schema.json",
+  "properties-v1.schema.json",
+  "clause-binding-v1.schema.json",
+  "clause-diff-v1.schema.json",
 ];
 
 function arg(name, fallback) {

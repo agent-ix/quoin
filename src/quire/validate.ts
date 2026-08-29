@@ -14,6 +14,11 @@ import type { ErrorObject, ValidateFunction } from "ajv";
 import { readSchema, type SchemaName } from "./contract.js";
 import type { AssuranceExport } from "./assurance.js";
 import type { CoverageReport, PropertiesReport } from "./types.js";
+import type {
+  ClauseBindingReport,
+  CoverageReport,
+  PropertiesReport,
+} from "./types.js";
 
 /** A payload that did not satisfy the published contract. */
 export interface ContractViolation {
@@ -96,6 +101,14 @@ export function validateAssurance(
   payload: unknown,
 ): ValidationResult<AssuranceExport> {
   return validate<AssuranceExport>("assurance-v1.schema.json", payload);
+/** Validate a `quire clauses evaluate --format json` payload. */
+export function validateClauseBinding(
+  payload: unknown,
+): ValidationResult<ClauseBindingReport> {
+  return validate<ClauseBindingReport>(
+    "clause-binding-v1.schema.json",
+    payload,
+  );
 }
 
 /**
@@ -123,6 +136,15 @@ export function parseAssurance(
   text: string,
 ): ValidationResult<AssuranceExport> {
   return parseThen(text, "assurance-v1.schema.json", validateAssurance);
+/** Parse and validate one clause binding payload. */
+export function parseClauseBinding(
+  text: string,
+): ValidationResult<ClauseBindingReport> {
+  return parseThen(
+    text,
+    "clause-binding-v1.schema.json",
+    validateClauseBinding,
+  );
 }
 
 function parseThen<T>(
