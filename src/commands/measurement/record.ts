@@ -3,7 +3,10 @@ import { readFileSync } from "node:fs";
 import { Flags } from "@oclif/core";
 
 import { QuoinCommand } from "../../base.js";
-import { writeMeasurementCollection } from "../../measurement/index.js";
+import {
+  writeInterventionRecord,
+  writeMeasurementCollection,
+} from "../../measurement/index.js";
 
 export default class MeasurementRecord extends QuoinCommand {
   static summary = "Atomically record one plan-validated producer invocation.";
@@ -29,7 +32,15 @@ export default class MeasurementRecord extends QuoinCommand {
       this.error(`measurement input is not JSON: ${detail}`, { exit: 2 });
     }
     try {
-      this.log(writeMeasurementCollection(flags.repo, value));
+      const recordType =
+        value !== null && typeof value === "object" && !Array.isArray(value)
+          ? (value as Record<string, unknown>).record_type
+          : undefined;
+      this.log(
+        recordType === "intervention_experiment"
+          ? writeInterventionRecord(flags.repo, value)
+          : writeMeasurementCollection(flags.repo, value),
+      );
     } catch (error) {
       const detail = error instanceof Error ? error.message : String(error);
       this.error(detail, { exit: 2 });
