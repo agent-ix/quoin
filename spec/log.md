@@ -35,6 +35,17 @@ description: "Chronological log of structural changes to this bundle."
 * **2026-08-29** — Added US-013, FR-046..FR-050, and NFR-013..NFR-014 for
   issue #289's architecture-only semantic-module ownership and authority record.
 
+* **2026-08-29** — **CR-132**: the graph-analysis views promised in closed
+  ticket #79 gain an owning requirement (`agent-ix/quoin#152`, epic
+  `agent-ix/quire-rs#384`). US-018 states the review need; FR-062 specifies
+  deterministic fan-out, reverse dependency change-impact closure, and retained
+  reaffirmation churn over Quire's accepted source-grounded export and Quoin's
+  evidence store. One affirmation copied across suite bindings counts once,
+  unresolved bindings remain gaps, and reachability never rewrites the
+  auditor's verdict. Absent, unreadable, incomplete, and empty inputs remain
+  distinct. The views execute and write nothing, parse no frontmatter, and emit
+  no overall score. Matrix: TC-1249..TC-1260 pending implementation.
+
 * **2026-08-29** — **CR-130**: intervention experiments become first-class
   evidence rather than an inference from execution traces (`agent-ix/quoin#268`,
   epic #267). US-015 separates the practitioner's need from the mechanism.

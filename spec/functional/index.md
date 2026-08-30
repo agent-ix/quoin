@@ -69,3 +69,4 @@ description: "Index of functional requirements (FR) for quoin."
 - [FR-059: Operational evidence record family](./FR-059-operational-evidence-records.md)
 - [FR-060: Operational evidence intake, clocked discharge, and reporting](./FR-060-operational-evidence-intake-report.md)
 - [FR-061: First-party GitHub Actions release operational producer](./FR-061-github-actions-release-operational-producer.md)
+- [FR-062: Read-only evidence-graph analysis views](./FR-062-read-only-evidence-graph-analysis.md)
