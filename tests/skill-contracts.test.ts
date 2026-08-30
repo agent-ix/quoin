@@ -14,6 +14,7 @@
 
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
+import { parse as parseYaml } from "yaml";
 
 const SKILLS_DIR = join(__dirname, "..", "skills");
 const MODULE_SCHEMA = join(
@@ -33,6 +34,14 @@ function skillText(name: string): string {
 
 function frontmatter(text: string): string {
   return /^---\n([\s\S]*?)\n---\n/.exec(text)?.[1] ?? "";
+}
+
+function parsedFrontmatter(text: string): Record<string, unknown> {
+  const parsed: unknown = parseYaml(frontmatter(text));
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+    throw new Error("skill frontmatter must be a YAML mapping");
+  }
+  return parsed as Record<string, unknown>;
 }
 
 /** Every `analysis: <value>` the skill mentions. */
@@ -55,15 +64,17 @@ function analysisEnum(): string[] | null {
 }
 
 describe("skill definitions", () => {
-  it("every skill ships a SKILL.md whose name matches its directory", () => {
-    // A skill whose declared name differs from its directory is invokable
-    // under one and referenced under the other.
+  it("every skill ships valid frontmatter whose name matches its directory", () => {
+    // Codex rejects the entire skill when its frontmatter is invalid YAML. A
+    // regex-only check missed spec-fuzz's `evidence_kind: Fuzz` plain-scalar
+    // continuation because it never exercised the parser used by consumers.
     const dirs = skillDirs();
     expect(dirs.length).toBeGreaterThanOrEqual(18);
     for (const dir of dirs) {
-      const fm = frontmatter(skillText(dir));
-      expect(/^name:\s*(\S+)/m.exec(fm)?.[1]).toBe(dir);
-      expect(/^description:\s*\S/m.test(fm)).toBe(true);
+      const fm = parsedFrontmatter(skillText(dir));
+      expect(fm.name).toBe(dir);
+      expect(typeof fm.description).toBe("string");
+      expect((fm.description as string).trim()).not.toBe("");
     }
   });
 
