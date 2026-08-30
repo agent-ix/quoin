@@ -172,13 +172,12 @@ describe("intervention-experiment evidence", () => {
   });
 
   // Trace: FR-046-AC-3 (TC-1127)
-  test.each([
-    ["repeated", "deterministic"],
-    ["randomized", "randomized"],
-    ["factorial", "blocked_randomized"],
-  ] as const)(
-    "validates %s designs and assignment boundaries",
-    (kind, method) => {
+  test("TC-1127 validates every design and assignment boundary", () => {
+    for (const [kind, method] of [
+      ["repeated", "deterministic"],
+      ["randomized", "randomized"],
+      ["factorial", "blocked_randomized"],
+    ] as const) {
       const value = record(repo());
       value.design = {
         kind,
@@ -192,8 +191,8 @@ describe("intervention-experiment evidence", () => {
       expect(() => validateInterventionRecord(value)).not.toThrow();
       value.design.repetitions = 0;
       expect(() => validateInterventionRecord(value)).toThrow(/repetitions/);
-    },
-  );
+    }
+  });
 
   // Trace: FR-046-AC-4, FR-046-AC-5 (TC-1128, TC-1129)
   test("requires unique linked arms, variables, and effects without null coercion", () => {
