@@ -8,6 +8,9 @@ description: "Chronological log of structural changes to this bundle."
 
 ## History
 
+* **2026-08-29** — Added US-013, FR-046..FR-050, and NFR-013..NFR-014 for
+  issue #289's architecture-only semantic-module ownership and authority record.
+
 * **2026-08-29** — **CR-129**: the canonical CI path is now locally explicit
   and content-addressed after the Phase-3 promotion rehearsal exposed three
   independent forms of apparently pinned drift (`agent-ix/quoin#260`, epic
