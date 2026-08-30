@@ -37,4 +37,3 @@ effects, counterevidence, gaps, owners, actions, and raw references.
 - Both renderers expose equivalent claim-centered content.
 - Reordered store inputs render byte-identically.
 - No aggregate trust/confidence/quality score or inferred causality appears.
-

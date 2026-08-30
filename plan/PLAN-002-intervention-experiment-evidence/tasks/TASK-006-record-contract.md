@@ -35,4 +35,3 @@ complete FR-046 envelope and cross-field invariants.
 - TC-1125..TC-1133 pass with `Trace: FR-046-AC-*` tags.
 - Valid records round-trip without coercion and every undeclared field is refused.
 - No store or report behavior is introduced in this task.
-

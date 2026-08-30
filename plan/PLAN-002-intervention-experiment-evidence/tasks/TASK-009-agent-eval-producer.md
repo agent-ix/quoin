@@ -42,4 +42,3 @@ raw metadata, and submits the resulting record through TASK-007.
 - The adapter never accepts caller-supplied effects or raw metadata.
 - It refuses empty, malformed, unversioned, duplicate, and mismatched reports.
 - It invokes no agent, harness, command, subprocess, or network client.
-

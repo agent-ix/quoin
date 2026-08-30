@@ -59,13 +59,13 @@ the contract and intake boundary but does not depend on report rendering.
 
 ## Task File Mapping
 
-| Task | Track | Scope | Owns |
-| --- | --- | --- | --- |
-| TASK-006 | A | Record types, JSON Schema, semantic validator | FR-046; TC-1125..TC-1133 |
-| TASK-007 | B | Governed intake, raw evidence, atomic store | FR-047 intake; TC-1134..TC-1139; TC-1146 |
-| TASK-008 | C | Claim-centered human/JSON projection | FR-047 reporting; TC-1140..TC-1143 |
-| TASK-009 | D | First-party agent-eval intervention producer | FR-050; TC-1168..TC-1171 |
-| TASK-010 | Gate | Real-run E2E, no-process and compatibility gates | TC-1144; TC-1145; TC-1172 |
+| Task     | Track | Scope                                            | Owns                                     |
+| -------- | ----- | ------------------------------------------------ | ---------------------------------------- |
+| TASK-006 | A     | Record types, JSON Schema, semantic validator    | FR-046; TC-1125..TC-1133                 |
+| TASK-007 | B     | Governed intake, raw evidence, atomic store      | FR-047 intake; TC-1134..TC-1139; TC-1146 |
+| TASK-008 | C     | Claim-centered human/JSON projection             | FR-047 reporting; TC-1140..TC-1143       |
+| TASK-009 | D     | First-party agent-eval intervention producer     | FR-050; TC-1168..TC-1171                 |
+| TASK-010 | Gate  | Real-run E2E, no-process and compatibility gates | TC-1144; TC-1145; TC-1172                |
 
 ## Completion Gates
 
@@ -74,4 +74,3 @@ the contract and intake boundary but does not depend on report rendering.
 - Typecheck, lint, unit/property/integration tests, and coverage gates pass.
 - A gap analysis finds every plan task complete and every criterion backed by real
   evidence before #270 is declared done.
-

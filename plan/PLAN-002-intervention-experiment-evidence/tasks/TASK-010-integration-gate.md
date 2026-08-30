@@ -46,4 +46,3 @@ backward compatibility, and produce the final traceability evidence for #270.
 - TC-1144, TC-1145, and TC-1172 pass with tracking tags.
 - Existing measurement and evidence fixtures remain readable without migration.
 - The validated gap-analysis artifact reports no unowned requirement or task gap.
-

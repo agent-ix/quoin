@@ -40,4 +40,3 @@ raw-byte-verified intervention intake and stable refusal reasons.
 - Invalid input reports every applicable path/reason and leaves no partial entry.
 - Identical input is byte-idempotent; same-id/different-content is refused.
 - All terminal and cause-not-established states remain independently queryable.
-

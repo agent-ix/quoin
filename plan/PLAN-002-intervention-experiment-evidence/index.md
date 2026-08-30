@@ -14,4 +14,3 @@ description: "Contents of the PLAN-002 bundle."
 - [TASK-008](./tasks/TASK-008-claim-report.md) — Claim-centered projection.
 - [TASK-009](./tasks/TASK-009-agent-eval-producer.md) — First real producer.
 - [TASK-010](./tasks/TASK-010-integration-gate.md) — E2E and completion gates.
-
