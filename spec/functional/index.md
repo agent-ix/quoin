@@ -65,3 +65,4 @@ description: "Index of functional requirements (FR) for quoin."
 - [FR-055: Reconcile audit findings with current semantic contracts](./FR-055-reconcile-semantic-audit-findings.md)
 - [FR-056: Intervention-experiment evidence record](./FR-056-intervention-experiment-record.md)
 - [FR-057: Intervention-experiment intake and claim-centered reporting](./FR-057-intervention-experiment-intake-report.md)
+- [FR-058: First-party agent-evaluation intervention producer](./FR-058-agent-eval-intervention-producer.md)

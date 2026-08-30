@@ -3,7 +3,7 @@ id: SR-061
 title: "Integrity review of intervention-experiment evidence"
 type: SpecReview
 analysis: integrity
-scope: "US-015; FR-056; FR-057; TC-1195..TC-1216"
+scope: "US-015; FR-056; FR-057; FR-058; TC-1195..TC-1216; TC-1217..TC-1221"
 review_set: all
 ---
 
@@ -21,3 +21,4 @@ semantic validation, acceptance criteria, and matrix rows now agree.
 | FND-002 | high | Resolved: conclusion kinds now have consistent observation, sample, confidence, and confounder preconditions. | FR-056-AC-8; FR-057-CON-2 | wrong-requirement |
 | FND-003 | low | The revised acceptance criteria each have a direct TC mapping, including the added raw-evidence refusal obligation. | FR-056; FR-057; TC-1195..TC-1216 | correct-requirement-no-evidence |
 | FND-004 | medium | Resolved: the record now carries the observation timestamp required by the governing FR-044 collection contract. | FR-044-AC-1; FR-056-AC-1; TC-1195 | missing-requirement |
+| FND-005 | high | Resolved: the implementation ticket's first-real-producer deliverable is now owned by FR-058 rather than remaining underspecified code. | FR-058; quoin#270 | missing-requirement |

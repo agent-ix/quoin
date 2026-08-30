@@ -3,19 +3,19 @@ id: SR-065
 title: "Scope-boundary review of intervention-experiment evidence"
 type: SpecReview
 analysis: scope-boundary
-scope: "US-015; FR-056; FR-057; TC-1195..TC-1216"
+scope: "US-015; FR-056; FR-057; FR-058; TC-1195..TC-1216; TC-1217..TC-1221"
 review_set: all
 ---
 
 ## Summary
 
 Quoin owns record validation, evidence-store intake, and deterministic reporting.
-The external producer owns experiment execution and supplies the record and retained
-raw bytes; the authored plan supplies the governing definition. These boundaries
-exclude producer execution from Quoin.
+External tooling owns experiment execution and supplies retained raw reports; the
+first-party Quoin adapter computes a record from those bytes without spawning the
+experiment. The authored plan supplies the governing definition.
 
 ## Findings
 
 | ID | Severity | Summary | Refs |
 | --- | --- | --- | --- |
-| FND-001 | low | No scope defect found; inputs, outputs, responsibility allocation, and the no-execution constraint cover every cross-boundary exchange. | FR-057 Inputs; FR-057 Outputs; FR-057-CON-1; TC-1214 |
+| FND-001 | low | No scope defect remains; intake, adapter, external-runner, and report responsibilities cover every exchange without making Quoin an experiment runner. | FR-057-CON-1; FR-058; TC-1214; TC-1221 |

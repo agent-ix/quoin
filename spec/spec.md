@@ -219,6 +219,8 @@ index; the files are authoritative.
 
 - [FR-056](./functional/FR-056-intervention-experiment-record.md) — define intervention-experiment evidence records.
 - [FR-057](./functional/FR-057-intervention-experiment-intake-report.md) — ingest and report intervention-experiment evidence.
+- [FR-058](./functional/FR-058-agent-eval-intervention-producer.md) — produce intervention evidence from retained real agent-evaluation runs.
+
 
 ### Non-Functional Requirements
 

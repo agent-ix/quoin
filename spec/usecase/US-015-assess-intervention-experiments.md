@@ -9,6 +9,8 @@ relationships:
     type: "traces_to"
   - target: "ix://agent-ix/quoin/FR-057"
     type: "traces_to"
+  - target: "ix://agent-ix/quoin/FR-058"
+    type: "traces_to"
 ---
 
 # US-015: Assess intervention experiments without overstating causality
@@ -67,10 +69,20 @@ the conclusion that they qualify.
 - **Then** those sections remain separate and no overall trust or quality score is
   shown
 
+### US-015-EX-4: A real evaluation comparison remains causally modest
+
+- **Given** retained baseline and treatment agent-evaluation reports with matching
+  scenarios but insufficient attribution control
+- **When** the first-party producer records their observed difference
+- **Then** it retains the computed effects and raw reports with
+  `cause_not_established` rather than inventing a causal conclusion
+
 ## Dependencies
 
 - **Upstream**: [StR-004](../stakeholder/StR-004-governed-workflows.md) requires
   assurance work to preserve explicit governance boundaries.
 - **Downstream**: [FR-056](../functional/FR-056-intervention-experiment-record.md)
   defines the record contract; [FR-057](../functional/FR-057-intervention-experiment-intake-report.md)
-  defines evidence-store intake and reporting.
+  defines evidence-store intake and reporting; and
+  [FR-058](../functional/FR-058-agent-eval-intervention-producer.md) supplies the
+  first real producer without executing experiments inside Quoin.
