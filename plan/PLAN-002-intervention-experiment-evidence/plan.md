@@ -2,7 +2,7 @@
 id: PLAN-002
 title: "Intervention-experiment evidence implementation"
 type: Plan
-status: active
+status: complete
 relationships:
   - target: "ix://agent-ix/quoin/US-013"
     type: references

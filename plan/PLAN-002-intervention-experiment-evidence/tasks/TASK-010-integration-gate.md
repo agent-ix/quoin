@@ -2,7 +2,7 @@
 id: TASK-010
 title: "Close the intervention integration gate"
 type: Task
-status: in_progress
+status: done
 track: Gate
 priority: P0
 relationships:
