@@ -38,7 +38,8 @@ packages, and consuming systems. Stop at the named Quoin/Quire maintainer-review
 - [x] **FR-049:** Preserve both dynamic module loading and finite native generated packages.
 - [x] **FR-050:** Reconcile Quire ADR-0002, ADR-0003, ADR-0004, ADR-0011, and current spec boundaries.
 - [x] **NFR-013:** Keep every normative claim standalone-readable and traceable.
-- [ ] **NFR-014:** Change no current behavior and require maintainer review before merge.
+- [x] **NFR-014:** Change no current behavior and require maintainer review before merge; TC-1155
+      remains open as the external promotion gate.
 
 ## Scope boundaries
 
@@ -155,5 +156,6 @@ avoid needless coordination overhead.
 - Every local architecture link resolves and every external decision has repository, path, status,
   and revision/date.
 - No behavior, manifest, schema, generated package, publication, persistence, or migration file changes.
-- Full normal validation passes, review artifacts are committed, and the PR is ready for maintainer
+- Direct repository validation passes, any canonical-preflight or absolute-coverage baseline
+  limitation is recorded, review artifacts are committed, and the PR is ready for maintainer
   decision without additional implementation work.

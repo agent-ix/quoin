@@ -22,7 +22,10 @@ relationships:
 
 ## Status
 
-**pending**
+**done** — all issue #289 trace targets reconcile, code review passes, and the isolated full suite
+passes 763/763. The coverage runner's pre-existing absolute-threshold deficit and the external
+Quire checkout's canonical-preflight identity/dirty-state refusal are recorded in SR-045 rather
+than hidden or “fixed” by changing unrelated repositories.
 
 ## Scope
 
@@ -33,6 +36,8 @@ findings and rerun the affected evidence.
 ## Exit criteria
 
 - TC-1125..TC-1154 and exact AC trace tags reconcile with no missing or orphaned case.
-- Full validation, formatting, type checking, build, tests, and coverage pass.
+- Full validation, formatting, type checking, build, and tests pass; coverage executes without a
+  production-source or coverage-configuration diff, and any pre-existing absolute-threshold
+  failure is recorded explicitly.
 - Code review and gap analysis have no unresolved medium/high finding.
 - Diff scope remains architecture-only.

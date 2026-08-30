@@ -14,3 +14,9 @@ description: "Chronological execution record for PLAN-002."
   one passing scope guard). TASK-007..TASK-009 then added the indexed architecture record,
   identity-pinned decision ledger, proposed ADRs, and dynamic/generated compatibility contract;
   all 30 automated architecture tests pass.
+- **2026-08-29** — TASK-010 reconciled all 26 functional criteria and seven NFR metrics, fixed the
+  code-review wording ambiguity, and passed lint, build, validation, and the isolated 763-test
+  suite. SR-045 records the pre-existing absolute coverage deficit and the external Quire checkout
+  preflight refusal without mutating unrelated repositories.
+- **2026-08-29** — TASK-011 opened draft PR #311, moved issue #289 to Project 18 In review, and
+  stopped at TC-1155 for named Quoin/Quire maintainer approval. No merge was attempted.

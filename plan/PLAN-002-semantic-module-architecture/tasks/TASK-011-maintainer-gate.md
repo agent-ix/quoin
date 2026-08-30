@@ -16,7 +16,8 @@ relationships:
 
 ## Status
 
-**pending**
+**done** — draft PR #311 is open, Project 18 is In review, and TC-1155 is presented as an explicit
+named-maintainer approval gate. No merge was attempted.
 
 ## Scope
 
