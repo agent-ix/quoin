@@ -115,6 +115,17 @@ producer provenance remain engine-independent and independently auditable.
             },
             "seed": { "type": "string", "minLength": 1 }
           },
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "method": { "enum": ["randomized", "blocked_randomized"] }
+                },
+                "required": ["method"]
+              },
+              "then": { "required": ["seed"] }
+            }
+          ],
           "additionalProperties": false
         },
         "sampling_conditions": {
@@ -123,6 +134,25 @@ producer provenance remain engine-independent and independently auditable.
           "items": { "type": "string", "minLength": 1 }
         }
       },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "kind": { "const": "randomized" } },
+            "required": ["kind"]
+          },
+          "then": {
+            "properties": {
+              "assignment": {
+                "properties": {
+                  "method": {
+                    "enum": ["randomized", "blocked_randomized"]
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
       "additionalProperties": false
     },
     "baseline": { "$ref": "#/$defs/arm" },
@@ -134,17 +164,18 @@ producer provenance remain engine-independent and independently auditable.
     "changed_variables": {
       "type": "array",
       "minItems": 1,
-      "items": { "$ref": "#/$defs/variable" }
+      "items": { "$ref": "#/$defs/changed_variable" }
     },
     "held_constant": {
       "type": "array",
-      "items": { "$ref": "#/$defs/variable" }
+      "items": { "$ref": "#/$defs/held_variable" }
     },
     "measured_effects": {
       "type": "array",
       "items": {
         "type": "object",
         "required": [
+          "treatment_id",
           "metric",
           "baseline_value",
           "treatment_value",
@@ -152,6 +183,7 @@ producer provenance remain engine-independent and independently auditable.
           "unit"
         ],
         "properties": {
+          "treatment_id": { "$ref": "#/$defs/identity" },
           "metric": { "$ref": "#/$defs/identity" },
           "baseline_value": {
             "anyOf": [
@@ -228,9 +260,11 @@ producer provenance remain engine-independent and independently auditable.
       "minItems": 1,
       "items": {
         "type": "object",
-        "required": ["path", "digest"],
+        "required": ["path", "media_type", "size_bytes", "digest"],
         "properties": {
           "path": { "type": "string", "minLength": 1 },
+          "media_type": { "type": "string", "minLength": 1 },
+          "size_bytes": { "type": "integer", "minimum": 0 },
           "digest": { "$ref": "#/$defs/digest" }
         },
         "additionalProperties": false
@@ -270,12 +304,91 @@ producer provenance remain engine-independent and independently auditable.
       },
       "then": {
         "properties": {
-          "measured_effects": { "type": "array", "minItems": 1 },
+          "baseline": {
+            "type": "object",
+            "properties": { "sample_size": { "minimum": 1 } }
+          },
+          "treatments": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": { "sample_size": { "minimum": 1 } }
+            }
+          },
+          "measured_effects": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "properties": {
+                "baseline_value": { "not": { "type": "null" } },
+                "treatment_value": { "not": { "type": "null" } },
+                "effect": { "not": { "type": "null" } }
+              }
+            }
+          },
+          "interactions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "disposition": { "enum": ["controlled", "not_applicable"] }
+              }
+            }
+          },
+          "confounders": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "disposition": { "enum": ["controlled", "not_applicable"] }
+              }
+            }
+          },
           "conclusion": {
             "type": "object",
             "properties": {
               "attribution_confidence": {
                 "enum": ["low", "moderate", "high"]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "type": "object",
+        "properties": {
+          "conclusion": {
+            "type": "object",
+            "properties": { "kind": { "const": "no_effect_observed" } },
+            "required": ["kind"]
+          }
+        },
+        "required": ["conclusion"]
+      },
+      "then": {
+        "properties": {
+          "baseline": {
+            "type": "object",
+            "properties": { "sample_size": { "minimum": 1 } }
+          },
+          "treatments": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": { "sample_size": { "minimum": 1 } }
+            }
+          },
+          "measured_effects": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "properties": {
+                "baseline_value": { "not": { "type": "null" } },
+                "treatment_value": { "not": { "type": "null" } }
               }
             }
           }
@@ -307,7 +420,18 @@ producer provenance remain engine-independent and independently auditable.
       },
       "additionalProperties": false
     },
-    "variable": {
+    "changed_variable": {
+      "type": "object",
+      "required": ["name", "treatment_id", "baseline_value", "treatment_value"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "treatment_id": { "$ref": "#/$defs/identity" },
+        "baseline_value": {},
+        "treatment_value": {}
+      },
+      "additionalProperties": false
+    },
+    "held_variable": {
       "type": "object",
       "required": ["name", "value"],
       "properties": {
@@ -333,19 +457,33 @@ producer provenance remain engine-independent and independently auditable.
 }
 ```
 
+## Cross-record integrity
+
+- The baseline id and every treatment id SHALL be unique within the record.
+- Every `changed_variables[].treatment_id` and
+  `measured_effects[].treatment_id` SHALL resolve to exactly one treatment in the
+  same record.
+- Each `(treatment_id, name)` changed-variable key and each
+  `(treatment_id, metric)` measured-effect key SHALL occur at most once.
+- Every raw-evidence path SHALL be a normalized relative path within the evidence
+  store. Absolute paths, parent traversal, and paths that resolve outside the
+  evidence store SHALL be refused.
+- A `causal_effect_established` conclusion SHALL be refused when any interaction
+  or confounder is `uncontrolled` or `unknown`.
+
 ## Acceptance Criteria
 
 | ID | Criteria | Verification |
 | --- | --- | --- |
 | FR-056-AC-1 | The schema requires version, record type and identity, subject identity and revision, and the unchanged FR-044 producer tuple. | Test (TC-1195) |
 | FR-056-AC-2 | The producer tuple rejects a missing field, a mutable tool version, an empty environment, and a malformed configuration digest. | Test (TC-1196) |
-| FR-056-AC-3 | Repeated, randomized, and factorial designs require a positive repetition count, assignment method, and non-empty sampling conditions. | Test (TC-1197) |
-| FR-056-AC-4 | Every record carries one baseline, one or more treatments, one or more changed variables, and an explicit list of held-constant variables. | Test (TC-1198) |
-| FR-056-AC-5 | Measured effects preserve baseline value, treatment value, effect, metric identity, and unit without replacing a missing value with zero. | Test (TC-1199) |
+| FR-056-AC-3 | Repeated, randomized, and factorial designs require a positive repetition count, assignment method, and non-empty sampling conditions; randomized assignment requires a reproducible seed. | Test (TC-1197) |
+| FR-056-AC-4 | Every record carries one uniquely identified baseline, one or more uniquely identified treatments, treatment-linked changed variables, and an explicit list of held-constant variables. | Test (TC-1198) |
+| FR-056-AC-5 | Measured effects preserve treatment identity, baseline value, treatment value, effect, metric identity, and unit without replacing a missing value with zero or permitting duplicate treatment/metric keys. | Test (TC-1199) |
 | FR-056-AC-6 | Interactions and confounders remain separate collections whose entries distinguish controlled, uncontrolled, unknown, and not-applicable dispositions. | Test (TC-1200) |
 | FR-056-AC-7 | Completed, failed, and inconclusive statuses validate; failed and inconclusive records require the first-class `cause_not_established` conclusion. | Test (TC-1201) |
-| FR-056-AC-8 | A causal-effect conclusion requires at least one measured effect and a non-`none` attribution confidence. | Test (TC-1202) |
-| FR-056-AC-9 | Gaps, owner, actions, and at least one content-digested raw-evidence reference are retained, and undeclared fields are refused. | Test (TC-1203) |
+| FR-056-AC-8 | A causal-effect conclusion requires positive baseline and treatment samples, at least one non-null measured effect, non-`none` attribution confidence, and no uncontrolled or unknown interaction or confounder; a no-effect conclusion requires positive samples and an observed comparison. | Test (TC-1202) |
+| FR-056-AC-9 | Gaps, owner, actions, and at least one content-digested raw-evidence reference with media type and byte size are retained; unsafe paths and undeclared fields are refused. | Test (TC-1203) |
 
 ## Dependencies
 

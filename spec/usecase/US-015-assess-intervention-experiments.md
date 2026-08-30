@@ -34,6 +34,14 @@ The practitioner needs a claim-centered report, not a synthetic score. Evidence,
 counterevidence, gaps, ownership, and the next action must remain inspectable beside
 the conclusion that they qualify.
 
+## Priority and Risk (Informative)
+
+- **Priority:** P0. Quoin must not admit or amplify an unsupported causal claim.
+- **Primary risk:** ambiguous treatment attribution or unverifiable raw evidence can
+  make a technically valid record materially misleading.
+- **Mitigation:** require treatment-linked observations, reproducible randomized
+  assignment, explicit attribution limits, and digest verification at intake.
+
 ## Acceptance Examples (Illustrative)
 
 ### US-015-EX-1: A repeated experiment supports a causal conclusion
