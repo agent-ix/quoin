@@ -1,6 +1,7 @@
 # Default-module semantic type-fit audit
 
-Canonical schema: `semantic-module-type-fit-v1`  
+Canonical schema: `semantic-module-type-fit-v1`
+
 Verdict: **findings**
 
 ## Denominators

@@ -2,7 +2,7 @@
   "artifacts": [
     {
       "bytes": 8951,
-      "digest": "sha256:a1c7f034f58c19d5eb470bfe73e26f851d28ea218495223aa1398cfb7bc3a574",
+      "digest": "sha256:0edc39681e46de50ec3af440fb4b6335d8a4e9f1f936311351b117e841417268",
       "path": "snapshot.json",
       "schemaVersion": "semantic-module-snapshot-v1"
     },
@@ -32,13 +32,13 @@
     },
     {
       "bytes": 66131,
-      "digest": "sha256:5b3bdf5c7c4980dd5b261caa3c9d517ee496adf9c752a21414566085ecc11665",
+      "digest": "sha256:88cc967c994617b58edba2821f6ab446b77f6f9aeab3ba90c7f865cf35c50bdd",
       "path": "repository-impact.json",
       "schemaVersion": "semantic-repository-impact-v1"
     },
     {
-      "bytes": 5822,
-      "digest": "sha256:1829ab51dd5be1ac5dedef6bd271ecd1fda283abe701a3e0037928bd63bd76f2",
+      "bytes": 5821,
+      "digest": "sha256:00b1b247961192ad1ccae1c36dd5c39a7730c84c4ebf801027af7d58ed335f84",
       "path": "report.md",
       "schemaVersion": "semantic-audit-report-v1"
     },
@@ -50,7 +50,7 @@
     }
   ],
   "auditSchemaVersion": "semantic-module-type-fit-v1",
-  "contentIdentity": "sha256:a7b30212afce68cfaca24b6ae662abb7320e8f6ae27f67f07ad397d0664d3e70",
+  "contentIdentity": "sha256:dffa869c54f23172eac38149f3ff37ee930c127518000824c3e0ef3468a0f6f2",
   "counts": {
     "conflicts": 11,
     "declarations": 90,
@@ -59,6 +59,6 @@
     "modules": 10,
     "repositoryImpacts": 19
   },
-  "runTimestamp": "2026-08-30T22:23:09.000Z",
+  "runTimestamp": "2026-08-30T22:24:30.000Z",
   "schemaVersion": "semantic-audit-artifact-manifest-v1"
 }

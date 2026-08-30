@@ -198,11 +198,11 @@
   ],
   "quoin": {
     "clean": true,
-    "commit": "9ce9a348af312713b0259d801edde6227e8e4443",
+    "commit": "843226fb9759bb1642aa8005ee1dbe07dfea8870",
     "version": "0.9.0"
   },
   "schemaVersion": "semantic-module-snapshot-v1",
-  "timestamp": "2026-08-30T22:23:09.000Z",
+  "timestamp": "2026-08-30T22:24:30.000Z",
   "tools": {
     "quire": {
       "cliCommit": "4f6ed024",
