@@ -22,3 +22,4 @@ description: "Index of artifacts in this directory."
 - [US-012: Generate fuzz harnesses for the input surfaces my spec names](./US-012-generate-fuzz-harnesses.md)
 - [US-013: Reason about semantic modules without confusing definitions and projections](./US-013-reason-about-semantic-module-boundaries.md)
 - [US-014: Audit the semantic fit of the complete default-module corpus](./US-014-audit-default-module-semantic-fit.md)
+- [US-015: Assess intervention experiments without overstating causality](./US-015-assess-intervention-experiments.md)
