@@ -832,6 +832,11 @@ describe("semantic module type-fit audit", () => {
     expect(
       isAllowedAuditPath("analysis/semantic-module-type-fit/report.md"),
     ).toBe(true);
+    expect(
+      isAllowedAuditPath(
+        "reviews/2026-08-30-semantic-data-promotion-review.md",
+      ),
+    ).toBe(true);
     expect(isAllowedAuditPath(".prettierignore")).toBe(true);
     for (const path of [
       "src/index.ts",

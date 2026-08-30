@@ -29,3 +29,9 @@ description: "Chronological execution record for PLAN-003."
   `843226fb9759bb1642aa8005ee1dbe07dfea8870` produced byte-identical evidence with content identity
   `sha256:dffa869c54f23172eac38149f3ff37ee930c127518000824c3e0ef3468a0f6f2`.
   Stacked PR #316 is open against PR #311, issue #288 is In review, and SR-057 stops at TC-1194.
+- **2026-08-30** — After PR #311 merged, a fresh census from clean PR #316 commit
+  `61aeaddf4571550bf1989f7add3197e52f54f73b` retained all substantive counts and findings and
+  produced content identity `sha256:8bb48f9d022422301a0bb45eea8ac7ed678602bd6f195dbbec5a4925bad983e2`.
+  Both merged `main` and PR #316 reproduce the same one-test mutable-local-module mismatch in
+  `tests/skill-contracts.test.ts`; the audit changes neither side of that contract. The human
+  disposition recorded by SR-058 authorizes admin merge of the read-only audit only.

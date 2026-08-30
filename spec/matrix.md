@@ -110,9 +110,9 @@ Coverage is mapped requirement → test as `file :: "test name"`:
 | NFR-011     | ⚠️ Spec-ahead-of-code | No performance measurement exists anywhere in the repository — no benchmark, no timing assertion, no threshold. The budget is stated so a regression fails a test rather than being absorbed as "CI got slower" — `agent-ix/quoin#133`. |
 | NFR-012     | ⚠️ Partial | The quire half is covered: `quire-contract.test.ts` TC-114 asserts the version premise names found/required/consequence, TC-118 validates a payload from the **installed** quire. The module half is `scripts/release-drift.js pins`, which no test invokes. |
 | NFR-013     | ✅ Covered | `tests/semantic-module-architecture.test.ts` resolves index links, checks every external-decision identity field, and rejects provisional claims presented as normative (TC-1151..TC-1153). |
-| NFR-014     | ⚠️ Partial | TC-1154 proves the branch changes no production, manifest, schema, generated-package, migration, or runtime behavior and the unchanged 763-test suite passes; TC-1155 remains open until named maintainers review the PR. |
+| NFR-014     | ✅ Covered | TC-1154 proves the branch changes no production, manifest, schema, generated-package, migration, or runtime behavior. TC-1155 records named active maintainer `kreneskyp`'s review and admin merge of PR #311 as merge commit `4a82644ad3cf75770cc53ef3812e3b13e80b516d`; SR-058 preserves the promotion evidence. |
 | NFR-015     | ✅ Covered | TC-1188..TC-1191 prove complete module, type-axis, and Markdown parse-state denominators plus byte-identical equal-input output. The retained census closes 10 modules, 90 declarations, 450 contract-surface states, and 299 Markdown paths. |
-| NFR-016     | ⚠️ Partial | TC-1192..TC-1193 prove read-only execution and changed-path isolation; TC-1194 remains open for the major-interference and stacked-architecture promotion gate. |
+| NFR-016     | ✅ Covered | TC-1192..TC-1193 prove read-only execution and changed-path isolation. TC-1194 records the human decision to admin-merge PR #316 after the architecture gate closed; SR-058 limits that decision to this read-only audit and leaves every downstream compiler, schema, migration, publication, enforcement, and retirement boundary gated. |
 
 ## Functional Requirement Coverage
 
@@ -529,7 +529,7 @@ generated tests under `tests/props/` and `Unit` for the rest.
 | TC-1152 | Every local architecture-index link resolves | Static | P0 | NFR-013 | ✅ |
 | TC-1153 | Provisional and unresolved claims cannot appear as normative | Static | P0 | NFR-013 | ✅ |
 | TC-1154 | Changed-path guard rejects behavior, manifest, schema, generated-package, and migration changes; the unchanged 763-test suite passes | Static | P0 | NFR-014 | ✅ |
-| TC-1155 | Merge requires named Quoin/Quire maintainer review | Inspection | P0 | NFR-014 | 🚧 |
+| TC-1155 | Merge requires named Quoin/Quire maintainer review | Inspection | P0 | NFR-014 | ✅ |
 | TC-1156 | Snapshot records Quoin identity, cleanliness, manifest digest, version, and run timestamp | Static | P0 | FR-051-AC-1 | ✅ |
 | TC-1157 | Every default-module declaration retains canonical source, request, and resolved full SHA | Static | P0 | FR-051-AC-2 | ✅ |
 | TC-1158 | Every inspected module retains content, manifest, path, commit, and cleanliness identity | Static | P0 | FR-051-AC-3 | ✅ |
@@ -568,7 +568,7 @@ generated tests under `tests/props/` and `Unit` for the rest.
 | TC-1191 | Equal-input canonical artifact bytes never differ | Property | P0 | NFR-015 | ✅ |
 | TC-1192 | Read-only fixture inputs and all paths outside the output root are unchanged | Integration | P0 | NFR-016 | ✅ |
 | TC-1193 | Changed-path guard permits audit/spec/review/plan files and rejects production, module, schema, skeleton, registry, generated, migration, and consumer changes | Static | P0 | NFR-016 | ✅ |
-| TC-1194 | Major-interference recommendations stop at their named human gate | Inspection | P0 | NFR-016 | 🚧 |
+| TC-1194 | Major-interference recommendations stop at their named human gate | Inspection | P0 | NFR-016 | ✅ |
 | TC-1077 | The supported Tier-1 update emits baseline JSON in the same format the repository gate enforces; updating a ratchet cannot make the next gate fail on style alone (#244) | Unit | P0 | FR-043-AC-17 | ✅ |
 | TC-1078 | Multiple standing-adjudication entries for one advisory family are unioned by declaration; a later narrow ruling cannot silently erase an earlier ruling (#252) | Unit | P0 | FR-043-AC-16 | ✅ |
 | TC-1079 | `untracked-id-has-minted-children` maps to a distinct located unminted-ID family rather than being folded into spelling near misses (#253) | Unit | P0 | FR-043-AC-22 | ✅ |
@@ -686,8 +686,8 @@ found the stakeholder layer had no rows here at all.
 | US-010   | ✅ Covered | `org.test.ts` resolution suites (precedence, both url forms, worktrees, owner-less remotes); `write.test.ts` "authoring pack organization" suite; `cli.test.ts` `--org` text/JSON/unresolved trio; `org-no-subprocess.test.ts` no-subprocess proof — see FR-025 |
 | US-011   | ✅ Covered | TC-EV-050…TC-EV-053 in `evals/scenarios/index.mjs` — the settled lane, the review artifact, the gap-analysis handoff, and the refusals; see FR-028. The skill's own run on this repo is `tests/props/` (17 criteria) + a `SpecReview` under `reviews/` |
 | US-012   | ✅ Covered | TC-EV-054…TC-EV-057 in `evals/scenarios/index.mjs` — the generation lane, the two refusals, idempotent re-runs and harness selection, and the undischarged report; see FR-038. |
-| US-013   | ⚠️ Partial | TC-1125..TC-1154 inspect the architecture record, decision ledger, and non-disruption scope; the TC-1155 maintainer walkthrough remains required before merge. |
-| US-014   | ⚠️ Partial | TC-1156..TC-1193 cover the complete read-only census, evidence-backed type-fit review, canonical outputs, reconciliation, and non-disruption; TC-1194 remains open at the stacked architecture/major-interference promotion gate. |
+| US-013   | ✅ Covered | TC-1125..TC-1154 inspect the architecture record, decision ledger, and non-disruption scope; TC-1155 records named active maintainer `kreneskyp`'s review and admin merge of PR #311 as merge commit `4a82644ad3cf75770cc53ef3812e3b13e80b516d`. |
+| US-014   | ✅ Covered | TC-1156..TC-1193 cover the complete read-only census, evidence-backed type-fit review, canonical outputs, reconciliation, and non-disruption; TC-1194 records the explicitly authorized admin merge of PR #316 while preserving every downstream major-interference gate. |
 
 ## Property Test Layer
 

@@ -27,7 +27,8 @@ relationships:
 
 Implement issue #289 as a tested, indexed, architecture-only record that applies the
 `filament-core-data` semantic-data model to Quoin, Quire, dynamic modules, finite generated
-packages, and consuming systems. Stop at the named Quoin/Quire maintainer-review gate before merge.
+packages, and consuming systems. Stop at the named Quoin/Quire maintainer-review gate before merge;
+record its disposition without broadening it into downstream implementation authority.
 
 ## Requirements in scope
 
@@ -39,7 +40,7 @@ packages, and consuming systems. Stop at the named Quoin/Quire maintainer-review
 - [x] **FR-050:** Reconcile Quire ADR-0002, ADR-0003, ADR-0004, ADR-0011, and current spec boundaries.
 - [x] **NFR-013:** Keep every normative claim standalone-readable and traceable.
 - [x] **NFR-014:** Change no current behavior and require maintainer review before merge; TC-1155
-      remains open as the external promotion gate.
+      was satisfied by named active maintainer `kreneskyp`'s admin merge of PR #311.
 
 ## Scope boundaries
 
@@ -152,7 +153,7 @@ avoid needless coordination overhead.
 ## Definition of done
 
 - TC-1125..TC-1154 pass with exact trace tags and matrix rows marked covered.
-- TC-1155 remains an explicit, truthful external approval gate until maintainers act.
+- TC-1155 has durable named-maintainer disposition in SR-058 and PR #311's merge record.
 - Every local architecture link resolves and every external decision has repository, path, status,
   and revision/date.
 - No behavior, manifest, schema, generated package, publication, persistence, or migration file changes.

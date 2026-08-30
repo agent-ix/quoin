@@ -16,8 +16,9 @@ relationships:
 
 ## Status
 
-**done** — draft PR #311 is open, Project 18 is In review, and TC-1155 is presented as an explicit
-named-maintainer approval gate. No merge was attempted.
+**done** — named active `agent-ix/maintainers` member `kreneskyp` reviewed the gate and admin-merged
+PR #311 as merge commit `4a82644ad3cf75770cc53ef3812e3b13e80b516d`. SR-058 retains the
+decision and its architecture-only scope.
 
 ## Scope
 
@@ -28,6 +29,6 @@ Do not merge until named maintainers approve the record.
 ## Exit criteria
 
 - PR is open with validation, code-review, gap-analysis, scope, and decision-status evidence.
-- Project 18 marks issue #289 In review.
-- TC-1155 remains open until named maintainer approval is recorded.
-- No merge is attempted during this task without that approval.
+- Project 18 advances issue #289 to Done after the merge.
+- TC-1155 records the named maintainer and immutable merge commit.
+- The merge does not activate a downstream disruptive recommendation.

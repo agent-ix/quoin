@@ -1468,6 +1468,7 @@ export function isAllowedAuditPath(path) {
     /^reviews\/2026-08-30-semantic-module-type-fit-(code-review|gap-analysis)\.md$/.test(
       normalized,
     ) ||
+    normalized === "reviews/2026-08-30-semantic-data-promotion-review.md" ||
     [
       "spec/usecase/US-014-audit-default-module-semantic-fit.md",
       "spec/functional/FR-051-snapshot-semantic-audit-scope.md",

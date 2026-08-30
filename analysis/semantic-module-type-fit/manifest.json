@@ -2,7 +2,7 @@
   "artifacts": [
     {
       "bytes": 8951,
-      "digest": "sha256:0edc39681e46de50ec3af440fb4b6335d8a4e9f1f936311351b117e841417268",
+      "digest": "sha256:ef6bbcb09426e98ce968faa01c2ab0587249f6084bd4e13f16cc741d3be64182",
       "path": "snapshot.json",
       "schemaVersion": "semantic-module-snapshot-v1"
     },
@@ -32,7 +32,7 @@
     },
     {
       "bytes": 66131,
-      "digest": "sha256:88cc967c994617b58edba2821f6ab446b77f6f9aeab3ba90c7f865cf35c50bdd",
+      "digest": "sha256:abb1fe764bf7f33ed5bad31c0f8f61bb389880f305a7f6ff415749ac89979ea2",
       "path": "repository-impact.json",
       "schemaVersion": "semantic-repository-impact-v1"
     },
@@ -50,7 +50,7 @@
     }
   ],
   "auditSchemaVersion": "semantic-module-type-fit-v1",
-  "contentIdentity": "sha256:dffa869c54f23172eac38149f3ff37ee930c127518000824c3e0ef3468a0f6f2",
+  "contentIdentity": "sha256:8bb48f9d022422301a0bb45eea8ac7ed678602bd6f195dbbec5a4925bad983e2",
   "counts": {
     "conflicts": 11,
     "declarations": 90,

@@ -16,8 +16,9 @@ relationships:
 
 ## Status
 
-**done** — stacked PR #316 is open against PR #311's architecture branch, Project 18 marks issue
-#288 In review, the maintainers team is requested, and no merge or disruptive follow-up was attempted.
+**done** — PR #311's architecture dependency is merged, PR #316 is retargeted to `main`, and the
+human promotion decision authorizes admin merge of this read-only audit. SR-058 makes explicit that
+the decision does not activate any disruptive follow-up.
 
 ## Scope
 
@@ -29,5 +30,5 @@ merge ahead of the architecture approval or activate a downstream disruptive cha
 
 - PR contains validation, review, gap, freshness, reproducibility, and read-only evidence.
 - Project 18 marks issue #288 In review.
-- TC-1194 and the PR #311 dependency are explicit and truthful.
+- TC-1194 and the satisfied PR #311 dependency have durable, scoped disposition.
 - No disruptive recommendation is implemented or merged as part of issue #288.

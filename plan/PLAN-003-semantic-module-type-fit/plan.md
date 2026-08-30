@@ -32,14 +32,14 @@ publication, enforcement, retirement, database, API, UI, or conflicting feature-
 
 ## Requirements in scope
 
-- [x] **US-014:** Maintainers can reason from complete corpus evidence rather than samples; promotion remains gated.
+- [x] **US-014:** Maintainers can reason from complete corpus evidence rather than samples; the read-only audit promotion is approved and every recommendation remains separately gated.
 - [x] **FR-051:** Snapshot exact source, installed-content, tool, and external-evidence identities.
 - [x] **FR-052:** Inventory every module, declaration, contract surface, Markdown path, and parse state.
 - [x] **FR-053:** Assess every declaration on all semantic-fit axes with evidence and confidence.
 - [x] **FR-054:** Publish canonical artifacts and generated human projections.
 - [x] **FR-055:** Reconcile findings with architecture, Quire, core-data, and downstream boundaries.
 - [x] **NFR-015:** Close all denominators and reproduce equal-input canonical bytes.
-- [x] **NFR-016:** Remain read-only; TC-1194 deliberately remains at the external promotion gate.
+- [x] **NFR-016:** Remain read-only; TC-1194 records the human promotion decision without activating downstream work.
 
 ## Scope boundaries
 
@@ -63,13 +63,13 @@ publication, enforcement, retirement, database, API, UI, or conflicting feature-
 
 ## Inputs and accepted premises
 
-| Input                  | Required identity and treatment                                                                      |
-| ---------------------- | ---------------------------------------------------------------------------------------------------- |
-| `default-modules.yaml` | Branch-local bytes, digest, ordered declarations, requested refs and resolved SHAs.                  |
-| Default module sources | Canonical repository/subdirectory and exact inspected content/commit; disagreement is retained.      |
-| Quire                  | CLI and engine identity plus pinned `quire-rs#385` corpus revision; parsing failures remain records. |
-| Semantic architecture  | Stacked #289 branch; its decisions guide classification but remain behind PR #311's approval gate.   |
-| Core-data census       | Merged `filament-core-data#10` commit and its contract inventory, linked rather than copied.         |
+| Input                  | Required identity and treatment                                                                                                         |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `default-modules.yaml` | Branch-local bytes, digest, ordered declarations, requested refs and resolved SHAs.                                                     |
+| Default module sources | Canonical repository/subdirectory and exact inspected content/commit; disagreement is retained.                                         |
+| Quire                  | CLI and engine identity plus pinned `quire-rs#385` corpus revision; parsing failures remain records.                                    |
+| Semantic architecture  | PR #311 merged as `4a82644ad3cf75770cc53ef3812e3b13e80b516d`; its decisions guide classification while downstream changes remain gated. |
+| Core-data census       | Merged `filament-core-data#10` commit and its contract inventory, linked rather than copied.                                            |
 
 ## Deliverable flow
 
@@ -162,4 +162,4 @@ TASK-019 stacked PR + major-interference/architecture gate
 - Every qualified type has every axis, one disposition, confidence, and linked evidence.
 - Canonical JSON, generated report, and validated SpecReview agree by count and digest.
 - Fresh-census, deterministic rerun, read-only filesystem, full repository, code-review, and gap gates pass.
-- TC-1194 and the stacked #289 approval dependency remain explicit until humans satisfy them.
+- TC-1194 and the #289 approval disposition are retained in SR-058; every downstream major-interference boundary remains explicit and unsatisfied.
