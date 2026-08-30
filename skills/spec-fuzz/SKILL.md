@@ -1,11 +1,12 @@
 ---
 name: spec-fuzz
-description: Turn Fuzz-kind obligations into runnable fuzz targets. Consumes `quoin advise
-  --json`, selects the obligations whose verification method carries `evidence_kind: Fuzz`,
-  grounds each one's entry-point symbol in the repository's source, and emits targets in the
-  repo's own harness (cargo-fuzz / atheris / fast-check) keyed on the obligation id. Writes
-  nothing where the tooling is absent or the entry point cannot be grounded — a finding
-  instead. Emits a validated SpecReview recording every obligation it could not serve.
+description: >-
+  Turn Fuzz-kind obligations into runnable fuzz targets. Consumes `quoin advise --json`,
+  selects the obligations whose verification method carries `evidence_kind: Fuzz`, grounds
+  each one's entry-point symbol in the repository's source, and emits targets in the repo's
+  own harness (cargo-fuzz / atheris / fast-check) keyed on the obligation id. Writes nothing
+  where the tooling is absent or the entry point cannot be grounded — a finding instead.
+  Emits a validated SpecReview recording every obligation it could not serve.
 ---
 
 # Spec Fuzz
