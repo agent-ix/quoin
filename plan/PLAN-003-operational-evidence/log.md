@@ -17,3 +17,8 @@ description: "Chronological log for the PLAN-003 bundle."
   REST payloads. The offline adapter persists one linked available-capability
   and successful actual-exercise pair with a met ten-minute clock. The final
   clean repository gate, matrix reconciliation, and gap analysis remain active.
+- **2026-08-30** — Completed TASK-015. The clean inner repository gate passed
+  all 758 tests across 66 files using Quire 0.31.0 and the locked
+  `spec-artifacts-process@61a20e0` vocabulary. Quire coverage reports FR-048 at
+  9/9, FR-049 at 12/12, and FR-051 at 5/5 backed. The final gap analysis is
+  recorded in SR-037.

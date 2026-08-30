@@ -2,7 +2,7 @@
 id: TASK-015
 title: "Close the operational integration gate"
 type: Task
-status: in_progress
+status: done
 track: Gate
 priority: P0
 relationships:

@@ -2,7 +2,7 @@
 id: PLAN-003
 title: "Operational evidence implementation"
 type: Plan
-status: active
+status: complete
 relationships:
   - target: "ix://agent-ix/quoin/US-014"
     type: references
