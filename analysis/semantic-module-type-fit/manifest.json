@@ -1,0 +1,64 @@
+{
+  "artifacts": [
+    {
+      "bytes": 8951,
+      "digest": "sha256:a1c7f034f58c19d5eb470bfe73e26f851d28ea218495223aa1398cfb7bc3a574",
+      "path": "snapshot.json",
+      "schemaVersion": "semantic-module-snapshot-v1"
+    },
+    {
+      "bytes": 205891,
+      "digest": "sha256:6f8572fca249afdabcb5b81ea79b8a85236dabfd1b89803ce957f14867039689",
+      "path": "inventory.json",
+      "schemaVersion": "semantic-module-inventory-v1"
+    },
+    {
+      "bytes": 264698,
+      "digest": "sha256:a2edcb9bb8170db125991ad883adcfd4a775a4affeb21df973f58f69086d9f6b",
+      "path": "type-fit.json",
+      "schemaVersion": "semantic-type-fit-matrix-v1"
+    },
+    {
+      "bytes": 9298,
+      "digest": "sha256:e605f8cee7c51d351f68b2e5decffde28d6b2262e19e8fe4a9de3652078e8d0a",
+      "path": "conflicts.json",
+      "schemaVersion": "semantic-conflict-ledger-v1"
+    },
+    {
+      "bytes": 8461,
+      "digest": "sha256:304ed6bcd5e3ab47c28806707f0eaad23abfafd910e7d2396591022b09d3c00d",
+      "path": "missing-types.json",
+      "schemaVersion": "semantic-missing-type-ledger-v1"
+    },
+    {
+      "bytes": 66131,
+      "digest": "sha256:5b3bdf5c7c4980dd5b261caa3c9d517ee496adf9c752a21414566085ecc11665",
+      "path": "repository-impact.json",
+      "schemaVersion": "semantic-repository-impact-v1"
+    },
+    {
+      "bytes": 5822,
+      "digest": "sha256:1829ab51dd5be1ac5dedef6bd271ecd1fda283abe701a3e0037928bd63bd76f2",
+      "path": "report.md",
+      "schemaVersion": "semantic-audit-report-v1"
+    },
+    {
+      "bytes": 4332,
+      "digest": "sha256:935b72d89fd34402e60480a499a7b1d085a2eb67948149137e1078291e873f69",
+      "path": "review.md",
+      "schemaVersion": "semantic-audit-specreview-v1"
+    }
+  ],
+  "auditSchemaVersion": "semantic-module-type-fit-v1",
+  "contentIdentity": "sha256:a7b30212afce68cfaca24b6ae662abb7320e8f6ae27f67f07ad397d0664d3e70",
+  "counts": {
+    "conflicts": 11,
+    "declarations": 90,
+    "documents": 299,
+    "missingTypes": 9,
+    "modules": 10,
+    "repositoryImpacts": 19
+  },
+  "runTimestamp": "2026-08-30T22:23:09.000Z",
+  "schemaVersion": "semantic-audit-artifact-manifest-v1"
+}

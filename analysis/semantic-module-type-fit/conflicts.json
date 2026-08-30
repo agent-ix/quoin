@@ -1,0 +1,294 @@
+{
+  "conflicts": [
+    {
+      "confidence": "high",
+      "evidence": [
+        "snapshot.modules[0].declaredVersion",
+        "snapshot.modules[0].manifestVersion"
+      ],
+      "id": "PROV-001",
+      "kind": "provenance-conflict",
+      "modules": [
+        "engineering-assurance"
+      ],
+      "nextBoundary": "source-provenance-decision",
+      "qualifiedTypes": [],
+      "rationale": "declaredVersion \"0.2.0+4e6522f\" disagrees with manifestVersion \"0.2.0\"",
+      "reconciliation": {
+        "authority": "docs/semantic-module-architecture/planes-and-authority.md",
+        "decision": "docs/semantic-module-architecture/decision-ledger.md",
+        "owner": "quoin",
+        "plane": "meta"
+      },
+      "repositories": [
+        "agent-ix/engineering-assurance"
+      ],
+      "severity": "high",
+      "status": "open"
+    },
+    {
+      "confidence": "high",
+      "evidence": [
+        "snapshot.modules[1].declaredVersion",
+        "snapshot.modules[1].manifestVersion"
+      ],
+      "id": "PROV-002",
+      "kind": "provenance-conflict",
+      "modules": [
+        "spec-artifacts-iso"
+      ],
+      "nextBoundary": "source-provenance-decision",
+      "qualifiedTypes": [],
+      "rationale": "declaredVersion \"0.18.0\" disagrees with manifestVersion \"0.1.0\"",
+      "reconciliation": {
+        "authority": "docs/semantic-module-architecture/planes-and-authority.md",
+        "decision": "docs/semantic-module-architecture/decision-ledger.md",
+        "owner": "quoin",
+        "plane": "meta"
+      },
+      "repositories": [
+        "agent-ix/spec-artifacts-iso"
+      ],
+      "severity": "high",
+      "status": "open"
+    },
+    {
+      "confidence": "high",
+      "evidence": [
+        "snapshot.modules[2].declaredVersion",
+        "snapshot.modules[2].manifestVersion"
+      ],
+      "id": "PROV-003",
+      "kind": "provenance-conflict",
+      "modules": [
+        "spec-artifacts-app"
+      ],
+      "nextBoundary": "source-provenance-decision",
+      "qualifiedTypes": [],
+      "rationale": "declaredVersion \"0.5.0\" disagrees with manifestVersion \"0.1.0\"",
+      "reconciliation": {
+        "authority": "docs/semantic-module-architecture/planes-and-authority.md",
+        "decision": "docs/semantic-module-architecture/decision-ledger.md",
+        "owner": "quoin",
+        "plane": "meta"
+      },
+      "repositories": [
+        "agent-ix/spec-artifacts-app"
+      ],
+      "severity": "high",
+      "status": "open"
+    },
+    {
+      "confidence": "high",
+      "evidence": [
+        "snapshot.modules[3].declaredVersion",
+        "snapshot.modules[3].manifestVersion"
+      ],
+      "id": "PROV-004",
+      "kind": "provenance-conflict",
+      "modules": [
+        "spec-artifacts-process"
+      ],
+      "nextBoundary": "source-provenance-decision",
+      "qualifiedTypes": [],
+      "rationale": "declaredVersion \"0.24.0+d605caa\" disagrees with manifestVersion \"0.1.0\"",
+      "reconciliation": {
+        "authority": "docs/semantic-module-architecture/planes-and-authority.md",
+        "decision": "docs/semantic-module-architecture/decision-ledger.md",
+        "owner": "quoin",
+        "plane": "meta"
+      },
+      "repositories": [
+        "agent-ix/spec-artifacts-process"
+      ],
+      "severity": "high",
+      "status": "open"
+    },
+    {
+      "confidence": "high",
+      "evidence": [
+        "snapshot.modules[4].declaredVersion",
+        "snapshot.modules[4].manifestVersion"
+      ],
+      "id": "PROV-005",
+      "kind": "provenance-conflict",
+      "modules": [
+        "spec-objects-business"
+      ],
+      "nextBoundary": "source-provenance-decision",
+      "qualifiedTypes": [],
+      "rationale": "declaredVersion \"0.6.0\" disagrees with manifestVersion \"0.2.0\"",
+      "reconciliation": {
+        "authority": "docs/semantic-module-architecture/planes-and-authority.md",
+        "decision": "docs/semantic-module-architecture/decision-ledger.md",
+        "owner": "quoin",
+        "plane": "meta"
+      },
+      "repositories": [
+        "agent-ix/spec-objects-business"
+      ],
+      "severity": "high",
+      "status": "open"
+    },
+    {
+      "confidence": "high",
+      "evidence": [
+        "snapshot.modules[5].declaredVersion",
+        "snapshot.modules[5].manifestVersion"
+      ],
+      "id": "PROV-006",
+      "kind": "provenance-conflict",
+      "modules": [
+        "spec-objects-architecture"
+      ],
+      "nextBoundary": "source-provenance-decision",
+      "qualifiedTypes": [],
+      "rationale": "declaredVersion \"0.6.0\" disagrees with manifestVersion \"0.2.0\"",
+      "reconciliation": {
+        "authority": "docs/semantic-module-architecture/planes-and-authority.md",
+        "decision": "docs/semantic-module-architecture/decision-ledger.md",
+        "owner": "quoin",
+        "plane": "meta"
+      },
+      "repositories": [
+        "agent-ix/spec-objects-architecture"
+      ],
+      "severity": "high",
+      "status": "open"
+    },
+    {
+      "confidence": "high",
+      "evidence": [
+        "snapshot.modules[6].declaredVersion",
+        "snapshot.modules[6].manifestVersion"
+      ],
+      "id": "PROV-007",
+      "kind": "provenance-conflict",
+      "modules": [
+        "spec-objects-enterprise"
+      ],
+      "nextBoundary": "source-provenance-decision",
+      "qualifiedTypes": [],
+      "rationale": "declaredVersion \"0.5.0\" disagrees with manifestVersion \"0.1.0\"",
+      "reconciliation": {
+        "authority": "docs/semantic-module-architecture/planes-and-authority.md",
+        "decision": "docs/semantic-module-architecture/decision-ledger.md",
+        "owner": "quoin",
+        "plane": "meta"
+      },
+      "repositories": [
+        "agent-ix/spec-objects-enterprise"
+      ],
+      "severity": "high",
+      "status": "open"
+    },
+    {
+      "confidence": "high",
+      "evidence": [
+        "snapshot.modules[7].declaredVersion",
+        "snapshot.modules[7].manifestVersion"
+      ],
+      "id": "PROV-008",
+      "kind": "provenance-conflict",
+      "modules": [
+        "spec-objects-operational"
+      ],
+      "nextBoundary": "source-provenance-decision",
+      "qualifiedTypes": [],
+      "rationale": "declaredVersion \"0.6.0\" disagrees with manifestVersion \"0.2.0\"",
+      "reconciliation": {
+        "authority": "docs/semantic-module-architecture/planes-and-authority.md",
+        "decision": "docs/semantic-module-architecture/decision-ledger.md",
+        "owner": "quoin",
+        "plane": "meta"
+      },
+      "repositories": [
+        "agent-ix/spec-objects-operational"
+      ],
+      "severity": "high",
+      "status": "open"
+    },
+    {
+      "confidence": "high",
+      "evidence": [
+        "snapshot.modules[8].declaredVersion",
+        "snapshot.modules[8].manifestVersion"
+      ],
+      "id": "PROV-009",
+      "kind": "provenance-conflict",
+      "modules": [
+        "spec-objects-security"
+      ],
+      "nextBoundary": "source-provenance-decision",
+      "qualifiedTypes": [],
+      "rationale": "declaredVersion \"0.7.0\" disagrees with manifestVersion \"0.1.0\"",
+      "reconciliation": {
+        "authority": "docs/semantic-module-architecture/planes-and-authority.md",
+        "decision": "docs/semantic-module-architecture/decision-ledger.md",
+        "owner": "quoin",
+        "plane": "meta"
+      },
+      "repositories": [
+        "agent-ix/spec-objects-security"
+      ],
+      "severity": "high",
+      "status": "open"
+    },
+    {
+      "confidence": "high",
+      "evidence": [
+        "snapshot.modules[9].declaredVersion",
+        "snapshot.modules[9].manifestVersion"
+      ],
+      "id": "PROV-010",
+      "kind": "provenance-conflict",
+      "modules": [
+        "spec-objects-safety"
+      ],
+      "nextBoundary": "source-provenance-decision",
+      "qualifiedTypes": [],
+      "rationale": "declaredVersion \"0.4.0\" disagrees with manifestVersion \"0.2.0\"",
+      "reconciliation": {
+        "authority": "docs/semantic-module-architecture/planes-and-authority.md",
+        "decision": "docs/semantic-module-architecture/decision-ledger.md",
+        "owner": "quoin",
+        "plane": "meta"
+      },
+      "repositories": [
+        "agent-ix/spec-objects-safety"
+      ],
+      "severity": "high",
+      "status": "open"
+    },
+    {
+      "confidence": "high",
+      "evidence": [
+        "inventory.declarations:spec-artifacts-process::artifact::Standard::9",
+        "inventory.declarations:spec-artifacts-process::object::standard::0"
+      ],
+      "id": "CONFLICT-011",
+      "kind": "duplicate-type",
+      "modules": [
+        "spec-artifacts-process"
+      ],
+      "nextBoundary": "module-schema-decision",
+      "qualifiedTypes": [
+        "spec-artifacts-process::artifact::Standard::9",
+        "spec-artifacts-process::object::standard::0"
+      ],
+      "rationale": "module-qualified declarations named Standard have incompatible shapes",
+      "reconciliation": {
+        "authority": "docs/semantic-module-architecture/planes-and-authority.md",
+        "decision": "docs/semantic-module-architecture/decision-ledger.md",
+        "owner": "module-repository",
+        "plane": "definition"
+      },
+      "repositories": [
+        "spec-artifacts-process"
+      ],
+      "severity": "medium",
+      "status": "open"
+    }
+  ],
+  "schemaVersion": "semantic-conflict-ledger-v1"
+}
