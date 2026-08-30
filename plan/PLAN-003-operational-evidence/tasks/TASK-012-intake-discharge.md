@@ -2,7 +2,7 @@
 id: TASK-012
 title: "Implement operational intake and clock discharge"
 type: Task
-status: todo
+status: done
 track: B
 priority: P0
 relationships:

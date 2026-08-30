@@ -2,7 +2,7 @@
 id: TASK-014
 title: "Build the GitHub Actions release producer"
 type: Task
-status: todo
+status: done
 track: D
 priority: P0
 relationships:

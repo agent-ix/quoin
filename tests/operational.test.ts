@@ -1,4 +1,5 @@
 import {
+  copyFileSync,
   mkdtempSync,
   mkdirSync,
   readFileSync,
@@ -386,29 +387,189 @@ describe("operational evidence", () => {
       outcome: "succeeded",
       clock: { status: "met" },
     });
+    Object.assign(definition as unknown as Record<string, unknown>, {
+      observed_at: "1900-01-01T00:00:00Z",
+      conclusion: "failure",
+      clock_status: "missed",
+      raw_evidence: [{ digest: `sha256:${"f".repeat(64)}` }],
+    });
+    expect(result.exercise.observed_at).toBe("2026-08-30T12:05:00.000Z");
     expect(writeOperationalPair(root, result.capability, result.exercise)).toBe(
       result.path,
     );
 
-    const adverseRoot = repo();
-    writeGitHubArtifacts(adverseRoot, "failure");
-    const adverse = produceGitHubReleaseOperational(adverseRoot, definition);
-    expect(adverse.exercise.exercise.outcome).toBe("failed");
-    expect(
-      operationalDischarge(adverse.exercise, {
-        control_kind: "release",
-        subject: adverse.exercise.subject,
-        scope: adverse.exercise.scope,
-        accepted_modes: ["actual"],
-      }).discharged,
-    ).toBe(false);
+    for (const [conclusion, outcome] of [
+      ["failure", "failed"],
+      ["timed_out", "failed"],
+      ["action_required", "failed"],
+      ["cancelled", "aborted"],
+      ["skipped", "partial"],
+    ] as const) {
+      const adverseRoot = repo();
+      writeGitHubArtifacts(adverseRoot, conclusion);
+      const adverse = produceGitHubReleaseOperational(
+        adverseRoot,
+        githubDefinition(),
+      );
+      expect(adverse.exercise.exercise.outcome).toBe(outcome);
+      expect(
+        operationalDischarge(adverse.exercise, {
+          control_kind: "release",
+          subject: adverse.exercise.subject,
+          scope: adverse.exercise.scope,
+          accepted_modes: ["actual"],
+        }).discharged,
+      ).toBe(false);
+    }
 
     const mismatchRoot = repo();
     writeGitHubArtifacts(mismatchRoot, "success", "wrong/path.yml");
     expect(() =>
-      produceGitHubReleaseOperational(mismatchRoot, definition),
+      produceGitHubReleaseOperational(mismatchRoot, githubDefinition()),
     ).toThrow(/path, event, or immutable source revision mismatch/);
     expect(readOperationalRecords(mismatchRoot)).toEqual([]);
+
+    const malformed = repo();
+    writeGitHubArtifacts(malformed, "success");
+    writeRaw(malformed, "raw/run.json", "{");
+    expect(() =>
+      produceGitHubReleaseOperational(malformed, githubDefinition()),
+    ).toThrow(/workflow-run export is malformed/);
+    expect(readOperationalRecords(malformed)).toEqual([]);
+
+    for (const [path, bytes, message] of [
+      ["raw/release.yml", "jobs: [", /Flow sequence/],
+      ["raw/jobs.json", "{", /workflow-jobs export is malformed/],
+      [
+        "raw/release.yml",
+        "name: Release\non:\n  push:\njobs:\n  publish:\n    name: Publish\n",
+        /accepted event/,
+      ],
+      [
+        "raw/release.yml",
+        "name: Release\non:\n  workflow_dispatch:\njobs:\n  test:\n    name: Test\n",
+        /configured release job/,
+      ],
+    ] as const) {
+      const invalid = repo();
+      writeGitHubArtifacts(invalid, "success");
+      writeRaw(invalid, path, bytes);
+      expect(() =>
+        produceGitHubReleaseOperational(invalid, githubDefinition()),
+      ).toThrow(message);
+      expect(readOperationalRecords(invalid)).toEqual([]);
+    }
+
+    for (const changed of [{ event: "push" }, { head_sha: "b".repeat(40) }]) {
+      const invalid = repo();
+      writeGitHubArtifacts(invalid, "success");
+      const run = JSON.parse(
+        readFileSync(
+          join(invalid, "spec", "evidence", "raw", "run.json"),
+          "utf8",
+        ),
+      ) as Record<string, unknown>;
+      writeRaw(invalid, "raw/run.json", JSON.stringify({ ...run, ...changed }));
+      expect(() =>
+        produceGitHubReleaseOperational(invalid, githubDefinition()),
+      ).toThrow(/path, event, or immutable source revision mismatch/);
+      expect(readOperationalRecords(invalid)).toEqual([]);
+    }
+
+    for (const jobs of [
+      [],
+      [githubJob("success"), githubJob("success")],
+      [{ ...githubJob("success"), started_at: undefined }],
+      [{ ...githubJob("success"), status: "in_progress" }],
+      [{ ...githubJob("success"), completed_at: undefined }],
+    ]) {
+      const invalid = repo();
+      writeGitHubArtifacts(invalid, "success");
+      writeRaw(invalid, "raw/jobs.json", JSON.stringify({ jobs }));
+      expect(() =>
+        produceGitHubReleaseOperational(invalid, githubDefinition()),
+      ).toThrow(/exactly one Publish job|unstarted or incomplete/);
+      expect(readOperationalRecords(invalid)).toEqual([]);
+    }
+  });
+
+  // Trace: FR-051-AC-1, FR-051-AC-5 (TC-1173, TC-1177)
+  test("retained real release evidence persists one exact linked pair offline", () => {
+    const root = repo();
+    const source = join(process.cwd(), "spec", "evidence", "github-actions");
+    const definition = JSON.parse(
+      readFileSync(
+        join(source, "quoin-271-release-v0.22.5-definition.json"),
+        "utf8",
+      ),
+    ) as GitHubReleaseProducerDefinition;
+    writeFileSync(
+      join(root, "spec", "assurance", "MP-901.md"),
+      PLAN.replace(DEFINITION, definition.producer.definition_version),
+    );
+    for (const name of [
+      "quoin-271-release-v0.22.5-workflow.yml",
+      "quoin-271-release-v0.22.5-run.json",
+      "quoin-271-release-v0.22.5-jobs.json",
+    ]) {
+      const target = join(root, "spec", "evidence", "github-actions", name);
+      mkdirSync(dirname(target), { recursive: true });
+      copyFileSync(join(source, name), target);
+    }
+
+    const result = produceGitHubReleaseOperational(root, definition);
+    expect(readOperationalRecords(root)).toEqual([
+      result.capability,
+      result.exercise,
+    ]);
+    expect(result.capability).toMatchObject({
+      record_shape: "standing_capability",
+      subject: definition.subject,
+      capability: {
+        status: "available",
+        surface: ".github/workflows/release.yml",
+      },
+    });
+    expect(result.exercise.exercise).toMatchObject({
+      actor: "kreneskyp",
+      trigger: "workflow_dispatch",
+      outcome: "succeeded",
+      started_at: "2026-08-29T23:11:00Z",
+      completed_at: "2026-08-29T23:11:37Z",
+      clock: { status: "met" },
+      state_before: {
+        source_revision: "a9808be18b61f8e4d44e3b74de27e90f17c5c76b",
+      },
+    });
+    expect(result.exercise.raw_evidence).toEqual([
+      expect.objectContaining({
+        digest:
+          "sha256:5a867277a071c2dd8fe1ab86e22b4b3e580fff0b269756c3911c4dde2ed1cc78",
+        size_bytes: 6651,
+      }),
+      expect.objectContaining({
+        digest:
+          "sha256:a3a3eea43f6f17fc9851a50aa6853aa1d67a77ad91c6b4ddc1922aa03c4acaaf",
+        size_bytes: 11898,
+      }),
+      expect.objectContaining({
+        digest:
+          "sha256:adb0e51b5212d9ff4f01238a26040f8ea893c75f6bc02cfbc4b7d98552182e92",
+        size_bytes: 13166,
+      }),
+    ]);
+
+    const invalidRoot = repo();
+    const invalidExercise = exercise(invalidRoot);
+    invalidExercise.exercise.control_id = "different-control";
+    expect(() =>
+      writeOperationalPair(
+        invalidRoot,
+        capability(invalidRoot),
+        invalidExercise,
+      ),
+    ).toThrow(/invalid_record/);
+    expect(readOperationalRecords(invalidRoot)).toEqual([]);
   });
 
   function githubDefinition(): GitHubReleaseProducerDefinition {
@@ -475,15 +636,17 @@ function writeGitHubArtifacts(
     root,
     "raw/jobs.json",
     JSON.stringify({
-      jobs: [
-        {
-          name: "Publish",
-          status: "completed",
-          conclusion,
-          started_at: "2026-08-30T12:00:00.000Z",
-          completed_at: "2026-08-30T12:04:00.000Z",
-        },
-      ],
+      jobs: [githubJob(conclusion)],
     }),
   );
+}
+
+function githubJob(conclusion: string): Record<string, unknown> {
+  return {
+    name: "Publish",
+    status: "completed",
+    conclusion,
+    started_at: "2026-08-30T12:00:00.000Z",
+    completed_at: "2026-08-30T12:04:00.000Z",
+  };
 }

@@ -2,7 +2,7 @@
 id: TASK-011
 title: "Implement the operational record family"
 type: Task
-status: todo
+status: done
 track: A
 priority: P0
 relationships:

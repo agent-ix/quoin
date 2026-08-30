@@ -2,7 +2,7 @@
 id: TASK-013
 title: "Render operational claims and counterevidence"
 type: Task
-status: todo
+status: done
 track: C
 priority: P0
 relationships:
