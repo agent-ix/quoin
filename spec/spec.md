@@ -221,6 +221,11 @@ index; the files are authoritative.
 - [FR-057](./functional/FR-057-intervention-experiment-intake-report.md) — ingest and report intervention-experiment evidence.
 - [FR-058](./functional/FR-058-agent-eval-intervention-producer.md) — produce intervention evidence from retained real agent-evaluation runs.
 
+**Operational evidence**
+
+- [FR-059](./functional/FR-059-operational-evidence-records.md) — define standing-capability and exercise records.
+- [FR-060](./functional/FR-060-operational-evidence-intake-report.md) — ingest operational evidence and evaluate clocked discharge.
+
 
 ### Non-Functional Requirements
 

@@ -8,6 +8,21 @@ description: "Chronological log of structural changes to this bundle."
 
 ## History
 
+* **2026-08-29** — **CR-131**: operational controls become two explicit evidence
+  shapes (`agent-ix/quoin#269`, epic #267). US-016 separates the practitioner's
+  need to know that a control exists from the stronger claim that it worked.
+  FR-059 defines a strict engine-independent v1 JSON family across releases,
+  feature flags, canary/shadow deployment, rollback/kill, override/appeal,
+  abstention/fallback, reporting, and policy/prompt/model/tool/data pinning. A
+  standing capability carries surface, authority, scope, limitations, supported
+  transitions, and clock support; an exercise carries actor, trigger, timing,
+  before/after state, outcome, clock state, observations, and retained output.
+  FR-060 forbids standing capability from discharging exercise evidence, permits
+  `operational_with_clock` discharge only from a matched exercise whose clock is
+  `met`, retains adverse outcomes, and reports claims, evidence, counterevidence,
+  gaps, owner, and action without an overall score. TC-1222..TC-1242 map every
+  criterion and constraint ahead of implementation in #271.
+
 * **2026-08-30** — Added US-014, FR-051..FR-055, and NFR-015..NFR-016 for
   agent-ix/quoin#288. The semantic type-fit audit freezes exact source and tool
   identities, closes the denominator over all default modules, declarations,
