@@ -35,6 +35,16 @@ policy, prompt, model, tool, and data revisions. Operational reporting must reta
 failed and partial exercises because removing them would erase the evidence that
 most directly drives remediation.
 
+## Priority and Risk (Informative)
+
+- **Priority:** P0. A capability claim or clock discharge can directly influence a
+  production-assurance decision.
+- **Primary risk:** stale capability state, producer-asserted clock labels, or a
+  drill accepted for the wrong obligation can falsely discharge required work.
+- **Mitigation:** retain immutable observation time, verify temporal relations and
+  raw bytes at intake, match the obligation's accepted mode, and keep non-success
+  states visible.
+
 ## Acceptance Examples (Illustrative)
 
 ### US-016-EX-1: A standing capability remains a capability claim

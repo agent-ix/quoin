@@ -31,6 +31,7 @@ raw evidence, and the unchanged FR-044 producer tuple.
     "schema_version",
     "record_type",
     "record_id",
+    "observed_at",
     "record_shape",
     "control_kind",
     "subject",
@@ -46,6 +47,7 @@ raw evidence, and the unchanged FR-044 producer tuple.
     "schema_version": { "const": 1 },
     "record_type": { "const": "operational_evidence" },
     "record_id": { "$ref": "#/$defs/identity" },
+    "observed_at": { "type": "string", "format": "date-time" },
     "record_shape": {
       "type": "string",
       "enum": ["standing_capability", "exercise"]
@@ -181,13 +183,37 @@ raw evidence, and the unchanged FR-044 producer tuple.
         },
         "clock_support": {
           "type": "object",
-          "required": ["supported", "start_event", "completion_event"],
+          "required": ["supported"],
           "properties": {
             "supported": { "type": "boolean" },
             "start_event": { "type": "string", "minLength": 1 },
             "completion_event": { "type": "string", "minLength": 1 },
             "deadline_seconds": { "type": "integer", "minimum": 1 }
           },
+          "allOf": [
+            {
+              "if": {
+                "properties": { "supported": { "const": true } },
+                "required": ["supported"]
+              },
+              "then": {
+                "required": [
+                  "start_event",
+                  "completion_event",
+                  "deadline_seconds"
+                ]
+              },
+              "else": {
+                "not": {
+                  "anyOf": [
+                    { "required": ["start_event"] },
+                    { "required": ["completion_event"] },
+                    { "required": ["deadline_seconds"] }
+                  ]
+                }
+              }
+            }
+          ],
           "additionalProperties": false
         }
       },
@@ -213,12 +239,7 @@ raw evidence, and the unchanged FR-044 producer tuple.
         "capability_record_id": { "$ref": "#/$defs/identity" },
         "mode": { "type": "string", "enum": ["actual", "drill"] },
         "started_at": { "type": "string", "format": "date-time" },
-        "completed_at": {
-          "anyOf": [
-            { "type": "string", "format": "date-time" },
-            { "type": "null" }
-          ]
-        },
+        "completed_at": { "type": "string", "format": "date-time" },
         "actor": { "type": "string", "minLength": 1 },
         "trigger": { "type": "string", "minLength": 1 },
         "outcome": {
@@ -229,6 +250,7 @@ raw evidence, and the unchanged FR-044 producer tuple.
         "state_after": { "type": "object" },
         "observations": {
           "type": "array",
+          "minItems": 1,
           "items": { "type": "string", "minLength": 1 }
         },
         "clock": { "$ref": "#/$defs/clock" }
@@ -250,9 +272,11 @@ raw evidence, and the unchanged FR-044 producer tuple.
       "minItems": 1,
       "items": {
         "type": "object",
-        "required": ["path", "digest"],
+        "required": ["path", "media_type", "size_bytes", "digest"],
         "properties": {
           "path": { "type": "string", "minLength": 1 },
+          "media_type": { "type": "string", "minLength": 1 },
+          "size_bytes": { "type": "integer", "minimum": 0 },
           "digest": { "$ref": "#/$defs/digest" }
         },
         "additionalProperties": false
@@ -377,19 +401,39 @@ raw evidence, and the unchanged FR-044 producer tuple.
 }
 ```
 
+## Cross-record and temporal integrity
+
+- `observed_at` SHALL be no earlier than an exercise's `completed_at`.
+- Exercise `completed_at` SHALL be no earlier than `started_at`.
+- For an `operational_with_clock` value, `started_at` SHALL be no later than
+  `deadline_at`; any `completed_at` SHALL be no earlier than `started_at`.
+- Clock status `met` SHALL require a clock completion no later than the deadline.
+  Status `missed` SHALL require a completion after the deadline or no completion
+  when `observed_at` is after the deadline. Status `open` SHALL require no clock
+  completion and an `observed_at` no later than the deadline. Status `unknown`
+  SHALL require at least one declared gap.
+- A `not_applicable` clock SHALL carry no start, deadline, or completion timestamp.
+- Each `(kind, identity)` version pin SHALL be unique. For a pin control, at least
+  one version pin kind SHALL match the `control_kind` prefix.
+- When `capability_record_id` is present, it SHALL resolve to a standing-capability
+  record with the same control id, control kind, subject, and deployed scope.
+- Every raw-evidence path SHALL be a normalized relative path within the evidence
+  store. Absolute paths, parent traversal, and paths that resolve outside the
+  evidence store SHALL be refused.
+
 ## Acceptance Criteria
 
 | ID | Criteria | Verification |
 | --- | --- | --- |
-| FR-059-AC-1 | The envelope requires version, record and subject identities, deployed scope, shape, control kind, governance fields, raw evidence, and every unchanged FR-044 producer-tuple field. | Test (TC-1222) |
-| FR-059-AC-2 | The control vocabulary admits releases, flags, canary and shadow deployment, rollback and kill, override and appeal, abstention and fallback, reporting, and policy, prompt, model, tool, and data pinning. | Test (TC-1223) |
-| FR-059-AC-3 | A standing-capability record requires its control surface, availability state, authorized roles, coverage, limitations, supported transitions, and clock-start, clock-completion, and deadline declarations. | Test (TC-1224) |
-| FR-059-AC-4 | An exercise record requires actual-or-drill mode, start and completion state, actor, trigger, outcome, before/after state, observations, and clock applicability. | Test (TC-1225) |
-| FR-059-AC-5 | Exactly one shape payload is present: standing capability excludes exercise data, and exercise excludes capability data. | Test (TC-1226) |
-| FR-059-AC-6 | An `operational_with_clock` exercise requires start and deadline timestamps plus an open, met, missed, or unknown status; a not-applicable clock requires `not_applicable` status. | Test (TC-1227) |
-| FR-059-AC-7 | Each policy, prompt, model, tool, or data pin record carries at least one typed identity, revision, and digest. | Test (TC-1228) |
-| FR-059-AC-8 | Succeeded, failed, partial, and aborted exercises all validate as retained outcomes. | Test (TC-1229) |
-| FR-059-AC-9 | Gaps, owner, actions, and at least one content-digested raw-evidence reference are retained, and undeclared fields are refused. | Test (TC-1230) |
+| FR-059-AC-1 | The envelope requires version, record and subject identities, observation timestamp, deployed scope, shape, control kind, governance fields, raw evidence, and every unchanged FR-044 producer-tuple field. | Test (TC-1223) |
+| FR-059-AC-2 | The control vocabulary admits releases, flags, canary and shadow deployment, rollback and kill, override and appeal, abstention and fallback, reporting, and policy, prompt, model, tool, and data pinning. | Test (TC-1224) |
+| FR-059-AC-3 | A standing-capability record requires its control surface, availability state, authorized roles, coverage, limitations, supported transitions, and an explicit clock-support choice; supported clocks require start event, completion event, and positive deadline, while unsupported clocks exclude them. | Test (TC-1225) |
+| FR-059-AC-4 | An exercise record requires actual-or-drill mode, ordered start and completion timestamps, actor, trigger, outcome, before/after state, at least one observation, and clock applicability. | Test (TC-1226) |
+| FR-059-AC-5 | Exactly one shape payload is present: standing capability excludes exercise data, and exercise excludes capability data. | Test (TC-1227) |
+| FR-059-AC-6 | An `operational_with_clock` exercise requires ordered start and deadline timestamps and a status consistent with completion and immutable observation time; a not-applicable clock requires `not_applicable` status and no clock timestamps. | Test (TC-1228) |
+| FR-059-AC-7 | Each policy, prompt, model, tool, or data pin record carries at least one matching typed identity, revision, and digest, with no duplicate kind/identity key. | Test (TC-1229) |
+| FR-059-AC-8 | Succeeded, failed, partial, and aborted exercises all validate as retained outcomes. | Test (TC-1230) |
+| FR-059-AC-9 | Gaps, owner, actions, and at least one safe content-digested raw-evidence reference with media type and byte size are retained; invalid capability links and undeclared fields are refused. | Test (TC-1231) |
 
 ## Dependencies
 
