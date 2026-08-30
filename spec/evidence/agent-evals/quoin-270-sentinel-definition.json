@@ -11,7 +11,7 @@
     "tool_identity": "quoin-agent-eval-intervention-adapter",
     "tool_version": "0.9.0",
     "configuration_digest": "sha256:3e1a8362b21a05d0962bd9789dae5eebef362f33c9c25665c838372bf20658d2",
-    "source_revision": "b8089092a115d74cdeb54d19719fa4ce9987f522",
+    "source_revision": "0066672c16822de9977a5e63e73079b9a0df0d5c",
     "environment": {
       "node": "24.15.0",
       "codex_cli": "0.151.0",

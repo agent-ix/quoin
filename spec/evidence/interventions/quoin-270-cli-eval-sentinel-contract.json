@@ -107,7 +107,7 @@
       "suite_revision": "suite-v1",
       "treatment_runner_revision": "9e7b6cdde67fccdd9417171f8f116a8c91d400b7"
     },
-    "source_revision": "b8089092a115d74cdeb54d19719fa4ce9987f522",
+    "source_revision": "0066672c16822de9977a5e63e73079b9a0df0d5c",
     "tool_identity": "quoin-agent-eval-intervention-adapter",
     "tool_version": "0.9.0"
   },
