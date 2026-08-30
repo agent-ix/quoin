@@ -30,6 +30,7 @@ producer provenance remain engine-independent and independently auditable.
     "schema_version",
     "record_type",
     "record_id",
+    "observed_at",
     "subject",
     "producer",
     "design",
@@ -51,6 +52,7 @@ producer provenance remain engine-independent and independently auditable.
     "schema_version": { "const": 1 },
     "record_type": { "const": "intervention_experiment" },
     "record_id": { "$ref": "#/$defs/identity" },
+    "observed_at": { "type": "string", "format": "date-time" },
     "subject": {
       "type": "object",
       "required": ["id", "revision"],
@@ -475,7 +477,7 @@ producer provenance remain engine-independent and independently auditable.
 
 | ID | Criteria | Verification |
 | --- | --- | --- |
-| FR-056-AC-1 | The schema requires version, record type and identity, subject identity and revision, and the unchanged FR-044 producer tuple. | Test (TC-1195) |
+| FR-056-AC-1 | The schema requires version, record type and identity, observation timestamp, subject identity and revision, and the unchanged FR-044 producer tuple. | Test (TC-1195) |
 | FR-056-AC-2 | The producer tuple rejects a missing field, a mutable tool version, an empty environment, and a malformed configuration digest. | Test (TC-1196) |
 | FR-056-AC-3 | Repeated, randomized, and factorial designs require a positive repetition count, assignment method, and non-empty sampling conditions; randomized assignment requires a reproducible seed. | Test (TC-1197) |
 | FR-056-AC-4 | Every record carries one uniquely identified baseline, one or more uniquely identified treatments, treatment-linked changed variables, and an explicit list of held-constant variables. | Test (TC-1198) |

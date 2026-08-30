@@ -571,7 +571,7 @@ generated tests under `tests/props/` and `Unit` for the rest.
 | TC-1192 | Read-only fixture inputs and all paths outside the output root are unchanged | Integration | P0 | NFR-016 | ✅ |
 | TC-1193 | Changed-path guard permits audit/spec/review/plan files and rejects production, module, schema, skeleton, registry, generated, migration, and consumer changes | Static | P0 | NFR-016 | ✅ |
 | TC-1194 | Major-interference recommendations stop at their named human gate | Inspection | P0 | NFR-016 | ✅ |
-| TC-1195 | The v1 schema requires record and subject identities plus every unchanged FR-044 producer-tuple field | Unit | P0 | FR-056-AC-1 | 🚧 planned for #270 |
+| TC-1195 | The v1 schema requires record and subject identities, an observation timestamp, and every unchanged FR-044 producer-tuple field | Unit | P0 | FR-056-AC-1 | 🚧 planned for #270 |
 | TC-1196 | Each missing producer field, mutable tool version, empty environment, and malformed configuration digest is rejected independently | Unit | P0 | FR-056-AC-2 | 🚧 planned for #270 |
 | TC-1197 | Repeated, randomized, and factorial designs accept their valid assignment combinations; randomized assignment without a seed, zero repetitions, and empty sampling conditions fail at their boundaries | Unit | P0 | FR-056-AC-3 | 🚧 planned for #270 |
 | TC-1198 | Unique baseline and treatment ids, treatment-linked changed variables, and an explicit held-constant list validate; duplicate or dangling treatment references fail | Property | P0 | FR-056-AC-4 | 🚧 planned for #270 |
