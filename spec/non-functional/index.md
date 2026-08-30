@@ -22,3 +22,5 @@ description: "Index of non-functional requirements (NFR) for quoin."
 - [NFR-012: Version skew across the ecosystem is reported, never absorbed](./NFR-012-ecosystem-compatibility.md)
 - [NFR-013: Semantic architecture decisions are traceable and standalone-readable](./NFR-013-traceable-semantic-architecture.md)
 - [NFR-014: The semantic architecture record is non-disruptive](./NFR-014-non-disruptive-architecture-record.md)
+- [NFR-015: The semantic audit is complete and reproducible](./NFR-015-complete-reproducible-semantic-audit.md)
+- [NFR-016: The semantic audit is read-only and non-disruptive](./NFR-016-read-only-semantic-audit.md)

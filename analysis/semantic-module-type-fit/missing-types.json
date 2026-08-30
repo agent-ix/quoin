@@ -1,0 +1,239 @@
+{
+  "missingTypes": [
+    {
+      "concept": "run",
+      "conceptDisposition": "absent",
+      "confidence": "high",
+      "evidence": [
+        "inventory.declarations:complete-name-and-field-census"
+      ],
+      "id": "MISSING-001",
+      "kind": "missing-type",
+      "modules": [],
+      "nextBoundary": "core-data-or-module-vocabulary-decision",
+      "qualifiedTypes": [],
+      "rationale": "run has no dedicated or structural representation in the default module set",
+      "reconciliation": {
+        "authority": "docs/semantic-module-architecture/planes-and-authority.md",
+        "decision": "docs/semantic-module-architecture/decision-ledger.md",
+        "owner": "filament-core-data/module-repository",
+        "plane": "execution-observation"
+      },
+      "repositories": [
+        "filament-core-data",
+        "quoin/default-modules"
+      ],
+      "severity": "medium",
+      "status": "open"
+    },
+    {
+      "concept": "result",
+      "conceptDisposition": "absent",
+      "confidence": "high",
+      "evidence": [
+        "inventory.declarations:complete-name-and-field-census"
+      ],
+      "id": "MISSING-002",
+      "kind": "missing-type",
+      "modules": [],
+      "nextBoundary": "core-data-or-module-vocabulary-decision",
+      "qualifiedTypes": [],
+      "rationale": "result has no dedicated or structural representation in the default module set",
+      "reconciliation": {
+        "authority": "docs/semantic-module-architecture/planes-and-authority.md",
+        "decision": "docs/semantic-module-architecture/decision-ledger.md",
+        "owner": "filament-core-data/module-repository",
+        "plane": "execution-observation"
+      },
+      "repositories": [
+        "filament-core-data",
+        "quoin/default-modules"
+      ],
+      "severity": "medium",
+      "status": "open"
+    },
+    {
+      "concept": "evidence",
+      "conceptDisposition": "overloaded",
+      "confidence": "medium",
+      "evidence": [
+        "inventory.declarations:embedded-concept-signal"
+      ],
+      "id": "MISSING-003",
+      "kind": "missing-type",
+      "modules": [],
+      "nextBoundary": "core-data-or-module-vocabulary-decision",
+      "qualifiedTypes": [],
+      "rationale": "evidence appears only inside another declaration rather than as a dedicated semantic type",
+      "reconciliation": {
+        "authority": "docs/semantic-module-architecture/planes-and-authority.md",
+        "decision": "docs/semantic-module-architecture/decision-ledger.md",
+        "owner": "filament-core-data/module-repository",
+        "plane": "execution-observation"
+      },
+      "repositories": [
+        "filament-core-data",
+        "quoin/default-modules"
+      ],
+      "severity": "medium",
+      "status": "overloaded-review-required"
+    },
+    {
+      "concept": "report",
+      "conceptDisposition": "absent",
+      "confidence": "high",
+      "evidence": [
+        "inventory.declarations:complete-name-and-field-census"
+      ],
+      "id": "MISSING-004",
+      "kind": "missing-type",
+      "modules": [],
+      "nextBoundary": "core-data-or-module-vocabulary-decision",
+      "qualifiedTypes": [],
+      "rationale": "report has no dedicated or structural representation in the default module set",
+      "reconciliation": {
+        "authority": "docs/semantic-module-architecture/planes-and-authority.md",
+        "decision": "docs/semantic-module-architecture/decision-ledger.md",
+        "owner": "filament-core-data/module-repository",
+        "plane": "definition"
+      },
+      "repositories": [
+        "filament-core-data",
+        "quoin/default-modules"
+      ],
+      "severity": "medium",
+      "status": "open"
+    },
+    {
+      "concept": "relationship",
+      "conceptDisposition": "represented",
+      "confidence": "high",
+      "evidence": [
+        "inventory.declarations:allowed_links"
+      ],
+      "id": "MISSING-005",
+      "kind": "missing-type",
+      "modules": [],
+      "nextBoundary": "core-data-or-module-vocabulary-decision",
+      "qualifiedTypes": [],
+      "rationale": "relationship is represented in the current module vocabulary or structural contract and still requires semantic-boundary review",
+      "reconciliation": {
+        "authority": "docs/semantic-module-architecture/planes-and-authority.md",
+        "decision": "docs/semantic-module-architecture/decision-ledger.md",
+        "owner": "filament-core-data/module-repository",
+        "plane": "definition"
+      },
+      "repositories": [
+        "filament-core-data",
+        "quoin/default-modules"
+      ],
+      "severity": "medium",
+      "status": "represented-review-required"
+    },
+    {
+      "concept": "identity",
+      "conceptDisposition": "represented",
+      "confidence": "high",
+      "evidence": [
+        "inventory.documents:documentId"
+      ],
+      "id": "MISSING-006",
+      "kind": "missing-type",
+      "modules": [],
+      "nextBoundary": "core-data-or-module-vocabulary-decision",
+      "qualifiedTypes": [],
+      "rationale": "identity is represented in the current module vocabulary or structural contract and still requires semantic-boundary review",
+      "reconciliation": {
+        "authority": "docs/semantic-module-architecture/planes-and-authority.md",
+        "decision": "docs/semantic-module-architecture/decision-ledger.md",
+        "owner": "filament-core-data/module-repository",
+        "plane": "definition"
+      },
+      "repositories": [
+        "filament-core-data",
+        "quoin/default-modules"
+      ],
+      "severity": "medium",
+      "status": "represented-review-required"
+    },
+    {
+      "concept": "version",
+      "conceptDisposition": "represented",
+      "confidence": "high",
+      "evidence": [
+        "snapshot.modules:version+resolvedSha"
+      ],
+      "id": "MISSING-007",
+      "kind": "missing-type",
+      "modules": [],
+      "nextBoundary": "core-data-or-module-vocabulary-decision",
+      "qualifiedTypes": [],
+      "rationale": "version is represented in the current module vocabulary or structural contract and still requires semantic-boundary review",
+      "reconciliation": {
+        "authority": "docs/semantic-module-architecture/planes-and-authority.md",
+        "decision": "docs/semantic-module-architecture/decision-ledger.md",
+        "owner": "filament-core-data/module-repository",
+        "plane": "definition"
+      },
+      "repositories": [
+        "filament-core-data",
+        "quoin/default-modules"
+      ],
+      "severity": "medium",
+      "status": "represented-review-required"
+    },
+    {
+      "concept": "provenance",
+      "conceptDisposition": "absent",
+      "confidence": "high",
+      "evidence": [
+        "inventory.declarations:complete-name-and-field-census"
+      ],
+      "id": "MISSING-008",
+      "kind": "missing-type",
+      "modules": [],
+      "nextBoundary": "core-data-or-module-vocabulary-decision",
+      "qualifiedTypes": [],
+      "rationale": "provenance has no dedicated or structural representation in the default module set",
+      "reconciliation": {
+        "authority": "docs/semantic-module-architecture/planes-and-authority.md",
+        "decision": "docs/semantic-module-architecture/decision-ledger.md",
+        "owner": "filament-core-data/module-repository",
+        "plane": "definition"
+      },
+      "repositories": [
+        "filament-core-data",
+        "quoin/default-modules"
+      ],
+      "severity": "medium",
+      "status": "open"
+    },
+    {
+      "concept": "lifecycle",
+      "conceptDisposition": "represented",
+      "confidence": "high",
+      "evidence": [
+        "inventory.declarations:lifecycle-signals"
+      ],
+      "id": "MISSING-009",
+      "kind": "missing-type",
+      "modules": [],
+      "nextBoundary": "core-data-or-module-vocabulary-decision",
+      "qualifiedTypes": [],
+      "rationale": "lifecycle is represented in the current module vocabulary or structural contract and still requires semantic-boundary review",
+      "reconciliation": {
+        "authority": "docs/semantic-module-architecture/planes-and-authority.md",
+        "decision": "docs/semantic-module-architecture/decision-ledger.md",
+        "owner": "filament-core-data/module-repository",
+        "plane": "definition"
+      },
+      "repositories": [
+        "filament-core-data",
+        "quoin/default-modules"
+      ],
+      "severity": "medium",
+      "status": "represented-review-required"
+    }
+  ],
+  "schemaVersion": "semantic-missing-type-ledger-v1"
+}

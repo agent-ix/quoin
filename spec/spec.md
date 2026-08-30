@@ -55,6 +55,8 @@ This specification governs:
 - The durable semantic-module architecture record that allocates authority and
   ownership across Quire, Quoin, `filament-core-data`, module repositories, and
   consumers without activating compiler, publication, or migration work.
+- The read-only, denominator-closed semantic type-fit audit of the pinned default-module
+  corpus and its canonical machine-readable findings and human report projection.
 
 ### Delegated Responsibilities
 
@@ -121,6 +123,7 @@ index; the files are authoritative.
 - [US-009](./usecase/US-009-install-in-any-coding-agent.md) — install quoin in the coding agent of my choice.
 - [US-010](./usecase/US-010-author-specs-for-my-own-organization.md) — author specs for my own organization.
 - [US-013](./usecase/US-013-reason-about-semantic-module-boundaries.md) — reason about semantic modules without confusing definitions and projections.
+- [US-014](./usecase/US-014-audit-default-module-semantic-fit.md) — audit the semantic fit of the complete default-module corpus.
 
 ### Functional Requirements
 
@@ -180,6 +183,14 @@ index; the files are authoritative.
 - [FR-049](./functional/FR-049-preserve-dynamic-and-generated-modules.md) — preserve dynamic modules and finite generated packages.
 - [FR-050](./functional/FR-050-reconcile-quire-decisions.md) — reconcile the architecture with Quire decisions.
 
+**Semantic-module type-fit audit**
+
+- [FR-051](./functional/FR-051-snapshot-semantic-audit-scope.md) — snapshot audit scope and provenance.
+- [FR-052](./functional/FR-052-inventory-default-module-corpus.md) — inventory the complete default-module corpus.
+- [FR-053](./functional/FR-053-score-semantic-type-fit.md) — score and disposition every declared type.
+- [FR-054](./functional/FR-054-publish-semantic-audit-artifacts.md) — publish canonical audit artifacts.
+- [FR-055](./functional/FR-055-reconcile-semantic-audit-findings.md) — reconcile findings with current contracts.
+
 ### Non-Functional Requirements
 
 - [NFR-001](./non-functional/NFR-001-idempotent-offline-reconcile.md) — default-module reconciliation is idempotent and offline-safe.
@@ -192,6 +203,8 @@ index; the files are authoritative.
 - [NFR-008](./non-functional/NFR-008-strict-manifest-parsing.md) — corrupt manifests abort assembly rather than drop silently.
 - [NFR-013](./non-functional/NFR-013-traceable-semantic-architecture.md) — decisions remain traceable and standalone-readable.
 - [NFR-014](./non-functional/NFR-014-non-disruptive-architecture-record.md) — architecture recording remains non-disruptive.
+- [NFR-015](./non-functional/NFR-015-complete-reproducible-semantic-audit.md) — audit completeness and reproducibility.
+- [NFR-016](./non-functional/NFR-016-read-only-semantic-audit.md) — read-only, non-disruptive auditing.
 
 ### Integration Tests
 

@@ -1,0 +1,1698 @@
+{
+  "impacts": [
+    {
+      "confidence": "high",
+      "dependency": "semantic-audit-findings",
+      "effort": "medium",
+      "id": "IMPACT-001",
+      "impact": "required",
+      "rationale": "the repository owns an audited declaration",
+      "repository": "engineering-assurance",
+      "risk": "medium",
+      "wave": "module-contract-review"
+    },
+    {
+      "confidence": "high",
+      "dependency": "semantic-audit-findings",
+      "effort": "medium",
+      "id": "IMPACT-002",
+      "impact": "required",
+      "rationale": "the repository owns an audited declaration",
+      "repository": "spec-artifacts-iso",
+      "risk": "medium",
+      "wave": "module-contract-review"
+    },
+    {
+      "confidence": "high",
+      "dependency": "semantic-audit-findings",
+      "effort": "medium",
+      "id": "IMPACT-003",
+      "impact": "required",
+      "rationale": "the repository owns an audited declaration",
+      "repository": "spec-artifacts-app",
+      "risk": "medium",
+      "wave": "module-contract-review"
+    },
+    {
+      "confidence": "high",
+      "dependency": "semantic-audit-findings",
+      "effort": "medium",
+      "id": "IMPACT-004",
+      "impact": "required",
+      "rationale": "the repository owns an audited declaration",
+      "repository": "spec-artifacts-process",
+      "risk": "medium",
+      "wave": "module-contract-review"
+    },
+    {
+      "confidence": "high",
+      "dependency": "semantic-audit-findings",
+      "effort": "medium",
+      "id": "IMPACT-005",
+      "impact": "required",
+      "rationale": "the repository owns an audited declaration",
+      "repository": "spec-objects-business",
+      "risk": "medium",
+      "wave": "module-contract-review"
+    },
+    {
+      "confidence": "high",
+      "dependency": "semantic-audit-findings",
+      "effort": "medium",
+      "id": "IMPACT-006",
+      "impact": "required",
+      "rationale": "the repository owns an audited declaration",
+      "repository": "spec-objects-architecture",
+      "risk": "medium",
+      "wave": "module-contract-review"
+    },
+    {
+      "confidence": "high",
+      "dependency": "semantic-audit-findings",
+      "effort": "medium",
+      "id": "IMPACT-007",
+      "impact": "required",
+      "rationale": "the repository owns an audited declaration",
+      "repository": "spec-objects-enterprise",
+      "risk": "medium",
+      "wave": "module-contract-review"
+    },
+    {
+      "confidence": "high",
+      "dependency": "semantic-audit-findings",
+      "effort": "medium",
+      "id": "IMPACT-008",
+      "impact": "required",
+      "rationale": "the repository owns an audited declaration",
+      "repository": "spec-objects-operational",
+      "risk": "medium",
+      "wave": "module-contract-review"
+    },
+    {
+      "confidence": "high",
+      "dependency": "semantic-audit-findings",
+      "effort": "medium",
+      "id": "IMPACT-009",
+      "impact": "required",
+      "rationale": "the repository owns an audited declaration",
+      "repository": "spec-objects-security",
+      "risk": "medium",
+      "wave": "module-contract-review"
+    },
+    {
+      "confidence": "high",
+      "dependency": "semantic-audit-findings",
+      "effort": "medium",
+      "id": "IMPACT-010",
+      "impact": "required",
+      "rationale": "the repository owns an audited declaration",
+      "repository": "spec-objects-safety",
+      "risk": "medium",
+      "wave": "module-contract-review"
+    },
+    {
+      "confidence": "low",
+      "dependency": "audit-owner",
+      "effort": "unknown",
+      "id": "IMPACT-011",
+      "impact": "required",
+      "rationale": "impact depends on accepted findings and a separately gated design",
+      "repository": "quoin",
+      "risk": "medium",
+      "wave": "gated-follow-up"
+    },
+    {
+      "confidence": "low",
+      "dependency": "semantic-audit-findings",
+      "effort": "unknown",
+      "id": "IMPACT-012",
+      "impact": "candidate",
+      "rationale": "impact depends on accepted findings and a separately gated design",
+      "repository": "quire",
+      "risk": "medium",
+      "wave": "gated-follow-up"
+    },
+    {
+      "confidence": "low",
+      "dependency": "semantic-audit-findings",
+      "effort": "unknown",
+      "id": "IMPACT-013",
+      "impact": "candidate",
+      "rationale": "impact depends on accepted findings and a separately gated design",
+      "repository": "filament-core-data",
+      "risk": "medium",
+      "wave": "gated-follow-up"
+    },
+    {
+      "confidence": "low",
+      "dependency": "semantic-audit-findings",
+      "effort": "unknown",
+      "id": "IMPACT-014",
+      "impact": "candidate",
+      "rationale": "impact depends on accepted findings and a separately gated design",
+      "repository": "compiler",
+      "risk": "high",
+      "wave": "gated-follow-up"
+    },
+    {
+      "confidence": "low",
+      "dependency": "semantic-audit-findings",
+      "effort": "unknown",
+      "id": "IMPACT-015",
+      "impact": "candidate",
+      "rationale": "impact depends on accepted findings and a separately gated design",
+      "repository": "generated-packages",
+      "risk": "high",
+      "wave": "gated-follow-up"
+    },
+    {
+      "confidence": "low",
+      "dependency": "semantic-audit-findings",
+      "effort": "unknown",
+      "id": "IMPACT-016",
+      "impact": "candidate",
+      "rationale": "impact depends on accepted findings and a separately gated design",
+      "repository": "database",
+      "risk": "high",
+      "wave": "gated-follow-up"
+    },
+    {
+      "confidence": "low",
+      "dependency": "semantic-audit-findings",
+      "effort": "unknown",
+      "id": "IMPACT-017",
+      "impact": "candidate",
+      "rationale": "impact depends on accepted findings and a separately gated design",
+      "repository": "api",
+      "risk": "high",
+      "wave": "gated-follow-up"
+    },
+    {
+      "confidence": "low",
+      "dependency": "semantic-audit-findings",
+      "effort": "unknown",
+      "id": "IMPACT-018",
+      "impact": "candidate",
+      "rationale": "impact depends on accepted findings and a separately gated design",
+      "repository": "cli",
+      "risk": "medium",
+      "wave": "gated-follow-up"
+    },
+    {
+      "confidence": "low",
+      "dependency": "semantic-audit-findings",
+      "effort": "unknown",
+      "id": "IMPACT-019",
+      "impact": "candidate",
+      "rationale": "impact depends on accepted findings and a separately gated design",
+      "repository": "ui",
+      "risk": "medium",
+      "wave": "gated-follow-up"
+    }
+  ],
+  "reconciliation": {
+    "architectureRevision": "61aeaddf4571550bf1989f7add3197e52f54f73b",
+    "coreData": [
+      {
+        "censusRecords": [
+          "INV-001",
+          "INV-002"
+        ],
+        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
+        "declarationId": "engineering-assurance::artifact::AssuranceProfile::0",
+        "disposition": "mapping",
+        "evidence": [
+          "INV-001:schema/avro/core-data.avpr",
+          "INV-002:src/generated.ts"
+        ],
+        "qualifiedName": "engineering-assurance::AssuranceProfile",
+        "rationale": "the declaration overlaps a current core artifact/object or named contract and requires an explicit mapping rather than a shadow definition"
+      },
+      {
+        "censusRecords": [
+          "INV-001",
+          "INV-002"
+        ],
+        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
+        "declarationId": "engineering-assurance::artifact::MeasurementPlan::1",
+        "disposition": "mapping",
+        "evidence": [
+          "INV-001:schema/avro/core-data.avpr",
+          "INV-002:src/generated.ts"
+        ],
+        "qualifiedName": "engineering-assurance::MeasurementPlan",
+        "rationale": "the declaration overlaps a current core artifact/object or named contract and requires an explicit mapping rather than a shadow definition"
+      },
+      {
+        "censusRecords": [
+          "INV-001",
+          "INV-002"
+        ],
+        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
+        "declarationId": "engineering-assurance::artifact::ArchitectureDescription::2",
+        "disposition": "mapping",
+        "evidence": [
+          "INV-001:schema/avro/core-data.avpr",
+          "INV-002:src/generated.ts"
+        ],
+        "qualifiedName": "engineering-assurance::ArchitectureDescription",
+        "rationale": "the declaration overlaps a current core artifact/object or named contract and requires an explicit mapping rather than a shadow definition"
+      },
+      {
+        "censusRecords": [
+          "INV-001",
+          "INV-002"
+        ],
+        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
+        "declarationId": "engineering-assurance::artifact::ComponentAssuranceContract::3",
+        "disposition": "mapping",
+        "evidence": [
+          "INV-001:schema/avro/core-data.avpr",
+          "INV-002:src/generated.ts"
+        ],
+        "qualifiedName": "engineering-assurance::ComponentAssuranceContract",
+        "rationale": "the declaration overlaps a current core artifact/object or named contract and requires an explicit mapping rather than a shadow definition"
+      },
+      {
+        "censusRecords": [
+          "INV-001",
+          "INV-002"
+        ],
+        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
+        "declarationId": "engineering-assurance::artifact::AssuranceArgument::4",
+        "disposition": "mapping",
+        "evidence": [
+          "INV-001:schema/avro/core-data.avpr",
+          "INV-002:src/generated.ts"
+        ],
+        "qualifiedName": "engineering-assurance::AssuranceArgument",
+        "rationale": "the declaration overlaps a current core artifact/object or named contract and requires an explicit mapping rather than a shadow definition"
+      },
+      {
+        "censusRecords": [
+          "INV-001",
+          "INV-002"
+        ],
+        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
+        "declarationId": "spec-artifacts-iso::artifact::FR::0",
+        "disposition": "mapping",
+        "evidence": [
+          "INV-001:schema/avro/core-data.avpr",
+          "INV-002:src/generated.ts"
+        ],
+        "qualifiedName": "spec-artifacts-iso::FR",
+        "rationale": "the declaration overlaps a current core artifact/object or named contract and requires an explicit mapping rather than a shadow definition"
+      },
+      {
+        "censusRecords": [
+          "INV-001",
+          "INV-002"
+        ],
+        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
+        "declarationId": "spec-artifacts-iso::artifact::NFR::1",
+        "disposition": "mapping",
+        "evidence": [
+          "INV-001:schema/avro/core-data.avpr",
+          "INV-002:src/generated.ts"
+        ],
+        "qualifiedName": "spec-artifacts-iso::NFR",
+        "rationale": "the declaration overlaps a current core artifact/object or named contract and requires an explicit mapping rather than a shadow definition"
+      },
+      {
+        "censusRecords": [
+          "INV-001",
+          "INV-002"
+        ],
+        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
+        "declarationId": "spec-artifacts-iso::artifact::StR::2",
+        "disposition": "mapping",
+        "evidence": [
+          "INV-001:schema/avro/core-data.avpr",
+          "INV-002:src/generated.ts"
+        ],
+        "qualifiedName": "spec-artifacts-iso::StR",
+        "rationale": "the declaration overlaps a current core artifact/object or named contract and requires an explicit mapping rather than a shadow definition"
+      },
+      {
+        "censusRecords": [
+          "INV-001",
+          "INV-002"
+        ],
+        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
+        "declarationId": "spec-artifacts-iso::artifact::US::3",
+        "disposition": "mapping",
+        "evidence": [
+          "INV-001:schema/avro/core-data.avpr",
+          "INV-002:src/generated.ts"
+        ],
+        "qualifiedName": "spec-artifacts-iso::US",
+        "rationale": "the declaration overlaps a current core artifact/object or named contract and requires an explicit mapping rather than a shadow definition"
+      },
+      {
+        "censusRecords": [
+          "INV-001",
+          "INV-002"
+        ],
+        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
+        "declarationId": "spec-artifacts-iso::artifact::IT::4",
+        "disposition": "mapping",
+        "evidence": [
+          "INV-001:schema/avro/core-data.avpr",
+          "INV-002:src/generated.ts"
+        ],
+        "qualifiedName": "spec-artifacts-iso::IT",
+        "rationale": "the declaration overlaps a current core artifact/object or named contract and requires an explicit mapping rather than a shadow definition"
+      },
+      {
+        "censusRecords": [
+          "INV-001",
+          "INV-002"
+        ],
+        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
+        "declarationId": "spec-artifacts-iso::artifact::TC::5",
+        "disposition": "mapping",
+        "evidence": [
+          "INV-001:schema/avro/core-data.avpr",
+          "INV-002:src/generated.ts"
+        ],
+        "qualifiedName": "spec-artifacts-iso::TC",
+        "rationale": "the declaration overlaps a current core artifact/object or named contract and requires an explicit mapping rather than a shadow definition"
+      },
+      {
+        "censusRecords": [
+          "INV-001",
+          "INV-002"
+        ],
+        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
+        "declarationId": "spec-artifacts-iso::artifact::master-requirements::6",
+        "disposition": "mapping",
+        "evidence": [
+          "INV-001:schema/avro/core-data.avpr",
+          "INV-002:src/generated.ts"
+        ],
+        "qualifiedName": "spec-artifacts-iso::master-requirements",
+        "rationale": "the declaration overlaps a current core artifact/object or named contract and requires an explicit mapping rather than a shadow definition"
+      },
+      {
+        "censusRecords": [
+          "INV-001",
+          "INV-002",
+          "INV-012",
+          "INV-013",
+          "INV-014"
+        ],
+        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
+        "declarationId": "spec-artifacts-iso::artifact::index::7",
+        "disposition": "mapping",
+        "evidence": [
+          "INV-001:schema/avro/core-data.avpr",
+          "INV-002:src/generated.ts",
+          "INV-012:crates/filament-data/src/entities.rs",
+          "INV-013:crates/filament-data/src/migrations/mod.rs",
+          "INV-014:crates/filament-service/src/dto.rs"
+        ],
+        "qualifiedName": "spec-artifacts-iso::index",
+        "rationale": "the declaration overlaps a current core artifact/object or named contract and requires an explicit mapping rather than a shadow definition"
+      },
+      {
+        "censusRecords": [
+          "INV-001",
+          "INV-002"
+        ],
+        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
+        "declarationId": "spec-artifacts-iso::artifact::log::8",
+        "disposition": "mapping",
+        "evidence": [
+          "INV-001:schema/avro/core-data.avpr",
+          "INV-002:src/generated.ts"
+        ],
+        "qualifiedName": "spec-artifacts-iso::log",
+        "rationale": "the declaration overlaps a current core artifact/object or named contract and requires an explicit mapping rather than a shadow definition"
+      },
+      {
+        "censusRecords": [
+          "INV-001",
+          "INV-002"
+        ],
+        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
+        "declarationId": "spec-artifacts-iso::artifact::Glossary::9",
+        "disposition": "mapping",
+        "evidence": [
+          "INV-001:schema/avro/core-data.avpr",
+          "INV-002:src/generated.ts"
+        ],
+        "qualifiedName": "spec-artifacts-iso::Glossary",
+        "rationale": "the declaration overlaps a current core artifact/object or named contract and requires an explicit mapping rather than a shadow definition"
+      },
+      {
+        "censusRecords": [
+          "INV-001",
+          "INV-002",
+          "INV-005",
+          "INV-006",
+          "INV-018"
+        ],
+        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
+        "declarationId": "spec-artifacts-app::artifact::ApplicationSpec::0",
+        "disposition": "mapping",
+        "evidence": [
+          "INV-001:schema/avro/core-data.avpr",
+          "INV-002:src/generated.ts",
+          "INV-005:filament_events/__init__.py",
+          "INV-006:filament_core_service/models/__init__.py",
+          "INV-018:src/corpus/walk.rs"
+        ],
+        "qualifiedName": "spec-artifacts-app::ApplicationSpec",
+        "rationale": "the declaration overlaps a current core artifact/object or named contract and requires an explicit mapping rather than a shadow definition"
+      },
+      {
+        "censusRecords": [
+          "INV-001",
+          "INV-002"
+        ],
+        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
+        "declarationId": "spec-artifacts-app::artifact::MasterRequirements::1",
+        "disposition": "mapping",
+        "evidence": [
+          "INV-001:schema/avro/core-data.avpr",
+          "INV-002:src/generated.ts"
+        ],
+        "qualifiedName": "spec-artifacts-app::MasterRequirements",
+        "rationale": "the declaration overlaps a current core artifact/object or named contract and requires an explicit mapping rather than a shadow definition"
+      },
+      {
+        "censusRecords": [
+          "INV-001",
+          "INV-002"
+        ],
+        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
+        "declarationId": "spec-artifacts-process::artifact::ADR::0",
+        "disposition": "mapping",
+        "evidence": [
+          "INV-001:schema/avro/core-data.avpr",
+          "INV-002:src/generated.ts"
+        ],
+        "qualifiedName": "spec-artifacts-process::ADR",
+        "rationale": "the declaration overlaps a current core artifact/object or named contract and requires an explicit mapping rather than a shadow definition"
+      },
+      {
+        "censusRecords": [
+          "INV-001",
+          "INV-002",
+          "INV-013"
+        ],
+        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
+        "declarationId": "spec-artifacts-process::artifact::Plan::1",
+        "disposition": "mapping",
+        "evidence": [
+          "INV-001:schema/avro/core-data.avpr",
+          "INV-002:src/generated.ts",
+          "INV-013:crates/filament-data/src/migrations/mod.rs"
+        ],
+        "qualifiedName": "spec-artifacts-process::Plan",
+        "rationale": "the declaration overlaps a current core artifact/object or named contract and requires an explicit mapping rather than a shadow definition"
+      },
+      {
+        "censusRecords": [
+          "INV-001",
+          "INV-002"
+        ],
+        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
+        "declarationId": "spec-artifacts-process::artifact::Task::2",
+        "disposition": "mapping",
+        "evidence": [
+          "INV-001:schema/avro/core-data.avpr",
+          "INV-002:src/generated.ts"
+        ],
+        "qualifiedName": "spec-artifacts-process::Task",
+        "rationale": "the declaration overlaps a current core artifact/object or named contract and requires an explicit mapping rather than a shadow definition"
+      },
+      {
+        "censusRecords": [
+          "INV-001",
+          "INV-002"
+        ],
+        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
+        "declarationId": "spec-artifacts-process::artifact::Review::3",
+        "disposition": "mapping",
+        "evidence": [
+          "INV-001:schema/avro/core-data.avpr",
+          "INV-002:src/generated.ts"
+        ],
+        "qualifiedName": "spec-artifacts-process::Review",
+        "rationale": "the declaration overlaps a current core artifact/object or named contract and requires an explicit mapping rather than a shadow definition"
+      },
+      {
+        "censusRecords": [
+          "INV-001",
+          "INV-002",
+          "INV-005",
+          "INV-006",
+          "INV-018"
+        ],
+        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
+        "declarationId": "spec-artifacts-process::artifact::SpecReview::4",
+        "disposition": "mapping",
+        "evidence": [
+          "INV-001:schema/avro/core-data.avpr",
+          "INV-002:src/generated.ts",
+          "INV-005:filament_events/__init__.py",
+          "INV-006:filament_core_service/models/__init__.py",
+          "INV-018:src/corpus/walk.rs"
+        ],
+        "qualifiedName": "spec-artifacts-process::SpecReview",
+        "rationale": "the declaration overlaps a current core artifact/object or named contract and requires an explicit mapping rather than a shadow definition"
+      },
+      {
+        "censusRecords": [
+          "INV-001",
+          "INV-002",
+          "INV-005"
+        ],
+        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
+        "declarationId": "spec-artifacts-process::artifact::Finding::5",
+        "disposition": "mapping",
+        "evidence": [
+          "INV-001:schema/avro/core-data.avpr",
+          "INV-002:src/generated.ts",
+          "INV-005:filament_events/__init__.py"
+        ],
+        "qualifiedName": "spec-artifacts-process::Finding",
+        "rationale": "the declaration overlaps a current core artifact/object or named contract and requires an explicit mapping rather than a shadow definition"
+      },
+      {
+        "censusRecords": [
+          "INV-001",
+          "INV-002"
+        ],
+        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
+        "declarationId": "spec-artifacts-process::artifact::Feedback::6",
+        "disposition": "mapping",
+        "evidence": [
+          "INV-001:schema/avro/core-data.avpr",
+          "INV-002:src/generated.ts"
+        ],
+        "qualifiedName": "spec-artifacts-process::Feedback",
+        "rationale": "the declaration overlaps a current core artifact/object or named contract and requires an explicit mapping rather than a shadow definition"
+      },
+      {
+        "censusRecords": [
+          "INV-001",
+          "INV-002",
+          "INV-008",
+          "INV-014"
+        ],
+        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
+        "declarationId": "spec-artifacts-process::artifact::TestMatrixIndex::7",
+        "disposition": "mapping",
+        "evidence": [
+          "INV-001:schema/avro/core-data.avpr",
+          "INV-002:src/generated.ts",
+          "INV-008:filament_parser/types.py",
+          "INV-014:crates/filament-service/src/dto.rs"
+        ],
+        "qualifiedName": "spec-artifacts-process::TestMatrixIndex",
+        "rationale": "the declaration overlaps a current core artifact/object or named contract and requires an explicit mapping rather than a shadow definition"
+      },
+      {
+        "censusRecords": [
+          "INV-001",
+          "INV-002",
+          "INV-008"
+        ],
+        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
+        "declarationId": "spec-artifacts-process::artifact::TestMatrix::8",
+        "disposition": "mapping",
+        "evidence": [
+          "INV-001:schema/avro/core-data.avpr",
+          "INV-002:src/generated.ts",
+          "INV-008:filament_parser/types.py"
+        ],
+        "qualifiedName": "spec-artifacts-process::TestMatrix",
+        "rationale": "the declaration overlaps a current core artifact/object or named contract and requires an explicit mapping rather than a shadow definition"
+      },
+      {
+        "censusRecords": [
+          "INV-001",
+          "INV-002"
+        ],
+        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
+        "declarationId": "spec-artifacts-process::artifact::Standard::9",
+        "disposition": "mapping",
+        "evidence": [
+          "INV-001:schema/avro/core-data.avpr",
+          "INV-002:src/generated.ts"
+        ],
+        "qualifiedName": "spec-artifacts-process::Standard",
+        "rationale": "the declaration overlaps a current core artifact/object or named contract and requires an explicit mapping rather than a shadow definition"
+      },
+      {
+        "censusRecords": [
+          "INV-001",
+          "INV-002",
+          "INV-019"
+        ],
+        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
+        "declarationId": "spec-artifacts-process::artifact::SuiteRegistry::10",
+        "disposition": "mapping",
+        "evidence": [
+          "INV-001:schema/avro/core-data.avpr",
+          "INV-002:src/generated.ts",
+          "INV-019:src/registry.rs"
+        ],
+        "qualifiedName": "spec-artifacts-process::SuiteRegistry",
+        "rationale": "the declaration overlaps a current core artifact/object or named contract and requires an explicit mapping rather than a shadow definition"
+      },
+      {
+        "censusRecords": [
+          "INV-001",
+          "INV-002",
+          "INV-005",
+          "INV-006",
+          "INV-018"
+        ],
+        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
+        "declarationId": "spec-artifacts-process::artifact::Inspections::11",
+        "disposition": "mapping",
+        "evidence": [
+          "INV-001:schema/avro/core-data.avpr",
+          "INV-002:src/generated.ts",
+          "INV-005:filament_events/__init__.py",
+          "INV-006:filament_core_service/models/__init__.py",
+          "INV-018:src/corpus/walk.rs"
+        ],
+        "qualifiedName": "spec-artifacts-process::Inspections",
+        "rationale": "the declaration overlaps a current core artifact/object or named contract and requires an explicit mapping rather than a shadow definition"
+      },
+      {
+        "censusRecords": [
+          "INV-001",
+          "INV-002"
+        ],
+        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
+        "declarationId": "spec-artifacts-process::object::standard::0",
+        "disposition": "mapping",
+        "evidence": [
+          "INV-001:schema/avro/core-data.avpr",
+          "INV-002:src/generated.ts"
+        ],
+        "qualifiedName": "spec-artifacts-process::standard",
+        "rationale": "the declaration overlaps a current core artifact/object or named contract and requires an explicit mapping rather than a shadow definition"
+      },
+      {
+        "censusRecords": [
+          "INV-001",
+          "INV-002",
+          "INV-010"
+        ],
+        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
+        "declarationId": "spec-objects-business::object::domain::0",
+        "disposition": "mapping",
+        "evidence": [
+          "INV-001:schema/avro/core-data.avpr",
+          "INV-002:src/generated.ts",
+          "INV-010:spec_parser_lib/models.py"
+        ],
+        "qualifiedName": "spec-objects-business::domain",
+        "rationale": "the declaration overlaps a current core artifact/object or named contract and requires an explicit mapping rather than a shadow definition"
+      },
+      {
+        "censusRecords": [
+          "INV-001",
+          "INV-002"
+        ],
+        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
+        "declarationId": "spec-objects-business::object::entity::1",
+        "disposition": "mapping",
+        "evidence": [
+          "INV-001:schema/avro/core-data.avpr",
+          "INV-002:src/generated.ts"
+        ],
+        "qualifiedName": "spec-objects-business::entity",
+        "rationale": "the declaration overlaps a current core artifact/object or named contract and requires an explicit mapping rather than a shadow definition"
+      },
+      {
+        "censusRecords": [
+          "INV-001",
+          "INV-002"
+        ],
+        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
+        "declarationId": "spec-objects-business::object::value_object::2",
+        "disposition": "mapping",
+        "evidence": [
+          "INV-001:schema/avro/core-data.avpr",
+          "INV-002:src/generated.ts"
+        ],
+        "qualifiedName": "spec-objects-business::value_object",
+        "rationale": "the declaration overlaps a current core artifact/object or named contract and requires an explicit mapping rather than a shadow definition"
+      },
+      {
+        "censusRecords": [
+          "INV-001",
+          "INV-002"
+        ],
+        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
+        "declarationId": "spec-objects-business::object::aggregate_root::3",
+        "disposition": "mapping",
+        "evidence": [
+          "INV-001:schema/avro/core-data.avpr",
+          "INV-002:src/generated.ts"
+        ],
+        "qualifiedName": "spec-objects-business::aggregate_root",
+        "rationale": "the declaration overlaps a current core artifact/object or named contract and requires an explicit mapping rather than a shadow definition"
+      },
+      {
+        "censusRecords": [
+          "INV-001",
+          "INV-002"
+        ],
+        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
+        "declarationId": "spec-objects-business::object::nested_entity::4",
+        "disposition": "mapping",
+        "evidence": [
+          "INV-001:schema/avro/core-data.avpr",
+          "INV-002:src/generated.ts"
+        ],
+        "qualifiedName": "spec-objects-business::nested_entity",
+        "rationale": "the declaration overlaps a current core artifact/object or named contract and requires an explicit mapping rather than a shadow definition"
+      },
+      {
+        "censusRecords": [
+          "INV-001",
+          "INV-002"
+        ],
+        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
+        "declarationId": "spec-objects-business::object::repository::5",
+        "disposition": "mapping",
+        "evidence": [
+          "INV-001:schema/avro/core-data.avpr",
+          "INV-002:src/generated.ts"
+        ],
+        "qualifiedName": "spec-objects-business::repository",
+        "rationale": "the declaration overlaps a current core artifact/object or named contract and requires an explicit mapping rather than a shadow definition"
+      },
+      {
+        "censusRecords": [
+          "INV-001",
+          "INV-002",
+          "INV-007",
+          "INV-010"
+        ],
+        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
+        "declarationId": "spec-objects-business::object::event::6",
+        "disposition": "mapping",
+        "evidence": [
+          "INV-001:schema/avro/core-data.avpr",
+          "INV-002:src/generated.ts",
+          "INV-007:filament_core_service/events.py",
+          "INV-010:spec_parser_lib/models.py"
+        ],
+        "qualifiedName": "spec-objects-business::event",
+        "rationale": "the declaration overlaps a current core artifact/object or named contract and requires an explicit mapping rather than a shadow definition"
+      },
+      {
+        "censusRecords": [
+          "INV-001",
+          "INV-002",
+          "INV-010"
+        ],
+        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
+        "declarationId": "spec-objects-business::object::state_machine::7",
+        "disposition": "mapping",
+        "evidence": [
+          "INV-001:schema/avro/core-data.avpr",
+          "INV-002:src/generated.ts",
+          "INV-010:spec_parser_lib/models.py"
+        ],
+        "qualifiedName": "spec-objects-business::state_machine",
+        "rationale": "the declaration overlaps a current core artifact/object or named contract and requires an explicit mapping rather than a shadow definition"
+      },
+      {
+        "censusRecords": [
+          "INV-001",
+          "INV-002",
+          "INV-010",
+          "INV-020"
+        ],
+        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
+        "declarationId": "spec-objects-business::object::process::8",
+        "disposition": "mapping",
+        "evidence": [
+          "INV-001:schema/avro/core-data.avpr",
+          "INV-002:src/generated.ts",
+          "INV-010:spec_parser_lib/models.py",
+          "INV-020:default-modules.yaml"
+        ],
+        "qualifiedName": "spec-objects-business::process",
+        "rationale": "the declaration overlaps a current core artifact/object or named contract and requires an explicit mapping rather than a shadow definition"
+      },
+      {
+        "censusRecords": [
+          "INV-001",
+          "INV-002"
+        ],
+        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
+        "declarationId": "spec-objects-business::object::enumeration::9",
+        "disposition": "mapping",
+        "evidence": [
+          "INV-001:schema/avro/core-data.avpr",
+          "INV-002:src/generated.ts"
+        ],
+        "qualifiedName": "spec-objects-business::enumeration",
+        "rationale": "the declaration overlaps a current core artifact/object or named contract and requires an explicit mapping rather than a shadow definition"
+      },
+      {
+        "censusRecords": [
+          "INV-001",
+          "INV-002"
+        ],
+        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
+        "declarationId": "spec-objects-architecture::object::api_endpoint::0",
+        "disposition": "mapping",
+        "evidence": [
+          "INV-001:schema/avro/core-data.avpr",
+          "INV-002:src/generated.ts"
+        ],
+        "qualifiedName": "spec-objects-architecture::api_endpoint",
+        "rationale": "the declaration overlaps a current core artifact/object or named contract and requires an explicit mapping rather than a shadow definition"
+      },
+      {
+        "censusRecords": [
+          "INV-001",
+          "INV-002"
+        ],
+        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
+        "declarationId": "spec-objects-architecture::object::data_schema::1",
+        "disposition": "mapping",
+        "evidence": [
+          "INV-001:schema/avro/core-data.avpr",
+          "INV-002:src/generated.ts"
+        ],
+        "qualifiedName": "spec-objects-architecture::data_schema",
+        "rationale": "the declaration overlaps a current core artifact/object or named contract and requires an explicit mapping rather than a shadow definition"
+      },
+      {
+        "censusRecords": [
+          "INV-001",
+          "INV-002"
+        ],
+        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
+        "declarationId": "spec-objects-architecture::object::queue::2",
+        "disposition": "mapping",
+        "evidence": [
+          "INV-001:schema/avro/core-data.avpr",
+          "INV-002:src/generated.ts"
+        ],
+        "qualifiedName": "spec-objects-architecture::queue",
+        "rationale": "the declaration overlaps a current core artifact/object or named contract and requires an explicit mapping rather than a shadow definition"
+      },
+      {
+        "censusRecords": [
+          "INV-001",
+          "INV-002",
+          "INV-009",
+          "INV-011",
+          "INV-012",
+          "INV-017"
+        ],
+        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
+        "declarationId": "spec-objects-architecture::object::action::3",
+        "disposition": "mapping",
+        "evidence": [
+          "INV-001:schema/avro/core-data.avpr",
+          "INV-002:src/generated.ts",
+          "INV-009:filament_parser/dsl/schema.py",
+          "INV-011:crates/filament-extraction/src/dto.rs",
+          "INV-012:crates/filament-data/src/entities.rs",
+          "INV-017:src/extract/mod.rs"
+        ],
+        "qualifiedName": "spec-objects-architecture::action",
+        "rationale": "the declaration overlaps a current core artifact/object or named contract and requires an explicit mapping rather than a shadow definition"
+      },
+      {
+        "censusRecords": [
+          "INV-001",
+          "INV-002"
+        ],
+        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
+        "declarationId": "spec-objects-architecture::object::ui_component::4",
+        "disposition": "mapping",
+        "evidence": [
+          "INV-001:schema/avro/core-data.avpr",
+          "INV-002:src/generated.ts"
+        ],
+        "qualifiedName": "spec-objects-architecture::ui_component",
+        "rationale": "the declaration overlaps a current core artifact/object or named contract and requires an explicit mapping rather than a shadow definition"
+      },
+      {
+        "censusRecords": [
+          "INV-001",
+          "INV-002"
+        ],
+        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
+        "declarationId": "spec-objects-architecture::object::interface::5",
+        "disposition": "mapping",
+        "evidence": [
+          "INV-001:schema/avro/core-data.avpr",
+          "INV-002:src/generated.ts"
+        ],
+        "qualifiedName": "spec-objects-architecture::interface",
+        "rationale": "the declaration overlaps a current core artifact/object or named contract and requires an explicit mapping rather than a shadow definition"
+      },
+      {
+        "censusRecords": [
+          "INV-001",
+          "INV-002"
+        ],
+        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
+        "declarationId": "spec-objects-architecture::object::external_contract::6",
+        "disposition": "mapping",
+        "evidence": [
+          "INV-001:schema/avro/core-data.avpr",
+          "INV-002:src/generated.ts"
+        ],
+        "qualifiedName": "spec-objects-architecture::external_contract",
+        "rationale": "the declaration overlaps a current core artifact/object or named contract and requires an explicit mapping rather than a shadow definition"
+      },
+      {
+        "censusRecords": [
+          "INV-001",
+          "INV-002"
+        ],
+        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
+        "declarationId": "spec-objects-architecture::object::extension_point::7",
+        "disposition": "mapping",
+        "evidence": [
+          "INV-001:schema/avro/core-data.avpr",
+          "INV-002:src/generated.ts"
+        ],
+        "qualifiedName": "spec-objects-architecture::extension_point",
+        "rationale": "the declaration overlaps a current core artifact/object or named contract and requires an explicit mapping rather than a shadow definition"
+      },
+      {
+        "censusRecords": [
+          "INV-001",
+          "INV-002"
+        ],
+        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
+        "declarationId": "spec-objects-architecture::object::binary_format::8",
+        "disposition": "mapping",
+        "evidence": [
+          "INV-001:schema/avro/core-data.avpr",
+          "INV-002:src/generated.ts"
+        ],
+        "qualifiedName": "spec-objects-architecture::binary_format",
+        "rationale": "the declaration overlaps a current core artifact/object or named contract and requires an explicit mapping rather than a shadow definition"
+      },
+      {
+        "censusRecords": [
+          "INV-001",
+          "INV-002"
+        ],
+        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
+        "declarationId": "spec-objects-architecture::object::rate_limit::9",
+        "disposition": "mapping",
+        "evidence": [
+          "INV-001:schema/avro/core-data.avpr",
+          "INV-002:src/generated.ts"
+        ],
+        "qualifiedName": "spec-objects-architecture::rate_limit",
+        "rationale": "the declaration overlaps a current core artifact/object or named contract and requires an explicit mapping rather than a shadow definition"
+      },
+      {
+        "censusRecords": [
+          "INV-001",
+          "INV-002"
+        ],
+        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
+        "declarationId": "spec-objects-enterprise::object::capability::0",
+        "disposition": "mapping",
+        "evidence": [
+          "INV-001:schema/avro/core-data.avpr",
+          "INV-002:src/generated.ts"
+        ],
+        "qualifiedName": "spec-objects-enterprise::capability",
+        "rationale": "the declaration overlaps a current core artifact/object or named contract and requires an explicit mapping rather than a shadow definition"
+      },
+      {
+        "censusRecords": [
+          "INV-001",
+          "INV-002"
+        ],
+        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
+        "declarationId": "spec-objects-enterprise::object::business_function::1",
+        "disposition": "mapping",
+        "evidence": [
+          "INV-001:schema/avro/core-data.avpr",
+          "INV-002:src/generated.ts"
+        ],
+        "qualifiedName": "spec-objects-enterprise::business_function",
+        "rationale": "the declaration overlaps a current core artifact/object or named contract and requires an explicit mapping rather than a shadow definition"
+      },
+      {
+        "censusRecords": [
+          "INV-001",
+          "INV-002"
+        ],
+        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
+        "declarationId": "spec-objects-enterprise::object::value_stream::2",
+        "disposition": "mapping",
+        "evidence": [
+          "INV-001:schema/avro/core-data.avpr",
+          "INV-002:src/generated.ts"
+        ],
+        "qualifiedName": "spec-objects-enterprise::value_stream",
+        "rationale": "the declaration overlaps a current core artifact/object or named contract and requires an explicit mapping rather than a shadow definition"
+      },
+      {
+        "censusRecords": [
+          "INV-001",
+          "INV-002"
+        ],
+        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
+        "declarationId": "spec-objects-enterprise::object::decision::3",
+        "disposition": "mapping",
+        "evidence": [
+          "INV-001:schema/avro/core-data.avpr",
+          "INV-002:src/generated.ts"
+        ],
+        "qualifiedName": "spec-objects-enterprise::decision",
+        "rationale": "the declaration overlaps a current core artifact/object or named contract and requires an explicit mapping rather than a shadow definition"
+      },
+      {
+        "censusRecords": [
+          "INV-001",
+          "INV-002"
+        ],
+        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
+        "declarationId": "spec-objects-enterprise::object::objective::4",
+        "disposition": "mapping",
+        "evidence": [
+          "INV-001:schema/avro/core-data.avpr",
+          "INV-002:src/generated.ts"
+        ],
+        "qualifiedName": "spec-objects-enterprise::objective",
+        "rationale": "the declaration overlaps a current core artifact/object or named contract and requires an explicit mapping rather than a shadow definition"
+      },
+      {
+        "censusRecords": [
+          "INV-001",
+          "INV-002"
+        ],
+        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
+        "declarationId": "spec-objects-enterprise::object::principle::5",
+        "disposition": "mapping",
+        "evidence": [
+          "INV-001:schema/avro/core-data.avpr",
+          "INV-002:src/generated.ts"
+        ],
+        "qualifiedName": "spec-objects-enterprise::principle",
+        "rationale": "the declaration overlaps a current core artifact/object or named contract and requires an explicit mapping rather than a shadow definition"
+      },
+      {
+        "censusRecords": [
+          "INV-001",
+          "INV-002"
+        ],
+        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
+        "declarationId": "spec-objects-enterprise::object::kpi::6",
+        "disposition": "mapping",
+        "evidence": [
+          "INV-001:schema/avro/core-data.avpr",
+          "INV-002:src/generated.ts"
+        ],
+        "qualifiedName": "spec-objects-enterprise::kpi",
+        "rationale": "the declaration overlaps a current core artifact/object or named contract and requires an explicit mapping rather than a shadow definition"
+      },
+      {
+        "censusRecords": [
+          "INV-001",
+          "INV-002",
+          "INV-021"
+        ],
+        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
+        "declarationId": "spec-objects-operational::object::configuration::0",
+        "disposition": "mapping",
+        "evidence": [
+          "INV-001:schema/avro/core-data.avpr",
+          "INV-002:src/generated.ts",
+          "INV-021:src/config-schema.ts"
+        ],
+        "qualifiedName": "spec-objects-operational::configuration",
+        "rationale": "the declaration overlaps a current core artifact/object or named contract and requires an explicit mapping rather than a shadow definition"
+      },
+      {
+        "censusRecords": [
+          "INV-001",
+          "INV-002"
+        ],
+        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
+        "declarationId": "spec-objects-operational::object::migration::1",
+        "disposition": "mapping",
+        "evidence": [
+          "INV-001:schema/avro/core-data.avpr",
+          "INV-002:src/generated.ts"
+        ],
+        "qualifiedName": "spec-objects-operational::migration",
+        "rationale": "the declaration overlaps a current core artifact/object or named contract and requires an explicit mapping rather than a shadow definition"
+      },
+      {
+        "censusRecords": [
+          "INV-001",
+          "INV-002"
+        ],
+        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
+        "declarationId": "spec-objects-operational::object::sli::2",
+        "disposition": "mapping",
+        "evidence": [
+          "INV-001:schema/avro/core-data.avpr",
+          "INV-002:src/generated.ts"
+        ],
+        "qualifiedName": "spec-objects-operational::sli",
+        "rationale": "the declaration overlaps a current core artifact/object or named contract and requires an explicit mapping rather than a shadow definition"
+      },
+      {
+        "censusRecords": [
+          "INV-001",
+          "INV-002"
+        ],
+        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
+        "declarationId": "spec-objects-operational::object::slo::3",
+        "disposition": "mapping",
+        "evidence": [
+          "INV-001:schema/avro/core-data.avpr",
+          "INV-002:src/generated.ts"
+        ],
+        "qualifiedName": "spec-objects-operational::slo",
+        "rationale": "the declaration overlaps a current core artifact/object or named contract and requires an explicit mapping rather than a shadow definition"
+      },
+      {
+        "censusRecords": [
+          "INV-001",
+          "INV-002"
+        ],
+        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
+        "declarationId": "spec-objects-operational::object::alert::4",
+        "disposition": "mapping",
+        "evidence": [
+          "INV-001:schema/avro/core-data.avpr",
+          "INV-002:src/generated.ts"
+        ],
+        "qualifiedName": "spec-objects-operational::alert",
+        "rationale": "the declaration overlaps a current core artifact/object or named contract and requires an explicit mapping rather than a shadow definition"
+      },
+      {
+        "censusRecords": [
+          "INV-001",
+          "INV-002"
+        ],
+        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
+        "declarationId": "spec-objects-operational::object::runbook::5",
+        "disposition": "mapping",
+        "evidence": [
+          "INV-001:schema/avro/core-data.avpr",
+          "INV-002:src/generated.ts"
+        ],
+        "qualifiedName": "spec-objects-operational::runbook",
+        "rationale": "the declaration overlaps a current core artifact/object or named contract and requires an explicit mapping rather than a shadow definition"
+      },
+      {
+        "censusRecords": [
+          "INV-001",
+          "INV-002"
+        ],
+        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
+        "declarationId": "spec-objects-operational::object::incident::6",
+        "disposition": "mapping",
+        "evidence": [
+          "INV-001:schema/avro/core-data.avpr",
+          "INV-002:src/generated.ts"
+        ],
+        "qualifiedName": "spec-objects-operational::incident",
+        "rationale": "the declaration overlaps a current core artifact/object or named contract and requires an explicit mapping rather than a shadow definition"
+      },
+      {
+        "censusRecords": [
+          "INV-001",
+          "INV-002"
+        ],
+        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
+        "declarationId": "spec-objects-operational::object::deployment::7",
+        "disposition": "mapping",
+        "evidence": [
+          "INV-001:schema/avro/core-data.avpr",
+          "INV-002:src/generated.ts"
+        ],
+        "qualifiedName": "spec-objects-operational::deployment",
+        "rationale": "the declaration overlaps a current core artifact/object or named contract and requires an explicit mapping rather than a shadow definition"
+      },
+      {
+        "censusRecords": [
+          "INV-001",
+          "INV-002"
+        ],
+        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
+        "declarationId": "spec-objects-security::object::auth_flow::0",
+        "disposition": "mapping",
+        "evidence": [
+          "INV-001:schema/avro/core-data.avpr",
+          "INV-002:src/generated.ts"
+        ],
+        "qualifiedName": "spec-objects-security::auth_flow",
+        "rationale": "the declaration overlaps a current core artifact/object or named contract and requires an explicit mapping rather than a shadow definition"
+      },
+      {
+        "censusRecords": [
+          "INV-001",
+          "INV-002"
+        ],
+        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
+        "declarationId": "spec-objects-security::object::permission::1",
+        "disposition": "mapping",
+        "evidence": [
+          "INV-001:schema/avro/core-data.avpr",
+          "INV-002:src/generated.ts"
+        ],
+        "qualifiedName": "spec-objects-security::permission",
+        "rationale": "the declaration overlaps a current core artifact/object or named contract and requires an explicit mapping rather than a shadow definition"
+      },
+      {
+        "censusRecords": [
+          "INV-001",
+          "INV-002",
+          "INV-005"
+        ],
+        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
+        "declarationId": "spec-objects-security::object::scope::2",
+        "disposition": "mapping",
+        "evidence": [
+          "INV-001:schema/avro/core-data.avpr",
+          "INV-002:src/generated.ts",
+          "INV-005:filament_events/__init__.py"
+        ],
+        "qualifiedName": "spec-objects-security::scope",
+        "rationale": "the declaration overlaps a current core artifact/object or named contract and requires an explicit mapping rather than a shadow definition"
+      },
+      {
+        "censusRecords": [
+          "INV-001",
+          "INV-002"
+        ],
+        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
+        "declarationId": "spec-objects-security::object::role::3",
+        "disposition": "mapping",
+        "evidence": [
+          "INV-001:schema/avro/core-data.avpr",
+          "INV-002:src/generated.ts"
+        ],
+        "qualifiedName": "spec-objects-security::role",
+        "rationale": "the declaration overlaps a current core artifact/object or named contract and requires an explicit mapping rather than a shadow definition"
+      },
+      {
+        "censusRecords": [
+          "INV-001",
+          "INV-002"
+        ],
+        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
+        "declarationId": "spec-objects-security::object::secret::4",
+        "disposition": "mapping",
+        "evidence": [
+          "INV-001:schema/avro/core-data.avpr",
+          "INV-002:src/generated.ts"
+        ],
+        "qualifiedName": "spec-objects-security::secret",
+        "rationale": "the declaration overlaps a current core artifact/object or named contract and requires an explicit mapping rather than a shadow definition"
+      },
+      {
+        "censusRecords": [
+          "INV-001",
+          "INV-002"
+        ],
+        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
+        "declarationId": "spec-objects-security::object::encryption_key::5",
+        "disposition": "mapping",
+        "evidence": [
+          "INV-001:schema/avro/core-data.avpr",
+          "INV-002:src/generated.ts"
+        ],
+        "qualifiedName": "spec-objects-security::encryption_key",
+        "rationale": "the declaration overlaps a current core artifact/object or named contract and requires an explicit mapping rather than a shadow definition"
+      },
+      {
+        "censusRecords": [
+          "INV-001",
+          "INV-002"
+        ],
+        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
+        "declarationId": "spec-objects-security::object::session_config::6",
+        "disposition": "mapping",
+        "evidence": [
+          "INV-001:schema/avro/core-data.avpr",
+          "INV-002:src/generated.ts"
+        ],
+        "qualifiedName": "spec-objects-security::session_config",
+        "rationale": "the declaration overlaps a current core artifact/object or named contract and requires an explicit mapping rather than a shadow definition"
+      },
+      {
+        "censusRecords": [
+          "INV-001",
+          "INV-002"
+        ],
+        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
+        "declarationId": "spec-objects-security::object::data_classification::7",
+        "disposition": "mapping",
+        "evidence": [
+          "INV-001:schema/avro/core-data.avpr",
+          "INV-002:src/generated.ts"
+        ],
+        "qualifiedName": "spec-objects-security::data_classification",
+        "rationale": "the declaration overlaps a current core artifact/object or named contract and requires an explicit mapping rather than a shadow definition"
+      },
+      {
+        "censusRecords": [
+          "INV-001",
+          "INV-002"
+        ],
+        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
+        "declarationId": "spec-objects-security::object::trust_boundary::8",
+        "disposition": "mapping",
+        "evidence": [
+          "INV-001:schema/avro/core-data.avpr",
+          "INV-002:src/generated.ts"
+        ],
+        "qualifiedName": "spec-objects-security::trust_boundary",
+        "rationale": "the declaration overlaps a current core artifact/object or named contract and requires an explicit mapping rather than a shadow definition"
+      },
+      {
+        "censusRecords": [
+          "INV-001",
+          "INV-002"
+        ],
+        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
+        "declarationId": "spec-objects-security::object::audit_event::9",
+        "disposition": "mapping",
+        "evidence": [
+          "INV-001:schema/avro/core-data.avpr",
+          "INV-002:src/generated.ts"
+        ],
+        "qualifiedName": "spec-objects-security::audit_event",
+        "rationale": "the declaration overlaps a current core artifact/object or named contract and requires an explicit mapping rather than a shadow definition"
+      },
+      {
+        "censusRecords": [
+          "INV-001",
+          "INV-002"
+        ],
+        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
+        "declarationId": "spec-objects-security::object::csrf_token::10",
+        "disposition": "mapping",
+        "evidence": [
+          "INV-001:schema/avro/core-data.avpr",
+          "INV-002:src/generated.ts"
+        ],
+        "qualifiedName": "spec-objects-security::csrf_token",
+        "rationale": "the declaration overlaps a current core artifact/object or named contract and requires an explicit mapping rather than a shadow definition"
+      },
+      {
+        "censusRecords": [
+          "INV-001",
+          "INV-002"
+        ],
+        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
+        "declarationId": "spec-objects-security::object::cors_policy::11",
+        "disposition": "mapping",
+        "evidence": [
+          "INV-001:schema/avro/core-data.avpr",
+          "INV-002:src/generated.ts"
+        ],
+        "qualifiedName": "spec-objects-security::cors_policy",
+        "rationale": "the declaration overlaps a current core artifact/object or named contract and requires an explicit mapping rather than a shadow definition"
+      },
+      {
+        "censusRecords": [
+          "INV-001",
+          "INV-002"
+        ],
+        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
+        "declarationId": "spec-objects-security::object::password_policy::12",
+        "disposition": "mapping",
+        "evidence": [
+          "INV-001:schema/avro/core-data.avpr",
+          "INV-002:src/generated.ts"
+        ],
+        "qualifiedName": "spec-objects-security::password_policy",
+        "rationale": "the declaration overlaps a current core artifact/object or named contract and requires an explicit mapping rather than a shadow definition"
+      },
+      {
+        "censusRecords": [
+          "INV-001",
+          "INV-002"
+        ],
+        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
+        "declarationId": "spec-objects-security::object::mfa_method::13",
+        "disposition": "mapping",
+        "evidence": [
+          "INV-001:schema/avro/core-data.avpr",
+          "INV-002:src/generated.ts"
+        ],
+        "qualifiedName": "spec-objects-security::mfa_method",
+        "rationale": "the declaration overlaps a current core artifact/object or named contract and requires an explicit mapping rather than a shadow definition"
+      },
+      {
+        "censusRecords": [
+          "INV-001",
+          "INV-002"
+        ],
+        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
+        "declarationId": "spec-objects-security::object::jwt_claim::14",
+        "disposition": "mapping",
+        "evidence": [
+          "INV-001:schema/avro/core-data.avpr",
+          "INV-002:src/generated.ts"
+        ],
+        "qualifiedName": "spec-objects-security::jwt_claim",
+        "rationale": "the declaration overlaps a current core artifact/object or named contract and requires an explicit mapping rather than a shadow definition"
+      },
+      {
+        "censusRecords": [
+          "INV-001",
+          "INV-002"
+        ],
+        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
+        "declarationId": "spec-objects-security::object::threat::15",
+        "disposition": "mapping",
+        "evidence": [
+          "INV-001:schema/avro/core-data.avpr",
+          "INV-002:src/generated.ts"
+        ],
+        "qualifiedName": "spec-objects-security::threat",
+        "rationale": "the declaration overlaps a current core artifact/object or named contract and requires an explicit mapping rather than a shadow definition"
+      },
+      {
+        "censusRecords": [
+          "INV-001",
+          "INV-002"
+        ],
+        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
+        "declarationId": "spec-objects-security::object::control::16",
+        "disposition": "mapping",
+        "evidence": [
+          "INV-001:schema/avro/core-data.avpr",
+          "INV-002:src/generated.ts"
+        ],
+        "qualifiedName": "spec-objects-security::control",
+        "rationale": "the declaration overlaps a current core artifact/object or named contract and requires an explicit mapping rather than a shadow definition"
+      },
+      {
+        "censusRecords": [
+          "INV-001",
+          "INV-002"
+        ],
+        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
+        "declarationId": "spec-objects-security::object::risk::17",
+        "disposition": "mapping",
+        "evidence": [
+          "INV-001:schema/avro/core-data.avpr",
+          "INV-002:src/generated.ts"
+        ],
+        "qualifiedName": "spec-objects-security::risk",
+        "rationale": "the declaration overlaps a current core artifact/object or named contract and requires an explicit mapping rather than a shadow definition"
+      },
+      {
+        "censusRecords": [
+          "INV-001",
+          "INV-002"
+        ],
+        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
+        "declarationId": "spec-objects-security::object::vulnerability::18",
+        "disposition": "mapping",
+        "evidence": [
+          "INV-001:schema/avro/core-data.avpr",
+          "INV-002:src/generated.ts"
+        ],
+        "qualifiedName": "spec-objects-security::vulnerability",
+        "rationale": "the declaration overlaps a current core artifact/object or named contract and requires an explicit mapping rather than a shadow definition"
+      },
+      {
+        "censusRecords": [
+          "INV-001",
+          "INV-002"
+        ],
+        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
+        "declarationId": "spec-objects-security::object::asset::19",
+        "disposition": "mapping",
+        "evidence": [
+          "INV-001:schema/avro/core-data.avpr",
+          "INV-002:src/generated.ts"
+        ],
+        "qualifiedName": "spec-objects-security::asset",
+        "rationale": "the declaration overlaps a current core artifact/object or named contract and requires an explicit mapping rather than a shadow definition"
+      },
+      {
+        "censusRecords": [
+          "INV-001",
+          "INV-002"
+        ],
+        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
+        "declarationId": "spec-objects-security::object::attack_surface::20",
+        "disposition": "mapping",
+        "evidence": [
+          "INV-001:schema/avro/core-data.avpr",
+          "INV-002:src/generated.ts"
+        ],
+        "qualifiedName": "spec-objects-security::attack_surface",
+        "rationale": "the declaration overlaps a current core artifact/object or named contract and requires an explicit mapping rather than a shadow definition"
+      },
+      {
+        "censusRecords": [
+          "INV-001",
+          "INV-002"
+        ],
+        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
+        "declarationId": "spec-objects-security::object::policy::21",
+        "disposition": "mapping",
+        "evidence": [
+          "INV-001:schema/avro/core-data.avpr",
+          "INV-002:src/generated.ts"
+        ],
+        "qualifiedName": "spec-objects-security::policy",
+        "rationale": "the declaration overlaps a current core artifact/object or named contract and requires an explicit mapping rather than a shadow definition"
+      },
+      {
+        "censusRecords": [
+          "INV-001",
+          "INV-002"
+        ],
+        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
+        "declarationId": "spec-objects-security::object::audit_finding::22",
+        "disposition": "mapping",
+        "evidence": [
+          "INV-001:schema/avro/core-data.avpr",
+          "INV-002:src/generated.ts"
+        ],
+        "qualifiedName": "spec-objects-security::audit_finding",
+        "rationale": "the declaration overlaps a current core artifact/object or named contract and requires an explicit mapping rather than a shadow definition"
+      },
+      {
+        "censusRecords": [
+          "INV-001",
+          "INV-002"
+        ],
+        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
+        "declarationId": "spec-objects-safety::object::hazard::0",
+        "disposition": "mapping",
+        "evidence": [
+          "INV-001:schema/avro/core-data.avpr",
+          "INV-002:src/generated.ts"
+        ],
+        "qualifiedName": "spec-objects-safety::hazard",
+        "rationale": "the declaration overlaps a current core artifact/object or named contract and requires an explicit mapping rather than a shadow definition"
+      },
+      {
+        "censusRecords": [
+          "INV-001",
+          "INV-002"
+        ],
+        "censusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
+        "declarationId": "spec-objects-safety::object::failure_mode::1",
+        "disposition": "mapping",
+        "evidence": [
+          "INV-001:schema/avro/core-data.avpr",
+          "INV-002:src/generated.ts"
+        ],
+        "qualifiedName": "spec-objects-safety::failure_mode",
+        "rationale": "the declaration overlaps a current core artifact/object or named contract and requires an explicit mapping rather than a shadow definition"
+      }
+    ],
+    "followUpBoundaries": [
+      {
+        "gate": null,
+        "majorInterference": false,
+        "name": "analysis"
+      },
+      {
+        "gate": "compiler-design-and-maintainer-gate",
+        "majorInterference": true,
+        "name": "compiler"
+      },
+      {
+        "gate": "code-generation-design-and-maintainer-gate",
+        "majorInterference": true,
+        "name": "code-generation"
+      },
+      {
+        "gate": "module-schema-design-and-maintainer-gate",
+        "majorInterference": true,
+        "name": "module-schema"
+      },
+      {
+        "gate": "migration-design-and-maintainer-gate",
+        "majorInterference": true,
+        "name": "migration"
+      },
+      {
+        "gate": "database-design-and-maintainer-gate",
+        "majorInterference": true,
+        "name": "database"
+      },
+      {
+        "gate": "api-design-and-maintainer-gate",
+        "majorInterference": true,
+        "name": "api"
+      },
+      {
+        "gate": "publication-design-and-maintainer-gate",
+        "majorInterference": true,
+        "name": "publication"
+      },
+      {
+        "gate": "enforcement-design-and-maintainer-gate",
+        "majorInterference": true,
+        "name": "enforcement"
+      },
+      {
+        "gate": "retirement-design-and-maintainer-gate",
+        "majorInterference": true,
+        "name": "retirement"
+      }
+    ],
+    "quire": {
+      "evidence": [
+        "agent-ix/quire-rs#385",
+        "agent-ix/quire-corpus@68eb2c7d93973adf36b2478c70176f3b89fbd5b0"
+      ],
+      "preservesBoundary": true,
+      "responsibilities": [
+        "parse",
+        "validate",
+        "extract",
+        "address",
+        "byte-splice"
+      ],
+      "revision": "68eb2c7d93973adf36b2478c70176f3b89fbd5b0"
+    },
+    "schemaVersion": "semantic-audit-reconciliation-v1",
+    "shadowContracts": []
+  },
+  "schemaVersion": "semantic-repository-impact-v1"
+}

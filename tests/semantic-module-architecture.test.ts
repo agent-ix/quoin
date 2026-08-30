@@ -5,6 +5,8 @@ import { fileURLToPath } from "node:url";
 
 import { describe, expect, it } from "vitest";
 
+import { isAllowedAuditPath } from "../scripts/lib/semantic-module-type-fit.mjs";
+
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const architectureRoot = join(repoRoot, "docs", "semantic-module-architecture");
 
@@ -59,6 +61,7 @@ function changedPaths(): string[] {
 
 function isAllowedArchitecturePath(path: string): boolean {
   return (
+    isAllowedAuditPath(path) ||
     path.startsWith("docs/semantic-module-architecture/") ||
     path.startsWith("plan/PLAN-002-semantic-module-architecture/") ||
     path.startsWith("spec/reviews/") ||

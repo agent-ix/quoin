@@ -58,3 +58,8 @@ description: "Index of functional requirements (FR) for quoin."
 - [FR-048: Declare semantic data authority by concern](./FR-048-declare-authority-by-concern.md)
 - [FR-049: Preserve dynamic modules and finite generated packages](./FR-049-preserve-dynamic-and-generated-modules.md)
 - [FR-050: Reconcile the semantic architecture with Quire decisions](./FR-050-reconcile-quire-decisions.md)
+- [FR-051: Snapshot the semantic audit scope and provenance](./FR-051-snapshot-semantic-audit-scope.md)
+- [FR-052: Inventory the complete default-module corpus](./FR-052-inventory-default-module-corpus.md)
+- [FR-053: Score and disposition every declared semantic type](./FR-053-score-semantic-type-fit.md)
+- [FR-054: Publish canonical semantic audit artifacts](./FR-054-publish-semantic-audit-artifacts.md)
+- [FR-055: Reconcile audit findings with current semantic contracts](./FR-055-reconcile-semantic-audit-findings.md)

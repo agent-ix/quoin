@@ -1,0 +1,214 @@
+{
+  "defaultModulesDigest": "sha256:fede6cfa75e19254314ec25d9604df6fee601c37e34fa29c5fb100bbdad79be7",
+  "externalEvidence": {
+    "coreDataCensusRevision": "3832e075a503d6fb4b6ad5dd0b134f92a62beb77",
+    "quireCorpusRevision": "68eb2c7d93973adf36b2478c70176f3b89fbd5b0"
+  },
+  "modules": [
+    {
+      "canonicalRepository": "agent-ix/engineering-assurance",
+      "declarationIndex": 0,
+      "inspected": {
+        "canonicalContentDigest": "sha256:7abbb963133c15494b2f9699d2b73de6e86181063d9be1f615c100d7fd9e939e",
+        "clean": false,
+        "contentDigest": "sha256:7abbb963133c15494b2f9699d2b73de6e86181063d9be1f615c100d7fd9e939e",
+        "manifestName": "engineering-assurance",
+        "manifestVersion": "0.2.0",
+        "sourceCommit": "4e6522fc32f82cac82a3489a4192e17a94f539c3",
+        "sourcePath": "installed/engineering-assurance"
+      },
+      "name": "engineering-assurance",
+      "requestedRef": "4e6522fc32f82cac82a3489a4192e17a94f539c3",
+      "resolvedSha": "4e6522fc32f82cac82a3489a4192e17a94f539c3",
+      "sourceKind": "git-subdir",
+      "subdirectory": "engineering_assurance",
+      "version": "0.2.0+4e6522f"
+    },
+    {
+      "canonicalRepository": "agent-ix/spec-artifacts-iso",
+      "declarationIndex": 1,
+      "inspected": {
+        "canonicalContentDigest": "sha256:81da0e66f4127b290761d9f9d5be2574e8b02b9925697355fa224de2bb9e905e",
+        "clean": true,
+        "contentDigest": "sha256:81da0e66f4127b290761d9f9d5be2574e8b02b9925697355fa224de2bb9e905e",
+        "manifestName": "spec-artifacts-iso",
+        "manifestVersion": "0.1.0",
+        "sourceCommit": "88ce642d670b8a641ec0a3d707b102a1bc2ce12a",
+        "sourcePath": "installed/spec-artifacts-iso"
+      },
+      "name": "spec-artifacts-iso",
+      "requestedRef": "v0.18.0",
+      "resolvedSha": "88ce642d670b8a641ec0a3d707b102a1bc2ce12a",
+      "sourceKind": "git-subdir",
+      "subdirectory": "spec_artifacts_iso",
+      "version": "0.18.0"
+    },
+    {
+      "canonicalRepository": "agent-ix/spec-artifacts-app",
+      "declarationIndex": 2,
+      "inspected": {
+        "canonicalContentDigest": "sha256:b4bcec4d21123258aa164852765816729e49e1a8aa33414c9505d12d00318877",
+        "clean": true,
+        "contentDigest": "sha256:b4bcec4d21123258aa164852765816729e49e1a8aa33414c9505d12d00318877",
+        "manifestName": "spec-artifacts-app",
+        "manifestVersion": "0.1.0",
+        "sourceCommit": "e40d59dcd95788006667059f8c97e9401583cb4a",
+        "sourcePath": "installed/spec-artifacts-app"
+      },
+      "name": "spec-artifacts-app",
+      "requestedRef": "v0.5.0",
+      "resolvedSha": "e40d59dcd95788006667059f8c97e9401583cb4a",
+      "sourceKind": "git-subdir",
+      "subdirectory": "spec_artifacts_app",
+      "version": "0.5.0"
+    },
+    {
+      "canonicalRepository": "agent-ix/spec-artifacts-process",
+      "declarationIndex": 3,
+      "inspected": {
+        "canonicalContentDigest": "sha256:0a58618f084c6665c1c77fad80e0ff128a93024d9be9f9122eac98e1bc891efd",
+        "clean": true,
+        "contentDigest": "sha256:0a58618f084c6665c1c77fad80e0ff128a93024d9be9f9122eac98e1bc891efd",
+        "manifestName": "spec-artifacts-process",
+        "manifestVersion": "0.1.0",
+        "sourceCommit": "d605caad70a8c09884ef22525d532e01330f763f",
+        "sourcePath": "installed/spec-artifacts-process"
+      },
+      "name": "spec-artifacts-process",
+      "requestedRef": "d605caad70a8c09884ef22525d532e01330f763f",
+      "resolvedSha": "d605caad70a8c09884ef22525d532e01330f763f",
+      "sourceKind": "git-subdir",
+      "subdirectory": "spec_artifacts_process",
+      "version": "0.24.0+d605caa"
+    },
+    {
+      "canonicalRepository": "agent-ix/spec-objects-business",
+      "declarationIndex": 4,
+      "inspected": {
+        "canonicalContentDigest": "sha256:98c4a55694d139cfabebd29fa0e752bbc8abb27c6b2faeccbe157e76286b917e",
+        "clean": true,
+        "contentDigest": "sha256:98c4a55694d139cfabebd29fa0e752bbc8abb27c6b2faeccbe157e76286b917e",
+        "manifestName": "spec-objects-business",
+        "manifestVersion": "0.2.0",
+        "sourceCommit": "8952acdd4736c94141a02048cc0e5c2935cbfe16",
+        "sourcePath": "installed/spec-objects-business"
+      },
+      "name": "spec-objects-business",
+      "requestedRef": "v0.6.0",
+      "resolvedSha": "8952acdd4736c94141a02048cc0e5c2935cbfe16",
+      "sourceKind": "git-subdir",
+      "subdirectory": "spec_objects_business",
+      "version": "0.6.0"
+    },
+    {
+      "canonicalRepository": "agent-ix/spec-objects-architecture",
+      "declarationIndex": 5,
+      "inspected": {
+        "canonicalContentDigest": "sha256:72aa75e1d4db4b2e2268357b757ff19e54fd362aaf006c40a835157beccc64e7",
+        "clean": true,
+        "contentDigest": "sha256:72aa75e1d4db4b2e2268357b757ff19e54fd362aaf006c40a835157beccc64e7",
+        "manifestName": "spec-objects-architecture",
+        "manifestVersion": "0.2.0",
+        "sourceCommit": "0093e9c108541ecfcad454202f0231ff6c27c9ca",
+        "sourcePath": "installed/spec-objects-architecture"
+      },
+      "name": "spec-objects-architecture",
+      "requestedRef": "v0.6.0",
+      "resolvedSha": "0093e9c108541ecfcad454202f0231ff6c27c9ca",
+      "sourceKind": "git-subdir",
+      "subdirectory": "spec_objects_architecture",
+      "version": "0.6.0"
+    },
+    {
+      "canonicalRepository": "agent-ix/spec-objects-enterprise",
+      "declarationIndex": 6,
+      "inspected": {
+        "canonicalContentDigest": "sha256:37ac61d0eb674043afac530afe874f226776888609bc3c0897845da594e309a0",
+        "clean": true,
+        "contentDigest": "sha256:37ac61d0eb674043afac530afe874f226776888609bc3c0897845da594e309a0",
+        "manifestName": "spec-objects-enterprise",
+        "manifestVersion": "0.1.0",
+        "sourceCommit": "4be221d6fd3144c3f3d5373550059ab8b5d19ed5",
+        "sourcePath": "installed/spec-objects-enterprise"
+      },
+      "name": "spec-objects-enterprise",
+      "requestedRef": "v0.5.0",
+      "resolvedSha": "4be221d6fd3144c3f3d5373550059ab8b5d19ed5",
+      "sourceKind": "git-subdir",
+      "subdirectory": "spec_objects_enterprise",
+      "version": "0.5.0"
+    },
+    {
+      "canonicalRepository": "agent-ix/spec-objects-operational",
+      "declarationIndex": 7,
+      "inspected": {
+        "canonicalContentDigest": "sha256:5de4b946feb5a2c26a8b13995f7609ee704ab7d095225d101c22d101098fe2ec",
+        "clean": true,
+        "contentDigest": "sha256:5de4b946feb5a2c26a8b13995f7609ee704ab7d095225d101c22d101098fe2ec",
+        "manifestName": "spec-objects-operational",
+        "manifestVersion": "0.2.0",
+        "sourceCommit": "7eae00cab87f6f9262128f0e2fc9f93cf2e1d577",
+        "sourcePath": "installed/spec-objects-operational"
+      },
+      "name": "spec-objects-operational",
+      "requestedRef": "v0.6.0",
+      "resolvedSha": "7eae00cab87f6f9262128f0e2fc9f93cf2e1d577",
+      "sourceKind": "git-subdir",
+      "subdirectory": "spec_objects_operational",
+      "version": "0.6.0"
+    },
+    {
+      "canonicalRepository": "agent-ix/spec-objects-security",
+      "declarationIndex": 8,
+      "inspected": {
+        "canonicalContentDigest": "sha256:ed088f7965f95ec1040f978c05411ab50c306b733f8c66e977bb243b33eccd8c",
+        "clean": true,
+        "contentDigest": "sha256:ed088f7965f95ec1040f978c05411ab50c306b733f8c66e977bb243b33eccd8c",
+        "manifestName": "spec-objects-security",
+        "manifestVersion": "0.1.0",
+        "sourceCommit": "0857f62b30b196ea816ffee54b8ad632262daaa9",
+        "sourcePath": "installed/spec-objects-security"
+      },
+      "name": "spec-objects-security",
+      "requestedRef": "v0.7.0",
+      "resolvedSha": "0857f62b30b196ea816ffee54b8ad632262daaa9",
+      "sourceKind": "git-subdir",
+      "subdirectory": "spec_objects_security",
+      "version": "0.7.0"
+    },
+    {
+      "canonicalRepository": "agent-ix/spec-objects-safety",
+      "declarationIndex": 9,
+      "inspected": {
+        "canonicalContentDigest": "sha256:7592b1f724bfcedb7946df7aa3d511b9290d478f6c2870aa95305d9106f82194",
+        "clean": true,
+        "contentDigest": "sha256:7592b1f724bfcedb7946df7aa3d511b9290d478f6c2870aa95305d9106f82194",
+        "manifestName": "spec-objects-safety",
+        "manifestVersion": "0.2.0",
+        "sourceCommit": "5e1e0165376abfdeda62ebde6f4fdfa36f3d6484",
+        "sourcePath": "installed/spec-objects-safety"
+      },
+      "name": "spec-objects-safety",
+      "requestedRef": "v0.4.0",
+      "resolvedSha": "5e1e0165376abfdeda62ebde6f4fdfa36f3d6484",
+      "sourceKind": "git-subdir",
+      "subdirectory": "spec_objects_safety",
+      "version": "0.4.0"
+    }
+  ],
+  "quoin": {
+    "clean": true,
+    "commit": "61aeaddf4571550bf1989f7add3197e52f54f73b",
+    "version": "0.9.0"
+  },
+  "schemaVersion": "semantic-module-snapshot-v1",
+  "timestamp": "2026-08-30T22:24:30.000Z",
+  "tools": {
+    "quire": {
+      "cliCommit": "4f6ed024",
+      "cliVersion": "0.31.0",
+      "engineCommit": "ca7362d4",
+      "engineVersion": "0.46.0"
+    }
+  }
+}

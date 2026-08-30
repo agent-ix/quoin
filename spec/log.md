@@ -8,6 +8,15 @@ description: "Chronological log of structural changes to this bundle."
 
 ## History
 
+* **2026-08-30** — Added US-014, FR-051..FR-055, and NFR-015..NFR-016 for
+  agent-ix/quoin#288. The semantic type-fit audit freezes exact source and tool
+  identities, closes the denominator over all default modules, declarations,
+  contract surfaces, and Markdown paths, and publishes canonical JSON with a
+  generated Markdown/SpecReview projection. It remains read-only and stacks on
+  the maintainer-gated semantic architecture from #289; findings recommend later
+  ticket boundaries but authorize no compiler, schema, migration, publication,
+  enforcement, or retirement change.
+
 * **2026-08-29** — Added US-013, FR-046..FR-050, and NFR-013..NFR-014 for
   issue #289's architecture-only semantic-module ownership and authority record.
 
