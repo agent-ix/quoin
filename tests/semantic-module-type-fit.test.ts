@@ -603,6 +603,8 @@ describe("semantic module type-fit audit", () => {
       expect(files.get("report.md")).toContain(row.id);
       expect(files.get("review.md")).toContain(row.id);
     }
+    expect(files.get("report.md")).not.toMatch(/[ \t]+\n/);
+    expect(files.get("review.md")).not.toMatch(/[ \t]+\n/);
   });
 
   // Trace: FR-054-AC-5

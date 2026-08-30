@@ -1184,7 +1184,7 @@ function reportOf(audit) {
     .join("\n");
   return (
     `# Default-module semantic type-fit audit\n\n` +
-    `Canonical schema: \`${audit.schemaVersion}\`  \n` +
+    `Canonical schema: \`${audit.schemaVersion}\`\n\n` +
     `Verdict: **${audit.summary.verdict}**\n\n` +
     `## Denominators\n\n| Population | Source | Inventoried | Reconciled |\n| --- | ---: | ---: | --- |\n` +
     Object.entries(audit.inventory.denominators)
