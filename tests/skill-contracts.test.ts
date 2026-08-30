@@ -8,8 +8,8 @@
  * These are deterministic contract tests over the skill definitions and the
  * module vocabulary they emit into. They do not drive an agent: an eval does
  * that, costs minutes, and cannot run on every commit. What is asserted here is
- * the part that silently drifts — the pairing between a skill and the declared
- * `analysis` value it writes.
+ * the part that silently drifts — loadable frontmatter and the pairing between
+ * a skill and the declared `analysis` value it writes.
  */
 
 import { readdirSync, readFileSync, statSync } from "node:fs";
