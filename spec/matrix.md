@@ -73,6 +73,11 @@ Coverage is mapped requirement → test as `file :: "test name"`:
 | FR-042 | ✅ Covered | `tests/agent-eval.test.ts` — TC-240..TC-244. `agent-eval-real.json` is a real `cli-agent-evals` report, unedited — the TC-EV-057 run of the spec-fuzz scenarios. The multi-scenario, failing and empty cases are **constructed and labelled as such**: no failing report survived to be captured, and a fabricated one claiming to be real would be worse than saying which is which. CON-1/CON-3 → inspection of `src/evidence/adapters/agent-eval.ts` (no subprocess; an unmatched trace id is reported, never assumed). CON-2 → TC-242. |
 | FR-044 | ✅ Covered | `tests/measurement.test.ts` — TC-1003 (unplanned records refused), TC-1004 (atomic/idempotent collection), TC-1005 (definition/config refusal names both), TC-1006 (population movement beside delta; no severity), TC-1007 (missing metric is `not_computed`), TC-1008 (byte-identical report retains plans without records). Tier-1 envelope provenance/raw attachment and explicit legacy history remain TC-997/TC-998/TC-1000. |
 | FR-045 | ✅ Covered | `tests/portfolio-report.test.ts` — TC-1011 (mixed definitions, missing/unreadable stores, relative staleness), TC-1012 (plan/collection links, same-object deterministic human/JSON views, no aggregate), TC-1013 (one command accepts repeated repository paths and no values). |
+| FR-046 | ✅ Covered | `tests/semantic-module-architecture.test.ts` — TC-1125..TC-1128 define the four planes, definition/occurrence/presentation distinctions, structural-role independence, and indexed decision status. |
+| FR-047 | ✅ Covered | `tests/semantic-module-architecture.test.ts` — TC-1129..TC-1133 assert positive and negative Quire, Quoin, compiler, module, and consumer ownership plus ADR-0011 levels and roles. |
+| FR-048 | ✅ Covered | `tests/semantic-module-architecture.test.ts` — TC-1134..TC-1139 assert concern-specific authority, schema-source status, stores, projections, provenance, and conflict stopping. |
+| FR-049 | ✅ Covered | `tests/semantic-module-architecture.test.ts` — TC-1140..TC-1144 assert open dynamic values, finite native exports, unknown-extension policy, elective regeneration, and declaration separation. |
+| FR-050 | ✅ Covered | `tests/semantic-module-architecture.test.ts` — TC-1145..TC-1150 reconcile Quire ADR-0002/0003/0004/0011 and require identity-complete external decisions. |
 | FR-041 | ✅ Covered | `tests/sbom.test.ts` — TC-231..TC-236. Both fixtures are **real tool output, unedited**: `cyclonedx-real.json` from `@cyclonedx/cyclonedx-npm` 6.0.1 over a real `npm install`, and `spdx-real.json` from GitHub's dependency-graph SBOM for `sindresorhus/slugify`. A fixture written to match the reader only proves the reader parses itself. CON-1/CON-2/CON-3 → inspection of `src/evidence/adapters/sbom.ts` (no subprocess, no new record type, no verdict). CON-4 → TC-231. |
 | FR-040 | ✅ Covered | `tests/assurance.test.ts` — TC-221..TC-230, TC-261 (empty case carries a machine-readable `reason`), TC-262 (`--claim-type` matched case-insensitively). TC-224 and TC-225 are the ones that matter: a claim nothing argues for is `open`, and a requirement no claim reaches gets reported. Both were written before the code and both failed it. TC-225 earned itself on the first real run — 15 requirements over this repository, 7 of them added during this program and fixed, 8 pre-existing (`agent-ix/quoin#136`). CON-1/CON-3/CON-4 → inspection of `src/assurance/` (no subprocess, no write, the auditor's verdict used as given). CON-2 → TC-224 and TC-225. |
 | FR-039 | ✅ Covered | `tests/auditor.test.ts` — TC-219 (the seven policy cases plus the mislabelled-score case), TC-269 (the `metric` discriminator: a labelled score from an uncatalogued tool is judged, no catalog is read, and an unlabelled score is not a mutation score) and TC-220 (the flag, including the two refusals). TC-220 states AC-8/AC-9 over `quoin evidence audit --mutation-floor`, not over the auditor function, because the flag is where a percentage typed as `80` would otherwise become a floor nothing can reach. CON-1 → inspection of `src/auditor/` (no subprocess). CON-2 → TC-219's unset-floor case. CON-3 → TC-219's skipped-symbol and unmeasured cases. |
@@ -99,6 +104,8 @@ Coverage is mapped requirement → test as `file :: "test name"`:
 | NFR-010     | ⚠️ Spec-ahead-of-code | Module pins record `version` and `ref` only; no resolved commit SHA is stored, so a repointed tag resolves differently under the same pin and nothing notices. Stated ahead of the implementation — `agent-ix/quoin#132`. |
 | NFR-011     | ⚠️ Spec-ahead-of-code | No performance measurement exists anywhere in the repository — no benchmark, no timing assertion, no threshold. The budget is stated so a regression fails a test rather than being absorbed as "CI got slower" — `agent-ix/quoin#133`. |
 | NFR-012     | ⚠️ Partial | The quire half is covered: `quire-contract.test.ts` TC-114 asserts the version premise names found/required/consequence, TC-118 validates a payload from the **installed** quire. The module half is `scripts/release-drift.js pins`, which no test invokes. |
+| NFR-013     | ✅ Covered | `tests/semantic-module-architecture.test.ts` resolves index links, checks every external-decision identity field, and rejects provisional claims presented as normative (TC-1151..TC-1153). |
+| NFR-014     | ⚠️ Partial | TC-1154 proves the branch changes no production, manifest, schema, generated-package, migration, or runtime behavior and the unchanged 763-test suite passes; TC-1155 remains open until named maintainers review the PR. |
 
 ## Functional Requirement Coverage
 
@@ -139,6 +146,11 @@ Criteria absent here are verified by a method that produces no test — see
 | FR-025 | FR-025-AC-1, FR-025-AC-2, FR-025-AC-3, FR-025-AC-4, FR-025-AC-5, FR-025-AC-6, FR-025-AC-7, FR-025-AC-8, FR-025-AC-9, FR-025-AC-10, FR-025-AC-11 | TC-083, TC-084, TC-085, TC-086, TC-087, TC-088, TC-089, TC-090, TC-091, TC-092, TC-093 | ✅ Covered |
 | FR-026 | FR-026-AC-1, FR-026-AC-2, FR-026-AC-3, FR-026-AC-4, FR-026-AC-5, FR-026-AC-6, FR-026-AC-7 | TC-094, TC-095, TC-096, TC-097, TC-098, TC-099, TC-100 | ✅ Covered |
 | FR-027 | FR-027-AC-1, FR-027-AC-2, FR-027-AC-3, FR-027-AC-4, FR-027-AC-5, FR-027-AC-6, FR-027-AC-7, FR-027-AC-8, FR-027-AC-9 | TC-101, TC-102, TC-103, TC-104, TC-105, TC-106, TC-107, TC-108, TC-109 | ✅ Covered |
+| FR-046 | FR-046-AC-1, FR-046-AC-2, FR-046-AC-3, FR-046-AC-4 | TC-1125, TC-1126, TC-1127, TC-1128 | ✅ Covered |
+| FR-047 | FR-047-AC-1, FR-047-AC-2, FR-047-AC-3, FR-047-AC-4, FR-047-AC-5 | TC-1129, TC-1130, TC-1131, TC-1132, TC-1133 | ✅ Covered |
+| FR-048 | FR-048-AC-1, FR-048-AC-2, FR-048-AC-3, FR-048-AC-4, FR-048-AC-5, FR-048-AC-6 | TC-1134, TC-1135, TC-1136, TC-1137, TC-1138, TC-1139 | ✅ Covered |
+| FR-049 | FR-049-AC-1, FR-049-AC-2, FR-049-AC-3, FR-049-AC-4, FR-049-AC-5 | TC-1140, TC-1141, TC-1142, TC-1143, TC-1144 | ✅ Covered |
+| FR-050 | FR-050-AC-1, FR-050-AC-2, FR-050-AC-3, FR-050-AC-4, FR-050-AC-5, FR-050-AC-6 | TC-1145, TC-1146, TC-1147, TC-1148, TC-1149, TC-1150 | ✅ Covered |
 
 ## Test Case Summary
 
@@ -475,6 +487,37 @@ generated tests under `tests/props/` and `Unit` for the rest.
 | TC-1076 | An inspector's unqualified source symbol joins an exact or terminally module-qualified result symbol, preserving the common Cargo adapter shape without substring matching (#204) | Unit | P0 | FR-032-AC-15, FR-032-AC-16 | ✅ |
 | TC-1123 | Evidence intake accepts an exact semantic version, source SHA, or executable digest and rejects bare or mutable tool identities (#274) | Unit | P0 | FR-030-AC-17 | ✅ |
 | TC-1124 | The first-party mock-inspection command records the exact Quoin package version in its stored tool identity (#274) | Integration | P0 | FR-030-AC-17, FR-032-AC-16 | ✅ |
+| TC-1125 | Architecture record defines the meta, definition, execution/observation, and presentation planes | Static | P0 | FR-046-AC-1 | ✅ |
+| TC-1126 | Definition, occurrence, and presentation examples remain distinct | Static | P0 | FR-046-AC-2 | ✅ |
+| TC-1127 | Structural kind is independent of semantic role and no universal runtime envelope is introduced | Static | P0 | FR-046-AC-3 | ✅ |
+| TC-1128 | Architecture index links all records and exposes provisional gates | Static | P0 | FR-046-AC-4 | ✅ |
+| TC-1129 | Quire ownership and exclusions remain explicit | Static | P0 | FR-047-AC-1 | ✅ |
+| TC-1130 | Quoin ownership and exclusions remain explicit | Static | P0 | FR-047-AC-2 | ✅ |
+| TC-1131 | Compiler and module-repository ownership remain separate | Static | P0 | FR-047-AC-3 | ✅ |
+| TC-1132 | Consumer adapter, persistence, migration, runtime, and presentation ownership remains explicit | Static | P0 | FR-047-AC-4 | ✅ |
+| TC-1133 | Quire ADR-0011 validation levels, roles, and consumer-CI execution remain governing | Static | P0 | FR-047-AC-5 | ✅ |
+| TC-1134 | Typed Markdown remains authoritative for authored durable knowledge | Static | P0 | FR-048-AC-1 | ✅ |
+| TC-1135 | Schema/package sources remain authoritative over generated language packages | Static | P0 | FR-048-AC-2 | ✅ |
+| TC-1136 | JSON Schema fallback is recommended without promoting TypeSpec | Static | P0 | FR-048-AC-3 | ✅ |
+| TC-1137 | Transactional and operational stores remain authoritative over Markdown reports | Static | P0 | FR-048-AC-4 | ✅ |
+| TC-1138 | Wire, analytical, and export representations remain selectable projections | Static | P0 | FR-048-AC-5 | ✅ |
+| TC-1139 | Competing authorities stop promotion and last-writer-wins is rejected | Static | P0 | FR-048-AC-6 | ✅ |
+| TC-1140 | Dynamic consumers preserve unknown namespaced module data | Static | P0 | FR-049-AC-1 | ✅ |
+| TC-1141 | Static consumers use finite versioned native exports | Static | P0 | FR-049-AC-2 | ✅ |
+| TC-1142 | Unknown extensions follow an explicit preserve, reject, or surface profile | Static | P0 | FR-049-AC-3 | ✅ |
+| TC-1143 | Dynamic installation does not force static regeneration | Static | P0 | FR-049-AC-4 | ✅ |
+| TC-1144 | Distribution manifests remain distinct from exports, targets, mappings, and profiles | Static | P0 | FR-049-AC-5 | ✅ |
+| TC-1145 | Unified archetype shape remains structural rather than a universal semantic base class | Static | P0 | FR-050-AC-1 | ✅ |
+| TC-1146 | Direct typed Markdown and document-boundary canonical Markdown remain preserved | Static | P0 | FR-050-AC-2 | ✅ |
+| TC-1147 | Draft rendering ownership is historical while byte-splicing remains preserved | Static | P0 | FR-050-AC-3 | ✅ |
+| TC-1148 | Accepted Quire ADR-0011 remains governing | Static | P0 | FR-050-AC-4 | ✅ |
+| TC-1149 | Quire, Quoin, and compiler exclusions prevent boundary regression | Static | P0 | FR-050-AC-5 | ✅ |
+| TC-1150 | External decisions retain repository, path, status, and revision or date | Static | P0 | FR-050-AC-6 | ✅ |
+| TC-1151 | Every external decision entry carries complete identity metadata | Static | P0 | NFR-013 | ✅ |
+| TC-1152 | Every local architecture-index link resolves | Static | P0 | NFR-013 | ✅ |
+| TC-1153 | Provisional and unresolved claims cannot appear as normative | Static | P0 | NFR-013 | ✅ |
+| TC-1154 | Changed-path guard rejects behavior, manifest, schema, generated-package, and migration changes; the unchanged 763-test suite passes | Static | P0 | NFR-014 | ✅ |
+| TC-1155 | Merge requires named Quoin/Quire maintainer review | Inspection | P0 | NFR-014 | 🚧 |
 | TC-1077 | The supported Tier-1 update emits baseline JSON in the same format the repository gate enforces; updating a ratchet cannot make the next gate fail on style alone (#244) | Unit | P0 | FR-043-AC-17 | ✅ |
 | TC-1078 | Multiple standing-adjudication entries for one advisory family are unioned by declaration; a later narrow ruling cannot silently erase an earlier ruling (#252) | Unit | P0 | FR-043-AC-16 | ✅ |
 | TC-1079 | `untracked-id-has-minted-children` maps to a distinct located unminted-ID family rather than being folded into spelling near misses (#253) | Unit | P0 | FR-043-AC-22 | ✅ |
@@ -592,6 +635,7 @@ found the stakeholder layer had no rows here at all.
 | US-010   | ✅ Covered | `org.test.ts` resolution suites (precedence, both url forms, worktrees, owner-less remotes); `write.test.ts` "authoring pack organization" suite; `cli.test.ts` `--org` text/JSON/unresolved trio; `org-no-subprocess.test.ts` no-subprocess proof — see FR-025 |
 | US-011   | ✅ Covered | TC-EV-050…TC-EV-053 in `evals/scenarios/index.mjs` — the settled lane, the review artifact, the gap-analysis handoff, and the refusals; see FR-028. The skill's own run on this repo is `tests/props/` (17 criteria) + a `SpecReview` under `reviews/` |
 | US-012   | ✅ Covered | TC-EV-054…TC-EV-057 in `evals/scenarios/index.mjs` — the generation lane, the two refusals, idempotent re-runs and harness selection, and the undischarged report; see FR-038. |
+| US-013   | ⚠️ Partial | TC-1125..TC-1154 inspect the architecture record, decision ledger, and non-disruption scope; the TC-1155 maintainer walkthrough remains required before merge. |
 
 ## Property Test Layer
 
