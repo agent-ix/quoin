@@ -225,6 +225,7 @@ index; the files are authoritative.
 
 - [FR-059](./functional/FR-059-operational-evidence-records.md) — define standing-capability and exercise records.
 - [FR-060](./functional/FR-060-operational-evidence-intake-report.md) — ingest operational evidence and evaluate clocked discharge.
+- [FR-061](./functional/FR-061-github-actions-release-operational-producer.md) — produce linked operational records from a retained real GitHub Actions release run.
 
 
 ### Non-Functional Requirements

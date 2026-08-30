@@ -9,6 +9,8 @@ relationships:
     type: "traces_to"
   - target: "ix://agent-ix/quoin/FR-060"
     type: "traces_to"
+  - target: "ix://agent-ix/quoin/FR-061"
+    type: "traces_to"
 ---
 
 # US-016: Assess operational controls and their exercises
@@ -69,10 +71,21 @@ most directly drives remediation.
 - **Then** the result appears as counterevidence or a gap beside its owner and next
   action rather than disappearing from the report
 
+### US-016-EX-4: A retained release run supplies both operational shapes
+
+- **Given** the version-controlled release workflow and retained GitHub API exports
+  from one of its real completed runs
+- **When** the practitioner records that deployment surface through Quoin
+- **Then** the workflow-derived standing capability and the run-derived exercise
+  remain linked, independently inspectable, and free of any producer-triggered
+  release or network action
+
 ## Dependencies
 
 - **Upstream**: [StR-004](../stakeholder/StR-004-governed-workflows.md) requires
   assurance decisions and their gates to remain explicit.
 - **Downstream**: [FR-059](../functional/FR-059-operational-evidence-records.md)
   defines both record shapes; [FR-060](../functional/FR-060-operational-evidence-intake-report.md)
-  defines storage, clocked discharge, and reporting.
+  defines storage, clocked discharge, and reporting; and
+  [FR-061](../functional/FR-061-github-actions-release-operational-producer.md)
+  defines the first real deployment-surface producer.

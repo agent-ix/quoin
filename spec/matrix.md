@@ -1,3 +1,6 @@
+Warning: truncated output (original token count: 37081)
+Total output lines: 826
+
 ---
 id: TM-001
 title: quoin Test Matrix
@@ -88,6 +91,7 @@ Coverage is mapped requirement → test as `file :: "test name"`:
 | FR-058 | ✅ Covered | `tests/intervention.test.ts` — TC-1217..TC-1221 consume the two byte-exact real Codex reports under `spec/evidence/agent-evals/`, derive the observed 0.5 → 0.5 effect, retain both SHA-256 digests, refuse invalid report families, force `cause_not_established`, and prove the adapter does not execute the experiment. |
 | FR-059 | 🚧 Planned | TC-1223..TC-1231 specify the operational envelope, full control vocabulary, standing/exercise distinction, clock states, pinning, negative outcomes, governance, and raw evidence (`agent-ix/quoin#269`; implementation `#271`). |
 | FR-060 | 🚧 Planned | TC-1232..TC-1243 specify atomic intake, definition gating, shape preservation, clocked discharge, claim-centered rendering, determinism, non-execution, and backward compatibility (`agent-ix/quoin#269`; implementation `#271`). |
+| FR-061 | 🚧 Planned | TC-1244..TC-1248 specify the first real GitHub Actions release producer, linked all-or-nothing records, source-derived state, adverse outcomes, and the no-network/no-process boundary (`agent-ix/quoin#269`; implementation `#271`). |
 | FR-041 | ✅ Covered | `tests/sbom.test.ts` — TC-231..TC-236. Both fixtures are **real tool output, unedited**: `cyclonedx-real.json` from `@cyclonedx/cyclonedx-npm` 6.0.1 over a real `npm install`, and `spdx-real.json` from GitHub's dependency-graph SBOM for `sindresorhus/slugify`. A fixture written to match the reader only proves the reader parses itself. CON-1/CON-2/CON-3 → inspection of `src/evidence/adapters/sbom.ts` (no subprocess, no new record type, no verdict). CON-4 → TC-231. |
 | FR-040 | ✅ Covered | `tests/assurance.test.ts` — TC-221..TC-230, TC-261 (empty case carries a machine-readable `reason`), TC-262 (`--claim-type` matched case-insensitively). TC-224 and TC-225 are the ones that matter: a claim nothing argues for is `open`, and a requirement no claim reaches gets reported. Both were written before the code and both failed it. TC-225 earned itself on the first real run — 15 requirements over this repository, 7 of them added during this program and fixed, 8 pre-existing (`agent-ix/quoin#136`). CON-1/CON-3/CON-4 → inspection of `src/assurance/` (no subprocess, no write, the auditor's verdict used as given). CON-2 → TC-224 and TC-225. |
 | FR-039 | ✅ Covered | `tests/auditor.test.ts` — TC-219 (the seven policy cases plus the mislabelled-score case), TC-269 (the `metric` discriminator: a labelled score from an uncatalogued tool is judged, no catalog is read, and an unlabelled score is not a mutation score) and TC-220 (the flag, including the two refusals). TC-220 states AC-8/AC-9 over `quoin evidence audit --mutation-floor`, not over the auditor function, because the flag is where a percentage typed as `80` would otherwise become a floor nothing can reach. CON-1 → inspection of `src/auditor/` (no subprocess). CON-2 → TC-219's unset-floor case. CON-3 → TC-219's skipped-symbol and unmeasured cases. |
@@ -305,151 +309,7 @@ generated tests under `tests/props/` and `Unit` for the rest.
 | TC-127 | An absent store reads as an empty binding graph, an empty run list and an empty collection — never an error | Unit | P1 | FR-030-AC-9 | ✅ |
 | TC-263 | `evidence gc` through the command: dry-run JSON lists without deleting, a real run deletes and reports each path, an absent store collects nothing — and the flag set is exactly `repo`/`dry-run`/`json`, pinning the deliberate absence of `--module` (#171: gc never invokes quire, so the flag would be a no-op that reads as doing something) | Unit | P1 | FR-030-AC-8 | ✅ |
 | TC-128 | No obligation statement, document or method appears in the written store — only the id and hash. Anything re-derivable is re-derived, so the store cannot disagree with the spec | Unit | P0 | FR-030-AC-10 | ✅ |
-| TC-129 | A second suite discharging the same obligation appends a binding rather than replacing the first; re-discharging the same suite merges into its own; affirmation clears every suite unless narrowed to one. `BindingsFile`'s own doc says the graph IS cross-suite, and keying on the obligation alone destroyed that on write | Unit | P0 | FR-030-AC-11 | ✅ |
-| TC-130 | The latest run is the newest by `timestamp`, proven with fixtures whose newest run's commit prefix sorts FIRST — the arrangement where filename order and time order disagree. `gc` keeps that run, and a shared timestamp ties on commit | Unit | P0 | FR-030-AC-12 | ✅ |
-| TC-131 | A merge-conflicted `bindings.json` raises a diagnostic naming the file and the cause, not a bare `SyntaxError: Unexpected token '<'`; one corrupt run file is skipped and reported rather than hiding every finding | Unit | P0 | FR-030-AC-13 | ✅ |
-| TC-132 | The written binding graph is pinned byte-exactly, so a runtime's collation data cannot change the diff of a file whose diff is meant to BE the per-PR delta | Unit | P1 | FR-030-AC-14 | ✅ |
-| TC-133 | A module whose `manifest.yaml` does not parse is skipped and reported on the merged catalog while the modules that parsed still merge — the crash was in the command an operator runs to diagnose module problems | Unit | P1 | FR-031-AC-9 | ✅ |
-| TC-134 | The `quire` subprocess runs through one helper that captures stderr and surfaces it on a non-zero exit; `stdio: [..., "ignore"]` threw away exactly the sentence the operator needed | Static | P1 | FR-029-AC-10 | ✅ |
-| TC-254 | An ENOBUFS death names the buffer overrun and the byte limit, reports no exit status, and appends no child stderr — the default 1 MiB cap killed six commands on a 1.09 MB corpus payload while the message blamed quire's harmless `DuplicateArchetype` warnings (#164) | Unit | P0 | FR-029-AC-11, FR-029-AC-12 | ✅ |
-| TC-255 | A signal death names the signal, reports no exit status, and appends no child stderr | Unit | P0 | FR-029-AC-12 | ✅ |
-| TC-256 | A child that itself exits non-zero still surfaces its own stderr — that is the case where the child's message IS the diagnosis, and the only one | Unit | P0 | FR-029-AC-10 | ✅ |
-| TC-257 | A binary that could not be run at all is reported by its spawn error code (`ENOENT`), not as an exit status | Unit | P1 | FR-029-AC-12 | ✅ |
-| TC-149 | Every command file under `src/commands/` with a `default export class` has a vite build entry. The enumeration is hand-maintained, so a command could exist in `src/`, pass `tsc`, pass every unit test, ship a `.d.ts` — and not exist at runtime; **two did** | Unit | P0 | FR-031-AC-10 | ✅ |
-| TC-150 | The advisor has a reachable command: `quoin advise` turns quire payloads into `ObligationFacts`, advises an NFR metric row from its statement alone, and keeps the payload of a `properties` run that exited non-zero | Unit | P0 | FR-031-AC-10, FR-031-AC-11 | ✅ |
-| TC-151 | The registry selects by `--adapter`, then by the suite's `--tool`, then falls back to the normalized `entries` shape | Unit | P0 | FR-033-AC-1 | ✅ |
-| TC-152 | An unknown `--adapter` is an error naming the available adapters — falling back would complain about JSON shape and send the reader to their XML instead of their typo | Unit | P0 | FR-033-AC-2 | ✅ |
-| TC-153 | Adapters are registered as data, so an external user can add one for their own tool | Unit | P1 | FR-033-AC-3 | ✅ |
-| TC-154 | JUnit `classname` + `name` map to the qualified name the symbol extractor emits; a tool's test name is not a symbol identity | Unit | P0 | FR-033-AC-4 | ✅ |
-| TC-155 | Every JUnit outcome class is read and declared trace ids are carried | Unit | P0 | FR-033-AC-5 | ✅ |
-| TC-156 | The JUnit adapter names no evidence kind — unit, integration and e2e suites all emit JUnit, so the format does not say which | Unit | P0 | FR-033-AC-6, FR-033-CON-3 | ✅ |
-| TC-157 | JUnit input carrying no `<testcase>` is rejected rather than recorded as an empty run | Unit | P0 | FR-033-AC-7 | ✅ |
-| TC-158 | cargo-mutants produces a per-function score with unviable mutants in neither side of the ratio | Unit | P0 | FR-033-AC-8 | ✅ |
-| TC-159 | Outcome is the tool's own classification, not a threshold | Unit | P0 | FR-033-AC-9, FR-033-CON-2 | ✅ |
-| TC-160 | Malformed, empty and unattributable mutation reports are rejected; a timed-out mutant counts as survived, not as absent | Unit | P0 | FR-033-AC-10 | ✅ |
-| TC-161 | `quoin evidence record --adapter junit --results <file>` records a JUnit file end to end | Integration | P0 | FR-033-AC-11 | ✅ |
-| TC-162 | `quoin evidence record --adapter cargo-mutants` records a mutation report end to end, preserving score | Integration | P0 | FR-033-AC-12 | ✅ |
-| TC-163 | `quoin evidence record` selects the adapter from `--tool` when none is named | Integration | P0 | FR-033-AC-13 | ✅ |
-| TC-164 | `quoin evidence record` still accepts the normalized shape with no adapter, so the registry is never a gate | Integration | P0 | FR-033-AC-14, FR-033-CON-4 | ✅ |
-| TC-165 | A SARIF run with an empty `results` array is a scan that HAPPENED — the distinction this record type exists to make | Unit | P0 | FR-034-AC-1 | ✅ |
-| TC-166 | A SARIF log whose `runs` array is empty is rejected: that file proves no scan executed | Unit | P0 | FR-034-AC-2 | ✅ |
-| TC-167 | The SARIF adapter reads rule id, level, message and first location | Unit | P0 | FR-034-AC-3 | ✅ |
-| TC-168 | The nested `rule.id` form is accepted; a result naming no rule is skipped | Unit | P1 | FR-034-AC-4 | ✅ |
-| TC-169 | Malformed SARIF and a log with no `runs` array are rejected | Unit | P0 | FR-034-AC-5 | ✅ |
-| TC-170 | The cargo-audit adapter parses REAL captured `cargo audit --json` output, checked in unedited | Unit | P0 | FR-034-AC-6 | ✅ |
-| TC-171 | Warning kinds (`unsound`, `unmaintained`, `yanked`) keep their own severity rather than being flattened | Unit | P0 | FR-034-AC-7, FR-034-CON-2 | ✅ |
-| TC-172 | Malformed input and non-cargo-audit output are rejected; an advisory with no id is skipped | Unit | P0 | FR-034-AC-8 | ✅ |
-| TC-173 | A clean scan discharges its binding — neither undischarged nor vacuous | Unit | P0 | FR-034-AC-9 | ✅ |
-| TC-174 | A scan that evaluated no rules is reported vacuous at high: it found nothing because it looked for nothing | Unit | P0 | FR-034-AC-10 | ✅ |
-| TC-175 | With no rule count reported the vacuity check stays silent rather than guessing | Unit | P0 | FR-034-AC-11 | ✅ |
-| TC-176 | Each run-shaped binding pairs with its OWN suite's run when a scan is bound to the same obligation — silent until scans existed, wrong from the moment they did | Unit | P0 | FR-034-AC-12 | ✅ |
-| TC-177 | `quoin evidence record --adapter sarif` writes a FindingRecord under `scans/` and nothing under `runs/` — the capability shipped unreachable and this is what reaches it | Integration | P0 | FR-034-AC-13 | ✅ |
-| TC-178 | A clean scan recorded through the command keeps `findings: []` and its rule count | Integration | P0 | FR-034-AC-14 | ✅ |
-| TC-179 | The command selects a finding adapter from `--tool` when none is named | Integration | P0 | FR-034-AC-15 | ✅ |
-| TC-180 | The space — strength, dimensions, values — is parsed back out of the obligation statement | Unit | P0 | FR-035-AC-1 | ✅ |
-| TC-181 | A statement that is not a configuration space yields null — which IS how a combinatorial obligation is told from every other kind, with no second flag | Unit | P0 | FR-035-AC-2 | ✅ |
-| TC-182 | Exclusions are read without being mistaken for dimensions | Unit | P0 | FR-035-AC-3 | ✅ |
-| TC-183 | The demanded-tuple count matches the number quire-rs computes for the same space (its TC-925) — disagreement would mean the obligation and its audit describe different spaces | Unit | P0 | FR-035-AC-4 | ✅ |
-| TC-184 | A forbidden combination is not demanded | Unit | P0 | FR-035-AC-5 | ✅ |
-| TC-185 | The result NAMES the combinations that never ran — a percentage says how much is missing, the list says what to run | Unit | P0 | FR-035-AC-6 | ✅ |
-| TC-186 | A configuration exercising undeclared values covers nothing — counting it would let coverage rise by testing something else | Unit | P0 | FR-035-AC-7 | ✅ |
-| TC-187 | Full coverage reports an empty gap list | Unit | P0 | FR-035-AC-8 | ✅ |
-| TC-188 | `audit` reports `combinatorial-gap` naming the missing combinations | Unit | P0 | FR-035-AC-9, FR-035-CON-3 | ✅ |
-| TC-189 | An obligation whose demanded combinations all ran is healthy | Unit | P0 | FR-035-AC-10 | ✅ |
-| TC-190 | An obligation declaring no configuration space produces no combinatorial finding | Unit | P0 | FR-035-AC-11 | ✅ |
-| TC-191 | A declared space advises the combinatorial method structurally; the prose regex would miss it and ordinary prose must not match | Unit | P0 | FR-035-AC-12 | ✅ |
-| TC-192 | `--discharges` binds the obligations a scan was run to check — a clean scan is the strongest evidence a scanner produces and carries no finding to bind from | Integration | P0 | FR-034-AC-16 | ✅ |
-| TC-193 | A scan that evaluated no rules binds nothing, whatever `--discharges` names | Integration | P0 | FR-034-AC-17 | ✅ |
-| TC-194 | A suite that recorded only scans is enumerated — reading `runs/` alone made it invisible to every caller that enumerates, the auditor included | Integration | P0 | FR-034-AC-18 | ✅ |
-| TC-195 | `gc` collects superseded scans, keeping the newest by timestamp, so a scan store does not grow without bound | Integration | P1 | FR-034-AC-19 | ✅ |
-| TC-196 | A tool reporting ZERO rules is distinguishable from one reporting NO count — the distinction FR-034 turns on, erased by omitting the field when it was 0 | Unit | P0 | FR-034-AC-20 | ✅ |
-| TC-197 | A real all-passing audit run reads as rules that ran and found nothing — the healthiest outcome must not be indistinguishable from a scan that never happened | Unit | P0 | FR-036-AC-1 | ✅ |
-| TC-198 | A `FAIL` line becomes a finding carrying the criterion the script names — the rule-id ⇄ obligation join is stated by the tool, not maintained in a mapping | Unit | P0 | FR-036-AC-2 | ✅ |
-| TC-199 | `OK` lines count toward rules evaluated, so a fully-passing suite is not reported as vacuous | Unit | P0 | FR-036-AC-3 | ✅ |
-| TC-200 | Output with no recognised audit line is rejected — no audit ran, and recording it would manufacture evidence from a file that proves nothing | Unit | P0 | FR-036-AC-4 | ✅ |
-| TC-201 | The adapter is selected by `--adapter`, and by `--tool` for the tools emitting this shape | Unit | P0 | FR-036-AC-5 | ✅ |
-| TC-202 | No module outside `src/commands/` imports from `src/commands/`; commands are leaves and the library must load without oclif | Static | P0 | FR-036-AC-7 | ✅ |
-| TC-203 | quoin executes exactly `git`, `quire` and `ix-flow` — ADR-0011 invariant 1 asserted as a whole set, so a new binary fails by default | Static | P0 | FR-036-AC-8 | ✅ |
-| TC-204 | Both characteristics the catalog keys `architecture-conformance` on are minted, and they do not match the same phrase | Unit | P0 | FR-036-AC-6 | ✅ |
-| TC-205 | An architectural statement is advised `architecture-conformance` through the real loader and advisor, with both halves of the rule matching | Unit | P0 | FR-036-AC-6 | ✅ |
-| TC-206 | The vocabulary's values are read from module data — the ticket assumed 9 ISO 25010 characteristics and the module declares 12 | Unit | P0 | FR-037-AC-1 | ✅ |
-| TC-207 | A declaration whose vocabulary cannot be resolved is reported; silently dropping it leaves engine findings quoin cannot explain | Unit | P0 | FR-037-AC-2 | ✅ |
-| TC-208 | A value no document claims is an unowned gap at `medium` — an admitted gap a reader can see and decide about | Unit | P0 | FR-037-AC-3 | ✅ |
-| TC-209 | An exclusion with no written reason is `high`, above the gap it replaces: a completeness claim with nothing behind it | Unit | P0 | FR-037-AC-4 | ✅ |
-| TC-210 | An exclusion naming a value outside the vocabulary excuses nothing while reading as handled; the real value keeps reporting | Unit | P0 | FR-037-AC-5 | ✅ |
-| TC-211 | A table row naming the value with a real reason accepts the exclusion | Unit | P0 | FR-037-AC-6 | ✅ |
-| TC-212 | `-`, `TBD` and `n/a` are not reasons, and a mention of the value in prose is not a justification | Unit | P0 | FR-037-AC-7 | ✅ |
-| TC-213 | A `high` finding fails whatever `--strict` says; a gap fails only under it | Unit | P0 | FR-037-AC-8 | ✅ |
-| TC-214 | `quoin completeness` reports the gaps over a real bundle and exits 0 while advisory | Integration | P0 | FR-037-AC-9 | ✅ |
-| TC-215 | `quoin completeness` exits non-zero on an unjustified exclusion without `--strict` | Integration | P0 | FR-037-AC-10 | ✅ |
-| TC-216 | `quoin completeness --strict` exits non-zero on gaps alone — same bundle, both ways round, so `--strict` is a policy and not a second code path | Integration | P0 | FR-037-AC-11 | ✅ |
-| TC-217 | A bundle whose modules declare no vocabulary reports `UNCHECKED`, never `PASS` — nothing checked is not nothing wrong | Integration | P0 | FR-037-AC-12 | ✅ |
-| TC-218 | The unowned set quoin reports equals the one the bundle read yields for the same declaration | Unit | P0 | FR-037-AC-13 | ✅ |
-| TC-219 | The mutation-score policy: silent until a floor is declared, judged on the weakest symbol not the mean, a skipped symbol's absent score is not zero, a demanded-but-unmeasured floor is its own finding, and an entry declaring another metric is not a mutation score | Unit | P0 | FR-039-AC-1, FR-039-AC-2, FR-039-AC-3, FR-039-AC-4, FR-039-AC-5, FR-039-AC-6, FR-039-AC-7, FR-039-AC-10 | ✅ |
-| TC-269 | The `metric` discriminator (#138): a `metric: mutation-score` entry from a tool no catalog lists is judged against the floor; the check reads no catalog at all; an entry without a `metric` is not a mutation score even when its tool string says `cargo-mutants` — migrate by re-recording through the adapter, which labels every entry | Unit | P0 | FR-039-AC-11, FR-039-AC-12 | ✅ |
-| TC-270 | A brace glob is rejected when the harness compiles it (#135): `globToRegExp` supports `**`/`*`/`?` only, and escaping `{`/`}` compiled `*.{js,ts,mjs}` to a literal-suffix match no file can hit — loud in `fileContains`, a vacuous pass in `absentFiles`, where the assertion exists to prove a file was NOT created. Pre-fix `ok: true` with the forbidden file present is on record; the same scenario now dies at load naming the glob, and a supported glob still fails the gate honestly | Unit | P0 | FR-038-AC-10 | ✅ |
-| TC-271 | The spec-matrix Status vocabulary is coupled to the installed module manifest (#177): SKILL.md's declared set and the `## Markers` list equal the manifest's classed set (`traceability.status`) exactly, the template's Status cells use exactly that set, the example stays within it, every taught marker is admitted by `column_patterns.Status`, and no Status cell reintroduces the retired concept as a note word — the seam is the installed manifest global-setup reconciles from the pins, so a pin bump re-tests the skills in the same run | Unit | P0 | NFR-005-AC-1 | ✅ |
-| TC-272 | The TypeScript interfaces and the vendored coverage schema agree (#179): one sample per `$defs` entry typed `Required<Interface>` — so it must carry every interface field and can carry nothing else — has exactly its schema entry's keys in both directions, the assembled report's top-level keys equal the schema's, the whole typed payload validates, and a spawned `tsc --noEmit` over the gate file enforces the compile half (vitest strips types and the build's dts diagnostics are non-fatal, so without it an interface-side deletion would fail nothing). Red-verified both ways: deleting `form` from the interface fails tsc with TS2353 on the sample; deleting it from the schema fails the key comparison | Unit | P0 | FR-029-AC-13 | ✅ |
-| TC-220 | `--mutation-floor` parses `<criticality>=<ratio>` and refuses a percentage or a malformed pair — an ignored floor reads as a passing gate | Unit | P0 | FR-039-AC-8, FR-039-AC-9 | ✅ |
-| TC-221 | The case argues from a claim through its requirements down to their obligations | Unit | P0 | FR-040-AC-1 | ✅ |
-| TC-222 | An obligation with a finding stays in the tree as an open node carrying the auditor's reason, rather than being dropped | Unit | P0 | FR-040-AC-2 | ✅ |
-| TC-223 | Open propagates upward, so a claim is never reported supported over a broken branch | Unit | P0 | FR-040-AC-3 | ✅ |
-| TC-224 | A claim with no sub-claim and no obligation is open — assuring it would rest on nobody having written anything | Unit | P0 | FR-040-AC-4 | ✅ |
-| TC-225 | Requirements carrying obligations that no claim reaches are reported; a case over the reachable half reads as complete | Unit | P0 | FR-040-AC-5 | ✅ |
-| TC-226 | The claim type is the caller's: a declared hazard argues as readily as an `StR`, because that vocabulary is module data | Unit | P0 | FR-040-AC-6 | ✅ |
-| TC-227 | An obligation's owning requirement is derived from its id, not from an edge that would need keeping in agreement | Unit | P1 | FR-040-AC-7 | ✅ |
-| TC-228 | Rendering unchanged inputs is byte-identical, so a diff means the evidence moved | Unit | P0 | FR-040-AC-8 | ✅ |
-| TC-229 | Mermaid survives punctuation in a statement — each of `-`, `(`, `"` and `;` otherwise yields a diagram that fails to draw | Unit | P0 | FR-040-AC-9 | ✅ |
-| TC-230 | A bundle declaring no claim says so rather than rendering an empty case; those are different problems | Unit | P0 | FR-040-AC-10 | ✅ |
-| TC-231 | A real CycloneDX document yields one passing entry per component, identified by purl | Unit | P0 | FR-041-AC-1 | ✅ |
-| TC-232 | A real SPDX document is read through its purl external refs — reading `name` would give the same component two identities across formats | Unit | P0 | FR-041-AC-2 | ✅ |
-| TC-233 | An empty inventory yields no entries, so `vacuous-evidence` names it with no new machinery; a count in `score` would read as healthy | Unit | P0 | FR-041-AC-3 | ✅ |
-| TC-234 | A document that is neither format is refused — zero entries is a real finding and an unreadable file must not masquerade as one | Unit | P0 | FR-041-AC-4 | ✅ |
-| TC-235 | A component with neither purl nor name is dropped, not given an invented identity that binds to nothing and inflates the count | Unit | P0 | FR-041-AC-5 | ✅ |
-| TC-236 | The adapter is selected by `--adapter sbom` and by the tools emitting these formats | Unit | P0 | FR-041-AC-6 | ✅ |
-| TC-237 | A requirement refining two claims appears under both — one visited-set answered cycles and "rendered elsewhere" at once, and the second claim reported a statement that was false | Unit | P0 | FR-040-AC-11 | ✅ |
-| TC-238 | A cycle terminates without dropping a legitimately shared child, so the FND-001 fix cannot regress into an infinite walk | Unit | P0 | FR-040-AC-12 | ✅ |
-| TC-261 | A case with no claims carries a machine-readable `reason` naming the searched claim types, present exactly when `claims` is empty — `claims: []` alone cannot distinguish a clean case from one where nothing was argued (#170) | Unit | P0 | FR-040-AC-13 | ✅ |
-| TC-262 | `--claim-type` matches case-insensitively — `str`, `STR` and `Hazard` all matched nothing under `===` and exited 0 with an empty case | Unit | P0 | FR-040-AC-14 | ✅ |
-| TC-239 | Retired by #138 (CR-035): the no-catalog-silence rule it pinned is gone — the `metric` discriminator lives on the entry, so the check reads no catalog and TC-269 states the replacement behaviour | Unit | P0 | FR-039-AC-12 | ⛔ Retired |
-| TC-941 | Finding precision/recall is reported PER FAMILY: a tool finding every marker mismatch and no vacuous suite shows recall 1 and 0, not a respectable average (#201) | Unit | P0 | FR-043-AC-2 | ✅ |
-| TC-942 | A finding matching no label is a false positive; an unfindable label is excluded from the denominator AND reported, so a scored miss stays distinguishable from a defect nobody claimed was findable (#201) | Unit | P0 | FR-043-AC-2 | ✅ |
-| TC-943 | A family with no denominator reports `null`, not 0 — 0/0 is not 0%, and a precision of 0 claims the run was wrong (#201) | Unit | P0 | FR-043-AC-2 | ✅ |
-| TC-944 | Actionability counts findings naming a row id or a line — the property measured at 15 of 496 in pass 2 (#201) | Unit | P0 | FR-043-AC-4 | ✅ |
-| TC-945 | Cost per confirmed insight reports tokens AND tool calls, divides by CONFIRMED findings rather than emitted ones, and reports `null` per-insight when nothing was confirmed (#201) | Unit | P0 | FR-043-AC-5 | ✅ |
-| TC-946 | The score pairs a finding to a label by LOCATION where both name one: two right-family findings at the same place, against two labels seeded at different places, score precision 0.50 not 1.00; both in the right places score 1.00; a label naming a file with no line matches a finding in that file (#201) | Unit | P0 | FR-043-AC-2, FR-043-AC-7 | ✅ |
-| TC-947 | An answer-key entry declaring `expect_metric` with no usable `expect_value` is malformed and fails, never scoring as a permanent miss — AK-003 shipped in that state (#200) | Unit | P0 | FR-043-AC-11 | ✅ |
-| TC-948 | Every family the metric dictionary declares has a seeded corpus and every corpus family is declared — the cross-check that was absent while 8 families were declared and 4 seeded, so precision and recall were unmeasurable for half the dictionary and nothing said so (#199) | Unit | P0 | FR-043-AC-2, FR-043-AC-7 | ✅ |
-| TC-949 | The family cross-check fails in BOTH directions, each mutated separately: a declared family nothing seeds, and a corpus family no metric governs (#199) | Unit | P0 | FR-043-AC-2 | ✅ |
-| TC-950 | Declared collateral names a family, a reason and a note, and consumes ONE finding per declaration — so a consequence of the seeded defect is not scored as a false positive, and a duplicate cannot hide behind the same declaration (#199) | Unit | P0 | FR-043-AC-2, FR-043-AC-7 | ✅ |
-| TC-951 | A label whose family has no working detector records which of the three reasons applies and names its ticket, so a recall of 0 says whether the tool looked and missed or never looked (#199) | Unit | P0 | FR-043-AC-7 | ✅ |
-| TC-952 | Declared collateral is set aside from scoring, reported by name, and SPENT once per declaration — a second identical consequence is a false positive, and a declaration whose reason does not match absorbs nothing (#199) | Unit | P0 | FR-043-AC-2 | ✅ |
-| TC-953 | `labels.json`'s per-corpus wrapper is flattened into the array `scoreFindings` consumes, in one place, carrying the corpus name — the shape mismatch that kept `buildBenchCorpora` and the scorer from ever meeting (#199) | Unit | P0 | FR-043-AC-7 | ✅ |
-| TC-954 | `finding_localisation_rate` is positional pairings over true positives, and `null` — never 0 — when nothing was confirmed (#199) | Unit | P0 | FR-043-AC-4 | ✅ |
-| TC-955 | The ratchet is one-way: a regression keeps the OLD baseline in both directions, so a bad run can never lower the bar (#199) | Unit | P0 | FR-043-AC-10 | ✅ |
-| TC-956 | A missing baseline scores `new` — neither a pass by default nor a failure — and the observed value is proposed, not written (#199) | Unit | P0 | FR-043-AC-10 | ✅ |
-| TC-957 | `gate-zero` carries no baseline and no tolerance, and its proposed baseline is forced to 0 so `--update` cannot launder a non-zero value (#199) | Unit | P0 | FR-043-AC-6 | ✅ |
-| TC-958 | Every family the dictionary declares is mapped to a real payload source and key, and no mapping names a family nothing declares (#199) | Unit | P0 | FR-043-AC-2 | ✅ |
-| TC-959 | The completed corpus plan leaves no family on the supported `source: none` escape hatch; every declared family now names a production source (#199, #224) | Unit | P0 | FR-043-AC-7 | ✅ |
-| TC-960 | A family the baseline scored and a run does not report AT ALL is a regression with the baseline kept — deleting a corpus must not read as a clean run (#199) | Unit | P0 | FR-043-AC-10 | ✅ |
-| TC-964 | A case whose `expect.yaml` names a diagnostic reason no family claims FAILS the run rather than deriving zero defects in silence, and the message names `source: none` as the way to declare a hole (#236) | Unit | P0 | FR-043-AC-2 | ✅ |
-| TC-965 | A recognised reason still loads and carries its family, its `expect_reason` and the language the case declares, so the guard refuses only the hole (#236) | Unit | P0 | FR-043-AC-2 | ✅ |
-| TC-966 | The score is cut by the language each case declares, partitioning the same findings and labels the headline used — a `held` verdict over a single-language corpus is not "verified in every language" (#236) | Unit | P0 | FR-043-AC-9 | ✅ |
-| TC-967 | A collateral declaration on one case cannot absorb a finding from another: pairing is scoped to the declaring case, so one case's consequence does not consume a second case's seeded true positive (#238) | Unit | P0 | FR-043-AC-7 | ✅ |
-| TC-968 | The report records WHICH declaration it scored against — a content digest over the module tree, a digest per bound module, and the upstream SHA the corpus vendored — and the digest moves on one byte of one manifest and holds on identical bytes (#240) | Unit | P0 | FR-043-AC-12 | ✅ |
-| TC-969 | A `VENDORED.md` present and unparseable FAILS the run rather than reporting no source, and a declaration root carrying none records `sources: null` — a provenance file that has silently stopped parsing is worse than none (#240) | Unit | P0 | FR-043-AC-12 | ✅ |
-| TC-970 | Cases resolve their module under an overridden declaration root, so the same corpus can be scored with the engine held fixed and the declaration moved; a module id resolving to no manifest fails the run rather than reading as a detection collapse (#240) | Unit | P0 | FR-043-AC-12 | ✅ |
-| TC-971 | The ENGINE may move and still be compared; the corpus revision, the declaration digest and the scored population — count and per-language mix — may not (#240, #231) | Unit | P0 | FR-043-AC-13 | ✅ |
-| TC-972 | An incomparable run withdraws the CLAIM and keeps both numbers: neither `improved` nor `regressed`, because a change was not observed — and the same run without the guard reads `regressed` (#240, #231) | Unit | P0 | FR-043-AC-13 | ✅ |
-| TC-973 | A baseline recording nothing for one of those fields is reported as UNKNOWN rather than assumed to match, so a legacy baseline is neither refused nor silently trusted (#240) | Unit | P0 | FR-043-AC-13 | ✅ |
-| TC-981 | An unreadable SHA on ONE row of a provenance table fails the run rather than being dropped once another row parses, and an annotated SHA is read from its first token (#240 reopened, found by #242) | Unit | P0 | FR-043-AC-12 | ✅ |
-| TC-974 | Canonically resolved language-set entries become one scorable case per language with distinct ids and input trees (#246) | Unit | P0 | FR-043-AC-14 | ✅ |
-| TC-975 | The real runner population and bounds equal qa-corpus's canonical envelope, with no unknown language produced by a third metadata interpretation (#246) | Integration | P0 | FR-043-AC-14 | ✅ |
-| TC-976 | A canonical envelope missing its case list, numeric bounds or required case fields fails instead of becoming an empty population (#246) | Unit | P0 | FR-043-AC-14 | ✅ |
-| TC-977 | The runner can consume a canonical case without reading `case.yaml`, proving it does not remain a third metadata reader (#246) | Unit | P0 | FR-043-AC-14 | ✅ |
-| TC-978 | A canonical entry whose input or expectation path does not resolve fails by case id (#246) | Unit | P0 | FR-043-AC-14 | ✅ |
-| TC-979 | A pending case's expiry signal comes from `expect-pending.yaml`, never from the live block where stating it would be a false claim about today, and reaches the check without a scoring family (#242, #236) | Unit | P0 | FR-043-AC-15 | ✅ |
-| TC-980 | A pending case with NO forward block is distinguishable from one whose forward block this runner cannot evaluate — the first fails, the second is deferred to the corpus's graders and named (#242) | Unit | P0 | FR-043-AC-15 | ✅ |
+| TC…7081 tokens truncated…ate — the first fails, the second is deferred to the corpus's graders and named (#242) | Unit | P0 | FR-043-AC-15 | ✅ |
 | TC-982 | A ruling SCOPED to one declaration governs only findings that declaration raised: a control ruling out `test-case/archetype-matches-nothing` does not make the `suite` and `inspection` firings on the same tree false positives — the reading that published a precision of 0.556 (#245) | Unit | P0 | FR-043-AC-16 | ✅ |
 | TC-983 | An UNSCOPED ruling still governs every firing of its family on that case, so scoping the match by declaration does not quietly turn a bare-token ruling into a ruling on nothing (#245) | Unit | P0 | FR-043-AC-16 | ✅ |
 | TC-984 | A family the baseline measured that now reports a null precision is `regressed`, naming it — reclassifying to `advisory` may no longer delete a number in silence, which is how 0.167 and 0.01 both vanished (#234, #245) | Unit | P0 | FR-043-AC-16 | ✅ |
@@ -623,6 +483,11 @@ generated tests under `tests/props/` and `Unit` for the rest.
 | TC-1241 | Reordered store input renders byte-identically and human/JSON views expose the same claim-centered sections | Property | P0 | FR-060-AC-10 | 🚧 planned for #271 |
 | TC-1242 | Intake and reporting invoke, drill, or alter no operational control | Static | P0 | FR-060-CON-1 | 🚧 planned for #271 |
 | TC-1243 | Existing measurement collections and pre-operational evidence remain readable without migration | Integration | P0 | FR-060-CON-2 | 🚧 planned for #271 |
+| TC-1244 | Quoin's retained release workflow and a real completed workflow-run/jobs export produce one linked capability/exercise pair with source-derived workflow, revision, actor, timing, outcome, and observations | Integration | P0 | FR-061-AC-1 | 🚧 planned for #271 |
+| TC-1245 | Malformed input, workflow/path/event/revision mismatch, and absent, duplicate, unstarted, or incomplete release jobs are refused without either operational record | Unit | P0 | FR-061-AC-2 | 🚧 planned for #271 |
+| TC-1246 | Workflow structure determines capability state and API exports determine exercise/clock state; caller-supplied substitutes cannot change them | Property | P0 | FR-061-AC-3 | 🚧 planned for #271 |
+| TC-1247 | Every non-success GitHub conclusion remains a named non-success exercise and cannot discharge a clocked release obligation | Property | P0 | FR-061-AC-4 | 🚧 planned for #271 |
+| TC-1248 | A real release run is captured outside Quoin, then retained artifacts are consumed with no network/process execution and the linked pair is persisted all-or-nothing through FR-060 | Integration | P0 | FR-061-AC-5 | 🚧 planned for #271 |
 | TC-1077 | The supported Tier-1 update emits baseline JSON in the same format the repository gate enforces; updating a ratchet cannot make the next gate fail on style alone (#244) | Unit | P0 | FR-043-AC-17 | ✅ |
 | TC-1078 | Multiple standing-adjudication entries for one advisory family are unioned by declaration; a later narrow ruling cannot silently erase an earlier ruling (#252) | Unit | P0 | FR-043-AC-16 | ✅ |
 | TC-1079 | `untracked-id-has-minted-children` maps to a distinct located unminted-ID family rather than being folded into spelling near misses (#253) | Unit | P0 | FR-043-AC-22 | ✅ |
@@ -743,7 +608,7 @@ found the stakeholder layer had no rows here at all.
 | US-013   | ✅ Covered | TC-1125..TC-1154 inspect the architecture record, decision ledger, and non-disruption scope; TC-1155 records named active maintainer `kreneskyp`'s review and admin merge of PR #311 as merge commit `4a82644ad3cf75770cc53ef3812e3b13e80b516d`. |
 | US-014   | ✅ Covered | TC-1156..TC-1193 cover the complete read-only census, evidence-backed type-fit review, canonical outputs, reconciliation, and non-disruption; TC-1194 records the explicitly authorized admin merge of PR #316 while preserving every downstream major-interference gate. |
 | US-015   | ✅ Covered | `tests/intervention.test.ts` — TC-1195..TC-1216 and TC-1217..TC-1221 cover record fidelity, negative outcomes, uncertainty, raw-evidence integrity, claim-centered reporting, the real producer, governance, and non-scoring. |
-| US-016   | 🚧 Planned | TC-1223..TC-1243 cover both operational shapes, the full control vocabulary, verified clocked discharge, raw-evidence integrity, adverse outcomes, claim-centered rendering, and non-scoring; implementation is owned by `agent-ix/quoin#271`. |
+| US-016   | 🚧 Planned | TC-1223..TC-1243 and TC-1244..TC-1248 cover both operational shapes, the full control vocabulary, verified clocked discharge, raw-evidence integrity, adverse outcomes, claim-centered rendering, non-scoring, and the real GitHub Actions release producer; implementation is owned by `agent-ix/quoin#271`. |
 
 ## Property Test Layer
 
