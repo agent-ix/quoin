@@ -38,4 +38,3 @@ action.
 - Human and JSON views expose equivalent claim-centered content.
 - Reordered store input is byte-stable.
 - No aggregate trust, confidence, or quality score is introduced.
-

@@ -41,4 +41,3 @@ jobs API JSON. It derives and submits one linked `release` capability/exercise p
 - Caller-supplied timestamps, conclusions, clock labels, sizes, and digests cannot
   replace source-derived values.
 - The adapter contains no GitHub client, dispatch, publication, or process path.
-

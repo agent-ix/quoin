@@ -35,4 +35,3 @@ validator for standing-capability and exercise records.
 - Both shapes and the complete control vocabulary validate independently.
 - Impossible clocks, pins, links, and mixed/missing shapes are refused.
 - No GitHub-specific field enters the core operational record contract.
-

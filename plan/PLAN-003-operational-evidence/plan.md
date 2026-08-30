@@ -60,13 +60,13 @@ the engine-independent intake boundary and does not couple core records to GitHu
 
 ## Task File Mapping
 
-| Task | Track | Scope | Owns |
-| --- | --- | --- | --- |
-| TASK-011 | A | Record shapes and semantic invariants | FR-048; TC-1147..TC-1155 |
-| TASK-012 | B | Governed intake and clock discharge | FR-049 intake/discharge; TC-1156..TC-1162 |
-| TASK-013 | C | Claim-centered operational report | FR-049 reporting; TC-1163..TC-1165 |
-| TASK-014 | D | First-party GitHub release producer | FR-051; TC-1173..TC-1176 |
-| TASK-015 | Gate | No-control, compatibility, real-run gates | TC-1166; TC-1167; TC-1177 |
+| Task     | Track | Scope                                     | Owns                                      |
+| -------- | ----- | ----------------------------------------- | ----------------------------------------- |
+| TASK-011 | A     | Record shapes and semantic invariants     | FR-048; TC-1147..TC-1155                  |
+| TASK-012 | B     | Governed intake and clock discharge       | FR-049 intake/discharge; TC-1156..TC-1162 |
+| TASK-013 | C     | Claim-centered operational report         | FR-049 reporting; TC-1163..TC-1165        |
+| TASK-014 | D     | First-party GitHub release producer       | FR-051; TC-1173..TC-1176                  |
+| TASK-015 | Gate  | No-control, compatibility, real-run gates | TC-1166; TC-1167; TC-1177                 |
 
 ## Completion Gates
 
@@ -75,4 +75,3 @@ the engine-independent intake boundary and does not couple core records to GitHu
 - Typecheck, lint, unit/property/integration tests, and coverage gates pass.
 - Gap analysis reports no incomplete task, unbacked matrix row, or unowned code
   before #271 is declared done.
-

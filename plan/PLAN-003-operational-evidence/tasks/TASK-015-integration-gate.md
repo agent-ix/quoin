@@ -46,4 +46,3 @@ and all-or-nothing pair persistence, then close traceability for #271.
 - TC-1166, TC-1167, and TC-1177 pass with tracking tags.
 - Existing measurement and pre-operational evidence remain readable.
 - Gap analysis reports no incomplete task, unbacked matrix row, or unowned code.
-

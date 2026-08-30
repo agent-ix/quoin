@@ -38,4 +38,3 @@ shapes, raw-byte integrity, stable refusals, and timestamp-derived clock dischar
 - Invalid input and raw mismatch write nothing and return every named reason.
 - Both shapes and all exercise outcomes remain independently queryable.
 - Capability existence alone and every non-matching/adverse exercise do not discharge.
-
