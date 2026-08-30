@@ -1,0 +1,106 @@
+{
+  "ok": false,
+  "generatedAt": "2026-08-30T17:54:41.378Z",
+  "suite": "engineering-assurance-onboarding",
+  "agent": "codex",
+  "repeats": 2,
+  "results": [
+    {
+      "id": "EA-001",
+      "useCase": "existing-profile",
+      "ok": false,
+      "passRate": "1/2",
+      "aggregate": {
+        "latencyMs": {
+          "p50": 528057,
+          "p95": 528057
+        },
+        "tokensIn": {
+          "p50": 0,
+          "p95": 0
+        },
+        "tokensOut": {
+          "p50": 0,
+          "p95": 0
+        },
+        "toolCalls": {
+          "p50": null,
+          "p95": null
+        }
+      },
+      "runs": [
+        {
+          "ok": true,
+          "latencyMs": 280739,
+          "exitReason": "complete",
+          "metricStatus": "unavailable",
+          "tokenUsage": {
+            "input": 0,
+            "output": 0,
+            "cacheCreation": 0,
+            "cacheRead": 0,
+            "contextInput": 0,
+            "total": 0
+          },
+          "toolCalls": null,
+          "toolBreakdown": {},
+          "classified": {},
+          "checks": {},
+          "failures": [],
+          "workDir": "/var/folders/0n/3kslqxjj7jv57nm5n4jg1sr40000gn/T/engineering-assurance-onboarding-ea-001-b8xBa8",
+          "sessionId": "4e0f0da5-bc4b-4052-9c4a-d04ac7937acf",
+          "screenTail": "\n────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\n\n• The repository contains one proposed AssuranceProfile whose scope and owner exactly match the supplied boundary and owner. There are no measurement plans, evidence-producer configs, evidence\n  references, or competing artifacts. I’m now validating that existing profile with the installed assurance catalog and checking the workflow interface; reuse is only allowed if validation succeeds.\n\n• Ran 8 commands · ctrl + t to view transcript\n\n────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\n\n• Quire accepted the profile, so the observed onboarding outcome is reused. The existing profile remains byte-for-byte unchanged. The only justified workflow state is a resumable assurance-intake run\n  bound to this repository, boundary, owner, and workflow version; it must remain at capture because no human terminal choice or complete interview was supplied.\n\n• Ran 5 commands · ctrl + t to view transcript\n\n────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\n\n• The workflow binding and successful artifact-validation item are now preserved under .ix/flows. No interview answers, evidence items, applicability conclusions, gate acknowledgements, or terminal\n  transitions were added. I’m writing the requested evaluation envelope with the immutable identities actually observed from the installed module, plugin, skill, workflow, CLIs, schema, and runner.\n\n• Added EVALUATION_RESULT.json (+124 -0)\n      1 +{\n      2 +  \"host\": \"codex\",\n      3 +  \"host_version\": \"codex-cli 0.151.0\",\n      4 +  \"scenario\": \"existing-profile\",\n      5 +  \"execution_status\": \"executed\",\n      6 +  \"passed\": true,\n      7 +  \"suite_revision\": \"suite-v1\",\n      8 +  \"fixture_revision\": \"fixtures-v1\",\n      9 +  \"source_revision\": \"2e09c9d0e7b6ff6a49267067033472a2d25f91c1\",\n     10 +  \"governing\": {\n     11 +    \"module\": {\n     12 +      \"name\": \"engineering-assurance\",\n  … Diff preview limited (ctrl + t to view transcript).\n\n• Ran jq -e '\n  │   .host == \"codex\" and\n  │   .scenario == \"existing-profile\" and\n  │ … +19 lines\n  └ {\n      \"ok\": true,\n    … +131 lines (ctrl + t to view transcript)\n    ./EVAL_TASK.md\n    ./spec/AP-001.md\n\n────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\n\n• All checks pass. EVALUATION_RESULT.json reports reused, all nine governing identities are immutable and digest-pinned, the workflow event chain verifies at capture, the original profile hash is\n  unchanged, terminal_event is null, and unsupported_additions is empty. I’m issuing the required completion marker now; no further shell commands will follow.\n\n• Ran echo '<<<EVAL-COMPLETE>>>'\n  └ <<<EVAL-COMPLETE>>>\n\n◦ Working (3s • esc to interrupt)\n\n\n› Ask Codex to do anything\n\n  gpt-5.6-sol high · /private/var/folders/0n/3kslqxjj7jv57nm5n4jg1sr40000gn/T/engineering-assurance-onboarding-ea-001-b8xBa8\n"
+        },
+        {
+          "ok": false,
+          "latencyMs": 528057,
+          "exitReason": "timeout",
+          "metricStatus": "unavailable",
+          "tokenUsage": {
+            "input": 0,
+            "output": 0,
+            "cacheCreation": 0,
+            "cacheRead": 0,
+            "contextInput": 0,
+            "total": 0
+          },
+          "toolCalls": null,
+          "toolBreakdown": {},
+          "classified": {},
+          "checks": {},
+          "failures": [
+            "agent exit: timeout",
+            "observed outcome mismatch",
+            "result field missing: governing",
+            "result field missing: elapsed_ms",
+            "result field missing: human_prompt_count",
+            "result field missing: manual_translation_count",
+            "result field missing: repeated_prompt_count"
+          ],
+          "workDir": "/var/folders/0n/3kslqxjj7jv57nm5n4jg1sr40000gn/T/engineering-assurance-onboarding-ea-001-STK48W",
+          "sessionId": "8419c259-ba78-405f-a9bf-3d895e08a2dd",
+          "screenTail": "\n• The scenario supplies its own decision boundary and owner, so I can proceed without inventing missing inputs. I’m now inspecting the repository, the scenario payload, and the workflow definition to\n  determine what must be reused versus merely reported.\n\n• Ran 3 commands · ctrl + t to view transcript\n\n────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\n\n• The supplied profile is the only candidate assurance artifact, and its scope and owner exactly match the scenario. I found no repository metadata, measurement definitions, producer configuration, or\n  evidence references beyond the profile’s declared control reference; next I’m validating the artifact and establishing the installed tool/workflow versions before starting the resumable run.\n\n• Ran 10 commands · ctrl + t to view transcript\n\n────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\n\n• Quire validates spec/AP-001.md successfully against the active catalog, and Quoin reports the 10-module catalog itself is valid. The profile will be reused unchanged; no MeasurementPlan or other\n  artifact is justified. I’m starting the stable assurance-intake run now and will stop before any human-owned terminal decision.\n\n• Ran 9 commands · ctrl + t to view transcript\n\n────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\n\n• The workflow is now at decision_ready. It remains deliberately non-terminal because juniper-release-owner has not supplied an explicit accept/reject decision. The only unresolved repository\n  reference is the profile’s declared CAC-001 control reference; I have not treated it as evidence or created a substitute artifact.\n\n• Ran 3 commands · ctrl + t to view transcript\n\n• Added EVALUATION_RESULT.json (+119 -0)\n      1 +{\n      2 +  \"immutable_governing_version_tuple\": {\n      3 +    \"suite_revision\": \"suite-v1\",\n      4 +    \"fixture_revision\": \"fixtures-v1\",\n      5 +    \"engineering_assurance_module\": {\n      6 +      \"name\": \"engineering-assurance\",\n      7 +      \"version\": \"0.2.0\",\n      8 +      \"source_revision\": \"4e6522fc32f82cac82a3489a4192e17a94f539c3\"\n      9 +    },\n     10 +    \"workflow_definition\": {\n     11 +      \"name\": \"assurance-intake\",\n     12 +      \"version\": \"0.1.0\",\n  … Diff preview limited (ctrl + t to view transcript).\n\n────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\n\n• EVALUATION_RESULT.json is written with the required version tuple, five-part inventory, non-terminal observed outcome, counts, and an empty unsupported-additions list. I’m performing the final\n  integrity checks now; if they pass, the only remaining shell action will be the required completion marker.\n\n• Ran 6 commands · ctrl + t to view transcript\n\n────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\n\n• Completed successfully. EVALUATION_RESULT.json was created and validated.\n\n─ Worked for 4m 42s ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\n\n\n› Ask Codex to do anything\n\n  gpt-5.6-sol high · /private/var/folders/0n/3kslqxjj7jv57nm5n4jg1sr40000gn/T/engineering-assurance-onboarding-ea-001-STK48W\n"
+        }
+      ]
+    }
+  ],
+  "aggregates": {
+    "successRate": "0/1",
+    "latencyMs": {
+      "p50": 528057,
+      "p95": 528057
+    },
+    "tokensIn": {
+      "p50": 0,
+      "p95": 0
+    },
+    "tokensOut": {
+      "p50": 0,
+      "p95": 0
+    },
+    "toolCalls": {
+      "p50": null,
+      "p95": null
+    }
+  }
+}

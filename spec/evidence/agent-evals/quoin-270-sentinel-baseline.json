@@ -1,0 +1,100 @@
+{
+  "ok": false,
+  "generatedAt": "2026-08-30T17:34:20.678Z",
+  "suite": "engineering-assurance-onboarding",
+  "agent": "codex",
+  "repeats": 2,
+  "results": [
+    {
+      "id": "EA-001",
+      "useCase": "existing-profile",
+      "ok": false,
+      "passRate": "1/2",
+      "aggregate": {
+        "latencyMs": {
+          "p50": 397484,
+          "p95": 397484
+        },
+        "tokensIn": {
+          "p50": 0,
+          "p95": 0
+        },
+        "tokensOut": {
+          "p50": 0,
+          "p95": 0
+        },
+        "toolCalls": {
+          "p50": null,
+          "p95": null
+        }
+      },
+      "runs": [
+        {
+          "ok": true,
+          "latencyMs": 397484,
+          "exitReason": "complete",
+          "metricStatus": "unavailable",
+          "tokenUsage": {
+            "input": 0,
+            "output": 0,
+            "cacheCreation": 0,
+            "cacheRead": 0,
+            "contextInput": 0,
+            "total": 0
+          },
+          "toolCalls": null,
+          "toolBreakdown": {},
+          "classified": {},
+          "checks": {},
+          "failures": [],
+          "workDir": "/var/folders/0n/3kslqxjj7jv57nm5n4jg1sr40000gn/T/engineering-assurance-onboarding-ea-001-6jEnJU",
+          "sessionId": "28f438a0-5144-4a57-85fa-889d1400b9bd",
+          "screenTail": "• Added EVALUATION_RESULT.json (+101 -0)\n      1 +{\n      2 +  \"host\": \"codex\",\n      3 +  \"host_version\": \"codex-cli 0.151.0\",\n      4 +  \"scenario\": \"existing-profile\",\n      5 +  \"execution_status\": \"executed\",\n      6 +  \"passed\": true,\n      7 +  \"suite_revision\": \"suite-v1\",\n      8 +  \"fixture_revision\": \"fixtures-v1\",\n      9 +  \"governing\": {\n     10 +    \"module\": {\n     11 +      \"name\": \"engineering-assurance\",\n     12 +      \"version\": \"0.2.0\",\n  … Diff preview limited (ctrl + t to view transcript).\n\n• Edited EVALUATION_RESULT.json (+23 -1)\n     94    \"command_count\": 4,\n     95 -  \"elapsed_ms\": 800,\n     95 +  \"command_observations\": [\n     96 +    {\n     97 +      \"boundary\": \"Quire\",\n     98 +      \"command\": \"engineering_assurance.onboarding.run_onboarding\",\n     99 +      \"outcome\": \"validated and reused spec/AP-001.md\"\n    100 +    },\n    101 +    {\n    102 +      \"boundary\": \"Quoin\",\n    103 +      \"command\": \"quoin catalog list\",\n    104 +      \"outcome\": \"resolved AssuranceProfile to engineering-assurance 0.2.0\"\n  … Diff preview limited (ctrl + t to view transcript).\n\n────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\n\n• The result envelope is written with all nine immutable governing identities, the five required inventory collections, four measured command observations, zero human interactions, a null terminal\n  event, and no unsupported additions. I’m doing the final integrity checks now, including the saved ix-flow event chain and JSON invariants.\n\n• Ran jq -e '\n  │   .scenario == \"existing-profile\" and\n  │   .observed_outcome == \"reused\" and\n  │ … +13 lines\n  └ {\n      \"ok\": true,\n    … +33 lines (ctrl + t to view transcript)\n    ./EVAL_TASK.md\n    ./spec/AP-001.md\n\n────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\n\n• All checks pass: the governing tuple satisfies the immutable-version contract, the evaluation JSON invariants hold, and ix-flow verified the complete event hash chain. The only new files are the\n  requested result and the preserved resumable workflow state.\n\n• Ran echo '<<<EVAL-COMPLETE>>>'\n  └ <<<EVAL-COMPLETE>>>\n\n• Working (2s • esc to interrupt)\n\n\n› Ask Codex to do anything\n\n  gpt-5.6-sol high · /private/var/folders/0n/3kslqxjj7jv57nm5n4jg1sr40000gn/T/engineering-assurance-onboarding-ea-001-6jEnJU\n"
+        },
+        {
+          "ok": false,
+          "latencyMs": 105894,
+          "exitReason": "complete",
+          "metricStatus": "unavailable",
+          "tokenUsage": {
+            "input": 0,
+            "output": 0,
+            "cacheCreation": 0,
+            "cacheRead": 0,
+            "contextInput": 0,
+            "total": 0
+          },
+          "toolCalls": null,
+          "toolBreakdown": {},
+          "classified": {},
+          "checks": {},
+          "failures": [
+            "result envelope unreadable: ENOENT: no such file or directory, open '/var/folders/0n/3kslqxjj7jv57nm5n4jg1sr40000gn/T/engineering-assurance-onboarding-ea-001-BRm7kq/EVALUATION_RESULT.json'"
+          ],
+          "workDir": "/var/folders/0n/3kslqxjj7jv57nm5n4jg1sr40000gn/T/engineering-assurance-onboarding-ea-001-BRm7kq",
+          "sessionId": "a4697ac3-bdc1-469f-884c-bcd32eedc65b",
+          "screenTail": "\n⚠ /Users/peter/.codex/plugins/cache/quoin/quoin/0.22.5/skills/spec-fuzz/SKILL.md: invalid YAML: mapping values are not allowed in this context at line 3 column 84\n\n╭──────────────────────────────────────────────────────────╮\n│ >_ OpenAI Codex (v0.151.0)                               │\n│                                                          │\n│ model:     gpt-5.6-sol high   /model to change           │\n│ directory: /private/var/folders/0n/…/T/…ng-ea-001-BRm7kq │\n╰──────────────────────────────────────────────────────────╯\n\n  Tip: Try the Desktop app. Run 'codex app' or visit https://chatgpt.com/codex?app-landing-page=true\n\n• You have 1 usage limit reset available. Run /usage to use one.\n\n\n› Read ./EVAL_TASK.md and complete the task exactly as instructed.\n\n\n• I’m using the assurance-onboarding skill because this task is explicitly an engineering-assurance onboarding exercise. I’ll read its full workflow and the evaluation brief before making any changes.\n\n• Explored\n  └ Read SKILL.md (assurance-onboarding skill), EVAL_TASK.md\n\n────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\n\n• The brief requires an exact, bounded run and forbids filling gaps speculatively. I’m now inventorying the repository and reading the applicable workflow definition; I’ll preserve any existing valid\n  profile instead of generating a replacement.\n\n• Ran 2 commands · ctrl + t to view transcript\n\n────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\n\n• The existing AssuranceProfile matches both the stated boundary and owner, so the justified path is validation and reuse. No measurement plan, evidence claim, exception, applicability ruling, or\n  terminal decision is currently supported by the input.\n\n• Ran 3 commands · ctrl + t to view transcript\n• Ran rg --files /Users/peter/.ix/filament/modules/engineering-assurance | sort; printf '\\n--- MANIFEST ---\\n'; sed -n '1,320p' /Users/peter/.ix/filament/modules/engineering-assurance/manifest.yaml;\n  │ printf '\\n--- PACKAGE ---\\n'; sed -n '1,260p' /Users/peter/.ix/filament/modules/engineering-assurance/package.json 2>/dev/null || true; printf '\\n--- WORKFLOW SYMBOLS ---\\n'; rg -n\n  │ \"start_or_resume|workflow\\.decide|run_binding|decision_ready|repository_id\" /Users/peter/.ix/filament/modules/engineering-assurance\n  └ /Users/peter/.ix/filament/modules/engineering-assurance/__init__.py\n    /Users/peter/.ix/filament/modules/engineering-assurance/manifest.yaml\n    … +124 lines (ctrl + t to view transcript)\n\n    --- WORKFLOW SYMBOLS ---\n\n• Ran rg -n --hidden --glob '!node_modules/**' --glob '!cache/**/objects/**' \"engineering_assurance\\.workflow\\.start_or_resume|workflow\\.start_or_resume\" /Users/peter/.ix /Users/peter/.codex /Users/\n  │ peter/.agents 2>/dev/null | head -200\n  └ urement-promotion` for a one-stage measurement decision; and\\n- `change-assurance` for a bounded change decision.\\n\\nRun them through ix-flow and preserve its state for resume. Terminal\n    transitions\\nremain named human decisions; never acknowledge or override those gates.\\n\\nUse `engineering_assurance.workflow.start_or_resume` to create or resume the\\nstable run and its\n    … +43 lines (ctrl + t to view transcript)\n    protocol\\n\\nYour final action must be one shell command:\\n\\n- On success: `echo '<<<EVAL-COMPLETE>>>'`\\n- On failure: `echo '<<<EVAL-FAILED>>>'`\\n\\nPrint exactly one marker and only as the last\n    step.\\n\"}],\"internal_chat_message_metadata_passthrough\":{\"turn_id\":\"01a053bb-a508-7810-8530-f553f092970b\",\"create_time\":1788111206.213726}}}\n\n◦ Working (35s • esc to interrupt)\n\n\n› Ask Codex to do anything\n\n  gpt-5.6-sol high · /private/var/folders/0n/3kslqxjj7jv57nm5n4jg1sr40000gn/T/engineering-assurance-onboarding-ea-001-BRm7kq\n"
+        }
+      ]
+    }
+  ],
+  "aggregates": {
+    "successRate": "0/1",
+    "latencyMs": {
+      "p50": 397484,
+      "p95": 397484
+    },
+    "tokensIn": {
+      "p50": 0,
+      "p95": 0
+    },
+    "tokensOut": {
+      "p50": 0,
+      "p95": 0
+    },
+    "toolCalls": {
+      "p50": null,
+      "p95": null
+    }
+  }
+}

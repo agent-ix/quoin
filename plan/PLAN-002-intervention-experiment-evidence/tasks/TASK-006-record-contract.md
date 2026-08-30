@@ -2,7 +2,7 @@
 id: TASK-006
 title: "Implement the intervention record contract"
 type: Task
-status: todo
+status: done
 track: A
 priority: P0
 relationships:

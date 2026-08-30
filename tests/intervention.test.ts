@@ -1,4 +1,5 @@
 import {
+  copyFileSync,
   mkdtempSync,
   mkdirSync,
   readFileSync,
@@ -386,6 +387,21 @@ describe("intervention-experiment evidence", () => {
         "application/json",
       ),
     ]);
+    const callerSubstitutes = {
+      ...definition,
+      measured_effects: [{ effect: 999 }],
+      raw_evidence: [
+        {
+          path: "caller-selected.json",
+          media_type: "text/plain",
+          size_bytes: 1,
+          digest: `sha256:${"f".repeat(64)}`,
+        },
+      ],
+    } as unknown as AgentEvalInterventionDefinition;
+    expect(
+      produceAgentEvalIntervention(root, callerSubstitutes).record.raw_evidence,
+    ).toEqual(produced.raw_evidence);
 
     const mismatchRoot = repo();
     writeRaw(mismatchRoot, "raw/eval-before.json", baseline);
@@ -398,6 +414,122 @@ describe("intervention-experiment evidence", () => {
       produceAgentEvalIntervention(mismatchRoot, definition),
     ).toThrow(/scenario mismatch/);
     expect(readInterventionRecords(mismatchRoot)).toEqual([]);
+
+    const invalidReports = [
+      [
+        "empty",
+        JSON.stringify({
+          ok: true,
+          suite: "empty",
+          repeats: 1,
+          results: [],
+        }),
+      ],
+      ["malformed", "{invalid\n"],
+      [
+        "unversioned",
+        JSON.stringify({
+          ok: true,
+          suite: "unversioned",
+          results: [{ id: "TC-EV-1", ok: true, passRate: "1/1" }],
+        }),
+      ],
+      [
+        "duplicate",
+        JSON.stringify({
+          ok: false,
+          suite: "duplicate",
+          repeats: 2,
+          results: [
+            { id: "TC-EV-1", ok: false, passRate: "1/2" },
+            { id: "TC-EV-1", ok: false, passRate: "1/2" },
+          ],
+        }),
+      ],
+    ] as const;
+    for (const [name, invalid] of invalidReports) {
+      const invalidRoot = repo();
+      writeRaw(invalidRoot, "raw/eval-before.json", invalid);
+      writeRaw(invalidRoot, "raw/eval-after.json", treatment);
+      expect(() =>
+        produceAgentEvalIntervention(invalidRoot, producerDefinition()),
+      ).toThrow();
+      expect(readInterventionRecords(invalidRoot), name).toEqual([]);
+    }
+
+    const inadequateRoot = repo();
+    const single = reportJson([{ id: "TC-EV-1", passed: 1, total: 1 }]);
+    writeRaw(inadequateRoot, "raw/eval-before.json", single);
+    writeRaw(inadequateRoot, "raw/eval-after.json", single);
+    const inadequate = producerDefinition();
+    inadequate.design.repetitions = 1;
+    inadequate.interactions = [
+      { description: "uncontrolled fixture", disposition: "uncontrolled" },
+    ];
+    inadequate.confounders = [
+      { description: "unknown fixture", disposition: "unknown" },
+    ];
+    const inadequateRecord = produceAgentEvalIntervention(
+      inadequateRoot,
+      inadequate,
+    ).record;
+    expect(inadequateRecord.conclusion).toMatchObject({
+      kind: "cause_not_established",
+      attribution_confidence: "none",
+    });
+    expect(inadequateRecord.gaps).toEqual(
+      expect.arrayContaining([
+        "agent-eval reports do not contain repeated samples for every scenario",
+        "one or more declared interactions or confounders are uncontrolled or unknown",
+        "no justified attribution method was supplied",
+      ]),
+    );
+  });
+
+  // Trace: FR-050-AC-1, FR-050-AC-5 (TC-1168, TC-1172)
+  test("real retained runner reports persist an honest zero-effect intervention", () => {
+    const root = repo();
+    const source = join(process.cwd(), "spec", "evidence", "agent-evals");
+    for (const name of [
+      "quoin-270-sentinel-baseline.json",
+      "quoin-270-sentinel-treatment.json",
+    ]) {
+      const target = join(root, "spec", "evidence", "agent-evals", name);
+      mkdirSync(dirname(target), { recursive: true });
+      copyFileSync(join(source, name), target);
+    }
+    writeFileSync(
+      join(root, "spec", "assurance", "MP-901.md"),
+      PLAN.replace(DEFINITION, "cli-agent-evals.sentinel-contract-v1"),
+    );
+    const definition = JSON.parse(
+      readFileSync(join(source, "quoin-270-sentinel-definition.json"), "utf8"),
+    ) as AgentEvalInterventionDefinition;
+
+    const { record: produced } = produceAgentEvalIntervention(root, definition);
+
+    expect(produced.baseline.sample_size).toBe(2);
+    expect(produced.treatments[0].sample_size).toBe(2);
+    expect(produced.measured_effects).toEqual([
+      expect.objectContaining({
+        baseline_value: 0.5,
+        treatment_value: 0.5,
+        effect: 0,
+      }),
+    ]);
+    expect(produced.conclusion).toEqual({
+      kind: "cause_not_established",
+      statement:
+        "The retained agent-evaluation runs show no observed pass-rate difference; this adapter does not establish causality.",
+      attribution_confidence: "none",
+    });
+    expect(produced.raw_evidence.map((item) => item.digest)).toEqual([
+      "sha256:741ab150c107d1f5551a9be2092081cc0439f85e804d23f81e3923dfab8fe076",
+      "sha256:baade4ab1c2e8f3447b4c585c95634884cb2ed1c69a9cf8819d0b495c7f77963",
+    ]);
+    expect(renderMeasurementReport(buildMeasurementReport(root))).toContain(
+      "no observed pass-rate difference",
+    );
   });
 
   function producerDefinition(): AgentEvalInterventionDefinition {

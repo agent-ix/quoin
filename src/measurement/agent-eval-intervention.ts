@@ -55,6 +55,20 @@ export function produceAgentEvalIntervention(
     gaps.push("no justified attribution method was supplied");
   }
 
+  const measuredEffects = baselineIds.map((id) => {
+    const before = baseline.get(id) as ScenarioRate;
+    const after = treatment.get(id) as ScenarioRate;
+    return {
+      treatment_id: definition.treatment.id,
+      metric: scenarioMetric(id),
+      baseline_value: before.rate,
+      treatment_value: after.rate,
+      effect: after.rate - before.rate,
+      unit: "fraction",
+    };
+  });
+  const observedDifference = measuredEffects.some((item) => item.effect !== 0);
+
   const record: InterventionExperimentRecord = {
     schema_version: 1,
     record_type: "intervention_experiment",
@@ -82,25 +96,15 @@ export function produceAgentEvalIntervention(
     ],
     changed_variables: definition.changed_variables,
     held_constant: definition.held_constant,
-    measured_effects: baselineIds.map((id) => {
-      const before = baseline.get(id) as ScenarioRate;
-      const after = treatment.get(id) as ScenarioRate;
-      return {
-        treatment_id: definition.treatment.id,
-        metric: scenarioMetric(id),
-        baseline_value: before.rate,
-        treatment_value: after.rate,
-        effect: after.rate - before.rate,
-        unit: "fraction",
-      };
-    }),
+    measured_effects: measuredEffects,
     interactions: definition.interactions,
     confounders: definition.confounders,
     status: "completed",
     conclusion: {
       kind: "cause_not_established",
-      statement:
-        "The retained agent-evaluation runs show observed pass-rate differences; this adapter does not establish causality.",
+      statement: observedDifference
+        ? "The retained agent-evaluation runs show observed pass-rate differences; this adapter does not establish causality."
+        : "The retained agent-evaluation runs show no observed pass-rate difference; this adapter does not establish causality.",
       attribution_confidence: "none",
     },
     gaps: [...new Set(gaps)],
