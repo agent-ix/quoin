@@ -21,3 +21,11 @@ description: "Chronological execution record for PLAN-003."
   environment mismatches: the current Quire CLI is ahead of the vendored JSON contract, and the mutable
   local process-module checkout lacks `architecture-evaluation` while the pinned installed module has it.
   Neither unrelated source is changed by this audit.
+- **2026-08-30** — SR-056 fixed five code-review findings: hidden test trace symbols, an incomplete-
+  semantics clean verdict, symlink-directed output, incomplete manifest/projection verification, and
+  sibling-aborting document reads. The final 38 automated rows have no targeted Quire unbacked row,
+  status lie, or untracked symbol; 69/69 focused architecture/audit tests pass.
+- **2026-08-30** — Two equal-input real corpus runs from clean commit
+  `843226fb9759bb1642aa8005ee1dbe07dfea8870` produced byte-identical evidence with content identity
+  `sha256:dffa869c54f23172eac38149f3ff37ee930c127518000824c3e0ef3468a0f6f2`.
+  Stacked PR #316 is open against PR #311, issue #288 is In review, and SR-057 stops at TC-1194.

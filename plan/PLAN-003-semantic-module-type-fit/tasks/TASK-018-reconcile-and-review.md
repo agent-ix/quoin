@@ -14,8 +14,9 @@ relationships:
 
 ## Status
 
-**in progress** — automated traceability is reconciled and focused gates pass; code review and gap
-analysis remain to be emitted after the retained clean-source snapshot is committed.
+**done** — SR-056 records the fixed code-review findings and SR-057 records the final gap analysis.
+All audit-owned validation and reverse traceability pass; the inherited two-test environment drift and
+the external promotion gate remain explicit and are not treated as audit implementation defects.
 
 ## Scope
 

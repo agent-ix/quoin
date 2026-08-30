@@ -16,7 +16,8 @@ relationships:
 
 ## Status
 
-**pending**
+**done** — stacked PR #316 is open against PR #311's architecture branch, Project 18 marks issue
+#288 In review, the maintainers team is requested, and no merge or disruptive follow-up was attempted.
 
 ## Scope
 
