@@ -25,3 +25,4 @@ description: "Index of artifacts in this directory."
 - [US-015: Assess intervention experiments without overstating causality](./US-015-assess-intervention-experiments.md)
 - [US-016: Assess operational controls and their exercises](./US-016-assess-operational-controls.md)
 - [US-018: Inspect evidence-graph concentration and change exposure](./US-018-inspect-evidence-graph-exposure.md)
+- [US-019: Review governed graph evidence across repositories](./US-019-review-graph-evidence-portfolio.md)
