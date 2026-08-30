@@ -6,6 +6,12 @@ import {
   type InterventionReportEntry,
 } from "./intervention-report.js";
 import { readInterventionRecords } from "./intervention.js";
+import {
+  buildOperationalReport,
+  renderOperationalReport,
+  type OperationalReportEntry,
+} from "./operational-report.js";
+import { readOperationalRecords } from "./operational.js";
 import { loadMeasurementPlans } from "./plans.js";
 import { measurementPath, readMeasurementCollections } from "./store.js";
 import type {
@@ -39,6 +45,7 @@ export interface MeasurementReport {
   }>;
   corpusGaps: number | null;
   interventions: InterventionReportEntry[];
+  operational: OperationalReportEntry[];
 }
 
 export function buildMeasurementReport(repo: string): MeasurementReport {
@@ -95,6 +102,7 @@ export function buildMeasurementReportFrom(
     current,
     corpusGaps: latestGapCount(collections),
     interventions: buildInterventionReport(readInterventionRecords(repo)),
+    operational: buildOperationalReport(readOperationalRecords(repo)),
   };
 }
 
@@ -207,6 +215,8 @@ export function renderMeasurementReport(report: MeasurementReport): string {
   );
   const intervention = renderInterventionReport(report.interventions);
   if (intervention) lines.push(intervention);
+  const operational = renderOperationalReport(report.operational);
+  if (operational) lines.push(operational);
   return lines.join("\n");
 }
 

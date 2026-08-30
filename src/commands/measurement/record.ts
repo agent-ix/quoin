@@ -6,6 +6,7 @@ import { QuoinCommand } from "../../base.js";
 import {
   writeInterventionRecord,
   writeMeasurementCollection,
+  writeOperationalRecord,
 } from "../../measurement/index.js";
 
 export default class MeasurementRecord extends QuoinCommand {
@@ -39,7 +40,9 @@ export default class MeasurementRecord extends QuoinCommand {
       this.log(
         recordType === "intervention_experiment"
           ? writeInterventionRecord(flags.repo, value)
-          : writeMeasurementCollection(flags.repo, value),
+          : recordType === "operational_evidence"
+            ? writeOperationalRecord(flags.repo, value)
+            : writeMeasurementCollection(flags.repo, value),
       );
     } catch (error) {
       const detail = error instanceof Error ? error.message : String(error);

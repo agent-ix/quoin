@@ -74,8 +74,8 @@ export function writeInterventionRecord(
   candidate: unknown,
 ): string {
   validateInterventionRecord(candidate);
-  validateDefinition(repo, candidate.producer.definition_version);
-  validateRawEvidence(repo, candidate);
+  assertGoverningDefinition(repo, candidate.producer.definition_version);
+  verifyRawEvidenceReferences(repo, candidate.raw_evidence);
   const path = interventionPath(repo, candidate.record_id);
   const bytes = canonicalJson(candidate);
   mkdirSync(dirname(path), { recursive: true });
@@ -144,7 +144,10 @@ export function rawEvidenceFor(repo: string, path: string, mediaType: string) {
   };
 }
 
-function validateDefinition(repo: string, observed: string): void {
+export function assertGoverningDefinition(
+  repo: string,
+  observed: string,
+): void {
   const active = loadMeasurementPlans(repo).filter(
     (plan) => plan.status === "active",
   );
@@ -163,12 +166,12 @@ function validateDefinition(repo: string, observed: string): void {
   }
 }
 
-function validateRawEvidence(
+export function verifyRawEvidenceReferences(
   repo: string,
-  record: InterventionExperimentRecord,
+  references: InterventionExperimentRecord["raw_evidence"],
 ): void {
   const findings: string[] = [];
-  for (const [index, reference] of record.raw_evidence.entries()) {
+  for (const [index, reference] of references.entries()) {
     try {
       const path = resolveRawPath(repo, reference.path);
       const bytes = readFileSync(path);
