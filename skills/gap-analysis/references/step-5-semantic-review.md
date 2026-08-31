@@ -21,8 +21,8 @@ code it governs (from Step 4), assess three axes:
    requirement describes*, including its acceptance criteria, or only an incidental/trivial
    aspect? A test tagged `FR-007-AC-1` that asserts something unrelated to AC-1 fails here.
 2. **(b) Test exercises the code** — does the test run the real implementation, or is it
-   hollow? Reuse the implementation-gap-analysis **test-stub / coverage-inflation**
-   heuristics: no assertions, weak-only assertions (`is not None`, `isinstance`),
+   hollow? Reuse Step 4's **test-stub / coverage-inflation** heuristics: no assertions,
+   weak-only assertions (`is not None`, `isinstance`),
    mock-everything (no real code path), import-only, circular-mock-of-a-stub.
 3. **(c) Code matches intent** — does the implementation actually do what the requirement
    says (semantics, edge cases, error behavior), or has it drifted?

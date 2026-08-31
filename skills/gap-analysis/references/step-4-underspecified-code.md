@@ -25,8 +25,7 @@ detection heuristics below.
 
 ## B. Implied requirements from code patterns
 
-Map suspicious patterns to the requirement that *should* exist (per the
-implementation-gap-analysis table):
+Map suspicious patterns to the requirement that *should* exist using the table below:
 
 | Code pattern | Missing requirement type |
 | --- | --- |
@@ -46,7 +45,7 @@ done:
 | Stub | Detect | Severity |
 | --- | --- | --- |
 | Tiny file (≤5 lines, excl. `__init__`) | line count | high |
-| `pass` / placeholder return (`{}`,`[]`,`None`,`"not implemented"`) body | grep/AST | high |
+| `pass` / placeholder return (`{}`, `[]`, `""`, `None`, `"not implemented"`) body | grep/AST | high |
 | Protocol/ABC-only with no concrete impl | structure | high |
 | Re-export-only module | structure | medium (may be intentional) |
 | Trivially-covered stub (≤5 lines @ 100% cov) | coverage + size | medium |
