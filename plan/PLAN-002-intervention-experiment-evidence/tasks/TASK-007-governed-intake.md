@@ -10,13 +10,13 @@ relationships:
     type: part_of
   - target: "ix://agent-ix/quoin/TASK-006"
     type: depends_on
-  - target: "ix://agent-ix/quoin/FR-047"
+  - target: "ix://agent-ix/quoin/FR-057"
     type: references
-  - target: "ix://agent-ix/quoin/TC-1134"
+  - target: "ix://agent-ix/quoin/TC-1204"
     type: verifies
-  - target: "ix://agent-ix/quoin/TC-1139"
+  - target: "ix://agent-ix/quoin/TC-1209"
     type: verifies
-  - target: "ix://agent-ix/quoin/TC-1146"
+  - target: "ix://agent-ix/quoin/TC-1216"
     type: verifies
 ---
 
@@ -29,7 +29,7 @@ raw-byte-verified intervention intake and stable refusal reasons.
 
 ## TDD Work
 
-- Write TC-1134..TC-1139 and TC-1146 against temporary same-filesystem stores.
+- Write TC-1204..TC-1209 and TC-1216 against temporary same-filesystem stores.
 - Resolve the active plan definition before any write and verify every raw path,
   byte size, digest, and safe-root constraint.
 - Reuse canonical serialization and same-directory atomic rename behavior for

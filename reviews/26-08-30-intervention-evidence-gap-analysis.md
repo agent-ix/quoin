@@ -3,7 +3,7 @@ id: SR-036
 title: "Gap analysis — intervention-experiment evidence (Quoin #270)"
 type: SpecReview
 analysis: gap-analysis
-scope: "PLAN-002, US-013, FR-046, FR-047, FR-050, intervention implementation, retained agent-eval evidence, and tests/intervention.test.ts"
+scope: "PLAN-002, US-015, FR-056, FR-057, FR-058, intervention implementation, retained agent-eval evidence, and tests/intervention.test.ts"
 review_set: subset
 ---
 
@@ -57,12 +57,12 @@ Quire 0.31.0 coverage reconciliation, using the locked
 
 | Requirement | Backed obligations | Test cases       |
 | ----------- | -----------------: | ---------------- |
-| FR-046      |                9/9 | TC-1125..TC-1133 |
-| FR-047      |              14/14 | TC-1134..TC-1146 |
-| FR-050      |                5/5 | TC-1168..TC-1172 |
+| FR-056      |                9/9 | TC-1195..TC-1203 |
+| FR-057      |              14/14 | TC-1204..TC-1216 |
+| FR-058      |                5/5 | TC-1217..TC-1221 |
 
-The FR-047 range contains thirteen unique test cases: eleven acceptance
-criteria and three constraints, with TC-1142 covering both an acceptance
+The FR-057 range contains thirteen unique test cases: eleven acceptance
+criteria and three constraints, with TC-1212 covering both an acceptance
 criterion and a constraint. All are bound to real tests in
 `tests/intervention.test.ts`; none relies on a matrix checkbox alone.
 
@@ -74,19 +74,19 @@ reviewed subset.
 
 ## Underspecified-code trace
 
-- `intervention-types.ts` and `intervention-schema.ts` implement FR-046's
+- `intervention-types.ts` and `intervention-schema.ts` implement FR-056's
   versioned record, design, treatment, effect, attribution, confounder, and raw
   evidence obligations.
 - `intervention.ts` and `commands/measurement/intervention.ts` implement
-  FR-047's governing-definition, validation, collision, atomic-write, raw-byte,
+  FR-057's governing-definition, validation, collision, atomic-write, raw-byte,
   and query obligations.
-- `intervention-report.ts` and `report.ts` implement FR-047's claims, evidence,
+- `intervention-report.ts` and `report.ts` implement FR-057's claims, evidence,
   counterevidence, gaps, owner, actions, determinism, and no-aggregate-score
   obligations.
-- `agent-eval-intervention.ts` implements FR-050's two-report reconciliation,
+- `agent-eval-intervention.ts` implements FR-058's two-report reconciliation,
   exact digest derivation, refusal paths, and conservative causal conclusion.
 - `measurement/index.ts`, `commands/measurement/record.ts`, and `vite.config.ts`
-  expose the governed surfaces and preserve compatibility under FR-047.
+  expose the governed surfaces and preserve compatibility under FR-057.
 
 No added production symbol lacks one of those owners, and no stub, placeholder,
 or unimplemented branch remains in the reviewed diff.
@@ -97,8 +97,8 @@ The baseline report digest is
 `sha256:741ab150c107d1f5551a9be2092081cc0439f85e804d23f81e3923dfab8fe076`
 (11,305 bytes). The treatment report digest is
 `sha256:baade4ab1c2e8f3447b4c585c95634884cb2ed1c69a9cf8819d0b495c7f77963`
-(14,261 bytes). TC-1172 consumes those exact checked-in bytes and persists the
-canonical record through the FR-047 path without spawning a process.
+(14,261 bytes). TC-1221 consumes those exact checked-in bytes and persists the
+canonical record through the FR-057 path without spawning a process.
 
 ## Semantic review
 

@@ -133,7 +133,7 @@ describe("intervention-experiment evidence", () => {
     };
   }
 
-  // Trace: FR-046-AC-1, FR-046-AC-2 (TC-1125, TC-1126)
+  // Trace: FR-056-AC-1, FR-056-AC-2 (TC-1195, TC-1196)
   test("requires the envelope and immutable producer tuple", () => {
     const root = repo();
     const valid = record(root);
@@ -172,8 +172,8 @@ describe("intervention-experiment evidence", () => {
     expect(() => validateInterventionRecord(mutable)).toThrow(/tool_version/);
   });
 
-  // Trace: FR-046-AC-3 (TC-1127)
-  test("TC-1127 validates every design and assignment boundary", () => {
+  // Trace: FR-056-AC-3 (TC-1197)
+  test("TC-1197 validates every design and assignment boundary", () => {
     for (const [kind, method] of [
       ["repeated", "deterministic"],
       ["randomized", "randomized"],
@@ -195,7 +195,7 @@ describe("intervention-experiment evidence", () => {
     }
   });
 
-  // Trace: FR-046-AC-4, FR-046-AC-5 (TC-1128, TC-1129)
+  // Trace: FR-056-AC-4, FR-056-AC-5 (TC-1198, TC-1199)
   test("requires unique linked arms, variables, and effects without null coercion", () => {
     const value = record(repo());
     value.measured_effects[0].effect = null;
@@ -209,7 +209,7 @@ describe("intervention-experiment evidence", () => {
     expect(() => validateInterventionRecord(value)).toThrow(/does not resolve/);
   });
 
-  // Trace: FR-046-AC-6, FR-046-AC-7 (TC-1130, TC-1131)
+  // Trace: FR-056-AC-6, FR-056-AC-7 (TC-1200, TC-1201)
   test("preserves qualifier collections and terminal causal safety", () => {
     const value = record(repo());
     value.interactions = [
@@ -227,7 +227,7 @@ describe("intervention-experiment evidence", () => {
     }
   });
 
-  // Trace: FR-046-AC-8 (TC-1132)
+  // Trace: FR-056-AC-8 (TC-1202)
   test("causal conclusions require samples, effects, confidence, and controlled qualifiers", () => {
     const value = record(repo());
     value.conclusion = {
@@ -242,7 +242,7 @@ describe("intervention-experiment evidence", () => {
     expect(() => validateInterventionRecord(value)).toThrow(/causal/);
   });
 
-  // Trace: FR-046-AC-9, FR-047-AC-2, FR-047-AC-11 (TC-1133, TC-1135, TC-1146)
+  // Trace: FR-056-AC-9, FR-057-AC-2, FR-057-AC-11 (TC-1203, TC-1205, TC-1216)
   test("refuses undeclared fields, unsafe paths, and raw-byte mismatch without writing", () => {
     const root = repo();
     const extra = record(root) as unknown as Record<string, unknown>;
@@ -265,7 +265,7 @@ describe("intervention-experiment evidence", () => {
     expect(readInterventionRecords(root)).toEqual([]);
   });
 
-  // Trace: FR-047-AC-1, FR-047-AC-4, FR-047-AC-5 (TC-1134, TC-1137, TC-1138)
+  // Trace: FR-057-AC-1, FR-057-AC-4, FR-057-AC-5 (TC-1204, TC-1207, TC-1208)
   test("writes atomically, repeats byte-identically, and refuses collisions", () => {
     const root = repo();
     const value = record(root);
@@ -281,7 +281,7 @@ describe("intervention-experiment evidence", () => {
     expect(readFileSync(path, "utf8")).toBe(before);
   });
 
-  // Trace: FR-047-AC-3 (TC-1136)
+  // Trace: FR-057-AC-3 (TC-1206)
   test("distinguishes absent and mismatched governing definitions", () => {
     const absent = repo(false);
     expect(() => writeInterventionRecord(absent, record(absent))).toThrow(
@@ -295,7 +295,7 @@ describe("intervention-experiment evidence", () => {
     );
   });
 
-  // Trace: FR-047-AC-6 (TC-1139)
+  // Trace: FR-057-AC-6 (TC-1209)
   test("keeps every terminal result independently queryable", () => {
     const root = repo();
     for (const [index, status] of (
@@ -313,7 +313,7 @@ describe("intervention-experiment evidence", () => {
     ]);
   });
 
-  // Trace: FR-047-AC-7, FR-047-AC-8, FR-047-AC-9, FR-047-AC-10, FR-047-CON-2 (TC-1140..TC-1143)
+  // Trace: FR-057-AC-7, FR-057-AC-8, FR-057-AC-9, FR-057-AC-10, FR-057-CON-2 (TC-1210..TC-1213)
   test("renders one deterministic claim-centered object with no aggregate score", () => {
     const root = repo();
     const value = record(root);
@@ -341,7 +341,7 @@ describe("intervention-experiment evidence", () => {
     });
   });
 
-  // Trace: FR-047-CON-1, FR-047-CON-3 (TC-1144, TC-1145)
+  // Trace: FR-057-CON-1, FR-057-CON-3 (TC-1214, TC-1215)
   test("intervention modules have no process/network import and an empty store preserves measurement reporting", () => {
     const sources = [
       "src/measurement/intervention.ts",
@@ -353,7 +353,7 @@ describe("intervention-experiment evidence", () => {
     expect(buildMeasurementReport(root).interventions).toEqual([]);
   });
 
-  // Trace: FR-050-AC-2, FR-050-AC-3, FR-050-AC-4 (TC-1169..TC-1171)
+  // Trace: FR-058-AC-2, FR-058-AC-3, FR-058-AC-4 (TC-1218..TC-1220)
   test("agent-eval producer derives effects/raw metadata and refuses mismatches", () => {
     const root = repo();
     const baseline = reportJson([
@@ -486,7 +486,7 @@ describe("intervention-experiment evidence", () => {
     );
   });
 
-  // Trace: FR-050-AC-1, FR-050-AC-5 (TC-1168, TC-1172)
+  // Trace: FR-058-AC-1, FR-058-AC-5 (TC-1217, TC-1221)
   test("real retained runner reports persist an honest zero-effect intervention", () => {
     const root = repo();
     const source = join(process.cwd(), "spec", "evidence", "agent-evals");

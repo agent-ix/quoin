@@ -12,11 +12,11 @@ relationships:
     type: depends_on
   - target: "ix://agent-ix/quoin/TASK-007"
     type: depends_on
-  - target: "ix://agent-ix/quoin/FR-050"
+  - target: "ix://agent-ix/quoin/FR-058"
     type: references
-  - target: "ix://agent-ix/quoin/TC-1168"
+  - target: "ix://agent-ix/quoin/TC-1217"
     type: verifies
-  - target: "ix://agent-ix/quoin/TC-1171"
+  - target: "ix://agent-ix/quoin/TC-1220"
     type: verifies
 ---
 
@@ -30,7 +30,7 @@ raw metadata, and submits the resulting record through TASK-007.
 
 ## TDD Work
 
-- Write TC-1168..TC-1171, including generated scenario mismatch and qualifier
+- Write TC-1217..TC-1220, including generated scenario mismatch and qualifier
   combinations.
 - Reuse the existing agent-eval evidence parser instead of introducing a parallel
   report interpretation.

@@ -10,11 +10,11 @@ relationships:
     type: part_of
   - target: "ix://agent-ix/quoin/TASK-006"
     type: depends_on
-  - target: "ix://agent-ix/quoin/FR-047"
+  - target: "ix://agent-ix/quoin/FR-057"
     type: references
-  - target: "ix://agent-ix/quoin/TC-1140"
+  - target: "ix://agent-ix/quoin/TC-1210"
     type: verifies
-  - target: "ix://agent-ix/quoin/TC-1143"
+  - target: "ix://agent-ix/quoin/TC-1213"
     type: verifies
 ---
 
@@ -27,7 +27,7 @@ effects, counterevidence, gaps, owners, actions, and raw references.
 
 ## TDD Work
 
-- Write TC-1140..TC-1143 before changing report projection or formatting.
+- Write TC-1210..TC-1213 before changing report projection or formatting.
 - Build one deterministically ordered projection consumed by human and JSON output.
 - Preserve unknown/uncontrolled qualifiers and negative results without deriving a
   trust score or causal conclusion.

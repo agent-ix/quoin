@@ -4,13 +4,13 @@ title: "Intervention-experiment evidence implementation"
 type: Plan
 status: complete
 relationships:
-  - target: "ix://agent-ix/quoin/US-013"
+  - target: "ix://agent-ix/quoin/US-015"
     type: references
-  - target: "ix://agent-ix/quoin/FR-046"
+  - target: "ix://agent-ix/quoin/FR-056"
     type: references
-  - target: "ix://agent-ix/quoin/FR-047"
+  - target: "ix://agent-ix/quoin/FR-057"
     type: references
-  - target: "ix://agent-ix/quoin/FR-050"
+  - target: "ix://agent-ix/quoin/FR-058"
     type: references
 ---
 
@@ -61,11 +61,11 @@ the contract and intake boundary but does not depend on report rendering.
 
 | Task     | Track | Scope                                            | Owns                                     |
 | -------- | ----- | ------------------------------------------------ | ---------------------------------------- |
-| TASK-006 | A     | Record types, JSON Schema, semantic validator    | FR-046; TC-1125..TC-1133                 |
-| TASK-007 | B     | Governed intake, raw evidence, atomic store      | FR-047 intake; TC-1134..TC-1139; TC-1146 |
-| TASK-008 | C     | Claim-centered human/JSON projection             | FR-047 reporting; TC-1140..TC-1143       |
-| TASK-009 | D     | First-party agent-eval intervention producer     | FR-050; TC-1168..TC-1171                 |
-| TASK-010 | Gate  | Real-run E2E, no-process and compatibility gates | TC-1144; TC-1145; TC-1172                |
+| TASK-006 | A     | Record types, JSON Schema, semantic validator    | FR-056; TC-1195..TC-1203                 |
+| TASK-007 | B     | Governed intake, raw evidence, atomic store      | FR-057 intake; TC-1204..TC-1209; TC-1216 |
+| TASK-008 | C     | Claim-centered human/JSON projection             | FR-057 reporting; TC-1210..TC-1213       |
+| TASK-009 | D     | First-party agent-eval intervention producer     | FR-058; TC-1217..TC-1220                 |
+| TASK-010 | Gate  | Real-run E2E, no-process and compatibility gates | TC-1214; TC-1215; TC-1221                |
 
 ## Completion Gates
 

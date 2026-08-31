@@ -14,15 +14,15 @@ relationships:
     type: depends_on
   - target: "ix://agent-ix/quoin/TASK-009"
     type: depends_on
-  - target: "ix://agent-ix/quoin/FR-047"
+  - target: "ix://agent-ix/quoin/FR-057"
     type: references
-  - target: "ix://agent-ix/quoin/FR-050"
+  - target: "ix://agent-ix/quoin/FR-058"
     type: references
-  - target: "ix://agent-ix/quoin/TC-1144"
+  - target: "ix://agent-ix/quoin/TC-1214"
     type: verifies
-  - target: "ix://agent-ix/quoin/TC-1145"
+  - target: "ix://agent-ix/quoin/TC-1215"
     type: verifies
-  - target: "ix://agent-ix/quoin/TC-1172"
+  - target: "ix://agent-ix/quoin/TC-1221"
     type: verifies
 ---
 
@@ -35,14 +35,14 @@ backward compatibility, and produce the final traceability evidence for #270.
 
 ## TDD Work
 
-- Add static TC-1144 and compatibility TC-1145 to the normal test suite.
+- Add static TC-1214 and compatibility TC-1215 to the normal test suite.
 - Run a real baseline/treatment evaluation outside Quoin, retain the unmodified
-  reports under the content-rights policy, and execute TC-1172 through intake and
+  reports under the content-rights policy, and execute TC-1221 through intake and
   report rendering.
 - Run validation, typecheck, lint, tests, coverage, and gap analysis.
 
 ## Exit Criteria
 
-- TC-1144, TC-1145, and TC-1172 pass with tracking tags.
+- TC-1214, TC-1215, and TC-1221 pass with tracking tags.
 - Existing measurement and evidence fixtures remain readable without migration.
 - The validated gap-analysis artifact reports no unowned requirement or task gap.
