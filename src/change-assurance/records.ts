@@ -77,6 +77,18 @@ export function validateDecision(
       event: null,
     };
   }
+  try {
+    const retainedHistory = object(history, "decision history");
+    exact(retainedHistory, ["run_id", "events"]);
+    identity(retainedHistory.run_id, "decision history run_id");
+    array(retainedHistory.events, "decision history events", false);
+  } catch {
+    return {
+      outcome: "invalid",
+      reasons: ["event_chain_invalid"],
+      event: null,
+    };
+  }
   if (!verifyIxFlowChain(history.events)) {
     return {
       outcome: "invalid",
@@ -90,11 +102,6 @@ export function validateDecision(
       reasons: ["decision_missing"],
       event: null,
     };
-  }
-  try {
-    identity(history.run_id, "decision history run_id");
-  } catch {
-    return { outcome: "invalid", reasons: ["decision_mismatch"], event: null };
   }
   if (history.run_id !== record.review_workflow.run_id) {
     return { outcome: "invalid", reasons: ["decision_mismatch"], event: null };

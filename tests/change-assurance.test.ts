@@ -804,6 +804,15 @@ describe("FR-065 verification receipts", () => {
     expect(verifyChangeAssurance(broken).checks.review.reasons).toContain(
       "event_chain_invalid",
     );
+    const malformedHistory = receiptInput();
+    delete (
+      malformedHistory.decision_history as Partial<
+        typeof malformedHistory.decision_history
+      >
+    ).events;
+    expect(
+      verifyChangeAssurance(malformedHistory).checks.review.reasons,
+    ).toContain("event_chain_invalid");
     const mismatched = receiptInput();
     (
       mismatched.decision_history.events[0].payload as { record_id: string }
