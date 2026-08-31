@@ -2,7 +2,7 @@
 id: PLAN-005
 title: "Change-assurance integrity contracts"
 type: Plan
-status: active
+status: done
 relationships:
   - target: "ix://agent-ix/quoin/US-017"
     type: "references"
