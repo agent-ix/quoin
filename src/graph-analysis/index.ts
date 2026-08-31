@@ -1,23 +1,44 @@
-/** Read-only trace graph analyses (FR-045). */
+/** Read-only evidence graph analyses (FR-062). */
 
 export {
+  DEFAULT_RELATION_KINDS,
   analyzeChangeImpact,
   analyzeChurn,
   analyzeFanOut,
-  buildTraceGraph,
+  type AuditorVerdict,
+  type BindingInput,
   type ChangeImpactAnalysis,
+  type ChangeImpactRow,
   type ChurnAnalysis,
   type ChurnEvent,
   type ChurnRow,
-  type DocumentEdge,
   type FanOutAnalysis,
   type FanOutRow,
-  type GraphLimitation,
-  type GraphLimitationKind,
-  type ImplementationNode,
-  type ObligationNode,
-  type ObligationSuiteEdge,
-  type TraceGraph,
-  type TraceGraphInput,
+  type GraphAnalysis,
+  type GraphAnalysisInput,
+  type GraphAnalysisState,
+  type GraphGap,
+  type GraphGapKind,
+  type GraphReportBase,
+  type ImpactBinding,
+  type ImpactObligation,
+  type ImpactPath,
+  type ImpactPathEdge,
+  type OwnedObligation,
 } from "./analysis.js";
-export { renderGraphAnalysis, type GraphAnalysis } from "./render.js";
+export {
+  parseAcceptedAssurancePremises,
+  parseAuditEnvelope,
+  validateAcceptedAssurancePremises,
+  validateAuditIdentity,
+  type AuditEnvelope,
+  type GraphInputResult,
+  type GraphInputViolation,
+} from "./input.js";
+export {
+  loadGraphAnalysisInput,
+  type GraphLoadFailure,
+  type GraphLoadOptions,
+  type GraphLoadResult,
+} from "./load.js";
+export { renderGraphAnalysis, renderGraphAnalysisJson } from "./render.js";

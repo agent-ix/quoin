@@ -1,671 +1,686 @@
-/**
- * Read-only analyses over the authored trace graph and evidence bindings
- * (FR-045).
- *
- * Direction matters. Documents author edges as source -> target, but the
- * relationship verbs accepted here all mean that the source depends on or
- * elaborates the target. The normalized graph is therefore target -> source:
- * a change at the target can flow downstream to the source. Verbs whose
- * direction is not safe to infer are reported as limitations rather than
- * guessed.
- */
+/** Deterministic, read-only assurance graph projections (FR-062). */
 
-import type { BundleDocument } from "../completeness/index.js";
+import type {
+  AuditReport,
+  Finding,
+  UnevaluatedCheck,
+} from "../auditor/index.js";
 import type { Binding } from "../evidence/index.js";
-import type { ImplementsRecord, Obligation } from "../quire/index.js";
-import { requirementOf } from "../assurance/index.js";
+import type {
+  AcceptedAssurancePremises,
+  AssuranceCorpusRelation,
+  AssuranceExport,
+  AssuranceObligation,
+  AssuranceSource,
+} from "../quire/index.js";
+import type { AuditEnvelope } from "./input.js";
 
-/** A change to the authored target can affect the source artifact. */
-const TARGET_TO_SOURCE = new Set([
-  "covers",
+export const DEFAULT_RELATION_KINDS = [
   "depends_on",
   "derives_from",
-  "extends",
   "implements",
   "mitigates",
   "refines",
   "requires",
   "satisfies",
   "traces_to",
-  "verifies",
-]);
+] as const;
 
-/** A change to the authored source can affect the target artifact. */
-const SOURCE_TO_TARGET = new Set(["constrains", "satisfied_by", "specifies"]);
+export type GraphAnalysisState = "complete" | "incomplete" | "not_computed";
+export type GraphGapKind =
+  | "absent-bindings-store"
+  | "dangling-relation"
+  | "empty-bindings-store"
+  | "missing-auditor-verdict"
+  | "missing-required-relation"
+  | "unknown-relation-availability"
+  | "unknown-relation-kind"
+  | "unknown-requirement"
+  | "unreadable-bindings-store"
+  | "unresolved-binding"
+  | "unresolved-obligation-owner";
 
-export type GraphLimitationKind =
-  | "duplicate-document-id"
-  | "orphan-binding"
-  | "orphan-implementation"
-  | "orphan-obligation"
-  | "unreadable-document"
-  | "unresolved-relationship"
-  | "unsupported-relationship";
-
-export interface GraphLimitation {
-  kind: GraphLimitationKind;
-  source: string;
-  target?: string;
-  relationship?: string;
+export interface GraphGap {
+  kind: GraphGapKind;
+  subject: string;
   reason: string;
 }
 
-export interface DocumentEdge {
-  /** The prerequisite, parent, or requirement being verified. */
-  from: string;
-  /** The dependent, derived artifact, implementation, or verification. */
-  to: string;
-  relationship: string;
+export type BindingInput =
+  | { availability: "available"; bindings: Binding[] }
+  | { availability: "absent"; reason: string }
+  | { availability: "unreadable"; reason: string };
+
+export interface GraphAnalysisInput {
+  assurance: AssuranceExport;
+  premises: AcceptedAssurancePremises;
+  audit: AuditEnvelope;
+  bindings: BindingInput;
 }
 
-export interface ObligationNode {
-  id: string;
-  owner: string;
+export interface GraphReportBase {
+  view: "fan-out" | "change-impact" | "churn";
+  source: AssuranceSource;
+  export: { format: "quire-assurance"; format_version: 1 };
+  premises: AcceptedAssurancePremises;
+  state: GraphAnalysisState;
+  gaps: GraphGap[];
 }
 
-export interface ObligationSuiteEdge {
+export interface OwnedObligation {
   obligation: string;
-  suite: string;
-}
-
-export interface ImplementationNode {
-  /** Stable change-impact input id: `<path>#<symbol>`. */
-  id: string;
-  path: string;
-  symbol: string;
-  forms: string[];
   requirements: string[];
-}
-
-export interface TraceGraph {
-  documents: string[];
-  documentEdges: DocumentEdge[];
-  obligations: ObligationNode[];
-  obligationSuites: ObligationSuiteEdge[];
-  implementations: ImplementationNode[];
-  limitations: GraphLimitation[];
-  complete: boolean;
-}
-
-export interface TraceGraphInput {
-  documents: BundleDocument[];
-  obligations: Obligation[];
-  bindings: Binding[];
-  implementations?: ImplementsRecord[];
-  unreadable?: Array<{ path: string; reason: string }>;
 }
 
 export interface FanOutRow {
   suite: string;
-  obligations: string[];
+  obligations: OwnedObligation[];
   obligationCount: number;
+  unresolvedBindings: string[];
 }
 
-export interface FanOutAnalysis {
+export interface FanOutAnalysis extends GraphReportBase {
   view: "fan-out";
   rows: FanOutRow[];
-  complete: boolean;
-  limitations: GraphLimitation[];
-}
-
-export interface ChangeImpactAnalysis {
-  view: "change-impact";
-  changed: string[];
-  unknown: string[];
-  /** Authored artifacts that depend on a changed document. */
-  downstreamDocuments: string[];
-  /** Claims and prerequisites on which an affected document depends. */
-  upstreamDocuments: string[];
-  /** Obligations whose owning document or evidence-producing suite changed. */
-  suspectObligations: string[];
-  /** Suites bound to a suspect obligation, or named directly as changed. */
-  affectedSuites: string[];
-  /** Production symbols in the affected requirements' implementation scope. */
-  affectedImplementations: ImplementationNode[];
-  /** Other obligations sharing an affected suite; exposed, not called suspect. */
-  sharedSuiteExposure: string[];
-  complete: boolean;
-  limitations: GraphLimitation[];
 }
 
 export interface ChurnEvent {
   who: string;
   commit: string;
   note?: string;
+  suites: string[];
 }
 
-export interface ChurnRow {
-  obligation: string;
-  affirmationCount: number;
+export interface ChurnRow extends OwnedObligation {
+  suites: string[];
   events: ChurnEvent[];
+  eventCount: number;
 }
 
-export interface ChurnAnalysis {
+export interface ChurnAnalysis extends GraphReportBase {
   view: "churn";
   rows: ChurnRow[];
-  complete: boolean;
-  limitations: GraphLimitation[];
 }
 
-/** Build the common graph once; every analysis below is a projection of it. */
-export function buildTraceGraph(input: TraceGraphInput): TraceGraph {
-  const limitations: GraphLimitation[] = (input.unreadable ?? []).map(
-    ({ path, reason }) => ({
-      kind: "unreadable-document",
-      source: path,
-      reason,
-    }),
-  );
-  const documents = new Set<string>();
-  const identity = bundleIdentity(input.documents);
-
-  for (const document of input.documents) {
-    const id = documentId(document);
-    if (!id) continue;
-    if (documents.has(id)) {
-      limitations.push({
-        kind: "duplicate-document-id",
-        source: document.path,
-        target: id,
-        reason: `more than one document declares id ${id}`,
-      });
-    }
-    documents.add(id);
-  }
-
-  const documentEdges: DocumentEdge[] = [];
-  for (const document of input.documents) {
-    const source = documentId(document);
-    if (!source) continue;
-    for (const relationship of relationshipsOf(document)) {
-      const target = localTarget(relationship.target, identity);
-      const targetToSource = TARGET_TO_SOURCE.has(relationship.type);
-      const sourceToTarget = SOURCE_TO_TARGET.has(relationship.type);
-      if (!targetToSource && !sourceToTarget) {
-        limitations.push({
-          kind: "unsupported-relationship",
-          source,
-          target: target ?? relationship.target,
-          relationship: relationship.type,
-          reason: `impact direction is not declared for ${relationship.type}`,
-        });
-        continue;
-      }
-      if (!target || !documents.has(target)) {
-        limitations.push({
-          kind: "unresolved-relationship",
-          source,
-          target: target ?? relationship.target,
-          relationship: relationship.type,
-          reason: `${relationship.target} is outside or absent from this bundle`,
-        });
-        continue;
-      }
-      documentEdges.push({
-        from: targetToSource ? target : source,
-        to: targetToSource ? source : target,
-        relationship: relationship.type,
-      });
-    }
-  }
-
-  const obligations = input.obligations.map((obligation) => ({
-    id: obligation.id,
-    owner: requirementOf(obligation.id),
-  }));
-  const obligationIds = new Set(obligations.map(({ id }) => id));
-  for (const obligation of obligations) {
-    if (!documents.has(obligation.owner)) {
-      limitations.push({
-        kind: "orphan-obligation",
-        source: obligation.id,
-        target: obligation.owner,
-        reason: `owning document ${obligation.owner} is outside or absent from this bundle`,
-      });
-    }
-  }
-
-  const obligationSuites = unique(
-    input.bindings.map(({ obligation, suite }) => ({ obligation, suite })),
-    (edge) => `${edge.obligation}\u0000${edge.suite}`,
-  );
-  for (const edge of obligationSuites) {
-    if (!obligationIds.has(edge.obligation)) {
-      limitations.push({
-        kind: "orphan-binding",
-        source: edge.suite,
-        target: edge.obligation,
-        reason: `${edge.obligation} is not a current obligation`,
-      });
-    }
-  }
-
-  const implementations = implementationNodes(input.implementations ?? []);
-  for (const implementation of implementations) {
-    for (const requirement of implementation.requirements) {
-      if (!documents.has(requirement)) {
-        limitations.push({
-          kind: "orphan-implementation",
-          source: implementation.id,
-          target: requirement,
-          reason: `${requirement} is outside or absent from this bundle`,
-        });
-      }
-    }
-  }
-
-  const graph: TraceGraph = {
-    documents: sorted(documents),
-    documentEdges: unique(
-      documentEdges,
-      (edge) => `${edge.from}\u0000${edge.to}\u0000${edge.relationship}`,
-    ).sort(edgeOrder),
-    obligations: unique(obligations, (node) => node.id).sort((a, b) =>
-      compare(a.id, b.id),
-    ),
-    obligationSuites: obligationSuites.sort(
-      (a, b) =>
-        compare(a.suite, b.suite) || compare(a.obligation, b.obligation),
-    ),
-    implementations,
-    limitations: unique(limitations, limitationKey).sort(limitationOrder),
-    complete: false,
-  };
-  graph.complete = graph.limitations.length === 0;
-  return graph;
+export interface ImpactPathEdge {
+  source: string;
+  target: string;
+  relationship: string;
 }
 
-/** Count the distinct obligations discharged by each suite. No threshold is implied. */
-export function analyzeFanOut(graph: TraceGraph): FanOutAnalysis {
-  const bySuite = new Map<string, Set<string>>();
-  for (const { suite, obligation } of graph.obligationSuites) {
-    const obligations = bySuite.get(suite) ?? new Set<string>();
-    obligations.add(obligation);
-    bySuite.set(suite, obligations);
-  }
-  const rows = [...bySuite].map(([suite, obligations]) => ({
-    suite,
-    obligations: sorted(obligations),
-    obligationCount: obligations.size,
-  }));
-  rows.sort(
-    (a, b) =>
-      b.obligationCount - a.obligationCount || compare(a.suite, b.suite),
-  );
-  return common(graph, { view: "fan-out", rows });
+export interface ImpactPath {
+  seed: string;
+  edges: ImpactPathEdge[];
 }
 
-/**
- * Compute typed impact closure without walking the graph as one undirected
- * component. Upstream claims are context; downstream requirements and their
- * evidence are suspect. Shared-suite obligations are exposure, not silently
- * promoted to suspect.
- */
-export function analyzeChangeImpact(
-  graph: TraceGraph,
-  changedIds: string[],
-): ChangeImpactAnalysis {
-  const changed = sorted(new Set(changedIds));
-  const documentIds = new Set(graph.documents);
-  const obligationIds = new Set(graph.obligations.map(({ id }) => id));
-  const suiteIds = new Set(graph.obligationSuites.map(({ suite }) => suite));
-  const implementationIds = new Set(graph.implementations.map(({ id }) => id));
-  const implementationPaths = new Set(
-    graph.implementations.map(({ path }) => path),
-  );
-  const downstream = adjacency(graph.documentEdges, "from", "to");
-  const upstream = adjacency(graph.documentEdges, "to", "from");
-  const ownerFor = new Map(
-    graph.obligations.map(({ id, owner }) => [id, owner] as const),
-  );
-  const obligationsForOwner = group(
-    graph.obligations,
-    ({ owner }) => owner,
-    ({ id }) => id,
-  );
-  const suitesForObligation = group(
-    graph.obligationSuites,
-    ({ obligation }) => obligation,
-    ({ suite }) => suite,
-  );
-  const obligationsForSuite = group(
-    graph.obligationSuites,
-    ({ suite }) => suite,
-    ({ obligation }) => obligation,
-  );
-  const implementationsForRequirement = new Map<string, ImplementationNode[]>();
-  const implementationById = new Map<string, ImplementationNode>();
-  const implementationsByPath = new Map<string, ImplementationNode[]>();
-  for (const implementation of graph.implementations) {
-    implementationById.set(implementation.id, implementation);
-    const atPath = implementationsByPath.get(implementation.path) ?? [];
-    atPath.push(implementation);
-    implementationsByPath.set(implementation.path, atPath);
-    for (const requirement of implementation.requirements) {
-      const nodes = implementationsForRequirement.get(requirement) ?? [];
-      nodes.push(implementation);
-      implementationsForRequirement.set(requirement, nodes);
-    }
-  }
-
-  const unknown = new Set<string>();
-  const changedDocumentSeeds = new Set<string>();
-  const affectedDocuments = new Set<string>();
-  const suspectObligations = new Set<string>();
-  const obligationsRequiringAllSuites = new Set<string>();
-  const affectedSuites = new Set<string>();
-  const affectedImplementationIds = new Set<string>();
-  const codeChangedRequirements = new Set<string>();
-
-  for (const id of changed) {
-    if (documentIds.has(id)) {
-      changedDocumentSeeds.add(id);
-    } else if (obligationIds.has(id)) {
-      suspectObligations.add(id);
-      obligationsRequiringAllSuites.add(id);
-    } else if (suiteIds.has(id)) {
-      affectedSuites.add(id);
-      for (const obligation of obligationsForSuite.get(id) ?? [])
-        suspectObligations.add(obligation);
-    } else if (implementationIds.has(id) || implementationPaths.has(id)) {
-      const implementations = implementationIds.has(id)
-        ? [implementationById.get(id)!]
-        : (implementationsByPath.get(id) ?? []);
-      for (const implementation of implementations) {
-        affectedImplementationIds.add(implementation.id);
-        for (const requirement of implementation.requirements)
-          codeChangedRequirements.add(requirement);
-      }
-    } else {
-      unknown.add(id);
-    }
-  }
-
-  for (const id of changedDocumentSeeds) affectedDocuments.add(id);
-  for (const dependent of closure(changedDocumentSeeds, downstream)) {
-    affectedDocuments.add(dependent);
-  }
-
-  for (const document of affectedDocuments) {
-    for (const obligation of obligationsForOwner.get(document) ?? []) {
-      suspectObligations.add(obligation);
-      obligationsRequiringAllSuites.add(obligation);
-    }
-    for (const implementation of implementationsForRequirement.get(document) ??
-      [])
-      affectedImplementationIds.add(implementation.id);
-  }
-  for (const obligation of obligationsRequiringAllSuites) {
-    const owner = ownerFor.get(obligation);
-    if (!owner) continue;
-    for (const implementation of implementationsForRequirement.get(owner) ?? [])
-      affectedImplementationIds.add(implementation.id);
-  }
-  for (const requirement of codeChangedRequirements) {
-    for (const obligation of obligationsForOwner.get(requirement) ?? []) {
-      suspectObligations.add(obligation);
-      obligationsRequiringAllSuites.add(obligation);
-    }
-  }
-  for (const obligation of obligationsRequiringAllSuites) {
-    for (const suite of suitesForObligation.get(obligation) ?? [])
-      affectedSuites.add(suite);
-  }
-
-  const upstreamDocuments = new Set<string>();
-  const upstreamSeeds = new Set(affectedDocuments);
-  for (const obligation of suspectObligations) {
-    const owner = ownerFor.get(obligation);
-    if (owner) upstreamSeeds.add(owner);
-  }
-  for (const prerequisite of closure(upstreamSeeds, upstream)) {
-    if (!affectedDocuments.has(prerequisite)) {
-      upstreamDocuments.add(prerequisite);
-    }
-  }
-
-  const sharedSuiteExposure = new Set<string>();
-  for (const suite of affectedSuites) {
-    for (const obligation of obligationsForSuite.get(suite) ?? []) {
-      if (!suspectObligations.has(obligation))
-        sharedSuiteExposure.add(obligation);
-    }
-  }
-
-  return {
-    ...common(graph, {
-      view: "change-impact" as const,
-      changed,
-      unknown: sorted(unknown),
-      downstreamDocuments: sorted(affectedDocuments),
-      upstreamDocuments: sorted(upstreamDocuments),
-      suspectObligations: sorted(suspectObligations),
-      affectedSuites: sorted(affectedSuites),
-      affectedImplementations: graph.implementations.filter(({ id }) =>
-        affectedImplementationIds.has(id),
-      ),
-      sharedSuiteExposure: sorted(sharedSuiteExposure),
-    }),
-    // Graph completeness and query resolution are separate failure modes. A
-    // perfectly readable graph still cannot answer for an id it does not know.
-    complete: graph.complete && unknown.size === 0,
-  };
+export interface AuditorVerdict {
+  findings: Finding[];
+  healthy: string[];
+  unevaluated: UnevaluatedCheck[];
 }
 
-/**
- * Rank obligation-level re-affirmation events. `affirm()` copies one event to
- * every selected suite binding, so identical events are deliberately
- * deduplicated here instead of counting the number of suites.
- */
-export function analyzeChurn(
-  graph: TraceGraph,
-  bindings: Binding[],
-): ChurnAnalysis {
-  const events = new Map<string, Map<string, ChurnEvent>>();
-  for (const binding of bindings) {
-    for (const affirmation of binding.affirmations ?? []) {
-      const event: ChurnEvent = {
-        who: affirmation.who,
-        commit: affirmation.commit,
-        ...(affirmation.note === undefined ? {} : { note: affirmation.note }),
-      };
-      const byIdentity = events.get(binding.obligation) ?? new Map();
-      byIdentity.set(eventKey(event), event);
-      events.set(binding.obligation, byIdentity);
-    }
-  }
-  const rows = [...events].map(([obligation, byIdentity]) => ({
-    obligation,
-    affirmationCount: byIdentity.size,
-    events: [...byIdentity.values()].sort(eventOrder),
-  }));
-  rows.sort(
-    (a, b) =>
-      b.affirmationCount - a.affirmationCount ||
-      compare(a.obligation, b.obligation),
-  );
-  return common(graph, { view: "churn", rows });
+export interface ImpactBinding {
+  suite: string;
+  auditorVerdict: AuditorVerdict;
 }
 
-function implementationNodes(
-  records: ImplementsRecord[],
-): ImplementationNode[] {
-  const nodes = new Map<string, ImplementationNode>();
-  for (const record of records) {
-    const id = `${record.path}#${record.symbol}`;
-    const prior = nodes.get(id) ?? {
-      id,
-      path: record.path,
-      symbol: record.symbol,
-      forms: [],
-      requirements: [],
+export interface ImpactObligation extends OwnedObligation {
+  bindings: ImpactBinding[];
+}
+
+export interface ChangeImpactRow {
+  requirement: string;
+  depth: number;
+  path: ImpactPath;
+  obligations: ImpactObligation[];
+}
+
+export interface ChangeImpactAnalysis extends GraphReportBase {
+  view: "change-impact";
+  requested: string[];
+  relationKinds: string[];
+  rows: ChangeImpactRow[];
+}
+
+export type GraphAnalysis =
+  FanOutAnalysis | ChangeImpactAnalysis | ChurnAnalysis;
+
+export function analyzeFanOut(input: GraphAnalysisInput): FanOutAnalysis {
+  const report = base(input, "fan-out");
+  if (input.bindings.availability !== "available") {
+    return { ...report, state: "not_computed", rows: [] };
+  }
+  const owners = obligationOwners(input.assurance);
+  const live = new Set(input.assurance.obligations.map(({ id }) => id));
+  const rows = new Map<
+    string,
+    { live: Set<string>; unresolved: Set<string> }
+  >();
+  for (const binding of input.bindings.bindings) {
+    const row = rows.get(binding.suite) ?? {
+      live: new Set(),
+      unresolved: new Set(),
     };
-    prior.forms = sorted(new Set([...prior.forms, record.form]));
-    prior.requirements = sorted(
-      new Set([...prior.requirements, requirementOf(record.trace_id)]),
-    );
-    nodes.set(id, prior);
+    if (live.has(binding.obligation)) row.live.add(binding.obligation);
+    else {
+      row.unresolved.add(binding.obligation);
+      report.gaps.push({
+        kind: "unresolved-binding",
+        subject: `${binding.suite}:${binding.obligation}`,
+        reason: `${binding.obligation} is absent from the accepted assurance export`,
+      });
+    }
+    rows.set(binding.suite, row);
   }
-  return [...nodes.values()].sort((a, b) => compare(a.id, b.id));
+  return finish({
+    ...report,
+    rows: [...rows.entries()]
+      .sort(([left], [right]) => compare(left, right))
+      .map(([suite, row]) => ({
+        suite,
+        obligations: sorted(row.live).map((obligation) => ({
+          obligation,
+          requirements: owners.get(obligation) ?? [],
+        })),
+        obligationCount: row.live.size,
+        unresolvedBindings: sorted(row.unresolved),
+      })),
+  });
 }
 
-function documentId(document: BundleDocument): string | null {
-  const id = document.frontmatter.id;
-  return typeof id === "string" && id.length > 0 ? id : null;
-}
-
-function relationshipsOf(
-  document: BundleDocument,
-): Array<{ type: string; target: string }> {
-  const relationships = document.frontmatter.relationships;
-  if (!Array.isArray(relationships)) return [];
-  const out: Array<{ type: string; target: string }> = [];
-  for (const value of relationships as Array<Record<string, unknown>>) {
-    if (!value || typeof value !== "object") continue;
-    const type = typeof value.type === "string" ? value.type : "";
-    const rawTarget = typeof value.target === "string" ? value.target : "";
-    if (type && rawTarget) out.push({ type, target: rawTarget });
+export function analyzeChurn(input: GraphAnalysisInput): ChurnAnalysis {
+  const report = base(input, "churn");
+  if (input.bindings.availability !== "available") {
+    return { ...report, state: "not_computed", rows: [] };
   }
-  return out;
+  const owners = obligationOwners(input.assurance);
+  const live = new Set(input.assurance.obligations.map(({ id }) => id));
+  const suites = new Map<string, Set<string>>();
+  const events = new Map<string, Map<string, ChurnEvent>>();
+  for (const binding of input.bindings.bindings) {
+    if (!live.has(binding.obligation)) {
+      if ((binding.affirmations?.length ?? 0) > 0) {
+        report.gaps.push({
+          kind: "unresolved-binding",
+          subject: `${binding.suite}:${binding.obligation}`,
+          reason: `affirmation history belongs to absent obligation ${binding.obligation}`,
+        });
+      }
+      continue;
+    }
+    const boundSuites = suites.get(binding.obligation) ?? new Set<string>();
+    boundSuites.add(binding.suite);
+    suites.set(binding.obligation, boundSuites);
+    const byKey =
+      events.get(binding.obligation) ?? new Map<string, ChurnEvent>();
+    for (const affirmation of binding.affirmations ?? []) {
+      const key = [
+        binding.obligation,
+        affirmation.who,
+        affirmation.commit,
+        affirmation.note ?? "",
+      ].join("\u0000");
+      const existing = byKey.get(key);
+      if (existing)
+        existing.suites = sorted(new Set([...existing.suites, binding.suite]));
+      else {
+        byKey.set(key, {
+          who: affirmation.who,
+          commit: affirmation.commit,
+          ...(affirmation.note === undefined ? {} : { note: affirmation.note }),
+          suites: [binding.suite],
+        });
+      }
+    }
+    events.set(binding.obligation, byKey);
+  }
+  const rows = input.assurance.obligations.map(({ id }) => {
+    const rowEvents = [...(events.get(id)?.values() ?? [])].sort(eventOrder);
+    return {
+      obligation: id,
+      requirements: owners.get(id) ?? [],
+      suites: sorted(suites.get(id) ?? new Set()),
+      events: rowEvents,
+      eventCount: rowEvents.length,
+    };
+  });
+  rows.sort(
+    (left, right) =>
+      right.eventCount - left.eventCount ||
+      compare(left.obligation, right.obligation),
+  );
+  return finish({ ...report, rows });
 }
 
-interface BundleIdentity {
-  org: string;
-  component: string;
-}
+export function analyzeChangeImpact(
+  input: GraphAnalysisInput,
+  requested: string[],
+  selectedRelations?: string[],
+): ChangeImpactAnalysis {
+  const report = base(input, "change-impact");
+  const relationKinds = sorted(
+    new Set(selectedRelations ?? DEFAULT_RELATION_KINDS),
+  );
+  const initial: ChangeImpactAnalysis = {
+    ...report,
+    requested: sorted(new Set(requested)),
+    relationKinds,
+    rows: [],
+  };
+  if (input.bindings.availability !== "available")
+    return { ...initial, state: "not_computed" };
 
-/** The master-requirements document declares the local ix URI authority. */
-function bundleIdentity(documents: BundleDocument[]): BundleIdentity | null {
-  for (const document of documents) {
-    const org = document.frontmatter.org;
-    const component =
-      document.frontmatter.component ?? document.frontmatter.name;
-    if (
-      typeof org === "string" &&
-      org.length > 0 &&
-      typeof component === "string" &&
-      component.length > 0
-    ) {
-      return { org, component };
+  const availableKinds = new Set(
+    input.assurance.relation_kinds.map(({ kind }) => kind),
+  );
+  for (const kind of relationKinds.filter(
+    (candidate) => !availableKinds.has(candidate),
+  )) {
+    initial.gaps.push({
+      kind: "unknown-relation-kind",
+      subject: kind,
+      reason: `relationship kind ${kind} is absent from the accepted export vocabulary`,
+    });
+  }
+  if (initial.gaps.some(({ kind }) => kind === "unknown-relation-kind")) {
+    return {
+      ...initial,
+      state: "not_computed",
+      gaps: uniqueGaps(initial.gaps),
+    };
+  }
+
+  const artifactIds = new Set(input.assurance.artifacts.map(({ id }) => id));
+  const validSeeds: string[] = [];
+  for (const seed of initial.requested) {
+    if (artifactIds.has(seed)) validSeeds.push(seed);
+    else
+      initial.gaps.push({
+        kind: "unknown-requirement",
+        subject: seed,
+        reason: `${seed} is absent from the accepted assurance export`,
+      });
+  }
+  const edges = selectedCorpusEdges(
+    input.assurance,
+    new Set(relationKinds),
+    artifactIds,
+    initial.gaps,
+  );
+  const paths = shortestReversePaths(validSeeds, edges);
+  const owners = obligationOwners(input.assurance);
+  const obligationsByOwner = new Map<string, AssuranceObligation[]>();
+  for (const obligation of input.assurance.obligations) {
+    for (const owner of owners.get(obligation.id) ?? []) {
+      const group = obligationsByOwner.get(owner) ?? [];
+      group.push(obligation);
+      obligationsByOwner.set(owner, group);
     }
   }
-  return null;
+  const bindingsByObligation = groupBindings(input.bindings.bindings);
+  const rows = [...paths.entries()]
+    .sort(([left], [right]) => compare(left, right))
+    .map(([requirement, path]) => ({
+      requirement,
+      depth: path.edges.length,
+      path,
+      obligations: (obligationsByOwner.get(requirement) ?? [])
+        .slice()
+        .sort((left, right) => compare(left.id, right.id))
+        .map((obligation) => ({
+          obligation: obligation.id,
+          requirements: owners.get(obligation.id) ?? [],
+          bindings: (bindingsByObligation.get(obligation.id) ?? []).map(
+            (binding) => ({
+              suite: binding.suite,
+              auditorVerdict: verdictFor(
+                input.audit.report,
+                obligation.id,
+                initial.gaps,
+              ),
+            }),
+          ),
+        })),
+    }));
+  return finish({ ...initial, rows });
 }
 
-/**
- * Resolve a bare id or a full local ix URI. External URIs stay unresolved;
- * taking only their last segment would alias `other/FR-001` to local FR-001.
- */
-function localTarget(
-  target: string,
-  identity: BundleIdentity | null,
-): string | null {
-  if (!target.startsWith("ix://")) return target;
-  const match = /^ix:\/\/([^/]+)\/([^/]+)\/([^/]+)$/.exec(target);
-  if (!match || !identity) return null;
-  return match[1] === identity.org && match[2] === identity.component
-    ? match[3]
-    : null;
-}
-
-function adjacency(
-  edges: DocumentEdge[],
-  key: "from" | "to",
-  value: "from" | "to",
-): Map<string, string[]> {
-  const result = new Map<string, Set<string>>();
-  for (const edge of edges) {
-    const values = result.get(edge[key]) ?? new Set<string>();
-    values.add(edge[value]);
-    result.set(edge[key], values);
+function base<V extends GraphReportBase["view"]>(
+  input: GraphAnalysisInput,
+  view: V,
+): GraphReportBase & { view: V } {
+  const gaps: GraphGap[] = [];
+  if (input.bindings.availability === "absent") {
+    gaps.push({
+      kind: "absent-bindings-store",
+      subject: "bindings.json",
+      reason: input.bindings.reason,
+    });
+  } else if (input.bindings.availability === "unreadable") {
+    gaps.push({
+      kind: "unreadable-bindings-store",
+      subject: "bindings.json",
+      reason: input.bindings.reason,
+    });
+  } else if (input.bindings.bindings.length === 0) {
+    gaps.push({
+      kind: "empty-bindings-store",
+      subject: "bindings.json",
+      reason:
+        "the bindings store is present and valid but contains no bindings",
+    });
   }
-  return new Map(
-    [...result].map(([id, values]) => [id, sorted(values)] as const),
-  );
-}
-
-function closure(
-  seeds: Iterable<string>,
-  edges: Map<string, string[]>,
-): Set<string> {
-  const seen = new Set<string>();
-  const queue = [...seeds];
-  for (let cursor = 0; cursor < queue.length; cursor += 1) {
-    const current = queue[cursor];
-    for (const next of edges.get(current) ?? []) {
-      if (seen.has(next)) continue;
-      seen.add(next);
-      queue.push(next);
+  if (input.bindings.availability === "available") {
+    const live = new Set(input.assurance.obligations.map(({ id }) => id));
+    for (const binding of input.bindings.bindings) {
+      if (!live.has(binding.obligation)) {
+        gaps.push({
+          kind: "unresolved-binding",
+          subject: `${binding.suite}:${binding.obligation}`,
+          reason: `${binding.obligation} is absent from the accepted assurance export`,
+        });
+      }
     }
   }
-  return seen;
-}
-
-function group<T>(
-  values: T[],
-  key: (value: T) => string,
-  item: (value: T) => string,
-): Map<string, string[]> {
-  const result = new Map<string, Set<string>>();
-  for (const value of values) {
-    const items = result.get(key(value)) ?? new Set<string>();
-    items.add(item(value));
-    result.set(key(value), items);
+  for (const observation of input.assurance.relation_observations) {
+    if (observation.availability === "unknown") {
+      gaps.push({
+        kind: "unknown-relation-availability",
+        subject: observation.subject ?? observation.declaration,
+        reason:
+          observation.reason ??
+          `availability of ${observation.declaration} is unknown`,
+      });
+    } else if (observation.availability === "missing") {
+      gaps.push({
+        kind: "missing-required-relation",
+        subject: observation.subject ?? observation.declaration,
+        reason:
+          observation.reason ?? `${observation.declaration} is not satisfied`,
+      });
+    }
   }
-  return new Map(
-    [...result].map(([id, items]) => [id, sorted(items)] as const),
-  );
-}
-
-function common<T extends object>(
-  graph: TraceGraph,
-  analysis: T,
-): T & { complete: boolean; limitations: GraphLimitation[] } {
+  const owners = obligationOwners(input.assurance);
+  for (const obligation of input.assurance.obligations) {
+    if ((owners.get(obligation.id) ?? []).length === 0) {
+      gaps.push({
+        kind: "unresolved-obligation-owner",
+        subject: obligation.id,
+        reason: `${obligation.document} does not identify an accepted artifact`,
+      });
+    }
+  }
   return {
-    ...analysis,
-    complete: graph.complete,
-    limitations: graph.limitations,
+    view,
+    source: input.assurance.source,
+    export: {
+      format: input.assurance.format,
+      format_version: input.assurance.format_version,
+    },
+    premises: input.premises,
+    state: gaps.length === 0 ? "complete" : "incomplete",
+    gaps: uniqueGaps(gaps),
   };
 }
 
-function unique<T>(values: T[], key: (value: T) => string): T[] {
-  return [...new Map(values.map((value) => [key(value), value])).values()];
+function finish<T extends GraphReportBase>(report: T): T {
+  const gaps = uniqueGaps(report.gaps);
+  return {
+    ...report,
+    state:
+      report.state === "not_computed"
+        ? "not_computed"
+        : gaps.length === 0
+          ? "complete"
+          : "incomplete",
+    gaps,
+  };
+}
+
+function obligationOwners(exportValue: AssuranceExport): Map<string, string[]> {
+  const artifactsByPath = new Map<string, string[]>();
+  for (const artifact of exportValue.artifacts) {
+    const group = artifactsByPath.get(artifact.locator.path) ?? [];
+    group.push(artifact.id);
+    artifactsByPath.set(artifact.locator.path, group);
+  }
+  return new Map(
+    exportValue.obligations.map((obligation) => [
+      obligation.id,
+      sorted(artifactsByPath.get(obligation.document) ?? []),
+    ]),
+  );
+}
+
+function groupBindings(bindings: Binding[]): Map<string, Binding[]> {
+  const groups = new Map<string, Map<string, Binding>>();
+  for (const binding of bindings) {
+    const group = groups.get(binding.obligation) ?? new Map<string, Binding>();
+    if (!group.has(binding.suite)) group.set(binding.suite, binding);
+    groups.set(binding.obligation, group);
+  }
+  return new Map(
+    [...groups].map(([obligation, group]) => [
+      obligation,
+      [...group.values()].sort((left, right) =>
+        compare(left.suite, right.suite),
+      ),
+    ]),
+  );
+}
+
+function verdictFor(
+  report: AuditReport,
+  obligation: string,
+  gaps: GraphGap[],
+): AuditorVerdict {
+  const verdict = {
+    findings: report.findings.filter(
+      (finding) => finding.obligation === obligation,
+    ),
+    healthy: report.healthy.filter((id) => id === obligation),
+    unevaluated: report.unevaluated.filter(
+      (check) => check.obligation === obligation,
+    ),
+  };
+  if (
+    verdict.findings.length === 0 &&
+    verdict.healthy.length === 0 &&
+    verdict.unevaluated.length === 0
+  ) {
+    gaps.push({
+      kind: "missing-auditor-verdict",
+      subject: obligation,
+      reason: `${obligation} has no FR-032 finding, healthy result, or unevaluated check`,
+    });
+  }
+  return verdict;
+}
+
+function selectedCorpusEdges(
+  exportValue: AssuranceExport,
+  selection: Set<string>,
+  artifactIds: Set<string>,
+  gaps: GraphGap[],
+): AssuranceCorpusRelation[] {
+  const edges: AssuranceCorpusRelation[] = [];
+  for (const relation of exportValue.relations) {
+    if (relation.kind !== "corpus" || !selection.has(relation.edge_type))
+      continue;
+    if (
+      relation.resolution !== "resolved" ||
+      !artifactIds.has(relation.source) ||
+      !artifactIds.has(relation.target)
+    ) {
+      gaps.push({
+        kind: "dangling-relation",
+        subject: `${relation.source}:${relation.edge_type}:${relation.target}`,
+        reason: "selected relationship cannot resolve both accepted artifacts",
+      });
+    } else edges.push(relation);
+  }
+  return edges.sort(corpusEdgeOrder);
+}
+
+function shortestReversePaths(
+  seeds: string[],
+  edges: AssuranceCorpusRelation[],
+): Map<string, ImpactPath> {
+  const dependents = new Map<string, AssuranceCorpusRelation[]>();
+  for (const edge of edges) {
+    const group = dependents.get(edge.target) ?? [];
+    group.push(edge);
+    dependents.set(edge.target, group);
+  }
+  for (const group of dependents.values()) group.sort(corpusEdgeOrder);
+  const paths = new Map<string, ImpactPath>();
+  const queue = new PathQueue();
+  for (const seed of seeds.sort(compare)) {
+    const candidate: ImpactPath = { seed, edges: [] };
+    if (betterPath(candidate, paths.get(seed))) {
+      paths.set(seed, candidate);
+      queue.push({ node: seed, path: candidate });
+    }
+  }
+  while (queue.length > 0) {
+    const current = queue.pop()!;
+    if (!samePath(paths.get(current.node), current.path)) continue;
+    for (const edge of dependents.get(current.node) ?? []) {
+      const candidate: ImpactPath = {
+        seed: current.path.seed,
+        edges: [
+          ...current.path.edges,
+          {
+            source: edge.source,
+            target: edge.target,
+            relationship: edge.edge_type,
+          },
+        ],
+      };
+      if (betterPath(candidate, paths.get(edge.source))) {
+        paths.set(edge.source, candidate);
+        queue.push({ node: edge.source, path: candidate });
+      }
+    }
+  }
+  return paths;
+}
+
+interface QueuedPath {
+  node: string;
+  path: ImpactPath;
+}
+
+/** Binary min-heap: shared/cyclic closures do not repeatedly sort the frontier. */
+class PathQueue {
+  private readonly items: QueuedPath[] = [];
+
+  get length(): number {
+    return this.items.length;
+  }
+
+  push(item: QueuedPath): void {
+    this.items.push(item);
+    let index = this.items.length - 1;
+    while (index > 0) {
+      const parent = Math.floor((index - 1) / 2);
+      if (queueOrder(this.items[parent], item) <= 0) break;
+      this.items[index] = this.items[parent];
+      index = parent;
+    }
+    this.items[index] = item;
+  }
+
+  pop(): QueuedPath | undefined {
+    const first = this.items[0];
+    const last = this.items.pop();
+    if (first === undefined || last === undefined || this.items.length === 0) {
+      return first;
+    }
+    let index = 0;
+    while (true) {
+      const left = index * 2 + 1;
+      if (left >= this.items.length) break;
+      const right = left + 1;
+      const child =
+        right < this.items.length &&
+        queueOrder(this.items[right], this.items[left]) < 0
+          ? right
+          : left;
+      if (queueOrder(this.items[child], last) >= 0) break;
+      this.items[index] = this.items[child];
+      index = child;
+    }
+    this.items[index] = last;
+    return first;
+  }
+}
+
+function betterPath(candidate: ImpactPath, current?: ImpactPath): boolean {
+  if (!current) return true;
+  return candidate.edges.length !== current.edges.length
+    ? candidate.edges.length < current.edges.length
+    : compare(pathKey(candidate), pathKey(current)) < 0;
+}
+
+function samePath(left: ImpactPath | undefined, right: ImpactPath): boolean {
+  return left !== undefined && pathKey(left) === pathKey(right);
+}
+
+function pathKey(path: ImpactPath): string {
+  return [
+    path.seed,
+    ...path.edges.flatMap(({ source, target, relationship }) => [
+      source,
+      target,
+      relationship,
+    ]),
+  ].join("\u0000");
+}
+
+function queueOrder(left: QueuedPath, right: QueuedPath): number {
+  return (
+    left.path.edges.length - right.path.edges.length ||
+    compare(pathKey(left.path), pathKey(right.path)) ||
+    compare(left.node, right.node)
+  );
+}
+
+function corpusEdgeOrder(
+  left: AssuranceCorpusRelation,
+  right: AssuranceCorpusRelation,
+): number {
+  return (
+    compare(left.source, right.source) ||
+    compare(left.target, right.target) ||
+    compare(left.edge_type, right.edge_type)
+  );
+}
+
+function eventOrder(left: ChurnEvent, right: ChurnEvent): number {
+  return (
+    compare(left.who, right.who) ||
+    compare(left.commit, right.commit) ||
+    compare(left.note ?? "", right.note ?? "")
+  );
+}
+
+function uniqueGaps(gaps: GraphGap[]): GraphGap[] {
+  const byKey = new Map<string, GraphGap>();
+  for (const gap of gaps)
+    byKey.set(`${gap.kind}\u0000${gap.subject}\u0000${gap.reason}`, gap);
+  return [...byKey.values()].sort(
+    (left, right) =>
+      compare(left.kind, right.kind) ||
+      compare(left.subject, right.subject) ||
+      compare(left.reason, right.reason),
+  );
 }
 
 function sorted(values: Iterable<string>): string[] {
   return [...values].sort(compare);
 }
 
-function compare(a: string, b: string): number {
-  return a < b ? -1 : a > b ? 1 : 0;
-}
-
-function edgeOrder(a: DocumentEdge, b: DocumentEdge): number {
-  return (
-    compare(a.from, b.from) ||
-    compare(a.to, b.to) ||
-    compare(a.relationship, b.relationship)
-  );
-}
-
-function limitationKey(limitation: GraphLimitation): string {
-  return [
-    limitation.kind,
-    limitation.source,
-    limitation.target ?? "",
-    limitation.relationship ?? "",
-    limitation.reason,
-  ].join("\u0000");
-}
-
-function limitationOrder(a: GraphLimitation, b: GraphLimitation): number {
-  return compare(limitationKey(a), limitationKey(b));
-}
-
-function eventKey(event: ChurnEvent): string {
-  return `${event.commit}\u0000${event.who}\u0000${event.note ?? ""}`;
-}
-
-function eventOrder(a: ChurnEvent, b: ChurnEvent): number {
-  return compare(eventKey(a), eventKey(b));
+function compare(left: string, right: string): number {
+  return left === right ? 0 : left < right ? -1 : 1;
 }

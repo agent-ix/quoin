@@ -33,6 +33,7 @@ export {
   runPath,
   mockInspectionPath,
   short,
+  StoreReadError,
   storeRoot,
   suitesPath,
   writeBaseline,

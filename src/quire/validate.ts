@@ -12,6 +12,7 @@ import { Ajv2020 } from "ajv/dist/2020.js";
 import type { ErrorObject, ValidateFunction } from "ajv";
 
 import { readSchema, type SchemaName } from "./contract.js";
+import type { AssuranceExport } from "./assurance.js";
 import type { CoverageReport, PropertiesReport } from "./types.js";
 
 /** A payload that did not satisfy the published contract. */
@@ -90,6 +91,13 @@ export function validateProperties(
   return validate<PropertiesReport>("properties-v1.schema.json", payload);
 }
 
+/** Validate a supplied source-grounded assurance-v1 export. */
+export function validateAssurance(
+  payload: unknown,
+): ValidationResult<AssuranceExport> {
+  return validate<AssuranceExport>("assurance-v1.schema.json", payload);
+}
+
 /**
  * Parse and validate in one step, so a caller never holds an unvalidated
  * payload it could accidentally use.
@@ -108,6 +116,13 @@ export function parseProperties(
   text: string,
 ): ValidationResult<PropertiesReport> {
   return parseThen(text, "properties-v1.schema.json", validateProperties);
+}
+
+/** As {@link parseCoverage}, for an existing assurance-export artifact. */
+export function parseAssurance(
+  text: string,
+): ValidationResult<AssuranceExport> {
+  return parseThen(text, "assurance-v1.schema.json", validateAssurance);
 }
 
 function parseThen<T>(

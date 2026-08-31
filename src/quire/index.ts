@@ -19,13 +19,34 @@ export {
 } from "./contract.js";
 
 export {
+  parseAssurance,
   parseCoverage,
   parseProperties,
+  validateAssurance,
   validateCoverage,
   validateProperties,
   type ContractViolation,
   type ValidationResult,
 } from "./validate.js";
+
+export type {
+  AcceptedAssurancePremises,
+  AssuranceArtifact,
+  AssuranceCorpusRelation,
+  AssuranceExport,
+  AssuranceFreshness,
+  AssuranceImplementsRelation,
+  AssuranceLocator,
+  AssuranceModulePremise,
+  AssuranceObligation,
+  AssuranceRelation,
+  AssuranceRelationKind,
+  AssuranceRelationObservation,
+  AssuranceSchemaPremise,
+  AssuranceSource,
+  AssuranceSymbol,
+  AssuranceVerifiesRelation,
+} from "./assurance.js";
 
 export type {
   AcShape,

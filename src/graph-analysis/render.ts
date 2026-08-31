@@ -1,39 +1,63 @@
-/** Deterministic Markdown renderers for FR-045 graph analyses. */
+/** Deterministic human and JSON projections of the same FR-062 report. */
 
+import { canonicalJson } from "../evidence/index.js";
 import type {
   ChangeImpactAnalysis,
   ChurnAnalysis,
   FanOutAnalysis,
-  GraphLimitation,
+  GraphAnalysis,
 } from "./analysis.js";
 
-export type GraphAnalysis =
-  FanOutAnalysis | ChangeImpactAnalysis | ChurnAnalysis;
+export function renderGraphAnalysisJson(analysis: GraphAnalysis): string {
+  return canonicalJson(analysis);
+}
 
 export function renderGraphAnalysis(analysis: GraphAnalysis): string {
-  const lines = [`# Trace graph: ${analysis.view}`, ""];
-  lines.push(
-    analysis.complete
-      ? "Graph completeness: **complete**"
-      : "Graph completeness: **incomplete** — see unknown inputs and/or limitations below.",
+  const lines = [
+    `# Evidence graph: ${analysis.view}`,
     "",
-  );
+    `State: **${analysis.state}**`,
+    `Source: \`${escapeCode(analysis.source.repository)}@${analysis.source.revision}\``,
+    `Export: \`${analysis.export.format} v${analysis.export.format_version}\``,
+    "",
+    "## Accepted module premises",
+    "",
+  ];
+  if (analysis.premises.modules.length === 0) lines.push("*(none)*", "");
+  else {
+    for (const module of analysis.premises.modules) {
+      lines.push(
+        `- \`${escapeCode(module.name)}@${escapeCode(module.version)}\`: ${module.schemas.length} schema(s)`,
+      );
+    }
+    lines.push("");
+  }
 
   if (analysis.view === "fan-out") renderFanOut(analysis, lines);
-  if (analysis.view === "change-impact") renderImpact(analysis, lines);
-  if (analysis.view === "churn") renderChurn(analysis, lines);
-  renderLimitations(analysis.limitations, lines);
+  else if (analysis.view === "change-impact") renderImpact(analysis, lines);
+  else renderChurn(analysis, lines);
+  renderGaps(analysis, lines);
   return `${lines.join("\n").trimEnd()}\n`;
 }
 
 function renderFanOut(analysis: FanOutAnalysis, lines: string[]): void {
-  lines.push("| Suite | Obligation count | Obligations |", "|---|---:|---|");
-  if (analysis.rows.length === 0) {
-    lines.push("| *(none)* | 0 | — |");
-  } else {
+  lines.push(
+    "## Fan-out",
+    "",
+    "| Suite | Live obligations | Count | Unresolved |",
+    "| --- | --- | ---: | --- |",
+  );
+  if (analysis.rows.length === 0) lines.push("| *(none)* | — | 0 | — |");
+  else {
     for (const row of analysis.rows) {
+      const obligations = row.obligations
+        .map(
+          ({ obligation, requirements }) =>
+            `${obligation} (${requirements.join(", ") || "owner unknown"})`,
+        )
+        .join(", ");
       lines.push(
-        `| ${cell(row.suite)} | ${row.obligationCount} | ${row.obligations.map(code).join(", ")} |`,
+        `| ${cell(row.suite)} | ${cell(obligations) || "—"} | ${row.obligationCount} | ${cell(row.unresolvedBindings.join(", ")) || "—"} |`,
       );
     }
   }
@@ -41,53 +65,54 @@ function renderFanOut(analysis: FanOutAnalysis, lines: string[]): void {
 }
 
 function renderImpact(analysis: ChangeImpactAnalysis, lines: string[]): void {
-  list(lines, "Changed", analysis.changed);
-  list(lines, "Unknown inputs", analysis.unknown);
-  list(lines, "Downstream documents", analysis.downstreamDocuments);
-  list(lines, "Upstream documents", analysis.upstreamDocuments);
-  list(lines, "Suspect obligations", analysis.suspectObligations);
-  list(lines, "Affected suites", analysis.affectedSuites);
-  list(
-    lines,
-    "Affected implementation",
-    analysis.affectedImplementations.map(
-      ({ id, requirements }) => `${id} (${requirements.join(", ")})`,
-    ),
+  lines.push(
+    "## Change impact",
+    "",
+    `Requested: ${analysis.requested.map(code).join(", ") || "*(none)*"}`,
+    `Relations: ${analysis.relationKinds.map(code).join(", ") || "*(none)*"}`,
+    "",
+    "| Requirement | Depth | Seed | Obligations |",
+    "| --- | ---: | --- | --- |",
   );
-  list(lines, "Shared-suite exposure", analysis.sharedSuiteExposure);
-}
-
-function renderChurn(analysis: ChurnAnalysis, lines: string[]): void {
-  lines.push("| Obligation | Distinct affirmation events |", "|---|---:|");
-  if (analysis.rows.length === 0) {
-    lines.push("| *(none)* | 0 |");
-  } else {
+  if (analysis.rows.length === 0) lines.push("| *(none)* | — | — | — |");
+  else {
     for (const row of analysis.rows) {
-      lines.push(`| ${code(row.obligation)} | ${row.affirmationCount} |`);
+      const obligations = row.obligations
+        .map(({ obligation }) => obligation)
+        .join(", ");
+      lines.push(
+        `| ${cell(row.requirement)} | ${row.depth} | ${cell(row.path.seed)} | ${cell(obligations) || "—"} |`,
+      );
     }
   }
   lines.push("");
 }
 
-function renderLimitations(
-  limitations: GraphLimitation[],
-  lines: string[],
-): void {
-  if (limitations.length === 0) return;
-  lines.push("## Limitations", "");
-  for (const limitation of limitations) {
-    const edge = limitation.target ? ` → ${code(limitation.target)}` : "";
-    lines.push(
-      `- **${limitation.kind}** ${code(limitation.source)}${edge}: ${limitation.reason}`,
-    );
+function renderChurn(analysis: ChurnAnalysis, lines: string[]): void {
+  lines.push(
+    "## Retained reaffirmation history",
+    "",
+    "| Obligation | Requirements | Suites | Events |",
+    "| --- | --- | --- | ---: |",
+  );
+  if (analysis.rows.length === 0) lines.push("| *(none)* | — | — | 0 |");
+  else {
+    for (const row of analysis.rows) {
+      lines.push(
+        `| ${cell(row.obligation)} | ${cell(row.requirements.join(", ")) || "—"} | ${cell(row.suites.join(", ")) || "—"} | ${row.eventCount} |`,
+      );
+    }
   }
   lines.push("");
 }
 
-function list(lines: string[], heading: string, values: string[]): void {
-  lines.push(`## ${heading}`, "");
-  if (values.length === 0) lines.push("*(none)*", "");
-  else lines.push(values.map((value) => `- ${code(value)}`).join("\n"), "");
+function renderGaps(analysis: GraphAnalysis, lines: string[]): void {
+  if (analysis.gaps.length === 0) return;
+  lines.push("## Gaps", "");
+  for (const gap of analysis.gaps) {
+    lines.push(`- **${gap.kind}** ${code(gap.subject)}: ${gap.reason}`);
+  }
+  lines.push("");
 }
 
 function cell(value: string): string {
@@ -95,5 +120,9 @@ function cell(value: string): string {
 }
 
 function code(value: string): string {
-  return `\`${value.replaceAll("`", "\\`")}\``;
+  return `\`${escapeCode(value)}\``;
+}
+
+function escapeCode(value: string): string {
+  return value.replaceAll("`", "\\`");
 }

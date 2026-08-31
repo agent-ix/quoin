@@ -1,44 +1,78 @@
-/** FR-045 — bidirectional trace graph analyses (TC-291..TC-298). */
+/** FR-062 — read-only evidence graph projections (TC-1249..TC-1260). */
 
+import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 
-import type { BundleDocument } from "../src/completeness/index.js";
 import type { Binding } from "../src/evidence/index.js";
 import {
+  DEFAULT_RELATION_KINDS,
   analyzeChangeImpact,
   analyzeChurn,
   analyzeFanOut,
-  buildTraceGraph,
+  parseAcceptedAssurancePremises,
+  parseAuditEnvelope,
   renderGraphAnalysis,
+  renderGraphAnalysisJson,
+  validateAcceptedAssurancePremises,
+  validateAuditIdentity,
+  type AuditEnvelope,
+  type GraphAnalysisInput,
 } from "../src/graph-analysis/index.js";
-import type { Obligation } from "../src/quire/index.js";
+import type {
+  AcceptedAssurancePremises,
+  AssuranceCorpusRelation,
+  AssuranceExport,
+} from "../src/quire/index.js";
+import { parseAssurance } from "../src/quire/index.js";
 
-function document(
-  id: string,
-  relationships: Array<{ type: string; target: string }> = [],
-): BundleDocument {
-  return {
-    path: `${id}.md`,
-    frontmatter: { id, type: id.split("-")[0], relationships },
-    body: "",
-  };
+const digest = "a".repeat(64);
+const revision = "b".repeat(40);
+const source = { repository: "agent-ix/example", revision };
+const modules = [
+  {
+    name: "example",
+    version: "1.0.0",
+    schemas: [{ archetype: "FR", schema_digest: "c".repeat(64) }],
+  },
+];
+
+function locator(path: string, line = 1) {
+  return { path, line, digest };
 }
 
-function master(org = "agent-ix", name = "demo"): BundleDocument {
-  return {
-    path: "spec.md",
-    frontmatter: { type: "master-requirements", org, name },
-    body: "",
-  };
-}
-
-function obligation(id: string): Obligation {
+function artifact(id: string) {
   return {
     id,
-    source: "Acceptance Criteria",
-    document: `${id.split("-AC-")[0]}.md`,
-    statement: id,
-    statement_hash: "a".repeat(64),
+    artifact_type: "FR",
+    locator: locator(`spec/${id}.md`),
+  };
+}
+
+function obligation(id: string, owner: string) {
+  return {
+    source: "acceptance-criterion",
+    id,
+    document: `spec/${owner}.md`,
+    statement: `${id} statement`,
+    statement_hash: digest,
+    target_ids: [`TC-${id}`],
+    locator: locator(`spec/${owner}.md`, 20),
+  };
+}
+
+function relation(
+  sourceId: string,
+  target: string,
+  edge_type: string,
+): AssuranceCorpusRelation {
+  return {
+    kind: "corpus",
+    source: sourceId,
+    target,
+    edge_type,
+    resolution: "resolved",
+    locator: locator(`spec/${sourceId}.md`, 5),
+    freshness: "not_applicable",
   };
 }
 
@@ -49,299 +83,386 @@ function binding(
 ): Binding {
   return {
     obligation: obligationId,
+    statementHashAtBinding: digest,
     suite,
-    commit: "1".repeat(40),
-    statementHashAtBinding: "a".repeat(64),
+    commit: revision,
     symbols: ["test"],
-    ...(affirmations ? { affirmations } : {}),
+    ...(affirmations === undefined ? {} : { affirmations }),
   };
 }
 
-function completeGraph() {
-  const documents = [
-    master(),
-    document("StR-001"),
-    document("FR-001", [
-      { type: "traces_to", target: "ix://agent-ix/demo/StR-001" },
-    ]),
-    document("FR-002", [{ type: "derives_from", target: "FR-001" }]),
-    document("FR-003", [{ type: "traces_to", target: "StR-001" }]),
+function exportFixture(
+  overrides: Partial<AssuranceExport> = {},
+): AssuranceExport {
+  const artifacts = [
+    artifact("FR-001"),
+    artifact("FR-002"),
+    artifact("FR-003"),
+    artifact("FR-004"),
   ];
   const obligations = [
-    obligation("FR-001-AC-1"),
-    obligation("FR-002-AC-1"),
-    obligation("FR-003-AC-1"),
+    obligation("FR-001-AC-1", "FR-001"),
+    obligation("FR-002-AC-1", "FR-002"),
+    obligation("FR-003-AC-1", "FR-003"),
+    obligation("FR-004-AC-1", "FR-004"),
   ];
+  return {
+    format: "quire-assurance",
+    format_version: 1,
+    source,
+    modules,
+    artifacts,
+    obligations,
+    symbols: [],
+    relation_kinds: DEFAULT_RELATION_KINDS.map((kind) => ({
+      kind,
+      availability: "available" as const,
+      sources: ["module_vocabulary" as const],
+    })),
+    relations: [],
+    relation_observations: [],
+    ...overrides,
+  };
+}
+
+function premises(): AcceptedAssurancePremises {
+  return { format: "quire-assurance", format_version: 1, modules };
+}
+
+function audit(
+  healthy = ["FR-001-AC-1", "FR-002-AC-1", "FR-003-AC-1", "FR-004-AC-1"],
+): AuditEnvelope {
+  return {
+    format: "quoin-audit-envelope",
+    format_version: 1,
+    source,
+    export: premises(),
+    report: { findings: [], healthy, unevaluated: [] },
+  };
+}
+
+function input(
+  exportValue = exportFixture(),
+  bindings: Binding[] = [],
+  auditValue = audit(),
+): GraphAnalysisInput {
+  return {
+    assurance: exportValue,
+    premises: premises(),
+    audit: auditValue,
+    bindings: { availability: "available", bindings },
+  };
+}
+
+describe("FR-062 fan-out", () => {
+  // Trace: FR-062-AC-1
+  it("TC-1249 counts a distinct live obligation once under arbitrary input order", () => {
+    fc.assert(
+      fc.property(fc.boolean(), fc.boolean(), (reverse, addDuplicate) => {
+        const bindings = [
+          binding("FR-002-AC-1", "suite-b"),
+          binding("FR-001-AC-1", "suite-b"),
+          binding("FR-003-AC-1", "suite-a"),
+        ];
+        if (addDuplicate) bindings.push(binding("FR-001-AC-1", "suite-b"));
+        if (reverse) bindings.reverse();
+        expect(analyzeFanOut(input(exportFixture(), bindings)).rows).toEqual([
+          {
+            suite: "suite-a",
+            obligations: [
+              { obligation: "FR-003-AC-1", requirements: ["FR-003"] },
+            ],
+            obligationCount: 1,
+            unresolvedBindings: [],
+          },
+          {
+            suite: "suite-b",
+            obligations: [
+              { obligation: "FR-001-AC-1", requirements: ["FR-001"] },
+              { obligation: "FR-002-AC-1", requirements: ["FR-002"] },
+            ],
+            obligationCount: 2,
+            unresolvedBindings: [],
+          },
+        ]);
+      }),
+    );
+  });
+
+  // Trace: FR-062-AC-2
+  it("TC-1250 names an unresolved binding without counting it", () => {
+    const report = analyzeFanOut(
+      input(exportFixture(), [
+        binding("FR-001-AC-1", "unit"),
+        binding("FR-999-AC-1", "unit"),
+      ]),
+    );
+    expect(report.rows[0]).toMatchObject({
+      obligationCount: 1,
+      unresolvedBindings: ["FR-999-AC-1"],
+    });
+    expect(report.state).toBe("incomplete");
+    expect(report.gaps).toContainEqual(
+      expect.objectContaining({ kind: "unresolved-binding" }),
+    );
+  });
+});
+
+describe("FR-062 change impact", () => {
+  const graphRelations = [
+    relation("FR-002", "FR-001", "depends_on"),
+    relation("FR-003", "FR-001", "derives_from"),
+    relation("FR-004", "FR-002", "requires"),
+    relation("FR-004", "FR-003", "refines"),
+    relation("FR-001", "FR-004", "depends_on"),
+  ];
+  const selected = ["depends_on", "derives_from", "requires", "refines"];
   const bindings = [
     binding("FR-001-AC-1", "unit"),
     binding("FR-002-AC-1", "integration"),
-    binding("FR-003-AC-1", "integration"),
+    binding("FR-004-AC-1", "integration"),
   ];
-  const implementations = [
-    {
-      path: "src/service.ts",
-      symbol: "run",
-      trace_id: "FR-002",
-      form: "ts-implements-comment",
-    },
-    {
-      path: "src/service.ts",
-      symbol: "run",
-      trace_id: "FR-003",
-      form: "ts-implements-comment",
-    },
-  ];
-  return {
-    graph: buildTraceGraph({
-      documents,
-      obligations,
-      bindings,
-      implementations,
-    }),
-    bindings,
-  };
-}
 
-describe("FR-045 trace graph construction", () => {
-  // Trace: FR-045-AC-1
-  it("normalizes child-authored edges into upstream-to-downstream direction", () => {
-    const { graph } = completeGraph();
-    expect(graph.documentEdges).toEqual([
-      { from: "FR-001", to: "FR-002", relationship: "derives_from" },
-      { from: "StR-001", to: "FR-001", relationship: "traces_to" },
-      { from: "StR-001", to: "FR-003", relationship: "traces_to" },
-    ]);
-    expect(graph.complete).toBe(true);
-
-    const constraint = buildTraceGraph({
-      documents: [
-        document("FR-010"),
-        document("NFR-001", [{ type: "constrains", target: "FR-010" }]),
-      ],
-      obligations: [],
-      bindings: [],
-    });
-    expect(constraint.documentEdges).toEqual([
-      { from: "NFR-001", to: "FR-010", relationship: "constrains" },
-    ]);
-
-    const external = buildTraceGraph({
-      documents: [
-        master(),
-        document("FR-053"),
-        document("FR-020", [
-          { type: "traces_to", target: "ix://agent-ix/quire-rs/FR-053" },
-        ]),
-      ],
-      obligations: [],
-      bindings: [],
-    });
-    expect(external.documentEdges).toEqual([]);
-    expect(external.limitations[0]).toMatchObject({
-      kind: "unresolved-relationship",
-      target: "ix://agent-ix/quire-rs/FR-053",
-    });
-  });
-
-  // Trace: FR-045-AC-2
-  it("names every reason the graph cannot claim completeness", () => {
-    const graph = buildTraceGraph({
-      documents: [
-        document("FR-001", [
-          { type: "publishes", target: "Event-001" },
-          { type: "traces_to", target: "StR-404" },
-        ]),
-        { ...document("FR-001"), path: "duplicate.md" },
-      ],
-      obligations: [obligation("FR-002-AC-1")],
-      bindings: [binding("FR-999-AC-1", "old-suite")],
-      implementations: [
-        {
-          path: "src/old.ts",
-          symbol: "old",
-          trace_id: "FR-998",
-          form: "ts-implements-comment",
+  // Trace: FR-062-AC-3
+  it("TC-1251 closes cycles and selects the lexicographically first shortest path", () => {
+    fc.assert(
+      fc.property(
+        fc.shuffledSubarray(graphRelations, {
+          minLength: graphRelations.length,
+          maxLength: graphRelations.length,
+        }),
+        (relations) => {
+          const report = analyzeChangeImpact(
+            input(exportFixture({ relations }), bindings),
+            ["FR-001"],
+            selected,
+          );
+          expect(
+            report.rows.map(({ requirement, depth }) => ({
+              requirement,
+              depth,
+            })),
+          ).toEqual([
+            { requirement: "FR-001", depth: 0 },
+            { requirement: "FR-002", depth: 1 },
+            { requirement: "FR-003", depth: 1 },
+            { requirement: "FR-004", depth: 2 },
+          ]);
+          expect(
+            report.rows.find(({ requirement }) => requirement === "FR-004")
+              ?.path,
+          ).toEqual({
+            seed: "FR-001",
+            edges: [
+              {
+                source: "FR-002",
+                target: "FR-001",
+                relationship: "depends_on",
+              },
+              { source: "FR-004", target: "FR-002", relationship: "requires" },
+            ],
+          });
+          expect(
+            analyzeChangeImpact(input(exportFixture({ relations }), bindings), [
+              "FR-001",
+            ]).relationKinds,
+          ).toEqual([...DEFAULT_RELATION_KINDS]);
         },
-      ],
-      unreadable: [{ path: "broken.md", reason: "bad YAML" }],
-    });
-
-    expect(graph.complete).toBe(false);
-    expect(graph.limitations.map(({ kind }) => kind)).toEqual([
-      "duplicate-document-id",
-      "orphan-binding",
-      "orphan-implementation",
-      "orphan-obligation",
-      "unreadable-document",
-      "unresolved-relationship",
-      "unsupported-relationship",
-    ]);
-  });
-});
-
-describe("FR-045 fan-out", () => {
-  // Trace: FR-045-AC-3
-  it("counts distinct obligation-to-suite edges without imposing a threshold", () => {
-    const { graph } = completeGraph();
-    graph.obligationSuites.push({
-      obligation: "FR-002-AC-1",
-      suite: "integration",
-    });
-    expect(analyzeFanOut(graph).rows).toEqual([
-      {
-        suite: "integration",
-        obligationCount: 2,
-        obligations: ["FR-002-AC-1", "FR-003-AC-1"],
-      },
-      {
-        suite: "unit",
-        obligationCount: 1,
-        obligations: ["FR-001-AC-1"],
-      },
-    ]);
-  });
-});
-
-describe("FR-045 change-impact closure", () => {
-  // Trace: FR-045-AC-4
-  it("walks downstream to suspect evidence and upstream to review context", () => {
-    const { graph } = completeGraph();
-    expect(analyzeChangeImpact(graph, ["FR-001"])).toMatchObject({
-      changed: ["FR-001"],
-      unknown: [],
-      downstreamDocuments: ["FR-001", "FR-002"],
-      upstreamDocuments: ["StR-001"],
-      suspectObligations: ["FR-001-AC-1", "FR-002-AC-1"],
-      affectedSuites: ["integration", "unit"],
-      affectedImplementations: [
-        {
-          id: "src/service.ts#run",
-          requirements: ["FR-002", "FR-003"],
-        },
-      ],
-      sharedSuiteExposure: ["FR-003-AC-1"],
-    });
-    expect(analyzeChangeImpact(graph, ["FR-002-AC-1"])).toMatchObject({
-      downstreamDocuments: [],
-      upstreamDocuments: ["FR-001", "StR-001"],
-      suspectObligations: ["FR-002-AC-1"],
-      affectedSuites: ["integration"],
-      affectedImplementations: [
-        {
-          id: "src/service.ts#run",
-          requirements: ["FR-002", "FR-003"],
-        },
-      ],
-      sharedSuiteExposure: ["FR-003-AC-1"],
-    });
+      ),
+    );
   });
 
-  // Trace: FR-045-AC-10
-  it("walks from a changed production path back to requirements and evidence", () => {
-    const { graph } = completeGraph();
-    expect(analyzeChangeImpact(graph, ["src/service.ts"])).toMatchObject({
-      changed: ["src/service.ts"],
-      unknown: [],
-      downstreamDocuments: [],
-      upstreamDocuments: ["FR-001", "StR-001"],
-      suspectObligations: ["FR-002-AC-1", "FR-003-AC-1"],
-      affectedSuites: ["integration"],
-      affectedImplementations: [
-        {
-          id: "src/service.ts#run",
-          path: "src/service.ts",
-          symbol: "run",
-          forms: ["ts-implements-comment"],
-          requirements: ["FR-002", "FR-003"],
-        },
-      ],
-      sharedSuiteExposure: [],
-    });
-  });
-
-  // Trace: FR-045-AC-5
-  it("treats a changed suite as making its bound obligations suspect", () => {
-    const { graph } = completeGraph();
-    expect(analyzeChangeImpact(graph, ["integration"])).toMatchObject({
-      downstreamDocuments: [],
-      upstreamDocuments: ["FR-001", "StR-001"],
-      suspectObligations: ["FR-002-AC-1", "FR-003-AC-1"],
-      affectedSuites: ["integration"],
-      sharedSuiteExposure: [],
-    });
-  });
-
-  // Trace: FR-045-AC-6
-  it("reports unknown changed ids instead of returning an apparently empty closure", () => {
-    const { graph } = completeGraph();
-    expect(analyzeChangeImpact(graph, ["missing"])).toMatchObject({
-      changed: ["missing"],
-      unknown: ["missing"],
-      complete: false,
-      downstreamDocuments: [],
-      suspectObligations: [],
-      affectedSuites: [],
-    });
-  });
-});
-
-describe("FR-045 churn", () => {
-  // Trace: FR-045-AC-7
-  it("deduplicates one obligation-level affirmation copied across suites", () => {
-    const event = {
-      who: "reviewer",
-      commit: "2".repeat(40),
-      note: "still fits",
-    };
-    const bindings = [
-      binding("FR-001-AC-1", "unit", [event]),
-      binding("FR-001-AC-1", "integration", [event]),
-      binding("FR-002-AC-1", "integration", [
-        event,
-        { who: "reviewer", commit: "3".repeat(40) },
-      ]),
-    ];
-    const graph = buildTraceGraph({
-      documents: [document("FR-001"), document("FR-002")],
-      obligations: [obligation("FR-001-AC-1"), obligation("FR-002-AC-1")],
-      bindings,
-    });
-    expect(analyzeChurn(graph, bindings).rows).toMatchObject([
-      { obligation: "FR-002-AC-1", affirmationCount: 2 },
-      { obligation: "FR-001-AC-1", affirmationCount: 1 },
-    ]);
-  });
-
-  // Trace: FR-045-AC-8
-  it("renders byte-identically and labels incomplete data", () => {
-    const graph = buildTraceGraph({
-      documents: [document("FR-001")],
-      obligations: [obligation("FR-001-AC-1")],
-      bindings: [],
-      unreadable: [{ path: "bad.md", reason: "bad YAML" }],
-    });
-    const analysis = analyzeFanOut(graph);
-    const first = renderGraphAnalysis(analysis);
-    expect(renderGraphAnalysis(analysis)).toBe(first);
-    expect(first).toContain("Graph completeness: **incomplete**");
-    expect(first).toContain("**unreadable-document** `bad.md`: bad YAML");
-
-    const { graph: populated, bindings } = completeGraph();
-    expect(renderGraphAnalysis(analyzeFanOut(populated))).toContain(
-      "| integration | 2 |",
+  // Trace: FR-062-AC-4
+  it("TC-1252 joins every reached requirement and isolates an unknown seed", () => {
+    const report = analyzeChangeImpact(
+      input(exportFixture({ relations: graphRelations }), bindings),
+      ["FR-404", "FR-001"],
+      selected,
     );
     expect(
-      renderGraphAnalysis(analyzeChangeImpact(populated, ["FR-001"])),
-    ).toContain("## Suspect obligations\n\n- `FR-001-AC-1`");
+      report.rows.some(({ requirement }) => requirement === "FR-404"),
+    ).toBe(false);
     expect(
-      renderGraphAnalysis(
-        analyzeChurn(populated, [
-          ...bindings,
-          binding("FR-001-AC-1", "unit", [
-            { who: "reviewer", commit: "2".repeat(40) },
-          ]),
-        ]),
+      report.rows.find(({ requirement }) => requirement === "FR-002")
+        ?.obligations[0],
+    ).toMatchObject({
+      obligation: "FR-002-AC-1",
+      requirements: ["FR-002"],
+      bindings: [{ suite: "integration" }],
+    });
+    expect(report.gaps).toContainEqual(
+      expect.objectContaining({
+        kind: "unknown-requirement",
+        subject: "FR-404",
+      }),
+    );
+  });
+
+  // Trace: FR-062-AC-5
+  it("TC-1253 copies the existing auditor verdict apart from exposure", () => {
+    const finding = {
+      kind: "stale-evidence" as const,
+      obligation: "FR-002-AC-1",
+      severity: "medium" as const,
+      summary: "The retained run is behind the accepted revision.",
+    };
+    const auditValue = audit(["FR-001-AC-1", "FR-003-AC-1", "FR-004-AC-1"]);
+    auditValue.report.findings.push(finding);
+    const report = analyzeChangeImpact(
+      input(exportFixture({ relations: graphRelations }), bindings, auditValue),
+      ["FR-001"],
+      selected,
+    );
+    const verdict = report.rows.find(
+      ({ requirement }) => requirement === "FR-002",
+    )?.obligations[0]?.bindings[0]?.auditorVerdict;
+    expect(verdict).toEqual({
+      findings: [finding],
+      healthy: [],
+      unevaluated: [],
+    });
+    expect(JSON.stringify(report)).toContain("stale-evidence");
+    expect(JSON.stringify(report)).not.toContain("suspectObligations");
+  });
+});
+
+describe("FR-062 churn, premises, and rendering", () => {
+  const event = { who: "@reviewer", commit: revision, note: "still valid" };
+
+  // Trace: FR-062-AC-6
+  it("TC-1254 deduplicates one affirmation while retaining all affected suites", () => {
+    fc.assert(
+      fc.property(fc.boolean(), (reverse) => {
+        const bindings = [
+          binding("FR-001-AC-1", "unit", [event]),
+          binding("FR-001-AC-1", "integration", [event]),
+        ];
+        if (reverse) bindings.reverse();
+        const row = analyzeChurn(input(exportFixture(), bindings)).rows[0];
+        expect(row.eventCount).toBe(1);
+        expect(row.events[0]).toEqual({
+          ...event,
+          suites: ["integration", "unit"],
+        });
+      }),
+    );
+  });
+
+  // Trace: FR-062-AC-7
+  it("TC-1255 retains zero-event rows and gaps orphan affirmation history", () => {
+    const report = analyzeChurn(
+      input(exportFixture(), [
+        binding("FR-002-AC-1", "unit", [event]),
+        binding("FR-999-AC-1", "old", [event]),
+      ]),
+    );
+    expect(
+      report.rows.map(({ obligation, eventCount }) => ({
+        obligation,
+        eventCount,
+      })),
+    ).toEqual([
+      { obligation: "FR-002-AC-1", eventCount: 1 },
+      { obligation: "FR-001-AC-1", eventCount: 0 },
+      { obligation: "FR-003-AC-1", eventCount: 0 },
+      { obligation: "FR-004-AC-1", eventCount: 0 },
+    ]);
+    expect(report.gaps).toContainEqual(
+      expect.objectContaining({ subject: "old:FR-999-AC-1" }),
+    );
+  });
+
+  // Trace: FR-062-AC-8
+  it("TC-1256 preserves source and accepted premises across every view", () => {
+    const value = input(exportFixture(), [binding("FR-001-AC-1", "unit")]);
+    const reports = [
+      analyzeFanOut(value),
+      analyzeChurn(value),
+      analyzeChangeImpact(value, ["FR-001"]),
+    ];
+    for (const report of reports) {
+      expect(report.source).toEqual(source);
+      expect(report.premises).toEqual(premises());
+      expect(report.export).toEqual({
+        format: "quire-assurance",
+        format_version: 1,
+      });
+    }
+  });
+
+  // Trace: FR-062-AC-9
+  it("TC-1257 rejects invalid premises/audit identity and distinguishes unavailable bindings", () => {
+    expect(parseAcceptedAssurancePremises("not json").ok).toBe(false);
+    expect(parseAuditEnvelope(JSON.stringify({})).ok).toBe(false);
+    expect(parseAssurance(JSON.stringify({})).ok).toBe(false);
+    const exported = exportFixture();
+    expect(
+      validateAcceptedAssurancePremises(exported, {
+        ...premises(),
+        modules: [],
+      })?.input,
+    ).toBe("premises");
+    expect(
+      validateAuditIdentity(
+        { ...audit(), source: { ...source, revision: "d".repeat(40) } },
+        exported,
+      )?.input,
+    ).toBe("audit");
+    const absent = analyzeFanOut({
+      ...input(),
+      bindings: { availability: "absent", reason: "missing" },
+    });
+    const unreadable = analyzeFanOut({
+      ...input(),
+      bindings: { availability: "unreadable", reason: "bad JSON" },
+    });
+    const empty = analyzeFanOut(input());
+    const unsupported = analyzeChangeImpact(
+      input(
+        exportFixture({
+          relation_kinds: exportFixture().relation_kinds.filter(
+            ({ kind }) => kind !== "depends_on",
+          ),
+        }),
       ),
-    ).toContain("| `FR-001-AC-1` | 1 |");
+      ["FR-001"],
+    );
+    expect(absent).toMatchObject({ state: "not_computed", rows: [] });
+    expect(unreadable).toMatchObject({ state: "not_computed", rows: [] });
+    expect(empty).toMatchObject({ state: "incomplete", rows: [] });
+    expect(empty.gaps).toContainEqual(
+      expect.objectContaining({ kind: "empty-bindings-store" }),
+    );
+    expect(unsupported).toMatchObject({ state: "not_computed", rows: [] });
+    expect(absent.gaps[0].kind).not.toBe(unreadable.gaps[0].kind);
+  });
+
+  // Trace: FR-062-AC-10
+  it("TC-1258 renders equivalent permutations as identical canonical JSON", () => {
+    const bindings = [binding("FR-002-AC-1", "z"), binding("FR-001-AC-1", "a")];
+    const left = analyzeFanOut(input(exportFixture(), bindings));
+    const right = analyzeFanOut(
+      input(
+        exportFixture({
+          artifacts: [...exportFixture().artifacts].reverse(),
+          obligations: [...exportFixture().obligations].reverse(),
+        }),
+        [...bindings].reverse(),
+      ),
+    );
+    expect(renderGraphAnalysisJson(left)).toBe(renderGraphAnalysisJson(right));
+    expect(renderGraphAnalysis(left)).toContain(left.source.revision);
+    expect(renderGraphAnalysis(left)).toContain("Suite");
+  });
+
+  // Trace: FR-062-AC-12
+  it("TC-1260 emits structural facts without scores or threshold labels", () => {
+    const json = renderGraphAnalysisJson(
+      analyzeChurn(
+        input(exportFixture(), [binding("FR-001-AC-1", "unit", [event])]),
+      ),
+    );
+    expect(json).not.toMatch(/trust|quality|releaseReadiness|threshold|score/i);
+    expect(json).toContain("eventCount");
   });
 });
