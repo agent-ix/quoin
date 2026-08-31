@@ -2,7 +2,7 @@
 id: PLAN-006
 title: "Governed graph adapters and portfolio"
 type: Plan
-status: active
+status: complete
 relationships:
   - target: "ix://agent-ix/quoin/StR-007"
     type: references
@@ -110,14 +110,14 @@ External:                     #152 stable export ---------^
 
 ## Task File Mapping
 
-| Task     | Track | Owns           | Verified by                                 | Status      |
-| -------- | ----- | -------------- | ------------------------------------------- | ----------- |
-| TASK-033 | A     | FR-066         | TC-1293..TC-1304                            | done        |
-| TASK-034 | A     | FR-066         | TC-1296, TC-1300, TC-1303                   | done        |
-| TASK-035 | B     | FR-067         | TC-1305..TC-1315                            | done        |
-| TASK-036 | A     | FR-067         | TC-1305, TC-1307..TC-1310, TC-1312..TC-1314 | done        |
-| TASK-037 | A     | FR-066, FR-067 | TC-1295, TC-1311, TC-1315                   | done        |
-| TASK-038 | Gate  | StR-007        | TC-1316                                     | not_started |
+| Task     | Track | Owns           | Verified by                                 | Status |
+| -------- | ----- | -------------- | ------------------------------------------- | ------ |
+| TASK-033 | A     | FR-066         | TC-1293..TC-1304                            | done   |
+| TASK-034 | A     | FR-066         | TC-1296, TC-1300, TC-1303                   | done   |
+| TASK-035 | B     | FR-067         | TC-1305..TC-1315                            | done   |
+| TASK-036 | A     | FR-067         | TC-1305, TC-1307..TC-1310, TC-1312..TC-1314 | done   |
+| TASK-037 | A     | FR-066, FR-067 | TC-1295, TC-1311, TC-1315                   | done   |
+| TASK-038 | Gate  | StR-007        | TC-1316                                     | done   |
 
 ## Coordination Rules
 

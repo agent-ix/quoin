@@ -27,7 +27,8 @@ relationships:
 **done** — the report command accepts explicit export/premises/audit triples
 and changed seeds, validates every mapping before reads, and injects #152's
 stable analyzers from corrected dependency commit `b8112fc`. The combined
-#152/#281 seam suite passes 67/67 and the legacy no-graph command is unchanged.
+#152/#281 seam suite passes 58/58 in its final bindable-test shape and the
+legacy no-graph command is unchanged.
 
 ## Scope
 

@@ -22,4 +22,13 @@ description: "Chronological execution record for PLAN-006."
 - **2026-08-31** — TASK-037 bound the command to #152's corrected stable
   consumer commit `b8112fc`. Explicit export/premises/audit triples and changed
   seeds are resolved before reads; accepted inputs inject #152's exact report
-  objects. Combined #152/#281 focused suites pass 67/67 and `make lint` passes.
+  objects. The then-current combined #152/#281 focused suites passed 67/67 and
+  `make lint` passed; the final bindable-test shape passes 58/58.
+- **2026-08-31** — TASK-038 completed SR-110 code review and SR-111 mechanical
+  gap analysis against final #152 tip `17ed860`. Review fixed per-file
+  `unreadable` classification and timestamp/id ordering in the tolerant
+  single-read seam. Gap analysis replaced three unbindable `test.each` symbols
+  and added direct AC traces; Quire reports FR-066 12/12 and FR-067 11/11
+  backed with no #281 status lie, unbacked row, or unmatched tag. Focused,
+  build, lint, full Vitest, review validation, and diff gates pass; the optional
+  semantic gap expansion was not run, as directed.
