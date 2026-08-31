@@ -581,7 +581,7 @@ generated tests under `tests/props/` and `Unit` for the rest.
 | TC-1201 | Completed, failed, and inconclusive records validate, while failed/inconclusive records with any conclusion other than `cause_not_established` fail | Unit | P0 | FR-056-AC-7 | 🚧 planned for #270 |
 | TC-1202 | Causal and no-effect conclusions require positive samples and observed comparisons; causal conclusions also require non-null effects, non-none confidence, and no uncontrolled/unknown qualifier | Unit | P0 | FR-056-AC-8 | 🚧 planned for #270 |
 | TC-1203 | Gaps, owner, actions, and safe content-digested raw evidence with media type and byte size are required, and every undeclared field is refused recursively | Property | P0 | FR-056-AC-9 | 🚧 planned for #270 |
-| TC-1204 | Valid intake writes exactly one complete canonical record by one atomic same-directory rename | Integration | P0 | FR-057-AC-1 | 🚧 planned for #270 |
+| TC-1204 | Valid intake writes exactly one complete canonical record by one atomic same-directory no-replace publication, and an existing concurrent destination is never overwritten | Integration | P0 | FR-057-AC-1 | 🚧 planned for #270 |
 | TC-1205 | Every invalid schema or cross-record integrity path is reported with `invalid_record` and no store entry is written | Unit | P0 | FR-057-AC-2 | 🚧 planned for #270 |
 | TC-1206 | An absent or mismatched governing definition returns its stable reason code, names requested, expected, and observed versions, and leaves the store unchanged | Unit | P0 | FR-057-AC-3 | 🚧 planned for #270 |
 | TC-1207 | Repeating identical canonical bytes for one id is byte-idempotent | Property | P0 | FR-057-AC-4 | 🚧 planned for #270 |

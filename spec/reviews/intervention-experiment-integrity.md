@@ -22,3 +22,4 @@ semantic validation, acceptance criteria, and matrix rows now agree.
 | FND-003 | low | The revised acceptance criteria each have a direct TC mapping, including the added raw-evidence refusal obligation. | FR-056; FR-057; TC-1195..TC-1216 | correct-requirement-no-evidence |
 | FND-004 | medium | Resolved: the record now carries the observation timestamp required by the governing FR-044 collection contract. | FR-044-AC-1; FR-056-AC-1; TC-1195 | missing-requirement |
 | FND-005 | high | Resolved: the implementation ticket's first-real-producer deliverable is now owned by FR-058 rather than remaining underspecified code. | FR-058; quoin#270 | missing-requirement |
+| FND-006 | high | Resolved: atomic publication now has explicit no-replace semantics rather than a check followed by an overwriting rename. | FR-057-AC-1; FR-057-AC-5; TC-1204; TC-1208 | missing-requirement |

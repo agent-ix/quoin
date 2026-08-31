@@ -55,7 +55,8 @@ render the record under claims, evidence, counterevidence, gaps, owner, and acti
   refuse the record with stable reason code `definition_mismatch` by naming the
   expected and observed definitions.
 - When validation succeeds, Quoin SHALL commit the complete entry by one atomic
-  same-directory rename.
+  same-directory no-replace publication that cannot overwrite an entry created by
+  a concurrent writer.
 - When identical canonical bytes already exist for a record id, Quoin SHALL treat
   the intake as idempotent.
 - If different canonical bytes already exist for a record id, then Quoin SHALL
@@ -78,7 +79,7 @@ render the record under claims, evidence, counterevidence, gaps, owner, and acti
 
 | ID | Criteria | Verification |
 | --- | --- | --- |
-| FR-057-AC-1 | Valid intake writes one complete canonical record by one atomic same-directory rename. | Test (TC-1204) |
+| FR-057-AC-1 | Valid intake writes one complete canonical record by one atomic same-directory no-replace publication; a concurrent destination cannot be overwritten. | Test (TC-1204) |
 | FR-057-AC-2 | Invalid schema or cross-record integrity input writes nothing and returns `invalid_record` with every failing JSON path and reason. | Test (TC-1205) |
 | FR-057-AC-3 | An absent governing plan returns `governing_plan_absent`; a mismatch returns `definition_mismatch`; both write nothing and name the requested, expected, and observed definitions that apply. | Test (TC-1206) |
 | FR-057-AC-4 | Repeating an identical record id and canonical payload is byte-idempotent. | Test (TC-1207) |
