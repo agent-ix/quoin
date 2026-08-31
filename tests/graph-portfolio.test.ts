@@ -11,6 +11,8 @@ import {
   canonicalGraphPortfolioJson,
   compareGraphQualityCollections,
   graphQualityObservationId,
+  GraphPortfolioMappingError,
+  parseGraphPortfolioMappings,
   renderGovernedGraphPortfolio,
   type GraphPortfolioRepositoryInput,
   type MeasurementCollection,
@@ -362,6 +364,14 @@ describe("governed graph portfolio", () => {
       availability: "missing",
       changeImpact: { availability: "not_applicable" },
     });
+
+    const partial = parseGraphPortfolioMappings(["/repos/a"], {
+      graphExports: ["/repos/a=/inputs/export.json"],
+    });
+    expect(partial[0]).toMatchObject({
+      status: "incompatible",
+      reason: expect.stringContaining("export, premises, and audit"),
+    });
   });
 
   test("TC-1312 corrupt collections and graph inputs become local gaps without hiding siblings", () => {
@@ -411,6 +421,36 @@ describe("governed graph portfolio", () => {
       canonicalGraphPortfolioJson(second),
     );
     expect(renderGovernedGraphPortfolio(first)).toContain("/repos/a");
+
+    const mapping = parseGraphPortfolioMappings(["/repos/a", "/repos/./a"], {
+      graphExports: ["/repos/a=/inputs/export.json"],
+      graphPremises: ["/repos/./a=/inputs/premises.json"],
+      graphAudits: ["/repos/a=/inputs/audit.json"],
+      changed: ["/repos/a=FR-002", "/repos/./a=FR-001", "/repos/a=FR-001"],
+    });
+    expect(mapping).toEqual([
+      {
+        root: "/repos/a",
+        status: "ready",
+        exportPath: "/inputs/export.json",
+        premisesPath: "/inputs/premises.json",
+        auditPath: "/inputs/audit.json",
+        changed: ["FR-001", "FR-002"],
+      },
+    ]);
+    for (const [field, code] of [
+      ["graphExports", "duplicate_graph_export"],
+      ["graphPremises", "duplicate_graph_premises"],
+      ["graphAudits", "duplicate_graph_audit"],
+    ] as const) {
+      expect(() =>
+        parseGraphPortfolioMappings(["/repos/a"], {
+          [field]: ["/repos/a=/inputs/one.json", "/repos/a=/inputs/two.json"],
+        }),
+      ).toThrow(
+        expect.objectContaining<Partial<GraphPortfolioMappingError>>({ code }),
+      );
+    }
   });
 
   test("TC-1314 old collections stay historical and output has no aggregate verdict", () => {

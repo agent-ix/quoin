@@ -26,6 +26,12 @@ premature local link to #152, and made identity and failure behavior explicit.
 
 ## Findings
 
+Implementation reconciliation found that FR-062 deliberately requires three
+explicit caller-owned inputs while FR-067 originally named only its export.
+FR-067 now names repository-scoped export, premises, and audit mappings,
+rejects conflicts before reads, and treats partial triples as local
+incompatible gaps without discovery or implicit acceptance.
+
 | ID | Severity | Summary | Refs |
 | --- | --- | --- | --- |
 | FND-001 | low | No unresolved base-review defects remain after the traced corrections | StR-007, US-019, FR-066, FR-067 |

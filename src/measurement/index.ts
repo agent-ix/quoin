@@ -18,6 +18,7 @@ export {
   buildGovernedGraphPortfolioFrom,
   canonicalGraphPortfolioJson,
   compareGraphQualityCollections,
+  parseGraphPortfolioMappings,
   renderGovernedGraphPortfolio,
   type GovernedGraphPortfolioReport,
   type GovernedGraphRepositoryReport,
@@ -27,12 +28,16 @@ export {
   type GraphCompatibilityReason,
   type GraphPartitionRow,
   type GraphPortfolioGap,
+  type GraphPortfolioMappingErrorCode,
+  type GraphPortfolioMappingOptions,
   type GraphPortfolioRepositoryInput,
+  type GraphPortfolioResolvedMapping,
   type GraphQualityComparison,
   type GraphQualityComparisonRow,
   type GraphQualityHistoryRow,
   type InjectedStructuralGraph,
   type NormalizedStructuralGraph,
+  GraphPortfolioMappingError,
 } from "./graph-portfolio.js";
 export { loadMeasurementPlans } from "./plans.js";
 export {

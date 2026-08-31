@@ -1,6 +1,7 @@
 /** Pure governed graph portfolio projection (FR-067). */
 
 import { canonicalJson } from "../evidence/store.js";
+import { resolve } from "node:path";
 import type { PortfolioRepositoryReport } from "./portfolio.js";
 import type {
   MeasurementCollection,
@@ -57,6 +58,46 @@ export interface GraphPortfolioRepositoryInput {
   collections: GraphCollectionRead[];
   graph: InjectedStructuralGraph;
 }
+
+export type GraphPortfolioMappingErrorCode =
+  | "invalid_repository_mapping"
+  | "duplicate_graph_export"
+  | "duplicate_graph_premises"
+  | "duplicate_graph_audit";
+
+export class GraphPortfolioMappingError extends Error {
+  constructor(
+    readonly code: GraphPortfolioMappingErrorCode,
+    message: string,
+  ) {
+    super(`${code}: ${message}`);
+    this.name = "GraphPortfolioMappingError";
+  }
+}
+
+export interface GraphPortfolioMappingOptions {
+  graphExports?: readonly string[];
+  graphPremises?: readonly string[];
+  graphAudits?: readonly string[];
+  changed?: readonly string[];
+  cwd?: string;
+}
+
+export type GraphPortfolioResolvedMapping =
+  | {
+      root: string;
+      status: "ready";
+      exportPath: string;
+      premisesPath: string;
+      auditPath: string;
+      changed: string[];
+    }
+  | {
+      root: string;
+      status: "missing" | "incompatible";
+      reason: string;
+      changed: string[];
+    };
 
 export interface GraphPartitionRow {
   measure: string;
@@ -150,6 +191,69 @@ export type NormalizedStructuralGraph =
 export interface GovernedGraphPortfolioReport {
   schemaVersion: 1;
   repositories: GovernedGraphRepositoryReport[];
+}
+
+/** Resolve all mappings before any repository or graph input is read. */
+export function parseGraphPortfolioMappings(
+  locations: readonly string[],
+  options: GraphPortfolioMappingOptions = {},
+): GraphPortfolioResolvedMapping[] {
+  const cwd = options.cwd ?? process.cwd();
+  const roots = [
+    ...new Set(locations.map((location) => resolve(cwd, location))),
+  ].sort(compare);
+  const known = new Set(roots);
+  const exports = resolvePathMappings(
+    options.graphExports ?? [],
+    "duplicate_graph_export",
+    known,
+    cwd,
+  );
+  const premises = resolvePathMappings(
+    options.graphPremises ?? [],
+    "duplicate_graph_premises",
+    known,
+    cwd,
+  );
+  const audits = resolvePathMappings(
+    options.graphAudits ?? [],
+    "duplicate_graph_audit",
+    known,
+    cwd,
+  );
+  const changed = resolveChangedMappings(options.changed ?? [], known, cwd);
+  return roots.map((root) => {
+    const exportPath = exports.get(root);
+    const premisesPath = premises.get(root);
+    const auditPath = audits.get(root);
+    const seeds = [...(changed.get(root) ?? new Set<string>())].sort(compare);
+    const present = [exportPath, premisesPath, auditPath].filter(
+      Boolean,
+    ).length;
+    if (present === 0)
+      return {
+        root,
+        status: "missing" as const,
+        reason: "no graph export, premises, or audit mapping was supplied",
+        changed: seeds,
+      };
+    if (present !== 3)
+      return {
+        root,
+        status: "incompatible" as const,
+        reason:
+          "graph structural reporting requires export, premises, and audit mappings",
+        changed: seeds,
+      };
+    return {
+      root,
+      status: "ready" as const,
+      exportPath: exportPath as string,
+      premisesPath: premisesPath as string,
+      auditPath: auditPath as string,
+      changed: seeds,
+    };
+  });
 }
 
 export function buildGovernedGraphPortfolioFrom(
@@ -506,6 +610,74 @@ function stringField(
   key: string,
 ): string | null {
   return typeof value?.[key] === "string" ? value[key] : null;
+}
+
+function resolvePathMappings(
+  values: readonly string[],
+  conflict: Exclude<
+    GraphPortfolioMappingErrorCode,
+    "invalid_repository_mapping"
+  >,
+  known: Set<string>,
+  cwd: string,
+): Map<string, string> {
+  const resolved = new Map<string, string>();
+  for (const value of values) {
+    const [repository, path] = splitMapping(value);
+    const root = resolve(cwd, repository);
+    if (!known.has(root))
+      throw new GraphPortfolioMappingError(
+        "invalid_repository_mapping",
+        `repository ${root} is not present in --portfolio`,
+      );
+    const target = resolve(cwd, path);
+    const prior = resolved.get(root);
+    if (prior !== undefined && prior !== target)
+      throw new GraphPortfolioMappingError(
+        conflict,
+        `${root} maps to both ${prior} and ${target}`,
+      );
+    resolved.set(root, target);
+  }
+  return resolved;
+}
+
+function resolveChangedMappings(
+  values: readonly string[],
+  known: Set<string>,
+  cwd: string,
+): Map<string, Set<string>> {
+  const resolved = new Map<string, Set<string>>();
+  for (const value of values) {
+    const [repository, seed] = splitMapping(value);
+    const root = resolve(cwd, repository);
+    if (!known.has(root))
+      throw new GraphPortfolioMappingError(
+        "invalid_repository_mapping",
+        `repository ${root} is not present in --portfolio`,
+      );
+    const seeds = resolved.get(root) ?? new Set<string>();
+    seeds.add(seed);
+    resolved.set(root, seeds);
+  }
+  return resolved;
+}
+
+function splitMapping(value: string): [string, string] {
+  const separator = value.indexOf("=");
+  if (separator < 1 || separator === value.length - 1)
+    throw new GraphPortfolioMappingError(
+      "invalid_repository_mapping",
+      `expected <repository>=<value>; observed ${JSON.stringify(value)}`,
+    );
+  const repository = value.slice(0, separator).trim();
+  const target = value.slice(separator + 1).trim();
+  if (!repository || !target)
+    throw new GraphPortfolioMappingError(
+      "invalid_repository_mapping",
+      `expected non-empty repository and value; observed ${JSON.stringify(value)}`,
+    );
+  return [repository, target];
 }
 
 function compare(a: string, b: string): number {

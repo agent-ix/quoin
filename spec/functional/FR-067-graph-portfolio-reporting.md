@@ -34,13 +34,24 @@ population identity are compatible.
 - Stored graph-quality measurement collections produced by FR-066.
 - Optional repeated `--graph-export <repository>=<path>` mappings accepted by
   the Quire adapter.
+- Optional repeated `--graph-premises <repository>=<path>` mappings naming the
+  caller's accepted format/module/schema premises for the corresponding
+  export.
+- Optional repeated `--graph-audit <repository>=<path>` mappings naming the
+  source-bound FR-032 audit envelope for the corresponding export.
 - Optional repeated `--changed <repository>=<requirement-id>` seeds for
-  change-impact; seeds are inapplicable when no export is supplied.
+  change-impact; seeds are inapplicable when no accepted graph-input triple is
+  supplied.
 
 Repository identities are resolved absolute paths. Repeating the same
 repository with equivalent paths deduplicates. Two different graph-export
 paths for one resolved repository are refused as `duplicate_graph_export`;
+the equivalent conflicts for premises and audit mappings are refused as
+`duplicate_graph_premises` and `duplicate_graph_audit`;
 repeated changed seeds for that repository deduplicate by requirement id.
+An accepted structural view requires export, premises, and audit mappings for
+the repository. Any partial triple is a repository-local `incompatible` gap
+and causes no graph input to be read or discovered.
 
 ## Outputs
 
@@ -83,12 +94,18 @@ separate `measured` or `not_computed` fact.
   report objects used by standalone graph commands. When it is absent or
   refused, the portfolio SHALL emit its exact availability and reason instead
   of an empty structural view.
+- The portfolio SHALL pass the three explicitly mapped graph inputs through
+  the FR-062 loader and SHALL NOT discover premises, infer acceptance from the
+  export, or reparse specification frontmatter.
 - One unreadable repository or graph artifact SHALL NOT hide readable siblings.
 
 ## Error Conditions
 
 Invalid command mappings fail before repository reads with
-`invalid_repository_mapping` or `duplicate_graph_export`. Repository,
+`invalid_repository_mapping`, `duplicate_graph_export`,
+`duplicate_graph_premises`, or `duplicate_graph_audit`. A partial graph-input
+triple becomes a repository-local `incompatible` gap before any graph read.
+Repository,
 collection, attachment, and graph-export read failures become typed local gaps
 (`missing`, `unreadable`, `unknown`, `incompatible`, or `not_applicable`) and do
 not abort readable repositories or readable collections in the same store.
@@ -112,7 +129,7 @@ not abort readable repositories or readable collections in the same store.
 | FR-067-AC-4 | Missing, unreadable, incompatible, unknown, and not-applicable graph inputs remain distinct from measured and not-computed states and are never rendered as numeric zero. | Test (TC-1308) |
 | FR-067-AC-5 | Equal plan, definition, configuration, tool, corpus revision, and population identity permit comparison; changing each premise independently blocks the delta and names the mismatch. | Property (TC-1309) |
 | FR-067-AC-6 | Current, historical, and comparison rows resolve to the exact retained producer record and scorer digests rather than a transcribed summary. | Integration (TC-1310) |
-| FR-067-AC-7 | A supplied accepted export embeds byte-equivalent FR-062 fan-out and churn reports plus requested change-impact reports; no export yields `missing`, and no seed yields change-impact `not_applicable`. | Integration (TC-1311) |
+| FR-067-AC-7 | A supplied export/premises/audit triple embeds byte-equivalent FR-062 fan-out and churn reports plus requested change-impact reports; no triple yields `missing`, a partial triple yields `incompatible` without a graph read, and no seed yields change-impact `not_applicable`. | Integration (TC-1311) |
 | FR-067-AC-8 | An unreadable repository, collection, raw attachment, or graph export is named locally while readable sibling repositories retain complete reports. | Test (TC-1312) |
 | FR-067-AC-9 | Reordered repository arguments and equivalent store enumeration produce byte-identical canonical JSON, and human output renders the same report object. | Property (TC-1313) |
 | FR-067-AC-10 | Existing measurement histories and non-graph portfolio goldens remain readable without migration, and graph output contains no aggregate score or verdict (CON-2, CON-4). | Integration (TC-1314) |

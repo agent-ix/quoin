@@ -24,8 +24,9 @@ relationships:
 
 ## Scope
 
-Parse graph-export and changed-seed mappings, reject conflicts before reads,
-and inject #152's stable report functions into the portfolio command without
+Parse graph-export, graph-premises, graph-audit, and changed-seed mappings,
+reject conflicts before reads, reject partial triples without graph reads, and
+inject #152's stable report functions into the portfolio command without
 reconstructing relationships or defining a second graph report contract.
 
 ## Subtasks
