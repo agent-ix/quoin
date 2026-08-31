@@ -62,7 +62,7 @@ those states.
 ## Validation Evidence
 
 The clean governed inner repository gate passes typecheck, lint, formatting,
-build, Quire validation, version agreement, and 815/815 tests in 67 files using
+build, Quire validation, version agreement, and 816/816 tests in 67 files using
 the pinned Quire 0.30.2 binary. Quire coverage reports repository-wide legacy
 gaps outside the reviewed target, but none names US-015, FR-056..FR-058, or
 TC-1195..TC-1221.

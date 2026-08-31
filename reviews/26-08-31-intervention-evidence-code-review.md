@@ -44,12 +44,15 @@ subprocess, or network client and does not infer causality from inadequate data.
 | FND-007 | low      | Fixed: the skill vocabulary gate preferred a stale developer checkout over the active installed public module contract; active module paths now win deterministically.                                                                                                | `tests/skill-contracts.test.ts`                                  | implementation-bug-despite-evidence |
 | FND-008 | high     | Fixed: the former existence check followed by `rename` could replace a record created by a concurrent writer; publication now uses one atomic same-directory create-if-absent operation, then resolves `EEXIST` as byte-idempotence or collision without replacement. | FR-057-AC-1; FR-057-AC-5; TC-1204; TC-1208                       | implementation-bug-despite-evidence |
 | FND-009 | medium   | Fixed: the retained reports cannot supply source-control provenance, so the governed definition is the authority for producer/subject revisions; the adapter now refuses mutable branch-like values rather than relying on non-empty record fields.                   | FR-058 inputs; FR-058-AC-2; TC-1218                              | implementation-bug-despite-evidence |
+| FND-010 | high     | Fixed: schema-valid slash-bearing or maximum-length record ids were rejected or could exceed a portable filename limit. Intake now maps the complete identity domain into disjoint, bounded portable basename namespaces.                                             | FR-056-AC-1; FR-057-AC-1; FR-057-AC-4; TC-1195; TC-1204; TC-1207 | implementation-bug-despite-evidence |
+| FND-011 | high     | Fixed: retained evidence named a producer source commit that was not an ancestor of the landing branch. The governed definition and byte-reproduced record now name the exact reachable code commit used by the final adapter.                                        | FR-058 inputs; FR-058-AC-1; FR-058-AC-5; TC-1217; TC-1221        | implementation-bug-despite-evidence |
 
 ## Review Method
 
 - Checked schema closure, semantic invariants, safe record IDs and evidence
   paths, definition gating, raw byte size/digest checks, same-directory atomic
-  no-replace publication, byte idempotence, and collision refusal.
+  no-replace publication, bounded cross-platform identity mapping, byte
+  idempotence, and collision refusal.
 - Checked that invalid input accumulates stable reasons and cannot leave a
   partial record, and that unknown/uncontrolled and negative results remain
   explicit rather than becoming a score or causal claim.
@@ -65,7 +68,7 @@ subprocess, or network client and does not infer causality from inadequate data.
 ## Validation Evidence
 
 The governed inner gate passes TypeScript typecheck, ESLint, Prettier, production
-build, Quire validation, version agreement, and 815/815 tests across 67 files using
+build, Quire validation, version agreement, and 816/816 tests across 67 files using
 the pinned Quire 0.30.2 binary. Quire reports zero target unbacked rows, status
 lies, or no-symbol rows for FR-056..FR-058 and TC-1195..TC-1221. The changed source
 and tests contain no target skip, placeholder, TODO/FIXME/XXX, or weak no-op
