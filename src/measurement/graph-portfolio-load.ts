@@ -14,7 +14,8 @@ import {
   type GraphPortfolioMappingOptions,
   type InjectedStructuralGraph,
 } from "./graph-portfolio.js";
-import { buildPortfolioReport } from "./portfolio.js";
+import { buildPortfolioReportFromCollections } from "./portfolio.js";
+import { loadMeasurementPlans } from "./plans.js";
 import { readMeasurementCollectionResults } from "./store.js";
 
 export function buildGovernedGraphPortfolio(
@@ -23,7 +24,32 @@ export function buildGovernedGraphPortfolio(
 ): GovernedGraphPortfolioReport {
   // Mapping validation is deliberately first: conflicts cannot trigger reads.
   const mappings = parseGraphPortfolioMappings(locations, options);
-  const portfolio = buildPortfolioReport([...locations]);
+  const reads = new Map(
+    mappings.map((mapping) => {
+      try {
+        return [mapping.root, readMeasurementCollectionResults(mapping.root)];
+      } catch (cause) {
+        return [
+          mapping.root,
+          [
+            {
+              path: mapping.root,
+              availability: "unreadable" as const,
+              error: cause instanceof Error ? cause.message : String(cause),
+            },
+          ],
+        ];
+      }
+    }),
+  );
+  const portfolio = buildPortfolioReportFromCollections(
+    mappings.map((mapping) => ({
+      root: mapping.root,
+      collections: (reads.get(mapping.root) ?? []).flatMap((read) =>
+        read.collection ? [read.collection] : [],
+      ),
+    })),
+  );
   const byRoot = new Map(
     portfolio.repositories.map((repository) => [repository.root, repository]),
   );
@@ -34,21 +60,13 @@ export function buildGovernedGraphPortfolio(
         throw new Error(
           `portfolio omitted resolved repository ${mapping.root}`,
         );
-      let collections;
-      try {
-        collections = readMeasurementCollectionResults(mapping.root);
-      } catch (cause) {
-        collections = [
-          {
-            path: mapping.root,
-            availability: "unreadable" as const,
-            error: cause instanceof Error ? cause.message : String(cause),
-          },
-        ];
-      }
+      const collections = reads.get(mapping.root) ?? [];
       return {
         portfolio: base,
-        plans: base.plans,
+        plans:
+          base.status === "readable"
+            ? loadMeasurementPlans(mapping.root, { includeGovernance: true })
+            : base.plans,
         collections,
         graph: loadStructuralGraph(mapping),
       };
@@ -84,24 +102,32 @@ function loadStructuralGraph(
       reason: loaded.error.message,
     };
   }
-  // FR-066's adapter performs the same closed producer-contract handoff used
-  // by other consumers; FR-062 remains the sole owner of graph semantics.
-  adaptQuireAssurance(loaded.value.assurance, {
-    format: loaded.value.premises.format,
-    formatVersion: loaded.value.premises.format_version,
-    source: loaded.value.assurance.source,
-    modules: loaded.value.premises.modules,
-  });
-  return {
-    availability: "available",
-    path: mapping.exportPath,
-    premises: loaded.value.premises,
-    fanOut: analyzeFanOut(loaded.value),
-    churn: analyzeChurn(loaded.value),
-    ...(mapping.changed.length > 0
-      ? { changeImpact: [analyzeChangeImpact(loaded.value, mapping.changed)] }
-      : {}),
-  };
+  try {
+    // FR-066's adapter performs the same closed producer-contract handoff used
+    // by other consumers; FR-062 remains the sole owner of graph semantics.
+    adaptQuireAssurance(loaded.value.assurance, {
+      format: loaded.value.premises.format,
+      formatVersion: loaded.value.premises.format_version,
+      source: loaded.value.assurance.source,
+      modules: loaded.value.premises.modules,
+    });
+    return {
+      availability: "available",
+      path: mapping.exportPath,
+      premises: loaded.value.premises,
+      fanOut: analyzeFanOut(loaded.value),
+      churn: analyzeChurn(loaded.value),
+      ...(mapping.changed.length > 0
+        ? { changeImpact: [analyzeChangeImpact(loaded.value, mapping.changed)] }
+        : {}),
+    };
+  } catch (cause) {
+    return {
+      availability: "incompatible",
+      path: mapping.exportPath,
+      reason: cause instanceof Error ? cause.message : String(cause),
+    };
+  }
 }
 
 function pathFor(

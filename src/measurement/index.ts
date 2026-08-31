@@ -47,10 +47,12 @@ export {
 } from "./profiles.js";
 export {
   buildPortfolioReport,
+  buildPortfolioReportFromCollections,
   PORTFOLIO_STALE_AFTER_DAYS,
   renderPortfolioReport,
   renderPortfolioReportJson,
   type PortfolioReport,
+  type PortfolioCollectionSnapshot,
   type PortfolioRepositoryReport,
 } from "./portfolio.js";
 export {

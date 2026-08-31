@@ -69,12 +69,39 @@ export interface PortfolioReport {
   repositories: PortfolioRepositoryReport[];
 }
 
+export interface PortfolioCollectionSnapshot {
+  root: string;
+  collections: MeasurementCollection[];
+}
+
 /** Load repository stores once, then derive both human and JSON views. */
 export function buildPortfolioReport(locations: string[]): PortfolioReport {
   const roots = [
     ...new Set(locations.map((location) => resolve(location))),
   ].sort(compare);
-  const repositories = roots.map(loadRepository);
+  return finalizePortfolioReport(roots.map((root) => loadRepository(root)));
+}
+
+/** Build the same FR-045 view from a caller's single-read store snapshots. */
+export function buildPortfolioReportFromCollections(
+  snapshots: readonly PortfolioCollectionSnapshot[],
+): PortfolioReport {
+  const byRoot = new Map(
+    snapshots.map(({ root, collections }) => [
+      resolve(root),
+      { root: resolve(root), collections },
+    ]),
+  );
+  return finalizePortfolioReport(
+    [...byRoot.values()]
+      .sort((a, b) => compare(a.root, b.root))
+      .map(({ root, collections }) => loadRepository(root, collections)),
+  );
+}
+
+function finalizePortfolioReport(
+  repositories: PortfolioRepositoryReport[],
+): PortfolioReport {
   for (const repository of repositories) {
     const latest = repository.latestCollection;
     if (latest && !Number.isFinite(Date.parse(latest.timestamp))) {
@@ -193,7 +220,10 @@ export function renderPortfolioReportJson(report: PortfolioReport): string {
   return canonicalJson(report);
 }
 
-function loadRepository(root: string): PortfolioRepositoryReport {
+function loadRepository(
+  root: string,
+  providedCollections?: MeasurementCollection[],
+): PortfolioRepositoryReport {
   const base = emptyRepository(root);
   if (!existsSync(root)) {
     return {
@@ -215,7 +245,7 @@ function loadRepository(root: string): PortfolioRepositoryReport {
     const plans = loadMeasurementPlans(root).filter(
       (plan) => plan.status === "active",
     );
-    const collections = readMeasurementCollections(root);
+    const collections = providedCollections ?? readMeasurementCollections(root);
     const latest = collections.at(-1) ?? null;
     const previous = collections.at(-2) ?? null;
     return {
