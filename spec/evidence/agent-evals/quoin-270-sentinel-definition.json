@@ -2,7 +2,6 @@
   "report_schema_version": "cli-agent-evals-report-v1",
   "cli_agent_evals_version": "9e7b6cdde67fccdd9417171f8f116a8c91d400b7",
   "record_id": "quoin-270-cli-eval-sentinel-contract",
-  "observed_at": "2026-08-30T17:54:41.378Z",
   "subject": {
     "id": "agent-ix/cli-agent-evals",
     "revision": "9e7b6cdde67fccdd9417171f8f116a8c91d400b7"

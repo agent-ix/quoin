@@ -11,6 +11,7 @@ import { dirname, join } from "node:path";
 
 import {
   buildMeasurementReport,
+  interventionExperimentSchema,
   InterventionIntakeError,
   produceAgentEvalIntervention,
   rawEvidenceFor,
@@ -138,6 +139,9 @@ describe("intervention-experiment evidence", () => {
     const root = repo();
     const valid = record(root);
     expect(() => validateInterventionRecord(valid)).not.toThrow();
+    expect(interventionExperimentSchema.$id).toBe(
+      "https://agent-ix.github.io/quoin/schemas/intervention-experiment-v1.schema.json",
+    );
     for (const key of [
       "record_id",
       "observed_at",
@@ -170,6 +174,15 @@ describe("intervention-experiment evidence", () => {
     const mutable = structuredClone(valid);
     mutable.producer.tool_version = "latest";
     expect(() => validateInterventionRecord(mutable)).toThrow(/tool_version/);
+    for (const observedAt of [
+      "2026-08-30",
+      "2026-02-30T12:00:00Z",
+      "2026-08-30T25:00:00Z",
+    ]) {
+      const invalid = structuredClone(valid);
+      invalid.observed_at = observedAt;
+      expect(() => validateInterventionRecord(invalid)).toThrow(/observed_at/);
+    }
   });
 
   // Trace: FR-056-AC-3 (TC-1197)
@@ -256,6 +269,11 @@ describe("intervention-experiment evidence", () => {
     expect(() => writeInterventionRecord(root, unsafe)).toThrow(
       /raw_evidence_mismatch/,
     );
+    const nonNormalized = record(root);
+    nonNormalized.raw_evidence[0].path = "raw/./baseline.json";
+    expect(() => writeInterventionRecord(root, nonNormalized)).toThrow(
+      /raw_evidence_mismatch.*unsafe relative path/,
+    );
     const mismatch = record(root);
     mismatch.raw_evidence[0].size_bytes += 1;
     mismatch.raw_evidence[1].digest = `sha256:${"f".repeat(64)}`;
@@ -313,7 +331,7 @@ describe("intervention-experiment evidence", () => {
     ]);
   });
 
-  // Trace: FR-057-AC-7, FR-057-AC-8, FR-057-AC-9, FR-057-AC-10, FR-057-CON-2 (TC-1210..TC-1213)
+  // Trace: FR-057-AC-7, FR-057-AC-8, FR-057-AC-9, FR-057-AC-10, FR-057-CON-2 (TC-1210, TC-1211, TC-1212, TC-1213)
   test("renders one deterministic claim-centered object with no aggregate score", () => {
     const root = repo();
     const value = record(root);
@@ -353,7 +371,7 @@ describe("intervention-experiment evidence", () => {
     expect(buildMeasurementReport(root).interventions).toEqual([]);
   });
 
-  // Trace: FR-058-AC-2, FR-058-AC-3, FR-058-AC-4 (TC-1218..TC-1220)
+  // Trace: FR-058-AC-2, FR-058-AC-3, FR-058-AC-4 (TC-1218, TC-1219, TC-1220)
   test("agent-eval producer derives effects/raw metadata and refuses mismatches", () => {
     const root = repo();
     const baseline = reportJson([
@@ -389,6 +407,7 @@ describe("intervention-experiment evidence", () => {
     ]);
     const callerSubstitutes = {
       ...definition,
+      observed_at: "2000-01-01T00:00:00.000Z",
       measured_effects: [{ effect: 999 }],
       raw_evidence: [
         {
@@ -402,6 +421,9 @@ describe("intervention-experiment evidence", () => {
     expect(
       produceAgentEvalIntervention(root, callerSubstitutes).record.raw_evidence,
     ).toEqual(produced.raw_evidence);
+    expect(
+      produceAgentEvalIntervention(root, callerSubstitutes).record.observed_at,
+    ).toBe("2026-08-30T12:00:00.000Z");
 
     const mismatchRoot = repo();
     writeRaw(mismatchRoot, "raw/eval-before.json", baseline);
@@ -420,6 +442,7 @@ describe("intervention-experiment evidence", () => {
         "empty",
         JSON.stringify({
           ok: true,
+          generatedAt: "2026-08-30T12:00:00.000Z",
           suite: "empty",
           repeats: 1,
           results: [],
@@ -427,17 +450,28 @@ describe("intervention-experiment evidence", () => {
       ],
       ["malformed", "{invalid\n"],
       [
-        "unversioned",
+        "structurally incompatible",
         JSON.stringify({
           ok: true,
-          suite: "unversioned",
+          generatedAt: "2026-08-30T12:00:00.000Z",
+          suite: "incompatible",
           results: [{ id: "TC-EV-1", ok: true, passRate: "1/1" }],
+        }),
+      ],
+      [
+        "missing generatedAt",
+        JSON.stringify({
+          ok: true,
+          suite: "missing-generated-at",
+          repeats: 2,
+          results: [{ id: "TC-EV-1", ok: false, passRate: "1/2" }],
         }),
       ],
       [
         "duplicate",
         JSON.stringify({
           ok: false,
+          generatedAt: "2026-08-30T12:00:00.000Z",
           suite: "duplicate",
           repeats: 2,
           results: [
@@ -455,6 +489,18 @@ describe("intervention-experiment evidence", () => {
         produceAgentEvalIntervention(invalidRoot, producerDefinition()),
       ).toThrow();
       expect(readInterventionRecords(invalidRoot), name).toEqual([]);
+    }
+
+    for (const reportSchemaVersion of ["", "cli-agent-evals-report-v2"]) {
+      const invalidRoot = repo();
+      writeRaw(invalidRoot, "raw/eval-before.json", baseline);
+      writeRaw(invalidRoot, "raw/eval-after.json", treatment);
+      const invalidDefinition = producerDefinition();
+      invalidDefinition.report_schema_version = reportSchemaVersion;
+      expect(() =>
+        produceAgentEvalIntervention(invalidRoot, invalidDefinition),
+      ).toThrow(/report_schema_version cli-agent-evals-report-v1/);
+      expect(readInterventionRecords(invalidRoot)).toEqual([]);
     }
 
     const inadequateRoot = repo();
@@ -507,9 +553,23 @@ describe("intervention-experiment evidence", () => {
     ) as AgentEvalInterventionDefinition;
 
     const { record: produced } = produceAgentEvalIntervention(root, definition);
+    const retained = JSON.parse(
+      readFileSync(
+        join(
+          process.cwd(),
+          "spec",
+          "evidence",
+          "interventions",
+          "quoin-270-cli-eval-sentinel-contract.json",
+        ),
+        "utf8",
+      ),
+    ) as InterventionExperimentRecord;
 
+    expect(produced).toEqual(retained);
     expect(produced.baseline.sample_size).toBe(2);
     expect(produced.treatments[0].sample_size).toBe(2);
+    expect(produced.observed_at).toBe("2026-08-30T17:54:41.378Z");
     expect(produced.measured_effects).toEqual([
       expect.objectContaining({
         baseline_value: 0.5,
@@ -540,7 +600,6 @@ describe("intervention-experiment evidence", () => {
       report_schema_version: "cli-agent-evals-report-v1",
       cli_agent_evals_version: "0.4.0",
       record_id: "agent-eval-experiment",
-      observed_at: base.observed_at,
       subject: base.subject,
       producer: base.producer,
       design: base.design,
@@ -579,6 +638,7 @@ function reportJson(
   const total = scenarios[0]?.total ?? 0;
   return JSON.stringify({
     ok: scenarios.every((item) => item.passed === item.total),
+    generatedAt: "2026-08-30T12:00:00.000Z",
     suite: "constructed-fixture",
     repeats: total,
     results: scenarios.map((item) => ({

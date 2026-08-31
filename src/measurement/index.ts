@@ -48,6 +48,7 @@ export {
   type InterventionRefusalCode,
   type RawEvidenceReference,
 } from "./intervention-types.js";
+export { interventionExperimentSchema } from "./intervention-schema.js";
 export { produceAgentEvalIntervention } from "./agent-eval-intervention.js";
 export {
   MEASUREMENT_SCHEMA_VERSION,

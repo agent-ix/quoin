@@ -22,8 +22,10 @@ export function produceAgentEvalIntervention(
   // scenario rates for the intervention-specific projection.
   parseAgentEval(baselineRaw);
   parseAgentEval(treatmentRaw);
-  const baseline = reportFrom(baselineRaw, "baseline");
-  const treatment = reportFrom(treatmentRaw, "treatment");
+  const baselineReport = reportFrom(baselineRaw, "baseline");
+  const treatmentReport = reportFrom(treatmentRaw, "treatment");
+  const baseline = baselineReport.scenarios;
+  const treatment = treatmentReport.scenarios;
   const baselineIds = [...baseline.keys()].sort(compare);
   const treatmentIds = [...treatment.keys()].sort(compare);
   if (baselineIds.join("\0") !== treatmentIds.join("\0")) {
@@ -73,7 +75,7 @@ export function produceAgentEvalIntervention(
     schema_version: 1,
     record_type: "intervention_experiment",
     record_id: definition.record_id,
-    observed_at: definition.observed_at,
+    observed_at: treatmentReport.generatedAt,
     subject: definition.subject,
     producer: {
       ...definition.producer,
@@ -132,11 +134,23 @@ interface ScenarioRate {
   rate: number;
 }
 
-function reportFrom(raw: string, label: string): Map<string, ScenarioRate> {
-  const root = JSON.parse(raw) as { repeats?: unknown; results?: unknown };
+interface AgentEvalReport {
+  generatedAt: string;
+  scenarios: Map<string, ScenarioRate>;
+}
+
+function reportFrom(raw: string, label: string): AgentEvalReport {
+  const root = JSON.parse(raw) as {
+    generatedAt?: unknown;
+    repeats?: unknown;
+    results?: unknown;
+  };
+  if (typeof root.generatedAt !== "string") {
+    throw new Error(`${label} agent-eval report lacks generatedAt`);
+  }
   if (!Number.isInteger(root.repeats) || Number(root.repeats) < 1) {
     throw new Error(
-      `${label} agent-eval report is unversioned or lacks positive repeats`,
+      `${label} agent-eval report is structurally incompatible: positive repeats are required`,
     );
   }
   const out = new Map<string, ScenarioRate>();
@@ -160,7 +174,7 @@ function reportFrom(raw: string, label: string): Map<string, ScenarioRate> {
     out.set(result.id, { passed, total, rate: passed / total });
   }
   if (out.size === 0) throw new Error(`${label} report contains no scenarios`);
-  return out;
+  return { generatedAt: root.generatedAt, scenarios: out };
 }
 
 function validateDefinition(value: AgentEvalInterventionDefinition): void {

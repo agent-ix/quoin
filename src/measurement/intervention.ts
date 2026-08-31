@@ -10,7 +10,7 @@ import {
   unlinkSync,
   writeFileSync,
 } from "node:fs";
-import { dirname, isAbsolute, join, relative, resolve } from "node:path";
+import { dirname, isAbsolute, join, posix, relative, resolve } from "node:path";
 
 import { Ajv2020 } from "ajv/dist/2020.js";
 
@@ -20,7 +20,11 @@ import type { InterventionExperimentRecord } from "./intervention-types.js";
 import { InterventionIntakeError } from "./intervention-types.js";
 import { loadMeasurementPlans } from "./plans.js";
 
-const ajv = new Ajv2020({ allErrors: true, strict: false });
+const ajv = new Ajv2020({
+  allErrors: true,
+  strict: false,
+  formats: { "date-time": isRfc3339DateTime },
+});
 const validateSchema = ajv.compile(interventionExperimentSchema as object);
 
 export function interventionsRoot(repo: string): string {
@@ -177,7 +181,10 @@ function resolveRawPath(repo: string, path: string): string {
     path.length === 0 ||
     isAbsolute(path) ||
     path.includes("\\") ||
-    path.split("/").includes("..")
+    path.split("/").includes("..") ||
+    posix.normalize(path) !== path ||
+    path === "." ||
+    path.endsWith("/")
   ) {
     throw new Error(`unsafe relative path ${JSON.stringify(path)}`);
   }
@@ -213,7 +220,7 @@ function semanticFindings(
 ): void {
   if (
     typeof value.observed_at === "string" &&
-    !Number.isFinite(Date.parse(value.observed_at))
+    !isRfc3339DateTime(value.observed_at)
   ) {
     findings.push("/observed_at: must be a valid date-time");
   }
@@ -334,6 +341,43 @@ function semanticFindings(
       }
     }
   }
+}
+
+function isRfc3339DateTime(value: string): boolean {
+  const match =
+    /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.\d+)?(?:Z|([+-])(\d{2}):(\d{2}))$/.exec(
+      value,
+    );
+  if (!match) return false;
+  const [, yearText, monthText, dayText, hourText, minuteText, secondText] =
+    match;
+  const year = Number(yearText);
+  const month = Number(monthText);
+  const day = Number(dayText);
+  const hour = Number(hourText);
+  const minute = Number(minuteText);
+  const second = Number(secondText);
+  const offsetHour = Number(match[8] ?? 0);
+  const offsetMinute = Number(match[9] ?? 0);
+  return (
+    month >= 1 &&
+    month <= 12 &&
+    day >= 1 &&
+    day <= daysInMonth(year, month) &&
+    hour <= 23 &&
+    minute <= 59 &&
+    second <= 59 &&
+    offsetHour <= 23 &&
+    offsetMinute <= 59
+  );
+}
+
+function daysInMonth(year: number, month: number): number {
+  if (month === 2) {
+    const leap = year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
+    return leap ? 29 : 28;
+  }
+  return [4, 6, 9, 11].includes(month) ? 30 : 31;
 }
 
 function checkLinkedKeys(

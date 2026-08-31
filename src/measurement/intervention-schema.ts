@@ -2,13 +2,19 @@ const identity = {
   type: "string",
   pattern: "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,127}$",
 };
-const digest = { type: "string", pattern: "^(sha256|blake3):[a-f0-9]{64}$" };
+const digest = { type: "string", pattern: "^sha256:[a-f0-9]{64}$" };
 const immutableVersion = {
   type: "string",
   pattern:
     "^(v?[0-9]+[.][0-9]+[.][0-9]+([-+][0-9A-Za-z.-]+)?|[a-f0-9]{40}|(sha256|blake3):[a-f0-9]{64})$",
 };
 const nonempty = { type: "string", minLength: 1 };
+const rfc3339DateTime = {
+  type: "string",
+  format: "date-time",
+  pattern:
+    "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:[.][0-9]+)?(?:Z|[+-][0-9]{2}:[0-9]{2})$",
+};
 const scalar = {
   anyOf: [
     { type: "number" },
@@ -39,6 +45,7 @@ const qualified = closed(["description", "disposition"], {
 
 export const interventionExperimentSchema = {
   $schema: "https://json-schema.org/draft/2020-12/schema",
+  $id: "https://agent-ix.github.io/quoin/schemas/intervention-experiment-v1.schema.json",
   type: "object",
   required: [
     "schema_version",
@@ -66,7 +73,7 @@ export const interventionExperimentSchema = {
     schema_version: { const: 1 },
     record_type: { const: "intervention_experiment" },
     record_id: identity,
-    observed_at: nonempty,
+    observed_at: rfc3339DateTime,
     subject: closed(["id", "revision"], { id: identity, revision: nonempty }),
     producer: closed(
       [

@@ -86,7 +86,6 @@ export interface AgentEvalInterventionDefinition {
   report_schema_version: string;
   cli_agent_evals_version: string;
   record_id: string;
-  observed_at: string;
   subject: InterventionExperimentRecord["subject"];
   producer: InterventionExperimentRecord["producer"];
   design: InterventionExperimentRecord["design"];

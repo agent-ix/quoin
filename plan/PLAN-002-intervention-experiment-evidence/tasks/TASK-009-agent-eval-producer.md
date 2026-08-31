@@ -40,5 +40,6 @@ raw metadata, and submits the resulting record through TASK-007.
 ## Exit Criteria
 
 - The adapter never accepts caller-supplied effects or raw metadata.
-- It refuses empty, malformed, unversioned, duplicate, and mismatched reports.
+- It refuses an absent/unsupported input-schema declaration and empty, malformed,
+  structurally incompatible, duplicate, or mismatched reports.
 - It invokes no agent, harness, command, subprocess, or network client.
