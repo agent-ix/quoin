@@ -231,6 +231,7 @@ function adapt(record = graphRecord(), bytes = Buffer.from("scorer")) {
 }
 
 describe("FR-066 governed graph producer adapters", () => {
+  // Trace: FR-066-AC-1
   test("TC-1293 selects exact versioned names and refuses an unknown adapter", () => {
     expect(selectGraphAdapter("quire-assurance-v1")).toBe("quire-assurance-v1");
     expect(selectGraphAdapter("quire-code-graph-quality-v1")).toBe(
@@ -241,6 +242,7 @@ describe("FR-066 governed graph producer adapters", () => {
     );
   });
 
+  // Trace: FR-066-AC-2
   test("TC-1294 preserves a valid Quire export and rejects every premise drift", () => {
     const value = quireExport();
     const accepted = {
@@ -261,6 +263,7 @@ describe("FR-066 governed graph producer adapters", () => {
     ).toThrow(/invalid_premise.*modules/);
   });
 
+  // Trace: FR-066-AC-3
   test("TC-1295 hands every Quire graph collection through without translation", () => {
     const value = quireExport();
     value.artifacts.push({
@@ -288,6 +291,7 @@ describe("FR-066 governed graph producer adapters", () => {
     ).toThrow(/invalid_premise.*duplicate/i);
   });
 
+  // Trace: FR-066-AC-4
   test("TC-1296 validates the closed graph-quality schema and canonical id", () => {
     const record = graphRecord();
     expect(() =>
@@ -310,6 +314,7 @@ describe("FR-066 governed graph producer adapters", () => {
     ).toThrow(/invalid_observation/);
   });
 
+  // Trace: FR-066-AC-5
   test("TC-1297 retains exact scorer bytes and refuses a digest mismatch", () => {
     const bytes = Buffer.from("scorer");
     const collection = adapt(graphRecord(), bytes);
@@ -336,43 +341,50 @@ describe("FR-066 governed graph producer adapters", () => {
     ).toThrow(/attachment_digest_mismatch/);
   });
 
-  test.each([
-    "subject",
-    "scope",
-    "timestamp",
-    "environment",
-    "verificationStack",
-  ])("TC-1298 refuses missing attestation field %s", (field) => {
-    const value = { ...attestation() } as Record<string, unknown>;
-    delete value[field];
-    expect(() =>
-      adaptGraphQualityObservation({
-        record: graphRecord(),
-        scorerBytes: Buffer.from("scorer"),
-        scorerMediaType: "application/json",
-        attestation: value,
-        plans: [plan()],
-      }),
-    ).toThrow(/invalid_attestation/);
+  // Trace: FR-066-AC-6
+  test("TC-1298 refuses every missing attestation field", () => {
+    for (const field of [
+      "subject",
+      "scope",
+      "timestamp",
+      "environment",
+      "verificationStack",
+    ]) {
+      const value = { ...attestation() } as Record<string, unknown>;
+      delete value[field];
+      expect(() =>
+        adaptGraphQualityObservation({
+          record: graphRecord(),
+          scorerBytes: Buffer.from("scorer"),
+          scorerMediaType: "application/json",
+          attestation: value,
+          plans: [plan()],
+        }),
+      ).toThrow(/invalid_attestation/);
+    }
   });
 
-  test.each([
-    [[], "absent"],
-    [[plan({ status: "retired" })], "retired"],
-    [[plan({ id: "MP-999" })], "MP-999"],
-    [[plan({ definitionVersion: "v2" })], "v2"],
-  ])("TC-1299 refuses an %s or mismatched graph-quality plan", (plans) => {
-    expect(() =>
-      adaptGraphQualityObservation({
-        record: graphRecord(),
-        scorerBytes: Buffer.from("scorer"),
-        scorerMediaType: "application/json",
-        attestation: attestation(),
-        plans: plans as MeasurementPlan[],
-      }),
-    ).toThrow(/inactive_plan/);
+  // Trace: FR-066-AC-7
+  test("TC-1299 refuses absent, inactive, or mismatched graph-quality plans", () => {
+    for (const plans of [
+      [],
+      [plan({ status: "retired" })],
+      [plan({ id: "MP-999" })],
+      [plan({ definitionVersion: "v2" })],
+    ] as MeasurementPlan[][]) {
+      expect(() =>
+        adaptGraphQualityObservation({
+          record: graphRecord(),
+          scorerBytes: Buffer.from("scorer"),
+          scorerMediaType: "application/json",
+          attestation: attestation(),
+          plans,
+        }),
+      ).toThrow(/inactive_plan/);
+    }
   });
 
+  // Trace: FR-066-AC-8
   test("TC-1300 maps census entries bijectively and deterministically", () => {
     fc.assert(
       fc.property(
@@ -408,6 +420,7 @@ describe("FR-066 governed graph producer adapters", () => {
     );
   });
 
+  // Trace: FR-066-AC-9
   test("TC-1301 maps result facts bijectively and refuses duplicate keys", () => {
     const collection = adapt();
     expect(
@@ -431,9 +444,9 @@ describe("FR-066 governed graph producer adapters", () => {
     expect(() => adapt(record)).toThrow(/duplicate_partition/);
   });
 
-  test.each(["empty", "unreadable", "unsupported"] as const)(
-    "TC-1302 retains census and one not-computed %s state",
-    (state) => {
+  // Trace: FR-066-AC-10
+  test("TC-1302 retains census and each distinct not-computed state", () => {
+    for (const state of ["empty", "unreadable", "unsupported"] as const) {
       const collection = adapt(graphRecord(state));
       const states = collection.observations.filter(
         (row) => row.state === "not_computed",
@@ -448,9 +461,10 @@ describe("FR-066 governed graph producer adapters", () => {
           (row) => row.dimensions?.measure === "census",
         ),
       ).toBe(true);
-    },
-  );
+    }
+  });
 
+  // Trace: FR-066-AC-11
   test("TC-1303 adapted intake is idempotent and collision-safe", () => {
     const root = mkdtempSync(join(tmpdir(), "quoin-graph-adapter-"));
     try {
@@ -471,6 +485,7 @@ describe("FR-066 governed graph producer adapters", () => {
     }
   });
 
+  // Trace: FR-066-AC-12
   test("TC-1304 adapters have no producer, network, Git, or frontmatter dependency", () => {
     const source = readFileSync(
       join(process.cwd(), "src", "measurement", "graph-adapters.ts"),
