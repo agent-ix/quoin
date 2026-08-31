@@ -72,6 +72,17 @@ Quire document validation also passed for the implementation work. Validation
 continues to emit pre-existing repository-wide grammar warnings outside this
 reviewed subset.
 
+After replay onto Quoin main `ab73aadfb7796e9a30ec89e42f87afe09fe7f1fd`,
+the current inner gate passed the production build, document validation, version
+agreement, 67/67 test files, and 815/815 tests using Quire CLI
+`bcface2714a958a328f3427714650ab2df71030f`, engine
+`ca7362d4dacecb96f01d74d1d971327118c25917`, and the locked
+`spec-artifacts-process@61a20e0` vocabulary. The broader verification-stack gate
+stopped before governed execution because its locked Filament revision
+`546e7943ee5a8fe552242cbb19d12aa902536652` is no longer reachable from any
+current remote-tracking ref; this provenance limitation remains visible rather
+than being bypassed with a fabricated ref.
+
 ## Underspecified-code trace
 
 - `intervention-types.ts` and `intervention-schema.ts` implement FR-056's

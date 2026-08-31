@@ -23,3 +23,10 @@ description: "Chronological log for the PLAN-002 bundle."
   `spec-artifacts-process@61a20e0` vocabulary. Quire coverage reports FR-056 at
   9/9, FR-057 at 14/14, and FR-058 at 5/5 backed. The final gap analysis is
   recorded in SR-036.
+- **2026-08-30** — Replayed PLAN-002 onto Quoin main `ab73aad`, rebased its
+  trace identities to US-015, FR-056..FR-058, and TC-1195..TC-1221, and repaired
+  two downstream test guards that incorrectly depended on the active branch and
+  the operator's home-directory checkout. The current inner gate passes 815/815
+  tests across 67 files. The outer verification-stack gate remains unavailable
+  because its locked Filament revision is no longer reachable from a remote ref;
+  no replacement provenance was invented.

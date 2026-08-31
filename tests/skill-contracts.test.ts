@@ -17,9 +17,12 @@ import { join } from "node:path";
 import { parse as parseYaml } from "yaml";
 
 const SKILLS_DIR = join(__dirname, "..", "skills");
+const PROCESS_MODULE_ROOT =
+  process.env.SPEC_ARTIFACTS_PROCESS_ROOT ??
+  join(process.env.HOME ?? "", "dev", "spec-artifacts-process");
 const MODULE_SCHEMA = join(
-  process.env.HOME ?? "",
-  "dev/spec-artifacts-process/spec_artifacts_process/schemas/spec-review-frontmatter.schema.json",
+  PROCESS_MODULE_ROOT,
+  "spec_artifacts_process/schemas/spec-review-frontmatter.schema.json",
 );
 
 function skillDirs(): string[] {
