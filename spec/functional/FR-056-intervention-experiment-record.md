@@ -405,7 +405,7 @@ producer provenance remain engine-independent and independently auditable.
     },
     "digest": {
       "type": "string",
-      "pattern": "^(sha256|blake3):[a-f0-9]{64}$"
+      "pattern": "^sha256:[a-f0-9]{64}$"
     },
     "immutable_version": {
       "type": "string",

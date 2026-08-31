@@ -594,9 +594,9 @@ generated tests under `tests/props/` and `Unit` for the rest.
 | TC-1214 | Intake and reporting spawn no experiment or producer process | Static | P0 | FR-057-CON-1 | 🚧 planned for #270 |
 | TC-1215 | Existing measurement collections and pre-experiment evidence remain readable without migration | Integration | P0 | FR-057-CON-3 | 🚧 planned for #270 |
 | TC-1216 | Unsafe, missing, wrong-sized, and digest-mismatched raw evidence returns `raw_evidence_mismatch`, identifies each mismatch, and leaves the record store unchanged | Property | P0 | FR-057-AC-11 | 🚧 planned for #270 |
-| TC-1217 | Two real versioned reports with the same scenario ids produce treatment-linked sample counts, pass rates, and treatment-minus-baseline effects | Integration | P0 | FR-058-AC-1 | 🚧 planned for #270 |
-| TC-1218 | Empty, malformed, unversioned, duplicate, and scenario-mismatched reports are refused without an intervention record | Property | P0 | FR-058-AC-2 | 🚧 planned for #270 |
-| TC-1219 | Raw-evidence media type, byte size, and digest derive from exact report bytes and ignore caller-supplied substitutes | Property | P0 | FR-058-AC-3 | 🚧 planned for #270 |
+| TC-1217 | Two real reports governed by a supported input-schema declaration and carrying the same scenario ids produce treatment-linked sample counts, pass rates, treatment-minus-baseline effects, and the treatment observation clock | Integration | P0 | FR-058-AC-1 | 🚧 planned for #270 |
+| TC-1218 | An absent or unsupported input-schema declaration and empty, malformed, structurally incompatible, duplicate, or scenario-mismatched reports are refused without an intervention record | Property | P0 | FR-058-AC-2 | 🚧 planned for #270 |
+| TC-1219 | Observation time and raw-evidence media type, byte size, and digest derive from exact report bytes and ignore caller-supplied substitutes | Property | P0 | FR-058-AC-3 | 🚧 planned for #270 |
 | TC-1220 | Inadequate repetition, uncontrolled/unknown qualifiers, and absent attribution method yield `cause_not_established`, none confidence, and explicit gaps | Property | P0 | FR-058-AC-4 | 🚧 planned for #270 |
 | TC-1221 | A real external two-run evaluation feeds retained reports to the producer, which spawns no process and persists through FR-057 | E2E | P0 | FR-058-AC-5 | 🚧 planned for #270 |
 | TC-1077 | The supported Tier-1 update emits baseline JSON in the same format the repository gate enforces; updating a ratchet cannot make the next gate fail on style alone (#244) | Unit | P0 | FR-043-AC-17 | ✅ |
