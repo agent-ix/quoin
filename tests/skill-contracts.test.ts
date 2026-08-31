@@ -17,13 +17,25 @@ import { join } from "node:path";
 import { parse as parseYaml } from "yaml";
 
 const SKILLS_DIR = join(__dirname, "..", "skills");
-const PROCESS_MODULE_ROOT =
-  process.env.SPEC_ARTIFACTS_PROCESS_ROOT ??
-  join(process.env.HOME ?? "", "dev", "spec-artifacts-process");
-const MODULE_SCHEMA = join(
-  PROCESS_MODULE_ROOT,
-  "spec_artifacts_process/schemas/spec-review-frontmatter.schema.json",
-);
+const MODULE_SCHEMA_CANDIDATES = [
+  ...(process.env.IX_FILAMENT_MODULES_PATH ?? "")
+    .split(":")
+    .filter(Boolean)
+    .map((root) =>
+      join(
+        root,
+        "spec-artifacts-process/schemas/spec-review-frontmatter.schema.json",
+      ),
+    ),
+  join(
+    process.env.HOME ?? "",
+    ".ix/filament/modules/spec-artifacts-process/schemas/spec-review-frontmatter.schema.json",
+  ),
+  join(
+    process.env.HOME ?? "",
+    "dev/spec-artifacts-process/spec_artifacts_process/schemas/spec-review-frontmatter.schema.json",
+  ),
+];
 
 function skillDirs(): string[] {
   return readdirSync(SKILLS_DIR).filter((d) =>
@@ -58,12 +70,16 @@ function declaredAnalyses(text: string): string[] {
 
 /** The module's declared vocabulary, or null when the module is not checked out. */
 function analysisEnum(): string[] | null {
-  try {
-    return JSON.parse(readFileSync(MODULE_SCHEMA, "utf8")).properties.analysis
-      .enum;
-  } catch {
-    return null;
+  for (const candidate of MODULE_SCHEMA_CANDIDATES) {
+    try {
+      return JSON.parse(readFileSync(candidate, "utf8")).properties.analysis
+        .enum;
+    } catch {
+      // Try the next active-module location; a local developer checkout is
+      // deliberately last because it may lag the installed runtime contract.
+    }
   }
+  return null;
 }
 
 describe("skill definitions", () => {
