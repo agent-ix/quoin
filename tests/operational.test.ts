@@ -491,6 +491,24 @@ describe("operational evidence", () => {
       ).toThrow(/exactly one Publish job|unstarted or incomplete/);
       expect(readOperationalRecords(invalid)).toEqual([]);
     }
+
+    for (const changed of [
+      { run_id: 41 },
+      { head_sha: "b".repeat(40) },
+      { run_attempt: 2 },
+    ]) {
+      const invalid = repo();
+      writeGitHubArtifacts(invalid, "success");
+      writeRaw(
+        invalid,
+        "raw/jobs.json",
+        JSON.stringify({ jobs: [{ ...githubJob("success"), ...changed }] }),
+      );
+      expect(() =>
+        produceGitHubReleaseOperational(invalid, githubDefinition()),
+      ).toThrow(/does not match workflow run/);
+      expect(readOperationalRecords(invalid)).toEqual([]);
+    }
   });
 
   // Trace: FR-061-AC-1, FR-061-AC-5 (TC-1244, TC-1248)
@@ -626,6 +644,7 @@ function writeGitHubArtifacts(
       head_sha: "a".repeat(40),
       status: "completed",
       conclusion,
+      run_attempt: 1,
       run_started_at: "2026-08-30T12:00:00.000Z",
       updated_at: "2026-08-30T12:05:00.000Z",
       html_url: "https://example.invalid/run/42",
@@ -643,6 +662,9 @@ function writeGitHubArtifacts(
 
 function githubJob(conclusion: string): Record<string, unknown> {
   return {
+    run_id: 42,
+    run_attempt: 1,
+    head_sha: "a".repeat(40),
     name: "Publish",
     status: "completed",
     conclusion,

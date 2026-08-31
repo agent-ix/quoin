@@ -76,6 +76,15 @@ export function produceGitHubReleaseOperational(
   ) {
     throw new Error("configured release job is unstarted or incomplete");
   }
+  if (
+    job.run_id !== run.id ||
+    job.head_sha !== run.head_sha ||
+    job.run_attempt !== run.run_attempt
+  ) {
+    throw new Error(
+      "configured release job run, revision, or attempt does not match workflow run",
+    );
+  }
   const started = timestamp(job.started_at, "job.started_at");
   const completed = timestamp(job.completed_at, "job.completed_at");
   const observedAt = String(run.updated_at ?? job.completed_at);
