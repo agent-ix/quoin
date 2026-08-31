@@ -38,13 +38,14 @@ underspecified production surface remains.
 - Matrix verification: TC-1249..TC-1260 are 12/12 covered. `quire coverage --scope . --json`
   reports the FR-062 acceptance-criterion group as `backed: 12, total: 12` with no unmatched
   FR-062 tag.
-- Test execution: 17/17 focused graph tests pass; the 104-test adjacent regression slice passes.
+- Test execution: 22/22 focused graph, command, and skill-contract tests pass; the 104-test adjacent
+  regression slice passes; the full pinned suite passes 819/819.
 - Review-finding closure: exact premises, malformed retained JSON, requirement-only closure,
-  permutation determinism, and inherited update-check isolation each have focused regressions.
+  permutation determinism, inherited update-check isolation, and preservation of the distinction
+  between missing storage and retained JSON `null` each have focused regressions.
 - Reverse traceability: assurance schema/types/validation, explicit input loading, graph projections,
   rendering, command registration, and tests trace to FR-062/TASK-020..TASK-024. The separate
   architecture harness commit traces to NFR-014/TC-1154.
 - Optional semantic review: skipped as directed; the user did not opt into the semantic
   intent↔test↔code pass.
-- Repository gate context: 817/819 tests pass. The two failures are pre-existing installed-tool/module
-  drift recorded in SR-106 and TASK-024; neither is a PLAN-004 implementation or coverage gap.
+- Repository gate context: the pinned repository gate passes 819/819 tests.

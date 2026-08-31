@@ -13,9 +13,10 @@ description: "Chronological log for the graph-analysis implementation plan."
   impact closure, command/rendering, and boundary/regression sealing.
 - **2026-08-31** — Completed TASK-020..TASK-024 against quire-rs #386 commit
   `3fe2c7e0e9de445af290603c3728857803b61183`. Focused graph tests, typecheck, lint, build, and Quire
-  validation pass. The full suite passes 817/819; two pre-existing external contract drifts are
-  recorded in TASK-024 and the landing reviews.
+  validation pass. The full pinned suite passes 819/819 after aligning the active module-schema
+  lookup and using the pinned Quire contract build.
 - **2026-08-31** — Closed the independent code-review findings: exact accepted-premise equality,
   malformed retained-binding classification, requirement-only impact closure, canonical accepted
-  and auditor arrays, and isolation from the inherited update check. Focused tests pass 17/17 and
-  the adjacent regression slice passes 104/104.
+  and auditor arrays, isolation from the inherited update check, and the retained JSON `null`
+  distinction. Focused graph, command, and skill-contract tests pass 22/22; the adjacent regression
+  slice passes 104/104.

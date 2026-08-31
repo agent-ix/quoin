@@ -40,6 +40,6 @@ non-scoring, export-driven, and additive to existing evidence, assurance, and me
 ## Notes
 
 - This is the landing gate for issue #152 and the prerequisite for issue #281.
-- The full Vitest run passes 817/819 tests. The two failures are outside the #152 diff: an installed
-  skill vocabulary ahead of the checked-out module schema, and an installed Quire coverage payload
-  missing `binding_census[].tagged` required by the unchanged pinned coverage-v1 schema.
+- The full pinned Vitest run passes 819/819 tests. The reusable skill-contract gate prefers the
+  active installed module schema over a stale development checkout, and the suite uses the pinned
+  Quire contract build from issue #386.

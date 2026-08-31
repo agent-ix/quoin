@@ -23,19 +23,20 @@ tests, command registration, schema provenance, and the separate TC-1154 harness
 
 ## Verdict
 
-**PASS.** Five findings from the independent review were corrected and regression-tested. No
+**PASS.** Six findings from the independent review were corrected and regression-tested. No
 Golden Path, mock-boundary, completeness, code-test alignment, or reverse-traceability defect
 remains in the reviewed change.
 
 ## Findings
 
-| ID      | Severity | Summary                                                                                                                                                                                                                        | Refs                  |
-| ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------- |
-| FND-001 | high     | Resolved: accepted premises previously admitted extra modules or schemas. Validation now requires exact format/version/module/schema equality after canonical ordering.                                                        | FR-062-AC-9; TC-1257  |
-| FND-002 | high     | Resolved: syntactically valid but malformed `bindings.json` could expose `undefined` and crash an analyzer. The loader now validates the retained schema and classifies malformed content as unreadable/not-computed.          | FR-062-AC-9; TC-1257  |
-| FND-003 | high     | Resolved: change-impact treated every artifact type as a requirement. Its seeds and edges are now restricted to StR, US, FR, and NFR; Plan, Task, SpecReview, and other artifact types are excluded.                           | FR-062-AC-4; TC-1252  |
-| FND-004 | medium   | Resolved: accepted-premise and retained-auditor array permutations could survive into report bytes. Modules, schemas, findings, healthy ids, unevaluated checks/suites, and loaded bindings are now canonically ordered.       | FR-062-AC-10; TC-1258 |
-| FND-005 | high     | Resolved: non-JSON commands inherited the interactive package update check. Every graph command now disables that inherited nudge, and TC-1259 exercises the human command path and statically seals all four command classes. | FR-062-CON-1; TC-1259 |
+| ID      | Severity | Summary                                                                                                                                                                                                                               | Refs                  |
+| ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------- |
+| FND-001 | high     | Resolved: accepted premises previously admitted extra modules or schemas. Validation now requires exact format/version/module/schema equality after canonical ordering.                                                               | FR-062-AC-9; TC-1257  |
+| FND-002 | high     | Resolved: syntactically valid but malformed `bindings.json` could expose `undefined` and crash an analyzer. The loader now validates the retained schema and classifies malformed content as unreadable/not-computed.                 | FR-062-AC-9; TC-1257  |
+| FND-003 | high     | Resolved: change-impact treated every artifact type as a requirement. Its seeds and edges are now restricted to StR, US, FR, and NFR; Plan, Task, SpecReview, and other artifact types are excluded.                                  | FR-062-AC-4; TC-1252  |
+| FND-004 | medium   | Resolved: accepted-premise and retained-auditor array permutations could survive into report bytes. Modules, schemas, findings, healthy ids, unevaluated checks/suites, and loaded bindings are now canonically ordered.              | FR-062-AC-10; TC-1258 |
+| FND-005 | high     | Resolved: non-JSON commands inherited the interactive package update check. Every graph command now disables that inherited nudge, and TC-1259 exercises the human command path and statically seals all four command classes.        | FR-062-CON-1; TC-1259 |
+| FND-006 | high     | Resolved: an existing `bindings.json` containing JSON `null` was collapsed into an available empty store. The loader now distinguishes missing storage from malformed retained JSON and classifies `null` as unreadable/not-computed. | FR-062-AC-9; TC-1257  |
 
 ## Review evidence
 
@@ -64,9 +65,8 @@ remains in the reviewed change.
 
 - `make lint`: pass.
 - `corepack pnpm run build`: pass, including all three command entries and assurance schema copy.
-- Focused graph tests: 17/17 pass.
+- Focused graph, command, and skill-contract tests: 22/22 pass.
 - Evidence-audit, auditor, assurance, measurement, portfolio, and graph regressions: 104/104 pass.
-- Full Vitest suite: 817/819 pass. The remaining failures are pre-existing external drift: the
-  installed skill set declares `architecture-evaluation` ahead of the checked-out module vocabulary,
-  and the installed Quire coverage payload omits `binding_census[].tagged` required by the unchanged
-  coverage-v1 schema. Neither failure intersects the #152 implementation.
+- Full pinned Vitest suite: 819/819 pass. The reusable skill-contract gate now prefers the active
+  installed module schema over a stale development checkout, and the suite uses the pinned Quire
+  contract build from issue #386.

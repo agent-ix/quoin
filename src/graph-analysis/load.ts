@@ -4,12 +4,7 @@ import { existsSync, readFileSync } from "node:fs";
 
 import { z } from "zod";
 
-import {
-  bindingsPath,
-  readBindings,
-  STORE_SCHEMA_VERSION,
-  StoreReadError,
-} from "../evidence/index.js";
+import { bindingsPath, STORE_SCHEMA_VERSION } from "../evidence/index.js";
 import type { Binding } from "../evidence/index.js";
 import { parseAssurance } from "../quire/index.js";
 import type { GraphAnalysisInput } from "./analysis.js";
@@ -99,7 +94,13 @@ export function loadGraphAnalysisInput(
     };
   } else {
     try {
-      const retained = bindingsFile.safeParse(readBindings(options.repo));
+      // Read the retained bytes directly at this stricter consumer boundary.
+      // `readBindings()` deliberately maps JSON `null` to the legacy
+      // absent-file default; FR-062 must instead distinguish an existing,
+      // malformed store from an absent one.
+      const retained = bindingsFile.safeParse(
+        JSON.parse(readFileSync(path, "utf8")),
+      );
       bindings = retained.success
         ? {
             availability: "available",
@@ -115,10 +116,7 @@ export function loadGraphAnalysisInput(
               .join("; ")}`,
           };
     } catch (cause) {
-      const detail =
-        cause instanceof StoreReadError || cause instanceof Error
-          ? cause.message
-          : String(cause);
+      const detail = cause instanceof Error ? cause.message : String(cause);
       bindings = { availability: "unreadable", reason: detail };
     }
   }

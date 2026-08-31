@@ -272,6 +272,18 @@ describe("FR-062 graph command", () => {
       state: "not_computed",
       rows: [],
     });
+
+    writeFileSync(bindingsPath(paths.root), "null");
+    const nullStore = loadGraphAnalysisInput({
+      repo: paths.root,
+      exportPath: paths.exportPath,
+      premisesPath: paths.premisesPath,
+      auditPath: paths.auditPath,
+    });
+    expect(nullStore).toMatchObject({
+      ok: true,
+      value: { bindings: { availability: "unreadable" } },
+    });
   });
 
   // Trace: FR-062-AC-11
