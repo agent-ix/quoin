@@ -36,7 +36,13 @@ const PLAN: MeasurementPlan = {
   metric: "graph_quality",
   definitionVersion: "quire-code.graph-quality-v1",
   path: "spec/assurance/MP-001.md",
+  owner: "assurance-team",
+  action: "repair retained evidence",
 };
+const RETAINED_SCORER_BYTES = Buffer.from("retained scorer");
+const RETAINED_SCORER_DIGEST = `sha256:${createHash("sha256")
+  .update(RETAINED_SCORER_BYTES)
+  .digest("hex")}`;
 
 function collection(
   id: string,
@@ -113,9 +119,12 @@ function collection(
         observation_id: `sha256:${id.padEnd(64, "0").slice(0, 64)}`,
         producer,
         population: { state: "measured" },
-        raw_scorer_output: { digest: `sha256:${"f".repeat(64)}` },
+        raw_scorer_output: { digest: RETAINED_SCORER_DIGEST },
       },
-      scorer: { digest: `sha256:${"f".repeat(64)}` },
+      scorer: {
+        digest: RETAINED_SCORER_DIGEST,
+        bytesBase64: RETAINED_SCORER_BYTES.toString("base64"),
+      },
     },
     ...overrides,
   };
@@ -172,7 +181,7 @@ describe("governed graph portfolio", () => {
       sourceRevision: "d".repeat(40),
       corpusRevision: "e".repeat(40),
       producerRecordDigest: expect.stringMatching(/^sha256:/),
-      scorerDigest: `sha256:${"f".repeat(64)}`,
+      scorerDigest: RETAINED_SCORER_DIGEST,
       populationIdentity: { files: ["a.rs", "b.rs"] },
     });
     expect(current?.producer).toMatchObject({ producer_contract_version: 1 });
@@ -309,6 +318,15 @@ describe("governed graph portfolio", () => {
           };
         },
       ],
+      [
+        "population_incomplete",
+        (value) => {
+          value.observations[0].population = {
+            ...value.observations[0].population,
+            complete: false,
+          };
+        },
+      ],
     ];
     for (const [code, mutate] of mutations) {
       const after = structuredClone(
@@ -331,8 +349,8 @@ describe("governed graph portfolio", () => {
       ]),
     ]).repositories[0].graphQuality;
     expect(result.history.map((row) => row.scorerDigest)).toEqual([
-      `sha256:${"f".repeat(64)}`,
-      `sha256:${"f".repeat(64)}`,
+      RETAINED_SCORER_DIGEST,
+      RETAINED_SCORER_DIGEST,
     ]);
     expect(result.comparison).toMatchObject({
       before: { scorerDigest: expect.stringMatching(/^sha256:/) },
@@ -365,6 +383,21 @@ describe("governed graph portfolio", () => {
     expect(report.fanOut).toBe(fanOut);
     expect(report.churn).toBe(churn);
     expect(report.changeImpact?.[0]).toBe(impact);
+    const human = renderGovernedGraphPortfolio(
+      buildGovernedGraphPortfolioFrom([
+        repository("/repos/a", [], {
+          graph: {
+            availability: "available",
+            premises: { revision: "a" },
+            fanOut,
+            churn,
+            changeImpact: [impact],
+          },
+        }),
+      ]),
+    );
+    expect(human).toContain("# QA portfolio report");
+    expect(human).toContain('Fan-out: {\n  "rows"');
     expect(
       buildGovernedGraphPortfolioFrom([repository("/repos/b", [])])
         .repositories[0].graph,
@@ -410,6 +443,8 @@ describe("governed graph portfolio", () => {
         expect.objectContaining({
           availability: "unreadable",
           path: "/repos/a/broken.json",
+          owner: "assurance-team",
+          action: "repair retained evidence",
         }),
         expect.objectContaining({
           availability: "unreadable",
@@ -418,6 +453,25 @@ describe("governed graph portfolio", () => {
       ]),
     );
     expect(result.repositories[1].graphQuality.current?.id).toBe("other");
+
+    const corruptAttachment = structuredClone(
+      collection("bad-attachment", "2026-08-31T00:00:00Z"),
+    );
+    (
+      corruptAttachment.rawEvidence as {
+        scorer: { bytesBase64: string };
+      }
+    ).scorer.bytesBase64 = Buffer.from("changed").toString("base64");
+    const attachmentReport = buildGovernedGraphPortfolioFrom([
+      repository("/repos/c", [corruptAttachment]),
+    ]).repositories[0];
+    expect(attachmentReport.graphQuality.current).toBeNull();
+    expect(attachmentReport.gaps).toContainEqual(
+      expect.objectContaining({
+        availability: "unreadable",
+        path: expect.stringContaining("bad-attachment"),
+      }),
+    );
 
     const root = mkdtempSync(join(tmpdir(), "quoin-graph-read-"));
     try {
@@ -459,6 +513,7 @@ describe("governed graph portfolio", () => {
       canonicalGraphPortfolioJson(second),
     );
     expect(renderGovernedGraphPortfolio(first)).toContain("/repos/a");
+    expect(renderGovernedGraphPortfolio(first)).toContain("History:");
 
     const mapping = parseGraphPortfolioMappings(["/repos/a", "/repos/./a"], {
       graphExports: ["/repos/a=/inputs/export.json"],

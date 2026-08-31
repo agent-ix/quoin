@@ -276,6 +276,16 @@ describe("FR-066 governed graph producer adapters", () => {
     });
     expect(output).toEqual(value);
     expect(output.relation_kinds[0]).toEqual(value.relation_kinds[0]);
+
+    value.relation_kinds[0].sources.push("module_vocabulary");
+    expect(() =>
+      adaptQuireAssurance(value, {
+        format: value.format,
+        formatVersion: value.format_version,
+        source: value.source,
+        modules: value.modules,
+      }),
+    ).toThrow(/invalid_premise.*duplicate/i);
   });
 
   test("TC-1296 validates the closed graph-quality schema and canonical id", () => {

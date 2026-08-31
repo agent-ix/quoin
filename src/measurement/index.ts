@@ -39,6 +39,7 @@ export {
   type NormalizedStructuralGraph,
   GraphPortfolioMappingError,
 } from "./graph-portfolio.js";
+export { buildGovernedGraphPortfolio } from "./graph-portfolio-load.js";
 export { loadMeasurementPlans } from "./plans.js";
 export {
   loadActiveAssuranceProfiles,

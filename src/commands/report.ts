@@ -4,6 +4,7 @@ import { QuoinCommand } from "../base.js";
 import { canonicalJson } from "../evidence/store.js";
 import {
   buildMeasurementReport,
+  buildGovernedGraphPortfolio,
   buildPortfolioReport,
   comparisonFor,
   renderPortfolioReport,
@@ -11,6 +12,8 @@ import {
   renderMeasurementComparison,
   renderMeasurementReport,
   renderMeasurementReportJson,
+  renderGovernedGraphPortfolio,
+  canonicalGraphPortfolioJson,
   seriesFor,
 } from "../measurement/index.js";
 
@@ -30,6 +33,26 @@ measurement producer. Plans with no records remain visible as not_computed.`;
       description: "Repository root to include; repeat for a portfolio view.",
       multiple: true,
     }),
+    "graph-export": Flags.string({
+      description:
+        "Repository=path mapping for an existing Quire assurance export; repeatable.",
+      multiple: true,
+    }),
+    "graph-premises": Flags.string({
+      description:
+        "Repository=path mapping for accepted graph premises; repeatable.",
+      multiple: true,
+    }),
+    "graph-audit": Flags.string({
+      description:
+        "Repository=path mapping for a source-bound audit envelope; repeatable.",
+      multiple: true,
+    }),
+    changed: Flags.string({
+      description:
+        "Repository=requirement mapping for graph change-impact; repeatable.",
+      multiple: true,
+    }),
     since: Flags.string({
       description: "Compare the named source revision to latest.",
     }),
@@ -47,12 +70,35 @@ measurement producer. Plans with no records remain visible as not_computed.`;
       this.error("--since and --series are mutually exclusive", { exit: 2 });
     }
     try {
+      const graphSelected = Boolean(
+        flags["graph-export"]?.length ||
+        flags["graph-premises"]?.length ||
+        flags["graph-audit"]?.length ||
+        flags.changed?.length,
+      );
+      if (graphSelected && !flags.portfolio?.length) {
+        this.error("graph portfolio mappings require --portfolio", { exit: 2 });
+      }
       if (flags.portfolio?.length) {
         if (flags.since || flags.series) {
           this.error(
             "--portfolio cannot be combined with --since or --series",
             { exit: 2 },
           );
+        }
+        if (graphSelected) {
+          const portfolio = buildGovernedGraphPortfolio(flags.portfolio, {
+            graphExports: flags["graph-export"],
+            graphPremises: flags["graph-premises"],
+            graphAudits: flags["graph-audit"],
+            changed: flags.changed,
+          });
+          this.log(
+            flags.format === "json"
+              ? canonicalGraphPortfolioJson(portfolio).trimEnd()
+              : renderGovernedGraphPortfolio(portfolio),
+          );
+          return;
         }
         const portfolio = buildPortfolioReport(flags.portfolio);
         this.log(

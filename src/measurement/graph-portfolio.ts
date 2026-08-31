@@ -1,8 +1,14 @@
 /** Pure governed graph portfolio projection (FR-067). */
 
-import { canonicalJson } from "../evidence/store.js";
+import { createHash } from "node:crypto";
 import { resolve } from "node:path";
-import type { PortfolioRepositoryReport } from "./portfolio.js";
+
+import { canonicalJson } from "../evidence/store.js";
+import {
+  PORTFOLIO_STALE_AFTER_DAYS,
+  renderPortfolioReport,
+  type PortfolioRepositoryReport,
+} from "./portfolio.js";
 import type {
   MeasurementCollection,
   MeasurementObservation,
@@ -114,7 +120,7 @@ export interface GraphQualityHistoryRow {
   id: string;
   path: string;
   timestamp: string;
-  availability: "available" | "incompatible" | "unknown";
+  availability: "available" | "incompatible" | "unreadable" | "unknown";
   reason: string | null;
   plan: { id: string; definitionVersion: string } | null;
   toolIdentity: string;
@@ -135,6 +141,7 @@ export type GraphCompatibilityCode =
   | "configuration_changed"
   | "tool_changed"
   | "corpus_changed"
+  | "population_incomplete"
   | "population_changed";
 
 export interface GraphCompatibilityReason {
@@ -190,6 +197,8 @@ export type NormalizedStructuralGraph =
 
 export interface GovernedGraphPortfolioReport {
   schemaVersion: 1;
+  newestCollectionTimestamp: string | null;
+  staleAfterDays: number;
   repositories: GovernedGraphRepositoryReport[];
 }
 
@@ -262,7 +271,18 @@ export function buildGovernedGraphPortfolioFrom(
   const repositories = [...inputs]
     .sort((a, b) => compare(a.portfolio.root, b.portfolio.root))
     .map(buildRepository);
-  return { schemaVersion: 1, repositories };
+  const newestCollectionTimestamp =
+    repositories
+      .map((repository) => repository.latestCollection?.timestamp)
+      .filter((timestamp): timestamp is string => timestamp !== undefined)
+      .sort(compare)
+      .at(-1) ?? null;
+  return {
+    schemaVersion: 1,
+    newestCollectionTimestamp,
+    staleAfterDays: PORTFOLIO_STALE_AFTER_DAYS,
+    repositories,
+  };
 }
 
 export function compareGraphQualityCollections(
@@ -312,7 +332,9 @@ export function renderGovernedGraphPortfolio(
   report: GovernedGraphPortfolioReport,
 ): string {
   const lines = [
-    "# Governed graph portfolio",
+    renderPortfolioReport(report).trimEnd(),
+    "",
+    "# Governed graph evidence",
     "",
     "No partition or repository is aggregated and no quality verdict is derived.",
     "",
@@ -335,6 +357,41 @@ export function renderGovernedGraphPortfolio(
           `| ${row.measure} | ${row.dimension} | ${row.key} | ` +
             `${row.state === "measured" ? `${row.value} ${row.unit}` : `not_computed: ${row.reason ?? "unknown"}`} |`,
         );
+    }
+    if (repository.graphQuality.history.length > 0) {
+      lines.push("", "History:");
+      for (const row of repository.graphQuality.history) {
+        lines.push(
+          `- ${row.timestamp} ${row.id}: ${row.availability}; ` +
+            `producer ${row.producerRecordDigest ?? "unknown"}; scorer ${row.scorerDigest ?? "unknown"}`,
+        );
+        for (const partition of row.partitions)
+          lines.push(
+            `  - ${partition.measure}/${partition.dimension}/${partition.key}: ` +
+              `${partition.state === "measured" ? `${partition.value} ${partition.unit}` : `not_computed: ${partition.reason ?? "unknown"}`}`,
+          );
+      }
+    }
+    const comparison = repository.graphQuality.comparison;
+    if (comparison) {
+      lines.push(
+        "",
+        `Graph comparison: ${comparison.before.id} -> ${comparison.after.id}`,
+      );
+      for (const row of comparison.observations)
+        lines.push(
+          `- ${row.measure}/${row.dimension}/${row.key}: ${row.status}; ` +
+            `delta ${row.delta ?? "not_computed"}; ` +
+            `${row.reasons.map(({ code }) => code).join(", ") || "compatible"}`,
+        );
+    }
+    if (repository.graph.availability === "available") {
+      lines.push(
+        "",
+        `Fan-out: ${canonicalJson(repository.graph.fanOut).trimEnd()}`,
+        `Churn: ${canonicalJson(repository.graph.churn).trimEnd()}`,
+        `Change impact: ${canonicalJson(repository.graph.changeImpact).trimEnd()}`,
+      );
     }
     if (repository.gaps.length > 0) {
       lines.push("", "Gaps:");
@@ -416,6 +473,11 @@ function buildRepository(
       path: "path" in graph ? (graph.path ?? null) : null,
       reason: graph.reason,
     });
+  if (activePlan?.owner || activePlan?.action)
+    for (const gap of gaps) {
+      if (activePlan.owner) gap.owner = activePlan.owner;
+      if (activePlan.action) gap.action = activePlan.action;
+    }
   return {
     ...input.portfolio,
     graphQuality: { plan: activePlan, current, history, comparison },
@@ -466,9 +528,32 @@ function historyRow(
     : null;
   let availability: GraphQualityHistoryRow["availability"] = "available";
   let reason: string | null = null;
-  if (!producerRecordDigest || !scorerDigest || producer === undefined) {
+  const attachmentFailure = scorerIntegrityFailure(producerRecord, scorer);
+  const planKeys = new Set(
+    observations.map((row) => `${row.planId}\0${row.definitionVersion}`),
+  );
+  const populationKeys = new Set(
+    observations.map((row) =>
+      canonicalJson(row.population?.identity ?? null).trimEnd(),
+    ),
+  );
+  if (attachmentFailure?.availability === "unreadable") {
+    availability = "unreadable";
+    reason = attachmentFailure.reason;
+  } else if (
+    !producerRecordDigest ||
+    !scorerDigest ||
+    producer === undefined ||
+    attachmentFailure
+  ) {
     availability = "unknown";
-    reason = "raw producer record or scorer identity is unavailable";
+    reason =
+      attachmentFailure?.reason ??
+      "raw producer record or scorer identity is unavailable";
+  } else if (planKeys.size !== 1 || populationKeys.size !== 1) {
+    availability = "incompatible";
+    reason =
+      "graph partitions disagree on plan/definition or population identity";
   } else if (
     !activePlan ||
     !plan ||
@@ -532,6 +617,13 @@ function compatibilityReasons(
     before.corpusRevision ?? null,
     after.corpusRevision ?? null,
   );
+  if (a.population?.complete !== true || b.population?.complete !== true)
+    reasons.push({
+      code: "population_incomplete",
+      blocking: true,
+      message:
+        "population_incomplete: both observations require complete populations",
+    });
   mismatch(
     reasons,
     "population_changed",
@@ -610,6 +702,37 @@ function stringField(
   key: string,
 ): string | null {
   return typeof value?.[key] === "string" ? value[key] : null;
+}
+
+function scorerIntegrityFailure(
+  producerRecord: Record<string, unknown> | null,
+  scorer: Record<string, unknown> | null,
+): { availability: "unreadable" | "unknown"; reason: string } | null {
+  const producerDigest = stringField(
+    asRecord(producerRecord?.raw_scorer_output),
+    "digest",
+  );
+  const scorerDigest = stringField(scorer, "digest");
+  const bytesBase64 = stringField(scorer, "bytesBase64");
+  if (!producerDigest || !scorerDigest || !bytesBase64)
+    return {
+      availability: "unknown",
+      reason: "raw scorer digest or retained bytes are unavailable",
+    };
+  if (producerDigest !== scorerDigest)
+    return {
+      availability: "unreadable",
+      reason: `producer scorer digest ${producerDigest} does not match retained ${scorerDigest}`,
+    };
+  const observed = `sha256:${createHash("sha256")
+    .update(Buffer.from(bytesBase64, "base64"))
+    .digest("hex")}`;
+  return observed === scorerDigest
+    ? null
+    : {
+        availability: "unreadable",
+        reason: `retained scorer bytes hash to ${observed}, expected ${scorerDigest}`,
+      };
 }
 
 function resolvePathMappings(

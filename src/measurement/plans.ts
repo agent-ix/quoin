@@ -68,6 +68,12 @@ function planFrom(path: string, repo: string): MeasurementPlan | null {
     metric: value.metric as string,
     definitionVersion: value.definition_version as string,
     path: isAbsolute(path) ? relative(repo, path) : path,
+    ...(typeof value.owner === "string" && value.owner
+      ? { owner: value.owner }
+      : {}),
+    ...(typeof value.action === "string" && value.action
+      ? { action: value.action }
+      : {}),
   };
 }
 

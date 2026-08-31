@@ -5,6 +5,7 @@ import { createHash } from "node:crypto";
 import { z } from "zod";
 
 import { canonicalJson } from "../evidence/store.js";
+import { validateAssurance } from "../quire/index.js";
 import type {
   MeasurementCollection,
   MeasurementObservation,
@@ -439,6 +440,12 @@ export function adaptQuireAssurance(
   value: unknown,
   accepted: AcceptedQuirePremises,
 ): QuireAssuranceV1 {
+  const contract = validateAssurance(value);
+  if (!contract.ok)
+    throw new GraphAdapterError(
+      "invalid_premise",
+      `${contract.error.message} ${contract.error.errors.join("; ")}`,
+    );
   const parsed = parseOrThrow(quireAssuranceSchema, value, "invalid_premise");
   if (parsed.format !== accepted.format)
     premiseFailure("format", accepted.format, parsed.format);

@@ -73,6 +73,8 @@ export interface MeasurementPlan {
   metric: string;
   definitionVersion: string;
   path: string;
+  owner?: string;
+  action?: string;
 }
 
 export interface ComparisonReason {
