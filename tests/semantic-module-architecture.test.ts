@@ -9,8 +9,7 @@ import { isAllowedAuditPath } from "../scripts/lib/semantic-module-type-fit.mjs"
 
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const architectureRoot = join(repoRoot, "docs", "semantic-module-architecture");
-const architectureDelivery =
-  "4a82644ad3cf75770cc53ef3812e3b13e80b516d";
+const architectureDelivery = "4a82644ad3cf75770cc53ef3812e3b13e80b516d";
 
 const architectureFiles = [
   "index.md",
