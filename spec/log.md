@@ -47,7 +47,8 @@ description: "Chronological log of structural changes to this bundle."
   measure/dimension/key partitions, population identities, source/corpus and
   definition revisions, raw digests, availability, and FR-062 structural views.
   Unlike definitions or populations have no delta; unplanned history remains
-  readable but cannot become current. Matrix: TC-1293..TC-1316 pending.
+  readable but cannot become current. Implemented under PLAN-006 with #152's
+  corrected stable consumer commit `b8112fc`; Matrix: TC-1293..TC-1316 covered.
 
 * **2026-08-29** — **CR-132**: the graph-analysis views promised in closed
   ticket #79 gain an owning requirement (`agent-ix/quoin#152`, epic

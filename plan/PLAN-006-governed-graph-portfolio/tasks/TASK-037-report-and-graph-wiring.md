@@ -2,7 +2,7 @@
 id: TASK-037
 title: "Wire report mappings and the stable FR-062 graph interface"
 type: Task
-status: not_started
+status: done
 track: A
 priority: P0
 relationships:
@@ -22,6 +22,13 @@ relationships:
 
 # TASK-037: Wire report mappings and the stable FR-062 graph interface
 
+## Status
+
+**done** — the report command accepts explicit export/premises/audit triples
+and changed seeds, validates every mapping before reads, and injects #152's
+stable analyzers from corrected dependency commit `b8112fc`. The combined
+#152/#281 seam suite passes 67/67 and the legacy no-graph command is unchanged.
+
 ## Scope
 
 Parse graph-export, graph-premises, graph-audit, and changed-seed mappings,
@@ -31,8 +38,8 @@ reconstructing relationships or defining a second graph report contract.
 
 ## Subtasks
 
-- [ ] Bind only after #152 confirms its exported interface.
-- [ ] Preserve existing `quoin report` behavior when graph flags are absent.
+- [x] Bind only after #152 confirms its exported interface.
+- [x] Preserve existing `quoin report` behavior when graph flags are absent.
 
 ## Deliverables
 

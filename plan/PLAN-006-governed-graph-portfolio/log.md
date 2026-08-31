@@ -19,3 +19,7 @@ description: "Chronological execution record for PLAN-006."
   implemented the pure portfolio reducer. The portfolio suite passes 12/12
   tests (TC-1305..TC-1316); focused adapter, portfolio, and FR-045 regression
   suites pass 37/37 and the lint/type/format gate passes.
+- **2026-08-31** — TASK-037 bound the command to #152's corrected stable
+  consumer commit `b8112fc`. Explicit export/premises/audit triples and changed
+  seeds are resolved before reads; accepted inputs inject #152's exact report
+  objects. Combined #152/#281 focused suites pass 67/67 and `make lint` passes.
