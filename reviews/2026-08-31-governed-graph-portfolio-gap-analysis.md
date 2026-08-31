@@ -16,24 +16,26 @@ relationships:
 
 ## Summary
 
-PLAN-006 is complete. All six task artifacts are `done`, every requirement and
-test-plan checkbox is closed, TM-001 marks TC-1293..TC-1316 covered, and every
-case resolves to a real test symbol. Quire reports FR-066 at 12/12 backed
-criteria and FR-067 at 11/11, with no #281 unbacked row, status lie, no-symbol
-row, or unmatched TC tag.
+PLAN-006 is complete at reviewed tip `371df9d`. All six task artifacts are
+`done`, every requirement and test-plan checkbox is closed, TM-001 marks
+TC-1293..TC-1316 covered, and every case resolves to a real test symbol. Quire
+reports FR-066 at 12/12 backed criteria and FR-067 at 11/11, with no #281
+unbacked row, status lie, no-symbol row, or unmatched TC tag.
 
 ## Verdict
 
-**PASS.** Two mechanical trace defects were corrected. No incomplete task,
-unbacked matrix row, unmatched #281 tracking tag, stub, or underspecified
-production surface remains.
+**PASS.** Two mechanical trace defects were corrected, and the independent
+review's strengthened assertions were re-audited without changing the declared
+TC-1293..TC-1316 mapping. No incomplete task, unbacked matrix row, unmatched
+#281 tracking tag, stub, or underspecified production surface remains.
 
 ## Findings
 
-| ID      | Severity | Summary                                                                                                                                                                                                                         | Refs                     |
-| ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------ |
-| FND-001 | high     | Resolved: TC-1298, TC-1299, and TC-1302 used curried `test.each`, a Vitest form the declared TypeScript symbol grammar cannot bind. Each is now one normally named test with an internal exhaustive case loop.                  | FR-066-AC-6, AC-7, AC-10 |
-| FND-002 | high     | Resolved: all TC ids were present, but FR-066 and FR-067 criterion groups were 0/12 and 0/11 because tests lacked direct `Trace:` markers. The 23 criteria plus StR-007-VC-1 now bind directly; the groups are 12/12 and 11/11. | FR-066; FR-067; StR-007  |
+| ID      | Severity | Summary                                                                                                                                                                                                                                                            | Refs                       |
+| ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------- |
+| FND-001 | high     | Resolved: TC-1298, TC-1299, and TC-1302 used curried `test.each`, a Vitest form the declared TypeScript symbol grammar cannot bind. Each is now one normally named test with an internal exhaustive case loop.                                                     | FR-066-AC-6, AC-7, AC-10   |
+| FND-002 | high     | Resolved: all TC ids were present, but FR-066 and FR-067 criterion groups were 0/12 and 0/11 because tests lacked direct `Trace:` markers. The 23 criteria plus StR-007-VC-1 now bind directly; the groups are 12/12 and 11/11.                                    | FR-066; FR-067; StR-007    |
+| FND-003 | medium   | Resolved: SR-110 and the plan log retained pre-independent-review evidence after the contract regressions were strengthened. The artifacts now enumerate the reopened findings, corrected tips, exact focused/seam/full counts, and unchanged mechanical coverage. | PLAN-006; TASK-038; SR-110 |
 
 ## Coverage
 
@@ -49,10 +51,11 @@ production surface remains.
 - Test execution: 26/26 focused adapter/portfolio/command tests pass; the
   combined #152/#281 seam and regression slice passes 58/58; the full suite
   passes 845/845 with the repository-pinned local Quire 0.30.2 binary.
-- Review-finding closure: malformed collection files are locally
-  `unreadable`; valid siblings survive; snapshot latest/comparison ordering is
-  timestamp/id based; curried tests are bindable; every criterion has a direct
-  trace marker.
+- Review-finding closure: compact producer hashing, exact active-plan
+  selection, overall incompatibility, inherited-current sanitization,
+  per-file invalid timestamps, instant/id ordering, and safe human rendering
+  have independent regressions; curried tests are bindable and every criterion
+  has a direct trace marker.
 - Reverse traceability: adapter registry, assurance validation, graph-quality
   transcription, tolerant store reads, portfolio reducer, graph-input loader,
   report command, renderers, and exports trace to FR-066/TASK-033..034 or

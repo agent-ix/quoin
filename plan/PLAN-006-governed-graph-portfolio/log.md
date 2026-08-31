@@ -32,3 +32,10 @@ description: "Chronological execution record for PLAN-006."
   backed with no #281 status lie, unbacked row, or unmatched tag. Focused,
   build, lint, full Vitest, review validation, and diff gates pass; the optional
   semantic gap expansion was not run, as directed.
+- **2026-08-31** — Independent review reopened TASK-038 and found compact
+  producer-id, mixed-plan, overall-incompatible comparison, inherited-current,
+  invalid-timestamp/offset-ordering, human-rendering, and masked-oracle gaps.
+  Commits `0149b14` and `371df9d` close every finding, including the residual
+  all-`not_computed` incompatibility reason. Adapter/portfolio tests pass 24/24,
+  the #152/#281 seam passes 58/58, and the pinned full suite passes 845/845;
+  SR-110 and SR-111 were reconciled before the final landing-ready gate.
