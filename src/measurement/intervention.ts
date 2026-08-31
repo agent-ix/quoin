@@ -1,3 +1,4 @@
+import { Buffer } from "node:buffer";
 import { createHash, randomUUID } from "node:crypto";
 import {
   existsSync,
@@ -32,12 +33,18 @@ export function interventionsRoot(repo: string): string {
 }
 
 export function interventionPath(repo: string, recordId: string): string {
-  if (!/^[A-Za-z0-9._:-]+$/.test(recordId)) {
+  if (!/^[A-Za-z0-9][A-Za-z0-9._:/-]{0,127}$/.test(recordId)) {
     throw new InterventionIntakeError("invalid_record", [
       `/record_id: unsafe record id ${JSON.stringify(recordId)}`,
     ]);
   }
-  return join(interventionsRoot(repo), `${recordId}.json`);
+  // Keep the two namespaces disjoint: a portable id can never alias the
+  // base64url encoding of a slash/colon-bearing id. The schema caps identity
+  // bytes at 128 ASCII characters, so either basename stays below NAME_MAX.
+  const basename = /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/.test(recordId)
+    ? `p-${recordId}`
+    : `b-${Buffer.from(recordId, "utf8").toString("base64url")}`;
+  return join(interventionsRoot(repo), `${basename}.json`);
 }
 
 export function validateInterventionRecord(

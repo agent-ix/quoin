@@ -14,6 +14,7 @@ import {
   buildMeasurementReport,
   interventionExperimentSchema,
   InterventionIntakeError,
+  interventionPath,
   produceAgentEvalIntervention,
   rawEvidenceFor,
   readInterventionRecords,
@@ -301,6 +302,36 @@ describe("intervention-experiment evidence", () => {
     expect(
       readdirSync(dirname(path)).filter((name) => name.includes(".tmp-")),
     ).toEqual([]);
+  });
+
+  // Trace: FR-056-AC-1, FR-057-AC-1, FR-057-AC-4 (TC-1195, TC-1204, TC-1207)
+  test("maps every schema-valid record identity to a bounded portable path", () => {
+    const root = repo();
+    const slashHeavy = `a${"/".repeat(127)}`;
+    const slashShort = "a/b";
+    const encodedLookalike = `b-${Buffer.from(slashShort).toString("base64url")}`;
+    const first = record(root);
+    first.record_id = slashHeavy;
+    const second = record(root);
+    second.record_id = slashShort;
+    const third = record(root);
+    third.record_id = encodedLookalike;
+
+    const firstPath = writeInterventionRecord(root, first);
+    const secondPath = writeInterventionRecord(root, second);
+    const thirdPath = writeInterventionRecord(root, third);
+
+    expect(firstPath).toBe(interventionPath(root, slashHeavy));
+    expect(secondPath).toBe(interventionPath(root, slashShort));
+    expect(thirdPath).toBe(interventionPath(root, encodedLookalike));
+    expect(firstPath).not.toBe(secondPath);
+    expect(secondPath).not.toBe(thirdPath);
+    expect(firstPath.split("/").at(-1)?.length).toBeLessThanOrEqual(255);
+    expect(secondPath.split("/").at(-1)?.length).toBeLessThanOrEqual(255);
+    expect(thirdPath.split("/").at(-1)?.length).toBeLessThanOrEqual(255);
+    expect(readInterventionRecords(root).map((item) => item.record_id)).toEqual(
+      [slashHeavy, slashShort, encodedLookalike],
+    );
   });
 
   // Trace: FR-057-AC-3 (TC-1206)
