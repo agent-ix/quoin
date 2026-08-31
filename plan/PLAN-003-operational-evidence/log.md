@@ -27,7 +27,17 @@ description: "Chronological log for the PLAN-003 bundle."
   the production build, Quire validation, version agreement, lint/typecheck/
   format checks, and all 827 tests across 68 files. Quire 0.30.2
   (`bcface27`, engine `0.46.0@ca7362d4`) reports no unbacked row or status
-  lie in TC-1223..TC-1248. The outer verification stack stops before execution
-  because its locked Filament revision `546e7943ee5a8fe552242cbb19d12aa902536652`
-  is no longer reachable from a remote-tracking ref; no substitute ref was
-  fabricated.
+  lie in TC-1223..TC-1248. Every dependency lock was confirmed reachable from
+  a genuine current GitHub branch. The outer verification stack then correctly
+  stopped at Quoin provenance because its lock names pre-feature code
+  `cf3035b` and this unpromoted branch contains later mainline merges plus
+  #270/#271. No synthetic remote ref or provenance exception was introduced.
+- **2026-08-31** — The landing rerun found and fixed two target defects: the
+  GitHub producer now proves the selected job's run id, revision, and attempt
+  match the workflow-run export, and operational storage now persists every
+  schema-valid identity including slash-bearing record ids. The full gate also
+  exposed a common Quoin contract-test drift and now prefers the active installed
+  module schema over a stale developer checkout. Code review SR-080 and mechanical
+  gap analysis SR-081 are PASS. The governed inner gate passes build, Quire 0.31.0
+  validation, version agreement, lint/typecheck/format, and 827/827 tests across
+  68 files.
