@@ -3,7 +3,7 @@ id: US-019
 title: "Review governed graph evidence across repositories"
 type: US
 relationships:
-  - target: "ix://agent-ix/quoin/StR-004"
+  - target: "ix://agent-ix/quoin/StR-007"
     type: "traces_to"
 ---
 # US-019: Review governed graph evidence across repositories
@@ -52,7 +52,7 @@ Quire command, or repository producer and computes no cross-repository score.
 
 Upstream: [FR-044](../functional/FR-044-plan-governed-measurements.md),
 [FR-045](../functional/FR-045-portfolio-measurement-report.md), and
-[FR-062](../functional/FR-062-read-only-evidence-graph-analysis.md). Producer
+FR-062 (`agent-ix/quoin#152`). Producer
 contracts are `agent-ix/quire-rs` FR-067/068 and `agent-ix/quire-code-rs`
 FR-011/012.
 

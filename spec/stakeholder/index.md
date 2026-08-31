@@ -14,3 +14,4 @@ description: "Index of stakeholder requirements (StR) for quoin."
 - [StR-004: Review, matrix, and planning run as governed workflows](./StR-004-governed-workflows.md)
 - [StR-005: Authoring stays offline-safe and reproducible](./StR-005-offline-reproducible.md)
 - [StR-006: Operators keep quoin current with one command](./StR-006-current-via-self-update.md)
+- [StR-007: Assurance owners inspect governed evidence without rerunning producers](./StR-007-governed-assurance-portfolio.md)

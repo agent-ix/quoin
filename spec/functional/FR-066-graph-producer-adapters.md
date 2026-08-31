@@ -2,7 +2,13 @@
 id: FR-066
 title: "Lossless adapters for governed graph producers"
 type: FR
+verification_method: test
+evidence:
+  - kind: test_case
+    ref: tests/graph-adapters.test.ts
 relationships:
+  - target: "ix://agent-ix/quoin/StR-007"
+    type: "satisfies"
   - target: "ix://agent-ix/quoin/US-019"
     type: "implements"
   - target: "ix://agent-ix/quoin/FR-044"
@@ -28,8 +34,10 @@ Neither adapter runs its producer or judges its results.
 
 ## Inputs
 
-The Quire adapter receives the assurance JSON, the accepted format/module/schema
-premises, and its file identity.
+The Quire adapter receives the assurance JSON, the caller's accepted
+format/module/schema premise tuple, and its file identity. The tuple is the
+complete allow-list for that invocation; the adapter neither consults an
+installed Quire version nor widens the accepted tuple.
 
 The graph-quality adapter receives:
 
@@ -40,6 +48,16 @@ The graph-quality adapter receives:
 
 The invocation attestation supplies facts absent from the producer record. It
 contains no observation value, population count, result, or verdict.
+
+`graph-quality-observation-v1` carries `schemaVersion`, `observationId`,
+`toolVersion`, `configDigest`, `sourceRevision`, `corpusRevision`, `planId`,
+`definitionVersion`, one complete `populationIdentity`, census facts, and
+either measured quality facts or one `empty`, `unreadable`, or `unsupported`
+state. Its `observationId` is `sha256:<lowercase hex>` over UTF-8 canonical JSON
+of the complete record with only `observationId` omitted: object keys sort by
+Unicode code point, array order remains authored, and no insignificant
+whitespace is emitted. The scorer attachment names a media type and a
+`sha256:<lowercase hex>` digest over its exact bytes.
 
 ## Outputs
 
@@ -69,7 +87,7 @@ naming `empty`, `unreadable`, or `unsupported`; it never emits result rows.
 
 - Adapter selection SHALL be exact and versioned. An unknown adapter names the
   available adapters and performs no fallback.
-- The Quire adapter SHALL apply FR-067's schema and accepted-premise checks
+- The Quire adapter SHALL apply Quire FR-067's schema and accepted-premise checks
   before exposing any graph record.
 - The graph-quality adapter SHALL validate the producer schema, recompute its
   canonical observation id, and verify the raw scorer bytes against the named
@@ -81,6 +99,14 @@ naming `empty`, `unreadable`, or `unsupported`; it never emits result rows.
   apply last-write-wins.
 - Collection validation, atomic write, idempotence, and same-id collision
   refusal SHALL reuse FR-044 unchanged.
+
+## Error Conditions
+
+The adapters SHALL report one of `unknown_adapter`, `invalid_premise`,
+`invalid_observation`, `invalid_attestation`, `attachment_missing`,
+`attachment_digest_mismatch`, `inactive_plan`, or `duplicate_partition`. Each
+error names the failing field or expected/observed premise and returns no
+partially constructed collection or graph input.
 
 ## Constraints
 
@@ -110,8 +136,8 @@ naming `empty`, `unreadable`, or `unsupported`; it never emits result rows.
 
 ## Dependencies
 
-- **Upstream**: [FR-044](./FR-044-plan-governed-measurements.md),
-  [FR-062](./FR-062-read-only-evidence-graph-analysis.md), Quire FR-067/068,
+- **Upstream**: [FR-044](./FR-044-plan-governed-measurements.md), FR-062
+  (`agent-ix/quoin#152`), Quire FR-067/068,
   and quire-code-rs FR-011/012 plus MP-001.
 - **Downstream**: [FR-067](./FR-067-graph-portfolio-reporting.md) renders the
   accepted graph and measurement records.

@@ -34,7 +34,9 @@ description: "Chronological log of structural changes to this bundle."
 
 * **2026-08-29** — Added US-013, FR-046..FR-050, and NFR-013..NFR-014 for
   issue #289's architecture-only semantic-module ownership and authority record.
-* **2026-08-31** — **CR-133**: governed graph producers gain lossless Quoin
+* **2026-08-31** — **CR-133**: StR-007 gives assurance owners an explicit
+  stakeholder contract for reviewing retained graph evidence without rerunning
+  producers or combining unlike populations. Governed graph producers gain lossless Quoin
   adapters and portfolio semantics (`agent-ix/quoin#281`, epic
   `agent-ix/quire-rs#384`). US-019 states the cross-repository review need.
   FR-066 validates Quire assurance-v1 directly into FR-062 and maps the
@@ -45,7 +47,7 @@ description: "Chronological log of structural changes to this bundle."
   measure/dimension/key partitions, population identities, source/corpus and
   definition revisions, raw digests, availability, and FR-062 structural views.
   Unlike definitions or populations have no delta; unplanned history remains
-  readable but cannot become current. Matrix: TC-1293..TC-1315 pending.
+  readable but cannot become current. Matrix: TC-1293..TC-1316 pending.
 
 * **2026-08-29** — **CR-132**: the graph-analysis views promised in closed
   ticket #79 gain an owning requirement (`agent-ix/quoin#152`, epic

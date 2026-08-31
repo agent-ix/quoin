@@ -2,7 +2,13 @@
 id: FR-067
 title: "Governed graph portfolio reporting"
 type: FR
+verification_method: test
+evidence:
+  - kind: test_case
+    ref: tests/graph-portfolio.test.ts
 relationships:
+  - target: "ix://agent-ix/quoin/StR-007"
+    type: "satisfies"
   - target: "ix://agent-ix/quoin/US-019"
     type: "implements"
   - target: "ix://agent-ix/quoin/FR-045"
@@ -31,6 +37,11 @@ population identity are compatible.
 - Optional repeated `--changed <repository>=<requirement-id>` seeds for
   change-impact; seeds are inapplicable when no export is supplied.
 
+Repository identities are resolved absolute paths. Repeating the same
+repository with equivalent paths deduplicates. Two different graph-export
+paths for one resolved repository are refused as `duplicate_graph_export`;
+repeated changed seeds for that repository deduplicate by requirement id.
+
 ## Outputs
 
 Each repository report SHALL retain its existing FR-045 fields and add:
@@ -52,6 +63,9 @@ separate `measured` or `not_computed` fact.
 - The portfolio SHALL show every graph-quality collection in deterministic
   timestamp/id order, including historical schema versions that remain
   structurally readable.
+- One unreadable collection SHALL become a repository-local gap naming its
+  path and cause while every structurally readable collection in that same
+  repository remains available for history and current selection.
 - The portfolio SHALL retain a collection without a matching active
   MeasurementPlan as historical evidence, mark it `incompatible` for current
   reporting and comparison, and omit its numeric values from current
@@ -70,6 +84,14 @@ separate `measured` or `not_computed` fact.
   refused, the portfolio SHALL emit its exact availability and reason instead
   of an empty structural view.
 - One unreadable repository or graph artifact SHALL NOT hide readable siblings.
+
+## Error Conditions
+
+Invalid command mappings fail before repository reads with
+`invalid_repository_mapping` or `duplicate_graph_export`. Repository,
+collection, attachment, and graph-export read failures become typed local gaps
+(`missing`, `unreadable`, `unknown`, `incompatible`, or `not_applicable`) and do
+not abort readable repositories or readable collections in the same store.
 
 ## Constraints
 
@@ -98,8 +120,8 @@ separate `measured` or `not_computed` fact.
 
 ## Dependencies
 
-- **Upstream**: [FR-045](./FR-045-portfolio-measurement-report.md),
-  [FR-062](./FR-062-read-only-evidence-graph-analysis.md), and
+- **Upstream**: [FR-045](./FR-045-portfolio-measurement-report.md), FR-062
+  (`agent-ix/quoin#152`), and
   [FR-066](./FR-066-graph-producer-adapters.md).
 - **Downstream**: shared assurance campaigns use this portfolio without
   changing producer definitions or population boundaries.
