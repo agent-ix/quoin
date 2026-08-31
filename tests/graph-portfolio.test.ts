@@ -1,5 +1,12 @@
 import { createHash } from "node:crypto";
-import { readFileSync } from "node:fs";
+import {
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
+import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -13,6 +20,7 @@ import {
   graphQualityObservationId,
   GraphPortfolioMappingError,
   parseGraphPortfolioMappings,
+  readMeasurementCollectionResults,
   renderGovernedGraphPortfolio,
   type GraphPortfolioRepositoryInput,
   type MeasurementCollection,
@@ -410,6 +418,36 @@ describe("governed graph portfolio", () => {
       ]),
     );
     expect(result.repositories[1].graphQuality.current?.id).toBe("other");
+
+    const root = mkdtempSync(join(tmpdir(), "quoin-graph-read-"));
+    try {
+      const store = join(root, "spec", "evidence", "measurements");
+      mkdirSync(store, { recursive: true });
+      writeFileSync(
+        join(store, "good.json"),
+        JSON.stringify(
+          collection("stored", "2026-08-31T00:00:00Z", {
+            schemaVersion: 1,
+          }),
+        ),
+      );
+      writeFileSync(join(store, "broken.json"), "{not json");
+      const reads = readMeasurementCollectionResults(root);
+      expect(reads).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            path: expect.stringMatching(/broken\.json$/),
+            error: expect.any(String),
+          }),
+          expect.objectContaining({
+            path: expect.stringMatching(/good\.json$/),
+            collection: expect.objectContaining({ collectionId: "stored" }),
+          }),
+        ]),
+      );
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
   });
 
   test("TC-1313 permutations have canonical JSON and human output consumes the report object", () => {

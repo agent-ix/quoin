@@ -65,7 +65,9 @@ export {
 export {
   measurementPath,
   measurementsRoot,
+  readMeasurementCollectionResults,
   readMeasurementCollections,
+  type MeasurementCollectionReadResult,
   writeMeasurementCollection,
 } from "./store.js";
 export {

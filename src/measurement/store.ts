@@ -55,6 +55,26 @@ export function writeMeasurementCollection(
 export function readMeasurementCollections(
   repo: string,
 ): MeasurementCollection[] {
+  return readMeasurementCollectionResults(repo)
+    .map((result) => {
+      if (result.collection) return result.collection;
+      throw new Error(
+        `${result.path}: unreadable measurement collection: ${result.error ?? "unknown error"}`,
+      );
+    })
+    .sort(collectionOrder);
+}
+
+export interface MeasurementCollectionReadResult {
+  path: string;
+  collection?: MeasurementCollection;
+  error?: string;
+}
+
+/** Read each collection independently for failure-isolating portfolio views. */
+export function readMeasurementCollectionResults(
+  repo: string,
+): MeasurementCollectionReadResult[] {
   const root = measurementsRoot(repo);
   if (!existsSync(root)) return [];
   return readdirSync(root)
@@ -62,23 +82,24 @@ export function readMeasurementCollections(
     .sort(compare)
     .map((name) => {
       const path = join(root, name);
-      let value: unknown;
       try {
-        value = JSON.parse(readFileSync(path, "utf8")) as unknown;
+        const value = JSON.parse(readFileSync(path, "utf8")) as unknown;
         validateStoredMeasurementCollection(value);
+        return { path, collection: value };
       } catch (error) {
         const detail = error instanceof Error ? error.message : String(error);
-        throw new Error(
-          `${path}: unreadable measurement collection: ${detail}`,
-        );
+        return { path, error: detail };
       }
-      return value;
-    })
-    .sort(
-      (a, b) =>
-        compare(a.timestamp, b.timestamp) ||
-        compare(a.collectionId, b.collectionId),
-    );
+    });
+}
+
+function collectionOrder(
+  a: MeasurementCollection,
+  b: MeasurementCollection,
+): number {
+  return (
+    compare(a.timestamp, b.timestamp) || compare(a.collectionId, b.collectionId)
+  );
 }
 
 function safeId(value: string): string {
