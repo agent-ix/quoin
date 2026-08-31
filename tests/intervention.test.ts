@@ -3,6 +3,7 @@ import {
   mkdtempSync,
   mkdirSync,
   readFileSync,
+  readdirSync,
   rmSync,
   writeFileSync,
 } from "node:fs";
@@ -284,7 +285,7 @@ describe("intervention-experiment evidence", () => {
   });
 
   // Trace: FR-057-AC-1, FR-057-AC-4, FR-057-AC-5 (TC-1204, TC-1207, TC-1208)
-  test("writes atomically, repeats byte-identically, and refuses collisions", () => {
+  test("publishes without replacement, repeats byte-identically, and refuses collisions", () => {
     const root = repo();
     const value = record(root);
     const path = writeInterventionRecord(root, value);
@@ -297,6 +298,9 @@ describe("intervention-experiment evidence", () => {
       /record_id_collision/,
     );
     expect(readFileSync(path, "utf8")).toBe(before);
+    expect(
+      readdirSync(dirname(path)).filter((name) => name.includes(".tmp-")),
+    ).toEqual([]);
   });
 
   // Trace: FR-057-AC-3 (TC-1206)

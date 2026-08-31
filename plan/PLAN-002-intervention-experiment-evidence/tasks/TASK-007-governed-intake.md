@@ -32,8 +32,8 @@ raw-byte-verified intervention intake and stable refusal reasons.
 - Write TC-1204..TC-1209 and TC-1216 against temporary same-filesystem stores.
 - Resolve the active plan definition before any write and verify every raw path,
   byte size, digest, and safe-root constraint.
-- Reuse canonical serialization and same-directory atomic rename behavior for
-  idempotency and collision protection.
+- Reuse canonical serialization and same-directory atomic no-replace publication
+  for idempotency and collision protection.
 
 ## Exit Criteria
 

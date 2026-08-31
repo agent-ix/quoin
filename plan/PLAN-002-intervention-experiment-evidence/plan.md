@@ -50,8 +50,8 @@ the contract and intake boundary but does not depend on report rendering.
 
 - Unit and property tests lead schema, semantic, causal-safety, and deterministic
   projection work.
-- Store tests use temporary same-filesystem directories to verify atomic rename,
-  idempotency, collision refusal, and raw-byte integrity.
+- Store tests use temporary same-filesystem directories to verify atomic
+  no-replace publication, idempotency, collision refusal, and raw-byte integrity.
 - Static tests prove intake, reporting, and the adapter have no experiment/process
   execution path.
 - The final E2E runs `cli-agent-evals` outside Quoin, retains both reports, and then

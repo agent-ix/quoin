@@ -1,11 +1,11 @@
 import { createHash, randomUUID } from "node:crypto";
 import {
   existsSync,
+  linkSync,
   mkdirSync,
   readFileSync,
   readdirSync,
   realpathSync,
-  renameSync,
   statSync,
   unlinkSync,
   writeFileSync,
@@ -61,7 +61,7 @@ export function validateInterventionRecord(
   }
 }
 
-/** Validate governance/raw bytes, then persist with one same-directory rename. */
+/** Validate governance/raw bytes, then publish atomically without replacement. */
 export function writeInterventionRecord(
   repo: string,
   candidate: unknown,
@@ -71,21 +71,32 @@ export function writeInterventionRecord(
   validateRawEvidence(repo, candidate);
   const path = interventionPath(repo, candidate.record_id);
   const bytes = canonicalJson(candidate);
-  if (existsSync(path)) {
-    if (readFileSync(path, "utf8") === bytes) return path;
-    throw new InterventionIntakeError("record_id_collision", [
-      `${path}: record id already exists with different canonical bytes`,
-    ]);
-  }
   mkdirSync(dirname(path), { recursive: true });
   const temporary = `${path}.tmp-${process.pid}-${randomUUID()}`;
   try {
     writeFileSync(temporary, bytes, { encoding: "utf8", flag: "wx" });
-    renameSync(temporary, path);
+    try {
+      linkSync(temporary, path);
+    } catch (error) {
+      if (!isErrno(error, "EEXIST")) throw error;
+      if (readFileSync(path, "utf8") === bytes) return path;
+      throw new InterventionIntakeError("record_id_collision", [
+        `${path}: record id already exists with different canonical bytes`,
+      ]);
+    }
   } finally {
     if (existsSync(temporary)) unlinkSync(temporary);
   }
   return path;
+}
+
+function isErrno(error: unknown, code: string): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    error.code === code
+  );
 }
 
 export function readInterventionRecords(
