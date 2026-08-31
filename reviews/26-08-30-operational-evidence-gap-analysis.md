@@ -1,5 +1,5 @@
 ---
-id: SR-037
+id: SR-076
 title: "Gap analysis — operational evidence (Quoin #271)"
 type: SpecReview
 analysis: gap-analysis
@@ -7,7 +7,7 @@ scope: "PLAN-003, US-016, FR-059, FR-060, FR-061, operational implementation, re
 review_set: subset
 ---
 
-# SR-037: Gap analysis — operational evidence (Quoin #271)
+# SR-076: Gap analysis — operational evidence (Quoin #271)
 
 ## Summary
 
@@ -16,6 +16,9 @@ plan tasks are complete. The implementation represents standing capabilities and
 actual or drill exercises, validates and atomically retains them, evaluates
 clocked discharge, renders claim-centered operational reports, and supplies a
 first-party offline producer for retained GitHub Actions release evidence.
+
+The complete delivery was reconciled onto current Quoin main and verified at
+`5a75025e2e8d11231fc6100008b03864b2e33576`.
 
 The first real producer consumes Quoin release run 33280266874 at immutable
 revision `a9808be18b61f8e4d44e3b74de27e90f17c5c76b`. It derives an available
@@ -30,12 +33,13 @@ owning requirement. No target gap or unowned implementation was found.
 
 ## Findings
 
-| ID      | Severity | Summary                                                                                                                                                                                                        | Refs             |
-| ------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------- |
-| FND-001 | low      | Repository-wide coverage remains a separate backlog: the full census reports 489/976 rows backed plus pre-existing parser and status-column diagnostics outside #271. None names a target requirement or test. | `spec/matrix.md` |
+| ID      | Severity | Summary                                                                                                                                                                                                                                                | Refs                                   |
+| ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------- |
+| FND-001 | low      | Repository-wide coverage remains a separate backlog: the current full census reports 610/1049 rows backed plus pre-existing parser and status-column diagnostics outside #271. None names a target requirement or test.                                | `spec/matrix.md`                       |
+| FND-002 | low      | The outer verification stack cannot enter governed execution because its locked Filament commit is no longer reachable from a remote-tracking ref. The exact-revision inner gate remains reproducible and green; lock maintenance is external to #271. | `quality/verification-stack-lock.json` |
 
-FND-001 is an out-of-scope census observation, not a target gap, so it does not
-alter this targeted verdict.
+FND-001 and FND-002 are visible out-of-scope observations, not target
+implementation gaps, so they do not alter this targeted verdict.
 
 ## Plan completion
 
@@ -51,8 +55,9 @@ PLAN-003 is marked `complete`; TASK-011 through TASK-015 are marked `done`.
 
 ## Matrix verification
 
-Quire 0.31.0 coverage reconciliation, using the locked
-`spec-artifacts-process@61a20e0` vocabulary, reports:
+Quire 0.30.2 (`bcface27`, engine `0.46.0@ca7362d4`) coverage
+reconciliation, using the locked `spec-artifacts-process@61a20e0` vocabulary,
+reports:
 
 | Requirement | Backed obligations | Test cases       |
 | ----------- | -----------------: | ---------------- |
@@ -60,14 +65,23 @@ Quire 0.31.0 coverage reconciliation, using the locked
 | FR-060      |              12/12 | TC-1232..TC-1243 |
 | FR-061      |                5/5 | TC-1244..TC-1248 |
 
-All 26 rows bind to real tests in `tests/operational.test.ts`; none relies on a
-matrix checkbox alone. The real-run checks copy the exact retained artifacts to
-an isolated repository and invoke only the offline Quoin producer.
+All 26 rows bind to real tests in `tests/operational.test.ts`; the current
+coverage output contains no unbacked row and no status lie in TC-1223..TC-1248.
+None relies on a matrix checkbox alone. The real-run checks copy the exact
+retained artifacts to an isolated repository and invoke only the offline Quoin
+producer.
 
-The clean inner repository gate passed 66 test files and 758 tests. TypeScript
-typechecking, targeted ESLint and Prettier checks, the production build, and
-Quire document validation also passed. Validation continues to emit pre-existing
-repository-wide grammar warnings outside this reviewed subset.
+The clean current-main inner repository gate passed 68 test files and 827 tests.
+TypeScript typechecking, ESLint, Prettier, the production build, version
+agreement, and Quire document validation also passed. Validation continues to
+emit pre-existing repository-wide grammar warnings outside this reviewed
+subset.
+
+The outer `make test` provenance gate was also exercised with every locked
+dependency checkout supplied. It stopped before building or testing because
+Filament commit `546e7943ee5a8fe552242cbb19d12aa902536652` is not reachable
+from a current remote-tracking ref. The review preserves that limitation rather
+than creating a synthetic ref or weakening provenance.
 
 ## Underspecified-code trace
 

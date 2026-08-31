@@ -22,7 +22,7 @@ description: "Chronological log for the PLAN-002 bundle."
   all 746 tests across 65 files using Quire 0.31.0 and the locked
   `spec-artifacts-process@61a20e0` vocabulary. Quire coverage reports FR-056 at
   9/9, FR-057 at 14/14, and FR-058 at 5/5 backed. The final gap analysis is
-  recorded in SR-036.
+  recorded in SR-075.
 - **2026-08-30** — Replayed PLAN-002 onto Quoin main `ab73aad`, rebased its
   trace identities to US-015, FR-056..FR-058, and TC-1195..TC-1221, and repaired
   two downstream test guards that incorrectly depended on the active branch and
