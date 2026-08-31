@@ -58,7 +58,7 @@ determinism, or code-test-alignment finding remains.
 
 ## Validation evidence
 
-- Full Quire-backed repository gate: 68 test files and **839/839 tests passed**.
+- Full pinned-Quire repository gate: 70 test files and **856/856 tests passed**.
 - Focused change-assurance and schema-asset suite: **37/37 tests passed**.
 - Type checking, ESLint, Prettier, Vite/declaration build, schema packaging,
   version agreement, diff checking, and Quire artifact validation pass.

@@ -46,7 +46,7 @@ behavior, or completed stub remains.
 - Status lies or skipped target tests: **0**
 - Untraced public behaviors: **0**
 - Stubs masquerading as complete: **0**
-- Full execution evidence: **68 / 68 test files; 839 / 839 tests passed**
+- Full pinned-Quire execution evidence: **70 / 70 test files; 856 / 856 tests passed**
 - Optional semantic review: **skipped**, as requested; the separate targeted
   code review is SR-108.
 
