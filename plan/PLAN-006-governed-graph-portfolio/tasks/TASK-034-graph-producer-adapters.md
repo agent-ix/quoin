@@ -2,7 +2,7 @@
 id: TASK-034
 title: "Implement lossless governed graph producer adapters"
 type: Task
-status: not_started
+status: done
 track: A
 priority: P0
 relationships:
@@ -20,6 +20,12 @@ relationships:
 
 # TASK-034: Implement lossless governed graph producer adapters
 
+## Status
+
+**done** — exact Quire assurance and graph-quality adapters validate closed
+contracts, canonical identities, scorer bytes, attestations, plans, normalized
+partitions, and FR-044 collections with no execution or frontmatter dependency.
+
 ## Scope
 
 Implement the exact adapter registry, Quire premise validation/handoff, graph-
@@ -28,8 +34,8 @@ bijective observations, and reuse of FR-044 collection validation/write behavior
 
 ## Subtasks
 
-- [ ] Keep parsing/validation pure and separate from file reads and store writes.
-- [ ] Export only producer-contract and measurement types; no graph-analysis model.
+- [x] Keep parsing/validation pure and separate from file reads and store writes.
+- [x] Export only producer-contract and measurement types; no graph-analysis model.
 
 ## Deliverables
 

@@ -2,7 +2,7 @@
 id: TASK-033
 title: "Add red governed graph adapter contract tests"
 type: Task
-status: not_started
+status: done
 track: A
 priority: P0
 relationships:
@@ -36,6 +36,11 @@ relationships:
 
 # TASK-033: Add red governed graph adapter contract tests
 
+## Status
+
+**done** — the red suite failed only because `graph-adapters` did not exist;
+the implemented focused suite passes 21/21 tests covering TC-1293..TC-1304.
+
 ## Scope
 
 Create retained Quire and graph-quality fixtures plus exact TC/AC-tagged tests
@@ -45,8 +50,8 @@ and static no-execution boundaries.
 
 ## Subtasks
 
-- [ ] Capture one healthy fixture and one independently mutated fixture per failure class.
-- [ ] Prove the initial suite fails only because adapter behavior is absent.
+- [x] Capture one healthy fixture and one independently mutated fixture per failure class.
+- [x] Prove the initial suite fails only because adapter behavior is absent.
 
 ## Deliverables
 

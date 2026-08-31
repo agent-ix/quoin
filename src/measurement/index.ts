@@ -1,4 +1,19 @@
 export { compareMeasurementCollections } from "./compare.js";
+export {
+  adaptGraphQualityObservation,
+  adaptQuireAssurance,
+  GRAPH_ADAPTER_NAMES,
+  GraphAdapterError,
+  graphQualityObservationId,
+  selectGraphAdapter,
+  type AcceptedQuirePremises,
+  type AdaptGraphQualityInput,
+  type GraphAdapterErrorCode,
+  type GraphAdapterName,
+  type GraphQualityObservationV1,
+  type InvocationAttestation,
+  type QuireAssuranceV1,
+} from "./graph-adapters.js";
 export { loadMeasurementPlans } from "./plans.js";
 export {
   loadActiveAssuranceProfiles,
