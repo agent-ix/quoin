@@ -102,3 +102,12 @@ export {
   inspectMockInjections,
   mockInspectionInput,
 } from "./mock-inspection.js";
+
+// Change-assurance extends the FR-030 retained-evidence boundary. Re-export its
+// versioned schemas here as PLAN-005's evidence-facing public seam.
+export {
+  CHANGE_ASSURANCE_SCHEMA_NAMES,
+  changeAssuranceSchemaPath,
+  readChangeAssuranceSchema,
+  type ChangeAssuranceSchemaName,
+} from "../change-assurance/schema-assets.js";

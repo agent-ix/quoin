@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Copy the vendored quire output schemas into `dist/` (FR-030).
+ * Copy runtime JSON Schema assets into `dist/` (FR-030, FR-063..FR-065).
  *
  * `src/quire/contract.ts` resolves them relative to its own module directory,
  * which is `src/quire/` when tests import the sources and `dist/` once the
@@ -14,16 +14,17 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const repo = dirname(dirname(fileURLToPath(import.meta.url)));
-const from = join(repo, "src", "quire", "schemas");
-const measurementFrom = join(repo, "src", "measurement", "schemas");
+const sources = [
+  join(repo, "src", "quire", "schemas"),
+  join(repo, "src", "change-assurance", "schemas"),
+  join(repo, "src", "measurement", "schemas"),
+];
 const to = join(repo, "dist", "schemas");
 
 mkdirSync(to, { recursive: true });
-for (const name of readdirSync(from)) {
-  copyFileSync(join(from, name), join(to, name));
-  console.log(`dist/schemas/${name}`);
-}
-for (const name of readdirSync(measurementFrom)) {
-  copyFileSync(join(measurementFrom, name), join(to, name));
-  console.log(`dist/schemas/${name}`);
+for (const from of sources) {
+  for (const name of readdirSync(from)) {
+    copyFileSync(join(from, name), join(to, name));
+    console.log(`dist/schemas/${name}`);
+  }
 }

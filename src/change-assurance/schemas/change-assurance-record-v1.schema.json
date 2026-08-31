@@ -1,0 +1,234 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agent-ix.github.io/quoin/schemas/change-assurance-record-v1.schema.json",
+  "title": "ChangeAssuranceRecordV1",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "record_type",
+    "record_id",
+    "revision",
+    "parent_digest",
+    "digest",
+    "subject",
+    "source_connections",
+    "impact_snapshot",
+    "definition",
+    "review_workflow"
+  ],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "record_type": { "const": "change_assurance" },
+    "record_id": { "$ref": "#/$defs/identity" },
+    "revision": { "type": "integer", "minimum": 1 },
+    "parent_digest": {
+      "anyOf": [{ "$ref": "#/$defs/digest" }, { "type": "null" }]
+    },
+    "digest": { "$ref": "#/$defs/digest" },
+    "subject": {
+      "type": "object",
+      "required": ["repository", "base_revision", "scope"],
+      "properties": {
+        "repository": { "type": "string", "minLength": 1 },
+        "base_revision": { "type": "string", "minLength": 1 },
+        "scope": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        }
+      },
+      "additionalProperties": false
+    },
+    "source_connections": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/source_connection" }
+    },
+    "impact_snapshot": {
+      "type": "object",
+      "required": [
+        "identity",
+        "revision",
+        "digest",
+        "completeness",
+        "truncated",
+        "gaps"
+      ],
+      "properties": {
+        "identity": { "$ref": "#/$defs/identity" },
+        "revision": { "type": "string", "minLength": 1 },
+        "digest": { "$ref": "#/$defs/digest" },
+        "completeness": {
+          "type": "string",
+          "enum": ["complete", "incomplete"]
+        },
+        "truncated": { "type": "boolean" },
+        "gaps": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        }
+      },
+      "additionalProperties": false
+    },
+    "definition": {
+      "type": "object",
+      "required": [
+        "requirements",
+        "preservation_constraints",
+        "proof_obligations",
+        "unknowns"
+      ],
+      "properties": {
+        "requirements": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/requirement" }
+        },
+        "preservation_constraints": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/preservation_constraint" }
+        },
+        "proof_obligations": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/proof_obligation" }
+        },
+        "unknowns": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/unknown" }
+        }
+      },
+      "additionalProperties": false
+    },
+    "review_workflow": {
+      "type": "object",
+      "required": ["run_id", "decision_event_kind"],
+      "properties": {
+        "run_id": { "$ref": "#/$defs/identity" },
+        "decision_event_kind": {
+          "const": "change_assurance.review_decided"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "$defs": {
+    "identity": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,255}$"
+    },
+    "digest": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "source_connection": {
+      "type": "object",
+      "required": ["source_id", "kind", "revision", "digest"],
+      "properties": {
+        "source_id": { "$ref": "#/$defs/identity" },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "requirement",
+            "test",
+            "api",
+            "architecture",
+            "impact_evidence",
+            "recovery_evidence",
+            "other"
+          ]
+        },
+        "revision": { "type": "string", "minLength": 1 },
+        "digest": { "$ref": "#/$defs/digest" }
+      },
+      "additionalProperties": false
+    },
+    "requirement": {
+      "type": "object",
+      "required": ["id", "statement", "source_ids"],
+      "properties": {
+        "id": { "$ref": "#/$defs/identity" },
+        "statement": { "type": "string", "minLength": 1 },
+        "source_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/identity" }
+        }
+      },
+      "additionalProperties": false
+    },
+    "preservation_constraint": {
+      "type": "object",
+      "required": ["id", "statement", "source_ids"],
+      "properties": {
+        "id": { "$ref": "#/$defs/identity" },
+        "statement": { "type": "string", "minLength": 1 },
+        "source_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/identity" }
+        }
+      },
+      "additionalProperties": false
+    },
+    "command": {
+      "type": "object",
+      "required": ["argv", "working_directory"],
+      "properties": {
+        "argv": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string" }
+        },
+        "working_directory": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "proof_obligation": {
+      "type": "object",
+      "required": [
+        "proof_id",
+        "statement",
+        "obligation_ids",
+        "evidence_kind",
+        "command",
+        "tool_identity",
+        "configuration_digest"
+      ],
+      "properties": {
+        "proof_id": { "$ref": "#/$defs/identity" },
+        "statement": { "type": "string", "minLength": 1 },
+        "obligation_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/identity" }
+        },
+        "evidence_kind": { "$ref": "#/$defs/identity" },
+        "command": { "$ref": "#/$defs/command" },
+        "tool_identity": { "type": "string", "minLength": 1 },
+        "configuration_digest": { "$ref": "#/$defs/digest" }
+      },
+      "additionalProperties": false
+    },
+    "unknown": {
+      "type": "object",
+      "required": ["id", "statement", "disposition", "owner"],
+      "properties": {
+        "id": { "$ref": "#/$defs/identity" },
+        "statement": { "type": "string", "minLength": 1 },
+        "disposition": {
+          "type": "string",
+          "enum": ["open", "accepted", "deferred", "resolved"]
+        },
+        "owner": { "type": "string", "minLength": 1 },
+        "resolution": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

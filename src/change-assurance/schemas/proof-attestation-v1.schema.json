@@ -1,0 +1,96 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agent-ix.github.io/quoin/schemas/proof-attestation-v1.schema.json",
+  "title": "ProofAttestationV1",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "record_type",
+    "attestation_id",
+    "digest",
+    "record_digest",
+    "candidate_revision",
+    "proof_id",
+    "command",
+    "tool",
+    "environment",
+    "observed_at",
+    "result",
+    "retained_output"
+  ],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "record_type": { "const": "proof_attestation" },
+    "attestation_id": { "$ref": "#/$defs/identity" },
+    "digest": { "$ref": "#/$defs/digest" },
+    "record_digest": { "$ref": "#/$defs/digest" },
+    "candidate_revision": { "type": "string", "minLength": 1 },
+    "proof_id": { "$ref": "#/$defs/identity" },
+    "command": { "$ref": "#/$defs/command" },
+    "tool": {
+      "type": "object",
+      "required": ["identity", "version", "configuration_digest"],
+      "properties": {
+        "identity": { "type": "string", "minLength": 1 },
+        "version": { "$ref": "#/$defs/immutable_version" },
+        "configuration_digest": { "$ref": "#/$defs/digest" }
+      },
+      "additionalProperties": false
+    },
+    "environment": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "anyOf": [
+          { "type": "string" },
+          { "type": "number" },
+          { "type": "boolean" },
+          { "type": "null" }
+        ]
+      }
+    },
+    "observed_at": { "type": "string", "format": "date-time" },
+    "result": {
+      "type": "string",
+      "enum": ["passed", "failed", "unavailable", "not_computed"]
+    },
+    "retained_output": {
+      "type": "object",
+      "required": ["media_type", "digest", "size_bytes"],
+      "properties": {
+        "media_type": { "type": "string", "minLength": 1 },
+        "digest": { "$ref": "#/$defs/digest" },
+        "size_bytes": { "type": "integer", "minimum": 0 }
+      },
+      "additionalProperties": false
+    }
+  },
+  "$defs": {
+    "identity": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,255}$"
+    },
+    "digest": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "immutable_version": {
+      "type": "string",
+      "pattern": "^(v?[0-9]+[.][0-9]+[.][0-9]+([-+][0-9A-Za-z.-]+)?|[a-f0-9]{40}|[a-f0-9]{64})$"
+    },
+    "command": {
+      "type": "object",
+      "required": ["argv", "working_directory"],
+      "properties": {
+        "argv": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string" }
+        },
+        "working_directory": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}
