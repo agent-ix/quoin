@@ -67,6 +67,11 @@ under claims, evidence, counterevidence, gaps, owner, and action.
 - If different canonical bytes already exist for a record id, then Quoin SHALL
   refuse the collision with stable reason code `record_id_collision` without
   replacing the retained entry.
+- Quoin SHALL serialize validation and publication across the entire operational
+  store so standalone and pair containers cannot concurrently retain one logical
+  record id twice. If an intake lock remains after a process death, Quoin SHALL
+  fail closed with `intake_busy`; an operator may remove that lock only after
+  confirming no writer is active.
 - When an exercise outcome is not `succeeded`, Quoin SHALL preserve the exercise as
   queryable evidence.
 - When Quoin reads an exercise with clock status `missed` or `open`,

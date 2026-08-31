@@ -615,7 +615,7 @@ generated tests under `tests/props/` and `Unit` for the rest.
 | TC-1233 | Invalid schema, cross-record, or temporal input returns `invalid_record`; unsafe or byte-mismatched raw evidence returns `raw_evidence_mismatch`; neither writes a store entry | Property | P0 | FR-060-AC-2 | ✅ |
 | TC-1234 | An absent or mismatched governing definition returns its stable reason code, names requested, expected, and observed versions, and leaves the store unchanged | Unit | P0 | FR-060-AC-3 | ✅ |
 | TC-1235 | Repeating identical canonical bytes for one id is byte-idempotent for standalone records and records already retained in a pair | Property | P0 | FR-060-AC-4 | ✅ |
-| TC-1236 | A same-id/different-bytes collision, including a destination appearing during publication, returns `record_id_collision` and cannot replace the retained entry | Property | P0 | FR-060-AC-5 | ✅ |
+| TC-1236 | Same-id/different-bytes races at one destination and across standalone/pair containers cannot replace or duplicate the retained logical id; a stale global intake lock fails closed as `intake_busy` | Property | P0 | FR-060-AC-5 | ✅ |
 | TC-1237 | Both standing capabilities and every exercise outcome remain queryable with byte-identical raw-evidence digests | Unit | P0 | FR-060-AC-6 | ✅ |
 | TC-1238 | Only a kind, subject, scope, accepted-mode, and exact obligation-clock-condition match with succeeded outcome and timestamp-derived timely completion discharges; every other case names non-discharge | Property | P0 | FR-060-AC-7 | ✅ |
 | TC-1239 | Only available capabilities and succeeded clock-satisfying exercises render as claims/evidence; unavailable, unknown, not-applicable, adverse, and incomplete states render as counterevidence/gaps | Unit | P0 | FR-060-AC-8 | ✅ |

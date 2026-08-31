@@ -1,5 +1,7 @@
+import { execFile } from "node:child_process";
 import {
   copyFileSync,
+  existsSync,
   mkdtempSync,
   mkdirSync,
   readFileSync,
@@ -8,6 +10,7 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { basename, dirname, join } from "node:path";
+import { promisify } from "node:util";
 
 import { publishFileNoReplace } from "../src/measurement/atomic-file.js";
 
@@ -30,6 +33,7 @@ import {
 } from "../src/measurement/index.js";
 
 const DEFINITION = "operational-fixture-v1";
+const execFileAsync = promisify(execFile);
 const PLAN = `---
 id: MP-901
 title: Operational fixture
@@ -328,7 +332,7 @@ describe("operational evidence", () => {
   });
 
   // Trace: FR-060-AC-3, FR-060-AC-4, FR-060-AC-5, FR-060-AC-6 (TC-1234..TC-1237)
-  test("definition, idempotency, collision, shape, and outcome behavior remain explicit", () => {
+  test("definition, idempotency, collision, shape, and outcome behavior remain explicit", async () => {
     const root = repo();
     const cap = capability(root);
     const path = writeOperationalRecord(root, cap);
@@ -392,7 +396,93 @@ describe("operational evidence", () => {
       ),
     ).toThrow(/record_id_collision/);
     expect(readFileSync(target, "utf8")).toBe("first");
-  });
+
+    const concurrentRoot = repo();
+    const standalone = capability(concurrentRoot);
+    const concurrentPairCapability = capability(concurrentRoot);
+    concurrentPairCapability.owner = "pair-owner";
+    const concurrentPairExercise = exercise(concurrentRoot);
+    concurrentPairExercise.owner = "pair-owner";
+    const standalonePath = join(concurrentRoot, "standalone.json");
+    const pairCapabilityPath = join(concurrentRoot, "pair-capability.json");
+    const pairExercisePath = join(concurrentRoot, "pair-exercise.json");
+    writeFileSync(standalonePath, JSON.stringify(standalone));
+    writeFileSync(pairCapabilityPath, JSON.stringify(concurrentPairCapability));
+    writeFileSync(pairExercisePath, JSON.stringify(concurrentPairExercise));
+    const lock = join(
+      concurrentRoot,
+      "spec",
+      "evidence",
+      ".operational-write.lock",
+    );
+    mkdirSync(lock, { recursive: true });
+    const worker = join(
+      process.cwd(),
+      "tests",
+      "fixtures",
+      "operational-race-writer.ts",
+    );
+    const command = ["--loader", "ts-node/esm", worker, concurrentRoot];
+    const writes = [
+      execFileAsync(process.execPath, [
+        ...command,
+        "standalone",
+        standalonePath,
+        pairExercisePath,
+      ]),
+      execFileAsync(process.execPath, [
+        ...command,
+        "pair",
+        pairCapabilityPath,
+        pairExercisePath,
+      ]),
+    ];
+    const readyBy = Date.now() + 10_000;
+    while (
+      (!existsSync(join(concurrentRoot, "standalone.ready")) ||
+        !existsSync(join(concurrentRoot, "pair.ready"))) &&
+      Date.now() < readyBy
+    ) {
+      await new Promise((resolve) => setTimeout(resolve, 10));
+    }
+    expect(existsSync(join(concurrentRoot, "standalone.ready"))).toBe(true);
+    expect(existsSync(join(concurrentRoot, "pair.ready"))).toBe(true);
+    rmSync(lock, { recursive: true });
+    const results = await Promise.allSettled(writes);
+    expect(
+      results.filter((result) => result.status === "fulfilled"),
+    ).toHaveLength(1);
+    expect(
+      results.filter((result) => result.status === "rejected"),
+    ).toHaveLength(1);
+    const retained = readOperationalRecords(concurrentRoot);
+    expect(new Set(retained.map((record) => record.record_id)).size).toBe(
+      retained.length,
+    );
+    expect([1, 2]).toContain(retained.length);
+
+    const staleRoot = repo();
+    const staleLock = join(
+      staleRoot,
+      "spec",
+      "evidence",
+      ".operational-write.lock",
+    );
+    mkdirSync(staleLock, { recursive: true });
+    const now = Date.now();
+    const clock = vi
+      .spyOn(Date, "now")
+      .mockReturnValueOnce(now)
+      .mockReturnValue(now + 10_001);
+    try {
+      expect(() =>
+        writeOperationalRecord(staleRoot, capability(staleRoot)),
+      ).toThrow(/intake_busy.*fail closed/);
+    } finally {
+      clock.mockRestore();
+    }
+    expect(readOperationalRecords(staleRoot)).toEqual([]);
+  }, 20_000);
 
   // Trace: FR-060-AC-7 (TC-1238)
   test("clocked discharge requires full identity, mode, success, and met-clock match", () => {

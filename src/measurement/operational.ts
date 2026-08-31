@@ -1,5 +1,11 @@
 import { createHash } from "node:crypto";
-import { existsSync, readFileSync, readdirSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  readdirSync,
+  rmdirSync,
+} from "node:fs";
 import { join } from "node:path";
 
 import { Ajv2020 } from "ajv/dist/2020.js";
@@ -67,16 +73,18 @@ export function writeOperationalRecord(
   candidate: unknown,
 ): string {
   validateOperationalRecord(candidate);
-  const entries = readOperationalEntries(repo);
-  const retained = entries.map((entry) => entry.record);
-  validateForIntake(repo, candidate, retained);
-  const identical = entries.find(
-    (entry) =>
-      entry.record.record_id === candidate.record_id &&
-      canonicalJson(entry.record) === canonicalJson(candidate),
-  );
-  if (identical) return identical.path;
-  return writeOne(repo, candidate);
+  return withOperationalWriteLock(repo, () => {
+    const entries = readOperationalEntries(repo);
+    const retained = entries.map((entry) => entry.record);
+    validateForIntake(repo, candidate, retained);
+    const identical = entries.find(
+      (entry) =>
+        entry.record.record_id === candidate.record_id &&
+        canonicalJson(entry.record) === canonicalJson(candidate),
+    );
+    if (identical) return identical.path;
+    return writeOne(repo, candidate);
+  });
 }
 
 /** Persist a linked capability/exercise pair as one atomic no-replace file. */
@@ -95,29 +103,31 @@ export function writeOperationalPair(
       "operational pair requires one standing capability followed by one exercise",
     ]);
   }
-  const existing = readOperationalRecords(repo);
-  const pairId = createHash("sha256")
-    .update(`${capability.record_id}\0${exercise.record_id}`)
-    .digest("hex");
-  const path = join(operationalRoot(repo), "pairs", `${pairId}.json`);
-  const bytes = canonicalJson({
-    schema_version: 1,
-    records: [capability, exercise],
-  });
-  validateForIntake(repo, capability, existing);
-  validateForIntake(repo, exercise, [...existing, capability]);
-  if (existsSync(path)) {
-    if (readFileSync(path, "utf8") === bytes) return path;
-    throw new InterventionIntakeError("record_id_collision", [path]);
-  }
-  for (const record of [capability, exercise]) {
-    if (existing.some((item) => item.record_id === record.record_id)) {
-      throw new InterventionIntakeError("record_id_collision", [
-        record.record_id,
-      ]);
+  return withOperationalWriteLock(repo, () => {
+    const existing = readOperationalRecords(repo);
+    const pairId = createHash("sha256")
+      .update(`${capability.record_id}\0${exercise.record_id}`)
+      .digest("hex");
+    const path = join(operationalRoot(repo), "pairs", `${pairId}.json`);
+    const bytes = canonicalJson({
+      schema_version: 1,
+      records: [capability, exercise],
+    });
+    validateForIntake(repo, capability, existing);
+    validateForIntake(repo, exercise, [...existing, capability]);
+    if (existsSync(path)) {
+      if (readFileSync(path, "utf8") === bytes) return path;
+      throw new InterventionIntakeError("record_id_collision", [path]);
     }
-  }
-  return writeAtomic(path, bytes);
+    for (const record of [capability, exercise]) {
+      if (existing.some((item) => item.record_id === record.record_id)) {
+        throw new InterventionIntakeError("record_id_collision", [
+          record.record_id,
+        ]);
+      }
+    }
+    return writeAtomic(path, bytes);
+  });
 }
 
 export function readOperationalRecords(
@@ -279,6 +289,35 @@ function writeAtomic(path: string, bytes: string): string {
         `${collisionPath}: retained bytes differ`,
       ]),
   );
+}
+
+function withOperationalWriteLock<T>(repo: string, operation: () => T): T {
+  const lock = join(storeRoot(repo), ".operational-write.lock");
+  mkdirSync(storeRoot(repo), { recursive: true });
+  const deadline = Date.now() + 10_000;
+  while (true) {
+    try {
+      mkdirSync(lock);
+      break;
+    } catch (error) {
+      if (!isNodeError(error) || error.code !== "EEXIST") throw error;
+      if (Date.now() >= deadline) {
+        throw new InterventionIntakeError("intake_busy", [
+          `${lock}: timed out waiting for the store-wide operational intake lock; fail closed and remove it only after confirming no writer is active`,
+        ]);
+      }
+      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 5);
+    }
+  }
+  try {
+    return operation();
+  } finally {
+    rmdirSync(lock);
+  }
+}
+
+function isNodeError(value: unknown): value is NodeJS.ErrnoException {
+  return value instanceof Error && "code" in value;
 }
 
 function readRecord(path: string): OperationalEvidenceRecord {
