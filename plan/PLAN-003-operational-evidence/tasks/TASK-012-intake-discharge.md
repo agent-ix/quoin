@@ -10,11 +10,11 @@ relationships:
     type: part_of
   - target: "ix://agent-ix/quoin/TASK-011"
     type: depends_on
-  - target: "ix://agent-ix/quoin/FR-049"
+  - target: "ix://agent-ix/quoin/FR-060"
     type: references
-  - target: "ix://agent-ix/quoin/TC-1156"
+  - target: "ix://agent-ix/quoin/TC-1232"
     type: verifies
-  - target: "ix://agent-ix/quoin/TC-1162"
+  - target: "ix://agent-ix/quoin/TC-1238"
     type: verifies
 ---
 
@@ -27,7 +27,7 @@ shapes, raw-byte integrity, stable refusals, and timestamp-derived clock dischar
 
 ## TDD Work
 
-- Write TC-1156..TC-1162 against temporary same-filesystem stores.
+- Write TC-1232..TC-1238 against temporary same-filesystem stores.
 - Reuse governing-plan resolution, canonical bytes, atomic rename, idempotency, and
   collision protection from the measurement store.
 - Match kind, subject, scope, accepted exercise mode, success outcome, and derived

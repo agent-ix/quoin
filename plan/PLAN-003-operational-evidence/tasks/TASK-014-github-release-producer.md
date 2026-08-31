@@ -12,11 +12,11 @@ relationships:
     type: depends_on
   - target: "ix://agent-ix/quoin/TASK-012"
     type: depends_on
-  - target: "ix://agent-ix/quoin/FR-051"
+  - target: "ix://agent-ix/quoin/FR-061"
     type: references
-  - target: "ix://agent-ix/quoin/TC-1173"
+  - target: "ix://agent-ix/quoin/TC-1244"
     type: verifies
-  - target: "ix://agent-ix/quoin/TC-1176"
+  - target: "ix://agent-ix/quoin/TC-1247"
     type: verifies
 ---
 
@@ -29,7 +29,7 @@ jobs API JSON. It derives and submits one linked `release` capability/exercise p
 
 ## TDD Work
 
-- Write TC-1173..TC-1176 with retained public fixtures and generated mismatch and
+- Write TC-1244..TC-1247 with retained public fixtures and generated mismatch and
   adverse-conclusion cases.
 - Parse workflow structure and uniquely select the configured release job.
 - Derive every decision-bearing record field and raw digest from retained bytes;

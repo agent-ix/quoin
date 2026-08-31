@@ -3,7 +3,7 @@ id: SR-037
 title: "Gap analysis — operational evidence (Quoin #271)"
 type: SpecReview
 analysis: gap-analysis
-scope: "PLAN-003, US-014, FR-048, FR-049, FR-051, operational implementation, retained GitHub Actions evidence, and tests/operational.test.ts"
+scope: "PLAN-003, US-016, FR-059, FR-060, FR-061, operational implementation, retained GitHub Actions evidence, and tests/operational.test.ts"
 review_set: subset
 ---
 
@@ -56,9 +56,9 @@ Quire 0.31.0 coverage reconciliation, using the locked
 
 | Requirement | Backed obligations | Test cases       |
 | ----------- | -----------------: | ---------------- |
-| FR-048      |                9/9 | TC-1147..TC-1155 |
-| FR-049      |              12/12 | TC-1156..TC-1167 |
-| FR-051      |                5/5 | TC-1173..TC-1177 |
+| FR-059      |                9/9 | TC-1223..TC-1231 |
+| FR-060      |              12/12 | TC-1232..TC-1243 |
+| FR-061      |                5/5 | TC-1244..TC-1248 |
 
 All 26 rows bind to real tests in `tests/operational.test.ts`; none relies on a
 matrix checkbox alone. The real-run checks copy the exact retained artifacts to
@@ -71,21 +71,21 @@ repository-wide grammar warnings outside this reviewed subset.
 
 ## Underspecified-code trace
 
-- `operational-types.ts` and `operational-schema.ts` implement FR-048's envelope,
+- `operational-types.ts` and `operational-schema.ts` implement FR-059's envelope,
   shape distinction, control vocabulary, clocks, version pins, outcomes,
   governance, linkage, and raw-evidence obligations.
-- `operational.ts` and `commands/measurement/record.ts` implement FR-049's
+- `operational.ts` and `commands/measurement/record.ts` implement FR-060's
   definition gate, raw-byte gate, validation, atomic writes, idempotence,
   collision handling, pair integrity, query, and discharge obligations.
-- `operational-report.ts` and `report.ts` implement FR-049's claims, evidence,
+- `operational-report.ts` and `report.ts` implement FR-060's claims, evidence,
   counterevidence, gaps, owner, actions, determinism, and no-aggregate-score
   obligations.
 - `github-release-operational.ts` and
-  `commands/measurement/operational-release.ts` implement FR-051's structural
+  `commands/measurement/operational-release.ts` implement FR-061's structural
   workflow check, exact run/job reconciliation, source-derived fields, adverse
   outcome preservation, and offline pair submission.
 - `measurement/index.ts` and `vite.config.ts` expose the governed surfaces and
-  preserve compatibility under FR-049.
+  preserve compatibility under FR-060.
 
 No added production symbol lacks one of those owners, and no stub, placeholder,
 or unimplemented branch remains in the reviewed diff.
@@ -100,8 +100,8 @@ or unimplemented branch remains in the reviewed diff.
 
 The two REST digests were compared with fresh read-only API responses, and the
 workflow digest was compared with the file at the run's immutable source
-revision. TC-1173 and TC-1177 consume those exact checked-in bytes and persist
-the canonical pair through the FR-049 path without network or process execution.
+revision. TC-1244 and TC-1248 consume those exact checked-in bytes and persist
+the canonical pair through the FR-060 path without network or process execution.
 
 ## Semantic review
 

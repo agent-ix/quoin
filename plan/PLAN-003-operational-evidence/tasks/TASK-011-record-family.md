@@ -8,11 +8,11 @@ priority: P0
 relationships:
   - target: "ix://agent-ix/quoin/PLAN-003"
     type: part_of
-  - target: "ix://agent-ix/quoin/FR-048"
+  - target: "ix://agent-ix/quoin/FR-059"
     type: references
-  - target: "ix://agent-ix/quoin/TC-1147"
+  - target: "ix://agent-ix/quoin/TC-1223"
     type: verifies
-  - target: "ix://agent-ix/quoin/TC-1155"
+  - target: "ix://agent-ix/quoin/TC-1231"
     type: verifies
 ---
 
@@ -25,7 +25,7 @@ validator for standing-capability and exercise records.
 
 ## TDD Work
 
-- Write TC-1147..TC-1155 first, including generated shape, clock, temporal, pin,
+- Write TC-1223..TC-1231 first, including generated shape, clock, temporal, pin,
   link, adverse-outcome, and raw-evidence combinations.
 - Implement deterministic path-addressed findings and derived clock-state checks.
 - Export the engine-independent contract through the existing measurement seam.

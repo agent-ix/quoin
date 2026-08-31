@@ -10,11 +10,11 @@ relationships:
     type: part_of
   - target: "ix://agent-ix/quoin/TASK-011"
     type: depends_on
-  - target: "ix://agent-ix/quoin/FR-049"
+  - target: "ix://agent-ix/quoin/FR-060"
     type: references
-  - target: "ix://agent-ix/quoin/TC-1163"
+  - target: "ix://agent-ix/quoin/TC-1239"
     type: verifies
-  - target: "ix://agent-ix/quoin/TC-1165"
+  - target: "ix://agent-ix/quoin/TC-1241"
     type: verifies
 ---
 
@@ -28,7 +28,7 @@ action.
 
 ## TDD Work
 
-- Write TC-1163..TC-1165 before modifying projection or formatting.
+- Write TC-1239..TC-1241 before modifying projection or formatting.
 - Keep unavailable/unknown/not-applicable capabilities and adverse/incomplete
   exercises out of affirmative claims.
 - Derive both formats from one deterministically ordered report object.

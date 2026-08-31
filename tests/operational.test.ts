@@ -139,8 +139,8 @@ describe("operational evidence", () => {
     };
   }
 
-  // Trace: FR-048-AC-1 (TC-1147)
-  test("TC-1147 requires the complete operational envelope", () => {
+  // Trace: FR-059-AC-1 (TC-1223)
+  test("TC-1223 requires the complete operational envelope", () => {
     const value = capability(repo());
     expect(() => validateOperationalRecord(value)).not.toThrow();
     for (const key of [
@@ -168,8 +168,8 @@ describe("operational evidence", () => {
     }
   });
 
-  // Trace: FR-048-AC-2 (TC-1148)
-  test("TC-1148 admits exactly the declared control vocabulary", () => {
+  // Trace: FR-059-AC-2 (TC-1224)
+  test("TC-1224 admits exactly the declared control vocabulary", () => {
     const kinds: OperationalControlKind[] = [
       "release",
       "feature_flag",
@@ -210,7 +210,7 @@ describe("operational evidence", () => {
     expect(() => validateOperationalRecord(invalid)).toThrow(/control_kind/);
   });
 
-  // Trace: FR-048-AC-3, FR-048-AC-5 (TC-1149, TC-1151)
+  // Trace: FR-059-AC-3, FR-059-AC-5 (TC-1225, TC-1227)
   test("capability shape requires complete clock support and excludes exercise", () => {
     const value = capability(repo());
     (value as unknown as Record<string, unknown>).exercise = {};
@@ -224,7 +224,7 @@ describe("operational evidence", () => {
     expect(() => validateOperationalRecord(value)).toThrow(/unsupported clock/);
   });
 
-  // Trace: FR-048-AC-4, FR-048-AC-6, FR-048-AC-8 (TC-1150, TC-1152, TC-1154)
+  // Trace: FR-059-AC-4, FR-059-AC-6, FR-059-AC-8 (TC-1226, TC-1228, TC-1230)
   test("exercise outcomes round-trip only with ordered and derived clock state", () => {
     for (const outcome of [
       "succeeded",
@@ -246,7 +246,7 @@ describe("operational evidence", () => {
     expect(() => validateOperationalRecord(invalid)).not.toThrow();
   });
 
-  // Trace: FR-048-AC-7 (TC-1153)
+  // Trace: FR-059-AC-7 (TC-1229)
   test("pin controls require one unique matching pin", () => {
     const value = capability(repo());
     value.control_kind = "model_pin";
@@ -263,7 +263,7 @@ describe("operational evidence", () => {
     expect(() => validateOperationalRecord(value)).toThrow(/duplicate/);
   });
 
-  // Trace: FR-048-AC-9, FR-049-AC-1, FR-049-AC-2 (TC-1155..TC-1157)
+  // Trace: FR-059-AC-9, FR-060-AC-1, FR-060-AC-2 (TC-1231..TC-1233)
   test("valid intake is atomic while invalid links and raw bytes write nothing", () => {
     const root = repo();
     const cap = capability(root);
@@ -285,7 +285,7 @@ describe("operational evidence", () => {
     expect(readOperationalRecords(root)).toHaveLength(1);
   });
 
-  // Trace: FR-049-AC-3, FR-049-AC-4, FR-049-AC-5, FR-049-AC-6 (TC-1158..TC-1161)
+  // Trace: FR-060-AC-3, FR-060-AC-4, FR-060-AC-5, FR-060-AC-6 (TC-1234..TC-1237)
   test("definition, idempotency, collision, shape, and outcome behavior remain explicit", () => {
     const root = repo();
     const cap = capability(root);
@@ -322,7 +322,7 @@ describe("operational evidence", () => {
     ).toThrow(/definition_mismatch/);
   });
 
-  // Trace: FR-049-AC-7 (TC-1162)
+  // Trace: FR-060-AC-7 (TC-1238)
   test("clocked discharge requires full identity, mode, success, and met-clock match", () => {
     const root = repo();
     const value = exercise(root);
@@ -344,7 +344,7 @@ describe("operational evidence", () => {
     ).toMatch(/mode mismatch/);
   });
 
-  // Trace: FR-049-AC-8, FR-049-AC-9, FR-049-AC-10 (TC-1163..TC-1165)
+  // Trace: FR-060-AC-8, FR-060-AC-9, FR-060-AC-10 (TC-1239..TC-1241)
   test("report keeps adverse states separate and has no aggregate trust score", () => {
     const root = repo();
     writeOperationalRecord(root, capability(root));
@@ -362,7 +362,7 @@ describe("operational evidence", () => {
     expect(json).not.toMatch(/trust.score|confidence.score|quality.score/i);
   });
 
-  // Trace: FR-049-CON-1, FR-049-CON-2 (TC-1166, TC-1167)
+  // Trace: FR-060-CON-1, FR-060-CON-2 (TC-1242, TC-1243)
   test("operational modules have no control-execution path and preserve empty-store reporting", () => {
     const sources = [
       "src/measurement/operational.ts",
@@ -373,7 +373,7 @@ describe("operational evidence", () => {
     expect(buildMeasurementReport(repo()).operational).toEqual([]);
   });
 
-  // Trace: FR-051-AC-2, FR-051-AC-3, FR-051-AC-4 (TC-1174..TC-1176)
+  // Trace: FR-061-AC-2, FR-061-AC-3, FR-061-AC-4 (TC-1245..TC-1247)
   test("GitHub producer derives a linked pair and refuses mismatched/adverse inputs", () => {
     const root = repo();
     writeGitHubArtifacts(root, "success");
@@ -493,7 +493,7 @@ describe("operational evidence", () => {
     }
   });
 
-  // Trace: FR-051-AC-1, FR-051-AC-5 (TC-1173, TC-1177)
+  // Trace: FR-061-AC-1, FR-061-AC-5 (TC-1244, TC-1248)
   test("retained real release evidence persists one exact linked pair offline", () => {
     const root = repo();
     const source = join(process.cwd(), "spec", "evidence", "github-actions");

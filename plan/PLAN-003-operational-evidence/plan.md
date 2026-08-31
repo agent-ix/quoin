@@ -4,13 +4,13 @@ title: "Operational evidence implementation"
 type: Plan
 status: complete
 relationships:
-  - target: "ix://agent-ix/quoin/US-014"
+  - target: "ix://agent-ix/quoin/US-016"
     type: references
-  - target: "ix://agent-ix/quoin/FR-048"
+  - target: "ix://agent-ix/quoin/FR-059"
     type: references
-  - target: "ix://agent-ix/quoin/FR-049"
+  - target: "ix://agent-ix/quoin/FR-060"
     type: references
-  - target: "ix://agent-ix/quoin/FR-051"
+  - target: "ix://agent-ix/quoin/FR-061"
     type: references
 ---
 
@@ -62,11 +62,11 @@ the engine-independent intake boundary and does not couple core records to GitHu
 
 | Task     | Track | Scope                                     | Owns                                      |
 | -------- | ----- | ----------------------------------------- | ----------------------------------------- |
-| TASK-011 | A     | Record shapes and semantic invariants     | FR-048; TC-1147..TC-1155                  |
-| TASK-012 | B     | Governed intake and clock discharge       | FR-049 intake/discharge; TC-1156..TC-1162 |
-| TASK-013 | C     | Claim-centered operational report         | FR-049 reporting; TC-1163..TC-1165        |
-| TASK-014 | D     | First-party GitHub release producer       | FR-051; TC-1173..TC-1176                  |
-| TASK-015 | Gate  | No-control, compatibility, real-run gates | TC-1166; TC-1167; TC-1177                 |
+| TASK-011 | A     | Record shapes and semantic invariants     | FR-059; TC-1223..TC-1231                  |
+| TASK-012 | B     | Governed intake and clock discharge       | FR-060 intake/discharge; TC-1232..TC-1238 |
+| TASK-013 | C     | Claim-centered operational report         | FR-060 reporting; TC-1239..TC-1241        |
+| TASK-014 | D     | First-party GitHub release producer       | FR-061; TC-1244..TC-1247                  |
+| TASK-015 | Gate  | No-control, compatibility, real-run gates | TC-1242; TC-1243; TC-1248                 |
 
 ## Completion Gates
 
