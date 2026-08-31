@@ -109,7 +109,7 @@ are adapted from existing auditor types rather than re-evaluated.
 - [x] **TC-1291 / FR-065-AC-11:** Existing outputs remain byte-identical and verification stays read-only.
 - [x] **TC-1292 / FR-065-AC-12:** Static/golden evidence excludes identity and signature claims.
 
-## Remaining Work
+## Completed Work
 
 ### Track A: Critical Path (serial)
 
@@ -136,15 +136,15 @@ TASK-025 ──> TASK-026 ───────────────> TASK-02
 
 ## Task File Mapping
 
-| Task     | Track | Owns (references) | Verified by (verifies) | Status      |
-| -------- | ----- | ----------------- | ---------------------- | ----------- |
-| TASK-025 | A     | FR-063            | TC-1261..TC-1267       | not_started |
-| TASK-026 | A     | FR-063            | TC-1268..TC-1271       | not_started |
-| TASK-027 | B     | FR-064            | TC-1272..TC-1280       | not_started |
-| TASK-028 | C     | FR-065            | TC-1281..TC-1286       | not_started |
-| TASK-029 | A     | FR-065            | TC-1287..TC-1289       | not_started |
-| TASK-030 | A     | FR-065            | TC-1290..TC-1292       | not_started |
-| TASK-031 | Gate  | FR-063..FR-065    | TC-1261..TC-1292       | not_started |
+| Task     | Track | Owns (references) | Verified by (verifies) | Status |
+| -------- | ----- | ----------------- | ---------------------- | ------ |
+| TASK-025 | A     | FR-063            | TC-1261..TC-1267       | done   |
+| TASK-026 | A     | FR-063            | TC-1268..TC-1271       | done   |
+| TASK-027 | B     | FR-064            | TC-1272..TC-1280       | done   |
+| TASK-028 | C     | FR-065            | TC-1281..TC-1286       | done   |
+| TASK-029 | A     | FR-065            | TC-1287..TC-1289       | done   |
+| TASK-030 | A     | FR-065            | TC-1290..TC-1292       | done   |
+| TASK-031 | Gate  | FR-063..FR-065    | TC-1261..TC-1292       | done   |
 
 ## Coordination Rules
 

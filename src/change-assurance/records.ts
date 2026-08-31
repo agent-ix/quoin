@@ -96,15 +96,15 @@ export function validateDecision(
       event: null,
     };
   }
+  if (history.run_id !== record.review_workflow.run_id) {
+    return { outcome: "invalid", reasons: ["decision_mismatch"], event: null };
+  }
   if (history.events.length === 0) {
     return {
       outcome: "incomplete",
       reasons: ["decision_missing"],
       event: null,
     };
-  }
-  if (history.run_id !== record.review_workflow.run_id) {
-    return { outcome: "invalid", reasons: ["decision_mismatch"], event: null };
   }
   const candidates = history.events.filter(
     (event) => event.kind === record.review_workflow.decision_event_kind,

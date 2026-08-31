@@ -351,6 +351,23 @@ describe("FR-063 records and canonical integrity", () => {
   });
 
   it("TC-1270 accepts only one exact integrity-valid human decision", () => {
+    const ixFlowVector = {
+      id: "event-1",
+      ts: "2026-08-31T00:00:00Z",
+      actor: { kind: "human" as const, id: "reviewer" },
+      kind: "change_assurance.review_decided",
+      payload: {
+        schema_version: 1,
+        record_id: "change-1",
+        revision: 1,
+        record_digest: HEX_A,
+        decision: "approved",
+      },
+      prevHash: "0".repeat(64),
+    };
+    expect(hashIxFlowEvent(ixFlowVector)).toBe(
+      "c9dd96c23640422c109507c357ea27023e2ee1b07cbf763240553c9e2d62f769",
+    );
     const input = receiptInput();
     expect(validateDecision(input.record, input.decision_history).outcome).toBe(
       "valid",
@@ -799,6 +816,12 @@ describe("FR-065 verification receipts", () => {
     expect(verifyChangeAssurance(missing).checks.review.outcome).toBe(
       "incomplete",
     );
+    const wrongEmptyRun = receiptInput();
+    wrongEmptyRun.decision_history.run_id = "wrong-run";
+    wrongEmptyRun.decision_history.events = [];
+    expect(
+      verifyChangeAssurance(wrongEmptyRun).checks.review.reasons,
+    ).toContain("decision_mismatch");
     const broken = receiptInput();
     broken.decision_history.events[0].hash = HEX_A;
     expect(verifyChangeAssurance(broken).checks.review.reasons).toContain(
