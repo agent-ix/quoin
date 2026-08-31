@@ -2,7 +2,7 @@
 id: TASK-031
 title: "Full assurance gate"
 type: Task
-status: not_started
+status: done
 track: Gate
 priority: P0
 relationships:
@@ -29,9 +29,9 @@ code review plus mechanical gap analysis before landing preparation.
 
 ## Subtasks
 
-- [ ] Prove TC-1261..TC-1292 are backed by real trace tags.
-- [ ] Run format, lint, test-with-quire, and compatibility checks.
-- [ ] Resolve code-review and gap-analysis findings and normalize plan status.
+- [x] Prove TC-1261..TC-1292 are backed by real trace tags.
+- [x] Run format, lint, test-with-quire, and compatibility checks.
+- [x] Resolve code-review and gap-analysis findings and normalize plan status.
 
 ## Deliverables
 

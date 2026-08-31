@@ -26,16 +26,16 @@ three-state outcomes without running proofs or making identity claims.
 
 ### User requirement
 
-- [ ] **US-017:** Reviewers can verify candidate evidence against the exact
+- [x] **US-017:** Reviewers can verify candidate evidence against the exact
       approved definition without treating hashes as signatures.
 
 ### Functional requirements
 
-- [ ] **FR-063:** Parse, canonicalize, seal, retain, and verify revisioned
+- [x] **FR-063:** Parse, canonicalize, seal, retain, and verify revisioned
       `ChangeAssuranceRecord` values.
-- [ ] **FR-064:** Validate and atomically retain producer `ProofAttestation`
+- [x] **FR-064:** Validate and atomically retain producer `ProofAttestation`
       values with exact output bytes.
-- [ ] **FR-065:** Derive deterministic valid/invalid/incomplete receipts from
+- [x] **FR-065:** Derive deterministic valid/invalid/incomplete receipts from
       retained records, events, attestations, output, and audit findings.
 
 ## Dependency Graph
@@ -70,44 +70,44 @@ are adapted from existing auditor types rather than re-evaluated.
 
 ### FR-063 — records and canonical integrity
 
-- [ ] **TC-1261 / FR-063-AC-1:** Closed schema requires every record field.
-- [ ] **TC-1262 / FR-063-AC-2:** Collection properties preserve empties and reject duplicate identities.
-- [ ] **TC-1263 / FR-063-AC-3:** Requirements and proofs retain exact reviewed premises.
-- [ ] **TC-1264 / FR-063-AC-4:** Incomplete impact and unknown states stay visible.
-- [ ] **TC-1265 / FR-063-AC-5:** RFC 8785 vectors and pinned BLAKE3 digests agree.
-- [ ] **TC-1266 / FR-063-AC-6:** Mutating every semantic leaf invalidates the digest.
-- [ ] **TC-1267 / FR-063-AC-7:** Malformed raw JSON, Unicode, numbers, ordering, and digest encodings fail closed.
-- [ ] **TC-1268 / FR-063-AC-8:** Genesis and strict N-1 lineage rules hold under generated chains.
-- [ ] **TC-1269 / FR-063-AC-9:** Successors preserve exact parent paths and bytes.
-- [ ] **TC-1270 / FR-063-AC-10:** Only one exact integrity-valid human decision binds.
-- [ ] **TC-1271 / FR-063-AC-11:** Static boundaries prohibit execution and identity claims.
+- [x] **TC-1261 / FR-063-AC-1:** Closed schema requires every record field.
+- [x] **TC-1262 / FR-063-AC-2:** Collection properties preserve empties and reject duplicate identities.
+- [x] **TC-1263 / FR-063-AC-3:** Requirements and proofs retain exact reviewed premises.
+- [x] **TC-1264 / FR-063-AC-4:** Incomplete impact and unknown states stay visible.
+- [x] **TC-1265 / FR-063-AC-5:** RFC 8785 vectors and pinned BLAKE3 digests agree.
+- [x] **TC-1266 / FR-063-AC-6:** Mutating every semantic leaf invalidates the digest.
+- [x] **TC-1267 / FR-063-AC-7:** Malformed raw JSON, Unicode, numbers, ordering, and digest encodings fail closed.
+- [x] **TC-1268 / FR-063-AC-8:** Genesis and strict N-1 lineage rules hold under generated chains.
+- [x] **TC-1269 / FR-063-AC-9:** Successors preserve exact parent paths and bytes.
+- [x] **TC-1270 / FR-063-AC-10:** Only one exact integrity-valid human decision binds.
+- [x] **TC-1271 / FR-063-AC-11:** Static boundaries prohibit execution and identity claims.
 
 ### FR-064 — attestation intake
 
-- [ ] **TC-1272 / FR-064-AC-1:** Closed schema requires every attestation field.
-- [ ] **TC-1273 / FR-064-AC-2:** Four producer results remain distinct facts.
-- [ ] **TC-1274 / FR-064-AC-3:** Exact output digest/size mismatch leaves no artifacts.
-- [ ] **TC-1275 / FR-064-AC-4:** JCS/BLAKE3 vectors and semantic mutations verify.
-- [ ] **TC-1276 / FR-064-AC-5:** Missing fields are independently refused.
-- [ ] **TC-1277 / FR-064-AC-6:** Pair persistence is idempotent, crash-atomic, recoverable, and collision-safe.
-- [ ] **TC-1278 / FR-064-AC-7:** Unavailable diagnostics persist while absence remains absent.
-- [ ] **TC-1279 / FR-064-AC-8:** Existing evidence records remain byte-compatible.
-- [ ] **TC-1280 / FR-064-AC-9:** Static boundaries prohibit execution and verdict claims.
+- [x] **TC-1272 / FR-064-AC-1:** Closed schema requires every attestation field.
+- [x] **TC-1273 / FR-064-AC-2:** Four producer results remain distinct facts.
+- [x] **TC-1274 / FR-064-AC-3:** Exact output digest/size mismatch leaves no artifacts.
+- [x] **TC-1275 / FR-064-AC-4:** JCS/BLAKE3 vectors and semantic mutations verify.
+- [x] **TC-1276 / FR-064-AC-5:** Missing fields are independently refused.
+- [x] **TC-1277 / FR-064-AC-6:** Pair persistence is idempotent, crash-atomic, recoverable, and collision-safe.
+- [x] **TC-1278 / FR-064-AC-7:** Unavailable diagnostics persist while absence remains absent.
+- [x] **TC-1279 / FR-064-AC-8:** Existing evidence records remain byte-compatible.
+- [x] **TC-1280 / FR-064-AC-9:** Static boundaries prohibit execution and verdict claims.
 
 ### FR-065 — verification receipts
 
-- [ ] **TC-1281 / FR-065-AC-1:** Closed receipt schema retains every required input and result.
-- [ ] **TC-1282 / FR-065-AC-2:** Invalid dominates incomplete, which dominates valid.
-- [ ] **TC-1283 / FR-065-AC-3:** Selection multiplicity, unknown ids, ordering, and non-selection semantics hold.
-- [ ] **TC-1284 / FR-065-AC-4:** Every record/candidate/proof/command/tool/config mismatch is named.
-- [ ] **TC-1285 / FR-065-AC-5:** Only passed exact output with healthy obligations discharges.
-- [ ] **TC-1286 / FR-065-AC-6:** Missing/unavailable/not-computed/not-evaluated stays incomplete.
-- [ ] **TC-1287 / FR-065-AC-7:** Event history, uniqueness, decisions, and integrity classify correctly.
-- [ ] **TC-1288 / FR-065-AC-8:** Impact gaps and unresolved unknowns force incomplete.
-- [ ] **TC-1289 / FR-065-AC-9:** Exact FR-032 finding kinds and obligation ids survive mapping.
-- [ ] **TC-1290 / FR-065-AC-10:** Input permutations yield byte-identical receipts and digests.
-- [ ] **TC-1291 / FR-065-AC-11:** Existing outputs remain byte-identical and verification stays read-only.
-- [ ] **TC-1292 / FR-065-AC-12:** Static/golden evidence excludes identity and signature claims.
+- [x] **TC-1281 / FR-065-AC-1:** Closed receipt schema retains every required input and result.
+- [x] **TC-1282 / FR-065-AC-2:** Invalid dominates incomplete, which dominates valid.
+- [x] **TC-1283 / FR-065-AC-3:** Selection multiplicity, unknown ids, ordering, and non-selection semantics hold.
+- [x] **TC-1284 / FR-065-AC-4:** Every record/candidate/proof/command/tool/config mismatch is named.
+- [x] **TC-1285 / FR-065-AC-5:** Only passed exact output with healthy obligations discharges.
+- [x] **TC-1286 / FR-065-AC-6:** Missing/unavailable/not-computed/not-evaluated stays incomplete.
+- [x] **TC-1287 / FR-065-AC-7:** Event history, uniqueness, decisions, and integrity classify correctly.
+- [x] **TC-1288 / FR-065-AC-8:** Impact gaps and unresolved unknowns force incomplete.
+- [x] **TC-1289 / FR-065-AC-9:** Exact FR-032 finding kinds and obligation ids survive mapping.
+- [x] **TC-1290 / FR-065-AC-10:** Input permutations yield byte-identical receipts and digests.
+- [x] **TC-1291 / FR-065-AC-11:** Existing outputs remain byte-identical and verification stays read-only.
+- [x] **TC-1292 / FR-065-AC-12:** Static/golden evidence excludes identity and signature claims.
 
 ## Remaining Work
 

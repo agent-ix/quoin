@@ -2,7 +2,7 @@
 id: TASK-026
 title: "Record lineage and decisions"
 type: Task
-status: not_started
+status: done
 track: A
 priority: P0
 relationships:
@@ -29,9 +29,9 @@ validate exact retained ix-flow human decisions without invoking ix-flow.
 
 ## Subtasks
 
-- [ ] Write generated genesis/successor/adversarial lineage tests.
-- [ ] Implement digest-addressed record persistence and parent preservation.
-- [ ] Implement pure decision-event matching and static side-effect boundaries.
+- [x] Write generated genesis/successor/adversarial lineage tests.
+- [x] Implement digest-addressed record persistence and parent preservation.
+- [x] Implement pure decision-event matching and static side-effect boundaries.
 
 ## Deliverables
 

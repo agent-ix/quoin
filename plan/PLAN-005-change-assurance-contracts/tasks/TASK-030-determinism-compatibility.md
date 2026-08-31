@@ -2,7 +2,7 @@
 id: TASK-030
 title: "Determinism and compatibility"
 type: Task
-status: not_started
+status: done
 track: A
 priority: P1
 relationships:
@@ -27,9 +27,9 @@ evidence and assurance outputs, and enforce non-identity terminology/boundaries.
 
 ## Subtasks
 
-- [ ] Add permutation, snapshot, prior-store, and prior-report regressions.
-- [ ] Export the new library without changing existing default command behavior.
-- [ ] Add static and golden checks for read-only and non-identity language.
+- [x] Add permutation, snapshot, prior-store, and prior-report regressions.
+- [x] Export the new library without changing existing default command behavior.
+- [x] Add static and golden checks for read-only and non-identity language.
 
 ## Deliverables
 

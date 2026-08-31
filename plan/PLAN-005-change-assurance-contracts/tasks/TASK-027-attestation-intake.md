@@ -2,7 +2,7 @@
 id: TASK-027
 title: "Atomic attestation intake"
 type: Task
-status: not_started
+status: done
 track: B
 priority: P0
 relationships:
@@ -39,9 +39,9 @@ content-addressed, crash-atomic directory without changing FR-030 storage.
 
 ## Subtasks
 
-- [ ] Write result-state, missing-field, digest, idempotence, and collision tests.
-- [ ] Inject failures before the atomic rename and verify cleanup/recovery.
-- [ ] Implement the isolated versioned attestation store family.
+- [x] Write result-state, missing-field, digest, idempotence, and collision tests.
+- [x] Inject failures before the atomic rename and verify cleanup/recovery.
+- [x] Implement the isolated versioned attestation store family.
 
 ## Deliverables
 

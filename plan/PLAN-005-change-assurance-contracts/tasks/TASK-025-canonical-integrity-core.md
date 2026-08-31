@@ -2,7 +2,7 @@
 id: TASK-025
 title: "Strict canonical integrity core"
 type: Task
-status: not_started
+status: done
 track: A
 priority: P0
 relationships:
@@ -33,9 +33,9 @@ digest-validation primitives used by all three records.
 
 ## Subtasks
 
-- [ ] Write red vector, malformed-input, closed-schema, and mutation properties.
-- [ ] Implement duplicate-preserving raw parsing and I-JSON validation.
-- [ ] Implement canonical bytes and BLAKE3 digest helpers without reusing generic sorted JSON.
+- [x] Write red vector, malformed-input, closed-schema, and mutation properties.
+- [x] Implement duplicate-preserving raw parsing and I-JSON validation.
+- [x] Implement canonical bytes and BLAKE3 digest helpers without reusing generic sorted JSON.
 
 ## Deliverables
 

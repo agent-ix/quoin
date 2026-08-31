@@ -2,7 +2,7 @@
 id: TASK-028
 title: "Pure receipt evaluator"
 type: Task
-status: not_started
+status: done
 track: C
 priority: P0
 relationships:
@@ -35,9 +35,9 @@ checks, outcome precedence, and proof-state evaluator.
 
 ## Subtasks
 
-- [ ] Write generated permutation and mismatch properties before implementation.
-- [ ] Preserve duplicate/unknown selection evidence before lookup construction.
-- [ ] Implement exact reason ordering and valid/invalid/incomplete aggregation.
+- [x] Write generated permutation and mismatch properties before implementation.
+- [x] Preserve duplicate/unknown selection evidence before lookup construction.
+- [x] Implement exact reason ordering and valid/invalid/incomplete aggregation.
 
 ## Deliverables
 

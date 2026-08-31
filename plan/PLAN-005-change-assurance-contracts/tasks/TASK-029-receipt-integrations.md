@@ -2,7 +2,7 @@
 id: TASK-029
 title: "Receipt integrations"
 type: Task
-status: not_started
+status: done
 track: A
 priority: P0
 relationships:
@@ -29,9 +29,9 @@ the pure evaluator without changing or suppressing their source verdicts.
 
 ## Subtasks
 
-- [ ] Exercise absent, duplicate, rejected, revise, mismatched, and broken decisions.
-- [ ] Adapt exact FR-032 kinds/ids and all impact/unknown states.
-- [ ] Verify inputs are read-only and external commands are never invoked.
+- [x] Exercise absent, duplicate, rejected, revise, mismatched, and broken decisions.
+- [x] Adapt exact FR-032 kinds/ids and all impact/unknown states.
+- [x] Verify inputs are read-only and external commands are never invoked.
 
 ## Deliverables
 
