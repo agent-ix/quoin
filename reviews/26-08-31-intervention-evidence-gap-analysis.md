@@ -37,13 +37,13 @@ FR-056, FR-057, FR-058, or the integration-gate task.
 
 ## Plan Completion
 
-| Task     | Result   | Evidence                                                                                            |
-| -------- | -------- | --------------------------------------------------------------------------------------------------- |
-| TASK-006 | complete | Versioned intervention record model, semantic invariants, and generated validation cases.           |
-| TASK-007 | complete | Definition-gated raw-byte intake, atomic persistence, idempotence, collisions, and stable refusals. |
-| TASK-008 | complete | Deterministic human/JSON claims, evidence, counterevidence, gaps, owners, and actions.              |
-| TASK-009 | complete | Offline retained cli-agent-evals baseline/treatment producer with conservative attribution.         |
-| TASK-010 | complete | No-execution, compatibility, real retained evidence, governed gate, SR-078, and this review.        |
+| Task     | Result   | Evidence                                                                                                       |
+| -------- | -------- | -------------------------------------------------------------------------------------------------------------- |
+| TASK-006 | complete | Versioned intervention record model, semantic invariants, and generated validation cases.                      |
+| TASK-007 | complete | Definition-gated raw-byte intake, atomic no-replace persistence, idempotence, collisions, and stable refusals. |
+| TASK-008 | complete | Deterministic human/JSON claims, evidence, counterevidence, gaps, owners, and actions.                         |
+| TASK-009 | complete | Offline retained cli-agent-evals baseline/treatment producer with conservative attribution.                    |
+| TASK-010 | complete | No-execution, compatibility, real retained evidence, governed gate, SR-078, and this review.                   |
 
 PLAN-002 is `complete`, all task documents are `done`, and no checkbox contradicts
 those states.
@@ -53,8 +53,9 @@ those states.
 - Target matrix rows: 27/27 backed by literal TC tags; target unbacked rows: 0;
   target status lies: 0; target no-symbol rows: 0.
 - Intervention types/schema/semantics own FR-056; intake and reporting own FR-057;
-  the retained report adapter owns FR-058; exports and CLI wiring are governed by
-  those same seams and TASK-010.
+  the retained report adapter owns FR-058, including immutable subject/producer
+  source pins from its governed definition; exports and CLI wiring are governed
+  by those same seams and TASK-010.
 - The full scoped diff contains no added behavior without one of those owners,
   and no stub, skipped target test, internal mock, or unimplemented branch.
 

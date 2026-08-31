@@ -31,10 +31,11 @@ description: "Chronological log for the PLAN-002 bundle."
   because its locked Filament revision is no longer reachable from a remote ref;
   no replacement provenance was invented.
 - **2026-08-31** — Re-ran code review and mechanical gap analysis against the
-  reconciled delivery. Closed seven review findings covering truthful legacy-report
+  reconciled delivery. Closed nine review findings covering truthful legacy-report
   versioning, report-derived observation time, strict RFC 3339 validation,
   normalized raw paths, the public runtime JSON Schema, literal target tags, and
-  active-module gate resolution. The retained live baseline/treatment bytes now
+  active-module gate resolution, atomic no-replace publication, and immutable
+  subject/producer source pins. The retained live baseline/treatment bytes now
   regenerate the checked-in `cause_not_established` record exactly. The pinned
   governed gate passes 815/815 tests across 67 files; SR-078 and SR-079 record the
   final PASS evidence.
