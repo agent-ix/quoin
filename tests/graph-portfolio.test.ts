@@ -14,6 +14,7 @@ import fc from "fast-check";
 
 import {
   adaptGraphQualityObservation,
+  buildGovernedGraphPortfolio,
   buildGovernedGraphPortfolioFrom,
   canonicalGraphPortfolioJson,
   compareGraphQualityCollections,
@@ -475,12 +476,39 @@ describe("governed graph portfolio", () => {
 
     const root = mkdtempSync(join(tmpdir(), "quoin-graph-read-"));
     try {
+      const assurance = join(root, "spec", "assurance");
       const store = join(root, "spec", "evidence", "measurements");
+      mkdirSync(assurance, { recursive: true });
       mkdirSync(store, { recursive: true });
       writeFileSync(
-        join(store, "good.json"),
+        join(assurance, "MP-001.md"),
+        `---
+id: MP-001
+title: "Graph quality"
+type: MeasurementPlan
+status: active
+stage: branch-comparison
+metric: graph_quality
+definition_version: quire-code.graph-quality-v1
+owner: assurance-team
+action: repair retained evidence
+---
+
+# Graph quality
+`,
+      );
+      writeFileSync(
+        join(store, "z-old.json"),
         JSON.stringify(
-          collection("stored", "2026-08-31T00:00:00Z", {
+          collection("z-old", "2026-01-01T00:00:00Z", {
+            schemaVersion: 1,
+          }),
+        ),
+      );
+      writeFileSync(
+        join(store, "a-new.json"),
+        JSON.stringify(
+          collection("a-new", "2026-08-31T00:00:00Z", {
             schemaVersion: 1,
           }),
         ),
@@ -494,10 +522,21 @@ describe("governed graph portfolio", () => {
             error: expect.any(String),
           }),
           expect.objectContaining({
-            path: expect.stringMatching(/good\.json$/),
-            collection: expect.objectContaining({ collectionId: "stored" }),
+            path: expect.stringMatching(/a-new\.json$/),
+            collection: expect.objectContaining({ collectionId: "a-new" }),
           }),
         ]),
+      );
+
+      const loaded = buildGovernedGraphPortfolio([root]).repositories[0];
+      expect(loaded.status, loaded.error ?? undefined).toBe("readable");
+      expect(loaded.latestCollection?.id).toBe("a-new");
+      expect(loaded.graphQuality.current?.id).toBe("a-new");
+      expect(loaded.gaps).toContainEqual(
+        expect.objectContaining({
+          availability: "unreadable",
+          path: expect.stringMatching(/broken\.json$/),
+        }),
       );
     } finally {
       rmSync(root, { recursive: true, force: true });

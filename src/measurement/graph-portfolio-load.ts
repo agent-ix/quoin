@@ -27,7 +27,14 @@ export function buildGovernedGraphPortfolio(
   const reads = new Map(
     mappings.map((mapping) => {
       try {
-        return [mapping.root, readMeasurementCollectionResults(mapping.root)];
+        return [
+          mapping.root,
+          readMeasurementCollectionResults(mapping.root).map((read) =>
+            read.collection
+              ? read
+              : { ...read, availability: "unreadable" as const },
+          ),
+        ];
       } catch (cause) {
         return [
           mapping.root,
@@ -45,9 +52,13 @@ export function buildGovernedGraphPortfolio(
   const portfolio = buildPortfolioReportFromCollections(
     mappings.map((mapping) => ({
       root: mapping.root,
-      collections: (reads.get(mapping.root) ?? []).flatMap((read) =>
-        read.collection ? [read.collection] : [],
-      ),
+      collections: (reads.get(mapping.root) ?? [])
+        .flatMap((read) => (read.collection ? [read.collection] : []))
+        .sort(
+          (a, b) =>
+            compare(a.timestamp, b.timestamp) ||
+            compare(a.collectionId, b.collectionId),
+        ),
     })),
   );
   const byRoot = new Map(
@@ -140,4 +151,8 @@ function pathFor(
   if (input === "export") return mapping.exportPath;
   if (input === "premises") return mapping.premisesPath;
   return mapping.auditPath;
+}
+
+function compare(a: string, b: string): number {
+  return a === b ? 0 : a < b ? -1 : 1;
 }
