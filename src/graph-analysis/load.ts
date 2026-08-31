@@ -2,11 +2,15 @@
 
 import { existsSync, readFileSync } from "node:fs";
 
+import { z } from "zod";
+
 import {
   bindingsPath,
   readBindings,
+  STORE_SCHEMA_VERSION,
   StoreReadError,
 } from "../evidence/index.js";
+import type { Binding } from "../evidence/index.js";
 import { parseAssurance } from "../quire/index.js";
 import type { GraphAnalysisInput } from "./analysis.js";
 import {
@@ -32,6 +36,32 @@ export interface GraphLoadFailure {
 export type GraphLoadResult =
   | { ok: true; value: GraphAnalysisInput }
   | { ok: false; error: GraphLoadFailure };
+
+const affirmation = z
+  .object({
+    who: z.string(),
+    commit: z.string(),
+    note: z.string().optional(),
+  })
+  .passthrough();
+
+const binding = z
+  .object({
+    obligation: z.string().min(1),
+    statementHashAtBinding: z.string().min(1),
+    suite: z.string().min(1),
+    commit: z.string().min(1),
+    symbols: z.array(z.string()),
+    affirmations: z.array(affirmation).optional(),
+  })
+  .passthrough();
+
+const bindingsFile = z
+  .object({
+    schemaVersion: z.literal(STORE_SCHEMA_VERSION),
+    bindings: z.array(binding),
+  })
+  .passthrough();
 
 export function loadGraphAnalysisInput(
   options: GraphLoadOptions,
@@ -69,10 +99,21 @@ export function loadGraphAnalysisInput(
     };
   } else {
     try {
-      bindings = {
-        availability: "available",
-        bindings: readBindings(options.repo).bindings,
-      };
+      const retained = bindingsFile.safeParse(readBindings(options.repo));
+      bindings = retained.success
+        ? {
+            availability: "available",
+            bindings: canonicalizeBindings(retained.data.bindings),
+          }
+        : {
+            availability: "unreadable",
+            reason: `${path} is valid JSON but does not match the retained bindings schema: ${retained.error.issues
+              .map(
+                (issue) =>
+                  `${issue.path.join(".") || "<root>"}: ${issue.message}`,
+              )
+              .join("; ")}`,
+          };
     } catch (cause) {
       const detail =
         cause instanceof StoreReadError || cause instanceof Error
@@ -90,6 +131,42 @@ export function loadGraphAnalysisInput(
       bindings,
     },
   };
+}
+
+function canonicalizeBindings(bindings: Binding[]): Binding[] {
+  return bindings
+    .map((item) => ({
+      ...item,
+      symbols: [...item.symbols].sort(compare),
+      ...(item.affirmations === undefined
+        ? {}
+        : {
+            affirmations: item.affirmations
+              .map((entry) => ({ ...entry }))
+              .sort(
+                (left, right) =>
+                  compare(left.who, right.who) ||
+                  compare(left.commit, right.commit) ||
+                  compare(left.note ?? "", right.note ?? ""),
+              ),
+          }),
+    }))
+    .sort(
+      (left, right) =>
+        compare(left.obligation, right.obligation) ||
+        compare(left.suite, right.suite) ||
+        compare(left.commit, right.commit) ||
+        compare(left.statementHashAtBinding, right.statementHashAtBinding) ||
+        compare(JSON.stringify(left.symbols), JSON.stringify(right.symbols)) ||
+        compare(
+          JSON.stringify(left.affirmations ?? []),
+          JSON.stringify(right.affirmations ?? []),
+        ),
+    );
+}
+
+function compare(left: string, right: string): number {
+  return left === right ? 0 : left < right ? -1 : 1;
 }
 
 function readRequired(

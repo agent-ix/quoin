@@ -3,6 +3,7 @@ import { analyzeFanOut } from "../../graph-analysis/index.js";
 import { graphInputFlags, graphOutput, loadGraphFlags } from "./common.js";
 
 export default class GraphFanOut extends QuoinCommand {
+  protected skipUpdateNudge = true;
   static summary = "Report distinct live obligations per evidence suite.";
   static flags = graphInputFlags;
 

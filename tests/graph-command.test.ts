@@ -19,6 +19,7 @@ import {
 } from "../src/evidence/index.js";
 import {
   DEFAULT_RELATION_KINDS,
+  analyzeFanOut,
   loadGraphAnalysisInput,
 } from "../src/graph-analysis/index.js";
 
@@ -133,6 +134,31 @@ describe("FR-062 graph command", () => {
     });
   });
 
+  it("runs the non-JSON path with the inherited update nudge disabled", async () => {
+    const paths = fixture();
+    const lines: string[] = [];
+    vi.spyOn(console, "log").mockImplementation((line) =>
+      lines.push(String(line)),
+    );
+    await GraphFanOut.run(
+      [
+        "--repo",
+        paths.root,
+        "--export",
+        paths.exportPath,
+        "--premises",
+        paths.premisesPath,
+        "--audit",
+        paths.auditPath,
+      ],
+      config,
+    );
+    expect(lines.join("\n")).toContain("Suite");
+    expect(
+      readFileSync(join(repoRoot, "src/commands/graph/fan-out.ts"), "utf8"),
+    ).toContain("skipUpdateNudge = true");
+  });
+
   it("runs churn over the same accepted inputs", async () => {
     const paths = fixture();
     const lines: string[] = [];
@@ -219,15 +245,32 @@ describe("FR-062 graph command", () => {
     expect(noAudit).toMatchObject({ ok: false, error: { input: "audit" } });
 
     writeFileSync(bindingsPath(paths.root), "not JSON");
-    const unreadable = loadGraphAnalysisInput({
+    const invalidJson = loadGraphAnalysisInput({
       repo: paths.root,
       exportPath: paths.exportPath,
       premisesPath: paths.premisesPath,
       auditPath: paths.auditPath,
     });
-    expect(unreadable).toMatchObject({
+    expect(invalidJson).toMatchObject({
       ok: true,
       value: { bindings: { availability: "unreadable" } },
+    });
+
+    writeFileSync(bindingsPath(paths.root), "{}");
+    const malformed = loadGraphAnalysisInput({
+      repo: paths.root,
+      exportPath: paths.exportPath,
+      premisesPath: paths.premisesPath,
+      auditPath: paths.auditPath,
+    });
+    expect(malformed).toMatchObject({
+      ok: true,
+      value: { bindings: { availability: "unreadable" } },
+    });
+    if (!malformed.ok) throw new Error("unreachable");
+    expect(analyzeFanOut(malformed.value)).toMatchObject({
+      state: "not_computed",
+      rows: [],
     });
   });
 
@@ -251,5 +294,15 @@ describe("FR-062 graph command", () => {
     );
     expect(sourceText).not.toContain("buildTraceGraph");
     expect(sourceText).not.toContain("--view");
+    for (const command of [
+      "src/commands/graph/index.ts",
+      "src/commands/graph/fan-out.ts",
+      "src/commands/graph/change-impact.ts",
+      "src/commands/graph/churn.ts",
+    ]) {
+      expect(readFileSync(join(repoRoot, command), "utf8")).toContain(
+        "skipUpdateNudge = true",
+      );
+    }
   });
 });

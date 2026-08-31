@@ -13,7 +13,11 @@ import type {
   AssuranceObligation,
   AssuranceSource,
 } from "../quire/index.js";
-import type { AuditEnvelope } from "./input.js";
+import {
+  canonicalizeAcceptedAssurancePremises,
+  canonicalizeAuditReport,
+  type AuditEnvelope,
+} from "./input.js";
 
 export const DEFAULT_RELATION_KINDS = [
   "depends_on",
@@ -25,6 +29,8 @@ export const DEFAULT_RELATION_KINDS = [
   "satisfies",
   "traces_to",
 ] as const;
+
+const REQUIREMENT_ARTIFACT_TYPES = new Set(["StR", "US", "FR", "NFR"]);
 
 export type GraphAnalysisState = "complete" | "incomplete" | "not_computed";
 export type GraphGapKind =
@@ -151,7 +157,7 @@ export function analyzeFanOut(input: GraphAnalysisInput): FanOutAnalysis {
     return { ...report, state: "not_computed", rows: [] };
   }
   const owners = obligationOwners(input.assurance);
-  const live = new Set(input.assurance.obligations.map(({ id }) => id));
+  const live = new Set(owners.keys());
   const rows = new Map<
     string,
     { live: Set<string>; unresolved: Set<string> }
@@ -194,7 +200,7 @@ export function analyzeChurn(input: GraphAnalysisInput): ChurnAnalysis {
     return { ...report, state: "not_computed", rows: [] };
   }
   const owners = obligationOwners(input.assurance);
-  const live = new Set(input.assurance.obligations.map(({ id }) => id));
+  const live = new Set(owners.keys());
   const suites = new Map<string, Set<string>>();
   const events = new Map<string, Map<string, ChurnEvent>>();
   for (const binding of input.bindings.bindings) {
@@ -234,16 +240,18 @@ export function analyzeChurn(input: GraphAnalysisInput): ChurnAnalysis {
     }
     events.set(binding.obligation, byKey);
   }
-  const rows = input.assurance.obligations.map(({ id }) => {
-    const rowEvents = [...(events.get(id)?.values() ?? [])].sort(eventOrder);
-    return {
-      obligation: id,
-      requirements: owners.get(id) ?? [],
-      suites: sorted(suites.get(id) ?? new Set()),
-      events: rowEvents,
-      eventCount: rowEvents.length,
-    };
-  });
+  const rows = input.assurance.obligations
+    .filter(({ id }) => live.has(id))
+    .map(({ id }) => {
+      const rowEvents = [...(events.get(id)?.values() ?? [])].sort(eventOrder);
+      return {
+        obligation: id,
+        requirements: owners.get(id) ?? [],
+        suites: sorted(suites.get(id) ?? new Set()),
+        events: rowEvents,
+        eventCount: rowEvents.length,
+      };
+    });
   rows.sort(
     (left, right) =>
       right.eventCount - left.eventCount ||
@@ -290,7 +298,9 @@ export function analyzeChangeImpact(
     };
   }
 
-  const artifactIds = new Set(input.assurance.artifacts.map(({ id }) => id));
+  const artifactIds = new Set(
+    input.assurance.artifacts.filter(isRequirementArtifact).map(({ id }) => id),
+  );
   const validSeeds: string[] = [];
   for (const seed of initial.requested) {
     if (artifactIds.has(seed)) validSeeds.push(seed);
@@ -305,10 +315,11 @@ export function analyzeChangeImpact(
     input.assurance,
     new Set(relationKinds),
     artifactIds,
+    new Set(input.assurance.artifacts.map(({ id }) => id)),
     initial.gaps,
   );
   const paths = shortestReversePaths(validSeeds, edges);
-  const owners = obligationOwners(input.assurance);
+  const owners = obligationOwners(input.assurance, true);
   const obligationsByOwner = new Map<string, AssuranceObligation[]>();
   for (const obligation of input.assurance.obligations) {
     for (const owner of owners.get(obligation.id) ?? []) {
@@ -417,7 +428,7 @@ function base<V extends GraphReportBase["view"]>(
       format: input.assurance.format,
       format_version: input.assurance.format_version,
     },
-    premises: input.premises,
+    premises: canonicalizeAcceptedAssurancePremises(input.premises),
     state: gaps.length === 0 ? "complete" : "incomplete",
     gaps: uniqueGaps(gaps),
   };
@@ -437,9 +448,14 @@ function finish<T extends GraphReportBase>(report: T): T {
   };
 }
 
-function obligationOwners(exportValue: AssuranceExport): Map<string, string[]> {
+function obligationOwners(
+  exportValue: AssuranceExport,
+  requirementsOnly = false,
+): Map<string, string[]> {
   const artifactsByPath = new Map<string, string[]>();
-  for (const artifact of exportValue.artifacts) {
+  for (const artifact of exportValue.artifacts.filter(
+    (candidate) => !requirementsOnly || isRequirementArtifact(candidate),
+  )) {
     const group = artifactsByPath.get(artifact.locator.path) ?? [];
     group.push(artifact.id);
     artifactsByPath.set(artifact.locator.path, group);
@@ -450,6 +466,12 @@ function obligationOwners(exportValue: AssuranceExport): Map<string, string[]> {
       sorted(artifactsByPath.get(obligation.document) ?? []),
     ]),
   );
+}
+
+function isRequirementArtifact(
+  artifact: AssuranceExport["artifacts"][number],
+): boolean {
+  return REQUIREMENT_ARTIFACT_TYPES.has(artifact.artifact_type);
 }
 
 function groupBindings(bindings: Binding[]): Map<string, Binding[]> {
@@ -474,12 +496,13 @@ function verdictFor(
   obligation: string,
   gaps: GraphGap[],
 ): AuditorVerdict {
+  const retained = canonicalizeAuditReport(report);
   const verdict = {
-    findings: report.findings.filter(
+    findings: retained.findings.filter(
       (finding) => finding.obligation === obligation,
     ),
-    healthy: report.healthy.filter((id) => id === obligation),
-    unevaluated: report.unevaluated.filter(
+    healthy: retained.healthy.filter((id) => id === obligation),
+    unevaluated: retained.unevaluated.filter(
       (check) => check.obligation === obligation,
     ),
   };
@@ -500,7 +523,8 @@ function verdictFor(
 function selectedCorpusEdges(
   exportValue: AssuranceExport,
   selection: Set<string>,
-  artifactIds: Set<string>,
+  requirementIds: Set<string>,
+  allArtifactIds: Set<string>,
   gaps: GraphGap[],
 ): AssuranceCorpusRelation[] {
   const edges: AssuranceCorpusRelation[] = [];
@@ -508,9 +532,18 @@ function selectedCorpusEdges(
     if (relation.kind !== "corpus" || !selection.has(relation.edge_type))
       continue;
     if (
+      relation.resolution === "resolved" &&
+      allArtifactIds.has(relation.source) &&
+      allArtifactIds.has(relation.target) &&
+      (!requirementIds.has(relation.source) ||
+        !requirementIds.has(relation.target))
+    ) {
+      continue;
+    }
+    if (
       relation.resolution !== "resolved" ||
-      !artifactIds.has(relation.source) ||
-      !artifactIds.has(relation.target)
+      !requirementIds.has(relation.source) ||
+      !requirementIds.has(relation.target)
     ) {
       gaps.push({
         kind: "dangling-relation",

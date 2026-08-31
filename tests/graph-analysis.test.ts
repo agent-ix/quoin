@@ -40,10 +40,10 @@ function locator(path: string, line = 1) {
   return { path, line, digest };
 }
 
-function artifact(id: string) {
+function artifact(id: string, artifact_type = "FR") {
   return {
     id,
-    artifact_type: "FR",
+    artifact_type,
     locator: locator(`spec/${id}.md`),
   };
 }
@@ -274,13 +274,28 @@ describe("FR-062 change impact", () => {
 
   // Trace: FR-062-AC-4
   it("TC-1252 joins every reached requirement and isolates an unknown seed", () => {
+    const plan = artifact("PLAN-999", "Plan");
+    const planObligation = obligation("PLAN-999-AC-1", "PLAN-999");
     const report = analyzeChangeImpact(
-      input(exportFixture({ relations: graphRelations }), bindings),
-      ["FR-404", "FR-001"],
+      input(
+        exportFixture({
+          artifacts: [...exportFixture().artifacts, plan],
+          obligations: [...exportFixture().obligations, planObligation],
+          relations: [
+            ...graphRelations,
+            relation("PLAN-999", "FR-001", "depends_on"),
+          ],
+        }),
+        [...bindings, binding("PLAN-999-AC-1", "planning")],
+      ),
+      ["FR-404", "PLAN-999", "FR-001"],
       selected,
     );
     expect(
       report.rows.some(({ requirement }) => requirement === "FR-404"),
+    ).toBe(false);
+    expect(
+      report.rows.some(({ requirement }) => requirement === "PLAN-999"),
     ).toBe(false);
     expect(
       report.rows.find(({ requirement }) => requirement === "FR-002")
@@ -294,6 +309,12 @@ describe("FR-062 change impact", () => {
       expect.objectContaining({
         kind: "unknown-requirement",
         subject: "FR-404",
+      }),
+    );
+    expect(report.gaps).toContainEqual(
+      expect.objectContaining({
+        kind: "unknown-requirement",
+        subject: "PLAN-999",
       }),
     );
   });
@@ -403,6 +424,33 @@ describe("FR-062 churn, premises, and rendering", () => {
       })?.input,
     ).toBe("premises");
     expect(
+      validateAcceptedAssurancePremises(exported, {
+        ...premises(),
+        modules: [
+          {
+            ...modules[0],
+            schemas: [
+              ...modules[0].schemas,
+              { archetype: "US", schema_digest: digest },
+            ],
+          },
+        ],
+      })?.input,
+    ).toBe("premises");
+    expect(
+      validateAcceptedAssurancePremises(exported, {
+        ...premises(),
+        modules: [
+          ...modules,
+          {
+            name: "not-in-export",
+            version: "1.0.0",
+            schemas: [{ archetype: "FR", schema_digest: digest }],
+          },
+        ],
+      })?.input,
+    ).toBe("premises");
+    expect(
       validateAuditIdentity(
         { ...audit(), source: { ...source, revision: "d".repeat(40) } },
         exported,
@@ -453,6 +501,120 @@ describe("FR-062 churn, premises, and rendering", () => {
     expect(renderGraphAnalysisJson(left)).toBe(renderGraphAnalysisJson(right));
     expect(renderGraphAnalysis(left)).toContain(left.source.revision);
     expect(renderGraphAnalysis(left)).toContain("Suite");
+
+    const twoModules = [
+      ...modules,
+      {
+        name: "second",
+        version: "2.0.0",
+        schemas: [
+          { archetype: "US", schema_digest: "d".repeat(64) },
+          { archetype: "NFR", schema_digest: "e".repeat(64) },
+        ],
+      },
+    ];
+    const reversedModules = [...twoModules]
+      .reverse()
+      .map((module) => ({ ...module, schemas: [...module.schemas].reverse() }));
+    const leftPremises = parseAcceptedAssurancePremises(
+      JSON.stringify({ ...premises(), modules: twoModules }),
+    );
+    const rightPremises = parseAcceptedAssurancePremises(
+      JSON.stringify({ ...premises(), modules: reversedModules }),
+    );
+    expect(leftPremises).toEqual(rightPremises);
+    if (!leftPremises.ok || !rightPremises.ok) throw new Error("unreachable");
+
+    const findings = [
+      {
+        kind: "stale-evidence" as const,
+        obligation: "FR-001-AC-1",
+        severity: "medium" as const,
+        summary: "stale",
+      },
+      {
+        kind: "unknown-method" as const,
+        obligation: "FR-001-AC-1",
+        severity: "low" as const,
+        summary: "unknown",
+      },
+    ];
+    const auditLeft = parseAuditEnvelope(
+      JSON.stringify({
+        ...audit([]),
+        export: { ...premises(), modules: twoModules },
+        report: {
+          findings,
+          healthy: ["FR-001-AC-1", "FR-001-AC-1"],
+          unevaluated: [
+            {
+              check: "mocked-confirmation",
+              obligation: "FR-001-AC-1",
+              suites: ["unit", "integration"],
+              reason: "not inspected",
+            },
+            {
+              check: "mocked-confirmation",
+              obligation: "FR-001-AC-1",
+              suites: ["system"],
+              reason: "not recorded",
+            },
+          ],
+        },
+      }),
+    );
+    const auditRight = parseAuditEnvelope(
+      JSON.stringify({
+        ...audit([]),
+        export: { ...premises(), modules: reversedModules },
+        report: {
+          findings: [...findings].reverse(),
+          healthy: ["FR-001-AC-1", "FR-001-AC-1"].reverse(),
+          unevaluated: [
+            {
+              check: "mocked-confirmation",
+              obligation: "FR-001-AC-1",
+              suites: ["system"],
+              reason: "not recorded",
+            },
+            {
+              check: "mocked-confirmation",
+              obligation: "FR-001-AC-1",
+              suites: ["integration", "unit"],
+              reason: "not inspected",
+            },
+          ],
+        },
+      }),
+    );
+    expect(auditLeft).toEqual(auditRight);
+    if (!auditLeft.ok || !auditRight.ok) throw new Error("unreachable");
+    const canonicalExport = exportFixture({ modules: twoModules });
+    const canonicalBinding = [binding("FR-001-AC-1", "unit")];
+    const leftImpact = analyzeChangeImpact(
+      {
+        assurance: canonicalExport,
+        premises: leftPremises.value,
+        audit: auditLeft.value,
+        bindings: { availability: "available", bindings: canonicalBinding },
+      },
+      ["FR-001"],
+    );
+    const rightImpact = analyzeChangeImpact(
+      {
+        assurance: canonicalExport,
+        premises: rightPremises.value,
+        audit: auditRight.value,
+        bindings: {
+          availability: "available",
+          bindings: [...canonicalBinding].reverse(),
+        },
+      },
+      ["FR-001"],
+    );
+    expect(renderGraphAnalysisJson(leftImpact)).toBe(
+      renderGraphAnalysisJson(rightImpact),
+    );
   });
 
   // Trace: FR-062-AC-12

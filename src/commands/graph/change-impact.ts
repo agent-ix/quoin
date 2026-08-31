@@ -5,6 +5,7 @@ import { analyzeChangeImpact } from "../../graph-analysis/index.js";
 import { graphInputFlags, graphOutput, loadGraphFlags } from "./common.js";
 
 export default class GraphChangeImpact extends QuoinCommand {
+  protected skipUpdateNudge = true;
   static summary =
     "Report reverse dependency exposure from requirement changes.";
   static flags = {

@@ -102,59 +102,48 @@ export type GraphInputResult<T> =
 export function parseAcceptedAssurancePremises(
   text: string,
 ): GraphInputResult<AcceptedAssurancePremises> {
-  return parseWithSchema(text, "premises", acceptedPremises);
+  const parsed = parseWithSchema(text, "premises", acceptedPremises);
+  return parsed.ok
+    ? { ok: true, value: canonicalizeAcceptedAssurancePremises(parsed.value) }
+    : parsed;
 }
 
 export function parseAuditEnvelope(
   text: string,
 ): GraphInputResult<AuditEnvelope> {
-  return parseWithSchema(
+  const parsed = parseWithSchema(
     text,
     "audit",
     auditEnvelope,
   ) as GraphInputResult<AuditEnvelope>;
+  return parsed.ok
+    ? {
+        ok: true,
+        value: {
+          ...parsed.value,
+          export: canonicalizeAcceptedAssurancePremises(parsed.value.export),
+          report: canonicalizeAuditReport(parsed.value.report),
+        },
+      }
+    : parsed;
 }
 
 export function validateAcceptedAssurancePremises(
   exportValue: AssuranceExport,
   accepted: AcceptedAssurancePremises,
 ): GraphInputViolation | null {
-  if (
-    exportValue.format !== accepted.format ||
-    exportValue.format_version !== accepted.format_version
-  ) {
-    return violation(
-      "premises",
-      "the assurance format or format_version is not accepted",
-    );
-  }
-
-  for (const module of exportValue.modules) {
-    const expected = accepted.modules.find(({ name }) => name === module.name);
-    if (!expected) {
-      return violation("premises", `module '${module.name}' is not accepted`);
-    }
-    if (expected.version !== module.version) {
-      return violation(
+  const actual = canonicalizeAcceptedAssurancePremises({
+    format: exportValue.format,
+    format_version: exportValue.format_version,
+    modules: exportValue.modules,
+  });
+  const expected = canonicalizeAcceptedAssurancePremises(accepted);
+  return sameJson(actual, expected)
+    ? null
+    : violation(
         "premises",
-        `module '${module.name}' version '${module.version}' is not accepted`,
+        "the accepted format, version, modules, and schema digests must exactly match the assurance export",
       );
-    }
-    for (const schema of module.schemas) {
-      const matches = expected.schemas.some(
-        (candidate) =>
-          candidate.archetype === schema.archetype &&
-          candidate.schema_digest === schema.schema_digest,
-      );
-      if (!matches) {
-        return violation(
-          "premises",
-          `module '${module.name}' archetype '${schema.archetype}' schema digest '${schema.schema_digest}' is not accepted`,
-        );
-      }
-    }
-  }
-  return null;
 }
 
 export function validateAuditIdentity(
@@ -172,13 +161,55 @@ export function validateAuditIdentity(
     format_version: exportValue.format_version,
     modules: exportValue.modules,
   };
-  if (!sameJson(audit.export, exportIdentity)) {
+  if (
+    !sameJson(
+      canonicalizeAcceptedAssurancePremises(audit.export),
+      canonicalizeAcceptedAssurancePremises(exportIdentity),
+    )
+  ) {
     return violation(
       "audit",
       "the audit export format/module premises do not match the assurance export",
     );
   }
   return null;
+}
+
+export function canonicalizeAcceptedAssurancePremises(
+  value: AcceptedAssurancePremises,
+): AcceptedAssurancePremises {
+  return {
+    ...value,
+    modules: value.modules
+      .map((module) => ({
+        ...module,
+        schemas: module.schemas
+          .map((schema) => ({ ...schema }))
+          .sort(
+            (left, right) =>
+              compare(left.archetype, right.archetype) ||
+              compare(left.schema_digest, right.schema_digest),
+          ),
+      }))
+      .sort(
+        (left, right) =>
+          compare(left.name, right.name) ||
+          compare(left.version, right.version),
+      ),
+  };
+}
+
+export function canonicalizeAuditReport(report: AuditReport): AuditReport {
+  return {
+    ...report,
+    findings: report.findings
+      .map((finding) => ({ ...finding }))
+      .sort((left, right) => compare(stableKey(left), stableKey(right))),
+    healthy: [...report.healthy].sort(compare),
+    unevaluated: report.unevaluated
+      .map((check) => ({ ...check, suites: [...check.suites].sort(compare) }))
+      .sort((left, right) => compare(stableKey(left), stableKey(right))),
+  };
 }
 
 function parseWithSchema<T>(
@@ -238,6 +269,14 @@ function canonical(value: unknown): unknown {
       .sort(([left], [right]) => (left === right ? 0 : left < right ? -1 : 1))
       .map(([key, child]) => [key, canonical(child)]),
   );
+}
+
+function stableKey(value: unknown): string {
+  return JSON.stringify(canonical(value));
+}
+
+function compare(left: string, right: string): number {
+  return left === right ? 0 : left < right ? -1 : 1;
 }
 
 /** Exported for report types without exposing the zod schemas. */

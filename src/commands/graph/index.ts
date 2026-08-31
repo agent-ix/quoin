@@ -1,6 +1,7 @@
 import { QuoinCommand } from "../../base.js";
 
 export default class Graph extends QuoinCommand {
+  protected skipUpdateNudge = true;
   static summary = "Read-only evidence-graph analysis views.";
   static description = `Analyze an existing, accepted Quire assurance export together with retained
 Quoin evidence and an existing FR-032 audit. These commands run no producer,

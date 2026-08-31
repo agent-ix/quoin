@@ -27,6 +27,8 @@ export {
   type OwnedObligation,
 } from "./analysis.js";
 export {
+  canonicalizeAcceptedAssurancePremises,
+  canonicalizeAuditReport,
   parseAcceptedAssurancePremises,
   parseAuditEnvelope,
   validateAcceptedAssurancePremises,
