@@ -12,14 +12,15 @@ review_set: all
 ## Summary
 
 Quoin owns validation of its accepted export premises, joins to its evidence/auditor data, graph
-analysis, and rendering. Quire owns the authoritative corpus/export; producers, Git, network,
-frontmatter parsing, portfolio policy, and assurance verdicts remain outside this feature.
+analysis, and rendering. Quire owns the authoritative corpus/export; producers, Git, inherited
+update checks, network, frontmatter parsing, portfolio policy, and assurance verdicts remain
+outside this feature.
 
 ## Findings
 
 | ID | Severity | Summary | Refs |
 | --- | --- | --- | --- |
-| FND-001 | low | Every responsibility and external dependency has one owner, and the Quire boundary is guaranteed by the versioned schema plus cross-repository contract test. | FR-062; quire-rs FR-067/FR-068 |
+| FND-001 | medium | Resolved during review: required `--export`, `--premises`, and source-bound `--audit` inputs make the Quire/Quoin/auditor handoff explicit; `--repo` may locate retained Quoin state but cannot invoke Quire, recompute an audit, or discover ambient module premises. | FR-062; quire-rs FR-067/FR-068 |
 
 ## External dependencies
 
@@ -27,7 +28,7 @@ frontmatter parsing, portfolio policy, and assurance verdicts remain outside thi
 | --- | --- | --- | --- |
 | Quire assurance export | Offline JSON artifact | Guaranteed | quire-rs assurance-v1 schema, FR-067/FR-068, and IT-001 |
 | Quoin evidence store | Local retained files | Guaranteed | FR-030 store readers and TC-1250/TC-1254/TC-1255 |
-| Quoin auditor verdicts | Pure report input | Guaranteed | FR-032 and TC-1253 |
+| Quoin auditor verdicts | Source-bound offline JSON artifact | Guaranteed | FR-032 and TC-1253/TC-1257 |
 
 ## Responsibility allocation
 

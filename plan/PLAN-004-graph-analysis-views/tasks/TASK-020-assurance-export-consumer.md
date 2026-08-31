@@ -2,7 +2,7 @@
 id: TASK-020
 title: "Consume the versioned Quire assurance export"
 type: Task
-status: not_started
+status: done
 track: A
 priority: P0
 relationships:
@@ -24,10 +24,14 @@ premise succeeds.
 
 ## Subtasks
 
-- [ ] Add the hand-authored schema, recorded publisher revision, and content digest.
-- [ ] Implement typed parse/validation with fail-closed premise checking.
-- [ ] Preserve source revision, module versions, schema digests, and distinct availability states.
-- [ ] Cover repeated valid import and every invalid/unavailable input class.
+- [x] Add the hand-authored schema, recorded publisher revision, and content digest.
+- [x] Implement typed parse/validation with fail-closed premise checking.
+- [x] Preserve source revision, module versions, schema digests, and distinct availability states.
+- [x] Read required `--export <json>`, `--premises <json>`, and `--audit <json>` inputs without
+      invoking Quire, recomputing an audit, or discovering acceptance from ambient modules.
+- [x] Validate audit source/export identity before exposing its unchanged FR-032 findings,
+      healthy obligations, and unevaluated checks.
+- [x] Cover repeated valid import and every invalid/unavailable input class.
 
 ## Deliverables
 
@@ -36,5 +40,6 @@ premise succeeds.
 
 ## Notes
 
-- Blocked until quire-rs #386 publishes the actual schema and producer contract.
+- Consumes quire-rs #386's committed producer contract at
+  `3fe2c7e0e9de445af290603c3728857803b61183`.
 - No subprocess belongs in the consumer; the command receives an existing export artifact.

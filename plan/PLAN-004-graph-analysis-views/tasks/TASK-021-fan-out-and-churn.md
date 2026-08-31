@@ -2,7 +2,7 @@
 id: TASK-021
 title: "Build fan-out and reaffirmation-churn projections"
 type: Task
-status: not_started
+status: done
 track: A
 priority: P0
 relationships:
@@ -29,10 +29,10 @@ suite fan-out and obligation-level reaffirmation churn without losing unresolved
 
 ## Subtasks
 
-- [ ] Index live obligation owners and suite bindings with exact deduplication keys.
-- [ ] Emit one fan-out row per suite, including unresolved binding ids and gaps.
-- [ ] Deduplicate affirmation copies while retaining affected suites and zero-event obligations.
-- [ ] Property-test ordering, duplication, missing-obligation, and permutation cases.
+- [x] Index live obligation owners and suite bindings with exact deduplication keys.
+- [x] Emit one fan-out row per suite, including unresolved binding ids and gaps.
+- [x] Deduplicate affirmation copies while retaining affected suites and zero-event obligations.
+- [x] Property-test ordering, duplication, missing-obligation, and permutation cases.
 
 ## Deliverables
 

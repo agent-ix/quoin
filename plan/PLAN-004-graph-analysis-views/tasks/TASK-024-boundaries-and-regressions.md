@@ -2,7 +2,7 @@
 id: TASK-024
 title: "Seal graph-analysis boundaries and regressions"
 type: Task
-status: not_started
+status: done
 track: Gate
 priority: P0
 relationships:
@@ -25,17 +25,21 @@ non-scoring, export-driven, and additive to existing evidence, assurance, and me
 
 ## Subtasks
 
-- [ ] Reject producer, suite, Quire, Git, network, write, and frontmatter-reader dependencies.
-- [ ] Reject independent graph construction and score/threshold vocabulary in graph reports.
-- [ ] Pin unchanged evidence-audit, assurance-case, and measurement output without graph invocation.
-- [ ] Run format, lint, build, Quire validation, focused tests, and the full repository gate.
+- [x] Reject producer, suite, Quire, Git, update-check, network, write, and frontmatter-reader
+      dependencies.
+- [x] Reject independent graph construction and score/threshold vocabulary in graph reports.
+- [x] Pin unchanged evidence-audit, assurance-case, and measurement output without graph invocation.
+- [x] Run format, lint, build, Quire validation, focused tests, and the full repository gate.
 
 ## Deliverables
 
 - TC-1259 static boundary test.
 - TC-1260 additive/non-regression test.
-- Green full verification evidence.
+- Verification evidence separating #152 results from two pre-existing external-drift failures.
 
 ## Notes
 
 - This is the landing gate for issue #152 and the prerequisite for issue #281.
+- The full Vitest run passes 817/819 tests. The two failures are outside the #152 diff: an installed
+  skill vocabulary ahead of the checked-out module schema, and an installed Quire coverage payload
+  missing `binding_census[].tagged` required by the unchanged pinned coverage-v1 schema.

@@ -2,7 +2,7 @@
 id: PLAN-004
 title: "Graph-analysis views"
 type: Plan
-status: active
+status: done
 relationships:
   - target: "ix://agent-ix/quoin/StR-004"
     type: references
@@ -18,15 +18,15 @@ relationships:
 
 ### Stakeholder Requirements
 
-- [ ] **StR-004**: Govern spec workflows with inspectable evidence.
+- [x] **StR-004**: Govern spec workflows with inspectable evidence.
 
 ### User Stories
 
-- [ ] **US-018**: Inspect evidence-graph concentration and change exposure.
+- [x] **US-018**: Inspect evidence-graph concentration and change exposure.
 
 ### Functional Requirements
 
-- [ ] **FR-062**: Derive deterministic, read-only fan-out, change-impact, and churn reports from an
+- [x] **FR-062**: Derive deterministic, read-only fan-out, change-impact, and churn reports from an
       accepted Quire assurance export, retained evidence, and unchanged auditor verdicts.
 
 ## Dependency Graph
@@ -51,40 +51,40 @@ than rebuilding a graph or reading specification frontmatter.
 
 ### Cross-cutting constraints
 
-FR-062-CON-1..CON-4 apply to every task: no producer, suite, Quire, Git, network, write, scoring,
-verdict mutation, frontmatter read, or independently constructed artifact graph may enter the
-analysis path.
+FR-062-CON-1..CON-4 apply to every task: no producer, suite, Quire, Git, update check, network,
+write, scoring, verdict mutation, frontmatter read, or independently constructed artifact graph
+may enter the analysis path.
 
 ### The seams
 
 The work attaches at `src/quire/` for schema-validated import, `src/evidence/` and `src/auditor/` for
 existing retained operands/verdicts, `src/graph-analysis/` for pure projections, and
-`src/commands/graph.ts` plus `vite.config.ts` for the oclif surface.
+`src/commands/graph/` plus `vite.config.ts` for the oclif surface.
 
 ## Test Plan
 
 ### Property tests
 
-- [ ] **TC-1249**: fan-out set/count is duplicate- and input-order-invariant.
-- [ ] **TC-1251**: relation selection, reverse closure, cycles, shared dependents, and shortest-path
+- [x] **TC-1249**: fan-out set/count is duplicate- and input-order-invariant.
+- [x] **TC-1251**: relation selection, reverse closure, cycles, shared dependents, and shortest-path
       tie-breaking are deterministic.
-- [ ] **TC-1254**: one copied affirmation is one event while all affected suites remain visible.
-- [ ] **TC-1255**: zero-event rows, absent-obligation gaps, and churn ordering hold under permutations.
-- [ ] **TC-1256**: source and module premises survive repeated analysis byte-for-byte.
-- [ ] **TC-1258**: equivalent input permutations produce byte-identical JSON and matching human output.
+- [x] **TC-1254**: one copied affirmation is one event while all affected suites remain visible.
+- [x] **TC-1255**: zero-event rows, absent-obligation gaps, and churn ordering hold under permutations.
+- [x] **TC-1256**: source and module premises survive repeated analysis byte-for-byte.
+- [x] **TC-1258**: equivalent input permutations produce byte-identical JSON and matching human output.
 
 ### Unit tests
 
-- [ ] **TC-1250**: unresolved bindings stay named under their suite and in gaps but do not count live.
-- [ ] **TC-1252**: every reached requirement joins obligations/suites; unknown seeds return no partial
+- [x] **TC-1250**: unresolved bindings stay named under their suite and in gaps but do not count live.
+- [x] **TC-1252**: every reached requirement joins obligations/suites; unknown seeds return no partial
       closure.
-- [ ] **TC-1253**: change exposure and every unchanged FR-032 verdict remain separate.
-- [ ] **TC-1257**: invalid, absent, unreadable, incomplete, and valid-empty inputs retain distinct states.
+- [x] **TC-1253**: change exposure and every unchanged FR-032 verdict remain separate.
+- [x] **TC-1257**: invalid, absent, unreadable, incomplete, and valid-empty inputs retain distinct states.
 
 ### Static and integration tests
 
-- [ ] **TC-1259**: dependency boundaries reject execution, write, frontmatter, and second-graph paths.
-- [ ] **TC-1260**: legacy evidence/assurance/measurement outputs remain byte-compatible and graph
+- [x] **TC-1259**: dependency boundaries reject execution, write, frontmatter, and second-graph paths.
+- [x] **TC-1260**: legacy evidence/assurance/measurement outputs remain byte-compatible and graph
       output contains no score or threshold classification.
 
 ## Remaining Work
@@ -115,13 +115,13 @@ serial.
 
 ## Task File Mapping
 
-| Task     | Track | Owns (references) | Verified by (verifies)             | Status      |
-| -------- | ----- | ----------------- | ---------------------------------- | ----------- |
-| TASK-020 | A     | FR-062            | TC-1256, TC-1257                   | not_started |
-| TASK-021 | A     | FR-062            | TC-1249, TC-1250, TC-1254, TC-1255 | not_started |
-| TASK-022 | A     | FR-062            | TC-1251, TC-1252, TC-1253          | not_started |
-| TASK-023 | A     | FR-062            | TC-1258                            | not_started |
-| TASK-024 | Gate  | FR-062            | TC-1259, TC-1260                   | not_started |
+| Task     | Track | Owns (references) | Verified by (verifies)             | Status |
+| -------- | ----- | ----------------- | ---------------------------------- | ------ |
+| TASK-020 | A     | FR-062            | TC-1256, TC-1257                   | done   |
+| TASK-021 | A     | FR-062            | TC-1249, TC-1250, TC-1254, TC-1255 | done   |
+| TASK-022 | A     | FR-062            | TC-1251, TC-1252, TC-1253          | done   |
+| TASK-023 | A     | FR-062            | TC-1258                            | done   |
+| TASK-024 | Gate  | FR-062            | TC-1259, TC-1260                   | done   |
 
 ## Coordination Rules
 

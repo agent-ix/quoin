@@ -2,7 +2,7 @@
 id: TASK-022
 title: "Build deterministic reverse change-impact closure"
 type: Task
-status: not_started
+status: done
 track: A
 priority: P0
 relationships:
@@ -28,10 +28,10 @@ auditor verdicts.
 
 ## Subtasks
 
-- [ ] Validate default versus replacement relationship-kind selections against export vocabulary.
-- [ ] Compute cycle-safe multi-source reverse closure with lexicographic shortest-path tie-breaking.
-- [ ] Return no partial result for an unknown seed and `not_computed` for an unknown relation premise.
-- [ ] Join live evidence and copy FR-032 verdicts into a field separate from exposure.
+- [x] Validate default versus replacement relationship-kind selections against export vocabulary.
+- [x] Compute cycle-safe multi-source reverse closure with lexicographic shortest-path tie-breaking.
+- [x] Return no partial result for an unknown seed and `not_computed` for an unknown relation premise.
+- [x] Join live evidence and copy FR-032 verdicts into a field separate from exposure.
 
 ## Deliverables
 

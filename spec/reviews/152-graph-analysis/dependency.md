@@ -19,7 +19,7 @@ issue #281 is downstream and may consume the reports without changing their sema
 
 | ID | Severity | Summary | Refs |
 | --- | --- | --- | --- |
-| FND-001 | low | The prerequisite graph is explicit, acyclic, and keeps export enablement separate from Quoin's graph-view feature work. | FR-030; FR-032; quire-rs FR-067/FR-068; FR-062 |
+| FND-001 | medium | Resolved during review: the external export, acceptance premises, and precomputed audit are now explicit file inputs, keeping Quire export and FR-032 verdict production outside graph-view execution. | FR-030; FR-032; quire-rs FR-067/FR-068; FR-062 |
 
 ## Classification and order
 

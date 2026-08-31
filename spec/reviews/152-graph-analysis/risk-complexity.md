@@ -19,7 +19,7 @@ boundary, and regression tests are named mitigations; no high unmitigated risk r
 
 | ID | Severity | Summary | Refs |
 | --- | --- | --- | --- |
-| FND-001 | low | All identified contract, topology, completeness, and accidental-verdict risks have named executable mitigations in TM-001. | FR-062; TC-1249..TC-1260 |
+| FND-001 | medium | Resolved during review: explicit export/premise/audit inputs and source/export identity matching now mitigate ambient-contract and stale-verdict risks in TC-1257. | FR-062; TC-1257 |
 
 ## Risk register
 
@@ -34,5 +34,7 @@ boundary, and regression tests are named mitigations; no high unmitigated risk r
 3. Closure could become nondeterministic or superlinearly repeat work; TC-1251/TC-1258 exercise
    cycles, shared dependents, shortest-path selection, and input permutations.
 4. Change exposure could overwrite an auditor verdict; TC-1253 keeps the facts separate.
+5. A verdict artifact could belong to another source/export; TC-1257 rejects identity mismatch
+   before rows.
 
 Failure-domain cross-check: SR-083 reports no open gap.

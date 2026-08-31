@@ -30,4 +30,4 @@ external-export premises all have explicit behavior and verification.
 - Invalid exports fail before rows; missing, unreadable, incomplete, valid-empty, unresolved, and
   unknown cases remain distinct.
 - The analyzer is read-only and invokes no plugin, producer, suite, Quire command, Git command,
-  network request, or write path.
+  inherited update check, network request, or write path.

@@ -2,7 +2,7 @@
 id: TASK-023
 title: "Expose graph commands and deterministic rendering"
 type: Task
-status: not_started
+status: done
 track: A
 priority: P0
 relationships:
@@ -27,10 +27,12 @@ and human output consuming the same sorted `GraphAnalysisReport` model.
 
 ## Subtasks
 
-- [ ] Implement subcommand flags, seed validation, repeated relation selection, and export input.
-- [ ] Render exact source/module premises, report state, gaps, relation selection, and view rows.
-- [ ] Prove equivalent input permutations produce byte-identical canonical JSON.
-- [ ] Add a real oclif command-path test without executing Quire or a producer.
+- [x] Implement subcommand flags, seed validation, repeated relation selection, and required
+      `--export <json>`/`--premises <json>`/`--audit <json>` inputs; keep `--repo` limited to
+      retained Quoin state.
+- [x] Render exact source/module premises, report state, gaps, relation selection, and view rows.
+- [x] Prove equivalent input permutations produce byte-identical canonical JSON.
+- [x] Add real oclif command-path tests without executing Quire or a producer.
 
 ## Deliverables
 

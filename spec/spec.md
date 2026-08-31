@@ -58,6 +58,9 @@ This specification governs:
   consumers without activating compiler, publication, or migration work.
 - The read-only, denominator-closed semantic type-fit audit of the pinned default-module
   corpus and its canonical machine-readable findings and human report projection.
+- Read-only fan-out, change-impact, and reaffirmation-churn views that consume a
+  validated, source-grounded Quire assurance export and join it to Quoin's retained
+  evidence and existing auditor verdicts without collecting evidence or defining policy.
 
 ### Delegated Responsibilities
 
@@ -68,7 +71,9 @@ This specification governs:
 - **`quire`** owns frontmatter-driven validation of authored files. `quoin`
   constructs the scoped `quire validate` command and the agent runs it; both read
   the same shared module store, so the authoring contract matches the validation
-  rules.
+  rules. Quire also owns the authoritative artifact/relationship projection and
+  publishes it as a versioned assurance export; Quoin validates that offline
+  artifact before deriving graph-analysis views and does not re-parse frontmatter.
 - **`@agent-ix/ts-plugin-kit`** owns install, registry, and reconcile mechanics.
   `quoin` maps CLI source arguments to typed sources and delegates the install.
 - **`@agent-ix/ix-cli-core`** owns the runtime context, config-root resolution,
