@@ -409,12 +409,12 @@ function linked(
 }
 
 function safeId(value: string): string {
-  if (!/^[A-Za-z0-9._:-]+$/.test(value)) {
+  if (!/^[A-Za-z0-9][A-Za-z0-9._:/-]{0,127}$/.test(value)) {
     throw new InterventionIntakeError("invalid_record", [
       `unsafe record id ${value}`,
     ]);
   }
-  return value;
+  return value.replaceAll("/", "%2F");
 }
 
 function date(value: unknown, path: string, findings: string[]): number | null {

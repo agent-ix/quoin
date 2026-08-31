@@ -283,6 +283,13 @@ describe("operational evidence", () => {
       /raw_evidence_mismatch/,
     );
     expect(readOperationalRecords(root)).toHaveLength(1);
+
+    const slashIdRoot = repo();
+    const slashId = capability(slashIdRoot);
+    slashId.record_id = "release/capability";
+    const slashIdPath = writeOperationalRecord(slashIdRoot, slashId);
+    expect(slashIdPath).toMatch(/release%2Fcapability[.]json$/);
+    expect(readOperationalRecords(slashIdRoot)).toEqual([slashId]);
   });
 
   // Trace: FR-060-AC-3, FR-060-AC-4, FR-060-AC-5, FR-060-AC-6 (TC-1234..TC-1237)
