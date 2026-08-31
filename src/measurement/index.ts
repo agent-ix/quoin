@@ -14,6 +14,26 @@ export {
   type InvocationAttestation,
   type QuireAssuranceV1,
 } from "./graph-adapters.js";
+export {
+  buildGovernedGraphPortfolioFrom,
+  canonicalGraphPortfolioJson,
+  compareGraphQualityCollections,
+  renderGovernedGraphPortfolio,
+  type GovernedGraphPortfolioReport,
+  type GovernedGraphRepositoryReport,
+  type GraphAvailability,
+  type GraphCollectionRead,
+  type GraphCompatibilityCode,
+  type GraphCompatibilityReason,
+  type GraphPartitionRow,
+  type GraphPortfolioGap,
+  type GraphPortfolioRepositoryInput,
+  type GraphQualityComparison,
+  type GraphQualityComparisonRow,
+  type GraphQualityHistoryRow,
+  type InjectedStructuralGraph,
+  type NormalizedStructuralGraph,
+} from "./graph-portfolio.js";
 export { loadMeasurementPlans } from "./plans.js";
 export {
   loadActiveAssuranceProfiles,

@@ -114,8 +114,8 @@ External:                     #152 stable export ---------^
 | -------- | ----- | -------------- | ------------------------------------------- | ----------- |
 | TASK-033 | A     | FR-066         | TC-1293..TC-1304                            | done        |
 | TASK-034 | A     | FR-066         | TC-1296, TC-1300, TC-1303                   | done        |
-| TASK-035 | B     | FR-067         | TC-1305..TC-1315                            | not_started |
-| TASK-036 | A     | FR-067         | TC-1305, TC-1307..TC-1310, TC-1312..TC-1314 | not_started |
+| TASK-035 | B     | FR-067         | TC-1305..TC-1315                            | done        |
+| TASK-036 | A     | FR-067         | TC-1305, TC-1307..TC-1310, TC-1312..TC-1314 | done        |
 | TASK-037 | A     | FR-066, FR-067 | TC-1295, TC-1311, TC-1315                   | not_started |
 | TASK-038 | Gate  | StR-007        | TC-1316                                     | not_started |
 

@@ -2,7 +2,7 @@
 id: TASK-035
 title: "Add red governed graph portfolio contract tests"
 type: Task
-status: not_started
+status: done
 track: B
 priority: P0
 relationships:
@@ -34,6 +34,12 @@ relationships:
 
 # TASK-035: Add red governed graph portfolio contract tests
 
+## Status
+
+**done** — the red run failed all 11 behavior groups only because the portfolio
+API was absent; the implemented suite now passes 12/12 tests including the
+TC-1316 retained-adapter stakeholder flow.
+
 ## Scope
 
 Create TC/AC-tagged tests for graph-quality current/history rows, partitions,
@@ -42,8 +48,8 @@ local failure isolation, permutations, old-store compatibility, and boundaries.
 
 ## Subtasks
 
-- [ ] Arrange repository/store fixtures with valid and corrupt sibling collections.
-- [ ] Use a minimal injected FR-062 fake object without defining a public graph model.
+- [x] Arrange repository/store fixtures with valid and corrupt sibling collections.
+- [x] Use a minimal injected FR-062 fake object without defining a public graph model.
 
 ## Deliverables
 

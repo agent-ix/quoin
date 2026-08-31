@@ -2,7 +2,7 @@
 id: TASK-036
 title: "Implement pure governed graph portfolio logic"
 type: Task
-status: not_started
+status: done
 track: A
 priority: P0
 relationships:
@@ -22,6 +22,12 @@ relationships:
 
 # TASK-036: Implement pure governed graph portfolio logic
 
+## Status
+
+**done** — the pure reducer retains current/history/raw identities, isolates
+read failures as typed gaps, gates every delta premise, preserves opaque
+structural-report objects, and renders human/JSON views from one report.
+
 ## Scope
 
 Build deterministic graph-quality history/current/comparison views and merge
@@ -30,9 +36,9 @@ availability, raw identities, incompatible history, and readable siblings.
 
 ## Subtasks
 
-- [ ] Isolate corrupt collection reads without changing existing strict store APIs.
-- [ ] Reuse FR-044 comparison concepts and add corpus/population premises.
-- [ ] Render human and canonical JSON from the same report object.
+- [x] Isolate corrupt collection reads without changing existing strict store APIs.
+- [x] Reuse FR-044 comparison concepts and add corpus/population premises.
+- [x] Render human and canonical JSON from the same report object.
 
 ## Deliverables
 
