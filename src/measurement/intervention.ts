@@ -1,21 +1,18 @@
 import { Buffer } from "node:buffer";
-import { createHash, randomUUID } from "node:crypto";
+import { createHash } from "node:crypto";
 import {
   existsSync,
-  linkSync,
-  mkdirSync,
   readFileSync,
   readdirSync,
   realpathSync,
   statSync,
-  unlinkSync,
-  writeFileSync,
 } from "node:fs";
-import { dirname, isAbsolute, join, posix, relative, resolve } from "node:path";
+import { isAbsolute, join, posix, relative, resolve } from "node:path";
 
 import { Ajv2020 } from "ajv/dist/2020.js";
 
 import { canonicalJson, storeRoot } from "../evidence/store.js";
+import { writeFileAtomicNoReplace } from "./atomic-file.js";
 import { interventionExperimentSchema } from "./intervention-schema.js";
 import type { InterventionExperimentRecord } from "./intervention-types.js";
 import { InterventionIntakeError } from "./intervention-types.js";
@@ -78,31 +75,13 @@ export function writeInterventionRecord(
   verifyRawEvidenceReferences(repo, candidate.raw_evidence);
   const path = interventionPath(repo, candidate.record_id);
   const bytes = canonicalJson(candidate);
-  mkdirSync(dirname(path), { recursive: true });
-  const temporary = `${path}.tmp-${process.pid}-${randomUUID()}`;
-  try {
-    writeFileSync(temporary, bytes, { encoding: "utf8", flag: "wx" });
-    try {
-      linkSync(temporary, path);
-    } catch (error) {
-      if (!isErrno(error, "EEXIST")) throw error;
-      if (readFileSync(path, "utf8") === bytes) return path;
-      throw new InterventionIntakeError("record_id_collision", [
-        `${path}: record id already exists with different canonical bytes`,
-      ]);
-    }
-  } finally {
-    if (existsSync(temporary)) unlinkSync(temporary);
-  }
-  return path;
-}
-
-function isErrno(error: unknown, code: string): boolean {
-  return (
-    typeof error === "object" &&
-    error !== null &&
-    "code" in error &&
-    error.code === code
+  return writeFileAtomicNoReplace(
+    path,
+    bytes,
+    (collisionPath) =>
+      new InterventionIntakeError("record_id_collision", [
+        `${collisionPath}: record id already exists with different canonical bytes`,
+      ]),
   );
 }
 

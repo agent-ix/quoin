@@ -1,18 +1,12 @@
-import { createHash, randomUUID } from "node:crypto";
-import {
-  existsSync,
-  mkdirSync,
-  readFileSync,
-  readdirSync,
-  renameSync,
-  unlinkSync,
-  writeFileSync,
-} from "node:fs";
-import { dirname, join } from "node:path";
+import { createHash } from "node:crypto";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
+import { join } from "node:path";
 
 import { Ajv2020 } from "ajv/dist/2020.js";
 
 import { canonicalJson, storeRoot } from "../evidence/store.js";
+import { writeFileAtomicNoReplace } from "./atomic-file.js";
+import { parseRfc3339DateTime } from "./date-time.js";
 import {
   assertGoverningDefinition,
   verifyRawEvidenceReferences,
@@ -27,15 +21,24 @@ import type {
 } from "./operational-types.js";
 
 const ajv = new Ajv2020({ allErrors: true, strict: false });
+ajv.addFormat("date-time", {
+  type: "string",
+  validate: (value: string) => parseRfc3339DateTime(value) !== null,
+});
 const validateSchema = ajv.compile(operationalEvidenceSchema as object);
 const PIN_KINDS = new Set(["policy", "prompt", "model", "tool", "data"]);
+
+interface RetainedOperationalEntry {
+  record: OperationalEvidenceRecord;
+  path: string;
+}
 
 export function operationalRoot(repo: string): string {
   return join(storeRoot(repo), "operational");
 }
 
 export function operationalPath(repo: string, recordId: string): string {
-  return join(operationalRoot(repo), `${safeId(recordId)}.json`);
+  return join(operationalRoot(repo), `${recordFileId(recordId)}.json`);
 }
 
 export function validateOperationalRecord(
@@ -64,11 +67,19 @@ export function writeOperationalRecord(
   candidate: unknown,
 ): string {
   validateOperationalRecord(candidate);
-  validateForIntake(repo, candidate, readOperationalRecords(repo));
+  const entries = readOperationalEntries(repo);
+  const retained = entries.map((entry) => entry.record);
+  validateForIntake(repo, candidate, retained);
+  const identical = entries.find(
+    (entry) =>
+      entry.record.record_id === candidate.record_id &&
+      canonicalJson(entry.record) === canonicalJson(candidate),
+  );
+  if (identical) return identical.path;
   return writeOne(repo, candidate);
 }
 
-/** Persist a linked capability/exercise pair as one canonical file and rename. */
+/** Persist a linked capability/exercise pair as one atomic no-replace file. */
 export function writeOperationalPair(
   repo: string,
   capability: unknown,
@@ -106,19 +117,24 @@ export function writeOperationalPair(
       ]);
     }
   }
-  return atomicWrite(path, bytes, "record_id_collision");
+  return writeAtomic(path, bytes);
 }
 
 export function readOperationalRecords(
   repo: string,
 ): OperationalEvidenceRecord[] {
+  return readOperationalEntries(repo).map((entry) => entry.record);
+}
+
+function readOperationalEntries(repo: string): RetainedOperationalEntry[] {
   const root = operationalRoot(repo);
   if (!existsSync(root)) return [];
-  const values: OperationalEvidenceRecord[] = [];
+  const entries: RetainedOperationalEntry[] = [];
   for (const name of readdirSync(root)
     .filter((item) => item.endsWith(".json"))
     .sort(compare)) {
-    values.push(readRecord(join(root, name)));
+    const path = join(root, name);
+    entries.push({ path, record: readRecord(path) });
   }
   const pairs = join(root, "pairs");
   if (existsSync(pairs)) {
@@ -136,23 +152,23 @@ export function readOperationalRecords(
       }
       for (const value of envelope.records) {
         validateOperationalRecord(value);
-        values.push(value);
+        entries.push({ path, record: value });
       }
     }
   }
   const seen = new Set<string>();
-  for (const value of values) {
-    if (seen.has(value.record_id)) {
+  for (const entry of entries) {
+    if (seen.has(entry.record.record_id)) {
       throw new Error(
-        `duplicate retained operational record id ${value.record_id}`,
+        `duplicate retained operational record id ${entry.record.record_id}`,
       );
     }
-    seen.add(value.record_id);
+    seen.add(entry.record.record_id);
   }
-  return values.sort(
+  return entries.sort(
     (a, b) =>
-      compare(a.observed_at, b.observed_at) ||
-      compare(a.record_id, b.record_id),
+      compare(a.record.observed_at, b.record.observed_at) ||
+      compare(a.record.record_id, b.record.record_id),
   );
 }
 
@@ -160,6 +176,13 @@ export function operationalDischarge(
   exercise: OperationalExerciseRecord,
   obligation: OperationalObligation,
 ): { discharged: boolean; reason: string } {
+  try {
+    validateOperationalRecord(exercise);
+  } catch (error) {
+    return no(
+      `invalid operational exercise: ${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
   if (exercise.control_kind !== obligation.control_kind)
     return no("control_kind mismatch");
   if (canonicalJson(exercise.subject) !== canonicalJson(obligation.subject))
@@ -170,11 +193,41 @@ export function operationalDischarge(
     return no("exercise mode mismatch");
   if (exercise.exercise.outcome !== "succeeded")
     return no(`exercise outcome ${exercise.exercise.outcome}`);
+  const obligationStart = parseRfc3339DateTime(obligation.clock?.started_at);
+  const obligationDeadline = parseRfc3339DateTime(
+    obligation.clock?.deadline_at,
+  );
   if (
-    exercise.exercise.clock.applicability !== "operational_with_clock" ||
-    exercise.exercise.clock.status !== "met"
+    obligation.clock?.applicability !== "operational_with_clock" ||
+    obligationStart === null ||
+    obligationDeadline === null ||
+    obligationStart > obligationDeadline
   ) {
-    return no(`clock status ${exercise.exercise.clock.status}`);
+    return no("invalid obligation clock condition");
+  }
+  const clock = exercise.exercise.clock;
+  if (clock.applicability !== "operational_with_clock") {
+    return no(`clock status ${clock.status}`);
+  }
+  const clockStart = parseRfc3339DateTime(clock.started_at);
+  const clockDeadline = parseRfc3339DateTime(clock.deadline_at);
+  const clockCompletion = parseRfc3339DateTime(clock.completed_at);
+  if (clockStart !== obligationStart || clockDeadline !== obligationDeadline) {
+    return no("obligation clock condition mismatch");
+  }
+  if (
+    clockCompletion === null ||
+    clockCompletion < obligationStart ||
+    clockCompletion > obligationDeadline
+  ) {
+    return no("exercise did not complete within obligation clock");
+  }
+  const derived = deriveClockStatus(
+    clock,
+    parseRfc3339DateTime(exercise.observed_at),
+  );
+  if (derived !== "met") {
+    return no(`derived clock status ${derived}`);
   }
   return {
     discharged: true,
@@ -214,29 +267,18 @@ function validateForIntake(
 
 function writeOne(repo: string, record: OperationalEvidenceRecord): string {
   const path = operationalPath(repo, record.record_id);
-  return atomicWrite(path, canonicalJson(record), "record_id_collision");
+  return writeAtomic(path, canonicalJson(record));
 }
 
-function atomicWrite(
-  path: string,
-  bytes: string,
-  collisionCode: "record_id_collision",
-): string {
-  if (existsSync(path)) {
-    if (readFileSync(path, "utf8") === bytes) return path;
-    throw new InterventionIntakeError(collisionCode, [
-      `${path}: retained bytes differ`,
-    ]);
-  }
-  mkdirSync(dirname(path), { recursive: true });
-  const temporary = `${path}.tmp-${process.pid}-${randomUUID()}`;
-  try {
-    writeFileSync(temporary, bytes, { encoding: "utf8", flag: "wx" });
-    renameSync(temporary, path);
-  } finally {
-    if (existsSync(temporary)) unlinkSync(temporary);
-  }
-  return path;
+function writeAtomic(path: string, bytes: string): string {
+  return writeFileAtomicNoReplace(
+    path,
+    bytes,
+    (collisionPath) =>
+      new InterventionIntakeError("record_id_collision", [
+        `${collisionPath}: retained bytes differ`,
+      ]),
+  );
 }
 
 function readRecord(path: string): OperationalEvidenceRecord {
@@ -366,33 +408,11 @@ function checkClock(
   if (started !== null && completed !== null && completed < started) {
     findings.push("/exercise/clock/completed_at: precedes clock start");
   }
-  const derived =
-    completed !== null && deadline !== null
-      ? completed <= deadline
-        ? "met"
-        : "missed"
-      : completed === null && observed !== null && deadline !== null
-        ? observed <= deadline
-          ? "open"
-          : "missed"
-        : "unknown";
-  if (
-    clock.status !== derived &&
-    !(
-      clock.status === "unknown" &&
-      Array.isArray(record.gaps) &&
-      record.gaps.length > 0
-    )
-  ) {
+  const derived = deriveClockStatus(clock, observed);
+  if (clock.status !== derived) {
     findings.push(
       `/exercise/clock/status: ${String(clock.status)} disagrees with derived ${derived}`,
     );
-  }
-  if (
-    clock.status === "unknown" &&
-    (!Array.isArray(record.gaps) || record.gaps.length === 0)
-  ) {
-    findings.push("/gaps: unknown clock status requires a declared gap");
   }
 }
 
@@ -408,22 +428,42 @@ function linked(
   );
 }
 
-function safeId(value: string): string {
+function recordFileId(value: string): string {
   if (!/^[A-Za-z0-9][A-Za-z0-9._:/-]{0,127}$/.test(value)) {
     throw new InterventionIntakeError("invalid_record", [
       `unsafe record id ${value}`,
     ]);
   }
-  return value.replaceAll("/", "%2F");
+  return createHash("sha256").update(value).digest("hex");
 }
 
 function date(value: unknown, path: string, findings: string[]): number | null {
-  const parsed = typeof value === "string" ? Date.parse(value) : Number.NaN;
-  if (!Number.isFinite(parsed)) {
-    findings.push(`${path}: must be a valid date-time`);
+  const parsed = parseRfc3339DateTime(value);
+  if (parsed === null) {
+    findings.push(`${path}: must be an RFC 3339 date-time`);
     return null;
   }
   return parsed;
+}
+
+function deriveClockStatus(
+  clock: Record<string, unknown>,
+  observed: number | null,
+): "open" | "met" | "missed" | "unknown" {
+  const deadline = parseRfc3339DateTime(clock.deadline_at);
+  const completed =
+    clock.completed_at === undefined
+      ? null
+      : parseRfc3339DateTime(clock.completed_at);
+  return completed !== null && deadline !== null
+    ? completed <= deadline
+      ? "met"
+      : "missed"
+    : completed === null && observed !== null && deadline !== null
+      ? observed <= deadline
+        ? "open"
+        : "missed"
+      : "unknown";
 }
 
 function positiveInteger(value: unknown): boolean {

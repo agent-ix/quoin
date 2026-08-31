@@ -1,0 +1,381 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agent-ix.github.io/quoin/schemas/operational-evidence-v1.schema.json",
+  "title": "OperationalEvidenceV1",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "record_type",
+    "record_id",
+    "observed_at",
+    "record_shape",
+    "control_kind",
+    "subject",
+    "producer",
+    "scope",
+    "configuration",
+    "owner",
+    "gaps",
+    "actions",
+    "raw_evidence"
+  ],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "record_type": { "const": "operational_evidence" },
+    "record_id": { "$ref": "#/$defs/identity" },
+    "observed_at": { "type": "string", "format": "date-time" },
+    "record_shape": {
+      "type": "string",
+      "enum": ["standing_capability", "exercise"]
+    },
+    "control_kind": {
+      "type": "string",
+      "enum": [
+        "release",
+        "feature_flag",
+        "canary_deployment",
+        "shadow_deployment",
+        "rollback",
+        "kill_switch",
+        "human_override",
+        "appeal",
+        "abstention",
+        "safe_fallback",
+        "policy_pin",
+        "prompt_pin",
+        "model_pin",
+        "tool_pin",
+        "data_pin",
+        "reporting"
+      ]
+    },
+    "subject": {
+      "type": "object",
+      "required": ["id", "revision"],
+      "properties": {
+        "id": { "$ref": "#/$defs/identity" },
+        "revision": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "producer": {
+      "type": "object",
+      "required": [
+        "tool_identity",
+        "tool_version",
+        "configuration_digest",
+        "source_revision",
+        "environment",
+        "definition_version"
+      ],
+      "properties": {
+        "tool_identity": { "type": "string", "minLength": 1 },
+        "tool_version": { "$ref": "#/$defs/immutable_version" },
+        "configuration_digest": { "$ref": "#/$defs/digest" },
+        "source_revision": { "type": "string", "minLength": 1 },
+        "environment": {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": {
+            "anyOf": [
+              { "type": "string" },
+              { "type": "number" },
+              { "type": "boolean" },
+              { "type": "null" }
+            ]
+          }
+        },
+        "definition_version": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "scope": {
+      "type": "object",
+      "required": ["service", "environment", "population"],
+      "properties": {
+        "service": { "$ref": "#/$defs/identity" },
+        "environment": { "type": "string", "minLength": 1 },
+        "population": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "configuration": {
+      "type": "object",
+      "required": ["version_pins"],
+      "properties": {
+        "version_pins": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["kind", "identity", "revision", "digest"],
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": ["policy", "prompt", "model", "tool", "data"]
+              },
+              "identity": { "$ref": "#/$defs/identity" },
+              "revision": { "type": "string", "minLength": 1 },
+              "digest": { "$ref": "#/$defs/digest" }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "capability": {
+      "type": "object",
+      "required": [
+        "control_id",
+        "status",
+        "surface",
+        "authorized_roles",
+        "coverage",
+        "limitations",
+        "supported_transitions",
+        "clock_support"
+      ],
+      "properties": {
+        "control_id": { "$ref": "#/$defs/identity" },
+        "status": {
+          "type": "string",
+          "enum": ["available", "unavailable", "unknown", "not_applicable"]
+        },
+        "surface": { "type": "string", "minLength": 1 },
+        "authorized_roles": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "coverage": { "type": "string", "minLength": 1 },
+        "limitations": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "supported_transitions": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "clock_support": {
+          "type": "object",
+          "required": ["supported"],
+          "properties": {
+            "supported": { "type": "boolean" },
+            "start_event": { "type": "string", "minLength": 1 },
+            "completion_event": { "type": "string", "minLength": 1 },
+            "deadline_seconds": { "type": "integer", "minimum": 1 }
+          },
+          "allOf": [
+            {
+              "if": {
+                "properties": { "supported": { "const": true } },
+                "required": ["supported"]
+              },
+              "then": {
+                "required": [
+                  "start_event",
+                  "completion_event",
+                  "deadline_seconds"
+                ]
+              },
+              "else": {
+                "not": {
+                  "anyOf": [
+                    { "required": ["start_event"] },
+                    { "required": ["completion_event"] },
+                    { "required": ["deadline_seconds"] }
+                  ]
+                }
+              }
+            }
+          ],
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "exercise": {
+      "type": "object",
+      "required": [
+        "control_id",
+        "mode",
+        "started_at",
+        "completed_at",
+        "actor",
+        "trigger",
+        "outcome",
+        "state_before",
+        "state_after",
+        "observations",
+        "clock"
+      ],
+      "properties": {
+        "control_id": { "$ref": "#/$defs/identity" },
+        "capability_record_id": { "$ref": "#/$defs/identity" },
+        "mode": { "type": "string", "enum": ["actual", "drill"] },
+        "started_at": { "type": "string", "format": "date-time" },
+        "completed_at": { "type": "string", "format": "date-time" },
+        "actor": { "type": "string", "minLength": 1 },
+        "trigger": { "type": "string", "minLength": 1 },
+        "outcome": {
+          "type": "string",
+          "enum": ["succeeded", "failed", "partial", "aborted"]
+        },
+        "state_before": { "type": "object" },
+        "state_after": { "type": "object" },
+        "observations": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "clock": { "$ref": "#/$defs/clock" }
+      },
+      "additionalProperties": false
+    },
+    "owner": { "type": "string", "minLength": 1 },
+    "gaps": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "actions": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "raw_evidence": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["path", "media_type", "size_bytes", "digest"],
+        "properties": {
+          "path": { "type": "string", "minLength": 1 },
+          "media_type": { "type": "string", "minLength": 1 },
+          "size_bytes": { "type": "integer", "minimum": 0 },
+          "digest": { "$ref": "#/$defs/raw_digest" }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "allOf": [
+    {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "record_shape": { "const": "standing_capability" },
+            "capability": {}
+          },
+          "required": ["record_shape", "capability"],
+          "not": {
+            "type": "object",
+            "properties": { "exercise": {} },
+            "required": ["exercise"]
+          }
+        },
+        {
+          "type": "object",
+          "properties": {
+            "record_shape": { "const": "exercise" },
+            "exercise": {}
+          },
+          "required": ["record_shape", "exercise"],
+          "not": {
+            "type": "object",
+            "properties": { "capability": {} },
+            "required": ["capability"]
+          }
+        }
+      ]
+    },
+    {
+      "if": {
+        "type": "object",
+        "properties": {
+          "control_kind": {
+            "enum": [
+              "policy_pin",
+              "prompt_pin",
+              "model_pin",
+              "tool_pin",
+              "data_pin"
+            ]
+          }
+        },
+        "required": ["control_kind"]
+      },
+      "then": {
+        "properties": {
+          "configuration": {
+            "type": "object",
+            "properties": {
+              "version_pins": { "type": "array", "minItems": 1 }
+            },
+            "required": ["version_pins"]
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "identity": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,127}$"
+    },
+    "digest": {
+      "type": "string",
+      "pattern": "^(sha256|blake3):[a-f0-9]{64}$"
+    },
+    "raw_digest": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "immutable_version": {
+      "type": "string",
+      "pattern": "^(v?[0-9]+[.][0-9]+[.][0-9]+([-+][0-9A-Za-z.-]+)?|[a-f0-9]{40}|(sha256|blake3):[a-f0-9]{64})$"
+    },
+    "clock": {
+      "type": "object",
+      "required": ["applicability", "status"],
+      "properties": {
+        "applicability": {
+          "type": "string",
+          "enum": ["operational_with_clock", "not_applicable"]
+        },
+        "started_at": { "type": "string", "format": "date-time" },
+        "deadline_at": { "type": "string", "format": "date-time" },
+        "completed_at": { "type": "string", "format": "date-time" },
+        "status": {
+          "type": "string",
+          "enum": ["not_applicable", "open", "met", "missed"]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "type": "object",
+            "properties": {
+              "applicability": { "const": "operational_with_clock" }
+            },
+            "required": ["applicability"]
+          },
+          "then": {
+            "properties": {
+              "started_at": { "type": "string", "format": "date-time" },
+              "deadline_at": { "type": "string", "format": "date-time" },
+              "status": { "enum": ["open", "met", "missed"] }
+            },
+            "required": ["started_at", "deadline_at"]
+          },
+          "else": {
+            "properties": { "status": { "const": "not_applicable" } }
+          }
+        }
+      ],
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

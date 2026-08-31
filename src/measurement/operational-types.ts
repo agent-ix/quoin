@@ -92,7 +92,7 @@ export interface OperationalExerciseRecord extends OperationalBase {
           started_at: string;
           deadline_at: string;
           completed_at?: string;
-          status: "open" | "met" | "missed" | "unknown";
+          status: "open" | "met" | "missed";
         };
   };
 }
@@ -105,6 +105,11 @@ export interface OperationalObligation {
   subject: OperationalBase["subject"];
   scope: OperationalBase["scope"];
   accepted_modes: Array<"actual" | "drill">;
+  clock: {
+    applicability: "operational_with_clock";
+    started_at: string;
+    deadline_at: string;
+  };
 }
 
 export interface GitHubReleaseProducerDefinition {

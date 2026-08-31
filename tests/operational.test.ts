@@ -7,11 +7,14 @@ import {
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
+import { basename, dirname, join } from "node:path";
+
+import { publishFileNoReplace } from "../src/measurement/atomic-file.js";
 
 import {
   buildMeasurementReport,
   operationalDischarge,
+  operationalEvidenceSchema,
   produceGitHubReleaseOperational,
   rawEvidenceFor,
   readOperationalRecords,
@@ -166,6 +169,22 @@ describe("operational evidence", () => {
         /invalid_record/,
       );
     }
+    for (const observedAt of ["2026-08-30", "2026-02-30T12:05:00Z"]) {
+      const invalid = structuredClone(value);
+      invalid.observed_at = observedAt;
+      expect(() => validateOperationalRecord(invalid)).toThrow(/date-time/);
+    }
+    const authored = readFileSync(
+      join(
+        process.cwd(),
+        "spec",
+        "functional",
+        "FR-059-operational-evidence-records.md",
+      ),
+      "utf8",
+    ).match(/```json\n([\s\S]*?)\n```/)?.[1];
+    expect(authored).toBeDefined();
+    expect(operationalEvidenceSchema).toEqual(JSON.parse(authored as string));
   });
 
   // Trace: FR-059-AC-2 (TC-1224)
@@ -239,6 +258,14 @@ describe("operational evidence", () => {
     const invalid = exercise(repo());
     invalid.exercise.clock.status = "missed";
     expect(() => validateOperationalRecord(invalid)).toThrow(/derived met/);
+    (invalid.exercise.clock as { status: string }).status = "unknown";
+    invalid.gaps = ["producer uncertainty must not hide deterministic time"];
+    expect(() => validateOperationalRecord(invalid)).toThrow(/derived met/);
+    invalid.exercise.clock.status = "met";
+    invalid.exercise.clock.completed_at = "2026-08-30T12:11:00.000Z";
+    expect(() => validateOperationalRecord(invalid)).toThrow(/derived missed/);
+    invalid.exercise.clock.completed_at = "2026-08-30";
+    expect(() => validateOperationalRecord(invalid)).toThrow(/RFC 3339/);
     invalid.exercise.clock = {
       applicability: "not_applicable",
       status: "not_applicable",
@@ -284,11 +311,19 @@ describe("operational evidence", () => {
     );
     expect(readOperationalRecords(root)).toHaveLength(1);
 
+    const badPath = exercise(root);
+    badPath.raw_evidence[0].path = "raw/./control.json";
+    expect(() => writeOperationalRecord(root, badPath)).toThrow(
+      /raw_evidence_mismatch/,
+    );
+    expect(readOperationalRecords(root)).toHaveLength(1);
+
     const slashIdRoot = repo();
     const slashId = capability(slashIdRoot);
-    slashId.record_id = "release/capability";
+    slashId.record_id = `a${"/".repeat(127)}`;
     const slashIdPath = writeOperationalRecord(slashIdRoot, slashId);
-    expect(slashIdPath).toMatch(/release%2Fcapability[.]json$/);
+    expect(basename(slashIdPath)).toMatch(/^[a-f0-9]{64}[.]json$/);
+    expect(basename(slashIdPath).length).toBeLessThanOrEqual(255);
     expect(readOperationalRecords(slashIdRoot)).toEqual([slashId]);
   });
 
@@ -327,6 +362,36 @@ describe("operational evidence", () => {
     expect(() =>
       writeOperationalRecord(roots.at(-1) as string, mismatch),
     ).toThrow(/definition_mismatch/);
+
+    const pairRoot = repo();
+    const pairCapability = capability(pairRoot);
+    const pairExercise = exercise(pairRoot);
+    const pairPath = writeOperationalPair(
+      pairRoot,
+      pairCapability,
+      pairExercise,
+    );
+    expect(writeOperationalRecord(pairRoot, pairCapability)).toBe(pairPath);
+    expect(writeOperationalRecord(pairRoot, pairExercise)).toBe(pairPath);
+    expect(readOperationalRecords(pairRoot)).toEqual([
+      pairCapability,
+      pairExercise,
+    ]);
+
+    const raceRoot = repo();
+    const target = join(raceRoot, "retained.json");
+    const temporary = join(raceRoot, "candidate.tmp");
+    writeFileSync(target, "first");
+    writeFileSync(temporary, "second");
+    expect(() =>
+      publishFileNoReplace(
+        temporary,
+        target,
+        "second",
+        () => new Error("record_id_collision"),
+      ),
+    ).toThrow(/record_id_collision/);
+    expect(readFileSync(target, "utf8")).toBe("first");
   });
 
   // Trace: FR-060-AC-7 (TC-1238)
@@ -338,6 +403,11 @@ describe("operational evidence", () => {
       subject: value.subject,
       scope: value.scope,
       accepted_modes: ["actual" as const],
+      clock: {
+        applicability: "operational_with_clock" as const,
+        started_at: value.exercise.clock.started_at,
+        deadline_at: value.exercise.clock.deadline_at,
+      },
     };
     expect(operationalDischarge(value, obligation).discharged).toBe(true);
     for (const outcome of ["failed", "partial", "aborted"] as const) {
@@ -349,6 +419,27 @@ describe("operational evidence", () => {
       operationalDischarge(value, { ...obligation, accepted_modes: ["drill"] })
         .reason,
     ).toMatch(/mode mismatch/);
+    const forged = structuredClone(value);
+    forged.exercise.clock.completed_at = "2026-08-30T12:11:00.000Z";
+    forged.exercise.clock.status = "met";
+    expect(operationalDischarge(forged, obligation)).toMatchObject({
+      discharged: false,
+      reason: expect.stringMatching(
+        /invalid operational exercise.*derived missed/,
+      ),
+    });
+    expect(
+      operationalDischarge(value, {
+        ...obligation,
+        clock: {
+          ...obligation.clock,
+          deadline_at: "2026-08-30T12:03:00.000Z",
+        },
+      }),
+    ).toMatchObject({
+      discharged: false,
+      reason: "obligation clock condition mismatch",
+    });
   });
 
   // Trace: FR-060-AC-8, FR-060-AC-9, FR-060-AC-10 (TC-1239..TC-1241)
@@ -358,26 +449,113 @@ describe("operational evidence", () => {
     const adverse = exercise(root);
     adverse.exercise.outcome = "failed";
     writeOperationalRecord(root, adverse);
+    const unknown = capability(root);
+    unknown.record_id = "unknown-capability";
+    unknown.capability.control_id = "unknown-control";
+    unknown.capability.status = "unknown";
+    unknown.gaps = ["availability has not been observed"];
+    unknown.actions = ["run a capability probe"];
+    writeOperationalRecord(root, unknown);
+    const open = exercise(root);
+    open.record_id = "open-exercise";
+    open.exercise.capability_record_id = undefined;
+    open.exercise.control_id = "open-control";
+    open.exercise.outcome = "partial";
+    open.exercise.clock.completed_at = undefined;
+    open.exercise.clock.status = "open";
+    open.observed_at = "2026-08-30T12:05:00.000Z";
+    open.gaps = ["exercise still open"];
+    open.actions = ["wait for the deadline"];
+    writeOperationalRecord(root, open);
     const report = buildMeasurementReport(root);
     const human = renderMeasurementReport(report);
     const json = renderMeasurementReportJson(report);
+    const parsed = JSON.parse(json) as { operational: unknown };
     expect(human).toContain("## Operational evidence");
     expect(human).toContain("#### Claims");
+    expect(human).toContain("#### Evidence");
     expect(human).toContain("#### Counterevidence");
+    expect(human).toContain("#### Gaps");
+    expect(human).toContain("#### Owner");
+    expect(human).toContain("#### Actions");
     expect(human).toContain("exercise is failed");
+    expect(human).toContain("availability has not been observed");
+    expect(human).toContain("run a capability probe");
+    expect(human).toContain("exercise still open");
+    expect(human).toContain("wait for the deadline");
+    expect(parsed.operational).toEqual(report.operational);
+    expect(report.operational).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          record_id: "release-capability",
+          claims: expect.arrayContaining([expect.stringMatching(/available/)]),
+          evidence: expect.arrayContaining([expect.stringMatching(/surface/)]),
+          owner: "release-owner",
+        }),
+        expect.objectContaining({
+          record_id: "release-exercise",
+          counterevidence: expect.arrayContaining([
+            expect.stringMatching(/exercise is failed/),
+          ]),
+        }),
+        expect.objectContaining({
+          record_id: "open-exercise",
+          gaps: expect.arrayContaining([
+            "exercise still open",
+            expect.stringMatching(/clock open/),
+          ]),
+          actions: ["wait for the deadline"],
+        }),
+      ]),
+    );
     expect(renderMeasurementReport(buildMeasurementReport(root))).toBe(human);
     expect(json).not.toMatch(/trust.score|confidence.score|quality.score/i);
   });
 
   // Trace: FR-060-CON-1, FR-060-CON-2 (TC-1242, TC-1243)
-  test("operational modules have no control-execution path and preserve empty-store reporting", () => {
+  test("operational modules have no control path and coexist with legacy evidence", () => {
     const sources = [
       "src/measurement/operational.ts",
       "src/measurement/operational-report.ts",
       "src/measurement/github-release-operational.ts",
     ].map((path) => readFileSync(join(process.cwd(), path), "utf8"));
     expect(sources.join("\n")).not.toMatch(/node:child_process|\bfetch\s*\(/);
-    expect(buildMeasurementReport(repo()).operational).toEqual([]);
+    const root = repo();
+    const source = join(process.cwd(), "spec", "evidence");
+    const measurement = "tier1-20260829194758755-8b2c0c3ba9c4.json";
+    const measurementTarget = join(
+      root,
+      "spec",
+      "evidence",
+      "measurements",
+      measurement,
+    );
+    mkdirSync(dirname(measurementTarget), { recursive: true });
+    copyFileSync(join(source, "measurements", measurement), measurementTarget);
+    const intervention = "quoin-270-cli-eval-sentinel-contract.json";
+    const interventionTarget = join(
+      root,
+      "spec",
+      "evidence",
+      "interventions",
+      intervention,
+    );
+    mkdirSync(dirname(interventionTarget), { recursive: true });
+    copyFileSync(
+      join(source, "interventions", intervention),
+      interventionTarget,
+    );
+    writeOperationalRecord(root, capability(root));
+    const report = buildMeasurementReport(root);
+    expect(report.corpusGaps).not.toBeNull();
+    expect(report.interventions).toHaveLength(1);
+    expect(report.operational).toHaveLength(1);
+    expect(renderMeasurementReport(report)).toContain(
+      "## Intervention experiments",
+    );
+    expect(renderMeasurementReport(report)).toContain(
+      "## Operational evidence",
+    );
   });
 
   // Trace: FR-061-AC-2, FR-061-AC-3, FR-061-AC-4 (TC-1245..TC-1247)
@@ -425,6 +603,11 @@ describe("operational evidence", () => {
           subject: adverse.exercise.subject,
           scope: adverse.exercise.scope,
           accepted_modes: ["actual"],
+          clock: {
+            applicability: "operational_with_clock",
+            started_at: "2026-08-30T12:00:00.000Z",
+            deadline_at: "2026-08-30T12:10:00.000Z",
+          },
         }).discharged,
       ).toBe(false);
     }
@@ -516,6 +699,61 @@ describe("operational evidence", () => {
       ).toThrow(/does not match workflow run/);
       expect(readOperationalRecords(invalid)).toEqual([]);
     }
+
+    for (const identityCase of [
+      { run: { id: undefined }, job: { run_id: undefined } },
+      {
+        run: { run_attempt: undefined },
+        job: { run_attempt: undefined },
+      },
+      { run: { id: 0 }, job: { run_id: 0 } },
+      { run: { run_attempt: 0 }, job: { run_attempt: 0 } },
+    ]) {
+      const invalid = repo();
+      writeGitHubArtifacts(invalid, "success");
+      const run = JSON.parse(
+        readFileSync(
+          join(invalid, "spec", "evidence", "raw", "run.json"),
+          "utf8",
+        ),
+      ) as Record<string, unknown>;
+      writeRaw(
+        invalid,
+        "raw/run.json",
+        JSON.stringify({ ...run, ...identityCase.run }),
+      );
+      writeRaw(
+        invalid,
+        "raw/jobs.json",
+        JSON.stringify({
+          jobs: [{ ...githubJob("success"), ...identityCase.job }],
+        }),
+      );
+      expect(() =>
+        produceGitHubReleaseOperational(invalid, githubDefinition()),
+      ).toThrow(/positive/);
+      expect(readOperationalRecords(invalid)).toEqual([]);
+    }
+
+    const inheritedTrigger = repo();
+    writeGitHubArtifacts(inheritedTrigger, "success");
+    const inheritedRun = JSON.parse(
+      readFileSync(
+        join(inheritedTrigger, "spec", "evidence", "raw", "run.json"),
+        "utf8",
+      ),
+    ) as Record<string, unknown>;
+    writeRaw(
+      inheritedTrigger,
+      "raw/run.json",
+      JSON.stringify({ ...inheritedRun, event: "toString" }),
+    );
+    expect(() =>
+      produceGitHubReleaseOperational(inheritedTrigger, {
+        ...githubDefinition(),
+        accepted_event: "toString",
+      }),
+    ).toThrow(/does not declare accepted event/);
   });
 
   // Trace: FR-061-AC-1, FR-061-AC-5 (TC-1244, TC-1248)

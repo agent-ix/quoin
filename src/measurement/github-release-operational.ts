@@ -3,6 +3,7 @@ import { join } from "node:path";
 
 import { parse as parseYaml } from "yaml";
 
+import { parseRfc3339DateTime } from "./date-time.js";
 import { rawEvidenceFor } from "./intervention.js";
 import { writeOperationalPair } from "./operational.js";
 import type {
@@ -40,7 +41,7 @@ export function produceGitHubReleaseOperational(
     );
   }
   const triggers = requireRecord(workflowRoot.on, "workflow.on");
-  if (!(definition.accepted_event in triggers)) {
+  if (!Object.hasOwn(triggers, definition.accepted_event)) {
     throw new Error(
       `workflow does not declare accepted event ${definition.accepted_event}`,
     );
@@ -57,6 +58,11 @@ export function produceGitHubReleaseOperational(
   if (run.status !== "completed" || typeof run.conclusion !== "string") {
     throw new Error("workflow run is not completed with a conclusion");
   }
+  const runId = positiveSafeInteger(run.id, "workflow-run.id");
+  const runAttempt = positiveInteger(
+    run.run_attempt,
+    "workflow-run.run_attempt",
+  );
   if (!Array.isArray(jobs.jobs))
     throw new Error("workflow-jobs export requires jobs array");
   const selected = jobs.jobs.filter(
@@ -77,9 +83,9 @@ export function produceGitHubReleaseOperational(
     throw new Error("configured release job is unstarted or incomplete");
   }
   if (
-    job.run_id !== run.id ||
+    positiveSafeInteger(job.run_id, "job.run_id") !== runId ||
     job.head_sha !== run.head_sha ||
-    job.run_attempt !== run.run_attempt
+    positiveInteger(job.run_attempt, "job.run_attempt") !== runAttempt
   ) {
     throw new Error(
       "configured release job run, revision, or attempt does not match workflow run",
@@ -98,7 +104,7 @@ export function produceGitHubReleaseOperational(
     ...definition.producer,
     environment: {
       ...definition.producer.environment,
-      github_run_id: scalar(run.id),
+      github_run_id: runId,
       github_run_url: scalar(run.html_url),
     },
   };
@@ -163,7 +169,7 @@ export function produceGitHubReleaseOperational(
       state_before: { source_revision: String(run.head_sha) },
       state_after: {
         conclusion: String(job.conclusion),
-        run_id: scalar(run.id),
+        run_id: runId,
         url: scalar(run.html_url),
       },
       observations: [
@@ -242,10 +248,24 @@ function requireRecord(value: unknown, label: string): Record<string, unknown> {
 }
 
 function timestamp(value: unknown, label: string): number {
-  const parsed = typeof value === "string" ? Date.parse(value) : Number.NaN;
-  if (!Number.isFinite(parsed))
-    throw new Error(`${label} must be a valid date-time`);
+  const parsed = parseRfc3339DateTime(value);
+  if (parsed === null)
+    throw new Error(`${label} must be an RFC 3339 date-time`);
   return parsed;
+}
+
+function positiveSafeInteger(value: unknown, label: string): number {
+  if (!Number.isSafeInteger(value) || Number(value) < 1) {
+    throw new Error(`${label} must be a positive safe integer`);
+  }
+  return Number(value);
+}
+
+function positiveInteger(value: unknown, label: string): number {
+  if (!Number.isInteger(value) || Number(value) < 1) {
+    throw new Error(`${label} must be a positive integer`);
+  }
+  return Number(value);
 }
 
 function mapConclusion(

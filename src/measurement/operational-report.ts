@@ -57,7 +57,7 @@ export function buildOperationalReport(
           evidence.push(
             `${record.exercise.mode} exercise completed ${record.exercise.completed_at}; clock ${clock.status}`,
           );
-        } else if (clock.status === "open" || clock.status === "unknown") {
+        } else if (clock.status === "open") {
           gaps.push(
             `${record.exercise.control_id} exercise is ${record.exercise.outcome}; clock ${clock.status}`,
           );

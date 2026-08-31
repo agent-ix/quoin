@@ -75,6 +75,7 @@ export type {
   StandingCapabilityRecord,
 } from "./operational-types.js";
 export { produceGitHubReleaseOperational } from "./github-release-operational.js";
+export { operationalEvidenceSchema } from "./operational-schema.js";
 export {
   MEASUREMENT_SCHEMA_VERSION,
   type ComparisonReason,
