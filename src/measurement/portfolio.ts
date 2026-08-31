@@ -114,7 +114,7 @@ function finalizePortfolioReport(
   const timestamps = repositories
     .map((repository) => repository.latestCollection?.timestamp)
     .filter((timestamp): timestamp is string => timestamp !== undefined)
-    .sort(compare);
+    .sort((a, b) => Date.parse(a) - Date.parse(b) || compare(a, b));
   const newestCollectionTimestamp = timestamps.at(-1) ?? null;
   const newest = newestCollectionTimestamp
     ? Date.parse(newestCollectionTimestamp)

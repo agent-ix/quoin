@@ -464,7 +464,7 @@ export function adaptQuireAssurance(
 export function graphQualityObservationId(value: unknown): string {
   const record = isRecord(value) ? { ...value } : value;
   if (isRecord(record)) delete record.observation_id;
-  const bytes = canonicalJson(record).trimEnd();
+  const bytes = compactCanonicalProducerJson(record);
   return `sha256:${createHash("sha256").update(bytes).digest("hex")}`;
 }
 
@@ -515,23 +515,30 @@ export function adaptGraphQualityObservation(
     "invalid_attestation",
   ) as InvocationAttestation;
   const planId = record.measurement_plan.ref.split("/").at(-1) as string;
-  const plan = input.plans.find(
-    (candidate) => candidate.metric === "graph_quality",
+  const activeGraphPlans = input.plans.filter(
+    (candidate) =>
+      candidate.metric === "graph_quality" && candidate.status === "active",
   );
-  if (
-    !plan ||
-    plan.status !== "active" ||
-    plan.id !== planId ||
-    plan.definitionVersion !== record.measurement_plan.definition_version
-  )
+  const matchingPlans = activeGraphPlans.filter(
+    (candidate) =>
+      candidate.id === planId &&
+      candidate.definitionVersion ===
+        record.measurement_plan.definition_version,
+  );
+  if (activeGraphPlans.length !== 1 || matchingPlans.length !== 1)
     throw new GraphAdapterError(
       "inactive_plan",
-      `expected active ${planId}/${record.measurement_plan.definition_version}; observed ${
-        plan
-          ? `${plan.id}/${plan.definitionVersion}/${plan.status}`
-          : "no graph_quality plan"
+      `expected exactly one active ${planId}/${record.measurement_plan.definition_version}; observed ${
+        input.plans
+          .filter((candidate) => candidate.metric === "graph_quality")
+          .map(
+            (candidate) =>
+              `${candidate.id}/${candidate.definitionVersion}/${candidate.status}`,
+          )
+          .join(", ") || "no graph_quality plan"
       }`,
     );
+  const plan = matchingPlans[0];
 
   const observations = normalizeGraphQuality(record, planId);
   const collection: MeasurementCollection = {
@@ -558,7 +565,10 @@ export function adaptGraphQualityObservation(
       },
     },
   };
-  validateMeasurementCollection(collection, input.plans);
+  validateMeasurementCollection(collection, [
+    ...input.plans.filter((candidate) => candidate.metric !== "graph_quality"),
+    plan,
+  ]);
   return collection;
 }
 
@@ -719,6 +729,33 @@ function premiseFailure(
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+function compactCanonicalProducerJson(value: unknown): string {
+  return JSON.stringify(sortProducerKeys(value));
+}
+
+function sortProducerKeys(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(sortProducerKeys);
+  if (!isRecord(value)) return value;
+  return Object.fromEntries(
+    Object.keys(value)
+      .sort(compareUnicodeCodePoints)
+      .map((key) => [key, sortProducerKeys(value[key])]),
+  );
+}
+
+function compareUnicodeCodePoints(a: string, b: string): number {
+  const left = [...a];
+  const right = [...b];
+  const length = Math.min(left.length, right.length);
+  for (let index = 0; index < length; index += 1) {
+    const difference =
+      (left[index].codePointAt(0) as number) -
+      (right[index].codePointAt(0) as number);
+    if (difference !== 0) return difference;
+  }
+  return left.length - right.length;
 }
 
 function compare(a: string, b: string): number {

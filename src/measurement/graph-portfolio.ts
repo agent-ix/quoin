@@ -142,7 +142,8 @@ export type GraphCompatibilityCode =
   | "tool_changed"
   | "corpus_changed"
   | "population_incomplete"
-  | "population_changed";
+  | "population_changed"
+  | "collection_incompatible";
 
 export interface GraphCompatibilityReason {
   code: GraphCompatibilityCode;
@@ -275,7 +276,7 @@ export function buildGovernedGraphPortfolioFrom(
     repositories
       .map((repository) => repository.latestCollection?.timestamp)
       .filter((timestamp): timestamp is string => timestamp !== undefined)
-      .sort(compare)
+      .sort(compareInstants)
       .at(-1) ?? null;
   return {
     schemaVersion: 1,
@@ -354,7 +355,7 @@ export function renderGovernedGraphPortfolio(
       );
       for (const row of current.partitions)
         lines.push(
-          `| ${row.measure} | ${row.dimension} | ${row.key} | ` +
+          `| ${markdownCell(row.measure)} | ${markdownCell(row.dimension)} | ${markdownCell(row.key)} | ` +
             `${row.state === "measured" ? `${row.value} ${row.unit}` : `not_computed: ${row.reason ?? "unknown"}`} |`,
         );
     }
@@ -367,7 +368,7 @@ export function renderGovernedGraphPortfolio(
         );
         for (const partition of row.partitions)
           lines.push(
-            `  - ${partition.measure}/${partition.dimension}/${partition.key}: ` +
+            `  - ${inlineText(partition.measure)}/${inlineText(partition.dimension)}/${inlineText(partition.key)}: ` +
               `${partition.state === "measured" ? `${partition.value} ${partition.unit}` : `not_computed: ${partition.reason ?? "unknown"}`}`,
           );
       }
@@ -380,7 +381,7 @@ export function renderGovernedGraphPortfolio(
       );
       for (const row of comparison.observations)
         lines.push(
-          `- ${row.measure}/${row.dimension}/${row.key}: ${row.status}; ` +
+          `- ${inlineText(row.measure)}/${inlineText(row.dimension)}/${inlineText(row.key)}: ${row.status}; ` +
             `delta ${row.delta ?? "not_computed"}; ` +
             `${row.reasons.map(({ code }) => code).join(", ") || "compatible"}`,
         );
@@ -428,26 +429,21 @@ function buildRepository(
     }))
     .sort(
       (a, b) =>
-        compare(a.row.timestamp, b.row.timestamp) ||
+        compareInstants(a.row.timestamp, b.row.timestamp) ||
         compare(a.row.id, b.row.id),
     );
   const history = historyPairs.map(({ row }) => row);
-  const current =
-    [...history].reverse().find((row) => row.availability === "available") ??
-    null;
+  const currentPair = [...historyPairs]
+    .reverse()
+    .find(({ row }) => row.availability === "available");
+  const current = currentPair?.row ?? null;
   const comparison =
     historyPairs.length < 2
       ? null
-      : {
-          before: historyPairs.at(-2)?.row as GraphQualityHistoryRow,
-          after: historyPairs.at(-1)?.row as GraphQualityHistoryRow,
-          observations: compareGraphQualityCollections(
-            (historyPairs.at(-2) as { collection: MeasurementCollection })
-              .collection,
-            (historyPairs.at(-1) as { collection: MeasurementCollection })
-              .collection,
-          ),
-        };
+      : compareHistoryPair(
+          historyPairs.at(-2) as GraphHistoryPair,
+          historyPairs.at(-1) as GraphHistoryPair,
+        );
   const graph = normalizeGraph(input.graph);
   const gaps: GraphPortfolioGap[] = input.collections
     .filter((read) => !read.collection)
@@ -479,10 +475,72 @@ function buildRepository(
       if (activePlan.action) gap.action = activePlan.action;
     }
   return {
-    ...input.portfolio,
+    ...sanitizeInheritedGraphCurrent(input.portfolio, activePlan, current),
     graphQuality: { plan: activePlan, current, history, comparison },
     graph,
     gaps,
+  };
+}
+
+interface GraphHistoryPair {
+  collection: MeasurementCollection;
+  row: GraphQualityHistoryRow;
+}
+
+function compareHistoryPair(
+  before: GraphHistoryPair,
+  after: GraphHistoryPair,
+): GraphQualityComparison {
+  let observations = compareGraphQualityCollections(
+    before.collection,
+    after.collection,
+  );
+  const incompatible = [before.row, after.row].filter(
+    (row) => row.availability !== "available",
+  );
+  if (incompatible.length > 0) {
+    const reason: GraphCompatibilityReason = {
+      code: "collection_incompatible",
+      blocking: true,
+      message: `collection_incompatible: ${incompatible
+        .map((row) => `${row.id} is ${row.availability}`)
+        .join(", ")}`,
+    };
+    observations = observations.map((row) =>
+      row.status === "not_computed"
+        ? row
+        : {
+            ...row,
+            delta: null,
+            status: "incomparable",
+            reasons: [...row.reasons, reason],
+          },
+    );
+  }
+  return { before: before.row, after: after.row, observations };
+}
+
+function sanitizeInheritedGraphCurrent(
+  portfolio: PortfolioRepositoryReport,
+  activePlan: MeasurementPlan | null,
+  current: GraphQualityHistoryRow | null,
+): PortfolioRepositoryReport {
+  if (!portfolio.measurements) return portfolio;
+  return {
+    ...portfolio,
+    measurements: {
+      ...portfolio.measurements,
+      current: portfolio.measurements.current.map((row) => {
+        if (row.metric !== "graph_quality") return row;
+        const accepted =
+          activePlan !== null &&
+          current !== null &&
+          row.collection?.collectionId === current.id &&
+          row.observation?.planId === activePlan.id &&
+          row.observation.definitionVersion === activePlan.definitionVersion;
+        return accepted ? row : { ...row, observation: null, collection: null };
+      }),
+    },
   };
 }
 
@@ -805,4 +863,19 @@ function splitMapping(value: string): [string, string] {
 
 function compare(a: string, b: string): number {
   return a === b ? 0 : a < b ? -1 : 1;
+}
+
+function compareInstants(a: string, b: string): number {
+  return Date.parse(a) - Date.parse(b) || compare(a, b);
+}
+
+function markdownCell(value: string): string {
+  return value
+    .replaceAll("\\", "\\\\")
+    .replaceAll("|", "\\|")
+    .replace(/\r\n?|\n/g, "<br>");
+}
+
+function inlineText(value: string): string {
+  return value.replace(/\r\n?|\n/g, " ");
 }

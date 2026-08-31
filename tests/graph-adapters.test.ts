@@ -34,6 +34,42 @@ const SCORER_DIGEST = `sha256:${createHash("sha256")
   .update("scorer")
   .digest("hex")}`;
 
+function producerObservationId(value: unknown): string {
+  const record = { ...(value as Record<string, unknown>) };
+  delete record.observation_id;
+  const sort = (item: unknown): unknown => {
+    if (Array.isArray(item)) return item.map(sort);
+    if (item === null || typeof item !== "object") return item;
+    const keys = Object.keys(item as Record<string, unknown>).sort((a, b) => {
+      const left = Array.from(a, (part) => part.codePointAt(0) as number);
+      const right = Array.from(b, (part) => part.codePointAt(0) as number);
+      for (
+        let index = 0;
+        index < Math.min(left.length, right.length);
+        index += 1
+      )
+        if (left[index] !== right[index]) return left[index] - right[index];
+      return left.length - right.length;
+    });
+    return Object.fromEntries(
+      keys.map((key) => [key, sort((item as Record<string, unknown>)[key])]),
+    );
+  };
+  return `sha256:${createHash("sha256")
+    .update(JSON.stringify(sort(record)))
+    .digest("hex")}`;
+}
+
+function deleteAt(value: unknown, path: string[]): void {
+  const parent = path
+    .slice(0, -1)
+    .reduce(
+      (record, key) => record[key] as Record<string, unknown>,
+      value as Record<string, unknown>,
+    );
+  delete parent[path.at(-1) as string];
+}
+
 function quireExport(): QuireAssuranceV1 {
   return {
     format: "quire-assurance",
@@ -167,7 +203,7 @@ function graphRecord(
   };
   return {
     ...withoutId,
-    observation_id: graphQualityObservationId(withoutId),
+    observation_id: producerObservationId(withoutId),
   } as GraphQualityObservationV1;
 }
 
@@ -217,7 +253,7 @@ function adapt(record = graphRecord(), bytes = Buffer.from("scorer")) {
       digest: `sha256:${createHash("sha256").update(bytes).digest("hex")}`,
     },
   };
-  patched.observation_id = graphQualityObservationId({
+  patched.observation_id = producerObservationId({
     ...patched,
     observation_id: undefined,
   });
@@ -256,8 +292,30 @@ describe("FR-066 governed graph producer adapters", () => {
       adaptQuireAssurance({ ...value, format_version: 2 }, accepted),
     ).toThrow(/invalid_premise.*format_version/);
     expect(() =>
+      adaptQuireAssurance({ ...value, format: "other" }, accepted),
+    ).toThrow(/invalid_premise.*format/);
+    expect(() =>
       adaptQuireAssurance(
         { ...value, modules: [{ ...value.modules[0], version: "9.9.9" }] },
+        accepted,
+      ),
+    ).toThrow(/invalid_premise.*modules/);
+    expect(() =>
+      adaptQuireAssurance(
+        {
+          ...value,
+          modules: [
+            {
+              ...value.modules[0],
+              schemas: [
+                {
+                  ...value.modules[0].schemas[0],
+                  schema_digest: "d".repeat(64),
+                },
+              ],
+            },
+          ],
+        },
         accepted,
       ),
     ).toThrow(/invalid_premise.*modules/);
@@ -293,6 +351,20 @@ describe("FR-066 governed graph producer adapters", () => {
 
   // Trace: FR-066-AC-4
   test("TC-1296 validates the closed graph-quality schema and canonical id", () => {
+    const canonicalBytes = '{"a":[{"a":1,"z":2}],"":"bmp","𐀀":"astral"}';
+    const expected = `sha256:${createHash("sha256")
+      .update(canonicalBytes)
+      .digest("hex")}`;
+    expect(
+      graphQualityObservationId({
+        "𐀀": "astral",
+        "": "bmp",
+        a: [{ z: 2, a: 1 }],
+        observation_id: SHA_A,
+      }),
+    ).toBe(expected);
+    expect(canonicalBytes).not.toMatch(/\n|: |, /);
+
     const record = graphRecord();
     expect(() =>
       adaptGraphQualityObservation({
@@ -326,7 +398,7 @@ describe("FR-066 governed graph producer adapters", () => {
     });
     const record = graphRecord();
     record.raw_scorer_output.digest = SHA_B;
-    record.observation_id = graphQualityObservationId({
+    record.observation_id = producerObservationId({
       ...record,
       observation_id: undefined,
     });
@@ -343,15 +415,29 @@ describe("FR-066 governed graph producer adapters", () => {
 
   // Trace: FR-066-AC-6
   test("TC-1298 refuses every missing attestation field", () => {
-    for (const field of [
-      "subject",
-      "scope",
-      "timestamp",
-      "environment",
-      "verificationStack",
+    for (const path of [
+      ["subject"],
+      ["scope"],
+      ["timestamp"],
+      ["environment"],
+      ["verificationStack"],
+      ["verificationStack", "schemaVersion"],
+      ["verificationStack", "lockDigest"],
+      ["verificationStack", "executableDigest"],
+      ["verificationStack", "buildProfile"],
+      ["verificationStack", "toolchains"],
+      ["verificationStack", "toolchains", "node"],
+      ["verificationStack", "toolchains", "rust"],
+      ["verificationStack", "toolchains", "python"],
+      ["verificationStack", "sources"],
+      ["verificationStack", "sources", "producer", "revision"],
+      ["verificationStack", "sources", "producer", "sourceState"],
+      ["verificationStack", "sources", "producer", "remote"],
+      ["verificationStack", "capabilities"],
+      ["verificationStack", "artifacts"],
     ]) {
-      const value = { ...attestation() } as Record<string, unknown>;
-      delete value[field];
+      const value = structuredClone(attestation());
+      deleteAt(value, path);
       expect(() =>
         adaptGraphQualityObservation({
           record: graphRecord(),
@@ -361,6 +447,32 @@ describe("FR-066 governed graph producer adapters", () => {
           plans: [plan()],
         }),
       ).toThrow(/invalid_attestation/);
+    }
+
+    for (const path of [
+      ["producer", "extractor_revision"],
+      ["producer", "producer_contract_version"],
+      ["producer", "parser_grammars"],
+      ["producer", "parser_grammars", "0", "language"],
+      ["producer", "parser_grammars", "0", "grammar"],
+      ["producer", "parser_grammars", "0", "revision"],
+      ["producer", "configuration_digest"],
+      ["producer", "source_revision"],
+      ["producer", "corpus_revision"],
+      ["producer", "scorer_version"],
+    ]) {
+      const record = structuredClone(graphRecord());
+      deleteAt(record, path);
+      record.observation_id = producerObservationId(record);
+      expect(() =>
+        adaptGraphQualityObservation({
+          record,
+          scorerBytes: Buffer.from("scorer"),
+          scorerMediaType: "application/json",
+          attestation: attestation(),
+          plans: [plan()],
+        }),
+      ).toThrow(/invalid_observation/);
     }
   });
 
@@ -380,8 +492,43 @@ describe("FR-066 governed graph producer adapters", () => {
           attestation: attestation(),
           plans,
         }),
-      ).toThrow(/inactive_plan/);
+      ).toThrow(
+        /inactive_plan.*expected exactly one active MP-001\/quire-code\.graph-quality-v1.*observed/,
+      );
     }
+
+    const historical = plan({
+      id: "MP-RETIRED",
+      status: "retired",
+      definitionVersion: "quire-code.graph-quality-v0",
+    });
+    expect(
+      adaptGraphQualityObservation({
+        record: graphRecord(),
+        scorerBytes: Buffer.from("scorer"),
+        scorerMediaType: "application/json",
+        attestation: attestation(),
+        plans: [historical, plan()],
+      }).observations,
+    ).not.toHaveLength(0);
+    expect(
+      adaptGraphQualityObservation({
+        record: graphRecord(),
+        scorerBytes: Buffer.from("scorer"),
+        scorerMediaType: "application/json",
+        attestation: attestation(),
+        plans: [plan(), historical],
+      }).observations,
+    ).not.toHaveLength(0);
+    expect(() =>
+      adaptGraphQualityObservation({
+        record: graphRecord(),
+        scorerBytes: Buffer.from("scorer"),
+        scorerMediaType: "application/json",
+        attestation: attestation(),
+        plans: [plan(), plan({ id: "MP-OTHER" })],
+      }),
+    ).toThrow(/expected exactly one active/);
   });
 
   // Trace: FR-066-AC-8
@@ -398,7 +545,7 @@ describe("FR-066 governed graph producer adapters", () => {
           record.population.census = Object.fromEntries(
             order.map((key) => [key, census[key]]),
           ) as typeof record.population.census;
-          record.observation_id = graphQualityObservationId({
+          record.observation_id = producerObservationId({
             ...record,
             observation_id: undefined,
           });
@@ -406,15 +553,42 @@ describe("FR-066 governed graph producer adapters", () => {
           expect(collection.observations[0].population?.identity).toEqual(
             record.population,
           );
-          const observations = collection.observations.filter(
-            (item) => item.dimensions?.measure === "census",
+          const observations = collection.observations.filter((item) =>
+            ["census", "population"].includes(item.dimensions?.measure ?? ""),
           );
           expect(observations.map((item) => item.dimensions)).toEqual(
             [...observations.map((item) => item.dimensions)].sort((a, b) =>
-              JSON.stringify(a).localeCompare(JSON.stringify(b)),
+              JSON.stringify({
+                dimension: a?.dimension,
+                key: a?.key,
+                measure: a?.measure,
+              }) <
+              JSON.stringify({
+                dimension: b?.dimension,
+                key: b?.key,
+                measure: b?.measure,
+              })
+                ? -1
+                : 1,
             ),
           );
-          expect(observations).toHaveLength(4);
+          expect(
+            Object.fromEntries(
+              observations.map((item) => [
+                `${item.dimensions?.measure}/${item.dimensions?.dimension}/${item.dimensions?.key}`,
+                item.value,
+              ]),
+            ),
+          ).toEqual({
+            "census/languages/typescript": 2,
+            "census/node_kinds/function": 3,
+            "census/relation_kinds/calls": 1,
+            "census/resolver_tiers/local": 1,
+            "population/overall/files_seen": 2,
+            "population/overall/supported_files": 2,
+            "population/overall/unreadable_files": 0,
+            "population/overall/unsupported_files": 0,
+          });
         },
       ),
     );
@@ -423,21 +597,52 @@ describe("FR-066 governed graph producer adapters", () => {
   // Trace: FR-066-AC-9
   test("TC-1301 maps result facts bijectively and refuses duplicate keys", () => {
     const collection = adapt();
-    expect(
-      collection.observations.filter(
-        (row) => row.dimensions?.measure === "confusion_matrix",
+    const facts = Object.fromEntries(
+      collection.observations
+        .filter((row) =>
+          ["ambiguous", "confusion_matrix", "recall", "unresolved"].includes(
+            row.dimensions?.measure ?? "",
+          ),
+        )
+        .map((row) => [
+          `${row.dimensions?.measure}/${row.dimensions?.dimension}/${row.dimensions?.key}`,
+          {
+            value: row.value,
+            examined: row.population?.examined,
+            matched: row.population?.matched,
+          },
+        ]),
+    );
+    const expectedConfusion = Object.fromEntries(
+      [
+        ["overall", "all"],
+        ["language", "typescript"],
+        ["node_kind", "function"],
+        ["relation_kind", "calls"],
+        ["resolver_tier", "local"],
+      ].flatMap(([dimension, key]) =>
+        [
+          ["false_negative", 1],
+          ["false_positive", 0],
+          ["true_negative", 1],
+          ["true_positive", 1],
+        ].map(([component, value]) => [
+          `confusion_matrix/${dimension}/${key}.${component}`,
+          { value, examined: 2, matched: 2 },
+        ]),
       ),
-    ).toHaveLength(20);
-    expect(
-      collection.observations.filter(
-        (row) => row.dimensions?.measure === "recall",
-      ),
-    ).toHaveLength(1);
+    );
+    expect(facts).toEqual({
+      ...expectedConfusion,
+      "ambiguous/overall/all": { value: 0, examined: 2, matched: 2 },
+      "recall/overall/all": { value: 0.5, examined: 2, matched: 1 },
+      "unresolved/overall/all": { value: 1, examined: 2, matched: 2 },
+    });
     const record = graphRecord();
     record.results?.confusion_matrices.push(
       record.results.confusion_matrices[0],
     );
-    record.observation_id = graphQualityObservationId({
+    record.observation_id = producerObservationId({
       ...record,
       observation_id: undefined,
     });

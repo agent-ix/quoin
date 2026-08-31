@@ -29,11 +29,17 @@ export function buildGovernedGraphPortfolio(
       try {
         return [
           mapping.root,
-          readMeasurementCollectionResults(mapping.root).map((read) =>
-            read.collection
-              ? read
-              : { ...read, availability: "unreadable" as const },
-          ),
+          readMeasurementCollectionResults(mapping.root).map((read) => {
+            if (!read.collection)
+              return { ...read, availability: "unreadable" as const };
+            if (!Number.isFinite(Date.parse(read.collection.timestamp)))
+              return {
+                path: read.path,
+                availability: "unreadable" as const,
+                error: `${read.path}: collection timestamp is not a valid instant`,
+              };
+            return read;
+          }),
         ];
       } catch (cause) {
         return [
@@ -56,7 +62,7 @@ export function buildGovernedGraphPortfolio(
         .flatMap((read) => (read.collection ? [read.collection] : []))
         .sort(
           (a, b) =>
-            compare(a.timestamp, b.timestamp) ||
+            compareInstants(a.timestamp, b.timestamp) ||
             compare(a.collectionId, b.collectionId),
         ),
     })),
@@ -155,4 +161,8 @@ function pathFor(
 
 function compare(a: string, b: string): number {
   return a === b ? 0 : a < b ? -1 : 1;
+}
+
+function compareInstants(a: string, b: string): number {
+  return Date.parse(a) - Date.parse(b) || compare(a, b);
 }

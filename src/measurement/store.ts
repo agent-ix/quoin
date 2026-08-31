@@ -98,7 +98,9 @@ function collectionOrder(
   b: MeasurementCollection,
 ): number {
   return (
-    compare(a.timestamp, b.timestamp) || compare(a.collectionId, b.collectionId)
+    Date.parse(a.timestamp) - Date.parse(b.timestamp) ||
+    compare(a.timestamp, b.timestamp) ||
+    compare(a.collectionId, b.collectionId)
   );
 }
 

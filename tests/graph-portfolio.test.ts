@@ -218,12 +218,24 @@ describe("governed graph portfolio", () => {
     fc.assert(
       fc.property(
         fc.shuffledSubarray(["a", "b"], { minLength: 2, maxLength: 2 }),
-        (order) => {
-          const inputs = order.map((name) =>
-            repository(`/repos/${name}`, [
-              collection(`${name}-1`, "2026-08-31T00:00:00Z"),
-            ]),
-          );
+        fc.boolean(),
+        (order, reversePartitions) => {
+          const inputs = order.map((name) => {
+            const values = [
+              collection(`${name}-1`, "2026-08-30T00:00:00Z"),
+              collection(`${name}-2`, "2026-08-31T00:00:00Z"),
+            ];
+            for (const value of values) {
+              if (name === "a")
+                value.observations[0].dimensions = {
+                  measure: "census",
+                  dimension: "language",
+                  key: "rust|tsx\nline",
+                };
+              if (reversePartitions) value.observations.reverse();
+            }
+            return repository(`/repos/${name}`, values);
+          });
           const report = buildGovernedGraphPortfolioFrom(inputs);
           expect(report.repositories.map((row) => row.name)).toEqual([
             "a",
@@ -234,6 +246,14 @@ describe("governed graph portfolio", () => {
               (row) => row.graphQuality.current?.partitions ?? [],
             ),
           ).toHaveLength(4);
+          expect(
+            report.repositories[0].graphQuality.current?.partitions.map(
+              ({ key }) => key,
+            ),
+          ).toContain("rust|tsx\nline");
+          const human = renderGovernedGraphPortfolio(report);
+          expect(human).toContain("| rust\\|tsx<br>line |");
+          expect(human.split("\n")).not.toContain("line");
         },
       ),
     );
@@ -345,6 +365,74 @@ describe("governed graph portfolio", () => {
         expect.objectContaining({ code, blocking: true }),
       );
     }
+
+    const retiredBefore = collection("retired-before", "2026-03-01T00:00:00Z", {
+      observations: before.observations.map((row) => ({
+        ...row,
+        planId: "MP-RETIRED",
+      })),
+    });
+    const retiredAfter = collection("retired-after", "2026-04-01T00:00:00Z", {
+      observations: before.observations.map((row) => ({
+        ...row,
+        planId: "MP-RETIRED",
+      })),
+    });
+    const incompatible = buildGovernedGraphPortfolioFrom([
+      repository("/repos/retired", [retiredAfter, retiredBefore]),
+    ]).repositories[0].graphQuality.comparison;
+    expect(incompatible?.observations).not.toHaveLength(0);
+    expect(incompatible?.observations).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          status: "incomparable",
+          delta: null,
+          reasons: expect.arrayContaining([
+            expect.objectContaining({ code: "collection_incompatible" }),
+          ]),
+        }),
+      ]),
+    );
+    expect(
+      incompatible?.observations.some(
+        ({ status, delta }) => status === "comparable" || delta !== null,
+      ),
+    ).toBe(false);
+
+    const inherited = base("/repos/inherited");
+    inherited.measurements = {
+      plans: [PLAN],
+      corpusGaps: null,
+      current: [
+        {
+          metric: "graph_quality",
+          planId: PLAN.id,
+          planPath: PLAN.path,
+          planDefinitionVersion: PLAN.definitionVersion,
+          stage: PLAN.stage,
+          observation: retiredAfter.observations[0],
+          collection: {
+            collectionId: retiredAfter.collectionId,
+            timestamp: retiredAfter.timestamp,
+            toolIdentity: retiredAfter.toolIdentity,
+            toolVersion: retiredAfter.toolVersion,
+            configDigest: retiredAfter.configDigest,
+            sourceRevision: retiredAfter.sourceRevision,
+            corpusRevision: retiredAfter.corpusRevision,
+            path: "/repos/inherited/spec/evidence/measurements/retired-after.json",
+          },
+        },
+      ],
+    };
+    const sanitized = buildGovernedGraphPortfolioFrom([
+      repository("/repos/inherited", [retiredAfter], {
+        portfolio: inherited,
+      }),
+    ]).repositories[0];
+    expect(sanitized.graphQuality.current).toBeNull();
+    expect(sanitized.measurements?.current).toEqual([
+      expect.objectContaining({ observation: null, collection: null }),
+    ]);
   });
 
   // Trace: FR-067-AC-6
@@ -508,7 +596,7 @@ action: repair retained evidence
       writeFileSync(
         join(store, "z-old.json"),
         JSON.stringify(
-          collection("z-old", "2026-01-01T00:00:00Z", {
+          collection("z-old", "2026-08-31T00:30:00+02:00", {
             schemaVersion: 1,
           }),
         ),
@@ -516,7 +604,15 @@ action: repair retained evidence
       writeFileSync(
         join(store, "a-new.json"),
         JSON.stringify(
-          collection("a-new", "2026-08-31T00:00:00Z", {
+          collection("a-new", "2026-08-30T23:00:00Z", {
+            schemaVersion: 1,
+          }),
+        ),
+      );
+      writeFileSync(
+        join(store, "bad-time.json"),
+        JSON.stringify(
+          collection("bad-time", "not-a-time", {
             schemaVersion: 1,
           }),
         ),
@@ -546,6 +642,13 @@ action: repair retained evidence
           path: expect.stringMatching(/broken\.json$/),
         }),
       );
+      expect(loaded.gaps).toContainEqual(
+        expect.objectContaining({
+          availability: "unreadable",
+          path: expect.stringMatching(/bad-time\.json$/),
+          reason: expect.stringContaining("timestamp"),
+        }),
+      );
     } finally {
       rmSync(root, { recursive: true, force: true });
     }
@@ -562,6 +665,55 @@ action: repair retained evidence
     );
     expect(renderGovernedGraphPortfolio(first)).toContain("/repos/a");
     expect(renderGovernedGraphPortfolio(first)).toContain("History:");
+
+    const expectedPermutation = buildGovernedGraphPortfolioFrom([
+      repository("/repos/a", [
+        collection("a-old", "2026-01-01T00:00:00Z"),
+        collection("a-new", "2026-02-01T00:00:00Z"),
+      ]),
+      repository("/repos/b", [
+        collection("b-old", "2026-01-01T00:00:00Z"),
+        collection("b-new", "2026-02-01T00:00:00Z"),
+      ]),
+    ]);
+    fc.assert(
+      fc.property(
+        fc.shuffledSubarray(["a-old", "a-new", "b-old", "b-new"], {
+          minLength: 4,
+          maxLength: 4,
+        }),
+        fc.shuffledSubarray(["a", "b"], { minLength: 2, maxLength: 2 }),
+        (collectionOrder, repositoryOrder) => {
+          const collections = Object.fromEntries(
+            collectionOrder.map((id) => [
+              id,
+              collection(
+                id,
+                id.endsWith("old")
+                  ? "2026-01-01T00:00:00Z"
+                  : "2026-02-01T00:00:00Z",
+              ),
+            ]),
+          );
+          const permuted = buildGovernedGraphPortfolioFrom(
+            repositoryOrder.map((name) =>
+              repository(
+                `/repos/${name}`,
+                collectionOrder
+                  .filter((id) => id.startsWith(`${name}-`))
+                  .map((id) => collections[id]),
+              ),
+            ),
+          );
+          expect(canonicalGraphPortfolioJson(permuted)).toBe(
+            canonicalGraphPortfolioJson(expectedPermutation),
+          );
+          expect(renderGovernedGraphPortfolio(permuted)).toBe(
+            renderGovernedGraphPortfolio(expectedPermutation),
+          );
+        },
+      ),
+    );
 
     const mapping = parseGraphPortfolioMappings(["/repos/a", "/repos/./a"], {
       graphExports: ["/repos/a=/inputs/export.json"],
