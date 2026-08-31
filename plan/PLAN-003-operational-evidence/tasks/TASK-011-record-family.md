@@ -20,15 +20,16 @@ relationships:
 
 ## Scope
 
-Add the v1 JSON Schema, TypeScript discriminated types, loader, and semantic
-validator for standing-capability and exercise records.
+Add one exact shipped v1 JSON Schema, TypeScript discriminated types, loader,
+and semantic validator for standing-capability and exercise records.
 
 ## TDD Work
 
 - Write TC-1223..TC-1231 first, including generated shape, clock, temporal, pin,
   link, adverse-outcome, and raw-evidence combinations.
 - Implement deterministic path-addressed findings and derived clock-state checks.
-- Export the engine-independent contract through the existing measurement seam.
+- Import the shipped schema into the validator and export that exact
+  engine-independent contract through the existing measurement seam.
 
 ## Exit Criteria
 

@@ -607,22 +607,22 @@ generated tests under `tests/props/` and `Unit` for the rest.
 | TC-1225 | A standing capability requires surface, availability, roles, coverage, limitations, transitions, and an explicit clock-support choice; only supported clocks admit and require event/deadline fields | Unit | P0 | FR-059-AC-3 | ✅ |
 | TC-1226 | An actual or drill exercise requires ordered timing, actor, trigger, outcome, before/after state, at least one observation, and clock applicability | Unit | P0 | FR-059-AC-4 | ✅ |
 | TC-1227 | Exactly one of capability and exercise is present for every generated valid record, and adding or removing the discriminator-matched payload fails | Property | P0 | FR-059-AC-5 | ✅ |
-| TC-1228 | Clocked exercises accept only timestamp-consistent open, met, missed, or explained-unknown states; not-applicable clocks exclude clock timestamps | Property | P0 | FR-059-AC-6 | ✅ |
+| TC-1228 | Clocked exercises accept only timestamp-consistent open, met, or missed states; gaps cannot override a deterministic status; not-applicable clocks exclude clock timestamps | Property | P0 | FR-059-AC-6 | ✅ |
 | TC-1229 | Every pin control requires a matching typed identity, revision, and digest; empty, duplicate, and wrong-kind pin lists fail | Property | P0 | FR-059-AC-7 | ✅ |
 | TC-1230 | Succeeded, failed, partial, and aborted exercises all round-trip without collapsing their outcome | Property | P0 | FR-059-AC-8 | ✅ |
 | TC-1231 | Gaps, owner, actions, and safe content-digested raw evidence with media type and byte size are required; invalid capability links and undeclared fields fail | Property | P0 | FR-059-AC-9 | ✅ |
-| TC-1232 | Valid intake writes exactly one complete canonical operational record by one atomic same-directory rename | Integration | P0 | FR-060-AC-1 | ✅ |
+| TC-1232 | Valid intake writes exactly one complete canonical operational record by one atomic same-directory no-replace publication | Integration | P0 | FR-060-AC-1 | ✅ |
 | TC-1233 | Invalid schema, cross-record, or temporal input returns `invalid_record`; unsafe or byte-mismatched raw evidence returns `raw_evidence_mismatch`; neither writes a store entry | Property | P0 | FR-060-AC-2 | ✅ |
 | TC-1234 | An absent or mismatched governing definition returns its stable reason code, names requested, expected, and observed versions, and leaves the store unchanged | Unit | P0 | FR-060-AC-3 | ✅ |
-| TC-1235 | Repeating identical canonical bytes for one id is byte-idempotent | Property | P0 | FR-060-AC-4 | ✅ |
-| TC-1236 | A same-id/different-bytes collision returns `record_id_collision` and cannot replace the retained entry | Property | P0 | FR-060-AC-5 | ✅ |
+| TC-1235 | Repeating identical canonical bytes for one id is byte-idempotent for standalone records and records already retained in a pair | Property | P0 | FR-060-AC-4 | ✅ |
+| TC-1236 | A same-id/different-bytes collision, including a destination appearing during publication, returns `record_id_collision` and cannot replace the retained entry | Property | P0 | FR-060-AC-5 | ✅ |
 | TC-1237 | Both standing capabilities and every exercise outcome remain queryable with byte-identical raw-evidence digests | Unit | P0 | FR-060-AC-6 | ✅ |
-| TC-1238 | Only a kind, subject, scope, and accepted-mode match with succeeded outcome and timestamp-derived `met` status discharges; every other case names non-discharge | Property | P0 | FR-060-AC-7 | ✅ |
+| TC-1238 | Only a kind, subject, scope, accepted-mode, and exact obligation-clock-condition match with succeeded outcome and timestamp-derived timely completion discharges; every other case names non-discharge | Property | P0 | FR-060-AC-7 | ✅ |
 | TC-1239 | Only available capabilities and succeeded clock-satisfying exercises render as claims/evidence; unavailable, unknown, not-applicable, adverse, and incomplete states render as counterevidence/gaps | Unit | P0 | FR-060-AC-8 | ✅ |
 | TC-1240 | Human and JSON output contain no derived overall trust, confidence, or quality score | Unit | P0 | FR-060-AC-9 | ✅ |
 | TC-1241 | Reordered store input renders byte-identically and human/JSON views expose the same claim-centered sections | Property | P0 | FR-060-AC-10 | ✅ |
 | TC-1242 | Intake and reporting invoke, drill, or alter no operational control | Static | P0 | FR-060-CON-1 | ✅ |
-| TC-1243 | Existing measurement collections and pre-operational evidence remain readable without migration | Integration | P0 | FR-060-CON-2 | ✅ |
+| TC-1243 | Existing measurement collections and intervention evidence remain readable and render alongside operational records without migration | Integration | P0 | FR-060-CON-2 | ✅ |
 | TC-1244 | Quoin's retained release workflow and a real completed workflow-run/jobs export produce one linked capability/exercise pair with source-derived workflow, revision, actor, timing, outcome, and observations | Integration | P0 | FR-061-AC-1 | ✅ |
 | TC-1245 | Malformed input, workflow/path/event/revision mismatch, and absent, duplicate, unstarted, or incomplete release jobs are refused without either operational record | Unit | P0 | FR-061-AC-2 | ✅ |
 | TC-1246 | Workflow structure determines capability state and API exports determine exercise/clock state; caller-supplied substitutes cannot change them | Property | P0 | FR-061-AC-3 | ✅ |

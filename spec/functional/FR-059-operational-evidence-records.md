@@ -19,6 +19,10 @@ so that standing control capabilities and control exercises remain distinct,
 engine-independent, and traceable to deployed scope, timing, outcome, governance,
 raw evidence, and the unchanged FR-044 producer tuple.
 
+Quoin SHALL ship this exact schema as
+`schemas/operational-evidence-v1.schema.json`, import it as the runtime validator
+contract, and export the same schema object through the package measurement seam.
+
 ## Schema
 
 ```json
@@ -277,7 +281,7 @@ raw evidence, and the unchanged FR-044 producer tuple.
           "path": { "type": "string", "minLength": 1 },
           "media_type": { "type": "string", "minLength": 1 },
           "size_bytes": { "type": "integer", "minimum": 0 },
-          "digest": { "$ref": "#/$defs/digest" }
+          "digest": { "$ref": "#/$defs/raw_digest" }
         },
         "additionalProperties": false
       }
@@ -352,6 +356,10 @@ raw evidence, and the unchanged FR-044 producer tuple.
       "type": "string",
       "pattern": "^(sha256|blake3):[a-f0-9]{64}$"
     },
+    "raw_digest": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
     "immutable_version": {
       "type": "string",
       "pattern": "^(v?[0-9]+[.][0-9]+[.][0-9]+([-+][0-9A-Za-z.-]+)?|[a-f0-9]{40}|(sha256|blake3):[a-f0-9]{64})$"
@@ -369,7 +377,7 @@ raw evidence, and the unchanged FR-044 producer tuple.
         "completed_at": { "type": "string", "format": "date-time" },
         "status": {
           "type": "string",
-          "enum": ["not_applicable", "open", "met", "missed", "unknown"]
+          "enum": ["not_applicable", "open", "met", "missed"]
         }
       },
       "allOf": [
@@ -385,7 +393,7 @@ raw evidence, and the unchanged FR-044 producer tuple.
             "properties": {
               "started_at": { "type": "string", "format": "date-time" },
               "deadline_at": { "type": "string", "format": "date-time" },
-              "status": { "enum": ["open", "met", "missed", "unknown"] }
+              "status": { "enum": ["open", "met", "missed"] }
             },
             "required": ["started_at", "deadline_at"]
           },
@@ -410,8 +418,8 @@ raw evidence, and the unchanged FR-044 producer tuple.
 - Clock status `met` SHALL require a clock completion no later than the deadline.
   Status `missed` SHALL require a completion after the deadline or no completion
   when `observed_at` is after the deadline. Status `open` SHALL require no clock
-  completion and an `observed_at` no later than the deadline. Status `unknown`
-  SHALL require at least one declared gap.
+  completion and an `observed_at` no later than the deadline. A declared gap
+  SHALL NOT override the status deterministically derived from these timestamps.
 - A `not_applicable` clock SHALL carry no start, deadline, or completion timestamp.
 - Each `(kind, identity)` version pin SHALL be unique. For a pin control, at least
   one version pin kind SHALL match the `control_kind` prefix.
@@ -420,6 +428,8 @@ raw evidence, and the unchanged FR-044 producer tuple.
 - Every raw-evidence path SHALL be a normalized relative path within the evidence
   store. Absolute paths, parent traversal, and paths that resolve outside the
   evidence store SHALL be refused.
+- Every raw-evidence digest SHALL use SHA-256, the algorithm Quoin independently
+  recomputes from the retained bytes.
 
 ## Acceptance Criteria
 

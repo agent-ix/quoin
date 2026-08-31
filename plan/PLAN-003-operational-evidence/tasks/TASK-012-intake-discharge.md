@@ -28,10 +28,10 @@ shapes, raw-byte integrity, stable refusals, and timestamp-derived clock dischar
 ## TDD Work
 
 - Write TC-1232..TC-1238 against temporary same-filesystem stores.
-- Reuse governing-plan resolution, canonical bytes, atomic rename, idempotency, and
-  collision protection from the measurement store.
-- Match kind, subject, scope, accepted exercise mode, success outcome, and derived
-  `met` status before discharging any clocked obligation.
+- Reuse governing-plan resolution and canonical bytes, and publish by atomic
+  no-replace commit with pair-aware idempotency and collision protection.
+- Match kind, subject, scope, accepted exercise mode, success outcome, and exact
+  obligation clock condition before deriving timely completion and discharging.
 
 ## Exit Criteria
 

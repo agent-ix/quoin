@@ -36,8 +36,8 @@ under claims, evidence, counterevidence, gaps, owner, and action.
   [FR-059](./FR-059-operational-evidence-records.md)
 - The exact retained bytes addressed by every raw-evidence path in the record
 - The active authored plan that owns the record's definition version
-- The obligation kind, subject, scope, accepted exercise modes, and clock condition
-  being evaluated
+- The obligation kind, subject, scope, accepted exercise modes, and exact
+  `operational_with_clock` start/deadline condition being evaluated
 - The evidence store defined by [FR-030](./FR-030-evidence-store.md) and
   [FR-044](./FR-044-plan-governed-measurements.md)
 
@@ -60,8 +60,8 @@ under claims, evidence, counterevidence, gaps, owner, and action.
 - If the record's definition differs from the governing plan, then Quoin SHALL
   refuse the record with stable reason code `definition_mismatch` by naming the
   expected and observed definitions.
-- When validation succeeds, Quoin SHALL commit the complete entry by one atomic
-  same-directory rename.
+- When validation succeeds, Quoin SHALL publish the complete entry by one atomic
+  same-directory no-replace operation.
 - When identical canonical bytes already exist for a record id, Quoin SHALL treat
   the intake as idempotent.
 - If different canonical bytes already exist for a record id, then Quoin SHALL
@@ -69,7 +69,7 @@ under claims, evidence, counterevidence, gaps, owner, and action.
   replacing the retained entry.
 - When an exercise outcome is not `succeeded`, Quoin SHALL preserve the exercise as
   queryable evidence.
-- When Quoin reads an exercise with clock status `missed`, `open`, or `unknown`,
+- When Quoin reads an exercise with clock status `missed` or `open`,
   Quoin SHALL preserve it as queryable evidence.
 - When a standing capability is `available`, `quoin report` SHALL label it as
   evidence that the control exists, but SHALL NOT label it as evidence that the
@@ -80,9 +80,11 @@ under claims, evidence, counterevidence, gaps, owner, and action.
 - Quoin SHALL derive clock status from the retained timestamps and `observed_at` and
   refuse any producer-supplied status that disagrees with that derivation.
 - Quoin SHALL discharge a clocked obligation only when control kind, subject, scope,
-  and exercise mode match the obligation, the exercise outcome is `succeeded`, and
-  the verified clock status is `met`.
-- When a clocked exercise is failed, partial, aborted, missed, open, or unknown,
+  and exercise mode match the obligation, its clock start and deadline identify the
+  obligation's exact clock condition, the exercise outcome is `succeeded`, and its
+  clock completion timestamp falls within that condition. Quoin SHALL derive this
+  result without trusting the producer's status label.
+- When a clocked exercise is failed, partial, aborted, missed, or open,
   `quoin report` SHALL render the outcome as counterevidence or a gap.
 - When rendering operational evidence, `quoin report` SHALL preserve the record's
   declared gaps, owner, and actions as separate sections.
@@ -95,14 +97,14 @@ under claims, evidence, counterevidence, gaps, owner, and action.
 
 | ID | Criteria | Verification |
 | --- | --- | --- |
-| FR-060-AC-1 | Valid intake writes one complete canonical record by one atomic same-directory rename. | Test (TC-1232) |
+| FR-060-AC-1 | Valid intake writes one complete canonical record by one atomic same-directory no-replace publication. | Test (TC-1232) |
 | FR-060-AC-2 | Invalid schema, cross-record, or temporal input returns `invalid_record`; unsafe, missing, wrong-sized, or digest-mismatched raw evidence returns `raw_evidence_mismatch`; both identify every mismatch and write nothing. | Test (TC-1233) |
 | FR-060-AC-3 | An absent governing plan returns `governing_plan_absent`; a mismatch returns `definition_mismatch`; both write nothing and name the requested, expected, and observed definitions that apply. | Test (TC-1234) |
-| FR-060-AC-4 | Repeating an identical record id and canonical payload is byte-idempotent. | Test (TC-1235) |
-| FR-060-AC-5 | Reusing a record id for different semantic bytes returns `record_id_collision` without replacing the retained entry. | Test (TC-1236) |
+| FR-060-AC-4 | Repeating an identical record id and canonical payload is byte-idempotent whether the retained record is standalone or a member of an atomic pair. | Test (TC-1235) |
+| FR-060-AC-5 | Reusing a record id for different semantic bytes returns `record_id_collision` without replacing the retained entry, including when another writer publishes after the initial absence check. | Test (TC-1236) |
 | FR-060-AC-6 | Standing capabilities and succeeded, failed, partial, and aborted exercises remain independently queryable with their raw-evidence digests. | Test (TC-1237) |
-| FR-060-AC-7 | A clocked obligation discharges only from a control-kind, subject, scope, and accepted-mode-matched exercise whose outcome is `succeeded` and whose timestamp-derived clock status is `met`; every other case remains a named non-discharge or gap. | Test (TC-1238) |
-| FR-060-AC-8 | The report renders only available capabilities and succeeded, clock-satisfying exercises as their distinct claims and evidence; unavailable, unknown, not-applicable, adverse-outcome, missed, open, or unknown states render as counterevidence or gaps beside owner and actions. | Test (TC-1239) |
+| FR-060-AC-7 | A clocked obligation discharges only from a control-kind, subject, scope, and accepted-mode-matched exercise whose clock start/deadline identify the exact obligation clock condition, whose outcome is `succeeded`, and whose completion falls within that condition; every other case remains a named non-discharge or gap. | Test (TC-1238) |
+| FR-060-AC-8 | The report renders only available capabilities and succeeded, clock-satisfying exercises as their distinct claims and evidence; unavailable, unknown, not-applicable, adverse-outcome, missed, or open states render as counterevidence or gaps beside owner and actions. | Test (TC-1239) |
 | FR-060-AC-9 | Neither human nor JSON output contains an aggregate trust, confidence, or quality score derived from operational records. | Test (TC-1240) |
 | FR-060-AC-10 | Re-rendering an unchanged store is byte-identical, and human and JSON views expose the same claims, evidence, counterevidence, gaps, owners, and actions. | Test (TC-1241) |
 
