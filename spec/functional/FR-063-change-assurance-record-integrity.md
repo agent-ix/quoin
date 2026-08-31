@@ -10,6 +10,8 @@ relationships:
     type: "extends"
   - target: "ix://agent-ix/ix-flow/FR-013"
     type: "requires"
+  - target: "ix://agent-ix/ix-flow/FR-018"
+    type: "requires"
 ---
 
 # FR-063: Integrity-sealed change assurance record
@@ -271,6 +273,13 @@ Each `argv` SHALL contain literal arguments without shell expansion.
 
 ## Canonical integrity contract
 
+The serialized sealing and verification boundary SHALL receive the exact UTF-8
+JSON bytes, not an already parsed host-language object. Quoin SHALL parse those
+bytes with a duplicate-preserving JSON decoder so duplicate object names,
+invalid Unicode, non-I-JSON numbers, and a byte-order mark remain observable
+and can be refused before any normalized value is constructed. Programmatic
+callers SHALL pass through the same validation and canonicalization boundary.
+
 Quoin SHALL compute `digest` by removing only the top-level `digest` member,
 applying RFC 8785 JSON Canonicalization Scheme to the
 remaining value, encoding the canonical text as UTF-8 without a byte-order mark,
@@ -327,7 +336,7 @@ person's identity, authority, possession of a key, or non-repudiation.
 | FR-063-AC-8 | Revision 1 requires a null parent; a successor requires the retained valid N-1 digest with the same record id; a missing, changed, skipped, or cross-record parent fails lineage verification. | Property (TC-1268) |
 | FR-063-AC-9 | Writing a successor leaves the parent's path and bytes unchanged, and rejected or revise-requested records remain addressable by digest (CON-2). | Integration (TC-1269) |
 | FR-063-AC-10 | Only an intact matching ix-flow human decision event identifies the exact reviewed revision; mismatched run, kind, actor kind, record id, revision, or digest cannot approve it. | Integration (TC-1270) |
-| FR-063-AC-11 | Static and golden-text checks prove sealing runs nothing and describes digests and actor labels only as integrity and recorded attribution, never identity, authority, signature, authenticity, or non-repudiation (CON-1, CON-3). | Inspection (TC-1271) |
+| FR-063-AC-11 | Static and golden-text checks prove sealing runs nothing and describes digests and actor labels only as integrity and recorded attribution, never identity, authority, signature, authenticity, or non-repudiation (CON-1, CON-3). | Analysis (TC-1271) |
 
 ## Dependencies
 

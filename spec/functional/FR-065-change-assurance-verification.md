@@ -12,6 +12,10 @@ relationships:
     type: "requires"
   - target: "ix://agent-ix/quoin/FR-064"
     type: "requires"
+  - target: "ix://agent-ix/ix-flow/FR-013"
+    type: "requires"
+  - target: "ix://agent-ix/ix-flow/FR-018"
+    type: "requires"
 ---
 
 # FR-065: Read-only change assurance verification receipt
@@ -245,11 +249,16 @@ When no invalid check exists, any incomplete check SHALL dominate `valid`.
 
 ## Selection and checks
 
-The caller SHALL select at most one attestation digest for each proof id. Quoin
-SHALL emit exactly one proof receipt for every proof in the reviewed record,
-ordered by proof id. A missing selection is `incomplete`; a duplicate selection
-or a selected attestation bound to another record, candidate, or proof is
-`invalid`. Unselected attestations have no effect.
+The verifier input SHALL carry an explicit array of selection entries, each
+containing exactly `proof_id` and `attestation_digest`; no selection is inferred
+from the store. Quoin SHALL group that raw list before constructing a map so a
+repeated proof id remains observable. It SHALL emit exactly one proof receipt
+for every proof in the reviewed record, ordered by proof id. A missing selection
+is `incomplete`; more than one selection for a proof is `invalid` with
+`attestation_schema_invalid`; and a selected attestation bound to another
+record, candidate, or proof is `invalid`. A selection for a proof absent from
+the record is invalid with `proof_id_mismatch`. Unselected stored attestations
+have no effect.
 
 For each selected attestation Quoin SHALL:
 
@@ -268,8 +277,9 @@ reason.
 
 The review check SHALL verify the complete ix-flow event chain under ix-flow
 FR-013 and require exactly one matching decision event. `approved` permits a
-valid review check; `rejected` and `revise` are invalid. A missing event or event
-history is incomplete, while a broken chain or mismatched event is invalid.
+valid review check; `rejected` and `revise` are invalid. Zero matching events or
+missing history is incomplete; more than one matching event is invalid with
+`decision_mismatch`; and a broken chain or mismatched event is invalid.
 
 An incomplete or truncated impact snapshot or any unknown whose disposition is
 not `resolved` SHALL make the receipt incomplete. It SHALL remain visible so an
@@ -306,16 +316,16 @@ authenticity, signature, or non-repudiation.
 | --- | --- | --- |
 | FR-065-AC-1 | Receipt schema v1 records the exact record/candidate, decision event and chain tail, parent chain, record/lineage/review/impact checks, every proof and auditor finding, unknowns, overall outcome, reasons, and receipt digest; undeclared fields are refused. | Test (TC-1281) |
 | FR-065-AC-2 | Valid, invalid, and incomplete remain distinct; any invalid check dominates incomplete, any incomplete check dominates valid, and an empty reason set is permitted only for valid. | Property (TC-1282) |
-| FR-065-AC-3 | Exactly one proof receipt is emitted per reviewed proof in id order; missing selection is incomplete, duplicate selection is invalid, and unselected attestations do not affect the result. | Property (TC-1283) |
+| FR-065-AC-3 | Exactly one proof receipt is emitted per reviewed proof in id order; missing selection is incomplete, duplicate or unknown-proof selection is invalid, and unselected stored attestations do not affect the result. | Property (TC-1283) |
 | FR-065-AC-4 | Changing record digest, candidate revision, proof id, argv/cwd, tool identity, or configuration independently makes the selected attestation invalid and names the mismatched premise. | Property (TC-1284) |
 | FR-065-AC-5 | Passed evidence can discharge only when its exact retained bytes verify and all owning obligations are healthy; failed, stale, suspect, vacuous, unrelated, output-mismatched, or other defect evidence is invalid. | Property (TC-1285) |
 | FR-065-AC-6 | A missing attestation or output, unavailable or not-computed result, or audit not-evaluated state is incomplete and never valid or numeric zero. | Test (TC-1286) |
-| FR-065-AC-7 | An intact matching human `approved` event permits review validity; missing history/event is incomplete; broken chain, mismatched event, rejection, or revise request is invalid. | Integration (TC-1287) |
+| FR-065-AC-7 | Exactly one intact matching human `approved` event permits review validity; missing history/event is incomplete; duplicate matching decisions, broken chain, mismatched event, rejection, or revise request are invalid. | Integration (TC-1287) |
 | FR-065-AC-8 | Incomplete/truncated impact evidence and every non-resolved unknown remain named and force incomplete verification while preserving an advisory workflow's ability to continue. | Test (TC-1288) |
 | FR-065-AC-9 | The receipt retains each FR-032 finding kind and obligation id byte-for-byte beside its mapped reason without changing the source auditor result (CON-2). | Integration (TC-1289) |
 | FR-065-AC-10 | Input and selection permutations emit byte-identical canonical receipts whose digest matches the pinned RFC 8785/BLAKE3 procedure. | Property (TC-1290) |
 | FR-065-AC-11 | Existing audit/assurance goldens stay byte-identical without change-assurance selection, and static boundaries prove verification runs and writes nothing (CON-1, CON-4). | Integration (TC-1291) |
-| FR-065-AC-12 | Golden terminology describes actor labels and hashes only as recorded attribution and content integrity, never identity, authority, authenticity, signature, or non-repudiation (CON-3). | Inspection (TC-1292) |
+| FR-065-AC-12 | Golden terminology describes actor labels and hashes only as recorded attribution and content integrity, never identity, authority, authenticity, signature, or non-repudiation (CON-3). | Analysis (TC-1292) |
 
 ## Dependencies
 

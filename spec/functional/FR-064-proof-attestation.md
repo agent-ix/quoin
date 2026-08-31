@@ -124,16 +124,20 @@ reported; it does not decide whether the proof discharges the obligation.
 
 ## Intake and integrity
 
-The intake operation SHALL receive the attestation plus the exact retained
-output bytes. It SHALL recompute the output's 32-byte BLAKE3 lowercase-hex
-digest and byte length before writing either artifact. It SHALL compute
-`digest` with FR-063's RFC 8785/BLAKE3 procedure after removing only the
-top-level `digest` member.
+The intake operation SHALL receive the attestation's exact UTF-8 JSON bytes plus
+the exact retained output bytes. It SHALL use FR-063's duplicate-preserving raw
+JSON boundary, recompute the output's 32-byte BLAKE3 lowercase-hex digest and
+byte length before writing either artifact, and compute `digest` with FR-063's
+RFC 8785/BLAKE3 procedure after removing only the top-level `digest` member.
 
 The operation SHALL validate the attestation schema and both digests before an
-atomic content-addressed write. Repeating identical intake SHALL be byte-
-idempotent. An existing digest with different bytes SHALL produce a collision
-error and preserve the existing artifacts.
+atomic content-addressed write. It SHALL stage `attestation.json` and the output
+bytes together in a new temporary directory, durably close both files, and
+atomically rename that complete directory to the attestation digest. A crash or
+error before the rename SHALL leave no visible attestation or output; recovery
+SHALL discard incomplete temporary directories. Repeating identical intake
+SHALL be byte-idempotent. An existing digest with different bytes SHALL produce
+a collision error and preserve the existing directory and both artifacts.
 
 `unavailable` and `not_computed` attestations SHALL retain producer diagnostics
 as their output bytes. Completely missing evidence has no attestation and is
@@ -157,10 +161,10 @@ discharges a proof until FR-065 checks all bindings and FR-032 findings.
 | FR-064-AC-3 | The exact retained bytes reproduce the declared BLAKE3 digest and size; changed, absent, or extra bytes leave neither a new attestation nor output artifact. | Property (TC-1274) |
 | FR-064-AC-4 | The attestation digest follows the same pinned RFC 8785/BLAKE3 contract as FR-063, and changing each semantic field independently invalidates it. | Property (TC-1275) |
 | FR-064-AC-5 | Each missing record, candidate, proof, argv/cwd, tool, configuration, environment, timestamp, result, or output field is refused independently rather than inferred. | Property (TC-1276) |
-| FR-064-AC-6 | Repeated identical intake preserves byte identity; a same-digest/different-content collision preserves the first attestation and output. | Integration (TC-1277) |
+| FR-064-AC-6 | Repeated identical intake preserves byte identity; injected failures before the directory rename expose neither artifact and are recoverable; a same-digest/different-content collision preserves the first attestation and output. | Integration (TC-1277) |
 | FR-064-AC-7 | An unavailable or not-computed producer result retains its diagnostic output, while entirely missing evidence creates no synthetic attestation. | Test (TC-1278) |
 | FR-064-AC-8 | Existing FR-030 run evidence remains readable and unchanged; proof attestations occupy a distinct versioned store family. | Integration (TC-1279) |
-| FR-064-AC-9 | Static boundaries and golden terminology prove intake runs nothing and reports only producer facts, never an audit, approval, identity, authorization, or non-repudiation conclusion (CON-1, CON-3). | Inspection (TC-1280) |
+| FR-064-AC-9 | Static boundaries and golden terminology prove intake runs nothing and reports only producer facts, never an audit, approval, identity, authorization, or non-repudiation conclusion (CON-1, CON-3). | Analysis (TC-1280) |
 
 ## Dependencies
 
