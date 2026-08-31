@@ -552,21 +552,20 @@ describe("intervention-experiment evidence", () => {
       readFileSync(join(source, "quoin-270-sentinel-definition.json"), "utf8"),
     ) as AgentEvalInterventionDefinition;
 
-    const { record: produced } = produceAgentEvalIntervention(root, definition);
-    const retained = JSON.parse(
-      readFileSync(
-        join(
-          process.cwd(),
-          "spec",
-          "evidence",
-          "interventions",
-          "quoin-270-cli-eval-sentinel-contract.json",
-        ),
-        "utf8",
-      ),
-    ) as InterventionExperimentRecord;
+    const { path: producedPath, record: produced } =
+      produceAgentEvalIntervention(root, definition);
+    const retainedPath = join(
+      process.cwd(),
+      "spec",
+      "evidence",
+      "interventions",
+      "quoin-270-cli-eval-sentinel-contract.json",
+    );
+    const retainedBytes = readFileSync(retainedPath, "utf8");
+    const retained = JSON.parse(retainedBytes) as InterventionExperimentRecord;
 
     expect(produced).toEqual(retained);
+    expect(readFileSync(producedPath, "utf8")).toBe(retainedBytes);
     expect(produced.baseline.sample_size).toBe(2);
     expect(produced.treatments[0].sample_size).toBe(2);
     expect(produced.observed_at).toBe("2026-08-30T17:54:41.378Z");
