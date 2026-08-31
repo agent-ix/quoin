@@ -190,6 +190,14 @@ function validateDefinition(value: AgentEvalInterventionDefinition): void {
       "producer definition requires an immutable cli_agent_evals_version",
     );
   }
+  for (const [field, revision] of [
+    ["subject.revision", value.subject?.revision],
+    ["producer.source_revision", value.producer?.source_revision],
+  ] as const) {
+    if (!IMMUTABLE_VERSION.test(String(revision ?? ""))) {
+      throw new Error(`producer definition requires an immutable ${field}`);
+    }
+  }
   if (
     !value.baseline_evidence_path ||
     !value.treatment_evidence_path ||

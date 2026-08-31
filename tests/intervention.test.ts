@@ -507,6 +507,29 @@ describe("intervention-experiment evidence", () => {
       expect(readInterventionRecords(invalidRoot)).toEqual([]);
     }
 
+    for (const [field, mutate] of [
+      [
+        "subject.revision",
+        (value: AgentEvalInterventionDefinition) => {
+          value.subject.revision = "main";
+        },
+      ],
+      [
+        "producer.source_revision",
+        (value: AgentEvalInterventionDefinition) => {
+          value.producer.source_revision = "working-tree";
+        },
+      ],
+    ] as const) {
+      const invalidRoot = repo();
+      const invalidDefinition = producerDefinition();
+      mutate(invalidDefinition);
+      expect(() =>
+        produceAgentEvalIntervention(invalidRoot, invalidDefinition),
+      ).toThrow(new RegExp(`immutable ${field.replace(".", "\\.")}`));
+      expect(readInterventionRecords(invalidRoot)).toEqual([]);
+    }
+
     const inadequateRoot = repo();
     const single = reportJson([{ id: "TC-EV-1", passed: 1, total: 1 }]);
     writeRaw(inadequateRoot, "raw/eval-before.json", single);
