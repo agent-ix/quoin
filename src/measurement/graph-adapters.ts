@@ -564,10 +564,7 @@ function normalizeGraphQuality(
     examined: record.population.files_seen,
     matched: record.population.supported_files,
     complete: record.population.state === "measured",
-    identity: {
-      producer: record.producer,
-      population: record.population,
-    },
+    identity: record.population,
   };
   const count = (
     measure: string,

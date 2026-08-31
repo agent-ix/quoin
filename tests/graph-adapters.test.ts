@@ -380,7 +380,11 @@ describe("FR-066 governed graph producer adapters", () => {
             ...record,
             observation_id: undefined,
           });
-          const observations = adapt(record).observations.filter(
+          const collection = adapt(record);
+          expect(collection.observations[0].population?.identity).toEqual(
+            record.population,
+          );
+          const observations = collection.observations.filter(
             (item) => item.dimensions?.measure === "census",
           );
           expect(observations.map((item) => item.dimensions)).toEqual(
