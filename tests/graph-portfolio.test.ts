@@ -399,6 +399,36 @@ describe("governed graph portfolio", () => {
       ),
     ).toBe(false);
 
+    const retiredNotComputed = ["before", "after"].map((suffix, index) =>
+      collection(
+        `retired-not-computed-${suffix}`,
+        `2026-05-0${index + 1}T00:00:00Z`,
+        {
+          observations: [
+            {
+              ...before.observations[0],
+              planId: "MP-RETIRED",
+              state: "not_computed",
+              value: null,
+              reason: "unsupported",
+            },
+          ],
+        },
+      ),
+    );
+    const notComputedComparison = buildGovernedGraphPortfolioFrom([
+      repository("/repos/retired-not-computed", retiredNotComputed),
+    ]).repositories[0].graphQuality.comparison;
+    expect(notComputedComparison?.observations).toEqual([
+      expect.objectContaining({
+        status: "not_computed",
+        delta: null,
+        reasons: expect.arrayContaining([
+          expect.objectContaining({ code: "collection_incompatible" }),
+        ]),
+      }),
+    ]);
+
     const inherited = base("/repos/inherited");
     inherited.measurements = {
       plans: [PLAN],

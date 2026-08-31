@@ -508,7 +508,7 @@ function compareHistoryPair(
     };
     observations = observations.map((row) =>
       row.status === "not_computed"
-        ? row
+        ? { ...row, reasons: [...row.reasons, reason] }
         : {
             ...row,
             delta: null,
