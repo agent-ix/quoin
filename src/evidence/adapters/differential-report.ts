@@ -21,11 +21,11 @@ const SCHEMA = /^[a-z0-9][a-z0-9-]*\.differential-summary\/v1$/;
  *
  * `unsupported` is deliberately absent — see {@link UnrepresentedResult}.
  */
-const STATUS: Record<string, RunEntry["outcome"]> = {
-  agreement: "pass",
-  mismatch: "fail",
-  "tool-error": "error",
-};
+const STATUS = new Map<string, RunEntry["outcome"]>([
+  ["agreement", "pass"],
+  ["mismatch", "fail"],
+  ["tool-error", "error"],
+]);
 
 interface DifferentialCase {
   id?: unknown;
@@ -117,7 +117,12 @@ export const differentialReportAdapter: EvidenceAdapter = {
         });
         return;
       }
-      const outcome = STATUS[entry.status];
+      // `Map`, not an object literal: `STATUS["valueOf"]` on a literal
+      // resolves through the prototype chain and is not `undefined`, so an
+      // inherited property name was accepted as a declared status and
+      // transcribed with a function as its outcome. CI's property test found
+      // it with the counterexample "valueOf".
+      const outcome = STATUS.get(entry.status);
       if (outcome === undefined) {
         throw new AdapterError(
           "differential-report",
