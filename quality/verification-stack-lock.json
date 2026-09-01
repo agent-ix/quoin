@@ -3,7 +3,7 @@
   "repositories": {
     "quoin": {
       "remote": "https://github.com/agent-ix/quoin",
-      "revision": "785858820f9910a22b5955a897d4bd634faa2367"
+      "revision": "4d0800b507d1900dafaf54a8a0f9c30fd0b0d525"
     },
     "quire": {
       "remote": "https://github.com/agent-ix/quire-rs",
@@ -94,7 +94,7 @@
     "bench/guidance-independent-review-v1.json": "sha256:69213dc1d6ce937e85d77d58b493667a0fa07a69943138270b9e96367e91f9f8",
     "bench/span-grounding-labels.json": "sha256:897ef28979f5a3f607fdb27e740f1508b736ae5d9ce3dd91c7813f09f841c000",
     "bench/span-grounding-v2-labels.json": "sha256:4e10f34488c87439e7253668ea34773adb432b16bce574b1cc93fbf0343e2650",
-    "bench/span-breadth-v1-labels.json": "sha256:1462030875e45113a2c266e7da7d222fc89f9eba768ecb5c3d1311b6ee754350",
+    "bench/span-breadth-v1-labels.json": "sha256:9cc1955d67750fcab99790d237693743e091a410a7ada67659ba124bd318f613",
     "bench/answer-key.json": "sha256:ece1a7f5d254623cf79beff1113021f4f71359ac9a3c703d07cff0f8a45e9532",
     "bench/advisory-adjudication-v1.json": "sha256:87c575b6ca0c0886d874f609144f907f3ac270e08c2091bb2bb1ead725713e43",
     "corpus/config/metrics.json": "sha256:69ab8e5b8fc14e07408e034f0b791c3dd3356c9db78e1ac0dc961bcc0b47c0d7",
