@@ -4,7 +4,7 @@ description: Verify a targeted plan is complete and validated — every task don
   Matrix backed by real tracking tags in tests, and code fully traced to spec (flagging
   underspecified code with no owning requirement). Optional semantic review checks that
   intent↔test↔code actually agree. Emits a quire-validated SpecReview artifact to
-  reviews/YY-MM-DD-slug.md.
+  reviews/YY-MM-DD-<slug>.md.
 ---
 
 # Gap Analysis
