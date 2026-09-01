@@ -1,5 +1,11 @@
 import { canonicalJson } from "../evidence/store.js";
 import { compareMeasurementCollections } from "./compare.js";
+import {
+  buildInterventionReport,
+  renderInterventionReport,
+  type InterventionReportEntry,
+} from "./intervention-report.js";
+import { readInterventionRecords } from "./intervention.js";
 import { loadMeasurementPlans } from "./plans.js";
 import { measurementPath, readMeasurementCollections } from "./store.js";
 import type {
@@ -32,6 +38,7 @@ export interface MeasurementReport {
       | null;
   }>;
   corpusGaps: number | null;
+  interventions: InterventionReportEntry[];
 }
 
 export function buildMeasurementReport(repo: string): MeasurementReport {
@@ -83,7 +90,12 @@ export function buildMeasurementReportFrom(
         : null,
     }));
   });
-  return { plans, current, corpusGaps: latestGapCount(collections) };
+  return {
+    plans,
+    current,
+    corpusGaps: latestGapCount(collections),
+    interventions: buildInterventionReport(readInterventionRecords(repo)),
+  };
 }
 
 export function renderMeasurementReport(report: MeasurementReport): string {
@@ -193,6 +205,8 @@ export function renderMeasurementReport(report: MeasurementReport): string {
       : ["No factual attention items."]),
     "",
   );
+  const intervention = renderInterventionReport(report.interventions);
+  if (intervention) lines.push(intervention);
   return lines.join("\n");
 }
 

@@ -1,0 +1,147 @@
+{
+  "actions": [
+    "make cli-agent-evals embed its report schema version",
+    "derive Engineering Assurance effort and transcript metadata from the runner rather than agent-authored fields",
+    "repeat the comparison after the terminal protocol is made mechanically enforceable"
+  ],
+  "baseline": {
+    "configuration": {
+      "runner_revision": "737dcd20c36191e29d921ab5f57eb0226dce26f2",
+      "sentinel_match": "substring"
+    },
+    "id": "substring-detector",
+    "population": "EA-001 existing-profile live Codex samples",
+    "sample_size": 2
+  },
+  "changed_variables": [
+    {
+      "baseline_value": "any substring occurrence",
+      "name": "completion sentinel recognition",
+      "treatment_id": "standalone-detector",
+      "treatment_value": "standalone terminal output line only"
+    }
+  ],
+  "conclusion": {
+    "attribution_confidence": "none",
+    "kind": "cause_not_established",
+    "statement": "The retained agent-evaluation runs show no observed pass-rate difference; this adapter does not establish causality."
+  },
+  "confounders": [
+    {
+      "description": "session state and model-side nondeterminism between sequential runs",
+      "disposition": "unknown"
+    },
+    {
+      "description": "the treatment timeout followed omission of the required final sentinel after the task result was written",
+      "disposition": "uncontrolled"
+    }
+  ],
+  "design": {
+    "assignment": {
+      "method": "deterministic"
+    },
+    "kind": "repeated",
+    "repetitions": 2,
+    "sampling_conditions": [
+      "same EA-001 existing-profile scenario",
+      "same suite and fixture bytes",
+      "same Codex CLI host version",
+      "two sequential live-agent samples per arm"
+    ]
+  },
+  "gaps": [
+    "the retained reports declare their schema version through this governed definition rather than an embedded report field",
+    "the two repeats per arm are insufficient for a causal attribution",
+    "private transcripts remain outside the tracked evidence set under the source repository content-rights policy",
+    "one or more declared interactions or confounders are uncontrolled or unknown",
+    "no justified attribution method was supplied"
+  ],
+  "held_constant": [
+    {
+      "name": "scenario",
+      "value": "EA-001 existing-profile"
+    },
+    {
+      "name": "host",
+      "value": "codex-cli 0.151.0"
+    },
+    {
+      "name": "suite configuration digest",
+      "value": "sha256:3e1a8362b21a05d0962bd9789dae5eebef362f33c9c25665c838372bf20658d2"
+    },
+    {
+      "name": "fixture digest",
+      "value": "sha256:e78a0dfa8a75b4a66444f4fc65fe80c77f5b7b237ebce0c7375b5e0d9530ffcd"
+    }
+  ],
+  "interactions": [
+    {
+      "description": "live agent behavior and tool-selection order",
+      "disposition": "uncontrolled"
+    }
+  ],
+  "measured_effects": [
+    {
+      "baseline_value": 0.5,
+      "effect": 0,
+      "metric": "agent-eval.ea-001.pass-rate",
+      "treatment_id": "standalone-detector",
+      "treatment_value": 0.5,
+      "unit": "fraction"
+    }
+  ],
+  "observed_at": "2026-08-30T17:54:41.378Z",
+  "owner": "engineering assurance",
+  "producer": {
+    "configuration_digest": "sha256:3e1a8362b21a05d0962bd9789dae5eebef362f33c9c25665c838372bf20658d2",
+    "definition_version": "cli-agent-evals.sentinel-contract-v1",
+    "environment": {
+      "baseline_runner_revision": "737dcd20c36191e29d921ab5f57eb0226dce26f2",
+      "cli_agent_evals_version": "9e7b6cdde67fccdd9417171f8f116a8c91d400b7",
+      "codex_cli": "0.151.0",
+      "engineering_assurance_revision": "236f420987bdfd5309fb531806a851ddc9f75ae3",
+      "fixture_digest": "sha256:e78a0dfa8a75b4a66444f4fc65fe80c77f5b7b237ebce0c7375b5e0d9530ffcd",
+      "fixture_revision": "fixtures-v1",
+      "node": "24.15.0",
+      "report_schema_version": "cli-agent-evals-report-v1",
+      "suite_revision": "suite-v1",
+      "treatment_runner_revision": "9e7b6cdde67fccdd9417171f8f116a8c91d400b7"
+    },
+    "source_revision": "b340140e4fa9667fe39e1843c18b526c820a37be",
+    "tool_identity": "quoin-agent-eval-intervention-adapter",
+    "tool_version": "0.9.0"
+  },
+  "raw_evidence": [
+    {
+      "digest": "sha256:741ab150c107d1f5551a9be2092081cc0439f85e804d23f81e3923dfab8fe076",
+      "media_type": "application/json",
+      "path": "agent-evals/quoin-270-sentinel-baseline.json",
+      "size_bytes": 11305
+    },
+    {
+      "digest": "sha256:baade4ab1c2e8f3447b4c585c95634884cb2ed1c69a9cf8819d0b495c7f77963",
+      "media_type": "application/json",
+      "path": "agent-evals/quoin-270-sentinel-treatment.json",
+      "size_bytes": 14261
+    }
+  ],
+  "record_id": "quoin-270-cli-eval-sentinel-contract",
+  "record_type": "intervention_experiment",
+  "schema_version": 1,
+  "status": "completed",
+  "subject": {
+    "id": "agent-ix/cli-agent-evals",
+    "revision": "9e7b6cdde67fccdd9417171f8f116a8c91d400b7"
+  },
+  "treatments": [
+    {
+      "configuration": {
+        "runner_revision": "9e7b6cdde67fccdd9417171f8f116a8c91d400b7",
+        "sentinel_match": "standalone-terminal-line"
+      },
+      "id": "standalone-detector",
+      "population": "EA-001 existing-profile live Codex samples",
+      "sample_size": 2
+    }
+  ]
+}

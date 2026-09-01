@@ -9,6 +9,7 @@ import { isAllowedAuditPath } from "../scripts/lib/semantic-module-type-fit.mjs"
 
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const architectureRoot = join(repoRoot, "docs", "semantic-module-architecture");
+const architectureDelivery = "4a82644ad3cf75770cc53ef3812e3b13e80b516d";
 
 const architectureFiles = [
   "index.md",
@@ -47,6 +48,24 @@ function gitLines(args: string[]): string[] {
 }
 
 function changedPaths(): string[] {
+  // Once the architecture-only branch has shipped, preserve its scope proof by
+  // checking the delivered merge itself. Comparing every future topic branch
+  // with origin/main would incorrectly make this historical gate reject all
+  // subsequent product work.
+  const delivered = gitLines([
+    "rev-parse",
+    "--verify",
+    `${architectureDelivery}^{commit}`,
+  ])[0];
+  if (delivered) {
+    return gitLines([
+      "diff",
+      "--name-only",
+      `${architectureDelivery}^1`,
+      architectureDelivery,
+    ]);
+  }
+
   const base = gitLines(["merge-base", "origin/main", "HEAD"])[0];
   const committed = base
     ? gitLines(["diff", "--name-only", `${base}...HEAD`])

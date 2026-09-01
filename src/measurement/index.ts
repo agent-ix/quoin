@@ -29,6 +29,28 @@ export {
   writeMeasurementCollection,
 } from "./store.js";
 export {
+  interventionPath,
+  interventionsRoot,
+  rawEvidenceFor,
+  readInterventionRecords,
+  validateInterventionRecord,
+  writeInterventionRecord,
+} from "./intervention.js";
+export {
+  buildInterventionReport,
+  renderInterventionReport,
+  type InterventionReportEntry,
+} from "./intervention-report.js";
+export {
+  InterventionIntakeError,
+  type AgentEvalInterventionDefinition,
+  type InterventionExperimentRecord,
+  type InterventionRefusalCode,
+  type RawEvidenceReference,
+} from "./intervention-types.js";
+export { interventionExperimentSchema } from "./intervention-schema.js";
+export { produceAgentEvalIntervention } from "./agent-eval-intervention.js";
+export {
   MEASUREMENT_SCHEMA_VERSION,
   type ComparisonReason,
   type MeasurementCollection,

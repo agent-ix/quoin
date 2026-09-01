@@ -1,0 +1,110 @@
+{
+  "report_schema_version": "cli-agent-evals-report-v1",
+  "cli_agent_evals_version": "9e7b6cdde67fccdd9417171f8f116a8c91d400b7",
+  "record_id": "quoin-270-cli-eval-sentinel-contract",
+  "subject": {
+    "id": "agent-ix/cli-agent-evals",
+    "revision": "9e7b6cdde67fccdd9417171f8f116a8c91d400b7"
+  },
+  "producer": {
+    "tool_identity": "quoin-agent-eval-intervention-adapter",
+    "tool_version": "0.9.0",
+    "configuration_digest": "sha256:3e1a8362b21a05d0962bd9789dae5eebef362f33c9c25665c838372bf20658d2",
+    "source_revision": "b340140e4fa9667fe39e1843c18b526c820a37be",
+    "environment": {
+      "node": "24.15.0",
+      "codex_cli": "0.151.0",
+      "suite_revision": "suite-v1",
+      "fixture_revision": "fixtures-v1",
+      "fixture_digest": "sha256:e78a0dfa8a75b4a66444f4fc65fe80c77f5b7b237ebce0c7375b5e0d9530ffcd",
+      "engineering_assurance_revision": "236f420987bdfd5309fb531806a851ddc9f75ae3",
+      "baseline_runner_revision": "737dcd20c36191e29d921ab5f57eb0226dce26f2",
+      "treatment_runner_revision": "9e7b6cdde67fccdd9417171f8f116a8c91d400b7"
+    },
+    "definition_version": "cli-agent-evals.sentinel-contract-v1"
+  },
+  "design": {
+    "kind": "repeated",
+    "repetitions": 2,
+    "assignment": {
+      "method": "deterministic"
+    },
+    "sampling_conditions": [
+      "same EA-001 existing-profile scenario",
+      "same suite and fixture bytes",
+      "same Codex CLI host version",
+      "two sequential live-agent samples per arm"
+    ]
+  },
+  "baseline": {
+    "id": "substring-detector",
+    "population": "EA-001 existing-profile live Codex samples",
+    "configuration": {
+      "runner_revision": "737dcd20c36191e29d921ab5f57eb0226dce26f2",
+      "sentinel_match": "substring"
+    }
+  },
+  "treatment": {
+    "id": "standalone-detector",
+    "population": "EA-001 existing-profile live Codex samples",
+    "configuration": {
+      "runner_revision": "9e7b6cdde67fccdd9417171f8f116a8c91d400b7",
+      "sentinel_match": "standalone-terminal-line"
+    }
+  },
+  "changed_variables": [
+    {
+      "name": "completion sentinel recognition",
+      "treatment_id": "standalone-detector",
+      "baseline_value": "any substring occurrence",
+      "treatment_value": "standalone terminal output line only"
+    }
+  ],
+  "held_constant": [
+    {
+      "name": "scenario",
+      "value": "EA-001 existing-profile"
+    },
+    {
+      "name": "host",
+      "value": "codex-cli 0.151.0"
+    },
+    {
+      "name": "suite configuration digest",
+      "value": "sha256:3e1a8362b21a05d0962bd9789dae5eebef362f33c9c25665c838372bf20658d2"
+    },
+    {
+      "name": "fixture digest",
+      "value": "sha256:e78a0dfa8a75b4a66444f4fc65fe80c77f5b7b237ebce0c7375b5e0d9530ffcd"
+    }
+  ],
+  "interactions": [
+    {
+      "description": "live agent behavior and tool-selection order",
+      "disposition": "uncontrolled"
+    }
+  ],
+  "confounders": [
+    {
+      "description": "session state and model-side nondeterminism between sequential runs",
+      "disposition": "unknown"
+    },
+    {
+      "description": "the treatment timeout followed omission of the required final sentinel after the task result was written",
+      "disposition": "uncontrolled"
+    }
+  ],
+  "owner": "engineering assurance",
+  "gaps": [
+    "the retained reports declare their schema version through this governed definition rather than an embedded report field",
+    "the two repeats per arm are insufficient for a causal attribution",
+    "private transcripts remain outside the tracked evidence set under the source repository content-rights policy"
+  ],
+  "actions": [
+    "make cli-agent-evals embed its report schema version",
+    "derive Engineering Assurance effort and transcript metadata from the runner rather than agent-authored fields",
+    "repeat the comparison after the terminal protocol is made mechanically enforceable"
+  ],
+  "baseline_evidence_path": "agent-evals/quoin-270-sentinel-baseline.json",
+  "treatment_evidence_path": "agent-evals/quoin-270-sentinel-treatment.json"
+}

@@ -122,8 +122,11 @@ index; the files are authoritative.
 - [US-008](./usecase/US-008-create-implementation-plan.md) — create an implementation plan from accepted requirements.
 - [US-009](./usecase/US-009-install-in-any-coding-agent.md) — install quoin in the coding agent of my choice.
 - [US-010](./usecase/US-010-author-specs-for-my-own-organization.md) — author specs for my own organization.
+- [US-011](./usecase/US-011-generate-property-tests-from-criteria.md) — generate property tests from acceptance criteria.
+- [US-012](./usecase/US-012-generate-fuzz-harnesses.md) — generate fuzz harnesses for specified input surfaces.
 - [US-013](./usecase/US-013-reason-about-semantic-module-boundaries.md) — reason about semantic modules without confusing definitions and projections.
 - [US-014](./usecase/US-014-audit-default-module-semantic-fit.md) — audit the semantic fit of the complete default-module corpus.
+- [US-015](./usecase/US-015-assess-intervention-experiments.md) — assess intervention experiments without overstating causality.
 
 ### Functional Requirements
 
@@ -175,6 +178,27 @@ index; the files are authoritative.
 - [FR-026](./functional/FR-026-dispatch-through-oclif-runner.md) — dispatch commands through the oclif runner.
 - [FR-027](./functional/FR-027-store-the-authoring-organization.md) — store the authoring organization.
 
+**Assurance evidence and reporting**
+
+- [FR-028](./functional/FR-028-generate-property-tests-from-criteria.md) — generate property tests from classified criteria.
+- [FR-029](./functional/FR-029-consume-the-quire-json-contract.md) — consume the published Quire JSON contract.
+- [FR-030](./functional/FR-030-evidence-store.md) — retain the evidence store as the artifact of record.
+- [FR-031](./functional/FR-031-catalog-driven-advisor.md) — advise verification methods from the catalog.
+- [FR-032](./functional/FR-032-evidence-auditor.md) — audit freshness, suspicion, and vacuous evidence.
+- [FR-033](./functional/FR-033-evidence-format-adapters.md) — transcribe supported evidence formats.
+- [FR-034](./functional/FR-034-finding-shaped-evidence.md) — retain finding-shaped evidence.
+- [FR-035](./functional/FR-035-combinatorial-coverage.md) — compute declared combinatorial coverage.
+- [FR-036](./functional/FR-036-architecture-conformance.md) — verify architecture conformance.
+- [FR-037](./functional/FR-037-declared-vocabulary-completeness.md) — verify declared-vocabulary completeness.
+- [FR-038](./functional/FR-038-generate-fuzz-harnesses.md) — generate fuzz harnesses from Fuzz obligations.
+- [FR-039](./functional/FR-039-mutation-score-threshold.md) — retain mutation score thresholds.
+- [FR-040](./functional/FR-040-assurance-case-view.md) — render assurance cases as read-only store views.
+- [FR-041](./functional/FR-041-sbom-inventory-evidence.md) — transcribe SBOM inventories.
+- [FR-042](./functional/FR-042-agent-eval-evidence.md) — transcribe agent-eval reports.
+- [FR-043](./functional/FR-043-quality-benchmark.md) — run the governed quality benchmark.
+- [FR-044](./functional/FR-044-plan-governed-measurements.md) — store and report plan-governed measurements.
+- [FR-045](./functional/FR-045-portfolio-measurement-report.md) — report measurement portfolios across repositories.
+
 **Semantic-module architecture**
 
 - [FR-046](./functional/FR-046-record-semantic-data-planes.md) — record the four semantic data planes.
@@ -190,6 +214,13 @@ index; the files are authoritative.
 - [FR-053](./functional/FR-053-score-semantic-type-fit.md) — score and disposition every declared type.
 - [FR-054](./functional/FR-054-publish-semantic-audit-artifacts.md) — publish canonical audit artifacts.
 - [FR-055](./functional/FR-055-reconcile-semantic-audit-findings.md) — reconcile findings with current contracts.
+
+**Intervention-experiment evidence**
+
+- [FR-056](./functional/FR-056-intervention-experiment-record.md) — define intervention-experiment evidence records.
+- [FR-057](./functional/FR-057-intervention-experiment-intake-report.md) — ingest and report intervention-experiment evidence.
+- [FR-058](./functional/FR-058-agent-eval-intervention-producer.md) — produce intervention evidence from retained real agent-evaluation runs.
+
 
 ### Non-Functional Requirements
 

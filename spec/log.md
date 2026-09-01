@@ -20,6 +20,20 @@ description: "Chronological log of structural changes to this bundle."
 * **2026-08-29** — Added US-013, FR-046..FR-050, and NFR-013..NFR-014 for
   issue #289's architecture-only semantic-module ownership and authority record.
 
+* **2026-08-29** — **CR-130**: intervention experiments become first-class
+  evidence rather than an inference from execution traces (`agent-ix/quoin#268`,
+  epic #267). US-015 separates the practitioner's need from the mechanism.
+  FR-056 defines the engine-independent v1 JSON contract: repeated, randomized,
+  and factorial designs; baseline and treatment arms; changed and held variables;
+  observations, interactions, confounders, explicit negative outcomes, gaps,
+  ownership, actions, raw-evidence digests, and the unchanged FR-044 producer
+  tuple. FR-057 keeps schema validation separate from interpretation, requires
+  atomic and collision-safe evidence intake, retains failed and inconclusive
+  experiments, and makes `cause_not_established` a reportable conclusion. Reports
+  preserve claims, evidence, counterevidence, gaps, owners, and actions without
+  computing an overall trust score. TC-1195..TC-1215 map every criterion and
+  constraint ahead of implementation in #270.
+
 * **2026-08-29** — **CR-129**: the canonical CI path is now locally explicit
   and content-addressed after the Phase-3 promotion rehearsal exposed three
   independent forms of apparently pinned drift (`agent-ix/quoin#260`, epic
