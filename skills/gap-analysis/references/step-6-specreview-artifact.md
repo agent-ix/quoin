@@ -3,17 +3,18 @@
 **Goal**: Emit the findings from Steps 1–5 as a single **quire-validated `SpecReview`**
 document with a Verdict, at `reviews/YY-MM-DD-<slug>.md`.
 
-## Fetch the template, then author (guardrail)
+## Render the template, then author (guardrail)
 
-The `SpecReview` archetype lives in `spec-artifacts-process`. Fetch its skeleton first, then
-author, then validate (the ecosystem direct-render-then-validate model):
+The `SpecReview` archetype lives in `spec-artifacts-process`. Render its skeleton first,
+then author, then validate (the ecosystem direct-render-then-validate model):
 
 ```
 quoin write --types SpecReview
 ```
 
-If `quoin write` is unavailable in the working tree, read the skeleton directly from
-`~/.ix/filament/modules/spec-artifacts-process/skeletons/SpecReview.md`.
+If `quoin write` is unavailable, use the complete frontmatter, body, findings-table, and
+validation contract below. Do not consult a private repository, user-home path, or
+separately installed template.
 
 ## Frontmatter
 
