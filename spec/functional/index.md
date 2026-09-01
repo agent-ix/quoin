@@ -75,3 +75,4 @@ description: "Index of functional requirements (FR) for quoin."
 - [FR-065: Read-only change assurance verification receipt](./FR-065-change-assurance-verification.md)
 - [FR-066: Lossless adapters for governed graph producers](./FR-066-graph-producer-adapters.md)
 - [FR-067: Governed graph portfolio reporting](./FR-067-graph-portfolio-reporting.md)
+- [FR-068: Producer-facing change assurance CLI surface](./FR-068-change-assurance-cli-surface.md)

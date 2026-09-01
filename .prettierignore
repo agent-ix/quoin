@@ -70,3 +70,10 @@ tests/fixtures/evidence/
 # scripts/semantic-module-type-fit.mjs. Reformatting them would invalidate the
 # retained byte digests and make the formatter a second serialization authority.
 analysis/semantic-module-type-fit/
+
+# Canonical change-assurance CLI goldens (FR-068 AC-10). These are the exact
+# JCS bytes the commands emit and a consumer stores; the compatibility claim is
+# byte identity, so a formatter that re-indents them turns the golden into a
+# second serialization authority and the drift check into a tautology. Same
+# reasoning as the vendored quire schemas and the captured tool output above.
+tests/fixtures/change-assurance-cli/
