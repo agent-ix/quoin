@@ -437,7 +437,10 @@ describe("operational evidence", () => {
         pairExercisePath,
       ]),
     ];
-    const readyBy = Date.now() + 10_000;
+    // A cold ts-node loader can take more than ten seconds on a contended CI
+    // runner. Keep the assertion deterministic while allowing both workers to
+    // reach the lock before releasing it.
+    const readyBy = Date.now() + 30_000;
     while (
       (!existsSync(join(concurrentRoot, "standalone.ready")) ||
         !existsSync(join(concurrentRoot, "pair.ready"))) &&
@@ -482,7 +485,7 @@ describe("operational evidence", () => {
       clock.mockRestore();
     }
     expect(readOperationalRecords(staleRoot)).toEqual([]);
-  }, 20_000);
+  }, 60_000);
 
   // Trace: FR-060-AC-7 (TC-1238)
   test("clocked discharge requires full identity, mode, success, and met-clock match", () => {

@@ -16,9 +16,12 @@ const STAGES = new Set<MeasurementPlan["stage"]>([
 ]);
 
 /** Load MeasurementPlans from either supported repository assurance root. */
-export function loadMeasurementPlans(repo: string): MeasurementPlan[] {
+export function loadMeasurementPlans(
+  repo: string,
+  options: { includeGovernance?: boolean } = {},
+): MeasurementPlan[] {
   return assuranceFiles(repo)
-    .map((path) => planFrom(path, repo))
+    .map((path) => planFrom(path, repo, options.includeGovernance ?? false))
     .filter((plan): plan is MeasurementPlan => plan !== null)
     .sort((a, b) => compare(a.metric, b.metric) || compare(a.id, b.id));
 }
@@ -30,7 +33,11 @@ function assuranceFiles(repo: string): string[] {
     .sort(compare);
 }
 
-function planFrom(path: string, repo: string): MeasurementPlan | null {
+function planFrom(
+  path: string,
+  repo: string,
+  includeGovernance: boolean,
+): MeasurementPlan | null {
   const text = readFileSync(path, "utf8");
   const match = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/.exec(text);
   if (!match) return null;
@@ -68,6 +75,12 @@ function planFrom(path: string, repo: string): MeasurementPlan | null {
     metric: value.metric as string,
     definitionVersion: value.definition_version as string,
     path: isAbsolute(path) ? relative(repo, path) : path,
+    ...(includeGovernance && typeof value.owner === "string" && value.owner
+      ? { owner: value.owner }
+      : {}),
+    ...(includeGovernance && typeof value.action === "string" && value.action
+      ? { action: value.action }
+      : {}),
   };
 }
 
