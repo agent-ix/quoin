@@ -17,6 +17,9 @@ importers:
       '@agent-ix/ts-plugin-kit':
         specifier: 0.2.0
         version: 0.2.0
+      '@noble/hashes':
+        specifier: 2.2.0
+        version: 2.2.0
       '@oclif/core':
         specifier: 4.13.3
         version: 4.13.3

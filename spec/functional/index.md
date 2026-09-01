@@ -70,5 +70,8 @@ description: "Index of functional requirements (FR) for quoin."
 - [FR-060: Operational evidence intake, clocked discharge, and reporting](./FR-060-operational-evidence-intake-report.md)
 - [FR-061: First-party GitHub Actions release operational producer](./FR-061-github-actions-release-operational-producer.md)
 - [FR-062: Read-only evidence-graph analysis views](./FR-062-read-only-evidence-graph-analysis.md)
+- [FR-063: Integrity-sealed change assurance record](./FR-063-change-assurance-record-integrity.md)
+- [FR-064: Candidate-bound proof attestation](./FR-064-proof-attestation.md)
+- [FR-065: Read-only change assurance verification receipt](./FR-065-change-assurance-verification.md)
 - [FR-066: Lossless adapters for governed graph producers](./FR-066-graph-producer-adapters.md)
 - [FR-067: Governed graph portfolio reporting](./FR-067-graph-portfolio-reporting.md)

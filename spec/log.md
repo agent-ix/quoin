@@ -75,6 +75,19 @@ description: "Chronological log of structural changes to this bundle."
   computing an overall trust score. TC-1195..TC-1215 map every criterion and
   constraint ahead of implementation in #270.
 
+* **2026-08-29** — **CR-134**: add shared change-assurance integrity and proof
+  contracts (`agent-ix/quoin#282`, epic `agent-ix/quire-rs#384`). US-017 states
+  the reviewer need. FR-063 defines a revisioned ChangeAssuranceRecord whose
+  exact RFC 8785 canonical UTF-8 bytes are sealed with BLAKE3 and whose approval
+  is an external ix-flow event referring to the sealed digest, avoiding a
+  circular hash. FR-064 binds a producer result to the reviewed record,
+  candidate, proof, command, tool/configuration, environment, and exact retained
+  output without running the producer. FR-065 joins the record, parent chain,
+  workflow decision, selected attestations, retained bytes, and unchanged
+  FR-032 findings into reproducible valid/invalid/incomplete receipts. Integrity
+  values make no identity, authorization, authenticity, signature, or
+  non-repudiation claim. Matrix: TC-1261..TC-1292 pending.
+
 * **2026-08-29** — **CR-129**: the canonical CI path is now locally explicit
   and content-addressed after the Phase-3 promotion rehearsal exposed three
   independent forms of apparently pinned drift (`agent-ix/quoin#260`, epic

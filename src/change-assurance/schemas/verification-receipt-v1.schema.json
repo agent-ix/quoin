@@ -1,0 +1,208 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agent-ix.github.io/quoin/schemas/verification-receipt-v1.schema.json",
+  "title": "VerificationReceiptV1",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "record_type",
+    "digest",
+    "record_digest",
+    "candidate_revision",
+    "decision_event",
+    "parent_digests",
+    "checks",
+    "proofs",
+    "unknowns",
+    "outcome",
+    "reasons"
+  ],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "record_type": { "const": "verification_receipt" },
+    "digest": { "$ref": "#/$defs/digest" },
+    "record_digest": { "$ref": "#/$defs/digest" },
+    "candidate_revision": { "type": "string", "minLength": 1 },
+    "decision_event": {
+      "anyOf": [{ "$ref": "#/$defs/decision_event" }, { "type": "null" }]
+    },
+    "parent_digests": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/digest" }
+    },
+    "checks": {
+      "type": "object",
+      "required": ["record", "lineage", "review", "impact"],
+      "properties": {
+        "record": { "$ref": "#/$defs/check" },
+        "lineage": { "$ref": "#/$defs/check" },
+        "review": { "$ref": "#/$defs/check" },
+        "impact": { "$ref": "#/$defs/check" }
+      },
+      "additionalProperties": false
+    },
+    "proofs": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/proof_receipt" }
+    },
+    "unknowns": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "disposition"],
+        "properties": {
+          "id": { "$ref": "#/$defs/identity" },
+          "disposition": {
+            "type": "string",
+            "enum": ["open", "accepted", "deferred", "resolved"]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "outcome": { "$ref": "#/$defs/outcome" },
+    "reasons": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/reason" }
+    }
+  },
+  "$defs": {
+    "identity": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,255}$"
+    },
+    "digest": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "outcome": {
+      "type": "string",
+      "enum": ["valid", "invalid", "incomplete"]
+    },
+    "reason": {
+      "type": "string",
+      "enum": [
+        "schema_invalid",
+        "record_digest_mismatch",
+        "parent_missing",
+        "parent_invalid",
+        "parent_mismatch",
+        "revision_gap",
+        "impact_incomplete",
+        "impact_truncated",
+        "unresolved_unknown",
+        "decision_missing",
+        "event_chain_missing",
+        "event_chain_invalid",
+        "decision_mismatch",
+        "review_rejected",
+        "review_revision_requested",
+        "attestation_missing",
+        "attestation_schema_invalid",
+        "attestation_digest_mismatch",
+        "output_missing",
+        "output_digest_mismatch",
+        "record_binding_mismatch",
+        "candidate_revision_mismatch",
+        "proof_id_mismatch",
+        "command_mismatch",
+        "tool_identity_mismatch",
+        "configuration_mismatch",
+        "result_failed",
+        "result_unavailable",
+        "result_not_computed",
+        "evidence_stale",
+        "evidence_suspect",
+        "evidence_vacuous",
+        "evidence_unrelated",
+        "audit_finding",
+        "audit_not_evaluated"
+      ]
+    },
+    "check": {
+      "type": "object",
+      "required": ["outcome", "reasons"],
+      "properties": {
+        "outcome": { "$ref": "#/$defs/outcome" },
+        "reasons": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/reason" }
+        }
+      },
+      "additionalProperties": false
+    },
+    "decision_event": {
+      "type": "object",
+      "required": [
+        "run_id",
+        "event_id",
+        "event_hash",
+        "chain_tail_hash",
+        "recorded_actor",
+        "decision"
+      ],
+      "properties": {
+        "run_id": { "$ref": "#/$defs/identity" },
+        "event_id": { "$ref": "#/$defs/identity" },
+        "event_hash": { "$ref": "#/$defs/digest" },
+        "chain_tail_hash": { "$ref": "#/$defs/digest" },
+        "recorded_actor": { "type": "string", "minLength": 1 },
+        "decision": {
+          "type": "string",
+          "enum": ["approved", "rejected", "revise"]
+        }
+      },
+      "additionalProperties": false
+    },
+    "audit_finding": {
+      "type": "object",
+      "required": ["obligation_id", "kind"],
+      "properties": {
+        "obligation_id": { "$ref": "#/$defs/identity" },
+        "kind": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "proof_receipt": {
+      "type": "object",
+      "required": [
+        "proof_id",
+        "obligation_ids",
+        "attestation_digest",
+        "retained_output_digest",
+        "audit_report_digest",
+        "audit_findings",
+        "outcome",
+        "reasons"
+      ],
+      "properties": {
+        "proof_id": { "$ref": "#/$defs/identity" },
+        "obligation_ids": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/identity" }
+        },
+        "attestation_digest": {
+          "anyOf": [{ "$ref": "#/$defs/digest" }, { "type": "null" }]
+        },
+        "retained_output_digest": {
+          "anyOf": [{ "$ref": "#/$defs/digest" }, { "type": "null" }]
+        },
+        "audit_report_digest": {
+          "anyOf": [{ "$ref": "#/$defs/digest" }, { "type": "null" }]
+        },
+        "audit_findings": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/audit_finding" }
+        },
+        "outcome": { "$ref": "#/$defs/outcome" },
+        "reasons": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/reason" }
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}
