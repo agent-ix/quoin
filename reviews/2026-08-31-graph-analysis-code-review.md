@@ -3,7 +3,7 @@ id: SR-106
 title: "Code review of read-only evidence graph analysis"
 type: SpecReview
 analysis: code-review
-scope: "PLAN-004; FR-062; quire-rs assurance-v1 at 3fe2c7e0e9de445af290603c3728857803b61183"
+scope: "PLAN-004; FR-062; quire-rs assurance-v1 at e3352a0644abcfd5f0ebad348bc7aca235925ecc"
 review_set: subset
 relationships:
   - target: "ix://agent-ix/quoin/PLAN-004"

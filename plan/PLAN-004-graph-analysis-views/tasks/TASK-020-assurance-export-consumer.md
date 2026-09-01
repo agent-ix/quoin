@@ -41,5 +41,5 @@ premise succeeds.
 ## Notes
 
 - Consumes quire-rs #386's committed producer contract at
-  `3fe2c7e0e9de445af290603c3728857803b61183`.
+  `e3352a0644abcfd5f0ebad348bc7aca235925ecc`.
 - No subprocess belongs in the consumer; the command receives an existing export artifact.
