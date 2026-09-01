@@ -15,10 +15,15 @@ import { fileURLToPath } from "node:url";
 
 const repo = dirname(dirname(fileURLToPath(import.meta.url)));
 const from = join(repo, "src", "quire", "schemas");
+const measurementFrom = join(repo, "src", "measurement", "schemas");
 const to = join(repo, "dist", "schemas");
 
 mkdirSync(to, { recursive: true });
 for (const name of readdirSync(from)) {
   copyFileSync(join(from, name), join(to, name));
+  console.log(`dist/schemas/${name}`);
+}
+for (const name of readdirSync(measurementFrom)) {
+  copyFileSync(join(measurementFrom, name), join(to, name));
   console.log(`dist/schemas/${name}`);
 }

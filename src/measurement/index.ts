@@ -29,12 +29,14 @@ export {
   writeMeasurementCollection,
 } from "./store.js";
 export {
+  assertGoverningDefinition,
   interventionPath,
   interventionsRoot,
   rawEvidenceFor,
   readInterventionRecords,
   validateInterventionRecord,
   writeInterventionRecord,
+  verifyRawEvidenceReferences,
 } from "./intervention.js";
 export {
   buildInterventionReport,
@@ -50,6 +52,30 @@ export {
 } from "./intervention-types.js";
 export { interventionExperimentSchema } from "./intervention-schema.js";
 export { produceAgentEvalIntervention } from "./agent-eval-intervention.js";
+export {
+  operationalDischarge,
+  operationalPath,
+  operationalRoot,
+  readOperationalRecords,
+  validateOperationalRecord,
+  writeOperationalPair,
+  writeOperationalRecord,
+} from "./operational.js";
+export {
+  buildOperationalReport,
+  renderOperationalReport,
+  type OperationalReportEntry,
+} from "./operational-report.js";
+export type {
+  GitHubReleaseProducerDefinition,
+  OperationalControlKind,
+  OperationalEvidenceRecord,
+  OperationalExerciseRecord,
+  OperationalObligation,
+  StandingCapabilityRecord,
+} from "./operational-types.js";
+export { produceGitHubReleaseOperational } from "./github-release-operational.js";
+export { operationalEvidenceSchema } from "./operational-schema.js";
 export {
   MEASUREMENT_SCHEMA_VERSION,
   type ComparisonReason,

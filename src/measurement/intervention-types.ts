@@ -108,6 +108,7 @@ export type InterventionRefusalCode =
   | "raw_evidence_mismatch"
   | "governing_plan_absent"
   | "definition_mismatch"
+  | "intake_busy"
   | "record_id_collision";
 
 export class InterventionIntakeError extends Error {

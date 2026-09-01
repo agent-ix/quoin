@@ -1,0 +1,56 @@
+{
+  "record_prefix": "quoin-271-release-v0.22.5",
+  "workflow_path": ".github/workflows/release.yml",
+  "release_job": "Publish",
+  "accepted_event": "workflow_dispatch",
+  "control_id": "quoin-npm-release",
+  "subject": {
+    "id": "agent-ix/quoin",
+    "revision": "a9808be18b61f8e4d44e3b74de27e90f17c5c76b"
+  },
+  "producer": {
+    "tool_identity": "quoin-github-release-operational-adapter",
+    "tool_version": "0.9.0",
+    "configuration_digest": "sha256:5a867277a071c2dd8fe1ab86e22b4b3e580fff0b269756c3911c4dde2ed1cc78",
+    "source_revision": "5a5283018f779a81e6f53138abb0e6d8fc140032",
+    "environment": {
+      "github_repository": "agent-ix/quoin",
+      "github_workflow_run_id": 33280266874,
+      "release_version": "0.22.5"
+    },
+    "definition_version": "github-actions.release-operational-v1"
+  },
+  "scope": {
+    "service": "agent-ix/quoin",
+    "environment": "npm-production",
+    "population": "v0.22.5 package release"
+  },
+  "configuration": {
+    "version_pins": [
+      {
+        "kind": "tool",
+        "identity": "release-workflow",
+        "revision": "a9808be18b61f8e4d44e3b74de27e90f17c5c76b",
+        "digest": "sha256:5a867277a071c2dd8fe1ab86e22b4b3e580fff0b269756c3911c4dde2ed1cc78"
+      }
+    ]
+  },
+  "supported_transition": "tagged-to-published",
+  "authorized_roles": ["repository maintainer with Actions dispatch access"],
+  "coverage": "manual npm publication of the exact tagged @agent-ix/quoin version",
+  "limitations": [
+    "the initial producer covers GitHub Actions release workflows only",
+    "one successful release exercise does not estimate future release reliability"
+  ],
+  "owner": "engineering assurance",
+  "gaps": [
+    "npm registry receipt is not part of this first producer's retained input contract"
+  ],
+  "actions": [
+    "retain a later adverse release run to exercise the non-success operational path with real evidence"
+  ],
+  "clock_deadline_seconds": 600,
+  "workflow_evidence_path": "github-actions/quoin-271-release-v0.22.5-workflow.yml",
+  "run_evidence_path": "github-actions/quoin-271-release-v0.22.5-run.json",
+  "jobs_evidence_path": "github-actions/quoin-271-release-v0.22.5-jobs.json"
+}

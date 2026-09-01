@@ -66,3 +66,6 @@ description: "Index of functional requirements (FR) for quoin."
 - [FR-056: Intervention-experiment evidence record](./FR-056-intervention-experiment-record.md)
 - [FR-057: Intervention-experiment intake and claim-centered reporting](./FR-057-intervention-experiment-intake-report.md)
 - [FR-058: First-party agent-evaluation intervention producer](./FR-058-agent-eval-intervention-producer.md)
+- [FR-059: Operational evidence record family](./FR-059-operational-evidence-records.md)
+- [FR-060: Operational evidence intake, clocked discharge, and reporting](./FR-060-operational-evidence-intake-report.md)
+- [FR-061: First-party GitHub Actions release operational producer](./FR-061-github-actions-release-operational-producer.md)
