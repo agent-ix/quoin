@@ -29,9 +29,9 @@ traceability debt and on #322 having no plan bundle.
 
 ## Findings
 
-| ID      | Severity | Summary                                                                  | Refs                          |
-| ------- | -------- | ------------------------------------------------------------------------ | ----------------------------- |
-| FND-001 | medium   | 107 unbacked matrix rows, 3 status lies, and 20 untracked symbols repo-wide | spec/matrix.md:739            |
+| ID      | Severity | Summary                                                                      | Refs                                               |
+| ------- | -------- | ---------------------------------------------------------------------------- | -------------------------------------------------- |
+| FND-001 | medium   | 107 unbacked matrix rows, 3 status lies, and 20 untracked symbols repo-wide  | spec/matrix.md:739                                 |
 | FND-002 | medium   | #322 landed with no plan bundle, so the Task-level record is the issue alone | plan/PLAN-005-change-assurance-contracts/plan.md:5 |
 
 ## Finding detail
@@ -70,19 +70,19 @@ in SR-114's boundary notes instead.
 
 Requirement-to-test, all backed:
 
-| Criterion | Test case | Backing symbol |
-| --- | --- | --- |
-| FR-068-AC-1 | TC-1317 | seals and retains an explicit record and refuses a supplied digest |
-| FR-068-AC-2 | TC-1318 | derives only the retained-output binding when sealing an attestation |
-| FR-068-AC-3 | TC-1319 | retains exact bytes, is idempotent, and refuses contradictions |
-| FR-068-AC-4 | TC-1320 | builds the verification input from named inputs only |
-| FR-068-AC-5 | TC-1321 | never converts unavailable, not-computed, or missing evidence into a pass |
-| FR-068-AC-6 | TC-1322 | exits 0 for valid, 1 for invalid and incomplete, and 2 for usage errors |
-| FR-068-AC-7 | TC-1323 | re-verifies a sealed receipt and refuses an altered one |
-| FR-068-AC-8 | TC-1324 | lists and emits the packaged assets and refuses an unknown name |
-| FR-068-AC-9 | TC-1325 | recovers only interrupted staging and leaves retained pairs alone |
-| FR-068-AC-10 | TC-1326 | reproduces the golden record, attestation, and receipt byte-identically |
-| FR-068-AC-11 | TC-1327 | executes nothing and claims no identity, authorization, or certification |
+| Criterion    | Test case | Backing symbol                                                            |
+| ------------ | --------- | ------------------------------------------------------------------------- |
+| FR-068-AC-1  | TC-1317   | seals and retains an explicit record and refuses a supplied digest        |
+| FR-068-AC-2  | TC-1318   | derives only the retained-output binding when sealing an attestation      |
+| FR-068-AC-3  | TC-1319   | retains exact bytes, is idempotent, and refuses contradictions            |
+| FR-068-AC-4  | TC-1320   | builds the verification input from named inputs only                      |
+| FR-068-AC-5  | TC-1321   | never converts unavailable, not-computed, or missing evidence into a pass |
+| FR-068-AC-6  | TC-1322   | exits 0 for valid, 1 for invalid and incomplete, and 2 for usage errors   |
+| FR-068-AC-7  | TC-1323   | re-verifies a sealed receipt and refuses an altered one                   |
+| FR-068-AC-8  | TC-1324   | lists and emits the packaged assets and refuses an unknown name           |
+| FR-068-AC-9  | TC-1325   | recovers only interrupted staging and leaves retained pairs alone         |
+| FR-068-AC-10 | TC-1326   | reproduces the golden record, attestation, and receipt byte-identically   |
+| FR-068-AC-11 | TC-1327   | executes nothing and claims no identity, authorization, or certification  |
 
 Constraint coverage: CON-1 and CON-3 by TC-1327 (static, over the command
 sources); CON-2 by TC-1318, which asserts field-by-field that only the three
@@ -91,12 +91,12 @@ the unchanged `src/change-assurance/` module, which this change does not touch.
 
 Engine reconciliation — `quire coverage --scope . --json`:
 
-| Measure | FR-068 | Repository |
-| --- | --- | --- |
-| Unbacked rows | 0 | 107 (FND-001) |
-| Status lies | 0 | 3 (FND-001) |
-| Untracked symbols | 0 | 20 (FND-001) |
-| Unmatched tracking tags | 0 | — |
+| Measure                 | FR-068 | Repository    |
+| ----------------------- | ------ | ------------- |
+| Unbacked rows           | 0      | 107 (FND-001) |
+| Status lies             | 0      | 3 (FND-001)   |
+| Untracked symbols       | 0      | 20 (FND-001)  |
+| Unmatched tracking tags | 0      | —             |
 
 Underspecified code — none. The four helpers added outside command classes
 (`readInputBytes`, `readInputJson`, `refuseSuppliedFields`, `parseSelection`)
@@ -112,5 +112,5 @@ TC-1326 drive the actual command classes against a temporary store on disk, and
 the whole chain was additionally driven end to end through the built
 `bin/quoin.js`, which is the only path that proves oclif can discover the
 commands at runtime. TC-1327 is source inspection, which is the right shape for
-a claim about what the code does *not* do — there is no runtime path that
+a claim about what the code does _not_ do — there is no runtime path that
 demonstrates the absence of a subprocess.

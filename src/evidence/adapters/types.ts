@@ -29,9 +29,41 @@ export interface EvidenceAdapter {
   parse(raw: string): AdapterResult;
 }
 
+/**
+ * A result the producer reported that quoin's run-entry vocabulary cannot
+ * carry.
+ *
+ * `RunEntry.outcome` is `pass | fail | skip | error`. A producer that reports
+ * "the external tool does not support this case" is saying none of those: it
+ * is not a skip (nothing chose to omit it) and not an error (nothing failed).
+ * Mapping it onto the nearest word would delete the distinction at the point
+ * of intake, permanently and silently — which is the failure this campaign
+ * exists to stop.
+ *
+ * So the adapter transcribes what it can and NAMES what it cannot. The command
+ * prints these; they are not dropped, and they are not smuggled in as a state
+ * they are not.
+ */
+export interface UnrepresentedResult {
+  /** The producer's own identity for the result. */
+  symbol: string;
+  /** The producer's own state name, verbatim. */
+  state: string;
+  /** Why no run-entry outcome carries it. */
+  reason: string;
+}
+
 /** What an adapter produces. */
 export interface AdapterResult {
   entries: RunEntry[];
+  /**
+   * Results the producer reported that no run-entry outcome represents.
+   *
+   * Absent when every result was transcribable. Never empty-when-present: an
+   * adapter with nothing to report omits the field rather than asserting an
+   * empty list, so "unrepresented: []" always means the adapter looked.
+   */
+  unrepresented?: UnrepresentedResult[];
   /**
    * The evidence kind this format proves, when the FORMAT ITSELF determines
    * it — and usually it does not.

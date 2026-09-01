@@ -48,10 +48,10 @@ Run on `feat/322-change-assurance-cli`:
 
 ## Findings
 
-| ID      | Severity | Summary                                                                      | Refs                              |
-| ------- | -------- | ---------------------------------------------------------------------------- | --------------------------------- |
-| FND-001 | medium   | `tests/quire-contract.test.ts` TC-118 fails against the installed quire 0.31.0 | tests/quire-contract.test.ts:541  |
-| FND-002 | low      | `make lint` wedges in a nested pnpm install and never completes               | Makefile:233                      |
+| ID      | Severity | Summary                                                                        | Refs                             |
+| ------- | -------- | ------------------------------------------------------------------------------ | -------------------------------- |
+| FND-001 | medium   | `tests/quire-contract.test.ts` TC-118 fails against the installed quire 0.31.0 | tests/quire-contract.test.ts:541 |
+| FND-002 | low      | `make lint` wedges in a nested pnpm install and never completes                | Makefile:233                     |
 
 ## Finding detail
 

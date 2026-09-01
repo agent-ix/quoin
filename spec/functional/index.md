@@ -76,3 +76,4 @@ description: "Index of functional requirements (FR) for quoin."
 - [FR-066: Lossless adapters for governed graph producers](./FR-066-graph-producer-adapters.md)
 - [FR-067: Governed graph portfolio reporting](./FR-067-graph-portfolio-reporting.md)
 - [FR-068: Producer-facing change assurance CLI surface](./FR-068-change-assurance-cli-surface.md)
+- [FR-069: Campaign-native result adapters](./FR-069-campaign-native-adapters.md)

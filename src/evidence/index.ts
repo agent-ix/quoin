@@ -75,10 +75,13 @@ export {
 } from "./adapters/registry.js";
 export { junitAdapter, qualifiedName } from "./adapters/junit.js";
 export { cargoMutantsAdapter } from "./adapters/cargo-mutants.js";
+export { contractConformanceAdapter } from "./adapters/contract-conformance.js";
+export { differentialReportAdapter } from "./adapters/differential-report.js";
 export {
   AdapterError,
   type AdapterResult,
   type EvidenceAdapter,
+  type UnrepresentedResult,
 } from "./adapters/types.js";
 export {
   parseCargoAudit,
