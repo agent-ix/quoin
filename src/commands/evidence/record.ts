@@ -13,7 +13,7 @@ import {
   selectAdapter,
   selectFindingAdapter,
   writeScan,
-  type RunEntry,
+  type AdapterResult,
 } from "../../evidence/index.js";
 import {
   checkVersionPremise,
@@ -240,10 +240,11 @@ runs nothing and judges nothing.`;
       return;
     }
 
-    const entries = readEntries(flags.results, {
+    const parsedRun = readRun(flags.results, {
       adapter: flags.adapter,
       tool: flags.tool,
     });
+    const entries = parsedRun.entries;
 
     const outcome = recordRun({
       repo: flags.repo,
@@ -257,7 +258,15 @@ runs nothing and judges nothing.`;
     });
 
     if (flags.json) {
-      this.log(JSON.stringify(outcome, null, 2));
+      this.log(
+        JSON.stringify(
+          parsedRun.unrepresented === undefined
+            ? outcome
+            : { ...outcome, unrepresented: parsedRun.unrepresented },
+          null,
+          2,
+        ),
+      );
       return;
     }
 
@@ -275,6 +284,14 @@ runs nothing and judges nothing.`;
     if (outcome.unmatched.length > 0) {
       this.log(
         `  unmatched trace ids (tagged in the suite, stated by no obligation): ${outcome.unmatched.join(", ")}`,
+      );
+    }
+    // Said out loud, never dropped: the producer reported these and no
+    // run-entry outcome carries them, so the record is short by exactly this
+    // much and the reader is told which.
+    for (const item of parsedRun.unrepresented ?? []) {
+      this.log(
+        `  not transcribed — ${item.symbol} reported ${item.state}: ${item.reason}`,
       );
     }
   }
@@ -298,11 +315,11 @@ function toolName(value: string): string {
  * `quoin evidence record` remains a transcriber and can never become a test
  * runner (ADR-0011 invariant 1).
  */
-function readEntries(
+function readRun(
   source: string,
   options: { adapter?: string; tool?: string },
-): RunEntry[] {
+): AdapterResult {
   const text =
     source === "-" ? readFileSync(0, "utf8") : readFileSync(source, "utf8");
-  return selectAdapter(options).parse(text).entries;
+  return selectAdapter(options).parse(text);
 }

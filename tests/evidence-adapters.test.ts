@@ -177,6 +177,8 @@ describe("the adapter registry", () => {
       "cargo-mutants",
       "sbom",
       "agent-eval",
+      "contract-conformance",
+      "differential-report",
       "sarif",
       "audit-script",
       "cargo-audit",

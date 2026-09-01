@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "tl-mltl.differential-summary/v1",
+  "sourceRevision": "336a2453dd2bd89bd26e9e45fb772a4bf77e4a6a",
+  "externalTool": "R2U2 4.2-release / C2PO 4.1.0",
+  "supported": 8,
+  "agreements": 8,
+  "mismatches": 0,
+  "unsupported": 1,
+  "toolErrors": 0,
+  "cases": [
+    {"id": "r2u2-future-witness-v1", "status": "agreement", "verdict": true, "verdictTime": 0},
+    {"id": "r2u2-globally-counterexample-v1", "status": "agreement", "verdict": false, "verdictTime": 0},
+    {"id": "r2u2-future-deadline-v1", "status": "agreement", "verdict": false, "verdictTime": 0},
+    {"id": "r2u2-until-lower-bound-v1", "status": "agreement", "verdict": true, "verdictTime": 0},
+    {"id": "r2u2-release-lower-bound-v1", "status": "agreement", "verdict": false, "verdictTime": 0},
+    {"id": "r2u2-nested-until-v1", "status": "agreement", "verdict": true, "verdictTime": 0},
+    {"id": "r2u2-future-at-one-v1", "status": "agreement", "verdict": false, "verdictTime": 1},
+    {"id": "r2u2-globally-at-one-v1", "status": "agreement", "verdict": true, "verdictTime": 1},
+    {"id": "closed-profile-not-mapped-v1", "status": "unsupported", "detail": "profile difference retained before external execution"}
+  ],
+  "limitations": [
+    "R2U2 output aggregates adjacent equal values; comparison retains the external time index from each selected record",
+    "the run covers Future, Globally, non-zero-lower-bound Until and Release, nesting, and non-zero verdict times, not production-monitor qualification"
+  ],
+  "releaseDecision": "pending-human-review"
+}
