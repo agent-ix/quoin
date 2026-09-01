@@ -238,6 +238,36 @@ describe("FR-069 contract conformance", () => {
       expect(() => differentialReportAdapter.parse(input)).toThrow(message);
     }
 
+    // The inherited property names an object literal would have resolved.
+    // CI found this with the counterexample "valueOf" after a local run of the
+    // same property passed on a different seed — the reason the property is
+    // here rather than a fixed list of statuses I thought of.
+    for (const inherited of [
+      "valueOf",
+      "toString",
+      "constructor",
+      "hasOwnProperty",
+      "__proto__",
+    ]) {
+      expect(
+        () =>
+          differentialReportAdapter.parse(
+            JSON.stringify({
+              schemaVersion: "tl-mltl.differential-summary/v1",
+              cases: [{ id: "case", status: inherited }],
+            }),
+          ),
+        inherited,
+      ).toThrow(AdapterError);
+      expect(
+        () =>
+          contractConformanceAdapter.parse(
+            JSON.stringify({ ...parsed, status: inherited }),
+          ),
+        inherited,
+      ).toThrow(AdapterError);
+    }
+
     // No status outside the declared vocabularies is ever accepted, however
     // plausible it looks.
     fc.assert(

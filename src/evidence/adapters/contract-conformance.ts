@@ -16,10 +16,10 @@ import {
 const PROTOCOL = "quire.contract.conformance-jsonl/v1";
 
 /** Every status the protocol declares. An unknown one is refused, not skipped. */
-const STATUS: Record<string, RunEntry["outcome"]> = {
-  match: "pass",
-  mismatch: "fail",
-};
+const STATUS = new Map<string, RunEntry["outcome"]>([
+  ["match", "pass"],
+  ["mismatch", "fail"],
+]);
 
 interface ConformanceRow {
   protocol?: unknown;
@@ -87,7 +87,11 @@ export const contractConformanceAdapter: EvidenceAdapter = {
           );
         }
       }
-      const outcome = STATUS[row.status as string];
+      // `Map`, not an object literal — see the same guard in
+      // differential-report.ts. An object literal resolves inherited property
+      // names like `valueOf`, so `"status": "valueOf"` would have been read as
+      // a declared status.
+      const outcome = STATUS.get(row.status as string);
       if (outcome === undefined) {
         throw new AdapterError(
           "contract-conformance",
