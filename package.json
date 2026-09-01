@@ -36,6 +36,9 @@
       "evidence": {
         "description": "The evidence store \u2014 what actually ran, and against which statement (record, affirm, gc)."
       },
+      "graph": {
+        "description": "Read-only evidence-graph analysis views."
+      },
       "measurement": {
         "description": "Record plan-validated QA measurements as atomic producer collections."
       },

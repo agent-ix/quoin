@@ -26,7 +26,11 @@ const repo = resolve(here, "..");
 const contractFile = join(repo, "src", "quire", "contract.ts");
 const vendorDir = join(repo, "src", "quire", "schemas");
 
-const SCHEMAS = ["coverage-v1.schema.json", "properties-v1.schema.json"];
+const SCHEMAS = [
+  "assurance-v1.schema.json",
+  "coverage-v1.schema.json",
+  "properties-v1.schema.json",
+];
 
 function arg(name, fallback) {
   const idx = process.argv.indexOf(name);

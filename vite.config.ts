@@ -93,6 +93,10 @@ export default defineConfig(({ command }) => ({
           "src/commands/measurement/intervention.ts",
         "commands/measurement/operational-release":
           "src/commands/measurement/operational-release.ts",
+        "commands/graph/index": "src/commands/graph/index.ts",
+        "commands/graph/fan-out": "src/commands/graph/fan-out.ts",
+        "commands/graph/change-impact": "src/commands/graph/change-impact.ts",
+        "commands/graph/churn": "src/commands/graph/churn.ts",
         "commands/config/index": "src/commands/config/index.ts",
         "commands/config/get": "src/commands/config/get.ts",
         "commands/config/set": "src/commands/config/set.ts",

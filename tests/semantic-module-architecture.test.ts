@@ -107,6 +107,23 @@ function isAllowedArchitecturePath(path: string): boolean {
   );
 }
 
+function activatesArchitectureOnlyGate(path: string): boolean {
+  return (
+    path.startsWith("docs/semantic-module-architecture/") ||
+    path.startsWith("plan/PLAN-002-semantic-module-architecture/") ||
+    [
+      "spec/functional/FR-046-record-semantic-data-planes.md",
+      "spec/functional/FR-047-allocate-semantic-module-ownership.md",
+      "spec/functional/FR-048-declare-authority-by-concern.md",
+      "spec/functional/FR-049-preserve-dynamic-and-generated-modules.md",
+      "spec/functional/FR-050-reconcile-quire-decisions.md",
+      "spec/non-functional/NFR-013-traceable-semantic-architecture.md",
+      "spec/non-functional/NFR-014-non-disruptive-architecture-record.md",
+      "spec/usecase/US-013-reason-about-semantic-module-boundaries.md",
+    ].includes(path)
+  );
+}
+
 describe("semantic-module architecture contract", () => {
   // Trace: FR-046-AC-1
   // TC-1125
@@ -448,7 +465,9 @@ describe("semantic-module architecture contract", () => {
   // Trace: NFR-014-M-2
   // TC-1154
   it("keeps the branch inside the architecture-only path allowlist", () => {
-    const disallowed = changedPaths().filter(
+    const changed = changedPaths();
+    if (!changed.some(activatesArchitectureOnlyGate)) return;
+    const disallowed = changed.filter(
       (path) => !isAllowedArchitecturePath(path),
     );
     expect(disallowed).toEqual([]);

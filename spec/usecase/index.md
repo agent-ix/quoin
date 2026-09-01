@@ -24,3 +24,4 @@ description: "Index of artifacts in this directory."
 - [US-014: Audit the semantic fit of the complete default-module corpus](./US-014-audit-default-module-semantic-fit.md)
 - [US-015: Assess intervention experiments without overstating causality](./US-015-assess-intervention-experiments.md)
 - [US-016: Assess operational controls and their exercises](./US-016-assess-operational-controls.md)
+- [US-018: Inspect evidence-graph concentration and change exposure](./US-018-inspect-evidence-graph-exposure.md)

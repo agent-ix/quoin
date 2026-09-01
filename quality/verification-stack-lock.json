@@ -3,7 +3,7 @@
   "repositories": {
     "quoin": {
       "remote": "https://github.com/agent-ix/quoin",
-      "revision": "e7cd6780cbde67718e047ba67c4e4deba83f1ff9"
+      "revision": "785858820f9910a22b5955a897d4bd634faa2367"
     },
     "quire": {
       "remote": "https://github.com/agent-ix/quire-rs",
@@ -28,6 +28,12 @@
     "spec-artifacts-iso": {
       "remote": "https://github.com/agent-ix/spec-artifacts-iso",
       "revision": "a6b1c70be8c22e9f7cb432e4410b7a3a280d0217"
+    }
+  },
+  "contracts": {
+    "quire": {
+      "remote": "https://github.com/agent-ix/quire-rs",
+      "revision": "e3352a0644abcfd5f0ebad348bc7aca235925ecc"
     }
   },
   "cohorts": {
@@ -66,19 +72,20 @@
   "artifacts": {
     ".node-version": "sha256:e1677620f62097e30fac6695180333d8eb9ead4fe5b1d1d6e01b76e049780059",
     ".npmrc": "sha256:cde76ca04e048c3eba070a2c0dfcf5b723cf6014eab177157096b924f24ec4ca",
-    "package.json": "sha256:d664e658d594d71614fae6b435c0c1b6e4306bdb616a658550afbc1ad66001f3",
+    "package.json": "sha256:554e54e71b6514a1790b9f05196af3d2cb40dfe26bd5d0709144033877f849b5",
     "pnpm-lock.yaml": "sha256:7b8e18508dc953412732112931b9010d0d27f76cff111cb77df1ee7c96ed4b42",
     "Makefile": "sha256:f41e84676f1c556f17f89a455274d6598e19b398e66199c0d219be5e957f421b",
     ".github/workflows/build-test.yml": "sha256:047c829e9f29c5877d88def89a3a828edb79ab14f5f6f47dff5cbefbfb13dafa",
-    "scripts/check-tool-drift.mjs": "sha256:7a56b1e11d82921b3d25a0fcaed30077cfd0161a56ad2c77605b5184209231b6",
-    "scripts/check-tool-drift-selftest.mjs": "sha256:7332dc465cdf1727d7eca63b39e211693b189c52dbdfd66dc3ed48eba15e5baa",
+    "scripts/check-tool-drift.mjs": "sha256:dd55b7c6a4cacd95135962f7c72f5d5fefde39d2dc70adc3d9aabaf8d2cd0116",
+    "scripts/check-tool-drift-selftest.mjs": "sha256:d08010fb4322adb5c49cdded56464d3ca74c8cd38d31d2046899e13ef2af8f2f",
     "scripts/verification-stack.mjs": "sha256:188000f40ce8a5db2c8186444f602816ab3cc9f0fd96d6792e99a1db7e648c4a",
     "scripts/verification-stack-selftest.mjs": "sha256:5429a7289c807b53f6c075a17fb1db0fe8e297d122dd7d873cdd058be31a0e59",
     "scripts/verify-span-breadth.mjs": "sha256:4ab0f359688e093c48414bdfec6e4d3915f8580ee652a31f796e4cc7c81e8869",
     "scripts/bench-tier1.mjs": "sha256:fe6356a91e94b6fca311dfc7995459b91f21e240c5e55017dfca6f7e6c6e0388",
     "scripts/battletest.mjs": "sha256:3737ea8c096ede3dd19cf22bdac6d52ac6d36d772e5a0045541be2dbb6caab61",
     "scripts/lib/tier2-baseline.mjs": "sha256:5331db28179a1d14da68ed9213664cce3188432ca5b77bdd85b9fedfaeedf8ee",
-    "src/quire/contract.ts": "sha256:01ed528cb1837a36af09f71113b8da7719486b09badaeced85d8c156bfecb28a",
+    "src/quire/contract.ts": "sha256:eb821178a5d5f774119a15752865cbd4993adf2787e60ed0d49cbf7f27094fe3",
+    "src/quire/schemas/assurance-v1.schema.json": "sha256:441e1b8324fe64e234a007216b11867ec937ac4779fcebcdd84b30fa064367e5",
     "src/quire/schemas/coverage-v1.schema.json": "sha256:f0cdbb9457ca7ca76b642c11fd5b6f41273909c894458c31f58c9c50fdbcdb38",
     "src/quire/schemas/properties-v1.schema.json": "sha256:cc687773c35b3e71e82fc336e887ecc688a28b03e970e349b2921b8624e4d11c",
     "bench/metrics.json": "sha256:5876512767852fd9ee5a848de90e34c9626926bb768db87c2eaf28deb2d05764",
@@ -87,7 +94,7 @@
     "bench/guidance-independent-review-v1.json": "sha256:69213dc1d6ce937e85d77d58b493667a0fa07a69943138270b9e96367e91f9f8",
     "bench/span-grounding-labels.json": "sha256:897ef28979f5a3f607fdb27e740f1508b736ae5d9ce3dd91c7813f09f841c000",
     "bench/span-grounding-v2-labels.json": "sha256:4e10f34488c87439e7253668ea34773adb432b16bce574b1cc93fbf0343e2650",
-    "bench/span-breadth-v1-labels.json": "sha256:d0cb900b9326158e306c3a4ed112d922739b9c8283accdc02c32aa199b879906",
+    "bench/span-breadth-v1-labels.json": "sha256:1462030875e45113a2c266e7da7d222fc89f9eba768ecb5c3d1311b6ee754350",
     "bench/answer-key.json": "sha256:ece1a7f5d254623cf79beff1113021f4f71359ac9a3c703d07cff0f8a45e9532",
     "bench/advisory-adjudication-v1.json": "sha256:87c575b6ca0c0886d874f609144f907f3ac270e08c2091bb2bb1ead725713e43",
     "corpus/config/metrics.json": "sha256:69ab8e5b8fc14e07408e034f0b791c3dd3356c9db78e1ac0dc961bcc0b47c0d7",
