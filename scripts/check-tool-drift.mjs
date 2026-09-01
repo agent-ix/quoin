@@ -162,13 +162,20 @@ export function auditToolDrift(files) {
     }
   }
 
+  const quireContract = stackLock.contracts?.quire;
+  if (quireContract?.remote !== stackLock.repositories.quire.remote) {
+    errors.push(
+      "vendored Quire contract source remote must equal verification-stack engine remote",
+    );
+  }
   if (
+    !/^[0-9a-f]{40}$/.test(quireContract?.revision ?? "") ||
     !files["src/quire/contract.ts"].includes(
-      `sourceRevision: "${stackLock.repositories.quire.revision}"`,
+      `sourceRevision: "${quireContract?.revision}"`,
     )
   ) {
     errors.push(
-      "vendored Quire contract source revision must equal verification-stack engine revision",
+      "vendored Quire contract source revision must equal the locked contract revision",
     );
   }
   if (
@@ -256,6 +263,7 @@ export function auditToolDrift(files) {
     );
   }
   for (const path of [
+    "src/quire/schemas/assurance-v1.schema.json",
     "scripts/verify-span-breadth.mjs",
     "scripts/verification-stack-selftest.mjs",
     "scripts/battletest.mjs",

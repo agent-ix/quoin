@@ -124,7 +124,7 @@ const mutations = [
         /sourceRevision: "[0-9a-f]{40}"/,
         'sourceRevision: "0000000000000000000000000000000000000000"',
       ),
-    /vendored Quire contract source revision must equal/,
+    /vendored Quire contract source revision must equal the locked contract revision/,
   ],
   [
     "reviewed evidence provenance disagreement",
