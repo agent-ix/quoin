@@ -32,6 +32,13 @@ description: "Chronological log of structural changes to this bundle."
   ticket boundaries but authorize no compiler, schema, migration, publication,
   enforcement, or retirement change.
 
+* **2026-09-03** — agent-ix/quoin#332: reflected filament-core-data ADR-0005.
+  TypeSpec is the structural schema source (owner decision on
+  filament-core-data#4); the modular JSON Schema fallback and the "separately
+  governed reusable compiler product" hedge are removed from the semantic-module
+  architecture record. FR-048-AC-3 and US-013-EX-3 now require the record to
+  cite ADR-0005 and describe no fallback; TC-1136 updated.
+
 * **2026-08-29** — Added US-013, FR-046..FR-050, and NFR-013..NFR-014 for
   issue #289's architecture-only semantic-module ownership and authority record.
 * **2026-08-31** — **CR-133**: StR-007 gives assurance owners an explicit

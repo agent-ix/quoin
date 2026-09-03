@@ -74,7 +74,7 @@ L2 work; neither Quoin nor Quire takes over the consumer's test execution.
    stay in modules.
 3. Catalog sourcing, installation, locks, and authoring workflow remain in Quoin.
 4. Shared IR, compatibility comparison, and cross-language emitters belong in
-   `filament-core-data` or its separately governed reusable compiler product.
+   `filament-core-data`.
 5. Database, API, IPC, UI, migration, and application policy remain consumer responsibilities.
 6. Generated output lands with a source digest and is consumer-owned after generation; silent
    overwrite is forbidden.

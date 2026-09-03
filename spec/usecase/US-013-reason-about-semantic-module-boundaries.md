@@ -56,11 +56,10 @@ This story records the boundary before compiler, package-publication, or migrati
 
 ### US-013-EX-3: A schema candidate does not silently become authority
 
-- **Given** the completed TypeSpec feasibility spike recommends the modular JSON Schema fallback
-  while ADR-0004 remains provisional
+- **Given** filament-core-data ADR-0005 records TypeSpec as the structural source
 - **When** a maintainer reads the Quoin architecture record
-- **Then** TypeSpec is not described as accepted, generated types are not described as authoritative,
-  and any promotion still requires its named human decision
+- **Then** the record cites ADR-0005 for the source decision, generated types are not described
+  as authoritative, and no Quoin document re-decides the source
 
 ### US-013-EX-4: Existing Quire decisions remain coherent
 

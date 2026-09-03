@@ -50,8 +50,9 @@ concern split, or successor ADR/migration resolves it.
   package definitions.
 - **Generated language classes canonical:** rejected because it privileges one consumer language
   and permits hand-edited cross-language drift.
-- **TypeSpec immediately canonical:** rejected because the feasibility gate did not pass unchanged;
-  modular JSON Schema is the recorded next-stage recommendation and the ADR remains provisional.
+- **Modular JSON Schema as the authoring source:** rejected. TypeSpec is the structural schema
+  source per filament-core-data ADR-0005 (owner decision on filament-core-data#4, 2026-09-03);
+  JSON Schema is a generated projection.
 - **Last writer wins between representations:** rejected because it hides competing ownership.
 
 ## Compatibility

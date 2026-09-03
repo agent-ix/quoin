@@ -252,14 +252,13 @@ describe("semantic-module architecture contract", () => {
 
   // Trace: FR-048-AC-3
   // TC-1136
-  it("records the JSON Schema fallback without promoting TypeSpec", () => {
+  it("records TypeSpec as the structural source per filament-core-data ADR-0005", () => {
     expectAll(architecture("decision-ledger.md"), [
-      "modular JSON Schema 2020-12",
-      "TypeSpec",
-      "unpromoted",
-      "ADR-0004",
-      "human resolution",
+      "TypeSpec is the structural source",
+      "ADR-0005",
+      "official-emitter projections",
     ]);
+    expect(architecture("decision-ledger.md")).not.toContain("fallback");
   });
 
   // Trace: FR-048-AC-4
@@ -456,9 +455,9 @@ describe("semantic-module architecture contract", () => {
   // TC-1153
   it("does not present provisional decisions as normative", () => {
     const ledger = architecture("decision-ledger.md").replace(/\s+/g, " ");
-    expect(ledger).toContain("TypeSpec remains unpromoted");
-    expect(ledger).toContain("ADR-0004 remains provisional");
-    expect(ledger).not.toContain("TypeSpec is normative");
+    expect(ledger).toContain("ADR-0005, which is normative");
+    expect(ledger).toContain("ADR-0004 historical");
+    expect(ledger).not.toContain("remains provisional");
   });
 
   // Trace: NFR-014-M-1

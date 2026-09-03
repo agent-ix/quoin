@@ -50,7 +50,7 @@ external gate.
 ## Non-goals
 
 - Selecting one universal document, database, analytical, or wire representation.
-- Promoting TypeSpec, retiring Avro, or implementing the modular JSON Schema fallback.
+- Retiring Avro or implementing the TypeSpec compiler; both belong to `filament-core-data`.
 - Implementing or publishing a compiler, emitter, or generated package.
 - Changing current module discovery, validation, extraction, persistence, or rendering.
 - Moving a decision owned by Quire, `filament-core-data`, a module, or a consumer into Quoin.

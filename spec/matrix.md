@@ -533,7 +533,7 @@ generated tests under `tests/props/` and `Unit` for the rest.
 | TC-1133 | Quire ADR-0011 validation levels, roles, and consumer-CI execution remain governing | Static | P0 | FR-047-AC-5 | ✅ |
 | TC-1134 | Typed Markdown remains authoritative for authored durable knowledge | Static | P0 | FR-048-AC-1 | ✅ |
 | TC-1135 | Schema/package sources remain authoritative over generated language packages | Static | P0 | FR-048-AC-2 | ✅ |
-| TC-1136 | JSON Schema fallback is recommended without promoting TypeSpec | Static | P0 | FR-048-AC-3 | ✅ |
+| TC-1136 | Record cites filament-core-data ADR-0005 (TypeSpec source) and describes no fallback | Static | P0 | FR-048-AC-3 | ✅ |
 | TC-1137 | Transactional and operational stores remain authoritative over Markdown reports | Static | P0 | FR-048-AC-4 | ✅ |
 | TC-1138 | Wire, analytical, and export representations remain selectable projections | Static | P0 | FR-048-AC-5 | ✅ |
 | TC-1139 | Competing authorities stop promotion and last-writer-wins is rejected | Static | P0 | FR-048-AC-6 | ✅ |
