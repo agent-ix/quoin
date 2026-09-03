@@ -25,7 +25,7 @@ Preserve the existing roles and add compiler/package work as a separate owner:
   contracts.
 - Quoin discovers and distributes modules, maintains locks/install/update, exposes authoring
   contracts, and orchestrates skills, workflows, advice, generation proposals, and evidence audits.
-- `filament-core-data` or its separately governed reusable compiler product owns semantic IR,
+- `filament-core-data` (per its ADR-0002) owns semantic IR,
   compatibility rules, compiler behavior, emitters, and generated package contracts.
 - Modules own domain vocabulary, mappings, constraints, examples, and semantic versions.
 - Consumers own adapters, persistence, migrations, runtime state, API/IPC choices, and presentation.
@@ -48,7 +48,7 @@ semantic compiler. Consumer CI remains the executor of L2 verification.
 - Quire may return generic JSON/open values for dynamically discovered types without promising
   native generated packages for every module.
 - A finite consumer may adopt native packages without closing Quoin/Quire's dynamic module model.
-- Compiler and publication changes have their own repositories, owners, conformance corpus,
+- Compiler and publication changes live in `filament-core-data` with their own conformance corpus,
   compatibility policy, release qualification, and incident response.
 - An ownership move requires a successor ADR in the owning repository; code dependency drift does
   not rewrite this decision.

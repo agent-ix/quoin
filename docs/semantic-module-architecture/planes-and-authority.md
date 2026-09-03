@@ -19,10 +19,9 @@ occurrence and a Markdown report is a useful projection of that occurrence.
 
 The Meta plane contains packages, semantic type definitions, mappings, profiles,
 transformation definitions, compatibility rules, and version identities. Its typical
-authority is an accepted schema/package source plus explicit package metadata. Under the
-current fallback recommendation that source may itself be modular JSON Schema 2020-12;
-normalized or bundled JSON Schema, language types, wire descriptors, and registry metadata
-are outputs or distribution forms.
+authority is the TypeSpec schema/package source (filament-core-data ADR-0005) plus explicit
+package metadata; normalized or bundled JSON Schema, language types, wire descriptors, and
+registry metadata are outputs or distribution forms.
 
 ### Definition plane
 
