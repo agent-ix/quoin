@@ -1,0 +1,16 @@
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"$id": "https://schemas.agent-ix.org/semantic-core/0.1.0/DefaultDecl.json",
+	"type": "object",
+	"properties": {
+		"kind": {
+			"$ref": "https://schemas.agent-ix.org/semantic-core/0.1.0/DefaultKind.json"
+		},
+		"value": {}
+	},
+	"required": ["kind"],
+	"unevaluatedProperties": {
+		"not": {}
+	},
+	"description": "A declared default; `value` shape is decided by the target scalar (FR-031-CON-2 exception)."
+}

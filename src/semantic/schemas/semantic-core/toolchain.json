@@ -1,0 +1,52 @@
+{
+	"compiler": {
+		"name": "@typespec/compiler",
+		"version": "1.15.0"
+	},
+	"emitter": {
+		"name": "@typespec/json-schema",
+		"version": "1.15.0"
+	},
+	"normalization": {
+		"name": "issue-31-absolute-id",
+		"version": "1.0.0",
+		"issue": "https://github.com/agent-ix/filament-core-data/issues/31",
+		"applied": false,
+		"rewrittenFiles": [],
+		"note": "no-op: the emitter produced no relative $id"
+	},
+	"base": "https://schemas.agent-ix.org/semantic-core/0.1.0/",
+	"files": [
+		"ClauseLanguage.json",
+		"ClauseRef.json",
+		"ConstraintDecl.json",
+		"ConstraintKeyword.json",
+		"DecimalPolicy.json",
+		"DefaultDecl.json",
+		"DefaultKind.json",
+		"EdgeCategory.json",
+		"EnumValue.json",
+		"EnumValuesConstraint.json",
+		"ExclusiveMaxConstraint.json",
+		"ExclusiveMinConstraint.json",
+		"FieldDecl.json",
+		"FormatConstraint.json",
+		"Identifier.json",
+		"KernelScalar.json",
+		"MaxConstraint.json",
+		"MaxLengthConstraint.json",
+		"MinConstraint.json",
+		"MinLengthConstraint.json",
+		"Multiplicity.json",
+		"NonEmptyConstraint.json",
+		"OperationDecl.json",
+		"PatternConstraint.json",
+		"RelationDecl.json",
+		"SemanticId.json",
+		"SourceLocus.json",
+		"TypeRef.json",
+		"UniqueConstraint.json",
+		"UnitSymbol.json"
+	],
+	"digest": "sha256:dd33c886f70e908b14507c35e078d163b76308c3d170d2b54ddf933d1a4ebb52"
+}

@@ -77,3 +77,13 @@ analysis/semantic-module-type-fit/
 # second serialization authority and the drift check into a tautology. Same
 # reasoning as the vendored quire schemas and the captured tool output above.
 tests/fixtures/change-assurance-cli/
+
+# Vendored semantic-module contract schemas (quoin FR-070/073/075, issue #293):
+# the filament-core-service module-manifest schema, the semantic-core JSON
+# Schema bundle, and filament-core-data's package-manifest/common schemas. Same
+# rule as src/quire/schemas/: provenance and sha256 are recorded in
+# src/semantic/contract.ts and asserted on every test run; refresh with
+# scripts/refresh-manifest-schema.mjs and
+# scripts/refresh-semantic-core-schemas.mjs, never with prettier.
+src/semantic/schemas/
+tests/fixtures/semantic-module/vendored/

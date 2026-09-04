@@ -1,0 +1,36 @@
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"$id": "https://schemas.agent-ix.org/semantic-core/0.1.0/OperationDecl.json",
+	"type": "object",
+	"properties": {
+		"name": {
+			"$ref": "https://schemas.agent-ix.org/semantic-core/0.1.0/Identifier.json"
+		},
+		"params": {
+			"type": "array",
+			"items": {
+				"$ref": "https://schemas.agent-ix.org/semantic-core/0.1.0/FieldDecl.json"
+			}
+		},
+		"returns": {
+			"$ref": "https://schemas.agent-ix.org/semantic-core/0.1.0/TypeRef.json"
+		},
+		"pre": {
+			"type": "array",
+			"items": {
+				"$ref": "https://schemas.agent-ix.org/semantic-core/0.1.0/ClauseRef.json"
+			}
+		},
+		"post": {
+			"type": "array",
+			"items": {
+				"$ref": "https://schemas.agent-ix.org/semantic-core/0.1.0/ClauseRef.json"
+			}
+		}
+	},
+	"required": ["name", "params"],
+	"unevaluatedProperties": {
+		"not": {}
+	},
+	"description": "An operation declaration (FR-028). Reader: params unique by name; returns carries no unit."
+}

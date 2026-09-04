@@ -1,0 +1,15 @@
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"$id": "https://schemas.agent-ix.org/semantic-core/0.1.0/NonEmptyConstraint.json",
+	"type": "object",
+	"properties": {
+		"keyword": {
+			"type": "string",
+			"const": "nonEmpty"
+		}
+	},
+	"required": ["keyword"],
+	"unevaluatedProperties": {
+		"not": {}
+	}
+}

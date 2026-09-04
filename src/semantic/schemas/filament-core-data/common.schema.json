@@ -1,0 +1,214 @@
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"$id": "https://schemas.agent-ix.org/filament-core-data/v1/common.schema.json",
+	"title": "Filament semantic contract common types v1",
+	"$defs": {
+		"semver": {
+			"type": "string",
+			"pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z.-]+)?(?:\\+[0-9A-Za-z.-]+)?$"
+		},
+		"sha256": {
+			"type": "string",
+			"pattern": "^sha256:[0-9a-f]{64}$"
+		},
+		"semanticIdentity": {
+			"type": "string",
+			"pattern": "^ix://[a-z0-9][a-z0-9._-]*/[A-Za-z0-9][A-Za-z0-9._~:/-]*$"
+		},
+		"packageIdentity": {
+			"type": "string",
+			"pattern": "^[a-z0-9][a-z0-9._-]*/[a-z0-9][a-z0-9._-]*$"
+		},
+		"sourceLocus": {
+			"type": "object",
+			"required": ["sourceIdentity", "path", "startLine", "startColumn"],
+			"properties": {
+				"sourceIdentity": {
+					"$ref": "#/$defs/semanticIdentity"
+				},
+				"path": {
+					"type": "string",
+					"minLength": 1,
+					"pattern": "^(?!/)(?![A-Za-z]:)(?!.*\\\\)(?!.*(?:^|/)\\.\\.(?:/|$))[^\\u0000]+$"
+				},
+				"startLine": {
+					"type": "integer",
+					"minimum": 1
+				},
+				"startColumn": {
+					"type": "integer",
+					"minimum": 1
+				},
+				"endLine": {
+					"type": "integer",
+					"minimum": 1
+				},
+				"endColumn": {
+					"type": "integer",
+					"minimum": 1
+				}
+			},
+			"additionalProperties": false
+		},
+		"generatedOrigin": {
+			"type": "object",
+			"required": ["generatorIdentity", "generatorVersion", "inputIdentities"],
+			"properties": {
+				"generatorIdentity": {
+					"$ref": "#/$defs/semanticIdentity"
+				},
+				"generatorVersion": {
+					"$ref": "#/$defs/semver"
+				},
+				"inputIdentities": {
+					"type": "array",
+					"minItems": 1,
+					"items": {
+						"$ref": "#/$defs/semanticIdentity"
+					}
+				}
+			},
+			"additionalProperties": false
+		},
+		"origin": {
+			"oneOf": [
+				{
+					"type": "object",
+					"required": ["source"],
+					"properties": {
+						"source": {
+							"$ref": "#/$defs/sourceLocus"
+						}
+					},
+					"additionalProperties": false
+				},
+				{
+					"type": "object",
+					"required": ["generated"],
+					"properties": {
+						"generated": {
+							"$ref": "#/$defs/generatedOrigin"
+						}
+					},
+					"additionalProperties": false
+				}
+			]
+		},
+		"extension": {
+			"type": "object",
+			"required": ["identity", "version", "required", "payload"],
+			"properties": {
+				"identity": {
+					"$ref": "#/$defs/semanticIdentity"
+				},
+				"version": {
+					"$ref": "#/$defs/semver"
+				},
+				"required": {
+					"type": "boolean"
+				},
+				"capability": {
+					"type": "string",
+					"minLength": 1
+				},
+				"payload": {}
+			},
+			"additionalProperties": false
+		},
+		"diagnostic": {
+			"type": "object",
+			"required": [
+				"code",
+				"severity",
+				"message",
+				"owner",
+				"blocking",
+				"causes",
+				"related"
+			],
+			"properties": {
+				"code": {
+					"type": "string",
+					"pattern": "^agent-ix\\.[a-z0-9-]+\\.[A-Z][A-Z0-9_]+$"
+				},
+				"severity": {
+					"enum": ["info", "warning", "error"]
+				},
+				"message": {
+					"type": "string",
+					"minLength": 1
+				},
+				"owner": {
+					"$ref": "#/$defs/semanticIdentity"
+				},
+				"locus": {
+					"$ref": "#/$defs/sourceLocus"
+				},
+				"blocking": {
+					"type": "boolean"
+				},
+				"causes": {
+					"type": "array",
+					"items": {
+						"$ref": "#/$defs/diagnostic"
+					}
+				},
+				"related": {
+					"type": "array",
+					"items": {
+						"$ref": "#/$defs/sourceLocus"
+					}
+				}
+			},
+			"additionalProperties": false
+		},
+		"resultState": {
+			"enum": [
+				"success",
+				"invalid",
+				"unsupported",
+				"unavailable",
+				"partial",
+				"lossy"
+			]
+		},
+		"unknownPolicy": {
+			"enum": ["preserve", "reject", "surface"]
+		},
+		"target": {
+			"enum": [
+				"json-schema",
+				"rust",
+				"typescript",
+				"python-pydantic-v2",
+				"python-dataclass"
+			]
+		},
+		"frontendDialect": {
+			"enum": ["typespec", "spec-bundle"]
+		},
+		"representationFormat": {
+			"enum": [
+				"markdown",
+				"json",
+				"postgresql",
+				"protobuf",
+				"avro",
+				"arrow",
+				"parquet",
+				"csv",
+				"tsv"
+			]
+		},
+		"manifestTarget": {
+			"anyOf": [
+				{
+					"$ref": "#/$defs/target"
+				},
+				{
+					"$ref": "#/$defs/representationFormat"
+				}
+			]
+		}
+	}
+}

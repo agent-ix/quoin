@@ -1,0 +1,23 @@
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"$id": "https://schemas.agent-ix.org/semantic-core/0.1.0/PatternConstraint.json",
+	"type": "object",
+	"properties": {
+		"keyword": {
+			"type": "string",
+			"const": "pattern"
+		},
+		"regex": {
+			"type": "string",
+			"minLength": 1
+		},
+		"dialect": {
+			"type": "string",
+			"const": "ecma-262"
+		}
+	},
+	"required": ["keyword", "regex", "dialect"],
+	"unevaluatedProperties": {
+		"not": {}
+	}
+}

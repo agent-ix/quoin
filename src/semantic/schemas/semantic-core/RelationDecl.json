@@ -1,0 +1,27 @@
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"$id": "https://schemas.agent-ix.org/semantic-core/0.1.0/RelationDecl.json",
+	"type": "object",
+	"properties": {
+		"verb": {
+			"$ref": "https://schemas.agent-ix.org/semantic-core/0.1.0/Identifier.json"
+		},
+		"category": {
+			"$ref": "https://schemas.agent-ix.org/semantic-core/0.1.0/EdgeCategory.json"
+		},
+		"composite": {
+			"type": "boolean"
+		},
+		"target": {
+			"$ref": "https://schemas.agent-ix.org/semantic-core/0.1.0/SemanticId.json"
+		},
+		"multiplicity": {
+			"$ref": "https://schemas.agent-ix.org/semantic-core/0.1.0/Multiplicity.json"
+		}
+	},
+	"required": ["verb", "category", "target"],
+	"unevaluatedProperties": {
+		"not": {}
+	},
+	"description": "A relationship declaration (FR-028). Absent multiplicity lowers to 0..1; absent composite to false."
+}

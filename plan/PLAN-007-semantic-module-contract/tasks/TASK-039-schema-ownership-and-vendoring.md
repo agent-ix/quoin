@@ -2,7 +2,7 @@
 id: TASK-039
 title: "Schema ownership and vendoring"
 type: Task
-status: todo
+status: done
 track: A
 priority: P0
 relationships:
@@ -28,9 +28,9 @@ Land the `semantic` block in filament-core-service's module-manifest schema (age
 
 ## Subtasks
 
-- [ ] Open the filament-core-service PR for #21: optional `semantic` object with the ten FR-070 keys, `data_schema` reference form, no new required key; merge it.
-- [ ] Add `scripts/refresh-manifest-schema.mjs` and `scripts/refresh-semantic-core-schemas.mjs` modelled on `refresh-quire-schemas.mjs`; vendor into `src/semantic/schemas/` with `src/semantic/contract.ts` recording repository, revision, path, sha256 (TC-1343, TC-1385).
-- [ ] Schema-diff test asserting `required` arrays unchanged versus the pre-#21 copy (TC-1342).
+- [x] Open the filament-core-service PR for #21: optional `semantic` object with the ten FR-070 keys, `data_schema` reference form, no new required key; merge it.
+- [x] Add `scripts/refresh-manifest-schema.mjs` and `scripts/refresh-semantic-core-schemas.mjs` modelled on `refresh-quire-schemas.mjs`; vendor into `src/semantic/schemas/` with `src/semantic/contract.ts` recording repository, revision, path, sha256 (TC-1343, TC-1385).
+- [x] Schema-diff test asserting `required` arrays unchanged versus the pre-#21 copy (TC-1342).
 
 ## Deliverables
 

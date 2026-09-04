@@ -1,0 +1,26 @@
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"$id": "https://schemas.agent-ix.org/semantic-core/0.1.0/MinConstraint.json",
+	"type": "object",
+	"properties": {
+		"keyword": {
+			"type": "string",
+			"const": "min"
+		},
+		"value": {
+			"anyOf": [
+				{
+					"type": "number"
+				},
+				{
+					"type": "string"
+				}
+			]
+		}
+	},
+	"required": ["keyword", "value"],
+	"unevaluatedProperties": {
+		"not": {}
+	},
+	"description": "`min`: number for numeric scalars, ISO 8601 string for temporal scalars."
+}

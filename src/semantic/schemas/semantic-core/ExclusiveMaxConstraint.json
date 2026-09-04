@@ -1,0 +1,25 @@
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"$id": "https://schemas.agent-ix.org/semantic-core/0.1.0/ExclusiveMaxConstraint.json",
+	"type": "object",
+	"properties": {
+		"keyword": {
+			"type": "string",
+			"const": "exclusiveMax"
+		},
+		"value": {
+			"anyOf": [
+				{
+					"type": "number"
+				},
+				{
+					"type": "string"
+				}
+			]
+		}
+	},
+	"required": ["keyword", "value"],
+	"unevaluatedProperties": {
+		"not": {}
+	}
+}

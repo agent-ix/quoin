@@ -1,0 +1,39 @@
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"$id": "https://schemas.agent-ix.org/semantic-core/0.1.0/SourceLocus.json",
+	"type": "object",
+	"properties": {
+		"sourceIdentity": {
+			"$ref": "https://schemas.agent-ix.org/semantic-core/0.1.0/SemanticId.json"
+		},
+		"path": {
+			"type": "string",
+			"minLength": 1
+		},
+		"startLine": {
+			"type": "integer",
+			"minimum": 1,
+			"maximum": 2147483647
+		},
+		"startColumn": {
+			"type": "integer",
+			"minimum": 1,
+			"maximum": 2147483647
+		},
+		"endLine": {
+			"type": "integer",
+			"minimum": 1,
+			"maximum": 2147483647
+		},
+		"endColumn": {
+			"type": "integer",
+			"minimum": 1,
+			"maximum": 2147483647
+		}
+	},
+	"required": ["sourceIdentity", "path", "startLine", "startColumn"],
+	"unevaluatedProperties": {
+		"not": {}
+	},
+	"description": "Source span of a declaration or clause, same shape as the IR `sourceLocus`."
+}

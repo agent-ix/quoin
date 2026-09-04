@@ -1,0 +1,180 @@
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"$id": "https://schemas.agent-ix.org/filament-core-data/v1/package-manifest.schema.json",
+	"title": "Filament semantic package manifest v1",
+	"type": "object",
+	"required": [
+		"contractVersion",
+		"package",
+		"schemaDialect",
+		"sourceRoots",
+		"exports",
+		"imports",
+		"profiles",
+		"targets",
+		"mappings",
+		"extensions"
+	],
+	"properties": {
+		"contractVersion": {
+			"const": "1.0.0"
+		},
+		"package": {
+			"type": "object",
+			"required": ["identity", "version"],
+			"properties": {
+				"identity": {
+					"$ref": "common.schema.json#/$defs/packageIdentity"
+				},
+				"version": {
+					"$ref": "common.schema.json#/$defs/semver"
+				}
+			},
+			"additionalProperties": false
+		},
+		"schemaDialect": {
+			"const": "https://json-schema.org/draft/2020-12/schema"
+		},
+		"sourceRoots": {
+			"type": "array",
+			"minItems": 1,
+			"items": {
+				"type": "string",
+				"minLength": 1
+			},
+			"uniqueItems": true
+		},
+		"exports": {
+			"type": "array",
+			"items": {
+				"type": "object",
+				"required": ["name", "typeIdentity", "visibility"],
+				"properties": {
+					"name": {
+						"type": "string",
+						"minLength": 1
+					},
+					"typeIdentity": {
+						"$ref": "common.schema.json#/$defs/semanticIdentity"
+					},
+					"visibility": {
+						"enum": ["public", "private"]
+					}
+				},
+				"additionalProperties": false
+			}
+		},
+		"imports": {
+			"type": "array",
+			"items": {
+				"type": "object",
+				"required": [
+					"packageIdentity",
+					"versionConstraint",
+					"exports",
+					"capabilities"
+				],
+				"properties": {
+					"packageIdentity": {
+						"$ref": "common.schema.json#/$defs/packageIdentity"
+					},
+					"versionConstraint": {
+						"type": "string",
+						"minLength": 1
+					},
+					"exports": {
+						"type": "array",
+						"items": {
+							"type": "string",
+							"minLength": 1
+						},
+						"uniqueItems": true
+					},
+					"capabilities": {
+						"type": "array",
+						"items": {
+							"type": "string",
+							"minLength": 1
+						},
+						"uniqueItems": true
+					}
+				},
+				"additionalProperties": false
+			}
+		},
+		"profiles": {
+			"type": "array",
+			"items": {
+				"type": "object",
+				"required": [
+					"name",
+					"version",
+					"exports",
+					"targets",
+					"mappings",
+					"options",
+					"compatibilityPosture"
+				],
+				"properties": {
+					"name": {
+						"type": "string",
+						"minLength": 1
+					},
+					"version": {
+						"$ref": "common.schema.json#/$defs/semver"
+					},
+					"exports": {
+						"type": "array",
+						"items": {
+							"type": "string",
+							"minLength": 1
+						},
+						"uniqueItems": true
+					},
+					"targets": {
+						"type": "array",
+						"items": {
+							"$ref": "common.schema.json#/$defs/manifestTarget"
+						},
+						"uniqueItems": true
+					},
+					"mappings": {
+						"type": "array",
+						"items": {
+							"$ref": "common.schema.json#/$defs/semanticIdentity"
+						},
+						"uniqueItems": true
+					},
+					"options": {
+						"type": "object"
+					},
+					"compatibilityPosture": {
+						"enum": ["strict", "additive", "declared-lossy"]
+					}
+				},
+				"additionalProperties": false
+			}
+		},
+		"targets": {
+			"type": "array",
+			"items": {
+				"$ref": "common.schema.json#/$defs/manifestTarget"
+			},
+			"uniqueItems": true
+		},
+		"mappings": {
+			"type": "array",
+			"items": {
+				"$ref": "common.schema.json#/$defs/semanticIdentity"
+			},
+			"uniqueItems": true
+		},
+		"extensions": {
+			"type": "array",
+			"items": {
+				"$ref": "common.schema.json#/$defs/extension"
+			}
+		}
+	},
+	"additionalProperties": false
+}

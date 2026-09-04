@@ -1,0 +1,18 @@
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"$id": "https://schemas.agent-ix.org/semantic-core/0.1.0/EnumValue.json",
+	"type": "object",
+	"properties": {
+		"value": {
+			"$ref": "https://schemas.agent-ix.org/semantic-core/0.1.0/Identifier.json"
+		},
+		"doc": {
+			"type": "string"
+		}
+	},
+	"required": ["value"],
+	"unevaluatedProperties": {
+		"not": {}
+	},
+	"description": "An enum member declaration; lowers to an IR variant."
+}

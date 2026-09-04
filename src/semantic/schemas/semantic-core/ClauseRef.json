@@ -1,0 +1,21 @@
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"$id": "https://schemas.agent-ix.org/semantic-core/0.1.0/ClauseRef.json",
+	"type": "object",
+	"properties": {
+		"language": {
+			"$ref": "https://schemas.agent-ix.org/semantic-core/0.1.0/ClauseLanguage.json"
+		},
+		"clauseId": {
+			"$ref": "https://schemas.agent-ix.org/semantic-core/0.1.0/Identifier.json"
+		},
+		"sourceSpan": {
+			"$ref": "https://schemas.agent-ix.org/semantic-core/0.1.0/SourceLocus.json"
+		}
+	},
+	"required": ["language", "clauseId"],
+	"unevaluatedProperties": {
+		"not": {}
+	},
+	"description": "A clause reference: language, id, and where the clause text lives. Text itself is never parsed here."
+}

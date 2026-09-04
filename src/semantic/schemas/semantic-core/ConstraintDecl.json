@@ -1,0 +1,40 @@
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"$id": "https://schemas.agent-ix.org/semantic-core/0.1.0/ConstraintDecl.json",
+	"anyOf": [
+		{
+			"$ref": "https://schemas.agent-ix.org/semantic-core/0.1.0/MinConstraint.json"
+		},
+		{
+			"$ref": "https://schemas.agent-ix.org/semantic-core/0.1.0/MaxConstraint.json"
+		},
+		{
+			"$ref": "https://schemas.agent-ix.org/semantic-core/0.1.0/ExclusiveMinConstraint.json"
+		},
+		{
+			"$ref": "https://schemas.agent-ix.org/semantic-core/0.1.0/ExclusiveMaxConstraint.json"
+		},
+		{
+			"$ref": "https://schemas.agent-ix.org/semantic-core/0.1.0/PatternConstraint.json"
+		},
+		{
+			"$ref": "https://schemas.agent-ix.org/semantic-core/0.1.0/MinLengthConstraint.json"
+		},
+		{
+			"$ref": "https://schemas.agent-ix.org/semantic-core/0.1.0/MaxLengthConstraint.json"
+		},
+		{
+			"$ref": "https://schemas.agent-ix.org/semantic-core/0.1.0/EnumValuesConstraint.json"
+		},
+		{
+			"$ref": "https://schemas.agent-ix.org/semantic-core/0.1.0/NonEmptyConstraint.json"
+		},
+		{
+			"$ref": "https://schemas.agent-ix.org/semantic-core/0.1.0/UniqueConstraint.json"
+		},
+		{
+			"$ref": "https://schemas.agent-ix.org/semantic-core/0.1.0/FormatConstraint.json"
+		}
+	],
+	"description": "FR-029 constraint declaration, discriminated on `keyword`."
+}
