@@ -1,0 +1,329 @@
+{
+  "$comment": "FR-071 cell and fence-line grammar cases (AC-4..AC-8). Each case gives one cell (or fence line) and the expected TypeRef/constraint fragment or diagnostic; quire-rs#388 executes them, quoin asserts the expectations validate against the vendored semantic-core schemas.",
+  "semanticCore": "0.1.0",
+  "package": "agent-ix/config-service",
+  "cases": [
+    {
+      "id": "type-kernel",
+      "cell": {
+        "Type": "UUID"
+      },
+      "expected": {
+        "target": "UUID"
+      }
+    },
+    {
+      "id": "type-decimal",
+      "cell": {
+        "Type": "Decimal(10,2)"
+      },
+      "expected": {
+        "target": "Decimal",
+        "decimal": {
+          "precision": 10,
+          "scale": 2
+        }
+      }
+    },
+    {
+      "id": "type-unit",
+      "cell": {
+        "Type": "Duration [ms]"
+      },
+      "expected": {
+        "target": "Duration",
+        "unit": "ms"
+      }
+    },
+    {
+      "id": "type-object-by-title",
+      "cell": {
+        "Type": "ConfigOverlay"
+      },
+      "bundle": {
+        "objects": [
+          {
+            "id": "FR-005",
+            "title": "ConfigOverlay"
+          }
+        ]
+      },
+      "expected": {
+        "target": "ix://agent-ix/config-service/type/ConfigOverlay"
+      }
+    },
+    {
+      "id": "type-enum-by-id",
+      "cell": {
+        "Type": "Status"
+      },
+      "bundle": {
+        "enumerations": [
+          {
+            "id": "Status",
+            "title": "Status Values"
+          }
+        ]
+      },
+      "expected": {
+        "target": "ix://agent-ix/config-service/type/Status"
+      }
+    },
+    {
+      "id": "type-import",
+      "cell": {
+        "Type": "Requirement"
+      },
+      "imports": {
+        "agent-ix/spec-artifacts-iso": {
+          "exports": [
+            "Requirement"
+          ]
+        }
+      },
+      "expected": {
+        "target": "ix://agent-ix/spec-artifacts-iso/type/Requirement"
+      }
+    },
+    {
+      "id": "type-unresolved",
+      "cell": {
+        "Type": "Mystery"
+      },
+      "expected": {
+        "target": "ix://agent-ix/config-service/unresolved/Mystery"
+      },
+      "diagnostics": [
+        {
+          "code": "semantic.unresolved-type",
+          "severity": "advisory",
+          "locus": "row"
+        }
+      ]
+    },
+    {
+      "id": "mult-one",
+      "cell": {
+        "Multiplicity": "1"
+      },
+      "expected": {
+        "multiplicity": {
+          "lower": 1,
+          "upper": 1
+        }
+      }
+    },
+    {
+      "id": "mult-optional",
+      "cell": {
+        "Multiplicity": "0..1"
+      },
+      "expected": {
+        "multiplicity": {
+          "lower": 0,
+          "upper": 1
+        }
+      }
+    },
+    {
+      "id": "mult-many-flags",
+      "cell": {
+        "Multiplicity": "1..* ordered unique"
+      },
+      "expected": {
+        "multiplicity": {
+          "lower": 1,
+          "ordered": true,
+          "unique": true
+        }
+      }
+    },
+    {
+      "id": "mult-range",
+      "cell": {
+        "Multiplicity": "2..5"
+      },
+      "expected": {
+        "multiplicity": {
+          "lower": 2,
+          "upper": 5
+        }
+      }
+    },
+    {
+      "id": "mult-empty",
+      "cell": {
+        "Multiplicity": ""
+      },
+      "expected": {
+        "multiplicity": {
+          "lower": 1,
+          "upper": 1
+        }
+      }
+    },
+    {
+      "id": "mult-inverted",
+      "cell": {
+        "Multiplicity": "5..2"
+      },
+      "diagnostics": [
+        {
+          "code": "semantic.invalid-multiplicity",
+          "severity": "error",
+          "locus": "row"
+        }
+      ]
+    },
+    {
+      "id": "mult-flag-on-single",
+      "cell": {
+        "Multiplicity": "1 ordered"
+      },
+      "diagnostics": [
+        {
+          "code": "semantic.invalid-multiplicity",
+          "severity": "error",
+          "locus": "row"
+        }
+      ]
+    },
+    {
+      "id": "con-min-maxlen-identity",
+      "cell": {
+        "Constraints": "min: 1, maxLength: 64, identity"
+      },
+      "expected": {
+        "constraints": [
+          {
+            "keyword": "min",
+            "value": 1
+          },
+          {
+            "keyword": "maxLength",
+            "value": 64
+          }
+        ],
+        "identity": true
+      }
+    },
+    {
+      "id": "con-pattern",
+      "cell": {
+        "Constraints": "pattern: /^[a-z]+$/"
+      },
+      "expected": {
+        "constraints": [
+          {
+            "keyword": "pattern",
+            "regex": "^[a-z]+$",
+            "dialect": "ecma-262"
+          }
+        ]
+      }
+    },
+    {
+      "id": "con-enum-values",
+      "cell": {
+        "Constraints": "enumValues: draft|final"
+      },
+      "expected": {
+        "constraints": [
+          {
+            "keyword": "enumValues",
+            "values": [
+              "draft",
+              "final"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "con-non-empty",
+      "cell": {
+        "Constraints": "nonEmpty"
+      },
+      "expected": {
+        "constraints": [
+          {
+            "keyword": "nonEmpty"
+          }
+        ]
+      }
+    },
+    {
+      "id": "con-format",
+      "cell": {
+        "Constraints": "format: agent-ix:email"
+      },
+      "expected": {
+        "constraints": [
+          {
+            "keyword": "format",
+            "name": "agent-ix:email"
+          }
+        ]
+      }
+    },
+    {
+      "id": "con-unknown-keyword",
+      "cell": {
+        "Constraints": "mnimum: 1"
+      },
+      "diagnostics": [
+        {
+          "code": "semantic.unknown-constraint-keyword",
+          "severity": "error",
+          "locus": "row"
+        }
+      ]
+    },
+    {
+      "id": "fence-item",
+      "fenceLine": "item x : Y;",
+      "diagnostics": [
+        {
+          "code": "semantic.sysml-outside-subset",
+          "severity": "error",
+          "locus": "fence-line"
+        }
+      ]
+    },
+    {
+      "id": "fence-part-def",
+      "fenceLine": "part def X;",
+      "diagnostics": [
+        {
+          "code": "semantic.sysml-outside-subset",
+          "severity": "error",
+          "locus": "fence-line"
+        }
+      ]
+    },
+    {
+      "id": "fence-specializes",
+      "fenceLine": ":> Y",
+      "diagnostics": [
+        {
+          "code": "semantic.sysml-outside-subset",
+          "severity": "error",
+          "locus": "fence-line"
+        }
+      ]
+    },
+    {
+      "id": "reader-rule-bare-decimal",
+      "cell": {
+        "Type": "Decimal"
+      },
+      "diagnostics": [
+        {
+          "code": "agent-ix.semantic-core.MISSING_DECIMAL_POLICY",
+          "severity": "error",
+          "locus": "row"
+        }
+      ]
+    }
+  ]
+}

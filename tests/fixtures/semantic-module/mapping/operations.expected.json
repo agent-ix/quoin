@@ -1,0 +1,81 @@
+{
+  "semanticCore": "0.1.0",
+  "clauses": [
+    {
+      "language": "ocl",
+      "clauseId": "notArchived",
+      "sourceSpan": {
+        "sourceIdentity": "ix://agent-ix/config-service/spec",
+        "path": "operations.md",
+        "startLine": 17,
+        "startColumn": 1,
+        "endLine": 19,
+        "endColumn": 4
+      }
+    },
+    {
+      "language": "ocl",
+      "clauseId": "archived",
+      "sourceSpan": {
+        "sourceIdentity": "ix://agent-ix/config-service/spec",
+        "path": "operations.md",
+        "startLine": 23,
+        "startColumn": 1,
+        "endLine": 25,
+        "endColumn": 4
+      }
+    }
+  ],
+  "operations": [
+    {
+      "name": "archive",
+      "params": [
+        {
+          "name": "reason",
+          "type": {
+            "target": "String",
+            "multiplicity": {
+              "lower": 1,
+              "upper": 1
+            }
+          },
+          "constraints": [
+            {
+              "keyword": "nonEmpty"
+            }
+          ]
+        },
+        {
+          "name": "delay",
+          "type": {
+            "target": "Duration",
+            "multiplicity": {
+              "lower": 0,
+              "upper": 1
+            },
+            "unit": "ms"
+          }
+        }
+      ],
+      "returns": {
+        "target": "ix://agent-ix/config-service/type/ConfigVersion",
+        "multiplicity": {
+          "lower": 1,
+          "upper": 1
+        }
+      },
+      "pre": [
+        {
+          "language": "ocl",
+          "clauseId": "notArchived"
+        }
+      ],
+      "post": [
+        {
+          "language": "ocl",
+          "clauseId": "archived"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+{
+  "repository": "agent-ix/config-service",
+  "revision": "6de6cd98718a8c8b516434172fb9b2dd4fe18978",
+  "path": "spec/functional/FR-006-config-version-entity.md",
+  "note": "Read-only corpus fixture (quoin FR-074-AC-1). Copied verbatim; never edited here or in config-service by this campaign."
+}

@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "ix://agent-ix/quoin/FR-074/sweep-report",
+  "title": "Semantic legacy-form sweep report (quoin FR-074)",
+  "description": "Produced by `quoin semantic sweep`; a module cites it via semantic.sweep_report before promoting legacy Properties forms to error.",
+  "type": "object",
+  "required": ["package", "version", "generatedAt", "corpus", "counts"],
+  "additionalProperties": false,
+  "properties": {
+    "package": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._-]*/[a-z0-9][a-z0-9._-]*$"
+    },
+    "version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+    "generatedAt": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]+)?Z$"
+    },
+    "corpus": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["repository", "revision"],
+        "additionalProperties": false,
+        "properties": {
+          "repository": { "type": "string", "minLength": 1 },
+          "revision": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "counts": {
+      "type": "object",
+      "required": ["artifacts", "forms", "legacy"],
+      "additionalProperties": false,
+      "properties": {
+        "artifacts": { "type": "integer", "minimum": 0 },
+        "forms": {
+          "type": "object",
+          "required": [
+            "typed-table",
+            "free-column-table",
+            "bullet-list",
+            "sysml-fence",
+            "none"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "typed-table": { "type": "integer", "minimum": 0 },
+            "free-column-table": { "type": "integer", "minimum": 0 },
+            "bullet-list": { "type": "integer", "minimum": 0 },
+            "sysml-fence": { "type": "integer", "minimum": 0 },
+            "none": { "type": "integer", "minimum": 0 }
+          }
+        },
+        "legacy": {
+          "type": "object",
+          "required": ["bullet-list", "free-column-table"],
+          "additionalProperties": false,
+          "properties": {
+            "bullet-list": { "type": "integer", "minimum": 0 },
+            "free-column-table": { "type": "integer", "minimum": 0 }
+          }
+        }
+      }
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["path", "form"],
+        "properties": {
+          "path": { "type": "string", "minLength": 1 },
+          "form": {
+            "enum": [
+              "typed-table",
+              "free-column-table",
+              "bullet-list",
+              "sysml-fence",
+              "none"
+            ]
+          },
+          "line": { "type": "integer", "minimum": 1 },
+          "diagnostic": { "type": "object" }
+        }
+      }
+    }
+  }
+}

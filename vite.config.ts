@@ -134,6 +134,7 @@ export default defineConfig(({ command }) => ({
         "commands/module/index": "src/commands/module/index.ts",
         "commands/module/list": "src/commands/module/list.ts",
         "commands/module/install": "src/commands/module/install.ts",
+        "commands/semantic/sweep": "src/commands/semantic/sweep.ts",
         "commands/module/remove": "src/commands/module/remove.ts",
         "commands/module/ensure-defaults":
           "src/commands/module/ensure-defaults.ts",

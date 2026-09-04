@@ -29,3 +29,13 @@ export {
   type SemanticModule,
   type SemanticReadResult,
 } from "./manifest.js";
+export {
+  LEGACY_MIGRATION_EXAMPLE,
+  TYPED_HEADER,
+  classifyArtifact,
+  classifyProperties,
+  sweepCorpus,
+  type FormFinding,
+  type PropertiesForm,
+  type SweepReport,
+} from "./sweep.js";
