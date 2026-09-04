@@ -43,12 +43,12 @@ identifiers make the licence a question rather than a grant.
 
 | Metric | Target | Threshold | Method |
 |--------|--------|-----------|--------|
-| Unresolved template tokens per rendered variant | 0 | 0 | Rendered-tree scan |
-| Placeholder organizations per rendered variant | 0 | 0 | Rendered-tree scan |
-| Absolute rendering-machine paths per rendered variant | 0 | 0 | Rendered-tree scan |
-| Credential or token matches per rendered variant | 0 | 0 | Rendered-tree scan |
-| Private-registry publication defaults per rendered variant | 0 | 0 | Rendered-tree scan |
-| Distinct licence identifiers per rendered variant | 1 | 1 | Rendered-tree scan |
+| Unresolved template tokens per rendered variant | 0 | 0 | Test |
+| Placeholder organizations per rendered variant | 0 | 0 | Test |
+| Absolute rendering-machine paths per rendered variant | 0 | 0 | Test |
+| Credential or token matches per rendered variant | 0 | 0 | Test |
+| Private-registry publication defaults per rendered variant | 0 | 0 | Test |
+| Distinct licence identifiers per rendered variant | 1 | 1 | Test |
 
 ## Verification
 
@@ -56,6 +56,18 @@ Quoin's gate renders each variant into a temporary directory and scans every fil
 for each residue class, reporting the file and the match. The scan is the same
 one FR-083 runs, and its negative cases are exercised by injecting one instance
 of each class into the template and asserting the gate fails naming it.
+
+The patterns are not left to the reader. Each residue class is defined by a
+declared pattern in the template's conformance contract, beside the required
+surfaces, so that "a credential" and "a private-registry publication default"
+are comparisons against a reviewable list rather than a judgement call made in a
+test body. The private-registry class is defined over publication configuration
+— the npm `publishConfig` registry, any Poetry package source, any workflow
+publish target — and not over every mention of a private host: the rendered
+`dev-quire` provisioning command names one, deliberately and with the tracking
+issue beside it, because no index the repository may depend on serves the engine
+(`agent-ix/quire-rs#392`). That one exemption is declared in the contract and
+asserted to be the only one.
 
 ## Dependencies
 

@@ -6,6 +6,8 @@ quality_attribute: reliability
 relationships:
   - target: "ix://agent-ix/quoin/US-021"
     type: "constrains"
+  - target: "ix://agent-ix/quoin/FR-076"
+    type: "constrains"
   - target: "ix://agent-ix/quoin/FR-077"
     type: "constrains"
   - target: "ix://agent-ix/quoin/FR-083"
@@ -25,6 +27,7 @@ somebody made.
 
 - Applies to: the rendered file set of every variant, and the emitted schema set, `toolchain.json`, and manifest digests of a rendered repository.
 - Operational context: two renders on the same machine and two renders on machines whose only difference is the working directory and the clock.
+- Not claimed: byte-identity across operating systems. The rendered tree is written with LF endings by a declared `.gitattributes`, which makes the committed bytes identical, but the working-tree bytes a checkout produces are the platform's business and this requirement does not measure them.
 
 ## Rationale
 
@@ -39,10 +42,10 @@ three at once, and breaks them quietly.
 
 | Metric | Target | Threshold | Method |
 |--------|--------|-----------|--------|
-| Differing files between two renders of one variant | 0 | 0 | Byte comparison |
-| Differing bytes between two schema emissions from an unchanged source | 0 | 0 | Byte comparison |
-| Rendered files carrying a rendering timestamp | 0 | 0 | Rendered-tree scan |
-| Rendered files carrying an absolute path from the rendering machine | 0 | 0 | Rendered-tree scan |
+| Differing files between two renders of one variant | 0 | 0 | Test |
+| Differing bytes between two schema emissions from an unchanged source | 0 | 0 | Test |
+| Rendered files carrying a rendering timestamp | 0 | 0 | Test |
+| Rendered files carrying an absolute path from the rendering machine | 0 | 0 | Test |
 
 ## Verification
 

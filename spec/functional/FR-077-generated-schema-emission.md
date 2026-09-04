@@ -49,6 +49,8 @@ that produced the bytes.
 - The rendered emit command SHALL write one JSON Schema file per type the rendered manifest exports.
 - When the emitter leaves an `$id` or `$ref` relative, the emit command SHALL rewrite it to an absolute URL under this module's base or under the semantic-core base.
 - The emit command SHALL discard the schemas the emitter re-emits for imported libraries, so that only this module's namespace is written.
+- Where a `$ref` names a model of an imported semantic module, the emit command SHALL rewrite it to that module's schema base at the exact version `semantic.imports` records, rather than to this module's base or to the semantic-core base.
+- If a `$ref` resolves to no declared base — this module's, the semantic-core base, or an imported module's — then the emit command SHALL fail naming the reference, rather than writing a schema whose reference points nowhere.
 - When the `@jsonSchema` base declared in the source and the manifest `version` disagree, the emit command SHALL fail naming both values, leaving the committed output untouched.
 - When `tsp compile` fails, the emit command SHALL fail carrying the compiler diagnostics, leaving the committed output untouched.
 - Where the emit command is run in check mode, it SHALL exit non-zero listing every schema, toolchain, and manifest digest that differs from the committed output, writing no file.
@@ -59,7 +61,7 @@ that produced the bytes.
 
 | ID | Constraint | Type | Validation |
 |----|------------|------|------------|
-| FR-077-CON-1 | An emitted schema SHALL NOT be hand-edited; a wrong schema is corrected in `typespec/main.tsp` and re-emitted. | Integrity | Inspection |
+| FR-077-CON-1 | An emitted schema SHALL NOT be hand-edited; a wrong schema is corrected in `typespec/main.tsp` and re-emitted. | Integrity | Test (TC-1414) |
 | FR-077-CON-2 | The rendered emitted schemas SHALL be `{type: object}` for no exported type. | Completeness | Test (TC-1409) |
 
 ## Acceptance Criteria
@@ -72,6 +74,8 @@ that produced the bytes.
 | FR-077-AC-4 | Check mode exits zero on the committed output and non-zero, naming the file, after one emitted byte is changed. | Test (TC-1414) |
 | FR-077-AC-5 | Editing the manifest `version` without editing the `@jsonSchema` base fails the emit command naming both values, and no committed file changes. | Test (TC-1415) |
 | FR-077-AC-6 | The rendered `main.tsp` imports `@agent-ix/semantic-core` and redeclares no model the grammar already declares. | Test (TC-1416) |
+| FR-077-AC-7 | A rendered source with a deliberate TypeSpec error fails the emit command with the compiler diagnostics in the message, and no committed schema, toolchain, or manifest byte changes. | Test (TC-1449) |
+| FR-077-AC-8 | In a mixed rendering with an imported module, a `$ref` to an imported model is written against that module's base at the imported version; a `$ref` matching no declared base fails the emit command naming the reference. | Test (TC-1457) |
 
 ## Dependencies
 

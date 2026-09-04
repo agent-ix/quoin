@@ -276,6 +276,7 @@ index; the files are authoritative.
 - [NFR-017](./non-functional/NFR-017-non-disruptive-manifest-evolution.md) — semantic manifest evolution invalidates no current manifest or artifact.
 - [NFR-018](./non-functional/NFR-018-rendered-output-hygiene.md) — rendered module repositories carry no generation residue.
 - [NFR-019](./non-functional/NFR-019-deterministic-rendering.md) — rendering and schema regeneration are byte-deterministic.
+- [NFR-020](./non-functional/NFR-020-declared-toolchain-floors.md) — every external command has a declared floor and a named absent-tool diagnostic.
 
 ### Integration Tests
 

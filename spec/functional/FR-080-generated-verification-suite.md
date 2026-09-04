@@ -48,14 +48,16 @@ precisely the environment that would skip.
 - The rendered suite SHALL assert the rendered `semantic` block, the emitted schemas, the manifest digests, the skeleton mappings, the negative fixtures, and the legacy-form fixture.
 - When the grammar package is not installed, the rendered suite SHALL fail naming the install command rather than skipping the schema checks.
 - The rendered suite SHALL treat every warning as an error, so that a deprecation is a failure rather than scrollback.
+- The rendered suite SHALL compare the installed engine's version with the engine floor the rendered repository declares.
+- If the installed engine is older than the declared floor, then the rendered suite SHALL fail naming both versions, rather than reporting a capability gap as a module defect.
 - The rendered repository's gate SHALL run spec validation, lint, the schema drift check, and the rendered suite, failing when any one of them fails.
 
 ## Constraints
 
 | ID | Constraint | Type | Validation |
 |----|------------|------|------------|
-| FR-080-CON-1 | The rendered suite SHALL skip no test for a missing tool, recording an expected engine gap as a strict expected failure with a paired control. | Coverage | Test (TC-1427) |
-| FR-080-CON-2 | The rendered `dev-quire` command SHALL name the tracking issue for the missing published wheel. | Traceability | Inspection |
+| FR-080-CON-1 | The rendered suite SHALL skip no test for a missing tool, recording an expected engine gap as a test marked to fail strictly — one that fails the run if it unexpectedly passes — beside a control test proving the failure has the declared cause. | Coverage | Test (TC-1427) |
+| FR-080-CON-2 | The rendered `dev-quire` command SHALL name the tracking issue for the missing published wheel. | Traceability | Test (TC-1430) |
 
 ## Acceptance Criteria
 
@@ -67,6 +69,8 @@ precisely the environment that would skip.
 | FR-080-AC-4 | The rendered package metadata declares no dependency on the engine. | Test (TC-1430) |
 | FR-080-AC-5 | The rendered gate runs spec validation, lint, the schema drift check, and the suite, and fails when any one fails. | Test (TC-1431) |
 | FR-080-AC-6 | The rendered test configuration turns warnings into errors. | Test (TC-1430) |
+| FR-080-AC-7 | With `@agent-ix/semantic-core` not installed, the rendered suite fails naming the install command, and reports no skipped schema check. | Test (TC-1450) |
+| FR-080-AC-8 | With an engine older than the declared floor installed, the rendered suite fails naming the installed version and the floor. | Test (TC-1460) |
 
 ## Dependencies
 

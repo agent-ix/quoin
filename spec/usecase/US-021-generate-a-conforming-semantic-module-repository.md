@@ -81,7 +81,7 @@ silent fallback to another license.
 Depends on [US-020](./US-020-declare-a-semantic-module-contract-once.md) and the
 contract it drives ([FR-070](../functional/FR-070-semantic-module-manifest-extension.md)
 through [FR-075](../functional/FR-075-semantic-package-exports-and-locks.md)), on
-ADR-0005 fixing TypeSpec as the structural source, and on
+filament-core-data ADR-0005 fixing TypeSpec as the structural source, and on
 `@agent-ix/semantic-core`.
 
 ## Priority and Risk (Informative)

@@ -53,13 +53,15 @@ is a claim nobody checked.
 - The rendered emit command SHALL write the `digest` values by rewriting the manifest lines textually, so that the manifest's comments and YAML anchors survive regeneration.
 - When `imported_modules` is non-empty, the rendered `semantic.imports` SHALL map each imported package identity to its exact version.
 - When `imported_modules` is empty, the rendered `semantic.imports` SHALL be an empty mapping rather than an absent key.
+- The rendered manifest SHALL declare each exported type name exactly once across `artifact_types` and `object_types`, so that a type name identifies one declaration.
+- If two entries of `imported_modules` name the same `<org>/<repo>`, then the template SHALL abort rendering naming the package identity, rather than collapsing them to whichever came last.
 
 ## Constraints
 
 | ID | Constraint | Type | Validation |
 |----|------------|------|------------|
 | FR-078-CON-1 | The rendered `semantic` block SHALL carry no key outside the set FR-070 admits. | Contract | Test (TC-1417) |
-| FR-078-CON-2 | A `digest` value SHALL be produced only by the emit command, never authored by hand. | Integrity | Inspection |
+| FR-078-CON-2 | A `digest` value SHALL be produced only by the emit command, never authored by hand. | Integrity | Test (TC-1419) |
 
 ## Acceptance Criteria
 
@@ -71,6 +73,8 @@ is a claim nobody checked.
 | FR-078-AC-4 | Regenerating the manifest digests preserves every comment and YAML anchor in the rendered manifest. | Test (TC-1419) |
 | FR-078-AC-5 | A mixed-variant rendering with two imported modules yields two `semantic.imports` entries carrying exact versions; an object-variant rendering with none yields `imports: {}`. | Test (TC-1402) |
 | FR-078-AC-6 | The rendered `semantic.exports` and the rendered manifest's declared type names are the same set. | Test (TC-1417) |
+| FR-078-AC-7 | No exported type name appears in more than one declaration of a rendered manifest, in any variant. | Test (TC-1458) |
+| FR-078-AC-8 | Two `imported_modules` entries naming the same package identity abort rendering naming that identity. | Test (TC-1459) |
 
 ## Dependencies
 

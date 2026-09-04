@@ -9,6 +9,10 @@ evidence:
 relationships:
   - target: "ix://agent-ix/quoin/FR-076"
     type: "satisfied_by"
+  - target: "ix://agent-ix/quoin/FR-078"
+    type: "satisfied_by"
+  - target: "ix://agent-ix/quoin/FR-080"
+    type: "satisfied_by"
   - target: "ix://agent-ix/quoin/FR-083"
     type: "satisfied_by"
 ---
@@ -54,7 +58,7 @@ they declare.
 ## Context and Assumptions
 
 The semantic-module contract is settled (FR-070 through FR-075). TypeSpec is the
-structural schema source by ADR-0005, and `@agent-ix/semantic-core` supplies the
+structural schema source by filament-core-data ADR-0005, and `@agent-ix/semantic-core` supplies the
 shared grammar. It is assumed that a rendered repository is a starting point that
 its owner then fills with module vocabulary — the template does not attempt to
 generate a module's types.

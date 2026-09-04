@@ -51,7 +51,8 @@ counterpart whose frontmatter names the expected refusal and the reason.
 - Each rendered skeleton SHALL carry a `## Properties` section whose table header is exactly `Field | Type | Multiplicity | Constraints`, with at least one substantive row.
 - Each rendered skeleton SHALL be accompanied by an alternate file declaring the same fields as one ```sysml``` fence under `## Properties`.
 - Each rendered skeleton SHALL carry an `## Invariants` section holding at least one ```ocl``` fence under its own `### <clauseId>` heading.
-- The rendered repository SHALL carry, for every failure mode its emitted schemas refuse, one negative fixture whose frontmatter names the expected diagnostic and the reason.
+- The rendered repository SHALL carry, for every failure mode its emitted schemas refuse, one negative fixture whose frontmatter carries an `expect` key naming the expected diagnostic and a `because` key naming the reason.
+- Each rendered negative fixture SHALL carry an `expect` value that no other rendered negative fixture of the same variant carries, so that "its own distinct reason" is a comparison of declared identifiers rather than of message text.
 - The rendered repository SHALL carry a legacy-form fixture whose `## Properties` section uses the pre-contract free-text form.
 - When the legacy-form fixture is validated under the rendered manifest, the rendered suite SHALL assert exactly one legacy warning and no error, so that `legacy_forms: warning` is exercised rather than asserted.
 - If a rendered skeleton carries both the table and the fence form in one document, then the rendered suite SHALL assert that the document is refused.

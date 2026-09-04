@@ -48,7 +48,10 @@ repository rather than a discovery in the next migration.
 - Quoin's gate SHALL assert the rendered manifest validates against the vendored module-manifest schema and that every `data_schema` digest matches the file it names.
 - Where the schema toolchain is installed, Quoin's gate SHALL run the rendered emit command, asserting that it reproduces the committed schemas byte for byte.
 - If the schema toolchain is not installed, then Quoin's gate SHALL fail naming the install command, rather than skipping the emission checks.
-- Quoin's gate SHALL compare the conformance contract with the surfaces the maintained semantic-module repositories carry.
+- The conformance contract SHALL name each maintained semantic-module repository it is compared against by remote and by one full commit revision, so that two runs of the drift check read the same bytes.
+- Quoin's gate SHALL compare the conformance contract with the surfaces the maintained semantic-module repositories carry at those pinned revisions.
+- Where a maintained repository is not available at its pinned revision, Quoin's gate SHALL fail naming the repository and the revision, rather than reporting no drift.
+- The conformance contract SHALL record, for every surface a maintained repository carries and the contract deliberately does not require, the reason it is exempt.
 - If a maintained semantic-module repository carries a surface the conformance contract omits, then Quoin's gate SHALL fail naming that surface.
 - Quoin's gate SHALL fail when a rendered variant's Test Matrix carries a `Status` cell outside the archetype's vocabulary.
 
@@ -57,7 +60,7 @@ repository rather than a discovery in the next migration.
 | ID | Constraint | Type | Validation |
 |----|------------|------|------------|
 | FR-083-CON-1 | Quoin's gate SHALL write a rendered variant only under a temporary directory, never inside the repository working tree. | Hygiene | Test (TC-1445) |
-| FR-083-CON-2 | The conformance contract SHALL be a declared file, not a list embedded in a test body, so a contract change is reviewable on its own. | Maintainability | Inspection |
+| FR-083-CON-2 | The conformance contract SHALL be a declared file, not a list embedded in a test body, so a contract change is reviewable on its own. | Maintainability | Test (TC-1447) |
 
 ## Acceptance Criteria
 
@@ -67,7 +70,8 @@ repository rather than a discovery in the next migration.
 | FR-083-AC-2 | Every rendered directory is removed after the run, including after a failure. | Test (TC-1445) |
 | FR-083-AC-3 | An injected unresolved token, placeholder organization, absolute path, credential, or private-registry default in the template fails the gate naming the file. | Test (TC-1446) |
 | FR-083-AC-4 | Removing a surface the conformance contract names fails the gate naming that surface. | Test (TC-1447) |
-| FR-083-AC-5 | A surface carried by the maintained module repositories and absent from the conformance contract fails the drift check naming it. | Test (TC-1418) |
+| FR-083-AC-5 | A surface carried by the maintained module repositories at their pinned revisions, absent from the conformance contract and absent from its exemptions, fails the drift check naming it. | Test (TC-1418) |
+| FR-083-AC-8 | A maintained repository that cannot be read at its pinned revision fails the drift check naming the repository and the revision. | Test (TC-1462) |
 | FR-083-AC-6 | With the schema toolchain absent, the gate fails naming the install command and reports no skipped emission check. | Test (TC-1448) |
 | FR-083-AC-7 | A `Status` cell of `⚠️` injected into a rendered Test Matrix fails the gate. | Test (TC-1440) |
 

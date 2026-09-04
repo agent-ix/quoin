@@ -41,7 +41,8 @@ marker the archetype admits, carrying the reason.
 ## Behavior
 
 - The rendered `spec/` tree SHALL validate structurally under `quire validate` with no error, as rendered and before any editing.
-- The rendered `spec/` tree SHALL carry a master-requirements root, a stakeholder requirement, a user story, and the functional requirements that describe the rendered module's own contract.
+- The rendered `spec/` tree SHALL carry a master-requirements root, a stakeholder requirement, a user story, and the functional requirements that describe the obligations the rendered REPOSITORY carries — its manifest block, its emitted schemas, its skeletons, its packaging, and its gate.
+- The rendered `spec/` tree SHALL state, in its master-requirements Out of Scope section, that the module's own domain types are specified by its maintainer and are not supplied by the template.
 - The rendered `spec/` tree SHALL carry an index and a log for each folder that the reserved archetypes require one for.
 - The rendered Test Matrix SHALL draw every `Status` cell from the markers the `TestMatrix` archetype admits.
 - The rendered Test Matrix SHALL NOT use the retired `⚠️` marker in any cell.
@@ -54,7 +55,7 @@ marker the archetype admits, carrying the reason.
 | ID | Constraint | Type | Validation |
 |----|------------|------|------------|
 | FR-082-CON-1 | The rendered Test Matrix `Status` vocabulary SHALL be the one `spec_artifacts_process/manifest.yaml` declares, not a superset. | Contract | Test (TC-1440) |
-| FR-082-CON-2 | The rendered spec tree SHALL describe the rendered module, carrying no requirement copied from an existing module repository. | Independence | Inspection |
+| FR-082-CON-2 | The rendered spec tree SHALL describe the rendered module, carrying no requirement copied from an existing module repository. | Independence | Test (TC-1461) |
 
 ## Acceptance Criteria
 
@@ -65,6 +66,7 @@ marker the archetype admits, carrying the reason.
 | FR-082-AC-3 | Every rendered Test Matrix row that is not covered carries `🚧` and a reason. | Test (TC-1441) |
 | FR-082-AC-4 | Every rendered Test Matrix row traces to an acceptance criterion that exists in the rendered spec. | Test (TC-1442) |
 | FR-082-AC-5 | Each rendered variant carries the master-requirements root, the stakeholder, usecase, functional, and non-functional folders, and their indexes. | Test (TC-1443) |
+| FR-082-AC-6 | The rendered master-requirements Out of Scope section states that the module's domain types are the maintainer's to specify, and no rendered requirement text is copied from a maintained module repository. | Test (TC-1461) |
 
 ## Dependencies
 

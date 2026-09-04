@@ -27,3 +27,4 @@ description: "Index of non-functional requirements (NFR) for quoin."
 - [NFR-017: Semantic manifest evolution is non-disruptive](./NFR-017-non-disruptive-manifest-evolution.md)
 - [NFR-018: Rendered semantic-module output is public-ready and free of generation residue](./NFR-018-rendered-output-hygiene.md)
 - [NFR-019: Deterministic rendering and regeneration](./NFR-019-deterministic-rendering.md)
+- [NFR-020: Declared external toolchain floors and absent-tool diagnostics](./NFR-020-declared-toolchain-floors.md)
