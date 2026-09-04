@@ -80,21 +80,21 @@ TASK-045 -> TASK-046 -> TASK-047 -> TASK-048 -> TASK-050 -> TASK-051
 
 ## Execution Tracks
 
-| Track | Tasks | Runs |
-| --- | --- | --- |
-| A — template core | TASK-045, TASK-046, TASK-047, TASK-048 | serial |
-| B — repository baseline | TASK-049 | parallel with A after TASK-045 |
-| C — verification | TASK-050, TASK-051 | after A and B |
+| Track                   | Tasks                                  | Runs                           |
+| ----------------------- | -------------------------------------- | ------------------------------ |
+| A — template core       | TASK-045, TASK-046, TASK-047, TASK-048 | serial                         |
+| B — repository baseline | TASK-049                               | parallel with A after TASK-045 |
+| C — verification        | TASK-050, TASK-051                     | after A and B                  |
 
 ## Quality Gates
 
-| Gate | Condition | Blocks |
-| --- | --- | --- |
-| G1 — renders | All three variants render unattended with no error. | TASK-046 onward |
-| G2 — emits | A rendered variant emits one schema per exported type, twice, byte-identically. | TASK-047 |
-| G3 — declares | The rendered manifest validates against the vendored module-manifest schema and every digest matches. | TASK-048 |
-| G4 — verifies | The rendered suite runs, fails without the engine, and reports zero skips with it. | TASK-050 |
-| G5 — conforms | Quoin's gate passes: conformance, residue, determinism, drift, and `quire validate` over each rendered spec tree. | TASK-051 |
+| Gate            | Condition                                                                                                                 | Blocks           |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------- | ---------------- |
+| G1 — renders    | All three variants render unattended with no error.                                                                       | TASK-046 onward  |
+| G2 — emits      | A rendered variant emits one schema per exported type, twice, byte-identically.                                           | TASK-047         |
+| G3 — declares   | The rendered manifest validates against the vendored module-manifest schema and every digest matches.                     | TASK-048         |
+| G4 — verifies   | The rendered suite runs, fails without the engine, and reports zero skips with it.                                        | TASK-050         |
+| G5 — conforms   | Quoin's gate passes: conformance, residue, determinism, drift, and `quire validate` over each rendered spec tree.         | TASK-051         |
 | G6 — repo green | `make lint` and `make test` pass in this repository, and `quire validate --scope . "spec/**/*.md"` is structurally clean. | the pull request |
 
 ## Test Plan
@@ -103,16 +103,16 @@ Every test lands in this repository, because the rendered repositories are
 disposable: a template's tests are tests of what it renders, and keeping them
 here is what makes the template verified rather than merely written.
 
-| Test group | File | Test cases |
-| --- | --- | --- |
+| Test group                  | File                                     | Test cases                                                    |
+| --------------------------- | ---------------------------------------- | ------------------------------------------------------------- |
 | Input contract and variants | `tests/semantic-module-template.test.ts` | TC-1400..TC-1407, TC-1412, TC-1451..TC-1456, TC-1466, TC-1467 |
-| Emission | `tests/semantic-module-template.test.ts` | TC-1408, TC-1409, TC-1413..TC-1416, TC-1449, TC-1457 |
-| Manifest and digests | `tests/semantic-module-template.test.ts` | TC-1410, TC-1417..TC-1419, TC-1458, TC-1459, TC-1468 |
-| Skeletons and fixtures | `tests/semantic-module-template.test.ts` | TC-1411, TC-1420..TC-1426 |
-| Rendered suite behaviour | `tests/semantic-module-template.test.ts` | TC-1427..TC-1431, TC-1450, TC-1460, TC-1469 |
-| Packaging baseline | `tests/semantic-module-template.test.ts` | TC-1432..TC-1438 |
-| Governance tree | `tests/semantic-module-template.test.ts` | TC-1439..TC-1443, TC-1461, TC-1470 |
-| Gate, conformance and drift | `tests/semantic-module-template.test.ts` | TC-1418, TC-1444..TC-1448, TC-1462..TC-1465 |
+| Emission                    | `tests/semantic-module-template.test.ts` | TC-1408, TC-1409, TC-1413..TC-1416, TC-1449, TC-1457          |
+| Manifest and digests        | `tests/semantic-module-template.test.ts` | TC-1410, TC-1417..TC-1419, TC-1458, TC-1459, TC-1468          |
+| Skeletons and fixtures      | `tests/semantic-module-template.test.ts` | TC-1411, TC-1420..TC-1426                                     |
+| Rendered suite behaviour    | `tests/semantic-module-template.test.ts` | TC-1427..TC-1431, TC-1450, TC-1460, TC-1469                   |
+| Packaging baseline          | `tests/semantic-module-template.test.ts` | TC-1432..TC-1438                                              |
+| Governance tree             | `tests/semantic-module-template.test.ts` | TC-1439..TC-1443, TC-1461, TC-1470                            |
+| Gate, conformance and drift | `tests/semantic-module-template.test.ts` | TC-1418, TC-1444..TC-1448, TC-1462..TC-1465                   |
 
 ## Out of Scope
 

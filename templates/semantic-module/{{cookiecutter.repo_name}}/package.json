@@ -1,0 +1,43 @@
+{
+  "name": "@{{ cookiecutter.org }}/{{ cookiecutter.repo_name }}",
+  "version": "0.0.0-managed",
+  "description": "{{ cookiecutter.description }}",
+  "license": "{{ cookiecutter.license }}",
+  "author": "{{ cookiecutter.author }} <{{ cookiecutter.email }}>",
+  "keywords": [
+    "{{ cookiecutter.org }}",
+    "filament",
+    "filament-module",
+    "quoin",
+    "quire",
+    "spec"
+  ],
+  "files": [
+    "manifest.yaml",
+    "schemas/",
+    "skeletons/",
+{%- if cookiecutter.module_kind in ("artifact", "mixed") %}
+    "mappings.yaml",
+    "examples/",
+{%- endif %}
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "prepack": "node scripts/stage-npm.mjs",
+    "postpack": "node scripts/stage-npm.mjs --clean"
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/",
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/{{ cookiecutter.org }}/{{ cookiecutter.repo_name }}.git"
+  },
+  "devDependencies": {
+    "@agent-ix/semantic-core": "{{ cookiecutter.semantic_core_version }}",
+    "@typespec/compiler": "{{ cookiecutter.typespec_version }}",
+    "@typespec/json-schema": "{{ cookiecutter.typespec_version }}"
+  }
+}

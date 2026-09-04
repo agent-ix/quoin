@@ -1,0 +1,103 @@
+{
+  "clauses": [
+    {
+      "clauseId": "DispatchedShipmentHasTrackingCode",
+      "language": "ocl",
+      "sourceSpan": {
+        "endColumn": 4,
+        "endLine": 42,
+        "path": "<document>",
+        "sourceIdentity": "ix://local/scope/spec",
+        "startColumn": 1,
+        "startLine": 38
+      }
+    },
+    {
+      "clauseId": "WeightIsPositive",
+      "language": "ocl",
+      "sourceSpan": {
+        "endColumn": 4,
+        "endLine": 50,
+        "path": "<document>",
+        "sourceIdentity": "ix://local/scope/spec",
+        "startColumn": 1,
+        "startLine": 46
+      }
+    }
+  ],
+  "fields": [
+    {
+      "identity": true,
+      "name": "shipment_id",
+      "type": {
+        "multiplicity": {
+          "lower": 1,
+          "upper": 1
+        },
+        "target": "UUID"
+      }
+    },
+    {
+      "constraints": [
+        {
+          "keyword": "minLength",
+          "value": 6
+        },
+        {
+          "keyword": "maxLength",
+          "value": 40
+        }
+      ],
+      "name": "tracking_code",
+      "type": {
+        "multiplicity": {
+          "lower": 1,
+          "upper": 1
+        },
+        "target": "String"
+      }
+    },
+    {
+      "constraints": [
+        {
+          "keyword": "minLength",
+          "value": 1
+        }
+      ],
+      "name": "destination",
+      "type": {
+        "multiplicity": {
+          "lower": 1,
+          "upper": 1
+        },
+        "target": "String"
+      }
+    },
+    {
+      "constraints": [
+        {
+          "keyword": "min",
+          "value": 1
+        }
+      ],
+      "name": "weight_grams",
+      "type": {
+        "multiplicity": {
+          "lower": 1,
+          "upper": 1
+        },
+        "target": "Integer"
+      }
+    },
+    {
+      "name": "dispatched_at",
+      "type": {
+        "multiplicity": {
+          "lower": 0,
+          "upper": 1
+        },
+        "target": "Timestamp"
+      }
+    }
+  ]
+}

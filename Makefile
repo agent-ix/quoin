@@ -155,8 +155,21 @@ verification-preflight:
 # version, not the engine, and the installed 0.29.0 predates `binding_census` --
 # it would score recall 0 on every coverage family and look like a collapse.
 .PHONY: gate
-gate: test
-	@echo "gate: canonical verification stack passed"
+gate: test template-gate
+	@echo "gate: canonical verification stack and the template gate passed"
+
+# Instantiate the semantic-module cookiecutter and run what it renders
+# (quoin#307, FR-083). `make test` already renders every variant and checks it
+# against the conformance contract; this target adds the two legs that need the
+# network and a Python toolchain — emitting the schemas with the pinned TypeSpec
+# compiler, and running the rendered repository's own suite.
+#
+# A template that has never been instantiated is unverified. These legs are what
+# make the difference, and they FAIL rather than skip when a tool is absent:
+# `npm` and `python3` are named in the failure, not worked around.
+.PHONY: template-gate
+template-gate:
+	node scripts/template-gate.mjs
 
 .PHONY: evidence-audit
 evidence-audit: require-quire

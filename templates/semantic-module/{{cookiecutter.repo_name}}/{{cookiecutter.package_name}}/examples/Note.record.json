@@ -1,0 +1,74 @@
+{
+  "clauses": [
+    {
+      "clauseId": "SupersededNoteIsNotItself",
+      "language": "ocl",
+      "sourceSpan": {
+        "endColumn": 4,
+        "endLine": 37,
+        "path": "<document>",
+        "sourceIdentity": "ix://local/scope/spec",
+        "startColumn": 1,
+        "startLine": 33
+      }
+    }
+  ],
+  "fields": [
+    {
+      "constraints": [
+        {
+          "keyword": "minLength",
+          "value": 1
+        },
+        {
+          "keyword": "maxLength",
+          "value": 2000
+        }
+      ],
+      "name": "summary",
+      "type": {
+        "multiplicity": {
+          "lower": 1,
+          "upper": 1
+        },
+        "target": "String"
+      }
+    },
+    {
+      "constraints": [
+        {
+          "keyword": "minLength",
+          "value": 1
+        }
+      ],
+      "name": "author",
+      "type": {
+        "multiplicity": {
+          "lower": 1,
+          "upper": 1
+        },
+        "target": "String"
+      }
+    },
+    {
+      "name": "recorded_at",
+      "type": {
+        "multiplicity": {
+          "lower": 1,
+          "upper": 1
+        },
+        "target": "Timestamp"
+      }
+    },
+    {
+      "name": "supersedes",
+      "type": {
+        "multiplicity": {
+          "lower": 0,
+          "upper": 1
+        },
+        "target": "String"
+      }
+    }
+  ]
+}

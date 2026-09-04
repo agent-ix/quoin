@@ -1,0 +1,142 @@
+[project]
+name = "{{ cookiecutter.package_name }}"
+dynamic = ["version"]
+license = "{{ cookiecutter.license }}"
+
+[tool.poetry]
+name = "{{ cookiecutter.package_name }}"
+version = "0.1.0"  # Placeholder, replaced by poetry-dynamic-versioning from the git tag
+description = "{{ cookiecutter.description }}"
+authors = ["{{ cookiecutter.author }} <{{ cookiecutter.email }}>"]
+license = "{{ cookiecutter.license }}"
+readme = "README.md"
+repository = "https://github.com/{{ cookiecutter.org }}/{{ cookiecutter.repo_name }}"
+packages = [{ include = "{{ cookiecutter.package_name }}" }]
+# The module payload ships in both distributions. The TypeSpec toolchain does
+# not: it is a build input, not module data, and a consumer that installed it
+# would be installing a compiler to read a schema.
+include = [
+    { path = "{{ cookiecutter.package_name }}/manifest.yaml", format = ["sdist", "wheel"] },
+    { path = "{{ cookiecutter.package_name }}/schemas/*.json", format = ["sdist", "wheel"] },
+    { path = "{{ cookiecutter.package_name }}/skeletons/*.md", format = ["sdist", "wheel"] },
+{%- if cookiecutter.module_kind in ("artifact", "mixed") %}
+    { path = "{{ cookiecutter.package_name }}/mappings.yaml", format = ["sdist", "wheel"] },
+    { path = "{{ cookiecutter.package_name }}/examples/*.record.json", format = ["sdist", "wheel"] },
+{%- endif %}
+]
+exclude = [
+    "typespec",
+    "node_modules",
+    "package.json",
+    "package-lock.json",
+]
+
+[tool.poetry.dependencies]
+python = ">={{ cookiecutter.python_version }},<3.14"
+# The Quire engine is deliberately NOT declared here. No index this repository
+# may commit against serves the wheel exposing `extract_semantic`
+# (agent-ix/quire-rs#392), so declaring it would make `poetry install` fail on
+# every machine. `make dev-quire` provisions it, and the suite FAILS rather than
+# skips without it — see tests/conftest.py.
+
+[tool.poetry.group.dev.dependencies]
+black = "^26.1.0"
+jsonschema = "^4.26.0"
+poethepoet = "^0.34.0"
+poetry-dynamic-versioning = "^1.9.1"
+pytest = "^9.0.2"
+pytest-cov = "^7.0.0"
+pytest-json-report = "^1.5.0"
+pyyaml = "^6.0.2"
+referencing = "^0.36.2"
+ruff = "^0.14.13"
+
+[tool.poetry.scripts]
+build-tools = "scripts.build_tools:main"
+
+[tool.poe.tasks]
+
+[tool.poe.tasks.version]
+cmd = "build-tools version"
+help = "Print the computed version"
+
+[tool.poe.tasks.info]
+cmd = "build-tools info"
+help = "Show git and version info"
+
+[tool.poe.tasks.build]
+cmd = "build-tools build"
+help = "Build the distribution (wheel + sdist)"
+
+[tool.poe.tasks.clean]
+cmd = "build-tools clean"
+help = "Remove build artifacts"
+
+[tool.poe.tasks.test]
+cmd = "pytest"
+help = "Run the module's verification suite"
+
+[tool.poe.tasks.schemas]
+cmd = "node scripts/generate-schemas.mjs"
+help = "Emit {{ cookiecutter.package_name }}/schemas/ from typespec/main.tsp and rewrite the manifest digests"
+
+[tool.poe.tasks.schemas-check]
+cmd = "node scripts/generate-schemas.mjs --check"
+help = "Fail when the committed schemas, toolchain, or manifest digests differ from the source"
+
+[tool.poe.tasks.dev-quire]
+# The one place this repository names a non-public index. It is a provisioning
+# command, not a dependency declaration and not a publication target: no index
+# this repository may depend on serves a Quire wheel exposing
+# `extract_semantic` (agent-ix/quire-rs#392). Delete this task the day that
+# issue closes and declare the engine as an ordinary dev dependency.
+shell = "pip install --index-url http://pypi.ix/root/dev/+simple/ --trusted-host pypi.ix 'quire>={{ cookiecutter.quire_engine_floor }}'"
+help = "Install the Quire wheel the semantic tests need (agent-ix/quire-rs#392)"
+
+[tool.poe.tasks.lint]
+sequence = ["ruff-check", "black-check", "schemas-check"]
+help = "ruff, black, and the schema drift gate"
+
+[tool.poe.tasks.ruff-check]
+cmd = "ruff check ."
+
+[tool.poe.tasks.black-check]
+cmd = "black --check ."
+
+[tool.poe.tasks.format]
+sequence = ["black", "ruff-fix"]
+help = "Format (black + ruff --fix)"
+
+[tool.poe.tasks.black]
+cmd = "black ."
+
+[tool.poe.tasks.ruff-fix]
+cmd = "ruff check --fix ."
+
+[tool.pytest.ini_options]
+addopts = "--cov={{ cookiecutter.package_name }} --cov-report=term-missing --json-report --json-report-file=report.json"
+# Every warning is an error. A deprecation that scrolls past is a defect that
+# ships.
+filterwarnings = ["error"]
+markers = [
+    "trace: Bind a test to one or more spec ids (quire trace marker form)",
+]
+
+[tool.ruff]
+line-length = 88
+target-version = "py{{ cookiecutter.python_version.replace('.', '') }}"
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "TID"]
+ignore = ["E203"]
+
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "all"
+
+[tool.poetry-dynamic-versioning]
+enable = true
+style = "pep440"
+
+[build-system]
+requires = ["poetry-core>=1.0.0", "poetry-dynamic-versioning>=1.0.0,<2.0.0"]
+build-backend = "poetry_dynamic_versioning.backend"

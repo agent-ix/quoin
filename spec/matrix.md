@@ -115,14 +115,14 @@ Coverage is mapped requirement → test as `file :: "test name"`:
 | FR-029 | ✅ Covered | `tests/quire-contract.test.ts` — TC-110 (vendored schemas hash to their recorded provenance and carry the pinned `$id`), TC-111 (conformant payloads validate, including every self-named binding-census field added by the locked engine), TC-112 (missing key / added field / value outside a closed engine enum each rejected, failing path named), TC-113 (unreadable output is a named violation, not a throw), TC-114 (version premise names found/required/consequence; an unreadable version fails rather than passes), TC-115 (numeric comparison, so `0.21.0` > `0.9.0`), TC-116 (every optional key absent and present, "every" read off the schema's own optional-key list; the v0.41.0 keys accepted; a malformed `undeclared_statuses` entry and a malformed statement hash rejected), TC-117 (the eval harness floor equals the pinned minimum), TC-118 (payloads from the **installed** `quire` validate — both `properties` and `coverage`, the contract checked against the real emitter rather than only fixtures). `tests/quire-types-conformance.test.ts` — TC-272 (the interfaces conform to the vendored coverage schema: `Required<Interface>` samples per `$defs` entry, key equality both directions, schema validation, and a spawned `tsc` enforcing the compile half). `tests/quire-exec.test.ts` — TC-254..TC-257 (the subprocess failure contract: explicit `maxBuffer`, kill-path deaths reported by cause with no stderr appended, a non-zero exit still surfacing the child's own diagnostic). CON-1/CON-2 → inspection of `src/quire/` (no hand-written validator, no network read). CON-3 → TC-112, which rejects a closed enum and leaves `diagnostics[].reason` open. |
 | FR-028 | ✅ Covered | The `spec-correctness` skill (`skills/spec-correctness/`) is agent-facing, so it is verified at the eval layer rather than by vitest — TC-EV-050…TC-EV-053, implemented in `evals/scenarios/index.mjs` and run by `make evals-all`. AC-1/AC-3/AC-4 → TC-EV-050. AC-2/AC-6/AC-7 → TC-EV-051. AC-5 → TC-EV-052. AC-8/AC-9/AC-11/AC-13 → TC-EV-053. AC-10/AC-12 → Inspection of `skills/spec-correctness/` (no framework name reaches any `spec/**` output; strategy selection is keyed on `property`, never on `shape`). CON-1 → TC-EV-053 `absentFiles`. The skill's own output on this repo is `tests/props/` + a `SpecReview` under `reviews/`. |
 
-| FR-076      | 🚧 In progress | `tests/semantic-module-template.test.ts` TC-1400..TC-1407, TC-1412, TC-1451 — the three variants render from one core, the shared surfaces are single-sourced, and each rejected input aborts naming the value. Implementation lands under agent-ix/quoin#307. |
-| FR-077      | 🚧 In progress | TC-1408, TC-1409, TC-1413..TC-1416, TC-1449 — emission, no `{type: object}` schema, byte-determinism, check mode, base/version disagreement, and the semantic-core import. |
-| FR-078      | 🚧 In progress | TC-1417, TC-1410, TC-1409, TC-1419, TC-1402 — the nine-key `semantic` block, digest agreement, reference-form `data_schema`, comment-preserving digest rewrite, and `imports`. |
-| FR-079      | 🚧 In progress | TC-1420..TC-1426, TC-1411 — typed table, `sysml` alternate, `ocl` invariants, distinct negative fixtures, the legacy warning, both-forms refusal, placeholder-free bodies, and the artifact mappings. |
-| FR-080      | 🚧 In progress | TC-1427..TC-1431, TC-1450 — engine-absent failure naming the provisioning path, missing `extract_semantic`, zero skips, no declared engine dependency, and the rendered gate. |
-| FR-081      | 🚧 In progress | TC-1432..TC-1438 — licence consistency, the baseline files, wheel/tarball payload agreement, credential and registry scans, the manual release workflows, and the catalog document. |
-| FR-082      | 🚧 In progress | TC-1439..TC-1443 — `quire validate` over each rendered `spec/` tree, the `Status` vocabulary, `🚧` rows carrying reasons, criterion traces, and the folder set. |
-| FR-083      | 🚧 In progress | TC-1444..TC-1448, TC-1418 — the render harness, temporary-directory hygiene, residue injection, conformance-contract removal, the maintained-module drift check, and the toolchain-absent failure. |
+| FR-076      | ✅ Covered | `tests/semantic-module-template.test.ts` TC-1400..TC-1407, TC-1412, TC-1451 — the three variants render from one core, the shared surfaces are single-sourced, and each rejected input aborts naming the value. `tests/semantic-module-template.test.ts` renders every variant on `make test`. |
+| FR-077      | 🚧 Partly | TC-1408, TC-1409, TC-1413 pass under `make template-gate`, which emits twice and re-checks. TC-1414..TC-1416 and TC-1449 are `🚧`: the emit driver implements each refusal and no run yet provokes one. |
+| FR-078      | ✅ Covered | TC-1417, TC-1410, TC-1409, TC-1419, TC-1402 — the nine-key `semantic` block, digest agreement, reference-form `data_schema`, comment-preserving digest rewrite, and `imports`. |
+| FR-079      | ✅ Covered | TC-1420..TC-1426, TC-1411 — typed table, `sysml` alternate, `ocl` invariants, distinct negative fixtures, the legacy warning, both-forms refusal, placeholder-free bodies, and the artifact mappings. |
+| FR-080      | 🚧 Partly | TC-1427 and TC-1430 pass under `make template-gate` — a rendered run reports 31 passed and zero skipped. TC-1428, TC-1429, TC-1431, TC-1450 and TC-1460 are `🚧`: the failure paths are authored in the rendered `conftest.py` and no run yet removes the tool to observe them. |
+| FR-081      | ✅ Covered | TC-1432..TC-1438 — licence consistency, the baseline files, wheel/tarball payload agreement, credential and registry scans, the manual release workflows, and the catalog document. |
+| FR-082      | ✅ Covered | TC-1439..TC-1443 — `quire validate` over each rendered `spec/` tree, the `Status` vocabulary, `🚧` rows carrying reasons, criterion traces, and the folder set. |
+| FR-083      | 🚧 Partly | TC-1418 and TC-1444..TC-1447 pass on `make test`. TC-1448 is `🚧`: the emit driver names the install command when the toolchain is absent and no run yet removes it. |
 
 ## Non-Functional Requirements
 
@@ -145,9 +145,9 @@ Coverage is mapped requirement → test as `file :: "test name"`:
 | NFR-016     | ✅ Covered | TC-1192..TC-1193 prove read-only execution and changed-path isolation. TC-1194 records the human decision to admin-merge PR #316 after the architecture gate closed; SR-058 limits that decision to this read-only audit and leaves every downstream compiler, schema, migration, publication, enforcement, and retirement boundary gated. |
 | NFR-017     | ✅ Covered | TC-1379..TC-1382: default module load, warning-only sweep, corpus changed-path gate, unchanged manifest `required` arrays. |
 
-| NFR-018     | 🚧 In progress | `tests/semantic-module-template.test.ts` TC-1436 scans every rendered file of all three variants for unresolved tokens, placeholder organizations, absolute rendering-machine paths, credentials, and private-registry defaults; TC-1434 asserts one licence identifier. Marked in progress until the template lands (agent-ix/quoin#307). |
-| NFR-020     | 🚧 In progress | TC-1463..TC-1465 and TC-1448 — every external command has a declared floor, and each invoking command fails naming the tool, the floor, and the install step when it is absent. Marked in progress until the template lands (agent-ix/quoin#307). |
-| NFR-019     | 🚧 In progress | `tests/semantic-module-template.test.ts` TC-1403 compares two renders of one variant byte for byte, and TC-1413 compares two schema emissions from an unchanged source. Marked in progress until the template lands (agent-ix/quoin#307). |
+| NFR-018     | ✅ Covered | `tests/semantic-module-template.test.ts` TC-1436 and TC-1446 scan every rendered file of all three variants against the residue patterns declared in `templates/semantic-module/conformance.yaml`, with an injected instance of each class proving the scan fires; TC-1434 asserts one licence identifier. |
+| NFR-020     | 🚧 Partly | TC-1463 and TC-1464 pass on `make test` — `toolchain.yaml` declares a floor and an install step for every external command, and the renderer's absence fails naming it. TC-1448 and TC-1465 are `🚧`: those two absent-tool paths are authored and not yet driven. |
+| NFR-019     | ✅ Covered | `tests/semantic-module-template.test.ts` TC-1467 compares two renders of one variant byte for byte; `make template-gate` TC-1413 emits twice from an unchanged source and re-checks byte-for-byte. |
 
 ## Functional Requirement Coverage
 
@@ -896,77 +896,77 @@ generated tests under `tests/props/` and `Unit` for the rest.
 | TC-264 | `unknown-method` fires on an obligation with no bindings at all — it is a statement-vs-catalog comparison and is asked before the binding guard, so an unbound obligation with an uncatalogued method yields BOTH `undischarged` and `unknown-method`, a catalogued method yields only `undischarged`, and no catalog means the question is not asked (#165: 1,107 findings all undischarged, 90+ uncatalogued Verification values, zero unknown-method) | Unit | P0 | FR-032-AC-14 | ✅ |
 | TC-265 | `quoin evidence audit` against a repository with no `spec/evidence/` store reports its uncatalogued methods, not only that nothing is bound — the one check that pays off on day one of adoption no longer requires having already adopted | Unit | P0 | FR-032-AC-14 | ✅ |
 | TC-144 | `ratchet` reports only violations absent from the baseline — a gate that fails on the whole backlog gets disabled within a week — and `delta` names what a change added and resolved | Unit | P0 | FR-032-AC-8 | ✅ |
-| TC-1400 | `module_kind: object` renders a manifest declaring `object_types` and no `artifact_types` | Unit | P0 | FR-076-AC-1 | 🚧 template not yet landed (agent-ix/quoin#307) |
-| TC-1401 | `module_kind: artifact` renders a manifest declaring `artifact_types` and no `object_types` | Unit | P0 | FR-076-AC-2 | 🚧 template not yet landed (agent-ix/quoin#307) |
-| TC-1402 | `module_kind: mixed` renders a manifest declaring both an artifact_types and an object_types section | Unit | P0 | FR-076-AC-3 | 🚧 template not yet landed (agent-ix/quoin#307) |
-| TC-1466 | A mixed rendering maps each imported package identity to its exact version, and an object rendering with none yields an empty imports mapping | Unit | P0 | FR-078-AC-5 | 🚧 template not yet landed (agent-ix/quoin#307) |
-| TC-1403 | Every file byte-identical across the three rendered variants exists exactly once in the template source | Static | P0 | FR-076-AC-4 | 🚧 template not yet landed (agent-ix/quoin#307) |
-| TC-1467 | Two renders of one variant from the same inputs produce byte-identical trees | Property | P0 | FR-076-AC-4 | 🚧 template not yet landed (agent-ix/quoin#307) |
-| TC-1404 | `license: MIT` aborts rendering naming `MIT`; the default renders the full AGPL-3.0-or-later text | Unit | P0 | FR-076-AC-5 | 🚧 template not yet landed (agent-ix/quoin#307) |
-| TC-1405 | `module_kind: hybrid` aborts rendering naming `hybrid` | Unit | P0 | FR-076-AC-6 | 🚧 template not yet landed (agent-ix/quoin#307) |
-| TC-1406 | An `imported_modules` entry without an exact version aborts naming the entry; the `<org>/<repo>@<version>` form renders | Unit | P0 | FR-076-AC-7 | 🚧 template not yet landed (agent-ix/quoin#307) |
-| TC-1407 | A `generated_targets` entry outside the filament-core-data target registry aborts naming the value | Unit | P0 | FR-076-AC-8 | 🚧 template not yet landed (agent-ix/quoin#307) |
-| TC-1408 | Each rendered variant emits one schema per exported type plus `toolchain.json`, and every `$ref` resolves against the committed tree and semantic-core | Integration | P0 | FR-077-AC-1 | 🚧 template not yet landed (agent-ix/quoin#307) |
-| TC-1409 | No emitted schema of any rendered variant is the placeholder `{"type": "object"}` contract, and no exported type carries `data_schema: {type: object}` | Static | P0 | FR-077-AC-2, FR-077-CON-2, FR-078-AC-3 | 🚧 template not yet landed (agent-ix/quoin#307) |
-| TC-1410 | Every exported type's `data_schema.digest` equals the SHA-256 of the file its `schema` names, and the rendered repository's own gate passes on a clean checkout | Integration | P0 | FR-078-AC-2, StR-008-VC-2 | 🚧 template not yet landed (agent-ix/quoin#307) |
-| TC-1411 | No rendered skeleton section carries a `TODO`, an ellipsis, or another placeholder body | Static | P1 | FR-079-AC-7, FR-079-CON-1 | 🚧 template not yet landed (agent-ix/quoin#307) |
-| TC-1412 | No rendered variant contains an `.npmrc` at any depth | Static | P0 | FR-076-AC-9, FR-076-CON-2 | 🚧 template not yet landed (agent-ix/quoin#307) |
-| TC-1413 | Two schema emissions from an unchanged rendered source are byte-identical, including `toolchain.json` and the manifest digest lines | Property | P0 | FR-077-AC-3 | 🚧 template not yet landed (agent-ix/quoin#307) |
-| TC-1414 | Emission check mode exits zero on the committed output and non-zero naming the file after one emitted byte changes | Unit | P0 | FR-077-AC-4, FR-077-CON-1 | 🚧 template not yet landed (agent-ix/quoin#307) |
-| TC-1415 | A manifest `version` edited without the `@jsonSchema` base fails emission naming both values, and no committed file changes | Unit | P0 | FR-077-AC-5 | 🚧 template not yet landed (agent-ix/quoin#307) |
-| TC-1416 | The rendered `main.tsp` imports `@agent-ix/semantic-core` and redeclares no model the grammar already declares | Static | P0 | FR-077-AC-6 | 🚧 template not yet landed (agent-ix/quoin#307) |
-| TC-1417 | Each rendered semantic block carries the nine admitted keys and no other, and validates against the vendored module-manifest schema | Unit | P0 | FR-078-AC-1, FR-078-CON-1 | 🚧 template not yet landed (agent-ix/quoin#307) |
-| TC-1468 | The rendered semantic.exports and the rendered manifest's declared type names are the same set | Unit | P0 | FR-078-AC-6 | 🚧 template not yet landed (agent-ix/quoin#307) |
-| TC-1418 | A surface the maintained module repositories carry and the conformance contract omits fails the drift check naming it | Static | P1 | FR-083-AC-5, StR-008-VC-3 | 🚧 template not yet landed (agent-ix/quoin#307) |
-| TC-1419 | Regenerating the manifest digests preserves every comment and YAML anchor in the rendered manifest | Unit | P1 | FR-078-AC-4, FR-078-CON-2 | 🚧 template not yet landed (agent-ix/quoin#307) |
-| TC-1420 | Every exported type has a skeleton whose Properties table header is exactly the typed four-column form (Field, Type, Multiplicity, Constraints) with at least one row | Property | P0 | FR-079-AC-1 | 🚧 template not yet landed (agent-ix/quoin#307) |
-| TC-1421 | Every rendered skeleton has a `sysml`-fence alternate declaring the same field names, types, and multiplicities | Property | P0 | FR-079-AC-2 | 🚧 template not yet landed (agent-ix/quoin#307) |
-| TC-1422 | A document carrying both Properties forms is refused, and no rendered artifact carries both | Unit | P0 | FR-079-AC-6, FR-079-CON-2 | 🚧 template not yet landed (agent-ix/quoin#307) |
-| TC-1423 | Every rendered skeleton carries at least one `ocl` fence under its own `### <clauseId>` heading | Property | P0 | FR-079-AC-3 | 🚧 template not yet landed (agent-ix/quoin#307) |
-| TC-1424 | Every rendered negative fixture is refused, and each for its own distinct reason | Property | P0 | FR-079-AC-4 | 🚧 template not yet landed (agent-ix/quoin#307) |
-| TC-1425 | The rendered legacy-form fixture validates with exactly one legacy warning and zero errors | Integration | P0 | FR-079-AC-5 | 🚧 template not yet landed (agent-ix/quoin#307) |
-| TC-1426 | For artifact and mixed renderings, every property of every exported model has exactly one mapping entry and every golden record round-trips from its skeleton | Property | P1 | FR-079-AC-8 | 🚧 template not yet landed (agent-ix/quoin#307) |
-| TC-1427 | A run of the rendered suite reports zero skipped tests, and an expected engine gap is a strict expected failure with a paired control | Integration | P0 | FR-080-AC-3, FR-080-CON-1 | 🚧 template not yet landed (agent-ix/quoin#307) |
-| TC-1428 | With the engine absent, the rendered suite fails naming the provisioning command and the tracking issue | Unit | P0 | FR-080-AC-1 | 🚧 template not yet landed (agent-ix/quoin#307) |
-| TC-1429 | With an engine lacking `extract_semantic`, the rendered suite fails naming the missing capability | Unit | P0 | FR-080-AC-2 | 🚧 template not yet landed (agent-ix/quoin#307) |
-| TC-1430 | The rendered package metadata declares no dependency on the engine, and the rendered dev-quire command names the tracking issue for the unpublished wheel | Static | P0 | FR-080-AC-4, FR-080-CON-2 | 🚧 template not yet landed (agent-ix/quoin#307) |
-| TC-1469 | The rendered test configuration turns warnings into errors | Static | P0 | FR-080-AC-6 | 🚧 template not yet landed (agent-ix/quoin#307) |
-| TC-1431 | The rendered gate runs spec validation, lint, the schema drift check, and the suite, and fails when any one fails | Integration | P0 | FR-080-AC-5 | 🚧 template not yet landed (agent-ix/quoin#307) |
-| TC-1432 | No rendered dependency declaration uses a local path reference or a version upper bound | Static | P0 | FR-081-AC-8, FR-081-CON-1 | 🚧 template not yet landed (agent-ix/quoin#307) |
-| TC-1433 | The rendered Python distribution and the rendered npm tarball carry the same manifest, schema, and skeleton bytes | Integration | P1 | FR-081-AC-3, FR-081-CON-2 | 🚧 template not yet landed (agent-ix/quoin#307) |
-| TC-1434 | Every rendered variant carries the full AGPL-3.0-or-later text and exactly one SPDX identifier across every declaration | Static | P0 | FR-081-AC-1 | 🚧 template not yet landed (agent-ix/quoin#307) |
-| TC-1435 | Every rendered variant carries CODEOWNERS, AGENTS.md, CLAUDE.md, README, contribution and security guidance, .gitignore, .gitattributes, and a Makefile | Static | P0 | FR-081-AC-2 | 🚧 template not yet landed (agent-ix/quoin#307) |
-| TC-1436 | No rendered file matches a credential, token, or private-registry publication pattern, and the npm publication target is the public registry with public access | Property | P0 | FR-081-AC-4, FR-081-AC-5 | 🚧 template not yet landed (agent-ix/quoin#307) |
-| TC-1437 | The rendered release workflows carry no publish step of their own and run only on a manual trigger | Static | P1 | FR-081-AC-6 | 🚧 template not yet landed (agent-ix/quoin#307) |
-| TC-1438 | The rendered catalog document names the Quoin catalog file and the tracking project the module is added to | Static | P2 | FR-081-AC-7 | 🚧 template not yet landed (agent-ix/quoin#307) |
-| TC-1439 | `quire validate` over each rendered variant's `spec/**/*.md` exits zero with no error diagnostic | Property | P0 | FR-082-AC-1 | 🚧 template not yet landed (agent-ix/quoin#307) |
-| TC-1440 | Every rendered Test Matrix Status cell matches the archetype pattern and none carries the retired warning marker | Static | P0 | FR-082-AC-2, FR-082-CON-1 | 🚧 template not yet landed (agent-ix/quoin#307) |
-| TC-1470 | A warning marker injected into a rendered Test Matrix Status cell fails the gate | Unit | P0 | FR-083-AC-7 | 🚧 template not yet landed (agent-ix/quoin#307) |
-| TC-1441 | Every rendered Test Matrix row that is not covered carries `🚧` and a reason | Static | P0 | FR-082-AC-3 | 🚧 template not yet landed (agent-ix/quoin#307) |
-| TC-1442 | Every rendered Test Matrix row traces to an acceptance criterion that exists in the rendered spec | Property | P0 | FR-082-AC-4 | 🚧 template not yet landed (agent-ix/quoin#307) |
-| TC-1443 | Each rendered variant carries the master-requirements root, the stakeholder, usecase, functional, and non-functional folders, and their indexes | Static | P1 | FR-082-AC-5 | 🚧 template not yet landed (agent-ix/quoin#307) |
-| TC-1444 | The gate renders all three variants and names the variant and the surface when one fails | Integration | P0 | FR-083-AC-1 | 🚧 template not yet landed (agent-ix/quoin#307) |
-| TC-1445 | Every rendered directory is removed after the run, including after a failure, and none is written inside the working tree | Unit | P1 | FR-083-AC-2, FR-083-CON-1 | 🚧 template not yet landed (agent-ix/quoin#307) |
-| TC-1446 | An injected unresolved token, placeholder organization, absolute path, credential, or private-registry default fails the gate naming the file | Unit | P0 | FR-083-AC-3 | 🚧 template not yet landed (agent-ix/quoin#307) |
-| TC-1447 | Removing a surface the conformance contract names fails the gate naming that surface | Unit | P0 | FR-083-AC-4, FR-083-CON-2 | 🚧 template not yet landed (agent-ix/quoin#307) |
-| TC-1448 | With the schema toolchain absent, the gate fails naming the install command and reports no skipped emission check | Unit | P0 | FR-083-AC-6, NFR-020-AC-3 | 🚧 template not yet landed (agent-ix/quoin#307) |
-| TC-1449 | A deliberate TypeSpec error fails emission with the compiler diagnostics in the message and changes no committed schema, toolchain, or manifest byte | Unit | P0 | FR-077-AC-7 | 🚧 template not yet landed (agent-ix/quoin#307) |
-| TC-1450 | With the semantic-core grammar package absent, the rendered suite fails naming the install command and reports no skipped schema check | Unit | P0 | FR-080-AC-7 | 🚧 template not yet landed (agent-ix/quoin#307) |
-| TC-1451 | A declared target with no emitter today is recorded as declared-not-emitted in the rendered README and as a `🚧` Test Matrix row carrying the reason | Static | P1 | FR-076-AC-10 | 🚧 template not yet landed (agent-ix/quoin#307) |
-| TC-1452 | Every variant renders unattended from arguments alone with no prompt and no terminal | Integration | P0 | FR-076-AC-11 | 🚧 template not yet landed (agent-ix/quoin#307) |
-| TC-1453 | A mixed rendering with no imported_modules aborts saying a mixed module declares at least one import | Unit | P0 | FR-076-AC-12 | 🚧 template not yet landed (agent-ix/quoin#307) |
-| TC-1454 | Every refused rendering leaves no directory at the output path | Unit | P1 | FR-076-AC-13 | 🚧 template not yet landed (agent-ix/quoin#307) |
-| TC-1455 | The template carries no copy of the schema emitter, the Quire runtime, or the semantic-core grammar | Static | P0 | FR-076-CON-1 | 🚧 template not yet landed (agent-ix/quoin#307) |
-| TC-1456 | The rendered emit driver is byte-identical to the template's copy in every variant | Property | P1 | FR-076-CON-3 | 🚧 template not yet landed (agent-ix/quoin#307) |
-| TC-1457 | A ref to an imported model is written against that module's base at the imported version, and a ref matching no declared base fails emission naming it | Unit | P0 | FR-077-AC-8 | 🚧 template not yet landed (agent-ix/quoin#307) |
-| TC-1458 | No exported type name appears in more than one declaration of a rendered manifest, in any variant | Property | P0 | FR-078-AC-7 | 🚧 template not yet landed (agent-ix/quoin#307) |
-| TC-1459 | Two imported_modules entries naming the same package identity abort rendering naming that identity | Unit | P0 | FR-078-AC-8 | 🚧 template not yet landed (agent-ix/quoin#307) |
-| TC-1460 | An engine older than the declared floor fails the rendered suite naming the installed version and the floor | Unit | P0 | FR-080-AC-8 | 🚧 template not yet landed (agent-ix/quoin#307) |
-| TC-1461 | The rendered master-requirements Out of Scope section states the module's domain types are the maintainer's, and no rendered requirement text is copied from a maintained module repository | Static | P1 | FR-082-AC-6, FR-082-CON-2 | 🚧 template not yet landed (agent-ix/quoin#307) |
-| TC-1462 | A maintained repository that cannot be read at its pinned revision fails the drift check naming the repository and the revision | Unit | P0 | FR-083-AC-8 | 🚧 template not yet landed (agent-ix/quoin#307) |
-| TC-1463 | Every external command the template and a rendered repository invoke has a declared minimum version recorded in one file | Static | P1 | NFR-020-AC-1 | 🚧 template not yet landed (agent-ix/quoin#307) |
-| TC-1464 | With the renderer absent, the render gate fails naming the renderer, the floor, and the install command | Unit | P0 | NFR-020-AC-2 | 🚧 template not yet landed (agent-ix/quoin#307) |
-| TC-1465 | With the validator absent, the rendered gate's validation leg fails naming the validator rather than reporting zero documents | Unit | P0 | NFR-020-AC-4 | 🚧 template not yet landed (agent-ix/quoin#307) |
+| TC-1400 | `module_kind: object` renders a manifest declaring `object_types` and no `artifact_types` | Unit | P0 | FR-076-AC-1 | ✅ |
+| TC-1401 | `module_kind: artifact` renders a manifest declaring `artifact_types` and no `object_types` | Unit | P0 | FR-076-AC-2 | ✅ |
+| TC-1402 | `module_kind: mixed` renders a manifest declaring both an artifact_types and an object_types section | Unit | P0 | FR-076-AC-3 | ✅ |
+| TC-1466 | A mixed rendering maps each imported package identity to its exact version, and an object rendering with none yields an empty imports mapping | Unit | P0 | FR-078-AC-5 | ✅ |
+| TC-1403 | Every file byte-identical across the three rendered variants exists exactly once in the template source | Static | P0 | FR-076-AC-4 | ✅ |
+| TC-1467 | Two renders of one variant from the same inputs produce byte-identical trees | Property | P0 | FR-076-AC-4 | ✅ |
+| TC-1404 | `license: MIT` aborts rendering naming `MIT`; the default renders the full AGPL-3.0-or-later text | Unit | P0 | FR-076-AC-5 | ✅ |
+| TC-1405 | `module_kind: hybrid` aborts rendering naming `hybrid` | Unit | P0 | FR-076-AC-6 | ✅ |
+| TC-1406 | An `imported_modules` entry without an exact version aborts naming the entry; the `<org>/<repo>@<version>` form renders | Unit | P0 | FR-076-AC-7 | ✅ |
+| TC-1407 | A `generated_targets` entry outside the filament-core-data target registry aborts naming the value | Unit | P0 | FR-076-AC-8 | ✅ |
+| TC-1408 | Each rendered variant emits one schema per exported type plus `toolchain.json`, and every `$ref` resolves against the committed tree and semantic-core | Integration | P0 | FR-077-AC-1 | ✅ `make template-gate` |
+| TC-1409 | No emitted schema of any rendered variant is the placeholder `{"type": "object"}` contract, and no exported type carries `data_schema: {type: object}` | Static | P0 | FR-077-AC-2, FR-077-CON-2, FR-078-AC-3 | ✅ `make template-gate` |
+| TC-1410 | Every exported type's `data_schema.digest` equals the SHA-256 of the file its `schema` names, and the rendered repository's own gate passes on a clean checkout | Integration | P0 | FR-078-AC-2, StR-008-VC-2 | ✅ `make template-gate` |
+| TC-1411 | No rendered skeleton section carries a `TODO`, an ellipsis, or another placeholder body | Static | P1 | FR-079-AC-7, FR-079-CON-1 | ✅ `make template-gate` |
+| TC-1412 | No rendered variant contains an `.npmrc` at any depth | Static | P0 | FR-076-AC-9, FR-076-CON-2 | ✅ |
+| TC-1413 | Two schema emissions from an unchanged rendered source are byte-identical, including `toolchain.json` and the manifest digest lines | Property | P0 | FR-077-AC-3 | ✅ `make template-gate` |
+| TC-1414 | Emission check mode exits zero on the committed output and non-zero naming the file after one emitted byte changes | Unit | P0 | FR-077-AC-4, FR-077-CON-1 | 🚧 the rendered suite asserts both check-mode directions; the template gate runs check mode green but does not yet mutate a byte and assert red |
+| TC-1415 | A manifest `version` edited without the `@jsonSchema` base fails emission naming both values, and no committed file changes | Unit | P0 | FR-077-AC-5 | 🚧 no run yet drives a manifest version and `@jsonSchema` base out of agreement in a rendered tree |
+| TC-1416 | The rendered `main.tsp` imports `@agent-ix/semantic-core` and redeclares no model the grammar already declares | Static | P0 | FR-077-AC-6 | 🚧 the rendered `main.tsp` imports semantic-core and the emission proves the refs resolve; no run yet asserts that no grammar model is redeclared |
+| TC-1417 | Each rendered semantic block carries the nine admitted keys and no other, and validates against the vendored module-manifest schema | Unit | P0 | FR-078-AC-1, FR-078-CON-1 | ✅ `make template-gate` |
+| TC-1468 | The rendered semantic.exports and the rendered manifest's declared type names are the same set | Unit | P0 | FR-078-AC-6 | ✅ `make template-gate` |
+| TC-1418 | A surface the maintained module repositories carry and the conformance contract omits fails the drift check naming it | Static | P1 | FR-083-AC-5, StR-008-VC-3 | ✅ |
+| TC-1419 | Regenerating the manifest digests preserves every comment and YAML anchor in the rendered manifest | Unit | P1 | FR-078-AC-4, FR-078-CON-2 | ✅ `make template-gate` |
+| TC-1420 | Every exported type has a skeleton whose Properties table header is exactly the typed four-column form (Field, Type, Multiplicity, Constraints) with at least one row | Property | P0 | FR-079-AC-1 | ✅ `make template-gate` |
+| TC-1421 | Every rendered skeleton has a `sysml`-fence alternate declaring the same field names, types, and multiplicities | Property | P0 | FR-079-AC-2 | ✅ `make template-gate` |
+| TC-1422 | A document carrying both Properties forms is refused, and no rendered artifact carries both | Unit | P0 | FR-079-AC-6, FR-079-CON-2 | ✅ `make template-gate` |
+| TC-1423 | Every rendered skeleton carries at least one `ocl` fence under its own `### <clauseId>` heading | Property | P0 | FR-079-AC-3 | ✅ `make template-gate` |
+| TC-1424 | Every rendered negative fixture is refused, and each for its own distinct reason | Property | P0 | FR-079-AC-4 | ✅ `make template-gate` |
+| TC-1425 | The rendered legacy-form fixture validates with exactly one legacy warning and zero errors | Integration | P0 | FR-079-AC-5 | ✅ `make template-gate` |
+| TC-1426 | For artifact and mixed renderings, every property of every exported model has exactly one mapping entry and every golden record round-trips from its skeleton | Property | P1 | FR-079-AC-8 | ✅ `make template-gate` |
+| TC-1427 | A run of the rendered suite reports zero skipped tests, and an expected engine gap is a strict expected failure with a paired control | Integration | P0 | FR-080-AC-3, FR-080-CON-1 | ✅ `make template-gate` |
+| TC-1428 | With the engine absent, the rendered suite fails naming the provisioning command and the tracking issue | Unit | P0 | FR-080-AC-1 | 🚧 the failure path is authored in the rendered conftest; no run yet removes the engine and observes it |
+| TC-1429 | With an engine lacking `extract_semantic`, the rendered suite fails naming the missing capability | Unit | P0 | FR-080-AC-2 | 🚧 the failure path is authored in the rendered conftest; no run yet installs an engine without `extract_semantic` |
+| TC-1430 | The rendered package metadata declares no dependency on the engine, and the rendered dev-quire command names the tracking issue for the unpublished wheel | Static | P0 | FR-080-AC-4, FR-080-CON-2 | ✅ `make template-gate` |
+| TC-1469 | The rendered test configuration turns warnings into errors | Static | P0 | FR-080-AC-6 | ✅ `make template-gate` |
+| TC-1431 | The rendered gate runs spec validation, lint, the schema drift check, and the suite, and fails when any one fails | Integration | P0 | FR-080-AC-5 | 🚧 the rendered `make gate` runs the four legs; no run yet fails one leg and asserts the target fails |
+| TC-1432 | No rendered dependency declaration uses a local path reference or a version upper bound | Static | P0 | FR-081-AC-8, FR-081-CON-1 | ✅ |
+| TC-1433 | The rendered Python distribution and the rendered npm tarball carry the same manifest, schema, and skeleton bytes | Integration | P1 | FR-081-AC-3, FR-081-CON-2 | ✅ |
+| TC-1434 | Every rendered variant carries the full AGPL-3.0-or-later text and exactly one SPDX identifier across every declaration | Static | P0 | FR-081-AC-1 | ✅ |
+| TC-1435 | Every rendered variant carries CODEOWNERS, AGENTS.md, CLAUDE.md, README, contribution and security guidance, .gitignore, .gitattributes, and a Makefile | Static | P0 | FR-081-AC-2 | ✅ |
+| TC-1436 | No rendered file matches a credential, token, or private-registry publication pattern, and the npm publication target is the public registry with public access | Property | P0 | FR-081-AC-4, FR-081-AC-5 | ✅ |
+| TC-1437 | The rendered release workflows carry no publish step of their own and run only on a manual trigger | Static | P1 | FR-081-AC-6 | ✅ |
+| TC-1438 | The rendered catalog document names the Quoin catalog file and the tracking project the module is added to | Static | P2 | FR-081-AC-7 | ✅ |
+| TC-1439 | `quire validate` over each rendered variant's `spec/**/*.md` exits zero with no error diagnostic | Property | P0 | FR-082-AC-1 | ✅ |
+| TC-1440 | Every rendered Test Matrix Status cell matches the archetype pattern and none carries the retired warning marker | Static | P0 | FR-082-AC-2, FR-082-CON-1 | ✅ |
+| TC-1470 | A warning marker injected into a rendered Test Matrix Status cell fails the gate | Unit | P0 | FR-083-AC-7 | ✅ |
+| TC-1441 | Every rendered Test Matrix row that is not covered carries `🚧` and a reason | Static | P0 | FR-082-AC-3 | ✅ |
+| TC-1442 | Every rendered Test Matrix row traces to an acceptance criterion that exists in the rendered spec | Property | P0 | FR-082-AC-4 | ✅ |
+| TC-1443 | Each rendered variant carries the master-requirements root, the stakeholder, usecase, functional, and non-functional folders, and their indexes | Static | P1 | FR-082-AC-5 | ✅ |
+| TC-1444 | The gate renders all three variants and names the variant and the surface when one fails | Integration | P0 | FR-083-AC-1 | ✅ |
+| TC-1445 | Every rendered directory is removed after the run, including after a failure, and none is written inside the working tree | Unit | P1 | FR-083-AC-2, FR-083-CON-1 | ✅ |
+| TC-1446 | An injected unresolved token, placeholder organization, absolute path, credential, or private-registry default fails the gate naming the file | Unit | P0 | FR-083-AC-3 | ✅ |
+| TC-1447 | Removing a surface the conformance contract names fails the gate naming that surface | Unit | P0 | FR-083-AC-4, FR-083-CON-2 | ✅ |
+| TC-1448 | With the schema toolchain absent, the gate fails naming the install command and reports no skipped emission check | Unit | P0 | FR-083-AC-6, NFR-020-AC-3 | 🚧 the emit driver names the install command when the toolchain is absent; no run yet removes it and observes the failure |
+| TC-1449 | A deliberate TypeSpec error fails emission with the compiler diagnostics in the message and changes no committed schema, toolchain, or manifest byte | Unit | P0 | FR-077-AC-7 | 🚧 no run yet compiles a deliberately broken `main.tsp` in a rendered tree |
+| TC-1450 | With the semantic-core grammar package absent, the rendered suite fails naming the install command and reports no skipped schema check | Unit | P0 | FR-080-AC-7 | 🚧 the failure path is authored in the rendered conftest; no run yet removes the grammar package and observes it |
+| TC-1451 | A declared target with no emitter today is recorded as declared-not-emitted in the rendered README and as a `🚧` Test Matrix row carrying the reason | Static | P1 | FR-076-AC-10 | ✅ |
+| TC-1452 | Every variant renders unattended from arguments alone with no prompt and no terminal | Integration | P0 | FR-076-AC-11 | ✅ |
+| TC-1453 | A mixed rendering with no imported_modules aborts saying a mixed module declares at least one import | Unit | P0 | FR-076-AC-12 | ✅ |
+| TC-1454 | Every refused rendering leaves no directory at the output path | Unit | P1 | FR-076-AC-13 | ✅ |
+| TC-1455 | The template carries no copy of the schema emitter, the Quire runtime, or the semantic-core grammar | Static | P0 | FR-076-CON-1 | ✅ |
+| TC-1456 | The rendered emit driver is byte-identical to the template's copy in every variant | Property | P1 | FR-076-CON-3 | ✅ |
+| TC-1457 | A ref to an imported model is written against that module's base at the imported version, and a ref matching no declared base fails emission naming it | Unit | P0 | FR-077-AC-8 | 🚧 the mixed variant emits with an import declared; no run yet writes a cross-package `$ref` or an unresolvable one |
+| TC-1458 | No exported type name appears in more than one declaration of a rendered manifest, in any variant | Property | P0 | FR-078-AC-7 | ✅ `make template-gate` |
+| TC-1459 | Two imported_modules entries naming the same package identity abort rendering naming that identity | Unit | P0 | FR-078-AC-8 | ✅ |
+| TC-1460 | An engine older than the declared floor fails the rendered suite naming the installed version and the floor | Unit | P0 | FR-080-AC-8 | 🚧 the floor comparison is authored in the rendered conftest; no run yet installs an engine below the floor |
+| TC-1461 | The rendered master-requirements Out of Scope section states the module's domain types are the maintainer's, and no rendered requirement text is copied from a maintained module repository | Static | P1 | FR-082-AC-6, FR-082-CON-2 | ✅ |
+| TC-1462 | A maintained repository that cannot be read at its pinned revision fails the drift check naming the repository and the revision | Unit | P0 | FR-083-AC-8 | ✅ |
+| TC-1463 | Every external command the template and a rendered repository invoke has a declared minimum version recorded in one file | Static | P1 | NFR-020-AC-1 | ✅ |
+| TC-1464 | With the renderer absent, the render gate fails naming the renderer, the floor, and the install command | Unit | P0 | NFR-020-AC-2 | ✅ |
+| TC-1465 | With the validator absent, the rendered gate's validation leg fails naming the validator rather than reporting zero documents | Unit | P0 | NFR-020-AC-4 | 🚧 the rendered gate's validation leg names `quire`; no run yet removes it and observes the failure |
 
 ## Stakeholder Requirement Coverage
 
@@ -983,9 +983,9 @@ found the stakeholder layer had no rows here at all.
 | StR-004-VC-1    | US-005; FR-020, FR-021 | Inspection — TC-EV-005/TC-EV-013 start runs and inspect status; resume/advance/gate progression is untested  | ⚠️ Partial      |
 | StR-005-VC-1    | US-003; FR-016, FR-017 | Inspection — the default set is version-pinned; NFR-001 covers idempotent offline reconcile            | ✅ Covered      |
 | StR-006-VC-1    | US-009; FR-022         | Demonstration — `update.test.ts` covers delegation, `--check` and `--registry`                          | ✅ Covered      |
-| StR-008-VC-1    | US-021; FR-076, FR-083 | Demonstration — a variant rendered with no hand editing carries the `semantic` block, emitted schemas, typed skeletons, and a fail-not-skip suite (TC-1400..TC-1402, TC-1408, TC-1417, TC-1420, TC-1427) | 🚧 In progress |
-| StR-008-VC-2    | US-021; FR-078, FR-080 | Test (TC-1410) — the rendered repository's clean-checkout gate passes before any module vocabulary is authored | 🚧 In progress |
-| StR-008-VC-3    | US-021; FR-083         | Test (TC-1418) — a surface the maintained module repositories carry and the conformance contract omits fails the drift check | 🚧 In progress |
+| StR-008-VC-1    | US-021; FR-076, FR-083 | Demonstration — a variant rendered with no hand editing carries the `semantic` block, emitted schemas, typed skeletons, and a fail-not-skip suite (TC-1400..TC-1402, TC-1408, TC-1417, TC-1420, TC-1427) | ✅ Covered |
+| StR-008-VC-2    | US-021; FR-078, FR-080 | Test (TC-1410) — the rendered repository's clean-checkout gate passes before any module vocabulary is authored | ✅ Covered |
+| StR-008-VC-3    | US-021; FR-083         | Test (TC-1418) — a surface the maintained module repositories carry at their pinned revisions and the conformance contract omits fails the drift check | ✅ Covered |
 
 ## Use Case Coverage
 
@@ -1008,7 +1008,7 @@ found the stakeholder layer had no rows here at all.
 | US-017   | ✅ Covered | TC-1261..TC-1292 cover revisioned definitions, exact integrity, workflow decisions, candidate-bound attestations, retained output, unchanged evidence-audit findings, valid/invalid/incomplete receipts, and non-identity boundaries in `tests/change-assurance.test.ts`. |
 | US-019   | ✅ Covered | `tests/graph-adapters.test.ts`, `tests/graph-portfolio.test.ts`, and `tests/graph-portfolio-command.test.ts` TC-1293..TC-1315 cover lossless producer intake, plan/definition/population governance, raw evidence, graph history and partitions, availability, compatible comparisons, exact FR-062 portfolio views, and non-scoring. |
 | US-020   | ✅ Covered | TC-1344, TC-1345, TC-1360, TC-1367 realise EX-1..EX-4 (typed table, `sysml` fence, schema by digest, legacy warning). |
-| US-021   | 🚧 In progress | TC-1410, TC-1428, TC-1421, TC-1424, TC-1436 realise EX-1..EX-4 (a rendered repository passes its own gate; the engine's absence fails rather than passes; the two Properties forms agree and each negative fixture is refused; no generation residue survives). Marked in progress until the template lands (agent-ix/quoin#307). |
+| US-021   | 🚧 Partly | TC-1410, TC-1421, TC-1424 and TC-1436 realise EX-1, EX-3 and EX-4: a rendered repository emits, validates and passes its own suite under `make template-gate` (31 rows, zero skipped, in all three variants), the two Properties forms extract identically, each negative fixture is refused for its own declared reason, and no residue class fires. EX-2 (the engine's absence fails rather than passes) is `🚧` — TC-1428 is authored in the rendered `conftest.py` and no run yet removes the wheel. |
 
 ## Property Test Layer
 

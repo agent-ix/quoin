@@ -1,0 +1,28 @@
+name: Release npm
+
+# Publish the Filament module to public npm under its scoped package name on a
+# vX.Y.Z tag.
+#
+# The publish itself lives in nodejs-actions so every module repository shares
+# one tokenless OIDC implementation and this file carries no credential. Keep
+# the name release-npm.yml: that filename is what the package's Trusted
+# Publisher configuration on npmjs.com matches.
+#
+# Dispatch is manual and stays manual until the module's first release has been
+# dry-run. Enabling it is a decision, not a default.
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to publish (e.g. 0.2.0); defaults to the triggering vX.Y.Z tag"
+        required: false
+
+permissions:
+  contents: read
+  id-token: write # OIDC token for npm Trusted Publishing
+
+jobs:
+  publish:
+    uses: agent-ix/nodejs-actions/.github/workflows/release-npm-module.yml@main
+    with:
+      version: ${{ inputs.version }}

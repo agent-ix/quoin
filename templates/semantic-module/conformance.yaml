@@ -1,0 +1,169 @@
+# Conformance contract for rendered Quire semantic-module repositories.
+#
+# FR-083-CON-2: a declared file rather than a list inside a test body, so a
+# contract change is reviewable on its own and the drift check (FR-083-AC-5) has
+# something to compare the maintained module repositories against.
+#
+# `required_paths` are repository-relative. A `{package}` segment is replaced by
+# the rendered package directory name. A path ending in `/` must exist and be
+# non-empty.
+contract_version: 1.0.0
+
+all:
+  required_paths:
+    - LICENSE
+    - README.md
+    - AGENTS.md
+    - CLAUDE.md
+    - CONTRIBUTING.md
+    - SECURITY.md
+    - Makefile
+    - toolchain.yaml
+    - pyproject.toml
+    - package.json
+    - .gitignore
+    - .gitattributes
+    - .github/CODEOWNERS
+    - .github/workflows/ci.yml
+    - .github/workflows/release-npm.yml
+    - docs/catalog-entry.md
+    - typespec/main.tsp
+    - typespec/tspconfig.yaml
+    - scripts/__init__.py
+    - scripts/build_tools.py
+    - scripts/generate-schemas.mjs
+    - scripts/stage-npm.mjs
+    - "{package}/__init__.py"
+    - "{package}/manifest.yaml"
+    - "{package}/skeletons/"
+    - tests/conftest.py
+    - tests/test_manifest_semantic.py
+    - tests/test_schema_emission.py
+    - tests/test_skeletons_semantic.py
+    - tests/fixtures/negative/
+    - tests/fixtures/legacy/
+    - spec/spec.md
+    - spec/index.md
+    - spec/log.md
+    - spec/matrix.md
+    - spec/stakeholder/index.md
+    - spec/usecase/index.md
+    - spec/functional/index.md
+    - spec/non-functional/index.md
+
+  # A rendered repository must carry none of these, at any depth.
+  forbidden_globs:
+    - "**/.npmrc"
+    - "**/.env"
+    - "**/id_rsa"
+    - "**/*.pem"
+
+kinds:
+  object:
+    required_paths: []
+  artifact:
+    required_paths:
+      - "{package}/mappings.yaml"
+      - "{package}/examples/"
+  mixed:
+    required_paths:
+      - "{package}/mappings.yaml"
+      - "{package}/examples/"
+
+# Residue classes NFR-018 forbids in a rendered file. Each is a declared regular
+# expression, so "a credential" is a comparison against a reviewable list rather
+# than a judgement made inside a test body.
+residue:
+  unresolved_token:
+    pattern: "\\{\\{\\s*cookiecutter\\.|\\{%\\s*(if|for|endif|endfor|raw|endraw)\\b"
+    reason: "an unresolved template token names nothing; the repository would carry the template's placeholder as its identity"
+  placeholder_org:
+    pattern: "(?i)(your-org|my-org|<org>|<your-|ORGANIZATION_NAME|example\\.com)"
+    reason: "a placeholder organization makes a public repository name somebody else's project"
+  absolute_render_path:
+    pattern: "/home/[A-Za-z0-9_.-]+/|/Users/[A-Za-z0-9_.-]+/|[A-Z]:\\\\Users\\\\"
+    reason: "an absolute path binds the repository to the machine that generated it"
+  credential:
+    pattern: "(?i)(BEGIN [A-Z ]*PRIVATE KEY|ghp_[A-Za-z0-9]{20,}|npm_[A-Za-z0-9]{20,}|AKIA[0-9A-Z]{16}|(api[_-]?key|secret|password|token)\\s*[:=]\\s*[\"'][^\"'{$][^\"']{7,})"
+    reason: "a credential in a public repository is a disclosure"
+
+# The private-registry class is defined over PUBLICATION configuration, not over
+# every mention of a private host. A rendered repository names exactly one
+# private index — the `dev-quire` provisioning command — because no index it may
+# depend on serves the engine wheel. That one occurrence is declared here and
+# the gate asserts it is the only one.
+private_registry:
+  hosts:
+    - "pypi.ix"
+    - "npm.ix"
+    - "pkg.dev"
+  publication_keys:
+    - "publishConfig"
+    - "tool.poetry.source"
+    - "repository-url"
+    - "extra_index_url"
+  allowed_occurrences:
+    - path: "pyproject.toml"
+      context: "tool.poe.tasks.dev-quire"
+      reason: >-
+        The engine wheel exposing `extract_semantic` is on no index a repository
+        may depend on (agent-ix/quire-rs#392). This is a provisioning command,
+        not a dependency declaration and not a publication target, and it names
+        the tracking issue beside it.
+    - path: "toolchain.yaml"
+      context: "quire (python wheel)"
+      reason: "the same provisioning command, recorded with its floor"
+
+# The maintained semantic-module repositories the drift check reads, each pinned
+# by remote and by one full commit revision. Two runs of the check must read the
+# same bytes, or "no drift" means only "nobody pushed today".
+maintained_modules:
+  - repo: spec-objects-business
+    remote: "https://github.com/agent-ix/spec-objects-business.git"
+    revision: "567e5c4c1bd39061a2367fc5148b4a5183cb820c"
+    local_path: "../spec-objects-business"
+    package: spec_objects_business
+    kind: object
+  - repo: spec-artifacts-iso
+    remote: "https://github.com/agent-ix/spec-artifacts-iso.git"
+    revision: "6686f112f2c38602c9d39c88e8134a945c34bbd6"
+    local_path: "../spec-artifacts-iso"
+    package: spec_artifacts_iso
+    kind: artifact
+
+# Surfaces the maintained repositories carry that this contract deliberately
+# does NOT require of a rendered repository, each with the reason it is exempt.
+# The drift check fails on any surface both maintained repositories carry that
+# appears in neither `all.required_paths` nor this list.
+drift_exemptions:
+  - path: poetry.lock
+    reason: "produced by `make install` in the rendered repository, not by the template"
+  - path: package-lock.json
+    reason: "produced by `npm install` in the rendered repository, not by the template"
+  - path: report.json
+    reason: "pytest-json-report output; gitignored"
+  - path: "{package}/schemas/"
+    reason: "emitted by `make schemas`; the template ships the source, never the emitted bytes"
+  - path: "{package}/examples/"
+    reason: "kind-specific; required for the artifact and mixed variants, absent from object"
+  - path: plan/
+    reason: "a plan bundle records a repository's own build history, and a new repository has none"
+  - path: reviews/
+    reason: "review artifacts are produced by a review, not by rendering"
+  - path: .agent/rules/
+    reason: "agent rules are supplied by the organization's agent configuration, not per module"
+  - path: tests/test_basic.py
+    reason: "a placeholder smoke test both maintained repositories inherited from the generic Python cookiecutter; the rendered suite has real rows instead"
+  - path: spec/tests.md
+    reason: "one maintained repository names its Test Matrix `tests.md` and the other `matrix.md`; the template requires `spec/matrix.md` and does not need both spellings"
+  - path: spec/reviews/
+    reason: "review artifacts, as above"
+  - path: spec/integration/
+    reason: "a module with no external integration authors no IT; the template does not manufacture one"
+  - pattern: "^spec/(functional|stakeholder|usecase|non-functional)/(FR|StR|US|NFR|IT)-\\d+-.*\\.md$"
+    reason: >-
+      An individual requirement document is a module's own specification. Two
+      maintained modules happening to name their first requirement the same way
+      is a coincidence of slugs, not a surface the template owes. The template
+      renders its OWN requirements, and the contract requires the folders and
+      their indexes rather than any particular requirement id.

@@ -1,0 +1,115 @@
+manifest_version: 1.0.0
+name: "{{ cookiecutter.module_name }}"
+version: "{{ cookiecutter.version }}"
+description: "{{ cookiecutter.description }}"
+
+# The semantic-module contract (agent-ix/quoin FR-070). Nine of the ten admitted
+# keys: `sweep_report` is absent by design, because FR-074 requires it only when
+# `legacy_forms` is promoted from `warning` to `error`.
+#
+# `data_schema` below references each emitted schema by path AND digest. Both
+# values are written by `make schemas` from the emitted bytes — never by hand.
+# A hand-written digest is a claim nobody checked.
+semantic:
+  contract_version: 1.0.0
+  semantic_core: {{ cookiecutter.semantic_core_version }}
+  package: {{ cookiecutter.org }}/{{ cookiecutter.repo_name }}
+  exports:
+{%- if cookiecutter.module_kind in ("object", "mixed") %}
+  - element
+{%- endif %}
+{%- if cookiecutter.module_kind in ("artifact", "mixed") %}
+  - note
+{%- endif %}
+  imports:
+{%- if cookiecutter.imported_modules %}
+{%- for entry in cookiecutter.imported_modules.split(',') %}
+{%- set parts = entry.strip().split('@') %}
+    {{ parts[0] }}: {{ parts[1] }}
+{%- endfor %}
+{%- else %} {}
+{%- endif %}
+  targets: [{{ cookiecutter.generated_targets.split(',') | map('trim') | join(', ') }}]
+  mappings: [typed-table, sysml-fence, ocl-clause]
+  compatibility_posture: additive
+  legacy_forms: warning
+
+nav:
+  category:
+    slug: {{ cookiecutter.nav_category_slug }}
+    label: {{ cookiecutter.nav_category_label }}
+    icon: {{ cookiecutter.nav_category_icon }}
+    order: {{ cookiecutter.nav_category_order }}
+
+archetypes: []
+grammars: []
+lint_rules: []
+
+{% if cookiecutter.module_kind in ("artifact", "mixed") -%}
+artifact_types:
+- name: note
+  data_schema:
+    schema: schemas/Note.json
+    digest: pending
+  body_extraction:
+    yield_pattern:
+      match:
+        id:
+          from: frontmatter_field
+          path: [id]
+          required: true
+        title:
+          from: frontmatter_field
+          path: [title]
+          required: true
+        type:
+          from: frontmatter_field
+          path: [type]
+          required: true
+        properties:
+          from: section_body
+          after_heading: Properties
+          required: true
+        invariants:
+          from: section_body
+          after_heading: Invariants
+          required: false
+{%- else -%}
+artifact_types: []
+{%- endif %}
+
+{% if cookiecutter.module_kind in ("object", "mixed") -%}
+object_types:
+- name: element
+  roles: [domain-object]
+  allowed_links:
+    references: [element]
+  data_schema:
+    schema: schemas/Element.json
+    digest: pending
+  body_extraction:
+    yield_pattern:
+      match:
+        id:
+          from: frontmatter_field
+          path: [id]
+          required: true
+        title:
+          from: frontmatter_field
+          path: [title]
+          required: true
+        type:
+          from: frontmatter_field
+          path: [type]
+          required: true
+        properties:
+          from: section_body
+          after_heading: Properties
+          required: true
+        invariants:
+          from: section_body
+          after_heading: Invariants
+          required: false
+{%- else -%}
+object_types: []
+{%- endif %}
