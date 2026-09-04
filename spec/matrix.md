@@ -967,6 +967,72 @@ generated tests under `tests/props/` and `Unit` for the rest.
 | TC-1463 | Every external command the template and a rendered repository invoke has a declared minimum version recorded in one file | Static | P1 | NFR-020-AC-1 | ✅ |
 | TC-1464 | With the renderer absent, the render gate fails naming the renderer, the floor, and the install command | Unit | P0 | NFR-020-AC-2 | ✅ |
 | TC-1465 | With the validator absent, the rendered gate's validation leg fails naming the validator rather than reporting zero documents | Unit | P0 | NFR-020-AC-4 | 🚧 the rendered gate's validation leg names `quire`; no run yet removes it and observes the failure (agent-ix/quoin#346) |
+| TC-1500 | A directory carrying both `.git/` and `spec/` is enumerated as one repository with `origin`, `commit` and `clean` | Unit | P0 | FR-084-AC-1 | 🚧 not yet implemented (agent-ix/quoin#291) |
+| TC-1501 | A Git worktree whose `.git` is a file is not a second repository and is recorded excluded by the worktree rule | Unit | P0 | FR-084-AC-2, FR-084-CON-2 | 🚧 not yet implemented (agent-ix/quoin#291) |
+| TC-1502 | A repository with no `origin` remote is retained with `origin: null` and its documents are still counted | Unit | P1 | FR-084-AC-3 | 🚧 not yet implemented (agent-ix/quoin#291) |
+| TC-1503 | A repository with an uncommitted change is recorded `clean: false` | Unit | P1 | FR-084-AC-4 | 🚧 not yet implemented (agent-ix/quoin#291) |
+| TC-1504 | Dot-prefixed and declared-excluded directories contribute no documents, and the exclusion vocabulary appears verbatim in the corpus record | Unit | P0 | FR-084-AC-5 | 🚧 not yet implemented (agent-ix/quoin#291) |
+| TC-1505 | Per-repository document counts sum to the published corpus document total | Property | P0 | FR-084-AC-6 | 🚧 not yet implemented (agent-ix/quoin#291) |
+| TC-1506 | Each declared module resolves to a commit and records its manifest version and declared artifact and object types | Unit | P0 | FR-085-AC-1 | 🚧 not yet implemented (agent-ix/quoin#291) |
+| TC-1507 | Every contract surface of every module carries a SHA-256 digest | Unit | P0 | FR-085-AC-2 | 🚧 not yet implemented (agent-ix/quoin#291) |
+| TC-1508 | Module content is read at the declared revision and is unaffected by an unrelated uncommitted edit in the module repository | Integration | P0 | FR-085-AC-3, FR-085-CON-1 | 🚧 not yet implemented (agent-ix/quoin#291) |
+| TC-1509 | An unresolvable revision yields one `unresolved` module record and the other modules still resolve | Unit | P0 | FR-085-AC-4, FR-085-CON-2 | 🚧 not yet implemented (agent-ix/quoin#291) |
+| TC-1510 | A module publishing no mappings records `mappings: absent` and still contributes its declared object types | Unit | P1 | FR-085-AC-5 | 🚧 not yet implemented (agent-ix/quoin#291) |
+| TC-1511 | Each module record states whether its measured revision equals its `default-modules.yaml` pin, and the report names every divergence | Unit | P0 | FR-085-AC-6 | 🚧 not yet implemented (agent-ix/quoin#291) |
+| TC-1512 | A document whose `type` resolves to exactly one module is `measured` and names that module | Unit | P0 | FR-086-AC-1 | 🚧 not yet implemented (agent-ix/quoin#291) |
+| TC-1513 | A document with no `type` is `out-of-model`/`no-declared-type`, and an unrecognised `type` is `out-of-model`/`type-not-declared-by-any-module`, neither counted as a failure | Unit | P0 | FR-086-AC-2, FR-086-CON-2 | 🚧 not yet implemented (agent-ix/quoin#291) |
+| TC-1514 | An unterminated frontmatter fence yields `unreadable` and its sibling documents are still stated | Unit | P0 | FR-086-AC-3 | 🚧 not yet implemented (agent-ix/quoin#291) |
+| TC-1515 | A `type` declared by two modules yields `unknown` naming both, and no aggregate reassigns it | Unit | P0 | FR-086-AC-4 | 🚧 not yet implemented (agent-ix/quoin#291) |
+| TC-1516 | The four state counts sum to the enumerated document count | Property | P0 | FR-086-AC-5, FR-086-CON-1 | 🚧 not yet implemented (agent-ix/quoin#291) |
+| TC-1517 | No document appears in more than one state record | Property | P0 | FR-086-AC-6 | 🚧 not yet implemented (agent-ix/quoin#291) |
+| TC-1518 | A document conforming to its module's mapping and schema reports `pass` | Unit | P0 | FR-087-AC-1 | 🚧 not yet implemented (agent-ix/quoin#291) |
+| TC-1519 | A document missing a declared required section reports `fail` naming the schema keyword, instance path and mapping heading | Unit | P0 | FR-087-AC-2 | 🚧 not yet implemented (agent-ix/quoin#291) |
+| TC-1520 | A typed-table header mismatch and a row-id outside the declared pattern each report `fail` at the offending line | Unit | P0 | FR-087-AC-3 | 🚧 not yet implemented (agent-ix/quoin#291) |
+| TC-1521 | An unimplemented mapping kind or parse rule reports `could-not-run` and is absent from the pass numerator and denominator | Unit | P0 | FR-087-AC-4, FR-087-CON-1 | 🚧 not yet implemented (agent-ix/quoin#291) |
+| TC-1522 | A declared type with a schema and no mapping reports `could-not-run` with reason `no-mapping-for-declared-type` | Unit | P1 | FR-087-AC-5 | 🚧 not yet implemented (agent-ix/quoin#291) |
+| TC-1523 | A document carrying three independent schema violations reports all three in one evaluation record | Unit | P1 | FR-087-AC-6 | 🚧 not yet implemented (agent-ix/quoin#291) |
+| TC-1524 | Changing only the module's declaration changes the evaluation of an unchanged document | Integration | P0 | FR-087-AC-7 | 🚧 not yet implemented (agent-ix/quoin#291) |
+| TC-1525 | Each of the five Properties representation forms is classified, and each document carries exactly one | Unit | P0 | FR-088-AC-1 | 🚧 not yet implemented (agent-ix/quoin#291) |
+| TC-1526 | A document carrying both a Properties table and a `sysml` fence reports `fail` with both block lines | Unit | P0 | FR-088-AC-2 | 🚧 not yet implemented (agent-ix/quoin#291) |
+| TC-1527 | A typed-table `Type` cell resolving to no declared type, enumeration or kernel scalar reports `fail` naming the token and line | Unit | P0 | FR-088-AC-3 | 🚧 not yet implemented (agent-ix/quoin#291) |
+| TC-1528 | `0..2..3` reports `fail` while `1`, `0..1`, `0..*`, `1..*` and `2..7` report `pass` | Property | P0 | FR-088-AC-4 | 🚧 not yet implemented (agent-ix/quoin#291) |
+| TC-1529 | A `Constraints` keyword outside the closed declared vocabulary reports `fail` naming the keyword | Unit | P0 | FR-088-AC-5, FR-088-CON-2 | 🚧 not yet implemented (agent-ix/quoin#291) |
+| TC-1530 | Free-column tables and bullet lists report `unsupported-representation`, and a document with no `## Properties` heading is `not-applicable` and excluded from both sides of the rate | Unit | P0 | FR-088-AC-6, FR-088-CON-1 | 🚧 not yet implemented (agent-ix/quoin#291) |
+| TC-1531 | Every reported failure appears in exactly one partition entry and the counts agree | Property | P0 | FR-089-AC-1, FR-089-CON-2 | 🚧 not yet implemented (agent-ix/quoin#291) |
+| TC-1532 | An unclassified failure is `unknown`/`undispositioned` and both counts are headline figures of the summary | Unit | P0 | FR-089-AC-2 | 🚧 not yet implemented (agent-ix/quoin#291) |
+| TC-1533 | A `tool-defect` ledger entry without a repository and issue number is refused and its failures stay `unknown` | Unit | P0 | FR-089-AC-3 | 🚧 not yet implemented (agent-ix/quoin#291) |
+| TC-1534 | A `deferred-corpus-fix` disposition naming no later campaign is refused | Unit | P0 | FR-089-AC-4 | 🚧 not yet implemented (agent-ix/quoin#291) |
+| TC-1535 | A partition entry with an absent owner or a bare role is refused | Unit | P0 | FR-089-AC-5 | 🚧 not yet implemented (agent-ix/quoin#291) |
+| TC-1536 | `contract-defect` requires a ledger entry recording that the declaration is wrong; without one the failure stays `unknown` | Unit | P0 | FR-089-AC-6 | 🚧 not yet implemented (agent-ix/quoin#291) |
+| TC-1537 | Per-class counts sum to the reported failure count | Property | P0 | FR-089-AC-7, FR-089-CON-1 | 🚧 not yet implemented (agent-ix/quoin#291) |
+| TC-1538 | Every published rate carries a unit, a population identifier and a method identifier | Property | P0 | FR-090-AC-1, FR-090-CON-1 | 🚧 not yet implemented (agent-ix/quoin#291) |
+| TC-1539 | Every rate's population identifier names the corpus revision and the module revisions | Unit | P0 | FR-090-AC-2 | 🚧 not yet implemented (agent-ix/quoin#291) |
+| TC-1540 | A `could-not-run` document is excluded from the denominator and its count is published beside the rate | Unit | P0 | FR-090-AC-3 | 🚧 not yet implemented (agent-ix/quoin#291) |
+| TC-1541 | The mapping rate and the representation rate are published separately with their own populations and are never summed | Unit | P0 | FR-090-AC-4 | 🚧 not yet implemented (agent-ix/quoin#291) |
+| TC-1542 | A module partition more than the declared margin below its aggregate appears in the divergence list naming both rates | Unit | P0 | FR-090-AC-5 | 🚧 not yet implemented (agent-ix/quoin#291) |
+| TC-1543 | A repository contributing one measured document appears in the by-repository breakdown with denominator one | Unit | P1 | FR-090-AC-6, FR-090-CON-2 | 🚧 not yet implemented (agent-ix/quoin#291) |
+| TC-1544 | Every declared type appears in the by-type breakdown, a type with no instance carrying denominator zero rather than being omitted | Property | P0 | FR-090-AC-7 | 🚧 not yet implemented (agent-ix/quoin#291) |
+| TC-1545 | A tool-defect ledger entry without a repository and issue number is refused naming the entry | Unit | P0 | FR-091-AC-1 | 🚧 not yet implemented (agent-ix/quoin#291) |
+| TC-1546 | A document inside a declared tool-defect scope reports `could-not-run` citing the entry and is excluded from both sides of the rate | Unit | P0 | FR-091-AC-2 | 🚧 not yet implemented (agent-ix/quoin#291) |
+| TC-1547 | A failure covered by a declared entry is classified `tool-defect` carrying the citation | Unit | P0 | FR-091-AC-3 | 🚧 not yet implemented (agent-ix/quoin#291) |
+| TC-1548 | A row-level entry reports both an affected document count and an affected row count | Unit | P1 | FR-091-AC-4 | 🚧 not yet implemented (agent-ix/quoin#291) |
+| TC-1549 | A failing document outside every declared scope is not classified `tool-defect` | Unit | P0 | FR-091-AC-5, FR-091-CON-2 | 🚧 not yet implemented (agent-ix/quoin#291) |
+| TC-1550 | The report states the share of the population covered by declared tool-defect exclusions beside the aggregate rate | Unit | P0 | FR-091-AC-6 | 🚧 not yet implemented (agent-ix/quoin#291) |
+| TC-1551 | A run over a corpus in which every document fails exits zero | Unit | P0 | FR-092-AC-1 | 🚧 not yet implemented (agent-ix/quoin#291) |
+| TC-1552 | Every enumerated corpus repository's Git status is byte-identical before and after a run | Integration | P0 | FR-092-AC-2, FR-092-CON-1, FR-084-CON-1, FR-087-CON-2 | 🚧 not yet implemented (agent-ix/quoin#291) |
+| TC-1553 | Every file a run writes is under the declared output directory | Unit | P0 | FR-092-AC-3 | 🚧 not yet implemented (agent-ix/quoin#291) |
+| TC-1554 | An output directory inside another enumerated corpus repository is refused before any file is read | Unit | P0 | FR-092-AC-4 | 🚧 not yet implemented (agent-ix/quoin#291) |
+| TC-1555 | The run manifest carries a SHA-256 digest for every artifact written | Unit | P1 | FR-092-AC-5 | 🚧 not yet implemented (agent-ix/quoin#291) |
+| TC-1556 | An unresolvable declared module set exits non-zero, distinguishing a tool failure from a measured failure | Unit | P0 | FR-092-AC-6, FR-092-CON-2 | 🚧 not yet implemented (agent-ix/quoin#291) |
+| TC-1557 | Two runs at equal pins produce digest-identical artifacts apart from the run timestamp | Integration | P0 | NFR-021-AC-1 | 🚧 not yet implemented (agent-ix/quoin#291) |
+| TC-1558 | No emitted collection depends on filesystem enumeration order | Property | P0 | NFR-021-AC-2 | 🚧 not yet implemented (agent-ix/quoin#291) |
+| TC-1559 | A run with networking disabled produces the same digests | Integration | P1 | NFR-021-AC-3 | 🚧 not yet implemented (agent-ix/quoin#291) |
+| TC-1560 | A full-corpus run completes within the declared wall-clock threshold | Benchmark | P1 | NFR-022-AC-1 | 🚧 not yet implemented (agent-ix/quoin#291) |
+| TC-1561 | Peak resident memory of a full-corpus run stays within the declared threshold | Benchmark | P2 | NFR-022-AC-2 | 🚧 not yet implemented (agent-ix/quoin#291) |
+| TC-1562 | Every corpus and module file the measurement opens is opened read-only | Integration | P0 | NFR-022-AC-3 | 🚧 not yet implemented (agent-ix/quoin#291) |
+| TC-1563 | Every figure printed by the report names the result artifact it came from | Static | P0 | NFR-023-AC-1 | 🚧 not yet implemented (agent-ix/quoin#291) |
+| TC-1564 | Every figure printed by the report equals the value recomputed from its source artifact | Property | P0 | NFR-023-AC-2 | 🚧 not yet implemented (agent-ix/quoin#291) |
+| TC-1565 | Every rate printed by the report carries its unit and population | Static | P0 | NFR-023-AC-3 | 🚧 not yet implemented (agent-ix/quoin#291) |
 
 ## Stakeholder Requirement Coverage
 
