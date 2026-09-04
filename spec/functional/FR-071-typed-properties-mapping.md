@@ -63,7 +63,7 @@ and expression semantics stay with `agent-ix/quire-contract-ir#52`.
 | FR-071-AC-3 | The both-forms fixture's expected diagnostic is a failure at the second form's locus. | Test |
 | FR-071-AC-4 | `Type` tokens `UUID`, `Decimal(10,2)`, `Duration [ms]`, `ConfigOverlay` (object by title), `Status` (enumeration by id), and an imported export resolve as specified; `Mystery` yields the advisory finding and the placeholder target. | Test |
 | FR-071-AC-5 | Multiplicity cells `1`, `0..1`, `1..* ordered unique`, `2..5`, and empty map to the expected `Multiplicity` objects; `5..2` and `1 ordered` are errors. | Test |
-| FR-071-AC-6 | Constraint cells `min: 1, maxLength: 64, identity`, `pattern: /^[a-z]+$/`, `enumValues: draft|final`, `nonEmpty`, `format: agent-ix:email` map as specified; `mnimum: 1` is an error with locus. | Test |
+| FR-071-AC-6 | Constraint cells `min: 1, maxLength: 64, identity`, `pattern: /^[a-z]+$/`, `enumValues: draft\|final`, `nonEmpty`, `format: agent-ix:email` map as specified; `mnimum: 1` is an error with locus. | Test |
 | FR-071-AC-7 | Fence lines `item x : Y;`, `part def X;`, and `:> Y` are errors with locus. | Test |
 | FR-071-AC-8 | A fixture row violating a semantic-core reader rule (`Decimal` without `(p,s)`) yields the rule's diagnostic at the row locus. | Test |
 

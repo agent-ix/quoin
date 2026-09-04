@@ -18,10 +18,11 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
 
 import { loadCatalog } from "../src/catalog.js";
-import { installPlugin, semanticPin } from "../src/plugins.js";
+import { installPlugin, listPlugins, semanticPin } from "../src/plugins.js";
 import {
   derivePackageManifest,
   exportDigests,
+  mappingIdentity,
   readModuleSemantic,
   resolveImports,
   typeIdentity,
@@ -112,9 +113,25 @@ describe("FR-075 package manifest derivation and registry pins", () => {
       name: "default",
       version: "0.1.0",
       exports: ["entity"],
+      mappings: [],
       compatibilityPosture: "additive",
       options: {},
     });
+    // Named mappings become semantic identities in the profile and at the root.
+    const named = readModuleSemantic(
+      moduleCopy("mapped", (m) => {
+        (m.semantic as Json).mappings = ["typed-table", "sysml-fence"];
+      }),
+    ).module!;
+    const withMappings = derivePackageManifest(named);
+    expect(validatePackageManifest(withMappings).valid).toBe(true);
+    expect(withMappings.mappings).toEqual([
+      mappingIdentity("agent-ix/spec-objects-fixture", "sysml-fence"),
+      "ix://agent-ix/spec-objects-fixture/mapping/typed-table",
+    ]);
+    expect((withMappings.profiles as Json[])[0]!.mappings).toEqual(
+      withMappings.mappings,
+    );
     // Installing writes it beside the module.
     installPlugin(`path:${root}`, home);
     const written = join(
@@ -170,8 +187,9 @@ describe("FR-075 package manifest derivation and registry pins", () => {
       (m.semantic as Json).imports = { "agent-ix/spec-objects-other": "0.2.0" };
     });
     expect(() => installPlugin(`path:${needy}`, home)).toThrow(
-      /semantic\.import-unresolved.*installed: none/s,
+      /semantic\.import-unresolved.*agent-ix\/spec-objects-other@0\.2\.0.*installed: none/s,
     );
+    expect(listPlugins(home).map((p) => p.name)).not.toContain("needy");
     const provider = moduleCopy("provider", (m, moduleRoot) => {
       retarget(m, moduleRoot, "agent-ix/spec-objects-other");
       m.version = "0.1.0";
@@ -205,9 +223,18 @@ describe("FR-075 package manifest derivation and registry pins", () => {
     const root = moduleCopy("parity");
     const catalog = loadCatalog([root]);
     const module = catalog.modules[0]!;
-    const dynamic = module.objectTypes
-      .filter((name) => module.semantic?.exports.includes(name))
-      .map((name) => typeIdentity(module.semantic!.package, name));
+    const exported = catalog.entries
+      .filter(
+        (entry) =>
+          entry.kind === "object" &&
+          entry.moduleName === module.name &&
+          module.semantic?.exports.includes(entry.name),
+      )
+      .map((entry) => entry.name);
+    expect(exported).toEqual(["entity"]);
+    const dynamic = exported.map((name) =>
+      typeIdentity(module.semantic!.package, name),
+    );
     const derived = (
       derivePackageManifest(readModuleSemantic(root).module!).exports as Json[]
     ).map((e) => e.typeIdentity);
@@ -231,6 +258,31 @@ describe("FR-075 package manifest derivation and registry pins", () => {
     expect(typeIdentity("agent-ix/spec-objects-business", "entity")).toBe(
       "ix://agent-ix/spec-objects-business/type/entity",
     );
+    const root = moduleCopy("derived-ids", (m) => {
+      (m.semantic as Json).mappings = ["typed-table"];
+    });
+    installPlugin(`path:${root}`, home);
+    const text = readFileSync(
+      join(
+        home,
+        "filament",
+        "modules",
+        "derived-ids",
+        "semantic",
+        "package-manifest.json",
+      ),
+      "utf8",
+    );
+    const identities = text.match(/ix:\/\/[^"]+/g) ?? [];
+    expect(identities.length).toBeGreaterThanOrEqual(2);
+    for (const identity of identities)
+      expect(identity).toMatch(
+        /^ix:\/\/[a-z0-9._-]+\/[a-z0-9._-]+\/(type|mapping)\/[A-Za-z0-9_-]+$/,
+      );
+    expect(JSON.parse(text).package).toEqual({
+      identity: "agent-ix/spec-objects-fixture",
+      version: "0.1.0",
+    });
   });
 
   // Trace: FR-075-CON-1

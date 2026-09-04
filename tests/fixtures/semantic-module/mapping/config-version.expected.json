@@ -98,10 +98,10 @@
       "clauseId": "immutable",
       "sourceSpan": {
         "sourceIdentity": "ix://agent-ix/config-service/spec",
-        "path": "spec/functional/FR-006-config-version-entity.md",
-        "startLine": 30,
+        "path": "config-version.table.md",
+        "startLine": 34,
         "startColumn": 1,
-        "endLine": 32,
+        "endLine": 36,
         "endColumn": 4
       }
     }
@@ -109,5 +109,8 @@
   "authoredForm": {
     "config-version.table.md": "table",
     "config-version.fence.md": "fence"
+  },
+  "clauseText": {
+    "immutable": "context ConfigVersion inv immutable: self.versionNumber = self.versionNumber@pre and self.data = self.data@pre and self.hash = self.hash@pre"
   }
 }

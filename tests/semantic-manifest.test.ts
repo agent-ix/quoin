@@ -15,11 +15,19 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { readdirSync } from "node:fs";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
 
 import { defaultModuleRoots, loadCatalog } from "../src/catalog.js";
-import { installPlugin, listPlugins } from "../src/plugins.js";
+import Ajv2020 from "ajv/dist/2020.js";
+
+import {
+  installPlugin,
+  listPlugins,
+  validateInstalledSemantics,
+} from "../src/plugins.js";
+import { semanticCoreDir } from "../src/semantic/contract.js";
 import {
   readModuleSemantic,
   readSemanticBlock,
@@ -97,6 +105,7 @@ describe("FR-070 semantic manifest block", () => {
       [],
     );
     expect(result.module?.block).toMatchObject({
+      contract_version: "1.0.0",
       package: "agent-ix/spec-objects-fixture",
       semantic_core: "0.1.0",
       compatibility_posture: "additive",
@@ -193,6 +202,11 @@ describe("FR-070 semantic manifest block", () => {
         c.startsWith("error:semantic.unknown-target@semantic.targets"),
       ),
     ).toBe(true);
+    expect(
+      readModuleSemantic(target).diagnostics.find(
+        (d) => d.code === "semantic.unknown-target",
+      )?.message,
+    ).toContain("go");
     for (const value of ["ix://agent-ix/x", "https://example.org/pkg"]) {
       const root = moduleCopy("bad-package", (m) => {
         (m.semantic as Json).package = value;
@@ -259,6 +273,89 @@ describe("FR-073 data_schema by path and digest", () => {
     expect(resolved?.kind).toBe("reference");
     expect((resolved?.schema as Json).$id).toContain("/Entity.json");
     expect(entity(root)).toBeDefined();
+    // The FR-006 golden declaration set validates against the resolved schema
+    // through the vendored semantic-core bundle (FieldDecl, ClauseRef).
+    const ajv = new Ajv2020({ allErrors: true, strict: true });
+    for (const name of readdirSync(semanticCoreDir()).filter(
+      (n) => n.endsWith(".json") && n !== "toolchain.json",
+    ))
+      ajv.addSchema(
+        JSON.parse(readFileSync(join(semanticCoreDir(), name), "utf8")),
+      );
+    const validate = ajv.compile(resolved!.schema as Json);
+    const golden = JSON.parse(
+      readFileSync(
+        join(
+          "tests",
+          "fixtures",
+          "semantic-module",
+          "mapping",
+          "config-version.expected.json",
+        ),
+        "utf8",
+      ),
+    ) as Json;
+    expect(
+      validate({ fields: golden.fields, clauses: golden.clauses }),
+      JSON.stringify(validate.errors),
+    ).toBe(true);
+    expect(validate({ fields: [{ name: "x" }] })).toBe(false);
+  });
+
+  // Trace: FR-070-AC-4
+  // Trace: TC-1339
+  it("rejects an export whose data_schema is not a { schema, digest } reference", () => {
+    const root = moduleCopy("export-inline", (m) => {
+      (m.semantic as Json).exports = ["entity", "enumeration"];
+    });
+    expect(codes(root)).toContain(
+      "error:semantic.export-without-schema@semantic.exports.enumeration",
+    );
+    expect(
+      readModuleSemantic(root).diagnostics.find(
+        (d) => d.code === "semantic.export-without-schema",
+      )?.message,
+    ).toContain("enumeration");
+  });
+
+  // Trace: FR-073-AC-3
+  // Trace: TC-1362
+  it("treats a $ref to the schema's own $id as a fragment, not a cycle", () => {
+    const root = moduleCopy("self-ref", (m, moduleRoot) => {
+      const file = join(moduleRoot, "schemas", "Entity.json");
+      const schema = JSON.parse(readFileSync(file, "utf8")) as Json;
+      schema.$defs = { marker: { type: "string" } };
+      (schema.properties as Json).marker = {
+        $ref: `${String(schema.$id)}#/$defs/marker`,
+      };
+      writeFileSync(file, JSON.stringify(schema));
+      ((m.object_types as Json[])[0].data_schema as Json).digest =
+        digestOf(file);
+    });
+    expect(codes(root).filter((c) => c.startsWith("error:"))).toEqual([]);
+  });
+
+  // Trace: FR-070-AC-1
+  // Trace: TC-1379
+  it("re-validates installed modules on the reconcile path", () => {
+    const root = moduleCopy("reconciled");
+    installPlugin(`path:${root}`, home);
+    expect(() => validateInstalledSemantics(home)).not.toThrow();
+    const installedManifest = join(
+      home,
+      "filament",
+      "modules",
+      "reconciled",
+      "manifest.yaml",
+    );
+    const manifest = parseYaml(readFileSync(installedManifest, "utf8")) as Json;
+    (manifest.semantic as Json).targets = ["go"];
+    writeFileSync(installedManifest, stringifyYaml(manifest));
+    expect(() => validateInstalledSemantics(home)).toThrow(
+      /installed module reconciled violates the semantic contract[\s\S]*semantic\.unknown-target/,
+    );
+    const source = readFileSync(join("src", "modules.ts"), "utf8");
+    expect(source).toContain("validateInstalledSemantics(home)");
   });
 
   // Trace: FR-073-AC-2
@@ -273,6 +370,11 @@ describe("FR-073 data_schema by path and digest", () => {
     expect(codes(mismatch)).toContain(
       "error:semantic.data-schema-digest-mismatch@object_types[entity].data_schema.digest",
     );
+    expect(
+      readModuleSemantic(mismatch).diagnostics.find(
+        (d) => d.code === "semantic.data-schema-digest-mismatch",
+      )?.message,
+    ).toMatch(/schemas\/Entity\.json.*sha256:/s);
     const missing = moduleCopy("missing", (_m, root) =>
       rmSync(join(root, "schemas", "Entity.json")),
     );

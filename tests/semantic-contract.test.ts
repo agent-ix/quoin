@@ -102,6 +102,8 @@ describe("semantic-module contract vendoring", () => {
   // Trace: TC-1385
   it("vendors the semantic-core bundle whose digest equals filament-core-data toolchain.json", () => {
     const record = SEMANTIC_CONTRACT.semanticCore;
+    expect(record.sourceRevision).toMatch(/^[0-9a-f]{40}$/);
+    expect(record.repository).toBe("agent-ix/filament-core-data");
     expect(semanticCoreBundleDigest()).toBe(record.bundleDigest);
     const toolchain = readJson(
       join(semanticCoreDir(), "toolchain.json"),

@@ -32,7 +32,7 @@ artifact-time diagnostics to Quire (`agent-ix/quire-rs#388`).
 ## Behavior
 
 - The `semantic` block SHALL be optional, so a manifest without it loads exactly as today.
-- The `semantic` block SHALL admit exactly these keys: `contract_version` (semver, `1.0.0` for this specification), `semantic_core` (the exact `@agent-ix/semantic-core` version), `package` (an IR `packageIdentity`, `<org>/<repo>`), `exports` (object-type names published as semantic types), `imports` (other modules' `package` identities with exact versions), `targets` (values from the filament-core-data `common.schema.json` `target` registry), `mappings` (named representation mappings, FR-071..073), `compatibility_posture` (`strict`, `additive`, or `declared-lossy`, default `additive`), `legacy_forms` (`warning` or `error`, default `warning`, FR-074), and `sweep_report` (relative path, FR-074).
+- The `semantic` block SHALL admit exactly these keys: `contract_version` (semver, `1.0.0` for this specification), `semantic_core` (the exact `@agent-ix/semantic-core` version), `package` (an IR `packageIdentity`, `<org>/<repo>`), `exports` (object-type names published as semantic types), `imports` (other modules' `package` identities with exact versions), `targets` (values from the filament-core-data declared target registry: `common.schema.json` `target` together with its `representationFormat` values, as vendored), `mappings` (named representation mappings, FR-071..073), `compatibility_posture` (`strict`, `additive`, or `declared-lossy`, default `additive`), `legacy_forms` (`warning` or `error`, default `warning`, FR-074), and `sweep_report` (relative path, FR-074).
 - The `semantic` block SHALL require `contract_version`, `semantic_core`, and `package`.
 - The module-manifest JSON Schema, owned by filament-core-service (`agent-ix/filament-core-service#21`), SHALL publish the block with `additionalProperties: false`.
 - Quoin SHALL vendor that schema with recorded provenance, as it vendors the Quire output schemas (FR-029).
@@ -61,7 +61,7 @@ artifact-time diagnostics to Quire (`agent-ix/quire-rs#388`).
 | FR-070-AC-3 | A `semantic` block with an unknown key `foo` is rejected naming `foo`; every key in the admitted list is accepted. | Test |
 | FR-070-AC-4 | `exports: [endpoint]` on a module without an `endpoint` object type is rejected naming `endpoint`. | Test |
 | FR-070-AC-5 | `contract_version: "2.0.0"` is rejected before any other semantic key is read. | Test |
-| FR-070-AC-6 | Two modules declaring the same `semantic.package` fail to install together, naming both, with the later module root in sorted order rejected. | Test |
+| FR-070-AC-6 | Two modules declaring the same `semantic.package` fail to install together, naming both, with the module being installed rejected whatever its sorted position. | Test |
 | FR-070-AC-7 | `targets: [go]` and `package: "ix://agent-ix/x"` are each rejected naming the value. | Test |
 
 ## Dependencies

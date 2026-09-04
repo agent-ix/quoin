@@ -19,6 +19,7 @@ import {
   SEMANTIC_CONTRACT,
   moduleManifestSchemaPath,
   readJson,
+  sweepReportSchemaPath,
 } from "./contract.js";
 import {
   resolveDataSchema,
@@ -68,6 +69,7 @@ function semanticBlockValidator(): ValidateFunction {
   const schema = readJson(moduleManifestSchemaPath()) as Json;
   const block = (schema.properties as Json).semantic as Json;
   const ajv = new Ajv2020({
+    verbose: true,
     allErrors: true,
     strict: true,
     useDefaults: false,
@@ -77,6 +79,7 @@ function semanticBlockValidator(): ValidateFunction {
 }
 
 interface AjvError {
+  data?: unknown;
   instancePath: string;
   keyword: string;
   message?: string;
@@ -108,7 +111,7 @@ function mapAjvError(error: AjvError): SemanticDiagnostic {
             : "semantic.invalid-value",
         severity: "error",
         path: at,
-        message: `${at} must be one of ${JSON.stringify(error.params.allowedValues)}`,
+        message: `${at} is ${JSON.stringify(error.data)}, not one of ${JSON.stringify(error.params.allowedValues)}`,
       };
     case "pattern":
       return {
@@ -249,6 +252,16 @@ export function readSemanticBlock(
     dataSchemas[name] = resolved;
     diagnostics.push(...resolved.diagnostics);
   }
+  for (const name of block.exports) {
+    if (dataSchemas[name]?.kind !== "reference") {
+      diagnostics.push({
+        code: "semantic.export-without-schema",
+        severity: "error",
+        path: `semantic.exports.${name}`,
+        message: `semantic.exports names ${name}, whose data_schema is not a { schema, digest } reference; nothing can be pinned for it`,
+      });
+    }
+  }
   return {
     module: {
       name: String(manifest.name),
@@ -262,6 +275,18 @@ export function readSemanticBlock(
 }
 
 /** FR-074: `legacy_forms: error` needs a shipped sweep report for this package and version. */
+let cachedSweepValidator: ValidateFunction | undefined;
+
+function sweepReportValidator(): ValidateFunction {
+  if (!cachedSweepValidator) {
+    const ajv = new Ajv2020({ allErrors: true, strict: true });
+    cachedSweepValidator = ajv.compile(
+      readJson(sweepReportSchemaPath()) as Record<string, unknown>,
+    );
+  }
+  return cachedSweepValidator;
+}
+
 function sweepReportProblem(
   block: SemanticBlock,
   moduleRoot: string,
@@ -286,8 +311,10 @@ function sweepReportProblem(
     return `sweep_report is for package ${String(report.package)}, manifest is ${block.package}`;
   if (report.version !== version)
     return `sweep_report is for version ${String(report.version)}, manifest is ${version}`;
-  for (const key of ["generatedAt", "corpus", "counts"]) {
-    if (!(key in report)) return `sweep_report lacks ${key}`;
+  const validate = sweepReportValidator();
+  if (!validate(report)) {
+    const first = validate.errors?.[0];
+    return `sweep_report ${block.sweep_report} does not validate against the sweep-report schema: ${first?.instancePath || "/"} ${first?.message ?? ""}`.trim();
   }
   return undefined;
 }

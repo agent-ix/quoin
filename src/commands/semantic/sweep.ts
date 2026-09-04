@@ -73,7 +73,13 @@ runs this over the corpus.`;
     );
     const text = `${JSON.stringify(report, null, 2)}\n`;
     if (flags.out) {
-      writeFileSync(flags.out, text);
+      const out = resolve(flags.out);
+      const allowed = [process.cwd(), ...roots];
+      if (!allowed.some((dir) => out === dir || out.startsWith(`${dir}/`)))
+        this.error(
+          `--out ${flags.out} is outside the working directory and every corpus root`,
+        );
+      writeFileSync(out, text);
       this.log(
         `sweep: ${report.counts.artifacts} artifacts, ${report.counts.legacy["bullet-list"]} bullet-list, ${report.counts.legacy["free-column-table"]} free-column-table → ${flags.out}`,
       );

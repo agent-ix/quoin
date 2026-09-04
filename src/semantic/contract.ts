@@ -119,6 +119,10 @@ export function packageManifestSchemaPath(): string {
   return join(SCHEMA_DIR, "filament-core-data", "package-manifest.schema.json");
 }
 
+export function sweepReportSchemaPath(): string {
+  return join(here, "sweep-report.schema.json");
+}
+
 export function commonSchemaPath(): string {
   return join(SCHEMA_DIR, "filament-core-data", "common.schema.json");
 }

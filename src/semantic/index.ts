@@ -45,6 +45,7 @@ export {
   exportDigests,
   registryPin,
   resolveImports,
+  mappingIdentity,
   typeIdentity,
   validatePackageManifest,
   writePackageManifest,

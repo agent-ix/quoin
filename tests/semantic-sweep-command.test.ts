@@ -28,6 +28,7 @@ import {
 import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
 
 import SemanticSweep from "../src/commands/semantic/sweep";
+import { installPlugin } from "../src/plugins.js";
 import { readModuleSemantic } from "../src/semantic/manifest.js";
 import { sweepCorpus, type SweepReport } from "../src/semantic/sweep.js";
 import { createAuthoringPack, formatAuthoringPack } from "../src/write.js";
@@ -125,9 +126,11 @@ describe("FR-074 sweep report", () => {
     expect([...severities]).toEqual(["warning"]);
   });
 
-  it("runs through the command, writing the report to --out", async () => {
+  // Trace: FR-074-AC-5
+  // Trace: TC-1386
+  it("runs through the command, writing the report to --out inside a corpus root", async () => {
     const root = corpus();
-    const out = join(scratch, "sweep.json");
+    const out = join(root, "sweep.json");
     const lines: string[] = [];
     const spy = vi.spyOn(console, "log").mockImplementation((message) => {
       lines.push(String(message));
@@ -159,6 +162,22 @@ describe("FR-074 sweep report", () => {
       "out",
       "package",
     ]);
+    // --out outside the working directory and every corpus root is refused.
+    const outside = join(scratch, "elsewhere.json");
+    await expect(
+      SemanticSweep.run(
+        [
+          "--package",
+          "agent-ix/spec-objects-fixture",
+          "--module-version",
+          "0.1.0",
+          "--out",
+          outside,
+          root,
+        ],
+        config,
+      ),
+    ).rejects.toThrow(/outside the working directory/);
   });
 
   // Trace: FR-074-AC-3
@@ -198,6 +217,31 @@ describe("FR-074 sweep report", () => {
     );
     expect(withReport((r) => (r.version = "9.9.9"))).toContain(
       "semantic.sweep-report-required",
+    );
+    // A report with the right package and version but the wrong shape is
+    // rejected by the schema, not by key presence.
+    expect(
+      withReport((r) => {
+        delete (r.counts as Json).forms;
+      }),
+    ).toContain("semantic.sweep-report-required");
+    expect(
+      withReport((r) => {
+        (r.corpus as Json[]).push({ repository: "x" });
+      }),
+    ).toContain("semantic.sweep-report-required");
+    // The guard runs on the install path and leaves nothing behind.
+    const home = join(scratch, "home");
+    mkdirSync(home, { recursive: true });
+    const unguarded = join(scratch, "unguarded");
+    cpSync(MODULE, unguarded, { recursive: true });
+    const unguardedManifest = join(unguarded, "manifest.yaml");
+    const raw = parseYaml(readFileSync(unguardedManifest, "utf8")) as Json;
+    raw.name = "unguarded";
+    (raw.semantic as Json).legacy_forms = "error";
+    writeFileSync(unguardedManifest, stringifyYaml(raw));
+    expect(() => installPlugin(`path:${unguarded}`, home)).toThrow(
+      /semantic\.sweep-report-required/,
     );
     const module = join(scratch, "no-report");
     cpSync(MODULE, module, { recursive: true });

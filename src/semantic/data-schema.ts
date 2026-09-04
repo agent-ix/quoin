@@ -272,6 +272,10 @@ export function resolveDataSchema(
   const visited = new Set<string>();
   const stack: string[] = [];
   const walk = (schemaDoc: unknown, fileKey: string): boolean => {
+    const selfId =
+      isObject(schemaDoc) && typeof schemaDoc.$id === "string"
+        ? schemaDoc.$id
+        : undefined;
     if (stack.includes(fileKey)) {
       diagnostics.push({
         code: "semantic.schema-ref-cycle",
@@ -288,7 +292,7 @@ export function resolveDataSchema(
     collectRefs(schemaDoc, refs);
     for (const target of refs) {
       const [url] = target.split("#");
-      if (!url) continue; // fragment-only
+      if (!url || url === selfId) continue; // fragment within this document
       if (url.startsWith(coreBase)) {
         const name = url.slice(coreBase.length);
         const corePath = join(coreDir, name);

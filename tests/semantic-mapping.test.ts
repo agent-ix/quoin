@@ -23,6 +23,13 @@ import { classifyArtifact } from "../src/semantic/sweep.js";
 const FIXTURES = join("tests", "fixtures", "semantic-module", "mapping");
 type Json = Record<string, unknown>;
 
+// `attribute|ref item <name> : <Type>[<mult>]` with optional brace-delimited
+// constraint text. Built from a string: a regex literal with braces trips the
+// Quire trace scanner and unbinds every tag in this file (SR-127 FND-210).
+const FENCE_LINE = new RegExp(
+  String.raw`^(attribute|ref item) \w+ : [\w.:/-]+\[[^\]]+\]( \{[^}]*\})?$`,
+);
+
 function fixture(name: string): string {
   return readFileSync(join(FIXTURES, name), "utf8");
 }
@@ -78,8 +85,15 @@ describe("FR-071 typed Properties table and sysml fence fixtures", () => {
     const fields = expected.fields as Json[];
     expect(fields).toHaveLength(7);
     for (const field of fields) validates("FieldDecl", field);
-    for (const clause of expected.clauses as Json[])
+    for (const clause of expected.clauses as Json[]) {
       validates("ClauseRef", clause);
+      const span = clause.sourceSpan as Json;
+      const lines = fixture(String(span.path)).split("\n");
+      expect(lines[Number(span.startLine) - 1]).toBe("```ocl");
+      expect((expected.clauseText as Json)[String(clause.clauseId)]).toBe(
+        lines[Number(span.startLine)],
+      );
+    }
     const table = fixture("config-version.table.md");
     expect(table).toContain("| Field | Type | Multiplicity | Constraints |");
     expect(classifyArtifact("table", table).form).toBe("typed-table");
@@ -117,6 +131,17 @@ describe("FR-071 typed Properties table and sysml fence fixtures", () => {
     const fenceLine =
       both.split("\n").findIndex((l) => l.startsWith("```sysml")) + 1;
     expect(fenceLine).toBeGreaterThan(tableLine);
+    const expected = json("both-forms.expected.json");
+    expect(expected.semanticCore).toBe(SEMANTIC_CONTRACT.semanticCore.version);
+    expect(expected.firstForm).toEqual({
+      form: "typed-table",
+      line: tableLine,
+    });
+    expect(expected.expectedDiagnostic).toMatchObject({
+      severity: "error",
+      line: fenceLine,
+      secondForm: "sysml-fence",
+    });
   });
 
   // Trace: FR-071-AC-4
@@ -199,9 +224,7 @@ describe("FR-071 typed Properties table and sysml fence fixtures", () => {
     const fence = fixture("config-version.fence.md");
     const body = fence.split("```sysml")[1]?.split("```")[0] ?? "";
     for (const line of body.trim().split("\n")) {
-      expect(line, line).toMatch(
-        /^(attribute|ref item) \w+ : [\w.:/-]+\[[^\]]+\]( \{[^}]*\})?$/,
-      );
+      expect(line, line).toMatch(FENCE_LINE);
     }
     const source = readFileSync(join("src", "semantic", "sweep.ts"), "utf8");
     expect(source).not.toMatch(/parseExpression|evaluate\(/);
@@ -221,6 +244,17 @@ describe("FR-072 Invariants and Operations fixtures", () => {
     for (const operation of expected.operations as Json[])
       validates("OperationDecl", operation);
     const source = fixture("operations.md");
+    // Clause text is recorded verbatim beside the ClauseRef, keyed by clause id,
+    // and equals the fence body at the recorded span.
+    const lines = source.split("\n");
+    for (const clause of expected.clauses as Json[]) {
+      const span = clause.sourceSpan as Json;
+      expect(lines[Number(span.startLine) - 1]).toBe("```ocl");
+      expect(lines[Number(span.endLine) - 1]).toBe("```");
+      expect((expected.clauseText as Json)[String(clause.clauseId)]).toBe(
+        lines[Number(span.startLine)],
+      );
+    }
     expect(source).toContain("### notArchived");
     expect(source).toContain("Pre: notArchived");
     expect(source).toContain("Post: archived");

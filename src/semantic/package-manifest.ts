@@ -32,6 +32,12 @@ export function typeIdentity(packageIdentity: string, name: string): string {
   return `ix://${org}/${repo}/type/${name}`;
 }
 
+/** `semantic.mappings` names a mapping; the package manifest records its identity. */
+export function mappingIdentity(packageIdentity: string, name: string): string {
+  const [org, repo] = packageIdentity.split("/");
+  return `ix://${org}/${repo}/mapping/${name}`;
+}
+
 /** Derive the filament-core-data package manifest for one semantic module (FR-075). */
 export function derivePackageManifest(module: SemanticModule): Json {
   const { block } = module;
@@ -51,6 +57,9 @@ export function derivePackageManifest(module: SemanticModule): Json {
         capabilities: [],
       })),
   ];
+  const mappings = [...block.mappings]
+    .sort()
+    .map((name) => mappingIdentity(block.package, name));
   const exports = [...block.exports].sort().map((name) => ({
     name,
     typeIdentity: typeIdentity(block.package, name),
@@ -69,13 +78,13 @@ export function derivePackageManifest(module: SemanticModule): Json {
         version: module.version,
         exports: exports.map((entry) => entry.name),
         targets: [...block.targets],
-        mappings: [...block.mappings],
+        mappings: mappings,
         options: {},
         compatibilityPosture: block.compatibility_posture,
       },
     ],
     targets: [...block.targets],
-    mappings: [],
+    mappings,
     extensions: [],
   };
 }

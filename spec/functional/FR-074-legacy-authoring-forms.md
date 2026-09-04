@@ -34,7 +34,8 @@ rewritten.
 - Where the module manifest sets `semantic.legacy_forms: error`, Quire SHALL promote the warning to an error.
 - The default for `semantic.legacy_forms` SHALL be `warning`.
 - If a manifest sets `semantic.legacy_forms: error` without `semantic.sweep_report` naming a shipped file that validates against the sweep-report schema and records the same `package` and module `version`, then Quoin SHALL reject the manifest at install naming the missing or mismatched report.
-- The sweep-report schema SHALL be `{ package, version, generatedAt, corpus: [{ repository, revision }], counts: { artifacts, legacy: { bullet-list, free-column-table } } }`, produced by `quoin semantic sweep` (`agent-ix/quoin#291` runs it over the corpus).
+- The sweep-report schema SHALL be `{ package, version, generatedAt, corpus: [{ repository, revision }], counts: { artifacts, forms: { typed-table, free-column-table, bullet-list, sysml-fence, none }, legacy: { bullet-list, free-column-table } }, findings?: [{ path, form, line?, diagnostic? }] }`, produced by `quoin semantic sweep` (`agent-ix/quoin#291` runs it over the corpus); `repository` is the corpus root's directory name and `revision` its git `HEAD`, or `worktree` when the root is not a repository.
+- When `quoin semantic sweep --out` names a path outside both the working directory and every corpus root, Quoin SHALL refuse to write it.
 - Quoin SHALL document the migration once in the module's authoring pack (`quoin write`) with a before/after example.
 - Quoin SHALL NOT edit, rewrite, or auto-migrate any artifact in a corpus repository.
 

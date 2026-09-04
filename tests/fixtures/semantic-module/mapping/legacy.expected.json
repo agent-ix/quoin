@@ -1,4 +1,5 @@
 {
+  "semanticCore": "0.1.0",
   "cases": [
     {
       "file": "../corpus/config-service/FR-006-config-version-entity.md",

@@ -77,6 +77,16 @@ export function parseSourceArg(arg: string): Source {
   return { type: "path", path: arg };
 }
 
+/** Run the rollback; a failure is appended to the rejection, never masks it. */
+function tryRollback(rollback: () => void): string {
+  try {
+    rollback();
+    return "";
+  } catch (error) {
+    return `\n(restoring the previous version also failed: ${error instanceof Error ? error.message : String(error)})`;
+  }
+}
+
 export function installPlugin(
   source: string,
   home = ixHome(),
@@ -107,7 +117,7 @@ export function installPlugin(
       removePlugin(installed.name, home);
     }
   };
-  // FR-070 / FR-073: a module whose `semantic` block or `data_schema`
+  // Semantic contract: a module whose `semantic` block or `data_schema`
   // references are outside the contract is rejected at install, not loaded
   // as an empty model. The block is optional; modules without it are untouched.
   const root = join(filamentModulesDir(home), installed.name);
@@ -122,19 +132,19 @@ export function installPlugin(
     diagnostics.push(...resolveImports(result.module, others));
   }
   if (hasErrors(diagnostics)) {
-    rollback();
+    const restore = tryRollback(rollback);
     throw new Error(
-      `module ${installed.name} rejected: semantic contract violations\n${formatDiagnostics(diagnostics)}`,
+      `module ${installed.name} rejected: semantic contract violations\n${formatDiagnostics(diagnostics)}${restore}`,
     );
   }
   if (result.module) {
-    // FR-075: derive the package manifest and pin export digests in the registry.
+    // Derive the package manifest and pin export digests in the registry.
     const manifest = derivePackageManifest(result.module);
     const verdict = validatePackageManifest(manifest);
     if (!verdict.valid) {
-      rollback();
+      const restore = tryRollback(rollback);
       throw new Error(
-        `module ${installed.name} rejected: derived package manifest is invalid\n${JSON.stringify(verdict.errors)}`,
+        `module ${installed.name} rejected: derived package manifest is invalid\n${JSON.stringify(verdict.errors)}${restore}`,
       );
     }
     writePackageManifest(result.module, manifest);
@@ -143,7 +153,7 @@ export function installPlugin(
   return installed;
 }
 
-/** Record the FR-075 pin under the plugin's registry entry. */
+/** Record the semantic pin under the plugin's registry entry. */
 function pinSemantic(
   name: string,
   pin: SemanticRegistryPin,
@@ -160,7 +170,7 @@ function pinSemantic(
   });
 }
 
-/** The FR-075 pin recorded for an installed module, if any. */
+/** The semantic pin recorded for an installed module, if any. */
 export function semanticPin(
   name: string,
   home = ixHome(),
@@ -184,6 +194,25 @@ export function installedSemanticModules(home = ixHome()): SemanticModule[] {
     if (result.module) modules.push(result.module);
   }
   return modules;
+}
+
+/**
+ * Re-read every installed module's `semantic` block and fail on the first
+ * module whose block or `data_schema` references are outside the contract.
+ * `installPlugin` guards the install path; this guards the reconcile path
+ * (`ensureDefaultModules`), which materializes modules without it.
+ */
+export function validateInstalledSemantics(home = ixHome()): void {
+  const modulesDir = filamentModulesDir(home);
+  for (const plugin of listPlugins(home)) {
+    const root = join(modulesDir, plugin.name);
+    if (!existsSync(join(root, "manifest.yaml"))) continue;
+    const diagnostics = readModuleSemantic(root).diagnostics;
+    if (hasErrors(diagnostics))
+      throw new Error(
+        `installed module ${plugin.name} violates the semantic contract\n${formatDiagnostics(diagnostics)}`,
+      );
+  }
 }
 
 export function listPlugins(home = ixHome()): InstalledPlugin[] {
