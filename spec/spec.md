@@ -133,6 +133,7 @@ index; the files are authoritative.
 - [US-013](./usecase/US-013-reason-about-semantic-module-boundaries.md) — reason about semantic modules without confusing definitions and projections.
 - [US-014](./usecase/US-014-audit-default-module-semantic-fit.md) — audit the semantic fit of the complete default-module corpus.
 - [US-015](./usecase/US-015-assess-intervention-experiments.md) — assess intervention experiments without overstating causality.
+- [US-020](./usecase/US-020-declare-a-semantic-module-contract-once.md) — declare a module's semantic contract once against the shared grammar.
 
 ### Functional Requirements
 
@@ -234,6 +235,15 @@ index; the files are authoritative.
 - [FR-061](./functional/FR-061-github-actions-release-operational-producer.md) — produce linked operational records from a retained real GitHub Actions release run.
 
 
+**Semantic module contract (issue #293)**
+
+- [FR-070](./functional/FR-070-semantic-module-manifest-extension.md) — optional, versioned `semantic` manifest block.
+- [FR-071](./functional/FR-071-typed-properties-mapping.md) — typed Properties table and SysML fence map to one `FieldDecl[]`.
+- [FR-072](./functional/FR-072-invariants-and-operations-mapping.md) — Invariants and Operations map to `ClauseRef[]` and `OperationDecl[]`.
+- [FR-073](./functional/FR-073-data-schema-by-path-and-digest.md) — `data_schema` by emitted-schema path and digest.
+- [FR-074](./functional/FR-074-legacy-authoring-forms.md) — legacy authoring forms at `warning` with a declared migration.
+- [FR-075](./functional/FR-075-semantic-package-exports-and-locks.md) — package exports, imports, locks, and generated coordinates.
+
 ### Non-Functional Requirements
 
 - [NFR-001](./non-functional/NFR-001-idempotent-offline-reconcile.md) — default-module reconciliation is idempotent and offline-safe.
@@ -248,6 +258,7 @@ index; the files are authoritative.
 - [NFR-014](./non-functional/NFR-014-non-disruptive-architecture-record.md) — architecture recording remains non-disruptive.
 - [NFR-015](./non-functional/NFR-015-complete-reproducible-semantic-audit.md) — audit completeness and reproducibility.
 - [NFR-016](./non-functional/NFR-016-read-only-semantic-audit.md) — read-only, non-disruptive auditing.
+- [NFR-017](./non-functional/NFR-017-non-disruptive-manifest-evolution.md) — semantic manifest evolution invalidates no current manifest or artifact.
 
 ### Integration Tests
 

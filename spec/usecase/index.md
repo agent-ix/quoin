@@ -27,3 +27,4 @@ description: "Index of artifacts in this directory."
 - [US-018: Inspect evidence-graph concentration and change exposure](./US-018-inspect-evidence-graph-exposure.md)
 - [US-017: Verify candidate evidence against an approved change definition](./US-017-verify-change-assurance-evidence.md)
 - [US-019: Review governed graph evidence across repositories](./US-019-review-graph-evidence-portfolio.md)
+- [US-020: Declare a module's semantic contract once](./US-020-declare-a-semantic-module-contract-once.md)
