@@ -12,6 +12,21 @@ import {
 } from "@agent-ix/ts-plugin-kit";
 
 import { filamentModulesDir, ixHome } from "./catalog.js";
+import {
+  duplicatePackageDiagnostic,
+  formatDiagnostics,
+  hasErrors,
+  readModuleSemantic,
+  type SemanticModule,
+} from "./semantic/manifest.js";
+import {
+  registryPin,
+  resolveImports,
+  validatePackageManifest,
+  writePackageManifest,
+  derivePackageManifest,
+  type SemanticRegistryPin,
+} from "./semantic/package-manifest.js";
 
 export type { InstalledPlugin } from "@agent-ix/ts-plugin-kit";
 
@@ -62,11 +77,142 @@ export function parseSourceArg(arg: string): Source {
   return { type: "path", path: arg };
 }
 
+/** Run the rollback; a failure is appended to the rejection, never masks it. */
+function tryRollback(rollback: () => void): string {
+  try {
+    rollback();
+    return "";
+  } catch (error) {
+    return `\n(restoring the previous version also failed: ${error instanceof Error ? error.message : String(error)})`;
+  }
+}
+
 export function installPlugin(
   source: string,
   home = ixHome(),
 ): InstalledPlugin {
-  return installEntry({ source: parseSourceArg(source) }, installOptions(home));
+  // Snapshot the registry so a rejected re-install restores the previous
+  // version instead of leaving the module absent (the install overwrites the
+  // materialized copy before the semantic block can be read).
+  const before = readRegistry(registryPath(home)).plugins;
+  const installed = installEntry(
+    { source: parseSourceArg(source) },
+    installOptions(home),
+  );
+  const previous = before.find((plugin) => plugin.name === installed.name);
+  const rollback = (): void => {
+    if (previous) {
+      installEntry(
+        {
+          name: previous.name,
+          source: previous.source,
+          ...(previous.ref ? { ref: previous.ref } : {}),
+        },
+        installOptions(home),
+      );
+      const restored = readModuleSemantic(root);
+      if (restored.module)
+        pinSemantic(previous.name, registryPin(restored.module), home);
+    } else {
+      removePlugin(installed.name, home);
+    }
+  };
+  // Semantic contract: a module whose `semantic` block or `data_schema`
+  // references are outside the contract is rejected at install, not loaded
+  // as an empty model. The block is optional; modules without it are untouched.
+  const root = join(filamentModulesDir(home), installed.name);
+  const result = readModuleSemantic(root);
+  const diagnostics = [...result.diagnostics];
+  if (result.module) {
+    const others = installedSemanticModules(home).filter(
+      (module) => module.name !== installed.name,
+    );
+    const duplicate = duplicatePackageDiagnostic(result.module, others);
+    if (duplicate) diagnostics.push(duplicate);
+    diagnostics.push(...resolveImports(result.module, others));
+  }
+  if (hasErrors(diagnostics)) {
+    const restore = tryRollback(rollback);
+    throw new Error(
+      `module ${installed.name} rejected: semantic contract violations\n${formatDiagnostics(diagnostics)}${restore}`,
+    );
+  }
+  if (result.module) {
+    // Derive the package manifest and pin export digests in the registry.
+    const manifest = derivePackageManifest(result.module);
+    const verdict = validatePackageManifest(manifest);
+    if (!verdict.valid) {
+      const restore = tryRollback(rollback);
+      throw new Error(
+        `module ${installed.name} rejected: derived package manifest is invalid\n${JSON.stringify(verdict.errors)}${restore}`,
+      );
+    }
+    writePackageManifest(result.module, manifest);
+    pinSemantic(installed.name, registryPin(result.module), home);
+  }
+  return installed;
+}
+
+/** Record the semantic pin under the plugin's registry entry. */
+function pinSemantic(
+  name: string,
+  pin: SemanticRegistryPin,
+  home: string,
+): void {
+  const reg = readRegistry(registryPath(home));
+  writeRegistry(registryPath(home), {
+    schemaVersion: 1,
+    plugins: reg.plugins.map((plugin) =>
+      plugin.name === name
+        ? ({ ...plugin, semantic: pin } as InstalledPlugin)
+        : plugin,
+    ),
+  });
+}
+
+/** The semantic pin recorded for an installed module, if any. */
+export function semanticPin(
+  name: string,
+  home = ixHome(),
+): SemanticRegistryPin | undefined {
+  const plugin = readRegistry(registryPath(home)).plugins.find(
+    (entry) => entry.name === name,
+  ) as (InstalledPlugin & { semantic?: SemanticRegistryPin }) | undefined;
+  return plugin?.semantic;
+}
+
+/** Every installed module that declares a semantic block, in sorted root order. */
+export function installedSemanticModules(home = ixHome()): SemanticModule[] {
+  const modulesDir = filamentModulesDir(home);
+  const roots = listPlugins(home)
+    .map((plugin) => join(modulesDir, plugin.name))
+    .filter((root) => existsSync(join(root, "manifest.yaml")))
+    .sort();
+  const modules: SemanticModule[] = [];
+  for (const root of roots) {
+    const result = readModuleSemantic(root);
+    if (result.module) modules.push(result.module);
+  }
+  return modules;
+}
+
+/**
+ * Re-read every installed module's `semantic` block and fail on the first
+ * module whose block or `data_schema` references are outside the contract.
+ * `installPlugin` guards the install path; this guards the reconcile path
+ * (`ensureDefaultModules`), which materializes modules without it.
+ */
+export function validateInstalledSemantics(home = ixHome()): void {
+  const modulesDir = filamentModulesDir(home);
+  for (const plugin of listPlugins(home)) {
+    const root = join(modulesDir, plugin.name);
+    if (!existsSync(join(root, "manifest.yaml"))) continue;
+    const diagnostics = readModuleSemantic(root).diagnostics;
+    if (hasErrors(diagnostics))
+      throw new Error(
+        `installed module ${plugin.name} violates the semantic contract\n${formatDiagnostics(diagnostics)}`,
+      );
+  }
 }
 
 export function listPlugins(home = ixHome()): InstalledPlugin[] {

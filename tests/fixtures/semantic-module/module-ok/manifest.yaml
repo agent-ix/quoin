@@ -1,0 +1,24 @@
+manifest_version: 1.0.0
+name: spec-objects-fixture
+version: 0.1.0
+description: "Semantic-module contract fixture (quoin FR-070/FR-073)."
+archetypes: []
+object_types:
+- name: entity
+  data_schema:
+    schema: schemas/Entity.json
+    digest: sha256:8692992e186f40a73b78fd1b0915f0fe78e05a2b00782fb1df58c951a37c91d5
+  body_extraction:
+    yield_pattern:
+      match:
+        id: { from: frontmatter_field, path: [id], required: true }
+        properties: { from: section_body, after_heading: Properties, required: true }
+- name: enumeration
+  data_schema:
+    type: object
+semantic:
+  contract_version: 1.0.0
+  semantic_core: 0.1.0
+  package: agent-ix/spec-objects-fixture
+  exports: [entity]
+  targets: [json-schema, markdown]

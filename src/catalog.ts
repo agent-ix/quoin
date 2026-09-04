@@ -4,7 +4,15 @@ import { basename, join, resolve } from "node:path";
 
 import { parse as parseYaml } from "yaml";
 
+import {
+  readSemanticBlock,
+  type SemanticBlock,
+  type SemanticDiagnostic,
+} from "./semantic/manifest.js";
+
 export interface SpecCatalogEntry {
+  /** Raw `data_schema` of an object type (inline object or FR-073 reference). */
+  dataSchema?: unknown;
   name: string;
   kind: "artifact" | "object";
   moduleName: string;
@@ -20,6 +28,10 @@ export interface SpecModule {
   root: string;
   artifactTypes: string[];
   objectTypes: string[];
+  /** Parsed `semantic` block (FR-070), absent when the manifest has none or it is invalid. */
+  semantic?: SemanticBlock;
+  /** Diagnostics from reading the semantic block at load time (install-time rejection lives in plugins.ts). */
+  semanticDiagnostics?: SemanticDiagnostic[];
 }
 
 export interface SpecCatalog {
@@ -79,12 +91,17 @@ export function loadCatalog(moduleRoots = defaultModuleRoots()): SpecCatalog {
     const artifactTypes = arrayObjects(manifest.artifact_types);
     const objectTypes = arrayObjects(manifest.object_types);
 
+    const semantic = readSemanticBlock(manifest, moduleRoot);
     modules.push({
       name: moduleName,
       version: stringValue(manifest.version),
       root: moduleRoot,
       artifactTypes: artifactTypes.map((entry) => String(entry.name)),
       objectTypes: objectTypes.map((entry) => String(entry.name)),
+      ...(semantic.module ? { semantic: semantic.module.block } : {}),
+      ...(semantic.diagnostics.length > 0
+        ? { semanticDiagnostics: semantic.diagnostics }
+        : {}),
     });
 
     for (const artifact of artifactTypes) {
@@ -108,6 +125,9 @@ export function loadCatalog(moduleRoots = defaultModuleRoots()): SpecCatalog {
         moduleName,
         moduleRoot,
         skeletonPath: skeletonPath(moduleRoot, name),
+        ...(object.data_schema !== undefined
+          ? { dataSchema: object.data_schema }
+          : {}),
       });
     }
   }

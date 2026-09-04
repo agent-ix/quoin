@@ -1,0 +1,115 @@
+{
+  "semanticCore": "0.1.0",
+  "cases": [
+    {
+      "id": "fence-no-language",
+      "invariants": "### immutable\n\n```\nx\n```\n",
+      "diagnostics": [
+        {
+          "code": "semantic.clause-language-missing",
+          "severity": "error",
+          "locus": "fence"
+        }
+      ]
+    },
+    {
+      "id": "fence-bare-unknown",
+      "invariants": "### immutable\n\n```tla\nx\n```\n",
+      "diagnostics": [
+        {
+          "code": "semantic.clause-language-invalid",
+          "severity": "error",
+          "locus": "fence"
+        }
+      ]
+    },
+    {
+      "id": "fence-sysml-advisory",
+      "invariants": "### immutable\n\n```sysml\nx\n```\n",
+      "diagnostics": [
+        {
+          "code": "semantic.clause-language-unchecked",
+          "severity": "advisory",
+          "locus": "fence"
+        }
+      ]
+    },
+    {
+      "id": "fence-fretish-advisory",
+      "invariants": "### immutable\n\n```fretish\nx\n```\n",
+      "diagnostics": [
+        {
+          "code": "semantic.clause-language-unchecked",
+          "severity": "advisory",
+          "locus": "fence"
+        }
+      ]
+    },
+    {
+      "id": "fence-namespaced-advisory",
+      "invariants": "### immutable\n\n```acme:tla\nx\n```\n",
+      "diagnostics": [
+        {
+          "code": "semantic.clause-language-unchecked",
+          "severity": "advisory",
+          "locus": "fence"
+        }
+      ]
+    },
+    {
+      "id": "duplicate-clause-id",
+      "invariants": "### immutable\n\n```ocl\na\n```\n\n### immutable\n\n```ocl\nb\n```\n",
+      "diagnostics": [
+        {
+          "code": "semantic.duplicate-clause-id",
+          "severity": "error",
+          "locus": "second-clause"
+        }
+      ]
+    },
+    {
+      "id": "clause-id-not-identifier",
+      "invariants": "### not-archived\n\n```ocl\na\n```\n",
+      "diagnostics": [
+        {
+          "code": "semantic.clause-id-not-identifier",
+          "severity": "error",
+          "locus": "heading"
+        }
+      ]
+    },
+    {
+      "id": "dangling-post",
+      "operations": "### archive\n\nReturns: ConfigVersion[1]\nPost: missing\n",
+      "diagnostics": [
+        {
+          "code": "semantic.dangling-clause-ref",
+          "severity": "error",
+          "locus": "post-line"
+        }
+      ]
+    },
+    {
+      "id": "duplicate-operation",
+      "operations": "### archive\n\nReturns: ConfigVersion[1]\n\n### archive\n\nReturns: ConfigVersion[1]\n",
+      "diagnostics": [
+        {
+          "code": "semantic.duplicate-operation",
+          "severity": "error",
+          "locus": "second-heading"
+        }
+      ]
+    },
+    {
+      "id": "inline-and-external",
+      "invariants": "### immutable\n\n```ocl\na\n```\n\nClause: ./clauses.md#immutable\n",
+      "diagnostics": [
+        {
+          "code": "semantic.duplicate-clause-authority",
+          "severity": "error",
+          "locus": "second-occurrence"
+        }
+      ]
+    }
+  ]
+}

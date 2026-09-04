@@ -1,0 +1,28 @@
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"$id": "https://schemas.agent-ix.org/semantic-core/0.1.0/Multiplicity.json",
+	"type": "object",
+	"properties": {
+		"lower": {
+			"type": "integer",
+			"minimum": 0,
+			"maximum": 2147483647
+		},
+		"upper": {
+			"type": "integer",
+			"minimum": 0,
+			"maximum": 2147483647
+		},
+		"ordered": {
+			"type": "boolean"
+		},
+		"unique": {
+			"type": "boolean"
+		}
+	},
+	"required": ["lower"],
+	"unevaluatedProperties": {
+		"not": {}
+	},
+	"description": "FR-027 multiplicity; absent `upper` is unbounded. Reader: upper >= lower; flags only on collections."
+}

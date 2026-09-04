@@ -1,0 +1,15 @@
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"$id": "https://schemas.agent-ix.org/semantic-core/0.1.0/EdgeCategory.json",
+	"type": "string",
+	"enum": [
+		"structural",
+		"behavioral",
+		"dataflow",
+		"dependency",
+		"realization",
+		"governance",
+		"traceability"
+	],
+	"description": "FR-040 edge categories; equal to the IR `relationship.category` set."
+}

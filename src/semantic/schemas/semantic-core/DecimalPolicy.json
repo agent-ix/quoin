@@ -1,0 +1,22 @@
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"$id": "https://schemas.agent-ix.org/semantic-core/0.1.0/DecimalPolicy.json",
+	"type": "object",
+	"properties": {
+		"precision": {
+			"type": "integer",
+			"minimum": 1,
+			"maximum": 2147483647
+		},
+		"scale": {
+			"type": "integer",
+			"minimum": 0,
+			"maximum": 2147483647
+		}
+	},
+	"required": ["precision", "scale"],
+	"unevaluatedProperties": {
+		"not": {}
+	},
+	"description": "Precision and scale for a `Decimal` target (FR-032)."
+}

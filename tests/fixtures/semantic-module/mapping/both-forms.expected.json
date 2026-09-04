@@ -1,0 +1,15 @@
+{
+  "$comment": "FR-071-AC-3: a typed table and a sysml fence under one Properties heading; extraction fails at the second form's locus (quire-rs#388 golden).",
+  "semanticCore": "0.1.0",
+  "artifact": "both-forms.md",
+  "firstForm": {
+    "form": "typed-table",
+    "line": 12
+  },
+  "expectedDiagnostic": {
+    "code": "semantic.properties-both-forms",
+    "severity": "error",
+    "line": 16,
+    "secondForm": "sysml-fence"
+  }
+}

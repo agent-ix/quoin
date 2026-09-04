@@ -1,0 +1,7 @@
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"$id": "https://schemas.agent-ix.org/semantic-core/0.1.0/SemanticId.json",
+	"type": "string",
+	"pattern": "^ix://[a-z0-9][a-z0-9._-]*/[A-Za-z0-9][A-Za-z0-9._~:/-]*$",
+	"description": "A stable semantic identity, same pattern as the IR `semanticIdentity`."
+}

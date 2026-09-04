@@ -10,7 +10,7 @@ import {
 } from "@agent-ix/ts-plugin-kit";
 
 import { ixHome } from "./catalog.js";
-import { installOptions } from "./plugins.js";
+import { installOptions, validateInstalledSemantics } from "./plugins.js";
 
 function packageRoot(): string {
   return dirname(dirname(fileURLToPath(import.meta.url)));
@@ -32,4 +32,5 @@ export function ensureDefaultModules(
   manifest: MarketplaceManifest = defaultModulesManifest(),
 ): void {
   reconcile(manifest, { ...installOptions(home), mode: "lazy" });
+  validateInstalledSemantics(home);
 }

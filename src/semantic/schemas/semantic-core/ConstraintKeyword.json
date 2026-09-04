@@ -1,0 +1,19 @@
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"$id": "https://schemas.agent-ix.org/semantic-core/0.1.0/ConstraintKeyword.json",
+	"type": "string",
+	"enum": [
+		"min",
+		"max",
+		"exclusiveMin",
+		"exclusiveMax",
+		"pattern",
+		"minLength",
+		"maxLength",
+		"enumValues",
+		"nonEmpty",
+		"unique",
+		"format"
+	],
+	"description": "FR-029 closed keyword set; equal to the IR `constraint.keyword` set."
+}

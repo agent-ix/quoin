@@ -1,0 +1,116 @@
+{
+  "$comment": "Expected normalized FieldDecl[] for config-version.table.md and config-version.fence.md (FR-071-AC-1/AC-2). Normalized: canonical key order, optional properties omitted, authored form outside the array.",
+  "semanticCore": "0.1.0",
+  "artifact": "FR-006",
+  "fields": [
+    {
+      "name": "id",
+      "type": {
+        "target": "UUID",
+        "multiplicity": {
+          "lower": 1,
+          "upper": 1
+        }
+      },
+      "identity": true
+    },
+    {
+      "name": "versionNumber",
+      "type": {
+        "target": "Integer",
+        "multiplicity": {
+          "lower": 1,
+          "upper": 1
+        }
+      },
+      "constraints": [
+        {
+          "keyword": "min",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "name": "data",
+      "type": {
+        "target": "JsonObject",
+        "multiplicity": {
+          "lower": 1,
+          "upper": 1
+        }
+      }
+    },
+    {
+      "name": "hash",
+      "type": {
+        "target": "String",
+        "multiplicity": {
+          "lower": 1,
+          "upper": 1
+        }
+      },
+      "constraints": [
+        {
+          "keyword": "nonEmpty"
+        }
+      ]
+    },
+    {
+      "name": "parent",
+      "type": {
+        "target": "ix://agent-ix/config-service/type/ConfigVersion",
+        "multiplicity": {
+          "lower": 0,
+          "upper": 1
+        }
+      }
+    },
+    {
+      "name": "createdAt",
+      "type": {
+        "target": "Timestamp",
+        "multiplicity": {
+          "lower": 1,
+          "upper": 1
+        }
+      }
+    },
+    {
+      "name": "createdBy",
+      "type": {
+        "target": "String",
+        "multiplicity": {
+          "lower": 1,
+          "upper": 1
+        }
+      },
+      "constraints": [
+        {
+          "keyword": "maxLength",
+          "value": 64
+        }
+      ]
+    }
+  ],
+  "clauses": [
+    {
+      "language": "ocl",
+      "clauseId": "immutable",
+      "sourceSpan": {
+        "sourceIdentity": "ix://agent-ix/config-service/spec",
+        "path": "config-version.table.md",
+        "startLine": 34,
+        "startColumn": 1,
+        "endLine": 36,
+        "endColumn": 4
+      }
+    }
+  ],
+  "authoredForm": {
+    "config-version.table.md": "table",
+    "config-version.fence.md": "fence"
+  },
+  "clauseText": {
+    "immutable": "context ConfigVersion inv immutable: self.versionNumber = self.versionNumber@pre and self.data = self.data@pre and self.hash = self.hash@pre"
+  }
+}

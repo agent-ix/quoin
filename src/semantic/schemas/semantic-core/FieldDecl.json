@@ -1,0 +1,36 @@
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"$id": "https://schemas.agent-ix.org/semantic-core/0.1.0/FieldDecl.json",
+	"type": "object",
+	"properties": {
+		"name": {
+			"$ref": "https://schemas.agent-ix.org/semantic-core/0.1.0/Identifier.json"
+		},
+		"type": {
+			"$ref": "https://schemas.agent-ix.org/semantic-core/0.1.0/TypeRef.json"
+		},
+		"identity": {
+			"type": "boolean"
+		},
+		"nullable": {
+			"type": "boolean"
+		},
+		"default": {
+			"$ref": "https://schemas.agent-ix.org/semantic-core/0.1.0/DefaultDecl.json"
+		},
+		"doc": {
+			"type": "string"
+		},
+		"constraints": {
+			"type": "array",
+			"items": {
+				"$ref": "https://schemas.agent-ix.org/semantic-core/0.1.0/ConstraintDecl.json"
+			}
+		}
+	},
+	"required": ["name", "type"],
+	"unevaluatedProperties": {
+		"not": {}
+	},
+	"description": "A field declaration (one typed Properties row). Reader: unique by name; identity only on 1..1 non-JsonObject."
+}

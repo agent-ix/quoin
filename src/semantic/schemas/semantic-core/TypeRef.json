@@ -1,0 +1,31 @@
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"$id": "https://schemas.agent-ix.org/semantic-core/0.1.0/TypeRef.json",
+	"type": "object",
+	"properties": {
+		"target": {
+			"anyOf": [
+				{
+					"$ref": "https://schemas.agent-ix.org/semantic-core/0.1.0/SemanticId.json"
+				},
+				{
+					"$ref": "https://schemas.agent-ix.org/semantic-core/0.1.0/KernelScalar.json"
+				}
+			]
+		},
+		"multiplicity": {
+			"$ref": "https://schemas.agent-ix.org/semantic-core/0.1.0/Multiplicity.json"
+		},
+		"unit": {
+			"$ref": "https://schemas.agent-ix.org/semantic-core/0.1.0/UnitSymbol.json"
+		},
+		"decimal": {
+			"$ref": "https://schemas.agent-ix.org/semantic-core/0.1.0/DecimalPolicy.json"
+		}
+	},
+	"required": ["target"],
+	"unevaluatedProperties": {
+		"not": {}
+	},
+	"description": "A reference to a kernel scalar or a semantic type. Reader: `decimal` iff target is Decimal; `unit` only on unit-allowed scalars."
+}

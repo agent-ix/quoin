@@ -1,0 +1,52 @@
+{
+  "semanticCore": "0.1.0",
+  "cases": [
+    {
+      "file": "../corpus/config-service/FR-006-config-version-entity.md",
+      "form": "free-column-table",
+      "line": 17,
+      "diagnostic": {
+        "code": "semantic.legacy-properties-form",
+        "severity": "warning",
+        "form": "free-column-table",
+        "line": 17,
+        "migration": "typed-table"
+      },
+      "propertiesExtractionUnchanged": true
+    },
+    {
+      "file": "legacy-bullets.md",
+      "form": "bullet-list",
+      "line": 12,
+      "diagnostic": {
+        "code": "semantic.legacy-properties-form",
+        "severity": "warning",
+        "form": "bullet-list",
+        "line": 12,
+        "migration": "typed-table"
+      }
+    },
+    {
+      "file": "legacy-mixed.md",
+      "form": "bullet-list",
+      "line": 12,
+      "diagnostic": {
+        "code": "semantic.legacy-properties-form",
+        "severity": "warning",
+        "form": "bullet-list",
+        "line": 12,
+        "migration": "typed-table"
+      }
+    },
+    {
+      "file": "config-version.table.md",
+      "form": "typed-table",
+      "line": 16
+    },
+    {
+      "file": "config-version.fence.md",
+      "form": "sysml-fence",
+      "line": 16
+    }
+  ]
+}

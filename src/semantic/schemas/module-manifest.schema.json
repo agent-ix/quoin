@@ -1,0 +1,709 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agent-ix.dev/schemas/filament/module-manifest/1.0.0.json",
+  "title": "Filament Module Manifest",
+  "description": "Normative schema for filament-core-service modules.manifest payload (FR-035). CR-003 (2026-09-03): optional top-level `semantic` block and the `data_schema` reference form (agent-ix/filament-core-service#21, quoin FR-070/FR-073); no new required key.",
+  "type": "object",
+  "required": [
+    "manifest_version",
+    "name",
+    "version"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "manifest_version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+      "description": "Version of FR-035 schema this manifest conforms to."
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Module name (unique per (name, version, tenant_id) per FR-026)."
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(-[0-9A-Za-z.-]+)?(\\+[0-9A-Za-z.-]+)?$",
+      "description": "Module SemVer."
+    },
+    "description": {
+      "type": "string"
+    },
+    "nav": {
+      "type": "object",
+      "description": "Optional navigation metadata (FR-039). Drives the global menu's object-category entry for this module.",
+      "additionalProperties": false,
+      "properties": {
+        "category": {
+          "type": "object",
+          "description": "Declares this module as an object category in the global menu. Its members are the manifest's object_types[].",
+          "required": [
+            "slug",
+            "label"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "slug": {
+              "type": "string",
+              "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+              "description": "Kebab-case URL segment and category identifier (unique across active modules, enforced at activation)."
+            },
+            "label": {
+              "type": "string",
+              "minLength": 1
+            },
+            "icon": {
+              "type": "string"
+            },
+            "order": {
+              "type": "integer"
+            }
+          }
+        }
+      }
+    },
+    "depends_on": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "name",
+          "version_range"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "version_range": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "archetypes": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/ArchetypeEntry"
+      }
+    },
+    "object_types": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/ObjectTypeEntry"
+      }
+    },
+    "grammars": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/GrammarEntry"
+      }
+    },
+    "artifact_types": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/ArtifactTypeEntry"
+      }
+    },
+    "doc_kinds": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
+    "state_schemas": {
+      "type": "object",
+      "additionalProperties": {
+        "description": "Inline JSON Schema (draft 2020-12) OR a relative path to a schema file.",
+        "anyOf": [
+          {
+            "type": "object"
+          },
+          {
+            "type": "string",
+            "minLength": 1
+          }
+        ]
+      }
+    },
+    "lint_rules": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/LintRuleEntry"
+      }
+    },
+    "edge_types": {
+      "type": "object",
+      "description": "Mergeable edge-type registry (FR-040): verb -> {description, category, inverse?}. Merged first-wins across active modules; a conflicting re-declaration is advisory (quire-rs DuplicateEdgeType), a verb used in allowed_links but absent here is advisory (UnknownEdgeType). The controlled vocabulary that closes the free-string edge type.",
+      "additionalProperties": {
+        "$ref": "#/$defs/EdgeTypeEntry"
+      }
+    },
+    "roles": {
+      "type": "object",
+      "description": "Mergeable role registry (FR-040): capability tag -> {description}. Object types opt into roles via ObjectTypeEntry.roles; cross-domain allowed_links target a role instead of a concrete cross-module type name.",
+      "additionalProperties": {
+        "$ref": "#/$defs/RoleEntry"
+      }
+    },
+    "semantic": {
+      "type": "object",
+      "description": "Optional semantic-module block (quoin FR-070, agent-ix/quoin#293; this repository owns the schema per agent-ix/filament-core-service#21). Versioned independently of manifest_version. Install-time rejections are Quoin's; artifact-time diagnostics are Quire's.",
+      "required": [
+        "contract_version",
+        "semantic_core",
+        "package"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "contract_version": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+          "description": "Semantic-module contract version; 1.0.0 for quoin FR-070."
+        },
+        "semantic_core": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+          "description": "Exact @agent-ix/semantic-core version the module compiles against."
+        },
+        "package": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9._-]*/[a-z0-9][a-z0-9._-]*$",
+          "description": "IR packageIdentity (<org>/<repo>), never a URL or ix:// identity."
+        },
+        "exports": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true,
+          "description": "Object-type names published as semantic types; each must be declared in object_types."
+        },
+        "imports": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+          },
+          "description": "Imported semantic packages (<org>/<repo>) at exact versions."
+        },
+        "targets": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "json-schema",
+              "rust",
+              "typescript",
+              "python-pydantic-v2",
+              "python-dataclass",
+              "markdown",
+              "json",
+              "postgresql",
+              "protobuf",
+              "avro",
+              "arrow",
+              "parquet",
+              "csv",
+              "tsv"
+            ]
+          },
+          "uniqueItems": true,
+          "description": "Values from the filament-core-data declared target registry (generated targets and representation formats)."
+        },
+        "mappings": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true,
+          "description": "Named representation mappings (quoin FR-071..073)."
+        },
+        "compatibility_posture": {
+          "enum": [
+            "strict",
+            "additive",
+            "declared-lossy"
+          ],
+          "default": "additive"
+        },
+        "legacy_forms": {
+          "enum": [
+            "warning",
+            "error"
+          ],
+          "default": "warning",
+          "description": "Severity of legacy Properties forms (quoin FR-074); error requires sweep_report."
+        },
+        "sweep_report": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Module-relative path to the quoin semantic sweep report that justifies legacy_forms: error."
+        }
+      }
+    }
+  },
+  "$defs": {
+    "ArchetypeEntry": {
+      "type": "object",
+      "required": [
+        "kind"
+      ],
+      "additionalProperties": true,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "minLength": 1
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": {
+          "type": "string"
+        },
+        "icon": {
+          "type": "string"
+        },
+        "parent_kind": {
+          "type": "string"
+        },
+        "supports_membership": {
+          "type": "boolean",
+          "default": false
+        },
+        "doc_backed": {
+          "type": "boolean",
+          "default": false
+        },
+        "has_service": {
+          "type": "boolean",
+          "default": false
+        },
+        "state_schema_ref": {
+          "type": "string"
+        },
+        "composition": {
+          "type": "object"
+        }
+      }
+    },
+    "ArtifactTypeEntry": {
+      "type": "object",
+      "description": "Unified archetype contract (FR-035 CR-002). template_ref, required_sections, and variants are REMOVED and REJECTED (additionalProperties:false → 422) — render is gone. Structural completeness is expressed via body_extraction asserts.",
+      "required": [
+        "name",
+        "grammar_ref",
+        "frontmatter_schema_ref"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "grammar_ref": {
+          "type": "string",
+          "minLength": 1
+        },
+        "frontmatter_schema_ref": {
+          "type": "string",
+          "minLength": 1
+        },
+        "body_extraction": {
+          "$ref": "#/$defs/BodyExtraction",
+          "description": "Locator DSL (FR-035 CR-002). Each locator MAY carry an `assert` facet driving structural validation in quire-rs validate_document. Supersedes required_sections."
+        },
+        "data_schema": {
+          "type": "object",
+          "description": "JSON Schema validating the EXTRACTED record (distinct from frontmatter_schema_ref, which validates frontmatter)."
+        },
+        "defaults": {
+          "type": "object",
+          "properties": {
+            "id_pattern": {
+              "type": "string"
+            },
+            "frontmatter": {
+              "type": "object"
+            }
+          },
+          "additionalProperties": true
+        },
+        "allowed_links": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "examples": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "lint_rules_ref": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        }
+      }
+    },
+    "ObjectTypeEntry": {
+      "type": "object",
+      "required": [
+        "name"
+      ],
+      "additionalProperties": true,
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": {
+          "type": "string"
+        },
+        "data_schema": {
+          "description": "Inline JSON Schema object, or (quoin FR-073) a reference to the module's emitted schema by module-relative path and sha256 digest. An object carrying schema/digest together with any other key is ambiguous and rejected by the consumer.",
+          "oneOf": [
+            {
+              "type": "object",
+              "not": {
+                "anyOf": [
+                  {
+                    "required": [
+                      "schema"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "digest"
+                    ]
+                  }
+                ]
+              }
+            },
+            {
+              "type": "object",
+              "required": [
+                "schema",
+                "digest"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "schema": {
+                  "type": "string",
+                  "minLength": 1,
+                  "pattern": "^(?!/)(?!.*\\.\\.)[^\\u0000]+\\.json$"
+                },
+                "digest": {
+                  "type": "string",
+                  "pattern": "^sha256:[0-9a-f]{64}$"
+                }
+              }
+            }
+          ]
+        },
+        "body_extraction": {
+          "$ref": "#/$defs/BodyExtraction"
+        },
+        "roles": {
+          "type": "array",
+          "description": "Capability tags this object type opts into (FR-040). Each MUST be declared in the merged `roles` registry. Cross-domain allowed_links target these instead of concrete type names.",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "allowed_links": {
+          "type": "object",
+          "description": "Verb -> allowed target tokens (FR-040). A token is a concrete object-type name, a role name, or \"*\". Each verb MUST be declared in the merged `edge_types` registry.",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "uniqueItems": true
+          }
+        }
+      }
+    },
+    "EdgeTypeEntry": {
+      "type": "object",
+      "description": "One edge-type registry entry (FR-040).",
+      "required": [
+        "description",
+        "category"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "description": {
+          "type": "string",
+          "minLength": 1
+        },
+        "category": {
+          "type": "string",
+          "enum": [
+            "structural",
+            "behavioral",
+            "dataflow",
+            "dependency",
+            "realization",
+            "governance",
+            "traceability"
+          ]
+        },
+        "inverse": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Optional inverse verb (e.g. contains <-> part_of). Need not itself be declared."
+        }
+      }
+    },
+    "RoleEntry": {
+      "type": "object",
+      "description": "One role registry entry (FR-040).",
+      "required": [
+        "description"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "description": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "LocatorAssert": {
+      "type": "object",
+      "description": "Optional `assert` facet on a body-extraction locator (FR-033). All keys optional; additionalProperties:false rejects typos at load time. Deep per-locator-kind validity (e.g. `columns` only on table_row) is enforced by quire-rs load-time validation.",
+      "additionalProperties": false,
+      "properties": {
+        "level": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 6
+        },
+        "columns": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "min_rows": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "min_items": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "id_column": {
+          "type": "string",
+          "minLength": 1
+        },
+        "id_pattern": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "Locator": {
+      "description": "A body-extraction locator: a single primitive (object with a `from` key) or an ordered fallback chain (array of primitives).",
+      "oneOf": [
+        {
+          "$ref": "#/$defs/LocatorPrimitive"
+        },
+        {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/LocatorPrimitive"
+          },
+          "minItems": 1
+        }
+      ]
+    },
+    "LocatorPrimitive": {
+      "type": "object",
+      "required": [
+        "from"
+      ],
+      "properties": {
+        "from": {
+          "type": "string",
+          "enum": [
+            "frontmatter_field",
+            "section_body",
+            "code_block",
+            "table_row",
+            "list_item",
+            "heading"
+          ]
+        },
+        "required": {
+          "type": "boolean",
+          "default": true
+        },
+        "regex": {
+          "type": "string"
+        },
+        "assert": {
+          "$ref": "#/$defs/LocatorAssert"
+        }
+      }
+    },
+    "BodyExtraction": {
+      "type": "object",
+      "description": "Body-extraction DSL (FR-011/FR-033). Wraps a `yield_pattern` and optional `emit_edges`. quire-rs enforces the match-XOR-iterate_over rule and deep per-locator-kind assert validity at load time.",
+      "additionalProperties": false,
+      "required": [
+        "yield_pattern"
+      ],
+      "properties": {
+        "yield_pattern": {
+          "type": "object",
+          "description": "`match` (single-yield) XOR `iterate_over` + `per_match` (multi-yield).",
+          "additionalProperties": false,
+          "properties": {
+            "match": {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/$defs/Locator"
+              }
+            },
+            "iterate_over": {
+              "type": "object",
+              "required": [
+                "section_path",
+                "kind"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "section_path": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "heading",
+                    "list_item",
+                    "table_row"
+                  ]
+                },
+                "depth": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            },
+            "per_match": {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/$defs/Locator"
+              }
+            }
+          }
+        },
+        "emit_edges": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "type",
+              "target"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "type": {
+                "type": "string",
+                "minLength": 1
+              },
+              "target": {}
+            }
+          }
+        }
+      }
+    },
+    "GrammarEntry": {
+      "type": "object",
+      "required": [
+        "name"
+      ],
+      "additionalProperties": true,
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": {
+          "type": "string"
+        },
+        "doc_kinds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        }
+      }
+    },
+    "LintRuleEntry": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1
+        },
+        "severity": {
+          "type": "string",
+          "enum": [
+            "error",
+            "warning",
+            "info"
+          ]
+        },
+        "pattern": {
+          "type": "object",
+          "required": [
+            "kind"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "additionalProperties": true
+        }
+      }
+    }
+  }
+}

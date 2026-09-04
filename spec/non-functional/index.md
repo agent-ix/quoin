@@ -24,3 +24,4 @@ description: "Index of non-functional requirements (NFR) for quoin."
 - [NFR-014: The semantic architecture record is non-disruptive](./NFR-014-non-disruptive-architecture-record.md)
 - [NFR-015: The semantic audit is complete and reproducible](./NFR-015-complete-reproducible-semantic-audit.md)
 - [NFR-016: The semantic audit is read-only and non-disruptive](./NFR-016-read-only-semantic-audit.md)
+- [NFR-017: Semantic manifest evolution is non-disruptive](./NFR-017-non-disruptive-manifest-evolution.md)
