@@ -193,11 +193,11 @@ Criteria absent here are verified by a method that produces no test — see
 | StR-007 | StR-007-VC-1 | TC-1316 | ✅ Covered |
 | FR-068 | FR-068-AC-1, FR-068-AC-2, FR-068-AC-3, FR-068-AC-4, FR-068-AC-5, FR-068-AC-6, FR-068-AC-7, FR-068-AC-8, FR-068-AC-9, FR-068-AC-10, FR-068-AC-11 | TC-1317, TC-1318, TC-1319, TC-1320, TC-1321, TC-1322, TC-1323, TC-1324, TC-1325, TC-1326, TC-1327 | ✅ Covered |
 | FR-069 | FR-069-AC-1, FR-069-AC-2, FR-069-AC-3, FR-069-AC-4, FR-069-AC-5, FR-069-AC-6, FR-069-AC-7, FR-069-AC-8 | TC-1328, TC-1329, TC-1330, TC-1331, TC-1332, TC-1333, TC-1334, TC-1335 | ✅ Covered |
-| FR-070 | FR-070-AC-1, FR-070-AC-2, FR-070-AC-3, FR-070-AC-4, FR-070-AC-5, FR-070-AC-6, FR-070-CON-1, FR-070-CON-2 | TC-1336, TC-1337, TC-1338, TC-1339, TC-1340, TC-1341, TC-1342, TC-1343 | 🚧 issue #293 |
-| FR-071 | FR-071-AC-1, FR-071-AC-2, FR-071-AC-3, FR-071-AC-4, FR-071-AC-5, FR-071-AC-6, FR-071-AC-7, FR-071-CON-1, FR-071-CON-2 | TC-1344, TC-1345, TC-1346, TC-1347, TC-1348, TC-1349, TC-1350, TC-1351, TC-1352 | 🚧 issue #293 |
+| FR-070 | FR-070-AC-1, FR-070-AC-2, FR-070-AC-3, FR-070-AC-4, FR-070-AC-5, FR-070-AC-6, FR-070-AC-7, FR-070-CON-1, FR-070-CON-2 | TC-1336, TC-1337, TC-1338, TC-1339, TC-1340, TC-1341, TC-1342, TC-1343, TC-1383 | 🚧 issue #293 |
+| FR-071 | FR-071-AC-1, FR-071-AC-2, FR-071-AC-3, FR-071-AC-4, FR-071-AC-5, FR-071-AC-6, FR-071-AC-7, FR-071-AC-8, FR-071-CON-1, FR-071-CON-2 | TC-1344, TC-1345, TC-1346, TC-1347, TC-1348, TC-1349, TC-1350, TC-1351, TC-1352, TC-1384 | 🚧 issue #293 |
 | FR-072 | FR-072-AC-1, FR-072-AC-2, FR-072-AC-3, FR-072-AC-4, FR-072-AC-5, FR-072-AC-6, FR-072-CON-1 | TC-1353, TC-1354, TC-1355, TC-1356, TC-1357, TC-1358, TC-1359 | 🚧 issue #293 |
-| FR-073 | FR-073-AC-1, FR-073-AC-2, FR-073-AC-3, FR-073-AC-4, FR-073-AC-5, FR-073-CON-1, FR-073-CON-2 | TC-1360, TC-1361, TC-1362, TC-1363, TC-1364, TC-1365, TC-1366 | 🚧 issue #293 |
-| FR-074 | FR-074-AC-1, FR-074-AC-2, FR-074-AC-3, FR-074-AC-4, FR-074-CON-1 | TC-1367, TC-1368, TC-1369, TC-1370, TC-1371 | 🚧 issue #293 |
+| FR-073 | FR-073-AC-1, FR-073-AC-2, FR-073-AC-3, FR-073-AC-4, FR-073-AC-5, FR-073-AC-6, FR-073-CON-1, FR-073-CON-2 | TC-1360, TC-1361, TC-1362, TC-1363, TC-1364, TC-1365, TC-1366, TC-1385 | 🚧 issue #293 |
+| FR-074 | FR-074-AC-1, FR-074-AC-2, FR-074-AC-3, FR-074-AC-4, FR-074-AC-5, FR-074-CON-1 | TC-1367, TC-1368, TC-1369, TC-1370, TC-1371, TC-1386 | 🚧 issue #293 |
 | FR-075 | FR-075-AC-1, FR-075-AC-2, FR-075-AC-3, FR-075-AC-4, FR-075-AC-5, FR-075-CON-1, FR-075-CON-2 | TC-1372, TC-1373, TC-1374, TC-1375, TC-1376, TC-1377, TC-1378 | 🚧 issue #293 |
 
 ## Test Case Summary
@@ -750,48 +750,52 @@ generated tests under `tests/props/` and `Unit` for the rest.
 | TC-1338 | An unknown key inside `semantic` is rejected naming the key | Unit | P0 | FR-070-AC-3 | 🚧 issue #293 |
 | TC-1339 | `exports` naming an undeclared object type is rejected naming it | Unit | P0 | FR-070-AC-4 | 🚧 issue #293 |
 | TC-1340 | `contract_version: 2.0.0` is rejected before any other semantic key is read | Unit | P0 | FR-070-AC-5 | 🚧 issue #293 |
-| TC-1341 | Two modules with one `semantic.package` fail to load together naming both | Unit | P0 | FR-070-AC-6 | 🚧 issue #293 |
-| TC-1342 | The manifest schema diff adds no required key to any entry type | Static | P0 | FR-070-CON-1 | 🚧 issue #293 |
-| TC-1343 | The published `semantic` block schema has `additionalProperties: false` | Static | P0 | FR-070-CON-2 | 🚧 issue #293 |
-| TC-1344 | FR-006 rows as a typed table extract to the expected `FieldDecl[]` fixture, valid against semantic-core `FieldDecl.json` | Unit | P0 | FR-071-AC-1, US-020-EX-1 | 🚧 issue #293 |
-| TC-1345 | The equivalent `sysml` fence extracts to a byte-identical normalized `FieldDecl[]` | Property | P0 | FR-071-AC-2, US-020-EX-2 | 🚧 issue #293 |
+| TC-1341 | Two modules with one `semantic.package` fail to install together naming both; the later sorted module root is rejected | Unit | P0 | FR-070-AC-6 | 🚧 issue #293 |
+| TC-1342 | The manifest schema diff adds no required key to the root or any entry type | Static | P0 | FR-070-CON-1 | 🚧 issue #293 |
+| TC-1343 | The vendored module-manifest schema carries filament-core-service provenance (repository, revision, path, sha256) | Static | P0 | FR-070-CON-2 | 🚧 issue #293 |
+| TC-1344 | Quoin's FR-006 typed-table fixture has an expected `FieldDecl[]` whose elements validate against the vendored `FieldDecl.json` | Unit | P0 | FR-071-AC-1, US-020-EX-1 | 🚧 issue #293 |
+| TC-1345 | The `sysml` fence fixture's expected normalized `FieldDecl[]` is identical to the table fixture's | Unit | P0 | FR-071-AC-2, US-020-EX-2 | 🚧 issue #293 |
 | TC-1346 | Table plus fence in one artifact fails at the second form's locus | Unit | P0 | FR-071-AC-3 | 🚧 issue #293 |
-| TC-1347 | `UUID`, `Decimal(10,2)`, `Duration [ms]`, `ConfigOverlay`, `Status` resolve as specified; `Mystery` is an advisory finding with locus | Unit | P0 | FR-071-AC-4 | 🚧 issue #293 |
-| TC-1348 | Multiplicity cells `1`, `0..1`, `1..* ordered unique`, `2..5`, empty map as specified; `5..2` fails | Unit | P0 | FR-071-AC-5 | 🚧 issue #293 |
-| TC-1349 | Constraint cells `min: 1, maxLength: 64, identity` map as specified; `mnimum: 1` fails with locus | Unit | P0 | FR-071-AC-6 | 🚧 issue #293 |
-| TC-1350 | A fence line outside the SysML subset (`part def`) fails with locus | Unit | P0 | FR-071-AC-7 | 🚧 issue #293 |
-| TC-1351 | Fence extraction records the span and recognises only subset lines; no expression parsing exists | Static | P0 | FR-071-CON-1 | 🚧 issue #293 |
-| TC-1352 | Golden fixtures (table, fence, expected `FieldDecl[]`) are published with provenance for quire-rs#388 | Static | P0 | FR-071-CON-2 | 🚧 issue #293 |
+| TC-1347 | `UUID`, `Decimal(10,2)`, `Duration [ms]`, `ConfigOverlay` (title), `Status` (id), and an import resolve as specified; `Mystery` yields the advisory and placeholder target | Unit | P0 | FR-071-AC-4 | 🚧 issue #293 |
+| TC-1348 | Multiplicity cells `1`, `0..1`, `1..* ordered unique`, `2..5`, empty map as specified; `5..2` and `1 ordered` fail | Unit | P0 | FR-071-AC-5 | 🚧 issue #293 |
+| TC-1349 | Constraint cells incl. `pattern: /…/`, `enumValues: a` or `b`, `nonEmpty`, `format: ns:name` map as specified; `mnimum: 1` fails with locus | Unit | P0 | FR-071-AC-6 | 🚧 issue #293 |
+| TC-1350 | Fence lines `item x : Y;`, `part def X;`, `:> Y` fail with locus | Unit | P0 | FR-071-AC-7 | 🚧 issue #293 |
+| TC-1351 | Fence recognition is line-level with spans; brace content is opaque constraint text | Static | P0 | FR-071-CON-1 | 🚧 issue #293 |
+| TC-1352 | Golden fixtures under `tests/fixtures/semantic-module/` carry the semantic-core version and expected diagnostics | Static | P0 | FR-071-CON-2 | 🚧 issue #293 |
 | TC-1353 | One `ocl` fence under `### immutable` extracts to the expected `ClauseRef` and verbatim text | Unit | P0 | FR-072-AC-1 | 🚧 issue #293 |
-| TC-1354 | A fence without a language or tagged `tla` fails at the fence | Unit | P0 | FR-072-AC-2 | 🚧 issue #293 |
-| TC-1355 | Two `### immutable` clauses fail at the second | Unit | P0 | FR-072-AC-3 | 🚧 issue #293 |
-| TC-1356 | `### archive` with param table, `Returns:`, `Pre:`, `Post:` extracts to the expected `OperationDecl` | Unit | P0 | FR-072-AC-4 | 🚧 issue #293 |
+| TC-1354 | No language or `tla` fails at the fence; `sysml`, `fretish`, `acme:tla` yield `semantic.clause-language-unchecked` | Unit | P0 | FR-072-AC-2 | 🚧 issue #293 |
+| TC-1355 | Two `### immutable` clauses fail at the second; `### not-archived` fails at the heading | Unit | P0 | FR-072-AC-3 | 🚧 issue #293 |
+| TC-1356 | `### archive` with param table, `Returns: ConfigVersion[1]`, `Pre: notArchived`, `Post: archived` yields the expected `OperationDecl` | Unit | P0 | FR-072-AC-4 | 🚧 issue #293 |
 | TC-1357 | `Post: missing` fails at that line | Unit | P0 | FR-072-AC-5 | 🚧 issue #293 |
-| TC-1358 | A clause present inline and by `clause:` reference fails at the second occurrence | Unit | P0 | FR-072-AC-6 | 🚧 issue #293 |
+| TC-1358 | A clause declared by a fence and by `Clause: ./clauses.md#immutable` fails at the second occurrence | Unit | P0 | FR-072-AC-6 | 🚧 issue #293 |
 | TC-1359 | No clause typechecking or evaluation code path exists in Quoin | Static | P0 | FR-072-CON-1 | 🚧 issue #293 |
-| TC-1360 | `data_schema: { schema, digest }` loads and validates a typed-table artifact against the emitted schema | Unit | P0 | FR-073-AC-1, US-020-EX-3 | 🚧 issue #293 |
-| TC-1361 | A digest mismatch fails naming the path and both digests | Unit | P0 | FR-073-AC-2 | 🚧 issue #293 |
-| TC-1362 | A schema `$ref`ing semantic-core `0.2.0` under a manifest recording `0.1.0` fails naming both | Unit | P0 | FR-073-AC-3 | 🚧 issue #293 |
-| TC-1363 | Inline `{type: object}` warns under a `semantic` block and is silent without one | Unit | P0 | FR-073-AC-4 | 🚧 issue #293 |
-| TC-1364 | A schema path escaping the module root is rejected | Unit | P0 | FR-073-AC-5 | 🚧 issue #293 |
-| TC-1365 | Schema reference resolution performs no network read | Static | P0 | FR-073-CON-1 | 🚧 issue #293 |
+| TC-1360 | `data_schema: { schema, digest }` installs; the fixture's declaration set validates against `FieldDecl.json` and its record against `Entity.json` | Unit | P0 | FR-073-AC-1, US-020-EX-3 | 🚧 issue #293 |
+| TC-1361 | Digest mismatch, missing, non-JSON, and `$id`-less files each fail naming the path and reason | Unit | P0 | FR-073-AC-2 | 🚧 issue #293 |
+| TC-1362 | `$ref` to semantic-core `0.2.0` under `0.1.0`, an unshipped `$ref`, and a `$ref` cycle each fail naming the `$ref` | Unit | P0 | FR-073-AC-3 | 🚧 issue #293 |
+| TC-1363 | Inline `data_schema` under a `semantic` block yields `semantic.inline-data-schema`; without one it is silent | Unit | P0 | FR-073-AC-4 | 🚧 issue #293 |
+| TC-1364 | `..` and symlink escapes are rejected; `{ schema, digest, type }` is rejected as ambiguous | Unit | P0 | FR-073-AC-5 | 🚧 issue #293 |
+| TC-1365 | Schema reference resolution completes with the network disabled | Integration | P0 | FR-073-CON-1 | 🚧 issue #293 |
 | TC-1366 | Existing manifests without `semantic` keep the inline `data_schema` form valid with no warning | Integration | P0 | FR-073-CON-2 | 🚧 issue #293 |
-| TC-1367 | Unmodified FR-006 validates with exactly one `semantic.legacy-properties-form` warning (`free-column-table`, locus) and byte-identical `properties` | Unit | P0 | FR-074-AC-1, US-020-EX-4 | 🚧 issue #293 |
-| TC-1368 | A bullet-list Properties section warns with form `bullet-list` | Unit | P0 | FR-074-AC-2 | 🚧 issue #293 |
-| TC-1369 | `legacy_forms: error` fails the artifact; without a recorded sweep report the manifest is rejected | Unit | P0 | FR-074-AC-3 | 🚧 issue #293 |
+| TC-1367 | Quoin's pinned FR-006 copy yields one `semantic.legacy-properties-form` warning (`free-column-table`, locus) and byte-identical `properties` | Unit | P0 | FR-074-AC-1, US-020-EX-4 | 🚧 issue #293 |
+| TC-1368 | Bullet-list Properties warns with form `bullet-list`; a mixed section names the first block's form | Unit | P0 | FR-074-AC-2 | 🚧 issue #293 |
+| TC-1369 | `legacy_forms: error` with a valid `sweep_report` errors the artifact; without a report, or with a mismatched one, install rejects the manifest naming the report | Unit | P0 | FR-074-AC-3 | 🚧 issue #293 |
 | TC-1370 | The authoring pack shows the migration example once | Unit | P1 | FR-074-AC-4 | 🚧 issue #293 |
 | TC-1371 | Legacy detection leaves the `properties` extraction unchanged across the existing fixture suite | Integration | P0 | FR-074-CON-1 | 🚧 issue #293 |
-| TC-1372 | The derived package manifest validates against filament-core-data `package-manifest.schema.json` | Unit | P0 | FR-075-AC-1 | 🚧 issue #293 |
-| TC-1373 | The lock carries one digest per exported object type and changes with the emitted schema | Unit | P0 | FR-075-AC-2 | 🚧 issue #293 |
-| TC-1374 | An import at a version absent from the lock fails `quoin install` naming the import | Unit | P0 | FR-075-AC-3 | 🚧 issue #293 |
-| TC-1375 | Dynamic load and declared generated coordinates expose the same object-type identities | Unit | P0 | FR-075-AC-4 | 🚧 issue #293 |
-| TC-1376 | A `semantic.package` given as a URL is rejected | Unit | P0 | FR-075-AC-5, FR-075-CON-2 | 🚧 issue #293 |
+| TC-1372 | The derived `semantic/package-manifest.json` validates against `package-manifest.schema.json` with every required field derived as specified | Unit | P0 | FR-075-AC-1 | 🚧 issue #293 |
+| TC-1373 | The `registry.json` entry carries one digest per exported object type and changes with the emitted schema | Unit | P0 | FR-075-AC-2 | 🚧 issue #293 |
+| TC-1374 | An import no installed module provides fails `quoin module install` naming import and installed versions; an import cycle fails naming the cycle | Unit | P0 | FR-075-AC-3 | 🚧 issue #293 |
+| TC-1375 | Derived export `typeIdentity` values equal the identities the dynamic load exposes | Unit | P0 | FR-075-AC-4 | 🚧 issue #293 |
+| TC-1376 | `semantic.package` as `ix://agent-ix/x` or a URL is rejected | Unit | P0 | FR-075-AC-5, FR-075-CON-2 | 🚧 issue #293 |
 | TC-1377 | Quoin compiles, publishes, or fetches no generated package in this scope | Static | P0 | FR-075-CON-1 | 🚧 issue #293 |
-| TC-1378 | Package identities are `ix://<org>/<repo>` in every derived document | Static | P0 | FR-075-CON-2 | 🚧 issue #293 |
+| TC-1378 | Package identities are `<org>/<repo>` and type identities `ix://<org>/<repo>/type/<Name>` in every derived document | Static | P0 | FR-075-CON-2 | 🚧 issue #293 |
 | TC-1379 | Every default module manifest loads with no new diagnostic | Integration | P0 | NFR-017-AC-1 | 🚧 issue #293 |
 | TC-1380 | The corpus fixture sweep reports only `warning`-severity semantic findings by default | Integration | P0 | NFR-017-AC-2 | 🚧 issue #293 |
 | TC-1381 | No corpus repository path appears in the change set | Static | P0 | NFR-017-AC-3 | 🚧 issue #293 |
 | TC-1382 | The manifest schema `required` arrays are unchanged | Static | P0 | NFR-017-AC-4 | 🚧 issue #293 |
+| TC-1383 | `targets: [go]` and `package: ix://agent-ix/x` are each rejected naming the value | Unit | P0 | FR-070-AC-7 | 🚧 issue #293 |
+| TC-1384 | A fixture row with bare `Decimal` yields the semantic-core reader diagnostic at the row locus | Unit | P0 | FR-071-AC-8 | 🚧 issue #293 |
+| TC-1385 | The vendored semantic-core bundle's provenance equals the filament-core-data `toolchain.json` digest at the recorded revision | Static | P0 | FR-073-AC-6 | 🚧 issue #293 |
+| TC-1386 | `quoin semantic sweep` over the fixture corpus yields a report that validates against the sweep-report schema and counts each legacy form | Unit | P0 | FR-074-AC-5 | 🚧 issue #293 |
 | TC-1077 | The supported Tier-1 update emits baseline JSON in the same format the repository gate enforces; updating a ratchet cannot make the next gate fail on style alone (#244) | Unit | P0 | FR-043-AC-17 | ✅ |
 | TC-1078 | Multiple standing-adjudication entries for one advisory family are unioned by declaration; a later narrow ruling cannot silently erase an earlier ruling (#252) | Unit | P0 | FR-043-AC-16 | ✅ |
 | TC-1079 | `untracked-id-has-minted-children` maps to a distinct located unminted-ID family rather than being folded into spelling near misses (#253) | Unit | P0 | FR-043-AC-22 | ✅ |

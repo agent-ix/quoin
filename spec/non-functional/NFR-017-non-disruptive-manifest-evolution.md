@@ -8,6 +8,12 @@ relationships:
     type: "constrains"
   - target: "ix://agent-ix/quoin/FR-070"
     type: "constrains"
+  - target: "ix://agent-ix/quoin/FR-073"
+    type: "constrains"
+  - target: "ix://agent-ix/quoin/FR-074"
+    type: "constrains"
+  - target: "ix://agent-ix/quoin/FR-075"
+    type: "constrains"
   - target: "ix://agent-ix/quoin/NFR-014"
     type: "depends_on"
 ---
@@ -36,11 +42,11 @@ control.
 
 | Metric | Target | Threshold | Method |
 |---|---|---|---|
-| Default module manifests that fail to load after the change | 0 | 0 | Load every module in `default-modules.yaml` |
-| Corpus artifacts whose validation severity rises above `warning` by default | 0 | 0 | Corpus sweep (`agent-ix/quoin#291`) |
-| Corpus repository files written | 0 | 0 | Changed-path gate |
-| Required manifest keys added | 0 | 0 | Manifest schema diff |
-| Legacy-form promotion without a recorded sweep report | 0 | 0 | Loader test |
+| Default module manifests that fail to load after the change | 0 | 0 | Integration test loading every module in `default-modules.yaml` |
+| Corpus artifacts whose validation severity rises above `warning` by default | 0 | 0 | `quoin semantic sweep` report over the fixture corpus (FR-074) |
+| Corpus repository files written | 0 | 0 | Static changed-path test |
+| Required manifest keys added | 0 | 0 | Static schema diff test |
+| Legacy-form promotion without a recorded sweep report | 0 | 0 | Unit test of the install-time guard |
 
 ## Verification
 

@@ -27,8 +27,9 @@ its Properties section as free text. Field types live in prose (`UUID (optional)
 grammar (`agent-ix/filament-core-data#35`) and IR v1.1
 (`agent-ix/filament-core-data#34`) now exist; this story is the Quoin side: what a
 module manifest declares and how a spec artifact's Markdown maps onto the
-grammar. Quire (`agent-ix/quire-rs#388`) implements the extraction; this story
-fixes the contract it implements.
+grammar. Quire (`agent-ix/quire-rs#388`) implements the extraction, recognising the
+`sysml` subset at line level and never parsing expressions; this story fixes the
+contract it implements.
 
 ## Acceptance Examples (Illustrative)
 

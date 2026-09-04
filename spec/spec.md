@@ -62,6 +62,8 @@ This specification governs:
   validated, source-grounded Quire assurance export and join it to Quoin's retained
   evidence and existing auditor verdicts without collecting evidence or defining policy.
 
+* **Semantic module contract (issue #293):** the optional `semantic` manifest block, the typed-Properties/`sysml`-fence and Invariants/Operations mapping fixtures Quire implements, `data_schema` by path and digest, legacy forms at `warning`, and derived package manifests with registry pins — without compiling, publishing, or migrating anything.
+
 ### Delegated Responsibilities
 
 `quoin` collaborates with three external pieces and works with each as follows:
