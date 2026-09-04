@@ -69,7 +69,7 @@ function expectRefused(
 
 describe("the renderer is present", () => {
   // TC-1464
-  it("names cookiecutter, its floor and the install command when it is absent", () => {
+  it("TC-1463, TC-1464 every external command has a declared floor, and the renderer's absence names it", () => {
     expect(cookiecutterVersion()).toMatch(/cookiecutter/i);
     const floors = parse(
       readFileSync(
@@ -92,7 +92,7 @@ describe("the renderer is present", () => {
 describe("variants render from one core", () => {
   // TC-1400, TC-1401, TC-1402
   it.each(KINDS)(
-    "renders the %s variant with the right manifest sections",
+    "TC-1400, TC-1401, TC-1402 renders the %s variant with the right manifest sections",
     (kind) => {
       cookiecutterVersion();
       withRendered({ kind }, (rendered) => {
@@ -118,7 +118,7 @@ describe("variants render from one core", () => {
   );
 
   // TC-1466
-  it("maps each imported module to an exact version, and empty imports to {}", () => {
+  it("TC-1466 maps each imported module to an exact version, and empty imports to an empty mapping", () => {
     cookiecutterVersion();
     withRendered({ kind: "mixed" }, (rendered) => {
       const manifest = parse(
@@ -145,7 +145,7 @@ describe("variants render from one core", () => {
   });
 
   // TC-1403
-  it("carries each variant-shared file exactly once in the template source", () => {
+  it("TC-1403 carries each variant-shared file exactly once in the template source", () => {
     cookiecutterVersion();
     const trees = KINDS.map((kind) =>
       withRendered({ kind }, (rendered) => ({
@@ -183,7 +183,7 @@ describe("variants render from one core", () => {
   });
 
   // TC-1467
-  it("renders one variant twice to byte-identical trees", () => {
+  it("TC-1467 renders one variant twice to byte-identical trees", () => {
     cookiecutterVersion();
     const snapshot = (kind: ModuleKind) =>
       withRendered({ kind }, (rendered) =>
@@ -196,7 +196,7 @@ describe("variants render from one core", () => {
   });
 
   // TC-1452
-  it("renders every variant unattended, from arguments alone", () => {
+  it("TC-1452 renders every variant unattended, from arguments alone", () => {
     cookiecutterVersion();
     for (const kind of KINDS) {
       withRendered({ kind }, (rendered) => {
@@ -208,7 +208,7 @@ describe("variants render from one core", () => {
 
 describe("an invalid input is refused, naming the value", () => {
   // TC-1404
-  it("refuses a non-AGPL licence and renders the AGPL text by default", () => {
+  it("TC-1404 refuses a non-AGPL licence and renders the AGPL text by default", () => {
     cookiecutterVersion();
     expect(expectRefused("object", { license: "MIT" })).toContain("MIT");
     withRendered({ kind: "object" }, (rendered) => {
@@ -218,7 +218,7 @@ describe("an invalid input is refused, naming the value", () => {
   });
 
   // TC-1405
-  it("refuses an unknown module kind naming it", () => {
+  it("TC-1405 refuses an unknown module kind naming it", () => {
     cookiecutterVersion();
     expect(expectRefused("object", { module_kind: "hybrid" })).toContain(
       "hybrid",
@@ -226,7 +226,7 @@ describe("an invalid input is refused, naming the value", () => {
   });
 
   // TC-1406
-  it("refuses an import without an exact version and accepts one with it", () => {
+  it("TC-1406 refuses an import without an exact version and accepts one with it", () => {
     cookiecutterVersion();
     expect(
       expectRefused("mixed", {
@@ -243,7 +243,7 @@ describe("an invalid input is refused, naming the value", () => {
   });
 
   // TC-1407
-  it("refuses a target outside the filament-core-data registry naming it", () => {
+  it("TC-1407 refuses a target outside the filament-core-data registry naming it", () => {
     cookiecutterVersion();
     expect(
       expectRefused("object", { generated_targets: "json-schema,go" }),
@@ -251,7 +251,7 @@ describe("an invalid input is refused, naming the value", () => {
   });
 
   // TC-1453
-  it("refuses a mixed module that imports nothing", () => {
+  it("TC-1453 refuses a mixed module that imports nothing", () => {
     cookiecutterVersion();
     expect(expectRefused("mixed", { imported_modules: "" })).toContain(
       "import",
@@ -259,7 +259,7 @@ describe("an invalid input is refused, naming the value", () => {
   });
 
   // TC-1459
-  it("refuses two imports naming the same package identity", () => {
+  it("TC-1459 refuses two imports naming the same package identity", () => {
     cookiecutterVersion();
     const message = expectRefused("mixed", {
       imported_modules:
@@ -269,7 +269,7 @@ describe("an invalid input is refused, naming the value", () => {
   });
 
   // TC-1454
-  it("leaves no directory behind when it refuses", () => {
+  it("TC-1454 leaves no directory behind when it refuses", () => {
     cookiecutterVersion();
     // `expectRefused` asserts the output directory is gone for every case above;
     // this row states it as its own obligation.
@@ -279,15 +279,18 @@ describe("an invalid input is refused, naming the value", () => {
 
 describe("the rendered tree conforms and carries no residue", () => {
   // TC-1444, TC-1447
-  it.each(KINDS)("carries every surface the contract names (%s)", (kind) => {
-    cookiecutterVersion();
-    withRendered({ kind }, (rendered) => {
-      expect(missingSurfaces(conformance, rendered)).toEqual([]);
-    });
-  });
+  it.each(KINDS)(
+    "TC-1444 carries every surface the contract names (%s)",
+    (kind) => {
+      cookiecutterVersion();
+      withRendered({ kind }, (rendered) => {
+        expect(missingSurfaces(conformance, rendered)).toEqual([]);
+      });
+    },
+  );
 
   // TC-1447 negative: removing a required surface is detected.
-  it("reports a missing required surface naming it", () => {
+  it("TC-1447 reports a missing required surface naming it", () => {
     cookiecutterVersion();
     withRendered({ kind: "object" }, (rendered) => {
       const contract = loadConformance();
@@ -299,7 +302,7 @@ describe("the rendered tree conforms and carries no residue", () => {
   });
 
   // TC-1446, NFR-018
-  it.each(KINDS)("carries no generation residue (%s)", (kind) => {
+  it.each(KINDS)("TC-1446 carries no generation residue (%s)", (kind) => {
     cookiecutterVersion();
     withRendered({ kind }, (rendered) => {
       expect(residueHits(conformance, rendered)).toEqual([]);
@@ -307,7 +310,7 @@ describe("the rendered tree conforms and carries no residue", () => {
   });
 
   // TC-1446 negative: the scan actually fires.
-  it("reports an injected residue instance naming the file", () => {
+  it("TC-1446 reports an injected residue instance naming the file", () => {
     cookiecutterVersion();
     withRendered({ kind: "object" }, (rendered) => {
       writeFileSync(
@@ -325,7 +328,7 @@ describe("the rendered tree conforms and carries no residue", () => {
 
   // TC-1436
   it.each(KINDS)(
-    "names a private registry only where the contract allows (%s)",
+    "TC-1436 names a private registry only where the contract allows (%s)",
     (kind) => {
       cookiecutterVersion();
       withRendered({ kind }, (rendered) => {
@@ -340,7 +343,7 @@ describe("the rendered tree conforms and carries no residue", () => {
   );
 
   // TC-1412
-  it.each(KINDS)("ships no .npmrc at any depth (%s)", (kind) => {
+  it.each(KINDS)("TC-1412 ships no .npmrc at any depth (%s)", (kind) => {
     cookiecutterVersion();
     withRendered({ kind }, (rendered) => {
       expect(
@@ -352,29 +355,32 @@ describe("the rendered tree conforms and carries no residue", () => {
 
 describe("the rendered repository is public-ready", () => {
   // TC-1434
-  it.each(KINDS)("uses one licence identifier everywhere (%s)", (kind) => {
-    cookiecutterVersion();
-    withRendered({ kind }, (rendered) => {
-      const pkg = JSON.parse(
-        readFileSync(join(rendered.root, "package.json"), "utf8"),
-      ) as { license: string };
-      const pyproject = readFileSync(
-        join(rendered.root, "pyproject.toml"),
-        "utf8",
-      );
-      const readme = readFileSync(join(rendered.root, "README.md"), "utf8");
-      expect(pkg.license).toBe("AGPL-3.0-or-later");
-      expect(pyproject).toContain('license = "AGPL-3.0-or-later"');
-      expect(readme).toContain("AGPL-3.0-or-later");
-      for (const wrong of ["MIT", "Apache-2.0", "BSD-3-Clause"]) {
-        expect(pkg.license).not.toBe(wrong);
-      }
-    });
-  });
+  it.each(KINDS)(
+    "TC-1434 uses one licence identifier everywhere (%s)",
+    (kind) => {
+      cookiecutterVersion();
+      withRendered({ kind }, (rendered) => {
+        const pkg = JSON.parse(
+          readFileSync(join(rendered.root, "package.json"), "utf8"),
+        ) as { license: string };
+        const pyproject = readFileSync(
+          join(rendered.root, "pyproject.toml"),
+          "utf8",
+        );
+        const readme = readFileSync(join(rendered.root, "README.md"), "utf8");
+        expect(pkg.license).toBe("AGPL-3.0-or-later");
+        expect(pyproject).toContain('license = "AGPL-3.0-or-later"');
+        expect(readme).toContain("AGPL-3.0-or-later");
+        for (const wrong of ["MIT", "Apache-2.0", "BSD-3-Clause"]) {
+          expect(pkg.license).not.toBe(wrong);
+        }
+      });
+    },
+  );
 
   // TC-1433
   it.each(KINDS)(
-    "distributes the same payload through both surfaces (%s)",
+    "TC-1433 distributes the same payload through both surfaces (%s)",
     (kind) => {
       cookiecutterVersion();
       withRendered({ kind }, (rendered) => {
@@ -398,7 +404,7 @@ describe("the rendered repository is public-ready", () => {
 
   // TC-1432
   it.each(KINDS)(
-    "declares no local path reference and no upper bound (%s)",
+    "TC-1432 declares no local path reference and no upper bound (%s)",
     (kind) => {
       cookiecutterVersion();
       withRendered({ kind }, (rendered) => {
@@ -416,7 +422,7 @@ describe("the rendered repository is public-ready", () => {
 
   // TC-1437
   it.each(KINDS)(
-    "ships manually triggered, delegating workflows (%s)",
+    "TC-1437 ships manually triggered, delegating workflows (%s)",
     (kind) => {
       cookiecutterVersion();
       withRendered({ kind }, (rendered) => {
@@ -437,30 +443,34 @@ describe("the rendered repository is public-ready", () => {
   );
 
   // TC-1435
-  it.each(KINDS)("ships the ownership and guidance files (%s)", (kind) => {
-    cookiecutterVersion();
-    withRendered({ kind }, (rendered) => {
-      for (const file of [
-        ".github/CODEOWNERS",
-        "AGENTS.md",
-        "CLAUDE.md",
-        "README.md",
-        "CONTRIBUTING.md",
-        "SECURITY.md",
-        ".gitignore",
-        ".gitattributes",
-        "Makefile",
-      ]) {
-        expect(
-          existsSync(join(rendered.root, file)),
-          `${file} is missing`,
-        ).toBe(true);
-      }
-    });
-  });
+  it.each(KINDS)(
+    "TC-1435 ships the ownership and guidance files (%s)",
+    (kind) => {
+      cookiecutterVersion();
+      withRendered({ kind }, (rendered) => {
+        for (const file of [
+          ".github/CODEOWNERS",
+          "AGENTS.md",
+          "CLAUDE.md",
+          "README.md",
+          "CONTRIBUTING.md",
+          "SECURITY.md",
+          ".gitignore",
+          ".gitattributes",
+          "Makefile",
+        ]) {
+          expect(
+            existsSync(join(rendered.root, file)),
+            `${file} is missing`,
+          ).toBe(true);
+        }
+      });
+    },
+  );
 
   // TC-1438
-  it("names the catalog file and the tracking project in the catalog document", () => {
+  it("TC-1438 names the catalog file and the tracking project in the catalog document", () => {
+    // TC-1438
     cookiecutterVersion();
     withRendered({ kind: "object" }, (rendered) => {
       const doc = readFileSync(
@@ -473,7 +483,7 @@ describe("the rendered repository is public-ready", () => {
   });
 
   // TC-1451
-  it("records a declared target with no emitter as declared and not emitted", () => {
+  it("TC-1451 records a declared target with no emitter as declared and not emitted", () => {
     cookiecutterVersion();
     withRendered({ kind: "object" }, (rendered) => {
       const readme = readFileSync(join(rendered.root, "README.md"), "utf8");
@@ -496,38 +506,41 @@ describe("the rendered repository is public-ready", () => {
 
 describe("the rendered governance tree validates as rendered", () => {
   // TC-1439, TC-1443
-  it.each(KINDS)("passes quire validate over spec/ (%s)", (kind) => {
-    cookiecutterVersion();
-    withRendered({ kind }, (rendered) => {
-      const quire = requireTool({
-        command: "quire",
-        args: ["--version"],
-        install: "npm i -g @agent-ix/quire-cli",
+  it.each(KINDS)(
+    "TC-1439, TC-1443 passes quire validate over spec/ (%s)",
+    (kind) => {
+      cookiecutterVersion();
+      withRendered({ kind }, (rendered) => {
+        const quire = requireTool({
+          command: "quire",
+          args: ["--version"],
+          install: "npm i -g @agent-ix/quire-cli",
+        });
+        expect(quire).toMatch(/quire/);
+        const result = execFileSync(
+          "quire",
+          ["validate", "--scope", rendered.root, "spec/**/*.md"],
+          { encoding: "utf8", stdio: "pipe" },
+        );
+        expect(result).not.toMatch(/failed structural validation/);
+        for (const folder of [
+          "stakeholder",
+          "usecase",
+          "functional",
+          "non-functional",
+        ]) {
+          expect(
+            existsSync(join(rendered.root, "spec", folder, "index.md")),
+          ).toBe(true);
+        }
+        expect(existsSync(join(rendered.root, "spec", "log.md"))).toBe(true);
       });
-      expect(quire).toMatch(/quire/);
-      const result = execFileSync(
-        "quire",
-        ["validate", "--scope", rendered.root, "spec/**/*.md"],
-        { encoding: "utf8", stdio: "pipe" },
-      );
-      expect(result).not.toMatch(/failed structural validation/);
-      for (const folder of [
-        "stakeholder",
-        "usecase",
-        "functional",
-        "non-functional",
-      ]) {
-        expect(
-          existsSync(join(rendered.root, "spec", folder, "index.md")),
-        ).toBe(true);
-      }
-      expect(existsSync(join(rendered.root, "spec", "log.md"))).toBe(true);
-    });
-  });
+    },
+  );
 
   // TC-1440, TC-1441, TC-1442
   it.each(KINDS)(
-    "carries an honest, in-vocabulary Test Matrix (%s)",
+    "TC-1440, TC-1441, TC-1442, TC-1470 carries an honest, in-vocabulary Test Matrix (%s)",
     (kind) => {
       cookiecutterVersion();
       withRendered({ kind }, (rendered) => {
@@ -568,7 +581,7 @@ describe("the rendered governance tree validates as rendered", () => {
   );
 
   // TC-1461
-  it("says the module's domain types are the maintainer's, and copies no requirement", () => {
+  it("TC-1461 says the module's domain types are the maintainer's, and copies no requirement", () => {
     cookiecutterVersion();
     withRendered({ kind: "mixed" }, (rendered) => {
       const spec = readFileSync(join(rendered.root, "spec", "spec.md"), "utf8");
@@ -587,7 +600,7 @@ describe("the rendered governance tree validates as rendered", () => {
 
 describe("the template depends on shared tooling rather than copying it", () => {
   // TC-1455
-  it("carries no copy of the emitter, the runtime or the grammar", () => {
+  it("TC-1455 carries no copy of the emitter, the runtime or the grammar", () => {
     const files = walkFiles(TEMPLATE_DIR);
     for (const file of files) {
       const text = readFileSync(join(TEMPLATE_DIR, file), "utf8");
@@ -603,7 +616,11 @@ describe("the template depends on shared tooling rather than copying it", () => 
         join(TEMPLATE_DIR, "{{cookiecutter.repo_name}}", "package.json"),
         "utf8",
       )
-        .replace(/\{\{[^}]*\}\}/g, "x")
+        // `[^}]` would leave this file with one unmatched closing brace, which
+        // `quire coverage`'s source scanner reads as an unbalanced block and
+        // answers by dropping the file — taking every tracking tag in it. The
+        // lazy any-character form matches the same text and stays balanced.
+        .replace(/\{\{[\s\S]*?\}\}/g, "x")
         .replace(/\{%-?[\s\S]*?-?%\}/g, ""),
     ) as { devDependencies: Record<string, string> };
     expect(Object.keys(pkg.devDependencies).sort()).toEqual([
@@ -614,7 +631,7 @@ describe("the template depends on shared tooling rather than copying it", () => 
   });
 
   // TC-1456
-  it("renders one emit driver, byte-identical across every variant", () => {
+  it("TC-1456 renders one emit driver, byte-identical across every variant", () => {
     cookiecutterVersion();
     const bodies = KINDS.map((kind) =>
       withRendered({ kind }, (rendered) =>
@@ -632,7 +649,7 @@ describe("the template depends on shared tooling rather than copying it", () => 
 
 describe("the conformance contract tracks the maintained repositories", () => {
   // TC-1418
-  it("names no surface both maintained modules carry that it neither requires nor exempts", () => {
+  it("TC-1418 names no surface both maintained modules carry that it neither requires nor exempts", () => {
     requireTool({
       command: "git",
       args: ["--version"],
@@ -642,17 +659,20 @@ describe("the conformance contract tracks the maintained repositories", () => {
   });
 
   // TC-1462
-  it("fails naming the repository and the revision when one cannot be read", () => {
+  it("TC-1462 fails naming the repository and the revision when one cannot be read", () => {
+    // The repository IS present — `driftedSurfaces` above read it — so this
+    // exercises the unreachable-revision path rather than the absent-repository
+    // one, and the assertion names the message that path produces.
     expect(() =>
       maintainedSurfaces({
         ...conformance.maintained_modules[0],
         revision: "0".repeat(40),
       }),
-    ).toThrow(/pinned revision 0{40}/);
+    ).toThrow(/cannot be read at its pinned revision 0{40}/);
   });
 
   // TC-1445, FR-083-CON-2
-  it("is a declared file, and every exemption carries a reason", () => {
+  it("TC-1445 is a declared file, and every exemption carries a reason", () => {
     expect(existsSync(CONFORMANCE_PATH)).toBe(true);
     expect(conformance.contract_version).toBe("1.0.0");
     for (const exemption of conformance.drift_exemptions) {
@@ -678,7 +698,7 @@ describe("the conformance contract tracks the maintained repositories", () => {
   });
 
   // TC-1445: no rendered tree survives the run.
-  it("writes every rendered tree under a temporary directory and removes it", () => {
+  it("TC-1445 writes every rendered tree under a temporary directory and removes it", () => {
     cookiecutterVersion();
     const rendered = render({ kind: "object" });
     expect(rendered.dir.startsWith(REPO_ROOT)).toBe(false);
@@ -689,5 +709,286 @@ describe("the conformance contract tracks the maintained repositories", () => {
         entry.startsWith("quoin-semantic-module-"),
       ),
     ).toEqual([]);
+  });
+});
+
+/**
+ * The rows above that `make template-gate` executes are executed inside a
+ * rendered repository, in a temporary directory that exists only for the length
+ * of that run. `quire coverage` cannot bind a test it can never see, so this
+ * block binds them here: it names, for each of those rows, the rendered test
+ * function that carries it, and asserts the function still exists in the
+ * template's suite carrying the rendered acceptance criterion it claims.
+ *
+ * That is not a restatement of the execution. It is the check that catches the
+ * other half of the failure: a rendered test deleted or renamed, which
+ * `make template-gate` would report as a smaller green run rather than as a
+ * loss.
+ */
+const RENDERED_ROWS: {
+  tc: string;
+  file: string;
+  test: string;
+  criterion: string;
+}[] = [
+  // TC-1408
+  {
+    tc: "TC-1408",
+    file: "test_schema_emission.py",
+    test: "test_one_schema_is_emitted_for_every_exported_type",
+    criterion: "FR-002-AC-1",
+  },
+  // TC-1409
+  {
+    tc: "TC-1409",
+    file: "test_schema_emission.py",
+    test: "test_no_emitted_schema_is_the_placeholder_contract",
+    criterion: "FR-002-AC-2",
+  },
+  // TC-1410
+  {
+    tc: "TC-1410",
+    file: "test_manifest_semantic.py",
+    test: "test_every_digest_equals_the_bytes_of_the_file_it_names",
+    criterion: "FR-001-AC-7",
+  },
+  // TC-1411
+  {
+    tc: "TC-1411",
+    file: "test_skeletons_semantic.py",
+    test: "test_no_skeleton_carries_a_placeholder_body",
+    criterion: "FR-003-AC-4",
+  },
+  // TC-1413
+  {
+    tc: "TC-1413",
+    file: "test_schema_emission.py",
+    test: "test_check_mode_is_green_against_the_committed_output",
+    criterion: "FR-002-AC-5",
+  },
+  // TC-1417
+  {
+    tc: "TC-1417",
+    file: "test_manifest_semantic.py",
+    test: "test_semantic_block_carries_exactly_the_admitted_keys",
+    criterion: "FR-001-AC-1",
+  },
+  // TC-1419
+  {
+    tc: "TC-1419",
+    file: "test_manifest_semantic.py",
+    test: "test_the_manifest_keeps_its_comments_and_is_not_reserialized",
+    criterion: "FR-001-AC-9",
+  },
+  // TC-1420
+  {
+    tc: "TC-1420",
+    file: "test_skeletons_semantic.py",
+    test: "test_every_export_has_a_skeleton_in_the_typed_table_form",
+    criterion: "FR-003-AC-1",
+  },
+  // TC-1421
+  {
+    tc: "TC-1421",
+    file: "test_skeletons_semantic.py",
+    test: "test_every_skeleton_has_a_sysml_alternate_declaring_the_same_fields",
+    criterion: "FR-003-AC-2",
+  },
+  // TC-1422
+  {
+    tc: "TC-1422",
+    file: "test_skeletons_semantic.py",
+    test: "test_the_both_forms_fixture_carries_both_forms",
+    criterion: "FR-003-AC-6",
+  },
+  // TC-1423
+  {
+    tc: "TC-1423",
+    file: "test_skeletons_semantic.py",
+    test: "test_every_skeleton_carries_an_ocl_clause_under_its_own_heading",
+    criterion: "FR-003-AC-3",
+  },
+  // TC-1424
+  {
+    tc: "TC-1424",
+    file: "test_skeletons_semantic.py",
+    test: "test_every_negative_fixture_is_actually_refused",
+    criterion: "FR-003-AC-15",
+  },
+  // TC-1425
+  {
+    tc: "TC-1425",
+    file: "test_skeletons_semantic.py",
+    test: "test_every_legacy_fixture_yields_no_error_under_warning",
+    criterion: "FR-003-AC-11",
+  },
+  // TC-1426
+  {
+    tc: "TC-1426",
+    file: "test_skeletons_semantic.py",
+    test: "test_every_golden_record_matches_what_its_skeleton_extracts_to",
+    criterion: "FR-003-AC-13",
+  },
+  // TC-1427
+  {
+    tc: "TC-1427",
+    file: "test_skeletons_semantic.py",
+    test: "test_every_skeleton_extracts_and_validates_against_its_emitted_schema",
+    criterion: "FR-003-AC-9",
+  },
+  // TC-1430
+  {
+    tc: "TC-1430",
+    file: "test_schema_emission.py",
+    test: "test_the_package_metadata_declares_no_engine_dependency",
+    criterion: "FR-002-AC-7",
+  },
+  // TC-1458
+  {
+    tc: "TC-1458",
+    file: "test_manifest_semantic.py",
+    test: "test_no_type_name_is_declared_twice",
+    criterion: "FR-001-AC-4",
+  },
+  // TC-1468
+  {
+    tc: "TC-1468",
+    file: "test_manifest_semantic.py",
+    test: "test_exports_and_declared_type_names_are_the_same_set",
+    criterion: "FR-001-AC-3",
+  },
+  // TC-1469
+  {
+    tc: "TC-1469",
+    file: "test_skeletons_semantic.py",
+    test: "test_each_negative_fixture_declares_its_own_distinct_expectation",
+    criterion: "FR-003-AC-5",
+  },
+];
+
+describe("the rendered suite carries the rows the template gate executes", () => {
+  const suiteDir = join(TEMPLATE_DIR, "{{cookiecutter.repo_name}}", "tests");
+
+  /**
+   * One case per row, spelled out.
+   *
+   * `it.each` would be shorter and would bind nothing: the engine reads the
+   * SOURCE, and an interpolated title carries no literal id for it to attach.
+   * A single case listing nineteen ids is worse still — it binds one and leaves
+   * eighteen rows claiming a backing they do not have, which is the status lie
+   * this matrix exists to make impossible.
+   */
+  function stillCarries(tc: string): void {
+    const row = RENDERED_ROWS.find((candidate) => candidate.tc === tc);
+    expect(row, `${tc} is not a rendered row`).toBeDefined();
+    const source = readFileSync(join(suiteDir, row!.file), "utf8");
+    expect(source, `${row!.file} has no ${row!.test}`).toContain(
+      `def ${row!.test}(`,
+    );
+    expect(source, `${row!.test} does not carry ${row!.criterion}`).toContain(
+      `"${row!.criterion}"`,
+    );
+  }
+
+  it("TC-1408 the rendered suite still carries its test", () => {
+    // TC-1408
+    stillCarries("TC-1408");
+  });
+
+  it("TC-1409 the rendered suite still carries its test", () => {
+    // TC-1409
+    stillCarries("TC-1409");
+  });
+
+  it("TC-1410 the rendered suite still carries its test", () => {
+    // TC-1410
+    stillCarries("TC-1410");
+  });
+
+  it("TC-1411 the rendered suite still carries its test", () => {
+    // TC-1411
+    stillCarries("TC-1411");
+  });
+
+  it("TC-1413 the rendered suite still carries its test", () => {
+    // TC-1413
+    stillCarries("TC-1413");
+  });
+
+  it("TC-1417 the rendered suite still carries its test", () => {
+    // TC-1417
+    stillCarries("TC-1417");
+  });
+
+  it("TC-1419 the rendered suite still carries its test", () => {
+    // TC-1419
+    stillCarries("TC-1419");
+  });
+
+  it("TC-1420 the rendered suite still carries its test", () => {
+    // TC-1420
+    stillCarries("TC-1420");
+  });
+
+  it("TC-1421 the rendered suite still carries its test", () => {
+    // TC-1421
+    stillCarries("TC-1421");
+  });
+
+  it("TC-1422 the rendered suite still carries its test", () => {
+    // TC-1422
+    stillCarries("TC-1422");
+  });
+
+  it("TC-1423 the rendered suite still carries its test", () => {
+    // TC-1423
+    stillCarries("TC-1423");
+  });
+
+  it("TC-1424 the rendered suite still carries its test", () => {
+    // TC-1424
+    stillCarries("TC-1424");
+  });
+
+  it("TC-1425 the rendered suite still carries its test", () => {
+    // TC-1425
+    stillCarries("TC-1425");
+  });
+
+  it("TC-1426 the rendered suite still carries its test", () => {
+    // TC-1426
+    stillCarries("TC-1426");
+  });
+
+  it("TC-1427 the rendered suite still carries its test", () => {
+    // TC-1427
+    stillCarries("TC-1427");
+  });
+
+  it("TC-1430 the rendered suite still carries its test", () => {
+    // TC-1430
+    stillCarries("TC-1430");
+  });
+
+  it("TC-1458 the rendered suite still carries its test", () => {
+    // TC-1458
+    stillCarries("TC-1458");
+  });
+
+  it("TC-1468 the rendered suite still carries its test", () => {
+    // TC-1468
+    stillCarries("TC-1468");
+  });
+
+  it("TC-1469 the rendered suite still carries its test", () => {
+    // TC-1469
+    stillCarries("TC-1469");
+  });
+
+  it("binds every rendered row exactly once and names no test twice", () => {
+    const ids = RENDERED_ROWS.map((row) => row.tc);
+    expect(new Set(ids).size).toBe(ids.length);
+    const tests = RENDERED_ROWS.map((row) => `${row.file}::${row.test}`);
+    expect(new Set(tests).size).toBe(tests.length);
   });
 });

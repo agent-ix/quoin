@@ -32,6 +32,7 @@ fixture per failure mode its emitted schemas refuse.
 - The engine SHALL extract each skeleton to a declaration that validates against that type's emitted schema.
 - The engine SHALL extract a skeleton and its alternate to the same fields.
 - The engine SHALL report no error for a legacy fixture while `legacy_forms` is `warning`.
+- Each negative fixture SHALL be refused, by the engine or by the emitted schema its type names.
 
 ## Acceptance Criteria
 
@@ -48,6 +49,10 @@ fixture per failure mode its emitted schemas refuse.
 | FR-003-AC-9 | Every skeleton extracts with no error and validates against its emitted schema. | Test |
 | FR-003-AC-10 | A skeleton and its alternate extract to identical fields. | Test |
 | FR-003-AC-11 | Every legacy fixture extracts with no error under `legacy_forms: warning`. | Test |
+| FR-003-AC-12 | Every mapped model names a schema, a skeleton and a golden record that all exist. | Test |
+| FR-003-AC-13 | Every golden record equals what its skeleton extracts to. | Test |
+| FR-003-AC-14 | Every golden record uses the declared serialization. | Test |
+| FR-003-AC-15 | Every negative fixture is refused, by the engine or by its emitted schema. | Test |
 
 ## Dependencies
 

@@ -11,7 +11,9 @@ import yaml
 
 
 @pytest.mark.trace("FR-001-AC-1")
-def test_semantic_block_carries_exactly_the_admitted_keys(semantic_block, semantic_keys):
+def test_semantic_block_carries_exactly_the_admitted_keys(
+    semantic_block, semantic_keys
+):
     assert set(semantic_block) == set(semantic_keys)
 
 
@@ -65,9 +67,9 @@ def test_every_digest_equals_the_bytes_of_the_file_it_names(
     for entry in helpers.declared_types(manifest):
         reference = entry["data_schema"]
         path = package_root / reference["schema"]
-        assert path.is_file(), (
-            f"{reference['schema']} is referenced but absent. Run `make schemas`."
-        )
+        assert (
+            path.is_file()
+        ), f"{reference['schema']} is referenced but absent. Run `make schemas`."
         assert reference["digest"] == helpers.sha256_of(path), (
             f"{entry['name']}'s digest does not match {reference['schema']}. "
             "Run `make schemas` and commit the result."
@@ -80,7 +82,9 @@ def test_imports_are_a_mapping_to_exact_versions(semantic_block):
     assert isinstance(imports, dict)
     for identity, version in imports.items():
         assert identity.count("/") == 1, identity
-        assert version.count(".") >= 2, f"{identity} is pinned to {version!r}, not exact"
+        assert (
+            version.count(".") >= 2
+        ), f"{identity} is pinned to {version!r}, not exact"
 
 
 @pytest.mark.trace("FR-001-AC-9")

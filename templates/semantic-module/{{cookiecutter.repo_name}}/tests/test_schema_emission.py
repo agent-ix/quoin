@@ -33,7 +33,9 @@ def require_toolchain(repo_root):
 
 
 @pytest.mark.trace("FR-002-AC-1")
-def test_one_schema_is_emitted_for_every_exported_type(manifest, helpers, schemas_dir, model_of):
+def test_one_schema_is_emitted_for_every_exported_type(
+    manifest, helpers, schemas_dir, model_of
+):
     for entry in helpers.declared_types(manifest):
         path = schemas_dir / f"{model_of[entry['name']]}.json"
         assert path.is_file(), f"{path.name} is missing; run `make schemas`"
@@ -59,7 +61,7 @@ def test_every_reference_is_absolute(schemas_dir):
         for line in path.read_text().splitlines():
             for token in ('"$ref":', '"$id":'):
                 if token in line:
-                    value = line.split(":", 1)[1].strip().strip(',').strip('"')
+                    value = line.split(":", 1)[1].strip().strip(",").strip('"')
                     assert value.startswith("https://"), f"{path.name}: {value}"
 
 
@@ -83,6 +85,10 @@ def test_check_mode_is_red_when_an_emitted_byte_changes(repo_root, schemas_dir):
     require_toolchain(repo_root)
     target = next(p for p in schemas_dir.glob("*.json") if p.name != "toolchain.json")
     original = target.read_bytes()
+    # The committed bytes are restored by `finally`, and a hard kill mid-test
+    # would leave them mutated. That is the trade this row accepts: check mode
+    # reads the committed tree by design, so proving it goes red means mutating
+    # the tree it reads. `make schemas` restores it in one command.
     try:
         target.write_bytes(original.replace(b'"type"', b'"typ3"', 1))
         result = run_generate(repo_root, "--check")

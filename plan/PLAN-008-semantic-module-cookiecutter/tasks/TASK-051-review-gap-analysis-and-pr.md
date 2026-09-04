@@ -2,7 +2,7 @@
 id: TASK-051
 title: "Code review, gap analysis and pull request"
 type: Task
-status: in_progress
+status: done
 track: C
 priority: P0
 relationships:
@@ -23,11 +23,11 @@ the matrix is backed by real tests, and open the pull request.
 
 ## Subtasks
 
-- [ ] `make lint` and `make test` green in this repository.
-- [ ] `quire validate --scope . "spec/**/*.md"` and `"plan/**/*.md"` structurally clean.
-- [ ] `/code-review` over the branch.
-- [ ] `/gap-analysis` over PLAN-008: every task done, every matrix row backed by a real test, every code path owned by a requirement.
-- [ ] Flip every PLAN-008 matrix row from `🚧` to its true state, with a reason on anything still `🚧`.
+- [x] `make lint` and `make test` green in this repository.
+- [x] `quire validate --scope . "spec/**/*.md"` and `"plan/**/*.md"` structurally clean.
+- [x] `/code-review` over the branch.
+- [x] `/gap-analysis` over PLAN-008: every task done, every matrix row backed by a real test, every code path owned by a requirement.
+- [x] Flip every PLAN-008 matrix row from `🚧` to its true state, with a reason on anything still `🚧`.
 - [ ] Open the pull request against `main` and comment when it is mergeable. Do not merge.
 
 ## Notes

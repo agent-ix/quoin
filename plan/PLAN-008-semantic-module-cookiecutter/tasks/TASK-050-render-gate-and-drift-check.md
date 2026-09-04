@@ -65,7 +65,7 @@ contract does not.
 - [x] Conformance check per variant, with a negative case removing a required surface (TC-1447).
 - [x] Drift check against the maintained repositories at their pinned revisions, failing when one carries an unlisted, unexempted surface (TC-1418) or cannot be read at its revision (TC-1462).
 - [x] Assert the template carries no copy of the emitter, the runtime or the grammar (TC-1455), and that a `⚠️` injected into a rendered Test Matrix fails the gate (TC-1470).
-- [x] `make template-gate` in the Makefile, wired into this repository's `make test`, so the render gate is part of the green bar rather than a target somebody remembers.
+- [x] `make template-gate` in the Makefile, and `make gate` runs it beside `make test`, so the instantiating legs are part of the declared green bar rather than a target somebody remembers.
 
 ## Deliverables
 

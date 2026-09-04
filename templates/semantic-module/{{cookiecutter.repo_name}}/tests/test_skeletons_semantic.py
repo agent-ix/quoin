@@ -84,9 +84,9 @@ def test_every_export_has_a_skeleton_in_the_typed_table_form(exports, skeletons_
         path = skeletons_dir / f"{name}.md"
         assert path.is_file(), f"{name} has no authoring skeleton"
         section = properties_section(path.read_text())
-        assert TABLE_HEADER in section, (
-            f"{path.name}'s Properties table header is not the typed four-column form"
-        )
+        assert (
+            TABLE_HEADER in section
+        ), f"{path.name}'s Properties table header is not the typed four-column form"
         assert len(table_rows(section)) >= 1, f"{path.name} declares no property"
 
 
@@ -107,7 +107,9 @@ def test_every_skeleton_has_a_sysml_alternate_declaring_the_same_fields(
 @pytest.mark.trace("FR-003-AC-3")
 def test_every_skeleton_carries_an_ocl_clause_under_its_own_heading(skeletons_dir):
     for path in sorted(skeletons_dir.glob("*.md")):
-        clauses = re.findall(r"^### (\w+)\n\n```ocl\n(.*?)```", path.read_text(), re.S | re.M)
+        clauses = re.findall(
+            r"^### (\w+)\n\n```ocl\n(.*?)```", path.read_text(), re.S | re.M
+        )
         assert clauses, f"{path.name} carries no ocl clause under a clause heading"
         ids = [clause[0] for clause in clauses]
         assert len(ids) == len(set(ids)), f"{path.name} repeats a clause id"
@@ -143,7 +145,9 @@ def test_the_both_forms_fixture_carries_both_forms(negative_fixtures, helpers):
     both = [
         path
         for path in negative_fixtures
-        if helpers.frontmatter(path.read_text())["expect"].endswith("both-forms-present")
+        if helpers.frontmatter(path.read_text())["expect"].endswith(
+            "both-forms-present"
+        )
     ]
     assert both, "no fixture exercises the both-Properties-forms refusal"
     section = properties_section(both[0].read_text())
@@ -191,6 +195,38 @@ def test_every_skeleton_extracts_and_validates_against_its_emitted_schema(
         record = extract(quire_engine, semantic_module, path)
         assert not errors_of(record), f"{path.name}: {errors_of(record)}"
         schema_registry(model_of[name]).validate(declaration_of(record))
+
+
+@pytest.mark.trace("FR-003-AC-15")
+def test_every_negative_fixture_is_actually_refused(
+    semantic_module, schema_registry, quire_engine, negative_fixtures, helpers, model_of
+):
+    """Each negative fixture is REFUSED, by the engine or by its emitted schema.
+
+    Declaring an `expect` proves nothing on its own: a fixture whose frontmatter
+    says `missing-identity-field` while the engine and the schema both accept it
+    would satisfy every label check in this file and prove the opposite of what
+    it claims. This row runs each fixture through the real engine and, where the
+    extraction succeeds, through the real schema, and asserts that one of them
+    says no.
+    """
+    from jsonschema.exceptions import ValidationError
+
+    for path in negative_fixtures:
+        front = helpers.frontmatter(path.read_text())
+        record = extract(quire_engine, semantic_module, path)
+        refused = bool(errors_of(record))
+        if not refused:
+            model = model_of[front["type"]]
+            try:
+                schema_registry(model).validate(declaration_of(record))
+            except ValidationError:
+                refused = True
+        assert refused, (
+            f"{path.name} declares `expect: {front['expect']}` and is accepted by "
+            "both the engine and its emitted schema. A negative fixture nothing "
+            "refuses documents a rule nothing enforces."
+        )
 
 
 @pytest.mark.trace("FR-003-AC-10")

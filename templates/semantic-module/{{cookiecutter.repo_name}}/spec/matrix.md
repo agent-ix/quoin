@@ -55,6 +55,10 @@ construction.
 | TC-026 | Every skeleton extracts with no error and validates against its emitted schema | Integration | P0 | FR-003-AC-9 | ✅ |
 | TC-027 | A skeleton and its alternate extract to identical fields | Property | P0 | FR-003-AC-10 | ✅ |
 | TC-028 | Every legacy fixture extracts with no error under legacy_forms warning | Integration | P0 | FR-003-AC-11 | ✅ |
+| TC-032 | Every mapped model names a schema, a skeleton and a golden record that all exist | Unit | P1 | FR-003-AC-12 | ✅ |
+| TC-033 | Every golden record equals what its skeleton extracts to | Integration | P0 | FR-003-AC-13 | ✅ |
+| TC-034 | Every golden record uses the declared serialization | Unit | P1 | FR-003-AC-14 | ✅ |
+| TC-035 | Every negative fixture is refused, by the engine or by its emitted schema | Integration | P0 | FR-003-AC-15 | ✅ |
 | TC-029 | A suite run reports zero skipped tests | Integration | P0 | NFR-001-AC-1 | 🚧 the run's skip count is read by eye until a reporter assertion is added |
 | TC-030 | Each absent tool produces a diagnostic naming the command that installs it | Unit | P0 | NFR-001-AC-2 | 🚧 exercised for the engine and the toolchain; the validator leg is not yet driven with quire absent |
 | TC-031 | Every declared generated target other than json-schema is emitted | Integration | P1 | FR-002-AC-1 | 🚧 no emitter exists for rust, typescript, python-pydantic-v2 or python-dataclass; agent-ix/filament-core-data#11 owns them, so the targets are declared and not emitted |
@@ -65,7 +69,7 @@ construction.
 | --- | --- | --- | --- |
 | FR-001 | FR-001-AC-1..9 | TC-001..TC-009 | ✅ Covered |
 | FR-002 | FR-002-AC-1..8 | TC-010..TC-017 | ✅ Covered |
-| FR-003 | FR-003-AC-1..11 | TC-018..TC-028 | ✅ Covered |
+| FR-003 | FR-003-AC-1..15 | TC-018..TC-028, TC-032..TC-035 | ✅ Covered |
 | NFR-001 | NFR-001-AC-1..2 | TC-029, TC-030 | 🚧 The engine and toolchain paths fail with a named command today. The skip count is not yet asserted programmatically and the validator-absent path is not yet driven. |
 
 ## Stakeholder Requirement Coverage

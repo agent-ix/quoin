@@ -1,4 +1,4 @@
-"""Shared fixtures for {{ cookiecutter.repo_name }}'s verification suite.
+"""Shared fixtures for spec-mixed-example's verification suite.
 
 Two policies live here and nowhere else.
 
@@ -45,7 +45,9 @@ SEMANTIC_CORE_DIR = (
     / "generated"
     / "json-schema"
 )
-SEMANTIC_CORE_BASE = f"https://schemas.agent-ix.org/semantic-core/{SEMANTIC_CORE_VERSION}/"
+SEMANTIC_CORE_BASE = (
+    f"https://schemas.agent-ix.org/semantic-core/{SEMANTIC_CORE_VERSION}/"
+)
 
 ENGINE_FLOOR = "{{ cookiecutter.quire_engine_floor }}"
 
@@ -63,14 +65,10 @@ SEMANTIC_CORE_MISSING = (
     "configuration; this repository ships no .npmrc."
 )
 
-EXPORTS = (
-{%- if cookiecutter.module_kind in ("object", "mixed") %}
-    "element",
-{%- endif %}
-{%- if cookiecutter.module_kind in ("artifact", "mixed") %}
-    "note",
-{%- endif %}
-)
+{% set exports = [] -%}
+{% if cookiecutter.module_kind in ("object", "mixed") %}{% set _ = exports.append('"element"') %}{% endif -%}
+{% if cookiecutter.module_kind in ("artifact", "mixed") %}{% set _ = exports.append('"note"') %}{% endif -%}
+EXPORTS = ({{ exports | join(", ") }}{% if exports | length == 1 %},{% endif %})
 
 MODEL_OF = {
 {%- if cookiecutter.module_kind in ("object", "mixed") %}
