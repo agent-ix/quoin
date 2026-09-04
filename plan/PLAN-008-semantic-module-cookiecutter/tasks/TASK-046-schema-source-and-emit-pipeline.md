@@ -2,7 +2,7 @@
 id: TASK-046
 title: "Rendered TypeSpec source and emit pipeline"
 type: Task
-status: todo
+status: done
 track: A
 priority: P0
 relationships:
@@ -45,14 +45,14 @@ every `$id` and `$ref`, and records the toolchain that produced the bytes.
 
 ## Subtasks
 
-- [ ] `typespec/main.tsp`: `@jsonSchema` base carrying the manifest version, one model per exported type, every grammar item a reference to semantic-core rather than a redeclaration (TC-1416).
-- [ ] `typespec/tspconfig.yaml`: the official `@typespec/json-schema` emitter, sealed object schemas.
-- [ ] `scripts/generate-schemas.mjs`: compile into a scratch directory, filter to this module's namespace, absolutize relative references against this module's base, the semantic-core base, or an imported module's base at its exact version, and fail naming a reference that matches none (TC-1457).
-- [ ] Digest each rendered file and the whole set into `schemas/toolchain.json` alongside the compiler, emitter and semantic-core versions.
-- [ ] `--check` mode: write nothing, exit non-zero listing every difference (TC-1414).
-- [ ] Fail naming both values when the `@jsonSchema` base and the manifest version disagree, leaving the committed output untouched (TC-1415).
-- [ ] Fail carrying the compiler diagnostics when `tsp compile` fails (TC-1449).
-- [ ] Assert no emitted schema is the placeholder `{type: object}` contract (TC-1409) and that two emissions are byte-identical (TC-1413).
+- [x] `typespec/main.tsp`: `@jsonSchema` base carrying the manifest version, one model per exported type, every grammar item a reference to semantic-core rather than a redeclaration (TC-1416).
+- [x] `typespec/tspconfig.yaml`: the official `@typespec/json-schema` emitter, sealed object schemas.
+- [x] `scripts/generate-schemas.mjs`: compile into a scratch directory, filter to this module's namespace, absolutize relative references against this module's base, the semantic-core base, or an imported module's base at its exact version, and fail naming a reference that matches none (TC-1457).
+- [x] Digest each rendered file and the whole set into `schemas/toolchain.json` alongside the compiler, emitter and semantic-core versions.
+- [x] `--check` mode: write nothing, exit non-zero listing every difference (TC-1414).
+- [x] Fail naming both values when the `@jsonSchema` base and the manifest version disagree, leaving the committed output untouched (TC-1415).
+- [x] Fail carrying the compiler diagnostics when `tsp compile` fails (TC-1449).
+- [x] Assert no emitted schema is the placeholder `{type: object}` contract (TC-1409) and that two emissions are byte-identical (TC-1413).
 
 ## Deliverables
 

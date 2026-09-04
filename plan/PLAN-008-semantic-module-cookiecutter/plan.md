@@ -44,25 +44,25 @@ contract (`agent-ix/quoin#293`, merged `3e842ce`), filament-core-data ADR-0005,
 
 ### Stakeholder and User Stories
 
-- [ ] **StR-008:** A new semantic-module repository conforms by construction, not by review after the fact.
-- [ ] **US-021:** A maintainer generates the repository from one maintained template and fills in only their module's vocabulary.
+- [x] **StR-008:** A new semantic-module repository conforms by construction, not by review after the fact.
+- [x] **US-021:** A maintainer generates the repository from one maintained template and fills in only their module's vocabulary.
 
 ### Functional Requirements
 
-- [ ] **FR-076:** Artifact, object and mixed variants from one template core; AGPL by default with no silent fallback; every invalid input aborts naming the value; unattended rendering.
-- [ ] **FR-077:** TypeSpec source importing `@agent-ix/semantic-core`; deterministic emission through the official emitter; absolute `$id`/`$ref`; check mode.
-- [ ] **FR-078:** The `semantic` manifest block with the nine admitted keys and reference-form `data_schema`; machine-written digests; unique export names.
-- [ ] **FR-079:** Typed-table skeletons with `sysml` alternates and `ocl` invariants; one negative fixture per declared failure mode; a legacy-form fixture at `warning`.
-- [ ] **FR-080:** The rendered suite treats the engine as a hard dependency and fails, naming `make dev-quire`, rather than skipping.
-- [ ] **FR-081:** Public AGPL baseline: one licence identifier, the ownership and guidance files, matching Python and npm payloads, no credential, no private publication default.
-- [ ] **FR-082:** The rendered `spec/` tree validates as rendered, with a Test Matrix drawn from the archetype's vocabulary and honest `🚧` rows.
-- [ ] **FR-083:** Quoin's gate renders every variant into a temporary directory, checks it against a declared conformance contract, and fails on drift from the maintained repositories at pinned revisions.
+- [x] **FR-076:** Artifact, object and mixed variants from one template core; AGPL by default with no silent fallback; every invalid input aborts naming the value; unattended rendering.
+- [x] **FR-077:** TypeSpec source importing `@agent-ix/semantic-core`; deterministic emission through the official emitter; absolute `$id`/`$ref`; check mode.
+- [x] **FR-078:** The `semantic` manifest block with the nine admitted keys and reference-form `data_schema`; machine-written digests; unique export names.
+- [x] **FR-079:** Typed-table skeletons with `sysml` alternates and `ocl` invariants; one negative fixture per declared failure mode; a legacy-form fixture at `warning`.
+- [x] **FR-080:** The rendered suite treats the engine as a hard dependency and fails, naming `make dev-quire`, rather than skipping.
+- [x] **FR-081:** Public AGPL baseline: one licence identifier, the ownership and guidance files, matching Python and npm payloads, no credential, no private publication default.
+- [x] **FR-082:** The rendered `spec/` tree validates as rendered, with a Test Matrix drawn from the archetype's vocabulary and honest `🚧` rows.
+- [x] **FR-083:** Quoin's gate renders every variant into a temporary directory, checks it against a declared conformance contract, and fails on drift from the maintained repositories at pinned revisions.
 
 ### Non-Functional Requirements
 
-- [ ] **NFR-018:** No generation residue in any rendered file; the residue classes are declared patterns, not judgement calls.
-- [ ] **NFR-019:** Rendering twice and emitting twice are byte-identical.
-- [ ] **NFR-020:** Every external command has a declared floor and a named absent-tool diagnostic.
+- [x] **NFR-018:** No generation residue in any rendered file; the residue classes are declared patterns, not judgement calls.
+- [x] **NFR-019:** Rendering twice and emitting twice are byte-identical.
+- [x] **NFR-020:** Every external command has a declared floor and a named absent-tool diagnostic.
 
 ## Dependency Graph
 

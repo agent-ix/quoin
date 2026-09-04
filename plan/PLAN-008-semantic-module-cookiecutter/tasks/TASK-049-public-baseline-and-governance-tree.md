@@ -2,7 +2,7 @@
 id: TASK-049
 title: "Rendered public baseline and governance tree"
 type: Task
-status: todo
+status: done
 track: B
 priority: P0
 relationships:
@@ -49,14 +49,14 @@ AGPL-3.0-or-later module needs, and the `spec/` tree that validates as rendered.
 
 ## Subtasks
 
-- [ ] Full AGPL-3.0-or-later text, and one SPDX identifier across `pyproject.toml`, `package.json`, the README and the package metadata (TC-1434).
-- [ ] `.github/CODEOWNERS`, `AGENTS.md`, `CLAUDE.md`, `README.md`, `CONTRIBUTING.md`, `SECURITY.md`, `.gitignore`, `.gitattributes`, `Makefile` (TC-1435).
-- [ ] Matching payloads: the Python `include` and the npm `files` both carry the manifest, schemas and skeletons, and the schema toolchain is excluded from both (TC-1433).
-- [ ] `scripts/stage-npm.mjs` staging the payload so the tarball root is the module root, and removing the staged copies after packing.
-- [ ] Public npm publication target with public access; no credential, no token, no private publication default (TC-1436).
-- [ ] Manually triggered release workflows delegating to the shared reusable workflows, carrying no publish step of their own (TC-1437).
-- [ ] `docs/catalog-entry.md` naming the Quoin catalog file and the tracking project (TC-1438).
-- [ ] No local-path dependency reference and no version upper bound anywhere (TC-1432).
-- [ ] A `spec/` tree — master-requirements root, stakeholder, usecase, functional, non-functional, indexes, log, and a Test Matrix — that passes `quire validate` as rendered (TC-1439, TC-1443).
-- [ ] A Test Matrix whose every `Status` cell is drawn from the archetype's vocabulary, never `⚠️`, with `🚧` rows carrying reasons and every row tracing to a criterion that exists (TC-1440, TC-1441, TC-1442).
-- [ ] An Out of Scope section saying the module's domain types are the maintainer's to specify, and no requirement text copied from a maintained module repository (TC-1461).
+- [x] Full AGPL-3.0-or-later text, and one SPDX identifier across `pyproject.toml`, `package.json`, the README and the package metadata (TC-1434).
+- [x] `.github/CODEOWNERS`, `AGENTS.md`, `CLAUDE.md`, `README.md`, `CONTRIBUTING.md`, `SECURITY.md`, `.gitignore`, `.gitattributes`, `Makefile` (TC-1435).
+- [x] Matching payloads: the Python `include` and the npm `files` both carry the manifest, schemas and skeletons, and the schema toolchain is excluded from both (TC-1433).
+- [x] `scripts/stage-npm.mjs` staging the payload so the tarball root is the module root, and removing the staged copies after packing.
+- [x] Public npm publication target with public access; no credential, no token, no private publication default (TC-1436).
+- [x] Manually triggered release workflows delegating to the shared reusable workflows, carrying no publish step of their own (TC-1437).
+- [x] `docs/catalog-entry.md` naming the Quoin catalog file and the tracking project (TC-1438).
+- [x] No local-path dependency reference and no version upper bound anywhere (TC-1432).
+- [x] A `spec/` tree — master-requirements root, stakeholder, usecase, functional, non-functional, indexes, log, and a Test Matrix — that passes `quire validate` as rendered (TC-1439, TC-1443).
+- [x] A Test Matrix whose every `Status` cell is drawn from the archetype's vocabulary, never `⚠️`, with `🚧` rows carrying reasons and every row tracing to a criterion that exists (TC-1440, TC-1441, TC-1442).
+- [x] An Out of Scope section saying the module's domain types are the maintainer's to specify, and no requirement text copied from a maintained module repository (TC-1461).

@@ -2,7 +2,7 @@
 id: TASK-048
 title: "Rendered skeletons, fixtures and verification suite"
 type: Task
-status: todo
+status: done
 track: A
 priority: P0
 relationships:
@@ -57,15 +57,15 @@ that treats the engine as a hard dependency.
 
 ## Subtasks
 
-- [ ] Skeletons with the exact four-column Properties header, substantive rows, and a body comment stating the manifest's extraction contract (TC-1420, TC-1411).
-- [ ] `sysml`-fence alternates declaring the same field names, types and multiplicities (TC-1421).
-- [ ] `## Invariants` with one `ocl` fence per `### <clauseId>` heading (TC-1423).
-- [ ] Negative fixtures, each with a distinct `expect` and a `because` (TC-1424), including the both-forms-in-one-document case (TC-1422).
-- [ ] A legacy-form fixture asserted to yield exactly one warning and no error (TC-1425).
-- [ ] For the artifact and mixed variants, mapping declarations covering every property of every exported model and one golden record per type, serialized with sorted keys and two-space indentation (TC-1426).
-- [ ] `tests/conftest.py`: import the engine and FAIL naming `make dev-quire` and `agent-ix/quire-rs#392` when it is absent, when it lacks `extract_semantic`, or when it is older than the declared floor (TC-1428, TC-1429, TC-1460); fail naming the install command when the grammar package is absent (TC-1450). No skip anywhere (TC-1427).
-- [ ] `make dev-quire`, and no engine dependency in the package metadata; warnings as errors (TC-1430, TC-1469).
-- [ ] `make gate`: validate, lint, schema drift check, suite — failing when any leg fails (TC-1431).
+- [x] Skeletons with the exact four-column Properties header, substantive rows, and a body comment stating the manifest's extraction contract (TC-1420, TC-1411).
+- [x] `sysml`-fence alternates declaring the same field names, types and multiplicities (TC-1421).
+- [x] `## Invariants` with one `ocl` fence per `### <clauseId>` heading (TC-1423).
+- [x] Negative fixtures, each with a distinct `expect` and a `because` (TC-1424), including the both-forms-in-one-document case (TC-1422).
+- [x] A legacy-form fixture asserted to yield exactly one warning and no error (TC-1425).
+- [x] For the artifact and mixed variants, mapping declarations covering every property of every exported model and one golden record per type, serialized with sorted keys and two-space indentation (TC-1426).
+- [x] `tests/conftest.py`: import the engine and FAIL naming `make dev-quire` and `agent-ix/quire-rs#392` when it is absent, when it lacks `extract_semantic`, or when it is older than the declared floor (TC-1428, TC-1429, TC-1460); fail naming the install command when the grammar package is absent (TC-1450). No skip anywhere (TC-1427).
+- [x] `make dev-quire`, and no engine dependency in the package metadata; warnings as errors (TC-1430, TC-1469).
+- [x] `make gate`: validate, lint, schema drift check, suite — failing when any leg fails (TC-1431).
 
 ## Deliverables
 

@@ -2,7 +2,7 @@
 id: TASK-047
 title: "Rendered manifest semantic block and digests"
 type: Task
-status: todo
+status: done
 track: A
 priority: P0
 relationships:
@@ -34,12 +34,12 @@ the emit driver rather than authored.
 
 ## Subtasks
 
-- [ ] Render `semantic` with `contract_version`, `semantic_core`, `package`, `exports`, `imports`, `targets`, `mappings`, `compatibility_posture: additive`, `legacy_forms: warning`, and no `sweep_report` (TC-1417).
-- [ ] Render `artifact_types` for the artifact variant, `object_types` for the object variant, and both for mixed, each with `data_schema: {schema, digest}` and `body_extraction` locators.
-- [ ] Rewrite the `digest:` lines textually from the emitted bytes so comments and YAML anchors survive regeneration (TC-1419).
-- [ ] Assert the rendered `exports` and the declared type names are the same set, and that no type name appears twice (TC-1468, TC-1458).
-- [ ] Map each imported package identity to its exact version, and refuse two entries naming the same identity (TC-1459).
-- [ ] Validate the rendered manifest against Quoin's vendored module-manifest schema (TC-1417) and assert each digest equals the SHA-256 of the file it names (TC-1410).
+- [x] Render `semantic` with `contract_version`, `semantic_core`, `package`, `exports`, `imports`, `targets`, `mappings`, `compatibility_posture: additive`, `legacy_forms: warning`, and no `sweep_report` (TC-1417).
+- [x] Render `artifact_types` for the artifact variant, `object_types` for the object variant, and both for mixed, each with `data_schema: {schema, digest}` and `body_extraction` locators.
+- [x] Rewrite the `digest:` lines textually from the emitted bytes so comments and YAML anchors survive regeneration (TC-1419).
+- [x] Assert the rendered `exports` and the declared type names are the same set, and that no type name appears twice (TC-1468, TC-1458).
+- [x] Map each imported package identity to its exact version, and refuse two entries naming the same identity (TC-1459).
+- [x] Validate the rendered manifest against Quoin's vendored module-manifest schema (TC-1417) and assert each digest equals the SHA-256 of the file it names (TC-1410).
 
 ## Deliverables
 

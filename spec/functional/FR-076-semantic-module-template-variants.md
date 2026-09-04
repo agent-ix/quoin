@@ -69,8 +69,8 @@ it invokes the official `@typespec/json-schema` emitter and never reimplements
 it (FR-076-CON-1). It is nevertheless the same file in every rendered
 repository, which is a fleet-drift surface of its own. FR-076-CON-3 keeps every
 rendered copy byte-identical to the template's, so the drift is detectable;
-extracting it into a versioned package is tracked separately and is not a
-condition of this requirement.
+extracting it into a versioned package is tracked as `agent-ix/quoin#345` and is
+not a condition of this requirement.
 
 ## Constraints
 
