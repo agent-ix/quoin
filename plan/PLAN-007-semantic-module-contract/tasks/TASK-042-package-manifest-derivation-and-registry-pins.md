@@ -2,7 +2,7 @@
 id: TASK-042
 title: "Package manifest derivation and registry pins"
 type: Task
-status: todo
+status: done
 track: A
 priority: P0
 relationships:
@@ -34,8 +34,8 @@ Derive `semantic/package-manifest.json` per FR-075 and pin per-export schema dig
 
 ## Subtasks
 
-- [ ] `src/semantic/package-manifest.ts`: derive every required field as FR-075 states; validate against the vendored filament-core-data `package-manifest.schema.json` (TC-1372).
-- [ ] Registry pins under the module entry's `semantic` key (TC-1373); import resolution and cycle rejection at install (TC-1374); identity parity test (TC-1375); package-form rejections (TC-1376); static scans (TC-1377, TC-1378).
+- [x] `src/semantic/package-manifest.ts`: derive every required field as FR-075 states; validate against the vendored filament-core-data `package-manifest.schema.json` (TC-1372).
+- [x] Registry pins under the module entry's `semantic` key (TC-1373); import resolution and cycle rejection at install (TC-1374); identity parity test (TC-1375); package-form rejections (TC-1376); static scans (TC-1377, TC-1378).
 
 ## Deliverables
 

@@ -2,7 +2,7 @@
 id: TASK-043
 title: "Non-disruption gates"
 type: Task
-status: todo
+status: done
 track: C
 priority: P0
 relationships:
@@ -30,9 +30,9 @@ Run the NFR-017 gates over the finished slice.
 
 ## Subtasks
 
-- [ ] Load every `default-modules.yaml` module with the new loader; assert no new diagnostic (TC-1379).
-- [ ] Sweep the fixture corpus; assert only `warning`-severity semantic findings (TC-1380).
-- [ ] Changed-path test excluding corpus repositories (TC-1381); schema `required` diff (TC-1382).
+- [x] Load every `default-modules.yaml` module with the new loader; assert no new diagnostic (TC-1379).
+- [x] Sweep the fixture corpus; assert only `warning`-severity semantic findings (TC-1380).
+- [x] Changed-path test excluding corpus repositories (TC-1381); schema `required` diff (TC-1382).
 
 ## Deliverables
 

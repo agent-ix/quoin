@@ -33,20 +33,20 @@ quire-rs#388 implements the extraction the fixtures define.
 
 ### User Stories
 
-- [ ] **US-020:** A module maintainer declares typed fields, relations, operations, and invariants once against the shared grammar.
+- [x] **US-020:** A module maintainer declares typed fields, relations, operations, and invariants once against the shared grammar.
 
 ### Functional Requirements
 
-- [ ] **FR-070:** Optional `semantic` manifest block with a closed key set; install-time rejections in Quoin; vendored schema with provenance.
-- [ ] **FR-071:** Typed Properties table and line-level `sysml` fence map to one normalized `FieldDecl[]`; golden fixtures for quire-rs#388.
-- [ ] **FR-072:** Invariants and Operations map to `ClauseRef[]`/`OperationDecl[]`; `Identifier` clause ids; advisory unchecked languages.
-- [ ] **FR-073:** `data_schema` by path + digest, offline `$ref` resolution against a vendored semantic-core bundle, inline-schema warning.
-- [ ] **FR-074:** Legacy forms at `warning`, `quoin semantic sweep` and the sweep-report guard for promotion.
-- [ ] **FR-075:** Derived `package-manifest.json` and per-export digests pinned in `registry.json`; import resolution at `quoin module install`.
+- [x] **FR-070:** Optional `semantic` manifest block with a closed key set; install-time rejections in Quoin; vendored schema with provenance.
+- [x] **FR-071:** Typed Properties table and line-level `sysml` fence map to one normalized `FieldDecl[]`; golden fixtures for quire-rs#388.
+- [x] **FR-072:** Invariants and Operations map to `ClauseRef[]`/`OperationDecl[]`; `Identifier` clause ids; advisory unchecked languages.
+- [x] **FR-073:** `data_schema` by path + digest, offline `$ref` resolution against a vendored semantic-core bundle, inline-schema warning.
+- [x] **FR-074:** Legacy forms at `warning`, `quoin semantic sweep` and the sweep-report guard for promotion.
+- [x] **FR-075:** Derived `package-manifest.json` and per-export digests pinned in `registry.json`; import resolution at `quoin module install`.
 
 ### Non-Functional Requirements
 
-- [ ] **NFR-017:** No current manifest or artifact invalidated; advisory by default; no corpus write; no required key.
+- [x] **NFR-017:** No current manifest or artifact invalidated; advisory by default; no corpus write; no required key.
 
 ## Dependency Graph
 
@@ -78,14 +78,14 @@ Fixtures live under `tests/fixtures/semantic-module/`.
 
 ## Test Plan
 
-- [ ] **TC-1342, TC-1343, TC-1385:** schema diffs and vendored provenance.
-- [ ] **TC-1336..1341, TC-1383, TC-1337:** manifest block load, rejections, pack.
-- [ ] **TC-1360..1366:** `data_schema` references, failures, offline resolution.
-- [ ] **TC-1344..1352, TC-1384:** Properties mapping fixtures and cell grammars.
-- [ ] **TC-1353..1359:** Invariants/Operations fixtures.
-- [ ] **TC-1367..1371, TC-1386:** legacy forms, promotion guard, sweep.
-- [ ] **TC-1372..1378:** derived package manifest and registry pins.
-- [ ] **TC-1379..1382:** NFR-017 gates.
+- [x] **TC-1342, TC-1343, TC-1385:** schema diffs and vendored provenance.
+- [x] **TC-1336..1341, TC-1383, TC-1337:** manifest block load, rejections, pack.
+- [x] **TC-1360..1366:** `data_schema` references, failures, offline resolution.
+- [x] **TC-1344..1352, TC-1384:** Properties mapping fixtures and cell grammars.
+- [x] **TC-1353..1359:** Invariants/Operations fixtures.
+- [x] **TC-1367..1371, TC-1386:** legacy forms, promotion guard, sweep.
+- [x] **TC-1372..1378:** derived package manifest and registry pins.
+- [x] **TC-1379..1382:** NFR-017 gates.
 
 ### Entrance Criteria
 

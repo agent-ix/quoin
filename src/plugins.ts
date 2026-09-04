@@ -19,6 +19,14 @@ import {
   readModuleSemantic,
   type SemanticModule,
 } from "./semantic/manifest.js";
+import {
+  registryPin,
+  resolveImports,
+  validatePackageManifest,
+  writePackageManifest,
+  derivePackageManifest,
+  type SemanticRegistryPin,
+} from "./semantic/package-manifest.js";
 
 export type { InstalledPlugin } from "@agent-ix/ts-plugin-kit";
 
@@ -89,6 +97,7 @@ export function installPlugin(
     );
     const duplicate = duplicatePackageDiagnostic(result.module, others);
     if (duplicate) diagnostics.push(duplicate);
+    diagnostics.push(...resolveImports(result.module, others));
   }
   if (hasErrors(diagnostics)) {
     removePlugin(installed.name, home);
@@ -96,7 +105,48 @@ export function installPlugin(
       `module ${installed.name} rejected: semantic contract violations\n${formatDiagnostics(diagnostics)}`,
     );
   }
+  if (result.module) {
+    // FR-075: derive the package manifest and pin export digests in the registry.
+    const manifest = derivePackageManifest(result.module);
+    const verdict = validatePackageManifest(manifest);
+    if (!verdict.valid) {
+      removePlugin(installed.name, home);
+      throw new Error(
+        `module ${installed.name} rejected: derived package manifest is invalid\n${JSON.stringify(verdict.errors)}`,
+      );
+    }
+    writePackageManifest(result.module, manifest);
+    pinSemantic(installed.name, registryPin(result.module), home);
+  }
   return installed;
+}
+
+/** Record the FR-075 pin under the plugin's registry entry. */
+function pinSemantic(
+  name: string,
+  pin: SemanticRegistryPin,
+  home: string,
+): void {
+  const reg = readRegistry(registryPath(home));
+  writeRegistry(registryPath(home), {
+    schemaVersion: 1,
+    plugins: reg.plugins.map((plugin) =>
+      plugin.name === name
+        ? ({ ...plugin, semantic: pin } as InstalledPlugin)
+        : plugin,
+    ),
+  });
+}
+
+/** The FR-075 pin recorded for an installed module, if any. */
+export function semanticPin(
+  name: string,
+  home = ixHome(),
+): SemanticRegistryPin | undefined {
+  const plugin = readRegistry(registryPath(home)).plugins.find(
+    (entry) => entry.name === name,
+  ) as (InstalledPlugin & { semantic?: SemanticRegistryPin }) | undefined;
+  return plugin?.semantic;
 }
 
 /** Every installed module that declares a semantic block, in sorted root order. */

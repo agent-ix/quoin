@@ -39,3 +39,14 @@ export {
   type PropertiesForm,
   type SweepReport,
 } from "./sweep.js";
+export {
+  SEMANTIC_CORE_PACKAGE,
+  derivePackageManifest,
+  exportDigests,
+  registryPin,
+  resolveImports,
+  typeIdentity,
+  validatePackageManifest,
+  writePackageManifest,
+  type SemanticRegistryPin,
+} from "./package-manifest.js";
