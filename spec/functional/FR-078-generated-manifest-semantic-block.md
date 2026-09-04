@@ -58,19 +58,19 @@ is a claim nobody checked.
 
 | ID | Constraint | Type | Validation |
 |----|------------|------|------------|
-| FR-078-CON-1 | The rendered `semantic` block SHALL carry no key outside the set FR-070 admits. | Contract | Test (TC-1357) |
+| FR-078-CON-1 | The rendered `semantic` block SHALL carry no key outside the set FR-070 admits. | Contract | Test (TC-1417) |
 | FR-078-CON-2 | A `digest` value SHALL be produced only by the emit command, never authored by hand. | Integrity | Inspection |
 
 ## Acceptance Criteria
 
 | ID | Criteria | Verification |
 |----|----------|--------------|
-| FR-078-AC-1 | Each rendered variant's `semantic` block carries the nine keys above and no other, and validates against Quoin's vendored module-manifest schema. | Test (TC-1357) |
-| FR-078-AC-2 | Every exported type of every rendered variant has `data_schema: {schema, digest}` whose digest equals the SHA-256 of the file named. | Test (TC-1350) |
-| FR-078-AC-3 | No exported type of any rendered variant carries `data_schema: {type: object}`. | Test (TC-1349) |
-| FR-078-AC-4 | Regenerating the manifest digests preserves every comment and YAML anchor in the rendered manifest. | Test (TC-1359) |
-| FR-078-AC-5 | A mixed-variant rendering with two imported modules yields two `semantic.imports` entries carrying exact versions; an object-variant rendering with none yields `imports: {}`. | Test (TC-1342) |
-| FR-078-AC-6 | The rendered `semantic.exports` and the rendered manifest's declared type names are the same set. | Test (TC-1357) |
+| FR-078-AC-1 | Each rendered variant's `semantic` block carries the nine keys above and no other, and validates against Quoin's vendored module-manifest schema. | Test (TC-1417) |
+| FR-078-AC-2 | Every exported type of every rendered variant has `data_schema: {schema, digest}` whose digest equals the SHA-256 of the file named. | Test (TC-1410) |
+| FR-078-AC-3 | No exported type of any rendered variant carries `data_schema: {type: object}`. | Test (TC-1409) |
+| FR-078-AC-4 | Regenerating the manifest digests preserves every comment and YAML anchor in the rendered manifest. | Test (TC-1419) |
+| FR-078-AC-5 | A mixed-variant rendering with two imported modules yields two `semantic.imports` entries carrying exact versions; an object-variant rendering with none yields `imports: {}`. | Test (TC-1402) |
+| FR-078-AC-6 | The rendered `semantic.exports` and the rendered manifest's declared type names are the same set. | Test (TC-1417) |
 
 ## Dependencies
 

@@ -62,21 +62,21 @@ and the mapping declarations it needs.
 | ID | Constraint | Type | Validation |
 |----|------------|------|------------|
 | FR-076-CON-1 | The template SHALL contain no copy of the schema emitter, the Quire runtime, or the semantic-core grammar; each is reached as a versioned dependency. | Architecture | Inspection |
-| FR-076-CON-2 | The rendered repository SHALL contain no `.npmrc`; `@agent-ix` resolves from the user-level npm configuration. | Packaging | Test (TC-1352) |
+| FR-076-CON-2 | The rendered repository SHALL contain no `.npmrc`; `@agent-ix` resolves from the user-level npm configuration. | Packaging | Test (TC-1412) |
 
 ## Acceptance Criteria
 
 | ID | Criteria | Verification |
 |----|----------|--------------|
-| FR-076-AC-1 | Rendering with `module_kind: object` produces a repository whose manifest declares `object_types` and no `artifact_types`. | Test (TC-1340) |
-| FR-076-AC-2 | Rendering with `module_kind: artifact` produces a repository whose manifest declares `artifact_types` and no `object_types`. | Test (TC-1341) |
-| FR-076-AC-3 | Rendering with `module_kind: mixed` produces a repository declaring both sections and a non-empty `semantic.imports`. | Test (TC-1342) |
-| FR-076-AC-4 | Every file byte-identical across the three rendered variants exists exactly once in the template source. | Test (TC-1343) |
-| FR-076-AC-5 | `license: MIT` aborts rendering naming `MIT`; the default renders the AGPL-3.0-or-later text. | Test (TC-1344) |
-| FR-076-AC-6 | `module_kind: hybrid` aborts rendering naming `hybrid`. | Test (TC-1345) |
-| FR-076-AC-7 | `imported_modules: ["agent-ix/spec-objects-business"]` aborts naming the entry; `agent-ix/spec-objects-business@0.3.0` renders. | Test (TC-1346) |
-| FR-076-AC-8 | `generated_targets: ["go"]` aborts naming `go`. | Test (TC-1347) |
-| FR-076-AC-9 | No rendered variant contains an `.npmrc` file at any depth. | Test (TC-1352) |
+| FR-076-AC-1 | Rendering with `module_kind: object` produces a repository whose manifest declares `object_types` and no `artifact_types`. | Test (TC-1400) |
+| FR-076-AC-2 | Rendering with `module_kind: artifact` produces a repository whose manifest declares `artifact_types` and no `object_types`. | Test (TC-1401) |
+| FR-076-AC-3 | Rendering with `module_kind: mixed` produces a repository declaring both sections and a non-empty `semantic.imports`. | Test (TC-1402) |
+| FR-076-AC-4 | Every file byte-identical across the three rendered variants exists exactly once in the template source. | Test (TC-1403) |
+| FR-076-AC-5 | `license: MIT` aborts rendering naming `MIT`; the default renders the AGPL-3.0-or-later text. | Test (TC-1404) |
+| FR-076-AC-6 | `module_kind: hybrid` aborts rendering naming `hybrid`. | Test (TC-1405) |
+| FR-076-AC-7 | `imported_modules: ["agent-ix/spec-objects-business"]` aborts naming the entry; `agent-ix/spec-objects-business@0.3.0` renders. | Test (TC-1406) |
+| FR-076-AC-8 | `generated_targets: ["go"]` aborts naming `go`. | Test (TC-1407) |
+| FR-076-AC-9 | No rendered variant contains an `.npmrc` file at any depth. | Test (TC-1412) |
 
 ## Dependencies
 

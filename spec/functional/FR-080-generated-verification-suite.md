@@ -54,19 +54,19 @@ precisely the environment that would skip.
 
 | ID | Constraint | Type | Validation |
 |----|------------|------|------------|
-| FR-080-CON-1 | The rendered suite SHALL skip no test for a missing tool, recording an expected engine gap as a strict expected failure with a paired control. | Coverage | Test (TC-1367) |
+| FR-080-CON-1 | The rendered suite SHALL skip no test for a missing tool, recording an expected engine gap as a strict expected failure with a paired control. | Coverage | Test (TC-1427) |
 | FR-080-CON-2 | The rendered `dev-quire` command SHALL name the tracking issue for the missing published wheel. | Traceability | Inspection |
 
 ## Acceptance Criteria
 
 | ID | Criteria | Verification |
 |----|----------|--------------|
-| FR-080-AC-1 | With the engine absent, the rendered suite fails and its message names the provisioning command and the tracking issue. | Test (TC-1368) |
-| FR-080-AC-2 | With the engine present but without `extract_semantic`, the rendered suite fails naming the missing capability. | Test (TC-1369) |
-| FR-080-AC-3 | A run of the rendered suite reports zero skipped tests. | Test (TC-1367) |
-| FR-080-AC-4 | The rendered package metadata declares no dependency on the engine. | Test (TC-1370) |
-| FR-080-AC-5 | The rendered gate runs spec validation, lint, the schema drift check, and the suite, and fails when any one fails. | Test (TC-1371) |
-| FR-080-AC-6 | The rendered test configuration turns warnings into errors. | Test (TC-1370) |
+| FR-080-AC-1 | With the engine absent, the rendered suite fails and its message names the provisioning command and the tracking issue. | Test (TC-1428) |
+| FR-080-AC-2 | With the engine present but without `extract_semantic`, the rendered suite fails naming the missing capability. | Test (TC-1429) |
+| FR-080-AC-3 | A run of the rendered suite reports zero skipped tests. | Test (TC-1427) |
+| FR-080-AC-4 | The rendered package metadata declares no dependency on the engine. | Test (TC-1430) |
+| FR-080-AC-5 | The rendered gate runs spec validation, lint, the schema drift check, and the suite, and fails when any one fails. | Test (TC-1431) |
+| FR-080-AC-6 | The rendered test configuration turns warnings into errors. | Test (TC-1430) |
 
 ## Dependencies
 

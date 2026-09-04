@@ -60,18 +60,18 @@ that produced the bytes.
 | ID | Constraint | Type | Validation |
 |----|------------|------|------------|
 | FR-077-CON-1 | An emitted schema SHALL NOT be hand-edited; a wrong schema is corrected in `typespec/main.tsp` and re-emitted. | Integrity | Inspection |
-| FR-077-CON-2 | The rendered emitted schemas SHALL be `{type: object}` for no exported type. | Completeness | Test (TC-1349) |
+| FR-077-CON-2 | The rendered emitted schemas SHALL be `{type: object}` for no exported type. | Completeness | Test (TC-1409) |
 
 ## Acceptance Criteria
 
 | ID | Criteria | Verification |
 |----|----------|--------------|
-| FR-077-AC-1 | In each rendered variant, running the emit command writes one schema per exported type plus `toolchain.json`, and every `$ref` resolves. | Test (TC-1348) |
-| FR-077-AC-2 | No emitted schema of any rendered variant is the placeholder `{"type": "object"}` contract. | Test (TC-1349) |
-| FR-077-AC-3 | Running the emit command twice over an unchanged tree produces byte-identical output. | Test (TC-1353) |
-| FR-077-AC-4 | Check mode exits zero on the committed output and non-zero, naming the file, after one emitted byte is changed. | Test (TC-1354) |
-| FR-077-AC-5 | Editing the manifest `version` without editing the `@jsonSchema` base fails the emit command naming both values, and no committed file changes. | Test (TC-1355) |
-| FR-077-AC-6 | The rendered `main.tsp` imports `@agent-ix/semantic-core` and redeclares no model the grammar already declares. | Test (TC-1356) |
+| FR-077-AC-1 | In each rendered variant, running the emit command writes one schema per exported type plus `toolchain.json`, and every `$ref` resolves. | Test (TC-1408) |
+| FR-077-AC-2 | No emitted schema of any rendered variant is the placeholder `{"type": "object"}` contract. | Test (TC-1409) |
+| FR-077-AC-3 | Running the emit command twice over an unchanged tree produces byte-identical output. | Test (TC-1413) |
+| FR-077-AC-4 | Check mode exits zero on the committed output and non-zero, naming the file, after one emitted byte is changed. | Test (TC-1414) |
+| FR-077-AC-5 | Editing the manifest `version` without editing the `@jsonSchema` base fails the emit command naming both values, and no committed file changes. | Test (TC-1415) |
+| FR-077-AC-6 | The rendered `main.tsp` imports `@agent-ix/semantic-core` and redeclares no model the grammar already declares. | Test (TC-1416) |
 
 ## Dependencies
 

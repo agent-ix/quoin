@@ -53,18 +53,18 @@ marker the archetype admits, carrying the reason.
 
 | ID | Constraint | Type | Validation |
 |----|------------|------|------------|
-| FR-082-CON-1 | The rendered Test Matrix `Status` vocabulary SHALL be the one `spec_artifacts_process/manifest.yaml` declares, not a superset. | Contract | Test (TC-1380) |
+| FR-082-CON-1 | The rendered Test Matrix `Status` vocabulary SHALL be the one `spec_artifacts_process/manifest.yaml` declares, not a superset. | Contract | Test (TC-1440) |
 | FR-082-CON-2 | The rendered spec tree SHALL describe the rendered module, carrying no requirement copied from an existing module repository. | Independence | Inspection |
 
 ## Acceptance Criteria
 
 | ID | Criteria | Verification |
 |----|----------|--------------|
-| FR-082-AC-1 | `quire validate` over each rendered variant's `spec/**/*.md` exits zero with no error diagnostic. | Test (TC-1379) |
-| FR-082-AC-2 | No rendered Test Matrix cell carries `⚠️`, and every `Status` cell matches the archetype's pattern. | Test (TC-1380) |
-| FR-082-AC-3 | Every rendered Test Matrix row that is not covered carries `🚧` and a reason. | Test (TC-1381) |
-| FR-082-AC-4 | Every rendered Test Matrix row traces to an acceptance criterion that exists in the rendered spec. | Test (TC-1382) |
-| FR-082-AC-5 | Each rendered variant carries the master-requirements root, the stakeholder, usecase, functional, and non-functional folders, and their indexes. | Test (TC-1383) |
+| FR-082-AC-1 | `quire validate` over each rendered variant's `spec/**/*.md` exits zero with no error diagnostic. | Test (TC-1439) |
+| FR-082-AC-2 | No rendered Test Matrix cell carries `⚠️`, and every `Status` cell matches the archetype's pattern. | Test (TC-1440) |
+| FR-082-AC-3 | Every rendered Test Matrix row that is not covered carries `🚧` and a reason. | Test (TC-1441) |
+| FR-082-AC-4 | Every rendered Test Matrix row traces to an acceptance criterion that exists in the rendered spec. | Test (TC-1442) |
+| FR-082-AC-5 | Each rendered variant carries the master-requirements root, the stakeholder, usecase, functional, and non-functional folders, and their indexes. | Test (TC-1443) |
 
 ## Dependencies
 

@@ -63,21 +63,21 @@ counterpart whose frontmatter names the expected refusal and the reason.
 
 | ID | Constraint | Type | Validation |
 |----|------------|------|------------|
-| FR-079-CON-1 | A rendered skeleton section SHALL carry substantive content, not a `TODO` or an ellipsis placeholder. | Completeness | Test (TC-1351) |
-| FR-079-CON-2 | One rendered artifact SHALL carry one Properties form; the alternate is a separate file. | Contract | Test (TC-1362) |
+| FR-079-CON-1 | A rendered skeleton section SHALL carry substantive content, not a `TODO` or an ellipsis placeholder. | Completeness | Test (TC-1411) |
+| FR-079-CON-2 | One rendered artifact SHALL carry one Properties form; the alternate is a separate file. | Contract | Test (TC-1422) |
 
 ## Acceptance Criteria
 
 | ID | Criteria | Verification |
 |----|----------|--------------|
-| FR-079-AC-1 | Every exported type of every rendered variant has a skeleton with the exact typed-table header and at least one row. | Test (TC-1360) |
-| FR-079-AC-2 | Every rendered skeleton has a `sysml`-fence alternate declaring the same field names, types, and multiplicities. | Test (TC-1361) |
-| FR-079-AC-3 | Every rendered skeleton carries at least one `ocl` fence under its own `### <clauseId>` heading. | Test (TC-1363) |
-| FR-079-AC-4 | Every rendered negative fixture is refused, and each is refused for its own distinct reason. | Test (TC-1364) |
-| FR-079-AC-5 | The rendered legacy-form fixture validates with exactly one legacy warning and zero errors. | Test (TC-1365) |
-| FR-079-AC-6 | A document carrying both Properties forms is refused. | Test (TC-1362) |
-| FR-079-AC-7 | No rendered skeleton contains a placeholder body; each section's content is substantive. | Test (TC-1351) |
-| FR-079-AC-8 | For an artifact or mixed rendering, every property of every exported model has exactly one mapping entry, and every golden record round-trips from its skeleton. | Test (TC-1366) |
+| FR-079-AC-1 | Every exported type of every rendered variant has a skeleton with the exact typed-table header and at least one row. | Test (TC-1420) |
+| FR-079-AC-2 | Every rendered skeleton has a `sysml`-fence alternate declaring the same field names, types, and multiplicities. | Test (TC-1421) |
+| FR-079-AC-3 | Every rendered skeleton carries at least one `ocl` fence under its own `### <clauseId>` heading. | Test (TC-1423) |
+| FR-079-AC-4 | Every rendered negative fixture is refused, and each is refused for its own distinct reason. | Test (TC-1424) |
+| FR-079-AC-5 | The rendered legacy-form fixture validates with exactly one legacy warning and zero errors. | Test (TC-1425) |
+| FR-079-AC-6 | A document carrying both Properties forms is refused. | Test (TC-1422) |
+| FR-079-AC-7 | No rendered skeleton contains a placeholder body; each section's content is substantive. | Test (TC-1411) |
+| FR-079-AC-8 | For an artifact or mixed rendering, every property of every exported model has exactly one mapping entry, and every golden record round-trips from its skeleton. | Test (TC-1426) |
 
 ## Dependencies
 

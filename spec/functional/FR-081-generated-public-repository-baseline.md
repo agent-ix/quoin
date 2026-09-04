@@ -57,21 +57,21 @@ typo, and it is the defect a copied cookiecutter default produces.
 
 | ID | Constraint | Type | Validation |
 |----|------------|------|------------|
-| FR-081-CON-1 | The rendered repository SHALL declare no dependency by a local path reference, and no dependency with a version upper bound. | Packaging | Test (TC-1372) |
-| FR-081-CON-2 | The rendered wheel and the rendered npm tarball SHALL carry the same manifest bytes, schema bytes, and skeleton bytes. | Consistency | Test (TC-1373) |
+| FR-081-CON-1 | The rendered repository SHALL declare no dependency by a local path reference, and no dependency with a version upper bound. | Packaging | Test (TC-1432) |
+| FR-081-CON-2 | The rendered wheel and the rendered npm tarball SHALL carry the same manifest bytes, schema bytes, and skeleton bytes. | Consistency | Test (TC-1433) |
 
 ## Acceptance Criteria
 
 | ID | Criteria | Verification |
 |----|----------|--------------|
-| FR-081-AC-1 | Every rendered variant carries the full AGPL-3.0-or-later text and one SPDX identifier across every declaration. | Test (TC-1374) |
-| FR-081-AC-2 | Every rendered variant carries CODEOWNERS, AGENTS.md, CLAUDE.md, README, contribution and security guidance, .gitignore, .gitattributes, and a Makefile. | Test (TC-1375) |
-| FR-081-AC-3 | Building the rendered Python package and packing the rendered npm package yield archives carrying the same manifest, schemas, and skeletons. | Test (TC-1373) |
-| FR-081-AC-4 | No rendered file matches a credential, token, or private-registry publication pattern. | Test (TC-1376) |
-| FR-081-AC-5 | The rendered npm publication target is the public registry and the package access is public. | Test (TC-1376) |
-| FR-081-AC-6 | The rendered release workflows carry no publish step of their own and are triggered manually. | Test (TC-1377) |
-| FR-081-AC-7 | The rendered catalog document names the Quoin catalog file and the tracking project to add the module to. | Test (TC-1378) |
-| FR-081-AC-8 | No rendered dependency declaration uses a local path reference or a version upper bound. | Test (TC-1372) |
+| FR-081-AC-1 | Every rendered variant carries the full AGPL-3.0-or-later text and one SPDX identifier across every declaration. | Test (TC-1434) |
+| FR-081-AC-2 | Every rendered variant carries CODEOWNERS, AGENTS.md, CLAUDE.md, README, contribution and security guidance, .gitignore, .gitattributes, and a Makefile. | Test (TC-1435) |
+| FR-081-AC-3 | Building the rendered Python package and packing the rendered npm package yield archives carrying the same manifest, schemas, and skeletons. | Test (TC-1433) |
+| FR-081-AC-4 | No rendered file matches a credential, token, or private-registry publication pattern. | Test (TC-1436) |
+| FR-081-AC-5 | The rendered npm publication target is the public registry and the package access is public. | Test (TC-1436) |
+| FR-081-AC-6 | The rendered release workflows carry no publish step of their own and are triggered manually. | Test (TC-1437) |
+| FR-081-AC-7 | The rendered catalog document names the Quoin catalog file and the tracking project to add the module to. | Test (TC-1438) |
+| FR-081-AC-8 | No rendered dependency declaration uses a local path reference or a version upper bound. | Test (TC-1432) |
 
 ## Dependencies
 
