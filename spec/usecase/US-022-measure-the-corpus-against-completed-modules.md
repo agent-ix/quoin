@@ -25,8 +25,11 @@ requirements it drives.
 
 ## Context
 
-Nine module repositories completed their semantic contracts in the current wave, and a tenth
-(`engineering-assurance`) is pinned in the catalog. Each of them declares vocabulary, JSON Schemas
+Nine module repositories completed their semantic contracts in the current wave —
+`spec-objects-business`, `spec-artifacts-iso`, `spec-objects-enterprise`, `spec-objects-safety`,
+`spec-objects-architecture`, `spec-objects-operational`, `spec-artifacts-app`,
+`spec-objects-security` and `spec-artifacts-process` — and a tenth, `engineering-assurance`, is
+pinned in the catalog beside them. Each of them declares vocabulary, JSON Schemas
 and — for the artifact-type modules — Markdown mappings that say how an authored document becomes a
 record. None of that has ever been run against the documents the ecosystem actually contains.
 

@@ -12,12 +12,13 @@ relationships:
 
 ## Statement
 
-Every numeric figure in the published measurement report SHALL be traceable to the result artifact,
-population and method that produced it.
+The corpus measurement SHALL emit, for every numeric figure its published report prints, a
+machine-readable reference naming the result artifact and field that figure was taken from.
 
 ## Scope
 
-- Applies to: every number in the human-readable report, including counts, rates and shares.
+- Applies to: every number in the human-readable report, including counts, rates and shares, and the
+  figure index of FR-090 that binds them to their artifacts.
 - Operational context: a reader who did not run the measurement, reading the report months later.
 
 ## Rationale

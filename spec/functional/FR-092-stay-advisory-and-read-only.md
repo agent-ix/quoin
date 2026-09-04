@@ -33,7 +33,7 @@ measurement that can write is a measurement that can destroy the evidence it was
 ## Behavior
 
 - The measurement SHALL exit with status `0` when it completes, whatever the measured rates and
-  failure counts are.
+  finding counts are.
 - The measurement SHALL open every corpus file and every module file for reading only.
 - The measurement SHALL write its artifacts only under the declared output directory.
 - If the declared output directory is inside an enumerated corpus repository other than the one the
@@ -56,8 +56,9 @@ measurement that can write is a measurement that can destroy the evidence it was
 | FR-092-AC-3 | Every file written by a run is under the declared output directory. | Test (TC-1553) |
 | FR-092-AC-4 | A declared output directory inside another enumerated corpus repository is refused before any file is read. | Test (TC-1554) |
 | FR-092-AC-5 | The run manifest carries a SHA-256 digest for every artifact written. | Test (TC-1555) |
-| FR-092-AC-6 | A measurement that cannot resolve its declared module set exits non-zero, distinguishing a tool failure from a measured failure. | Test (TC-1556) |
+| FR-092-AC-6 | A measurement that cannot resolve a module of its declared required module set exits non-zero before reading a corpus document, distinguishing a tool failure from a measured failure. | Test (TC-1556) |
+| FR-092-AC-7 | The refs, index and working tree of every enumerated corpus repository and every module repository compare equal before and after a run. | Test (TC-1583) |
 
 ## Dependencies
 
-- **Upstream**: [FR-084](./FR-084-pin-and-enumerate-the-governed-corpus.md)
+- **Downstream**: [FR-084](./FR-084-pin-and-enumerate-the-governed-corpus.md) and [FR-085](./FR-085-resolve-the-completed-module-set.md) run inside this envelope.

@@ -12,14 +12,18 @@ relationships:
 
 ## Statement
 
-The corpus measurement SHALL complete a full run over the pinned governed corpus within 15 minutes of
-wall-clock time on a developer workstation while opening every corpus file read-only.
+The corpus measurement SHALL complete a full run over a governed corpus of up to 30,000 documents in
+300 repositories within 15 minutes of wall-clock time on the declared reference machine.
 
 ## Scope
 
-- Applies to: a full run over the whole pinned corpus, on one machine, from a warm filesystem cache.
+- Applies to: a full run over a governed corpus of up to 30,000 documents in 300 repositories, from a
+  warm filesystem cache.
+- Reference machine: the declared reference machine recorded in the run manifest — the run records
+  its own CPU count, total memory and platform so a measurement taken elsewhere is comparable rather
+  than merely quoted.
 - Operational context: the campaign owner re-running the census inside a working session, repeatedly,
-  until every failure has an owner.
+  until every finding has an owner.
 
 ## Rationale
 
@@ -30,7 +34,7 @@ gets run once, and a census run once is a census whose unknowns never get resolv
 
 | Metric | Target | Threshold | Method |
 | --- | --- | --- | --- |
-| Full-corpus wall-clock run time | 5 minutes | 15 minutes | Timed run over the pinned corpus |
+| Full-corpus wall-clock run time | 5 minutes | 15 minutes | Timed run over a corpus of the declared size on the recorded reference machine |
 | Peak resident memory | 1 GiB | 4 GiB | Resident-set sampling during a timed run |
 | Corpus files opened for writing | 0 files | 0 files | Syscall-level or wrapper-level open-mode assertion |
 
@@ -43,7 +47,7 @@ an open-mode assertion records the mode of every corpus and module file the meas
 
 | ID | Criteria | Verification |
 | --- | --- | --- |
-| NFR-022-AC-1 | A full run over the pinned corpus completes within 15 minutes of wall-clock time. | Test (TC-1560) |
+| NFR-022-AC-1 | A full run over a corpus of up to 30,000 documents in 300 repositories completes within 15 minutes of wall-clock time, and the run manifest records the machine it was measured on. | Test (TC-1560) |
 | NFR-022-AC-2 | Peak resident memory during a full run stays at or below 4 GiB. | Test (TC-1561) |
 | NFR-022-AC-3 | Every corpus and module file the measurement opens is opened in a read-only mode. | Test (TC-1562) |
 
