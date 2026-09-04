@@ -117,6 +117,7 @@ index; the files are authoritative.
 - [StR-004](./stakeholder/StR-004-governed-workflows.md) — review/matrix/planning run as governed workflows.
 - [StR-005](./stakeholder/StR-005-offline-reproducible.md) — authoring stays offline-safe and reproducible.
 - [StR-006](./stakeholder/StR-006-current-via-self-update.md) — keep quoin current with one command.
+- [StR-008](./stakeholder/StR-008-conforming-module-repositories-by-construction.md) — new semantic-module repositories conform by construction.
 
 ### User Stories
 
@@ -136,6 +137,7 @@ index; the files are authoritative.
 - [US-014](./usecase/US-014-audit-default-module-semantic-fit.md) — audit the semantic fit of the complete default-module corpus.
 - [US-015](./usecase/US-015-assess-intervention-experiments.md) — assess intervention experiments without overstating causality.
 - [US-020](./usecase/US-020-declare-a-semantic-module-contract-once.md) — declare a module's semantic contract once against the shared grammar.
+- [US-021](./usecase/US-021-generate-a-conforming-semantic-module-repository.md) — generate a semantic-module repository that already conforms to the contract.
 
 ### Functional Requirements
 
@@ -246,6 +248,17 @@ index; the files are authoritative.
 - [FR-074](./functional/FR-074-legacy-authoring-forms.md) — legacy authoring forms at `warning` with a declared migration.
 - [FR-075](./functional/FR-075-semantic-package-exports-and-locks.md) — package exports, imports, locks, and generated coordinates.
 
+**Semantic module cookiecutter (issue #307)**
+
+- [FR-076](./functional/FR-076-semantic-module-template-variants.md) — artifact, object, and mixed variants from one maintained template core.
+- [FR-077](./functional/FR-077-generated-schema-emission.md) — generated TypeSpec source and deterministic schema emission.
+- [FR-078](./functional/FR-078-generated-manifest-semantic-block.md) — generated manifest `semantic` block and reference-form `data_schema`.
+- [FR-079](./functional/FR-079-generated-skeletons-and-fixtures.md) — generated skeletons, mappings, and compatibility fixtures.
+- [FR-080](./functional/FR-080-generated-verification-suite.md) — generated suite treats the engine as a hard dependency.
+- [FR-081](./functional/FR-081-generated-public-repository-baseline.md) — generated public repository and packaging baseline.
+- [FR-082](./functional/FR-082-generated-governance-tree.md) — generated governance tree validates as rendered.
+- [FR-083](./functional/FR-083-template-render-self-tests.md) — template render self-tests and module conformance gate.
+
 ### Non-Functional Requirements
 
 - [NFR-001](./non-functional/NFR-001-idempotent-offline-reconcile.md) — default-module reconciliation is idempotent and offline-safe.
@@ -261,6 +274,8 @@ index; the files are authoritative.
 - [NFR-015](./non-functional/NFR-015-complete-reproducible-semantic-audit.md) — audit completeness and reproducibility.
 - [NFR-016](./non-functional/NFR-016-read-only-semantic-audit.md) — read-only, non-disruptive auditing.
 - [NFR-017](./non-functional/NFR-017-non-disruptive-manifest-evolution.md) — semantic manifest evolution invalidates no current manifest or artifact.
+- [NFR-018](./non-functional/NFR-018-rendered-output-hygiene.md) — rendered module repositories carry no generation residue.
+- [NFR-019](./non-functional/NFR-019-deterministic-rendering.md) — rendering and schema regeneration are byte-deterministic.
 
 ### Integration Tests
 
