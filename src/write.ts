@@ -24,6 +24,8 @@ export interface AuthoringContract {
   moduleRoot: string;
   schemaPath?: string;
   skeletonPath?: string;
+  /** FR-070: the module's semantic package and semantic-core version, when declared. */
+  semantic?: { package: string; semanticCore: string; dataSchema?: string };
 }
 
 export interface AuthoringPack {
@@ -71,7 +73,7 @@ export function createAuthoringPack(
           .join(", ")}`,
       );
     }
-    return toAuthoringContract(entry);
+    return toAuthoringContract(entry, catalog);
   });
 
   const { org, source } = resolveOrg(repoRoot, { flag: options.org });
@@ -106,6 +108,13 @@ export function formatAuthoringPack(pack: AuthoringPack): string {
     lines.push(`  module_root: ${type.moduleRoot}`);
     if (type.skeletonPath) lines.push(`  skeleton: ${type.skeletonPath}`);
     if (type.schemaPath) lines.push(`  schema: ${type.schemaPath}`);
+    if (type.semantic) {
+      lines.push(
+        `  semantic: ${type.semantic.package} (semantic-core ${type.semantic.semanticCore})`,
+      );
+      if (type.semantic.dataSchema)
+        lines.push(`  data_schema: ${type.semantic.dataSchema}`);
+    }
     if (!type.skeletonPath && !type.schemaPath) {
       lines.push("  contract: manifest only");
     }
@@ -119,7 +128,18 @@ export function formatAuthoringPack(pack: AuthoringPack): string {
   return lines.join("\n");
 }
 
-function toAuthoringContract(entry: SpecCatalogEntry): AuthoringContract {
+function toAuthoringContract(
+  entry: SpecCatalogEntry,
+  catalog: SpecCatalog,
+): AuthoringContract {
+  const module = catalog.modules.find((m) => m.name === entry.moduleName);
+  const block = module?.semantic;
+  const reference =
+    entry.dataSchema &&
+    typeof entry.dataSchema === "object" &&
+    "schema" in (entry.dataSchema as Record<string, unknown>)
+      ? String((entry.dataSchema as Record<string, unknown>).schema)
+      : undefined;
   return {
     name: entry.name,
     kind: entry.kind,
@@ -127,6 +147,15 @@ function toAuthoringContract(entry: SpecCatalogEntry): AuthoringContract {
     moduleRoot: entry.moduleRoot,
     ...(entry.schemaPath ? { schemaPath: entry.schemaPath } : {}),
     ...(entry.skeletonPath ? { skeletonPath: entry.skeletonPath } : {}),
+    ...(block
+      ? {
+          semantic: {
+            package: block.package,
+            semanticCore: block.semantic_core,
+            ...(reference ? { dataSchema: reference } : {}),
+          },
+        }
+      : {}),
   };
 }
 

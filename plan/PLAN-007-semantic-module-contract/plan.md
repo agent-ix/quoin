@@ -117,14 +117,14 @@ Fixtures live under `tests/fixtures/semantic-module/`.
 
 ## Task File Mapping
 
-| Task | Track | Owns (references) | Verified by (verifies) | Status |
-|---|---|---|---|---|
-| TASK-039 | A | FR-070, FR-073 | TC-1342, TC-1343, TC-1385 | done |
-| TASK-040 | A | FR-070, FR-073 | TC-1336..1341, TC-1360..1366, TC-1383 | todo |
-| TASK-041 | B | FR-071, FR-072, FR-074 | TC-1344..1359, TC-1367..1371, TC-1384, TC-1386 | todo |
-| TASK-042 | A | FR-075 | TC-1372..1378 | todo |
-| TASK-043 | C | NFR-017 | TC-1379..1382 | todo |
-| TASK-044 | Gate | US-020 | — | todo |
+| Task     | Track | Owns (references)      | Verified by (verifies)                         | Status |
+| -------- | ----- | ---------------------- | ---------------------------------------------- | ------ |
+| TASK-039 | A     | FR-070, FR-073         | TC-1342, TC-1343, TC-1385                      | done   |
+| TASK-040 | A     | FR-070, FR-073         | TC-1336..1341, TC-1360..1366, TC-1383          | todo   |
+| TASK-041 | B     | FR-071, FR-072, FR-074 | TC-1344..1359, TC-1367..1371, TC-1384, TC-1386 | todo   |
+| TASK-042 | A     | FR-075                 | TC-1372..1378                                  | todo   |
+| TASK-043 | C     | NFR-017                | TC-1379..1382                                  | todo   |
+| TASK-044 | Gate  | US-020                 | —                                              | todo   |
 
 ## Coordination Rules
 

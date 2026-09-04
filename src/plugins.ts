@@ -12,6 +12,13 @@ import {
 } from "@agent-ix/ts-plugin-kit";
 
 import { filamentModulesDir, ixHome } from "./catalog.js";
+import {
+  duplicatePackageDiagnostic,
+  formatDiagnostics,
+  hasErrors,
+  readModuleSemantic,
+  type SemanticModule,
+} from "./semantic/manifest.js";
 
 export type { InstalledPlugin } from "@agent-ix/ts-plugin-kit";
 
@@ -66,7 +73,45 @@ export function installPlugin(
   source: string,
   home = ixHome(),
 ): InstalledPlugin {
-  return installEntry({ source: parseSourceArg(source) }, installOptions(home));
+  const installed = installEntry(
+    { source: parseSourceArg(source) },
+    installOptions(home),
+  );
+  // FR-070 / FR-073: a module whose `semantic` block or `data_schema`
+  // references are outside the contract is rejected at install, not loaded
+  // as an empty model. The block is optional; modules without it are untouched.
+  const root = join(filamentModulesDir(home), installed.name);
+  const result = readModuleSemantic(root);
+  const diagnostics = [...result.diagnostics];
+  if (result.module) {
+    const others = installedSemanticModules(home).filter(
+      (module) => module.name !== installed.name,
+    );
+    const duplicate = duplicatePackageDiagnostic(result.module, others);
+    if (duplicate) diagnostics.push(duplicate);
+  }
+  if (hasErrors(diagnostics)) {
+    removePlugin(installed.name, home);
+    throw new Error(
+      `module ${installed.name} rejected: semantic contract violations\n${formatDiagnostics(diagnostics)}`,
+    );
+  }
+  return installed;
+}
+
+/** Every installed module that declares a semantic block, in sorted root order. */
+export function installedSemanticModules(home = ixHome()): SemanticModule[] {
+  const modulesDir = filamentModulesDir(home);
+  const roots = listPlugins(home)
+    .map((plugin) => join(modulesDir, plugin.name))
+    .filter((root) => existsSync(join(root, "manifest.yaml")))
+    .sort();
+  const modules: SemanticModule[] = [];
+  for (const root of roots) {
+    const result = readModuleSemantic(root);
+    if (result.module) modules.push(result.module);
+  }
+  return modules;
 }
 
 export function listPlugins(home = ixHome()): InstalledPlugin[] {
