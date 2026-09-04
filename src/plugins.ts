@@ -81,10 +81,32 @@ export function installPlugin(
   source: string,
   home = ixHome(),
 ): InstalledPlugin {
+  // Snapshot the registry so a rejected re-install restores the previous
+  // version instead of leaving the module absent (the install overwrites the
+  // materialized copy before the semantic block can be read).
+  const before = readRegistry(registryPath(home)).plugins;
   const installed = installEntry(
     { source: parseSourceArg(source) },
     installOptions(home),
   );
+  const previous = before.find((plugin) => plugin.name === installed.name);
+  const rollback = (): void => {
+    if (previous) {
+      installEntry(
+        {
+          name: previous.name,
+          source: previous.source,
+          ...(previous.ref ? { ref: previous.ref } : {}),
+        },
+        installOptions(home),
+      );
+      const restored = readModuleSemantic(root);
+      if (restored.module)
+        pinSemantic(previous.name, registryPin(restored.module), home);
+    } else {
+      removePlugin(installed.name, home);
+    }
+  };
   // FR-070 / FR-073: a module whose `semantic` block or `data_schema`
   // references are outside the contract is rejected at install, not loaded
   // as an empty model. The block is optional; modules without it are untouched.
@@ -100,7 +122,7 @@ export function installPlugin(
     diagnostics.push(...resolveImports(result.module, others));
   }
   if (hasErrors(diagnostics)) {
-    removePlugin(installed.name, home);
+    rollback();
     throw new Error(
       `module ${installed.name} rejected: semantic contract violations\n${formatDiagnostics(diagnostics)}`,
     );
@@ -110,7 +132,7 @@ export function installPlugin(
     const manifest = derivePackageManifest(result.module);
     const verdict = validatePackageManifest(manifest);
     if (!verdict.valid) {
-      removePlugin(installed.name, home);
+      rollback();
       throw new Error(
         `module ${installed.name} rejected: derived package manifest is invalid\n${JSON.stringify(verdict.errors)}`,
       );

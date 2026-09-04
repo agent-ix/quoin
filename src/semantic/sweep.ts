@@ -81,21 +81,11 @@ export function classifyProperties(markdown: string): {
       continue;
     }
     if (/^\s*\|/.test(text)) {
-      const previous = blocks[blocks.length - 1];
-      if (
-        !previous ||
-        previous.kind !== "table" ||
-        previous.line + blocks.length < i
-      ) {
-        // A new table starts on a header row followed by a separator row.
-        const next = lines[i + 1] ?? "";
-        if (/^\s*\|?\s*:?-{3,}/.test(next)) {
-          blocks.push({
-            kind: "table",
-            line: i + 1,
-            header: parseHeader(text),
-          });
-        }
+      // A table starts on a header row followed by a separator row; every
+      // other pipe line is a continuation row and adds no block.
+      const next = lines[i + 1] ?? "";
+      if (/^\s*\|?\s*:?-{3,}/.test(next)) {
+        blocks.push({ kind: "table", line: i + 1, header: parseHeader(text) });
       }
       continue;
     }

@@ -203,6 +203,32 @@ describe("FR-070 semantic manifest block", () => {
     }
   });
 
+  // Trace: FR-070-AC-3
+  it("restores the previously installed version when a re-install is rejected", () => {
+    const good = moduleCopy("stable");
+    installPlugin(`path:${good}`, home);
+    const bad = join(scratch, "stable-bad");
+    cpSync(good, bad, { recursive: true });
+    const manifestPath = join(bad, "manifest.yaml");
+    const manifest = parseYaml(readFileSync(manifestPath, "utf8")) as Json;
+    (manifest.semantic as Json).foo = 1;
+    writeFileSync(manifestPath, stringifyYaml(manifest));
+    expect(() => installPlugin(`path:${bad}`, home)).toThrow(
+      /semantic\.unknown-key/,
+    );
+    expect(listPlugins(home).map((p) => p.name)).toEqual(["stable"]);
+    const restored = readFileSync(
+      join(home, "filament", "modules", "stable", "manifest.yaml"),
+      "utf8",
+    );
+    expect(restored).not.toContain("foo");
+    expect(
+      readModuleSemantic(
+        join(home, "filament", "modules", "stable"),
+      ).diagnostics.filter((d) => d.severity === "error"),
+    ).toEqual([]);
+  });
+
   it("readSemanticBlock returns no diagnostics and no module for a manifest without the block", () => {
     expect(readSemanticBlock({ name: "m", version: "0.1.0" }, scratch)).toEqual(
       { diagnostics: [] },
