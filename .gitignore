@@ -18,3 +18,8 @@ evals/.bin/
 !.npmrc
 builtin-modules/
 reports/
+
+# Rendered variants are written to a temporary directory by the template gate
+# and removed afterwards. This entry catches a run interrupted before its
+# `finally`, so a stray tree never reaches a commit.
+quoin-semantic-module-*/

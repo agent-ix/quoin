@@ -1,0 +1,84 @@
+# Markdown → declaration-record mappings for {{ cookiecutter.repo_name }}.
+#
+# The manifest says WHICH section yields a property; this file says HOW the
+# section's Markdown becomes the record's value, and names the golden record that
+# fixes the answer. The two are authored separately and cross-checked by the
+# suite on purpose: a mapping derived from the manifest would agree with it by
+# construction and would check nothing.
+#
+# Every property of every exported model has exactly one entry here, and every
+# entry names a property its model declares.
+version: 1
+
+kinds:
+  - frontmatter
+  - typed-table
+  - sysml-fence
+  - ocl-clause
+
+golden_records:
+  source_identity: "ix://{{ cookiecutter.org }}/{{ cookiecutter.repo_name }}/skeletons"
+  path_prefix: {{ cookiecutter.package_name }}/skeletons
+  serialization: "sorted keys, two-space indent, trailing newline"
+
+models:
+{%- if cookiecutter.module_kind in ("artifact", "mixed") %}
+  Note:
+    schema: schemas/Note.json
+    skeleton: skeletons/note.md
+    alternate: skeletons/note.sysml.md
+    example: examples/Note.record.json
+    authority: markdown
+    round_trip: derived
+    properties:
+      fields:
+        kind: typed-table
+        source:
+          section: Properties
+          columns: [Field, Type, Multiplicity, Constraints]
+        cells:
+          Field: {property: name}
+          Type: {property: type.target}
+          Multiplicity: {property: type.multiplicity}
+          Constraints: {property: constraints}
+        alternate_kind: sysml-fence
+        lossless: false
+      clauses:
+        kind: ocl-clause
+        source:
+          section: Invariants
+          clause_heading_level: 3
+          language: ocl
+          sidecar: clauseText
+        lossless: true
+{%- endif %}
+{%- if cookiecutter.module_kind == "mixed" %}
+  Element:
+    schema: schemas/Element.json
+    skeleton: skeletons/element.md
+    alternate: skeletons/element.sysml.md
+    example: examples/Element.record.json
+    authority: markdown
+    round_trip: derived
+    properties:
+      fields:
+        kind: typed-table
+        source:
+          section: Properties
+          columns: [Field, Type, Multiplicity, Constraints]
+        cells:
+          Field: {property: name}
+          Type: {property: type.target}
+          Multiplicity: {property: type.multiplicity}
+          Constraints: {property: constraints}
+        alternate_kind: sysml-fence
+        lossless: false
+      clauses:
+        kind: ocl-clause
+        source:
+          section: Invariants
+          clause_heading_level: 3
+          language: ocl
+          sidecar: clauseText
+        lossless: true
+{%- endif %}

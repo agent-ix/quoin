@@ -1,0 +1,30 @@
+{
+  "org": "agent-ix",
+  "repo_name": "spec-objects-example",
+  "module_name": "{{ cookiecutter.repo_name }}",
+  "package_name": "{{ cookiecutter.repo_name.replace('-', '_') }}",
+  "description": "Filament Module: example semantic types.",
+  "module_kind": [
+    "object",
+    "artifact",
+    "mixed"
+  ],
+  "author": "Agent IX",
+  "email": "agents@agent-ix.dev",
+  "version": "0.1.0",
+  "license": "AGPL-3.0-or-later",
+  "semantic_core_version": "0.1.0",
+  "typespec_version": "1.15.0",
+  "python_version": "3.13",
+  "generated_targets": "json-schema,markdown",
+  "imported_modules": "",
+  "nav_category_slug": "example",
+  "nav_category_label": "Example",
+  "nav_category_icon": "Boxes",
+  "nav_category_order": "90",
+  "quire_engine_floor": "0.46.0",
+  "_copy_without_render": [
+    "LICENSE",
+    ".github/workflows/*.yml"
+  ]
+}

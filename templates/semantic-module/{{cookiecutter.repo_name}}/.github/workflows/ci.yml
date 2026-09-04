@@ -1,0 +1,12 @@
+name: CI
+
+# Manual dispatch only, matching the rest of the module fleet: the suite needs a
+# Quire wheel no index a repository may depend on serves yet
+# (agent-ix/quire-rs#392), so an automatic push trigger would go red on every
+# commit for a reason nobody in the pull request can fix.
+on:
+  workflow_dispatch:
+
+jobs:
+  ci:
+    uses: agent-ix/python-service-actions/.github/workflows/lib-ci.yml@main

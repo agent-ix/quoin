@@ -97,3 +97,11 @@ tests/fixtures/semantic-module/vendored/
 # scripts/refresh-semantic-core-schemas.mjs, never with prettier.
 src/semantic/schemas/
 tests/fixtures/semantic-module/
+
+# The semantic-module cookiecutter (quoin FR-076, issue #307). Its files are
+# Jinja templates, not JavaScript, TypeScript, JSON or YAML: prettier parses
+# `{{ cookiecutter.x }}` inside a JSON value as a syntax error and rewrites
+# `{%- if -%}` blocks into something cookiecutter no longer renders. The
+# rendered repository formats ITSELF — `make format` in the generated tree runs
+# black and ruff — which is where formatting belongs.
+templates/semantic-module/

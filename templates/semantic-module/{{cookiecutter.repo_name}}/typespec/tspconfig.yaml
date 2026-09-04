@@ -1,0 +1,18 @@
+# The official @typespec/json-schema emitter, and only it.
+#
+# `emitter-output-dir` is always overridden by scripts/generate-schemas.mjs with
+# a scratch directory, so a stray `tsp compile` never writes over the committed
+# schemas.
+#
+# `seal-object-schemas` is deliberately NOT set. Sealing is per-model here: a
+# declaration model seals itself with `...Record<never>`, while the open marker
+# models used as `@contains` predicates must stay open — a sealed marker matches
+# nothing, because the field it is meant to recognise also carries a name and a
+# type. Sealing globally made every identity check fail, silently, in a way that
+# reads as a broken skeleton.
+emit:
+  - "@typespec/json-schema"
+options:
+  "@typespec/json-schema":
+    file-type: json
+    emitter-output-dir: "{output-dir}"

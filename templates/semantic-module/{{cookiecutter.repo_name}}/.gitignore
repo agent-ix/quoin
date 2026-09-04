@@ -1,0 +1,25 @@
+__pycache__/
+*.pyc
+dist/
+*.egg-info/
+.idea
+.venv/
+node_modules
+.pnpm-store
+.pytest_cache/
+.ruff_cache/
+.coverage
+*.log
+report.json
+
+# npm packaging — staged by scripts/stage-npm.mjs at pack time so the published
+# tarball root IS the module root. The source of truth is the inner
+# {{ cookiecutter.package_name }}/ directory; these copies are never committed.
+# Leaving one behind puts a manifest.yaml at the repository root, which every
+# Filament tool then discovers as a second module.
+/manifest.yaml
+/schemas/
+/skeletons/
+/mappings.yaml
+/examples/
+*.tgz

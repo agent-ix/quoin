@@ -1,0 +1,47 @@
+# The external commands this repository invokes, and the version each must be at
+# or above. One file, because a floor recorded in three places is three floors.
+#
+# Every command below is invoked by something in this repository's gate. When one
+# is absent or older than its floor, the invoking command FAILS naming the
+# command, the floor and the install step — it never reports success for a check
+# it did not run.
+commands:
+  - name: node
+    minimum: "20.0.0"
+    detect: "node --version"
+    install: "https://nodejs.org — or the organization's Node toolchain"
+    used_by: "make schemas, make schemas-check"
+  - name: npm
+    minimum: "10.0.0"
+    detect: "npm --version"
+    install: "ships with Node"
+    used_by: "make install, make pack"
+  - name: poetry
+    minimum: "1.8.0"
+    detect: "poetry --version"
+    install: "https://python-poetry.org/docs/#installation"
+    used_by: "make install, make test, make lint"
+  - name: quire
+    minimum: "0.31.0"
+    detect: "quire --version"
+    install: "npm i -g @agent-ix/quire-cli"
+    used_by: "make validate"
+  - name: "@typespec/compiler"
+    minimum: "{{ cookiecutter.typespec_version }}"
+    detect: "node_modules/@typespec/compiler/package.json"
+    install: "make install"
+    used_by: "make schemas, make schemas-check"
+  - name: "@agent-ix/semantic-core"
+    minimum: "{{ cookiecutter.semantic_core_version }}"
+    detect: "node_modules/@agent-ix/semantic-core/package.json"
+    install: "make install"
+    used_by: "make schemas, make test"
+  - name: "quire (python wheel)"
+    minimum: "{{ cookiecutter.quire_engine_floor }}"
+    detect: "python -c 'import quire'"
+    install: "make dev-quire"
+    used_by: "make test"
+    note: >-
+      Not a declared dependency: no index this repository may commit against
+      serves a wheel exposing `extract_semantic` (agent-ix/quire-rs#392). The
+      suite fails rather than skips without it.
