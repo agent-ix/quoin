@@ -97,7 +97,11 @@ function listNames(yaml: string, block: string): string[] {
     // A new top-level key ends the block. List items sit at column zero in
     // these manifests, so indentation cannot be the terminator.
     if (/^[a-z_]+:/.test(line)) break;
-    const m = /^-\s+name:\s*["']?([A-Za-z0-9_.-]+)/.exec(line);
+    // Manifests disagree on indentation: the spec-objects/* modules put list
+    // items at column zero, engineering-assurance indents them two spaces.
+    // Requiring either one reads zero types from half the ecosystem and
+    // reports that as a clean run.
+    const m = /^\s*-\s+name:\s*["']?([A-Za-z0-9_.-]+)/.exec(line);
     if (m) names.push(m[1]);
   }
   return names;
