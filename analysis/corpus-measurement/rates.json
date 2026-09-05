@@ -1,0 +1,32 @@
+{
+	"structural": {
+		"id": "structural",
+		"numerator": 7370,
+		"denominator": 7501,
+		"unit": "documents",
+		"populationId": "pop:cafc3ffdf1b73a29",
+		"methodId": "engine-structural-v1",
+		"excluded": {
+			"could-not-run": 0,
+			"measured": 7501,
+			"out-of-model": 86,
+			"unreadable": 0,
+			"contested": 0
+		},
+		"value": 0.9825356619117451
+	},
+	"formCensus": {
+		"id": "properties-form",
+		"numerator": 1,
+		"denominator": 155,
+		"unit": "documents",
+		"populationId": "pop:cafc3ffdf1b73a29",
+		"methodId": "properties-form-census-v1",
+		"excluded": {
+			"not-applicable": 7432
+		},
+		"value": 0.0064516129032258064
+	},
+	"unstableRepositories": 0,
+	"dirtyRepositories": 3
+}

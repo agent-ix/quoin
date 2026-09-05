@@ -1,0 +1,21 @@
+{
+	"corpusId": "ix-workspace-2026-09-04",
+	"populationId": "pop:cafc3ffdf1b73a29",
+	"startedAt": "2026-09-05T01:48:10.068Z",
+	"finishedAt": "2026-09-05T01:48:50.043Z",
+	"durationMs": 39975,
+	"environment": {
+		"cpuCount": 20,
+		"totalMemoryBytes": 67344384000,
+		"platform": "linux",
+		"arch": "x64"
+	},
+	"artifacts": {
+		"corpus.json": "sha256:3d4130e9d9d7d390fe660f9a628e1efed5ac93b061b6965c189b8e3c2d50cc49",
+		"modules.json": "sha256:52a6437fd890debdbc401f0b964859cd7b443c1b5db150abf03cfeb3dd8060d6",
+		"states.json": "sha256:a37c93c162f3ff7aa2a010a8acd9e71786d0ff8ef77a5f5665bbf143cf87d801",
+		"census.json": "sha256:238028aeafb8f1ae1e686d240052ccb2a5c42a6876fb46debc67d2f0719962e9",
+		"rates.json": "sha256:b7dd47b182efd2ed25641692d8d648b466dfe456faabba59fbd5091247f7f816",
+		"findings.json": "sha256:a552df4bc1a03ed6f79f0cd2a84c609e8c0fd98893f1f3f66b4ec4100a17bfc6"
+	}
+}

@@ -138,6 +138,7 @@ index; the files are authoritative.
 - [US-015](./usecase/US-015-assess-intervention-experiments.md) — assess intervention experiments without overstating causality.
 - [US-020](./usecase/US-020-declare-a-semantic-module-contract-once.md) — declare a module's semantic contract once against the shared grammar.
 - [US-021](./usecase/US-021-generate-a-conforming-semantic-module-repository.md) — generate a semantic-module repository that already conforms to the contract.
+- [US-022](./usecase/US-022-measure-the-corpus-against-completed-modules.md) — measure the governed corpus against the completed module schemas before promotion.
 
 ### Functional Requirements
 
@@ -258,6 +259,15 @@ index; the files are authoritative.
 - [FR-081](./functional/FR-081-generated-public-repository-baseline.md) — generated public repository and packaging baseline.
 - [FR-082](./functional/FR-082-generated-governance-tree.md) — generated governance tree validates as rendered.
 - [FR-083](./functional/FR-083-template-render-self-tests.md) — template render self-tests and module conformance gate.
+- [FR-084](./functional/FR-084-pin-and-enumerate-the-governed-corpus.md) — pin and enumerate the governed corpus.
+- [FR-085](./functional/FR-085-resolve-the-completed-module-set.md) — resolve the completed module set and its contract surfaces.
+- [FR-086](./functional/FR-086-assign-one-measurement-state-per-document.md) — assign exactly one measurement state to every corpus document.
+- [FR-087](./functional/FR-087-evaluate-declared-markdown-mappings.md) — evaluate declared Markdown mappings and validate the extracted record.
+- [FR-088](./functional/FR-088-measure-the-l3-properties-representation.md) — measure the L3 Properties representation of every measured document.
+- [FR-089](./functional/FR-089-partition-every-failure.md) — partition every failure with an owner and a disposition.
+- [FR-090](./functional/FR-090-publish-rates-with-unit-population-and-method.md) — publish every rate with its unit, population and method.
+- [FR-091](./functional/FR-091-account-for-known-tool-defects.md) — account for known tool defects as cited, distinct states.
+- [FR-092](./functional/FR-092-stay-advisory-and-read-only.md) — stay advisory and read-only over the corpus.
 
 ### Non-Functional Requirements
 
@@ -277,6 +287,9 @@ index; the files are authoritative.
 - [NFR-018](./non-functional/NFR-018-rendered-output-hygiene.md) — rendered module repositories carry no generation residue.
 - [NFR-019](./non-functional/NFR-019-deterministic-rendering.md) — rendering and schema regeneration are byte-deterministic.
 - [NFR-020](./non-functional/NFR-020-declared-toolchain-floors.md) — every external command has a declared floor and a named absent-tool diagnostic.
+- [NFR-021](./non-functional/NFR-021-reproducible-corpus-measurement.md) — reproducible corpus measurement.
+- [NFR-022](./non-functional/NFR-022-bounded-read-only-measurement-run.md) — bounded, read-only measurement run.
+- [NFR-023](./non-functional/NFR-023-figures-carry-their-provenance.md) — published figures carry their provenance.
 
 ### Integration Tests
 

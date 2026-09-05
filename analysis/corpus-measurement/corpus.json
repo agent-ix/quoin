@@ -1,0 +1,2336 @@
+{
+	"corpusId": "ix-workspace-2026-09-04",
+	"workspaceRoot": "/home/peter/dev",
+	"exclusionVocabulary": [
+		"node_modules",
+		".git",
+		"dist",
+		"target",
+		".venv",
+		"__pycache__"
+	],
+	"repositories": [
+		{
+			"path": "/home/peter/dev/agent-cli-daemon",
+			"origin": "https://github.com/agent-ix/agent-cli-daemon.git",
+			"commit": "594e4fb9f37e3242114b924293718a5807bf5ee4",
+			"clean": true,
+			"stable": true,
+			"documents": 45
+		},
+		{
+			"path": "/home/peter/dev/agent-config-cookiecutter",
+			"origin": "https://github.com/agent-ix/agent-config-cookiecutter.git",
+			"commit": "7feeaf345c4c7f8b1bda9c3bdfef27881f6a854e",
+			"clean": true,
+			"stable": true,
+			"documents": 12
+		},
+		{
+			"path": "/home/peter/dev/agent-config-loader",
+			"origin": "https://github.com/agent-ix/agent-config-loader.git",
+			"commit": "5abadbb4cf0d744f819e08f68a28eeb33557c690",
+			"clean": true,
+			"stable": true,
+			"documents": 16
+		},
+		{
+			"path": "/home/peter/dev/agent-config-models",
+			"origin": "https://github.com/agent-ix/agent-config-models.git",
+			"commit": "3c531656c481638f8e7b305de6291ae2c67f9a29",
+			"clean": true,
+			"stable": true,
+			"documents": 27
+		},
+		{
+			"path": "/home/peter/dev/agent-duncan",
+			"origin": "https://github.com/agent-ix/agent-duncan.git",
+			"commit": "f3112b347602a67df37970ffa59e54b581607c81",
+			"clean": true,
+			"stable": true,
+			"documents": 109
+		},
+		{
+			"path": "/home/peter/dev/agent-forge",
+			"origin": "https://github.com/agent-ix/agent-forge.git",
+			"commit": "3c2f6f29b7378bb770bbed94caa2a3c735ad7e38",
+			"clean": true,
+			"stable": true,
+			"documents": 1
+		},
+		{
+			"path": "/home/peter/dev/agent-ix-docs",
+			"origin": "git@github.com:agent-ix/agent-ix-docs.git",
+			"commit": "43a1eea8ed1efaab61e913338e889fc1e6482a17",
+			"clean": true,
+			"stable": true,
+			"documents": 3
+		},
+		{
+			"path": "/home/peter/dev/auth",
+			"origin": "https://github.com/agent-ix/auth.git",
+			"commit": "b84177649e8e3801f6076e1adfe48b2c06ebf2e4",
+			"clean": true,
+			"stable": true,
+			"documents": 82
+		},
+		{
+			"path": "/home/peter/dev/auth-fastapi",
+			"origin": "git@github.com:agent-ix/auth-fastapi.git",
+			"commit": "8ebc815d969a002b335bc18e1d10e777123707e7",
+			"clean": true,
+			"stable": true,
+			"documents": 63
+		},
+		{
+			"path": "/home/peter/dev/auth-py",
+			"origin": "git@github.com:agent-ix/auth-py.git",
+			"commit": "789f438604304d57b11da81dfa9df3a737206407",
+			"clean": true,
+			"stable": true,
+			"documents": 32
+		},
+		{
+			"path": "/home/peter/dev/auth-service",
+			"origin": "git@github.com:agent-ix/auth-service.git",
+			"commit": "47abe942a1a3b35bc280d052dad3b0b6b050e29c",
+			"clean": true,
+			"stable": true,
+			"documents": 139
+		},
+		{
+			"path": "/home/peter/dev/auth-settings-react",
+			"origin": "https://github.com/agent-ix/auth-settings-react.git",
+			"commit": "30f9beed957c17be8a4ec9b044d2c7a9e8d74933",
+			"clean": true,
+			"stable": true,
+			"documents": 20
+		},
+		{
+			"path": "/home/peter/dev/build-chain",
+			"origin": "https://github.com/agent-ix/build-chain.git",
+			"commit": "a02ef1c3bbe8c36c40f5fc297dd687a17ab80eb0",
+			"clean": true,
+			"stable": true,
+			"documents": 37
+		},
+		{
+			"path": "/home/peter/dev/catalog-mcp-ui",
+			"origin": "https://github.com/agent-ix/catalog-mcp-ui.git",
+			"commit": "a716704c5a0021ea18f3712f7215fd2f272dade6",
+			"clean": true,
+			"stable": true,
+			"documents": 3
+		},
+		{
+			"path": "/home/peter/dev/catalog-service",
+			"origin": "https://github.com/agent-ix/catalog-service.git",
+			"commit": "527341f5a3e7fe2ca7c256b57c22c8073c1d1302",
+			"clean": true,
+			"stable": true,
+			"documents": 56
+		},
+		{
+			"path": "/home/peter/dev/chat-input",
+			"origin": "https://github.com/agent-ix/chat-input.git",
+			"commit": "4b88065ee504cb767276fec52311bf54675ef200",
+			"clean": true,
+			"stable": true,
+			"documents": 39
+		},
+		{
+			"path": "/home/peter/dev/chat-markdown-renderer",
+			"origin": "https://github.com/agent-ix/chat-markdown-renderer.git",
+			"commit": "b45f70cf376f839b0b2e40ad0b4073b0b7600bb8",
+			"clean": true,
+			"stable": true,
+			"documents": 21
+		},
+		{
+			"path": "/home/peter/dev/chat-window",
+			"origin": "https://github.com/agent-ix/chat-window.git",
+			"commit": "a14ed06d4d270e2b3451712c40598bcdbd3c019b",
+			"clean": true,
+			"stable": true,
+			"documents": 27
+		},
+		{
+			"path": "/home/peter/dev/cli-agent-evals",
+			"origin": "https://github.com/agent-ix/cli-agent-evals.git",
+			"commit": "51f98940646893123a92dbef68ee4690a1fdb65b",
+			"clean": true,
+			"stable": true,
+			"documents": 11
+		},
+		{
+			"path": "/home/peter/dev/cloud-manager",
+			"origin": "https://github.com/agent-ix/cloud-manager.git",
+			"commit": "ea03fa9e642937c611208c0e3d2979f5ea42cf55",
+			"clean": true,
+			"stable": true,
+			"documents": 51
+		},
+		{
+			"path": "/home/peter/dev/cloud-manager-app",
+			"origin": "https://github.com/agent-ix/cloud-manager-app.git",
+			"commit": "5b5535e2f4a993d168c641b0d830ff2d6df415ca",
+			"clean": true,
+			"stable": true,
+			"documents": 24
+		},
+		{
+			"path": "/home/peter/dev/cloud-manager-integrations",
+			"origin": "https://github.com/agent-ix/cloud-manager-integrations.git",
+			"commit": "956da5a853c830f337547cb197667312cf01c62a",
+			"clean": true,
+			"stable": true,
+			"documents": 3
+		},
+		{
+			"path": "/home/peter/dev/cloud-manager-ui",
+			"origin": "https://github.com/agent-ix/cloud-manager-ui.git",
+			"commit": "e920f9fa7e7e91b53dd72e94fb85a6f8e84c357d",
+			"clean": true,
+			"stable": true,
+			"documents": 19
+		},
+		{
+			"path": "/home/peter/dev/cloud-manager-ui-components",
+			"origin": "https://github.com/agent-ix/cloud-manager-ui-components.git",
+			"commit": "25eddf79046a0284580302b7d97937b456212f09",
+			"clean": true,
+			"stable": true,
+			"documents": 6
+		},
+		{
+			"path": "/home/peter/dev/cloud-manager-ui-config",
+			"origin": "https://github.com/agent-ix/cloud-manager-ui-config.git",
+			"commit": "5cc793a44292451401ca27e5d2bd78cceb3c2ddc",
+			"clean": true,
+			"stable": true,
+			"documents": 11
+		},
+		{
+			"path": "/home/peter/dev/cloud-manager-ui-core",
+			"origin": "https://github.com/agent-ix/cloud-manager-ui-core.git",
+			"commit": "1e4ae51c0bebbcc170af1731956eabbc407b07f8",
+			"clean": true,
+			"stable": true,
+			"documents": 19
+		},
+		{
+			"path": "/home/peter/dev/cloud-manager-ui-dashboard",
+			"origin": "https://github.com/agent-ix/cloud-manager-ui-dashboard.git",
+			"commit": "9c1a859c110430bd3bb7692b3ade596f7781d163",
+			"clean": true,
+			"stable": true,
+			"documents": 13
+		},
+		{
+			"path": "/home/peter/dev/cloud-manager-ui-domain",
+			"origin": "https://github.com/agent-ix/cloud-manager-ui-domain.git",
+			"commit": "5f7198acf808029df262ed9d0d2d00535fb09137",
+			"clean": true,
+			"stable": true,
+			"documents": 11
+		},
+		{
+			"path": "/home/peter/dev/cloud-manager-ui-flow-editor",
+			"origin": "https://github.com/agent-ix/cloud-manager-ui-flow-editor.git",
+			"commit": "12c2797c6660933bfcdb56b929ce9a4c8c004135",
+			"clean": true,
+			"stable": true,
+			"documents": 11
+		},
+		{
+			"path": "/home/peter/dev/cloud-manager-ui-repos",
+			"origin": "https://github.com/agent-ix/cloud-manager-ui-repos.git",
+			"commit": "8b8da42a3c979802e65575f9f4c8d73fcb45aeea",
+			"clean": true,
+			"stable": true,
+			"documents": 9
+		},
+		{
+			"path": "/home/peter/dev/cloud-manager-ui-services",
+			"origin": "https://github.com/agent-ix/cloud-manager-ui-services.git",
+			"commit": "4b588c366df8d2bbe76d2c08cadd116db7ea13b3",
+			"clean": true,
+			"stable": true,
+			"documents": 14
+		},
+		{
+			"path": "/home/peter/dev/cloud-manager-ui-types",
+			"origin": "https://github.com/agent-ix/cloud-manager-ui-types.git",
+			"commit": "c9255b6895154b80db022626910296d91173324d",
+			"clean": true,
+			"stable": true,
+			"documents": 10
+		},
+		{
+			"path": "/home/peter/dev/cloudmanager-local-sync",
+			"origin": "https://github.com/agent-ix/cloudmanager-local-sync.git",
+			"commit": "084df9466ca4d2025849b168a1aa3b7236a3ed6e",
+			"clean": true,
+			"stable": true,
+			"documents": 77
+		},
+		{
+			"path": "/home/peter/dev/code-block-editor",
+			"origin": "https://github.com/agent-ix/code-block-editor.git",
+			"commit": "d10f0fd077d7eed607ff189bf8c2f3cfcb4084eb",
+			"clean": true,
+			"stable": true,
+			"documents": 14
+		},
+		{
+			"path": "/home/peter/dev/code-block-renderer",
+			"origin": "https://github.com/agent-ix/code-block-renderer.git",
+			"commit": "0d3d42d09b10eefccd3a63352a431d3b00680933",
+			"clean": true,
+			"stable": true,
+			"documents": 15
+		},
+		{
+			"path": "/home/peter/dev/code-diff-editor",
+			"origin": "https://github.com/agent-ix/code-diff-editor.git",
+			"commit": "b1e9c3a49540309bc3f20953e1ac07303c4dee75",
+			"clean": true,
+			"stable": true,
+			"documents": 14
+		},
+		{
+			"path": "/home/peter/dev/code-diff-renderer",
+			"origin": "https://github.com/agent-ix/code-diff-renderer.git",
+			"commit": "75649310531a8bfa31aaae96a2eac102090bba73",
+			"clean": true,
+			"stable": true,
+			"documents": 15
+		},
+		{
+			"path": "/home/peter/dev/coding-agent",
+			"origin": "https://github.com/agent-ix/coding-agent.git",
+			"commit": "81b92998d05d94f047dbf8aadaebecd3f85c8e87",
+			"clean": false,
+			"stable": true,
+			"documents": 1
+		},
+		{
+			"path": "/home/peter/dev/config-overlay",
+			"origin": "https://github.com/agent-ix/config-overlay.git",
+			"commit": "fec6f5bdecc2ba479940cd0ab994522583618b3c",
+			"clean": true,
+			"stable": true,
+			"documents": 36
+		},
+		{
+			"path": "/home/peter/dev/config-service",
+			"origin": "https://github.com/agent-ix/config-service.git",
+			"commit": "6de6cd98718a8c8b516434172fb9b2dd4fe18978",
+			"clean": true,
+			"stable": true,
+			"documents": 41
+		},
+		{
+			"path": "/home/peter/dev/cookiecutter-service",
+			"origin": "git@github.com:agent-ix/cookiecutter-service.git",
+			"commit": "32fcf68db3bb02a7fe8eb1d3abb2b0bbfc7ff19a",
+			"clean": true,
+			"stable": true,
+			"documents": 16
+		},
+		{
+			"path": "/home/peter/dev/core-web-ui",
+			"origin": "https://github.com/agent-ix/core-web-ui.git",
+			"commit": "676479ee446f546c835c9de78f05b0645a930be9",
+			"clean": true,
+			"stable": true,
+			"documents": 19
+		},
+		{
+			"path": "/home/peter/dev/data-store",
+			"origin": "https://github.com/agent-ix/data-store.git",
+			"commit": "fb4041933c92e22858fd1c8a588a90dca975349a",
+			"clean": true,
+			"stable": true,
+			"documents": 40
+		},
+		{
+			"path": "/home/peter/dev/deploy-app",
+			"origin": "https://github.com/agent-ix/deploy-app.git",
+			"commit": "0859307e2b87153a4a1b294c44bfa94e49be0f9b",
+			"clean": true,
+			"stable": true,
+			"documents": 14
+		},
+		{
+			"path": "/home/peter/dev/deploy-worker",
+			"origin": "https://github.com/agent-ix/deploy-worker.git",
+			"commit": "4432de6d5bd1639b4a592ce36bb2ff8dd683a064",
+			"clean": true,
+			"stable": true,
+			"documents": 36
+		},
+		{
+			"path": "/home/peter/dev/docker-actions",
+			"origin": "git@github.com:agent-ix/docker-actions.git",
+			"commit": "49b3a94815427ea1641efc799757eb24dbf87e43",
+			"clean": true,
+			"stable": true,
+			"documents": 3
+		},
+		{
+			"path": "/home/peter/dev/ecaz",
+			"origin": "https://github.com/agent-ix/ecaz.git",
+			"commit": "92d5d527ebcea13b4cfc4e49e691c720507dd938",
+			"clean": true,
+			"stable": true,
+			"documents": 263
+		},
+		{
+			"path": "/home/peter/dev/ecaz-landing",
+			"origin": "https://github.com/agent-ix/ecaz-landing.git",
+			"commit": "41e3b2da6b7c3cc41b3be29a49bbbbb81c4179fe",
+			"clean": true,
+			"stable": true,
+			"documents": 27
+		},
+		{
+			"path": "/home/peter/dev/engineering-assurance",
+			"origin": "https://github.com/agent-ix/engineering-assurance.git",
+			"commit": "ae50e13154f92f666fe2d469625efe2b889d2d75",
+			"clean": true,
+			"stable": true,
+			"documents": 47
+		},
+		{
+			"path": "/home/peter/dev/event-models",
+			"origin": "https://github.com/agent-ix/event-models.git",
+			"commit": "fe190fae3f7b113487818116231e120635e2e4fd",
+			"clean": true,
+			"stable": true,
+			"documents": 24
+		},
+		{
+			"path": "/home/peter/dev/event-monitor",
+			"origin": "https://github.com/agent-ix/event-monitor.git",
+			"commit": "28e5f2442fdc151ebe262583fa8e279edaeee012",
+			"clean": true,
+			"stable": true,
+			"documents": 25
+		},
+		{
+			"path": "/home/peter/dev/event-schema-registry",
+			"origin": "https://github.com/agent-ix/event-schema-registry.git",
+			"commit": "71ad36a003299d69833bdb8f9f429e53588eb08a",
+			"clean": true,
+			"stable": true,
+			"documents": 27
+		},
+		{
+			"path": "/home/peter/dev/fastapi-cookiecutter",
+			"origin": "git@github.com:agent-ix/fastapi-cookiecutter.git",
+			"commit": "a90babadb8291f990392998cc37b2f94353b963b",
+			"clean": true,
+			"stable": true,
+			"documents": 10
+		},
+		{
+			"path": "/home/peter/dev/fastapi-service",
+			"origin": "git@github.com:agent-ix/fastapi-service.git",
+			"commit": "eb2d34bf16fddae6c170e0789916b78497e1a779",
+			"clean": true,
+			"stable": true,
+			"documents": 18
+		},
+		{
+			"path": "/home/peter/dev/fastmcp-cookiecutter",
+			"origin": "https://github.com/agent-ix/fastmcp-cookiecutter.git",
+			"commit": "ee6939b3bf03d11769b7d3f2a6688cb33b157339",
+			"clean": true,
+			"stable": true,
+			"documents": 15
+		},
+		{
+			"path": "/home/peter/dev/faststream-worker",
+			"origin": "https://github.com/agent-ix/faststream-worker.git",
+			"commit": "1c6b06fe932ab71a2c8d31a2d52049b9cbc35d60",
+			"clean": true,
+			"stable": true,
+			"documents": 16
+		},
+		{
+			"path": "/home/peter/dev/faststream-worker-cookiecutter",
+			"origin": "https://github.com/agent-ix/faststream-worker-cookiecutter.git",
+			"commit": "650cfc040895aaff9266e7ddf02f11049e170828",
+			"clean": true,
+			"stable": true,
+			"documents": 3
+		},
+		{
+			"path": "/home/peter/dev/filament-analysis-worker",
+			"origin": "https://github.com/agent-ix/filament-analysis-worker.git",
+			"commit": "a29342e0e1086d59ac3356823daabf544f24f4a3",
+			"clean": true,
+			"stable": true,
+			"documents": 35
+		},
+		{
+			"path": "/home/peter/dev/filament-core-data",
+			"origin": "https://github.com/agent-ix/filament-core-data.git",
+			"commit": "65ea7fa6d4805752fff82d2cc2b7100eefe60bb8",
+			"clean": true,
+			"stable": true,
+			"documents": 205
+		},
+		{
+			"path": "/home/peter/dev/filament-core-service",
+			"origin": "https://github.com/agent-ix/filament-core-service.git",
+			"commit": "8f8181aa51423769f26179954447759de3348194",
+			"clean": true,
+			"stable": true,
+			"documents": 107
+		},
+		{
+			"path": "/home/peter/dev/filament-domain-events",
+			"origin": "https://github.com/agent-ix/filament-domain-events.git",
+			"commit": "80b7fcf6746680855a702a4fb01caa6d33ed3ebf",
+			"clean": true,
+			"stable": true,
+			"documents": 28
+		},
+		{
+			"path": "/home/peter/dev/filament-editor",
+			"origin": "https://github.com/agent-ix/filament-editor.git",
+			"commit": "4749b99f2a5e3f891354736460e1a01c152df347",
+			"clean": true,
+			"stable": true,
+			"documents": 35
+		},
+		{
+			"path": "/home/peter/dev/filament-editor-app",
+			"origin": "https://github.com/agent-ix/filament-editor-app.git",
+			"commit": "24247d11c786d3ac64dc073bc8b1c3afd83d18ac",
+			"clean": true,
+			"stable": true,
+			"documents": 60
+		},
+		{
+			"path": "/home/peter/dev/filament-editor-gateway",
+			"origin": "https://github.com/agent-ix/filament-editor-gateway.git",
+			"commit": "cdc230258511be5bd5b6b5aba0bfc5d156f227a3",
+			"clean": true,
+			"stable": true,
+			"documents": 46
+		},
+		{
+			"path": "/home/peter/dev/filament-editor-integration",
+			"origin": "https://github.com/agent-ix/filament-editor-integration.git",
+			"commit": "a226e0624ca1ad1b537297bfca73f655468b1dbf",
+			"clean": true,
+			"stable": true,
+			"documents": 26
+		},
+		{
+			"path": "/home/peter/dev/filament-editor-repos",
+			"origin": "https://github.com/agent-ix/filament-editor-repos.git",
+			"commit": "d37fded9e1d0f522ee941a17a4ee20106f3a7c56",
+			"clean": true,
+			"stable": true,
+			"documents": 11
+		},
+		{
+			"path": "/home/peter/dev/filament-editor-ui-catalog",
+			"origin": "https://github.com/agent-ix/filament-editor-ui-catalog.git",
+			"commit": "be76b8c4094489a7e02b07c88681d70af70bcd89",
+			"clean": true,
+			"stable": true,
+			"documents": 4
+		},
+		{
+			"path": "/home/peter/dev/filament-editor-ui-reviews",
+			"origin": "https://github.com/agent-ix/filament-editor-ui-reviews.git",
+			"commit": "18d43b3c562db3248dccc9a2d82130f2c9ca2750",
+			"clean": true,
+			"stable": true,
+			"documents": 4
+		},
+		{
+			"path": "/home/peter/dev/filament-ide",
+			"origin": "https://github.com/agent-ix/filament-ide.git",
+			"commit": "38ec5abb8d48808fb02b874d8f970e35f48f8417",
+			"clean": true,
+			"stable": true,
+			"documents": 192
+		},
+		{
+			"path": "/home/peter/dev/filament-ide-rs",
+			"origin": "git@github.com:agent-ix/filament-ide-rs.git",
+			"commit": "546e7943ee5a8fe552242cbb19d12aa902536652",
+			"clean": true,
+			"stable": true,
+			"documents": 278
+		},
+		{
+			"path": "/home/peter/dev/filament-landing",
+			"origin": "https://github.com/agent-ix/filament-landing.git",
+			"commit": "06431efc1af7652517a22bb95abd3172d65eebe7",
+			"clean": true,
+			"stable": true,
+			"documents": 3
+		},
+		{
+			"path": "/home/peter/dev/filament-parser-lib",
+			"origin": "https://github.com/agent-ix/filament-parser-lib.git",
+			"commit": "0ba45454e8d64d9605731ea1e9baba08b01c8cae",
+			"clean": true,
+			"stable": true,
+			"documents": 82
+		},
+		{
+			"path": "/home/peter/dev/filament-review-service",
+			"origin": "https://github.com/agent-ix/filament-review-service.git",
+			"commit": "68116a72658b89a2fc6df0302e5048d86e74bda7",
+			"clean": true,
+			"stable": true,
+			"documents": 35
+		},
+		{
+			"path": "/home/peter/dev/filament-standards",
+			"origin": "https://github.com/agent-ix/filament-standards.git",
+			"commit": "5594033b255512ed9e4bbf83f7b35d60fc54e1b4",
+			"clean": true,
+			"stable": true,
+			"documents": 43
+		},
+		{
+			"path": "/home/peter/dev/filament-ui",
+			"origin": "https://github.com/agent-ix/filament-ui.git",
+			"commit": "7ebfc1b0f237003f47667db40386b90e888a9aaf",
+			"clean": true,
+			"stable": true,
+			"documents": 48
+		},
+		{
+			"path": "/home/peter/dev/filament-ui-shared",
+			"origin": "https://github.com/agent-ix/filament-ui-shared.git",
+			"commit": "d3a28cb41e80ec6027ad46a259cec5227dae6e87",
+			"clean": true,
+			"stable": true,
+			"documents": 27
+		},
+		{
+			"path": "/home/peter/dev/filament-view-document",
+			"origin": "https://github.com/agent-ix/filament-view-document.git",
+			"commit": "c83cc77ee5b0cebcc34901c1e0e7a89e8be39f90",
+			"clean": true,
+			"stable": true,
+			"documents": 16
+		},
+		{
+			"path": "/home/peter/dev/filament-view-ecosystem",
+			"origin": "https://github.com/agent-ix/filament-view-ecosystem.git",
+			"commit": "a28b781d1632a56e3504dfda07aee2bebd9603e6",
+			"clean": false,
+			"stable": true,
+			"documents": 21
+		},
+		{
+			"path": "/home/peter/dev/filament-view-editor",
+			"origin": "https://github.com/agent-ix/filament-view-editor.git",
+			"commit": "46c6e415c0ad417f2e82db07ce934efbca3d6c5b",
+			"clean": true,
+			"stable": true,
+			"documents": 22
+		},
+		{
+			"path": "/home/peter/dev/filament-view-object",
+			"origin": "https://github.com/agent-ix/filament-view-object.git",
+			"commit": "bd85dd89e6f52829b1c9f028bb41464d3b5751ca",
+			"clean": true,
+			"stable": true,
+			"documents": 25
+		},
+		{
+			"path": "/home/peter/dev/filament-view-review",
+			"origin": "https://github.com/agent-ix/filament-view-review.git",
+			"commit": "2355b0591867b8ee93e692757f45a31fb226f697",
+			"clean": true,
+			"stable": true,
+			"documents": 26
+		},
+		{
+			"path": "/home/peter/dev/filament-view-standard",
+			"origin": "https://github.com/agent-ix/filament-view-standard.git",
+			"commit": "01feb632bed9919434b8bef38c7edf422d829599",
+			"clean": true,
+			"stable": true,
+			"documents": 8
+		},
+		{
+			"path": "/home/peter/dev/flowkit",
+			"origin": "git@github.com:agent-ix/flowkit.git",
+			"commit": "e911907c3d91eb3d71c2b5d84efeca03b7335094",
+			"clean": true,
+			"stable": true,
+			"documents": 25
+		},
+		{
+			"path": "/home/peter/dev/frame",
+			"origin": "git@github.com:agent-ix/frame.git",
+			"commit": "b60bfb8ae5e5f889904a9b51f2423ac004c2adac",
+			"clean": true,
+			"stable": true,
+			"documents": 3
+		},
+		{
+			"path": "/home/peter/dev/gateway-bff-contract",
+			"origin": "https://github.com/agent-ix/gateway-bff-contract.git",
+			"commit": "2aba9211b19391c6d4e913b6cd68cea512521b3c",
+			"clean": true,
+			"stable": true,
+			"documents": 14
+		},
+		{
+			"path": "/home/peter/dev/git-actions",
+			"origin": "git@github.com:agent-ix/git-actions.git",
+			"commit": "a69bbf9497ea0dd6952bbb3666f9cfbd08396b82",
+			"clean": true,
+			"stable": true,
+			"documents": 3
+		},
+		{
+			"path": "/home/peter/dev/github-models",
+			"origin": "git@github.com:agent-ix/github-models.git",
+			"commit": "4436cf90dbd4e6978bfd3dc57c3538cec2851535",
+			"clean": true,
+			"stable": true,
+			"documents": 15
+		},
+		{
+			"path": "/home/peter/dev/github-projects",
+			"origin": "https://github.com/agent-ix/github-projects.git",
+			"commit": "bbc6f208def509ac840c3232b76eb56100ee5aa6",
+			"clean": true,
+			"stable": true,
+			"documents": 17
+		},
+		{
+			"path": "/home/peter/dev/github-skills",
+			"origin": "https://github.com/agent-ix/github-skills.git",
+			"commit": "c4d9c4f4d164e9bc41cc2a0bbf32004dcc39315d",
+			"clean": true,
+			"stable": true,
+			"documents": 7
+		},
+		{
+			"path": "/home/peter/dev/glitchtip-mcp",
+			"origin": "https://github.com/agent-ix/glitchtip-mcp.git",
+			"commit": "b24689713b020a5b74ef032fd01af7560244a17e",
+			"clean": true,
+			"stable": true,
+			"documents": 20
+		},
+		{
+			"path": "/home/peter/dev/helm-charts",
+			"origin": "https://github.com/agent-ix/helm-charts.git",
+			"commit": "2cfc9819db59235bd56da2d6c6fd3b4829070472",
+			"clean": true,
+			"stable": true,
+			"documents": 31
+		},
+		{
+			"path": "/home/peter/dev/identity",
+			"origin": "git@github.com:agent-ix/identity.git",
+			"commit": "d74588991a813f8963f1a7b8cb957a57f0630dc8",
+			"clean": true,
+			"stable": true,
+			"documents": 142
+		},
+		{
+			"path": "/home/peter/dev/ix-agent-browser-control",
+			"origin": "https://github.com/agent-ix/ix-agent-browser-control.git",
+			"commit": "affc399e0c3b5c19a03eeef0baba1abb5f235506",
+			"clean": true,
+			"stable": true,
+			"documents": 30
+		},
+		{
+			"path": "/home/peter/dev/ix-agent-canvas-ui",
+			"origin": "https://github.com/agent-ix/ix-agent-canvas-ui.git",
+			"commit": "6dcce9ba46bdecab081fb30213bcab7cfa4592d6",
+			"clean": true,
+			"stable": true,
+			"documents": 3
+		},
+		{
+			"path": "/home/peter/dev/ix-agent-chat",
+			"origin": "https://github.com/agent-ix/ix-agent-chat.git",
+			"commit": "7ae512841b845d7500cfb2ed1fa4dd95abfd52b5",
+			"clean": true,
+			"stable": true,
+			"documents": 38
+		},
+		{
+			"path": "/home/peter/dev/ix-agent-chat-app",
+			"origin": "https://github.com/agent-ix/ix-agent-chat-app.git",
+			"commit": "53791fb4b8079cfa6f7bfd8bdbaee26e35fb2f50",
+			"clean": true,
+			"stable": true,
+			"documents": 31
+		},
+		{
+			"path": "/home/peter/dev/ix-agent-client",
+			"origin": "https://github.com/agent-ix/ix-agent-client.git",
+			"commit": "04135e7e3a109d27a7294d6f4937366d90fae872",
+			"clean": true,
+			"stable": true,
+			"documents": 32
+		},
+		{
+			"path": "/home/peter/dev/ix-agent-comms",
+			"origin": "https://github.com/agent-ix/ix-agent-comms.git",
+			"commit": "a83e128f8abecf293123e8ac7815fa19c66b2a8b",
+			"clean": true,
+			"stable": true,
+			"documents": 3
+		},
+		{
+			"path": "/home/peter/dev/ix-agent-core",
+			"origin": "https://github.com/agent-ix/ix-agent-core.git",
+			"commit": "56de875925424a941257fd8187fed8b9c905493a",
+			"clean": true,
+			"stable": true,
+			"documents": 19
+		},
+		{
+			"path": "/home/peter/dev/ix-agent-discord-adapter",
+			"origin": "https://github.com/agent-ix/ix-agent-discord-adapter.git",
+			"commit": "84f6dee45fab2a0b3d050e99b8e832354ef5ad99",
+			"clean": true,
+			"stable": true,
+			"documents": 14
+		},
+		{
+			"path": "/home/peter/dev/ix-agent-extensions",
+			"origin": "https://github.com/agent-ix/ix-agent-extensions.git",
+			"commit": "77fcfbc00c440e9d41d45908f6859d710ad33eed",
+			"clean": true,
+			"stable": true,
+			"documents": 28
+		},
+		{
+			"path": "/home/peter/dev/ix-agent-fastapi",
+			"origin": "https://github.com/agent-ix/ix-agent-fastapi.git",
+			"commit": "49a0eee32ac310bad532bcd7a85d206c2713e718",
+			"clean": true,
+			"stable": true,
+			"documents": 8
+		},
+		{
+			"path": "/home/peter/dev/ix-agent-flow",
+			"origin": "https://github.com/agent-ix/ix-agent-flow.git",
+			"commit": "818b0c220d830b788f50449b8a159846d5b7ebbe",
+			"clean": true,
+			"stable": true,
+			"documents": 17
+		},
+		{
+			"path": "/home/peter/dev/ix-agent-hitl",
+			"origin": "https://github.com/agent-ix/ix-agent-hitl.git",
+			"commit": "a5388d3ffcba08cc99d307ec65719cdace08cd6f",
+			"clean": true,
+			"stable": true,
+			"documents": 22
+		},
+		{
+			"path": "/home/peter/dev/ix-agent-memory",
+			"origin": "https://github.com/agent-ix/ix-agent-memory.git",
+			"commit": "25714b1b4e3974b6cf0e200049ffe04dd8ca154d",
+			"clean": true,
+			"stable": true,
+			"documents": 16
+		},
+		{
+			"path": "/home/peter/dev/ix-agent-memory-service",
+			"origin": "https://github.com/agent-ix/ix-agent-memory-service.git",
+			"commit": "ee28f8c362841a634bb0219a3bfb1567f6d048f4",
+			"clean": true,
+			"stable": true,
+			"documents": 9
+		},
+		{
+			"path": "/home/peter/dev/ix-agent-messaging-bridge",
+			"origin": "https://github.com/agent-ix/ix-agent-messaging-bridge.git",
+			"commit": "01bcc32ebff2fdcfc1a3e3f8d21709dc974a632f",
+			"clean": true,
+			"stable": true,
+			"documents": 25
+		},
+		{
+			"path": "/home/peter/dev/ix-agent-messaging-sdk",
+			"origin": "https://github.com/agent-ix/ix-agent-messaging-sdk.git",
+			"commit": "53c37a35f9ca436c9432242bd6e586dce76c455b",
+			"clean": true,
+			"stable": true,
+			"documents": 18
+		},
+		{
+			"path": "/home/peter/dev/ix-agent-sandbox-control",
+			"origin": "https://github.com/agent-ix/ix-agent-sandbox-control.git",
+			"commit": "abb1ddc78a839453793500f95f60e5e78eb3aba4",
+			"clean": true,
+			"stable": true,
+			"documents": 18
+		},
+		{
+			"path": "/home/peter/dev/ix-agent-telegram-adapter",
+			"origin": "https://github.com/agent-ix/ix-agent-telegram-adapter.git",
+			"commit": "d0f6db71c701301daf9825e8ebef77ccdecce1a3",
+			"clean": true,
+			"stable": true,
+			"documents": 17
+		},
+		{
+			"path": "/home/peter/dev/ix-agent-terminal-control",
+			"origin": "https://github.com/agent-ix/ix-agent-terminal-control.git",
+			"commit": "d9f7e2a2253e043954650ff6306ef77089ac0605",
+			"clean": true,
+			"stable": true,
+			"documents": 27
+		},
+		{
+			"path": "/home/peter/dev/ix-agent-test-kit",
+			"origin": "https://github.com/agent-ix/ix-agent-test-kit.git",
+			"commit": "0a1b4bf5078bb595ebae0a5f5f8f0cd7b2b32dcb",
+			"clean": true,
+			"stable": true,
+			"documents": 24
+		},
+		{
+			"path": "/home/peter/dev/ix-agent-tools",
+			"origin": "https://github.com/agent-ix/ix-agent-tools.git",
+			"commit": "759fe6df427bbb3cf1857f2e2617da1623ee72a8",
+			"clean": true,
+			"stable": true,
+			"documents": 21
+		},
+		{
+			"path": "/home/peter/dev/ix-cli",
+			"origin": "https://github.com/agent-ix/ix-cli.git",
+			"commit": "df7ffbb72ec9c3e59c9dbab2784861f6e0ba77e4",
+			"clean": true,
+			"stable": true,
+			"documents": 69
+		},
+		{
+			"path": "/home/peter/dev/ix-cli-core",
+			"origin": "https://github.com/agent-ix/ix-cli-core.git",
+			"commit": "44148a992bbd8d9d74eaf47ef71514482b408f0e",
+			"clean": true,
+			"stable": true,
+			"documents": 45
+		},
+		{
+			"path": "/home/peter/dev/ix-coder-workflows",
+			"origin": "https://github.com/agent-ix/ix-coder-workflows.git",
+			"commit": "f46f375556a4c3f5a124a34c8c15c129a9b8edb4",
+			"clean": true,
+			"stable": true,
+			"documents": 65
+		},
+		{
+			"path": "/home/peter/dev/ix-flow",
+			"origin": "https://github.com/agent-ix/ix-flow.git",
+			"commit": "307ca71b718ba55d70508801d8c3a0633f4d529b",
+			"clean": true,
+			"stable": true,
+			"documents": 47
+		},
+		{
+			"path": "/home/peter/dev/ix-icons",
+			"origin": "https://github.com/agent-ix/ix-icons.git",
+			"commit": "4565c7622f5207de510b936143fc624a9777457a",
+			"clean": true,
+			"stable": true,
+			"documents": 3
+		},
+		{
+			"path": "/home/peter/dev/ix-local-build",
+			"origin": "https://github.com/agent-ix/ix-local-build.git",
+			"commit": "2856d5eb5683e2b71c54909907f01fb67e6ffbc2",
+			"clean": true,
+			"stable": true,
+			"documents": 10
+		},
+		{
+			"path": "/home/peter/dev/ix-local-data",
+			"origin": "https://github.com/agent-ix/ix-local-data.git",
+			"commit": "5e0eb27b47e083473a4791dbed4bfe50cad150e8",
+			"clean": true,
+			"stable": true,
+			"documents": 13
+		},
+		{
+			"path": "/home/peter/dev/ix-local-llm",
+			"origin": "https://github.com/agent-ix/ix-local-llm.git",
+			"commit": "1e083e169ac7a2d221379054a28b149b4706d875",
+			"clean": true,
+			"stable": true,
+			"documents": 10
+		},
+		{
+			"path": "/home/peter/dev/ix-local-observability",
+			"origin": "https://github.com/agent-ix/ix-local-observability.git",
+			"commit": "c15ae4f4f0ded2ea32c7d7b73a741d30f92d78db",
+			"clean": true,
+			"stable": true,
+			"documents": 10
+		},
+		{
+			"path": "/home/peter/dev/ix-platform-landing",
+			"origin": "https://github.com/agent-ix/ix-platform-landing.git",
+			"commit": "004c4988b62fefd9d77981dc49ed6a99f2eecf2e",
+			"clean": true,
+			"stable": true,
+			"documents": 3
+		},
+		{
+			"path": "/home/peter/dev/ix-prefab-landing",
+			"origin": "https://github.com/agent-ix/ix-prefab-landing.git",
+			"commit": "eb3d61e23cadce3d94012f10af72b1100d1a2298",
+			"clean": true,
+			"stable": true,
+			"documents": 3
+		},
+		{
+			"path": "/home/peter/dev/ix-sandbox-backend",
+			"origin": "https://github.com/agent-ix/ix-sandbox-backend.git",
+			"commit": "433f5cc029158781536f7e1923e80310f22b85c1",
+			"clean": true,
+			"stable": true,
+			"documents": 13
+		},
+		{
+			"path": "/home/peter/dev/ix-services-landing",
+			"origin": "https://github.com/agent-ix/ix-services-landing.git",
+			"commit": "1d477b4e78dc80cddc366c2c98a5ff29d36f2c97",
+			"clean": true,
+			"stable": true,
+			"documents": 3
+		},
+		{
+			"path": "/home/peter/dev/ix-themes",
+			"origin": "https://github.com/agent-ix/ix-themes.git",
+			"commit": "2a6c5c5acc4df79b61464be5db5b2fd221cd51f1",
+			"clean": true,
+			"stable": true,
+			"documents": 3
+		},
+		{
+			"path": "/home/peter/dev/ix-trace-rs",
+			"origin": "https://github.com/agent-ix/ix-trace-rs.git",
+			"commit": "2ce4ebf47f726b9d76388220545cd0abda8a5cfb",
+			"clean": true,
+			"stable": true,
+			"documents": 8
+		},
+		{
+			"path": "/home/peter/dev/ix-ui",
+			"origin": "https://github.com/agent-ix/ix-ui.git",
+			"commit": "601e02c8c0a7f4418ded234e55c635c327e94057",
+			"clean": true,
+			"stable": true,
+			"documents": 38
+		},
+		{
+			"path": "/home/peter/dev/ix-workflow-runner",
+			"origin": "git@github.com:agent-ix/ix-workflow-runner.git",
+			"commit": "0348d0ce0c53d96fd6a7357adbdb1250d96caa1a",
+			"clean": true,
+			"stable": true,
+			"documents": 51
+		},
+		{
+			"path": "/home/peter/dev/jest-results",
+			"origin": "https://github.com/agent-ix/jest-results.git",
+			"commit": "1cfb96444dbc645446bdb5072a09a0def7a31fca",
+			"clean": true,
+			"stable": true,
+			"documents": 24
+		},
+		{
+			"path": "/home/peter/dev/job-execution",
+			"origin": "https://github.com/agent-ix/job-execution.git",
+			"commit": "ccd4fe938e6848d0b45a5d01ab8a51b77d9694e6",
+			"clean": true,
+			"stable": true,
+			"documents": 43
+		},
+		{
+			"path": "/home/peter/dev/js-deps",
+			"origin": "git@github.com:agent-ix/js-deps.git",
+			"commit": "0a4f9b871d23f75942aa70392246c9906cbd71d6",
+			"clean": true,
+			"stable": true,
+			"documents": 17
+		},
+		{
+			"path": "/home/peter/dev/k8s-gateway",
+			"origin": "https://github.com/agent-ix/k8s-gateway.git",
+			"commit": "65ea829854df01d4d59c966d1b52bb04c3d5565d",
+			"clean": true,
+			"stable": true,
+			"documents": 30
+		},
+		{
+			"path": "/home/peter/dev/k8s-orchestration",
+			"origin": "https://github.com/agent-ix/k8s-orchestration.git",
+			"commit": "57d96db5f384a0b8e0a885db6a3b9e85df83efd0",
+			"clean": true,
+			"stable": true,
+			"documents": 3
+		},
+		{
+			"path": "/home/peter/dev/knowledge-graph",
+			"origin": "https://github.com/agent-ix/knowledge-graph.git",
+			"commit": "edf84f6881a94e4af3247c114416a9fe40fe9944",
+			"clean": true,
+			"stable": true,
+			"documents": 40
+		},
+		{
+			"path": "/home/peter/dev/legal",
+			"origin": "https://github.com/agent-ix/legal.git",
+			"commit": "b92e72943fabc7374c52aacd842851c9d5f735f4",
+			"clean": true,
+			"stable": true,
+			"documents": 4
+		},
+		{
+			"path": "/home/peter/dev/local",
+			"origin": "git@github.com:agent-ix/local.git",
+			"commit": "5f1523485da5e753fe4da15df3834de57cee073a",
+			"clean": true,
+			"stable": true,
+			"documents": 23
+		},
+		{
+			"path": "/home/peter/dev/local-app-cookiecutter",
+			"origin": "https://github.com/agent-ix/local-app-cookiecutter.git",
+			"commit": "b38799ca034364f63e5fc8a57cfde8e3ea966e03",
+			"clean": true,
+			"stable": true,
+			"documents": 3
+		},
+		{
+			"path": "/home/peter/dev/local-workspace-actions",
+			"origin": "https://github.com/agent-ix/local-workspace-actions.git",
+			"commit": "989e003ca2ceddca9abd008a1bd9ac53cdbebb13",
+			"clean": true,
+			"stable": true,
+			"documents": 3
+		},
+		{
+			"path": "/home/peter/dev/local-workspace-service",
+			"origin": "git@github.com:agent-ix/local-workspace-service.git",
+			"commit": "b6c21b7a3912624325c5fa54bbe8ee95e1890f22",
+			"clean": true,
+			"stable": true,
+			"documents": 16
+		},
+		{
+			"path": "/home/peter/dev/loki-mcp",
+			"origin": "https://github.com/agent-ix/loki-mcp.git",
+			"commit": "c327961e2f5d840a3c5b1dacfa3532080d262c56",
+			"clean": true,
+			"stable": true,
+			"documents": 24
+		},
+		{
+			"path": "/home/peter/dev/markdown-editor",
+			"origin": "https://github.com/agent-ix/markdown-editor.git",
+			"commit": "e5b2bb1df0fd13305960760b097f61caafeba782",
+			"clean": true,
+			"stable": true,
+			"documents": 34
+		},
+		{
+			"path": "/home/peter/dev/mcp-gateway",
+			"origin": "git@github.com:agent-ix/mcp-gateway.git",
+			"commit": "e11c98a83df7aab0ce5da9e137dd38ec6d5c025d",
+			"clean": true,
+			"stable": true,
+			"documents": 19
+		},
+		{
+			"path": "/home/peter/dev/mcp-gateway-ui",
+			"origin": "git@github.com:agent-ix/mcp-gateway-ui.git",
+			"commit": "0e92341cdca9f59f37af3ae8b2cd266512f1e9e2",
+			"clean": true,
+			"stable": true,
+			"documents": 16
+		},
+		{
+			"path": "/home/peter/dev/mcp-gateway-view",
+			"origin": "git@github.com:agent-ix/mcp-gateway-view.git",
+			"commit": "93f0f8a456bf1b78a134c5740dcfdd14ed738dbd",
+			"clean": true,
+			"stable": true,
+			"documents": 12
+		},
+		{
+			"path": "/home/peter/dev/mcp-ui-cookiecutter",
+			"origin": "git@github.com:agent-ix/mcp-ui-cookiecutter.git",
+			"commit": "884a1a2f4f6a8807f0996253fc6a0526700b2ac1",
+			"clean": true,
+			"stable": true,
+			"documents": 3
+		},
+		{
+			"path": "/home/peter/dev/mcp-ui-sdk",
+			"origin": "https://github.com/agent-ix/mcp-ui-sdk.git",
+			"commit": "2fd8ed0b0e227c912a540be61413380be36c4b05",
+			"clean": true,
+			"stable": true,
+			"documents": 3
+		},
+		{
+			"path": "/home/peter/dev/mermaid-renderer",
+			"origin": "https://github.com/agent-ix/mermaid-renderer.git",
+			"commit": "8e07a68af7fc05a9cad59daa0a51d84a8fd22a3c",
+			"clean": true,
+			"stable": true,
+			"documents": 17
+		},
+		{
+			"path": "/home/peter/dev/mesh_dashboard",
+			"origin": "git@github.com:agent-ix/mesh_dashboard.git",
+			"commit": "8ea4f41625dcbebaf6c7f163c4135792d8401abb",
+			"clean": true,
+			"stable": true,
+			"documents": 13
+		},
+		{
+			"path": "/home/peter/dev/naming-lib",
+			"origin": "https://github.com/agent-ix/naming-lib.git",
+			"commit": "1b7a87f3be29bc0bbfdec76b0e5e6f3098049954",
+			"clean": true,
+			"stable": true,
+			"documents": 37
+		},
+		{
+			"path": "/home/peter/dev/nodejs-actions",
+			"origin": "git@github.com:agent-ix/nodejs-actions.git",
+			"commit": "5f1eb92b20aaac54dc8dff180e3d19adfd1a08ea",
+			"clean": true,
+			"stable": true,
+			"documents": 3
+		},
+		{
+			"path": "/home/peter/dev/nodejs-lib",
+			"origin": "git@github.com:agent-ix/nodejs-lib.git",
+			"commit": "56cd3f3d1604032b4a45146ba3c649c794911d78",
+			"clean": true,
+			"stable": true,
+			"documents": 13
+		},
+		{
+			"path": "/home/peter/dev/orchestrator-service",
+			"origin": "https://github.com/agent-ix/orchestrator-service.git",
+			"commit": "35b40ee1c77daff2bbd077b8c40110212eca588f",
+			"clean": true,
+			"stable": true,
+			"documents": 54
+		},
+		{
+			"path": "/home/peter/dev/paperclip",
+			"origin": "https://github.com/agent-ix/ix-paperclip.git",
+			"commit": "7877bcdd003b435ecb66f88b816829a0cf124f3f",
+			"clean": true,
+			"stable": true,
+			"documents": 23
+		},
+		{
+			"path": "/home/peter/dev/permission-service",
+			"origin": "git@github.com:agent-ix/permission-service.git",
+			"commit": "a23f2ceca6e8ebc6212127c5e3ed12d78bd27eac",
+			"clean": true,
+			"stable": true,
+			"documents": 81
+		},
+		{
+			"path": "/home/peter/dev/pg-data-service",
+			"origin": "https://github.com/agent-ix/pg-data-service.git",
+			"commit": "2b95e311cf43ec3b3f3a85cf5d8a70897a26cf31",
+			"clean": true,
+			"stable": true,
+			"documents": 14
+		},
+		{
+			"path": "/home/peter/dev/pg-data-service-cookiecutter",
+			"origin": "git@github.com:agent-ix/pg-data-service-cookiecutter.git",
+			"commit": "9a2144e44525e62c06f20ef41da52f836802f9f4",
+			"clean": true,
+			"stable": true,
+			"documents": 3
+		},
+		{
+			"path": "/home/peter/dev/platform-test-kit",
+			"origin": "https://github.com/agent-ix/platform-test-kit.git",
+			"commit": "75e13134f242b5f19ab1c61ef01321cde3cdbd3b",
+			"clean": true,
+			"stable": true,
+			"documents": 70
+		},
+		{
+			"path": "/home/peter/dev/py-observability",
+			"origin": "https://github.com/agent-ix/py-observability.git",
+			"commit": "34e603a37134900949d1c86c33d98d06d023f21c",
+			"clean": true,
+			"stable": true,
+			"documents": 36
+		},
+		{
+			"path": "/home/peter/dev/py-permissions",
+			"origin": "https://github.com/agent-ix/py-permissions.git",
+			"commit": "133b93e9e66ddf18af285b69f25cdf5fb2e70805",
+			"clean": true,
+			"stable": true,
+			"documents": 44
+		},
+		{
+			"path": "/home/peter/dev/py-project",
+			"origin": "git@github.com:agent-ix/py-project.git",
+			"commit": "e8b28f257d3bda649a6d7e5099a2c23bc70ba5f1",
+			"clean": true,
+			"stable": true,
+			"documents": 4
+		},
+		{
+			"path": "/home/peter/dev/py-state-machine",
+			"origin": "https://github.com/agent-ix/py-state-machine.git",
+			"commit": "372f30a5229a3ce6eb84e0f53cb36a1b072e6142",
+			"clean": true,
+			"stable": true,
+			"documents": 51
+		},
+		{
+			"path": "/home/peter/dev/pytest-results",
+			"origin": "https://github.com/agent-ix/pytest-results.git",
+			"commit": "18d8cb0c484b4939379faf7cf852335e39d47675",
+			"clean": true,
+			"stable": true,
+			"documents": 27
+		},
+		{
+			"path": "/home/peter/dev/pytest-sqlmodel",
+			"origin": "git@github.com:agent-ix/pytest-sqlmodel.git",
+			"commit": "fb38d2a155841ced37e70614737679449e41805f",
+			"clean": true,
+			"stable": true,
+			"documents": 15
+		},
+		{
+			"path": "/home/peter/dev/pytest-summary",
+			"origin": "git@github.com:agent-ix/pytest-summary.git",
+			"commit": "425a8dedd42b87e36b92275aacc8979ab7e45f9b",
+			"clean": true,
+			"stable": true,
+			"documents": 3
+		},
+		{
+			"path": "/home/peter/dev/python-lib",
+			"origin": "git@github.com:agent-ix/python-lib.git",
+			"commit": "b0dc15f88832bc0bbb2e651305c854e04dfb42ba",
+			"clean": true,
+			"stable": true,
+			"documents": 3
+		},
+		{
+			"path": "/home/peter/dev/python-lib-actions",
+			"origin": "git@github.com:agent-ix/python-lib-actions.git",
+			"commit": "e7ef1e87bbe5330663b3c0e1bc4d22221fc7443a",
+			"clean": true,
+			"stable": true,
+			"documents": 3
+		},
+		{
+			"path": "/home/peter/dev/python-lib-cookiecutter",
+			"origin": "git@github.com:agent-ix/python-lib-cookiecutter.git",
+			"commit": "2a90a5a339d64be5683edab0cc9681fd3992d90e",
+			"clean": true,
+			"stable": true,
+			"documents": 3
+		},
+		{
+			"path": "/home/peter/dev/python-service-actions",
+			"origin": "git@github.com:agent-ix/python-service-actions.git",
+			"commit": "896e2a605b7ea9501ea95a1a33eedf1938da8f0c",
+			"clean": true,
+			"stable": true,
+			"documents": 3
+		},
+		{
+			"path": "/home/peter/dev/qa-corpus",
+			"origin": "https://github.com/agent-ix/qa-corpus.git",
+			"commit": "7323e289197776f9e97b22877ab81b1d1088ada8",
+			"clean": true,
+			"stable": true,
+			"documents": 0
+		},
+		{
+			"path": "/home/peter/dev/quire",
+			"origin": "git@github.com:agent-ix/quire.git",
+			"commit": "9446b283c0d0f882710670dca3bfd987a447d857",
+			"clean": true,
+			"stable": true,
+			"documents": 55
+		},
+		{
+			"path": "/home/peter/dev/quire-analyze",
+			"origin": "https://github.com/agent-ix/quire-analyze.git",
+			"commit": "5f37678928aea451447d1ee6d42deefb95cb2f5a",
+			"clean": true,
+			"stable": true,
+			"documents": 30
+		},
+		{
+			"path": "/home/peter/dev/quire-cli",
+			"origin": "https://github.com/agent-ix/quire-cli.git",
+			"commit": "4f6ed024cf27298b2dc49c7051941571197fddff",
+			"clean": true,
+			"stable": true,
+			"documents": 45
+		},
+		{
+			"path": "/home/peter/dev/quire-code-rs",
+			"origin": "https://github.com/agent-ix/quire-code-rs.git",
+			"commit": "390be847dd8dbac3f69233b1184154723aed1537",
+			"clean": true,
+			"stable": true,
+			"documents": 28
+		},
+		{
+			"path": "/home/peter/dev/quire-contract-codegen",
+			"origin": "https://github.com/agent-ix/quire-contract-codegen.git",
+			"commit": "bfa70861eb748321dea57b1a1f7b1e86ecda0818",
+			"clean": true,
+			"stable": true,
+			"documents": 30
+		},
+		{
+			"path": "/home/peter/dev/quire-contract-ir",
+			"origin": "https://github.com/agent-ix/quire-contract-ir.git",
+			"commit": "9b9102c3806e9cda0ed70312f4f6c23a211f6fbf",
+			"clean": true,
+			"stable": true,
+			"documents": 40
+		},
+		{
+			"path": "/home/peter/dev/quire-contract-ir-wave0",
+			"origin": "https://github.com/agent-ix/quire-contract-ir.git",
+			"commit": "d8d376d887c40255e87ef9656bc0faf79216b321",
+			"clean": true,
+			"stable": true,
+			"documents": 13
+		},
+		{
+			"path": "/home/peter/dev/quire-contract-runtime",
+			"origin": "https://github.com/agent-ix/quire-contract-runtime.git",
+			"commit": "60749bcaa9725c33362de399e4430ca105b4a50b",
+			"clean": true,
+			"stable": true,
+			"documents": 30
+		},
+		{
+			"path": "/home/peter/dev/quire-rs",
+			"origin": "git@github.com:agent-ix/quire-rs.git",
+			"commit": "17b80e420f719eeaf9c33f541118aa480f5d6175",
+			"clean": true,
+			"stable": true,
+			"documents": 170
+		},
+		{
+			"path": "/home/peter/dev/quire-wasm",
+			"origin": "https://github.com/agent-ix/quire-wasm.git",
+			"commit": "4722129007d5cbd330c0d43e682455d542d0b70b",
+			"clean": true,
+			"stable": true,
+			"documents": 13
+		},
+		{
+			"path": "/home/peter/dev/quoin",
+			"origin": "https://github.com/agent-ix/quoin.git",
+			"commit": "3e842ce78271a0b876a90471957f57c8ddcad6da",
+			"clean": false,
+			"stable": true,
+			"documents": 212
+		},
+		{
+			"path": "/home/peter/dev/reference-sdk",
+			"origin": "https://github.com/agent-ix/reference-sdk.git",
+			"commit": "2c00af8d6f32b5f4c506a57347ccb27a258a4628",
+			"clean": true,
+			"stable": true,
+			"documents": 12
+		},
+		{
+			"path": "/home/peter/dev/review-worker",
+			"origin": "https://github.com/agent-ix/review-worker.git",
+			"commit": "6b4cea3ab288902efb9771241d3b1291664e0b4f",
+			"clean": true,
+			"stable": true,
+			"documents": 13
+		},
+		{
+			"path": "/home/peter/dev/rjsf-ix-theme",
+			"origin": "https://github.com/agent-ix/rjsf-ix-theme.git",
+			"commit": "a4d0d0e8287a574c5a6a03ae2d0a154a06733c10",
+			"clean": true,
+			"stable": true,
+			"documents": 20
+		},
+		{
+			"path": "/home/peter/dev/scenario-agent",
+			"origin": "https://github.com/agent-ix/scenario-agent.git",
+			"commit": "4eac695a74925ae44ecad2783c591481058687ab",
+			"clean": true,
+			"stable": true,
+			"documents": 9
+		},
+		{
+			"path": "/home/peter/dev/scenario-runner",
+			"origin": "https://github.com/agent-ix/scenario-runner.git",
+			"commit": "ff5ae4c88227f04b53b2583cc1719cf09360efe4",
+			"clean": true,
+			"stable": true,
+			"documents": 37
+		},
+		{
+			"path": "/home/peter/dev/scenario-service",
+			"origin": "https://github.com/agent-ix/scenario-service.git",
+			"commit": "06f3d1d6329e6bc3fc9ebba4c220de71083ca5ed",
+			"clean": true,
+			"stable": true,
+			"documents": 115
+		},
+		{
+			"path": "/home/peter/dev/scheduler-service",
+			"origin": "https://github.com/agent-ix/scheduler-service.git",
+			"commit": "147a703325c3181e8a1d863edc839d0659acfa95",
+			"clean": true,
+			"stable": true,
+			"documents": 23
+		},
+		{
+			"path": "/home/peter/dev/scheduler-view",
+			"origin": "https://github.com/agent-ix/scheduler-view.git",
+			"commit": "ac1d300bf83fffd4bc2a22fcb3fb3db3786b93dd",
+			"clean": true,
+			"stable": true,
+			"documents": 21
+		},
+		{
+			"path": "/home/peter/dev/secret-refresh-controller",
+			"origin": "https://github.com/agent-ix/secret-refresh-controller.git",
+			"commit": "3fd498503b2aaa68696070a250a2fa25c662f022",
+			"clean": true,
+			"stable": true,
+			"documents": 44
+		},
+		{
+			"path": "/home/peter/dev/secrets-injector-webhook",
+			"origin": "https://github.com/agent-ix/secrets-injector-webhook.git",
+			"commit": "a8c87342c15ccf67d6a0deff447ac5201a3fe458",
+			"clean": true,
+			"stable": true,
+			"documents": 19
+		},
+		{
+			"path": "/home/peter/dev/secrets-ref",
+			"origin": "https://github.com/agent-ix/secrets-ref.git",
+			"commit": "fb5f6ec8bce5c5b3eb1c18a7ababadee2b3a997f",
+			"clean": true,
+			"stable": true,
+			"documents": 8
+		},
+		{
+			"path": "/home/peter/dev/settings-react",
+			"origin": "https://github.com/agent-ix/settings-react.git",
+			"commit": "9b0a74aa3baefdc1b7c06c46e7610a82c7217639",
+			"clean": true,
+			"stable": true,
+			"documents": 8
+		},
+		{
+			"path": "/home/peter/dev/settings-sdk",
+			"origin": "https://github.com/agent-ix/settings-sdk.git",
+			"commit": "5b2ba6baba6f35e62e9403250d5efd4725941f61",
+			"clean": true,
+			"stable": true,
+			"documents": 6
+		},
+		{
+			"path": "/home/peter/dev/settings-service",
+			"origin": "https://github.com/agent-ix/settings-service.git",
+			"commit": "f1fa98bc8026d92b07346172dd7bc32005372544",
+			"clean": true,
+			"stable": true,
+			"documents": 15
+		},
+		{
+			"path": "/home/peter/dev/spec-artifacts-app",
+			"origin": "https://github.com/agent-ix/spec-artifacts-app.git",
+			"commit": "c3137358f4f418ac240be009b34d65887257f092",
+			"clean": true,
+			"stable": true,
+			"documents": 27
+		},
+		{
+			"path": "/home/peter/dev/spec-artifacts-iso",
+			"origin": "https://github.com/agent-ix/spec-artifacts-iso.git",
+			"commit": "6686f112f2c38602c9d39c88e8134a945c34bbd6",
+			"clean": true,
+			"stable": true,
+			"documents": 22
+		},
+		{
+			"path": "/home/peter/dev/spec-artifacts-process",
+			"origin": "https://github.com/agent-ix/spec-artifacts-process.git",
+			"commit": "61a20e010d5e758f52864ad3152ccdb304a39d27",
+			"clean": true,
+			"stable": true,
+			"documents": 20
+		},
+		{
+			"path": "/home/peter/dev/spec-comments",
+			"origin": "https://github.com/agent-ix/spec-comments.git",
+			"commit": "03b589942e9a0379a5494764b72acc6c6b0b8dbf",
+			"clean": true,
+			"stable": true,
+			"documents": 27
+		},
+		{
+			"path": "/home/peter/dev/spec-hierarchy",
+			"origin": "https://github.com/agent-ix/spec-hierarchy.git",
+			"commit": "b39eeeeb79b2aba7a6b63c74ea603dd2e5898d47",
+			"clean": true,
+			"stable": true,
+			"documents": 25
+		},
+		{
+			"path": "/home/peter/dev/spec-objects-architecture",
+			"origin": "https://github.com/agent-ix/spec-objects-architecture.git",
+			"commit": "0093e9c108541ecfcad454202f0231ff6c27c9ca",
+			"clean": true,
+			"stable": true,
+			"documents": 10
+		},
+		{
+			"path": "/home/peter/dev/spec-objects-business",
+			"origin": "https://github.com/agent-ix/spec-objects-business.git",
+			"commit": "d1840b87aaf23612c435e9bec09016c7605cff6d",
+			"clean": true,
+			"stable": true,
+			"documents": 27
+		},
+		{
+			"path": "/home/peter/dev/spec-objects-enterprise",
+			"origin": "https://github.com/agent-ix/spec-objects-enterprise.git",
+			"commit": "4be221d6fd3144c3f3d5373550059ab8b5d19ed5",
+			"clean": true,
+			"stable": true,
+			"documents": 10
+		},
+		{
+			"path": "/home/peter/dev/spec-objects-operational",
+			"origin": "https://github.com/agent-ix/spec-objects-operational.git",
+			"commit": "7eae00cab87f6f9262128f0e2fc9f93cf2e1d577",
+			"clean": true,
+			"stable": true,
+			"documents": 10
+		},
+		{
+			"path": "/home/peter/dev/spec-objects-safety",
+			"origin": "https://github.com/agent-ix/spec-objects-safety.git",
+			"commit": "5e1e0165376abfdeda62ebde6f4fdfa36f3d6484",
+			"clean": true,
+			"stable": true,
+			"documents": 8
+		},
+		{
+			"path": "/home/peter/dev/spec-objects-security",
+			"origin": "https://github.com/agent-ix/spec-objects-security.git",
+			"commit": "494f4e1eefc4f1f6efdad0a70f3b48645c0e5c1d",
+			"clean": true,
+			"stable": true,
+			"documents": 10
+		},
+		{
+			"path": "/home/peter/dev/spec-reports",
+			"origin": "https://github.com/agent-ix/spec-reports.git",
+			"commit": "94402ba6069a0338d24c558e4e94a9984f6e2385",
+			"clean": true,
+			"stable": true,
+			"documents": 18
+		},
+		{
+			"path": "/home/peter/dev/spec-reviews",
+			"origin": "https://github.com/agent-ix/spec-reviews.git",
+			"commit": "3d62d65db26eef8909952e68177da68e7fc0f6f6",
+			"clean": true,
+			"stable": true,
+			"documents": 24
+		},
+		{
+			"path": "/home/peter/dev/spec-skills",
+			"origin": "git@github.com:agent-ix/spec-skills.git",
+			"commit": "5774d573e179fd349153d47fcdbe1315167cfcdf",
+			"clean": true,
+			"stable": true,
+			"documents": 3
+		},
+		{
+			"path": "/home/peter/dev/spec-view-project",
+			"origin": "https://github.com/agent-ix/spec-view-project.git",
+			"commit": "d1a111eec4f36574c4648b53ce13d30b4bbcf6ef",
+			"clean": true,
+			"stable": true,
+			"documents": 19
+		},
+		{
+			"path": "/home/peter/dev/sqlmodel-fixtures",
+			"origin": "https://github.com/agent-ix/sqlmodel-fixtures.git",
+			"commit": "841fbbaf15f7876cebd1c482342bf26df8dd61da",
+			"clean": true,
+			"stable": true,
+			"documents": 22
+		},
+		{
+			"path": "/home/peter/dev/sqlmodel-publisher",
+			"origin": "https://github.com/agent-ix/sqlmodel-publisher.git",
+			"commit": "1efd1277e16a78f21840cc3027213ec11140aa61",
+			"clean": true,
+			"stable": true,
+			"documents": 22
+		},
+		{
+			"path": "/home/peter/dev/static-site-cookiecutter",
+			"origin": "git@github.com:agent-ix/static-site-cookiecutter.git",
+			"commit": "006d74ae8c19470e9669955c39f4e8041db88ef0",
+			"clean": true,
+			"stable": true,
+			"documents": 16
+		},
+		{
+			"path": "/home/peter/dev/status-service",
+			"origin": "https://github.com/agent-ix/status-service.git",
+			"commit": "a4138141d6074b55b9b5153641bca2400ba9ed46",
+			"clean": true,
+			"stable": true,
+			"documents": 48
+		},
+		{
+			"path": "/home/peter/dev/sync-cloudmanager",
+			"origin": "https://github.com/agent-ix/sync-cloudmanager.git",
+			"commit": "bec4a4742e77a54bb39b37a811ab90404a4e5010",
+			"clean": true,
+			"stable": true,
+			"documents": 15
+		},
+		{
+			"path": "/home/peter/dev/sync-core",
+			"origin": "https://github.com/agent-ix/sync-core.git",
+			"commit": "7313893e48a56e9d07ddb5bca1e29380082375d3",
+			"clean": true,
+			"stable": true,
+			"documents": 23
+		},
+		{
+			"path": "/home/peter/dev/sync-filament",
+			"origin": "https://github.com/agent-ix/sync-filament.git",
+			"commit": "4677a04b43ee127f480866e8d89c20d7788ab457",
+			"clean": true,
+			"stable": true,
+			"documents": 13
+		},
+		{
+			"path": "/home/peter/dev/sync-github",
+			"origin": "https://github.com/agent-ix/sync-github.git",
+			"commit": "701f85e87bacf1881c4b5921e492317ae3f66949",
+			"clean": true,
+			"stable": true,
+			"documents": 13
+		},
+		{
+			"path": "/home/peter/dev/sync-github-service",
+			"origin": "https://github.com/agent-ix/sync-github-service.git",
+			"commit": "9d4d13545e8dbeb5f8ac75a8b997580ba05b0194",
+			"clean": true,
+			"stable": true,
+			"documents": 21
+		},
+		{
+			"path": "/home/peter/dev/sync-local",
+			"origin": "https://github.com/agent-ix/sync-local.git",
+			"commit": "fe52a8fbadefee63d707d6137886cbc1edb83252",
+			"clean": true,
+			"stable": true,
+			"documents": 18
+		},
+		{
+			"path": "/home/peter/dev/table-renderer",
+			"origin": "git@github.com:agent-ix/table-renderer.git",
+			"commit": "00860593199d8cfe02312aa160a33982947ea9a4",
+			"clean": true,
+			"stable": true,
+			"documents": 18
+		},
+		{
+			"path": "/home/peter/dev/ticket-runner",
+			"origin": "https://github.com/agent-ix/ticket-runner.git",
+			"commit": "977ae36eb31bbcbddc7ceccd6f151d1e685a471b",
+			"clean": true,
+			"stable": true,
+			"documents": 43
+		},
+		{
+			"path": "/home/peter/dev/tl-mltl",
+			"origin": "https://github.com/agent-ix/tl-mltl.git",
+			"commit": "f0a9a0fdfbdc56bc727c9d397aec1befd4f82363",
+			"clean": true,
+			"stable": true,
+			"documents": 46
+		},
+		{
+			"path": "/home/peter/dev/tl-parse",
+			"origin": "https://github.com/agent-ix/tl-parse.git",
+			"commit": "958f018c08150a66c17664cbabf66c759aefaa97",
+			"clean": true,
+			"stable": true,
+			"documents": 47
+		},
+		{
+			"path": "/home/peter/dev/tl-rewrite",
+			"origin": "https://github.com/agent-ix/tl-rewrite.git",
+			"commit": "ee5a32956f7425c0c9ed60cdbc06f3bbda26d129",
+			"clean": true,
+			"stable": true,
+			"documents": 45
+		},
+		{
+			"path": "/home/peter/dev/tl-syntax",
+			"origin": "https://github.com/agent-ix/tl-syntax.git",
+			"commit": "a6d58aa4df3ade8964b3e1223666983aa5e89910",
+			"clean": true,
+			"stable": true,
+			"documents": 47
+		},
+		{
+			"path": "/home/peter/dev/ts-auth-sdk",
+			"origin": "git@github.com:agent-ix/ts-auth-sdk.git",
+			"commit": "5bdce2d7d3e0224f0fb6c88c7f7205c0f8d5704d",
+			"clean": true,
+			"stable": true,
+			"documents": 25
+		},
+		{
+			"path": "/home/peter/dev/ts-auth-ui",
+			"origin": "git@github.com:agent-ix/ts-auth-ui.git",
+			"commit": "2a109d6de97b5f5470ce70e76e508db0454cfaaf",
+			"clean": true,
+			"stable": true,
+			"documents": 55
+		},
+		{
+			"path": "/home/peter/dev/ts-build-chain",
+			"origin": "https://github.com/agent-ix/ts-build-chain.git",
+			"commit": "d6b9e9feda19f463f873757723199925657f1d60",
+			"clean": true,
+			"stable": true,
+			"documents": 48
+		},
+		{
+			"path": "/home/peter/dev/ts-observability",
+			"origin": "https://github.com/agent-ix/ts-observability.git",
+			"commit": "805c9c11439b91a6b712ad4ef98544b4cb5dde5b",
+			"clean": true,
+			"stable": true,
+			"documents": 15
+		},
+		{
+			"path": "/home/peter/dev/ts-plugin-kit",
+			"origin": "https://github.com/agent-ix/ts-plugin-kit.git",
+			"commit": "92a9d9ad963eff4aee41dfcba3fab819f7b76fa6",
+			"clean": true,
+			"stable": true,
+			"documents": 36
+		},
+		{
+			"path": "/home/peter/dev/typescript-lib-cookiecutter",
+			"origin": "git@github.com:agent-ix/typescript-lib-cookiecutter.git",
+			"commit": "bb4ef229cfd86de2d64b44b4872f49b6171fb431",
+			"clean": true,
+			"stable": true,
+			"documents": 3
+		},
+		{
+			"path": "/home/peter/dev/typescript-monorepo-cookiecutter",
+			"origin": "https://github.com/agent-ix/typescript-monorepo-cookiecutter.git",
+			"commit": "2b85a669c95d48ae3adeb5e2d4b7576c91cc2904",
+			"clean": true,
+			"stable": true,
+			"documents": 3
+		},
+		{
+			"path": "/home/peter/dev/typescript-react-lib",
+			"origin": "git@github.com:agent-ix/typescript-react-lib.git",
+			"commit": "31b5404879d2efb837c55f1c80d5153eaafe98af",
+			"clean": true,
+			"stable": true,
+			"documents": 15
+		},
+		{
+			"path": "/home/peter/dev/typescript-react-lib-cookiecutter",
+			"origin": "git@github.com:agent-ix/typescript-react-lib-cookiecutter.git",
+			"commit": "ced7eb11cc78b10fe10e059026306710074d61e0",
+			"clean": true,
+			"stable": true,
+			"documents": 3
+		},
+		{
+			"path": "/home/peter/dev/typesetter",
+			"origin": "https://github.com/agent-ix/typesetter.git",
+			"commit": "0137d0ccbf43bb2bec4a7ef738cd2ba41ba8a502",
+			"clean": true,
+			"stable": true,
+			"documents": 81
+		},
+		{
+			"path": "/home/peter/dev/ui-data-table",
+			"origin": "https://github.com/agent-ix/ui-data-table.git",
+			"commit": "3fcab22d4a16cdc55b2fb35d8b320eae41c71bfd",
+			"clean": true,
+			"stable": true,
+			"documents": 10
+		},
+		{
+			"path": "/home/peter/dev/ui-reference-component",
+			"origin": "https://github.com/agent-ix/ui-reference-component.git",
+			"commit": "c7c5c41fba7d50f66c366906f35521489861d4ea",
+			"clean": true,
+			"stable": true,
+			"documents": 14
+		},
+		{
+			"path": "/home/peter/dev/ui-workflow-pane",
+			"origin": "https://github.com/agent-ix/ui-workflow-pane.git",
+			"commit": "b81cfb114357bf5ef8de01be4a04d20438bdd5d7",
+			"clean": true,
+			"stable": true,
+			"documents": 25
+		},
+		{
+			"path": "/home/peter/dev/user-admin-ui",
+			"origin": "https://github.com/agent-ix/user-admin-ui.git",
+			"commit": "46c078bf149385826a06bea3353a6070683a360f",
+			"clean": true,
+			"stable": true,
+			"documents": 113
+		},
+		{
+			"path": "/home/peter/dev/user-profile-ui",
+			"origin": "https://github.com/agent-ix/user-profile-ui.git",
+			"commit": "a38976b846b5a0990e25902521c26f2d4f281cde",
+			"clean": true,
+			"stable": true,
+			"documents": 32
+		},
+		{
+			"path": "/home/peter/dev/usul-code",
+			"origin": "git@github.com:agent-ix/usul-code.git",
+			"commit": "3e7cf3b6ac519c297a16aac0282f8d64aca7a836",
+			"clean": true,
+			"stable": true,
+			"documents": 45
+		},
+		{
+			"path": "/home/peter/dev/web-app",
+			"origin": "git@github.com:agent-ix/web-app.git",
+			"commit": "48ee3d4b9d6461a79ce1fa2f3577bf81c4b0c106",
+			"clean": true,
+			"stable": true,
+			"documents": 12
+		},
+		{
+			"path": "/home/peter/dev/web-app-cookiecutter",
+			"origin": "git@github.com:agent-ix/web-app-cookiecutter.git",
+			"commit": "2ab92e0e42e9e3916ee3daca0cd0e3dfc11b7da6",
+			"clean": true,
+			"stable": true,
+			"documents": 3
+		},
+		{
+			"path": "/home/peter/dev/workflow-app",
+			"origin": "https://github.com/agent-ix/workflow-app.git",
+			"commit": "84c3c0f591881ad662476c952284606a6186d9d5",
+			"clean": true,
+			"stable": true,
+			"documents": 19
+		},
+		{
+			"path": "/home/peter/dev/workflow-execution",
+			"origin": "https://github.com/agent-ix/workflow-execution.git",
+			"commit": "d831b4b7e944bc6904f6a40fc16a18d081246863",
+			"clean": true,
+			"stable": true,
+			"documents": 81
+		},
+		{
+			"path": "/home/peter/dev/workflow-plugin-sdk",
+			"origin": "https://github.com/agent-ix/workflow-plugin-sdk.git",
+			"commit": "467cc6cb7c8e210802d0f4a77eb30ca748845b5d",
+			"clean": true,
+			"stable": true,
+			"documents": 15
+		},
+		{
+			"path": "/home/peter/dev/workflow-service",
+			"origin": "https://github.com/agent-ix/workflow-service.git",
+			"commit": "dc57425e0cbddfce36a5a525f05363ea6fc00162",
+			"clean": true,
+			"stable": true,
+			"documents": 86
+		},
+		{
+			"path": "/home/peter/dev/workflow-worker-pool",
+			"origin": "https://github.com/agent-ix/workflow-worker-pool.git",
+			"commit": "f2da32ba846136ac85cdff0bbf5e63f80ddf723e",
+			"clean": true,
+			"stable": true,
+			"documents": 31
+		},
+		{
+			"path": "/home/peter/dev/workspace-worker",
+			"origin": "https://github.com/agent-ix/workspace-worker.git",
+			"commit": "21e905157c86fc1c18b95bbe8e35f48681e46f7b",
+			"clean": true,
+			"stable": true,
+			"documents": 9
+		}
+	],
+	"excluded": [
+		{
+			"path": "/home/peter/dev/.agent",
+			"rule": "not-a-repository"
+		},
+		{
+			"path": "/home/peter/dev/.agents",
+			"rule": "not-a-repository"
+		},
+		{
+			"path": "/home/peter/dev/.audit",
+			"rule": "not-a-repository"
+		},
+		{
+			"path": "/home/peter/dev/.cc-scratch",
+			"rule": "not-a-repository"
+		},
+		{
+			"path": "/home/peter/dev/.ci-artifacts",
+			"rule": "not-a-repository"
+		},
+		{
+			"path": "/home/peter/dev/.claude",
+			"rule": "not-a-repository"
+		},
+		{
+			"path": "/home/peter/dev/.cookiecutter_replay",
+			"rule": "not-a-repository"
+		},
+		{
+			"path": "/home/peter/dev/.gcp",
+			"rule": "not-a-repository"
+		},
+		{
+			"path": "/home/peter/dev/.git",
+			"rule": "excluded-directory"
+		},
+		{
+			"path": "/home/peter/dev/.ix",
+			"rule": "not-a-repository"
+		},
+		{
+			"path": "/home/peter/dev/.pnpm-store",
+			"rule": "not-a-repository"
+		},
+		{
+			"path": "/home/peter/dev/.pytest_cache",
+			"rule": "not-a-repository"
+		},
+		{
+			"path": "/home/peter/dev/.research-synaptic",
+			"rule": "not-a-repository"
+		},
+		{
+			"path": "/home/peter/dev/.rights-quarantine",
+			"rule": "not-a-repository"
+		},
+		{
+			"path": "/home/peter/dev/.ruff_cache",
+			"rule": "not-a-repository"
+		},
+		{
+			"path": "/home/peter/dev/.ticket-runner",
+			"rule": "not-a-repository"
+		},
+		{
+			"path": "/home/peter/dev/.workflow",
+			"rule": "not-a-repository"
+		},
+		{
+			"path": "/home/peter/dev/__pycache__",
+			"rule": "excluded-directory"
+		},
+		{
+			"path": "/home/peter/dev/agent-drivers",
+			"rule": "no-spec-directory"
+		},
+		{
+			"path": "/home/peter/dev/agent-ix-landing",
+			"rule": "no-spec-directory"
+		},
+		{
+			"path": "/home/peter/dev/agent-pty",
+			"rule": "no-spec-directory"
+		},
+		{
+			"path": "/home/peter/dev/agent-skills",
+			"rule": "no-spec-directory"
+		},
+		{
+			"path": "/home/peter/dev/agent-systems-manager",
+			"rule": "not-a-repository"
+		},
+		{
+			"path": "/home/peter/dev/agent_skills",
+			"rule": "no-spec-directory"
+		},
+		{
+			"path": "/home/peter/dev/assurance-local-evidence",
+			"rule": "not-a-repository"
+		},
+		{
+			"path": "/home/peter/dev/auth-bff",
+			"rule": "no-spec-directory"
+		},
+		{
+			"path": "/home/peter/dev/brand-kit",
+			"rule": "no-spec-directory"
+		},
+		{
+			"path": "/home/peter/dev/catalog-mcp",
+			"rule": "no-spec-directory"
+		},
+		{
+			"path": "/home/peter/dev/claude-plugin-cookiecutter",
+			"rule": "no-spec-directory"
+		},
+		{
+			"path": "/home/peter/dev/cloud-manager-ui-applications",
+			"rule": "no-spec-directory"
+		},
+		{
+			"path": "/home/peter/dev/cloud-manager-ui-elements",
+			"rule": "no-spec-directory"
+		},
+		{
+			"path": "/home/peter/dev/datasets",
+			"rule": "not-a-repository"
+		},
+		{
+			"path": "/home/peter/dev/duncan-skills",
+			"rule": "no-spec-directory"
+		},
+		{
+			"path": "/home/peter/dev/ecaz-task137",
+			"rule": "git-link-file"
+		},
+		{
+			"path": "/home/peter/dev/ecaz-task139",
+			"rule": "git-link-file"
+		},
+		{
+			"path": "/home/peter/dev/ecaz-task164",
+			"rule": "git-link-file"
+		},
+		{
+			"path": "/home/peter/dev/electron-hello",
+			"rule": "not-a-repository"
+		},
+		{
+			"path": "/home/peter/dev/fast_debug",
+			"rule": "not-a-repository"
+		},
+		{
+			"path": "/home/peter/dev/fastmcp-cookiecutter-template-contaminated",
+			"rule": "not-a-repository"
+		},
+		{
+			"path": "/home/peter/dev/filament",
+			"rule": "symlink"
+		},
+		{
+			"path": "/home/peter/dev/golden-path",
+			"rule": "no-spec-directory"
+		},
+		{
+			"path": "/home/peter/dev/ix-agent-a2a",
+			"rule": "no-spec-directory"
+		},
+		{
+			"path": "/home/peter/dev/ix-landing-kit",
+			"rule": "no-spec-directory"
+		},
+		{
+			"path": "/home/peter/dev/ix-spec",
+			"rule": "not-a-repository"
+		},
+		{
+			"path": "/home/peter/dev/keys",
+			"rule": "not-a-repository"
+		},
+		{
+			"path": "/home/peter/dev/mcp-app-test-ui",
+			"rule": "not-a-repository"
+		},
+		{
+			"path": "/home/peter/dev/mcp-ui-host",
+			"rule": "no-spec-directory"
+		},
+		{
+			"path": "/home/peter/dev/mock-mcp-server",
+			"rule": "not-a-repository"
+		},
+		{
+			"path": "/home/peter/dev/out",
+			"rule": "not-a-repository"
+		},
+		{
+			"path": "/home/peter/dev/platform",
+			"rule": "no-spec-directory"
+		},
+		{
+			"path": "/home/peter/dev/py_code",
+			"rule": "not-a-repository"
+		},
+		{
+			"path": "/home/peter/dev/quire-contract-codegen-agent-b",
+			"rule": "git-link-file"
+		},
+		{
+			"path": "/home/peter/dev/quire-contract-codegen-agent-b-vacuity",
+			"rule": "git-link-file"
+		},
+		{
+			"path": "/home/peter/dev/quire-research",
+			"rule": "not-a-repository"
+		},
+		{
+			"path": "/home/peter/dev/quire-rs-plain",
+			"rule": "git-link-file"
+		},
+		{
+			"path": "/home/peter/dev/reports",
+			"rule": "not-a-repository"
+		},
+		{
+			"path": "/home/peter/dev/retros",
+			"rule": "not-a-repository"
+		},
+		{
+			"path": "/home/peter/dev/rust-lib-cookiecutter",
+			"rule": "no-spec-directory"
+		},
+		{
+			"path": "/home/peter/dev/spec",
+			"rule": "not-a-repository"
+		},
+		{
+			"path": "/home/peter/dev/spec-core-service",
+			"rule": "not-a-repository"
+		},
+		{
+			"path": "/home/peter/dev/spec-editor-ui-core",
+			"rule": "no-spec-directory"
+		},
+		{
+			"path": "/home/peter/dev/spec-graph-skills",
+			"rule": "no-spec-directory"
+		},
+		{
+			"path": "/home/peter/dev/spec-view-element",
+			"rule": "no-spec-directory"
+		},
+		{
+			"path": "/home/peter/dev/tl-mltl-context",
+			"rule": "git-link-file"
+		},
+		{
+			"path": "/home/peter/dev/tl-mltl-followups",
+			"rule": "git-link-file"
+		},
+		{
+			"path": "/home/peter/dev/tl-mltl-hermetic",
+			"rule": "git-link-file"
+		},
+		{
+			"path": "/home/peter/dev/tl-mltl-residuals",
+			"rule": "git-link-file"
+		},
+		{
+			"path": "/home/peter/dev/tl-rewrite-context",
+			"rule": "git-link-file"
+		},
+		{
+			"path": "/home/peter/dev/tl-rewrite-followups",
+			"rule": "git-link-file"
+		},
+		{
+			"path": "/home/peter/dev/tl-rewrite-pr18",
+			"rule": "git-link-file"
+		},
+		{
+			"path": "/home/peter/dev/tl-syntax-make-control",
+			"rule": "git-link-file"
+		},
+		{
+			"path": "/home/peter/dev/tl-syntax-review-residuals",
+			"rule": "git-link-file"
+		},
+		{
+			"path": "/home/peter/dev/tl-syntax-typed-signals",
+			"rule": "git-link-file"
+		},
+		{
+			"path": "/home/peter/dev/tmp",
+			"rule": "not-a-repository"
+		},
+		{
+			"path": "/home/peter/dev/workflow-event-bridge",
+			"rule": "no-spec-directory"
+		},
+		{
+			"path": "/home/peter/dev/workspaces",
+			"rule": "not-a-repository"
+		},
+		{
+			"path": "/home/peter/dev/worktrees",
+			"rule": "not-a-repository"
+		},
+		{
+			"path": "/home/peter/dev/wsl2-antigravity-setup",
+			"rule": "no-spec-directory"
+		}
+	]
+}

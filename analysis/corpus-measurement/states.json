@@ -1,0 +1,9 @@
+{
+	"states": {
+		"measured": 7501,
+		"out-of-model": 86,
+		"unreadable": 0,
+		"contested": 0
+	},
+	"contested": []
+}
