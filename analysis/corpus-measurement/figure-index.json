@@ -1,0 +1,67 @@
+[
+	{
+		"printed": "251",
+		"artifact": "corpus.json",
+		"field": "repositories.length"
+	},
+	{
+		"printed": "7,587",
+		"artifact": "census.json",
+		"field": "total"
+	},
+	{
+		"printed": "7,501",
+		"artifact": "states.json",
+		"field": "states.measured"
+	},
+	{
+		"printed": "86",
+		"artifact": "states.json",
+		"field": "states.out-of-model"
+	},
+	{
+		"printed": "7,370",
+		"artifact": "rates.json",
+		"field": "structural.numerator"
+	},
+	{
+		"printed": "98.3",
+		"artifact": "rates.json",
+		"field": "structural.valuePercent"
+	},
+	{
+		"printed": "155",
+		"artifact": "rates.json",
+		"field": "formCensus.denominator"
+	},
+	{
+		"printed": "154",
+		"artifact": "census.json",
+		"field": "byForm.free-column-table"
+	},
+	{
+		"printed": "3",
+		"artifact": "rates.json",
+		"field": "dirtyRepositories"
+	},
+	{
+		"printed": "292",
+		"artifact": "findings.json",
+		"field": "tally.missing-structure"
+	},
+	{
+		"printed": "7",
+		"artifact": "findings.json",
+		"field": "tally.malformed-document"
+	},
+	{
+		"printed": "1",
+		"artifact": "findings.json",
+		"field": "tally.stale-module"
+	},
+	{
+		"printed": "0",
+		"artifact": "findings.json",
+		"field": "unknown"
+	}
+]

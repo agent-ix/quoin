@@ -1,0 +1,12 @@
+{
+	"unit": "documents",
+	"total": 7587,
+	"byForm": {
+		"not-applicable": 7432,
+		"free-column-table": 154,
+		"typed-table": 1
+	},
+	"advisoryFindings": 154,
+	"notApplicable": 7432,
+	"fieldLevelCitation": "agent-ix/quire-rs#392"
+}

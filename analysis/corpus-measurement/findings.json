@@ -1,0 +1,48 @@
+{
+	"tally": {
+		"contract-defect": 0,
+		"legitimate-undeclared-value": 0,
+		"malformed-document": 7,
+		"missing-structure": 292,
+		"unsupported-representation": 0,
+		"stale-module": 1,
+		"tool-defect": 0,
+		"unknown": 0
+	},
+	"unknown": 0,
+	"undispositioned": 0,
+	"unmatchedLedgerEntries": [
+		"range-ids-unresolvable",
+		"regex-brace-unbinds-file",
+		"status-lie-check-never-ran",
+		"artifact-module-install-refused",
+		"pinned-module-set-not-closed"
+	],
+	"ledgerCoverage": [
+		{
+			"entryId": "range-ids-unresolvable",
+			"documents": 203,
+			"share": 0.02675629366020825
+		},
+		{
+			"entryId": "regex-brace-unbinds-file",
+			"documents": 0,
+			"share": 0
+		},
+		{
+			"entryId": "status-lie-check-never-ran",
+			"documents": 203,
+			"share": 0.02675629366020825
+		},
+		{
+			"entryId": "artifact-module-install-refused",
+			"documents": 0,
+			"share": 0
+		},
+		{
+			"entryId": "pinned-module-set-not-closed",
+			"documents": 7587,
+			"share": 1
+		}
+	]
+}
