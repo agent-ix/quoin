@@ -224,6 +224,7 @@ Criteria absent here are verified by a method that produces no test — see
 | FR-073 | FR-073-AC-1, FR-073-AC-2, FR-073-AC-3, FR-073-AC-4, FR-073-AC-5, FR-073-AC-6, FR-073-CON-1, FR-073-CON-2 | TC-1360, TC-1361, TC-1362, TC-1363, TC-1364, TC-1365, TC-1366, TC-1385 | ✅ Complete |
 | FR-074 | FR-074-AC-1, FR-074-AC-2, FR-074-AC-3, FR-074-AC-4, FR-074-AC-5, FR-074-CON-1 | TC-1367, TC-1368, TC-1369, TC-1370, TC-1371, TC-1386 | ✅ Complete |
 | FR-075 | FR-075-AC-1, FR-075-AC-2, FR-075-AC-3, FR-075-AC-4, FR-075-AC-5, FR-075-CON-1, FR-075-CON-2 | TC-1372, TC-1373, TC-1374, TC-1375, TC-1376, TC-1377, TC-1378 | ✅ Complete |
+| FR-101 | FR-101-AC-1..10 | TC-1600..TC-1610 | ✅ Complete |
 
 ## Test Case Summary
 
@@ -1064,6 +1065,17 @@ generated tests under `tests/props/` and `Unit` for the rest.
 | TC-1582 | A module capability with no surface in the toolchain record yields a tool-defect entry naming that capability | Unit | P0 | FR-091-AC-8 | 🚧 not yet implemented (agent-ix/quoin#291) |
 | TC-1583 | The refs, index and working tree of every corpus and module repository compare equal before and after a run | Integration | P0 | FR-092-AC-7, FR-085-CON-1 | 🚧 not yet implemented (agent-ix/quoin#291) |
 | TC-1584 | Every repository outside the reproducibility claim is marked `clean: false` or `stable: false` in the corpus record | Property | P0 | NFR-021-AC-4 | 🚧 not yet implemented (agent-ix/quoin#291) |
+| TC-1600 | A lock record identifies its source by commit and reports no nearest tag | Unit | P0 | FR-101-AC-1 | ✅ passed |
+| TC-1601 | Two resolutions of an unchanged environment produce byte-identical records | Unit | P0 | FR-101-AC-2 | ✅ passed |
+| TC-1602 | The catalog is ordered by module name rather than by discovery order | Property | P0 | FR-101-AC-2 | ✅ passed |
+| TC-1603 | A dirty repository is recorded `clean: false` and stays in the catalog | Unit | P0 | FR-101-AC-3 | ✅ passed |
+| TC-1604 | A declared target with no generated package is `missing` and names its owning issue | Unit | P0 | FR-101-AC-4 | ✅ passed |
+| TC-1605 | A mismatched fingerprint is `incompatible` and is not substituted, while a matching one resolves | Unit | P0 | FR-101-AC-5 | ✅ passed |
+| TC-1606 | An unrecognised schema major is reported without falling back to a recognised one | Unit | P0 | FR-101-AC-6 | ✅ passed |
+| TC-1607 | A module with no semantic block resolves `dynamic-only` and remains installable | Unit | P0 | FR-101-AC-7 | ✅ passed |
+| TC-1608 | The lock record carries the module's declared semantic-core version | Unit | P0 | FR-101-AC-8 | ✅ passed |
+| TC-1609 | Resolution leaves the module repository byte-unchanged | Unit | P0 | FR-101-AC-9 | ✅ passed |
+| TC-1610 | The lock module imports no network client and calls no fetch | Static | P1 | FR-101-AC-10 | ✅ passed |
 
 ## Stakeholder Requirement Coverage
 
@@ -1107,6 +1119,7 @@ found the stakeholder layer had no rows here at all.
 | US-019   | ✅ Covered | `tests/graph-adapters.test.ts`, `tests/graph-portfolio.test.ts`, and `tests/graph-portfolio-command.test.ts` TC-1293..TC-1315 cover lossless producer intake, plan/definition/population governance, raw evidence, graph history and partitions, availability, compatible comparisons, exact FR-062 portfolio views, and non-scoring. |
 | US-020   | ✅ Covered | TC-1344, TC-1345, TC-1360, TC-1367 realise EX-1..EX-4 (typed table, `sysml` fence, schema by digest, legacy warning). |
 | US-021   | 🚧 Partly | TC-1410, TC-1421, TC-1424 and TC-1436 realise EX-1, EX-3 and EX-4: a rendered repository emits, validates and passes its own suite under `make template-gate` (31 rows, zero skipped, in all three variants), the two Properties forms extract identically, each negative fixture is refused for its own declared reason, and no residue class fires. EX-2 (the engine's absence fails rather than passes) is `🚧` — TC-1428 is authored in the rendered `conftest.py` and no run yet removes the wheel. |
+| US-023 | US-023-AC-1..4 | TC-1600..TC-1610 | ✅ Complete |
 
 ## Property Test Layer
 
