@@ -48,6 +48,7 @@ that is the ticket to reopen.
 - **Governed target record** — `RunRecord` entries, one per replayed fixture.
 - **Why nothing existing represents it** — it is JSONL, one object per line. `entries` requires a single object with an `entries` array; `junit` requires XML. The finding-shaped adapters would write it into `findings/`, which loses the clean-versus-unrun distinction FR-034 exists to make.
 - **Identity** — `<corpus>::<operation>::<fixture>`. The same fixture id is replayed under several operations, so collapsing them would let one result overwrite another.
+- **Trace metadata** — optional row `trace_ids` is retained as `RunEntry.traceIds`, preserving order and values. Supplied arrays must be non-empty and contain distinct nonblank strings. Omission remains compatible with the original producer. `tests/fixtures/evidence/contract-conformance-traces-real.jsonl` adds a byte-exact row from candidate `9b9102c3806e9cda0ed70312f4f6c23a211f6fbf`; its capture command and full-run digest are recorded in the fixture README. The adapter preserves identifiers; the producer owns their verification meaning, and the existing record path performs binding.
 
 ### `differential-report`
 
