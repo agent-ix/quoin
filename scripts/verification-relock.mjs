@@ -15,6 +15,7 @@ import ts from "typescript";
 import {
   committedTree,
   describeModule,
+  literalGit,
   sourceNames,
   V1_SOURCES,
   V2_SOURCES,
@@ -40,14 +41,14 @@ const SCHEMAS = [
 const RELOCK_ARTIFACTS = [
   "scripts/verification-relock.mjs",
   "scripts/verification-relock-selftest.mjs",
+  "scripts/verification-declarations.mjs",
+  "scripts/verification-declarations-selftest.mjs",
+  "scripts/verification-object-integrity-selftest.mjs",
+  "scripts/workspace-policy-selftest.mjs",
 ];
 
 function git(root, ...args) {
-  return execFileSync("git", ["-C", root, ...args], {
-    timeout: 120_000,
-    maxBuffer: 128 * 1024 * 1024,
-    stdio: ["ignore", "pipe", "pipe"],
-  });
+  return literalGit(root, args);
 }
 
 export function parseArguments(args) {
@@ -325,10 +326,6 @@ export function prepareCandidate(base, roots) {
   for (const path of new Set([
     ...Object.keys(base.artifacts),
     ...RELOCK_ARTIFACTS,
-    "scripts/verification-declarations.mjs",
-    ...(base.schemaVersion === "quoin-verification-stack-lock-v2"
-      ? ["scripts/verification-declarations-selftest.mjs"]
-      : []),
   ])) {
     const corpus = path.startsWith("corpus/");
     const bytes = committedBytes(

@@ -112,6 +112,8 @@ export function fixture(scratch) {
     "verification-relock-selftest.mjs",
     "verification-declarations.mjs",
     "verification-declarations-selftest.mjs",
+    "verification-object-integrity-selftest.mjs",
+    "workspace-policy-selftest.mjs",
   ]) {
     put(roots.quoin, `scripts/${name}`, "// fixture artifact\n");
   }

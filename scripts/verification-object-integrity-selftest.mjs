@@ -6,6 +6,7 @@ import {
   chmodSync,
   mkdirSync,
   mkdtempSync,
+  readFileSync,
   rmSync,
   statSync,
   writeFileSync,
@@ -162,6 +163,12 @@ check(
     git(root, ["commit", "-qm", "valid Unicode"]);
     const healthy = committedTree(root, git(root, ["rev-parse", "HEAD"]));
     assert.ok(healthy.files.some((file) => file.path === "schéma-測定.yaml"));
+    const unicode = join(scratch, "unicode-snapshot");
+    writeCommittedTree(healthy, unicode);
+    assert.equal(
+      readFileSync(join(unicode, "schéma-測定.yaml"), "utf8"),
+      "healthy: true\n",
+    );
     const invalid = Buffer.concat([
       Buffer.from(root + "/"),
       Buffer.from([0xff]),

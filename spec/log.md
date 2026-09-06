@@ -8,6 +8,19 @@ description: "Chronological log of structural changes to this bundle."
 
 ## History
 
+* **2026-09-06** — #350 literal-object repair disables replacement
+  interpretation in shared Git readers, relock reads, source preflight and
+  canonical descendant commands, without changing replacement refs. Fatal UTF-8
+  decoding refuses invalid names while preserving valid Unicode; explicit
+  post-creation permissions preserve declared file modes under restrictive umask.
+  The five independently banked native controls now pass, including complete
+  candidate schema provenance and source-preflight checks.
+  All 84 focused tests pass through normal pinned pnpm execution. Native
+  `make validate` (including its normal build) passes with CLI `ff638b9` /
+  engine `d3bc2ba` and the three declared module snapshots under poisoned
+  ambient module settings. The final QA `7442f27` snapshot still reports
+  178 executable plus 11 reporting cases; accepted lock/evidence remain unchanged.
+
 * **2026-09-06** — Independent #350 review reproduced three literal snapshot
   gaps: caller umask changes emitted file modes, Git replacement refs substitute
   requested objects, and lossy UTF-8 decoding renames invalid Git paths. Native

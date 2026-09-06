@@ -18,6 +18,8 @@ import { createRequire } from "node:module";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
+  decodeGitText,
+  literalGit,
   materializeDeclarations,
   sourceNames,
   validateDeclarationShape,
@@ -154,7 +156,7 @@ function run(command, args, options = {}) {
   const timeout = options.timeout ?? 120_000;
   const done = spawnSync(command, args, {
     cwd: options.cwd,
-    env: options.env ?? process.env,
+    env: { ...(options.env ?? process.env), GIT_NO_REPLACE_OBJECTS: "1" },
     encoding: options.encoding ?? "utf8",
     maxBuffer: 128 * 1024 * 1024,
     timeout,
@@ -171,7 +173,7 @@ function run(command, args, options = {}) {
 }
 
 function git(root, ...args) {
-  return run("git", ["-C", root, ...args]).trim();
+  return decodeGitText(literalGit(root, args)).trim();
 }
 
 function normalizedRemote(value) {

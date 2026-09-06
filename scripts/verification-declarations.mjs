@@ -4,6 +4,7 @@
 import { execFileSync, spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import {
+  chmodSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
@@ -13,6 +14,7 @@ import {
 import { tmpdir } from "node:os";
 import { dirname, isAbsolute, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { TextDecoder } from "node:util";
 
 export const V1_SOURCES = [
   "quoin",
@@ -98,12 +100,20 @@ export function validateDeclarationShape(lock) {
   }
 }
 
-function git(root, args, timeout) {
-  return execFileSync("git", ["-C", root, ...args], {
+export function literalGit(root, args, timeout = 120_000) {
+  return execFileSync("git", ["--no-replace-objects", "-C", root, ...args], {
     timeout,
     maxBuffer: 128 * 1024 * 1024,
     stdio: ["ignore", "pipe", "pipe"],
   });
+}
+
+export function decodeGitText(bytes) {
+  try {
+    return new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+  } catch {
+    throw new Error("Git paths and metadata must be valid UTF-8");
+  }
 }
 
 /** Complete literal Git tree, bounded without filters, export attributes or working files. */
@@ -113,16 +123,18 @@ export function committedTree(root, revision, path = "", timeout = 120_000) {
       "committed snapshot requires a full revision and safe relative path",
     );
   const selection = path ? `${revision}:${path}` : `${revision}^{tree}`;
-  const tree = git(root, ["rev-parse", "--verify", selection], timeout)
+  const tree = literalGit(root, ["rev-parse", "--verify", selection], timeout)
     .toString()
     .trim();
   if (
     !FULL_SHA.test(tree) ||
-    git(root, ["cat-file", "-t", tree], timeout).toString().trim() !== "tree"
+    literalGit(root, ["cat-file", "-t", tree], timeout).toString().trim() !==
+      "tree"
   )
     throw new Error("committed snapshot selection is not a tree");
-  const entries = git(root, ["ls-tree", "-r", "-z", tree], timeout)
-    .toString()
+  const entries = decodeGitText(
+    literalGit(root, ["ls-tree", "-r", "-z", tree], timeout),
+  )
     .split("\0")
     .filter(Boolean)
     .map((row) => {
@@ -141,12 +153,16 @@ export function committedTree(root, revision, path = "", timeout = 120_000) {
     })
     .sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0));
   if (!entries.length) throw new Error("committed snapshot tree is empty");
-  const objects = execFileSync("git", ["-C", root, "cat-file", "--batch"], {
-    input: entries.map((entry) => entry.object).join("\n") + "\n",
-    timeout,
-    maxBuffer: 128 * 1024 * 1024,
-    stdio: ["pipe", "pipe", "pipe"],
-  });
+  const objects = execFileSync(
+    "git",
+    ["--no-replace-objects", "-C", root, "cat-file", "--batch"],
+    {
+      input: entries.map((entry) => entry.object).join("\n") + "\n",
+      timeout,
+      maxBuffer: 128 * 1024 * 1024,
+      stdio: ["pipe", "pipe", "pipe"],
+    },
+  );
   let offset = 0;
   const files = entries.map((entry) => {
     const end = objects.indexOf(10, offset);
@@ -186,6 +202,7 @@ export function writeCommittedTree(snapshot, destination) {
       flag: "wx",
       mode: file.mode === "100755" ? 0o755 : 0o644,
     });
+    chmodSync(target, file.mode === "100755" ? 0o755 : 0o644);
   }
 }
 

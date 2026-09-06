@@ -43,6 +43,12 @@ filters and Git archive export attributes cannot alter those bytes. The existing
 attestation's lock digest binds this complete declaration inventory without
 changing the attestation schema.
 
+All literal source/object readers disable Git replacement interpretation without
+changing replacement refs. Invalid UTF-8 Git paths fail instead of being renamed
+through lossy decoding; valid Unicode filenames retain their exact spelling.
+Materialized files are explicitly set to `0644` or `0755` after creation, so a
+restrictive caller umask cannot change the recorded file modes.
+
 The canonical runner passes a scratch JSON array of exact roots through
 `QUOIN_VERIFICATION_DECLARATIONS` to the existing Make `validate` prerequisite.
 That route calls the native Quire validator with repeated `--module` flags,
