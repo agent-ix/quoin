@@ -8,6 +8,13 @@ description: "Chronological log of structural changes to this bundle."
 
 ## History
 
+* **2026-09-06** — #350 build prerequisite banks the actual unrendered
+  cookiecutter package bytes in a minimal frozen pnpm workspace. Pnpm 11.20's
+  install configuration defaults to the root package, but its run/exec dependency
+  checker defaults absent workspace membership to recursive discovery. Explicit
+  root-only membership must align both without disabling dependency checks or
+  omitting the three rendered consumer variants (FR-083-AC-9, TC-1597).
+
 * **2026-09-06** — #350 slice A implements explicit eight-source v2 and
   literal committed module inventories using the same bounded Git snapshot
   loader as the QA inventory. The existing native Make validation prerequisite
