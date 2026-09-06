@@ -5,6 +5,9 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
+// Keep relock qualification on the existing canonical selftest path.
+import "./verification-relock-selftest.mjs";
+
 import {
   assertRepository,
   assertRemoteRevision,

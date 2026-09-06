@@ -226,6 +226,19 @@ function evidenceHeadForCheckout(name, root, lockedRevision, head, options) {
 }
 
 export function assertRepository(name, root, locked, options = {}) {
+  try {
+    return assertRepositorySource(name, root, locked, options);
+  } catch (cause) {
+    throw new Error(
+      `${cause.message}\nReview the source change and prepare a candidate with ` +
+        `make verification-relock; see quality/verification-stack.md. ` +
+        `Relocking does not waive source checks or promote evidence.`,
+      { cause },
+    );
+  }
+}
+
+function assertRepositorySource(name, root, locked, options) {
   if (!existsSync(join(root, ".git")) && !existsSync(root)) {
     throw new Error(`${name} checkout is missing at ${root}`);
   }

@@ -8,6 +8,13 @@ description: "Chronological log of structural changes to this bundle."
 
 ## History
 
+* **2026-09-06** — `agent-ix/quoin#350`: FR-043-AC-32/33 specify an
+  explicit-source candidate relock command and actionable stale-lock remedy.
+  TC-1589..TC-1592 distinguish preparing immutable inputs from accepting a
+  replay; historical producer cohorts and all existing verification gates stay
+  unchanged. Source review, declaration alignment and canonical evidence remain
+  prerequisites to lock promotion.
+
 * **2026-09-06** — `agent-ix/quoin#331`: FR-069 adds optional native
   conformance trace preservation, explicit malformed-metadata refusal, legacy
   omission compatibility, and command-level Test Case-to-criterion binding

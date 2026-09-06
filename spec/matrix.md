@@ -774,6 +774,10 @@ generated tests under `tests/props/` and `Unit` for the rest.
 | TC-1586 | Malformed supplied trace arrays and identifiers fail naming the line and field | Unit | P0 | FR-069-AC-10 | ✅ `tests/contract-conformance-traces.test.ts` |
 | TC-1587 | Evidence recording binds producer Test Case ids to Quire-derived criteria, preserves failures, and reports unmatched ids | Integration | P0 | FR-069-AC-11 | ✅ `tests/contract-conformance-traces.test.ts` |
 | TC-1588 | A valid row followed by malformed trace metadata records no partial run or bindings | Integration | P0 | FR-069-AC-10 | ✅ `tests/contract-conformance-traces.test.ts` |
+| TC-1589 | Candidate relock derives seven exact sources, schema identity, QA counts and artifact hashes while preserving policy and historical cohorts | Integration | P0 | FR-043-AC-32 | ✅ `tests/verification-relock.test.ts` |
+| TC-1590 | Missing, dirty, unbound, Cargo-mismatched, schema-drifted and undersized-budget inputs cannot produce a candidate | Integration | P0 | FR-043-AC-32 | ✅ `tests/verification-relock.test.ts` |
+| TC-1591 | Candidate output cannot overwrite an existing file or change the accepted lock, evidence or producer expectations | Integration | P0 | FR-043-AC-33 | ✅ `tests/verification-relock.test.ts` |
+| TC-1592 | Source drift names the relock command while rollback and merge-before-promotion controls remain failing | Integration | P0 | FR-043-AC-33 | ✅ `tests/verification-relock.test.ts` |
 | TC-1336 | Every default module manifest loads unchanged with no `semantic` block | Integration | P0 | FR-070-AC-1 | ✅ Complete |
 | TC-1337 | A minimal `semantic` block loads and `quoin write` reports contract, semantic-core version, and package | Unit | P0 | FR-070-AC-2 | ✅ Complete |
 | TC-1338 | An unknown key inside `semantic` is rejected naming the key | Unit | P0 | FR-070-AC-3 | ✅ Complete |
