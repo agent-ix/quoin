@@ -8,6 +8,11 @@ spec-artifacts-iso. The CLI's Cargo pin must select that exact engine.
 
 ## Prepare a candidate
 
+Install the locked developer dependencies with
+`corepack pnpm install --frozen-lockfile` before invoking the relock command.
+The canonical verifier retains its own frozen install after source checks, so
+stale-source diagnostics still work on a checkout without `node_modules`.
+
 First commit the source changes, initialize Quoin's `corpus` submodule to the
 selected qa-corpus commit, and arrange clean checkouts of all seven sources.
 Each selected commit must already be reachable from a remote-tracking ref.
@@ -19,6 +24,14 @@ make verification-relock RELOCK_ARGS='--out /tmp/stack-candidate.json --root quo
 ```
 
 All roots are required; no sibling, PATH or installed-module discovery occurs.
+Cargo TOML is parsed with the exact locked `smol-toml` development dependency;
+only one explicit normal `quire-rs` dependency (including a package alias) is
+accepted. Branch, tag, path, workspace inheritance and engine override ambiguity
+are refused. Contract provenance is read from the exported `QUIRE_CONTRACT`
+literal using the already-pinned TypeScript parser, never from comments or by
+executing the module. Each candidate artifact must equal its committed Git blob;
+`corpus/` files resolve through the selected corpus gitlink. Hidden working-tree
+changes cannot be blessed merely because `git status` is empty.
 The output must not exist. The command derives revisions, artifact hashes and
 case counts, not policy. If the QA population exceeds the locked Tier-1 timeout
 budget, explicitly review that budget in the input lock before trying again.

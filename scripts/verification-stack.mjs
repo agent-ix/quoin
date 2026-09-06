@@ -12,6 +12,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
+import { createRequire } from "node:module";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -19,6 +20,7 @@ const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 const DEFAULT_LOCK = join(ROOT, "quality", "verification-stack-lock.json");
 const FULL_SHA = /^[0-9a-f]{40}$/;
 const DIGEST = /^sha256:[0-9a-f]{64}$/;
+const require = createRequire(import.meta.url);
 
 export function sha256(bytes) {
   return `sha256:${createHash("sha256").update(bytes).digest("hex")}`;
@@ -357,28 +359,82 @@ function assertToolchains(lock) {
   }
 }
 
-export function cliSelectsEngine(manifest, lockfile, engineRevision) {
-  const blocks = lockfile
-    .split("[[package]]")
-    .filter((block) => /\nname = "quire-rs"\n/.test(block));
-  if (blocks.length !== 1 || !blocks[0].includes(`#${engineRevision}`)) {
+export function cliSelectsEngine(
+  manifest,
+  lockfile,
+  engineRevision,
+  engineRemote,
+) {
+  // The canonical entrypoint must work before node_modules exists. It performs
+  // its frozen install after source checks and before reaching this parser.
+  const { parse: parseToml } = require("smol-toml");
+  const declared = parseToml(manifest);
+  const resolved = parseToml(lockfile);
+  const isEngine = ([name, dependency]) =>
+    name === "quire-rs" || dependency?.package === "quire-rs";
+  const selected = Object.entries(declared.dependencies ?? {}).filter(isEngine);
+  const otherTables = [
+    ...Object.values(declared.target ?? {}).map(
+      (target) => target.dependencies,
+    ),
+    ...Object.values(declared.patch ?? {}),
+  ];
+  const ambiguous =
+    otherTables.some((table) => Object.entries(table ?? {}).some(isEngine)) ||
+    Object.keys(declared.replace ?? {}).some((name) =>
+      /^quire-rs(?::|$)/.test(name),
+    );
+  const dependency = selected[0]?.[1];
+  if (
+    selected.length !== 1 ||
+    ambiguous ||
+    typeof dependency !== "object" ||
+    dependency === null ||
+    (dependency.package !== undefined && dependency.package !== "quire-rs") ||
+    dependency.rev !== engineRevision ||
+    typeof dependency.git !== "string" ||
+    !dependency.git.startsWith("https://") ||
+    ["branch", "tag", "path", "workspace"].some((key) => key in dependency) ||
+    (engineRemote &&
+      normalizedRemote(dependency.git) !== normalizedRemote(engineRemote))
+  ) {
     throw new Error(
-      `quire-cli Cargo.lock does not select locked Quire ${engineRevision}`,
+      `quire-cli Cargo.toml does not pin locked Quire ${engineRevision} as one unambiguous normal dependency`,
     );
   }
-  if (!manifest.includes(`rev = "${engineRevision}"`)) {
+  const packages = (resolved.package ?? []).filter(
+    (entry) => entry.name === "quire-rs",
+  );
+  let source;
+  try {
+    const value = packages[0]?.source;
+    if (typeof value === "string" && value.startsWith("git+"))
+      source = new URL(value.slice(4));
+  } catch {
+    /* malformed source remains a mismatch */
+  }
+  if (
+    packages.length !== 1 ||
+    !source ||
+    source.hash !== `#${engineRevision}` ||
+    source.searchParams.get("rev") !== engineRevision ||
+    [...source.searchParams.keys()].join() !== "rev" ||
+    normalizedRemote(`${source.origin}${source.pathname}`) !==
+      normalizedRemote(dependency.git)
+  ) {
     throw new Error(
-      `quire-cli Cargo.toml does not pin locked Quire ${engineRevision}`,
+      `quire-cli Cargo.lock does not select locked Quire ${engineRevision}`,
     );
   }
   return true;
 }
 
-function assertCliSelectsEngine(cliRoot, engineRevision) {
+function assertCliSelectsEngine(cliRoot, engineRevision, engineRemote) {
   return cliSelectsEngine(
     readFileSync(join(cliRoot, "Cargo.toml"), "utf8"),
     readFileSync(join(cliRoot, "Cargo.lock"), "utf8"),
     engineRevision,
+    engineRemote,
   );
 }
 
@@ -591,7 +647,17 @@ async function main() {
   );
   assertArtifactDigests(lock);
   assertToolchains(lock);
-  assertCliSelectsEngine(roots["quire-cli"], lock.repositories.quire.revision);
+  console.error("verification-stack: frozen package install");
+  run("corepack", ["pnpm", "install", "--frozen-lockfile"], {
+    cwd: ROOT,
+    timeout: lock.timeouts.installMilliseconds,
+    stdio: "inherit",
+  });
+  assertCliSelectsEngine(
+    roots["quire-cli"],
+    lock.repositories.quire.revision,
+    lock.repositories.quire.remote,
+  );
 
   const scratch = mkdtempSync(join(tmpdir(), "quoin-stack-"));
   let externalQuoin = null;
@@ -648,13 +714,7 @@ async function main() {
       QUOIN_TIER1_CASE_TIMEOUT_MS: String(lock.timeouts.caseMilliseconds),
       QUOIN_LOCKED_SOURCE_REVISION: lock.repositories.quoin.revision,
     };
-    console.error("verification-stack: frozen package install and Quoin gates");
-    run("corepack", ["pnpm", "install", "--frozen-lockfile"], {
-      cwd: ROOT,
-      env,
-      timeout: lock.timeouts.installMilliseconds,
-      stdio: "inherit",
-    });
+    console.error("verification-stack: Quoin gates");
     run("corepack", ["pnpm", "run", "audit:tool-drift"], {
       cwd: ROOT,
       env,

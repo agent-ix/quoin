@@ -4,6 +4,7 @@ import { execFileSync } from "node:child_process";
 import { readFileSync, realpathSync, writeFileSync } from "node:fs";
 import { dirname, isAbsolute, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import ts from "typescript";
 import {
   assertRemoteRevision,
   assertRepository,
@@ -85,6 +86,102 @@ function artifactPath(root, path) {
   return full;
 }
 
+function committedBytes(root, revision, path) {
+  const entry = git(root, "ls-tree", revision, "--", path).toString().trim();
+  if (!/^100(?:644|755) blob [0-9a-f]{40}\t/.test(entry)) {
+    throw new Error(
+      `artifact ${path} is not a regular file in git object ${revision}`,
+    );
+  }
+  const bytes = git(root, "show", `${revision}:${path}`);
+  if (!bytes.equals(readFileSync(artifactPath(root, path)))) {
+    throw new Error(
+      `artifact ${path} differs from committed git object ${revision}`,
+    );
+  }
+  return bytes;
+}
+
+/** Read the exported literal, not comments or executed TypeScript code. */
+export function parseContract(source) {
+  const file = ts.createSourceFile(
+    "contract.ts",
+    source,
+    ts.ScriptTarget.Latest,
+    true,
+    ts.ScriptKind.TS,
+  );
+  if (file.parseDiagnostics.length)
+    throw new Error("vendored contract contains invalid TypeScript");
+  const declarations = file.statements
+    .filter(
+      (statement) =>
+        ts.isVariableStatement(statement) &&
+        statement.modifiers?.some(
+          (modifier) => modifier.kind === ts.SyntaxKind.ExportKeyword,
+        ),
+    )
+    .flatMap((statement) =>
+      statement.declarationList.declarations
+        .filter(
+          (declaration) =>
+            ts.isIdentifier(declaration.name) &&
+            declaration.name.text === "QUIRE_CONTRACT",
+        )
+        .map((declaration) => ({
+          declaration,
+          constant: Boolean(
+            statement.declarationList.flags & ts.NodeFlags.Const,
+          ),
+        })),
+    );
+  if (declarations.length !== 1 || !declarations[0].constant)
+    throw new Error("expected one direct exported const QUIRE_CONTRACT");
+  function object(node) {
+    while (
+      node &&
+      (ts.isAsExpression(node) || ts.isParenthesizedExpression(node))
+    )
+      node = node.expression;
+    if (!node || !ts.isObjectLiteralExpression(node))
+      throw new Error("QUIRE_CONTRACT requires literal objects");
+    const properties = new Map();
+    for (const property of node.properties) {
+      if (
+        !ts.isPropertyAssignment(property) ||
+        !(ts.isIdentifier(property.name) || ts.isStringLiteral(property.name))
+      )
+        throw new Error("QUIRE_CONTRACT has an ambiguous property");
+      const name = property.name.text;
+      if (properties.has(name))
+        throw new Error(`duplicate QUIRE_CONTRACT property ${name}`);
+      properties.set(name, property.initializer);
+    }
+    return properties;
+  }
+  const properties = object(declarations[0].declaration.initializer);
+  const revision = properties.get("sourceRevision");
+  if (
+    !revision ||
+    !ts.isStringLiteral(revision) ||
+    !/^[0-9a-f]{40}$/.test(revision.text)
+  )
+    throw new Error("vendored contract has no exact literal sourceRevision");
+  const hashes = object(properties.get("hashes"));
+  const result = {};
+  for (const name of SCHEMAS) {
+    const value = hashes.get(name);
+    if (
+      !value ||
+      !ts.isStringLiteral(value) ||
+      !/^[0-9a-f]{64}$/.test(value.text)
+    )
+      throw new Error(`vendored schema has no exact literal hash: ${name}`);
+    result[name] = value.text;
+  }
+  return { revision: revision.text, hashes: result };
+}
+
 // TC-1589 / FR-043-AC-32: candidate preparation is not evidence promotion.
 export function prepareCandidate(base, roots) {
   validateLockShape(base);
@@ -110,9 +207,18 @@ export function prepareCandidate(base, roots) {
   const engine = roots.quire;
   const engineRevision = candidate.repositories.quire.revision;
   cliSelectsEngine(
-    readFileSync(join(roots["quire-cli"], "Cargo.toml"), "utf8"),
-    readFileSync(join(roots["quire-cli"], "Cargo.lock"), "utf8"),
+    committedBytes(
+      roots["quire-cli"],
+      candidate.repositories["quire-cli"].revision,
+      "Cargo.toml",
+    ).toString(),
+    committedBytes(
+      roots["quire-cli"],
+      candidate.repositories["quire-cli"].revision,
+      "Cargo.lock",
+    ).toString(),
     engineRevision,
+    candidate.repositories.quire.remote,
   );
   const submodule = git(quoin, "ls-tree", "HEAD", "--", "corpus")
     .toString()
@@ -133,17 +239,21 @@ export function prepareCandidate(base, roots) {
   for (const name of ["qaExternalQuoin", "quireBenchmarkQuoin"]) {
     assertRemoteRevision(name, quoin, base.cohorts[name].revision);
   }
-  const contract = readFileSync(join(quoin, "src/quire/contract.ts"), "utf8");
-  const revision = /sourceRevision:\s*"([0-9a-f]{40})"/.exec(contract)?.[1];
-  if (!revision)
-    throw new Error("vendored contract has no exact sourceRevision");
+  const { revision, hashes } = parseContract(
+    committedBytes(
+      quoin,
+      candidate.repositories.quoin.revision,
+      "src/quire/contract.ts",
+    ).toString(),
+  );
   assertRemoteRevision("vendored Quire contract", engine, revision);
   for (const name of SCHEMAS) {
-    const bytes = readFileSync(join(quoin, "src/quire/schemas", name));
-    const expectedHash = new RegExp(
-      `"${name.replaceAll(".", "\\.")}":\\s*"([0-9a-f]{64})"`,
-    ).exec(contract)?.[1];
-    if (sha256(bytes) !== `sha256:${expectedHash}`) {
+    const bytes = committedBytes(
+      quoin,
+      candidate.repositories.quoin.revision,
+      `src/quire/schemas/${name}`,
+    );
+    if (sha256(bytes) !== `sha256:${hashes[name]}`) {
       throw new Error(`vendored schema hash drift: ${name}`);
     }
     for (const sourceRevision of new Set([revision, engineRevision])) {
@@ -162,6 +272,11 @@ export function prepareCandidate(base, roots) {
     ...base.contracts,
     quire: { remote: candidate.repositories.quire.remote, revision },
   };
+  committedBytes(
+    roots["qa-corpus"],
+    candidate.repositories["qa-corpus"].revision,
+    "bounds.py",
+  );
   const inventory = JSON.parse(
     execFileSync("python3", [join(roots["qa-corpus"], "bounds.py"), "--json"], {
       cwd: roots["qa-corpus"],
@@ -176,7 +291,16 @@ export function prepareCandidate(base, roots) {
     ...Object.keys(base.artifacts),
     ...RELOCK_ARTIFACTS,
   ])) {
-    candidate.artifacts[path] = sha256(readFileSync(artifactPath(quoin, path)));
+    const corpus = path.startsWith("corpus/");
+    const bytes = committedBytes(
+      corpus ? roots["qa-corpus"] : quoin,
+      candidate.repositories[corpus ? "qa-corpus" : "quoin"].revision,
+      corpus ? path.slice("corpus/".length) : path,
+    );
+    // A separately routed corpus and Quoin's actual submodule must expose the same bytes.
+    if (!bytes.equals(readFileSync(artifactPath(quoin, path))))
+      throw new Error(`artifact ${path} differs from selected git object`);
+    candidate.artifacts[path] = sha256(bytes);
   }
   // The inventory reader is executable source. Recheck that every input stayed
   // at the measured clean commit before allowing any candidate output.

@@ -8,6 +8,13 @@ description: "Chronological log of structural changes to this bundle."
 
 ## History
 
+* **2026-09-06** — #350 candidate integrity repair uses exact
+  `smol-toml` 1.8.0 for Cargo fields and the existing pinned TypeScript parser
+  for the exported contract literal. Candidate artifact digests now compare
+  against commit blobs, including corpus gitlinks and the new relock tools.
+  Misleading comments, ambiguous dependencies/overrides, and hidden changed
+  bytes remain failing; unchanged assume-unchanged files remain valid.
+
 * **2026-09-06** — Independent #350 review banked candidate-integrity
   regressions before repair: Cargo comments impersonating an engine pin,
   TypeScript comments impersonating the exported contract revision, and

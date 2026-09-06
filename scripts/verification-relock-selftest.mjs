@@ -15,6 +15,7 @@ import { fileURLToPath } from "node:url";
 import {
   SOURCE_NAMES,
   parseArguments,
+  parseContract,
   prepareCandidate,
   writeCandidate,
 } from "./verification-relock.mjs";
@@ -96,7 +97,7 @@ function fixture(scratch) {
   put(
     roots.quoin,
     "src/quire/contract.ts",
-    `export const QUIRE_CONTRACT = { sourceRevision: "${engine}",\nhashes: {${schemas.map((name) => `"${name}": "${sha256(bytes).slice(7)}"`).join(",")}} as const;\n`,
+    `export const QUIRE_CONTRACT = { sourceRevision: "${engine}",\nhashes: {${schemas.map((name) => `"${name}": "${sha256(bytes).slice(7)}"`).join(",")}}} as const;\n`,
   );
   for (const name of schemas)
     put(roots.quoin, `src/quire/schemas/${name}`, bytes);
@@ -129,7 +130,10 @@ function fixture(scratch) {
     },
     requiredCapabilities: ["metrics_envelope"],
     toolchains: { node: "22.15.0", rust: "1.94.1", python: "3.10.12" },
-    artifacts: { "source.txt": sha256("old artifact") },
+    artifacts: {
+      "source.txt": sha256("old artifact"),
+      "corpus/source.txt": sha256("old corpus artifact"),
+    },
     timeouts: Object.fromEntries(
       ["case", "corpus", "tier1", "tier2", "install", "quoin", "span"].map(
         (name) => [`${name}Milliseconds`, 1000],
@@ -214,7 +218,11 @@ for (const [name, mutate, expected] of [
   [
     "Cargo comment cannot impersonate the selected revision",
     ({ roots, base }) => {
-      put(roots["quire-cli"], "Cargo.toml", `[dependencies]\nquire-rs = { git = "https://github.com/agent-ix/quire", rev = "${"b".repeat(40)}" }\n# expected: rev = "${base.repositories.quire.revision}"\n`);
+      put(
+        roots["quire-cli"],
+        "Cargo.toml",
+        `[dependencies]\nquire-rs = { git = "https://github.com/agent-ix/quire", rev = "${"b".repeat(40)}" }\n# expected: rev = "${base.repositories.quire.revision}"\n`,
+      );
       commit(roots["quire-cli"]);
     },
     /Cargo.toml does not pin/,
@@ -239,11 +247,35 @@ for (const [name, mutate, expected] of [
     "contract comment cannot impersonate exported source revision",
     ({ roots, base }) => {
       const path = join(roots.quoin, "src/quire/contract.ts");
-      const source = readFileSync(path, "utf8").replace(base.repositories.quire.revision, "b".repeat(40));
-      writeFileSync(path, `// prior sourceRevision: "${base.repositories.quire.revision}"\n${source}`);
+      const source = readFileSync(path, "utf8").replace(
+        base.repositories.quire.revision,
+        "b".repeat(40),
+      );
+      writeFileSync(
+        path,
+        `// prior sourceRevision: "${base.repositories.quire.revision}"\n${source}`,
+      );
       commit(roots.quoin);
     },
     /not a local commit/,
+  ],
+  [
+    "contract comment cannot impersonate an exported schema hash",
+    ({ roots }) => {
+      const path = join(roots.quoin, "src/quire/contract.ts");
+      const hash = sha256(
+        readFileSync(
+          join(roots.quoin, "src/quire/schemas/assurance-v1.schema.json"),
+        ),
+      ).slice(7);
+      const source = readFileSync(path, "utf8").replace(hash, "b".repeat(64));
+      writeFileSync(
+        path,
+        `// "assurance-v1.schema.json": "${hash}"\n${source}`,
+      );
+      commit(roots.quoin);
+    },
+    /vendored schema hash drift/,
   ],
   [
     "git-object schema drift",
@@ -279,6 +311,32 @@ for (const [name, mutate, expected] of [
     ({ roots }) => {
       git(roots.quoin, "update-index", "--assume-unchanged", "source.txt");
       put(roots.quoin, "source.txt", "not committed\n");
+    },
+    /artifact.*git object/,
+  ],
+  [
+    "assume-unchanged corpus bytes cannot impersonate selected gitlink source",
+    ({ roots }) => {
+      git(
+        roots["qa-corpus"],
+        "update-index",
+        "--assume-unchanged",
+        "source.txt",
+      );
+      put(roots["qa-corpus"], "source.txt", "not committed\n");
+    },
+    /artifact.*git object/,
+  ],
+  [
+    "new relock tool artifacts must also equal committed source",
+    ({ roots }) => {
+      git(
+        roots.quoin,
+        "update-index",
+        "--assume-unchanged",
+        "scripts/verification-relock.mjs",
+      );
+      put(roots.quoin, "scripts/verification-relock.mjs", "not committed\n");
     },
     /artifact.*git object/,
   ],
@@ -399,6 +457,37 @@ assert.throws(
   () =>
     parseArguments(["--root", "quire=/tmp/one", "--root", "quire=/tmp/two"]),
   /duplicate/,
+);
+
+check(
+  "unchanged assume-unchanged files remain valid; contract AST rejects ambiguity",
+  ({ roots, base }) => {
+    git(roots.quoin, "update-index", "--assume-unchanged", "source.txt");
+    prepareCandidate(base, roots);
+    const source = readFileSync(
+      join(roots.quoin, "src/quire/contract.ts"),
+      "utf8",
+    );
+    for (const invalid of [
+      source.replace("export const", "export let"),
+      source.replace("sourceRevision:", "['sourceRevision']:"),
+      source.replace("sourceRevision:", "...{}, sourceRevision:"),
+      source.replace(
+        "sourceRevision:",
+        `sourceRevision: "${"b".repeat(40)}", sourceRevision:`,
+      ),
+      source.replace(
+        "hashes: {",
+        'hashes: { ["coverage-v1.schema.json"]: "bad", ',
+      ),
+      source + source,
+    ])
+      assert.throws(() => parseContract(invalid));
+    const actual = parseContract(
+      `// sourceRevision: "${"b".repeat(40)}"\n${source}`,
+    );
+    assert.equal(actual.revision, base.repositories.quire.revision);
+  },
 );
 console.log(
   `${passed} verification relock integration checks and 5 argument checks passed`,

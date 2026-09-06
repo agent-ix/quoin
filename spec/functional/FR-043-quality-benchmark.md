@@ -81,6 +81,12 @@ Unchanged from this repository's standing posture. The benchmark is expensive â€
 
 ## Acceptance Criteria
 
+For AC-32, Cargo selection is read from parsed manifest and lock fields, never
+comments, unrelated dependencies or ambiguous overrides. Schema metadata is
+read from one exported literal `QUIRE_CONTRACT` declaration without executing
+source. Relocked artifacts must match selected commit blobs (including the
+selected corpus gitlink); clean Git status alone cannot establish byte identity.
+
 | ID | Criteria | Verification |
 |----|----------|--------------|
 | FR-043-AC-32 | `make verification-relock` prepares a candidate lock from seven explicitly routed, clean, remotely reachable source checkouts. It records full revisions, verifies the CLI's declared and resolved engine pin and the vendored schemas against both their recorded source and the selected engine git objects, derives the QA case partition and artifact digests, and preserves historical producer cohorts, capabilities, toolchains and timeout policy. Missing, dirty, mismatched or incompatible inputs fail before output. | Test (TC-1589, TC-1590) |
