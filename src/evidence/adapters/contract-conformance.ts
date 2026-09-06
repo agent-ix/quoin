@@ -28,6 +28,7 @@ interface ConformanceRow {
   operation?: unknown;
   status?: unknown;
   mismatch_kinds?: unknown;
+  trace_ids?: unknown;
 }
 
 /**
@@ -98,12 +99,32 @@ export const contractConformanceAdapter: EvidenceAdapter = {
           `line ${index + 1} has unknown status ${JSON.stringify(row.status)}`,
         );
       }
+      let traceIds: string[] | undefined;
+      if (row.trace_ids !== undefined) {
+        if (
+          !Array.isArray(row.trace_ids) ||
+          row.trace_ids.length === 0 ||
+          row.trace_ids.some(
+            (id: unknown) => typeof id !== "string" || id.trim() === "",
+          ) ||
+          new Set(row.trace_ids).size !== row.trace_ids.length
+        ) {
+          throw new AdapterError(
+            "contract-conformance",
+            `line ${index + 1} trace_ids must be a non-empty array of distinct non-blank strings`,
+          );
+        }
+        // Bindings belong to recordRun: preserve producer values and ordering.
+        // Legacy producers may omit trace_ids; that must not invent a binding.
+        traceIds = row.trace_ids as string[];
+      }
       entries.push({
         // Corpus and operation are part of the identity: the same fixture id
         // is replayed under several operations, and collapsing them would make
         // one result overwrite another.
         symbol: `${row.corpus_id as string}::${row.operation as string}::${row.fixture_id as string}`,
         outcome,
+        ...(traceIds === undefined ? {} : { traceIds }),
       });
     });
 
