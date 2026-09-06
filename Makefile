@@ -217,8 +217,12 @@ check-version: build
 # also means a module set is never validated against a stale host binary.
 .PHONY: validate
 validate: require-quire build
+ifneq ($(strip $(QUOIN_VERIFICATION_DECLARATIONS)),)
+	node scripts/verification-declarations.mjs "$(QUIRE)" "$(QUOIN_VERIFICATION_DECLARATIONS)"
+else
 	node bin/quoin.js module ensure-defaults
 	$(QUIRE) validate "spec/**/*.md" "plan/**/*.md" "reviews/*.md"
+endif
 
 .PHONY: test-json
 test-json:

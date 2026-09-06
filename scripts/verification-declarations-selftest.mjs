@@ -12,7 +12,8 @@ import {
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { fixture } from "./verification-relock-selftest.mjs";
 import { prepareCandidate } from "./verification-relock.mjs";
 import { sha256, validateLockShape } from "./verification-stack.mjs";
@@ -28,6 +29,7 @@ const routes = [
   ["engineering-assurance", "engineering_assurance"],
 ];
 let passed = 0;
+const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 function check(name, action) {
   const scratch = mkdtempSync(join(tmpdir(), "quoin-declarations-selftest-"));
   try {
@@ -88,6 +90,95 @@ check("healthy explicit eight-source v2 policy is supported", ({ base }) =>
 
 const { describeModule, materializeDeclarations, runExactValidation } =
   await import("./verification-declarations.mjs");
+
+check(
+  "v2 candidate derives complete source module artifacts and preserves historical producers",
+  ({ base, roots }) => {
+    const original = structuredClone(base);
+    const candidate = prepareCandidate(base, roots);
+    assert.deepEqual(base, original);
+    assert.equal(Object.keys(candidate.repositories).length, 8);
+    assert.deepEqual(candidate.declarations, original.declarations);
+    assert.deepEqual(
+      candidate.cohorts.qaExternalQuoin,
+      original.cohorts.qaExternalQuoin,
+    );
+    assert.deepEqual(
+      candidate.cohorts.quireBenchmarkQuoin,
+      original.cohorts.quireBenchmarkQuoin,
+    );
+    assert.ok(candidate.artifacts["scripts/verification-declarations.mjs"]);
+    assert.ok(
+      candidate.artifacts["scripts/verification-declarations-selftest.mjs"],
+    );
+    const historical = structuredClone(base);
+    historical.schemaVersion = "quoin-verification-stack-lock-v1";
+    delete historical.repositories["engineering-assurance"];
+    assert.throws(() => validateLockShape(historical), /historical v1/);
+    delete historical.declarations;
+    assert.equal(validateLockShape(historical), historical);
+    const missing = { ...roots };
+    delete missing["engineering-assurance"];
+    assert.throws(
+      () => prepareCandidate(base, missing),
+      /explicit absolute root/,
+    );
+  },
+);
+
+check(
+  "native v2 relock command requires eight roots and creates only a new candidate",
+  ({ base, roots, scratch }) => {
+    const policy = join(scratch, "policy.json");
+    const output = join(scratch, "candidate.json");
+    writeFileSync(policy, JSON.stringify(base));
+    const args = [
+      join(ROOT, "scripts/verification-relock.mjs"),
+      "--lock",
+      policy,
+      "--out",
+      output,
+      ...Object.entries(roots).flatMap(([name, root]) => [
+        "--root",
+        `${name}=${root}`,
+      ]),
+    ];
+    execFileSync(process.execPath, args, { stdio: ["ignore", "pipe", "pipe"] });
+    const candidate = JSON.parse(readFileSync(output, "utf8"));
+    assert.equal(candidate.schemaVersion, "quoin-verification-stack-lock-v2");
+    assert.deepEqual(candidate.declarations, base.declarations);
+    assert.deepEqual(JSON.parse(readFileSync(policy, "utf8")), base);
+    assert.throws(
+      () =>
+        execFileSync(process.execPath, args, {
+          stdio: ["ignore", "pipe", "pipe"],
+        }),
+      /EEXIST/,
+    );
+  },
+);
+
+check(
+  "hidden nested schema edits cannot become candidate source",
+  ({ base, roots }) => {
+    const root = roots["engineering-assurance"];
+    git(
+      root,
+      "update-index",
+      "--skip-worktree",
+      "engineering_assurance/schemas/frontmatter.json",
+    );
+    writeFileSync(
+      join(root, "engineering_assurance/schemas/frontmatter.json"),
+      '{"changed":true}\n',
+    );
+    assert.equal(git(root, "status", "--porcelain"), "");
+    assert.throws(
+      () => prepareCandidate(base, roots),
+      /differs from git object/,
+    );
+  },
+);
 
 // TC-1594 / FR-043-AC-34
 check(
@@ -181,6 +272,7 @@ check(
         () => materializeDeclarations(changed, roots, join(scratch, "invalid")),
         /inventory|tree/,
       );
+      assert.throws(() => prepareCandidate(changed, roots), /inventory|tree/);
     }
     symlinkSync("/tmp", join(source, declaration.path, "escape"));
     git(source, "add", "--all");
@@ -206,10 +298,11 @@ check(
       roots,
       join(scratch, "modules"),
     );
-    const producer = join(scratch, "quire-fixture");
+    mkdirSync(join(scratch, "bin"));
+    const producer = join(scratch, "bin", "quire");
     writeFileSync(
       producer,
-      `#!${process.execPath}\nconst fs = require('node:fs');\nfs.writeFileSync(process.env.OBSERVED, JSON.stringify({ args: process.argv.slice(2), ambient: [process.env.QUOIN_MODULE_PATHS, process.env.IX_FILAMENT_MODULES_PATH] }));\nprocess.exit(Number(process.env.FAILURE || 0));\n`,
+      `#!${process.execPath}\nconst fs = require('node:fs');\nfs.writeFileSync(process.env.OBSERVED, JSON.stringify({ args: process.argv.slice(2), home: process.env.IX_HOME, ambient: [process.env.QUOIN_MODULE_PATHS, process.env.IX_FILAMENT_MODULES_PATH] }));\nprocess.exit(Number(process.env.FAILURE || 0));\n`,
     );
     chmodSync(producer, 0o755);
     const observed = join(scratch, "observed.json");
@@ -220,9 +313,17 @@ check(
       QUOIN_MODULE_PATHS: "/poison",
       IX_FILAMENT_MODULES_PATH: "/poison",
     };
+    mkdirSync(join(env.IX_HOME, "filament/modules/poison"), {
+      recursive: true,
+    });
+    writeFileSync(
+      join(env.IX_HOME, "filament/modules/poison/manifest.yaml"),
+      "invalid: poison\n",
+    );
     runExactValidation(producer, modules, { cwd: scratch, env });
     const result = JSON.parse(readFileSync(observed, "utf8"));
     assert.deepEqual(result.ambient, [null, null]);
+    assert.notEqual(result.home, env.IX_HOME);
     assert.deepEqual(result.args, [
       "validate",
       "spec/**/*.md",
@@ -242,6 +343,48 @@ check(
         }),
       /failed/,
     );
+    const manifest = join(scratch, "exact roots.json");
+    writeFileSync(manifest, JSON.stringify(modules));
+    // The native Make routing control omits only the fixture's unrelated build;
+    // canonical execution still uses the unchanged build prerequisite.
+    const args = [
+      "--no-print-directory",
+      "-o",
+      "build",
+      "validate",
+      `QUIRE=${producer}`,
+      `QUOIN_VERIFICATION_DECLARATIONS=${manifest}`,
+    ];
+    execFileSync("make", args, {
+      cwd: ROOT,
+      env,
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+    assert.deepEqual(
+      JSON.parse(readFileSync(observed, "utf8")).args,
+      result.args,
+    );
+    assert.throws(
+      () =>
+        execFileSync("make", args, {
+          cwd: ROOT,
+          env: { ...env, FAILURE: "7" },
+          stdio: ["ignore", "pipe", "pipe"],
+        }),
+      /exact native validation failed/,
+    );
+    const legacy = execFileSync(
+      "make",
+      [
+        "-n",
+        "validate",
+        `QUIRE=${producer}`,
+        "QUOIN_VERIFICATION_DECLARATIONS=",
+      ],
+      { cwd: ROOT, encoding: "utf8" },
+    );
+    assert.match(legacy, /module ensure-defaults/);
+    assert.doesNotMatch(legacy, /node scripts\/verification-declarations.mjs/);
   },
 );
 

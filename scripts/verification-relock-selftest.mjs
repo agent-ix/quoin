@@ -110,6 +110,8 @@ export function fixture(scratch) {
   for (const name of [
     "verification-relock.mjs",
     "verification-relock-selftest.mjs",
+    "verification-declarations.mjs",
+    "verification-declarations-selftest.mjs",
   ]) {
     put(roots.quoin, `scripts/${name}`, "// fixture artifact\n");
   }

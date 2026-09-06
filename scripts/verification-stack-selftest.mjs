@@ -12,7 +12,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 // Keep relock qualification on the existing canonical selftest path.
-import "./verification-relock-selftest.mjs";
+import "./verification-declarations-selftest.mjs";
 
 import {
   assertRepository,
@@ -227,6 +227,10 @@ try {
   copyFileSync(
     new URL("./verification-stack.mjs", import.meta.url),
     join(bootstrap, "scripts/verification-stack.mjs"),
+  );
+  copyFileSync(
+    new URL("./verification-declarations.mjs", import.meta.url),
+    join(bootstrap, "scripts/verification-declarations.mjs"),
   );
   writeFileSync(join(bootstrap, "lock.json"), JSON.stringify(base));
   const result = spawnSync(

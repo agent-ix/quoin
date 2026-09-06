@@ -1,10 +1,59 @@
 # Refreshing the verification stack
 
 The maintainer integrating a producer or declaration change owns the refresh.
-Do not loosen source checks when a sibling checkout advances. The lock names
+Do not loosen source checks when a sibling checkout advances. Historical v1 names
 seven independent sources: Quoin, Quire engine, Quire CLI, qa-corpus,
 filament-ide-rs (read-only Tier-2 corpus), spec-artifacts-process and
 spec-artifacts-iso. The CLI's Cargo pin must select that exact engine.
+
+## Explicit declaration policy (v2)
+
+V2 adds one source, `engineering-assurance`, and requires exactly these eight
+repository keys. It is an explicit reviewed input to `--lock`, never an implicit
+upgrade of the accepted v1 lock. Both modes preserve historical producer cohorts;
+v1 replay does not claim the declaration isolation supplied by v2.
+
+V2 has exactly one declaration set, `declarations.quoinValidation`, ordered as:
+
+1. `spec-artifacts-process` / `spec_artifacts_process`
+2. `spec-artifacts-iso` / `spec_artifacts_iso`
+3. `engineering-assurance` / `engineering_assurance`
+
+Each entry contains `repository`, `path`, `tree` (the full Git tree object ID),
+and `files`: a complete path-sorted array of `{path, mode, digest}` records.
+Paths are relative to the module subdirectory; modes are `100644` or `100755`;
+digests are full `sha256:` values. `manifest.yaml` must be present. There are no
+absolute workstation paths in this policy. Relocking recomputes the tree and
+every file digest from the selected source commit, including nested schemas and
+templates. The reviewed input must already be a structurally complete v2 policy;
+missing inventory is not an invitation to discover a default module set.
+
+Add `--root engineering-assurance=/absolute/engineering-assurance` to the relock
+command below and select the reviewed v2 policy with `--lock /absolute/policy.json`.
+Use the released EA v0.2.0 commit `8ea16ce240934aa2c31c1cc3f781b7eb0f8c73ba`
+for this campaign; keep the historical Filament source
+`546e7943ee5a8fe552242cbb19d12aa902536652`. A moving upstream main is not a
+replacement policy. EA's separate accepted cross-component compatibility matrix
+does not automatically accept these newer engine/CLI/Quoin source candidates.
+
+Canonical v2 preflight verifies all inventories and materializes literal Git
+objects into fresh scratch directories. Non-regular entries, missing files,
+changed modes/digests and trees are refused; ignored working files, checkout
+filters and Git archive export attributes cannot alter those bytes. The existing
+attestation's lock digest binds this complete declaration inventory without
+changing the attestation schema.
+
+The canonical runner passes a scratch JSON array of exact roots through
+`QUOIN_VERIFICATION_DECLARATIONS` to the existing Make `validate` prerequisite.
+That route calls the native Quire validator with repeated `--module` flags,
+isolated `IX_HOME` and no module discovery environment. It does not call
+`ensure-defaults`. An explicit empty or malformed root manifest fails. Ordinary
+validation without this explicit manifest retains its existing default installer
+behavior. The manifest is internal invocation data, not accepted evidence.
+
+This slice changes Quoin's own static validation only. Tier-1 case declarations,
+Tier-2 historical declaration sets and external producer feature support are
+unchanged; their explicit repeated-module join is a separate reviewed slice.
 
 ## Prepare a candidate
 
@@ -68,6 +117,9 @@ code commit, and run the existing canonical `make test` with the seven source
 routes (`QUIRE_ROOT`, `QUIRE_CLI_ROOT`, `QA_CORPUS_ROOT`,
 `FILAMENT_IDE_RS_ROOT`, `SPEC_ARTIFACTS_PROCESS_ROOT`,
 `SPEC_ARTIFACTS_ISO_ROOT`; Quoin is the runner checkout).
+V2 additionally requires `ENGINEERING_ASSURANCE_ROOT` at its exact released
+commit. The same source, artifact, schema, capability and native gate checks apply
+to both modes; preparing v2 metadata does not remove any review or promotion gate.
 Use `make bench-tier1-update` only for a separately reviewed evidence refresh;
 it is not the relock command. Retain native producer failures and incomparable
 populations, regenerate evidence through the existing measurement path, and

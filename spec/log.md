@@ -8,6 +8,22 @@ description: "Chronological log of structural changes to this bundle."
 
 ## History
 
+* **2026-09-06** — #350 slice A implements explicit eight-source v2 and
+  literal committed module inventories using the same bounded Git snapshot
+  loader as the QA inventory. The existing native Make validation prerequisite
+  receives exactly process, ISO and engineering-assurance, never an installed
+  default catalog. Seven native declaration checks include real relock output,
+  hidden nested schema changes, partial inventory refusal, poisoned module
+  environments and Make failure propagation; existing v1 controls remain intact.
+  The attestation schema is unchanged: its lock digest binds declaration policy.
+  Native Quoin validation passed with process `e6ea515`, ISO `a60ee12`, EA
+  released `8ea16ce` and CLI `977a32` / engine `11969b7`; the literal module
+  snapshots contained 113, 89 and 50 files respectively. Existing module and
+  grammar advisories remain visible. This is bounded qualification, not a
+  promoted stack: canonical `make test` still refuses the old accepted source
+  lock, and normal pnpm build discovery separately encounters the unrendered
+  semantic-module template package. No dependency check was bypassed.
+
 * **2026-09-06** — #350 slice A banks explicit eight-source lock-v2 and
   committed declaration isolation controls before implementation (TC-1593..1596).
   Canonical validation needs process, ISO and engineering-assurance together;

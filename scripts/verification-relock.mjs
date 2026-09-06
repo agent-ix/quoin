@@ -2,7 +2,6 @@
 
 import { execFileSync } from "node:child_process";
 import {
-  mkdirSync,
   mkdtempSync,
   readFileSync,
   realpathSync,
@@ -14,6 +13,15 @@ import { dirname, isAbsolute, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import ts from "typescript";
 import {
+  committedTree,
+  describeModule,
+  sourceNames,
+  V1_SOURCES,
+  V2_SOURCES,
+  verifyDeclarations,
+  writeCommittedTree,
+} from "./verification-declarations.mjs";
+import {
   assertRemoteRevision,
   assertRepository,
   cliSelectsEngine,
@@ -23,15 +31,7 @@ import {
 } from "./verification-stack.mjs";
 
 const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
-export const SOURCE_NAMES = [
-  "quoin",
-  "quire",
-  "quire-cli",
-  "qa-corpus",
-  "filament-ide-rs",
-  "spec-artifacts-process",
-  "spec-artifacts-iso",
-];
+export const SOURCE_NAMES = V1_SOURCES;
 const SCHEMAS = [
   "assurance-v1.schema.json",
   "coverage-v1.schema.json",
@@ -62,7 +62,7 @@ export function parseArguments(args) {
       const separator = value.indexOf("=");
       const name = value.slice(0, separator);
       const path = value.slice(separator + 1);
-      if (!SOURCE_NAMES.includes(name) || !isAbsolute(path)) {
+      if (!V2_SOURCES.includes(name) || !isAbsolute(path)) {
         throw new Error(
           `--root requires a known source and absolute path: ${value}`,
         );
@@ -113,62 +113,11 @@ function committedBytes(root, revision, path) {
 export function committedInventory(root, revision, timeout) {
   const scratch = mkdtempSync(join(tmpdir(), "quoin-relock-inventory-"));
   try {
-    const entries = git(root, "ls-tree", "-r", "-z", revision)
-      .toString()
-      .split("\0")
-      .filter(Boolean)
-      .map((row) => {
-        const separator = row.indexOf("\t");
-        const [mode, kind, object] = row.slice(0, separator).split(" ");
-        const path = row.slice(separator + 1);
-        if (!["100644", "100755"].includes(mode) || kind !== "blob")
-          throw new Error(
-            `inventory snapshot refuses non-regular Git input ${path}`,
-          );
-        const destination = resolve(scratch, path);
-        if (!destination.startsWith(`${scratch}/`))
-          throw new Error(`inventory snapshot path escapes: ${path}`);
-        return { object, destination, mode };
-      });
-    // Read literal objects in one bounded batch: no archive export attributes,
-    // checkout filters, ignored files, working-tree imports or ambient Python path.
-    const objects = execFileSync("git", ["-C", root, "cat-file", "--batch"], {
-      input: entries.map((entry) => entry.object).join("\n") + "\n",
-      timeout,
-      maxBuffer: 128 * 1024 * 1024,
-      stdio: ["pipe", "pipe", "pipe"],
-    });
-    let offset = 0;
-    for (const entry of entries) {
-      const end = objects.indexOf(10, offset);
-      const [object, kind, sizeText] = objects
-        .subarray(offset, end)
-        .toString()
-        .split(" ");
-      const size = Number(sizeText);
-      if (
-        end < 0 ||
-        object !== entry.object ||
-        kind !== "blob" ||
-        !Number.isSafeInteger(size) ||
-        size < 0 ||
-        end + size + 1 >= objects.length ||
-        objects[end + size + 1] !== 10
-      )
-        throw new Error("malformed Git object snapshot batch");
-      mkdirSync(dirname(entry.destination), { recursive: true });
-      writeFileSync(
-        entry.destination,
-        objects.subarray(end + 1, end + size + 1),
-        { mode: entry.mode === "100755" ? 0o755 : 0o644 },
-      );
-      offset = end + size + 2;
-    }
-    if (offset !== objects.length)
-      throw new Error("unexpected trailing Git snapshot bytes");
+    const snapshot = join(scratch, "source");
+    writeCommittedTree(committedTree(root, revision, "", timeout), snapshot);
     return JSON.parse(
-      execFileSync("python3", ["-I", join(scratch, "bounds.py"), "--json"], {
-        cwd: scratch,
+      execFileSync("python3", ["-I", join(snapshot, "bounds.py"), "--json"], {
+        cwd: snapshot,
         encoding: "utf8",
         timeout,
         maxBuffer: 128 * 1024 * 1024,
@@ -263,16 +212,18 @@ export function parseContract(source) {
 // TC-1589 / FR-043-AC-32: candidate preparation is not evidence promotion.
 export function prepareCandidate(base, roots) {
   validateLockShape(base);
+  const names = sourceNames(base);
   if (
-    Object.keys(base.repositories).sort().join() !==
-    [...SOURCE_NAMES].sort().join()
+    Object.keys(base.repositories).sort().join() !== [...names].sort().join()
   ) {
     throw new Error(
-      "candidate requires exactly the seven known source repositories",
+      "candidate requires exactly the known source repositories for its explicit schema version",
     );
   }
+  if (Object.keys(roots).some((name) => !names.includes(name)))
+    throw new Error("candidate requires exactly its explicit source root set");
   const candidate = structuredClone(base);
-  for (const name of SOURCE_NAMES) {
+  for (const name of names) {
     if (!roots[name] || !isAbsolute(roots[name])) {
       throw new Error(`missing explicit absolute root for ${name}`);
     }
@@ -282,6 +233,8 @@ export function prepareCandidate(base, roots) {
     candidate.repositories[name] = source;
   }
   const quoin = roots.quoin;
+  if (base.schemaVersion === "quoin-verification-stack-lock-v2")
+    verifyDeclarations(base, roots);
   const engine = roots.quire;
   const engineRevision = candidate.repositories.quire.revision;
   cliSelectsEngine(
@@ -356,9 +309,26 @@ export function prepareCandidate(base, roots) {
     base.timeouts.corpusMilliseconds,
   );
   candidate.cohorts.qaCorpus = qaCorpusCounts(inventory);
+  if (base.schemaVersion === "quoin-verification-stack-lock-v2") {
+    candidate.declarations.quoinValidation =
+      base.declarations.quoinValidation.map(({ repository, path }) => ({
+        repository,
+        path,
+        ...describeModule(
+          roots[repository],
+          candidate.repositories[repository].revision,
+          path,
+          base.timeouts.installMilliseconds,
+        ),
+      }));
+  }
   for (const path of new Set([
     ...Object.keys(base.artifacts),
     ...RELOCK_ARTIFACTS,
+    "scripts/verification-declarations.mjs",
+    ...(base.schemaVersion === "quoin-verification-stack-lock-v2"
+      ? ["scripts/verification-declarations-selftest.mjs"]
+      : []),
   ])) {
     const corpus = path.startsWith("corpus/");
     const bytes = committedBytes(
@@ -373,7 +343,7 @@ export function prepareCandidate(base, roots) {
   }
   // The inventory reader is executable source. Recheck that every input stayed
   // at the measured clean commit before allowing any candidate output.
-  for (const name of SOURCE_NAMES) {
+  for (const name of names) {
     assertRepository(name, roots[name], candidate.repositories[name]);
   }
   return validateLockShape(candidate);

@@ -17,6 +17,11 @@ import { tmpdir } from "node:os";
 import { createRequire } from "node:module";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import {
+  materializeDeclarations,
+  sourceNames,
+  validateDeclarationShape,
+} from "./verification-declarations.mjs";
 
 const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 const DEFAULT_LOCK = join(ROOT, "quality", "verification-stack-lock.json");
@@ -29,18 +34,8 @@ export function sha256(bytes) {
 }
 
 export function validateLockShape(lock) {
-  if (lock?.schemaVersion !== "quoin-verification-stack-lock-v1") {
-    throw new Error("verification lock has unsupported schemaVersion");
-  }
-  const required = [
-    "quoin",
-    "quire",
-    "quire-cli",
-    "qa-corpus",
-    "filament-ide-rs",
-    "spec-artifacts-process",
-    "spec-artifacts-iso",
-  ];
+  const required = sourceNames(lock);
+  validateDeclarationShape(lock);
   for (const name of required) {
     const source = lock.repositories?.[name];
     if (!source || !FULL_SHA.test(source.revision ?? "")) {
@@ -645,6 +640,10 @@ async function main() {
       process.env.SPEC_ARTIFACTS_ISO_ROOT ??
         join(ROOT, "..", "spec-artifacts-iso"),
     ),
+    "engineering-assurance": resolve(
+      process.env.ENGINEERING_ASSURANCE_ROOT ??
+        join(ROOT, "..", "engineering-assurance"),
+    ),
   };
   const sources = {};
   const producerEvidenceOverlays = {
@@ -707,6 +706,21 @@ async function main() {
   let externalQuoin = null;
   let isolatedQuoinCheckout = null;
   try {
+    const declarationRoots =
+      lock.schemaVersion === "quoin-verification-stack-lock-v2"
+        ? materializeDeclarations(
+            lock,
+            roots,
+            join(scratch, "validation-modules"),
+          )
+        : null;
+    const declarationManifest = join(scratch, "validation-module-roots.json");
+    if (declarationRoots)
+      writeFileSync(
+        declarationManifest,
+        `${JSON.stringify(declarationRoots)}\n`,
+        { flag: "wx" },
+      );
     const binary = buildCli(roots["quire-cli"], scratch);
     const provenance = assertToolProvenance(binary, lock);
     assertRemoteRevision(
@@ -781,6 +795,10 @@ async function main() {
       stdio: "inherit",
     });
     const testEnv = { ...env };
+    // Do not let an inherited explicit-set override change either replay mode.
+    delete testEnv.QUOIN_VERIFICATION_DECLARATIONS;
+    if (declarationRoots)
+      testEnv.QUOIN_VERIFICATION_DECLARATIONS = declarationManifest;
     // The suite deliberately substitutes fake `quire` executables through
     // PATH to grade subprocess failures. The Make target prepends the exact,
     // already-hashed binary as the default; individual fixtures may still
