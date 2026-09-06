@@ -73,7 +73,11 @@ function fixture(scratch) {
     "bounds.py",
     'import json, pathlib\nroot = pathlib.Path(__file__).parent\nvalue = json.loads((root / "inventory.json").read_text())\nif (root / "extra.json").exists(): value["cases"] += json.loads((root / "extra.json").read_text())\nprint(json.dumps(value))\n',
   );
-  put(roots["qa-corpus"], "inventory.json", '{"cases":[{"mode":"detection"},{"mode":"reporting"}]}\n');
+  put(
+    roots["qa-corpus"],
+    "inventory.json",
+    '{"cases":[{"mode":"detection"},{"mode":"reporting"}]}\n',
+  );
   put(roots["qa-corpus"], ".gitignore", "extra.json\n");
   const qa = commit(roots["qa-corpus"]);
   git(roots.quoin, "clone", "-q", roots["qa-corpus"], "corpus");
@@ -345,8 +349,25 @@ for (const [name, mutate, expected] of [
   [
     "hidden non-artifact inventory input cannot change locked population",
     ({ roots }) => {
-      git(roots["qa-corpus"], "update-index", "--assume-unchanged", "inventory.json");
-      put(roots["qa-corpus"], "inventory.json", '{"cases":[{"mode":"reporting"},{"mode":"reporting"}]}\n');
+      git(
+        roots["qa-corpus"],
+        "update-index",
+        "--assume-unchanged",
+        "inventory.json",
+      );
+      put(
+        roots["qa-corpus"],
+        "inventory.json",
+        '{"cases":[{"mode":"reporting"},{"mode":"reporting"}]}\n',
+      );
+    },
+    /tracked source.*git object/,
+  ],
+  [
+    "skip-worktree source bytes cannot impersonate a selected producer",
+    ({ roots }) => {
+      git(roots.quire, "update-index", "--skip-worktree", "source.txt");
+      put(roots.quire, "source.txt", "not committed\n");
     },
     /tracked source.*git object/,
   ],
@@ -499,6 +520,19 @@ check(
     assert.equal(actual.revision, base.repositories.quire.revision);
   },
 );
+check(
+  "ignored working-tree inputs never enter the committed inventory snapshot",
+  ({ roots, base }) => {
+    put(roots["qa-corpus"], "extra.json", '[{"mode":"reporting"}]\n');
+    assert.equal(git(roots["qa-corpus"], "status", "--porcelain"), "");
+    assert.deepEqual(prepareCandidate(base, roots).cohorts.qaCorpus, {
+      executableCases: 1,
+      reportingCases: 1,
+      totalCases: 2,
+    });
+  },
+);
+
 console.log(
   `${passed} verification relock integration checks and 5 argument checks passed`,
 );

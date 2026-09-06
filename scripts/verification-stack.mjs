@@ -6,8 +6,10 @@ import {
   chmodSync,
   copyFileSync,
   existsSync,
+  lstatSync,
   mkdtempSync,
   readFileSync,
+  readlinkSync,
   rmSync,
   writeFileSync,
 } from "node:fs";
@@ -247,6 +249,7 @@ function assertRepositorySource(name, root, locked, options) {
   const status = git(root, "status", "--porcelain=v1", "--untracked-files=all");
   if (status) throw new Error(`${name} checkout is dirty:\n${status}`);
   const head = git(root, "rev-parse", "HEAD");
+  assertTrackedSource(name, root, head);
   if (head !== locked.revision) {
     if (!options.allowEvidenceOverlay) {
       throw new Error(
@@ -318,6 +321,47 @@ function assertRepositorySource(name, root, locked, options) {
     sourceState: "clean",
     remote: locked.remote,
   };
+}
+
+/** Git status can conceal assume-unchanged/skip-worktree file modifications. */
+function assertTrackedSource(name, root, revision) {
+  for (const row of git(root, "ls-tree", "-r", "-z", revision)
+    .split("\0")
+    .filter(Boolean)) {
+    const separator = row.indexOf("\t");
+    const [mode, kind, object] = row.slice(0, separator).split(" ");
+    const path = row.slice(separator + 1);
+    // Gitlink contents are separate source identities, checked at their own
+    // consuming boundaries (notably the explicitly selected corpus source).
+    if (mode === "160000" && kind === "commit") continue;
+    let bytes;
+    try {
+      const full = join(root, path);
+      const stat = lstatSync(full);
+      if (mode === "120000" && stat.isSymbolicLink()) {
+        bytes = readlinkSync(full, { encoding: "buffer" });
+      } else if (
+        ["100644", "100755"].includes(mode) &&
+        stat.isFile() &&
+        Boolean(stat.mode & 0o111) === (mode === "100755")
+      ) {
+        bytes = readFileSync(full);
+      }
+    } catch {
+      /* absence or a changed file kind is a source mismatch */
+    }
+    const observed =
+      bytes &&
+      createHash("sha1")
+        .update(`blob ${bytes.length}\0`)
+        .update(bytes)
+        .digest("hex");
+    if (kind !== "blob" || observed !== object) {
+      throw new Error(
+        `${name} tracked source artifact ${path} differs from git object ${revision}`,
+      );
+    }
+  }
 }
 
 function assertArtifactDigests(lock) {

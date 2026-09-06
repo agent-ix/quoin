@@ -1,7 +1,15 @@
 #!/usr/bin/env node
 
 import { execFileSync } from "node:child_process";
-import { readFileSync, realpathSync, writeFileSync } from "node:fs";
+import {
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  realpathSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
+import { tmpdir } from "node:os";
 import { dirname, isAbsolute, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import ts from "typescript";
@@ -100,6 +108,76 @@ function committedBytes(root, revision, path) {
     );
   }
   return bytes;
+}
+
+export function committedInventory(root, revision, timeout) {
+  const scratch = mkdtempSync(join(tmpdir(), "quoin-relock-inventory-"));
+  try {
+    const entries = git(root, "ls-tree", "-r", "-z", revision)
+      .toString()
+      .split("\0")
+      .filter(Boolean)
+      .map((row) => {
+        const separator = row.indexOf("\t");
+        const [mode, kind, object] = row.slice(0, separator).split(" ");
+        const path = row.slice(separator + 1);
+        if (!["100644", "100755"].includes(mode) || kind !== "blob")
+          throw new Error(
+            `inventory snapshot refuses non-regular Git input ${path}`,
+          );
+        const destination = resolve(scratch, path);
+        if (!destination.startsWith(`${scratch}/`))
+          throw new Error(`inventory snapshot path escapes: ${path}`);
+        return { object, destination, mode };
+      });
+    // Read literal objects in one bounded batch: no archive export attributes,
+    // checkout filters, ignored files, working-tree imports or ambient Python path.
+    const objects = execFileSync("git", ["-C", root, "cat-file", "--batch"], {
+      input: entries.map((entry) => entry.object).join("\n") + "\n",
+      timeout,
+      maxBuffer: 128 * 1024 * 1024,
+      stdio: ["pipe", "pipe", "pipe"],
+    });
+    let offset = 0;
+    for (const entry of entries) {
+      const end = objects.indexOf(10, offset);
+      const [object, kind, sizeText] = objects
+        .subarray(offset, end)
+        .toString()
+        .split(" ");
+      const size = Number(sizeText);
+      if (
+        end < 0 ||
+        object !== entry.object ||
+        kind !== "blob" ||
+        !Number.isSafeInteger(size) ||
+        size < 0 ||
+        end + size + 1 >= objects.length ||
+        objects[end + size + 1] !== 10
+      )
+        throw new Error("malformed Git object snapshot batch");
+      mkdirSync(dirname(entry.destination), { recursive: true });
+      writeFileSync(
+        entry.destination,
+        objects.subarray(end + 1, end + size + 1),
+        { mode: entry.mode === "100755" ? 0o755 : 0o644 },
+      );
+      offset = end + size + 2;
+    }
+    if (offset !== objects.length)
+      throw new Error("unexpected trailing Git snapshot bytes");
+    return JSON.parse(
+      execFileSync("python3", ["-I", join(scratch, "bounds.py"), "--json"], {
+        cwd: scratch,
+        encoding: "utf8",
+        timeout,
+        maxBuffer: 128 * 1024 * 1024,
+        stdio: ["ignore", "pipe", "pipe"],
+      }),
+    );
+  } finally {
+    rmSync(scratch, { recursive: true, force: true });
+  }
 }
 
 /** Read the exported literal, not comments or executed TypeScript code. */
@@ -272,19 +350,10 @@ export function prepareCandidate(base, roots) {
     ...base.contracts,
     quire: { remote: candidate.repositories.quire.remote, revision },
   };
-  committedBytes(
+  const inventory = committedInventory(
     roots["qa-corpus"],
     candidate.repositories["qa-corpus"].revision,
-    "bounds.py",
-  );
-  const inventory = JSON.parse(
-    execFileSync("python3", [join(roots["qa-corpus"], "bounds.py"), "--json"], {
-      cwd: roots["qa-corpus"],
-      encoding: "utf8",
-      timeout: base.timeouts.corpusMilliseconds,
-      maxBuffer: 128 * 1024 * 1024,
-      stdio: ["ignore", "pipe", "pipe"],
-    }),
+    base.timeouts.corpusMilliseconds,
   );
   candidate.cohorts.qaCorpus = qaCorpusCounts(inventory);
   for (const path of new Set([

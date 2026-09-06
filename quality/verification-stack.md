@@ -32,6 +32,15 @@ literal using the already-pinned TypeScript parser, never from comments or by
 executing the module. Each candidate artifact must equal its committed Git blob;
 `corpus/` files resolve through the selected corpus gitlink. Hidden working-tree
 changes cannot be blessed merely because `git status` is empty.
+Every tracked regular file, executable mode and symlink is additionally checked
+against its Git blob for each selected source. Gitlinks remain independent
+source identities validated at their consuming boundary. Inventory computation
+materializes the complete selected QA tree from literal Git blobs into an
+isolated directory and runs its native reader with isolated Python import
+settings. Ignored working-tree inputs never enter that snapshot. The snapshot
+refuses symlinks and nested gitlinks rather than resolving unpinned inputs; the
+current corpus has neither. Snapshot materialization has an explicit 128 MiB
+batch-output bound and fails rather than truncating a larger corpus.
 The output must not exist. The command derives revisions, artifact hashes and
 case counts, not policy. If the QA population exceeds the locked Tier-1 timeout
 budget, explicitly review that budget in the input lock before trying again.

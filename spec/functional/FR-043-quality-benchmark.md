@@ -86,6 +86,10 @@ comments, unrelated dependencies or ambiguous overrides. Schema metadata is
 read from one exported literal `QUIRE_CONTRACT` declaration without executing
 source. Relocked artifacts must match selected commit blobs (including the
 selected corpus gitlink); clean Git status alone cannot establish byte identity.
+All tracked source file bytes, modes and symlink targets must agree with Git
+objects despite index visibility flags. The native QA inventory reader runs
+over the complete committed snapshot, with no working-tree ignored inputs;
+non-regular snapshot entries are refused rather than resolved outside the pin.
 
 | ID | Criteria | Verification |
 |----|----------|--------------|
