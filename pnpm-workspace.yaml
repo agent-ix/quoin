@@ -1,3 +1,8 @@
+packages:
+  # Quoin has one lockfile importer. Cookiecutter packages are raw inputs;
+  # FR-083 renders and tests their consumers separately outside this workspace.
+  - "."
+
 minimumReleaseAge: 14400
 minimumReleaseAgeExclude:
   - "@agent-ix/*"

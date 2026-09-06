@@ -8,6 +8,12 @@ description: "Chronological log of structural changes to this bundle."
 
 ## History
 
+* **2026-09-06** — Explicit `packages: ["."]` aligns workspace dependency
+  discovery with Quoin's existing one-importer lock. Normal pinned pnpm build,
+  frozen install, typecheck and all 84 focused workspace/template/declaration
+  tests pass, including the three rendered consumer variants. Dependency
+  versions, lock bytes and production verification mode are unchanged.
+
 * **2026-09-06** — The workspace regression's initial universal default-run
   refusal assumption was refuted by native PATH evidence: pnpm's default
   dependency-check recovery invokes installation then continues, succeeding
