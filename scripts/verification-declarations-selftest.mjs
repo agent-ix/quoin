@@ -91,6 +91,26 @@ check("healthy explicit eight-source v2 policy is supported", ({ base }) =>
 const { describeModule, materializeDeclarations, runExactValidation } =
   await import("./verification-declarations.mjs");
 
+// TC-1590 / FR-043-AC-32: boundary calibrated to the independently read QA7442
+// population. This checks policy shape only, not a synthetic corpus measurement.
+check(
+  "178-case policy keeps sixty-second cases and refuses one millisecond below capacity",
+  ({ base }) => {
+    base.cohorts.qaCorpus = {
+      executableCases: 178,
+      reportingCases: 11,
+      totalCases: 189,
+    };
+    base.timeouts.caseMilliseconds = 60_000;
+    base.timeouts.tier1Milliseconds = 10_680_000;
+    assert.equal(validateLockShape(base), base);
+    const below = structuredClone(base);
+    below.timeouts.tier1Milliseconds -= 1;
+    assert.throws(() => validateLockShape(below), /178 \* 60000 = 10680000ms/);
+    assert.equal(base.timeouts.caseMilliseconds, 60_000);
+  },
+);
+
 check(
   "v2 candidate derives complete source module artifacts and preserves historical producers",
   ({ base, roots }) => {

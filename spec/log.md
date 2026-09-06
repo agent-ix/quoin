@@ -8,6 +8,12 @@ description: "Chronological log of structural changes to this bundle."
 
 ## History
 
+* **2026-09-06** — The independently read final QA `7442f27` population is
+  178 executable and 11 reporting cases. The reviewed candidate-policy budget
+  keeps sixty-second cases and requires at least 10,680,000 milliseconds for
+  Tier 1; a calibrated shape control refuses 10,679,999. This changes no accepted
+  lock, producer expectation or measured result.
+
 * **2026-09-06** — #350 literal-object repair disables replacement
   interpretation in shared Git readers, relock reads, source preflight and
   canonical descendant commands, without changing replacement refs. Fatal UTF-8

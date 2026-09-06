@@ -102,6 +102,14 @@ budget, explicitly review that budget in the input lock before trying again.
 An optional `--lock` selects the reviewed input policy instead of the committed
 lock. The output is a candidate, not a successful verification attestation.
 
+The campaign's selected QA `7442f2770880a4ade303fb23d725804bdef454db` native
+inventory reports 178 executable and 11 reporting cases (189 total), not the
+older 166-case executable population. Reviewed v2 input policy retains
+`caseMilliseconds: 60000` and needs `tier1Milliseconds: 10680000` or more.
+The bound is 178 × 60000; one millisecond below it is refused. This is a maximum
+allowed run budget, not measured runtime or permission to change expected
+producer results. The accepted lock is not edited by this instruction.
+
 Vendored output schemas must equal the bytes at both
 `QUIRE_CONTRACT.sourceRevision` and the selected engine revision. A newer engine
 with unchanged schemas may retain the older, exact contract source. Otherwise
