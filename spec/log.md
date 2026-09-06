@@ -8,6 +8,13 @@ description: "Chronological log of structural changes to this bundle."
 
 ## History
 
+* **2026-09-06** — #350 slice A banks explicit eight-source lock-v2 and
+  committed declaration isolation controls before implementation (TC-1593..1596).
+  Canonical validation needs process, ISO and engineering-assurance together;
+  ambient `ensure-defaults` cannot establish that exact source identity.
+  Accepted locks, default installation and historical producer/cohort policy
+  remain unchanged; source review and promotion are separate gates.
+
 * **2026-09-06** — #350 follow-up review banked a hidden tracked inventory
   input outside the artifact allow-list: the real native fixture reader changes
   the QA partition while the selected commit and clean Git status stay fixed.

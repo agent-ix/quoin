@@ -778,6 +778,10 @@ generated tests under `tests/props/` and `Unit` for the rest.
 | TC-1590 | Missing, dirty, unbound, Cargo-mismatched, schema-drifted and undersized-budget inputs cannot produce a candidate | Integration | P0 | FR-043-AC-32 | ✅ `tests/verification-relock.test.ts` |
 | TC-1591 | Candidate output cannot overwrite an existing file or change the accepted lock, evidence or producer expectations | Integration | P0 | FR-043-AC-33 | ✅ `tests/verification-relock.test.ts` |
 | TC-1592 | Source drift names the relock command while rollback and merge-before-promotion controls remain failing | Integration | P0 | FR-043-AC-33 | ✅ `tests/verification-relock.test.ts` |
+| TC-1593 | Explicit v2 derives eight sources and complete committed declaration inventories without silently changing historical v1 | Integration | P0 | FR-043-AC-34 | ⏳ `tests/verification-relock.test.ts` |
+| TC-1594 | Missing, duplicate, unknown, malformed and partial declaration sets are refused | Integration | P0 | FR-043-AC-34 | ⏳ `tests/verification-relock.test.ts` |
+| TC-1595 | Literal committed module snapshots reject altered inventories and non-regular inputs, excluding ignored files | Integration | P0 | FR-043-AC-35 | ⏳ `tests/verification-relock.test.ts` |
+| TC-1596 | Native explicit validation ignores poisoned module environments, preserves argument order and propagates failure | Integration | P0 | FR-043-AC-35 | ⏳ `tests/verification-relock.test.ts` |
 | TC-1336 | Every default module manifest loads unchanged with no `semantic` block | Integration | P0 | FR-070-AC-1 | ✅ Complete |
 | TC-1337 | A minimal `semantic` block loads and `quoin write` reports contract, semantic-core version, and package | Unit | P0 | FR-070-AC-2 | ✅ Complete |
 | TC-1338 | An unknown key inside `semantic` is rejected naming the key | Unit | P0 | FR-070-AC-3 | ✅ Complete |

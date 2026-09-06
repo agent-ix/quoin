@@ -38,7 +38,7 @@ function commit(root) {
   return revision;
 }
 
-function fixture(scratch) {
+export function fixture(scratch) {
   const roots = {};
   for (const name of SOURCE_NAMES) {
     const root = join(scratch, name);
