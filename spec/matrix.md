@@ -783,6 +783,9 @@ generated tests under `tests/props/` and `Unit` for the rest.
 | TC-1595 | Literal committed module snapshots reject altered inventories and non-regular inputs, excluding ignored files | Integration | P0 | FR-043-AC-35 | ✅ `tests/verification-relock.test.ts` |
 | TC-1596 | Native explicit validation ignores poisoned module environments, preserves argument order and propagates failure | Integration | P0 | FR-043-AC-35 | ✅ `tests/verification-relock.test.ts` |
 | TC-1597 | Explicit root-only workspace keeps raw template package input out of dependency discovery while normal frozen/run/exec and all rendered variants remain checked | Integration | P0 | FR-083-AC-9 | ✅ `tests/workspace-policy.test.ts` |
+| TC-1598 | Repeatable audit module arguments preserve order and use the same complete catalog set despite poisoned ambient modules | Integration | P0 | FR-032-AC-12 | 🚧 Banked `tests/evidence-audit-modules.test.ts` |
+| TC-1599 | Omitted and single-module audit selection remain compatible; native producer refusal does not retry without arguments | Integration | P0 | FR-032-AC-12 | 🚧 Banked `tests/evidence-audit-modules.test.ts` |
+| TC-1600 | Real Quire derives both controlled module populations and the audit uses both catalogs; absent or malformed supplied modules remain errors | Integration | P0 | FR-032-AC-12 | 🚧 Banked `tests/evidence-audit-modules.test.ts` |
 | TC-1336 | Every default module manifest loads unchanged with no `semantic` block | Integration | P0 | FR-070-AC-1 | ✅ Complete |
 | TC-1337 | A minimal `semantic` block loads and `quoin write` reports contract, semantic-core version, and package | Unit | P0 | FR-070-AC-2 | ✅ Complete |
 | TC-1338 | An unknown key inside `semantic` is rejected naming the key | Unit | P0 | FR-070-AC-3 | ✅ Complete |

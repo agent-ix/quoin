@@ -8,6 +8,19 @@ description: "Chronological log of structural changes to this bundle."
 
 ## History
 
+* **2026-09-06** — #350 B1 banks repeatable ordered audit module selection
+  before production edits (FR-032-AC-12, PLAN-010, TC-1598..TC-1600).
+  The real CLI `ff638b9` / engine `d3bc2ba` derives both controlled criterion
+  populations while Quoin rejects repeated flags; the real single-module
+  control and omitted/single transport controls pass. The fixture is an
+  intentionally unbound repository, not a fabricated historical run. Ambient
+  catalog poison, incomplete selection and unsupported producer controls
+  distinguish closed selection from dropped flags or discovery retry.
+  Final native bank: five healthy controls pass and four repeated-selection
+  controls fail at Quoin's single-use flag parser; typecheck, targeted lint
+  and formatting pass. Production code has not changed.
+  B2 routing and all accepted locks, baselines and evidence remain untouched.
+
 * **2026-09-06** — The independently read final QA `7442f27` population is
   178 executable and 11 reporting cases. The reviewed candidate-policy budget
   keeps sixty-second cases and requires at least 10,680,000 milliseconds for
