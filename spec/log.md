@@ -8,6 +8,12 @@ description: "Chronological log of structural changes to this bundle."
 
 ## History
 
+* **2026-09-06** — Independent #350 review banked candidate-integrity
+  regressions before repair: Cargo comments impersonating an engine pin,
+  TypeScript comments impersonating the exported contract revision, and
+  assume-unchanged artifact bytes impersonating committed source. These are
+  defects in the new exact-source candidate claim, not acceptable inputs.
+
 * **2026-09-06** — `agent-ix/quoin#350`: FR-043-AC-32/33 specify an
   explicit-source candidate relock command and actionable stale-lock remedy.
   TC-1589..TC-1592 distinguish preparing immutable inputs from accepting a

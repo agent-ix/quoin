@@ -96,7 +96,7 @@ function fixture(scratch) {
   put(
     roots.quoin,
     "src/quire/contract.ts",
-    `sourceRevision: "${engine}",\nhashes: {${schemas.map((name) => `"${name}": "${sha256(bytes).slice(7)}"`).join(",")}}\n`,
+    `export const QUIRE_CONTRACT = { sourceRevision: "${engine}",\nhashes: {${schemas.map((name) => `"${name}": "${sha256(bytes).slice(7)}"`).join(",")}} as const;\n`,
   );
   for (const name of schemas)
     put(roots.quoin, `src/quire/schemas/${name}`, bytes);
@@ -212,6 +212,14 @@ for (const [name, mutate, expected] of [
     /Cargo.toml does not pin/,
   ],
   [
+    "Cargo comment cannot impersonate the selected revision",
+    ({ roots, base }) => {
+      put(roots["quire-cli"], "Cargo.toml", `[dependencies]\nquire-rs = { git = "https://github.com/agent-ix/quire", rev = "${"b".repeat(40)}" }\n# expected: rev = "${base.repositories.quire.revision}"\n`);
+      commit(roots["quire-cli"]);
+    },
+    /Cargo.toml does not pin/,
+  ],
+  [
     "Cargo resolved pin",
     ({ roots }) => {
       put(roots["quire-cli"], "Cargo.lock", "");
@@ -226,6 +234,16 @@ for (const [name, mutate, expected] of [
       commit(roots.quoin);
     },
     /vendored schema hash drift/,
+  ],
+  [
+    "contract comment cannot impersonate exported source revision",
+    ({ roots, base }) => {
+      const path = join(roots.quoin, "src/quire/contract.ts");
+      const source = readFileSync(path, "utf8").replace(base.repositories.quire.revision, "b".repeat(40));
+      writeFileSync(path, `// prior sourceRevision: "${base.repositories.quire.revision}"\n${source}`);
+      commit(roots.quoin);
+    },
+    /not a local commit/,
   ],
   [
     "git-object schema drift",
@@ -255,6 +273,14 @@ for (const [name, mutate, expected] of [
     "historical cohort missing",
     ({ base }) => (base.cohorts.qaExternalQuoin.revision = "a".repeat(40)),
     /not a local commit/,
+  ],
+  [
+    "assume-unchanged artifact bytes cannot impersonate committed source",
+    ({ roots }) => {
+      git(roots.quoin, "update-index", "--assume-unchanged", "source.txt");
+      put(roots.quoin, "source.txt", "not committed\n");
+    },
+    /artifact.*git object/,
   ],
   [
     "undersized budget",
