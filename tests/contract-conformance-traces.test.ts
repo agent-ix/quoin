@@ -66,6 +66,7 @@ function repository(): string {
 async function record(
   root: string,
   input: string,
+  producerRevision = "9b9102c3806e9cda0ed70312f4f6c23a211f6fbf",
 ): Promise<{
   bound: string[];
   unmatched: string[];
@@ -85,7 +86,7 @@ async function record(
       "--commit",
       "a".repeat(40),
       "--tool",
-      "quire-contract-conformance git:9b9102c3806e9cda0ed70312f4f6c23a211f6fbf",
+      `quire-contract-conformance git:${producerRevision}`,
       "--adapter",
       "contract-conformance",
       "--results",
@@ -205,5 +206,40 @@ describe("FR-069 conformance traces", () => {
       record(root, `${real}${JSON.stringify({ ...row, trace_ids: [""] })}\n`),
     ).rejects.toThrow(/line 2.*trace_ids/);
     expect(existsSync(join(root, "spec", "evidence"))).toBe(false);
+  });
+
+  it("TC-1587 binds the corrected IR producer's exact criterion targets without sibling TC fanout", async () => {
+    const root = repository();
+    for (const name of [
+      "FR-011-package-identity.md",
+      "FR-018-conformance-corpus.md",
+    ]) {
+      writeFileSync(
+        join(root, "spec", "functional", name),
+        readFileSync(join(fixtureRoot, "contract-ir-criteria", name)),
+      );
+    }
+    const sample = readFileSync(
+      join(fixtureRoot, "contract-conformance-criteria-real.jsonl"),
+      "utf8",
+    );
+    const targets = ["FR-011-AC-3", "FR-018-AC-1"];
+    expect(createHash("sha256").update(sample).digest("hex")).toBe(
+      "d5a962e80328c34897d839d2d553c9f7395144f94abd1e7f92717f0d3656ab1a",
+    );
+    expect(
+      contractConformanceAdapter.parse(sample).entries[0].traceIds,
+    ).toEqual(targets);
+    const result = await record(
+      root,
+      sample,
+      "66a0399656624764f75873886d7de54a96afc7ea",
+    );
+    expect(result.bound).toEqual(targets);
+    expect(result.unmatched).toEqual([]);
+    expect(
+      readBindings(root).bindings.map((binding) => binding.obligation),
+    ).toEqual(targets);
+    expect(readRuns(root, "SUITE-001")[0].entries[0].traceIds).toEqual(targets);
   });
 });
