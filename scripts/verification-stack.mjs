@@ -6,37 +6,38 @@ import {
   chmodSync,
   copyFileSync,
   existsSync,
+  lstatSync,
   mkdtempSync,
   readFileSync,
+  readlinkSync,
   rmSync,
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
+import { createRequire } from "node:module";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import {
+  decodeGitText,
+  literalGit,
+  materializeDeclarations,
+  sourceNames,
+  validateDeclarationShape,
+} from "./verification-declarations.mjs";
 
 const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 const DEFAULT_LOCK = join(ROOT, "quality", "verification-stack-lock.json");
 const FULL_SHA = /^[0-9a-f]{40}$/;
 const DIGEST = /^sha256:[0-9a-f]{64}$/;
+const require = createRequire(import.meta.url);
 
 export function sha256(bytes) {
   return `sha256:${createHash("sha256").update(bytes).digest("hex")}`;
 }
 
 export function validateLockShape(lock) {
-  if (lock?.schemaVersion !== "quoin-verification-stack-lock-v1") {
-    throw new Error("verification lock has unsupported schemaVersion");
-  }
-  const required = [
-    "quoin",
-    "quire",
-    "quire-cli",
-    "qa-corpus",
-    "filament-ide-rs",
-    "spec-artifacts-process",
-    "spec-artifacts-iso",
-  ];
+  const required = sourceNames(lock);
+  validateDeclarationShape(lock);
   for (const name of required) {
     const source = lock.repositories?.[name];
     if (!source || !FULL_SHA.test(source.revision ?? "")) {
@@ -155,7 +156,7 @@ function run(command, args, options = {}) {
   const timeout = options.timeout ?? 120_000;
   const done = spawnSync(command, args, {
     cwd: options.cwd,
-    env: options.env ?? process.env,
+    env: { ...(options.env ?? process.env), GIT_NO_REPLACE_OBJECTS: "1" },
     encoding: options.encoding ?? "utf8",
     maxBuffer: 128 * 1024 * 1024,
     timeout,
@@ -172,7 +173,7 @@ function run(command, args, options = {}) {
 }
 
 function git(root, ...args) {
-  return run("git", ["-C", root, ...args]).trim();
+  return decodeGitText(literalGit(root, args)).trim();
 }
 
 function normalizedRemote(value) {
@@ -226,12 +227,26 @@ function evidenceHeadForCheckout(name, root, lockedRevision, head, options) {
 }
 
 export function assertRepository(name, root, locked, options = {}) {
+  try {
+    return assertRepositorySource(name, root, locked, options);
+  } catch (cause) {
+    throw new Error(
+      `${cause.message}\nReview the source change and prepare a candidate with ` +
+        `make verification-relock; see quality/verification-stack.md. ` +
+        `Relocking does not waive source checks or promote evidence.`,
+      { cause },
+    );
+  }
+}
+
+function assertRepositorySource(name, root, locked, options) {
   if (!existsSync(join(root, ".git")) && !existsSync(root)) {
     throw new Error(`${name} checkout is missing at ${root}`);
   }
   const status = git(root, "status", "--porcelain=v1", "--untracked-files=all");
   if (status) throw new Error(`${name} checkout is dirty:\n${status}`);
   const head = git(root, "rev-parse", "HEAD");
+  assertTrackedSource(name, root, head);
   if (head !== locked.revision) {
     if (!options.allowEvidenceOverlay) {
       throw new Error(
@@ -305,6 +320,47 @@ export function assertRepository(name, root, locked, options = {}) {
   };
 }
 
+/** Git status can conceal assume-unchanged/skip-worktree file modifications. */
+function assertTrackedSource(name, root, revision) {
+  for (const row of git(root, "ls-tree", "-r", "-z", revision)
+    .split("\0")
+    .filter(Boolean)) {
+    const separator = row.indexOf("\t");
+    const [mode, kind, object] = row.slice(0, separator).split(" ");
+    const path = row.slice(separator + 1);
+    // Gitlink contents are separate source identities, checked at their own
+    // consuming boundaries (notably the explicitly selected corpus source).
+    if (mode === "160000" && kind === "commit") continue;
+    let bytes;
+    try {
+      const full = join(root, path);
+      const stat = lstatSync(full);
+      if (mode === "120000" && stat.isSymbolicLink()) {
+        bytes = readlinkSync(full, { encoding: "buffer" });
+      } else if (
+        ["100644", "100755"].includes(mode) &&
+        stat.isFile() &&
+        Boolean(stat.mode & 0o111) === (mode === "100755")
+      ) {
+        bytes = readFileSync(full);
+      }
+    } catch {
+      /* absence or a changed file kind is a source mismatch */
+    }
+    const observed =
+      bytes &&
+      createHash("sha1")
+        .update(`blob ${bytes.length}\0`)
+        .update(bytes)
+        .digest("hex");
+    if (kind !== "blob" || observed !== object) {
+      throw new Error(
+        `${name} tracked source artifact ${path} differs from git object ${revision}`,
+      );
+    }
+  }
+}
+
 function assertArtifactDigests(lock) {
   for (const [path, expected] of Object.entries(lock.artifacts)) {
     const full = resolve(ROOT, path);
@@ -344,28 +400,82 @@ function assertToolchains(lock) {
   }
 }
 
-export function cliSelectsEngine(manifest, lockfile, engineRevision) {
-  const blocks = lockfile
-    .split("[[package]]")
-    .filter((block) => /\nname = "quire-rs"\n/.test(block));
-  if (blocks.length !== 1 || !blocks[0].includes(`#${engineRevision}`)) {
+export function cliSelectsEngine(
+  manifest,
+  lockfile,
+  engineRevision,
+  engineRemote,
+) {
+  // The canonical entrypoint must work before node_modules exists. It performs
+  // its frozen install after source checks and before reaching this parser.
+  const { parse: parseToml } = require("smol-toml");
+  const declared = parseToml(manifest);
+  const resolved = parseToml(lockfile);
+  const isEngine = ([name, dependency]) =>
+    name === "quire-rs" || dependency?.package === "quire-rs";
+  const selected = Object.entries(declared.dependencies ?? {}).filter(isEngine);
+  const otherTables = [
+    ...Object.values(declared.target ?? {}).map(
+      (target) => target.dependencies,
+    ),
+    ...Object.values(declared.patch ?? {}),
+  ];
+  const ambiguous =
+    otherTables.some((table) => Object.entries(table ?? {}).some(isEngine)) ||
+    Object.keys(declared.replace ?? {}).some((name) =>
+      /^quire-rs(?::|$)/.test(name),
+    );
+  const dependency = selected[0]?.[1];
+  if (
+    selected.length !== 1 ||
+    ambiguous ||
+    typeof dependency !== "object" ||
+    dependency === null ||
+    (dependency.package !== undefined && dependency.package !== "quire-rs") ||
+    dependency.rev !== engineRevision ||
+    typeof dependency.git !== "string" ||
+    !dependency.git.startsWith("https://") ||
+    ["branch", "tag", "path", "workspace"].some((key) => key in dependency) ||
+    (engineRemote &&
+      normalizedRemote(dependency.git) !== normalizedRemote(engineRemote))
+  ) {
     throw new Error(
-      `quire-cli Cargo.lock does not select locked Quire ${engineRevision}`,
+      `quire-cli Cargo.toml does not pin locked Quire ${engineRevision} as one unambiguous normal dependency`,
     );
   }
-  if (!manifest.includes(`rev = "${engineRevision}"`)) {
+  const packages = (resolved.package ?? []).filter(
+    (entry) => entry.name === "quire-rs",
+  );
+  let source;
+  try {
+    const value = packages[0]?.source;
+    if (typeof value === "string" && value.startsWith("git+"))
+      source = new URL(value.slice(4));
+  } catch {
+    /* malformed source remains a mismatch */
+  }
+  if (
+    packages.length !== 1 ||
+    !source ||
+    source.hash !== `#${engineRevision}` ||
+    source.searchParams.get("rev") !== engineRevision ||
+    [...source.searchParams.keys()].join() !== "rev" ||
+    normalizedRemote(`${source.origin}${source.pathname}`) !==
+      normalizedRemote(dependency.git)
+  ) {
     throw new Error(
-      `quire-cli Cargo.toml does not pin locked Quire ${engineRevision}`,
+      `quire-cli Cargo.lock does not select locked Quire ${engineRevision}`,
     );
   }
   return true;
 }
 
-function assertCliSelectsEngine(cliRoot, engineRevision) {
+function assertCliSelectsEngine(cliRoot, engineRevision, engineRemote) {
   return cliSelectsEngine(
     readFileSync(join(cliRoot, "Cargo.toml"), "utf8"),
     readFileSync(join(cliRoot, "Cargo.lock"), "utf8"),
     engineRevision,
+    engineRemote,
   );
 }
 
@@ -532,6 +642,10 @@ async function main() {
       process.env.SPEC_ARTIFACTS_ISO_ROOT ??
         join(ROOT, "..", "spec-artifacts-iso"),
     ),
+    "engineering-assurance": resolve(
+      process.env.ENGINEERING_ASSURANCE_ROOT ??
+        join(ROOT, "..", "engineering-assurance"),
+    ),
   };
   const sources = {};
   const producerEvidenceOverlays = {
@@ -578,12 +692,37 @@ async function main() {
   );
   assertArtifactDigests(lock);
   assertToolchains(lock);
-  assertCliSelectsEngine(roots["quire-cli"], lock.repositories.quire.revision);
+  console.error("verification-stack: frozen package install");
+  run("corepack", ["pnpm", "install", "--frozen-lockfile"], {
+    cwd: ROOT,
+    timeout: lock.timeouts.installMilliseconds,
+    stdio: "inherit",
+  });
+  assertCliSelectsEngine(
+    roots["quire-cli"],
+    lock.repositories.quire.revision,
+    lock.repositories.quire.remote,
+  );
 
   const scratch = mkdtempSync(join(tmpdir(), "quoin-stack-"));
   let externalQuoin = null;
   let isolatedQuoinCheckout = null;
   try {
+    const declarationRoots =
+      lock.schemaVersion === "quoin-verification-stack-lock-v2"
+        ? materializeDeclarations(
+            lock,
+            roots,
+            join(scratch, "validation-modules"),
+          )
+        : null;
+    const declarationManifest = join(scratch, "validation-module-roots.json");
+    if (declarationRoots)
+      writeFileSync(
+        declarationManifest,
+        `${JSON.stringify(declarationRoots)}\n`,
+        { flag: "wx" },
+      );
     const binary = buildCli(roots["quire-cli"], scratch);
     const provenance = assertToolProvenance(binary, lock);
     assertRemoteRevision(
@@ -635,13 +774,7 @@ async function main() {
       QUOIN_TIER1_CASE_TIMEOUT_MS: String(lock.timeouts.caseMilliseconds),
       QUOIN_LOCKED_SOURCE_REVISION: lock.repositories.quoin.revision,
     };
-    console.error("verification-stack: frozen package install and Quoin gates");
-    run("corepack", ["pnpm", "install", "--frozen-lockfile"], {
-      cwd: ROOT,
-      env,
-      timeout: lock.timeouts.installMilliseconds,
-      stdio: "inherit",
-    });
+    console.error("verification-stack: Quoin gates");
     run("corepack", ["pnpm", "run", "audit:tool-drift"], {
       cwd: ROOT,
       env,
@@ -664,6 +797,10 @@ async function main() {
       stdio: "inherit",
     });
     const testEnv = { ...env };
+    // Do not let an inherited explicit-set override change either replay mode.
+    delete testEnv.QUOIN_VERIFICATION_DECLARATIONS;
+    if (declarationRoots)
+      testEnv.QUOIN_VERIFICATION_DECLARATIONS = declarationManifest;
     // The suite deliberately substitutes fake `quire` executables through
     // PATH to grade subprocess failures. The Make target prepends the exact,
     // already-hashed binary as the default; individual fixtures may still

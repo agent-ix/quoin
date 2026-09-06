@@ -74,6 +74,7 @@ repository rather than a discovery in the next migration.
 | FR-083-AC-8 | A maintained repository that cannot be read at its pinned revision fails the drift check naming the repository and the revision. | Test (TC-1462) |
 | FR-083-AC-6 | With the schema toolchain absent, the gate fails naming the install command and reports no skipped emission check. | Test (TC-1448) |
 | FR-083-AC-7 | A `Status` cell of `⚠️` injected into a rendered Test Matrix fails the gate. | Test (TC-1440) |
+| FR-083-AC-9 | Quoin explicitly declares only its root package as its pnpm workspace, matching the one-importer lock. Unrendered template package files remain generation input, not installable workspace packages. Normal frozen installation, script execution and command execution retain dependency verification; all three rendered variants remain independently exercised outside the workspace. | Test (TC-1597) |
 
 ## Dependencies
 

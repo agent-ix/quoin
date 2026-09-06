@@ -8,6 +8,101 @@ description: "Chronological log of structural changes to this bundle."
 
 ## History
 
+* **2026-09-06** — The independently read final QA `7442f27` population is
+  178 executable and 11 reporting cases. The reviewed candidate-policy budget
+  keeps sixty-second cases and requires at least 10,680,000 milliseconds for
+  Tier 1; a calibrated shape control refuses 10,679,999. This changes no accepted
+  lock, producer expectation or measured result.
+
+* **2026-09-06** — #350 literal-object repair disables replacement
+  interpretation in shared Git readers, relock reads, source preflight and
+  canonical descendant commands, without changing replacement refs. Fatal UTF-8
+  decoding refuses invalid names while preserving valid Unicode; explicit
+  post-creation permissions preserve declared file modes under restrictive umask.
+  The five independently banked native controls now pass, including complete
+  candidate schema provenance and source-preflight checks.
+  All 84 focused tests pass through normal pinned pnpm execution. Native
+  `make validate` (including its normal build) passes with CLI `ff638b9` /
+  engine `d3bc2ba` and the three declared module snapshots under poisoned
+  ambient module settings. The final QA `7442f27` snapshot still reports
+  178 executable plus 11 reporting cases; accepted lock/evidence remain unchanged.
+
+* **2026-09-06** — Independent #350 review reproduced three literal snapshot
+  gaps: caller umask changes emitted file modes, Git replacement refs substitute
+  requested objects, and lossy UTF-8 decoding renames invalid Git paths. Native
+  TC-1595 controls bank each gap before repair, including valid Unicode, original
+  object bytes, source preflight and complete candidate healthy controls.
+
+* **2026-09-06** — Explicit `packages: ["."]` aligns workspace dependency
+  discovery with Quoin's existing one-importer lock. Normal pinned pnpm build,
+  frozen install, typecheck and all 84 focused workspace/template/declaration
+  tests pass, including the three rendered consumer variants. Dependency
+  versions, lock bytes and production verification mode are unchanged.
+
+* **2026-09-06** — The workspace regression's initial universal default-run
+  refusal assumption was refuted by native PATH evidence: pnpm's default
+  dependency-check recovery invokes installation then continues, succeeding
+  when its fallback finds pinned pnpm rather than the stale ambient binary.
+  The banked discriminating control now uses error-only dependency checking
+  to expose the raw template parse failure, with normal healthy run/exec/build
+  retained. Production policy changes membership only, not verification mode.
+
+* **2026-09-06** — #350 build prerequisite banks the actual unrendered
+  cookiecutter package bytes in a minimal frozen pnpm workspace. Pnpm 11.20's
+  install configuration defaults to the root package, but its run/exec dependency
+  checker defaults absent workspace membership to recursive discovery. Explicit
+  root-only membership must align both without disabling dependency checks or
+  omitting the three rendered consumer variants (FR-083-AC-9, TC-1597).
+
+* **2026-09-06** — #350 slice A implements explicit eight-source v2 and
+  literal committed module inventories using the same bounded Git snapshot
+  loader as the QA inventory. The existing native Make validation prerequisite
+  receives exactly process, ISO and engineering-assurance, never an installed
+  default catalog. Seven native declaration checks include real relock output,
+  hidden nested schema changes, partial inventory refusal, poisoned module
+  environments and Make failure propagation; existing v1 controls remain intact.
+  The attestation schema is unchanged: its lock digest binds declaration policy.
+  Native Quoin validation passed with process `e6ea515`, ISO `a60ee12`, EA
+  released `8ea16ce` and CLI `977a32` / engine `11969b7`; the literal module
+  snapshots contained 113, 89 and 50 files respectively. Existing module and
+  grammar advisories remain visible. This is bounded qualification, not a
+  promoted stack: canonical `make test` still refuses the old accepted source
+  lock, and normal pnpm build discovery separately encounters the unrendered
+  semantic-module template package. No dependency check was bypassed.
+
+* **2026-09-06** — #350 slice A banks explicit eight-source lock-v2 and
+  committed declaration isolation controls before implementation (TC-1593..1596).
+  Canonical validation needs process, ISO and engineering-assurance together;
+  ambient `ensure-defaults` cannot establish that exact source identity.
+  Accepted locks, default installation and historical producer/cohort policy
+  remain unchanged; source review and promotion are separate gates.
+
+* **2026-09-06** — #350 follow-up review banked a hidden tracked inventory
+  input outside the artifact allow-list: the real native fixture reader changes
+  the QA partition while the selected commit and clean Git status stay fixed.
+  Population derivation must use a complete committed snapshot, not a handful
+  of individually checked entrypoint/config files.
+
+* **2026-09-06** — #350 candidate integrity repair uses exact
+  `smol-toml` 1.8.0 for Cargo fields and the existing pinned TypeScript parser
+  for the exported contract literal. Candidate artifact digests now compare
+  against commit blobs, including corpus gitlinks and the new relock tools.
+  Misleading comments, ambiguous dependencies/overrides, and hidden changed
+  bytes remain failing; unchanged assume-unchanged files remain valid.
+
+* **2026-09-06** — Independent #350 review banked candidate-integrity
+  regressions before repair: Cargo comments impersonating an engine pin,
+  TypeScript comments impersonating the exported contract revision, and
+  assume-unchanged artifact bytes impersonating committed source. These are
+  defects in the new exact-source candidate claim, not acceptable inputs.
+
+* **2026-09-06** — `agent-ix/quoin#350`: FR-043-AC-32/33 specify an
+  explicit-source candidate relock command and actionable stale-lock remedy.
+  TC-1589..TC-1592 distinguish preparing immutable inputs from accepting a
+  replay; historical producer cohorts and all existing verification gates stay
+  unchanged. Source review, declaration alignment and canonical evidence remain
+  prerequisites to lock promotion.
+
 * **2026-09-06** — `agent-ix/quoin#331`: FR-069 adds optional native
   conformance trace preservation, explicit malformed-metadata refusal, legacy
   omission compatibility, and command-level Test Case-to-criterion binding

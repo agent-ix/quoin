@@ -143,6 +143,12 @@ bench-tier1-experimental: require-quire
 verification-preflight:
 	node scripts/verification-stack.mjs --preflight
 
+# Prepares a candidate only. See quality/verification-stack.md for source roots,
+# evidence replay, ownership and the separate review/promotion steps.
+.PHONY: verification-relock
+verification-relock:
+	node scripts/verification-relock.mjs $(RELOCK_ARGS)
+
 # THE LOCAL GREEN BAR. `bench-tier1` was invoked by nothing (agent-ix/quoin#244)
 # -- not `test`, not any vitest case against the committed baseline, and CI is
 # off by design during active development, so CI is not the answer. The ratchet
@@ -211,8 +217,12 @@ check-version: build
 # also means a module set is never validated against a stale host binary.
 .PHONY: validate
 validate: require-quire build
+ifneq ($(strip $(QUOIN_VERIFICATION_DECLARATIONS)),)
+	node scripts/verification-declarations.mjs "$(QUIRE)" "$(QUOIN_VERIFICATION_DECLARATIONS)"
+else
 	node bin/quoin.js module ensure-defaults
 	$(QUIRE) validate "spec/**/*.md" "plan/**/*.md" "reviews/*.md"
+endif
 
 .PHONY: test-json
 test-json:
