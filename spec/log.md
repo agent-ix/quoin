@@ -8,6 +8,12 @@ description: "Chronological log of structural changes to this bundle."
 
 ## History
 
+* **2026-09-06** — #350 follow-up review banked a hidden tracked inventory
+  input outside the artifact allow-list: the real native fixture reader changes
+  the QA partition while the selected commit and clean Git status stay fixed.
+  Population derivation must use a complete committed snapshot, not a handful
+  of individually checked entrypoint/config files.
+
 * **2026-09-06** — #350 candidate integrity repair uses exact
   `smol-toml` 1.8.0 for Cargo fields and the existing pinned TypeScript parser
   for the exported contract literal. Candidate artifact digests now compare

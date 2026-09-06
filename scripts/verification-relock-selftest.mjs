@@ -71,8 +71,10 @@ function fixture(scratch) {
   put(
     roots["qa-corpus"],
     "bounds.py",
-    'print(\'{"cases":[{"mode":"detection"},{"mode":"reporting"}]}\')\n',
+    'import json, pathlib\nroot = pathlib.Path(__file__).parent\nvalue = json.loads((root / "inventory.json").read_text())\nif (root / "extra.json").exists(): value["cases"] += json.loads((root / "extra.json").read_text())\nprint(json.dumps(value))\n',
   );
+  put(roots["qa-corpus"], "inventory.json", '{"cases":[{"mode":"detection"},{"mode":"reporting"}]}\n');
+  put(roots["qa-corpus"], ".gitignore", "extra.json\n");
   const qa = commit(roots["qa-corpus"]);
   git(roots.quoin, "clone", "-q", roots["qa-corpus"], "corpus");
   git(
@@ -339,6 +341,14 @@ for (const [name, mutate, expected] of [
       put(roots.quoin, "scripts/verification-relock.mjs", "not committed\n");
     },
     /artifact.*git object/,
+  ],
+  [
+    "hidden non-artifact inventory input cannot change locked population",
+    ({ roots }) => {
+      git(roots["qa-corpus"], "update-index", "--assume-unchanged", "inventory.json");
+      put(roots["qa-corpus"], "inventory.json", '{"cases":[{"mode":"reporting"},{"mode":"reporting"}]}\n');
+    },
+    /tracked source.*git object/,
   ],
   [
     "undersized budget",
