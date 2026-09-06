@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import assert from "node:assert/strict";
-import { execFileSync, spawnSync } from "node:child_process";
+import { execFileSync } from "node:child_process";
 import {
   copyFileSync,
   mkdirSync,
@@ -23,11 +23,16 @@ const manager = JSON.parse(
   readFileSync(join(ROOT, "package.json"), "utf8"),
 ).packageManager;
 const lock =
-  "lockfileVersion: '9.0'\nsettings:\n  autoInstallPeers: true\n  excludeLinksFromLockfile: false\nimporters:\n  .: {}\n";
+  "lockfileVersion: '9.0'\n\nsettings:\n  autoInstallPeers: true\n  excludeLinksFromLockfile: false\n\nimporters:\n\n  .: {}\n";
 const scratch = mkdtempSync(join(tmpdir(), "quoin-workspace-policy-"));
+// pnpm suppresses repeated verification in its script children. This fixture
+// models fresh top-level invocations, so restore the default dependency check.
+const env = { ...process.env };
+delete env.pnpm_config_verify_deps_before_run;
 const run = (args) =>
   execFileSync("corepack", ["pnpm", ...args], {
     cwd: scratch,
+    env,
     encoding: "utf8",
     timeout: 30_000,
     stdio: ["ignore", "pipe", "pipe"],
@@ -57,6 +62,10 @@ try {
   writeFileSync(join(scratch, "pnpm-workspace.yaml"), workspace);
   assert.equal(run(["--version"]).trim(), manager.slice("pnpm@".length));
   run(["install", "--frozen-lockfile", "--offline", "--ignore-scripts"]);
+  assert.match(
+    run(["--config.verify-deps-before-run=error", "exec", "node", "probe.cjs"]),
+    /workspace-ok/,
+  );
   // TC-1597 / FR-083-AC-9: same normal paths as build/test; no dependency bypass.
   assert.match(run(["run", "probe"]), /workspace-ok/);
   assert.match(run(["exec", "node", "probe.cjs"]), /workspace-ok/);
@@ -64,17 +73,8 @@ try {
   const missingPolicy = parse(workspace);
   delete missingPolicy.packages;
   writeFileSync(join(scratch, "pnpm-workspace.yaml"), stringify(missingPolicy));
-  const refused = spawnSync("corepack", ["pnpm", "exec", "node", "probe.cjs"], {
-    cwd: scratch,
-    encoding: "utf8",
-    timeout: 30_000,
-  });
-  assert.notEqual(
-    refused.status,
-    0,
-    "recursive discovery must not execute over raw template JSON",
-  );
-  assert.doesNotMatch(refused.stdout ?? "", /workspace-ok/);
+  // Default install recovery can continue when PATH finds the pinned manager;
+  // its failure is not universal. Error-only checking diagnoses the raw input.
   // Error-only mode tightens the refusal for an attributed diagnostic; it does not skip verification.
   assert.throws(
     () =>
@@ -84,7 +84,9 @@ try {
         "node",
         "probe.cjs",
       ]),
-    /cookiecutter\.repo_name/,
+    (error) =>
+      error.status === 1 &&
+      /cookiecutter\.repo_name/.test(String(error.stdout)),
   );
   assert.equal(readFileSync(join(scratch, "pnpm-lock.yaml"), "utf8"), lock);
   console.log(

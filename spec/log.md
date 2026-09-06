@@ -8,6 +8,14 @@ description: "Chronological log of structural changes to this bundle."
 
 ## History
 
+* **2026-09-06** — The workspace regression's initial universal default-run
+  refusal assumption was refuted by native PATH evidence: pnpm's default
+  dependency-check recovery invokes installation then continues, succeeding
+  when its fallback finds pinned pnpm rather than the stale ambient binary.
+  The banked discriminating control now uses error-only dependency checking
+  to expose the raw template parse failure, with normal healthy run/exec/build
+  retained. Production policy changes membership only, not verification mode.
+
 * **2026-09-06** — #350 build prerequisite banks the actual unrendered
   cookiecutter package bytes in a minimal frozen pnpm workspace. Pnpm 11.20's
   install configuration defaults to the root package, but its run/exec dependency
