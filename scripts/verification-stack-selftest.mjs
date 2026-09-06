@@ -13,6 +13,7 @@ import { join } from "node:path";
 
 // Keep relock qualification on the existing canonical selftest path.
 import "./verification-declarations-selftest.mjs";
+import "./verification-object-integrity-selftest.mjs";
 
 import {
   assertRepository,

@@ -8,6 +8,12 @@ description: "Chronological log of structural changes to this bundle."
 
 ## History
 
+* **2026-09-06** — Independent #350 review reproduced three literal snapshot
+  gaps: caller umask changes emitted file modes, Git replacement refs substitute
+  requested objects, and lossy UTF-8 decoding renames invalid Git paths. Native
+  TC-1595 controls bank each gap before repair, including valid Unicode, original
+  object bytes, source preflight and complete candidate healthy controls.
+
 * **2026-09-06** — Explicit `packages: ["."]` aligns workspace dependency
   discovery with Quoin's existing one-importer lock. Normal pinned pnpm build,
   frozen install, typecheck and all 84 focused workspace/template/declaration

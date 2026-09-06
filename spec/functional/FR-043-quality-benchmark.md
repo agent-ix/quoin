@@ -90,6 +90,11 @@ All tracked source file bytes, modes and symlink targets must agree with Git
 objects despite index visibility flags. The native QA inventory reader runs
 over the complete committed snapshot, with no working-tree ignored inputs;
 non-regular snapshot entries are refused rather than resolved outside the pin.
+For AC-35, literal Git reads ignore replacement refs without modifying them.
+Git paths must decode as valid UTF-8; invalid byte sequences are refused rather
+than renamed through replacement characters, while valid Unicode is preserved.
+Materialized regular files have the declared `0644` or `0755` permission bits
+independently of the invoking process's umask.
 
 | ID | Criteria | Verification |
 |----|----------|--------------|
