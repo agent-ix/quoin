@@ -8,6 +8,12 @@ description: "Chronological log of structural changes to this bundle."
 
 ## History
 
+* **2026-09-06** — `agent-ix/quoin#331`: FR-069 adds optional native
+  conformance trace preservation, explicit malformed-metadata refusal, legacy
+  omission compatibility, and command-level Test Case-to-criterion binding
+  verification. TC-1585..TC-1588 cover the existing adapter/store boundary;
+  no producer execution or evidence schema is added.
+
 * **2026-08-29** — **CR-131**: operational controls become two explicit evidence
   shapes (`agent-ix/quoin#269`, epic #267). US-016 separates the practitioner's
   need to know that a control exists from the stronger claim that it worked.
