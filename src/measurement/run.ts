@@ -45,7 +45,11 @@ export interface RunOptions {
   readonly exclusionVocabulary: readonly string[];
   readonly corpusId: string;
   readonly outputDir: string;
-  readonly modules: readonly { name: string; repositoryPath: string; ref: string }[];
+  readonly modules: readonly {
+    name: string;
+    repositoryPath: string;
+    ref: string;
+  }[];
   /** Skip the engine pass; the structural rate is then absent, never zero. */
   readonly skipEngine?: boolean;
 }
@@ -122,7 +126,9 @@ export function runMeasurement(options: RunOptions): RunResult {
 
   // Throws if any required module is unresolvable: a rate computed without one
   // is a rate for a population nobody declared.
-  const { modules, findings: moduleFindings } = resolveModuleSet(options.modules);
+  const { modules, findings: moduleFindings } = resolveModuleSet(
+    options.modules,
+  );
   const vocabulary = buildVocabulary(modules);
 
   const documents = corpus.repositories.flatMap((r) =>
@@ -140,7 +146,8 @@ export function runMeasurement(options: RunOptions): RunResult {
     for (const repository of corpus.repositories) {
       const mine = assignments
         .filter(
-          (a) => a.state === "measured" && a.path.startsWith(`${repository.path}/`),
+          (a) =>
+            a.state === "measured" && a.path.startsWith(`${repository.path}/`),
         )
         .map((a) => a.path.slice(repository.path.length + 1));
       evaluations = evaluations.concat(
@@ -166,7 +173,8 @@ export function runMeasurement(options: RunOptions): RunResult {
         .filter((d) => d.severity === "error")
         .map((d) => ({
           repository:
-            corpus.repositories.find((r) => e.path.startsWith(r.path))?.path ?? "",
+            corpus.repositories.find((r) => e.path.startsWith(r.path))?.path ??
+            "",
           path: e.path,
           check: d.code ?? "unknown",
           code: d.code,

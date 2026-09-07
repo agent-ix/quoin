@@ -16,14 +16,10 @@
 import { readFileSync } from "node:fs";
 
 export type DocumentState =
-  | "measured"
-  | "out-of-model"
-  | "unreadable"
-  | "contested";
+  "measured" | "out-of-model" | "unreadable" | "contested";
 
 export type OutOfModelReason =
-  | "no-declared-type"
-  | "type-not-declared-by-any-module";
+  "no-declared-type" | "type-not-declared-by-any-module";
 
 export interface DocumentAssignment {
   readonly path: string;

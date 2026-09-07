@@ -188,6 +188,69 @@ export function runQuireAllowFailure(args: string[]): {
   }
 }
 
+/**
+ * Runs quire for one measurement batch and reports how it terminated.
+ *
+ * The measurement runner needs a working directory, an added environment
+ * variable and its own buffer ceiling, none of which `runQuireAllowFailure`
+ * carries. It used to reach for `execFileSync` itself with a caller-supplied
+ * binary name, which put an executable this module cannot see outside the
+ * boundary FR-036-AC-8 asserts over. Resolution belongs here, with every other
+ * quire invocation, so `QUOIN_QUIRE` and `QUOIN_EXPECTED_QUIRE_SHA256` govern
+ * the measurement lane exactly as they govern the rest of Quoin.
+ *
+ * `status` and `signal` are reported rather than interpreted: a non-zero exit
+ * is how the engine reports document errors, and only the caller knows that a
+ * signal means the batch never ran.
+ */
+export function runQuireBatch(
+  args: string[],
+  options: {
+    cwd: string;
+    env?: Readonly<Record<string, string>>;
+    maxBuffer?: number;
+  },
+): {
+  stdout: string;
+  stderr: string;
+  ok: boolean;
+  status: number | undefined;
+  signal: string | undefined;
+} {
+  const settings: Parameters<typeof execFileSync>[2] & {
+    encoding: "utf8";
+  } = {
+    cwd: options.cwd,
+    encoding: "utf8",
+    maxBuffer: options.maxBuffer ?? QUIRE_MAX_BUFFER,
+    env: { ...process.env, ...(options.env ?? {}) },
+    stdio: ["ignore", "pipe", "pipe"],
+  };
+  try {
+    return {
+      stdout: execFileSync(quireExecutable(), args, settings),
+      stderr: "",
+      ok: true,
+      status: 0,
+      signal: undefined,
+    };
+  } catch (cause) {
+    const err = cause as {
+      stdout?: string | Buffer;
+      stderr?: string | Buffer;
+      status?: number;
+      signal?: string;
+    };
+    return {
+      stdout: String(err.stdout ?? ""),
+      stderr: String(err.stderr ?? ""),
+      ok: false,
+      status: err.status,
+      signal: err.signal,
+    };
+  }
+}
+
 /** `quire --version` output, or `null` when quire is not on PATH. */
 export function quireVersion(): string | null {
   try {

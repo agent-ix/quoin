@@ -61,7 +61,9 @@ describe("TC-1570..1578 the reproducibility claim is made over a fixture", () =>
       exclusionVocabulary: [],
       corpusId: "fixture",
     });
-    const dirty = record.repositories.find((r) => r.path.endsWith("dirty-tree"));
+    const dirty = record.repositories.find((r) =>
+      r.path.endsWith("dirty-tree"),
+    );
     expect(dirty?.clean).toBe(false);
   });
 

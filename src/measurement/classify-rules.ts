@@ -43,7 +43,8 @@ export interface Rule {
 }
 
 /** The later campaign every corpus finding is deferred to. */
-export const NORMALIZATION_CAMPAIGN = "corpus normalization campaign (post-Wave-4)";
+export const NORMALIZATION_CAMPAIGN =
+  "corpus normalization campaign (post-Wave-4)";
 
 export const RULES: readonly Rule[] = [
   {
