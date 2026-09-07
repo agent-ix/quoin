@@ -143,14 +143,12 @@ export function auditToolDrift(files) {
       "build-test must use the explicit non-recursive Quire test gate",
     );
   }
-  if (
-    governedCliCheckout?.with?.ref !==
-    stackLock.repositories?.["quire-cli"]?.revision
-  ) {
-    errors.push(
-      "build-test governed Quire checkout must equal verification-stack quire-cli revision",
-    );
-  }
+  // The CI checkout tracks the CONSUMER CLI — `contract.cliSourceRevision`,
+  // asserted below — and not `stackLock.repositories["quire-cli"]`, which names
+  // the historical benchmark producer. The two are deliberately separate pins:
+  // coupling CI to the benchmark cohort would either pin CI to whatever last
+  // produced measurements, or force that evidence to be relabelled every time
+  // the consumer contract advances.
   const contractSource = /sourceRevision:\s*"([0-9a-f]{40})"/.exec(
     files["src/quire/contract.ts"],
   )?.[1];
