@@ -36,6 +36,8 @@ export const SCANS_DIR = "scans";
 
 /** Where source-level mock inspection records live, relative to the store. */
 export const MOCK_INSPECTIONS_DIR = "mock-inspections";
+/** Where use-specific evidence-producer reliance decisions live. */
+export const TRUST_DIR = "trust";
 
 /** Schema version carried by every machine-written file in the store. */
 export const STORE_SCHEMA_VERSION = 1;
@@ -292,4 +294,71 @@ export interface BaselineFile {
   commit: string;
   /** Accepted findings as `<kind>:<obligation>`, sorted. */
   accepted: string[];
+}
+
+/** Exact producer context accepted or observed for one bounded use. */
+export interface ProducerContext {
+  name: string;
+  version: string;
+  configurationDigest: string;
+  validationCorpusDigest: string;
+  inputContract: string;
+  environment: string;
+  adapter?: { name: string; version: string };
+}
+
+export type TrustTrigger =
+  | "producer-version"
+  | "configuration"
+  | "adapter"
+  | "validation-corpus"
+  | "input-contract"
+  | "environment";
+
+/** A validation result or review that supports a reliance decision. */
+export interface TrustEvidenceReference {
+  id: string;
+  digest?: string;
+  reference?: string;
+}
+
+/**
+ * An accountable decision about one producer use, never a global tool badge.
+ *
+ * `acceptedContext` is the context the validation justified. `observedContext`
+ * is what the current consumer says it is using. Quoin compares only the
+ * project-selected triggers and never silently treats absence as acceptance.
+ */
+export interface TrustDecision {
+  schemaVersion: number;
+  id: string;
+  use: {
+    id: string;
+    intendedFunction: string;
+    permittedDecisions: string[];
+  };
+  decision: "relied-upon" | "not-relied-upon";
+  acceptedContext: ProducerContext;
+  observedContext?: ProducerContext;
+  revalidateOn: TrustTrigger[];
+  validationEvidence: TrustEvidenceReference[];
+  limitations: string[];
+  owner: string;
+  decidedAt: string;
+}
+
+export interface TrustAssessment {
+  id: string;
+  useId: string;
+  producer: string;
+  status:
+    | "accepted"
+    | "accepted-with-limitations"
+    | "invalidated"
+    | "not-accepted"
+    | "unobserved";
+  permittedDecisions: string[];
+  limitations: string[];
+  triggeredBy: TrustTrigger[];
+  owner: string;
 }

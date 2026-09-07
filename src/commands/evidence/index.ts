@@ -16,6 +16,7 @@ Layout, under spec/evidence/:
 
 Subcommands:
   quoin evidence record     transcribe a suite run
+  quoin evidence trust      record a use-specific producer trust decision
   quoin evidence affirm     re-affirm a binding after its statement changed
   quoin evidence audit      read the store and report
   quoin evidence baseline   accept the current findings as the ratchet baseline
@@ -23,6 +24,7 @@ Subcommands:
 
   static examples = [
     "quoin evidence record --suite SUITE-001 --commit $(git rev-parse HEAD) --tool 'cargo test' --results run.json",
+    "quoin evidence trust --decision trust-decision.json",
     "quoin evidence affirm --obligation FR-001-AC-1 --who @reviewer",
     "quoin evidence audit --ratchet --strict",
     "quoin evidence baseline",

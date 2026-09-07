@@ -100,3 +100,4 @@ description: "Index of functional requirements (FR) for quoin."
 - [FR-090: Publish every rate with its unit, population and method](./FR-090-publish-rates-with-unit-population-and-method.md)
 - [FR-091: Account for known tool defects as cited, distinct states](./FR-091-account-for-known-tool-defects.md)
 - [FR-092: Stay advisory and read-only over the corpus](./FR-092-stay-advisory-and-read-only.md)
+* [FR-093: Use-specific evidence-producer trust decisions and invalidation](./FR-093-evidence-producer-trust.md)

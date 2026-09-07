@@ -65,6 +65,27 @@ export function renderCase(assurance: AssuranceCase): string {
     );
   }
 
+  if (assurance.producerTrust.length > 0) {
+    lines.push(
+      "## Evidence-producer reliance",
+      "",
+      "These decisions are context for the case; they do not make a claim supported.",
+      "",
+    );
+    for (const decision of assurance.producerTrust) {
+      const triggered =
+        decision.triggeredBy.length === 0
+          ? ""
+          : ` — revalidate: ${decision.triggeredBy.join(", ")}`;
+      lines.push(
+        `- **${decision.id} / ${decision.useId}** — ${decision.status}${triggered}`,
+      );
+      if (decision.limitations.length > 0)
+        lines.push(`  - limitations: ${decision.limitations.join("; ")}`);
+    }
+    lines.push("");
+  }
+
   return lines.join("\n");
 }
 
