@@ -94,8 +94,7 @@ export function propertiesCensus(documents: readonly string[]): Census {
     const applicable = form !== "none";
     if (!applicable) notApplicable += 1;
 
-    const advisory =
-      form === "bullet-list" || form === "free-column-table";
+    const advisory = form === "bullet-list" || form === "free-column-table";
     if (advisory) advisoryFindings += 1;
 
     const key = applicable ? String(form) : "not-applicable";

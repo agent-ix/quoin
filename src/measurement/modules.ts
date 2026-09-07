@@ -52,7 +52,11 @@ export interface ToolchainRecord {
 }
 
 function git(cwd: string, ...args: string[]): string {
-  return execFileSync("git", args, { cwd, encoding: "utf8", maxBuffer: 1 << 28 });
+  return execFileSync("git", args, {
+    cwd,
+    encoding: "utf8",
+    maxBuffer: 1 << 28,
+  });
 }
 
 function tryGit(cwd: string, ...args: string[]): string | null {
@@ -83,7 +87,9 @@ export function showAt(repo: string, rev: string, path: string): string | null {
 
 /** A scalar `key: value` read without a YAML dependency, for the few we need. */
 function scalar(yaml: string, key: string): string | null {
-  const m = new RegExp(`^${key}:\\s*["']?([^"'\\n]+)["']?\\s*$`, "m").exec(yaml);
+  const m = new RegExp(`^${key}:\\s*["']?([^"'\\n]+)["']?\\s*$`, "m").exec(
+    yaml,
+  );
   return m ? m[1].trim() : null;
 }
 
@@ -150,7 +156,8 @@ export function resolveModule(options: {
   const pkg = manifestPath.split("/")[0];
   const schemaDigests: Record<string, string> = {};
   for (const path of (tree ?? "").split("\n")) {
-    if (!path.startsWith(`${pkg}/schemas/`) || !path.endsWith(".json")) continue;
+    if (!path.startsWith(`${pkg}/schemas/`) || !path.endsWith(".json"))
+      continue;
     const body = showAt(repositoryPath, commit, path);
     if (body !== null) schemaDigests[path] = sha256(body);
   }
@@ -189,7 +196,8 @@ export function resolveModule(options: {
     manifestPath,
     manifestVersion: scalar(manifest, "version"),
     manifestDigest: sha256(manifest),
-    semanticCore: scalar(manifest, "  semantic_core") ?? scalar(manifest, "semantic_core"),
+    semanticCore:
+      scalar(manifest, "  semantic_core") ?? scalar(manifest, "semantic_core"),
     objectTypes: listNames(manifest, "object_types"),
     artifactTypes: listNames(manifest, "artifact_types"),
     mappingsDigest: mappings === null ? null : sha256(mappings),
@@ -225,11 +233,21 @@ export function toolchainRecord(
   const semanticCoreByModule: Record<string, string | null> = {};
   for (const m of modules) semanticCoreByModule[m.name] = m.semanticCore;
   return {
-    engineVersion: tryGit(options.quireRepo ?? ".", "describe", "--tags", "--always"),
+    engineVersion: tryGit(
+      options.quireRepo ?? ".",
+      "describe",
+      "--tags",
+      "--always",
+    ),
     engineRevision: options.quireRepo
       ? tryGit(options.quireRepo, "rev-parse", "HEAD")
       : null,
-    cliVersion: tryGit(options.quoinRepo ?? ".", "describe", "--tags", "--always"),
+    cliVersion: tryGit(
+      options.quoinRepo ?? ".",
+      "describe",
+      "--tags",
+      "--always",
+    ),
     cliRevision: options.quoinRepo
       ? tryGit(options.quoinRepo, "rev-parse", "HEAD")
       : null,

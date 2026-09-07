@@ -94,13 +94,13 @@ describe("TC-1560..1567 a rate carries what it counted", () => {
       methodId: "structural-v1",
     });
 
-    expect(divergences(aggregate, [low, near], 0.1).map((d) => d.partition)).toEqual(
-      ["by-repository:laggard"],
-    );
+    expect(
+      divergences(aggregate, [low, near], 0.1).map((d) => d.partition),
+    ).toEqual(["by-repository:laggard"]);
     // Moving the margin moves the list, which is how we know it is read.
-    expect(divergences(aggregate, [low, near], 0.01).map((d) => d.partition)).toEqual(
-      ["by-repository:laggard", "by-repository:close"],
-    );
+    expect(
+      divergences(aggregate, [low, near], 0.01).map((d) => d.partition),
+    ).toEqual(["by-repository:laggard", "by-repository:close"]);
     expect(divergences(aggregate, [low, near], 0.9)).toEqual([]);
   });
 
@@ -159,6 +159,8 @@ describe("TC-1560..1567 a rate carries what it counted", () => {
       dirtyRepositories: 3,
       figures: [],
     } as Report;
-    expect(() => assertNotSummed(report)).toThrow(/must not be reported as one figure/);
+    expect(() => assertNotSummed(report)).toThrow(
+      /must not be reported as one figure/,
+    );
   });
 });

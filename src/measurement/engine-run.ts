@@ -49,11 +49,15 @@ export function materializeModules(
 ): string {
   const root = mkdtempSync(join(tmpdir(), "pinned-modules-"));
   for (const m of modules) {
-    const tree = execFileSync("git", ["ls-tree", "-r", "--name-only", m.commit], {
-      cwd: m.repositoryPath,
-      encoding: "utf8",
-      maxBuffer: 1 << 28,
-    });
+    const tree = execFileSync(
+      "git",
+      ["ls-tree", "-r", "--name-only", m.commit],
+      {
+        cwd: m.repositoryPath,
+        encoding: "utf8",
+        maxBuffer: 1 << 28,
+      },
+    );
     const paths = tree.split("\n").filter((p) => p.length > 0);
     const pkg = paths
       .find((p) => /^[a-z_]+\/manifest\.yaml$/.test(p))
@@ -69,10 +73,14 @@ export function materializeModules(
     const prefix = `${pkg}/`;
     for (const path of paths) {
       if (!path.startsWith(prefix)) continue;
-      const contents = execFileSync("git", ["cat-file", "blob", `${m.commit}:${path}`], {
-        cwd: m.repositoryPath,
-        maxBuffer: 1 << 28,
-      });
+      const contents = execFileSync(
+        "git",
+        ["cat-file", "blob", `${m.commit}:${path}`],
+        {
+          cwd: m.repositoryPath,
+          maxBuffer: 1 << 28,
+        },
+      );
       // `--strip-components=1` dropped the package directory itself; the
       // module is materialized at its own name, not nested under the package.
       const target = join(dest, path.slice(prefix.length));
@@ -137,7 +145,14 @@ export function runBatch(options: {
   // A binary this file picks is one FR-036-AC-8 cannot read, and the option
   // that used to allow it was never passed by any caller.
   const run = runQuireBatch(
-    ["validate", "--scope", scope, "--diagnostics-format", "json", ...documents],
+    [
+      "validate",
+      "--scope",
+      scope,
+      "--diagnostics-format",
+      "json",
+      ...documents,
+    ],
     {
       // `--scope` bounds relative globs, but the engine still resolves them
       // against the process working directory: run this from anywhere else

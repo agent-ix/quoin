@@ -63,7 +63,10 @@ describe("TC-1540..1547 the partition drops nothing and hides nothing", () => {
         identity(finding()),
         {
           classification: "malformed-document" as const,
-          disposition: { owner: "the team", kind: "fix-in-this-campaign" as const },
+          disposition: {
+            owner: "the team",
+            kind: "fix-in-this-campaign" as const,
+          },
         },
       ],
     ]);
@@ -106,7 +109,11 @@ describe("TC-1540..1547 the partition drops nothing and hides nothing", () => {
         },
       ],
     ]);
-    const result = partition({ findings: [finding()], ledger: LEDGER, authored });
+    const result = partition({
+      findings: [finding()],
+      ledger: LEDGER,
+      authored,
+    });
     expect(result.tally["malformed-document"]).toBe(1);
     expect(result.undispositioned).toBe(0);
   });
