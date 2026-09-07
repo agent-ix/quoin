@@ -86,39 +86,39 @@ TASK-060 -> TASK-061 -> TASK-062 -> TASK-063 -> TASK-066 -> TASK-067 -> TASK-069
 
 ## Execution Tracks
 
-| Track | Tasks | Runs |
-| --- | --- | --- |
-| A — population and contract | TASK-060, TASK-061, TASK-062, TASK-063 | serial |
-| B — semantic census | TASK-064 | parallel with A after TASK-061 |
-| C — tool defects | TASK-065 | parallel with A after TASK-061 |
-| D — partition and publication | TASK-066, TASK-067 | after A, B and C |
-| E — evidence and close | TASK-068, TASK-069 | TASK-068 parallel from TASK-060; TASK-069 last |
+| Track                         | Tasks                                  | Runs                                           |
+| ----------------------------- | -------------------------------------- | ---------------------------------------------- |
+| A — population and contract   | TASK-060, TASK-061, TASK-062, TASK-063 | serial                                         |
+| B — semantic census           | TASK-064                               | parallel with A after TASK-061                 |
+| C — tool defects              | TASK-065                               | parallel with A after TASK-061                 |
+| D — partition and publication | TASK-066, TASK-067                     | after A, B and C                               |
+| E — evidence and close        | TASK-068, TASK-069                     | TASK-068 parallel from TASK-060; TASK-069 last |
 
 ## Quality Gates
 
-| Gate | Condition | Blocks |
-| --- | --- | --- |
-| G1 — population stated | The enumerated document count, the exclusion vocabulary and every repository pin are recorded, and the per-repository counts sum to the total. | TASK-061 onward |
-| G2 — contract pinned | Every required module resolves to a commit, every contract surface carries a digest, and the toolchain record names the engine and CLI revisions. | TASK-062 onward |
-| G3 — no second extractor | No source file of the measurement parses a module mapping, builds a semantic record, or resolves a type, multiplicity or constraint keyword. | TASK-066 |
-| G4 — nothing hidden | Every document holds exactly one state, every finding holds exactly one class, `could-not-run` never enters a rate, and the `unknown` and `undispositioned` counts are headline figures. | TASK-067 |
-| G5 — reproducible | Two runs over the fixture corpus are digest-identical, an offline run agrees, and a shuffled enumeration order agrees. | TASK-069 |
-| G6 — repo green | `make lint` passes, `npx vitest run` passes apart from the four failures already failing on `main`, `quire validate --scope . "spec/**/*.md"` is structurally clean, and every corpus repository is untouched. | the pull request |
+| Gate                     | Condition                                                                                                                                                                                                      | Blocks           |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------- |
+| G1 — population stated   | The enumerated document count, the exclusion vocabulary and every repository pin are recorded, and the per-repository counts sum to the total.                                                                 | TASK-061 onward  |
+| G2 — contract pinned     | Every required module resolves to a commit, every contract surface carries a digest, and the toolchain record names the engine and CLI revisions.                                                              | TASK-062 onward  |
+| G3 — no second extractor | No source file of the measurement parses a module mapping, builds a semantic record, or resolves a type, multiplicity or constraint keyword.                                                                   | TASK-066         |
+| G4 — nothing hidden      | Every document holds exactly one state, every finding holds exactly one class, `could-not-run` never enters a rate, and the `unknown` and `undispositioned` counts are headline figures.                       | TASK-067         |
+| G5 — reproducible        | Two runs over the fixture corpus are digest-identical, an offline run agrees, and a shuffled enumeration order agrees.                                                                                         | TASK-069         |
+| G6 — repo green          | `make lint` passes, `npx vitest run` passes apart from the four failures already failing on `main`, `quire validate --scope . "spec/**/*.md"` is structurally clean, and every corpus repository is untouched. | the pull request |
 
 ## Test Plan
 
-| Test group | File | Test cases |
-| --- | --- | --- |
-| Enumeration and pinning | `tests/corpus-measurement/enumeration.test.ts` | TC-1500..TC-1505, TC-1566, TC-1567 |
-| Module resolution and toolchain | `tests/corpus-measurement/modules.test.ts` | TC-1506..TC-1511, TC-1568..TC-1571 |
-| Document states | `tests/corpus-measurement/states.test.ts` | TC-1512..TC-1517, TC-1573, TC-1574 |
-| Engine-driven measurement | `tests/corpus-measurement/engine.test.ts` | TC-1518..TC-1524, TC-1572 |
-| Form census and the L3 gap | `tests/corpus-measurement/representation.test.ts` | TC-1525..TC-1530 |
-| Partition | `tests/corpus-measurement/partition.test.ts` | TC-1531..TC-1537, TC-1575..TC-1577 |
-| Rates, report and figure index | `tests/corpus-measurement/publication.test.ts` | TC-1538..TC-1544, TC-1563..TC-1565, TC-1578..TC-1580 |
-| Tool-defect ledger | `tests/corpus-measurement/tool-defects.test.ts` | TC-1545..TC-1550, TC-1581, TC-1582 |
-| Advisory and read-only envelope | `tests/corpus-measurement/envelope.test.ts` | TC-1551..TC-1556, TC-1583 |
-| Reproducibility and budget | `tests/corpus-measurement/reproducibility.test.ts` | TC-1557..TC-1562, TC-1584 |
+| Test group                      | File                                               | Test cases                                           |
+| ------------------------------- | -------------------------------------------------- | ---------------------------------------------------- |
+| Enumeration and pinning         | `tests/corpus-measurement/enumeration.test.ts`     | TC-1500..TC-1505, TC-1566, TC-1567                   |
+| Module resolution and toolchain | `tests/corpus-measurement/modules.test.ts`         | TC-1506..TC-1511, TC-1568..TC-1571                   |
+| Document states                 | `tests/corpus-measurement/states.test.ts`          | TC-1512..TC-1517, TC-1573, TC-1574                   |
+| Engine-driven measurement       | `tests/corpus-measurement/engine.test.ts`          | TC-1518..TC-1524, TC-1572                            |
+| Form census and the L3 gap      | `tests/corpus-measurement/representation.test.ts`  | TC-1525..TC-1530                                     |
+| Partition                       | `tests/corpus-measurement/partition.test.ts`       | TC-1531..TC-1537, TC-1575..TC-1577                   |
+| Rates, report and figure index  | `tests/corpus-measurement/publication.test.ts`     | TC-1538..TC-1544, TC-1563..TC-1565, TC-1578..TC-1580 |
+| Tool-defect ledger              | `tests/corpus-measurement/tool-defects.test.ts`    | TC-1545..TC-1550, TC-1581, TC-1582                   |
+| Advisory and read-only envelope | `tests/corpus-measurement/envelope.test.ts`        | TC-1551..TC-1556, TC-1583                            |
+| Reproducibility and budget      | `tests/corpus-measurement/reproducibility.test.ts` | TC-1557..TC-1562, TC-1584                            |
 
 Five criteria are discharged by inspection of the measurement's own source rather
 than by a test, because each asserts the absence of code: FR-087-AC-9,

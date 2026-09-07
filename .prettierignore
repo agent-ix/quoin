@@ -71,6 +71,11 @@ tests/fixtures/evidence/
 # retained byte digests and make the formatter a second serialization authority.
 analysis/semantic-module-type-fit/
 
+# Corpus measurement outputs, on the same rule. `run-manifest.json` records a
+# sha256 for each sibling document it was produced with, so reformatting any of
+# them makes the manifest describe bytes that no longer exist.
+analysis/corpus-measurement/
+
 # Canonical change-assurance CLI goldens (FR-068 AC-10). These are the exact
 # JCS bytes the commands emit and a consumer stores; the compatibility claim is
 # byte identity, so a formatter that re-indents them turns the golden into a

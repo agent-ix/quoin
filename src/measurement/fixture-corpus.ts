@@ -83,7 +83,10 @@ export function buildFixtureCorpus(root: string): string {
   const dirty = repo(root, "dirty-tree");
   writeFileSync(join(dirty, "spec", "doc.md"), "---\ntype: FR\n---\n# doc\n");
   commitAll(dirty);
-  writeFileSync(join(dirty, "spec", "doc.md"), "---\ntype: FR\n---\n# edited\n");
+  writeFileSync(
+    join(dirty, "spec", "doc.md"),
+    "---\ntype: FR\n---\n# edited\n",
+  );
 
   // A `.git` file rather than a directory: the `git-link-file` rule, so a
   // worktree is not counted as a second copy of its repository.
@@ -95,7 +98,10 @@ export function buildFixtureCorpus(root: string): string {
   // A nested repository below an enumerated root: a separate population,
   // excluded from the enclosing count rather than folded into it.
   const nested = repo(root, "with-nested");
-  writeFileSync(join(nested, "spec", "outer.md"), "---\ntype: FR\n---\n# outer\n");
+  writeFileSync(
+    join(nested, "spec", "outer.md"),
+    "---\ntype: FR\n---\n# outer\n",
+  );
   const inner = join(nested, "spec", "inner");
   mkdirSync(inner, { recursive: true });
   writeFileSync(join(inner, ".git"), "gitdir: /elsewhere\n");
@@ -112,8 +118,14 @@ export function buildFixtureCorpus(root: string): string {
   const spec = join(states, "spec");
   writeFileSync(join(spec, "measured.md"), "---\ntype: FR\n---\n# ok\n");
   writeFileSync(join(spec, "no-type.md"), "# no frontmatter at all\n");
-  writeFileSync(join(spec, "unknown-type.md"), "---\ntype: NotAType\n---\n# x\n");
-  writeFileSync(join(spec, "unterminated.md"), "---\ntype: FR\nno closing fence\n");
+  writeFileSync(
+    join(spec, "unknown-type.md"),
+    "---\ntype: NotAType\n---\n# x\n",
+  );
+  writeFileSync(
+    join(spec, "unterminated.md"),
+    "---\ntype: FR\nno closing fence\n",
+  );
   commitAll(states);
 
   // A symlink, never traversed.

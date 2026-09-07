@@ -37,9 +37,9 @@ describe("TC-1506..1512 module-set resolution reads the object store", () => {
   // TC-1507
   it("finds no data_schema digest mismatch across the merged wave", () => {
     const { findings } = resolveModuleSet(REQUIRED);
-    expect(findings.filter((f) => f.kind === "data-schema-digest-mismatch")).toEqual(
-      [],
-    );
+    expect(
+      findings.filter((f) => f.kind === "data-schema-digest-mismatch"),
+    ).toEqual([]);
   });
 
   // TC-1508
