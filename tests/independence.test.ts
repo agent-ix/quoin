@@ -100,6 +100,11 @@ function auditInput(
         outcome: "pass" as const,
       })),
     })),
+    // #204's mocked-confirmation check reports an obligation as unevaluated
+    // until each suite has a current mock inspection. Declare them, as
+    // auditor.test.ts and finding-record.test.ts do, so this file exercises
+    // independence rather than the missing-inspection path.
+    mockInspectionSuites: bindings.map((item) => item.suite),
     independencePolicy,
   };
 }
@@ -265,7 +270,11 @@ describe("TC-304..TC-307 relationship independence", () => {
   // Trace: FR-094-AC-5
   it("does nothing when no profile requests independence", () => {
     const report = audit(auditInput([binding("SUITE-A", lineageA)]));
-    expect(report).toEqual({ findings: [], healthy: [OBLIGATION] });
+    expect(report).toEqual({
+      findings: [],
+      healthy: [OBLIGATION],
+      unevaluated: [],
+    });
   });
 
   // Trace: FR-094-AC-6

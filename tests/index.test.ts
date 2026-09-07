@@ -184,11 +184,13 @@ test("parseSourceArg maps CLI prefixes to typed sources", () => {
 // Trace: FR-016-AC-2
 test("ships the committed default module set", () => {
   const manifest = defaultModulesManifest();
-  // The count is asserted rather than a lower bound so a module arriving in
-  // the public default set costs a deliberate line here. Private opt-in
-  // modules must never become an implicit network dependency.
-  expect(manifest.entries).toHaveLength(9);
-  expect(manifest.entries.map((e) => e.name)).not.toContain(
+  // Ten with the opt-in engineering-assurance vocabulary (#275). The
+  // count is asserted rather than a lower bound so a module arriving in the
+  // default set costs a deliberate line here — the set is installed into every
+  // consumer's ~/.ix/filament/modules, so a silent addition is a silent change
+  // to everyone's catalog.
+  expect(manifest.entries).toHaveLength(10);
+  expect(manifest.entries.map((e) => e.name)).toContain(
     "engineering-assurance",
   );
   expect(manifest.entries.map((e) => e.name)).toContain(

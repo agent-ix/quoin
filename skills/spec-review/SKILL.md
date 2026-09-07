@@ -13,7 +13,17 @@ See **[references/checklist.md](references/checklist.md)** for the detailed qual
 
 ## Choose the review set
 
-Before reviewing, present these options to the user and let them choose:
+First look for an applicable installed `AssuranceProfile` in the requested spec scope.
+If it has `review_selection`:
+
+- `mode: recommend` supplies a reasoned default, but the user still chooses below;
+- `mode: require` uses an enforced `quoin review` run with exactly the profile-selected
+  analyses and records the profile path; do not claim completion through the direct path;
+- a selected analysis absent from the installed `SpecReview.analysis` schema is an
+  unavailable dependency, not permission to emit an invalid review document.
+
+Without a required profile selection, present these options to the user and let them
+choose:
 
 - **base** — the **Checklist** only: ID formats, US/FR/TC quality, and the six coverage
   rules. No analysis skills.
@@ -73,7 +83,9 @@ The seven analyses:
 `quoin review` drives this through `ix-flow`, which **records the chosen set and hard-blocks
 acceptance until every selected analysis has produced a validated `SpecReview` doc** (the
 `selected_analyses_covered` gate). Use it when you want the choice enforced rather than
-trusted to discipline. The per-analysis `SpecReview` structure + the findings table are
+trusted to discipline, and always when an applicable profile uses
+`review_selection.mode: require`. Record the profile path, mode, and profile analysis
+set during intake. The per-analysis `SpecReview` structure + the findings table are
 defined in the workflow skill (`workflow-assets/skills/review/SKILL.md`).
 
 ## Common Issues

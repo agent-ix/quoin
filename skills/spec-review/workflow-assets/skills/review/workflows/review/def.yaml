@@ -13,6 +13,7 @@ transitions:
     to: analyses_run
     invariants:
       - "interview.complete:request"
+      - "review_selection_consistent"
     defaultGate: auto
   - from: analyses_run
     to: reviews_rendered
@@ -50,6 +51,19 @@ interviews:
         type: enum
         options: [base, all, subset]
         required: true
+      - key: assurance_profile
+        prompt: "Applicable AssuranceProfile path, or empty when none applies."
+        type: text
+        required: false
+      - key: profile_selection_mode
+        prompt: "Applicable profile review-selection mode: none, recommend, or require."
+        type: enum
+        options: [none, recommend, require]
+        required: false
+      - key: profile_analyses
+        prompt: "Analyses named by the applicable profile review_selection, or an empty list."
+        type: list<text>
+        required: false
       - key: selected_analyses
         prompt: "Analyses to run as a list, drawn from: failure-domain, integrity, dependency, evidence, risk-complexity, scope-boundary, ears-conformance. Use all seven for 'all'; the chosen ones for 'subset'; leave empty for 'base'."
         type: list<text>
