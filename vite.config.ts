@@ -170,12 +170,7 @@ export default defineConfig(({ command }) => ({
     // branch's tests alongside this one's — 2220 files instead of 97 — and
     // reported failures that belong to other branches. Git already ignores the
     // directory; the test runner has to as well.
-    exclude: [
-      "node_modules/**",
-      "dist/**",
-      "corpus/**",
-      ".worktrees/**",
-    ],
+    exclude: ["node_modules/**", "dist/**", "corpus/**", ".worktrees/**"],
     // Oclif enables source auto-transpilation whenever NODE_ENV=test. That
     // makes Config.load prefer src/commands/*.ts over the built command tree,
     // even though dispatch tests deliberately exercise dist/. Configure the
