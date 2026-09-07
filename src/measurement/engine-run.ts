@@ -12,9 +12,11 @@
  */
 
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join, resolve } from "node:path";
+import { dirname, join, resolve } from "node:path";
+
+import { runQuireBatch } from "../quire/exec.js";
 
 export type Outcome = "pass" | "fail" | "could-not-run";
 
@@ -47,26 +49,36 @@ export function materializeModules(
 ): string {
   const root = mkdtempSync(join(tmpdir(), "pinned-modules-"));
   for (const m of modules) {
-    const tree = execFileSync(
-      "git",
-      ["ls-tree", "-r", "--name-only", m.commit],
-      { cwd: m.repositoryPath, encoding: "utf8", maxBuffer: 1 << 28 },
-    );
-    const pkg = tree
-      .split("\n")
+    const tree = execFileSync("git", ["ls-tree", "-r", "--name-only", m.commit], {
+      cwd: m.repositoryPath,
+      encoding: "utf8",
+      maxBuffer: 1 << 28,
+    });
+    const paths = tree.split("\n").filter((p) => p.length > 0);
+    const pkg = paths
       .find((p) => /^[a-z_]+\/manifest\.yaml$/.test(p))
       ?.split("/")[0];
     if (!pkg) continue;
     const dest = join(root, m.name);
-    execFileSync("mkdir", ["-p", dest]);
-    const archive = execFileSync(
-      "git",
-      ["archive", "--format=tar", m.commit, pkg],
-      { cwd: m.repositoryPath, maxBuffer: 1 << 28 },
-    );
-    const tar = join(root, `${m.name}.tar`);
-    writeFileSync(tar, archive);
-    execFileSync("tar", ["-xf", tar, "-C", dest, "--strip-components=1"]);
+
+    // Read the package out of the commit with git alone. This used to be
+    // `git archive` into a tar file, then `mkdir -p` and `tar -xf` to unpack
+    // it -- two executables beyond the git/quire/ix-flow boundary FR-036-AC-8
+    // declares, for a directory copy Node already does. Blob-by-blob keeps the
+    // pinned commit as the only source of the bytes.
+    const prefix = `${pkg}/`;
+    for (const path of paths) {
+      if (!path.startsWith(prefix)) continue;
+      const contents = execFileSync("git", ["cat-file", "blob", `${m.commit}:${path}`], {
+        cwd: m.repositoryPath,
+        maxBuffer: 1 << 28,
+      });
+      // `--strip-components=1` dropped the package directory itself; the
+      // module is materialized at its own name, not nested under the package.
+      const target = join(dest, path.slice(prefix.length));
+      mkdirSync(dirname(target), { recursive: true });
+      writeFileSync(target, contents);
+    }
   }
   return root;
 }
@@ -117,39 +129,32 @@ export function runBatch(options: {
   scope: string;
   documents: readonly string[];
   modulesPath: string;
-  quire?: string;
 }): Evaluation[] {
-  const { scope, documents, modulesPath, quire = "quire" } = options;
+  const { scope, documents, modulesPath } = options;
   if (documents.length === 0) return [];
 
-  let stderr = "";
-  let terminated: string | null = null;
-  try {
-    const result = execFileSync(
-      quire,
-      ["validate", "--scope", scope, "--diagnostics-format", "json", ...documents],
-      {
-        // `--scope` bounds relative globs, but the engine still resolves them
-        // against the process working directory: run this from anywhere else
-        // and it validates that directory's documents instead, reporting a
-        // clean batch for documents it never opened.
-        cwd: scope,
-        encoding: "utf8",
-        maxBuffer: 1 << 28,
-        env: { ...process.env, IX_FILAMENT_MODULES_PATH: modulesPath },
-        stdio: ["ignore", "pipe", "pipe"],
-      },
-    );
-    void result;
-  } catch (error) {
-    const e = error as { stderr?: string; status?: number; signal?: string };
-    stderr = e.stderr ?? "";
-    // A non-zero exit is how the engine reports errors; only a signal or a
-    // missing stream means the batch did not run.
-    if (e.signal || (e.status === undefined && !e.stderr)) {
-      terminated = `batch terminated: signal=${e.signal ?? "none"} status=${e.status ?? "none"}`;
-    }
-  }
+  // The executable is resolved by `src/quire/exec.ts` rather than named here.
+  // A binary this file picks is one FR-036-AC-8 cannot read, and the option
+  // that used to allow it was never passed by any caller.
+  const run = runQuireBatch(
+    ["validate", "--scope", scope, "--diagnostics-format", "json", ...documents],
+    {
+      // `--scope` bounds relative globs, but the engine still resolves them
+      // against the process working directory: run this from anywhere else
+      // and it validates that directory's documents instead, reporting a
+      // clean batch for documents it never opened.
+      cwd: scope,
+      env: { IX_FILAMENT_MODULES_PATH: modulesPath },
+      maxBuffer: 1 << 28,
+    },
+  );
+  const stderr = run.stderr;
+  // A non-zero exit is how the engine reports errors; only a signal or a
+  // missing stream means the batch did not run.
+  const terminated =
+    !run.ok && (run.signal || (run.status === undefined && !run.stderr))
+      ? `batch terminated: signal=${run.signal ?? "none"} status=${run.status ?? "none"}`
+      : null;
 
   if (terminated) {
     return documents.map((path) => ({
