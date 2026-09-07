@@ -103,3 +103,4 @@ description: "Index of functional requirements (FR) for quoin."
 * [FR-093: Use-specific evidence-producer trust decisions and invalidation](./FR-093-evidence-producer-trust.md)
 * [FR-046: Use-specific evidence-producer trust decisions and invalidation](./FR-046-evidence-producer-trust.md)
 * [FR-094: Profile-selected evidence independence](./FR-094-profile-selected-evidence-independence.md)
+* [FR-095: Assurance-aware specification authoring and review selection](./FR-095-assurance-aware-spec-workflows.md)

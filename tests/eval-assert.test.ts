@@ -20,6 +20,7 @@ import { afterAll, describe, expect, it } from "vitest";
 // The harness is plain ESM, deliberately importable from vitest so its own
 // behaviour is covered by `make test` rather than only by running evals.
 import { assertExpectations, matchFiles } from "../evals/lib/assert.mjs";
+import { findCommand } from "../evals/lib/metrics.mjs";
 
 const repo = mkdtempSync(join(tmpdir(), "quoin-eval-assert-"));
 mkdirSync(join(repo, "test"), { recursive: true });
@@ -76,5 +77,37 @@ describe("TC-270 an inexpressible glob is a load error, not a vacuous pass", () 
     expect(matchFiles(repo, "**/CODES.FUZZ.TEST.JS")).toEqual([
       "test/codes.fuzz.test.js",
     ]);
+  });
+});
+
+describe("Codex rollout command assertions", () => {
+  // TC-EV-058 — the shared runner resolves Codex's rollout JSONL after a run;
+  // agentRan must evaluate its completed CommandExecution records, not only the
+  // Claude tool_use/tool_result schema.
+  it("accepts a matching successful Codex command after an earlier failure", () => {
+    const transcript = join(repo, "codex-rollout.jsonl");
+    const execution = (exitCode: number) => ({
+      type: "event_msg",
+      payload: {
+        type: "item_completed",
+        item: {
+          type: "CommandExecution",
+          command: [
+            "/bin/bash",
+            "-lc",
+            "quoin write . --types AssuranceProfile",
+          ],
+          exit_code: exitCode,
+        },
+      },
+    });
+    writeFileSync(
+      transcript,
+      `${JSON.stringify(execution(1))}\n${JSON.stringify(execution(0))}\n`,
+    );
+
+    expect(
+      findCommand(transcript, String.raw`\bquoin\b[^\n]*\bwrite\b`),
+    ).toEqual({ ran: true, succeeded: true });
   });
 });
