@@ -1,4 +1,5 @@
 __pycache__/
+.pytest_cache/
 *.pyc
 dist/
 # ...except the vendored workflow-asset bundles. They have no source in this

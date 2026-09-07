@@ -165,7 +165,17 @@ export default defineConfig(({ command }) => ({
     // undeclared marker one of them exists to seed. This is the same class as
     // the ecosystem manifest's `source_exclude`: a fixture tree that carries
     // real-looking evidence has to be excluded by the tools that walk it.
-    exclude: ["node_modules/**", "dist/**", "corpus/**"],
+    // `.worktrees/` holds git worktrees of this same repository. Each one is a
+    // full second copy of the suite, so vitest collected every checked-out
+    // branch's tests alongside this one's — 2220 files instead of 97 — and
+    // reported failures that belong to other branches. Git already ignores the
+    // directory; the test runner has to as well.
+    exclude: [
+      "node_modules/**",
+      "dist/**",
+      "corpus/**",
+      ".worktrees/**",
+    ],
     // Oclif enables source auto-transpilation whenever NODE_ENV=test. That
     // makes Config.load prefer src/commands/*.ts over the built command tree,
     // even though dispatch tests deliberately exercise dist/. Configure the

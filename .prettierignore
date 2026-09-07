@@ -35,6 +35,7 @@ Thumbs.db
 .npm/
 tmp/
 __pycache__/
+.pytest_cache/
 *.pyc
 *.egg-info/
 
@@ -91,19 +92,14 @@ tests/fixtures/change-assurance-cli/
 # scripts/refresh-manifest-schema.mjs and
 # scripts/refresh-semantic-core-schemas.mjs, never with prettier.
 src/semantic/schemas/
-tests/fixtures/semantic-module/vendored/
-
-# Vendored semantic-module contract schemas (quoin FR-070/073/075, issue #293):
-# the filament-core-service module-manifest schema, the semantic-core JSON
-# Schema bundle, and filament-core-data's package-manifest/common schemas. Same
-# rule as src/quire/schemas/: provenance and sha256 are recorded in
-# src/semantic/contract.ts and asserted on every test run; refresh with
-# scripts/refresh-manifest-schema.mjs and
-# scripts/refresh-semantic-core-schemas.mjs, never with prettier.
-src/semantic/schemas/
 tests/fixtures/semantic-module/
 
 # The semantic-module cookiecutter (quoin FR-076, issue #307). Its files are
+# Git worktrees of this same repository. Their tracked files are already
+# linted from the root checkout; scanning them again double-lints and drags
+# ignored template syntax back in. Git itself ignores .worktrees/.
+.worktrees/
+
 # Jinja templates, not JavaScript, TypeScript, JSON or YAML: prettier parses
 # `{{ cookiecutter.x }}` inside a JSON value as a syntax error and rewrites
 # `{%- if -%}` blocks into something cookiecutter no longer renders. The
