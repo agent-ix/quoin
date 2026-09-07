@@ -86,6 +86,33 @@ export function renderCase(assurance: AssuranceCase): string {
     lines.push("");
   }
 
+  if ((assurance.evidenceIndependence?.length ?? 0) > 0) {
+    lines.push(
+      "## Evidence independence",
+      "",
+      "These are profile-selected relationship checks; they do not make a claim supported by themselves.",
+      "",
+    );
+    for (const assessment of assurance.evidenceIndependence ?? []) {
+      lines.push(
+        `- **${assessment.profile} / ${assessment.requirement} / ${assessment.obligation}** — ${assessment.status}`,
+        `  - ${assessment.summary}`,
+      );
+      for (const dimension of assessment.dimensions) {
+        const values =
+          dimension.values.length === 0
+            ? "no stated values"
+            : dimension.values.join(", ");
+        const missing =
+          dimension.missingSuites.length === 0
+            ? ""
+            : `; missing on ${dimension.missingSuites.join(", ")}`;
+        lines.push(`  - ${dimension.dimension}: ${values}${missing}`);
+      }
+    }
+    lines.push("");
+  }
+
   return lines.join("\n");
 }
 
