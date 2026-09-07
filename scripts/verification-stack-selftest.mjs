@@ -1,9 +1,19 @@
 #!/usr/bin/env node
 
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import {
+  copyFileSync,
+  mkdirSync,
+  mkdtempSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+
+// Keep relock qualification on the existing canonical selftest path.
+import "./verification-declarations-selftest.mjs";
+import "./verification-object-integrity-selftest.mjs";
 
 import {
   assertRepository,
@@ -137,7 +147,7 @@ passed += 1;
 
 try {
   cliSelectsEngine(
-    `[dependencies]\nquire = { git = "https://example/quire", rev = "${A}" }\n`,
+    `[dependencies]\nquire = { package = "quire-rs", git = "https://example/quire", rev = "${A}" }\n`,
     `[[package]]\nname = "quire-rs"\nsource = "git+https://example/quire?rev=${A}#${B}"\n`,
     A,
   );
@@ -153,6 +163,51 @@ cliSelectsEngine(
 );
 passed += 1;
 
+// TC-1590: parsed Cargo fields, never comments or an unrelated dependency.
+const selectedLock = `[[package]]\nname = "quire-rs"\nsource = "git+https://example/quire?rev=${A}#${A}"\n`;
+for (const manifest of [
+  `[dependencies]\nquire-rs = { git = "https://example/quire", rev = "${B}" }\n# reviewed: rev = "${A}"`,
+  `[dependencies]\nother = { git = "https://example/quire", rev = "${A}" }`,
+  `[dev-dependencies]\nquire-rs = { git = "https://example/quire", rev = "${A}" }`,
+  `[dependencies]\nquire-rs = { git = "https://example/quire", rev = "${A}", branch = "main" }`,
+  `[dependencies]\nquire-rs = { git = "https://example/quire", rev = "${A}", tag = "v1" }`,
+  `[dependencies]\nquire-rs = { git = "https://example/quire", rev = "${A}", path = "../quire" }`,
+  `[dependencies]\nquire-rs = { workspace = true }\n[workspace.dependencies]\nquire-rs = { git = "https://example/quire", rev = "${A}" }`,
+  `[dependencies]\nquire-rs = { git = "https://example/quire", rev = "${A}" }\n[patch.crates-io]\nquire-rs = { path = "../quire" }`,
+  `[dependencies]\nquire-rs = { git = "https://example/quire", rev = "${A}" }\n[target.'cfg(unix)'.dependencies]\nquire-rs = { git = "https://example/quire", rev = "${B}" }`,
+]) {
+  try {
+    cliSelectsEngine(manifest, selectedLock, A);
+    throw new Error("ambiguous Cargo dependency accepted");
+  } catch (error) {
+    if (!/Cargo.toml does not pin/.test(error.message)) throw error;
+    passed += 1;
+  }
+}
+cliSelectsEngine(
+  `[dependencies.engine]\npackage = 'quire-rs'\ngit = 'https://example/quire'\nrev = '${A}'\n`,
+  selectedLock,
+  A,
+);
+passed += 1;
+for (const lockfile of [
+  `[[package]]\nname = "quire-rs"\nsource = "git+https://example/quire?rev=${A}#${B}"\n# reviewed #${A}`,
+  `[[package]]\nname = "quire-rs"\nsource = "git+https://example/quire?branch=main#${A}"`,
+  `[[package]]\nname = "quire-rs"\nsource = "git+https://other/quire?rev=${A}#${A}"`,
+]) {
+  try {
+    cliSelectsEngine(
+      `[dependencies]\nquire-rs = { git = "https://example/quire", rev = "${A}" }`,
+      lockfile,
+      A,
+    );
+    throw new Error("ambiguous Cargo resolution accepted");
+  } catch (error) {
+    if (!/Cargo.lock does not select/.test(error.message)) throw error;
+    passed += 1;
+  }
+}
+
 if (parseSubmoduleRevision(` ${A} corpus (heads/main)`) !== A) {
   throw new Error("exact submodule revision was not preserved");
 }
@@ -165,6 +220,44 @@ for (const marker of ["+", "-"]) {
     if (!/uninitialized or mismatched/.test(String(error.message))) throw error;
     passed += 1;
   }
+}
+
+const bootstrap = mkdtempSync(join(tmpdir(), "quoin-stack-bootstrap-"));
+try {
+  mkdirSync(join(bootstrap, "scripts"));
+  copyFileSync(
+    new URL("./verification-stack.mjs", import.meta.url),
+    join(bootstrap, "scripts/verification-stack.mjs"),
+  );
+  copyFileSync(
+    new URL("./verification-declarations.mjs", import.meta.url),
+    join(bootstrap, "scripts/verification-declarations.mjs"),
+  );
+  writeFileSync(join(bootstrap, "lock.json"), JSON.stringify(base));
+  const result = spawnSync(
+    process.execPath,
+    [
+      join(bootstrap, "scripts/verification-stack.mjs"),
+      "--lock",
+      join(bootstrap, "lock.json"),
+    ],
+    {
+      encoding: "utf8",
+      env: { ...process.env, QUIRE_ROOT: join(bootstrap, "absent-engine") },
+    },
+  );
+  if (
+    result.status === 0 ||
+    !result.stderr.includes("quire checkout is missing") ||
+    !result.stderr.includes("make verification-relock") ||
+    result.stderr.includes("Cannot find")
+  )
+    throw new Error(
+      "clean bootstrap did not reach source checks before loading development dependencies",
+    );
+  passed += 1;
+} finally {
+  rmSync(bootstrap, { recursive: true, force: true });
 }
 
 const root = mkdtempSync(join(tmpdir(), "quoin-stack-selftest-"));
@@ -415,6 +508,4 @@ try {
   rmSync(root, { recursive: true, force: true });
 }
 
-console.log(
-  `verification-stack-selftest: ${passed}/${shapeMutations.length + 18} invariants verified`,
-);
+console.log(`verification-stack-selftest: ${passed} invariants verified`);

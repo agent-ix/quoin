@@ -895,8 +895,17 @@ describe("TC-148 the audit command reads the catalog from --module", () => {
       ),
       "utf8",
     );
+    // `--module` is repeatable as of #350, so the wiring to prove is that ONE
+    // selection reaches both sides: the roots forwarded to the engine deriving
+    // obligations and the roots the catalog checks them against. Two separate
+    // reads of `flags.module` could drift apart silently, which is the
+    // disagreement quoin#105 opens by warning about.
+    expect(source).toContain("const modules = flags.module ?? [];");
     expect(source).toContain(
-      "catalog: loadMethodCatalog(flags.module ? [flags.module] : undefined)",
+      'for (const root of modules) args.push("--module", root);',
+    );
+    expect(source).toContain(
+      "catalog: loadMethodCatalog(modules.length > 0 ? modules : undefined)",
     );
   });
 });

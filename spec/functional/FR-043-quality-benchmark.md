@@ -81,8 +81,27 @@ Unchanged from this repository's standing posture. The benchmark is expensive �
 
 ## Acceptance Criteria
 
+For AC-32, Cargo selection is read from parsed manifest and lock fields, never
+comments, unrelated dependencies or ambiguous overrides. Schema metadata is
+read from one exported literal `QUIRE_CONTRACT` declaration without executing
+source. Relocked artifacts must match selected commit blobs (including the
+selected corpus gitlink); clean Git status alone cannot establish byte identity.
+All tracked source file bytes, modes and symlink targets must agree with Git
+objects despite index visibility flags. The native QA inventory reader runs
+over the complete committed snapshot, with no working-tree ignored inputs;
+non-regular snapshot entries are refused rather than resolved outside the pin.
+For AC-35, literal Git reads ignore replacement refs without modifying them.
+Git paths must decode as valid UTF-8; invalid byte sequences are refused rather
+than renamed through replacement characters, while valid Unicode is preserved.
+Materialized regular files have the declared `0644` or `0755` permission bits
+independently of the invoking process's umask.
+
 | ID | Criteria | Verification |
 |----|----------|--------------|
+| FR-043-AC-32 | `make verification-relock` prepares a candidate lock from seven explicitly routed, clean, remotely reachable source checkouts. It records full revisions, verifies the CLI's declared and resolved engine pin and the vendored schemas against both their recorded source and the selected engine git objects, derives the QA case partition and artifact digests, and preserves historical producer cohorts, capabilities, toolchains and timeout policy. Missing, dirty, mismatched or incompatible inputs fail before output. | Test (TC-1589, TC-1590) |
+| FR-043-AC-33 | Relocking creates only a new, explicitly named candidate file; it never overwrites an existing lock, edits producer expectations, regenerates evidence or promotes a baseline. Source-drift refusals name `make verification-relock` and its runbook. The exact-source, rollback and merge-before-promotion checks remain enforced. The maintainer integrating a producer change owns relocking and the subsequent canonical replay; a candidate alone is not accepted evidence. | Test (TC-1591, TC-1592), Inspection |
+| FR-043-AC-34 | Explicit lock-v2 policy names exactly the seven v1 sources plus engineering-assurance and the ordered Quoin validation set: process, ISO, engineering-assurance. Each declaration names its source repository and module subdirectory, exact committed tree and complete sorted path/mode/SHA-256 file inventory, including its manifest. Missing, duplicate, unknown, escaping, partial or malformed declarations fail. V1 remains a historical seven-source mode and is neither silently upgraded nor evidence of v2 isolation. | Test (TC-1593, TC-1594) |
+| FR-043-AC-35 | V2 relocking and replay derive and materialize declaration files from literal selected Git objects, refusing non-regular entries and inventory drift. Canonical Quoin validation passes exactly the declared ordered roots through repeated native Quire `--module` arguments, with no ambient module discovery or default installation. Poisoned installed catalogs and module environment variables cannot add inputs; native validation failures remain failures. Ordinary validation without an explicit set remains compatible. This slice does not change historical Tier-1/Tier-2 declaration or producer policy. | Test (TC-1595, TC-1596) |
 | FR-043-AC-1 | The metric dictionary declares, for every benchmark metric, its `unit` (what one of the value is), `population` (what the denominator is drawn from), and `method` (how it was arrived at, and what a partial read means). A metric missing any of the three is rejected at load, not reported with a gap. | Test (TC-926) |
 | FR-043-AC-2 | The dictionary defines `finding_precision` and `finding_recall` **per defect family**, each keyed on a family the corpora label, so a score cannot be reported over an unlabelled population. | Test (TC-927) |
 | FR-043-AC-3 | The dictionary defines `span_grounding_rate` — of the criteria carrying a specific property shape, the fraction whose `domain`, `precondition` and `oracle` are all present — with the pass-2 figure (0 of 65) recorded as the baseline it starts from. | Test (TC-928) |

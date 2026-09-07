@@ -51,7 +51,11 @@ a week. Write that baseline with: quoin evidence baseline`;
   static flags = {
     repo: Flags.string({ description: "Repository root.", default: "." }),
     module: Flags.string({
-      description: "Module directory supplying the traceability model.",
+      description:
+        "Module directory supplying the traceability model. Repeatable; " +
+        "roots are used in the order given and replace ambient discovery " +
+        "entirely rather than adding to it.",
+      multiple: true,
     }),
     ratchet: Flags.boolean({
       description: "Report only violations absent from the baseline.",
@@ -82,8 +86,13 @@ a week. Write that baseline with: quoin evidence baseline`;
     const premise = checkVersionPremise(quireVersion());
     if (premise) this.error(premise.message, { exit: 2 });
 
+    // One selection, used twice. A repeated flag is a closed, ordered set:
+    // the same roots in the same order reach the engine deriving obligations
+    // and the catalog checking them, because deriving from one catalog and
+    // checking against another is the disagreement quoin#105 warns about.
+    const modules = flags.module ?? [];
     const args = ["coverage", "--scope", flags.repo, "--json"];
-    if (flags.module) args.push("--module", flags.module);
+    for (const root of modules) args.push("--module", root);
     const parsed = parseCoverage(runQuire(args));
     if (!parsed.ok) this.error(parsed.error.message, { exit: 2 });
 
@@ -100,7 +109,7 @@ a week. Write that baseline with: quoin evidence baseline`;
       // installed roots meant `--module <dir>` derived obligations from one
       // catalog and checked conformance against another — the exact disagreement
       // `src/advisor/methods.ts` opens by warning about (agent-ix/quoin#105).
-      catalog: loadMethodCatalog(flags.module ? [flags.module] : undefined),
+      catalog: loadMethodCatalog(modules.length > 0 ? modules : undefined),
       headCommit: head,
       // Deliberately unset. No obligation source in the ecosystem declares a
       // `criticality_column` — measured: 2,304 of 2,304 `Acceptance Criteria`
