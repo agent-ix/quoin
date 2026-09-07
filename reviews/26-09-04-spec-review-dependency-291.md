@@ -36,7 +36,7 @@ The external side is the sharper problem. Six live blockers bear on this work �
 sequencing only, `agent-ix/quoin#349` — and not one of them is named in an FR,
 an NFR or a matrix row. FR-085's choice to read modules from the Git object
 store is the correct decoupling from `#347`, but the spec does not record that
-it *is* a decoupling, so the constraint is one refactor away from being lost.
+it _is_ a decoupling, so the constraint is one refactor away from being lost.
 
 ## Verdict
 
@@ -47,18 +47,18 @@ declared graph and cannot see the prose.
 
 ## Findings
 
-| ID | Severity | Summary | Refs | Escape Cause |
-| --- | --- | --- | --- | --- |
-| FND-1410 | high | No FR, NFR or matrix row names any of the six live blockers, so the work has no declared external prerequisites at all. | FR-084..FR-092; agent-ix/quoin#347; agent-ix/quoin#350 | missing-requirement |
-| FND-1411 | medium | FR-090 declares FR-089 as its only upstream while its Inputs consume the records of FR-086, FR-087 and FR-088 — three undeclared prerequisite edges. | FR-090 Inputs; FR-090 Dependencies | wrong-requirement |
-| FND-1412 | medium | Frontmatter `depends_on` disagrees with the prose Dependencies in FR-086, FR-087, FR-089, FR-092 and NFR-021, so the graph a tool reads is smaller than the graph the author wrote. | FR-086; FR-087; FR-089; FR-092; NFR-021 | wrong-requirement |
-| FND-1413 | medium | Five declared configuration inputs are prerequisites that no requirement produces or owns. | FR-084 Inputs; FR-085 Inputs; FR-089 Inputs; FR-090 Behavior; FR-091 Inputs | missing-requirement |
-| FND-1414 | medium | FR-091's rationale asserts four live tool defects but names none, and the tool-defect ledger has no declared seed content. | FR-091 Rationale; FR-091-CON-1 | wrong-requirement |
-| FND-1415 | medium | TC-1500..TC-1565 depend on binding that two engine defects and one manifest defect can silently break, and no row or NFR declares that dependency. | TC-1500..TC-1565; agent-ix/quire-rs#403; agent-ix/spec-artifacts-process#81 | correct-requirement-no-evidence |
-| FND-1416 | medium | FR-088 declares only FR-074 upstream while consuming the resolved module set and the `measured` state of FR-085 and FR-086. | FR-088 Inputs; FR-088 Dependencies | wrong-requirement |
-| FND-1417 | low | FR-092 is declared downstream of FR-084, but the read-only envelope it owns must hold during enumeration — FR-084-CON-1 is FR-092's obligation. | FR-092 Dependencies; FR-084-CON-1; TC-1552 | wrong-requirement |
-| FND-1418 | low | The set consumes the semantic-module manifest contract (FR-070, FR-071, FR-073) without declaring an edge to it. | FR-085 Behavior; FR-087 Inputs; FR-088 Inputs | missing-requirement |
-| FND-1419 | low | The Downstream halves of FR-084, FR-085, FR-088 and FR-091 are incomplete, so the graph read forward under-reports blast radius. | FR-084 Dependencies; FR-085 Dependencies; FR-088 Dependencies; FR-091 Dependencies | wrong-requirement |
+| ID       | Severity | Summary                                                                                                                                                                             | Refs                                                                               | Escape Cause                    |
+| -------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- | ------------------------------- |
+| FND-1410 | high     | No FR, NFR or matrix row names any of the six live blockers, so the work has no declared external prerequisites at all.                                                             | FR-084..FR-092; agent-ix/quoin#347; agent-ix/quoin#350                             | missing-requirement             |
+| FND-1411 | medium   | FR-090 declares FR-089 as its only upstream while its Inputs consume the records of FR-086, FR-087 and FR-088 — three undeclared prerequisite edges.                                | FR-090 Inputs; FR-090 Dependencies                                                 | wrong-requirement               |
+| FND-1412 | medium   | Frontmatter `depends_on` disagrees with the prose Dependencies in FR-086, FR-087, FR-089, FR-092 and NFR-021, so the graph a tool reads is smaller than the graph the author wrote. | FR-086; FR-087; FR-089; FR-092; NFR-021                                            | wrong-requirement               |
+| FND-1413 | medium   | Five declared configuration inputs are prerequisites that no requirement produces or owns.                                                                                          | FR-084 Inputs; FR-085 Inputs; FR-089 Inputs; FR-090 Behavior; FR-091 Inputs        | missing-requirement             |
+| FND-1414 | medium   | FR-091's rationale asserts four live tool defects but names none, and the tool-defect ledger has no declared seed content.                                                          | FR-091 Rationale; FR-091-CON-1                                                     | wrong-requirement               |
+| FND-1415 | medium   | TC-1500..TC-1565 depend on binding that two engine defects and one manifest defect can silently break, and no row or NFR declares that dependency.                                  | TC-1500..TC-1565; agent-ix/quire-rs#403; agent-ix/spec-artifacts-process#81        | correct-requirement-no-evidence |
+| FND-1416 | medium   | FR-088 declares only FR-074 upstream while consuming the resolved module set and the `measured` state of FR-085 and FR-086.                                                         | FR-088 Inputs; FR-088 Dependencies                                                 | wrong-requirement               |
+| FND-1417 | low      | FR-092 is declared downstream of FR-084, but the read-only envelope it owns must hold during enumeration — FR-084-CON-1 is FR-092's obligation.                                     | FR-092 Dependencies; FR-084-CON-1; TC-1552                                         | wrong-requirement               |
+| FND-1418 | low      | The set consumes the semantic-module manifest contract (FR-070, FR-071, FR-073) without declaring an edge to it.                                                                    | FR-085 Behavior; FR-087 Inputs; FR-088 Inputs                                      | missing-requirement             |
+| FND-1419 | low      | The Downstream halves of FR-084, FR-085, FR-088 and FR-091 are incomplete, so the graph read forward under-reports blast radius.                                                    | FR-084 Dependencies; FR-085 Dependencies; FR-088 Dependencies; FR-091 Dependencies | wrong-requirement               |
 
 ## Findings in detail
 
@@ -68,8 +68,8 @@ declared graph and cannot see the prose.
 `semantic.exports` against `object_types` only, so no artifact-type module can
 be installed at all. That removes the installed-catalog route US-022's Options
 section raises, and it is the reason FR-085 reads each module from its
-repository's object store instead. FR-085 states the *behaviour* and not the
-*reason*, so nothing stops a later implementer from "simplifying" onto
+repository's object store instead. FR-085 states the _behaviour_ and not the
+_reason_, so nothing stops a later implementer from "simplifying" onto
 `quoin module install` and re-blocking the measurement.
 
 `agent-ix/quoin#350` refuses `make test` on `main` before any test runs,
@@ -90,15 +90,15 @@ matrix rows.
 
 Three layers disagree, each smaller than the last:
 
-| Requirement | `depends_on` relationship | Prose Dependencies upstream | Prerequisites its Inputs name |
-| --- | --- | --- | --- |
-| FR-086 | FR-084 | FR-084, FR-085 | FR-084, FR-085 |
-| FR-087 | FR-086 | FR-085, FR-086 | FR-085, FR-086 |
-| FR-088 | FR-074 | FR-074 | FR-074, FR-085, FR-086 |
-| FR-089 | FR-087 | FR-087, FR-088 | FR-087, FR-088 |
-| FR-090 | FR-089 | FR-089 | FR-086, FR-087, FR-088, FR-089 |
-| FR-092 | none | FR-084 | FR-084 |
-| NFR-021 | constrains FR-084, FR-090 | FR-084, FR-085 | FR-084, FR-085 |
+| Requirement | `depends_on` relationship | Prose Dependencies upstream | Prerequisites its Inputs name  |
+| ----------- | ------------------------- | --------------------------- | ------------------------------ |
+| FR-086      | FR-084                    | FR-084, FR-085              | FR-084, FR-085                 |
+| FR-087      | FR-086                    | FR-085, FR-086              | FR-085, FR-086                 |
+| FR-088      | FR-074                    | FR-074                      | FR-074, FR-085, FR-086         |
+| FR-089      | FR-087                    | FR-087, FR-088              | FR-087, FR-088                 |
+| FR-090      | FR-089                    | FR-089                      | FR-086, FR-087, FR-088, FR-089 |
+| FR-092      | none                      | FR-084                      | FR-084                         |
+| NFR-021     | constrains FR-084, FR-090 | FR-084, FR-085              | FR-084, FR-085                 |
 
 `spec-to-plan` consumes the declared graph. Left as authored, it would place
 FR-090 in the same wave as FR-086 and FR-087, and FR-088 in a wave before the
@@ -132,13 +132,13 @@ its data precisely what its own rationale omits.
 
 The live set, as of this review:
 
-| Defect | Effect on this work |
-| --- | --- |
-| `agent-ix/quoin#347` | No artifact-type module installs. Removes the catalog route (FND-1410). |
-| `agent-ix/quire-rs#403` | The TypeScript binder counts braces inside regex literals, so one regex makes every trace tag in a file bind nothing. Quoin's suite is TypeScript, so TC-1500..TC-1565 can read green while binding zero rows. |
+| Defect                               | Effect on this work                                                                                                                                                                                                                 |
+| ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `agent-ix/quoin#347`                 | No artifact-type module installs. Removes the catalog route (FND-1410).                                                                                                                                                             |
+| `agent-ix/quire-rs#403`              | The TypeScript binder counts braces inside regex literals, so one regex makes every trace tag in a file bind nothing. Quoin's suite is TypeScript, so TC-1500..TC-1565 can read green while binding zero rows.                      |
 | `agent-ix/spec-artifacts-process#81` | `traceability.status.column` is `Status` while three TestMatrix coverage tables assert `Coverage Status`, so the status-lie check has never run over FR, StR or US coverage — the check that would catch a `✅` on an unbacked row. |
-| `agent-ix/quire-rs#402` | `quire coverage` does not expand `A..B` ranges. Low exposure here: all 66 new rows use comma lists, not ranges. Declaring it keeps that a checked property rather than an accident. |
-| `agent-ix/quoin#350` | `make test` refuses on `main` (FND-1410). |
+| `agent-ix/quire-rs#402`              | `quire coverage` does not expand `A..B` ranges. Low exposure here: all 66 new rows use comma lists, not ranges. Declaring it keeps that a checked property rather than an accident.                                                 |
+| `agent-ix/quoin#350`                 | `make test` refuses on `main` (FND-1410).                                                                                                                                                                                           |
 
 The first three, at minimum, belong in the tool-defect ledger's seed content,
 because they are exactly the "check could not run" cases FR-091 was written to
@@ -154,7 +154,7 @@ its constraints: FR-084-CON-1 ("enumeration SHALL NOT write") and
 FR-087-CON-2 ("mapping evaluation SHALL NOT rewrite") are obligations FR-092
 owns and TC-1552 verifies in one row. The read-only envelope and the output
 directory refusal have to be in place the first time enumeration runs over the
-real corpus, not after it. FR-092's *reporting* obligations (exit status, run
+real corpus, not after it. FR-092's _reporting_ obligations (exit status, run
 manifest digests) genuinely do follow FR-084. Splitting the two, or noting that
 the envelope is co-requisite, removes the inversion.
 
@@ -169,20 +169,20 @@ contract it measures against is undeclared.
 
 ## Classification
 
-| Requirement | Class | Rationale |
-| --- | --- | --- |
-| FR-084 | Enablement | Produces the population every later requirement counts over. No published behaviour of its own. |
-| FR-085 | Enablement | Produces the module set, schemas and mappings the two checks read. |
-| FR-092 | Enablement | The read-only, advisory envelope every other requirement runs inside. See FND-1417. |
-| FR-086 | Feature | Assigns the state the campaign's first acceptance criterion is stated in. |
-| FR-087 | Feature | The mapping check the promotion gate consumes. |
-| FR-088 | Feature | The L3 representation check, the only signal about the nine object-type modules. |
-| FR-089 | Feature | The partition, owner and disposition the campaign exits on. |
-| FR-090 | Feature | The published report and its breakdowns. |
-| FR-091 | Feature | The declared tool-defect accounting and its coverage statement. |
-| NFR-021 | Enablement | Reproducibility is a property of the harness and constrains its construction. |
-| NFR-022 | Enablement | Run-time and read-only bounds constrain the harness, not a published behaviour. |
-| NFR-023 | Feature | A property of the published report, verifiable only once the report exists. |
+| Requirement | Class      | Rationale                                                                                       |
+| ----------- | ---------- | ----------------------------------------------------------------------------------------------- |
+| FR-084      | Enablement | Produces the population every later requirement counts over. No published behaviour of its own. |
+| FR-085      | Enablement | Produces the module set, schemas and mappings the two checks read.                              |
+| FR-092      | Enablement | The read-only, advisory envelope every other requirement runs inside. See FND-1417.             |
+| FR-086      | Feature    | Assigns the state the campaign's first acceptance criterion is stated in.                       |
+| FR-087      | Feature    | The mapping check the promotion gate consumes.                                                  |
+| FR-088      | Feature    | The L3 representation check, the only signal about the nine object-type modules.                |
+| FR-089      | Feature    | The partition, owner and disposition the campaign exits on.                                     |
+| FR-090      | Feature    | The published report and its breakdowns.                                                        |
+| FR-091      | Feature    | The declared tool-defect accounting and its coverage statement.                                 |
+| NFR-021     | Enablement | Reproducibility is a property of the harness and constrains its construction.                   |
+| NFR-022     | Enablement | Run-time and read-only bounds constrain the harness, not a published behaviour.                 |
+| NFR-023     | Feature    | A property of the published report, verifiable only once the report exists.                     |
 
 Enablement before feature holds: FR-084, FR-085 and FR-092 with NFR-021 and
 NFR-022 precede every feature requirement that depends on them.

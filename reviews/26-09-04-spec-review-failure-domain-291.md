@@ -30,18 +30,18 @@ any requirement detecting it.
 
 ## Findings
 
-| ID       | Severity | Summary                                                                                                                              | Refs                                                             | Escape Cause        |
-| -------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------- | ------------------- |
-| FND-1440 | high     | Enumeration has no symlink rule: a symlinked repository is counted twice and a directory cycle does not terminate.                     | FR-084 Behavior; FR-084-AC-6; FR-086-AC-5; FR-086-AC-6; NFR-022   | missing-requirement |
-| FND-1441 | high     | A nested repository or submodule is neither a repository nor excluded; its documents are counted under the parent's origin and commit. | FR-084 Behavior; FR-084-AC-2; FR-086 Outputs                       | missing-requirement |
-| FND-1442 | high     | Documents are read from the working tree while the pin records the commit, and nothing re-verifies the tree after the run.             | FR-084 Behavior; FR-085 Behavior; NFR-021-AC-1                     | wrong-requirement   |
-| FND-1443 | high     | A declared module revision may be a mutable ref; nothing requires the population identifier to carry the resolved immutable commit.    | FR-085 Inputs; FR-085-AC-1; FR-090-AC-2; NFR-021-AC-1              | missing-requirement |
-| FND-1444 | high     | Disagreement between manifest, mappings and schemas is undefined; a declared type with no schema passes validation vacuously.          | FR-085 Behavior; FR-087 Behavior; FR-087-AC-1                      | missing-requirement |
-| FND-1445 | high     | No fault isolation or time bound at the mapping-evaluation trust boundary; one hang or crash aborts the whole census.                  | FR-087 Behavior; FR-087-AC-4; FR-092-AC-1; NFR-022-AC-1            | missing-requirement |
-| FND-1446 | high     | Document, row and repository are mixed as denominators; FR-088 never says when a failing row makes its document fail.                  | FR-088 Behavior; FR-088-AC-3; FR-090 Outputs; FR-091-AC-4          | missing-requirement |
-| FND-1447 | medium   | The partition ledger has no declared join key and no stale-entry rule, so it can silently suppress a new, different failure.           | FR-089 Inputs; FR-089-AC-6; FR-091-CON-2                           | missing-requirement |
-| FND-1448 | medium   | A contested type has no place in the by-type breakdown and never reaches the failure partition, so nobody owns it.                     | FR-086 Behavior; FR-090-AC-7; FR-089-AC-1                          | missing-requirement |
-| FND-1449 | medium   | "SHALL NOT write to, or inside, any enumerated repository" is unsatisfiable: reading a commit or a status writes inside `.git`.        | FR-084-CON-1; FR-092-AC-2; FR-092 Behavior; NFR-022-AC-3           | wrong-requirement   |
+| ID       | Severity | Summary                                                                                                                                | Refs                                                            | Escape Cause        |
+| -------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- | ------------------- |
+| FND-1440 | high     | Enumeration has no symlink rule: a symlinked repository is counted twice and a directory cycle does not terminate.                     | FR-084 Behavior; FR-084-AC-6; FR-086-AC-5; FR-086-AC-6; NFR-022 | missing-requirement |
+| FND-1441 | high     | A nested repository or submodule is neither a repository nor excluded; its documents are counted under the parent's origin and commit. | FR-084 Behavior; FR-084-AC-2; FR-086 Outputs                    | missing-requirement |
+| FND-1442 | high     | Documents are read from the working tree while the pin records the commit, and nothing re-verifies the tree after the run.             | FR-084 Behavior; FR-085 Behavior; NFR-021-AC-1                  | wrong-requirement   |
+| FND-1443 | high     | A declared module revision may be a mutable ref; nothing requires the population identifier to carry the resolved immutable commit.    | FR-085 Inputs; FR-085-AC-1; FR-090-AC-2; NFR-021-AC-1           | missing-requirement |
+| FND-1444 | high     | Disagreement between manifest, mappings and schemas is undefined; a declared type with no schema passes validation vacuously.          | FR-085 Behavior; FR-087 Behavior; FR-087-AC-1                   | missing-requirement |
+| FND-1445 | high     | No fault isolation or time bound at the mapping-evaluation trust boundary; one hang or crash aborts the whole census.                  | FR-087 Behavior; FR-087-AC-4; FR-092-AC-1; NFR-022-AC-1         | missing-requirement |
+| FND-1446 | high     | Document, row and repository are mixed as denominators; FR-088 never says when a failing row makes its document fail.                  | FR-088 Behavior; FR-088-AC-3; FR-090 Outputs; FR-091-AC-4       | missing-requirement |
+| FND-1447 | medium   | The partition ledger has no declared join key and no stale-entry rule, so it can silently suppress a new, different failure.           | FR-089 Inputs; FR-089-AC-6; FR-091-CON-2                        | missing-requirement |
+| FND-1448 | medium   | A contested type has no place in the by-type breakdown and never reaches the failure partition, so nobody owns it.                     | FR-086 Behavior; FR-090-AC-7; FR-089-AC-1                       | missing-requirement |
+| FND-1449 | medium   | "SHALL NOT write to, or inside, any enumerated repository" is unsatisfiable: reading a commit or a status writes inside `.git`.        | FR-084-CON-1; FR-092-AC-2; FR-092 Behavior; NFR-022-AC-3        | wrong-requirement   |
 
 ## Detail
 
@@ -70,14 +70,14 @@ resolved real path so an alias reached by any route is counted once.
 ### FND-1441 — a repository inside a repository
 
 FR-084 recognises a repository by `.git` plus `spec/`, and explicitly refuses a directory whose
-`.git` is a *file* so that worktrees are not double-counted. A submodule's `.git` is also a file.
+`.git` is a _file_ so that worktrees are not double-counted. A submodule's `.git` is also a file.
 The rule therefore rejects submodules as repositories, and no other rule excludes their contents,
-so their documents are enumerated as documents *of the parent repository*, attributed to the
+so their documents are enumerated as documents _of the parent repository_, attributed to the
 parent's `origin` and the parent's `commit`.
 
 This repository does exactly that: `/home/peter/dev/quoin/.gitmodules` declares the submodule
 `corpus` → `agent-ix/qa-corpus`, checked out at `corpus/` with a `.git` file and 338 Markdown
-files. `qa-corpus` is the QA fixture corpus — documents that are *deliberately* malformed. Under
+files. `qa-corpus` is the QA fixture corpus — documents that are _deliberately_ malformed. Under
 FR-084 as written, several hundred intentionally broken fixtures enter the governed-corpus
 population as Quoin's own documents, at Quoin's commit, and their failures land in FR-089's
 partition with Quoin named as owner. The same shape recurs in `quire-rs` and
@@ -92,7 +92,7 @@ change.
 
 ### FND-1442 — the pin does not identify the bytes measured
 
-FR-085 is careful: module content is read *from the object store at the declared revision*, so a
+FR-085 is careful: module content is read _from the object store at the declared revision_, so a
 dirty checkout cannot change what was measured. FR-084 is the opposite and does not say so: it
 enumerates `*.md` files on disk, records the `commit` as the pin, and records `clean: false` when
 the tree disagrees with that commit — but retains the repository and measures the tree anyway.
@@ -114,15 +114,15 @@ is measured from the tree (and the pin recorded as tree-not-commit) or refused.
 
 ### FND-1443 — a revision that is a tag that later moves
 
-FR-085's input is "a revision" per module, and its outputs record the *requested* revision and the
-*resolved* commit. Nothing requires the requested revision to be immutable, and nothing requires
+FR-085's input is "a revision" per module, and its outputs record the _requested_ revision and the
+_resolved_ commit. Nothing requires the requested revision to be immutable, and nothing requires
 the reproducibility contract to be expressed over the resolved commit rather than the request.
 
 So: declare `v0.3.0`, resolve it, publish. The tag is force-moved a week later — normal for this
 ecosystem, where module tags are cut and re-cut during a wave. A re-run "at the same declared
 module set" now measures different schemas and different mappings, produces different digests, and
 FR-090-AC-2's population identifier — "names the corpus revision, the module revisions" — reads
-identically in both reports because it does not say *which* revision it names. NFR-021-AC-1 fails
+identically in both reports because it does not say _which_ revision it names. NFR-021-AC-1 fails
 for a reason nobody can see, and the promotion gate compares two numbers about two different
 contracts.
 
@@ -138,12 +138,12 @@ FR-085 records the manifest, the declared types, the JSON Schemas and the mappin
 digest, but never requires them to be mutually consistent, and defines no outcome when they are
 not. FR-087 covers exactly one of the four disagreements:
 
-| Disagreement | Defined? |
-| --- | --- |
-| Declared type with a schema and no mapping | Yes — `could-not-run` / `no-mapping-for-declared-type` |
-| Mapping entry for a type the manifest does not declare | No |
-| Declared type with a mapping and **no schema** | No |
-| Mapping or manifest naming a schema file absent at the revision | No |
+| Disagreement                                                    | Defined?                                               |
+| --------------------------------------------------------------- | ------------------------------------------------------ |
+| Declared type with a schema and no mapping                      | Yes — `could-not-run` / `no-mapping-for-declared-type` |
+| Mapping entry for a type the manifest does not declare          | No                                                     |
+| Declared type with a mapping and **no schema**                  | No                                                     |
+| Mapping or manifest naming a schema file absent at the revision | No                                                     |
 
 The third is the dangerous one. FR-087 says report `pass` "only when validation reports no error".
 Validating against a schema that does not exist reports no error, so a whole module's documents
@@ -155,11 +155,11 @@ a self-inconsistent module is a finding against the module, which is precisely t
 
 ### FND-1445 — the mapping evaluator is an untrusted extension point
 
-FR-087 evaluates nine mapping kinds and derives every heading, column list and row-id *pattern*
+FR-087 evaluates nine mapping kinds and derives every heading, column list and row-id _pattern_
 from the module's own declaration (FR-087-AC-7) — that is, the measurement executes
 module-supplied rules, including regular expressions, over 24,600 documents of arbitrary
 authored text. That is a trust boundary, and the spec defines its failure behavior for exactly one
-case: an *unimplemented* kind yields `could-not-run`.
+case: an _unimplemented_ kind yields `could-not-run`.
 
 Undefined, and each of them aborts the run as written:
 
@@ -200,12 +200,12 @@ the requirement rather than left to the implementation.
 
 FR-089's ledger is an external declared input keyed to "each classified failure or failure group",
 and FR-091's tool-defect ledger is keyed to a declared "scope". Neither says what a ledger entry
-*matches on*. A failure is a tuple of document, check, schema keyword, instance path and line; a
-ledger entry that matches on document alone will classify tomorrow's *different* failure in that
+_matches on_. A failure is a tuple of document, check, schema keyword, instance path and line; a
+ledger entry that matches on document alone will classify tomorrow's _different_ failure in that
 document as today's `accepted` — a real finding suppressed without anybody choosing to suppress it.
 Line numbers move; instance paths do not; the spec picks neither.
 
-The reverse drift is equally unstated: an entry matching *no* failure any more, because the corpus
+The reverse drift is equally unstated: an entry matching _no_ failure any more, because the corpus
 was fixed or the module changed. FR-089 requires an unclassified failure to be reported (`unknown`,
 `undispositioned`, both as headline counts), but imposes no symmetric obligation to report an
 unmatched ledger entry, so a ledger silently rots and the campaign's claim to have dispositioned
@@ -217,7 +217,7 @@ an unmatched-entry count published beside the `unknown` and `undispositioned` co
 
 ### FND-1448 — a contested type has no owner and no row
 
-FR-086 handles the contested-type case well as a *state*: two modules declaring one `type` gives
+FR-086 handles the contested-type case well as a _state_: two modules declaring one `type` gives
 the document `unknown`, naming both, retained in every published output, never guessed. What
 follows it is not handled.
 
@@ -244,7 +244,7 @@ rewrites `.git/index` when stat data is stale, and object reads may take `.git/i
 `.git/objects` pack locks. A literal reading of FR-084-CON-1 forbids the mechanism FR-085 depends
 on, and there is no way to satisfy both.
 
-FR-092-AC-2 shows the authors mean something narrower and more checkable — "the Git *status* of
+FR-092-AC-2 shows the authors mean something narrower and more checkable — "the Git _status_ of
 every enumerated corpus repository is byte-identical before and after" — that is, no tracked file,
 no untracked file and no ref changes. FR-084-CON-1 and NFR-022-AC-3 should be restated in those
 terms, with `.git` internal bookkeeping named as the explicit carve-out. Left as written, the
@@ -253,23 +253,23 @@ constraint is either untestable or it fails on the first repository.
 The adjacent unstated failure is the lock itself: a concurrent Git operation in a corpus repository
 makes a plumbing call fail with a lock error. There is no requirement saying whether that
 repository becomes an `unresolved`/excluded population member with the failure recorded, or whether
-the run aborts — and given FR-092-AC-6 makes an unresolvable *module set* a non-zero exit, the
+the run aborts — and given FR-092-AC-6 makes an unresolvable _module set_ a non-zero exit, the
 asymmetry for corpus repositories should be stated rather than inferred.
 
 ## Recommended Additions
 
-| Finding | Proposed home | Type |
-| --- | --- | --- |
-| FND-1440 | FR-084: symlink traversal policy, link exclusions recorded, document identity on resolved real path | FR |
-| FND-1441 | FR-084: nested-repository and submodule policy, parent walk stops at the boundary | FR |
-| FND-1442 | FR-084: measured-from-tree vs measured-from-commit stated; post-run pin and cleanliness re-verification | FR |
-| FND-1443 | FR-085 / FR-090: population identifier carries resolved commit object ids; moved-ref divergence reported | FR |
-| FND-1444 | FR-087: outcomes for mapping-without-manifest-type, type-without-schema, and absent schema file | FR |
-| FND-1445 | FR-087 / NFR-022: per-document fault isolation and evaluation timeout, both yielding `could-not-run` | NFR |
-| FND-1446 | FR-088 / FR-090: row-to-document roll-up rule and a named unit for the representation rate | FR |
-| FND-1447 | FR-089: declared ledger match key, refusal of ambiguous entries, unmatched-entry count published | FR |
-| FND-1448 | FR-086 / FR-089 / FR-090: contested types routed into the partition; by-type key is `(module, type)` | FR |
-| FND-1449 | FR-084-CON-1 / NFR-022-AC-3: restate read-only as working-tree-and-refs invariance; lock-failure behavior | StR |
+| Finding  | Proposed home                                                                                             | Type |
+| -------- | --------------------------------------------------------------------------------------------------------- | ---- |
+| FND-1440 | FR-084: symlink traversal policy, link exclusions recorded, document identity on resolved real path       | FR   |
+| FND-1441 | FR-084: nested-repository and submodule policy, parent walk stops at the boundary                         | FR   |
+| FND-1442 | FR-084: measured-from-tree vs measured-from-commit stated; post-run pin and cleanliness re-verification   | FR   |
+| FND-1443 | FR-085 / FR-090: population identifier carries resolved commit object ids; moved-ref divergence reported  | FR   |
+| FND-1444 | FR-087: outcomes for mapping-without-manifest-type, type-without-schema, and absent schema file           | FR   |
+| FND-1445 | FR-087 / NFR-022: per-document fault isolation and evaluation timeout, both yielding `could-not-run`      | NFR  |
+| FND-1446 | FR-088 / FR-090: row-to-document roll-up rule and a named unit for the representation rate                | FR   |
+| FND-1447 | FR-089: declared ledger match key, refusal of ambiguous entries, unmatched-entry count published          | FR   |
+| FND-1448 | FR-086 / FR-089 / FR-090: contested types routed into the partition; by-type key is `(module, type)`      | FR   |
+| FND-1449 | FR-084-CON-1 / NFR-022-AC-3: restate read-only as working-tree-and-refs invariance; lock-failure behavior | StR  |
 
 ## Notes
 

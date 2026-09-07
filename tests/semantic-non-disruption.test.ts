@@ -97,7 +97,8 @@ describe("NFR-017 non-disruptive manifest evolution", () => {
       const found = new Map<string, string[]>();
       if (Array.isArray(node)) {
         node.forEach((child, index) => {
-          for (const [k, v] of collect(child, `${path}/${index}`)) found.set(k, v);
+          for (const [k, v] of collect(child, `${path}/${index}`))
+            found.set(k, v);
         });
         return found;
       }
@@ -148,9 +149,10 @@ describe("NFR-017 non-disruptive manifest evolution", () => {
       const parent = at(segments.slice(0, index).join("/")) as {
         required?: string[];
       } | null;
-      expect(parent?.required ?? [], `${path} is gated on ${property}`).not.toContain(
-        property,
-      );
+      expect(
+        parent?.required ?? [],
+        `${path} is gated on ${property}`,
+      ).not.toContain(property);
     }
   });
 });
