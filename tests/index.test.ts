@@ -9,7 +9,7 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { stringify as stringifyYaml } from "yaml";
+import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
 import type { MarketplaceManifest } from "@agent-ix/ts-plugin-kit";
 
 import {
@@ -197,6 +197,28 @@ test("ships the committed default module set", () => {
     "spec-objects-business",
   );
   expect(manifest.entries.map((e) => e.name)).toContain("spec-objects-safety");
+});
+
+test("public assurance fixture registers types without vendoring contracts", () => {
+  const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
+  const fixture = parseYaml(
+    readFileSync(
+      join(
+        repoRoot,
+        "tests",
+        "fixtures",
+        "modules",
+        "engineering-assurance-fixture",
+        "manifest.yaml",
+      ),
+      "utf8",
+    ),
+  ) as { artifact_types: Array<{ name: string }> };
+  expect(fixture.artifact_types.map((entry) => entry.name)).toEqual([
+    "AssuranceProfile",
+    "MeasurementPlan",
+  ]);
+  expect(JSON.stringify(fixture)).not.toContain("schema_ref");
 });
 
 test("ships claude plugin skills without artifact-specific write skills", () => {

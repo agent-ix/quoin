@@ -13,7 +13,7 @@ import {
  * because the question was whether a supply-chain obligation is discharged by
  * an SBOM's *presence* or by its *contents* — and those imply different records.
  *
- * FR-040 answered it. A GSN evidence leaf renders one line per obligation:
+ * FR-040 answered it. An argument evidence leaf renders one line per obligation:
  * statement, supported-or-open, and the auditor's reason. It does not render
  * component lists, and could not usefully — a case is reviewed by a person, and
  * a thousand-row inventory in an argument is not an argument.

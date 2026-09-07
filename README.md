@@ -196,6 +196,26 @@ quoin plugin install path:../spec-objects-business
 quoin plugin list
 ```
 
+Quoin also provides rights-safe, project-owned assurance workflows: evaluate a
+generic ClauseSet with Quire, account for discharge without a score, render an
+authored argument with explicit sufficiency decisions, and publish immutable
+experiment or operational evidence:
+
+```bash
+quire clauses evaluate --module ./modules/widget --authority example.invalid \
+  --set widget-rules --version 1.0.0 \
+  --context product=widget --format json > binding.json
+quoin discharge --binding binding.json --facts discharge-facts.json \
+  --as-of 2026-08-28T00:00:00Z --json
+quoin assurance --argument AA-001 --decisions sufficiency-decisions.json \
+  --as-of 2026-08-28T00:00:00Z
+quoin evidence record-experiment --repo . --input experiment.json
+quoin evidence record-operational --repo . --input operational.json
+```
+
+See [Assurance workflows](./docs/assurance-workflows.md) for the record shapes,
+expiry behavior, and the boundary that leaves existing run records unchanged.
+
 ## Development
 
 ```bash

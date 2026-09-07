@@ -71,6 +71,7 @@ describe("TC-110 the vendored schemas match their recorded provenance", () => {
   // TC-110
   it("pins an exact source commit rather than a moving tag or branch", () => {
     expect(QUIRE_CONTRACT.sourceRevision).toMatch(/^[0-9a-f]{40}$/);
+    expect(QUIRE_CONTRACT.cliSourceRevision).toMatch(/^[0-9a-f]{40}$/);
   });
 
   it("hashes exactly what contract.ts records", () => {

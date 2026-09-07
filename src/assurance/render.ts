@@ -9,7 +9,7 @@
 
 import type { AssuranceCase, CaseNode } from "./graph.js";
 
-/** GSN marks an unsupported goal as undeveloped; these are the two states. */
+/** The internal view has two states and makes every unsupported branch open. */
 const MARK: Record<CaseNode["status"], string> = {
   supported: "✅",
   open: "◇",

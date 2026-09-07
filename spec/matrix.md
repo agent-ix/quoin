@@ -107,6 +107,9 @@ Coverage is mapped requirement → test as `file :: "test name"`:
 | FR-093 | ✅ Covered | `tests/trust-decision.test.ts` — TC-297..TC-302. Exact use identity, changed-context invalidation, neutral absence, different decisions for two uses of one producer, canonical storage with visible invalid records, and assurance-context rendering are covered. Validation tests require evidence and minimum revalidation triggers. CON-1/CON-2/CON-3 → inspection of `src/evidence/trust.ts` and `src/commands/evidence/trust.ts` (no producer execution, allowlist, certification state, or inferred trust). |
 | FR-046 | ✅ Covered | `tests/trust-decision.test.ts` — TC-297..TC-302. Exact use identity, changed-context invalidation, neutral absence, different decisions for two uses of one producer, canonical storage with visible invalid records, and assurance-context rendering are covered. Validation tests require evidence and minimum revalidation triggers. CON-1/CON-2/CON-3 → inspection of `src/evidence/trust.ts` and `src/commands/evidence/trust.ts` (no producer execution, allowlist, certification state, or inferred trust). |
 | FR-094 | ✅ Covered | `tests/independence.test.ts` — TC-303..TC-309. Strict lineage/policy boundaries, current-obligation validation, distinct-evidence pairing, shared/missing lineage, absent-policy compatibility, audit finding clearance, binding persistence/clearing, command reachability, and assurance-context rendering are covered. CON-1/CON-3/CON-4 → inspection of `src/evidence/independence.ts` and the two policy-consuming commands (no role/tool/vendor inference, score, or Markdown parser). CON-2 → TC-306. |
+| FR-046 | ✅ Covered | `tests/discharge.test.ts` — TC-1125..TC-1130 (pinned binding contract, complete partition, unresolved separation, expiry, validation, deterministic rendering). Command discovery and production build verify the `quoin discharge` boundary. |
+| FR-047 | ✅ Covered | `tests/authored-argument.test.ts` — TC-1131..TC-1136 (claim preservation, explicit decisions, expiry/review, challenges, closed contract and authority, deterministic rendering with no score). |
+| FR-048 | ✅ Covered | `tests/assurance-records.test.ts` — TC-1137..TC-1142 (producer provenance, content identity, pre-publication validation, no overwrite, operational windows, tamper detection and FR-030 separation); `tests/assurance-record-commands.test.ts` — TC-1143 (file/stdin CLI boundary). |
 | FR-095 | ✅ Covered | `tests/specify-assurance.test.ts` — TC-277..TC-278 (installed authoring contract and opt-in boundary); `tests/spec-review-vocab-drift.test.ts` — TC-279..TC-284 (recommendation remains advisory, required selection equality, exact all-set derivation, selected-document coverage, unsupported-analysis refusal, and ordinary base compatibility). CON-1/CON-2 → inspection of the two skill entrypoints and workflow definition. CON-3 → TC-279/TC-280. |
 | FR-041 | ✅ Covered | `tests/sbom.test.ts` — TC-231..TC-236. Both fixtures are **real tool output, unedited**: `cyclonedx-real.json` from `@cyclonedx/cyclonedx-npm` 6.0.1 over a real `npm install`, and `spdx-real.json` from GitHub's dependency-graph SBOM for `sindresorhus/slugify`. A fixture written to match the reader only proves the reader parses itself. CON-1/CON-2/CON-3 → inspection of `src/evidence/adapters/sbom.ts` (no subprocess, no new record type, no verdict). CON-4 → TC-231. |
 | FR-040 | ✅ Covered | `tests/assurance.test.ts` — TC-221..TC-230, TC-261 (empty case carries a machine-readable `reason`), TC-262 (`--claim-type` matched case-insensitively). TC-224 and TC-225 are the ones that matter: a claim nothing argues for is `open`, and a requirement no claim reaches gets reported. Both were written before the code and both failed it. TC-225 earned itself on the first real run — 15 requirements over this repository, 7 of them added during this program and fixed, 8 pre-existing (`agent-ix/quoin#136`). CON-1/CON-3/CON-4 → inspection of `src/assurance/` (no subprocess, no write, the auditor's verdict used as given). CON-2 → TC-224 and TC-225. |
@@ -228,6 +231,9 @@ Criteria absent here are verified by a method that produces no test — see
 | FR-073 | FR-073-AC-1, FR-073-AC-2, FR-073-AC-3, FR-073-AC-4, FR-073-AC-5, FR-073-AC-6, FR-073-CON-1, FR-073-CON-2 | TC-1360, TC-1361, TC-1362, TC-1363, TC-1364, TC-1365, TC-1366, TC-1385 | ✅ Complete |
 | FR-074 | FR-074-AC-1, FR-074-AC-2, FR-074-AC-3, FR-074-AC-4, FR-074-AC-5, FR-074-CON-1 | TC-1367, TC-1368, TC-1369, TC-1370, TC-1371, TC-1386 | ✅ Complete |
 | FR-075 | FR-075-AC-1, FR-075-AC-2, FR-075-AC-3, FR-075-AC-4, FR-075-AC-5, FR-075-CON-1, FR-075-CON-2 | TC-1372, TC-1373, TC-1374, TC-1375, TC-1376, TC-1377, TC-1378 | ✅ Complete |
+| FR-046 | FR-046-AC-1, FR-046-AC-2, FR-046-AC-3, FR-046-AC-4, FR-046-AC-5, FR-046-AC-6 | TC-1125, TC-1126, TC-1127, TC-1128, TC-1129, TC-1130 | ✅ Covered |
+| FR-047 | FR-047-AC-1, FR-047-AC-2, FR-047-AC-3, FR-047-AC-4, FR-047-AC-5, FR-047-AC-6 | TC-1131, TC-1132, TC-1133, TC-1134, TC-1135, TC-1136 | ✅ Covered |
+| FR-048 | FR-048-AC-1, FR-048-AC-2, FR-048-AC-3, FR-048-AC-4, FR-048-AC-5, FR-048-AC-6, FR-048-AC-7 | TC-1137, TC-1138, TC-1139, TC-1140, TC-1141, TC-1142, TC-1143 | ✅ Covered |
 
 ## Test Case Summary
 
@@ -1094,6 +1100,25 @@ generated tests under `tests/props/` and `Unit` for the rest.
 | TC-1582 | A module capability with no surface in the toolchain record yields a tool-defect entry naming that capability | Unit | P0 | FR-091-AC-8 | 🚧 not yet implemented (agent-ix/quoin#291) |
 | TC-1583 | The refs, index and working tree of every corpus and module repository compare equal before and after a run | Integration | P0 | FR-092-AC-7, FR-085-CON-1 | 🚧 not yet implemented (agent-ix/quoin#291) |
 | TC-1584 | Every repository outside the reproducibility claim is marked `clean: false` or `stable: false` in the corpus record | Property | P0 | NFR-021-AC-4 | 🚧 not yet implemented (agent-ix/quoin#291) |
+| TC-1125 | A clause-binding payload must satisfy the pinned runtime schema before discharge accounting consumes it | Unit | P0 | FR-046-AC-1 | ✅ |
+| TC-1126 | Every binding clause is partitioned exactly once as direct evidence, approved disposition, or open, with no aggregate score | Unit | P0 | FR-046-AC-2 | ✅ |
+| TC-1127 | Unresolved applicability stays outside the binding population and a supplied fact for it is reported unused | Unit | P0 | FR-046-AC-3 | ✅ |
+| TC-1128 | An expired attestation reopens its binding clause with a visible reason | Unit | P0 | FR-046-AC-4 | ✅ |
+| TC-1129 | Duplicate discharge facts and incomplete attestations are rejected | Unit | P0 | FR-046-AC-5 | ✅ |
+| TC-1130 | Discharge rendering includes every population deterministically and never invents a score | Unit | P1 | FR-046-AC-6 | ✅ |
+| TC-1131 | The authored view preserves the claim, subject, participants, authority, and independence without a score | Unit | P0 | FR-047-AC-1 | ✅ |
+| TC-1132 | A criterion with no explicit sufficiency decision remains open rather than inheriting evidence status | Unit | P0 | FR-047-AC-2 | ✅ |
+| TC-1133 | Expired decisions and assumptions due for review reopen their branches and the top claim | Unit | P0 | FR-047-AC-3 | ✅ |
+| TC-1134 | Challenge resolution requires evidence references and accepted risk additionally requires a current expiry | Unit | P0 | FR-047-AC-4 | ✅ |
+| TC-1135 | The closed argument contract rejects unknown fields, duplicate decisions, and authority that differs from the authored participant | Unit | P0 | FR-047-AC-5 | ✅ |
+| TC-1136 | The authored Markdown view is deterministic and retains open reasons and participant authority | Unit | P1 | FR-047-AC-6 | ✅ |
+| TC-1137 | Each assurance evidence record binds the complete producer-provenance tuple | Unit | P0 | FR-048-AC-1 | ✅ |
+| TC-1138 | Canonical content determines immutable identity and identical publication is byte-stable and idempotent | Unit | P0 | FR-048-AC-2 | ✅ |
+| TC-1139 | Invalid producer provenance is rejected before any record is published | Unit | P0 | FR-048-AC-3 | ✅ |
+| TC-1140 | Different bytes at an immutable content path are reported and never overwritten | Unit | P0 | FR-048-AC-4 | ✅ |
+| TC-1141 | Operational records preserve their ordered window, environment, observations, evidence, and outcome | Unit | P0 | FR-048-AC-5 | ✅ |
+| TC-1142 | Reads detect content tampering and the new writers do not touch FR-030 run-record paths | Unit | P0 | FR-048-AC-6 | ✅ |
+| TC-1143 | The built CLI records an experiment from stdin and operational evidence from a file, returning immutable ids and publication state | Integration | P0 | FR-048-AC-7 | ✅ |
 
 ## Stakeholder Requirement Coverage
 

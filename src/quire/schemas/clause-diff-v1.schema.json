@@ -1,0 +1,204 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agent-ix.dev/schemas/quire/clause-diff-v1.schema.json",
+  "title": "Quire clause-set diff v1",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "before",
+    "beforeDigest",
+    "after",
+    "afterDigest",
+    "added",
+    "removed",
+    "changed"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": { "const": "clause-diff-v1" },
+    "before": { "$ref": "#/$defs/key" },
+    "beforeDigest": { "$ref": "#/$defs/digest" },
+    "after": { "$ref": "#/$defs/key" },
+    "afterDigest": { "$ref": "#/$defs/digest" },
+    "added": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/clause" }
+    },
+    "removed": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/clause" }
+    },
+    "changed": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["clauseId", "before", "after"],
+        "additionalProperties": false,
+        "properties": {
+          "clauseId": { "type": "string", "minLength": 1 },
+          "before": { "$ref": "#/$defs/clause" },
+          "after": { "$ref": "#/$defs/clause" }
+        }
+      }
+    },
+    "engine": { "$ref": "#/$defs/engine" }
+  },
+  "$defs": {
+    "digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "key": {
+      "type": "object",
+      "required": ["authority", "id", "version"],
+      "additionalProperties": false,
+      "properties": {
+        "authority": { "type": "string", "minLength": 1 },
+        "id": { "type": "string", "minLength": 1 },
+        "version": { "type": "string", "minLength": 1 }
+      }
+    },
+    "clause": {
+      "type": "object",
+      "required": [
+        "id",
+        "force",
+        "title",
+        "text",
+        "subjects",
+        "obligatedActors",
+        "approvalRoles",
+        "styles",
+        "applicability",
+        "expectedOutputs"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "force": {
+          "enum": ["mandatory", "recommended", "permitted"]
+        },
+        "title": { "type": ["string", "null"] },
+        "text": { "type": ["string", "null"] },
+        "subjects": {
+          "type": "array",
+          "items": { "type": "string" },
+          "uniqueItems": true
+        },
+        "obligatedActors": {
+          "type": "array",
+          "items": { "type": "string" },
+          "uniqueItems": true
+        },
+        "approvalRoles": {
+          "type": "array",
+          "items": { "type": "string" },
+          "uniqueItems": true
+        },
+        "styles": {
+          "type": "object",
+          "additionalProperties": { "type": "string" }
+        },
+        "applicability": {
+          "oneOf": [
+            { "type": "null" },
+            { "$ref": "#/$defs/applicability" }
+          ]
+        },
+        "expectedOutputs": {
+          "type": "array",
+          "items": { "type": "string" },
+          "uniqueItems": true
+        }
+      }
+    },
+    "applicability": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["op", "terms"],
+          "additionalProperties": false,
+          "properties": {
+            "op": { "const": "all" },
+            "terms": {
+              "type": "array",
+              "minItems": 1,
+              "items": { "$ref": "#/$defs/applicability" }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["op", "terms"],
+          "additionalProperties": false,
+          "properties": {
+            "op": { "const": "any" },
+            "terms": {
+              "type": "array",
+              "minItems": 1,
+              "items": { "$ref": "#/$defs/applicability" }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["op", "term"],
+          "additionalProperties": false,
+          "properties": {
+            "op": { "const": "not" },
+            "term": { "$ref": "#/$defs/applicability" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["op", "dimension", "value"],
+          "additionalProperties": false,
+          "properties": {
+            "op": { "const": "eq" },
+            "dimension": { "type": "string", "minLength": 1 },
+            "value": { "type": "string", "minLength": 1 }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["op", "dimension", "values"],
+          "additionalProperties": false,
+          "properties": {
+            "op": { "const": "in" },
+            "dimension": { "type": "string", "minLength": 1 },
+            "values": {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": { "type": "string", "minLength": 1 }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["op", "dimension", "value"],
+          "additionalProperties": false,
+          "properties": {
+            "op": { "const": "at_least" },
+            "dimension": { "type": "string", "minLength": 1 },
+            "value": { "type": "string", "minLength": 1 }
+          }
+        }
+      ]
+    },
+    "engine": {
+      "type": "object",
+      "required": ["cli", "engine", "capabilities"],
+      "additionalProperties": false,
+      "properties": {
+        "cli": { "type": "string", "minLength": 1 },
+        "engine": { "type": "string", "minLength": 1 },
+        "capabilities": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        }
+      }
+    }
+  }
+}
