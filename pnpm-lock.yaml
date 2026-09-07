@@ -34,8 +34,8 @@ importers:
         version: 4.4.3
     devDependencies:
       '@agent-ix/quire-cli':
-        specifier: 0.31.0
-        version: 0.31.0
+        specifier: 0.32.0
+        version: 0.32.0
       '@types/node':
         specifier: 26.1.2
         version: 26.1.2
@@ -99,28 +99,28 @@ packages:
   '@agent-ix/ix-ui-semantic@0.4.10':
     resolution: {integrity: sha512-kjDiorrEnWRJlSrQvLiNC+wblBwwZtXcesBD/9KhtOAMGt6WBHMjTr2Ae8iepzcZ6lqsPk1m3EY5YQmoOeVurw==}
 
-  '@agent-ix/quire-cli-darwin-arm64@0.31.0':
-    resolution: {integrity: sha512-N1d9Y5hfawBDIQw5zSDUXigHFeW4DJAcRb8RpuKIDT1pKfqnJXdcHaGiSAjuV6lvAvTiu0Rrc5GMVCNNDJTt6A==}
+  '@agent-ix/quire-cli-darwin-arm64@0.32.0':
+    resolution: {integrity: sha512-VZEukXWKeN/QM+Dymz/IerbigJHPq2oqiiwPhvoHu6/JM7b7pA7Rt6ZJSXsEhNsYvNubtfw0Punucoa/LQIGGA==}
     cpu: [arm64]
     os: [darwin]
 
-  '@agent-ix/quire-cli-linux-arm64@0.31.0':
-    resolution: {integrity: sha512-vv+FRwpznRuJVJY4J75kFOwowN7rmbq6Qn6V1IP0fFSqMoNNACWtaQzq+ugjDANsk9TGPtElPdl9d2jluRYUTg==}
+  '@agent-ix/quire-cli-linux-arm64@0.32.0':
+    resolution: {integrity: sha512-xQfcnhUFnv7nCa8Hke/11FAMXWknmwXtRK4K53RAIGa/p11MwuRY1577CS9iEoFtdo8WyFjV4LEMNA/vMWM8fg==}
     cpu: [arm64]
     os: [linux]
 
-  '@agent-ix/quire-cli-linux-x64@0.31.0':
-    resolution: {integrity: sha512-ZilTcBRKPYcoux/4AtC4blATOQZo5KDhkA0aUBMZsKftM9SzSalqqSruBt8O+H44D2dBnu9pffupvc7MbMd5Kw==}
+  '@agent-ix/quire-cli-linux-x64@0.32.0':
+    resolution: {integrity: sha512-FYk7AzZQgcno5+qziI4E04uaR/b6NY0CtvHUk6Pazx9tAFfVrZe3t5dKHtQqkqiA3/FwnEqx6kEkypSRH6aPOg==}
     cpu: [x64]
     os: [linux]
 
-  '@agent-ix/quire-cli-win32-x64@0.31.0':
-    resolution: {integrity: sha512-0KAiaD04uXMynJW4TgX+CwttVTCu+lnZh/+9u8+/sc99mMrxbnPwNgJbvMyaVeKY/NVPWo8sgog8ftQwuYPhCA==}
+  '@agent-ix/quire-cli-win32-x64@0.32.0':
+    resolution: {integrity: sha512-69udQKwxerfoLBmULTuanNtkjqcofcY2FTltevgaOefBHxZBEVG4hzWejqvEDtdUmNAcPNgi7t/jA9k7RFvYzQ==}
     cpu: [x64]
     os: [win32]
 
-  '@agent-ix/quire-cli@0.31.0':
-    resolution: {integrity: sha512-1X7xImFku7hgTw7SpzmCmjbElEoAxjZykKBWEBoX5e8xD9FRPmmAVtTOuU+7uB1Co7MDgk2wMxJmSRb07q6NoQ==}
+  '@agent-ix/quire-cli@0.32.0':
+    resolution: {integrity: sha512-YIzBAA4zQr4ySInIldFv8yHSND3C99lnie5Baov3reVTN93c6M/u5bI+442OgILqWa+cdtv4LTiiZmYNwrSxmQ==}
     engines: {node: '>=16'}
     hasBin: true
 
@@ -1843,24 +1843,24 @@ snapshots:
 
   '@agent-ix/ix-ui-semantic@0.4.10': {}
 
-  '@agent-ix/quire-cli-darwin-arm64@0.31.0':
+  '@agent-ix/quire-cli-darwin-arm64@0.32.0':
     optional: true
 
-  '@agent-ix/quire-cli-linux-arm64@0.31.0':
+  '@agent-ix/quire-cli-linux-arm64@0.32.0':
     optional: true
 
-  '@agent-ix/quire-cli-linux-x64@0.31.0':
+  '@agent-ix/quire-cli-linux-x64@0.32.0':
     optional: true
 
-  '@agent-ix/quire-cli-win32-x64@0.31.0':
+  '@agent-ix/quire-cli-win32-x64@0.32.0':
     optional: true
 
-  '@agent-ix/quire-cli@0.31.0':
+  '@agent-ix/quire-cli@0.32.0':
     optionalDependencies:
-      '@agent-ix/quire-cli-darwin-arm64': 0.31.0
-      '@agent-ix/quire-cli-linux-arm64': 0.31.0
-      '@agent-ix/quire-cli-linux-x64': 0.31.0
-      '@agent-ix/quire-cli-win32-x64': 0.31.0
+      '@agent-ix/quire-cli-darwin-arm64': 0.32.0
+      '@agent-ix/quire-cli-linux-arm64': 0.32.0
+      '@agent-ix/quire-cli-linux-x64': 0.32.0
+      '@agent-ix/quire-cli-win32-x64': 0.32.0
 
   '@agent-ix/ts-plugin-kit@0.2.0': {}
 
