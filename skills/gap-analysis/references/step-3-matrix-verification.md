@@ -1,8 +1,13 @@
-# Step 3: Test-Matrix Verification
+# Test-Matrix Verification
 
 **Goal**: Prove the Test Matrix is *real* — every Test Case it claims is backed by an actual
 test in the suite, identified by a matching **tracking tag** in the test code. This is the
 heart of gap-analysis: a matrix row marked ✅ means nothing unless a tagged test exists.
+
+**Scope: the whole repository, always.** This step runs identically in planless and
+plan-assisted mode. `--scope` is the repository root and the row set is whatever the matrix
+declares — never the subset a plan's tasks happen to touch. A supplied plan neither selects
+rows nor excuses an unbacked one.
 
 **This step no longer greps.** `quire coverage` computes the reconciliation deterministically
 and reports it; this skill interprets the report and owns the judgement. Severity and verdict
@@ -46,8 +51,8 @@ quire --version    # expect >= 0.16.0; on an older build the roots are not split
 If it is older, say so in `## Coverage` rather than reading the report as if the split
 applied.
 
-Do **not** pass `--strict`. Whether a gap blocks is this skill's verdict rule (Step 6), not
-the command's exit code.
+Do **not** pass `--strict`. Whether a gap blocks is this skill's verdict rule (see the
+[SpecReview artifact](step-6-specreview-artifact.md) step), not the command's exit code.
 
 The report carries exactly the findings this step produces:
 
@@ -75,7 +80,7 @@ The report carries exactly the findings this step produces:
 for an untracked symbol. Do not re-derive them.
 
 Marker drift is the one judgement the report cannot make — it needs the suite to have
-actually run (step 4 below).
+actually run (see "Optionally run the suite" below).
 
 ## Two ways the report can mislead, and how to read it
 
@@ -142,6 +147,6 @@ report, the backed/total count, and which reconciliation path ran.
 ## Notes
 
 - A backed row proves *traceability*, not *correctness* — whether the test is a good test is
-  Step 4 (underspecified/stub) and Step 5 (semantic). Keep this step about presence + trace.
+  the [reverse-gap step](step-4-underspecified-code.md) and the [semantic review](step-5-semantic-review.md). Keep this step about presence + trace.
 - The command performs no network or service I/O and executes none of the code it reads
   (FR-050-CON-2, FR-051-CON-1), so it is safe to run in any repo.

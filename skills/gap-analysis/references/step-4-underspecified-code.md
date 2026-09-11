@@ -1,9 +1,14 @@
-# Step 4: Underspecified Code (reverse gap)
+# Underspecified Code (reverse gap)
 
 **Goal**: Find the *reverse* gap — code and behavior that exist with **no owning
-requirement**, plus stubs that masquerade as complete. Steps 2–3 verify spec→code/test
-coverage; this step verifies code→spec, catching scope that was implemented but never
-specified.
+requirement**, plus stubs that masquerade as complete. Matrix verification checks
+spec→code/test coverage; this step verifies code→spec, catching scope that was implemented
+but never specified.
+
+**Scope: the whole source tree, always.** This step runs identically in planless and
+plan-assisted mode. The inventory in section A is the component's real surface, not the
+surface a plan's tasks claim. Untraced behavior stays a finding whether or not any plan ever
+mentioned it — a plan bounds nothing here.
 
 This reference is the authoritative, self-contained reverse-gap procedure. Do not
 consult a private repository, user-home path, or separately installed skill for the
@@ -50,7 +55,8 @@ done:
 | Re-export-only module | structure | medium (may be intentional) |
 | Trivially-covered stub (≤5 lines @ 100% cov) | coverage + size | medium |
 
-A stub behind a `done` task or a ✅ matrix row is a `high` finding (false completion).
+A stub behind a ✅ matrix row is a `high` finding (false completion) — and likewise behind a
+`done` task, when a plan was supplied.
 
 Inspect test files as well as source. A passing test can still be a stub:
 
@@ -77,8 +83,8 @@ Treat coverage as evidence only after checking what the covered lines do:
 - A threshold dominated by imports, declarations, or re-exports does not establish that
   the promised behavior exists.
 
-Record these as `high` when they support a `done` task or ✅ matrix claim, otherwise
-`medium`. Cite both the hollow source and the test or coverage artifact.
+Record these as `high` when they support a ✅ matrix claim (or, in plan-assisted mode, a
+`done` task), otherwise `medium`. Cite both the hollow source and the test or coverage artifact.
 
 ## Output of this step
 
