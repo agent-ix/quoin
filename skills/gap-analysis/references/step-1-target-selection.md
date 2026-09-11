@@ -1,53 +1,60 @@
-# Step 1: Target Selection
+# Target Selection
 
-**Goal**: Resolve exactly what this run audits — one plan bundle, its spec, its Test
-Matrix — and the `ix://` identity used in the output artifact.
+**Goal**: Resolve exactly what this run audits — one **repository**, its spec, its Test
+Matrix, its source and test trees — and the `ix://` identity used in the output artifact.
+Record whether the caller explicitly supplied a plan.
+
+The target of gap-analysis is a repository, not a plan. A plan is an optional extra input.
 
 ## Process
 
-### 1. Resolve the target plan
+### 1. Resolve the repository scope
 
-Mirror `spec-to-plan/references/step-0-plan-selection.md`:
+1. **Repository root.** The repo under audit (`--scope <project_root>` for every `quire`
+   invocation later). Default to the repository the session is working in unless the user
+   names another.
+2. **Spec root.** Single-repo: `spec/`. Multi-repo: `specs/<category>/<component>/spec/`.
+3. **`org` / `component`.** Read from `spec/spec.md` frontmatter (`org`, `name`). These build
+   the `ix://<org>/<component>/<id>` URIs used in the SpecReview `relationships:`.
+4. **Test Matrix.** Look for `spec/matrix.md` first, then `spec/tests.md` (both names are in
+   use across the ecosystem). Note its frontmatter `id` (e.g. `TestMatrix-001` / `TM-001`)
+   for the `references` edge.
+5. **Requirements.** Note the requirement files under `spec/functional/`,
+   `spec/non-functional/`, `spec/usecase/`, `spec/stakeholder/` — the matrix and reverse-gap
+   steps trace against these ids.
+6. **Source / test trees.** Identify where implementation and tests live (e.g. `src/` +
+   `tests/`, or language-specific layout).
 
-1. **Named in context?** If the user passed a plan id (`Plan-002`) or one was established
-   earlier this session, use it.
-2. **Otherwise discover.** Glob `plan/*/plan.md`, read each frontmatter `id`/`title`/`status`,
-   and present the list:
+### 2. Determine the mode
 
-   ```
-   Plans available to gap-analyze:
-   - Plan-001  electron-hello core app    (active)
-   - Plan-002  packaging & distribution   (active)
-   ```
+**Planless is the default.** Do not glob `plan/`, do not present a plan menu, and do not ask
+which plan to audit. The run is plan-assisted **only** when the caller explicitly names a
+plan — `--plan Plan-001`, "gap-analyse Plan-002", or a plan established as the target earlier
+in the session.
 
-   Ask which one. One run targets **one** bundle.
+When a plan *is* supplied:
 
-### 2. Locate the spec and Test Matrix
-
-- **Spec root.** Single-repo: `spec/`. Multi-repo: `specs/<category>/<component>/spec/`.
-- **`org` / `component`.** Read from `spec/spec.md` frontmatter (`org`, `name`). These build
-  the `ix://<org>/<component>/<id>` URIs used in the SpecReview `relationships:`.
-- **Test Matrix.** Look for `spec/matrix.md` first, then `spec/tests.md` (both names are in
-  use across the ecosystem). Note its frontmatter `id` (e.g. `TestMatrix-001` / `TM-001`)
-  for the `references` edge.
-- **Requirements.** Note the requirement files under `spec/functional/`,
-  `spec/non-functional/`, `spec/usecase/`, `spec/stakeholder/` — Steps 3 and 4 trace against
-  these ids.
-- **Source / test trees.** Identify where implementation and tests live (e.g. `src/` +
-  `tests/`, or language-specific layout). Used in Steps 2–4.
+- Resolve its bundle path `plan/<Plan-id>-<slug>/` and confirm it exists. If the named plan
+  does not exist, say so and ask — do not silently fall back to planless, and do not
+  substitute a different bundle.
+- Record the `<Plan-id>` for the SpecReview `reviews` edge and the plan-completeness step.
+- **The bundle does not change anything resolved in section 1.** Scope stays the repository.
+  The requirement set stays the full spec. The code surface stays the whole source tree.
 
 ### 3. Hand off
 
 State explicitly, so later steps and the artifact agree:
 
-- target bundle path (e.g. `plan/Plan-002-packaging-distribution/`)
-- spec root, matrix path + id
+- repository root, spec root, matrix path + id
 - `ix://<org>/<component>` prefix
 - where source and tests live
+- **mode**: `planless` or `plan-assisted (<Plan-id>)`
 
 ## Notes
 
-- If there is **no** plan bundle, stop and tell the user — gap-analysis audits a plan; it
-  does not invent one (use `spec-to-plan` first).
-- If there is **no** Test Matrix, Step 2 a/Plan checks still run, but record a `high`
-  finding that the matrix is missing and Step 3 cannot verify coverage.
+- If there is **no** plan bundle, that is the normal case. Proceed planless; the SpecReview
+  will record `Plan completion: not assessed`. Never tell the user to run `spec-to-plan`
+  first, and never author a retrospective plan to make the audit possible — that reverses
+  the assurance order the skill exists to enforce.
+- If there is **no** Test Matrix, the remaining steps still run, but record a `high` finding
+  that the matrix is missing and that coverage cannot be verified. Do not create a matrix.

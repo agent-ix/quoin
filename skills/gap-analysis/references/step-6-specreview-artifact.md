@@ -1,7 +1,11 @@
-# Step 6: SpecReview Artifact
+# SpecReview Artifact
 
-**Goal**: Emit the findings from Steps 1–5 as a single **quire-validated `SpecReview`**
-document with a Verdict, at `reviews/YY-MM-DD-<slug>.md`.
+**Goal**: Emit the findings from the preceding steps as a single **quire-validated
+`SpecReview`** document with a Verdict, at `reviews/YY-MM-DD-<slug>.md`.
+
+The artifact must make the mode unambiguous. A reader who sees only this document has to be
+able to tell whether plan completion was assessed or skipped, and must not be able to read a
+planless PASS as evidence that planned work was completed.
 
 ## Render the template, then author (guardrail)
 
@@ -18,13 +22,30 @@ separately installed template.
 
 ## Frontmatter
 
+**Planless (the default).** No plan id appears anywhere in the frontmatter:
+
 ```yaml
 ---
 id: SR-001                      # ^[A-Z]{2,4}-[0-9]+$ — SR- default is fine; bump if SR-001 exists
-title: "Gap analysis — <Plan-id> <slug>"
+title: "Gap analysis — <component> repository audit"
 type: SpecReview
 analysis: gap-analysis          # the dedicated analysis value
-scope: "plan/<Plan-id>-<slug>/, spec/matrix.md"
+scope: "spec/, src/, tests/, spec/matrix.md"
+review_set: subset
+relationships:
+  - { target: "ix://<org>/<component>/<TestMatrix-id>", type: references }
+---
+```
+
+**Plan-assisted.** Identical, plus the `reviews` edge to the supplied plan:
+
+```yaml
+---
+id: SR-001
+title: "Gap analysis — <component> repository audit (with <Plan-id>)"
+type: SpecReview
+analysis: gap-analysis
+scope: "spec/, src/, tests/, spec/matrix.md, plan/<Plan-id>-<slug>/"
 review_set: subset
 relationships:
   - { target: "ix://<org>/<component>/<Plan-id>",       type: reviews }
@@ -32,8 +53,9 @@ relationships:
 ---
 ```
 
-`<org>`/`<component>` come from `spec/spec.md` (`org`, `name`); the `<Plan-id>` and
-`<TestMatrix-id>` from Step 1.
+`<org>`/`<component>` come from `spec/spec.md` (`org`, `name`); the `<TestMatrix-id>` and
+the optional `<Plan-id>` from target selection. Never emit a `reviews` edge to a plan in a
+planless run — a relationship to a plan nobody audited is a fabricated claim.
 
 ## Body
 
@@ -43,7 +65,10 @@ are extra sections (allowed).
 ```markdown
 ## Summary
 
-<1–2 sentences: what plan/matrix/code was audited and the headline result.>
+<1–2 sentences: which repository's spec, matrix, tests and code were audited, and the
+headline result. In planless mode, say the audit was repository-driven and that plan
+completion was not assessed. Do not describe the result as work being "complete" or
+"delivered as planned".>
 
 ## Verdict
 
@@ -53,18 +78,31 @@ are extra sections (allowed).
 
 | ID      | Severity | Summary                                          | Refs               |
 | ------- | -------- | ------------------------------------------------ | ------------------ |
-| FND-001 | high     | Task-007 still in_progress (P0, critical path)   | Task-007, FR-004   |
-| FND-002 | high     | Matrix TC-012 has no backing tagged test         | TC-012, FR-006     |
-| FND-003 | medium   | `cli.ts::--force` flag has no owning requirement | cli.ts::--force    |
+| FND-001 | high     | Matrix TC-012 has no backing tagged test         | TC-012, FR-006     |
+| FND-002 | medium   | `cli.ts::--force` flag has no owning requirement | cli.ts::--force    |
+| FND-003 | high     | Task-007 still in_progress (P0) — plan-assisted  | Task-007, FR-004   |
 
 ## Coverage
 
 - Reconciliation: quire coverage (module <name> <version>) | grep fallback — no active module declares a traceability model
-- Tasks done: X / Y
+- Plan completion: not assessed
 - Rows backed by a tagged test: X / Y   (from `totals`; `0 / 0` means the model matched nothing, not full coverage)
 - Untraced behaviors / stubs: N
 - Semantic review: ran over N requirements | skipped
 ```
+
+### The plan-completion line (mandatory, both modes)
+
+`## Coverage` always carries exactly one plan-completion line, and it is not optional:
+
+| Mode | Line |
+| --- | --- |
+| Planless | `Plan completion: not assessed` |
+| Plan-assisted | `Plan completion: assessed (<Plan-id>) — tasks done X / Y` |
+
+`Plan completion: not assessed` is the literal wording. Do not soften it to "n/a", "none",
+or "no plan required", and never write `Tasks done: 0 / 0` in a planless run — a zero
+denominator reads as a completed plan and asserts something nobody checked.
 
 The reconciliation line is not optional. A number from the engine and a number from a grep
 are not the same claim — grep matches a tag wherever it sits, including places the engine
@@ -79,9 +117,19 @@ will not bind it — and a reader cannot tell which they are looking at unless i
 
 ## Verdict rule
 
-- **FAIL** — any incomplete/blocked task, any unbacked matrix Test Case, or any `high` finding.
+- **FAIL** — any unbacked matrix Test Case, any `high` finding, or (plan-assisted only) any
+  incomplete/blocked task.
 - **CONDITIONAL** — only `medium`/`low` findings.
 - **PASS** — no gaps (single `No gaps found` row).
+
+### What a planless PASS means
+
+A planless PASS asserts **repository assurance only**: the matrix rows are backed by tagged
+tests, no meaningful code lacks an owning requirement, and no stub or inflated coverage
+stands behind a claim. It asserts nothing about whether the work was planned, tracked, or
+completed against a plan — that question was not asked. Keep the Summary and Verdict lines
+consistent with that, and leave `Plan completion: not assessed` visible in `## Coverage` as
+the record of what the PASS does not cover.
 
 ## Validate
 
@@ -101,8 +149,12 @@ before reporting completion. Then tell the user the artifact path and the Verdic
 
 ## Notes
 
-- File name: `reviews/<YYYY-MM-DD>-<short-slug>.md` (today's real date; slug from the plan,
-  e.g. `2026-06-22-plan-002-packaging`).
+- File name: `reviews/<YYYY-MM-DD>-<short-slug>.md` (today's real date; slug from the
+  component or area audited, e.g. `2026-06-22-observation-gap-analysis`, or from the plan in
+  plan-assisted mode, e.g. `2026-06-22-plan-002-packaging`).
 - `reviews/` is **repo root** for this skill (deliberate); validation is path-agnostic.
 - One run → one SpecReview doc (the `analysis: gap-analysis` lens), matching the one-doc-per-
   analysis model used by `quoin:spec-review`.
+- This document is the run's **only** write. Do not also create a plan, a `Task`, a
+  requirement, or an acceptance criterion to make the findings actionable — filing that work
+  is a separate, later decision.

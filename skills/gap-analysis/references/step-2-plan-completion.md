@@ -1,6 +1,29 @@
-# Step 2: Plan Completion
+# Plan Completeness (OPTIONAL — explicit plan only)
 
-**Goal**: Confirm every unit of work in the targeted plan is actually finished.
+**Goal**: When — and only when — the caller explicitly supplied a plan, confirm that plan's
+bookkeeping is sound: every unit of work is finished, done work completed in dependency
+order, and `plan.md` agrees with its tasks.
+
+## Gate first
+
+**Skip this step entirely unless the caller named a plan** (`--plan Plan-001`, or an
+equivalent explicit instruction — see [target selection](step-1-target-selection.md)). The
+presence of a `plan/` directory is not an instruction. A planless run records
+`Plan completion: not assessed` in `## Coverage` and produces no finding from this step.
+
+## What this step is, and is not
+
+This is **bookkeeping on top of a completed repository audit**, not the audit itself. It may
+only add findings. It must never:
+
+- narrow the matrix, reverse-gap, stub, or semantic steps to the plan's task set;
+- suppress, downgrade, or omit a repository finding because it falls outside the plan;
+- supply the scope, the requirement set, or the code surface for any other step;
+- stand in for repository assurance — a plan whose tasks are all `done` says nothing about
+  whether the matrix is backed or the code is traced.
+
+Nor does it author: do not create or edit a plan, a `Task`, a requirement, or an acceptance
+criterion, and do not fix a status you believe is stale.
 
 ## The Task contract
 
@@ -21,21 +44,22 @@ relationships:
 ---
 ```
 
-## Process
+## The three checks
 
-1. **Enumerate tasks.** Read every `plan/<Plan-id>-<slug>/tasks/Task-*.md`.
-2. **Assert completion.** For each task, check `status`:
+1. **All tasks done.** Read every `plan/<Plan-id>-<slug>/tasks/Task-*.md` and check `status`:
    - `done` → OK.
    - `not_started` / `in_progress` / `blocked` → **finding**. Severity:
      - `high` if `priority: P0`/`P1` or it is on the critical path (`track: A`/`S`).
      - `medium` otherwise. `blocked` → note the blocker (its unmet `depends_on`).
-3. **Check dependency sanity.** Flag a `done` task whose `depends_on` target is **not**
+2. **Done-task dependency sanity.** Flag a `done` task whose `depends_on` target is **not**
    `done` (out-of-order completion) as a `medium` finding.
-4. **Cross-check `plan.md` checkboxes.** `plan.md` mirrors requirements/tests as
+3. **Task status vs plan checkbox consistency.** `plan.md` mirrors requirements/tests as
    `- [ ]` / `- [x]`. Flag (`low`) any checkbox state that contradicts task status
    (e.g. an unchecked requirement whose owning task is `done`, or vice-versa) — the plan
    doc is drifting from its tasks.
-5. **Record the rollup.** Count tasks `done` / total — feeds the SpecReview `## Coverage`.
+
+Record the rollup: tasks `done` / total — feeds the SpecReview `## Coverage` line
+`Plan completion: assessed (<Plan-id>) — tasks done X / Y`.
 
 ## Output of this step
 
@@ -47,3 +71,6 @@ the tasks-done/total count.
 
 - Do not edit task files or `plan.md` — gap-analysis only reports. If the user wants the
   plan reconciled, that's `spec-to-plan` (update flow) or `implement-plan`.
+- A plan-assisted PASS still means the repository checks passed *and* the plan's books
+  balance. The two claims stay separate in the artifact; do not merge them into one
+  sentence that implies either proves the other.

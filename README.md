@@ -58,12 +58,22 @@ Call `/implement-plan` to trigger your coding agent to begin work on the plan.
 
 #### 5. Gap review
 
-`/gap-analysis` validates that the `UserStory` and `Functional Requirements` are implemented and tested using the `traceability matrix`
-as the guide. `/gap-analysis` will optionally perform a _semantic_ comparison of `spec`, `code`, and `tests` to ensure the
-`plan` is faithfully implemented.
+`/gap-analysis` audits the repository: `UserStory` and `Functional Requirements` implemented and tested,
+using the `traceability matrix` as the guide, plus the reverse gap — code with no owning requirement — and
+stubs standing behind a covered row. It is **planless by default**, so a repository whose work predates
+planning can still be audited; the review it emits records `Plan completion: not assessed`.
+`/gap-analysis` will optionally perform a _semantic_ comparison of `spec`, `code`, and `tests`.
 
 ```
 > /gap-analysis
+```
+
+Pass a plan to add completion bookkeeping — every `Task` done, done tasks in dependency order, and
+`plan.md` checkboxes matching task status. The repository audit is unchanged by it: a plan never narrows
+the scope or suppresses a finding outside its tasks.
+
+```
+> /gap-analysis --plan Plan-001
 ```
 
 ## What's included
