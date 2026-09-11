@@ -41,8 +41,8 @@ and a validated **Findings** table.
 ## Modes
 
 **Planless (the default).** No plan is selected, discovered, or asked for. The repository
-audit — matrix verification, reverse gaps, stubs, and the opt-in semantic review — runs in
-full. The SpecReview records, verbatim:
+audit — matrix verification, reverse gaps, and stubs — runs in full, and the semantic review
+is offered on the same terms as ever. The SpecReview records, verbatim:
 
 ```
 Plan completion: not assessed
@@ -90,28 +90,34 @@ code, edit the plan, or change the matrix.
 
 ## Steps
 
-0.  **[Target selection](references/step-1-target-selection.md)**: Resolve the repository
-    root, spec root, Test Matrix, and `org`/`component` for `ix://` URIs. Record whether a
-    plan was explicitly supplied.
-1.  **[Matrix verification](references/step-3-matrix-verification.md)**: Run
-    `quire coverage --scope <root> --json` and interpret the report — unbacked rows, status
-    lies, untracked tests, and the backed/total rollup. The reconciliation is the engine's;
-    the severity and the verdict stay here. A repo whose module set declares no
-    `traceability:` model falls back to a grep index, declared as such.
-2.  **[Underspecified code](references/step-4-underspecified-code.md)**: Find code/behavior
-    with no owning requirement (reverse gap), plus stubs and coverage inflation
-    masquerading as complete.
-3.  **[Semantic review](references/step-5-semantic-review.md)** *(OPTIONAL — ask first)*:
-    Judge intent↔test↔code agreement per requirement. Skip unless the user opts in. Opt-in
-    works the same way in both modes.
-4.  **[Plan completeness](references/step-2-plan-completion.md)** *(ONLY with an explicit
-    plan)*: Assert every `Task` is `done`, check done-task dependency order, and reconcile
-    `plan.md` checkboxes against task status.
-5.  **[SpecReview artifact](references/step-6-specreview-artifact.md)**: Write and validate
-    the `SpecReview` to `reviews/YY-MM-DD-<slug>.md`.
+Each step says when it runs. Nothing here is numbered, because the plan step is an overlay
+rather than a position in a sequence, and a number would imply the audit waits on it.
 
-Steps 0–2 and 5 always run. Step 3 is gated on user opt-in. Step 4 runs only when the
-caller supplied a plan.
+**Always — [Target selection](references/step-1-target-selection.md).** Resolve the
+repository root, spec root, Test Matrix, and `org`/`component` for `ix://` URIs. Record
+whether a plan was explicitly supplied.
+
+**Always — [Matrix verification](references/step-3-matrix-verification.md).** Run
+`quire coverage --scope <root> --json` and interpret the report — unbacked rows, status
+lies, untracked tests, and the backed/total rollup. The reconciliation is the engine's;
+the severity and the verdict stay here. A repo whose module set declares no
+`traceability:` model falls back to a grep index, declared as such.
+
+**Always — [Underspecified code](references/step-4-underspecified-code.md).** Find
+code/behavior with no owning requirement (reverse gap), plus stubs and coverage inflation
+masquerading as complete.
+
+**Only when the user opts in — [Semantic review](references/step-5-semantic-review.md).**
+Judge intent↔test↔code agreement per requirement. Ask first; skip unless the user says yes.
+Opt-in works the same way in both modes.
+
+**Only with an explicit plan — [Plan completeness](references/step-2-plan-completion.md).**
+Assert every `Task` is `done`, check done-task dependency order, and reconcile `plan.md`
+checkboxes against task status. This is bookkeeping added to the audit, not a gate in front
+of it.
+
+**Always — [SpecReview artifact](references/step-6-specreview-artifact.md).** Write and
+validate the `SpecReview` to `reviews/YY-MM-DD-<slug>.md`.
 
 > **`--scope` is the repository root, and must be passed explicitly.** Since quire-cli
 > v0.16.0 (quire-rs CR-045) the command derives **two roots** from it and never
@@ -127,9 +133,9 @@ caller supplied a plan.
 
 ## The optional semantic review
 
-The matrix, reverse-gap, and plan-completeness steps are mechanical and cheap. The semantic review is an expensive,
-judgment-heavy LLM pass. **Before running it**, ask the user explicitly (e.g. with a yes/no
-choice):
+The matrix, reverse-gap, and plan-completeness steps are mechanical and cheap. The semantic
+review is an expensive, judgment-heavy LLM pass. **Before running it**, ask the user
+explicitly (e.g. with a yes/no choice):
 
 > Run the optional semantic review (intent↔test↔code)? It's slower but verifies that tests
 > actually validate requirement intent and exercise real code.

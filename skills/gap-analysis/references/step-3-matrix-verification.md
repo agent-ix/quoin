@@ -51,8 +51,8 @@ quire --version    # expect >= 0.16.0; on an older build the roots are not split
 If it is older, say so in `## Coverage` rather than reading the report as if the split
 applied.
 
-Do **not** pass `--strict`. Whether a gap blocks is this skill's verdict rule (Step 6), not
-the command's exit code.
+Do **not** pass `--strict`. Whether a gap blocks is this skill's verdict rule (see the
+[SpecReview artifact](step-6-specreview-artifact.md) step), not the command's exit code.
 
 The report carries exactly the findings this step produces:
 

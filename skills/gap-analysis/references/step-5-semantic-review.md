@@ -16,16 +16,17 @@ If declined, skip and note "semantic review: skipped" in the SpecReview `## Cove
 
 ## What to judge (per requirement)
 
-For each requirement (FR/US/StR) in scope, with its tagged test(s) (from [matrix verification](step-3-matrix-verification.md)) and the
-code it governs (from the [reverse-gap step](step-4-underspecified-code.md)), assess three axes:
+For each requirement (FR/US/StR) in scope, with its tagged test(s) (from
+[matrix verification](step-3-matrix-verification.md)) and the code it governs (from the
+[reverse-gap step](step-4-underspecified-code.md)), assess three axes:
 
 1. **(a) Test validates intent** — does the test actually check the *behavior the
    requirement describes*, including its acceptance criteria, or only an incidental/trivial
    aspect? A test tagged `FR-007-AC-1` that asserts something unrelated to AC-1 fails here.
 2. **(b) Test exercises the code** — does the test run the real implementation, or is it
-   hollow? Reuse the reverse-gap step's **test-stub / coverage-inflation** heuristics: no assertions,
-   weak-only assertions (`is not None`, `isinstance`),
-   mock-everything (no real code path), import-only, circular-mock-of-a-stub.
+   hollow? Reuse the reverse-gap step's **test-stub / coverage-inflation** heuristics:
+   no assertions, weak-only assertions (`is not None`, `isinstance`), mock-everything
+   (no real code path), import-only, circular-mock-of-a-stub.
 3. **(c) Code matches intent** — does the implementation actually do what the requirement
    says (semantics, edge cases, error behavior), or has it drifted?
 
