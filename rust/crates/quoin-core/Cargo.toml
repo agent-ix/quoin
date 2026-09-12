@@ -24,7 +24,18 @@ path = "src/main.rs"
 workspace = true
 
 [dependencies]
-quoin-schemas = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }
+# Optional, and enabled by `quoin-schemas` rather than by this crate: the
+# derives are what let the SCHEMA be read off the canonical type, but nothing
+# on the boundary's own execution path needs them, so the shipped binary does
+# not carry the generator's dependency tree.
+schemars = { workspace = true, optional = true }
+
+[features]
+# FR-097. `quoin-schemas` turns this on to read the wire shapes off the types
+# that actually serialise them, rather than off a second declaration of the
+# same shapes. There is no `default` here on purpose: a feature that is on by
+# default is a feature nobody ever proves works when it is off.
+schema = ["dep:schemars"]

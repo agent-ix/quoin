@@ -23,6 +23,17 @@
 
 use std::collections::BTreeMap;
 
+/// The IPC protocol revision the boundary speaks.
+///
+/// Lives beside the wire contract it versions. It used to sit in
+/// `quoin-schemas` on the premise that the generated TypeScript side is
+/// generated from that crate — but FR-097 makes the canonical Rust type the
+/// source, so `quoin-schemas` now reads FROM here and the constant belongs
+/// with the taxonomy, the diagnostic and the payloads it revises together.
+/// The generated `src/core/types.ts` carries this number, so a bump reaches
+/// the TypeScript side only through a regeneration whose digest is asserted.
+pub const PROTOCOL_VERSION: u32 = 1;
+
 /// How the process terminated, and therefore whether stdout is worth reading.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Outcome {
@@ -83,6 +94,7 @@ impl Outcome {
 /// field list is then reviewable, and the compiler checks that every branch
 /// populated it.
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct Diagnostic {
     /// The stable code, from the catalogued enum — never a literal invented
