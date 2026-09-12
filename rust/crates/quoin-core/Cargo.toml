@@ -28,3 +28,9 @@ quoin-schemas = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }
+
+[dev-dependencies]
+# quoin does not grow its own syn-based source auditor: `source_audit` is the
+# shared home for "is this library half actually I/O-free" (quire-research
+# implementation-language-policy, "Shared tooling is consumed, not regrown").
+engineering-assurance = { workspace = true }
