@@ -7,9 +7,17 @@
  */
 
 import { execFileSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import {
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  readdirSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -606,5 +614,89 @@ describe("the contract holds against the selected quire", () => {
     );
     const result = parseProperties(out);
     expect(result.ok, JSON.stringify(result)).toBe(true);
+  });
+});
+
+const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
+const schemasDir = join(repoRoot, "src", "quire", "schemas");
+const quireSrcDir = join(repoRoot, "src", "quire");
+
+describe("the vendored schemas are the whole mechanism", () => {
+  // Trace: FR-029-CON-3
+  it("keeps the publisher's open vocabularies open", () => {
+    // FR-029-CON-3 names the exact hazard: "Closing `diagnostics[].reason`
+    // would reject a newer engine's payload that a consumer could otherwise
+    // read." An open vocabulary is a deliberate publisher decision, and
+    // mirroring it means copying the decision rather than the values — a
+    // vendored copy that adds an `enum` is not a stricter copy, it is a
+    // different contract that fails on the publisher's own next release.
+    //
+    // Asserted positively over the fields the criterion names, not by diffing
+    // against upstream: the hash in `schemaHash` already proves the bytes are
+    // the publisher's. What that hash cannot say is which of those bytes are
+    // load-bearing, and this is the one the criterion singles out.
+    const open: [string, string[]][] = [
+      ["coverage-v1.schema.json", ["$defs", "CoverageDiagnostic", "reason"]],
+      ["assurance-v1.schema.json", ["$defs", "relationObservation", "reason"]],
+    ];
+    for (const [file, path] of open) {
+      const schema = JSON.parse(
+        readFileSync(join(schemasDir, file), "utf8"),
+      ) as Record<string, unknown>;
+      let node: Record<string, unknown> = schema;
+      for (const [index, key] of path.entries()) {
+        const next =
+          index === path.length - 1
+            ? (node.properties as Record<string, unknown>)?.[key]
+            : node[key];
+        expect(
+          next,
+          `${file}: ${path.slice(0, index + 1).join("/")} missing`,
+        ).toBeDefined();
+        node = next as Record<string, unknown>;
+      }
+      expect(
+        Object.keys(node),
+        `${file}: ${path.join("/")} must stay open`,
+      ).not.toContain("enum");
+      expect(Object.keys(node)).not.toContain("const");
+    }
+  });
+
+  // Trace: FR-029-CON-1
+  it("declares no hand-written validator beside the vendored artifact", () => {
+    // FR-029-CON-1: "quoin SHALL NOT restate the published schemas as
+    // hand-written validators. The duplication is the failure being closed;
+    // the vendored artifact plus its hash is the whole mechanism."
+    //
+    // A restatement looks like a schema: an object literal carrying the
+    // keywords a JSON Schema carries. Asserted over `src/quire/` source rather
+    // than over behaviour, because a hand-written validator that agrees with
+    // the schema today passes every behavioural test and is still the
+    // duplication the criterion forbids — it is wrong the moment the publisher
+    // moves, which is exactly when nobody is looking.
+    // `required` is deliberately NOT in this set. It matched
+    // `src/quire/contract.ts:118 readonly required: string;` — an ordinary
+    // TypeScript field, not a schema keyword — on the first run. `$schema` and
+    // `additionalProperties` are JSON-Schema-specific and have no other
+    // meaning in this tree; `required` has one and would make the check fire
+    // on the type declarations that CONSUME the vendored schema, which is the
+    // opposite of what the criterion forbids.
+    const keywords = /"?\b(additionalProperties|\$schema)\b"?\s*:/;
+    const restated = readdirSync(quireSrcDir)
+      .filter((f) => f.endsWith(".ts"))
+      .flatMap((f) =>
+        readFileSync(join(quireSrcDir, f), "utf8")
+          .split("\n")
+          .map((line, i) => ({ f, i: i + 1, line }))
+          .filter(
+            ({ line }) =>
+              keywords.test(line) &&
+              !line.trimStart().startsWith("*") &&
+              !line.trimStart().startsWith("//"),
+          )
+          .map(({ f, i, line }) => `src/quire/${f}:${i} ${line.trim()}`),
+      );
+    expect(restated).toEqual([]);
   });
 });
