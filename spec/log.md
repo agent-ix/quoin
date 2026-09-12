@@ -8,6 +8,46 @@ description: "Chronological log of structural changes to this bundle."
 
 ## History
 
+* **2026-09-12** — **NFR-021 and NFR-022 withdrawn; NFR-023 retained with a
+  named population** (agent-ix/quoin#388, under the Rust burn-down #373). All
+  three belonged to the closed gate #291 alongside FR-084..FR-092 and US-022,
+  and were left standing when those were withdrawn — so three requirements
+  constrained code that no longer existed. Found while checking FR-100's
+  Dependencies list, which cited all three as "continuing to constrain the
+  ported measurement crates".
+
+  **NFR-021 and NFR-022 are withdrawn.** Reproducible corpus measurement and a
+  bounded, read-only measurement run both constrain the harness itself — its
+  determinism and its execution envelope — and the harness was disposed of
+  rather than ported. Nothing surviving inherits the obligation, and they are
+  deliberately NOT re-pointed at the measurement-record subsystem: that would be
+  inventing a new obligation under an old id. The capability class is corpus
+  accounting, which the implementation-language policy places in
+  `engineering-assurance`; if corpus measurement is wanted again it is consumed
+  from there.
+
+  **NFR-023 is retained**, because "every printed figure bound to the artifact
+  and field it came from" generalises past the corpus harness completely. It is
+  the written form of the failure this programme keeps meeting: a number reading
+  green over a population that is not what it claims.
+
+  Retaining it as written would have reproduced the defect it forbids — an NFR
+  scoped to figures in a report nothing produces, vacuous while wearing the
+  banner of the rule against vacuousness. So its scope now NAMES its population
+  instead of inheriting #291's: `renderMeasurementReport`
+  (`src/measurement/report.ts:109`) and `renderPortfolioReport`
+  (`src/measurement/portfolio.ts:142`), both printing `observation.value` with
+  `observation.unit`. The figures are `MeasurementObservation` fields
+  (`types.ts:19-22`), so the artifact a figure came from is the
+  MeasurementCollection carrying it and the binding is checkable without a
+  separate figure index. The corpus report and FR-090's figure index are
+  explicitly out of scope, FR-090 being withdrawn.
+
+  It gains **NFR-023-AC-4**, a bypass probe: a planted figure with no binding
+  must fail, and a run finding no figure to check is inconclusive rather than
+  zero unbound figures. Named non-empty population and bypass probe as a matched
+  pair, which is the standard the rest of this set holds.
+
 * **2026-09-12** — **US-022 withdrawn** (agent-ix/quoin#388). The use case
   *"Measure the governed corpus against the completed module schemas"* is
   withdrawn alongside FR-084..FR-092, its entire requirement set.

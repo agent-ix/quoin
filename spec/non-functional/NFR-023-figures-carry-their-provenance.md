@@ -17,8 +17,26 @@ machine-readable reference naming the result artifact and field that figure was 
 
 ## Scope
 
-- Applies to: every number in the human-readable report, including counts, rates and shares, and the
-  figure index of FR-090 that binds them to their artifacts.
+- Applies to: every numeric figure printed by a **surviving** measurement
+  renderer. That population is named rather than inherited, because the corpus
+  report this requirement was first written against no longer exists — its
+  harness was disposed of under
+  [quoin#388](https://github.com/agent-ix/quoin/issues/388) and FR-084..FR-092,
+  NFR-021 and NFR-022 are withdrawn with it. A requirement scoped to a report
+  nothing produces is vacuous in exactly the way this requirement exists to
+  prevent, so the scope states its population and the population is checkable:
+
+  | renderer | figures it prints |
+  | --- | --- |
+  | `src/measurement/report.ts:109` `renderMeasurementReport` | `observation.value` with `observation.unit` (`:132`), and the finding-recall figures at `:190,196,199` |
+  | `src/measurement/portfolio.ts:142` `renderPortfolioReport` | `observation.value` with `observation.unit` (`:204`), in the `Metric / State-value / Plan / Collection` table |
+
+  The figures themselves are `MeasurementObservation` fields — `value`, `unit`
+  and `population` (`src/measurement/types.ts:19-22`) — so the artifact a figure
+  came from is the MeasurementCollection carrying that observation, and the
+  binding is checkable without a separate figure index.
+- Out of scope: the corpus report and its figure index. FR-090, which defined
+  that index, is withdrawn.
 - Operational context: a reader who did not run the measurement, reading the report months later.
 
 ## Rationale
@@ -47,6 +65,7 @@ figure is absent from those artifacts or disagrees with them.
 | NFR-023-AC-1 | Every numeric figure printed by the report names the result artifact it was taken from. | Test (TC-1563) |
 | NFR-023-AC-2 | Every numeric figure printed by the report equals the value recomputed from the artifact it names. | Test (TC-1564) |
 | NFR-023-AC-3 | Every rate printed by the report carries its unit and its population identifier. | Test (TC-1565) |
+| NFR-023-AC-4 | A planted figure with no binding fails the check: a printed numeric figure whose observation names no collection, and a printed rate with no unit or no population identifier, are each reported rather than passed over. A run that finds no figure to check is reported as inconclusive, never as zero unbound figures. | Test |
 
 ## Dependencies
 
