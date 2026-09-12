@@ -105,8 +105,12 @@ ceiling and the branch ceiling that host dispatch may not exceed. An
 `owner-disposition` entry additionally declares the date and the deciding owner.
 Staged-port retention is deliberately not a manifest category: it lives in the
 burn-down matrix at `docs/rust-burndown/executable-path-matrix.md`, where it is
-counted. An entry missing a required field, a classification that no entry backs,
-and a path carrying both a manifest entry and a retention row each fail the run.
+counted. An entry missing a required field, a classification that no entry backs, an
+entry declaring a category this requirement does not admit, and a path carrying
+both a manifest entry and a retention row each fail the run. The second and
+third are different directions of the same check and both are needed: without
+the third, a sixth category can be invented in the manifest and every path
+under it becomes allowed with no requirement admitting it.
 Where two path globs overlap, the more specific glob wins, and two entries of
 equal specificity covering one path fail the run rather than resolving silently.
 
@@ -143,6 +147,7 @@ classifies nothing is reported as inconclusive rather than as clean.
 | NFR-024-AC-11 | A path carrying both a manifest entry and a retention row fails the run, and two equally specific overlapping globs fail rather than resolving silently. | Test (TC-1706) |
 | NFR-024-AC-12 | The classified population includes executable paths with no governed extension, and a planted non-Rust assertion in a Makefile recipe or a workflow `run:` block is classified rather than skipped. | Test (TC-1707) |
 | NFR-024-AC-13 | An expired retention fails the enforcement report while the build lane still completes, so a calendar boundary does not break every branch at once. | Test (TC-1708) |
+| NFR-024-AC-14 | A manifest entry declaring a category this requirement does not admit fails the run, naming the entry and the category. | Test (TC-1710) |
 
 ## Dependencies
 
