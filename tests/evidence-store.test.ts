@@ -334,7 +334,7 @@ describe("an absent store reads as empty, not as an error", () => {
 });
 
 describe("no obligation is ever stored", () => {
-  // Trace: FR-030-AC-10
+  // Trace: FR-030-AC-10, FR-030-CON-2
   it("keeps only the hash, never the statement", () => {
     // The governing principle: store only what cannot be recomputed from
     // spec + code at HEAD. An obligation is always re-derivable, so a stored

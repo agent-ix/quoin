@@ -319,7 +319,7 @@ describe("FR-062 change impact", () => {
     );
   });
 
-  // Trace: FR-062-AC-5
+  // Trace: FR-062-AC-5, FR-062-CON-3
   it("copies the existing auditor verdict apart from exposure", () => {
     const finding = {
       kind: "stale-evidence" as const,
@@ -617,7 +617,7 @@ describe("FR-062 churn, premises, and rendering", () => {
     );
   });
 
-  // Trace: FR-062-AC-12
+  // Trace: FR-062-AC-12, FR-062-CON-2
   it("emits structural facts without scores or threshold labels", () => {
     const json = renderGraphAnalysisJson(
       analyzeChurn(

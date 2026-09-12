@@ -262,6 +262,7 @@ describe("method conformance", () => {
     expect(report.findings).toEqual([]);
   });
 
+  // Trace: FR-032-CON-3
   it("asks nothing when no catalog is available", () => {
     // An absent catalog means the question cannot be asked, which is different
     // from the answer being yes.
