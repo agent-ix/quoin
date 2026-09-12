@@ -1,0 +1,21 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 Agent-IX
+[package]
+name = "quoin-assurance"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+description = "The assurance-case view: a read-only projection over evidence already collected."
+publish.workspace = true
+
+[lib]
+name = "quoin_assurance"
+path = "src/lib.rs"
+
+[lints]
+workspace = true
+
+[dependencies]
