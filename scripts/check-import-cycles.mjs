@@ -48,45 +48,63 @@ function sources(directory) {
   return out;
 }
 
-/** The top-level unit of `src/` a file belongs to: `evidence`, `catalog`, ... */
-function unit(path) {
-  const parts = relative(SRC, path).split(sep);
-  return parts.length === 1 ? parts[0].replace(/\.ts$/, "") : parts[0];
+/**
+ * The top-level unit of `src/` a file belongs to: `evidence`, `catalog`, ...
+ *
+ * Both extensions are stripped, because the same leaf unit is named twice in
+ * two spellings: the file on disk is `src/catalog.ts`, while every specifier
+ * that imports it is the ESM-resolved `../catalog.js`. Stripping only `.ts`
+ * left the importer's target as the unit `catalog.js`, which joined to no
+ * source file, so every top-level leaf module was invisible as an import
+ * target and its cycles went unreported (agent-ix/quoin#397 review).
+ */
+function unit(src, path) {
+  const parts = relative(src, path).split(sep);
+  return parts.length === 1 ? parts[0].replace(/\.(ts|js)$/, "") : parts[0];
 }
 
-const graph = new Map();
-const edgeSites = new Map();
+/**
+ * Condense `src` into its unit-level import graph.
+ *
+ * `root` only prefixes the reported edge sites, so a fixture tree can report
+ * paths relative to itself.
+ */
+export function importGraph(src, root = src) {
+  const graph = new Map();
+  const edgeSites = new Map();
 
-for (const file of sources(SRC)) {
-  const from = unit(file);
-  if (!graph.has(from)) graph.set(from, new Set());
-  const text = readFileSync(file, "utf8");
-  const lines = text.split("\n");
-  for (const match of text.matchAll(SPECIFIER)) {
-    const specifier = match[1] ?? match[2];
-    if (!specifier.startsWith(".")) continue;
-    const target = resolve(dirname(file), specifier);
-    if (!target.startsWith(SRC + sep)) continue;
-    const to = unit(target);
-    if (to === from) continue;
-    graph.get(from).add(to);
-    const key = `${from} -> ${to}`;
-    if (!edgeSites.has(key)) {
-      const at = match.index + match[0].indexOf(specifier);
-      const index = text.slice(0, at).split("\n").length;
-      edgeSites.set(
-        key,
-        `${relative(ROOT, file)}:${index}: ${lines[index - 1].trim()}`,
-      );
+  for (const file of sources(src)) {
+    const from = unit(src, file);
+    if (!graph.has(from)) graph.set(from, new Set());
+    const text = readFileSync(file, "utf8");
+    const lines = text.split("\n");
+    for (const match of text.matchAll(SPECIFIER)) {
+      const specifier = match[1] ?? match[2];
+      if (!specifier.startsWith(".")) continue;
+      const target = resolve(dirname(file), specifier);
+      if (!target.startsWith(src + sep)) continue;
+      const to = unit(src, target);
+      if (to === from) continue;
+      graph.get(from).add(to);
+      const key = `${from} -> ${to}`;
+      if (!edgeSites.has(key)) {
+        const at = match.index + match[0].indexOf(specifier);
+        const index = text.slice(0, at).split("\n").length;
+        edgeSites.set(
+          key,
+          `${relative(root, file)}:${index}: ${lines[index - 1].trim()}`,
+        );
+      }
     }
   }
+  return { graph, edgeSites };
 }
 
 /**
  * Tarjan's strongly connected components, iteratively (the graph is small, but
  * a gate that overflows its own stack fails for the wrong reason).
  */
-function stronglyConnectedComponents() {
+function stronglyConnectedComponents(graph) {
   const index = new Map();
   const low = new Map();
   const onStack = new Set();
@@ -142,35 +160,54 @@ function stronglyConnectedComponents() {
   return components;
 }
 
-const cyclic = stronglyConnectedComponents().filter(
-  (component) => component.length > 1,
-);
-
-if (cyclic.length === 0) {
-  console.log(
-    `check-import-cycles: ${graph.size} src modules, no cyclic component`,
+/** Every component of the unit graph holding more than one unit. */
+export function cyclicComponents(graph) {
+  return stronglyConnectedComponents(graph).filter(
+    (component) => component.length > 1,
   );
-  process.exit(0);
 }
 
-console.error(
-  `check-import-cycles: ${cyclic.length} cyclic component(s) in the src import graph.`,
-);
-console.error(
-  "Cargo forbids crate cycles (agent-ix/quoin#376). Extract the shared surface",
-);
-console.error("into a lower module instead of cutting an edge arbitrarily.\n");
-for (const component of cyclic) {
-  const members = [...component].sort();
-  console.error(`  component: ${members.join(", ")}`);
-  for (const from of members) {
-    for (const to of [...graph.get(from)].sort()) {
-      if (!members.includes(to)) continue;
-      console.error(`    ${from} -> ${to}`);
-      const site = edgeSites.get(`${from} -> ${to}`);
-      if (site) console.error(`      ${site}`);
-    }
+/**
+ * The gate itself: `{ ok, report }` over one source tree, so a test can assert
+ * the verdict on a fixture graph without shelling out or exiting.
+ */
+export function checkImportCycles(src, root = src) {
+  const { graph, edgeSites } = importGraph(src, root);
+  const cyclic = cyclicComponents(graph);
+  const report = [];
+
+  if (cyclic.length === 0) {
+    report.push(
+      `check-import-cycles: ${graph.size} src modules, no cyclic component`,
+    );
+    return { ok: true, report, components: cyclic };
   }
-  console.error("");
+
+  report.push(
+    `check-import-cycles: ${cyclic.length} cyclic component(s) in the src import graph.`,
+    "Cargo forbids crate cycles (agent-ix/quoin#376). Extract the shared surface",
+    "into a lower module instead of cutting an edge arbitrarily.\n",
+  );
+  for (const component of cyclic) {
+    const members = [...component].sort();
+    report.push(`  component: ${members.join(", ")}`);
+    for (const from of members) {
+      for (const to of [...graph.get(from)].sort()) {
+        if (!members.includes(to)) continue;
+        report.push(`    ${from} -> ${to}`);
+        const site = edgeSites.get(`${from} -> ${to}`);
+        if (site) report.push(`      ${site}`);
+      }
+    }
+    report.push("");
+  }
+  return { ok: false, report, components: cyclic };
 }
-process.exit(1);
+
+if (
+  resolve(process.argv[1] ?? "") === resolve(fileURLToPath(import.meta.url))
+) {
+  const { ok, report } = checkImportCycles(SRC, ROOT);
+  for (const line of report) (ok ? console.log : console.error)(line);
+  process.exit(ok ? 0 : 1);
+}
