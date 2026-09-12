@@ -1,0 +1,26 @@
+[package]
+name = "quoin-config"
+description = "Quoin's persistent configuration, plugin-schema registration and authoring-organization resolution (Rust port, quoin#381)."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+# Not declared at the root: pinned exactly here, for the same reason the root
+# pins exactly — the gate is a claim about these bytes, not about whatever
+# resolved this morning.
+schemars = "=1.2.2"
+serde_yaml_ng = "=0.10.0"
+
+[dev-dependencies]
+tempfile = "=3.27.0"

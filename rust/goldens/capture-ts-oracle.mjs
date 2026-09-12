@@ -81,6 +81,14 @@ out.paths = { registry_path: registryPath("/h"), modules_dir: filamentModulesDir
   const rec = { name: "m", source: { type: "path", path: "/p" }, ref: undefined, sha: undefined, resolvedPath: "/p", targetPath: "/t/m", installedAt: "2026-01-02T03:04:05.678Z" };
   writeRegistry(path, upsertPlugin(readRegistry(path), rec));
   out.registry_file_bytes = readFileSync(path, "utf8");
+  // A second record with every optional field PRESENT. The record above has
+  // them all absent, so on its own it pins nothing about the ordering or
+  // presence of `ref`, `sha` and `semantic` — the keys most likely to drift.
+  const full = mkdtempSync(join(tmpdir(), "quoin-381-regfull-"));
+  const fullPath = join(full, "registry.json");
+  const recFull = { name: "m", source: { type: "git-subdir", url: "https://github.com/acme/widgets.git", path: "modules/m", ref: "v1.2.3", sha: "978111c6884ccc0f5e6ca100fb17be5361a98713" }, ref: "v1.2.3", sha: "978111c6884ccc0f5e6ca100fb17be5361a98713", resolvedPath: "/c/978111c/modules/m", targetPath: "/t/m", installedAt: "2026-01-02T03:04:05.678Z", semantic: { package: "acme.widgets", semanticCore: "quire-core@1", exports: { "Gadget": "sha256:bb", "Widget": "sha256:aa" } } };
+  writeRegistry(fullPath, upsertPlugin(readRegistry(fullPath), recFull));
+  out.registry_file_bytes_full = readFileSync(fullPath, "utf8");
   writeFileSync(path, "{ not json");
   out.registry_read_malformed = tryv(() => readRegistry(path));
   writeFileSync(path, '{"schemaVersion":1,"plugins":"nope"}');

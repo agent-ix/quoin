@@ -633,6 +633,7 @@
     }
   },
   "registry_file_bytes": "{\n  \"schemaVersion\": 1,\n  \"plugins\": [\n    {\n      \"name\": \"m\",\n      \"source\": {\n        \"type\": \"path\",\n        \"path\": \"/p\"\n      },\n      \"resolvedPath\": \"/p\",\n      \"targetPath\": \"/t/m\",\n      \"installedAt\": \"2026-01-02T03:04:05.678Z\"\n    }\n  ]\n}\n",
+  "registry_file_bytes_full": "{\n  \"schemaVersion\": 1,\n  \"plugins\": [\n    {\n      \"name\": \"m\",\n      \"source\": {\n        \"type\": \"git-subdir\",\n        \"url\": \"https://github.com/acme/widgets.git\",\n        \"path\": \"modules/m\",\n        \"ref\": \"v1.2.3\",\n        \"sha\": \"978111c6884ccc0f5e6ca100fb17be5361a98713\"\n      },\n      \"ref\": \"v1.2.3\",\n      \"sha\": \"978111c6884ccc0f5e6ca100fb17be5361a98713\",\n      \"resolvedPath\": \"/c/978111c/modules/m\",\n      \"targetPath\": \"/t/m\",\n      \"installedAt\": \"2026-01-02T03:04:05.678Z\",\n      \"semantic\": {\n        \"package\": \"acme.widgets\",\n        \"semanticCore\": \"quire-core@1\",\n        \"exports\": {\n          \"Gadget\": \"sha256:bb\",\n          \"Widget\": \"sha256:aa\"\n        }\n      }\n    }\n  ]\n}\n",
   "registry_read_malformed": {
     "ok": false,
     "error": "Expected property name or '}' in JSON at position 2 (line 1 column 3)"

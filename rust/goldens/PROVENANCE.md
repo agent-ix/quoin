@@ -65,7 +65,7 @@ rm tests/.capture-381.test.ts
 | `parse_source_arg` | `src/plugins.ts` `parseSourceArg` | `quoin-modules` `tc_381_230` |
 | `to_git_url`, `normalize_source` | `ts-plugin-kit` `toGitUrl`, `normalizeSource` | `quoin-modules` `tc_381_231`, `tc_381_232` |
 | `default_modules_manifest`, `validate_manifest` | `ts-plugin-kit` `validateMarketplaceManifest` | `quoin-modules` `tc_381_233`, `tc_381_234` |
-| `registry_file_bytes`, `registry_read_*` | `ts-plugin-kit` `writeRegistry` / `readRegistry` | `quoin-modules` `tc_381_235`, `tc_381_236` |
+| `registry_file_bytes`, `registry_file_bytes_full`, `registry_read_*` | `ts-plugin-kit` `writeRegistry` / `readRegistry` | `quoin-modules` `tc_381_235`, `tc_381_236`, `tc_381_239` |
 | `read_module_name` | `src/plugins.ts` `readModuleName` | `quoin-modules` `tc_381_237` |
 | `paths` | `src/catalog.ts`, `src/plugins.ts` | `quoin-modules` `tc_381_238` |
 
@@ -98,3 +98,58 @@ because a later reviewer will reach for this file first.
    with `git checkout` and `git sparse-checkout`; this crate keeps bare
    repositories with no worktree. The two layouts are incompatible, and sharing
    one directory during staged coexistence would corrupt whichever ran second.
+6. **Symlink and submodule tree entries are skipped on extraction.** `write_tree`
+   materializes blobs and trees only; an entry whose mode is a symlink or a
+   gitlink is passed over without error. `git checkout` would recreate the
+   symlink and record the submodule gitlink, so this is a real behavioural
+   difference, not an implementation detail. It is deliberate for now: a module
+   is a directory of specs, a symlink in an extracted module is an escape route
+   out of the target directory that the path checks above would otherwise have
+   to re-validate, and a submodule has no content in the fetched pack to
+   materialize at all. A module that genuinely needs either currently installs
+   with those entries missing rather than failing — which is the weaker half of
+   this divergence, and the reason it is written down here.
+7. **Unknown config keys are all reported, not just the first.**
+   `#[serde(deny_unknown_fields)]` aborts deserialization at the first
+   unrecognised key, where zod's `.strict()` collects every one. `QuoinConfig::validate`
+   therefore scans the top-level mapping for unknown keys *before* handing the
+   document to serde, and returns one `ConfigIssue` per key. This is parity with
+   the oracle's *reporting*, reached by a different route than the oracle's; the
+   verdict (invalid) is identical either way, and only the issue count differs
+   from what `deny_unknown_fields` alone would produce. Nested objects still stop
+   at serde's first unknown key — quoin's schema has no nested objects today, so
+   nothing exercises that, and it is recorded here rather than claimed as closed.
+
+## FR-027-AC-8 and delegation
+
+`spec/functional/FR-027-*.md` AC-8 requires quoin's config handlers to
+**delegate** to `@agent-ix/ix-cli-core`. `quoin-config` does not delegate: it
+reimplements the nine `ix-cli-core` symbols quoin actually uses — plugin-id
+derivation, the schema registry, the layered `ConfigService`, the incident log,
+the advisory write lock, and org resolution — and depends on no TypeScript at
+runtime.
+
+That is the intended design, not an oversight. The Rust burn-down deliberately
+does not port `@agent-ix/ix-cli-core`: quoin uses a small, well-bounded fraction
+of it, and porting the whole package would mean owning a second CLI framework in
+Rust to satisfy a dependency edge rather than a requirement. Reimplementing the
+used surface against captured goldens is cheaper and is what the golden set in
+this directory exists to keep honest.
+
+The conflict with AC-8 is therefore real and is resolved as follows:
+
+* **AC-8 governs the retained TypeScript implementation** for as long as it is
+  the shipping one. Nothing in `src/` is exempted by this crate's existence, and
+  the TypeScript handlers continue to delegate.
+* **`quoin-config` is the divergence recorded here**, which is what makes it a
+  decision rather than a defect.
+* **Cutover must amend AC-8.** When the Rust implementation replaces the
+  TypeScript one, AC-8 as written becomes false about the shipping code, and a
+  spec that is false about the shipping code is worse than no spec. Amending
+  AC-8 — to require the reimplemented surface to match ix-cli-core's *observable
+  behaviour*, which is what the goldens already test — is a **named deliverable
+  of the cutover ticket**, not a follow-up.
+
+Amending the spec is out of scope for quoin#381 and is not done here: this file
+records the conflict and its resolution so the cutover ticket inherits a written
+decision instead of rediscovering an argument.

@@ -1,0 +1,33 @@
+[package]
+name = "quoin-modules"
+description = "Quoin's spec-module install registry, git-backed sources and default-set reconciliation (Rust port, quoin#381)."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+# Not declared at the root: pinned exactly here, for the same reason the root
+# pins exactly — the gate is a claim about these bytes, not about whatever
+# resolved this morning.
+#
+# Blocking client on purpose — see `src/git.rs`. rustls rather than the system
+# curl/openssl so a module install does not depend on ambient TLS libraries.
+gix = { version = "=0.87.1", features = [
+    "blocking-network-client",
+    "blocking-http-transport-reqwest-rust-tls",
+    "revision",
+] }
+serde_yaml_ng = "=0.10.0"
+
+[dev-dependencies]
+tempfile = "=3.27.0"
