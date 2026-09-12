@@ -68,7 +68,7 @@ function propertiesPayload(): Record<string, unknown> {
 }
 
 describe("the vendored schemas match their recorded provenance", () => {
-  // Trace: FR-029-AC-1
+  // Trace: FR-029-AC-1, FR-029-AC-14
   it("pins an exact source commit rather than a moving tag or branch", () => {
     expect(QUIRE_CONTRACT.sourceRevision).toMatch(/^[0-9a-f]{40}$/);
     expect(QUIRE_CONTRACT.cliSourceRevision).toMatch(/^[0-9a-f]{40}$/);

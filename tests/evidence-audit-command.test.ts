@@ -254,6 +254,7 @@ describe("mocked-confirmation production command path (agent-ix/quoin#204)", () 
   });
 
   it("inspect-mocks records its version and audit reports a located finding", async () => {
+    // Trace: FR-030-AC-16, FR-030-AC-17, FR-032-AC-16
     process.env.PATH = `${fakeQuireDir(
       JSON.stringify({
         unbacked_rows: [],

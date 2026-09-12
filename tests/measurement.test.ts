@@ -122,6 +122,7 @@ describe("generic MeasurementRecords", () => {
   }
 
   test("refuses an observation with no authored MeasurementPlan", () => {
+    // Trace: FR-044-AC-1
     expect(() => validateMeasurementCollection(collection(), [])).toThrow(
       /has no MeasurementPlan.*record refused/,
     );
@@ -165,6 +166,7 @@ describe("generic MeasurementRecords", () => {
   });
 
   test("writes one complete collection atomically and reads the same bytes", () => {
+    // Trace: FR-044-AC-2
     const root = repo();
     const path = writeMeasurementCollection(root, collection());
     expect(readMeasurementCollections(root)).toEqual([collection()]);
@@ -174,6 +176,7 @@ describe("generic MeasurementRecords", () => {
   });
 
   test("refuses unlike definitions/configs and names both causes", () => {
+    // Trace: FR-044-AC-3
     const before = collection();
     const after = collection({
       collectionId: "run-002",
@@ -199,6 +202,7 @@ describe("generic MeasurementRecords", () => {
   });
 
   test("reports population movement beside a delta and never assigns severity", () => {
+    // Trace: FR-044-AC-3
     const before = collection();
     const after = collection({
       collectionId: "run-002",
@@ -225,6 +229,7 @@ describe("generic MeasurementRecords", () => {
   });
 
   test("a missing metric is not_computed, not an unchanged zero", () => {
+    // Trace: FR-044-AC-3
     const before = collection();
     const after = collection({ collectionId: "run-002", observations: [] });
     const [result] = compareMeasurementCollections(before, after);
@@ -237,6 +242,7 @@ describe("generic MeasurementRecords", () => {
   });
 
   test("report is byte-identical and keeps a plan with no record visible", () => {
+    // Trace: FR-044-AC-4
     const root = repo();
     const first = renderMeasurementReport(buildMeasurementReport(root));
     expect(renderMeasurementReport(buildMeasurementReport(root))).toBe(first);

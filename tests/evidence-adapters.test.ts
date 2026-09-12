@@ -135,6 +135,7 @@ async function record(
 
 describe("the adapter registry", () => {
   it("requires an immutable tool version before evidence intake", () => {
+    // Trace: FR-030-AC-17
     expect(isVersionedToolIdentity("vitest 3.2.4")).toBe(true);
     expect(isVersionedToolIdentity(`scanner git:${"a".repeat(40)}`)).toBe(true);
     expect(isVersionedToolIdentity(`scanner sha256:${"b".repeat(64)}`)).toBe(

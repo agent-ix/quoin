@@ -189,7 +189,7 @@ describe("strict lineage and policy boundaries", () => {
 });
 
 describe("relationship independence", () => {
-  // Trace: FR-094-AC-3
+  // Trace: FR-094-AC-3, FR-094-CON-2
   it("requires two distinct evidence relationships that differ on every selected dimension", () => {
     const one = assessIndependence("AP-001", policy().requirements[0], [
       binding("SUITE-A", lineageA),

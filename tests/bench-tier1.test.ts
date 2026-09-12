@@ -369,7 +369,7 @@ describe("the measurement series", () => {
   };
 
   test("tool version and config digest come from the payload, not from an operator", () => {
-    // Trace: FR-043-AC-18
+    // Trace: FR-043-AC-18, FR-044-AC-5
     // The two fields that would have PREVENTED the defect this EPIC exists to
     // fix. The installed `quire` was CLI 0.29.0 pinning engine v0.42.0, sixteen
     // releases behind and unable to emit `binding_census` at all, and every
@@ -389,7 +389,7 @@ describe("the measurement series", () => {
   });
 
   test("the raw report is ATTACHED, never transcribed into the record's own fields", () => {
-    // Trace: FR-043-AC-18
+    // Trace: FR-043-AC-18, FR-044-AC-5
     // Three published SpecReviews cited hand-typed figures from a binary whose
     // self-reported version was wrong. The whole payload rides along so a later
     // reader re-derives rather than re-types (agent-ix/quoin#228).
@@ -400,6 +400,7 @@ describe("the measurement series", () => {
   });
 
   test("the superseded JSONL series remains readable as legacy evidence", () => {
+    // Trace: FR-044-AC-5
     // These observations predate MeasurementPlans. Preserve them, but do not
     // silently treat them as active plan-governed collections.
     const path = join(__dirname, "..", "bench", "measurements.jsonl");

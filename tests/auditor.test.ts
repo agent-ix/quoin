@@ -519,6 +519,7 @@ describe("every finding kind can be baselined (FR-032-AC-11)", () => {
 });
 
 describe("mutation score as the acceptance-criteria oracle", () => {
+  // Trace: FR-039-CON-2, FR-039-CON-3
   // `RunEntry.score` is generic — "a mutation score, a coverage percentage, a
   // measured latency" — so what makes a score a MUTATION score is the entry's
   // own `metric`, declared by the adapter at the point of recording (#138).
@@ -1082,6 +1083,7 @@ describe("mocked confirmation (#204)", () => {
   });
 
   it("an unrelated mock in the same suite is not joined", () => {
+    // Trace: FR-032-AC-16
     // A workspace suite can contain thousands of tests. Suite identity alone
     // is not evidence that this particular binding used the stand-in.
     const report = audit({
@@ -1102,6 +1104,7 @@ describe("mocked confirmation (#204)", () => {
   });
 
   it("source symbols join module-qualified result symbols", () => {
+    // Trace: FR-032-AC-16
     const report = audit({
       obligations: [obligation],
       bindings: [binding],
@@ -1120,7 +1123,7 @@ describe("mocked confirmation (#204)", () => {
   });
 
   it("no injection data means silence, not a clean bill", () => {
-    // Trace: FR-032-AC-15
+    // Trace: FR-032-AC-15, FR-032-AC-16
     // Absent means "nobody looked". Reporting healthy here would be the
     // silent-zero defect this whole programme is about.
     const report = audit({

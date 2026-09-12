@@ -310,6 +310,7 @@ fi
   });
 
   test("audit-sourced families execute the store-backed command path and preserve its locus", () => {
+    // Trace: FR-032-AC-16
     const root = mkdtempSync(join(tmpdir(), "quoin-tier1-audit-exec-"));
     roots.push(root);
     const quire = join(root, "quire");
