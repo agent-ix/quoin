@@ -3,10 +3,8 @@
 #
 # Modelled on quire-rs/deny.toml. Two deliberate differences: this workspace
 # has no git source at all (so `allow-git` stays empty and `unknown-git =
-# "deny"` has full teeth), and `multiple-versions` is "deny" because the
-# Stage-0 graph is small enough that a duplicate is a fact worth knowing
-# rather than noise to wade through. Relax it when a real transitive
-# duplicate lands, with the reason written here.
+# "deny"` has full teeth), and `multiple-versions` is "deny": a duplicate
+# version is resolved, not conceded.
 
 [licenses]
 version = 2
@@ -19,14 +17,11 @@ allow = [
     "Apache-2.0",
     "Unicode-3.0",
 ]
-# quoin's own crates are AGPL-3.0-or-later (the repository license). Allowed
-# here per-crate WITHOUT admitting AGPL into the third-party graph — the
+# quoin's own crates are AGPL-3.0-or-later (the repository license). Every one
+# of them is `publish = false`, so ignoring private crates covers them all
+# permanently WITHOUT admitting AGPL into the third-party graph — the
 # allow-list above stays permissive-only.
-exceptions = [
-    { allow = ["AGPL-3.0-or-later"], crate = "quoin-core" },
-    { allow = ["AGPL-3.0-or-later"], crate = "quoin-schemas" },
-    { allow = ["AGPL-3.0-or-later"], crate = "quoin-difftest" },
-]
+private = { ignore = true }
 confidence-threshold = 0.9
 
 [bans]

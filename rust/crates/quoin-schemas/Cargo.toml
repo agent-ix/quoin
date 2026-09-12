@@ -9,7 +9,7 @@ license.workspace = true
 repository.workspace = true
 authors.workspace = true
 description = "Placeholder for the schema-sourced type surface of quoin-core (FR-097)."
-publish = false
+publish.workspace = true
 
 [lints]
 workspace = true

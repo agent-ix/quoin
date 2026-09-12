@@ -9,7 +9,7 @@ license.workspace = true
 repository.workspace = true
 authors.workspace = true
 description = "Dev-only differential harness: the retained TypeScript and quoin-core, one request, one verdict."
-publish = false
+publish.workspace = true
 
 [[bin]]
 name = "quoin-difftest"

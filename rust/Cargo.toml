@@ -13,11 +13,7 @@
 
 [workspace]
 resolver = "3"
-members = [
-    "crates/quoin-core",
-    "crates/quoin-difftest",
-    "crates/quoin-schemas",
-]
+members = ["crates/*"]
 
 # The lint policy lives HERE rather than only in CI flags, so `cargo clippy`
 # on a developer machine enforces the same thing the gate does. Every crate
@@ -50,6 +46,9 @@ rust-version = "1.98.1"
 license = "AGPL-3.0-or-later"
 repository = "https://github.com/agent-ix/quoin"
 authors = ["Agent-IX"]
+# Every crate in this workspace is unpublished; `publish.workspace = true` in
+# each manifest inherits it rather than restating it.
+publish = false
 
 # Exact pins, matching quire-corpus. A caret range makes the gate a claim about
 # whatever resolved that morning; `=` makes it a claim about these bytes.
@@ -59,6 +58,7 @@ quoin-schemas = { path = "crates/quoin-schemas" }
 serde = { version = "=1.0.228", features = ["derive"] }
 serde_json = "=1.0.150"
 thiserror = "=2.0.18"
+jsonschema = { version = "=0.56.0", default-features = false }
 
 [profile.release]
 lto = "thin"

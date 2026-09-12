@@ -9,7 +9,7 @@ license.workspace = true
 repository.workspace = true
 authors.workspace = true
 description = "The quoin engine boundary: one subprocess, JSON in on stdin, JSON out on stdout."
-publish = false
+publish.workspace = true
 default-run = "quoin-core"
 
 [lib]
