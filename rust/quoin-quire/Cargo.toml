@@ -1,0 +1,47 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 Agent-IX
+[package]
+name = "quoin-quire"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.98.1"
+license = "AGPL-3.0-or-later"
+repository = "https://github.com/agent-ix/quoin"
+description = "quoin's quire edge as a linked crate: coverage, properties, validation, clause sets and assurance, without a subprocess."
+# EPIC quoin#373: no crates.io, no public npmjs. This crate is consumed inside
+# the quoin repository and published nowhere.
+publish = false
+
+[dependencies]
+# THE PIN. Exactly what `quire-cli` HEAD pins, and that is the whole argument:
+# quire-cli is the governed producer of the payloads quoin reads today, so
+# linking its engine byte-for-byte makes `quoin-quire` and the `quire` binary
+# one candidate revision (EPIC #373 FR-101), not two things that agree by
+# version number.
+#
+# `rev`, never a tag or branch: a moving ref makes the gate a claim about
+# whatever resolved that morning. `version = "="` alongside it because the
+# rev's manifest says 0.46.0 while `git describe` says v0.45.0-123 — the two
+# disagree, and a build that resolved a different 0.46.0 would be a silent
+# substitution. Both must match or the resolution fails.
+#
+# `build.rs` reads this line, so the pin is stated once and reported from the
+# same place it is declared.
+quire-rs = { version = "=0.46.0", git = "https://github.com/agent-ix/quire-rs", rev = "85dfe9d5a937c52af6456f2e6aa3a6bc4c82db9f" }
+serde = { version = "=1.0.228", features = ["derive"] }
+serde_json = "=1.0.150"
+thiserror = "=2.0.18"
+
+# An explicit empty workspace table, so this crate is its own workspace root.
+#
+# Required today: `rust/Cargo.toml` is owned by quoin#375 and does not list
+# `quoin-quire` among its members, so without this line the crate would stop
+# building the moment that root lands beside it — cargo refuses a package
+# inside a workspace directory that the workspace does not claim.
+#
+# **Hand-off to quoin#375:** when the workspace adopts this crate, add it to
+# `members` and delete these five lines and `Cargo.lock` in the same commit.
+# Leaving the table behind would silently keep the crate outside the shared
+# `[workspace.lints]`, which is exactly the enforcement gap the workspace
+# exists to close.
+[workspace]

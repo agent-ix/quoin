@@ -1,0 +1,12 @@
+# A module that declares archetypes and no `traceability:` model (quoin#379).
+#
+# Exists so the "no module in scope declares a traceability model" refusal
+# (agent-ix/quoin#106) is exercised deterministically, against a named module,
+# rather than against whatever happens to be installed on the machine running
+# the suite.
+name: quoin-quire-fixture-no-traceability
+version: 0.1.0
+description: Fixture module with no traceability model
+artifact_types:
+- name: FR
+  grammar_ref: iso-spec-core
