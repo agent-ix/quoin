@@ -39,3 +39,9 @@ schemars = { workspace = true, optional = true }
 # same shapes. There is no `default` here on purpose: a feature that is on by
 # default is a feature nobody ever proves works when it is off.
 schema = ["dep:schemars"]
+
+[dev-dependencies]
+# quoin does not grow its own syn-based source auditor: `source_audit` is the
+# shared home for "is this library half actually I/O-free" (quire-research
+# implementation-language-policy, "Shared tooling is consumed, not regrown").
+engineering-assurance = { workspace = true }

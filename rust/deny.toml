@@ -42,4 +42,7 @@ unknown-git = "deny"
 # quoin PUBLISHES; dependencies are consumed from crates.io exactly as
 # quire-corpus and quire-rs consume theirs. When quoin-core gains a git
 # dependency it is listed here, or `unknown-git = "deny"` refuses it.
-allow-git = []
+# engineering-assurance is `publish = false` and consumed by git rev, the
+# pattern quire-cli already proves against quire-rs. The rev is pinned in
+# rust/Cargo.toml; this entry is what `unknown-git = "deny"` checks it against.
+allow-git = ["https://github.com/agent-ix/engineering-assurance"]
