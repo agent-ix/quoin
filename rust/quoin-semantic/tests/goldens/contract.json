@@ -1,0 +1,57 @@
+{
+  "provenance": {
+    "producer": "scripts/capture-semantic-goldens.mjs",
+    "oracle": "agent-ix/quoin src/semantic + src/completeness (TypeScript)",
+    "quoinRevision": "4d27dcf1621d8c28da0961a5521a5be7b6d1cd28",
+    "ajvVersion": "8.20.0",
+    "note": "Captured once from the TypeScript implementation. The Rust crates read these files; they never invoke Node. Regenerate by re-running the producer, never by hand-editing."
+  },
+  "source": "src/semantic/contract.ts",
+  "contract": {
+    "contractVersion": "1.0.0",
+    "semanticCoreVersions": [
+      "0.1.0"
+    ],
+    "semanticKeys": [
+      "contract_version",
+      "semantic_core",
+      "package",
+      "exports",
+      "imports",
+      "targets",
+      "mappings",
+      "compatibility_posture",
+      "legacy_forms",
+      "sweep_report"
+    ],
+    "moduleManifestSchema": {
+      "repository": "agent-ix/filament-core-service",
+      "sourceRevision": "a77f31efc757f3578ad80d8c7e619897aa3b2513",
+      "sourcePath": "filament_core_service/schemas/module-manifest.schema.json",
+      "sha256": "sha256:69cf9738600e7d8daa45ed5cd7231b17ca8dc58d068bd36af9b0d2c9b69dcbbc"
+    },
+    "semanticCore": {
+      "repository": "agent-ix/filament-core-data",
+      "sourceRevision": "d48b8da7ae5e40b8b3d465d45b2bd3e24b994dbb",
+      "sourcePath": "packages/semantic-core/generated/json-schema",
+      "version": "0.1.0",
+      "bundleDigest": "sha256:dd33c886f70e908b14507c35e078d163b76308c3d170d2b54ddf933d1a4ebb52"
+    },
+    "packageManifestSchema": {
+      "repository": "agent-ix/filament-core-data",
+      "sourceRevision": "d48b8da7ae5e40b8b3d465d45b2bd3e24b994dbb",
+      "sourcePath": "schema/semantic/v1/package-manifest.schema.json",
+      "sha256": "sha256:d6e696577f58abd59c36588803c019ad3a43f9a7078c873ad41a0aec41031ffd"
+    },
+    "commonSchema": {
+      "repository": "agent-ix/filament-core-data",
+      "sourceRevision": "d48b8da7ae5e40b8b3d465d45b2bd3e24b994dbb",
+      "sourcePath": "schema/semantic/v1/common.schema.json",
+      "sha256": "sha256:1de370f344b099b511960c32ddc98d512218183c13b03350201627bdcba7710a"
+    }
+  },
+  "semanticCoreBundleDigest": "sha256:dd33c886f70e908b14507c35e078d163b76308c3d170d2b54ddf933d1a4ebb52",
+  "moduleManifestSchemaSha256": "sha256:69cf9738600e7d8daa45ed5cd7231b17ca8dc58d068bd36af9b0d2c9b69dcbbc",
+  "packageManifestSchemaSha256": "sha256:d6e696577f58abd59c36588803c019ad3a43f9a7078c873ad41a0aec41031ffd",
+  "commonSchemaSha256": "sha256:1de370f344b099b511960c32ddc98d512218183c13b03350201627bdcba7710a"
+}

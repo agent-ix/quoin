@@ -1,0 +1,128 @@
+{
+  "provenance": {
+    "producer": "scripts/capture-semantic-goldens.mjs",
+    "oracle": "agent-ix/quoin src/semantic + src/completeness (TypeScript)",
+    "quoinRevision": "4d27dcf1621d8c28da0961a5521a5be7b6d1cd28",
+    "ajvVersion": "8.20.0",
+    "note": "Captured once from the TypeScript implementation. The Rust crates read these files; they never invoke Node. Regenerate by re-running the producer, never by hand-editing."
+  },
+  "source": "src/semantic/manifest.ts duplicatePackageDiagnostic()",
+  "counts": {
+    "total": 3
+  },
+  "cases": [
+    {
+      "id": "no-duplicate",
+      "candidate": {
+        "name": "a",
+        "root": "/modules/a",
+        "block": {
+          "contract_version": "1.0.0",
+          "semantic_core": "0.1.0",
+          "package": "agent-ix/a",
+          "exports": [],
+          "imports": {},
+          "targets": [],
+          "mappings": [],
+          "compatibility_posture": "additive",
+          "legacy_forms": "warning"
+        }
+      },
+      "installed": [
+        {
+          "name": "b",
+          "root": "/modules/b",
+          "block": {
+            "contract_version": "1.0.0",
+            "semantic_core": "0.1.0",
+            "package": "agent-ix/b",
+            "exports": [],
+            "imports": {},
+            "targets": [],
+            "mappings": [],
+            "compatibility_posture": "additive",
+            "legacy_forms": "warning"
+          }
+        }
+      ],
+      "diagnostic": null
+    },
+    {
+      "id": "duplicate",
+      "candidate": {
+        "name": "a",
+        "root": "/modules/a2",
+        "block": {
+          "contract_version": "1.0.0",
+          "semantic_core": "0.1.0",
+          "package": "agent-ix/a",
+          "exports": [],
+          "imports": {},
+          "targets": [],
+          "mappings": [],
+          "compatibility_posture": "additive",
+          "legacy_forms": "warning"
+        }
+      },
+      "installed": [
+        {
+          "name": "a",
+          "root": "/modules/a",
+          "block": {
+            "contract_version": "1.0.0",
+            "semantic_core": "0.1.0",
+            "package": "agent-ix/a",
+            "exports": [],
+            "imports": {},
+            "targets": [],
+            "mappings": [],
+            "compatibility_posture": "additive",
+            "legacy_forms": "warning"
+          }
+        }
+      ],
+      "diagnostic": {
+        "code": "semantic.duplicate-package",
+        "severity": "error",
+        "path": "semantic.package",
+        "message": "semantic.package agent-ix/a is already declared by module a at /modules/a; a at /modules/a2 is rejected (sorted root order)"
+      }
+    },
+    {
+      "id": "same-root-is-not-duplicate",
+      "candidate": {
+        "name": "a",
+        "root": "/modules/a",
+        "block": {
+          "contract_version": "1.0.0",
+          "semantic_core": "0.1.0",
+          "package": "agent-ix/a",
+          "exports": [],
+          "imports": {},
+          "targets": [],
+          "mappings": [],
+          "compatibility_posture": "additive",
+          "legacy_forms": "warning"
+        }
+      },
+      "installed": [
+        {
+          "name": "a",
+          "root": "/modules/a",
+          "block": {
+            "contract_version": "1.0.0",
+            "semantic_core": "0.1.0",
+            "package": "agent-ix/a",
+            "exports": [],
+            "imports": {},
+            "targets": [],
+            "mappings": [],
+            "compatibility_posture": "additive",
+            "legacy_forms": "warning"
+          }
+        }
+      ],
+      "diagnostic": null
+    }
+  ]
+}

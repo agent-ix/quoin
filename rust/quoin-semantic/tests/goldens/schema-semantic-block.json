@@ -1,0 +1,1469 @@
+{
+  "provenance": {
+    "producer": "scripts/capture-semantic-goldens.mjs",
+    "oracle": "agent-ix/quoin src/semantic + src/completeness (TypeScript)",
+    "quoinRevision": "4d27dcf1621d8c28da0961a5521a5be7b6d1cd28",
+    "ajvVersion": "8.20.0",
+    "note": "Captured once from the TypeScript implementation. The Rust crates read these files; they never invoke Node. Regenerate by re-running the producer, never by hand-editing."
+  },
+  "ajv": {
+    "options": {
+      "verbose": true,
+      "allErrors": true,
+      "strict": true,
+      "useDefaults": false
+    },
+    "compiledFrom": "src/semantic/schemas/module-manifest.schema.json #/properties/semantic",
+    "callSite": "src/semantic/manifest.ts semanticBlockValidator()"
+  },
+  "schema": "semantic-block",
+  "counts": {
+    "total": 65,
+    "valid": 24,
+    "invalid": 41
+  },
+  "documents": [
+    {
+      "id": "minimal",
+      "document": {
+        "contract_version": "1.0.0",
+        "semantic_core": "0.1.0",
+        "package": "agent-ix/spec-objects"
+      },
+      "valid": true,
+      "errors": []
+    },
+    {
+      "id": "all-keys",
+      "document": {
+        "contract_version": "1.0.0",
+        "semantic_core": "0.1.0",
+        "package": "agent-ix/spec-objects",
+        "exports": [
+          "entity",
+          "enumeration"
+        ],
+        "imports": {
+          "agent-ix/other": "1.2.3"
+        },
+        "targets": [
+          "json-schema",
+          "markdown"
+        ],
+        "mappings": [
+          "config-version"
+        ],
+        "compatibility_posture": "strict",
+        "legacy_forms": "error",
+        "sweep_report": "semantic/sweep.json"
+      },
+      "valid": true,
+      "errors": []
+    },
+    {
+      "id": "empty-collections",
+      "document": {
+        "contract_version": "1.0.0",
+        "semantic_core": "0.1.0",
+        "package": "agent-ix/spec-objects",
+        "exports": [],
+        "imports": {},
+        "targets": [],
+        "mappings": []
+      },
+      "valid": true,
+      "errors": []
+    },
+    {
+      "id": "posture-strict",
+      "document": {
+        "contract_version": "1.0.0",
+        "semantic_core": "0.1.0",
+        "package": "agent-ix/spec-objects",
+        "compatibility_posture": "strict"
+      },
+      "valid": true,
+      "errors": []
+    },
+    {
+      "id": "posture-additive",
+      "document": {
+        "contract_version": "1.0.0",
+        "semantic_core": "0.1.0",
+        "package": "agent-ix/spec-objects",
+        "compatibility_posture": "additive"
+      },
+      "valid": true,
+      "errors": []
+    },
+    {
+      "id": "posture-declared-lossy",
+      "document": {
+        "contract_version": "1.0.0",
+        "semantic_core": "0.1.0",
+        "package": "agent-ix/spec-objects",
+        "compatibility_posture": "declared-lossy"
+      },
+      "valid": true,
+      "errors": []
+    },
+    {
+      "id": "legacy-forms-warning",
+      "document": {
+        "contract_version": "1.0.0",
+        "semantic_core": "0.1.0",
+        "package": "agent-ix/spec-objects",
+        "legacy_forms": "warning"
+      },
+      "valid": true,
+      "errors": []
+    },
+    {
+      "id": "legacy-forms-error",
+      "document": {
+        "contract_version": "1.0.0",
+        "semantic_core": "0.1.0",
+        "package": "agent-ix/spec-objects",
+        "legacy_forms": "error"
+      },
+      "valid": true,
+      "errors": []
+    },
+    {
+      "id": "target-json-schema",
+      "document": {
+        "contract_version": "1.0.0",
+        "semantic_core": "0.1.0",
+        "package": "agent-ix/spec-objects",
+        "targets": [
+          "json-schema"
+        ]
+      },
+      "valid": true,
+      "errors": []
+    },
+    {
+      "id": "target-rust",
+      "document": {
+        "contract_version": "1.0.0",
+        "semantic_core": "0.1.0",
+        "package": "agent-ix/spec-objects",
+        "targets": [
+          "rust"
+        ]
+      },
+      "valid": true,
+      "errors": []
+    },
+    {
+      "id": "target-typescript",
+      "document": {
+        "contract_version": "1.0.0",
+        "semantic_core": "0.1.0",
+        "package": "agent-ix/spec-objects",
+        "targets": [
+          "typescript"
+        ]
+      },
+      "valid": true,
+      "errors": []
+    },
+    {
+      "id": "target-python-pydantic-v2",
+      "document": {
+        "contract_version": "1.0.0",
+        "semantic_core": "0.1.0",
+        "package": "agent-ix/spec-objects",
+        "targets": [
+          "python-pydantic-v2"
+        ]
+      },
+      "valid": true,
+      "errors": []
+    },
+    {
+      "id": "target-python-dataclass",
+      "document": {
+        "contract_version": "1.0.0",
+        "semantic_core": "0.1.0",
+        "package": "agent-ix/spec-objects",
+        "targets": [
+          "python-dataclass"
+        ]
+      },
+      "valid": true,
+      "errors": []
+    },
+    {
+      "id": "target-markdown",
+      "document": {
+        "contract_version": "1.0.0",
+        "semantic_core": "0.1.0",
+        "package": "agent-ix/spec-objects",
+        "targets": [
+          "markdown"
+        ]
+      },
+      "valid": true,
+      "errors": []
+    },
+    {
+      "id": "target-json",
+      "document": {
+        "contract_version": "1.0.0",
+        "semantic_core": "0.1.0",
+        "package": "agent-ix/spec-objects",
+        "targets": [
+          "json"
+        ]
+      },
+      "valid": true,
+      "errors": []
+    },
+    {
+      "id": "target-postgresql",
+      "document": {
+        "contract_version": "1.0.0",
+        "semantic_core": "0.1.0",
+        "package": "agent-ix/spec-objects",
+        "targets": [
+          "postgresql"
+        ]
+      },
+      "valid": true,
+      "errors": []
+    },
+    {
+      "id": "target-protobuf",
+      "document": {
+        "contract_version": "1.0.0",
+        "semantic_core": "0.1.0",
+        "package": "agent-ix/spec-objects",
+        "targets": [
+          "protobuf"
+        ]
+      },
+      "valid": true,
+      "errors": []
+    },
+    {
+      "id": "target-avro",
+      "document": {
+        "contract_version": "1.0.0",
+        "semantic_core": "0.1.0",
+        "package": "agent-ix/spec-objects",
+        "targets": [
+          "avro"
+        ]
+      },
+      "valid": true,
+      "errors": []
+    },
+    {
+      "id": "target-arrow",
+      "document": {
+        "contract_version": "1.0.0",
+        "semantic_core": "0.1.0",
+        "package": "agent-ix/spec-objects",
+        "targets": [
+          "arrow"
+        ]
+      },
+      "valid": true,
+      "errors": []
+    },
+    {
+      "id": "target-parquet",
+      "document": {
+        "contract_version": "1.0.0",
+        "semantic_core": "0.1.0",
+        "package": "agent-ix/spec-objects",
+        "targets": [
+          "parquet"
+        ]
+      },
+      "valid": true,
+      "errors": []
+    },
+    {
+      "id": "target-csv",
+      "document": {
+        "contract_version": "1.0.0",
+        "semantic_core": "0.1.0",
+        "package": "agent-ix/spec-objects",
+        "targets": [
+          "csv"
+        ]
+      },
+      "valid": true,
+      "errors": []
+    },
+    {
+      "id": "target-tsv",
+      "document": {
+        "contract_version": "1.0.0",
+        "semantic_core": "0.1.0",
+        "package": "agent-ix/spec-objects",
+        "targets": [
+          "tsv"
+        ]
+      },
+      "valid": true,
+      "errors": []
+    },
+    {
+      "id": "targets-all",
+      "document": {
+        "contract_version": "1.0.0",
+        "semantic_core": "0.1.0",
+        "package": "agent-ix/spec-objects",
+        "targets": [
+          "json-schema",
+          "rust",
+          "typescript",
+          "python-pydantic-v2",
+          "python-dataclass",
+          "markdown",
+          "json",
+          "postgresql",
+          "protobuf",
+          "avro",
+          "arrow",
+          "parquet",
+          "csv",
+          "tsv"
+        ]
+      },
+      "valid": true,
+      "errors": []
+    },
+    {
+      "id": "prerelease-versions",
+      "document": {
+        "contract_version": "1.0.0-rc.1",
+        "semantic_core": "0.1.0",
+        "package": "agent-ix/spec-objects"
+      },
+      "valid": false,
+      "errors": [
+        {
+          "instancePath": "/contract_version",
+          "keyword": "pattern",
+          "schemaPath": "#/properties/contract_version/pattern",
+          "params": {
+            "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+          },
+          "message": "must match pattern \"^[0-9]+\\.[0-9]+\\.[0-9]+$\""
+        }
+      ]
+    },
+    {
+      "id": "package-dotted",
+      "document": {
+        "contract_version": "1.0.0",
+        "semantic_core": "0.1.0",
+        "package": "agent-ix/spec.objects-v2"
+      },
+      "valid": true,
+      "errors": []
+    },
+    {
+      "id": "missing-contract_version",
+      "document": {
+        "semantic_core": "0.1.0",
+        "package": "agent-ix/spec-objects"
+      },
+      "valid": false,
+      "errors": [
+        {
+          "instancePath": "",
+          "keyword": "required",
+          "schemaPath": "#/required",
+          "params": {
+            "missingProperty": "contract_version"
+          },
+          "message": "must have required property 'contract_version'"
+        }
+      ]
+    },
+    {
+      "id": "missing-semantic_core",
+      "document": {
+        "contract_version": "1.0.0",
+        "package": "agent-ix/spec-objects"
+      },
+      "valid": false,
+      "errors": [
+        {
+          "instancePath": "",
+          "keyword": "required",
+          "schemaPath": "#/required",
+          "params": {
+            "missingProperty": "semantic_core"
+          },
+          "message": "must have required property 'semantic_core'"
+        }
+      ]
+    },
+    {
+      "id": "missing-package",
+      "document": {
+        "contract_version": "1.0.0",
+        "semantic_core": "0.1.0"
+      },
+      "valid": false,
+      "errors": [
+        {
+          "instancePath": "",
+          "keyword": "required",
+          "schemaPath": "#/required",
+          "params": {
+            "missingProperty": "package"
+          },
+          "message": "must have required property 'package'"
+        }
+      ]
+    },
+    {
+      "id": "missing-all-required",
+      "document": {},
+      "valid": false,
+      "errors": [
+        {
+          "instancePath": "",
+          "keyword": "required",
+          "schemaPath": "#/required",
+          "params": {
+            "missingProperty": "contract_version"
+          },
+          "message": "must have required property 'contract_version'"
+        },
+        {
+          "instancePath": "",
+          "keyword": "required",
+          "schemaPath": "#/required",
+          "params": {
+            "missingProperty": "semantic_core"
+          },
+          "message": "must have required property 'semantic_core'"
+        },
+        {
+          "instancePath": "",
+          "keyword": "required",
+          "schemaPath": "#/required",
+          "params": {
+            "missingProperty": "package"
+          },
+          "message": "must have required property 'package'"
+        }
+      ]
+    },
+    {
+      "id": "unknown-key",
+      "document": {
+        "contract_version": "1.0.0",
+        "semantic_core": "0.1.0",
+        "package": "agent-ix/spec-objects",
+        "extra": 1
+      },
+      "valid": false,
+      "errors": [
+        {
+          "instancePath": "",
+          "keyword": "additionalProperties",
+          "schemaPath": "#/additionalProperties",
+          "params": {
+            "additionalProperty": "extra"
+          },
+          "message": "must NOT have additional properties"
+        }
+      ]
+    },
+    {
+      "id": "two-unknown-keys",
+      "document": {
+        "contract_version": "1.0.0",
+        "semantic_core": "0.1.0",
+        "package": "agent-ix/spec-objects",
+        "a": 1,
+        "b": 2
+      },
+      "valid": false,
+      "errors": [
+        {
+          "instancePath": "",
+          "keyword": "additionalProperties",
+          "schemaPath": "#/additionalProperties",
+          "params": {
+            "additionalProperty": "a"
+          },
+          "message": "must NOT have additional properties"
+        },
+        {
+          "instancePath": "",
+          "keyword": "additionalProperties",
+          "schemaPath": "#/additionalProperties",
+          "params": {
+            "additionalProperty": "b"
+          },
+          "message": "must NOT have additional properties"
+        }
+      ]
+    },
+    {
+      "id": "unknown-key-and-missing",
+      "document": {
+        "contract_version": "1.0.0",
+        "semantic_core": "0.1.0",
+        "nope": true
+      },
+      "valid": false,
+      "errors": [
+        {
+          "instancePath": "",
+          "keyword": "required",
+          "schemaPath": "#/required",
+          "params": {
+            "missingProperty": "package"
+          },
+          "message": "must have required property 'package'"
+        },
+        {
+          "instancePath": "",
+          "keyword": "additionalProperties",
+          "schemaPath": "#/additionalProperties",
+          "params": {
+            "additionalProperty": "nope"
+          },
+          "message": "must NOT have additional properties"
+        }
+      ]
+    },
+    {
+      "id": "contract-version-not-semver",
+      "document": {
+        "contract_version": "1.0",
+        "semantic_core": "0.1.0",
+        "package": "agent-ix/spec-objects"
+      },
+      "valid": false,
+      "errors": [
+        {
+          "instancePath": "/contract_version",
+          "keyword": "pattern",
+          "schemaPath": "#/properties/contract_version/pattern",
+          "params": {
+            "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+          },
+          "message": "must match pattern \"^[0-9]+\\.[0-9]+\\.[0-9]+$\""
+        }
+      ]
+    },
+    {
+      "id": "contract-version-not-string",
+      "document": {
+        "contract_version": 1,
+        "semantic_core": "0.1.0",
+        "package": "agent-ix/spec-objects"
+      },
+      "valid": false,
+      "errors": [
+        {
+          "instancePath": "/contract_version",
+          "keyword": "type",
+          "schemaPath": "#/properties/contract_version/type",
+          "params": {
+            "type": "string"
+          },
+          "message": "must be string"
+        }
+      ]
+    },
+    {
+      "id": "semantic-core-not-semver",
+      "document": {
+        "contract_version": "1.0.0",
+        "semantic_core": "v0.1.0",
+        "package": "agent-ix/spec-objects"
+      },
+      "valid": false,
+      "errors": [
+        {
+          "instancePath": "/semantic_core",
+          "keyword": "pattern",
+          "schemaPath": "#/properties/semantic_core/pattern",
+          "params": {
+            "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+          },
+          "message": "must match pattern \"^[0-9]+\\.[0-9]+\\.[0-9]+$\""
+        }
+      ]
+    },
+    {
+      "id": "package-uppercase",
+      "document": {
+        "contract_version": "1.0.0",
+        "semantic_core": "0.1.0",
+        "package": "Agent-IX/spec-objects"
+      },
+      "valid": false,
+      "errors": [
+        {
+          "instancePath": "/package",
+          "keyword": "pattern",
+          "schemaPath": "#/properties/package/pattern",
+          "params": {
+            "pattern": "^[a-z0-9][a-z0-9._-]*/[a-z0-9][a-z0-9._-]*$"
+          },
+          "message": "must match pattern \"^[a-z0-9][a-z0-9._-]*/[a-z0-9][a-z0-9._-]*$\""
+        }
+      ]
+    },
+    {
+      "id": "package-no-slash",
+      "document": {
+        "contract_version": "1.0.0",
+        "semantic_core": "0.1.0",
+        "package": "agent-ix"
+      },
+      "valid": false,
+      "errors": [
+        {
+          "instancePath": "/package",
+          "keyword": "pattern",
+          "schemaPath": "#/properties/package/pattern",
+          "params": {
+            "pattern": "^[a-z0-9][a-z0-9._-]*/[a-z0-9][a-z0-9._-]*$"
+          },
+          "message": "must match pattern \"^[a-z0-9][a-z0-9._-]*/[a-z0-9][a-z0-9._-]*$\""
+        }
+      ]
+    },
+    {
+      "id": "package-url",
+      "document": {
+        "contract_version": "1.0.0",
+        "semantic_core": "0.1.0",
+        "package": "https://agent-ix.dev/spec-objects"
+      },
+      "valid": false,
+      "errors": [
+        {
+          "instancePath": "/package",
+          "keyword": "pattern",
+          "schemaPath": "#/properties/package/pattern",
+          "params": {
+            "pattern": "^[a-z0-9][a-z0-9._-]*/[a-z0-9][a-z0-9._-]*$"
+          },
+          "message": "must match pattern \"^[a-z0-9][a-z0-9._-]*/[a-z0-9][a-z0-9._-]*$\""
+        }
+      ]
+    },
+    {
+      "id": "package-leading-dash",
+      "document": {
+        "contract_version": "1.0.0",
+        "semantic_core": "0.1.0",
+        "package": "-agent-ix/spec-objects"
+      },
+      "valid": false,
+      "errors": [
+        {
+          "instancePath": "/package",
+          "keyword": "pattern",
+          "schemaPath": "#/properties/package/pattern",
+          "params": {
+            "pattern": "^[a-z0-9][a-z0-9._-]*/[a-z0-9][a-z0-9._-]*$"
+          },
+          "message": "must match pattern \"^[a-z0-9][a-z0-9._-]*/[a-z0-9][a-z0-9._-]*$\""
+        }
+      ]
+    },
+    {
+      "id": "package-three-segments",
+      "document": {
+        "contract_version": "1.0.0",
+        "semantic_core": "0.1.0",
+        "package": "agent-ix/spec/objects"
+      },
+      "valid": false,
+      "errors": [
+        {
+          "instancePath": "/package",
+          "keyword": "pattern",
+          "schemaPath": "#/properties/package/pattern",
+          "params": {
+            "pattern": "^[a-z0-9][a-z0-9._-]*/[a-z0-9][a-z0-9._-]*$"
+          },
+          "message": "must match pattern \"^[a-z0-9][a-z0-9._-]*/[a-z0-9][a-z0-9._-]*$\""
+        }
+      ]
+    },
+    {
+      "id": "exports-not-array",
+      "document": {
+        "contract_version": "1.0.0",
+        "semantic_core": "0.1.0",
+        "package": "agent-ix/spec-objects",
+        "exports": "entity"
+      },
+      "valid": false,
+      "errors": [
+        {
+          "instancePath": "/exports",
+          "keyword": "type",
+          "schemaPath": "#/properties/exports/type",
+          "params": {
+            "type": "array"
+          },
+          "message": "must be array"
+        }
+      ]
+    },
+    {
+      "id": "exports-non-string",
+      "document": {
+        "contract_version": "1.0.0",
+        "semantic_core": "0.1.0",
+        "package": "agent-ix/spec-objects",
+        "exports": [
+          "entity",
+          7
+        ]
+      },
+      "valid": false,
+      "errors": [
+        {
+          "instancePath": "/exports/1",
+          "keyword": "type",
+          "schemaPath": "#/properties/exports/items/type",
+          "params": {
+            "type": "string"
+          },
+          "message": "must be string"
+        }
+      ]
+    },
+    {
+      "id": "exports-empty-string",
+      "document": {
+        "contract_version": "1.0.0",
+        "semantic_core": "0.1.0",
+        "package": "agent-ix/spec-objects",
+        "exports": [
+          ""
+        ]
+      },
+      "valid": false,
+      "errors": [
+        {
+          "instancePath": "/exports/0",
+          "keyword": "minLength",
+          "schemaPath": "#/properties/exports/items/minLength",
+          "params": {
+            "limit": 1
+          },
+          "message": "must NOT have fewer than 1 characters"
+        }
+      ]
+    },
+    {
+      "id": "exports-duplicate",
+      "document": {
+        "contract_version": "1.0.0",
+        "semantic_core": "0.1.0",
+        "package": "agent-ix/spec-objects",
+        "exports": [
+          "entity",
+          "entity"
+        ]
+      },
+      "valid": false,
+      "errors": [
+        {
+          "instancePath": "/exports",
+          "keyword": "uniqueItems",
+          "schemaPath": "#/properties/exports/uniqueItems",
+          "params": {
+            "i": 0,
+            "j": 1
+          },
+          "message": "must NOT have duplicate items (items ## 1 and 0 are identical)"
+        }
+      ]
+    },
+    {
+      "id": "exports-two-faults",
+      "document": {
+        "contract_version": "1.0.0",
+        "semantic_core": "0.1.0",
+        "package": "agent-ix/spec-objects",
+        "exports": [
+          "",
+          "",
+          3
+        ]
+      },
+      "valid": false,
+      "errors": [
+        {
+          "instancePath": "/exports/0",
+          "keyword": "minLength",
+          "schemaPath": "#/properties/exports/items/minLength",
+          "params": {
+            "limit": 1
+          },
+          "message": "must NOT have fewer than 1 characters"
+        },
+        {
+          "instancePath": "/exports/1",
+          "keyword": "minLength",
+          "schemaPath": "#/properties/exports/items/minLength",
+          "params": {
+            "limit": 1
+          },
+          "message": "must NOT have fewer than 1 characters"
+        },
+        {
+          "instancePath": "/exports/2",
+          "keyword": "type",
+          "schemaPath": "#/properties/exports/items/type",
+          "params": {
+            "type": "string"
+          },
+          "message": "must be string"
+        },
+        {
+          "instancePath": "/exports",
+          "keyword": "uniqueItems",
+          "schemaPath": "#/properties/exports/uniqueItems",
+          "params": {
+            "i": 0,
+            "j": 1
+          },
+          "message": "must NOT have duplicate items (items ## 1 and 0 are identical)"
+        }
+      ]
+    },
+    {
+      "id": "imports-not-object",
+      "document": {
+        "contract_version": "1.0.0",
+        "semantic_core": "0.1.0",
+        "package": "agent-ix/spec-objects",
+        "imports": [
+          "agent-ix/other"
+        ]
+      },
+      "valid": false,
+      "errors": [
+        {
+          "instancePath": "/imports",
+          "keyword": "type",
+          "schemaPath": "#/properties/imports/type",
+          "params": {
+            "type": "object"
+          },
+          "message": "must be object"
+        }
+      ]
+    },
+    {
+      "id": "imports-bad-version",
+      "document": {
+        "contract_version": "1.0.0",
+        "semantic_core": "0.1.0",
+        "package": "agent-ix/spec-objects",
+        "imports": {
+          "agent-ix/other": "^1.0.0"
+        }
+      },
+      "valid": false,
+      "errors": [
+        {
+          "instancePath": "/imports/agent-ix~1other",
+          "keyword": "pattern",
+          "schemaPath": "#/properties/imports/additionalProperties/pattern",
+          "params": {
+            "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+          },
+          "message": "must match pattern \"^[0-9]+\\.[0-9]+\\.[0-9]+$\""
+        }
+      ]
+    },
+    {
+      "id": "imports-two-bad-versions",
+      "document": {
+        "contract_version": "1.0.0",
+        "semantic_core": "0.1.0",
+        "package": "agent-ix/spec-objects",
+        "imports": {
+          "agent-ix/a": "1",
+          "agent-ix/b": "latest"
+        }
+      },
+      "valid": false,
+      "errors": [
+        {
+          "instancePath": "/imports/agent-ix~1a",
+          "keyword": "pattern",
+          "schemaPath": "#/properties/imports/additionalProperties/pattern",
+          "params": {
+            "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+          },
+          "message": "must match pattern \"^[0-9]+\\.[0-9]+\\.[0-9]+$\""
+        },
+        {
+          "instancePath": "/imports/agent-ix~1b",
+          "keyword": "pattern",
+          "schemaPath": "#/properties/imports/additionalProperties/pattern",
+          "params": {
+            "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+          },
+          "message": "must match pattern \"^[0-9]+\\.[0-9]+\\.[0-9]+$\""
+        }
+      ]
+    },
+    {
+      "id": "imports-value-not-string",
+      "document": {
+        "contract_version": "1.0.0",
+        "semantic_core": "0.1.0",
+        "package": "agent-ix/spec-objects",
+        "imports": {
+          "agent-ix/other": 1
+        }
+      },
+      "valid": false,
+      "errors": [
+        {
+          "instancePath": "/imports/agent-ix~1other",
+          "keyword": "type",
+          "schemaPath": "#/properties/imports/additionalProperties/type",
+          "params": {
+            "type": "string"
+          },
+          "message": "must be string"
+        }
+      ]
+    },
+    {
+      "id": "targets-unknown",
+      "document": {
+        "contract_version": "1.0.0",
+        "semantic_core": "0.1.0",
+        "package": "agent-ix/spec-objects",
+        "targets": [
+          "cobol"
+        ]
+      },
+      "valid": false,
+      "errors": [
+        {
+          "instancePath": "/targets/0",
+          "keyword": "enum",
+          "schemaPath": "#/properties/targets/items/enum",
+          "params": {
+            "allowedValues": [
+              "json-schema",
+              "rust",
+              "typescript",
+              "python-pydantic-v2",
+              "python-dataclass",
+              "markdown",
+              "json",
+              "postgresql",
+              "protobuf",
+              "avro",
+              "arrow",
+              "parquet",
+              "csv",
+              "tsv"
+            ]
+          },
+          "message": "must be equal to one of the allowed values"
+        }
+      ]
+    },
+    {
+      "id": "targets-duplicate",
+      "document": {
+        "contract_version": "1.0.0",
+        "semantic_core": "0.1.0",
+        "package": "agent-ix/spec-objects",
+        "targets": [
+          "json-schema",
+          "json-schema"
+        ]
+      },
+      "valid": false,
+      "errors": [
+        {
+          "instancePath": "/targets",
+          "keyword": "uniqueItems",
+          "schemaPath": "#/properties/targets/uniqueItems",
+          "params": {
+            "i": 1,
+            "j": 0
+          },
+          "message": "must NOT have duplicate items (items ## 0 and 1 are identical)"
+        }
+      ]
+    },
+    {
+      "id": "targets-not-array",
+      "document": {
+        "contract_version": "1.0.0",
+        "semantic_core": "0.1.0",
+        "package": "agent-ix/spec-objects",
+        "targets": "json-schema"
+      },
+      "valid": false,
+      "errors": [
+        {
+          "instancePath": "/targets",
+          "keyword": "type",
+          "schemaPath": "#/properties/targets/type",
+          "params": {
+            "type": "array"
+          },
+          "message": "must be array"
+        }
+      ]
+    },
+    {
+      "id": "targets-two-unknown",
+      "document": {
+        "contract_version": "1.0.0",
+        "semantic_core": "0.1.0",
+        "package": "agent-ix/spec-objects",
+        "targets": [
+          "cobol",
+          "fortran"
+        ]
+      },
+      "valid": false,
+      "errors": [
+        {
+          "instancePath": "/targets/0",
+          "keyword": "enum",
+          "schemaPath": "#/properties/targets/items/enum",
+          "params": {
+            "allowedValues": [
+              "json-schema",
+              "rust",
+              "typescript",
+              "python-pydantic-v2",
+              "python-dataclass",
+              "markdown",
+              "json",
+              "postgresql",
+              "protobuf",
+              "avro",
+              "arrow",
+              "parquet",
+              "csv",
+              "tsv"
+            ]
+          },
+          "message": "must be equal to one of the allowed values"
+        },
+        {
+          "instancePath": "/targets/1",
+          "keyword": "enum",
+          "schemaPath": "#/properties/targets/items/enum",
+          "params": {
+            "allowedValues": [
+              "json-schema",
+              "rust",
+              "typescript",
+              "python-pydantic-v2",
+              "python-dataclass",
+              "markdown",
+              "json",
+              "postgresql",
+              "protobuf",
+              "avro",
+              "arrow",
+              "parquet",
+              "csv",
+              "tsv"
+            ]
+          },
+          "message": "must be equal to one of the allowed values"
+        }
+      ]
+    },
+    {
+      "id": "mappings-empty-string",
+      "document": {
+        "contract_version": "1.0.0",
+        "semantic_core": "0.1.0",
+        "package": "agent-ix/spec-objects",
+        "mappings": [
+          ""
+        ]
+      },
+      "valid": false,
+      "errors": [
+        {
+          "instancePath": "/mappings/0",
+          "keyword": "minLength",
+          "schemaPath": "#/properties/mappings/items/minLength",
+          "params": {
+            "limit": 1
+          },
+          "message": "must NOT have fewer than 1 characters"
+        }
+      ]
+    },
+    {
+      "id": "mappings-duplicate",
+      "document": {
+        "contract_version": "1.0.0",
+        "semantic_core": "0.1.0",
+        "package": "agent-ix/spec-objects",
+        "mappings": [
+          "m",
+          "m"
+        ]
+      },
+      "valid": false,
+      "errors": [
+        {
+          "instancePath": "/mappings",
+          "keyword": "uniqueItems",
+          "schemaPath": "#/properties/mappings/uniqueItems",
+          "params": {
+            "i": 0,
+            "j": 1
+          },
+          "message": "must NOT have duplicate items (items ## 1 and 0 are identical)"
+        }
+      ]
+    },
+    {
+      "id": "posture-unknown",
+      "document": {
+        "contract_version": "1.0.0",
+        "semantic_core": "0.1.0",
+        "package": "agent-ix/spec-objects",
+        "compatibility_posture": "lossy"
+      },
+      "valid": false,
+      "errors": [
+        {
+          "instancePath": "/compatibility_posture",
+          "keyword": "enum",
+          "schemaPath": "#/properties/compatibility_posture/enum",
+          "params": {
+            "allowedValues": [
+              "strict",
+              "additive",
+              "declared-lossy"
+            ]
+          },
+          "message": "must be equal to one of the allowed values"
+        }
+      ]
+    },
+    {
+      "id": "posture-null",
+      "document": {
+        "contract_version": "1.0.0",
+        "semantic_core": "0.1.0",
+        "package": "agent-ix/spec-objects",
+        "compatibility_posture": null
+      },
+      "valid": false,
+      "errors": [
+        {
+          "instancePath": "/compatibility_posture",
+          "keyword": "enum",
+          "schemaPath": "#/properties/compatibility_posture/enum",
+          "params": {
+            "allowedValues": [
+              "strict",
+              "additive",
+              "declared-lossy"
+            ]
+          },
+          "message": "must be equal to one of the allowed values"
+        }
+      ]
+    },
+    {
+      "id": "legacy-forms-unknown",
+      "document": {
+        "contract_version": "1.0.0",
+        "semantic_core": "0.1.0",
+        "package": "agent-ix/spec-objects",
+        "legacy_forms": "fatal"
+      },
+      "valid": false,
+      "errors": [
+        {
+          "instancePath": "/legacy_forms",
+          "keyword": "enum",
+          "schemaPath": "#/properties/legacy_forms/enum",
+          "params": {
+            "allowedValues": [
+              "warning",
+              "error"
+            ]
+          },
+          "message": "must be equal to one of the allowed values"
+        }
+      ]
+    },
+    {
+      "id": "sweep-report-empty",
+      "document": {
+        "contract_version": "1.0.0",
+        "semantic_core": "0.1.0",
+        "package": "agent-ix/spec-objects",
+        "sweep_report": ""
+      },
+      "valid": false,
+      "errors": [
+        {
+          "instancePath": "/sweep_report",
+          "keyword": "minLength",
+          "schemaPath": "#/properties/sweep_report/minLength",
+          "params": {
+            "limit": 1
+          },
+          "message": "must NOT have fewer than 1 characters"
+        }
+      ]
+    },
+    {
+      "id": "sweep-report-not-string",
+      "document": {
+        "contract_version": "1.0.0",
+        "semantic_core": "0.1.0",
+        "package": "agent-ix/spec-objects",
+        "sweep_report": 42
+      },
+      "valid": false,
+      "errors": [
+        {
+          "instancePath": "/sweep_report",
+          "keyword": "type",
+          "schemaPath": "#/properties/sweep_report/type",
+          "params": {
+            "type": "string"
+          },
+          "message": "must be string"
+        }
+      ]
+    },
+    {
+      "id": "many-faults",
+      "document": {
+        "contract_version": "1.0",
+        "semantic_core": "0.1",
+        "package": "BAD",
+        "exports": [
+          "",
+          ""
+        ],
+        "targets": [
+          "cobol"
+        ],
+        "compatibility_posture": "lossy",
+        "legacy_forms": "fatal",
+        "extra": true
+      },
+      "valid": false,
+      "errors": [
+        {
+          "instancePath": "",
+          "keyword": "additionalProperties",
+          "schemaPath": "#/additionalProperties",
+          "params": {
+            "additionalProperty": "extra"
+          },
+          "message": "must NOT have additional properties"
+        },
+        {
+          "instancePath": "/contract_version",
+          "keyword": "pattern",
+          "schemaPath": "#/properties/contract_version/pattern",
+          "params": {
+            "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+          },
+          "message": "must match pattern \"^[0-9]+\\.[0-9]+\\.[0-9]+$\""
+        },
+        {
+          "instancePath": "/semantic_core",
+          "keyword": "pattern",
+          "schemaPath": "#/properties/semantic_core/pattern",
+          "params": {
+            "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+          },
+          "message": "must match pattern \"^[0-9]+\\.[0-9]+\\.[0-9]+$\""
+        },
+        {
+          "instancePath": "/package",
+          "keyword": "pattern",
+          "schemaPath": "#/properties/package/pattern",
+          "params": {
+            "pattern": "^[a-z0-9][a-z0-9._-]*/[a-z0-9][a-z0-9._-]*$"
+          },
+          "message": "must match pattern \"^[a-z0-9][a-z0-9._-]*/[a-z0-9][a-z0-9._-]*$\""
+        },
+        {
+          "instancePath": "/exports/0",
+          "keyword": "minLength",
+          "schemaPath": "#/properties/exports/items/minLength",
+          "params": {
+            "limit": 1
+          },
+          "message": "must NOT have fewer than 1 characters"
+        },
+        {
+          "instancePath": "/exports/1",
+          "keyword": "minLength",
+          "schemaPath": "#/properties/exports/items/minLength",
+          "params": {
+            "limit": 1
+          },
+          "message": "must NOT have fewer than 1 characters"
+        },
+        {
+          "instancePath": "/exports",
+          "keyword": "uniqueItems",
+          "schemaPath": "#/properties/exports/uniqueItems",
+          "params": {
+            "i": 0,
+            "j": 1
+          },
+          "message": "must NOT have duplicate items (items ## 1 and 0 are identical)"
+        },
+        {
+          "instancePath": "/targets/0",
+          "keyword": "enum",
+          "schemaPath": "#/properties/targets/items/enum",
+          "params": {
+            "allowedValues": [
+              "json-schema",
+              "rust",
+              "typescript",
+              "python-pydantic-v2",
+              "python-dataclass",
+              "markdown",
+              "json",
+              "postgresql",
+              "protobuf",
+              "avro",
+              "arrow",
+              "parquet",
+              "csv",
+              "tsv"
+            ]
+          },
+          "message": "must be equal to one of the allowed values"
+        },
+        {
+          "instancePath": "/compatibility_posture",
+          "keyword": "enum",
+          "schemaPath": "#/properties/compatibility_posture/enum",
+          "params": {
+            "allowedValues": [
+              "strict",
+              "additive",
+              "declared-lossy"
+            ]
+          },
+          "message": "must be equal to one of the allowed values"
+        },
+        {
+          "instancePath": "/legacy_forms",
+          "keyword": "enum",
+          "schemaPath": "#/properties/legacy_forms/enum",
+          "params": {
+            "allowedValues": [
+              "warning",
+              "error"
+            ]
+          },
+          "message": "must be equal to one of the allowed values"
+        }
+      ]
+    },
+    {
+      "id": "not-an-object-array",
+      "document": [],
+      "valid": false,
+      "errors": [
+        {
+          "instancePath": "",
+          "keyword": "type",
+          "schemaPath": "#/type",
+          "params": {
+            "type": "object"
+          },
+          "message": "must be object"
+        }
+      ]
+    },
+    {
+      "id": "not-an-object-string",
+      "document": "semantic",
+      "valid": false,
+      "errors": [
+        {
+          "instancePath": "",
+          "keyword": "type",
+          "schemaPath": "#/type",
+          "params": {
+            "type": "object"
+          },
+          "message": "must be object"
+        }
+      ]
+    },
+    {
+      "id": "not-an-object-null",
+      "document": null,
+      "valid": false,
+      "errors": [
+        {
+          "instancePath": "",
+          "keyword": "type",
+          "schemaPath": "#/type",
+          "params": {
+            "type": "object"
+          },
+          "message": "must be object"
+        }
+      ]
+    },
+    {
+      "id": "deeply-nested-unknown",
+      "document": {
+        "contract_version": "1.0.0",
+        "semantic_core": "0.1.0",
+        "package": "agent-ix/spec-objects",
+        "imports": {
+          "agent-ix/other": {
+            "version": "1.0.0"
+          }
+        }
+      },
+      "valid": false,
+      "errors": [
+        {
+          "instancePath": "/imports/agent-ix~1other",
+          "keyword": "type",
+          "schemaPath": "#/properties/imports/additionalProperties/type",
+          "params": {
+            "type": "string"
+          },
+          "message": "must be string"
+        }
+      ]
+    }
+  ]
+}

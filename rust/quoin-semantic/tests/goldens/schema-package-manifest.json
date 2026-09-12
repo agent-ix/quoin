@@ -1,0 +1,3812 @@
+{
+  "provenance": {
+    "producer": "scripts/capture-semantic-goldens.mjs",
+    "oracle": "agent-ix/quoin src/semantic + src/completeness (TypeScript)",
+    "quoinRevision": "4d27dcf1621d8c28da0961a5521a5be7b6d1cd28",
+    "ajvVersion": "8.20.0",
+    "note": "Captured once from the TypeScript implementation. The Rust crates read these files; they never invoke Node. Regenerate by re-running the producer, never by hand-editing."
+  },
+  "ajv": {
+    "options": {
+      "allErrors": true,
+      "strict": true
+    },
+    "compiledFrom": "src/semantic/schemas/filament-core-data/package-manifest.schema.json (+ common.schema.json via addSchema)",
+    "callSite": "src/semantic/package-manifest.ts validatePackageManifest()"
+  },
+  "schema": "package-manifest",
+  "counts": {
+    "total": 59,
+    "valid": 14,
+    "invalid": 45
+  },
+  "documents": [
+    {
+      "id": "minimal",
+      "document": {
+        "contractVersion": "1.0.0",
+        "package": {
+          "identity": "agent-ix/spec-objects",
+          "version": "0.1.0"
+        },
+        "schemaDialect": "https://json-schema.org/draft/2020-12/schema",
+        "sourceRoots": [
+          "schemas/"
+        ],
+        "imports": [
+          {
+            "packageIdentity": "agent-ix/semantic-core",
+            "versionConstraint": "=0.1.0",
+            "exports": [],
+            "capabilities": []
+          }
+        ],
+        "exports": [
+          {
+            "name": "entity",
+            "typeIdentity": "ix://agent-ix/spec-objects/type/entity",
+            "visibility": "public"
+          }
+        ],
+        "profiles": [
+          {
+            "name": "default",
+            "version": "0.1.0",
+            "exports": [
+              "entity"
+            ],
+            "targets": [
+              "json-schema"
+            ],
+            "mappings": [],
+            "options": {},
+            "compatibilityPosture": "additive"
+          }
+        ],
+        "targets": [
+          "json-schema"
+        ],
+        "mappings": [],
+        "extensions": []
+      },
+      "valid": true,
+      "errors": []
+    },
+    {
+      "id": "no-exports",
+      "document": {
+        "contractVersion": "1.0.0",
+        "package": {
+          "identity": "agent-ix/spec-objects",
+          "version": "0.1.0"
+        },
+        "schemaDialect": "https://json-schema.org/draft/2020-12/schema",
+        "sourceRoots": [
+          "schemas/"
+        ],
+        "imports": [
+          {
+            "packageIdentity": "agent-ix/semantic-core",
+            "versionConstraint": "=0.1.0",
+            "exports": [],
+            "capabilities": []
+          }
+        ],
+        "exports": [],
+        "profiles": [
+          {
+            "name": "default",
+            "version": "0.1.0",
+            "exports": [],
+            "targets": [
+              "json-schema"
+            ],
+            "mappings": [],
+            "options": {},
+            "compatibilityPosture": "additive"
+          }
+        ],
+        "targets": [
+          "json-schema"
+        ],
+        "mappings": [],
+        "extensions": []
+      },
+      "valid": true,
+      "errors": []
+    },
+    {
+      "id": "representation-format-target",
+      "document": {
+        "contractVersion": "1.0.0",
+        "package": {
+          "identity": "agent-ix/spec-objects",
+          "version": "0.1.0"
+        },
+        "schemaDialect": "https://json-schema.org/draft/2020-12/schema",
+        "sourceRoots": [
+          "schemas/"
+        ],
+        "imports": [
+          {
+            "packageIdentity": "agent-ix/semantic-core",
+            "versionConstraint": "=0.1.0",
+            "exports": [],
+            "capabilities": []
+          }
+        ],
+        "exports": [
+          {
+            "name": "entity",
+            "typeIdentity": "ix://agent-ix/spec-objects/type/entity",
+            "visibility": "public"
+          }
+        ],
+        "profiles": [
+          {
+            "name": "default",
+            "version": "0.1.0",
+            "exports": [
+              "entity"
+            ],
+            "targets": [
+              "markdown",
+              "parquet"
+            ],
+            "mappings": [],
+            "options": {},
+            "compatibilityPosture": "additive"
+          }
+        ],
+        "targets": [
+          "markdown",
+          "parquet"
+        ],
+        "mappings": [],
+        "extensions": []
+      },
+      "valid": true,
+      "errors": []
+    },
+    {
+      "id": "mapping-identity",
+      "document": {
+        "contractVersion": "1.0.0",
+        "package": {
+          "identity": "agent-ix/spec-objects",
+          "version": "0.1.0"
+        },
+        "schemaDialect": "https://json-schema.org/draft/2020-12/schema",
+        "sourceRoots": [
+          "schemas/"
+        ],
+        "imports": [
+          {
+            "packageIdentity": "agent-ix/semantic-core",
+            "versionConstraint": "=0.1.0",
+            "exports": [],
+            "capabilities": []
+          }
+        ],
+        "exports": [
+          {
+            "name": "entity",
+            "typeIdentity": "ix://agent-ix/spec-objects/type/entity",
+            "visibility": "public"
+          }
+        ],
+        "profiles": [
+          {
+            "name": "default",
+            "version": "0.1.0",
+            "exports": [
+              "entity"
+            ],
+            "targets": [
+              "json-schema"
+            ],
+            "mappings": [
+              "ix://agent-ix/spec-objects/mapping/config-version"
+            ],
+            "options": {},
+            "compatibilityPosture": "additive"
+          }
+        ],
+        "targets": [
+          "json-schema"
+        ],
+        "mappings": [
+          "ix://agent-ix/spec-objects/mapping/config-version"
+        ],
+        "extensions": []
+      },
+      "valid": true,
+      "errors": []
+    },
+    {
+      "id": "private-export",
+      "document": {
+        "contractVersion": "1.0.0",
+        "package": {
+          "identity": "agent-ix/spec-objects",
+          "version": "0.1.0"
+        },
+        "schemaDialect": "https://json-schema.org/draft/2020-12/schema",
+        "sourceRoots": [
+          "schemas/"
+        ],
+        "imports": [
+          {
+            "packageIdentity": "agent-ix/semantic-core",
+            "versionConstraint": "=0.1.0",
+            "exports": [],
+            "capabilities": []
+          }
+        ],
+        "exports": [
+          {
+            "name": "internal",
+            "typeIdentity": "ix://agent-ix/spec-objects/type/internal",
+            "visibility": "private"
+          }
+        ],
+        "profiles": [
+          {
+            "name": "default",
+            "version": "0.1.0",
+            "exports": [
+              "internal"
+            ],
+            "targets": [
+              "json-schema"
+            ],
+            "mappings": [],
+            "options": {},
+            "compatibilityPosture": "additive"
+          }
+        ],
+        "targets": [
+          "json-schema"
+        ],
+        "mappings": [],
+        "extensions": []
+      },
+      "valid": true,
+      "errors": []
+    },
+    {
+      "id": "prerelease-package-version",
+      "document": {
+        "contractVersion": "1.0.0",
+        "package": {
+          "identity": "agent-ix/spec-objects",
+          "version": "0.1.0-rc.1"
+        },
+        "schemaDialect": "https://json-schema.org/draft/2020-12/schema",
+        "sourceRoots": [
+          "schemas/"
+        ],
+        "imports": [
+          {
+            "packageIdentity": "agent-ix/semantic-core",
+            "versionConstraint": "=0.1.0",
+            "exports": [],
+            "capabilities": []
+          }
+        ],
+        "exports": [
+          {
+            "name": "entity",
+            "typeIdentity": "ix://agent-ix/spec-objects/type/entity",
+            "visibility": "public"
+          }
+        ],
+        "profiles": [
+          {
+            "name": "default",
+            "version": "0.1.0",
+            "exports": [
+              "entity"
+            ],
+            "targets": [
+              "json-schema"
+            ],
+            "mappings": [],
+            "options": {},
+            "compatibilityPosture": "additive"
+          }
+        ],
+        "targets": [
+          "json-schema"
+        ],
+        "mappings": [],
+        "extensions": []
+      },
+      "valid": true,
+      "errors": []
+    },
+    {
+      "id": "build-metadata-version",
+      "document": {
+        "contractVersion": "1.0.0",
+        "package": {
+          "identity": "agent-ix/spec-objects",
+          "version": "0.1.0+build.7"
+        },
+        "schemaDialect": "https://json-schema.org/draft/2020-12/schema",
+        "sourceRoots": [
+          "schemas/"
+        ],
+        "imports": [
+          {
+            "packageIdentity": "agent-ix/semantic-core",
+            "versionConstraint": "=0.1.0",
+            "exports": [],
+            "capabilities": []
+          }
+        ],
+        "exports": [
+          {
+            "name": "entity",
+            "typeIdentity": "ix://agent-ix/spec-objects/type/entity",
+            "visibility": "public"
+          }
+        ],
+        "profiles": [
+          {
+            "name": "default",
+            "version": "0.1.0",
+            "exports": [
+              "entity"
+            ],
+            "targets": [
+              "json-schema"
+            ],
+            "mappings": [],
+            "options": {},
+            "compatibilityPosture": "additive"
+          }
+        ],
+        "targets": [
+          "json-schema"
+        ],
+        "mappings": [],
+        "extensions": []
+      },
+      "valid": true,
+      "errors": []
+    },
+    {
+      "id": "posture-strict",
+      "document": {
+        "contractVersion": "1.0.0",
+        "package": {
+          "identity": "agent-ix/spec-objects",
+          "version": "0.1.0"
+        },
+        "schemaDialect": "https://json-schema.org/draft/2020-12/schema",
+        "sourceRoots": [
+          "schemas/"
+        ],
+        "imports": [
+          {
+            "packageIdentity": "agent-ix/semantic-core",
+            "versionConstraint": "=0.1.0",
+            "exports": [],
+            "capabilities": []
+          }
+        ],
+        "exports": [
+          {
+            "name": "entity",
+            "typeIdentity": "ix://agent-ix/spec-objects/type/entity",
+            "visibility": "public"
+          }
+        ],
+        "profiles": [
+          {
+            "name": "default",
+            "version": "0.1.0",
+            "exports": [
+              "entity"
+            ],
+            "targets": [
+              "json-schema"
+            ],
+            "mappings": [],
+            "options": {},
+            "compatibilityPosture": "strict"
+          }
+        ],
+        "targets": [
+          "json-schema"
+        ],
+        "mappings": [],
+        "extensions": []
+      },
+      "valid": true,
+      "errors": []
+    },
+    {
+      "id": "posture-additive",
+      "document": {
+        "contractVersion": "1.0.0",
+        "package": {
+          "identity": "agent-ix/spec-objects",
+          "version": "0.1.0"
+        },
+        "schemaDialect": "https://json-schema.org/draft/2020-12/schema",
+        "sourceRoots": [
+          "schemas/"
+        ],
+        "imports": [
+          {
+            "packageIdentity": "agent-ix/semantic-core",
+            "versionConstraint": "=0.1.0",
+            "exports": [],
+            "capabilities": []
+          }
+        ],
+        "exports": [
+          {
+            "name": "entity",
+            "typeIdentity": "ix://agent-ix/spec-objects/type/entity",
+            "visibility": "public"
+          }
+        ],
+        "profiles": [
+          {
+            "name": "default",
+            "version": "0.1.0",
+            "exports": [
+              "entity"
+            ],
+            "targets": [
+              "json-schema"
+            ],
+            "mappings": [],
+            "options": {},
+            "compatibilityPosture": "additive"
+          }
+        ],
+        "targets": [
+          "json-schema"
+        ],
+        "mappings": [],
+        "extensions": []
+      },
+      "valid": true,
+      "errors": []
+    },
+    {
+      "id": "posture-declared-lossy",
+      "document": {
+        "contractVersion": "1.0.0",
+        "package": {
+          "identity": "agent-ix/spec-objects",
+          "version": "0.1.0"
+        },
+        "schemaDialect": "https://json-schema.org/draft/2020-12/schema",
+        "sourceRoots": [
+          "schemas/"
+        ],
+        "imports": [
+          {
+            "packageIdentity": "agent-ix/semantic-core",
+            "versionConstraint": "=0.1.0",
+            "exports": [],
+            "capabilities": []
+          }
+        ],
+        "exports": [
+          {
+            "name": "entity",
+            "typeIdentity": "ix://agent-ix/spec-objects/type/entity",
+            "visibility": "public"
+          }
+        ],
+        "profiles": [
+          {
+            "name": "default",
+            "version": "0.1.0",
+            "exports": [
+              "entity"
+            ],
+            "targets": [
+              "json-schema"
+            ],
+            "mappings": [],
+            "options": {},
+            "compatibilityPosture": "declared-lossy"
+          }
+        ],
+        "targets": [
+          "json-schema"
+        ],
+        "mappings": [],
+        "extensions": []
+      },
+      "valid": true,
+      "errors": []
+    },
+    {
+      "id": "extension-source-origin",
+      "document": {
+        "contractVersion": "1.0.0",
+        "package": {
+          "identity": "agent-ix/spec-objects",
+          "version": "0.1.0"
+        },
+        "schemaDialect": "https://json-schema.org/draft/2020-12/schema",
+        "sourceRoots": [
+          "schemas/"
+        ],
+        "imports": [
+          {
+            "packageIdentity": "agent-ix/semantic-core",
+            "versionConstraint": "=0.1.0",
+            "exports": [],
+            "capabilities": []
+          }
+        ],
+        "exports": [
+          {
+            "name": "entity",
+            "typeIdentity": "ix://agent-ix/spec-objects/type/entity",
+            "visibility": "public"
+          }
+        ],
+        "profiles": [
+          {
+            "name": "default",
+            "version": "0.1.0",
+            "exports": [
+              "entity"
+            ],
+            "targets": [
+              "json-schema"
+            ],
+            "mappings": [],
+            "options": {},
+            "compatibilityPosture": "additive"
+          }
+        ],
+        "targets": [
+          "json-schema"
+        ],
+        "mappings": [],
+        "extensions": [
+          {
+            "identity": "ix://agent-ix/quoin/ext/a",
+            "version": "1.0.0",
+            "required": false,
+            "payload": {
+              "any": "thing"
+            }
+          }
+        ]
+      },
+      "valid": true,
+      "errors": []
+    },
+    {
+      "id": "extension-with-capability",
+      "document": {
+        "contractVersion": "1.0.0",
+        "package": {
+          "identity": "agent-ix/spec-objects",
+          "version": "0.1.0"
+        },
+        "schemaDialect": "https://json-schema.org/draft/2020-12/schema",
+        "sourceRoots": [
+          "schemas/"
+        ],
+        "imports": [
+          {
+            "packageIdentity": "agent-ix/semantic-core",
+            "versionConstraint": "=0.1.0",
+            "exports": [],
+            "capabilities": []
+          }
+        ],
+        "exports": [
+          {
+            "name": "entity",
+            "typeIdentity": "ix://agent-ix/spec-objects/type/entity",
+            "visibility": "public"
+          }
+        ],
+        "profiles": [
+          {
+            "name": "default",
+            "version": "0.1.0",
+            "exports": [
+              "entity"
+            ],
+            "targets": [
+              "json-schema"
+            ],
+            "mappings": [],
+            "options": {},
+            "compatibilityPosture": "additive"
+          }
+        ],
+        "targets": [
+          "json-schema"
+        ],
+        "mappings": [],
+        "extensions": [
+          {
+            "identity": "ix://agent-ix/quoin/ext/a",
+            "version": "1.0.0",
+            "required": true,
+            "capability": "render",
+            "payload": null
+          }
+        ]
+      },
+      "valid": true,
+      "errors": []
+    },
+    {
+      "id": "import-with-exports",
+      "document": {
+        "contractVersion": "1.0.0",
+        "package": {
+          "identity": "agent-ix/spec-objects",
+          "version": "0.1.0"
+        },
+        "schemaDialect": "https://json-schema.org/draft/2020-12/schema",
+        "sourceRoots": [
+          "schemas/"
+        ],
+        "imports": [
+          {
+            "packageIdentity": "agent-ix/other",
+            "versionConstraint": "=1.0.0",
+            "exports": [
+              "thing"
+            ],
+            "capabilities": [
+              "cap"
+            ]
+          }
+        ],
+        "exports": [
+          {
+            "name": "entity",
+            "typeIdentity": "ix://agent-ix/spec-objects/type/entity",
+            "visibility": "public"
+          }
+        ],
+        "profiles": [
+          {
+            "name": "default",
+            "version": "0.1.0",
+            "exports": [
+              "entity"
+            ],
+            "targets": [
+              "json-schema"
+            ],
+            "mappings": [],
+            "options": {},
+            "compatibilityPosture": "additive"
+          }
+        ],
+        "targets": [
+          "json-schema"
+        ],
+        "mappings": [],
+        "extensions": []
+      },
+      "valid": true,
+      "errors": []
+    },
+    {
+      "id": "two-profiles",
+      "document": {
+        "contractVersion": "1.0.0",
+        "package": {
+          "identity": "agent-ix/spec-objects",
+          "version": "0.1.0"
+        },
+        "schemaDialect": "https://json-schema.org/draft/2020-12/schema",
+        "sourceRoots": [
+          "schemas/"
+        ],
+        "imports": [
+          {
+            "packageIdentity": "agent-ix/semantic-core",
+            "versionConstraint": "=0.1.0",
+            "exports": [],
+            "capabilities": []
+          }
+        ],
+        "exports": [
+          {
+            "name": "entity",
+            "typeIdentity": "ix://agent-ix/spec-objects/type/entity",
+            "visibility": "public"
+          }
+        ],
+        "profiles": [
+          {
+            "name": "default",
+            "version": "0.1.0",
+            "exports": [
+              "entity"
+            ],
+            "targets": [
+              "json-schema"
+            ],
+            "mappings": [],
+            "options": {},
+            "compatibilityPosture": "additive"
+          },
+          {
+            "name": "wide",
+            "version": "0.1.0",
+            "exports": [
+              "entity"
+            ],
+            "targets": [
+              "json-schema",
+              "rust"
+            ],
+            "mappings": [],
+            "options": {},
+            "compatibilityPosture": "additive"
+          }
+        ],
+        "targets": [
+          "json-schema"
+        ],
+        "mappings": [],
+        "extensions": []
+      },
+      "valid": true,
+      "errors": []
+    },
+    {
+      "id": "missing-contractVersion",
+      "document": {
+        "package": {
+          "identity": "agent-ix/spec-objects",
+          "version": "0.1.0"
+        },
+        "schemaDialect": "https://json-schema.org/draft/2020-12/schema",
+        "sourceRoots": [
+          "schemas/"
+        ],
+        "imports": [
+          {
+            "packageIdentity": "agent-ix/semantic-core",
+            "versionConstraint": "=0.1.0",
+            "exports": [],
+            "capabilities": []
+          }
+        ],
+        "exports": [
+          {
+            "name": "entity",
+            "typeIdentity": "ix://agent-ix/spec-objects/type/entity",
+            "visibility": "public"
+          }
+        ],
+        "profiles": [
+          {
+            "name": "default",
+            "version": "0.1.0",
+            "exports": [
+              "entity"
+            ],
+            "targets": [
+              "json-schema"
+            ],
+            "mappings": [],
+            "options": {},
+            "compatibilityPosture": "additive"
+          }
+        ],
+        "targets": [
+          "json-schema"
+        ],
+        "mappings": [],
+        "extensions": []
+      },
+      "valid": false,
+      "errors": [
+        {
+          "instancePath": "",
+          "keyword": "required",
+          "schemaPath": "#/required",
+          "params": {
+            "missingProperty": "contractVersion"
+          },
+          "message": "must have required property 'contractVersion'"
+        }
+      ]
+    },
+    {
+      "id": "missing-package",
+      "document": {
+        "contractVersion": "1.0.0",
+        "schemaDialect": "https://json-schema.org/draft/2020-12/schema",
+        "sourceRoots": [
+          "schemas/"
+        ],
+        "imports": [
+          {
+            "packageIdentity": "agent-ix/semantic-core",
+            "versionConstraint": "=0.1.0",
+            "exports": [],
+            "capabilities": []
+          }
+        ],
+        "exports": [
+          {
+            "name": "entity",
+            "typeIdentity": "ix://agent-ix/spec-objects/type/entity",
+            "visibility": "public"
+          }
+        ],
+        "profiles": [
+          {
+            "name": "default",
+            "version": "0.1.0",
+            "exports": [
+              "entity"
+            ],
+            "targets": [
+              "json-schema"
+            ],
+            "mappings": [],
+            "options": {},
+            "compatibilityPosture": "additive"
+          }
+        ],
+        "targets": [
+          "json-schema"
+        ],
+        "mappings": [],
+        "extensions": []
+      },
+      "valid": false,
+      "errors": [
+        {
+          "instancePath": "",
+          "keyword": "required",
+          "schemaPath": "#/required",
+          "params": {
+            "missingProperty": "package"
+          },
+          "message": "must have required property 'package'"
+        }
+      ]
+    },
+    {
+      "id": "missing-schemaDialect",
+      "document": {
+        "contractVersion": "1.0.0",
+        "package": {
+          "identity": "agent-ix/spec-objects",
+          "version": "0.1.0"
+        },
+        "sourceRoots": [
+          "schemas/"
+        ],
+        "imports": [
+          {
+            "packageIdentity": "agent-ix/semantic-core",
+            "versionConstraint": "=0.1.0",
+            "exports": [],
+            "capabilities": []
+          }
+        ],
+        "exports": [
+          {
+            "name": "entity",
+            "typeIdentity": "ix://agent-ix/spec-objects/type/entity",
+            "visibility": "public"
+          }
+        ],
+        "profiles": [
+          {
+            "name": "default",
+            "version": "0.1.0",
+            "exports": [
+              "entity"
+            ],
+            "targets": [
+              "json-schema"
+            ],
+            "mappings": [],
+            "options": {},
+            "compatibilityPosture": "additive"
+          }
+        ],
+        "targets": [
+          "json-schema"
+        ],
+        "mappings": [],
+        "extensions": []
+      },
+      "valid": false,
+      "errors": [
+        {
+          "instancePath": "",
+          "keyword": "required",
+          "schemaPath": "#/required",
+          "params": {
+            "missingProperty": "schemaDialect"
+          },
+          "message": "must have required property 'schemaDialect'"
+        }
+      ]
+    },
+    {
+      "id": "missing-sourceRoots",
+      "document": {
+        "contractVersion": "1.0.0",
+        "package": {
+          "identity": "agent-ix/spec-objects",
+          "version": "0.1.0"
+        },
+        "schemaDialect": "https://json-schema.org/draft/2020-12/schema",
+        "imports": [
+          {
+            "packageIdentity": "agent-ix/semantic-core",
+            "versionConstraint": "=0.1.0",
+            "exports": [],
+            "capabilities": []
+          }
+        ],
+        "exports": [
+          {
+            "name": "entity",
+            "typeIdentity": "ix://agent-ix/spec-objects/type/entity",
+            "visibility": "public"
+          }
+        ],
+        "profiles": [
+          {
+            "name": "default",
+            "version": "0.1.0",
+            "exports": [
+              "entity"
+            ],
+            "targets": [
+              "json-schema"
+            ],
+            "mappings": [],
+            "options": {},
+            "compatibilityPosture": "additive"
+          }
+        ],
+        "targets": [
+          "json-schema"
+        ],
+        "mappings": [],
+        "extensions": []
+      },
+      "valid": false,
+      "errors": [
+        {
+          "instancePath": "",
+          "keyword": "required",
+          "schemaPath": "#/required",
+          "params": {
+            "missingProperty": "sourceRoots"
+          },
+          "message": "must have required property 'sourceRoots'"
+        }
+      ]
+    },
+    {
+      "id": "missing-exports",
+      "document": {
+        "contractVersion": "1.0.0",
+        "package": {
+          "identity": "agent-ix/spec-objects",
+          "version": "0.1.0"
+        },
+        "schemaDialect": "https://json-schema.org/draft/2020-12/schema",
+        "sourceRoots": [
+          "schemas/"
+        ],
+        "imports": [
+          {
+            "packageIdentity": "agent-ix/semantic-core",
+            "versionConstraint": "=0.1.0",
+            "exports": [],
+            "capabilities": []
+          }
+        ],
+        "profiles": [
+          {
+            "name": "default",
+            "version": "0.1.0",
+            "exports": [
+              "entity"
+            ],
+            "targets": [
+              "json-schema"
+            ],
+            "mappings": [],
+            "options": {},
+            "compatibilityPosture": "additive"
+          }
+        ],
+        "targets": [
+          "json-schema"
+        ],
+        "mappings": [],
+        "extensions": []
+      },
+      "valid": false,
+      "errors": [
+        {
+          "instancePath": "",
+          "keyword": "required",
+          "schemaPath": "#/required",
+          "params": {
+            "missingProperty": "exports"
+          },
+          "message": "must have required property 'exports'"
+        }
+      ]
+    },
+    {
+      "id": "missing-imports",
+      "document": {
+        "contractVersion": "1.0.0",
+        "package": {
+          "identity": "agent-ix/spec-objects",
+          "version": "0.1.0"
+        },
+        "schemaDialect": "https://json-schema.org/draft/2020-12/schema",
+        "sourceRoots": [
+          "schemas/"
+        ],
+        "exports": [
+          {
+            "name": "entity",
+            "typeIdentity": "ix://agent-ix/spec-objects/type/entity",
+            "visibility": "public"
+          }
+        ],
+        "profiles": [
+          {
+            "name": "default",
+            "version": "0.1.0",
+            "exports": [
+              "entity"
+            ],
+            "targets": [
+              "json-schema"
+            ],
+            "mappings": [],
+            "options": {},
+            "compatibilityPosture": "additive"
+          }
+        ],
+        "targets": [
+          "json-schema"
+        ],
+        "mappings": [],
+        "extensions": []
+      },
+      "valid": false,
+      "errors": [
+        {
+          "instancePath": "",
+          "keyword": "required",
+          "schemaPath": "#/required",
+          "params": {
+            "missingProperty": "imports"
+          },
+          "message": "must have required property 'imports'"
+        }
+      ]
+    },
+    {
+      "id": "missing-profiles",
+      "document": {
+        "contractVersion": "1.0.0",
+        "package": {
+          "identity": "agent-ix/spec-objects",
+          "version": "0.1.0"
+        },
+        "schemaDialect": "https://json-schema.org/draft/2020-12/schema",
+        "sourceRoots": [
+          "schemas/"
+        ],
+        "imports": [
+          {
+            "packageIdentity": "agent-ix/semantic-core",
+            "versionConstraint": "=0.1.0",
+            "exports": [],
+            "capabilities": []
+          }
+        ],
+        "exports": [
+          {
+            "name": "entity",
+            "typeIdentity": "ix://agent-ix/spec-objects/type/entity",
+            "visibility": "public"
+          }
+        ],
+        "targets": [
+          "json-schema"
+        ],
+        "mappings": [],
+        "extensions": []
+      },
+      "valid": false,
+      "errors": [
+        {
+          "instancePath": "",
+          "keyword": "required",
+          "schemaPath": "#/required",
+          "params": {
+            "missingProperty": "profiles"
+          },
+          "message": "must have required property 'profiles'"
+        }
+      ]
+    },
+    {
+      "id": "missing-targets",
+      "document": {
+        "contractVersion": "1.0.0",
+        "package": {
+          "identity": "agent-ix/spec-objects",
+          "version": "0.1.0"
+        },
+        "schemaDialect": "https://json-schema.org/draft/2020-12/schema",
+        "sourceRoots": [
+          "schemas/"
+        ],
+        "imports": [
+          {
+            "packageIdentity": "agent-ix/semantic-core",
+            "versionConstraint": "=0.1.0",
+            "exports": [],
+            "capabilities": []
+          }
+        ],
+        "exports": [
+          {
+            "name": "entity",
+            "typeIdentity": "ix://agent-ix/spec-objects/type/entity",
+            "visibility": "public"
+          }
+        ],
+        "profiles": [
+          {
+            "name": "default",
+            "version": "0.1.0",
+            "exports": [
+              "entity"
+            ],
+            "targets": [
+              "json-schema"
+            ],
+            "mappings": [],
+            "options": {},
+            "compatibilityPosture": "additive"
+          }
+        ],
+        "mappings": [],
+        "extensions": []
+      },
+      "valid": false,
+      "errors": [
+        {
+          "instancePath": "",
+          "keyword": "required",
+          "schemaPath": "#/required",
+          "params": {
+            "missingProperty": "targets"
+          },
+          "message": "must have required property 'targets'"
+        }
+      ]
+    },
+    {
+      "id": "missing-mappings",
+      "document": {
+        "contractVersion": "1.0.0",
+        "package": {
+          "identity": "agent-ix/spec-objects",
+          "version": "0.1.0"
+        },
+        "schemaDialect": "https://json-schema.org/draft/2020-12/schema",
+        "sourceRoots": [
+          "schemas/"
+        ],
+        "imports": [
+          {
+            "packageIdentity": "agent-ix/semantic-core",
+            "versionConstraint": "=0.1.0",
+            "exports": [],
+            "capabilities": []
+          }
+        ],
+        "exports": [
+          {
+            "name": "entity",
+            "typeIdentity": "ix://agent-ix/spec-objects/type/entity",
+            "visibility": "public"
+          }
+        ],
+        "profiles": [
+          {
+            "name": "default",
+            "version": "0.1.0",
+            "exports": [
+              "entity"
+            ],
+            "targets": [
+              "json-schema"
+            ],
+            "mappings": [],
+            "options": {},
+            "compatibilityPosture": "additive"
+          }
+        ],
+        "targets": [
+          "json-schema"
+        ],
+        "extensions": []
+      },
+      "valid": false,
+      "errors": [
+        {
+          "instancePath": "",
+          "keyword": "required",
+          "schemaPath": "#/required",
+          "params": {
+            "missingProperty": "mappings"
+          },
+          "message": "must have required property 'mappings'"
+        }
+      ]
+    },
+    {
+      "id": "missing-extensions",
+      "document": {
+        "contractVersion": "1.0.0",
+        "package": {
+          "identity": "agent-ix/spec-objects",
+          "version": "0.1.0"
+        },
+        "schemaDialect": "https://json-schema.org/draft/2020-12/schema",
+        "sourceRoots": [
+          "schemas/"
+        ],
+        "imports": [
+          {
+            "packageIdentity": "agent-ix/semantic-core",
+            "versionConstraint": "=0.1.0",
+            "exports": [],
+            "capabilities": []
+          }
+        ],
+        "exports": [
+          {
+            "name": "entity",
+            "typeIdentity": "ix://agent-ix/spec-objects/type/entity",
+            "visibility": "public"
+          }
+        ],
+        "profiles": [
+          {
+            "name": "default",
+            "version": "0.1.0",
+            "exports": [
+              "entity"
+            ],
+            "targets": [
+              "json-schema"
+            ],
+            "mappings": [],
+            "options": {},
+            "compatibilityPosture": "additive"
+          }
+        ],
+        "targets": [
+          "json-schema"
+        ],
+        "mappings": []
+      },
+      "valid": false,
+      "errors": [
+        {
+          "instancePath": "",
+          "keyword": "required",
+          "schemaPath": "#/required",
+          "params": {
+            "missingProperty": "extensions"
+          },
+          "message": "must have required property 'extensions'"
+        }
+      ]
+    },
+    {
+      "id": "contract-version-wrong-const",
+      "document": {
+        "contractVersion": "1.1.0",
+        "package": {
+          "identity": "agent-ix/spec-objects",
+          "version": "0.1.0"
+        },
+        "schemaDialect": "https://json-schema.org/draft/2020-12/schema",
+        "sourceRoots": [
+          "schemas/"
+        ],
+        "imports": [
+          {
+            "packageIdentity": "agent-ix/semantic-core",
+            "versionConstraint": "=0.1.0",
+            "exports": [],
+            "capabilities": []
+          }
+        ],
+        "exports": [
+          {
+            "name": "entity",
+            "typeIdentity": "ix://agent-ix/spec-objects/type/entity",
+            "visibility": "public"
+          }
+        ],
+        "profiles": [
+          {
+            "name": "default",
+            "version": "0.1.0",
+            "exports": [
+              "entity"
+            ],
+            "targets": [
+              "json-schema"
+            ],
+            "mappings": [],
+            "options": {},
+            "compatibilityPosture": "additive"
+          }
+        ],
+        "targets": [
+          "json-schema"
+        ],
+        "mappings": [],
+        "extensions": []
+      },
+      "valid": false,
+      "errors": [
+        {
+          "instancePath": "/contractVersion",
+          "keyword": "const",
+          "schemaPath": "#/properties/contractVersion/const",
+          "params": {
+            "allowedValue": "1.0.0"
+          },
+          "message": "must be equal to constant"
+        }
+      ]
+    },
+    {
+      "id": "schema-dialect-wrong-const",
+      "document": {
+        "contractVersion": "1.0.0",
+        "package": {
+          "identity": "agent-ix/spec-objects",
+          "version": "0.1.0"
+        },
+        "schemaDialect": "https://json-schema.org/draft-07/schema",
+        "sourceRoots": [
+          "schemas/"
+        ],
+        "imports": [
+          {
+            "packageIdentity": "agent-ix/semantic-core",
+            "versionConstraint": "=0.1.0",
+            "exports": [],
+            "capabilities": []
+          }
+        ],
+        "exports": [
+          {
+            "name": "entity",
+            "typeIdentity": "ix://agent-ix/spec-objects/type/entity",
+            "visibility": "public"
+          }
+        ],
+        "profiles": [
+          {
+            "name": "default",
+            "version": "0.1.0",
+            "exports": [
+              "entity"
+            ],
+            "targets": [
+              "json-schema"
+            ],
+            "mappings": [],
+            "options": {},
+            "compatibilityPosture": "additive"
+          }
+        ],
+        "targets": [
+          "json-schema"
+        ],
+        "mappings": [],
+        "extensions": []
+      },
+      "valid": false,
+      "errors": [
+        {
+          "instancePath": "/schemaDialect",
+          "keyword": "const",
+          "schemaPath": "#/properties/schemaDialect/const",
+          "params": {
+            "allowedValue": "https://json-schema.org/draft/2020-12/schema"
+          },
+          "message": "must be equal to constant"
+        }
+      ]
+    },
+    {
+      "id": "unknown-top-key",
+      "document": {
+        "contractVersion": "1.0.0",
+        "package": {
+          "identity": "agent-ix/spec-objects",
+          "version": "0.1.0"
+        },
+        "schemaDialect": "https://json-schema.org/draft/2020-12/schema",
+        "sourceRoots": [
+          "schemas/"
+        ],
+        "imports": [
+          {
+            "packageIdentity": "agent-ix/semantic-core",
+            "versionConstraint": "=0.1.0",
+            "exports": [],
+            "capabilities": []
+          }
+        ],
+        "exports": [
+          {
+            "name": "entity",
+            "typeIdentity": "ix://agent-ix/spec-objects/type/entity",
+            "visibility": "public"
+          }
+        ],
+        "profiles": [
+          {
+            "name": "default",
+            "version": "0.1.0",
+            "exports": [
+              "entity"
+            ],
+            "targets": [
+              "json-schema"
+            ],
+            "mappings": [],
+            "options": {},
+            "compatibilityPosture": "additive"
+          }
+        ],
+        "targets": [
+          "json-schema"
+        ],
+        "mappings": [],
+        "extensions": [],
+        "extra": 1
+      },
+      "valid": false,
+      "errors": [
+        {
+          "instancePath": "",
+          "keyword": "additionalProperties",
+          "schemaPath": "#/additionalProperties",
+          "params": {
+            "additionalProperty": "extra"
+          },
+          "message": "must NOT have additional properties"
+        }
+      ]
+    },
+    {
+      "id": "package-identity-bad",
+      "document": {
+        "contractVersion": "1.0.0",
+        "package": {
+          "identity": "AgentIX",
+          "version": "0.1.0"
+        },
+        "schemaDialect": "https://json-schema.org/draft/2020-12/schema",
+        "sourceRoots": [
+          "schemas/"
+        ],
+        "imports": [
+          {
+            "packageIdentity": "agent-ix/semantic-core",
+            "versionConstraint": "=0.1.0",
+            "exports": [],
+            "capabilities": []
+          }
+        ],
+        "exports": [
+          {
+            "name": "entity",
+            "typeIdentity": "ix://agent-ix/spec-objects/type/entity",
+            "visibility": "public"
+          }
+        ],
+        "profiles": [
+          {
+            "name": "default",
+            "version": "0.1.0",
+            "exports": [
+              "entity"
+            ],
+            "targets": [
+              "json-schema"
+            ],
+            "mappings": [],
+            "options": {},
+            "compatibilityPosture": "additive"
+          }
+        ],
+        "targets": [
+          "json-schema"
+        ],
+        "mappings": [],
+        "extensions": []
+      },
+      "valid": false,
+      "errors": [
+        {
+          "instancePath": "/package/identity",
+          "keyword": "pattern",
+          "schemaPath": "common.schema.json#/$defs/packageIdentity/pattern",
+          "params": {
+            "pattern": "^[a-z0-9][a-z0-9._-]*/[a-z0-9][a-z0-9._-]*$"
+          },
+          "message": "must match pattern \"^[a-z0-9][a-z0-9._-]*/[a-z0-9][a-z0-9._-]*$\""
+        }
+      ]
+    },
+    {
+      "id": "package-version-bad-semver",
+      "document": {
+        "contractVersion": "1.0.0",
+        "package": {
+          "identity": "agent-ix/spec-objects",
+          "version": "0.1"
+        },
+        "schemaDialect": "https://json-schema.org/draft/2020-12/schema",
+        "sourceRoots": [
+          "schemas/"
+        ],
+        "imports": [
+          {
+            "packageIdentity": "agent-ix/semantic-core",
+            "versionConstraint": "=0.1.0",
+            "exports": [],
+            "capabilities": []
+          }
+        ],
+        "exports": [
+          {
+            "name": "entity",
+            "typeIdentity": "ix://agent-ix/spec-objects/type/entity",
+            "visibility": "public"
+          }
+        ],
+        "profiles": [
+          {
+            "name": "default",
+            "version": "0.1.0",
+            "exports": [
+              "entity"
+            ],
+            "targets": [
+              "json-schema"
+            ],
+            "mappings": [],
+            "options": {},
+            "compatibilityPosture": "additive"
+          }
+        ],
+        "targets": [
+          "json-schema"
+        ],
+        "mappings": [],
+        "extensions": []
+      },
+      "valid": false,
+      "errors": [
+        {
+          "instancePath": "/package/version",
+          "keyword": "pattern",
+          "schemaPath": "common.schema.json#/$defs/semver/pattern",
+          "params": {
+            "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z.-]+)?(?:\\+[0-9A-Za-z.-]+)?$"
+          },
+          "message": "must match pattern \"^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z.-]+)?(?:\\+[0-9A-Za-z.-]+)?$\""
+        }
+      ]
+    },
+    {
+      "id": "package-leading-zero-semver",
+      "document": {
+        "contractVersion": "1.0.0",
+        "package": {
+          "identity": "agent-ix/spec-objects",
+          "version": "01.0.0"
+        },
+        "schemaDialect": "https://json-schema.org/draft/2020-12/schema",
+        "sourceRoots": [
+          "schemas/"
+        ],
+        "imports": [
+          {
+            "packageIdentity": "agent-ix/semantic-core",
+            "versionConstraint": "=0.1.0",
+            "exports": [],
+            "capabilities": []
+          }
+        ],
+        "exports": [
+          {
+            "name": "entity",
+            "typeIdentity": "ix://agent-ix/spec-objects/type/entity",
+            "visibility": "public"
+          }
+        ],
+        "profiles": [
+          {
+            "name": "default",
+            "version": "0.1.0",
+            "exports": [
+              "entity"
+            ],
+            "targets": [
+              "json-schema"
+            ],
+            "mappings": [],
+            "options": {},
+            "compatibilityPosture": "additive"
+          }
+        ],
+        "targets": [
+          "json-schema"
+        ],
+        "mappings": [],
+        "extensions": []
+      },
+      "valid": false,
+      "errors": [
+        {
+          "instancePath": "/package/version",
+          "keyword": "pattern",
+          "schemaPath": "common.schema.json#/$defs/semver/pattern",
+          "params": {
+            "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z.-]+)?(?:\\+[0-9A-Za-z.-]+)?$"
+          },
+          "message": "must match pattern \"^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z.-]+)?(?:\\+[0-9A-Za-z.-]+)?$\""
+        }
+      ]
+    },
+    {
+      "id": "package-unknown-key",
+      "document": {
+        "contractVersion": "1.0.0",
+        "package": {
+          "identity": "agent-ix/spec-objects",
+          "version": "0.1.0",
+          "name": "x"
+        },
+        "schemaDialect": "https://json-schema.org/draft/2020-12/schema",
+        "sourceRoots": [
+          "schemas/"
+        ],
+        "imports": [
+          {
+            "packageIdentity": "agent-ix/semantic-core",
+            "versionConstraint": "=0.1.0",
+            "exports": [],
+            "capabilities": []
+          }
+        ],
+        "exports": [
+          {
+            "name": "entity",
+            "typeIdentity": "ix://agent-ix/spec-objects/type/entity",
+            "visibility": "public"
+          }
+        ],
+        "profiles": [
+          {
+            "name": "default",
+            "version": "0.1.0",
+            "exports": [
+              "entity"
+            ],
+            "targets": [
+              "json-schema"
+            ],
+            "mappings": [],
+            "options": {},
+            "compatibilityPosture": "additive"
+          }
+        ],
+        "targets": [
+          "json-schema"
+        ],
+        "mappings": [],
+        "extensions": []
+      },
+      "valid": false,
+      "errors": [
+        {
+          "instancePath": "/package",
+          "keyword": "additionalProperties",
+          "schemaPath": "#/properties/package/additionalProperties",
+          "params": {
+            "additionalProperty": "name"
+          },
+          "message": "must NOT have additional properties"
+        }
+      ]
+    },
+    {
+      "id": "source-roots-empty",
+      "document": {
+        "contractVersion": "1.0.0",
+        "package": {
+          "identity": "agent-ix/spec-objects",
+          "version": "0.1.0"
+        },
+        "schemaDialect": "https://json-schema.org/draft/2020-12/schema",
+        "sourceRoots": [],
+        "imports": [
+          {
+            "packageIdentity": "agent-ix/semantic-core",
+            "versionConstraint": "=0.1.0",
+            "exports": [],
+            "capabilities": []
+          }
+        ],
+        "exports": [
+          {
+            "name": "entity",
+            "typeIdentity": "ix://agent-ix/spec-objects/type/entity",
+            "visibility": "public"
+          }
+        ],
+        "profiles": [
+          {
+            "name": "default",
+            "version": "0.1.0",
+            "exports": [
+              "entity"
+            ],
+            "targets": [
+              "json-schema"
+            ],
+            "mappings": [],
+            "options": {},
+            "compatibilityPosture": "additive"
+          }
+        ],
+        "targets": [
+          "json-schema"
+        ],
+        "mappings": [],
+        "extensions": []
+      },
+      "valid": false,
+      "errors": [
+        {
+          "instancePath": "/sourceRoots",
+          "keyword": "minItems",
+          "schemaPath": "#/properties/sourceRoots/minItems",
+          "params": {
+            "limit": 1
+          },
+          "message": "must NOT have fewer than 1 items"
+        }
+      ]
+    },
+    {
+      "id": "source-roots-duplicate",
+      "document": {
+        "contractVersion": "1.0.0",
+        "package": {
+          "identity": "agent-ix/spec-objects",
+          "version": "0.1.0"
+        },
+        "schemaDialect": "https://json-schema.org/draft/2020-12/schema",
+        "sourceRoots": [
+          "schemas/",
+          "schemas/"
+        ],
+        "imports": [
+          {
+            "packageIdentity": "agent-ix/semantic-core",
+            "versionConstraint": "=0.1.0",
+            "exports": [],
+            "capabilities": []
+          }
+        ],
+        "exports": [
+          {
+            "name": "entity",
+            "typeIdentity": "ix://agent-ix/spec-objects/type/entity",
+            "visibility": "public"
+          }
+        ],
+        "profiles": [
+          {
+            "name": "default",
+            "version": "0.1.0",
+            "exports": [
+              "entity"
+            ],
+            "targets": [
+              "json-schema"
+            ],
+            "mappings": [],
+            "options": {},
+            "compatibilityPosture": "additive"
+          }
+        ],
+        "targets": [
+          "json-schema"
+        ],
+        "mappings": [],
+        "extensions": []
+      },
+      "valid": false,
+      "errors": [
+        {
+          "instancePath": "/sourceRoots",
+          "keyword": "uniqueItems",
+          "schemaPath": "#/properties/sourceRoots/uniqueItems",
+          "params": {
+            "i": 0,
+            "j": 1
+          },
+          "message": "must NOT have duplicate items (items ## 1 and 0 are identical)"
+        }
+      ]
+    },
+    {
+      "id": "source-roots-empty-string",
+      "document": {
+        "contractVersion": "1.0.0",
+        "package": {
+          "identity": "agent-ix/spec-objects",
+          "version": "0.1.0"
+        },
+        "schemaDialect": "https://json-schema.org/draft/2020-12/schema",
+        "sourceRoots": [
+          ""
+        ],
+        "imports": [
+          {
+            "packageIdentity": "agent-ix/semantic-core",
+            "versionConstraint": "=0.1.0",
+            "exports": [],
+            "capabilities": []
+          }
+        ],
+        "exports": [
+          {
+            "name": "entity",
+            "typeIdentity": "ix://agent-ix/spec-objects/type/entity",
+            "visibility": "public"
+          }
+        ],
+        "profiles": [
+          {
+            "name": "default",
+            "version": "0.1.0",
+            "exports": [
+              "entity"
+            ],
+            "targets": [
+              "json-schema"
+            ],
+            "mappings": [],
+            "options": {},
+            "compatibilityPosture": "additive"
+          }
+        ],
+        "targets": [
+          "json-schema"
+        ],
+        "mappings": [],
+        "extensions": []
+      },
+      "valid": false,
+      "errors": [
+        {
+          "instancePath": "/sourceRoots/0",
+          "keyword": "minLength",
+          "schemaPath": "#/properties/sourceRoots/items/minLength",
+          "params": {
+            "limit": 1
+          },
+          "message": "must NOT have fewer than 1 characters"
+        }
+      ]
+    },
+    {
+      "id": "export-identity-not-ix",
+      "document": {
+        "contractVersion": "1.0.0",
+        "package": {
+          "identity": "agent-ix/spec-objects",
+          "version": "0.1.0"
+        },
+        "schemaDialect": "https://json-schema.org/draft/2020-12/schema",
+        "sourceRoots": [
+          "schemas/"
+        ],
+        "imports": [
+          {
+            "packageIdentity": "agent-ix/semantic-core",
+            "versionConstraint": "=0.1.0",
+            "exports": [],
+            "capabilities": []
+          }
+        ],
+        "exports": [
+          {
+            "name": "entity",
+            "typeIdentity": "agent-ix/spec-objects/type/entity",
+            "visibility": "public"
+          }
+        ],
+        "profiles": [
+          {
+            "name": "default",
+            "version": "0.1.0",
+            "exports": [
+              "entity"
+            ],
+            "targets": [
+              "json-schema"
+            ],
+            "mappings": [],
+            "options": {},
+            "compatibilityPosture": "additive"
+          }
+        ],
+        "targets": [
+          "json-schema"
+        ],
+        "mappings": [],
+        "extensions": []
+      },
+      "valid": false,
+      "errors": [
+        {
+          "instancePath": "/exports/0/typeIdentity",
+          "keyword": "pattern",
+          "schemaPath": "common.schema.json#/$defs/semanticIdentity/pattern",
+          "params": {
+            "pattern": "^ix://[a-z0-9][a-z0-9._-]*/[A-Za-z0-9][A-Za-z0-9._~:/-]*$"
+          },
+          "message": "must match pattern \"^ix://[a-z0-9][a-z0-9._-]*/[A-Za-z0-9][A-Za-z0-9._~:/-]*$\""
+        }
+      ]
+    },
+    {
+      "id": "export-identity-uppercase-org",
+      "document": {
+        "contractVersion": "1.0.0",
+        "package": {
+          "identity": "agent-ix/spec-objects",
+          "version": "0.1.0"
+        },
+        "schemaDialect": "https://json-schema.org/draft/2020-12/schema",
+        "sourceRoots": [
+          "schemas/"
+        ],
+        "imports": [
+          {
+            "packageIdentity": "agent-ix/semantic-core",
+            "versionConstraint": "=0.1.0",
+            "exports": [],
+            "capabilities": []
+          }
+        ],
+        "exports": [
+          {
+            "name": "entity",
+            "typeIdentity": "ix://Agent-IX/spec-objects/type/entity",
+            "visibility": "public"
+          }
+        ],
+        "profiles": [
+          {
+            "name": "default",
+            "version": "0.1.0",
+            "exports": [
+              "entity"
+            ],
+            "targets": [
+              "json-schema"
+            ],
+            "mappings": [],
+            "options": {},
+            "compatibilityPosture": "additive"
+          }
+        ],
+        "targets": [
+          "json-schema"
+        ],
+        "mappings": [],
+        "extensions": []
+      },
+      "valid": false,
+      "errors": [
+        {
+          "instancePath": "/exports/0/typeIdentity",
+          "keyword": "pattern",
+          "schemaPath": "common.schema.json#/$defs/semanticIdentity/pattern",
+          "params": {
+            "pattern": "^ix://[a-z0-9][a-z0-9._-]*/[A-Za-z0-9][A-Za-z0-9._~:/-]*$"
+          },
+          "message": "must match pattern \"^ix://[a-z0-9][a-z0-9._-]*/[A-Za-z0-9][A-Za-z0-9._~:/-]*$\""
+        }
+      ]
+    },
+    {
+      "id": "export-visibility-unknown",
+      "document": {
+        "contractVersion": "1.0.0",
+        "package": {
+          "identity": "agent-ix/spec-objects",
+          "version": "0.1.0"
+        },
+        "schemaDialect": "https://json-schema.org/draft/2020-12/schema",
+        "sourceRoots": [
+          "schemas/"
+        ],
+        "imports": [
+          {
+            "packageIdentity": "agent-ix/semantic-core",
+            "versionConstraint": "=0.1.0",
+            "exports": [],
+            "capabilities": []
+          }
+        ],
+        "exports": [
+          {
+            "name": "entity",
+            "typeIdentity": "ix://agent-ix/spec-objects/type/entity",
+            "visibility": "internal"
+          }
+        ],
+        "profiles": [
+          {
+            "name": "default",
+            "version": "0.1.0",
+            "exports": [
+              "entity"
+            ],
+            "targets": [
+              "json-schema"
+            ],
+            "mappings": [],
+            "options": {},
+            "compatibilityPosture": "additive"
+          }
+        ],
+        "targets": [
+          "json-schema"
+        ],
+        "mappings": [],
+        "extensions": []
+      },
+      "valid": false,
+      "errors": [
+        {
+          "instancePath": "/exports/0/visibility",
+          "keyword": "enum",
+          "schemaPath": "#/properties/exports/items/properties/visibility/enum",
+          "params": {
+            "allowedValues": [
+              "public",
+              "private"
+            ]
+          },
+          "message": "must be equal to one of the allowed values"
+        }
+      ]
+    },
+    {
+      "id": "export-unknown-key",
+      "document": {
+        "contractVersion": "1.0.0",
+        "package": {
+          "identity": "agent-ix/spec-objects",
+          "version": "0.1.0"
+        },
+        "schemaDialect": "https://json-schema.org/draft/2020-12/schema",
+        "sourceRoots": [
+          "schemas/"
+        ],
+        "imports": [
+          {
+            "packageIdentity": "agent-ix/semantic-core",
+            "versionConstraint": "=0.1.0",
+            "exports": [],
+            "capabilities": []
+          }
+        ],
+        "exports": [
+          {
+            "name": "entity",
+            "typeIdentity": "ix://agent-ix/spec-objects/type/entity",
+            "visibility": "public",
+            "doc": "x"
+          }
+        ],
+        "profiles": [
+          {
+            "name": "default",
+            "version": "0.1.0",
+            "exports": [
+              "entity"
+            ],
+            "targets": [
+              "json-schema"
+            ],
+            "mappings": [],
+            "options": {},
+            "compatibilityPosture": "additive"
+          }
+        ],
+        "targets": [
+          "json-schema"
+        ],
+        "mappings": [],
+        "extensions": []
+      },
+      "valid": false,
+      "errors": [
+        {
+          "instancePath": "/exports/0",
+          "keyword": "additionalProperties",
+          "schemaPath": "#/properties/exports/items/additionalProperties",
+          "params": {
+            "additionalProperty": "doc"
+          },
+          "message": "must NOT have additional properties"
+        }
+      ]
+    },
+    {
+      "id": "export-missing-name",
+      "document": {
+        "contractVersion": "1.0.0",
+        "package": {
+          "identity": "agent-ix/spec-objects",
+          "version": "0.1.0"
+        },
+        "schemaDialect": "https://json-schema.org/draft/2020-12/schema",
+        "sourceRoots": [
+          "schemas/"
+        ],
+        "imports": [
+          {
+            "packageIdentity": "agent-ix/semantic-core",
+            "versionConstraint": "=0.1.0",
+            "exports": [],
+            "capabilities": []
+          }
+        ],
+        "exports": [
+          {
+            "typeIdentity": "ix://agent-ix/spec-objects/type/entity",
+            "visibility": "public"
+          }
+        ],
+        "profiles": [
+          {
+            "name": "default",
+            "version": "0.1.0",
+            "exports": [
+              "entity"
+            ],
+            "targets": [
+              "json-schema"
+            ],
+            "mappings": [],
+            "options": {},
+            "compatibilityPosture": "additive"
+          }
+        ],
+        "targets": [
+          "json-schema"
+        ],
+        "mappings": [],
+        "extensions": []
+      },
+      "valid": false,
+      "errors": [
+        {
+          "instancePath": "/exports/0",
+          "keyword": "required",
+          "schemaPath": "#/properties/exports/items/required",
+          "params": {
+            "missingProperty": "name"
+          },
+          "message": "must have required property 'name'"
+        }
+      ]
+    },
+    {
+      "id": "import-missing-capabilities",
+      "document": {
+        "contractVersion": "1.0.0",
+        "package": {
+          "identity": "agent-ix/spec-objects",
+          "version": "0.1.0"
+        },
+        "schemaDialect": "https://json-schema.org/draft/2020-12/schema",
+        "sourceRoots": [
+          "schemas/"
+        ],
+        "imports": [
+          {
+            "packageIdentity": "agent-ix/other",
+            "versionConstraint": "=1.0.0",
+            "exports": []
+          }
+        ],
+        "exports": [
+          {
+            "name": "entity",
+            "typeIdentity": "ix://agent-ix/spec-objects/type/entity",
+            "visibility": "public"
+          }
+        ],
+        "profiles": [
+          {
+            "name": "default",
+            "version": "0.1.0",
+            "exports": [
+              "entity"
+            ],
+            "targets": [
+              "json-schema"
+            ],
+            "mappings": [],
+            "options": {},
+            "compatibilityPosture": "additive"
+          }
+        ],
+        "targets": [
+          "json-schema"
+        ],
+        "mappings": [],
+        "extensions": []
+      },
+      "valid": false,
+      "errors": [
+        {
+          "instancePath": "/imports/0",
+          "keyword": "required",
+          "schemaPath": "#/properties/imports/items/required",
+          "params": {
+            "missingProperty": "capabilities"
+          },
+          "message": "must have required property 'capabilities'"
+        }
+      ]
+    },
+    {
+      "id": "import-identity-bad",
+      "document": {
+        "contractVersion": "1.0.0",
+        "package": {
+          "identity": "agent-ix/spec-objects",
+          "version": "0.1.0"
+        },
+        "schemaDialect": "https://json-schema.org/draft/2020-12/schema",
+        "sourceRoots": [
+          "schemas/"
+        ],
+        "imports": [
+          {
+            "packageIdentity": "ix://agent-ix/other",
+            "versionConstraint": "=1.0.0",
+            "exports": [],
+            "capabilities": []
+          }
+        ],
+        "exports": [
+          {
+            "name": "entity",
+            "typeIdentity": "ix://agent-ix/spec-objects/type/entity",
+            "visibility": "public"
+          }
+        ],
+        "profiles": [
+          {
+            "name": "default",
+            "version": "0.1.0",
+            "exports": [
+              "entity"
+            ],
+            "targets": [
+              "json-schema"
+            ],
+            "mappings": [],
+            "options": {},
+            "compatibilityPosture": "additive"
+          }
+        ],
+        "targets": [
+          "json-schema"
+        ],
+        "mappings": [],
+        "extensions": []
+      },
+      "valid": false,
+      "errors": [
+        {
+          "instancePath": "/imports/0/packageIdentity",
+          "keyword": "pattern",
+          "schemaPath": "common.schema.json#/$defs/packageIdentity/pattern",
+          "params": {
+            "pattern": "^[a-z0-9][a-z0-9._-]*/[a-z0-9][a-z0-9._-]*$"
+          },
+          "message": "must match pattern \"^[a-z0-9][a-z0-9._-]*/[a-z0-9][a-z0-9._-]*$\""
+        }
+      ]
+    },
+    {
+      "id": "import-constraint-empty",
+      "document": {
+        "contractVersion": "1.0.0",
+        "package": {
+          "identity": "agent-ix/spec-objects",
+          "version": "0.1.0"
+        },
+        "schemaDialect": "https://json-schema.org/draft/2020-12/schema",
+        "sourceRoots": [
+          "schemas/"
+        ],
+        "imports": [
+          {
+            "packageIdentity": "agent-ix/other",
+            "versionConstraint": "",
+            "exports": [],
+            "capabilities": []
+          }
+        ],
+        "exports": [
+          {
+            "name": "entity",
+            "typeIdentity": "ix://agent-ix/spec-objects/type/entity",
+            "visibility": "public"
+          }
+        ],
+        "profiles": [
+          {
+            "name": "default",
+            "version": "0.1.0",
+            "exports": [
+              "entity"
+            ],
+            "targets": [
+              "json-schema"
+            ],
+            "mappings": [],
+            "options": {},
+            "compatibilityPosture": "additive"
+          }
+        ],
+        "targets": [
+          "json-schema"
+        ],
+        "mappings": [],
+        "extensions": []
+      },
+      "valid": false,
+      "errors": [
+        {
+          "instancePath": "/imports/0/versionConstraint",
+          "keyword": "minLength",
+          "schemaPath": "#/properties/imports/items/properties/versionConstraint/minLength",
+          "params": {
+            "limit": 1
+          },
+          "message": "must NOT have fewer than 1 characters"
+        }
+      ]
+    },
+    {
+      "id": "profile-unknown-target",
+      "document": {
+        "contractVersion": "1.0.0",
+        "package": {
+          "identity": "agent-ix/spec-objects",
+          "version": "0.1.0"
+        },
+        "schemaDialect": "https://json-schema.org/draft/2020-12/schema",
+        "sourceRoots": [
+          "schemas/"
+        ],
+        "imports": [
+          {
+            "packageIdentity": "agent-ix/semantic-core",
+            "versionConstraint": "=0.1.0",
+            "exports": [],
+            "capabilities": []
+          }
+        ],
+        "exports": [
+          {
+            "name": "entity",
+            "typeIdentity": "ix://agent-ix/spec-objects/type/entity",
+            "visibility": "public"
+          }
+        ],
+        "profiles": [
+          {
+            "name": "default",
+            "version": "0.1.0",
+            "exports": [
+              "entity"
+            ],
+            "targets": [
+              "cobol"
+            ],
+            "mappings": [],
+            "options": {},
+            "compatibilityPosture": "additive"
+          }
+        ],
+        "targets": [
+          "json-schema"
+        ],
+        "mappings": [],
+        "extensions": []
+      },
+      "valid": false,
+      "errors": [
+        {
+          "instancePath": "/profiles/0/targets/0",
+          "keyword": "enum",
+          "schemaPath": "#/$defs/target/enum",
+          "params": {
+            "allowedValues": [
+              "json-schema",
+              "rust",
+              "typescript",
+              "python-pydantic-v2",
+              "python-dataclass"
+            ]
+          },
+          "message": "must be equal to one of the allowed values"
+        },
+        {
+          "instancePath": "/profiles/0/targets/0",
+          "keyword": "enum",
+          "schemaPath": "#/$defs/representationFormat/enum",
+          "params": {
+            "allowedValues": [
+              "markdown",
+              "json",
+              "postgresql",
+              "protobuf",
+              "avro",
+              "arrow",
+              "parquet",
+              "csv",
+              "tsv"
+            ]
+          },
+          "message": "must be equal to one of the allowed values"
+        },
+        {
+          "instancePath": "/profiles/0/targets/0",
+          "keyword": "anyOf",
+          "schemaPath": "#/anyOf",
+          "params": {},
+          "message": "must match a schema in anyOf"
+        }
+      ]
+    },
+    {
+      "id": "profile-duplicate-target",
+      "document": {
+        "contractVersion": "1.0.0",
+        "package": {
+          "identity": "agent-ix/spec-objects",
+          "version": "0.1.0"
+        },
+        "schemaDialect": "https://json-schema.org/draft/2020-12/schema",
+        "sourceRoots": [
+          "schemas/"
+        ],
+        "imports": [
+          {
+            "packageIdentity": "agent-ix/semantic-core",
+            "versionConstraint": "=0.1.0",
+            "exports": [],
+            "capabilities": []
+          }
+        ],
+        "exports": [
+          {
+            "name": "entity",
+            "typeIdentity": "ix://agent-ix/spec-objects/type/entity",
+            "visibility": "public"
+          }
+        ],
+        "profiles": [
+          {
+            "name": "default",
+            "version": "0.1.0",
+            "exports": [
+              "entity"
+            ],
+            "targets": [
+              "json-schema",
+              "json-schema"
+            ],
+            "mappings": [],
+            "options": {},
+            "compatibilityPosture": "additive"
+          }
+        ],
+        "targets": [
+          "json-schema"
+        ],
+        "mappings": [],
+        "extensions": []
+      },
+      "valid": false,
+      "errors": [
+        {
+          "instancePath": "/profiles/0/targets",
+          "keyword": "uniqueItems",
+          "schemaPath": "#/properties/profiles/items/properties/targets/uniqueItems",
+          "params": {
+            "i": 1,
+            "j": 0
+          },
+          "message": "must NOT have duplicate items (items ## 0 and 1 are identical)"
+        }
+      ]
+    },
+    {
+      "id": "profile-bad-version",
+      "document": {
+        "contractVersion": "1.0.0",
+        "package": {
+          "identity": "agent-ix/spec-objects",
+          "version": "0.1.0"
+        },
+        "schemaDialect": "https://json-schema.org/draft/2020-12/schema",
+        "sourceRoots": [
+          "schemas/"
+        ],
+        "imports": [
+          {
+            "packageIdentity": "agent-ix/semantic-core",
+            "versionConstraint": "=0.1.0",
+            "exports": [],
+            "capabilities": []
+          }
+        ],
+        "exports": [
+          {
+            "name": "entity",
+            "typeIdentity": "ix://agent-ix/spec-objects/type/entity",
+            "visibility": "public"
+          }
+        ],
+        "profiles": [
+          {
+            "name": "default",
+            "version": "one",
+            "exports": [
+              "entity"
+            ],
+            "targets": [
+              "json-schema"
+            ],
+            "mappings": [],
+            "options": {},
+            "compatibilityPosture": "additive"
+          }
+        ],
+        "targets": [
+          "json-schema"
+        ],
+        "mappings": [],
+        "extensions": []
+      },
+      "valid": false,
+      "errors": [
+        {
+          "instancePath": "/profiles/0/version",
+          "keyword": "pattern",
+          "schemaPath": "common.schema.json#/$defs/semver/pattern",
+          "params": {
+            "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z.-]+)?(?:\\+[0-9A-Za-z.-]+)?$"
+          },
+          "message": "must match pattern \"^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z.-]+)?(?:\\+[0-9A-Za-z.-]+)?$\""
+        }
+      ]
+    },
+    {
+      "id": "profile-posture-unknown",
+      "document": {
+        "contractVersion": "1.0.0",
+        "package": {
+          "identity": "agent-ix/spec-objects",
+          "version": "0.1.0"
+        },
+        "schemaDialect": "https://json-schema.org/draft/2020-12/schema",
+        "sourceRoots": [
+          "schemas/"
+        ],
+        "imports": [
+          {
+            "packageIdentity": "agent-ix/semantic-core",
+            "versionConstraint": "=0.1.0",
+            "exports": [],
+            "capabilities": []
+          }
+        ],
+        "exports": [
+          {
+            "name": "entity",
+            "typeIdentity": "ix://agent-ix/spec-objects/type/entity",
+            "visibility": "public"
+          }
+        ],
+        "profiles": [
+          {
+            "name": "default",
+            "version": "0.1.0",
+            "exports": [
+              "entity"
+            ],
+            "targets": [
+              "json-schema"
+            ],
+            "mappings": [],
+            "options": {},
+            "compatibilityPosture": "lossy"
+          }
+        ],
+        "targets": [
+          "json-schema"
+        ],
+        "mappings": [],
+        "extensions": []
+      },
+      "valid": false,
+      "errors": [
+        {
+          "instancePath": "/profiles/0/compatibilityPosture",
+          "keyword": "enum",
+          "schemaPath": "#/properties/profiles/items/properties/compatibilityPosture/enum",
+          "params": {
+            "allowedValues": [
+              "strict",
+              "additive",
+              "declared-lossy"
+            ]
+          },
+          "message": "must be equal to one of the allowed values"
+        }
+      ]
+    },
+    {
+      "id": "profile-options-not-object",
+      "document": {
+        "contractVersion": "1.0.0",
+        "package": {
+          "identity": "agent-ix/spec-objects",
+          "version": "0.1.0"
+        },
+        "schemaDialect": "https://json-schema.org/draft/2020-12/schema",
+        "sourceRoots": [
+          "schemas/"
+        ],
+        "imports": [
+          {
+            "packageIdentity": "agent-ix/semantic-core",
+            "versionConstraint": "=0.1.0",
+            "exports": [],
+            "capabilities": []
+          }
+        ],
+        "exports": [
+          {
+            "name": "entity",
+            "typeIdentity": "ix://agent-ix/spec-objects/type/entity",
+            "visibility": "public"
+          }
+        ],
+        "profiles": [
+          {
+            "name": "default",
+            "version": "0.1.0",
+            "exports": [
+              "entity"
+            ],
+            "targets": [
+              "json-schema"
+            ],
+            "mappings": [],
+            "options": [],
+            "compatibilityPosture": "additive"
+          }
+        ],
+        "targets": [
+          "json-schema"
+        ],
+        "mappings": [],
+        "extensions": []
+      },
+      "valid": false,
+      "errors": [
+        {
+          "instancePath": "/profiles/0/options",
+          "keyword": "type",
+          "schemaPath": "#/properties/profiles/items/properties/options/type",
+          "params": {
+            "type": "object"
+          },
+          "message": "must be object"
+        }
+      ]
+    },
+    {
+      "id": "profile-mapping-not-identity",
+      "document": {
+        "contractVersion": "1.0.0",
+        "package": {
+          "identity": "agent-ix/spec-objects",
+          "version": "0.1.0"
+        },
+        "schemaDialect": "https://json-schema.org/draft/2020-12/schema",
+        "sourceRoots": [
+          "schemas/"
+        ],
+        "imports": [
+          {
+            "packageIdentity": "agent-ix/semantic-core",
+            "versionConstraint": "=0.1.0",
+            "exports": [],
+            "capabilities": []
+          }
+        ],
+        "exports": [
+          {
+            "name": "entity",
+            "typeIdentity": "ix://agent-ix/spec-objects/type/entity",
+            "visibility": "public"
+          }
+        ],
+        "profiles": [
+          {
+            "name": "default",
+            "version": "0.1.0",
+            "exports": [
+              "entity"
+            ],
+            "targets": [
+              "json-schema"
+            ],
+            "mappings": [
+              "config-version"
+            ],
+            "options": {},
+            "compatibilityPosture": "additive"
+          }
+        ],
+        "targets": [
+          "json-schema"
+        ],
+        "mappings": [],
+        "extensions": []
+      },
+      "valid": false,
+      "errors": [
+        {
+          "instancePath": "/profiles/0/mappings/0",
+          "keyword": "pattern",
+          "schemaPath": "common.schema.json#/$defs/semanticIdentity/pattern",
+          "params": {
+            "pattern": "^ix://[a-z0-9][a-z0-9._-]*/[A-Za-z0-9][A-Za-z0-9._~:/-]*$"
+          },
+          "message": "must match pattern \"^ix://[a-z0-9][a-z0-9._-]*/[A-Za-z0-9][A-Za-z0-9._~:/-]*$\""
+        }
+      ]
+    },
+    {
+      "id": "profile-unknown-key",
+      "document": {
+        "contractVersion": "1.0.0",
+        "package": {
+          "identity": "agent-ix/spec-objects",
+          "version": "0.1.0"
+        },
+        "schemaDialect": "https://json-schema.org/draft/2020-12/schema",
+        "sourceRoots": [
+          "schemas/"
+        ],
+        "imports": [
+          {
+            "packageIdentity": "agent-ix/semantic-core",
+            "versionConstraint": "=0.1.0",
+            "exports": [],
+            "capabilities": []
+          }
+        ],
+        "exports": [
+          {
+            "name": "entity",
+            "typeIdentity": "ix://agent-ix/spec-objects/type/entity",
+            "visibility": "public"
+          }
+        ],
+        "profiles": [
+          {
+            "name": "default",
+            "version": "0.1.0",
+            "exports": [
+              "entity"
+            ],
+            "targets": [
+              "json-schema"
+            ],
+            "mappings": [],
+            "options": {},
+            "compatibilityPosture": "additive",
+            "description": "x"
+          }
+        ],
+        "targets": [
+          "json-schema"
+        ],
+        "mappings": [],
+        "extensions": []
+      },
+      "valid": false,
+      "errors": [
+        {
+          "instancePath": "/profiles/0",
+          "keyword": "additionalProperties",
+          "schemaPath": "#/properties/profiles/items/additionalProperties",
+          "params": {
+            "additionalProperty": "description"
+          },
+          "message": "must NOT have additional properties"
+        }
+      ]
+    },
+    {
+      "id": "targets-unknown",
+      "document": {
+        "contractVersion": "1.0.0",
+        "package": {
+          "identity": "agent-ix/spec-objects",
+          "version": "0.1.0"
+        },
+        "schemaDialect": "https://json-schema.org/draft/2020-12/schema",
+        "sourceRoots": [
+          "schemas/"
+        ],
+        "imports": [
+          {
+            "packageIdentity": "agent-ix/semantic-core",
+            "versionConstraint": "=0.1.0",
+            "exports": [],
+            "capabilities": []
+          }
+        ],
+        "exports": [
+          {
+            "name": "entity",
+            "typeIdentity": "ix://agent-ix/spec-objects/type/entity",
+            "visibility": "public"
+          }
+        ],
+        "profiles": [
+          {
+            "name": "default",
+            "version": "0.1.0",
+            "exports": [
+              "entity"
+            ],
+            "targets": [
+              "json-schema"
+            ],
+            "mappings": [],
+            "options": {},
+            "compatibilityPosture": "additive"
+          }
+        ],
+        "targets": [
+          "cobol"
+        ],
+        "mappings": [],
+        "extensions": []
+      },
+      "valid": false,
+      "errors": [
+        {
+          "instancePath": "/targets/0",
+          "keyword": "enum",
+          "schemaPath": "#/$defs/target/enum",
+          "params": {
+            "allowedValues": [
+              "json-schema",
+              "rust",
+              "typescript",
+              "python-pydantic-v2",
+              "python-dataclass"
+            ]
+          },
+          "message": "must be equal to one of the allowed values"
+        },
+        {
+          "instancePath": "/targets/0",
+          "keyword": "enum",
+          "schemaPath": "#/$defs/representationFormat/enum",
+          "params": {
+            "allowedValues": [
+              "markdown",
+              "json",
+              "postgresql",
+              "protobuf",
+              "avro",
+              "arrow",
+              "parquet",
+              "csv",
+              "tsv"
+            ]
+          },
+          "message": "must be equal to one of the allowed values"
+        },
+        {
+          "instancePath": "/targets/0",
+          "keyword": "anyOf",
+          "schemaPath": "#/anyOf",
+          "params": {},
+          "message": "must match a schema in anyOf"
+        }
+      ]
+    },
+    {
+      "id": "targets-duplicate",
+      "document": {
+        "contractVersion": "1.0.0",
+        "package": {
+          "identity": "agent-ix/spec-objects",
+          "version": "0.1.0"
+        },
+        "schemaDialect": "https://json-schema.org/draft/2020-12/schema",
+        "sourceRoots": [
+          "schemas/"
+        ],
+        "imports": [
+          {
+            "packageIdentity": "agent-ix/semantic-core",
+            "versionConstraint": "=0.1.0",
+            "exports": [],
+            "capabilities": []
+          }
+        ],
+        "exports": [
+          {
+            "name": "entity",
+            "typeIdentity": "ix://agent-ix/spec-objects/type/entity",
+            "visibility": "public"
+          }
+        ],
+        "profiles": [
+          {
+            "name": "default",
+            "version": "0.1.0",
+            "exports": [
+              "entity"
+            ],
+            "targets": [
+              "json-schema"
+            ],
+            "mappings": [],
+            "options": {},
+            "compatibilityPosture": "additive"
+          }
+        ],
+        "targets": [
+          "rust",
+          "rust"
+        ],
+        "mappings": [],
+        "extensions": []
+      },
+      "valid": false,
+      "errors": [
+        {
+          "instancePath": "/targets",
+          "keyword": "uniqueItems",
+          "schemaPath": "#/properties/targets/uniqueItems",
+          "params": {
+            "i": 1,
+            "j": 0
+          },
+          "message": "must NOT have duplicate items (items ## 0 and 1 are identical)"
+        }
+      ]
+    },
+    {
+      "id": "mappings-not-identity",
+      "document": {
+        "contractVersion": "1.0.0",
+        "package": {
+          "identity": "agent-ix/spec-objects",
+          "version": "0.1.0"
+        },
+        "schemaDialect": "https://json-schema.org/draft/2020-12/schema",
+        "sourceRoots": [
+          "schemas/"
+        ],
+        "imports": [
+          {
+            "packageIdentity": "agent-ix/semantic-core",
+            "versionConstraint": "=0.1.0",
+            "exports": [],
+            "capabilities": []
+          }
+        ],
+        "exports": [
+          {
+            "name": "entity",
+            "typeIdentity": "ix://agent-ix/spec-objects/type/entity",
+            "visibility": "public"
+          }
+        ],
+        "profiles": [
+          {
+            "name": "default",
+            "version": "0.1.0",
+            "exports": [
+              "entity"
+            ],
+            "targets": [
+              "json-schema"
+            ],
+            "mappings": [],
+            "options": {},
+            "compatibilityPosture": "additive"
+          }
+        ],
+        "targets": [
+          "json-schema"
+        ],
+        "mappings": [
+          "config-version"
+        ],
+        "extensions": []
+      },
+      "valid": false,
+      "errors": [
+        {
+          "instancePath": "/mappings/0",
+          "keyword": "pattern",
+          "schemaPath": "common.schema.json#/$defs/semanticIdentity/pattern",
+          "params": {
+            "pattern": "^ix://[a-z0-9][a-z0-9._-]*/[A-Za-z0-9][A-Za-z0-9._~:/-]*$"
+          },
+          "message": "must match pattern \"^ix://[a-z0-9][a-z0-9._-]*/[A-Za-z0-9][A-Za-z0-9._~:/-]*$\""
+        }
+      ]
+    },
+    {
+      "id": "extension-missing-payload",
+      "document": {
+        "contractVersion": "1.0.0",
+        "package": {
+          "identity": "agent-ix/spec-objects",
+          "version": "0.1.0"
+        },
+        "schemaDialect": "https://json-schema.org/draft/2020-12/schema",
+        "sourceRoots": [
+          "schemas/"
+        ],
+        "imports": [
+          {
+            "packageIdentity": "agent-ix/semantic-core",
+            "versionConstraint": "=0.1.0",
+            "exports": [],
+            "capabilities": []
+          }
+        ],
+        "exports": [
+          {
+            "name": "entity",
+            "typeIdentity": "ix://agent-ix/spec-objects/type/entity",
+            "visibility": "public"
+          }
+        ],
+        "profiles": [
+          {
+            "name": "default",
+            "version": "0.1.0",
+            "exports": [
+              "entity"
+            ],
+            "targets": [
+              "json-schema"
+            ],
+            "mappings": [],
+            "options": {},
+            "compatibilityPosture": "additive"
+          }
+        ],
+        "targets": [
+          "json-schema"
+        ],
+        "mappings": [],
+        "extensions": [
+          {
+            "identity": "ix://agent-ix/quoin/ext/a",
+            "version": "1.0.0",
+            "required": true
+          }
+        ]
+      },
+      "valid": false,
+      "errors": [
+        {
+          "instancePath": "/extensions/0",
+          "keyword": "required",
+          "schemaPath": "#/required",
+          "params": {
+            "missingProperty": "payload"
+          },
+          "message": "must have required property 'payload'"
+        }
+      ]
+    },
+    {
+      "id": "extension-bad-version",
+      "document": {
+        "contractVersion": "1.0.0",
+        "package": {
+          "identity": "agent-ix/spec-objects",
+          "version": "0.1.0"
+        },
+        "schemaDialect": "https://json-schema.org/draft/2020-12/schema",
+        "sourceRoots": [
+          "schemas/"
+        ],
+        "imports": [
+          {
+            "packageIdentity": "agent-ix/semantic-core",
+            "versionConstraint": "=0.1.0",
+            "exports": [],
+            "capabilities": []
+          }
+        ],
+        "exports": [
+          {
+            "name": "entity",
+            "typeIdentity": "ix://agent-ix/spec-objects/type/entity",
+            "visibility": "public"
+          }
+        ],
+        "profiles": [
+          {
+            "name": "default",
+            "version": "0.1.0",
+            "exports": [
+              "entity"
+            ],
+            "targets": [
+              "json-schema"
+            ],
+            "mappings": [],
+            "options": {},
+            "compatibilityPosture": "additive"
+          }
+        ],
+        "targets": [
+          "json-schema"
+        ],
+        "mappings": [],
+        "extensions": [
+          {
+            "identity": "ix://agent-ix/quoin/ext/a",
+            "version": "1",
+            "required": true,
+            "payload": {}
+          }
+        ]
+      },
+      "valid": false,
+      "errors": [
+        {
+          "instancePath": "/extensions/0/version",
+          "keyword": "pattern",
+          "schemaPath": "#/$defs/semver/pattern",
+          "params": {
+            "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z.-]+)?(?:\\+[0-9A-Za-z.-]+)?$"
+          },
+          "message": "must match pattern \"^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z.-]+)?(?:\\+[0-9A-Za-z.-]+)?$\""
+        }
+      ]
+    },
+    {
+      "id": "extension-required-not-boolean",
+      "document": {
+        "contractVersion": "1.0.0",
+        "package": {
+          "identity": "agent-ix/spec-objects",
+          "version": "0.1.0"
+        },
+        "schemaDialect": "https://json-schema.org/draft/2020-12/schema",
+        "sourceRoots": [
+          "schemas/"
+        ],
+        "imports": [
+          {
+            "packageIdentity": "agent-ix/semantic-core",
+            "versionConstraint": "=0.1.0",
+            "exports": [],
+            "capabilities": []
+          }
+        ],
+        "exports": [
+          {
+            "name": "entity",
+            "typeIdentity": "ix://agent-ix/spec-objects/type/entity",
+            "visibility": "public"
+          }
+        ],
+        "profiles": [
+          {
+            "name": "default",
+            "version": "0.1.0",
+            "exports": [
+              "entity"
+            ],
+            "targets": [
+              "json-schema"
+            ],
+            "mappings": [],
+            "options": {},
+            "compatibilityPosture": "additive"
+          }
+        ],
+        "targets": [
+          "json-schema"
+        ],
+        "mappings": [],
+        "extensions": [
+          {
+            "identity": "ix://agent-ix/quoin/ext/a",
+            "version": "1.0.0",
+            "required": "yes",
+            "payload": {}
+          }
+        ]
+      },
+      "valid": false,
+      "errors": [
+        {
+          "instancePath": "/extensions/0/required",
+          "keyword": "type",
+          "schemaPath": "#/properties/required/type",
+          "params": {
+            "type": "boolean"
+          },
+          "message": "must be boolean"
+        }
+      ]
+    },
+    {
+      "id": "extension-unknown-key",
+      "document": {
+        "contractVersion": "1.0.0",
+        "package": {
+          "identity": "agent-ix/spec-objects",
+          "version": "0.1.0"
+        },
+        "schemaDialect": "https://json-schema.org/draft/2020-12/schema",
+        "sourceRoots": [
+          "schemas/"
+        ],
+        "imports": [
+          {
+            "packageIdentity": "agent-ix/semantic-core",
+            "versionConstraint": "=0.1.0",
+            "exports": [],
+            "capabilities": []
+          }
+        ],
+        "exports": [
+          {
+            "name": "entity",
+            "typeIdentity": "ix://agent-ix/spec-objects/type/entity",
+            "visibility": "public"
+          }
+        ],
+        "profiles": [
+          {
+            "name": "default",
+            "version": "0.1.0",
+            "exports": [
+              "entity"
+            ],
+            "targets": [
+              "json-schema"
+            ],
+            "mappings": [],
+            "options": {},
+            "compatibilityPosture": "additive"
+          }
+        ],
+        "targets": [
+          "json-schema"
+        ],
+        "mappings": [],
+        "extensions": [
+          {
+            "identity": "ix://agent-ix/quoin/ext/a",
+            "version": "1.0.0",
+            "required": true,
+            "payload": {},
+            "owner": "x"
+          }
+        ]
+      },
+      "valid": false,
+      "errors": [
+        {
+          "instancePath": "/extensions/0",
+          "keyword": "additionalProperties",
+          "schemaPath": "#/additionalProperties",
+          "params": {
+            "additionalProperty": "owner"
+          },
+          "message": "must NOT have additional properties"
+        }
+      ]
+    },
+    {
+      "id": "many-faults",
+      "document": {
+        "contractVersion": "2.0.0",
+        "package": {
+          "identity": "X",
+          "version": "1"
+        },
+        "schemaDialect": "draft-07",
+        "sourceRoots": [],
+        "imports": [
+          {}
+        ],
+        "exports": [
+          {}
+        ],
+        "profiles": [
+          {}
+        ],
+        "targets": [
+          "cobol"
+        ],
+        "mappings": [
+          "x"
+        ],
+        "extensions": [
+          {}
+        ],
+        "extra": true
+      },
+      "valid": false,
+      "errors": [
+        {
+          "instancePath": "",
+          "keyword": "additionalProperties",
+          "schemaPath": "#/additionalProperties",
+          "params": {
+            "additionalProperty": "extra"
+          },
+          "message": "must NOT have additional properties"
+        },
+        {
+          "instancePath": "/contractVersion",
+          "keyword": "const",
+          "schemaPath": "#/properties/contractVersion/const",
+          "params": {
+            "allowedValue": "1.0.0"
+          },
+          "message": "must be equal to constant"
+        },
+        {
+          "instancePath": "/package/identity",
+          "keyword": "pattern",
+          "schemaPath": "common.schema.json#/$defs/packageIdentity/pattern",
+          "params": {
+            "pattern": "^[a-z0-9][a-z0-9._-]*/[a-z0-9][a-z0-9._-]*$"
+          },
+          "message": "must match pattern \"^[a-z0-9][a-z0-9._-]*/[a-z0-9][a-z0-9._-]*$\""
+        },
+        {
+          "instancePath": "/package/version",
+          "keyword": "pattern",
+          "schemaPath": "common.schema.json#/$defs/semver/pattern",
+          "params": {
+            "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z.-]+)?(?:\\+[0-9A-Za-z.-]+)?$"
+          },
+          "message": "must match pattern \"^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z.-]+)?(?:\\+[0-9A-Za-z.-]+)?$\""
+        },
+        {
+          "instancePath": "/schemaDialect",
+          "keyword": "const",
+          "schemaPath": "#/properties/schemaDialect/const",
+          "params": {
+            "allowedValue": "https://json-schema.org/draft/2020-12/schema"
+          },
+          "message": "must be equal to constant"
+        },
+        {
+          "instancePath": "/sourceRoots",
+          "keyword": "minItems",
+          "schemaPath": "#/properties/sourceRoots/minItems",
+          "params": {
+            "limit": 1
+          },
+          "message": "must NOT have fewer than 1 items"
+        },
+        {
+          "instancePath": "/exports/0",
+          "keyword": "required",
+          "schemaPath": "#/properties/exports/items/required",
+          "params": {
+            "missingProperty": "name"
+          },
+          "message": "must have required property 'name'"
+        },
+        {
+          "instancePath": "/exports/0",
+          "keyword": "required",
+          "schemaPath": "#/properties/exports/items/required",
+          "params": {
+            "missingProperty": "typeIdentity"
+          },
+          "message": "must have required property 'typeIdentity'"
+        },
+        {
+          "instancePath": "/exports/0",
+          "keyword": "required",
+          "schemaPath": "#/properties/exports/items/required",
+          "params": {
+            "missingProperty": "visibility"
+          },
+          "message": "must have required property 'visibility'"
+        },
+        {
+          "instancePath": "/imports/0",
+          "keyword": "required",
+          "schemaPath": "#/properties/imports/items/required",
+          "params": {
+            "missingProperty": "packageIdentity"
+          },
+          "message": "must have required property 'packageIdentity'"
+        },
+        {
+          "instancePath": "/imports/0",
+          "keyword": "required",
+          "schemaPath": "#/properties/imports/items/required",
+          "params": {
+            "missingProperty": "versionConstraint"
+          },
+          "message": "must have required property 'versionConstraint'"
+        },
+        {
+          "instancePath": "/imports/0",
+          "keyword": "required",
+          "schemaPath": "#/properties/imports/items/required",
+          "params": {
+            "missingProperty": "exports"
+          },
+          "message": "must have required property 'exports'"
+        },
+        {
+          "instancePath": "/imports/0",
+          "keyword": "required",
+          "schemaPath": "#/properties/imports/items/required",
+          "params": {
+            "missingProperty": "capabilities"
+          },
+          "message": "must have required property 'capabilities'"
+        },
+        {
+          "instancePath": "/profiles/0",
+          "keyword": "required",
+          "schemaPath": "#/properties/profiles/items/required",
+          "params": {
+            "missingProperty": "name"
+          },
+          "message": "must have required property 'name'"
+        },
+        {
+          "instancePath": "/profiles/0",
+          "keyword": "required",
+          "schemaPath": "#/properties/profiles/items/required",
+          "params": {
+            "missingProperty": "version"
+          },
+          "message": "must have required property 'version'"
+        },
+        {
+          "instancePath": "/profiles/0",
+          "keyword": "required",
+          "schemaPath": "#/properties/profiles/items/required",
+          "params": {
+            "missingProperty": "exports"
+          },
+          "message": "must have required property 'exports'"
+        },
+        {
+          "instancePath": "/profiles/0",
+          "keyword": "required",
+          "schemaPath": "#/properties/profiles/items/required",
+          "params": {
+            "missingProperty": "targets"
+          },
+          "message": "must have required property 'targets'"
+        },
+        {
+          "instancePath": "/profiles/0",
+          "keyword": "required",
+          "schemaPath": "#/properties/profiles/items/required",
+          "params": {
+            "missingProperty": "mappings"
+          },
+          "message": "must have required property 'mappings'"
+        },
+        {
+          "instancePath": "/profiles/0",
+          "keyword": "required",
+          "schemaPath": "#/properties/profiles/items/required",
+          "params": {
+            "missingProperty": "options"
+          },
+          "message": "must have required property 'options'"
+        },
+        {
+          "instancePath": "/profiles/0",
+          "keyword": "required",
+          "schemaPath": "#/properties/profiles/items/required",
+          "params": {
+            "missingProperty": "compatibilityPosture"
+          },
+          "message": "must have required property 'compatibilityPosture'"
+        },
+        {
+          "instancePath": "/targets/0",
+          "keyword": "enum",
+          "schemaPath": "#/$defs/target/enum",
+          "params": {
+            "allowedValues": [
+              "json-schema",
+              "rust",
+              "typescript",
+              "python-pydantic-v2",
+              "python-dataclass"
+            ]
+          },
+          "message": "must be equal to one of the allowed values"
+        },
+        {
+          "instancePath": "/targets/0",
+          "keyword": "enum",
+          "schemaPath": "#/$defs/representationFormat/enum",
+          "params": {
+            "allowedValues": [
+              "markdown",
+              "json",
+              "postgresql",
+              "protobuf",
+              "avro",
+              "arrow",
+              "parquet",
+              "csv",
+              "tsv"
+            ]
+          },
+          "message": "must be equal to one of the allowed values"
+        },
+        {
+          "instancePath": "/targets/0",
+          "keyword": "anyOf",
+          "schemaPath": "#/anyOf",
+          "params": {},
+          "message": "must match a schema in anyOf"
+        },
+        {
+          "instancePath": "/mappings/0",
+          "keyword": "pattern",
+          "schemaPath": "common.schema.json#/$defs/semanticIdentity/pattern",
+          "params": {
+            "pattern": "^ix://[a-z0-9][a-z0-9._-]*/[A-Za-z0-9][A-Za-z0-9._~:/-]*$"
+          },
+          "message": "must match pattern \"^ix://[a-z0-9][a-z0-9._-]*/[A-Za-z0-9][A-Za-z0-9._~:/-]*$\""
+        },
+        {
+          "instancePath": "/extensions/0",
+          "keyword": "required",
+          "schemaPath": "#/required",
+          "params": {
+            "missingProperty": "identity"
+          },
+          "message": "must have required property 'identity'"
+        },
+        {
+          "instancePath": "/extensions/0",
+          "keyword": "required",
+          "schemaPath": "#/required",
+          "params": {
+            "missingProperty": "version"
+          },
+          "message": "must have required property 'version'"
+        },
+        {
+          "instancePath": "/extensions/0",
+          "keyword": "required",
+          "schemaPath": "#/required",
+          "params": {
+            "missingProperty": "required"
+          },
+          "message": "must have required property 'required'"
+        },
+        {
+          "instancePath": "/extensions/0",
+          "keyword": "required",
+          "schemaPath": "#/required",
+          "params": {
+            "missingProperty": "payload"
+          },
+          "message": "must have required property 'payload'"
+        }
+      ]
+    },
+    {
+      "id": "not-an-object",
+      "document": "manifest",
+      "valid": false,
+      "errors": [
+        {
+          "instancePath": "",
+          "keyword": "type",
+          "schemaPath": "#/type",
+          "params": {
+            "type": "object"
+          },
+          "message": "must be object"
+        }
+      ]
+    },
+    {
+      "id": "empty-object",
+      "document": {},
+      "valid": false,
+      "errors": [
+        {
+          "instancePath": "",
+          "keyword": "required",
+          "schemaPath": "#/required",
+          "params": {
+            "missingProperty": "contractVersion"
+          },
+          "message": "must have required property 'contractVersion'"
+        },
+        {
+          "instancePath": "",
+          "keyword": "required",
+          "schemaPath": "#/required",
+          "params": {
+            "missingProperty": "package"
+          },
+          "message": "must have required property 'package'"
+        },
+        {
+          "instancePath": "",
+          "keyword": "required",
+          "schemaPath": "#/required",
+          "params": {
+            "missingProperty": "schemaDialect"
+          },
+          "message": "must have required property 'schemaDialect'"
+        },
+        {
+          "instancePath": "",
+          "keyword": "required",
+          "schemaPath": "#/required",
+          "params": {
+            "missingProperty": "sourceRoots"
+          },
+          "message": "must have required property 'sourceRoots'"
+        },
+        {
+          "instancePath": "",
+          "keyword": "required",
+          "schemaPath": "#/required",
+          "params": {
+            "missingProperty": "exports"
+          },
+          "message": "must have required property 'exports'"
+        },
+        {
+          "instancePath": "",
+          "keyword": "required",
+          "schemaPath": "#/required",
+          "params": {
+            "missingProperty": "imports"
+          },
+          "message": "must have required property 'imports'"
+        },
+        {
+          "instancePath": "",
+          "keyword": "required",
+          "schemaPath": "#/required",
+          "params": {
+            "missingProperty": "profiles"
+          },
+          "message": "must have required property 'profiles'"
+        },
+        {
+          "instancePath": "",
+          "keyword": "required",
+          "schemaPath": "#/required",
+          "params": {
+            "missingProperty": "targets"
+          },
+          "message": "must have required property 'targets'"
+        },
+        {
+          "instancePath": "",
+          "keyword": "required",
+          "schemaPath": "#/required",
+          "params": {
+            "missingProperty": "mappings"
+          },
+          "message": "must have required property 'mappings'"
+        },
+        {
+          "instancePath": "",
+          "keyword": "required",
+          "schemaPath": "#/required",
+          "params": {
+            "missingProperty": "extensions"
+          },
+          "message": "must have required property 'extensions'"
+        }
+      ]
+    }
+  ]
+}

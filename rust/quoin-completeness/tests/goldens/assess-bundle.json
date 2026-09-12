@@ -1,0 +1,213 @@
+{
+  "provenance": {
+    "producer": "scripts/capture-semantic-goldens.mjs",
+    "oracle": "agent-ix/quoin src/semantic + src/completeness (TypeScript)",
+    "quoinRevision": "4d27dcf1621d8c28da0961a5521a5be7b6d1cd28",
+    "ajvVersion": "8.20.0",
+    "note": "Captured once from the TypeScript implementation. The Rust crates read these files; they never invoke Node. Regenerate by re-running the producer, never by hand-editing."
+  },
+  "source": "src/completeness/run.ts assessBundle() + declarations.ts loadVocabularyCoverage()",
+  "moduleFiles": {
+    "manifest.yaml": "name: iso\nversion: 1.0.0\nartifact_types:\n- name: NFR\n  grammar_ref: g\n  frontmatter_schema_ref: schemas/nfr.json\ntraceability:\n  vocabulary_coverage:\n  - name: quality-characteristics\n    from: NFR\n    field: quality_attribute\n    check: vocabulary-coverage\n    justified_absence_field: quality_attributes_not_applicable\n  - name: open-vocabulary\n    from: NFR\n    field: owner\n    check: owner-coverage\n  - name: missing-type\n    from: ZZZ\n    field: whatever\n    check: zzz\n",
+    "schemas/nfr.json": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"quality_attribute\": {\n      \"enum\": [\n        \"security\",\n        \"reliability\",\n        \"safety\",\n        \"compliance\"\n      ]\n    },\n    \"owner\": {\n      \"type\": \"string\"\n    }\n  }\n}"
+  },
+  "bundleFiles": {
+    "a.md": "---\nid: NFR-001\nquality_attribute: security\n---\n\nBody A\n",
+    "nested/b.md": "---\nid: NFR-002\nquality_attribute:\n  - reliability\n  - safety\n---\n\nBody B\n",
+    "nested/deep/c.md": "---\nid: NFR-003\nquality_attributes_not_applicable: [compliance]\n---\n\n| compliance | not a regulated product |\n",
+    "no-frontmatter.md": "# Index\n\nnothing\n",
+    "broken.md": "---\nid: [unclosed\n---\n\nbody\n",
+    "empty-frontmatter.md": "---\n---\n\nbody\n",
+    "crlf.md": "---\r\nid: NFR-004\r\nquality_attribute: security\r\n---\r\n\r\nBody\r\n",
+    "not-markdown.txt": "---\nquality_attribute: security\n---\n",
+    "scalar-frontmatter.md": "---\njust-a-string\n---\n\nbody\n",
+    "no-trailing-newline.md": "---\nid: NFR-005\nquality_attribute: compliance\n---\nbody"
+  },
+  "declarations": {
+    "declarations": [
+      {
+        "name": "quality-characteristics",
+        "from": "NFR",
+        "field": "quality_attribute",
+        "check": "vocabulary-coverage",
+        "justifiedAbsenceField": "quality_attributes_not_applicable",
+        "values": [
+          "security",
+          "reliability",
+          "safety",
+          "compliance"
+        ],
+        "moduleName": "iso"
+      }
+    ],
+    "unresolved": [
+      {
+        "name": "open-vocabulary",
+        "reason": "property 'owner' declares no enum, so its vocabulary is open"
+      },
+      {
+        "name": "missing-type",
+        "reason": "no artifact type 'ZZZ' in this module"
+      }
+    ]
+  },
+  "cases": [
+    {
+      "id": "advisory",
+      "strict": false,
+      "hasModules": true,
+      "bundleRootExists": true,
+      "assessment": {
+        "vocabularies": [
+          "quality-characteristics"
+        ],
+        "unresolved": [
+          {
+            "name": "open-vocabulary",
+            "reason": "property 'owner' declares no enum, so its vocabulary is open"
+          },
+          {
+            "name": "missing-type",
+            "reason": "no artifact type 'ZZZ' in this module"
+          }
+        ],
+        "unreadable": [
+          {
+            "path": "broken.md",
+            "reason": "Flow sequence in block collection must be sufficiently indented and end with a ] at line 1, column 14:\n\nid: [unclosed\n             ^\n"
+          }
+        ],
+        "rollups": [
+          {
+            "vocabulary": "quality-characteristics",
+            "declared": 4,
+            "owned": 4,
+            "excused": 1,
+            "unowned": 0
+          }
+        ],
+        "findings": [],
+        "verdict": "PASS"
+      }
+    },
+    {
+      "id": "strict",
+      "strict": true,
+      "hasModules": true,
+      "bundleRootExists": true,
+      "assessment": {
+        "vocabularies": [
+          "quality-characteristics"
+        ],
+        "unresolved": [
+          {
+            "name": "open-vocabulary",
+            "reason": "property 'owner' declares no enum, so its vocabulary is open"
+          },
+          {
+            "name": "missing-type",
+            "reason": "no artifact type 'ZZZ' in this module"
+          }
+        ],
+        "unreadable": [
+          {
+            "path": "broken.md",
+            "reason": "Flow sequence in block collection must be sufficiently indented and end with a ] at line 1, column 14:\n\nid: [unclosed\n             ^\n"
+          }
+        ],
+        "rollups": [
+          {
+            "vocabulary": "quality-characteristics",
+            "declared": 4,
+            "owned": 4,
+            "excused": 1,
+            "unowned": 0
+          }
+        ],
+        "findings": [],
+        "verdict": "PASS"
+      }
+    },
+    {
+      "id": "no-modules",
+      "strict": false,
+      "hasModules": false,
+      "bundleRootExists": true,
+      "assessment": {
+        "vocabularies": [],
+        "unresolved": [],
+        "unreadable": [
+          {
+            "path": "broken.md",
+            "reason": "Flow sequence in block collection must be sufficiently indented and end with a ] at line 1, column 14:\n\nid: [unclosed\n             ^\n"
+          }
+        ],
+        "rollups": [],
+        "findings": [],
+        "verdict": "UNCHECKED"
+      }
+    },
+    {
+      "id": "absent-bundle-root",
+      "strict": false,
+      "hasModules": true,
+      "bundleRootExists": false,
+      "assessment": {
+        "vocabularies": [
+          "quality-characteristics"
+        ],
+        "unresolved": [
+          {
+            "name": "open-vocabulary",
+            "reason": "property 'owner' declares no enum, so its vocabulary is open"
+          },
+          {
+            "name": "missing-type",
+            "reason": "no artifact type 'ZZZ' in this module"
+          }
+        ],
+        "unreadable": [],
+        "rollups": [
+          {
+            "vocabulary": "quality-characteristics",
+            "declared": 4,
+            "owned": 0,
+            "excused": 0,
+            "unowned": 4
+          }
+        ],
+        "findings": [
+          {
+            "vocabulary": "quality-characteristics",
+            "value": "compliance",
+            "kind": "unowned",
+            "severity": "medium",
+            "message": "no document claims 'compliance' for 'quality_attribute', and nothing records it under 'quality_attributes_not_applicable'"
+          },
+          {
+            "vocabulary": "quality-characteristics",
+            "value": "reliability",
+            "kind": "unowned",
+            "severity": "medium",
+            "message": "no document claims 'reliability' for 'quality_attribute', and nothing records it under 'quality_attributes_not_applicable'"
+          },
+          {
+            "vocabulary": "quality-characteristics",
+            "value": "safety",
+            "kind": "unowned",
+            "severity": "medium",
+            "message": "no document claims 'safety' for 'quality_attribute', and nothing records it under 'quality_attributes_not_applicable'"
+          },
+          {
+            "vocabulary": "quality-characteristics",
+            "value": "security",
+            "kind": "unowned",
+            "severity": "medium",
+            "message": "no document claims 'security' for 'quality_attribute', and nothing records it under 'quality_attributes_not_applicable'"
+          }
+        ],
+        "verdict": "CONDITIONAL"
+      }
+    }
+  ]
+}
