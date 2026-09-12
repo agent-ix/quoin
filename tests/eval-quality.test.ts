@@ -343,7 +343,7 @@ describe("finding precision and recall", () => {
   });
 
   it("a STANDING ruling covers only the declarations it names", () => {
-    // TC-1001
+    // Trace: FR-043-AC-16
     // The first measurement of `unadjudicated` read 316 of 319 for
     // `archetype-matches-nothing`, and the obvious way to move that number is
     // wrong: adding the token to seventy-six `expect.yaml` files would be 300
@@ -383,7 +383,6 @@ describe("finding precision and recall", () => {
   });
 
   it("a standing ruling is counted separately from a per-case one", () => {
-    // TC-1002
     // Different strengths of evidence. The first run after
     // `archetype-matches-nothing` gained a standing ruling read precision 1.00
     // over 323 firings — of which 3 were the fixtures' own `expect.yaml` and
