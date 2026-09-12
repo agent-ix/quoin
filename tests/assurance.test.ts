@@ -102,7 +102,7 @@ describe("building the case", () => {
     expect(result.claims[0].children[0].status).toBe("open");
   });
 
-  // Trace: FR-040-AC-4
+  // Trace: FR-040-AC-4, FR-040-CON-2
   it("marks a claim nothing traces to as undeveloped, not as met", () => {
     // A goal with no sub-goal and no evidence is open. Rendering it supported
     // would assure a claim on the strength of nobody having written anything

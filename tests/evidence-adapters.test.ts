@@ -216,7 +216,7 @@ describe("the junit adapter", () => {
     expect(entries[1].traceIds).toBeUndefined();
   });
 
-  // Trace: FR-033-AC-6
+  // Trace: FR-033-AC-6, FR-033-CON-3
   it("names no evidence kind, because JUnit does not carry one", () => {
     // Unit, integration and e2e suites all emit JUnit. An adapter answering
     // "Unit" would assert something the format does not contain — and would
@@ -224,7 +224,7 @@ describe("the junit adapter", () => {
     expect(junitAdapter.parse(JUNIT).evidenceKind).toBeUndefined();
   });
 
-  // Trace: FR-033-AC-7
+  // Trace: FR-033-AC-7, FR-033-CON-4
   it("rejects input carrying no testcase rather than recording an empty run", () => {
     // An empty run is indistinguishable from a suite that passed nothing, which
     // is exactly the state a freshness check must not be fed.

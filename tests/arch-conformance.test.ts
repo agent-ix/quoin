@@ -125,7 +125,7 @@ function archCatalog(): MethodCatalog {
 }
 
 describe("advising architecture conformance", () => {
-  // Trace: FR-036-AC-6
+  // Trace: FR-036-AC-6, FR-036-CON-3
   it("mints both characteristics the catalog's rule is keyed on", () => {
     // `module-boundary` was declared by the catalog and minted by nothing, so
     // half of this method's applicability rule could never match. A census of

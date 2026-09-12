@@ -163,7 +163,7 @@ describe("the cargo-audit adapter, against real tool output", () => {
     expect(result.findings[0].path).toMatch(/^anyhow@/);
   });
 
-  // Trace: FR-034-AC-7
+  // Trace: FR-034-AC-7, FR-034-CON-2
   it("keeps each warning kind as its own severity rather than flattening", () => {
     // `unsound`, `unmaintained` and `yanked` are distinctions cargo-audit drew.
     // Collapsing them to one word would discard information the tool produced,

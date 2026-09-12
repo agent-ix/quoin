@@ -89,7 +89,7 @@ describe("quoin's declared boundaries", () => {
     expect(violations).toEqual([]);
   });
 
-  // Trace: FR-036-AC-8
+  // Trace: FR-036-AC-8, FR-036-CON-1
   it("executes only git, quire and ix-flow", () => {
     // ADR-0011 invariant 1 made mechanical: quoin transcribes, the consumer's CI
     // executes. A run record's claim is "this ran in your CI" — true only while

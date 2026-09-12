@@ -141,7 +141,7 @@ describe("the auditor over a combinatorial obligation", () => {
     })),
   });
 
-  // Trace: FR-035-AC-9
+  // Trace: FR-035-AC-9, FR-035-CON-3
   it("reports the missing combinations by name", () => {
     const report = audit({
       obligations: [obligation],
