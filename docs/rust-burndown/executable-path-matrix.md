@@ -85,7 +85,7 @@ After the owner rulings of 2026-09-12 and the deletion of the one violation:
 
 | | Files | Lines |
 |---|---:|---:|
-| **Violations** | **0** | **0** |
+| **Violations** | **0** ([#375](https://github.com/agent-ix/quoin/issues/375)) | **0** |
 | **Retained-with-successor** | 345 | **81,910** |
 | **Allowed** | 18 | **23,579** |
 | **Total population** | **363** | **105,489** |
@@ -152,30 +152,45 @@ Each row names the exception it matches. Full definitions in
 All rows are *staged-port retention*: still TypeScript on purpose, because the Rust
 replacement does not exist yet.
 
-**Successor convention:** the owner is opening the ten stage tickets. Until they exist,
-the named successor is `quoin#373 Stage N` and the expiry is that stage's end. The
-issue numbers replace these references once the tickets land.
+**Successor convention:** each row names the ticket whose Rust replacement retires it.
+Seven stage tickets exist and are linked inline below:
+
+| Stage | Ticket | Covers |
+|---|---|---|
+| 0 | [#375](https://github.com/agent-ix/quoin/issues/375) | workspace, boundary, CI at one revision, gates |
+| 0 (prereq) | [#376](https://github.com/agent-ix/quoin/issues/376) | break the two TypeScript dependency cycles — must land before any crate exists |
+| 1 | [#379](https://github.com/agent-ix/quoin/issues/379) | quire adapter collapse → `quoin-quire` |
+| 2 | [#377](https://github.com/agent-ix/quoin/issues/377) | validators — boundary proof-of-life |
+| 3 | [#378](https://github.com/agent-ix/quoin/issues/378) | semantic + completeness |
+| 4 (foundation) | [#380](https://github.com/agent-ix/quoin/issues/380) | `quoin-store` — canonical JSON, JCS, blake3, atomic rename |
+| 7 | [#381](https://github.com/agent-ix/quoin/issues/381) | config, plugins, modules |
+
+**Stages 5, 6, 8 and 9 have no tickets yet.** Rows in those stages name
+`quoin#373 Stage N` and the expiry is that stage's end; the references are replaced as
+the tickets land. Stage 5 (auditor/advisor, assurance, graph-analysis) and Stage 6
+(measurement) are the two largest untucketed domains and together carry roughly a third
+of the retained population.
 
 #### Engine — `src/` (27,692 lines, 169 files, all `shipped`)
 
 | Path | Lang | Lines | Files | Reach | Owner capability | Stage | Basis |
 |---|---|---:|---:|---|---|---|---|
 | `src/measurement/**` | TS | 7,851 | 35 | `shipped` `oracle` | measurement model | **6** | Largest single block, last logic stage. `engine-run.ts`, `enumerate.ts`, `fixture-corpus.ts`, `modules.ts` all `execFileSync`. |
-| `src/evidence/**` | TS | 3,958 | 18 | `shipped` | evidence store | **4** | Quoin keeps ownership of the store (EA migration contract). The port relocates its language, not its ownership. Carries the digest/JCS surface — #373's hard gate. |
+| `src/evidence/**` | TS | 3,958 | 18 | `shipped` | evidence store | **4** ([#380](https://github.com/agent-ix/quoin/issues/380)) | Quoin keeps ownership of the store (EA migration contract). The port relocates its language, not its ownership. Carries the digest/JCS surface — #373's hard gate. |
 | `src/commands/evidence/**` | TS | 1,173 | 10 | `shipped` | evidence commands | **8** | `affirm.ts`, `audit.ts`, `baseline.ts` `execFileSync` out. |
 | `src/commands/*.ts` | TS | 1,126 | 11 | `shipped` | command shell | **8** | `assurance.ts` `execFileSync`s. |
-| `src/commands/change-assurance/**` | TS | 796 | 9 | `shipped` | change assurance | **4** | |
+| `src/commands/change-assurance/**` | TS | 796 | 9 | `shipped` | change assurance | **4** ([#380](https://github.com/agent-ix/quoin/issues/380)) | |
 | `src/commands/{catalog,measurement,graph,module,semantic,config,plugin}/**` | TS | 796 | 31 | `shipped` | command shell | **8** | catalog 179/5 · measurement 139/4 · graph 135/5 · module 99/5 · semantic 90/1 · config 88/5 · plugin 66/6. `semantic/sweep.ts` `execFileSync`s. |
-| `src/change-assurance/**` | TS | 2,023 | 8 | `shipped` | change assurance | **4** | **Cycle A:** `store.ts:22` imports `storeRoot` from `../evidence/store.js` while `evidence/index.ts:142` re-exports from `../change-assurance/schema-assets.js`. Cargo forbids this; break it before any crate exists. |
+| `src/change-assurance/**` | TS | 2,023 | 8 | `shipped` | change assurance | **4** ([#380](https://github.com/agent-ix/quoin/issues/380)) | **Cycle A:** `store.ts:22` imports `storeRoot` from `../evidence/store.js` while `evidence/index.ts:142` re-exports from `../change-assurance/schema-assets.js`. Cargo forbids this; broken by [#376](https://github.com/agent-ix/quoin/issues/376) before any crate exists. |
 | `src/assurance/**` | TS | 1,723 | 5 | `shipped` | assurance records | **5** | |
 | `src/graph-analysis/**` | TS | 1,373 | 5 | `shipped` | graph views | **5** | |
-| `src/*.ts` (`base cli catalog config-schema flow-command flows index modules org plugins version write`) | TS | 1,358 | 12 | `shipped` | CLI core, config, modules | **7**, **9** | `flows.ts` `spawn`s `ix-flow` — a transitive call out to a Node tool. `config-schema.ts` is 56 lines of zod, a verified non-risk. |
-| `src/quire/**` | TS | 1,342 | 6 | `shipped` `oracle` | Quire adapter | **1**, **8** | `exec.ts` is the boundary template #373 adopts; it is the **last** file deleted (Stage 8). |
-| `src/semantic/**` | TS | 1,323 | 6 | `shipped` | semantic modules | **3** | `manifest.ts` `mapAjvError` — the ajv ↔ `jsonschema` parity risk lands here. |
-| `src/auditor/**` | TS | 1,139 | 3 | `shipped` | auditor | **5** | **Cycle B:** `auditor` ↔ `advisor`. Break before Stage 5. |
+| `src/*.ts` (`base cli catalog config-schema flow-command flows index modules org plugins version write`) | TS | 1,358 | 12 | `shipped` | CLI core, config, modules | **7** ([#381](https://github.com/agent-ix/quoin/issues/381)), **9** | `flows.ts` `spawn`s `ix-flow` — a transitive call out to a Node tool. `config-schema.ts` is 56 lines of zod, a verified non-risk. |
+| `src/quire/**` | TS | 1,342 | 6 | `shipped` `oracle` | Quire adapter | **1** ([#379](https://github.com/agent-ix/quoin/issues/379)), **8** | `exec.ts` is the boundary template #373 adopts; it is the **last** file deleted (Stage 8). |
+| `src/semantic/**` | TS | 1,323 | 6 | `shipped` | semantic modules | **3** ([#378](https://github.com/agent-ix/quoin/issues/378)) | `manifest.ts` `mapAjvError` — the ajv ↔ `jsonschema` parity risk lands here. |
+| `src/auditor/**` | TS | 1,139 | 3 | `shipped` | auditor | **5** | **Cycle B:** `auditor` ↔ `advisor`. Broken by [#376](https://github.com/agent-ix/quoin/issues/376). |
 | `src/advisor/**` | TS | 862 | 3 | `shipped` | advisor | **5** | Cycle B, other half. |
-| `src/completeness/**` | TS | 685 | 5 | `shipped` | completeness | **3** | |
-| `src/validators/**` | TS | 164 | 2 | `shipped` | validators | **2** | Smallest engine module — #373's boundary proof-of-life. |
+| `src/completeness/**` | TS | 685 | 5 | `shipped` | completeness | **3** ([#378](https://github.com/agent-ix/quoin/issues/378)) | |
+| `src/validators/**` | TS | 164 | 2 | `shipped` | validators | **2** ([#377](https://github.com/agent-ix/quoin/issues/377)) | Smallest engine module — #373's boundary proof-of-life. |
 
 #### Tests — `tests/` (33,707 lines, 109 files, all `oracle`)
 
@@ -192,31 +207,31 @@ already owns in Rust. Marked **[EA]**.
 
 | Path | Lang | Lines | Files | Reach | Owner capability | Stage | Basis |
 |---|---|---:|---:|---|---|---|---|
-| `scripts/verification-stack.mjs` + `-selftest.mjs` | mjs | 1,515 | 2 | `oracle` | **[EA]** bounded producer execution, process supervision | **0** | `make test` — *the* local green bar. Runs `python3 corpus/bounds.py --json` and asserts toolchain identity. EA owns this as `producer_execution.rs` + `process_host.rs`. Consume, do not re-grow in Rust. |
-| `scripts/verification-declarations.mjs` + `-selftest.mjs` | mjs | 731 | 2 | `oracle` | **[EA]** producer execution | **0** | Gate leg of `make validate`. |
-| `scripts/verification-relock.mjs` + `-selftest.mjs` + `verification-object-integrity-selftest.mjs` | mjs | 1,108 | 3 | `manual` `oracle` | **[EA]** evidence reporting | **0** | `make verification-relock`. Runs `python3 -I corpus/bounds.py --json`. |
-| `scripts/lib/tier1-*.mjs` (`execution comparison corpus render measurement recall scoring`) | mjs | 2,569 | 7 | `oracle` | **[EA]** corpus accounting, evaluation reporting | **0** | EA owns `compatibility_corpus.rs` + `evaluation_reports.rs`. |
-| `scripts/bench-tier1.mjs` | mjs | 921 | 1 | `oracle` | **[EA]** evaluation reporting | **0** | Runs `python3 corpus/bounds.py`. Asserts the attestation pins node, rust **and python** toolchains — the Python dependency is load-bearing and declared. |
-| `scripts/battletest.mjs` + `lib/tier2-baseline.mjs` | mjs | 1,356 | 2 | `manual` `oracle` | **[EA]** corpus accounting | **0** | `make battletest`, needs an external pinned tree. |
-| `scripts/check-tool-drift.mjs` + `-selftest.mjs` | mjs | 797 | 2 | `oracle` | **[EA]** package audit | **0** | `make audit-tool-drift`. |
-| `scripts/lib/semantic-module-type-fit.mjs` + `semantic-module-type-fit.mjs` | mjs | 1,810 | 2 | `oracle` | semantic modules — **domain-specific** | **3** | Three-part test answered: must it be local — **yes**, it is Quoin's own module type system; is it Rust — **no, port at Stage 3**; should it be common — **no**, recorded reason: it encodes Quoin's module archetypes, not generic assurance. |
-| `scripts/template-gate.mjs` | mjs | 191 | 1 | `oracle` | template gate | **3** | `make template-gate`. **Runs `python3 -m ruff/black/pytest` on the rendered template** — a Python test oracle inside quoin's own gate, in quoin's own tree. Squarely in AC-5's path. |
+| `scripts/verification-stack.mjs` + `-selftest.mjs` | mjs | 1,515 | 2 | `oracle` | **[EA]** bounded producer execution, process supervision | **0** ([#375](https://github.com/agent-ix/quoin/issues/375)) | `make test` — *the* local green bar. Runs `python3 corpus/bounds.py --json` and asserts toolchain identity. EA owns this as `producer_execution.rs` + `process_host.rs`. Consume, do not re-grow in Rust. |
+| `scripts/verification-declarations.mjs` + `-selftest.mjs` | mjs | 731 | 2 | `oracle` | **[EA]** producer execution | **0** ([#375](https://github.com/agent-ix/quoin/issues/375)) | Gate leg of `make validate`. |
+| `scripts/verification-relock.mjs` + `-selftest.mjs` + `verification-object-integrity-selftest.mjs` | mjs | 1,108 | 3 | `manual` `oracle` | **[EA]** evidence reporting | **0** ([#375](https://github.com/agent-ix/quoin/issues/375)) | `make verification-relock`. Runs `python3 -I corpus/bounds.py --json`. |
+| `scripts/lib/tier1-*.mjs` (`execution comparison corpus render measurement recall scoring`) | mjs | 2,569 | 7 | `oracle` | **[EA]** corpus accounting, evaluation reporting | **0** ([#375](https://github.com/agent-ix/quoin/issues/375)) | EA owns `compatibility_corpus.rs` + `evaluation_reports.rs`. |
+| `scripts/bench-tier1.mjs` | mjs | 921 | 1 | `oracle` | **[EA]** evaluation reporting | **0** ([#375](https://github.com/agent-ix/quoin/issues/375)) | Runs `python3 corpus/bounds.py`. Asserts the attestation pins node, rust **and python** toolchains — the Python dependency is load-bearing and declared. |
+| `scripts/battletest.mjs` + `lib/tier2-baseline.mjs` | mjs | 1,356 | 2 | `manual` `oracle` | **[EA]** corpus accounting | **0** ([#375](https://github.com/agent-ix/quoin/issues/375)) | `make battletest`, needs an external pinned tree. |
+| `scripts/check-tool-drift.mjs` + `-selftest.mjs` | mjs | 797 | 2 | `oracle` | **[EA]** package audit | **0** ([#375](https://github.com/agent-ix/quoin/issues/375)) | `make audit-tool-drift`. |
+| `scripts/lib/semantic-module-type-fit.mjs` + `semantic-module-type-fit.mjs` | mjs | 1,810 | 2 | `oracle` | semantic modules — **domain-specific** | **3** ([#378](https://github.com/agent-ix/quoin/issues/378)) | Three-part test answered: must it be local — **yes**, it is Quoin's own module type system; is it Rust — **no, port at Stage 3**; should it be common — **no**, recorded reason: it encodes Quoin's module archetypes, not generic assurance. |
+| `scripts/template-gate.mjs` | mjs | 191 | 1 | `oracle` | template gate | **3** ([#378](https://github.com/agent-ix/quoin/issues/378)) | `make template-gate`. **Runs `python3 -m ruff/black/pytest` on the rendered template** — a Python test oracle inside quoin's own gate, in quoin's own tree. Squarely in AC-5's path. |
 | `scripts/verify-span-breadth.mjs` | mjs | 197 | 1 | `oracle` | span breadth | **6** | |
-| `scripts/workspace-policy-selftest.mjs` | mjs | 97 | 1 | `oracle` | workspace policy | **0** | |
+| `scripts/workspace-policy-selftest.mjs` | mjs | 97 | 1 | `oracle` | workspace policy | **0** ([#375](https://github.com/agent-ix/quoin/issues/375)) | |
 | `scripts/lib/advisory-adjudication.mjs`, `lib/guidance-proof.mjs` | mjs | 460 | 2 | `oracle` | advisor/auditor | **5** | |
-| `scripts/release-drift.js` | JS | 308 | 1 | `oracle` (CI) | release integrity | **0** | The only script `release-drift.yml` runs (3 legs). |
-| `scripts/check-version-agreement.mjs` | mjs | 84 | 1 | `oracle` | version agreement | **0** | `make check-version`. |
-| `scripts/copy-quire-schemas.mjs` | mjs | 30 | 1 | `gate-tool` | build step | **0** | Part of `pnpm build`. |
+| `scripts/release-drift.js` | JS | 308 | 1 | `oracle` (CI) | release integrity | **0** ([#375](https://github.com/agent-ix/quoin/issues/375)) | The only script `release-drift.yml` runs (3 legs). |
+| `scripts/check-version-agreement.mjs` | mjs | 84 | 1 | `oracle` | version agreement | **0** ([#375](https://github.com/agent-ix/quoin/issues/375)) | `make check-version`. |
+| `scripts/copy-quire-schemas.mjs` | mjs | 30 | 1 | `gate-tool` | build step | **0** ([#375](https://github.com/agent-ix/quoin/issues/375)) | Part of `pnpm build`. |
 | `scripts/build-tools.js`, `scripts/help.js` | JS | 198 | 2 | `gate-tool` | version/info/help | **9** | `make version`, `make info`, `pnpm help`. |
 | `scripts/freeze-{advisory-adjudication,guidance-review,span-breadth}.mjs` | mjs | 499 | 3 | `manual` | baseline re-pin | **5**, **6** | **No caller anywhere** — see *Reachability warning* below. |
-| `scripts/refresh-{quire,semantic-core,manifest}-schemas.mjs` | mjs | 289 | 3 | `manual` | schema refresh | **0** | Only `refresh-quire-schemas.mjs` is referenced, and only by a comment in `src/quire/contract.ts`. These are the generator side of the JSON schemas in the tree: if the `generated` exception is ever claimed for anything here, the provenance recorder gets built in these files. |
+| `scripts/refresh-{quire,semantic-core,manifest}-schemas.mjs` | mjs | 289 | 3 | `manual` | schema refresh | **0** ([#375](https://github.com/agent-ix/quoin/issues/375)) | Only `refresh-quire-schemas.mjs` is referenced, and only by a comment in `src/quire/contract.ts`. These are the generator side of the JSON schemas in the tree: if the `generated` exception is ever claimed for anything here, the provenance recorder gets built in these files. |
 
 #### Eval harness — `evals/` (5,075 lines, 14 files)
 
 | Path | Lang | Lines | Files | Reach | Owner capability | Stage | Basis |
 |---|---|---:|---:|---|---|---|---|
-| `evals/scenarios/index.mjs` | mjs | 2,057 | 1 | `manual` `oracle` | **[EA]** agent evaluation | **0** | `make evals`. EA owns `agent_evals_host.rs` / `agent_evals_provider.rs`. |
-| `evals/lib/*.mjs` + `run.mjs` | mjs | 3,018 | 13 | `manual` `oracle` | **[EA]** evaluation + evidence reporting | **0** | `quality.mjs` (1,145) is the largest. `assert.mjs`, `resolve.mjs`, `seed.mjs` spawn subprocesses. EA owns `evaluation.rs` + `evaluation_reports.rs`. |
+| `evals/scenarios/index.mjs` | mjs | 2,057 | 1 | `manual` `oracle` | **[EA]** agent evaluation | **0** ([#375](https://github.com/agent-ix/quoin/issues/375)) | `make evals`. EA owns `agent_evals_host.rs` / `agent_evals_provider.rs`. |
+| `evals/lib/*.mjs` + `run.mjs` | mjs | 3,018 | 13 | `manual` `oracle` | **[EA]** evaluation + evidence reporting | **0** ([#375](https://github.com/agent-ix/quoin/issues/375)) | `quality.mjs` (1,145) is the largest. `assert.mjs`, `resolve.mjs`, `seed.mjs` spawn subprocesses. EA owns `evaluation.rs` + `evaluation_reports.rs`. |
 
 #### Templates — `templates/` (1,767 lines, 11 files)
 
@@ -225,10 +240,10 @@ decision; do not hide them as data."* These are not data — they render and the
 
 | Path | Lang | Lines | Files | Reach | Owner capability | Stage | Basis |
 |---|---|---:|---:|---|---|---|---|
-| `templates/semantic-module/hooks/{pre,post}_gen_project.py` | Py | 289 | 2 | `oracle` (via `make gate`) | cookiecutter render | **3** | Executes on every template render, including `make test`'s conformance leg. |
-| `templates/semantic-module/{{cookiecutter.repo_name}}/tests/*.py` | Py | 848 | 4 | `oracle` (via `make template-gate`) | rendered test suite | **3** | Python **test oracles** that `make gate` runs under pytest, in quoin's own tree. Named directly by AC-5. |
-| `templates/.../scripts/{generate-schemas.mjs,stage-npm.mjs,build_tools.py,__init__.py}` | mjs, Py | 614 | 4 | `gate-tool` | rendered build tooling | **3** | `generate-schemas.mjs` (377) `execFileSync`s the pinned TypeSpec compiler. |
-| `templates/.../{{cookiecutter.package_name}}/__init__.py` | Py | 16 | 1 | rendered | rendered package | **3** | |
+| `templates/semantic-module/hooks/{pre,post}_gen_project.py` | Py | 289 | 2 | `oracle` (via `make gate`) | cookiecutter render | **3** ([#378](https://github.com/agent-ix/quoin/issues/378)) | Executes on every template render, including `make test`'s conformance leg. |
+| `templates/semantic-module/{{cookiecutter.repo_name}}/tests/*.py` | Py | 848 | 4 | `oracle` (via `make template-gate`) | rendered test suite | **3** ([#378](https://github.com/agent-ix/quoin/issues/378)) | Python **test oracles** that `make gate` runs under pytest, in quoin's own tree. Named directly by AC-5. |
+| `templates/.../scripts/{generate-schemas.mjs,stage-npm.mjs,build_tools.py,__init__.py}` | mjs, Py | 614 | 4 | `gate-tool` | rendered build tooling | **3** ([#378](https://github.com/agent-ix/quoin/issues/378)) | `generate-schemas.mjs` (377) `execFileSync`s the pinned TypeSpec compiler. |
+| `templates/.../{{cookiecutter.package_name}}/__init__.py` | Py | 16 | 1 | rendered | rendered package | **3** ([#378](https://github.com/agent-ix/quoin/issues/378)) | |
 
 #### Install smoke — `smoke/` (509 lines, 5 files)
 
@@ -243,8 +258,8 @@ A file-extension scanner cannot see any of these. They are executable paths all 
 
 | Path | Lang | Reach | Stage | Basis |
 |---|---|---|---|---|
-| `Makefile` → `answer-key-repin` | Py (inline) | `manual` | **0** | `python3 -c "import json,sys; ... json.dump(...)"` rewrites `bench/answer-key.json` — **the recall denominator**. An inline Python one-liner mutating the file every recall figure is scored against. |
-| `.github/workflows/**` inline `run:` steps | sh (+`jq`, `node`) | CI | **0** | 35 steps across 4 workflows, ~118 lines of inline shell. All five workflows are `on: workflow_dispatch` only — nothing runs on push. Two steps carry semantics rather than orchestration: `build-test.yml`'s `test -n "$REGISTRY_TOKEN" \|\| exit 1` is a CI **assertion**, and `release.yml`'s 14-line publish block uses `git describe --exact-match` + `npm view` + `jq` to rewrite `package.json` and run `npm publish` — an **irreversible** shell decision. Neither is thin dispatch. |
+| `Makefile` → `answer-key-repin` | Py (inline) | `manual` | **0** ([#375](https://github.com/agent-ix/quoin/issues/375)) | `python3 -c "import json,sys; ... json.dump(...)"` rewrites `bench/answer-key.json` — **the recall denominator**. An inline Python one-liner mutating the file every recall figure is scored against. |
+| `.github/workflows/**` inline `run:` steps | sh (+`jq`, `node`) | CI | **0** ([#375](https://github.com/agent-ix/quoin/issues/375)) | 35 steps across 4 workflows, ~118 lines of inline shell. All five workflows are `on: workflow_dispatch` only — nothing runs on push. Two steps carry semantics rather than orchestration: `build-test.yml`'s `test -n "$REGISTRY_TOKEN" \|\| exit 1` is a CI **assertion**, and `release.yml`'s 14-line publish block uses `git describe --exact-match` + `npm view` + `jq` to rewrite `package.json` and run `npm publish` — an **irreversible** shell decision. Neither is thin dispatch. |
 
 ## Consequence for AC-5 — proposed rewording
 
