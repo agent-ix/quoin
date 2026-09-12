@@ -8,38 +8,38 @@ name: quoin-quire-fixture
 version: 0.1.0
 description: Fixture module for the quoin-quire integration tests
 artifact_types:
-- name: FR
-  grammar_ref: iso-spec-core
-  defaults:
-    id_pattern: FR-{next:03d}
-- name: TestMatrix
-  defaults:
-    id_pattern: TM-{next:03d}
+  - name: FR
+    grammar_ref: iso-spec-core
+    defaults:
+      id_pattern: FR-{next:03d}
+  - name: TestMatrix
+    defaults:
+      id_pattern: TM-{next:03d}
 traceability:
   trace_targets:
-  - name: acceptance-criterion
-    archetype: FR
-    section: Acceptance Criteria
-    id_column: ID
-  - name: test-case
-    archetype: TestMatrix
-    section: Test Cases
-    id_column: ID
+    - name: acceptance-criterion
+      archetype: FR
+      section: Acceptance Criteria
+      id_column: ID
+    - name: test-case
+      archetype: TestMatrix
+      section: Test Cases
+      id_column: ID
   document_references:
-  - name: verification
-    archetype: FR
-    section: Acceptance Criteria
-    column: Verification
-    row_id_column: ID
-    pattern: '\((TC-\d+)\)'
-    targets: [test-case]
-  - name: traces-to
-    archetype: TestMatrix
-    section: Test Cases
-    column: Traces To
-    row_id_column: ID
-    pattern: '((?:StR|US|FR|NFR)-\d+(?:-AC-\d+)?)'
-    targets: [acceptance-criterion]
+    - name: verification
+      archetype: FR
+      section: Acceptance Criteria
+      column: Verification
+      row_id_column: ID
+      pattern: '\((TC-\d+)\)'
+      targets: [test-case]
+    - name: traces-to
+      archetype: TestMatrix
+      section: Test Cases
+      column: Traces To
+      row_id_column: ID
+      pattern: '((?:StR|US|FR|NFR)-\d+(?:-AC-\d+)?)'
+      targets: [acceptance-criterion]
   status:
     column: Status
     complete: ["✅"]
@@ -47,7 +47,7 @@ traceability:
     failed: ["❌"]
   trace_tags:
     markers:
-    - name: rust-trace-attribute
-      language: rust
-      pattern: '#\[trace\(([^)]*)\)\]'
-      template: '#[trace({ids})]'
+      - name: rust-trace-attribute
+        language: rust
+        pattern: '#\[trace\(([^)]*)\)\]'
+        template: "#[trace({ids})]"

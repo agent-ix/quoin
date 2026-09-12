@@ -1,5 +1,5 @@
 /**
- * Every command file is a build entry (TC-149).
+ * Every command file is a build entry.
  *
  * oclif discovers commands as individual modules under `dist/commands`, and
  * `vite.config.ts` enumerates those entries **by hand**. Nothing checked the
@@ -37,8 +37,8 @@ function commandFiles(dir: string): string[] {
   });
 }
 
-describe("TC-149 every command file is a vite build entry", () => {
-  // TC-149
+describe("every command file is a vite build entry", () => {
+  // Trace: FR-031-AC-10
   it("has no command that would be missing from dist/", () => {
     const config = readFileSync(join(REPO, "vite.config.ts"), "utf8");
     const declared = new Set(

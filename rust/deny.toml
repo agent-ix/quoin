@@ -18,6 +18,14 @@ allow = [
     "MIT",
     "Apache-2.0",
     "Unicode-3.0",
+    # foldhash 0.2.0 (Zlib, OSI-approved and FSF Free/Libre, so the list stays
+    # permissive-only). It reaches the workspace through `hashbrown 0.17.1`,
+    # which `quire-rs 0.46.0` pulls in as a NORMAL dependency of quoin-quire
+    # via `indexmap`/`serde_yaml`. On main the same crate is present but only
+    # behind quoin-core's dev-dependency on engineering-assurance, which is
+    # why this line is added here, in the commit that first puts it on a
+    # non-dev path — exactly as the rule above requires.
+    "Zlib",
 ]
 # quoin's own crates are AGPL-3.0-or-later (the repository license). Every one
 # of them is `publish = false`, so ignoring private crates covers them all
@@ -76,8 +84,18 @@ unknown-registry = "deny"
 unknown-git = "deny"
 # quoin#373: "no crates.io, no public npmjs" governs where quoin PUBLISHES;
 # dependencies are consumed from crates.io exactly as quire-corpus and quire-rs
-# consume theirs. The single entry is the engine quoin-quire links (quoin#379):
-# the crate pins it by `rev`, so allowing the REPOSITORY here does not weaken
-# the revision pin — `unknown-git = "deny"` still refuses every other git
-# source, and any other revision of this one still fails resolution.
-allow-git = ["https://github.com/agent-ix/quire-rs"]
+# consume theirs. Two git sources are admitted, each named by REPOSITORY:
+#
+#   * quire-rs — the engine quoin-quire links (quoin#379).
+#   * engineering-assurance — library containment (quoin#416), the pattern
+#     quire-cli already proves against quire-rs.
+#
+# Both are pinned by an exact `rev` in rust/Cargo.toml, so allowing the
+# repository here does not weaken the revision pin: `unknown-git = "deny"`
+# still refuses every other git source, and any other revision of these two
+# still fails resolution. A third git dependency is listed here in the commit
+# that adds it, or this check refuses it.
+allow-git = [
+    "https://github.com/agent-ix/quire-rs",
+    "https://github.com/agent-ix/engineering-assurance",
+]

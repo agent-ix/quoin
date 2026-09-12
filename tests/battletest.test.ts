@@ -164,7 +164,7 @@ describe("scoring against the adjudicated answer key", () => {
     expect(wrong.missed).toContain("AK-002");
   });
 
-  it("TC-1072 scores an evaluated production source with no finding as a miss", () => {
+  it("scores an evaluated production source with no finding as a miss", () => {
     const score = scoreAgainstSources(
       { "quoin.validate": { ok: true, payload: { findings: [] } } },
       {
@@ -181,7 +181,7 @@ describe("scoring against the adjudicated answer key", () => {
     expect(score.notEvaluated).toEqual([]);
   });
 
-  it("TC-1073 names an unavailable source and does not coerce it to a miss", () => {
+  it("names an unavailable source and does not coerce it to a miss", () => {
     const score = scoreAgainstSources(
       {
         "quoin.evidence-audit": {
@@ -206,7 +206,7 @@ describe("scoring against the adjudicated answer key", () => {
     );
   });
 
-  it("TC-1074 executes the declared Tier-2 source registry", () => {
+  it("executes the declared Tier-2 source registry", () => {
     const root = mkdtempSync(join(tmpdir(), "quoin-tier2-sources-"));
     const corpus = join(root, "corpus");
     mkdirSync(corpus);
@@ -256,7 +256,7 @@ describe("scoring against the adjudicated answer key", () => {
     });
   });
 
-  it("TC-1121 requires every declaration commit to be remotely reachable", () => {
+  it("requires every declaration commit to be remotely reachable", () => {
     const root = mkdtempSync(join(tmpdir(), "quoin-tier2-declarations-"));
     const repositories: Record<string, string> = {};
     const declarations = [];
@@ -335,7 +335,7 @@ describe("scoring against the adjudicated answer key", () => {
     }
   });
 
-  it("TC-1104 scores retained finding envelopes rather than raw producer arrays", () => {
+  it("scores retained finding envelopes rather than raw producer arrays", () => {
     const retained = createTier2Baseline({
       provenance: {},
       cohorts: {
@@ -378,7 +378,7 @@ describe("scoring against the adjudicated answer key", () => {
     ]);
   });
 
-  it("TC-1116 requires an exact defect locus and a clean pinned control", () => {
+  it("requires an exact defect locus and a clean pinned control", () => {
     const payload = (line: number | null) => ({
       diagnostics: [],
       metrics: [],
@@ -428,7 +428,7 @@ describe("scoring against the adjudicated answer key", () => {
     expect(score.controlFailures).toEqual([]);
   });
 
-  it("TC-1117 distinguishes unavailable, invalid-key, and healthy-control failure", () => {
+  it("distinguishes unavailable, invalid-key, and healthy-control failure", () => {
     const retained = (findings: object[]) =>
       createTier2Baseline({
         provenance: {},
@@ -595,7 +595,7 @@ describe("retained multi-source Tier-2 baseline", () => {
     sources,
   });
 
-  it("TC-1119 retains the committed v2 cohort states and exact score buckets", () => {
+  it("retains the committed v2 cohort states and exact score buckets", () => {
     const baseline = JSON.parse(
       readFileSync(
         join(__dirname, "..", "bench", "battletest-baseline.json"),
@@ -638,7 +638,7 @@ describe("retained multi-source Tier-2 baseline", () => {
     });
   });
 
-  it("TC-1122 retains exact multi-repository declarations and environment-only commands", () => {
+  it("retains exact multi-repository declarations and environment-only commands", () => {
     const baseline = JSON.parse(
       readFileSync(
         join(__dirname, "..", "bench", "battletest-baseline.json"),
@@ -676,7 +676,7 @@ describe("retained multi-source Tier-2 baseline", () => {
     });
   });
 
-  it("TC-1101 retains raw and normalized output for every supported producer", () => {
+  it("retains raw and normalized output for every supported producer", () => {
     const record = createTier2Baseline({
       provenance,
       cohorts: {
@@ -739,7 +739,7 @@ describe("retained multi-source Tier-2 baseline", () => {
     });
   });
 
-  it("TC-1102 keeps expected unavailability outside clean and missed states", () => {
+  it("keeps expected unavailability outside clean and missed states", () => {
     const baseline = createTier2Baseline({
       provenance,
       cohorts: {
@@ -772,7 +772,7 @@ describe("retained multi-source Tier-2 baseline", () => {
     expect(baseline).toEqual(snapshot);
   });
 
-  it("TC-1103 candidate comparison reports unavailable regressions and never rewrites the baseline", () => {
+  it("candidate comparison reports unavailable regressions and never rewrites the baseline", () => {
     const evaluated = createTier2Baseline({
       provenance,
       cohorts: {

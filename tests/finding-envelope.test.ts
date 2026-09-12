@@ -16,7 +16,7 @@ import {
 } from "../evals/lib/quality.mjs";
 
 describe("finding-envelope-v2", () => {
-  it("TC-1080 normalizes all three producer classes without inventing evidence", () => {
+  it("normalizes all three producer classes without inventing evidence", () => {
     const quireRaw = {
       reason: "status-column-matches-nothing",
       path: "spec/tests.md",
@@ -53,7 +53,7 @@ describe("finding-envelope-v2", () => {
     expect(external.changeTarget.state).toBe("not_applicable");
   });
 
-  it("TC-1081 rejects missing, malformed, and unknown-version records", () => {
+  it("rejects missing, malformed, and unknown-version records", () => {
     expect(() =>
       normalizeQuireFinding({ reason: "x" }, { channel: "diagnostic" }),
     ).toThrow(/producer is required/);
@@ -72,7 +72,7 @@ describe("finding-envelope-v2", () => {
     ).toThrow(/unsupported schemaVersion/);
   });
 
-  it("TC-1082 scores positive, negative, unavailable, and not-applicable records explicitly", () => {
+  it("scores positive, negative, unavailable, and not-applicable records explicitly", () => {
     const full = normalizeQuireFinding(
       {
         reason: "configured-column-missing",
@@ -154,7 +154,7 @@ describe("finding-envelope-v2", () => {
     ]);
   });
 
-  it("TC-1083 keeps v1 reproducible while L1/L2/L3-family scoring consumes envelopes", () => {
+  it("keeps v1 reproducible while L1/L2/L3-family scoring consumes envelopes", () => {
     const normalized = normalizeQuireFinding(
       { reason: "located", path: "spec/a.md", line: 7 },
       {

@@ -10,13 +10,13 @@ on **2026-09-12** and checked in. It is a real corpus payload, not a generated
 one: 139 documents contributing criteria, 1,215 obligations, 2,749 reference
 rows of which 1,555 are backed.
 
-| fact | value |
-|---|---|
-| bytes | 1,632,821 |
-| producing CLI | `quire` 0.32.0 (cli `55a1c4e2`) |
-| producing engine | `a874fb641cb70da83c8c8b23f9fea0a44255b88a` |
-| `totals` | `backed 1555 / total 2749`, `criteria 1007`, `property_shaped 553`, `specific_shaped 79` |
-| exit status | 0 |
+| fact             | value                                                                                    |
+| ---------------- | ---------------------------------------------------------------------------------------- |
+| bytes            | 1,632,821                                                                                |
+| producing CLI    | `quire` 0.32.0 (cli `55a1c4e2`)                                                          |
+| producing engine | `a874fb641cb70da83c8c8b23f9fea0a44255b88a`                                               |
+| `totals`         | `backed 1555 / total 2749`, `criteria 1007`, `property_shaped 553`, `specific_shaped 79` |
+| exit status      | 0                                                                                        |
 
 ## Why this file exists
 
@@ -83,7 +83,7 @@ behind every stored artifact. There is no migration or back-compat path and
 none is planned: an artifact that cannot be re-measured is evidence about an
 instrument that no longer exists.
 
-**What it does not do.** It does not refuse to *read* those payloads.
+**What it does not do.** It does not refuse to _read_ those payloads.
 `payload::from_slice` parses them fine — `tc_379_100` reads this very fixture
 end to end. `check_premise` is a separate, explicit call, and only a consumer
 that asks about provenance meets the refusal.
@@ -95,6 +95,6 @@ old"), because the two are different conditions.
 ## Refreshing it
 
 Don't, unless a test needs a shape this payload cannot carry. It is a
-*historical* artifact as much as a fixture: its value is that it is the real
+_historical_ artifact as much as a fixture: its value is that it is the real
 output of a real corpus at a known size, and a regenerated copy from a
 different day measures a different corpus.

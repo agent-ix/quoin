@@ -8,5 +8,5 @@ name: quoin-quire-fixture-no-traceability
 version: 0.1.0
 description: Fixture module with no traceability model
 artifact_types:
-- name: FR
-  grammar_ref: iso-spec-core
+  - name: FR
+    grammar_ref: iso-spec-core

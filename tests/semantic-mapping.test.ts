@@ -75,10 +75,7 @@ function canonical(value: unknown): string {
 }
 
 describe("FR-071 typed Properties table and sysml fence fixtures", () => {
-  // Trace: FR-071-AC-1
-  // Trace: TC-1344
-  // Trace: FR-071-CON-2
-  // Trace: TC-1352
+  // Trace: FR-071-AC-1, FR-071-CON-2
   it("has an FR-006 typed-table fixture whose expected FieldDecl[] validates against the vendored FieldDecl.json", () => {
     const expected = json("config-version.expected.json");
     expect(expected.semanticCore).toBe(SEMANTIC_CONTRACT.semanticCore.version);
@@ -100,7 +97,6 @@ describe("FR-071 typed Properties table and sysml fence fixtures", () => {
   });
 
   // Trace: FR-071-AC-2
-  // Trace: TC-1345
   it("gives the sysml fence fixture the byte-identical normalized FieldDecl[] of the table fixture", () => {
     const expected = json("config-version.expected.json");
     const authored = expected.authoredForm as Record<string, string>;
@@ -121,7 +117,6 @@ describe("FR-071 typed Properties table and sysml fence fixtures", () => {
   });
 
   // Trace: FR-071-AC-3
-  // Trace: TC-1346
   it("ships a both-forms fixture whose expected outcome is a failure at the second form", () => {
     const both = fixture("both-forms.md");
     expect(both).toContain("| Field | Type | Multiplicity | Constraints |");
@@ -144,16 +139,7 @@ describe("FR-071 typed Properties table and sysml fence fixtures", () => {
     });
   });
 
-  // Trace: FR-071-AC-4
-  // Trace: TC-1347
-  // Trace: FR-071-AC-5
-  // Trace: TC-1348
-  // Trace: FR-071-AC-6
-  // Trace: TC-1349
-  // Trace: FR-071-AC-7
-  // Trace: TC-1350
-  // Trace: FR-071-AC-8
-  // Trace: TC-1384
+  // Trace: FR-071-AC-4, FR-071-AC-5, FR-071-AC-6, FR-071-AC-7, FR-071-AC-8
   it("records every cell, fence-line, and reader-rule case with a schema-valid expectation or a located diagnostic", () => {
     const cases = json("cell-cases.json");
     expect(cases.semanticCore).toBe(SEMANTIC_CONTRACT.semanticCore.version);
@@ -219,7 +205,6 @@ describe("FR-071 typed Properties table and sysml fence fixtures", () => {
   });
 
   // Trace: FR-071-CON-1
-  // Trace: TC-1351
   it("keeps the fence subset to attribute and ref item lines with brace content opaque", () => {
     const fence = fixture("config-version.fence.md");
     const body = fence.split("```sysml")[1]?.split("```")[0] ?? "";
@@ -232,10 +217,7 @@ describe("FR-071 typed Properties table and sysml fence fixtures", () => {
 });
 
 describe("FR-072 Invariants and Operations fixtures", () => {
-  // Trace: FR-072-AC-1
-  // Trace: TC-1353
-  // Trace: FR-072-AC-4
-  // Trace: TC-1356
+  // Trace: FR-072-AC-1, FR-072-AC-4
   it("ships an operations fixture whose expected ClauseRef[] and OperationDecl[] validate", () => {
     const expected = json("operations.expected.json");
     expect(expected.semanticCore).toBe(SEMANTIC_CONTRACT.semanticCore.version);
@@ -264,14 +246,7 @@ describe("FR-072 Invariants and Operations fixtures", () => {
     expect((operation.post as Json[])[0]?.clauseId).toBe("archived");
   });
 
-  // Trace: FR-072-AC-2
-  // Trace: TC-1354
-  // Trace: FR-072-AC-3
-  // Trace: TC-1355
-  // Trace: FR-072-AC-5
-  // Trace: TC-1357
-  // Trace: FR-072-AC-6
-  // Trace: TC-1358
+  // Trace: FR-072-AC-2, FR-072-AC-3, FR-072-AC-5, FR-072-AC-6
   it("records every clause-language, duplicate, dangling, and dual-authority case with a located diagnostic", () => {
     const cases = json("operations-cases.json");
     const byId = new Map((cases.cases as Json[]).map((c) => [String(c.id), c]));
@@ -313,7 +288,6 @@ describe("FR-072 Invariants and Operations fixtures", () => {
   });
 
   // Trace: FR-072-CON-1
-  // Trace: TC-1359
   it("contains no clause typechecking or evaluation path in quoin", () => {
     const dir = join("src", "semantic");
     for (const name of readdirSync(dir).filter((n) => n.endsWith(".ts"))) {
@@ -324,12 +298,7 @@ describe("FR-072 Invariants and Operations fixtures", () => {
 });
 
 describe("FR-074 legacy forms", () => {
-  // Trace: FR-074-AC-1
-  // Trace: TC-1367
-  // Trace: FR-074-AC-2
-  // Trace: TC-1368
-  // Trace: FR-074-CON-1
-  // Trace: TC-1371
+  // Trace: FR-074-AC-1, FR-074-AC-2, FR-074-CON-1
   it("classifies the pinned FR-006 copy, bullet lists, and mixed sections as the expectations record", () => {
     const expected = json("legacy.expected.json").cases as Json[];
     for (const entry of expected) {

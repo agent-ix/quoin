@@ -1,6 +1,5 @@
 /**
- * FR-040 — the assurance-case view (TC-221..TC-230, TC-237, TC-238, TC-261,
- * TC-262).
+ * FR-040 — the assurance-case view.
  */
 
 import { describe, expect, it } from "vitest";
@@ -103,7 +102,7 @@ describe("building the case", () => {
     expect(result.claims[0].children[0].status).toBe("open");
   });
 
-  // Trace: FR-040-AC-4
+  // Trace: FR-040-AC-4, FR-040-CON-2
   it("marks a claim nothing traces to as undeveloped, not as met", () => {
     // A goal with no sub-goal and no evidence is open. Rendering it supported
     // would assure a claim on the strength of nobody having written anything
@@ -195,7 +194,6 @@ describe("building the case", () => {
   });
 
   // Trace: FR-040-AC-13
-  // TC-261
   it("carries a machine-readable reason exactly when nothing is a claim", () => {
     // `--json` emits `buildCase`'s result verbatim, so this field is what lets
     // a pipeline tell "the case is clean" from "nothing matched, so nothing
@@ -226,7 +224,6 @@ describe("building the case", () => {
   });
 
   // Trace: FR-040-AC-14
-  // TC-262
   it("matches --claim-type case-insensitively", () => {
     // `str`, `STR` and `Hazard` all matched nothing under `===` and exited 0
     // with an empty case — silence indistinguishable from a clean corpus.

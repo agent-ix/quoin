@@ -61,7 +61,7 @@ function repository(): string {
 }
 
 describe("FR-069 contract conformance", () => {
-  it("TC-1328 transcribes a real conformance run, keyed by corpus, operation, and fixture", () => {
+  it("transcribes a real conformance run, keyed by corpus, operation, and fixture", () => {
     const rows = conformance.split("\n").filter((line) => line.trim() !== "");
     const result = contractConformanceAdapter.parse(conformance);
 
@@ -112,7 +112,7 @@ describe("FR-069 contract conformance", () => {
     expect(validity).toEqual(new Set([true, false]));
   });
 
-  it("TC-1329 transcribes a real differential report, one entry per compared case", () => {
+  it("transcribes a real differential report, one entry per compared case", () => {
     const report = JSON.parse(differential) as {
       schemaVersion: string;
       cases: { id: string; status: string }[];
@@ -130,7 +130,7 @@ describe("FR-069 contract conformance", () => {
     );
   });
 
-  it("TC-1330 names an unsupported case rather than transcribing it as another state", () => {
+  it("names an unsupported case rather than transcribing it as another state", () => {
     const report = JSON.parse(differential) as {
       cases: { id: string; status: string }[];
     };
@@ -165,7 +165,7 @@ describe("FR-069 contract conformance", () => {
     ).toBeUndefined();
   });
 
-  it("TC-1331 refuses every malformed, unknown, and empty input by line or case", () => {
+  it("refuses every malformed, unknown, and empty input by line or case", () => {
     const row = conformance.split("\n")[0];
     const parsed = JSON.parse(row) as Record<string, unknown>;
 
@@ -295,7 +295,7 @@ describe("FR-069 contract conformance", () => {
     );
   });
 
-  it("TC-1332 registers both adapters by name and by declared tool", () => {
+  it("registers both adapters by name and by declared tool", () => {
     expect(ADAPTER_NAMES).toContain("contract-conformance");
     expect(ADAPTER_NAMES).toContain("differential-report");
 
@@ -315,7 +315,7 @@ describe("FR-069 contract conformance", () => {
 });
 
 describe("FR-069 recording", () => {
-  it("TC-1333 prints every unrepresented result in human and JSON output", async () => {
+  it("prints every unrepresented result in human and JSON output", async () => {
     const root = repository();
     const results = join(root, "differential.json");
     writeFileSync(results, differential);
@@ -380,7 +380,7 @@ describe("FR-069 recording", () => {
 });
 
 describe("FR-069 inventory and boundaries", () => {
-  it("TC-1334 records a producer and a verdict for every scope item", () => {
+  it("records a producer and a verdict for every scope item", () => {
     const text = readFileSync(inventory, "utf8");
 
     // Every format #323 names is dispositioned, by name.
@@ -417,7 +417,7 @@ describe("FR-069 inventory and boundaries", () => {
     expect(text).toMatch(/stdout or stderr scraping is out of\nscope/);
   });
 
-  it("TC-1335 executes nothing and scrapes no console text for a verdict", () => {
+  it("executes nothing and scrapes no console text for a verdict", () => {
     for (const name of ["contract-conformance.ts", "differential-report.ts"]) {
       const text = readFileSync(join(adapterRoot, name), "utf8");
       for (const forbidden of [

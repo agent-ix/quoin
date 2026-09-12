@@ -68,7 +68,7 @@ function fixture() {
 }
 
 describe("retained advisory adjudication", () => {
-  it("TC-1099 validates content identity and retains every row-level ruling", () => {
+  it("validates content identity and retains every row-level ruling", () => {
     const loaded = validateAdvisoryAdjudication(fixture());
     expect(loaded.population.count).toBe(1);
     expect(loaded.counts).toEqual({
@@ -105,7 +105,7 @@ describe("retained advisory adjudication", () => {
     });
   });
 
-  it("TC-1100 refuses incompatible metrics and incomplete review records", () => {
+  it("refuses incompatible metrics and incomplete review records", () => {
     const incompatible = fixture();
     incompatible.metric_version = "finding.precision.advisory-v2";
     expect(() => validateAdvisoryAdjudication(incompatible)).toThrow(

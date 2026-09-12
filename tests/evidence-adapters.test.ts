@@ -1,5 +1,5 @@
 /**
- * FR-033 — evidence format adapters (TC-151..TC-164).
+ * FR-033 — evidence format adapters.
  *
  * At least one criterion per adapter is stated over
  * `quoin evidence record --adapter <x> --results <file>`, not over the parse
@@ -134,7 +134,8 @@ async function record(
 }
 
 describe("the adapter registry", () => {
-  it("TC-1123 requires an immutable tool version before evidence intake", () => {
+  it("requires an immutable tool version before evidence intake", () => {
+    // Trace: FR-030-AC-17
     expect(isVersionedToolIdentity("vitest 3.2.4")).toBe(true);
     expect(isVersionedToolIdentity(`scanner git:${"a".repeat(40)}`)).toBe(true);
     expect(isVersionedToolIdentity(`scanner sha256:${"b".repeat(64)}`)).toBe(
@@ -215,7 +216,7 @@ describe("the junit adapter", () => {
     expect(entries[1].traceIds).toBeUndefined();
   });
 
-  // Trace: FR-033-AC-6
+  // Trace: FR-033-AC-6, FR-033-CON-3
   it("names no evidence kind, because JUnit does not carry one", () => {
     // Unit, integration and e2e suites all emit JUnit. An adapter answering
     // "Unit" would assert something the format does not contain — and would
@@ -223,7 +224,7 @@ describe("the junit adapter", () => {
     expect(junitAdapter.parse(JUNIT).evidenceKind).toBeUndefined();
   });
 
-  // Trace: FR-033-AC-7
+  // Trace: FR-033-AC-7, FR-033-CON-4
   it("rejects input carrying no testcase rather than recording an empty run", () => {
     // An empty run is indistinguishable from a suite that passed nothing, which
     // is exactly the state a freshness check must not be fed.

@@ -1,5 +1,5 @@
 /**
- * FR-030 — the evidence store (TC-119..TC-132).
+ * FR-030 — the evidence store.
  */
 
 import {
@@ -55,8 +55,8 @@ const HASH_A = "a".repeat(64);
 const COMMIT = "abcdef0123456789";
 const HASH_B = "b".repeat(64);
 
-describe("TC-119 the store lives under spec/", () => {
-  // TC-119
+describe("the store lives under spec/", () => {
+  // Trace: FR-030-AC-1
   it("places the store inside the walked document root", () => {
     // quire-rs CR-045 bounds the document walk to <scope>/spec, so the authored
     // half is only a validated corpus document if the store lives there. A
@@ -71,8 +71,8 @@ describe("TC-119 the store lives under spec/", () => {
   });
 });
 
-describe("TC-120 writes are canonical, so a diff of the store is the delta", () => {
-  // TC-120
+describe("writes are canonical, so a diff of the store is the delta", () => {
+  // Trace: FR-030-AC-2
   it("sorts keys at every level and ends with a newline", () => {
     const json = canonicalJson({ b: 1, a: { d: 2, c: 3 } });
     expect(json).toBe(
@@ -103,8 +103,8 @@ describe("TC-120 writes are canonical, so a diff of the store is the delta", () 
   });
 });
 
-describe("TC-121 the suite is the atomic unit of evidence", () => {
-  // TC-121
+describe("the suite is the atomic unit of evidence", () => {
+  // Trace: FR-030-AC-3
   it("keeps one file per (suite, commit) and does not merge suites", () => {
     const base = {
       schemaVersion: STORE_SCHEMA_VERSION,
@@ -136,8 +136,8 @@ describe("TC-121 the suite is the atomic unit of evidence", () => {
   });
 });
 
-describe("TC-122 first discharge auto-binds and stamps the hash", () => {
-  // TC-122
+describe("first discharge auto-binds and stamps the hash", () => {
+  // Trace: FR-030-AC-4
   it("binds a passing symbol's obligation with the hash as it stands now", () => {
     const outcome = recordRun({
       repo,
@@ -184,8 +184,8 @@ describe("TC-122 first discharge auto-binds and stamps the hash", () => {
   });
 });
 
-describe("TC-123 a reworded statement makes a binding suspect", () => {
-  // TC-123
+describe("a reworded statement makes a binding suspect", () => {
+  // Trace: FR-030-AC-5
   it("reports suspicion and does NOT overwrite the hash", () => {
     const request = {
       repo,
@@ -216,8 +216,8 @@ describe("TC-123 a reworded statement makes a binding suspect", () => {
   });
 });
 
-describe("TC-124 affirmation is the explicit act", () => {
-  // TC-124
+describe("affirmation is the explicit act", () => {
+  // Trace: FR-030-AC-6
   it("moves the hash forward and records who, at which commit", () => {
     const existing: Binding[] = [
       {
@@ -252,8 +252,8 @@ describe("TC-124 affirmation is the explicit act", () => {
   });
 });
 
-describe("TC-125 a trace id no obligation states is reported", () => {
-  // TC-125
+describe("a trace id no obligation states is reported", () => {
+  // Trace: FR-030-AC-7
   it("names it rather than dropping it", () => {
     // quire-rs#72 from the other direction: a test claiming to verify something
     // the spec does not state.
@@ -273,8 +273,8 @@ describe("TC-125 a trace id no obligation states is reported", () => {
   });
 });
 
-describe("TC-126 gc keeps the latest run and anything a binding references", () => {
-  // TC-126
+describe("gc keeps the latest run and anything a binding references", () => {
+  // Trace: FR-030-AC-8
   it("deletes only unreferenced older runs", () => {
     const base = {
       schemaVersion: STORE_SCHEMA_VERSION,
@@ -324,8 +324,8 @@ describe("TC-126 gc keeps the latest run and anything a binding references", () 
   });
 });
 
-describe("TC-127 an absent store reads as empty, not as an error", () => {
-  // TC-127
+describe("an absent store reads as empty, not as an error", () => {
+  // Trace: FR-030-AC-9
   it("returns an empty binding graph before anything has been recorded", () => {
     expect(readBindings(repo).bindings).toEqual([]);
     expect(listRuns(repo, "SUITE-001")).toEqual([]);
@@ -333,8 +333,8 @@ describe("TC-127 an absent store reads as empty, not as an error", () => {
   });
 });
 
-describe("TC-128 no obligation is ever stored", () => {
-  // TC-128
+describe("no obligation is ever stored", () => {
+  // Trace: FR-030-AC-10, FR-030-CON-2
   it("keeps only the hash, never the statement", () => {
     // The governing principle: store only what cannot be recomputed from
     // spec + code at HEAD. An obligation is always re-derivable, so a stored
@@ -382,13 +382,13 @@ describe("bind() is the one place the auto-bind rule lives", () => {
   });
 });
 
-describe("TC-129 a second suite appends, it does not overwrite (FR-030-AC-11)", () => {
+describe("a second suite appends, it does not overwrite (FR-030-AC-11)", () => {
   // `BindingsFile`'s own doc says the graph IS cross-suite — "one obligation
   // can be discharged by a unit test and a benchmark" — and `bind()` keyed on
   // the obligation alone, so the second discharge replaced the first. The
   // relationship the file exists to hold was destroyed on write, silently
   // (agent-ix/quoin#102).
-  // TC-129
+  // Trace: FR-031-AC-1
   it("keeps both bindings and orders them by (obligation, suite)", () => {
     const first = bind([], {
       obligation: "FR-001-AC-1",
@@ -478,7 +478,7 @@ describe("TC-129 a second suite appends, it does not overwrite (FR-030-AC-11)", 
   });
 });
 
-describe("TC-130 the latest run is the newest, not the highest filename (FR-030-AC-12)", () => {
+describe("the latest run is the newest, not the highest filename (FR-030-AC-12)", () => {
   // A run filename is `<commit12>.json` and a commit prefix is uniformly random
   // hex, so `listRuns().at(-1)` picked the newest run with probability 1/n.
   // These fixtures are built so the two answers DISAGREE: the newest run's
@@ -506,7 +506,7 @@ describe("TC-130 the latest run is the newest, not the highest filename (FR-030-
     });
   }
 
-  // TC-130
+  // Trace: FR-031-AC-2
   it("reads the newest by timestamp even when its filename sorts first", () => {
     twoRuns();
     // The premise: filename order and time order genuinely disagree here.
@@ -546,14 +546,14 @@ describe("TC-130 the latest run is the newest, not the highest filename (FR-030-
   });
 });
 
-describe("TC-131 a corrupt store file is named, not a bare SyntaxError (FR-030-AC-13)", () => {
+describe("a corrupt store file is named, not a bare SyntaxError (FR-030-AC-13)", () => {
   // `bindings.json` and `baseline.json` are checked into git, so a merge
   // conflict leaves `<<<<<<< HEAD` in one of them. Every store read used to
   // throw `SyntaxError: Unexpected token '<'` naming no file
   // (agent-ix/quoin#106).
   const CONFLICTED = '<<<<<<< HEAD\n{"bindings": []}\n=======\n';
 
-  // TC-131
+  // Trace: FR-031-AC-3
   it("names the file and the cause when the binding graph is unreadable", () => {
     mkdirSync(storeRoot(repo), { recursive: true });
     writeFileSync(bindingsPath(repo), CONFLICTED, "utf8");
@@ -587,12 +587,12 @@ describe("TC-131 a corrupt store file is named, not a bare SyntaxError (FR-030-A
   });
 });
 
-describe("TC-132 the store's byte order does not depend on the locale (FR-030-AC-14)", () => {
+describe("the store's byte order does not depend on the locale (FR-030-AC-14)", () => {
   // `writeBindings` sorted with `localeCompare`, whose collation depends on the
   // runtime's ICU data — so two machines could serialize one binding set two
   // ways and produce a diff nobody made, in a file whose diff is meant to BE
   // the per-PR delta (agent-ix/quoin#106).
-  // TC-132
+  // Trace: FR-031-AC-4
   it("writes an exact, pinned byte sequence", () => {
     writeBindings(repo, {
       schemaVersion: 1,
@@ -628,7 +628,7 @@ describe("TC-132 the store's byte order does not depend on the locale (FR-030-AC
   });
 });
 
-describe("TC-245 a run binds through an obligation's declared test cases", () => {
+describe("a run binds through an obligation's declared test cases", () => {
   // A tool reports the id it knows. A unit test carries the criterion's own id
   // because the tag is written in the test; an agent-eval report — and any tool
   // keyed on the Test Matrix — carries the TEST CASE id. Both are stated by the
@@ -638,7 +638,7 @@ describe("TC-245 a run binds through an obligation's declared test cases", () =>
   // Before this, `quoin evidence record --adapter agent-eval` reported
   // `bound: 0` and `unmatched trace ids … TC-EV-057` while `FR-038-AC-8 →
   // TC-EV-057` sat in the FR's own table (agent-ix/quoin#144).
-  // TC-245
+  // Trace: FR-030-AC-15
   it("binds a test-case id to the criterion whose cell names it", () => {
     const outcome = recordRun({
       repo,

@@ -21,8 +21,8 @@ const DICTIONARY = join(__dirname, "..", "bench", "metrics.json");
 describe("the metric dictionary", () => {
   const { families, metrics } = loadMetrics(DICTIONARY);
 
-  it("TC-926 declares unit, population and method for every metric, and refuses one that does not", () => {
-    // TC-926
+  it("declares unit, population and method for every metric, and refuses one that does not", () => {
+    // Trace: FR-043-AC-1
     for (const [name, spec] of Object.entries(metrics)) {
       for (const field of ["unit", "population", "method", "direction"]) {
         expect(
@@ -55,8 +55,8 @@ describe("the metric dictionary", () => {
     ).toThrow(/direction/);
   });
 
-  it("TC-927 defines precision and recall per defect family, keyed on families the corpora label", () => {
-    // TC-927
+  it("defines precision and recall per defect family, keyed on families the corpora label", () => {
+    // Trace: FR-043-AC-2
     for (const name of ["finding_precision", "finding_recall"]) {
       expect(metrics[name].per_family).toBe(true);
       expect(metrics[name].direction).toBe("higher-is-better");
@@ -88,8 +88,8 @@ describe("the metric dictionary", () => {
     ).toThrow(/labels no families/);
   });
 
-  it("TC-928 defines span_grounding_rate with the pass-2 figure as its baseline", () => {
-    // TC-928
+  it("defines span_grounding_rate with the pass-2 figure as its baseline", () => {
+    // Trace: FR-043-AC-3
     const m = metrics.span_grounding_rate;
     expect(m.unit).toMatch(/specific-shape/);
     // 0 of 65 measured at pass 2. Zero is the measured starting point, and it
@@ -98,7 +98,7 @@ describe("the metric dictionary", () => {
     expect(m.baseline_note).toMatch(/0 of 65/);
   });
 
-  it("TC-1094 defines correctness and safe refusal independently of presence", () => {
+  it("defines correctness and safe refusal independently of presence", () => {
     const correctness = metrics.span_correctness_rate;
     const refusal = metrics.span_safe_refusal_rate;
     expect(correctness.population).toMatch(/expected.*loci/i);
@@ -110,7 +110,7 @@ describe("the metric dictionary", () => {
     expect(correctness.measurement_plan).not.toBe(refusal.measurement_plan);
   });
 
-  it("TC-1120 gives labeled span v2 its own active MeasurementPlan", () => {
+  it("gives labeled span v2 its own active MeasurementPlan", () => {
     const historical = metrics.span_grounding_rate;
     const labeled = metrics.span_grounding_v2_rate;
     expect(historical.measurement_plan).toMatch(/MP-204/);
@@ -125,16 +125,16 @@ describe("the metric dictionary", () => {
     expect(plan).toMatch(/definition_version: property\.span-grounding-v2/);
   });
 
-  it("TC-929 defines actionability_rate with the 15-of-496 baseline", () => {
-    // TC-929
+  it("defines actionability_rate with the 15-of-496 baseline", () => {
+    // Trace: FR-043-AC-4
     const m = metrics.actionability_rate;
     expect(m.baseline).toBeCloseTo(3.02, 2);
     expect(m.baseline_note).toMatch(/15 of 496/);
     expect(m.method).toMatch(/row id/);
   });
 
-  it("TC-930 defines cost per confirmed insight in tokens AND tool calls", () => {
-    // TC-930
+  it("defines cost per confirmed insight in tokens AND tool calls", () => {
+    // Trace: FR-043-AC-5
     const m = metrics.cost_per_confirmed_insight;
     expect(m.unit).toMatch(/tokens/);
     expect(m.unit).toMatch(/tool calls/);
@@ -144,8 +144,8 @@ describe("the metric dictionary", () => {
     expect(m.direction).toBe("lower-is-better");
   });
 
-  it("TC-931 declares the silent-zero sentinel as a gate with no tolerance", () => {
-    // TC-931
+  it("declares the silent-zero sentinel as a gate with no tolerance", () => {
+    // Trace: FR-043-AC-6
     const m = metrics["sentinel.silent_zero"];
     expect(m.direction).toBe("gate-zero");
     expect(m.expected).toBe(0);

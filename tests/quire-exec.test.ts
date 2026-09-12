@@ -42,7 +42,7 @@ describe("runQuire failure reporting (FR-029-AC-10..AC-12)", () => {
     process.env.PATH = savedPath;
   });
 
-  // TC-254
+  // Trace: FR-029-AC-11, FR-029-AC-12
   it("returns a payload larger than Node's 1 MiB default whole — the cap is actually raised", () => {
     // The headline #164 fix, pinned: without `maxBuffer: QUIRE_MAX_BUFFER` at
     // the call site this payload dies ENOBUFS under Node's 1 MiB default —
@@ -58,7 +58,7 @@ describe("runQuire failure reporting (FR-029-AC-10..AC-12)", () => {
     expect(stdout).toHaveLength(bytes);
   });
 
-  // TC-254
+  // Trace: FR-029-AC-11, FR-029-AC-12
   it("names the buffer overrun on an ENOBUFS death — not an exit status, not the child's stderr", () => {
     // A child whose output outgrows maxBuffer is killed by Node: status is
     // null, code is ENOBUFS. Flood one MiB past the cap; the real
@@ -79,7 +79,7 @@ describe("runQuire failure reporting (FR-029-AC-10..AC-12)", () => {
     expect(message).not.toContain("DuplicateArchetype");
   });
 
-  // TC-255
+  // Trace: FR-029-AC-12
   it("names the signal on a signal death, and does not append unrelated stderr", () => {
     process.env.PATH = `${fakeQuireDir(
       `echo '${NOISE}' >&2\nkill -TERM $$`,
@@ -95,7 +95,7 @@ describe("runQuire failure reporting (FR-029-AC-10..AC-12)", () => {
     expect(message).not.toContain("DuplicateArchetype");
   });
 
-  // TC-256
+  // Trace: FR-029-AC-10
   it("still surfaces the child's own stderr when the child itself exited non-zero", () => {
     // AC-10's contract, previously verified by inspection only: when quire
     // EXITS with a diagnosis, that diagnosis is the message worth surfacing.
@@ -112,7 +112,7 @@ describe("runQuire failure reporting (FR-029-AC-10..AC-12)", () => {
     expect(message).toContain("no module in scope declares");
   });
 
-  // TC-257
+  // Trace: FR-029-AC-12
   it("reports a binary that could not be run at all, by its cause", () => {
     // No quire anywhere on PATH: no status, no signal — err.code (ENOENT) is
     // the only true statement available, so it is the one made.
