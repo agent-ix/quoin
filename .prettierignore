@@ -114,5 +114,5 @@ templates/semantic-module/
 # differ from what the producer emits, so the next regeneration reads as a
 # change that nobody made. Same rule as the vendored schemas above — these bytes
 # are evidence, not source.
-rust/quoin-semantic/tests/goldens/
-rust/quoin-completeness/tests/goldens/
+rust/crates/quoin-semantic/tests/goldens/
+rust/crates/quoin-completeness/tests/goldens/

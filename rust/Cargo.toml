@@ -55,9 +55,13 @@ publish = false
 [workspace.dependencies]
 quoin-core = { path = "crates/quoin-core" }
 quoin-schemas = { path = "crates/quoin-schemas" }
+quoin-yaml = { path = "crates/quoin-yaml" }
 serde = { version = "=1.0.228", features = ["derive"] }
 serde_json = "=1.0.150"
-thiserror = "=2.0.18"
+# Raised from =2.0.18 by quoin#378: `saphyr` (the YAML 1.2 core-schema reader
+# quoin-yaml wraps) requires ^2.0.20, and `multiple-versions = "deny"` in
+# deny.toml forbids carrying both.
+thiserror = "=2.0.20"
 jsonschema = { version = "=0.56.0", default-features = false }
 
 [profile.release]

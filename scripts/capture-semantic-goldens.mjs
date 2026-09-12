@@ -37,10 +37,13 @@ const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(here, "..");
 const oracleRoot = resolve(repoRoot, process.argv[2] ?? ".oracle");
 
-const semanticGoldens = join(repoRoot, "rust/quoin-semantic/tests/goldens");
+const semanticGoldens = join(
+  repoRoot,
+  "rust/crates/quoin-semantic/tests/goldens",
+);
 const completenessGoldens = join(
   repoRoot,
-  "rust/quoin-completeness/tests/goldens",
+  "rust/crates/quoin-completeness/tests/goldens",
 );
 
 const contract = await import(`${oracleRoot}/semantic/contract.js`);
@@ -2560,6 +2563,19 @@ const bundleFiles = {
   "scalar-frontmatter.md": "---\njust-a-string\n---\n\nbody\n",
   "no-trailing-newline.md":
     "---\nid: NFR-005\nquality_attribute: compliance\n---\nbody",
+  // D4 (DIVERGENCE.md section 6). These documents exist so the corpus contains
+  // YAML tokens whose implicit type depends on which scalar-resolution schema
+  // the reader implements. `on`/`no`/`1:30`/`2026-09-12`/`null` are the tokens
+  // YAML 1.1 (libyaml) types as bool/sexagesimal/timestamp/null; `017`/`010`
+  // are octal under YAML 1.1 but decimal integers under the YAML 1.2 core
+  // schema; `0b101` is an integer under YAML 1.1 but a plain string under the
+  // core schema. A reader that disagrees with this oracle on any of them
+  // projects a different claim set, and -- through the exclusion path below --
+  // a different verdict.
+  "ambiguous/claims.md":
+    "---\nid: NFR-006\nquality_attribute:\n  - security\n  - on\n  - no\n  - 1:30\n  - 2026-09-12\n  - 017\n  - 010\n  - 0b101\n---\n\nBody F\n",
+  "ambiguous/excuse.md":
+    "---\nid: NFR-007\nquality_attributes_not_applicable:\n  - 017\n  - null\n---\n\n| 017 | out of scope for this bundle |\n",
 };
 
 const bundleRoot = writeModule("bundle", bundleFiles);
