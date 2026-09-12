@@ -1,0 +1,18 @@
+# The toolchain every Rust gate in this workspace is measured on.
+#
+# NFR-026 states a 1.98.1 floor "consistent with quire-corpus and
+# filament-core-data". Those two do not in fact agree today:
+# quire-corpus/Cargo.toml pins rust-version = "1.98.1" and
+# filament-core-data/rust-toolchain.toml pins channel = "1.94.1". 1.98.1 is
+# the floor NFR-026 names and the higher of the two, so it is what is pinned
+# here; filament-core-data sitting below the floor is recorded in quoin#375
+# rather than silently reconciled by lowering quoin's pin.
+#
+# Pinning the channel is what makes `cargo fmt --check` and `cargo clippy -D
+# warnings` claims about this code rather than about whichever toolchain
+# happened to be on the path.
+
+[toolchain]
+channel = "1.98.1"
+profile = "minimal"
+components = ["clippy", "rustfmt"]

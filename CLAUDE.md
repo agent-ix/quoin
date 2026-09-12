@@ -89,6 +89,30 @@ numbers from a binary whose self-reported version was wrong. `make check-version
 asserts that `--version` and `--help` agree and that a clean tag reports itself;
 run it before tagging.
 
+## Rust
+
+`rust/` is a Cargo workspace inside this repository, beside `src/` — the Rust
+burn-down (#373) ports quoin's engine logic behind a `quoin-core` subprocess
+one stage at a time, and FR-101 requires both trees to be exercised at one
+candidate revision, which two repositories cannot do.
+
+```bash
+make rust-gate       # fmt --check, clippy -D warnings, cargo deny, tests, difftest
+make rust-difftest   # the retained TypeScript vs quoin-core, one request, one verdict
+```
+
+**Read `.claude/skills/rust-style/SKILL.md` before writing or reviewing
+anything under `rust/`.** It is the repo-level idiom doc and it outranks the
+ecosystem `rust-style` and `rust-review` skills here; the ecosystem
+`rust-review` checklist defers to it by name in its own §0. It states the
+boundary contract (exit taxonomy, canonical JSON, stream discipline), the error
+envelope, the workspace lint policy and the `tc_NNN` / `/// Trace:` test
+convention, and every rule in it is enforced by a lint or a test.
+
+Invoke cargo **from `rust/`**: rustup selects a toolchain from the working
+directory, so `cargo --manifest-path rust/Cargo.toml` run from the root ignores
+`rust/rust-toolchain.toml` and silently builds with `rustup default`.
+
 ## Adding or improving a spec check
 
 quoin's analyses and quire's validators both point at the `~/dev` corpus, where a

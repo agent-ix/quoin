@@ -99,6 +99,13 @@ describe("quoin's declared boundaries", () => {
     // Asserted as the full sorted set rather than a subset, so a NEW binary
     // fails by default. A membership test would pass until someone remembered
     // to extend it, which is the failure mode of every denylist.
+    //
+    // `quoin-core` joined the set in quoin#375. It does not weaken invariant 1
+    // — quoin still transcribes rather than executes the consumer's CI —
+    // because quoin-core IS quoin: the burn-down (#373) moves quoin's own
+    // engine logic behind a subprocess, and at the final stage `quoin-core`
+    // becomes `quoin`. A binary that is not quoin, quire, ix-flow or git still
+    // fails here.
     const executed = new Set<string>();
     const unreadable: string[] = [];
 
@@ -124,6 +131,58 @@ describe("quoin's declared boundaries", () => {
       }
       if (executors.size === 0) continue;
 
+      // Local bindings initialised from a resolver call, e.g.
+      // `const executable = quoinCoreExecutable();`. Resolution has to happen
+      // OUTSIDE the try block that classifies a termination — a digest
+      // mismatch has no exit status and is otherwise reported as
+      // "could not be run (undefined)" — so the executor's first argument is
+      // an identifier rather than the call itself, and the check has to be
+      // able to read through one level of binding to stay honest.
+      const resolvedBindings = new Map<string, string>();
+      const collectBindings = (node: ts.Node): void => {
+        if (
+          ts.isVariableDeclaration(node) &&
+          ts.isIdentifier(node.name) &&
+          node.initializer &&
+          ts.isCallExpression(node.initializer) &&
+          ts.isIdentifier(node.initializer.expression) &&
+          node.initializer.arguments.length === 0
+        ) {
+          resolvedBindings.set(
+            node.name.text,
+            node.initializer.expression.text,
+          );
+        }
+        ts.forEachChild(node, collectBindings);
+      };
+      collectBindings(file.ast);
+
+      /** The binary a resolver function name stands for, if it is admitted. */
+      const resolverBinary = (
+        fileRel: string,
+        resolver: string,
+      ): string | null => {
+        if (fileRel === "src/quire/exec.ts" && resolver === "quireExecutable") {
+          // Quire is resolved once to an absolute, real path and can be
+          // digest-locked by QUOIN_EXPECTED_QUIRE_SHA256. Keep this narrow:
+          // no other computed executable or call site is admitted.
+          return "quire";
+        }
+        if (
+          fileRel === "src/core/exec.ts" &&
+          resolver === "quoinCoreExecutable"
+        ) {
+          // The same allowance, and only the same allowance, for the Rust
+          // boundary (quoin#373, #375): `quoin-core` is resolved once to an
+          // absolute real path and can be digest-locked by
+          // QUOIN_EXPECTED_CORE_SHA256. It is a fourth EXECUTED binary and not
+          // a fourth exception — when `src/quire/exec.ts` is deleted at Stage
+          // 8, the first branch goes with it and this one remains.
+          return "quoin-core";
+        }
+        return null;
+      };
+
       const visit = (node: ts.Node): void => {
         if (
           ts.isCallExpression(node) &&
@@ -131,20 +190,25 @@ describe("quoin's declared boundaries", () => {
           executors.has(node.expression.text)
         ) {
           const [first] = node.arguments;
-          if (first && ts.isStringLiteral(first)) {
-            executed.add(first.text);
-          } else if (
-            file.rel === "src/quire/exec.ts" &&
+          // The resolver, whether called inline or read back out of the local
+          // binding it was assigned to. Nothing deeper is followed: one hop is
+          // what the two admitted files need, and every hop past that is a
+          // hop the reader has to verify by hand.
+          const resolver =
             first &&
             ts.isCallExpression(first) &&
-            ts.isIdentifier(first.expression) &&
-            first.expression.text === "quireExecutable" &&
-            first.arguments.length === 0
-          ) {
-            // Quire is resolved once to an absolute, real path and can be
-            // digest-locked by QUOIN_EXPECTED_QUIRE_SHA256. Keep this narrow:
-            // no other computed executable or call site is admitted.
-            executed.add("quire");
+            ts.isIdentifier(first.expression)
+              ? first.arguments.length === 0
+                ? first.expression.text
+                : null
+              : first && ts.isIdentifier(first)
+                ? (resolvedBindings.get(first.text) ?? null)
+                : null;
+          const admitted = resolver ? resolverBinary(file.rel, resolver) : null;
+          if (first && ts.isStringLiteral(first)) {
+            executed.add(first.text);
+          } else if (admitted) {
+            executed.add(admitted);
           } else {
             // A computed binary is not readable here and therefore must not
             // pass: the check would be asserting over a set it cannot see.
@@ -159,6 +223,11 @@ describe("quoin's declared boundaries", () => {
     }
 
     expect(unreadable).toEqual([]);
-    expect([...executed].sort()).toEqual(["git", "ix-flow", "quire"]);
+    expect([...executed].sort()).toEqual([
+      "git",
+      "ix-flow",
+      "quire",
+      "quoin-core",
+    ]);
   });
 });

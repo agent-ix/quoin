@@ -1,0 +1,50 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 Agent-IX
+#
+# Modelled on quire-rs/deny.toml. Two deliberate differences: this workspace
+# has no git source at all (so `allow-git` stays empty and `unknown-git =
+# "deny"` has full teeth), and `multiple-versions` is "deny" because the
+# Stage-0 graph is small enough that a duplicate is a fact worth knowing
+# rather than noise to wade through. Relax it when a real transitive
+# duplicate lands, with the reason written here.
+
+[licenses]
+version = 2
+# Exactly the licences the current graph carries, not a generous list held
+# open for licences nothing uses. cargo-deny warns on an unmatched allowance,
+# so a permissive list is also a noisy one; a new dependency adds its licence
+# here in the same commit that adds the dependency.
+allow = [
+    "MIT",
+    "Apache-2.0",
+    "Unicode-3.0",
+]
+# quoin's own crates are AGPL-3.0-or-later (the repository license). Allowed
+# here per-crate WITHOUT admitting AGPL into the third-party graph — the
+# allow-list above stays permissive-only.
+exceptions = [
+    { allow = ["AGPL-3.0-or-later"], crate = "quoin-core" },
+    { allow = ["AGPL-3.0-or-later"], crate = "quoin-schemas" },
+    { allow = ["AGPL-3.0-or-later"], crate = "quoin-difftest" },
+]
+confidence-threshold = 0.9
+
+[bans]
+multiple-versions = "deny"
+wildcards = "deny"
+# An in-workspace `path` dependency has no version to pin and is not the kind
+# of wildcard this check exists to catch — the bytes are in this tree. Only
+# registry wildcards are refused.
+allow-wildcard-paths = true
+
+[advisories]
+version = 2
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
+# Empty on purpose. quoin#373: "no crates.io, no public npmjs" governs where
+# quoin PUBLISHES; dependencies are consumed from crates.io exactly as
+# quire-corpus and quire-rs consume theirs. When quoin-core gains a git
+# dependency it is listed here, or `unknown-git = "deny"` refuses it.
+allow-git = []

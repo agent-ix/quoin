@@ -257,6 +257,76 @@ install-smoke:
 lint:
 	$(PNPM) run lint
 
+# =============================================================================
+# Rust workspace (quoin#373 burn-down, Stage 0 = quoin#375)
+# =============================================================================
+# The Rust half of the repository lives in `rust/`, beside the retained `src/`,
+# so both trees are exercised at ONE candidate revision (FR-101).
+#
+# CARGO_TARGET_DIR IS NAMED EXPLICITLY ON EVERY INVOCATION, and that is not
+# decoration. With the variable set in the environment, `cargo build` writes to
+# `$CARGO_TARGET_DIR/debug/quoin-core` while `rust/target/` keeps whatever was
+# there before — the exact defect recorded against bench-tier1 above, where an
+# in-repo path held a binary four days and one engine older than the build that
+# was supposed to have produced it. `--target-dir` makes the gate a statement
+# about the build it just ran.
+# Every recipe below enters $(RUST_DIR) first. rustup selects a toolchain from
+# the WORKING DIRECTORY, so `cargo --manifest-path rust/Cargo.toml` run from
+# the repository root builds with whatever `rustup default` happens to be —
+# 1.94.1 on this machine — and ignores rust/rust-toolchain.toml entirely. The
+# `cd` is what makes the pinned 1.98.1 the toolchain the gate measures on.
+RUST_DIR := $(CURDIR)/rust
+CARGO_TARGET := $(RUST_DIR)/target
+CARGO_TARGET_FLAG := --target-dir $(CARGO_TARGET)
+
+.PHONY: rust-build
+rust-build:
+	cd $(RUST_DIR) && cargo build --workspace --locked $(CARGO_TARGET_FLAG)
+
+.PHONY: rust-fmt
+rust-fmt:
+	cd $(RUST_DIR) && cargo fmt --all
+
+.PHONY: rust-lint
+rust-lint:
+	cd $(RUST_DIR) && cargo fmt --all --check
+	cd $(RUST_DIR) && cargo clippy --workspace --all-targets --locked $(CARGO_TARGET_FLAG) -- -D warnings
+
+.PHONY: rust-deny
+rust-deny:
+	cd $(RUST_DIR) && cargo deny check
+
+.PHONY: rust-test
+rust-test:
+	cd $(RUST_DIR) && cargo test --workspace --locked $(CARGO_TARGET_FLAG)
+
+# The FR-101 differential harness: the retained TypeScript and quoin-core, one
+# request, one verdict. It needs BOTH trees built, and it depends on `build`
+# rather than assuming a `dist/` is present, because the TypeScript side runs
+# from `dist/core/reference.js` — comparing a built artifact against a source
+# tree would be comparing two revisions.
+.PHONY: rust-difftest
+rust-difftest: build rust-build
+	$(CARGO_TARGET)/debug/quoin-difftest \
+	  --core $(CARGO_TARGET)/debug/quoin-core \
+	  --ts $(CURDIR)/scripts/core-reference.mjs
+
+# `src/core/exec.ts` against the real binary. The suite skips these cases when
+# QUOIN_CORE is unset, which is every ordinary `vitest run`; this target is the
+# lane that sets it. Without it the caller is only ever tested against fakes,
+# and a fake agrees with whatever the test wrote into it.
+.PHONY: rust-e2e
+rust-e2e: rust-build
+	QUOIN_CORE=$(CARGO_TARGET)/debug/quoin-core \
+	  $(PNPM) exec vitest run tests/core-exec-e2e.test.ts
+
+# The Rust gate, in the order a failure is cheapest to read: format and lint
+# first (seconds), then the supply-chain check, then the suites, then the
+# cross-language comparison that needs both trees built.
+.PHONY: rust-gate
+rust-gate: rust-lint rust-deny rust-test rust-e2e rust-difftest
+	@echo "rust-gate: fmt, clippy -D warnings, cargo deny, tests, the end-to-end caller and the differential harness passed"
+
 .PHONY: audit-tool-drift
 audit-tool-drift:
 	$(PNPM) run audit:tool-drift
@@ -399,6 +469,7 @@ help:
 	@echo ""
 	@echo "Common targets:"
 	@echo "  make build              - Build TypeScript"
+	@echo "  make rust-gate          - Rust fmt, clippy, deny, tests and difftest"
 	@echo "  make test               - Run the exact-source canonical verification stack"
 	@echo "  make test-with-quire QUIRE=/absolute/path - Run the explicit inner test gate"
 	@echo "  make lint               - Run linter"

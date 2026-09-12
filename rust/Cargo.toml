@@ -1,0 +1,66 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 Agent-IX
+#
+# The Rust workspace for the quoin burn-down (quoin#373, Stage 0 = quoin#375).
+#
+# It lives INSIDE the quoin repository, beside the retained `src/`, because
+# FR-101 requires old and new implementations to be exercised at ONE candidate
+# revision. A second repository would turn that into a two-repo pin-and-sync
+# problem, which is the failure this arrangement exists to avoid.
+#
+# Only three crates exist today, and that is deliberate: an empty crate is
+# noise, not a plan. The topology in #373 is realised one stage at a time.
+
+[workspace]
+resolver = "3"
+members = [
+    "crates/quoin-core",
+    "crates/quoin-difftest",
+    "crates/quoin-schemas",
+]
+
+# The lint policy lives HERE rather than only in CI flags, so `cargo clippy`
+# on a developer machine enforces the same thing the gate does. Every crate
+# opts in with `[lints] workspace = true`; there is no exception, and adding
+# one needs a written reason in this file.
+[workspace.lints.rust]
+unsafe_code = "forbid"
+missing_docs = "warn"
+unreachable_pub = "warn"
+
+[workspace.lints.clippy]
+all = { level = "warn", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
+# The panic surface of a binary that reads untrusted JSON off stdin. These are
+# `warn` here and fatal in the gate (`-D warnings`), so a local build shows
+# them all rather than stopping at the first.
+unwrap_used = "warn"
+expect_used = "warn"
+panic = "warn"
+indexing_slicing = "warn"
+# Every `as` cast crossing the wire boundary must be a `try_from`.
+cast_possible_truncation = "warn"
+cast_sign_loss = "warn"
+cast_possible_wrap = "warn"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.98.1"
+license = "AGPL-3.0-or-later"
+repository = "https://github.com/agent-ix/quoin"
+authors = ["Agent-IX"]
+
+# Exact pins, matching quire-corpus. A caret range makes the gate a claim about
+# whatever resolved that morning; `=` makes it a claim about these bytes.
+[workspace.dependencies]
+quoin-core = { path = "crates/quoin-core" }
+quoin-schemas = { path = "crates/quoin-schemas" }
+serde = { version = "=1.0.228", features = ["derive"] }
+serde_json = "=1.0.150"
+thiserror = "=2.0.18"
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+strip = true

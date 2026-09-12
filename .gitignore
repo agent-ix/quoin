@@ -24,3 +24,10 @@ reports/
 # and removed afterwards. This entry catches a run interrupted before its
 # `finally`, so a stray tree never reaches a commit.
 quoin-semantic-module-*/
+
+# Cargo build output for the Rust workspace (quoin#375). `rust/target/` is the
+# EXPLICIT target dir every gate names on the command line; an inherited
+# CARGO_TARGET_DIR moves the artifact somewhere else and leaves a stale binary
+# here, which is how a measurement gets attributed to a build that is four
+# days old (see the bench-tier1 note in the Makefile).
+rust/target/

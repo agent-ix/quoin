@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 Agent-IX
+#
+# Stable options only. A nightly-gated option makes `cargo fmt --check` pass
+# locally and do nothing in CI, which is worse than not setting it.
+edition = "2024"
+newline_style = "Unix"
