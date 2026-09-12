@@ -231,3 +231,148 @@ describe("quoin's declared boundaries", () => {
     ]);
   });
 });
+
+describe("the auditor is a pure function of its inputs", () => {
+  // Trace: FR-032-CON-2
+  it("reads no clock, walks no filesystem and spawns no subprocess", () => {
+    // FR-032-CON-2 made mechanical. `src/auditor/audit.ts:14` states the
+    // invariant in prose — "The auditor runs nothing. It reads the store and
+    // reports (ADR-0011 invariant 1)" — and prose is what the criterion had
+    // instead of a check. The caller assembles the inputs; that is what makes
+    // the whole thing testable without a repository, and it is only true for
+    // as long as nothing here reaches for ambient state.
+    //
+    // Asserted over IMPORTS rather than call sites, because an impure
+    // dependency cannot be used without being imported and an import cannot be
+    // spelled around. A call-site scan would miss `fs.readFileSync` reached
+    // through a re-export, which is the same class of miss the executor check
+    // above records having made as a regex.
+    const impure = new Set([
+      "node:fs",
+      "node:fs/promises",
+      "fs",
+      "node:child_process",
+      "child_process",
+      "node:http",
+      "node:https",
+      "node:net",
+      "node:dns",
+    ]);
+    const violations = sources
+      .filter((file) => file.rel.startsWith("src/auditor/"))
+      .flatMap((file) =>
+        moduleSpecifiers(file)
+          .filter(({ text }) => impure.has(text))
+          .map(({ text, line }) => `${file.rel}:${line} imports ${text}`),
+      );
+    expect(violations).toEqual([]);
+  });
+
+  // Trace: FR-032-CON-2
+  it("names no clock", () => {
+    // The clock is the one impurity with no import to catch it: `Date.now()`
+    // and `new Date()` are globals. A check that fires on a fresh timestamp is
+    // not a pure function of its inputs, and it fails differently on a re-run
+    // an hour later — which is the worst kind of audit defect, because the
+    // report that disagrees is the one nobody kept.
+    const clocks: string[] = [];
+    for (const file of sources.filter((f) =>
+      f.rel.startsWith("src/auditor/"),
+    )) {
+      const visit = (node: ts.Node): void => {
+        if (
+          ts.isPropertyAccessExpression(node) &&
+          ts.isIdentifier(node.expression) &&
+          node.expression.text === "Date"
+        ) {
+          clocks.push(
+            `${file.rel}:${lineOf(file, node)} Date.${node.name.text}`,
+          );
+        }
+        if (
+          ts.isNewExpression(node) &&
+          ts.isIdentifier(node.expression) &&
+          node.expression.text === "Date"
+        ) {
+          clocks.push(`${file.rel}:${lineOf(file, node)} new Date()`);
+        }
+        ts.forEachChild(node, visit);
+      };
+      visit(file.ast);
+    }
+    expect(clocks).toEqual([]);
+  });
+
+  // Trace: FR-032-CON-2
+  it("would fail if the auditor grew an impure import", () => {
+    // The bypass probe. A check over a population that happens to be clean is
+    // indistinguishable from a check that reads nothing, and this file's own
+    // history is the argument: the executor check reported five violations on
+    // its first run and every one was a false positive. Prove the detector
+    // fires before trusting that it found nothing.
+    const planted = ts.createSourceFile(
+      "src/auditor/planted.ts",
+      'import { readFileSync } from "node:fs";\nexport const x = readFileSync;\n',
+      ts.ScriptTarget.ESNext,
+      true,
+    );
+    const found = moduleSpecifiers({
+      rel: "src/auditor/planted.ts",
+      ast: planted,
+    }).filter(({ text }) => text === "node:fs");
+    expect(found).toHaveLength(1);
+  });
+});
+
+describe("the advisor carries no method vocabulary of its own", () => {
+  // Trace: FR-031-CON-1
+  it("names no verification method, class or evidence kind as a literal", () => {
+    // FR-031-CON-1: "The advisor SHALL NOT carry its own method list. Every
+    // method, class and evidence kind comes from module data; a restated table
+    // is the failure being closed."
+    //
+    // The obvious candidate test is the wrong one, and the distinction is the
+    // whole point. `tests/advisor.test.ts` asserts the merged catalog IS read
+    // from module data — but code can read the catalog AND carry a restated
+    // table beside it, and that test passes either way. This one asserts the
+    // absence the criterion actually states.
+    //
+    // The vocabulary is the engine's, not this test's: `Test`, `Inspection`,
+    // `Analysis` and `Demonstration` are the four method classes the catalog
+    // declares, and a literal naming one inside the advisor is a restatement
+    // whatever it is used for. Type positions are excluded — a union type
+    // describing the shape module data arrives in is not a restatement of its
+    // contents.
+    const vocabulary = new Set([
+      "Test",
+      "Inspection",
+      "Analysis",
+      "Demonstration",
+    ]);
+    const restated: string[] = [];
+    for (const file of sources.filter((f) =>
+      f.rel.startsWith("src/advisor/"),
+    )) {
+      const visit = (node: ts.Node): void => {
+        if (ts.isStringLiteral(node) && vocabulary.has(node.text)) {
+          // A string in a type position is a shape declaration, not a table.
+          let inType = false;
+          for (let p = node.parent; p; p = p.parent) {
+            if (ts.isTypeNode(p) || ts.isTypeAliasDeclaration(p)) {
+              inType = true;
+              break;
+            }
+          }
+          if (!inType) {
+            restated.push(
+              `${file.rel}:${lineOf(file, node)} names "${node.text}"`,
+            );
+          }
+        }
+        ts.forEachChild(node, visit);
+      };
+      visit(file.ast);
+    }
+    expect(restated).toEqual([]);
+  });
+});
