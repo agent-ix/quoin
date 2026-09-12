@@ -98,4 +98,4 @@ recorded against a file inside the submodule each block consolidation.
 ## Dependencies
 
 - **Upstream**: [FR-096](./FR-096-versioned-rust-engine-boundary.md); [NFR-024](../non-functional/NFR-024-bounded-staged-coexistence.md), which defines the allowance manifest; the owner ruling that `agent-ix/qa-corpus` is out of this programme's scope (2026-09-12), recorded in [ADR-0003](../../docs/semantic-module-architecture/adr/0003-rust-native-quoin-engine-boundary.md). This requirement runs in parallel with the delivery stages and is not sequenced behind [FR-101](./FR-101-retire-replaced-executable-paths.md).
-- **Downstream**: [FR-100](./FR-100-rust-evidence-measurement-change-assurance.md), whose measurement crates consume the consolidated accounting.
+- **Downstream**: none. This previously named [FR-100](./FR-100-rust-evidence-measurement-change-assurance.md) as consuming the consolidated accounting, which stopped being true when [#388](https://github.com/agent-ix/quoin/issues/388) disposed of the corpus-measurement subsystem: FR-100's measurement crates now carry the measurement-record capability and are required NOT to restate corpus accounting.
