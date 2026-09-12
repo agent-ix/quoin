@@ -116,3 +116,11 @@ tests/fixtures/semantic-module/
 # rendered repository formats ITSELF — `make format` in the generated tree runs
 # black and ruff — which is where formatting belongs.
 templates/semantic-module/
+
+# The quoin#377 golden oracle (rust/crates/quoin-validators). `expected.json` is
+# captured output, not source: `tools/generate-oracle.mts` compares the bytes it
+# re-derives from the retained TypeScript against this file exactly, so a
+# formatter that re-indents it makes the reproduction check fail against a file
+# nothing produced. Same rule as src/quire/schemas/ and the change-assurance
+# goldens above. `cases.json` beside it is hand-authored input and IS formatted.
+rust/crates/quoin-validators/tests/golden/expected.json
