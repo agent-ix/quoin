@@ -388,8 +388,7 @@ describe("semantic-module architecture contract", () => {
     ]);
   });
 
-  // Trace:
-  // TC-1151
+  // Trace: NFR-013-M-1, NFR-013-M-2
   it("gives every external decision complete identity metadata", () => {
     const ledger = architecture("decision-ledger.md");
     const rows = ledger
@@ -433,8 +432,7 @@ describe("semantic-module architecture contract", () => {
     expect(ledger).not.toContain("remains provisional");
   });
 
-  // Trace:
-  // TC-1154
+  // Trace: NFR-014-M-1, NFR-014-M-2
   it("keeps the branch inside the architecture-only path allowlist", () => {
     const changed = changedPaths();
     if (!changed.some(activatesArchitectureOnlyGate)) return;
