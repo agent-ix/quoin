@@ -47,7 +47,7 @@ fn run(args: &[&str], stdin: &str) -> Run {
     }
 }
 
-/// Trace: FR-096
+/// Trace: FR-096-AC-2
 /// Provenance: quoin#375
 #[test]
 fn tc_375_a_ping_round_trips_payload_on_stdout_and_nothing_on_stderr() {
@@ -60,7 +60,7 @@ fn tc_375_a_ping_round_trips_payload_on_stdout_and_nothing_on_stderr() {
     assert_eq!(payload["core_version"], env!("CARGO_PKG_VERSION"));
 }
 
-/// Trace: FR-096
+/// Trace: FR-096-AC-2
 /// Provenance: quoin#375
 #[test]
 fn tc_375_stdout_is_canonical_json_one_line() {
@@ -78,7 +78,7 @@ fn tc_375_stdout_is_canonical_json_one_line() {
     );
 }
 
-/// Trace: FR-096
+/// Trace: FR-096-AC-4
 /// Provenance: quoin#375, agent-ix/quoin#103
 #[test]
 fn tc_375_exit_1_still_carries_a_complete_payload() {
@@ -95,7 +95,7 @@ fn tc_375_exit_1_still_carries_a_complete_payload() {
     assert_eq!(diagnostics[0]["context"]["actual"], "1");
 }
 
-/// Trace: FR-096
+/// Trace: FR-096-AC-4
 /// Provenance: quoin#375
 #[test]
 fn tc_375_a_refusal_writes_no_payload_at_all() {
@@ -110,8 +110,17 @@ fn tc_375_a_refusal_writes_no_payload_at_all() {
     assert_eq!(diagnostics[0]["code"], "CORE_REFUSED");
 }
 
-/// Trace: FR-096
-/// Provenance: quoin#375
+/// Unbound: deliberately carries no `Trace:` line. The nearest criterion is
+/// FR-096-AC-3, which requires each refusal to return "the declared exit
+/// status" — and FR-096's Behavior section declares 2 for "a malformed or
+/// unsupported request" and 3 for "an unavailable required host or resource".
+/// This asserts 3 for malformed JSON and an unknown operation, which is the
+/// taxonomy `protocol::Outcome` implements (2 = Refused, 3 = Invalid) and not
+/// the one the requirement states. Binding it to AC-3 would mark the criterion
+/// backed by a test that contradicts it, which is the FR-043/FR-095 defect
+/// class (#390) in a new spelling. The divergence is reported, not papered
+/// over: either FR-096 or `Outcome` has to move, and that is an owner call.
+/// Provenance: quoin#375, quoin#390
 #[test]
 fn tc_375_every_invalid_shape_exits_3_with_its_own_code() {
     for (args, stdin, code) in [
@@ -134,8 +143,12 @@ fn tc_375_every_invalid_shape_exits_3_with_its_own_code() {
     }
 }
 
-/// Trace: FR-096
-/// Provenance: quoin#375
+/// Unbound: deliberately carries no `Trace:` line. That an absent stdin is the
+/// empty request rather than a malformed one is a real property of the
+/// boundary, and no criterion of FR-096 states it — AC-2 and AC-4 are about
+/// what a run emits, not about what an absent request means. A criterion is
+/// the gap here, not a tag.
+/// Provenance: quoin#375, quoin#390
 #[test]
 fn tc_375_no_stdin_at_all_is_the_empty_request() {
     let result = run(&["core.ping"], "");

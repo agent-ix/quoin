@@ -1,6 +1,17 @@
 #!/usr/bin/env node
-// Assert every `// Trace:` tag in the test tree names a criterion that exists
+// Assert every `// Trace:` tag in every test tree names a criterion that exists
 // (agent-ix/quoin#390).
+//
+// THERE ARE TWO TREES AND THEY ARE COUNTED SEPARATELY. `tests/**/*.ts` is the
+// retained TypeScript suite; `rust/**/*.rs` is the Rust workspace, whose tests
+// write the tag as a `///` doc comment. A combined population passes forever:
+// the TypeScript side carries hundreds of tags, so an empty-or-untagged Rust
+// tree disappears into it. That is exactly how Stage 0 landed 30 passing Rust
+// tests carrying nine `/// Trace: FR-096`-style tags — bare REQUIREMENT ids,
+// binding no criterion — under a check that reported `0 unresolved` and exited
+// 0, because `rust/` was never in the population it was reporting on. Each
+// population therefore carries its own empty guard (NFR-027-AC-9: a check that
+// scanned nothing is inconclusive, not clean).
 //
 // WHAT THIS CHECKS, and it is deliberately one thing: a tag resolves. It
 // catches a criterion id that names nothing — a typo, a renamed requirement, a
@@ -50,8 +61,22 @@ if (!root) {
 }
 const CRITERION = /(?:FR|NFR|StR|IT|US)-\d+-[A-Z]+-\d+/g;
 
+// Directories that hold no authored source. `target/` is the Cargo build tree:
+// it is large, it is full of vendored `.rs`, and walking it would put another
+// crate's tags in this repository's population.
+const SKIP_DIRS = new Set(["target", "node_modules", ".git", "dist"]);
+
 function walk(dir, ext, out = []) {
-  for (const entry of readdirSync(dir)) {
+  let entries;
+  try {
+    entries = readdirSync(dir);
+  } catch {
+    // A tree that does not exist is an EMPTY population, not an absent check.
+    // The per-population guard below is what turns that into a failure.
+    return out;
+  }
+  for (const entry of entries) {
+    if (SKIP_DIRS.has(entry)) continue;
     const full = join(dir, entry);
     if (statSync(full).isDirectory()) walk(full, ext, out);
     else if (entry.endsWith(ext)) out.push(full);
@@ -93,41 +118,87 @@ function declaredCriteria() {
   return declared;
 }
 
+// One entry per tree that carries tracking tags. Each is scanned, counted and
+// GUARDED on its own; see the header for why a combined guard is worthless.
+//
+// The tag line is `//` in TypeScript and `///` in Rust — a Rust tracking tag is
+// a doc comment on the test function (`.claude/skills/rust-style/SKILL.md`), so
+// a `//`-only pattern matches none of them. `//!` is an inner doc comment on
+// the MODULE and is deliberately not accepted: a tag there names no test.
+const TRACE_LINE = /^\s*\/\/\/?(?!\/)\s*Trace:/;
+
+const POPULATIONS = [
+  { name: "typescript", dir: "tests", ext: ".ts" },
+  { name: "rust", dir: "rust", ext: ".rs" },
+];
+
 const declared = declaredCriteria();
 const failures = [];
-let tags = 0;
-let ids = 0;
+const scanned = [];
 
-for (const file of walk(join(root, "tests"), ".ts")) {
-  const lines = readFileSync(file, "utf8").split("\n");
-  for (const [index, line] of lines.entries()) {
-    if (!/^\s*\/\/\s*Trace:/.test(line)) continue;
-    tags += 1;
-    const where = `${relative(root, file)}:${index + 1}`;
-    const named = line.match(CRITERION) ?? [];
-    if (named.length === 0) {
-      failures.push(`${where}: a Trace tag naming no criterion`);
-      continue;
-    }
-    for (const id of named) {
-      ids += 1;
-      if (!declared.has(id)) {
-        failures.push(`${where}: ${id} — no such criterion in spec/`);
+for (const population of POPULATIONS) {
+  const files = walk(join(root, population.dir), population.ext);
+  let tags = 0;
+  let ids = 0;
+  for (const file of files) {
+    const lines = readFileSync(file, "utf8").split("\n");
+    for (const [index, line] of lines.entries()) {
+      if (!TRACE_LINE.test(line)) continue;
+      tags += 1;
+      const where = `${relative(root, file)}:${index + 1}`;
+      const named = line.match(CRITERION) ?? [];
+      if (named.length === 0) {
+        failures.push(`${where}: a Trace tag naming no criterion`);
+        continue;
+      }
+      for (const id of named) {
+        ids += 1;
+        if (!declared.has(id)) {
+          failures.push(`${where}: ${id} — no such criterion in spec/`);
+        }
       }
     }
   }
+  scanned.push({ ...population, files: files.length, tags, ids });
 }
 
-if (declared.size === 0 || tags === 0) {
-  // An empty population passes every assertion, which is not evidence.
+// The population report, printed whether the run passes or fails: a count that
+// is never shown cannot be noticed going to zero (NFR-027-AC-9).
+for (const p of scanned) {
+  console.log(
+    `check-trace-tags: ${p.name} — ${p.files} ${p.ext} files under ${p.dir}/, ${p.tags} tags, ${p.ids} criterion references`,
+  );
+}
+
+const inconclusive = [];
+if (declared.size === 0) {
+  inconclusive.push("0 criteria declared in spec/");
+}
+for (const p of scanned) {
+  // Separately, per tree. An empty population passes every assertion, which is
+  // not evidence — and one large population must never vouch for another.
+  if (p.files === 0) {
+    inconclusive.push(`${p.name}: no ${p.ext} file under ${p.dir}/`);
+  } else if (p.tags === 0) {
+    inconclusive.push(
+      `${p.name}: ${p.files} ${p.ext} files under ${p.dir}/ and not one Trace tag`,
+    );
+  }
+}
+if (inconclusive.length > 0) {
+  for (const reason of inconclusive) {
+    console.error(`check-trace-tags: INCONCLUSIVE — ${reason}`);
+  }
   console.error(
-    `check-trace-tags: refusing an empty population — ${declared.size} criteria declared, ${tags} tags found`,
+    "check-trace-tags: refusing to report zero findings over a population that is not what it claims",
   );
   process.exit(2);
 }
 
 for (const failure of failures) console.error(`check-trace-tags: ${failure}`);
 
+const tags = scanned.reduce((n, p) => n + p.tags, 0);
+const ids = scanned.reduce((n, p) => n + p.ids, 0);
 console.log(
   `check-trace-tags: ${ids} criterion references across ${tags} tags, against ${declared.size} declared criteria — ${failures.length} unresolved`,
 );
