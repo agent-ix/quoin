@@ -60,11 +60,11 @@ Two `=` requirements on one semver-compatible range are unsatisfiable; the same
 collision stood on `serde_json` and `thiserror`. **quoin moved up to EA's pins**
 — EA is the shared home and the ecosystem follows it:
 
-| crate | quoin before | quoin now (= EA) |
-|---|---|---|
-| serde | `=1.0.228` | `=1.0.229` |
-| serde_json | `=1.0.150` | `=1.0.151` |
-| thiserror | `=2.0.18` | `=2.0.20` |
+| crate      | quoin before | quoin now (= EA) |
+| ---------- | ------------ | ---------------- |
+| serde      | `=1.0.228`   | `=1.0.229`       |
+| serde_json | `=1.0.150`   | `=1.0.151`       |
+| thiserror  | `=2.0.18`    | `=2.0.20`        |
 
 `jsonschema` already agreed at `=0.56.0`.
 
@@ -72,26 +72,26 @@ collision stood on `serde_json` and `thiserror`. **quoin moved up to EA's pins**
 
 Every EA public module against quoin. Paths are repository-relative.
 
-| EA module | quoin local equivalent | disposition |
-|---|---|---|
-| `compatibility` | `scripts/check-tool-drift.mjs:13` `auditToolDrift()`; `scripts/check-version-agreement.mjs:16`; `quality/verification-stack-lock.json` | **consume** at Stage 5. quoin classifies pinned-tool drift, not a shared compatibility matrix; the matrix belongs in EA. |
-| `compatibility_corpus` | `scripts/verification-declarations.mjs:225` `verifyDeclarations()`, `:120` `committedTree()`; `src/measurement/fixture-corpus.ts:15` | **consume**. "Corpus accounting" is named verbatim in #373's consume-from-EA clause. |
-| `content_rights` | `rust/crates/quoin-core/tests/tc_source_conventions.rs:46` `tc_375_every_rust_file_carries_the_agpl_spdx_header` | **consume** (retention test below). `src/evidence/adapters/sbom.ts:82` only *reads* SPDX SBOM documents; there is no second TS checker. |
-| `discovery` | none. `skills/` (28 dirs), `.claude/skills/rust-style/` (a directory **copy**, not a symlink), `.claude-plugin/plugin.json`, `.codex-plugin/plugin.json`, `.agents/plugins/marketplace.json` exist; nothing checks they reference one canonical skill. Closest: `tests/skill-contracts.test.ts:18` (frontmatter loads), `scripts/release-drift.js:45` (plugin version drift) | **consume**. The copies-vs-references condition EA detects is live in quoin today and unchecked. |
-| `evaluation` | `src/completeness/assess.ts:117` `assessVocabulary()`, `:229` `verdictFor()`; `src/measurement/agent-eval-intervention.ts:182` | **consume** at Stage 6. "evaluation/evidence reporting" is in #373's clause. |
-| `evaluation_reports` | `src/evidence/adapters/agent-eval.ts:31` `parseAgentEval()`; version gate `src/measurement/agent-eval-intervention.ts:183` | **consume** at Stage 6. |
-| `evidence` | `src/evidence/store.ts:50` `storeRoot()`, `:146` `canonicalJson()`, `:219` `writeRun()`; `src/evidence/record.ts`; `src/evidence/trust.ts` | **quoin owns it.** EA's migration contract assigns the evidence STORE to Quoin; the edge points EA → Quoin. `rust/quoin-store` is quoin's. |
-| `manifest` | `src/semantic/manifest.ts:136` `readSemanticBlock()`, `:71` (ajv); `src/quire/validate.ts:50`; `src/semantic/package-manifest.ts:95`; `rust/crates/quoin-schemas/src/lib.rs` | **quoin owns it** (retention test below). quoin's manifests are quoin's own schema surface, and this is Stage 3 work that precedes EA-consuming stages. |
-| `onboarding` | none found (zero case-insensitive hits for "onboarding" across `src/`, `scripts/`, `tests/`, `bin/`, `quality/`) | **not needed.** quoin is not an onboarding host. |
-| `package_audit` | none found. No `npm pack` inspection, no archive reader. | **consume** — named verbatim in #373. Clean adopt, nothing to retire. |
-| `package_lifecycle` | `scripts/release-drift.js:57`, `:212`; `package.json` `publish:dry-run` / `prepublishOnly` | **consume** at Stage 8. |
-| `package_membership` | `scripts/release-drift.js:57` derives the path set from `package.json.files` but compares against **git**, not an archive's members | **consume** at Stage 8. The archive-member half does not exist in quoin. |
-| `producer_execution` | `src/core/exec.ts:48` `QUOIN_CORE_MAX_BUFFER`, `:58` `CORE_EXIT`; `src/quire/exec.ts:112`; `src/measurement/engine-run.ts:136` `runBatch()` | **consume** at Stage 6 (retention test below). quoin bounds capture and classifies termination for **fixed, pinned** binaries; it has no capability-rooted artifact access, environment isolation, cancellation or process-group confinement. |
-| `semantics` | `src/semantic/contract.ts:23`, `package-manifest.ts:30` `typeIdentity()`, `:112` `exportDigests()`, `:130` `registryPin()` | **quoin owns it** (retention test below). These are quoin's semantic-module contract, not EA's verification semantics; the names collide, the domains do not. |
-| `source_audit` | containment: `tests/arch-boundaries.test.ts:22` (TypeScript compiler API, TS sources only). Trace tags: **none** — quoin never parses `Trace:` out of source; `quire coverage --json` does (`src/quire/exec.ts:100`, `src/quire/validate.ts:85`) | **consume** — and this is the module the one real call routes through today. The `RequirementTests` role does not fit (gap filed). |
-| `structured_yaml` | `src/modules.ts:5`+`:20`; `src/catalog.ts:5`; `src/plugins.ts:4`; 7 more call sites — all direct `yaml.parse`, no unambiguity layer | **consume** when the Rust side needs YAML. #373 records the TS side as a verified non-risk ("quoin only calls `yaml.parse`, never `stringify`"). |
-| `workflow` | `src/flows.ts:74` `spawn("ix-flow", …)`, `:22` `startSpecFlow()`; `src/flow-command.ts:14` | **consume** at Stage 8. |
-| `workflow_invariants` | `src/graph-analysis/analysis.ts:154` `analyzeFanOut()`, `:263` `analyzeChangeImpact()`; `src/auditor/combinatorial.ts`; `src/change-assurance/integrity.ts` | **not needed.** quoin evaluates evidence-graph invariants, not ix-flow workflow invariants. Same shape, different closed projection; adopting EA's types would mean adopting EA's domain. |
+| EA module              | quoin local equivalent                                                                                                                                                                                                                                                                                                                                                       | disposition                                                                                                                                                                                                                                   |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `compatibility`        | `scripts/check-tool-drift.mjs:13` `auditToolDrift()`; `scripts/check-version-agreement.mjs:16`; `quality/verification-stack-lock.json`                                                                                                                                                                                                                                       | **consume** at Stage 5. quoin classifies pinned-tool drift, not a shared compatibility matrix; the matrix belongs in EA.                                                                                                                      |
+| `compatibility_corpus` | `scripts/verification-declarations.mjs:225` `verifyDeclarations()`, `:120` `committedTree()`; `src/measurement/fixture-corpus.ts:15`                                                                                                                                                                                                                                         | **consume**. "Corpus accounting" is named verbatim in #373's consume-from-EA clause.                                                                                                                                                          |
+| `content_rights`       | `rust/crates/quoin-core/tests/tc_source_conventions.rs:46` `tc_375_every_rust_file_carries_the_agpl_spdx_header`                                                                                                                                                                                                                                                             | **consume** (retention test below). `src/evidence/adapters/sbom.ts:82` only _reads_ SPDX SBOM documents; there is no second TS checker.                                                                                                       |
+| `discovery`            | none. `skills/` (28 dirs), `.claude/skills/rust-style/` (a directory **copy**, not a symlink), `.claude-plugin/plugin.json`, `.codex-plugin/plugin.json`, `.agents/plugins/marketplace.json` exist; nothing checks they reference one canonical skill. Closest: `tests/skill-contracts.test.ts:18` (frontmatter loads), `scripts/release-drift.js:45` (plugin version drift) | **consume**. The copies-vs-references condition EA detects is live in quoin today and unchecked.                                                                                                                                              |
+| `evaluation`           | `src/completeness/assess.ts:117` `assessVocabulary()`, `:229` `verdictFor()`; `src/measurement/agent-eval-intervention.ts:182`                                                                                                                                                                                                                                               | **consume** at Stage 6. "evaluation/evidence reporting" is in #373's clause.                                                                                                                                                                  |
+| `evaluation_reports`   | `src/evidence/adapters/agent-eval.ts:31` `parseAgentEval()`; version gate `src/measurement/agent-eval-intervention.ts:183`                                                                                                                                                                                                                                                   | **consume** at Stage 6.                                                                                                                                                                                                                       |
+| `evidence`             | `src/evidence/store.ts:50` `storeRoot()`, `:146` `canonicalJson()`, `:219` `writeRun()`; `src/evidence/record.ts`; `src/evidence/trust.ts`                                                                                                                                                                                                                                   | **quoin owns it.** EA's migration contract assigns the evidence STORE to Quoin; the edge points EA → Quoin. `rust/quoin-store` is quoin's.                                                                                                    |
+| `manifest`             | `src/semantic/manifest.ts:136` `readSemanticBlock()`, `:71` (ajv); `src/quire/validate.ts:50`; `src/semantic/package-manifest.ts:95`; `rust/crates/quoin-schemas/src/lib.rs`                                                                                                                                                                                                 | **quoin owns it** (retention test below). quoin's manifests are quoin's own schema surface, and this is Stage 3 work that precedes EA-consuming stages.                                                                                       |
+| `onboarding`           | none found (zero case-insensitive hits for "onboarding" across `src/`, `scripts/`, `tests/`, `bin/`, `quality/`)                                                                                                                                                                                                                                                             | **not needed.** quoin is not an onboarding host.                                                                                                                                                                                              |
+| `package_audit`        | none found. No `npm pack` inspection, no archive reader.                                                                                                                                                                                                                                                                                                                     | **consume** — named verbatim in #373. Clean adopt, nothing to retire.                                                                                                                                                                         |
+| `package_lifecycle`    | `scripts/release-drift.js:57`, `:212`; `package.json` `publish:dry-run` / `prepublishOnly`                                                                                                                                                                                                                                                                                   | **consume** at Stage 8.                                                                                                                                                                                                                       |
+| `package_membership`   | `scripts/release-drift.js:57` derives the path set from `package.json.files` but compares against **git**, not an archive's members                                                                                                                                                                                                                                          | **consume** at Stage 8. The archive-member half does not exist in quoin.                                                                                                                                                                      |
+| `producer_execution`   | `src/core/exec.ts:48` `QUOIN_CORE_MAX_BUFFER`, `:58` `CORE_EXIT`; `src/quire/exec.ts:112`; `src/measurement/engine-run.ts:136` `runBatch()`                                                                                                                                                                                                                                  | **consume** at Stage 6 (retention test below). quoin bounds capture and classifies termination for **fixed, pinned** binaries; it has no capability-rooted artifact access, environment isolation, cancellation or process-group confinement. |
+| `semantics`            | `src/semantic/contract.ts:23`, `package-manifest.ts:30` `typeIdentity()`, `:112` `exportDigests()`, `:130` `registryPin()`                                                                                                                                                                                                                                                   | **quoin owns it** (retention test below). These are quoin's semantic-module contract, not EA's verification semantics; the names collide, the domains do not.                                                                                 |
+| `source_audit`         | containment: `tests/arch-boundaries.test.ts:22` (TypeScript compiler API, TS sources only). Trace tags: **none** — quoin never parses `Trace:` out of source; `quire coverage --json` does (`src/quire/exec.ts:100`, `src/quire/validate.ts:85`)                                                                                                                             | **consume** — and this is the module the one real call routes through today. The `RequirementTests` role does not fit (gap filed).                                                                                                            |
+| `structured_yaml`      | `src/modules.ts:5`+`:20`; `src/catalog.ts:5`; `src/plugins.ts:4`; 7 more call sites — all direct `yaml.parse`, no unambiguity layer                                                                                                                                                                                                                                          | **consume** when the Rust side needs YAML. #373 records the TS side as a verified non-risk ("quoin only calls `yaml.parse`, never `stringify`").                                                                                              |
+| `workflow`             | `src/flows.ts:74` `spawn("ix-flow", …)`, `:22` `startSpecFlow()`; `src/flow-command.ts:14`                                                                                                                                                                                                                                                                                   | **consume** at Stage 8.                                                                                                                                                                                                                       |
+| `workflow_invariants`  | `src/graph-analysis/analysis.ts:154` `analyzeFanOut()`, `:263` `analyzeChangeImpact()`; `src/auditor/combinatorial.ts`; `src/change-assurance/integrity.ts`                                                                                                                                                                                                                  | **not needed.** quoin evaluates evidence-graph invariants, not ix-flow workflow invariants. Same shape, different closed projection; adopting EA's types would mean adopting EA's domain.                                                     |
 
 Counts: **10 consume**, **4 quoin owns it** (three by retention test, one by
 EA's own migration contract), **2 not needed**, plus `source_audit` consumed
@@ -164,10 +164,10 @@ each answered, with reasons — including where the answer is "no".
 
 ### 4. `src/core/exec.ts` / `src/quire/exec.ts` — bounded subprocess execution, vs EA `producer_execution`
 
-- **Must it be local?** **Partly, today.** `src/core/exec.ts` is the *caller* of
+- **Must it be local?** **Partly, today.** `src/core/exec.ts` is the _caller_ of
   the quoin-core boundary: it is the TypeScript side of the FR-101 coexistence
   and cannot be EA's, because EA does not know quoin's exit taxonomy. The
-  *measurement* producer runs (`src/measurement/engine-run.ts:136`) are a
+  _measurement_ producer runs (`src/measurement/engine-run.ts:136`) are a
   different matter and have no such claim.
 - **Is it Rust?** **No**, both are TypeScript today.
 - **Should it be common?** **Yes**, for the measurement half. "Bounded producer
@@ -204,13 +204,13 @@ each answered, with reasons — including where the answer is "no".
 These are why adoption is one test and not ten. Each is an EA ticket, never a
 local copy.
 
-| # | EA issue |
-|---|---|
-| 1 | agent-ix/engineering-assurance#99 |
-| 2 | agent-ix/engineering-assurance#100 |
-| 3 | agent-ix/engineering-assurance#101 |
-| 4 | agent-ix/engineering-assurance#102 |
-| 5 | agent-ix/engineering-assurance#103 |
+| #   | EA issue                           |
+| --- | ---------------------------------- |
+| 1   | agent-ix/engineering-assurance#99  |
+| 2   | agent-ix/engineering-assurance#100 |
+| 3   | agent-ix/engineering-assurance#101 |
+| 4   | agent-ix/engineering-assurance#102 |
+| 5   | agent-ix/engineering-assurance#103 |
 
 1. **17 of 19 public modules sit behind a single `full` feature**, and `full`
    pulls `cap-std`, `clap`, `flate2`, `jsonschema`, `regex`, `syn`, `tar`,
@@ -219,7 +219,7 @@ local copy.
    dependency tree. EA needs per-capability features.
 
 2. **`--no-default-features` and `--no-default-features --features
-   producer-execution` do not compile** at `72b0fcd`. `pub mod evaluation;` is
+producer-execution` do not compile** at `72b0fcd`. `pub mod evaluation;` is
    unconditional in `src/lib.rs` while `src/evaluation.rs` imports `time`,
    `serde`, `serde_json` and `thiserror`, all `full`-only optionals. `full` is
    the only feature set that builds. This is the defect EA#78 closed; it stands
