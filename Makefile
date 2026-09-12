@@ -326,6 +326,7 @@ rust-e2e: rust-build
 .PHONY: rust-gate
 rust-gate: rust-lint rust-deny rust-test rust-e2e rust-difftest
 	@echo "rust-gate: fmt, clippy -D warnings, cargo deny, tests, the end-to-end caller and the differential harness passed"
+
 .PHONY: audit-tool-drift
 audit-tool-drift:
 	$(PNPM) run audit:tool-drift
