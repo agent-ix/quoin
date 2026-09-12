@@ -70,9 +70,17 @@ measurement model and consuming shared assurance capability from
 - `quoin-auditor` SHALL carry both audit and advisory behaviour in one crate,
   and `quoin-assurance` and `quoin-graph-analysis` SHALL preserve the assurance
   case view and the read-only graph analysis.
-- The five measurement crates SHALL preserve the existing measurement states,
-  failure partitions, and published rates with their unit, population and
-  method.
+- The measurement crates SHALL preserve the existing measurement-record
+  capability: collection validation against an active MeasurementPlan, the
+  retained record envelopes, comparison, reporting, portfolio rendering and the
+  governed graph projection.
+- They SHALL NOT restate the corpus-measurement capability — measurement states,
+  failure partitions and published rates. That subsystem was disposed of under
+  [#388](https://github.com/agent-ix/quoin/issues/388) rather than ported, its
+  requirements FR-084..FR-092 are withdrawn, and its results are retained at
+  `analysis/corpus-measurement/`. Re-implementing it in Rust would be reviving a
+  closed gate's one-shot harness; the capability class is corpus accounting,
+  which the implementation-language policy places in `engineering-assurance`.
 - Quoin SHALL remain advisory and read-only over the governed corpus and SHALL
   write no corpus byte.
 - Before implementing a capability for advisory floors, package audit, bounded
@@ -118,7 +126,7 @@ successful report.
 | FR-100-AC-1 | `cargo tree --manifest-path rust/Cargo.toml` shows no dependency cycle, and the two named TypeScript cycles are absent from the tree before the first domain crate is added. | Test (TC-1633) |
 | FR-100-AC-2 | Reading and re-serializing every store reachable in the ecosystem through `quoin-store` returns byte-identical records, and `STORE_SCHEMA_VERSION` is unchanged. | Test (TC-1634) |
 | FR-100-AC-3 | Each change-assurance refusal for a stale, tampered or mismatched record returns the same classification from the Rust implementation as from the retained one. | Property (TC-1635) |
-| FR-100-AC-4 | Each measurement report produced by the Rust crates carries the same states, failure partitions, unit, population and method as the retained report for the same pins. | Test (TC-1636) |
+| FR-100-AC-4 | Each measurement collection and report produced by the Rust crates carries the same record envelope, plan binding, comparison verdict and rendered figures as the retained TypeScript produces for the same inputs. The comparison is against a report the retained implementation can still generate; it is not stated over the corpus-measurement report, whose generator #388 disposed of. | Test (TC-1636) |
 | FR-100-AC-5 | A measurement run over a read-only governed corpus completes and the corpus working tree is unchanged afterwards. | Test (TC-1637) |
 | FR-100-AC-6 | Every locally retained assurance capability carries a recorded three-part retention answer, and a capability with no recorded answer fails the gate. | Test (TC-1638) |
 | FR-100-AC-7 | Each enforcement run writes the three classification counts into the existing evidence store as one measurement collection with its unit and population, and the record names LR08 as the producing check. | Test (TC-1639) |
@@ -127,5 +135,5 @@ successful report.
 
 ## Dependencies
 
-- **Upstream**: [FR-096](./FR-096-versioned-rust-engine-boundary.md), [FR-098](./FR-098-semantic-and-identity-parity.md), [FR-099](./FR-099-rust-catalog-and-validation-capability.md) and [FR-103](./FR-103-corpus-consolidation.md); [FR-030](./FR-030-evidence-store.md), [FR-063](./FR-063-change-assurance-record-integrity.md) and [FR-090](./FR-090-publish-rates-with-unit-population-and-method.md), whose behaviour it preserves; [NFR-021](../non-functional/NFR-021-reproducible-corpus-measurement.md), [NFR-022](../non-functional/NFR-022-bounded-read-only-measurement-run.md) and [NFR-023](../non-functional/NFR-023-figures-carry-their-provenance.md), which continue to constrain the ported measurement crates.
+- **Upstream**: [FR-096](./FR-096-versioned-rust-engine-boundary.md), [FR-098](./FR-098-semantic-and-identity-parity.md), [FR-099](./FR-099-rust-catalog-and-validation-capability.md) and [FR-103](./FR-103-corpus-consolidation.md); [FR-030](./FR-030-evidence-store.md) and [FR-063](./FR-063-change-assurance-record-integrity.md), whose behaviour it preserves; [NFR-021](../non-functional/NFR-021-reproducible-corpus-measurement.md), [NFR-022](../non-functional/NFR-022-bounded-read-only-measurement-run.md) and [NFR-023](../non-functional/NFR-023-figures-carry-their-provenance.md), which continue to constrain the ported measurement crates.
 - **Downstream**: [FR-101](./FR-101-retire-replaced-executable-paths.md); [NFR-024](../non-functional/NFR-024-bounded-staged-coexistence.md) defines the allowance manifest and the successor reference this requirement's enforcement record reads; [NFR-025](../non-functional/NFR-025-immutable-evidence-and-corpus-bytes.md) constrains it.

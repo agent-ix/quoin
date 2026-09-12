@@ -9,8 +9,6 @@ relationships:
     type: "implements"
   - target: "ix://agent-ix/quoin/FR-096"
     type: "requires"
-  - target: "ix://agent-ix/quoin/FR-084"
-    type: "extends"
 ---
 
 # FR-103: Consolidate the Quoin side of corpus tooling
@@ -99,5 +97,5 @@ recorded against a file inside the submodule each block consolidation.
 
 ## Dependencies
 
-- **Upstream**: [FR-096](./FR-096-versioned-rust-engine-boundary.md); [FR-084](./FR-084-pin-and-enumerate-the-governed-corpus.md), whose pins it preserves; [NFR-024](../non-functional/NFR-024-bounded-staged-coexistence.md), which defines the allowance manifest; the open owner ruling on whether `agent-ix/qa-corpus` is in this programme's scope, recorded in [ADR-0003](../../docs/semantic-module-architecture/adr/0003-rust-native-quoin-engine-boundary.md). This requirement runs in parallel with the delivery stages and is not sequenced behind [FR-101](./FR-101-retire-replaced-executable-paths.md).
+- **Upstream**: [FR-096](./FR-096-versioned-rust-engine-boundary.md); [NFR-024](../non-functional/NFR-024-bounded-staged-coexistence.md), which defines the allowance manifest; the owner ruling that `agent-ix/qa-corpus` is out of this programme's scope (2026-09-12), recorded in [ADR-0003](../../docs/semantic-module-architecture/adr/0003-rust-native-quoin-engine-boundary.md). This requirement runs in parallel with the delivery stages and is not sequenced behind [FR-101](./FR-101-retire-replaced-executable-paths.md).
 - **Downstream**: [FR-100](./FR-100-rust-evidence-measurement-change-assurance.md), whose measurement crates consume the consolidated accounting.
