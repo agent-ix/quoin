@@ -217,11 +217,11 @@ Each delivery stage ends in two tickets that are never merged together: a
 reversible cutover, and a deletion of the retained TypeScript together with its
 tests. Deletion is always last.
 
-The delivery-stage issues 0 through 9 do not exist yet; they are prose in the
-epic body. They are created before the first enforcement run, because
+The delivery-stage issues 0 through 9 were created on 2026-09-12 and the
+executable-path matrix names them, because
 [NFR-024](../../../spec/non-functional/NFR-024-bounded-staged-coexistence.md)
-defines a valid successor reference as one of them and reports anything else as
-provisional.
+defines a valid successor reference as one of them and reports an epic-level
+reference as provisional.
 
 ## Gate
 
@@ -288,8 +288,16 @@ incompatibilities.
   owner ruling; until then
   [FR-103](../../../spec/functional/FR-103-corpus-consolidation.md) is confined
   to the Quoin side of the boundary.
-- Delivery stage tickets 0 through 9 do not exist. Read strictly, allowance 5
-  requires every retained path to name an open successor ticket, so until those
-  tickets exist every retained path fails the allowance. What counts as a valid
-  successor reference is fixed by
-  [NFR-024](../../../spec/non-functional/NFR-024-bounded-staged-coexistence.md).
+- Whether the 22,575 lines of vendored `ix-spec-workflows` bundle under
+  `skills/**/workflow-assets/dist/` belong in this programme's baseline at all,
+  given that the same argument excludes the `corpus/` submodule. Until that
+  ruling, the bundle is governed as first-party source and only the 139-line
+  invariant shim is treated as hand-written logic.
+- `@agent-ix/quoin` publishes to public npmjs today (`publishConfig.registry`).
+  The registries rule here forbids that; whether the already-published package is
+  unpublished, deprecated or exempted is an owner decision, not a manifest edit.
+- Whether `engineering-assurance` is a build dependency of this workspace or a
+  reference only. This ADR's crate topology says reference;
+  [FR-100](../../../spec/functional/FR-100-rust-evidence-measurement-change-assurance.md)
+  and [FR-103](../../../spec/functional/FR-103-corpus-consolidation.md) make
+  consuming it mandatory. The direction of that edge decides who can break whom.

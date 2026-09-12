@@ -87,12 +87,13 @@ A valid successor reference is an open issue in `agent-ix/quoin` that is a
 sub-issue of the burn-down epic, names the delivery stage it discharges, and
 names the path or path glob it retires. A reference to the epic itself, to a
 prose stage in the epic body, to a closed issue, or to an issue in another
-repository is not valid. Because the delivery-stage issues do not exist yet, the
-matrix currently names `quoin#373 Stage N`: the enforcement run reports such a
-row as **provisional**, distinctly from both valid and invalid, and a provisional
-row becomes invalid once the stage issues exist or once the manifest-wide
-provisional expiry passes. Nothing in this requirement is satisfied by a
-provisional row.
+repository is not valid. The delivery-stage issues were created on 2026-09-12
+and the matrix at `docs/rust-burndown/executable-path-matrix.md` now names them
+(for example issue #380 for stage 4 and #381 for stage 7). A row that names the
+epic itself, or a prose stage such as `quoin#373 Stage N`, is reported as
+**provisional**, distinctly from both valid and invalid, and satisfies nothing in
+this requirement; that class exists so a regression to an epic-level reference is
+visible rather than silently accepted.
 
 The allowance manifest is `.language-allowances.yaml` at the repository root.
 Each entry declares its category — `ui`, `generated`, `inert`, `thin-host` or
