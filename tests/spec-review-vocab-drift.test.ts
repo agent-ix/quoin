@@ -313,3 +313,53 @@ describe("spec-review analysis vocabulary", () => {
     );
   });
 });
+
+describe("a profile selection assigns no finding severity", () => {
+  // Trace: FR-095-CON-3
+  it("neither the selection type nor any consumer derives severity from a profile", () => {
+    // FR-095-CON-3: "A profile selection SHALL NOT assign finding severity."
+    //
+    // A profile decides WHICH analyses run. Severity is the auditor's verdict
+    // about a finding, and letting a profile set it would make the same defect
+    // report differently depending on which profile happened to apply — which
+    // is the reverse of what a profile is for, and undetectable from the
+    // report, because the number would look like a finding about the code
+    // rather than about the selection.
+    //
+    // Two halves, because either alone is satisfiable while the criterion is
+    // broken: the type a selection yields carries no severity field, AND no
+    // module that computes severity reads a profile.
+    const profilesSrc = readFileSync(
+      join(repoRoot, "src", "measurement", "profiles.ts"),
+      "utf8",
+    );
+    const summary = /export interface AssuranceProfileSummary \{([^}]*)\}/.exec(
+      profilesSrc,
+    );
+    expect(summary, "AssuranceProfileSummary not found").not.toBeNull();
+    expect(summary?.[1]).not.toMatch(/\bseverity\b/);
+
+    // The auditor DOES read a profile — `input.independencePolicy.profile`
+    // at src/auditor/audit.ts:372 and :536 — and that is correct: FR-094 has a
+    // profile select which obligations need independent evidence. So "the
+    // auditor never sees a profile" is the wrong assertion and it fails
+    // honestly; the right one is that severity cannot travel along that path.
+    //
+    // The only shapes a profile reaches the auditor through are
+    // `IndependencePolicy` and `IndependenceRequirement`. Neither may carry a
+    // severity, because a field is how it would get there.
+    const evidenceTypes = readFileSync(
+      join(repoRoot, "src", "evidence", "types.ts"),
+      "utf8",
+    );
+    for (const shape of ["IndependencePolicy", "IndependenceRequirement"]) {
+      const decl = new RegExp(`export interface ${shape} \\{([^}]*)\\}`).exec(
+        evidenceTypes,
+      );
+      expect(decl, `${shape} not found`).not.toBeNull();
+      expect(decl?.[1], `${shape} carries a severity`).not.toMatch(
+        /\bseverity\b/,
+      );
+    }
+  });
+});
