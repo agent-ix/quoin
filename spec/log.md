@@ -8,6 +8,27 @@ description: "Chronological log of structural changes to this bundle."
 
 ## History
 
+* **2026-09-12** — **US-022 withdrawn** (agent-ix/quoin#388). The use case
+  *"Measure the governed corpus against the completed module schemas"* is
+  withdrawn alongside FR-084..FR-092, its entire requirement set.
+
+  A use case whose every requirement is withdrawn drives nothing, and leaving it
+  standing would leave a story in the bundle that no requirement serves and no
+  code answers — the dangling artifact the previous entry flagged and did not
+  take.
+
+  The story asked for a decision input: whether module schemas could be promoted
+  from advisory to enforcing without discovering, one broken repository at a
+  time, that they cannot be. **It got one.** The measurement ran on 2026-09-05
+  over 251 repositories and 7,501 documents, and `analysis/corpus-measurement/`
+  retains the result. The story is withdrawn because it was answered and its
+  gate closed, not because it was abandoned.
+
+  Not restated as EA-consumed, for the same reason as its requirements:
+  engineering-assurance#98 is open, and a story written against a surface that
+  does not yet exist is owned by nobody. Document retained with a withdrawal
+  banner; matrix row moves to `⛔ Withdrawn`.
+
 * **2026-09-12** — **FR-084..FR-092 withdrawn** (agent-ix/quoin#388, under the
   Rust burn-down #373). The nine requirements of the corpus-measurement campaign
   are withdrawn rather than restated, and their implementing code disposed of
