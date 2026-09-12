@@ -26,9 +26,9 @@ answer to the problem it exists to solve: a reviewer meeting six high findings o
 a branch could not tell which were live, because nothing recorded that four had
 already been answered — three of them by a commit on that same branch.
 
-## Dispositions
+## Findings
 
-| Finding | Sev | Disposition | Evidence |
+| ID | Severity | Summary | Refs |
 |---|---|---|---|
 | FND-173 | high | **Resolved** — the other way | The finding argued `skills/**/workflow-assets/**` should not be classified as first-party executable logic in scope. The matrix agrees: `skills/**` is **Allowed** under the `agent-skills` exception, so its 23,164 lines were never counted as debt. Recorded in `.language-allowances.yaml` and `docs/rust-burndown/executable-path-matrix.md`. The vendoring defect the finding also describes is [#374](https://github.com/agent-ix/quoin/issues/374), a supply-chain ticket, not a port ticket. |
 | FND-174 | high | **Open** — deferred to Stage 3 | `ajv-formats` is not a dependency, so `"format"` keywords are inert annotations under the retained validator, and the set never states whether a Rust validator should assert them. Verified unaddressed: `format` assertion appears nowhere in FR-098 or FR-099. This is the ajv ↔ `jsonschema` error-shape surface and belongs to the stage that owns it ([#378](https://github.com/agent-ix/quoin/issues/378)), not to this branch. |
