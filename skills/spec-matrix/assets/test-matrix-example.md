@@ -14,14 +14,14 @@ This is an example test matrix demonstrating comprehensive test coverage for the
 ## Requirements Traceability
 
 ### User Story Coverage
-| User Story | Acceptance Criteria | Test Cases | Coverage Status |
+| User Story | Acceptance Criteria | Test Cases | Status |
 |------------|---------------------|------------|-----------------|
 | US-001 | US-001-AC-1 | TC-001, TC-002, TC-003 | ✅ Complete |
 | US-001 | US-001-AC-2 | TC-004, TC-005 | ✅ Complete |
 | US-001 | US-001-AC-3 | TC-006, TC-007, TC-008 | ✅ Complete |
 
 ### Functional Requirement Coverage
-| Functional Req | Acceptance Criteria | Test Cases | Coverage Status |
+| Functional Req | Acceptance Criteria | Test Cases | Status |
 |----------------|---------------------|------------|-----------------|
 | FR-001 | FR-001-AC-1 | TC-001 | ✅ Complete |
 | FR-001 | FR-001-AC-2 | TC-002 | ✅ Complete |
