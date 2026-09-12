@@ -5,7 +5,11 @@ type: FR
 relationships:
   - target: "ix://agent-ix/quoin/StR-009"
     type: "implements"
+  - target: "ix://agent-ix/quoin/US-024"
+    type: "implements"
   - target: "ix://agent-ix/quoin/FR-099"
+    type: "requires"
+  - target: "ix://agent-ix/quoin/FR-100"
     type: "requires"
   - target: "ix://agent-ix/quoin/FR-101"
     type: "requires"
@@ -49,8 +53,11 @@ lands.
   meaning.
 - Quoin SHALL record a dated owner disposition — port, retain behind an escape
   hatch, or drop — for the `plugins` array, for the `command_not_found` hook and
-  for the `@agent-ix/filament-plan-sync` plugin, and that disposition SHALL exist
-  before the shell replacement lands.
+  for the `@agent-ix/filament-plan-sync` plugin, which is a runtime dependency as
+  well as an oclif plugin declaration.
+- That disposition SHALL be recorded before delivery stage 8 begins rather than
+  at its end, because the hook's consumers are outside this repository and a
+  drop cannot be reversed once announced.
 - Where a disposition is to retain, `quoin-cli` SHALL continue to resolve
   declared plugin commands and SHALL continue to invoke the
   `command_not_found` behaviour for an unrecognised command.
@@ -62,9 +69,11 @@ lands.
 - At the shell replacement, `quoin-core` SHALL become `quoin`, and Quoin SHALL
   delete `src/quire/exec.ts` and `src/core/exec.ts` together with the
   TypeScript entry point.
-- Quoin SHALL publish the TypeScript package, while it exists, to `npm.ix` and
-  SHALL NOT publish it to public npmjs, and SHALL NOT publish `quoin-cli` to
-  crates.io.
+- Quoin SHALL NOT publish `quoin-cli` to crates.io.
+- `@agent-ix/quoin` currently declares `registry.npmjs.org` with public access,
+  so the registry it publishes to while the TypeScript package exists SHALL
+  follow a dated owner disposition recorded against that already-published
+  artefact rather than a silent manifest edit.
 
 ## Error Conditions
 
@@ -91,7 +100,7 @@ each fail and block the change.
 | FR-102-AC-4 | Where the disposition is retain, a declared plugin command resolves through `quoin-cli` and an unrecognised command invokes the `command_not_found` behaviour. | Test (TC-1652) |
 | FR-102-AC-5 | An unrecognised command that no extension resolves exits non-zero and names the command. | Test (TC-1653) |
 | FR-102-AC-6 | After the replacement, the repository contains no `@oclif/core` dependency, no `src/quire/exec.ts` and no `src/core/exec.ts`, and the binary is named `quoin`. | Test (TC-1654) |
-| FR-102-AC-7 | The package manifest declares `npm.ix` as its publication registry and no first-party crate declares a crates.io publication target. | Inspection |
+| FR-102-AC-7 | `package.json` declares the publication registry the owner disposition records and no first-party crate declares a crates.io publication target. | Test (TC-1703) |
 
 ## Dependencies
 

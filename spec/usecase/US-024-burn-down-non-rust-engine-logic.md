@@ -33,7 +33,8 @@ submodule pointing at another repository, `agent-ix/qa-corpus`.
 
 Three facts shape what the owner is asking for. Quoin's digests are *identifiers* inside retained
 records, so a digest that changes is not a regression to fix later, it is an unrecoverable one.
-Quoin's 109 TypeScript test files are the only oracle that says what the current behaviour is, so
+Quoin's retained TypeScript test suite — 105 `*.test.ts` files under `tests/`, seven of them
+`fast-check` property suites — is the only oracle that says what the current behaviour is, so
 deleting them early destroys the evidence the port needs. And a previous measurement in this
 ecosystem reported a check as clean when the check had never executed, which is why the owner will
 not accept a removal justified by a check whose population was empty.

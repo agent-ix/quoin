@@ -51,10 +51,18 @@ distinguishes every non-success state, and admits no Node runtime type.
   able to distinguish a non-zero status that carries a valid payload from one
   that carries none.
 - The TypeScript caller SHALL resolve the `quoin-core` executable through its
-  real path and SHALL refuse to invoke it when its bytes do not match
-  `QUOIN_EXPECTED_CORE_SHA256`.
-- The TypeScript caller SHALL admit a result payload of at least 67,108,864
-  bytes without truncation or an operating-system buffer error.
+  real path.
+- If the executable's bytes do not match `QUOIN_EXPECTED_CORE_SHA256`, or that
+  variable is unset, then the TypeScript caller SHALL refuse to invoke it.
+- The TypeScript caller SHALL resolve the caller-selected repository and
+  configuration roots through their real paths, so that a symbolic link inside a
+  permitted root cannot reach outside it.
+- The TypeScript caller SHALL declare an output-buffer ceiling strictly
+  greater than 67,108,864 bytes, so that a 67,108,864-byte result payload is
+  returned without truncation or an operating-system buffer error. The ceiling
+  is strictly greater because the retained caller's 64 MiB `maxBuffer` is the
+  exact size at which agent-ix/quoin#164 recurred, and a framing byte puts a
+  payload of that size over it.
 - The TypeScript caller SHALL classify a child process that exits, that is
   terminated by a signal, and that fails to spawn as three distinguishable
   outcomes.
@@ -88,8 +96,8 @@ non-success outcome and are never reported as success.
 | FR-096-AC-2 | Every boundary operation emits exactly one declared-version JSON document on stdout and sends all diagnostics to stderr. | Property (TC-1606) |
 | FR-096-AC-3 | An unknown protocol version, an unknown operation, malformed JSON and an escaping root each refuse before any filesystem write, returning the declared exit status. | Property (TC-1607) |
 | FR-096-AC-4 | A refusal carrying a valid result payload is distinguishable by the caller from a fault carrying no payload, for every declared non-zero exit status. | Test (TC-1608) |
-| FR-096-AC-5 | With `QUOIN_EXPECTED_CORE_SHA256` set and the binary's bytes altered, the caller refuses to invoke it and names the expected and observed digests. | Test (TC-1609) |
-| FR-096-AC-6 | A result payload of 67,108,864 bytes is returned to the caller intact, and process exit, signal termination and spawn failure are reported as three distinct outcomes. | Test (TC-1610) |
+| FR-096-AC-5 | With `QUOIN_EXPECTED_CORE_SHA256` set and the binary's bytes altered, the caller refuses to invoke it and names the expected and observed digests; with the variable unset the caller refuses rather than invoking unpinned. | Test (TC-1609) |
+| FR-096-AC-6 | A result payload of 67,108,864 bytes is returned to the caller intact under a declared buffer ceiling strictly greater than that size, and process exit, signal termination and spawn failure are reported as three distinct outcomes. | Test (TC-1610) |
 | FR-096-AC-7 | A static check over the generated boundary type surface finds no Node, npm or oclif runtime type, and fails when one is planted. | Test (TC-1611) |
 
 ## Dependencies

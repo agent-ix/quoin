@@ -52,6 +52,10 @@ Quoin's architecture, its ownership of the evidence store, the catalog, or the
 measurement model, and it takes no ownership from Quire, `filament-core-data`,
 `engineering-assurance`, ix-flow, or any module repository.
 
+The enforcement run that publishes the metric is owned by quire-research LR08.
+Quoin owns only the retention of its result in Quoin's evidence store. Neither
+programme reports the other's work as its own.
+
 Two standing-approved TypeScript categories are **not** program debt and are not
 retired by this decision: (a) user-interface code, and (b) types and clients
 published by `filament-core-data` from the single multi-language schema source.
@@ -164,8 +168,8 @@ imports `storeRoot` from `../evidence/store.js`; and `auditor` depends on
 | Configuration, plugins, modules, catalog | Port; this is the only stage needing git and network access. |
 | Command surface (`src/commands/`, `src/cli.ts`) | Port last. `@oclif/core` retirement is Stage 9, after every logic capability behind it is Rust-native. |
 | Corpus tooling reached through the `corpus/` submodule | The submodule points at `agent-ix/qa-corpus`, which this repository does not own. Only the Quoin-side accounting and selection are in scope here; the `qa-corpus` side is pending an owner scope ruling and carries no disposition from this ADR. |
-| Foreign-language sample inputs that determine no assertion | Retain as inert data, metric allowance 3, identified by the allowance manifest rather than by a directory name. |
-| `skills/**/workflow-assets/**` | **Not inert.** `src/flows.ts:57` spawns ix-flow against these assets and their `specInvariants` decide whether a review, matrix or plan flow passes, which makes them assertion logic in scope for the burn-down. Their disposition is decided with the command surface at delivery stage 8. |
+| Foreign-language sample inputs that determine no assertion | Retain as inert data under the `inert` category of `.language-allowances.yaml`, identified by the manifest rather than by a directory name. |
+| `skills/**/workflow-assets/**` | **Not inert.** `src/flows.ts:57` spawns ix-flow against these assets and their `specInvariants` decide whether a review, matrix or plan flow passes, which makes them assertion logic in scope. Measured at `e718d45`, 22,575 of the 23,164 lines under `skills/` are three byte-identical copies of `workflow-assets/dist/index.js` and its declaration file — a build product of `ix-spec-workflows` — while `scripts/invariants.js` is 139 hand-written lines re-exporting `specInvariants` from it. The shim is first-party logic in scope; the bundle claims the `generated` exception only once its generator identity and source digest are recorded, and is governed as first-party source until then. Whether the bundle belongs in this programme's baseline at all is an open owner ruling. |
 | Markdown skill prose outside `workflow-assets/` | Retain as data, shipped through `files:`. Skill-vocabulary-drift and skill-contract assertions port to Rust tests reading the same Markdown. |
 | Schemas, manifests, specifications, plans, reviews, fixtures | Retain in their data or documentation formats. |
 | User-interface TypeScript | Retain. Standing-approved; not program debt. |
@@ -213,6 +217,12 @@ Each delivery stage ends in two tickets that are never merged together: a
 reversible cutover, and a deletion of the retained TypeScript together with its
 tests. Deletion is always last.
 
+The delivery-stage issues 0 through 9 do not exist yet; they are prose in the
+epic body. They are created before the first enforcement run, because
+[NFR-024](../../../spec/non-functional/NFR-024-bounded-staged-coexistence.md)
+defines a valid successor reference as one of them and reports anything else as
+provisional.
+
 ## Gate
 
 `filament-core-data` is the multi-language schema source of truth, and its gate
@@ -241,7 +251,9 @@ publication carries this restriction.
 - TypeScript and Rust coexist during each staged cutover. That coexistence is
   bounded by [NFR-024](../../../spec/non-functional/NFR-024-bounded-staged-coexistence.md)
   and is never reportable as completed remediation.
-- The 109 TypeScript test files are the parity oracle, not debt, until their
+- The retained TypeScript test suite — 105 `*.test.ts` files under `tests/` at
+  `e718d45`, of which seven are `fast-check` property suites — is the parity
+  oracle, not debt, until its
   capability cuts over; each criterion a retired test carried is restated on a
   tracking-tagged Rust test, and tests are deleted in the same commit as the code
   they cover.

@@ -5,8 +5,14 @@ type: FR
 relationships:
   - target: "ix://agent-ix/quoin/StR-009"
     type: "implements"
+  - target: "ix://agent-ix/quoin/US-024"
+    type: "implements"
   - target: "ix://agent-ix/quoin/FR-096"
     type: "requires"
+  - target: "ix://agent-ix/quoin/FR-099"
+    type: "requires"
+  - target: "ix://agent-ix/quoin/FR-030"
+    type: "extends"
   - target: "ix://agent-ix/quoin/FR-098"
     type: "requires"
 ---
@@ -28,8 +34,8 @@ measurement model and consuming shared assurance capability from
 - Producer-supplied evidence documents and their declared adapters.
 - The governed corpus pins and the completed module set.
 - `engineering-assurance`'s published capability for advisory floors, package
-  audit, bounded producer execution, evaluation and evidence reporting, corpus
-  accounting and canonical serialization.
+  audit, bounded producer execution, evaluation and evidence reporting, and
+  corpus accounting.
 
 ## Outputs
 
@@ -45,8 +51,15 @@ measurement model and consuming shared assurance capability from
   `auditor`-to-`advisor` dependency cycle before any crate implementing those
   capabilities exists.
 - `quoin-store` SHALL own canonical JSON serialization, JCS canonicalization,
-  blake3 digest computation and atomic record replacement, and every other crate
-  SHALL obtain them from it.
+  sha256 record-identity computation, blake3 digest computation and atomic
+  record replacement.
+- Every other crate SHALL obtain those from `quoin-store` rather than
+  implementing them, and canonical serialization SHALL NOT be taken from
+  `engineering-assurance`, because Quoin owns the identity domain its evidence
+  store depends on.
+- `quoin-store` SHALL serialize a record to a temporary file and replace the
+  target by atomic rename, SHALL detect and remove an orphaned temporary left by
+  an interrupted write, and SHALL refuse a torn record rather than reading it.
 - `quoin-evidence` SHALL preserve the on-disk store layout, the
   `STORE_SCHEMA_VERSION` value and the canonical record serialization, so that
   reading and re-serializing every store in the ecosystem returns byte-identical
@@ -63,9 +76,8 @@ measurement model and consuming shared assurance capability from
 - Quoin SHALL remain advisory and read-only over the governed corpus and SHALL
   write no corpus byte.
 - Before implementing a capability for advisory floors, package audit, bounded
-  producer execution, evaluation or evidence reporting, corpus accounting or
-  canonical serialization outside `quoin-store`, Quoin SHALL consume
-  `engineering-assurance`'s implementation; if `engineering-assurance` does not
+  producer execution, evaluation or evidence reporting, or corpus accounting,
+  Quoin SHALL consume `engineering-assurance`'s implementation; if `engineering-assurance` does not
   supply it, then Quoin SHALL file a gap ticket in `engineering-assurance`
   rather than growing a local substitute.
 - For each capability retained locally, Quoin SHALL record a three-part answer —
@@ -74,9 +86,13 @@ measurement model and consuming shared assurance capability from
   and SHALL record the reason when the third answer is no.
 - The evidence store SHALL remain Quoin's, and Quoin SHALL NOT take a dependency
   on `engineering-assurance` for evidence retention.
-- Quoin SHALL write the first-party non-Rust executable line count as a Quoin
-  measurement collection into the existing evidence store on each enforcement
-  run.
+- Quoin SHALL write the classification counts the enforcement run produces —
+  violations, retained-with-successor and allowed — as one Quoin measurement
+  collection into the existing evidence store on each run, with its unit and
+  population.
+- The enforcement run itself is owned by quire-research LR08; Quoin owns only
+  the retention of its result, so that neither programme reports the other's
+  work as its own.
 
 ## Error Conditions
 
@@ -105,10 +121,11 @@ successful report.
 | FR-100-AC-4 | Each measurement report produced by the Rust crates carries the same states, failure partitions, unit, population and method as the retained report for the same pins. | Test (TC-1636) |
 | FR-100-AC-5 | A measurement run over a read-only governed corpus completes and the corpus working tree is unchanged afterwards. | Test (TC-1637) |
 | FR-100-AC-6 | Every locally retained assurance capability carries a recorded three-part retention answer, and a capability with no recorded answer fails the gate. | Test (TC-1638) |
-| FR-100-AC-7 | Each enforcement run writes the first-party non-Rust executable line count into the existing evidence store as a measurement collection with its unit and population. | Test (TC-1639) |
-| FR-100-AC-8 | A static check finds canonicalization and digest computation implemented only in `quoin-store`, and fails when a second implementation is planted. | Test (TC-1640) |
+| FR-100-AC-7 | Each enforcement run writes the three classification counts into the existing evidence store as one measurement collection with its unit and population, and the record names LR08 as the producing check. | Test (TC-1639) |
+| FR-100-AC-8 | A static check over a named non-empty population of crate sources finds canonical JSON, JCS, sha256 record identity and blake3 implemented only in `quoin-store`, and fails when a second implementation is planted. | Test (TC-1640) |
+| FR-100-AC-9 | An interrupted record write leaves no torn record readable and no orphaned temporary file after the next run, and concurrent writes to one store root produce a readable store with every completed record intact. | Test (TC-1699) |
 
 ## Dependencies
 
-- **Upstream**: [FR-096](./FR-096-versioned-rust-engine-boundary.md), [FR-098](./FR-098-semantic-and-identity-parity.md) and [FR-099](./FR-099-rust-catalog-and-validation-capability.md); [FR-030](./FR-030-evidence-store.md), [FR-063](./FR-063-change-assurance-record-integrity.md) and [FR-090](./FR-090-publish-rates-with-unit-population-and-method.md), whose behaviour it preserves.
-- **Downstream**: [FR-101](./FR-101-retire-replaced-executable-paths.md); [NFR-025](../non-functional/NFR-025-immutable-evidence-and-corpus-bytes.md) constrains it.
+- **Upstream**: [FR-096](./FR-096-versioned-rust-engine-boundary.md), [FR-098](./FR-098-semantic-and-identity-parity.md), [FR-099](./FR-099-rust-catalog-and-validation-capability.md) and [FR-103](./FR-103-corpus-consolidation.md); [FR-030](./FR-030-evidence-store.md), [FR-063](./FR-063-change-assurance-record-integrity.md) and [FR-090](./FR-090-publish-rates-with-unit-population-and-method.md), whose behaviour it preserves; [NFR-021](../non-functional/NFR-021-reproducible-corpus-measurement.md), [NFR-022](../non-functional/NFR-022-bounded-read-only-measurement-run.md) and [NFR-023](../non-functional/NFR-023-figures-carry-their-provenance.md), which continue to constrain the ported measurement crates.
+- **Downstream**: [FR-101](./FR-101-retire-replaced-executable-paths.md); [NFR-024](../non-functional/NFR-024-bounded-staged-coexistence.md) defines the allowance manifest and the successor reference this requirement's enforcement record reads; [NFR-025](../non-functional/NFR-025-immutable-evidence-and-corpus-bytes.md) constrains it.

@@ -5,6 +5,8 @@ type: FR
 relationships:
   - target: "ix://agent-ix/quoin/StR-009"
     type: "implements"
+  - target: "ix://agent-ix/quoin/US-024"
+    type: "implements"
   - target: "ix://agent-ix/quoin/FR-096"
     type: "requires"
 ---
@@ -49,6 +51,9 @@ that duplicates a type the schema source publishes.
 - Quoin SHALL treat a hand edit of a generated artefact as loss of its generated
   status, identified by the provenance record rather than by the artefact's
   directory name.
+- Generation, provenance recording and staleness refusal SHALL be delivered at
+  stage 0 under the `filament-core-data` Phase A gate; only the retirement of a
+  hand-written duplicate is gated on Phase B.
 - Retirement of a hand-written duplicate SHALL NOT begin before
   `filament-core-data` publishes the replacing package, and a retired duplicate
   SHALL be replaced by an import of the published type rather than by a second
@@ -85,9 +90,9 @@ fail the type-surface gate and are never reported as passing.
 | FR-097-AC-4 | A hand edit of a generated artefact fails the gate even though the artefact's path is unchanged. | Test (TC-1615) |
 | FR-097-AC-5 | A generated artefact whose recorded source-schema digest is stale is refused rather than used. | Test (TC-1616) |
 | FR-097-AC-6 | The gate reports no finding against user-interface TypeScript or against an imported `filament-core-data`-published type. | Test (TC-1617) |
-| FR-097-AC-7 | The dependency manifests declare no crates.io registry source and no public npmjs registry source for a first-party package. | Inspection |
+| FR-097-AC-7 | `rust/Cargo.toml` and `package.json` declare no crates.io registry source and no public npmjs registry source for a first-party package. | Test (TC-1691) |
 
 ## Dependencies
 
-- **Upstream**: [FR-096](./FR-096-versioned-rust-engine-boundary.md); the `filament-core-data` Phase B gate (`filament-core-data` #11), which releases duplicate retirement.
+- **Upstream**: [FR-096](./FR-096-versioned-rust-engine-boundary.md); the `filament-core-data` Phase A gate (#7) releases generation and provenance, and the Phase B gate (#11) releases duplicate retirement only.
 - **Downstream**: [IT-003](../integration/IT-003-filament-core-data-published-types.md) exercises the published-type boundary; [FR-101](./FR-101-retire-replaced-executable-paths.md) removes the replaced declarations.

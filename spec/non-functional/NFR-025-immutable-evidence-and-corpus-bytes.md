@@ -26,13 +26,18 @@ the replaced path is deleted.
 ## Scope
 
 - Applies to: every record under the Quoin evidence store root — evidence,
-  measurement, intervention, operational and change-assurance records — and every
-  accepted-corpus byte reachable from the governed corpus pins.
+  measurement, intervention, operational and change-assurance records — together
+  with each store root named in the checked-in store inventory, and every
+  accepted-corpus byte reachable from the governed corpus pins. An absent store
+  inventory refuses the replay rather than narrowing its population.
+- Applies to: records the Rust implementation newly writes, which must be
+  byte-identical to what the retained implementation would have written for the
+  same input, so a canonicalization difference cannot escape through new records.
 - Operational context: each cutover change, each revert of a cutover, each
   deletion change, and the corpus consolidation.
-- Not applied to: newly written records produced after a cutover, which are new
-  bytes rather than rewritten ones; and generated build output, which carries its
-  own provenance under FR-097.
+- Not applied to: the contents of the `corpus/` submodule, which belong to
+  `agent-ix/qa-corpus` and are read rather than guaranteed by this repository;
+  and generated build output, which carries its own provenance under FR-097.
 
 ## Rationale
 
@@ -81,7 +86,8 @@ clean.
 | NFR-025-AC-2 | A planted single-byte canonicalization difference makes the digest replay fail. | Test (TC-1666) |
 | NFR-025-AC-3 | Reading and re-serializing every store returns byte-identical records. | Test (TC-1667) |
 | NFR-025-AC-4 | Comparing the evidence and accepted-corpus trees before and after a cutover, after its revert, and after the deletion change finds zero changed bytes. | Test (TC-1668) |
-| NFR-025-AC-5 | A digest replay whose population is zero is reported as inconclusive and does not satisfy the cutover gate. | Test (TC-1669) |
+| NFR-025-AC-5 | A digest replay whose population is zero, or whose store inventory is absent, is reported as inconclusive and does not satisfy the cutover gate. | Test (TC-1669) |
+| NFR-025-AC-6 | For the same input, a record newly written by the Rust implementation is byte-identical to the record the retained implementation writes, over a named non-empty population. | Test (TC-1704) |
 
 ## Dependencies
 

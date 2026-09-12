@@ -5,8 +5,12 @@ type: FR
 relationships:
   - target: "ix://agent-ix/quoin/StR-009"
     type: "implements"
-  - target: "ix://agent-ix/quoin/FR-101"
+  - target: "ix://agent-ix/quoin/US-024"
+    type: "implements"
+  - target: "ix://agent-ix/quoin/FR-096"
     type: "requires"
+  - target: "ix://agent-ix/quoin/FR-084"
+    type: "extends"
 ---
 
 # FR-103: Consolidate the Quoin side of corpus tooling
@@ -39,8 +43,10 @@ read but not retire, and SHALL change no accepted-corpus byte.
 ## Behavior
 
 - Quoin SHALL scope this consolidation to the corpus accounting and selection its
-  own measurement crates consume, and SHALL NOT record a disposition for a file
-  inside the `corpus/` submodule.
+  own measurement crates consume.
+- Quoin SHALL NOT record a port or delete disposition for a file inside the
+  `corpus/` submodule; an inert allowance entry is permitted, because it records
+  that the file determines no assertion rather than an intent to change it.
 - Quoin SHALL record that corpus construction and reproduction from recorded
   sources belong to the repository the submodule points at, and SHALL treat the
   question of whether this programme has any scope over `agent-ix/qa-corpus` as
@@ -67,15 +73,15 @@ read but not retire, and SHALL change no accepted-corpus byte.
 
 A corpus digest that differs before and after consolidation, an unclassified
 Quoin-side corpus module, a measurement run that resolves two corpus sources, an
-unpinned or missing submodule revision, and a disposition recorded against a file
-inside the submodule each block consolidation.
+unpinned or missing submodule revision, and a port or delete disposition
+recorded against a file inside the submodule each block consolidation.
 
 ## Constraints
 
 | ID | Constraint | Type | Validation |
 |----|-----------|------|------------|
 | FR-103-CON-1 | Consolidation SHALL NOT change an accepted-corpus byte. | Data Integrity | Test |
-| FR-103-CON-2 | Quoin SHALL NOT record a disposition for a file it does not own inside the `corpus/` submodule. | Scope | Test |
+| FR-103-CON-2 | Quoin SHALL NOT record a port or delete disposition for a file inside the `corpus/` submodule. | Scope | Test |
 | FR-103-CON-3 | Quoin SHALL NOT open a corpus debt row that the containment matrix does not carry. | Scope | Inspection |
 | FR-103-CON-4 | Inert sample inputs SHALL NOT be counted as executable debt. | Reporting | Test |
 
@@ -88,10 +94,10 @@ inside the submodule each block consolidation.
 | FR-103-AC-3 | A measurement run resolves exactly one corpus source, and a planted second source is refused. | Test (TC-1657) |
 | FR-103-AC-4 | Corpus accounting is obtained from `engineering-assurance`, and no local corpus-accounting implementation exists in the workspace. | Test (TC-1658) |
 | FR-103-AC-5 | A sample input declared inert in the allowance manifest is reported as an allowance, and the same file moved to an undeclared executable path is reported as a violation. | Test (TC-1659) |
-| FR-103-AC-6 | A disposition recorded against a path inside the `corpus/` submodule fails the gate, naming the submodule and its upstream repository. | Test (TC-1684) |
+| FR-103-AC-6 | A port or delete disposition recorded against a path inside the `corpus/` submodule fails the gate, naming the submodule and its upstream repository; an inert allowance entry covering the same path does not, because it records no intent to change that repository. | Test (TC-1684) |
 | FR-103-AC-7 | The submodule is pinned to an exact revision, and a revision change is reported as a corpus identity change with both revisions named. | Test (TC-1685) |
 
 ## Dependencies
 
-- **Upstream**: [FR-101](./FR-101-retire-replaced-executable-paths.md); [FR-084](./FR-084-pin-and-enumerate-the-governed-corpus.md), whose pins it preserves; the open owner ruling on whether `agent-ix/qa-corpus` is in this programme's scope, recorded in [ADR-0003](../../docs/semantic-module-architecture/adr/0003-rust-native-quoin-engine-boundary.md).
+- **Upstream**: [FR-096](./FR-096-versioned-rust-engine-boundary.md); [FR-084](./FR-084-pin-and-enumerate-the-governed-corpus.md), whose pins it preserves; [NFR-024](../non-functional/NFR-024-bounded-staged-coexistence.md), which defines the allowance manifest; the open owner ruling on whether `agent-ix/qa-corpus` is in this programme's scope, recorded in [ADR-0003](../../docs/semantic-module-architecture/adr/0003-rust-native-quoin-engine-boundary.md). This requirement runs in parallel with the delivery stages and is not sequenced behind [FR-101](./FR-101-retire-replaced-executable-paths.md).
 - **Downstream**: [FR-100](./FR-100-rust-evidence-measurement-change-assurance.md), whose measurement crates consume the consolidated accounting.

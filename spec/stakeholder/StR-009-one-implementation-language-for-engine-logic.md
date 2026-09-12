@@ -63,7 +63,7 @@ and it does so invisibly, because both copies compile.
 
 | ID | Criteria | Validation |
 | --- | --- | --- |
-| StR-009-VC-1 | Quoin's first-party engine logic is reached through one versioned Rust boundary hosted in this repository; no additional repository owns the port. | Demonstration |
+| StR-009-VC-1 | Quoin's first-party engine logic is reached through one versioned Rust boundary hosted in this repository; no additional repository owns the port, demonstrated by building and invoking `quoin-core` from a clean checkout of this repository alone. | Demonstration |
 | StR-009-VC-2 | Every first-party executable path in this repository carries one current state and one final disposition — port, retain as approved TypeScript, retain as data, or delete — with no unclassified path. | Test (TC-1601) |
 | StR-009-VC-3 | Differential qualification preserves accepted success, non-success, malformed, refusal, canonicalization and digest behaviour across each cutover. | Test (TC-1602) |
 | StR-009-VC-4 | No type crossing the boundary is hand-written where `filament-core-data` or a repository schema publishes it, and every generated type records its generator provenance. | Test (TC-1603) |

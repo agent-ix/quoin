@@ -62,16 +62,20 @@ absorbed; raising another repository's floor is that repository's decision.
 | Declared channel | 1.98.1 | 1.98.1 | Inspection |
 | Rust gates that pass on a toolchain older than the floor | 0 | 0 | Test |
 | Cross-repository toolchain disagreements reported rather than absorbed | all | all | Test |
+| Gate runs on a toolchain above the declared channel without a recorded decision | 0 | 0 | Test |
 
 ## Verification
 
 The gate reads the channel from `rust/rust-toolchain.toml`, compares it to the
 version reported by the running `rustc`, and fails naming both when the running
 version is lower. A second check asserts the channel appears in exactly one file,
-so the floor cannot drift between a manifest and a workflow. A third check
-compares the declared channel against the channels declared by the repositories
-this workspace takes a Cargo edge to and reports each disagreement with both
-versions named. Running `cargo fmt --check` and
+so the floor cannot drift between a manifest and a workflow, over a scanned
+population the gate reports. A third check compares the declared channel against
+a checked-in record of the channels declared by the repositories this workspace
+takes a Cargo edge to, reads no network, and reports each disagreement with both
+versions named. Because `rustfmt` and `clippy` output is version-dependent above
+the floor as well as below it, the gate also refuses a run on a toolchain other
+than the declared channel unless a recorded decision permits it. Running `cargo fmt --check` and
 `cargo clippy --workspace --all-targets --all-features -- -D warnings` under a
 toolchain below the floor must fail rather than warn.
 
@@ -80,9 +84,9 @@ toolchain below the floor must fail rather than warn.
 | ID | Criteria | Verification |
 |----|----------|--------------|
 | NFR-026-AC-1 | The workspace toolchain channel is declared in exactly one file, `rust/rust-toolchain.toml`, and its value is 1.98.1. | Test (TC-1670) |
-| NFR-026-AC-2 | With a toolchain older than the declared channel active, `cargo fmt --check` and `cargo clippy --workspace --all-targets --all-features -- -D warnings` both fail naming the required and observed versions. | Test (TC-1671) |
-| NFR-026-AC-3 | A second declaration of the channel anywhere in the repository fails the gate. | Test (TC-1672) |
-| NFR-026-AC-4 | Each upstream repository this workspace takes a Cargo edge to is compared against the declared channel, and a disagreement is reported naming both repositories and both versions rather than silently accepted. | Test (TC-1673) |
+| NFR-026-AC-2 | A toolchain gate run with `RUSTUP_TOOLCHAIN` overriding the declared channel to an older version fails before `cargo fmt --check` and `cargo clippy --workspace --all-targets --all-features -- -D warnings` run, naming the required and the observed version. | Test (TC-1671) |
+| NFR-026-AC-3 | A second declaration of the channel in a file this repository authors — a workflow, a Makefile or a documentation table — fails the gate; vendored trees and inert sample inputs are excluded from the scanned population, which the gate reports. | Test (TC-1672) |
+| NFR-026-AC-4 | The checked-in record of each upstream repository's declared channel is compared against this workspace's channel, and a disagreement is reported naming both repositories and both versions rather than silently accepted; the gate reads the checked-in record and performs no network access. | Test (TC-1673) |
 
 ## Dependencies
 

@@ -4,6 +4,8 @@ title: "Staged coexistence is bounded, owned, and never reported as remediation"
 type: NFR
 quality_attribute: maintainability
 relationships:
+  - target: "ix://agent-ix/quoin/FR-100"
+    type: "constrains"
   - target: "ix://agent-ix/quoin/FR-101"
     type: "constrains"
   - target: "ix://agent-ix/quoin/FR-102"
@@ -57,12 +59,14 @@ surface — the large majority of 105,814 lines — reads as violations rather t
 as retentions. What counts as a valid successor reference therefore decides the
 metric's opening value, and must be written down rather than inferred.
 
-Second, the allowance manifest the policy requires does not exist. Allowances 1
-through 4 are supposed to be declared in a checked-in file and nothing declares
-them, so the classifier has no allow-set to read and every user-interface and
-generated file is a false positive waiting to happen. Naming the file and its
-required fields is what makes allowance 2 provenance-based rather than
-directory-name-based, and allowance 4 a ceiling rather than an opinion.
+Second, the allow-set and the retention list are two artefacts, not one, and the
+split has to be stated or a path can hold both at once. The named exceptions —
+user interface, generated, inert, thin host dispatch, dated owner disposition —
+are declarations, so they belong in a checked-in manifest. Staged-port retention
+is a shrinking list that is counted, so it belongs in the burn-down matrix beside
+the count. Naming each file and its required fields is what makes the generated
+exception provenance-based rather than directory-name-based, and the thin-host
+exception a ceiling rather than an opinion.
 
 ## Measurement and Evaluation
 
@@ -73,6 +77,8 @@ directory-name-based, and allowance 4 a ceiling rather than an opinion.
 | Retained paths reported as remediated or allowed | 0 | 0 | Test |
 | Expired retentions with no re-dated owner decision | 0 | 0 | Test |
 | Allowance classifications not backed by the allowance manifest | 0 | 0 | Test |
+| Paths carrying both a manifest entry and a retention row | 0 | 0 | Test |
+| Retentions naming a provisional successor reference | 0 | 0 | Test |
 | First-party non-Rust executable violations | 0 | 0 | Test |
 
 ## Verification
@@ -81,43 +87,63 @@ A valid successor reference is an open issue in `agent-ix/quoin` that is a
 sub-issue of the burn-down epic, names the delivery stage it discharges, and
 names the path or path glob it retires. A reference to the epic itself, to a
 prose stage in the epic body, to a closed issue, or to an issue in another
-repository is not valid, and the enforcement run fails the row that carries it.
+repository is not valid. Because the delivery-stage issues do not exist yet, the
+matrix currently names `quoin#373 Stage N`: the enforcement run reports such a
+row as **provisional**, distinctly from both valid and invalid, and a provisional
+row becomes invalid once the stage issues exist or once the manifest-wide
+provisional expiry passes. Nothing in this requirement is satisfied by a
+provisional row.
 
-The allowance manifest is `quoin/.language-allowances.yaml`, checked in at the
-repository root. Each entry declares the allowance number (1 through 4), the path
-or glob it covers, and the owner recording it. An allowance-2 entry additionally
-declares the generator identity and the source-schema digest, so generated status
-is decided by provenance and a hand edit loses the allowance. An allowance-4
-entry additionally declares the line ceiling and the branch ceiling that thin
-host dispatch may not exceed. An entry missing a required field, and a
-classification that no entry backs, each fail the run.
+The allowance manifest is `.language-allowances.yaml` at the repository root.
+Each entry declares its category — `ui`, `generated`, `inert`, `thin-host` or
+`owner-disposition` — the path or glob it covers, and the owner recording it. A
+`generated` entry additionally declares the generator identity and the
+source-schema digest, so generated status is decided by provenance and a hand
+edit loses the exception. A `thin-host` entry additionally declares the line
+ceiling and the branch ceiling that host dispatch may not exceed. An
+`owner-disposition` entry additionally declares the date and the deciding owner.
+Staged-port retention is deliberately not a manifest category: it lives in the
+burn-down matrix at `docs/rust-burndown/executable-path-matrix.md`, where it is
+counted. An entry missing a required field, a classification that no entry backs,
+and a path carrying both a manifest entry and a retention row each fail the run.
+Where two path globs overlap, the more specific glob wins, and two entries of
+equal specificity covering one path fail the run rather than resolving silently.
 
 The enforcement run classifies every first-party executable path into exactly one
 of violation, retained-with-successor, or allowed, and writes the three counts as
-a measurement collection into the evidence store. It asserts that every retained
-row names a valid successor reference and an expiry date, that no retained row is
-emitted in the allowed class, and that a retention whose expiry has passed
-without a re-dated owner decision fails. A planted retention with no successor,
-a planted retention whose successor is the epic itself, a planted retention with
-a passed expiry, and a planted hand edit of an allowance-2 file must each fail
-the run. A run that classifies nothing is reported as inconclusive rather than as
-clean.
+a measurement collection into the evidence store. Its population is defined by
+role rather than by extension, so an executable path with no governed extension —
+a Makefile recipe, a `run:` block under `.github/workflows/**` — is classified
+like any other. It asserts that every retained row names a valid successor
+reference and an expiry date, that no retained row is emitted in the allowed
+class, and that a retention whose expiry has passed without a re-dated owner
+decision is reported. An expired retention fails the report rather than the
+build, so a calendar boundary cannot break every branch at once; the report
+failing is what the programme acts on. A planted retention with no successor, a
+planted retention whose successor is the epic itself, a planted retention with a
+passed expiry, a planted path carrying both a manifest entry and a retention row,
+and a planted hand edit of a `generated` file must each be reported. A run that
+classifies nothing is reported as inconclusive rather than as clean.
 
 ## Acceptance Criteria
 
 | ID | Criteria | Verification |
 |----|----------|--------------|
 | NFR-024-AC-1 | Every retained path is emitted in the retained-with-successor class naming an open sub-issue of the burn-down epic that names its delivery stage and the path it retires, plus an expiry date. | Test (TC-1660) |
+| NFR-024-AC-10 | A retention naming `quoin#373 Stage N` rather than a stage issue is reported as provisional, distinctly from valid and from invalid, and satisfies no criterion in this requirement. | Test (TC-1705) |
 | NFR-024-AC-2 | A planted retention with no successor, one whose successor is the epic itself or a closed issue, and one whose expiry has passed with no re-dated owner decision each fail the enforcement run. | Test (TC-1661) |
 | NFR-024-AC-3 | No report produced by this programme records a retained path as remediated, and no report records the existence of a successor ticket as remediation. | Test (TC-1662) |
 | NFR-024-AC-4 | Standing-approved user-interface TypeScript and `filament-core-data`-published types are emitted in the allowed class and never in the retained class. | Test (TC-1663) |
 | NFR-024-AC-5 | An enforcement run that classifies an empty population is reported as inconclusive rather than as zero violations. | Test (TC-1664) |
-| NFR-024-AC-6 | `.language-allowances.yaml` exists at the repository root, every entry declares an allowance number, a path or glob and an owner, and an entry missing a required field fails the run. | Test (TC-1686) |
-| NFR-024-AC-7 | Every allowance-2 entry declares a generator identity and a source-schema digest, and a hand edit of a covered file loses the allowance and is reported as a violation. | Test (TC-1687) |
-| NFR-024-AC-8 | Every allowance-4 entry declares a line ceiling and a branch ceiling, and a covered file exceeding either is reported as a violation. | Test (TC-1688) |
+| NFR-024-AC-6 | `.language-allowances.yaml` is checked in at the repository root, every entry declares a category, a path or glob and an owner, and an entry missing a required field fails the run. | Test (TC-1686) |
+| NFR-024-AC-7 | Every `generated` entry declares a generator identity and a source-schema digest, and a hand edit of a covered file loses the exception and is reported as a violation. | Test (TC-1687) |
+| NFR-024-AC-8 | Every `thin-host` entry declares a line ceiling and a branch ceiling, and a covered file exceeding either is reported as a violation. | Test (TC-1688) |
 | NFR-024-AC-9 | A path classified as allowed with no backing entry in the manifest fails the run. | Test (TC-1689) |
+| NFR-024-AC-11 | A path carrying both a manifest entry and a retention row fails the run, and two equally specific overlapping globs fail rather than resolving silently. | Test (TC-1706) |
+| NFR-024-AC-12 | The classified population includes executable paths with no governed extension, and a planted non-Rust assertion in a Makefile recipe or a workflow `run:` block is classified rather than skipped. | Test (TC-1707) |
+| NFR-024-AC-13 | An expired retention fails the enforcement report while the build lane still completes, so a calendar boundary does not break every branch at once. | Test (TC-1708) |
 
 ## Dependencies
 
-- **Upstream**: [FR-101](../functional/FR-101-retire-replaced-executable-paths.md), which creates each retention; quire-research LR03, which owns the shared capability-gap matrix this consumes.
-- **Downstream**: quire-research LR08 enforcement, which emits the metric as a byproduct of the check it already performs, and whose bypass probe is the planted-violation half of this requirement's verification.
+- **Upstream**: [StR-009](../stakeholder/StR-009-one-implementation-language-for-engine-logic.md) and [ADR-0003](../../docs/semantic-module-architecture/adr/0003-rust-native-quoin-engine-boundary.md); quire-research LR03, which owns the shared capability-gap matrix this consumes.
+- **Downstream**: [FR-100](../functional/FR-100-rust-evidence-measurement-change-assurance.md), [FR-101](../functional/FR-101-retire-replaced-executable-paths.md) and [FR-103](../functional/FR-103-corpus-consolidation.md), each of which reads the manifest and the successor definition this requirement fixes; quire-research LR08 enforcement, which owns the run and whose bypass probe is the planted-violation half of this requirement's verification.

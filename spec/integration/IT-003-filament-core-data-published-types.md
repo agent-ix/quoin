@@ -87,6 +87,7 @@ per-step success criterion holds.
 ## Metadata
 
 - Priority: High
+- Test Case: TC-1709
 - Target Integration: `filament-core-data` published Rust crate and `npm.ix` TypeScript package
 - Automation: Automated (live registry integration; gated on `filament-core-data` Phase B — see Notes)
 
@@ -96,9 +97,11 @@ per-step success criterion holds.
 [FR-096](../functional/FR-096-versioned-rust-engine-boundary.md), which this
 verifies; the `filament-core-data` Phase A and Phase B gates recorded in
 [ADR-0003](../../docs/semantic-module-architecture/adr/0003-rust-native-quoin-engine-boundary.md).
-**Downstream**: the type-retirement work under
-[FR-101](../functional/FR-101-retire-replaced-executable-paths.md), which may not
-begin before this boundary holds.
+**Downstream**: the hand-written-duplicate retirement clauses of
+[FR-097](../functional/FR-097-schema-sourced-type-surface.md), which may not
+begin before this boundary holds; the rest of
+[FR-101](../functional/FR-101-retire-replaced-executable-paths.md) is released by
+Phase A and is not gated on this test.
 
 ## Notes
 

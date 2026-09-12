@@ -5,6 +5,12 @@ type: FR
 relationships:
   - target: "ix://agent-ix/quoin/StR-009"
     type: "implements"
+  - target: "ix://agent-ix/quoin/US-024"
+    type: "implements"
+  - target: "ix://agent-ix/quoin/FR-007"
+    type: "extends"
+  - target: "ix://agent-ix/quoin/FR-029"
+    type: "extends"
   - target: "ix://agent-ix/quoin/FR-096"
     type: "requires"
   - target: "ix://agent-ix/quoin/FR-098"
@@ -53,9 +59,15 @@ store.
 - `quoin-catalog` SHALL assemble one catalog from the resolved module roots,
   SHALL resolve a requested type case-insensitively, and SHALL report duplicate
   type declarations rather than silently selecting one.
-- Quoin SHALL reimplement natively the nine `@agent-ix/ix-cli-core` behaviours it
-  uses and SHALL NOT port that package's authentication, secrets or marketplace
-  surface.
+- Quoin SHALL reimplement natively each `@agent-ix/ix-cli-core` symbol `src/`
+  imports — measured at `e718d45` as twelve: `BaseCommand`, `ConfigService`,
+  `RunnerLoadOptions`, `loadConfig`, `run`, `maybeOfferUpdate`,
+  `registerPluginSchema`, `runConfigDoctor`, `runConfigEdit`, `runConfigGet`,
+  `runConfigSet` and `runSelfUpdate`.
+- Quoin SHALL NOT port that package's authentication, secrets or marketplace
+  surface beyond those symbols; `runSelfUpdate` and `maybeOfferUpdate` are
+  reimplemented only to the extent [FR-022](./FR-022-self-update.md) already
+  requires.
 - Module reconcile SHALL remain idempotent and SHALL perform no git or network
   access when every declared module is already materialized at its pinned
   reference.
@@ -71,7 +83,20 @@ store.
 - Quoin SHALL classify `skills/**/workflow-assets/**` as executable assertion
   logic rather than as inert data, because `src/flows.ts:57` spawns ix-flow
   against those assets and their `specInvariants` decide whether a review, matrix
-  or plan flow passes, and SHALL record one disposition for each such asset.
+  or plan flow passes.
+- Quoin SHALL record one disposition for each such asset, distinguishing the
+  first-party invariant shim from the vendored bundle: measured at `e718d45`,
+  22,575 of the 23,164 lines under `skills/` are three byte-identical copies of
+  `workflow-assets/dist/index.js` and its declaration file, a build product of
+  `ix-spec-workflows`, while `scripts/invariants.js` is 139 hand-written lines
+  that re-export `specInvariants` from it.
+- Quoin SHALL treat the vendored bundle as claiming the generated allowance only
+  once its generator identity and source digest are recorded, and SHALL treat it
+  as first-party source until then.
+- Quoin SHALL apply the boundary hardening of
+  [FR-096](./FR-096-versioned-rust-engine-boundary.md) — real-path resolution, a
+  pinned expected digest, a declared output ceiling, a timeout and the three-way
+  termination taxonomy — to the ix-flow child process as well as to `quoin-core`.
 
 ## Error Conditions
 
@@ -99,8 +124,11 @@ refusal and are never reported as an empty but successful catalog.
 | FR-099-AC-5 | A manifest carrying an unknown key is refused by the Rust reader with the same classification as the retained reader. | Test (TC-1629) |
 | FR-099-AC-6 | `quoin-core semantic.validate` and `quoin-core completeness.analyze` return verdicts identical to the retained implementations over the golden corpus. | Test (TC-1630) |
 | FR-099-AC-7 | The Rust skill tests read the shipped Markdown skills and fail on a planted vocabulary drift, and the binary resolves the skills root from an argument, an environment value and its embedded fallback. | Test (TC-1631) |
-| FR-099-AC-8 | The workspace declares no dependency on `@agent-ix/ix-cli-core`, and each of the nine behaviours it supplied has a named Rust implementation and a test. | Test (TC-1632) |
-| FR-099-AC-9 | Every asset under `skills/**/workflow-assets/**` is classified as executable assertion logic with a recorded disposition, and an unclassified asset fails the gate. | Test (TC-1683) |
+| FR-099-AC-8 | `package.json` declares no dependency on `@agent-ix/ix-cli-core`, and each imported symbol recorded in the baseline inventory has a named Rust implementation and a test; the gate reads the inventory rather than a hard-coded count. | Test (TC-1632) |
+| FR-099-AC-9 | Every asset under `skills/**/workflow-assets/**` carries a recorded disposition that distinguishes the first-party invariant shim from the vendored bundle, and an unclassified asset fails the gate. | Test (TC-1683) |
+| FR-099-AC-10 | The ix-flow child process is spawned through the same hardened path as `quoin-core`: real-path resolution, expected-digest refusal, a declared output ceiling, a timeout, and exit, signal and spawn-failure reported as three distinct outcomes. | Test (TC-1696) |
+| FR-099-AC-11 | A partially materialized module root is refused rather than served, so an interrupted checkout cannot satisfy the already-materialized path. | Test (TC-1697) |
+| FR-099-AC-12 | Duplicate type detection folds case under the same rule the resolver uses, so no two declarations are distinct to the duplicate gate and identical to the resolver. | Test (TC-1698) |
 
 ## Dependencies
 
