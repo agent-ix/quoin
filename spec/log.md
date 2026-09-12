@@ -8,6 +8,49 @@ description: "Chronological log of structural changes to this bundle."
 
 ## History
 
+* **2026-09-12** — **FR-084..FR-092 withdrawn** (agent-ix/quoin#388, under the
+  Rust burn-down #373). The nine requirements of the corpus-measurement campaign
+  are withdrawn rather than restated, and their implementing code disposed of
+  rather than ported.
+
+  The reason is not that the code was bad. Its gate, #291 — *"[GATE] Measure the
+  full corpus against completed module schemas (**advisory, report only**)"* —
+  **closed**. The harness was built for that gate, ran exactly once on
+  2026-09-05, and was deliberately never given a CLI command: `run.ts` has no
+  importer anywhere in the repository, and every other file in the subsystem is
+  reached only by its own unit test. Eleven source files, 2,117 lines, fully
+  tested and unreachable from any shipped entrypoint.
+
+  **The results outlive the code.** `analysis/corpus-measurement/` retains nine
+  digest-pinned artifacts from that run: 251 repositories enumerated, 7,501
+  documents measured, structural conformance 7,370/7,501 (98.25%, method
+  `engine-structural-v1`), Properties-form census 1/155, 86 documents
+  out-of-model, zero unreadable, zero contested. Deleting the code that produced
+  them changes none of that — which is what makes the disposal cheap and the
+  measurement still citable.
+
+  **Why withdraw rather than restate as EA-consumed.** The capability class here
+  is corpus accounting, bounded producer execution and rate arithmetic, which the
+  implementation-language policy (Amendment 1, *"shared tooling is consumed, not
+  regrown"*) places in `engineering-assurance`. Porting 2,117 lines of advisory
+  one-shot code into Rust so it could go on having no callers is precisely the
+  duplication that rule exists to stop. But restating the requirements as
+  EA-consumed would assert an obligation EA has not accepted — the gap ticket,
+  engineering-assurance#98, is open and unanswered. A requirement written against
+  a surface that does not yet exist is owned by nobody. If EA#98's resolution
+  shows a capability genuinely needs restating, it is restated then, against a
+  surface that exists.
+
+  The nine requirement documents are retained with a withdrawal banner rather
+  than deleted; their text describes what was required, not what is required.
+  Matrix rows FR-084..FR-092 move from `🚧 Pending` to `⛔ Withdrawn`.
+
+  **Open, and deliberately not decided here:** US-022 (*"Measure the governed
+  corpus against the completed module schemas"*) is the use case these nine
+  requirements traced to, and withdrawing all nine leaves it driving nothing.
+  Whether US-022 is withdrawn with them is an owner decision and is not taken by
+  this entry.
+
 * **2026-09-06** — #350 B1 banks repeatable ordered audit module selection
   before production edits (FR-032-AC-12, PLAN-010, TC-1598..TC-1600).
   The real CLI `ff638b9` / engine `d3bc2ba` derives both controlled criterion
