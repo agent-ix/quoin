@@ -41,6 +41,18 @@ machine-readable reference naming the result artifact and field that figure was 
 
 ## Rationale
 
+
+Retention was available here for a reason worth stating, because it inverts the
+usual failure. The normal defect is a requirement outliving the thing it
+constrained — which is why NFR-021 and NFR-022 are withdrawn. This is a
+requirement outliving the thing that was supposed to *implement* it, and still
+being satisfiable: FR-090 defined a figure index and FR-090 is withdrawn, but the
+binding this requirement actually needs is structural rather than indexed. A
+`MeasurementObservation` carries its `value`, `unit` and `population` together
+(`src/measurement/types.ts:19-22`), so the artifact a figure came from is the
+collection carrying that observation and no separate index is required. A later
+reader should not assume the withdrawn index was load-bearing; it was one
+possible vehicle for an obligation the record shape already satisfies.
 Three figures published by this programme were later found not to match the measurement they claimed
 to summarise. Requiring each number in the prose report to name the artifact it came from turns that
 class of defect into something a reviewer can check by opening one file.

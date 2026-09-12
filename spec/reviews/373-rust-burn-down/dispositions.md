@@ -28,6 +28,13 @@ already been answered — three of them by a commit on that same branch.
 
 ## Findings
 
+FND-173..FND-186 are the eight analyses' findings and their dispositions.
+FND-1483 and FND-1484 were raised by the disposition pass itself and are recorded
+here rather than appended to `risk-complexity.md`, for the reason stated at the
+end of this document: a review records what was true when it ran, and adding
+findings to it afterwards makes it a document that cannot be dated. This one can.
+
+
 | ID | Severity | Summary | Refs |
 |---|---|---|---|
 | FND-173 | high | **Resolved** — the other way | The finding argued `skills/**/workflow-assets/**` should not be classified as first-party executable logic in scope. The matrix agrees: `skills/**` is **Allowed** under the `agent-skills` exception, so its 23,164 lines were never counted as debt. Recorded in `.language-allowances.yaml` and `docs/rust-burndown/executable-path-matrix.md`. The vendoring defect the finding also describes is [#374](https://github.com/agent-ix/quoin/issues/374), a supply-chain ticket, not a port ticket. |
@@ -44,6 +51,8 @@ already been answered — three of them by a commit on that same branch.
 | FND-184 | medium | **Resolved** — `5968de3` | FR-102 now names `@agent-ix/filament-plan-sync` as a runtime dependency, and FR-102-AC-3 requires a dated owner disposition covering the `plugins` array and the `command_not_found` hook together. |
 | FND-185 | low | **Resolved** — by `#401` landing | The artefacts described in the present tense now exist: `src/core/exec.ts`, `src/core/index.ts` and `src/core/reference.ts` are on `origin/main`. |
 | FND-186 | low | **Resolved** — `ed5cceb` | The finding caught a stale test-file count, and chasing it found the matrix was stale in a way the finding did not anticipate — [#388](https://github.com/agent-ix/quoin/issues/388) deleted nine more test files after the matrix was written. Re-measured: 344 files, 102,248 lines. See *Two rules* below. |
+| FND-1483 | high | **New, raised by this pass, not by the eight analyses.** An instrument can agree with itself and report that as agreement with the world. Checking an installed module set against a local upstream checkout is ONE direction wearing two coats: both are pulled copies, both age at the same rate, and they agree with each other precisely while both disagree with the remote. I asserted "not a stale pin — I checked both directions" on that basis and was wrong in the opposite direction from the truth; the repository was ahead the whole time. The check is only two-directional when one side is a remote ref fetched in the same breath. Same shape as a replay gate passing over zero comparisons, `status_lies: []` over four unclassified tables, and `NFR-024-AC-8` governing an empty category — four instances in one day, four different subjects. | NFR-024-AC-5; NFR-027; FR-098-AC-3 |
+| FND-1484 | medium | **New, raised by this pass.** A whitespace-only change is invisible to diff review and fatal to a digest. Resolving a rebase conflict in the `Makefile` dropped one blank line, which changed its sha256 and therefore its entry in `quality/verification-stack-lock.json`; the file was otherwise byte-identical to `origin/main`. Caught by re-running the digest check, not by reading the diff. It is the counter-example to the #350 phantom digest and belongs beside it: there the digest fired with nothing behind it, here it fired with exactly one character behind it. Both are the same instrument, and a review recording only the false alarm teaches that the instrument is noisy. | NFR-025; NFR-027 |
 
 ## A gap neither the review nor the fixes named — recorded, not fixed
 
@@ -83,6 +92,22 @@ rendering, so its own domain. Owner ruling 2026-09-12.
 
 Not fixed into this branch. It is a decision to take, not a defect to patch, and
 the branch is not held for it.
+
+## Which document is state and which is evidence
+
+`base.md` books FND-174, FND-177 and FND-182 as **Resolved**. This document books
+the same three as **Open**, and this document is correct.
+
+That is not a contradiction to be repaired by editing `base.md`. A review records
+what was true when it ran; this document records what happened afterwards. When
+they disagree, **this one is state and the review is evidence**, and a reader who
+reaches `base.md` first should come here before acting on it.
+
+The three were re-checked rather than inherited: FND-174's `format` assertion and
+FND-177's `allErrors` error-set cardinality are absent from FR-098 today, and
+FND-182's population is still unenumerated though it has since gained a probe.
+Both are deferred to [#378](https://github.com/agent-ix/quoin/issues/378), which
+owns the ajv error-shape surface.
 
 ## Two rules this review set produced
 
