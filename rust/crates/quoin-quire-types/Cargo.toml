@@ -1,25 +1,26 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # Copyright (C) 2026 Agent-IX
 [package]
-name = "quoin-assurance"
+name = "quoin-quire-types"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
 authors.workspace = true
-description = "The assurance-case view: a read-only projection over evidence already collected."
+description = "Deserialize-only readers for quire's wire formats. Quire owns these formats; this crate only reads them."
 publish.workspace = true
 
 [lib]
-name = "quoin_assurance"
+name = "quoin_quire_types"
 path = "src/lib.rs"
 
 [lints]
 workspace = true
 
 [dependencies]
-quoin-finding-types = { workspace = true }
-quoin-quire-types = { workspace = true }
 serde = { workspace = true }
+
+[dev-dependencies]
 serde_json = { workspace = true }
+sha2 = { workspace = true }

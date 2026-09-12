@@ -55,6 +55,8 @@ publish = false
 [workspace.dependencies]
 quoin-assurance = { path = "crates/quoin-assurance" }
 quoin-core = { path = "crates/quoin-core" }
+quoin-finding-types = { path = "crates/quoin-finding-types" }
+quoin-quire-types = { path = "crates/quoin-quire-types" }
 quoin-schemas = { path = "crates/quoin-schemas" }
 serde = { version = "=1.0.228", features = ["derive"] }
 # FR-097: the JSON Schema the generated TypeScript surface is derived from.

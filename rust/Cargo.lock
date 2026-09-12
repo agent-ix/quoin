@@ -92,12 +92,19 @@ dependencies = [
 [[package]]
 name = "quoin-assurance"
 version = "0.1.0"
+dependencies = [
+ "quoin-finding-types",
+ "quoin-quire-types",
+ "serde",
+ "serde_json",
+]
 
 [[package]]
 name = "quoin-core"
 version = "0.1.0"
 dependencies = [
  "quoin-assurance",
+ "quoin-schemas",
  "schemars",
  "serde",
  "serde_json",
@@ -113,14 +120,25 @@ dependencies = [
 ]
 
 [[package]]
-name = "quoin-schemas"
+name = "quoin-finding-types"
 version = "0.1.0"
 dependencies = [
- "quoin-core",
- "schemars",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "quoin-quire-types"
+version = "0.1.0"
+dependencies = [
+ "serde",
  "serde_json",
  "sha2",
 ]
+
+[[package]]
+name = "quoin-schemas"
+version = "0.1.0"
 
 [[package]]
 name = "quote"
