@@ -1,0 +1,942 @@
+{
+  "origin_org_urls": [
+    {
+      "url": "git@github.com:acme/widgets.git",
+      "org": "acme"
+    },
+    {
+      "url": "https://github.com/acme/widgets.git",
+      "org": "acme"
+    },
+    {
+      "url": "https://github.com/acme/widgets/",
+      "org": "acme"
+    },
+    {
+      "url": "git@github.com:acme/widgets",
+      "org": "acme"
+    },
+    {
+      "url": "https://git.example.com:8443/acme/widgets.git",
+      "org": "acme"
+    },
+    {
+      "url": "ssh://git@host:2222/acme/widgets.git",
+      "org": "acme"
+    },
+    {
+      "url": "https://gitlab.com/top/sub/widgets.git",
+      "org": "sub"
+    },
+    {
+      "url": "https://github.com/repo.git",
+      "org": null
+    },
+    {
+      "url": "/srv/git/myrepo.git",
+      "org": null
+    },
+    {
+      "url": "../sibling-repo",
+      "org": null
+    },
+    {
+      "url": "file:///srv/git/myrepo.git",
+      "org": null
+    },
+    {
+      "url": "~/repos/thing.git",
+      "org": null
+    },
+    {
+      "url": "https://github.com",
+      "org": null
+    },
+    {
+      "url": "justahostname",
+      "org": null
+    },
+    {
+      "url": "https://github.com/acme//",
+      "org": null
+    },
+    {
+      "url": "https://github.com/",
+      "org": null
+    },
+    {
+      "url": "git@github.com:",
+      "org": null
+    },
+    {
+      "url": "ssh://git@host/acme/widgets.git",
+      "org": "acme"
+    },
+    {
+      "url": "FILE:///srv/git/x.git",
+      "org": null
+    },
+    {
+      "url": "user@host:org/repo.git",
+      "org": "org"
+    },
+    {
+      "url": "https://host/a/b/c/d.git",
+      "org": "c"
+    }
+  ],
+  "origin_org_configs": [
+    {
+      "label": "upstream before origin",
+      "config": "[remote \"upstream\"]\n\turl = git@github.com:wrong/repo.git\n[remote \"origin\"]\n\turl = git@github.com:right/repo.git\n",
+      "org": "right"
+    },
+    {
+      "label": "section name uppercase",
+      "config": "[REMOTE \"origin\"]\n\turl = git@github.com:acme/w.git\n",
+      "org": "acme"
+    },
+    {
+      "label": "subsection name cased",
+      "config": "[remote \"Origin\"]\n\turl = git@github.com:acme/w.git\n",
+      "org": null
+    },
+    {
+      "label": "url not an assignment",
+      "config": "[remote \"origin\"]\n\turlsomething\n",
+      "org": null
+    },
+    {
+      "label": "no origin section",
+      "config": "[core]\n\trepositoryformatversion = 0\n[remote \"upstream\"]\n\turl = git@github.com:other/repo.git\n",
+      "org": null
+    },
+    {
+      "label": "spaces in section header",
+      "config": "[ remote  \"origin\" ]\n\turl = git@github.com:acme/w.git\n",
+      "org": "acme"
+    },
+    {
+      "label": "urlfoo key",
+      "config": "[remote \"origin\"]\n\turlfoo = git@github.com:acme/w.git\n",
+      "org": null
+    },
+    {
+      "label": "empty",
+      "config": "",
+      "org": null
+    }
+  ],
+  "parse_source_arg": [
+    {
+      "arg": "path:/a/b",
+      "source": {
+        "type": "path",
+        "path": "/a/b"
+      }
+    },
+    {
+      "arg": "github:agent-ix/x@v1",
+      "source": {
+        "type": "github",
+        "repo": "agent-ix/x",
+        "ref": "v1"
+      }
+    },
+    {
+      "arg": "github:agent-ix/x",
+      "source": {
+        "type": "github",
+        "repo": "agent-ix/x",
+        "ref": null
+      }
+    },
+    {
+      "arg": "github:agent-ix/repo//pkg@v1.0.0",
+      "source": {
+        "type": "git-subdir",
+        "url": "agent-ix/repo",
+        "path": "pkg",
+        "ref": "v1.0.0"
+      }
+    },
+    {
+      "arg": "github:agent-ix/repo//pkg",
+      "source": {
+        "type": "git-subdir",
+        "url": "agent-ix/repo",
+        "path": "pkg",
+        "ref": null
+      }
+    },
+    {
+      "arg": "package:foo@1.2.3",
+      "source": {
+        "type": "npm",
+        "package": "foo",
+        "version": "1.2.3"
+      }
+    },
+    {
+      "arg": "package:foo",
+      "source": {
+        "type": "npm",
+        "package": "foo"
+      }
+    },
+    {
+      "arg": "package:@scope/foo@2.0.0",
+      "source": {
+        "type": "npm",
+        "package": "@scope/foo",
+        "version": "2.0.0"
+      }
+    },
+    {
+      "arg": "package:@scope/foo",
+      "source": {
+        "type": "npm",
+        "package": "@scope/foo"
+      }
+    },
+    {
+      "arg": "./bare",
+      "source": {
+        "type": "path",
+        "path": "./bare"
+      }
+    },
+    {
+      "arg": "/abs/path",
+      "source": {
+        "type": "path",
+        "path": "/abs/path"
+      }
+    },
+    {
+      "arg": "github:agent-ix/repo//a/b@main",
+      "source": {
+        "type": "git-subdir",
+        "url": "agent-ix/repo",
+        "path": "a/b",
+        "ref": "main"
+      }
+    }
+  ],
+  "to_git_url": [
+    {
+      "raw": "agent-ix/quoin",
+      "url": "https://github.com/agent-ix/quoin.git"
+    },
+    {
+      "raw": "agent-ix/quoin.git",
+      "url": "https://github.com/agent-ix/quoin.git"
+    },
+    {
+      "raw": "https://github.com/a/b.git",
+      "url": "https://github.com/a/b.git"
+    },
+    {
+      "raw": "git@github.com:a/b.git",
+      "url": "git@github.com:a/b.git"
+    },
+    {
+      "raw": "  agent-ix/quoin  ",
+      "url": "https://github.com/agent-ix/quoin.git"
+    },
+    {
+      "raw": "ssh://git@h/a/b.git",
+      "url": "ssh://git@h/a/b.git"
+    }
+  ],
+  "normalize_source": [
+    {
+      "source": {
+        "type": "github",
+        "repo": "a/b"
+      },
+      "result": {
+        "ok": true,
+        "value": {
+          "type": "github",
+          "repo": "a/b"
+        }
+      }
+    },
+    {
+      "source": {
+        "type": "github",
+        "repo": ""
+      },
+      "result": {
+        "ok": false,
+        "error": "source field \"repo\" must be a non-empty string"
+      }
+    },
+    {
+      "source": {
+        "type": "github",
+        "repo": "-evil"
+      },
+      "result": {
+        "ok": false,
+        "error": "source field \"repo\" must not begin with \"-\""
+      }
+    },
+    {
+      "source": {
+        "type": "git-subdir",
+        "url": "a/b",
+        "path": "p"
+      },
+      "result": {
+        "ok": true,
+        "value": {
+          "type": "git-subdir",
+          "url": "a/b",
+          "path": "p"
+        }
+      }
+    },
+    {
+      "source": {
+        "type": "git-subdir",
+        "url": "a/b"
+      },
+      "result": {
+        "ok": false,
+        "error": "source field \"path\" must be a non-empty string"
+      }
+    },
+    {
+      "source": {
+        "type": "path",
+        "path": "-x"
+      },
+      "result": {
+        "ok": true,
+        "value": {
+          "type": "path",
+          "path": "-x"
+        }
+      }
+    },
+    {
+      "source": {
+        "type": "path",
+        "path": ""
+      },
+      "result": {
+        "ok": false,
+        "error": "source field \"path\" must be a non-empty string"
+      }
+    },
+    {
+      "source": {
+        "type": "npm",
+        "package": "x"
+      },
+      "result": {
+        "ok": true,
+        "value": {
+          "type": "npm",
+          "package": "x"
+        }
+      }
+    },
+    {
+      "source": {
+        "type": "bogus"
+      },
+      "result": {
+        "ok": false,
+        "error": "unknown source type \"bogus\""
+      }
+    },
+    {
+      "source": {},
+      "result": {
+        "ok": false,
+        "error": "source must have a string `type`"
+      }
+    },
+    {
+      "source": {
+        "type": "git",
+        "url": "u",
+        "ref": "-r"
+      },
+      "result": {
+        "ok": false,
+        "error": "source field \"ref\" must not begin with \"-\""
+      }
+    },
+    {
+      "source": {
+        "type": "url",
+        "url": "http://x"
+      },
+      "result": {
+        "ok": true,
+        "value": {
+          "type": "url",
+          "url": "http://x"
+        }
+      }
+    }
+  ],
+  "default_modules_manifest": {
+    "ok": true,
+    "value": {
+      "schemaVersion": 1,
+      "name": "quoin-default-modules",
+      "entries": [
+        {
+          "name": "engineering-assurance",
+          "version": "0.2.0+4e6522f",
+          "defaultEnabled": true,
+          "source": {
+            "type": "git-subdir",
+            "url": "agent-ix/engineering-assurance",
+            "path": "engineering_assurance",
+            "ref": "4e6522fc32f82cac82a3489a4192e17a94f539c3"
+          }
+        },
+        {
+          "name": "spec-artifacts-iso",
+          "version": "0.18.0",
+          "defaultEnabled": true,
+          "source": {
+            "type": "git-subdir",
+            "url": "agent-ix/spec-artifacts-iso",
+            "path": "spec_artifacts_iso",
+            "ref": "v0.18.0"
+          }
+        },
+        {
+          "name": "spec-artifacts-app",
+          "version": "0.5.0",
+          "defaultEnabled": true,
+          "source": {
+            "type": "git-subdir",
+            "url": "agent-ix/spec-artifacts-app",
+            "path": "spec_artifacts_app",
+            "ref": "v0.5.0"
+          }
+        },
+        {
+          "name": "spec-artifacts-process",
+          "version": "0.24.0+d605caa",
+          "defaultEnabled": true,
+          "source": {
+            "type": "git-subdir",
+            "url": "agent-ix/spec-artifacts-process",
+            "path": "spec_artifacts_process",
+            "ref": "d605caad70a8c09884ef22525d532e01330f763f"
+          }
+        },
+        {
+          "name": "spec-objects-business",
+          "version": "0.6.0",
+          "defaultEnabled": true,
+          "source": {
+            "type": "git-subdir",
+            "url": "agent-ix/spec-objects-business",
+            "path": "spec_objects_business",
+            "ref": "v0.6.0"
+          }
+        },
+        {
+          "name": "spec-objects-architecture",
+          "version": "0.6.0",
+          "defaultEnabled": true,
+          "source": {
+            "type": "git-subdir",
+            "url": "agent-ix/spec-objects-architecture",
+            "path": "spec_objects_architecture",
+            "ref": "v0.6.0"
+          }
+        },
+        {
+          "name": "spec-objects-enterprise",
+          "version": "0.5.0",
+          "defaultEnabled": true,
+          "source": {
+            "type": "git-subdir",
+            "url": "agent-ix/spec-objects-enterprise",
+            "path": "spec_objects_enterprise",
+            "ref": "v0.5.0"
+          }
+        },
+        {
+          "name": "spec-objects-operational",
+          "version": "0.6.0",
+          "defaultEnabled": true,
+          "source": {
+            "type": "git-subdir",
+            "url": "agent-ix/spec-objects-operational",
+            "path": "spec_objects_operational",
+            "ref": "v0.6.0"
+          }
+        },
+        {
+          "name": "spec-objects-security",
+          "version": "0.7.0",
+          "defaultEnabled": true,
+          "source": {
+            "type": "git-subdir",
+            "url": "agent-ix/spec-objects-security",
+            "path": "spec_objects_security",
+            "ref": "v0.7.0"
+          }
+        },
+        {
+          "name": "spec-objects-safety",
+          "version": "0.4.0",
+          "defaultEnabled": true,
+          "source": {
+            "type": "git-subdir",
+            "url": "agent-ix/spec-objects-safety",
+            "path": "spec_objects_safety",
+            "ref": "v0.4.0"
+          }
+        }
+      ]
+    }
+  },
+  "validate_manifest": [
+    {
+      "input": null,
+      "result": {
+        "ok": false,
+        "error": "manifest must be an object"
+      }
+    },
+    {
+      "input": {},
+      "result": {
+        "ok": false,
+        "error": "manifest schemaVersion must be 1"
+      }
+    },
+    {
+      "input": {
+        "schemaVersion": 2,
+        "entries": []
+      },
+      "result": {
+        "ok": false,
+        "error": "manifest schemaVersion must be 1"
+      }
+    },
+    {
+      "input": {
+        "schemaVersion": 1,
+        "entries": {}
+      },
+      "result": {
+        "ok": false,
+        "error": "manifest entries must be an array"
+      }
+    },
+    {
+      "input": {
+        "schemaVersion": 1,
+        "entries": [
+          {
+            "source": {
+              "type": "path",
+              "path": "p"
+            }
+          }
+        ]
+      },
+      "result": {
+        "ok": false,
+        "error": "entry 0 requires a non-empty name"
+      }
+    },
+    {
+      "input": {
+        "schemaVersion": 1,
+        "entries": [
+          {
+            "name": "",
+            "source": {
+              "type": "path",
+              "path": "p"
+            }
+          }
+        ]
+      },
+      "result": {
+        "ok": false,
+        "error": "entry 0 requires a non-empty name"
+      }
+    },
+    {
+      "input": {
+        "schemaVersion": 1,
+        "name": 7,
+        "entries": []
+      },
+      "result": {
+        "ok": true,
+        "value": {
+          "schemaVersion": 1,
+          "name": null,
+          "entries": []
+        }
+      }
+    },
+    {
+      "input": {
+        "schemaVersion": 1,
+        "entries": [
+          {
+            "name": "a",
+            "source": {
+              "type": "path",
+              "path": "p"
+            },
+            "defaultEnabled": false
+          }
+        ]
+      },
+      "result": {
+        "ok": true,
+        "value": {
+          "schemaVersion": 1,
+          "name": null,
+          "entries": [
+            {
+              "name": "a",
+              "source": {
+                "type": "path",
+                "path": "p"
+              },
+              "defaultEnabled": false
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "paths": {
+    "registry_path": "/h/filament/registry.json",
+    "modules_dir": "/h/filament/modules",
+    "install_options": {
+      "cacheRoot": "/h/cache/ts-plugin-kit",
+      "targetRoot": "/h/filament/modules",
+      "registryPath": "/h/filament/registry.json",
+      "materialize": "copy"
+    }
+  },
+  "registry_file_bytes": "{\n  \"schemaVersion\": 1,\n  \"plugins\": [\n    {\n      \"name\": \"m\",\n      \"source\": {\n        \"type\": \"path\",\n        \"path\": \"/p\"\n      },\n      \"resolvedPath\": \"/p\",\n      \"targetPath\": \"/t/m\",\n      \"installedAt\": \"2026-01-02T03:04:05.678Z\"\n    }\n  ]\n}\n",
+  "registry_read_malformed": {
+    "ok": false,
+    "error": "Expected property name or '}' in JSON at position 2 (line 1 column 3)"
+  },
+  "registry_read_plugins_not_array": {
+    "ok": true,
+    "value": {
+      "schemaVersion": 1,
+      "plugins": []
+    }
+  },
+  "registry_read_absent": {
+    "schemaVersion": 1,
+    "plugins": []
+  },
+  "read_module_name": [
+    {
+      "label": "top-level",
+      "result": {
+        "ok": true,
+        "value": "spec-objects-business",
+        "error": null
+      }
+    },
+    {
+      "label": "nested <root>/<basename>",
+      "result": {
+        "ok": true,
+        "value": "nested-mod",
+        "error": null
+      }
+    },
+    {
+      "label": "absent",
+      "result": {
+        "ok": false,
+        "value": null,
+        "error": "no manifest.yaml found under <tmp>"
+      }
+    },
+    {
+      "label": "non-string name",
+      "result": {
+        "ok": false,
+        "value": null,
+        "error": "manifest <tmp> has no name"
+      }
+    },
+    {
+      "label": "empty name",
+      "result": {
+        "ok": false,
+        "value": null,
+        "error": "manifest <tmp> has no name"
+      }
+    }
+  ],
+  "config_schema": [
+    {
+      "input": {},
+      "valid": true,
+      "value": {}
+    },
+    {
+      "input": {
+        "org": "acme"
+      },
+      "valid": true,
+      "value": {
+        "org": "acme"
+      }
+    },
+    {
+      "input": {
+        "org": ""
+      },
+      "valid": false,
+      "value": null
+    },
+    {
+      "input": {
+        "bogus": "x"
+      },
+      "valid": false,
+      "value": null
+    },
+    {
+      "input": {
+        "org": "acme",
+        "bogus": 1
+      },
+      "valid": false,
+      "value": null
+    },
+    {
+      "input": {
+        "org": 5
+      },
+      "valid": false,
+      "value": null
+    },
+    {
+      "input": {
+        "org": null
+      },
+      "valid": false,
+      "value": null
+    }
+  ],
+  "config_service_org": [
+    {
+      "label": "stored beats remote",
+      "given": {
+        "user": "org: from-config\n",
+        "project": null,
+        "projectEnabled": null,
+        "env": null,
+        "remote": "git@github.com:from-git/repo.git"
+      },
+      "resolved": {
+        "org": "from-config",
+        "source": "config"
+      }
+    },
+    {
+      "label": "remote when nothing stored",
+      "given": {
+        "user": null,
+        "project": null,
+        "projectEnabled": null,
+        "env": null,
+        "remote": "git@github.com:from-git/repo.git"
+      },
+      "resolved": {
+        "org": "from-git",
+        "source": "git"
+      }
+    },
+    {
+      "label": "env layers over stored",
+      "given": {
+        "user": "org: from-config\n",
+        "project": null,
+        "projectEnabled": null,
+        "env": "from-env",
+        "remote": "git@github.com:from-git/repo.git"
+      },
+      "resolved": {
+        "org": "from-env",
+        "source": "env"
+      }
+    },
+    {
+      "label": "nothing at all",
+      "given": {
+        "user": null,
+        "project": null,
+        "projectEnabled": null,
+        "env": null,
+        "remote": null
+      },
+      "resolved": {
+        "source": "none"
+      }
+    },
+    {
+      "label": "project beats user",
+      "given": {
+        "user": "org: user-level\n",
+        "project": "org: project-level\n",
+        "projectEnabled": true,
+        "env": null,
+        "remote": "git@github.com:from-git/repo.git"
+      },
+      "resolved": {
+        "org": "project-level",
+        "source": "config"
+      }
+    },
+    {
+      "label": "project disabled",
+      "given": {
+        "user": "org: user-level\n",
+        "project": "org: project-level\n",
+        "projectEnabled": false,
+        "env": null,
+        "remote": "git@github.com:from-git/repo.git"
+      },
+      "resolved": {
+        "org": "user-level",
+        "source": "config"
+      }
+    },
+    {
+      "label": "malformed user config falls through",
+      "given": {
+        "user": "org: [unterminated\n",
+        "project": null,
+        "projectEnabled": null,
+        "env": null,
+        "remote": "git@github.com:from-git/repo.git"
+      },
+      "resolved": {
+        "org": "from-git",
+        "source": "git"
+      }
+    },
+    {
+      "label": "unknown key in user config",
+      "given": {
+        "user": "org: stored\nbogus: 1\n",
+        "project": null,
+        "projectEnabled": null,
+        "env": null,
+        "remote": "git@github.com:from-git/repo.git"
+      },
+      "resolved": {
+        "org": "from-git",
+        "source": "git"
+      }
+    },
+    {
+      "label": "empty org in user config",
+      "given": {
+        "user": "org: \"\"\n",
+        "project": null,
+        "projectEnabled": null,
+        "env": null,
+        "remote": "git@github.com:from-git/repo.git"
+      },
+      "resolved": {
+        "org": "from-git",
+        "source": "git"
+      }
+    },
+    {
+      "label": "blank env ignored",
+      "given": {
+        "user": "org: from-config\n",
+        "project": null,
+        "projectEnabled": null,
+        "env": "   ",
+        "remote": "git@github.com:from-git/repo.git"
+      },
+      "resolved": {
+        "org": "from-git",
+        "source": "git"
+      }
+    }
+  ],
+  "resolve_org_flag_env": [
+    {
+      "opts": {
+        "flag": "from-flag",
+        "env": {
+          "QUOIN_ORG": "from-env"
+        }
+      },
+      "resolved": {
+        "org": "from-flag",
+        "source": "flag"
+      }
+    },
+    {
+      "opts": {
+        "env": {
+          "QUOIN_ORG": "from-env"
+        }
+      },
+      "resolved": {
+        "org": "from-env",
+        "source": "env"
+      }
+    },
+    {
+      "opts": {
+        "env": {}
+      },
+      "resolved": {
+        "org": "from-git",
+        "source": "git"
+      }
+    },
+    {
+      "opts": {
+        "flag": "   ",
+        "env": {
+          "QUOIN_ORG": "  "
+        }
+      },
+      "resolved": {
+        "org": "from-git",
+        "source": "git"
+      }
+    },
+    {
+      "opts": {
+        "flag": "  padded  ",
+        "env": {}
+      },
+      "resolved": {
+        "org": "padded",
+        "source": "flag"
+      }
+    }
+  ]
+}
