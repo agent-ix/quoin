@@ -165,30 +165,50 @@ Seven stage tickets exist and are linked inline below:
 | 4 (foundation) | [#380](https://github.com/agent-ix/quoin/issues/380) | `quoin-store` — canonical JSON, JCS, blake3, atomic rename |
 | 7 | [#381](https://github.com/agent-ix/quoin/issues/381) | config, plugins, modules |
 
-**Stages 5, 6, 8 and 9 have no tickets yet.** Rows in those stages name
-`quoin#373 Stage N` and the expiry is that stage's end; the references are replaced as
-the tickets land. Stage 5 (auditor/advisor, assurance, graph-analysis) and Stage 6
-(measurement) are the two largest untucketed domains and together carry roughly a third
-of the retained population.
+Stage 5 and Stage 6 are decomposed, against the code rather than the directory listing:
+
+| Stage | Ticket | Crate | Lines |
+|---|---|---|---:|
+| 5 | [#382](https://github.com/agent-ix/quoin/issues/382) | `quoin-combinatorial` — the auditor ↔ advisor cycle cut | 195 |
+| 5 | [#383](https://github.com/agent-ix/quoin/issues/383) | `quoin-auditor` (auditor **+** advisor, one crate) | 1,806 |
+| 5 | [#384](https://github.com/agent-ix/quoin/issues/384) | `quoin-assurance` | 1,723 |
+| 5 | [#385](https://github.com/agent-ix/quoin/issues/385) | `quoin-graph-analysis` | 1,373 |
+| 6 | [#386](https://github.com/agent-ix/quoin/issues/386) | `quoin-measurement` | 3,922 |
+| 6 | [#387](https://github.com/agent-ix/quoin/issues/387) | `quoin-measurement-graph` | 1,812 |
+| 6 | [#388](https://github.com/agent-ix/quoin/issues/388) | `measurement-run` — **liveness unconfirmed** | 2,117 |
+| 6 | [#389](https://github.com/agent-ix/quoin/issues/389) | consume EA for raw-evidence accounting — *not a port* | — |
+
+The plan's crate topology was wrong in both stages, because it was written from a
+directory listing. Stage 6's proposed five-way measurement split creates three
+**value-level** Cargo cycles and omits 2,117 lines; Stage 5's auditor/advisor are one
+crate, not two. Two hard facts fell out: `quoin-auditor` cannot compile until
+[#376](https://github.com/agent-ix/quoin/issues/376) lands (`src/auditor/audit.ts:21` is a value import from `evidence`,
+and `evidence ↔ change-assurance` is the repo's only genuine value cycle), and
+`src/measurement/run.ts` has **no importer anywhere** — 2,117 lines that are fully
+tested and unreachable from any shipped entrypoint. Reasoning and evidence on each
+ticket.
+
+**Stages 8 and 9 have no tickets yet.** Rows in those stages name `quoin#373 Stage N`
+and the expiry is that stage's end.
 
 #### Engine — `src/` (27,692 lines, 169 files, all `shipped`)
 
 | Path | Lang | Lines | Files | Reach | Owner capability | Stage | Basis |
 |---|---|---:|---:|---|---|---|---|
-| `src/measurement/**` | TS | 7,851 | 35 | `shipped` `oracle` | measurement model | **6** | Largest single block, last logic stage. `engine-run.ts`, `enumerate.ts`, `fixture-corpus.ts`, `modules.ts` all `execFileSync`. |
+| `src/measurement/**` | TS | 7,851 | 35 | `shipped` `oracle` | measurement model | **6** ([#386](https://github.com/agent-ix/quoin/issues/386), [#387](https://github.com/agent-ix/quoin/issues/387), [#388](https://github.com/agent-ix/quoin/issues/388)) | Largest single block, last logic stage. `engine-run.ts`, `enumerate.ts`, `fixture-corpus.ts`, `modules.ts` all `execFileSync`. |
 | `src/evidence/**` | TS | 3,958 | 18 | `shipped` | evidence store | **4** ([#380](https://github.com/agent-ix/quoin/issues/380)) | Quoin keeps ownership of the store (EA migration contract). The port relocates its language, not its ownership. Carries the digest/JCS surface — #373's hard gate. |
 | `src/commands/evidence/**` | TS | 1,173 | 10 | `shipped` | evidence commands | **8** | `affirm.ts`, `audit.ts`, `baseline.ts` `execFileSync` out. |
 | `src/commands/*.ts` | TS | 1,126 | 11 | `shipped` | command shell | **8** | `assurance.ts` `execFileSync`s. |
 | `src/commands/change-assurance/**` | TS | 796 | 9 | `shipped` | change assurance | **4** ([#380](https://github.com/agent-ix/quoin/issues/380)) | |
 | `src/commands/{catalog,measurement,graph,module,semantic,config,plugin}/**` | TS | 796 | 31 | `shipped` | command shell | **8** | catalog 179/5 · measurement 139/4 · graph 135/5 · module 99/5 · semantic 90/1 · config 88/5 · plugin 66/6. `semantic/sweep.ts` `execFileSync`s. |
 | `src/change-assurance/**` | TS | 2,023 | 8 | `shipped` | change assurance | **4** ([#380](https://github.com/agent-ix/quoin/issues/380)) | **Cycle A:** `store.ts:22` imports `storeRoot` from `../evidence/store.js` while `evidence/index.ts:142` re-exports from `../change-assurance/schema-assets.js`. Cargo forbids this; broken by [#376](https://github.com/agent-ix/quoin/issues/376) before any crate exists. |
-| `src/assurance/**` | TS | 1,723 | 5 | `shipped` | assurance records | **5** | |
-| `src/graph-analysis/**` | TS | 1,373 | 5 | `shipped` | graph views | **5** | |
+| `src/assurance/**` | TS | 1,723 | 5 | `shipped` | assurance records | **5** ([#384](https://github.com/agent-ix/quoin/issues/384)) | |
+| `src/graph-analysis/**` | TS | 1,373 | 5 | `shipped` | graph views | **5** ([#385](https://github.com/agent-ix/quoin/issues/385)) | |
 | `src/*.ts` (`base cli catalog config-schema flow-command flows index modules org plugins version write`) | TS | 1,358 | 12 | `shipped` | CLI core, config, modules | **7** ([#381](https://github.com/agent-ix/quoin/issues/381)), **9** | `flows.ts` `spawn`s `ix-flow` — a transitive call out to a Node tool. `config-schema.ts` is 56 lines of zod, a verified non-risk. |
 | `src/quire/**` | TS | 1,342 | 6 | `shipped` `oracle` | Quire adapter | **1** ([#379](https://github.com/agent-ix/quoin/issues/379)), **8** | `exec.ts` is the boundary template #373 adopts; it is the **last** file deleted (Stage 8). |
 | `src/semantic/**` | TS | 1,323 | 6 | `shipped` | semantic modules | **3** ([#378](https://github.com/agent-ix/quoin/issues/378)) | `manifest.ts` `mapAjvError` — the ajv ↔ `jsonschema` parity risk lands here. |
-| `src/auditor/**` | TS | 1,139 | 3 | `shipped` | auditor | **5** | **Cycle B:** `auditor` ↔ `advisor`. Broken by [#376](https://github.com/agent-ix/quoin/issues/376). |
-| `src/advisor/**` | TS | 862 | 3 | `shipped` | advisor | **5** | Cycle B, other half. |
+| `src/auditor/**` | TS | 1,139 | 3 | `shipped` | auditor | **5** ([#383](https://github.com/agent-ix/quoin/issues/383)) | **Cycle B:** `auditor` ↔ `advisor`. Broken by [#376](https://github.com/agent-ix/quoin/issues/376). |
+| `src/advisor/**` | TS | 862 | 3 | `shipped` | advisor | **5** ([#383](https://github.com/agent-ix/quoin/issues/383)) | Cycle B, other half. |
 | `src/completeness/**` | TS | 685 | 5 | `shipped` | completeness | **3** ([#378](https://github.com/agent-ix/quoin/issues/378)) | |
 | `src/validators/**` | TS | 164 | 2 | `shipped` | validators | **2** ([#377](https://github.com/agent-ix/quoin/issues/377)) | Smallest engine module — #373's boundary proof-of-life. |
 
@@ -216,9 +236,9 @@ already owns in Rust. Marked **[EA]**.
 | `scripts/check-tool-drift.mjs` + `-selftest.mjs` | mjs | 797 | 2 | `oracle` | **[EA]** package audit | **0** ([#375](https://github.com/agent-ix/quoin/issues/375)) | `make audit-tool-drift`. |
 | `scripts/lib/semantic-module-type-fit.mjs` + `semantic-module-type-fit.mjs` | mjs | 1,810 | 2 | `oracle` | semantic modules — **domain-specific** | **3** ([#378](https://github.com/agent-ix/quoin/issues/378)) | Three-part test answered: must it be local — **yes**, it is Quoin's own module type system; is it Rust — **no, port at Stage 3**; should it be common — **no**, recorded reason: it encodes Quoin's module archetypes, not generic assurance. |
 | `scripts/template-gate.mjs` | mjs | 191 | 1 | `oracle` | template gate | **3** ([#378](https://github.com/agent-ix/quoin/issues/378)) | `make template-gate`. **Runs `python3 -m ruff/black/pytest` on the rendered template** — a Python test oracle inside quoin's own gate, in quoin's own tree. Squarely in AC-5's path. |
-| `scripts/verify-span-breadth.mjs` | mjs | 197 | 1 | `oracle` | span breadth | **6** | |
+| `scripts/verify-span-breadth.mjs` | mjs | 197 | 1 | `oracle` | span breadth | **6** ([#386](https://github.com/agent-ix/quoin/issues/386)) | |
 | `scripts/workspace-policy-selftest.mjs` | mjs | 97 | 1 | `oracle` | workspace policy | **0** ([#375](https://github.com/agent-ix/quoin/issues/375)) | |
-| `scripts/lib/advisory-adjudication.mjs`, `lib/guidance-proof.mjs` | mjs | 460 | 2 | `oracle` | advisor/auditor | **5** | |
+| `scripts/lib/advisory-adjudication.mjs`, `lib/guidance-proof.mjs` | mjs | 460 | 2 | `oracle` | advisor/auditor | **5** ([#383](https://github.com/agent-ix/quoin/issues/383)) | |
 | `scripts/release-drift.js` | JS | 308 | 1 | `oracle` (CI) | release integrity | **0** ([#375](https://github.com/agent-ix/quoin/issues/375)) | The only script `release-drift.yml` runs (3 legs). |
 | `scripts/check-version-agreement.mjs` | mjs | 84 | 1 | `oracle` | version agreement | **0** ([#375](https://github.com/agent-ix/quoin/issues/375)) | `make check-version`. |
 | `scripts/copy-quire-schemas.mjs` | mjs | 30 | 1 | `gate-tool` | build step | **0** ([#375](https://github.com/agent-ix/quoin/issues/375)) | Part of `pnpm build`. |
