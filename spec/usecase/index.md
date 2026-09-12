@@ -30,3 +30,4 @@ description: "Index of artifacts in this directory."
 - [US-020: Declare a module's semantic contract once](./US-020-declare-a-semantic-module-contract-once.md)
 - [US-021: Generate a conforming semantic-module repository](./US-021-generate-a-conforming-semantic-module-repository.md)
 - [US-022: Measure the governed corpus against the completed module schemas](./US-022-measure-the-corpus-against-completed-modules.md)
+- [US-024: Retire Quoin's non-Rust engine logic without losing behaviour or evidence](./US-024-burn-down-non-rust-engine-logic.md)

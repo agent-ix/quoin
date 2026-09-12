@@ -31,3 +31,7 @@ description: "Index of non-functional requirements (NFR) for quoin."
 - [NFR-021: Reproducible corpus measurement](./NFR-021-reproducible-corpus-measurement.md)
 - [NFR-022: Bounded, read-only measurement run](./NFR-022-bounded-read-only-measurement-run.md)
 - [NFR-023: Published figures carry their provenance](./NFR-023-figures-carry-their-provenance.md)
+- [NFR-024: Staged coexistence is bounded, owned, and never reported as remediation](./NFR-024-bounded-staged-coexistence.md)
+- [NFR-025: Evidence and accepted-corpus bytes are immutable across the port](./NFR-025-immutable-evidence-and-corpus-bytes.md)
+- [NFR-026: Declared Rust toolchain floor for the Quoin workspace](./NFR-026-rust-toolchain-floor.md)
+- [NFR-027: Rust implementation idioms and the gates that enforce them](./NFR-027-rust-implementation-idioms-and-gates.md)
