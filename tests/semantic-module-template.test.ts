@@ -144,7 +144,7 @@ describe("variants render from one core", () => {
     });
   });
 
-  // Trace: FR-076-AC-4
+  // Trace: FR-076-AC-4, NFR-019-M-1
   it("carries each variant-shared file exactly once in the template source", () => {
     cookiecutterVersion();
     const trees = KINDS.map((kind) =>
@@ -207,7 +207,7 @@ describe("variants render from one core", () => {
 });
 
 describe("an invalid input is refused, naming the value", () => {
-  // Trace: FR-076-AC-5
+  // Trace: FR-076-AC-5, NFR-018-M-6
   it("refuses a non-AGPL licence and renders the AGPL text by default", () => {
     cookiecutterVersion();
     expect(expectRefused("object", { license: "MIT" })).toContain("MIT");
@@ -301,7 +301,7 @@ describe("the rendered tree conforms and carries no residue", () => {
     });
   });
 
-  // TC-1446, NFR-018
+  // Trace: NFR-018-M-1, NFR-018-M-2, NFR-018-M-3, NFR-018-M-4, NFR-019-M-4
   it.each(KINDS)("TC-1446 carries no generation residue (%s)", (kind) => {
     cookiecutterVersion();
     withRendered({ kind }, (rendered) => {
@@ -326,7 +326,7 @@ describe("the rendered tree conforms and carries no residue", () => {
     });
   });
 
-  // Trace: FR-081-AC-4, FR-081-AC-5
+  // Trace: FR-081-AC-4, FR-081-AC-5, NFR-018-M-5
   it.each(KINDS)(
     "TC-1436 names a private registry only where the contract allows (%s)",
     (kind) => {
