@@ -56,7 +56,25 @@ publish = false
 quoin-core = { path = "crates/quoin-core" }
 quoin-schemas = { path = "crates/quoin-schemas" }
 serde = { version = "=1.0.228", features = ["derive"] }
+# FR-097: the JSON Schema the generated TypeScript surface is derived from.
+# Exact pin for the same reason as every other line here — the generated file
+# is hash-asserted, so the generator's version is part of the contract and a
+# caret range would let a patch release silently move the digest.
+#
+# 1.2.1 AND NOT 1.2.2, and the difference is `multiple-versions = "deny"`
+# rather than taste. `schemars_derive` 1.2.2 moved to `syn` 3, while
+# `serde_derive` 1.0.228 and `thiserror-impl` 2.0.18 are on `syn` 2, so 1.2.2
+# puts two `syn` majors in the graph and `cargo deny` refuses it — correctly.
+# The lockfile holds `ref-cast` at 1.0.25 for the same reason: 1.0.26 moved
+# `ref-cast-impl` to `syn` 3 too, and `ref-cast` is not a dependency this
+# workspace declares, so the lock is the only place to state it. `cargo deny`
+# is what keeps both true: a `cargo update` that reintroduces either duplicate
+# fails `make rust-deny`, it is not quietly absorbed. Neither pin was worked
+# around by editing `deny.toml`.
+schemars = { version = "=1.2.1", features = ["derive"] }
 serde_json = "=1.0.150"
+# The digest under the FR-097 hash assertion. Exact pin like everything else.
+sha2 = "=0.10.9"
 thiserror = "=2.0.18"
 jsonschema = { version = "=0.56.0", default-features = false }
 
