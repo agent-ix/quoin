@@ -60,8 +60,8 @@ describeCorpus("tier-1 seeded corpora", () => {
     for (const c of clean) expect(c.family).toBe("none");
   });
 
-  test("TC-932 every seeded defect is fully labelled, family location and findability", () => {
-    // TC-932
+  test("every seeded defect is fully labelled, family location and findability", () => {
+    // Trace: FR-043-AC-7
     for (const corpus of CORPORA) {
       for (const defect of corpus.defects) {
         // Explicit language labels use a compact language token (GN-PY),
@@ -121,8 +121,8 @@ describeCorpus("tier-1 seeded corpora", () => {
     }
   }, 30_000);
 
-  test("TC-948 every family the dictionary declares has a corpus, and vice versa", () => {
-    // TC-948
+  test("every family the dictionary declares has a corpus, and vice versa", () => {
+    // Trace: FR-043-AC-2, FR-043-AC-7
     // The gap that let four families sit unseeded from the day the dictionary
     // shipped: `bench/metrics.json` declared 8, `CORPORA` seeded 4, and
     // nothing compared the two lists. `finding_precision` and
@@ -144,8 +144,8 @@ describeCorpus("tier-1 seeded corpora", () => {
     ).not.toThrow();
   });
 
-  test("TC-949 the cross-check fails in BOTH directions", () => {
-    // TC-949
+  test("the cross-check fails in BOTH directions", () => {
+    // Trace: FR-043-AC-2
     // A guard that cannot fail is the defect it exists to prevent, and this
     // whole programme exists because one shipped. Each direction catches a
     // different mistake, so each is mutated separately.
@@ -174,8 +174,8 @@ describeCorpus("tier-1 seeded corpora", () => {
     ).toThrow(/does not declare/);
   });
 
-  test("TC-950 declared collateral names a family and a reason", () => {
-    // TC-950
+  test("declared collateral names a family and a reason", () => {
+    // Trace: FR-043-AC-2, FR-043-AC-7
     // Collateral suppresses a finding from the precision denominator, so a
     // loose declaration is a licence to launder false positives. It must name
     // BOTH the family and the reason: family alone would absorb any finding of
@@ -193,8 +193,8 @@ describeCorpus("tier-1 seeded corpora", () => {
     }
   });
 
-  test("TC-951 a family with no working detector says so in its label", () => {
-    // TC-951
+  test("a family with no working detector says so in its label", () => {
+    // Trace: FR-043-AC-7
     // Three families score recall 0 today for three different reasons, and the
     // difference matters: `oracle-is-code-copy` has a detector with no caller
     // (quire-rs#236), `mocked-confirmation` has one with no producer
@@ -218,8 +218,8 @@ describe("tier-2 adjudicated answer key", () => {
     readFileSync(join(__dirname, "..", "bench", "answer-key.json"), "utf8"),
   );
 
-  test("TC-933 it is pinned to a commit and says why re-pinning is not free", () => {
-    // TC-933
+  test("it is pinned to a commit and says why re-pinning is not free", () => {
+    // Trace: FR-043-AC-8
     // A tier-2 score is only a measurement because the corpus cannot move
     // under it. Re-pinning requires RE-ADJUDICATION, not re-measurement:
     // carrying these findings to a different tree would assert something
@@ -245,7 +245,7 @@ describe("tier-2 adjudicated answer key", () => {
     }
   });
 
-  test("TC-1072 every Tier-2 finding names one production source and signal", () => {
+  test("every Tier-2 finding names one production source and signal", () => {
     const sources = new Set([
       "quire.coverage",
       "quoin.validate",
@@ -283,8 +283,8 @@ describe("tier-2 adjudicated answer key", () => {
     }
   });
 
-  test("TC-947 an entry declaring expect_metric also declares expect_value", () => {
-    // TC-947
+  test("an entry declaring expect_metric also declares expect_value", () => {
+    // Trace: FR-043-AC-11
     // Without this, `Number(undefined)` is NaN, every comparison is false, and
     // the finding scores MISSED forever rather than being reported as a
     // malformed key. AK-003 shipped in exactly that state and was caught only
@@ -299,8 +299,8 @@ describe("tier-2 adjudicated answer key", () => {
     }
   });
 
-  test("TC-961 every finding records how strongly it is detected, not just whether", () => {
-    // TC-961
+  test("every finding records how strongly it is detected, not just whether", () => {
+    // Trace: FR-043-AC-8
     // `now_detectable: true` was flattening two different states: AK-003 is "a
     // number moved somewhere in 274 spec files" and AK-001 is "here is the
     // file". Counting them as one overstates the toolchain, and it is the same
@@ -327,8 +327,8 @@ describe("tier-2 adjudicated answer key", () => {
     }
   });
 
-  test("TC-962 an undetectable finding claims no date and no fix", () => {
-    // TC-962
+  test("an undetectable finding claims no date and no fix", () => {
+    // Trace: FR-043-AC-8
     // AK-005 carried `now_detectable: "partially"` with both a
     // `detectable_since` and a `fixed_by`, for a detector with no production
     // caller. Every one of those errors flattered the toolchain, which is the
@@ -342,8 +342,8 @@ describe("tier-2 adjudicated answer key", () => {
     }
   });
 
-  test("TC-963 every untracked family has its OWN ticket", () => {
-    // TC-963
+  test("every untracked family has its OWN ticket", () => {
+    // Trace: FR-043-AC-8
     // AK-007 (`gate-that-gates-nothing`) pointed at quoin#204 — the
     // mocked-confirmation ticket — from the day it was written, so the family
     // had no owner and nobody could tell. Two findings sharing a ticket means
@@ -359,7 +359,7 @@ describe("tier-2 adjudicated answer key", () => {
     expect(new Set(ids).size).toBe(ids.length);
   });
 
-  test("TC-1118 every valid Tier-2 finding is reproducible from immutable cohort inputs", () => {
+  test("every valid Tier-2 finding is reproducible from immutable cohort inputs", () => {
     expect(key.schema_version).toBe("tier2-answer-key-v3");
     for (const [id, cohort] of Object.entries(key.cohorts) as Array<
       [
@@ -438,8 +438,8 @@ describe("battletest scoring and ratchet", () => {
     metrics: [{ name: "coverage.specific_shaped", value: 73 }],
   };
 
-  test("TC-934 the score report is byte-identical over identical inputs and carries its identity", () => {
-    // TC-934
+  test("the score report is byte-identical over identical inputs and carries its identity", () => {
+    // Trace: FR-043-AC-9
     // FR-043-AC-9. Not two calls compared for equality -- `scoreAgainstKey` is
     // pure, so that could not fail (the SR-014 FND-003 shape). This asserts the
     // report carries no time-varying field, which is the property the
@@ -463,8 +463,8 @@ describe("battletest scoring and ratchet", () => {
     expect(total).toBe(key.findings.length);
   });
 
-  test("TC-935 the ratchet names what was gained and what was LOST", () => {
-    // TC-935
+  test("the ratchet names what was gained and what was LOST", () => {
+    // Trace: FR-043-AC-10
     // FR-043-AC-10. A regression must name the finding that stopped being
     // surfaced -- a recall percentage that drops by one seventh says nothing
     // about which detector rotted.

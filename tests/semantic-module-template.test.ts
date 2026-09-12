@@ -68,8 +68,8 @@ function expectRefused(
 }
 
 describe("the renderer is present", () => {
-  // TC-1464
-  it("TC-1463, TC-1464 every external command has a declared floor, and the renderer's absence names it", () => {
+  // Trace: NFR-020-AC-2
+  it("every external command has a declared floor, and the renderer's absence names it", () => {
     expect(cookiecutterVersion()).toMatch(/cookiecutter/i);
     const floors = parse(
       readFileSync(
@@ -90,7 +90,7 @@ describe("the renderer is present", () => {
 });
 
 describe("variants render from one core", () => {
-  // TC-1400, TC-1401, TC-1402
+  // Trace: FR-076-AC-1, FR-076-AC-2, FR-076-AC-3
   it.each(KINDS)(
     "TC-1400, TC-1401, TC-1402 renders the %s variant with the right manifest sections",
     (kind) => {
@@ -117,8 +117,8 @@ describe("variants render from one core", () => {
     },
   );
 
-  // TC-1466
-  it("TC-1466 maps each imported module to an exact version, and empty imports to an empty mapping", () => {
+  // Trace: FR-078-AC-5
+  it("maps each imported module to an exact version, and empty imports to an empty mapping", () => {
     cookiecutterVersion();
     withRendered({ kind: "mixed" }, (rendered) => {
       const manifest = parse(
@@ -144,8 +144,8 @@ describe("variants render from one core", () => {
     });
   });
 
-  // TC-1403
-  it("TC-1403 carries each variant-shared file exactly once in the template source", () => {
+  // Trace: FR-076-AC-4, NFR-019-M-1
+  it("carries each variant-shared file exactly once in the template source", () => {
     cookiecutterVersion();
     const trees = KINDS.map((kind) =>
       withRendered({ kind }, (rendered) => ({
@@ -182,8 +182,8 @@ describe("variants render from one core", () => {
     }
   });
 
-  // TC-1467
-  it("TC-1467 renders one variant twice to byte-identical trees", () => {
+  // Trace: FR-076-AC-4
+  it("renders one variant twice to byte-identical trees", () => {
     cookiecutterVersion();
     const snapshot = (kind: ModuleKind) =>
       withRendered({ kind }, (rendered) =>
@@ -195,8 +195,8 @@ describe("variants render from one core", () => {
     expect(snapshot("mixed")).toEqual(snapshot("mixed"));
   });
 
-  // TC-1452
-  it("TC-1452 renders every variant unattended, from arguments alone", () => {
+  // Trace: FR-076-AC-11
+  it("renders every variant unattended, from arguments alone", () => {
     cookiecutterVersion();
     for (const kind of KINDS) {
       withRendered({ kind }, (rendered) => {
@@ -207,8 +207,8 @@ describe("variants render from one core", () => {
 });
 
 describe("an invalid input is refused, naming the value", () => {
-  // TC-1404
-  it("TC-1404 refuses a non-AGPL licence and renders the AGPL text by default", () => {
+  // Trace: FR-076-AC-5, NFR-018-M-6
+  it("refuses a non-AGPL licence and renders the AGPL text by default", () => {
     cookiecutterVersion();
     expect(expectRefused("object", { license: "MIT" })).toContain("MIT");
     withRendered({ kind: "object" }, (rendered) => {
@@ -217,16 +217,16 @@ describe("an invalid input is refused, naming the value", () => {
     });
   });
 
-  // TC-1405
-  it("TC-1405 refuses an unknown module kind naming it", () => {
+  // Trace: FR-076-AC-6
+  it("refuses an unknown module kind naming it", () => {
     cookiecutterVersion();
     expect(expectRefused("object", { module_kind: "hybrid" })).toContain(
       "hybrid",
     );
   });
 
-  // TC-1406
-  it("TC-1406 refuses an import without an exact version and accepts one with it", () => {
+  // Trace: FR-076-AC-7
+  it("refuses an import without an exact version and accepts one with it", () => {
     cookiecutterVersion();
     expect(
       expectRefused("mixed", {
@@ -242,24 +242,24 @@ describe("an invalid input is refused, naming the value", () => {
     );
   });
 
-  // TC-1407
-  it("TC-1407 refuses a target outside the filament-core-data registry naming it", () => {
+  // Trace: FR-076-AC-8
+  it("refuses a target outside the filament-core-data registry naming it", () => {
     cookiecutterVersion();
     expect(
       expectRefused("object", { generated_targets: "json-schema,go" }),
     ).toContain("go");
   });
 
-  // TC-1453
-  it("TC-1453 refuses a mixed module that imports nothing", () => {
+  // Trace: FR-076-AC-12
+  it("refuses a mixed module that imports nothing", () => {
     cookiecutterVersion();
     expect(expectRefused("mixed", { imported_modules: "" })).toContain(
       "import",
     );
   });
 
-  // TC-1459
-  it("TC-1459 refuses two imports naming the same package identity", () => {
+  // Trace: FR-078-AC-8
+  it("refuses two imports naming the same package identity", () => {
     cookiecutterVersion();
     const message = expectRefused("mixed", {
       imported_modules:
@@ -268,8 +268,8 @@ describe("an invalid input is refused, naming the value", () => {
     expect(message).toContain("agent-ix/spec-objects-business");
   });
 
-  // TC-1454
-  it("TC-1454 leaves no directory behind when it refuses", () => {
+  // Trace: FR-076-AC-13
+  it("leaves no directory behind when it refuses", () => {
     cookiecutterVersion();
     // `expectRefused` asserts the output directory is gone for every case above;
     // this row states it as its own obligation.
@@ -278,7 +278,7 @@ describe("an invalid input is refused, naming the value", () => {
 });
 
 describe("the rendered tree conforms and carries no residue", () => {
-  // TC-1444, TC-1447
+  // Trace: FR-083-AC-1, FR-083-AC-4, FR-083-CON-2
   it.each(KINDS)(
     "TC-1444 carries every surface the contract names (%s)",
     (kind) => {
@@ -290,7 +290,7 @@ describe("the rendered tree conforms and carries no residue", () => {
   );
 
   // TC-1447 negative: removing a required surface is detected.
-  it("TC-1447 reports a missing required surface naming it", () => {
+  it("reports a missing required surface naming it", () => {
     cookiecutterVersion();
     withRendered({ kind: "object" }, (rendered) => {
       const contract = loadConformance();
@@ -301,7 +301,7 @@ describe("the rendered tree conforms and carries no residue", () => {
     });
   });
 
-  // TC-1446, NFR-018
+  // Trace: NFR-018-M-1, NFR-018-M-2, NFR-018-M-3, NFR-018-M-4, NFR-019-M-3, NFR-019-M-4
   it.each(KINDS)("TC-1446 carries no generation residue (%s)", (kind) => {
     cookiecutterVersion();
     withRendered({ kind }, (rendered) => {
@@ -310,7 +310,7 @@ describe("the rendered tree conforms and carries no residue", () => {
   });
 
   // TC-1446 negative: the scan actually fires.
-  it("TC-1446 reports an injected residue instance naming the file", () => {
+  it("reports an injected residue instance naming the file", () => {
     cookiecutterVersion();
     withRendered({ kind: "object" }, (rendered) => {
       writeFileSync(
@@ -326,7 +326,7 @@ describe("the rendered tree conforms and carries no residue", () => {
     });
   });
 
-  // TC-1436
+  // Trace: FR-081-AC-4, FR-081-AC-5, NFR-018-M-5
   it.each(KINDS)(
     "TC-1436 names a private registry only where the contract allows (%s)",
     (kind) => {
@@ -342,7 +342,7 @@ describe("the rendered tree conforms and carries no residue", () => {
     },
   );
 
-  // TC-1412
+  // Trace: FR-076-AC-9, FR-076-CON-2
   it.each(KINDS)("TC-1412 ships no .npmrc at any depth (%s)", (kind) => {
     cookiecutterVersion();
     withRendered({ kind }, (rendered) => {
@@ -354,7 +354,7 @@ describe("the rendered tree conforms and carries no residue", () => {
 });
 
 describe("the rendered repository is public-ready", () => {
-  // TC-1434
+  // Trace: FR-081-AC-1
   it.each(KINDS)(
     "TC-1434 uses one licence identifier everywhere (%s)",
     (kind) => {
@@ -378,7 +378,7 @@ describe("the rendered repository is public-ready", () => {
     },
   );
 
-  // TC-1433
+  // Trace: FR-081-AC-3, FR-081-CON-2
   it.each(KINDS)(
     "TC-1433 distributes the same payload through both surfaces (%s)",
     (kind) => {
@@ -402,7 +402,7 @@ describe("the rendered repository is public-ready", () => {
     },
   );
 
-  // TC-1432
+  // Trace: FR-081-AC-8, FR-081-CON-1
   it.each(KINDS)(
     "TC-1432 declares no local path reference and no upper bound (%s)",
     (kind) => {
@@ -420,7 +420,7 @@ describe("the rendered repository is public-ready", () => {
     },
   );
 
-  // TC-1437
+  // Trace: FR-081-AC-6
   it.each(KINDS)(
     "TC-1437 ships manually triggered, delegating workflows (%s)",
     (kind) => {
@@ -442,7 +442,7 @@ describe("the rendered repository is public-ready", () => {
     },
   );
 
-  // TC-1435
+  // Trace: FR-081-AC-2
   it.each(KINDS)(
     "TC-1435 ships the ownership and guidance files (%s)",
     (kind) => {
@@ -468,9 +468,9 @@ describe("the rendered repository is public-ready", () => {
     },
   );
 
-  // TC-1438
-  it("TC-1438 names the catalog file and the tracking project in the catalog document", () => {
-    // TC-1438
+  // Trace: FR-081-AC-7
+  it("names the catalog file and the tracking project in the catalog document", () => {
+    // Trace: FR-081-AC-7
     cookiecutterVersion();
     withRendered({ kind: "object" }, (rendered) => {
       const doc = readFileSync(
@@ -482,8 +482,8 @@ describe("the rendered repository is public-ready", () => {
     });
   });
 
-  // TC-1451
-  it("TC-1451 records a declared target with no emitter as declared and not emitted", () => {
+  // Trace: FR-076-AC-10
+  it("records a declared target with no emitter as declared and not emitted", () => {
     cookiecutterVersion();
     withRendered({ kind: "object" }, (rendered) => {
       const readme = readFileSync(join(rendered.root, "README.md"), "utf8");
@@ -505,7 +505,7 @@ describe("the rendered repository is public-ready", () => {
 });
 
 describe("the rendered governance tree validates as rendered", () => {
-  // TC-1439, TC-1443
+  // Trace: FR-082-AC-1, FR-082-AC-5
   it.each(KINDS)(
     "TC-1439, TC-1443 passes quire validate over spec/ (%s)",
     (kind) => {
@@ -538,7 +538,7 @@ describe("the rendered governance tree validates as rendered", () => {
     },
   );
 
-  // TC-1440, TC-1441, TC-1442
+  // Trace: FR-082-AC-2, FR-082-AC-3, FR-082-AC-4, FR-082-CON-1
   it.each(KINDS)(
     "TC-1440, TC-1441, TC-1442, TC-1470 carries an honest, in-vocabulary Test Matrix (%s)",
     (kind) => {
@@ -580,8 +580,8 @@ describe("the rendered governance tree validates as rendered", () => {
     },
   );
 
-  // TC-1461
-  it("TC-1461 says the module's domain types are the maintainer's, and copies no requirement", () => {
+  // Trace: FR-082-AC-6, FR-082-CON-2
+  it("says the module's domain types are the maintainer's, and copies no requirement", () => {
     cookiecutterVersion();
     withRendered({ kind: "mixed" }, (rendered) => {
       const spec = readFileSync(join(rendered.root, "spec", "spec.md"), "utf8");
@@ -599,8 +599,8 @@ describe("the rendered governance tree validates as rendered", () => {
 });
 
 describe("the template depends on shared tooling rather than copying it", () => {
-  // TC-1455
-  it("TC-1455 carries no copy of the emitter, the runtime or the grammar", () => {
+  // Trace: FR-076-CON-1
+  it("carries no copy of the emitter, the runtime or the grammar", () => {
     const files = walkFiles(TEMPLATE_DIR);
     for (const file of files) {
       const text = readFileSync(join(TEMPLATE_DIR, file), "utf8");
@@ -630,8 +630,8 @@ describe("the template depends on shared tooling rather than copying it", () => 
     ]);
   });
 
-  // TC-1456
-  it("TC-1456 renders one emit driver, byte-identical across every variant", () => {
+  // Trace: FR-076-CON-3
+  it("renders one emit driver, byte-identical across every variant", () => {
     cookiecutterVersion();
     const bodies = KINDS.map((kind) =>
       withRendered({ kind }, (rendered) =>
@@ -648,8 +648,8 @@ describe("the template depends on shared tooling rather than copying it", () => 
 });
 
 describe("the conformance contract tracks the maintained repositories", () => {
-  // TC-1418
-  it("TC-1418 names no surface both maintained modules carry that it neither requires nor exempts", () => {
+  // Trace: FR-083-AC-5, StR-008-VC-3
+  it("names no surface both maintained modules carry that it neither requires nor exempts", () => {
     requireTool({
       command: "git",
       args: ["--version"],
@@ -658,8 +658,8 @@ describe("the conformance contract tracks the maintained repositories", () => {
     expect(driftedSurfaces(conformance)).toEqual([]);
   });
 
-  // TC-1462
-  it("TC-1462 fails naming the repository and the revision when one cannot be read", () => {
+  // Trace: FR-083-AC-8
+  it("fails naming the repository and the revision when one cannot be read", () => {
     // The repository IS present — `driftedSurfaces` above read it — so this
     // exercises the unreachable-revision path rather than the absent-repository
     // one, and the assertion names the message that path produces.
@@ -671,8 +671,8 @@ describe("the conformance contract tracks the maintained repositories", () => {
     ).toThrow(/cannot be read at its pinned revision 0{40}/);
   });
 
-  // TC-1445, FR-083-CON-2
-  it("TC-1445 is a declared file, and every exemption carries a reason", () => {
+  // Trace: FR-083-AC-2, FR-083-CON-1, FR-083-CON-2
+  it("is a declared file, and every exemption carries a reason", () => {
     expect(existsSync(CONFORMANCE_PATH)).toBe(true);
     expect(conformance.contract_version).toBe("1.0.0");
     for (const exemption of conformance.drift_exemptions) {
@@ -698,7 +698,7 @@ describe("the conformance contract tracks the maintained repositories", () => {
   });
 
   // TC-1445: no rendered tree survives the run.
-  it("TC-1445 writes every rendered tree under a temporary directory and removes it", () => {
+  it("writes every rendered tree under a temporary directory and removes it", () => {
     cookiecutterVersion();
     const rendered = render({ kind: "object" });
     expect(rendered.dir.startsWith(REPO_ROOT)).toBe(false);
@@ -731,133 +731,133 @@ const RENDERED_ROWS: {
   test: string;
   criterion: string;
 }[] = [
-  // TC-1408
+  // Trace: FR-077-AC-1
   {
     tc: "TC-1408",
     file: "test_schema_emission.py",
     test: "test_one_schema_is_emitted_for_every_exported_type",
     criterion: "FR-002-AC-1",
   },
-  // TC-1409
+  // Trace: FR-077-AC-2, FR-077-CON-2, FR-078-AC-3
   {
     tc: "TC-1409",
     file: "test_schema_emission.py",
     test: "test_no_emitted_schema_is_the_placeholder_contract",
     criterion: "FR-002-AC-2",
   },
-  // TC-1410
+  // Trace: FR-078-AC-2, StR-008-VC-2
   {
     tc: "TC-1410",
     file: "test_manifest_semantic.py",
     test: "test_every_digest_equals_the_bytes_of_the_file_it_names",
     criterion: "FR-001-AC-7",
   },
-  // TC-1411
+  // Trace: FR-079-AC-7, FR-079-CON-1
   {
     tc: "TC-1411",
     file: "test_skeletons_semantic.py",
     test: "test_no_skeleton_carries_a_placeholder_body",
     criterion: "FR-003-AC-4",
   },
-  // TC-1413
+  // Trace: FR-077-AC-3
   {
     tc: "TC-1413",
     file: "test_schema_emission.py",
     test: "test_check_mode_is_green_against_the_committed_output",
     criterion: "FR-002-AC-5",
   },
-  // TC-1417
+  // Trace: FR-078-AC-1, FR-078-CON-1
   {
     tc: "TC-1417",
     file: "test_manifest_semantic.py",
     test: "test_semantic_block_carries_exactly_the_admitted_keys",
     criterion: "FR-001-AC-1",
   },
-  // TC-1419
+  // Trace: FR-078-AC-4, FR-078-CON-2
   {
     tc: "TC-1419",
     file: "test_manifest_semantic.py",
     test: "test_the_manifest_keeps_its_comments_and_is_not_reserialized",
     criterion: "FR-001-AC-9",
   },
-  // TC-1420
+  // Trace: FR-079-AC-1
   {
     tc: "TC-1420",
     file: "test_skeletons_semantic.py",
     test: "test_every_export_has_a_skeleton_in_the_typed_table_form",
     criterion: "FR-003-AC-1",
   },
-  // TC-1421
+  // Trace: FR-079-AC-2
   {
     tc: "TC-1421",
     file: "test_skeletons_semantic.py",
     test: "test_every_skeleton_has_a_sysml_alternate_declaring_the_same_fields",
     criterion: "FR-003-AC-2",
   },
-  // TC-1422
+  // Trace: FR-079-AC-6, FR-079-CON-2
   {
     tc: "TC-1422",
     file: "test_skeletons_semantic.py",
     test: "test_the_both_forms_fixture_carries_both_forms",
     criterion: "FR-003-AC-6",
   },
-  // TC-1423
+  // Trace: FR-079-AC-3
   {
     tc: "TC-1423",
     file: "test_skeletons_semantic.py",
     test: "test_every_skeleton_carries_an_ocl_clause_under_its_own_heading",
     criterion: "FR-003-AC-3",
   },
-  // TC-1424
+  // Trace: FR-079-AC-4
   {
     tc: "TC-1424",
     file: "test_skeletons_semantic.py",
     test: "test_every_negative_fixture_is_actually_refused",
     criterion: "FR-003-AC-15",
   },
-  // TC-1425
+  // Trace: FR-079-AC-5
   {
     tc: "TC-1425",
     file: "test_skeletons_semantic.py",
     test: "test_every_legacy_fixture_yields_no_error_under_warning",
     criterion: "FR-003-AC-11",
   },
-  // TC-1426
+  // Trace: FR-079-AC-8
   {
     tc: "TC-1426",
     file: "test_skeletons_semantic.py",
     test: "test_every_golden_record_matches_what_its_skeleton_extracts_to",
     criterion: "FR-003-AC-13",
   },
-  // TC-1427
+  // Trace: FR-080-AC-3, FR-080-CON-1
   {
     tc: "TC-1427",
     file: "test_skeletons_semantic.py",
     test: "test_every_skeleton_extracts_and_validates_against_its_emitted_schema",
     criterion: "FR-003-AC-9",
   },
-  // TC-1430
+  // Trace: FR-080-AC-4, FR-080-CON-2
   {
     tc: "TC-1430",
     file: "test_schema_emission.py",
     test: "test_the_package_metadata_declares_no_engine_dependency",
     criterion: "FR-002-AC-7",
   },
-  // TC-1458
+  // Trace: FR-078-AC-7
   {
     tc: "TC-1458",
     file: "test_manifest_semantic.py",
     test: "test_no_type_name_is_declared_twice",
     criterion: "FR-001-AC-4",
   },
-  // TC-1468
+  // Trace: FR-078-AC-6
   {
     tc: "TC-1468",
     file: "test_manifest_semantic.py",
     test: "test_exports_and_declared_type_names_are_the_same_set",
     criterion: "FR-001-AC-3",
   },
-  // TC-1469
+  // Trace: FR-080-AC-6
   {
     tc: "TC-1469",
     file: "test_skeletons_semantic.py",
@@ -890,98 +890,98 @@ describe("the rendered suite carries the rows the template gate executes", () =>
     );
   }
 
-  it("TC-1408 the rendered suite still carries its test", () => {
-    // TC-1408
+  it("the rendered suite still carries its test", () => {
+    // Trace: FR-077-AC-1
     stillCarries("TC-1408");
   });
 
-  it("TC-1409 the rendered suite still carries its test", () => {
-    // TC-1409
+  it("the rendered suite still carries its test", () => {
+    // Trace: FR-077-AC-2, FR-077-CON-2, FR-078-AC-3
     stillCarries("TC-1409");
   });
 
-  it("TC-1410 the rendered suite still carries its test", () => {
-    // TC-1410
+  it("the rendered suite still carries its test", () => {
+    // Trace: FR-078-AC-2, StR-008-VC-2
     stillCarries("TC-1410");
   });
 
-  it("TC-1411 the rendered suite still carries its test", () => {
-    // TC-1411
+  it("the rendered suite still carries its test", () => {
+    // Trace: FR-079-AC-7, FR-079-CON-1
     stillCarries("TC-1411");
   });
 
-  it("TC-1413 the rendered suite still carries its test", () => {
-    // TC-1413
+  it("the rendered suite still carries its test", () => {
+    // Trace: FR-077-AC-3
     stillCarries("TC-1413");
   });
 
-  it("TC-1417 the rendered suite still carries its test", () => {
-    // TC-1417
+  it("the rendered suite still carries its test", () => {
+    // Trace: FR-078-AC-1, FR-078-CON-1
     stillCarries("TC-1417");
   });
 
-  it("TC-1419 the rendered suite still carries its test", () => {
-    // TC-1419
+  it("the rendered suite still carries its test", () => {
+    // Trace: FR-078-AC-4, FR-078-CON-2
     stillCarries("TC-1419");
   });
 
-  it("TC-1420 the rendered suite still carries its test", () => {
-    // TC-1420
+  it("the rendered suite still carries its test", () => {
+    // Trace: FR-079-AC-1
     stillCarries("TC-1420");
   });
 
-  it("TC-1421 the rendered suite still carries its test", () => {
-    // TC-1421
+  it("the rendered suite still carries its test", () => {
+    // Trace: FR-079-AC-2
     stillCarries("TC-1421");
   });
 
-  it("TC-1422 the rendered suite still carries its test", () => {
-    // TC-1422
+  it("the rendered suite still carries its test", () => {
+    // Trace: FR-079-AC-6, FR-079-CON-2
     stillCarries("TC-1422");
   });
 
-  it("TC-1423 the rendered suite still carries its test", () => {
-    // TC-1423
+  it("the rendered suite still carries its test", () => {
+    // Trace: FR-079-AC-3
     stillCarries("TC-1423");
   });
 
-  it("TC-1424 the rendered suite still carries its test", () => {
-    // TC-1424
+  it("the rendered suite still carries its test", () => {
+    // Trace: FR-079-AC-4
     stillCarries("TC-1424");
   });
 
-  it("TC-1425 the rendered suite still carries its test", () => {
-    // TC-1425
+  it("the rendered suite still carries its test", () => {
+    // Trace: FR-079-AC-5
     stillCarries("TC-1425");
   });
 
-  it("TC-1426 the rendered suite still carries its test", () => {
-    // TC-1426
+  it("the rendered suite still carries its test", () => {
+    // Trace: FR-079-AC-8
     stillCarries("TC-1426");
   });
 
-  it("TC-1427 the rendered suite still carries its test", () => {
-    // TC-1427
+  it("the rendered suite still carries its test", () => {
+    // Trace: FR-080-AC-3, FR-080-CON-1
     stillCarries("TC-1427");
   });
 
-  it("TC-1430 the rendered suite still carries its test", () => {
-    // TC-1430
+  it("the rendered suite still carries its test", () => {
+    // Trace: FR-080-AC-4, FR-080-CON-2
     stillCarries("TC-1430");
   });
 
-  it("TC-1458 the rendered suite still carries its test", () => {
-    // TC-1458
+  it("the rendered suite still carries its test", () => {
+    // Trace: FR-078-AC-7
     stillCarries("TC-1458");
   });
 
-  it("TC-1468 the rendered suite still carries its test", () => {
-    // TC-1468
+  it("the rendered suite still carries its test", () => {
+    // Trace: FR-078-AC-6
     stillCarries("TC-1468");
   });
 
-  it("TC-1469 the rendered suite still carries its test", () => {
-    // TC-1469
+  it("the rendered suite still carries its test", () => {
+    // Trace: FR-080-AC-6
     stillCarries("TC-1469");
   });
 

@@ -185,7 +185,7 @@ beforeEach(() => {
 });
 
 describe("FR-063 records and canonical integrity", () => {
-  it("TC-1261 rejects missing and undeclared record fields", () => {
+  it("rejects missing and undeclared record fields", () => {
     const sealed = sealChangeRecord(recordInput());
     expect(verifyChangeRecord(sealed)).toEqual(sealed);
     expect(() => verifyChangeRecord({ ...sealed, extra: true })).toThrow(
@@ -196,7 +196,7 @@ describe("FR-063 records and canonical integrity", () => {
     expect(() => verifyChangeRecord(missing)).toThrow(/subject/);
   });
 
-  it("TC-1262 preserves meaningful empties and refuses duplicate identities", () => {
+  it("preserves meaningful empties and refuses duplicate identities", () => {
     const sealed = sealChangeRecord(recordInput());
     expect(sealed.definition.unknowns).toEqual([]);
     expect(sealed.definition.preservation_constraints).toEqual([]);
@@ -211,7 +211,7 @@ describe("FR-063 records and canonical integrity", () => {
     ).toThrow(/duplicate source/);
   });
 
-  it("TC-1263 retains reviewed statements and exact proof premises", () => {
+  it("retains reviewed statements and exact proof premises", () => {
     const sealed = sealChangeRecord(recordInput());
     expect(sealed.definition.requirements[0].statement).toBe("seal it");
     expect(sealed.definition.proof_obligations[0]).toMatchObject({
@@ -222,7 +222,7 @@ describe("FR-063 records and canonical integrity", () => {
     });
   });
 
-  it("TC-1264 preserves incomplete impact and every unknown disposition", () => {
+  it("preserves incomplete impact and every unknown disposition", () => {
     const input = recordInput();
     input.impact_snapshot.completeness = "incomplete";
     input.impact_snapshot.truncated = true;
@@ -249,7 +249,7 @@ describe("FR-063 records and canonical integrity", () => {
     ).toEqual(["open", "accepted", "deferred", "resolved"]);
   });
 
-  it("TC-1265 matches RFC 8785 canonicalization and BLAKE3 vectors", () => {
+  it("matches RFC 8785 canonicalization and BLAKE3 vectors", () => {
     expect(canonicalizeJcs({ b: 1, a: [true, null, "x"] })).toBe(
       '{"a":[true,null,"x"],"b":1}',
     );
@@ -268,7 +268,7 @@ describe("FR-063 records and canonical integrity", () => {
     );
   });
 
-  it("TC-1266 invalidates the digest when any generated semantic leaf changes", () => {
+  it("invalidates the digest when any generated semantic leaf changes", () => {
     fc.assert(
       fc.property(fc.string({ minLength: 1 }), (statement) => {
         const sealed = sealChangeRecord(recordInput());
@@ -303,7 +303,7 @@ describe("FR-063 records and canonical integrity", () => {
     }
   });
 
-  it("TC-1267 refuses duplicate names, bad Unicode/numbers/BOM, and bad digest encodings", () => {
+  it("refuses duplicate names, bad Unicode/numbers/BOM, and bad digest encodings", () => {
     expect(() => parseStrictJson('{"a":1,"a":2}')).toThrow(/duplicate.*a/i);
     expect(() => parseStrictJson('"\\ud800"')).toThrow(/surrogate|unicode/i);
     expect(() => parseStrictJson("1e9999")).toThrow(/I-JSON|finite/i);
@@ -322,7 +322,7 @@ describe("FR-063 records and canonical integrity", () => {
     ).toThrow();
   });
 
-  it("TC-1268 enforces genesis and retained strict N-1 lineage", () => {
+  it("enforces genesis and retained strict N-1 lineage", () => {
     const parent = sealChangeRecord(recordInput());
     const child = sealChangeRecord({
       ...recordInput(2),
@@ -337,7 +337,7 @@ describe("FR-063 records and canonical integrity", () => {
     expect(() => verifyLineage(child, [])).toThrow(/parent/);
   });
 
-  it("TC-1269 writes a successor without changing its parent bytes", () => {
+  it("writes a successor without changing its parent bytes", () => {
     const parent = sealChangeRecord(recordInput());
     writeChangeRecord(repo, parent);
     const before = readFileSync(recordPath(repo, parent.digest));
@@ -350,7 +350,7 @@ describe("FR-063 records and canonical integrity", () => {
     expect(readChangeRecord(repo, child.digest)).toEqual(child);
   });
 
-  it("TC-1270 accepts only one exact integrity-valid human decision", () => {
+  it("accepts only one exact integrity-valid human decision", () => {
     const ixFlowVector = {
       id: "event-1",
       ts: "2026-08-31T00:00:00Z",
@@ -379,7 +379,7 @@ describe("FR-063 records and canonical integrity", () => {
     );
   });
 
-  it("TC-1271 has no execution dependency and makes only integrity claims", async () => {
+  it("has no execution dependency and makes only integrity claims", async () => {
     const source = readFileSync(
       new URL("../src/change-assurance/index.ts", import.meta.url),
       "utf8",
@@ -393,7 +393,7 @@ describe("FR-063 records and canonical integrity", () => {
 });
 
 describe("FR-064 attestation intake", () => {
-  it("TC-1272 requires every attestation field and refuses extras", () => {
+  it("requires every attestation field and refuses extras", () => {
     const record = sealChangeRecord(recordInput());
     const output = new TextEncoder().encode("ok");
     const sealed = sealAttestation(attestationInput(record.digest, output));
@@ -403,7 +403,7 @@ describe("FR-064 attestation intake", () => {
     );
   });
 
-  it("TC-1273 round-trips four producer states without a verifier verdict", () => {
+  it("round-trips four producer states without a verifier verdict", () => {
     const record = sealChangeRecord(recordInput());
     const output = new TextEncoder().encode("diagnostic");
     for (const result of [
@@ -419,7 +419,7 @@ describe("FR-064 attestation intake", () => {
     }
   });
 
-  it("TC-1274 rejects changed or absent output without writing either artifact", () => {
+  it("rejects changed or absent output without writing either artifact", () => {
     const record = sealChangeRecord(recordInput());
     const output = new TextEncoder().encode("ok");
     const attestation = sealAttestation(
@@ -432,7 +432,7 @@ describe("FR-064 attestation intake", () => {
     expect(existsSync(attestationPath(repo, attestation.digest))).toBe(false);
   });
 
-  it("TC-1275 invalidates attestation digests under semantic mutation", () => {
+  it("invalidates attestation digests under semantic mutation", () => {
     const record = sealChangeRecord(recordInput());
     const output = new TextEncoder().encode("ok");
     const sealed = sealAttestation(attestationInput(record.digest, output));
@@ -472,7 +472,7 @@ describe("FR-064 attestation intake", () => {
     }
   });
 
-  it("TC-1276 refuses each absent attestation premise instead of inferring", () => {
+  it("refuses each absent attestation premise instead of inferring", () => {
     const record = sealChangeRecord(recordInput());
     const output = new TextEncoder().encode("ok");
     const sealed = sealAttestation(attestationInput(record.digest, output));
@@ -493,7 +493,7 @@ describe("FR-064 attestation intake", () => {
     }
   });
 
-  it("TC-1277 is byte-idempotent, crash-atomic, recoverable, and collision-safe", () => {
+  it("is byte-idempotent, crash-atomic, recoverable, and collision-safe", () => {
     const record = sealChangeRecord(recordInput());
     const output = new TextEncoder().encode("ok");
     const sealed = sealAttestation(attestationInput(record.digest, output));
@@ -524,7 +524,7 @@ describe("FR-064 attestation intake", () => {
     expect(() => intakeAttestation(repo, raw, output)).toThrow(/collision/);
   });
 
-  it("TC-1277 accepts noncanonical valid input but stores canonical bytes", () => {
+  it("accepts noncanonical valid input but stores canonical bytes", () => {
     const record = sealChangeRecord(recordInput());
     const output = new TextEncoder().encode("ok");
     const sealed = sealAttestation(attestationInput(record.digest, output));
@@ -541,7 +541,7 @@ describe("FR-064 attestation intake", () => {
     expect(() => attestationPath(repo, "../../escape")).toThrow(/digest/);
   });
 
-  it("TC-1278 retains unavailable diagnostics and creates nothing for absence", () => {
+  it("retains unavailable diagnostics and creates nothing for absence", () => {
     const record = sealChangeRecord(recordInput());
     const output = new TextEncoder().encode("tool unavailable");
     const sealed = sealAttestation({
@@ -559,7 +559,7 @@ describe("FR-064 attestation intake", () => {
     expect(readAttestation(repo, HEX_A)).toBeNull();
   });
 
-  it("TC-1279 does not alter the existing FR-030 store family", () => {
+  it("does not alter the existing FR-030 store family", () => {
     writeRun(repo, {
       schemaVersion: 1,
       suite: "SUITE-1",
@@ -587,7 +587,7 @@ describe("FR-064 attestation intake", () => {
     expect(readFileSync(existing)).toEqual(before);
   });
 
-  it("TC-1280 intake exposes no execution or verdict path", () => {
+  it("intake exposes no execution or verdict path", () => {
     const source = readFileSync(
       new URL("../src/change-assurance/store.ts", import.meta.url),
       "utf8",
@@ -600,7 +600,7 @@ describe("FR-064 attestation intake", () => {
 });
 
 describe("FR-065 verification receipts", () => {
-  it("TC-1261/TC-1272/TC-1281 keeps runtime values aligned with the packaged schemas", () => {
+  it("/TC-1272/TC-1281 keeps runtime values aligned with the packaged schemas", () => {
     const ajv = new Ajv2020({ strict: false, validateFormats: false });
     const input = receiptInput();
     const samples = [
@@ -614,7 +614,7 @@ describe("FR-065 verification receipts", () => {
     }
   });
 
-  it("TC-1281 emits a closed receipt with all retained joins", () => {
+  it("emits a closed receipt with all retained joins", () => {
     const receipt = verifyChangeAssurance(receiptInput());
     expect(receipt).toMatchObject({
       schema_version: 1,
@@ -636,7 +636,7 @@ describe("FR-065 verification receipts", () => {
     });
   });
 
-  it("TC-1282 applies invalid > incomplete > valid under permutations", () => {
+  it("applies invalid > incomplete > valid under permutations", () => {
     const incomplete = receiptInput();
     incomplete.selections = [];
     expect(verifyChangeAssurance(incomplete).outcome).toBe("incomplete");
@@ -648,7 +648,7 @@ describe("FR-065 verification receipts", () => {
     );
   });
 
-  it("TC-1283 detects missing, duplicate, and unknown selections and ignores stored extras", () => {
+  it("detects missing, duplicate, and unknown selections and ignores stored extras", () => {
     const missing = receiptInput();
     missing.selections = [];
     expect(verifyChangeAssurance(missing).proofs[0].outcome).toBe("incomplete");
@@ -666,7 +666,7 @@ describe("FR-065 verification receipts", () => {
     expect(verifyChangeAssurance(extra).outcome).toBe("valid");
   });
 
-  it("TC-1284 names independent binding mismatches", () => {
+  it("names independent binding mismatches", () => {
     const cases: Array<{
       reason: string;
       mutate: (value: ProofAttestation) => void;
@@ -729,7 +729,7 @@ describe("FR-065 verification receipts", () => {
     }
   });
 
-  it("TC-1285 rejects failed or unhealthy evidence and output mismatch", () => {
+  it("rejects failed or unhealthy evidence and output mismatch", () => {
     const failed = receiptInput();
     failed.attestations[0].attestation = sealAttestation({
       ...failed.attestations[0].attestation,
@@ -770,7 +770,7 @@ describe("FR-065 verification receipts", () => {
     );
   });
 
-  it("TC-1286 keeps absence, unavailable, not-computed, and unevaluated incomplete", () => {
+  it("keeps absence, unavailable, not-computed, and unevaluated incomplete", () => {
     for (const state of ["unavailable", "not_computed"] as const) {
       const input = receiptInput();
       input.attestations[0].attestation = sealAttestation({
@@ -801,7 +801,7 @@ describe("FR-065 verification receipts", () => {
     );
   });
 
-  it("TC-1287 classifies missing, duplicate, broken, mismatched, rejected, and revise decisions", () => {
+  it("classifies missing, duplicate, broken, mismatched, rejected, and revise decisions", () => {
     const duplicate = receiptInput();
     duplicate.decision_history.events.push({
       ...structuredClone(duplicate.decision_history.events[0]),
@@ -872,7 +872,7 @@ describe("FR-065 verification receipts", () => {
     }
   });
 
-  it("TC-1288 keeps impact gaps and unresolved unknowns explicitly incomplete", () => {
+  it("keeps impact gaps and unresolved unknowns explicitly incomplete", () => {
     const input = receiptInput();
     input.record.impact_snapshot.truncated = true;
     input.record.definition.unknowns = [
@@ -901,7 +901,7 @@ describe("FR-065 verification receipts", () => {
     expect(receipt.unknowns).toEqual([{ id: "u1", disposition: "deferred" }]);
   });
 
-  it("TC-1289 retains exact FR-032 finding kinds and obligation ids", () => {
+  it("retains exact FR-032 finding kinds and obligation ids", () => {
     const input = receiptInput();
     input.audits[0].report.findings = [
       {
@@ -916,7 +916,7 @@ describe("FR-065 verification receipts", () => {
     ]);
   });
 
-  it("TC-1290 emits byte-identical canonical receipts under input permutations", () => {
+  it("emits byte-identical canonical receipts under input permutations", () => {
     const first = verifyChangeAssurance(receiptInput());
     const secondInput = receiptInput();
     secondInput.record.subject.scope.reverse();
@@ -955,7 +955,7 @@ describe("FR-065 verification receipts", () => {
     );
   });
 
-  it("TC-1291 leaves prior outputs unchanged and performs no writes", () => {
+  it("leaves prior outputs unchanged and performs no writes", () => {
     const input = receiptInput();
     const snapshot = structuredClone(input);
     verifyChangeAssurance(input);
@@ -963,7 +963,7 @@ describe("FR-065 verification receipts", () => {
     expect(vi.isMockFunction(verifyChangeAssurance)).toBe(false);
   });
 
-  it("TC-1292 uses attribution/integrity terminology, never identity guarantees", () => {
+  it("uses attribution/integrity terminology, never identity guarantees", () => {
     const receipt = canonicalizeJcs(verifyChangeAssurance(receiptInput()));
     expect(receipt).toContain("recorded_actor");
     expect(receipt).not.toMatch(

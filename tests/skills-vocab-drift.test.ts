@@ -1,6 +1,6 @@
 /**
  * NFR-005-AC-1 — the spec-matrix skill's Status vocabulary is coupled to the
- * module manifest (TC-271).
+ * module manifest.
  *
  * PR #163 retired the warning marker from `skills/spec-matrix/SKILL.md` and
  * both asset templates BY HAND, and nothing coupled the skill's declared
@@ -161,8 +161,8 @@ function statusColumnNames(text: string): Set<string> {
   return names;
 }
 
-describe("TC-271 the spec-matrix vocabulary cannot drift from the module manifest", () => {
-  // TC-271
+describe("the spec-matrix vocabulary cannot drift from the module manifest", () => {
+  // Trace: NFR-005-AC-1
   it("SKILL.md's declared Status vocabulary equals the manifest's classed set", () => {
     // Exact equality: a marker taught but classed by nothing is exempt from
     // the status-lie check by construction (the ⚠️ defect); a marker classed
@@ -170,7 +170,7 @@ describe("TC-271 the spec-matrix vocabulary cannot drift from the module manifes
     expect(sorted(skillDeclared())).toEqual(sorted(classedSet()));
   });
 
-  // TC-271
+  // Trace: NFR-005-AC-1
   it("every taught marker is admitted by the manifest's Status column pattern", () => {
     const admitted = admittedSet(manifest);
     expect(admitted.size, "no column_patterns.Status found").toBeGreaterThan(0);
@@ -181,18 +181,18 @@ describe("TC-271 the spec-matrix vocabulary cannot drift from the module manifes
     }
   });
 
-  // TC-271
+  // Trace: NFR-005-AC-1
   it("the `## Markers` list restates exactly the declared vocabulary", () => {
     expect(sorted(skillMarkersList())).toEqual(sorted(skillDeclared()));
   });
 
-  // TC-271
+  // Trace: NFR-005-AC-1
   it("the template's Status cells use exactly the declared vocabulary", () => {
     const used = markersIn(statusCells(templateMd).join(" "));
     expect(sorted(used)).toEqual(sorted(skillDeclared()));
   });
 
-  // TC-271
+  // Trace: NFR-005-AC-1
   it("the example's Status cells stay within the declared vocabulary", () => {
     // Subset, not equality: an example need not exhibit a retired-row (`⛔`)
     // to be a good example, but it must not exhibit a marker the vocabulary

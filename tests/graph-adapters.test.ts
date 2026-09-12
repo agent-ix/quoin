@@ -268,7 +268,7 @@ function adapt(record = graphRecord(), bytes = Buffer.from("scorer")) {
 
 describe("FR-066 governed graph producer adapters", () => {
   // Trace: FR-066-AC-1
-  test("TC-1293 selects exact versioned names and refuses an unknown adapter", () => {
+  test("selects exact versioned names and refuses an unknown adapter", () => {
     expect(selectGraphAdapter("quire-assurance-v1")).toBe("quire-assurance-v1");
     expect(selectGraphAdapter("quire-code-graph-quality-v1")).toBe(
       "quire-code-graph-quality-v1",
@@ -279,7 +279,7 @@ describe("FR-066 governed graph producer adapters", () => {
   });
 
   // Trace: FR-066-AC-2
-  test("TC-1294 preserves a valid Quire export and rejects every premise drift", () => {
+  test("preserves a valid Quire export and rejects every premise drift", () => {
     const value = quireExport();
     const accepted = {
       format: value.format,
@@ -322,7 +322,7 @@ describe("FR-066 governed graph producer adapters", () => {
   });
 
   // Trace: FR-066-AC-3
-  test("TC-1295 hands every Quire graph collection through without translation", () => {
+  test("hands every Quire graph collection through without translation", () => {
     const value = quireExport();
     value.artifacts.push({
       id: "FR-001",
@@ -350,7 +350,7 @@ describe("FR-066 governed graph producer adapters", () => {
   });
 
   // Trace: FR-066-AC-4
-  test("TC-1296 validates the closed graph-quality schema and canonical id", () => {
+  test("validates the closed graph-quality schema and canonical id", () => {
     const canonicalBytes = '{"a":[{"a":1,"z":2}],"":"bmp","𐀀":"astral"}';
     const expected = `sha256:${createHash("sha256")
       .update(canonicalBytes)
@@ -387,7 +387,7 @@ describe("FR-066 governed graph producer adapters", () => {
   });
 
   // Trace: FR-066-AC-5
-  test("TC-1297 retains exact scorer bytes and refuses a digest mismatch", () => {
+  test("retains exact scorer bytes and refuses a digest mismatch", () => {
     const bytes = Buffer.from("scorer");
     const collection = adapt(graphRecord(), bytes);
     expect(collection.rawEvidence).toMatchObject({
@@ -414,7 +414,7 @@ describe("FR-066 governed graph producer adapters", () => {
   });
 
   // Trace: FR-066-AC-6
-  test("TC-1298 refuses every missing attestation field", () => {
+  test("refuses every missing attestation field", () => {
     for (const path of [
       ["subject"],
       ["scope"],
@@ -477,7 +477,7 @@ describe("FR-066 governed graph producer adapters", () => {
   });
 
   // Trace: FR-066-AC-7
-  test("TC-1299 refuses absent, inactive, or mismatched graph-quality plans", () => {
+  test("refuses absent, inactive, or mismatched graph-quality plans", () => {
     for (const plans of [
       [],
       [plan({ status: "retired" })],
@@ -532,7 +532,7 @@ describe("FR-066 governed graph producer adapters", () => {
   });
 
   // Trace: FR-066-AC-8
-  test("TC-1300 maps census entries bijectively and deterministically", () => {
+  test("maps census entries bijectively and deterministically", () => {
     fc.assert(
       fc.property(
         fc.shuffledSubarray(
@@ -595,7 +595,7 @@ describe("FR-066 governed graph producer adapters", () => {
   });
 
   // Trace: FR-066-AC-9
-  test("TC-1301 maps result facts bijectively and refuses duplicate keys", () => {
+  test("maps result facts bijectively and refuses duplicate keys", () => {
     const collection = adapt();
     const facts = Object.fromEntries(
       collection.observations
@@ -650,7 +650,7 @@ describe("FR-066 governed graph producer adapters", () => {
   });
 
   // Trace: FR-066-AC-10
-  test("TC-1302 retains census and each distinct not-computed state", () => {
+  test("retains census and each distinct not-computed state", () => {
     for (const state of ["empty", "unreadable", "unsupported"] as const) {
       const collection = adapt(graphRecord(state));
       const states = collection.observations.filter(
@@ -670,7 +670,7 @@ describe("FR-066 governed graph producer adapters", () => {
   });
 
   // Trace: FR-066-AC-11
-  test("TC-1303 adapted intake is idempotent and collision-safe", () => {
+  test("adapted intake is idempotent and collision-safe", () => {
     const root = mkdtempSync(join(tmpdir(), "quoin-graph-adapter-"));
     try {
       mkdirSync(join(root, "spec", "assurance"), { recursive: true });
@@ -691,7 +691,7 @@ describe("FR-066 governed graph producer adapters", () => {
   });
 
   // Trace: FR-066-AC-12
-  test("TC-1304 adapters have no producer, network, Git, or frontmatter dependency", () => {
+  test("adapters have no producer, network, Git, or frontmatter dependency", () => {
     const source = readFileSync(
       join(process.cwd(), "src", "measurement", "graph-adapters.ts"),
       "utf8",

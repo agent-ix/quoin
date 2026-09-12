@@ -11,6 +11,29 @@ relationships:
 
 # US-022: Measure the governed corpus against the completed module schemas
 
+> **⛔ Withdrawn — 2026-09-12.** This use case is withdrawn. Every requirement it
+> drove — FR-084 through FR-092 — is withdrawn under
+> [quoin#388](https://github.com/agent-ix/quoin/issues/388), leaving it driving nothing.
+>
+> Its gate, [quoin#291](https://github.com/agent-ix/quoin/issues/291) ("[GATE] Measure the full corpus against
+> completed module schemas — advisory, report only"), is **closed**. The
+> measurement it asked for ran once, on 2026-09-05, and its results are retained
+> at [`analysis/corpus-measurement/`](../../analysis/corpus-measurement/): 251
+> repositories, 7,501 documents measured, structural conformance 98.25%. The
+> decision this story exists to inform was therefore made, on the evidence it
+> asked for.
+>
+> The capability class is corpus accounting, which the implementation-language
+> policy places in `engineering-assurance` rather than in a local harness. The
+> use case is **not** restated as EA-consumed:
+> [engineering-assurance#98](https://github.com/agent-ix/engineering-assurance/issues/98)
+> is open and unanswered, and a story written against a surface that does not yet
+> exist is owned by nobody.
+>
+> The text below is retained unchanged for provenance. It describes what was
+> wanted, not what is wanted.
+
+
 ## Story
 
 **As a** campaign owner deciding whether a module contract may start failing builds

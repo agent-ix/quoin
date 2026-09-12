@@ -10,6 +10,27 @@ relationships:
 
 # NFR-022: Bounded, read-only measurement run
 
+> **⛔ Withdrawn — 2026-09-12.** This requirement constrained the
+> corpus-measurement harness, which was **disposed of rather than ported** under
+> [quoin#388](https://github.com/agent-ix/quoin/issues/388) — not retired, not
+> superseded, and not awaiting a Rust replacement. Its results are retained at
+> [`analysis/corpus-measurement/`](../../analysis/corpus-measurement/).
+>
+> The requirement is withdrawn because the thing it constrained no longer exists
+> and nothing surviving inherits the obligation. It is **not** re-pointed at the
+> measurement-record subsystem: that would be inventing a new obligation under an
+> old id.
+>
+> The capability class here is **corpus accounting**, which the
+> implementation-language policy places in `engineering-assurance` rather than in
+> a local harness. If corpus measurement is wanted again it is consumed from
+> there, and this requirement is not the place it comes back.
+>
+> Withdrawn with FR-084..FR-092, US-022 and NFR-021, all of the same closed gate
+> [quoin#291](https://github.com/agent-ix/quoin/issues/291). The text below is
+> retained for provenance.
+
+
 ## Statement
 
 The corpus measurement SHALL complete a full run over a governed corpus of up to 30,000 documents in

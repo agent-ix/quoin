@@ -1,5 +1,5 @@
 /**
- * FR-029 — the quire↔quoin JSON contract (TC-110..TC-118).
+ * FR-029 — the quire↔quoin JSON contract.
  *
  * The point of these is stated in quoin's own `spec/review.md` Finding 8: "no
  * contract test against quire". The shapes lived as prose in skill markdown,
@@ -7,9 +7,17 @@
  */
 
 import { execFileSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import {
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  readdirSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -67,8 +75,8 @@ function propertiesPayload(): Record<string, unknown> {
   };
 }
 
-describe("TC-110 the vendored schemas match their recorded provenance", () => {
-  // TC-110
+describe("the vendored schemas match their recorded provenance", () => {
+  // Trace: FR-029-AC-1, FR-029-AC-14
   it("pins an exact source commit rather than a moving tag or branch", () => {
     expect(QUIRE_CONTRACT.sourceRevision).toMatch(/^[0-9a-f]{40}$/);
     expect(QUIRE_CONTRACT.cliSourceRevision).toMatch(/^[0-9a-f]{40}$/);
@@ -93,8 +101,8 @@ describe("TC-110 the vendored schemas match their recorded provenance", () => {
   });
 });
 
-describe("TC-111 a conformant payload validates", () => {
-  // TC-111
+describe("a conformant payload validates", () => {
+  // Trace: FR-029-AC-2
   it("accepts a coverage payload", () => {
     const result = validateCoverage(coveragePayload());
     expect(result.ok, JSON.stringify(result)).toBe(true);
@@ -106,8 +114,8 @@ describe("TC-111 a conformant payload validates", () => {
   });
 });
 
-describe("TC-112 a drifted payload is rejected with the offending path", () => {
-  // TC-112
+describe("a drifted payload is rejected with the offending path", () => {
+  // Trace: FR-029-AC-3
   it("names a missing required key rather than failing later", () => {
     const payload = coveragePayload();
     delete payload.totals;
@@ -164,8 +172,8 @@ describe("TC-112 a drifted payload is rejected with the offending path", () => {
   });
 });
 
-describe("TC-113 unreadable output is a named diagnostic, not a throw", () => {
-  // TC-113
+describe("unreadable output is a named diagnostic, not a throw", () => {
+  // Trace: FR-029-AC-4
   it("reports a JSON parse failure as a contract violation", () => {
     const result = parseCoverage("not json at all");
     expect(result.ok).toBe(false);
@@ -183,8 +191,8 @@ describe("TC-113 unreadable output is a named diagnostic, not a throw", () => {
   });
 });
 
-describe("TC-114 the version premise is enforced with a named diagnostic", () => {
-  // TC-114
+describe("the version premise is enforced with a named diagnostic", () => {
+  // Trace: FR-029-AC-5
   it("passes a satisfying version", () => {
     expect(
       checkVersionPremise(`quire ${QUIRE_CONTRACT.minimumCli}`),
@@ -209,8 +217,8 @@ describe("TC-114 the version premise is enforced with a named diagnostic", () =>
   });
 });
 
-describe("TC-115 version parsing and comparison", () => {
-  // TC-115
+describe("version parsing and comparison", () => {
+  // Trace: FR-029-AC-6
   it("reads the version out of the CLI banner", () => {
     expect(parseCliVersion("quire 0.21.0")).toBe("0.21.0");
     expect(parseCliVersion("nothing here")).toBeNull();
@@ -224,13 +232,13 @@ describe("TC-115 version parsing and comparison", () => {
   });
 });
 
-describe("TC-116 optional keys are optional and absence is not emptiness", () => {
-  // TC-116
+describe("optional keys are optional and absence is not emptiness", () => {
+  // Trace: FR-029-AC-7
   it("accepts a payload omitting every optional key", () => {
     expect(validateCoverage(coveragePayload()).ok).toBe(true);
   });
 
-  // TC-116
+  // Trace: FR-029-AC-7
   it("accepts a payload carrying every optional key", () => {
     const full = {
       ...coveragePayload(),
@@ -415,7 +423,7 @@ describe("TC-116 optional keys are optional and absence is not emptiness", () =>
     expect(result.ok, JSON.stringify(result)).toBe(true);
   });
 
-  // TC-116
+  // Trace: FR-029-AC-7
   it("accepts the v0.41.0 optional keys, and rejects a malformed one", () => {
     // A vendored schema can drift from the engine in the one direction nothing
     // notices: a NEW optional key. The payload still validates because the key
@@ -449,7 +457,7 @@ describe("TC-116 optional keys are optional and absence is not emptiness", () =>
     expect(validateCoverage(malformed).ok).toBe(false);
   });
 
-  // TC-116
+  // Trace: FR-029-AC-7
   it("rejects a malformed statement hash", () => {
     const payload = {
       ...coveragePayload(),
@@ -467,8 +475,8 @@ describe("TC-116 optional keys are optional and absence is not emptiness", () =>
   });
 });
 
-describe("TC-117 the eval harness floor tracks the contract", () => {
-  // TC-117
+describe("the eval harness floor tracks the contract", () => {
+  // Trace: FR-029-AC-8
   it("mirrors QUIRE_CONTRACT.minimumCli", async () => {
     // The harness restates the floor because it runs against sources rather
     // than `dist/`, and a build step between "run the evals" and "know which
@@ -479,7 +487,7 @@ describe("TC-117 the eval harness floor tracks the contract", () => {
   });
 });
 
-describe("TC-118 the contract holds against the selected quire", () => {
+describe("the contract holds against the selected quire", () => {
   const quire = process.env.QUIRE ?? "quire";
   const installed = (() => {
     try {
@@ -489,7 +497,7 @@ describe("TC-118 the contract holds against the selected quire", () => {
     }
   })();
 
-  // TC-118
+  // Trace: FR-029-AC-9
   it("the installed CLI satisfies the pinned premise", (ctx) => {
     // `ctx.skip()` rather than `it.skipIf(cond)("title", …)`: the curried form
     // puts the title on a line the symbol extractor never reads, so the row
@@ -498,7 +506,7 @@ describe("TC-118 the contract holds against the selected quire", () => {
     expect(checkVersionPremise(installed)).toBeNull();
   });
 
-  // TC-118
+  // Trace: FR-029-AC-9
   it("a real `quire coverage --json` payload validates against the pinned schema", (ctx) => {
     if (installed === null) return ctx.skip();
 
@@ -586,7 +594,7 @@ describe("TC-118 the contract holds against the selected quire", () => {
     }
   });
 
-  // TC-118
+  // Trace: FR-029-AC-9
   it("a real `quire properties --json` payload validates against the pinned schema", (ctx) => {
     if (installed === null) return ctx.skip();
     // Deliberately end-to-end: the schema is vendored, so the one thing a
@@ -606,5 +614,89 @@ describe("TC-118 the contract holds against the selected quire", () => {
     );
     const result = parseProperties(out);
     expect(result.ok, JSON.stringify(result)).toBe(true);
+  });
+});
+
+const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
+const schemasDir = join(repoRoot, "src", "quire", "schemas");
+const quireSrcDir = join(repoRoot, "src", "quire");
+
+describe("the vendored schemas are the whole mechanism", () => {
+  // Trace: FR-029-CON-3
+  it("keeps the publisher's open vocabularies open", () => {
+    // FR-029-CON-3 names the exact hazard: "Closing `diagnostics[].reason`
+    // would reject a newer engine's payload that a consumer could otherwise
+    // read." An open vocabulary is a deliberate publisher decision, and
+    // mirroring it means copying the decision rather than the values — a
+    // vendored copy that adds an `enum` is not a stricter copy, it is a
+    // different contract that fails on the publisher's own next release.
+    //
+    // Asserted positively over the fields the criterion names, not by diffing
+    // against upstream: the hash in `schemaHash` already proves the bytes are
+    // the publisher's. What that hash cannot say is which of those bytes are
+    // load-bearing, and this is the one the criterion singles out.
+    const open: [string, string[]][] = [
+      ["coverage-v1.schema.json", ["$defs", "CoverageDiagnostic", "reason"]],
+      ["assurance-v1.schema.json", ["$defs", "relationObservation", "reason"]],
+    ];
+    for (const [file, path] of open) {
+      const schema = JSON.parse(
+        readFileSync(join(schemasDir, file), "utf8"),
+      ) as Record<string, unknown>;
+      let node: Record<string, unknown> = schema;
+      for (const [index, key] of path.entries()) {
+        const next =
+          index === path.length - 1
+            ? (node.properties as Record<string, unknown>)?.[key]
+            : node[key];
+        expect(
+          next,
+          `${file}: ${path.slice(0, index + 1).join("/")} missing`,
+        ).toBeDefined();
+        node = next as Record<string, unknown>;
+      }
+      expect(
+        Object.keys(node),
+        `${file}: ${path.join("/")} must stay open`,
+      ).not.toContain("enum");
+      expect(Object.keys(node)).not.toContain("const");
+    }
+  });
+
+  // Trace: FR-029-CON-1
+  it("declares no hand-written validator beside the vendored artifact", () => {
+    // FR-029-CON-1: "quoin SHALL NOT restate the published schemas as
+    // hand-written validators. The duplication is the failure being closed;
+    // the vendored artifact plus its hash is the whole mechanism."
+    //
+    // A restatement looks like a schema: an object literal carrying the
+    // keywords a JSON Schema carries. Asserted over `src/quire/` source rather
+    // than over behaviour, because a hand-written validator that agrees with
+    // the schema today passes every behavioural test and is still the
+    // duplication the criterion forbids — it is wrong the moment the publisher
+    // moves, which is exactly when nobody is looking.
+    // `required` is deliberately NOT in this set. It matched
+    // `src/quire/contract.ts:118 readonly required: string;` — an ordinary
+    // TypeScript field, not a schema keyword — on the first run. `$schema` and
+    // `additionalProperties` are JSON-Schema-specific and have no other
+    // meaning in this tree; `required` has one and would make the check fire
+    // on the type declarations that CONSUME the vendored schema, which is the
+    // opposite of what the criterion forbids.
+    const keywords = /"?\b(additionalProperties|\$schema)\b"?\s*:/;
+    const restated = readdirSync(quireSrcDir)
+      .filter((f) => f.endsWith(".ts"))
+      .flatMap((f) =>
+        readFileSync(join(quireSrcDir, f), "utf8")
+          .split("\n")
+          .map((line, i) => ({ f, i: i + 1, line }))
+          .filter(
+            ({ line }) =>
+              keywords.test(line) &&
+              !line.trimStart().startsWith("*") &&
+              !line.trimStart().startsWith("//"),
+          )
+          .map(({ f, i, line }) => `src/quire/${f}:${i} ${line.trim()}`),
+      );
+    expect(restated).toEqual([]);
   });
 });

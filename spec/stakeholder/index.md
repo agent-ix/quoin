@@ -16,3 +16,4 @@ description: "Index of stakeholder requirements (StR) for quoin."
 - [StR-006: Operators keep quoin current with one command](./StR-006-current-via-self-update.md)
 - [StR-007: Assurance owners inspect governed evidence without rerunning producers](./StR-007-governed-assurance-portfolio.md)
 - [StR-008: Module owners need new semantic-module repositories to conform by construction](./StR-008-conforming-module-repositories-by-construction.md)
+- [StR-009: Owners need one implementation language and one schema source for Quoin engine logic](./StR-009-one-implementation-language-for-engine-logic.md)

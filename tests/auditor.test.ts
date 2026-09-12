@@ -1,5 +1,5 @@
 /**
- * FR-032 — the evidence auditor (TC-137..TC-148).
+ * FR-032 — the evidence auditor.
  *
  * A trace link is a string match that never expires. These tests are about the
  * three ways evidence rots invisibly, and about the auditor refusing to be
@@ -73,8 +73,8 @@ function input(over: Partial<AuditInput> = {}): AuditInput {
   };
 }
 
-describe("TC-137 healthy evidence produces no finding", () => {
-  // TC-137
+describe("healthy evidence produces no finding", () => {
+  // Trace: FR-032-AC-1
   it("reports the obligation as healthy", () => {
     const report = audit(input());
     expect(report.findings).toEqual([]);
@@ -82,8 +82,8 @@ describe("TC-137 healthy evidence produces no finding", () => {
   });
 });
 
-describe("TC-138 a suspect link is the highest-severity finding", () => {
-  // TC-138
+describe("a suspect link is the highest-severity finding", () => {
+  // Trace: FR-032-AC-2
   it("fires when the statement changed after binding, and says so", () => {
     const report = audit(
       input({ obligations: [obligation({ statement_hash: HASH_B })] }),
@@ -99,8 +99,8 @@ describe("TC-138 a suspect link is the highest-severity finding", () => {
   });
 });
 
-describe("TC-139 stale evidence", () => {
-  // TC-139
+describe("stale evidence", () => {
+  // Trace: FR-032-AC-3
   it("is high when the binding names a suite with no recorded run", () => {
     const report = audit(input({ runs: [] }));
     expect(report.findings[0].kind).toBe("stale-evidence");
@@ -117,8 +117,8 @@ describe("TC-139 stale evidence", () => {
   });
 });
 
-describe("TC-140 vacuous evidence", () => {
-  // TC-140
+describe("vacuous evidence", () => {
+  // Trace: FR-032-AC-4
   it("fires when every bound symbol was skipped", () => {
     const report = audit(
       input({
@@ -160,8 +160,8 @@ describe("TC-140 vacuous evidence", () => {
   });
 });
 
-describe("TC-141 an obligation with no binding is undischarged", () => {
-  // TC-141
+describe("an obligation with no binding is undischarged", () => {
+  // Trace: FR-032-AC-5
   it("reports it at medium, not high", () => {
     const report = audit(input({ bindings: [] }));
     const [finding] = report.findings;
@@ -172,7 +172,7 @@ describe("TC-141 an obligation with no binding is undischarged", () => {
   });
 });
 
-describe("TC-142 method conformance", () => {
+describe("method conformance", () => {
   const catalog: MethodCatalog = {
     methods: [
       {
@@ -199,7 +199,7 @@ describe("TC-142 method conformance", () => {
     duplicates: [],
   };
 
-  // TC-142
+  // Trace: FR-032-AC-6
   it("compares kind to kind, not entry count", () => {
     // The old test was `run.entries.length > 0`, read as "this was a test run"
     // — true of a transcribed inspection too, so every Analysis obligation
@@ -239,7 +239,7 @@ describe("TC-142 method conformance", () => {
     expect(report.findings).toEqual([]);
   });
 
-  // TC-146
+  // Trace: FR-032-AC-9, FR-032-AC-10
   it("reports a method no catalog carries rather than skipping it", () => {
     // `declaredClasses.size === 0` used to return null — a silent skip — so the
     // requirements whose verification is LEAST well defined were exactly the
@@ -262,6 +262,7 @@ describe("TC-142 method conformance", () => {
     expect(report.findings).toEqual([]);
   });
 
+  // Trace: FR-032-CON-3
   it("asks nothing when no catalog is available", () => {
     // An absent catalog means the question cannot be asked, which is different
     // from the answer being yes.
@@ -274,8 +275,8 @@ describe("TC-142 method conformance", () => {
   });
 });
 
-describe("TC-143 multiplicity", () => {
-  // TC-143
+describe("multiplicity", () => {
+  // Trace: FR-032-AC-7
   it("flags a critical obligation whose evidence is all one suite", () => {
     const report = audit(
       input({
@@ -317,8 +318,8 @@ describe("TC-143 multiplicity", () => {
   });
 });
 
-describe("TC-144 ratchet and per-PR delta", () => {
-  // TC-144
+describe("ratchet and per-PR delta", () => {
+  // Trace: FR-032-AC-8
   it("reports only violations absent from the baseline", () => {
     const report = audit(
       input({
@@ -384,7 +385,7 @@ describe("the report is deterministic", () => {
   });
 });
 
-describe("TC-145 one obligation, two suites (FR-032-AC-8)", () => {
+describe("one obligation, two suites (FR-032-AC-8)", () => {
   // While `bind()` keyed on the obligation alone, the second suite's binding
   // OVERWROTE the first — so this set could never hold two suites, and
   // `insufficient-multiplicity` fired on every demanding obligation with no
@@ -401,7 +402,7 @@ describe("TC-145 one obligation, two suites (FR-032-AC-8)", () => {
     }),
   ];
 
-  // TC-145
+  // Trace: FR-032-AC-8
   it("clears the multiplicity finding two independent suites satisfy", () => {
     const report = audit(
       input({
@@ -479,13 +480,13 @@ describe("TC-145 one obligation, two suites (FR-032-AC-8)", () => {
   });
 });
 
-describe("TC-147 every finding kind can be baselined (FR-032-AC-11)", () => {
+describe("every finding kind can be baselined (FR-032-AC-11)", () => {
   // The baseline used to be two named buckets. `stale-evidence`,
   // `vacuous-evidence`, `method-conformance`, `unknown-method` and
   // `insufficient-multiplicity` could never appear in one, so `--ratchet`
   // reported the whole existing backlog for five of the six kinds — the
   // outcome ratchet mode exists to prevent (agent-ix/quoin#105).
-  // TC-147
+  // Trace: FR-032-AC-11
   it("accepts each kind by its own key", () => {
     const kinds: Array<[string, AuditInput]> = [
       ["undischarged", input({ bindings: [] })],
@@ -518,7 +519,8 @@ describe("TC-147 every finding kind can be baselined (FR-032-AC-11)", () => {
   });
 });
 
-describe("TC-219 mutation score as the acceptance-criteria oracle", () => {
+describe("mutation score as the acceptance-criteria oracle", () => {
+  // Trace: FR-039-CON-2, FR-039-CON-3
   // `RunEntry.score` is generic — "a mutation score, a coverage percentage, a
   // measured latency" — so what makes a score a MUTATION score is the entry's
   // own `metric`, declared by the adapter at the point of recording (#138).
@@ -537,8 +539,7 @@ describe("TC-219 mutation score as the acceptance-criteria oracle", () => {
       ...over,
     });
 
-  // Trace: FR-039-AC-1
-  // TC-219
+  // Trace: FR-039-AC-1, FR-039-AC-2, FR-039-AC-3, FR-039-AC-4, FR-039-AC-5, FR-039-AC-6, FR-039-AC-7, FR-039-AC-10
   it("says nothing until a floor is declared", () => {
     // The CR-008 lesson, applied before it could bite: a built-in floor is a
     // rule nobody chose, firing on everything the moment a criticality column
@@ -716,8 +717,7 @@ describe("TC-219 mutation score as the acceptance-criteria oracle", () => {
 
   // ── TC-269: the metric discriminator (#138) ──
 
-  // Trace: FR-039-AC-11
-  // TC-269
+  // Trace: FR-039-AC-11, FR-039-AC-12
   it("judges a labelled score from a tool no catalog lists", () => {
     // The tool allowlist by another name: a consumer using a mutation tool the
     // catalog did not list got `unmeasured-mutation-score` while holding a
@@ -748,8 +748,7 @@ describe("TC-219 mutation score as the acceptance-criteria oracle", () => {
     ).toContain("0.4");
   });
 
-  // Trace: FR-039-AC-12
-  // TC-269
+  // Trace: FR-039-AC-11, FR-039-AC-12
   it("needs no catalog: the entry's declared metric is the whole answer", () => {
     // The old mechanism named `mutation-testing` — a method id, module data —
     // inside the engine, and went silent without a catalog. The discriminator
@@ -775,7 +774,7 @@ describe("TC-219 mutation score as the acceptance-criteria oracle", () => {
     ]);
   });
 
-  // TC-269
+  // Trace: FR-039-AC-11, FR-039-AC-12
   it("an unlabelled score is not a mutation score — no fallback read of the tool name", () => {
     // Migration is migration, not dual-read: a pre-#138 record whose entries
     // carry no `metric` does not satisfy a mutation floor even when its tool
@@ -799,9 +798,8 @@ describe("TC-219 mutation score as the acceptance-criteria oracle", () => {
   });
 });
 
-describe("TC-220 --mutation-floor is parsed, and a bad one is refused", () => {
-  // Trace: FR-039-AC-8
-  // TC-220
+describe("--mutation-floor is parsed, and a bad one is refused", () => {
+  // Trace: FR-039-AC-8, FR-039-AC-9
   it("reads <criticality>=<ratio> pairs", async () => {
     const { parseMutationFloor } =
       await import("../src/commands/evidence/audit.js");
@@ -846,8 +844,8 @@ describe("TC-220 --mutation-floor is parsed, and a bad one is refused", () => {
   });
 });
 
-describe("TC-148 the audit command reads the catalog from --module", () => {
-  // TC-148
+describe("the audit command reads the catalog from --module", () => {
+  // Trace: FR-032-AC-12
   it("loads only what the named module declares, not the installed roots", async () => {
     // The disagreement this closes: obligations derived from one catalog and
     // conformance checked against another, so a method the module declares
@@ -882,7 +880,7 @@ describe("TC-148 the audit command reads the catalog from --module", () => {
     rmSync(root, { recursive: true, force: true });
   });
 
-  // TC-148
+  // Trace: FR-032-AC-12
   it("passes the flag through from the command, so the two agree", () => {
     // The behavioural half above proves the loader honours a module root; this
     // proves the command hands it one. Without it a wiring regression would
@@ -910,7 +908,7 @@ describe("TC-148 the audit command reads the catalog from --module", () => {
   });
 });
 
-describe("TC-264 unknown-method fires on unbound obligations (FR-032-AC-14)", () => {
+describe("unknown-method fires on unbound obligations (FR-032-AC-14)", () => {
   const catalog: MethodCatalog = {
     methods: [
       {
@@ -927,7 +925,7 @@ describe("TC-264 unknown-method fires on unbound obligations (FR-032-AC-14)", ()
     duplicates: [],
   };
 
-  // TC-264
+  // Trace: FR-032-AC-14
   it("an unbound obligation with an uncatalogued method yields BOTH undischarged and unknown-method", () => {
     // The battle-test shape (#165): a repository with no evidence store at all
     // — 1,107 findings, every one `undischarged`, zero `unknown-method`,
@@ -951,7 +949,7 @@ describe("TC-264 unknown-method fires on unbound obligations (FR-032-AC-14)", ()
     expect(report.healthy).toEqual([]);
   });
 
-  // TC-264
+  // Trace: FR-032-AC-14
   it("an unbound obligation with a catalogued method is only undischarged", () => {
     const report = audit(
       input({
@@ -964,7 +962,7 @@ describe("TC-264 unknown-method fires on unbound obligations (FR-032-AC-14)", ()
     expect(report.findings.map((f) => f.kind)).toEqual(["undischarged"]);
   });
 
-  // TC-264
+  // Trace: FR-032-AC-14
   it("with no catalog the question is not asked, bound or not", () => {
     const report = audit(
       input({
@@ -1001,8 +999,8 @@ describe("mocked confirmation (#204)", () => {
     entries: [{ symbol: "tests::confirms", outcome: "pass" as const }],
   };
 
-  it("TC-936 an obligation discharged only by a mocked stand-in is reported", () => {
-    // TC-936
+  it("an obligation discharged only by a mocked stand-in is reported", () => {
+    // Trace: FR-032-AC-15
     // The measured case: the trusted-UI confirmation had NO implementation,
     // and the test passed by injecting `Confirmation::allow()` — mocking
     // exactly the behaviour the criterion verifies.
@@ -1036,8 +1034,8 @@ describe("mocked confirmation (#204)", () => {
     expect(found[0].remedy).toBeUndefined();
   });
 
-  it("TC-937 a mock unrelated to the statement's subject is not reported", () => {
-    // TC-937
+  it("a mock unrelated to the statement's subject is not reported", () => {
+    // Trace: FR-032-AC-15
     // Tests legitimately mock clocks, filesystems and networks. What this is
     // looking for is the narrow case where the mock's NAME is the statement's
     // subject.
@@ -1058,8 +1056,8 @@ describe("mocked confirmation (#204)", () => {
     ).toHaveLength(0);
   });
 
-  it("TC-938 one real suite alongside a mocked one is not reported", () => {
-    // TC-938
+  it("one real suite alongside a mocked one is not reported", () => {
+    // Trace: FR-032-AC-15
     // Ordinary test design: a suite stands in a dependency while another
     // exercises the real path. Flagging it would fire across most of the
     // corpus for a reason unrelated to this defect.
@@ -1081,7 +1079,8 @@ describe("mocked confirmation (#204)", () => {
     ).toHaveLength(0);
   });
 
-  it("TC-1075 an unrelated mock in the same suite is not joined", () => {
+  it("an unrelated mock in the same suite is not joined", () => {
+    // Trace: FR-032-AC-16
     // A workspace suite can contain thousands of tests. Suite identity alone
     // is not evidence that this particular binding used the stand-in.
     const report = audit({
@@ -1101,7 +1100,8 @@ describe("mocked confirmation (#204)", () => {
     ).toHaveLength(0);
   });
 
-  it("TC-1076 source symbols join module-qualified result symbols", () => {
+  it("source symbols join module-qualified result symbols", () => {
+    // Trace: FR-032-AC-16
     const report = audit({
       obligations: [obligation],
       bindings: [binding],
@@ -1119,8 +1119,8 @@ describe("mocked confirmation (#204)", () => {
     ).toHaveLength(1);
   });
 
-  it("TC-939 no injection data means silence, not a clean bill", () => {
-    // TC-939
+  it("no injection data means silence, not a clean bill", () => {
+    // Trace: FR-032-AC-15, FR-032-AC-16
     // Absent means "nobody looked". Reporting healthy here would be the
     // silent-zero defect this whole programme is about.
     const report = audit({
@@ -1141,8 +1141,8 @@ describe("mocked confirmation (#204)", () => {
     ]);
   });
 
-  it("TC-940 the finding ratchets through the existing key form", () => {
-    // TC-940
+  it("the finding ratchets through the existing key form", () => {
+    // Trace: FR-032-AC-15
     // #204 asked to extend `evidence audit`, not to build a second system, so
     // the finding must be acceptable in a baseline like every other kind.
     const report = audit({
