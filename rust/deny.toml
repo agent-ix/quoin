@@ -38,20 +38,30 @@ allow = ["AGPL-3.0-or-later"]
 [bans]
 multiple-versions = "deny"
 wildcards = "deny"
-# Duplicates that arrive ENTIRELY through `quire-rs`, which pins
-# `jsonschema 0.18.3`; that release's `url`/`getrandom`/`icu` chain carries
-# older majors than the rest of the graph resolves. Each is skipped at an
-# EXACT version, so a new duplicate — or a different version of the same crate
-# — still fails: this concedes these three resolutions, not the check.
+# Four duplicate pairs, all forced by `quire-rs`'s pin on `jsonschema 0.18.3`,
+# whose `url`/`getrandom`/`icu` chain carries older majors than the rest of the
+# graph resolves. Provenance verified with
+# `cargo tree -i --target all --edges normal,build`, and recorded per entry.
+#
+# For each pair, the SKIPPED side is the one reachable only through quire-rs;
+# the other side stays checked. That matters most for `syn`: `2.0.119` is what
+# our own `serde = "=1.0.228"` pin pulls into quoin-core and quoin-difftest
+# directly, so skipping it would exempt the side of the graph we control — the
+# side this check exists to police. `3.0.5` is quire-rs-only, so that is the
+# one conceded, and a future second `syn 2.x` on our side still fails.
+#
+# Each entry is an EXACT version, so a new duplicate — or a different version
+# of the same crate — still fails: this concedes these four resolutions, not
+# the check.
 #
 # Not resolvable from here: the only lever is the quire-rs `rev`, and that pin
 # is the subject of quoin#379 (FR-101, one candidate revision). It is removed
 # when quire-rs advances past jsonschema 0.18.3, not by loosening this file.
 skip = [
     { crate = "getrandom@0.2.17", reason = "jsonschema 0.18.3 via quire-rs" },
-    { crate = "getrandom@0.3.4", reason = "jsonschema 0.18.3 via quire-rs" },
-    { crate = "r-efi@5.3.0", reason = "getrandom 0.3.4 via quire-rs" },
-    { crate = "syn@2.0.119", reason = "proc-macro deps under quire-rs still on syn 2" },
+    { crate = "getrandom@0.3.4", reason = "ahash → jsonschema 0.18.3 via quire-rs" },
+    { crate = "r-efi@5.3.0", reason = "getrandom 0.3.4 → ahash → jsonschema 0.18.3 via quire-rs" },
+    { crate = "syn@3.0.5", reason = "displaydoc → icu → idna → url → jsonschema 0.18.3 via quire-rs" },
 ]
 # An in-workspace `path` dependency has no version to pin and is not the kind
 # of wildcard this check exists to catch — the bytes are in this tree. Only
