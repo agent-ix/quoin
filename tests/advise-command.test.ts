@@ -57,8 +57,8 @@ const CATALOG: MethodCatalog = {
   unreadable: [],
 };
 
-describe("TC-150 the advisor is reachable from a command (FR-031-AC-10, AC-11)", () => {
-  // TC-150
+describe("the advisor is reachable from a command (FR-031-AC-10, AC-11)", () => {
+  // Trace: FR-031-AC-10, FR-031-AC-11
   it("exposes a command class with the flags the workflow needs", async () => {
     // The command file existing is not enough: `vite.config.ts` enumerates
     // build entries by hand, and a command with no entry builds no module.
@@ -293,20 +293,20 @@ async function runAdvise(
   return { logged, warned };
 }
 
-describe("TC-274 the battle-test oracle: real uncatalogued values are not mismatches (FR-031-AC-22)", () => {
+describe("the battle-test oracle: real uncatalogued values are not mismatches (FR-031-AC-22)", () => {
   const savedPath = process.env.PATH;
   afterEach(() => {
     process.env.PATH = savedPath;
     vi.restoreAllMocks();
   });
 
-  // TC-274
+  // Trace: FR-031-AC-22, FR-031-AC-24
   it("the vendored contract accepts the CR-091 payload carrying diagnostic values", () => {
     const result = validateCoverage(battlePayload({ diagnosticValues: true }));
     expect(result.ok, JSON.stringify(result)).toBe(true);
   });
 
-  // TC-274
+  // Trace: FR-031-AC-22, FR-031-AC-24
   it("classifies all five uncatalogued, and the Inspection disagreement mismatch", async () => {
     const { logged } = await runAdvise(
       battlePayload({ diagnosticValues: true }),
@@ -324,7 +324,7 @@ describe("TC-274 the battle-test oracle: real uncatalogued values are not mismat
     expect(inspection).not.toContain("uncatalogued");
   });
 
-  // TC-274
+  // Trace: FR-031-AC-22, FR-031-AC-24
   it("carries the three states in JSON", async () => {
     const { logged } = await runAdvise(
       battlePayload({ diagnosticValues: true }),
@@ -350,14 +350,14 @@ describe("TC-274 the battle-test oracle: real uncatalogued values are not mismat
   });
 });
 
-describe("TC-275 an engine predating CR-091 degrades to two states, and says so (FR-031-AC-23)", () => {
+describe("an engine predating CR-091 degrades to two states, and says so (FR-031-AC-23)", () => {
   const savedPath = process.env.PATH;
   afterEach(() => {
     process.env.PATH = savedPath;
     vi.restoreAllMocks();
   });
 
-  // TC-275
+  // Trace: FR-031-AC-23
   it("reads the join off the diagnostics, and reports a value-less payload as degraded", () => {
     const classified = uncataloguedAuthoredMethods(
       battlePayload({ diagnosticValues: true }).diagnostics as never,
@@ -381,7 +381,7 @@ describe("TC-275 an engine predating CR-091 degrades to two states, and says so 
     ).toBe(false);
   });
 
-  // TC-275
+  // Trace: FR-031-AC-23
   it("falls back to today's two-state report with an explicit note, not a misclassification", async () => {
     const { logged, warned } = await runAdvise(
       battlePayload({ diagnosticValues: false }),
@@ -402,14 +402,14 @@ describe("TC-275 an engine predating CR-091 degrades to two states, and says so 
   });
 });
 
-describe("TC-276 combined --*-only filters union, and the footer tallies the full population (FR-031-AC-24)", () => {
+describe("combined --*-only filters union, and the footer tallies the full population (FR-031-AC-24)", () => {
   const savedPath = process.env.PATH;
   afterEach(() => {
     process.env.PATH = savedPath;
     vi.restoreAllMocks();
   });
 
-  // TC-276
+  // Trace: FR-031-AC-24
   it("--mismatch-only returns only genuine disagreements", async () => {
     const { logged } = await runAdvise(
       battlePayload({ diagnosticValues: true }),
@@ -420,7 +420,7 @@ describe("TC-276 combined --*-only filters union, and the footer tallies the ful
     expect(rows[0]).toContain("authored=Inspection");
   });
 
-  // TC-276
+  // Trace: FR-031-AC-24
   it("--mismatch-only --inconclusive-only selects the union, not the empty intersection", async () => {
     // Inconclusive implies no recommendations implies never mismatch, so the
     // intersection was a GUARANTEED zero rows — and the footer then reported

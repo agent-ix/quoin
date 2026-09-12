@@ -103,7 +103,7 @@ describe("evidence audit --ratchet with and without a baseline (FR-032-AC-13)", 
     return mkdtempSync(join(tmpdir(), "quoin-audit-"));
   }
 
-  // TC-258
+  // Trace: FR-032-AC-13
   it("day one: names the missing baseline and does not claim '(new violations only)'", async () => {
     const root = workspace();
     const { lines, restore } = captureLog();
@@ -119,7 +119,7 @@ describe("evidence audit --ratchet with and without a baseline (FR-032-AC-13)", 
     expect(output).not.toContain("(new violations only)");
   });
 
-  // TC-259
+  // Trace: FR-032-AC-13
   it("with a baseline present, ratchets and says so — and prints no missing-baseline notice", async () => {
     const root = workspace();
     // An EMPTY accepted set: everything the audit finds is genuinely new, so
@@ -140,7 +140,7 @@ describe("evidence audit --ratchet with and without a baseline (FR-032-AC-13)", 
     expect(output).not.toContain("does not exist");
   });
 
-  // TC-260
+  // Trace: FR-032-AC-13
   it("JSON `ratchet` reflects whether ratcheting was applied, not what was asked for", async () => {
     const root = workspace();
     const bare = captureLog();
@@ -180,7 +180,7 @@ describe("evidence audit --ratchet with and without a baseline (FR-032-AC-13)", 
   });
 });
 
-describe("TC-265 audit reports uncatalogued methods with no evidence store at all (FR-032-AC-14)", () => {
+describe("audit reports uncatalogued methods with no evidence store at all (FR-032-AC-14)", () => {
   const savedPath = process.env.PATH;
   afterEach(() => {
     process.env.PATH = savedPath;
@@ -225,7 +225,7 @@ describe("TC-265 audit reports uncatalogued methods with no evidence store at al
     return dir;
   }
 
-  // TC-265
+  // Trace: FR-032-AC-14
   it("an unadopted repository hears about its uncatalogued methods, not only that nothing is bound", async () => {
     // Before #165 this run reported the obligation ONLY as undischarged: the
     // unknown-method check lived past the binding guard, so the one check
@@ -254,7 +254,7 @@ describe("mocked-confirmation production command path (agent-ix/quoin#204)", () 
     process.env.PATH = savedPath;
   });
 
-  it("TC-1065 TC-1124 inspect-mocks records its version and audit reports a located finding", async () => {
+  it("inspect-mocks records its version and audit reports a located finding", async () => {
     process.env.PATH = `${fakeQuireDir(
       JSON.stringify({
         unbacked_rows: [],

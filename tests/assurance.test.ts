@@ -195,7 +195,7 @@ describe("building the case", () => {
   });
 
   // Trace: FR-040-AC-13
-  // TC-261
+  // Trace: FR-040-AC-13
   it("carries a machine-readable reason exactly when nothing is a claim", () => {
     // `--json` emits `buildCase`'s result verbatim, so this field is what lets
     // a pipeline tell "the case is clean" from "nothing matched, so nothing
@@ -226,7 +226,7 @@ describe("building the case", () => {
   });
 
   // Trace: FR-040-AC-14
-  // TC-262
+  // Trace: FR-040-AC-14
   it("matches --claim-type case-insensitively", () => {
     // `str`, `STR` and `Hazard` all matched nothing under `===` and exited 0
     // with an empty case — silence indistinguishable from a clean corpus.

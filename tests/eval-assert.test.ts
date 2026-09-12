@@ -32,8 +32,8 @@ afterAll(() => rmSync(repo, { recursive: true, force: true }));
 const ctx = { repo, ixHome: join(repo, ".ix") } as never;
 const complete = { exitReason: "complete" } as never;
 
-describe("TC-270 an inexpressible glob is a load error, not a vacuous pass", () => {
-  // TC-270
+describe("an inexpressible glob is a load error, not a vacuous pass", () => {
+  // Trace: FR-038-AC-10
   it("rejects a brace glob instead of compiling it to match nothing", () => {
     // Pre-fix behaviour, kept on record: the brace glob compiled to a regex
     // demanding a literal `{js,ts,mjs}` suffix, matched zero files, and an
@@ -43,7 +43,7 @@ describe("TC-270 an inexpressible glob is a load error, not a vacuous pass", () 
     );
   });
 
-  // TC-270
+  // Trace: FR-038-AC-10
   it("fails a scenario carrying a brace glob in absentFiles at load", () => {
     // The scenario author's intent ("no fuzz test of any extension") cannot be
     // expressed — the run must die where the glob is read, not report ok.
@@ -56,7 +56,7 @@ describe("TC-270 an inexpressible glob is a load error, not a vacuous pass", () 
     ).toThrowError(/\*\*\/\*fuzz\*\.\{js,ts,mjs\}/);
   });
 
-  // TC-270
+  // Trace: FR-038-AC-10
   it("still fails absentFiles honestly when a supported glob matches", () => {
     // The other half of falsifiability: with the trap removed, the gate must
     // actually fire on the file it forbids.
@@ -69,7 +69,7 @@ describe("TC-270 an inexpressible glob is a load error, not a vacuous pass", () 
     expect(result.failures.join(" ")).toContain("test/codes.fuzz.test.js");
   });
 
-  // TC-270
+  // Trace: FR-038-AC-10
   it("keeps supported globs matching, case-insensitively", () => {
     expect(matchFiles(repo, "**/*fuzz*.test.js")).toEqual([
       "test/codes.fuzz.test.js",

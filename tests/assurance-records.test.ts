@@ -88,7 +88,7 @@ beforeEach(() => {
 
 describe("append-only assurance evidence", () => {
   // Trace: FR-048-AC-1
-  // TC-1137
+  // Trace: FR-048-AC-1
   it("binds a complete producer provenance tuple to each record", () => {
     const stored = writeExperimentRecord(repo, experiment);
     expect(stored.record.producerProvenance).toEqual(provenance);
@@ -99,7 +99,7 @@ describe("append-only assurance evidence", () => {
   });
 
   // Trace: FR-048-AC-2
-  // TC-1138
+  // Trace: FR-048-AC-2
   it("derives identity from canonical content and writes identical input idempotently", () => {
     const first = writeExperimentRecord(repo, experiment);
     const second = writeExperimentRecord(repo, {
@@ -115,7 +115,7 @@ describe("append-only assurance evidence", () => {
   });
 
   // Trace: FR-048-AC-3
-  // TC-1139
+  // Trace: FR-048-AC-3
   it("refuses invalid provenance before publishing any record", () => {
     expect(() =>
       writeExperimentRecord(repo, {
@@ -127,7 +127,7 @@ describe("append-only assurance evidence", () => {
   });
 
   // Trace: FR-048-AC-4
-  // TC-1140
+  // Trace: FR-048-AC-4
   it("never overwrites different bytes at an immutable record path", () => {
     const first = writeExperimentRecord(repo, experiment);
     writeFileSync(first.path, "corrupt\n", "utf8");
@@ -138,7 +138,7 @@ describe("append-only assurance evidence", () => {
   });
 
   // Trace: FR-048-AC-5
-  // TC-1141
+  // Trace: FR-048-AC-5
   it("stores operational evidence by content and validates its time window", () => {
     const stored = writeOperationalEvidenceRecord(repo, operational);
     expect(listOperationalEvidenceRecords(repo)).toEqual([
@@ -159,7 +159,7 @@ describe("append-only assurance evidence", () => {
   });
 
   // Trace: FR-048-AC-6
-  // TC-1142
+  // Trace: FR-048-AC-6
   it("detects content tampering on read and keeps run-record storage separate", () => {
     const stored = writeExperimentRecord(repo, experiment);
     const changed = JSON.parse(readFileSync(stored.path, "utf8")) as {

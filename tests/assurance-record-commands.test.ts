@@ -35,7 +35,7 @@ function run(args: string[], input?: string): string {
 }
 
 // Trace: FR-048-AC-7
-// TC-1143
+// Trace: FR-048-AC-7
 it("records experiments from stdin and operational evidence from a file", () => {
   const repo = mkdtempSync(join(tmpdir(), "quoin-assurance-command-"));
   const experiment = {

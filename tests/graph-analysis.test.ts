@@ -156,7 +156,7 @@ function input(
 
 describe("FR-062 fan-out", () => {
   // Trace: FR-062-AC-1
-  it("TC-1249 counts a distinct live obligation once under arbitrary input order", () => {
+  it("counts a distinct live obligation once under arbitrary input order", () => {
     fc.assert(
       fc.property(fc.boolean(), fc.boolean(), (reverse, addDuplicate) => {
         const bindings = [
@@ -190,7 +190,7 @@ describe("FR-062 fan-out", () => {
   });
 
   // Trace: FR-062-AC-2
-  it("TC-1250 names an unresolved binding without counting it", () => {
+  it("names an unresolved binding without counting it", () => {
     const report = analyzeFanOut(
       input(exportFixture(), [
         binding("FR-001-AC-1", "unit"),
@@ -224,7 +224,7 @@ describe("FR-062 change impact", () => {
   ];
 
   // Trace: FR-062-AC-3
-  it("TC-1251 closes cycles and selects the lexicographically first shortest path", () => {
+  it("closes cycles and selects the lexicographically first shortest path", () => {
     fc.assert(
       fc.property(
         fc.shuffledSubarray(graphRelations, {
@@ -273,7 +273,7 @@ describe("FR-062 change impact", () => {
   });
 
   // Trace: FR-062-AC-4
-  it("TC-1252 joins every reached requirement and isolates an unknown seed", () => {
+  it("joins every reached requirement and isolates an unknown seed", () => {
     const plan = artifact("PLAN-999", "Plan");
     const planObligation = obligation("PLAN-999-AC-1", "PLAN-999");
     const report = analyzeChangeImpact(
@@ -320,7 +320,7 @@ describe("FR-062 change impact", () => {
   });
 
   // Trace: FR-062-AC-5
-  it("TC-1253 copies the existing auditor verdict apart from exposure", () => {
+  it("copies the existing auditor verdict apart from exposure", () => {
     const finding = {
       kind: "stale-evidence" as const,
       obligation: "FR-002-AC-1",
@@ -351,7 +351,7 @@ describe("FR-062 churn, premises, and rendering", () => {
   const event = { who: "@reviewer", commit: revision, note: "still valid" };
 
   // Trace: FR-062-AC-6
-  it("TC-1254 deduplicates one affirmation while retaining all affected suites", () => {
+  it("deduplicates one affirmation while retaining all affected suites", () => {
     fc.assert(
       fc.property(fc.boolean(), (reverse) => {
         const bindings = [
@@ -370,7 +370,7 @@ describe("FR-062 churn, premises, and rendering", () => {
   });
 
   // Trace: FR-062-AC-7
-  it("TC-1255 retains zero-event rows and gaps orphan affirmation history", () => {
+  it("retains zero-event rows and gaps orphan affirmation history", () => {
     const report = analyzeChurn(
       input(exportFixture(), [
         binding("FR-002-AC-1", "unit", [event]),
@@ -394,7 +394,7 @@ describe("FR-062 churn, premises, and rendering", () => {
   });
 
   // Trace: FR-062-AC-8
-  it("TC-1256 preserves source and accepted premises across every view", () => {
+  it("preserves source and accepted premises across every view", () => {
     const value = input(exportFixture(), [binding("FR-001-AC-1", "unit")]);
     const reports = [
       analyzeFanOut(value),
@@ -412,7 +412,7 @@ describe("FR-062 churn, premises, and rendering", () => {
   });
 
   // Trace: FR-062-AC-9
-  it("TC-1257 rejects invalid premises/audit identity and distinguishes unavailable bindings", () => {
+  it("rejects invalid premises/audit identity and distinguishes unavailable bindings", () => {
     expect(parseAcceptedAssurancePremises("not json").ok).toBe(false);
     expect(parseAuditEnvelope(JSON.stringify({})).ok).toBe(false);
     expect(parseAssurance(JSON.stringify({})).ok).toBe(false);
@@ -486,7 +486,7 @@ describe("FR-062 churn, premises, and rendering", () => {
   });
 
   // Trace: FR-062-AC-10
-  it("TC-1258 renders equivalent permutations as identical canonical JSON", () => {
+  it("renders equivalent permutations as identical canonical JSON", () => {
     const bindings = [binding("FR-002-AC-1", "z"), binding("FR-001-AC-1", "a")];
     const left = analyzeFanOut(input(exportFixture(), bindings));
     const right = analyzeFanOut(
@@ -618,7 +618,7 @@ describe("FR-062 churn, premises, and rendering", () => {
   });
 
   // Trace: FR-062-AC-12
-  it("TC-1260 emits structural facts without scores or threshold labels", () => {
+  it("emits structural facts without scores or threshold labels", () => {
     const json = renderGraphAnalysisJson(
       analyzeChurn(
         input(exportFixture(), [binding("FR-001-AC-1", "unit", [event])]),

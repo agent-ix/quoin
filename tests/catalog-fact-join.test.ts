@@ -101,7 +101,7 @@ const EXEMPT = new Map<string, string>([
 const UNREACHABLE_METHODS = new Map<string, string>();
 
 describe("the catalog and the fact set agree", () => {
-  // TC-247
+  // Trace: FR-031-AC-12
   it("declares no characteristic that nothing can produce", () => {
     const catalog = loadMethodCatalog();
     const mintable = mintableCharacteristics();
@@ -125,7 +125,7 @@ describe("the catalog and the fact set agree", () => {
     ).toEqual([]);
   });
 
-  // TC-251
+  // Trace: FR-031-AC-16
   it("carries no exemption for a value the catalog no longer declares", () => {
     // Without this the map becomes a place things go to be forgotten. A value
     // retired from the catalog leaves its excuse behind, and the next reader
@@ -150,7 +150,7 @@ describe("the catalog and the fact set agree", () => {
     ).toEqual([]);
   });
 
-  // TC-248
+  // Trace: FR-031-AC-13
   it("leaves no method unreachable by every statement", () => {
     // The number that matters. Not "how many values are missing" — how many
     // METHODS the advisor is incapable of recommending, which is what an author

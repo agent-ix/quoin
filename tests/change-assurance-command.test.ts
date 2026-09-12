@@ -275,7 +275,7 @@ async function intakeAttestationThroughCli(
 }
 
 describe("FR-068 sealing commands", () => {
-  it("TC-1317 seals and retains an explicit record and refuses a supplied digest", async () => {
+  it("seals and retains an explicit record and refuses a supplied digest", async () => {
     const sealed = await sealRecordThroughCli();
     expect(sealed.digest).toBe(sealChangeRecord(recordBody()).digest);
     expect(existsSync(sealed.path)).toBe(true);
@@ -314,7 +314,7 @@ describe("FR-068 sealing commands", () => {
     ]);
   });
 
-  it("TC-1318 derives only the retained-output binding when sealing an attestation", async () => {
+  it("derives only the retained-output binding when sealing an attestation", async () => {
     const record = await sealRecordThroughCli();
     const bodyPath = write("body.json", attestationBody(record.digest));
     const outputPath = writeBytes("output.bin", OUTPUT);
@@ -373,7 +373,7 @@ describe("FR-068 sealing commands", () => {
 });
 
 describe("FR-068 intake", () => {
-  it("TC-1319 retains exact bytes, is idempotent, and refuses contradictions", async () => {
+  it("retains exact bytes, is idempotent, and refuses contradictions", async () => {
     const record = await sealRecordThroughCli();
     const attestation = await intakeAttestationThroughCli(record.digest);
     const directory = attestationPath(repo, attestation.digest);
@@ -429,7 +429,7 @@ describe("FR-068 intake", () => {
     expect(readdirSync(dirname(directory))).toEqual(before);
   });
 
-  it("TC-1325 recovers only interrupted staging and leaves retained pairs alone", async () => {
+  it("recovers only interrupted staging and leaves retained pairs alone", async () => {
     const record = await sealRecordThroughCli();
     const attestation = await intakeAttestationThroughCli(record.digest);
     const parent = dirname(attestationPath(repo, attestation.digest));
@@ -450,7 +450,7 @@ describe("FR-068 intake", () => {
 });
 
 describe("FR-068 receipt", () => {
-  it("TC-1320 builds the verification input from named inputs only", async () => {
+  it("builds the verification input from named inputs only", async () => {
     const record = await sealRecordThroughCli();
     const attestation = await intakeAttestationThroughCli(record.digest);
     const decisions = decisionsFile(record.digest);
@@ -556,7 +556,7 @@ describe("FR-068 receipt", () => {
     expect(error.message).toMatch(/names no retained attestation/);
   });
 
-  it("TC-1321 never converts unavailable, not-computed, or missing evidence into a pass", async () => {
+  it("never converts unavailable, not-computed, or missing evidence into a pass", async () => {
     const record = await sealRecordThroughCli();
     const decisions = decisionsFile(record.digest);
     const audits = auditsFile();
@@ -637,7 +637,7 @@ describe("FR-068 receipt", () => {
     expect(receipt.outcome).toBe("incomplete");
   });
 
-  it("TC-1322 exits 0 for valid, 1 for invalid and incomplete, and 2 for usage errors", async () => {
+  it("exits 0 for valid, 1 for invalid and incomplete, and 2 for usage errors", async () => {
     const record = await sealRecordThroughCli();
     const attestation = await intakeAttestationThroughCli(record.digest);
     const decisions = decisionsFile(record.digest);
@@ -692,7 +692,7 @@ describe("FR-068 receipt", () => {
     expect(lines).toEqual([]);
   });
 
-  it("TC-1323 re-verifies a sealed receipt and refuses an altered one", async () => {
+  it("re-verifies a sealed receipt and refuses an altered one", async () => {
     const record = await sealRecordThroughCli();
     const attestation = await intakeAttestationThroughCli(record.digest);
     const decisions = decisionsFile(record.digest);
@@ -743,7 +743,7 @@ describe("FR-068 receipt", () => {
 });
 
 describe("FR-068 packaged schemas", () => {
-  it("TC-1324 lists and emits the packaged assets and refuses an unknown name", async () => {
+  it("lists and emits the packaged assets and refuses an unknown name", async () => {
     await ChangeAssuranceSchema.run(["--json"], config);
     expect(JSON.parse(lines.join("\n"))).toEqual({
       schemas: [...CHANGE_ASSURANCE_SCHEMA_NAMES],
@@ -765,7 +765,7 @@ describe("FR-068 packaged schemas", () => {
 });
 
 describe("FR-068 compatibility and boundaries", () => {
-  it("TC-1326 reproduces the golden record, attestation, and receipt byte-identically", async () => {
+  it("reproduces the golden record, attestation, and receipt byte-identically", async () => {
     const record = await sealRecordThroughCli();
     const attestation = await intakeAttestationThroughCli(record.digest);
     const decisions = decisionsFile(record.digest);
@@ -804,7 +804,7 @@ describe("FR-068 compatibility and boundaries", () => {
     );
   });
 
-  it("TC-1327 executes nothing and claims no identity, authorization, or certification", () => {
+  it("executes nothing and claims no identity, authorization, or certification", () => {
     const sources = readdirSync(commandRoot).map((name) => ({
       name,
       text: readFileSync(join(commandRoot, name), "utf8"),

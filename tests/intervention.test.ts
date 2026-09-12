@@ -188,7 +188,7 @@ describe("intervention-experiment evidence", () => {
   });
 
   // Trace: FR-056-AC-3 (TC-1197)
-  test("TC-1197 validates every design and assignment boundary", () => {
+  test("validates every design and assignment boundary", () => {
     for (const [kind, method] of [
       ["repeated", "deterministic"],
       ["randomized", "randomized"],

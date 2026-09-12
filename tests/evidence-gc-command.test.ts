@@ -60,8 +60,8 @@ function captureLog(): { lines: string[]; restore: () => void } {
   return { lines, restore: () => spy.mockRestore() };
 }
 
-describe("TC-263 evidence gc through the command (FR-030-AC-8)", () => {
-  // TC-263
+describe("evidence gc through the command (FR-030-AC-8)", () => {
+  // Trace: FR-030-AC-8
   it("declares exactly repo, dry-run and json — no --module, deliberately", () => {
     // gc() never shells to quire and never loads a catalog, so --module would
     // be a no-op accepted only for symmetry — a flag that reads as doing
@@ -78,7 +78,7 @@ describe("TC-263 evidence gc through the command (FR-030-AC-8)", () => {
     expect(EvidenceGc.description).toContain("never invokes quire");
   });
 
-  // TC-263
+  // Trace: FR-030-AC-8
   it("--dry-run --json lists what would go and deletes nothing", async () => {
     const repo = seededRepo();
     const older = runPath(repo, "SUITE-001", "a".repeat(16));
@@ -98,7 +98,7 @@ describe("TC-263 evidence gc through the command (FR-030-AC-8)", () => {
     expect(existsSync(older)).toBe(true);
   });
 
-  // TC-263
+  // Trace: FR-030-AC-8
   it("deletes the unreferenced older run and reports each path", async () => {
     const repo = seededRepo();
     const older = runPath(repo, "SUITE-001", "a".repeat(16));
@@ -114,7 +114,7 @@ describe("TC-263 evidence gc through the command (FR-030-AC-8)", () => {
     expect(existsSync(newest)).toBe(true);
   });
 
-  // TC-263
+  // Trace: FR-030-AC-8
   it("says 'nothing to collect' over an absent store", async () => {
     const repo = mkdtempSync(join(tmpdir(), "quoin-gc-empty-"));
     const { lines, restore } = captureLog();

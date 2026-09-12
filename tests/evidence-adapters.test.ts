@@ -134,7 +134,7 @@ async function record(
 }
 
 describe("the adapter registry", () => {
-  it("TC-1123 requires an immutable tool version before evidence intake", () => {
+  it("requires an immutable tool version before evidence intake", () => {
     expect(isVersionedToolIdentity("vitest 3.2.4")).toBe(true);
     expect(isVersionedToolIdentity(`scanner git:${"a".repeat(40)}`)).toBe(true);
     expect(isVersionedToolIdentity(`scanner sha256:${"b".repeat(64)}`)).toBe(

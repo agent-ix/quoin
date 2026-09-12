@@ -67,8 +67,8 @@ function propertiesPayload(): Record<string, unknown> {
   };
 }
 
-describe("TC-110 the vendored schemas match their recorded provenance", () => {
-  // TC-110
+describe("the vendored schemas match their recorded provenance", () => {
+  // Trace: FR-029-AC-1
   it("pins an exact source commit rather than a moving tag or branch", () => {
     expect(QUIRE_CONTRACT.sourceRevision).toMatch(/^[0-9a-f]{40}$/);
     expect(QUIRE_CONTRACT.cliSourceRevision).toMatch(/^[0-9a-f]{40}$/);
@@ -93,8 +93,8 @@ describe("TC-110 the vendored schemas match their recorded provenance", () => {
   });
 });
 
-describe("TC-111 a conformant payload validates", () => {
-  // TC-111
+describe("a conformant payload validates", () => {
+  // Trace: FR-029-AC-2
   it("accepts a coverage payload", () => {
     const result = validateCoverage(coveragePayload());
     expect(result.ok, JSON.stringify(result)).toBe(true);
@@ -106,8 +106,8 @@ describe("TC-111 a conformant payload validates", () => {
   });
 });
 
-describe("TC-112 a drifted payload is rejected with the offending path", () => {
-  // TC-112
+describe("a drifted payload is rejected with the offending path", () => {
+  // Trace: FR-029-AC-3
   it("names a missing required key rather than failing later", () => {
     const payload = coveragePayload();
     delete payload.totals;
@@ -164,8 +164,8 @@ describe("TC-112 a drifted payload is rejected with the offending path", () => {
   });
 });
 
-describe("TC-113 unreadable output is a named diagnostic, not a throw", () => {
-  // TC-113
+describe("unreadable output is a named diagnostic, not a throw", () => {
+  // Trace: FR-029-AC-4
   it("reports a JSON parse failure as a contract violation", () => {
     const result = parseCoverage("not json at all");
     expect(result.ok).toBe(false);
@@ -183,8 +183,8 @@ describe("TC-113 unreadable output is a named diagnostic, not a throw", () => {
   });
 });
 
-describe("TC-114 the version premise is enforced with a named diagnostic", () => {
-  // TC-114
+describe("the version premise is enforced with a named diagnostic", () => {
+  // Trace: FR-029-AC-5
   it("passes a satisfying version", () => {
     expect(
       checkVersionPremise(`quire ${QUIRE_CONTRACT.minimumCli}`),
@@ -209,8 +209,8 @@ describe("TC-114 the version premise is enforced with a named diagnostic", () =>
   });
 });
 
-describe("TC-115 version parsing and comparison", () => {
-  // TC-115
+describe("version parsing and comparison", () => {
+  // Trace: FR-029-AC-6
   it("reads the version out of the CLI banner", () => {
     expect(parseCliVersion("quire 0.21.0")).toBe("0.21.0");
     expect(parseCliVersion("nothing here")).toBeNull();
@@ -224,13 +224,13 @@ describe("TC-115 version parsing and comparison", () => {
   });
 });
 
-describe("TC-116 optional keys are optional and absence is not emptiness", () => {
-  // TC-116
+describe("optional keys are optional and absence is not emptiness", () => {
+  // Trace: FR-029-AC-7
   it("accepts a payload omitting every optional key", () => {
     expect(validateCoverage(coveragePayload()).ok).toBe(true);
   });
 
-  // TC-116
+  // Trace: FR-029-AC-7
   it("accepts a payload carrying every optional key", () => {
     const full = {
       ...coveragePayload(),
@@ -415,7 +415,7 @@ describe("TC-116 optional keys are optional and absence is not emptiness", () =>
     expect(result.ok, JSON.stringify(result)).toBe(true);
   });
 
-  // TC-116
+  // Trace: FR-029-AC-7
   it("accepts the v0.41.0 optional keys, and rejects a malformed one", () => {
     // A vendored schema can drift from the engine in the one direction nothing
     // notices: a NEW optional key. The payload still validates because the key
@@ -449,7 +449,7 @@ describe("TC-116 optional keys are optional and absence is not emptiness", () =>
     expect(validateCoverage(malformed).ok).toBe(false);
   });
 
-  // TC-116
+  // Trace: FR-029-AC-7
   it("rejects a malformed statement hash", () => {
     const payload = {
       ...coveragePayload(),
@@ -467,8 +467,8 @@ describe("TC-116 optional keys are optional and absence is not emptiness", () =>
   });
 });
 
-describe("TC-117 the eval harness floor tracks the contract", () => {
-  // TC-117
+describe("the eval harness floor tracks the contract", () => {
+  // Trace: FR-029-AC-8
   it("mirrors QUIRE_CONTRACT.minimumCli", async () => {
     // The harness restates the floor because it runs against sources rather
     // than `dist/`, and a build step between "run the evals" and "know which
@@ -479,7 +479,7 @@ describe("TC-117 the eval harness floor tracks the contract", () => {
   });
 });
 
-describe("TC-118 the contract holds against the selected quire", () => {
+describe("the contract holds against the selected quire", () => {
   const quire = process.env.QUIRE ?? "quire";
   const installed = (() => {
     try {
@@ -489,7 +489,7 @@ describe("TC-118 the contract holds against the selected quire", () => {
     }
   })();
 
-  // TC-118
+  // Trace: FR-029-AC-9
   it("the installed CLI satisfies the pinned premise", (ctx) => {
     // `ctx.skip()` rather than `it.skipIf(cond)("title", …)`: the curried form
     // puts the title on a line the symbol extractor never reads, so the row
@@ -498,7 +498,7 @@ describe("TC-118 the contract holds against the selected quire", () => {
     expect(checkVersionPremise(installed)).toBeNull();
   });
 
-  // TC-118
+  // Trace: FR-029-AC-9
   it("a real `quire coverage --json` payload validates against the pinned schema", (ctx) => {
     if (installed === null) return ctx.skip();
 
@@ -586,7 +586,7 @@ describe("TC-118 the contract holds against the selected quire", () => {
     }
   });
 
-  // TC-118
+  // Trace: FR-029-AC-9
   it("a real `quire properties --json` payload validates against the pinned schema", (ctx) => {
     if (installed === null) return ctx.skip();
     // Deliberately end-to-end: the schema is vendored, so the one thing a

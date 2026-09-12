@@ -34,7 +34,7 @@ function changedPaths(): string[] {
 
 describe("NFR-017 non-disruptive manifest evolution", () => {
   // Trace: NFR-017-AC-3
-  // Trace: TC-1381
+  // Trace: NFR-017-AC-3
   it("writes nothing into a corpus repository or the retained corpus mirror", () => {
     const paths = changedPaths();
     for (const path of paths) {
@@ -56,7 +56,7 @@ describe("NFR-017 non-disruptive manifest evolution", () => {
   });
 
   // Trace: NFR-017-AC-4
-  // Trace: TC-1382
+  // Trace: NFR-017-AC-4
   it("leaves every pre-existing manifest schema `required` array unchanged", () => {
     // NFR-017-AC-4 is "the manifest schema's `required` arrays are unchanged",
     // and its Verification is "diff the manifest schema `required` arrays".

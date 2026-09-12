@@ -168,7 +168,7 @@ describe("Tier-1 module contracts", () => {
     );
   });
 
-  test("TC-1009 execution preserves structured locations and counts subprocesses", () => {
+  test("execution preserves structured locations and counts subprocesses", () => {
     const root = mkdtempSync(join(tmpdir(), "quoin-tier1-exec-"));
     roots.push(root);
     const quire = join(root, "quire");
@@ -246,7 +246,7 @@ fi
     expect(execution.toolCalls()).toBe(3);
   });
 
-  test("TC-1010 modules are acyclic and rendering is deterministic from one report", () => {
+  test("modules are acyclic and rendering is deterministic from one report", () => {
     const files = [
       "tier1-comparison.mjs",
       "tier1-corpus.mjs",
@@ -309,7 +309,7 @@ fi
     ).toHaveLength(1);
   });
 
-  test("TC-1066 audit-sourced families execute the store-backed command path and preserve its locus", () => {
+  test("audit-sourced families execute the store-backed command path and preserve its locus", () => {
     const root = mkdtempSync(join(tmpdir(), "quoin-tier1-audit-exec-"));
     roots.push(root);
     const quire = join(root, "quire");

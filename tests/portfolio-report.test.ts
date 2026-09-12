@@ -124,7 +124,7 @@ describe("portfolio measurement report", () => {
     };
   }
 
-  test("TC-1011 mixed definitions, missing stores, unreadable input and one stale repository stay distinct", () => {
+  test("mixed definitions, missing stores, unreadable input and one stale repository stay distinct", () => {
     const recent = repo("recent");
     writeFileSync(join(recent, "spec", "assurance", "AP-001.md"), PROFILE);
     writeMeasurementCollection(
@@ -213,7 +213,7 @@ describe("portfolio measurement report", () => {
     );
   });
 
-  test("TC-1012 human and JSON views share one report, link values, and invent no aggregate", () => {
+  test("human and JSON views share one report, link values, and invent no aggregate", () => {
     const measured = repo("measured");
     writeMeasurementCollection(
       measured,
@@ -235,7 +235,7 @@ describe("portfolio measurement report", () => {
     expect(human).not.toMatch(/overall quality|portfolio quality|aggregate %/i);
   });
 
-  test("TC-1013 one report command accepts repeated repository locations and no values", async () => {
+  test("one report command accepts repeated repository locations and no values", async () => {
     const first = repo("first");
     const second = repo("second");
     const output: string[] = [];
@@ -259,7 +259,7 @@ describe("portfolio measurement report", () => {
     expect(Object.keys(ReportCommand.flags)).not.toContain("value");
   });
 
-  test("TC-1014 a corpus-oriented root assurance directory is a governed store", () => {
+  test("a corpus-oriented root assurance directory is a governed store", () => {
     const root = repo("root-assurance", false);
     const rootAssurance = join(root, "assurance");
     mkdirSync(rootAssurance, { recursive: true });

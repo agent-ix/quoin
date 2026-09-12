@@ -21,7 +21,7 @@ function write(root: string, path: string, source: string): void {
 }
 
 describe("mock injection inspection producer (agent-ix/quoin#204)", () => {
-  it("TC-1062 locates the same explicit stand-in shape in Rust, Python and TypeScript", () => {
+  it("locates the same explicit stand-in shape in Rust, Python and TypeScript", () => {
     const root = workspace();
     write(
       root,
@@ -53,7 +53,7 @@ describe("mock injection inspection producer (agent-ix/quoin#204)", () => {
     ]);
   });
 
-  it("TC-1063 ignores production calls and ordinary constructors but retains unrelated mocks for auditor adjudication", () => {
+  it("ignores production calls and ordinary constructors but retains unrelated mocks for auditor adjudication", () => {
     const root = workspace();
     write(
       root,
@@ -69,7 +69,7 @@ describe("mock injection inspection producer (agent-ix/quoin#204)", () => {
     ]);
   });
 
-  it("TC-1064 records a completed empty inspection and reads only the exact commit", () => {
+  it("records a completed empty inspection and reads only the exact commit", () => {
     const root = workspace();
     const commit = "a".repeat(40);
     const path = writeMockInspection(root, {

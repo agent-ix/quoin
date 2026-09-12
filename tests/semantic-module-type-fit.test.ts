@@ -241,8 +241,8 @@ function built(): SemanticAudit {
 
 describe("semantic module type-fit audit", () => {
   // Trace: FR-051-AC-1
-  // TC-1156
-  it("TC-1156", "captures Quoin and manifest identity", () => {
+  // Trace: FR-051-AC-1
+  it("", "captures Quoin and manifest identity", () => {
     const { snapshot } = built();
     expect(snapshot).toMatchObject({
       timestamp: auditInput().timestamp,
@@ -252,8 +252,8 @@ describe("semantic module type-fit audit", () => {
   });
 
   // Trace: FR-051-AC-2
-  // TC-1157
-  it("TC-1157", "captures every declared module source and full SHA", () => {
+  // Trace: FR-051-AC-2
+  it("", "captures every declared module source and full SHA", () => {
     const rows = built().snapshot.modules;
     expect(rows.map((row) => row.name)).toEqual(["alpha", "beta"]);
     expect(rows.every((row) => /^[0-9a-f]{40}$/.test(row.resolvedSha))).toBe(
@@ -263,8 +263,8 @@ describe("semantic module type-fit audit", () => {
   });
 
   // Trace: FR-051-AC-3
-  // TC-1158
-  it("TC-1158", "captures inspected content and manifest identity", () => {
+  // Trace: FR-051-AC-3
+  it("", "captures inspected content and manifest identity", () => {
     expect(built().snapshot.modules[0].inspected).toMatchObject({
       manifestName: "alpha",
       manifestVersion: "1.0.0",
@@ -275,8 +275,8 @@ describe("semantic module type-fit audit", () => {
   });
 
   // Trace: FR-051-AC-4
-  // TC-1159
-  it("TC-1159", "pins tool and external evidence identities", () => {
+  // Trace: FR-051-AC-4
+  it("", "pins tool and external evidence identities", () => {
     expect(built().snapshot).toMatchObject({
       tools: auditInput().tools,
       externalEvidence: auditInput().externalEvidence,
@@ -284,8 +284,8 @@ describe("semantic module type-fit audit", () => {
   });
 
   // Trace: FR-051-AC-5
-  // TC-1160
-  it("TC-1160", "retains provenance disagreement and blocks clean", () => {
+  // Trace: FR-051-AC-5
+  it("", "retains provenance disagreement and blocks clean", () => {
     const input = auditInput();
     input.modules[0].resolvedSha = SHA_B;
     const result = buildSemanticAudit(input) as SemanticAudit;
@@ -296,16 +296,16 @@ describe("semantic module type-fit audit", () => {
   });
 
   // Trace: FR-051-AC-6
-  // TC-1161
-  it("TC-1161", "serializes equivalent inputs identically", () => {
+  // Trace: FR-051-AC-6
+  it("", "serializes equivalent inputs identically", () => {
     expect(serializeCanonical(built())).toBe(
       serializeCanonical(buildSemanticAudit(auditInput())),
     );
   });
 
   // Trace: FR-052-AC-1
-  // TC-1162
-  it("TC-1162", "keeps the module denominator equal to declarations", () => {
+  // Trace: FR-052-AC-1
+  it("", "keeps the module denominator equal to declarations", () => {
     expect(built().inventory.denominators.modules).toEqual({
       source: 2,
       inventoried: 2,
@@ -325,7 +325,7 @@ describe("semantic module type-fit audit", () => {
   });
 
   // Trace: FR-052-AC-2
-  // TC-1163
+  // Trace: FR-052-AC-2
   it(
     "TC-1163",
     "keeps every declaration including qualified duplicates",
@@ -337,8 +337,8 @@ describe("semantic module type-fit audit", () => {
   );
 
   // Trace: FR-052-AC-3
-  // TC-1164
-  it("TC-1164", "records every contract surface as present or absent", () => {
+  // Trace: FR-052-AC-3
+  it("", "records every contract surface as present or absent", () => {
     for (const row of built().inventory.declarations) {
       expect(Object.keys(row.surfaces).sort()).toEqual([
         "mappings",
@@ -356,8 +356,8 @@ describe("semantic module type-fit audit", () => {
   });
 
   // Trace: FR-052-AC-4
-  // TC-1165
-  it("TC-1165", "assigns one parse state and reasons to failures", () => {
+  // Trace: FR-052-AC-4
+  it("", "assigns one parse state and reasons to failures", () => {
     const docs = built().inventory.documents.filter(
       (row) => row.module === "alpha",
     );
@@ -370,8 +370,8 @@ describe("semantic module type-fit audit", () => {
   });
 
   // Trace: FR-052-AC-5
-  // TC-1166
-  it("TC-1166", "retains identity and occurrence signals", () => {
+  // Trace: FR-052-AC-5
+  it("", "retains identity and occurrence signals", () => {
     const event = built().inventory.documents.find(
       (row) => row.path === "spec/event.md",
     );
@@ -385,8 +385,8 @@ describe("semantic module type-fit audit", () => {
   });
 
   // Trace: FR-052-AC-6
-  // TC-1167
-  it("TC-1167", "keeps explicit no-instance observations", () => {
+  // Trace: FR-052-AC-6
+  it("", "keeps explicit no-instance observations", () => {
     const betaFoo = built().inventory.declarations.find(
       (row) => row.qualifiedName === "beta::Foo",
     );
@@ -395,8 +395,8 @@ describe("semantic module type-fit audit", () => {
   });
 
   // Trace: FR-052-AC-7
-  // TC-1168
-  it("TC-1168", "reconciles every denominator", () => {
+  // Trace: FR-052-AC-7
+  it("", "reconciles every denominator", () => {
     expect(
       Object.values(built().inventory.denominators).every(
         (row) => row.reconciled,
@@ -418,8 +418,8 @@ describe("semantic module type-fit audit", () => {
   });
 
   // Trace: FR-053-AC-1
-  // TC-1169
-  it("TC-1169", "assesses every required axis", () => {
+  // Trace: FR-053-AC-1
+  it("", "assesses every required axis", () => {
     const names = built().typeFit.axes;
     expect(names).toEqual([
       "vocabulary",
@@ -442,7 +442,7 @@ describe("semantic module type-fit audit", () => {
   });
 
   // Trace: FR-053-AC-2
-  // TC-1170
+  // Trace: FR-053-AC-2
   it(
     "TC-1170",
     "uses closed axis and confidence vocabularies with evidence",
@@ -465,8 +465,8 @@ describe("semantic module type-fit audit", () => {
   );
 
   // Trace: FR-053-AC-3
-  // TC-1171
-  it("TC-1171", "assigns exactly one closed disposition", () => {
+  // Trace: FR-053-AC-3
+  it("", "assigns exactly one closed disposition", () => {
     for (const row of built().typeFit.assessments)
       expect([
         "fits",
@@ -488,8 +488,8 @@ describe("semantic module type-fit audit", () => {
   });
 
   // Trace: FR-053-AC-4
-  // TC-1172
-  it("TC-1172", "does not promote placeholder schemas", () => {
+  // Trace: FR-053-AC-4
+  it("", "does not promote placeholder schemas", () => {
     const event = built().typeFit.assessments.find(
       (row) => row.qualifiedName === "alpha::event",
     );
@@ -499,8 +499,8 @@ describe("semantic module type-fit audit", () => {
   });
 
   // Trace: FR-053-AC-5
-  // TC-1173
-  it("TC-1173", "retains qualified duplicate conflicts", () => {
+  // Trace: FR-053-AC-5
+  it("", "retains qualified duplicate conflicts", () => {
     expect(
       built().conflicts.some(
         (row) =>
@@ -510,8 +510,8 @@ describe("semantic module type-fit audit", () => {
   });
 
   // Trace: FR-053-AC-6
-  // TC-1174
-  it("TC-1174", "flags schema encoded blobs", () => {
+  // Trace: FR-053-AC-6
+  it("", "flags schema encoded blobs", () => {
     const opaque = built().typeFit.assessments.find(
       (row) => row.qualifiedName === "beta::opaque",
     );
@@ -520,8 +520,8 @@ describe("semantic module type-fit audit", () => {
   });
 
   // Trace: FR-053-AC-7
-  // TC-1175
-  it("TC-1175", "records definition occurrence plane confusion", () => {
+  // Trace: FR-053-AC-7
+  it("", "records definition occurrence plane confusion", () => {
     const event = built().typeFit.assessments.find(
       (row) => row.qualifiedName === "alpha::event",
     );
@@ -530,8 +530,8 @@ describe("semantic module type-fit audit", () => {
   });
 
   // Trace: FR-053-AC-8
-  // TC-1176
-  it("TC-1176", "evaluates the required missing concepts", () => {
+  // Trace: FR-053-AC-8
+  it("", "evaluates the required missing concepts", () => {
     expect(built().missingTypes.map((row) => row.concept)).toEqual([
       "run",
       "result",
@@ -546,8 +546,8 @@ describe("semantic module type-fit audit", () => {
   });
 
   // Trace: FR-054-AC-1
-  // TC-1177
-  it("TC-1177", "creates the complete artifact family", () => {
+  // Trace: FR-054-AC-1
+  it("", "creates the complete artifact family", () => {
     expect([...createArtifactFiles(built()).keys()].sort()).toEqual(
       [
         "conflicts.json",
@@ -564,8 +564,8 @@ describe("semantic module type-fit audit", () => {
   });
 
   // Trace: FR-054-AC-2
-  // TC-1178
-  it("TC-1178", "gives every ledger row stable complete fields", () => {
+  // Trace: FR-054-AC-2
+  it("", "gives every ledger row stable complete fields", () => {
     for (const row of [...built().conflicts, ...built().missingTypes])
       expect(row).toMatchObject({
         id: expect.any(String),
@@ -579,8 +579,8 @@ describe("semantic module type-fit audit", () => {
   });
 
   // Trace: FR-054-AC-3
-  // TC-1179
-  it("TC-1179", "closes all named repository boundaries", () => {
+  // Trace: FR-054-AC-3
+  it("", "closes all named repository boundaries", () => {
     expect(built().repositoryImpact).toHaveLength(
       auditInput().repositoryBoundaries.length,
     );
@@ -596,8 +596,8 @@ describe("semantic module type-fit audit", () => {
   });
 
   // Trace: FR-054-AC-4
-  // TC-1180
-  it("TC-1180", "renders report and SpecReview from canonical ids", () => {
+  // Trace: FR-054-AC-4
+  it("", "renders report and SpecReview from canonical ids", () => {
     const files = createArtifactFiles(built());
     for (const row of [...built().conflicts, ...built().missingTypes]) {
       expect(files.get("report.md")).toContain(row.id);
@@ -608,8 +608,8 @@ describe("semantic module type-fit audit", () => {
   });
 
   // Trace: FR-054-AC-5
-  // TC-1181
-  it("TC-1181", "rejects missing stale and count disagreeing artifacts", () => {
+  // Trace: FR-054-AC-5
+  it("", "rejects missing stale and count disagreeing artifacts", () => {
     const files = createArtifactFiles(built());
     expect(verifyArtifactFiles(files).valid).toBe(true);
     files.set(
@@ -678,8 +678,8 @@ describe("semantic module type-fit audit", () => {
   });
 
   // Trace: FR-054-AC-6
-  // TC-1182
-  it("TC-1182", "isolates time from equal-input content identity", () => {
+  // Trace: FR-054-AC-6
+  it("", "isolates time from equal-input content identity", () => {
     const a = createArtifactFiles(built());
     const next = auditInput();
     next.timestamp = "2026-08-31T20:00:00.000Z";
@@ -690,7 +690,7 @@ describe("semantic module type-fit audit", () => {
   });
 
   // Trace: FR-055-AC-1
-  // TC-1183
+  // Trace: FR-055-AC-1
   it(
     "TC-1183",
     "reconciles findings to plane authority owner and decision",
@@ -706,8 +706,8 @@ describe("semantic module type-fit audit", () => {
   );
 
   // Trace: FR-055-AC-2
-  // TC-1184
-  it("TC-1184", "classifies core data overlap without shadow contracts", () => {
+  // Trace: FR-055-AC-2
+  it("", "classifies core data overlap without shadow contracts", () => {
     expect(
       built().reconciliation.coreData.every((row) =>
         ["reuse", "extension", "mapping", "conflict", "unrelated"].includes(
@@ -719,8 +719,8 @@ describe("semantic module type-fit audit", () => {
   });
 
   // Trace: FR-055-AC-3
-  // TC-1185
-  it("TC-1185", "preserves the pinned Quire boundary", () => {
+  // Trace: FR-055-AC-3
+  it("", "preserves the pinned Quire boundary", () => {
     expect(built().reconciliation.quire).toMatchObject({
       revision: SHA_A,
       preservesBoundary: true,
@@ -735,8 +735,8 @@ describe("semantic module type-fit audit", () => {
   });
 
   // Trace: FR-055-AC-4
-  // TC-1186
-  it("TC-1186", "gates every major interference boundary", () => {
+  // Trace: FR-055-AC-4
+  it("", "gates every major interference boundary", () => {
     expect(
       built()
         .reconciliation.followUpBoundaries.filter(
@@ -747,8 +747,8 @@ describe("semantic module type-fit audit", () => {
   });
 
   // Trace: FR-055-AC-5
-  // TC-1187
-  it("TC-1187", "blocks signoff on fresh census drift", () => {
+  // Trace: FR-055-AC-5
+  it("", "blocks signoff on fresh census drift", () => {
     expect(freshCensus(built().snapshot, built().snapshot).fresh).toBe(true);
     const drifted = structuredClone(built().snapshot);
     drifted.modules[0].resolvedSha = SHA_B;
@@ -760,7 +760,7 @@ describe("semantic module type-fit audit", () => {
 
   // Trace: NFR-015
   // TC-1188
-  it("TC-1188", "proves complete module coverage", () => {
+  it("", "proves complete module coverage", () => {
     expect(built().inventory.denominators.modules).toMatchObject({
       source: 2,
       inventoried: 2,
@@ -770,7 +770,7 @@ describe("semantic module type-fit audit", () => {
 
   // Trace: NFR-015
   // TC-1189
-  it("TC-1189", "proves complete axis coverage", () => {
+  it("", "proves complete axis coverage", () => {
     expect(
       built().inventory.declarations.length * built().typeFit.axes.length,
     ).toBe(
@@ -783,7 +783,7 @@ describe("semantic module type-fit audit", () => {
 
   // Trace: NFR-015
   // TC-1190
-  it("TC-1190", "proves complete Markdown state coverage", () => {
+  it("", "proves complete Markdown state coverage", () => {
     expect(built().inventory.denominators.documents).toMatchObject({
       reconciled: true,
     });
@@ -794,7 +794,7 @@ describe("semantic module type-fit audit", () => {
 
   // Trace: NFR-015
   // TC-1191
-  it("TC-1191", "proves byte identical equal input artifacts", () => {
+  it("", "proves byte identical equal input artifacts", () => {
     expect([...createArtifactFiles(built())]).toEqual([
       ...createArtifactFiles(buildSemanticAudit(auditInput())),
     ]);
@@ -802,7 +802,7 @@ describe("semantic module type-fit audit", () => {
 
   // Trace: NFR-016
   // TC-1192
-  it("TC-1192", "writes only below the configured output root", () => {
+  it("", "writes only below the configured output root", () => {
     const root = mkdtempSync(join(tmpdir(), "semantic-audit-"));
     const sentinel = join(root, "sentinel");
     writeFileSync(sentinel, "unchanged");
@@ -825,7 +825,7 @@ describe("semantic module type-fit audit", () => {
 
   // Trace: NFR-016
   // TC-1193
-  it("TC-1193", "enforces the changed path allowlist", () => {
+  it("", "enforces the changed path allowlist", () => {
     expect(isAllowedAuditPath("scripts/lib/semantic-module-type-fit.mjs")).toBe(
       true,
     );
