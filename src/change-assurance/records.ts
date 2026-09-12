@@ -1,6 +1,10 @@
 import { createHash } from "node:crypto";
 
-import { canonicalBytes, digestValue, assertDigest } from "./integrity.js";
+import {
+  canonicalBytes,
+  digestValue,
+  assertDigest,
+} from "../store/integrity.js";
 import type {
   ChangeAssuranceRecord,
   Check,

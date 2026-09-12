@@ -14,7 +14,7 @@
  * ADR-0010 discipline: no verdict-by-LLM).
  */
 
-import type { MethodCatalog, VerificationMethod } from "./methods.js";
+import type { MethodCatalog, VerificationMethod } from "../method-catalog.js";
 import { parseSpace } from "../auditor/combinatorial.js";
 import type { CoverageDiagnostic } from "../quire/index.js";
 

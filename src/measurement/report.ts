@@ -1,4 +1,4 @@
-import { canonicalJson } from "../evidence/store.js";
+import { canonicalJson } from "../store/canonical.js";
 import { compareMeasurementCollections } from "./compare.js";
 import {
   buildInterventionReport,

@@ -1,7 +1,7 @@
 import { existsSync, statSync } from "node:fs";
 import { basename, resolve } from "node:path";
 
-import { canonicalJson } from "../evidence/store.js";
+import { canonicalJson } from "../store/canonical.js";
 import { compareMeasurementCollections } from "./compare.js";
 import { loadMeasurementPlans } from "./plans.js";
 import {

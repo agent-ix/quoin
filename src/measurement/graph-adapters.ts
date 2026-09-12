@@ -4,7 +4,7 @@ import { createHash } from "node:crypto";
 
 import { z } from "zod";
 
-import { canonicalJson } from "../evidence/store.js";
+import { canonicalJson } from "../store/canonical.js";
 import { validateAssurance } from "../quire/index.js";
 import type {
   MeasurementCollection,

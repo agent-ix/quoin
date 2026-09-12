@@ -10,7 +10,8 @@ import { join } from "node:path";
 
 import { Ajv2020 } from "ajv/dist/2020.js";
 
-import { canonicalJson, storeRoot } from "../evidence/store.js";
+import { canonicalJson } from "../store/canonical.js";
+import { storeRoot } from "../store/paths.js";
 import { writeFileAtomicNoReplace } from "./atomic-file.js";
 import { parseRfc3339DateTime } from "./date-time.js";
 import {
