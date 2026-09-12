@@ -184,6 +184,60 @@ fn tc_377_021_missing_root_is_a_coded_refusal() {
     assert_eq!(error.path(), missing);
 }
 
+/// Wiring bodies are read on demand, exactly as the TypeScript reads them.
+///
+/// `inspectEmptyGates` calls `readFileSync` *inside* `wiring.find(...)`, so a
+/// repository whose scripts declare no negative gate claim never opens a wiring
+/// file. Reading the wiring eagerly is therefore a behavioural divergence, not a
+/// speed-up: an unreadable `Makefile` that the oracle never touches would turn a
+/// clean verdict into a `QV-E003` refusal.
+///
+/// Trace: FR-096
+/// Provenance: quoin#377
+#[test]
+#[cfg(unix)]
+fn tc_377_023_wiring_is_read_only_when_a_claim_needs_it() {
+    use std::os::unix::fs::PermissionsExt as _;
+
+    let scratch = tempfile::tempdir().unwrap();
+    let root = scratch.path();
+    // A wiring file, and a script with no gate claim at all. The oracle answers
+    // "no findings" without ever opening the Makefile.
+    fs::write(root.join("Makefile"), "gate:\n\t./gate.sh\n").unwrap();
+    fs::write(
+        root.join("gate.sh"),
+        "#!/bin/sh\ngrep -rn \"unwrap\" . | wc -l\n",
+    )
+    .unwrap();
+    fs::set_permissions(root.join("Makefile"), fs::Permissions::from_mode(0o000)).unwrap();
+
+    // Running as root defeats the mode bits, and a test that silently measures
+    // nothing is worse than one that says so.
+    if fs::read(root.join("Makefile")).is_ok() {
+        eprintln!("tc_377_023 skipped: this process can read a 0o000 file (root?)");
+        return;
+    }
+
+    assert_eq!(
+        inspect_empty_gates(root).unwrap(),
+        vec![],
+        "an unreadable wiring file the oracle never opens must not become a refusal"
+    );
+
+    // And the other half of the contract: once a negative claim does need the
+    // wiring, the unreadable file is a coded refusal rather than a clean verdict.
+    fs::write(
+        root.join("gate.sh"),
+        "#!/bin/sh\n# Gate for FR-1: no unwrap in src\ngrep -rn \"unwrap\" . | wc -l\n",
+    )
+    .unwrap();
+    let error = inspect_empty_gates(root).unwrap_err();
+    assert_eq!(error.code(), quoin_validators::ErrorCode::FileUnreadable);
+    assert_eq!(error.path(), root.join("Makefile"));
+
+    fs::set_permissions(root.join("Makefile"), fs::Permissions::from_mode(0o644)).unwrap();
+}
+
 /// An empty report is clean, advisory-clean, and prints the no-findings line.
 ///
 /// Trace: TC-1070

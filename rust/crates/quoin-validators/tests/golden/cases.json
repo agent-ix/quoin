@@ -51,7 +51,11 @@
       "covers": "TC-1070: a wired count script with no claim is a report",
       "files": {
         "Makefile": ["report:", "\t./scripts/count_unwrap.sh", ""],
-        "scripts/count_unwrap.sh": ["#!/bin/sh", "grep -rn \"unwrap()\" src/ | wc -l", ""]
+        "scripts/count_unwrap.sh": [
+          "#!/bin/sh",
+          "grep -rn \"unwrap()\" src/ | wc -l",
+          ""
+        ]
       }
     },
     {
@@ -384,7 +388,12 @@
       "name": "multiple-files-sorted",
       "covers": "findings are ordered by path across files",
       "files": {
-        "Makefile": ["gate:", "\t./scripts/b_second.sh", "\t./scripts/a_first.sh", ""],
+        "Makefile": [
+          "gate:",
+          "\t./scripts/b_second.sh",
+          "\t./scripts/a_first.sh",
+          ""
+        ],
         "scripts/b_second.sh": [
           "#!/bin/sh",
           "# Gate for FR-027: no expect in src.",
@@ -454,7 +463,13 @@
       "name": "taskfile-wiring",
       "covers": "Taskfile.yaml is wiring",
       "files": {
-        "Taskfile.yaml": ["tasks:", "  gate:", "    cmds:", "      - ./scripts/check_unwrap.sh", ""],
+        "Taskfile.yaml": [
+          "tasks:",
+          "  gate:",
+          "    cmds:",
+          "      - ./scripts/check_unwrap.sh",
+          ""
+        ],
         "scripts/check_unwrap.sh": [
           "#!/bin/sh",
           "# Gate for FR-032: no unwrap in src.",
@@ -480,7 +495,11 @@
       "name": "workflow-outside-github-is-not-wiring",
       "covers": "a YAML workflow outside .github/workflows/ is not wiring",
       "files": {
-        "ci/workflows/deploy.yml": ["steps:", "  - run: ./scripts/check_unwrap.sh", ""],
+        "ci/workflows/deploy.yml": [
+          "steps:",
+          "  - run: ./scripts/check_unwrap.sh",
+          ""
+        ],
         "scripts/check_unwrap.sh": [
           "#!/bin/sh",
           "# Gate for FR-034: no unwrap in src.",
@@ -493,7 +512,11 @@
       "name": "uppercase-workflow-extension-is-not-wiring",
       "covers": "/\\.ya?ml$/ is case-sensitive, so .YML is not a workflow",
       "files": {
-        ".github/workflows/CI.YML": ["steps:", "  - run: ./scripts/check_unwrap.sh", ""],
+        ".github/workflows/CI.YML": [
+          "steps:",
+          "  - run: ./scripts/check_unwrap.sh",
+          ""
+        ],
         "scripts/check_unwrap.sh": [
           "#!/bin/sh",
           "# Gate for FR-042: no unwrap in src.",

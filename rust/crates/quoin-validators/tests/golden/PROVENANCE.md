@@ -11,13 +11,13 @@ decide whether it passed is not a port (quoin#373, AC-5).
 
 ## What produced it
 
-| | |
-|---|---|
-| Produced by | `generate-oracle.test.ts` in this directory |
-| Captured on | 2026-09-12 |
-| Oracle revision | quoin `4d27dcf1621d8c28da0961a5521a5be7b6d1cd28` (`main`) |
+|                  |                                                                                                                                                                 |
+| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Produced by      | `../../tools/generate-oracle.mts`                                                                                                                               |
+| Captured on      | 2026-09-12                                                                                                                                                      |
+| Oracle revision  | quoin `4d27dcf1621d8c28da0961a5521a5be7b6d1cd28` (`main`)                                                                                                       |
 | Capture checkout | `888840185a917546b3ea1b65a5fb160495ceb58e` (`spec/373-rust-burn-down`), whose three oracle files are byte-identical to `4d27dcf` — verified by the hashes below |
-| Runtime | node v22.15.0, vitest 4.1.10 |
+| Runtime          | node v22.15.0, vitest 4.1.10                                                                                                                                    |
 
 ### Oracle bytes
 
@@ -31,6 +31,24 @@ If any of those three hashes changes, the TypeScript moved and this corpus is
 stale. Re-capture it deliberately, and say in the commit message what behaviour
 changed — a golden that is refreshed as a matter of routine has stopped being a
 gate.
+
+## Reproducing it
+
+The capture is a script, not a test. It is excluded from `pnpm test` by the
+`rust/**` entry in `vite.config.ts` **and** by its name, and it writes nothing
+unless `QUOIN_ORACLE_WRITE=1` is set. Run from the repository root:
+
+```sh
+# Verify: re-derive the verdicts and compare them to the committed bytes.
+pnpm vitest run --config rust/crates/quoin-validators/tools/vitest.oracle.config.mts
+
+# Regenerate: overwrite expected.json. A decision, not a convenience.
+QUOIN_ORACLE_WRITE=1 pnpm vitest run \
+  --config rust/crates/quoin-validators/tools/vitest.oracle.config.mts
+```
+
+The verify run compares **bytes**, not parsed JSON: the Rust suite asserts
+against these exact bytes, so "equivalent JSON" is not the property under test.
 
 ## What is in it
 
@@ -73,7 +91,20 @@ recorded rather than papered over:
    folding. They differ on exactly one character, U+212A KELVIN SIGN, which Rust
    accepts as `K` in an obligation id and JavaScript does not.
 
-A third difference is deliberate and not a divergence: `references_script` drops
-the TypeScript's `source.includes("./" + repoPath)` arm, because
-`source.includes(repoPath)` is true whenever that arm is, and the port keeps one
-site rather than two that must agree.
+Two further differences are deliberate and are **not** divergences, because
+neither changes any observable result:
+
+- `references_script` drops the TypeScript's `source.includes("./" + repoPath)`
+  arm, because `source.includes(repoPath)` is true whenever that arm is, and
+  the port keeps one site rather than two that must agree.
+- Wiring bodies are **cached** after their first read. The TypeScript re-reads
+  the same body once per candidate script. Caching only ever removes a re-read
+  of a file already opened, so the set of files opened is unchanged.
+
+Reading the wiring _eagerly_ would not have been in that class, and an earlier
+revision of this crate did exactly that. `inspectEmptyGates` calls
+`readFileSync` **inside** `wiring.find(...)`, so a repository whose scripts
+declare no negative gate claim opens no wiring file at all; an unreadable
+`Makefile` that the oracle never touches would have become a `QV-E003` refusal
+where the oracle returns a clean verdict. The port now reads on demand and
+`tc_377_023` pins both halves of that behaviour.

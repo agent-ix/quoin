@@ -94,15 +94,15 @@ static IDENTIFIER: LazyLock<Regex> = LazyLock::new(|| literal_regex(r"[a-z_][a-z
 /// found cannot be read.
 pub fn inspect_empty_gates(repo: &Path) -> Result<Vec<EmptyGateFinding>, ValidatorError> {
     let files = scan(repo)?;
-
-    // Wiring bodies are read once each, not once per candidate script: the
-    // TypeScript re-reads every wiring file inside the per-script loop, which is
-    // O(scripts x wiring) syscalls for an identical answer.
-    let wiring: Vec<(String, String)> = files
+    let mut wiring: Vec<WiringFile> = files
         .wiring
         .iter()
-        .map(|path| Ok((relative_to(repo, path), read_text(path)?)))
-        .collect::<Result<_, ValidatorError>>()?;
+        .map(|path| WiringFile {
+            relative: relative_to(repo, path),
+            path: path.clone(),
+            body: None,
+        })
+        .collect();
 
     let mut findings = Vec::new();
     for path in &files.shell {
@@ -114,13 +114,10 @@ pub fn inspect_empty_gates(repo: &Path) -> Result<Vec<EmptyGateFinding>, Validat
             continue;
         }
         let repo_path = relative_to(repo, path);
-        let Some(wired_by) = wiring
-            .iter()
-            .find(|(_, body)| references_script(body, &repo_path))
-            .map(|(wire_path, _)| wire_path.as_str())
-        else {
+        let Some(wired_by) = wired_by(&mut wiring, &repo_path)? else {
             continue;
         };
+        let wired_by = wired_by.as_str();
 
         findings.extend(
             split_lines(&source)
@@ -142,6 +139,42 @@ pub fn inspect_empty_gates(repo: &Path) -> Result<Vec<EmptyGateFinding>, Validat
 
     findings.sort_by(|a, b| a.sort_key().cmp(&b.sort_key()));
     Ok(findings)
+}
+
+/// A candidate wiring file, and its body once something has needed it.
+struct WiringFile {
+    /// The repository-relative, `/`-separated path, which is what a finding names.
+    relative: String,
+    /// The absolute path the walk produced.
+    path: std::path::PathBuf,
+    /// `None` until this file is actually read.
+    body: Option<String>,
+}
+
+/// The first wiring file that references `repo_path`, reading bodies on demand.
+///
+/// The read set is the oracle's read set, exactly. `inspectEmptyGates` calls
+/// `readFileSync` *inside* `wiring.find(...)`, so a repository whose scripts
+/// declare no negative gate claim opens no wiring file at all, and a script
+/// matched by the first candidate never opens the rest. Reading them all up
+/// front is not an optimisation of that function, it is a different one: an
+/// unreadable `Makefile` the oracle never touches would turn a clean verdict
+/// into a `QV-E003` refusal. See `tc_377_023`.
+///
+/// Caching each body is the part that *is* an optimisation, and it is free of
+/// that hazard: it only ever avoids a re-read of a file already opened. The
+/// TypeScript re-reads the same body once per candidate script.
+fn wired_by(wiring: &mut [WiringFile], repo_path: &str) -> Result<Option<String>, ValidatorError> {
+    for candidate in &mut *wiring {
+        let body = match candidate.body {
+            Some(ref body) => body,
+            None => &*candidate.body.insert(read_text(&candidate.path)?),
+        };
+        if references_script(body, repo_path) {
+            return Ok(Some(candidate.relative.clone()));
+        }
+    }
+    Ok(None)
 }
 
 fn finding(
