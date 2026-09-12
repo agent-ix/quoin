@@ -36,7 +36,18 @@ import { readFileSync, readdirSync, statSync } from "node:fs";
 import { dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const root = dirname(dirname(fileURLToPath(import.meta.url)));
+// `--root <dir>` scans a tree other than this one — a worktree of a port
+// branch, say, whose spec/ and tests/ must be read together: a tag is
+// unresolved only against the criteria ITS OWN tree declares.
+const rootFlag = process.argv.indexOf("--root");
+const root =
+  rootFlag === -1
+    ? dirname(dirname(fileURLToPath(import.meta.url)))
+    : process.argv[rootFlag + 1];
+if (!root) {
+  console.error("check-trace-tags: --root needs a directory");
+  process.exit(2);
+}
 const CRITERION = /(?:FR|NFR|StR|IT|US)-\d+-[A-Z]+-\d+/g;
 
 function walk(dir, ext, out = []) {
