@@ -1,22 +1,14 @@
 /**
  * Reading and writing the evidence store (FR-030).
  *
- * Every write is **canonical**: key-sorted, stable ordering, two-space JSON
- * with a trailing newline. That is what makes a PR diff of the store *be* the
- * per-PR delta — a store whose serialization wobbled would produce noise diffs
- * that reviewers learn to skip, which is how a review artifact stops being
- * read.
+ * The root, the canonical serialization and the canonical write live one layer
+ * down in `src/store/`: change assurance writes its own family beneath the same
+ * root, and reaching up into this module for it was one half of an import cycle
+ * (agent-ix/quoin#376).
  */
 
-import {
-  existsSync,
-  mkdirSync,
-  readFileSync,
-  readdirSync,
-  rmSync,
-  writeFileSync,
-} from "node:fs";
-import { dirname, join } from "node:path";
+import { existsSync, readFileSync, readdirSync, rmSync } from "node:fs";
+import { join } from "node:path";
 
 import {
   MOCK_INSPECTIONS_DIR,
@@ -33,23 +25,8 @@ import {
   type TrustDecision,
 } from "./types.js";
 import { validateTrustDecision } from "./trust.js";
-
-/**
- * The store root for a repository.
- *
- * Under `spec/`, not at the repository root. quire-rs CR-045 bounds the
- * document walk to `<scope>/spec`, so the authored half of the store —
- * `suites.md` and `inspections.md` — is only a validated corpus document if it
- * lives there. The machine-written half sits beside it so the whole store is
- * one directory rather than two halves in different places.
- *
- * agent-ix/quoin#79's original layout put `evidence/` at the repository root on
- * the premise that quire "validates them wherever they live". Measured: it does
- * not — a typed registry at the root minted nothing and was reported nowhere.
- */
-export function storeRoot(repo: string): string {
-  return join(repo, "spec", "evidence");
-}
+import { writeCanonical } from "../store/canonical.js";
+import { storeRoot } from "../store/paths.js";
 
 export function suitesPath(repo: string): string {
   return join(storeRoot(repo), "suites.md");
@@ -136,30 +113,6 @@ export function mockInspectionPath(
 /** The 12-character commit prefix the run filenames use. */
 export function short(commit: string): string {
   return commit.slice(0, 12);
-}
-
-/**
- * Canonical JSON: keys sorted at every level, two-space indent, trailing
- * newline. Deterministic by construction, so two runs over identical inputs
- * produce identical bytes.
- */
-export function canonicalJson(value: unknown): string {
-  return `${JSON.stringify(sortKeys(value), null, 2)}\n`;
-}
-
-function sortKeys(value: unknown): unknown {
-  if (Array.isArray(value)) return value.map(sortKeys);
-  if (value === null || typeof value !== "object") return value;
-  const out: Record<string, unknown> = {};
-  for (const key of Object.keys(value as Record<string, unknown>).sort()) {
-    out[key] = sortKeys((value as Record<string, unknown>)[key]);
-  }
-  return out;
-}
-
-function writeCanonical(path: string, value: unknown): void {
-  mkdirSync(dirname(path), { recursive: true });
-  writeFileSync(path, canonicalJson(value), "utf8");
 }
 
 /**

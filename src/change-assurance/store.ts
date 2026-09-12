@@ -19,9 +19,13 @@ import {
 } from "node:fs";
 import { dirname, join } from "node:path";
 
-import { storeRoot } from "../evidence/store.js";
+import {
+  blake3Hex,
+  canonicalizeJcs,
+  parseStrictJson,
+} from "../store/integrity.js";
+import { storeRoot } from "../store/paths.js";
 import { attestationBytes, verifyAttestation } from "./attestations.js";
-import { blake3Hex, canonicalizeJcs, parseStrictJson } from "./integrity.js";
 import { recordBytes, verifyChangeRecord } from "./records.js";
 import type { ChangeAssuranceRecord, ProofAttestation } from "./types.js";
 
