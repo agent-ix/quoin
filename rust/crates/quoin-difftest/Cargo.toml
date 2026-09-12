@@ -1,0 +1,23 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 Agent-IX
+[package]
+name = "quoin-difftest"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+description = "Dev-only differential harness: the retained TypeScript and quoin-core, one request, one verdict."
+publish.workspace = true
+
+[[bin]]
+name = "quoin-difftest"
+path = "src/main.rs"
+
+[lints]
+workspace = true
+
+[dependencies]
+quoin-core = { workspace = true }
+serde_json = { workspace = true }

@@ -71,6 +71,11 @@ export default defineConfig(({ command }) => ({
       entry: {
         index: "src/index.ts",
         cli: "src/cli.ts",
+        // The TypeScript side of the Stage-0 differential harness (quoin#375).
+        // `scripts/core-reference.mjs` is a runner over the built module, so
+        // `quoin-difftest` compares two BUILT artifacts at one revision rather
+        // than a build against a source tree.
+        "core/reference": "src/core/reference.ts",
         // oclif resolves `oclif.hooks` to a built module the same way it
         // resolves commands, so the hook needs its own entry too.
         "hooks/command-not-found": "src/hooks/command-not-found.ts",

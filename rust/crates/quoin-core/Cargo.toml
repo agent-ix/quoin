@@ -1,0 +1,30 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 Agent-IX
+[package]
+name = "quoin-core"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+description = "The quoin engine boundary: one subprocess, JSON in on stdin, JSON out on stdout."
+publish.workspace = true
+default-run = "quoin-core"
+
+[lib]
+name = "quoin_core"
+path = "src/lib.rs"
+
+[[bin]]
+name = "quoin-core"
+path = "src/main.rs"
+
+[lints]
+workspace = true
+
+[dependencies]
+quoin-schemas = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
