@@ -33,10 +33,10 @@ reports vary run to run, undermining trust in the catalog.
 
 ## Measurement and Evaluation
 
-| Criterion | Metric | Target | Threshold | Method |
-| --- | ----------------------------------------------------- | ------ | --------- | ------ |
-| NFR-002-AC-1 | Catalog ordering variance across runs for fixed roots | 0      | 0         | Test   |
-| NFR-002-AC-2 | Duplicate-module lists not in sorted order            | 0      | 0         | Test   |
+| Metric                                                | Target | Threshold | Method |
+| ----------------------------------------------------- | ------ | --------- | ------ |
+| Catalog ordering variance across runs for fixed roots | 0      | 0         | Test   |
+| Duplicate-module lists not in sorted order            | 0      | 0         | Test   |
 
 ## Verification
 

@@ -37,10 +37,10 @@ manifest.
 
 ## Measurement and Evaluation
 
-| Criterion | Metric | Target | Threshold | Method |
-| --- | ------------------------------------------------------------------- | ------ | --------- | ---------- |
-| NFR-009-AC-1 | Copies of any skill body outside the single `skills/` tree          | 0      | 0         | Inspection |
-| NFR-009-AC-2 | Per-agent manifests that point at a skill tree other than `skills/` | 0      | 0         | Inspection |
+| Metric                                                              | Target | Threshold | Method     |
+| ------------------------------------------------------------------- | ------ | --------- | ---------- |
+| Copies of any skill body outside the single `skills/` tree          | 0      | 0         | Inspection |
+| Per-agent manifests that point at a skill tree other than `skills/` | 0      | 0         | Inspection |
 
 ## Verification
 

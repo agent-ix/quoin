@@ -54,11 +54,11 @@ implement, so a third integration point cannot be added without one.
 
 ## Measurement and Evaluation
 
-| Criterion | Metric | Target | Threshold | Method |
-| --- | -------------------------------------------------------------------------- | ------ | --------- | ---------- |
-| NFR-012-AC-1 | Capabilities used without a declared minimum version                       | 0      | 0         | Inspection |
-| NFR-012-AC-2 | Skew conditions reported as a diagnostic rather than an empty result       | 100%   | 100%      | Test       |
-| NFR-012-AC-3 | Module pins behind their latest release at merge                           | 0      | 0         | Test       |
+| Metric                                                                     | Target | Threshold | Method     |
+| -------------------------------------------------------------------------- | ------ | --------- | ---------- |
+| Capabilities used without a declared minimum version                       | 0      | 0         | Inspection |
+| Skew conditions reported as a diagnostic rather than an empty result       | 100%   | 100%      | Test       |
+| Module pins behind their latest release at merge                           | 0      | 0         | Test       |
 
 ## Verification
 

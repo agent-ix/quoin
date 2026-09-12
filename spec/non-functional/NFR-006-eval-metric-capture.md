@@ -31,9 +31,9 @@ commands efficiently. Recording these metrics per scenario turns "did it work" i
 
 ## Measurement and Evaluation
 
-| Criterion | Metric | Target | Threshold | Method |
-| --- | ---------------------------------------------------------------------------------------------------------- | ------ | --------- | -------- |
-| NFR-006-AC-1 | Required metrics recorded per scenario (latency, tokens, tool calls, validation attempts, context fetches) | 5 of 5 | 5 of 5    | Analysis |
+| Metric                                                                                                     | Target | Threshold | Method   |
+| ---------------------------------------------------------------------------------------------------------- | ------ | --------- | -------- |
+| Required metrics recorded per scenario (latency, tokens, tool calls, validation attempts, context fetches) | 5 of 5 | 5 of 5    | Analysis |
 
 ## Verification
 

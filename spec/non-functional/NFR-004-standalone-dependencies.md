@@ -30,10 +30,10 @@ usable independently of the platform.
 
 ## Measurement and Evaluation
 
-| Criterion | Metric | Target | Threshold | Method |
-| --- | ------------------------------------------------------------------------- | ------ | --------- | ---------- |
-| NFR-004-AC-1 | Runtime dependencies beyond ix-cli-core, ts-plugin-kit, and a YAML parser | 0      | 0         | Inspection |
-| NFR-004-AC-2 | External tools linked rather than invoked as processes                    | 0      | 0         | Inspection |
+| Metric                                                                    | Target | Threshold | Method     |
+| ------------------------------------------------------------------------- | ------ | --------- | ---------- |
+| Runtime dependencies beyond ix-cli-core, ts-plugin-kit, and a YAML parser | 0      | 0         | Inspection |
+| External tools linked rather than invoked as processes                    | 0      | 0         | Inspection |
 
 ## Verification
 

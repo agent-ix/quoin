@@ -40,12 +40,12 @@ three at once, and breaks them quietly.
 
 ## Measurement and Evaluation
 
-| Criterion | Metric | Target | Threshold | Method |
-| --- |--------|--------|-----------|--------|
-| NFR-019-AC-1 | Differing files between two renders of one variant | 0 | 0 | Test |
-| NFR-019-AC-2 | Differing bytes between two schema emissions from an unchanged source | 0 | 0 | Test |
-| NFR-019-AC-3 | Rendered files carrying a rendering timestamp | 0 | 0 | Test |
-| NFR-019-AC-4 | Rendered files carrying an absolute path from the rendering machine | 0 | 0 | Test |
+| Metric | Target | Threshold | Method |
+|--------|--------|-----------|--------|
+| Differing files between two renders of one variant | 0 | 0 | Test |
+| Differing bytes between two schema emissions from an unchanged source | 0 | 0 | Test |
+| Rendered files carrying a rendering timestamp | 0 | 0 | Test |
+| Rendered files carrying an absolute path from the rendering machine | 0 | 0 | Test |
 
 ## Verification
 

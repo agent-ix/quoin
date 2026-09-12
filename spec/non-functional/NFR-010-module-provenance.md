@@ -48,11 +48,11 @@ existing `release-drift pins` report is the natural place for the comparison.
 
 ## Measurement and Evaluation
 
-| Criterion | Metric | Target | Threshold | Method |
-| --- | --------------------------------------------------------------- | ------ | --------- | ----------- |
-| NFR-010-AC-1 | Default-set pins recording the commit SHA their ref resolved to | 100%   | 100%      | Test        |
-| NFR-010-AC-2 | Installs that proceed when a recorded SHA no longer matches     | 0      | 0         | Test        |
-| NFR-010-AC-3 | Module fetches from a source outside the declared pin set       | 0      | 0         | Inspection  |
+| Metric                                                          | Target | Threshold | Method      |
+| --------------------------------------------------------------- | ------ | --------- | ----------- |
+| Default-set pins recording the commit SHA their ref resolved to | 100%   | 100%      | Test        |
+| Installs that proceed when a recorded SHA no longer matches     | 0      | 0         | Test        |
+| Module fetches from a source outside the declared pin set       | 0      | 0         | Inspection  |
 
 ## Verification
 

@@ -32,11 +32,11 @@ Recording the target model must not make the target model operational by implica
 
 ## Measurement and Evaluation
 
-| Criterion | Metric | Target | Threshold | Method |
-| --- | --- | --- | --- | --- |
-| NFR-014-AC-1 | Production source, manifest, schema, generated package, or migration files changed | 0 | 0 | Test (TC-1154) |
-| NFR-014-AC-2 | Existing tests regressed | 0 | 0 | Test (TC-1154) |
-| NFR-014-AC-3 | Architecture PR merged without named Quoin/Quire maintainer review | 0 | 0 | Inspection (TC-1155) |
+| Metric | Target | Threshold | Method |
+| --- | --- | --- | --- |
+| Production source, manifest, schema, generated package, or migration files changed | 0 | 0 | Test (TC-1154) |
+| Existing tests regressed | 0 | 0 | Test (TC-1154) |
+| Architecture PR merged without named Quoin/Quire maintainer review | 0 | 0 | Inspection (TC-1155) |
 
 ## Verification
 
