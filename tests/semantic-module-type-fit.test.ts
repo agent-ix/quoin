@@ -726,8 +726,7 @@ describe("semantic module type-fit audit", () => {
     });
   });
 
-  // Trace: NFR-015
-  // TC-1188
+  // Trace: NFR-015-M-1
   it("", "proves complete module coverage", () => {
     expect(built().inventory.denominators.modules).toMatchObject({
       source: 2,
@@ -736,8 +735,7 @@ describe("semantic module type-fit audit", () => {
     });
   });
 
-  // Trace: NFR-015
-  // TC-1189
+  // Trace: NFR-015-M-2
   it("", "proves complete axis coverage", () => {
     expect(
       built().inventory.declarations.length * built().typeFit.axes.length,
@@ -749,8 +747,7 @@ describe("semantic module type-fit audit", () => {
     );
   });
 
-  // Trace: NFR-015
-  // TC-1190
+  // Trace: NFR-015-M-3
   it("", "proves complete Markdown state coverage", () => {
     expect(built().inventory.denominators.documents).toMatchObject({
       reconciled: true,
@@ -760,16 +757,14 @@ describe("semantic module type-fit audit", () => {
     );
   });
 
-  // Trace: NFR-015
-  // TC-1191
+  // Trace: NFR-015-M-4
   it("", "proves byte identical equal input artifacts", () => {
     expect([...createArtifactFiles(built())]).toEqual([
       ...createArtifactFiles(buildSemanticAudit(auditInput())),
     ]);
   });
 
-  // Trace: NFR-016
-  // TC-1192
+  // Trace: NFR-016-M-1
   it("", "writes only below the configured output root", () => {
     const root = mkdtempSync(join(tmpdir(), "semantic-audit-"));
     const sentinel = join(root, "sentinel");
@@ -791,8 +786,7 @@ describe("semantic module type-fit audit", () => {
     expect(readFileSync(redirected, "utf8")).toBe("unchanged");
   });
 
-  // Trace: NFR-016
-  // TC-1193
+  // Trace: NFR-016-M-2
   it("", "enforces the changed path allowlist", () => {
     expect(isAllowedAuditPath("scripts/lib/semantic-module-type-fit.mjs")).toBe(
       true,

@@ -406,7 +406,6 @@ describe("semantic-module architecture contract", () => {
   });
 
   // Trace: NFR-013-M-3
-  // TC-1152
   it("resolves every local architecture link", () => {
     for (const file of architectureFiles) {
       const sourcePath = join(architectureRoot, file);
@@ -424,7 +423,6 @@ describe("semantic-module architecture contract", () => {
   });
 
   // Trace: NFR-013-M-4
-  // TC-1153
   it("does not present provisional decisions as normative", () => {
     const ledger = architecture("decision-ledger.md").replace(/\s+/g, " ");
     expect(ledger).toContain("ADR-0005, which is normative");
