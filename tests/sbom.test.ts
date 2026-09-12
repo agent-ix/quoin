@@ -1,5 +1,5 @@
 /**
- * FR-041 — SBOM inventories as run evidence (TC-231..TC-236).
+ * FR-041 — SBOM inventories as run evidence.
  *
  * Both fixtures are real tool output, checked in unedited:
  *

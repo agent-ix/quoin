@@ -1,5 +1,5 @@
 /**
- * FR-035 — t-way coverage over a declared configuration space (TC-180..TC-186).
+ * FR-035 — t-way coverage over a declared configuration space.
  */
 
 import { describe, expect, it } from "vitest";

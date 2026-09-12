@@ -1,5 +1,5 @@
 /**
- * FR-036 — quoin's own architectural boundaries, enforced (TC-202, TC-203).
+ * FR-036 — quoin's own architectural boundaries, enforced.
  *
  * This is the dogfood half of FR-036: the boundaries quoin's specs and ADR-0011
  * state, checked mechanically rather than documented and left to rot.

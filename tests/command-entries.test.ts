@@ -1,5 +1,5 @@
 /**
- * Every command file is a build entry (TC-149).
+ * Every command file is a build entry.
  *
  * oclif discovers commands as individual modules under `dist/commands`, and
  * `vite.config.ts` enumerates those entries **by hand**. Nothing checked the

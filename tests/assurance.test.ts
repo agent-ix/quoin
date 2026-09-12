@@ -1,6 +1,5 @@
 /**
- * FR-040 — the assurance-case view (TC-221..TC-230, TC-237, TC-238, TC-261,
- * TC-262).
+ * FR-040 — the assurance-case view.
  */
 
 import { describe, expect, it } from "vitest";

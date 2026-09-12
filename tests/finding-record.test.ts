@@ -1,5 +1,5 @@
 /**
- * FR-034 — FindingRecord and the finding-shaped adapters (TC-165..TC-172).
+ * FR-034 — FindingRecord and the finding-shaped adapters.
  */
 
 import {

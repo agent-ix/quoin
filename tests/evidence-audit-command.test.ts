@@ -1,6 +1,5 @@
 /**
- * `quoin evidence audit --ratchet` reports whether it actually ratcheted
- * (FR-032-AC-13, #169, TC-258..TC-260).
+ * `quoin evidence audit --ratchet` reports whether it actually ratcheted.
  *
  * The label and the JSON `ratchet` field were keyed on the FLAG, not on
  * whether a baseline was found. A missing baseline silently degrades the run

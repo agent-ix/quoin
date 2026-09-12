@@ -1,5 +1,5 @@
 /**
- * FR-033 — evidence format adapters (TC-151..TC-164).
+ * FR-033 — evidence format adapters.
  *
  * At least one criterion per adapter is stated over
  * `quoin evidence record --adapter <x> --results <file>`, not over the parse

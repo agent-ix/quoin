@@ -1,5 +1,5 @@
 /**
- * FR-029 — the quire↔quoin JSON contract (TC-110..TC-118).
+ * FR-029 — the quire↔quoin JSON contract.
  *
  * The point of these is stated in quoin's own `spec/review.md` Finding 8: "no
  * contract test against quire". The shapes lived as prose in skill markdown,

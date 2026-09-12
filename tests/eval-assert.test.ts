@@ -1,6 +1,5 @@
 /**
- * FR-038-AC-10 — the eval harness's negative file assertions are falsifiable
- * (TC-270).
+ * FR-038-AC-10 — the eval harness's negative file assertions are falsifiable.
  *
  * `globToRegExp` supports `**`, `*` and `?` — not brace expansion. A brace
  * glob like `*fuzz*.{js,ts,mjs}` therefore compiles to a literal-suffix

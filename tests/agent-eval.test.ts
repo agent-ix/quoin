@@ -1,5 +1,5 @@
 /**
- * FR-042 — agent-eval reports as run evidence (TC-240..TC-244).
+ * FR-042 — agent-eval reports as run evidence.
  *
  * `agent-eval-real.json` is a real `cli-agent-evals` report, checked in
  * unedited — the TC-EV-057 run of the `spec-fuzz` scenarios. The multi-scenario,

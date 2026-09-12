@@ -4,7 +4,6 @@
  * Trace: FR-063-AC-1
  * Trace: FR-064-AC-1
  * Trace: FR-065-AC-1
- * TC-1261, TC-1272, TC-1281
  */
 
 import { execFileSync } from "node:child_process";

@@ -1,6 +1,5 @@
 /**
- * FR-031 — the catalog-driven test-plan advisor (TC-129..TC-136, TC-133,
- * TC-273).
+ * FR-031 — the catalog-driven test-plan advisor.
  *
  * The proto-advisor was a skill-local prose table, so `Verification` columns
  * defaulted to `Test` by habit and nothing ever advised DAST for an attack

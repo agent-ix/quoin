@@ -1,6 +1,6 @@
 /**
  * NFR-005-AC-1 — the spec-matrix skill's Status vocabulary is coupled to the
- * module manifest (TC-271).
+ * module manifest.
  *
  * PR #163 retired the warning marker from `skills/spec-matrix/SKILL.md` and
  * both asset templates BY HAND, and nothing coupled the skill's declared

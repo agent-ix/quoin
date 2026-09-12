@@ -1,5 +1,5 @@
 /**
- * `quoin evidence gc` at the command level (FR-030-AC-8, #171, TC-263).
+ * `quoin evidence gc` at the command level.
  *
  * The `gc()` store function was exercised (TC-126, TC-127) and the command
  * wrapping it was not, so the flag surface itself was unasserted. That surface

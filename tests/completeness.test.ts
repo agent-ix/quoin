@@ -1,6 +1,5 @@
 /**
- * FR-037 — declared-vocabulary completeness and its verdict policy
- * (TC-206..TC-217).
+ * FR-037 — declared-vocabulary completeness and its verdict policy.
  *
  * Six of the twelve criteria are stated over `quoin completeness` rather than
  * over `assessVocabulary`, because the defect this program keeps finding is a

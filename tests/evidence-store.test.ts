@@ -1,5 +1,5 @@
 /**
- * FR-030 — the evidence store (TC-119..TC-132).
+ * FR-030 — the evidence store.
  */
 
 import {

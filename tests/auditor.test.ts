@@ -1,5 +1,5 @@
 /**
- * FR-032 — the evidence auditor (TC-137..TC-148).
+ * FR-032 — the evidence auditor.
  *
  * A trace link is a string match that never expires. These tests are about the
  * three ways evidence rots invisibly, and about the auditor refusing to be

@@ -1,5 +1,5 @@
 /**
- * `quoin advise` — the advisor's reachable path (TC-150).
+ * `quoin advise` — the advisor's reachable path.
  *
  * FR-031's eight ACs all passed against `advise()` directly, and no command
  * reached it: the deterministic advisor shipped as library code exercised only

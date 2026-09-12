@@ -1,6 +1,6 @@
 /**
  * FR-029-AC-13 — the TypeScript interfaces and the vendored coverage schema
- * describe the same shapes (TC-272).
+ * describe the same shapes.
  *
  * The vendored `coverage-v1.schema.json` carried `implements` /
  * `$defs/ImplementsRecord` since v0.39, while `src/quire/types.ts` only
