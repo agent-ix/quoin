@@ -75,6 +75,8 @@ skip = [
     # base64 is the one pair where BOTH sides are gix-only, so either could be
     # skipped; we skip the narrower one. 0.22.1 is reached by two gix paths
     # (gix-transport directly, and hyper-util under reqwest), 0.23.1 by one.
+    # The asymmetry is the point: skipping the narrower path and leaving the
+    # broader one counted keeps the most of the graph under the gate.
     { crate = "base64@0.23.1", reason = "gix-only: reqwest -> gix-transport -> gix -> quoin-modules; the other side, 0.22.1, is also gix-only but more widely shared, so it is the one left counted" },
 ]
 wildcards = "deny"
