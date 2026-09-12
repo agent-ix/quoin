@@ -326,6 +326,16 @@ rust-e2e: rust-build
 .PHONY: rust-gate
 rust-gate: rust-lint rust-deny rust-test rust-e2e rust-difftest
 	@echo "rust-gate: fmt, clippy -D warnings, cargo deny, tests, the end-to-end caller and the differential harness passed"
+# Every `// Trace:` tag in the test tree names a criterion that exists
+# (quoin#390). Its own header states what it cannot catch: a tag resolving to
+# the WRONG criterion, which is how FR-043/FR-095 hid a whole mis-traced file
+# behind two well-formed ids.
+#
+# NOT in the locked verification stack. Adding it there needs a relock, which is
+# a governed act and not one to take as a side effect of writing a check.
+.PHONY: check-trace-tags
+check-trace-tags:
+	node scripts/check-trace-tags.mjs
 
 .PHONY: audit-tool-drift
 audit-tool-drift:
