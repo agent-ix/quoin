@@ -89,7 +89,6 @@
     "audit:tool-drift": "node scripts/check-tool-drift.mjs",
     "test:tool-drift": "node scripts/check-tool-drift-selftest.mjs",
     "test:verification-stack": "node scripts/verification-stack-selftest.mjs",
-    "test:trace-tags": "node scripts/check-trace-tags.mjs",
     "test-results:summary": "./node_modules/.bin/jest-results summary",
     "test-results:groups": "./node_modules/.bin/jest-results groups",
     "test-results:detail": "./node_modules/.bin/jest-results detail",
