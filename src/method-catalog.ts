@@ -2,13 +2,15 @@
  * The verification-method catalog, merged and readable (FR-031).
  *
  * quire-rs owns the merge for its own consumers; this reads the same manifests
- * from the same module roots so an agent — and this advisor — can reach the
+ * from the same module roots so an agent — and the advisor — can reach the
  * catalog without shelling into the engine for a value that is plain module
  * data on disk.
  *
  * Merge is **first-wins by method id**, matching quire-rs FR-054 exactly. If
  * the two disagreed, the advisor would recommend from one catalog while the
- * auditor checked conformance against another.
+ * auditor checked conformance against another. Both read it, so it belongs to
+ * neither: the auditor reaching into `advisor/` for the catalog type was one
+ * half of an import cycle Cargo forbids (agent-ix/quoin#376).
  */
 
 import { readFileSync } from "node:fs";
@@ -16,7 +18,7 @@ import { join } from "node:path";
 
 import { parse as parseYaml } from "yaml";
 
-import { defaultModuleRoots, locateModuleRoot } from "../catalog.js";
+import { defaultModuleRoots, locateModuleRoot } from "./catalog.js";
 
 /** One catalog entry, as the module declared it. */
 export interface VerificationMethod {

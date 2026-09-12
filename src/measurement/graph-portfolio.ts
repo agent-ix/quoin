@@ -3,7 +3,7 @@
 import { createHash } from "node:crypto";
 import { resolve } from "node:path";
 
-import { canonicalJson } from "../evidence/store.js";
+import { canonicalJson } from "../store/canonical.js";
 import {
   PORTFOLIO_STALE_AFTER_DAYS,
   renderPortfolioReport,

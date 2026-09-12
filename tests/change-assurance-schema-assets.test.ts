@@ -4,7 +4,6 @@
  * Trace: FR-063-AC-1
  * Trace: FR-064-AC-1
  * Trace: FR-065-AC-1
- * TC-1261, TC-1272, TC-1281
  */
 
 import { execFileSync } from "node:child_process";
@@ -38,7 +37,7 @@ function normativeSchema(path: string): unknown {
 }
 
 describe("change-assurance JSON Schema assets", () => {
-  it("TC-1261/TC-1272/TC-1281 exactly match the normative specification blocks", () => {
+  it("/TC-1272/TC-1281 exactly match the normative specification blocks", () => {
     expect(CHANGE_ASSURANCE_SCHEMA_NAMES).toEqual(Object.keys(SPEC_FILES));
     for (const name of CHANGE_ASSURANCE_SCHEMA_NAMES) {
       const schema = readChangeAssuranceSchema(name);

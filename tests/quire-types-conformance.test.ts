@@ -1,6 +1,6 @@
 /**
  * FR-029-AC-13 — the TypeScript interfaces and the vendored coverage schema
- * describe the same shapes (TC-272).
+ * describe the same shapes.
  *
  * The vendored `coverage-v1.schema.json` carried `implements` /
  * `$defs/ImplementsRecord` since v0.39, while `src/quire/types.ts` only
@@ -371,15 +371,15 @@ const report: Required<CoverageReport> = {
 
 const sorted = (keys: Iterable<string>) => [...keys].sort();
 
-describe("TC-272 the interfaces and the vendored coverage schema agree", () => {
-  // TC-272
+describe("the interfaces and the vendored coverage schema agree", () => {
+  // Trace: FR-029-AC-13
   it("covers every $defs entry with a typed sample", () => {
     expect(sorted(Object.keys(samples))).toEqual(
       sorted(Object.keys(schema.$defs)),
     );
   });
 
-  // TC-272
+  // Trace: FR-029-AC-13
   it("each sample's keys equal its $defs entry's keys, both directions", () => {
     for (const [name, sample] of Object.entries(samples)) {
       if (typeof sample !== "object" || sample === null) continue;
@@ -398,14 +398,14 @@ describe("TC-272 the interfaces and the vendored coverage schema agree", () => {
     }
   });
 
-  // TC-272
+  // Trace: FR-029-AC-13
   it("the report's top-level keys equal the schema's, both directions", () => {
     expect(sorted(Object.keys(report))).toEqual(
       sorted(Object.keys(schema.properties)),
     );
   });
 
-  // TC-272
+  // Trace: FR-029-AC-13
   it("the fully-populated typed report validates against the schema", () => {
     const result = validateCoverage(
       report as unknown as Record<string, unknown>,
@@ -413,7 +413,7 @@ describe("TC-272 the interfaces and the vendored coverage schema agree", () => {
     expect(result.ok, JSON.stringify(result)).toBe(true);
   });
 
-  // TC-272
+  // Trace: FR-029-AC-13
   it("this file typechecks, so the Required<Interface> half is enforced", () => {
     // vitest strips types and the build's dts diagnostics are non-fatal, so
     // without this an interface missing a field would fail NOTHING at

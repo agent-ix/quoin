@@ -1,5 +1,5 @@
 /**
- * FR-041 — SBOM inventories as run evidence (TC-231..TC-236).
+ * FR-041 — SBOM inventories as run evidence.
  *
  * Both fixtures are real tool output, checked in unedited:
  *
@@ -28,7 +28,7 @@ const fixture = (name: string) =>
   readFileSync(join(here, "fixtures", "evidence", name), "utf8");
 
 describe("the SBOM adapter", () => {
-  // Trace: FR-041-AC-1
+  // Trace: FR-041-AC-1, FR-041-CON-4
   it("reads a real CycloneDX document as one entry per component", () => {
     const result = parseSbom(fixture("cyclonedx-real.json"));
     expect(result.entries.length).toBeGreaterThan(0);

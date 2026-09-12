@@ -44,7 +44,7 @@ import {
   validateCanonicalInventory,
 } from "../scripts/bench-tier1.mjs";
 
-test("TC-1121 retained Tier-1 producer paths are checkout-independent", () => {
+test("retained Tier-1 producer paths are checkout-independent", () => {
   const root = join(tmpdir(), "machine-specific-checkout");
   const source = {
     path: join(root, "corpus", "cases", "one", "input", "spec", "FR-001.md"),
@@ -64,7 +64,7 @@ test("TC-1121 retained Tier-1 producer paths are checkout-independent", () => {
   expect(source.path).toContain("machine-specific-checkout");
 });
 
-test("TC-1120 canonical corpus identity excludes ignored tool state and rejects dirty inputs", () => {
+test("canonical corpus identity excludes ignored tool state and rejects dirty inputs", () => {
   const root = mkdtempSync(join(tmpdir(), "quoin-corpus-identity-"));
   const git = (...args: string[]) => {
     const done = spawnSync("git", ["-C", root, ...args], {
@@ -104,7 +104,7 @@ test("TC-1120 canonical corpus identity excludes ignored tool state and rejects 
   }
 });
 
-test("TC-1078 standing rulings for one family are unioned", () => {
+test("standing rulings for one family are unioned", () => {
   const adjudication = adjudicationOf(
     [{ name: "case-a", rules: { present: [], absent: [] } }],
     {
@@ -133,7 +133,7 @@ test("TC-1078 standing rulings for one family are unioned", () => {
   ]);
 });
 
-test("TC-1077 generated Tier-1 baselines satisfy the repository format gate", async () => {
+test("generated Tier-1 baselines satisfy the repository format gate", async () => {
   const filepath = join(process.cwd(), "bench", "tier1-baseline.json");
   const generated = await formatTier1Json(
     { rows: [{ misses: ["one", "two"] }] },
@@ -155,8 +155,8 @@ describe("the silent-zero sentinel", () => {
     ...over,
   });
 
-  test("TC-988 a ratio reading none of a non-zero population, unaccompanied, is a violation", () => {
-    // TC-988
+  test("a ratio reading none of a non-zero population, unaccompanied, is a violation", () => {
+    // Trace: FR-043-AC-6
     // `555/2389 (23%)` — arithmetic over a corpus the binder could not read,
     // published with nothing saying so. The number that made three reviews
     // wrong and opened agent-ix/quire-rs#264. The dictionary has declared this
@@ -172,8 +172,8 @@ describe("the silent-zero sentinel", () => {
     });
   });
 
-  test("TC-989 a COUNT-shaped metric reading zero is exempt", () => {
-    // TC-989
+  test("a COUNT-shaped metric reading zero is exempt", () => {
+    // Trace: FR-043-AC-6
     // CR-098. For a count, `matched` and the value are the same fact: a zero
     // reports that none was found, not that none was read. Failing on it would
     // make every clean corpus a gate violation.
@@ -188,8 +188,8 @@ describe("the silent-zero sentinel", () => {
     expect(unread).toEqual([]);
   });
 
-  test("TC-990 accompanied means a diagnostic NAMES the metric, not that one exists", () => {
-    // TC-990
+  test("accompanied means a diagnostic NAMES the metric, not that one exists", () => {
+    // Trace: FR-043-AC-6
     // Every ecosystem-bound fixture in this corpus emits four
     // `archetype-matches-nothing`, so "the payload carried a diagnostic" is
     // true of every case here and would excuse every hollow ratio in it. The
@@ -236,8 +236,8 @@ describe("the silent-zero sentinel", () => {
     expect(byValue.violations).toEqual([]);
   });
 
-  test("TC-991 an unmeasured metric is an absence, not a silent zero", () => {
-    // TC-991
+  test("an unmeasured metric is an absence, not a silent zero", () => {
+    // Trace: FR-043-AC-6
     // quire-rs FR-063 already reports a metric it could not arrive at as
     // `state != measured`. Counting that as a hollow ratio would fail the gate
     // for the engine correctly saying it did not know.
@@ -263,8 +263,8 @@ describe("the silent-zero sentinel", () => {
     ).toEqual({ violations: [], unread: [] });
   });
 
-  test("TC-993 walking NONE of a population is reported, not gated — it is a different claim", () => {
-    // TC-993
+  test("walking NONE of a population is reported, not gated — it is a different claim", () => {
+    // Trace: FR-043-AC-6
     // THE FIRST DRAFT OF THIS GATE FIRED ON THREE CORPUS CASES, and every one
     // was correct input: `catch-all-properties`, `greenfield-no-symbols` and
     // `gate-that-gates-nothing` each seed a tree with no evidence symbols at
@@ -295,8 +295,8 @@ describe("the silent-zero sentinel", () => {
     expect(unread.map((v) => v.corpus)).toEqual(["greenfield"]);
   });
 
-  test("TC-992 the gate reads against 0 and ignores the baseline, so --update cannot launder it", () => {
-    // TC-992
+  test("the gate reads against 0 and ignores the baseline, so --update cannot launder it", () => {
+    // Trace: FR-043-AC-6
     // A gate is not a score: `compare`'s `gate-zero` branch never consults the
     // previous value, so a run that wrote a baseline with three violations in
     // it still fails the next run.
@@ -368,8 +368,8 @@ describe("the measurement series", () => {
     families: [{ family: "hollow-denominator", precision: 1, recall: 1 }],
   };
 
-  test("TC-997 tool version and config digest come from the payload, not from an operator", () => {
-    // TC-997
+  test("tool version and config digest come from the payload, not from an operator", () => {
+    // Trace: FR-043-AC-18, FR-044-AC-5
     // The two fields that would have PREVENTED the defect this EPIC exists to
     // fix. The installed `quire` was CLI 0.29.0 pinning engine v0.42.0, sixteen
     // releases behind and unable to emit `binding_census` at all, and every
@@ -388,8 +388,8 @@ describe("the measurement series", () => {
     expect(record.scope.by_language).toEqual({ rust: 42, python: 18 });
   });
 
-  test("TC-998 the raw report is ATTACHED, never transcribed into the record's own fields", () => {
-    // TC-998
+  test("the raw report is ATTACHED, never transcribed into the record's own fields", () => {
+    // Trace: FR-043-AC-18, FR-044-AC-5
     // Three published SpecReviews cited hand-typed figures from a binary whose
     // self-reported version was wrong. The whole payload rides along so a later
     // reader re-derives rather than re-types (agent-ix/quoin#228).
@@ -399,7 +399,8 @@ describe("the measurement series", () => {
     expect(record.observations.length).toBeGreaterThan(0);
   });
 
-  test("TC-1000 the superseded JSONL series remains readable as legacy evidence", () => {
+  test("the superseded JSONL series remains readable as legacy evidence", () => {
+    // Trace: FR-044-AC-5
     // These observations predate MeasurementPlans. Preserve them, but do not
     // silently treat them as active plan-governed collections.
     const path = join(__dirname, "..", "bench", "measurements.jsonl");
@@ -421,8 +422,8 @@ describe("the measurement series", () => {
 });
 
 describe("the committed baseline and the committed scorer", () => {
-  test("TC-995 the real baseline compared against itself holds on every verdict", () => {
-    // TC-995
+  test("the real baseline compared against itself holds on every verdict", () => {
+    // Trace: FR-043-AC-17
     // `make bench-tier1` is invoked by nothing (agent-ix/quoin#244) and the
     // ratchet tests all ran against hand-built synthetic objects, so
     // `bench/tier1-baseline.json` was a committed file no automated run ever
@@ -449,8 +450,8 @@ describe("the committed baseline and the committed scorer", () => {
     ).toEqual([]);
   });
 
-  test("TC-996 every family the baseline scored is one the mapping still claims", () => {
-    // TC-996
+  test("every family the baseline scored is one the mapping still claims", () => {
+    // Trace: FR-043-AC-17
     // A family dropped from `bench/tier1-mapping.json` while its row stays in
     // the baseline is a score against a contract nobody holds. `ratchet` already
     // fails a family that vanishes from a RUN; nothing held the two committed
@@ -474,7 +475,7 @@ describe("the committed baseline and the committed scorer", () => {
     expect(orphans).toEqual([]);
   });
 
-  test("TC-1095 retains the controlled grounding tradeoff and all failure-shape families", () => {
+  test("retains the controlled grounding tradeoff and all failure-shape families", () => {
     const baseline = JSON.parse(
       readFileSync(
         join(__dirname, "..", "bench", "tier1-baseline.json"),
@@ -515,8 +516,8 @@ describe("the committed baseline and the committed scorer", () => {
 });
 
 describe("tier-1 label flattening", () => {
-  test("TC-953 the builder's wrapper becomes the flat array scoring consumes", () => {
-    // TC-953
+  test("the builder's wrapper becomes the flat array scoring consumes", () => {
+    // Trace: FR-043-AC-7
     // The shape mismatch that kept the two halves from ever meeting:
     // `buildBenchCorpora` writes `{corpora:[{name, defects}]}` and
     // `scoreFindings` consumes a flat list of labels. Nothing converted, so
@@ -537,8 +538,8 @@ describe("tier-1 label flattening", () => {
 });
 
 describe("finding localisation rate", () => {
-  test("TC-954 it is positional pairings over true positives, null when there are none", () => {
-    // TC-954
+  test("it is positional pairings over true positives, null when there are none", () => {
+    // Trace: FR-043-AC-4
     // The metric that encodes the actual requirement: an alert must say WHERE.
     // Two of five is the first scored run — the three that did not name a place
     // are an aggregate metric, a diagnostic that names a metric rather than a
@@ -564,8 +565,8 @@ describe("finding localisation rate", () => {
 });
 
 describe("the ratchet", () => {
-  test("TC-955 a regression keeps the OLD baseline, so a bad run cannot lower the bar", () => {
-    // TC-955
+  test("a regression keeps the OLD baseline, so a bad run cannot lower the bar", () => {
+    // Trace: FR-043-AC-10
     // quire-rs `scripts/bench.py`'s semantics, deliberately identical. The
     // one-way property is the whole point: if a regression proposed its own
     // value as the new baseline, `--update` after a bad run would quietly
@@ -578,8 +579,8 @@ describe("the ratchet", () => {
     expect(compare("lower-is-better", 0.9, 0.5)).toEqual(["regressed", 0.5]);
   });
 
-  test("TC-956 a missing baseline is `new`, never a pass by default", () => {
-    // TC-956
+  test("a missing baseline is `new`, never a pass by default", () => {
+    // Trace: FR-043-AC-10
     // The first run of any metric. It must not read as a pass — nothing was
     // compared — and it must not read as a failure either. The observed value
     // is PROPOSED, and only `--update` writes it.
@@ -587,8 +588,8 @@ describe("the ratchet", () => {
     expect(compare("higher-is-better", 0.7, undefined)).toEqual(["new", 0.7]);
   });
 
-  test("TC-957 gate-zero carries no baseline and no tolerance to spend", () => {
-    // TC-957
+  test("gate-zero carries no baseline and no tolerance to spend", () => {
+    // Trace: FR-043-AC-6
     // A gate is not a score. Anything non-zero is a regression regardless of
     // history, and the proposed baseline is forced back to 0 so `--update`
     // cannot launder a non-zero value into the accepted state.
@@ -599,8 +600,8 @@ describe("the ratchet", () => {
 });
 
 describe("a vanished family", () => {
-  test("TC-960 a family the baseline scored and this run does not report is a regression", () => {
-    // TC-960
+  test("a family the baseline scored and this run does not report is a regression", () => {
+    // Trace: FR-043-AC-10
     // Delete a corpus, drop a mapping, remove a label — and without this the
     // family simply stops appearing and the ratchet says nothing. An absent row
     // is indistinguishable from an absence of news, which is the same shape as
@@ -640,8 +641,8 @@ describe("a vanished family", () => {
     expect(gone?.why).toMatch(/did not report it at all/);
   });
 
-  test("TC-984 a family the baseline measured and this run reports null is regressed, not skipped", () => {
-    // TC-984
+  test("a family the baseline measured and this run reports null is regressed, not skipped", () => {
+    // Trace: FR-043-AC-16
     // THE ESCAPE HATCH. `shape: advisory` in `bench/tier1-mapping.json` turns a
     // family's precision to null, and the old `if (family[metric] === null)
     // continue` then emitted no verdict at all — so a bad number could be
@@ -682,8 +683,8 @@ describe("a vanished family", () => {
     expect(v?.why).toMatch(/stopped being measured/);
   });
 
-  test("TC-985 a family that never had a precision is still skipped, not failed", () => {
-    // TC-985
+  test("a family that never had a precision is still skipped, not failed", () => {
+    // Trace: FR-043-AC-16
     // The other half of TC-984, and the reason the old `continue` existed:
     // `gate-that-gates-nothing` has no detector anywhere, so it reports null
     // every run. Failing the build for a family nothing ever fired on would
@@ -719,8 +720,8 @@ describe("a vanished family", () => {
     );
   });
 
-  test("TC-986 an advisory's unadjudicated count is ratcheted lower-is-better", () => {
-    // TC-986
+  test("an advisory's unadjudicated count is ratcheted lower-is-better", () => {
+    // Trace: FR-043-AC-16
     // An advisory's precision RATE cannot fall independently of qa-corpus's own
     // `make ci` — a firing on a case that declared the reason absent turns that
     // gate red first. So the rate is not the evidence; the count of firings
@@ -832,8 +833,8 @@ describe("a case whose ground truth maps to nothing", () => {
     for (const root of roots) rmSync(root, { recursive: true, force: true });
   });
 
-  test("TC-964 an expect.yaml reason no family claims fails the run, and is never skipped", () => {
-    // TC-964
+  test("an expect.yaml reason no family claims fails the run, and is never skipped", () => {
+    // Trace: FR-043-AC-2
     // agent-ix/quoin#236. `defectsFrom` used to `continue` past a reason the
     // family table did not recognise, so a case whose ONLY expectation was
     // unmapped derived zero defects — and derived zero silently. That is how
@@ -855,8 +856,8 @@ describe("a case whose ground truth maps to nothing", () => {
     );
   });
 
-  test("TC-965 a recognised reason still loads, so the guard refuses only the hole", () => {
-    // TC-965
+  test("a recognised reason still loads, so the guard refuses only the hole", () => {
+    // Trace: FR-043-AC-2
     // The counterpart assertion. A guard that refuses everything is not a
     // guard, and this is what distinguishes "the table does not claim this"
     // from "the table is unreadable".
@@ -873,7 +874,7 @@ describe("a case whose ground truth maps to nothing", () => {
     expect(corpora[0].language).toBe("rust");
   });
 
-  test("TC-1084 external-producer labels carry explicit action fragments", () => {
+  test("external-producer labels carry explicit action fragments", () => {
     const { root, inventory } = corpusWith(
       "diagnostic_reasons:\n  - known-reason\n",
       CASE,
@@ -899,8 +900,8 @@ describe("a case whose ground truth maps to nothing", () => {
 });
 
 describe("the score cut by language", () => {
-  test("TC-966 per-language rows partition the same findings the headline used", () => {
-    // TC-966
+  test("per-language rows partition the same findings the headline used", () => {
+    // Trace: FR-043-AC-9
     // The corpus was 22 of 22 `language: rust` when Wave 3's before/after
     // reported every family `held`, and two of the six fixes were for the
     // other two languages. One table over one language reads as a statement
@@ -977,8 +978,8 @@ describe("the declaration axis", () => {
     for (const root of roots) rmSync(root, { recursive: true, force: true });
   });
 
-  test("TC-968 the report records WHICH declaration it scored against, by content and by upstream SHA", () => {
-    // TC-968
+  test("the report records WHICH declaration it scored against, by content and by upstream SHA", () => {
+    // Trace: FR-043-AC-12
     // agent-ix/quoin#240. The report named the engine and the corpus and not
     // the third input — and two of Wave 3's six fixes changed nothing else, so
     // `spec-artifacts-process#68` scored `held` in the same word the runner
@@ -1007,8 +1008,8 @@ describe("the declaration axis", () => {
     expect(declarationProvenance(same, []).digest).toBe(p.digest);
   });
 
-  test("TC-969 a VENDORED.md present and unreadable fails the run rather than reporting no source", () => {
-    // TC-969
+  test("a VENDORED.md present and unreadable fails the run rather than reporting no source", () => {
+    // Trace: FR-043-AC-12
     // A provenance file that has silently stopped parsing is WORSE than none:
     // the report keeps printing a confident `sources` beside numbers nobody can
     // join to a commit, which is the defect quoin#229 records one file over.
@@ -1023,8 +1024,8 @@ describe("the declaration axis", () => {
     ).toBeNull();
   });
 
-  test("TC-981 an unreadable SHA on ONE row of a table fails the run, and an annotated SHA is read rather than dropped", () => {
-    // TC-981
+  test("an unreadable SHA on ONE row of a table fails the run, and an annotated SHA is read rather than dropped", () => {
+    // Trace: FR-043-AC-12
     // agent-ix/quoin#240, REOPENED. The guard was `if (!rows)` — all-or-nothing
     // — so a table of two dropped the unreadable row the moment the other one
     // parsed. Measured on `qa-corpus@41c6224` while re-pinning for #242: the
@@ -1063,8 +1064,8 @@ describe("the declaration axis", () => {
     });
   });
 
-  test("TC-970 cases resolve their module under an overridden root, and an id resolving to nothing fails the run", () => {
-    // TC-970
+  test("cases resolve their module under an overridden root, and an id resolving to nothing fails the run", () => {
+    // Trace: FR-043-AC-12
     // The axis itself: the same cases, scored against another declaration with
     // the engine held fixed. That is the only way a declaration-side fix is
     // distinguishable from a fix that had no effect.
@@ -1152,8 +1153,8 @@ describe("a delta across unlike inputs", () => {
     finding_localisation_rate: null,
   };
 
-  test("TC-971 the ENGINE may move and still be compared; the corpus, the declaration and the population may not", () => {
-    // TC-971
+  test("the ENGINE may move and still be compared; the corpus, the declaration and the population may not", () => {
+    // Trace: FR-043-AC-13
     // agent-ix/quoin#231 and #240's second half. Varying the engine and
     // comparing is what this benchmark is FOR, so it is deliberately not a
     // reason. The other three are the inputs a delta is only meaningful while
@@ -1189,8 +1190,8 @@ describe("a delta across unlike inputs", () => {
     ).toBe("by_language");
   });
 
-  test("TC-972 an incomparable run withdraws the CLAIM, keeps both numbers, and is not called a regression", () => {
-    // TC-972
+  test("an incomparable run withdraws the CLAIM, keeps both numbers, and is not called a regression", () => {
+    // Trace: FR-043-AC-13
     // The distinction that makes this usable: `improved` and `regressed` are
     // statements about a CHANGE, and a run over another declaration did not
     // observe one — the subject changed. Reporting it as a regression would
@@ -1248,8 +1249,8 @@ describe("a delta across unlike inputs", () => {
     ).toBe("regressed");
   });
 
-  test("TC-973 a baseline that records nothing for a field is UNKNOWN, not a match", () => {
-    // TC-973
+  test("a baseline that records nothing for a field is UNKNOWN, not a match", () => {
+    // Trace: FR-043-AC-13
     // The legacy baseline. It records no declaration, so a comparison against
     // it rests on an assumption nobody stated — and the two available answers,
     // refusing every old baseline or quietly assuming it matched, are both
@@ -1266,7 +1267,7 @@ describe("a delta across unlike inputs", () => {
 });
 
 describe("span-grounding ratchet", () => {
-  test("TC-1086 compares the computed rate and keeps the accepted floor on regression", () => {
+  test("compares the computed rate and keeps the accepted floor on regression", () => {
     const base = {
       provenance: {
         corpus_input: "same",
@@ -1295,7 +1296,7 @@ describe("span-grounding ratchet", () => {
     });
   });
 
-  test("TC-1093 ratchets exact loci per failure-shape family and names each miss", () => {
+  test("ratchets exact loci per failure-shape family and names each miss", () => {
     const base = {
       provenance: {
         corpus_input: "same",
@@ -1361,8 +1362,8 @@ describe("the committed mapping table", () => {
     readFileSync(join(__dirname, "..", "bench", "metrics.json"), "utf8"),
   );
 
-  test("TC-958 every declared family is mapped, and every mapping names a real source", () => {
-    // TC-958
+  test("every declared family is mapped, and every mapping names a real source", () => {
+    // Trace: FR-043-AC-2
     // The mapping is the contract between what a tool emits and what the
     // benchmark calls a finding. A family the dictionary declares but the table
     // does not map scores 0 forever and looks like a detector failure; a
@@ -1394,8 +1395,8 @@ describe("the committed mapping table", () => {
     expect(new Set(claims.map((claim) => claim.key)).size).toBe(claims.length);
   });
 
-  test("TC-959 the completed plan leaves no family on the declared `source: none` escape hatch", () => {
-    // TC-959
+  test("the completed plan leaves no family on the declared `source: none` escape hatch", () => {
+    // Trace: FR-043-AC-7
     // The difference between "we looked and the tool said nothing" and "nothing
     // looks for this" is the whole substance of a recall of 0. An omitted
     // family reads as an oversight; `source: none` reads as a declared hole.
@@ -1407,7 +1408,7 @@ describe("the committed mapping table", () => {
     expect(holes).toEqual([]);
   });
 
-  test("TC-1079 actionable unminted-id guidance is its own located family", () => {
+  test("actionable unminted-id guidance is its own located family", () => {
     expect(mapping.families["unminted-id-guidance"]).toEqual({
       source: "coverage.diagnostics",
       key: "untracked-id-has-minted-children",
@@ -1459,8 +1460,8 @@ describe("the canonical qa-corpus inventory", () => {
     for (const root of roots) rmSync(root, { recursive: true, force: true });
   });
 
-  test("TC-974 a language set yields one scorable case per language, each with its own id and input tree", () => {
-    // TC-974
+  test("a language set yields one scorable case per language, each with its own id and input tree", () => {
+    // Trace: FR-043-AC-14
     const root = corpus((dir) => {
       writeFileSync(join(dir, "case.yaml"), SHARED);
       for (const language of ["python", "rust", "typescript"]) {
@@ -1535,7 +1536,7 @@ describe("the canonical qa-corpus inventory", () => {
     ]);
   });
 
-  test("TC-975 the runner consumes the authoritative inventory instead of re-reading layouts", () => {
+  test("the runner consumes the authoritative inventory instead of re-reading layouts", () => {
     // qa-corpus's Python and Rust readers own layout validation. This consumer
     // receives their resolved ids, languages, directories and expectations.
     const root = join(__dirname, "..", "corpus");
@@ -1552,7 +1553,7 @@ describe("the canonical qa-corpus inventory", () => {
     expect(loaded.corpora.every((c) => c.language !== "unknown")).toBe(true);
   });
 
-  test("TC-976 an unreadable canonical envelope fails instead of becoming an empty corpus", () => {
+  test("an unreadable canonical envelope fails instead of becoming an empty corpus", () => {
     expect(() => validateCanonicalInventory({ bounds: {} })).toThrow(
       /must carry cases and numeric bounds/,
     );
@@ -1578,7 +1579,7 @@ describe("the canonical qa-corpus inventory", () => {
     ).toThrow(/case 0 lacks grading_contract/);
   });
 
-  test("TC-977 raw case metadata is not interpreted by this third consumer", () => {
+  test("raw case metadata is not interpreted by this third consumer", () => {
     const root = corpus((dir) => {
       mkdirSync(join(dir, "input"), { recursive: true });
       writeFileSync(join(dir, "expect.yaml"), "{}\n");
@@ -1593,15 +1594,15 @@ describe("the canonical qa-corpus inventory", () => {
     expect(loaded.corpora.map((c) => c.name)).toEqual(["a-case"]);
   });
 
-  test("TC-978 a canonical entry resolving to no fixture fails by case id", () => {
+  test("a canonical entry resolving to no fixture fails by case id", () => {
     const root = corpus(() => {});
     expect(() =>
       loadCorpus({ families: {} }, root, null, inventory([entry()])),
     ).toThrow(/canonical case a-case resolves to missing input/);
   });
 
-  test("TC-979 a pending case's expiry signal is read from `expect-pending.yaml`, never from the live block", () => {
-    // TC-979
+  test("a pending case's expiry signal is read from `expect-pending.yaml`, never from the live block", () => {
+    // Trace: FR-043-AC-15
     // The old rule demanded the future reason under `diagnostic_reasons:` in
     // `expect.yaml` — where stating it would be FALSE, because the reason does
     // not fire today, which is the whole point of the marker. All ten pending
@@ -1639,8 +1640,8 @@ describe("the canonical qa-corpus inventory", () => {
     expect(c.defects.map((d) => d.expect_reason).filter(Boolean)).toEqual([]);
   });
 
-  test("TC-980 a pending case with no forward block at all is distinguishable from one this runner merely cannot evaluate", () => {
-    // TC-980
+  test("a pending case with no forward block at all is distinguishable from one this runner merely cannot evaluate", () => {
+    // Trace: FR-043-AC-15
     const noBlock = corpus((dir) => {
       writeFileSync(
         join(dir, "case.yaml"),

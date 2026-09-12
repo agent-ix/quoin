@@ -95,7 +95,6 @@ const disposition: DischargeFact = {
 
 describe("clause discharge", () => {
   // Trace: FR-046-AC-1
-  // TC-1125
   it("accepts only a validated clause-binding-v1 report", () => {
     const parsed = parseClauseBinding(JSON.stringify(binding));
     expect(parsed).toEqual({ ok: true, value: binding });
@@ -107,7 +106,6 @@ describe("clause discharge", () => {
   });
 
   // Trace: FR-046-AC-2
-  // TC-1126
   it("partitions every binding clause into direct, disposition, or open", () => {
     const report = buildDischargeReport({
       binding,
@@ -128,7 +126,6 @@ describe("clause discharge", () => {
   });
 
   // Trace: FR-046-AC-3
-  // TC-1127
   it("keeps unresolved applicability separate and refuses to spend a fact on it", () => {
     const unresolvedFact: DischargeFact = {
       ...direct,
@@ -155,7 +152,6 @@ describe("clause discharge", () => {
   });
 
   // Trace: FR-046-AC-4
-  // TC-1128
   it("reopens a binding clause when its attestation is expired", () => {
     const expired: DischargeFact = {
       ...direct,
@@ -177,7 +173,6 @@ describe("clause discharge", () => {
   });
 
   // Trace: FR-046-AC-5
-  // TC-1129
   it("rejects duplicate facts and incomplete attestations", () => {
     expect(() =>
       buildDischargeReport({
@@ -228,7 +223,6 @@ describe("clause discharge", () => {
   });
 
   // Trace: FR-046-AC-6
-  // TC-1130
   it("renders every population without inventing a score", () => {
     const report = buildDischargeReport({
       binding,

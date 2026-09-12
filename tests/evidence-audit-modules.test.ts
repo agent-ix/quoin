@@ -170,7 +170,7 @@ async function report(modules: string[] = []) {
 }
 
 describe("ordered audit module transport", () => {
-  // Trace: TC-1598, FR-032-AC-12
+  // Trace: FR-032-AC-12
   it("forwards both roots in caller order and excludes the ambient catalog", async () => {
     const calls = transportDouble();
     const catalog = vi.spyOn(advisor, "loadMethodCatalog");
@@ -196,7 +196,7 @@ describe("ordered audit module transport", () => {
     ).toHaveLength(3);
   });
 
-  // Trace: TC-1599, FR-032-AC-12
+  // Trace: FR-032-AC-12
   it("preserves single-root catalog and coverage selection", async () => {
     const calls = transportDouble();
     const result = await report([alpha]);
@@ -210,7 +210,7 @@ describe("ordered audit module transport", () => {
     ).toEqual(["FR-001-AC-2", "FR-001-AC-3"]);
   });
 
-  // Trace: TC-1599, FR-032-AC-12
+  // Trace: FR-032-AC-12
   it("preserves ordinary discovery when no module was supplied", async () => {
     const calls = transportDouble();
     const result = await report();
@@ -222,7 +222,7 @@ describe("ordered audit module transport", () => {
     ).toEqual(["FR-001-AC-1", "FR-001-AC-2"]);
   });
 
-  // Trace: TC-1599, FR-032-AC-12
+  // Trace: FR-032-AC-12
   it("surfaces an unsupported producer invocation once, without dropping module arguments", async () => {
     const calls = transportDouble(true);
     await expect(report([alpha, beta])).rejects.toThrow(
@@ -272,7 +272,7 @@ title: Controlled ${method} criterion
     }
   }
 
-  // Trace: TC-1600, FR-032-AC-12
+  // Trace: FR-032-AC-12
   it("derives both real populations and consults both catalogs without adding ambient criteria", async () => {
     nativeFixture();
     const native = JSON.parse(
@@ -305,7 +305,7 @@ title: Controlled ${method} criterion
     expect(existsSync(join(repo, "spec", "evidence"))).toBe(false);
   });
 
-  // Trace: TC-1600, FR-032-AC-12
+  // Trace: FR-032-AC-12
   it("retains a healthy real single-module control", async () => {
     nativeFixture();
     const result = await report([alpha]);
@@ -314,7 +314,7 @@ title: Controlled ${method} criterion
     );
   });
 
-  // Trace: TC-1600, FR-032-AC-12
+  // Trace: FR-032-AC-12
   it("does not replace an absent supplied root with installed modules", async () => {
     nativeFixture();
     await expect(report([join(scratch, "missing-module")])).rejects.toThrow(
@@ -323,7 +323,7 @@ title: Controlled ${method} criterion
     expect(existsSync(join(repo, "spec", "evidence"))).toBe(false);
   });
 
-  // Trace: TC-1600, FR-032-AC-12
+  // Trace: FR-032-AC-12
   it("refuses a partially valid explicit set instead of auditing only its readable member", async () => {
     nativeFixture();
     await expect(
@@ -332,7 +332,7 @@ title: Controlled ${method} criterion
     expect(existsSync(join(repo, "spec", "evidence"))).toBe(false);
   });
 
-  // Trace: TC-1600, FR-032-AC-12
+  // Trace: FR-032-AC-12
   it("does not replace a malformed supplied module with installed modules", async () => {
     nativeFixture();
     writeFileSync(

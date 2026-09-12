@@ -31,7 +31,7 @@ This profile governs Quoin's quality benchmark, measurement store, comparison
 rules, gates, and deterministic report views. It does not make `/gap-analysis`
 or any agent review a universal executable gate.
 
-## Impact Scenarios
+## Applicability
 
 Apply it across development, review, release, and maintenance, whenever code
 changes what is collected, scored, persisted, compared, or rendered. These

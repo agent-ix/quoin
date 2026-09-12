@@ -10,7 +10,8 @@ import {
 } from "node:fs";
 import { dirname, join } from "node:path";
 
-import { canonicalJson, storeRoot } from "../evidence/store.js";
+import { canonicalJson } from "../store/canonical.js";
+import { storeRoot } from "../store/paths.js";
 import type { MeasurementCollection } from "./types.js";
 import {
   validateMeasurementCollection,
