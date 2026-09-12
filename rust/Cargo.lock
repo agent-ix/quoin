@@ -1190,10 +1190,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "quoin-assurance"
+version = "0.1.0"
+dependencies = [
+ "quoin-finding-types",
+ "quoin-quire-types",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "quoin-core"
 version = "0.1.0"
 dependencies = [
  "engineering-assurance",
+ "quoin-assurance",
  "schemars",
  "serde",
  "serde_json",
@@ -1209,6 +1220,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "quoin-finding-types"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "quoin-quire"
 version = "0.1.0"
 dependencies = [
@@ -1216,6 +1235,15 @@ dependencies = [
  "serde",
  "serde_json",
  "thiserror",
+]
+
+[[package]]
+name = "quoin-quire-types"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
 ]
 
 [[package]]

@@ -25,7 +25,6 @@ workspace = true
 
 [dependencies]
 quoin-assurance = { workspace = true }
-quoin-schemas = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }

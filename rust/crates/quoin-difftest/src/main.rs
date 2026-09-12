@@ -45,13 +45,37 @@ enum Request {
     Literal(&'static str),
     /// `{"echo": "x" * n}`.
     EchoOfBytes(usize),
+    /// A well-formed `assurance.build_case` request of exactly `n` bytes.
+    ///
+    /// Generated rather than written because the bound it probes is 16 MiB,
+    /// and "too large to put in the table" is a reason to generate the input,
+    /// not a reason to leave the boundary unasserted. Same class as the 64 MiB
+    /// `maxBuffer` incident, where the failure only appeared at a real payload
+    /// size — a limit nothing ever reaches is a limit nobody has tested.
+    ///
+    /// Both sides measure the RE-SERIALISED request, and `serde_json` sorts
+    /// object keys where `JSON.stringify` preserves insertion order. The two
+    /// orderings differ; their byte counts do not, which is why this works.
+    BuildCaseOfBytes(usize),
 }
+
+/// The `assurance.build_case` request [`Request::BuildCaseOfBytes`] pads.
+///
+/// Documents are empty on purpose: the padding rides in an obligation's
+/// statement, so a 16 MiB request still produces a few-hundred-byte payload
+/// and a difference is readable rather than being a wall of `x`.
+const BUILD_CASE_ENVELOPE: &str =
+    r#"{"documents":[],"obligations":[{"id":"FR-001-AC-1","statement":""}],"findings":[]}"#;
 
 impl Request {
     fn text(&self) -> String {
         match *self {
             Self::Literal(text) => text.to_owned(),
             Self::EchoOfBytes(n) => format!(r#"{{"echo":"{}"}}"#, "x".repeat(n)),
+            Self::BuildCaseOfBytes(n) => format!(
+                r#"{{"documents":[],"obligations":[{{"id":"FR-001-AC-1","statement":"{}"}}],"findings":[]}}"#,
+                "x".repeat(n.saturating_sub(BUILD_CASE_ENVELOPE.len()))
+            ),
         }
     }
 }
@@ -351,6 +375,20 @@ const CASES: &[Case] = &[
         request: Request::Literal(
             r#"{"documents":[],"obligations":[],"findings":[{"obligation":"FR-001-AC-1","summary":"s"}]}"#,
         ),
+    },
+    Case {
+        // The 16 MiB bound, from both directions. Until these existed the two
+        // sides' agreement about refusing an oversize request was asserted by
+        // nobody: the Rust unit test proved Rust refuses, and nothing proved
+        // the reference refuses the same byte.
+        name: "assurance/build-case-at-the-limit",
+        op: "assurance.build_case",
+        request: Request::BuildCaseOfBytes(16 * 1024 * 1024),
+    },
+    Case {
+        name: "assurance/build-case-refused-over-the-limit",
+        op: "assurance.build_case",
+        request: Request::BuildCaseOfBytes(16 * 1024 * 1024 + 1),
     },
     Case {
         name: "assurance/build-case-invalid-malformed",
