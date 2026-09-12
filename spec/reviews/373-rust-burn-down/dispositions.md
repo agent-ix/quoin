@@ -64,12 +64,22 @@ interchangeable:
 | assurance-record identity, and its file names | `sha256:<hex>` ids, `sha256-<hex>.json` files | `src/evidence/assurance-records.ts` |
 | change-assurance record digests | blake3 over JCS bytes, bare `<hex>.json` files | `src/change-assurance/store.ts` |
 | raw-evidence file references | `sha256:<hex>` | `src/measurement/intervention.ts` |
+| vendored-schema provenance pinning | sha256, **bare hex** | `src/quire/contract.ts:103` |
 
-The first and third share an algorithm and a prefix and differ only in role. A
-fourth, unclassified: `src/quire/contract.ts:103` `schemaHash` is bare-hex sha256
-over vendored schema bytes for provenance pinning — distinguishable from the third
-by rendering, which is the operative test, so probably its own role. Decide before
-Stage 4 closes.
+**The test for whether two roles are the same domain:** an implementation of one
+can be substituted for the other **without a rendering change**. Rendering is the
+operative property, not the algorithm — a bare-hex sha256 and a `sha256:`-prefixed
+sha256 are not interchangeable at any call site that parses or constructs the
+string, which is every call site that matters. `src/evidence/assurance-records.ts:522`
+rejecting a bare hex against `/^sha256:[0-9a-f]{64}$/` is that proof in the
+retained code.
+
+Under that test none of the four collapse — and the pair that looks collapsible,
+sharing both algorithm and prefix, is separated by role rather than by rendering,
+which is why it needs the map rather than the test. The fourth role,
+`src/quire/contract.ts:103` `schemaHash`, is bare-hex sha256 over vendored schema
+bytes for provenance pinning: distinguishable from the raw-file-reference role by
+rendering, so its own domain. Owner ruling 2026-09-12.
 
 Not fixed into this branch. It is a decision to take, not a defect to patch, and
 the branch is not held for it.
