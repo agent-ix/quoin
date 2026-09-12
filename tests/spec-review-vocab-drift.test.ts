@@ -109,7 +109,7 @@ function invariantSet(): Set<string> {
 }
 
 describe("spec-review analysis vocabulary", () => {
-  // Trace: FR-043-AC-7 / TC-283
+  // Trace: FR-095-AC-7 / TC-283
   it("keeps the direct skill, workflow docs, intake, gate, and schema aligned", () => {
     const direct = directAnalysisSet();
     expect(direct.size).toBe(7);
@@ -137,7 +137,7 @@ describe("spec-review analysis vocabulary", () => {
     }
   });
 
-  // Trace: FR-043-AC-5, FR-043-AC-6
+  // Trace: FR-095-AC-5, FR-095-AC-6
   it("blocks an all-set review until the EARS review document is recorded", async () => {
     const module = await loadInvariants();
     const direct = directAnalysisSet();
@@ -169,7 +169,7 @@ describe("spec-review analysis vocabulary", () => {
     );
   });
 
-  // Trace: FR-043-AC-4, FR-043-AC-5, FR-043-AC-6, FR-043-AC-7
+  // Trace: FR-095-AC-4, FR-095-AC-5, FR-095-AC-6, FR-095-AC-7
   it("cannot truncate all or bypass a required profile selection", async () => {
     const module = await loadInvariants();
     const analyses = [...directAnalysisSet()];
@@ -264,7 +264,7 @@ describe("spec-review analysis vocabulary", () => {
     });
   });
 
-  // Trace: FR-043-AC-3 / TC-279
+  // Trace: FR-095-AC-3 / TC-279
   it("keeps a recommended profile advisory when the user chooses base", async () => {
     const module = await loadInvariants();
     const instance = {
@@ -290,7 +290,7 @@ describe("spec-review analysis vocabulary", () => {
     );
   });
 
-  // Trace: FR-043-AC-8 / TC-284
+  // Trace: FR-095-AC-8 / TC-284
   it("preserves the ordinary base path when no profile applies", async () => {
     const module = await loadInvariants();
     const instance = {
