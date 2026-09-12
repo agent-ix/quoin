@@ -83,17 +83,23 @@ the `.tsp` schema source the estimate omitted).
 
 After the owner rulings of 2026-09-12 and the deletion of the one violation:
 
-|                             |                                                        Files |       Lines |
-| --------------------------- | -----------------------------------------------------------: | ----------: |
-| **Violations**              | **0** ([#375](https://github.com/agent-ix/quoin/issues/375)) |       **0** |
-| **Retained-with-successor** |                                                          345 |  **81,910** |
-| **Allowed**                 |                                                           18 |  **23,579** |
-| **Total population**        |                                                      **363** | **105,489** |
+|                             |   Files |       Lines |
+| --------------------------- | ------: | ----------: |
+| **Violations**              |       0 |       **0** |
+| **Retained-with-successor** |     326 |  **78,669** |
+| **Allowed**                 |      18 |  **23,579** |
+| **Total population**        | **344** | **102,248** |
 
 Nothing is unclassified — AC-3's "zero unclassified rows" is met.
 
-Population is 105,489 rather than the 105,814 measured above because
-`scripts/storybook-deploy.js` (325 lines) was deleted in this change, not reclassified.
+Population is 102,248 rather than the 105,814 first measured at `e718d45`. Three
+changes moved it, all in this branch: `scripts/storybook-deploy.js` deleted as the
+sole violation (325 lines); the corpus-measurement subsystem disposed of under
+[#388](https://github.com/agent-ix/quoin/issues/388) (3,200 lines across 20 files);
+`scripts/check-trace-tags.mjs` added (134 lines); and 185 redundant `// Trace:`
+lines merged away in the tag pass. The figures above are a fresh measurement at
+this revision, not the earlier ones adjusted — reconciling by arithmetic would
+have hidden the merge, which no ticket predicted.
 
 **81,910 is the burn-down target** — the slope AC-7 measures. Violations = 0 is the
 level AC-7 requires held from the day enforcement lands.
@@ -191,7 +197,7 @@ ticket.
 **Stages 8 and 9 have no tickets yet.** Rows in those stages name `quoin#373 Stage N`
 and the expiry is that stage's end.
 
-#### Engine — `src/` (27,692 lines, 169 files, all `shipped`)
+#### Engine — `src/` (25,575 lines, 158 files, all `shipped`)
 
 | Path                                                                                                     | Lang | Lines | Files | Reach              | Owner capability          | Stage                                                                                                                                                                    | Basis                                                                                                                                                                                                                                                                        |
 | -------------------------------------------------------------------------------------------------------- | ---- | ----: | ----: | ------------------ | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -212,7 +218,7 @@ and the expiry is that stage's end.
 | `src/completeness/**`                                                                                    | TS   |   685 |     5 | `shipped`          | completeness              | **3** ([#378](https://github.com/agent-ix/quoin/issues/378))                                                                                                             |                                                                                                                                                                                                                                                                              |
 | `src/validators/**`                                                                                      | TS   |   164 |     2 | `shipped`          | validators                | **2** ([#377](https://github.com/agent-ix/quoin/issues/377))                                                                                                             | Smallest engine module — #373's boundary proof-of-life.                                                                                                                                                                                                                      |
 
-#### Tests — `tests/` (33,707 lines, 109 files, all `oracle`)
+#### Tests — `tests/` (32,449 lines, 100 files, all `oracle`)
 
 | Path                                                | Lang |  Lines | Files | Reach            | Owner capability | Stage            | Basis                                                                                                                                                                                                                                                                      |
 | --------------------------------------------------- | ---- | -----: | ----: | ---------------- | ---------------- | ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -220,7 +226,7 @@ and the expiry is that stage's end.
 | `tests/props/*.prop.test.ts`                        | TS   |  1,157 |     7 | `oracle`         | property tests   | follows its code | Header: _"Property tests generated by the `spec-correctness` skill."_ **Not the `generated` exception** — it names a generator identity but records no source digest, and the files are hand-maintainable. Governed as ordinary source. `fr-005.prop.test.ts` `execSync`s. |
 | `tests/{support,fixtures,setup.ts,global-setup.ts}` | TS   |    419 |     2 | `oracle` harness | test harness     | follows its code | `support/semantic-module-template.ts` `execFileSync`s the cookiecutter.                                                                                                                                                                                                    |
 
-#### Qualification scripts — `scripts/` (13,160 lines, 37 files)
+#### Qualification scripts — `scripts/` (13,294 lines, 38 files)
 
 This is where **AC-9** bites: most of this block is capability `engineering-assurance`
 already owns in Rust. Marked **[EA]**.
