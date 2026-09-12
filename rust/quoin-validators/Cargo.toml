@@ -1,0 +1,55 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 Agent-IX
+#
+# quoin-validators — Stage 2 of the Rust burn-down (quoin#377, parent quoin#373).
+#
+# This manifest is deliberately SELF-CONTAINED. quoin#375 owns `rust/Cargo.toml`
+# and wires members at integration; five port agents each writing a workspace
+# root is five conflicts. Until that wiring lands the crate builds, tests, and
+# lints standalone, which is also the property the ticket asks for.
+#
+# At integration the three blocks marked `INTEGRATION:` collapse into
+# `workspace = true` / `{ workspace = true }`. Nothing else changes.
+
+[package]
+name = "quoin-validators"
+description = "Deterministic repository QA-gate validators for quoin."
+# INTEGRATION: -> version.workspace = true, edition.workspace = true, ...
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.98.1"
+license = "AGPL-3.0-or-later"
+repository = "https://github.com/agent-ix/quoin"
+authors = ["Agent-IX"]
+publish = false
+
+[dependencies]
+# INTEGRATION: -> { workspace = true }
+regex = "=1.13.1"
+serde = { version = "=1.0.228", features = ["derive"] }
+thiserror = "=2.0.18"
+
+[dev-dependencies]
+serde_json = "=1.0.150"
+tempfile = "=3.27.0"
+
+# INTEGRATION: -> [lints] workspace = true
+#
+# Copied verbatim from `rust/Cargo.toml` on branch feat/375-rust-workspace-stage-0
+# so a standalone `cargo clippy -- -D warnings` here enforces exactly what the
+# workspace gate will. If the two ever disagree, the workspace wins.
+[lints.rust]
+unsafe_code = "forbid"
+missing_docs = "warn"
+unreachable_pub = "warn"
+
+[lints.clippy]
+all = { level = "warn", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
+unwrap_used = "warn"
+expect_used = "warn"
+panic = "warn"
+indexing_slicing = "warn"
+cast_possible_truncation = "warn"
+cast_sign_loss = "warn"
+cast_possible_wrap = "warn"

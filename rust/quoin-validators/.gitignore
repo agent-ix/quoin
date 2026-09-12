@@ -1,0 +1,5 @@
+# Build output and the standalone lock. The lock belongs to the workspace root
+# (quoin#375), not to a member crate: committing one here would be a second
+# resolution of the same graph that nothing keeps in step.
+/target
+/Cargo.lock

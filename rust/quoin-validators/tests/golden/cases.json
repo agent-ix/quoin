@@ -1,0 +1,710 @@
+{
+  "note": "Input corpus for the TS->Rust parity oracle. Each case is materialised into a fresh temp directory; every file body is `lines.join(\"\\n\")`. Expected verdicts live in expected.json and are produced by generate-oracle.mts running the TypeScript implementation. See PROVENANCE.md.",
+  "cases": [
+    {
+      "name": "baseline-bad-gate",
+      "covers": "the TC-1067 fixture: claim + wiring + unasserted count",
+      "files": {
+        "Makefile": ["gate:", "\t./scripts/check_unwrap.sh", ""],
+        "scripts/check_unwrap.sh": [
+          "#!/usr/bin/env bash",
+          "# Gate for FR-001-AC-1: no production symbol shall call `unwrap`.",
+          "set -euo pipefail",
+          "grep -rn \"unwrap()\" src/ | wc -l",
+          "exit 0",
+          ""
+        ]
+      }
+    },
+    {
+      "name": "unwired-report",
+      "covers": "TC-1068: identical shell text with no wiring is a report",
+      "files": {
+        "Makefile": ["report:", "\t@echo report only", ""],
+        "scripts/check_unwrap.sh": [
+          "#!/usr/bin/env bash",
+          "# Gate for FR-001-AC-1: no production symbol shall call `unwrap`.",
+          "set -euo pipefail",
+          "grep -rn \"unwrap()\" src/ | wc -l",
+          "exit 0",
+          ""
+        ]
+      }
+    },
+    {
+      "name": "explicit-failure-path",
+      "covers": "TC-1069: a wired gate that can fail stays silent",
+      "files": {
+        "Makefile": ["gate:", "\t./scripts/check_unwrap.sh", ""],
+        "scripts/check_unwrap.sh": [
+          "#!/usr/bin/env bash",
+          "# Gate for FR-001-AC-1: no production symbol shall call `unwrap`.",
+          "if grep -rn \"unwrap()\" src/; then",
+          "  exit 1",
+          "fi",
+          ""
+        ]
+      }
+    },
+    {
+      "name": "no-gate-claim",
+      "covers": "TC-1070: a wired count script with no claim is a report",
+      "files": {
+        "Makefile": ["report:", "\t./scripts/count_unwrap.sh", ""],
+        "scripts/count_unwrap.sh": ["#!/bin/sh", "grep -rn \"unwrap()\" src/ | wc -l", ""]
+      }
+    },
+    {
+      "name": "check-keyword-claim",
+      "covers": "the claim keyword may be `check` as well as `gate`",
+      "files": {
+        "Makefile": ["ci:", "\t./scripts/todo.sh", ""],
+        "scripts/todo.sh": [
+          "#!/bin/sh",
+          "# Check for NFR-004: never leave TODO markers in shipped source.",
+          "grep -rn \"TODO\" src/ | wc -l",
+          ""
+        ]
+      }
+    },
+    {
+      "name": "lowercase-obligation",
+      "covers": "the claim regex carries /i, so a lowercase obligation is kept as written",
+      "files": {
+        "Makefile": ["gate:", "\t./scripts/unwrap.sh", ""],
+        "scripts/unwrap.sh": [
+          "#!/bin/sh",
+          "# gate for fr-003: no unwrap anywhere in the crate.",
+          "grep -rn \"unwrap\" src/ | wc -l",
+          ""
+        ]
+      }
+    },
+    {
+      "name": "uppercase-claim-keyword",
+      "covers": "GATE FOR in upper case, and an upper-case negative word",
+      "files": {
+        "Makefile": ["gate:", "\t./scripts/panic.sh", ""],
+        "scripts/panic.sh": [
+          "#!/bin/sh",
+          "# GATE FOR FR-012: NO PANIC IN THE WORKER LOOP.",
+          "grep -rn \"panic\" src/ | wc -l",
+          ""
+        ]
+      }
+    },
+    {
+      "name": "rg-matcher",
+      "covers": "rg is a matcher as well as grep",
+      "files": {
+        "Makefile": ["gate:", "\t./scripts/panic.sh", ""],
+        "scripts/panic.sh": [
+          "#!/bin/sh",
+          "# Gate for FR-005: no panic! calls on a request path.",
+          "rg -n 'panic!' . | wc -l",
+          ""
+        ]
+      }
+    },
+    {
+      "name": "ripgrep-is-not-rg",
+      "covers": "the \\b around the matcher token: `ripgrep` is not `rg`",
+      "files": {
+        "Makefile": ["gate:", "\t./scripts/tools.sh", ""],
+        "scripts/tools.sh": [
+          "#!/bin/sh",
+          "# Gate for FR-006: no unwrap in the tooling list.",
+          "echo \"ripgrep unwrap\" | wc -l",
+          ""
+        ]
+      }
+    },
+    {
+      "name": "count-piped-to-grep",
+      "covers": "a count consumed by grep can fail, so it is not unasserted",
+      "files": {
+        "Makefile": ["gate:", "\t./scripts/unwrap.sh", ""],
+        "scripts/unwrap.sh": [
+          "#!/bin/sh",
+          "# Gate for FR-007: no unwrap in src.",
+          "grep -rn \"unwrap\" src/ | wc -l | grep -q '^0$'",
+          ""
+        ]
+      }
+    },
+    {
+      "name": "count-piped-to-test",
+      "covers": "a count consumed by test can fail",
+      "files": {
+        "Makefile": ["gate:", "\t./scripts/unwrap.sh", ""],
+        "scripts/unwrap.sh": [
+          "#!/bin/sh",
+          "# Gate for FR-008: no unwrap in src.",
+          "grep -rn \"unwrap\" src/ | wc -l | test 0",
+          ""
+        ]
+      }
+    },
+    {
+      "name": "count-compared-eq",
+      "covers": "a count compared with -eq is asserted",
+      "files": {
+        "Makefile": ["gate:", "\t./scripts/unwrap.sh", ""],
+        "scripts/unwrap.sh": [
+          "#!/bin/sh",
+          "# Gate for FR-009: no unwrap in src.",
+          "[ $(grep -rn \"unwrap\" src/ | wc -l) -eq 0 ]",
+          ""
+        ]
+      }
+    },
+    {
+      "name": "count-compared-double-equals",
+      "covers": "a count compared with == is asserted",
+      "files": {
+        "Makefile": ["gate:", "\t./scripts/unwrap.sh", ""],
+        "scripts/unwrap.sh": [
+          "#!/bin/sh",
+          "# Gate for FR-010: no unwrap in src.",
+          "n=$(grep -rn \"unwrap\" src/ | wc -l); [ \"$n\" == \"0\" ]",
+          ""
+        ]
+      }
+    },
+    {
+      "name": "control-flow-guards",
+      "covers": "if/while/until lines are skipped; the bare line beside them is not",
+      "files": {
+        "Makefile": ["gate:", "\t./scripts/unwrap.sh", ""],
+        "scripts/unwrap.sh": [
+          "#!/bin/sh",
+          "# Gate for FR-011: no unwrap in src.",
+          "if grep -rn \"unwrap\" src/ | wc -l; then :; fi",
+          "  while grep -rn \"unwrap\" src/ | wc -l; do break; done",
+          "until grep -rn \"unwrap\" src/ | wc -l; do break; done",
+          "grep -rn \"unwrap\" src/ | wc -l",
+          ""
+        ]
+      }
+    },
+    {
+      "name": "no-quoted-pattern",
+      "covers": "an unquoted search token yields no reportable pattern",
+      "files": {
+        "Makefile": ["gate:", "\t./scripts/unwrap.sh", ""],
+        "scripts/unwrap.sh": [
+          "#!/bin/sh",
+          "# Gate for FR-013: no unwrap in src.",
+          "grep -rn unwrap src/ | wc -l",
+          ""
+        ]
+      }
+    },
+    {
+      "name": "empty-quoted-pattern",
+      "covers": "an empty quoted token yields no reportable pattern",
+      "files": {
+        "Makefile": ["gate:", "\t./scripts/unwrap.sh", ""],
+        "scripts/unwrap.sh": [
+          "#!/bin/sh",
+          "# Gate for FR-014: no unwrap in src.",
+          "grep -rn \"\" src/ | wc -l",
+          ""
+        ]
+      }
+    },
+    {
+      "name": "single-quoted-pattern",
+      "covers": "single quotes delimit the pattern too",
+      "files": {
+        "Makefile": ["gate:", "\t./scripts/unwrap.sh", ""],
+        "scripts/unwrap.sh": [
+          "#!/bin/sh",
+          "# Gate for FR-015: no unwrap in src.",
+          "grep -rn 'unwrap' src/ | wc -l",
+          ""
+        ]
+      }
+    },
+    {
+      "name": "pattern-word-too-short",
+      "covers": "the shared identifier must be four characters or more",
+      "files": {
+        "Makefile": ["gate:", "\t./scripts/tod.sh", ""],
+        "scripts/tod.sh": [
+          "#!/bin/sh",
+          "# Gate for FR-016: no TOD markers.",
+          "grep -rn \"TOD\" src/ | wc -l",
+          ""
+        ]
+      }
+    },
+    {
+      "name": "claim-and-pattern-disjoint",
+      "covers": "a claim about one token does not join a count of another",
+      "files": {
+        "Makefile": ["gate:", "\t./scripts/unwrap.sh", ""],
+        "scripts/unwrap.sh": [
+          "#!/bin/sh",
+          "# Gate for FR-017: no unwrap in src.",
+          "grep -rn \"expect\" src/ | wc -l",
+          ""
+        ]
+      }
+    },
+    {
+      "name": "wc-l-without-dash",
+      "covers": "the counter regex is -?l, so `wc l` counts as a counter",
+      "files": {
+        "Makefile": ["gate:", "\t./scripts/unwrap.sh", ""],
+        "scripts/unwrap.sh": [
+          "#!/bin/sh",
+          "# Gate for FR-018: no unwrap in src.",
+          "grep -rn \"unwrap\" src/ | wc l",
+          ""
+        ]
+      }
+    },
+    {
+      "name": "wc-lc-is-not-a-counter",
+      "covers": "the \\b after -?l, so `wc -lc` is not a line counter",
+      "files": {
+        "Makefile": ["gate:", "\t./scripts/unwrap.sh", ""],
+        "scripts/unwrap.sh": [
+          "#!/bin/sh",
+          "# Gate for FR-019: no unwrap in src.",
+          "grep -rn \"unwrap\" src/ | wc -lc",
+          ""
+        ]
+      }
+    },
+    {
+      "name": "negative-word-must-be-whole-word",
+      "covers": "`notable` contains `not` but is not a negative claim",
+      "files": {
+        "Makefile": ["gate:", "\t./scripts/unwrap.sh", ""],
+        "scripts/unwrap.sh": [
+          "#!/bin/sh",
+          "# Gate for FR-020: notable unwrap counts are tracked here.",
+          "grep -rn \"unwrap\" src/ | wc -l",
+          ""
+        ]
+      }
+    },
+    {
+      "name": "negative-word-variants",
+      "covers": "forbids / forbidden / without are negative claims",
+      "files": {
+        "Makefile": [
+          "gate:",
+          "\t./scripts/a_forbids.sh",
+          "\t./scripts/b_forbidden.sh",
+          "\t./scripts/c_without.sh",
+          ""
+        ],
+        "scripts/a_forbids.sh": [
+          "#!/bin/sh",
+          "# Gate for FR-021: the policy forbids unwrap in src.",
+          "grep -rn \"unwrap\" src/ | wc -l",
+          ""
+        ],
+        "scripts/b_forbidden.sh": [
+          "#!/bin/sh",
+          "# Gate for FR-022: unwrap is forbidden in src.",
+          "grep -rn \"unwrap\" src/ | wc -l",
+          ""
+        ],
+        "scripts/c_without.sh": [
+          "#!/bin/sh",
+          "# Gate for FR-023: src ships without unwrap.",
+          "grep -rn \"unwrap\" src/ | wc -l",
+          ""
+        ]
+      }
+    },
+    {
+      "name": "non-negative-claim",
+      "covers": "a claim with no negative word is not a gate claim to report",
+      "files": {
+        "Makefile": ["gate:", "\t./scripts/unwrap.sh", ""],
+        "scripts/unwrap.sh": [
+          "#!/bin/sh",
+          "# Gate for FR-024: count every unwrap in src.",
+          "grep -rn \"unwrap\" src/ | wc -l",
+          ""
+        ]
+      }
+    },
+    {
+      "name": "first-claim-wins",
+      "covers": "the first claim in the file decides, even when a later one is negative",
+      "files": {
+        "Makefile": ["gate:", "\t./scripts/unwrap.sh", ""],
+        "scripts/unwrap.sh": [
+          "#!/bin/sh",
+          "# Gate for AA-1: count every unwrap in src.",
+          "# Gate for BB-2: no unwrap in src.",
+          "grep -rn \"unwrap\" src/ | wc -l",
+          ""
+        ]
+      }
+    },
+    {
+      "name": "claim-deep-in-file",
+      "covers": "the claim need not be near the top",
+      "files": {
+        "Makefile": ["gate:", "\t./scripts/unwrap.sh", ""],
+        "scripts/unwrap.sh": [
+          "#!/bin/sh",
+          "set -euo pipefail",
+          "cd \"$(dirname \"$0\")/..\"",
+          "",
+          "   # Gate for FR-025: no unwrap in src.",
+          "grep -rn \"unwrap\" src/ | wc -l",
+          ""
+        ]
+      }
+    },
+    {
+      "name": "multiple-findings-one-file",
+      "covers": "every offending line in a file is reported, ordered by line",
+      "files": {
+        "Makefile": ["gate:", "\t./scripts/unwrap.sh", ""],
+        "scripts/unwrap.sh": [
+          "#!/bin/sh",
+          "# Gate for FR-026: no unwrap and no expect in src.",
+          "grep -rn \"unwrap\" src/ | wc -l",
+          "echo done",
+          "grep -rn \"expect\" src/ | wc -l",
+          ""
+        ]
+      }
+    },
+    {
+      "name": "multiple-files-sorted",
+      "covers": "findings are ordered by path across files",
+      "files": {
+        "Makefile": ["gate:", "\t./scripts/b_second.sh", "\t./scripts/a_first.sh", ""],
+        "scripts/b_second.sh": [
+          "#!/bin/sh",
+          "# Gate for FR-027: no expect in src.",
+          "grep -rn \"expect\" src/ | wc -l",
+          ""
+        ],
+        "scripts/a_first.sh": [
+          "#!/bin/sh",
+          "# Gate for FR-028: no unwrap in src.",
+          "grep -rn \"unwrap\" src/ | wc -l",
+          ""
+        ]
+      }
+    },
+    {
+      "name": "wiring-first-in-sort-order",
+      "covers": "wiredBy is the first wiring file in full-path sort order",
+      "files": {
+        ".github/workflows/ci.yml": [
+          "jobs:",
+          "  gate:",
+          "    steps:",
+          "      - run: ./scripts/check_unwrap.sh",
+          ""
+        ],
+        "Makefile": ["gate:", "\t./scripts/check_unwrap.sh", ""],
+        "scripts/check_unwrap.sh": [
+          "#!/bin/sh",
+          "# Gate for FR-029: no unwrap in src.",
+          "grep -rn \"unwrap\" src/ | wc -l",
+          ""
+        ]
+      }
+    },
+    {
+      "name": "justfile-wiring",
+      "covers": "a justfile is wiring",
+      "files": {
+        "justfile": ["gate:", "    ./scripts/check_unwrap.sh", ""],
+        "scripts/check_unwrap.sh": [
+          "#!/bin/sh",
+          "# Gate for FR-030: no unwrap in src.",
+          "grep -rn \"unwrap\" src/ | wc -l",
+          ""
+        ]
+      }
+    },
+    {
+      "name": "package-json-wiring",
+      "covers": "package.json is wiring",
+      "files": {
+        "package.json": [
+          "{",
+          "  \"scripts\": { \"gate\": \"./scripts/check_unwrap.sh\" }",
+          "}",
+          ""
+        ],
+        "scripts/check_unwrap.sh": [
+          "#!/bin/sh",
+          "# Gate for FR-031: no unwrap in src.",
+          "grep -rn \"unwrap\" src/ | wc -l",
+          ""
+        ]
+      }
+    },
+    {
+      "name": "taskfile-wiring",
+      "covers": "Taskfile.yaml is wiring",
+      "files": {
+        "Taskfile.yaml": ["tasks:", "  gate:", "    cmds:", "      - ./scripts/check_unwrap.sh", ""],
+        "scripts/check_unwrap.sh": [
+          "#!/bin/sh",
+          "# Gate for FR-032: no unwrap in src.",
+          "grep -rn \"unwrap\" src/ | wc -l",
+          ""
+        ]
+      }
+    },
+    {
+      "name": "makefile-suffix-wiring",
+      "covers": "Makefile.<suffix> is wiring",
+      "files": {
+        "Makefile.ci": ["gate:", "\t./scripts/check_unwrap.sh", ""],
+        "scripts/check_unwrap.sh": [
+          "#!/bin/sh",
+          "# Gate for FR-033: no unwrap in src.",
+          "grep -rn \"unwrap\" src/ | wc -l",
+          ""
+        ]
+      }
+    },
+    {
+      "name": "workflow-outside-github-is-not-wiring",
+      "covers": "a YAML workflow outside .github/workflows/ is not wiring",
+      "files": {
+        "ci/workflows/deploy.yml": ["steps:", "  - run: ./scripts/check_unwrap.sh", ""],
+        "scripts/check_unwrap.sh": [
+          "#!/bin/sh",
+          "# Gate for FR-034: no unwrap in src.",
+          "grep -rn \"unwrap\" src/ | wc -l",
+          ""
+        ]
+      }
+    },
+    {
+      "name": "uppercase-workflow-extension-is-not-wiring",
+      "covers": "/\\.ya?ml$/ is case-sensitive, so .YML is not a workflow",
+      "files": {
+        ".github/workflows/CI.YML": ["steps:", "  - run: ./scripts/check_unwrap.sh", ""],
+        "scripts/check_unwrap.sh": [
+          "#!/bin/sh",
+          "# Gate for FR-042: no unwrap in src.",
+          "grep -rn \"unwrap\" src/ | wc -l",
+          ""
+        ]
+      }
+    },
+    {
+      "name": "uppercase-sh-extension-is-not-a-script",
+      "covers": "extname comparison is case-sensitive, so .SH is not inspected",
+      "files": {
+        "Makefile": ["gate:", "\t./scripts/CHECK_UNWRAP.SH", ""],
+        "scripts/CHECK_UNWRAP.SH": [
+          "#!/bin/sh",
+          "# Gate for FR-043: no unwrap in src.",
+          "grep -rn \"unwrap\" src/ | wc -l",
+          ""
+        ]
+      }
+    },
+    {
+      "name": "wiring-by-basename",
+      "covers": "wiring is matched by bare basename as well as by path",
+      "files": {
+        "Makefile": ["gate:", "\tbash check_unwrap.sh", ""],
+        "scripts/check_unwrap.sh": [
+          "#!/bin/sh",
+          "# Gate for FR-035: no unwrap in src.",
+          "grep -rn \"unwrap\" src/ | wc -l",
+          ""
+        ]
+      }
+    },
+    {
+      "name": "excluded-directories",
+      "covers": ".git dist node_modules spec target vendor are never descended into",
+      "files": {
+        "Makefile": ["gate:", "\t./scripts/check_unwrap.sh", ""],
+        "scripts/check_unwrap.sh": [
+          "#!/bin/sh",
+          "# Gate for FR-036: no unwrap in src.",
+          "grep -rn \"unwrap\" src/ | wc -l",
+          ""
+        ],
+        ".git/hooks/check_unwrap.sh": [
+          "#!/bin/sh",
+          "# Gate for GIT-1: no unwrap in src.",
+          "grep -rn \"unwrap\" src/ | wc -l",
+          ""
+        ],
+        "dist/check_unwrap.sh": [
+          "#!/bin/sh",
+          "# Gate for DIST-1: no unwrap in src.",
+          "grep -rn \"unwrap\" src/ | wc -l",
+          ""
+        ],
+        "node_modules/pkg/check_unwrap.sh": [
+          "#!/bin/sh",
+          "# Gate for NM-1: no unwrap in src.",
+          "grep -rn \"unwrap\" src/ | wc -l",
+          ""
+        ],
+        "spec/check_unwrap.sh": [
+          "#!/bin/sh",
+          "# Gate for SPEC-1: no unwrap in src.",
+          "grep -rn \"unwrap\" src/ | wc -l",
+          ""
+        ],
+        "target/check_unwrap.sh": [
+          "#!/bin/sh",
+          "# Gate for TARGET-1: no unwrap in src.",
+          "grep -rn \"unwrap\" src/ | wc -l",
+          ""
+        ],
+        "vendor/check_unwrap.sh": [
+          "#!/bin/sh",
+          "# Gate for VENDOR-1: no unwrap in src.",
+          "grep -rn \"unwrap\" src/ | wc -l",
+          ""
+        ],
+        "node_modules/pkg/Makefile": ["gate:", "\t./check_unwrap.sh", ""]
+      }
+    },
+    {
+      "name": "nested-and-hidden-directories",
+      "covers": "the walk descends arbitrarily, and only .git is excluded among dotted dirs",
+      "files": {
+        "Makefile": ["gate:", "\t./.ci/deep/nested/check_unwrap.sh", ""],
+        ".ci/deep/nested/check_unwrap.sh": [
+          "#!/bin/sh",
+          "# Gate for FR-037: no unwrap in src.",
+          "grep -rn \"unwrap\" src/ | wc -l",
+          ""
+        ]
+      }
+    },
+    {
+      "name": "crlf-line-endings",
+      "covers": "lines split on CRLF, so the reported line number is still right",
+      "files": {
+        "Makefile": ["gate:", "\t./scripts/check_unwrap.sh", ""],
+        "scripts/check_unwrap.sh": [
+          "#!/bin/sh\r",
+          "# Gate for FR-038: no unwrap in src.\r",
+          "set -e\r",
+          "grep -rn \"unwrap\" src/ | wc -l\r",
+          ""
+        ]
+      }
+    },
+    {
+      "name": "no-trailing-newline",
+      "covers": "a file whose last line has no terminator still reports",
+      "files": {
+        "Makefile": ["gate:", "\t./scripts/check_unwrap.sh", ""],
+        "scripts/check_unwrap.sh": [
+          "#!/bin/sh",
+          "# Gate for FR-039: no unwrap in src.",
+          "grep -rn \"unwrap\" src/ | wc -l"
+        ]
+      }
+    },
+    {
+      "name": "non-sh-extension",
+      "covers": "only .sh files are inspected",
+      "files": {
+        "Makefile": ["gate:", "\t./scripts/check_unwrap.bash", ""],
+        "scripts/check_unwrap.bash": [
+          "#!/bin/bash",
+          "# Gate for FR-040: no unwrap in src.",
+          "grep -rn \"unwrap\" src/ | wc -l",
+          ""
+        ]
+      }
+    },
+    {
+      "name": "dotfile-named-sh",
+      "covers": "path.extname(\".sh\") is empty, so a file named .sh is not a script",
+      "files": {
+        "Makefile": ["gate:", "\t./scripts/.sh", ""],
+        "scripts/.sh": [
+          "#!/bin/sh",
+          "# Gate for FR-041: no unwrap in src.",
+          "grep -rn \"unwrap\" src/ | wc -l",
+          ""
+        ]
+      }
+    },
+    {
+      "name": "empty-repository",
+      "covers": "an empty population produces an empty verdict without erroring",
+      "files": {}
+    },
+    {
+      "name": "wiring-only-no-scripts",
+      "covers": "wiring with nothing to wire",
+      "files": {
+        "Makefile": ["build:", "\techo hi", ""],
+        "package.json": ["{}", ""]
+      }
+    },
+    {
+      "name": "realistic-mixed-repo",
+      "covers": "several scripts, several wiring files, findings and non-findings together",
+      "files": {
+        "Makefile": [
+          "lint:",
+          "\t./scripts/lint.sh",
+          "gate:",
+          "\t./scripts/no_unwrap.sh",
+          "\t./scripts/no_todo.sh",
+          ""
+        ],
+        ".github/workflows/ci.yaml": [
+          "jobs:",
+          "  build:",
+          "    steps:",
+          "      - run: ./scripts/no_sleep.sh",
+          "      - run: make gate",
+          ""
+        ],
+        "scripts/lint.sh": ["#!/bin/sh", "eslint .", ""],
+        "scripts/no_unwrap.sh": [
+          "#!/usr/bin/env bash",
+          "# Gate for FR-100-AC-1: no production symbol shall call `unwrap`.",
+          "set -euo pipefail",
+          "grep -rn \"unwrap()\" src/ | wc -l",
+          ""
+        ],
+        "scripts/no_todo.sh": [
+          "#!/usr/bin/env bash",
+          "# Check for FR-101: source shall carry no TODO markers.",
+          "grep -rn \"TODO\" src/ | wc -l",
+          "grep -rn \"FIXME\" src/ | wc -l",
+          ""
+        ],
+        "scripts/no_sleep.sh": [
+          "#!/usr/bin/env bash",
+          "# Gate for NFR-009: tests shall never call sleep.",
+          "if grep -rn \"sleep\" tests/; then exit 1; fi",
+          ""
+        ],
+        "docs/gates.md": ["We run ./scripts/no_unwrap.sh in CI.", ""],
+        "vendor/tool/check.sh": [
+          "#!/bin/sh",
+          "# Gate for VEN-1: no unwrap in src.",
+          "grep -rn \"unwrap\" src/ | wc -l",
+          ""
+        ]
+      }
+    }
+  ]
+}
