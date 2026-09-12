@@ -153,3 +153,14 @@ The conflict with AC-8 is therefore real and is resolved as follows:
 Amending the spec is out of scope for quoin#381 and is not done here: this file
 records the conflict and its resolution so the cutover ticket inherits a written
 decision instead of rediscovering an argument.
+
+## A note on resolving `HEAD` with `gix`
+
+Recorded so the next person does not spend the attempt. `Revision::Head`
+resolves `refs/remotes/origin/HEAD`, and nothing in a fetch creates that ref:
+`+refs/heads/*:refs/remotes/origin/*` produces no ref named `HEAD`. The obvious
+repair — read the remote's advertised `HEAD` out of `ref_map.remote_refs` after
+`prepare_fetch` — does not work either, because `remote_refs` is already
+filtered by the refspecs that were supplied. The working mechanism is the one
+`gix`'s own clone uses: add `+HEAD:refs/remotes/origin/HEAD` to the fetch
+refspecs, so the ref the resolver looks for is a ref the fetch actually wrote.

@@ -16,7 +16,19 @@ allow = [
     "MIT",
     "Apache-2.0",
     "Unicode-3.0",
+    # Arrived with `gix` (quoin#381). Every one is permissive and adds no
+    # obligation beyond attribution:
+    #   ISC                  rustls-webpki, untrusted, and the ISC halves of
+    #                        aws-lc-rs / aws-lc-sys
+    #   BSD-3-Clause         subtle, and the BSD-3-Clause half of encoding_rs
+    #   Zlib                 foldhash, zlib-rs
+    #   CDLA-Permissive-2.0  webpki-root-certs
+    "ISC",
+    "BSD-3-Clause",
+    "Zlib",
+    "CDLA-Permissive-2.0",
 ]
+
 # quoin's own crates are AGPL-3.0-or-later (the repository license). Every one
 # of them is `publish = false`, so ignoring private crates covers them all
 # permanently WITHOUT admitting AGPL into the third-party graph — the
@@ -24,8 +36,47 @@ allow = [
 private = { ignore = true }
 confidence-threshold = 0.9
 
+# `uluru` (an LRU cache, reached through gix-worktree) is MPL-2.0, which is
+# weak copyleft and therefore a different kind of thing from everything in
+# `allow` above. It gets a named per-crate exception rather than an allow-list
+# entry, so that MPL cannot arrive unnoticed in some future dependency.
+#
+# This is a policy exception to a permissive-only list, not a legal exposure:
+# MPL-2.0 s3.3 is explicitly compatible with the GPL/AGPL family, and quoin is
+# AGPL-3.0-or-later, so there is no licence conflict in either direction. MPL's
+# obligations attach per-file to *modified* MPL source; we consume `uluru`
+# unmodified, so s3.2 — distribution in a larger work under our own terms — is
+# satisfied by shipping the crate's own source and notice unchanged.
+[[licenses.exceptions]]
+crate = "uluru"
+allow = ["MPL-2.0"]
+
 [bans]
 multiple-versions = "deny"
+# The rule this list follows, and the only rule: for a duplicated crate, the
+# skipped side is the one reachable *solely* through `gix`. A version any of
+# our own crates reaches by a path that does not pass through `gix` is ours,
+# stays counted, and must be resolved rather than skipped — a skip there would
+# hide our own problem. Every chain below was read off
+#
+#   cargo +1.98.1 tree --manifest-path rust/Cargo.toml --locked \
+#       -i <crate>@<version> --target all --edges normal,build --prefix depth
+#
+# and the skips are exact versions, so a bump re-opens the question instead of
+# inheriting the answer.
+skip = [
+    # hashbrown 0.17.1 is OURS — quoin-config reaches it through
+    # serde_yaml_ng -> indexmap — so it is the side that stays counted. The two
+    # older majors are gix-only:
+    #   0.14.5  dashmap -> gix-tempfile -> gix -> quoin-modules
+    #   0.16.1  clru -> gix-pack -> gix -> quoin-modules
+    { crate = "hashbrown@0.14.5", reason = "gix-only: dashmap -> gix-tempfile -> gix -> quoin-modules" },
+    { crate = "hashbrown@0.16.1", reason = "gix-only: clru -> gix-pack -> gix -> quoin-modules" },
+    # base64 is the one pair where BOTH sides are gix-only, so either could be
+    # skipped; we skip the narrower one. 0.22.1 is reached by two gix paths
+    # (gix-transport directly, and hyper-util under reqwest), 0.23.1 by one.
+    { crate = "base64@0.23.1", reason = "gix-only: reqwest -> gix-transport -> gix -> quoin-modules; the other side, 0.22.1, is also gix-only but more widely shared, so it is the one left counted" },
+]
 wildcards = "deny"
 # An in-workspace `path` dependency has no version to pin and is not the kind
 # of wildcard this check exists to catch — the bytes are in this tree. Only
