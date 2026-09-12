@@ -323,6 +323,22 @@ rust-e2e: rust-build
 # The Rust gate, in the order a failure is cheapest to read: format and lint
 # first (seconds), then the supply-chain check, then the suites, then the
 # cross-language comparison that needs both trees built.
+# FR-097: `src/core/types.ts` is GENERATED from the Rust boundary types, never
+# hand-written. This target is the only thing that may write it, and it rewrites
+# the two digests in `quoin-schemas/src/lib.rs` in the same run — the artefact
+# and the assertion about it cannot be updated apart. `scripts/refresh-quire-
+# schemas.mjs` does the same for the vendored quire schemas; this is that
+# pattern with a `schemars` render in place of a pinned git object.
+#
+# The assertion is NOT in this recipe. It is in `quoin-schemas`' tests, so a
+# generated file that disagrees with the Rust types fails `make rust-gate`
+# whether or not anyone thought to run `make types` first.
+.PHONY: types
+types:
+	cd $(RUST_DIR) && cargo run --locked $(CARGO_TARGET_FLAG) \
+	  --bin quoin-schemas-gen -- --repo $(CURDIR)
+	$(PNPM) exec prettier --write $(CURDIR)/src/core/types.ts
+
 .PHONY: rust-gate
 rust-gate: rust-lint rust-deny rust-test rust-e2e rust-difftest
 	@echo "rust-gate: fmt, clippy -D warnings, cargo deny, tests, the end-to-end caller and the differential harness passed"
@@ -470,6 +486,7 @@ help:
 	@echo "Common targets:"
 	@echo "  make build              - Build TypeScript"
 	@echo "  make rust-gate          - Rust fmt, clippy, deny, tests and difftest"
+	@echo "  make types              - regenerate src/core/types.ts from the Rust types"
 	@echo "  make test               - Run the exact-source canonical verification stack"
 	@echo "  make test-with-quire QUIRE=/absolute/path - Run the explicit inner test gate"
 	@echo "  make lint               - Run linter"

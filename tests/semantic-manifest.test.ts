@@ -72,10 +72,7 @@ afterEach(() => {
 });
 
 describe("FR-070 semantic manifest block", () => {
-  // Trace: FR-070-AC-1
-  // Trace: TC-1336
-  // Trace: NFR-017-AC-1
-  // Trace: TC-1379
+  // Trace: FR-070-AC-1, NFR-017-AC-1
   it("loads every default module unchanged when no semantic block is present", () => {
     const roots = defaultModuleRoots().filter((root) => root.length > 0);
     const catalog = loadCatalog([
@@ -91,7 +88,6 @@ describe("FR-070 semantic manifest block", () => {
   });
 
   // Trace: FR-070-AC-2
-  // Trace: TC-1337
   it("reads a minimal block and reports it in the authoring pack", () => {
     const root = moduleCopy("minimal", (m) => {
       m.semantic = {
@@ -122,7 +118,6 @@ describe("FR-070 semantic manifest block", () => {
   });
 
   // Trace: FR-070-AC-3
-  // Trace: TC-1338
   it("rejects an unknown key naming it and accepts every admitted key", () => {
     const bad = moduleCopy("unknown-key", (m) => {
       (m.semantic as Json).foo = 1;
@@ -146,7 +141,6 @@ describe("FR-070 semantic manifest block", () => {
   });
 
   // Trace: FR-070-AC-4
-  // Trace: TC-1339
   it("rejects an export that no object type declares", () => {
     const root = moduleCopy("bad-export", (m) => {
       (m.semantic as Json).exports = ["endpoint"];
@@ -157,7 +151,6 @@ describe("FR-070 semantic manifest block", () => {
   });
 
   // Trace: FR-070-AC-5
-  // Trace: TC-1340
   it("rejects an unsupported contract version before reading any other key", () => {
     const root = moduleCopy("bad-version", (m) => {
       (m.semantic as Json).contract_version = "2.0.0";
@@ -170,7 +163,6 @@ describe("FR-070 semantic manifest block", () => {
   });
 
   // Trace: FR-070-AC-6
-  // Trace: TC-1341
   it("fails to install a second module declaring the same semantic package, naming both", () => {
     const first = moduleCopy("alpha-module");
     const second = moduleCopy("beta-module");
@@ -192,7 +184,6 @@ describe("FR-070 semantic manifest block", () => {
   });
 
   // Trace: FR-070-AC-7
-  // Trace: TC-1383
   it("rejects a target outside the registry and a package that is not org/repo", () => {
     const target = moduleCopy("bad-target", (m) => {
       (m.semantic as Json).targets = ["go"];
@@ -258,7 +249,6 @@ describe("FR-073 data_schema by path and digest", () => {
   }
 
   // Trace: FR-073-AC-1
-  // Trace: TC-1360
   it("installs a reference-form data_schema and resolves it against the vendored semantic-core bundle", () => {
     const root = moduleCopy("ref-ok");
     const installed = installPlugin(`path:${root}`, home);
@@ -303,7 +293,6 @@ describe("FR-073 data_schema by path and digest", () => {
   });
 
   // Trace: FR-070-AC-4
-  // Trace: TC-1339
   it("rejects an export whose data_schema is not a { schema, digest } reference", () => {
     const root = moduleCopy("export-inline", (m) => {
       (m.semantic as Json).exports = ["entity", "enumeration"];
@@ -319,7 +308,6 @@ describe("FR-073 data_schema by path and digest", () => {
   });
 
   // Trace: FR-073-AC-3
-  // Trace: TC-1362
   it("treats a $ref to the schema's own $id as a fragment, not a cycle", () => {
     const root = moduleCopy("self-ref", (m, moduleRoot) => {
       const file = join(moduleRoot, "schemas", "Entity.json");
@@ -335,8 +323,7 @@ describe("FR-073 data_schema by path and digest", () => {
     expect(codes(root).filter((c) => c.startsWith("error:"))).toEqual([]);
   });
 
-  // Trace: FR-070-AC-1
-  // Trace: TC-1379
+  // Trace: FR-070-AC-1, NFR-017-AC-1
   it("re-validates installed modules on the reconcile path", () => {
     const root = moduleCopy("reconciled");
     installPlugin(`path:${root}`, home);
@@ -359,7 +346,6 @@ describe("FR-073 data_schema by path and digest", () => {
   });
 
   // Trace: FR-073-AC-2
-  // Trace: TC-1361
   it("fails on digest mismatch, missing, non-JSON, and $id-less schema files naming the path and reason", () => {
     const mismatch = moduleCopy("mismatch", (_m, root) => {
       writeFileSync(
@@ -405,7 +391,6 @@ describe("FR-073 data_schema by path and digest", () => {
   });
 
   // Trace: FR-073-AC-3
-  // Trace: TC-1362
   it("fails a $ref to another semantic-core version, an unshipped $ref, and a $ref cycle naming the $ref", () => {
     const rewrite = (
       name: string,
@@ -453,7 +438,6 @@ describe("FR-073 data_schema by path and digest", () => {
   });
 
   // Trace: FR-073-AC-4
-  // Trace: TC-1363
   it("warns on an inline data_schema under a semantic block and stays silent without one", () => {
     const withBlock = moduleCopy("inline-warn");
     const warnings = codes(withBlock).filter((c) => c.startsWith("warning:"));
@@ -465,7 +449,6 @@ describe("FR-073 data_schema by path and digest", () => {
   });
 
   // Trace: FR-073-AC-5
-  // Trace: TC-1364
   it("rejects .. and symlink escapes and an ambiguous mixed data_schema", () => {
     const dotdot = moduleCopy("dotdot", (m) => {
       ((m.object_types as Json[])[0].data_schema as Json).schema =
@@ -496,7 +479,6 @@ describe("FR-073 data_schema by path and digest", () => {
   });
 
   // Trace: FR-073-CON-1
-  // Trace: TC-1365
   it("resolves references with no network read", () => {
     // No fetch/http import exists on the resolution path; assert the module graph statically.
     const source = readFileSync(
@@ -509,7 +491,6 @@ describe("FR-073 data_schema by path and digest", () => {
   });
 
   // Trace: FR-073-CON-2
-  // Trace: TC-1366
   it("keeps the inline form valid and silent for a module without a semantic block", () => {
     const root = moduleCopy("legacy-inline", (m) => {
       delete m.semantic;

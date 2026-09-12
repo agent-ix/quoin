@@ -14,7 +14,10 @@
  * transliteration of one implementation would agree with itself.
  */
 
-/** Mirrors `quoin_schemas::PROTOCOL_VERSION`. */
+/** Mirrors `quoin_core::protocol::PROTOCOL_VERSION` — deliberately restated,
+ * not imported from the generated `./types.js`: this file is the differential
+ * harness's independent oracle (FR-101) and importing the generated surface
+ * would make it a transliteration of the thing it exists to check. */
 export const PROTOCOL_VERSION = 1;
 
 /** Mirrors `quoin_core::ops::core::MAX_ECHO_BYTES`. */

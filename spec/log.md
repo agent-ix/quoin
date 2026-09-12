@@ -8,6 +8,110 @@ description: "Chronological log of structural changes to this bundle."
 
 ## History
 
+* **2026-09-12** — **NFR-021 and NFR-022 withdrawn; NFR-023 retained with a
+  named population** (agent-ix/quoin#388, under the Rust burn-down #373). All
+  three belonged to the closed gate #291 alongside FR-084..FR-092 and US-022,
+  and were left standing when those were withdrawn — so three requirements
+  constrained code that no longer existed. Found while checking FR-100's
+  Dependencies list, which cited all three as "continuing to constrain the
+  ported measurement crates".
+
+  **NFR-021 and NFR-022 are withdrawn.** Reproducible corpus measurement and a
+  bounded, read-only measurement run both constrain the harness itself — its
+  determinism and its execution envelope — and the harness was disposed of
+  rather than ported. Nothing surviving inherits the obligation, and they are
+  deliberately NOT re-pointed at the measurement-record subsystem: that would be
+  inventing a new obligation under an old id. The capability class is corpus
+  accounting, which the implementation-language policy places in
+  `engineering-assurance`; if corpus measurement is wanted again it is consumed
+  from there.
+
+  **NFR-023 is retained**, because "every printed figure bound to the artifact
+  and field it came from" generalises past the corpus harness completely. It is
+  the written form of the failure this programme keeps meeting: a number reading
+  green over a population that is not what it claims.
+
+  Retaining it as written would have reproduced the defect it forbids — an NFR
+  scoped to figures in a report nothing produces, vacuous while wearing the
+  banner of the rule against vacuousness. So its scope now NAMES its population
+  instead of inheriting #291's: `renderMeasurementReport`
+  (`src/measurement/report.ts:109`) and `renderPortfolioReport`
+  (`src/measurement/portfolio.ts:142`), both printing `observation.value` with
+  `observation.unit`. The figures are `MeasurementObservation` fields
+  (`types.ts:19-22`), so the artifact a figure came from is the
+  MeasurementCollection carrying it and the binding is checkable without a
+  separate figure index. The corpus report and FR-090's figure index are
+  explicitly out of scope, FR-090 being withdrawn.
+
+  It gains **NFR-023-AC-4**, a bypass probe: a planted figure with no binding
+  must fail, and a run finding no figure to check is inconclusive rather than
+  zero unbound figures. Named non-empty population and bypass probe as a matched
+  pair, which is the standard the rest of this set holds.
+
+* **2026-09-12** — **US-022 withdrawn** (agent-ix/quoin#388). The use case
+  *"Measure the governed corpus against the completed module schemas"* is
+  withdrawn alongside FR-084..FR-092, its entire requirement set.
+
+  A use case whose every requirement is withdrawn drives nothing, and leaving it
+  standing would leave a story in the bundle that no requirement serves and no
+  code answers — the dangling artifact the previous entry flagged and did not
+  take.
+
+  The story asked for a decision input: whether module schemas could be promoted
+  from advisory to enforcing without discovering, one broken repository at a
+  time, that they cannot be. **It got one.** The measurement ran on 2026-09-05
+  over 251 repositories and 7,501 documents, and `analysis/corpus-measurement/`
+  retains the result. The story is withdrawn because it was answered and its
+  gate closed, not because it was abandoned.
+
+  Not restated as EA-consumed, for the same reason as its requirements:
+  engineering-assurance#98 is open, and a story written against a surface that
+  does not yet exist is owned by nobody. Document retained with a withdrawal
+  banner; matrix row moves to `⛔ Withdrawn`.
+
+* **2026-09-12** — **FR-084..FR-092 withdrawn** (agent-ix/quoin#388, under the
+  Rust burn-down #373). The nine requirements of the corpus-measurement campaign
+  are withdrawn rather than restated, and their implementing code disposed of
+  rather than ported.
+
+  The reason is not that the code was bad. Its gate, #291 — *"[GATE] Measure the
+  full corpus against completed module schemas (**advisory, report only**)"* —
+  **closed**. The harness was built for that gate, ran exactly once on
+  2026-09-05, and was deliberately never given a CLI command: `run.ts` has no
+  importer anywhere in the repository, and every other file in the subsystem is
+  reached only by its own unit test. Eleven source files, 2,117 lines, fully
+  tested and unreachable from any shipped entrypoint.
+
+  **The results outlive the code.** `analysis/corpus-measurement/` retains nine
+  digest-pinned artifacts from that run: 251 repositories enumerated, 7,501
+  documents measured, structural conformance 7,370/7,501 (98.25%, method
+  `engine-structural-v1`), Properties-form census 1/155, 86 documents
+  out-of-model, zero unreadable, zero contested. Deleting the code that produced
+  them changes none of that — which is what makes the disposal cheap and the
+  measurement still citable.
+
+  **Why withdraw rather than restate as EA-consumed.** The capability class here
+  is corpus accounting, bounded producer execution and rate arithmetic, which the
+  implementation-language policy (Amendment 1, *"shared tooling is consumed, not
+  regrown"*) places in `engineering-assurance`. Porting 2,117 lines of advisory
+  one-shot code into Rust so it could go on having no callers is precisely the
+  duplication that rule exists to stop. But restating the requirements as
+  EA-consumed would assert an obligation EA has not accepted — the gap ticket,
+  engineering-assurance#98, is open and unanswered. A requirement written against
+  a surface that does not yet exist is owned by nobody. If EA#98's resolution
+  shows a capability genuinely needs restating, it is restated then, against a
+  surface that exists.
+
+  The nine requirement documents are retained with a withdrawal banner rather
+  than deleted; their text describes what was required, not what is required.
+  Matrix rows FR-084..FR-092 move from `🚧 Pending` to `⛔ Withdrawn`.
+
+  **Open, and deliberately not decided here:** US-022 (*"Measure the governed
+  corpus against the completed module schemas"*) is the use case these nine
+  requirements traced to, and withdrawing all nine leaves it driving nothing.
+  Whether US-022 is withdrawn with them is an owner decision and is not taken by
+  this entry.
+
 * **2026-09-06** — #350 B1 banks repeatable ordered audit module selection
   before production edits (FR-032-AC-12, PLAN-010, TC-1598..TC-1600).
   The real CLI `ff638b9` / engine `d3bc2ba` derives both controlled criterion

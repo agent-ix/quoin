@@ -1,6 +1,5 @@
 /**
- * FR-037 — declared-vocabulary completeness and its verdict policy
- * (TC-206..TC-217).
+ * FR-037 — declared-vocabulary completeness and its verdict policy.
  *
  * Six of the twelve criteria are stated over `quoin completeness` rather than
  * over `assessVocabulary`, because the defect this program keeps finding is a
@@ -126,7 +125,7 @@ beforeEach(() => {
 });
 
 describe("reading the declared vocabulary", () => {
-  // Trace: FR-037-AC-1
+  // Trace: FR-037-AC-1, FR-037-CON-1
   it("reads the values from module data rather than minting a list", () => {
     // The ticket proposed walking a hardcoded 9-item ISO 25010 list; the module
     // declares 12. A second list is the drift this whole area exists to avoid,
@@ -325,7 +324,7 @@ describe("quoin completeness", () => {
     ).rejects.toMatchObject({ oclif: { exit: 1 } });
   });
 
-  // Trace: FR-037-AC-12
+  // Trace: FR-037-AC-12, FR-037-CON-4
   it("says nothing was checked when no module declares a vocabulary", async () => {
     // Not a pass. A repository whose modules declare no coverage has not been
     // checked, and PASS over it is the green-matrix-over-dead-links result.

@@ -1,5 +1,5 @@
 /**
- * FR-042 — agent-eval reports as run evidence (TC-240..TC-244).
+ * FR-042 — agent-eval reports as run evidence.
  *
  * `agent-eval-real.json` is a real `cli-agent-evals` report, checked in
  * unedited — the TC-EV-057 run of the `spec-fuzz` scenarios. The multi-scenario,
@@ -52,7 +52,7 @@ describe("the agent-eval adapter", () => {
     ]);
   });
 
-  // Trace: FR-042-AC-3
+  // Trace: FR-042-AC-3, FR-042-CON-2
   it("takes the harness's verdict rather than recomputing it", () => {
     // A scenario passing 1 run of 3 is not a pass. `ok` is the suite's own
     // answer over `repeats`, and a second opinion here could disagree with the

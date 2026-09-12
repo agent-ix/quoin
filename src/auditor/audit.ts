@@ -32,7 +32,7 @@ import type {
   IndependencePolicy,
   RunRecord,
 } from "../evidence/index.js";
-import type { MethodCatalog } from "../advisor/index.js";
+import type { MethodCatalog } from "../method-catalog.js";
 
 /** Severity of one finding. Matches the SpecReview vocabulary. */
 export type Severity = "low" | "medium" | "high";
