@@ -181,13 +181,37 @@ is unit-testable without spawning a process.
   measured, which is why 51% of its matrix rows read as untested while the
   tests existed.
 
+  **Tag a CRITERION, never a bare requirement id.** `FR-096` binds NOTHING.
+  `scripts/check-trace-tags.mjs` resolves ids of the form
+  `<TYPE>-<n>-<KIND>-<k>` — `FR-096-AC-2`, `NFR-027-AC-2`, `NFR-026-M-2` — and
+  a line carrying only `FR-096` is reported as "a Trace tag naming no
+  criterion". The matrix is backed at criterion granularity, so a requirement
+  id is not a coarser binding, it is no binding at all: the row stays unbacked
+  and the test's evidence is lost. This is not hypothetical and it is not
+  filament-ide-rs's mistake — **Stage 0 of this workspace shipped nine such
+  tags** (`/// Trace: FR-096`, `/// Trace: NFR-024`, `/// Trace: NFR-026`),
+  copied from the example that used to sit two paragraphs below this one, while
+  30 tests passed and every Stage-0 matrix row read "none implemented"
+  (agent-ix/quoin#390). `-M-` is a real kind: NFR metric-table rows carry no id
+  and the engine mints `NFR-<n>-M-<k>` per row in document order.
+
+  **Bind to what the test proves, and leave it untagged when nothing states
+  it.** A tag that resolves to the wrong criterion is worse than no tag — it
+  reads as coverage. If the assertion contradicts the criterion, or no
+  criterion states the property, write the reason in an `/// Unbound:` block
+  above the test and report the gap; do not reach for the nearest id.
+
   Only requirement criteria belong on that line — `FR-`, `NFR-`, `StR-`, `US-`,
-  `IT-`, `TC-` and their `-AC-`/`-EX-`/`-SC-` forms. Issue numbers, `Task-`,
-  `Plan-` and `REV-` go on a sibling `/// Provenance:` line: they are real
-  artifacts, but on the trace line they only mint untracked symbols.
+  `IT-` and their `-AC-`/`-CON-`/`-VC-`/`-M-`/`-EX-`/`-SC-` forms. A bare
+  `TC-<n>` is a matrix row, not a criterion: the checker cannot resolve one and
+  now counts them in its report (57 sit on Trace lines in `tests/` today), so a
+  `TC-` id may accompany a criterion id but never stand in for one. Issue
+  numbers, `Task-`, `Plan-` and `REV-` go on a sibling `/// Provenance:` line:
+  they are real artifacts, but on the trace line they only mint untracked
+  symbols.
 
   ```rust
-  /// Trace: FR-096
+  /// Trace: FR-096-AC-4
   /// Provenance: quoin#375, agent-ix/quoin#103
   #[test]
   fn tc_375_exit_1_still_carries_a_complete_payload() { … }

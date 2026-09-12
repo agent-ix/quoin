@@ -40,8 +40,15 @@ fn rust_sources(dir: &Path, out: &mut Vec<PathBuf>) {
     }
 }
 
-/// Trace: NFR-024
-/// Provenance: quoin#375
+/// Unbound: deliberately carries no `Trace:` line. It was tagged NFR-024,
+/// which is about bounded staged coexistence — successors, expiry dates and
+/// the allowance manifest — and says nothing about a licence header, so the
+/// tag bound nothing and would have mis-bound if it had. The only SPDX
+/// criterion in `spec/` is FR-081-AC-1, which governs the rendered public
+/// repository template, not this workspace. No criterion requires an SPDX
+/// header on `rust/**/*.rs`; that is a specification gap, and the test stands
+/// untagged until one exists.
+/// Provenance: quoin#375, quoin#390
 #[test]
 fn tc_375_every_rust_file_carries_the_agpl_spdx_header() {
     let root = workspace_root();
@@ -66,8 +73,13 @@ fn tc_375_every_rust_file_carries_the_agpl_spdx_header() {
     assert_eq!(missing, Vec::<String>::new());
 }
 
-/// Trace: NFR-024
+/// Trace: NFR-027-AC-2, NFR-027-M-2
 /// Provenance: quoin#375
+///
+/// Backs the population half of AC-2 — every crate manifest opts in — and the
+/// `Crates taking lints from [workspace.lints]` metric. It does NOT back AC-2's
+/// planted-override half: nothing here demonstrates that a per-crate override
+/// fails the gate.
 #[test]
 fn tc_375_every_crate_opts_into_the_workspace_lint_policy() {
     // The style doc says there is no exception. An exception added without
@@ -84,8 +96,16 @@ fn tc_375_every_crate_opts_into_the_workspace_lint_policy() {
     assert_eq!(without, Vec::<String>::new());
 }
 
-/// Trace: NFR-026
+/// Trace: NFR-026-M-2
 /// Provenance: quoin#375
+///
+/// The metric row `Declared channel | 1.98.1` is exactly what this asserts, and
+/// is the only obligation it discharges. It is NOT tagged NFR-026-AC-1, whose
+/// other half is that the channel is declared in **exactly one file**: this
+/// test asserts the channel value in `rust-toolchain.toml` and then asserts two
+/// further `toolchain: 1.98.1` pins in `.github/workflows/build-test.yml`,
+/// which NFR-026-AC-3 says a gate must reject. Tagging AC-1 would mark a
+/// criterion backed by a test that exhibits the state its sibling forbids.
 #[test]
 fn tc_375_the_pinned_channel_and_the_declared_msrv_agree() {
     // Three files state the toolchain; a pin that disagrees with itself means
