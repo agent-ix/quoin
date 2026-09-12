@@ -65,3 +65,48 @@ pub fn requirement_of(request: &serde_json::Value) -> Result<Response, CoreError
 
     Ok(Response::ok(payload))
 }
+
+/// The largest `assurance.build_case` request this domain will accept, in bytes.
+///
+/// A whole bundle's frontmatter, obligations and findings arrive in one
+/// request, so the ceiling is far above `assurance.requirement_of`'s — quoin's
+/// own bundle is 991 obligations and roughly 350 documents. 16 MiB is past
+/// anything a real corpus produces and still refuses a stream, which is the
+/// property the bound exists for (rust-style §11).
+pub const MAX_BUILD_CASE_BYTES: usize = 16 * 1024 * 1024;
+
+/// Answer an `assurance.build_case`.
+///
+/// # Errors
+///
+/// - [`CoreErrorCode::BadRequest`] when stdin is not a [`CaseInput`].
+/// - [`CoreErrorCode::Refused`] when the request exceeds [`MAX_BUILD_CASE_BYTES`].
+///
+/// [`CaseInput`]: quoin_assurance::CaseInput
+pub fn build_case(request: &serde_json::Value) -> Result<Response, CoreError> {
+    // Measured on the parsed value rather than on raw stdin: the dispatcher
+    // has already read and parsed the stream, so this is the honest place to
+    // state a size the DOMAIN refuses, distinct from any transport ceiling.
+    let size = serde_json::to_vec(request)
+        .map_err(|e| CoreError::new(CoreErrorCode::Io, e.to_string()))?
+        .len();
+    if size > MAX_BUILD_CASE_BYTES {
+        return Err(
+            CoreError::new(CoreErrorCode::Refused, "request exceeds the accepted size")
+                .with_context("op", "assurance.build_case")
+                .with_context("limit_bytes", MAX_BUILD_CASE_BYTES.to_string())
+                .with_context("observed_bytes", size.to_string()),
+        );
+    }
+
+    let input: quoin_assurance::CaseInput =
+        serde_json::from_value(request.clone()).map_err(|e| {
+            CoreError::new(CoreErrorCode::BadRequest, e.to_string())
+                .with_context("op", "assurance.build_case")
+        })?;
+
+    let payload = serde_json::to_value(quoin_assurance::build_case(&input))
+        .map_err(|e| CoreError::new(CoreErrorCode::Io, e.to_string()))?;
+
+    Ok(Response::ok(payload))
+}

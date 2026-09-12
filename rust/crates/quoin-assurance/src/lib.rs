@@ -18,11 +18,25 @@
 //! before it can be written, and four of those five belong to crates that do
 //! not exist yet.
 //!
-//! So the port starts with the part of the retained surface that names no
-//! imported type at all. That is not a shortcut: it puts a real retained
+//! So the port started with the part of the retained surface that names no
+//! imported type at all. That was not a shortcut: it put a real retained
 //! capability through the whole pattern — request shape, exit taxonomy,
 //! differential comparison against the retained implementation — on a surface
 //! where a failure is legible.
+//!
+//! # What measuring the field subset changed
+//!
+//! Sizing from the import list said four missing crates. Measuring the FIELD
+//! SUBSET `build_case` can observe said two: twelve fields across five types,
+//! and two of the five never read at all. [`case`] states the budget in full
+//! and gives the reason for each type that did not get one. The general form
+//! is that an import list sizes a crate from the module boundary, while a
+//! field subset sizes it from what the code can observe, and those differ by a
+//! factor of five here (quoin#425).
+
+pub mod case;
+
+pub use case::{AssuranceCase, CaseInput, CaseNode, NodeKind, NodeStatus, Unreadable, build_case};
 
 /// The requirement an obligation belongs to.
 ///
