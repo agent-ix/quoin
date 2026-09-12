@@ -383,6 +383,7 @@ describe("finding precision and recall", () => {
   });
 
   it("a standing ruling is counted separately from a per-case one", () => {
+    // Trace: FR-043-AC-36
     // Different strengths of evidence. The first run after
     // `archetype-matches-nothing` gained a standing ruling read precision 1.00
     // over 323 firings — of which 3 were the fixtures' own `expect.yaml` and
