@@ -301,7 +301,7 @@ describe("the rendered tree conforms and carries no residue", () => {
     });
   });
 
-  // Trace: NFR-018-M-1, NFR-018-M-2, NFR-018-M-3, NFR-018-M-4, NFR-019-M-4
+  // Trace: NFR-018-M-1, NFR-018-M-2, NFR-018-M-3, NFR-018-M-4, NFR-019-M-3, NFR-019-M-4
   it.each(KINDS)("TC-1446 carries no generation residue (%s)", (kind) => {
     cookiecutterVersion();
     withRendered({ kind }, (rendered) => {
