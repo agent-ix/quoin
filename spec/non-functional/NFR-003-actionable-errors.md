@@ -36,10 +36,10 @@ agent recover in one step, whereas a silent failure stalls the loop.
 
 ## Measurement and Evaluation
 
-| Metric                                                         | Target | Threshold | Method |
-| -------------------------------------------------------------- | ------ | --------- | ------ |
-| Failure paths that emit an actionable message or non-zero exit | 100%   | 100%      | Test   |
-| Silent or partial-output failures                              | 0      | 0         | Test   |
+| Criterion | Metric | Target | Threshold | Method |
+| --- | -------------------------------------------------------------- | ------ | --------- | ------ |
+| NFR-003-AC-1 | Failure paths that emit an actionable message or non-zero exit | 100%   | 100%      | Test   |
+| NFR-003-AC-2 | Silent or partial-output failures                              | 0      | 0         | Test   |
 
 ## Verification
 

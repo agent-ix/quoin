@@ -28,11 +28,11 @@ registries, schemas, skeletons, generated packages, runtime behavior, persistenc
 
 ## Measurement and Evaluation
 
-| Metric | Target | Threshold | Method |
-| --- | --- | --- | --- |
-| Writes outside the configured audit output directory | 0 | 0 | Test (TC-1192) |
-| Production source, module manifest, schema, skeleton, registry, generated package, migration, or consumer contract files changed | 0 | 0 | Test (TC-1193) |
-| Major-interference recommendation advanced without its named gate | 0 | 0 | Inspection (TC-1194) |
+| Criterion | Metric | Target | Threshold | Method |
+| --- | --- | --- | --- | --- |
+| NFR-016-AC-1 | Writes outside the configured audit output directory | 0 | 0 | Test (TC-1192) |
+| NFR-016-AC-2 | Production source, module manifest, schema, skeleton, registry, generated package, migration, or consumer contract files changed | 0 | 0 | Test (TC-1193) |
+| NFR-016-AC-3 | Major-interference recommendation advanced without its named gate | 0 | 0 | Inspection (TC-1194) |
 
 ## Verification
 

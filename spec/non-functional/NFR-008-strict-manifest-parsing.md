@@ -35,10 +35,10 @@ Aborting makes the corruption visible at the source.
 
 ## Measurement and Evaluation
 
-| Metric                                                            | Target | Threshold | Method |
-| ----------------------------------------------------------------- | ------ | --------- | ------ |
-| Corrupt manifests that abort assembly (rather than drop silently) | 100%   | 100%      | Test   |
-| Missing manifests that are skipped (rather than abort)            | 100%   | 100%      | Test   |
+| Criterion | Metric | Target | Threshold | Method |
+| --- | ----------------------------------------------------------------- | ------ | --------- | ------ |
+| NFR-008-AC-1 | Corrupt manifests that abort assembly (rather than drop silently) | 100%   | 100%      | Test   |
+| NFR-008-AC-2 | Missing manifests that are skipped (rather than abort)            | 100%   | 100%      | Test   |
 
 ## Verification
 

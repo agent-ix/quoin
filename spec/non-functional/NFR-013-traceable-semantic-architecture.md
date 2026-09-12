@@ -38,12 +38,12 @@ what is merely evidence, and which owner can change it.
 
 ## Measurement and Evaluation
 
-| Metric | Target | Threshold | Method |
-| --- | --- | --- | --- |
-| Normative architecture claims with a requirement or decision reference | 100% | 100% | Test (TC-1151) |
-| External decisions with repository, path, status, and revision/date | 100% | 100% | Test (TC-1151) |
-| Broken links from the architecture index | 0 | 0 | Test (TC-1152) |
-| Undeclared provisional or unresolved decisions presented as normative | 0 | 0 | Test (TC-1153) |
+| Criterion | Metric | Target | Threshold | Method |
+| --- | --- | --- | --- | --- |
+| NFR-013-AC-1 | Normative architecture claims with a requirement or decision reference | 100% | 100% | Test (TC-1151) |
+| NFR-013-AC-2 | External decisions with repository, path, status, and revision/date | 100% | 100% | Test (TC-1151) |
+| NFR-013-AC-3 | Broken links from the architecture index | 0 | 0 | Test (TC-1152) |
+| NFR-013-AC-4 | Undeclared provisional or unresolved decisions presented as normative | 0 | 0 | Test (TC-1153) |
 
 ## Verification
 

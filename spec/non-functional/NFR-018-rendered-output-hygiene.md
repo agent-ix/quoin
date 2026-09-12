@@ -41,14 +41,14 @@ identifiers make the licence a question rather than a grant.
 
 ## Measurement and Evaluation
 
-| Metric | Target | Threshold | Method |
-|--------|--------|-----------|--------|
-| Unresolved template tokens per rendered variant | 0 | 0 | Test |
-| Placeholder organizations per rendered variant | 0 | 0 | Test |
-| Absolute rendering-machine paths per rendered variant | 0 | 0 | Test |
-| Credential or token matches per rendered variant | 0 | 0 | Test |
-| Private-registry publication defaults per rendered variant | 0 | 0 | Test |
-| Distinct licence identifiers per rendered variant | 1 | 1 | Test |
+| Criterion | Metric | Target | Threshold | Method |
+| --- |--------|--------|-----------|--------|
+| NFR-018-AC-1 | Unresolved template tokens per rendered variant | 0 | 0 | Test |
+| NFR-018-AC-2 | Placeholder organizations per rendered variant | 0 | 0 | Test |
+| NFR-018-AC-3 | Absolute rendering-machine paths per rendered variant | 0 | 0 | Test |
+| NFR-018-AC-4 | Credential or token matches per rendered variant | 0 | 0 | Test |
+| NFR-018-AC-5 | Private-registry publication defaults per rendered variant | 0 | 0 | Test |
+| NFR-018-AC-6 | Distinct licence identifiers per rendered variant | 1 | 1 | Test |
 
 ## Verification
 

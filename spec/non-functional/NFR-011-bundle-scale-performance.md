@@ -46,10 +46,10 @@ design change, not a tuning question.
 
 ## Measurement and Evaluation
 
-| Metric                                                        | Target | Threshold | Method |
-| ------------------------------------------------------------- | ------ | --------- | ------ |
-| Wall-clock for a bundle walk over 250 documents               | < 2s   | < 5s      | Test   |
-| Full passes over the document set per command invocation      | 1      | 1         | Test   |
+| Criterion | Metric | Target | Threshold | Method |
+| --- | ------------------------------------------------------------- | ------ | --------- | ------ |
+| NFR-011-AC-1 | Wall-clock for a bundle walk over 250 documents               | < 2s   | < 5s      | Test   |
+| NFR-011-AC-2 | Full passes over the document set per command invocation      | 1      | 1         | Test   |
 
 ## Verification
 

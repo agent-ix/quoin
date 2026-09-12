@@ -33,10 +33,10 @@ reproducible.
 
 ## Measurement and Evaluation
 
-| Metric                                                         | Target | Threshold | Method |
-| -------------------------------------------------------------- | ------ | --------- | ------ |
-| Network/git operations on repeat catalog access after install  | 0      | 0         | Test   |
-| Module-store mutations on repeat reconcile of an installed set | 0      | 0         | Test   |
+| Criterion | Metric | Target | Threshold | Method |
+| --- | -------------------------------------------------------------- | ------ | --------- | ------ |
+| NFR-001-AC-1 | Network/git operations on repeat catalog access after install  | 0      | 0         | Test   |
+| NFR-001-AC-2 | Module-store mutations on repeat reconcile of an installed set | 0      | 0         | Test   |
 
 ## Verification
 
