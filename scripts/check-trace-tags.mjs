@@ -37,11 +37,26 @@
 //   2. NFR metric rows, which carry no id in the table: the engine mints
 //      `NFR-<n>-M-<k>` per row in document order and that is what tests tag
 //
-// The id pattern does NOT enumerate suffixes. `requirementOf`
+// The id pattern enumerates NEITHER half. `requirementOf`
 // (src/assurance/graph.ts) is `/^([A-Za-z]+-\d+)/` — the requirement prefix is
-// the whole grammar and the suffix is unconstrained. A suffix allow-list is a
-// standing bet that nobody mints a new kind, and the engine took no such bet.
-// An earlier list of AC|CON|VC|EX|SC silently skipped every `-M-` obligation.
+// the whole grammar and the suffix is unconstrained. An allow-list on either
+// half is a standing bet that nobody mints a new kind, and the engine took no
+// such bet. An earlier suffix list of AC|CON|VC|EX|SC silently skipped every
+// `-M-` obligation; the same defect was found independently in the #384 check.
+// The prefix half carried the identical bet — `FR|NFR|StR|IT|US`, an allow-list
+// on BOTH the declared-row scan and the tag scan at once, so a criterion under
+// a new artifact type would have been invisible to both halves simultaneously
+// and a tag naming it would have been dropped in silence whenever the same line
+// also carried a known id. Measured over this tree on 2026-09-12: the declared
+// criterion rows use prefixes FR (1025), StR (24), NFR (54) and suffixes AC
+// (900), CON (179), VC (24), plus the minted NFR `-M-` rows — so nothing was
+// invisible in fact, only by luck. Both halves are now open.
+//
+// What is still NOT validated, and is now REPORTED rather than dropped: a bare
+// id with no criterion suffix on a Trace line. 57 `TC-` ids sit on Trace lines
+// in this tree; the style doc admits them there, and this check cannot resolve
+// them because a TC is a matrix row rather than a criterion. They bind nothing,
+// so the count is printed — an id that binds nothing must at least be counted.
 
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { dirname, join, relative } from "node:path";
@@ -59,7 +74,10 @@ if (!root) {
   console.error("check-trace-tags: --root needs a directory");
   process.exit(2);
 }
-const CRITERION = /(?:FR|NFR|StR|IT|US)-\d+-[A-Z]+-\d+/g;
+const CRITERION = /[A-Za-z]+-\d+-[A-Z]+-\d+/g;
+// A bare `<TYPE>-<n>` left on a Trace line after the criteria are removed:
+// resolvable by nothing here, counted so it is not silently dropped.
+const BARE_ID = /\b[A-Za-z]+-\d+\b/g;
 
 // Directories that hold no authored source. `target/` is the Cargo build tree:
 // it is large, it is full of vendored `.rs`, and walking it would put another
@@ -90,7 +108,7 @@ function declaredCriteria() {
   for (const file of walk(join(root, "spec"), ".md")) {
     if (file.includes(`${"/"}reviews${"/"}`)) continue;
     for (const line of readFileSync(file, "utf8").split("\n")) {
-      const row = /^\|\s*((?:FR|NFR|StR|IT|US)-\d+-[A-Z]+-\d+)\s*\|/.exec(line);
+      const row = /^\|\s*([A-Za-z]+-\d+-[A-Z]+-\d+)\s*\|/.exec(line);
       if (row) declared.add(row[1]);
     }
   }
@@ -140,6 +158,7 @@ for (const population of POPULATIONS) {
   const files = walk(join(root, population.dir), population.ext);
   let tags = 0;
   let ids = 0;
+  const bare = new Map();
   for (const file of files) {
     const lines = readFileSync(file, "utf8").split("\n");
     for (const [index, line] of lines.entries()) {
@@ -147,6 +166,10 @@ for (const population of POPULATIONS) {
       tags += 1;
       const where = `${relative(root, file)}:${index + 1}`;
       const named = line.match(CRITERION) ?? [];
+      for (const id of line.replace(CRITERION, "").match(BARE_ID) ?? []) {
+        const kind = id.split("-")[0];
+        bare.set(kind, (bare.get(kind) ?? 0) + 1);
+      }
       if (named.length === 0) {
         failures.push(`${where}: a Trace tag naming no criterion`);
         continue;
@@ -159,14 +182,19 @@ for (const population of POPULATIONS) {
       }
     }
   }
-  scanned.push({ ...population, files: files.length, tags, ids });
+  scanned.push({ ...population, files: files.length, tags, ids, bare });
 }
 
 // The population report, printed whether the run passes or fails: a count that
 // is never shown cannot be noticed going to zero (NFR-027-AC-9).
 for (const p of scanned) {
+  const bare = [...p.bare.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .map(([kind, n]) => `${n} ${kind}-`)
+    .join(", ");
   console.log(
-    `check-trace-tags: ${p.name} — ${p.files} ${p.ext} files under ${p.dir}/, ${p.tags} tags, ${p.ids} criterion references`,
+    `check-trace-tags: ${p.name} — ${p.files} ${p.ext} files under ${p.dir}/, ${p.tags} tags, ${p.ids} criterion references` +
+      (bare === "" ? "" : `; ids on Trace lines that bind nothing: ${bare}`),
   );
 }
 
