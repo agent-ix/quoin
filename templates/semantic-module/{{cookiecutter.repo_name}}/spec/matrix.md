@@ -65,7 +65,7 @@ construction.
 
 ## Functional Requirement Coverage
 
-| Functional Req | Acceptance Criteria | Test Cases | Coverage Status |
+| Functional Req | Acceptance Criteria | Test Cases | Status |
 | --- | --- | --- | --- |
 | FR-001 | FR-001-AC-1..9 | TC-001..TC-009 | ✅ Covered |
 | FR-002 | FR-002-AC-1..8 | TC-010..TC-017 | ✅ Covered |
@@ -74,7 +74,7 @@ construction.
 
 ## Stakeholder Requirement Coverage
 
-| Stakeholder Req | Trace to US/FR | Test/Validation | Coverage Status |
+| Stakeholder Req | Trace to US/FR | Test/Validation | Status |
 | --- | --- | --- | --- |
 | StR-001-VC-1 | US-001; FR-001 | TC-005, TC-006, TC-007 | ✅ Covered |
 | StR-001-VC-2 | US-001; FR-003 | TC-026 | ✅ Covered |

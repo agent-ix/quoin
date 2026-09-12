@@ -83,7 +83,7 @@ carry a story out end to end, not whether a unit behaves. The archetype's column
 is named `Functional Req`; the ids below are the US ids each scenario drives.
 Per-FR coverage lives in TM-001 (`spec/matrix.md`).
 
-| Functional Req | Acceptance Criteria | Test Cases | Coverage Status |
+| Functional Req | Acceptance Criteria | Test Cases | Status |
 | --- | --- | --- | --- |
 | US-001 | US-001-AC-1 | TC-EV-001, TC-EV-006, TC-EV-014, TC-EV-015, TC-EV-016, TC-EV-017, TC-EV-018, TC-EV-021, TC-EV-022, TC-EV-024, TC-EV-025, TC-EV-040, TC-EV-042 | ✅ Covered |
 | US-002 | US-002-AC-1 | TC-EV-002, TC-EV-007, TC-EV-011, TC-EV-014, TC-EV-017, TC-EV-023 | ✅ Covered |

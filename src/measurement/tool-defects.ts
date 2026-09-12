@@ -130,7 +130,7 @@ export const LEDGER: readonly LedgerEntry[] = [
     covers: (p) => p.endsWith("tests.md"),
     blocks: ["status-lie"],
     summary:
-      "`traceability.status.column` names `Status` while the coverage tables assert `Coverage Status`, so the complete-but-unbacked check has never run. Any existing 'no status lies' claim is unmeasured, not clean.",
+      "`traceability.status.column` named `Status` while the coverage tables asserted `Coverage Status`, so the complete-but-unbacked check never ran. Fixed in the contract by spec-artifacts-process#87 (375fc2a), which collapsed the two names. The entry stays because the fix is per-repository: the check still does not run on any tests.md that has not renamed its header, and a 'no status lies' claim from one of those is unmeasured, not clean.",
   },
   {
     id: "artifact-module-install-refused",

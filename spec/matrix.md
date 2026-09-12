@@ -178,7 +178,7 @@ cannot hold, and are kept for that reason.
 Criteria absent here are verified by a method that produces no test — see
 "Tracking-tag coverage".
 
-| Functional Req | Acceptance Criteria | Test Cases | Coverage Status |
+| Functional Req | Acceptance Criteria | Test Cases | Status |
 | --- | --- | --- | --- |
 | FR-001 | FR-001-AC-1, FR-001-AC-2, FR-001-AC-3, FR-001-AC-4 | TC-001, TC-002, TC-003, TC-004 | ✅ Covered |
 | FR-002 | FR-002-AC-1, FR-002-AC-2, FR-002-AC-3, FR-002-AC-4 | TC-005, TC-006, TC-007, TC-008 | ✅ Covered |
@@ -1127,12 +1127,12 @@ inspection rather than by a unit test — so these rows carry no tracking tag by
 design (see "Tracking-tag coverage"). Added in response to SR-003 FND-002, which
 found the stakeholder layer had no rows here at all.
 
-| Stakeholder Req | Trace to US/FR         | Test/Validation                                                                                       | Coverage Status |
+| Stakeholder Req | Trace to US/FR         | Test/Validation                                                                                       | Status |
 | --------------- | ---------------------- | ----------------------------------------------------------------------------------------------------- | --------------- |
 | StR-001-VC-1    | US-009; FR-004, FR-023 | Demonstration — TC-EV-001…TC-EV-013 run the real CLI from an isolated `IX_HOME`; NFR-004 inspects the deps    | ✅ Covered      |
 | StR-002-VC-1    | US-003; FR-018, FR-019 | Demonstration — TC-EV-003/TC-EV-009/TC-EV-010/TC-EV-020 install from local, GitHub and subdir sources              | ✅ Covered      |
 | StR-003-VC-1    | US-004; FR-014, FR-015 | Demonstration — TC-EV-001/TC-EV-004/TC-EV-008 author to the skeleton and validate with a real `quire`           | ✅ Covered      |
-| StR-004-VC-1    | US-005; FR-020, FR-021 | Inspection — TC-EV-005/TC-EV-013 start runs and inspect status; resume/advance/gate progression is untested  | ⚠️ Partial      |
+| StR-004-VC-1    | US-005; FR-020, FR-021 | Inspection — TC-EV-005/TC-EV-013 start runs and inspect status; resume/advance/gate progression is untested  | 🚧 progression untested |
 | StR-005-VC-1    | US-003; FR-016, FR-017 | Inspection — the default set is version-pinned; NFR-001 covers idempotent offline reconcile            | ✅ Covered      |
 | StR-006-VC-1    | US-009; FR-022         | Demonstration — `update.test.ts` covers delegation, `--check` and `--registry`                          | ✅ Covered      |
 | StR-008-VC-1    | US-021; FR-076, FR-083 | Demonstration — a variant rendered with no hand editing carries the `semantic` block, emitted schemas, typed skeletons, and a fail-not-skip suite (TC-1400..TC-1402, TC-1408, TC-1417, TC-1420, TC-1427) | ✅ Covered |

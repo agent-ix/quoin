@@ -129,6 +129,38 @@ function skillMarkersList(): Set<string> {
   return markersIn(section?.[1] ?? "");
 }
 
+/** The status column name the manifest configures. */
+function configuredStatusColumn(): string {
+  const traceability = manifest.traceability as
+    Record<string, unknown> | undefined;
+  const status = traceability?.status as Record<string, unknown> | undefined;
+  const column = status?.column;
+  expect(
+    typeof column === "string" && column.length > 0,
+    "the manifest declares no traceability.status.column",
+  ).toBe(true);
+  return String(column);
+}
+
+/** Every markdown table header cell in `text` that names a status column. */
+function statusColumnNames(text: string): Set<string> {
+  const names = new Set<string>();
+  let inTable = false;
+  for (const line of text.split("\n")) {
+    if (!line.trimStart().startsWith("|")) {
+      inTable = false;
+      continue;
+    }
+    if (/^[-\s:|]+$/.test(line.trim())) continue; // separator
+    if (inTable) continue; // body row of a table already seen
+    inTable = true;
+    for (const cell of line.split("|").map((c) => c.trim())) {
+      if (/status/i.test(cell)) names.add(cell);
+    }
+  }
+  return names;
+}
+
 describe("TC-271 the spec-matrix vocabulary cannot drift from the module manifest", () => {
   // TC-271
   it("SKILL.md's declared Status vocabulary equals the manifest's classed set", () => {
@@ -180,6 +212,30 @@ describe("TC-271 the spec-matrix vocabulary cannot drift from the module manifes
       expect(cell, "the retired concept returned as a note word").not.toMatch(
         /partial/i,
       );
+    }
+  });
+  // TC-271
+  it("every taught status column is named exactly as the manifest configures", () => {
+    // #177 gated MARKERS only, so a stale column NAME sailed through: the
+    // contract declared `Coverage Status` on the coverage tables and
+    // `Status` on the summaries with byte-identical vocabularies, and the
+    // single global selector matched only the latter. Status classification
+    // was skipped on every table it missed, and `status_lies` came back
+    // empty because nothing ran rather than because the rows were honest.
+    // `statusCells` above cannot see that: it keys on a header cell equal to
+    // `Status`, so a differently-named column is silently not checked.
+    const configured = configuredStatusColumn();
+    for (const [label, text] of [
+      ["SKILL.md", skillMd],
+      ["the template", templateMd],
+      ["the example", exampleMd],
+    ] as const) {
+      for (const name of statusColumnNames(text)) {
+        expect(
+          name,
+          `${label} names a status column \`${name}\`, but the manifest configures \`${configured}\``,
+        ).toBe(configured);
+      }
     }
   });
 });
