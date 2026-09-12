@@ -15,6 +15,8 @@
  */
 
 /** Mirrors `quoin_schemas::PROTOCOL_VERSION`. */
+import { requirementOf } from "../assurance/index.js";
+
 export const PROTOCOL_VERSION = 1;
 
 /** Mirrors `quoin_core::ops::core::MAX_ECHO_BYTES`. */
@@ -104,11 +106,21 @@ export function reference(argv: string[], stdin: string): ReferenceOutcome {
       }),
     );
   }
+  // `assurance.requirement_of` is the first REAL capability on this side of
+  // the harness, and it is deliberately a CALL rather than a reimplementation.
+  // `core.ping` has two implementations because Stage 0 had no retained
+  // capability to compare against; every operation after it does, and FR-101's
+  // rule is that the retained implementation IS the oracle. A second copy here
+  // would make the difftest prove that two things written this week agree with
+  // each other, which is the one thing it must not prove.
+  if (op === "assurance.requirement_of") {
+    return assuranceRequirementOf(stdin);
+  }
   if (op !== "core.ping") {
     return failure(
       3,
       diagnostic("CORE_UNKNOWN_OP", "no such operation in this build", {
-        known: "core.ping",
+        known: "assurance.requirement_of, core.ping",
         op,
       }),
     );
@@ -224,4 +236,75 @@ function ping(request: Record<string, unknown>): ReferenceOutcome {
     };
   }
   return { payload, diagnostics: [], exitCode: 0 };
+}
+
+/** The largest obligation id accepted, mirroring `MAX_OBLIGATION_ID_BYTES`. */
+export const MAX_OBLIGATION_ID_BYTES = 4 * 1024;
+
+/**
+ * `assurance.requirement_of`, answered by the RETAINED implementation.
+ *
+ * The only logic here is the boundary's: parse the request, enforce the size
+ * bound, shape the payload. The answer itself comes from
+ * `src/assurance/graph.ts` unchanged.
+ */
+function assuranceRequirementOf(stdin: string): ReferenceOutcome {
+  let request: unknown;
+  try {
+    request = stdin.trim() === "" ? undefined : JSON.parse(stdin);
+  } catch (error) {
+    return failure(
+      3,
+      diagnostic("CORE_BAD_REQUEST", String(error), {
+        op: "assurance.requirement_of",
+      }),
+    );
+  }
+  if (
+    typeof request !== "object" ||
+    request === null ||
+    Array.isArray(request)
+  ) {
+    return failure(
+      3,
+      diagnostic("CORE_BAD_REQUEST", "request must be a JSON object", {
+        op: "assurance.requirement_of",
+      }),
+    );
+  }
+  const fields = request as Record<string, unknown>;
+  for (const key of Object.keys(fields)) {
+    if (key !== "obligation_id") {
+      return failure(
+        3,
+        diagnostic("CORE_BAD_REQUEST", `unknown field \`${key}\``, {
+          op: "assurance.requirement_of",
+        }),
+      );
+    }
+  }
+  const id = fields.obligation_id;
+  if (typeof id !== "string") {
+    return failure(
+      3,
+      diagnostic("CORE_BAD_REQUEST", "`obligation_id` must be a string", {
+        op: "assurance.requirement_of",
+      }),
+    );
+  }
+  if (id.length > MAX_OBLIGATION_ID_BYTES) {
+    return failure(
+      2,
+      diagnostic("CORE_REFUSED", "obligation id exceeds the accepted size", {
+        limit_bytes: String(MAX_OBLIGATION_ID_BYTES),
+        observed_bytes: String(id.length),
+        op: "assurance.requirement_of",
+      }),
+    );
+  }
+  return {
+    exitCode: 0,
+    payload: canonicalJson({ requirement: requirementOf(id) }),
+    diagnostics: [],
+  };
 }

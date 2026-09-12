@@ -28,6 +28,7 @@ pub const OPERATIONS: &[&str] = &["core.ping"];
 /// or whatever the operation itself returns.
 pub fn dispatch(op: &str, request: &serde_json::Value) -> Result<Response, CoreError> {
     match op {
+        "assurance.requirement_of" => crate::ops::assurance::requirement_of(request),
         "core.ping" => crate::ops::core::ping(request),
         _ => Err(
             CoreError::new(CoreErrorCode::UnknownOp, "no such operation in this build")

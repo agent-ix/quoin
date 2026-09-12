@@ -116,6 +116,57 @@ const CASES: &[Case] = &[
         op: "core.ping",
         request: Request::Literal("[1,2]"),
     },
+    // ── assurance.requirement_of (quoin#384) ──
+    //
+    // The first cases comparing a REAL retained capability. The TypeScript
+    // side calls `src/assurance/graph.ts`'s own `requirementOf`; it does not
+    // reimplement it. Everything above this line compares two implementations
+    // of a purpose-built ping.
+    Case {
+        name: "assurance/ac-suffix",
+        op: "assurance.requirement_of",
+        request: Request::Literal(r#"{"obligation_id":"FR-001-AC-3"}"#),
+    },
+    Case {
+        name: "assurance/metric-suffix",
+        op: "assurance.requirement_of",
+        request: Request::Literal(r#"{"obligation_id":"NFR-010-M-2"}"#),
+    },
+    Case {
+        name: "assurance/unknown-suffix-is-still-a-prefix-match",
+        op: "assurance.requirement_of",
+        request: Request::Literal(r#"{"obligation_id":"FR-042-QQQ-9"}"#),
+    },
+    Case {
+        name: "assurance/bare-requirement-id",
+        op: "assurance.requirement_of",
+        request: Request::Literal(r#"{"obligation_id":"FR-001"}"#),
+    },
+    Case {
+        name: "assurance/unrecognised-returns-unchanged",
+        op: "assurance.requirement_of",
+        request: Request::Literal(r#"{"obligation_id":"not-an-id"}"#),
+    },
+    Case {
+        name: "assurance/empty-id",
+        op: "assurance.requirement_of",
+        request: Request::Literal(r#"{"obligation_id":""}"#),
+    },
+    Case {
+        name: "assurance/non-ascii-falls-to-unchanged",
+        op: "assurance.requirement_of",
+        request: Request::Literal(r#"{"obligation_id":"é-001-AC-1"}"#),
+    },
+    Case {
+        name: "assurance/invalid-unknown-field",
+        op: "assurance.requirement_of",
+        request: Request::Literal(r#"{"obligation_id":"FR-001","extra":1}"#),
+    },
+    Case {
+        name: "assurance/invalid-wrong-type",
+        op: "assurance.requirement_of",
+        request: Request::Literal(r#"{"obligation_id":7}"#),
+    },
     Case {
         name: "invalid/unknown-op",
         op: "evidence.record",
