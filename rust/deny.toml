@@ -39,6 +39,47 @@ wildcards = "deny"
 # registry wildcards are refused.
 allow-wildcard-paths = true
 
+# The ONLY concession in this file, and it is scoped to one exact version.
+#
+# "A duplicate version is resolved, not conceded" means WE resolve what WE
+# control. The test is provenance: run `cargo tree -i syn@<version>` and look at
+# who is on each side.
+#
+#   syn 3.x  <- serde_derive <- serde            (ours: a root pin)
+#            <- thiserror-impl <- thiserror      (ours: a root pin)
+#            <- ref-cast-impl <- ref-cast <- fluent-uri <- referencing
+#                                                      <- jsonschema 0.56.0
+#   syn 2.x  <- strum_macros 0.28.0 <- strum <- jsonschema 0.56.0
+#
+# Our two edges were resolved, not skipped: `thiserror` was raised to =2.0.20
+# and `serde` to =1.0.229, both of which build on syn 3. What is left on the
+# syn 2 side is reachable ONLY through `strum_macros` inside `jsonschema`'s
+# subtree, and there is no version of anything we pin that collapses it:
+#
+#   - `jsonschema` 0.56.0 is the latest release (`cargo info jsonschema`), and
+#     the pin is `=` deliberately because the error-kind match is exhaustive.
+#   - `strum_macros` has no release on syn 3. Checked with `cargo info
+#     strum_macros`: the latest published version is 0.28.0, and
+#     `[dependencies.syn] version = "2.0"` in its manifest
+#     (`~/.cargo/registry/src/*/strum_macros-0.28.0/Cargo.toml`). RE-VERIFY
+#     THIS: it is a claim about what a crate has not yet published, so it goes
+#     stale the moment strum_macros ships a syn 3 release. When it does, drop
+#     this entry rather than bumping the version in it.
+#
+# Contrast, so a future reader can tell the two cases apart: on
+# `feat/381-config-modules` this same syn pair is OURS — `serde_derive` and
+# `thiserror-impl` both reach our crates directly — and it is resolved there by
+# raising both pins, not skipped. Same crate, opposite ruling, because the
+# provenance differs.
+#
+# Skipping 2.0.119 and NOT 3.0.5 is deliberate: 3.0.5 is the side our own pins
+# (`serde`, `thiserror`, and `schemars` on the sibling branch) land on, so
+# leaving it counted keeps the side we control under the gate.
+#
+# Ruling: quoin#402. Tracked by the `jsonschema` version question in #392.
+[[bans.skip]]
+crate = "syn@2.0.119"
+
 [advisories]
 version = 2
 

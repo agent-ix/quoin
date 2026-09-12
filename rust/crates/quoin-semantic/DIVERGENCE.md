@@ -439,3 +439,31 @@ sequences, so anything digesting that output — an evidence record, a cache key
 disguised as a per-crate convenience; any crate that wants insertion order must
 get it from an explicitly ordered type, not from this feature. Raised on
 quoin#375 as a workspace-level concern.
+
+## 11. Root pins this port raised, and the one duplicate it concedes
+
+Two workspace pins were raised to join the workspace. Both are raises, not
+relaxations, and neither weakens a gate.
+
+| Pin         | Was        | Now        | Why                                                                                                                                                          |
+| ----------- | ---------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `thiserror` | `=2.0.18`  | `=2.0.20`  | `saphyr`, the YAML 1.2 reader `quoin-yaml` wraps, requires `^2.0.20`, and `multiple-versions = "deny"` forbids carrying both.                                |
+| `serde`     | `=1.0.228` | `=1.0.229` | `serde_derive` 1.0.228 builds on `syn` 2; 1.0.229 builds on `syn` 3, matching `thiserror-impl` 2.0.20. This resolves the half of the `syn` duplicate we own. |
+
+`feat/381-config-modules` raises `thiserror` to the same `=2.0.20`
+independently, for an unrelated reason. The branches converge rather than
+conflict; whoever merges second should not read the pin as drift.
+
+After both raises, one `syn` duplicate remains — `2.0.119` reachable only
+through `strum_macros 0.28.0` inside `jsonschema 0.56.0`'s subtree, against
+`3.0.5` on our own pins. It is conceded with a single exact-version
+`[[bans.skip]]` in `rust/deny.toml`, whose comment carries the full chain for
+each side, the evidence that no version we pin collapses it, and how to
+re-verify the claim that `strum_macros` has no syn 3 release. That entry is the
+only concession in the file; the ruling is recorded on #402.
+
+**User-visible consequence:** none today — `syn` is a build-time proc-macro
+dependency and appears in no shipped artifact. The cost is that a second
+`strum_macros` major inside `jsonschema` would no longer be caught by `bans`
+for `syn@2.0.119` specifically. The skip is version-exact so that any _other_
+`syn` pair still fails the gate.
