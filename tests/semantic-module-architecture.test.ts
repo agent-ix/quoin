@@ -126,7 +126,6 @@ function activatesArchitectureOnlyGate(path: string): boolean {
 
 describe("semantic-module architecture contract", () => {
   // Trace: FR-046-AC-1
-  // Trace: FR-046-AC-1
   it("defines all four semantic data planes", () => {
     expectAll(architecture("planes-and-authority.md"), [
       "Meta plane",
@@ -136,7 +135,6 @@ describe("semantic-module architecture contract", () => {
     ]);
   });
 
-  // Trace: FR-046-AC-2
   // Trace: FR-046-AC-2
   it("separates definitions, occurrences, and presentations", () => {
     expectAll(architecture("planes-and-authority.md"), [
@@ -148,7 +146,6 @@ describe("semantic-module architecture contract", () => {
   });
 
   // Trace: FR-046-AC-3
-  // Trace: FR-046-AC-3
   it("keeps structural kinds independent from semantic roles", () => {
     expectAll(architecture("planes-and-authority.md"), [
       "Structural kind and semantic role are independent",
@@ -156,7 +153,6 @@ describe("semantic-module architecture contract", () => {
     ]);
   });
 
-  // Trace: FR-046-AC-4
   // Trace: FR-046-AC-4
   it("indexes every record and labels decision status", () => {
     const index = architecture("index.md");
@@ -166,8 +162,7 @@ describe("semantic-module architecture contract", () => {
     expectAll(index, ["normative", "provisional", "external gate"]);
   });
 
-  // Trace: FR-047-AC-1
-  // Trace: FR-046-AC-5
+  // Trace: FR-046-AC-5, FR-047-AC-1
   it("preserves Quire ownership and exclusions", () => {
     expectAll(architecture("ownership-and-boundaries.md"), [
       "parse, validate, extract, address, and byte-splice",
@@ -178,8 +173,7 @@ describe("semantic-module architecture contract", () => {
     ]);
   });
 
-  // Trace: FR-047-AC-2
-  // Trace: FR-046-AC-6
+  // Trace: FR-046-AC-6, FR-047-AC-2
   it("preserves Quoin ownership and exclusions", () => {
     expectAll(architecture("ownership-and-boundaries.md"), [
       "catalog discovery, locks, installation, update",
@@ -191,8 +185,7 @@ describe("semantic-module architecture contract", () => {
     ]);
   });
 
-  // Trace: FR-047-AC-3
-  // Trace: FR-047-AC-1
+  // Trace: FR-047-AC-1, FR-047-AC-3
   it("separates compiler and module-repository ownership", () => {
     expectAll(architecture("ownership-and-boundaries.md"), [
       "`filament-core-data`",
@@ -202,8 +195,7 @@ describe("semantic-module architecture contract", () => {
     ]);
   });
 
-  // Trace: FR-047-AC-4
-  // Trace: FR-047-AC-2
+  // Trace: FR-047-AC-2, FR-047-AC-4
   it("allocates consumer adapters and state without semantic forks", () => {
     expectAll(architecture("ownership-and-boundaries.md"), [
       "application adapters",
@@ -215,8 +207,7 @@ describe("semantic-module architecture contract", () => {
     ]);
   });
 
-  // Trace: FR-047-AC-5
-  // Trace: FR-047-AC-3
+  // Trace: FR-047-AC-3, FR-047-AC-5
   it("retains accepted validation levels and capability roles", () => {
     expectAll(architecture("ownership-and-boundaries.md"), [
       "L0",
@@ -230,8 +221,7 @@ describe("semantic-module architecture contract", () => {
     ]);
   });
 
-  // Trace: FR-048-AC-1
-  // Trace: FR-047-AC-4
+  // Trace: FR-047-AC-4, FR-048-AC-1
   it("keeps typed Markdown authoritative for authored knowledge", () => {
     expectAll(architecture("planes-and-authority.md"), [
       "Reviewed typed Markdown",
@@ -240,8 +230,7 @@ describe("semantic-module architecture contract", () => {
     ]);
   });
 
-  // Trace: FR-048-AC-2
-  // Trace: FR-047-AC-5
+  // Trace: FR-047-AC-5, FR-048-AC-2
   it("keeps package sources authoritative over generated language types", () => {
     expectAll(architecture("planes-and-authority.md"), [
       "Accepted schema/package source plus package metadata",
@@ -250,8 +239,7 @@ describe("semantic-module architecture contract", () => {
     ]);
   });
 
-  // Trace: FR-048-AC-3
-  // Trace: FR-047-AC-6
+  // Trace: FR-047-AC-6, FR-048-AC-3
   it("records TypeSpec as the structural source per filament-core-data ADR-0005", () => {
     expectAll(architecture("decision-ledger.md"), [
       "TypeSpec is the structural source",
@@ -261,8 +249,7 @@ describe("semantic-module architecture contract", () => {
     expect(architecture("decision-ledger.md")).not.toContain("fallback");
   });
 
-  // Trace: FR-048-AC-4
-  // Trace: FR-048-AC-1
+  // Trace: FR-048-AC-1, FR-048-AC-4
   it("keeps transactional and observation stores authoritative", () => {
     expectAll(architecture("planes-and-authority.md"), [
       "Owning PostgreSQL database or event store",
@@ -272,8 +259,7 @@ describe("semantic-module architecture contract", () => {
     ]);
   });
 
-  // Trace: FR-048-AC-5
-  // Trace: FR-048-AC-2
+  // Trace: FR-048-AC-2, FR-048-AC-5
   it("classifies wire, analytical, and export projections", () => {
     expectAll(architecture("planes-and-authority.md"), [
       "Protobuf",
@@ -287,8 +273,7 @@ describe("semantic-module architecture contract", () => {
     ]);
   });
 
-  // Trace: FR-048-AC-6
-  // Trace: FR-048-AC-3
+  // Trace: FR-048-AC-3, FR-048-AC-6
   it("stops on competing authorities", () => {
     expectAll(architecture("planes-and-authority.md"), [
       "promotion stops",
@@ -299,8 +284,7 @@ describe("semantic-module architecture contract", () => {
     ]);
   });
 
-  // Trace: FR-049-AC-1
-  // Trace: FR-048-AC-4
+  // Trace: FR-048-AC-4, FR-049-AC-1
   it("preserves unknown dynamic module data", () => {
     expectAll(architecture("dynamic-and-generated.md"), [
       "previously unknown module",
@@ -309,8 +293,7 @@ describe("semantic-module architecture contract", () => {
     ]);
   });
 
-  // Trace: FR-049-AC-2
-  // Trace: FR-048-AC-5
+  // Trace: FR-048-AC-5, FR-049-AC-2
   it("defines finite generated package exports", () => {
     expectAll(architecture("dynamic-and-generated.md"), [
       "finite generated export set",
@@ -319,8 +302,7 @@ describe("semantic-module architecture contract", () => {
     ]);
   });
 
-  // Trace: FR-049-AC-3
-  // Trace: FR-048-AC-6
+  // Trace: FR-048-AC-6, FR-049-AC-3
   it("requires an explicit unknown-extension policy", () => {
     expectAll(architecture("dynamic-and-generated.md"), [
       "preserve, reject, or surface",
@@ -329,8 +311,7 @@ describe("semantic-module architecture contract", () => {
     ]);
   });
 
-  // Trace: FR-049-AC-4
-  // Trace: FR-048-AC-7
+  // Trace: FR-048-AC-7, FR-049-AC-4
   it("makes native regeneration elective", () => {
     expectAll(architecture("dynamic-and-generated.md"), [
       "does not require regeneration",
@@ -338,7 +319,6 @@ describe("semantic-module architecture contract", () => {
     ]);
   });
 
-  // Trace: FR-049-AC-5
   // Trace: FR-049-AC-5
   it("separates distribution from generation and mapping declarations", () => {
     expectAll(architecture("dynamic-and-generated.md"), [
@@ -352,7 +332,6 @@ describe("semantic-module architecture contract", () => {
   });
 
   // Trace: FR-050-AC-1
-  // Trace: FR-050-AC-1
   it("keeps the unified archetype decision structural", () => {
     expectAll(architecture("decision-ledger.md"), [
       "ADR-0003",
@@ -363,7 +342,6 @@ describe("semantic-module architecture contract", () => {
   });
 
   // Trace: FR-050-AC-2
-  // Trace: FR-050-AC-2
   it("preserves direct and document-boundary canonical Markdown", () => {
     expectAll(architecture("decision-ledger.md"), [
       "ADR-0004",
@@ -372,7 +350,6 @@ describe("semantic-module architecture contract", () => {
     ]);
   });
 
-  // Trace: FR-050-AC-3
   // Trace: FR-050-AC-3
   it("retires draft rendering ownership while keeping byte-splicing", () => {
     expectAll(architecture("decision-ledger.md"), [
@@ -384,7 +361,6 @@ describe("semantic-module architecture contract", () => {
   });
 
   // Trace: FR-050-AC-4
-  // Trace: FR-050-AC-4
   it("keeps the accepted validation-level decision governing", () => {
     expectAll(architecture("decision-ledger.md"), [
       "ADR-0011",
@@ -394,7 +370,6 @@ describe("semantic-module architecture contract", () => {
   });
 
   // Trace: FR-050-AC-5
-  // Trace: FR-050-AC-5
   it("prevents Quire, Quoin, and compiler boundary regression", () => {
     expectAll(architecture("adr/0002-preserve-quire-quoin-boundaries.md"), [
       "Quire does not become a renderer or cross-language generator",
@@ -402,7 +377,6 @@ describe("semantic-module architecture contract", () => {
     ]);
   });
 
-  // Trace: FR-050-AC-6
   // Trace: FR-050-AC-6
   it("records a complete external-decision identity contract", () => {
     expectAll(architecture("decision-ledger.md"), [
@@ -414,8 +388,7 @@ describe("semantic-module architecture contract", () => {
     ]);
   });
 
-  // Trace: NFR-013-M-1
-  // Trace: NFR-013-M-2
+  // Trace:
   // TC-1151
   it("gives every external decision complete identity metadata", () => {
     const ledger = architecture("decision-ledger.md");
@@ -460,8 +433,7 @@ describe("semantic-module architecture contract", () => {
     expect(ledger).not.toContain("remains provisional");
   });
 
-  // Trace: NFR-014-M-1
-  // Trace: NFR-014-M-2
+  // Trace:
   // TC-1154
   it("keeps the branch inside the architecture-only path allowlist", () => {
     const changed = changedPaths();

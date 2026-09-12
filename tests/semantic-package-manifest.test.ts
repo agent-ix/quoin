@@ -78,7 +78,6 @@ afterEach(() => {
 
 describe("FR-075 package manifest derivation and registry pins", () => {
   // Trace: FR-075-AC-1
-  // Trace: FR-075-AC-1
   it("derives a package manifest that validates against the vendored filament-core-data schema", () => {
     const root = moduleCopy("derive");
     const module = readModuleSemantic(root).module;
@@ -151,7 +150,6 @@ describe("FR-075 package manifest derivation and registry pins", () => {
   });
 
   // Trace: FR-075-AC-2
-  // Trace: FR-075-AC-2
   it("pins one digest per exported object type in registry.json and changes when the schema changes", () => {
     const root = moduleCopy("pins");
     installPlugin(`path:${root}`, home);
@@ -180,7 +178,6 @@ describe("FR-075 package manifest derivation and registry pins", () => {
     });
   });
 
-  // Trace: FR-075-AC-3
   // Trace: FR-075-AC-3
   it("fails install on an import no installed module provides, naming versions, and on an import cycle", () => {
     const needy = moduleCopy("needy", (m) => {
@@ -218,7 +215,6 @@ describe("FR-075 package manifest derivation and registry pins", () => {
   });
 
   // Trace: FR-075-AC-4
-  // Trace: FR-075-AC-4
   it("exposes the same object-type identities in the dynamic load and the derived exports", () => {
     const root = moduleCopy("parity");
     const catalog = loadCatalog([root]);
@@ -242,10 +238,7 @@ describe("FR-075 package manifest derivation and registry pins", () => {
     expect(dynamic).toEqual(["ix://agent-ix/spec-objects-fixture/type/entity"]);
   });
 
-  // Trace: FR-075-AC-5
   // Trace: FR-075-AC-5, FR-075-CON-2
-  // Trace: FR-075-CON-2
-  // Trace: FR-075-CON-2
   it("rejects a URL or ix:// package and derives ix:// type identities from the org/repo package", () => {
     for (const value of ["ix://agent-ix/x", "https://example.org/pkg"]) {
       const root = moduleCopy("bad-pkg", (m) => {
@@ -285,7 +278,6 @@ describe("FR-075 package manifest derivation and registry pins", () => {
     });
   });
 
-  // Trace: FR-075-CON-1
   // Trace: FR-075-CON-1
   it("compiles, publishes, and fetches nothing", () => {
     const source = readFileSync(

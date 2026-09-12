@@ -110,8 +110,7 @@ function auditInput(
 }
 
 describe("strict lineage and policy boundaries", () => {
-  // Trace: FR-094-AC-1
-  // Trace: FR-094-AC-2
+  // Trace: FR-094-AC-1, FR-094-AC-2
   it("accepts stated dimensions and rejects empty or invented dimensions", () => {
     expect(validateEvidenceLineage(lineageA)).toEqual(lineageA);
     expect(() => validateEvidenceLineage({})).toThrow(/at least one/);

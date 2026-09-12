@@ -83,7 +83,6 @@ const decision: SufficiencyDecision = {
 
 describe("authored assurance arguments", () => {
   // Trace: FR-047-AC-1
-  // Trace: FR-047-AC-1
   it("preserves the authored claim, authority, and independence", () => {
     const view = buildAuthoredArgumentView({
       argument,
@@ -100,7 +99,6 @@ describe("authored assurance arguments", () => {
   });
 
   // Trace: FR-047-AC-2
-  // Trace: FR-047-AC-2
   it("leaves an undecided criterion open instead of inferring from evidence", () => {
     const view = buildAuthoredArgumentView({
       argument,
@@ -114,7 +112,6 @@ describe("authored assurance arguments", () => {
     expect(view.topClaim.status).toBe("open");
   });
 
-  // Trace: FR-047-AC-3
   // Trace: FR-047-AC-3
   it("reopens expired decisions and assumptions due for review", () => {
     const view = buildAuthoredArgumentView({
@@ -132,7 +129,6 @@ describe("authored assurance arguments", () => {
     expect(view.topClaim.status).toBe("open");
   });
 
-  // Trace: FR-047-AC-4
   // Trace: FR-047-AC-4
   it("requires resolution evidence and a current expiry for accepted risk", () => {
     const view = buildAuthoredArgumentView({
@@ -155,7 +151,6 @@ describe("authored assurance arguments", () => {
     });
   });
 
-  // Trace: FR-047-AC-5
   // Trace: FR-047-AC-5
   it("validates the closed authored contract and rejects duplicate decisions", () => {
     expect(parseAssuranceArgument(argument)).toEqual(argument);
@@ -202,7 +197,6 @@ describe("authored assurance arguments", () => {
     ).toThrow("top claim, reasoning, and assumption ids must be unique");
   });
 
-  // Trace: FR-047-AC-6
   // Trace: FR-047-AC-6
   it("renders open reasons and explicit decision state deterministically", () => {
     const view = buildAuthoredArgumentView({

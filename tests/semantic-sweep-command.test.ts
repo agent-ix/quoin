@@ -102,10 +102,7 @@ function corpus(): string {
 }
 
 describe("FR-074 sweep report", () => {
-  // Trace: FR-074-AC-5
-  // Trace: FR-074-AC-5
-  // Trace: NFR-017-AC-2
-  // Trace: NFR-017-AC-2
+  // Trace: FR-074-AC-5, NFR-017-AC-2
   it("produces a schema-valid report that counts each legacy form and only warning-severity findings", () => {
     const root = corpus();
     const report = sweepCorpus(
@@ -126,7 +123,6 @@ describe("FR-074 sweep report", () => {
     expect([...severities]).toEqual(["warning"]);
   });
 
-  // Trace: FR-074-AC-5
   // Trace: FR-074-AC-5
   it("runs through the command, writing the report to --out inside a corpus root", async () => {
     const root = corpus();
@@ -180,7 +176,6 @@ describe("FR-074 sweep report", () => {
     ).rejects.toThrow(/outside the working directory/);
   });
 
-  // Trace: FR-074-AC-3
   // Trace: FR-074-AC-3
   it("lets legacy_forms: error through only with a shipped report for the same package and version", () => {
     const withReport = (
@@ -254,7 +249,6 @@ describe("FR-074 sweep report", () => {
     );
   });
 
-  // Trace: FR-074-AC-4
   // Trace: FR-074-AC-4
   it("shows the migration example once in the authoring pack for a semantic module", () => {
     const catalog = loadCatalog([MODULE]);

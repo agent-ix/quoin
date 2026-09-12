@@ -538,7 +538,6 @@ describe("mutation score as the acceptance-criteria oracle", () => {
       ...over,
     });
 
-  // Trace: FR-039-AC-1
   // Trace: FR-039-AC-1, FR-039-AC-2, FR-039-AC-3, FR-039-AC-4, FR-039-AC-5, FR-039-AC-6, FR-039-AC-7, FR-039-AC-10
   it("says nothing until a floor is declared", () => {
     // The CR-008 lesson, applied before it could bite: a built-in floor is a
@@ -717,7 +716,6 @@ describe("mutation score as the acceptance-criteria oracle", () => {
 
   // ── TC-269: the metric discriminator (#138) ──
 
-  // Trace: FR-039-AC-11
   // Trace: FR-039-AC-11, FR-039-AC-12
   it("judges a labelled score from a tool no catalog lists", () => {
     // The tool allowlist by another name: a consumer using a mutation tool the
@@ -749,7 +747,6 @@ describe("mutation score as the acceptance-criteria oracle", () => {
     ).toContain("0.4");
   });
 
-  // Trace: FR-039-AC-12
   // Trace: FR-039-AC-11, FR-039-AC-12
   it("needs no catalog: the entry's declared metric is the whole answer", () => {
     // The old mechanism named `mutation-testing` — a method id, module data —
@@ -801,7 +798,6 @@ describe("mutation score as the acceptance-criteria oracle", () => {
 });
 
 describe("--mutation-floor is parsed, and a bad one is refused", () => {
-  // Trace: FR-039-AC-8
   // Trace: FR-039-AC-8, FR-039-AC-9
   it("reads <criticality>=<ratio> pairs", async () => {
     const { parseMutationFloor } =

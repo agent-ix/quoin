@@ -48,7 +48,6 @@ function requiredArrays(node: unknown, path = ""): Map<string, string[]> {
 
 describe("semantic-module contract vendoring", () => {
   // Trace: FR-070-CON-2
-  // Trace: FR-070-CON-2
   it("records filament-core-service provenance for the module-manifest schema and the bytes match", () => {
     const record = SEMANTIC_CONTRACT.moduleManifestSchema;
     expect(record.repository).toBe("agent-ix/filament-core-service");
@@ -65,10 +64,7 @@ describe("semantic-module contract vendoring", () => {
     );
   });
 
-  // Trace: FR-070-CON-1
-  // Trace: FR-070-CON-1
-  // Trace: NFR-017-AC-4
-  // Trace: NFR-017-AC-4
+  // Trace: FR-070-CON-1, NFR-017-AC-4
   it("adds no required key anywhere versus the pre-CR-003 schema", () => {
     const before = requiredArrays(
       JSON.parse(
@@ -98,7 +94,6 @@ describe("semantic-module contract vendoring", () => {
     expect(after.get("")).toEqual(["manifest_version", "name", "version"]);
   });
 
-  // Trace: FR-073-AC-6
   // Trace: FR-073-AC-6
   it("vendors the semantic-core bundle whose digest equals filament-core-data toolchain.json", () => {
     const record = SEMANTIC_CONTRACT.semanticCore;

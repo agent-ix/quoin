@@ -137,8 +137,7 @@ describe("spec-review analysis vocabulary", () => {
     }
   });
 
-  // Trace: FR-043-AC-5 / TC-281
-  // Trace: FR-043-AC-6 / TC-282
+  // Trace: FR-043-AC-5, FR-043-AC-6
   it("blocks an all-set review until the EARS review document is recorded", async () => {
     const module = await loadInvariants();
     const direct = directAnalysisSet();
@@ -170,10 +169,7 @@ describe("spec-review analysis vocabulary", () => {
     );
   });
 
-  // Trace: FR-043-AC-4 / TC-280
-  // Trace: FR-043-AC-5 / TC-281
-  // Trace: FR-043-AC-6 / TC-282
-  // Trace: FR-043-AC-7 / TC-283
+  // Trace: FR-043-AC-4, FR-043-AC-5, FR-043-AC-6, FR-043-AC-7
   it("cannot truncate all or bypass a required profile selection", async () => {
     const module = await loadInvariants();
     const analyses = [...directAnalysisSet()];
