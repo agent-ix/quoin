@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Agent-IX
 //! Fixture source tree for the quoin-quire integration tests.
 //!
 //! Only TC-001 carries a trace marker. TC-002 deliberately carries none, so

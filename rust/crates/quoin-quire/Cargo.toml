@@ -2,15 +2,20 @@
 # Copyright (C) 2026 Agent-IX
 [package]
 name = "quoin-quire"
-version = "0.1.0"
-edition = "2024"
-rust-version = "1.98.1"
-license = "AGPL-3.0-or-later"
-repository = "https://github.com/agent-ix/quoin"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
 description = "quoin's quire edge as a linked crate: coverage, properties, validation, clause sets and assurance, without a subprocess."
 # EPIC quoin#373: no crates.io, no public npmjs. This crate is consumed inside
-# the quoin repository and published nowhere.
-publish = false
+# the quoin repository and published nowhere. `publish = false` is stated once
+# in `[workspace.package]` and inherited here.
+publish.workspace = true
+
+[lints]
+workspace = true
 
 [dependencies]
 # THE PIN. Exactly what `quire-cli` HEAD pins, and that is the whole argument:
@@ -25,23 +30,11 @@ publish = false
 # disagree, and a build that resolved a different 0.46.0 would be a silent
 # substitution. Both must match or the resolution fails.
 #
-# `build.rs` reads this line, so the pin is stated once and reported from the
-# same place it is declared.
+# Declared here rather than in `[workspace.dependencies]` because this crate is
+# the only consumer of the quire engine and the pin is the crate's own subject
+# matter; `build.rs` reads THIS line, so the pin is stated once and reported
+# from the same place it is declared.
 quire-rs = { version = "=0.46.0", git = "https://github.com/agent-ix/quire-rs", rev = "85dfe9d5a937c52af6456f2e6aa3a6bc4c82db9f" }
-serde = { version = "=1.0.228", features = ["derive"] }
-serde_json = "=1.0.150"
-thiserror = "=2.0.18"
-
-# An explicit empty workspace table, so this crate is its own workspace root.
-#
-# Required today: `rust/Cargo.toml` is owned by quoin#375 and does not list
-# `quoin-quire` among its members, so without this line the crate would stop
-# building the moment that root lands beside it — cargo refuses a package
-# inside a workspace directory that the workspace does not claim.
-#
-# **Hand-off to quoin#375:** when the workspace adopts this crate, add it to
-# `members` and delete these five lines and `Cargo.lock` in the same commit.
-# Leaving the table behind would silently keep the crate outside the shared
-# `[workspace.lints]`, which is exactly the enforcement gap the workspace
-# exists to close.
-[workspace]
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }

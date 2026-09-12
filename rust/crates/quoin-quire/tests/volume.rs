@@ -8,6 +8,12 @@
 //! any other process: the oracle ran once, its answer is in that note, and
 //! these assertions stand on their own against the same bytes.
 
+#![allow(
+    clippy::expect_used,
+    clippy::indexing_slicing,
+    reason = "in a test, a panic IS the failure report; the production lints stand"
+)]
+
 use quoin_quire::{CoveragePayload, ErrorCode, PayloadLimit, engine, payload};
 
 /// The captured payload.

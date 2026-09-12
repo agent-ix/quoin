@@ -1,4 +1,0 @@
-# Build output. Named here rather than at the repository root because the root
-# .gitignore is shared with the TypeScript tree and `target/` means nothing
-# there.
-/target

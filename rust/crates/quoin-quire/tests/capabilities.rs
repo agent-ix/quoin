@@ -10,6 +10,12 @@
 //!
 //! These tests reach only the public API and never shell out.
 
+#![allow(
+    clippy::expect_used,
+    clippy::indexing_slicing,
+    reason = "in a test, a panic IS the failure report; the production lints stand"
+)]
+
 use std::path::{Path, PathBuf};
 
 use quoin_quire::{

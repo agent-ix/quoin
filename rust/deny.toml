@@ -1,10 +1,12 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # Copyright (C) 2026 Agent-IX
 #
-# Modelled on quire-rs/deny.toml. Two deliberate differences: this workspace
-# has no git source at all (so `allow-git` stays empty and `unknown-git =
-# "deny"` has full teeth), and `multiple-versions` is "deny": a duplicate
+# Modelled on quire-rs/deny.toml. `multiple-versions` is "deny": a duplicate
 # version is resolved, not conceded.
+#
+# quoin#379 added the workspace's first and only git source — the `rev`-pinned
+# quire-rs engine. Both the git allowance and the AGPL exception below are
+# scoped to that one crate; nothing else in the graph gains either.
 
 [licenses]
 version = 2
@@ -24,9 +26,33 @@ allow = [
 private = { ignore = true }
 confidence-threshold = 0.9
 
+# The linked engine. quire-rs is AGPL-3.0-or-later — the same licence quoin
+# itself carries — and quoin#379 links it rather than shelling out to it. The
+# exception is named per crate ON PURPOSE: the `allow` list above stays
+# permissive-only, so AGPL is admitted for this one dependency and cannot
+# arrive unnoticed in another.
+[[licenses.exceptions]]
+crate = "quire-rs"
+allow = ["AGPL-3.0-or-later"]
+
 [bans]
 multiple-versions = "deny"
 wildcards = "deny"
+# Duplicates that arrive ENTIRELY through `quire-rs`, which pins
+# `jsonschema 0.18.3`; that release's `url`/`getrandom`/`icu` chain carries
+# older majors than the rest of the graph resolves. Each is skipped at an
+# EXACT version, so a new duplicate — or a different version of the same crate
+# — still fails: this concedes these three resolutions, not the check.
+#
+# Not resolvable from here: the only lever is the quire-rs `rev`, and that pin
+# is the subject of quoin#379 (FR-101, one candidate revision). It is removed
+# when quire-rs advances past jsonschema 0.18.3, not by loosening this file.
+skip = [
+    { crate = "getrandom@0.2.17", reason = "jsonschema 0.18.3 via quire-rs" },
+    { crate = "getrandom@0.3.4", reason = "jsonschema 0.18.3 via quire-rs" },
+    { crate = "r-efi@5.3.0", reason = "getrandom 0.3.4 via quire-rs" },
+    { crate = "syn@2.0.119", reason = "proc-macro deps under quire-rs still on syn 2" },
+]
 # An in-workspace `path` dependency has no version to pin and is not the kind
 # of wildcard this check exists to catch — the bytes are in this tree. Only
 # registry wildcards are refused.
@@ -38,8 +64,10 @@ version = 2
 [sources]
 unknown-registry = "deny"
 unknown-git = "deny"
-# Empty on purpose. quoin#373: "no crates.io, no public npmjs" governs where
-# quoin PUBLISHES; dependencies are consumed from crates.io exactly as
-# quire-corpus and quire-rs consume theirs. When quoin-core gains a git
-# dependency it is listed here, or `unknown-git = "deny"` refuses it.
-allow-git = []
+# quoin#373: "no crates.io, no public npmjs" governs where quoin PUBLISHES;
+# dependencies are consumed from crates.io exactly as quire-corpus and quire-rs
+# consume theirs. The single entry is the engine quoin-quire links (quoin#379):
+# the crate pins it by `rev`, so allowing the REPOSITORY here does not weaken
+# the revision pin — `unknown-git = "deny"` still refuses every other git
+# source, and any other revision of this one still fails resolution.
+allow-git = ["https://github.com/agent-ix/quire-rs"]

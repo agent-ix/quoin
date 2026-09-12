@@ -25,12 +25,19 @@
 
 use std::path::PathBuf;
 
+// The parser that enforces the pin, shared verbatim with `tests/manifest_pin.rs`.
+// A build script is never built as a test target, so a `#[cfg(test)]` module
+// here would never run; including one file in both targets is what makes the
+// assertions about `field` a real gate.
+include!("build_support/manifest_pin.rs");
+
 fn main() {
     let manifest_dir = PathBuf::from(
         std::env::var_os("CARGO_MANIFEST_DIR").expect("cargo always sets CARGO_MANIFEST_DIR"),
     );
     let manifest_path = manifest_dir.join("Cargo.toml");
     println!("cargo:rerun-if-changed={}", manifest_path.display());
+    println!("cargo:rerun-if-changed=build_support/manifest_pin.rs");
 
     let manifest = std::fs::read_to_string(&manifest_path)
         .unwrap_or_else(|error| panic!("reading {}: {error}", manifest_path.display()));
@@ -69,14 +76,4 @@ fn main() {
         version.trim_start_matches('=')
     );
     println!("cargo:rustc-env=QUOIN_QUIRE_ENGINE_REVISION={revision}");
-}
-
-/// The value of `key = "…"` inside one inline table line.
-fn field(line: &str, key: &str) -> Option<String> {
-    let after_key = line.split(key).nth(1)?;
-    let after_equals = after_key.trim_start().strip_prefix('=')?;
-    let opening = after_equals.find('"')?;
-    let rest = after_equals.get(opening + 1..)?;
-    let closing = rest.find('"')?;
-    rest.get(..closing).map(str::to_string)
 }

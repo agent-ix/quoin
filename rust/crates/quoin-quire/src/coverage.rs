@@ -100,30 +100,44 @@ pub fn compute(request: &Request) -> Result<Outcome> {
 }
 
 #[cfg(test)]
+#[allow(
+    clippy::expect_used,
+    clippy::indexing_slicing,
+    reason = "in a test, a panic IS the failure report; the production lints stand"
+)]
 mod tests {
     use super::*;
 
     /// Trace: FR-099
     #[test]
     fn tc_379_050_a_scope_without_a_document_root_is_named_not_walked() {
-        let scope = crate::testing::scratch("coverage-no-spec");
+        let scratch = crate::testing::Scratch::new("coverage-no-spec");
+        // A CLOSED module set naming the checked-in fixture, never `Ambient`.
+        // `compute` resolves the module set first and the document root last,
+        // so an ambient selection makes the error depend on which modules the
+        // machine running the suite happens to have installed: no modules
+        // installed yields `ModuleLoad`, an installed set without a model
+        // yields `TraceabilityModelUndeclared`, and only a machine with a
+        // model installed reaches the condition under test. The fixture module
+        // declares a traceability model, so every earlier gate passes and the
+        // oracle is a single outcome on every machine.
         let request = Request {
-            scope: ScopeRoot::open(&scope).expect("scratch dir"),
-            modules: ModuleSelection::Ambient,
+            scope: ScopeRoot::open(scratch.path()).expect("scratch dir"),
+            modules: ModuleSelection::Closed(vec![
+                crate::ids::ModuleRoot::open(
+                    std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+                        .join("tests")
+                        .join("fixtures")
+                        .join("repo"),
+                )
+                .expect("the fixture module is checked in"),
+            ]),
         };
-        // Resolution order matters: the module set resolves first, so an
-        // ambient environment with no modules can report `ModuleLoad` before
-        // the document root is reached. Both are refusals, and neither is a
-        // silent repository-wide crawl — which is the property under test.
         let error = compute(&request).expect_err("a scope with no spec/ cannot be reconciled");
-        assert!(
-            matches!(
-                error.code(),
-                crate::ErrorCode::DocumentRootMissing
-                    | crate::ErrorCode::TraceabilityModelUndeclared
-                    | crate::ErrorCode::ModuleLoad
-            ),
-            "got {error:?}"
+        assert_eq!(
+            error.code(),
+            crate::ErrorCode::DocumentRootMissing,
+            "the missing document root must be named, not walked around: {error:?}"
         );
     }
 }

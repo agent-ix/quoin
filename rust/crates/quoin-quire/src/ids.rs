@@ -278,6 +278,11 @@ nonempty_newtype!(
 );
 
 #[cfg(test)]
+#[allow(
+    clippy::expect_used,
+    clippy::indexing_slicing,
+    reason = "in a test, a panic IS the failure report; the production lints stand"
+)]
 mod tests {
     use super::*;
 
