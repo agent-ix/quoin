@@ -61,12 +61,20 @@ publish = false
 # moves `serde_derive` off the `syn 2.x` side. quire-corpus has no `schemars`
 # dependency, so it does not have this duplicate and is not wrong today; it
 # should follow when it next revises its pins.
+#
+# `thiserror` diverges from quire-corpus's `=2.0.18` for the same reason and in
+# the same direction. `serde 1.0.229` left `thiserror-impl` as the only
+# consumer of `syn 2.x` that any of our crates reach without passing through
+# `gix`; `thiserror 2.0.20` uses `syn 3.x`, which makes `syn 2.x` reachable
+# through `gix` alone. That is the premise the `syn@2.0.119` skip in
+# `deny.toml` rests on: revert either of these two pins and the premise is
+# gone, and the skip is hiding a duplicate we could resolve.
 [workspace.dependencies]
 quoin-core = { path = "crates/quoin-core" }
 quoin-schemas = { path = "crates/quoin-schemas" }
 serde = { version = "=1.0.229", features = ["derive"] }
 serde_json = "=1.0.150"
-thiserror = "=2.0.18"
+thiserror = "=2.0.20"
 jsonschema = { version = "=0.56.0", default-features = false }
 
 [profile.release]

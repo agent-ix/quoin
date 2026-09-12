@@ -77,6 +77,12 @@ skip = [
     # (gix-transport directly, and hyper-util under reqwest), 0.23.1 by one.
     # The asymmetry is the point: skipping the narrower path and leaving the
     # broader one counted keeps the most of the graph under the gate.
+    # syn 2.x became gix-only ONLY after the `serde` and `thiserror` bumps in
+    # rust/Cargo.toml; before them `serde_derive` and then `thiserror-impl`
+    # reached it from our own crates. Revert either pin and this skip's premise
+    # is gone. syn@3.0.5 stays counted — it is the side quoin-config reaches
+    # through schemars.
+    { crate = "syn@2.0.119", reason = "gix-only, by all five remaining paths: gix-macros -> gix-protocol -> gix -> quoin-modules; jiff-static -> jiff -> gix-date -> gix; jni-macros -> jni -> rustls-platform-verifier -> reqwest -> gix-transport -> gix; jni-sys-macros -> jni-sys -> jni (same tail); synstructure/yoke-derive/zerofrom-derive -> yoke/zerofrom -> icu_* -> idna -> url -> reqwest (and tower-http -> reqwest) -> gix-transport -> gix. gix pins these itself, so unlike hashbrown and syn@3.0.5 this duplicate cannot be resolved from here" },
     { crate = "base64@0.23.1", reason = "gix-only: reqwest -> gix-transport -> gix -> quoin-modules; the other side, 0.22.1, is also gix-only but more widely shared, so it is the one left counted" },
 ]
 wildcards = "deny"
