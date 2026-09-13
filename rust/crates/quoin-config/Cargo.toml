@@ -33,4 +33,9 @@ serde_yaml_ng = "=0.10.0"
 # workspace pin as the runtime dependency above, so no second version enters
 # the graph that `multiple-versions = "deny"` would then reject.
 schemars = { workspace = true }
+# For `tests/tc_446_org_no_child_program.rs`, which carries the amended
+# FR-025-AC-7. The same auditor `quoin-core`'s `tc_library_containment.rs`
+# consumes, at the same workspace pin, rather than a second syn-based source
+# auditor grown here.
+engineering-assurance = { workspace = true }
 tempfile = "=3.27.0"

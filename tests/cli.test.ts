@@ -225,7 +225,7 @@ afterEach(() => {
  * artifact the `oclif` dispatch tests below dispatch into.
  */
 describe("the built package's host-resolved assets", () => {
-  // Trace: FR-019-AC-1
+  // Trace: FR-016-AC-1, FR-017-AC-1
   test("the default module set is reachable from the built entry", async () => {
     // Through the BUILT module and not the source one: the property under test
     // is the path the bundled chunk derives, and importing `src/` would derive

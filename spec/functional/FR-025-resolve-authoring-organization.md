@@ -55,7 +55,11 @@ The `quoin` CLI SHALL NOT substitute a default authoring organization.
   designates — so a worktree or submodule resolves the same organization its
   main checkout does.
 - The command SHALL NOT invoke `git` to resolve the organization.
-- The command SHALL NOT execute any subprocess to resolve the organization.
+- The command SHALL execute no subprocess to resolve the organization other than
+  the single `quoin-core` boundary call that performs the resolution, and that
+  call SHALL be handed the Git configuration's content rather than a path to
+  read — so resolution still depends on no Git executable and on no program
+  found on `PATH`.
 - The command SHALL match the configuration's section name without regard to
   case and the quoted remote name with regard to case, as Git itself does, so
   `[REMOTE "origin"]` is the `origin` remote and `[remote "Origin"]` is not.
@@ -93,17 +97,17 @@ notice, and worse once noticed, than an absent one that stops the author and ask
 
 | ID          | Criteria                                                                                       | Verification                    |
 | ----------- | ---------------------------------------------------------------------------------------------- | ------------------------------- |
-| FR-025-AC-1 | `--org` takes precedence over `QUOIN_ORG`, then the stored configuration, then the `origin` remote, and an empty or whitespace-only value defers to the next source | Test (org.test.ts)              |
-| FR-025-AC-2 | The organization is parsed from an SSH remote URL                                               | Test (org.test.ts)              |
-| FR-025-AC-3 | The organization is parsed from an HTTPS remote URL                                             | Test (org.test.ts)              |
-| FR-025-AC-4 | A missing configuration, an absent `origin` remote, and a remote yielding no organization each resolve to unresolved without failing | Test (org.test.ts)              |
-| FR-025-AC-5 | An unresolved organization is reported with the `--org` remedy and no substituted value         | Test (org.test.ts, write.test.ts) |
+| FR-025-AC-1 | `--org` takes precedence over `QUOIN_ORG`, then the stored configuration, then the `origin` remote, and an empty or whitespace-only value defers to the next source | Test (ts_oracle.rs, tc_446_org_parity.rs, core-org.test.ts) |
+| FR-025-AC-2 | The organization is parsed from an SSH remote URL                                               | Test (ts_oracle.rs, tc_446_org_url_properties.rs, tc_446_org_parity.rs) |
+| FR-025-AC-3 | The organization is parsed from an HTTPS remote URL                                             | Test (ts_oracle.rs, tc_446_org_url_properties.rs) |
+| FR-025-AC-4 | A missing configuration, an absent `origin` remote, and a remote yielding no organization each resolve to unresolved without failing | Test (ts_oracle.rs, core-org.test.ts) |
+| FR-025-AC-5 | An unresolved organization is reported with the `--org` remedy and no substituted value         | Test (ids.rs, write.test.ts)    |
 | FR-025-AC-6 | The authoring pack carries the organization and its source in text and under `--json`           | Test (write.test.ts, cli.test.ts) |
-| FR-025-AC-7 | Resolution executes no subprocess                                                               | Test (org.test.ts)              |
-| FR-025-AC-8 | A worktree or submodule, whose `.git` is a file naming a Git directory, resolves the organization its main checkout does | Test (org.test.ts)              |
-| FR-025-AC-9 | A local-path remote and a host-based remote with no owner segment each yield no organization, rather than a path segment or the host name | Test (org.test.ts)              |
-| FR-025-AC-10 | A remote path with a nested namespace qualifies by the segment immediately preceding the repository | Test (org.test.ts)             |
-| FR-025-AC-11 | The configuration's section name matches case-insensitively and the quoted remote name case-sensitively | Test (org.test.ts)             |
+| FR-025-AC-7 | Resolution invokes no `git` executable, and executes no subprocess other than the single `quoin-core` boundary call, which is handed the configuration content rather than a path | Test (tc_446_org_no_child_program.rs, org-one-subprocess.test.ts) |
+| FR-025-AC-8 | A worktree or submodule, whose `.git` is a file naming a Git directory, resolves the organization its main checkout does | Test (ts_oracle.rs, core-org.test.ts) |
+| FR-025-AC-9 | A local-path remote and a host-based remote with no owner segment each yield no organization, rather than a path segment or the host name | Test (ts_oracle.rs, tc_446_org_url_properties.rs) |
+| FR-025-AC-10 | A remote path with a nested namespace qualifies by the segment immediately preceding the repository | Test (ts_oracle.rs, tc_446_org_url_properties.rs) |
+| FR-025-AC-11 | The configuration's section name matches case-insensitively and the quoted remote name case-sensitively | Test (ts_oracle.rs, tc_446_org_url_properties.rs) |
 
 ## Dependencies
 

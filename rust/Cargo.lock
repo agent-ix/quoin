@@ -2958,6 +2958,7 @@ dependencies = [
 name = "quoin-config"
 version = "0.1.0"
 dependencies = [
+ "engineering-assurance",
  "schemars",
  "serde",
  "serde_json",

@@ -46,7 +46,9 @@ agent recover in one step, whereas a silent failure stalls the loop.
 Error-path tests assert that unknown commands and subcommands, unknown types
 (with the available-type list), missing manifests, and catalog conflicts each
 raise an actionable error or set a non-zero exit (`cli.test.ts`,
-`write.test.ts`, `plugins.test.ts`).
+`write.test.ts`, and — since quoin#446 moved module management behind the
+`quoin-core` boundary — `quoin-modules`' `ts_oracle.rs`, whose `tc_381_237`
+pins the missing-manifest error code the boundary reports).
 
 ## Dependencies
 

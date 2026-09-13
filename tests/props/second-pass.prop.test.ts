@@ -11,6 +11,14 @@
  * only the skip marker and `review=` changed.
  * Emitted by the review-gated second pass; each test's provenance line carries
  * `origin=llm-second-pass` and its own confidence.
+ *
+ * quoin#446 removed the FR-018-AC-1..AC-4 and FR-025-AC-2/AC-3/AC-11 sections
+ * along with the `src/plugins.ts` and `src/org.ts` they were grounded on. The
+ * properties themselves were not dropped: they are restated over the same
+ * families in `quoin-modules`' `tc_446_062`..`tc_446_065` and `quoin-config`'s
+ * `tc_446_050`..`tc_446_053`, as exhaustive loops over a bounded domain with an
+ * explicit population-floor assertion, because the Rust tree carries no
+ * property-testing dependency and a cutover is not the place to add one.
  */
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -20,8 +28,6 @@ import fc from "fast-check";
 
 import { defaultModuleRoots, loadCatalog } from "../../src/catalog";
 import { QuoinConfigSchema } from "../../src/config-schema";
-import { originOrg } from "../../src/org";
-import { parseSourceArg } from "../../src/plugins";
 import { createAuthoringPack, parseTypeList } from "../../src/write";
 
 const segment = fc.stringMatching(/^[a-z][a-z0-9-]{0,11}$/);
@@ -37,10 +43,6 @@ function scratchDir(prefix: string): string {
 afterAll(() => {
   for (const dir of scratch) rmSync(dir, { recursive: true, force: true });
 });
-
-function gitConfig(url: string, section = '[remote "origin"]'): string {
-  return `[core]\n\trepositoryformatversion = 0\n${section}\n\turl = ${url}\n`;
-}
 
 // ---- FR-013-AC-3 -------------------------------------------------------------
 
@@ -93,179 +95,6 @@ describe("FR-013-AC-3 type-list parsing", () => {
           );
         },
       ),
-    );
-  });
-});
-
-// ---- FR-018-AC-1..AC-4 -------------------------------------------------------
-
-describe("FR-018-AC-1..AC-4 plugin source parsing", () => {
-  /**
-   * Trace: FR-018-AC-1 — `path:<dir>` maps to a path source.
-   * Trace: FR-018-AC-2 — `github:<owner>/<repo>[@<ref>]` maps to a GitHub source with optional ref.
-   * Trace: FR-018-AC-3 — `github:<owner>/<repo>//<subdir>[@<ref>]` maps to a git-subdir source.
-   * Trace: FR-018-AC-4 — `package:<pkg>[@<ver>]` maps to an npm source split on the final `@`.
-   * spec-correctness: row=FR-018-AC-1 property=example extraction=not-extractable origin=llm-second-pass review=accepted confidence=high
-   * spec-correctness: row=FR-018-AC-2 property=example extraction=not-extractable origin=llm-second-pass review=accepted confidence=high
-   * spec-correctness: row=FR-018-AC-3 property=example extraction=not-extractable origin=llm-second-pass review=accepted confidence=high
-   * spec-correctness: row=FR-018-AC-4 property=example extraction=not-extractable origin=llm-second-pass review=accepted confidence=high
-   *
-   * Reclassified `universal`. Each criterion states a total rule over its prefix,
-   * grounded on src/plugins.ts:34 `parseSourceArg`. The classifier read the inline
-   * `<placeholder>` syntax as a concrete example.
-   */
-  test("FR-018-AC-1 `path:` carries the remainder verbatim, whatever it contains", () => {
-    fc.assert(
-      fc.property(fc.string({ maxLength: 40 }), (rest) => {
-        expect(parseSourceArg(`path:${rest}`)).toEqual({
-          type: "path",
-          path: rest,
-        });
-      }),
-    );
-  });
-
-  test("FR-018-AC-2 `github:` yields owner/repo, and the ref only when one is given", () => {
-    fc.assert(
-      fc.property(
-        segment,
-        segment,
-        fc.option(segment, { nil: undefined }),
-        (owner, repo, ref) => {
-          const arg = `github:${owner}/${repo}${ref ? `@${ref}` : ""}`;
-          expect(parseSourceArg(arg)).toEqual({
-            type: "github",
-            repo: `${owner}/${repo}`,
-            ref,
-          });
-        },
-      ),
-    );
-  });
-
-  test("FR-018-AC-3 a `//` in the spec always yields git-subdir, split at the first `//`", () => {
-    fc.assert(
-      fc.property(
-        segment,
-        segment,
-        segment,
-        fc.option(segment, { nil: undefined }),
-        (owner, repo, sub, ref) => {
-          const arg = `github:${owner}/${repo}//${sub}${ref ? `@${ref}` : ""}`;
-          expect(parseSourceArg(arg)).toEqual({
-            type: "git-subdir",
-            url: `${owner}/${repo}`,
-            path: sub,
-            ref,
-          });
-        },
-      ),
-    );
-  });
-
-  test("FR-018-AC-4 `package:` splits on the FINAL `@`, so a scoped package keeps its scope", () => {
-    fc.assert(
-      fc.property(
-        segment,
-        segment,
-        fc.option(segment, { nil: undefined }),
-        (scope, name, version) => {
-          const pkg = `@${scope}/${name}`;
-          const arg = `package:${pkg}${version ? `@${version}` : ""}`;
-          expect(parseSourceArg(arg)).toEqual(
-            version
-              ? { type: "npm", package: pkg, version }
-              : { type: "npm", package: pkg },
-          );
-        },
-      ),
-    );
-  });
-});
-
-// ---- FR-025-AC-2, AC-3, AC-11 ------------------------------------------------
-
-describe("FR-025-AC-2/AC-3 remote url forms", () => {
-  /**
-   * Trace: FR-025-AC-2 — the organization is parsed from an SSH remote URL.
-   * Trace: FR-025-AC-3 — the organization is parsed from an HTTPS remote URL.
-   * spec-correctness: row=FR-025-AC-2 property=example extraction=not-extractable origin=llm-second-pass review=accepted confidence=high
-   * spec-correctness: row=FR-025-AC-3 property=example extraction=not-extractable origin=llm-second-pass review=accepted confidence=high
-   *
-   * Reclassified `universal`. Grounded on src/org.ts:190 `originOrg`: each url form
-   * is a family, not a single url.
-   */
-  test("AC-2 the scp-style form yields the owner for any host, owner and repo", () => {
-    fc.assert(
-      fc.property(
-        segment,
-        segment,
-        segment,
-        fc.boolean(),
-        (host, owner, repo, dotGit) => {
-          const url = `git@${host}.example.com:${owner}/${repo}${dotGit ? ".git" : ""}`;
-          expect(originOrg(gitConfig(url))).toBe(owner);
-        },
-      ),
-    );
-  });
-
-  test("AC-3 the https form yields the owner, with or without a port or `.git`", () => {
-    fc.assert(
-      fc.property(
-        segment,
-        segment,
-        fc.option(fc.integer({ min: 1, max: 65535 }), { nil: undefined }),
-        fc.boolean(),
-        (owner, repo, port, dotGit) => {
-          const url = `https://git.example.com${port ? `:${port}` : ""}/${owner}/${repo}${dotGit ? ".git" : ""}`;
-          expect(originOrg(gitConfig(url))).toBe(owner);
-        },
-      ),
-    );
-  });
-});
-
-describe("FR-025-AC-11 section and remote name casing", () => {
-  const casingsOf = (word: string) =>
-    fc
-      .array(fc.boolean(), { minLength: word.length, maxLength: word.length })
-      .map((up) =>
-        [...word]
-          .map((c, i) => (up[i] ? c.toUpperCase() : c.toLowerCase()))
-          .join(""),
-      );
-
-  /**
-   * Trace: FR-025-AC-11 — the configuration's section name matches
-   * case-insensitively and the quoted remote name case-sensitively.
-   * spec-correctness: row=FR-025-AC-11 property=example extraction=not-extractable origin=llm-second-pass review=accepted confidence=high
-   *
-   * Reclassified `universal` over casings — the source comment at src/org.ts:193
-   * states the asymmetry explicitly, which is the oracle.
-   */
-  test("any casing of the section name `remote` still resolves the org", () => {
-    fc.assert(
-      fc.property(casingsOf("remote"), segment, (section, owner) => {
-        const config = gitConfig(
-          `https://git.example.com/${owner}/repo.git`,
-          `[${section} "origin"]`,
-        );
-        expect(originOrg(config)).toBe(owner);
-      }),
-    );
-  });
-
-  test("any casing of the remote name other than `origin` resolves nothing", () => {
-    fc.assert(
-      fc.property(casingsOf("origin"), segment, (name, owner) => {
-        fc.pre(name !== "origin");
-        const config = gitConfig(
-          `https://git.example.com/${owner}/repo.git`,
-          `[remote "${name}"]`,
-        );
-        expect(originOrg(config)).toBeUndefined();
-      }),
     );
   });
 });

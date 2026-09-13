@@ -205,7 +205,7 @@ describe.skipIf(!available)(
       expect(reached).toBe(3);
     });
 
-    // Trace: FR-025-AC-1
+    // Trace: FR-025-AC-1, FR-025-AC-8
     it("follows a worktree's .git file to the common directory", () => {
       // Not a variation on the same case: in a worktree `.git` is a *file*, and
       // the config lives in the main checkout that `commondir` names. A selection

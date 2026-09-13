@@ -41,11 +41,11 @@ source; `github:<owner>/<repo>//<subdir>[@<ref>]` to a git-subdir source;
 
 | ID          | Criteria                                                                                          | Verification                          |
 | ----------- | ------------------------------------------------------------------------------------------------- | ------------------------------------- |
-| FR-018-AC-1 | `path:<dir>` maps to a path source                                                                | Test (plugins.test.ts, index.test.ts) |
-| FR-018-AC-2 | `github:<owner>/<repo>[@<ref>]` maps to a GitHub source with optional ref                         | Test (plugins.test.ts)                |
-| FR-018-AC-3 | `github:<owner>/<repo>//<subdir>[@<ref>]` maps to a git-subdir source                             | Test (plugins.test.ts)                |
-| FR-018-AC-4 | `package:<pkg>[@<ver>]`, including a scoped package, maps to an npm source split on the final `@` | Test (plugins.test.ts)                |
-| FR-018-AC-5 | A bare argument maps to a path source                                                             | Test (plugins.test.ts, index.test.ts) |
+| FR-018-AC-1 | `path:<dir>` maps to a path source                                                                | Test (ts_oracle.rs, tc_446_source_arg_properties.rs, index.test.ts) |
+| FR-018-AC-2 | `github:<owner>/<repo>[@<ref>]` maps to a GitHub source with optional ref                         | Test (ts_oracle.rs, tc_446_source_arg_properties.rs) |
+| FR-018-AC-3 | `github:<owner>/<repo>//<subdir>[@<ref>]` maps to a git-subdir source                             | Test (ts_oracle.rs, tc_446_source_arg_properties.rs) |
+| FR-018-AC-4 | `package:<pkg>[@<ver>]`, including a scoped package, maps to an npm source split on the final `@` | Test (ts_oracle.rs, tc_446_source_arg_properties.rs) |
+| FR-018-AC-5 | A bare argument maps to a path source                                                             | Test (ts_oracle.rs, tc_446_source_arg_properties.rs, index.test.ts) |
 
 ## Dependencies
 
