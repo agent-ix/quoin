@@ -302,6 +302,69 @@ mod tests {
         );
     }
 
+    /// Each format-specific adapter is reachable both by `--adapter` and by
+    /// the tool strings its producers spell.
+    ///
+    /// Selection is the half of an adapter nothing else asserts: a parser that
+    /// works and is never selected reads, from the store, exactly like a parser
+    /// that does not exist.
+    ///
+    /// Trace: FR-036-AC-5, FR-041-AC-6, FR-042-AC-5
+    /// Provenance: quoin#458
+    #[test]
+    fn tc_458_240_each_adapter_is_reachable_by_name_and_by_declared_tool() {
+        let by_name = [
+            ("sbom", "sbom"),
+            ("agent-eval", "agent-eval"),
+            ("audit-script", "audit-script"),
+        ];
+        for (adapter, expected) in by_name {
+            let chosen = select(adapter, expected);
+            assert_eq!(chosen, expected, "--adapter {adapter}");
+        }
+        let by_tool = [
+            ("syft 1.0.0", "sbom"),
+            ("cyclonedx-npm 6.0.1", "sbom"),
+            ("cli-agent-evals 0.4.0", "agent-eval"),
+            ("make ci", "audit-script"),
+            ("import-linter 2.0", "audit-script"),
+        ];
+        for (tool, expected) in by_tool {
+            let chosen = select_by_tool(tool, expected);
+            assert_eq!(chosen, expected, "--tool {tool}");
+        }
+        // Anti-vacuity: the table above must name more than one adapter, or a
+        // registry collapsed onto a single entry would satisfy every row.
+        let distinct: BTreeSet<&str> = by_tool.iter().map(|(_, name)| *name).collect();
+        assert_eq!(distinct.len(), 3);
+    }
+
+    /// `select_adapter` or `select_finding_adapter`, whichever registry the
+    /// named adapter is in — the command makes the same choice by shape.
+    fn select(adapter: &'static str, expected: &str) -> &'static str {
+        let selection = AdapterSelection {
+            adapter: Some(adapter),
+            tool: None,
+        };
+        if FINDING_ADAPTERS.iter().any(|a| a.name == expected) {
+            select_finding_adapter(selection).unwrap().name
+        } else {
+            select_adapter(selection).unwrap().name
+        }
+    }
+
+    fn select_by_tool(tool: &'static str, expected: &str) -> &'static str {
+        let selection = AdapterSelection {
+            adapter: None,
+            tool: Some(tool),
+        };
+        if FINDING_ADAPTERS.iter().any(|a| a.name == expected) {
+            select_finding_adapter(selection).map_or("(none)", |adapter| adapter.name)
+        } else {
+            select_adapter(selection).unwrap().name
+        }
+    }
+
     #[test]
     fn a_finding_shaped_selection_is_caught_before_the_run_path() {
         assert_eq!(

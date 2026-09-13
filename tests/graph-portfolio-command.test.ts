@@ -10,7 +10,10 @@ import type { Config } from "@oclif/core";
 import { afterEach, beforeAll, expect, test, vi } from "vitest";
 
 import ReportCommand from "../src/commands/report.js";
-import { STORE_SCHEMA_VERSION, writeBindings } from "../src/evidence/index.js";
+import {
+  STORE_SCHEMA_VERSION,
+  writeBindings,
+} from "./support/evidence-store.js";
 import {
   analyzeChangeImpact,
   analyzeChurn,

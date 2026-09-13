@@ -12,6 +12,7 @@ pub mod change_assurance;
 pub mod completeness;
 pub mod config;
 pub mod core;
+pub mod evidence;
 pub mod modules;
 pub mod semantic;
 pub mod validators;

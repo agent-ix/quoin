@@ -23,12 +23,29 @@ use crate::error::EvidenceError;
 /// name (NFR-025).
 pub const SHORT_COMMIT_LENGTH: usize = 12;
 
+/// Declares one opaque string identity.
+///
+/// The optional `schema = "Name"` renames the type **in the boundary schema
+/// only** (never in serde, which is `transparent` either way). It exists
+/// because `quoin-validators` also publishes an `ObligationId` across the same
+/// boundary: schemars resolves a collision by appending a digit, so the two
+/// would reach TypeScript as `ObligationId` and `ObligationId2` with nothing
+/// saying which is which — and which one got the digit would depend on
+/// registration order, so adding an unrelated type could silently swap them.
 macro_rules! opaque_id {
     ($name:ident, $what:literal) => {
+        opaque_id!(@declare $name, $what,);
+    };
+    ($name:ident, $what:literal, schema = $schema:literal) => {
+        opaque_id!(@declare $name, $what, #[cfg_attr(feature = "schema", schemars(rename = $schema))]);
+    };
+    (@declare $name:ident, $what:literal, $($rename:tt)*) => {
         #[doc = concat!("A ", $what, ".")]
         #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
         #[derive(serde::Serialize, serde::Deserialize)]
         #[serde(transparent)]
+        #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+        $($rename)*
         pub struct $name(String);
 
         impl $name {
@@ -60,7 +77,11 @@ macro_rules! opaque_id {
 }
 
 opaque_id!(SuiteId, "suite identity, as the suite registry declares it");
-opaque_id!(ObligationId, "obligation id, the join the matrix keys on");
+opaque_id!(
+    ObligationId,
+    "obligation id, the join the matrix keys on",
+    schema = "EvidenceObligationId"
+);
 opaque_id!(SymbolId, "FR-051 stable symbol identity");
 opaque_id!(
     StatementHash,
@@ -76,6 +97,7 @@ opaque_id!(
     Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize,
 )]
 #[serde(transparent)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct Commit(String);
 
 impl Commit {
@@ -118,6 +140,7 @@ impl std::fmt::Display for Commit {
     Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize,
 )]
 #[serde(try_from = "String", into = "String")]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct TrustDecisionId(String);
 
 impl TrustDecisionId {
@@ -168,6 +191,7 @@ impl std::fmt::Display for TrustDecisionId {
     Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize,
 )]
 #[serde(try_from = "String", into = "String")]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct ProfileId(String);
 
 impl ProfileId {

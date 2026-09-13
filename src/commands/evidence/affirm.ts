@@ -3,7 +3,7 @@ import { execFileSync } from "node:child_process";
 import { Flags } from "@oclif/core";
 
 import { QuoinCommand } from "../../base.js";
-import { affirm, readBindings, writeBindings } from "../../evidence/index.js";
+import { affirm } from "../../core/evidence.js";
 import {
   checkVersionPremise,
   parseCoverage,
@@ -83,16 +83,15 @@ clear itself on the next CI run and the detector would never fire.`;
         encoding: "utf8",
       }).trim();
 
-    const before = readBindings(flags.repo).bindings;
-    const { bindings, found } = affirm(
-      before,
-      flags.obligation,
-      current.statement_hash,
-      flags.who,
+    const outcome = affirm({
+      repo: flags.repo,
+      obligation: flags.obligation,
+      statement_hash: current.statement_hash,
+      who: flags.who,
       commit,
-      flags.note,
-    );
-    if (!found) {
+      ...(flags.note === undefined ? {} : { note: flags.note }),
+    });
+    if (!outcome.found) {
       this.error(
         `no binding exists for \`${flags.obligation}\`, so there is nothing to ` +
           `affirm. A binding is created when a suite first discharges the ` +
@@ -101,15 +100,23 @@ clear itself on the next CI run and the detector would never fire.`;
       );
     }
 
-    writeBindings(flags.repo, { bindings });
-    const outcome = {
-      obligation: flags.obligation,
-      who: flags.who,
-      commit,
-      statementHash: current.statement_hash,
-    };
     if (flags.json) {
-      this.log(JSON.stringify(outcome, null, 2));
+      // The shape the command has always printed. The payload spells its
+      // fields the way every other boundary request does (`statement_hash`),
+      // and the command's own JSON is a user-visible surface that a port does
+      // not get to rename.
+      this.log(
+        JSON.stringify(
+          {
+            obligation: outcome.obligation,
+            who: outcome.who,
+            commit: outcome.commit,
+            statementHash: outcome.statement_hash,
+          },
+          null,
+          2,
+        ),
+      );
       return;
     }
     this.log(

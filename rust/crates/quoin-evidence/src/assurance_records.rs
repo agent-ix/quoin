@@ -27,6 +27,7 @@ use serde::de::DeserializeOwned;
 use serde_json::{Map, Value};
 
 use crate::error::EvidenceError;
+use crate::instant::{Instant, InstantGrammar};
 use crate::paths::{EXPERIMENTS_DIR, OPERATIONAL_EVIDENCE_DIR, assurance_record_path};
 use crate::source::EvidenceSource;
 use crate::store::codec::{canonical_bytes_of, decode};
@@ -34,6 +35,13 @@ use crate::types::{
     ExperimentRecord, ExperimentRecordInput, OperationalEvidenceRecord,
     OperationalEvidenceRecordInput, StoredAssuranceRecord,
 };
+
+/// The language every timestamp in an assurance record is written in.
+///
+/// The retained check was an anchored regular expression with a mandatory
+/// zone, so a bare date is refused and nothing may follow the offset. See
+/// [`crate::instant`] for why the two grammars in this crate are not one.
+const RECORDED_AT_GRAMMAR: InstantGrammar = InstantGrammar::ZonedInstant;
 
 /// Publish one experiment record, append-only.
 ///
@@ -612,66 +620,18 @@ fn literal(value: Option<&Value>, name: &str, allowed: &[&str], clauses: &mut Ve
     }
 }
 
-/// ISO-8601, as the retained regex spells it. Returns the text when it passes.
+/// ISO-8601 with a mandatory zone, as the retained regex spells it.
+///
+/// Returns the text when it reads, so the caller stores what was validated
+/// rather than re-reaching for the raw value. The grammar is named because the
+/// crate has two and they are not interchangeable; see [`crate::instant`].
 fn instant(name: &str, value: Option<&Value>, clauses: &mut Vec<String>) -> Option<String> {
     let text = value.and_then(Value::as_str).unwrap_or("");
-    if is_iso_instant(text) {
-        return Some(text.to_owned());
-    }
-    clauses.push(format!("{name}: must be an ISO-8601 instant"));
-    None
-}
-
-fn is_iso_instant(value: &str) -> bool {
-    // `\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})`
-    let bytes = value.as_bytes();
-    let digit = |index: usize| bytes.get(index).is_some_and(u8::is_ascii_digit);
-    let at = |index: usize, byte: u8| bytes.get(index) == Some(&byte);
-    if bytes.len() < 20 {
-        return false;
-    }
-    if !((0..4).all(digit)
-        && at(4, b'-')
-        && digit(5)
-        && digit(6)
-        && at(7, b'-')
-        && digit(8)
-        && digit(9)
-        && at(10, b'T')
-        && digit(11)
-        && digit(12)
-        && at(13, b':')
-        && digit(14)
-        && digit(15)
-        && at(16, b':')
-        && digit(17)
-        && digit(18))
-    {
-        return false;
-    }
-    let mut index = 19;
-    if at(index, b'.') {
-        index += 1;
-        let start = index;
-        while digit(index) {
-            index += 1;
-        }
-        if index == start {
-            return false;
-        }
-    }
-    if at(index, b'Z') {
-        return index + 1 == bytes.len();
-    }
-    if at(index, b'+') || at(index, b'-') {
-        return digit(index + 1)
-            && digit(index + 2)
-            && at(index + 3, b':')
-            && digit(index + 4)
-            && digit(index + 5)
-            && index + 6 == bytes.len();
-    }
-    false
+    let Some(read) = Instant::parse(text, RECORDED_AT_GRAMMAR) else {
+        clauses.push(format!("{name}: {}", RECORDED_AT_GRAMMAR.expectation()));
+        return None;
+    };
+    Some(read.into())
 }
 
 fn sha256_value(name: &str, value: Option<&Value>, clauses: &mut Vec<String>) {

@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { Flags } from "@oclif/core";
 
 import { QuoinCommand } from "../../base.js";
-import { writeExperimentRecord } from "../../evidence/index.js";
+import { recordExperiment, recordId } from "../../core/evidence.js";
 
 export default class EvidenceRecordExperiment extends QuoinCommand {
   static summary = "Publish one content-addressed experiment record.";
@@ -23,14 +23,11 @@ export default class EvidenceRecordExperiment extends QuoinCommand {
         flags.input === "-"
           ? readFileSync(0, "utf8")
           : readFileSync(flags.input, "utf8");
-      const stored = writeExperimentRecord(
-        flags.repo,
-        JSON.parse(text) as unknown,
-      );
+      const stored = recordExperiment(flags.repo, JSON.parse(text) as unknown);
       this.log(
         flags.json
           ? JSON.stringify(stored, null, 2)
-          : `${stored.record.recordId} ${stored.created ? "created" : "exists"} ${stored.path}`,
+          : `${recordId(stored.record)} ${stored.created ? "created" : "exists"} ${stored.path}`,
       );
     } catch (error) {
       const detail = error instanceof Error ? error.message : String(error);

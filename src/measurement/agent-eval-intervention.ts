@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { parseAgentEval } from "../evidence/adapters/agent-eval.js";
+import { parseResults } from "../core/evidence.js";
 import { rawEvidenceFor, writeInterventionRecord } from "./intervention.js";
 import type {
   AgentEvalInterventionDefinition,
@@ -19,9 +19,12 @@ export function produceAgentEvalIntervention(
   const baselineRaw = readRetained(repo, definition.baseline_evidence_path);
   const treatmentRaw = readRetained(repo, definition.treatment_evidence_path);
   // Reuse the established FR-042 parser/refusal boundary before interpreting
-  // scenario rates for the intervention-specific projection.
-  parseAgentEval(baselineRaw);
-  parseAgentEval(treatmentRaw);
+  // scenario rates for the intervention-specific projection. The adapter is
+  // NAMED rather than selected from a tool string: this is the only reader of
+  // these two files, and a fall-through to the normalized shape would accept a
+  // document `agent-eval` refuses.
+  parseResults({ text: baselineRaw, adapter: "agent-eval" });
+  parseResults({ text: treatmentRaw, adapter: "agent-eval" });
   const baselineReport = reportFrom(baselineRaw, "baseline");
   const treatmentReport = reportFrom(treatmentRaw, "treatment");
   const baseline = baselineReport.scenarios;

@@ -18,6 +18,7 @@ use crate::ids::{Commit, SuiteId};
 /// `severity` is the scanner's own word, never normalized (FR-034-CON-2).
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct Finding {
     /// The scanner's rule identity.
     pub rule_id: String,
@@ -56,6 +57,7 @@ impl Finding {
 /// One finding-shaped scan of ONE suite at ONE commit.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct FindingRecord {
     /// Always [`STORE_SCHEMA_VERSION`](super::STORE_SCHEMA_VERSION).
     pub schema_version: u32,

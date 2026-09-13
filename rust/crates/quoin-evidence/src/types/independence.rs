@@ -10,6 +10,7 @@ use crate::ids::{ObligationId, ProfileId, SuiteId};
 /// One separation axis a profile can ask two evidence lines to differ on.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub enum IndependenceDimension {
     /// Who produced the evidence.
     Actor,
@@ -55,6 +56,7 @@ impl std::fmt::Display for IndependenceDimension {
 /// One exact obligation for which a profile requests two separated lines.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct IndependenceRequirement {
     /// The requirement's own id, unique within the policy.
     pub id: String,
@@ -69,6 +71,7 @@ pub struct IndependenceRequirement {
 /// Normalized projection of profile-selected independence requirements.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct IndependencePolicy {
     /// Always `1`.
     pub schema_version: u32,
@@ -81,6 +84,7 @@ pub struct IndependencePolicy {
 /// What one dimension looked like across the bound suites.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct IndependenceDimensionAssessment {
     /// The dimension.
     pub dimension: IndependenceDimension,
@@ -93,6 +97,7 @@ pub struct IndependenceDimensionAssessment {
 /// Whether two separated lines were found.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub enum IndependenceStatus {
     /// Two bound suites differ on every requested dimension.
     Satisfied,
@@ -114,6 +119,7 @@ impl IndependenceStatus {
 /// Explainable result for one requested obligation, successful or not.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct IndependenceAssessment {
     /// The profile that asked.
     pub profile: ProfileId,

@@ -39,6 +39,21 @@ pub const OPERATIONS: &[&str] = &[
     "config.resolve_org",
     "config.unresolved_org_message",
     "core.ping",
+    "evidence.affirm",
+    "evidence.audit_inputs",
+    "evidence.gc",
+    "evidence.inspect_mocks",
+    "evidence.parse_lineage",
+    "evidence.parse_policy",
+    "evidence.parse_results",
+    "evidence.read_baseline",
+    "evidence.record",
+    "evidence.record_experiment",
+    "evidence.record_operational",
+    "evidence.store_facts",
+    "evidence.trust_assessments",
+    "evidence.trust_decision",
+    "evidence.write_baseline",
     "modules.ensure_defaults",
     "modules.install",
     "modules.list",
@@ -99,6 +114,27 @@ pub fn dispatch(
         "completeness.read_frontmatter" => crate::ops::completeness::read_frontmatter(request),
         "completeness.schema_refs" => crate::ops::completeness::schema_refs(request),
         "core.ping" => crate::ops::core::ping(request),
+        "evidence.store_facts" => crate::ops::evidence::store_facts(request),
+        "evidence.parse_results" => crate::ops::evidence::parse_results(request),
+        "evidence.parse_lineage" => crate::ops::evidence::parse_lineage(request),
+        "evidence.parse_policy" => crate::ops::evidence::parse_policy(request),
+        "evidence.gc" => crate::ops::evidence::gc(request, capabilities),
+        "evidence.affirm" => crate::ops::evidence::affirm_binding(request, capabilities),
+        "evidence.record" => crate::ops::evidence::record(request, capabilities),
+        "evidence.trust_decision" => crate::ops::evidence::trust_decision(request, capabilities),
+        "evidence.trust_assessments" => {
+            crate::ops::evidence::trust_assessments(request, capabilities)
+        }
+        "evidence.inspect_mocks" => crate::ops::evidence::inspect_mocks(request, capabilities),
+        "evidence.record_experiment" => {
+            crate::ops::evidence::record_experiment(request, capabilities)
+        }
+        "evidence.record_operational" => {
+            crate::ops::evidence::record_operational(request, capabilities)
+        }
+        "evidence.audit_inputs" => crate::ops::evidence::audit_inputs(request, capabilities),
+        "evidence.read_baseline" => crate::ops::evidence::read_baseline(request, capabilities),
+        "evidence.write_baseline" => crate::ops::evidence::write_baseline(request, capabilities),
         "modules.ensure_defaults" => crate::ops::modules::ensure_defaults(request, capabilities),
         "modules.install" => crate::ops::modules::install(request, capabilities),
         "modules.list" => crate::ops::modules::list(request, capabilities),
@@ -311,6 +347,41 @@ mod tests {
         ),
         ("core", "core.rs", include_str!("ops/core.rs")),
         (
+            "evidence",
+            "evidence/documents.rs",
+            include_str!("ops/evidence/documents.rs"),
+        ),
+        (
+            "evidence",
+            "evidence/mod.rs",
+            include_str!("ops/evidence/mod.rs"),
+        ),
+        (
+            "evidence",
+            "evidence/records.rs",
+            include_str!("ops/evidence/records.rs"),
+        ),
+        (
+            "evidence",
+            "evidence/store.rs",
+            include_str!("ops/evidence/store.rs"),
+        ),
+        (
+            "evidence",
+            "evidence/taxonomy.rs",
+            include_str!("ops/evidence/taxonomy.rs"),
+        ),
+        (
+            "evidence",
+            "evidence/tests.rs",
+            include_str!("ops/evidence/tests.rs"),
+        ),
+        (
+            "evidence",
+            "evidence/wire.rs",
+            include_str!("ops/evidence/wire.rs"),
+        ),
+        (
             "modules",
             "modules/mod.rs",
             include_str!("ops/modules/mod.rs"),
@@ -513,12 +584,16 @@ mod tests {
 
     #[test]
     fn an_unknown_operation_names_the_ones_that_exist() {
-        let error = dispatch(
-            "evidence.record",
-            &serde_json::json!({}),
-            &Capabilities::none(),
-        )
-        .unwrap_err();
+        // A domain this build will never implement. The example used to be
+        // `evidence.record`, which quoin#458 then made real — a test whose
+        // subject can be promoted into the routing table is a test that
+        // silently changes what it asserts, so the guard below is stated.
+        const ABSENT: &str = "phlogiston.measure";
+        assert!(
+            !OPERATIONS.contains(&ABSENT),
+            "`{ABSENT}` is routed now; this test needs an operation that is not"
+        );
+        let error = dispatch(ABSENT, &serde_json::json!({}), &Capabilities::none()).unwrap_err();
         assert_eq!(error.code, CoreErrorCode::UnknownOp);
         assert_eq!(error.outcome().code(), 3);
         assert_eq!(error.context["known"], OPERATIONS.join(","));
@@ -614,13 +689,11 @@ mod tests {
         );
     }
 
-    /// Every domain bound in the crate, named one by one.
-    ///
-    /// A scan would find whatever it found, and find nothing once the constants
-    /// are renamed; `declared_domain_bounds()` checks this list against the
-    /// `ops` sources instead.
-    fn domain_bounds() -> [(&'static str, usize); 22] {
-        [
+    /// Every domain bound outside `ops::evidence`, named one by one: a scan
+    /// would find whatever it found, and find nothing once the constants are
+    /// renamed.
+    fn census_of_the_older_domains() -> Vec<(&'static str, usize)> {
+        vec![
             (
                 "ops::core::MAX_ECHO_BYTES",
                 crate::ops::core::MAX_ECHO_BYTES,
@@ -712,6 +785,75 @@ mod tests {
         ]
     }
 
+    /// Every `ops::evidence` bound, named one by one (quoin#458). Its own
+    /// function only because the two together exceed the length lint; the two
+    /// are concatenated below and compared against `declared_domain_bounds()`
+    /// as one population, so a bound listed in neither still fails.
+    fn census_of_the_evidence_domain() -> Vec<(&'static str, usize)> {
+        vec![
+            (
+                "ops::evidence::MAX_AFFIRM_BYTES",
+                crate::ops::evidence::MAX_AFFIRM_BYTES,
+            ),
+            (
+                "ops::evidence::MAX_ASSURANCE_RECORD_BYTES",
+                crate::ops::evidence::MAX_ASSURANCE_RECORD_BYTES,
+            ),
+            (
+                "ops::evidence::MAX_AUDIT_INPUTS_BYTES",
+                crate::ops::evidence::MAX_AUDIT_INPUTS_BYTES,
+            ),
+            (
+                "ops::evidence::MAX_GC_BYTES",
+                crate::ops::evidence::MAX_GC_BYTES,
+            ),
+            (
+                "ops::evidence::MAX_INSPECT_MOCKS_BYTES",
+                crate::ops::evidence::MAX_INSPECT_MOCKS_BYTES,
+            ),
+            (
+                "ops::evidence::MAX_PARSE_LINEAGE_BYTES",
+                crate::ops::evidence::MAX_PARSE_LINEAGE_BYTES,
+            ),
+            (
+                "ops::evidence::MAX_PARSE_POLICY_BYTES",
+                crate::ops::evidence::MAX_PARSE_POLICY_BYTES,
+            ),
+            (
+                "ops::evidence::MAX_PARSE_RESULTS_BYTES",
+                crate::ops::evidence::MAX_PARSE_RESULTS_BYTES,
+            ),
+            (
+                "ops::evidence::MAX_READ_BASELINE_BYTES",
+                crate::ops::evidence::MAX_READ_BASELINE_BYTES,
+            ),
+            (
+                "ops::evidence::MAX_RECORD_BYTES",
+                crate::ops::evidence::MAX_RECORD_BYTES,
+            ),
+            (
+                "ops::evidence::MAX_SCALAR_BYTES",
+                crate::ops::evidence::MAX_SCALAR_BYTES,
+            ),
+            (
+                "ops::evidence::MAX_STORE_FACTS_BYTES",
+                crate::ops::evidence::MAX_STORE_FACTS_BYTES,
+            ),
+            (
+                "ops::evidence::MAX_TRUST_ASSESSMENTS_BYTES",
+                crate::ops::evidence::MAX_TRUST_ASSESSMENTS_BYTES,
+            ),
+            (
+                "ops::evidence::MAX_TRUST_DECISION_BYTES",
+                crate::ops::evidence::MAX_TRUST_DECISION_BYTES,
+            ),
+            (
+                "ops::evidence::MAX_WRITE_BASELINE_BYTES",
+                crate::ops::evidence::MAX_WRITE_BASELINE_BYTES,
+            ),
+        ]
+    }
+
     /// The transport ceiling stays strictly above every domain bound.
     ///
     /// Each `ops::*` bound refuses with the `op` that refused and the quantity
@@ -728,15 +870,16 @@ mod tests {
     /// measured on something unbounded.
     #[test]
     fn tc_412_the_transport_ceiling_stays_above_every_domain_bound() {
-        // Every domain bound in the crate, named one by one: a scan would find
-        // whatever it found, and find nothing once the constants are renamed.
-        let domain_bounds = domain_bounds();
+        let domain_bounds: Vec<(&str, usize)> = census_of_the_older_domains()
+            .into_iter()
+            .chain(census_of_the_evidence_domain())
+            .collect();
         // The census is hand-written, so it is checked against the `ops`
         // sources rather than against itself. A literal count (`len() == 6`)
-        // is the quoin#443 shape: `domain_bounds` is the array directly above
-        // it, so the assertion re-reads the thing it guards and a bound added
-        // to a module but never listed here leaves the inequality below
-        // unevaluated while the test stays green.
+        // is the quoin#443 shape: the two functions above are the census, so
+        // the assertion would re-read the thing it guards, and a bound added
+        // to a module but never listed there would leave the inequality below
+        // unevaluated while the test stayed green.
         let mut listed: Vec<String> = domain_bounds
             .iter()
             .map(|(name, _)| (*name).to_owned())

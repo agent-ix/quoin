@@ -3,7 +3,7 @@
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 
-import type { Binding } from "../src/evidence/index.js";
+import type { Binding } from "../src/core/evidence.js";
 import {
   DEFAULT_RELATION_KINDS,
   analyzeChangeImpact,

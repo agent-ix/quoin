@@ -24,6 +24,7 @@ pub const MUTATION_SCORE_METRIC: &str = "mutation-score";
 /// picks from these four, and the store's readers branch on all four.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub enum Outcome {
     /// The producer reported success.
     Pass,
@@ -51,6 +52,7 @@ impl Outcome {
 /// One producer result, transcribed.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct RunEntry {
     /// The producer's own identity for the result.
     pub symbol: SymbolId,
@@ -98,6 +100,7 @@ impl RunEntry {
 /// short commit and nothing distinguishing one attempt from the next.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct RunRecord {
     /// Always [`STORE_SCHEMA_VERSION`](super::STORE_SCHEMA_VERSION).
     pub schema_version: u32,

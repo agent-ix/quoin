@@ -15,10 +15,6 @@ import {
   changeAssuranceSchemaPath,
   readChangeAssuranceSchema,
 } from "../src/store/schema-assets.js";
-import {
-  CHANGE_ASSURANCE_SCHEMA_NAMES as EVIDENCE_SCHEMA_NAMES,
-  readChangeAssuranceSchema as readEvidenceSchema,
-} from "../src/evidence/index.js";
 
 const SPEC_FILES = {
   "change-assurance-record-v1.schema.json":
@@ -46,13 +42,6 @@ describe("change-assurance JSON Schema assets", () => {
         `https://agent-ix.github.io/quoin/schemas/${name}`,
       );
       expect(basename(changeAssuranceSchemaPath(name))).toBe(name);
-    }
-  });
-
-  it("exposes the same normative assets through the retained-evidence seam", () => {
-    expect(EVIDENCE_SCHEMA_NAMES).toEqual(CHANGE_ASSURANCE_SCHEMA_NAMES);
-    for (const name of CHANGE_ASSURANCE_SCHEMA_NAMES) {
-      expect(readEvidenceSchema(name)).toEqual(readChangeAssuranceSchema(name));
     }
   });
 

@@ -3,19 +3,7 @@ import { readFileSync } from "node:fs";
 import { Flags } from "@oclif/core";
 
 import { QuoinCommand } from "../../base.js";
-import {
-  ADAPTER_NAMES,
-  bind,
-  obligationsFrom,
-  readEvidenceLineage,
-  readBindings,
-  writeBindings,
-  recordRun,
-  selectAdapter,
-  selectFindingAdapter,
-  writeScan,
-  type AdapterResult,
-} from "../../evidence/index.js";
+import { ADAPTER_NAMES, parseLineage, record } from "../../core/evidence.js";
 import {
   checkVersionPremise,
   parseCoverage,
@@ -116,7 +104,9 @@ runs nothing and judges nothing.`;
 
     let lineage;
     try {
-      lineage = flags.lineage ? readEvidenceLineage(flags.lineage) : undefined;
+      lineage = flags.lineage
+        ? parseLineage(readFileSync(flags.lineage, "utf8"))
+        : undefined;
     } catch (cause) {
       this.error((cause as Error).message, { exit: 2 });
     }
@@ -141,86 +131,49 @@ runs nothing and judges nothing.`;
       );
     }
 
-    // A finding-shaped adapter writes a DIFFERENT record type, so the branch is
-    // taken before anything is parsed. Letting a scan fall through to the run
-    // path would write it into `runs/` and lose the clean-versus-unrun
-    // distinction at the point of intake — silently, and permanently for that
-    // commit (FR-034).
-    const findingAdapter = selectFindingAdapter({
-      adapter: flags.adapter,
-      tool: flags.tool,
-    });
-    if (findingAdapter) {
-      const raw =
-        flags.results === "-"
-          ? readFileSync(0, "utf8")
-          : readFileSync(flags.results, "utf8");
-      const result = findingAdapter.parse(raw);
-      const reportedTool = result.tool;
-      if (
-        reportedTool !== undefined &&
-        reportedTool !== flags.tool &&
-        reportedTool !== toolName(flags.tool)
-      ) {
-        this.error(
-          `result tool identity ${JSON.stringify(reportedTool)} does not match --tool ${JSON.stringify(flags.tool)}`,
-          { exit: 2 },
-        );
-      }
-      const path = writeScan(flags.repo, {
-        schemaVersion: 1,
+    // One call for both record types. The choice between a run record and a
+    // finding-shaped scan is made by the ADAPTER REGISTRY before anything is
+    // parsed — letting a scan fall through to the run path would write it into
+    // `runs/` and lose the clean-versus-unrun distinction at the point of
+    // intake, silently and permanently for that commit (FR-034). The payload
+    // is tagged, so this reads which record was written rather than inferring
+    // it from which fields came back.
+    const results =
+      flags.results === "-"
+        ? readFileSync(0, "utf8")
+        : readFileSync(flags.results, "utf8");
+    let outcome;
+    try {
+      outcome = record({
+        repo: flags.repo,
         suite: flags.suite,
         commit: flags.commit,
         tool: flags.tool,
-        ...(flags.kind === undefined ? {} : { evidenceKind: flags.kind }),
+        ...(flags.kind === undefined ? {} : { kind: flags.kind }),
+        ...(lineage === undefined ? {} : { lineage }),
         timestamp: flags.timestamp ?? new Date().toISOString(),
-        ...(result.ruleset === undefined ? {} : { ruleset: result.ruleset }),
-        ...(result.rulesEvaluated === undefined
-          ? {}
-          : { rulesEvaluated: result.rulesEvaluated }),
-        findings: result.findings,
+        ...(flags.adapter === undefined ? {} : { adapter: flags.adapter }),
+        results,
+        discharges: (flags.discharges ?? "")
+          .split(",")
+          .map((id) => id.trim())
+          .filter((id) => id !== ""),
+        obligations: parsed.value.obligations ?? [],
       });
-      // A scan discharges what it was run to check — but only if it looked.
-      // A rule-less scan reports zero findings and proves nothing, so binding
-      // on it would put the store's strongest claim behind its weakest
-      // evidence (FR-034 vacuity).
-      const vacuous = result.rulesEvaluated === 0;
-      const ids = (flags.discharges ?? "")
-        .split(",")
-        .map((id) => id.trim())
-        .filter((id) => id !== "");
-      const bound: string[] = [];
-      const unknown: string[] = [];
-      if (ids.length > 0 && !vacuous) {
-        const byId = new Map(
-          obligationsFrom(parsed.value).map((o) => [o.id, o]),
-        );
-        let bindings = readBindings(flags.repo).bindings;
-        for (const id of [...ids].sort()) {
-          const obligation = byId.get(id);
-          if (!obligation) {
-            unknown.push(id);
-            continue;
-          }
-          const outcome = bind(bindings, {
-            obligation: id,
-            statementHashAtBinding: obligation.statement_hash,
-            suite: flags.suite,
-            commit: flags.commit,
-            // A scan binds no symbol: it has none. The record is the evidence.
-            symbols: [],
-            lineage,
-          });
-          bindings = outcome.bindings;
-          if (outcome.created) bound.push(id);
-        }
-        writeBindings(flags.repo, { bindings });
-      }
+    } catch (cause) {
+      this.error((cause as Error).message, { exit: 2 });
+    }
 
+    if (outcome.kind === "scan") {
       if (flags.json) {
         this.log(
           JSON.stringify(
-            { scanPath: path, findings: result.findings, bound, unknown },
+            {
+              scanPath: outcome.scan_path,
+              findings: outcome.findings,
+              bound: outcome.bound,
+              unknown: outcome.unknown,
+            },
             null,
             2,
           ),
@@ -228,17 +181,17 @@ runs nothing and judges nothing.`;
         return;
       }
       this.log(
-        `recorded scan ${flags.suite} @ ${flags.commit.slice(0, 12)} → ${path}`,
+        `recorded scan ${flags.suite} @ ${flags.commit.slice(0, 12)} → ${outcome.scan_path}`,
       );
-      this.log(`  bound: ${bound.length}`);
-      if (unknown.length > 0) {
+      this.log(`  bound: ${outcome.bound.length}`);
+      if (outcome.unknown.length > 0) {
         // Named, not counted: an id nothing states is a typo or a reworded
         // obligation, and both need the id to act on.
         this.log(
-          `  discharges no such obligation: ${unknown.sort().join(", ")}`,
+          `  discharges no such obligation: ${outcome.unknown.join(", ")}`,
         );
       }
-      if (vacuous && ids.length > 0) {
+      if (outcome.vacuous && (flags.discharges ?? "").trim() !== "") {
         this.log(
           "  bound nothing: the scan evaluated no rules, so it found nothing " +
             "because it looked for nothing",
@@ -247,38 +200,28 @@ runs nothing and judges nothing.`;
       // Said explicitly, because "0 findings" is the one line a reader is most
       // likely to mistake for "nothing ran".
       this.log(
-        `  findings: ${result.findings.length}` +
-          (result.rulesEvaluated === undefined
+        `  findings: ${outcome.findings.length}` +
+          (outcome.rules_evaluated === undefined ||
+          outcome.rules_evaluated === null
             ? " (the tool reported no rule count, so this cannot be told from a scan with no rules enabled)"
-            : ` over ${result.rulesEvaluated} rules evaluated`),
+            : ` over ${outcome.rules_evaluated} rules evaluated`),
       );
       return;
     }
 
-    const parsedRun = readRun(flags.results, {
-      adapter: flags.adapter,
-      tool: flags.tool,
-    });
-    const entries = parsedRun.entries;
-
-    const outcome = recordRun({
-      repo: flags.repo,
-      suite: flags.suite,
-      commit: flags.commit,
-      tool: flags.tool,
-      evidenceKind: flags.kind,
-      lineage,
-      timestamp: flags.timestamp ?? new Date().toISOString(),
-      entries,
-      obligations: obligationsFrom(parsed.value),
-    });
-
     if (flags.json) {
       this.log(
         JSON.stringify(
-          parsedRun.unrepresented === undefined
-            ? outcome
-            : { ...outcome, unrepresented: parsedRun.unrepresented },
+          {
+            runPath: outcome.run_path,
+            bound: outcome.bound,
+            suspect: outcome.suspect,
+            unmatched: outcome.unmatched,
+            ...(outcome.unrepresented === undefined ||
+            outcome.unrepresented === null
+              ? {}
+              : { unrepresented: outcome.unrepresented }),
+          },
           null,
           2,
         ),
@@ -287,7 +230,7 @@ runs nothing and judges nothing.`;
     }
 
     this.log(
-      `recorded ${flags.suite} @ ${flags.commit.slice(0, 12)} → ${outcome.runPath}`,
+      `recorded ${flags.suite} @ ${flags.commit.slice(0, 12)} → ${outcome.run_path}`,
     );
     this.log(`  bound: ${outcome.bound.length}`);
     if (outcome.suspect.length > 0) {
@@ -305,7 +248,7 @@ runs nothing and judges nothing.`;
     // Said out loud, never dropped: the producer reported these and no
     // run-entry outcome carries them, so the record is short by exactly this
     // much and the reader is told which.
-    for (const item of parsedRun.unrepresented ?? []) {
+    for (const item of outcome.unrepresented ?? []) {
       this.log(
         `  not transcribed — ${item.symbol} reported ${item.state}: ${item.reason}`,
       );
@@ -317,25 +260,4 @@ export function isVersionedToolIdentity(value: string): boolean {
   return /(?:^|[\s/@])(?:v?\d+(?:\.\d+)+(?:[-+][0-9A-Za-z.-]+)?|git:[0-9a-f]{40}|sha256:[0-9a-f]{64})(?:$|[\s,)])/i.test(
     value,
   );
-}
-
-function toolName(value: string): string {
-  return value.trim().split(/\s+/, 1)[0];
-}
-
-/**
- * Read `--results` through the selected adapter.
- *
- * The only place a raw tool file becomes run entries. Reading the file is the
- * caller's side of the adapter contract: adapters are pure over text so that
- * `quoin evidence record` remains a transcriber and can never become a test
- * runner (ADR-0011 invariant 1).
- */
-function readRun(
-  source: string,
-  options: { adapter?: string; tool?: string },
-): AdapterResult {
-  const text =
-    source === "-" ? readFileSync(0, "utf8") : readFileSync(source, "utf8");
-  return selectAdapter(options).parse(text);
 }

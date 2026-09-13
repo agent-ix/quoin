@@ -6,14 +6,10 @@ import { QuoinCommand } from "../../base.js";
 import { loadMethodCatalog } from "../../advisor/index.js";
 import { audit, findingKey } from "../../auditor/index.js";
 import {
+  auditInputs,
   baselinePath,
-  latestRun,
-  listRecordedSuites,
-  mockInspectionInput,
-  readBindings,
   writeBaseline,
-} from "../../evidence/index.js";
-import type { RunRecord } from "../../evidence/index.js";
+} from "../../core/evidence.js";
 import {
   checkVersionPremise,
   parseCoverage,
@@ -63,13 +59,14 @@ releases is the gate quietly being disabled one entry at a time.`;
     if (!parsed.ok) this.error(parsed.error.message, { exit: 2 });
 
     const head = headCommit(flags.repo);
-    const mockInspections = mockInspectionInput(flags.repo, head);
+    const store = auditInputs(flags.repo, head);
     const report = audit({
       obligations: parsed.value.obligations ?? [],
-      bindings: readBindings(flags.repo).bindings,
-      runs: latestRuns(flags.repo),
-      injections: mockInspections.injections,
-      mockInspectionSuites: mockInspections.suites,
+      bindings: store.bindings,
+      runs: store.runs,
+      injections: store.injections,
+      mockInspectionSuites: store.mock_inspection_suites,
+      vacuousScanSuites: store.vacuous_scan_suites,
       catalog: loadMethodCatalog(flags.module ? [flags.module] : undefined),
       headCommit: head,
     });
@@ -78,7 +75,7 @@ releases is the gate quietly being disabled one entry at a time.`;
     const commit = head ?? "";
 
     if (!flags["dry-run"]) {
-      writeBaseline(flags.repo, { schemaVersion: 1, commit, accepted });
+      writeBaseline(flags.repo, commit, accepted);
     }
 
     if (flags.json) {
@@ -104,12 +101,6 @@ releases is the gate quietly being disabled one entry at a time.`;
     for (const [kind, n] of [...byKind].sort()) this.log(`  ${kind}: ${n}`);
     if (!flags["dry-run"]) this.log(baselinePath(flags.repo));
   }
-}
-
-function latestRuns(repo: string): RunRecord[] {
-  return listRecordedSuites(repo)
-    .map((suite) => latestRun(repo, suite))
-    .filter((r): r is RunRecord => r !== null);
 }
 
 function headCommit(repo: string): string | undefined {

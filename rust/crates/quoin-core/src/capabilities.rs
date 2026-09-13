@@ -62,12 +62,15 @@
 //! path's inputs — it builds a real tree, runs both paths over it, and reads
 //! the documents off that same tree.
 
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use quoin_change_assurance::EvidenceStore;
+use quoin_evidence::EvidenceSource;
 use quoin_modules::{InstallOutcome, InstalledModule, MarketplaceManifest, ModuleName, Source};
 use quoin_modules::{ModulesError, ReconcileMode, ReconcileReport};
 use quoin_semantic::{CorpusRoot, SemanticError, SemanticReadResult, SweepIdentity, SweepReport};
+
+use crate::error::CoreError;
 
 /// Installing, listing and removing spec modules in one `~/.ix` home.
 ///
@@ -197,6 +200,48 @@ pub trait ChangeAssuranceHost {
     fn store<'a>(&'a self, repo: &Path) -> Box<dyn EvidenceStore + 'a>;
 }
 
+/// Reading and writing one repository's evidence store (quoin#458, Stage 9).
+///
+/// Granted rather than acquired, for the same reason [`ModuleHost`] and
+/// [`SemanticHost`] are, and for the shape-2 reason in this module's header: an
+/// evidence store is a directory tree of run, scan, inspection, trust and
+/// assurance records that `gc` walks and that every reader lists. Those bytes
+/// cannot ride on stdin.
+///
+/// The seam is deliberately a **scope**, not a handle. `quoin-evidence`'s store
+/// functions take `&mut S where S: EvidenceSource + ?Sized`, so the host opens
+/// the store, hands `ops::evidence` a `&mut dyn EvidenceSource` for the length
+/// of one action, and closes it again. `ops::evidence` therefore never holds a
+/// disk object, never names a path, and every one of its tests substitutes a
+/// [`quoin_evidence::MemoryEvidence`] with no temporary directory at all.
+///
+/// Implemented for real in `main.rs` over [`quoin_evidence::DiskEvidence`].
+pub trait EvidenceHost {
+    /// Run one action against the store belonging to `repo`.
+    ///
+    /// The action returns the operation's payload, already serialised, because
+    /// the borrow of the store must end before this returns and a payload that
+    /// borrowed from it could not outlive the call.
+    ///
+    /// # Errors
+    /// Whatever the action returns.
+    fn with_store(
+        &self,
+        repo: &Path,
+        action: &mut dyn FnMut(&mut dyn EvidenceSource) -> Result<serde_json::Value, CoreError>,
+    ) -> Result<serde_json::Value, CoreError>;
+
+    /// The absolute directory the store for `repo` is rooted at.
+    ///
+    /// Load-bearing, not a convenience. `quoin_evidence::store::gc` returns
+    /// STORE-RELATIVE paths — correct for a library that names no host
+    /// capability, and the opposite of what the retained `gc()` returned. The
+    /// caller prints those paths for a human to act on, so the join has to
+    /// happen somewhere, and it happens here: the only place that knows where
+    /// the store actually is.
+    fn store_root(&self, repo: &Path) -> PathBuf;
+}
+
 /// Everything `main.rs` grants one dispatch.
 ///
 /// A struct rather than a growing argument list so that adding a capability is
@@ -214,6 +259,8 @@ pub struct Capabilities<'a> {
     pub semantic: Option<&'a dyn SemanticHost>,
     /// The change-assurance evidence store, absent when nothing granted one.
     pub change_assurance: Option<&'a dyn ChangeAssuranceHost>,
+    /// The evidence-store capability, absent when nothing granted one.
+    pub evidence: Option<&'a dyn EvidenceHost>,
 }
 
 impl<'a> Capabilities<'a> {
@@ -227,6 +274,7 @@ impl<'a> Capabilities<'a> {
             modules: None,
             semantic: None,
             change_assurance: None,
+            evidence: None,
         }
     }
 
@@ -237,6 +285,7 @@ impl<'a> Capabilities<'a> {
             modules: Some(host),
             semantic: None,
             change_assurance: None,
+            evidence: None,
         }
     }
 
@@ -247,6 +296,7 @@ impl<'a> Capabilities<'a> {
             modules: None,
             semantic: Some(host),
             change_assurance: None,
+            evidence: None,
         }
     }
 
@@ -257,6 +307,18 @@ impl<'a> Capabilities<'a> {
             modules: None,
             semantic: None,
             change_assurance: Some(host),
+            evidence: None,
+        }
+    }
+
+    /// A grant of the evidence host only.
+    #[must_use]
+    pub const fn with_evidence(host: &'a dyn EvidenceHost) -> Self {
+        Self {
+            modules: None,
+            semantic: None,
+            change_assurance: None,
+            evidence: Some(host),
         }
     }
 
@@ -266,11 +328,13 @@ impl<'a> Capabilities<'a> {
         modules: &'a dyn ModuleHost,
         semantic: &'a dyn SemanticHost,
         change_assurance: &'a dyn ChangeAssuranceHost,
+        evidence: &'a dyn EvidenceHost,
     ) -> Self {
         Self {
             modules: Some(modules),
             semantic: Some(semantic),
             change_assurance: Some(change_assurance),
+            evidence: Some(evidence),
         }
     }
 }

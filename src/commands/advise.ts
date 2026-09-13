@@ -13,8 +13,8 @@ import type {
   UncataloguedMethods,
 } from "../advisor/index.js";
 import { scoresFor } from "../auditor/index.js";
-import { latestRuns, readBindings } from "../evidence/index.js";
-import type { Binding, RunRecord } from "../evidence/index.js";
+import { auditInputs } from "../core/evidence.js";
+import type { Binding, RunRecord } from "../core/evidence.js";
 import {
   checkVersionPremise,
   parseCoverage,
@@ -116,8 +116,9 @@ residue afterwards — labelled as judgement (the FR-042 / ADR-0010 discipline).
     // The store is read ONCE, here, and handed in. `advise` performs no I/O —
     // an advisor that could reach the filesystem could also disagree with the
     // auditor about what it found (ADR-0011).
-    const bindings = readBindings(flags.repo).bindings;
-    const runs = latestRuns(flags.repo);
+    const store = auditInputs(flags.repo);
+    const bindings = store.bindings;
+    const runs = store.runs;
 
     // The uncatalogued-method join (quoin#168): quire's own diagnosis of which
     // authored values the catalog never declared, keyed by the `value` field

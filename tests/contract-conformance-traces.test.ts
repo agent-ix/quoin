@@ -1,4 +1,12 @@
-/** Quoin #331: native conformance trace metadata reaches the existing store. */
+/**
+ * Quoin #331: native conformance trace metadata reaches the existing store.
+ *
+ * The adapter's own reading of `trace_ids` — preservation without sorting or
+ * trimming, and the per-line refusals for every malformed spelling — is
+ * `quoin-evidence`'s and is asserted by its golden corpus (quoin#458). What
+ * stays here is the path only this tree has: the real producer ids through
+ * `quire coverage` targets, into bindings, in the store.
+ */
 import { createHash } from "node:crypto";
 import {
   existsSync,
@@ -17,12 +25,7 @@ import type { Config } from "@oclif/core";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 import EvidenceRecord from "../src/commands/evidence/record.js";
-import {
-  AdapterError,
-  contractConformanceAdapter,
-  readBindings,
-  readRuns,
-} from "../src/evidence/index.js";
+import { auditInputs, parseResults } from "../src/core/evidence.js";
 import { parseCoverage, runQuire } from "../src/quire/index.js";
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -104,60 +107,6 @@ async function record(
 }
 
 describe("FR-069 conformance traces", () => {
-  it("preserves real trace metadata and accepts legacy omission", () => {
-    expect(row.trace_ids).toEqual(["TC-015", "TC-017", "TC-018"]);
-    const entry = contractConformanceAdapter.parse(real).entries[0];
-    expect(entry.traceIds).toEqual(row.trace_ids);
-    expect(entry.outcome).toBe("pass");
-    expect(entry.symbol).toBe(
-      "contract-v0.1::package::package-invalid-namespace",
-    );
-    // Constructed variant proves this is preservation, not sorting/trimming.
-    const ids = ["TC-018", " TC-015 ", "TC-017"];
-    expect(
-      contractConformanceAdapter.parse(
-        JSON.stringify({ ...row, trace_ids: ids }),
-      ).entries[0].traceIds,
-    ).toEqual(ids);
-    const legacy = readFileSync(
-      join(fixtureRoot, "contract-conformance-real.jsonl"),
-      "utf8",
-    );
-    for (const old of contractConformanceAdapter.parse(legacy).entries)
-      expect(old).not.toHaveProperty("traceIds");
-    expect(createHash("sha256").update(real).digest("hex")).toBe(
-      "785018c631c8393c5d8f36712bf183431fab74a505c9b1d2c2059b5a249ef2d3",
-    );
-  });
-
-  it("rejects malformed supplied trace metadata with line and field", () => {
-    for (const trace_ids of [
-      null,
-      {},
-      "TC-015",
-      1,
-      true,
-      [],
-      [null],
-      [15],
-      [true],
-      [[]],
-      [{}],
-      [""],
-      [" \t\n"],
-      ["TC-015", "TC-015"],
-      ["TC-015", ""],
-    ]) {
-      const input = `${real}${JSON.stringify({ ...row, trace_ids })}\n`;
-      expect(() => contractConformanceAdapter.parse(input)).toThrow(
-        AdapterError,
-      );
-      expect(() => contractConformanceAdapter.parse(input)).toThrow(
-        /line 2.*trace_ids/,
-      );
-    }
-  });
-
   it("records and binds the real producer ids through Quire targets", async () => {
     const root = repository();
     const coverage = parseCoverage(
@@ -170,14 +119,18 @@ describe("FR-069 conformance traces", () => {
       ["TC-017"],
       ["TC-018"],
     ]);
+    // The fixture is real captured producer output; the digest pins which
+    // bytes these expectations were read from.
+    expect(createHash("sha256").update(real).digest("hex")).toBe(
+      "785018c631c8393c5d8f36712bf183431fab74a505c9b1d2c2059b5a249ef2d3",
+    );
     const result = await record(root, real);
     expect(result.bound).toEqual(["FR-001-AC-1", "FR-001-AC-2", "FR-001-AC-3"]);
     expect(result.unmatched).toEqual([]);
-    expect(readRuns(root, "SUITE-001")[0].entries[0].traceIds).toEqual(
-      row.trace_ids,
-    );
-    expect(readBindings(root).bindings).toHaveLength(3);
-    for (const binding of readBindings(root).bindings)
+    const inputs = auditInputs(root);
+    expect(inputs.runs[0].entries[0].traceIds).toEqual(row.trace_ids);
+    expect(inputs.bindings).toHaveLength(3);
+    for (const binding of inputs.bindings)
       expect(binding.symbols).toEqual([
         "contract-v0.1::package::package-invalid-namespace",
       ]);
@@ -193,8 +146,9 @@ describe("FR-069 conformance traces", () => {
     const failed = await record(failedRoot, failure);
     expect(failed.bound).toEqual([]);
     expect(failed.unmatched).toEqual(["TC-999"]);
-    expect(readBindings(failedRoot).bindings).toEqual([]);
-    expect(readRuns(failedRoot, "SUITE-001")[0].entries[0]).toMatchObject({
+    const failedInputs = auditInputs(failedRoot);
+    expect(failedInputs.bindings).toEqual([]);
+    expect(failedInputs.runs[0].entries[0]).toMatchObject({
       outcome: "fail",
       traceIds: ["TC-015", "TC-017", "TC-018", "TC-999"],
     });
@@ -227,9 +181,13 @@ describe("FR-069 conformance traces", () => {
     expect(createHash("sha256").update(sample).digest("hex")).toBe(
       "d5a962e80328c34897d839d2d553c9f7395144f94abd1e7f92717f0d3656ab1a",
     );
-    expect(
-      contractConformanceAdapter.parse(sample).entries[0].traceIds,
-    ).toEqual(targets);
+    const parsed = parseResults({
+      text: sample,
+      adapter: "contract-conformance",
+    });
+    expect(parsed.kind).toBe("run");
+    if (parsed.kind !== "run") throw new Error("expected a run-shaped parse");
+    expect(parsed.entries[0].traceIds).toEqual(targets);
     const result = await record(
       root,
       sample,
@@ -237,9 +195,10 @@ describe("FR-069 conformance traces", () => {
     );
     expect(result.bound).toEqual(targets);
     expect(result.unmatched).toEqual([]);
-    expect(
-      readBindings(root).bindings.map((binding) => binding.obligation),
-    ).toEqual(targets);
-    expect(readRuns(root, "SUITE-001")[0].entries[0].traceIds).toEqual(targets);
+    const stored = auditInputs(root);
+    expect(stored.bindings.map((binding) => binding.obligation)).toEqual(
+      targets,
+    );
+    expect(stored.runs[0].entries[0].traceIds).toEqual(targets);
   });
 });

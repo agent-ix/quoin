@@ -64,7 +64,31 @@ export const KNOWN_OPERATIONS = [
   "completeness.assess_bundle",
   "completeness.read_frontmatter",
   "completeness.schema_refs",
+  "config.resolve_org",
+  "config.unresolved_org_message",
   "core.ping",
+  "evidence.affirm",
+  "evidence.audit_inputs",
+  "evidence.gc",
+  "evidence.inspect_mocks",
+  "evidence.parse_lineage",
+  "evidence.parse_policy",
+  "evidence.parse_results",
+  "evidence.read_baseline",
+  "evidence.record",
+  "evidence.record_experiment",
+  "evidence.record_operational",
+  "evidence.store_facts",
+  "evidence.trust_assessments",
+  "evidence.trust_decision",
+  "evidence.write_baseline",
+  "modules.ensure_defaults",
+  "modules.install",
+  "modules.list",
+  "modules.remove",
+  "semantic.migration_example",
+  "semantic.read_blocks",
+  "semantic.sweep_corpus",
   "validators.run",
 ].join(",");
 
@@ -178,7 +202,7 @@ export function reference(argv: string[], stdin: string): ReferenceOutcome {
     parsed = value as Record<string, unknown>;
   }
 
-  // Everything but `core.ping` — including the twelve operations
+  // Everything but `core.ping` — including the other operations
   // `KNOWN_OPERATIONS` names and this file does not implement — falls through
   // to `CORE_UNKNOWN_OP`, and that is deliberate rather than an oversight. The
   // verdict is honest for an oracle that has no such operation, and no

@@ -31,12 +31,12 @@ import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import EvidenceAudit from "../src/commands/evidence/audit";
 import EvidenceInspectMocks from "../src/commands/evidence/inspect-mocks";
 import {
+  STORE_SCHEMA_VERSION,
   baselinePath,
   writeBaseline,
   writeBindings,
   writeRun,
-} from "../src/evidence/index.js";
-import { STORE_SCHEMA_VERSION } from "../src/evidence/types.js";
+} from "./support/evidence-store.js";
 import { packageVersion } from "../src/version.js";
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..");

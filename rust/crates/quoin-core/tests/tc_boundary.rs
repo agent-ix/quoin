@@ -119,11 +119,19 @@ fn tc_375_a_refusal_writes_no_payload_at_all() {
 /// Provenance: quoin#375
 #[test]
 fn tc_375_every_invalid_shape_exits_3_with_its_own_code() {
+    assert!(
+        !quoin_core::dispatch::OPERATIONS.contains(&"phlogiston.measure"),
+        "the unknown-op example is routed now; pick one that is not"
+    );
     for (args, stdin, code) in [
         (vec![], "", "CORE_BAD_USAGE"),
         (vec!["core.ping", "extra"], "", "CORE_BAD_USAGE"),
         (vec!["notdotted"], "", "CORE_BAD_USAGE"),
-        (vec!["evidence.record"], "{}", "CORE_UNKNOWN_OP"),
+        // A domain this build will never implement. `evidence.record` stood
+        // here until quoin#458 made it real; an unknown-op example that can be
+        // promoted into the routing table silently stops testing the unknown-op
+        // path, so the guard below states the requirement.
+        (vec!["phlogiston.measure"], "{}", "CORE_UNKNOWN_OP"),
         (vec!["core.ping"], "{oops", "CORE_BAD_JSON"),
         (vec!["core.ping"], "[1,2]", "CORE_BAD_JSON"),
         (vec!["core.ping"], r#"{"eco":1}"#, "CORE_BAD_REQUEST"),

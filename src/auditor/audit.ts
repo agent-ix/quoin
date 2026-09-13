@@ -18,11 +18,7 @@
  */
 
 import type { Obligation } from "../quire/index.js";
-import {
-  MUTATION_SCORE_METRIC,
-  assessIndependence,
-  scanIsVacuous,
-} from "../evidence/index.js";
+import { MUTATION_SCORE_METRIC } from "../core/evidence.js";
 import { parseSpace, twayCoverage } from "./combinatorial.js";
 import type {
   Binding,
@@ -31,7 +27,7 @@ import type {
   IndependenceAssessment,
   IndependencePolicy,
   RunRecord,
-} from "../evidence/index.js";
+} from "../core/evidence.js";
 import type { MethodCatalog } from "../method-catalog.js";
 
 /** Severity of one finding. Matches the SpecReview vocabulary. */
@@ -87,6 +83,25 @@ export interface AuditInput {
   injections?: MockInjection[];
   /** Suites with a current completed inspection, including clean inspections. */
   mockInspectionSuites?: string[];
+  /**
+   * Suites whose newest finding-shaped scan evaluated no rules (FR-034).
+   *
+   * Answered by the store rather than recomputed here, and answered as a
+   * closed list: a tool that reported no rule count is NOT in it, which is the
+   * same silence the question used to return for that case. An absent list
+   * means nothing was asked, never that nothing was vacuous.
+   */
+  vacuousScanSuites?: string[];
+  /**
+   * One assessment per policy requirement, already made against the bindings.
+   *
+   * Supplied rather than computed for the same reason as `injections`: the
+   * assessment is the store's judgement over the binding graph, and the
+   * auditor reads. `independencePolicy` still says which requirements EXIST —
+   * a requirement with no assessment is a gap the report must show rather than
+   * an absence it can quietly skip.
+   */
+  independence?: IndependenceAssessment[];
   /**
    * Every finding-shaped scan record the store holds, newest per suite
    * (FR-034).
@@ -168,6 +183,15 @@ export function audit(input: AuditInput): AuditReport {
     input.mockInspectionSuites ??
       injections.map((injection) => injection.suite),
   );
+  const assessedRequirements = new Map(
+    (input.independence ?? []).map((assessment) => [
+      assessment.requirement,
+      assessment,
+    ]),
+  );
+  // A closed list, so an unanswered suite is not a vacuous one. `undefined`
+  // means nobody asked; membership means the scan evaluated no rules.
+  const vacuousSuites = new Set(input.vacuousScanSuites ?? []);
   const independenceByObligation = new Map(
     (input.independencePolicy?.requirements ?? []).map((requirement) => [
       requirement.obligation,
@@ -345,7 +369,7 @@ export function audit(input: AuditInput): AuditReport {
     const emptyScans = bindings
       .map((b) => scansBySuite.get(b.suite))
       .filter((s): s is FindingRecord => s !== undefined)
-      .filter((s) => scanIsVacuous(s) === true);
+      .filter((s) => vacuousSuites.has(s.suite));
     if (emptyScans.length > 0) {
       findings.push({
         kind: "vacuous-evidence",
@@ -367,12 +391,10 @@ export function audit(input: AuditInput): AuditReport {
     // guessed property of roles, method names, or tool vendors. It is asked
     // only for exact obligations the profile projected into the policy.
     const independenceRequirement = independenceByObligation.get(obligation.id);
-    if (independenceRequirement && input.independencePolicy) {
-      const assessment = assessIndependence(
-        input.independencePolicy.profile,
-        independenceRequirement,
-        bindings,
-      );
+    const assessment = assessedRequirements.get(
+      independenceRequirement?.id ?? "",
+    );
+    if (independenceRequirement && input.independencePolicy && assessment) {
       independence.push(assessment);
       if (assessment.status === "insufficient") {
         findings.push({
@@ -528,16 +550,15 @@ export function audit(input: AuditInput): AuditReport {
     (a, b) => compare(a.obligation, b.obligation) || compare(a.check, b.check),
   );
   if (input.independencePolicy) {
-    const assessed = new Set(independence.map((item) => item.requirement));
+    // Every requirement the policy states appears in the report, including the
+    // ones no obligation loop reached — a requirement whose obligation is not
+    // derived today still has an answer, and dropping it would report a
+    // narrower policy than the one that was supplied.
+    const reported = new Set(independence.map((item) => item.requirement));
     for (const requirement of input.independencePolicy.requirements) {
-      if (assessed.has(requirement.id)) continue;
-      independence.push(
-        assessIndependence(
-          input.independencePolicy.profile,
-          requirement,
-          bindingsByObligation.get(requirement.obligation) ?? [],
-        ),
-      );
+      if (reported.has(requirement.id)) continue;
+      const missed = assessedRequirements.get(requirement.id);
+      if (missed) independence.push(missed);
     }
   }
   const report: AuditReport = {
@@ -876,7 +897,7 @@ export function scoresFor(bindings: Binding[], runs: RunRecord[]): number[] {
       // `skip` carries no measurement: a skipped symbol's absent score is not a
       // zero, and treating it as one would fail an obligation for a test nobody
       // ran rather than for a test that failed to discriminate.
-      if (entry.score !== undefined && entry.outcome !== "skip") {
+      if (entry.score != null && entry.outcome !== "skip") {
         out.push(entry.score);
       }
     }

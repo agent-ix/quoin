@@ -10,6 +10,7 @@ use crate::ids::TrustDecisionId;
 /// The adapter half of a producer context.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct TrustAdapter {
     /// The adapter's name.
     pub name: String,
@@ -20,6 +21,7 @@ pub struct TrustAdapter {
 /// Exact producer context accepted or observed for one bounded use.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct ProducerContext {
     /// The producing tool.
     pub name: String,
@@ -41,6 +43,7 @@ pub struct ProducerContext {
 /// A fact about a producer context whose change can invalidate a decision.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub enum TrustTrigger {
     /// The producer's version changed.
     ProducerVersion,
@@ -80,6 +83,7 @@ impl std::fmt::Display for TrustTrigger {
 /// A validation result or review that supports a reliance decision.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct TrustEvidenceReference {
     /// The evidence's own id.
     pub id: String,
@@ -94,6 +98,7 @@ pub struct TrustEvidenceReference {
 /// The bounded use a decision is about.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct TrustUse {
     /// The use's own id.
     pub id: String,
@@ -111,6 +116,7 @@ pub struct TrustUse {
 /// treats absence as acceptance.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct TrustDecision {
     /// Always [`STORE_SCHEMA_VERSION`](super::STORE_SCHEMA_VERSION).
     pub schema_version: u32,
@@ -140,6 +146,7 @@ pub struct TrustDecision {
 /// Whether a producer is relied upon for one use.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub enum TrustDecisionKind {
     /// The producer is relied upon.
     ReliedUpon,
@@ -150,6 +157,7 @@ pub enum TrustDecisionKind {
 /// What a decision says about the context currently observed.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub enum TrustStatus {
     /// The observed context matches on every selected trigger.
     Accepted,
@@ -180,6 +188,7 @@ impl TrustStatus {
 /// The explainable result of comparing one decision against what is observed.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct TrustAssessment {
     /// The decision's id.
     pub id: TrustDecisionId,

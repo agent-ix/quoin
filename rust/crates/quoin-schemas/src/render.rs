@@ -635,6 +635,50 @@ fn render_named_type(
         "boolean" => Ok("boolean".to_owned()),
         "null" => Ok("null".to_owned()),
         "array" => {
+            // A FIXED-LENGTH array — a Rust tuple — is `prefixItems` with no
+            // `items`, and it renders as a TypeScript tuple. Rendering it as
+            // `T[]` instead would lose the arity and the per-position type,
+            // which is the whole content of the declaration: a caller could
+            // then read a one-element array off a pair without a type error.
+            if let Some(prefix) = object.get("prefixItems") {
+                let members = prefix
+                    .as_array()
+                    .ok_or_else(|| refuse(pointer, "`prefixItems` must be an array of schemas"))?;
+                if members.is_empty() {
+                    return Err(refuse(
+                        pointer,
+                        "an empty `prefixItems` describes a tuple with no members",
+                    ));
+                }
+                // A tuple whose length is not pinned would let extra elements
+                // arrive with the type still claiming a pair, so the arity is
+                // required rather than assumed from the member count.
+                let arity = u64::try_from(members.len()).unwrap_or(u64::MAX);
+                for bound in ["minItems", "maxItems"] {
+                    let declared = object.get(bound).and_then(Value::as_u64).ok_or_else(|| {
+                        refuse(
+                            pointer,
+                            format!("a `prefixItems` schema must declare `{bound}`"),
+                        )
+                    })?;
+                    if declared != arity {
+                        return Err(refuse(
+                            pointer,
+                            format!(
+                                "`{bound}` is {declared} but `prefixItems` has {arity} member(s);                                  the tuple's length is not pinned"
+                            ),
+                        ));
+                    }
+                }
+                let mut rendered = Vec::with_capacity(members.len());
+                for (index, member) in members.iter().enumerate() {
+                    rendered.push(render_type(
+                        member,
+                        &format!("{pointer}/prefixItems/{index}"),
+                    )?);
+                }
+                return Ok(format!("[{}]", rendered.join(", ")));
+            }
             let items = object
                 .get("items")
                 .ok_or_else(|| refuse(pointer, "an array schema must declare `items`"))?;
@@ -721,6 +765,58 @@ mod tests {
     fn a_nullable_string_renders_as_a_union() {
         let rendered = render_type(&json!({ "type": ["string", "null"] }), "#").unwrap();
         assert_eq!(rendered, "string | null");
+    }
+
+    /// Trace: FR-097-AC-3
+    ///
+    /// A Rust tuple — `Option<(SuiteId, SuiteId)>` on
+    /// `IndependenceAssessment::satisfied_by` is the one on the boundary —
+    /// arrives as `prefixItems` with a pinned length, and renders as a
+    /// TypeScript tuple. `T[]` would lose the arity and the per-position type.
+    #[test]
+    fn a_fixed_length_array_renders_as_a_tuple() {
+        let rendered = render_type(
+            &json!({
+                "type": "array",
+                "prefixItems": [{ "type": "string" }, { "type": "integer" }],
+                "minItems": 2,
+                "maxItems": 2,
+            }),
+            "#",
+        )
+        .unwrap();
+        assert_eq!(rendered, "[string, number]");
+    }
+
+    /// Trace: FR-097-AC-3
+    ///
+    /// Paired with the acceptance above: a tuple whose length is not pinned is
+    /// refused rather than rendered from the member count, because extra
+    /// elements could then arrive with the type still claiming a pair.
+    #[test]
+    fn an_unpinned_tuple_is_refused_rather_than_rendered_from_its_members() {
+        let refusal = render_type(
+            &json!({
+                "type": "array",
+                "prefixItems": [{ "type": "string" }, { "type": "integer" }],
+                "minItems": 2,
+            }),
+            "#",
+        )
+        .unwrap_err();
+        assert!(refusal.to_string().contains("maxItems"), "{refusal}");
+
+        let refusal = render_type(
+            &json!({
+                "type": "array",
+                "prefixItems": [{ "type": "string" }],
+                "minItems": 1,
+                "maxItems": 3,
+            }),
+            "#",
+        )
+        .unwrap_err();
+        assert!(refusal.to_string().contains("not pinned"), "{refusal}");
     }
 
     #[test]

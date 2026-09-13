@@ -1,7 +1,7 @@
 import { Flags } from "@oclif/core";
 
 import { QuoinCommand } from "../../base.js";
-import { gc } from "../../evidence/index.js";
+import { gc } from "../../core/evidence.js";
 
 export default class EvidenceGc extends QuoinCommand {
   static summary = "Drop run records nothing references.";

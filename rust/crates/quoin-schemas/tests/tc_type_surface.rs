@@ -271,6 +271,13 @@ fn tc_1614_no_hand_written_declaration_shadows_a_generated_boundary_type() {
     // when it was first written was called `CoreDiagnostic`, and a name-keyed
     // check would have reported clean over it. The fcd-published half of
     // FR-097-AC-3 waits on the Phase B gate (fcd#11) and is not faked here.
+    /// How many interfaces the generated surface publishes.
+    ///
+    /// A literal, and deliberately so: it is the sanity pin on the SCANNER
+    /// rather than on the surface, so it moves whenever the surface does and
+    /// cannot be satisfied by a scanner that has silently stopped reading.
+    const INTERFACE_COUNT: usize = 138;
+
     let core_dir = repo_root().join("src/core");
     let generated: Vec<(String, Vec<String>)> = interfaces(&committed_surface())
         .into_iter()
@@ -279,20 +286,21 @@ fn tc_1614_no_hand_written_declaration_shadows_a_generated_boundary_type() {
             (name, fields)
         })
         .collect();
-    // Ninety-four interfaces: `Diagnostic`, the two `core.ping` shapes, the two
-    // `validators.run` shapes, the request and payload types of the
+    // `INTERFACE_COUNT` interfaces: `Diagnostic`, the two `core.ping` shapes,
+    // the two `validators.run` shapes, the request and payload types of the
     // `config.*` and `modules.*` operations with the documents they nest, the
     // six `Source*` variants of the internally tagged module source, and the
     // request, payload and nested document types of the eight `completeness.*`
     // and `assurance.*` operations, and the request, payload and nested
     // document types of the three `semantic.*` operations (quoin#452), and the
     // thirteen request, payload and selection types of the six
-    // `change_assurance.*` operations (quoin#457). The enum
-    // and newtype aliases the surface
-    // also publishes are `export type` and not interfaces, so they are outside
-    // what this scanner reads — a hand written `type ObligationId = string`
-    // shadows nothing structural; nor are the externally tagged unions, whose
-    // arms are rendered inline.
+    // `change_assurance.*` operations (quoin#457), and the request, payload and
+    // nested document types of the fifteen `evidence.*` operations with the
+    // store records they carry (quoin#458). The enum and newtype aliases the
+    // surface also publishes are `export type` and not interfaces, so they are
+    // outside what this scanner reads — a hand written
+    // `type ObligationId = string` shadows nothing structural; nor are the
+    // externally tagged unions, whose arms are rendered inline.
     //
     // The literal is the sanity pin on the SCANNER, not on the surface: being a
     // COUNT, it moves whenever the surface does and cannot be satisfied by a
@@ -301,8 +309,8 @@ fn tc_1614_no_hand_written_declaration_shadows_a_generated_boundary_type() {
     // below does that.
     assert_eq!(
         generated.len(),
-        94,
-        "the scanner read {} interfaces out of the generated surface, not 94; \
+        INTERFACE_COUNT,
+        "the scanner read {} interfaces out of the generated surface, not {INTERFACE_COUNT}; \
          it is broken and would report clean over anything",
         generated.len()
     );

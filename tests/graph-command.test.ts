@@ -16,7 +16,7 @@ import {
   bindingsPath,
   STORE_SCHEMA_VERSION,
   writeBindings,
-} from "../src/evidence/index.js";
+} from "./support/evidence-store.js";
 import {
   DEFAULT_RELATION_KINDS,
   analyzeFanOut,

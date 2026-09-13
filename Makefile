@@ -343,8 +343,8 @@ rust-e2e: rust-build
 	    tests/org-one-subprocess.test.ts \
 	    tests/completeness-cli.test.ts \
 	    tests/core-bundle-snapshot.test.ts \
-	    tests/independence.test.ts \
-	    tests/trust-decision.test.ts
+	    tests/core-evidence.test.ts \
+	    tests/independence.test.ts
 
 # The Rust gate, in the order a failure is cheapest to read: format and lint
 # first (seconds), then the supply-chain check, then the suites, then the

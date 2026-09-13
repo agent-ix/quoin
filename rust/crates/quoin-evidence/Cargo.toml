@@ -33,6 +33,16 @@ regex = "=1.13.1"
 serde = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }
+# Optional, and enabled by `quoin-schemas` through `quoin-core` rather than by
+# this crate: the derives are what let FR-097 read the boundary's TypeScript
+# off the types that actually serialise, but nothing on the store's own
+# execution path needs them.
+schemars = { workspace = true, optional = true }
+
+[features]
+# FR-097. Off by default on purpose: a feature that is on by default is a
+# feature nobody ever proves works when it is off.
+schema = ["dep:schemars", "quoin-quire-types/schema"]
 
 [dev-dependencies]
 tempfile = "=3.27.0"

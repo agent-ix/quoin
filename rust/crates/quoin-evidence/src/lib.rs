@@ -39,6 +39,7 @@ pub mod assurance_records;
 pub mod error;
 pub mod ids;
 pub mod independence;
+pub mod instant;
 pub mod mock_inspection;
 pub mod paths;
 pub mod record;

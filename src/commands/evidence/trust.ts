@@ -3,11 +3,7 @@ import { readFileSync } from "node:fs";
 import { Flags } from "@oclif/core";
 
 import { QuoinCommand } from "../../base.js";
-import {
-  assessTrust,
-  validateTrustDecision,
-  writeTrustDecision,
-} from "../../evidence/index.js";
+import { trustDecision } from "../../core/evidence.js";
 
 export default class EvidenceTrust extends QuoinCommand {
   static summary = "Record a use-specific evidence-producer trust decision.";
@@ -42,14 +38,21 @@ as invalidated rather than silently falling back to trusted.`;
         exit: 2,
       });
     }
-    const decision = validateTrustDecision(parsed);
-    const assessment = assessTrust(decision);
-    const path = writeTrustDecision(flags.repo, decision);
+    // Validated, assessed and stored in one call, and in that order: a
+    // decision the boundary refuses must never reach the store, because a
+    // store that held one could render it as `accepted`.
+    let path: string;
+    let assessment;
+    try {
+      ({ path, assessment } = trustDecision(flags.repo, parsed));
+    } catch (cause) {
+      this.error((cause as Error).message, { exit: 2 });
+    }
     if (flags.json) {
       this.log(JSON.stringify({ path, assessment }, null, 2));
       return;
     }
-    this.log(`${decision.id} (${decision.use.id}): ${assessment.status}`);
+    this.log(`${assessment.id} (${assessment.useId}): ${assessment.status}`);
     if (assessment.triggeredBy.length > 0)
       this.log(`  revalidation required: ${assessment.triggeredBy.join(", ")}`);
     this.log(`  ${path}`);
