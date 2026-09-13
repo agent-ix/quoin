@@ -499,11 +499,15 @@ fn tc_455_no_receipt_claims_more_than_integrity_and_attribution() {
 ///
 /// The reason census. 34 of the 35 reasons the vocabulary declares are reached
 /// by the captured scenarios, and every one of them is reached in a receipt
-/// this crate produced rather than only in the oracle's. The one that is not
-/// reached is `parent_missing`, and the reason it cannot be is a defect in the
-/// retained TypeScript recorded in `DIVERGENCE.md` §4 — so this asserts the
+/// this crate produced rather than only in the oracle's. So this asserts the
 /// exact figure rather than a floor, and a port that quietly stopped emitting
 /// a reason fails here.
+///
+/// The one that is not reached is `parent_missing`, and it is unreachable in
+/// any receipt at all — not merely absent from this capture.
+/// `tc_455_parent_missing_is_structurally_unreachable_in_this_crate` states
+/// why over this crate's own code, so the figure stays falsifiable now that the
+/// TypeScript it was originally explained by is gone (quoin#457).
 #[test]
 fn tc_455_thirty_four_of_the_thirty_five_reasons_are_reached() {
     let mut reached: std::collections::BTreeSet<&'static str> = std::collections::BTreeSet::new();
@@ -544,5 +548,75 @@ fn tc_455_thirty_four_of_the_thirty_five_reasons_are_reached() {
         unreached,
         vec!["parent_missing"],
         "exactly one reason is unreachable, and only for the recorded reason"
+    );
+}
+
+/// Trace: FR-065-AC-2
+///
+/// Why `parent_missing` is unreachable, stated over THIS implementation.
+///
+/// The census above records that one of the thirty-five reasons never appears
+/// in a receipt. Until quoin#457 the recorded explanation was a defect in the
+/// retained TypeScript (`DIVERGENCE.md` §4) — an explanation that stops being
+/// checkable the moment that tree is deleted, which would leave "34 of 35" as
+/// an assertion nothing could falsify.
+///
+/// The port inherited the defect faithfully, so it can be restated as a
+/// property of this crate and checked here. Two facts in this crate contradict
+/// each other:
+///
+/// - `Reason::ParentMissing` declares its precedence class `incomplete`;
+/// - `verify::verify_change_assurance` builds the lineage check with
+///   `Check::from_reasons(.., Outcome::Invalid)`, so ANY lineage reason makes
+///   that check `invalid`.
+///
+/// A receipt carrying it therefore disagrees with its own precedence rule and
+/// is refused by the self-consistency check before it is returned — for every
+/// input that reaches the reason, not only for the one the capture holds. Both
+/// halves are asserted, so a change to either one fails here and forces the
+/// census figure and `DIVERGENCE.md` to be revisited together.
+#[test]
+fn tc_455_parent_missing_is_structurally_unreachable_in_this_crate() {
+    // Half one: the reason's precedence class.
+    assert!(
+        Reason::ParentMissing.is_incomplete(),
+        "parent_missing is an incompleteness, not an invalidity"
+    );
+    // The lineage reasons that are NOT incompletenesses do reach receipts, so
+    // this is a statement about one reason and not about the whole check.
+    for reachable in [
+        Reason::ParentInvalid,
+        Reason::ParentMismatch,
+        Reason::RevisionGap,
+    ] {
+        assert!(!reachable.is_incomplete(), "{}", reachable.as_str());
+    }
+
+    // Half two: an input that reaches the reason is refused rather than
+    // answered. A parent missing a required member is an absence, which is what
+    // `verify::lineage::lineage_reason` maps to `parent_missing`.
+    let scenario = scenarios()
+        .into_iter()
+        .find(|scenario| text(scenario, "name") == "full-chain")
+        .expect("the capture carries the full-chain scenario");
+    let mut input = verification_input(member(&scenario, "input"));
+    assert!(
+        !input.parents.is_empty(),
+        "anti-vacuity floor: the scenario must offer a parent to damage"
+    );
+    let parent = input.parents.last_mut().expect("a parent");
+    let JsonValue::Object(members) = parent else {
+        panic!("a parent is an object")
+    };
+    assert!(
+        members.remove("revision").is_some(),
+        "the parent carried the member this test removes"
+    );
+
+    let refusal = verify_change_assurance(&input)
+        .expect_err("a receipt carrying parent_missing contradicts its own precedence rule");
+    assert!(
+        format!("{refusal:?}").contains("outcome disagrees with reason precedence"),
+        "refused for the recorded reason, not some other one: {refusal:?}"
     );
 }

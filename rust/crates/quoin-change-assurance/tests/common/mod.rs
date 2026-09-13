@@ -2,11 +2,15 @@
 // Copyright (C) 2026 Agent-IX
 //! Reading the committed oracle capture.
 //!
-//! `tests/fixtures/oracle.json` was written once by
-//! `oracle/capture-change-assurance-oracle.mjs` against the retained
-//! TypeScript. Nothing here runs Node, and nothing here recomputes anything the
-//! fixture states: these functions only shape what the oracle already said into
-//! the types this crate takes (FR-101 AC-5).
+//! `tests/fixtures/oracle.json` was written once by a capture script run
+//! against `src/change-assurance/`, the retained TypeScript. Both the script
+//! and the tree it read were deleted at quoin#457, because FR-101 AC-5 forbids
+//! a non-Rust test oracle once the cutover has landed — the committed fixture
+//! is now the whole of the oracle's testimony and cannot be regenerated.
+//!
+//! Nothing here runs Node, and nothing here recomputes anything the fixture
+//! states: these functions only shape what the oracle already said into the
+//! types this crate takes.
 
 #![allow(
     dead_code,

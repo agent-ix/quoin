@@ -14,7 +14,7 @@ import {
   CHANGE_ASSURANCE_SCHEMA_NAMES,
   changeAssuranceSchemaPath,
   readChangeAssuranceSchema,
-} from "../src/change-assurance/index.js";
+} from "../src/store/schema-assets.js";
 import {
   CHANGE_ASSURANCE_SCHEMA_NAMES as EVIDENCE_SCHEMA_NAMES,
   readChangeAssuranceSchema as readEvidenceSchema,

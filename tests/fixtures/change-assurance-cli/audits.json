@@ -1,0 +1,13 @@
+[
+ {
+  "proof_id": "proof-1",
+  "report_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "report": {
+   "findings": [],
+   "healthy": [
+    "FR-068-AC-1"
+   ],
+   "unevaluated": []
+  }
+ }
+]

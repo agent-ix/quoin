@@ -64,6 +64,7 @@
 
 use std::path::Path;
 
+use quoin_change_assurance::EvidenceStore;
 use quoin_modules::{InstallOutcome, InstalledModule, MarketplaceManifest, ModuleName, Source};
 use quoin_modules::{ModulesError, ReconcileMode, ReconcileReport};
 use quoin_semantic::{CorpusRoot, SemanticError, SemanticReadResult, SweepIdentity, SweepReport};
@@ -169,6 +170,33 @@ pub trait SemanticHost {
     ) -> Result<SweepReport, SemanticError>;
 }
 
+/// Where change-assurance evidence is retained (quoin#457, Stage 9).
+///
+/// Granted rather than acquired, for the same reason [`ModuleHost`] and
+/// [`SemanticHost`] are, and with the smallest surface of the three: ONE
+/// method, returning the store rooted at the repository the caller named.
+/// Everything `ops::change_assurance` decides — that a request is well formed,
+/// that a document parses strictly, that a record satisfies FR-063, what a
+/// candidate's evidence comes to — is decided with no disk at all, and its unit
+/// tests prove it by running the whole domain against
+/// `quoin_change_assurance::intake::memory::MemoryEvidenceStore`.
+///
+/// The seam is the crate's own [`EvidenceStore`] rather than a second trait
+/// restating it: `quoin-change-assurance` already states "where evidence is
+/// kept" once, addressed only by digest, and a parallel declaration here would
+/// be a shape nobody checks against it.
+///
+/// Implemented for real in `main.rs` over
+/// `quoin_change_assurance::intake::disk::DiskEvidenceStore`.
+pub trait ChangeAssuranceHost {
+    /// The evidence store rooted at `repo`.
+    ///
+    /// A factory rather than one store held as state: a process answers one
+    /// operation and exits, and the repository root is a REQUEST field, so
+    /// there is no store to build until an operation says which one.
+    fn store<'a>(&'a self, repo: &Path) -> Box<dyn EvidenceStore + 'a>;
+}
+
 /// Everything `main.rs` grants one dispatch.
 ///
 /// A struct rather than a growing argument list so that adding a capability is
@@ -184,6 +212,8 @@ pub struct Capabilities<'a> {
     pub modules: Option<&'a dyn ModuleHost>,
     /// The semantic-contract capability, absent when nothing granted one.
     pub semantic: Option<&'a dyn SemanticHost>,
+    /// The change-assurance evidence store, absent when nothing granted one.
+    pub change_assurance: Option<&'a dyn ChangeAssuranceHost>,
 }
 
 impl<'a> Capabilities<'a> {
@@ -196,6 +226,7 @@ impl<'a> Capabilities<'a> {
         Self {
             modules: None,
             semantic: None,
+            change_assurance: None,
         }
     }
 
@@ -205,6 +236,7 @@ impl<'a> Capabilities<'a> {
         Self {
             modules: Some(host),
             semantic: None,
+            change_assurance: None,
         }
     }
 
@@ -214,15 +246,31 @@ impl<'a> Capabilities<'a> {
         Self {
             modules: None,
             semantic: Some(host),
+            change_assurance: None,
+        }
+    }
+
+    /// A grant of the change-assurance store only.
+    #[must_use]
+    pub const fn with_change_assurance(host: &'a dyn ChangeAssuranceHost) -> Self {
+        Self {
+            modules: None,
+            semantic: None,
+            change_assurance: Some(host),
         }
     }
 
     /// The full grant `main.rs` hands one dispatch.
     #[must_use]
-    pub const fn with_hosts(modules: &'a dyn ModuleHost, semantic: &'a dyn SemanticHost) -> Self {
+    pub const fn with_hosts(
+        modules: &'a dyn ModuleHost,
+        semantic: &'a dyn SemanticHost,
+        change_assurance: &'a dyn ChangeAssuranceHost,
+    ) -> Self {
         Self {
             modules: Some(modules),
             semantic: Some(semantic),
+            change_assurance: Some(change_assurance),
         }
     }
 }

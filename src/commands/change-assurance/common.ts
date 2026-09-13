@@ -2,10 +2,8 @@ import { readFileSync } from "node:fs";
 
 import { Flags } from "@oclif/core";
 
-import {
-  canonicalizeJcs,
-  parseStrictJson,
-} from "../../change-assurance/index.js";
+import { carriesPayload, runCoreAllowFailure } from "../../core/exec.js";
+import { canonicalizeJcs } from "../../store/integrity.js";
 
 /** Repository root holding the evidence store. */
 export const repoFlag = Flags.string({
@@ -27,14 +25,17 @@ export function readInputBytes(source: string): Uint8Array {
 }
 
 /**
- * Read one command input as strictly parsed JSON.
+ * Lowercase hex of exact bytes, the encoding every document crosses the
+ * `quoin-core` boundary in (quoin#457).
  *
- * Strict parsing is the same reader the sealed contracts use, so a duplicate
- * key or a non-finite number is refused here rather than silently normalized
- * into a record that then seals cleanly.
+ * A document is NOT pre-parsed on this side. The strict reader the sealed
+ * contracts use takes its decisions — a duplicate member, a BOM, a non-finite
+ * number, trailing content — over the producer's own bytes, and a value parsed
+ * here would already have had a duplicate member resolved last-wins before the
+ * engine ever saw it.
  */
-export function readInputJson(source: string): unknown {
-  return parseStrictJson(readInputBytes(source));
+export function hexOf(bytes: Uint8Array): string {
+  return Buffer.from(bytes).toString("hex");
 }
 
 /** Canonical JCS text for machine output, with a trailing newline. */
@@ -48,24 +49,34 @@ export function messageOf(error: unknown): string {
 }
 
 /**
- * Refuse a body that supplies a field the caller must not state.
+ * Ask `quoin-core` one change-assurance question.
  *
- * The sealing functions delete a supplied `digest` before hashing, so without
- * this check a caller could hand in a wrong digest and receive a cleanly
- * sealed record back, having been told nothing.
+ * Every refusal the engine reports — a malformed document (3), a contradicting
+ * digest or an unretained selection (2), an engine fault (4) — reaches the
+ * caller as this surface's own exit 2, because FR-068-AC-6 makes 1 mean "the
+ * receipt is not valid" and nothing else. The engine's status and its
+ * diagnostic codes are named in the message so the distinction is not lost,
+ * only re-graded.
+ *
+ * `fail` is the command's `this.error`, which never returns.
  */
-export function refuseSuppliedFields(
-  value: unknown,
-  fields: readonly string[],
-): string | null {
-  if (typeof value !== "object" || value === null || Array.isArray(value)) {
-    return "input must be a JSON object";
+export function askCore(
+  op: string,
+  request: unknown,
+  what: string,
+  fail: (message: string) => never,
+): Record<string, unknown> {
+  const result = runCoreAllowFailure(op, request);
+  if (!carriesPayload(result.exitCode)) {
+    const detail = result.diagnostics
+      .map((d) => `${d.code}: ${d.message}`)
+      .join("\n");
+    fail(
+      `${what}: quoin-core ${op} exited ${result.exitCode}` +
+        (detail ? `:\n${detail}` : " with no diagnostic on stderr."),
+    );
   }
-  const supplied = fields.filter((field) =>
-    Object.prototype.hasOwnProperty.call(value, field),
-  );
-  if (supplied.length === 0) return null;
-  return `input must not supply ${supplied.join(", ")}; it is derived when sealing`;
+  return result.payload as Record<string, unknown>;
 }
 
 /** Parse one repeated `--select <proof-id>=<attestation-digest>` mapping. */

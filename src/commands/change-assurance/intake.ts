@@ -1,9 +1,11 @@
 import { Flags } from "@oclif/core";
 
 import { QuoinCommand } from "../../base.js";
-import { intakeAttestation } from "../../change-assurance/index.js";
+import type { IntakePayload } from "../../core/types.js";
 import {
+  askCore,
   canonicalOutput,
+  hexOf,
   jsonFlag,
   messageOf,
   readInputBytes,
@@ -69,18 +71,27 @@ as an attestation; \`quoin change-assurance recover\` removes it.`;
       });
     }
 
-    let directory: string;
-    try {
-      directory = intakeAttestation(flags.repo, raw, output);
-    } catch (error) {
-      this.error(`cannot retain attestation: ${messageOf(error)}`, { exit: 2 });
-    }
+    const payload = askCore(
+      "change_assurance.intake",
+      {
+        repo: flags.repo,
+        attestation_hex: hexOf(raw),
+        output_hex: hexOf(output),
+      },
+      "cannot retain attestation",
+      (message) => this.error(message, { exit: 2 }),
+    ) as unknown as IntakePayload;
 
     if (flags.json) {
-      this.log(canonicalOutput({ directory, size_bytes: output.byteLength }));
+      this.log(
+        canonicalOutput({
+          directory: payload.directory,
+          size_bytes: payload.size_bytes,
+        }),
+      );
       return;
     }
-    this.log(`retained attestation → ${directory}`);
-    this.log(`  output bytes: ${output.byteLength}`);
+    this.log(`retained attestation → ${payload.directory}`);
+    this.log(`  output bytes: ${payload.size_bytes}`);
   }
 }

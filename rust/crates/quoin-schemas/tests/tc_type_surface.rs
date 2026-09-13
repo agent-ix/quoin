@@ -279,13 +279,15 @@ fn tc_1614_no_hand_written_declaration_shadows_a_generated_boundary_type() {
             (name, fields)
         })
         .collect();
-    // Eighty-one interfaces: `Diagnostic`, the two `core.ping` shapes, the two
+    // Ninety-four interfaces: `Diagnostic`, the two `core.ping` shapes, the two
     // `validators.run` shapes, the request and payload types of the
     // `config.*` and `modules.*` operations with the documents they nest, the
     // six `Source*` variants of the internally tagged module source, and the
     // request, payload and nested document types of the eight `completeness.*`
     // and `assurance.*` operations, and the request, payload and nested
-    // document types of the three `semantic.*` operations (quoin#452). The enum
+    // document types of the three `semantic.*` operations (quoin#452), and the
+    // thirteen request, payload and selection types of the six
+    // `change_assurance.*` operations (quoin#457). The enum
     // and newtype aliases the surface
     // also publishes are `export type` and not interfaces, so they are outside
     // what this scanner reads — a hand written `type ObligationId = string`
@@ -299,8 +301,8 @@ fn tc_1614_no_hand_written_declaration_shadows_a_generated_boundary_type() {
     // below does that.
     assert_eq!(
         generated.len(),
-        81,
-        "the scanner read {} interfaces out of the generated surface, not 81; \
+        94,
+        "the scanner read {} interfaces out of the generated surface, not 94; \
          it is broken and would report clean over anything",
         generated.len()
     );

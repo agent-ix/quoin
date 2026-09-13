@@ -1,0 +1,66 @@
+{
+ "schema_version": 1,
+ "record_type": "change_assurance",
+ "record_id": "change-1",
+ "revision": 1,
+ "parent_digest": null,
+ "subject": {
+  "repository": "agent-ix/quoin",
+  "base_revision": "abc123",
+  "scope": [
+   "src/change-assurance"
+  ]
+ },
+ "source_connections": [
+  {
+   "source_id": "FR-068",
+   "kind": "requirement",
+   "revision": "1",
+   "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  }
+ ],
+ "impact_snapshot": {
+  "identity": "impact-1",
+  "revision": "1",
+  "digest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "completeness": "complete",
+  "truncated": false,
+  "gaps": []
+ },
+ "definition": {
+  "requirements": [
+   {
+    "id": "FR-068",
+    "statement": "expose it",
+    "source_ids": [
+     "FR-068"
+    ]
+   }
+  ],
+  "preservation_constraints": [],
+  "proof_obligations": [
+   {
+    "proof_id": "proof-1",
+    "statement": "tests pass",
+    "obligation_ids": [
+     "FR-068-AC-1"
+    ],
+    "evidence_kind": "Unit",
+    "command": {
+     "argv": [
+      "pnpm",
+      "test"
+     ],
+     "working_directory": "."
+    },
+    "tool_identity": "vitest",
+    "configuration_digest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+   }
+  ],
+  "unknowns": []
+ },
+ "review_workflow": {
+  "run_id": "run-1",
+  "decision_event_kind": "change_assurance.review_decided"
+ }
+}

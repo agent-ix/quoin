@@ -15,7 +15,25 @@ export {
   type InstalledModule,
 } from "./core/modules.js";
 export * from "./measurement/index.js";
-export * from "./change-assurance/index.js";
+// `src/change-assurance/` was deleted at quoin#457: the FR-063..FR-065
+// contracts are decided by `quoin-change-assurance` behind `quoin-core`. What
+// that barrel re-exported from modules that SURVIVE is named here, so no
+// library consumer loses an export to the cutover.
+export {
+  IntegrityError,
+  assertDigest,
+  blake3Hex,
+  canonicalBytes,
+  canonicalizeJcs,
+  digestValue,
+  parseStrictJson,
+} from "./store/integrity.js";
+export {
+  CHANGE_ASSURANCE_SCHEMA_NAMES,
+  changeAssuranceSchemaPath,
+  readChangeAssuranceSchema,
+  type ChangeAssuranceSchemaName,
+} from "./store/schema-assets.js";
 export {
   createAuthoringPack,
   formatAuthoringPack,

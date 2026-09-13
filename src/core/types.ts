@@ -32,7 +32,7 @@ export const CORE_TYPES_PROVENANCE = {
   generator: "quoin-schemas/quoin-schemas-gen",
   generatorVersion: "0.1.0",
   sourceSchemaSha256:
-    "d8ee4643c562f4ee2ca1d8abf9c182fbdd343810835c8ec39c12d504436c4ed0",
+    "7411cd37687c4ef3f222e53e64ba85a39e444f02b2df3f3e92bcb33e9d358f26",
 } as const;
 
 /**
@@ -1116,6 +1116,43 @@ export interface InstalledModule {
 }
 
 /**
+ * The payload `change_assurance.intake` writes to stdout.
+ */
+export interface IntakePayload {
+  /**
+   * The directory the pair became visible in.
+   */
+  directory: string;
+  /**
+   * Whether this call retained the pair, or found the same pair already
+   * there.
+   */
+  retained: boolean;
+  /**
+   * How many bytes of output were retained.
+   */
+  size_bytes: number;
+}
+
+/**
+ * The request accepted by `change_assurance.intake`.
+ */
+export interface IntakeRequest {
+  /**
+   * The sealed attestation's exact bytes, as hex.
+   */
+  attestation_hex: string;
+  /**
+   * The output's exact bytes, as hex.
+   */
+  output_hex: string;
+  /**
+   * Repository root holding the evidence store.
+   */
+  repo: string;
+}
+
+/**
  * The advisory diagnostic a legacy form earns (FR-074).
  */
 export interface LegacyFormDiagnostic {
@@ -1426,6 +1463,76 @@ export interface ReasoningView {
 }
 
 /**
+ * The payload `change_assurance.receipt` writes to stdout.
+ */
+export interface ReceiptPayload {
+  /**
+   * The sealed verification receipt, in full.
+   *
+   * The whole receipt rather than a verdict: the caller prints the proof
+   * rows and the reasons, and a payload that carried only `outcome` would
+   * make "why" a second call.
+   */
+  receipt: unknown;
+}
+
+/**
+ * The request accepted by `change_assurance.receipt`.
+ */
+export interface ReceiptRequest {
+  /**
+   * The retained FR-032 audit reports as a JSON array, as hex of the exact
+   * input bytes. Absent means no audit was retained, which stays distinct
+   * from an audit with no findings.
+   */
+  audits_hex?: string | null;
+  /**
+   * The candidate revision the selected attestations must be bound to.
+   */
+  candidate_revision: string;
+  /**
+   * The retained ix-flow decision history, as hex of the exact input bytes.
+   */
+  decisions_hex: string;
+  /**
+   * Digests of stored parent records, named rather than walked.
+   */
+  parent_digests: string[];
+  /**
+   * Digest of the stored record to verify.
+   */
+  record_digest: string;
+  /**
+   * Repository root holding the evidence store.
+   */
+  repo: string;
+  /**
+   * Which attestation is offered for which obligation. Only these are read.
+   */
+  selections: SelectionRequest[];
+}
+
+/**
+ * The payload `change_assurance.recover` writes to stdout.
+ */
+export interface RecoverPayload {
+  /**
+   * How many interrupted-intake staging directories were removed.
+   */
+  removed: number;
+}
+
+/**
+ * The request accepted by `change_assurance.recover`.
+ */
+export interface RecoverRequest {
+  /**
+   * Repository root holding the evidence store.
+   */
+  repo: string;
+}
+
+/**
  * An edge to a document outside this argument.
  */
 export interface Relationship {
@@ -1659,6 +1766,85 @@ export interface SchemaRefsRequest {
  * error, and an absent key could only ever produce a generic sentence.
  */
 export type SchemaSource = { text: string } | { unreadable: string };
+
+/**
+ * The payload `change_assurance.seal_attestation` writes to stdout.
+ */
+export interface SealAttestationPayload {
+  /**
+   * The sealed attestation. Emitted, not retained.
+   */
+  attestation: unknown;
+}
+
+/**
+ * The request accepted by `change_assurance.seal_attestation`.
+ */
+export interface SealAttestationRequest {
+  /**
+   * The attestation body, without `digest` and without `retained_output`,
+   * as hex of the exact input bytes.
+   */
+  attestation_hex: string;
+  /**
+   * The media type the caller declares for that file.
+   *
+   * Stated rather than sniffed, so a producer's own content type is
+   * preserved exactly.
+   */
+  media_type: string;
+  /**
+   * The retained result file's exact bytes, as hex.
+   */
+  output_hex: string;
+}
+
+/**
+ * The payload `change_assurance.seal_record` writes to stdout.
+ */
+export interface SealRecordPayload {
+  /**
+   * Where it was retained, relative to the repository root as supplied.
+   */
+  path: string;
+  /**
+   * The sealed record, `digest` included.
+   */
+  record: unknown;
+  /**
+   * Whether this call retained the record, or found the same bytes already
+   * there. Re-sealing an identical record is not an error and never was.
+   */
+  retained: boolean;
+}
+
+/**
+ * The request accepted by `change_assurance.seal_record`.
+ */
+export interface SealRecordRequest {
+  /**
+   * The record body, without its `digest`, as hex of the exact input bytes.
+   */
+  record_hex: string;
+  /**
+   * Repository root holding the evidence store.
+   */
+  repo: string;
+}
+
+/**
+ * One `<proof-id>=<attestation-digest>` selection.
+ */
+export interface SelectionRequest {
+  /**
+   * The digest of the attestation offered.
+   */
+  attestation_digest: string;
+  /**
+   * The obligation the attestation is offered against.
+   */
+  proof_id: string;
+}
 
 /**
  * One module's validated `semantic` block.
@@ -2171,6 +2357,26 @@ export type UnusedFactReason = "unknown_clause" | "not_binding" | "unresolved";
  * the criterion written to forbid it caught it.
  */
 export type Verdict = "PASS" | "CONDITIONAL" | "FAIL" | "UNCHECKED";
+
+/**
+ * The payload `change_assurance.verify_receipt` writes to stdout.
+ */
+export interface VerifyReceiptPayload {
+  /**
+   * The receipt as re-read and re-verified, in full.
+   */
+  receipt: unknown;
+}
+
+/**
+ * The request accepted by `change_assurance.verify_receipt`.
+ */
+export interface VerifyReceiptRequest {
+  /**
+   * The sealed receipt's exact bytes, as hex.
+   */
+  receipt_hex: string;
+}
 
 /**
  * The one value `schemaVersion` takes.

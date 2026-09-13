@@ -1,0 +1,729 @@
+{
+  "provenance": "Extracted from rust/crates/quoin-change-assurance/tests/fixtures/oracle.json, captured against the retained TypeScript in src/change-assurance/ by oracle/capture-change-assurance-oracle.mjs before its deletion (quoin#457, FR-101 AC-5).",
+  "cases": [
+    {
+      "name": "everything-agrees",
+      "record_body": {
+        "schema_version": 1,
+        "record_type": "change_assurance",
+        "record_id": "change-1",
+        "revision": 1,
+        "parent_digest": null,
+        "subject": {
+          "repository": "agent-ix/quoin",
+          "base_revision": "abc123",
+          "scope": ["docs/é", "docs/𐀀", "src/evidence"]
+        },
+        "source_connections": [
+          {
+            "source_id": "FR-063",
+            "kind": "requirement",
+            "revision": "1",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "impact_snapshot": {
+          "identity": "impact-1",
+          "revision": "1",
+          "digest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "completeness": "complete",
+          "truncated": false,
+          "gaps": []
+        },
+        "definition": {
+          "requirements": [
+            {
+              "id": "FR-063",
+              "statement": "seal it",
+              "source_ids": ["FR-063"]
+            }
+          ],
+          "preservation_constraints": [],
+          "proof_obligations": [
+            {
+              "proof_id": "proof-1",
+              "statement": "tests pass",
+              "obligation_ids": ["FR-063-AC-1"],
+              "evidence_kind": "Unit",
+              "command": {
+                "argv": ["pnpm", "test"],
+                "working_directory": "."
+              },
+              "tool_identity": "vitest",
+              "configuration_digest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          ],
+          "unknowns": []
+        },
+        "review_workflow": {
+          "run_id": "run-1",
+          "decision_event_kind": "change_assurance.review_decided"
+        }
+      },
+      "record_digest": "ea2fd46ffd5cbfc55e0da7113bbc66c9072cc2da3a29ef8b7eabdddc121c61e1",
+      "parents": [],
+      "candidate_revision": "candidate-1",
+      "selections": [
+        {
+          "proof_id": "proof-1",
+          "attestation_digest": "5f315c53b82500ef703a4e3fa43b224ccf3ca160f1ae0592662b949169c5e983"
+        }
+      ],
+      "attestations": [
+        {
+          "attestation": {
+            "schema_version": 1,
+            "record_type": "proof_attestation",
+            "attestation_id": "att-1",
+            "record_digest": "ea2fd46ffd5cbfc55e0da7113bbc66c9072cc2da3a29ef8b7eabdddc121c61e1",
+            "candidate_revision": "candidate-1",
+            "proof_id": "proof-1",
+            "command": {
+              "argv": ["pnpm", "test"],
+              "working_directory": "."
+            },
+            "tool": {
+              "identity": "vitest",
+              "version": "4.1.10",
+              "configuration_digest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            },
+            "environment": {
+              "os": "test",
+              "parallel": true,
+              "unset": null,
+              "workers": 4
+            },
+            "observed_at": "2026-08-31T00:00:00Z",
+            "result": "passed",
+            "retained_output": {
+              "media_type": "application/octet-stream",
+              "digest": "fee90f5cc8bda93838b6de0c43f53550a3e470b76fb2dffa02dfcdc5d223d459",
+              "size_bytes": 18
+            },
+            "digest": "5f315c53b82500ef703a4e3fa43b224ccf3ca160f1ae0592662b949169c5e983"
+          },
+          "output": [
+            110, 111, 116, 32, 106, 115, 111, 110, 58, 32, 240, 159, 152, 128,
+            0, 239, 191, 189
+          ]
+        }
+      ],
+      "decision_history": {
+        "run_id": "run-1",
+        "events": [
+          {
+            "id": "event-1",
+            "ts": "2026-08-31T00:00:00.000Z",
+            "actor": {
+              "kind": "human",
+              "id": "reviewer-1"
+            },
+            "kind": "change_assurance.review_decided",
+            "payload": {
+              "schema_version": 1,
+              "record_id": "change-1",
+              "revision": 1,
+              "record_digest": "ea2fd46ffd5cbfc55e0da7113bbc66c9072cc2da3a29ef8b7eabdddc121c61e1",
+              "decision": "approved"
+            },
+            "prevHash": "0000000000000000000000000000000000000000000000000000000000000000",
+            "hash": "d8b8b4bfc986a9dd4083087fbb4dc35196c3c5aed7a0f1e7c1bc0f8b70057889"
+          }
+        ]
+      },
+      "audits": [
+        {
+          "proof_id": "proof-1",
+          "report_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "report": {
+            "findings": [],
+            "healthy": ["FR-063-AC-1"],
+            "unevaluated": []
+          }
+        }
+      ],
+      "receipt_outcome": "valid",
+      "receipt_reasons": [],
+      "receipt_digest": "ed17b691f72eaead1d68663cfb324c97f1eaeda2ed895b41931f5b37e41b8a5e"
+    },
+    {
+      "name": "attestation-not-selected",
+      "record_body": {
+        "schema_version": 1,
+        "record_type": "change_assurance",
+        "record_id": "change-1",
+        "revision": 1,
+        "parent_digest": null,
+        "subject": {
+          "repository": "agent-ix/quoin",
+          "base_revision": "abc123",
+          "scope": ["docs/é", "docs/𐀀", "src/evidence"]
+        },
+        "source_connections": [
+          {
+            "source_id": "FR-063",
+            "kind": "requirement",
+            "revision": "1",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "impact_snapshot": {
+          "identity": "impact-1",
+          "revision": "1",
+          "digest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "completeness": "complete",
+          "truncated": false,
+          "gaps": []
+        },
+        "definition": {
+          "requirements": [
+            {
+              "id": "FR-063",
+              "statement": "seal it",
+              "source_ids": ["FR-063"]
+            }
+          ],
+          "preservation_constraints": [],
+          "proof_obligations": [
+            {
+              "proof_id": "proof-1",
+              "statement": "tests pass",
+              "obligation_ids": ["FR-063-AC-1"],
+              "evidence_kind": "Unit",
+              "command": {
+                "argv": ["pnpm", "test"],
+                "working_directory": "."
+              },
+              "tool_identity": "vitest",
+              "configuration_digest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          ],
+          "unknowns": []
+        },
+        "review_workflow": {
+          "run_id": "run-1",
+          "decision_event_kind": "change_assurance.review_decided"
+        }
+      },
+      "record_digest": "ea2fd46ffd5cbfc55e0da7113bbc66c9072cc2da3a29ef8b7eabdddc121c61e1",
+      "parents": [],
+      "candidate_revision": "candidate-1",
+      "selections": [],
+      "attestations": [
+        {
+          "attestation": {
+            "schema_version": 1,
+            "record_type": "proof_attestation",
+            "attestation_id": "att-1",
+            "record_digest": "ea2fd46ffd5cbfc55e0da7113bbc66c9072cc2da3a29ef8b7eabdddc121c61e1",
+            "candidate_revision": "candidate-1",
+            "proof_id": "proof-1",
+            "command": {
+              "argv": ["pnpm", "test"],
+              "working_directory": "."
+            },
+            "tool": {
+              "identity": "vitest",
+              "version": "4.1.10",
+              "configuration_digest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            },
+            "environment": {
+              "os": "test",
+              "parallel": true,
+              "unset": null,
+              "workers": 4
+            },
+            "observed_at": "2026-08-31T00:00:00Z",
+            "result": "passed",
+            "retained_output": {
+              "media_type": "application/octet-stream",
+              "digest": "fee90f5cc8bda93838b6de0c43f53550a3e470b76fb2dffa02dfcdc5d223d459",
+              "size_bytes": 18
+            },
+            "digest": "5f315c53b82500ef703a4e3fa43b224ccf3ca160f1ae0592662b949169c5e983"
+          },
+          "output": [
+            110, 111, 116, 32, 106, 115, 111, 110, 58, 32, 240, 159, 152, 128,
+            0, 239, 191, 189
+          ]
+        }
+      ],
+      "decision_history": {
+        "run_id": "run-1",
+        "events": [
+          {
+            "id": "event-1",
+            "ts": "2026-08-31T00:00:00.000Z",
+            "actor": {
+              "kind": "human",
+              "id": "reviewer-1"
+            },
+            "kind": "change_assurance.review_decided",
+            "payload": {
+              "schema_version": 1,
+              "record_id": "change-1",
+              "revision": 1,
+              "record_digest": "ea2fd46ffd5cbfc55e0da7113bbc66c9072cc2da3a29ef8b7eabdddc121c61e1",
+              "decision": "approved"
+            },
+            "prevHash": "0000000000000000000000000000000000000000000000000000000000000000",
+            "hash": "d8b8b4bfc986a9dd4083087fbb4dc35196c3c5aed7a0f1e7c1bc0f8b70057889"
+          }
+        ]
+      },
+      "audits": [
+        {
+          "proof_id": "proof-1",
+          "report_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "report": {
+            "findings": [],
+            "healthy": ["FR-063-AC-1"],
+            "unevaluated": []
+          }
+        }
+      ],
+      "receipt_outcome": "incomplete",
+      "receipt_reasons": ["attestation_missing"],
+      "receipt_digest": "f3dc735e4e6b3a17f7e53cf0d71c7acbd10d868101750202ff6227c304b0baca"
+    },
+    {
+      "name": "producer-unavailable",
+      "record_body": {
+        "schema_version": 1,
+        "record_type": "change_assurance",
+        "record_id": "change-1",
+        "revision": 1,
+        "parent_digest": null,
+        "subject": {
+          "repository": "agent-ix/quoin",
+          "base_revision": "abc123",
+          "scope": ["docs/é", "docs/𐀀", "src/evidence"]
+        },
+        "source_connections": [
+          {
+            "source_id": "FR-063",
+            "kind": "requirement",
+            "revision": "1",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "impact_snapshot": {
+          "identity": "impact-1",
+          "revision": "1",
+          "digest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "completeness": "complete",
+          "truncated": false,
+          "gaps": []
+        },
+        "definition": {
+          "requirements": [
+            {
+              "id": "FR-063",
+              "statement": "seal it",
+              "source_ids": ["FR-063"]
+            }
+          ],
+          "preservation_constraints": [],
+          "proof_obligations": [
+            {
+              "proof_id": "proof-1",
+              "statement": "tests pass",
+              "obligation_ids": ["FR-063-AC-1"],
+              "evidence_kind": "Unit",
+              "command": {
+                "argv": ["pnpm", "test"],
+                "working_directory": "."
+              },
+              "tool_identity": "vitest",
+              "configuration_digest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          ],
+          "unknowns": []
+        },
+        "review_workflow": {
+          "run_id": "run-1",
+          "decision_event_kind": "change_assurance.review_decided"
+        }
+      },
+      "record_digest": "ea2fd46ffd5cbfc55e0da7113bbc66c9072cc2da3a29ef8b7eabdddc121c61e1",
+      "parents": [],
+      "candidate_revision": "candidate-1",
+      "selections": [
+        {
+          "proof_id": "proof-1",
+          "attestation_digest": "f62a204007e13341e6efc5d400d41f20882035dcaf5c8d905cd120c6c7ae4ed2"
+        }
+      ],
+      "attestations": [
+        {
+          "attestation": {
+            "schema_version": 1,
+            "record_type": "proof_attestation",
+            "attestation_id": "att-1",
+            "record_digest": "ea2fd46ffd5cbfc55e0da7113bbc66c9072cc2da3a29ef8b7eabdddc121c61e1",
+            "candidate_revision": "candidate-1",
+            "proof_id": "proof-1",
+            "command": {
+              "argv": ["pnpm", "test"],
+              "working_directory": "."
+            },
+            "tool": {
+              "identity": "vitest",
+              "version": "4.1.10",
+              "configuration_digest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            },
+            "environment": {
+              "os": "test",
+              "parallel": true,
+              "unset": null,
+              "workers": 4
+            },
+            "observed_at": "2026-08-31T00:00:00Z",
+            "result": "unavailable",
+            "retained_output": {
+              "media_type": "application/octet-stream",
+              "digest": "fee90f5cc8bda93838b6de0c43f53550a3e470b76fb2dffa02dfcdc5d223d459",
+              "size_bytes": 18
+            },
+            "digest": "f62a204007e13341e6efc5d400d41f20882035dcaf5c8d905cd120c6c7ae4ed2"
+          },
+          "output": [
+            110, 111, 116, 32, 106, 115, 111, 110, 58, 32, 240, 159, 152, 128,
+            0, 239, 191, 189
+          ]
+        }
+      ],
+      "decision_history": {
+        "run_id": "run-1",
+        "events": [
+          {
+            "id": "event-1",
+            "ts": "2026-08-31T00:00:00.000Z",
+            "actor": {
+              "kind": "human",
+              "id": "reviewer-1"
+            },
+            "kind": "change_assurance.review_decided",
+            "payload": {
+              "schema_version": 1,
+              "record_id": "change-1",
+              "revision": 1,
+              "record_digest": "ea2fd46ffd5cbfc55e0da7113bbc66c9072cc2da3a29ef8b7eabdddc121c61e1",
+              "decision": "approved"
+            },
+            "prevHash": "0000000000000000000000000000000000000000000000000000000000000000",
+            "hash": "d8b8b4bfc986a9dd4083087fbb4dc35196c3c5aed7a0f1e7c1bc0f8b70057889"
+          }
+        ]
+      },
+      "audits": [
+        {
+          "proof_id": "proof-1",
+          "report_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "report": {
+            "findings": [],
+            "healthy": ["FR-063-AC-1"],
+            "unevaluated": []
+          }
+        }
+      ],
+      "receipt_outcome": "incomplete",
+      "receipt_reasons": ["result_unavailable"],
+      "receipt_digest": "1d5263d92964452a2c35549d4aa7360b8248618e49980da4eca549360466273d"
+    },
+    {
+      "name": "producer-did-not-compute",
+      "record_body": {
+        "schema_version": 1,
+        "record_type": "change_assurance",
+        "record_id": "change-1",
+        "revision": 1,
+        "parent_digest": null,
+        "subject": {
+          "repository": "agent-ix/quoin",
+          "base_revision": "abc123",
+          "scope": ["docs/é", "docs/𐀀", "src/evidence"]
+        },
+        "source_connections": [
+          {
+            "source_id": "FR-063",
+            "kind": "requirement",
+            "revision": "1",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "impact_snapshot": {
+          "identity": "impact-1",
+          "revision": "1",
+          "digest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "completeness": "complete",
+          "truncated": false,
+          "gaps": []
+        },
+        "definition": {
+          "requirements": [
+            {
+              "id": "FR-063",
+              "statement": "seal it",
+              "source_ids": ["FR-063"]
+            }
+          ],
+          "preservation_constraints": [],
+          "proof_obligations": [
+            {
+              "proof_id": "proof-1",
+              "statement": "tests pass",
+              "obligation_ids": ["FR-063-AC-1"],
+              "evidence_kind": "Unit",
+              "command": {
+                "argv": ["pnpm", "test"],
+                "working_directory": "."
+              },
+              "tool_identity": "vitest",
+              "configuration_digest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          ],
+          "unknowns": []
+        },
+        "review_workflow": {
+          "run_id": "run-1",
+          "decision_event_kind": "change_assurance.review_decided"
+        }
+      },
+      "record_digest": "ea2fd46ffd5cbfc55e0da7113bbc66c9072cc2da3a29ef8b7eabdddc121c61e1",
+      "parents": [],
+      "candidate_revision": "candidate-1",
+      "selections": [
+        {
+          "proof_id": "proof-1",
+          "attestation_digest": "2b74e44e9c3aac962c5875fd8e8407526d9510edfb3683a09328b9678ec86616"
+        }
+      ],
+      "attestations": [
+        {
+          "attestation": {
+            "schema_version": 1,
+            "record_type": "proof_attestation",
+            "attestation_id": "att-1",
+            "record_digest": "ea2fd46ffd5cbfc55e0da7113bbc66c9072cc2da3a29ef8b7eabdddc121c61e1",
+            "candidate_revision": "candidate-1",
+            "proof_id": "proof-1",
+            "command": {
+              "argv": ["pnpm", "test"],
+              "working_directory": "."
+            },
+            "tool": {
+              "identity": "vitest",
+              "version": "4.1.10",
+              "configuration_digest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            },
+            "environment": {
+              "os": "test",
+              "parallel": true,
+              "unset": null,
+              "workers": 4
+            },
+            "observed_at": "2026-08-31T00:00:00Z",
+            "result": "not_computed",
+            "retained_output": {
+              "media_type": "application/octet-stream",
+              "digest": "fee90f5cc8bda93838b6de0c43f53550a3e470b76fb2dffa02dfcdc5d223d459",
+              "size_bytes": 18
+            },
+            "digest": "2b74e44e9c3aac962c5875fd8e8407526d9510edfb3683a09328b9678ec86616"
+          },
+          "output": [
+            110, 111, 116, 32, 106, 115, 111, 110, 58, 32, 240, 159, 152, 128,
+            0, 239, 191, 189
+          ]
+        }
+      ],
+      "decision_history": {
+        "run_id": "run-1",
+        "events": [
+          {
+            "id": "event-1",
+            "ts": "2026-08-31T00:00:00.000Z",
+            "actor": {
+              "kind": "human",
+              "id": "reviewer-1"
+            },
+            "kind": "change_assurance.review_decided",
+            "payload": {
+              "schema_version": 1,
+              "record_id": "change-1",
+              "revision": 1,
+              "record_digest": "ea2fd46ffd5cbfc55e0da7113bbc66c9072cc2da3a29ef8b7eabdddc121c61e1",
+              "decision": "approved"
+            },
+            "prevHash": "0000000000000000000000000000000000000000000000000000000000000000",
+            "hash": "d8b8b4bfc986a9dd4083087fbb4dc35196c3c5aed7a0f1e7c1bc0f8b70057889"
+          }
+        ]
+      },
+      "audits": [
+        {
+          "proof_id": "proof-1",
+          "report_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "report": {
+            "findings": [],
+            "healthy": ["FR-063-AC-1"],
+            "unevaluated": []
+          }
+        }
+      ],
+      "receipt_outcome": "incomplete",
+      "receipt_reasons": ["result_not_computed"],
+      "receipt_digest": "2be0ae0b9025bbf1a8513fdd566034f3b703ad1c694d0209b91cfb7d4de0c523"
+    },
+    {
+      "name": "audit-left-it-unevaluated",
+      "record_body": {
+        "schema_version": 1,
+        "record_type": "change_assurance",
+        "record_id": "change-1",
+        "revision": 1,
+        "parent_digest": null,
+        "subject": {
+          "repository": "agent-ix/quoin",
+          "base_revision": "abc123",
+          "scope": ["docs/é", "docs/𐀀", "src/evidence"]
+        },
+        "source_connections": [
+          {
+            "source_id": "FR-063",
+            "kind": "requirement",
+            "revision": "1",
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "impact_snapshot": {
+          "identity": "impact-1",
+          "revision": "1",
+          "digest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "completeness": "complete",
+          "truncated": false,
+          "gaps": []
+        },
+        "definition": {
+          "requirements": [
+            {
+              "id": "FR-063",
+              "statement": "seal it",
+              "source_ids": ["FR-063"]
+            }
+          ],
+          "preservation_constraints": [],
+          "proof_obligations": [
+            {
+              "proof_id": "proof-1",
+              "statement": "tests pass",
+              "obligation_ids": ["FR-063-AC-1"],
+              "evidence_kind": "Unit",
+              "command": {
+                "argv": ["pnpm", "test"],
+                "working_directory": "."
+              },
+              "tool_identity": "vitest",
+              "configuration_digest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          ],
+          "unknowns": []
+        },
+        "review_workflow": {
+          "run_id": "run-1",
+          "decision_event_kind": "change_assurance.review_decided"
+        }
+      },
+      "record_digest": "ea2fd46ffd5cbfc55e0da7113bbc66c9072cc2da3a29ef8b7eabdddc121c61e1",
+      "parents": [],
+      "candidate_revision": "candidate-1",
+      "selections": [
+        {
+          "proof_id": "proof-1",
+          "attestation_digest": "5f315c53b82500ef703a4e3fa43b224ccf3ca160f1ae0592662b949169c5e983"
+        }
+      ],
+      "attestations": [
+        {
+          "attestation": {
+            "schema_version": 1,
+            "record_type": "proof_attestation",
+            "attestation_id": "att-1",
+            "record_digest": "ea2fd46ffd5cbfc55e0da7113bbc66c9072cc2da3a29ef8b7eabdddc121c61e1",
+            "candidate_revision": "candidate-1",
+            "proof_id": "proof-1",
+            "command": {
+              "argv": ["pnpm", "test"],
+              "working_directory": "."
+            },
+            "tool": {
+              "identity": "vitest",
+              "version": "4.1.10",
+              "configuration_digest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            },
+            "environment": {
+              "os": "test",
+              "parallel": true,
+              "unset": null,
+              "workers": 4
+            },
+            "observed_at": "2026-08-31T00:00:00Z",
+            "result": "passed",
+            "retained_output": {
+              "media_type": "application/octet-stream",
+              "digest": "fee90f5cc8bda93838b6de0c43f53550a3e470b76fb2dffa02dfcdc5d223d459",
+              "size_bytes": 18
+            },
+            "digest": "5f315c53b82500ef703a4e3fa43b224ccf3ca160f1ae0592662b949169c5e983"
+          },
+          "output": [
+            110, 111, 116, 32, 106, 115, 111, 110, 58, 32, 240, 159, 152, 128,
+            0, 239, 191, 189
+          ]
+        }
+      ],
+      "decision_history": {
+        "run_id": "run-1",
+        "events": [
+          {
+            "id": "event-1",
+            "ts": "2026-08-31T00:00:00.000Z",
+            "actor": {
+              "kind": "human",
+              "id": "reviewer-1"
+            },
+            "kind": "change_assurance.review_decided",
+            "payload": {
+              "schema_version": 1,
+              "record_id": "change-1",
+              "revision": 1,
+              "record_digest": "ea2fd46ffd5cbfc55e0da7113bbc66c9072cc2da3a29ef8b7eabdddc121c61e1",
+              "decision": "approved"
+            },
+            "prevHash": "0000000000000000000000000000000000000000000000000000000000000000",
+            "hash": "d8b8b4bfc986a9dd4083087fbb4dc35196c3c5aed7a0f1e7c1bc0f8b70057889"
+          }
+        ]
+      },
+      "audits": [
+        {
+          "proof_id": "proof-1",
+          "report_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "report": {
+            "findings": [],
+            "healthy": [],
+            "unevaluated": [
+              {
+                "obligation": "FR-063-AC-1"
+              }
+            ]
+          }
+        }
+      ],
+      "receipt_outcome": "incomplete",
+      "receipt_reasons": ["audit_not_evaluated"],
+      "receipt_digest": "9edc439c57f79d02647855f9b9d267c6329d9f1501d6c75b1ad9a326231189e9"
+    }
+  ]
+}

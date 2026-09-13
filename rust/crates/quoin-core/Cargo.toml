@@ -25,6 +25,13 @@ workspace = true
 
 [dependencies]
 quoin-assurance = { workspace = true }
+# quoin#457, the Stage 9 cutover. `quoin-core` uses only the DECIDING half —
+# sealing, verifying, lineage and the verification itself, all of which are
+# pure functions over documents. The evidence STORE is the
+# `ChangeAssuranceHost` seam, whose one production implementation is the
+# crate's own `DiskEvidenceStore`, constructed in `main.rs`. Nothing under
+# `ops/` opens a file; see `src/capabilities.rs`.
+quoin-change-assurance = { workspace = true }
 # quoin#446, the Stage 7 cutover. `quoin-core` uses only the FILESYSTEM-FREE
 # half of these two crates — `resolve_org_from_documents`, `Source`,
 # `MarketplaceManifest`, `ModuleRegistry` — plus the `GitResolver` and
@@ -39,6 +46,10 @@ quoin-modules = { workspace = true }
 # `src/capabilities.rs`.
 quoin-semantic = { workspace = true }
 quoin-completeness = { workspace = true }
+# The canonicalizer, the strict JSON reader, the digest domains and the store
+# layout, all shared with `quoin-change-assurance` so that a payload cannot
+# disagree with the digest taken over the same value (FR-100-CON-4).
+quoin-store = { workspace = true }
 quoin-validators = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }

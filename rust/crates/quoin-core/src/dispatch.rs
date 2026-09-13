@@ -27,6 +27,12 @@ pub const OPERATIONS: &[&str] = &[
     "assurance.render_case",
     "assurance.render_discharge",
     "assurance.requirement_of",
+    "change_assurance.intake",
+    "change_assurance.receipt",
+    "change_assurance.recover",
+    "change_assurance.seal_attestation",
+    "change_assurance.seal_record",
+    "change_assurance.verify_receipt",
     "completeness.assess_bundle",
     "completeness.read_frontmatter",
     "completeness.schema_refs",
@@ -79,6 +85,16 @@ pub fn dispatch(
         }
         "assurance.build_discharge" => crate::ops::assurance::build_discharge(request),
         "assurance.render_discharge" => crate::ops::assurance::render_discharge(request),
+        "change_assurance.intake" => crate::ops::change_assurance::intake(request, capabilities),
+        "change_assurance.receipt" => crate::ops::change_assurance::receipt(request, capabilities),
+        "change_assurance.recover" => crate::ops::change_assurance::recover(request, capabilities),
+        "change_assurance.seal_attestation" => {
+            crate::ops::change_assurance::seal_attestation(request)
+        }
+        "change_assurance.seal_record" => {
+            crate::ops::change_assurance::seal_record(request, capabilities)
+        }
+        "change_assurance.verify_receipt" => crate::ops::change_assurance::verify_receipt(request),
         "completeness.assess_bundle" => crate::ops::completeness::assess_bundle(request),
         "completeness.read_frontmatter" => crate::ops::completeness::read_frontmatter(request),
         "completeness.schema_refs" => crate::ops::completeness::schema_refs(request),
@@ -256,6 +272,31 @@ mod tests {
             "assurance",
             "assurance.rs",
             include_str!("ops/assurance.rs"),
+        ),
+        (
+            "change_assurance",
+            "change_assurance/mod.rs",
+            include_str!("ops/change_assurance/mod.rs"),
+        ),
+        (
+            "change_assurance",
+            "change_assurance/support.rs",
+            include_str!("ops/change_assurance/support.rs"),
+        ),
+        (
+            "change_assurance",
+            "change_assurance/taxonomy.rs",
+            include_str!("ops/change_assurance/taxonomy.rs"),
+        ),
+        (
+            "change_assurance",
+            "change_assurance/tests.rs",
+            include_str!("ops/change_assurance/tests.rs"),
+        ),
+        (
+            "change_assurance",
+            "change_assurance/wire.rs",
+            include_str!("ops/change_assurance/wire.rs"),
         ),
         (
             "completeness",
@@ -573,25 +614,13 @@ mod tests {
         );
     }
 
-    /// The transport ceiling stays strictly above every domain bound.
+    /// Every domain bound in the crate, named one by one.
     ///
-    /// Each `ops::*` bound refuses with the `op` that refused and the quantity
-    /// it measured. The transport refusal carries neither, because it fires
-    /// before the bytes are a request at all. If this ceiling ever met or fell
-    /// below a domain bound, the transport verdict would shadow that domain's
-    /// and the domain's own refusal would become unreachable through the
-    /// binary — compiled, unit-tested, and dead. The failure mode is silent,
-    /// so it is asserted rather than commented (quoin#448 FND-003).
-    ///
-    /// `ops::validators::MAX_RUN_REQUEST_BYTES` is the one this is really for:
-    /// it is the largest request the boundary accepts, and the transport
-    /// ceiling above it is what stops the read before that bound can be
-    /// measured on something unbounded.
-    #[test]
-    fn tc_412_the_transport_ceiling_stays_above_every_domain_bound() {
-        // Every domain bound in the crate, named one by one: a scan would find
-        // whatever it found, and find nothing once the constants are renamed.
-        let domain_bounds = [
+    /// A scan would find whatever it found, and find nothing once the constants
+    /// are renamed; `declared_domain_bounds()` checks this list against the
+    /// `ops` sources instead.
+    fn domain_bounds() -> [(&'static str, usize); 22] {
+        [
             (
                 "ops::core::MAX_ECHO_BYTES",
                 crate::ops::core::MAX_ECHO_BYTES,
@@ -607,6 +636,34 @@ mod tests {
             (
                 "ops::assurance::MAX_OBLIGATION_ID_BYTES",
                 crate::ops::assurance::MAX_OBLIGATION_ID_BYTES,
+            ),
+            (
+                "ops::change_assurance::MAX_INTAKE_BYTES",
+                crate::ops::change_assurance::MAX_INTAKE_BYTES,
+            ),
+            (
+                "ops::change_assurance::MAX_RECEIPT_BYTES",
+                crate::ops::change_assurance::MAX_RECEIPT_BYTES,
+            ),
+            (
+                "ops::change_assurance::MAX_RECOVER_BYTES",
+                crate::ops::change_assurance::MAX_RECOVER_BYTES,
+            ),
+            (
+                "ops::change_assurance::MAX_SCALAR_BYTES",
+                crate::ops::change_assurance::MAX_SCALAR_BYTES,
+            ),
+            (
+                "ops::change_assurance::MAX_SEAL_ATTESTATION_BYTES",
+                crate::ops::change_assurance::MAX_SEAL_ATTESTATION_BYTES,
+            ),
+            (
+                "ops::change_assurance::MAX_SEAL_RECORD_BYTES",
+                crate::ops::change_assurance::MAX_SEAL_RECORD_BYTES,
+            ),
+            (
+                "ops::change_assurance::MAX_VERIFY_RECEIPT_BYTES",
+                crate::ops::change_assurance::MAX_VERIFY_RECEIPT_BYTES,
             ),
             (
                 "ops::completeness::MAX_MANIFEST_BYTES",
@@ -652,7 +709,28 @@ mod tests {
                 "ops::semantic::MAX_SWEEP_CORPUS_BYTES",
                 crate::ops::semantic::MAX_SWEEP_CORPUS_BYTES,
             ),
-        ];
+        ]
+    }
+
+    /// The transport ceiling stays strictly above every domain bound.
+    ///
+    /// Each `ops::*` bound refuses with the `op` that refused and the quantity
+    /// it measured. The transport refusal carries neither, because it fires
+    /// before the bytes are a request at all. If this ceiling ever met or fell
+    /// below a domain bound, the transport verdict would shadow that domain's
+    /// and the domain's own refusal would become unreachable through the
+    /// binary — compiled, unit-tested, and dead. The failure mode is silent,
+    /// so it is asserted rather than commented (quoin#448 FND-003).
+    ///
+    /// `ops::validators::MAX_RUN_REQUEST_BYTES` is the one this is really for:
+    /// it is the largest request the boundary accepts, and the transport
+    /// ceiling above it is what stops the read before that bound can be
+    /// measured on something unbounded.
+    #[test]
+    fn tc_412_the_transport_ceiling_stays_above_every_domain_bound() {
+        // Every domain bound in the crate, named one by one: a scan would find
+        // whatever it found, and find nothing once the constants are renamed.
+        let domain_bounds = domain_bounds();
         // The census is hand-written, so it is checked against the `ops`
         // sources rather than against itself. A literal count (`len() == 6`)
         // is the quoin#443 shape: `domain_bounds` is the array directly above

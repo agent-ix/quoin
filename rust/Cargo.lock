@@ -2985,10 +2985,12 @@ version = "0.1.0"
 dependencies = [
  "engineering-assurance",
  "quoin-assurance",
+ "quoin-change-assurance",
  "quoin-completeness",
  "quoin-config",
  "quoin-modules",
  "quoin-semantic",
+ "quoin-store",
  "quoin-validators",
  "schemars",
  "serde",
