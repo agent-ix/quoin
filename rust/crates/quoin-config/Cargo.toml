@@ -27,4 +27,10 @@ schemars = { workspace = true }
 serde_yaml_ng = "=0.10.0"
 
 [dev-dependencies]
+# For the test-local `PluginConfigSchema` in `tests/config_service.rs`: the
+# trait's `json_schema` names `schemars::Schema` in return position, so an
+# integration test cannot implement it without the crate in scope. Same
+# workspace pin as the runtime dependency above, so no second version enters
+# the graph that `multiple-versions = "deny"` would then reject.
+schemars = { workspace = true }
 tempfile = "=3.27.0"

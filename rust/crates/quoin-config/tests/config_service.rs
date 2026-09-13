@@ -366,3 +366,62 @@ fn tc_381_130_get_key_reports_declared_unset_and_refuses_undeclared() {
         ConfigErrorCode::UnknownConfigKey
     );
 }
+
+/// A schema declaring a [`KeyKind::Complex`] key.
+///
+/// `QuoinConfig` declares only scalars, so nothing in the shipped schema
+/// reaches the complex branch of `set_key`. That branch converts a parsed
+/// `serde_json::Value` into YAML, and the conversion it must NOT use is
+/// `serde_yaml_ng::to_value`: with `serde_json/arbitrary_precision` enabled
+/// anywhere in the workspace — it is a global, unifying feature, so one
+/// dependency edge turns it on for every crate — a number leaves the serde
+/// data model as the private marker map `{"$serde_json::private::Number": "7"}`
+/// and that is what a non-serde_json serializer writes. See quoin#440.
+#[derive(Debug, Default, PartialEq, Eq, serde::Serialize)]
+struct ComplexSchema;
+
+impl quoin_config::PluginConfigSchema for ComplexSchema {
+    fn plugin_id() -> quoin_config::PluginId {
+        quoin_config::PluginId::new("quoin").expect("legal plugin id")
+    }
+
+    fn env_bindings() -> &'static [quoin_config::schema::EnvBinding] {
+        &[]
+    }
+
+    fn validate(_value: &serde_yaml_ng::Value) -> Result<Self, Vec<quoin_config::ConfigIssue>> {
+        Ok(Self)
+    }
+
+    fn key_kind(key_path: &str) -> quoin_config::schema::KeyKind {
+        match key_path {
+            "limits" => quoin_config::schema::KeyKind::Complex,
+            _ => quoin_config::schema::KeyKind::Unknown,
+        }
+    }
+
+    fn json_schema() -> schemars::Schema {
+        QuoinConfig::json_schema()
+    }
+}
+
+/// Trace: FR-027-AC-1
+#[test]
+fn tc_381_131_set_key_writes_a_complex_value_as_yaml_not_as_a_serde_marker() {
+    let f = fixture();
+    let svc: ConfigService<'_, ComplexSchema> = ConfigService::for_plugin(&f.env, &f.ctx);
+    let mut log = IncidentLog::new();
+
+    svc.set_key("limits", r#"{"retries":7,"deep":[1,{"n":2}]}"#, &mut log)
+        .expect("a complex key accepts JSON");
+
+    let text = fs::read_to_string(&f.user_config).expect("file written");
+    assert!(
+        !text.contains("$serde_json::private::Number"),
+        "a number was written as serde_json's private arbitrary-precision \
+         marker instead of as a number — the JSON→YAML bridge regressed to \
+         `serde_yaml_ng::to_value`; see quoin#440:\n{text}"
+    );
+    assert!(text.contains("retries: 7"), "body: {text:?}");
+    assert!(text.contains("n: 2"), "nested number: {text:?}");
+}

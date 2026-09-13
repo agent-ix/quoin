@@ -142,7 +142,17 @@ fn tc_381_234_manifest_refusals_match_the_oracle() {
     for case in cases {
         let input = &case["input"];
         let expected_ok = case["result"]["ok"].as_bool().expect("ok flag");
-        let yaml = serde_yaml_ng::to_string(input).expect("json converts to yaml");
+        // JSON text, not `serde_yaml_ng::to_string(input)`. YAML 1.2 is a
+        // superset of JSON, so the golden's own bytes are already legal input,
+        // and feeding them directly is the more faithful oracle. Re-serialising
+        // a `serde_json::Value` through a NON-serde_json serializer is not
+        // faithful: under `serde_json/arbitrary_precision` every number leaves
+        // the serde data model as `{"$serde_json::private::Number": "7"}`, and
+        // `from_yaml` then correctly refuses a manifest that is in fact legal.
+        // That feature is global and unifying — any crate in the workspace
+        // turns it on for every other crate — so this bridge is only ever one
+        // dependency edge away from breaking. See quoin#440.
+        let yaml = serde_json::to_string(input).expect("golden serialises");
         let actual_ok = MarketplaceManifest::from_yaml(&yaml).is_ok();
         assert_eq!(actual_ok, expected_ok, "manifest {input}");
     }

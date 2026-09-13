@@ -335,7 +335,25 @@ impl<'a, S: PluginConfigSchema + Default + serde::Serialize> ConfigService<'a, S
                         expected: "object or array".to_owned(),
                         detail: e.to_string(),
                     })?;
-                serde_yaml_ng::to_value(parsed).map_err(|e| ConfigError::ConfigSetParse {
+                // Through JSON TEXT, never `serde_yaml_ng::to_value(parsed)`.
+                // `serde_json::Value` only survives a NON-serde_json serializer
+                // while `serde_json/arbitrary_precision` is off; with it on,
+                // every number leaves the serde data model as the private
+                // marker map `{"$serde_json::private::Number": "7"}` and that
+                // is what would be written to the user's config file. The
+                // feature is global and unifying, so one dependency edge
+                // anywhere in the workspace enabling it silently corrupts
+                // `quoin config set` for every complex value containing a
+                // number. serde_json's own serializer renders the token
+                // correctly, and YAML 1.2 is a superset of JSON, so a text
+                // round-trip is both faithful and immune. See quoin#440.
+                let json =
+                    serde_json::to_string(&parsed).map_err(|e| ConfigError::ConfigSetParse {
+                        key_path: key_path.to_owned(),
+                        expected: "object or array".to_owned(),
+                        detail: e.to_string(),
+                    })?;
+                serde_yaml_ng::from_str(&json).map_err(|e| ConfigError::ConfigSetParse {
                     key_path: key_path.to_owned(),
                     expected: "object or array".to_owned(),
                     detail: e.to_string(),
