@@ -387,3 +387,117 @@ quoin#471; it was discharged here.
 deadline and the retry interval are unchanged; only their source is injectable,
 so `tests/tc_472_operational_lock.rs` can state the refusal instead of sleeping
 ten seconds for it.
+
+# Wave 4 — intake, the record-id encoding, and the agent-eval producer (quoin#471)
+
+`src/measurement/intervention.ts` and `src/measurement/agent-eval-intervention.ts`,
+ported under `src/intervention/`. The retained TypeScript is unchanged and
+remains the oracle until the cutover (quoin#479).
+
+The strongest evidence that these divergences are the only ones that matter:
+`tc_471_the_producer_reproduces_the_retained_record` runs the ported producer
+on the retained definition and the two retained agent-eval reports and gets the
+retained record back **byte for byte**. Everything below is a difference that
+the one retained production does not exercise.
+
+## §12 — Wave 4 divergences
+
+### §12.1 — the `blake3:` immutable-version alternative is dropped
+
+`agent-eval-intervention.ts:11-12` admits `blake3:<64 hex>` beside `sha256:`,
+a git object name and a semantic version. `ImmutableVersion` admits the other
+three and refuses that one.
+
+Separating input: `"cli_agent_evals_version": "blake3:<64 hex>"` in a producer
+definition — accepted there, refused here.
+
+**Narrowing, and deliberate.** quoin#409 recorded that no quoin producer emits a
+BLAKE3 digest for this field, the Stage 6 plan §4 rules it dropped rather than
+carried, and nothing in the retained corpus uses it. The crate's
+`tc_468_boundary` census reads the lower-case token as a second hasher, so
+`version.rs` spells the algorithm in upper case and its test builds the prefix
+by concatenation. Held as an assertion —
+`the_dropped_digest_alternative_is_gone` — rather than only as this paragraph.
+
+### §12.2 — `observed_at` is validated by one RFC 3339 grammar, not two
+
+`intervention.ts:24-26` registers `isRfc3339DateTime` as ajv's `date-time`
+format and `semanticFindings` calls the same function again. Both here go
+through `crate::date_time::Rfc3339DateTime`, the crate's one grammar, which
+§2.1 already records as the permissive one of quoin's six. So a record whose
+`observed_at` is accepted by the permissive grammar and refused by a stricter
+one is accepted here and in the retained code alike; what changed is that there
+is no second grammar to disagree with.
+
+### §12.3 — schema finding text is ajv's there and `jsonschema`'s here
+
+`intervention.ts:51-56` renders `` `${instancePath || "/"}: ${message}` ``. The
+instance path and the verdict agree; the sentence after the colon is each
+library's own. quoin#470's `DIVERGENCE.md` records this for the vendored
+schemas generally and this wave inherits it — a caller matching on refusal text
+rather than on `InterventionRefusalCode` is relying on something neither
+implementation promises.
+
+### §12.4 — scenario ids are ordered by UTF-8 bytes
+
+`reportFrom` builds a `Map` and the producer sorts its keys with the default
+comparator, which is UTF-16 code-unit order. `AgentEvalReport` holds a
+`BTreeMap`, which is UTF-8 byte order. The two orders differ only for scenario
+ids containing characters outside the Basic Multilingual Plane — the same
+divergence §6 records for record ordering, with the same separating input and
+the same conclusion: not reconciled, and no retained report contains one.
+
+### §12.5 — a report with no `results` array gets a sentence
+
+`agent-eval-intervention.ts:159` reaches `(report.results as unknown[]).entries()`
+with no check, so a report lacking `results` throws a bare `TypeError` whose
+message is V8's. `AgentEvalReport::parse` refuses with
+`"{label} agent-eval report lacks a results array"` under
+`InterventionRefusalCode::InvalidRecord`.
+
+Unreachable through the producer: `quoin_evidence::adapters::parse_agent_eval`
+is the FR-042 boundary and runs first, and it already refuses a report with no
+`results` array. Reachable only by calling `AgentEvalReport::parse` directly,
+which the producer is the only caller of.
+
+### §12.6 — what `digest_file_sha256` refuses that `readFileSync` does not
+
+`intervention.ts:120` digests whatever `readFileSync` returns.
+`quoin_store::digest_file_sha256` (`quoin-store/src/digest.rs:470-514`) stats
+first and refuses three things the retained reader accepts:
+
+- a file larger than `MAX_DIGESTED_FILE_BYTES` (256 MiB),
+- a path that is not a regular file — a FIFO, a device, a socket,
+- a file that shrinks between the stat and the read (a short read).
+
+**The symlink case, honestly:** quoin#407 is filed as a symlink divergence, and
+`digest_file_sha256` does refuse a symlink. On *this* path it never sees one.
+`DiskMeasurement::resolve_raw_evidence` canonicalises before digesting — it has
+to, because that canonicalisation is how `resolveRawPath`'s escape check is
+performed — so a symlink that stays inside the evidence store is followed by
+both implementations and digests to the same bytes, and one that leaves the
+store is refused earlier and for a different reason. Both halves are asserted in
+`tc_471_raw_evidence_resolution_refuses_every_escape` on a real tree with real
+symlinks. The reachable part of quoin#407 here is the 256 MiB ceiling and the
+non-regular-file refusal; the symlink refusal is unreachable through raw-evidence
+resolution.
+
+Not reconciled. All three refusals are strengthenings on evidence quoin retains
+and digests, and no retained evidence file is affected.
+
+### §12.7 — the retained record's file name predates the `p-`/`b-` namespacing
+
+Not a port divergence: the two implementations agree, and the store does not.
+
+`intervention.ts:39-45` names a record's file `p-<record_id>.json` or
+`b-<base64url>.json`. The one retained record is at
+`spec/evidence/interventions/quoin-270-cli-eval-sentinel-contract.json`, with no
+prefix — it was published before that encoding landed. Reads are unaffected
+(both implementations list the directory), but a re-publication of that record
+by either implementation writes a second file beside it rather than over it.
+
+Filed as **quoin#486** against the retained store, not absorbed here.
+`tc_471_the_producer_reproduces_the_retained_record` asserts the produced path
+is the `p-` one *and* that the unprefixed name is no longer what the writer
+chooses, so renaming the retained file fails this test and points at this
+paragraph.

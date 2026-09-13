@@ -22,6 +22,7 @@
 
 use serde_json::{Map, Value};
 
+use crate::common::scalar::js_string;
 use crate::operational::clock::{check_clock, instant_at};
 use crate::operational::record::VersionPinKind;
 
@@ -128,7 +129,13 @@ fn check_pins(record: &Map<String, Value>, findings: &mut Vec<String>) {
         .unwrap_or_default();
     let mut seen: Vec<(String, String)> = Vec::new();
     for (index, pin) in pins.iter().enumerate() {
-        let key = (rendered(pin.get("kind")), rendered(pin.get("identity")));
+        // `String(x)` is `common::scalar::js_string`, not a second spelling
+        // of it: the local one quoin#472 landed here wrote a number with
+        // serde_json's `to_string` (`1` as `1.0`, `1e21` as `1e21`) and an
+        // array as `[object Array]`, where `String([1,2])` is `1,2`. The
+        // schema constrains both members to strings so no retained record
+        // separates them, but a refused record's finding is the oracle's now.
+        let key = (js_string(pin.get("kind")), js_string(pin.get("identity")));
         if seen.contains(&key) {
             findings.push(format!(
                 "/configuration/version_pins/{index}: duplicate kind/identity"
@@ -169,24 +176,6 @@ fn positive_integer(value: Option<&Value>) -> bool {
     value
         .and_then(Value::as_f64)
         .is_some_and(|number| number.fract() == 0.0 && number > 0.0)
-}
-
-/// `String(value)` for the scalars a pin's discriminant can be.
-///
-/// The schema constrains both members to strings, so a composite value only
-/// reaches here inside a record the schema pass already refused; it is rendered
-/// as one opaque spelling rather than walked, because the only use of the
-/// rendering is telling two pins apart.
-fn rendered(value: Option<&Value>) -> String {
-    match value {
-        None => "undefined".to_owned(),
-        Some(Value::Null) => "null".to_owned(),
-        Some(Value::Bool(flag)) => flag.to_string(),
-        Some(Value::Number(number)) => number.to_string(),
-        Some(Value::String(text)) => text.clone(),
-        Some(Value::Array(_)) => "[object Array]".to_owned(),
-        Some(Value::Object(_)) => "[object Object]".to_owned(),
-    }
 }
 
 #[allow(

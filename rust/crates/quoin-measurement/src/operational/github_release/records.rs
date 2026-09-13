@@ -12,7 +12,7 @@ use std::collections::BTreeMap;
 
 use serde_json::{Map, Value};
 
-use crate::common::identity::{Digest, EvidencePath, MediaType, RecordId, WireInstant};
+use crate::common::identity::{RecordId, WireInstant};
 use crate::common::producer::Producer;
 use crate::common::recorded_evidence::RecordedEvidenceReference;
 use crate::common::scalar::EnvironmentValue;
@@ -58,14 +58,11 @@ pub(super) fn raw_evidence(
     ]
     .into_iter()
     .map(|path| {
-        let minted = raw_evidence_for(source, path.as_str(), media_type_for(path))
-            .map_err(|error| GitHubReleaseError::Input(error.to_string()))?;
-        Ok(RecordedEvidenceReference {
-            path: EvidencePath::from_stored(minted.path.as_str()),
-            media_type: MediaType::from_stored(minted.media_type.as_str()),
-            size_bytes: minted.size_bytes,
-            digest: Digest::from_stored(minted.digest.to_stored()),
-        })
+        // `From<RawEvidenceReference>` (quoin#471), not a widening written out
+        // here: minted-to-recorded is one conversion and it has one home.
+        raw_evidence_for(source, path.as_str(), media_type_for(path))
+            .map(RecordedEvidenceReference::from)
+            .map_err(|error| GitHubReleaseError::Input(error.to_string()))
     })
     .collect()
 }

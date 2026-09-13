@@ -97,6 +97,24 @@ impl std::fmt::Display for RawEvidencePath {
 }
 
 /// One raw-evidence reference, as `rawEvidenceFor` mints it.
+///
+/// # Two types, not three
+///
+/// This crate describes a retained evidence file with **exactly two** types,
+/// and `tests/tc_471_evidence_reference_types.rs` fails if a third appears.
+/// They are the two trust levels the domain actually has:
+///
+/// | type | who makes it | what holding it proves |
+/// | --- | --- | --- |
+/// | `RawEvidenceReference` | [`raw_evidence_for`], from the file | the path is safe, the media type is non-empty, the digest is a sha256 the store itself took |
+/// | [`RecordedEvidenceReference`] | serde, from a stored record | nothing — it is what the record *claims* |
+///
+/// quoin#468 landed a third, `RawEvidenceClaim`, holding bare `String`s for the
+/// same claim [`RecordedEvidenceReference`] already carried. It is gone:
+/// `verify_raw_evidence_references` takes the record's own field, which is what
+/// the caller has anyway, and the conversion only runs upward — a minted
+/// reference becomes a recorded one through [`From`], and there is no
+/// conversion back, because a claim is not evidence.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct RawEvidenceReference {
     /// The store-root-relative path.
@@ -107,6 +125,22 @@ pub struct RawEvidenceReference {
     pub size_bytes: u64,
     /// The file's sha256 digest.
     pub digest: RawFileSha256Digest,
+}
+
+impl From<RawEvidenceReference> for RecordedEvidenceReference {
+    /// Widen a minted reference to the form a record stores.
+    ///
+    /// One direction only. Going the other way would mean minting proof from a
+    /// claim, which is the whole thing `verify_raw_evidence_references` exists
+    /// to refuse.
+    fn from(value: RawEvidenceReference) -> Self {
+        Self {
+            path: crate::common::identity::EvidencePath::from_stored(value.path.as_str()),
+            media_type: crate::common::identity::MediaType::from_stored(value.media_type.as_str()),
+            size_bytes: value.size_bytes,
+            digest: crate::common::identity::Digest::from_stored(value.digest.to_stored()),
+        }
+    }
 }
 
 /// Mint a raw-evidence reference for a retained file.

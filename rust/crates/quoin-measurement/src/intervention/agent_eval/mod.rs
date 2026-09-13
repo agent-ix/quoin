@@ -1,10 +1,32 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
-//! The agent-eval producer definition.
+//! The agent-eval producer: its definition, and the record it produces.
 //!
-//! A port of `intervention-types.ts:82-102` — the declaration only. The
-//! producer that reads one and writes an intervention record is
-//! `agent-eval-intervention.ts`, which lands with quoin#471.
+//! | retained TypeScript | here |
+//! | --- | --- |
+//! | `intervention-types.ts:82-102` | this module's declarations |
+//! | `agent-eval-intervention.ts:11-12,183-215` | [`version`] |
+//! | `agent-eval-intervention.ts:134-181` | [`report`] |
+//! | `agent-eval-intervention.ts:14-132` | [`produce`] |
+//!
+//! # What the producer refuses with
+//!
+//! The retained producer throws bare `Error`s. Every refusal here is an
+//! [`InterventionIntakeError`](crate::intervention::intake::InterventionIntakeError)
+//! instead, because a caller that already handles intake refusals should not
+//! need a second error family to call the producer that feeds it. The mapping
+//! is deliberate and is the whole of it: a definition the producer will not
+//! accept is `definition_mismatch`; a retained agent-eval report it cannot read
+//! is `invalid_record`, since what failed is the record the producer was asked
+//! to assemble. The refusal *sentences* are the retained ones.
+
+pub mod produce;
+pub mod report;
+pub mod version;
+
+pub use produce::{ProducedIntervention, produce_agent_eval_intervention};
+pub use report::{AgentEvalReport, ScenarioRate};
+pub use version::{ImmutableVersion, ImmutableVersionKind};
 
 use serde::{Deserialize, Serialize};
 
