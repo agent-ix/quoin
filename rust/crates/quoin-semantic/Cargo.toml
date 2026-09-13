@@ -1,0 +1,47 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 Agent-IX
+[package]
+name = "quoin-semantic"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+description = "Semantic-module contract: manifest block, data_schema resolution, derived package manifest, legacy-form sweep (quoin FR-070/FR-073/FR-074/FR-075)."
+publish.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+serde = { workspace = true }
+# Deliberately WITHOUT `serde_json/preserve_order`. Enabling it anywhere in
+# this workspace swaps serde_json's `Map` from `BTreeMap` to `IndexMap` for
+# every crate, which silently turns off the key sorting
+# `quoin-core::protocol::canonical_json` depends on. Measured, not assumed:
+# with it on, `quoin-core` loses two tests and this crate's goldens still
+# pass. See DIVERGENCE.md §10.
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+# Exact pin. The error-*kind* enum is the surface the ajv-parity diagnostic
+# mapping is written against, so a minor bump is a reviewable change, not a
+# silent one. See DIVERGENCE.md §1 for why 0.56 rather than the 0.17/0.18 pins
+# elsewhere in the ecosystem.
+jsonschema = { workspace = true }
+# The one YAML reader on the boundary. It resolves scalars under the YAML 1.2
+# core schema, matching the `yaml` npm package the oracle uses. Do NOT swap in
+# a libyaml binding (`serde_yaml`, `serde_norway`, `serde_yml`): those are
+# YAML 1.1 and the difference is verdict-level. See DIVERGENCE.md §6 (D4).
+quoin-yaml = { workspace = true }
+sha2 = { workspace = true }
+hex = "=0.4.3"
+
+[dev-dependencies]
+# Raised from =3.24.0 on the merge with main. `quoin-validators` (quoin#377,
+# already on main) pins `tempfile = "=3.27.0"`, and cargo cannot resolve two
+# exact pins of one crate in one workspace graph — a conflict git does not mark
+# because the two pins live in different files. Converged UPWARD, per the rule
+# that a pin moves up and never down; 3.27.0 is API-compatible for the
+# `TempDir`/`NamedTempFile` use here.
+tempfile = "=3.27.0"

@@ -59,7 +59,8 @@ function decision(
   };
 }
 
-describe("TC-297 a decision is scoped to one use", () => {
+describe("a decision is scoped to one use", () => {
+  // Trace: FR-093-AC-1, FR-093-AC-2
   it("accepts an exact observed context without making a global tool badge", () => {
     expect(assessTrust(decision())).toMatchObject({
       id: "ETD-001",
@@ -70,7 +71,8 @@ describe("TC-297 a decision is scoped to one use", () => {
   });
 });
 
-describe("TC-298 changed context invalidates", () => {
+describe("changed context invalidates", () => {
+  // Trace: FR-093-AC-3, FR-093-CON-3
   it("names every triggered field and never falls back to accepted", () => {
     const changed = decision();
     changed.observedContext = {
@@ -84,7 +86,8 @@ describe("TC-298 changed context invalidates", () => {
   });
 });
 
-describe("TC-299 absence is not acceptance or rejection", () => {
+describe("absence is not acceptance or rejection", () => {
+  // Trace: FR-093-AC-4, FR-093-CON-3
   it("reports an accepted decision with no observed context as unobserved", () => {
     const absent = decision();
     delete absent.observedContext;
@@ -92,7 +95,8 @@ describe("TC-299 absence is not acceptance or rejection", () => {
   });
 });
 
-describe("TC-300 the same producer can have different use decisions", () => {
+describe("the same producer can have different use decisions", () => {
+  // Trace: FR-093-AC-5
   it("keeps use identity and accountable decision separate", () => {
     const accepted = decision("ETD-001", "advisory-review");
     const refused = decision("ETD-002", "automatic-release-approval");
@@ -103,7 +107,8 @@ describe("TC-300 the same producer can have different use decisions", () => {
   });
 });
 
-describe("TC-301 trust records are canonical and invalid files stay visible", () => {
+describe("trust records are canonical and invalid files stay visible", () => {
+  // Trace: FR-093-AC-6
   it("round-trips valid decisions and reports skipped invalid records", () => {
     const repo = mkdtempSync(join(tmpdir(), "quoin-trust-"));
     const path = writeTrustDecision(repo, decision());
@@ -118,7 +123,8 @@ describe("TC-301 trust records are canonical and invalid files stay visible", ()
   });
 });
 
-describe("TC-302 assurance renders trust as context", () => {
+describe("assurance renders trust as context", () => {
+  // Trace: FR-093-AC-7
   it("shows invalidation without changing claim support", () => {
     const changed = decision();
     changed.observedContext = context("1.1.0");

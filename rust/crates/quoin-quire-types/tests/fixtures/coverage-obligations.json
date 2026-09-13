@@ -1,0 +1,63 @@
+{
+  "obligations": [
+    {
+      "document": "spec/functional/FR-028-generate-property-tests-from-criteria.md",
+      "id": "FR-028-AC-10",
+      "method": "Inspection",
+      "source": "acceptance-criterion",
+      "statement": "No specification artifact the skill writes names a test framework, harness, or generator library",
+      "statement_hash": "4a3b3292d2605f5a8eef0b99d74cc1e2fddc0bea1e2f32239928120be6c7d950"
+    },
+    {
+      "document": "spec/functional/FR-001-parse-command-line.md",
+      "id": "FR-001-AC-1",
+      "method": "Test",
+      "source": "acceptance-criterion",
+      "statement": "Both `--flag=value` and `--flag value` bind the value",
+      "statement_hash": "a8f326d89cecd5cee8741093c36f254c0b99c65a8e269359812ccf6f2ed7452f",
+      "target_ids": ["cli.test.ts"]
+    },
+    {
+      "document": "spec/non-functional/NFR-007-external-tool-invocation.md",
+      "id": "NFR-007-AC-1",
+      "method": "Demonstration",
+      "source": "nfr-acceptance-criterion",
+      "statement": "The absence of external-tool version pinning is an accepted limitation, recorded here rather than as a metric; it is revisited if pinning becomes required.",
+      "statement_hash": "7de11b22f6b43d90785f57fc5d3b64a3b3bdf0ad63605814489872a613fefaf6"
+    },
+    {
+      "document": "spec/non-functional/NFR-005-catalog-driven-workflows.md",
+      "id": "NFR-005-AC-1",
+      "method": "Test",
+      "source": "nfr-acceptance-criterion",
+      "statement": "The Status vocabulary that `skills/spec-matrix/SKILL.md` and both of its asset templates teach equals the classed status set the installed `spec-artifacts-process` manifest declares (`traceability.status`), and every taught marker is admitted by the manifest's Status column pattern; divergence in either direction fails the suite. A marker the manifest admits but classes as nothing is deliberately not required to be taught.",
+      "statement_hash": "219b6ae38de5e96e46bd1060deed180f63a13d68ed74ecc9033ee84312bba9ee",
+      "target_ids": ["TC-271"]
+    },
+    {
+      "document": "spec/non-functional/NFR-001-idempotent-offline-reconcile.md",
+      "id": "NFR-001-M-1",
+      "method": "Test",
+      "parameters": {
+        "target": "0",
+        "threshold": "0"
+      },
+      "source": "nfr-metric",
+      "statement": "Network/git operations on repeat catalog access after install",
+      "statement_hash": "050c8c68cfe526cbd4e93ab5dc81d62ac5146ce91adb646b594ed5b58a2308e7"
+    },
+    {
+      "document": "spec/non-functional/NFR-013-traceable-semantic-architecture.md",
+      "id": "NFR-013-M-1",
+      "method": "Test",
+      "parameters": {
+        "target": "100%",
+        "threshold": "100%"
+      },
+      "source": "nfr-metric",
+      "statement": "Normative architecture claims with a requirement or decision reference",
+      "statement_hash": "f60ae02c8f687f13be8b8ab49e340b057e27eaceec947008cbc89c93851b4ad2",
+      "target_ids": ["TC-1151"]
+    }
+  ]
+}

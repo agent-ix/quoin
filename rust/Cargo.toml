@@ -53,12 +53,59 @@ publish = false
 # Exact pins, matching quire-corpus. A caret range makes the gate a claim about
 # whatever resolved that morning; `=` makes it a claim about these bytes.
 [workspace.dependencies]
+quoin-assurance = { path = "crates/quoin-assurance" }
 quoin-core = { path = "crates/quoin-core" }
+quoin-evidence-types = { path = "crates/quoin-evidence-types" }
+quoin-finding-types = { path = "crates/quoin-finding-types" }
+quoin-quire-types = { path = "crates/quoin-quire-types" }
 quoin-schemas = { path = "crates/quoin-schemas" }
-serde = { version = "=1.0.228", features = ["derive"] }
-serde_json = "=1.0.150"
-thiserror = "=2.0.18"
+quoin-yaml = { path = "crates/quoin-yaml" }
+# Raised from =1.0.228 by quoin#378: `serde_derive` 1.0.228 builds on `syn` 2
+# while `thiserror-impl` 2.0.20 builds on `syn` 3, and `multiple-versions =
+# "deny"` forbids carrying both. 1.0.229 moves `serde_derive` to `syn` 3, which
+# resolves the half of that duplicate we own. See the `syn` entry in
+# `deny.toml`'s `[bans] skip` for the half we do not. `engineering-assurance`
+# 0.3.1 (on main) requires exactly 1.0.229, so the two sides already agree.
+serde = { version = "=1.0.229", features = ["derive"] }
+# FR-097: the JSON Schema the generated TypeScript surface is derived from.
+# Exact pin for the same reason as every other line here — the generated file
+# is hash-asserted, so the generator's version is part of the contract and a
+# caret range would let a patch release silently move the digest.
+#
+# 1.2.2 AND NOT 1.2.1, and the difference is `multiple-versions = "deny"`
+# rather than taste. `schemars_derive` 1.2.2 is on `syn` 3, which is where
+# `serde_derive` 1.0.229 also is; 1.2.1 is on `syn` 2 and would put two `syn`
+# majors in the graph, which `cargo deny` refuses — correctly. `ref-cast` is
+# at 1.0.27 for the same reason.
+schemars = { version = "=1.2.2", features = ["derive"] }
+# Raised from =1.0.150 (this branch) to =1.0.151 (main) on merge: main's pin is
+# the higher of the two and a pin moves UP, never down. Nothing on this branch
+# requires 1.0.150 specifically; it was simply the latest when the branch was
+# cut.
+serde_json = "=1.0.151"
+# The digest under the FR-097 hash assertion. Exact pin like everything else.
+#
+# 0.10.9 AND NOT 0.11.0, and the reason is an upstream requirement rather than
+# taste: `quire-rs 0.46.0` — linked by quoin-quire — depends on sha2 0.10.9,
+# and `multiple-versions = "deny"` forbids carrying both majors. quoin#380
+# (quoin-store) arrived pinning sha2 at =0.11.0 in its own manifest, which is
+# a duplicate git does not mark because the two pins live in different files;
+# quoin-store now takes this pin instead. Nothing that has landed moved: this
+# line is unchanged, and the unlanded pin converged onto it. Raising the
+# workspace to 0.11.0 would not resolve the duplicate, only swap which side of
+# it we own — verified with `cargo tree -i sha2@0.10.9`, whose only path is
+# `quire-rs <- quoin-quire`. Nothing is lost by converging here: SHA-256 is
+# SHA-256, and 0.11.0 changes the `digest` trait crate beneath it, not the
+# bytes it produces. When quire-rs advances, this pin moves up with it.
+sha2 = "=0.10.9"
+# Raised from =2.0.18 by quoin#378: `saphyr` (the YAML 1.2 core-schema reader
+# quoin-yaml wraps) requires ^2.0.20, and `multiple-versions = "deny"` in
+# deny.toml forbids carrying both. `feat/381-config-modules` raises this pin to
+# the same =2.0.20 independently, for an unrelated reason — the two branches
+# converge here; whoever merges second should not read it as drift.
+thiserror = "=2.0.20"
 jsonschema = { version = "=0.56.0", default-features = false }
+engineering-assurance = { version = "=0.3.1", git = "https://github.com/agent-ix/engineering-assurance", rev = "72b0fcd" }
 
 [profile.release]
 lto = "thin"

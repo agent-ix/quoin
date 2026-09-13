@@ -1,6 +1,5 @@
 /**
- * FR-040 — the assurance-case view (TC-221..TC-230, TC-237, TC-238, TC-261,
- * TC-262).
+ * FR-040 — the assurance-case view.
  */
 
 import { describe, expect, it } from "vitest";
@@ -103,7 +102,7 @@ describe("building the case", () => {
     expect(result.claims[0].children[0].status).toBe("open");
   });
 
-  // Trace: FR-040-AC-4
+  // Trace: FR-040-AC-4, FR-040-CON-2
   it("marks a claim nothing traces to as undeveloped, not as met", () => {
     // A goal with no sub-goal and no evidence is open. Rendering it supported
     // would assure a claim on the strength of nobody having written anything
@@ -195,7 +194,6 @@ describe("building the case", () => {
   });
 
   // Trace: FR-040-AC-13
-  // TC-261
   it("carries a machine-readable reason exactly when nothing is a claim", () => {
     // `--json` emits `buildCase`'s result verbatim, so this field is what lets
     // a pipeline tell "the case is clean" from "nothing matched, so nothing
@@ -226,7 +224,6 @@ describe("building the case", () => {
   });
 
   // Trace: FR-040-AC-14
-  // TC-262
   it("matches --claim-type case-insensitively", () => {
     // `str`, `STR` and `Hazard` all matched nothing under `===` and exited 0
     // with an empty case — silence indistinguishable from a clean corpus.
@@ -291,6 +288,60 @@ describe("rendering the case", () => {
     expect(mermaid).not.toMatch(/FR-001-AC-1\(/);
     expect(mermaid).not.toContain(";");
     expect(mermaid).not.toMatch(/"[^"\n]*"[^"\n]*"/);
+  });
+
+  // Trace: FR-040-AC-15
+  it("truncates a mermaid label on a code point, never inside one", () => {
+    // quoin#432. `String.prototype.slice` counts UTF-16 CODE UNITS, so a
+    // label whose 80th unit fell inside a surrogate pair was cut in half and
+    // rendered as U+FFFD.
+    //
+    // Constructed rather than taken from the corpus, and deliberately: no
+    // label in this repository's 991 obligations reaches the boundary with an
+    // astral character today. The nearest is FR-082-AC-3, whose emoji sits
+    // six characters short of it. Waiting for a real one is waiting for the
+    // bug.
+    //
+    // The label is `${id}: ${statement}`, so the id and its separator are
+    // part of the budget — the statement is padded to put the emoji exactly
+    // astride unit 80 of the whole label.
+    const id = "FR-001-AC-1";
+    const prefix = `${id}: `;
+    const statement = "x".repeat(80 - prefix.length) + "😀";
+    const result = buildCase({
+      documents: bundle(),
+      obligations: [obligation(id, statement)],
+      findings: [],
+    });
+    const mermaid = renderCase(result).split("```mermaid")[1].split("```")[0];
+
+    // The whole rendered block, not just the label: a lone surrogate anywhere
+    // in the output is the defect, wherever it came from.
+    expect(mermaid.isWellFormed()).toBe(true);
+    // The emoji is dropped whole rather than halved. Asserting its absence
+    // AND well-formedness together is what distinguishes "truncated cleanly"
+    // from "truncated into a replacement character".
+    expect(mermaid).not.toContain("😀");
+    expect(mermaid).not.toContain("\uFFFD");
+  });
+
+  // Trace: FR-040-AC-15
+  it("renders labels with no astral character byte for byte as before", () => {
+    // The fix must not move any byte that was already correct, which is 833
+    // of the 835 truncated labels in this repository. A 100-character ASCII
+    // statement exercises the truncation path; `Array.from` and `slice` agree
+    // on every input where one code point is one code unit.
+    const id = "FR-001-AC-1";
+    const statement = "y".repeat(100);
+    const result = buildCase({
+      documents: bundle(),
+      obligations: [obligation(id, statement)],
+      findings: [],
+    });
+    const mermaid = renderCase(result).split("```mermaid")[1].split("```")[0];
+    // No finding, so the node is supported and carries no ` ◇` suffix.
+    const expected = `${id}: ${statement}`.slice(0, 80);
+    expect(mermaid).toContain(`(["${expected}"])`);
   });
 
   // Trace: FR-040-AC-10

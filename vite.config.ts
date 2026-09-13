@@ -181,7 +181,19 @@ export default defineConfig(({ command }) => ({
     // branch's tests alongside this one's — 2220 files instead of 97 — and
     // reported failures that belong to other branches. Git already ignores the
     // directory; the test runner has to as well.
-    exclude: ["node_modules/**", "dist/**", "corpus/**", ".worktrees/**"],
+    // `rust/` is the Cargo workspace (quoin#373). Its TypeScript is tooling for
+    // the Rust suite — the one-time oracle capture that produced the golden
+    // corpus — and it imports `src/` by a path that only resolves when it is
+    // invoked deliberately with its own config. Vitest collected it as a test,
+    // failed to resolve that import, and broke the whole lane at collection.
+    // Same rule as `corpus/` below: a tree the TypeScript suite does not own.
+    exclude: [
+      "node_modules/**",
+      "dist/**",
+      "rust/**",
+      "corpus/**",
+      ".worktrees/**",
+    ],
     // Oclif enables source auto-transpilation whenever NODE_ENV=test. That
     // makes Config.load prefer src/commands/*.ts over the built command tree,
     // even though dispatch tests deliberately exercise dist/. Configure the

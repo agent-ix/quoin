@@ -3,7 +3,7 @@
 `agent-ix/quoin#380`, under EPIC `#373`.
 
 This crate produces bytes and digests that **already exist on disk**. A digest
-here is not a checksum, it is an *identifier*: a change-assurance record is
+here is not a checksum, it is an _identifier_: a change-assurance record is
 filed under its own digest and an attestation references its retained output by
 digest. A value this crate computes differently from the TypeScript it replaces
 is evidence that can no longer be found by the name it was filed under, with no
@@ -12,11 +12,11 @@ migration back.
 Everything below is therefore frozen: changing one is changing retained
 evidence, not changing code.
 
-**What this crate does and does not do.** It is a *reader and verifier*. It
+**What this crate does and does not do.** It is a _reader and verifier_. It
 parses stored documents, canonicalizes values, computes digests, replays a
 store against the TypeScript oracle, and writes bytes a caller hands it
 (`write_atomic`, `write_canonical`, `write_content_addressed`). It does **not**
-implement the change-assurance *writers*: nothing in `src/` seals a record,
+implement the change-assurance _writers_: nothing in `src/` seals a record,
 publishes an attestation pair, or files either under its digest.
 `store::record_path` and `store::attestation_path` compute the layout's paths
 and are called by no writer in this crate — `grep -rn 'record_path\|attestation_path' src/`
@@ -26,8 +26,8 @@ finds only their definitions.
 crate's tests (`tests/tc_jcs_adversarial.rs`,
 `tests/tc_change_assurance_store.rs`, the unit tests in `src/json/`, and the
 oracle case corpus in `oracle/cases.mjs`) and by the
-differential replay. Items 12 and 13 are *descriptions of the retained layout
-and of the retained TypeScript writer's behaviour*, not assertions about this
+differential replay. Items 12 and 13 are _descriptions of the retained layout
+and of the retained TypeScript writer's behaviour_, not assertions about this
 crate; each says below exactly how far this crate's tests reach. Where an item
 is not asserted, it says so rather than implying otherwise.
 
@@ -48,7 +48,7 @@ cargo run --release --bin quoin-store-replay -- \
   --oracle /tmp/store-oracle.ndjson <repo> [<repo> ...]
 ```
 
-The gate is the *number*, not the tool: a run reports digests replayed and
+The gate is the _number_, not the tool: a run reports digests replayed and
 mismatches, and only `mismatches = 0` clears it. A mismatch is never reconciled
 by adjusting the Rust until it agrees — it is reported, and a person decides.
 
@@ -64,20 +64,20 @@ The full capture is recorded in [`oracle/GATE-RESULT.md`](oracle/GATE-RESULT.md)
 with the oracle capture's sha256, the reproduction commands, the verbatim output
 of both halves, and the list of stores.
 
-| | |
-|---|---|
-| stores replayed | **90** |
-| store files | **464**, all parsed by both |
-| **compared population** | **471 of 471** store entities (464 files + 7 raw outputs) |
-| oracle entries unmatched / store entries unmatched | **0 / 0** |
-| digests replayed | **10,748,598** |
-| **digest mismatches** | **0** |
-| sealed records verified against their own digest | 8 |
-| retained outputs verified in the raw-bytes domain | 7 |
-| read → re-serialize byte-identical | 413 of 464 |
-| files Rust refused to read | 0 |
-| store-integrity findings | 0 |
-| **gate** | **PASS** (exit status 0) |
+|                                                    |                                                           |
+| -------------------------------------------------- | --------------------------------------------------------- |
+| stores replayed                                    | **90**                                                    |
+| store files                                        | **464**, all parsed by both                               |
+| **compared population**                            | **471 of 471** store entities (464 files + 7 raw outputs) |
+| oracle entries unmatched / store entries unmatched | **0 / 0**                                                 |
+| digests replayed                                   | **10,748,598**                                            |
+| **digest mismatches**                              | **0**                                                     |
+| sealed records verified against their own digest   | 8                                                         |
+| retained outputs verified in the raw-bytes domain  | 7                                                         |
+| read → re-serialize byte-identical                 | 413 of 464                                                |
+| files Rust refused to read                         | 0                                                         |
+| store-integrity findings                           | 0                                                         |
+| **gate**                                           | **PASS** (exit status 0)                                  |
 
 Every JSON node of every store file is digested on both sides and compared —
 scalars included, because number formatting and string escaping are where the
@@ -85,7 +85,7 @@ two implementations were most likely to disagree.
 
 Two results need stating rather than summarising:
 
-* **51 store files are not in canonical form on disk**, and both implementations
+- **51 store files are not in canonical form on disk**, and both implementations
   agree that they are not. They were written by producers that do not go through
   `writeCanonical`: some differ by member order only, the rest also by shape —
   raw GitHub API payloads stored compact and verbatim, and measurement records
@@ -94,7 +94,7 @@ Two results need stating rather than summarising:
   ever referenced by a digest over its on-disk bytes, that rewrite breaks the
   reference. (The per-cause split is not recomputed here; the replay reports the
   total and names each divergent file under `--verbose`.)
-* **Production change-assurance instances now exist and were replayed.** Seven
+- **Production change-assurance instances now exist and were replayed.** Seven
   attestation pairs and one sealed record, all under
   `quire-contract-ir/target/assurance/store`, written by the shipped TypeScript
   writers. All 8 sealed records verified against their own digest and all 7
@@ -111,16 +111,16 @@ Two results need stating rather than summarising:
 
 There are **two** canonical serializations and they are not interchangeable.
 
-| | RFC 8785 JCS | `canonicalJson` |
-|---|---|---|
-| shape | compact, no whitespace | 2-space indent, `": "` separator |
-| trailing newline | no | yes |
-| member order | UTF-16 code unit | ECMAScript own-property order |
-| used for | digest bytes; the `change-assurance` family on disk | every other store file |
+|                  | RFC 8785 JCS                                        | `canonicalJson`                  |
+| ---------------- | --------------------------------------------------- | -------------------------------- |
+| shape            | compact, no whitespace                              | 2-space indent, `": "` separator |
+| trailing newline | no                                                  | yes                              |
+| member order     | UTF-16 code unit                                    | ECMAScript own-property order    |
+| used for         | digest bytes; the `change-assurance` family on disk | every other store file           |
 
 1. **`STORE_SCHEMA_VERSION == 1`.**
 2. **JCS member order is UTF-16 code unit order.** Not Unicode scalar order.
-   `U+10000` (surrogate pair `D800 DC00`) sorts *before* `U+FFFD`; Rust's
+   `U+10000` (surrogate pair `D800 DC00`) sorts _before_ `U+FFFD`; Rust's
    `str: Ord` puts it after. A `BTreeMap`-ordered port silently reverses those
    two members and changes the digest.
 3. **The pretty form's member order is ECMAScript own-property order.**
@@ -128,7 +128,7 @@ There are **two** canonical serializations and they are not interchangeable.
    insertion hoists **array-index** names — the canonical decimal spelling of
    `0..=2^32-2` — ahead of everything else, in ascending numeric order, leaving
    the rest in sorted order. `{"10":_,"2":_,"a":_}` is `2, 10, a` here and
-   `10, 2, a` in JCS. `"4294967295"` is *not* an array index; `"4294967294"` is.
+   `10, 2, a` in JCS. `"4294967295"` is _not_ an array index; `"4294967294"` is.
 4. **Numbers are ECMAScript `Number::toString`.** `1e+21` with its `+`;
    `100000000000000000000` for `1e20`; `0.000001` for `1e-6` and `1e-7` for
    `1e-7`; `0` for negative zero. Rust's own formatting differs on all four.
@@ -162,12 +162,12 @@ There are **two** canonical serializations and they are not interchangeable.
     that builds a store path goes through `store_root`, and the replay finds
     nothing outside it, but no test pins the literal layout string.
 12. `change-assurance/records/<digest>.json` — one sealed record, JCS bytes.
-    The *bytes on disk* are asserted: `tc_change_assurance_store.rs` reads the
+    The _bytes on disk_ are asserted: `tc_change_assurance_store.rs` reads the
     fixture's records and checks they are byte-identical to this crate's JCS
     serialization, and the replay above did the same over the production
     instances. What is **not** asserted is that this crate writes them: it has
     no record writer. Its only file-writing canonicalizer, `write_canonical`,
-    emits the *pretty* form, which is the correct form for every other store
+    emits the _pretty_ form, which is the correct form for every other store
     file and the wrong form for this family. `record_path` computes the path and
     nothing in `src/` calls it.
 13. `change-assurance/attestations/<digest>/{attestation.json,output.bin}` —
@@ -186,11 +186,11 @@ Three, as separate types with no `From`, no `Into`, no shared trait yielding a
 value another accepts, and no constructor that converts between them. Passing
 one where another belongs does not compile.
 
-| type | algorithm | digest *of* | stored as |
-|---|---|---|---|
-| `RawBytesDigest` | blake3 | a producer's retained output bytes, exactly as supplied | bare hex |
-| `CanonicalDigest` | blake3 | the RFC 8785 canonical bytes of a JSON value | bare hex |
-| `RawFileSha256Digest` | sha256 | a file's complete bytes on disk, in the *measurement raw-evidence* role specifically | `sha256:<hex>` |
+| type                  | algorithm | digest _of_                                                                          | stored as      |
+| --------------------- | --------- | ------------------------------------------------------------------------------------ | -------------- |
+| `RawBytesDigest`      | blake3    | a producer's retained output bytes, exactly as supplied                              | bare hex       |
+| `CanonicalDigest`     | blake3    | the RFC 8785 canonical bytes of a JSON value                                         | bare hex       |
+| `RawFileSha256Digest` | sha256    | a file's complete bytes on disk, in the _measurement raw-evidence_ role specifically | `sha256:<hex>` |
 
 These are this crate's three domains, not the tree's. The retained TypeScript
 uses sha256 for at least two further roles that this crate does not model:

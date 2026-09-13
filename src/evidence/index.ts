@@ -13,7 +13,6 @@ export {
   baselinePath,
   bind,
   bindingsPath,
-  canonicalJson,
   gc,
   inspectionsPath,
   latestMockInspection,
@@ -36,7 +35,6 @@ export {
   mockInspectionPath,
   short,
   StoreReadError,
-  storeRoot,
   suitesPath,
   trustDecisionPath,
   writeBaseline,
@@ -45,6 +43,8 @@ export {
   writeTrustDecision,
   writeRun,
 } from "./store.js";
+export { canonicalJson } from "../store/canonical.js";
+export { storeRoot } from "../store/paths.js";
 
 export {
   MOCK_INSPECTIONS_DIR,
@@ -133,13 +133,15 @@ export {
 } from "./mock-inspection.js";
 
 // Change-assurance extends the FR-030 retained-evidence boundary. Re-export its
-// versioned schemas here as PLAN-005's evidence-facing public seam.
+// versioned schemas here as PLAN-005's evidence-facing public seam. The assets
+// themselves sit in `src/store/`, which neither module owns: reaching sideways
+// into `change-assurance/` for them closed an import cycle (agent-ix/quoin#376).
 export {
   CHANGE_ASSURANCE_SCHEMA_NAMES,
   changeAssuranceSchemaPath,
   readChangeAssuranceSchema,
   type ChangeAssuranceSchemaName,
-} from "../change-assurance/schema-assets.js";
+} from "../store/schema-assets.js";
 export {
   EXPERIMENTS_DIR,
   OPERATIONAL_EVIDENCE_DIR,

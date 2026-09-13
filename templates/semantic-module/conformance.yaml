@@ -83,6 +83,9 @@ residue:
   absolute_render_path:
     pattern: "/home/[A-Za-z0-9_.-]+/|/Users/[A-Za-z0-9_.-]+/|[A-Z]:\\\\Users\\\\"
     reason: "an absolute path binds the repository to the machine that generated it"
+  render_timestamp:
+    pattern: "\\b20[0-9]{2}-[01][0-9]-[0-3][0-9][T ][0-2][0-9]:[0-5][0-9]"
+    reason: "a rendered file carrying the moment it was generated makes two renders of one variant differ, which is the determinism NFR-019 states; a bare calendar date is deliberately not matched, because a changelog or licence year is content rather than render residue"
   credential:
     pattern: "(?i)(BEGIN [A-Z ]*PRIVATE KEY|ghp_[A-Za-z0-9]{20,}|npm_[A-Za-z0-9]{20,}|AKIA[0-9A-Z]{16}|(api[_-]?key|secret|password|token)\\s*[:=]\\s*[\"'][^\"'{$][^\"']{7,})"
     reason: "a credential in a public repository is a disclosure"

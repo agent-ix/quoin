@@ -171,7 +171,7 @@ function repository(
 
 describe("governed graph portfolio", () => {
   // Trace: FR-067-AC-1
-  test("TC-1305 current carries the active plan, producer tuple, revisions, population, and raw digests", () => {
+  test("current carries the active plan, producer tuple, revisions, population, and raw digests", () => {
     const current = buildGovernedGraphPortfolioFrom([
       repository("/repos/a", [collection("new", "2026-08-31T00:00:00Z")]),
     ]).repositories[0].graphQuality.current;
@@ -190,7 +190,7 @@ describe("governed graph portfolio", () => {
   });
 
   // Trace: FR-067-AC-2
-  test("TC-1306 history retains readable collections in timestamp/id order and marks retired-plan evidence incompatible", () => {
+  test("history retains readable collections in timestamp/id order and marks retired-plan evidence incompatible", () => {
     const old = collection("z-old", "2026-01-01T00:00:00Z", {
       observations: collection("x", "2026-01-01T00:00:00Z").observations.map(
         (row) => ({ ...row, planId: "MP-RETIRED" }),
@@ -214,7 +214,7 @@ describe("governed graph portfolio", () => {
   });
 
   // Trace: FR-067-AC-3
-  test("TC-1307 partitions and repositories remain separate under permutations", () => {
+  test("partitions and repositories remain separate under permutations", () => {
     fc.assert(
       fc.property(
         fc.shuffledSubarray(["a", "b"], { minLength: 2, maxLength: 2 }),
@@ -260,7 +260,7 @@ describe("governed graph portfolio", () => {
   });
 
   // Trace: FR-067-AC-4
-  test("TC-1308 availability is separate from measurement state and numeric zero", () => {
+  test("availability is separate from measurement state and numeric zero", () => {
     const unavailable = [
       "missing",
       "unreadable",
@@ -296,7 +296,7 @@ describe("governed graph portfolio", () => {
   });
 
   // Trace: FR-067-AC-5
-  test("TC-1309 every graph compatibility premise blocks a delta independently", () => {
+  test("every graph compatibility premise blocks a delta independently", () => {
     const before = collection("before", "2026-01-01T00:00:00Z");
     expect(
       compareGraphQualityCollections(
@@ -466,7 +466,7 @@ describe("governed graph portfolio", () => {
   });
 
   // Trace: FR-067-AC-6
-  test("TC-1310 raw identities are the retained producer and scorer digests in every view", () => {
+  test("raw identities are the retained producer and scorer digests in every view", () => {
     const result = buildGovernedGraphPortfolioFrom([
       repository("/repos/a", [
         collection("one", "2026-01-01T00:00:00Z"),
@@ -484,7 +484,7 @@ describe("governed graph portfolio", () => {
   });
 
   // Trace: FR-067-AC-7
-  test("TC-1311 structural report objects remain byte-identical and absent inputs are explicit", () => {
+  test("structural report objects remain byte-identical and absent inputs are explicit", () => {
     const fanOut = Object.freeze({
       type: "fan-out",
       rows: [{ id: "FR-001", count: 2 }],
@@ -542,7 +542,7 @@ describe("governed graph portfolio", () => {
   });
 
   // Trace: FR-067-AC-8
-  test("TC-1312 corrupt collections and graph inputs become local gaps without hiding siblings", () => {
+  test("corrupt collections and graph inputs become local gaps without hiding siblings", () => {
     const result = buildGovernedGraphPortfolioFrom([
       repository("/repos/a", [collection("good", "2026-08-31T00:00:00Z")], {
         collections: [
@@ -685,7 +685,7 @@ action: repair retained evidence
   });
 
   // Trace: FR-067-AC-9
-  test("TC-1313 permutations have canonical JSON and human output consumes the report object", () => {
+  test("permutations have canonical JSON and human output consumes the report object", () => {
     const a = repository("/repos/a", [collection("a", "2026-08-31T00:00:00Z")]);
     const b = repository("/repos/b", [collection("b", "2026-08-31T00:00:00Z")]);
     const first = buildGovernedGraphPortfolioFrom([b, a]);
@@ -777,7 +777,7 @@ action: repair retained evidence
   });
 
   // Trace: FR-067-AC-10
-  test("TC-1314 old collections stay historical and output has no aggregate verdict", () => {
+  test("old collections stay historical and output has no aggregate verdict", () => {
     const old = collection("old", "2026-01-01T00:00:00Z", {
       schemaVersion: 1,
       verificationStack: undefined,
@@ -792,7 +792,7 @@ action: repair retained evidence
   });
 
   // Trace: FR-067-AC-11
-  test("TC-1315 static boundary consumes injected objects and has no execution, graph traversal, or write dependency", () => {
+  test("static boundary consumes injected objects and has no execution, graph traversal, or write dependency", () => {
     const root = dirname(fileURLToPath(import.meta.url));
     const source = readFileSync(
       join(root, "../src/measurement/graph-portfolio.ts"),
@@ -805,7 +805,7 @@ action: repair retained evidence
   });
 
   // Trace: StR-007-VC-1
-  test("TC-1316 retained adapter evidence reaches the portfolio without losing boundaries or identity", () => {
+  test("retained adapter evidence reaches the portfolio without losing boundaries or identity", () => {
     const scorerBytes = Buffer.from('{"score":1}\n');
     const scorerDigest = `sha256:${createHash("sha256").update(scorerBytes).digest("hex")}`;
     const record: Record<string, unknown> = {

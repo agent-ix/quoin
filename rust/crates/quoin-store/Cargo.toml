@@ -29,4 +29,7 @@ ryu-js = "=1.0.3"
 # The second algorithm, for the second raw-bytes domain. quoin already holds
 # both: change-assurance digests are blake3, measurement raw-evidence and
 # contract pins are sha256. Modelling only one would not remove the other.
-sha2 = "=0.11.0"
+# Taken from `[workspace.dependencies]` rather than pinned here: quoin-schemas,
+# quoin-quire-types and quoin-semantic all depend on sha2 too, so one pin in one
+# place is the only arrangement `multiple-versions = "deny"` permits.
+sha2 = { workspace = true }

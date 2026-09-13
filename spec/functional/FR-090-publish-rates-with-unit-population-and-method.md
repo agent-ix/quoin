@@ -19,6 +19,29 @@ relationships:
 
 # FR-090: Publish every rate with its unit, population and method
 
+> **⛔ Withdrawn — 2026-09-12.** This requirement is withdrawn and is not
+> implemented. Its gate, [quoin#291](https://github.com/agent-ix/quoin/issues/291)
+> ("[GATE] Measure the full corpus against completed module schemas — advisory,
+> report only"), is **closed**. The measurement ran once, on 2026-09-05, and its
+> results are retained at
+> [`analysis/corpus-measurement/`](../../analysis/corpus-measurement/) — nine
+> digest-pinned artifacts covering 251 repositories and 7,501 measured documents.
+> The implementing code was disposed of under
+> [quoin#388](https://github.com/agent-ix/quoin/issues/388) rather than ported to
+> Rust, because its capability class is **corpus accounting**, which the
+> implementation-language policy places in `engineering-assurance` rather than in
+> a local harness.
+>
+> The requirement is **not** restated as EA-consumed. Doing so would assert an
+> obligation `engineering-assurance` has not accepted — see
+> [engineering-assurance#98](https://github.com/agent-ix/engineering-assurance/issues/98),
+> still open. If its resolution shows a capability genuinely needs restating, it
+> is restated then, against a surface that exists.
+>
+> The text below is retained unchanged for provenance. It describes what was
+> required, not what is required.
+
+
 ## Description
 
 The corpus measurement SHALL publish every rate accompanied by the unit it counts, the population it

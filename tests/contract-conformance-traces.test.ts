@@ -104,7 +104,7 @@ async function record(
 }
 
 describe("FR-069 conformance traces", () => {
-  it("TC-1585 preserves real trace metadata and accepts legacy omission", () => {
+  it("preserves real trace metadata and accepts legacy omission", () => {
     expect(row.trace_ids).toEqual(["TC-015", "TC-017", "TC-018"]);
     const entry = contractConformanceAdapter.parse(real).entries[0];
     expect(entry.traceIds).toEqual(row.trace_ids);
@@ -130,7 +130,7 @@ describe("FR-069 conformance traces", () => {
     );
   });
 
-  it("TC-1586 rejects malformed supplied trace metadata with line and field", () => {
+  it("rejects malformed supplied trace metadata with line and field", () => {
     for (const trace_ids of [
       null,
       {},
@@ -158,7 +158,7 @@ describe("FR-069 conformance traces", () => {
     }
   });
 
-  it("TC-1587 records and binds the real producer ids through Quire targets", async () => {
+  it("records and binds the real producer ids through Quire targets", async () => {
     const root = repository();
     const coverage = parseCoverage(
       runQuire(["coverage", "--scope", root, "--json"]),
@@ -200,7 +200,7 @@ describe("FR-069 conformance traces", () => {
     });
   });
 
-  it("TC-1588 records nothing when a later row has malformed trace metadata", async () => {
+  it("records nothing when a later row has malformed trace metadata", async () => {
     const root = repository();
     await expect(
       record(root, `${real}${JSON.stringify({ ...row, trace_ids: [""] })}\n`),
@@ -208,7 +208,7 @@ describe("FR-069 conformance traces", () => {
     expect(existsSync(join(root, "spec", "evidence"))).toBe(false);
   });
 
-  it("TC-1587 binds the corrected IR producer's exact criterion targets without sibling TC fanout", async () => {
+  it("binds the corrected IR producer's exact criterion targets without sibling TC fanout", async () => {
     const root = repository();
     for (const name of [
       "FR-011-package-identity.md",

@@ -29,11 +29,11 @@ typescript oracle: 90 stores, 464 json files, 7 raw outputs, 10748590 digests, 0
 
 Capture identity:
 
-| | |
-|---|---|
-| sha256 | `c6f55fec00734c0cd02d7d1019c5cf0a67ff0379e4d53c3dceda8f9a60776472` |
-| bytes | 720,326,915 |
-| lines (one per store entity) | 471 |
+|                              |                                                                    |
+| ---------------------------- | ------------------------------------------------------------------ |
+| sha256                       | `c6f55fec00734c0cd02d7d1019c5cf0a67ff0379e4d53c3dceda8f9a60776472` |
+| bytes                        | 720,326,915                                                        |
+| lines (one per store entity) | 471                                                                |
 
 ## Rust half, verbatim, exit status 0
 

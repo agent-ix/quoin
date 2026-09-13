@@ -20,12 +20,19 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { cases } from "./cases.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
-const repoRoot = resolve(process.env.QUOIN_SRC_ROOT ?? join(here, "..", "..", ".."));
+const repoRoot = resolve(
+  process.env.QUOIN_SRC_ROOT ?? join(here, "..", "..", ".."),
+);
 const load = (relative) =>
   import(pathToFileURL(join(repoRoot, "src", relative)).href);
 
-const { blake3Hex, canonicalizeJcs, canonicalBytes, digestValue, parseStrictJson } =
-  await load("change-assurance/integrity.js");
+const {
+  blake3Hex,
+  canonicalizeJcs,
+  canonicalBytes,
+  digestValue,
+  parseStrictJson,
+} = await load("change-assurance/integrity.js");
 const { canonicalJson } = await load("evidence/store.js");
 
 // `blake3Hex` is the oracle's own single digest function. Hashing through it

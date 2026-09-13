@@ -1,0 +1,581 @@
+{
+  "provenance": {
+    "producer": "scripts/capture-semantic-goldens.mjs",
+    "oracle": "agent-ix/quoin src/semantic + src/completeness (TypeScript)",
+    "quoinRevision": "dc834a22f45cea52275595ebc2857baa17484229",
+    "ajvVersion": "8.20.0",
+    "note": "Captured once from the TypeScript implementation. The Rust crates read these files; they never invoke Node. Regenerate by re-running the producer, never by hand-editing."
+  },
+  "source": "src/completeness/assess.ts assessVocabulary()",
+  "counts": {
+    "total": 11
+  },
+  "cases": [
+    {
+      "id": "all-owned",
+      "declaration": {
+        "name": "quality-characteristics",
+        "from": "NFR",
+        "field": "quality_attribute",
+        "check": "vocabulary-coverage",
+        "justifiedAbsenceField": "quality_attributes_not_applicable",
+        "values": [
+          "security",
+          "reliability",
+          "safety",
+          "compliance"
+        ],
+        "moduleName": "iso"
+      },
+      "documents": [
+        {
+          "path": "a.md",
+          "claims": [
+            "security",
+            "reliability"
+          ],
+          "excuses": [],
+          "body": ""
+        },
+        {
+          "path": "b.md",
+          "claims": [
+            "safety",
+            "compliance"
+          ],
+          "excuses": [],
+          "body": ""
+        }
+      ],
+      "rollup": {
+        "vocabulary": "quality-characteristics",
+        "declared": 4,
+        "owned": 4,
+        "excused": 0,
+        "unowned": 0
+      },
+      "findings": []
+    },
+    {
+      "id": "none-owned",
+      "declaration": {
+        "name": "quality-characteristics",
+        "from": "NFR",
+        "field": "quality_attribute",
+        "check": "vocabulary-coverage",
+        "justifiedAbsenceField": "quality_attributes_not_applicable",
+        "values": [
+          "security",
+          "reliability",
+          "safety",
+          "compliance"
+        ],
+        "moduleName": "iso"
+      },
+      "documents": [],
+      "rollup": {
+        "vocabulary": "quality-characteristics",
+        "declared": 4,
+        "owned": 0,
+        "excused": 0,
+        "unowned": 4
+      },
+      "findings": [
+        {
+          "vocabulary": "quality-characteristics",
+          "value": "security",
+          "kind": "unowned",
+          "severity": "medium",
+          "message": "no document claims 'security' for 'quality_attribute', and nothing records it under 'quality_attributes_not_applicable'"
+        },
+        {
+          "vocabulary": "quality-characteristics",
+          "value": "reliability",
+          "kind": "unowned",
+          "severity": "medium",
+          "message": "no document claims 'reliability' for 'quality_attribute', and nothing records it under 'quality_attributes_not_applicable'"
+        },
+        {
+          "vocabulary": "quality-characteristics",
+          "value": "safety",
+          "kind": "unowned",
+          "severity": "medium",
+          "message": "no document claims 'safety' for 'quality_attribute', and nothing records it under 'quality_attributes_not_applicable'"
+        },
+        {
+          "vocabulary": "quality-characteristics",
+          "value": "compliance",
+          "kind": "unowned",
+          "severity": "medium",
+          "message": "no document claims 'compliance' for 'quality_attribute', and nothing records it under 'quality_attributes_not_applicable'"
+        }
+      ]
+    },
+    {
+      "id": "one-unowned",
+      "declaration": {
+        "name": "quality-characteristics",
+        "from": "NFR",
+        "field": "quality_attribute",
+        "check": "vocabulary-coverage",
+        "justifiedAbsenceField": "quality_attributes_not_applicable",
+        "values": [
+          "security",
+          "reliability",
+          "safety",
+          "compliance"
+        ],
+        "moduleName": "iso"
+      },
+      "documents": [
+        {
+          "path": "a.md",
+          "claims": [
+            "security",
+            "reliability",
+            "safety"
+          ],
+          "excuses": [],
+          "body": ""
+        }
+      ],
+      "rollup": {
+        "vocabulary": "quality-characteristics",
+        "declared": 4,
+        "owned": 3,
+        "excused": 0,
+        "unowned": 1
+      },
+      "findings": [
+        {
+          "vocabulary": "quality-characteristics",
+          "value": "compliance",
+          "kind": "unowned",
+          "severity": "medium",
+          "message": "no document claims 'compliance' for 'quality_attribute', and nothing records it under 'quality_attributes_not_applicable'"
+        }
+      ]
+    },
+    {
+      "id": "justified-exclusion",
+      "declaration": {
+        "name": "quality-characteristics",
+        "from": "NFR",
+        "field": "quality_attribute",
+        "check": "vocabulary-coverage",
+        "justifiedAbsenceField": "quality_attributes_not_applicable",
+        "values": [
+          "security",
+          "reliability",
+          "safety",
+          "compliance"
+        ],
+        "moduleName": "iso"
+      },
+      "documents": [
+        {
+          "path": "a.md",
+          "claims": [
+            "security",
+            "reliability",
+            "compliance"
+          ],
+          "excuses": [
+            "safety"
+          ],
+          "body": "| safety | controls no hardware |\n"
+        }
+      ],
+      "rollup": {
+        "vocabulary": "quality-characteristics",
+        "declared": 4,
+        "owned": 3,
+        "excused": 1,
+        "unowned": 0
+      },
+      "findings": []
+    },
+    {
+      "id": "unjustified-exclusion",
+      "declaration": {
+        "name": "quality-characteristics",
+        "from": "NFR",
+        "field": "quality_attribute",
+        "check": "vocabulary-coverage",
+        "justifiedAbsenceField": "quality_attributes_not_applicable",
+        "values": [
+          "security",
+          "reliability",
+          "safety",
+          "compliance"
+        ],
+        "moduleName": "iso"
+      },
+      "documents": [
+        {
+          "path": "a.md",
+          "claims": [
+            "security",
+            "reliability",
+            "compliance"
+          ],
+          "excuses": [
+            "safety"
+          ],
+          "body": ""
+        }
+      ],
+      "rollup": {
+        "vocabulary": "quality-characteristics",
+        "declared": 4,
+        "owned": 3,
+        "excused": 1,
+        "unowned": 0
+      },
+      "findings": [
+        {
+          "vocabulary": "quality-characteristics",
+          "value": "safety",
+          "kind": "unjustified-exclusion",
+          "severity": "high",
+          "document": "a.md",
+          "message": "'safety' is excused under 'quality_attributes_not_applicable' with no written reason; state why it does not apply in a table row naming 'safety'"
+        }
+      ]
+    },
+    {
+      "id": "undeclared-exclusion",
+      "declaration": {
+        "name": "quality-characteristics",
+        "from": "NFR",
+        "field": "quality_attribute",
+        "check": "vocabulary-coverage",
+        "justifiedAbsenceField": "quality_attributes_not_applicable",
+        "values": [
+          "security",
+          "reliability",
+          "safety",
+          "compliance"
+        ],
+        "moduleName": "iso"
+      },
+      "documents": [
+        {
+          "path": "a.md",
+          "claims": [
+            "security",
+            "reliability",
+            "safety",
+            "compliance"
+          ],
+          "excuses": [
+            "saftey"
+          ],
+          "body": "| saftey | typo here indeed |\n"
+        }
+      ],
+      "rollup": {
+        "vocabulary": "quality-characteristics",
+        "declared": 4,
+        "owned": 4,
+        "excused": 0,
+        "unowned": 0
+      },
+      "findings": [
+        {
+          "vocabulary": "quality-characteristics",
+          "value": "saftey",
+          "kind": "undeclared-exclusion",
+          "severity": "high",
+          "document": "a.md",
+          "message": "'saftey' is excused under 'quality_attributes_not_applicable' but is not one of the 4 values 'quality-characteristics' declares, so it excuses nothing"
+        }
+      ]
+    },
+    {
+      "id": "claim-outside-vocabulary-ignored",
+      "declaration": {
+        "name": "quality-characteristics",
+        "from": "NFR",
+        "field": "quality_attribute",
+        "check": "vocabulary-coverage",
+        "justifiedAbsenceField": "quality_attributes_not_applicable",
+        "values": [
+          "security",
+          "reliability",
+          "safety",
+          "compliance"
+        ],
+        "moduleName": "iso"
+      },
+      "documents": [
+        {
+          "path": "a.md",
+          "claims": [
+            "performance"
+          ],
+          "excuses": [],
+          "body": ""
+        }
+      ],
+      "rollup": {
+        "vocabulary": "quality-characteristics",
+        "declared": 4,
+        "owned": 0,
+        "excused": 0,
+        "unowned": 4
+      },
+      "findings": [
+        {
+          "vocabulary": "quality-characteristics",
+          "value": "security",
+          "kind": "unowned",
+          "severity": "medium",
+          "message": "no document claims 'security' for 'quality_attribute', and nothing records it under 'quality_attributes_not_applicable'"
+        },
+        {
+          "vocabulary": "quality-characteristics",
+          "value": "reliability",
+          "kind": "unowned",
+          "severity": "medium",
+          "message": "no document claims 'reliability' for 'quality_attribute', and nothing records it under 'quality_attributes_not_applicable'"
+        },
+        {
+          "vocabulary": "quality-characteristics",
+          "value": "safety",
+          "kind": "unowned",
+          "severity": "medium",
+          "message": "no document claims 'safety' for 'quality_attribute', and nothing records it under 'quality_attributes_not_applicable'"
+        },
+        {
+          "vocabulary": "quality-characteristics",
+          "value": "compliance",
+          "kind": "unowned",
+          "severity": "medium",
+          "message": "no document claims 'compliance' for 'quality_attribute', and nothing records it under 'quality_attributes_not_applicable'"
+        }
+      ]
+    },
+    {
+      "id": "excuse-in-two-documents",
+      "declaration": {
+        "name": "quality-characteristics",
+        "from": "NFR",
+        "field": "quality_attribute",
+        "check": "vocabulary-coverage",
+        "justifiedAbsenceField": "quality_attributes_not_applicable",
+        "values": [
+          "security",
+          "reliability",
+          "safety",
+          "compliance"
+        ],
+        "moduleName": "iso"
+      },
+      "documents": [
+        {
+          "path": "a.md",
+          "claims": [],
+          "excuses": [
+            "safety"
+          ],
+          "body": "| safety | controls no hardware |\n"
+        },
+        {
+          "path": "b.md",
+          "claims": [],
+          "excuses": [
+            "safety"
+          ],
+          "body": ""
+        }
+      ],
+      "rollup": {
+        "vocabulary": "quality-characteristics",
+        "declared": 4,
+        "owned": 0,
+        "excused": 1,
+        "unowned": 3
+      },
+      "findings": [
+        {
+          "vocabulary": "quality-characteristics",
+          "value": "safety",
+          "kind": "unjustified-exclusion",
+          "severity": "high",
+          "document": "b.md",
+          "message": "'safety' is excused under 'quality_attributes_not_applicable' with no written reason; state why it does not apply in a table row naming 'safety'"
+        },
+        {
+          "vocabulary": "quality-characteristics",
+          "value": "security",
+          "kind": "unowned",
+          "severity": "medium",
+          "message": "no document claims 'security' for 'quality_attribute', and nothing records it under 'quality_attributes_not_applicable'"
+        },
+        {
+          "vocabulary": "quality-characteristics",
+          "value": "reliability",
+          "kind": "unowned",
+          "severity": "medium",
+          "message": "no document claims 'reliability' for 'quality_attribute', and nothing records it under 'quality_attributes_not_applicable'"
+        },
+        {
+          "vocabulary": "quality-characteristics",
+          "value": "compliance",
+          "kind": "unowned",
+          "severity": "medium",
+          "message": "no document claims 'compliance' for 'quality_attribute', and nothing records it under 'quality_attributes_not_applicable'"
+        }
+      ]
+    },
+    {
+      "id": "everything-excused",
+      "declaration": {
+        "name": "quality-characteristics",
+        "from": "NFR",
+        "field": "quality_attribute",
+        "check": "vocabulary-coverage",
+        "justifiedAbsenceField": "quality_attributes_not_applicable",
+        "values": [
+          "security",
+          "reliability",
+          "safety",
+          "compliance"
+        ],
+        "moduleName": "iso"
+      },
+      "documents": [
+        {
+          "path": "a.md",
+          "claims": [],
+          "excuses": [
+            "security",
+            "reliability",
+            "safety",
+            "compliance"
+          ],
+          "body": ""
+        }
+      ],
+      "rollup": {
+        "vocabulary": "quality-characteristics",
+        "declared": 4,
+        "owned": 0,
+        "excused": 4,
+        "unowned": 0
+      },
+      "findings": [
+        {
+          "vocabulary": "quality-characteristics",
+          "value": "security",
+          "kind": "unjustified-exclusion",
+          "severity": "high",
+          "document": "a.md",
+          "message": "'security' is excused under 'quality_attributes_not_applicable' with no written reason; state why it does not apply in a table row naming 'security'"
+        },
+        {
+          "vocabulary": "quality-characteristics",
+          "value": "reliability",
+          "kind": "unjustified-exclusion",
+          "severity": "high",
+          "document": "a.md",
+          "message": "'reliability' is excused under 'quality_attributes_not_applicable' with no written reason; state why it does not apply in a table row naming 'reliability'"
+        },
+        {
+          "vocabulary": "quality-characteristics",
+          "value": "safety",
+          "kind": "unjustified-exclusion",
+          "severity": "high",
+          "document": "a.md",
+          "message": "'safety' is excused under 'quality_attributes_not_applicable' with no written reason; state why it does not apply in a table row naming 'safety'"
+        },
+        {
+          "vocabulary": "quality-characteristics",
+          "value": "compliance",
+          "kind": "unjustified-exclusion",
+          "severity": "high",
+          "document": "a.md",
+          "message": "'compliance' is excused under 'quality_attributes_not_applicable' with no written reason; state why it does not apply in a table row naming 'compliance'"
+        }
+      ]
+    },
+    {
+      "id": "empty-vocabulary",
+      "declaration": {
+        "name": "quality-characteristics",
+        "from": "NFR",
+        "field": "quality_attribute",
+        "check": "vocabulary-coverage",
+        "justifiedAbsenceField": "quality_attributes_not_applicable",
+        "values": [],
+        "moduleName": "iso"
+      },
+      "documents": [],
+      "rollup": {
+        "vocabulary": "quality-characteristics",
+        "declared": 0,
+        "owned": 0,
+        "excused": 0,
+        "unowned": 0
+      },
+      "findings": []
+    },
+    {
+      "id": "no-absence-field",
+      "declaration": {
+        "name": "quality-characteristics",
+        "from": "NFR",
+        "field": "quality_attribute",
+        "check": "vocabulary-coverage",
+        "values": [
+          "security",
+          "reliability",
+          "safety",
+          "compliance"
+        ],
+        "moduleName": "iso"
+      },
+      "documents": [
+        {
+          "path": "a.md",
+          "claims": [
+            "security"
+          ],
+          "excuses": [],
+          "body": ""
+        }
+      ],
+      "rollup": {
+        "vocabulary": "quality-characteristics",
+        "declared": 4,
+        "owned": 1,
+        "excused": 0,
+        "unowned": 3
+      },
+      "findings": [
+        {
+          "vocabulary": "quality-characteristics",
+          "value": "reliability",
+          "kind": "unowned",
+          "severity": "medium",
+          "message": "no document claims 'reliability' for 'quality_attribute', and nothing records it under 'a justified-absence field'"
+        },
+        {
+          "vocabulary": "quality-characteristics",
+          "value": "safety",
+          "kind": "unowned",
+          "severity": "medium",
+          "message": "no document claims 'safety' for 'quality_attribute', and nothing records it under 'a justified-absence field'"
+        },
+        {
+          "vocabulary": "quality-characteristics",
+          "value": "compliance",
+          "kind": "unowned",
+          "severity": "medium",
+          "message": "no document claims 'compliance' for 'quality_attribute', and nothing records it under 'a justified-absence field'"
+        }
+      ]
+    }
+  ]
+}

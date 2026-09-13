@@ -30,7 +30,9 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 const here = dirname(fileURLToPath(import.meta.url));
-const repoRoot = resolve(process.env.QUOIN_SRC_ROOT ?? join(here, "..", "..", ".."));
+const repoRoot = resolve(
+  process.env.QUOIN_SRC_ROOT ?? join(here, "..", "..", ".."),
+);
 const load = (path) => import(pathToFileURL(join(repoRoot, "src", path)).href);
 
 const {
@@ -126,7 +128,11 @@ for (const [index, output] of outputs.entries()) {
     candidate_revision: `candidate-${index + 1}`,
     proof_id: "proof-1",
     command: { argv: ["pnpm", "test"], working_directory: "." },
-    tool: { identity: "vitest", version: "4.1.10", configuration_digest: HEX_B },
+    tool: {
+      identity: "vitest",
+      version: "4.1.10",
+      configuration_digest: HEX_B,
+    },
     environment: { os: "test" },
     observed_at: "2026-08-31T00:00:00Z",
     result: "passed",

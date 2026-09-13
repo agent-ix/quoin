@@ -41,12 +41,13 @@ import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 const here = dirname(fileURLToPath(import.meta.url));
-const repoRoot = resolve(process.env.QUOIN_SRC_ROOT ?? join(here, "..", "..", ".."));
+const repoRoot = resolve(
+  process.env.QUOIN_SRC_ROOT ?? join(here, "..", "..", ".."),
+);
 const load = (path) => import(pathToFileURL(join(repoRoot, "src", path)).href);
 
-const { blake3Hex, canonicalBytes, canonicalizeJcs, parseStrictJson } = await load(
-  "change-assurance/integrity.js",
-);
+const { blake3Hex, canonicalBytes, canonicalizeJcs, parseStrictJson } =
+  await load("change-assurance/integrity.js");
 const { canonicalJson } = await load("evidence/store.js");
 
 const argv = process.argv.slice(2);
@@ -97,7 +98,8 @@ function listFiles(root, into) {
 
 writeFileSync(out, "", "utf8");
 const handle = openSync(out, "a");
-const emit = (record) => appendFileSync(handle, `${JSON.stringify(record)}\n`, "utf8");
+const emit = (record) =>
+  appendFileSync(handle, `${JSON.stringify(record)}\n`, "utf8");
 
 let jsonFileCount = 0;
 let rawFileCount = 0;
@@ -148,7 +150,9 @@ for (const repository of repositories) {
         record.round_trip_identical =
           serialized.byteLength === bytes.byteLength &&
           serialized.every((byte, index) => byte === bytes[index]);
-        record.node_digests = walk(value, []).map((node) => blake3Hex(canonicalBytes(node)));
+        record.node_digests = walk(value, []).map((node) =>
+          blake3Hex(canonicalBytes(node)),
+        );
         digestCount += record.node_digests.length;
       } catch (error) {
         record.serialization_error =
@@ -159,7 +163,12 @@ for (const repository of repositories) {
       emit(record);
       jsonFileCount += 1;
     } else if (path.endsWith("output.bin")) {
-      emit({ kind: "raw", key, path: suffix, digest: blake3Hex(readFileSync(path)) });
+      emit({
+        kind: "raw",
+        key,
+        path: suffix,
+        digest: blake3Hex(readFileSync(path)),
+      });
       rawFileCount += 1;
       digestCount += 1;
     }

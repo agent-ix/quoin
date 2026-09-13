@@ -29,14 +29,14 @@ export const cases = [
     id: "num-negative-zero-loses-its-sign",
     expect: "accept",
     probes:
-      "ECMAScript Number::toString maps both zeros to \"0\", so -0 and 0 canonicalize identically and share a digest. Rust's own formatting prints \"-0\" and would mint a second identity for the same record.",
+      'ECMAScript Number::toString maps both zeros to "0", so -0 and 0 canonicalize identically and share a digest. Rust\'s own formatting prints "-0" and would mint a second identity for the same record.',
     input: '{"n":-0}',
   },
   {
     id: "num-exponent-carries-an-explicit-plus",
     expect: "accept",
     probes:
-      "1e21 serializes as \"1e+21\". ryu and Rust's Display both print \"1e21\" with no sign. One missing character changes every digest of every record containing a large number.",
+      '1e21 serializes as "1e+21". ryu and Rust\'s Display both print "1e21" with no sign. One missing character changes every digest of every record containing a large number.',
     input: '{"n":1e21}',
   },
   {
@@ -112,7 +112,7 @@ export const cases = [
     id: "num-bare-decimal-point-is-refused",
     expect: "refuse",
     probes:
-      "1. has no fraction digits. The oracle's number regex makes the fraction optional but not empty, so it matches \"1\" and the \".\" then fails as trailing content — refused either way, which is what must be reproduced.",
+      '1. has no fraction digits. The oracle\'s number regex makes the fraction optional but not empty, so it matches "1" and the "." then fails as trailing content — refused either way, which is what must be reproduced.',
     input: "1.",
   },
   {
@@ -126,7 +126,7 @@ export const cases = [
     id: "num-nan-literal-is-refused",
     expect: "refuse",
     probes:
-      "NaN is a JavaScript literal, not a JSON one, and has no canonical form. Rust's str::parse::<f64> accepts the spelling \"NaN\", so a reader that delegates to it diverges here.",
+      'NaN is a JavaScript literal, not a JSON one, and has no canonical form. Rust\'s str::parse::<f64> accepts the spelling "NaN", so a reader that delegates to it diverges here.',
     input: '{"n":NaN}',
   },
   {
@@ -149,21 +149,21 @@ export const cases = [
     id: "key-order-array-index-names-in-jcs",
     expect: "accept",
     probes:
-      "In JCS, \"10\" sorts before \"2\" because ordering is lexicographic over code units with no numeric exception. Contrast the pretty form of this same document, which emits 2 before 10 — see the pretty-form expectation captured alongside.",
+      'In JCS, "10" sorts before "2" because ordering is lexicographic over code units with no numeric exception. Contrast the pretty form of this same document, which emits 2 before 10 — see the pretty-form expectation captured alongside.',
     input: '{"10":1,"2":2,"a":3,"1":4}',
   },
   {
     id: "key-order-array-index-boundary-at-2pow32-minus-2",
     expect: "accept",
     probes:
-      "\"4294967294\" is an ECMAScript array index and \"4294967295\" is not. The pretty form hoists the first and leaves the second among the string keys; JCS treats both as plain strings. An off-by-one in that boundary reorders two members of the pretty form.",
+      '"4294967294" is an ECMAScript array index and "4294967295" is not. The pretty form hoists the first and leaves the second among the string keys; JCS treats both as plain strings. An off-by-one in that boundary reorders two members of the pretty form.',
     input: '{"4294967295":1,"4294967294":2,"!x":3}',
   },
   {
     id: "key-order-array-index-requires-canonical-spelling",
     expect: "accept",
     probes:
-      "\"01\", \"1.0\" and \"-1\" look numeric and are not array indices; only \"1\" is. In the pretty form only \"1\" is hoisted.",
+      '"01", "1.0" and "-1" look numeric and are not array indices; only "1" is. In the pretty form only "1" is hoisted.',
     input: '{"01":1,"1":2,"-1":3,"1.0":4}',
   },
   {
@@ -177,7 +177,7 @@ export const cases = [
     id: "key-order-is-case-sensitive-and-ascii-ordinal",
     expect: "accept",
     probes:
-      "\"A\" (0x41) before \"_\" (0x5F) before \"a\" (0x61). Any locale-aware or case-insensitive comparison — JavaScript localeCompare, Rust's to_lowercase — reorders these.",
+      '"A" (0x41) before "_" (0x5F) before "a" (0x61). Any locale-aware or case-insensitive comparison — JavaScript localeCompare, Rust\'s to_lowercase — reorders these.',
     input: '{"a":1,"A":2,"_":3,"b":4}',
   },
   {
@@ -205,7 +205,7 @@ export const cases = [
     id: "key-duplicate-after-unescaping-is-refused",
     expect: "refuse",
     probes:
-      "\"a\" and \"\\u0061\" are the same member name. Duplicate detection must run on the decoded name, not on the source text.",
+      '"a" and "\\u0061" are the same member name. Duplicate detection must run on the decoded name, not on the source text.',
     input: '{"a":1,"\\u0061":2}',
   },
   {
@@ -407,7 +407,8 @@ export const cases = [
   {
     id: "doc-empty-input-is-refused",
     expect: "refuse",
-    probes: "An empty file is not a document. A zero-length store file must not digest to anything.",
+    probes:
+      "An empty file is not a document. A zero-length store file must not digest to anything.",
     input: "",
   },
   {
@@ -466,7 +467,7 @@ export const cases = [
     id: "digest-strips-only-the-top-level-digest-member",
     expect: "accept",
     probes:
-      "A nested member also named \"digest\" stays in the hashed bytes. Stripping it everywhere would make two different records hash the same.",
+      'A nested member also named "digest" stays in the hashed bytes. Stripping it everywhere would make two different records hash the same.',
     input:
       '{"digest":"0000000000000000000000000000000000000000000000000000000000000000","a":{"digest":"kept"},"b":[{"digest":"kept"}]}',
   },
@@ -488,7 +489,7 @@ export const cases = [
     id: "digest-negative-zero-collides-with-zero",
     expect: "accept",
     probes:
-      "Paired with num-negative-zero-loses-its-sign: {\"n\":-0} and {\"n\":0} are different documents with the same digest. This is a consequence of the frozen number model, recorded here so it is a known property rather than a surprise during an investigation.",
+      'Paired with num-negative-zero-loses-its-sign: {"n":-0} and {"n":0} are different documents with the same digest. This is a consequence of the frozen number model, recorded here so it is a known property rather than a surprise during an investigation.',
     input: '{"n":0}',
   },
 ];

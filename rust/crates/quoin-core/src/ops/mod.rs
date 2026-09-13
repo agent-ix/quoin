@@ -7,4 +7,5 @@
 //! function (quoin#373). One module per domain; one entry per operation in
 //! [`crate::dispatch`].
 
+pub mod assurance;
 pub mod core;

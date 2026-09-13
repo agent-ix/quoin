@@ -1,0 +1,25 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 Agent-IX
+[package]
+name = "quoin-evidence-types"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+description = "Producer-reliance and independence assessments, as the assurance renderer observes them."
+publish.workspace = true
+
+[lib]
+name = "quoin_evidence_types"
+path = "src/lib.rs"
+
+[lints]
+workspace = true
+
+[dependencies]
+serde = { workspace = true }
+
+[dev-dependencies]
+serde_json = { workspace = true }

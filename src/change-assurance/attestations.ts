@@ -1,4 +1,8 @@
-import { assertDigest, canonicalBytes, digestValue } from "./integrity.js";
+import {
+  assertDigest,
+  canonicalBytes,
+  digestValue,
+} from "../store/integrity.js";
 import {
   array,
   digest,

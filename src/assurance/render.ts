@@ -141,6 +141,14 @@ function renderNode(node: CaseNode, depth: number): string[] {
  * - **Labels are quoted**, because a statement containing `(` or `)` ends the
  *   node shape early.
  * - **No `;` in label text** — it terminates the statement.
+ *
+ * And one rule about the truncation itself (quoin#432): it counts CODE POINTS,
+ * not UTF-16 code units. `String.prototype.slice` counts units, so a label
+ * whose 80th unit fell inside a surrogate pair was cut in half and rendered as
+ * `\uFFFD` — `"x".repeat(79) + "\u{1F600}"` sliced to a lone high surrogate,
+ * `isWellFormed()` false. Measured over this repository's own 991 obligations,
+ * 835 labels are truncated and two carry an astral character; the nearest miss
+ * is `FR-082-AC-3`, whose emoji sits six characters before the boundary.
  */
 function mermaidFor(claim: CaseNode): string[] {
   const lines = ["flowchart TD"];
@@ -165,11 +173,14 @@ function nodeId(id: string): string {
   return id.replace(/[^A-Za-z0-9]/g, "_");
 }
 
+/** Label budget, in CODE POINTS. See the truncation rule in `mermaidFor`. */
+const MAX_LABEL_LENGTH = 80;
+
 function label(node: CaseNode): string {
   const text = `${node.id}: ${node.statement}`;
-  return text
-    .replace(/["`]/g, "'")
-    .replace(/;/g, ",")
-    .slice(0, 80)
-    .concat(node.status === "open" ? " ◇" : "");
+  const sanitised = text.replace(/["`]/g, "'").replace(/;/g, ",");
+  // `Array.from` iterates code points, so a surrogate pair is one element and
+  // cannot be split. `.slice(0, 80)` on the string would count code units.
+  const truncated = Array.from(sanitised).slice(0, MAX_LABEL_LENGTH).join("");
+  return truncated.concat(node.status === "open" ? " ◇" : "");
 }

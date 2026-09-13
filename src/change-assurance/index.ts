@@ -13,7 +13,7 @@ export {
   canonicalizeJcs,
   digestValue,
   parseStrictJson,
-} from "./integrity.js";
+} from "../store/integrity.js";
 export {
   recordBytes,
   hashIxFlowEvent,
@@ -46,5 +46,5 @@ export {
   changeAssuranceSchemaPath,
   readChangeAssuranceSchema,
   type ChangeAssuranceSchemaName,
-} from "./schema-assets.js";
+} from "../store/schema-assets.js";
 export type * from "./types.js";
