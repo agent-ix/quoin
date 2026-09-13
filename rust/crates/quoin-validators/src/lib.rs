@@ -42,8 +42,11 @@ mod finding;
 mod gates;
 mod ids;
 mod repo;
+mod source;
 
 pub use error::{ErrorCode, ValidatorError};
 pub use finding::{EmptyGateFinding, FindingKind, GateReport, Verdict};
-pub use gates::inspect_empty_gates;
+pub use gates::{inspect_empty_gates, inspect_empty_gates_in};
 pub use ids::{LineNumber, ObligationId, RepoPath};
+pub use repo::DiskRepo;
+pub use source::{MemoryRepo, ROOT_PATH, RepoSource};

@@ -35,6 +35,21 @@
 // refresh stops being a gate the first time the implementation changes. Say in
 // the commit message what behaviour changed, and refresh the hashes in
 // `tests/golden/PROVENANCE.md`.
+//
+// THE ORACLE IS NO LONGER IN THE WORKING TREE. quoin#412 retired
+// `src/validators/` and rewrote `src/commands/validate.ts` onto the `quoin-core`
+// boundary, so the two imports below resolve only after the historical files are
+// restored — which is the point: the oracle is the retained TypeScript at
+// `4d27dcf`, not whatever `src/` holds today, and capturing against today's tree
+// would ask the port whether the port is right. Nothing catches the broken
+// import automatically (`vite.config.ts` excludes `rust/**`), so it is said here.
+// From the repository root:
+//
+//   git checkout 4d27dcf -- src/validators src/commands/validate.ts
+//   # verify the three hashes in tests/golden/PROVENANCE.md, then capture
+//   QUOIN_ORACLE_WRITE=1 pnpm vitest run \
+//     --config rust/crates/quoin-validators/tools/vitest.oracle.config.mts
+//   git checkout HEAD -- src/commands/validate.ts && rm -rf src/validators
 
 import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";

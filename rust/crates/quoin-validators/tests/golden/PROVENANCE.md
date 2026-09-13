@@ -14,7 +14,7 @@ decide whether it passed is not a port (quoin#373, AC-5).
 |                  |                                                                                                                                                                 |
 | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Produced by      | `../../tools/generate-oracle.mts`                                                                                                                               |
-| Captured on      | 2026-09-12                                                                                                                                                      |
+| Captured on      | 2026-09-12; re-captured 2026-09-13 for one added case (quoin#448 FND-006)                                                                                       |
 | Oracle revision  | quoin `4d27dcf1621d8c28da0961a5521a5be7b6d1cd28` (`main`)                                                                                                       |
 | Capture checkout | `888840185a917546b3ea1b65a5fb160495ceb58e` (`spec/373-rust-burn-down`), whose three oracle files are byte-identical to `4d27dcf` — verified by the hashes below |
 | Runtime          | node v22.15.0, vitest 4.1.10                                                                                                                                    |
@@ -32,6 +32,27 @@ stale. Re-capture it deliberately, and say in the commit message what behaviour
 changed — a golden that is refreshed as a matter of routine has stopped being a
 gate.
 
+**Those three files are no longer in the working tree.** quoin#412 retired
+`src/validators/` and rewrote `src/commands/validate.ts` onto the `quoin-core`
+boundary, so `generate-oracle.mts` imports paths that only exist in history.
+That is the correct state of affairs — the oracle is the retained TypeScript at
+`4d27dcf`, and capturing against today's `src/` would be asking the port whether
+the port is right — but it means a capture has one extra step, given under
+"Reproducing it" below. Nothing fails automatically if the import goes stale:
+`vite.config.ts` excludes `rust/**`, so the file is never collected.
+
+### Re-capture of 2026-09-13
+
+One case added, `makefile-sh-is-both-wiring-and-script`, and nothing else
+changed: the diff against the previous `expected.json` is 34 added lines and no
+modified ones. It pins a path that is **both** wiring (by the `makefile`
+basename) and a script (by the `.sh` extension), which `main`'s Rust treated as
+mutually exclusive (`if is_shell_file … else if is_wiring_file …`) and the
+TypeScript oracle never did — `shellFiles()` and `wiringFiles()` were two
+independent walks. quoin#412 made the Rust match, silently; this case is what
+stops it reverting (quoin#448 FND-006). The expectation was captured from the
+`4d27dcf` TypeScript under the hashes above, not written by hand.
+
 ## Reproducing it
 
 The capture is a script, not a test. It is excluded from `pnpm test` by the
@@ -39,12 +60,19 @@ The capture is a script, not a test. It is excluded from `pnpm test` by the
 unless `QUOIN_ORACLE_WRITE=1` is set. Run from the repository root:
 
 ```sh
+# Restore the oracle. It is history, not working-tree source.
+git checkout 4d27dcf -- src/validators src/commands/validate.ts
+sha256sum src/validators/gates.ts src/validators/index.ts src/commands/validate.ts
+
 # Verify: re-derive the verdicts and compare them to the committed bytes.
 pnpm vitest run --config rust/crates/quoin-validators/tools/vitest.oracle.config.mts
 
 # Regenerate: overwrite expected.json. A decision, not a convenience.
 QUOIN_ORACLE_WRITE=1 pnpm vitest run \
   --config rust/crates/quoin-validators/tools/vitest.oracle.config.mts
+
+# Put the working tree back.
+git checkout HEAD -- src/commands/validate.ts && rm -rf src/validators
 ```
 
 The verify run compares **bytes**, not parsed JSON: the Rust suite asserts
@@ -52,7 +80,7 @@ against these exact bytes, so "equivalent JSON" is not the property under test.
 
 ## What is in it
 
-46 cases, 28 findings, materialised from `cases.json`. Each case records four
+47 cases, 30 findings, materialised from `cases.json`. Each case records four
 things captured from the retained implementation:
 
 - `findings` — the return of `inspectEmptyGates(root)`
@@ -72,7 +100,7 @@ cold.
 
 ## Population, stated
 
-23 of the 46 cases expect findings and 23 expect none. A check that only ever
+24 of the 47 cases expect findings and 23 expect none. A check that only ever
 ran over the empty half would pass vacuously, so both halves are asserted, and
 `tc_377_020` asserts the corpus itself still contains both — a corpus silently
 trimmed to only-negative cases is a green suite that measures nothing.

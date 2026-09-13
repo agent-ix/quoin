@@ -143,3 +143,62 @@ fn tc_375_no_stdin_at_all_is_the_empty_request() {
     let payload: serde_json::Value = serde_json::from_str(&result.stdout).unwrap();
     assert_eq!(payload["echo"], serde_json::Value::Null);
 }
+
+/// Trace: FR-096-AC-9
+/// Provenance: quoin#412, review #448 FND-003
+///
+/// The transport ceiling, through the shell a caller actually meets.
+///
+/// The library tests drive `read_request` directly, which proves the decision
+/// but not the process: a ceiling that is only enforced in a function nothing
+/// in `main` calls is a ceiling nobody has. This one pipes a real oversize
+/// stream into a real subprocess and reads the status off the exit code.
+///
+/// It also pins the part a unit test cannot see — that the child stops reading
+/// and exits while the parent still has bytes to send. The writer below runs on
+/// its own thread and tolerates a broken pipe **because a broken pipe is the
+/// pass**: a binary that drained 64 MiB before deciding would let `write_all`
+/// finish, and the ceiling would be a remark about an allocation that had
+/// already happened.
+#[test]
+fn tc_412_an_oversize_stream_is_refused_by_the_process_not_merely_by_the_library() {
+    let ceiling = quoin_core::protocol::MAX_REQUEST_BYTES;
+    let envelope = r#"{"echo":""}"#.len();
+    let oversize = format!(r#"{{"echo":"{}"}}"#, "x".repeat(ceiling - envelope + 1));
+    assert_eq!(oversize.len(), ceiling + 1);
+
+    let mut child = Command::new(env!("CARGO_BIN_EXE_quoin-core"))
+        .arg("core.ping")
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .unwrap();
+    let mut sink = child.stdin.take().unwrap();
+    let writer = std::thread::spawn(move || {
+        // `write_all`'s error is discarded, not unwrapped: EPIPE here means the
+        // child refused early, which is the behaviour under test.
+        let _ = sink.write_all(oversize.as_bytes());
+    });
+    let out = child.wait_with_output().unwrap();
+    writer.join().unwrap();
+
+    assert_eq!(out.status.code().unwrap(), 2);
+    assert!(
+        out.stdout.is_empty(),
+        "a refusal must not leave a partial payload on stdout"
+    );
+    let diagnostics: Vec<serde_json::Value> =
+        serde_json::from_str(&String::from_utf8(out.stderr).unwrap()).unwrap();
+    assert_eq!(diagnostics[0]["code"], "CORE_REFUSED");
+    assert_eq!(
+        diagnostics[0]["context"]["limit_bytes"],
+        ceiling.to_string()
+    );
+    // Read, not sent: the number names what the process consumed, and it is one
+    // byte past the ceiling however much the caller offered.
+    assert_eq!(
+        diagnostics[0]["context"]["read_bytes"],
+        (ceiling + 1).to_string()
+    );
+}

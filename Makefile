@@ -315,10 +315,18 @@ rust-difftest: build rust-build
 # QUOIN_CORE is unset, which is every ordinary `vitest run`; this target is the
 # lane that sets it. Without it the caller is only ever tested against fakes,
 # and a fake agrees with whatever the test wrote into it.
+# `QUOIN_DISK_FINDINGS` is the DISK side of the snapshot differential
+# (quoin#412, review #448 FND-001): `tests/core-snapshot-differential.test.ts`
+# analyses one tree through `repoSnapshot` -> `validators.run` -> `MemoryRepo`
+# and through `DiskRepo`, and compares. Without both variables the file skips,
+# which is every ordinary `vitest run`; this target is the lane that sets them.
 .PHONY: rust-e2e
 rust-e2e: rust-build
 	QUOIN_CORE=$(CARGO_TARGET)/debug/quoin-core \
-	  $(PNPM) exec vitest run tests/core-exec-e2e.test.ts
+	  QUOIN_DISK_FINDINGS=$(CARGO_TARGET)/debug/quoin-disk-findings \
+	  $(PNPM) exec vitest run \
+	    tests/core-exec-e2e.test.ts \
+	    tests/core-snapshot-differential.test.ts
 
 # The Rust gate, in the order a failure is cheapest to read: format and lint
 # first (seconds), then the supply-chain check, then the suites, then the

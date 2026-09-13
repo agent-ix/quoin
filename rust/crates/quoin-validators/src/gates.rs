@@ -24,7 +24,8 @@ use regex::Regex;
 use crate::error::ValidatorError;
 use crate::finding::{EmptyGateFinding, FindingKind};
 use crate::ids::{LineNumber, ObligationId, RepoPath};
-use crate::repo::{read_text, relative_to, scan};
+use crate::repo::{DiskRepo, is_excluded, is_shell_file, is_wiring_file};
+use crate::source::RepoSource;
 
 /// A gate's declared obligation and the claim it makes about it.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -93,48 +94,76 @@ static IDENTIFIER: LazyLock<Regex> = LazyLock::new(|| literal_regex(r"[a-z_][a-z
 /// cannot be listed, and [`ValidatorError::FileUnreadable`] when a file the walk
 /// found cannot be read.
 pub fn inspect_empty_gates(repo: &Path) -> Result<Vec<EmptyGateFinding>, ValidatorError> {
-    let files = scan(repo)?;
-    let mut wiring: Vec<WiringFile> = files
-        .wiring
+    inspect_empty_gates_in(&mut DiskRepo::new(repo))
+}
+
+/// Find every declared, wired shell gate in `source` that counts forbidden
+/// matches without asserting the count.
+///
+/// The analysis itself, over whatever [`RepoSource`] supplies the bytes: a
+/// directory on disk ([`DiskRepo`], via [`inspect_empty_gates`]) or a snapshot
+/// the caller already read ([`crate::MemoryRepo`], via `quoin-core`'s
+/// `validators.run`). There is one copy of it, so the golden corpus and the
+/// boundary cannot drift apart (quoin#412).
+///
+/// Classification stays here rather than with the caller: a caller that
+/// pre-filters its walk can only send a superset, because every path it sends
+/// is re-classified by [`is_shell_file`] and [`is_wiring_file`] before it can
+/// affect a verdict.
+///
+/// # Errors
+///
+/// As [`inspect_empty_gates`]: the source's own refusal, unchanged.
+pub fn inspect_empty_gates_in(
+    source: &mut impl RepoSource,
+) -> Result<Vec<EmptyGateFinding>, ValidatorError> {
+    // `EXCLUDED` is applied here and not only in the walk: it is a rule of the
+    // analysis, so a snapshot that happens to carry `vendor/gate.sh` reaches
+    // the same verdict as a disk walk that never descended into `vendor`.
+    let paths: Vec<String> = source
+        .paths()?
+        .into_iter()
+        .filter(|path| !is_excluded(path))
+        .collect();
+    let mut wiring: Vec<WiringFile> = paths
         .iter()
+        .filter(|path| is_wiring_file(path))
         .map(|path| WiringFile {
-            relative: relative_to(repo, path),
-            path: path.clone(),
+            relative: path.clone(),
             body: None,
         })
         .collect();
+    let shell: Vec<String> = paths
+        .into_iter()
+        .filter(|path| is_shell_file(path))
+        .collect();
 
     let mut findings = Vec::new();
-    for path in &files.shell {
-        let source = read_text(path)?;
-        let Some(claim) = gate_claim(&source) else {
+    for repo_path in &shell {
+        let body = source.text(repo_path)?;
+        let Some(claim) = gate_claim(&body) else {
             continue;
         };
         if !NEGATIVE.is_match(&claim.statement) {
             continue;
         }
-        let repo_path = relative_to(repo, path);
-        let Some(wired_by) = wired_by(&mut wiring, &repo_path)? else {
+        let Some(wired_by) = wired_by(&mut wiring, source, repo_path)? else {
             continue;
         };
         let wired_by = wired_by.as_str();
 
-        findings.extend(
-            split_lines(&source)
-                .enumerate()
-                .filter_map(|(index, line)| {
-                    let pattern = unasserted_count_pattern(line)?;
-                    claim_mentions(&claim.statement, pattern).then(|| {
-                        finding(
-                            &claim,
-                            &repo_path,
-                            wired_by,
-                            LineNumber::from_zero_based(index),
-                            pattern,
-                        )
-                    })
-                }),
-        );
+        findings.extend(split_lines(&body).enumerate().filter_map(|(index, line)| {
+            let pattern = unasserted_count_pattern(line)?;
+            claim_mentions(&claim.statement, pattern).then(|| {
+                finding(
+                    &claim,
+                    repo_path,
+                    wired_by,
+                    LineNumber::from_zero_based(index),
+                    pattern,
+                )
+            })
+        }));
     }
 
     findings.sort_by(|a, b| a.sort_key().cmp(&b.sort_key()));
@@ -145,8 +174,6 @@ pub fn inspect_empty_gates(repo: &Path) -> Result<Vec<EmptyGateFinding>, Validat
 struct WiringFile {
     /// The repository-relative, `/`-separated path, which is what a finding names.
     relative: String,
-    /// The absolute path the walk produced.
-    path: std::path::PathBuf,
     /// `None` until this file is actually read.
     body: Option<String>,
 }
@@ -164,11 +191,15 @@ struct WiringFile {
 /// Caching each body is the part that *is* an optimisation, and it is free of
 /// that hazard: it only ever avoids a re-read of a file already opened. The
 /// TypeScript re-reads the same body once per candidate script.
-fn wired_by(wiring: &mut [WiringFile], repo_path: &str) -> Result<Option<String>, ValidatorError> {
+fn wired_by(
+    wiring: &mut [WiringFile],
+    source: &mut impl RepoSource,
+    repo_path: &str,
+) -> Result<Option<String>, ValidatorError> {
     for candidate in &mut *wiring {
         let body = match candidate.body {
             Some(ref body) => body,
-            None => &*candidate.body.insert(read_text(&candidate.path)?),
+            None => &*candidate.body.insert(source.text(&candidate.relative)?),
         };
         if references_script(body, repo_path) {
             return Ok(Some(candidate.relative.clone()));

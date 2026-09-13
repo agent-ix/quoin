@@ -250,10 +250,15 @@ fn tc_1614_no_hand_written_declaration_shadows_a_generated_boundary_type() {
             (name, fields)
         })
         .collect();
+    // Six interfaces: `Diagnostic`, the two `core.ping` shapes and the two
+    // `validators.run` shapes, plus the finding they carry. The four newtype
+    // and enum aliases the surface also publishes are `export type` and are
+    // not interfaces, so they are outside what this scanner reads — a hand
+    // written `type ObligationId = string` shadows nothing structural.
     assert_eq!(
         generated.len(),
-        3,
-        "the scanner read {} interfaces out of the generated surface, not 3; \
+        6,
+        "the scanner read {} interfaces out of the generated surface, not 6; \
          it is broken and would report clean over anything",
         generated.len()
     );

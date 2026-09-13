@@ -13,10 +13,15 @@
 //! incapable of.
 //!
 //! The subset is exactly what the boundary declares today: objects with named
-//! properties, string/integer/boolean/null unions, `Record<string, string>`
-//! from a `BTreeMap<String, String>`, arrays, and `$ref` into `$defs`. When a
-//! boundary type needs more, this module grows a case and a test in the same
-//! commit — which is the point of refusing rather than degrading.
+//! properties, string/integer/boolean/null unions, `Record<string, T>` from a
+//! `BTreeMap<String, T>`, arrays, `$ref` into `$defs`, and — since quoin#412 —
+//! the two shapes a Rust **newtype** and a **unit-variant enum** produce: a
+//! `$defs` entry that is not an object at all, and a closed set of string
+//! constants. Those become `export type X = string;` and
+//! `export type X = "a" | "b";` respectively, which is what the Rust side means
+//! and what a TypeScript caller can check. When a boundary type needs more,
+//! this module grows a case and a test in the same commit — which is the point
+//! of refusing rather than degrading.
 
 use std::fmt::Write as _;
 
@@ -48,6 +53,47 @@ fn refuse(pointer: &str, reason: impl Into<String>) -> RenderRefusal {
         pointer: pointer.to_owned(),
         reason: reason.into(),
     }
+}
+
+/// Render one `$defs` entry as a TypeScript declaration.
+///
+/// An object schema with named properties becomes an `interface`
+/// ([`render_interface`]); anything else becomes a type alias. Both shapes are
+/// produced by the boundary today: `#[serde(transparent)]` newtypes such as
+/// `ObligationId` emit a bare `"type": "string"` definition, and a unit-variant
+/// enum such as `FindingKind` emits a set of string constants.
+///
+/// A newtype is deliberately NOT inlined into its uses. `path: RepoPath` and
+/// `subject: string` are the same bytes on the wire and different things in the
+/// domain, and the whole reason those newtypes exist is that swapping two of
+/// them was a silent payload defect. Carrying the name across the boundary
+/// keeps the distinction legible on the TypeScript side, even though TypeScript
+/// will not enforce it.
+///
+/// # Errors
+///
+/// [`RenderRefusal`] when the definition is outside the supported subset.
+pub fn render_definition(
+    name: &str,
+    schema: &Value,
+    pointer: &str,
+) -> Result<String, RenderRefusal> {
+    let object = schema
+        .as_object()
+        .ok_or_else(|| refuse(pointer, "a `$defs` entry must be an object schema"))?;
+    if object.get("type").and_then(Value::as_str) == Some("object")
+        || object.contains_key("properties")
+    {
+        return render_interface(name, schema, pointer);
+    }
+
+    let mut out = String::new();
+    if let Some(description) = object.get("description").and_then(Value::as_str) {
+        out.push_str(&doc_comment(description, ""));
+    }
+    let rendered = render_type(schema, pointer)?;
+    let _ = writeln!(out, "export type {name} = {rendered};");
+    Ok(out)
 }
 
 /// Render one `$defs` entry as a TypeScript `interface` declaration.
@@ -123,6 +169,49 @@ pub fn render_type(schema: &Value, pointer: &str) -> Result<String, RenderRefusa
         return Ok(name.to_owned());
     }
 
+    // A closed set of string constants, in either spelling `schemars` uses: a
+    // bare `enum` when the variants carry no documentation, and a `oneOf` of
+    // `const`s when they do. Both are one Rust enum whose variants are all
+    // unit, and both mean the same TypeScript union.
+    if let Some(members) = object.get("oneOf").and_then(Value::as_array) {
+        if members.is_empty() {
+            return Err(refuse(pointer, "an empty `oneOf` names no type"));
+        }
+        let mut parts = Vec::with_capacity(members.len());
+        for (index, member) in members.iter().enumerate() {
+            let member_pointer = format!("{pointer}/oneOf/{index}");
+            // `const`, read here rather than by recursing through
+            // `render_type`. Recursion would render whatever a member happened
+            // to be — an object, a `$ref`, a `type` array — and this arm exists
+            // for exactly one shape: `schemars`' spelling of a documented unit
+            // enum. A `oneOf` of anything else is a boundary type nobody has
+            // designed, and the module's contract is to refuse rather than
+            // render something plausible (quoin#448 FND-007).
+            let Some(constant) = member.get("const") else {
+                return Err(refuse(
+                    &member_pointer,
+                    "a `oneOf` member must be a string `const`; a union of \
+                     anything else is outside the subset this renderer supports",
+                ));
+            };
+            parts.push(string_literal(constant, &member_pointer)?);
+        }
+        return Ok(union_of(parts));
+    }
+    if let Some(constant) = object.get("const") {
+        return string_literal(constant, pointer);
+    }
+    if let Some(members) = object.get("enum").and_then(Value::as_array) {
+        if members.is_empty() {
+            return Err(refuse(pointer, "an empty `enum` names no value"));
+        }
+        let mut parts = Vec::with_capacity(members.len());
+        for (index, member) in members.iter().enumerate() {
+            parts.push(string_literal(member, &format!("{pointer}/enum/{index}"))?);
+        }
+        return Ok(union_of(parts));
+    }
+
     let Some(type_node) = object.get("type") else {
         return Err(refuse(
             pointer,
@@ -144,11 +233,50 @@ pub fn render_type(schema: &Value, pointer: &str) -> Result<String, RenderRefusa
             if parts.is_empty() {
                 return Err(refuse(pointer, "an empty `type` array names no type"));
             }
-            parts.dedup();
-            Ok(parts.join(" | "))
+            Ok(union_of(parts))
         }
         _ => Err(refuse(pointer, "`type` must be a string or an array")),
     }
+}
+
+/// Join rendered members into a union, dropping repeats and keeping order.
+///
+/// `Vec::dedup` drops only ADJACENT repeats, so it left `"a" | "b" | "a"`
+/// standing — a duplicate in a hand-written schema is exactly the case that is
+/// not already sorted (quoin#448 FND-007). Sorting instead would dedup
+/// correctly and reorder the union, and the order of a union is the order the
+/// schema declared: `"error" | "warning" | "info"` is a severity ladder, not
+/// an alphabet. So: first occurrence wins, later repeats drop.
+fn union_of(parts: Vec<String>) -> String {
+    let mut seen = std::collections::BTreeSet::new();
+    let mut unique = Vec::with_capacity(parts.len());
+    for part in parts {
+        if seen.insert(part.clone()) {
+            unique.push(part);
+        }
+    }
+    unique.join(" | ")
+}
+
+/// A JSON string constant as a TypeScript string-literal type.
+///
+/// Only strings: a numeric or boolean constant on the boundary would be a
+/// decision nobody has made yet, and guessing at one is exactly the widening
+/// this module refuses.
+fn string_literal(value: &Value, pointer: &str) -> Result<String, RenderRefusal> {
+    let text = value.as_str().ok_or_else(|| {
+        refuse(
+            pointer,
+            "only string constants are rendered; a non-string `const` is \
+             outside the subset",
+        )
+    })?;
+    serde_json::to_string(text).map_err(|error| {
+        refuse(
+            pointer,
+            format!("a constant that is not encodable: {error}"),
+        )
+    })
 }
 
 fn render_named_type(
@@ -297,6 +425,147 @@ mod tests {
         .unwrap();
         assert!(rendered.contains("  a: string;"), "{rendered}");
         assert!(rendered.contains("  b?: string;"), "{rendered}");
+    }
+
+    /// A `#[serde(transparent)]` newtype emits a `$defs` entry that is not an
+    /// object, which `render_interface` refuses by design. It becomes an alias
+    /// rather than being inlined, so `path: RepoPath` still reads as a path on
+    /// the TypeScript side.
+    #[test]
+    fn a_newtype_definition_becomes_a_type_alias() {
+        let rendered = render_definition(
+            "RepoPath",
+            &json!({ "description": "A repo-relative path.", "type": "string" }),
+            "#/$defs/RepoPath",
+        )
+        .unwrap();
+        assert_eq!(
+            rendered,
+            "/**\n * A repo-relative path.\n */\nexport type RepoPath = string;\n"
+        );
+    }
+
+    /// A unit-variant enum whose variants carry doc comments: `schemars` emits
+    /// `oneOf` of `const`s, one per variant.
+    #[test]
+    fn a_documented_unit_enum_becomes_a_string_literal_union() {
+        let rendered = render_definition(
+            "FindingKind",
+            &json!({
+                "oneOf": [
+                    { "type": "string", "const": "gate-that-gates-nothing" },
+                    { "type": "string", "const": "something-else" }
+                ]
+            }),
+            "#/$defs/FindingKind",
+        )
+        .unwrap();
+        assert_eq!(
+            rendered,
+            "export type FindingKind = \"gate-that-gates-nothing\" | \"something-else\";\n"
+        );
+    }
+
+    /// A `oneOf` of anything but string constants is refused, not rendered.
+    ///
+    /// The arm was written for one shape — `schemars`' documented unit enum —
+    /// and before quoin#448 it recursed through `render_type`, so a `oneOf` of
+    /// objects or of `$ref`s rendered a union nobody designed. `tc_type_surface`
+    /// counts interfaces, so an alias of the wrong shape reached the TypeScript
+    /// side unremarked. Each member below renders PERFECTLY WELL on its own —
+    /// that is what made the widening invisible — so the refusal asserted here
+    /// can only be the `oneOf` arm's own.
+    #[test]
+    fn a_one_of_that_is_not_a_union_of_string_constants_is_refused() {
+        for member in [
+            json!({ "$ref": "#/$defs/Finding" }),
+            json!({ "type": "array", "items": { "type": "string" } }),
+            json!({ "type": "string" }),
+        ] {
+            // Renders perfectly well on its own — so the refusal below is this
+            // ARM's decision, not a member that could not be rendered at all.
+            assert!(
+                render_type(&member, "#/$defs/X").is_ok(),
+                "fixture: {member} must render on its own, or the refusal below \
+                 proves nothing about the `oneOf` arm"
+            );
+            let refusal = render_type(
+                &json!({ "oneOf": [ { "const": "a" }, member ] }),
+                "#/$defs/X",
+            )
+            .unwrap_err();
+            assert!(
+                refusal.to_string().contains("#/$defs/X/oneOf/1"),
+                "the refusal must name the member that caused it: {refusal}"
+            );
+        }
+    }
+
+    /// Repeats drop and the declared order survives.
+    ///
+    /// `Vec::dedup` dropped only adjacent repeats, so the first union below
+    /// rendered `"a" | "b" | "a"` — invalid-looking TypeScript generated by
+    /// the thing that exists to refuse rather than degrade (quoin#448 FND-007).
+    /// A duplicate that is already adjacent is the case a sort would have
+    /// fixed; this is the one it would not.
+    #[test]
+    fn a_non_adjacent_repeat_is_dropped_and_the_declared_order_stands() {
+        assert_eq!(
+            render_type(&json!({ "enum": ["a", "b", "a"] }), "#/$defs/X").unwrap(),
+            "\"a\" | \"b\""
+        );
+        // Not alphabetical, and not sorted into being alphabetical: a union's
+        // order is the schema's, and `error | warning | info` is a ladder.
+        assert_eq!(
+            render_type(
+                &json!({ "enum": ["error", "warning", "info", "error"] }),
+                "#/$defs/X"
+            )
+            .unwrap(),
+            "\"error\" | \"warning\" | \"info\""
+        );
+    }
+
+    /// The undocumented spelling of the same Rust construct — a bare `enum` —
+    /// must render identically, because it IS the same construct.
+    #[test]
+    fn a_bare_enum_renders_the_same_as_a_oneof_of_consts() {
+        let rendered = render_type(&json!({ "type": "string", "enum": ["a", "b"] }), "#").unwrap();
+        assert_eq!(rendered, "\"a\" | \"b\"");
+    }
+
+    /// A constant that is not a string is a decision nobody has made; the
+    /// renderer refuses rather than guessing at a numeric literal type.
+    #[test]
+    fn a_non_string_constant_is_refused_rather_than_guessed_at() {
+        let error = render_type(&json!({ "const": 7 }), "#/$defs/X").unwrap_err();
+        assert_eq!(error.pointer, "#/$defs/X");
+        assert!(
+            error.reason.contains("string constants"),
+            "{}",
+            error.reason
+        );
+    }
+
+    /// A string constant with a quote in it is escaped, not concatenated into
+    /// a broken literal.
+    #[test]
+    fn a_string_constant_is_escaped() {
+        let rendered = render_type(&json!({ "const": "a\"b" }), "#").unwrap();
+        assert_eq!(rendered, "\"a\\\"b\"");
+    }
+
+    /// An object definition still becomes an interface: the alias case must not
+    /// have swallowed the common one.
+    #[test]
+    fn an_object_definition_is_still_an_interface() {
+        let rendered = render_definition(
+            "T",
+            &json!({ "type": "object", "properties": { "a": { "type": "string" } }, "required": ["a"] }),
+            "#/$defs/T",
+        )
+        .unwrap();
+        assert!(rendered.starts_with("export interface T {"), "{rendered}");
     }
 
     #[test]

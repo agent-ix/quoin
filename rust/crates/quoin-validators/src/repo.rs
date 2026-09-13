@@ -7,50 +7,95 @@
 //! `extname` from `src/validators/gates.ts`. The traversal order is part of the
 //! contract: `wiredBy` is the *first* wiring file that references a script in
 //! full-path sort order, so a different sort is a different payload.
+//!
+//! Classification ([`is_shell_file`], [`is_wiring_file`]) takes a
+//! repository-relative path rather than an absolute one, so it is the same
+//! function whether the paths came off a disk walk or out of a `quoin-core`
+//! request (quoin#412). It is deliberately on THIS side of the boundary: Node's
+//! `extname` semantics, the `/^makefile(?:\..+)?$/` shape and the
+//! case-sensitive `/\.ya?ml$/` are the subtle half of the port, and a caller
+//! that pre-filters its walk can only ever send a superset — it cannot decide
+//! a verdict.
 
+use std::collections::BTreeMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 
 use crate::error::ValidatorError;
+use crate::source::RepoSource;
 
 /// Directory names never descended into, at any depth.
 ///
 /// Verbatim from `EXCLUDED` in `gates.ts`. `spec` and `vendor` are here because
 /// a specification or a vendored tree contains shell that is documentation, not
 /// a gate this repository owns.
-const EXCLUDED: [&str; 6] = [".git", "dist", "node_modules", "spec", "target", "vendor"];
+pub(crate) const EXCLUDED: [&str; 6] = [".git", "dist", "node_modules", "spec", "target", "vendor"];
 
-/// Files a shell gate can be wired from, split by how they are recognised.
-pub(crate) struct RepoFiles {
-    /// Every `.sh` file, in full-path sort order.
-    pub(crate) shell: Vec<PathBuf>,
-    /// Every build/CI file, in full-path sort order.
-    pub(crate) wiring: Vec<PathBuf>,
+/// A repository on disk, read lazily.
+///
+/// The [`RepoSource`] the library's own entry point runs on, so the golden
+/// corpus exercises the analysis the boundary also runs. Bodies are cached
+/// after their first read; the TypeScript re-reads the same wiring body once
+/// per candidate script, and caching only ever removes a re-read of a file
+/// already opened, so the set of files opened is unchanged.
+pub struct DiskRepo<'a> {
+    root: &'a Path,
+    cache: BTreeMap<String, String>,
 }
 
-/// Walk `root` once and classify every file it holds.
+impl<'a> DiskRepo<'a> {
+    /// Read the repository rooted at `root`.
+    #[must_use]
+    pub fn new(root: &'a Path) -> Self {
+        Self {
+            root,
+            cache: BTreeMap::new(),
+        }
+    }
+}
+
+impl RepoSource for DiskRepo<'_> {
+    fn paths(&mut self) -> Result<Vec<String>, ValidatorError> {
+        scan(self.root)
+    }
+
+    fn text(&mut self, path: &str) -> Result<String, ValidatorError> {
+        if let Some(cached) = self.cache.get(path) {
+            return Ok(cached.clone());
+        }
+        let text = read_text(&self.root.join(path))?;
+        self.cache.insert(path.to_owned(), text.clone());
+        Ok(text)
+    }
+}
+
+/// Walk `root` once and return every file it holds, repository-relative and
+/// `/`-separated, in full-path sort order.
 ///
 /// The TypeScript walks twice, once per classification; one walk over a static
-/// tree yields the same two lists and halves the syscalls.
-pub(crate) fn scan(root: &Path) -> Result<RepoFiles, ValidatorError> {
+/// tree yields the same list and halves the syscalls.
+///
+/// # Errors
+///
+/// [`ValidatorError::RepoRootUnreadable`] when `root` is not a listable
+/// directory, [`ValidatorError::DirectoryUnreadable`] when a directory inside
+/// it cannot be listed.
+pub(crate) fn scan(root: &Path) -> Result<Vec<String>, ValidatorError> {
     let mut files = Vec::new();
     visit(root, root, &mut files)?;
+    // Sorted as ABSOLUTE byte paths, then made relative, rather than sorted as
+    // relative strings: every entry shares the root prefix, so the order is the
+    // same, and this keeps the comparison on the bytes the walk produced rather
+    // than on a lossy string conversion.
     files.sort_by(|a, b| {
         a.as_os_str()
             .as_encoded_bytes()
             .cmp(b.as_os_str().as_encoded_bytes())
     });
-
-    let mut shell = Vec::new();
-    let mut wiring = Vec::new();
-    for path in files {
-        if is_shell_file(&path) {
-            shell.push(path);
-        } else if is_wiring_file(root, &path) {
-            wiring.push(path);
-        }
-    }
-    Ok(RepoFiles { shell, wiring })
+    Ok(files
+        .iter()
+        .map(|path| relative_to(root, path))
+        .collect::<Vec<String>>())
 }
 
 /// Read a file the way Node's `readFileSync(path, "utf8")` does: invalid UTF-8
@@ -109,9 +154,25 @@ fn visit(root: &Path, dir: &Path, out: &mut Vec<PathBuf>) -> Result<(), Validato
     Ok(())
 }
 
-/// `extname(path) === ".sh"`.
-fn is_shell_file(path: &Path) -> bool {
-    file_name_of(path).is_some_and(|name| node_extname(name) == ".sh")
+/// Is any segment of this repository-relative path an [`EXCLUDED`] directory?
+///
+/// The walk never descends into one, so [`scan`] can never produce such a path.
+/// It is applied again to whatever a caller sends, because the exclusion is a
+/// rule of the analysis and not an optimisation of the walk: a snapshot that
+/// happens to include `vendor/gate.sh` must reach the same verdict as a disk
+/// walk that skipped it.
+#[must_use]
+pub(crate) fn is_excluded(relative: &str) -> bool {
+    let mut segments = relative.split('/');
+    // The last segment is the file name, which is never a directory here.
+    segments.next_back();
+    segments.any(|segment| EXCLUDED.contains(&segment))
+}
+
+/// `extname(path) === ".sh"`, on a repository-relative path.
+#[must_use]
+pub(crate) fn is_shell_file(relative: &str) -> bool {
+    node_extname(file_name_of(relative)) == ".sh"
 }
 
 /// `path.extname` semantics, which differ from [`Path::extension`] in the cases
@@ -131,11 +192,9 @@ fn node_extname(name: &str) -> &str {
     clippy::case_sensitive_file_extension_comparisons,
     reason = "deliberate: the oracle's /\\.ya?ml$/ is case-sensitive, so `ci.YML` is not wiring in the TypeScript and must not become wiring here. Taking clippy's suggestion would be a verdict divergence, not a cleanup."
 )]
-fn is_wiring_file(root: &Path, path: &Path) -> bool {
-    let Some(name) = file_name_of(path) else {
-        return false;
-    };
-    let lowered = name.to_lowercase();
+#[must_use]
+pub(crate) fn is_wiring_file(relative: &str) -> bool {
+    let lowered = file_name_of(relative).to_lowercase();
 
     // `/^makefile(?:\..+)?$/` — bare `Makefile`, or `Makefile.<at least one char>`.
     let is_makefile = lowered == "makefile"
@@ -152,18 +211,22 @@ fn is_wiring_file(root: &Path, path: &Path) -> bool {
     // `/^\.github\/workflows\//.test(rel) && /\.ya?ml$/.test(rel)` — note the
     // extension is tested against the whole relative path, so a workflow in a
     // nested directory still counts.
-    let relative = relative_to(root, path);
     relative.starts_with(".github/workflows/")
         && (relative.ends_with(".yml") || relative.ends_with(".yaml"))
 }
 
-fn file_name_of(path: &Path) -> Option<&str> {
-    path.file_name().and_then(|name| name.to_str())
+fn file_name_of(relative: &str) -> &str {
+    relative.rsplit('/').next().unwrap_or(relative)
 }
 
 #[cfg(test)]
+#[allow(
+    clippy::unwrap_used,
+    clippy::indexing_slicing,
+    reason = "in a test, a panic IS the failure report; the production lints stand"
+)]
 mod tests {
-    use super::{is_shell_file, node_extname, relative_to};
+    use super::{is_excluded, is_shell_file, is_wiring_file, node_extname, relative_to};
     use std::path::Path;
 
     /// Node's `extname` treats a leading dot as part of the name.
@@ -174,9 +237,9 @@ mod tests {
         assert_eq!(node_extname("a.b.sh"), ".sh");
         assert_eq!(node_extname("Makefile"), "");
         assert_eq!(node_extname("gate.SH"), ".SH");
-        assert!(is_shell_file(Path::new("/r/gate.sh")));
-        assert!(!is_shell_file(Path::new("/r/.sh")));
-        assert!(!is_shell_file(Path::new("/r/gate.bash")));
+        assert!(is_shell_file("gate.sh"));
+        assert!(!is_shell_file(".sh"));
+        assert!(!is_shell_file("gate.bash"));
     }
 
     /// Relative paths are repo-rooted and `/`-separated.
@@ -188,26 +251,42 @@ mod tests {
         );
     }
 
+    /// An excluded directory anywhere in the path removes the file, and the
+    /// file name itself is never read as a directory.
+    #[test]
+    fn tc_412_005_excluded_directories_are_excluded_at_any_depth() {
+        assert!(is_excluded("vendor/gate.sh"));
+        assert!(is_excluded("a/node_modules/b/gate.sh"));
+        assert!(is_excluded("target/debug/Makefile"));
+        assert!(!is_excluded("scripts/gate.sh"));
+        assert!(!is_excluded("Makefile"));
+        // A FILE called `vendor` is not an excluded directory.
+        assert!(!is_excluded("vendor"));
+        // The prefix must be a whole segment.
+        assert!(!is_excluded("vendored/gate.sh"));
+    }
+
     /// Each of the five wiring shapes, and the near-misses next to them.
     #[test]
     fn tc_377_009_wiring_shapes() {
-        let root = Path::new("/repo");
-        let wired = |relative: &str| super::is_wiring_file(root, &root.join(relative));
-        assert!(wired("Makefile"));
-        assert!(wired("makefile"));
-        assert!(wired("Makefile.ci"));
-        assert!(wired("justfile"));
-        assert!(wired("package.json"));
-        assert!(wired("Taskfile.yml"));
-        assert!(wired("Taskfile.yaml"));
-        assert!(wired(".github/workflows/ci.yml"));
-        assert!(wired(".github/workflows/nested/ci.yaml"));
+        assert!(is_wiring_file("Makefile"));
+        assert!(is_wiring_file("makefile"));
+        assert!(is_wiring_file("Makefile.ci"));
+        assert!(is_wiring_file("justfile"));
+        assert!(is_wiring_file("package.json"));
+        assert!(is_wiring_file("Taskfile.yml"));
+        assert!(is_wiring_file("Taskfile.yaml"));
+        assert!(is_wiring_file(".github/workflows/ci.yml"));
+        assert!(is_wiring_file(".github/workflows/nested/ci.yaml"));
 
-        assert!(!wired("Makefile."));
-        assert!(!wired("Taskfile.toml"));
-        assert!(!wired("ci/workflows/ci.yml"));
-        assert!(!wired(".github/actions/ci.yml"));
-        assert!(!wired(".github/workflows/README.md"));
-        assert!(!wired("package-lock.json"));
+        assert!(!is_wiring_file("Makefile."));
+        assert!(!is_wiring_file("Taskfile.toml"));
+        assert!(!is_wiring_file("ci/workflows/ci.yml"));
+        assert!(!is_wiring_file(".github/actions/ci.yml"));
+        assert!(!is_wiring_file(".github/workflows/README.md"));
+        assert!(!is_wiring_file("package-lock.json"));
+        // `.github/workflows/` must be at the ROOT of the relative path, the
+        // same as the oracle's anchored `/^\.github\/workflows\//`.
+        assert!(!is_wiring_file("vendor/.github/workflows/ci.yml"));
     }
 }

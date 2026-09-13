@@ -27,6 +27,17 @@ workspace = true
 regex = "=1.13.1"
 serde = { workspace = true }
 thiserror = { workspace = true }
+# Optional, and turned on by `quoin-core`'s own `schema` feature rather than
+# here: the payload types below are boundary types, so FR-097 reads their JSON
+# Schema off THESE declarations instead of a second copy in `quoin-schemas`.
+# Nothing on the validator's execution path needs the derives, so the shipped
+# binary does not carry the generator's dependency tree.
+schemars = { workspace = true, optional = true }
+
+[features]
+# FR-097. No `default`: a feature that is on by default is a feature nobody
+# ever proves works when it is off.
+schema = ["dep:schemars"]
 
 [dev-dependencies]
 serde_json = { workspace = true }

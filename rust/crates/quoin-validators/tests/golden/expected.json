@@ -772,6 +772,40 @@
         "2 gate finding(s)"
       ],
       "strictExit": 1
+    },
+    {
+      "name": "makefile-sh-is-both-wiring-and-script",
+      "findings": [
+        {
+          "kind": "gate-that-gates-nothing",
+          "obligation": "FR-044-AC-1",
+          "path": "makefile.sh",
+          "line": 3,
+          "wiredBy": "Makefile",
+          "subject": "gate for FR-044-AC-1",
+          "changeTarget": "makefile.sh:3",
+          "remedy": "compare the count for “unwrap()” to zero or make the match command exit non-zero when forbidden text is present",
+          "summary": "FR-044-AC-1 claims “no production symbol shall call `unwrap`.”, and Makefile wires makefile.sh, but line 3 only counts matches for “unwrap()” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero."
+        },
+        {
+          "kind": "gate-that-gates-nothing",
+          "obligation": "FR-045-AC-1",
+          "path": "scripts/check_todo.sh",
+          "line": 3,
+          "wiredBy": "makefile.sh",
+          "subject": "gate for FR-045-AC-1",
+          "changeTarget": "scripts/check_todo.sh:3",
+          "remedy": "compare the count for “TODO” to zero or make the match command exit non-zero when forbidden text is present",
+          "summary": "FR-045-AC-1 claims “no source file shall carry a `TODO` marker.”, and makefile.sh wires scripts/check_todo.sh, but line 3 only counts matches for “TODO” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero."
+        }
+      ],
+      "json": "{\n  \"findings\": [\n    {\n      \"kind\": \"gate-that-gates-nothing\",\n      \"obligation\": \"FR-044-AC-1\",\n      \"path\": \"makefile.sh\",\n      \"line\": 3,\n      \"wiredBy\": \"Makefile\",\n      \"subject\": \"gate for FR-044-AC-1\",\n      \"changeTarget\": \"makefile.sh:3\",\n      \"remedy\": \"compare the count for “unwrap()” to zero or make the match command exit non-zero when forbidden text is present\",\n      \"summary\": \"FR-044-AC-1 claims “no production symbol shall call `unwrap`.”, and Makefile wires makefile.sh, but line 3 only counts matches for “unwrap()” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero.\"\n    },\n    {\n      \"kind\": \"gate-that-gates-nothing\",\n      \"obligation\": \"FR-045-AC-1\",\n      \"path\": \"scripts/check_todo.sh\",\n      \"line\": 3,\n      \"wiredBy\": \"makefile.sh\",\n      \"subject\": \"gate for FR-045-AC-1\",\n      \"changeTarget\": \"scripts/check_todo.sh:3\",\n      \"remedy\": \"compare the count for “TODO” to zero or make the match command exit non-zero when forbidden text is present\",\n      \"summary\": \"FR-045-AC-1 claims “no source file shall carry a `TODO` marker.”, and makefile.sh wires scripts/check_todo.sh, but line 3 only counts matches for “TODO” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero.\"\n    }\n  ]\n}",
+      "human": [
+        "[warning] gate-that-gates-nothing: makefile.sh:3: FR-044-AC-1 claims “no production symbol shall call `unwrap`.”, and Makefile wires makefile.sh, but line 3 only counts matches for “unwrap()” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero.",
+        "[warning] gate-that-gates-nothing: scripts/check_todo.sh:3: FR-045-AC-1 claims “no source file shall carry a `TODO` marker.”, and makefile.sh wires scripts/check_todo.sh, but line 3 only counts matches for “TODO” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero.",
+        "2 gate finding(s)"
+      ],
+      "strictExit": 1
     }
   ]
 }

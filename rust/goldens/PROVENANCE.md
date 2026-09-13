@@ -7,11 +7,11 @@ parity finding to adjudicate, not a file to regenerate casually.
 
 ## Source revision
 
-| Fact | Value |
-|---|---|
-| Repository | `agent-ix/quoin` |
+| Fact                                  | Value                                                                         |
+| ------------------------------------- | ----------------------------------------------------------------------------- |
+| Repository                            | `agent-ix/quoin`                                                              |
 | Revision the goldens were produced at | `7c8e18f873b6295f528b4d694647a10d82cfb59c` (branch `spec/373-rust-burn-down`) |
-| Branch this port is based on | `main` @ `4d27dcf1621d8c28da0961a5521a5be7b6d1cd28` |
+| Branch this port is based on          | `main` @ `4d27dcf1621d8c28da0961a5521a5be7b6d1cd28`                           |
 
 The oracle source files —
 `src/config-schema.ts`, `src/org.ts`, `src/plugins.ts`, `src/modules.ts`,
@@ -29,13 +29,13 @@ TypeScript validator produced.
 
 ## Dependency versions at capture time
 
-| Package | Version |
-|---|---|
-| `@agent-ix/ix-cli-core` | 0.12.0 |
-| `@agent-ix/ts-plugin-kit` | 0.2.0 |
-| `zod` | 4.4.3 |
-| `yaml` | 2.9.0 |
-| Node | v22.15.0 |
+| Package                   | Version  |
+| ------------------------- | -------- |
+| `@agent-ix/ix-cli-core`   | 0.12.0   |
+| `@agent-ix/ts-plugin-kit` | 0.2.0    |
+| `zod`                     | 4.4.3    |
+| `yaml`                    | 2.9.0    |
+| Node                      | v22.15.0 |
 
 ## How they were captured
 
@@ -57,17 +57,17 @@ rm tests/.capture-381.test.ts
 
 ## What is in `ts-oracle.json`
 
-| Section | Oracle | Consumed by |
-|---|---|---|
-| `origin_org_urls`, `origin_org_configs` | `src/org.ts` `originOrg` | `quoin-config` `tc_381_100`, `tc_381_101` |
-| `config_service_org`, `resolve_org_flag_env` | `src/org.ts` `resolveOrg` (through `ix-cli-core`'s `ConfigService`) | `quoin-config` `tc_381_103`, `tc_381_104` |
-| `config_schema` | `src/config-schema.ts` `QuoinConfigSchema` | `quoin-config` `tc_381_102` |
-| `parse_source_arg` | `src/plugins.ts` `parseSourceArg` | `quoin-modules` `tc_381_230` |
-| `to_git_url`, `normalize_source` | `ts-plugin-kit` `toGitUrl`, `normalizeSource` | `quoin-modules` `tc_381_231`, `tc_381_232` |
-| `default_modules_manifest`, `validate_manifest` | `ts-plugin-kit` `validateMarketplaceManifest` | `quoin-modules` `tc_381_233`, `tc_381_234` |
-| `registry_file_bytes`, `registry_file_bytes_full`, `registry_read_*` | `ts-plugin-kit` `writeRegistry` / `readRegistry` | `quoin-modules` `tc_381_235`, `tc_381_236`, `tc_381_239` |
-| `read_module_name` | `src/plugins.ts` `readModuleName` | `quoin-modules` `tc_381_237` |
-| `paths` | `src/catalog.ts`, `src/plugins.ts` | `quoin-modules` `tc_381_238` |
+| Section                                                              | Oracle                                                              | Consumed by                                              |
+| -------------------------------------------------------------------- | ------------------------------------------------------------------- | -------------------------------------------------------- |
+| `origin_org_urls`, `origin_org_configs`                              | `src/org.ts` `originOrg`                                            | `quoin-config` `tc_381_100`, `tc_381_101`                |
+| `config_service_org`, `resolve_org_flag_env`                         | `src/org.ts` `resolveOrg` (through `ix-cli-core`'s `ConfigService`) | `quoin-config` `tc_381_103`, `tc_381_104`                |
+| `config_schema`                                                      | `src/config-schema.ts` `QuoinConfigSchema`                          | `quoin-config` `tc_381_102`                              |
+| `parse_source_arg`                                                   | `src/plugins.ts` `parseSourceArg`                                   | `quoin-modules` `tc_381_230`                             |
+| `to_git_url`, `normalize_source`                                     | `ts-plugin-kit` `toGitUrl`, `normalizeSource`                       | `quoin-modules` `tc_381_231`, `tc_381_232`               |
+| `default_modules_manifest`, `validate_manifest`                      | `ts-plugin-kit` `validateMarketplaceManifest`                       | `quoin-modules` `tc_381_233`, `tc_381_234`               |
+| `registry_file_bytes`, `registry_file_bytes_full`, `registry_read_*` | `ts-plugin-kit` `writeRegistry` / `readRegistry`                    | `quoin-modules` `tc_381_235`, `tc_381_236`, `tc_381_239` |
+| `read_module_name`                                                   | `src/plugins.ts` `readModuleName`                                   | `quoin-modules` `tc_381_237`                             |
+| `paths`                                                              | `src/catalog.ts`, `src/plugins.ts`                                  | `quoin-modules` `tc_381_238`                             |
 
 ## Deliberate divergences from the oracle
 
@@ -82,7 +82,7 @@ because a later reviewer will reach for this file first.
    fixed, which is the golden set doing its job.
 2. **Absent optionals are omitted, not written as `null`.** `parseSourceArg`
    returns `{ ref: undefined }`; the Rust `Source` omits the key. The registry
-   *file* is unaffected — `JSON.stringify` drops `undefined` too, which
+   _file_ is unaffected — `JSON.stringify` drops `undefined` too, which
    `registry_file_bytes` pins byte for byte.
 3. **Malformed registry JSON is an error, not an empty registry.**
    `readRegistry`'s doc comment promises tolerance but its body lets
@@ -90,7 +90,7 @@ because a later reviewer will reach for this file first.
    silently reporting "nothing installed" would destroy the snapshot
    `installPlugin`'s rollback depends on.
 4. **`config set <key>` writes only that key.** `runConfigSet` starts from
-   `get()`, so it persists the whole *resolved* object and can bake an
+   `get()`, so it persists the whole _resolved_ object and can bake an
    environment- or project-supplied value into the user file as a side effect of
    setting an unrelated key. `ConfigService::set_key` writes the named key only.
 5. **The source cache lives at `~/.ix/cache/quoin-modules`, not
@@ -112,9 +112,9 @@ because a later reviewer will reach for this file first.
 7. **Unknown config keys are all reported, not just the first.**
    `#[serde(deny_unknown_fields)]` aborts deserialization at the first
    unrecognised key, where zod's `.strict()` collects every one. `QuoinConfig::validate`
-   therefore scans the top-level mapping for unknown keys *before* handing the
+   therefore scans the top-level mapping for unknown keys _before_ handing the
    document to serde, and returns one `ConfigIssue` per key. This is parity with
-   the oracle's *reporting*, reached by a different route than the oracle's; the
+   the oracle's _reporting_, reached by a different route than the oracle's; the
    verdict (invalid) is identical either way, and only the issue count differs
    from what `deny_unknown_fields` alone would produce. Nested objects still stop
    at serde's first unknown key — quoin's schema has no nested objects today, so
@@ -138,16 +138,16 @@ this directory exists to keep honest.
 
 The conflict with AC-8 is therefore real and is resolved as follows:
 
-* **AC-8 governs the retained TypeScript implementation** for as long as it is
+- **AC-8 governs the retained TypeScript implementation** for as long as it is
   the shipping one. Nothing in `src/` is exempted by this crate's existence, and
   the TypeScript handlers continue to delegate.
-* **`quoin-config` is the divergence recorded here**, which is what makes it a
+- **`quoin-config` is the divergence recorded here**, which is what makes it a
   decision rather than a defect.
-* **Cutover must amend AC-8.** When the Rust implementation replaces the
+- **Cutover must amend AC-8.** When the Rust implementation replaces the
   TypeScript one, AC-8 as written becomes false about the shipping code, and a
   spec that is false about the shipping code is worse than no spec. Amending
-  AC-8 — to require the reimplemented surface to match ix-cli-core's *observable
-  behaviour*, which is what the goldens already test — is a **named deliverable
+  AC-8 — to require the reimplemented surface to match ix-cli-core's _observable
+  behaviour_, which is what the goldens already test — is a **named deliverable
   of the cutover ticket**, not a follow-up.
 
 Amending the spec is out of scope for quoin#381 and is not done here: this file
