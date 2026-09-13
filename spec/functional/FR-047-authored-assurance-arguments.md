@@ -35,11 +35,20 @@ score or claim compatibility with an external argument notation.
 | FR-047-AC-4 | A resolved challenge requires resolution references; accepted risk additionally requires a current expiry. | Test (TC-1134) |
 | FR-047-AC-5 | The closed authored contract, decision shape, uniqueness, timestamps, and digests are validated before rendering. | Test (TC-1135) |
 | FR-047-AC-6 | Markdown and JSON preserve every open reason and render unchanged input deterministically. | Test (TC-1136) |
+| FR-047-AC-7 | An authored instant naming a day, hour, minute or second that does not exist is refused, rather than rolled forward into a different instant that then decides a reported status. | Test (TC-1712) |
 
 ## Constraints
 
 - A test result or coverage result is evidence, not a sufficiency decision.
 - The evaluator reads no wall clock; callers provide the `asOf` instant.
+
+An instant is validated in full, not merely matched for shape. `Date.parse` does
+not reject an impossible value — it rolls it, so `2026-02-30T00:00:00Z` becomes
+March 2 and `T24:00:00Z` becomes the following day. The parsed number is then
+compared against `asOf` to decide whether an assumption is due for review or an
+accepted risk has expired, which makes a date nobody can have meant into a
+reported status rather than into an error (`agent-ix/quoin#436`). The strict
+reader is shared with the measurement surfaces rather than written a third time.
 - The authored contract remains owned by the separately installed private
   engineering-assurance module.
 - No external argument notation is emitted or claimed.

@@ -6,6 +6,8 @@
  * assumptions and challenges remain independently visible.
  */
 
+import { parseRfc3339DateTime } from "../measurement/date-time.js";
+
 import type { DischargeReport } from "./discharge.js";
 
 export interface AssuranceArgumentDefinition {
@@ -779,6 +781,23 @@ function literal<const T extends readonly string[]>(
   return value;
 }
 
+/**
+ * One authored instant, as a number for comparison.
+ *
+ * Two gates, and the split is deliberate (quoin#436). The regex is this
+ * module's own and is stricter than RFC 3339 on case: an authored `review_by`
+ * spells `T` and `Z` in upper case, and `parseRfc3339DateTime` admits `t` and
+ * `z`. Delegating the whole check would have tightened the ranges and loosened
+ * the spelling in one move.
+ *
+ * The ranges are delegated, because `Date.parse` does not reject impossible
+ * values — it ROLLS them. `2026-02-30T00:00:00Z` parsed as March 2 and
+ * `T24:00:00Z` as the following day, and the returned number is compared
+ * against `asOf` to decide whether an assumption is due for review or an
+ * accepted risk has expired. A date nobody can have meant was deciding a
+ * reported status, silently. `parseRfc3339DateTime` is the strict reader this
+ * repository already shares; a third private copy of it was the bug.
+ */
 function instant(name: string, value: string): number {
   if (
     !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/.test(
@@ -787,9 +806,8 @@ function instant(name: string, value: string): number {
   ) {
     throw new Error(`${name} must be an ISO-8601 instant`);
   }
-  const parsed = Date.parse(value);
-  if (!Number.isFinite(parsed))
-    throw new Error(`${name} must be an ISO-8601 instant`);
+  const parsed = parseRfc3339DateTime(value);
+  if (parsed === null) throw new Error(`${name} must be an ISO-8601 instant`);
   return parsed;
 }
 
