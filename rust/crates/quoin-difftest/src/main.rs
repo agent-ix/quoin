@@ -77,7 +77,7 @@ impl Request {
 /// wrote both sides on purpose, which is why it is the one operation a
 /// difference between them still means something for.
 ///
-/// What the 156 assurance cases asserted did not go with them: they are
+/// What the 111 assurance cases asserted did not go with them: they are
 /// replayed through the real binary from the frozen golden corpus in
 /// `rust/crates/quoin-assurance/tests/golden/`, by
 /// `rust/crates/quoin-core/tests/tc_447_assurance_boundary.rs`.

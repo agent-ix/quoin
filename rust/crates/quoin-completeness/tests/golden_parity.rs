@@ -111,7 +111,15 @@ fn tc_378_300_written_reason_matches_the_oracle() {
     assert!(rejected >= 8, "only {rejected} corpus cases are refused");
 }
 
-/// Trace: FR-037
+/// The four verdict criteria the deleted `tests/completeness.test.ts` carried:
+/// an unclaimed value is an unowned gap at `medium` (AC-3), an exclusion with
+/// no written reason is `high` (AC-4), an exclusion naming a value outside the
+/// vocabulary excuses nothing (AC-5), and a row with a real reason accepts the
+/// exclusion (AC-6, the `excused` rollup). Severity is part of
+/// `finding_identity`, so the grid pins the rank and not only the kind, and the
+/// `kinds_seen` floor below refuses a corpus that stopped producing one of them.
+///
+/// Trace: FR-037-AC-3, FR-037-AC-4, FR-037-AC-5, FR-037-AC-6
 /// Provenance: agent-ix/quoin#378
 #[test]
 fn tc_378_301_assess_vocabulary_matches_the_oracle() {

@@ -390,7 +390,7 @@ pub fn verdict_for(
 mod tests {
     use super::*;
 
-    /// Trace: FR-037
+    /// Trace: FR-037-AC-7
     #[test]
     fn tc_378_210_non_answers_are_rejected_and_real_sentences_accepted() {
         for non_answer in [
@@ -405,7 +405,7 @@ mod tests {
         );
     }
 
-    /// Trace: FR-037
+    /// Trace: FR-037-AC-7
     #[test]
     fn tc_378_211_a_mention_in_prose_is_not_a_justification() {
         assert_eq!(
@@ -429,7 +429,7 @@ mod tests {
         assert_eq!(verdict_for(&[high], true, 0), Verdict::Unchecked);
     }
 
-    /// Trace: FR-037
+    /// Trace: FR-037-AC-8
     #[test]
     fn tc_378_213_strict_promotes_only_admitted_gaps() {
         let medium = CompletenessFinding {

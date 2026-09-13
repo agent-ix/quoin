@@ -596,4 +596,81 @@ mod tests {
         );
         assert_eq!(loaded.declarations.len(), 2, "{loaded:?}");
     }
+
+    /// The vocabulary is the schema's enum, never a list quoin carries.
+    ///
+    /// FR-037-CON-1 forbids quoin minting a vocabulary, and the incident behind
+    /// it is concrete: the ticket assumed the nine ISO 25010 characteristics
+    /// while the module declares twelve. Counting resolved declarations cannot
+    /// tell a read vocabulary from a compiled-in one — both resolve — so this
+    /// asserts the VALUES, against an enum no ISO list would ever produce, and
+    /// over two declarations reading different schemas, so a single minted
+    /// answer cannot satisfy both.
+    ///
+    /// Trace: FR-037-AC-1, FR-037-CON-1
+    /// Provenance: agent-ix/quoin#449
+    #[test]
+    fn tc_449_240_the_vocabulary_is_the_schema_enum_not_a_minted_list() {
+        let manifest = concat!(
+            "name: m\n",
+            "artifact_types:\n",
+            "- name: NFR\n",
+            "  frontmatter_schema_ref: schemas/nfr.json\n",
+            "- name: FR\n",
+            "  frontmatter_schema_ref: schemas/fr.json\n",
+            "traceability:\n",
+            "  vocabulary_coverage:\n",
+            "  - name: quality\n",
+            "    from: NFR\n",
+            "    field: characteristic\n",
+            "  - name: kind\n",
+            "    from: FR\n",
+            "    field: characteristic\n",
+        );
+        let schemas: std::collections::BTreeMap<String, SchemaSource> = [
+            (
+                "schemas/nfr.json".to_owned(),
+                SchemaSource::Text(
+                    r#"{"properties":{"characteristic":{"enum":["moisture","spice","folding"]}}}"#
+                        .to_owned(),
+                ),
+            ),
+            (
+                "schemas/fr.json".to_owned(),
+                SchemaSource::Text(
+                    r#"{"properties":{"characteristic":{"enum":["tidal"]}}}"#.to_owned(),
+                ),
+            ),
+        ]
+        .into_iter()
+        .collect();
+
+        let loaded = declarations_from_sources(&[ModuleSource {
+            label: "m".to_owned(),
+            manifest: manifest.to_owned(),
+            schemas,
+        }]);
+
+        assert!(loaded.unresolved.is_empty(), "{loaded:?}");
+        let read: Vec<(String, Vec<String>)> = loaded
+            .declarations
+            .iter()
+            .map(|d| (d.name.as_str().to_owned(), d.values.clone()))
+            .collect();
+        let expected: Vec<(String, Vec<String>)> = vec![
+            (
+                "quality".to_owned(),
+                vec![
+                    "moisture".to_owned(),
+                    "spice".to_owned(),
+                    "folding".to_owned(),
+                ],
+            ),
+            ("kind".to_owned(), vec!["tidal".to_owned()]),
+        ];
+        assert_eq!(
+            read, expected,
+            "the vocabulary did not come from the schemas it was told to read: {loaded:?}"
+        );
+    }
 }

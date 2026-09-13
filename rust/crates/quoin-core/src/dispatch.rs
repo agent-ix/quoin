@@ -234,6 +234,67 @@ pub fn parse_operation(args: &[String]) -> Result<&str, CoreError> {
 mod tests {
     use super::*;
 
+    /// Every `ops` module's source, keyed by the name `ops/mod.rs` declares.
+    ///
+    /// `include_str!` takes a literal path, so this list is hand-written too —
+    /// but it is checked against `ops/mod.rs` by
+    /// [`the_bound_census_can_see_every_ops_module`], which is a different
+    /// file, so the two cannot go stale together.
+    const OPS_SOURCES: &[(&str, &str)] = &[
+        ("assurance", include_str!("ops/assurance.rs")),
+        ("completeness", include_str!("ops/completeness.rs")),
+        ("core", include_str!("ops/core.rs")),
+        ("validators", include_str!("ops/validators.rs")),
+    ];
+
+    /// The modules `ops/mod.rs` declares, in its own spelling.
+    fn declared_ops_modules() -> Vec<String> {
+        include_str!("ops/mod.rs")
+            .lines()
+            .filter_map(|line| line.trim().strip_prefix("pub mod "))
+            .filter_map(|rest| rest.split_once(';'))
+            .map(|(name, _)| name.to_owned())
+            .collect()
+    }
+
+    /// Every `pub const MAX_*_BYTES` an `ops` module declares, fully qualified.
+    fn declared_domain_bounds() -> Vec<String> {
+        OPS_SOURCES
+            .iter()
+            .flat_map(|(module, source)| {
+                source
+                    .lines()
+                    .filter_map(|line| line.trim().strip_prefix("pub const "))
+                    .filter_map(|rest| rest.split_once(':'))
+                    .map(|(name, _)| name.trim())
+                    .filter(|name| name.starts_with("MAX_") && name.ends_with("_BYTES"))
+                    .map(move |name| format!("ops::{module}::{name}"))
+            })
+            .collect()
+    }
+
+    /// Without this, a rename of `pub const` or of the `pub mod` spelling turns
+    /// the census check into a comparison of two empty lists, which passes.
+    #[test]
+    fn the_bound_census_can_see_every_ops_module() {
+        let mut declared = declared_ops_modules();
+        declared.sort();
+        let mut included: Vec<String> = OPS_SOURCES
+            .iter()
+            .map(|(name, _)| (*name).to_owned())
+            .collect();
+        included.sort();
+        assert_eq!(
+            declared, included,
+            "`ops/mod.rs` and `OPS_SOURCES` disagree about which domains exist;              a module missing from `OPS_SOURCES` has its size bounds uncensused"
+        );
+        assert!(
+            declared_domain_bounds().len() >= 4,
+            "the source scan found {} bound(s); it has stopped reading the              `ops` modules",
+            declared_domain_bounds().len()
+        );
+    }
+
     /// Every `"…" =>` arm of `dispatch`'s match, read out of this file's own
     /// source.
     ///
@@ -440,14 +501,21 @@ mod tests {
                 crate::ops::completeness::MAX_ASSESS_BUNDLE_BYTES,
             ),
         ];
-        // The count is pinned beside the list because the list is hand-written:
-        // a bound added to an `ops` module and not added here would leave this
-        // test green over a population that no longer includes it, which is the
-        // "agrees with itself" shape quoin#443 records. `ops::mod` declares one
-        // module per domain, so the number moves when a domain does.
+        // The census is hand-written, so it is checked against the `ops`
+        // sources rather than against itself. A literal count (`len() == 6`)
+        // is the quoin#443 shape: `domain_bounds` is the array directly above
+        // it, so the assertion re-reads the thing it guards and a bound added
+        // to a module but never listed here leaves the inequality below
+        // unevaluated while the test stays green.
+        let mut listed: Vec<String> = domain_bounds
+            .iter()
+            .map(|(name, _)| (*name).to_owned())
+            .collect();
+        listed.sort();
+        let mut declared = declared_domain_bounds();
+        declared.sort();
         assert_eq!(
-            domain_bounds.len(),
-            6,
+            listed, declared,
             "a domain bound was added or removed without this census moving"
         );
         for (name, bound) in domain_bounds {
