@@ -1,16 +1,24 @@
 import { Flags } from "@oclif/core";
 
 import { QuoinCommand } from "../../base.js";
+import type { VerifyReceiptPayload } from "../../core/types.js";
 import {
-  verifyReceipt,
-  type VerificationReceipt,
-} from "../../change-assurance/index.js";
-import {
+  askCore,
   canonicalOutput,
+  hexOf,
   jsonFlag,
   messageOf,
-  readInputJson,
+  readInputBytes,
 } from "./common.js";
+
+/** The members of a verified receipt this command reports. */
+interface VerifiedReceipt {
+  digest: string;
+  record_digest: string;
+  candidate_revision: string;
+  outcome: string;
+  reasons: string[];
+}
 
 export default class ChangeAssuranceVerifyReceipt extends QuoinCommand {
   protected skipUpdateNudge = true;
@@ -41,21 +49,22 @@ Exit status is 0 when the verified receipt is \`valid\`, 1 when it is
   async run(): Promise<void> {
     const { flags } = await this.parse(ChangeAssuranceVerifyReceipt);
 
-    let body: unknown;
+    let body: Uint8Array;
     try {
-      body = readInputJson(flags.input);
+      body = readInputBytes(flags.input);
     } catch (error) {
       this.error(`cannot read --input ${flags.input}: ${messageOf(error)}`, {
         exit: 2,
       });
     }
 
-    let receipt: VerificationReceipt;
-    try {
-      receipt = verifyReceipt(body);
-    } catch (error) {
-      this.error(`receipt refused: ${messageOf(error)}`, { exit: 2 });
-    }
+    const payload = askCore(
+      "change_assurance.verify_receipt",
+      { receipt_hex: hexOf(body) },
+      "receipt refused",
+      (message) => this.error(message, { exit: 2 }),
+    ) as unknown as VerifyReceiptPayload;
+    const receipt = payload.receipt as VerifiedReceipt;
 
     if (flags.json) {
       this.log(

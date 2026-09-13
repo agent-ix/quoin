@@ -5,7 +5,9 @@ type: FR
 verification_method: test
 evidence:
   - kind: test_case
-    ref: tests/change-assurance-command.test.ts
+    ref: rust/crates/quoin-core/tests/tc_457_change_assurance_boundary.rs
+  - kind: test_case
+    ref: tests/change-assurance-command-surface.test.ts
 relationships:
   - target: "ix://agent-ix/quoin/StR-001"
     type: "satisfies"
@@ -101,7 +103,7 @@ receipt is retained on any of these paths.
 
 | ID | Constraint | Type | Validation |
 |----|------------|------|------------|
-| FR-068-CON-1 | No command SHALL execute the attested command, spawn a process, invoke Git, or perform a network request. | Architecture | Inspection |
+| FR-068-CON-1 | No command SHALL execute the attested command, invoke Git, or perform a network request. The only process any command SHALL start is the `quoin-core` engine that decides the FR-063..FR-065 contracts, reached through the single FR-096 boundary module. (Amended at [quoin#457](https://github.com/agent-ix/quoin/issues/457), which moved those contracts out of TypeScript; before the cutover the surface decided them in process and spawned nothing at all.) | Architecture | Inspection |
 | FR-068-CON-2 | No command SHALL infer a candidate revision, proof id, command binding, tool or configuration identity, result, environment, or decision. Content digests and sizes computed from named bytes are not inferences. | Integrity | Test |
 | FR-068-CON-3 | No command output or help text SHALL make an identity, authorization, non-repudiation, or certification claim. | Responsibility | Inspection |
 | FR-068-CON-4 | The library contracts, stored layout, and schema assets SHALL be unchanged by this surface, and existing retained records SHALL remain readable. | Compatibility | Test |
@@ -120,7 +122,7 @@ receipt is retained on any of these paths.
 | FR-068-AC-8 | `schema` lists the three normative asset names and emits each by name byte-identically to the packaged asset; an unknown name is refused with exit 2. | Test (TC-1324) |
 | FR-068-AC-9 | `recover` removes only interrupted-intake staging directories, reports the count, and leaves retained records, attestations, and outputs untouched. | Test (TC-1325) |
 | FR-068-AC-10 | Golden fixtures for a sealed record, a sealed attestation, and a valid receipt reproduce byte-identical canonical JSON through the CLI (CON-4). | Integration (TC-1326) |
-| FR-068-AC-11 | Static boundaries prove no command executes an attested command, spawns a process, or performs Git or network work, and that no output or help text makes an identity, authorization, non-repudiation, or certification claim (CON-1, CON-3). | Inspection (TC-1327) |
+| FR-068-AC-11 | Static boundaries prove no command executes an attested command or performs Git or network work, that the one process boundary any command reaches is the FR-096 engine module, and that no output or help text makes an identity, authorization, non-repudiation, or certification claim (CON-1, CON-3). | Inspection (TC-1327) |
 
 ## Dependencies
 

@@ -3,8 +3,11 @@
 
 # Where this crate and the retained TypeScript differ
 
-`src/change-assurance/` is the oracle for this port, and
-`tests/fixtures/oracle.json` is what it produced. Every scenario in that
+`src/change-assurance/` **was** the oracle for this port; quoin#457 cut the CLI
+surface over to this crate and deleted it. `tests/fixtures/oracle.json` is what
+it produced and is now the only witness to what it said — so every statement
+below that used to be checkable against that tree has been restated as
+something checkable against this one, or is marked as no longer testable. Every scenario in that
 capture is reproduced byte for byte — 38 verifications, 4 records, 4
 attestations and 6 ix-flow events. What follows is everything outside the
 capture where the two trees can be told apart, and why each one is what it is.
@@ -56,9 +59,20 @@ receipt**, because the receipt it assembled fails `validateReceipt`:
    `check(reasons, "invalid")` while `parent_missing` is in the _incomplete_
    precedence set, so the receipt disagrees with its own reason precedence.
    The consequence is that **`parent_missing` is unreachable as a receipt
-   reason in the retained TypeScript**, and the reason census in
-   `tests/tc_455_verify.rs` records 34 of 35 reasons reached for that
-   reason.
+   reason**, and the reason census in `tests/tc_455_verify.rs` records 34 of
+   35 reasons reached for that reason.
+
+   This is not a property of the TypeScript. The port inherited it exactly —
+   `Reason::ParentMissing` declares its precedence class `incomplete` while
+   `verify::verify_change_assurance` builds the lineage check with
+   `Check::from_reasons(.., Outcome::Invalid)` — so any input reaching the
+   reason is refused, not only the one the capture holds.
+   `tc_455_parent_missing_is_structurally_unreachable_in_this_crate` asserts
+   both halves over this crate's own code, so the census figure stays
+   falsifiable now that the TypeScript is gone. **It is deliberately not
+   fixed here**: quoin#457 is a cutover, and changing the verdict for an input
+   both trees refuse would be a divergence introduced by a deletion.
+
 2. A retained attestation whose `retained_output.digest` is malformed. The
    oracle copies it into the receipt unvalidated and `validateReceipt` then
    refuses the receipt.
@@ -74,3 +88,43 @@ malformed member inside one retained attestation destroys the verification of
 every other proof in the record, and the receipt is the only artifact that
 would have recorded why. The receipt still cites the attestation by its
 selection digest, so nothing is lost from the trail.
+
+## §5 — the cutover (quoin#457)
+
+`src/commands/change-assurance/` now reaches these contracts through
+`quoin-core change_assurance.*`. The following differ from what the deleted
+TypeScript did, and each is an accepted, declared consequence of the move.
+
+1. **A malformed `retained_output.digest` or `attestation_digest` changes the
+   exit status.** Per §4 cases 2 and 3, the TypeScript threw; through the
+   engine the request is refused with `Invalid` (exit 3), regraded by the
+   command to exit 2 — never `Internal` (exit 4). Asserted by
+   `quoin-core` `tc_457_change_assurance_boundary.rs` ::
+   `tc_457_608`, which requires exit 3 and forbids 4.
+
+2. **Every operation now carries a declared input ceiling.** `seal_attestation`
+   and `intake` read their bytes with `readFileSync`, which had no bound; each
+   `change_assurance.*` operation now applies a `MAX_*_BYTES` before any host is
+   consulted. An input larger than the bound is refused where it used to be
+   read. All six bounds are entered in
+   `tc_412_the_transport_ceiling_stays_above_every_domain_bound`.
+
+3. **`--audits` entries are shape-checked.** The request type is a serde struct
+   with `deny_unknown_fields`, so an audit entry carrying an undeclared member
+   is refused instead of ignored.
+
+4. **Documents cross the boundary as lowercase hex of the producer's exact
+   bytes**, never re-serialized JSON, so `parse_strict_json`'s decisions
+   (duplicate members, BOM, non-finite numbers, trailing content) are taken over
+   the bytes the caller held.
+
+5. **`seal-record` refuses a body supplying `digest` in the engine.** The
+   TypeScript refused it in `seal-record.ts`; the check moved into
+   `ops::change_assurance::seal_record`, where it applies to every caller of the
+   operation and not only to the command.
+
+6. **FR-068-CON-1 was amended.** The surface used to spawn nothing at all. It
+   now starts exactly one process — the engine — through `src/core/exec.ts`.
+   `tests/change-assurance-command-surface.test.ts` asserts that positively
+   (every engine-reaching command goes through that one module) as well as
+   negatively (no command reaches `child_process`, Git, or the network).

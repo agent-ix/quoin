@@ -1,6 +1,6 @@
 import { QuoinCommand } from "../../base.js";
-import { recoverChangeAssuranceStaging } from "../../change-assurance/index.js";
-import { canonicalOutput, jsonFlag, messageOf, repoFlag } from "./common.js";
+import type { RecoverPayload } from "../../core/types.js";
+import { askCore, canonicalOutput, jsonFlag, repoFlag } from "./common.js";
 
 export default class ChangeAssuranceRecover extends QuoinCommand {
   protected skipUpdateNudge = true;
@@ -23,12 +23,13 @@ here re-runs, re-hashes, or re-verifies anything.`;
   async run(): Promise<void> {
     const { flags } = await this.parse(ChangeAssuranceRecover);
 
-    let removed: number;
-    try {
-      removed = recoverChangeAssuranceStaging(flags.repo);
-    } catch (error) {
-      this.error(`cannot recover staging: ${messageOf(error)}`, { exit: 2 });
-    }
+    const payload = askCore(
+      "change_assurance.recover",
+      { repo: flags.repo },
+      "cannot recover staging",
+      (message) => this.error(message, { exit: 2 }),
+    ) as unknown as RecoverPayload;
+    const removed = payload.removed;
 
     if (flags.json) {
       this.log(canonicalOutput({ removed }));

@@ -1,24 +1,25 @@
 import { Flags } from "@oclif/core";
 
 import { QuoinCommand } from "../../base.js";
+import type { ReceiptPayload } from "../../core/types.js";
 import {
-  readAttestation,
-  readChangeRecord,
-  verifyChangeAssurance,
-  type ChangeAssuranceRecord,
-  type DecisionHistory,
-  type ProofAttestation,
-  type RetainedAuditInput,
-  type VerificationReceipt,
-} from "../../change-assurance/index.js";
-import {
+  askCore,
   canonicalOutput,
+  hexOf,
   jsonFlag,
   messageOf,
   parseSelection,
-  readInputJson,
+  readInputBytes,
   repoFlag,
 } from "./common.js";
+
+/** The members of a verification receipt this command reports. */
+interface Receipt {
+  digest: string;
+  outcome: string;
+  reasons: string[];
+  proofs: Array<{ proof_id: string; outcome: string; reasons: string[] }>;
+}
 
 export default class ChangeAssuranceReceipt extends QuoinCommand {
   protected skipUpdateNudge = true;
@@ -89,17 +90,12 @@ integrity error exits 2 instead and emits none.`;
   async run(): Promise<void> {
     const { flags } = await this.parse(ChangeAssuranceReceipt);
 
-    const record = this.storedRecord(flags.repo, flags.record, "--record");
-    const parents = flags.parent.map((digest) =>
-      this.storedRecord(flags.repo, digest, "--parent"),
-    );
-
+    // The `<proof-id>=<digest>` spelling is this surface's own grammar, so it
+    // is refused here, naming the flag the user typed. Everything the grammar
+    // produces is then decided on the far side: whether the digests name
+    // retained evidence, and what the receipt says.
     const selections: Array<{ proof_id: string; attestation_digest: string }> =
       [];
-    const attestations: Array<{
-      attestation: ProofAttestation;
-      output: Uint8Array | null;
-    }> = [];
     for (const raw of flags.select) {
       const selection = parseSelection(raw);
       if (!selection) {
@@ -109,27 +105,11 @@ integrity error exits 2 instead and emits none.`;
         );
       }
       selections.push(selection);
-      let stored: { attestation: ProofAttestation; output: Uint8Array } | null;
-      try {
-        stored = readAttestation(flags.repo, selection.attestation_digest);
-      } catch (error) {
-        this.error(
-          `cannot read attestation ${selection.attestation_digest}: ${messageOf(error)}`,
-          { exit: 2 },
-        );
-      }
-      if (!stored) {
-        this.error(
-          `--select ${raw} names no retained attestation in ${flags.repo}`,
-          { exit: 2 },
-        );
-      }
-      attestations.push(stored);
     }
 
-    let decisionHistory: DecisionHistory;
+    let decisions: Uint8Array;
     try {
-      decisionHistory = readInputJson(flags.decisions) as DecisionHistory;
+      decisions = readInputBytes(flags.decisions);
     } catch (error) {
       this.error(
         `cannot read --decisions ${flags.decisions}: ${messageOf(error)}`,
@@ -137,39 +117,33 @@ integrity error exits 2 instead and emits none.`;
       );
     }
 
-    let audits: RetainedAuditInput[] = [];
+    let audits: Uint8Array | null = null;
     if (flags.audits !== undefined) {
-      let parsed: unknown;
       try {
-        parsed = readInputJson(flags.audits);
+        audits = readInputBytes(flags.audits);
       } catch (error) {
         this.error(
           `cannot read --audits ${flags.audits}: ${messageOf(error)}`,
           { exit: 2 },
         );
       }
-      if (!Array.isArray(parsed)) {
-        this.error("--audits must be a JSON array of retained audit reports", {
-          exit: 2,
-        });
-      }
-      audits = parsed as RetainedAuditInput[];
     }
 
-    let receipt: VerificationReceipt;
-    try {
-      receipt = verifyChangeAssurance({
-        record,
-        parents,
+    const payload = askCore(
+      "change_assurance.receipt",
+      {
+        repo: flags.repo,
+        record_digest: flags.record,
         candidate_revision: flags["candidate-revision"],
+        parent_digests: flags.parent,
         selections,
-        attestations,
-        decision_history: decisionHistory,
-        audits,
-      });
-    } catch (error) {
-      this.error(`cannot verify candidate: ${messageOf(error)}`, { exit: 2 });
-    }
+        decisions_hex: hexOf(decisions),
+        audits_hex: audits === null ? null : hexOf(audits),
+      },
+      "cannot verify candidate",
+      (message) => this.error(message, { exit: 2 }),
+    ) as unknown as ReceiptPayload;
+    const receipt = payload.receipt as Receipt;
 
     if (flags.json) {
       this.log(canonicalOutput(receipt));
@@ -193,27 +167,5 @@ integrity error exits 2 instead and emits none.`;
     // it is the honest state of the evidence, and it exits non-zero so a gate
     // cannot mistake "nothing was retained" for "everything checked out".
     if (receipt.outcome !== "valid") this.exit(1);
-  }
-
-  /** Read one stored record, refusing an unknown digest rather than skipping it. */
-  private storedRecord(
-    repo: string,
-    digest: string,
-    flag: string,
-  ): ChangeAssuranceRecord {
-    let record: ChangeAssuranceRecord | null;
-    try {
-      record = readChangeRecord(repo, digest);
-    } catch (error) {
-      this.error(`cannot read ${flag} ${digest}: ${messageOf(error)}`, {
-        exit: 2,
-      });
-    }
-    if (!record) {
-      this.error(`${flag} ${digest} names no retained record in ${repo}`, {
-        exit: 2,
-      });
-    }
-    return record;
   }
 }

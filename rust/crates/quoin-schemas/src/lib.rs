@@ -80,11 +80,11 @@ pub const BOUNDARY_SCHEMA_ID: &str = "https://agent-ix.dev/quoin/core-boundary-v
 // --- The two checked-in digests. `make types` rewrites both; nothing else may.
 /// SHA-256 of the canonical JSON of [`boundary_schema`] at generation time.
 pub const SOURCE_SCHEMA_SHA256: &str =
-    "d8ee4643c562f4ee2ca1d8abf9c182fbdd343810835c8ec39c12d504436c4ed0";
+    "7411cd37687c4ef3f222e53e64ba85a39e444f02b2df3f3e92bcb33e9d358f26";
 
 /// SHA-256 of the committed `src/core/types.ts`.
 pub const GENERATED_TYPES_SHA256: &str =
-    "39ac0cfad425c505f70c06a68691dec15677b9011219af75ddaf10729bc21ca0";
+    "3223187bbbab767ee368eeebf45c227e5fe89d1c3e3b6c8980064e30d6e7d26f";
 
 /// The JSON Schema of every type that crosses the `quoin-core` boundary.
 ///
@@ -126,6 +126,19 @@ pub fn boundary_schema() -> Value {
     let _ = generator.subschema_for::<quoin_core::ops::semantic::SweepCorpusRequest>();
     let _ = generator.subschema_for::<quoin_core::ops::semantic::SweepCorpusPayload>();
     let _ = generator.subschema_for::<quoin_core::ops::semantic::MigrationExamplePayload>();
+    let _ = generator.subschema_for::<quoin_core::ops::change_assurance::SealRecordRequest>();
+    let _ = generator.subschema_for::<quoin_core::ops::change_assurance::SealRecordPayload>();
+    let _ = generator.subschema_for::<quoin_core::ops::change_assurance::SealAttestationRequest>();
+    let _ = generator.subschema_for::<quoin_core::ops::change_assurance::SealAttestationPayload>();
+    let _ = generator.subschema_for::<quoin_core::ops::change_assurance::IntakeRequest>();
+    let _ = generator.subschema_for::<quoin_core::ops::change_assurance::IntakePayload>();
+    let _ = generator.subschema_for::<quoin_core::ops::change_assurance::RecoverRequest>();
+    let _ = generator.subschema_for::<quoin_core::ops::change_assurance::RecoverPayload>();
+    let _ = generator.subschema_for::<quoin_core::ops::change_assurance::SelectionRequest>();
+    let _ = generator.subschema_for::<quoin_core::ops::change_assurance::ReceiptRequest>();
+    let _ = generator.subschema_for::<quoin_core::ops::change_assurance::ReceiptPayload>();
+    let _ = generator.subschema_for::<quoin_core::ops::change_assurance::VerifyReceiptRequest>();
+    let _ = generator.subschema_for::<quoin_core::ops::change_assurance::VerifyReceiptPayload>();
     let _ = generator.subschema_for::<quoin_core::ops::validators::RunRequest>();
     let _ = generator.subschema_for::<quoin_core::ops::validators::RunPayload>();
     json!({
@@ -388,7 +401,7 @@ mod tests {
     /// A list and not a count: a count moves when a type is renamed and says
     /// nothing about WHICH names crossed, and the names are what TypeScript
     /// imports.
-    const BOUNDARY_TYPES: [&str; 114] = [
+    const BOUNDARY_TYPES: [&str; 127] = [
         "ArgumentStatus",
         "ArgumentSummary",
         "AssessInput",
@@ -439,6 +452,8 @@ mod tests {
         "InstallPayload",
         "InstallRequest",
         "InstalledModule",
+        "IntakePayload",
+        "IntakeRequest",
         "LegacyFormDiagnostic",
         "LegacyForms",
         "LineNumber",
@@ -462,6 +477,10 @@ mod tests {
         "ReadBlocksRequest",
         "ReadFrontmatterRequest",
         "ReasoningView",
+        "ReceiptPayload",
+        "ReceiptRequest",
+        "RecoverPayload",
+        "RecoverRequest",
         "Relationship",
         "RelationshipType",
         "RemovePayload",
@@ -477,6 +496,11 @@ mod tests {
         "SchemaRefsPayload",
         "SchemaRefsRequest",
         "SchemaSource",
+        "SealAttestationPayload",
+        "SealAttestationRequest",
+        "SealRecordPayload",
+        "SealRecordRequest",
+        "SelectionRequest",
         "SemanticBlock",
         "SemanticCoreVersion",
         "SemanticDiagnostic",
@@ -498,6 +522,8 @@ mod tests {
         "UnusedDischargeFact",
         "UnusedFactReason",
         "Verdict",
+        "VerifyReceiptPayload",
+        "VerifyReceiptRequest",
         "ViewSchemaVersion",
         "ViewStatus",
         "VocabularyName",

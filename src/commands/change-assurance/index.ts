@@ -8,8 +8,9 @@ export default class ChangeAssurance extends QuoinCommand {
 retained-output intake, and FR-065 verification receipt contracts (FR-068).
 
 These commands transcribe and verify what a producer supplies. None of them
-runs the command an attestation describes, spawns a process, invokes Git, or
-performs a network request. Digests establish content integrity and recorded
+runs the command an attestation describes, invokes Git, or performs a network
+request. The only process any of them starts is the quoin-core engine that
+decides the FR-063..FR-065 contracts (FR-096). Digests establish content integrity and recorded
 actor labels are attribution only; nothing here establishes authorization or
 non-repudiation, and no output is a certification.
 

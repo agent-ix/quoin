@@ -1,19 +1,23 @@
 import { Flags } from "@oclif/core";
 
 import { QuoinCommand } from "../../base.js";
+import type { SealRecordPayload } from "../../core/types.js";
 import {
-  sealChangeRecord,
-  writeChangeRecord,
-  type ChangeAssuranceRecord,
-} from "../../change-assurance/index.js";
-import {
+  askCore,
   canonicalOutput,
+  hexOf,
   jsonFlag,
   messageOf,
-  readInputJson,
-  refuseSuppliedFields,
+  readInputBytes,
   repoFlag,
 } from "./common.js";
+
+/** The three members of a sealed record this command prints. */
+interface SealedRecord {
+  record_id: string;
+  revision: number;
+  digest: string;
+}
 
 export default class ChangeAssuranceSealRecord extends QuoinCommand {
   protected skipUpdateNudge = true;
@@ -47,31 +51,25 @@ it writes into.`;
   async run(): Promise<void> {
     const { flags } = await this.parse(ChangeAssuranceSealRecord);
 
-    let body: unknown;
+    let body: Uint8Array;
     try {
-      body = readInputJson(flags.input);
+      body = readInputBytes(flags.input);
     } catch (error) {
       this.error(`cannot read --input ${flags.input}: ${messageOf(error)}`, {
         exit: 2,
       });
     }
 
-    const supplied = refuseSuppliedFields(body, ["digest"]);
-    if (supplied) this.error(supplied, { exit: 2 });
-
-    let record: ChangeAssuranceRecord;
-    try {
-      record = sealChangeRecord(body as Omit<ChangeAssuranceRecord, "digest">);
-    } catch (error) {
-      this.error(`cannot seal record: ${messageOf(error)}`, { exit: 2 });
-    }
-
-    let path: string;
-    try {
-      path = writeChangeRecord(flags.repo, record);
-    } catch (error) {
-      this.error(`cannot retain record: ${messageOf(error)}`, { exit: 2 });
-    }
+    // The bytes cross unparsed. Sealing, schema validation, and the refusal of
+    // a supplied `digest` are all decided on the far side (FR-096), over the
+    // bytes the producer wrote.
+    const payload = askCore(
+      "change_assurance.seal_record",
+      { repo: flags.repo, record_hex: hexOf(body) },
+      "cannot seal record",
+      (message) => this.error(message, { exit: 2 }),
+    ) as unknown as SealRecordPayload;
+    const record = payload.record as SealedRecord;
 
     if (flags.json) {
       this.log(
@@ -79,13 +77,13 @@ it writes into.`;
           record_id: record.record_id,
           revision: record.revision,
           digest: record.digest,
-          path,
+          path: payload.path,
         }),
       );
       return;
     }
     this.log(`sealed ${record.record_id} revision ${record.revision}`);
     this.log(`  digest: ${record.digest}`);
-    this.log(`  retained: ${path}`);
+    this.log(`  retained: ${payload.path}`);
   }
 }

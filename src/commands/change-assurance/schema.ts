@@ -7,7 +7,7 @@ import {
   CHANGE_ASSURANCE_SCHEMA_NAMES,
   changeAssuranceSchemaPath,
   type ChangeAssuranceSchemaName,
-} from "../../change-assurance/index.js";
+} from "../../store/schema-assets.js";
 import { canonicalOutput, jsonFlag, messageOf } from "./common.js";
 
 export default class ChangeAssuranceSchema extends QuoinCommand {

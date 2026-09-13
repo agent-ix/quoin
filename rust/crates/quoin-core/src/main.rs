@@ -43,7 +43,9 @@
 use std::io::Write as _;
 use std::path::{Path, PathBuf};
 
-use quoin_core::capabilities::{Capabilities, ModuleHost, SemanticHost};
+use quoin_change_assurance::EvidenceStore;
+use quoin_change_assurance::intake::disk::DiskEvidenceStore;
+use quoin_core::capabilities::{Capabilities, ChangeAssuranceHost, ModuleHost, SemanticHost};
 use quoin_core::dispatch::{dispatch, parse_operation, read_request};
 use quoin_core::error::CoreError;
 use quoin_core::protocol::{Diagnostic, Response, canonical_json};
@@ -81,7 +83,8 @@ fn run(args: &[String]) -> Result<Response, CoreError> {
     // The grant is built once, here, and nothing downstream can widen it.
     let modules = HostModules::new();
     let semantic = HostSemantic::new();
-    let capabilities = Capabilities::with_hosts(&modules, &semantic);
+    let change_assurance = HostChangeAssurance;
+    let capabilities = Capabilities::with_hosts(&modules, &semantic, &change_assurance);
     dispatch(op, &request, &capabilities)
 }
 
@@ -255,6 +258,22 @@ impl SemanticHost for HostSemantic {
         // make `quoin semantic sweep` require a vendored contract it does not
         // consult.
         quoin_semantic::sweep_corpus(roots, identity, generated_at)
+    }
+}
+
+/// The production [`ChangeAssuranceHost`]: the evidence store on disk
+/// (quoin#457).
+///
+/// It holds no state at all. The repository root is a REQUEST field — `--repo`
+/// on every `quoin change-assurance` command — so there is nothing to resolve
+/// from the environment and nothing to cache between operations; a process
+/// answers one operation and exits. The whole host is the one line that says
+/// which implementation of `EvidenceStore` production uses.
+struct HostChangeAssurance;
+
+impl ChangeAssuranceHost for HostChangeAssurance {
+    fn store<'a>(&'a self, repo: &Path) -> Box<dyn EvidenceStore + 'a> {
+        Box::new(DiskEvidenceStore::new(repo))
     }
 }
 
