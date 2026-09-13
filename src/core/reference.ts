@@ -14,7 +14,12 @@
  * transliteration of one implementation would agree with itself.
  */
 
-import { buildCase, renderCase, requirementOf } from "../assurance/index.js";
+import {
+  buildCase,
+  parseAssuranceArgument,
+  renderCase,
+  requirementOf,
+} from "../assurance/index.js";
 
 /** Mirrors `quoin_core::protocol::PROTOCOL_VERSION` — deliberately restated,
  * not imported from the generated `./types.js`: this file is the differential
@@ -152,12 +157,15 @@ export function reference(argv: string[], stdin: string): ReferenceOutcome {
   if (op === "assurance.render_case") {
     return assuranceRenderCase(parsed);
   }
+  if (op === "assurance.parse_argument") {
+    return assuranceParseArgument(parsed);
+  }
   if (op !== "core.ping") {
     return failure(
       3,
       diagnostic("CORE_UNKNOWN_OP", "no such operation in this build", {
         known:
-          "assurance.build_case, assurance.render_case, assurance.requirement_of, core.ping",
+          "assurance.build_case, assurance.parse_argument, assurance.render_case, assurance.requirement_of, core.ping",
         op,
       }),
     );
@@ -424,6 +432,57 @@ function assuranceBuildCase(fields: Record<string, unknown>): ReferenceOutcome {
       : {}),
   });
   return { exitCode: 0, payload: canonicalJson(built), diagnostics: [] };
+}
+
+/**
+ * `assurance.parse_argument`, answered by the RETAINED implementation.
+ *
+ * **The request IS the argument**, with no wrapper object. Every other
+ * operation here takes named fields because the retained function does; this
+ * one takes a single `unknown` and its first act is to refuse any key outside
+ * a closed set of twelve. A wrapper would have introduced a thirteenth key
+ * that exists on neither side of the retained API, and the closed set already
+ * gives the boundary the "unknown field" verdict a wrapper would have added.
+ *
+ * **There is no parity validation here, and that is the difference from
+ * `assuranceBuildCase`.** The two operations above lean on serde to reject a
+ * malformed request, so the reference had to grow a hand-written copy of what
+ * serde refuses or the sides would disagree on every bad input. This operation
+ * has no derive: the Rust port reads `serde_json::Value` directly and
+ * reimplements all seventeen of the retained predicates, because three of them
+ * — the asymmetric `null`, JavaScript's trim set, and the impossible-date
+ * check — are ones no derive can express. So the validation this function
+ * would otherwise duplicate is already the thing under comparison.
+ */
+function assuranceParseArgument(
+  fields: Record<string, unknown>,
+): ReferenceOutcome {
+  const op = "assurance.parse_argument";
+
+  const size = Buffer.byteLength(JSON.stringify(fields), "utf8");
+  if (size > MAX_BUILD_CASE_BYTES) {
+    return failure(
+      2,
+      diagnostic("CORE_REFUSED", "request exceeds the accepted size", {
+        limit_bytes: String(MAX_BUILD_CASE_BYTES),
+        observed_bytes: String(size),
+        op,
+      }),
+    );
+  }
+
+  try {
+    return {
+      exitCode: 0,
+      payload: canonicalJson(parseAssuranceArgument(fields)),
+      diagnostics: [],
+    };
+  } catch (cause) {
+    return failure(
+      3,
+      diagnostic("CORE_BAD_REQUEST", (cause as Error).message, { op }),
+    );
+  }
 }
 
 /**
