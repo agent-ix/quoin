@@ -7,15 +7,21 @@
 //! must keep doing only four: read argv, read stdin, call
 //! [`quoin_core::dispatch::dispatch`], write the two streams and exit.
 //!
+//! Even "read stdin" is a library decision here: the ceiling on an untrusted
+//! stream is [`quoin_core::protocol::MAX_REQUEST_BYTES`] and the bounded read
+//! is [`quoin_core::dispatch::read_request`], so the refusal is unit-testable
+//! against a `&[u8]` without a process. This file supplies the handle and
+//! nothing else.
+//!
 //! The discipline that matters here is that **stdout is written only when the
 //! outcome carries a payload**. A caller reading a half-written object off a
 //! failed run is the defect this ordering prevents: the payload is serialised
 //! in full, in memory, before a byte reaches stdout.
 
-use std::io::{Read as _, Write as _};
+use std::io::Write as _;
 
-use quoin_core::dispatch::{dispatch, parse_operation, parse_request};
-use quoin_core::error::{CoreError, CoreErrorCode};
+use quoin_core::dispatch::{dispatch, parse_operation, read_request};
+use quoin_core::error::CoreError;
 use quoin_core::protocol::{Diagnostic, Response, canonical_json};
 
 fn main() -> std::process::ExitCode {
@@ -32,11 +38,12 @@ fn main() -> std::process::ExitCode {
 
 fn run(args: &[String]) -> Result<Response, CoreError> {
     let op = parse_operation(args)?;
-    let mut stdin = String::new();
-    std::io::stdin().read_to_string(&mut stdin).map_err(|e| {
-        CoreError::new(CoreErrorCode::Io, e.to_string()).with_context("stream", "stdin")
-    })?;
-    let request = parse_request(&stdin)?;
+    // Bounded, and bounded HERE: `read_request` stops the stream one byte past
+    // `protocol::MAX_REQUEST_BYTES` rather than reading whatever arrives and
+    // measuring it afterwards. See quoin#448's review — an uncapped
+    // `read_to_string` in this function made every operation's own size limit
+    // a remark about an allocation that had already happened.
+    let request = read_request(std::io::stdin())?;
     dispatch(op, &request)
 }
 

@@ -58,6 +58,18 @@ use crate::protocol::Response;
 /// — shell scripts and build wiring — so quoin's own repository arrives in tens
 /// of kilobytes; 16 MiB is far past anything a real tree produces and still
 /// refuses a stream.
+///
+/// **This is the DOMAIN's bound, and it is not the one that protects the
+/// process.** quoin#448's review made that distinction concrete: this number is
+/// measured on a request that has already been read whole, parsed whole and
+/// re-serialised to measure, so on its own it described the request instead of
+/// bounding the work — a 2 GiB stdin was three copies deep before anything
+/// said it was too large. What bounds the read is
+/// [`crate::protocol::MAX_REQUEST_BYTES`], applied by
+/// [`crate::dispatch::read_request`] to the stream itself, one byte past its
+/// limit. It sits deliberately above this one, so that a caller who sends a
+/// too-large repository still gets THIS refusal, naming `validators.run` and
+/// the size it measured, rather than a transport verdict that can name neither.
 pub const MAX_RUN_REQUEST_BYTES: usize = 16 * 1024 * 1024;
 
 /// The request accepted by `validators.run`.
@@ -167,8 +179,9 @@ fn snapshot(request: RunRequest) -> quoin_validators::MemoryRepo {
 ///   present turns out to be unreadable where the analysis needs it.
 pub fn run(request: &serde_json::Value) -> Result<Response, CoreError> {
     // Measured on the parsed value rather than on raw stdin: the dispatcher has
-    // already read and parsed the stream, so this is the honest place to state
-    // a size the DOMAIN refuses, distinct from any transport ceiling.
+    // already read and parsed the stream — within `protocol::MAX_REQUEST_BYTES`,
+    // which is what keeps that read bounded — so this is the honest place to
+    // state a size the DOMAIN refuses, distinct from that transport ceiling.
     let size = serde_json::to_vec(request)
         .map_err(|e| CoreError::new(CoreErrorCode::Io, e.to_string()))?
         .len();
@@ -177,7 +190,12 @@ pub fn run(request: &serde_json::Value) -> Result<Response, CoreError> {
             CoreError::new(CoreErrorCode::Refused, "request exceeds the accepted size")
                 .with_context("op", "validators.run")
                 .with_context("limit_bytes", MAX_RUN_REQUEST_BYTES.to_string())
-                .with_context("observed_bytes", size.to_string()),
+                .with_context("observed_bytes", size.to_string())
+                // What `observed_bytes` counted. A caller that pretty-prints
+                // its request sends more bytes than this number, and without
+                // this key the diagnostic looks like arithmetic they can check
+                // against their own stdin and fail (quoin#448 FND-003).
+                .with_context("measured_on", "the compactly re-serialised request"),
         );
     }
 
@@ -219,6 +237,62 @@ mod tests {
                 ]
             }
         })
+    }
+
+    /// A `files` map padded until the re-serialised request is `bytes` long.
+    ///
+    /// One file whose single line carries the padding, so the returned value is
+    /// exactly the size asked for and the test can sit on the boundary rather
+    /// than near it.
+    fn a_request_of_exactly(bytes: usize) -> serde_json::Value {
+        let empty = serde_json::to_vec(&serde_json::json!({
+            "files": { "pad.sh": [""] }
+        }))
+        .expect("the envelope serialises");
+        let padding = bytes
+            .checked_sub(empty.len())
+            .expect("the requested size must hold the envelope");
+        let request = serde_json::json!({
+            "files": { "pad.sh": ["x".repeat(padding)] }
+        });
+        assert_eq!(
+            serde_json::to_vec(&request)
+                .expect("the request serialises")
+                .len(),
+            bytes
+        );
+        request
+    }
+
+    /// The domain bound, from both sides of it.
+    ///
+    /// Before quoin#448 nothing exercised this refusal at all: the constant was
+    /// declared, the branch was written, and no test said at what size it
+    /// fires. A bound nobody has stood on is a number, not a behaviour.
+    #[test]
+    fn tc_412_the_domain_bound_refuses_one_byte_past_itself_and_not_at_itself() {
+        let at_the_limit = run(&a_request_of_exactly(MAX_RUN_REQUEST_BYTES))
+            .expect("a request of exactly the limit is accepted");
+        assert_eq!(at_the_limit.outcome, Outcome::Ok);
+
+        let error = run(&a_request_of_exactly(MAX_RUN_REQUEST_BYTES + 1)).unwrap_err();
+        assert_eq!(error.code, CoreErrorCode::Refused);
+        assert_eq!(error.outcome().code(), 2);
+        assert_eq!(error.context["op"], "validators.run");
+        assert_eq!(
+            error.context["limit_bytes"],
+            MAX_RUN_REQUEST_BYTES.to_string()
+        );
+        assert_eq!(
+            error.context["observed_bytes"],
+            (MAX_RUN_REQUEST_BYTES + 1).to_string()
+        );
+        // The refusal says what it counted, because it is not the number the
+        // caller put on the wire.
+        assert_eq!(
+            error.context["measured_on"],
+            "the compactly re-serialised request"
+        );
     }
 
     /// A repository with no shell gates at all: the analysis completes and finds

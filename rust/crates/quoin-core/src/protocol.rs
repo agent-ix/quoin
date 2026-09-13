@@ -34,6 +34,45 @@ use std::collections::BTreeMap;
 /// the TypeScript side only through a regeneration whose digest is asserted.
 pub const PROTOCOL_VERSION: u32 = 1;
 
+/// The largest request, in bytes, that may be read off stdin.
+///
+/// **The transport ceiling, enforced while the stream is being read** —
+/// `dispatch::read_request` stops at `MAX_REQUEST_BYTES + 1` and refuses, so
+/// nothing larger is ever held, parsed or re-serialised. A ceiling that is
+/// measured after the whole document is in memory is a statement about the
+/// input, not a bound on the process: rust-style's rule is "every accumulator
+/// from the stream has a ceiling, and a named refusal at it", and an
+/// accumulator whose ceiling is checked afterwards had no ceiling.
+///
+/// It lives here, once, rather than per operation, because it is a property of
+/// the stream and not of any domain. Every op's own bound is therefore a bound
+/// on something it understands — `ops::core::MAX_ECHO_BYTES` is a bound on a
+/// token, `ops::assurance::MAX_BUILD_CASE_BYTES` on a case document — and never
+/// a second spelling of this one.
+///
+/// **It is deliberately larger than every domain bound**, and
+/// `tc_412_the_transport_ceiling_stays_above_every_domain_bound` holds it
+/// there. A domain refusal carries the `op` that refused and the quantity it
+/// measured; a transport refusal cannot, because it happens before the request
+/// is a request. Setting this to the same number as a domain bound would make
+/// the transport verdict shadow the domain's, and the domain's check — still
+/// compiled, still tested in isolation — would be one no caller could ever
+/// reach. `ops::validators::run` has no bound of its own precisely because
+/// this one is the whole of its answer.
+///
+/// 64 MiB is far past what any caller produces, and the number is measured
+/// rather than guessed. `validators.run` is the largest request the boundary
+/// accepts today and it carries only the files `quoin-validators` can
+/// classify: `repoSnapshot(".")` on this repository walks 1056 files and puts
+/// **13 of them, 71.1 KiB, on the wire** — 0.1% of this ceiling (measured
+/// 2026-09-13 on this tree). A repository that reached 64 MiB of shell scripts
+/// and build wiring would carry some 900 times quoin's gate surface.
+///
+/// The refusal is therefore a real one a real caller can hit only by sending
+/// something no repository looks like, which is what a ceiling on an untrusted
+/// stream is for.
+pub const MAX_REQUEST_BYTES: usize = 64 * 1024 * 1024;
+
 /// How the process terminated, and therefore whether stdout is worth reading.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Outcome {
