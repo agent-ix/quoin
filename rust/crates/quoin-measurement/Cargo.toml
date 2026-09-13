@@ -8,7 +8,7 @@ rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
 authors.workspace = true
-description = "Measurement plans, collections, comparisons, assurance profiles and raw-evidence accounting (quoin FR-100)."
+description = "Measurement plans, collections, assurance profiles, raw-evidence accounting, intervention experiments and operational control evidence (quoin FR-100)."
 publish.workspace = true
 
 [lints]
@@ -25,6 +25,12 @@ quoin-store = { workspace = true }
 # and AssuranceProfile frontmatter are read with it; nothing else here parses
 # YAML.
 quoin-yaml = { workspace = true }
+serde = { workspace = true }
+# The record types carry three open JSON shapes the schema does not close —
+# `configuration`, `held_constant[].value` and the exercise's
+# `state_before`/`state_after` (`intervention-types.ts:8,52`,
+# `operational-types.ts:82,83`). They are carried as `serde_json::Value` so a
+# round trip through this crate returns the bytes it was handed.
 serde_json = { workspace = true }
 thiserror = { workspace = true }
 

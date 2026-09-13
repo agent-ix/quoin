@@ -3046,6 +3046,7 @@ version = "0.1.0"
 dependencies = [
  "quoin-store",
  "quoin-yaml",
+ "serde",
  "serde_json",
  "tempfile",
  "thiserror",
