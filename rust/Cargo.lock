@@ -1223,6 +1223,7 @@ dependencies = [
 name = "quoin-assurance"
 version = "0.1.0"
 dependencies = [
+ "quoin-evidence-types",
  "quoin-finding-types",
  "quoin-quire-types",
  "serde",
@@ -1257,6 +1258,14 @@ name = "quoin-difftest"
 version = "0.1.0"
 dependencies = [
  "quoin-core",
+ "serde_json",
+]
+
+[[package]]
+name = "quoin-evidence-types"
+version = "0.1.0"
+dependencies = [
+ "serde",
  "serde_json",
 ]
 
