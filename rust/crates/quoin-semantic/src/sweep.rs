@@ -19,6 +19,7 @@ use crate::ids::PackageIdentity;
 /// The four shapes a `## Properties` section can take, plus its absence.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, serde::Serialize)]
 #[serde(rename_all = "kebab-case")]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub enum PropertiesForm {
     /// The authored form: the four typed columns.
     TypedTable,
@@ -69,6 +70,7 @@ pub const TYPED_HEADER: [&str; 4] = ["Field", "Type", "Multiplicity", "Constrain
 
 /// The advisory diagnostic a legacy form earns (FR-074).
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct LegacyFormDiagnostic {
     /// Always `semantic.legacy-properties-form`.
     pub code: &'static str,
@@ -84,6 +86,7 @@ pub struct LegacyFormDiagnostic {
 
 /// One classified artifact.
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct FormFinding {
     /// Repo-relative artifact path, prefixed with its repository.
     pub path: String,
@@ -332,6 +335,7 @@ pub struct SweepIdentity {
 
 /// A corpus root as it appears in the report.
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct ReportCorpusRoot {
     /// `<org>/<repo>`.
     pub repository: String,
@@ -341,6 +345,7 @@ pub struct ReportCorpusRoot {
 
 /// The per-form tallies.
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct SweepCounts {
     /// How many artifacts were classified.
     pub artifacts: usize,
@@ -352,6 +357,7 @@ pub struct SweepCounts {
 
 /// The document `semantic.sweep_report` points at.
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct SweepReport {
     /// `<org>/<repo>`.
     pub package: String,

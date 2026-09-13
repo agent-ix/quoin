@@ -1,14 +1,29 @@
-import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
-import { homedir } from "node:os";
-import { basename, join, resolve } from "node:path";
+import { readdirSync, readFileSync } from "node:fs";
+import { basename, join } from "node:path";
 
 import { parse as parseYaml } from "yaml";
 
 import {
-  readSemanticBlock,
+  readSemanticBlocks,
   type SemanticBlock,
   type SemanticDiagnostic,
-} from "./semantic/manifest.js";
+} from "./core/semantic.js";
+import { defaultModuleRoots, locateModuleRoot } from "./module-roots.js";
+
+/**
+ * Where modules live, re-exported from `src/module-roots.ts`.
+ *
+ * These four used to be declared here and are still imported from here by
+ * `src/base.ts`, `src/flows.ts`, `src/method-catalog.ts` and the CLI commands.
+ * They moved one module down so that `catalog.ts` may import `src/core/` without
+ * a cycle (quoin#376); re-exporting keeps every existing import working.
+ */
+export {
+  defaultModuleRoots,
+  filamentModulesDir,
+  ixHome,
+  locateModuleRoot,
+} from "./module-roots.js";
 
 export interface SpecCatalogEntry {
   /** Raw `data_schema` of an object type (inline object or FR-073 reference). */
@@ -44,28 +59,25 @@ export interface SpecCatalog {
   }>;
 }
 
-export function ixHome(): string {
-  return process.env.IX_HOME && process.env.IX_HOME.length > 0
-    ? process.env.IX_HOME
-    : join(homedir(), ".ix");
-}
-
-/** The single directory that holds installed Filament modules; also read by quire-rs. */
-export function filamentModulesDir(home = ixHome()): string {
-  return join(home, "filament", "modules");
-}
-
-export function defaultModuleRoots(home = ixHome()): string[] {
-  const roots: string[] = [];
-  const env = process.env.QUOIN_MODULE_PATHS;
-  if (env) roots.push(...env.split(":").filter(Boolean));
-
-  const installed = filamentModulesDir(home);
-  if (existsSync(installed)) {
-    for (const name of readdirSync(installed))
-      roots.push(join(installed, name));
+/**
+ * Read every module's `semantic` block across the boundary, in ONE call.
+ *
+ * One call and not one per module: `quoin-core` is a subprocess, `loadCatalog`
+ * runs on every `quoin write`, and a crossing per module would make the cost of
+ * the boundary proportional to the installed module set. The answers come back
+ * in the order asked and each echoes the root it answers for, so the pairing is
+ * by name rather than by position.
+ */
+function attachSemanticBlocks(modules: SpecModule[]): void {
+  const views = readSemanticBlocks(modules.map((module) => module.root));
+  const byRoot = new Map(views.map((view) => [view.root, view]));
+  for (const module of modules) {
+    const view = byRoot.get(module.root);
+    if (!view) continue;
+    if (view.block) module.semantic = view.block;
+    if (view.diagnostics.length > 0)
+      module.semanticDiagnostics = view.diagnostics;
   }
-  return roots;
 }
 
 export function loadCatalog(moduleRoots = defaultModuleRoots()): SpecCatalog {
@@ -91,17 +103,12 @@ export function loadCatalog(moduleRoots = defaultModuleRoots()): SpecCatalog {
     const artifactTypes = arrayObjects(manifest.artifact_types);
     const objectTypes = arrayObjects(manifest.object_types);
 
-    const semantic = readSemanticBlock(manifest, moduleRoot);
     modules.push({
       name: moduleName,
       version: stringValue(manifest.version),
       root: moduleRoot,
       artifactTypes: artifactTypes.map((entry) => String(entry.name)),
       objectTypes: objectTypes.map((entry) => String(entry.name)),
-      ...(semantic.module ? { semantic: semantic.module.block } : {}),
-      ...(semantic.diagnostics.length > 0
-        ? { semanticDiagnostics: semantic.diagnostics }
-        : {}),
     });
 
     for (const artifact of artifactTypes) {
@@ -132,6 +139,7 @@ export function loadCatalog(moduleRoots = defaultModuleRoots()): SpecCatalog {
     }
   }
 
+  attachSemanticBlocks(modules);
   return { modules, entries, duplicates: findDuplicates(entries) };
 }
 
@@ -147,18 +155,6 @@ export function findCatalogEntry(
 
 function normalizeTypeName(name: string): string {
   return name.toLowerCase();
-}
-
-export function locateModuleRoot(candidate: string): string | undefined {
-  const root = resolve(candidate);
-  if (!existsSync(root)) return undefined;
-  if (existsSync(join(root, "manifest.yaml"))) return root;
-  if (!statSync(root).isDirectory()) return undefined;
-  for (const child of readdirSync(root)) {
-    const childRoot = join(root, child);
-    if (existsSync(join(childRoot, "manifest.yaml"))) return childRoot;
-  }
-  return undefined;
 }
 
 function skeletonPath(

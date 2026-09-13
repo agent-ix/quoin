@@ -5,7 +5,7 @@ import { basename, resolve } from "node:path";
 import { Args, Flags } from "@oclif/core";
 
 import { QuoinCommand } from "../../base.js";
-import { sweepCorpus } from "../../semantic/sweep.js";
+import { sweepCorpus } from "../../core/semantic.js";
 
 /** Best-effort `git rev-parse HEAD` for a corpus root; `worktree` when not a repository. */
 function revisionOf(root: string): string {

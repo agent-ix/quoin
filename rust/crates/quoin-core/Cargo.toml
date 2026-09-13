@@ -32,6 +32,12 @@ quoin-assurance = { workspace = true }
 # file; see `src/capabilities.rs`.
 quoin-config = { workspace = true }
 quoin-modules = { workspace = true }
+# quoin#452, the Stage 8 cutover. `quoin-core` uses only the DECIDING half —
+# the diagnostics, the block shape and the sweep report; the reading of the
+# vendored contract tree and of the corpus is the `SemanticHost` seam, which
+# `main.rs` supplies. Nothing under `ops/` opens a file; see
+# `src/capabilities.rs`.
+quoin-semantic = { workspace = true }
 quoin-completeness = { workspace = true }
 quoin-validators = { workspace = true }
 serde = { workspace = true }
@@ -53,6 +59,7 @@ schema = [
     "quoin-assurance/schema",
     "quoin-completeness/schema",
     "quoin-modules/schema",
+    "quoin-semantic/schema",
     "quoin-validators/schema",
 ]
 

@@ -80,11 +80,11 @@ pub const BOUNDARY_SCHEMA_ID: &str = "https://agent-ix.dev/quoin/core-boundary-v
 // --- The two checked-in digests. `make types` rewrites both; nothing else may.
 /// SHA-256 of the canonical JSON of [`boundary_schema`] at generation time.
 pub const SOURCE_SCHEMA_SHA256: &str =
-    "497d00461f8d66ceecd99a7738b0b9b68b8d0220cc50533c6e88c56055508086";
+    "d8ee4643c562f4ee2ca1d8abf9c182fbdd343810835c8ec39c12d504436c4ed0";
 
 /// SHA-256 of the committed `src/core/types.ts`.
 pub const GENERATED_TYPES_SHA256: &str =
-    "2eca724205094f831e71ac55846f0dddefcfdb1f1f13910a53eb622a4faac39e";
+    "39ac0cfad425c505f70c06a68691dec15677b9011219af75ddaf10729bc21ca0";
 
 /// The JSON Schema of every type that crosses the `quoin-core` boundary.
 ///
@@ -121,6 +121,11 @@ pub fn boundary_schema() -> Value {
     let _ = generator.subschema_for::<quoin_completeness::FrontmatterRead>();
     let _ = generator.subschema_for::<quoin_completeness::AssessInput>();
     let _ = generator.subschema_for::<quoin_completeness::BundleAssessment>();
+    let _ = generator.subschema_for::<quoin_core::ops::semantic::ReadBlocksRequest>();
+    let _ = generator.subschema_for::<quoin_core::ops::semantic::ReadBlocksPayload>();
+    let _ = generator.subschema_for::<quoin_core::ops::semantic::SweepCorpusRequest>();
+    let _ = generator.subschema_for::<quoin_core::ops::semantic::SweepCorpusPayload>();
+    let _ = generator.subschema_for::<quoin_core::ops::semantic::MigrationExamplePayload>();
     let _ = generator.subschema_for::<quoin_core::ops::validators::RunRequest>();
     let _ = generator.subschema_for::<quoin_core::ops::validators::RunPayload>();
     json!({
@@ -378,107 +383,135 @@ pub fn check_generated_source(text: &str) -> Result<(), SurfaceFinding> {
 mod tests {
     use super::*;
 
+    /// Every type the boundary schema declares, by name.
+    ///
+    /// A list and not a count: a count moves when a type is renamed and says
+    /// nothing about WHICH names crossed, and the names are what TypeScript
+    /// imports.
+    const BOUNDARY_TYPES: [&str; 114] = [
+        "ArgumentStatus",
+        "ArgumentSummary",
+        "AssessInput",
+        "AssumptionStatus",
+        "AssumptionView",
+        "AuthoredArgumentView",
+        "BuildAuthoredArgumentRequest",
+        "BuildDischargeRequest",
+        "BundleAssessment",
+        "BundleDocument",
+        "ChallengeStatus",
+        "ChallengeView",
+        "ChallengeViewStatus",
+        "ClauseBinding",
+        "ClauseBindingOutcome",
+        "ClauseBindingReason",
+        "ClauseBindingReport",
+        "ClauseBindingSchemaVersion",
+        "ClauseDischarge",
+        "ClauseForce",
+        "ClauseSetKey",
+        "CommitSha",
+        "CompatibilityPosture",
+        "CompletenessFinding",
+        "CompletenessFindingKind",
+        "ContractVersion",
+        "CriterionView",
+        "DecisionState",
+        "Diagnostic",
+        "DirectDischargeFact",
+        "DischargeAttestation",
+        "DischargeBinding",
+        "DischargeFact",
+        "DischargeReport",
+        "DischargeSchemaVersion",
+        "DischargeState",
+        "DispositionDecision",
+        "DispositionFact",
+        "DocumentSource",
+        "EmptyGateFinding",
+        "EngineProvenance",
+        "EnsureDefaultsPayload",
+        "EnsureDefaultsRequest",
+        "FactKind",
+        "FindingKind",
+        "FormFinding",
+        "FrontmatterRead",
+        "InstallPayload",
+        "InstallRequest",
+        "InstalledModule",
+        "LegacyFormDiagnostic",
+        "LegacyForms",
+        "LineNumber",
+        "ListPayload",
+        "ListRequest",
+        "MappingName",
+        "MigrationExamplePayload",
+        "Mode",
+        "ModuleName",
+        "ModuleSemanticView",
+        "ModuleSource",
+        "ModuleVersion",
+        "ObjectTypeName",
+        "ObligationId",
+        "PackageIdentity",
+        "Participant",
+        "PingPayload",
+        "PingRequest",
+        "PropertiesForm",
+        "ReadBlocksPayload",
+        "ReadBlocksRequest",
+        "ReadFrontmatterRequest",
+        "ReasoningView",
+        "Relationship",
+        "RelationshipType",
+        "RemovePayload",
+        "RemoveRequest",
+        "RenderAuthoredArgumentPayload",
+        "RenderDischargePayload",
+        "RepoPath",
+        "ReportCorpusRoot",
+        "ResolveOrgPayload",
+        "ResolveOrgRequest",
+        "RunPayload",
+        "RunRequest",
+        "SchemaRefsPayload",
+        "SchemaRefsRequest",
+        "SchemaSource",
+        "SemanticBlock",
+        "SemanticCoreVersion",
+        "SemanticDiagnostic",
+        "SemanticPin",
+        "SemanticSeverity",
+        "Severity",
+        "Source",
+        "SufficiencyDecision",
+        "SweepCorpusPayload",
+        "SweepCorpusRequest",
+        "SweepCounts",
+        "SweepReport",
+        "SweepRootRequest",
+        "TopClaimView",
+        "UnreadableDocument",
+        "UnresolvedDeclaration",
+        "UnresolvedOrgMessagePayload",
+        "UnusedDecision",
+        "UnusedDischargeFact",
+        "UnusedFactReason",
+        "Verdict",
+        "ViewSchemaVersion",
+        "ViewStatus",
+        "VocabularyName",
+        "VocabularyRollup",
+        "VocabularyValue",
+    ];
+
     #[test]
     fn the_schema_covers_every_type_that_crosses_the_boundary() {
         let schema = boundary_schema();
         let defs = schema["$defs"].as_object().unwrap();
         let mut names: Vec<&String> = defs.keys().collect();
         names.sort();
-        assert_eq!(
-            names,
-            [
-                "ArgumentStatus",
-                "ArgumentSummary",
-                "AssessInput",
-                "AssumptionStatus",
-                "AssumptionView",
-                "AuthoredArgumentView",
-                "BuildAuthoredArgumentRequest",
-                "BuildDischargeRequest",
-                "BundleAssessment",
-                "BundleDocument",
-                "ChallengeStatus",
-                "ChallengeView",
-                "ChallengeViewStatus",
-                "ClauseBinding",
-                "ClauseBindingOutcome",
-                "ClauseBindingReason",
-                "ClauseBindingReport",
-                "ClauseBindingSchemaVersion",
-                "ClauseDischarge",
-                "ClauseForce",
-                "ClauseSetKey",
-                "CommitSha",
-                "CompletenessFinding",
-                "CompletenessFindingKind",
-                "CriterionView",
-                "DecisionState",
-                "Diagnostic",
-                "DirectDischargeFact",
-                "DischargeAttestation",
-                "DischargeBinding",
-                "DischargeFact",
-                "DischargeReport",
-                "DischargeSchemaVersion",
-                "DischargeState",
-                "DispositionDecision",
-                "DispositionFact",
-                "DocumentSource",
-                "EmptyGateFinding",
-                "EngineProvenance",
-                "EnsureDefaultsPayload",
-                "EnsureDefaultsRequest",
-                "FactKind",
-                "FindingKind",
-                "FrontmatterRead",
-                "InstallPayload",
-                "InstallRequest",
-                "InstalledModule",
-                "LineNumber",
-                "ListPayload",
-                "ListRequest",
-                "Mode",
-                "ModuleName",
-                "ModuleSource",
-                "ObligationId",
-                "Participant",
-                "PingPayload",
-                "PingRequest",
-                "ReadFrontmatterRequest",
-                "ReasoningView",
-                "Relationship",
-                "RelationshipType",
-                "RemovePayload",
-                "RemoveRequest",
-                "RenderAuthoredArgumentPayload",
-                "RenderDischargePayload",
-                "RepoPath",
-                "ResolveOrgPayload",
-                "ResolveOrgRequest",
-                "RunPayload",
-                "RunRequest",
-                "SchemaRefsPayload",
-                "SchemaRefsRequest",
-                "SchemaSource",
-                "SemanticPin",
-                "Severity",
-                "Source",
-                "SufficiencyDecision",
-                "TopClaimView",
-                "UnreadableDocument",
-                "UnresolvedDeclaration",
-                "UnresolvedOrgMessagePayload",
-                "UnusedDecision",
-                "UnusedDischargeFact",
-                "UnusedFactReason",
-                "Verdict",
-                "ViewSchemaVersion",
-                "ViewStatus",
-                "VocabularyName",
-                "VocabularyRollup",
-                "VocabularyValue",
-            ]
-        );
+        assert_eq!(names, BOUNDARY_TYPES);
     }
 
     #[test]

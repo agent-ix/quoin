@@ -59,5 +59,6 @@ pub use package_manifest::{
 };
 pub use sweep::{
     CorpusRoot, FormFinding, LEGACY_MIGRATION_EXAMPLE, LegacyFormDiagnostic, PropertiesForm,
-    SweepIdentity, SweepReport, TYPED_HEADER, classify_artifact, classify_properties, sweep_corpus,
+    ReportCorpusRoot, SweepCounts, SweepIdentity, SweepReport, TYPED_HEADER, classify_artifact,
+    classify_properties, sweep_corpus,
 };

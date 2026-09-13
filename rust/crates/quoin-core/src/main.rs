@@ -43,7 +43,7 @@
 use std::io::Write as _;
 use std::path::{Path, PathBuf};
 
-use quoin_core::capabilities::{Capabilities, ModuleHost};
+use quoin_core::capabilities::{Capabilities, ModuleHost, SemanticHost};
 use quoin_core::dispatch::{dispatch, parse_operation, read_request};
 use quoin_core::error::CoreError;
 use quoin_core::protocol::{Diagnostic, Response, canonical_json};
@@ -51,6 +51,10 @@ use quoin_modules::{
     ContractGate, GixResolver, InstallOutcome, InstallPaths, InstalledModule, IxHome,
     MarketplaceManifest, ModuleInstaller, ModuleName, ModulesError, ReconcileMode, ReconcileReport,
     Source,
+};
+use quoin_semantic::{
+    CorpusRoot, SemanticError, SemanticReadResult, SweepIdentity, SweepReport,
+    manifest::SemanticValidators,
 };
 
 fn main() -> std::process::ExitCode {
@@ -75,8 +79,9 @@ fn run(args: &[String]) -> Result<Response, CoreError> {
     let request = read_request(std::io::stdin())?;
 
     // The grant is built once, here, and nothing downstream can widen it.
-    let host = HostModules::new();
-    let capabilities = Capabilities::with_modules(&host);
+    let modules = HostModules::new();
+    let semantic = HostSemantic::new();
+    let capabilities = Capabilities::with_hosts(&modules, &semantic);
     dispatch(op, &request, &capabilities)
 }
 
@@ -179,6 +184,77 @@ impl ModuleHost for HostModules {
 
     fn validate_installed(&self, home: Option<&Path>) -> Result<(), ModulesError> {
         self.gate(&self.home(home)).validate_installed()
+    }
+}
+
+/// The production [`SemanticHost`]: the vendored contract tree, resolved from
+/// the process environment (quoin#452).
+///
+/// `ops::semantic` is handed this and never constructs one. The in-memory host
+/// its unit tests use implements the same trait, which is how the refusal,
+/// mapping and payload paths are exercised with no disk at all.
+///
+/// The validators are compiled **per invocation and at most once**: compiling
+/// the two vendored schemas is the expensive half, `read_blocks` asks about
+/// every installed module in one call, and a process answers one operation and
+/// exits. `OnceCell` rather than eager construction so that
+/// `semantic.migration_example` — which needs no contract at all — does not pay
+/// for one, and so a missing `QUOIN_SEMANTIC_ROOT` is reported by the
+/// operation that needed it rather than at start-up.
+struct HostSemantic {
+    /// `$QUOIN_SEMANTIC_ROOT`: the vendored schema tree inside the npm package.
+    ///
+    /// Supplied by the caller because only the caller knows where its own
+    /// package was installed. Absent means nothing can be judged, and the
+    /// answer is [`SemanticError::ContractRootUnset`] rather than a clean read
+    /// of an unjudged module.
+    semantic_root: Option<PathBuf>,
+    /// The compiled validators, built on first use.
+    validators: std::cell::OnceCell<SemanticValidators>,
+}
+
+impl HostSemantic {
+    fn new() -> Self {
+        Self {
+            semantic_root: std::env::var_os("QUOIN_SEMANTIC_ROOT").map(PathBuf::from),
+            validators: std::cell::OnceCell::new(),
+        }
+    }
+
+    /// The compiled validators, or the refusal of having no contract.
+    ///
+    /// `get_or_init` cannot carry a failure, so the fallible load is written
+    /// out: a failed compile is NOT cached as a success, and a second call
+    /// re-reports the same condition rather than reporting a poisoned cell.
+    fn validators(&self) -> Result<&SemanticValidators, SemanticError> {
+        if let Some(ready) = self.validators.get() {
+            return Ok(ready);
+        }
+        let root = self
+            .semantic_root
+            .as_deref()
+            .ok_or(SemanticError::ContractRootUnset)?;
+        let loaded = SemanticValidators::load(root)?;
+        Ok(self.validators.get_or_init(|| loaded))
+    }
+}
+
+impl SemanticHost for HostSemantic {
+    fn read_module(&self, module_root: &Path) -> Result<SemanticReadResult, SemanticError> {
+        quoin_semantic::read_module_semantic(module_root, self.validators()?)
+    }
+
+    fn sweep(
+        &self,
+        roots: &[CorpusRoot],
+        identity: &SweepIdentity,
+        generated_at: &str,
+    ) -> Result<SweepReport, SemanticError> {
+        // No validator is needed to CLASSIFY: the sweep reads Markdown as text
+        // and never validates it against a schema. Asking for one here would
+        // make `quoin semantic sweep` require a vendored contract it does not
+        // consult.
+        quoin_semantic::sweep_corpus(roots, identity, generated_at)
     }
 }
 

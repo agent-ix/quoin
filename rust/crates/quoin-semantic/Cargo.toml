@@ -36,6 +36,17 @@ jsonschema = { workspace = true }
 quoin-yaml = { workspace = true }
 sha2 = { workspace = true }
 hex = "=0.4.3"
+# Optional, and enabled by `quoin-core`'s own `schema` feature rather than by
+# this crate: the derives are what let FR-097 read the wire schema off the
+# canonical type instead of a second declaration of it, and nothing on this
+# crate's execution path needs them.
+schemars = { workspace = true, optional = true }
+
+[features]
+# FR-097. Turned on transitively by `quoin-core/schema`, which `quoin-schemas`
+# turns on. No `default`: a feature that is on by default is a feature nobody
+# ever proves works when it is off.
+schema = ["dep:schemars"]
 
 [dev-dependencies]
 # Raised from =3.24.0 on the merge with main. `quoin-validators` (quoin#377,

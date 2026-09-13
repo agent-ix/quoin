@@ -32,7 +32,7 @@ export const CORE_TYPES_PROVENANCE = {
   generator: "quoin-schemas/quoin-schemas-gen",
   generatorVersion: "0.1.0",
   sourceSchemaSha256:
-    "497d00461f8d66ceecd99a7738b0b9b68b8d0220cc50533c6e88c56055508086",
+    "d8ee4643c562f4ee2ca1d8abf9c182fbdd343810835c8ec39c12d504436c4ed0",
 } as const;
 
 /**
@@ -520,6 +520,11 @@ export interface ClauseSetKey {
 export type CommitSha = string;
 
 /**
+ * How a module treats a downstream consumer's additions.
+ */
+export type CompatibilityPosture = "strict" | "additive" | "declared-lossy";
+
+/**
  * One gap in declared-vocabulary coverage.
  */
 export interface CompletenessFinding {
@@ -563,6 +568,11 @@ export interface CompletenessFinding {
  */
 export type CompletenessFindingKind =
   "unowned" | "unjustified-exclusion" | "undeclared-exclusion";
+
+/**
+ * The `semantic.contract_version` a manifest declares.
+ */
+export type ContractVersion = string;
 
 /**
  * One authored criterion, as decided or not decided.
@@ -1003,6 +1013,28 @@ export type FactKind = "direct" | "disposition";
 export type FindingKind = "gate-that-gates-nothing";
 
 /**
+ * One classified artifact.
+ */
+export interface FormFinding {
+  /**
+   * The advisory diagnostic, for a legacy form.
+   */
+  diagnostic?: LegacyFormDiagnostic | null;
+  /**
+   * The form found.
+   */
+  form: PropertiesForm;
+  /**
+   * 1-based line of the first Properties block, when one exists.
+   */
+  line?: number | null;
+  /**
+   * Repo-relative artifact path, prefixed with its repository.
+   */
+  path: string;
+}
+
+/**
  * Every document under a bundle root that carries parseable frontmatter.
  */
 export interface FrontmatterRead {
@@ -1084,6 +1116,37 @@ export interface InstalledModule {
 }
 
 /**
+ * The advisory diagnostic a legacy form earns (FR-074).
+ */
+export interface LegacyFormDiagnostic {
+  /**
+   * Always `semantic.legacy-properties-form`.
+   */
+  code: string;
+  /**
+   * Which legacy form was found.
+   */
+  form: PropertiesForm;
+  /**
+   * 1-based line of the block.
+   */
+  line: number;
+  /**
+   * Always `typed-table`.
+   */
+  migration: string;
+  /**
+   * Always `warning`.
+   */
+  severity: string;
+}
+
+/**
+ * Severity of legacy Properties forms (FR-074).
+ */
+export type LegacyForms = "warning" | "error";
+
+/**
  * A 1-based line number inside a source file.
  *
  * `NonZeroU64` rather than `usize`: line 0 does not exist, and the payload
@@ -1117,6 +1180,21 @@ export interface ListRequest {
 }
 
 /**
+ * A named representation mapping (FR-071..073).
+ */
+export type MappingName = string;
+
+/**
+ * The payload `semantic.migration_example` writes to stdout.
+ */
+export interface MigrationExamplePayload {
+  /**
+   * The migration guidance a legacy-form diagnostic cites (FR-074).
+   */
+  example: string;
+}
+
+/**
  * How hard a reconcile should look, in the wire spelling.
  */
 export type Mode = "lazy" | "sync";
@@ -1131,6 +1209,35 @@ export type Mode = "lazy" | "sync";
  * check unskippable.
  */
 export type ModuleName = string;
+
+/**
+ * What one module root's `semantic` block came to.
+ *
+ * The `data_schema` resolutions `quoin_semantic::SemanticModule` also carries
+ * are deliberately NOT here. Nothing on the TypeScript side reads them — they
+ * exist so the diagnostics below can be produced — and a payload field with no
+ * reader is a wire shape nobody maintains and every future change has to keep
+ * working.
+ */
+export interface ModuleSemanticView {
+  /**
+   * The parsed block, absent when the manifest declares none or its block
+   * was refused.
+   */
+  block?: SemanticBlock | null;
+  /**
+   * Every diagnostic reading the block produced, in the order produced.
+   */
+  diagnostics: SemanticDiagnostic[];
+  /**
+   * The module root this entry answers for, echoed back.
+   *
+   * Echoed rather than left to positional correlation: the caller pairs the
+   * answer with its own module record, and a list that says which root each
+   * entry is for cannot be mis-paired by a change to either side.
+   */
+  root: string;
+}
 
 /**
  * One module's text, as the CALLER read it.
@@ -1159,6 +1266,16 @@ export interface ModuleSource {
 }
 
 /**
+ * A module's `version`.
+ */
+export type ModuleVersion = string;
+
+/**
+ * An object type's name, as `object_types[].name` declares it.
+ */
+export type ObjectTypeName = string;
+
+/**
  * A requirement obligation as it was written in the gate comment, e.g.
  * `FR-001-AC-1`.
  *
@@ -1167,6 +1284,12 @@ export interface ModuleSource {
  * the file actually says.
  */
 export type ObligationId = string;
+
+/**
+ * A semantic package's IR identity, `<org>/<repo>` — never a URL and never
+ * an `ix://` identity (FR-070).
+ */
+export type PackageIdentity = string;
 
 /**
  * A named actor and the authority they hold.
@@ -1229,6 +1352,36 @@ export interface PingRequest {
    * failure.
    */
   expect_protocol?: number | null;
+}
+
+/**
+ * The four shapes a `## Properties` section can take, plus its absence.
+ */
+export type PropertiesForm =
+  "typed-table" | "free-column-table" | "bullet-list" | "sysml-fence" | "none";
+
+/**
+ * The payload `semantic.read_blocks` writes to stdout.
+ */
+export interface ReadBlocksPayload {
+  /**
+   * One entry per requested root, in the order they were requested.
+   */
+  modules: ModuleSemanticView[];
+}
+
+/**
+ * The request accepted by `semantic.read_blocks`.
+ */
+export interface ReadBlocksRequest {
+  /**
+   * The module roots to read, each a directory holding a `manifest.yaml`.
+   *
+   * A list rather than one root per call: `loadCatalog` reads every
+   * installed module on every `quoin write`, and one subprocess per module
+   * would make the cost of the boundary proportional to the module set.
+   */
+  roots: string[];
 }
 
 /**
@@ -1348,6 +1501,20 @@ export interface RenderDischargePayload {
  * `scripts/gate.sh` are the same gate.
  */
 export type RepoPath = string;
+
+/**
+ * A corpus root as it appears in the report.
+ */
+export interface ReportCorpusRoot {
+  /**
+   * `<org>/<repo>`.
+   */
+  repository: string;
+  /**
+   * The revision swept.
+   */
+  revision: string;
+}
 
 /**
  * The payload `config.resolve_org` writes to stdout.
@@ -1494,6 +1661,86 @@ export interface SchemaRefsRequest {
 export type SchemaSource = { text: string } | { unreadable: string };
 
 /**
+ * One module's validated `semantic` block.
+ */
+export interface SemanticBlock {
+  /**
+   * `compatibility_posture`, defaulted to `additive` when absent.
+   */
+  compatibility_posture: CompatibilityPosture;
+  /**
+   * `contract_version`.
+   */
+  contract_version: ContractVersion;
+  /**
+   * `exports`, in manifest order.
+   */
+  exports: ObjectTypeName[];
+  /**
+   * `imports`, package identity to exact version.
+   */
+  imports: Record<string, ModuleVersion>;
+  /**
+   * `legacy_forms`, defaulted to `warning` when absent.
+   */
+  legacy_forms: LegacyForms;
+  /**
+   * `mappings`, in manifest order.
+   */
+  mappings: MappingName[];
+  /**
+   * `package`.
+   */
+  package: PackageIdentity;
+  /**
+   * `semantic_core`.
+   */
+  semantic_core: SemanticCoreVersion;
+  /**
+   * `sweep_report`, when the manifest carries one as a string.
+   */
+  sweep_report?: string | null;
+  /**
+   * `targets`, in manifest order.
+   */
+  targets: string[];
+}
+
+/**
+ * The `@agent-ix/semantic-core` version a manifest compiles against.
+ */
+export type SemanticCoreVersion = string;
+
+/**
+ * One install-time refusal or advisory.
+ */
+export interface SemanticDiagnostic {
+  /**
+   * The stable code.
+   *
+   * `string` in the schema, not a closed union of the 29 spellings:
+   * `DiagnosticCode` is `#[non_exhaustive]`, so freezing today's set into
+   * a TypeScript literal type would make a code added here a type error at
+   * a call site that only forwards the value. The catalogue lives in
+   * `all`, where it can be enumerated, and the wire
+   * spelling is `as_str`.
+   */
+  code: string;
+  /**
+   * Human-readable detail. **Not contractual** — see `DIVERGENCE.md`.
+   */
+  message: string;
+  /**
+   * Manifest or file locus, e.g. `object_types[entity].data_schema.schema`.
+   */
+  path: string;
+  /**
+   * How much it is worth.
+   */
+  severity: SemanticSeverity;
+}
+
+/**
  * The registry pin recorded under an installed module's `semantic` key.
  *
  * Field names match `SemanticRegistryPin` in `src/semantic/package-manifest.ts`
@@ -1513,6 +1760,11 @@ export interface SemanticPin {
    */
   semanticCore: string;
 }
+
+/**
+ * How much a diagnostic is worth.
+ */
+export type SemanticSeverity = "error" | "warning";
 
 /**
  * How much a finding is worth.
@@ -1694,6 +1946,109 @@ export interface SufficiencyDecision {
    * Whether the decider called it satisfied.
    */
   state: DecisionState;
+}
+
+/**
+ * The payload `semantic.sweep_corpus` writes to stdout.
+ */
+export interface SweepCorpusPayload {
+  /**
+   * The report, in the shape `sweep-report.schema.json` describes.
+   */
+  report: SweepReport;
+}
+
+/**
+ * The request accepted by `semantic.sweep_corpus`.
+ */
+export interface SweepCorpusRequest {
+  /**
+   * RFC 3339 UTC, supplied by the caller.
+   *
+   * The clock is the caller's, not the boundary's: a report whose timestamp
+   * came from inside this process could not be asserted, and
+   * `quoin_semantic::sweep_corpus` takes the same parameter for the same
+   * reason.
+   */
+  generated_at: string;
+  /**
+   * The semantic package identity the report is for.
+   */
+  package: string;
+  /**
+   * The roots to walk, in the order the report should list them.
+   */
+  roots: SweepRootRequest[];
+  /**
+   * The module version the report is for.
+   */
+  version: string;
+}
+
+/**
+ * The per-form tallies.
+ */
+export interface SweepCounts {
+  /**
+   * How many artifacts were classified.
+   */
+  artifacts: number;
+  /**
+   * One count per form.
+   */
+  forms: Record<string, number>;
+  /**
+   * The two legacy forms, repeated so the schema's `legacy` block is filled.
+   */
+  legacy: Record<string, number>;
+}
+
+/**
+ * The document `semantic.sweep_report` points at.
+ */
+export interface SweepReport {
+  /**
+   * The roots swept.
+   */
+  corpus: ReportCorpusRoot[];
+  /**
+   * The tallies.
+   */
+  counts: SweepCounts;
+  /**
+   * One entry per artifact.
+   */
+  findings: FormFinding[];
+  /**
+   * RFC 3339 UTC, as the schema's pattern requires.
+   */
+  generatedAt: string;
+  /**
+   * `<org>/<repo>`.
+   */
+  package: string;
+  /**
+   * The module version.
+   */
+  version: string;
+}
+
+/**
+ * One corpus root a sweep should walk.
+ */
+export interface SweepRootRequest {
+  /**
+   * The repository name recorded against every finding under it.
+   */
+  repository: string;
+  /**
+   * The revision recorded in the report's `corpus` block.
+   */
+  revision: string;
+  /**
+   * The directory to walk.
+   */
+  root: string;
 }
 
 /**

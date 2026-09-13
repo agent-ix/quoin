@@ -6,12 +6,12 @@ import {
   type SpecCatalogEntry,
   findCatalogEntry,
 } from "./catalog.js";
-import { LEGACY_MIGRATION_EXAMPLE } from "./semantic/sweep.js";
 import {
   type OrgSource,
   resolveOrg,
   unresolvedOrgMessage,
 } from "./core/org.js";
+import { migrationExample } from "./core/semantic.js";
 
 /** How each org source is named in the rendered pack. */
 const ORG_SOURCE_LABEL: Record<OrgSource, string> = {
@@ -126,7 +126,7 @@ export function formatAuthoringPack(pack: AuthoringPack): string {
   }
   if (pack.types.some((type) => type.semantic)) {
     lines.push("");
-    lines.push(LEGACY_MIGRATION_EXAMPLE);
+    lines.push(migrationExample());
   }
   lines.push("");
   lines.push(

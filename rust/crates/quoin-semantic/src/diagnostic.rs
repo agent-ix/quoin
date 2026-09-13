@@ -17,6 +17,15 @@ use std::fmt;
 /// How much a diagnostic is worth.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize)]
 #[serde(rename_all = "lowercase")]
+// `SemanticSeverity` and not `Severity` on the boundary: `quoin-validators`
+// already publishes a `Severity` there, and two different enums under one name
+// is exactly the collision schemars resolves by minting `Severity2`. The wire
+// VALUES are untouched — this renames the schema definition, not the data.
+#[cfg_attr(
+    feature = "schema",
+    derive(schemars::JsonSchema),
+    schemars(rename = "SemanticSeverity")
+)]
 pub enum Severity {
     /// Blocks the install.
     Error,
@@ -152,8 +161,17 @@ impl serde::Serialize for DiagnosticCode {
 
 /// One install-time refusal or advisory.
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct SemanticDiagnostic {
     /// The stable code.
+    ///
+    /// `string` in the schema, not a closed union of the 29 spellings:
+    /// [`DiagnosticCode`] is `#[non_exhaustive]`, so freezing today's set into
+    /// a TypeScript literal type would make a code added here a type error at
+    /// a call site that only forwards the value. The catalogue lives in
+    /// [`DiagnosticCode::all`], where it can be enumerated, and the wire
+    /// spelling is [`DiagnosticCode::as_str`].
+    #[cfg_attr(feature = "schema", schemars(with = "String"))]
     pub code: DiagnosticCode,
     /// How much it is worth.
     pub severity: Severity,
