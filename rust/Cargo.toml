@@ -53,7 +53,10 @@ publish = false
 # Exact pins, matching quire-corpus. A caret range makes the gate a claim about
 # whatever resolved that morning; `=` makes it a claim about these bytes.
 [workspace.dependencies]
+quoin-assurance = { path = "crates/quoin-assurance" }
 quoin-core = { path = "crates/quoin-core" }
+quoin-finding-types = { path = "crates/quoin-finding-types" }
+quoin-quire-types = { path = "crates/quoin-quire-types" }
 quoin-schemas = { path = "crates/quoin-schemas" }
 quoin-yaml = { path = "crates/quoin-yaml" }
 # Raised from =1.0.228 by quoin#378: `serde_derive` 1.0.228 builds on `syn` 2

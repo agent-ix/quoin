@@ -1,0 +1,10 @@
+{
+  "bundle": "the quoin repository itself",
+  "captured_from": "quire coverage --scope . --json",
+  "obligations_captured": 6,
+  "obligations_in_bundle": 991,
+  "quire_executable": "/home/peter/.npm-global/lib/node_modules/@agent-ix/quire-cli/bin/quire.js",
+  "quire_sha256": "sha256:96ce25fe91ab75ee96505b343b251a3e1db16de430a524aabef1f5590dbc02b3",
+  "quire_version": "quire 0.32.0 (cli 55a1c4e2, engine 0.46.0@a874fb64)",
+  "selection": "one per distinct (source, key-set) pair the run emitted; all 6 pairs present"
+}
