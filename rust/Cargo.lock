@@ -3041,6 +3041,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "quoin-jsonschema"
+version = "0.1.0"
+dependencies = [
+ "jsonschema 0.56.0",
+ "quoin-measurement",
+ "serde_json",
+ "thiserror",
+]
+
+[[package]]
 name = "quoin-measurement"
 version = "0.1.0"
 dependencies = [
@@ -3103,7 +3113,7 @@ name = "quoin-semantic"
 version = "0.1.0"
 dependencies = [
  "hex",
- "jsonschema 0.56.0",
+ "quoin-jsonschema",
  "quoin-yaml",
  "schemars",
  "serde",

@@ -1,0 +1,37 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 Agent-IX
+[package]
+name = "quoin-jsonschema"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+description = "The one ajv-parity JSON Schema validator in the workspace, and the vendored measurement schema documents (quoin FR-098, FR-100-AC-4)."
+publish.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+# Exact pin, inherited from the workspace. The error-*kind* enum is the surface
+# the ajv-parity diagnostic mapping is written against, so a minor bump is a
+# reviewable change, not a silent one.
+jsonschema = { workspace = true }
+# Deliberately WITHOUT `serde_json/preserve_order`, for the reason recorded in
+# `quoin-semantic/Cargo.toml`: enabling it anywhere in this workspace swaps
+# serde_json's `Map` from `BTreeMap` to `IndexMap` for every crate and silently
+# turns off the key sorting canonical JSON depends on.
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+# The ONE RFC 3339 grammar in the measurement domain (quoin#468). This crate
+# sits below `quoin-measurement` so it cannot depend on it at build time — the
+# `date-time` check is a parameter of `VendoredSchema::compile` for exactly
+# that reason. The tests, which must prove the real grammar is what gets wired,
+# take the dev-dependency instead; cargo permits a dev-dependency cycle and a
+# build-dependency cycle is what would not resolve.
+quoin-measurement = { workspace = true }
+serde_json = { workspace = true }

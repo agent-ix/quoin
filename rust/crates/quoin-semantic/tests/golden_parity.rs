@@ -46,7 +46,7 @@ use quoin_semantic::package_manifest::{
     PackageManifestValidator, derive_package_manifest, mapping_identity, resolve_imports,
     type_identity,
 };
-use quoin_semantic::schema::{SchemaValidator, read_json};
+use quoin_semantic::schema::{SchemaValidator, SchemaValidatorExt, read_json};
 use quoin_semantic::sweep::{PropertiesForm, classify_artifact, classify_properties};
 use quoin_semantic::{
     CompatibilityPosture, LegacyForms, MappingName, ModuleName, ModuleVersion, ObjectTypeName,

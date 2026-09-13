@@ -26,7 +26,7 @@ use crate::diagnostic::{DiagnosticCode, SemanticDiagnostic};
 use crate::error::SemanticError;
 use crate::ids::{ObjectTypeName, PackageIdentity};
 use crate::manifest::{CompatibilityPosture, SemanticModule};
-use crate::schema::{SchemaError, SchemaValidator, read_json};
+use crate::schema::{SchemaError, SchemaValidator, SchemaValidatorExt, read_json};
 
 /// The semantic-core package every derived manifest imports.
 pub const SEMANTIC_CORE_PACKAGE: &str = "agent-ix/semantic-core";
