@@ -71,7 +71,7 @@ fn compare_one(
     // otherwise; the caller has already resolved that.
     let not_computed = |sample: &MeasurementObservation| MeasurementComparison {
         metric: sample.metric.as_str().to_owned(),
-        dimensions: sample.dimensions.clone(),
+        dimensions: sample.dimensions.entries().clone(),
         before: left.and_then(|observation| observation.value),
         after: right.and_then(|observation| observation.value),
         delta: None,
@@ -133,7 +133,7 @@ fn compare_one(
     let blocked = reasons.iter().any(|reason| reason.blocking);
     MeasurementComparison {
         metric: metric.to_owned(),
-        dimensions: a.dimensions.clone(),
+        dimensions: a.dimensions.entries().clone(),
         before: a.value,
         after: b.value,
         delta: if blocked {
@@ -197,6 +197,7 @@ fn key_of(observation: &MeasurementObservation) -> Result<String, StoreError> {
     let entries = JsonValue::Array(
         observation
             .dimensions
+            .entries()
             .iter()
             .map(|(name, value)| {
                 JsonValue::Array(vec![JsonValue::string(name.clone()), value.clone()])

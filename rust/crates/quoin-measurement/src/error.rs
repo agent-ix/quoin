@@ -36,6 +36,13 @@ pub enum MeasurementErrorCode {
     CollectionIdCollision,
     /// A retained collection could not be read back as a collection.
     CollectionUnreadable,
+    /// A retained intervention or operational record could not be read.
+    ///
+    /// The read paths raise [`crate::InterventionIntakeError`], whose codes are
+    /// the *intake* vocabulary. A report that merely reads the store carries
+    /// that refusal across under this code, with the intake code named in the
+    /// subject and its findings kept.
+    RecordUnreadable,
     /// A `MeasurementPlan` frontmatter block was present and unacceptable.
     PlanInvalid,
     /// An `AssuranceProfile` frontmatter block was present and unacceptable.
@@ -67,11 +74,12 @@ pub enum MeasurementErrorCode {
 
 impl MeasurementErrorCode {
     /// Every code, in declaration order.
-    pub const ALL: [Self; 15] = [
+    pub const ALL: [Self; 16] = [
         Self::CollectionInvalid,
         Self::CollectionIdUnsafe,
         Self::CollectionIdCollision,
         Self::CollectionUnreadable,
+        Self::RecordUnreadable,
         Self::PlanInvalid,
         Self::ProfileInvalid,
         Self::GoverningPlanAbsent,
@@ -93,6 +101,7 @@ impl MeasurementErrorCode {
             Self::CollectionIdUnsafe => "QM-COLLECTION-ID-UNSAFE",
             Self::CollectionIdCollision => "QM-COLLECTION-ID-COLLISION",
             Self::CollectionUnreadable => "QM-COLLECTION-UNREADABLE",
+            Self::RecordUnreadable => "QM-RECORD-UNREADABLE",
             Self::PlanInvalid => "QM-PLAN-INVALID",
             Self::ProfileInvalid => "QM-PROFILE-INVALID",
             Self::GoverningPlanAbsent => "QM-GOVERNING-PLAN-ABSENT",
@@ -197,6 +206,23 @@ impl From<StoreError> for MeasurementError {
             _ => MeasurementErrorCode::Store,
         };
         Self::new(code, source.to_string())
+    }
+}
+
+impl From<crate::intervention::intake::InterventionIntakeError> for MeasurementError {
+    /// Carry an intake refusal into this crate's envelope.
+    ///
+    /// The inverse of `From<MeasurementError> for InterventionIntakeError`, and
+    /// deliberately lossy in one direction only: the intake code is named in
+    /// the subject rather than mapped onto a measurement code, because the six
+    /// intake codes answer "why was this write refused" and there is no read
+    /// path that acts on them.
+    fn from(source: crate::intervention::intake::InterventionIntakeError) -> Self {
+        Self::with_findings(
+            MeasurementErrorCode::RecordUnreadable,
+            source.code().as_str(),
+            source.findings().to_vec(),
+        )
     }
 }
 

@@ -145,13 +145,21 @@ disagree only for strings containing characters above U+FFFF alongside ones in
 U+E000–U+FFFF. No metric, plan id, collection id, timestamp or assurance path
 in the corpus contains a character outside ASCII.
 
-### §3.3 — `population` and `dimensions` keep only what is modelled
+### §3.3 — `population` and `dimensions` keep what is modelled, and the rest verbatim
 
-`validate.ts` checks neither member. The typed parse keeps `examined`,
-`matched`, `complete` and `identity` from a `population` object and drops any
-other member; `dimensions` is kept whole. A caller that read an unmodelled
-`population` member off the oracle's object cannot read it here. Nothing in the
-corpus carries one.
+**Amended by quoin#473.** As first written this section said the typed parse
+drops unmodelled `population` members and that "nothing in the corpus carries
+one". The second half was false: 25 of the 14,644 observations under
+`spec/evidence/measurements/` carry `exclusions` and `namedMisses`, and dropping
+them was a real byte divergence on re-serialisation. Wave 6 found it while
+building the reporting port, because `renderMeasurementReportJson` writes the
+population straight back out. See §13.4.
+
+What stands now: [`types::observation::MeasurementPopulation`] models
+`examined`, `matched`, `complete` and `identity` as typed members and keeps
+every other member verbatim in an `unmodelled` map that is flattened back on the
+way out. `dimensions` is kept whole, and its absence is modelled rather than
+flattened to an empty map — also §13.4.
 
 ### §3.4 — the error envelope is a code plus findings
 
@@ -501,3 +509,102 @@ Filed as **quoin#486** against the retained store, not absorbed here.
 is the `p-` one *and* that the unprefixed name is no longer what the writer
 chooses, so renaming the retained file fails this test and points at this
 paragraph.
+
+## §13 — Wave 6 divergences: the reporting port (quoin#473)
+
+`report.ts` and `portfolio.ts`, ported into [`report`] and [`portfolio`]. All
+six gated functions — `renderMeasurementReport`, `renderMeasurementReportJson`,
+`renderPortfolioReport`, `renderPortfolioReportJson`, `comparisonFor` and
+`seriesFor` — are byte-identical to the retained TypeScript on the committed
+fixture tree (`tc_473_reporting`, FR-100-AC-4). The divergences below are
+therefore either outside those bytes, or reachable only on inputs the fixture
+states cannot occur.
+
+### §13.1 — the fixture compares with one path substitution
+
+`root` and `path` are absolute in both the rendered report and its JSON, so the
+captured bytes would otherwise record whoever's checkout produced them. The
+capture script and `tc_473_reporting` both replace the fixture tree's own
+absolute root with the token `@@TREE@@` before comparing, and nothing else is
+edited. Neither side canonicalises: node's `path.resolve` absolutises and
+normalises lexically without following symlinks, and
+[`portfolio::location::resolve`] does the same, so a checkout reached through a
+symlink produces the same string on both sides.
+
+This is a property of the comparison, not of the port. Everything to the right
+of the substituted prefix — separators, ordering, the `n/a` fallbacks — is
+compared as written.
+
+### §13.2 — a caught reader error renders Rust's message, not node's
+
+`portfolio.ts:99-104` catches whatever the store read threw and puts
+`error.message` into the repository's `status`. Three of those messages are
+constructed by quoin itself and are reproduced verbatim here:
+
+- `<root>: repository does not exist`
+- `<root>: repository location is not a directory`
+- `<path>: collection timestamp is not a valid date`
+
+The fourth class is not: a message raised by node's `fs` or by `JSON.parse` —
+`ENOENT: no such file or directory, open '…'`, `Unexpected token } in JSON at
+position 41` — becomes this crate's [`MeasurementError`] text instead. The
+answer (that repository is unreadable, and the walk continues) is the same; the
+sentence is not.
+
+The fixture tree exercises all three constructed messages and no member of the
+fourth class, which is why byte-identity holds. **A portfolio run over a
+repository with a corrupt or unreadable collection file diverges in that one
+string.** Not reconciled: reproducing node's `fs` and `JSON.parse` prose would
+mean a second error vocabulary inside this crate, which §2.3 and the Stage 6
+plan §5 both forbid.
+
+### §13.3 — staleness reads instants with the crate's one grammar
+
+`portfolio.ts` compares collection timestamps with `Date.parse`, which accepts
+far more than RFC 3339 (`"March 1, 2026"`, `"2026"`, a bare
+`"2026-03-01T00:00:00"` read as local time). [`portfolio::build::epoch_millis`]
+uses [`date_time::Rfc3339DateTime`], the single instant reader this crate is
+permitted (§2.1, Stage 6 plan §5).
+
+Where the two disagree, this crate refuses: a collection whose `timestamp`
+`Date.parse` would have accepted and `Rfc3339DateTime` will not makes that
+repository `unreadable — <path>: collection timestamp is not a valid date`,
+which is the same sentence `portfolio.ts:112` writes for a timestamp `Date.parse`
+rejects outright. The fixture's `golf` repository carries
+`"timestamp": "the-first-of-never"`, rejected by both, so the refusal path is
+under the byte comparison; the widening is not, because no such collection
+exists in the corpus — every `timestamp` under `spec/evidence/measurements/`
+parses as RFC 3339.
+
+### §13.4 — observation member fidelity, and the `Dimensions` newtype
+
+Two defects wave 6 found in the wave-1 type model, both fixed here rather than
+absorbed:
+
+1. **Unmodelled `population` members were dropped.** 25 of 14,644 corpus
+   observations carry `exclusions` and `namedMisses`.
+   [`types::observation::MeasurementPopulation`] now keeps every unmodelled
+   member verbatim and flattens it back on serialisation. §3.3 is amended.
+2. **An absent `dimensions` was flattened to an empty map.** 305 of 14,644
+   observations state no `dimensions` at all, and `{}` and absent are different
+   bytes in the report JSON. [`types::observation::Dimensions`] now models the
+   distinction: `ABSENT` serialises as absent, `stated(entries)` as the object.
+
+A census over all 14,644 retained observations settles what is left: there is no
+unmodelled observation-level or collection-level member, `dimensions` is never a
+stated `{}`, `population` is never a non-object, and all four modelled
+population members always carry their modelled type. Those are facts about the
+corpus at this revision, not guarantees; a future observation that breaks one
+would be refused by [`validate`] rather than silently reshaped.
+
+### §13.5 — `dimensions` are ordered, not in insertion order
+
+`dimensions` is a `BTreeMap<String, JsonValue>` here and a plain object in the
+TypeScript, so it re-serialises in sorted-name order rather than insertion
+order. This is invisible in the canonical JSON, which sorts names anyway, and it
+is invisible in the rendered `[language=rust, tier=2]` suffix for the same
+reason — `report.ts:106` sorts the entries before joining them.
+
+It is visible nowhere in the corpus: all 23,214 `dimensions` and `population`
+objects under `spec/evidence/measurements/` are already stored in sorted-name
+order, because every one of them was written through `canonicalJson`.

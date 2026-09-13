@@ -38,7 +38,7 @@ use crate::types::collection::{
     MeasurementCollection,
 };
 use crate::types::observation::{
-    MeasurementObservation, MeasurementPopulation, MeasurementShape, MeasurementState,
+    Dimensions, MeasurementObservation, MeasurementPopulation, MeasurementShape, MeasurementState,
 };
 use crate::types::plan::{LifecycleStatus, MeasurementPlan};
 
@@ -287,16 +287,29 @@ fn population(object: &JsonObject) -> Option<MeasurementPopulation> {
         matched: read::number(population, "matched"),
         complete: read::boolean(population, "complete"),
         identity: population.get("identity").cloned(),
+        // Kept rather than dropped: see `MeasurementPopulation`'s header for
+        // the two retained call sites that see every stored member.
+        unmodelled: population
+            .iter()
+            .filter(|(name, _)| !MeasurementPopulation::MODELLED.contains(&name.as_str()))
+            .map(|(name, value)| (name.clone(), value.clone()))
+            .collect(),
     })
 }
 
 /// The `dimensions` member, when it is an object.
-fn dimensions(object: &JsonObject) -> BTreeMap<String, JsonValue> {
+fn dimensions(object: &JsonObject) -> Dimensions {
     match object.get("dimensions") {
-        Some(JsonValue::Object(dimensions)) => dimensions
-            .iter()
-            .map(|(name, value)| (name.clone(), value.clone()))
-            .collect(),
-        _ => BTreeMap::new(),
+        Some(JsonValue::Object(dimensions)) => Dimensions::stated(
+            dimensions
+                .iter()
+                .map(|(name, value)| (name.clone(), value.clone()))
+                .collect(),
+        ),
+        // A `dimensions` member that is not an object is not one the retained
+        // reader would see either: `report.ts:120` spreads it with
+        // `Object.entries(… ?? {})`, which a non-object would make throw
+        // before this crate is reached.
+        _ => Dimensions::ABSENT,
     }
 }

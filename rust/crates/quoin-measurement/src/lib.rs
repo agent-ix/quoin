@@ -13,7 +13,9 @@
 //! them. Wave 4 (quoin#471): intervention record-id encoding, schema and
 //! semantic validation, intake, and the agent-eval producer. Wave 5
 //! (quoin#472): operational intake, the store-wide write lock, the discharge
-//! question and the GitHub-release producer.
+//! question and the GitHub-release producer. Wave 6 (quoin#473): the
+//! repository report, its comparison and series views, and the portfolio walk
+//! across repositories.
 //!
 //! | retained TypeScript | here |
 //! | --- | --- |
@@ -33,6 +35,8 @@
 //! | `github-release-operational.ts` | [`operational::github_release`] |
 //! | `intervention.ts` | [`intervention::ids`], [`intervention::validate`], [`intervention::semantics`], [`intervention::intake`] |
 //! | `agent-eval-intervention.ts` | [`intervention::agent_eval`] |
+//! | `report.ts` | [`report`]'s five modules |
+//! | `portfolio.ts` | [`portfolio`]'s five modules |
 //!
 //! [`common`] holds what those four files declare more than once — the
 //! subject, the producer, the scalar unions — declared once here.
@@ -57,8 +61,13 @@
 //! - **No seventh instant validator.** [`date_time`] is the one RFC 3339
 //!   grammar in this crate, and it is the permissive one, per the owner ruling
 //!   in the Stage 6 plan §5.
-//! - **No filesystem outside [`source`] and [`store`].** Everything else takes
-//!   a [`source::MeasurementSource`].
+//! - **No filesystem outside [`source`], [`store`] and
+//!   [`portfolio`]'s location probe.** Everything else takes a
+//!   [`source::MeasurementSource`]. The portfolio walk is the exception on
+//!   purpose: it is handed candidate directories and must report *that a
+//!   location is missing or is not a directory* as that repository's status, a
+//!   question no `MeasurementSource` can be asked. Its module states the
+//!   argument; the probe is three `std::fs` calls and no reader.
 
 pub mod common;
 pub mod compare;
@@ -69,8 +78,10 @@ pub mod intervention;
 pub mod json_bridge;
 pub mod operational;
 pub mod plans;
+pub mod portfolio;
 pub mod profiles;
 pub mod raw_evidence;
+pub mod report;
 pub mod source;
 pub mod store;
 pub mod types;
@@ -88,10 +99,19 @@ pub use intervention::intake::{
 };
 pub use intervention::validate::validate_intervention_record;
 pub use plans::{PlanLoadOptions, load_measurement_plans};
+pub use portfolio::{
+    PORTFOLIO_STALE_AFTER_DAYS, PortfolioReport, build_portfolio_report, render_portfolio_report,
+    render_portfolio_report_json,
+};
 pub use profiles::load_active_assurance_profiles;
 pub use raw_evidence::{
     RawEvidencePath, RawEvidenceReference, assert_governing_definition, raw_evidence_for,
     verify_raw_evidence_references,
+};
+pub use report::{
+    MeasurementComparisonReport, MeasurementReport, build_measurement_report, comparison_for,
+    render_measurement_comparison, render_measurement_comparison_json, render_measurement_report,
+    render_measurement_report_json, render_series_json, series_for,
 };
 pub use source::{DiskMeasurement, MeasurementSource, MemoryMeasurement, RawEvidenceFile};
 pub use store::{

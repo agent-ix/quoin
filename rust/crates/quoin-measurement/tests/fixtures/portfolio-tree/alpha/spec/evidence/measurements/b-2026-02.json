@@ -1,0 +1,106 @@
+{
+  "collectionId": "b-2026-02",
+  "configDigest": "sha256:cfg-b",
+  "corpusRevision": "corpus-two",
+  "environment": {
+    "ci": "true"
+  },
+  "observations": [
+    {
+      "definitionVersion": "1",
+      "dimensions": {
+        "language": "python"
+      },
+      "metric": "finding_recall",
+      "planId": "ap-recall",
+      "population": {
+        "complete": false,
+        "examined": 12,
+        "identity": {
+          "corpus": "spec"
+        },
+        "matched": 3
+      },
+      "shape": "ratio",
+      "state": "measured",
+      "unit": "ratio",
+      "value": 0.25
+    },
+    {
+      "definitionVersion": "1",
+      "dimensions": {
+        "language": "rust"
+      },
+      "metric": "finding_recall",
+      "planId": "ap-recall",
+      "reason": "no rust corpus",
+      "shape": "ratio",
+      "state": "not_computed",
+      "unit": "ratio",
+      "value": null
+    },
+    {
+      "definitionVersion": "1",
+      "metric": "finding_precision.unadjudicated",
+      "planId": "ap-precision",
+      "shape": "count",
+      "state": "measured",
+      "unit": "count",
+      "value": 0
+    },
+    {
+      "definitionVersion": "1",
+      "metric": "actionability_rate",
+      "planId": "ap-actionability",
+      "shape": "ratio",
+      "state": "not_computed",
+      "unit": "ratio",
+      "value": null
+    },
+    {
+      "definitionVersion": "1",
+      "metric": "drifted_metric",
+      "planId": "ap-drifted",
+      "shape": "count",
+      "state": "measured",
+      "unit": "count",
+      "value": 2
+    }
+  ],
+  "rawEvidence": {
+    "notes": "no bounds stated"
+  },
+  "schemaVersion": 2,
+  "scope": {
+    "corpus": "spec"
+  },
+  "sourceRevision": "revision-two",
+  "subject": "quoin",
+  "timestamp": "2026-02-01T00:00:00.000Z",
+  "toolIdentity": "quoin",
+  "toolVersion": "0.9.0",
+  "verificationStack": {
+    "artifacts": {
+      "quoin-core": "sha256:3333333333333333333333333333333333333333333333333333333333333333"
+    },
+    "buildProfile": "release",
+    "capabilities": [
+      "measure"
+    ],
+    "executableDigest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+    "lockDigest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+    "schemaVersion": "verification-stack-attestation-v1",
+    "sources": {
+      "quoin": {
+        "remote": "git@github.com:agent-ix/quoin.git",
+        "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "sourceState": "clean"
+      }
+    },
+    "toolchains": {
+      "node": "22.11.0",
+      "python": "3.13.1",
+      "rust": "1.90.0"
+    }
+  }
+}

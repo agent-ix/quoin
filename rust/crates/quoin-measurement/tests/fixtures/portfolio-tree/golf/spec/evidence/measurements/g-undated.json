@@ -1,0 +1,28 @@
+{
+  "collectionId": "g-undated",
+  "configDigest": "sha256:cfg-a",
+  "environment": {
+    "ci": "true"
+  },
+  "observations": [
+    {
+      "definitionVersion": "1",
+      "metric": "finding_recall",
+      "planId": "gp-recall",
+      "shape": "ratio",
+      "state": "measured",
+      "unit": "ratio",
+      "value": 1
+    }
+  ],
+  "rawEvidence": null,
+  "schemaVersion": 1,
+  "scope": {
+    "corpus": "spec"
+  },
+  "sourceRevision": "revision-one",
+  "subject": "quoin",
+  "timestamp": "the-first-of-never",
+  "toolIdentity": "quoin",
+  "toolVersion": "0.9.0"
+}

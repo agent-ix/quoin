@@ -53,7 +53,18 @@ const REPRESENTATIONS: [&str; 2] = ["RawEvidenceReference", "RecordedEvidenceRef
 /// what this census exists to count. It still excludes the near miss the
 /// four-member spelling was written to exclude — `RawEvidenceFile` carries a
 /// size and a digest but no path, and is a *file*, not a reference to one.
-const MEMBERS: [&str; 2] = ["path:", "digest:"];
+///
+/// # These are member *names*, not substrings (quoin#473)
+///
+/// As landed, the census asked whether the declaration body contained the text
+/// `"digest:"`, which every `config_digest:` member also contains. Wave 6
+/// tripped it with six measurement-collection references — a collection is
+/// identified by its file path and the digest of the *configuration* that
+/// produced it, and is not a retained evidence file. The match is on the
+/// parsed member name now, which is a stricter net and not a looser one: a
+/// type declaring `digest` still matches, and one declaring only
+/// `config_digest` no longer pretends to.
+const MEMBERS: [&str; 2] = ["path", "digest"];
 
 /// The count below which this census is not reading the crate at all.
 const SOURCE_FLOOR: usize = 20;
@@ -107,6 +118,27 @@ fn declarations(text: &str) -> Vec<(String, String)> {
     found
 }
 
+/// The member names a struct body declares.
+///
+/// One member per line is what rustfmt produces and what this crate is
+/// formatted as, so a line is `pub <name>: <type>,` once its doc comments and
+/// attributes are dropped. Anything that does not parse as one is not a member.
+fn member_names(body: &str) -> Vec<String> {
+    body.lines()
+        .map(str::trim)
+        .filter(|line| !line.starts_with("//") && !line.starts_with('#'))
+        .filter_map(|line| line.split_once(':'))
+        .map(|(before, _)| {
+            before
+                .rsplit(char::is_whitespace)
+                .next()
+                .unwrap_or(before)
+                .to_owned()
+        })
+        .filter(|name| !name.is_empty())
+        .collect()
+}
+
 /// Trace: FR-100-AC-4, NFR-025-AC-3
 /// Provenance: quoin#472, quoin#471
 #[test]
@@ -122,7 +154,11 @@ fn tc_472_a_retained_evidence_file_has_exactly_two_representations() {
     let mut found: Vec<String> = Vec::new();
     for (module, text) in &sources {
         for (name, body) in declarations(text) {
-            if MEMBERS.iter().all(|member| body.contains(member)) {
+            let declared = member_names(&body);
+            if MEMBERS
+                .iter()
+                .all(|member| declared.iter().any(|name| name == member))
+            {
                 found.push(format!("{name} ({module})"));
             }
         }
