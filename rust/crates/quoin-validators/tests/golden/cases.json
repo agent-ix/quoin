@@ -728,6 +728,26 @@
           ""
         ]
       }
+    },
+    {
+      "name": "makefile-sh-is-both-wiring-and-script",
+      "covers": "quoin#448 FND-006: one path in both roles \u2014 `makefile.sh` is wiring by basename AND a script by extension, so it is the subject of one finding and the `wiredBy` of another",
+      "files": {
+        "Makefile": ["gate:", "\t./makefile.sh", ""],
+        "makefile.sh": [
+          "#!/bin/sh",
+          "# Gate for FR-044-AC-1: no production symbol shall call `unwrap`.",
+          "grep -rn \"unwrap()\" src/ | wc -l",
+          "./scripts/check_todo.sh",
+          ""
+        ],
+        "scripts/check_todo.sh": [
+          "#!/bin/sh",
+          "# Gate for FR-045-AC-1: no source file shall carry a `TODO` marker.",
+          "grep -rn \"TODO\" src/ | wc -l",
+          ""
+        ]
+      }
     }
   ]
 }

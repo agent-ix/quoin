@@ -76,8 +76,15 @@ fn materialise(case: &CaseInput, root: &Path) {
 /// Exact verdict parity on the golden corpus: the serialised payload, the
 /// operator-facing lines, and the strict exit code, case by case.
 ///
-/// Trace: FR-096, TC-1067, TC-1068, TC-1069, TC-1070, TC-1071
-/// Provenance: quoin#377
+/// **Not TC-1071.** That criterion is about the shipped `quoin validate`
+/// command, and this test calls [`GateReport`] in process without ever
+/// reaching the oclif command — so listing it here made a matrix row read ✅
+/// over a test that did not exercise it (quoin#448 FND-004). The command half
+/// lives in `tests/core-exec-e2e.test.ts`, tagged `FR-043-AC-20`, which is the
+/// only lane with a built binary to talk to.
+///
+/// Trace: FR-096, TC-1067, TC-1068, TC-1069, TC-1070
+/// Provenance: quoin#377, quoin#448
 #[test]
 fn tc_377_019_golden_corpus_matches_the_typescript_verdicts() {
     let (corpus, expected) = load();
@@ -106,7 +113,15 @@ fn tc_377_019_golden_corpus_matches_the_typescript_verdicts() {
             case.name
         );
 
-        // Byte parity of `quoin validate --json`.
+        // Byte parity with the TypeScript's `--json` document — which is NOT
+        // the same claim as byte parity with what `quoin validate` prints
+        // today. `to_string_pretty` emits the struct's DECLARATION order, and
+        // the shipped command's bytes now come through
+        // `protocol::canonical_json`, which sorts keys at every depth. What
+        // this pins is that the ported struct still carries the oracle's
+        // fields, values and order; what a caller sees is pinned in
+        // `tests/core-exec-e2e.test.ts` against these same bytes with the keys
+        // sorted (quoin#448 FND-002).
         let json = serde_json::to_string_pretty(&report).unwrap();
         assert_eq!(
             json, expectation.json,
@@ -136,6 +151,51 @@ fn tc_377_019_golden_corpus_matches_the_typescript_verdicts() {
     }
 }
 
+/// One path in both roles: wiring by basename, a script by extension.
+///
+/// `main`'s `scan()` classified with `if is_shell_file { … } else if
+/// is_wiring_file { … }`, so a path was one or the other. `inspect_empty_gates_in`
+/// runs the two filters independently, so `makefile.sh` is now both — which is a
+/// FIX, because the TypeScript oracle's `shellFiles()` and `wiringFiles()` were
+/// always two independent walks and `main`'s Rust was the side that diverged.
+/// But it is a silent verdict change: a `makefile.sh` can now supply `wiredBy`
+/// for another script and be reported as a defective gate itself, and until
+/// quoin#448 no case in the corpus held a name in both roles.
+///
+/// This names the case so that deleting it is a failure rather than a smaller
+/// corpus, and reads the two roles out of the captured TypeScript verdict
+/// rather than out of the classifier — the classifier is the thing under test.
+///
+/// Trace: FR-096
+/// Provenance: quoin#412, review #448 FND-006
+#[test]
+fn tc_412_a_path_in_both_roles_is_pinned_by_the_corpus() {
+    let (_, expected) = load();
+    let case = expected
+        .cases
+        .iter()
+        .find(|c| c.name == "makefile-sh-is-both-wiring-and-script")
+        .expect("the dual-role case is missing from the golden corpus");
+
+    let findings = case.findings.as_array().expect("findings is an array");
+    let as_script = findings
+        .iter()
+        .filter(|f| f["path"] == "makefile.sh")
+        .count();
+    let as_wiring = findings
+        .iter()
+        .filter(|f| f["wiredBy"] == "makefile.sh")
+        .count();
+    assert_eq!(
+        as_script, 1,
+        "makefile.sh must be reported as a defective gate in its own right: {findings:#?}"
+    );
+    assert_eq!(
+        as_wiring, 1,
+        "makefile.sh must also be the wiring that gives another script its role: {findings:#?}"
+    );
+}
+
 /// The corpus asserts over a non-empty population on both sides of the verdict.
 ///
 /// Without this, trimming `cases.json` down to only-clean repositories would
@@ -159,10 +219,10 @@ fn tc_377_020_corpus_covers_both_verdicts() {
         .map(Vec::len)
         .sum();
 
-    assert!(corpus.cases.len() >= 46, "corpus shrank below its floor");
-    assert!(with_findings >= 23, "too few cases expect a finding");
+    assert!(corpus.cases.len() >= 47, "corpus shrank below its floor");
+    assert!(with_findings >= 24, "too few cases expect a finding");
     assert!(clean >= 23, "too few cases expect a clean verdict");
-    assert!(total_findings >= 28, "too few findings asserted overall");
+    assert!(total_findings >= 30, "too few findings asserted overall");
 }
 
 /// A repository root that does not exist is a refusal, not a clean verdict.
