@@ -1,0 +1,29 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 Agent-IX
+[package]
+name = "quoin-change-assurance"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+description = "Change-assurance records, proof attestations, verification receipts and the ix-flow decision chain (quoin FR-063/FR-064/FR-065)."
+publish.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+# The ONLY place canonical JSON, JCS, blake3 and durable store writes come
+# from. FR-100-CON-4 forbids a second implementation, and `tc_455_boundary`
+# asserts over this crate's own sources that there is not one here.
+quoin-store = { workspace = true }
+# The ix-flow event hash is sha256, and `quoin-store` keeps its own sha256
+# helper private. This is that one hash and nothing else: no canonicalization,
+# no record digest, no file digest comes from here.
+sha2 = { workspace = true }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+tempfile = "=3.27.0"
