@@ -7,9 +7,12 @@
 //! ported: that one is the reference `rawEvidenceFor` *mints*, built from
 //! `RawEvidencePath`, `NonEmptyText` and `RawFileSha256Digest`, so holding one
 //! is proof the path is well-formed and the digest is a sha256. This one is the
-//! field as it appears in a stored record — read by serde, unvalidated,
-//! nearer quoin#468's `RawEvidenceClaim`. Checking a record's claim against a
-//! minted reference is intake's job (quoin#471/#472), not this wave's.
+//! field as it appears in a stored record — read by serde, unvalidated.
+//! Checking a record's claim against the file it names is intake's job, and
+//! [`crate::raw_evidence::verify_raw_evidence_references`] takes this type
+//! directly: quoin#472 deleted quoin#468's third spelling, `RawEvidenceClaim`,
+//! so a retained evidence file has exactly two representations in this crate
+//! and `tests/tc_472_evidence_representations.rs` fails if a third returns.
 
 use serde::{Deserialize, Serialize};
 

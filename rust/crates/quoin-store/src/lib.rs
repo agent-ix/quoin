@@ -71,8 +71,9 @@ pub mod store;
 
 pub use digest::{
     AssuranceRecordId, CanonicalDigest, DigestDomain, MAX_DIGESTED_FILE_BYTES, RawBytesDigest,
-    RawFileSha256Digest, digest_assurance_record, digest_canonical_value, digest_file_sha256,
-    digest_raw_bytes, digest_record, verify_record_digest,
+    RawFileSha256Digest, RecordFileName, digest_assurance_record, digest_canonical_value,
+    digest_file_sha256, digest_raw_bytes, digest_record, digest_record_file_name,
+    digest_record_pair_file_name, verify_record_digest,
 };
 pub use error::{StoreError, StoreErrorCode};
 pub use json::jcs::{canonical_bytes, canonicalize_jcs};

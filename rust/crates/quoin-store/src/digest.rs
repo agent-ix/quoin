@@ -153,15 +153,27 @@ pub enum DigestDomain {
     /// one for the other crosses exactly the boundary
     /// `FR-201-canonical-identity-domain` forbids.
     AssuranceRecordSha256,
+    /// Over a record identity's UTF-8 bytes, under SHA-256: the *file name* an
+    /// operational record or record pair is stored under
+    /// (`src/measurement/operational.ts:104,459`).
+    ///
+    /// A fourth question again. [`Self::RawFileSha256`] answers "what bytes are
+    /// in this file" and [`Self::AssuranceRecordSha256`] answers "what value is
+    /// this record"; this one answers "what do I call the file", over an
+    /// identity string that is not a file and not a canonical record. It is
+    /// never stored inside a record and never compared against a digest
+    /// member — it is spelled bare, because it is a basename.
+    RecordFileNameSha256,
 }
 
 impl DigestDomain {
     /// Every domain, in declaration order.
-    pub const ALL: [Self; 4] = [
+    pub const ALL: [Self; 5] = [
         Self::RawBytes,
         Self::CanonicalJcs,
         Self::RawFileSha256,
         Self::AssuranceRecordSha256,
+        Self::RecordFileNameSha256,
     ];
 
     /// Whether values in this domain are copied exactly rather than recomputed
@@ -170,7 +182,7 @@ impl DigestDomain {
     pub const fn is_opaque_bytes(self) -> bool {
         match self {
             Self::RawBytes | Self::RawFileSha256 => true,
-            Self::CanonicalJcs | Self::AssuranceRecordSha256 => false,
+            Self::CanonicalJcs | Self::AssuranceRecordSha256 | Self::RecordFileNameSha256 => false,
         }
     }
 
@@ -182,6 +194,7 @@ impl DigestDomain {
             Self::CanonicalJcs => "quoin.canonical-jcs",
             Self::RawFileSha256 => "quoin.raw-file-sha256",
             Self::AssuranceRecordSha256 => "quoin.assurance-record-sha256",
+            Self::RecordFileNameSha256 => "quoin.record-file-name-sha256",
         }
     }
 
@@ -199,6 +212,10 @@ impl DigestDomain {
             // hardcodes, and NFR-025 freezes), so the label is the only place
             // the difference can be said out loud.
             Self::AssuranceRecordSha256 => "sha256-canonical",
+            // Never spelled with a prefix on disk — a basename carries no
+            // algorithm label. The label exists so a diagnostic can still say
+            // which question the value answers.
+            Self::RecordFileNameSha256 => "sha256-identity",
         }
     }
 }
@@ -434,6 +451,65 @@ impl fmt::Display for AssuranceRecordId {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         formatter.write_str(&self.to_stored())
     }
+}
+
+/// The basename a record is stored under, a SHA-256 over its identity string.
+///
+/// `src/measurement/operational.ts:459` names an operational record file
+/// `createHash("sha256").update(recordId).digest("hex")`, and `:104` names a
+/// record *pair* file the same way over `` `${a}\0${b}` ``. Minted only by
+/// [`digest_record_file_name`] and [`digest_record_pair_file_name`], so a
+/// caller holding one is holding a name that was derived, not assembled.
+///
+/// Stored **bare**: it is a file name, so it carries no `sha256:` prefix and
+/// has no `to_stored` — the absence is the difference from
+/// [`AssuranceRecordId`], which is a prefixed member *inside* a record.
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
+pub struct RecordFileName(String);
+
+impl RecordFileName {
+    /// This value's domain. Always [`DigestDomain::RecordFileNameSha256`].
+    pub const DOMAIN: DigestDomain = DigestDomain::RecordFileNameSha256;
+
+    /// The bare hex, which is the file's stem.
+    #[must_use]
+    pub fn as_hex(&self) -> &str {
+        &self.0
+    }
+
+    /// This value's domain.
+    #[must_use]
+    pub const fn domain(&self) -> DigestDomain {
+        Self::DOMAIN
+    }
+}
+
+impl fmt::Display for RecordFileName {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter.write_str(&self.0)
+    }
+}
+
+/// The file name one record is stored under.
+///
+/// Takes the identity as text because that is what is hashed; whether the
+/// identity is safe to put in a path is the caller's guard, not this one's.
+#[must_use]
+pub fn digest_record_file_name(identity: &str) -> RecordFileName {
+    RecordFileName(sha256_hex(identity.as_bytes()))
+}
+
+/// The file name a linked record *pair* is stored under.
+///
+/// The two identities are joined by a NUL, which no record identity may
+/// contain, so `(a, b)` and `(a\0b, "")` cannot collide.
+#[must_use]
+pub fn digest_record_pair_file_name(first: &str, second: &str) -> RecordFileName {
+    let mut joined = Vec::with_capacity(first.len() + second.len() + 1);
+    joined.extend_from_slice(first.as_bytes());
+    joined.push(0);
+    joined.extend_from_slice(second.as_bytes());
+    RecordFileName(sha256_hex(&joined))
 }
 
 /// Compute an assurance record's identity from the value it will be stored as.
