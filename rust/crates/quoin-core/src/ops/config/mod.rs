@@ -24,6 +24,12 @@
 //! and it is not a leftover: a `.git` pointer chain is host state, and the
 //! boundary's contract is that host state is acquired by the shell and decided
 //! on by the library.
+//!
+//! [`taxonomy`] holds the one place a `quoin_config::ConfigError` becomes an
+//! exit status, the twin of `ops::modules::taxonomy`, and the count pin that
+//! makes a code added upstream fail a test rather than fall into a wildcard.
+
+mod taxonomy;
 
 use std::collections::BTreeMap;
 

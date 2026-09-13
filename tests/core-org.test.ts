@@ -43,9 +43,15 @@ import {
   QUOIN_PLUGIN_ID,
   QuoinConfigSchema,
 } from "../src/config-schema.js";
-import { quoinCoreExecutable } from "../src/core/exec.js";
+import { quoinCoreExecutable, runCoreAllowFailure } from "../src/core/exec.js";
 import type { OrgOptions, ResolvedOrg } from "../src/core/org.js";
-import { resolveOrg, unresolvedOrgMessage } from "../src/core/org.js";
+import {
+  MAX_CONFIG_LAYER_BYTES,
+  MAX_ENV_VALUE_BYTES,
+  MAX_GIT_CONFIG_BYTES,
+  resolveOrg,
+  unresolvedOrgMessage,
+} from "../src/core/org.js";
 
 function boundaryAvailable(): boolean {
   try {
@@ -290,6 +296,102 @@ describe.skipIf(!available)("resolveOrg ↔ quoin-core", () => {
       org: "from-user",
       source: "config",
       degraded: false,
+    });
+  });
+
+  // Trace: FR-025-AC-2, FR-027-AC-5
+  it("resolves with an oversized unrelated variable in the environment", () => {
+    // The defect: `resolveOrg` sent the WHOLE environment, and the boundary
+    // refuses any single value over `MAX_SCALAR_BYTES` with `CORE_REFUSED`,
+    // exit 2, which `call()` throws on. One 5,000-byte variable — `LS_COLORS`,
+    // an exported shell function, a CI token bundle — therefore killed every
+    // `quoin write`. Measured before the fix: with this variable exported, this
+    // file went 9 failed / 2 passed (quoin#450 review, finding 1).
+    //
+    // `options.env` is the same map `process.env` would be, so this exercises
+    // the narrowing rather than a path only tests take.
+    const env = {
+      ...process.env,
+      BIGVAR: "x".repeat(MAX_ENV_VALUE_BYTES + 904),
+      QUOIN_ORG: "from-env",
+    };
+    expect(resolveOrg(repoWithRemote(), { env })).toEqual({
+      org: "from-env",
+      source: "env",
+      degraded: false,
+    });
+  });
+
+  // Trace: FR-025-AC-2
+  it("drops an oversized QUOIN_ORG instead of dying on it", () => {
+    // An over-limit value of a variable that IS read degrades the same way an
+    // over-limit document does: that source is absent and the next one answers.
+    // A resolution that threw here would be the same defect wearing the one
+    // variable name this side cannot narrow away.
+    const env = {
+      ...process.env,
+      QUOIN_ORG: "x".repeat(MAX_ENV_VALUE_BYTES + 1),
+    };
+    expect(resolveOrg(repoWithRemote(), { env })).toEqual({
+      org: "from-git",
+      source: "git",
+      degraded: false,
+    });
+  });
+
+  // Trace: FR-025-AC-2
+  it("sends the declared bindings and nothing else", () => {
+    // The narrowing itself, not just its consequence: a variable the resolver
+    // does not declare must not reach the boundary at all, because an
+    // unbounded map of values the user did not author is the input the ceiling
+    // exists for. `QUOIN_ORG` still decides, so this is not "the environment
+    // stopped working".
+    const env = { ...process.env, QUOIN_ORG: "from-env" };
+    expect(resolveOrg(repoWithRemote(), { env }).org).toBe("from-env");
+    expect(Object.values(QUOIN_ENV_BINDINGS)).toEqual(["QUOIN_ORG"]);
+  });
+
+  // Trace: FR-025-AC-2, FR-027-AC-5
+  it("the ceilings this side sends under are the boundary's own", () => {
+    // TWO numbers duplicated across two languages, and until now nothing failed
+    // when they diverged: narrowing both TypeScript constants to 100000 left
+    // 13/13 tests here green (quoin#450 review, finding 4). `the_bounds_are_
+    // the_crates_own_ceilings` pins Rust to Rust; this pins TypeScript to the
+    // boundary, by asking the boundary.
+    //
+    // Not a source scrape and not a restated literal: each field is sent one
+    // byte past the constant THIS FILE'S caller uses, and the refusal the
+    // boundary reports must name that same number as its limit. Narrow the
+    // TypeScript and the boundary accepts the payload, so there is no refusal
+    // to read — the test fails. Widen it and the refusal names a smaller limit
+    // — the test fails. Both directions of drift are covered.
+    for (const [field, limit] of [
+      ["user_config", MAX_CONFIG_LAYER_BYTES],
+      ["project_config", MAX_CONFIG_LAYER_BYTES],
+      ["git_config", MAX_GIT_CONFIG_BYTES],
+    ] as const) {
+      const result = runCoreAllowFailure("config.resolve_org", {
+        env: {},
+        [field]: "x".repeat(limit + 1),
+      });
+      expect(result.exitCode, field).toBe(2);
+      const refusal = result.diagnostics[0];
+      expect(refusal?.code, field).toBe("CORE_REFUSED");
+      expect(refusal?.context, field).toMatchObject({
+        field,
+        limit_bytes: String(limit),
+        observed_bytes: String(limit + 1),
+      });
+    }
+
+    const env = runCoreAllowFailure("config.resolve_org", {
+      env: { QUOIN_ORG: "x".repeat(MAX_ENV_VALUE_BYTES + 1) },
+    });
+    expect(env.exitCode).toBe(2);
+    expect(env.diagnostics[0]?.context).toMatchObject({
+      field: "env_value",
+      env_name: "QUOIN_ORG",
+      limit_bytes: String(MAX_ENV_VALUE_BYTES),
     });
   });
 

@@ -111,7 +111,7 @@ export function resolveOrg(
 ): ResolvedOrg {
   const payload = call<ResolveOrgPayload>("config.resolve_org", {
     ...(options.flag === undefined ? {} : { flag: options.flag }),
-    env: stringValuedEnv(options.env ?? process.env),
+    env: declaredEnv(options.env ?? process.env),
     ...documents(repoRoot, options),
   } satisfies ResolveOrgRequest);
   // Passed through rather than rebuilt: a field added to the payload reaches
@@ -175,16 +175,46 @@ function call<T>(op: string, request: unknown): T {
 }
 
 /**
- * `process.env` as the string→string map the request declares.
+ * The variables the resolution actually reads, as the string→string map the
+ * request declares.
+ *
+ * **Only the declared bindings cross, and that is the fix for a real defect.**
+ * This sent the WHOLE environment. The boundary refuses any single value over
+ * `ops::config::MAX_SCALAR_BYTES` (4 KiB) with `CORE_REFUSED`, exit 2, and
+ * {@link call} throws on a refusal — so one unrelated oversized variable killed
+ * `quoin write` outright. Real environments carry 4 KiB+ variables routinely:
+ * `LS_COLORS`, an exported `BASH_FUNC_*`, a CI token bundle, a `KUBECONFIG`
+ * blob. Measured, not supposed: with a 5,000-byte `BIGVAR` exported,
+ * `tests/core-org.test.ts` went 9 failed / 2 passed (quoin#450 review,
+ * finding 1).
+ *
+ * `QUOIN_ENV_BINDINGS` is the whole set that can matter — `quoin_config`
+ * layers exactly the declared bindings over the config document and reads
+ * `QUOIN_ORG` for the `env` source, and the documents themselves arrive as
+ * content, so no XDG root is consulted on this path. Sending anything else was
+ * never a feature; narrowing removes an unbounded, user-uncontrolled input from
+ * the boundary rather than raising a ceiling to accommodate it.
+ *
+ * An over-limit value of a *declared* variable is dropped rather than sent,
+ * which is the answer {@link readIfPresent} gives an over-limit document: a
+ * broken input degrades one source, it does not stop an author (FR-027-AC-5).
+ * The boundary's refusal stays where it is, as the defence against a caller
+ * that is not this one.
  *
  * Node types every entry as possibly `undefined` (an unset variable reads as
  * absent, not empty), and an `undefined` would fail `deny_unknown_fields`'s
  * sibling — the typed `BTreeMap<String, String>` — rather than being ignored.
  */
-function stringValuedEnv(env: NodeJS.ProcessEnv): Record<string, string> {
+function declaredEnv(env: NodeJS.ProcessEnv): Record<string, string> {
   const out: Record<string, string> = {};
-  for (const [name, value] of Object.entries(env)) {
-    if (typeof value === "string") out[name] = value;
+  for (const name of Object.values(QUOIN_ENV_BINDINGS)) {
+    const value = env[name];
+    // Bytes, not characters, and the same unit the boundary measures in:
+    // `"é"` is one UTF-16 unit and two UTF-8 bytes (rust-style §"Untrusted
+    // input").
+    if (typeof value !== "string") continue;
+    if (Buffer.byteLength(value, "utf8") > MAX_ENV_VALUE_BYTES) continue;
+    out[name] = value;
   }
   return out;
 }
@@ -211,23 +241,41 @@ function documents(
 }
 
 /**
+ * The largest environment value this side will send, in bytes.
+ *
+ * `ops::config::MAX_SCALAR_BYTES`, and pinned to it by asking the boundary —
+ * a TypeScript copy of a Rust number that nothing compares is a copy that
+ * drifts.
+ */
+export const MAX_ENV_VALUE_BYTES = 4 * 1024;
+
+/**
  * The largest config layer this side will send, in bytes.
  *
  * `quoin_config::service::MAX_CONFIG_FILE_BYTES`, and the same number the
  * boundary refuses past (`ops::config::MAX_CONFIG_LAYER_BYTES`). Restated here
- * because it is a ceiling on a *read*, and `tests/core-org.test.ts` pins the
- * behaviour it produces rather than the constant.
+ * because it is a ceiling on a *read*, which happens on this side.
+ *
+ * A number duplicated across two languages needs a test that fails when the
+ * copies diverge, not tests that pass at today's value: narrowing this to
+ * 100000 once left 13/13 tests here green while the caller silently began
+ * discarding valid 200 KiB config layers (quoin#450 review, finding 4).
+ * The case "the ceilings this side sends under are the boundary's own" in
+ * `tests/core-org.test.ts` sends one byte past this constant and asserts that
+ * the boundary's own refusal names it, so drift in either direction fails.
  */
-const MAX_CONFIG_LAYER_BYTES = 1 << 20;
+export const MAX_CONFIG_LAYER_BYTES = 1 << 20;
 
 /**
  * The largest `.git/config` this side will send, in bytes.
  *
  * `quoin_config::org::MAX_GIT_CONFIG_BYTES`, matching the in-process resolver:
  * `org_from_git_config` stats the file and answers "no org here" past this
- * number rather than reading it.
+ * number rather than reading it. Pinned to the boundary's own ceiling by the
+ * same case as the layer ceiling above — which is the test this constant did
+ * not have at all.
  */
-const MAX_GIT_CONFIG_BYTES = 4 << 20;
+export const MAX_GIT_CONFIG_BYTES = 4 << 20;
 
 /**
  * An absent, unreadable or oversized document is absent, never an error.

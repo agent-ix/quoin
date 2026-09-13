@@ -882,6 +882,53 @@ mod tests {
         assert!(error.reason.contains("oneOf"), "{}", error.reason);
     }
 
+    /// The interface arm takes BOTH halves of its condition, and neither half
+    /// alone.
+    ///
+    /// The guard was `type == "object" || contains_key("properties")` and is
+    /// now `&&`. Reverting it to `||` left all 39 tests in this crate green,
+    /// including the committed-digest case — the rule was pinned in neither
+    /// direction (quoin#450 review, finding 6). Both off-diagonal cases are
+    /// asserted here, because the whole content of the change is what happens
+    /// to them:
+    ///
+    /// - `properties` with no `"type": "object"` falls through to
+    ///   [`render_type`], which refuses by name rather than emitting an
+    ///   interface for a schema that never said it was one.
+    /// - `"type": "object"` with no `properties` renders the index signature
+    ///   its `additionalProperties` describes, rather than an empty interface
+    ///   that silently accepts anything.
+    #[test]
+    fn the_interface_arm_needs_the_type_and_the_properties() {
+        let interface = render_definition(
+            "X",
+            &json!({ "type": "object", "properties": { "a": { "type": "string" } } }),
+            "#/$defs/X",
+        )
+        .unwrap();
+        assert!(interface.contains("export interface X"), "{interface}");
+
+        // `properties` alone is not an interface: under `||` this rendered one.
+        let error = render_definition(
+            "X",
+            &json!({ "properties": { "a": { "type": "string" } } }),
+            "#/$defs/X",
+        )
+        .unwrap_err();
+        assert_eq!(error.pointer, "#/$defs/X");
+
+        // `type: object` alone is a map, not an empty interface: under `||`
+        // this rendered `export interface X {}`.
+        let map = render_definition(
+            "X",
+            &json!({ "type": "object", "additionalProperties": { "type": "string" } }),
+            "#/$defs/X",
+        )
+        .unwrap();
+        assert!(map.contains("Record<string, string>"), "{map}");
+        assert!(!map.contains("interface"), "{map}");
+    }
+
     #[test]
     fn an_intra_doc_link_keeps_only_its_final_segment() {
         assert_eq!(

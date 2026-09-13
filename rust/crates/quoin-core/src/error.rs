@@ -169,6 +169,36 @@ mod tests {
         assert_eq!(seen.len(), count, "two codes share a wire spelling");
     }
 
+    /// `all()` is hand-maintained, so nothing but this makes a variant added
+    /// to the enum and forgotten there a failure.
+    ///
+    /// The count is written out and every code is listed by NAME. A loop over
+    /// `all()` would only re-run `all()` and agree with itself — the quoin#443
+    /// failure mode, and the reason `ModulesErrorCode` is pinned the same way.
+    /// A new code is a deliberate act: add it to `all()`, add it here, raise
+    /// the number.
+    #[test]
+    fn the_catalogue_is_every_variant_of_the_enum() {
+        assert_eq!(
+            CoreErrorCode::all().len(),
+            8,
+            "a code was added to the enum; add it to `all()` too"
+        );
+        assert_eq!(
+            CoreErrorCode::all(),
+            [
+                CoreErrorCode::BadUsage,
+                CoreErrorCode::UnknownOp,
+                CoreErrorCode::BadJson,
+                CoreErrorCode::BadRequest,
+                CoreErrorCode::Refused,
+                CoreErrorCode::ProtocolSkew,
+                CoreErrorCode::Degraded,
+                CoreErrorCode::Io,
+            ]
+        );
+    }
+
     #[test]
     fn an_io_failure_is_internal_not_the_callers_fault() {
         assert_eq!(CoreErrorCode::Io.outcome(), Outcome::Internal);

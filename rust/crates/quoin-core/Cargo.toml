@@ -32,10 +32,6 @@ quoin-assurance = { workspace = true }
 # file; see `src/capabilities.rs`.
 quoin-config = { workspace = true }
 quoin-modules = { workspace = true }
-# The semantic contract `quoin-modules` declines to judge: its `SemanticGate` is
-# a seam, and this is the implementation `main.rs` puts behind it so the Rust
-# install path refuses exactly what `src/plugins.ts` refused (quoin#446).
-quoin-semantic = { workspace = true }
 quoin-validators = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }

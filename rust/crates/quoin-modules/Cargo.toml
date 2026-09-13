@@ -13,6 +13,13 @@ publish.workspace = true
 workspace = true
 
 [dependencies]
+# quoin#450, the independent review's finding 3. `contract_gate` is the
+# production `SemanticGate`, and it is stated in THIS crate's vocabulary
+# (`SemanticGate`, `SemanticVerdict`, `ModuleName`, `ModuleRegistry`) over free
+# functions from `quoin-semantic`. It lived in `quoin-core`'s `main.rs`, the one
+# file no containment audit walks and the one file with no unit tests; that is
+# how a silently emptied population passed every gate.
+quoin-semantic = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }

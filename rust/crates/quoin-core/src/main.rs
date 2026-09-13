@@ -28,6 +28,17 @@
 //! file and handed to `dispatch` as a `Capabilities` grant; `ops::modules`
 //! decides what to do and never acquires the means to do it. See
 //! `quoin_core::capabilities`.
+//!
+//! **Construction is not policy, and the difference is the whole point.** What
+//! the semantic gate DECIDES is `quoin_modules::ContractGate`, in a domain
+//! crate, with unit tests against a real temporary home. It lived here once, on
+//! the argument that no library could hold a gate that must read the
+//! filesystem; the containment audit walks one crate, so that argument was only
+//! ever true of `quoin-core`'s own library. The price of it being here was that
+//! ~230 lines of decidable policy sat in the one file no audit walks and no
+//! unit test reaches, which is how a filter that silently emptied the
+//! population the duplicate-package rule judges against passed every gate
+//! (quoin#450 review, findings 2 and 3).
 
 use std::io::Write as _;
 use std::path::{Path, PathBuf};
@@ -37,9 +48,9 @@ use quoin_core::dispatch::{dispatch, parse_operation, read_request};
 use quoin_core::error::CoreError;
 use quoin_core::protocol::{Diagnostic, Response, canonical_json};
 use quoin_modules::{
-    GixResolver, InstallOutcome, InstallPaths, InstalledModule, IxHome, MarketplaceManifest,
-    ModuleInstaller, ModuleName, ModuleRegistry, ModulesError, ReconcileMode, ReconcileReport,
-    RollbackOutcome, SemanticGate, SemanticPin, SemanticVerdict, Source,
+    ContractGate, GixResolver, InstallOutcome, InstallPaths, InstalledModule, IxHome,
+    MarketplaceManifest, ModuleInstaller, ModuleName, ModulesError, ReconcileMode, ReconcileReport,
+    Source,
 };
 
 fn main() -> std::process::ExitCode {
@@ -114,12 +125,17 @@ impl HostModules {
         let home = self.home(home);
         let paths = InstallPaths::for_home(&home);
         let resolver = GixResolver::new(paths.cache_root.clone());
-        let gate = ContractGate {
-            semantic_root: self.semantic_root.clone(),
-            modules_dir: home.modules_dir(),
-            registry_path: home.registry_path(),
-        };
+        let gate = self.gate(&home);
         work(&ModuleInstaller::new(paths, &resolver, &gate))
+    }
+
+    /// The production semantic gate for `home`.
+    ///
+    /// The rules it enforces are `quoin_modules::ContractGate`'s and are unit
+    /// tested there. This file only says WHERE the vendored contract is, which
+    /// is the one part of it that is host state.
+    fn gate(&self, home: &IxHome) -> ContractGate {
+        ContractGate::for_home(home, self.semantic_root.clone())
     }
 }
 
@@ -162,290 +178,7 @@ impl ModuleHost for HostModules {
     }
 
     fn validate_installed(&self, home: Option<&Path>) -> Result<(), ModulesError> {
-        // `validateInstalledSemantics` in `src/plugins.ts`, rule for rule: the
-        // module's OWN diagnostics only. The duplicate-package and
-        // import-resolution checks are install-time rules about a module
-        // joining a population, and re-running them here would fail a home that
-        // the install path had already accepted.
-        let home = self.home(home);
-        // Unjudged is not the same as clean, so an absent or unreadable
-        // contract refuses rather than passes — the same choice `ContractGate`
-        // makes on the install path, for the same reason.
-        let unavailable = |detail: String| ModulesError::SemanticContractUnavailable { detail };
-        let semantic_root = self.semantic_root.as_deref().ok_or_else(|| {
-            unavailable(
-                "QUOIN_SEMANTIC_ROOT is not set, so installed modules cannot be re-validated; \
-                 refusing rather than reporting them clean unjudged"
-                    .to_owned(),
-            )
-        })?;
-        let validators = quoin_semantic::manifest::SemanticValidators::load(semantic_root)
-            .map_err(|error| {
-                unavailable(format!(
-                    "the vendored semantic contract could not be loaded: {error}"
-                ))
-            })?;
-        let modules_dir = home.modules_dir();
-        // An unreadable registry is NOT an empty registry. `unwrap_or_default`
-        // here would have re-validated a population of zero and reported the
-        // home clean, which is the "check over an empty population" this file's
-        // own doc above refuses to make.
-        let registry = ModuleRegistry::read(&home.registry_path()).map_err(|error| {
-            unavailable(format!(
-                "the installed-module registry at {} could not be read, so installed \
-                 modules cannot be re-validated: {error}",
-                home.registry_path().display()
-            ))
-        })?;
-        for installed in registry.plugins {
-            let root = modules_dir.join(installed.name.as_str());
-            if !root.join("manifest.yaml").is_file() {
-                continue;
-            }
-            // Same rule one level down: a module whose manifest is present but
-            // unreadable is unjudged, not clean.
-            let result =
-                quoin_semantic::read_module_semantic(&root, &validators).map_err(|error| {
-                    unavailable(format!(
-                        "the semantic contract of installed module `{}` could not be read, \
-                         so it cannot be re-validated: {error}",
-                        installed.name.as_str()
-                    ))
-                })?;
-            if quoin_semantic::has_errors(&result.diagnostics) {
-                return Err(ModulesError::SemanticContractViolation {
-                    name: installed.name.clone(),
-                    report: quoin_semantic::format_diagnostics(&result.diagnostics),
-                    rollback: RollbackOutcome::NotAttempted,
-                });
-            }
-        }
-        Ok(())
-    }
-}
-
-/// The semantic contract, put behind `quoin-modules`' gate seam.
-///
-/// `quoin-modules` owns *when* the gate runs and what a rejection does to the
-/// filesystem and the registry; it deliberately does not own what the gate
-/// decides, and its own `PermissiveGate` accepts everything. This is the
-/// implementation that makes the Rust install path refuse exactly what
-/// `src/plugins.ts` refused: the module's own `semantic` block, a package
-/// already claimed by another installed module, unresolvable imports, and a
-/// derived package manifest that does not validate.
-struct ContractGate {
-    semantic_root: Option<PathBuf>,
-    modules_dir: PathBuf,
-    registry_path: PathBuf,
-}
-
-impl ContractGate {
-    /// Every OTHER installed module that declares a semantic block, in sorted
-    /// root order — the population `duplicate_package_diagnostic` and
-    /// `resolve_imports` judge against.
-    ///
-    /// `installedSemanticModules(home).filter(m => m.name !== installed.name)`
-    /// in `src/plugins.ts`, including the sort: the diagnostics name whichever
-    /// module is found first, so the order is user-visible.
-    ///
-    /// # Errors
-    /// A description of what could not be read, when the population cannot be
-    /// established. This is deliberately not an empty population: the
-    /// duplicate-package and import-resolution rules are judgements *against*
-    /// this list, so an unreadable registry or an unreadable sibling silently
-    /// turns both rules off and passes a module they would have refused.
-    fn others(
-        &self,
-        validators: &quoin_semantic::manifest::SemanticValidators,
-        exclude: &ModuleName,
-    ) -> Result<Vec<quoin_semantic::SemanticModule>, String> {
-        let registry = ModuleRegistry::read(&self.registry_path).map_err(|error| {
-            format!(
-                "the installed-module registry at {} could not be read, so a module \
-                 cannot be judged against the modules already installed: {error}",
-                self.registry_path.display()
-            )
-        })?;
-        let mut roots: Vec<PathBuf> = registry
-            .plugins
-            .iter()
-            .filter(|installed| &installed.name != exclude)
-            .map(|installed| self.modules_dir.join(installed.name.as_str()))
-            .filter(|root| root.join("manifest.yaml").is_file())
-            .collect();
-        roots.sort();
-        roots
-            .iter()
-            .map(|root| {
-                quoin_semantic::read_module_semantic(root, validators)
-                    .map(|result| result.module)
-                    .map_err(|error| {
-                        format!(
-                            "the semantic contract of installed module at {} could not be \
-                             read, so a new module cannot be judged against it: {error}",
-                            root.display()
-                        )
-                    })
-            })
-            // A sibling with no `semantic` block is genuinely not part of this
-            // population — `src/plugins.ts` skipped it too. A sibling that
-            // could not be READ is a different thing, and is the error above.
-            .filter_map(Result::transpose)
-            .collect()
-    }
-}
-
-/// One error diagnostic, which is what every refusal on this gate is.
-///
-/// A free function rather than a closure inside `inspect` so that the helpers
-/// below refuse in exactly the same shape: a verdict carrying one error and no
-/// pin is what `quoin-modules` reads as "do not install this".
-fn refuse(rule: &str, message: String) -> SemanticVerdict {
-    use quoin_modules::semantic::{Diagnostic as GateDiagnostic, Severity as GateSeverity};
-    SemanticVerdict {
-        diagnostics: vec![GateDiagnostic {
-            severity: GateSeverity::Error,
-            rule: rule.to_owned(),
-            message,
-        }],
-        pin: None,
-    }
-}
-
-/// `quoin_semantic`'s diagnostics in the gate's own vocabulary.
-fn as_gate_diagnostics(
-    diagnostics: &[quoin_semantic::SemanticDiagnostic],
-) -> Vec<quoin_modules::semantic::Diagnostic> {
-    use quoin_modules::semantic::{Diagnostic as GateDiagnostic, Severity as GateSeverity};
-    diagnostics
-        .iter()
-        .map(|d| GateDiagnostic {
-            severity: match d.severity {
-                quoin_semantic::Severity::Error => GateSeverity::Error,
-                quoin_semantic::Severity::Warning => GateSeverity::Warning,
-            },
-            rule: d.code.to_string(),
-            message: format!("{}: {}", d.path, d.message),
-        })
-        .collect()
-}
-
-/// Derive, validate and write the package manifest, then derive the pin.
-///
-/// Order matters and is `installPlugin`'s: the manifest is validated and
-/// written before the pin is offered, so a module whose manifest is invalid
-/// never reaches the registry with a pin recorded for it.
-///
-/// # Errors
-/// The refusal verdict to return, when any step of that sequence fails.
-fn materialise(
-    module: &quoin_semantic::SemanticModule,
-    semantic_root: &Path,
-) -> Result<SemanticPin, SemanticVerdict> {
-    let derived = quoin_semantic::derive_package_manifest(module);
-    match serde_json::to_value(&derived)
-        .map_err(|e| e.to_string())
-        .and_then(|value| {
-            quoin_semantic::validate_package_manifest(semantic_root, &value)
-                .map_err(|e| e.to_string())
-        }) {
-        Ok(Ok(())) => {}
-        Ok(Err(errors)) => {
-            return Err(refuse(
-                "semantic/package-manifest-invalid",
-                format!(
-                    "derived package manifest is invalid: {}",
-                    errors
-                        .iter()
-                        .map(|e| format!("{}: {}", e.instance_path, e.message))
-                        .collect::<Vec<_>>()
-                        .join("; ")
-                ),
-            ));
-        }
-        Err(detail) => {
-            return Err(refuse("semantic/package-manifest-underivable", detail));
-        }
-    }
-
-    if let Err(error) = quoin_semantic::package_manifest::write_package_manifest(module, &derived) {
-        return Err(refuse(
-            "semantic/package-manifest-unwritable",
-            format!("the derived package manifest could not be written: {error}"),
-        ));
-    }
-
-    quoin_semantic::registry_pin(module)
-        .map(|registry_pin| SemanticPin {
-            package: registry_pin.package,
-            semantic_core: registry_pin.semantic_core,
-            exports: registry_pin.exports.into_iter().collect(),
-        })
-        .map_err(|error| {
-            refuse(
-                "semantic/pin-underivable",
-                format!("the registry pin could not be derived: {error}"),
-            )
-        })
-}
-
-impl SemanticGate for ContractGate {
-    fn inspect(&self, name: &ModuleName, root: &Path) -> SemanticVerdict {
-        // No vendored tree means no judgement is possible. REFUSING is the only
-        // honest answer: accepting unjudged would install a module the
-        // TypeScript path would have rejected, silently, which is exactly the
-        // regression FR-101's retire-after-parity rule exists to prevent.
-        let Some(semantic_root) = self.semantic_root.as_deref() else {
-            return refuse(
-                "semantic/contract-unavailable",
-                "QUOIN_SEMANTIC_ROOT is not set, so the semantic contract cannot be checked; \
-                 refusing rather than installing a module unjudged"
-                    .to_owned(),
-            );
-        };
-        let validators = match quoin_semantic::manifest::SemanticValidators::load(semantic_root) {
-            Ok(validators) => validators,
-            Err(error) => {
-                return refuse(
-                    "semantic/contract-unreadable",
-                    format!("the vendored semantic contract could not be loaded: {error}"),
-                );
-            }
-        };
-
-        // No readable manifest is not this gate's rule to enforce:
-        // `quoin-modules` already refuses a module root without one, and
-        // `src/plugins.ts` left modules with no `semantic` block untouched.
-        let Ok(result) = quoin_semantic::read_module_semantic(root, &validators) else {
-            return SemanticVerdict::default();
-        };
-
-        let mut diagnostics = result.diagnostics.clone();
-        let mut pin = None;
-        if let Some(module) = result.module.as_ref() {
-            let others = match self.others(&validators, name) {
-                Ok(others) => others,
-                Err(detail) => {
-                    return refuse("semantic/population-unreadable", detail);
-                }
-            };
-            if let Some(duplicate) = quoin_semantic::duplicate_package_diagnostic(module, &others) {
-                diagnostics.push(duplicate);
-            }
-            diagnostics.extend(quoin_semantic::resolve_imports(module, &others));
-
-            if !quoin_semantic::has_errors(&diagnostics) {
-                match materialise(module, semantic_root) {
-                    Ok(derived_pin) => pin = Some(derived_pin),
-                    Err(verdict) => return verdict,
-                }
-            }
-        }
-
-        SemanticVerdict {
-            diagnostics: as_gate_diagnostics(&diagnostics),
-            pin,
-        }
+        self.gate(&self.home(home)).validate_installed()
     }
 }
 
