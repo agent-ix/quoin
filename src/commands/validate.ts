@@ -40,8 +40,15 @@ Findings are advisory by default. Pass --strict in CI to exit non-zero.`;
       const detail = result.diagnostics
         .map((d) => `${d.code}: ${d.message}`)
         .join("\n");
+      // The repo is named here because the boundary cannot name it. Paths in a
+      // request are repository-relative, so an unlistable ROOT arrives on the
+      // far side as the empty path and comes back as "repository root  is not
+      // a readable directory" — a blank where the user's typo was. On `main`
+      // `readdirSync`'s ENOENT escaped and oclif printed the offending path
+      // itself; this restores that much (quoin#448 FND-008).
       this.error(
-        `quoin-core validators.run exited ${result.exitCode}` +
+        `quoin validate --repo ${flags.repo}: quoin-core validators.run ` +
+          `exited ${result.exitCode}` +
           (detail ? `:\n${detail}` : " with no diagnostic on stderr."),
         { exit: result.exitCode },
       );

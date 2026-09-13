@@ -153,6 +153,11 @@ describe.skipIf(!available)("quoin validate \u2194 quoin-core", () => {
     return lines;
   }
 
+  // Trace: FR-043-AC-20
+  // TC-1071's command half. `tests/gate-validator.test.ts` carried it and is
+  // gone; `tc_377_019` names the criterion but calls `GateReport` in process
+  // and never reaches the oclif command, so before quoin#448 the matrix row
+  // read ✅ over a test that did not exercise it (FND-004).
   it("reports the finding at an exact locus, as JSON and as prose", async () => {
     const root = mkdtempSync(join(tmpdir(), "quoin-validate-e2e-"));
     badGate(root);
@@ -218,6 +223,7 @@ describe.skipIf(!available)("quoin validate \u2194 quoin-core", () => {
     ]);
   });
 
+  // Trace: FR-043-AC-20
   it("says so when there is nothing to report", async () => {
     // TC-1068: identical shell text with no wiring is a report, not a gate.
     const root = mkdtempSync(join(tmpdir(), "quoin-validate-e2e-"));
@@ -228,6 +234,111 @@ describe.skipIf(!available)("quoin validate \u2194 quoin-core", () => {
     ]);
   });
 
+  /**
+   * The bytes a caller sees, pinned against the oracle they used to be
+   * (quoin#448 FND-002).
+   *
+   * `--json` is still `JSON.stringify({ findings }, null, 2)`, but the findings
+   * now arrive through `protocol::canonical_json`, which sorts object keys at
+   * every depth. So the document a consumer diffs CHANGED, and the review found
+   * nothing pinning it: `golden_parity.rs::tc_377_019` compares
+   * `to_string_pretty(&report)` — declaration order, a path the shipped command
+   * no longer takes — and the case above uses `objectContaining`, which is
+   * order-insensitive.
+   *
+   * The expectation here is DERIVED, not authored: it is the TypeScript
+   * oracle's own captured stdout (`tests/golden/expected.json`, taken from
+   * quoin `4d27dcf`) with its keys recursively sorted. So the assertion states
+   * exactly one permitted difference — key order — over the whole document,
+   * values, indentation and all. Writing the field list out by hand would also
+   * be a type declaration in TypeScript, which FR-097 forbids.
+   */
+  it("emits the oracle's document, byte for byte, modulo key order", async () => {
+    const goldenDir = join(
+      repoRoot,
+      "rust/crates/quoin-validators/tests/golden",
+    );
+    const corpus = JSON.parse(
+      readFileSync(join(goldenDir, "cases.json"), "utf8"),
+    ) as { cases: { name: string; files: Record<string, string[]> }[] };
+    const oracle = JSON.parse(
+      readFileSync(join(goldenDir, "expected.json"), "utf8"),
+    ) as { cases: { name: string; json: string }[] };
+
+    const sortKeys = (value: unknown): unknown => {
+      if (Array.isArray(value)) return value.map(sortKeys);
+      if (value === null || typeof value !== "object") return value;
+      const source = value as Record<string, unknown>;
+      const out: Record<string, unknown> = {};
+      for (const key of Object.keys(source).sort())
+        out[key] = sortKeys(source[key]);
+      return out;
+    };
+
+    // Cases chosen by what they contain, not by name: one finding, several
+    // findings across several files, and none. A single case would let a
+    // regression in ordering ACROSS findings pass.
+    const chosen = [
+      "baseline-bad-gate",
+      "multiple-files-sorted",
+      "no-gate-claim",
+    ];
+    let findingsAsserted = 0;
+    for (const name of chosen) {
+      const spec = corpus.cases.find((c) => c.name === name);
+      const expectation = oracle.cases.find((c) => c.name === name);
+      expect(spec, `corpus case ${name}`).toBeDefined();
+      expect(expectation, `oracle case ${name}`).toBeDefined();
+
+      const root = mkdtempSync(join(tmpdir(), "quoin-validate-bytes-"));
+      for (const [relative, lines] of Object.entries(spec!.files)) {
+        const target = join(root, relative);
+        mkdirSync(dirname(target), { recursive: true });
+        writeFileSync(target, lines.join("\n"));
+      }
+
+      const wanted = `${JSON.stringify(sortKeys(JSON.parse(expectation!.json)), null, 2)}`;
+      expect(
+        (await run(["--repo", root, "--json"])).join("\n"),
+        `case ${name}`,
+      ).toBe(wanted);
+      findingsAsserted += (
+        JSON.parse(expectation!.json) as { findings: unknown[] }
+      ).findings.length;
+    }
+
+    // A population floor. Every comparison above is an equality, and two empty
+    // documents are equal: if the corpus lost its findings, or the chosen names
+    // stopped matching, this would agree perfectly about `{"findings": []}`.
+    expect(findingsAsserted).toBeGreaterThanOrEqual(3);
+  });
+
+  /**
+   * An unusable `--repo` exits 2 and names the repository (quoin#448 FND-008).
+   *
+   * A user-visible change this PR makes, measured rather than asserted from
+   * memory: on `main` at `4d27dcf`, `readdirSync`'s `ENOENT` escaped
+   * `inspectEmptyGates` with no `oclif.exit`, and oclif's handler exits 1
+   * (`@oclif/core/lib/errors/handle.js`: `err.oclif?.exit ?? 1`). Measured on
+   * that tree: `node bin/quoin.js validate --repo /nope/does/not/exist` exits
+   * **1**. It now exits **2**, because the unlistable root reaches the boundary
+   * and comes back `CORE_REFUSED`.
+   *
+   * The message half matters too: paths on the wire are repository-relative, so
+   * the far side can only call the root `""` and its own text reads "repository
+   * root  is not a readable directory". The command names the `--repo` it was
+   * given, because otherwise this PR replaces a message containing the typo
+   * with one containing a blank.
+   */
+  it("exits 2 and names the repository when the root cannot be listed", async () => {
+    const missing = join(tmpdir(), "quoin-no-such-repo-", String(process.pid));
+    await expect(run(["--repo", missing])).rejects.toMatchObject({
+      oclif: { exit: 2 },
+      message: expect.stringContaining(missing),
+    });
+  });
+
+  // Trace: FR-043-AC-20
   it("makes --strict the caller's policy, not the boundary's verdict", async () => {
     // A finding is a SUCCESSFUL answer: quoin-core exits 0 and the payload
     // carries the findings. The exit 1 below is this command's own decision,
