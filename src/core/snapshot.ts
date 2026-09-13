@@ -30,6 +30,15 @@ const EXCLUDED = new Set([
  * `is_shell_file` / `is_wiring_file`, which would be a rule in two places that
  * could disagree.
  *
+ * The superset property is the only thing standing between a transport
+ * optimisation and a changed verdict, so it is MEASURED and not listed:
+ * `tests/core-exec-e2e.test.ts` asks the real `quoin-core` binary, path by
+ * path, which paths its classifier accepts, and fails if this filter dropped
+ * one. A fixture list is exactly as complete as whoever wrote it — narrowing
+ * the `taskfile` arm below to the literal `taskfile.yml` loses every
+ * `Taskfile.yaml` finding, and left the whole suite green before that test
+ * existed.
+ *
  * Sending the whole tree instead is not an option: quoin's own repository is
  * 1056 files and 26 MB after the exclusions above, and that is a request per
  * `quoin validate`.

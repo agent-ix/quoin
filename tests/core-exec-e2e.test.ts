@@ -19,6 +19,7 @@ import {
   mkdirSync,
   mkdtempSync,
   readFileSync,
+  rmSync,
   writeFileSync,
 } from "node:fs";
 import { createHash } from "node:crypto";
@@ -31,6 +32,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import Validate from "../src/commands/validate.js";
 import { CORE_EXIT, runCore, runCoreAllowFailure } from "../src/core/index.js";
+import { repoSnapshot } from "../src/core/snapshot.js";
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -180,6 +182,42 @@ describe.skipIf(!available)("quoin validate \u2194 quoin-core", () => {
     ]);
   });
 
+  /**
+   * The one place the cutover DID change the bytes, pinned so it is a decision
+   * and not an accident.
+   *
+   * The prose lines and every value are identical to what `src/validators/`
+   * printed. The `--json` document's KEY ORDER is not: the payload is now
+   * parsed out of `quoin-core`'s stdout, which is canonical JSON with object
+   * keys sorted at every depth (rust-style, "the boundary contract"), and
+   * `JSON.stringify` preserves that parse order. The retained TypeScript built
+   * the object literal in `kind, obligation, path, line, wiredBy, subject,
+   * changeTarget, remedy, summary` order.
+   *
+   * Restoring the old order would mean hand-writing a field list in TypeScript
+   * for a type FR-097 says TypeScript never declares, so the new order is the
+   * contract. It is asserted here rather than left implicit because a consumer
+   * diffing `quoin validate --json` output byte for byte sees it.
+   */
+  it("emits the payload in canonical key order", async () => {
+    const root = mkdtempSync(join(tmpdir(), "quoin-validate-e2e-"));
+    badGate(root);
+    const payload = JSON.parse(
+      (await run(["--repo", root, "--json"])).join("\n"),
+    ) as { findings: Record<string, unknown>[] };
+    expect(Object.keys(payload.findings[0])).toEqual([
+      "changeTarget",
+      "kind",
+      "line",
+      "obligation",
+      "path",
+      "remedy",
+      "subject",
+      "summary",
+      "wiredBy",
+    ]);
+  });
+
   it("says so when there is nothing to report", async () => {
     // TC-1068: identical shell text with no wiring is a report, not a gate.
     const root = mkdtempSync(join(tmpdir(), "quoin-validate-e2e-"));
@@ -206,3 +244,127 @@ describe.skipIf(!available)("quoin validate \u2194 quoin-core", () => {
     ]);
   });
 });
+
+/**
+ * The superset property, measured rather than enumerated (quoin#412).
+ *
+ * `src/core/snapshot.ts` is sound only if it is a strict SUPERSET of what
+ * `quoin-validators` classifies: a path it drops that `is_shell_file` or
+ * `is_wiring_file` would have accepted is a finding `quoin validate` silently
+ * stops reporting. `tests/core-snapshot.test.ts` pins that with a list of
+ * shapes, and a list is exactly as complete as whoever wrote it — narrowing
+ * `couldMatter`'s `taskfile` arm to the literal `taskfile.yml` drops
+ * `Taskfile.yaml`, which the far side DOES call wiring, and every test in this
+ * repository stayed green.
+ *
+ * So this one does not hold an expectation about the classifier at all. It asks
+ * the real binary, path by path, whether the classifier accepts it, and asserts
+ * `repoSnapshot` sent every path that came back yes. The oracle is the
+ * implementation under test's far side, not a second transcription of its
+ * rules — which is the whole reason classification stayed in Rust.
+ */
+describe.skipIf(!available)(
+  "repoSnapshot ⊇ quoin-validators (quoin#412)",
+  () => {
+    /** A script whose claim, count and pattern make one finding when it is wired. */
+    const GATE = [
+      "#!/bin/sh",
+      "# Gate for FR-001-AC-1: no production symbol shall call `unwrap`.",
+      'grep -rn "unwrap()" src/ | wc -l',
+    ];
+
+    function findings(
+      files: Record<string, string[]>,
+    ): { path: string; wiredBy: string }[] {
+      const payload = runCore("validators.run", { files }) as {
+        findings: { path: string; wiredBy: string }[];
+      };
+      return payload.findings;
+    }
+
+    /**
+     * Does the far side classify `path` as a shell script? Asked by wiring it
+     * from a Makefile and seeing whether a finding comes back against it — the
+     * analysis only ever reaches a file it classified.
+     */
+    function classifiedAsScript(path: string): boolean {
+      if (path === "Makefile") return false;
+      return findings({
+        Makefile: ["gate:", `\t./${path}`],
+        [path]: GATE,
+      }).some((f) => f.path === path);
+    }
+
+    /** The same question for wiring: is `path` the file that wires the script? */
+    function classifiedAsWiring(path: string): boolean {
+      if (path === "scripts/check.sh") return false;
+      return findings({
+        [path]: ["gate:", "\t./scripts/check.sh"],
+        "scripts/check.sh": GATE,
+      }).some((f) => f.wiredBy === path);
+    }
+
+    const NAMES = [
+      ".sh",
+      "CHECK.SH",
+      "JUSTFILE",
+      "MAKEFILE",
+      "Makefile",
+      "Makefile.",
+      "Makefile.ci",
+      "PACKAGE.JSON",
+      "TASKFILE.YML",
+      "Taskfile.toml",
+      "Taskfile.yaml",
+      "Taskfile.yml",
+      "check.sh",
+      "ci.YML",
+      "ci.yaml",
+      "ci.yml",
+      "gate.SH",
+      "gate.bash",
+      "gate.sh",
+      "justfile",
+      "makefile",
+      "makefile.txt",
+      "package-lock.json",
+      "package.json",
+      "x.b.sh",
+    ];
+    const DIRECTORIES = [
+      "",
+      "scripts/",
+      "deep/nested/",
+      ".github/workflows/",
+      ".github/actions/",
+    ];
+
+    it("sends every path the far side would classify", () => {
+      const root = mkdtempSync(join(tmpdir(), "quoin-superset-"));
+      try {
+        const candidates: string[] = [];
+        for (const directory of DIRECTORIES) {
+          for (const name of NAMES) {
+            const path = `${directory}${name}`;
+            const target = join(root, path);
+            mkdirSync(dirname(target), { recursive: true });
+            writeFileSync(target, "x\n");
+            candidates.push(path);
+          }
+        }
+
+        const sent = new Set(Object.keys(repoSnapshot(root).files));
+        const classified = candidates.filter(
+          (path) => classifiedAsScript(path) || classifiedAsWiring(path),
+        );
+        // A comparison over an empty population is green and says nothing: if the
+        // probes stopped reaching the binary, every path would read as "not
+        // classified" and the assertion below would pass over nothing.
+        expect(classified.length).toBeGreaterThan(40);
+        expect(classified.filter((path) => !sent.has(path))).toEqual([]);
+      } finally {
+        rmSync(root, { force: true, recursive: true });
+      }
+    });
+  },
+);

@@ -39,6 +39,7 @@ describe("repoSnapshot (quoin#412)", () => {
       ".github/workflows/gate.yml": "on: push\n",
       Makefile: "gate:\n",
       "Makefile.common": "gate:\n",
+      "Taskfile.yaml": "version: '3'\n",
       "Taskfile.yml": "version: '3'\n",
       "deep/nested/dir/check.sh": "# gate\n",
       justfile: "gate:\n",
@@ -50,6 +51,7 @@ describe("repoSnapshot (quoin#412)", () => {
       ".github/workflows/gate.yml",
       "Makefile",
       "Makefile.common",
+      "Taskfile.yaml",
       "Taskfile.yml",
       "deep/nested/dir/check.sh",
       "justfile",
@@ -59,11 +61,19 @@ describe("repoSnapshot (quoin#412)", () => {
   });
 
   it("is coarser than the far side rather than a second copy of it", () => {
-    // These are sent and then REJECTED by the Rust classification: `.SH` is not
-    // a script (the extension comparison is case-sensitive), a YAML workflow
-    // outside .github/workflows/ is not wiring, and `makefile.txt` is not a
-    // Makefile. Being wrong in this direction is free; being wrong in the other
-    // direction would lose a finding.
+    // `scripts/CHECK.SH` is sent and then REJECTED on the far side: the
+    // extension comparison in `is_shell_file` is case-sensitive, so `.SH` is
+    // not a script. `workflows/ci.yml` is dropped here and would not have been
+    // wiring on the far side either — `is_wiring_file` anchors the workflow arm
+    // at `.github/workflows/`.
+    //
+    // `MAKEFILE` and `makefile.txt` are sent and ACCEPTED: `is_wiring_file`
+    // lowercases the basename, and its Makefile arm is `/^makefile(?:\..+)?$/`,
+    // so both are wiring. They are here because they are the shapes a "tidier"
+    // pre-filter would stop sending — the exact direction of wrongness that
+    // loses a finding. Which of these the far side keeps is not asserted from
+    // this file; `tests/core-exec-e2e.test.ts` measures it against the real
+    // classifier.
     const root = workspace({
       MAKEFILE: "gate:\n",
       "makefile.txt": "prose\n",
