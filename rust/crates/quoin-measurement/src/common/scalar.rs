@@ -178,6 +178,41 @@ fn js_f64_string(value: f64) -> String {
     format!("{first}.{rest}e{sign}{magnitude}")
 }
 
+/// JavaScript `String(value)` for a value that may be absent.
+///
+/// The whole of `String(x)`, not a case of it: two ports need it — the
+/// semantic pass interpolates `item[field]` into a set key without checking
+/// its type (`intervention.ts:236`), and the agent-eval reader matches
+/// `String(result.passRate ?? "")` against a grammar
+/// (`agent-eval-intervention.ts:167`). Writing it twice would be two chances
+/// to spell a number differently from the renderer, so it lives beside
+/// [`js_number_string`], which is the only number formatting in this crate.
+pub(crate) fn js_string(value: Option<&serde_json::Value>) -> String {
+    use serde_json::Value;
+    match value {
+        None => "undefined".to_owned(),
+        Some(Value::Null) => "null".to_owned(),
+        Some(Value::Bool(true)) => "true".to_owned(),
+        Some(Value::Bool(false)) => "false".to_owned(),
+        Some(Value::Number(number)) => js_number_string(number),
+        Some(Value::String(text)) => text.clone(),
+        // `Array.prototype.toString` joins with `,` and renders `null` and
+        // `undefined` as the empty string; every object is `[object Object]`.
+        Some(Value::Array(items)) => items
+            .iter()
+            .map(|item| {
+                if item.is_null() {
+                    String::new()
+                } else {
+                    js_string(Some(item))
+                }
+            })
+            .collect::<Vec<_>>()
+            .join(","),
+        Some(Value::Object(_)) => "[object Object]".to_owned(),
+    }
+}
+
 #[cfg(test)]
 #[allow(
     clippy::unwrap_used,

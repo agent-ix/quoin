@@ -20,11 +20,16 @@ workspace = true
 # and `tc_468_boundary` asserts over this crate's own sources that there is not
 # one here. In particular: this crate has no `sha2` dependency, because the one
 # sha256 it needs is `quoin_store::digest_file_sha256`.
-quoin-store = { workspace = true }
+# The FR-042 refusal boundary for `cli-agent-evals` reports. The agent-eval
+# producer names that adapter rather than re-deciding what the format is
+# (`agent-eval-intervention.ts:21-27`).
+quoin-evidence = { workspace = true }
 # The one JSON Schema validator, carrying the vendored
-# `operational-evidence.v1` document. Operational intake validates against the
-# vendored copy rather than re-vendoring the schema here (quoin#470).
+# `intervention-experiment.v1` and `operational-evidence.v1` documents
+# (quoin#470). This crate carries no second copy of either schema and compiles
+# neither itself.
 quoin-jsonschema = { workspace = true }
+quoin-store = { workspace = true }
 # The one YAML reader on the quoin boundary (quoin#378/#404). MeasurementPlan
 # and AssuranceProfile frontmatter are read with it; nothing else here parses
 # YAML.

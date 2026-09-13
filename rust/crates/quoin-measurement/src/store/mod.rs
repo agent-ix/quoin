@@ -19,7 +19,7 @@ pub mod paths;
 pub mod publish;
 pub mod read;
 
-pub use paths::{measurement_path, measurements_root};
+pub use paths::{intervention_path, interventions_root, measurement_path, measurements_root};
 pub use publish::write_measurement_collection;
 pub use read::{
     MeasurementCollectionReadResult, collection_order, read_measurement_collection_results,

@@ -180,26 +180,17 @@ fn validate_for_intake(
     retained: &[&ValidOperationalRecord],
 ) -> Result<(), InterventionIntakeError> {
     let source = DiskMeasurement::new(repo);
-    let plans = load_measurement_plans(&source, PlanLoadOptions::default())
-        .map_err(|error| invalid(vec![error.to_string()]))?;
+    // `From<MeasurementError>` (quoin#471) is the one place a crate refusal
+    // becomes an intake refusal. It is an exhaustive match, so a code added to
+    // `MeasurementErrorCode` is placed deliberately; the per-call-site matches
+    // quoin#472 wrote here agreed with it on every code these three calls can
+    // return, and would have silently disagreed on the next one. It also keeps
+    // the rendered sentence as the finding when a refusal carries none, where
+    // `error.findings().to_vec()` handed the caller an empty refusal.
+    let plans = load_measurement_plans(&source, PlanLoadOptions::default())?;
     let base = candidate.record().base();
-    assert_governing_definition(&plans, &base.producer.definition_version).map_err(|error| {
-        InterventionIntakeError::new(
-            match error.code() {
-                crate::error::MeasurementErrorCode::GoverningPlanAbsent => {
-                    InterventionRefusalCode::GoverningPlanAbsent
-                }
-                _ => InterventionRefusalCode::DefinitionMismatch,
-            },
-            error.findings().to_vec(),
-        )
-    })?;
-    verify_raw_evidence_references(&source, &base.raw_evidence).map_err(|error| {
-        InterventionIntakeError::new(
-            InterventionRefusalCode::RawEvidenceMismatch,
-            error.findings().to_vec(),
-        )
-    })?;
+    assert_governing_definition(&plans, &base.producer.definition_version)?;
+    verify_raw_evidence_references(&source, &base.raw_evidence)?;
     let candidate_bytes = candidate.canonical_bytes()?;
     for item in retained {
         if item.record_id() == candidate.record_id() && item.canonical_bytes()? != candidate_bytes {

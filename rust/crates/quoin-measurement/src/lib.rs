@@ -10,8 +10,10 @@
 //! domain that depend on nothing else in it, plus the raw-evidence accounting
 //! lifted out of `intervention.ts`. Wave 2 (quoin#469): the intervention and
 //! operational record declarations and the two pure report renderers over
-//! them. Wave 5 (quoin#472): operational intake, the store-wide write lock,
-//! the discharge question and the GitHub-release producer.
+//! them. Wave 4 (quoin#471): intervention record-id encoding, schema and
+//! semantic validation, intake, and the agent-eval producer. Wave 5
+//! (quoin#472): operational intake, the store-wide write lock, the discharge
+//! question and the GitHub-release producer.
 //!
 //! | retained TypeScript | here |
 //! | --- | --- |
@@ -29,18 +31,22 @@
 //! | `operational-report.ts` | [`operational::report`] |
 //! | `operational.ts` | [`operational`]'s nine other modules |
 //! | `github-release-operational.ts` | [`operational::github_release`] |
+//! | `intervention.ts` | [`intervention::ids`], [`intervention::validate`], [`intervention::semantics`], [`intervention::intake`] |
+//! | `agent-eval-intervention.ts` | [`intervention::agent_eval`] |
 //!
 //! [`common`] holds what those four files declare more than once — the
 //! subject, the producer, the scalar unions — declared once here.
 //!
 //! The TypeScript is retained, not deleted: this is a port wave and the
-//! cutover is quoin#479. Intervention intake is quoin#471.
+//! cutover is quoin#479. The operational producer is quoin#472 and
+//! intervention intake is quoin#471.
 //!
 //! [`json_bridge`] is the one crossing between [`quoin_store::JsonValue`] —
 //! the store's value, with ECMAScript number semantics and the canonical
 //! writers — and [`serde_json::Value`], which is what the schema validator and
 //! the record types speak. It decides nothing: one direction goes through the
-//! store's own writer and the other is a structural walk.
+//! store's own writer and the other is a structural walk. Both waves needed
+//! it; there is one.
 //!
 //! # What is deliberately absent
 //!
@@ -73,6 +79,14 @@ pub mod validate;
 pub use compare::compare_measurement_collections;
 pub use date_time::Rfc3339DateTime;
 pub use error::{MeasurementError, MeasurementErrorCode};
+pub use intervention::ids::{
+    InterventionRecordBasename, InterventionRecordId, MAX_RECORD_ID_BYTES, RecordIdNamespace,
+};
+pub use intervention::intake::{
+    InterventionIntakeError, InterventionRefusalCode, read_intervention_records,
+    write_intervention_record,
+};
+pub use intervention::validate::validate_intervention_record;
 pub use plans::{PlanLoadOptions, load_measurement_plans};
 pub use profiles::load_active_assurance_profiles;
 pub use raw_evidence::{
@@ -81,8 +95,8 @@ pub use raw_evidence::{
 };
 pub use source::{DiskMeasurement, MeasurementSource, MemoryMeasurement, RawEvidenceFile};
 pub use store::{
-    MeasurementCollectionReadResult, measurement_path, measurements_root,
-    read_measurement_collection_results, read_measurement_collections,
+    MeasurementCollectionReadResult, intervention_path, interventions_root, measurement_path,
+    measurements_root, read_measurement_collection_results, read_measurement_collections,
     write_measurement_collection,
 };
 pub use types::collection::{MEASUREMENT_SCHEMA_VERSION, MeasurementCollection};

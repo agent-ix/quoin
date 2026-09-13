@@ -24,9 +24,9 @@ use crate::common::identity::{Digest, EvidencePath, MediaType};
 /// rather than redeclaring it, and so does this crate.
 ///
 /// Verifying that the file on disk still digests to [`digest`](Self::digest) is
-/// not this type's job and not this wave's — it is
-/// [`crate::raw_evidence::verify_raw_evidence_references`], ported by
-/// quoin#468 and called at intake by quoin#471/#472.
+/// not this type's job — it is
+/// [`crate::raw_evidence::verify_raw_evidence_references`], which intake calls
+/// on exactly this field.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct RecordedEvidenceReference {
     /// Where the file is, relative to the store.

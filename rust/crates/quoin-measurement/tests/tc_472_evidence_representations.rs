@@ -45,10 +45,15 @@ const REPRESENTATIONS: [&str; 2] = ["RawEvidenceReference", "RecordedEvidenceRef
 
 /// The members that together make a declaration a retained-evidence pointer.
 ///
-/// All four, because two of them alone describe something else:
-/// `RawEvidenceFile` carries a size and a digest and is a *file*, not a
-/// reference to one.
-const MEMBERS: [&str; 4] = ["path:", "media_type:", "size_bytes:", "digest:"];
+/// quoin#471 landed a second census over the same concept and matched on these
+/// two rather than on all four of `path`, `media_type`, `size_bytes` and
+/// `digest`. Two is the stronger net and it is the one kept: a future type
+/// that pointed at a retained file with only a path and a digest would slip
+/// through a four-member match, and pointing at a retained file is exactly
+/// what this census exists to count. It still excludes the near miss the
+/// four-member spelling was written to exclude — `RawEvidenceFile` carries a
+/// size and a digest but no path, and is a *file*, not a reference to one.
+const MEMBERS: [&str; 2] = ["path:", "digest:"];
 
 /// The count below which this census is not reading the crate at all.
 const SOURCE_FLOOR: usize = 20;
@@ -103,7 +108,7 @@ fn declarations(text: &str) -> Vec<(String, String)> {
 }
 
 /// Trace: FR-100-AC-4, NFR-025-AC-3
-/// Provenance: quoin#472
+/// Provenance: quoin#472, quoin#471
 #[test]
 fn tc_472_a_retained_evidence_file_has_exactly_two_representations() {
     let sources = sources();

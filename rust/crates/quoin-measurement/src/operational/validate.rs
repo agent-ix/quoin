@@ -29,6 +29,7 @@ use std::sync::OnceLock;
 use quoin_jsonschema::{VendoredSchema, VendoredValidator};
 use serde_json::Value;
 
+use crate::common::schema::{findings as schema_findings, sorted_unique};
 use crate::date_time::Rfc3339DateTime;
 use crate::error::MeasurementErrorCode;
 use crate::intervention::intake::{InterventionIntakeError, InterventionRefusalCode};
@@ -115,23 +116,13 @@ fn validator() -> Result<&'static VendoredValidator, InterventionIntakeError> {
 pub fn validate_operational_record(
     candidate: &Value,
 ) -> Result<ValidOperationalRecord, InterventionIntakeError> {
-    let mut findings: Vec<String> = validator()?
-        .errors(candidate)
-        .iter()
-        .map(|error| {
-            let pointer = if error.instance_path.is_empty() {
-                "/"
-            } else {
-                error.instance_path.as_str()
-            };
-            format!("{pointer}: {}", error.message)
-        })
-        .collect();
+    // The rendering and the ordering are `common::schema`'s, shared with the
+    // intervention family: a caller splits `/<pointer>: <sentence>` on the
+    // first colon and must not have to learn which family wrote it.
+    let mut findings = schema_findings(validator()?, candidate);
     semantic_findings(candidate, &mut findings);
     if !findings.is_empty() {
-        findings.sort_unstable();
-        findings.dedup();
-        return Err(refusal(findings));
+        return Err(refusal(sorted_unique(findings)));
     }
     // Past here the schema has accepted the document, so the typed read cannot
     // fail on a shape — only on a shape this port models more narrowly than the
