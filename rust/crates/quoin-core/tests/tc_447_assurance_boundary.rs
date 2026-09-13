@@ -119,8 +119,8 @@ fn run(op: &str, stdin: &str) -> Run {
     }
 }
 
-/// The request a case hands to the binary, rebuilt exactly as
-/// `tools/generate-oracle.mts` rebuilt it for the capture.
+/// The request a case hands to the binary, rebuilt exactly as the capture
+/// rebuilt it.
 fn request_for(corpus: &Corpus, case: &Case) -> Value {
     if case.op != "parse_argument" || case.input.is_some() {
         return case.input.clone().unwrap_or(Value::Null);

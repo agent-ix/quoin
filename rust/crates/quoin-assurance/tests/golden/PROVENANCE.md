@@ -19,9 +19,9 @@ implementation, and a replay that reads bytes.
 
 |                 |                                                                                                 |
 | --------------- | ----------------------------------------------------------------------------------------------- |
-| Produced by     | `../../tools/generate-oracle.mts`                                                               |
+| Produced by     | `rust/crates/quoin-assurance/tools/generate-oracle.mts`, deleted with its subject               |
 | Captured on     | 2026-09-13                                                                                      |
-| Oracle revision | quoin `c7450332d6acb80b757d6af22001d114a4d2d3e4`                                                |
+| Oracle revision | quoin `c2d7f54` — the commit BEFORE the deletion                                                |
 | Runtime         | node v22.15.0, vitest 4.1.10                                                                    |
 | Oracle entry    | `src/assurance/index.ts` — `requirementOf`, `buildCase`, `renderCase`, `parseAssuranceArgument` |
 
@@ -62,21 +62,30 @@ gate.
 
 ## Reproducing it
 
-The capture is a script, not a test. It is excluded from `pnpm test` by the
-`rust/**` entry in `vite.config.ts` **and** by its name, and it writes nothing
-unless `QUOIN_ORACLE_WRITE=1` is set. Run from the repository root:
+The capture cannot be re-run on this revision, and that is the point. The commit
+that follows the capture deletes `src/assurance/` — the corpus exists precisely
+because the oracle does not survive it — and the generator went with its subject
+rather than staying behind as a script importing a module no longer in the tree.
+FR-101 AC-5 forbids a non-Rust runtime oracle after cutover; a dormant one that
+a future reader might try to run is the same thing with a longer fuse.
+
+To re-derive the bytes, check out the revision where both still exist and run it
+there:
 
 ```sh
-# Verify: re-derive the verdicts and compare them to the committed bytes.
-pnpm vitest run --config rust/crates/quoin-assurance/tools/vitest.oracle.config.mts
-
-# Regenerate: overwrite expected.json. A decision, not a convenience.
+# c2d7f54 is the commit before the deletion: subject and generator both present.
 QUOIN_ORACLE_WRITE=1 pnpm vitest run \
   --config rust/crates/quoin-assurance/tools/vitest.oracle.config.mts
 ```
 
-The verify run compares **bytes**, not parsed JSON: the Rust suite asserts
-against these exact bytes, so "equivalent JSON" is not the property under test.
+Verify — re-derive and compare to the committed bytes without writing anything —
+by running the same command without `QUOIN_ORACLE_WRITE`. That run compares
+**bytes**, not parsed JSON: the Rust suite asserts against these exact bytes, so
+"equivalent JSON" is not the property under test.
+
+The hashes above are what makes this checkable. They pin the six files that
+answered every case; if a re-derivation at that revision disagrees with
+`expected.json`, one of them moved, and this document says which.
 
 ## What is in it
 

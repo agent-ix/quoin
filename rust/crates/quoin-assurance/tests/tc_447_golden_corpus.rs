@@ -14,9 +14,11 @@
 //!
 //! `tests/golden/cases.json` holds hand-authored inputs and
 //! `tests/golden/expected.json` holds the verdicts CAPTURED from the retained
-//! TypeScript by `tools/generate-oracle.mts`. Nothing in this file executes
-//! Node: it reads two files and calls the port. `tests/golden/PROVENANCE.md`
-//! records what produced the bytes, when, and from which revision.
+//! TypeScript by a generator that was deleted along with its subject.
+//! Nothing in this file executes Node: it reads two files and calls the
+//! port. `tests/golden/PROVENANCE.md` records what produced the bytes,
+//! when, from which revision, and the hashes that let a reader re-derive
+//! them at that revision.
 //!
 //! This test runs the corpus through the crate's own functions.
 //! `quoin-core`'s `tc_447_assurance_boundary` runs the same corpus through the
@@ -88,8 +90,8 @@ fn read<T: for<'de> Deserialize<'de>>(file: &str) -> T {
     serde_json::from_str(&std::fs::read_to_string(golden_dir().join(file)).unwrap()).unwrap()
 }
 
-/// The request a case hands to the port, rebuilt exactly as
-/// `tools/generate-oracle.mts` rebuilt it for the capture.
+/// The request a case hands to the port, rebuilt exactly as the capture
+/// rebuilt it.
 ///
 /// `remove` DELETES a key where `overrides` could only set one, and the
 /// difference is load-bearing: an explicit `null` is itself under test, so
