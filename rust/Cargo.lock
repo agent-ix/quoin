@@ -2984,6 +2984,7 @@ name = "quoin-difftest"
 version = "0.1.0"
 dependencies = [
  "quoin-core",
+ "quoin-validators",
  "serde_json",
 ]
 
