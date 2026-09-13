@@ -1,0 +1,32 @@
+{
+  "collectionId": "d-2025-11",
+  "configDigest": "sha256:cfg-a",
+  "environment": {
+    "ci": "true"
+  },
+  "observations": [
+    {
+      "definitionVersion": "1",
+      "metric": "finding_recall",
+      "planId": "dp-recall",
+      "shape": "ratio",
+      "state": "measured",
+      "unit": "ratio",
+      "value": 1
+    }
+  ],
+  "rawEvidence": {
+    "bounds": {
+      "gap_count": 0
+    }
+  },
+  "schemaVersion": 1,
+  "scope": {
+    "corpus": "spec"
+  },
+  "sourceRevision": "revision-one",
+  "subject": "quoin",
+  "timestamp": "2025-11-01T00:00:00.000Z",
+  "toolIdentity": "quoin",
+  "toolVersion": "0.9.0"
+}

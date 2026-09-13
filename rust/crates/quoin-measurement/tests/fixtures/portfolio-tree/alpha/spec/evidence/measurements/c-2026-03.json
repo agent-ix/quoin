@@ -1,0 +1,93 @@
+{
+  "collectionId": "c-2026-03",
+  "configDigest": "sha256:cfg-b",
+  "environment": {
+    "ci": "true"
+  },
+  "observations": [
+    {
+      "definitionVersion": "1",
+      "dimensions": {
+        "language": "python"
+      },
+      "metric": "finding_recall",
+      "planId": "ap-recall",
+      "population": {
+        "complete": true,
+        "examined": 12,
+        "identity": {
+          "corpus": "spec"
+        },
+        "matched": 6
+      },
+      "shape": "ratio",
+      "state": "measured",
+      "unit": "ratio",
+      "value": 0.5
+    },
+    {
+      "definitionVersion": "1",
+      "dimensions": {
+        "language": "rust",
+        "tier": "2"
+      },
+      "metric": "finding_recall",
+      "planId": "ap-recall",
+      "population": {
+        "complete": true,
+        "examined": 1,
+        "matched": 1
+      },
+      "shape": "ratio",
+      "state": "measured",
+      "unit": "ratio",
+      "value": 1e+21
+    },
+    {
+      "definitionVersion": "1",
+      "metric": "finding_precision.unadjudicated",
+      "planId": "ap-precision",
+      "shape": "count",
+      "state": "measured",
+      "unit": "count",
+      "value": 3
+    },
+    {
+      "definitionVersion": "1",
+      "metric": "actionability_rate",
+      "planId": "ap-actionability",
+      "population": {
+        "complete": true,
+        "examined": 8,
+        "matched": 6
+      },
+      "shape": "ratio",
+      "state": "measured",
+      "unit": "ratio",
+      "value": 0.75
+    },
+    {
+      "definitionVersion": "1",
+      "metric": "drifted_metric",
+      "planId": "ap-drifted",
+      "shape": "count",
+      "state": "measured",
+      "unit": "count",
+      "value": 4
+    }
+  ],
+  "rawEvidence": {
+    "bounds": {
+      "gap_count": 3
+    }
+  },
+  "schemaVersion": 1,
+  "scope": {
+    "corpus": "spec"
+  },
+  "sourceRevision": "revision-three",
+  "subject": "quoin",
+  "timestamp": "2026-03-01T00:00:00.000Z",
+  "toolIdentity": "quoin",
+  "toolVersion": "0.9.1"
+}

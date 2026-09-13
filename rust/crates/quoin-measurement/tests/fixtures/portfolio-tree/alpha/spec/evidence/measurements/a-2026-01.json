@@ -1,0 +1,91 @@
+{
+  "collectionId": "a-2026-01",
+  "configDigest": "sha256:cfg-a",
+  "corpusRevision": "corpus-one",
+  "environment": {
+    "ci": "true"
+  },
+  "observations": [
+    {
+      "definitionVersion": "1",
+      "dimensions": {
+        "language": "python"
+      },
+      "metric": "finding_recall",
+      "planId": "ap-recall",
+      "population": {
+        "complete": true,
+        "examined": 10,
+        "identity": {
+          "corpus": "spec"
+        },
+        "matched": 0
+      },
+      "shape": "ratio",
+      "state": "measured",
+      "unit": "ratio",
+      "value": 0
+    },
+    {
+      "definitionVersion": "1",
+      "metric": "finding_precision.unadjudicated",
+      "planId": "ap-precision",
+      "shape": "count",
+      "state": "measured",
+      "unit": "count",
+      "value": 2
+    },
+    {
+      "definitionVersion": "1",
+      "metric": "actionability_rate",
+      "planId": "ap-actionability",
+      "population": {
+        "complete": true,
+        "examined": 8,
+        "exclusions": [
+          "vendored"
+        ],
+        "matched": 4,
+        "namedMisses": [
+          "row-4"
+        ]
+      },
+      "shape": "ratio",
+      "state": "measured",
+      "unit": "ratio",
+      "value": 0.5
+    },
+    {
+      "definitionVersion": "1",
+      "metric": "drifted_metric",
+      "planId": "ap-drifted",
+      "shape": "count",
+      "state": "measured",
+      "unit": "count",
+      "value": 1
+    },
+    {
+      "definitionVersion": "1",
+      "metric": "retired_metric",
+      "planId": "ap-retired",
+      "shape": "count",
+      "state": "measured",
+      "unit": "count",
+      "value": 9
+    }
+  ],
+  "rawEvidence": {
+    "bounds": {
+      "gap_count": 7
+    }
+  },
+  "schemaVersion": 1,
+  "scope": {
+    "corpus": "spec"
+  },
+  "sourceRevision": "revision-one",
+  "subject": "quoin",
+  "timestamp": "2026-01-01T00:00:00.000Z",
+  "toolIdentity": "quoin",
+  "toolVersion": "0.9.0"
+}

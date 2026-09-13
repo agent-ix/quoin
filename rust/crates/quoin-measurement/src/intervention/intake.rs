@@ -115,6 +115,7 @@ impl From<MeasurementError> for InterventionIntakeError {
             MeasurementErrorCode::CollectionInvalid
             | MeasurementErrorCode::CollectionIdUnsafe
             | MeasurementErrorCode::CollectionUnreadable
+            | MeasurementErrorCode::RecordUnreadable
             | MeasurementErrorCode::PlanInvalid
             | MeasurementErrorCode::ProfileInvalid
             | MeasurementErrorCode::DateTimeInvalid

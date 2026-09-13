@@ -77,6 +77,17 @@ impl MeasurementShape {
 /// Every member is optional and none is validated by the retained validator,
 /// so none is narrowed here either. `identity` is producer-defined and stays
 /// opaque.
+///
+/// # Why there is an `unmodelled` map
+///
+/// The retained code never rebuilds this object: `compare.ts:106` keys on
+/// `JSON.stringify(observation.population)` and `report.ts` re-serialises the
+/// observation it read. Both see **every** stored member, so a model that kept
+/// only the four named ones would compare and re-serialise a different value
+/// than the oracle does. The retained corpus is not hypothetical about this —
+/// 25 of the 14,644 observations under `spec/evidence/measurements/` carry
+/// `exclusions` and `namedMisses` — so the rest is kept verbatim rather than
+/// dropped (quoin#473).
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct MeasurementPopulation {
     /// How many candidates were considered.
@@ -87,9 +98,15 @@ pub struct MeasurementPopulation {
     pub complete: Option<bool>,
     /// A producer-defined identity for the population.
     pub identity: Option<JsonValue>,
+    /// Every other member of the stored object, kept as it was stored.
+    pub unmodelled: BTreeMap<String, JsonValue>,
 }
 
 impl MeasurementPopulation {
+    /// The members this type reads by name; everything else is
+    /// [`unmodelled`](Self::unmodelled).
+    pub const MODELLED: [&'static str; 4] = ["examined", "matched", "complete", "identity"];
+
     /// A population that declares nothing.
     ///
     /// `compare.ts:79-87` reads an absent `population` through `?.`, so every
@@ -99,7 +116,52 @@ impl MeasurementPopulation {
         matched: None,
         complete: None,
         identity: None,
+        unmodelled: BTreeMap::new(),
     };
+}
+
+/// The `dimensions` member of a stored observation.
+///
+/// # Why absence is modelled rather than flattened to an empty map
+///
+/// `report.ts:202-204` re-serialises the observation it read, and
+/// `JSON.stringify` drops an absent member while emitting a stated empty
+/// object as `{}`. The two are therefore different bytes, and 305 of the
+/// 14,644 observations under `spec/evidence/measurements/` state no
+/// `dimensions` at all — so a model that could not tell them apart would
+/// render a byte the oracle does not (quoin#473).
+///
+/// Every *reader* still sees `dimensions ?? {}`, which is what `compare.ts:99`
+/// and `report.ts:120` do; that is [`entries`](Self::entries). Only the
+/// re-serialiser asks whether the member was stated, through
+/// [`stated_entries`](Self::stated_entries).
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct Dimensions(Option<BTreeMap<String, JsonValue>>);
+
+/// The map [`Dimensions::entries`] hands back when the member was not stated.
+static NO_ENTRIES: BTreeMap<String, JsonValue> = BTreeMap::new();
+
+impl Dimensions {
+    /// The member was not stated.
+    pub const ABSENT: Self = Self(None);
+
+    /// The member was stated, with these entries.
+    #[must_use]
+    pub const fn stated(entries: BTreeMap<String, JsonValue>) -> Self {
+        Self(Some(entries))
+    }
+
+    /// The entries every reader sees — empty when the member was not stated.
+    #[must_use]
+    pub fn entries(&self) -> &BTreeMap<String, JsonValue> {
+        self.0.as_ref().unwrap_or(&NO_ENTRIES)
+    }
+
+    /// The entries, only when the member was stated.
+    #[must_use]
+    pub const fn stated_entries(&self) -> Option<&BTreeMap<String, JsonValue>> {
+        self.0.as_ref()
+    }
 }
 
 /// One observation within a collection.
@@ -127,7 +189,7 @@ pub struct MeasurementObservation {
     /// `types.ts:22` declares `Record<string, string>` but nothing validates
     /// the member type, and `compare.ts:99` stringifies whatever is there. The
     /// port keeps what the validator checks, not what the declaration claims.
-    pub dimensions: BTreeMap<String, JsonValue>,
+    pub dimensions: Dimensions,
     /// Why no value was produced.
     pub reason: Option<String>,
 }
@@ -139,6 +201,6 @@ impl MeasurementObservation {
     /// sorting the entries, so a [`BTreeMap`] is the same key by construction.
     #[must_use]
     pub fn identity(&self) -> (&str, &BTreeMap<String, JsonValue>) {
-        (self.metric.as_str(), &self.dimensions)
+        (self.metric.as_str(), self.dimensions.entries())
     }
 }
