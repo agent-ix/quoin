@@ -3038,6 +3038,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "quoin-measurement"
+version = "0.1.0"
+dependencies = [
+ "quoin-store",
+ "quoin-yaml",
+ "serde_json",
+ "tempfile",
+ "thiserror",
+]
+
+[[package]]
 name = "quoin-modules"
 version = "0.1.0"
 dependencies = [

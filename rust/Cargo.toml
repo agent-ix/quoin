@@ -83,6 +83,7 @@ quoin-config = { path = "crates/quoin-config" }
 quoin-core = { path = "crates/quoin-core" }
 quoin-evidence-types = { path = "crates/quoin-evidence-types" }
 quoin-finding-types = { path = "crates/quoin-finding-types" }
+quoin-measurement = { path = "crates/quoin-measurement" }
 quoin-modules = { path = "crates/quoin-modules" }
 quoin-quire-types = { path = "crates/quoin-quire-types" }
 quoin-semantic = { path = "crates/quoin-semantic" }
