@@ -82,9 +82,16 @@ pub use schema::{ValidAssuranceDocument, validate_assurance};
 /// the payloads this crate computes. The one document that did come across,
 /// and the one caller that needs it, are in [`schema`].
 pub mod model {
+    // Every type reachable from `AssuranceExport`'s public fields, not only the
+    // ones a caller happened to need first: a consumer that can hold an
+    // `AssuranceExport` but cannot name the enum in its `relations` has to
+    // reach past this module to read it, which is the coupling this re-export
+    // exists to prevent (found porting `src/graph-analysis/`, quoin#385).
     pub use quire_rs::assurance::{
-        AssuranceArtifact, AssuranceLocator, AssuranceModulePremise, AssuranceObligation,
-        AssuranceRelation, AssuranceSchemaPremise, AssuranceSymbol,
+        AssuranceArtifact, AssuranceFreshness, AssuranceLocator, AssuranceModulePremise,
+        AssuranceObligation, AssuranceRelation, AssuranceRelationKind,
+        AssuranceRelationObservation, AssuranceResolution, AssuranceSchemaPremise, AssuranceSymbol,
+        RelationAvailability, RelationKindAvailability, RelationKindSource,
     };
     pub use quire_rs::coverage::{
         CoverageDiagnostic, CoverageTotals, CriteriaCounts, GroupCounts, GroupCounts as Group,

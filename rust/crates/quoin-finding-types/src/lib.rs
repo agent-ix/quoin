@@ -16,8 +16,54 @@
 //! The auditor's other three types are not on `build_case`'s path, and putting
 //! them here because they share a directory with this one would be sizing from
 //! the module boundary again — the same mistake in the opposite direction.
+//!
+//! # What quoin#385 added, and why it did not add a fourth crate
+//!
+//! `src/graph-analysis/` is a **second** view of the auditor's output, and it
+//! reads more than `build_case` does: [`AuditReport`] as a whole, and every
+//! [`UnevaluatedCheck`] in it. quoin#385 recorded the ruling once — those
+//! types live here, beside [`Finding`], rather than in the view crate that
+//! happens to need them first. Two homes for one producer's shape is how two
+//! readers end up disagreeing about it.
+//!
+//! # `severity` is declared by neither reader, and that is the boundary
+//!
+//! `src/auditor/audit.ts:34` types it `"low" | "medium" | "high"`, and the
+//! graph view's input contract refuses a fourth spelling
+//! (`src/graph-analysis/input.ts:52`). Neither reader *uses* the value:
+//! `build_case` renders `kind` and `summary`, and the graph view copies the
+//! finding out again unchanged. So `severity` is carried in `other` like every
+//! other undeclared member, and the closed vocabulary is stated once, at the
+//! boundary that states it — `quoin-graph-analysis`'s audit contract.
+//!
+//! Declaring it here as a closed enum instead would make this crate refuse a
+//! finding `build_case` has always accepted: TypeScript's types are not
+//! runtime checks, and `quoin-assurance`'s captured corpus carries a
+//! `severity` of `"error"` that the retained implementation read without
+//! complaint. A reader stricter than the one it replaces is a port defect.
+//!
+//! # Members nobody here reads are preserved, not declared
+//!
+//! The graph view copies the auditor's findings and unevaluated checks
+//! **verbatim** into its own report — `src/graph-analysis/input.ts` validates
+//! the join surface with a zod `.passthrough()` and preserves the rest. A type
+//! that dropped the other members would change those bytes. So every type in
+//! this crate carries a flattened `other` map: the members are carried, and
+//! still not declared. The original argument stands — a *declared* field
+//! nothing observes is untested surface — and it is a different thing from a
+//! member kept because its producer wrote it.
+
+use std::collections::BTreeMap;
 
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
+
+/// Members the producer wrote that no reader here declares.
+///
+/// A `BTreeMap` rather than a `serde_json::Map`: the map is only ever written
+/// back out through a canonical serializer, so a stable order here costs
+/// nothing and makes equality on these types independent of input order.
+pub type OtherMembers = BTreeMap<String, Value>;
 
 /// One auditor finding, restricted to the fields the assurance view reads.
 ///
@@ -74,17 +120,63 @@ pub struct Finding {
     pub kind: String,
     /// The finding's one-line summary, rendered verbatim into `because`.
     pub summary: String,
+    /// Every other member the auditor wrote, carried unchanged.
+    #[serde(flatten)]
+    pub other: OtherMembers,
+}
+
+/// One check the auditor could not run, as a view observes it.
+///
+/// Separate from both findings and clean results: `src/auditor/audit.ts:146`
+/// exists because "the check did not run" and "the check passed" are different
+/// answers, and folding them together is how an unrun check reads as healthy.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct UnevaluatedCheck {
+    /// Which check did not run.
+    ///
+    /// A `String`, for [`Finding::kind`]'s reason: the retained type declares
+    /// one spelling, `mocked-confirmation`, and the graph view's input
+    /// contract accepts any non-empty string.
+    pub check: String,
+    /// The obligation it would have been run against. The view's join key.
+    pub obligation: String,
+    /// The suites it would have covered.
+    pub suites: Vec<String>,
+    /// Why it could not run.
+    pub reason: String,
+    /// Every other member the auditor wrote, carried unchanged.
+    #[serde(flatten)]
+    pub other: OtherMembers,
+}
+
+/// The audit result, as a view observes it.
+///
+/// The three collections are the whole join surface. `independence` — present
+/// only when a profile supplied requirements — is one of the members carried
+/// in [`AuditReport::other`] rather than declared: no view reads it.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct AuditReport {
+    /// Everything wrong with the evidence.
+    pub findings: Vec<Finding>,
+    /// Obligations with a binding whose hash still matches.
+    pub healthy: Vec<String>,
+    /// Checks that could not run.
+    pub unevaluated: Vec<UnevaluatedCheck>,
+    /// Every other member the auditor wrote, carried unchanged.
+    #[serde(flatten)]
+    pub other: OtherMembers,
 }
 
 #[cfg(test)]
 #[allow(
     clippy::unwrap_used,
     clippy::expect_used,
+    clippy::indexing_slicing,
     clippy::panic,
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 mod tests {
-    use super::Finding;
+    use super::{AuditReport, Finding};
 
     #[test]
     fn reads_a_finding_carrying_the_auditor_s_other_nine_fields() {
@@ -109,6 +201,36 @@ mod tests {
         assert_eq!(finding.obligation, "FR-001-AC-1");
         assert_eq!(finding.kind, "undischarged");
         assert_eq!(finding.summary, "no evidence binds this criterion");
+        // Every member the graph view copies verbatim, severity included.
+        assert_eq!(finding.other.len(), 8, "{:?}", finding.other);
+    }
+
+    /// A finding round-trips through JSON with every member the producer
+    /// wrote, because `src/graph-analysis/` renders the whole finding into its
+    /// own report and a dropped member is a changed byte.
+    #[test]
+    fn carries_undeclared_members_back_out_again() {
+        let source = r#"{"obligation":"FR-1","kind":"k","summary":"s","severity":"low","line":42,"deep":{"b":[1,null,true],"a":"x"}}"#;
+        let finding: Finding = serde_json::from_str(source).expect("reads");
+        let back = serde_json::to_value(&finding).expect("writes");
+        assert_eq!(
+            back,
+            serde_json::from_str::<serde_json::Value>(source).expect("reads"),
+            "a member the auditor wrote must survive the round trip"
+        );
+    }
+
+    /// The report and its unevaluated checks carry their undeclared members
+    /// too — `independence` is the one the real auditor writes.
+    #[test]
+    fn a_report_carries_independence_without_declaring_it() {
+        let report: AuditReport = serde_json::from_str(
+            r#"{"findings":[],"healthy":["FR-1-AC-1"],"unevaluated":[{"check":"mocked-confirmation","obligation":"FR-1-AC-1","suites":["unit"],"reason":"r","inspectedAt":null}],"independence":[{"obligation":"FR-1-AC-1"}]}"#,
+        )
+        .expect("the auditor's own report shape must deserialize");
+        assert!(report.other.contains_key("independence"));
+        assert_eq!(report.unevaluated[0].other.len(), 1);
+        assert_eq!(report.unevaluated[0].check, "mocked-confirmation");
     }
 
     #[test]

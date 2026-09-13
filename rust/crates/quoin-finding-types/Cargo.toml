@@ -8,7 +8,7 @@ rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
 authors.workspace = true
-description = "The auditor's Finding, as the assurance view observes it."
+description = "The auditor's report family, as quoin's views observe it."
 publish.workspace = true
 
 [lib]
@@ -20,6 +20,7 @@ workspace = true
 
 [dependencies]
 serde = { workspace = true }
-
-[dev-dependencies]
+# `#[serde(flatten)]` needs a real value type for the members this crate carries
+# and does not declare; `serde_json` moved from dev-dependencies for that
+# (quoin#385).
 serde_json = { workspace = true }
