@@ -17,9 +17,18 @@
 //! here; a consumer that matched on it was matching on a dependency's wording.
 
 use crate::error::EvidenceError;
+use crate::instant::{Instant, InstantGrammar};
 use crate::types::{
     ProducerContext, TrustAssessment, TrustDecision, TrustDecisionKind, TrustStatus, TrustTrigger,
 };
+
+/// The language `decidedAt` is written in.
+///
+/// The retained check was `!Number.isNaN(Date.parse(value))`, so a bare
+/// `YYYY-MM-DD` reads and a trailing zone or comment does not disqualify a
+/// well-formed prefix. See [`crate::instant`] for why the two grammars in this
+/// crate are not one.
+const DECIDED_AT_GRAMMAR: InstantGrammar = InstantGrammar::DateOrInstant;
 
 /// The triggers every project must revalidate on, whatever else it selects.
 ///
@@ -113,8 +122,8 @@ pub fn validate_trust_decision(decision: &TrustDecision) -> Result<(), EvidenceE
         non_empty(&mut clauses, "limitations", limitation);
     }
     non_empty(&mut clauses, "owner", &decision.owner);
-    if !is_instant(&decision.decided_at) {
-        clauses.push("decidedAt: must be an ISO-8601 timestamp".to_owned());
+    if Instant::parse(&decision.decided_at, DECIDED_AT_GRAMMAR).is_none() {
+        clauses.push(format!("decidedAt: {}", DECIDED_AT_GRAMMAR.expectation()));
     }
 
     if clauses.is_empty() {
@@ -255,34 +264,4 @@ fn is_algorithm_digest(value: &str) -> bool {
         && hex
             .bytes()
             .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
-}
-
-/// `Date.parse`-able, restated as the ISO-8601 forms quoin actually writes.
-///
-/// The retained check is `!Number.isNaN(Date.parse(value))`, which accepts a
-/// wide set of legacy spellings no producer emits. Reproducing V8's date parser
-/// would be a second implementation of a browser quirk; this accepts the
-/// `YYYY-MM-DD` date and the full instant, which is what every record on disk
-/// carries. Reported as a divergence rather than silently reproduced.
-fn is_instant(value: &str) -> bool {
-    let bytes = value.as_bytes();
-    if bytes.len() < 10 {
-        return false;
-    }
-    let digits_at = |index: usize, count: usize| {
-        (index..index + count).all(|position| bytes.get(position).is_some_and(u8::is_ascii_digit))
-    };
-    let dash_at = |index: usize| bytes.get(index) == Some(&b'-');
-    if !(digits_at(0, 4) && dash_at(4) && digits_at(5, 2) && dash_at(7) && digits_at(8, 2)) {
-        return false;
-    }
-    if bytes.len() == 10 {
-        return true;
-    }
-    bytes.get(10) == Some(&b'T')
-        && digits_at(11, 2)
-        && bytes.get(13) == Some(&b':')
-        && digits_at(14, 2)
-        && bytes.get(16) == Some(&b':')
-        && digits_at(17, 2)
 }
