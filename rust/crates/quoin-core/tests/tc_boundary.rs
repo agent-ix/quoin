@@ -272,17 +272,22 @@ fn tc_445_103_a_request_past_an_operation_bound_is_the_operations_refusal() {
 /// refusal, not an internal fault.
 ///
 /// `take(MAX + 1)` stops at a BYTE offset, and that offset can fall inside a
-/// multi-byte character. Reading the truncated stream straight into a `String`
-/// validated UTF-8 before the size was ever compared, so a request one
-/// character wider than ASCII exited **4** with `CORE_IO` and the message
-/// "stream did not contain valid UTF-8" — false twice over: the stream DID
-/// contain valid UTF-8, and an oversized request is a caller refusal (2),
-/// which `src/core/exec.ts` distinguishes from the crash it reads 4 as.
-/// `tc_445_100` could not see it because its filler is ASCII, so the cut always
-/// landed on a character boundary. rust-style names exactly this hazard: a
-/// bound whose behaviour depends on the caller's alphabet.
+/// multi-byte character. `read_request` read the truncated stream straight
+/// into a `String`, so UTF-8 was validated BEFORE the size was ever compared,
+/// and the verdict on an oversized request depended on the caller's alphabet:
+/// all-ASCII gave `CORE_REFUSED` (exit 2), while the same request with one
+/// character wider than ASCII across the cut gave `CORE_BAD_JSON` (exit 3) —
+/// reported as malformed when it was merely too large, over a stream that did
+/// contain valid UTF-8. `src/core/exec.ts` branches on those statuses, so it
+/// is a behaviour difference and not a wording one.
 ///
-/// The size is therefore compared on BYTES, before any decode.
+/// `tc_412_an_oversize_stream_is_refused_by_the_process_not_merely_by_the_library`
+/// could not see it: its filler is ASCII, so its cut always lands on a
+/// character boundary. rust-style names exactly this hazard — a bound whose
+/// behaviour depends on the caller's alphabet.
+///
+/// The size is therefore compared on BYTES, before any decode. The encoding
+/// question survives, one step later, in `tc_445_105`.
 ///
 /// Trace: FR-096, NFR-024
 /// Provenance: agent-ix/quoin#445, agent-ix/quoin#447
@@ -313,20 +318,29 @@ fn tc_445_104_an_oversized_request_cut_mid_character_is_still_refused() {
     let diagnostics: serde_json::Value = serde_json::from_str(&result.stderr).unwrap();
     assert_eq!(diagnostics[0]["code"], "CORE_REFUSED");
     assert_eq!(diagnostics[0]["context"]["limit_bytes"], limit.to_string());
-    assert_eq!(diagnostics[0]["context"]["stream"], "stdin");
+    // The SAME diagnostic an all-ASCII oversize request gets, which is the
+    // whole property: `tc_412_an_oversize_stream_is_refused_by_the_process`
+    // asserts this pair over ASCII, and the two must not diverge.
+    assert_eq!(
+        diagnostics[0]["context"]["read_bytes"],
+        (limit + 1).to_string()
+    );
 }
 
-/// A request the transport ACCEPTS that is not UTF-8 is still `CORE_IO`.
+/// A request the transport ACCEPTS that is not UTF-8 is still MALFORMED.
 ///
 /// The counterpart to `tc_445_104`: comparing the size first must not swallow a
 /// genuine encoding error into the refusal. A lone `0x80` well inside the bound
-/// is a stream that cannot be decoded, which is what `CORE_IO` says and what
-/// this pins.
+/// is a request that cannot be decoded, and `read_request` calls that
+/// `CORE_BAD_JSON` — a malformed request (exit 3) rather than a failing stream
+/// (exit 4), which is the classification merged `main` chose and this keeps.
+/// The two tests together say the size decides the size and the encoding
+/// decides the encoding, neither answering for the other.
 ///
 /// Trace: FR-096
 /// Provenance: agent-ix/quoin#445, agent-ix/quoin#447
 #[test]
-fn tc_445_105_an_undecodable_request_within_the_bound_is_an_io_fault() {
+fn tc_445_105_an_undecodable_request_within_the_bound_is_a_malformed_request() {
     let mut request = Vec::new();
     request.extend_from_slice(br#"{"echo":""#);
     request.push(0x80);
@@ -334,9 +348,9 @@ fn tc_445_105_an_undecodable_request_within_the_bound_is_an_io_fault() {
     assert!(request.len() < quoin_core::protocol::MAX_REQUEST_BYTES);
 
     let result = run_bytes(&["core.ping"], &request);
-    assert_eq!(result.status, 4, "{}", result.stderr);
+    assert_eq!(result.status, 3, "{}", result.stderr);
     assert_eq!(result.stdout, "");
     let diagnostics: serde_json::Value = serde_json::from_str(&result.stderr).unwrap();
-    assert_eq!(diagnostics[0]["code"], "CORE_IO");
+    assert_eq!(diagnostics[0]["code"], "CORE_BAD_JSON");
     assert_eq!(diagnostics[0]["context"]["stream"], "stdin");
 }
