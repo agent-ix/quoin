@@ -2997,6 +2997,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "quoin-evidence"
+version = "0.1.0"
+dependencies = [
+ "quoin-store",
+ "regex",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "thiserror",
+]
+
+[[package]]
 name = "quoin-evidence-types"
 version = "0.1.0"
 dependencies = [

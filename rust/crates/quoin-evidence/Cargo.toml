@@ -1,0 +1,37 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 Agent-IX
+#
+# quoin-evidence — the evidence store and its producer adapters (quoin#456,
+# parent quoin#373; FR-100).
+#
+# A member of the workspace root at `rust/Cargo.toml`. Every shared field and
+# every shared dependency is inherited rather than restated, so this crate is
+# measured by the workspace's gate and cannot drift from it.
+#
+# `quoin-store` is a hard dependency and not an optional one: FR-100-CON-4
+# forbids reimplementing canonical JSON, JCS, sha256 record identity, blake3 or
+# atomic replacement anywhere else, so every byte this crate writes goes
+# through it.
+[package]
+name = "quoin-evidence"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+description = "Quoin's evidence store, producer adapters and trust/independence assessments."
+publish.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+quoin-store = { workspace = true }
+regex = "=1.13.1"
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+tempfile = "=3.27.0"

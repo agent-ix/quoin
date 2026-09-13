@@ -1,0 +1,460 @@
+{
+  "cases": [
+    {
+      "name": "entries-normalized",
+      "adapter": "entries",
+      "shape": "run",
+      "inline": "{\"entries\": [{\"symbol\": \"tests::tc001\", \"outcome\": \"pass\"}]}"
+    },
+    {
+      "name": "entries-with-trace-and-score",
+      "adapter": "entries",
+      "shape": "run",
+      "inline": "{\"entries\": [{\"symbol\": \"a\", \"outcome\": \"fail\", \"score\": 0.25, \"metric\": \"mutation-score\", \"traceIds\": [\"FR-1-AC-1\"]}]}"
+    },
+    {
+      "name": "entries-empty-array",
+      "adapter": "entries",
+      "shape": "run",
+      "inline": "{\"entries\": []}"
+    },
+    {
+      "name": "entries-not-json",
+      "adapter": "entries",
+      "shape": "run",
+      "inline": "{"
+    },
+    {
+      "name": "entries-no-entries-member",
+      "adapter": "entries",
+      "shape": "run",
+      "inline": "{}"
+    },
+    {
+      "name": "junit-four-outcome-classes",
+      "adapter": "junit",
+      "shape": "run",
+      "inline": "<?xml version=\"1.0\"?>\n<testsuites>\n  <testsuite name=\"corpus\">\n    <testcase classname=\"tests.corpus\" name=\"tc001_resolves\">\n      <properties><property name=\"trace\" value=\"FR-001-AC-1, FR-001-AC-2\"/></properties>\n    </testcase>\n    <testcase classname=\"tests.corpus\" name=\"tc002_dangles\"><failure message=\"boom\"/></testcase>\n    <testcase classname=\"tests.corpus\" name=\"tc003_errors\"><error message=\"panic\"/></testcase>\n    <testcase classname=\"tests.corpus\" name=\"tc004_skipped\"><skipped/></testcase>\n  </testsuite>\n</testsuites>"
+    },
+    {
+      "name": "junit-entities-and-unknown-properties",
+      "adapter": "junit",
+      "shape": "run",
+      "inline": "<testsuites><testcase classname=\"a&amp;b\" name=\"t&lt;1&gt;\">\n      <properties>\n        <property name=\"owner\" value=\"someone\"/>\n        <property name=\"trace_ids\" value=\"FR-002-AC-1\"/>\n        <property value=\"no name\"/>\n        <property name=\"no value\"/>\n      </properties>\n    </testcase></testsuites>"
+    },
+    {
+      "name": "junit-self-closing-and-nameless",
+      "adapter": "junit",
+      "shape": "run",
+      "inline": "<testsuites><testcase classname=\"a\" name=\"t\"/><testcase classname=\"\" name=\"\"/></testsuites>"
+    },
+    {
+      "name": "junit-no-classname-attribute",
+      "adapter": "junit",
+      "shape": "run",
+      "inline": "<testsuites><testcase name=\"bare_test\"/></testsuites>"
+    },
+    {
+      "name": "junit-separator-edges",
+      "adapter": "junit",
+      "shape": "run",
+      "inline": "<testsuites><testcase classname=\"a\" name=\"t\">\n        <properties><property name=\"trace\" value=\" FR-1 ,, FR-2 , \"/></properties>\n      </testcase></testsuites>"
+    },
+    {
+      "name": "junit-neither-classname-nor-name",
+      "adapter": "junit",
+      "shape": "run",
+      "inline": "<testsuites><testcase time=\"0.1\"/><testcase classname=\"a\" name=\"t\"/></testsuites>"
+    },
+    {
+      "name": "junit-classname-already-ends-with-member",
+      "adapter": "junit",
+      "shape": "run",
+      "inline": "<testsuites><testcase classname=\"mod.tests.tc001\" name=\"tc001\"/></testsuites>"
+    },
+    {
+      "name": "junit-error-outranks-failure",
+      "adapter": "junit",
+      "shape": "run",
+      "inline": "<testsuites><testcase classname=\"t\" name=\"a\"><error/><failure/><skipped/></testcase></testsuites>"
+    },
+    {
+      "name": "junit-traceids-property-name",
+      "adapter": "junit",
+      "shape": "run",
+      "inline": "<testsuites><testcase classname=\"a\" name=\"t\"><properties><property name=\"traceIds\" value=\"FR-9-AC-1\"/></properties></testcase></testsuites>"
+    },
+    {
+      "name": "junit-empty-document",
+      "adapter": "junit",
+      "shape": "run",
+      "inline": "<testsuites/>"
+    },
+    {
+      "name": "junit-not-xml",
+      "adapter": "junit",
+      "shape": "run",
+      "inline": "not xml at all"
+    },
+    {
+      "name": "cargo-mutants-scored",
+      "adapter": "cargo-mutants",
+      "shape": "run",
+      "inline": "{\"outcomes\": [{\"scenario\": \"Baseline\", \"summary\": \"Success\"}, {\"scenario\": {\"Mutant\": {\"file\": \"src/a.rs\", \"function\": {\"function_name\": \"resolve\"}}}, \"summary\": \"CaughtMutant\"}, {\"scenario\": {\"Mutant\": {\"file\": \"src/a.rs\", \"function\": {\"function_name\": \"resolve\"}}}, \"summary\": \"MissedMutant\"}, {\"scenario\": {\"Mutant\": {\"file\": \"src/a.rs\", \"function\": {\"function_name\": \"resolve\"}}}, \"summary\": \"Unviable\"}, {\"scenario\": {\"Mutant\": {\"file\": \"src/b.rs\", \"function\": {\"function_name\": \"harvest\"}}}, \"summary\": \"CaughtMutant\"}]}"
+    },
+    {
+      "name": "cargo-mutants-timeout-is-survived",
+      "adapter": "cargo-mutants",
+      "shape": "run",
+      "inline": "{\"outcomes\": [{\"scenario\": {\"Mutant\": {\"file\": \"src/a.rs\", \"function\": {\"function_name\": \"f\"}}}, \"summary\": \"Timeout\"}]}"
+    },
+    {
+      "name": "cargo-mutants-not-json",
+      "adapter": "cargo-mutants",
+      "shape": "run",
+      "inline": "{"
+    },
+    {
+      "name": "cargo-mutants-no-outcomes",
+      "adapter": "cargo-mutants",
+      "shape": "run",
+      "inline": "{}"
+    },
+    {
+      "name": "cargo-mutants-baseline-only",
+      "adapter": "cargo-mutants",
+      "shape": "run",
+      "inline": "{\"outcomes\": [{\"scenario\": \"Baseline\"}]}"
+    },
+    {
+      "name": "cargo-mutants-mutant-without-function",
+      "adapter": "cargo-mutants",
+      "shape": "run",
+      "inline": "{\"outcomes\": [{\"scenario\": {\"Mutant\": {}}, \"summary\": \"CaughtMutant\"}]}"
+    },
+    {
+      "name": "cargo-mutants-foreign-scenarios",
+      "adapter": "cargo-mutants",
+      "shape": "run",
+      "inline": "{\"outcomes\": [{\"scenario\": 7}, {\"scenario\": {\"Other\": {}}}]}"
+    },
+    {
+      "name": "sbom-cyclonedx-real",
+      "adapter": "sbom",
+      "shape": "run",
+      "file": "tests/fixtures/evidence/cyclonedx-real.json"
+    },
+    {
+      "name": "sbom-spdx-real",
+      "adapter": "sbom",
+      "shape": "run",
+      "file": "tests/fixtures/evidence/spdx-real.json"
+    },
+    {
+      "name": "sbom-cyclonedx-empty-inventory",
+      "adapter": "sbom",
+      "shape": "run",
+      "inline": "{\"bomFormat\": \"CycloneDX\", \"components\": []}"
+    },
+    {
+      "name": "sbom-cyclonedx-identity-precedence",
+      "adapter": "sbom",
+      "shape": "run",
+      "inline": "{\"bomFormat\": \"CycloneDX\", \"components\": [{\"purl\": \"pkg:npm/a@1\", \"name\": \"a\", \"version\": \"1\"}, {\"name\": \"b\", \"version\": \"2\"}, {\"name\": \"c\"}, {\"version\": \"4\"}]}"
+    },
+    {
+      "name": "sbom-spdx-purl-external-ref",
+      "adapter": "sbom",
+      "shape": "run",
+      "inline": "{\"spdxVersion\": \"SPDX-2.3\", \"packages\": [{\"name\": \"a\", \"versionInfo\": \"1\", \"externalRefs\": [{\"referenceType\": \"cpe23Type\", \"referenceLocator\": \"cpe:x\"}, {\"referenceType\": \"purl\", \"referenceLocator\": \"pkg:cargo/a@1\"}]}, {\"name\": \"b\", \"versionInfo\": \"2\"}, {\"versionInfo\": \"3\"}]}"
+    },
+    {
+      "name": "sbom-not-json",
+      "adapter": "sbom",
+      "shape": "run",
+      "inline": "{"
+    },
+    {
+      "name": "sbom-not-an-object",
+      "adapter": "sbom",
+      "shape": "run",
+      "inline": "[]"
+    },
+    {
+      "name": "sbom-unrecognised-empty-object",
+      "adapter": "sbom",
+      "shape": "run",
+      "inline": "{}"
+    },
+    {
+      "name": "agent-eval-real",
+      "adapter": "agent-eval",
+      "shape": "run",
+      "file": "tests/fixtures/evidence/agent-eval-real.json"
+    },
+    {
+      "name": "agent-eval-pass-rate-and-missing-id",
+      "adapter": "agent-eval",
+      "shape": "run",
+      "inline": "{\"results\": [{\"id\": \"TC-EV-054\", \"ok\": true, \"passRate\": \"3/3\"}, {\"id\": \"TC-EV-055\", \"ok\": false, \"passRate\": \"2/3\"}, {\"id\": \"TC-EV-056\", \"ok\": true}, {\"id\": \"TC-EV-057\", \"ok\": \"true\", \"passRate\": \"x/3\"}, {\"ok\": true}]}"
+    },
+    {
+      "name": "agent-eval-not-json",
+      "adapter": "agent-eval",
+      "shape": "run",
+      "inline": "{"
+    },
+    {
+      "name": "agent-eval-no-results-array",
+      "adapter": "agent-eval",
+      "shape": "run",
+      "inline": "{}"
+    },
+    {
+      "name": "agent-eval-no-usable-result",
+      "adapter": "agent-eval",
+      "shape": "run",
+      "inline": "{\"results\": [{\"ok\": true}]}"
+    },
+    {
+      "name": "contract-conformance-real",
+      "adapter": "contract-conformance",
+      "shape": "run",
+      "file": "tests/fixtures/evidence/contract-conformance-real.jsonl"
+    },
+    {
+      "name": "contract-conformance-traces-real",
+      "adapter": "contract-conformance",
+      "shape": "run",
+      "file": "tests/fixtures/evidence/contract-conformance-traces-real.jsonl"
+    },
+    {
+      "name": "contract-conformance-criteria-real",
+      "adapter": "contract-conformance",
+      "shape": "run",
+      "file": "tests/fixtures/evidence/contract-conformance-criteria-real.jsonl"
+    },
+    {
+      "name": "contract-conformance-empty",
+      "adapter": "contract-conformance",
+      "shape": "run",
+      "inline": "\n  \n"
+    },
+    {
+      "name": "contract-conformance-bad-protocol",
+      "adapter": "contract-conformance",
+      "shape": "run",
+      "inline": "{\"protocol\": \"other/v1\"}"
+    },
+    {
+      "name": "contract-conformance-missing-protocol",
+      "adapter": "contract-conformance",
+      "shape": "run",
+      "inline": "{\"corpus_id\": \"c\"}"
+    },
+    {
+      "name": "contract-conformance-missing-operation",
+      "adapter": "contract-conformance",
+      "shape": "run",
+      "inline": "{\"protocol\": \"quire.contract.conformance-jsonl/v1\", \"corpus_id\": \"c\", \"fixture_id\": \"f\"}"
+    },
+    {
+      "name": "contract-conformance-unknown-status",
+      "adapter": "contract-conformance",
+      "shape": "run",
+      "inline": "{\"protocol\": \"quire.contract.conformance-jsonl/v1\", \"corpus_id\": \"c\", \"fixture_id\": \"f\", \"operation\": \"o\", \"status\": \"valueOf\"}"
+    },
+    {
+      "name": "contract-conformance-missing-status",
+      "adapter": "contract-conformance",
+      "shape": "run",
+      "inline": "{\"protocol\": \"quire.contract.conformance-jsonl/v1\", \"corpus_id\": \"c\", \"fixture_id\": \"f\", \"operation\": \"o\"}"
+    },
+    {
+      "name": "contract-conformance-bad-trace-ids",
+      "adapter": "contract-conformance",
+      "shape": "run",
+      "inline": "{\"protocol\": \"quire.contract.conformance-jsonl/v1\", \"corpus_id\": \"c\", \"fixture_id\": \"f\", \"operation\": \"o\", \"status\": \"match\", \"trace_ids\": [\"a\", \"a\"]}"
+    },
+    {
+      "name": "contract-conformance-line-two-not-json",
+      "adapter": "contract-conformance",
+      "shape": "run",
+      "inline": "{\"protocol\": \"quire.contract.conformance-jsonl/v1\", \"corpus_id\": \"c\", \"fixture_id\": \"f\", \"operation\": \"o\", \"status\": \"match\"}\n\n{"
+    },
+    {
+      "name": "contract-conformance-mismatch-row",
+      "adapter": "contract-conformance",
+      "shape": "run",
+      "inline": "{\"protocol\": \"quire.contract.conformance-jsonl/v1\", \"corpus_id\": \"c\", \"fixture_id\": \"f\", \"operation\": \"o\", \"status\": \"mismatch\", \"trace_ids\": [\"FR-1-AC-1\", \"FR-2-AC-1\"]}"
+    },
+    {
+      "name": "differential-report-real",
+      "adapter": "differential-report",
+      "shape": "run",
+      "file": "tests/fixtures/evidence/differential-report-real.json"
+    },
+    {
+      "name": "differential-report-all-states",
+      "adapter": "differential-report",
+      "shape": "run",
+      "inline": "{\"schemaVersion\": \"tl-mltl.differential-summary/v1\", \"cases\": [{\"id\": \"c1\", \"status\": \"agreement\"}, {\"id\": \"c2\", \"status\": \"mismatch\"}, {\"id\": \"c3\", \"status\": \"tool-error\"}, {\"id\": \"c4\", \"status\": \"unsupported\"}]}"
+    },
+    {
+      "name": "differential-report-not-json",
+      "adapter": "differential-report",
+      "shape": "run",
+      "inline": "{"
+    },
+    {
+      "name": "differential-report-bad-schema",
+      "adapter": "differential-report",
+      "shape": "run",
+      "inline": "{\"schemaVersion\": \"tl-mltl.differential-summary/v2\", \"cases\": []}"
+    },
+    {
+      "name": "differential-report-missing-schema",
+      "adapter": "differential-report",
+      "shape": "run",
+      "inline": "{\"cases\": []}"
+    },
+    {
+      "name": "differential-report-no-cases-array",
+      "adapter": "differential-report",
+      "shape": "run",
+      "inline": "{\"schemaVersion\": \"a.differential-summary/v1\"}"
+    },
+    {
+      "name": "differential-report-empty-cases",
+      "adapter": "differential-report",
+      "shape": "run",
+      "inline": "{\"schemaVersion\": \"a.differential-summary/v1\", \"cases\": []}"
+    },
+    {
+      "name": "differential-report-case-without-id",
+      "adapter": "differential-report",
+      "shape": "run",
+      "inline": "{\"schemaVersion\": \"a.differential-summary/v1\", \"cases\": [{\"status\": \"agreement\"}]}"
+    },
+    {
+      "name": "differential-report-case-without-status",
+      "adapter": "differential-report",
+      "shape": "run",
+      "inline": "{\"schemaVersion\": \"a.differential-summary/v1\", \"cases\": [{\"id\": \"c\"}]}"
+    },
+    {
+      "name": "differential-report-unknown-status",
+      "adapter": "differential-report",
+      "shape": "run",
+      "inline": "{\"schemaVersion\": \"a.differential-summary/v1\", \"cases\": [{\"id\": \"c\", \"status\": \"valueOf\"}]}"
+    },
+    {
+      "name": "sarif-clean-run-declaring-zero-rules",
+      "adapter": "sarif",
+      "shape": "finding",
+      "inline": "{\"runs\": [{\"tool\": {\"driver\": {\"name\": \"semgrep\", \"version\": \"1.2.3\", \"rules\": []}}, \"results\": []}]}"
+    },
+    {
+      "name": "sarif-no-rules-declared",
+      "adapter": "sarif",
+      "shape": "finding",
+      "inline": "{\"runs\": [{\"tool\": {\"driver\": {\"name\": \"x\"}}, \"results\": []}]}"
+    },
+    {
+      "name": "sarif-findings-with-locations",
+      "adapter": "sarif",
+      "shape": "finding",
+      "inline": "{\"runs\": [{\"tool\": {\"driver\": {\"name\": \"t\", \"rules\": [{\"id\": \"r1\"}, {\"id\": \"r2\"}]}}, \"results\": [{\"ruleId\": \"r1\", \"level\": \"error\", \"message\": {\"text\": \"m\"}, \"locations\": [{\"physicalLocation\": {\"artifactLocation\": {\"uri\": \"a.ts\"}, \"region\": {\"startLine\": 7}}}]}, {\"rule\": {\"id\": \"r2\"}}, {\"level\": \"note\"}, {\"ruleId\": \"\"}]}]}"
+    },
+    {
+      "name": "sarif-two-runs-join-tool-names",
+      "adapter": "sarif",
+      "shape": "finding",
+      "inline": "{\"runs\": [{\"tool\": {\"driver\": {\"name\": \"a\", \"version\": \"1\", \"rules\": [{\"id\": \"x\"}]}}, \"results\": []}, {\"tool\": {\"driver\": {\"name\": \"b\", \"rules\": [{\"id\": \"y\"}, {\"id\": \"z\"}]}}, \"results\": []}]}"
+    },
+    {
+      "name": "sarif-not-json",
+      "adapter": "sarif",
+      "shape": "finding",
+      "inline": "{"
+    },
+    {
+      "name": "sarif-no-runs-array",
+      "adapter": "sarif",
+      "shape": "finding",
+      "inline": "{}"
+    },
+    {
+      "name": "sarif-empty-runs",
+      "adapter": "sarif",
+      "shape": "finding",
+      "inline": "{\"runs\": []}"
+    },
+    {
+      "name": "audit-script-real",
+      "adapter": "audit-script",
+      "shape": "finding",
+      "file": "tests/fixtures/evidence/audit-static-real.txt"
+    },
+    {
+      "name": "audit-script-ok-and-fail",
+      "adapter": "audit-script",
+      "shape": "finding",
+      "inline": "check_a: OK\ncheck_b: FAIL — boundary crossed (quire-rs FR-003-AC-4).\nnoise\n"
+    },
+    {
+      "name": "audit-script-trailing-punctuation",
+      "adapter": "audit-script",
+      "shape": "finding",
+      "inline": "c: FAIL - bad (TC-9). \n"
+    },
+    {
+      "name": "audit-script-no-reason",
+      "adapter": "audit-script",
+      "shape": "finding",
+      "inline": "c: FAIL\n"
+    },
+    {
+      "name": "audit-script-no-recognised-line",
+      "adapter": "audit-script",
+      "shape": "finding",
+      "inline": "all good\n"
+    },
+    {
+      "name": "cargo-audit-real",
+      "adapter": "cargo-audit",
+      "shape": "finding",
+      "file": "tests/fixtures/evidence/cargo-audit-real.json"
+    },
+    {
+      "name": "cargo-audit-warning-kinds",
+      "adapter": "cargo-audit",
+      "shape": "finding",
+      "inline": "{\"database\": {\"advisory-count\": 700}, \"vulnerabilities\": {\"found\": true, \"list\": [{\"advisory\": {\"id\": \"RUSTSEC-1\", \"title\": \"t\"}, \"package\": {\"name\": \"p\", \"version\": \"1\"}}]}, \"warnings\": {\"unmaintained\": [{\"advisory\": {\"id\": \"RUSTSEC-2\"}, \"package\": {\"name\": \"q\"}}], \"yanked\": [{\"advisory\": {\"id\": \"RUSTSEC-3\"}}]}}"
+    },
+    {
+      "name": "cargo-audit-warning-kinds-out-of-byte-order",
+      "adapter": "cargo-audit",
+      "shape": "finding",
+      "inline": "{\"vulnerabilities\":{\"found\":false,\"list\":[]},\"warnings\":{\"yanked\":[{\"advisory\":{\"id\":\"RUSTSEC-9\"}}],\"unmaintained\":[{\"advisory\":{\"id\":\"RUSTSEC-8\"}}]}}"
+    },
+    {
+      "name": "cargo-audit-clean",
+      "adapter": "cargo-audit",
+      "shape": "finding",
+      "inline": "{\"database\": {\"advisory-count\": 12}, \"vulnerabilities\": {\"found\": false, \"list\": []}}"
+    },
+    {
+      "name": "cargo-audit-not-json",
+      "adapter": "cargo-audit",
+      "shape": "finding",
+      "inline": "{"
+    },
+    {
+      "name": "cargo-audit-no-vulnerabilities",
+      "adapter": "cargo-audit",
+      "shape": "finding",
+      "inline": "{}"
+    }
+  ]
+}

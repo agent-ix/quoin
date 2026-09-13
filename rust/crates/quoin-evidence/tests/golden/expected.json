@@ -1,0 +1,949 @@
+{
+  "cases": [
+    {
+      "name": "entries-normalized",
+      "adapter": "entries",
+      "shape": "run",
+      "ok": {
+        "entries": [
+          {
+            "symbol": "tests::tc001",
+            "outcome": "pass"
+          }
+        ]
+      }
+    },
+    {
+      "name": "entries-with-trace-and-score",
+      "adapter": "entries",
+      "shape": "run",
+      "ok": {
+        "entries": [
+          {
+            "symbol": "a",
+            "outcome": "fail",
+            "score": 0.25,
+            "metric": "mutation-score",
+            "traceIds": [
+              "FR-1-AC-1"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "entries-empty-array",
+      "adapter": "entries",
+      "shape": "run",
+      "ok": {
+        "entries": []
+      }
+    },
+    {
+      "name": "entries-not-json",
+      "adapter": "entries",
+      "shape": "run",
+      "err": "entries: input is not JSON: Expected property name or '}' in JSON at position 1 (line 1 column 2)"
+    },
+    {
+      "name": "entries-no-entries-member",
+      "adapter": "entries",
+      "shape": "run",
+      "err": "entries: expected JSON of the form {\"entries\": [{symbol, outcome, traceIds?}]}"
+    },
+    {
+      "name": "junit-four-outcome-classes",
+      "adapter": "junit",
+      "shape": "run",
+      "ok": {
+        "entries": [
+          {
+            "symbol": "tests::corpus::tc001_resolves",
+            "outcome": "pass",
+            "traceIds": [
+              "FR-001-AC-1",
+              "FR-001-AC-2"
+            ]
+          },
+          {
+            "symbol": "tests::corpus::tc002_dangles",
+            "outcome": "fail"
+          },
+          {
+            "symbol": "tests::corpus::tc003_errors",
+            "outcome": "error"
+          },
+          {
+            "symbol": "tests::corpus::tc004_skipped",
+            "outcome": "skip"
+          }
+        ]
+      }
+    },
+    {
+      "name": "junit-entities-and-unknown-properties",
+      "adapter": "junit",
+      "shape": "run",
+      "ok": {
+        "entries": [
+          {
+            "symbol": "a&b::t<1>",
+            "outcome": "pass",
+            "traceIds": [
+              "FR-002-AC-1"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "junit-self-closing-and-nameless",
+      "adapter": "junit",
+      "shape": "run",
+      "ok": {
+        "entries": [
+          {
+            "symbol": "a::t",
+            "outcome": "pass"
+          }
+        ]
+      }
+    },
+    {
+      "name": "junit-no-classname-attribute",
+      "adapter": "junit",
+      "shape": "run",
+      "ok": {
+        "entries": [
+          {
+            "symbol": "bare_test",
+            "outcome": "pass"
+          }
+        ]
+      }
+    },
+    {
+      "name": "junit-separator-edges",
+      "adapter": "junit",
+      "shape": "run",
+      "ok": {
+        "entries": [
+          {
+            "symbol": "a::t",
+            "outcome": "pass",
+            "traceIds": [
+              "FR-1",
+              "FR-2"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "junit-neither-classname-nor-name",
+      "adapter": "junit",
+      "shape": "run",
+      "ok": {
+        "entries": [
+          {
+            "symbol": "a::t",
+            "outcome": "pass"
+          }
+        ]
+      }
+    },
+    {
+      "name": "junit-classname-already-ends-with-member",
+      "adapter": "junit",
+      "shape": "run",
+      "ok": {
+        "entries": [
+          {
+            "symbol": "mod::tests::tc001",
+            "outcome": "pass"
+          }
+        ]
+      }
+    },
+    {
+      "name": "junit-error-outranks-failure",
+      "adapter": "junit",
+      "shape": "run",
+      "ok": {
+        "entries": [
+          {
+            "symbol": "t::a",
+            "outcome": "error"
+          }
+        ]
+      }
+    },
+    {
+      "name": "junit-traceids-property-name",
+      "adapter": "junit",
+      "shape": "run",
+      "ok": {
+        "entries": [
+          {
+            "symbol": "a::t",
+            "outcome": "pass",
+            "traceIds": [
+              "FR-9-AC-1"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "junit-empty-document",
+      "adapter": "junit",
+      "shape": "run",
+      "err": "junit: no <testcase> elements found — is this JUnit XML?"
+    },
+    {
+      "name": "junit-not-xml",
+      "adapter": "junit",
+      "shape": "run",
+      "err": "junit: no <testcase> elements found — is this JUnit XML?"
+    },
+    {
+      "name": "cargo-mutants-scored",
+      "adapter": "cargo-mutants",
+      "shape": "run",
+      "ok": {
+        "entries": [
+          {
+            "symbol": "src/a.rs::resolve",
+            "outcome": "fail",
+            "score": 0.5,
+            "metric": "mutation-score"
+          },
+          {
+            "symbol": "src/b.rs::harvest",
+            "outcome": "pass",
+            "score": 1,
+            "metric": "mutation-score"
+          }
+        ]
+      }
+    },
+    {
+      "name": "cargo-mutants-timeout-is-survived",
+      "adapter": "cargo-mutants",
+      "shape": "run",
+      "ok": {
+        "entries": [
+          {
+            "symbol": "src/a.rs::f",
+            "outcome": "fail",
+            "score": 0,
+            "metric": "mutation-score"
+          }
+        ]
+      }
+    },
+    {
+      "name": "cargo-mutants-not-json",
+      "adapter": "cargo-mutants",
+      "shape": "run",
+      "err": "cargo-mutants: input is not JSON: Expected property name or '}' in JSON at position 1 (line 1 column 2)"
+    },
+    {
+      "name": "cargo-mutants-no-outcomes",
+      "adapter": "cargo-mutants",
+      "shape": "run",
+      "err": "cargo-mutants: no `outcomes` array — expected the contents of mutants.out/outcomes.json"
+    },
+    {
+      "name": "cargo-mutants-baseline-only",
+      "adapter": "cargo-mutants",
+      "shape": "run",
+      "err": "cargo-mutants: no viable mutants in the report — nothing was measured"
+    },
+    {
+      "name": "cargo-mutants-mutant-without-function",
+      "adapter": "cargo-mutants",
+      "shape": "run",
+      "err": "cargo-mutants: no viable mutants in the report — nothing was measured"
+    },
+    {
+      "name": "cargo-mutants-foreign-scenarios",
+      "adapter": "cargo-mutants",
+      "shape": "run",
+      "err": "cargo-mutants: no viable mutants in the report — nothing was measured"
+    },
+    {
+      "name": "sbom-cyclonedx-real",
+      "adapter": "sbom",
+      "shape": "run",
+      "ok": {
+        "entries": [
+          {
+            "symbol": "pkg:npm/semver@7.6.3?download_url=http%3A%2F%2Fnpm.ix%2Fsemver%2F-%2Fsemver-7.6.3.tgz",
+            "outcome": "pass"
+          }
+        ]
+      }
+    },
+    {
+      "name": "sbom-spdx-real",
+      "adapter": "sbom",
+      "shape": "run",
+      "ok": {
+        "entries": [
+          {
+            "symbol": "pkg:npm/xo@%5E0.38.2",
+            "outcome": "pass"
+          },
+          {
+            "symbol": "pkg:npm/%40sindresorhus/transliterate@%5E1.0.0",
+            "outcome": "pass"
+          },
+          {
+            "symbol": "pkg:npm/escape-string-regexp@%5E5.0.0",
+            "outcome": "pass"
+          },
+          {
+            "symbol": "pkg:npm/ava@%5E3.15.0",
+            "outcome": "pass"
+          },
+          {
+            "symbol": "pkg:npm/tsd@%5E0.14.0",
+            "outcome": "pass"
+          },
+          {
+            "symbol": "pkg:githubactions/actions/setup-node@5.*.*",
+            "outcome": "pass"
+          },
+          {
+            "symbol": "pkg:githubactions/actions/checkout@5.*.*",
+            "outcome": "pass"
+          },
+          {
+            "symbol": "pkg:github/sindresorhus/slugify@main",
+            "outcome": "pass"
+          }
+        ]
+      }
+    },
+    {
+      "name": "sbom-cyclonedx-empty-inventory",
+      "adapter": "sbom",
+      "shape": "run",
+      "ok": {
+        "entries": []
+      }
+    },
+    {
+      "name": "sbom-cyclonedx-identity-precedence",
+      "adapter": "sbom",
+      "shape": "run",
+      "ok": {
+        "entries": [
+          {
+            "symbol": "pkg:npm/a@1",
+            "outcome": "pass"
+          },
+          {
+            "symbol": "b@2",
+            "outcome": "pass"
+          },
+          {
+            "symbol": "c",
+            "outcome": "pass"
+          }
+        ]
+      }
+    },
+    {
+      "name": "sbom-spdx-purl-external-ref",
+      "adapter": "sbom",
+      "shape": "run",
+      "ok": {
+        "entries": [
+          {
+            "symbol": "pkg:cargo/a@1",
+            "outcome": "pass"
+          },
+          {
+            "symbol": "b@2",
+            "outcome": "pass"
+          }
+        ]
+      }
+    },
+    {
+      "name": "sbom-not-json",
+      "adapter": "sbom",
+      "shape": "run",
+      "err": "sbom: not JSON: Expected property name or '}' in JSON at position 1 (line 1 column 2). CycloneDX and SPDX both have JSON serialisations; the tag-value SPDX form is not read here."
+    },
+    {
+      "name": "sbom-not-an-object",
+      "adapter": "sbom",
+      "shape": "run",
+      "err": "sbom: neither a CycloneDX (`bomFormat`) nor an SPDX (`spdxVersion`) document — top-level keys: (none)"
+    },
+    {
+      "name": "sbom-unrecognised-empty-object",
+      "adapter": "sbom",
+      "shape": "run",
+      "err": "sbom: neither a CycloneDX (`bomFormat`) nor an SPDX (`spdxVersion`) document — top-level keys: (none)"
+    },
+    {
+      "name": "agent-eval-real",
+      "adapter": "agent-eval",
+      "shape": "run",
+      "ok": {
+        "entries": [
+          {
+            "symbol": "TC-EV-057",
+            "outcome": "pass",
+            "traceIds": [
+              "TC-EV-057"
+            ],
+            "score": 1
+          }
+        ]
+      }
+    },
+    {
+      "name": "agent-eval-pass-rate-and-missing-id",
+      "adapter": "agent-eval",
+      "shape": "run",
+      "ok": {
+        "entries": [
+          {
+            "symbol": "TC-EV-054",
+            "outcome": "pass",
+            "traceIds": [
+              "TC-EV-054"
+            ],
+            "score": 1
+          },
+          {
+            "symbol": "TC-EV-055",
+            "outcome": "fail",
+            "traceIds": [
+              "TC-EV-055"
+            ],
+            "score": 0.6666666666666666
+          },
+          {
+            "symbol": "TC-EV-056",
+            "outcome": "pass",
+            "traceIds": [
+              "TC-EV-056"
+            ]
+          },
+          {
+            "symbol": "TC-EV-057",
+            "outcome": "fail",
+            "traceIds": [
+              "TC-EV-057"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "agent-eval-not-json",
+      "adapter": "agent-eval",
+      "shape": "run",
+      "err": "agent-eval: not JSON: Expected property name or '}' in JSON at position 1 (line 1 column 2)"
+    },
+    {
+      "name": "agent-eval-no-results-array",
+      "adapter": "agent-eval",
+      "shape": "run",
+      "err": "agent-eval: expected a cli-agent-evals report with a \"results\" array"
+    },
+    {
+      "name": "agent-eval-no-usable-result",
+      "adapter": "agent-eval",
+      "shape": "run",
+      "err": "agent-eval: no scenario results in the report — did the suite run?"
+    },
+    {
+      "name": "contract-conformance-real",
+      "adapter": "contract-conformance",
+      "shape": "run",
+      "ok": {
+        "entries": [
+          {
+            "symbol": "contract-v0.1::package::package-constructs",
+            "outcome": "pass"
+          },
+          {
+            "symbol": "contract-v0.1::package::package-invalid-namespace",
+            "outcome": "pass"
+          },
+          {
+            "symbol": "contract-v0.1::expression::expression-boolean-literal",
+            "outcome": "pass"
+          },
+          {
+            "symbol": "contract-v0.1::expression::expression-invalid-wire",
+            "outcome": "pass"
+          },
+          {
+            "symbol": "contract-v0.1::migration::migration-valid",
+            "outcome": "pass"
+          },
+          {
+            "symbol": "contract-v0.1::migration::migration-unregistered",
+            "outcome": "pass"
+          },
+          {
+            "symbol": "contract-v0.1::coverage::coverage-shallow",
+            "outcome": "pass"
+          }
+        ]
+      }
+    },
+    {
+      "name": "contract-conformance-traces-real",
+      "adapter": "contract-conformance",
+      "shape": "run",
+      "ok": {
+        "entries": [
+          {
+            "symbol": "contract-v0.1::package::package-invalid-namespace",
+            "outcome": "pass",
+            "traceIds": [
+              "TC-015",
+              "TC-017",
+              "TC-018"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "contract-conformance-criteria-real",
+      "adapter": "contract-conformance",
+      "shape": "run",
+      "ok": {
+        "entries": [
+          {
+            "symbol": "contract-v0.1::package::package-invalid-namespace",
+            "outcome": "pass",
+            "traceIds": [
+              "FR-011-AC-3",
+              "FR-018-AC-1"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "contract-conformance-empty",
+      "adapter": "contract-conformance",
+      "shape": "run",
+      "err": "contract-conformance: input contains no conformance rows; an empty run is not a clean run"
+    },
+    {
+      "name": "contract-conformance-bad-protocol",
+      "adapter": "contract-conformance",
+      "shape": "run",
+      "err": "contract-conformance: line 1 declares protocol \"other/v1\", expected quire.contract.conformance-jsonl/v1"
+    },
+    {
+      "name": "contract-conformance-missing-protocol",
+      "adapter": "contract-conformance",
+      "shape": "run",
+      "err": "contract-conformance: line 1 declares protocol undefined, expected quire.contract.conformance-jsonl/v1"
+    },
+    {
+      "name": "contract-conformance-missing-operation",
+      "adapter": "contract-conformance",
+      "shape": "run",
+      "err": "contract-conformance: line 1 has no operation"
+    },
+    {
+      "name": "contract-conformance-unknown-status",
+      "adapter": "contract-conformance",
+      "shape": "run",
+      "err": "contract-conformance: line 1 has unknown status \"valueOf\""
+    },
+    {
+      "name": "contract-conformance-missing-status",
+      "adapter": "contract-conformance",
+      "shape": "run",
+      "err": "contract-conformance: line 1 has unknown status undefined"
+    },
+    {
+      "name": "contract-conformance-bad-trace-ids",
+      "adapter": "contract-conformance",
+      "shape": "run",
+      "err": "contract-conformance: line 1 trace_ids must be a non-empty array of distinct non-blank strings"
+    },
+    {
+      "name": "contract-conformance-line-two-not-json",
+      "adapter": "contract-conformance",
+      "shape": "run",
+      "err": "contract-conformance: line 2 is not JSON: Expected property name or '}' in JSON at position 1 (line 1 column 2)"
+    },
+    {
+      "name": "contract-conformance-mismatch-row",
+      "adapter": "contract-conformance",
+      "shape": "run",
+      "ok": {
+        "entries": [
+          {
+            "symbol": "c::o::f",
+            "outcome": "fail",
+            "traceIds": [
+              "FR-1-AC-1",
+              "FR-2-AC-1"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "differential-report-real",
+      "adapter": "differential-report",
+      "shape": "run",
+      "ok": {
+        "entries": [
+          {
+            "symbol": "r2u2-future-witness-v1",
+            "outcome": "pass"
+          },
+          {
+            "symbol": "r2u2-globally-counterexample-v1",
+            "outcome": "pass"
+          },
+          {
+            "symbol": "r2u2-future-deadline-v1",
+            "outcome": "pass"
+          },
+          {
+            "symbol": "r2u2-until-lower-bound-v1",
+            "outcome": "pass"
+          },
+          {
+            "symbol": "r2u2-release-lower-bound-v1",
+            "outcome": "pass"
+          },
+          {
+            "symbol": "r2u2-nested-until-v1",
+            "outcome": "pass"
+          },
+          {
+            "symbol": "r2u2-future-at-one-v1",
+            "outcome": "pass"
+          },
+          {
+            "symbol": "r2u2-globally-at-one-v1",
+            "outcome": "pass"
+          }
+        ],
+        "unrepresented": [
+          {
+            "symbol": "closed-profile-not-mapped-v1",
+            "state": "unsupported",
+            "reason": "the external reference does not support this case; that is neither a skip nor an error, and no run-entry outcome carries it"
+          }
+        ]
+      }
+    },
+    {
+      "name": "differential-report-all-states",
+      "adapter": "differential-report",
+      "shape": "run",
+      "ok": {
+        "entries": [
+          {
+            "symbol": "c1",
+            "outcome": "pass"
+          },
+          {
+            "symbol": "c2",
+            "outcome": "fail"
+          },
+          {
+            "symbol": "c3",
+            "outcome": "error"
+          }
+        ],
+        "unrepresented": [
+          {
+            "symbol": "c4",
+            "state": "unsupported",
+            "reason": "the external reference does not support this case; that is neither a skip nor an error, and no run-entry outcome carries it"
+          }
+        ]
+      }
+    },
+    {
+      "name": "differential-report-not-json",
+      "adapter": "differential-report",
+      "shape": "run",
+      "err": "differential-report: input is not JSON: Expected property name or '}' in JSON at position 1 (line 1 column 2)"
+    },
+    {
+      "name": "differential-report-bad-schema",
+      "adapter": "differential-report",
+      "shape": "run",
+      "err": "differential-report: unknown schemaVersion \"tl-mltl.differential-summary/v2\"; expected <domain>.differential-summary/v1"
+    },
+    {
+      "name": "differential-report-missing-schema",
+      "adapter": "differential-report",
+      "shape": "run",
+      "err": "differential-report: unknown schemaVersion undefined; expected <domain>.differential-summary/v1"
+    },
+    {
+      "name": "differential-report-no-cases-array",
+      "adapter": "differential-report",
+      "shape": "run",
+      "err": "differential-report: report has no cases array"
+    },
+    {
+      "name": "differential-report-empty-cases",
+      "adapter": "differential-report",
+      "shape": "run",
+      "err": "differential-report: report contains no cases; a comparison that examined nothing is not an agreement"
+    },
+    {
+      "name": "differential-report-case-without-id",
+      "adapter": "differential-report",
+      "shape": "run",
+      "err": "differential-report: case 0 has no id"
+    },
+    {
+      "name": "differential-report-case-without-status",
+      "adapter": "differential-report",
+      "shape": "run",
+      "err": "differential-report: case c has no status"
+    },
+    {
+      "name": "differential-report-unknown-status",
+      "adapter": "differential-report",
+      "shape": "run",
+      "err": "differential-report: case c has unknown status \"valueOf\""
+    },
+    {
+      "name": "sarif-clean-run-declaring-zero-rules",
+      "adapter": "sarif",
+      "shape": "finding",
+      "ok": {
+        "findings": [],
+        "tool": "semgrep 1.2.3",
+        "rulesEvaluated": 0
+      }
+    },
+    {
+      "name": "sarif-no-rules-declared",
+      "adapter": "sarif",
+      "shape": "finding",
+      "ok": {
+        "findings": [],
+        "tool": "x"
+      }
+    },
+    {
+      "name": "sarif-findings-with-locations",
+      "adapter": "sarif",
+      "shape": "finding",
+      "ok": {
+        "findings": [
+          {
+            "ruleId": "r1",
+            "severity": "error",
+            "message": "m",
+            "path": "a.ts",
+            "line": 7
+          },
+          {
+            "ruleId": "r2"
+          }
+        ],
+        "tool": "t",
+        "rulesEvaluated": 2
+      }
+    },
+    {
+      "name": "sarif-two-runs-join-tool-names",
+      "adapter": "sarif",
+      "shape": "finding",
+      "ok": {
+        "findings": [],
+        "tool": "a 1, b",
+        "rulesEvaluated": 3
+      }
+    },
+    {
+      "name": "sarif-not-json",
+      "adapter": "sarif",
+      "shape": "finding",
+      "err": "sarif: input is not JSON: Expected property name or '}' in JSON at position 1 (line 1 column 2)"
+    },
+    {
+      "name": "sarif-no-runs-array",
+      "adapter": "sarif",
+      "shape": "finding",
+      "err": "sarif: no `runs` array — expected a SARIF 2.1.0 log"
+    },
+    {
+      "name": "sarif-empty-runs",
+      "adapter": "sarif",
+      "shape": "finding",
+      "err": "sarif: `runs` is empty — a log with no run proves no scan executed"
+    },
+    {
+      "name": "audit-script-real",
+      "adapter": "audit-script",
+      "shape": "finding",
+      "ok": {
+        "findings": [],
+        "tool": "audit-script",
+        "rulesEvaluated": 7
+      }
+    },
+    {
+      "name": "audit-script-ok-and-fail",
+      "adapter": "audit-script",
+      "shape": "finding",
+      "ok": {
+        "findings": [
+          {
+            "ruleId": "check_b",
+            "severity": "violation",
+            "message": "boundary crossed (quire-rs FR-003-AC-4).",
+            "traceIds": [
+              "FR-003-AC-4"
+            ]
+          }
+        ],
+        "tool": "audit-script",
+        "rulesEvaluated": 2
+      }
+    },
+    {
+      "name": "audit-script-trailing-punctuation",
+      "adapter": "audit-script",
+      "shape": "finding",
+      "ok": {
+        "findings": [
+          {
+            "ruleId": "c",
+            "severity": "violation",
+            "message": "bad (TC-9).",
+            "traceIds": [
+              "TC-9"
+            ]
+          }
+        ],
+        "tool": "audit-script",
+        "rulesEvaluated": 1
+      }
+    },
+    {
+      "name": "audit-script-no-reason",
+      "adapter": "audit-script",
+      "shape": "finding",
+      "ok": {
+        "findings": [
+          {
+            "ruleId": "c",
+            "severity": "violation"
+          }
+        ],
+        "tool": "audit-script",
+        "rulesEvaluated": 1
+      }
+    },
+    {
+      "name": "audit-script-no-recognised-line",
+      "adapter": "audit-script",
+      "shape": "finding",
+      "err": "audit-script: no `<name>: OK` or `<name>: FAIL` line found — is this audit-script output?"
+    },
+    {
+      "name": "cargo-audit-real",
+      "adapter": "cargo-audit",
+      "shape": "finding",
+      "ok": {
+        "findings": [
+          {
+            "ruleId": "RUSTSEC-2026-0190",
+            "severity": "unsound",
+            "message": "Unsoundness in `Error::downcast_mut()`",
+            "path": "anyhow@1.0.102"
+          }
+        ],
+        "tool": "cargo-audit",
+        "rulesEvaluated": 1217
+      }
+    },
+    {
+      "name": "cargo-audit-warning-kinds",
+      "adapter": "cargo-audit",
+      "shape": "finding",
+      "ok": {
+        "findings": [
+          {
+            "ruleId": "RUSTSEC-1",
+            "severity": "vulnerability",
+            "message": "t",
+            "path": "p@1"
+          },
+          {
+            "ruleId": "RUSTSEC-2",
+            "severity": "unmaintained",
+            "path": "q"
+          },
+          {
+            "ruleId": "RUSTSEC-3",
+            "severity": "yanked"
+          }
+        ],
+        "tool": "cargo-audit",
+        "rulesEvaluated": 700
+      }
+    },
+    {
+      "name": "cargo-audit-warning-kinds-out-of-byte-order",
+      "adapter": "cargo-audit",
+      "shape": "finding",
+      "ok": {
+        "findings": [
+          {
+            "ruleId": "RUSTSEC-9",
+            "severity": "yanked"
+          },
+          {
+            "ruleId": "RUSTSEC-8",
+            "severity": "unmaintained"
+          }
+        ],
+        "tool": "cargo-audit"
+      }
+    },
+    {
+      "name": "cargo-audit-clean",
+      "adapter": "cargo-audit",
+      "shape": "finding",
+      "ok": {
+        "findings": [],
+        "tool": "cargo-audit",
+        "rulesEvaluated": 12
+      }
+    },
+    {
+      "name": "cargo-audit-not-json",
+      "adapter": "cargo-audit",
+      "shape": "finding",
+      "err": "cargo-audit: input is not JSON: Expected property name or '}' in JSON at position 1 (line 1 column 2)"
+    },
+    {
+      "name": "cargo-audit-no-vulnerabilities",
+      "adapter": "cargo-audit",
+      "shape": "finding",
+      "err": "cargo-audit: no `vulnerabilities` object — expected `cargo audit --json` output"
+    }
+  ]
+}
