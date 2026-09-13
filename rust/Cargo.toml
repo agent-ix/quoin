@@ -78,6 +78,7 @@ publish = false
 [workspace.dependencies]
 quoin-assurance = { path = "crates/quoin-assurance" }
 quoin-change-assurance = { path = "crates/quoin-change-assurance" }
+quoin-combinatorial = { path = "crates/quoin-combinatorial" }
 quoin-completeness = { path = "crates/quoin-completeness" }
 quoin-config = { path = "crates/quoin-config" }
 quoin-core = { path = "crates/quoin-core" }
@@ -140,6 +141,18 @@ sha2 = "=0.10.9"
 # the same =2.0.20 independently, for an unrelated reason — the two branches
 # converge here; whoever merges second should not read it as drift.
 thiserror = "=2.0.20"
+# The regex engine the advisor's ~60-entry characteristic table is written
+# against (quoin#383) and the three the combinatorial parser uses (quoin#382).
+# Already in the graph transitively, so this pin adds a direct edge and no new
+# version: `cargo tree -i regex` reaches it through `jsonschema`. Exact pin for
+# the reason every line here is exact.
+regex = "=1.13.1"
+# Property testing for the covering-array invariants (quoin#382 acceptance).
+# The workspace had no property-testing dependency before this; quoin#446
+# restated a fast-check property as a bounded exhaustive loop and said so,
+# because that cutover was not the place to add one. quoin#382 names proptest
+# in its acceptance criterion, so this is the place.
+proptest = { version = "=1.9.0", default-features = false, features = ["std", "bit-set"] }
 jsonschema = { version = "=0.56.0", default-features = false }
 engineering-assurance = { version = "=0.3.1", git = "https://github.com/agent-ix/engineering-assurance", rev = "72b0fcd" }
 

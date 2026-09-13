@@ -1,0 +1,30 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 Agent-IX
+[package]
+name = "quoin-combinatorial"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+description = "t-way covering-array algebra over a declared configuration space (quoin#382)"
+publish.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+regex = { workspace = true }
+serde = { workspace = true }
+thiserror = { workspace = true }
+# For `quoin_store::json::order::cmp_utf16`. The retained implementation sorts
+# with JavaScript's `<`/`>` on strings and with `Array.prototype.sort`'s default
+# comparator, both of which are UTF-16 code-unit order. That ordering already
+# has exactly one home in this workspace and this crate uses it rather than
+# minting a second.
+quoin-store = { workspace = true }
+
+[dev-dependencies]
+serde_json = { workspace = true }
+proptest = { workspace = true }
