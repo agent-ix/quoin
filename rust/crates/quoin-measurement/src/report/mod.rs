@@ -35,7 +35,7 @@ pub mod comparison;
 pub mod render;
 pub mod render_json;
 pub mod series;
-pub(crate) mod wire;
+pub mod wire;
 
 pub use build::{
     CollectionSummary, CurrentRow, MeasurementReport, build_measurement_report,

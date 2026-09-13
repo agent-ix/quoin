@@ -14,6 +14,11 @@
 //!
 //! So the probe is here, in one module, rather than as a fourth method on a
 //! trait the other twelve callers would never use.
+//!
+//! [`resolve`] and [`resolve_against`] are `pub` because the governed graph
+//! portfolio (`quoin-measurement-graph`, quoin#476) resolves the same
+//! locations, the same way, before it reads anything — and two lexical path
+//! resolvers that agreed today would not have to agree tomorrow.
 
 use std::path::{Component, Path, PathBuf};
 
@@ -50,16 +55,30 @@ pub(crate) fn probe(root: &Path) -> LocationState {
 /// lexically: `.` dropped, `..` popped, trailing separators removed. Symbolic
 /// links are not followed, by either implementation — `resolve` is a string
 /// operation in both.
-pub(crate) fn resolve(location: &Path) -> PathBuf {
+#[must_use]
+pub fn resolve(location: &Path) -> PathBuf {
+    // A working directory that cannot be read is not a reason to panic in a
+    // library; the root is what `resolve` would produce from an empty one.
+    let cwd = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("/"));
+    resolve_against(&cwd, location)
+}
+
+/// `resolve(base, location)` (`node:path`) with the base stated rather than
+/// taken from the process.
+///
+/// `graph-portfolio.ts:211` takes `options.cwd ?? process.cwd()` and resolves
+/// every mapping against it, so the base is an argument there and is one here.
+/// A relative `base` is itself resolved against the process's working
+/// directory first, which is what `path.resolve` does with its leading
+/// segments.
+#[must_use]
+pub fn resolve_against(base: &Path, location: &Path) -> PathBuf {
     let absolute = if location.is_absolute() {
         location.to_path_buf()
+    } else if base.is_absolute() {
+        base.join(location)
     } else {
-        // A working directory that cannot be read is not a reason to panic in
-        // a library; the root is what `resolve` would produce from an empty
-        // one.
-        std::env::current_dir()
-            .unwrap_or_else(|_| PathBuf::from("/"))
-            .join(location)
+        resolve(base).join(location)
     };
     let mut out = PathBuf::new();
     for component in absolute.components() {

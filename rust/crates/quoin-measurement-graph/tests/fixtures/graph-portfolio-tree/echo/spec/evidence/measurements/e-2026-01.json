@@ -1,0 +1,59 @@
+{
+  "collectionId": "e-2026-01",
+  "configDigest": "sha256:cfg-one",
+  "corpusRevision": "corpus-one",
+  "environment": {
+    "ci": "true"
+  },
+  "observations": [
+    {
+      "definitionVersion": "gq-1",
+      "dimensions": {
+        "dimension": "overall",
+        "key": "all",
+        "measure": "precision"
+      },
+      "metric": "graph_quality",
+      "planId": "gp-echo",
+      "population": {
+        "complete": true,
+        "examined": 10,
+        "identity": {
+          "corpus": "echo"
+        },
+        "matched": 5
+      },
+      "shape": "ratio",
+      "state": "measured",
+      "unit": "ratio",
+      "value": 0.5
+    }
+  ],
+  "rawEvidence": {
+    "producer": {
+      "observation_id": "sha256:producer-echo-one",
+      "producer": {
+        "extractor_revision": "v1.2.3",
+        "scorer_version": "v0.4.0"
+      },
+      "raw_scorer_output": {
+        "digest": "sha256:35977f285a45f1c57dbb3b437bb61c3ac788011232225eec65d0bdb6a9309c47",
+        "path": "out/scores.json"
+      }
+    },
+    "scorer": {
+      "bytesBase64": "eyJzY29yZXMiOltdfQ==",
+      "digest": "sha256:8921d092c89a885cc0f7b86bb93f21dcea3b45e31c8c0bb021e1cbf2ff534b2e",
+      "mediaType": "application/json"
+    }
+  },
+  "schemaVersion": 1,
+  "scope": {
+    "corpus": "spec"
+  },
+  "sourceRevision": "rev-one",
+  "subject": "quoin",
+  "timestamp": "2026-01-05T00:00:00.000Z",
+  "toolIdentity": "quoin",
+  "toolVersion": "1.0.0"
+}

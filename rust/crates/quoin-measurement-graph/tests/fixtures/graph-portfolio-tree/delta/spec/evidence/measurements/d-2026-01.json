@@ -1,0 +1,54 @@
+{
+  "collectionId": "d-2026-01",
+  "configDigest": "sha256:cfg-one",
+  "corpusRevision": "corpus-one",
+  "environment": {
+    "ci": "true"
+  },
+  "observations": [
+    {
+      "definitionVersion": "gq-1",
+      "dimensions": {
+        "dimension": "overall",
+        "key": "all",
+        "measure": "precision"
+      },
+      "metric": "graph_quality",
+      "planId": "gp-delta",
+      "population": {
+        "complete": true,
+        "examined": 10,
+        "identity": {
+          "corpus": "delta"
+        },
+        "matched": 5
+      },
+      "shape": "ratio",
+      "state": "measured",
+      "unit": "ratio",
+      "value": 0.5
+    }
+  ],
+  "rawEvidence": {
+    "producer": {
+      "observation_id": "sha256:producer-delta",
+      "producer": {
+        "extractor_revision": "v1.2.3",
+        "scorer_version": "v0.4.0"
+      },
+      "raw_scorer_output": {
+        "digest": "sha256:35977f285a45f1c57dbb3b437bb61c3ac788011232225eec65d0bdb6a9309c47",
+        "path": "out/scores.json"
+      }
+    }
+  },
+  "schemaVersion": 1,
+  "scope": {
+    "corpus": "spec"
+  },
+  "sourceRevision": "rev-one",
+  "subject": "quoin",
+  "timestamp": "2026-01-25T00:00:00.000Z",
+  "toolIdentity": "quoin",
+  "toolVersion": "1.0.0"
+}

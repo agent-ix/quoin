@@ -48,7 +48,7 @@ use crate::types::plan::MeasurementPlan;
 ///
 /// [`MeasurementErrorCode::Store`] for a value no canonical JSON writer can
 /// spell — a non-finite number, which no wire view here can hold.
-pub(crate) fn canonical_json_of<T: Serialize>(value: &T) -> Result<String, MeasurementError> {
+pub fn canonical_json_of<T: Serialize>(value: &T) -> Result<String, MeasurementError> {
     let analysis = serde_json::to_value(value).map_err(|error| {
         MeasurementError::new(
             MeasurementErrorCode::Store,
@@ -59,9 +59,13 @@ pub(crate) fn canonical_json_of<T: Serialize>(value: &T) -> Result<String, Measu
 }
 
 /// A `MeasurementPlan` as `plans.ts:69-80` returns it.
+///
+/// `pub` because the governed graph portfolio (`quoin-measurement-graph`,
+/// quoin#476) states the same plan under its own `graphQuality.plan` member.
+/// Two spellings of one stored object would be two chances to drop a member.
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub(crate) struct PlanWire<'a> {
+pub struct PlanWire<'a> {
     id: &'a str,
     title: &'a str,
     status: &'a str,
@@ -79,7 +83,8 @@ pub(crate) struct PlanWire<'a> {
 
 impl<'a> PlanWire<'a> {
     /// The wire view of one plan.
-    pub(crate) fn of(plan: &'a MeasurementPlan) -> Self {
+    #[must_use]
+    pub fn of(plan: &'a MeasurementPlan) -> Self {
         Self {
             id: plan.id.as_str(),
             title: plan.title.as_str(),

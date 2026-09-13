@@ -26,9 +26,14 @@
 //! [`compact_bytes`] is the identity form `graphQualityObservationId` digests.
 //! See [`crate::quality::identity`] for the one measured difference between it
 //! and the retained spelling.
+//!
+//! Each has a `stored_*` twin for a value that is already a
+//! [`quoin_store::JsonValue`] — the governed graph portfolio (quoin#476) holds
+//! opaque analyses in that form — so the bridge is crossed only where a
+//! crossing is actually needed.
 
 use quoin_measurement::json_bridge;
-use quoin_store::{canonical_bytes, canonical_json};
+use quoin_store::{JsonValue, canonical_bytes, canonical_json, canonical_json_bytes};
 use serde_json::Value;
 
 use crate::error::{GraphAdapterError, GraphAdapterErrorCode, Result};
@@ -45,7 +50,41 @@ fn store_value(value: &Value) -> Result<quoin_store::JsonValue> {
 /// [`GraphAdapterErrorCode::Store`] for a value the store cannot hold, which is
 /// a number no IEEE-754 double can express.
 pub fn pretty_text(value: &Value) -> Result<String> {
-    Ok(canonical_json(&store_value(value)?)?)
+    stored_pretty_text(&store_value(value)?)
+}
+
+/// [`pretty_text`] for a value that is already the store's.
+///
+/// The governed graph portfolio (quoin#476) holds opaque FR-062 analyses and
+/// producer-defined population identities as [`JsonValue`] and never needs
+/// them as a [`Value`], so it reads this rather than crossing the bridge twice
+/// to reach the same writer.
+///
+/// # Errors
+///
+/// As [`pretty_text`].
+pub fn stored_pretty_text(value: &JsonValue) -> Result<String> {
+    Ok(canonical_json(value)?)
+}
+
+/// [`pretty_text_trimmed`] for a value that is already the store's.
+///
+/// # Errors
+///
+/// As [`pretty_text`].
+pub fn stored_pretty_text_trimmed(value: &JsonValue) -> Result<String> {
+    Ok(stored_pretty_text(value)?.trim_end().to_owned())
+}
+
+/// The evidence store's pretty canonical bytes, for a value already the
+/// store's. `canonicalGraphPortfolioJson` (`graph-portfolio.ts:326-329`) is
+/// this and nothing else.
+///
+/// # Errors
+///
+/// As [`pretty_text`].
+pub fn stored_pretty_bytes(value: &JsonValue) -> Result<Vec<u8>> {
+    Ok(canonical_json_bytes(value)?)
 }
 
 /// The same text with its trailing newline removed, as `.trimEnd()` leaves it.

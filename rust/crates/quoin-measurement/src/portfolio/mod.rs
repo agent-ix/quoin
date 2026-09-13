@@ -21,7 +21,7 @@
 //! evidence for.
 
 pub mod build;
-pub(crate) mod location;
+pub mod location;
 pub mod render;
 pub mod render_json;
 pub mod types;

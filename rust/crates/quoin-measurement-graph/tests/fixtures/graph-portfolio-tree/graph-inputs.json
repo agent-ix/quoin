@@ -1,0 +1,90 @@
+{
+  "graphs": {
+    "alpha": {
+      "availability": "available",
+      "churn": {
+        "changed": [
+          "src/a.rs",
+          "src/b.rs"
+        ],
+        "windowDays": 30
+      },
+      "fanOut": {
+        "edges": 30,
+        "nodes": 12
+      },
+      "path": "graph/export.json",
+      "premises": {
+        "format": "quire-assurance",
+        "formatVersion": 1
+      }
+    },
+    "bravo": {
+      "availability": "missing",
+      "path": "graph/export.json",
+      "reason": "no graph export, premises, or audit mapping was supplied"
+    },
+    "charlie": {
+      "availability": "unknown",
+      "reason": "graph export was not inspected"
+    },
+    "delta": {
+      "availability": "not_applicable",
+      "reason": "this repository declares no structural graph"
+    },
+    "echo": {
+      "availability": "unreadable",
+      "path": "graph/export.json",
+      "reason": "graph/export.json: unexpected end of JSON input"
+    },
+    "foxtrot": {
+      "availability": "available",
+      "changeImpact": [
+        {
+          "impacted": [
+            "src/measurement"
+          ],
+          "seed": "FR-067"
+        }
+      ],
+      "churn": {
+        "changed": [],
+        "windowDays": 7
+      },
+      "fanOut": {
+        "edges": 2,
+        "nodes": 3
+      },
+      "path": "graph/export.json",
+      "premises": {
+        "format": "quire-assurance",
+        "formatVersion": 1
+      }
+    }
+  },
+  "note": "Injected, opaque FR-062 results and injected collection refusals. graph-portfolio.ts neither reads nor interprets either; this file is read identically by the oracle and by tc_476_graph_portfolio.rs.",
+  "refusals": {
+    "alpha": [
+      {
+        "availability": "missing",
+        "error": "spec/evidence/measurements/a-gone.json: no such file",
+        "path": "spec/evidence/measurements/a-gone.json"
+      }
+    ],
+    "foxtrot": [
+      {
+        "availability": "unreadable",
+        "error": "spec/evidence/measurements/f-broken.json: unexpected token",
+        "path": "spec/evidence/measurements/f-broken.json"
+      }
+    ]
+  },
+  "repositories": [
+    "alpha",
+    "bravo",
+    "charlie",
+    "delta",
+    "echo",
+    "foxtrot"
+  ]
+}
