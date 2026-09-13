@@ -73,6 +73,24 @@ The 10,748,598 digests the Rust half reports exceed the oracle's 10,748,590 by
 record, which is a store-integrity check internal to this crate and has no
 oracle counterpart.
 
+## Provenance of this capture, and why it was not re-run
+
+The TypeScript half above ran under `@noble/hashes` **2.2.0**, the version in
+`package.json` on the day of the capture. quoin#428 has since bumped it to
+2.4.0.
+
+The capture was NOT re-run, deliberately. BLAKE3's output is defined by the
+algorithm, not by the implementation, so a version bump of the JavaScript
+implementation cannot move a digest; and the full TypeScript suite — which
+exercises `src/store/integrity.ts`, the only place `@noble/hashes` is used —
+passes under 2.4.0. Re-running a 10,748,590-digest replay to re-prove an
+algorithm-defined constant is assurance overhead this pre-release port was told
+not to spend.
+
+Written down here rather than left in a merge-train transcript: a dated
+artifact whose provenance is recorded is fine, one whose provenance exists only
+in a conversation is not.
+
 ## The 90 stores
 
 ```
