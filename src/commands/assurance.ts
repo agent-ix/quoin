@@ -11,12 +11,9 @@ import {
   buildCase,
   renderAuthoredArgument,
   renderCase,
-} from "../assurance/index.js";
-import type {
-  DischargeReport,
-  SufficiencyDecision,
-} from "../assurance/index.js";
-import { readBundleFrontmatter } from "../completeness/index.js";
+} from "../core/assurance.js";
+import { readBundleFrontmatter } from "../core/completeness.js";
+import type { DischargeReport } from "../core/types.js";
 import {
   latestRun,
   latestScan,
@@ -134,7 +131,7 @@ that quietly narrows to what it can prove reads exactly like a complete one.`;
       try {
         const view = buildAuthoredArgumentView({
           argument: matches[0].frontmatter,
-          decisions: decisions as SufficiencyDecision[],
+          decisions,
           asOf: flags["as-of"],
           ...(discharge ? { discharge } : {}),
         });
@@ -196,10 +193,15 @@ that quietly narrows to what it can prove reads exactly like a complete one.`;
       assessTrust,
     );
     const assurance = buildCase({
+      // The whole `BundleDocument`, not its frontmatter: `build_case` reads
+      // `doc.frontmatter.id` and `doc.frontmatter.relationships`, so the
+      // envelope is part of the shape it expects. Sending the projection
+      // instead would produce an EMPTY case — every id unreadable — which is
+      // indistinguishable from a bundle that declares no claims.
       documents: bundle.documents,
       obligations,
       findings: report.findings,
-      claimTypes: flags["claim-type"],
+      ...(flags["claim-type"] ? { claim_types: flags["claim-type"] } : {}),
       unreadable: [
         ...bundle.unreadable,
         ...trustUnreadable.map((path) => ({
@@ -207,8 +209,8 @@ that quietly narrows to what it can prove reads exactly like a complete one.`;
           reason: "trust decision is unreadable or invalid",
         })),
       ],
-      producerTrust,
-      evidenceIndependence: report.independence,
+      producer_trust: producerTrust,
+      evidence_independence: report.independence,
     });
 
     this.log(

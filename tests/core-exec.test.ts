@@ -310,6 +310,36 @@ describe("runCoreAllowFailure — non-zero but valid", () => {
     expect(() => runCoreAllowFailure("core.ping; rm -rf /", {})).toThrow(
       /spelled <domain>\.<op>/,
     );
+    // Shell metacharacters, one per class, so widening the charset for `_`
+    // cannot quietly widen it for anything that matters.
+    for (const hostile of [
+      "core.ping&whoami",
+      "core.ping|cat",
+      "core.ping $(id)",
+      "core.ping`id`",
+      "../core.ping",
+    ]) {
+      expect(() => runCoreAllowFailure(hostile, {})).toThrow(
+        /spelled <domain>\.<op>/,
+      );
+    }
+  });
+
+  it("accepts the underscored operation names the boundary actually has", () => {
+    // `assurance.build_case` and `completeness.read_frontmatter` are real
+    // entries in `OPERATIONS`. The guard rejected every one of them until
+    // quoin#445, so this asserts the guard reaches the binary rather than
+    // failing before argv — the digest check below is the first thing PAST it.
+    process.env.QUOIN_CORE = "/nonexistent/quoin-core";
+    for (const op of [
+      "assurance.build_case",
+      "completeness.read_frontmatter",
+      "assurance.render_authored_argument",
+    ]) {
+      expect(() => runCoreAllowFailure(op, {})).toThrow(
+        /QUOIN_CORE is not an executable file/,
+      );
+    }
   });
 
   it("accepts every operation the boundary actually registers", () => {

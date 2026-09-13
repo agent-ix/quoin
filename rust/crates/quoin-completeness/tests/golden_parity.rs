@@ -23,7 +23,6 @@
 //! criterion says so.
 
 use std::collections::BTreeMap;
-use std::path::Path;
 
 use quoin_completeness::{
     ArtifactTypeName, AssessOptions, CompletenessFinding, DocumentClaims, FindingKind,
@@ -33,30 +32,10 @@ use quoin_completeness::{
 };
 use serde_json::Value;
 
-fn golden(name: &str) -> Value {
-    let path = Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("tests/goldens")
-        .join(name);
-    let text = match std::fs::read_to_string(&path) {
-        Ok(text) => text,
-        Err(error) => panic!("golden {name} must be readable: {error}"),
-    };
-    match serde_json::from_str(&text) {
-        Ok(value) => value,
-        Err(error) => panic!("golden {name} must be JSON: {error}"),
-    }
-}
+#[path = "common/corpus.rs"]
+mod corpus;
 
-fn array<'a>(value: &'a Value, key: &str) -> &'a Vec<Value> {
-    match value.get(key).and_then(Value::as_array) {
-        Some(items) => items,
-        None => panic!("golden has no array at {key}"),
-    }
-}
-
-fn text<'a>(value: &'a Value, key: &str) -> &'a str {
-    value.get(key).and_then(Value::as_str).unwrap_or_default()
-}
+use crate::corpus::{array, golden, materialize, text};
 
 fn strings(value: &Value, key: &str) -> Vec<String> {
     value
@@ -106,24 +85,6 @@ fn golden_finding_identity(value: &Value) -> (String, String, String, String) {
     )
 }
 
-/// Rebuild a file tree from a golden's `{ path: contents }` map.
-fn materialize(root: &Path, files: &Value) {
-    let Some(map) = files.as_object() else {
-        return;
-    };
-    for (relative, body) in map {
-        let path = root.join(relative);
-        if let Some(parent) = path.parent()
-            && let Err(error) = std::fs::create_dir_all(parent)
-        {
-            panic!("mkdir {}: {error}", parent.display());
-        }
-        if let Err(error) = std::fs::write(&path, body.as_str().unwrap_or_default()) {
-            panic!("write {}: {error}", path.display());
-        }
-    }
-}
-
 /// Trace: FR-037
 /// Provenance: agent-ix/quoin#378
 #[test]
@@ -150,7 +111,15 @@ fn tc_378_300_written_reason_matches_the_oracle() {
     assert!(rejected >= 8, "only {rejected} corpus cases are refused");
 }
 
-/// Trace: FR-037
+/// The four verdict criteria the deleted `tests/completeness.test.ts` carried:
+/// an unclaimed value is an unowned gap at `medium` (AC-3), an exclusion with
+/// no written reason is `high` (AC-4), an exclusion naming a value outside the
+/// vocabulary excuses nothing (AC-5), and a row with a real reason accepts the
+/// exclusion (AC-6, the `excused` rollup). Severity is part of
+/// `finding_identity`, so the grid pins the rank and not only the kind, and the
+/// `kinds_seen` floor below refuses a corpus that stopped producing one of them.
+///
+/// Trace: FR-037-AC-3, FR-037-AC-4, FR-037-AC-5, FR-037-AC-6
 /// Provenance: agent-ix/quoin#378
 #[test]
 fn tc_378_301_assess_vocabulary_matches_the_oracle() {

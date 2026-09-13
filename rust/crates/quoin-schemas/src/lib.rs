@@ -80,11 +80,11 @@ pub const BOUNDARY_SCHEMA_ID: &str = "https://agent-ix.dev/quoin/core-boundary-v
 // --- The two checked-in digests. `make types` rewrites both; nothing else may.
 /// SHA-256 of the canonical JSON of [`boundary_schema`] at generation time.
 pub const SOURCE_SCHEMA_SHA256: &str =
-    "9d6a775327486558c05ed7e5d9e120e4c29584505e0ba6820e910b29297b54ee";
+    "497d00461f8d66ceecd99a7738b0b9b68b8d0220cc50533c6e88c56055508086";
 
 /// SHA-256 of the committed `src/core/types.ts`.
 pub const GENERATED_TYPES_SHA256: &str =
-    "2cb3796c8a9fe105175ef67340d6c5edb9beefdee366bce2f34db9fa1251b978";
+    "2eca724205094f831e71ac55846f0dddefcfdb1f1f13910a53eb622a4faac39e";
 
 /// The JSON Schema of every type that crosses the `quoin-core` boundary.
 ///
@@ -109,6 +109,18 @@ pub fn boundary_schema() -> Value {
     let _ = generator.subschema_for::<quoin_core::ops::modules::RemovePayload>();
     let _ = generator.subschema_for::<quoin_core::ops::modules::EnsureDefaultsRequest>();
     let _ = generator.subschema_for::<quoin_core::ops::modules::EnsureDefaultsPayload>();
+    let _ = generator.subschema_for::<quoin_core::ops::assurance::RenderAuthoredArgumentPayload>();
+    let _ = generator.subschema_for::<quoin_core::ops::assurance::RenderDischargePayload>();
+    let _ = generator.subschema_for::<quoin_assurance::BuildAuthoredArgumentRequest>();
+    let _ = generator.subschema_for::<quoin_assurance::AuthoredArgumentView>();
+    let _ = generator.subschema_for::<quoin_assurance::BuildDischargeRequest>();
+    let _ = generator.subschema_for::<quoin_assurance::DischargeReport>();
+    let _ = generator.subschema_for::<quoin_core::ops::completeness::SchemaRefsRequest>();
+    let _ = generator.subschema_for::<quoin_core::ops::completeness::SchemaRefsPayload>();
+    let _ = generator.subschema_for::<quoin_core::ops::completeness::ReadFrontmatterRequest>();
+    let _ = generator.subschema_for::<quoin_completeness::FrontmatterRead>();
+    let _ = generator.subschema_for::<quoin_completeness::AssessInput>();
+    let _ = generator.subschema_for::<quoin_completeness::BundleAssessment>();
     let _ = generator.subschema_for::<quoin_core::ops::validators::RunRequest>();
     let _ = generator.subschema_for::<quoin_core::ops::validators::RunPayload>();
     json!({
@@ -375,12 +387,50 @@ mod tests {
         assert_eq!(
             names,
             [
+                "ArgumentStatus",
+                "ArgumentSummary",
+                "AssessInput",
+                "AssumptionStatus",
+                "AssumptionView",
+                "AuthoredArgumentView",
+                "BuildAuthoredArgumentRequest",
+                "BuildDischargeRequest",
+                "BundleAssessment",
+                "BundleDocument",
+                "ChallengeStatus",
+                "ChallengeView",
+                "ChallengeViewStatus",
+                "ClauseBinding",
+                "ClauseBindingOutcome",
+                "ClauseBindingReason",
+                "ClauseBindingReport",
+                "ClauseBindingSchemaVersion",
+                "ClauseDischarge",
+                "ClauseForce",
+                "ClauseSetKey",
                 "CommitSha",
+                "CompletenessFinding",
+                "CompletenessFindingKind",
+                "CriterionView",
+                "DecisionState",
                 "Diagnostic",
+                "DirectDischargeFact",
+                "DischargeAttestation",
+                "DischargeBinding",
+                "DischargeFact",
+                "DischargeReport",
+                "DischargeSchemaVersion",
+                "DischargeState",
+                "DispositionDecision",
+                "DispositionFact",
+                "DocumentSource",
                 "EmptyGateFinding",
+                "EngineProvenance",
                 "EnsureDefaultsPayload",
                 "EnsureDefaultsRequest",
+                "FactKind",
                 "FindingKind",
+                "FrontmatterRead",
                 "InstallPayload",
                 "InstallRequest",
                 "InstalledModule",
@@ -389,19 +439,44 @@ mod tests {
                 "ListRequest",
                 "Mode",
                 "ModuleName",
+                "ModuleSource",
                 "ObligationId",
+                "Participant",
                 "PingPayload",
                 "PingRequest",
+                "ReadFrontmatterRequest",
+                "ReasoningView",
+                "Relationship",
+                "RelationshipType",
                 "RemovePayload",
                 "RemoveRequest",
+                "RenderAuthoredArgumentPayload",
+                "RenderDischargePayload",
                 "RepoPath",
                 "ResolveOrgPayload",
                 "ResolveOrgRequest",
                 "RunPayload",
                 "RunRequest",
+                "SchemaRefsPayload",
+                "SchemaRefsRequest",
+                "SchemaSource",
                 "SemanticPin",
+                "Severity",
                 "Source",
+                "SufficiencyDecision",
+                "TopClaimView",
+                "UnreadableDocument",
+                "UnresolvedDeclaration",
                 "UnresolvedOrgMessagePayload",
+                "UnusedDecision",
+                "UnusedDischargeFact",
+                "UnusedFactReason",
+                "Verdict",
+                "ViewSchemaVersion",
+                "ViewStatus",
+                "VocabularyName",
+                "VocabularyRollup",
+                "VocabularyValue",
             ]
         );
     }

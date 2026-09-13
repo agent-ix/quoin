@@ -6,8 +6,7 @@ import { QuoinCommand } from "../base.js";
 import {
   buildDischargeReport,
   renderDischargeReport,
-  type DischargeFact,
-} from "../assurance/index.js";
+} from "../core/assurance.js";
 import { parseClauseBinding } from "../quire/index.js";
 
 export default class Discharge extends QuoinCommand {
@@ -58,7 +57,7 @@ outside the binding partition, and no aggregate score is emitted.`;
     try {
       const report = buildDischargeReport({
         binding: parsedBinding.value,
-        facts: facts as DischargeFact[],
+        facts,
         asOf: flags["as-of"],
       });
       this.log(

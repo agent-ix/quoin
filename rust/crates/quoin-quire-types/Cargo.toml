@@ -21,6 +21,18 @@ workspace = true
 [dependencies]
 serde = { workspace = true }
 
+# Optional, and enabled by `quoin-schemas` rather than by this crate: the
+# derives are what let the SCHEMA be read off the canonical type, but nothing
+# on the boundary's own execution path needs them, so the shipped binary does
+# not carry the generator's dependency tree.
+schemars = { workspace = true, optional = true }
+
 [dev-dependencies]
 serde_json = { workspace = true }
 sha2 = { workspace = true }
+
+[features]
+# FR-097. `quoin-schemas` turns this on to read the wire shapes off the types
+# that actually deserialise them. No `default`: a feature that is on by default
+# is a feature nobody ever proves works when it is off.
+schema = ["dep:schemars"]

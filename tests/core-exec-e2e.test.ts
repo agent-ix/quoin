@@ -450,6 +450,13 @@ describe.skipIf(!available)(
       ".github/actions/",
     ];
 
+    // One `quoin-core` spawn per candidate path, and the candidate set is the
+    // cross product of NAMES and DIRECTORIES — so the wall clock scales with
+    // the classifier surface this test exists to cover, not with the machine.
+    // It needs ~8s against vitest's 5s default and timed out in `make rust-e2e`
+    // on this tree (agent-ix/quoin#447). The budget is stated rather than
+    // inherited; every assertion below is unchanged, and the population floor
+    // still refuses a run that swept nothing.
     it("sends every path the far side would classify", () => {
       const root = mkdtempSync(join(tmpdir(), "quoin-superset-"));
       try {
@@ -476,6 +483,6 @@ describe.skipIf(!available)(
       } finally {
         rmSync(root, { force: true, recursive: true });
       }
-    });
+    }, 60_000);
   },
 );

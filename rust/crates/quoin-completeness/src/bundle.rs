@@ -26,8 +26,28 @@ use serde_json::Value;
 use crate::assess::DocumentClaims;
 use crate::declarations::VocabularyDeclaration;
 
+/// One document as the CALLER read it: a bundle-relative path and raw bytes.
+///
+/// The boundary's reason for existing (quoin#445). `quoin-core`'s library half
+/// is audited as a `ReusableLibrary` by
+/// `quoin-core/tests/tc_library_containment.rs`, so an operation that takes a
+/// path and reads the disk fails the gate. The walk and the reads stay in the
+/// command shell — which is where a CLI's I/O belongs — and the decision
+/// crosses the boundary as bytes.
+#[derive(Debug, Clone, PartialEq, Eq, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+pub struct DocumentSource {
+    /// Path, relative to the bundle root, with `/` separators.
+    pub path: String,
+    /// The whole file, as text.
+    pub raw: String,
+}
+
 /// A document whose frontmatter could not be read, and why.
-#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct UnreadableDocument {
     /// Path, relative to the bundle root, with `/` separators.
     pub path: String,
@@ -36,7 +56,8 @@ pub struct UnreadableDocument {
 }
 
 /// One document's frontmatter and body, as read from the bundle.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct BundleDocument {
     /// Path, relative to the bundle root, with `/` separators.
     pub path: String,
@@ -47,7 +68,8 @@ pub struct BundleDocument {
 }
 
 /// Every document under a bundle root that carries parseable frontmatter.
-#[derive(Debug, Clone, PartialEq, Default)]
+#[derive(Debug, Clone, PartialEq, Default, serde::Serialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct FrontmatterRead {
     /// The documents.
     pub documents: Vec<BundleDocument>,
@@ -116,50 +138,87 @@ pub fn read_bundle_frontmatter(bundle_root: &Path) -> FrontmatterRead {
             .unwrap_or(&path)
             .to_string_lossy()
             .replace('\\', "/");
-        let raw = match std::fs::read_to_string(&path) {
-            Ok(raw) => raw,
-            Err(cause) => {
-                read.unreadable.push(UnreadableDocument {
+        match std::fs::read_to_string(&path) {
+            // Absorbed inside the walk, not collected and parsed afterwards: an
+            // OS read failure and a YAML failure are both `unreadable` entries,
+            // and the order they are reported in is the walk order. Two passes
+            // would group them by kind instead, which is a different list.
+            Ok(raw) => absorb(
+                &mut read,
+                &DocumentSource {
                     path: relative,
-                    reason: cause.to_string(),
-                });
-                continue;
-            }
-        };
-        // No frontmatter is not an error: an index or a README declares nothing.
-        let Some((yaml, body)) = split_frontmatter(&raw) else {
-            continue;
-        };
-        let parsed: Value = match quoin_yaml::from_str(yaml) {
-            Ok(value) => value,
-            Err(cause) => {
-                // Reported, not skipped silently: a document whose frontmatter
-                // does not parse may be the one carrying the exclusion, and
-                // dropping it would turn a broken declaration into a clean
-                // bundle.
-                read.unreadable.push(UnreadableDocument {
-                    path: relative,
-                    reason: cause.to_string(),
-                });
-                continue;
-            }
-        };
-        // `parseYaml(...) ?? {}` — an empty block yields null, which the
-        // TypeScript coerces to an empty object. A scalar or sequence is neither
-        // and contributes nothing.
-        let frontmatter = match parsed {
-            Value::Null => serde_json::Map::new(),
-            Value::Object(map) => map,
-            _ => continue,
-        };
-        read.documents.push(BundleDocument {
-            path: relative,
-            frontmatter,
-            body: body.to_owned(),
-        });
+                    raw,
+                },
+            ),
+            Err(cause) => read.unreadable.push(UnreadableDocument {
+                path: relative,
+                reason: cause.to_string(),
+            }),
+        }
     }
 
     read
+}
+
+/// Parse frontmatter out of documents the CALLER read.
+///
+/// The decidable half of [`read_bundle_frontmatter`], split out so it can cross
+/// the `quoin-core` boundary without the library half acquiring a filesystem
+/// (quoin#445). The filesystem shell above is the only other caller, so there
+/// is one parser and not two.
+///
+/// `unreadable` is what the CALLER could not open. It leads the list because
+/// the filesystem shell interleaves both kinds in walk order and a wire caller
+/// cannot express that interleaving — it can only send what it managed to read.
+/// Dropping it instead would turn a broken bundle into a clean one.
+#[must_use]
+pub fn frontmatter_from_sources(
+    documents: &[DocumentSource],
+    unreadable: &[UnreadableDocument],
+) -> FrontmatterRead {
+    let mut read = FrontmatterRead {
+        documents: Vec::new(),
+        unreadable: unreadable.to_vec(),
+    };
+    for source in documents {
+        absorb(&mut read, source);
+    }
+    read
+}
+
+/// Parse one document into `read`, as either a `BundleDocument` or an
+/// `UnreadableDocument`, or as neither when it carries no frontmatter at all.
+fn absorb(read: &mut FrontmatterRead, source: &DocumentSource) {
+    // No frontmatter is not an error: an index or a README declares nothing.
+    let Some((yaml, body)) = split_frontmatter(&source.raw) else {
+        return;
+    };
+    let parsed: Value = match quoin_yaml::from_str(yaml) {
+        Ok(value) => value,
+        Err(cause) => {
+            // Reported, not skipped silently: a document whose frontmatter does
+            // not parse may be the one carrying the exclusion, and dropping it
+            // would turn a broken declaration into a clean bundle.
+            read.unreadable.push(UnreadableDocument {
+                path: source.path.clone(),
+                reason: cause.to_string(),
+            });
+            return;
+        }
+    };
+    // `parseYaml(...) ?? {}` — an empty block yields null, which the TypeScript
+    // coerces to an empty object. A scalar or sequence is neither and
+    // contributes nothing.
+    let frontmatter = match parsed {
+        Value::Null => serde_json::Map::new(),
+        Value::Object(map) => map,
+        _ => return,
+    };
+    read.documents.push(BundleDocument {
+        path: source.path.clone(),
+        frontmatter,
+        body: body.to_owned(),
+    });
 }
 
 /// Project already-read documents onto one declaration.
@@ -211,15 +270,28 @@ pub fn read_bundle_claims(bundle_root: &Path, declaration: &VocabularyDeclaratio
 
 /// Every `*.md` under `root`, recursively, sorted by relative path.
 ///
-/// The TypeScript uses `readdirSync(root, { recursive: true })` and sorts the
-/// **relative** entries, which is not the same order as sorting absolute paths
-/// per directory — `a/b.md` sorts before `a-b.md` one way and after it the
-/// other. Sorting relative paths keeps the reported order identical.
+/// The TypeScript recurses per directory and sorts the **relative** entries,
+/// which is not the same order as sorting absolute paths per directory —
+/// `a/b.md` sorts before `a-b.md` one way and after it the other. Sorting
+/// relative paths keeps the reported order identical.
 fn markdown_under(root: &Path) -> Vec<PathBuf> {
     let mut relative: Vec<String> = Vec::new();
     collect(root, Path::new(""), &mut relative);
     relative.sort();
     relative.into_iter().map(|entry| root.join(entry)).collect()
+}
+
+/// Is this relative path a markdown document by NAME?
+///
+/// Case-sensitive on purpose: the TypeScript filters `entry.endsWith(".md")`,
+/// and a case-insensitive match here would read documents the oracle never saw.
+#[allow(
+    clippy::case_sensitive_file_extension_comparisons,
+    reason = "the oracle's `endsWith('.md')` is case-sensitive; matching case-insensitively here \
+              would admit documents the shell never puts on the wire"
+)]
+fn is_markdown_name(relative: &str) -> bool {
+    relative.ends_with(".md")
 }
 
 fn collect(root: &Path, prefix: &Path, out: &mut Vec<String>) {
@@ -229,20 +301,48 @@ fn collect(root: &Path, prefix: &Path, out: &mut Vec<String>) {
     for entry in entries.flatten() {
         let name = entry.file_name();
         let relative = prefix.join(&name);
-        match entry.file_type() {
-            Ok(file_type) if file_type.is_dir() => collect(root, &relative, out),
-            Ok(_) => {
-                let text = relative.to_string_lossy().replace('\\', "/");
-                // Case-sensitive on purpose: the TypeScript filters
-                // `entry.endsWith(".md")`, and a case-insensitive match here
-                // would read documents the oracle never saw.
-                #[allow(clippy::case_sensitive_file_extension_comparisons)]
-                let is_markdown = text.ends_with(".md");
-                if is_markdown {
-                    out.push(text);
-                }
-            }
-            Err(_) => {}
+        let Ok(file_type) = entry.file_type() else {
+            continue;
+        };
+        // `read_dir` reports the LINK's own type, never its target's — so a
+        // real directory is descended and a symlinked one is not, which is what
+        // keeps the walk from following a cycle out of the bundle.
+        if file_type.is_dir() {
+            collect(root, &relative, out);
+            continue;
+        }
+        let text = relative.to_string_lossy().replace('\\', "/");
+        if !is_markdown_name(&text) {
+            continue;
+        }
+        // A symlink is a document exactly when it RESOLVES to a file. That is
+        // the deliberate decision at this seam, and the two sides state it
+        // identically (`src/core/snapshot.ts` asks `statSync(...).isFile()`):
+        //
+        // - resolving to a FILE: a document. `spec/FR-042.md` symlinked into a
+        //   shared spec directory is the normal monorepo layout, and dropping
+        //   it loses that document's claims from the verdict entirely — the
+        //   value it owned is reported `unowned` and a finding appears that a
+        //   direct disk read never produces.
+        // - resolving to a DIRECTORY: not a document, and not descended. A
+        //   directory may be named `notes.md`; opening it invents an `EISDIR`
+        //   entry for a file the bundle does not hold.
+        // - resolving to NOTHING (a broken link): not a document. There are no
+        //   bytes to read, and reporting it `unreadable` would be a document
+        //   the tree does not contain.
+        //
+        // This differs from `quoin-validators`' repository walk, which drops
+        // symlinks outright — that walk scans an arbitrary repository for build
+        // wiring, where a link is far likelier to be an escape than content. A
+        // completeness bundle is a curated document set whose links are the
+        // point.
+        let resolved_to_file = if file_type.is_symlink() {
+            std::fs::metadata(root.join(&relative)).is_ok_and(|meta| meta.is_file())
+        } else {
+            file_type.is_file()
+        };
+        if resolved_to_file {
+            out.push(text);
         }
     }
 }

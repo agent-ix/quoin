@@ -23,8 +23,19 @@ use crate::declarations::VocabularyDeclaration;
 use crate::ids::{VocabularyName, VocabularyValue};
 
 /// What kind of gap a finding records.
+///
+/// The schema name is spelled out rather than taken from the Rust name.
+/// `quoin-validators` owns a `FindingKind` too, and `schemars` resolves a
+/// collision by appending a digit to whichever type it generated SECOND — so
+/// the bare name would belong to whichever crate `boundary_schema()` happened
+/// to register first, and reordering those calls would silently re-point an
+/// exported TypeScript type at the other crate's union. `FindingKind2` says
+/// nothing about which domain it describes; this says it. `tc_1617` pins the
+/// name to this union's members so a future collision cannot take it back.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, serde::Serialize)]
 #[serde(rename_all = "kebab-case")]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[cfg_attr(feature = "schema", schemars(rename = "CompletenessFindingKind"))]
 pub enum FindingKind {
     /// No document claims the value and nothing excuses it.
     Unowned,
@@ -55,6 +66,7 @@ impl FindingKind {
 /// have prompted the work.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, serde::Serialize)]
 #[serde(rename_all = "lowercase")]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub enum Severity {
     /// An admitted gap.
     Medium,
@@ -75,6 +87,7 @@ impl Severity {
 
 /// One gap in declared-vocabulary coverage.
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct CompletenessFinding {
     /// Declaration this concerns, e.g. `quality-characteristics`.
     pub vocabulary: VocabularyName,
@@ -93,6 +106,7 @@ pub struct CompletenessFinding {
 
 /// The per-vocabulary tally.
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct VocabularyRollup {
     /// Which declaration.
     pub vocabulary: VocabularyName,
@@ -127,6 +141,7 @@ pub struct DocumentClaims {
 /// the criterion written to forbid it caught it.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, serde::Serialize)]
 #[serde(rename_all = "UPPERCASE")]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub enum Verdict {
     /// Checked, nothing found.
     Pass,
@@ -375,7 +390,7 @@ pub fn verdict_for(
 mod tests {
     use super::*;
 
-    /// Trace: FR-037
+    /// Trace: FR-037-AC-7
     #[test]
     fn tc_378_210_non_answers_are_rejected_and_real_sentences_accepted() {
         for non_answer in [
@@ -390,7 +405,7 @@ mod tests {
         );
     }
 
-    /// Trace: FR-037
+    /// Trace: FR-037-AC-7
     #[test]
     fn tc_378_211_a_mention_in_prose_is_not_a_justification() {
         assert_eq!(
@@ -414,7 +429,7 @@ mod tests {
         assert_eq!(verdict_for(&[high], true, 0), Verdict::Unchecked);
     }
 
-    /// Trace: FR-037
+    /// Trace: FR-037-AC-8
     #[test]
     fn tc_378_213_strict_promotes_only_admitted_gaps() {
         let medium = CompletenessFinding {

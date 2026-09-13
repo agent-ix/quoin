@@ -1,0 +1,1894 @@
+{
+  "cases": [
+    {
+      "name": "requirement-of/ac-suffix",
+      "ok": true,
+      "value": {
+        "requirement": "FR-001"
+      }
+    },
+    {
+      "name": "requirement-of/metric-suffix",
+      "ok": true,
+      "value": {
+        "requirement": "NFR-010"
+      }
+    },
+    {
+      "name": "requirement-of/unknown-suffix-is-still-a-prefix-match",
+      "ok": true,
+      "value": {
+        "requirement": "FR-042"
+      }
+    },
+    {
+      "name": "requirement-of/bare-requirement-id",
+      "ok": true,
+      "value": {
+        "requirement": "FR-001"
+      }
+    },
+    {
+      "name": "requirement-of/unrecognised-returns-unchanged",
+      "ok": true,
+      "value": {
+        "requirement": "not-an-id"
+      }
+    },
+    {
+      "name": "requirement-of/empty-id",
+      "ok": true,
+      "value": {
+        "requirement": ""
+      }
+    },
+    {
+      "name": "requirement-of/non-ascii-falls-to-unchanged",
+      "ok": true,
+      "value": {
+        "requirement": "é-001-AC-1"
+      }
+    },
+    {
+      "name": "requirement-of/lowercase-prefix-is-a-prefix",
+      "ok": true,
+      "value": {
+        "requirement": "fr-001"
+      }
+    },
+    {
+      "name": "requirement-of/mixed-case-prefix-with-a-con-suffix",
+      "ok": true,
+      "value": {
+        "requirement": "StR-007"
+      }
+    },
+    {
+      "name": "requirement-of/a-digit-only-prefix-is-not-a-requirement",
+      "ok": true,
+      "value": {
+        "requirement": "001-AC-1"
+      }
+    },
+    {
+      "name": "requirement-of/a-long-number-is-still-one-number",
+      "ok": true,
+      "value": {
+        "requirement": "FR-0001234567890"
+      }
+    },
+    {
+      "name": "requirement-of/an-astral-character-falls-to-unchanged",
+      "ok": true,
+      "value": {
+        "requirement": "FR-😀-AC-1"
+      }
+    },
+    {
+      "name": "requirement-of/unknown-request-field",
+      "ok": true,
+      "value": {
+        "requirement": "FR-001"
+      }
+    },
+    {
+      "name": "requirement-of/obligation-id-is-not-a-string",
+      "ok": true,
+      "value": {
+        "requirement": 7
+      }
+    },
+    {
+      "name": "build-case/no-claim-declares-itself",
+      "ok": true,
+      "value": {
+        "claims": [],
+        "unreachable": [],
+        "unreadable": [],
+        "producerTrust": [],
+        "reason": "no document declares itself a top-level claim (searched claim types: StR); declare one or pass --claim-type"
+      }
+    },
+    {
+      "name": "build-case/searched-types-are-named-back",
+      "ok": true,
+      "value": {
+        "claims": [],
+        "unreachable": [],
+        "unreadable": [],
+        "producerTrust": [],
+        "reason": "no document declares itself a top-level claim (searched claim types: Hazard, Threat); declare one or pass --claim-type"
+      }
+    },
+    {
+      "name": "build-case/a-claim-with-nothing-under-it-is-open",
+      "ok": true,
+      "value": {
+        "claims": [
+          {
+            "id": "StR-001",
+            "kind": "goal",
+            "statement": "The claim",
+            "status": "open",
+            "children": [],
+            "because": "no sub-claim and no obligation traces to this claim"
+          }
+        ],
+        "unreachable": [],
+        "unreadable": [],
+        "producerTrust": []
+      }
+    },
+    {
+      "name": "build-case/claim-type-is-case-insensitive-lowercase-request",
+      "ok": true,
+      "value": {
+        "claims": [
+          {
+            "id": "StR-001",
+            "kind": "goal",
+            "statement": "The claim",
+            "status": "open",
+            "children": [],
+            "because": "no sub-claim and no obligation traces to this claim"
+          }
+        ],
+        "unreachable": [],
+        "unreadable": [],
+        "producerTrust": []
+      }
+    },
+    {
+      "name": "build-case/claim-type-is-case-insensitive-uppercase-request",
+      "ok": true,
+      "value": {
+        "claims": [
+          {
+            "id": "StR-001",
+            "kind": "goal",
+            "statement": "The claim",
+            "status": "open",
+            "children": [],
+            "because": "no sub-claim and no obligation traces to this claim"
+          }
+        ],
+        "unreachable": [],
+        "unreadable": [],
+        "producerTrust": []
+      }
+    },
+    {
+      "name": "build-case/claim-type-replaces-the-default",
+      "ok": true,
+      "value": {
+        "claims": [
+          {
+            "id": "HAZ-001",
+            "kind": "goal",
+            "statement": "The hazard",
+            "status": "open",
+            "children": [],
+            "because": "no sub-claim and no obligation traces to this claim"
+          }
+        ],
+        "unreachable": [],
+        "unreadable": [],
+        "producerTrust": []
+      }
+    },
+    {
+      "name": "build-case/evidence-under-a-traced-requirement",
+      "ok": true,
+      "value": {
+        "claims": [
+          {
+            "id": "StR-001",
+            "kind": "goal",
+            "statement": "The claim",
+            "status": "supported",
+            "children": [
+              {
+                "id": "FR-001",
+                "kind": "goal",
+                "statement": "A requirement",
+                "status": "supported",
+                "children": [
+                  {
+                    "id": "FR-001-AC-1",
+                    "kind": "solution",
+                    "statement": "first",
+                    "status": "supported",
+                    "children": []
+                  },
+                  {
+                    "id": "FR-001-AC-2",
+                    "kind": "solution",
+                    "statement": "second",
+                    "status": "supported",
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "unreachable": [],
+        "unreadable": [],
+        "producerTrust": []
+      }
+    },
+    {
+      "name": "build-case/a-supported-str-fr-ac-tree",
+      "ok": true,
+      "value": {
+        "claims": [
+          {
+            "id": "StR-001",
+            "kind": "goal",
+            "statement": "Releases are reviewed",
+            "status": "supported",
+            "children": [
+              {
+                "id": "FR-001",
+                "kind": "goal",
+                "statement": "Every release carries a review",
+                "status": "supported",
+                "children": [
+                  {
+                    "id": "FR-002",
+                    "kind": "goal",
+                    "statement": "A review names its reviewer",
+                    "status": "supported",
+                    "children": [
+                      {
+                        "id": "FR-002-AC-1",
+                        "kind": "solution",
+                        "statement": "The reviewer is named.",
+                        "status": "supported",
+                        "children": []
+                      }
+                    ]
+                  },
+                  {
+                    "id": "FR-001-AC-1",
+                    "kind": "solution",
+                    "statement": "A release without a review is refused.",
+                    "status": "supported",
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "unreachable": [],
+        "unreadable": [],
+        "producerTrust": []
+      }
+    },
+    {
+      "name": "build-case/a-finding-opens-the-whole-path",
+      "ok": true,
+      "value": {
+        "claims": [
+          {
+            "id": "StR-001",
+            "kind": "goal",
+            "statement": "The claim",
+            "status": "open",
+            "children": [
+              {
+                "id": "FR-001",
+                "kind": "goal",
+                "statement": "A requirement",
+                "status": "open",
+                "children": [
+                  {
+                    "id": "FR-001-AC-1",
+                    "kind": "solution",
+                    "statement": "first",
+                    "status": "open",
+                    "because": "undischarged: nothing binds it",
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "unreachable": [],
+        "unreadable": [],
+        "producerTrust": []
+      }
+    },
+    {
+      "name": "build-case/a-finding-on-a-leaf-propagates-up-two-levels",
+      "ok": true,
+      "value": {
+        "claims": [
+          {
+            "id": "StR-001",
+            "kind": "goal",
+            "statement": "Top",
+            "status": "open",
+            "children": [
+              {
+                "id": "FR-001",
+                "kind": "goal",
+                "statement": "Middle",
+                "status": "open",
+                "children": [
+                  {
+                    "id": "FR-002",
+                    "kind": "goal",
+                    "statement": "Leaf owner",
+                    "status": "open",
+                    "children": [
+                      {
+                        "id": "FR-002-AC-1",
+                        "kind": "solution",
+                        "statement": "the leaf",
+                        "status": "open",
+                        "because": "stale-evidence: recorded before the change",
+                        "children": []
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "unreachable": [],
+        "unreadable": [],
+        "producerTrust": []
+      }
+    },
+    {
+      "name": "build-case/unknown-finding-kind",
+      "ok": true,
+      "value": {
+        "claims": [
+          {
+            "id": "StR-001",
+            "kind": "goal",
+            "statement": "The claim",
+            "status": "open",
+            "children": [
+              {
+                "id": "FR-001",
+                "kind": "goal",
+                "statement": "A requirement",
+                "status": "open",
+                "children": [
+                  {
+                    "id": "FR-001-AC-1",
+                    "kind": "solution",
+                    "statement": "first",
+                    "status": "open",
+                    "because": "kind-invented-tomorrow: s",
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "unreachable": [],
+        "unreadable": [],
+        "producerTrust": []
+      }
+    },
+    {
+      "name": "build-case/first-finding-per-obligation-wins",
+      "ok": true,
+      "value": {
+        "claims": [
+          {
+            "id": "StR-001",
+            "kind": "goal",
+            "statement": "The claim",
+            "status": "open",
+            "children": [
+              {
+                "id": "FR-001",
+                "kind": "goal",
+                "statement": "A requirement",
+                "status": "open",
+                "children": [
+                  {
+                    "id": "FR-001-AC-1",
+                    "kind": "solution",
+                    "statement": "first",
+                    "status": "open",
+                    "because": "undischarged: most serious",
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "unreachable": [],
+        "unreadable": [],
+        "producerTrust": []
+      }
+    },
+    {
+      "name": "build-case/a-requirement-under-two-claims",
+      "ok": true,
+      "value": {
+        "claims": [
+          {
+            "id": "StR-001",
+            "kind": "goal",
+            "statement": "First",
+            "status": "supported",
+            "children": [
+              {
+                "id": "FR-001",
+                "kind": "goal",
+                "statement": "Shared",
+                "status": "supported",
+                "children": [
+                  {
+                    "id": "FR-001-AC-1",
+                    "kind": "solution",
+                    "statement": "first",
+                    "status": "supported",
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "StR-002",
+            "kind": "goal",
+            "statement": "Second",
+            "status": "supported",
+            "children": [
+              {
+                "id": "FR-001",
+                "kind": "goal",
+                "statement": "Shared",
+                "status": "supported",
+                "children": [
+                  {
+                    "id": "FR-001-AC-1",
+                    "kind": "solution",
+                    "statement": "first",
+                    "status": "supported",
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "unreachable": [],
+        "unreadable": [],
+        "producerTrust": []
+      }
+    },
+    {
+      "name": "build-case/a-cycle-terminates",
+      "ok": true,
+      "value": {
+        "claims": [
+          {
+            "id": "StR-001",
+            "kind": "goal",
+            "statement": "First",
+            "status": "open",
+            "children": [
+              {
+                "id": "FR-001",
+                "kind": "goal",
+                "statement": "Cyclic",
+                "status": "open",
+                "children": [],
+                "because": "no sub-claim and no obligation traces to this claim"
+              }
+            ]
+          }
+        ],
+        "unreachable": [],
+        "unreadable": [],
+        "producerTrust": []
+      }
+    },
+    {
+      "name": "build-case/a-three-node-refinement-cycle-terminates",
+      "ok": true,
+      "value": {
+        "claims": [
+          {
+            "id": "StR-001",
+            "kind": "goal",
+            "statement": "First",
+            "status": "supported",
+            "children": [
+              {
+                "id": "FR-001",
+                "kind": "goal",
+                "statement": "Second",
+                "status": "supported",
+                "children": [
+                  {
+                    "id": "FR-002",
+                    "kind": "goal",
+                    "statement": "Third",
+                    "status": "supported",
+                    "children": [
+                      {
+                        "id": "FR-002-AC-1",
+                        "kind": "solution",
+                        "statement": "on the cycle",
+                        "status": "supported",
+                        "children": []
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "unreachable": [],
+        "unreadable": [],
+        "producerTrust": []
+      }
+    },
+    {
+      "name": "build-case/unreachable-requirement",
+      "ok": true,
+      "value": {
+        "claims": [
+          {
+            "id": "StR-001",
+            "kind": "goal",
+            "statement": "The claim",
+            "status": "open",
+            "children": [],
+            "because": "no sub-claim and no obligation traces to this claim"
+          }
+        ],
+        "unreachable": [
+          "FR-009"
+        ],
+        "unreadable": [],
+        "producerTrust": []
+      }
+    },
+    {
+      "name": "build-case/a-non-downward-edge-is-not-a-child",
+      "ok": true,
+      "value": {
+        "claims": [
+          {
+            "id": "StR-001",
+            "kind": "goal",
+            "statement": "The claim",
+            "status": "open",
+            "children": [],
+            "because": "no sub-claim and no obligation traces to this claim"
+          }
+        ],
+        "unreachable": [
+          "FR-001"
+        ],
+        "unreadable": [],
+        "producerTrust": []
+      }
+    },
+    {
+      "name": "build-case/every-downward-verb-is-a-child",
+      "ok": true,
+      "value": {
+        "claims": [
+          {
+            "id": "StR-001",
+            "kind": "goal",
+            "statement": "The claim",
+            "status": "open",
+            "children": [
+              {
+                "id": "FR-001",
+                "kind": "goal",
+                "statement": "traces_to",
+                "status": "open",
+                "children": [],
+                "because": "no sub-claim and no obligation traces to this claim"
+              },
+              {
+                "id": "FR-002",
+                "kind": "goal",
+                "statement": "refines",
+                "status": "open",
+                "children": [],
+                "because": "no sub-claim and no obligation traces to this claim"
+              },
+              {
+                "id": "FR-003",
+                "kind": "goal",
+                "statement": "implements",
+                "status": "open",
+                "children": [],
+                "because": "no sub-claim and no obligation traces to this claim"
+              },
+              {
+                "id": "FR-004",
+                "kind": "goal",
+                "statement": "derives_from",
+                "status": "open",
+                "children": [],
+                "because": "no sub-claim and no obligation traces to this claim"
+              },
+              {
+                "id": "FR-005",
+                "kind": "goal",
+                "statement": "mitigates",
+                "status": "open",
+                "children": [],
+                "because": "no sub-claim and no obligation traces to this claim"
+              },
+              {
+                "id": "FR-006",
+                "kind": "goal",
+                "statement": "satisfies",
+                "status": "open",
+                "children": [],
+                "because": "no sub-claim and no obligation traces to this claim"
+              }
+            ]
+          }
+        ],
+        "unreachable": [],
+        "unreadable": [],
+        "producerTrust": []
+      }
+    },
+    {
+      "name": "build-case/null-title-falls-through-to-the-id",
+      "ok": true,
+      "value": {
+        "claims": [
+          {
+            "id": "StR-001",
+            "kind": "goal",
+            "statement": "StR-001",
+            "status": "open",
+            "children": [],
+            "because": "no sub-claim and no obligation traces to this claim"
+          }
+        ],
+        "unreachable": [],
+        "unreadable": [],
+        "producerTrust": []
+      }
+    },
+    {
+      "name": "build-case/a-numeric-id-is-not-an-id",
+      "ok": true,
+      "value": {
+        "claims": [],
+        "unreachable": [],
+        "unreadable": [],
+        "producerTrust": [],
+        "reason": "no document declares itself a top-level claim (searched claim types: StR); declare one or pass --claim-type"
+      }
+    },
+    {
+      "name": "build-case/a-statement-carrying-paren-semicolon-and-quote",
+      "ok": true,
+      "value": {
+        "claims": [
+          {
+            "id": "StR-001",
+            "kind": "goal",
+            "statement": "The claim",
+            "status": "supported",
+            "children": [
+              {
+                "id": "FR-001",
+                "kind": "goal",
+                "statement": "A requirement",
+                "status": "supported",
+                "children": [
+                  {
+                    "id": "FR-001-AC-1",
+                    "kind": "solution",
+                    "statement": "Rejects (bad) input; logs \"why\" and `how`",
+                    "status": "supported",
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "unreachable": [],
+        "unreadable": [],
+        "producerTrust": []
+      }
+    },
+    {
+      "name": "build-case/a-label-well-over-eighty-characters",
+      "ok": true,
+      "value": {
+        "claims": [
+          {
+            "id": "StR-001",
+            "kind": "goal",
+            "statement": "The claim",
+            "status": "supported",
+            "children": [
+              {
+                "id": "FR-001",
+                "kind": "goal",
+                "statement": "A requirement",
+                "status": "supported",
+                "children": [
+                  {
+                    "id": "FR-001-AC-1",
+                    "kind": "solution",
+                    "statement": "The system shall refuse every request whose declared payload exceeds the stated ceiling, and shall say so.",
+                    "status": "supported",
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "unreachable": [],
+        "unreadable": [],
+        "producerTrust": []
+      }
+    },
+    {
+      "name": "build-case/a-label-carrying-an-astral-character",
+      "ok": true,
+      "value": {
+        "claims": [
+          {
+            "id": "StR-001",
+            "kind": "goal",
+            "statement": "The claim",
+            "status": "supported",
+            "children": [
+              {
+                "id": "FR-001",
+                "kind": "goal",
+                "statement": "A requirement",
+                "status": "supported",
+                "children": [
+                  {
+                    "id": "FR-001-AC-1",
+                    "kind": "solution",
+                    "statement": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx😀 tail",
+                    "status": "supported",
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "unreachable": [],
+        "unreadable": [],
+        "producerTrust": []
+      }
+    },
+    {
+      "name": "build-case/assessments-pass-through",
+      "ok": true,
+      "value": {
+        "claims": [],
+        "unreachable": [],
+        "unreadable": [],
+        "producerTrust": [
+          {
+            "id": "T-001",
+            "useId": "U-1",
+            "producer": "p",
+            "status": "unobserved",
+            "permittedDecisions": [],
+            "limitations": [],
+            "triggeredBy": [],
+            "owner": "o"
+          },
+          {
+            "id": "T-002",
+            "useId": "U-2",
+            "producer": "p",
+            "status": "accepted-with-limitations",
+            "permittedDecisions": [
+              "release"
+            ],
+            "limitations": [
+              "only on linux"
+            ],
+            "triggeredBy": [
+              {
+                "kind": "version-change",
+                "detail": {
+                  "from": "1",
+                  "to": "2"
+                }
+              }
+            ],
+            "owner": "o"
+          }
+        ],
+        "evidenceIndependence": [
+          {
+            "profile": "P",
+            "requirement": "FR-001",
+            "obligation": "FR-001-AC-1",
+            "status": "satisfied",
+            "dimensions": [],
+            "satisfiedBy": [
+              "a",
+              "b"
+            ],
+            "summary": "ok"
+          },
+          {
+            "profile": "P",
+            "requirement": "FR-002",
+            "obligation": "FR-002-AC-1",
+            "status": "insufficient",
+            "dimensions": [
+              {
+                "dimension": "author",
+                "status": "insufficient"
+              }
+            ],
+            "summary": "same author"
+          }
+        ],
+        "reason": "no document declares itself a top-level claim (searched claim types: StR); declare one or pass --claim-type"
+      }
+    },
+    {
+      "name": "build-case/an-invalidated-producer-trust-entry-is-carried",
+      "ok": true,
+      "value": {
+        "claims": [],
+        "unreachable": [],
+        "unreadable": [],
+        "producerTrust": [
+          {
+            "id": "T-010",
+            "useId": "U-10",
+            "producer": "vitest",
+            "status": "invalidated",
+            "permittedDecisions": [],
+            "limitations": [
+              "the producer moved under the recorded use"
+            ],
+            "triggeredBy": [
+              "producer-version"
+            ],
+            "owner": "qa"
+          }
+        ],
+        "reason": "no document declares itself a top-level claim (searched claim types: StR); declare one or pass --claim-type"
+      }
+    },
+    {
+      "name": "build-case/a-satisfied-independence-entry-is-carried",
+      "ok": true,
+      "value": {
+        "claims": [],
+        "unreachable": [],
+        "unreadable": [],
+        "producerTrust": [],
+        "evidenceIndependence": [
+          {
+            "profile": "P",
+            "requirement": "FR-001",
+            "obligation": "FR-001-AC-1",
+            "status": "satisfied",
+            "dimensions": [
+              {
+                "dimension": "author",
+                "values": [
+                  "ada",
+                  "grace"
+                ],
+                "missingSuites": []
+              }
+            ],
+            "satisfiedBy": [
+              "unit",
+              "integration"
+            ],
+            "summary": "two authors"
+          }
+        ],
+        "reason": "no document declares itself a top-level claim (searched claim types: StR); declare one or pass --claim-type"
+      }
+    },
+    {
+      "name": "build-case/equal-sort-keys-keep-input-order",
+      "ok": true,
+      "value": {
+        "claims": [],
+        "unreachable": [],
+        "unreadable": [],
+        "producerTrust": [
+          {
+            "id": "T-000",
+            "marker": "first-by-key"
+          },
+          {
+            "id": "T-001",
+            "marker": "second-in"
+          },
+          {
+            "id": "T-001",
+            "marker": "third-in"
+          }
+        ],
+        "reason": "no document declares itself a top-level claim (searched claim types: StR); declare one or pass --claim-type"
+      }
+    },
+    {
+      "name": "build-case/unreadable-documents-are-carried",
+      "ok": true,
+      "value": {
+        "claims": [],
+        "unreachable": [],
+        "unreadable": [
+          {
+            "path": "broken.md",
+            "reason": "unterminated frontmatter"
+          }
+        ],
+        "producerTrust": [],
+        "reason": "no document declares itself a top-level claim (searched claim types: StR); declare one or pass --claim-type"
+      }
+    },
+    {
+      "name": "build-case/an-empty-claim-types-list-names-nothing-back",
+      "ok": true,
+      "value": {
+        "claims": [],
+        "unreachable": [],
+        "unreadable": [],
+        "producerTrust": [],
+        "reason": "no document declares itself a top-level claim (searched claim types: ); declare one or pass --claim-type"
+      }
+    },
+    {
+      "name": "build-case/unknown-request-field",
+      "ok": true,
+      "value": {
+        "claims": [],
+        "unreachable": [],
+        "unreadable": [],
+        "producerTrust": [],
+        "reason": "no document declares itself a top-level claim (searched claim types: StR); declare one or pass --claim-type"
+      }
+    },
+    {
+      "name": "build-case/missing-findings",
+      "ok": false,
+      "error": "input.findings is not iterable"
+    },
+    {
+      "name": "build-case/obligation-id-is-not-a-string",
+      "ok": true,
+      "value": {
+        "claims": [],
+        "unreachable": [],
+        "unreadable": [],
+        "producerTrust": [],
+        "reason": "no document declares itself a top-level claim (searched claim types: StR); declare one or pass --claim-type"
+      }
+    },
+    {
+      "name": "build-case/finding-missing-kind",
+      "ok": true,
+      "value": {
+        "claims": [],
+        "unreachable": [],
+        "unreadable": [],
+        "producerTrust": [],
+        "reason": "no document declares itself a top-level claim (searched claim types: StR); declare one or pass --claim-type"
+      }
+    },
+    {
+      "name": "render-case/no-case-is-not-an-empty-case",
+      "ok": true,
+      "value": {
+        "rendered": "# Assurance case\n\nNo document declares itself a top-level claim, so there is no case to\nargue. Declare an `StR` (or pass `--claim-type`) and re-run.\n"
+      }
+    },
+    {
+      "name": "render-case/one-supported-claim",
+      "ok": true,
+      "value": {
+        "rendered": "# Assurance case\n\n1 claim(s), 0 with an open branch.\n\n## ✅ StR-001 — The system is usable\n\n  - ✅ **FR-001-AC-1** — It holds.\n\n```mermaid\nflowchart TD\n  StR_001[\"StR-001: The system is usable\"]\n  FR_001_AC_1([\"FR-001-AC-1: It holds.\"])\n  StR_001 --> FR_001_AC_1\n```\n"
+      }
+    },
+    {
+      "name": "render-case/an-open-branch-carries-its-reason",
+      "ok": true,
+      "value": {
+        "rendered": "# Assurance case\n\n1 claim(s), 1 with an open branch.\n\n## ◇ StR-001 — The system is usable\n\n  - ◇ **FR-001-AC-1** — It holds.\n    - ↳ undischarged: nothing binds it\n\n```mermaid\nflowchart TD\n  StR_001[\"StR-001: The system is usable ◇\"]\n  FR_001_AC_1([\"FR-001-AC-1: It holds. ◇\"])\n  StR_001 --> FR_001_AC_1\n```\n"
+      }
+    },
+    {
+      "name": "render-case/a-bare-claim-states-why-it-is-open",
+      "ok": true,
+      "value": {
+        "rendered": "# Assurance case\n\n1 claim(s), 1 with an open branch.\n\n## ◇ StR-001 — Nothing under it\n\n  - ↳ no sub-claim and no obligation traces to this claim\n\n```mermaid\nflowchart TD\n  StR_001[\"StR-001: Nothing under it ◇\"]\n```\n"
+      }
+    },
+    {
+      "name": "render-case/nested-goals-indent-and-change-shape",
+      "ok": true,
+      "value": {
+        "rendered": "# Assurance case\n\n1 claim(s), 1 with an open branch.\n\n## ◇ StR-001 — Top\n\n  - ◇ FR-001 — Middle\n    - ◇ **FR-001-AC-1** — Leaf\n      - ↳ stale-evidence: old\n\n```mermaid\nflowchart TD\n  StR_001[\"StR-001: Top ◇\"]\n  FR_001[\"FR-001: Middle ◇\"]\n  FR_001_AC_1([\"FR-001-AC-1: Leaf ◇\"])\n  FR_001 --> FR_001_AC_1\n  StR_001 --> FR_001\n```\n"
+      }
+    },
+    {
+      "name": "render-case/a-strategy-node-renders-as-a-goal-shape",
+      "ok": true,
+      "value": {
+        "rendered": "# Assurance case\n\n1 claim(s), 1 with an open branch.\n\n## ◇ StR-001 — Top\n\n  - ◇ STRAT-1 — Argue by decomposition\n\n```mermaid\nflowchart TD\n  StR_001[\"StR-001: Top ◇\"]\n  STRAT_1[\"STRAT-1: Argue by decomposition ◇\"]\n  StR_001 --> STRAT_1\n```\n"
+      }
+    },
+    {
+      "name": "render-case/counts-open-branches-across-claims",
+      "ok": true,
+      "value": {
+        "rendered": "# Assurance case\n\n2 claim(s), 1 with an open branch.\n\n## ◇ StR-001 — First\n\n  - ↳ no sub-claim and no obligation traces to this claim\n\n```mermaid\nflowchart TD\n  StR_001[\"StR-001: First ◇\"]\n```\n\n## ✅ StR-002 — Second\n\n  - ✅ **FR-002-AC-1** — It holds.\n\n```mermaid\nflowchart TD\n  StR_002[\"StR-002: Second\"]\n  FR_002_AC_1([\"FR-002-AC-1: It holds.\"])\n  StR_002 --> FR_002_AC_1\n```\n"
+      }
+    },
+    {
+      "name": "render-case/mermaid-survives-punctuation",
+      "ok": true,
+      "value": {
+        "rendered": "# Assurance case\n\n1 claim(s), 1 with an open branch.\n\n## ◇ StR-001 — Top\n\n  - ◇ **FR-001-AC-1** — Rejects (bad) input; logs \"why\" and `how`\n    - ↳ x: y\n\n```mermaid\nflowchart TD\n  StR_001[\"StR-001: Top ◇\"]\n  FR_001_AC_1([\"FR-001-AC-1: Rejects (bad) input, logs 'why' and 'how' ◇\"])\n  StR_001 --> FR_001_AC_1\n```\n"
+      }
+    },
+    {
+      "name": "render-case/punctuation-in-the-claim-statement-itself",
+      "ok": true,
+      "value": {
+        "rendered": "# Assurance case\n\n1 claim(s), 0 with an open branch.\n\n## ✅ StR-001 — Accepts (a; b) and rejects \"c\"\n\n  - ✅ **FR-001-AC-1** — It holds.\n\n```mermaid\nflowchart TD\n  StR_001[\"StR-001: Accepts (a, b) and rejects 'c'\"]\n  FR_001_AC_1([\"FR-001-AC-1: It holds.\"])\n  StR_001 --> FR_001_AC_1\n```\n"
+      }
+    },
+    {
+      "name": "render-case/truncates-on-a-code-point",
+      "ok": true,
+      "value": {
+        "rendered": "# Assurance case\n\n1 claim(s), 0 with an open branch.\n\n## ✅ StR-001 — Top\n\n  - ✅ **FR-001-AC-1** — xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx😀 tail\n\n```mermaid\nflowchart TD\n  StR_001[\"StR-001: Top\"]\n  FR_001_AC_1([\"FR-001-AC-1: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"])\n  StR_001 --> FR_001_AC_1\n```\n"
+      }
+    },
+    {
+      "name": "render-case/a-label-well-over-eighty-characters-is-cut",
+      "ok": true,
+      "value": {
+        "rendered": "# Assurance case\n\n1 claim(s), 0 with an open branch.\n\n## ✅ StR-001 — Top\n\n  - ✅ **FR-001-AC-1** — The system shall refuse every request whose declared payload exceeds the stated ceiling, and shall say so in a diagnostic naming the limit.\n\n```mermaid\nflowchart TD\n  StR_001[\"StR-001: Top\"]\n  FR_001_AC_1([\"FR-001-AC-1: The system shall refuse every request whose declared payload exceed\"])\n  StR_001 --> FR_001_AC_1\n```\n"
+      }
+    },
+    {
+      "name": "render-case/an-astral-character-inside-the-label-budget",
+      "ok": true,
+      "value": {
+        "rendered": "# Assurance case\n\n1 claim(s), 0 with an open branch.\n\n## ✅ StR-001 — Top\n\n  - ✅ **FR-001-AC-1** — 😀 leads, and the rest of the label is short\n\n```mermaid\nflowchart TD\n  StR_001[\"StR-001: Top\"]\n  FR_001_AC_1([\"FR-001-AC-1: 😀 leads, and the rest of the label is short\"])\n  StR_001 --> FR_001_AC_1\n```\n"
+      }
+    },
+    {
+      "name": "render-case/node-id-sanitises-per-code-unit",
+      "ok": true,
+      "value": {
+        "rendered": "# Assurance case\n\n1 claim(s), 0 with an open branch.\n\n## ✅ StR-001 — Top\n\n  - ✅ **FR-😀-AC-1** — Astral in the id\n\n```mermaid\nflowchart TD\n  StR_001[\"StR-001: Top\"]\n  FR____AC_1([\"FR-😀-AC-1: Astral in the id\"])\n  StR_001 --> FR____AC_1\n```\n"
+      }
+    },
+    {
+      "name": "render-case/a-shared-child-is-declared-once",
+      "ok": true,
+      "value": {
+        "rendered": "# Assurance case\n\n1 claim(s), 1 with an open branch.\n\n## ◇ StR-001 — Top\n\n  - ◇ FR-001 — A\n    - ◇ **FR-009-AC-1** — Shared\n      - ↳ x: y\n  - ◇ FR-002 — B\n    - ◇ **FR-009-AC-1** — Shared\n      - ↳ x: y\n\n```mermaid\nflowchart TD\n  StR_001[\"StR-001: Top ◇\"]\n  FR_001[\"FR-001: A ◇\"]\n  FR_009_AC_1([\"FR-009-AC-1: Shared ◇\"])\n  FR_001 --> FR_009_AC_1\n  StR_001 --> FR_001\n  FR_002[\"FR-002: B ◇\"]\n  FR_002 --> FR_009_AC_1\n  StR_001 --> FR_002\n```\n"
+      }
+    },
+    {
+      "name": "render-case/unreachable-and-unreadable-sections",
+      "ok": true,
+      "value": {
+        "rendered": "# Assurance case\n\nNo document declares itself a top-level claim, so there is no case to\nargue. Declare an `StR` (or pass `--claim-type`) and re-run.\n\n## Reachable from no claim\n\nThese carry obligations and no claim argues over them. A case rendered\nonly over the reachable half would read as complete.\n\n- FR-009\n- FR-010\n\n## Unreadable\n\n- broken.md: unterminated frontmatter\n"
+      }
+    },
+    {
+      "name": "render-case/producer-trust-fields",
+      "ok": true,
+      "value": {
+        "rendered": "# Assurance case\n\nNo document declares itself a top-level claim, so there is no case to\nargue. Declare an `StR` (or pass `--claim-type`) and re-run.\n\n## Evidence-producer reliance\n\nThese decisions are context for the case; they do not make a claim supported.\n\n- **T-001 / U-1** — accepted-with-limitations — revalidate: producer-version, configuration\n  - limitations: linux only; x86 only\n- **T-002 / U-2** — unobserved\n"
+      }
+    },
+    {
+      "name": "render-case/an-invalidated-producer-trust-entry",
+      "ok": true,
+      "value": {
+        "rendered": "# Assurance case\n\nNo document declares itself a top-level claim, so there is no case to\nargue. Declare an `StR` (or pass `--claim-type`) and re-run.\n\n## Evidence-producer reliance\n\nThese decisions are context for the case; they do not make a claim supported.\n\n- **T-010 / U-10** — invalidated — revalidate: producer-version\n  - limitations: the producer moved under the recorded use\n"
+      }
+    },
+    {
+      "name": "render-case/independence-fields",
+      "ok": true,
+      "value": {
+        "rendered": "# Assurance case\n\nNo document declares itself a top-level claim, so there is no case to\nargue. Declare an `StR` (or pass `--claim-type`) and re-run.\n\n## Evidence independence\n\nThese are profile-selected relationship checks; they do not make a claim supported by themselves.\n\n- **P / FR-001 / FR-001-AC-1** — satisfied\n  - two authors\n  - author: a, b\n  - tooling: no stated values; missing on unit, e2e\n"
+      }
+    },
+    {
+      "name": "render-case/a-satisfied-independence-entry-with-no-dimensions",
+      "ok": true,
+      "value": {
+        "rendered": "# Assurance case\n\nNo document declares itself a top-level claim, so there is no case to\nargue. Declare an `StR` (or pass `--claim-type`) and re-run.\n\n## Evidence independence\n\nThese are profile-selected relationship checks; they do not make a claim supported by themselves.\n\n- **P / FR-001 / FR-001-AC-1** — satisfied\n  - nothing to separate\n"
+      }
+    },
+    {
+      "name": "render-case/empty-independence-emits-no-heading",
+      "ok": true,
+      "value": {
+        "rendered": "# Assurance case\n\nNo document declares itself a top-level claim, so there is no case to\nargue. Declare an `StR` (or pass `--claim-type`) and re-run.\n"
+      }
+    },
+    {
+      "name": "render-case/absent-independence",
+      "ok": true,
+      "value": {
+        "rendered": "# Assurance case\n\nNo document declares itself a top-level claim, so there is no case to\nargue. Declare an `StR` (or pass `--claim-type`) and re-run.\n"
+      }
+    },
+    {
+      "name": "render-case/unknown-trust-status",
+      "ok": true,
+      "value": {
+        "rendered": "# Assurance case\n\nNo document declares itself a top-level claim, so there is no case to\nargue. Declare an `StR` (or pass `--claim-type`) and re-run.\n\n## Evidence-producer reliance\n\nThese decisions are context for the case; they do not make a claim supported.\n\n- **T / U** — status-invented-tomorrow — revalidate: trigger-invented-tomorrow\n"
+      }
+    },
+    {
+      "name": "render-case/absent-producer-trust",
+      "ok": false,
+      "error": "Cannot read properties of undefined (reading 'length')"
+    },
+    {
+      "name": "render-case/unrecognised-node-kind",
+      "ok": true,
+      "value": {
+        "rendered": "# Assurance case\n\n1 claim(s), 1 with an open branch.\n\n## ◇ StR-001 — Top\n\n\n```mermaid\nflowchart TD\n  StR_001[\"StR-001: Top ◇\"]\n```\n"
+      }
+    },
+    {
+      "name": "render-case/unrecognised-node-status",
+      "ok": true,
+      "value": {
+        "rendered": "# Assurance case\n\n1 claim(s), 0 with an open branch.\n\n## undefined StR-001 — Top\n\n\n```mermaid\nflowchart TD\n  StR_001[\"StR-001: Top\"]\n```\n"
+      }
+    },
+    {
+      "name": "render-case/nested-node-missing-children",
+      "ok": false,
+      "error": "node.children is not iterable"
+    },
+    {
+      "name": "render-case/missing-unreachable",
+      "ok": false,
+      "error": "Cannot read properties of undefined (reading 'length')"
+    },
+    {
+      "name": "render-case/trust-missing-use-id",
+      "ok": true,
+      "value": {
+        "rendered": "# Assurance case\n\nNo document declares itself a top-level claim, so there is no case to\nargue. Declare an `StR` (or pass `--claim-type`) and re-run.\n\n## Evidence-producer reliance\n\nThese decisions are context for the case; they do not make a claim supported.\n\n- **T / undefined** — accepted\n"
+      }
+    },
+    {
+      "name": "render-case/dimension-missing-missing-suites",
+      "ok": false,
+      "error": "Cannot read properties of undefined (reading 'length')"
+    },
+    {
+      "name": "parse-argument/ok-minimal",
+      "ok": true,
+      "value": {
+        "id": "AA-900",
+        "title": "Synthetic widget release decision",
+        "type": "AssuranceArgument",
+        "status": "active",
+        "owner": "release-owner",
+        "profile": "ix://example.invalid/widget/AP-900",
+        "top_claim": {
+          "id": "CLAIM-900",
+          "statement": "The bounded synthetic widget change is acceptable.",
+          "subject": "widget revision 0123456789abcdef"
+        },
+        "reasoning": [
+          {
+            "id": "ARG-900",
+            "statement": "Argue from the explicitly reviewed clause disposition.",
+            "supports": "CLAIM-900",
+            "sufficiency_criteria": [
+              "Every binding clause has a disposition."
+            ]
+          }
+        ],
+        "assumptions": [],
+        "participants": [
+          {
+            "id": "reviewer-900",
+            "role": "decision reviewer",
+            "authority": "may accept or reject this synthetic release",
+            "independence": "did not produce the implementation evidence"
+          }
+        ],
+        "challenges": [],
+        "relationships": []
+      }
+    },
+    {
+      "name": "parse-argument/ok-full",
+      "ok": true,
+      "value": {
+        "id": "AA-900",
+        "title": "Synthetic widget release decision",
+        "type": "AssuranceArgument",
+        "status": "active",
+        "owner": "release-owner",
+        "profile": "ix://example.invalid/widget/AP-900",
+        "top_claim": {
+          "id": "CLAIM-900",
+          "statement": "The bounded synthetic widget change is acceptable.",
+          "subject": "widget revision 0123456789abcdef"
+        },
+        "reasoning": [
+          {
+            "id": "ARG-900",
+            "statement": "Argue from the explicitly reviewed clause disposition.",
+            "supports": "CLAIM-900",
+            "sufficiency_criteria": [
+              "Every binding clause has a disposition."
+            ]
+          }
+        ],
+        "assumptions": [
+          {
+            "id": "ASM-900",
+            "statement": "The reviewed clause set is stable.",
+            "owner": "release-owner",
+            "status": "accepted",
+            "review_by": "2028-02-29T00:00:00Z"
+          }
+        ],
+        "participants": [
+          {
+            "id": "reviewer-900",
+            "role": "decision reviewer",
+            "authority": "may accept or reject this synthetic release",
+            "independence": "did not produce the implementation evidence"
+          }
+        ],
+        "challenges": [
+          {
+            "id": "CH-900",
+            "target": "ASM-900",
+            "statement": "The clause set moved once before.",
+            "status": "accepted-risk",
+            "owner": "release-owner",
+            "resolution_refs": [
+              "ix://example.invalid/e/EV-1"
+            ],
+            "expires_at": "2029-01-01T00:00:00+05:30"
+          }
+        ],
+        "relationships": [
+          {
+            "target": "ix://example.invalid/w/AA-800",
+            "type": "supports"
+          }
+        ]
+      }
+    },
+    {
+      "name": "parse-argument/review-by-impossible-day",
+      "ok": false,
+      "error": "review_by must be an ISO-8601 instant"
+    },
+    {
+      "name": "parse-argument/review-by-june-31",
+      "ok": false,
+      "error": "review_by must be an ISO-8601 instant"
+    },
+    {
+      "name": "parse-argument/review-by-non-leap-february-29",
+      "ok": false,
+      "error": "review_by must be an ISO-8601 instant"
+    },
+    {
+      "name": "parse-argument/review-by-hour-24",
+      "ok": false,
+      "error": "review_by must be an ISO-8601 instant"
+    },
+    {
+      "name": "parse-argument/review-by-leap-second",
+      "ok": false,
+      "error": "review_by must be an ISO-8601 instant"
+    },
+    {
+      "name": "parse-argument/review-by-lowercase-t",
+      "ok": false,
+      "error": "review_by must be an ISO-8601 instant"
+    },
+    {
+      "name": "parse-argument/review-by-lowercase-z",
+      "ok": false,
+      "error": "review_by must be an ISO-8601 instant"
+    },
+    {
+      "name": "parse-argument/review-by-offset-out-of-range",
+      "ok": false,
+      "error": "review_by must be an ISO-8601 instant"
+    },
+    {
+      "name": "parse-argument/review-by-empty-fraction",
+      "ok": false,
+      "error": "review_by must be an ISO-8601 instant"
+    },
+    {
+      "name": "parse-argument/review-by-real-leap-day",
+      "ok": true,
+      "value": {
+        "id": "AA-900",
+        "title": "Synthetic widget release decision",
+        "type": "AssuranceArgument",
+        "status": "active",
+        "owner": "release-owner",
+        "profile": "ix://example.invalid/widget/AP-900",
+        "top_claim": {
+          "id": "CLAIM-900",
+          "statement": "The bounded synthetic widget change is acceptable.",
+          "subject": "widget revision 0123456789abcdef"
+        },
+        "reasoning": [
+          {
+            "id": "ARG-900",
+            "statement": "Argue from the explicitly reviewed clause disposition.",
+            "supports": "CLAIM-900",
+            "sufficiency_criteria": [
+              "Every binding clause has a disposition."
+            ]
+          }
+        ],
+        "assumptions": [
+          {
+            "id": "ASM-900",
+            "statement": "The reviewed clause set is stable.",
+            "owner": "release-owner",
+            "status": "accepted",
+            "review_by": "2028-02-29T00:00:00Z"
+          }
+        ],
+        "participants": [
+          {
+            "id": "reviewer-900",
+            "role": "decision reviewer",
+            "authority": "may accept or reject this synthetic release",
+            "independence": "did not produce the implementation evidence"
+          }
+        ],
+        "challenges": [],
+        "relationships": []
+      }
+    },
+    {
+      "name": "parse-argument/review-by-offset-and-fraction",
+      "ok": true,
+      "value": {
+        "id": "AA-900",
+        "title": "Synthetic widget release decision",
+        "type": "AssuranceArgument",
+        "status": "active",
+        "owner": "release-owner",
+        "profile": "ix://example.invalid/widget/AP-900",
+        "top_claim": {
+          "id": "CLAIM-900",
+          "statement": "The bounded synthetic widget change is acceptable.",
+          "subject": "widget revision 0123456789abcdef"
+        },
+        "reasoning": [
+          {
+            "id": "ARG-900",
+            "statement": "Argue from the explicitly reviewed clause disposition.",
+            "supports": "CLAIM-900",
+            "sufficiency_criteria": [
+              "Every binding clause has a disposition."
+            ]
+          }
+        ],
+        "assumptions": [
+          {
+            "id": "ASM-900",
+            "statement": "The reviewed clause set is stable.",
+            "owner": "release-owner",
+            "status": "accepted",
+            "review_by": "2026-08-15T23:59:59.250-11:00"
+          }
+        ],
+        "participants": [
+          {
+            "id": "reviewer-900",
+            "role": "decision reviewer",
+            "authority": "may accept or reject this synthetic release",
+            "independence": "did not produce the implementation evidence"
+          }
+        ],
+        "challenges": [],
+        "relationships": []
+      }
+    },
+    {
+      "name": "parse-argument/challenge-expires-at-null",
+      "ok": false,
+      "error": "expires_at must be a string"
+    },
+    {
+      "name": "parse-argument/challenge-resolution-refs-null",
+      "ok": true,
+      "value": {
+        "id": "AA-900",
+        "title": "Synthetic widget release decision",
+        "type": "AssuranceArgument",
+        "status": "active",
+        "owner": "release-owner",
+        "profile": "ix://example.invalid/widget/AP-900",
+        "top_claim": {
+          "id": "CLAIM-900",
+          "statement": "The bounded synthetic widget change is acceptable.",
+          "subject": "widget revision 0123456789abcdef"
+        },
+        "reasoning": [
+          {
+            "id": "ARG-900",
+            "statement": "Argue from the explicitly reviewed clause disposition.",
+            "supports": "CLAIM-900",
+            "sufficiency_criteria": [
+              "Every binding clause has a disposition."
+            ]
+          }
+        ],
+        "assumptions": [],
+        "participants": [
+          {
+            "id": "reviewer-900",
+            "role": "decision reviewer",
+            "authority": "may accept or reject this synthetic release",
+            "independence": "did not produce the implementation evidence"
+          }
+        ],
+        "challenges": [
+          {
+            "id": "CH-900",
+            "target": "CLAIM-900",
+            "statement": "A bounded recovery case needed review.",
+            "status": "open",
+            "owner": "release-owner"
+          }
+        ],
+        "relationships": []
+      }
+    },
+    {
+      "name": "parse-argument/challenge-resolution-refs-empty",
+      "ok": false,
+      "error": "challenges[0].resolution_refs must be a non-empty array"
+    },
+    {
+      "name": "parse-argument/challenge-resolution-refs-duplicated",
+      "ok": false,
+      "error": "challenges[0].resolution_refs must contain unique values"
+    },
+    {
+      "name": "parse-argument/challenge-missing-owner",
+      "ok": false,
+      "error": "challenges[0] is missing owner"
+    },
+    {
+      "name": "parse-argument/challenge-unknown-target",
+      "ok": false,
+      "error": "challenge CH-900 targets unknown argument node NOPE-1"
+    },
+    {
+      "name": "parse-argument/owner-byte-order-mark",
+      "ok": false,
+      "error": "owner must not be empty"
+    },
+    {
+      "name": "parse-argument/owner-next-line",
+      "ok": true,
+      "value": {
+        "id": "AA-900",
+        "title": "Synthetic widget release decision",
+        "type": "AssuranceArgument",
+        "status": "active",
+        "owner": "",
+        "profile": "ix://example.invalid/widget/AP-900",
+        "top_claim": {
+          "id": "CLAIM-900",
+          "statement": "The bounded synthetic widget change is acceptable.",
+          "subject": "widget revision 0123456789abcdef"
+        },
+        "reasoning": [
+          {
+            "id": "ARG-900",
+            "statement": "Argue from the explicitly reviewed clause disposition.",
+            "supports": "CLAIM-900",
+            "sufficiency_criteria": [
+              "Every binding clause has a disposition."
+            ]
+          }
+        ],
+        "assumptions": [],
+        "participants": [
+          {
+            "id": "reviewer-900",
+            "role": "decision reviewer",
+            "authority": "may accept or reject this synthetic release",
+            "independence": "did not produce the implementation evidence"
+          }
+        ],
+        "challenges": [],
+        "relationships": []
+      }
+    },
+    {
+      "name": "parse-argument/owner-no-break-space",
+      "ok": false,
+      "error": "owner must not be empty"
+    },
+    {
+      "name": "parse-argument/owner-zero-width-space",
+      "ok": true,
+      "value": {
+        "id": "AA-900",
+        "title": "Synthetic widget release decision",
+        "type": "AssuranceArgument",
+        "status": "active",
+        "owner": "​",
+        "profile": "ix://example.invalid/widget/AP-900",
+        "top_claim": {
+          "id": "CLAIM-900",
+          "statement": "The bounded synthetic widget change is acceptable.",
+          "subject": "widget revision 0123456789abcdef"
+        },
+        "reasoning": [
+          {
+            "id": "ARG-900",
+            "statement": "Argue from the explicitly reviewed clause disposition.",
+            "supports": "CLAIM-900",
+            "sufficiency_criteria": [
+              "Every binding clause has a disposition."
+            ]
+          }
+        ],
+        "assumptions": [],
+        "participants": [
+          {
+            "id": "reviewer-900",
+            "role": "decision reviewer",
+            "authority": "may accept or reject this synthetic release",
+            "independence": "did not produce the implementation evidence"
+          }
+        ],
+        "challenges": [],
+        "relationships": []
+      }
+    },
+    {
+      "name": "parse-argument/owner-empty",
+      "ok": false,
+      "error": "owner must not be empty"
+    },
+    {
+      "name": "parse-argument/status-unlisted",
+      "ok": false,
+      "error": "status must be one of proposed, active, retired"
+    },
+    {
+      "name": "parse-argument/type-unlisted",
+      "ok": false,
+      "error": "type must be one of AssuranceArgument"
+    },
+    {
+      "name": "parse-argument/assumption-status-unlisted",
+      "ok": false,
+      "error": "assumption status must be one of open, accepted, invalidated"
+    },
+    {
+      "name": "parse-argument/challenge-status-unlisted",
+      "ok": false,
+      "error": "challenge status must be one of open, resolved, accepted-risk"
+    },
+    {
+      "name": "parse-argument/relationship-type-unlisted",
+      "ok": false,
+      "error": "relationship type must be one of supports, challenges, references"
+    },
+    {
+      "name": "parse-argument/unknown-top-level-key",
+      "ok": false,
+      "error": "argument has unknown field schemaVersion"
+    },
+    {
+      "name": "parse-argument/top-claim-unknown-key",
+      "ok": false,
+      "error": "top_claim has unknown field confidence"
+    },
+    {
+      "name": "parse-argument/top-claim-missing-subject",
+      "ok": false,
+      "error": "top_claim is missing subject"
+    },
+    {
+      "name": "parse-argument/top-claim-not-an-object",
+      "ok": false,
+      "error": "top_claim must be an object"
+    },
+    {
+      "name": "parse-argument/missing-relationships",
+      "ok": false,
+      "error": "relationships must be an array"
+    },
+    {
+      "name": "parse-argument/reasoning-not-an-array",
+      "ok": false,
+      "error": "reasoning must be an array"
+    },
+    {
+      "name": "parse-argument/reasoning-empty",
+      "ok": false,
+      "error": "reasoning must not be empty"
+    },
+    {
+      "name": "parse-argument/participants-empty",
+      "ok": false,
+      "error": "participants must not be empty"
+    },
+    {
+      "name": "parse-argument/id-not-numbered",
+      "ok": false,
+      "error": "argument id must match AA-<number>"
+    },
+    {
+      "name": "parse-argument/id-not-a-string",
+      "ok": false,
+      "error": "id must be a string"
+    },
+    {
+      "name": "parse-argument/profile-not-a-reference",
+      "ok": false,
+      "error": "profile must be an ix:// reference"
+    },
+    {
+      "name": "parse-argument/relationship-target-not-a-reference",
+      "ok": false,
+      "error": "relationships[0].target must be an ix:// reference"
+    },
+    {
+      "name": "parse-argument/criteria-not-strings",
+      "ok": false,
+      "error": "reasoning[0].sufficiency_criteria must contain strings"
+    },
+    {
+      "name": "parse-argument/criteria-empty",
+      "ok": false,
+      "error": "reasoning[0].sufficiency_criteria must be a non-empty array"
+    },
+    {
+      "name": "parse-argument/criteria-duplicated",
+      "ok": false,
+      "error": "reasoning[0].sufficiency_criteria must contain unique values"
+    },
+    {
+      "name": "parse-argument/duplicate-reasoning-id",
+      "ok": false,
+      "error": "reasoning contains duplicate id ARG-900"
+    },
+    {
+      "name": "parse-argument/assumption-collides-with-top-claim",
+      "ok": false,
+      "error": "top claim, reasoning, and assumption ids must be unique"
+    },
+    {
+      "name": "parse-argument/supports-unknown-target",
+      "ok": false,
+      "error": "reasoning ARG-900 supports unknown target NOPE-1"
+    },
+    {
+      "name": "parse-argument/reasoning-cycle",
+      "ok": false,
+      "error": "reasoning cycle does not reach top claim from A"
+    },
+    {
+      "name": "parse-argument/shared-intermediate-step",
+      "ok": true,
+      "value": {
+        "id": "AA-900",
+        "title": "Synthetic widget release decision",
+        "type": "AssuranceArgument",
+        "status": "active",
+        "owner": "release-owner",
+        "profile": "ix://example.invalid/widget/AP-900",
+        "top_claim": {
+          "id": "CLAIM-900",
+          "statement": "The bounded synthetic widget change is acceptable.",
+          "subject": "widget revision 0123456789abcdef"
+        },
+        "reasoning": [
+          {
+            "id": "A",
+            "statement": "a",
+            "supports": "M",
+            "sufficiency_criteria": [
+              "c"
+            ]
+          },
+          {
+            "id": "B",
+            "statement": "b",
+            "supports": "M",
+            "sufficiency_criteria": [
+              "d"
+            ]
+          },
+          {
+            "id": "M",
+            "statement": "m",
+            "supports": "CLAIM-900",
+            "sufficiency_criteria": [
+              "e"
+            ]
+          }
+        ],
+        "assumptions": [],
+        "participants": [
+          {
+            "id": "reviewer-900",
+            "role": "decision reviewer",
+            "authority": "may accept or reject this synthetic release",
+            "independence": "did not produce the implementation evidence"
+          }
+        ],
+        "challenges": [],
+        "relationships": []
+      }
+    },
+    {
+      "name": "parse-argument/not-an-object",
+      "ok": false,
+      "error": "argument must be an object"
+    },
+    {
+      "name": "parse-argument/an-accepted-assumption-with-a-past-review",
+      "ok": true,
+      "value": {
+        "id": "AA-900",
+        "title": "Synthetic widget release decision",
+        "type": "AssuranceArgument",
+        "status": "active",
+        "owner": "release-owner",
+        "profile": "ix://example.invalid/widget/AP-900",
+        "top_claim": {
+          "id": "CLAIM-900",
+          "statement": "The bounded synthetic widget change is acceptable.",
+          "subject": "widget revision 0123456789abcdef"
+        },
+        "reasoning": [
+          {
+            "id": "ARG-900",
+            "statement": "Argue from the explicitly reviewed clause disposition.",
+            "supports": "CLAIM-900",
+            "sufficiency_criteria": [
+              "Every binding clause has a disposition."
+            ]
+          }
+        ],
+        "assumptions": [
+          {
+            "id": "ASM-901",
+            "statement": "The reviewed clause set was stable.",
+            "owner": "release-owner",
+            "status": "accepted",
+            "review_by": "2020-01-01T00:00:00Z"
+          }
+        ],
+        "participants": [
+          {
+            "id": "reviewer-900",
+            "role": "decision reviewer",
+            "authority": "may accept or reject this synthetic release",
+            "independence": "did not produce the implementation evidence"
+          }
+        ],
+        "challenges": [],
+        "relationships": []
+      }
+    },
+    {
+      "name": "parse-argument/a-resolved-challenge-carrying-resolution-refs",
+      "ok": true,
+      "value": {
+        "id": "AA-900",
+        "title": "Synthetic widget release decision",
+        "type": "AssuranceArgument",
+        "status": "active",
+        "owner": "release-owner",
+        "profile": "ix://example.invalid/widget/AP-900",
+        "top_claim": {
+          "id": "CLAIM-900",
+          "statement": "The bounded synthetic widget change is acceptable.",
+          "subject": "widget revision 0123456789abcdef"
+        },
+        "reasoning": [
+          {
+            "id": "ARG-900",
+            "statement": "Argue from the explicitly reviewed clause disposition.",
+            "supports": "CLAIM-900",
+            "sufficiency_criteria": [
+              "Every binding clause has a disposition."
+            ]
+          }
+        ],
+        "assumptions": [],
+        "participants": [
+          {
+            "id": "reviewer-900",
+            "role": "decision reviewer",
+            "authority": "may accept or reject this synthetic release",
+            "independence": "did not produce the implementation evidence"
+          }
+        ],
+        "challenges": [
+          {
+            "id": "CH-901",
+            "target": "CLAIM-900",
+            "statement": "The recovery path was unclear.",
+            "status": "resolved",
+            "owner": "release-owner",
+            "resolution_refs": [
+              "ix://example.invalid/e/EV-2"
+            ]
+          }
+        ],
+        "relationships": []
+      }
+    }
+  ]
+}

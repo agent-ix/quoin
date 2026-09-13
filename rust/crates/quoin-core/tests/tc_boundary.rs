@@ -26,6 +26,16 @@ struct Run {
 }
 
 fn run(args: &[&str], stdin: &str) -> Run {
+    run_bytes(args, stdin.as_bytes())
+}
+
+/// The same run, over BYTES.
+///
+/// stdin is a byte stream and the transport bound is stated in bytes, so a
+/// helper that can only send `&str` cannot reach the two cases at the ceiling
+/// that matter: a request whose cut lands mid-character, and a request that is
+/// not UTF-8 at all.
+fn run_bytes(args: &[&str], stdin: &[u8]) -> Run {
     let mut child = Command::new(env!("CARGO_BIN_EXE_quoin-core"))
         .args(args)
         .stdin(Stdio::piped())
@@ -33,12 +43,7 @@ fn run(args: &[&str], stdin: &str) -> Run {
         .stderr(Stdio::piped())
         .spawn()
         .unwrap();
-    child
-        .stdin
-        .as_mut()
-        .unwrap()
-        .write_all(stdin.as_bytes())
-        .unwrap();
+    child.stdin.as_mut().unwrap().write_all(stdin).unwrap();
     let out = child.wait_with_output().unwrap();
     Run {
         stdout: String::from_utf8(out.stdout).unwrap(),
@@ -201,4 +206,151 @@ fn tc_412_an_oversize_stream_is_refused_by_the_process_not_merely_by_the_library
         diagnostics[0]["context"]["read_bytes"],
         (ceiling + 1).to_string()
     );
+}
+
+/// A request AT the ceiling is read and dispatched, so the transport bound is
+/// a ceiling rather than a tighter limit spelled with a larger number.
+///
+/// The refusal that comes back is `core.ping`'s own 4 KiB echo bound, and that
+/// is the assertion: the request crossed the transport and the DOMAIN
+/// answered. A transport that quietly refused everything large would pass a
+/// test that only looked at the exit status.
+///
+/// Trace: FR-096, NFR-024
+/// Provenance: agent-ix/quoin#445, agent-ix/quoin#447
+#[test]
+fn tc_445_101_a_request_at_the_ceiling_reaches_the_operation() {
+    let limit = quoin_core::protocol::MAX_REQUEST_BYTES;
+    // `{"echo":"…"}` is 11 bytes of envelope; the filler is the remainder.
+    let filler = "x".repeat(limit - 11);
+    let at_limit = format!(r#"{{"echo":"{filler}"}}"#);
+    assert_eq!(at_limit.len(), limit);
+
+    let result = run(&["core.ping"], &at_limit);
+    assert_eq!(result.status, 2, "{}", result.stderr);
+    let diagnostics: serde_json::Value = serde_json::from_str(&result.stderr).unwrap();
+    assert_eq!(diagnostics[0]["code"], "CORE_REFUSED");
+    assert_eq!(diagnostics[0]["context"]["op"], "core.ping");
+    assert_eq!(
+        diagnostics[0]["context"]["limit_bytes"],
+        quoin_core::ops::core::MAX_ECHO_BYTES.to_string()
+    );
+}
+
+/// A request past an OPERATION's bound is refused by that operation, with the
+/// size it observed — the transport does not answer for it.
+///
+/// Trace: FR-096, NFR-024
+/// Provenance: agent-ix/quoin#445, agent-ix/quoin#447
+#[test]
+fn tc_445_103_a_request_past_an_operation_bound_is_the_operations_refusal() {
+    let over = "x".repeat(quoin_core::ops::assurance::MAX_OBLIGATION_ID_BYTES + 1);
+    let request = serde_json::json!({ "obligation_id": over }).to_string();
+    assert!(request.len() < quoin_core::protocol::MAX_REQUEST_BYTES);
+
+    let result = run(&["assurance.requirement_of"], &request);
+    assert_eq!(result.status, 2, "{}", result.stderr);
+    let diagnostics: serde_json::Value = serde_json::from_str(&result.stderr).unwrap();
+    assert_eq!(diagnostics[0]["code"], "CORE_REFUSED");
+    assert_eq!(
+        diagnostics[0]["context"]["op"], "assurance.requirement_of",
+        "the transport answered for the domain"
+    );
+    assert!(
+        diagnostics[0]["context"]["observed_bytes"].is_string(),
+        "the domain's refusal must carry the size it observed: {}",
+        result.stderr
+    );
+    assert!(
+        diagnostics[0]["context"]["stream"].is_null(),
+        "a domain refusal is not a stream refusal: {}",
+        result.stderr
+    );
+}
+
+/// An oversized request whose cut lands MID-CHARACTER is still the transport's
+/// refusal, not an internal fault.
+///
+/// `take(MAX + 1)` stops at a BYTE offset, and that offset can fall inside a
+/// multi-byte character. `read_request` read the truncated stream straight
+/// into a `String`, so UTF-8 was validated BEFORE the size was ever compared,
+/// and the verdict on an oversized request depended on the caller's alphabet:
+/// all-ASCII gave `CORE_REFUSED` (exit 2), while the same request with one
+/// character wider than ASCII across the cut gave `CORE_BAD_JSON` (exit 3) —
+/// reported as malformed when it was merely too large, over a stream that did
+/// contain valid UTF-8. `src/core/exec.ts` branches on those statuses, so it
+/// is a behaviour difference and not a wording one.
+///
+/// `tc_412_an_oversize_stream_is_refused_by_the_process_not_merely_by_the_library`
+/// could not see it: its filler is ASCII, so its cut always lands on a
+/// character boundary. rust-style names exactly this hazard — a bound whose
+/// behaviour depends on the caller's alphabet.
+///
+/// The size is therefore compared on BYTES, before any decode. The encoding
+/// question survives, one step later, in `tc_445_105`.
+///
+/// Trace: FR-096, NFR-024
+/// Provenance: agent-ix/quoin#445, agent-ix/quoin#447
+#[test]
+fn tc_445_104_an_oversized_request_cut_mid_character_is_still_refused() {
+    let limit = quoin_core::protocol::MAX_REQUEST_BYTES;
+    // `{"echo":"` is 9 bytes, so the euro sign occupies bytes `limit - 1`
+    // through `limit + 1` and straddles the cut `take(limit + 1)` makes.
+    let mut oversize = Vec::new();
+    oversize.extend_from_slice(br#"{"echo":""#);
+    oversize.extend(std::iter::repeat_n(b'x', limit - 10));
+    oversize.extend_from_slice("\u{20ac}".as_bytes());
+    oversize.extend(std::iter::repeat_n(b'x', 100));
+    oversize.extend_from_slice(br#""}"#);
+    assert!(oversize.len() > limit);
+    assert!(
+        std::str::from_utf8(&oversize).is_ok(),
+        "the payload itself is valid UTF-8, or this test proves nothing"
+    );
+    assert!(
+        std::str::from_utf8(&oversize[..=limit]).is_err(),
+        "the cut must land inside the multi-byte character"
+    );
+
+    let result = run_bytes(&["core.ping"], &oversize);
+    assert_eq!(result.status, 2, "{}", result.stderr);
+    assert_eq!(result.stdout, "");
+    let diagnostics: serde_json::Value = serde_json::from_str(&result.stderr).unwrap();
+    assert_eq!(diagnostics[0]["code"], "CORE_REFUSED");
+    assert_eq!(diagnostics[0]["context"]["limit_bytes"], limit.to_string());
+    // The SAME diagnostic an all-ASCII oversize request gets, which is the
+    // whole property: `tc_412_an_oversize_stream_is_refused_by_the_process`
+    // asserts this pair over ASCII, and the two must not diverge.
+    assert_eq!(
+        diagnostics[0]["context"]["read_bytes"],
+        (limit + 1).to_string()
+    );
+}
+
+/// A request the transport ACCEPTS that is not UTF-8 is still MALFORMED.
+///
+/// The counterpart to `tc_445_104`: comparing the size first must not swallow a
+/// genuine encoding error into the refusal. A lone `0x80` well inside the bound
+/// is a request that cannot be decoded, and `read_request` calls that
+/// `CORE_BAD_JSON` — a malformed request (exit 3) rather than a failing stream
+/// (exit 4), which is the classification merged `main` chose and this keeps.
+/// The two tests together say the size decides the size and the encoding
+/// decides the encoding, neither answering for the other.
+///
+/// Trace: FR-096
+/// Provenance: agent-ix/quoin#445, agent-ix/quoin#447
+#[test]
+fn tc_445_105_an_undecodable_request_within_the_bound_is_a_malformed_request() {
+    let mut request = Vec::new();
+    request.extend_from_slice(br#"{"echo":""#);
+    request.push(0x80);
+    request.extend_from_slice(br#""}"#);
+    assert!(request.len() < quoin_core::protocol::MAX_REQUEST_BYTES);
+
+    let result = run_bytes(&["core.ping"], &request);
+    assert_eq!(result.status, 3, "{}", result.stderr);
+    assert_eq!(result.stdout, "");
+    let diagnostics: serde_json::Value = serde_json::from_str(&result.stderr).unwrap();
+    assert_eq!(diagnostics[0]["code"], "CORE_BAD_JSON");
+    assert_eq!(diagnostics[0]["context"]["stream"], "stdin");
 }

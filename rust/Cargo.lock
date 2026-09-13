@@ -2939,6 +2939,7 @@ dependencies = [
  "quoin-evidence-types",
  "quoin-finding-types",
  "quoin-quire-types",
+ "schemars",
  "serde",
  "serde_json",
 ]
@@ -2948,6 +2949,7 @@ name = "quoin-completeness"
 version = "0.1.0"
 dependencies = [
  "quoin-yaml",
+ "schemars",
  "serde",
  "serde_json",
  "tempfile",
@@ -2973,6 +2975,7 @@ version = "0.1.0"
 dependencies = [
  "engineering-assurance",
  "quoin-assurance",
+ "quoin-completeness",
  "quoin-config",
  "quoin-modules",
  "quoin-validators",
@@ -3036,6 +3039,7 @@ dependencies = [
 name = "quoin-quire-types"
 version = "0.1.0"
 dependencies = [
+ "schemars",
  "serde",
  "serde_json",
  "sha2 0.10.9",
@@ -3045,6 +3049,8 @@ dependencies = [
 name = "quoin-schemas"
 version = "0.1.0"
 dependencies = [
+ "quoin-assurance",
+ "quoin-completeness",
  "quoin-core",
  "schemars",
  "serde_json",

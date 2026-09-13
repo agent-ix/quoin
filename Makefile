@@ -311,15 +311,26 @@ rust-difftest: build rust-build
 	  --core $(CARGO_TARGET)/debug/quoin-core \
 	  --ts $(CURDIR)/scripts/core-reference.mjs
 
-# `src/core/exec.ts` against the real binary. The suite skips these cases when
-# QUOIN_CORE is unset, which is every ordinary `vitest run`; this target is the
-# lane that sets it. Without it the caller is only ever tested against fakes,
-# and a fake agrees with whatever the test wrote into it.
-# `QUOIN_DISK_FINDINGS` is the DISK side of the snapshot differential
+# `src/core/exec.ts` and every criterion stated over a command that now asks
+# quoin-core, against the real binary. Those cases skip when QUOIN_CORE is
+# unset, which is every ordinary `vitest run`; this target is the lane that
+# sets it. Without it the caller is only ever tested against fakes, and a fake
+# agrees with whatever the test wrote into it.
+#
+# `QUOIN_DISK_FINDINGS` is the DISK side of the validators snapshot differential
 # (quoin#412, review #448 FND-001): `tests/core-snapshot-differential.test.ts`
 # analyses one tree through `repoSnapshot` -> `validators.run` -> `MemoryRepo`
-# and through `DiskRepo`, and compares. Without both variables the file skips,
-# which is every ordinary `vitest run`; this target is the lane that sets them.
+# and through `DiskRepo`, and compares. The bundle differential
+# (`tests/core-bundle-snapshot.test.ts`, quoin#445) asks the same question of
+# the completeness domain and needs only `QUOIN_CORE`, because its independent
+# walk is written in the test file rather than shelled out to a second binary.
+# Both skip without their variables, which is every ordinary `vitest run`.
+#
+# The files beyond core-exec-e2e carry criteria whose SUBJECT is retained
+# TypeScript -- the `quoin completeness` command (FR-037-AC-9..12) and the two
+# assurance-context renderings (FR-093-AC-7, FR-094-AC-7/AC-8) -- which reach
+# the analysis through the boundary. They are listed here so those criteria are
+# actually executed somewhere rather than skipping in every lane.
 .PHONY: rust-e2e
 rust-e2e: rust-build
 	QUOIN_CORE=$(CARGO_TARGET)/debug/quoin-core \
@@ -329,7 +340,11 @@ rust-e2e: rust-build
 	    tests/core-snapshot-differential.test.ts \
 	    tests/core-org.test.ts \
 	    tests/core-modules.test.ts \
-	    tests/org-one-subprocess.test.ts
+	    tests/org-one-subprocess.test.ts \
+	    tests/completeness-cli.test.ts \
+	    tests/core-bundle-snapshot.test.ts \
+	    tests/independence.test.ts \
+	    tests/trust-decision.test.ts
 
 # The Rust gate, in the order a failure is cheapest to read: format and lint
 # first (seconds), then the supply-chain check, then the suites, then the

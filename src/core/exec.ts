@@ -180,14 +180,15 @@ function resolveOnPath(name: string): string {
 /**
  * The operation name a caller passed, guarded before it reaches argv.
  *
- * Underscores are accepted because the boundary's own registry spells
- * operations with them — `assurance.build_case`, `config.resolve_org`,
- * `modules.ensure_defaults` — so a guard that refused them refused five of the
- * eleven names in `quoin_core::dispatch::OPERATIONS` before a process was ever
- * spawned, and did it with a message about the `<domain>.<op>` shape, which was
- * not the disagreement. The guard is still stricter than `parse_operation`,
- * deliberately: this side is what decides what reaches argv, and a lowercase
- * two-part name is the whole of what the boundary has ever exposed.
+ * The charset admits `_` because that is how the boundary actually spells its
+ * operations — `assurance.build_case`, `completeness.read_frontmatter`,
+ * `config.resolve_org`, `modules.ensure_defaults` — and a guard that rejected
+ * them refused most of `quoin_core::dispatch::OPERATIONS` before a process was
+ * ever spawned, with a message about the `<domain>.<op>` shape, which was not
+ * the disagreement. It is not a loosening of what the guard is FOR: the pattern
+ * stays anchored and closed, so the injection shapes `tests/core-exec.test.ts`
+ * pins (`--version`, `core.ping; rm -rf /`) are still refused, and the only
+ * characters added are ones no shell reads specially.
  */
 function checkOperation(op: string): string {
   if (!/^[a-z][a-z0-9_-]*\.[a-z][a-z0-9_-]*$/.test(op)) {

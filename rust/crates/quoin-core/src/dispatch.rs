@@ -19,10 +19,17 @@ use crate::protocol::{MAX_REQUEST_BYTES, Response};
 /// Exposed so a caller — and `quoin-difftest` — can enumerate the surface
 /// rather than discover it by trying names.
 pub const OPERATIONS: &[&str] = &[
+    "assurance.build_authored_argument",
     "assurance.build_case",
+    "assurance.build_discharge",
     "assurance.parse_argument",
+    "assurance.render_authored_argument",
     "assurance.render_case",
+    "assurance.render_discharge",
     "assurance.requirement_of",
+    "completeness.assess_bundle",
+    "completeness.read_frontmatter",
+    "completeness.schema_refs",
     "config.resolve_org",
     "config.unresolved_org_message",
     "core.ping",
@@ -61,6 +68,17 @@ pub fn dispatch(
         "assurance.parse_argument" => crate::ops::assurance::parse_argument(request),
         "config.resolve_org" => crate::ops::config::resolve_org(request),
         "config.unresolved_org_message" => crate::ops::config::unresolved_org_message(request),
+        "assurance.build_authored_argument" => {
+            crate::ops::assurance::build_authored_argument(request)
+        }
+        "assurance.render_authored_argument" => {
+            crate::ops::assurance::render_authored_argument(request)
+        }
+        "assurance.build_discharge" => crate::ops::assurance::build_discharge(request),
+        "assurance.render_discharge" => crate::ops::assurance::render_discharge(request),
+        "completeness.assess_bundle" => crate::ops::completeness::assess_bundle(request),
+        "completeness.read_frontmatter" => crate::ops::completeness::read_frontmatter(request),
+        "completeness.schema_refs" => crate::ops::completeness::schema_refs(request),
         "core.ping" => crate::ops::core::ping(request),
         "modules.ensure_defaults" => crate::ops::modules::ensure_defaults(request, capabilities),
         "modules.install" => crate::ops::modules::install(request, capabilities),
@@ -130,20 +148,25 @@ pub fn read_request(reader: impl Read) -> Result<serde_json::Value, CoreError> {
     let ceiling = u64::try_from(MAX_REQUEST_BYTES)
         .unwrap_or(u64::MAX)
         .saturating_add(1);
-    let mut text = String::new();
-    let read = reader
-        .take(ceiling)
-        .read_to_string(&mut text)
-        .map_err(|e| {
-            // Invalid UTF-8 arrives here as an `InvalidData` error. It is a
-            // malformed request, not a failing stream.
-            let code = if e.kind() == std::io::ErrorKind::InvalidData {
-                CoreErrorCode::BadJson
-            } else {
-                CoreErrorCode::Io
-            };
-            CoreError::new(code, e.to_string()).with_context("stream", "stdin")
-        })?;
+    // Read BYTES, compare BYTES, decode LAST.
+    //
+    // `take` cuts at a byte offset, and that offset can fall inside a
+    // multi-byte character. Decoding during the read therefore made the
+    // classification of an oversized request depend on the CALLER'S ALPHABET:
+    // an all-ASCII request one byte over the ceiling was `CORE_REFUSED` (exit
+    // 2), while the same request from a caller whose text happened to put a
+    // `€` across the cut was `CORE_BAD_JSON` (exit 3) — reported as malformed
+    // when it was merely too large, and the message was false besides, because
+    // the stream did contain valid UTF-8. `src/core/exec.ts` branches on those
+    // statuses, so this is a behaviour difference and not a wording one.
+    //
+    // Deciding the size first removes the dependency: the length test cannot
+    // see an encoding, and the decode below only ever runs on bytes already
+    // known to be within the bound (agent-ix/quoin#447; tc_445_104, tc_445_105).
+    let mut bytes = Vec::new();
+    let read = reader.take(ceiling).read_to_end(&mut bytes).map_err(|e| {
+        CoreError::new(CoreErrorCode::Io, e.to_string()).with_context("stream", "stdin")
+    })?;
 
     if read > MAX_REQUEST_BYTES {
         return Err(
@@ -155,6 +178,12 @@ pub fn read_request(reader: impl Read) -> Result<serde_json::Value, CoreError> {
                 .with_context("read_bytes", read.to_string()),
         );
     }
+
+    // Within the bound and undecodable is a GENUINE encoding fault, and keeps
+    // the malformed-request classification the size test must not borrow.
+    let text = String::from_utf8(bytes).map_err(|e| {
+        CoreError::new(CoreErrorCode::BadJson, e.to_string()).with_context("stream", "stdin")
+    })?;
 
     parse_request(&text)
 }
@@ -204,6 +233,157 @@ pub fn parse_operation(args: &[String]) -> Result<&str, CoreError> {
 )]
 mod tests {
     use super::*;
+
+    /// Every `ops` source file, as `(domain, path, source)`.
+    ///
+    /// A domain is one file (`ops/core.rs`) or a directory whose `mod.rs`
+    /// re-exports its parts (`ops/modules/`), so the domain is named beside the
+    /// path rather than derived from it: `ops/modules/wire.rs` declares bounds
+    /// that a caller reaches as `ops::modules::MAX_*`.
+    ///
+    /// `include_str!` takes a literal path, so this list is hand-written — but
+    /// it is checked against `ops/mod.rs` and against each directory's own
+    /// `mod.rs` by [`the_bound_census_can_see_every_ops_module`], which are
+    /// different files, so the two cannot go stale together.
+    const OPS_SOURCES: &[(&str, &str, &str)] = &[
+        (
+            "assurance",
+            "assurance.rs",
+            include_str!("ops/assurance.rs"),
+        ),
+        (
+            "completeness",
+            "completeness.rs",
+            include_str!("ops/completeness.rs"),
+        ),
+        ("config", "config/mod.rs", include_str!("ops/config/mod.rs")),
+        (
+            "config",
+            "config/taxonomy.rs",
+            include_str!("ops/config/taxonomy.rs"),
+        ),
+        ("core", "core.rs", include_str!("ops/core.rs")),
+        (
+            "modules",
+            "modules/mod.rs",
+            include_str!("ops/modules/mod.rs"),
+        ),
+        (
+            "modules",
+            "modules/support.rs",
+            include_str!("ops/modules/support.rs"),
+        ),
+        (
+            "modules",
+            "modules/taxonomy.rs",
+            include_str!("ops/modules/taxonomy.rs"),
+        ),
+        (
+            "modules",
+            "modules/tests.rs",
+            include_str!("ops/modules/tests.rs"),
+        ),
+        (
+            "modules",
+            "modules/wire.rs",
+            include_str!("ops/modules/wire.rs"),
+        ),
+        (
+            "validators",
+            "validators.rs",
+            include_str!("ops/validators.rs"),
+        ),
+    ];
+
+    /// The `mod` names a source declares, whatever the visibility or `cfg`.
+    fn declared_modules(source: &str) -> Vec<String> {
+        source
+            .lines()
+            .map(str::trim)
+            .filter_map(|line| {
+                line.strip_prefix("pub mod ")
+                    .or_else(|| line.strip_prefix("mod "))
+            })
+            .filter_map(|rest| rest.split_once(';'))
+            .map(|(name, _)| name.to_owned())
+            .collect()
+    }
+
+    /// The domains `ops/mod.rs` declares, in its own spelling.
+    fn declared_ops_modules() -> Vec<String> {
+        declared_modules(include_str!("ops/mod.rs"))
+    }
+
+    /// Every `pub const MAX_*_BYTES` an `ops` source declares, qualified by the
+    /// domain that re-exports it.
+    fn declared_domain_bounds() -> Vec<String> {
+        OPS_SOURCES
+            .iter()
+            .flat_map(|(domain, _, source)| {
+                source
+                    .lines()
+                    .filter_map(|line| line.trim().strip_prefix("pub const "))
+                    .filter_map(|rest| rest.split_once(':'))
+                    .map(|(name, _)| name.trim())
+                    .filter(|name| name.starts_with("MAX_") && name.ends_with("_BYTES"))
+                    .map(move |name| format!("ops::{domain}::{name}"))
+            })
+            .collect()
+    }
+
+    /// Without this, a rename of `pub const` or of the `mod` spelling turns the
+    /// census check into a comparison of two empty lists, which passes.
+    ///
+    /// Two levels are checked, because a domain has two shapes: `ops/mod.rs`
+    /// against the domains listed, and each directory domain's `mod.rs` against
+    /// the files listed under it. Checking only the first would let a bound
+    /// added to a new `ops/modules/<new>.rs` go uncensused.
+    #[test]
+    fn the_bound_census_can_see_every_ops_module() {
+        let mut declared = declared_ops_modules();
+        declared.sort();
+        let mut included: Vec<String> = OPS_SOURCES
+            .iter()
+            .map(|(domain, _, _)| (*domain).to_owned())
+            .collect();
+        included.sort();
+        included.dedup();
+        assert_eq!(
+            declared, included,
+            "`ops/mod.rs` and `OPS_SOURCES` disagree about which domains exist; \
+             a domain missing from `OPS_SOURCES` has its size bounds uncensused"
+        );
+
+        for (domain, path, source) in OPS_SOURCES {
+            if !path.ends_with("/mod.rs") {
+                continue;
+            }
+            let mut expected: Vec<String> = declared_modules(source)
+                .into_iter()
+                .map(|name| format!("{domain}/{name}.rs"))
+                .chain(std::iter::once((*path).to_owned()))
+                .collect();
+            expected.sort();
+            let mut listed: Vec<String> = OPS_SOURCES
+                .iter()
+                .filter(|(other, _, _)| other == domain)
+                .map(|(_, other, _)| (*other).to_owned())
+                .collect();
+            listed.sort();
+            assert_eq!(
+                expected, listed,
+                "`{path}` and `OPS_SOURCES` disagree about which files make up \
+                 `ops::{domain}`; a file missing from `OPS_SOURCES` has its size \
+                 bounds uncensused"
+            );
+        }
+
+        assert!(
+            declared_domain_bounds().len() >= 4,
+            "the source scan found {} bound(s); it has stopped reading the `ops` sources",
+            declared_domain_bounds().len()
+        );
+    }
 
     /// Every `"…" =>` arm of `dispatch`'s match, read out of this file's own
     /// source.
@@ -398,7 +578,60 @@ mod tests {
                 "ops::validators::MAX_RUN_REQUEST_BYTES",
                 crate::ops::validators::MAX_RUN_REQUEST_BYTES,
             ),
+            (
+                "ops::assurance::MAX_OBLIGATION_ID_BYTES",
+                crate::ops::assurance::MAX_OBLIGATION_ID_BYTES,
+            ),
+            (
+                "ops::completeness::MAX_MANIFEST_BYTES",
+                crate::ops::completeness::MAX_MANIFEST_BYTES,
+            ),
+            (
+                "ops::completeness::MAX_ASSESS_BUNDLE_BYTES",
+                crate::ops::completeness::MAX_ASSESS_BUNDLE_BYTES,
+            ),
+            (
+                "ops::config::MAX_GIT_CONFIG_BYTES",
+                crate::ops::config::MAX_GIT_CONFIG_BYTES,
+            ),
+            (
+                "ops::config::MAX_CONFIG_LAYER_BYTES",
+                crate::ops::config::MAX_CONFIG_LAYER_BYTES,
+            ),
+            (
+                "ops::config::MAX_SCALAR_BYTES",
+                crate::ops::config::MAX_SCALAR_BYTES,
+            ),
+            (
+                "ops::modules::MAX_MANIFEST_BYTES",
+                crate::ops::modules::MAX_MANIFEST_BYTES,
+            ),
+            (
+                "ops::modules::MAX_SCALAR_BYTES",
+                crate::ops::modules::MAX_SCALAR_BYTES,
+            ),
+            (
+                "ops::modules::MAX_SOURCE_ARG_BYTES",
+                crate::ops::modules::MAX_SOURCE_ARG_BYTES,
+            ),
         ];
+        // The census is hand-written, so it is checked against the `ops`
+        // sources rather than against itself. A literal count (`len() == 6`)
+        // is the quoin#443 shape: `domain_bounds` is the array directly above
+        // it, so the assertion re-reads the thing it guards and a bound added
+        // to a module but never listed here leaves the inequality below
+        // unevaluated while the test stays green.
+        let mut listed: Vec<String> = domain_bounds
+            .iter()
+            .map(|(name, _)| (*name).to_owned())
+            .collect();
+        listed.sort();
+        let mut declared = declared_domain_bounds();
+        declared.sort();
+        assert_eq!(
+            listed, declared,
+            "a domain bound was added or removed without this census moving"
+        );
         for (name, bound) in domain_bounds {
             assert!(
                 bound < MAX_REQUEST_BYTES,
