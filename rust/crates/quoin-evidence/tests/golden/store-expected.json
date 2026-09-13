@@ -1,0 +1,1367 @@
+{
+  "cases": [
+    {
+      "name": "trust-accepted",
+      "kind": "trust",
+      "ok": {
+        "id": "ETD-1",
+        "useId": "U-1",
+        "producer": "junit",
+        "permittedDecisions": [
+          "record-run",
+          "report-coverage"
+        ],
+        "limitations": [],
+        "owner": "peter",
+        "status": "accepted",
+        "triggeredBy": []
+      }
+    },
+    {
+      "name": "trust-accepted-with-limitations",
+      "kind": "trust",
+      "ok": {
+        "id": "ETD-1",
+        "useId": "U-1",
+        "producer": "junit",
+        "permittedDecisions": [
+          "record-run",
+          "report-coverage"
+        ],
+        "limitations": [
+          "unit suites only"
+        ],
+        "owner": "peter",
+        "status": "accepted-with-limitations",
+        "triggeredBy": []
+      }
+    },
+    {
+      "name": "trust-unobserved",
+      "kind": "trust",
+      "ok": {
+        "id": "ETD-1",
+        "useId": "U-1",
+        "producer": "junit",
+        "permittedDecisions": [
+          "record-run",
+          "report-coverage"
+        ],
+        "limitations": [],
+        "owner": "peter",
+        "status": "unobserved",
+        "triggeredBy": []
+      }
+    },
+    {
+      "name": "trust-not-relied-upon",
+      "kind": "trust",
+      "ok": {
+        "id": "ETD-1",
+        "useId": "U-1",
+        "producer": "junit",
+        "permittedDecisions": [
+          "record-run",
+          "report-coverage"
+        ],
+        "limitations": [],
+        "owner": "peter",
+        "status": "not-accepted",
+        "triggeredBy": []
+      }
+    },
+    {
+      "name": "trust-invalidated-version",
+      "kind": "trust",
+      "ok": {
+        "id": "ETD-1",
+        "useId": "U-1",
+        "producer": "junit",
+        "permittedDecisions": [
+          "record-run",
+          "report-coverage"
+        ],
+        "limitations": [],
+        "owner": "peter",
+        "status": "invalidated",
+        "triggeredBy": [
+          "producer-version"
+        ]
+      }
+    },
+    {
+      "name": "trust-invalidated-producer-name",
+      "kind": "trust",
+      "ok": {
+        "id": "ETD-1",
+        "useId": "U-1",
+        "producer": "junit",
+        "permittedDecisions": [
+          "record-run",
+          "report-coverage"
+        ],
+        "limitations": [],
+        "owner": "peter",
+        "status": "invalidated",
+        "triggeredBy": [
+          "producer-version"
+        ]
+      }
+    },
+    {
+      "name": "trust-invalidated-configuration",
+      "kind": "trust",
+      "ok": {
+        "id": "ETD-1",
+        "useId": "U-1",
+        "producer": "junit",
+        "permittedDecisions": [
+          "record-run",
+          "report-coverage"
+        ],
+        "limitations": [],
+        "owner": "peter",
+        "status": "invalidated",
+        "triggeredBy": [
+          "configuration"
+        ]
+      }
+    },
+    {
+      "name": "trust-invalidated-corpus",
+      "kind": "trust",
+      "ok": {
+        "id": "ETD-1",
+        "useId": "U-1",
+        "producer": "junit",
+        "permittedDecisions": [
+          "record-run",
+          "report-coverage"
+        ],
+        "limitations": [],
+        "owner": "peter",
+        "status": "invalidated",
+        "triggeredBy": [
+          "validation-corpus"
+        ]
+      }
+    },
+    {
+      "name": "trust-invalidated-input-contract",
+      "kind": "trust",
+      "ok": {
+        "id": "ETD-1",
+        "useId": "U-1",
+        "producer": "junit",
+        "permittedDecisions": [
+          "record-run",
+          "report-coverage"
+        ],
+        "limitations": [],
+        "owner": "peter",
+        "status": "invalidated",
+        "triggeredBy": [
+          "input-contract"
+        ]
+      }
+    },
+    {
+      "name": "trust-invalidated-environment",
+      "kind": "trust",
+      "ok": {
+        "id": "ETD-1",
+        "useId": "U-1",
+        "producer": "junit",
+        "permittedDecisions": [
+          "record-run",
+          "report-coverage"
+        ],
+        "limitations": [],
+        "owner": "peter",
+        "status": "invalidated",
+        "triggeredBy": [
+          "environment"
+        ]
+      }
+    },
+    {
+      "name": "trust-invalidated-on-two-triggers",
+      "kind": "trust",
+      "ok": {
+        "id": "ETD-1",
+        "useId": "U-1",
+        "producer": "junit",
+        "permittedDecisions": [
+          "record-run",
+          "report-coverage"
+        ],
+        "limitations": [],
+        "owner": "peter",
+        "status": "invalidated",
+        "triggeredBy": [
+          "producer-version",
+          "environment"
+        ]
+      }
+    },
+    {
+      "name": "trust-adapter-accepted",
+      "kind": "trust",
+      "ok": {
+        "id": "ETD-1",
+        "useId": "U-1",
+        "producer": "junit",
+        "permittedDecisions": [
+          "record-run",
+          "report-coverage"
+        ],
+        "limitations": [],
+        "owner": "peter",
+        "status": "accepted",
+        "triggeredBy": []
+      }
+    },
+    {
+      "name": "trust-adapter-differs",
+      "kind": "trust",
+      "ok": {
+        "id": "ETD-1",
+        "useId": "U-1",
+        "producer": "junit",
+        "permittedDecisions": [
+          "record-run",
+          "report-coverage"
+        ],
+        "limitations": [],
+        "owner": "peter",
+        "status": "invalidated",
+        "triggeredBy": [
+          "adapter"
+        ]
+      }
+    },
+    {
+      "name": "trust-adapter-absent-on-one-side",
+      "kind": "trust",
+      "ok": {
+        "id": "ETD-1",
+        "useId": "U-1",
+        "producer": "junit",
+        "permittedDecisions": [
+          "record-run",
+          "report-coverage"
+        ],
+        "limitations": [],
+        "owner": "peter",
+        "status": "invalidated",
+        "triggeredBy": [
+          "adapter"
+        ]
+      }
+    },
+    {
+      "name": "trust-adapter-without-trigger",
+      "kind": "trust",
+      "err": "invalid trust decision: revalidateOn: must include adapter when an adapter is relied upon"
+    },
+    {
+      "name": "trust-missing-required-trigger",
+      "kind": "trust",
+      "err": "invalid trust decision: revalidateOn: must include environment"
+    },
+    {
+      "name": "trust-duplicate-triggers",
+      "kind": "trust",
+      "err": "invalid trust decision: revalidateOn: contains duplicate triggers"
+    },
+    {
+      "name": "trust-empty-revalidate-on",
+      "kind": "trust",
+      "err": "invalid trust decision: revalidateOn: Too small: expected array to have >=1 items; revalidateOn: must include producer-version; revalidateOn: must include configuration; revalidateOn: must include validation-corpus; revalidateOn: must include input-contract; revalidateOn: must include environment"
+    },
+    {
+      "name": "trust-empty-validation-evidence",
+      "kind": "trust",
+      "err": "invalid trust decision: validationEvidence: must not be empty"
+    },
+    {
+      "name": "trust-evidence-without-digest-or-reference",
+      "kind": "trust",
+      "err": "invalid trust decision: validationEvidence.0: validation evidence needs digest or reference"
+    },
+    {
+      "name": "trust-evidence-with-reference-only",
+      "kind": "trust",
+      "ok": {
+        "id": "ETD-1",
+        "useId": "U-1",
+        "producer": "junit",
+        "permittedDecisions": [
+          "record-run",
+          "report-coverage"
+        ],
+        "limitations": [],
+        "owner": "peter",
+        "status": "accepted",
+        "triggeredBy": []
+      }
+    },
+    {
+      "name": "trust-bad-id",
+      "kind": "trust",
+      "err": "invalid trust decision: id: Invalid string: must match pattern /^ETD-[0-9]+$/"
+    },
+    {
+      "name": "trust-bad-decided-at",
+      "kind": "trust",
+      "err": "invalid trust decision: decidedAt: must be an ISO-8601 timestamp"
+    },
+    {
+      "name": "trust-duplicate-permitted-decisions",
+      "kind": "trust",
+      "err": "invalid trust decision: use.permittedDecisions: contains duplicate decisions"
+    },
+    {
+      "name": "trust-empty-owner",
+      "kind": "trust",
+      "err": "invalid trust decision: owner: Too small: expected string to have >=1 characters"
+    },
+    {
+      "name": "trust-wrong-schema-version",
+      "kind": "trust",
+      "err": "invalid trust decision: schemaVersion: Invalid input: expected 1"
+    },
+    {
+      "name": "independence-satisfied-on-actor",
+      "kind": "independence",
+      "ok": {
+        "profile": "AP-1",
+        "requirement": "IR-1",
+        "obligation": "FR-001-AC-1",
+        "status": "satisfied",
+        "dimensions": [
+          {
+            "dimension": "actor",
+            "values": [
+              "alice",
+              "bob"
+            ],
+            "missingSuites": []
+          }
+        ],
+        "satisfiedBy": [
+          "SUITE-A",
+          "SUITE-B"
+        ],
+        "summary": "IR-1 is satisfied by SUITE-A and SUITE-B; they differ on actor."
+      }
+    },
+    {
+      "name": "independence-insufficient-same-actor",
+      "kind": "independence",
+      "ok": {
+        "profile": "AP-1",
+        "requirement": "IR-1",
+        "obligation": "FR-001-AC-1",
+        "status": "insufficient",
+        "dimensions": [
+          {
+            "dimension": "actor",
+            "values": [
+              "alice"
+            ],
+            "missingSuites": []
+          }
+        ],
+        "summary": "IR-1 requires two evidence lines differing on every selected dimension (actor); actor: 1 distinct."
+      }
+    },
+    {
+      "name": "independence-insufficient-missing-lineage",
+      "kind": "independence",
+      "ok": {
+        "profile": "AP-1",
+        "requirement": "IR-1",
+        "obligation": "FR-001-AC-1",
+        "status": "insufficient",
+        "dimensions": [
+          {
+            "dimension": "actor",
+            "values": [
+              "alice"
+            ],
+            "missingSuites": [
+              "SUITE-B"
+            ]
+          }
+        ],
+        "summary": "IR-1 requires two evidence lines differing on every selected dimension (actor); actor: 1 distinct; missing on SUITE-B."
+      }
+    },
+    {
+      "name": "independence-blank-value-is-absent",
+      "kind": "independence",
+      "ok": {
+        "profile": "AP-1",
+        "requirement": "IR-1",
+        "obligation": "FR-001-AC-1",
+        "status": "insufficient",
+        "dimensions": [
+          {
+            "dimension": "actor",
+            "values": [
+              "alice"
+            ],
+            "missingSuites": [
+              "SUITE-B"
+            ]
+          }
+        ],
+        "summary": "IR-1 requires two evidence lines differing on every selected dimension (actor); actor: 1 distinct; missing on SUITE-B."
+      }
+    },
+    {
+      "name": "independence-two-dimensions-satisfied",
+      "kind": "independence",
+      "ok": {
+        "profile": "AP-1",
+        "requirement": "IR-1",
+        "obligation": "FR-001-AC-1",
+        "status": "satisfied",
+        "dimensions": [
+          {
+            "dimension": "actor",
+            "values": [
+              "alice",
+              "bob"
+            ],
+            "missingSuites": []
+          },
+          {
+            "dimension": "technique",
+            "values": [
+              "property",
+              "unit"
+            ],
+            "missingSuites": []
+          }
+        ],
+        "satisfiedBy": [
+          "SUITE-A",
+          "SUITE-B"
+        ],
+        "summary": "IR-1 is satisfied by SUITE-A and SUITE-B; they differ on actor, technique."
+      }
+    },
+    {
+      "name": "independence-two-dimensions-one-shared",
+      "kind": "independence",
+      "ok": {
+        "profile": "AP-1",
+        "requirement": "IR-1",
+        "obligation": "FR-001-AC-1",
+        "status": "insufficient",
+        "dimensions": [
+          {
+            "dimension": "actor",
+            "values": [
+              "alice",
+              "bob"
+            ],
+            "missingSuites": []
+          },
+          {
+            "dimension": "technique",
+            "values": [
+              "unit"
+            ],
+            "missingSuites": []
+          }
+        ],
+        "summary": "IR-1 requires two evidence lines differing on every selected dimension (actor, technique); actor: 2 distinct; technique: 1 distinct."
+      }
+    },
+    {
+      "name": "independence-three-suites-pair-found",
+      "kind": "independence",
+      "ok": {
+        "profile": "AP-1",
+        "requirement": "IR-1",
+        "obligation": "FR-001-AC-1",
+        "status": "satisfied",
+        "dimensions": [
+          {
+            "dimension": "actor",
+            "values": [
+              "alice",
+              "bob"
+            ],
+            "missingSuites": []
+          }
+        ],
+        "satisfiedBy": [
+          "SUITE-A",
+          "SUITE-B"
+        ],
+        "summary": "IR-1 is satisfied by SUITE-A and SUITE-B; they differ on actor."
+      }
+    },
+    {
+      "name": "independence-no-bindings",
+      "kind": "independence",
+      "ok": {
+        "profile": "AP-1",
+        "requirement": "IR-1",
+        "obligation": "FR-001-AC-1",
+        "status": "insufficient",
+        "dimensions": [
+          {
+            "dimension": "actor",
+            "values": [],
+            "missingSuites": []
+          }
+        ],
+        "summary": "IR-1 requires two evidence lines differing on every selected dimension (actor); actor: 0 distinct."
+      }
+    },
+    {
+      "name": "independence-single-binding",
+      "kind": "independence",
+      "ok": {
+        "profile": "AP-1",
+        "requirement": "IR-1",
+        "obligation": "FR-001-AC-1",
+        "status": "insufficient",
+        "dimensions": [
+          {
+            "dimension": "actor",
+            "values": [
+              "alice"
+            ],
+            "missingSuites": []
+          }
+        ],
+        "summary": "IR-1 requires two evidence lines differing on every selected dimension (actor); actor: 1 distinct."
+      }
+    },
+    {
+      "name": "independence-all-five-dimensions",
+      "kind": "independence",
+      "ok": {
+        "profile": "AP-1",
+        "requirement": "IR-1",
+        "obligation": "FR-001-AC-1",
+        "status": "satisfied",
+        "dimensions": [
+          {
+            "dimension": "actor",
+            "values": [
+              "alice",
+              "bob"
+            ],
+            "missingSuites": []
+          },
+          {
+            "dimension": "implementation-toolchain",
+            "values": [
+              "rustc",
+              "tsc"
+            ],
+            "missingSuites": []
+          },
+          {
+            "dimension": "technique",
+            "values": [
+              "property",
+              "unit"
+            ],
+            "missingSuites": []
+          },
+          {
+            "dimension": "data-source",
+            "values": [
+              "corpus",
+              "fixtures"
+            ],
+            "missingSuites": []
+          },
+          {
+            "dimension": "review-path",
+            "values": [
+              "audit",
+              "peer"
+            ],
+            "missingSuites": []
+          }
+        ],
+        "satisfiedBy": [
+          "SUITE-A",
+          "SUITE-B"
+        ],
+        "summary": "IR-1 is satisfied by SUITE-A and SUITE-B; they differ on actor, implementation-toolchain, technique, data-source, review-path."
+      }
+    },
+    {
+      "name": "bind-creates-a-new-binding",
+      "kind": "bind",
+      "ok": {
+        "bindings": [
+          {
+            "obligation": "FR-001-AC-1",
+            "statementHashAtBinding": "sha256:h1",
+            "suite": "SUITE-A",
+            "commit": "cccccccccccccccccccccccccccccccccccccccc",
+            "symbols": [
+              "t1"
+            ]
+          }
+        ],
+        "created": true,
+        "suspect": false
+      }
+    },
+    {
+      "name": "bind-second-suite-does-not-overwrite-the-first",
+      "kind": "bind",
+      "ok": {
+        "bindings": [
+          {
+            "obligation": "FR-001-AC-1",
+            "statementHashAtBinding": "sha256:h1",
+            "suite": "SUITE-A",
+            "commit": "cccccccccccccccccccccccccccccccccccccccc",
+            "symbols": [
+              "t1"
+            ]
+          },
+          {
+            "obligation": "FR-001-AC-1",
+            "statementHashAtBinding": "sha256:h1",
+            "suite": "SUITE-B",
+            "commit": "cccccccccccccccccccccccccccccccccccccccc",
+            "symbols": [
+              "t1"
+            ]
+          }
+        ],
+        "created": true,
+        "suspect": false
+      }
+    },
+    {
+      "name": "bind-rediscovers-the-same-pair",
+      "kind": "bind",
+      "ok": {
+        "bindings": [
+          {
+            "obligation": "FR-001-AC-1",
+            "statementHashAtBinding": "sha256:h1",
+            "suite": "SUITE-A",
+            "commit": "dddddddddddddddddddddddddddddddddddddddd",
+            "symbols": [
+              "t1",
+              "t2"
+            ]
+          }
+        ],
+        "created": false,
+        "suspect": false
+      }
+    },
+    {
+      "name": "bind-marks-suspect-on-a-changed-hash",
+      "kind": "bind",
+      "ok": {
+        "bindings": [
+          {
+            "obligation": "FR-001-AC-1",
+            "statementHashAtBinding": "sha256:h1",
+            "suite": "SUITE-A",
+            "commit": "cccccccccccccccccccccccccccccccccccccccc",
+            "symbols": [
+              "t1"
+            ]
+          }
+        ],
+        "created": false,
+        "suspect": true
+      }
+    },
+    {
+      "name": "bind-clears-lineage-when-the-new-record-states-none",
+      "kind": "bind",
+      "ok": {
+        "bindings": [
+          {
+            "obligation": "FR-001-AC-1",
+            "statementHashAtBinding": "sha256:h1",
+            "suite": "SUITE-A",
+            "commit": "cccccccccccccccccccccccccccccccccccccccc",
+            "symbols": [
+              "t1"
+            ]
+          }
+        ],
+        "created": false,
+        "suspect": false
+      }
+    },
+    {
+      "name": "bind-sets-lineage-on-rediscovery",
+      "kind": "bind",
+      "ok": {
+        "bindings": [
+          {
+            "obligation": "FR-001-AC-1",
+            "statementHashAtBinding": "sha256:h1",
+            "suite": "SUITE-A",
+            "commit": "cccccccccccccccccccccccccccccccccccccccc",
+            "symbols": [
+              "t1"
+            ],
+            "lineage": {
+              "actor": "bob"
+            }
+          }
+        ],
+        "created": false,
+        "suspect": false
+      }
+    },
+    {
+      "name": "affirm-every-binding-for-the-obligation",
+      "kind": "affirm",
+      "ok": {
+        "bindings": [
+          {
+            "obligation": "FR-001-AC-1",
+            "statementHashAtBinding": "sha256:h9",
+            "suite": "SUITE-A",
+            "commit": "cccccccccccccccccccccccccccccccccccccccc",
+            "symbols": [
+              "t1"
+            ],
+            "affirmations": [
+              {
+                "who": "peter",
+                "commit": "ffffffffffffffffffffffffffffffffffffffff",
+                "note": "read the new statement"
+              }
+            ]
+          },
+          {
+            "obligation": "FR-001-AC-1",
+            "statementHashAtBinding": "sha256:h9",
+            "suite": "SUITE-B",
+            "commit": "cccccccccccccccccccccccccccccccccccccccc",
+            "symbols": [
+              "t1"
+            ],
+            "affirmations": [
+              {
+                "who": "peter",
+                "commit": "ffffffffffffffffffffffffffffffffffffffff",
+                "note": "read the new statement"
+              }
+            ]
+          }
+        ],
+        "found": true
+      }
+    },
+    {
+      "name": "affirm-narrowed-to-one-suite",
+      "kind": "affirm",
+      "ok": {
+        "bindings": [
+          {
+            "obligation": "FR-001-AC-1",
+            "statementHashAtBinding": "sha256:h1",
+            "suite": "SUITE-A",
+            "commit": "cccccccccccccccccccccccccccccccccccccccc",
+            "symbols": [
+              "t1"
+            ]
+          },
+          {
+            "obligation": "FR-001-AC-1",
+            "statementHashAtBinding": "sha256:h9",
+            "suite": "SUITE-B",
+            "commit": "cccccccccccccccccccccccccccccccccccccccc",
+            "symbols": [
+              "t1"
+            ],
+            "affirmations": [
+              {
+                "who": "peter",
+                "commit": "ffffffffffffffffffffffffffffffffffffffff",
+                "note": "read the new statement"
+              }
+            ]
+          }
+        ],
+        "found": true
+      }
+    },
+    {
+      "name": "affirm-finds-nothing",
+      "kind": "affirm",
+      "ok": {
+        "bindings": [
+          {
+            "obligation": "FR-001-AC-1",
+            "statementHashAtBinding": "sha256:h1",
+            "suite": "SUITE-A",
+            "commit": "cccccccccccccccccccccccccccccccccccccccc",
+            "symbols": [
+              "t1"
+            ]
+          }
+        ],
+        "found": false
+      }
+    },
+    {
+      "name": "affirm-appends-to-existing-affirmations",
+      "kind": "affirm",
+      "ok": {
+        "bindings": [
+          {
+            "obligation": "FR-001-AC-1",
+            "statementHashAtBinding": "sha256:h9",
+            "suite": "SUITE-A",
+            "commit": "cccccccccccccccccccccccccccccccccccccccc",
+            "symbols": [
+              "t1"
+            ],
+            "affirmations": [
+              {
+                "who": "ann",
+                "commit": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+              },
+              {
+                "who": "peter",
+                "commit": "ffffffffffffffffffffffffffffffffffffffff",
+                "note": "read the new statement"
+              }
+            ]
+          }
+        ],
+        "found": true
+      }
+    },
+    {
+      "name": "canonical-run-record",
+      "kind": "canonical",
+      "ok": {
+        "record": "run",
+        "files": [
+          {
+            "path": "runs/SUITE-A/aaaaaaaaaaaa.json",
+            "text": "{\n  \"commit\": \"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\n  \"entries\": [\n    {\n      \"outcome\": \"pass\",\n      \"symbol\": \"tests::tc001\",\n      \"traceIds\": [\n        \"FR-001-AC-1\"\n      ]\n    },\n    {\n      \"outcome\": \"fail\",\n      \"symbol\": \"tests::tc002\"\n    },\n    {\n      \"metric\": \"mutation-score\",\n      \"outcome\": \"pass\",\n      \"score\": 1,\n      \"symbol\": \"mutants\"\n    },\n    {\n      \"config\": {\n        \"a\": \"1\",\n        \"b\": \"2\"\n      },\n      \"outcome\": \"pass\",\n      \"symbol\": \"cfg\"\n    }\n  ],\n  \"evidenceKind\": \"Unit\",\n  \"schemaVersion\": 1,\n  \"suite\": \"SUITE-A\",\n  \"timestamp\": \"2026-01-01T00:00:00Z\",\n  \"tool\": \"vitest 4.1.10\"\n}\n"
+          }
+        ]
+      }
+    },
+    {
+      "name": "canonical-run-record-empty-entries",
+      "kind": "canonical",
+      "ok": {
+        "record": "run",
+        "files": [
+          {
+            "path": "runs/SUITE-A/aaaaaaaaaaaa.json",
+            "text": "{\n  \"commit\": \"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\n  \"entries\": [],\n  \"evidenceKind\": \"Unit\",\n  \"schemaVersion\": 1,\n  \"suite\": \"SUITE-A\",\n  \"timestamp\": \"2026-01-01T00:00:00Z\",\n  \"tool\": \"vitest 4.1.10\"\n}\n"
+          }
+        ]
+      }
+    },
+    {
+      "name": "canonical-run-record-no-evidence-kind",
+      "kind": "canonical",
+      "ok": {
+        "record": "run",
+        "files": [
+          {
+            "path": "runs/SUITE-A/aaaaaaaaaaaa.json",
+            "text": "{\n  \"commit\": \"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\n  \"entries\": [\n    {\n      \"outcome\": \"pass\",\n      \"symbol\": \"tests::tc001\",\n      \"traceIds\": [\n        \"FR-001-AC-1\"\n      ]\n    },\n    {\n      \"outcome\": \"fail\",\n      \"symbol\": \"tests::tc002\"\n    },\n    {\n      \"metric\": \"mutation-score\",\n      \"outcome\": \"pass\",\n      \"score\": 1,\n      \"symbol\": \"mutants\"\n    },\n    {\n      \"config\": {\n        \"a\": \"1\",\n        \"b\": \"2\"\n      },\n      \"outcome\": \"pass\",\n      \"symbol\": \"cfg\"\n    }\n  ],\n  \"schemaVersion\": 1,\n  \"suite\": \"SUITE-A\",\n  \"timestamp\": \"2026-01-01T00:00:00Z\",\n  \"tool\": \"vitest 4.1.10\"\n}\n"
+          }
+        ]
+      }
+    },
+    {
+      "name": "canonical-scan-record",
+      "kind": "canonical",
+      "ok": {
+        "record": "scan",
+        "files": [
+          {
+            "path": "scans/SUITE-S/bbbbbbbbbbbb.json",
+            "text": "{\n  \"commit\": \"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\n  \"findings\": [\n    {\n      \"line\": 3,\n      \"message\": \"m\",\n      \"path\": \"Cargo.lock\",\n      \"ruleId\": \"RUSTSEC-2026-0190\",\n      \"severity\": \"high\"\n    }\n  ],\n  \"rulesEvaluated\": 0,\n  \"ruleset\": \"advisory-db@2026-01-01\",\n  \"schemaVersion\": 1,\n  \"suite\": \"SUITE-S\",\n  \"timestamp\": \"2026-01-02T00:00:00Z\",\n  \"tool\": \"cargo-audit 0.21\"\n}\n"
+          }
+        ]
+      }
+    },
+    {
+      "name": "canonical-scan-record-no-findings",
+      "kind": "canonical",
+      "ok": {
+        "record": "scan",
+        "files": [
+          {
+            "path": "scans/SUITE-S/bbbbbbbbbbbb.json",
+            "text": "{\n  \"commit\": \"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\n  \"findings\": [],\n  \"rulesEvaluated\": 42,\n  \"ruleset\": \"advisory-db@2026-01-01\",\n  \"schemaVersion\": 1,\n  \"suite\": \"SUITE-S\",\n  \"timestamp\": \"2026-01-02T00:00:00Z\",\n  \"tool\": \"cargo-audit 0.21\"\n}\n"
+          }
+        ]
+      }
+    },
+    {
+      "name": "canonical-mock-inspection-record",
+      "kind": "canonical",
+      "ok": {
+        "record": "mockInspection",
+        "files": [
+          {
+            "path": "mock-inspections/SUITE-A/cccccccccccc.json",
+            "text": "{\n  \"commit\": \"cccccccccccccccccccccccccccccccccccccccc\",\n  \"injections\": [\n    {\n      \"injects\": [\n        \"MockClock::new\"\n      ],\n      \"line\": 12,\n      \"path\": \"src/a.rs\",\n      \"suite\": \"SUITE-A\",\n      \"symbol\": \"t1\"\n    }\n  ],\n  \"schemaVersion\": 1,\n  \"suite\": \"SUITE-A\",\n  \"timestamp\": \"2026-01-03T00:00:00Z\",\n  \"tool\": \"quoin 0.1\"\n}\n"
+          }
+        ]
+      }
+    },
+    {
+      "name": "canonical-mock-inspection-empty",
+      "kind": "canonical",
+      "ok": {
+        "record": "mockInspection",
+        "files": [
+          {
+            "path": "mock-inspections/SUITE-A/cccccccccccc.json",
+            "text": "{\n  \"commit\": \"cccccccccccccccccccccccccccccccccccccccc\",\n  \"injections\": [],\n  \"schemaVersion\": 1,\n  \"suite\": \"SUITE-A\",\n  \"timestamp\": \"2026-01-03T00:00:00Z\",\n  \"tool\": \"quoin 0.1\"\n}\n"
+          }
+        ]
+      }
+    },
+    {
+      "name": "canonical-bindings-file",
+      "kind": "canonical",
+      "ok": {
+        "record": "bindings",
+        "files": [
+          {
+            "path": "bindings.json",
+            "text": "{\n  \"bindings\": [\n    {\n      \"commit\": \"cccccccccccccccccccccccccccccccccccccccc\",\n      \"lineage\": {\n        \"actor\": \"alice\"\n      },\n      \"obligation\": \"FR-001-AC-1\",\n      \"statementHashAtBinding\": \"sha256:h1\",\n      \"suite\": \"SUITE-A\",\n      \"symbols\": [\n        \"t1\"\n      ]\n    },\n    {\n      \"commit\": \"cccccccccccccccccccccccccccccccccccccccc\",\n      \"obligation\": \"FR-001-AC-1\",\n      \"statementHashAtBinding\": \"sha256:h1\",\n      \"suite\": \"SUITE-Z\",\n      \"symbols\": [\n        \"t1\"\n      ]\n    },\n    {\n      \"commit\": \"cccccccccccccccccccccccccccccccccccccccc\",\n      \"obligation\": \"FR-002-AC-1\",\n      \"statementHashAtBinding\": \"sha256:h1\",\n      \"suite\": \"SUITE-B\",\n      \"symbols\": [\n        \"t1\"\n      ]\n    }\n  ],\n  \"schemaVersion\": 1\n}\n"
+          }
+        ]
+      }
+    },
+    {
+      "name": "canonical-bindings-file-empty",
+      "kind": "canonical",
+      "ok": {
+        "record": "bindings",
+        "files": [
+          {
+            "path": "bindings.json",
+            "text": "{\n  \"bindings\": [],\n  \"schemaVersion\": 1\n}\n"
+          }
+        ]
+      }
+    },
+    {
+      "name": "canonical-baseline-file",
+      "kind": "canonical",
+      "ok": {
+        "record": "baseline",
+        "files": [
+          {
+            "path": "baseline.json",
+            "text": "{\n  \"accepted\": [\n    \"stale-evidence:FR-003-AC-1\",\n    \"suspect:FR-002-AC-1\",\n    \"undischarged:FR-001-AC-1\"\n  ],\n  \"commit\": \"dddddddddddddddddddddddddddddddddddddddd\",\n  \"schemaVersion\": 1\n}\n"
+          }
+        ]
+      }
+    },
+    {
+      "name": "canonical-trust-decision",
+      "kind": "canonical",
+      "ok": {
+        "record": "trustDecision",
+        "files": [
+          {
+            "path": "trust/ETD-1.json",
+            "text": "{\n  \"acceptedContext\": {\n    \"configurationDigest\": \"sha256:aa\",\n    \"environment\": \"ci\",\n    \"inputContract\": \"junit-xml\",\n    \"name\": \"junit\",\n    \"validationCorpusDigest\": \"sha256:bb\",\n    \"version\": \"1.0\"\n  },\n  \"decidedAt\": \"2026-01-01T00:00:00Z\",\n  \"decision\": \"relied-upon\",\n  \"id\": \"ETD-1\",\n  \"limitations\": [],\n  \"observedContext\": {\n    \"configurationDigest\": \"sha256:aa\",\n    \"environment\": \"ci\",\n    \"inputContract\": \"junit-xml\",\n    \"name\": \"junit\",\n    \"validationCorpusDigest\": \"sha256:bb\",\n    \"version\": \"1.0\"\n  },\n  \"owner\": \"peter\",\n  \"revalidateOn\": [\n    \"producer-version\",\n    \"configuration\",\n    \"validation-corpus\",\n    \"input-contract\",\n    \"environment\"\n  ],\n  \"schemaVersion\": 1,\n  \"use\": {\n    \"id\": \"U-1\",\n    \"intendedFunction\": \"transcribe junit\",\n    \"permittedDecisions\": [\n      \"record-run\",\n      \"report-coverage\"\n    ]\n  },\n  \"validationEvidence\": [\n    {\n      \"digest\": \"sha256:abcdef\",\n      \"id\": \"V-1\"\n    }\n  ]\n}\n"
+          }
+        ]
+      }
+    },
+    {
+      "name": "vacuity-no-rules-evaluated",
+      "kind": "vacuity",
+      "ok": {
+        "vacuous": true
+      }
+    },
+    {
+      "name": "vacuity-rules-evaluated",
+      "kind": "vacuity",
+      "ok": {
+        "vacuous": false
+      }
+    },
+    {
+      "name": "vacuity-unknown",
+      "kind": "vacuity",
+      "ok": {
+        "vacuous": null
+      }
+    },
+    {
+      "name": "assurance-experiment-valid",
+      "kind": "assurance",
+      "ok": {
+        "schemaVersion": "experiment-record-v1",
+        "subject": {
+          "kind": "requirement",
+          "id": "FR-001",
+          "sourceRevision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        },
+        "recordedAt": "2026-01-01T00:00:00Z",
+        "hypothesis": "the adapter reads real output",
+        "design": {
+          "timeBox": "1d",
+          "corpusRefs": [
+            "corpus/a"
+          ],
+          "comparisonMethod": "A/B",
+          "decisionRule": "p<0.05"
+        },
+        "result": {
+          "status": "supported",
+          "summary": "it did",
+          "evidenceRefs": [
+            "runs/SUITE-A"
+          ]
+        },
+        "producerProvenance": {
+          "schemaVersion": "producer-provenance-v1",
+          "identity": "quoin",
+          "version": "0.1.0",
+          "sourceRevision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "sourceState": "clean",
+          "executableDigest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+          "configurationDigest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+          "capabilities": [
+            "record"
+          ],
+          "artifacts": [
+            {
+              "name": "report.json",
+              "digest": "sha256:3333333333333333333333333333333333333333333333333333333333333333"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "assurance-experiment-unknown-field",
+      "kind": "assurance",
+      "err": "experiment record has unknown field extra"
+    },
+    {
+      "name": "assurance-experiment-missing-field",
+      "kind": "assurance",
+      "err": "experiment record is missing hypothesis"
+    },
+    {
+      "name": "assurance-experiment-bad-status",
+      "kind": "assurance",
+      "err": "result.status must be one of supported, not_supported, inconclusive"
+    },
+    {
+      "name": "assurance-experiment-empty-corpus-refs",
+      "kind": "assurance",
+      "err": "corpusRefs must be a non-empty array"
+    },
+    {
+      "name": "assurance-experiment-duplicate-corpus-refs",
+      "kind": "assurance",
+      "err": "corpusRefs must contain unique values"
+    },
+    {
+      "name": "assurance-experiment-bad-recorded-at",
+      "kind": "assurance",
+      "err": "recordedAt must be an ISO-8601 instant"
+    },
+    {
+      "name": "assurance-experiment-bad-digest",
+      "kind": "assurance",
+      "err": "producerProvenance.executableDigest must be sha256:<64 lowercase hex>"
+    },
+    {
+      "name": "assurance-experiment-not-an-object",
+      "kind": "assurance",
+      "err": "experiment record must be an object"
+    },
+    {
+      "name": "assurance-operational-valid",
+      "kind": "assurance",
+      "ok": {
+        "schemaVersion": "operational-evidence-record-v1",
+        "subject": {
+          "kind": "service",
+          "id": "quoin-core",
+          "sourceRevision": "cccccccccccccccccccccccccccccccccccccccc"
+        },
+        "recordedAt": "2026-01-01T00:00:00Z",
+        "window": {
+          "startedAt": "2026-01-01T00:00:00Z",
+          "endedAt": "2026-01-02T00:00:00Z"
+        },
+        "environment": "production",
+        "observations": [
+          {
+            "signal": "latency",
+            "value": "12",
+            "unit": "ms",
+            "interpretation": "within bounds",
+            "evidenceRefs": [
+              "metrics/1"
+            ]
+          }
+        ],
+        "outcome": "within_bounds",
+        "producerProvenance": {
+          "schemaVersion": "producer-provenance-v1",
+          "identity": "quoin",
+          "version": "0.1.0",
+          "sourceRevision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "sourceState": "clean",
+          "executableDigest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+          "configurationDigest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+          "capabilities": [
+            "record"
+          ],
+          "artifacts": [
+            {
+              "name": "report.json",
+              "digest": "sha256:3333333333333333333333333333333333333333333333333333333333333333"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "assurance-operational-window-inverted",
+      "kind": "assurance",
+      "err": "window.endedAt must be after window.startedAt"
+    },
+    {
+      "name": "assurance-operational-no-observations",
+      "kind": "assurance",
+      "err": "observations must be a non-empty array"
+    },
+    {
+      "name": "assurance-operational-observation-without-unit",
+      "kind": "assurance",
+      "ok": {
+        "schemaVersion": "operational-evidence-record-v1",
+        "subject": {
+          "kind": "service",
+          "id": "quoin-core",
+          "sourceRevision": "cccccccccccccccccccccccccccccccccccccccc"
+        },
+        "recordedAt": "2026-01-01T00:00:00Z",
+        "window": {
+          "startedAt": "2026-01-01T00:00:00Z",
+          "endedAt": "2026-01-02T00:00:00Z"
+        },
+        "environment": "production",
+        "observations": [
+          {
+            "signal": "latency",
+            "value": "12",
+            "interpretation": "within bounds",
+            "evidenceRefs": [
+              "metrics/1"
+            ]
+          }
+        ],
+        "outcome": "within_bounds",
+        "producerProvenance": {
+          "schemaVersion": "producer-provenance-v1",
+          "identity": "quoin",
+          "version": "0.1.0",
+          "sourceRevision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "sourceState": "clean",
+          "executableDigest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+          "configurationDigest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+          "capabilities": [
+            "record"
+          ],
+          "artifacts": [
+            {
+              "name": "report.json",
+              "digest": "sha256:3333333333333333333333333333333333333333333333333333333333333333"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "assurance-operational-bad-outcome",
+      "kind": "assurance",
+      "err": "outcome must be one of within_bounds, outside_bounds, inconclusive"
+    },
+    {
+      "name": "assurance-operational-unknown-observation-field",
+      "kind": "assurance",
+      "err": "observations[0] has unknown field extra"
+    },
+    {
+      "name": "mock-rust-test-file",
+      "kind": "mock",
+      "ok": [
+        {
+          "suite": "SUITE-A",
+          "symbol": "tc_001_uses_a_stand_in",
+          "injects": [
+            "MockClock::new"
+          ],
+          "path": "src/lib.rs",
+          "line": 7
+        },
+        {
+          "suite": "SUITE-A",
+          "symbol": "tc_001_uses_a_stand_in",
+          "injects": [
+            "Confirmation::allow"
+          ],
+          "path": "src/lib.rs",
+          "line": 8
+        }
+      ]
+    },
+    {
+      "name": "mock-python-test-file",
+      "kind": "mock",
+      "ok": [
+        {
+          "suite": "SUITE-A",
+          "symbol": "test_allows",
+          "injects": [
+            "FakeGate.build"
+          ],
+          "path": "tests/test_gate.py",
+          "line": 2
+        },
+        {
+          "suite": "SUITE-A",
+          "symbol": "test_allows",
+          "injects": [
+            "Policy.approve"
+          ],
+          "path": "tests/test_gate.py",
+          "line": 3
+        }
+      ]
+    },
+    {
+      "name": "mock-typescript-test-file",
+      "kind": "mock",
+      "ok": [
+        {
+          "suite": "SUITE-A",
+          "symbol": "uses a stub",
+          "injects": [
+            "StubStore.create"
+          ],
+          "path": "tests/gate.test.ts",
+          "line": 2
+        },
+        {
+          "suite": "SUITE-A",
+          "symbol": "uses a stub",
+          "injects": [
+            "Gate.bypass"
+          ],
+          "path": "tests/gate.test.ts",
+          "line": 3
+        }
+      ]
+    },
+    {
+      "name": "mock-all-three-languages",
+      "kind": "mock",
+      "ok": [
+        {
+          "suite": "SUITE-A",
+          "symbol": "tc_001_uses_a_stand_in",
+          "injects": [
+            "MockClock::new"
+          ],
+          "path": "src/lib.rs",
+          "line": 7
+        },
+        {
+          "suite": "SUITE-A",
+          "symbol": "tc_001_uses_a_stand_in",
+          "injects": [
+            "Confirmation::allow"
+          ],
+          "path": "src/lib.rs",
+          "line": 8
+        },
+        {
+          "suite": "SUITE-A",
+          "symbol": "uses a stub",
+          "injects": [
+            "StubStore.create"
+          ],
+          "path": "tests/gate.test.ts",
+          "line": 2
+        },
+        {
+          "suite": "SUITE-A",
+          "symbol": "uses a stub",
+          "injects": [
+            "Gate.bypass"
+          ],
+          "path": "tests/gate.test.ts",
+          "line": 3
+        },
+        {
+          "suite": "SUITE-A",
+          "symbol": "test_allows",
+          "injects": [
+            "FakeGate.build"
+          ],
+          "path": "tests/test_gate.py",
+          "line": 2
+        },
+        {
+          "suite": "SUITE-A",
+          "symbol": "test_allows",
+          "injects": [
+            "Policy.approve"
+          ],
+          "path": "tests/test_gate.py",
+          "line": 3
+        }
+      ]
+    },
+    {
+      "name": "mock-no-test-markers",
+      "kind": "mock",
+      "ok": []
+    },
+    {
+      "name": "mock-excluded-directory",
+      "kind": "mock",
+      "ok": []
+    },
+    {
+      "name": "mock-unreadable-extension",
+      "kind": "mock",
+      "ok": []
+    }
+  ]
+}

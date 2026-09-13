@@ -1,0 +1,2838 @@
+{
+  "cases": [
+    {
+      "name": "trust-accepted",
+      "kind": "trust",
+      "input": {
+        "schemaVersion": 1,
+        "id": "ETD-1",
+        "use": {
+          "id": "U-1",
+          "intendedFunction": "transcribe junit",
+          "permittedDecisions": ["record-run", "report-coverage"]
+        },
+        "decision": "relied-upon",
+        "acceptedContext": {
+          "name": "junit",
+          "version": "1.0",
+          "configurationDigest": "sha256:aa",
+          "validationCorpusDigest": "sha256:bb",
+          "inputContract": "junit-xml",
+          "environment": "ci"
+        },
+        "observedContext": {
+          "name": "junit",
+          "version": "1.0",
+          "configurationDigest": "sha256:aa",
+          "validationCorpusDigest": "sha256:bb",
+          "inputContract": "junit-xml",
+          "environment": "ci"
+        },
+        "revalidateOn": [
+          "producer-version",
+          "configuration",
+          "validation-corpus",
+          "input-contract",
+          "environment"
+        ],
+        "validationEvidence": [
+          {
+            "id": "V-1",
+            "digest": "sha256:abcdef"
+          }
+        ],
+        "limitations": [],
+        "owner": "peter",
+        "decidedAt": "2026-01-01T00:00:00Z"
+      }
+    },
+    {
+      "name": "trust-accepted-with-limitations",
+      "kind": "trust",
+      "input": {
+        "schemaVersion": 1,
+        "id": "ETD-1",
+        "use": {
+          "id": "U-1",
+          "intendedFunction": "transcribe junit",
+          "permittedDecisions": ["record-run", "report-coverage"]
+        },
+        "decision": "relied-upon",
+        "acceptedContext": {
+          "name": "junit",
+          "version": "1.0",
+          "configurationDigest": "sha256:aa",
+          "validationCorpusDigest": "sha256:bb",
+          "inputContract": "junit-xml",
+          "environment": "ci"
+        },
+        "observedContext": {
+          "name": "junit",
+          "version": "1.0",
+          "configurationDigest": "sha256:aa",
+          "validationCorpusDigest": "sha256:bb",
+          "inputContract": "junit-xml",
+          "environment": "ci"
+        },
+        "revalidateOn": [
+          "producer-version",
+          "configuration",
+          "validation-corpus",
+          "input-contract",
+          "environment"
+        ],
+        "validationEvidence": [
+          {
+            "id": "V-1",
+            "digest": "sha256:abcdef"
+          }
+        ],
+        "limitations": ["unit suites only"],
+        "owner": "peter",
+        "decidedAt": "2026-01-01T00:00:00Z"
+      }
+    },
+    {
+      "name": "trust-unobserved",
+      "kind": "trust",
+      "input": {
+        "schemaVersion": 1,
+        "id": "ETD-1",
+        "use": {
+          "id": "U-1",
+          "intendedFunction": "transcribe junit",
+          "permittedDecisions": ["record-run", "report-coverage"]
+        },
+        "decision": "relied-upon",
+        "acceptedContext": {
+          "name": "junit",
+          "version": "1.0",
+          "configurationDigest": "sha256:aa",
+          "validationCorpusDigest": "sha256:bb",
+          "inputContract": "junit-xml",
+          "environment": "ci"
+        },
+        "revalidateOn": [
+          "producer-version",
+          "configuration",
+          "validation-corpus",
+          "input-contract",
+          "environment"
+        ],
+        "validationEvidence": [
+          {
+            "id": "V-1",
+            "digest": "sha256:abcdef"
+          }
+        ],
+        "limitations": [],
+        "owner": "peter",
+        "decidedAt": "2026-01-01T00:00:00Z"
+      }
+    },
+    {
+      "name": "trust-not-relied-upon",
+      "kind": "trust",
+      "input": {
+        "schemaVersion": 1,
+        "id": "ETD-1",
+        "use": {
+          "id": "U-1",
+          "intendedFunction": "transcribe junit",
+          "permittedDecisions": ["record-run", "report-coverage"]
+        },
+        "decision": "not-relied-upon",
+        "acceptedContext": {
+          "name": "junit",
+          "version": "1.0",
+          "configurationDigest": "sha256:aa",
+          "validationCorpusDigest": "sha256:bb",
+          "inputContract": "junit-xml",
+          "environment": "ci"
+        },
+        "observedContext": {
+          "name": "junit",
+          "version": "1.0",
+          "configurationDigest": "sha256:aa",
+          "validationCorpusDigest": "sha256:bb",
+          "inputContract": "junit-xml",
+          "environment": "ci"
+        },
+        "revalidateOn": [
+          "producer-version",
+          "configuration",
+          "validation-corpus",
+          "input-contract",
+          "environment"
+        ],
+        "validationEvidence": [
+          {
+            "id": "V-1",
+            "digest": "sha256:abcdef"
+          }
+        ],
+        "limitations": [],
+        "owner": "peter",
+        "decidedAt": "2026-01-01T00:00:00Z"
+      }
+    },
+    {
+      "name": "trust-invalidated-version",
+      "kind": "trust",
+      "input": {
+        "schemaVersion": 1,
+        "id": "ETD-1",
+        "use": {
+          "id": "U-1",
+          "intendedFunction": "transcribe junit",
+          "permittedDecisions": ["record-run", "report-coverage"]
+        },
+        "decision": "relied-upon",
+        "acceptedContext": {
+          "name": "junit",
+          "version": "1.0",
+          "configurationDigest": "sha256:aa",
+          "validationCorpusDigest": "sha256:bb",
+          "inputContract": "junit-xml",
+          "environment": "ci"
+        },
+        "observedContext": {
+          "name": "junit",
+          "version": "2.0",
+          "configurationDigest": "sha256:aa",
+          "validationCorpusDigest": "sha256:bb",
+          "inputContract": "junit-xml",
+          "environment": "ci"
+        },
+        "revalidateOn": [
+          "producer-version",
+          "configuration",
+          "validation-corpus",
+          "input-contract",
+          "environment"
+        ],
+        "validationEvidence": [
+          {
+            "id": "V-1",
+            "digest": "sha256:abcdef"
+          }
+        ],
+        "limitations": [],
+        "owner": "peter",
+        "decidedAt": "2026-01-01T00:00:00Z"
+      }
+    },
+    {
+      "name": "trust-invalidated-producer-name",
+      "kind": "trust",
+      "input": {
+        "schemaVersion": 1,
+        "id": "ETD-1",
+        "use": {
+          "id": "U-1",
+          "intendedFunction": "transcribe junit",
+          "permittedDecisions": ["record-run", "report-coverage"]
+        },
+        "decision": "relied-upon",
+        "acceptedContext": {
+          "name": "junit",
+          "version": "1.0",
+          "configurationDigest": "sha256:aa",
+          "validationCorpusDigest": "sha256:bb",
+          "inputContract": "junit-xml",
+          "environment": "ci"
+        },
+        "observedContext": {
+          "name": "junit5",
+          "version": "1.0",
+          "configurationDigest": "sha256:aa",
+          "validationCorpusDigest": "sha256:bb",
+          "inputContract": "junit-xml",
+          "environment": "ci"
+        },
+        "revalidateOn": [
+          "producer-version",
+          "configuration",
+          "validation-corpus",
+          "input-contract",
+          "environment"
+        ],
+        "validationEvidence": [
+          {
+            "id": "V-1",
+            "digest": "sha256:abcdef"
+          }
+        ],
+        "limitations": [],
+        "owner": "peter",
+        "decidedAt": "2026-01-01T00:00:00Z"
+      }
+    },
+    {
+      "name": "trust-invalidated-configuration",
+      "kind": "trust",
+      "input": {
+        "schemaVersion": 1,
+        "id": "ETD-1",
+        "use": {
+          "id": "U-1",
+          "intendedFunction": "transcribe junit",
+          "permittedDecisions": ["record-run", "report-coverage"]
+        },
+        "decision": "relied-upon",
+        "acceptedContext": {
+          "name": "junit",
+          "version": "1.0",
+          "configurationDigest": "sha256:aa",
+          "validationCorpusDigest": "sha256:bb",
+          "inputContract": "junit-xml",
+          "environment": "ci"
+        },
+        "observedContext": {
+          "name": "junit",
+          "version": "1.0",
+          "configurationDigest": "sha256:cc",
+          "validationCorpusDigest": "sha256:bb",
+          "inputContract": "junit-xml",
+          "environment": "ci"
+        },
+        "revalidateOn": [
+          "producer-version",
+          "configuration",
+          "validation-corpus",
+          "input-contract",
+          "environment"
+        ],
+        "validationEvidence": [
+          {
+            "id": "V-1",
+            "digest": "sha256:abcdef"
+          }
+        ],
+        "limitations": [],
+        "owner": "peter",
+        "decidedAt": "2026-01-01T00:00:00Z"
+      }
+    },
+    {
+      "name": "trust-invalidated-corpus",
+      "kind": "trust",
+      "input": {
+        "schemaVersion": 1,
+        "id": "ETD-1",
+        "use": {
+          "id": "U-1",
+          "intendedFunction": "transcribe junit",
+          "permittedDecisions": ["record-run", "report-coverage"]
+        },
+        "decision": "relied-upon",
+        "acceptedContext": {
+          "name": "junit",
+          "version": "1.0",
+          "configurationDigest": "sha256:aa",
+          "validationCorpusDigest": "sha256:bb",
+          "inputContract": "junit-xml",
+          "environment": "ci"
+        },
+        "observedContext": {
+          "name": "junit",
+          "version": "1.0",
+          "configurationDigest": "sha256:aa",
+          "validationCorpusDigest": "sha256:dd",
+          "inputContract": "junit-xml",
+          "environment": "ci"
+        },
+        "revalidateOn": [
+          "producer-version",
+          "configuration",
+          "validation-corpus",
+          "input-contract",
+          "environment"
+        ],
+        "validationEvidence": [
+          {
+            "id": "V-1",
+            "digest": "sha256:abcdef"
+          }
+        ],
+        "limitations": [],
+        "owner": "peter",
+        "decidedAt": "2026-01-01T00:00:00Z"
+      }
+    },
+    {
+      "name": "trust-invalidated-input-contract",
+      "kind": "trust",
+      "input": {
+        "schemaVersion": 1,
+        "id": "ETD-1",
+        "use": {
+          "id": "U-1",
+          "intendedFunction": "transcribe junit",
+          "permittedDecisions": ["record-run", "report-coverage"]
+        },
+        "decision": "relied-upon",
+        "acceptedContext": {
+          "name": "junit",
+          "version": "1.0",
+          "configurationDigest": "sha256:aa",
+          "validationCorpusDigest": "sha256:bb",
+          "inputContract": "junit-xml",
+          "environment": "ci"
+        },
+        "observedContext": {
+          "name": "junit",
+          "version": "1.0",
+          "configurationDigest": "sha256:aa",
+          "validationCorpusDigest": "sha256:bb",
+          "inputContract": "junit-xml-2",
+          "environment": "ci"
+        },
+        "revalidateOn": [
+          "producer-version",
+          "configuration",
+          "validation-corpus",
+          "input-contract",
+          "environment"
+        ],
+        "validationEvidence": [
+          {
+            "id": "V-1",
+            "digest": "sha256:abcdef"
+          }
+        ],
+        "limitations": [],
+        "owner": "peter",
+        "decidedAt": "2026-01-01T00:00:00Z"
+      }
+    },
+    {
+      "name": "trust-invalidated-environment",
+      "kind": "trust",
+      "input": {
+        "schemaVersion": 1,
+        "id": "ETD-1",
+        "use": {
+          "id": "U-1",
+          "intendedFunction": "transcribe junit",
+          "permittedDecisions": ["record-run", "report-coverage"]
+        },
+        "decision": "relied-upon",
+        "acceptedContext": {
+          "name": "junit",
+          "version": "1.0",
+          "configurationDigest": "sha256:aa",
+          "validationCorpusDigest": "sha256:bb",
+          "inputContract": "junit-xml",
+          "environment": "ci"
+        },
+        "observedContext": {
+          "name": "junit",
+          "version": "1.0",
+          "configurationDigest": "sha256:aa",
+          "validationCorpusDigest": "sha256:bb",
+          "inputContract": "junit-xml",
+          "environment": "laptop"
+        },
+        "revalidateOn": [
+          "producer-version",
+          "configuration",
+          "validation-corpus",
+          "input-contract",
+          "environment"
+        ],
+        "validationEvidence": [
+          {
+            "id": "V-1",
+            "digest": "sha256:abcdef"
+          }
+        ],
+        "limitations": [],
+        "owner": "peter",
+        "decidedAt": "2026-01-01T00:00:00Z"
+      }
+    },
+    {
+      "name": "trust-invalidated-on-two-triggers",
+      "kind": "trust",
+      "input": {
+        "schemaVersion": 1,
+        "id": "ETD-1",
+        "use": {
+          "id": "U-1",
+          "intendedFunction": "transcribe junit",
+          "permittedDecisions": ["record-run", "report-coverage"]
+        },
+        "decision": "relied-upon",
+        "acceptedContext": {
+          "name": "junit",
+          "version": "1.0",
+          "configurationDigest": "sha256:aa",
+          "validationCorpusDigest": "sha256:bb",
+          "inputContract": "junit-xml",
+          "environment": "ci"
+        },
+        "observedContext": {
+          "name": "junit",
+          "version": "2.0",
+          "configurationDigest": "sha256:aa",
+          "validationCorpusDigest": "sha256:bb",
+          "inputContract": "junit-xml",
+          "environment": "laptop"
+        },
+        "revalidateOn": [
+          "producer-version",
+          "configuration",
+          "validation-corpus",
+          "input-contract",
+          "environment"
+        ],
+        "validationEvidence": [
+          {
+            "id": "V-1",
+            "digest": "sha256:abcdef"
+          }
+        ],
+        "limitations": [],
+        "owner": "peter",
+        "decidedAt": "2026-01-01T00:00:00Z"
+      }
+    },
+    {
+      "name": "trust-adapter-accepted",
+      "kind": "trust",
+      "input": {
+        "schemaVersion": 1,
+        "id": "ETD-1",
+        "use": {
+          "id": "U-1",
+          "intendedFunction": "transcribe junit",
+          "permittedDecisions": ["record-run", "report-coverage"]
+        },
+        "decision": "relied-upon",
+        "acceptedContext": {
+          "name": "junit",
+          "version": "1.0",
+          "configurationDigest": "sha256:aa",
+          "validationCorpusDigest": "sha256:bb",
+          "inputContract": "junit-xml",
+          "environment": "ci",
+          "adapter": {
+            "name": "junit",
+            "version": "3"
+          }
+        },
+        "observedContext": {
+          "name": "junit",
+          "version": "1.0",
+          "configurationDigest": "sha256:aa",
+          "validationCorpusDigest": "sha256:bb",
+          "inputContract": "junit-xml",
+          "environment": "ci",
+          "adapter": {
+            "name": "junit",
+            "version": "3"
+          }
+        },
+        "revalidateOn": [
+          "producer-version",
+          "configuration",
+          "validation-corpus",
+          "input-contract",
+          "environment",
+          "adapter"
+        ],
+        "validationEvidence": [
+          {
+            "id": "V-1",
+            "digest": "sha256:abcdef"
+          }
+        ],
+        "limitations": [],
+        "owner": "peter",
+        "decidedAt": "2026-01-01T00:00:00Z"
+      }
+    },
+    {
+      "name": "trust-adapter-differs",
+      "kind": "trust",
+      "input": {
+        "schemaVersion": 1,
+        "id": "ETD-1",
+        "use": {
+          "id": "U-1",
+          "intendedFunction": "transcribe junit",
+          "permittedDecisions": ["record-run", "report-coverage"]
+        },
+        "decision": "relied-upon",
+        "acceptedContext": {
+          "name": "junit",
+          "version": "1.0",
+          "configurationDigest": "sha256:aa",
+          "validationCorpusDigest": "sha256:bb",
+          "inputContract": "junit-xml",
+          "environment": "ci",
+          "adapter": {
+            "name": "junit",
+            "version": "3"
+          }
+        },
+        "observedContext": {
+          "name": "junit",
+          "version": "1.0",
+          "configurationDigest": "sha256:aa",
+          "validationCorpusDigest": "sha256:bb",
+          "inputContract": "junit-xml",
+          "environment": "ci",
+          "adapter": {
+            "name": "junit",
+            "version": "4"
+          }
+        },
+        "revalidateOn": [
+          "producer-version",
+          "configuration",
+          "validation-corpus",
+          "input-contract",
+          "environment",
+          "adapter"
+        ],
+        "validationEvidence": [
+          {
+            "id": "V-1",
+            "digest": "sha256:abcdef"
+          }
+        ],
+        "limitations": [],
+        "owner": "peter",
+        "decidedAt": "2026-01-01T00:00:00Z"
+      }
+    },
+    {
+      "name": "trust-adapter-absent-on-one-side",
+      "kind": "trust",
+      "input": {
+        "schemaVersion": 1,
+        "id": "ETD-1",
+        "use": {
+          "id": "U-1",
+          "intendedFunction": "transcribe junit",
+          "permittedDecisions": ["record-run", "report-coverage"]
+        },
+        "decision": "relied-upon",
+        "acceptedContext": {
+          "name": "junit",
+          "version": "1.0",
+          "configurationDigest": "sha256:aa",
+          "validationCorpusDigest": "sha256:bb",
+          "inputContract": "junit-xml",
+          "environment": "ci",
+          "adapter": {
+            "name": "junit",
+            "version": "3"
+          }
+        },
+        "observedContext": {
+          "name": "junit",
+          "version": "1.0",
+          "configurationDigest": "sha256:aa",
+          "validationCorpusDigest": "sha256:bb",
+          "inputContract": "junit-xml",
+          "environment": "ci"
+        },
+        "revalidateOn": [
+          "producer-version",
+          "configuration",
+          "validation-corpus",
+          "input-contract",
+          "environment",
+          "adapter"
+        ],
+        "validationEvidence": [
+          {
+            "id": "V-1",
+            "digest": "sha256:abcdef"
+          }
+        ],
+        "limitations": [],
+        "owner": "peter",
+        "decidedAt": "2026-01-01T00:00:00Z"
+      }
+    },
+    {
+      "name": "trust-adapter-without-trigger",
+      "kind": "trust",
+      "input": {
+        "schemaVersion": 1,
+        "id": "ETD-1",
+        "use": {
+          "id": "U-1",
+          "intendedFunction": "transcribe junit",
+          "permittedDecisions": ["record-run", "report-coverage"]
+        },
+        "decision": "relied-upon",
+        "acceptedContext": {
+          "name": "junit",
+          "version": "1.0",
+          "configurationDigest": "sha256:aa",
+          "validationCorpusDigest": "sha256:bb",
+          "inputContract": "junit-xml",
+          "environment": "ci",
+          "adapter": {
+            "name": "junit",
+            "version": "3"
+          }
+        },
+        "observedContext": {
+          "name": "junit",
+          "version": "1.0",
+          "configurationDigest": "sha256:aa",
+          "validationCorpusDigest": "sha256:bb",
+          "inputContract": "junit-xml",
+          "environment": "ci"
+        },
+        "revalidateOn": [
+          "producer-version",
+          "configuration",
+          "validation-corpus",
+          "input-contract",
+          "environment"
+        ],
+        "validationEvidence": [
+          {
+            "id": "V-1",
+            "digest": "sha256:abcdef"
+          }
+        ],
+        "limitations": [],
+        "owner": "peter",
+        "decidedAt": "2026-01-01T00:00:00Z"
+      }
+    },
+    {
+      "name": "trust-missing-required-trigger",
+      "kind": "trust",
+      "input": {
+        "schemaVersion": 1,
+        "id": "ETD-1",
+        "use": {
+          "id": "U-1",
+          "intendedFunction": "transcribe junit",
+          "permittedDecisions": ["record-run", "report-coverage"]
+        },
+        "decision": "relied-upon",
+        "acceptedContext": {
+          "name": "junit",
+          "version": "1.0",
+          "configurationDigest": "sha256:aa",
+          "validationCorpusDigest": "sha256:bb",
+          "inputContract": "junit-xml",
+          "environment": "ci"
+        },
+        "observedContext": {
+          "name": "junit",
+          "version": "1.0",
+          "configurationDigest": "sha256:aa",
+          "validationCorpusDigest": "sha256:bb",
+          "inputContract": "junit-xml",
+          "environment": "ci"
+        },
+        "revalidateOn": [
+          "producer-version",
+          "configuration",
+          "validation-corpus",
+          "input-contract"
+        ],
+        "validationEvidence": [
+          {
+            "id": "V-1",
+            "digest": "sha256:abcdef"
+          }
+        ],
+        "limitations": [],
+        "owner": "peter",
+        "decidedAt": "2026-01-01T00:00:00Z"
+      }
+    },
+    {
+      "name": "trust-duplicate-triggers",
+      "kind": "trust",
+      "input": {
+        "schemaVersion": 1,
+        "id": "ETD-1",
+        "use": {
+          "id": "U-1",
+          "intendedFunction": "transcribe junit",
+          "permittedDecisions": ["record-run", "report-coverage"]
+        },
+        "decision": "relied-upon",
+        "acceptedContext": {
+          "name": "junit",
+          "version": "1.0",
+          "configurationDigest": "sha256:aa",
+          "validationCorpusDigest": "sha256:bb",
+          "inputContract": "junit-xml",
+          "environment": "ci"
+        },
+        "observedContext": {
+          "name": "junit",
+          "version": "1.0",
+          "configurationDigest": "sha256:aa",
+          "validationCorpusDigest": "sha256:bb",
+          "inputContract": "junit-xml",
+          "environment": "ci"
+        },
+        "revalidateOn": [
+          "producer-version",
+          "producer-version",
+          "configuration",
+          "validation-corpus",
+          "input-contract",
+          "environment"
+        ],
+        "validationEvidence": [
+          {
+            "id": "V-1",
+            "digest": "sha256:abcdef"
+          }
+        ],
+        "limitations": [],
+        "owner": "peter",
+        "decidedAt": "2026-01-01T00:00:00Z"
+      }
+    },
+    {
+      "name": "trust-empty-revalidate-on",
+      "kind": "trust",
+      "input": {
+        "schemaVersion": 1,
+        "id": "ETD-1",
+        "use": {
+          "id": "U-1",
+          "intendedFunction": "transcribe junit",
+          "permittedDecisions": ["record-run", "report-coverage"]
+        },
+        "decision": "relied-upon",
+        "acceptedContext": {
+          "name": "junit",
+          "version": "1.0",
+          "configurationDigest": "sha256:aa",
+          "validationCorpusDigest": "sha256:bb",
+          "inputContract": "junit-xml",
+          "environment": "ci"
+        },
+        "observedContext": {
+          "name": "junit",
+          "version": "1.0",
+          "configurationDigest": "sha256:aa",
+          "validationCorpusDigest": "sha256:bb",
+          "inputContract": "junit-xml",
+          "environment": "ci"
+        },
+        "revalidateOn": [],
+        "validationEvidence": [
+          {
+            "id": "V-1",
+            "digest": "sha256:abcdef"
+          }
+        ],
+        "limitations": [],
+        "owner": "peter",
+        "decidedAt": "2026-01-01T00:00:00Z"
+      }
+    },
+    {
+      "name": "trust-empty-validation-evidence",
+      "kind": "trust",
+      "input": {
+        "schemaVersion": 1,
+        "id": "ETD-1",
+        "use": {
+          "id": "U-1",
+          "intendedFunction": "transcribe junit",
+          "permittedDecisions": ["record-run", "report-coverage"]
+        },
+        "decision": "relied-upon",
+        "acceptedContext": {
+          "name": "junit",
+          "version": "1.0",
+          "configurationDigest": "sha256:aa",
+          "validationCorpusDigest": "sha256:bb",
+          "inputContract": "junit-xml",
+          "environment": "ci"
+        },
+        "observedContext": {
+          "name": "junit",
+          "version": "1.0",
+          "configurationDigest": "sha256:aa",
+          "validationCorpusDigest": "sha256:bb",
+          "inputContract": "junit-xml",
+          "environment": "ci"
+        },
+        "revalidateOn": [
+          "producer-version",
+          "configuration",
+          "validation-corpus",
+          "input-contract",
+          "environment"
+        ],
+        "validationEvidence": [],
+        "limitations": [],
+        "owner": "peter",
+        "decidedAt": "2026-01-01T00:00:00Z"
+      }
+    },
+    {
+      "name": "trust-evidence-without-digest-or-reference",
+      "kind": "trust",
+      "input": {
+        "schemaVersion": 1,
+        "id": "ETD-1",
+        "use": {
+          "id": "U-1",
+          "intendedFunction": "transcribe junit",
+          "permittedDecisions": ["record-run", "report-coverage"]
+        },
+        "decision": "relied-upon",
+        "acceptedContext": {
+          "name": "junit",
+          "version": "1.0",
+          "configurationDigest": "sha256:aa",
+          "validationCorpusDigest": "sha256:bb",
+          "inputContract": "junit-xml",
+          "environment": "ci"
+        },
+        "observedContext": {
+          "name": "junit",
+          "version": "1.0",
+          "configurationDigest": "sha256:aa",
+          "validationCorpusDigest": "sha256:bb",
+          "inputContract": "junit-xml",
+          "environment": "ci"
+        },
+        "revalidateOn": [
+          "producer-version",
+          "configuration",
+          "validation-corpus",
+          "input-contract",
+          "environment"
+        ],
+        "validationEvidence": [
+          {
+            "id": "V-1"
+          }
+        ],
+        "limitations": [],
+        "owner": "peter",
+        "decidedAt": "2026-01-01T00:00:00Z"
+      }
+    },
+    {
+      "name": "trust-evidence-with-reference-only",
+      "kind": "trust",
+      "input": {
+        "schemaVersion": 1,
+        "id": "ETD-1",
+        "use": {
+          "id": "U-1",
+          "intendedFunction": "transcribe junit",
+          "permittedDecisions": ["record-run", "report-coverage"]
+        },
+        "decision": "relied-upon",
+        "acceptedContext": {
+          "name": "junit",
+          "version": "1.0",
+          "configurationDigest": "sha256:aa",
+          "validationCorpusDigest": "sha256:bb",
+          "inputContract": "junit-xml",
+          "environment": "ci"
+        },
+        "observedContext": {
+          "name": "junit",
+          "version": "1.0",
+          "configurationDigest": "sha256:aa",
+          "validationCorpusDigest": "sha256:bb",
+          "inputContract": "junit-xml",
+          "environment": "ci"
+        },
+        "revalidateOn": [
+          "producer-version",
+          "configuration",
+          "validation-corpus",
+          "input-contract",
+          "environment"
+        ],
+        "validationEvidence": [
+          {
+            "id": "V-1",
+            "reference": "spec/reviews/r1.md"
+          }
+        ],
+        "limitations": [],
+        "owner": "peter",
+        "decidedAt": "2026-01-01T00:00:00Z"
+      }
+    },
+    {
+      "name": "trust-bad-id",
+      "kind": "trust",
+      "input": {
+        "schemaVersion": 1,
+        "id": "ETD-x",
+        "use": {
+          "id": "U-1",
+          "intendedFunction": "transcribe junit",
+          "permittedDecisions": ["record-run", "report-coverage"]
+        },
+        "decision": "relied-upon",
+        "acceptedContext": {
+          "name": "junit",
+          "version": "1.0",
+          "configurationDigest": "sha256:aa",
+          "validationCorpusDigest": "sha256:bb",
+          "inputContract": "junit-xml",
+          "environment": "ci"
+        },
+        "observedContext": {
+          "name": "junit",
+          "version": "1.0",
+          "configurationDigest": "sha256:aa",
+          "validationCorpusDigest": "sha256:bb",
+          "inputContract": "junit-xml",
+          "environment": "ci"
+        },
+        "revalidateOn": [
+          "producer-version",
+          "configuration",
+          "validation-corpus",
+          "input-contract",
+          "environment"
+        ],
+        "validationEvidence": [
+          {
+            "id": "V-1",
+            "digest": "sha256:abcdef"
+          }
+        ],
+        "limitations": [],
+        "owner": "peter",
+        "decidedAt": "2026-01-01T00:00:00Z"
+      }
+    },
+    {
+      "name": "trust-bad-decided-at",
+      "kind": "trust",
+      "input": {
+        "schemaVersion": 1,
+        "id": "ETD-1",
+        "use": {
+          "id": "U-1",
+          "intendedFunction": "transcribe junit",
+          "permittedDecisions": ["record-run", "report-coverage"]
+        },
+        "decision": "relied-upon",
+        "acceptedContext": {
+          "name": "junit",
+          "version": "1.0",
+          "configurationDigest": "sha256:aa",
+          "validationCorpusDigest": "sha256:bb",
+          "inputContract": "junit-xml",
+          "environment": "ci"
+        },
+        "observedContext": {
+          "name": "junit",
+          "version": "1.0",
+          "configurationDigest": "sha256:aa",
+          "validationCorpusDigest": "sha256:bb",
+          "inputContract": "junit-xml",
+          "environment": "ci"
+        },
+        "revalidateOn": [
+          "producer-version",
+          "configuration",
+          "validation-corpus",
+          "input-contract",
+          "environment"
+        ],
+        "validationEvidence": [
+          {
+            "id": "V-1",
+            "digest": "sha256:abcdef"
+          }
+        ],
+        "limitations": [],
+        "owner": "peter",
+        "decidedAt": "not-a-date"
+      }
+    },
+    {
+      "name": "trust-duplicate-permitted-decisions",
+      "kind": "trust",
+      "input": {
+        "schemaVersion": 1,
+        "id": "ETD-1",
+        "use": {
+          "id": "U-1",
+          "intendedFunction": "transcribe junit",
+          "permittedDecisions": ["record-run", "record-run"]
+        },
+        "decision": "relied-upon",
+        "acceptedContext": {
+          "name": "junit",
+          "version": "1.0",
+          "configurationDigest": "sha256:aa",
+          "validationCorpusDigest": "sha256:bb",
+          "inputContract": "junit-xml",
+          "environment": "ci"
+        },
+        "observedContext": {
+          "name": "junit",
+          "version": "1.0",
+          "configurationDigest": "sha256:aa",
+          "validationCorpusDigest": "sha256:bb",
+          "inputContract": "junit-xml",
+          "environment": "ci"
+        },
+        "revalidateOn": [
+          "producer-version",
+          "configuration",
+          "validation-corpus",
+          "input-contract",
+          "environment"
+        ],
+        "validationEvidence": [
+          {
+            "id": "V-1",
+            "digest": "sha256:abcdef"
+          }
+        ],
+        "limitations": [],
+        "owner": "peter",
+        "decidedAt": "2026-01-01T00:00:00Z"
+      }
+    },
+    {
+      "name": "trust-empty-owner",
+      "kind": "trust",
+      "input": {
+        "schemaVersion": 1,
+        "id": "ETD-1",
+        "use": {
+          "id": "U-1",
+          "intendedFunction": "transcribe junit",
+          "permittedDecisions": ["record-run", "report-coverage"]
+        },
+        "decision": "relied-upon",
+        "acceptedContext": {
+          "name": "junit",
+          "version": "1.0",
+          "configurationDigest": "sha256:aa",
+          "validationCorpusDigest": "sha256:bb",
+          "inputContract": "junit-xml",
+          "environment": "ci"
+        },
+        "observedContext": {
+          "name": "junit",
+          "version": "1.0",
+          "configurationDigest": "sha256:aa",
+          "validationCorpusDigest": "sha256:bb",
+          "inputContract": "junit-xml",
+          "environment": "ci"
+        },
+        "revalidateOn": [
+          "producer-version",
+          "configuration",
+          "validation-corpus",
+          "input-contract",
+          "environment"
+        ],
+        "validationEvidence": [
+          {
+            "id": "V-1",
+            "digest": "sha256:abcdef"
+          }
+        ],
+        "limitations": [],
+        "owner": "",
+        "decidedAt": "2026-01-01T00:00:00Z"
+      }
+    },
+    {
+      "name": "trust-wrong-schema-version",
+      "kind": "trust",
+      "input": {
+        "schemaVersion": 2,
+        "id": "ETD-1",
+        "use": {
+          "id": "U-1",
+          "intendedFunction": "transcribe junit",
+          "permittedDecisions": ["record-run", "report-coverage"]
+        },
+        "decision": "relied-upon",
+        "acceptedContext": {
+          "name": "junit",
+          "version": "1.0",
+          "configurationDigest": "sha256:aa",
+          "validationCorpusDigest": "sha256:bb",
+          "inputContract": "junit-xml",
+          "environment": "ci"
+        },
+        "observedContext": {
+          "name": "junit",
+          "version": "1.0",
+          "configurationDigest": "sha256:aa",
+          "validationCorpusDigest": "sha256:bb",
+          "inputContract": "junit-xml",
+          "environment": "ci"
+        },
+        "revalidateOn": [
+          "producer-version",
+          "configuration",
+          "validation-corpus",
+          "input-contract",
+          "environment"
+        ],
+        "validationEvidence": [
+          {
+            "id": "V-1",
+            "digest": "sha256:abcdef"
+          }
+        ],
+        "limitations": [],
+        "owner": "peter",
+        "decidedAt": "2026-01-01T00:00:00Z"
+      }
+    },
+    {
+      "name": "independence-satisfied-on-actor",
+      "kind": "independence",
+      "input": {
+        "profile": "AP-1",
+        "requirement": {
+          "id": "IR-1",
+          "obligation": "FR-001-AC-1",
+          "dimensions": ["actor"],
+          "rationale": "two lines"
+        },
+        "bindings": [
+          {
+            "obligation": "FR-001-AC-1",
+            "statementHashAtBinding": "sha256:h1",
+            "suite": "SUITE-A",
+            "commit": "cccccccccccccccccccccccccccccccccccccccc",
+            "symbols": ["t1"],
+            "lineage": {
+              "actor": "alice"
+            }
+          },
+          {
+            "obligation": "FR-001-AC-1",
+            "statementHashAtBinding": "sha256:h1",
+            "suite": "SUITE-B",
+            "commit": "cccccccccccccccccccccccccccccccccccccccc",
+            "symbols": ["t1"],
+            "lineage": {
+              "actor": "bob"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "independence-insufficient-same-actor",
+      "kind": "independence",
+      "input": {
+        "profile": "AP-1",
+        "requirement": {
+          "id": "IR-1",
+          "obligation": "FR-001-AC-1",
+          "dimensions": ["actor"],
+          "rationale": "two lines"
+        },
+        "bindings": [
+          {
+            "obligation": "FR-001-AC-1",
+            "statementHashAtBinding": "sha256:h1",
+            "suite": "SUITE-A",
+            "commit": "cccccccccccccccccccccccccccccccccccccccc",
+            "symbols": ["t1"],
+            "lineage": {
+              "actor": "alice"
+            }
+          },
+          {
+            "obligation": "FR-001-AC-1",
+            "statementHashAtBinding": "sha256:h1",
+            "suite": "SUITE-B",
+            "commit": "cccccccccccccccccccccccccccccccccccccccc",
+            "symbols": ["t1"],
+            "lineage": {
+              "actor": "alice"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "independence-insufficient-missing-lineage",
+      "kind": "independence",
+      "input": {
+        "profile": "AP-1",
+        "requirement": {
+          "id": "IR-1",
+          "obligation": "FR-001-AC-1",
+          "dimensions": ["actor"],
+          "rationale": "two lines"
+        },
+        "bindings": [
+          {
+            "obligation": "FR-001-AC-1",
+            "statementHashAtBinding": "sha256:h1",
+            "suite": "SUITE-A",
+            "commit": "cccccccccccccccccccccccccccccccccccccccc",
+            "symbols": ["t1"],
+            "lineage": {
+              "actor": "alice"
+            }
+          },
+          {
+            "obligation": "FR-001-AC-1",
+            "statementHashAtBinding": "sha256:h1",
+            "suite": "SUITE-B",
+            "commit": "cccccccccccccccccccccccccccccccccccccccc",
+            "symbols": ["t1"]
+          }
+        ]
+      }
+    },
+    {
+      "name": "independence-blank-value-is-absent",
+      "kind": "independence",
+      "input": {
+        "profile": "AP-1",
+        "requirement": {
+          "id": "IR-1",
+          "obligation": "FR-001-AC-1",
+          "dimensions": ["actor"],
+          "rationale": "two lines"
+        },
+        "bindings": [
+          {
+            "obligation": "FR-001-AC-1",
+            "statementHashAtBinding": "sha256:h1",
+            "suite": "SUITE-A",
+            "commit": "cccccccccccccccccccccccccccccccccccccccc",
+            "symbols": ["t1"],
+            "lineage": {
+              "actor": "alice"
+            }
+          },
+          {
+            "obligation": "FR-001-AC-1",
+            "statementHashAtBinding": "sha256:h1",
+            "suite": "SUITE-B",
+            "commit": "cccccccccccccccccccccccccccccccccccccccc",
+            "symbols": ["t1"],
+            "lineage": {
+              "actor": "   "
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "independence-two-dimensions-satisfied",
+      "kind": "independence",
+      "input": {
+        "profile": "AP-1",
+        "requirement": {
+          "id": "IR-1",
+          "obligation": "FR-001-AC-1",
+          "dimensions": ["actor", "technique"],
+          "rationale": "two lines"
+        },
+        "bindings": [
+          {
+            "obligation": "FR-001-AC-1",
+            "statementHashAtBinding": "sha256:h1",
+            "suite": "SUITE-A",
+            "commit": "cccccccccccccccccccccccccccccccccccccccc",
+            "symbols": ["t1"],
+            "lineage": {
+              "actor": "alice",
+              "technique": "unit"
+            }
+          },
+          {
+            "obligation": "FR-001-AC-1",
+            "statementHashAtBinding": "sha256:h1",
+            "suite": "SUITE-B",
+            "commit": "cccccccccccccccccccccccccccccccccccccccc",
+            "symbols": ["t1"],
+            "lineage": {
+              "actor": "bob",
+              "technique": "property"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "independence-two-dimensions-one-shared",
+      "kind": "independence",
+      "input": {
+        "profile": "AP-1",
+        "requirement": {
+          "id": "IR-1",
+          "obligation": "FR-001-AC-1",
+          "dimensions": ["actor", "technique"],
+          "rationale": "two lines"
+        },
+        "bindings": [
+          {
+            "obligation": "FR-001-AC-1",
+            "statementHashAtBinding": "sha256:h1",
+            "suite": "SUITE-A",
+            "commit": "cccccccccccccccccccccccccccccccccccccccc",
+            "symbols": ["t1"],
+            "lineage": {
+              "actor": "alice",
+              "technique": "unit"
+            }
+          },
+          {
+            "obligation": "FR-001-AC-1",
+            "statementHashAtBinding": "sha256:h1",
+            "suite": "SUITE-B",
+            "commit": "cccccccccccccccccccccccccccccccccccccccc",
+            "symbols": ["t1"],
+            "lineage": {
+              "actor": "bob",
+              "technique": "unit"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "independence-three-suites-pair-found",
+      "kind": "independence",
+      "input": {
+        "profile": "AP-1",
+        "requirement": {
+          "id": "IR-1",
+          "obligation": "FR-001-AC-1",
+          "dimensions": ["actor"],
+          "rationale": "two lines"
+        },
+        "bindings": [
+          {
+            "obligation": "FR-001-AC-1",
+            "statementHashAtBinding": "sha256:h1",
+            "suite": "SUITE-C",
+            "commit": "cccccccccccccccccccccccccccccccccccccccc",
+            "symbols": ["t1"],
+            "lineage": {
+              "actor": "alice"
+            }
+          },
+          {
+            "obligation": "FR-001-AC-1",
+            "statementHashAtBinding": "sha256:h1",
+            "suite": "SUITE-A",
+            "commit": "cccccccccccccccccccccccccccccccccccccccc",
+            "symbols": ["t1"],
+            "lineage": {
+              "actor": "alice"
+            }
+          },
+          {
+            "obligation": "FR-001-AC-1",
+            "statementHashAtBinding": "sha256:h1",
+            "suite": "SUITE-B",
+            "commit": "cccccccccccccccccccccccccccccccccccccccc",
+            "symbols": ["t1"],
+            "lineage": {
+              "actor": "bob"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "independence-no-bindings",
+      "kind": "independence",
+      "input": {
+        "profile": "AP-1",
+        "requirement": {
+          "id": "IR-1",
+          "obligation": "FR-001-AC-1",
+          "dimensions": ["actor"],
+          "rationale": "two lines"
+        },
+        "bindings": []
+      }
+    },
+    {
+      "name": "independence-single-binding",
+      "kind": "independence",
+      "input": {
+        "profile": "AP-1",
+        "requirement": {
+          "id": "IR-1",
+          "obligation": "FR-001-AC-1",
+          "dimensions": ["actor"],
+          "rationale": "two lines"
+        },
+        "bindings": [
+          {
+            "obligation": "FR-001-AC-1",
+            "statementHashAtBinding": "sha256:h1",
+            "suite": "SUITE-A",
+            "commit": "cccccccccccccccccccccccccccccccccccccccc",
+            "symbols": ["t1"],
+            "lineage": {
+              "actor": "alice"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "independence-all-five-dimensions",
+      "kind": "independence",
+      "input": {
+        "profile": "AP-1",
+        "requirement": {
+          "id": "IR-1",
+          "obligation": "FR-001-AC-1",
+          "dimensions": [
+            "actor",
+            "implementation-toolchain",
+            "technique",
+            "data-source",
+            "review-path"
+          ],
+          "rationale": "two lines"
+        },
+        "bindings": [
+          {
+            "obligation": "FR-001-AC-1",
+            "statementHashAtBinding": "sha256:h1",
+            "suite": "SUITE-A",
+            "commit": "cccccccccccccccccccccccccccccccccccccccc",
+            "symbols": ["t1"],
+            "lineage": {
+              "actor": "alice",
+              "implementationToolchain": "rustc",
+              "technique": "unit",
+              "dataSource": "fixtures",
+              "reviewPath": "peer"
+            }
+          },
+          {
+            "obligation": "FR-001-AC-1",
+            "statementHashAtBinding": "sha256:h1",
+            "suite": "SUITE-B",
+            "commit": "cccccccccccccccccccccccccccccccccccccccc",
+            "symbols": ["t1"],
+            "lineage": {
+              "actor": "bob",
+              "implementationToolchain": "tsc",
+              "technique": "property",
+              "dataSource": "corpus",
+              "reviewPath": "audit"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "bind-creates-a-new-binding",
+      "kind": "bind",
+      "input": {
+        "existing": [],
+        "next": {
+          "obligation": "FR-001-AC-1",
+          "statementHashAtBinding": "sha256:h1",
+          "suite": "SUITE-A",
+          "commit": "cccccccccccccccccccccccccccccccccccccccc",
+          "symbols": ["t1"]
+        }
+      }
+    },
+    {
+      "name": "bind-second-suite-does-not-overwrite-the-first",
+      "kind": "bind",
+      "input": {
+        "existing": [
+          {
+            "obligation": "FR-001-AC-1",
+            "statementHashAtBinding": "sha256:h1",
+            "suite": "SUITE-A",
+            "commit": "cccccccccccccccccccccccccccccccccccccccc",
+            "symbols": ["t1"]
+          }
+        ],
+        "next": {
+          "obligation": "FR-001-AC-1",
+          "statementHashAtBinding": "sha256:h1",
+          "suite": "SUITE-B",
+          "commit": "cccccccccccccccccccccccccccccccccccccccc",
+          "symbols": ["t1"]
+        }
+      }
+    },
+    {
+      "name": "bind-rediscovers-the-same-pair",
+      "kind": "bind",
+      "input": {
+        "existing": [
+          {
+            "obligation": "FR-001-AC-1",
+            "statementHashAtBinding": "sha256:h1",
+            "suite": "SUITE-A",
+            "commit": "cccccccccccccccccccccccccccccccccccccccc",
+            "symbols": ["t1"]
+          }
+        ],
+        "next": {
+          "obligation": "FR-001-AC-1",
+          "statementHashAtBinding": "sha256:h1",
+          "suite": "SUITE-A",
+          "commit": "dddddddddddddddddddddddddddddddddddddddd",
+          "symbols": ["t1", "t2"]
+        }
+      }
+    },
+    {
+      "name": "bind-marks-suspect-on-a-changed-hash",
+      "kind": "bind",
+      "input": {
+        "existing": [
+          {
+            "obligation": "FR-001-AC-1",
+            "statementHashAtBinding": "sha256:h1",
+            "suite": "SUITE-A",
+            "commit": "cccccccccccccccccccccccccccccccccccccccc",
+            "symbols": ["t1"]
+          }
+        ],
+        "next": {
+          "obligation": "FR-001-AC-1",
+          "statementHashAtBinding": "sha256:h2",
+          "suite": "SUITE-A",
+          "commit": "cccccccccccccccccccccccccccccccccccccccc",
+          "symbols": ["t1"]
+        }
+      }
+    },
+    {
+      "name": "bind-clears-lineage-when-the-new-record-states-none",
+      "kind": "bind",
+      "input": {
+        "existing": [
+          {
+            "obligation": "FR-001-AC-1",
+            "statementHashAtBinding": "sha256:h1",
+            "suite": "SUITE-A",
+            "commit": "cccccccccccccccccccccccccccccccccccccccc",
+            "symbols": ["t1"],
+            "lineage": {
+              "actor": "alice"
+            }
+          }
+        ],
+        "next": {
+          "obligation": "FR-001-AC-1",
+          "statementHashAtBinding": "sha256:h1",
+          "suite": "SUITE-A",
+          "commit": "cccccccccccccccccccccccccccccccccccccccc",
+          "symbols": ["t1"]
+        }
+      }
+    },
+    {
+      "name": "bind-sets-lineage-on-rediscovery",
+      "kind": "bind",
+      "input": {
+        "existing": [
+          {
+            "obligation": "FR-001-AC-1",
+            "statementHashAtBinding": "sha256:h1",
+            "suite": "SUITE-A",
+            "commit": "cccccccccccccccccccccccccccccccccccccccc",
+            "symbols": ["t1"]
+          }
+        ],
+        "next": {
+          "obligation": "FR-001-AC-1",
+          "statementHashAtBinding": "sha256:h1",
+          "suite": "SUITE-A",
+          "commit": "cccccccccccccccccccccccccccccccccccccccc",
+          "symbols": ["t1"],
+          "lineage": {
+            "actor": "bob"
+          }
+        }
+      }
+    },
+    {
+      "name": "affirm-every-binding-for-the-obligation",
+      "kind": "affirm",
+      "input": {
+        "existing": [
+          {
+            "obligation": "FR-001-AC-1",
+            "statementHashAtBinding": "sha256:h1",
+            "suite": "SUITE-A",
+            "commit": "cccccccccccccccccccccccccccccccccccccccc",
+            "symbols": ["t1"]
+          },
+          {
+            "obligation": "FR-001-AC-1",
+            "statementHashAtBinding": "sha256:h1",
+            "suite": "SUITE-B",
+            "commit": "cccccccccccccccccccccccccccccccccccccccc",
+            "symbols": ["t1"]
+          }
+        ],
+        "obligation": "FR-001-AC-1",
+        "currentHash": "sha256:h9",
+        "who": "peter",
+        "commit": "ffffffffffffffffffffffffffffffffffffffff",
+        "note": "read the new statement"
+      }
+    },
+    {
+      "name": "affirm-narrowed-to-one-suite",
+      "kind": "affirm",
+      "input": {
+        "existing": [
+          {
+            "obligation": "FR-001-AC-1",
+            "statementHashAtBinding": "sha256:h1",
+            "suite": "SUITE-A",
+            "commit": "cccccccccccccccccccccccccccccccccccccccc",
+            "symbols": ["t1"]
+          },
+          {
+            "obligation": "FR-001-AC-1",
+            "statementHashAtBinding": "sha256:h1",
+            "suite": "SUITE-B",
+            "commit": "cccccccccccccccccccccccccccccccccccccccc",
+            "symbols": ["t1"]
+          }
+        ],
+        "obligation": "FR-001-AC-1",
+        "currentHash": "sha256:h9",
+        "who": "peter",
+        "commit": "ffffffffffffffffffffffffffffffffffffffff",
+        "note": "read the new statement",
+        "suite": "SUITE-B"
+      }
+    },
+    {
+      "name": "affirm-finds-nothing",
+      "kind": "affirm",
+      "input": {
+        "existing": [
+          {
+            "obligation": "FR-001-AC-1",
+            "statementHashAtBinding": "sha256:h1",
+            "suite": "SUITE-A",
+            "commit": "cccccccccccccccccccccccccccccccccccccccc",
+            "symbols": ["t1"]
+          }
+        ],
+        "obligation": "FR-002-AC-1",
+        "currentHash": "sha256:h9",
+        "who": "peter",
+        "commit": "ffffffffffffffffffffffffffffffffffffffff",
+        "note": "read the new statement"
+      }
+    },
+    {
+      "name": "affirm-appends-to-existing-affirmations",
+      "kind": "affirm",
+      "input": {
+        "existing": [
+          {
+            "obligation": "FR-001-AC-1",
+            "statementHashAtBinding": "sha256:h1",
+            "suite": "SUITE-A",
+            "commit": "cccccccccccccccccccccccccccccccccccccccc",
+            "symbols": ["t1"],
+            "affirmations": [
+              {
+                "who": "ann",
+                "commit": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+              }
+            ]
+          }
+        ],
+        "obligation": "FR-001-AC-1",
+        "currentHash": "sha256:h9",
+        "who": "peter",
+        "commit": "ffffffffffffffffffffffffffffffffffffffff",
+        "note": "read the new statement"
+      }
+    },
+    {
+      "name": "canonical-run-record",
+      "kind": "canonical",
+      "input": {
+        "record": "run",
+        "value": {
+          "schemaVersion": 1,
+          "suite": "SUITE-A",
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "tool": "vitest 4.1.10",
+          "evidenceKind": "Unit",
+          "timestamp": "2026-01-01T00:00:00Z",
+          "entries": [
+            {
+              "symbol": "tests::tc001",
+              "outcome": "pass",
+              "traceIds": ["FR-001-AC-1"]
+            },
+            {
+              "symbol": "tests::tc002",
+              "outcome": "fail"
+            },
+            {
+              "symbol": "mutants",
+              "outcome": "pass",
+              "score": 1.0,
+              "metric": "mutation-score"
+            },
+            {
+              "symbol": "cfg",
+              "outcome": "pass",
+              "config": {
+                "b": "2",
+                "a": "1"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "canonical-run-record-empty-entries",
+      "kind": "canonical",
+      "input": {
+        "record": "run",
+        "value": {
+          "schemaVersion": 1,
+          "suite": "SUITE-A",
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "tool": "vitest 4.1.10",
+          "evidenceKind": "Unit",
+          "timestamp": "2026-01-01T00:00:00Z",
+          "entries": []
+        }
+      }
+    },
+    {
+      "name": "canonical-run-record-no-evidence-kind",
+      "kind": "canonical",
+      "input": {
+        "record": "run",
+        "value": {
+          "schemaVersion": 1,
+          "suite": "SUITE-A",
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "tool": "vitest 4.1.10",
+          "timestamp": "2026-01-01T00:00:00Z",
+          "entries": [
+            {
+              "symbol": "tests::tc001",
+              "outcome": "pass",
+              "traceIds": ["FR-001-AC-1"]
+            },
+            {
+              "symbol": "tests::tc002",
+              "outcome": "fail"
+            },
+            {
+              "symbol": "mutants",
+              "outcome": "pass",
+              "score": 1.0,
+              "metric": "mutation-score"
+            },
+            {
+              "symbol": "cfg",
+              "outcome": "pass",
+              "config": {
+                "b": "2",
+                "a": "1"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "canonical-scan-record",
+      "kind": "canonical",
+      "input": {
+        "record": "scan",
+        "value": {
+          "schemaVersion": 1,
+          "suite": "SUITE-S",
+          "commit": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "tool": "cargo-audit 0.21",
+          "timestamp": "2026-01-02T00:00:00Z",
+          "ruleset": "advisory-db@2026-01-01",
+          "rulesEvaluated": 0,
+          "findings": [
+            {
+              "ruleId": "RUSTSEC-2026-0190",
+              "severity": "high",
+              "message": "m",
+              "path": "Cargo.lock",
+              "line": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "canonical-scan-record-no-findings",
+      "kind": "canonical",
+      "input": {
+        "record": "scan",
+        "value": {
+          "schemaVersion": 1,
+          "suite": "SUITE-S",
+          "commit": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "tool": "cargo-audit 0.21",
+          "timestamp": "2026-01-02T00:00:00Z",
+          "ruleset": "advisory-db@2026-01-01",
+          "rulesEvaluated": 42,
+          "findings": []
+        }
+      }
+    },
+    {
+      "name": "canonical-mock-inspection-record",
+      "kind": "canonical",
+      "input": {
+        "record": "mockInspection",
+        "value": {
+          "schemaVersion": 1,
+          "suite": "SUITE-A",
+          "commit": "cccccccccccccccccccccccccccccccccccccccc",
+          "tool": "quoin 0.1",
+          "timestamp": "2026-01-03T00:00:00Z",
+          "injections": [
+            {
+              "suite": "SUITE-A",
+              "symbol": "t1",
+              "injects": ["MockClock::new"],
+              "path": "src/a.rs",
+              "line": 12
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "canonical-mock-inspection-empty",
+      "kind": "canonical",
+      "input": {
+        "record": "mockInspection",
+        "value": {
+          "schemaVersion": 1,
+          "suite": "SUITE-A",
+          "commit": "cccccccccccccccccccccccccccccccccccccccc",
+          "tool": "quoin 0.1",
+          "timestamp": "2026-01-03T00:00:00Z",
+          "injections": []
+        }
+      }
+    },
+    {
+      "name": "canonical-bindings-file",
+      "kind": "canonical",
+      "input": {
+        "record": "bindings",
+        "value": {
+          "bindings": [
+            {
+              "obligation": "FR-002-AC-1",
+              "statementHashAtBinding": "sha256:h1",
+              "suite": "SUITE-B",
+              "commit": "cccccccccccccccccccccccccccccccccccccccc",
+              "symbols": ["t1"]
+            },
+            {
+              "obligation": "FR-001-AC-1",
+              "statementHashAtBinding": "sha256:h1",
+              "suite": "SUITE-Z",
+              "commit": "cccccccccccccccccccccccccccccccccccccccc",
+              "symbols": ["t1"]
+            },
+            {
+              "obligation": "FR-001-AC-1",
+              "statementHashAtBinding": "sha256:h1",
+              "suite": "SUITE-A",
+              "commit": "cccccccccccccccccccccccccccccccccccccccc",
+              "symbols": ["t1"],
+              "lineage": {
+                "actor": "alice"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "canonical-bindings-file-empty",
+      "kind": "canonical",
+      "input": {
+        "record": "bindings",
+        "value": {
+          "bindings": []
+        }
+      }
+    },
+    {
+      "name": "canonical-baseline-file",
+      "kind": "canonical",
+      "input": {
+        "record": "baseline",
+        "value": {
+          "schemaVersion": 1,
+          "commit": "dddddddddddddddddddddddddddddddddddddddd",
+          "accepted": [
+            "suspect:FR-002-AC-1",
+            "undischarged:FR-001-AC-1",
+            "stale-evidence:FR-003-AC-1"
+          ]
+        }
+      }
+    },
+    {
+      "name": "canonical-trust-decision",
+      "kind": "canonical",
+      "input": {
+        "record": "trustDecision",
+        "value": {
+          "schemaVersion": 1,
+          "id": "ETD-1",
+          "use": {
+            "id": "U-1",
+            "intendedFunction": "transcribe junit",
+            "permittedDecisions": ["record-run", "report-coverage"]
+          },
+          "decision": "relied-upon",
+          "acceptedContext": {
+            "name": "junit",
+            "version": "1.0",
+            "configurationDigest": "sha256:aa",
+            "validationCorpusDigest": "sha256:bb",
+            "inputContract": "junit-xml",
+            "environment": "ci"
+          },
+          "observedContext": {
+            "name": "junit",
+            "version": "1.0",
+            "configurationDigest": "sha256:aa",
+            "validationCorpusDigest": "sha256:bb",
+            "inputContract": "junit-xml",
+            "environment": "ci"
+          },
+          "revalidateOn": [
+            "producer-version",
+            "configuration",
+            "validation-corpus",
+            "input-contract",
+            "environment"
+          ],
+          "validationEvidence": [
+            {
+              "id": "V-1",
+              "digest": "sha256:abcdef"
+            }
+          ],
+          "limitations": [],
+          "owner": "peter",
+          "decidedAt": "2026-01-01T00:00:00Z"
+        }
+      }
+    },
+    {
+      "name": "vacuity-no-rules-evaluated",
+      "kind": "vacuity",
+      "input": {
+        "schemaVersion": 1,
+        "suite": "SUITE-S",
+        "commit": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "tool": "cargo-audit 0.21",
+        "timestamp": "2026-01-02T00:00:00Z",
+        "ruleset": "advisory-db@2026-01-01",
+        "rulesEvaluated": 0,
+        "findings": [
+          {
+            "ruleId": "RUSTSEC-2026-0190",
+            "severity": "high",
+            "message": "m",
+            "path": "Cargo.lock",
+            "line": 3
+          }
+        ]
+      }
+    },
+    {
+      "name": "vacuity-rules-evaluated",
+      "kind": "vacuity",
+      "input": {
+        "schemaVersion": 1,
+        "suite": "SUITE-S",
+        "commit": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "tool": "cargo-audit 0.21",
+        "timestamp": "2026-01-02T00:00:00Z",
+        "ruleset": "advisory-db@2026-01-01",
+        "rulesEvaluated": 7,
+        "findings": [
+          {
+            "ruleId": "RUSTSEC-2026-0190",
+            "severity": "high",
+            "message": "m",
+            "path": "Cargo.lock",
+            "line": 3
+          }
+        ]
+      }
+    },
+    {
+      "name": "vacuity-unknown",
+      "kind": "vacuity",
+      "input": {
+        "schemaVersion": 1,
+        "suite": "SUITE-S",
+        "commit": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "tool": "cargo-audit 0.21",
+        "timestamp": "2026-01-02T00:00:00Z",
+        "ruleset": "advisory-db@2026-01-01",
+        "findings": [
+          {
+            "ruleId": "RUSTSEC-2026-0190",
+            "severity": "high",
+            "message": "m",
+            "path": "Cargo.lock",
+            "line": 3
+          }
+        ]
+      }
+    },
+    {
+      "name": "assurance-experiment-valid",
+      "kind": "assurance",
+      "input": {
+        "record": "experiment",
+        "value": {
+          "schemaVersion": "experiment-record-v1",
+          "subject": {
+            "kind": "requirement",
+            "id": "FR-001",
+            "sourceRevision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          "recordedAt": "2026-01-01T00:00:00Z",
+          "hypothesis": "the adapter reads real output",
+          "design": {
+            "timeBox": "1d",
+            "corpusRefs": ["corpus/a"],
+            "comparisonMethod": "A/B",
+            "decisionRule": "p<0.05"
+          },
+          "result": {
+            "status": "supported",
+            "summary": "it did",
+            "evidenceRefs": ["runs/SUITE-A"]
+          },
+          "producerProvenance": {
+            "schemaVersion": "producer-provenance-v1",
+            "identity": "quoin",
+            "version": "0.1.0",
+            "sourceRevision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceState": "clean",
+            "executableDigest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+            "configurationDigest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+            "capabilities": ["record"],
+            "artifacts": [
+              {
+                "name": "report.json",
+                "digest": "sha256:3333333333333333333333333333333333333333333333333333333333333333"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "assurance-experiment-unknown-field",
+      "kind": "assurance",
+      "input": {
+        "record": "experiment",
+        "value": {
+          "schemaVersion": "experiment-record-v1",
+          "subject": {
+            "kind": "requirement",
+            "id": "FR-001",
+            "sourceRevision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          "recordedAt": "2026-01-01T00:00:00Z",
+          "hypothesis": "the adapter reads real output",
+          "design": {
+            "timeBox": "1d",
+            "corpusRefs": ["corpus/a"],
+            "comparisonMethod": "A/B",
+            "decisionRule": "p<0.05"
+          },
+          "result": {
+            "status": "supported",
+            "summary": "it did",
+            "evidenceRefs": ["runs/SUITE-A"]
+          },
+          "producerProvenance": {
+            "schemaVersion": "producer-provenance-v1",
+            "identity": "quoin",
+            "version": "0.1.0",
+            "sourceRevision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceState": "clean",
+            "executableDigest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+            "configurationDigest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+            "capabilities": ["record"],
+            "artifacts": [
+              {
+                "name": "report.json",
+                "digest": "sha256:3333333333333333333333333333333333333333333333333333333333333333"
+              }
+            ]
+          },
+          "extra": 1
+        }
+      }
+    },
+    {
+      "name": "assurance-experiment-missing-field",
+      "kind": "assurance",
+      "input": {
+        "record": "experiment",
+        "value": {
+          "schemaVersion": "experiment-record-v1",
+          "subject": {
+            "kind": "requirement",
+            "id": "FR-001",
+            "sourceRevision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          "recordedAt": "2026-01-01T00:00:00Z",
+          "design": {
+            "timeBox": "1d",
+            "corpusRefs": ["corpus/a"],
+            "comparisonMethod": "A/B",
+            "decisionRule": "p<0.05"
+          },
+          "result": {
+            "status": "supported",
+            "summary": "it did",
+            "evidenceRefs": ["runs/SUITE-A"]
+          },
+          "producerProvenance": {
+            "schemaVersion": "producer-provenance-v1",
+            "identity": "quoin",
+            "version": "0.1.0",
+            "sourceRevision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceState": "clean",
+            "executableDigest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+            "configurationDigest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+            "capabilities": ["record"],
+            "artifacts": [
+              {
+                "name": "report.json",
+                "digest": "sha256:3333333333333333333333333333333333333333333333333333333333333333"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "assurance-experiment-bad-status",
+      "kind": "assurance",
+      "input": {
+        "record": "experiment",
+        "value": {
+          "schemaVersion": "experiment-record-v1",
+          "subject": {
+            "kind": "requirement",
+            "id": "FR-001",
+            "sourceRevision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          "recordedAt": "2026-01-01T00:00:00Z",
+          "hypothesis": "the adapter reads real output",
+          "design": {
+            "timeBox": "1d",
+            "corpusRefs": ["corpus/a"],
+            "comparisonMethod": "A/B",
+            "decisionRule": "p<0.05"
+          },
+          "result": {
+            "status": "maybe",
+            "summary": "it did",
+            "evidenceRefs": ["runs/SUITE-A"]
+          },
+          "producerProvenance": {
+            "schemaVersion": "producer-provenance-v1",
+            "identity": "quoin",
+            "version": "0.1.0",
+            "sourceRevision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceState": "clean",
+            "executableDigest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+            "configurationDigest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+            "capabilities": ["record"],
+            "artifacts": [
+              {
+                "name": "report.json",
+                "digest": "sha256:3333333333333333333333333333333333333333333333333333333333333333"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "assurance-experiment-empty-corpus-refs",
+      "kind": "assurance",
+      "input": {
+        "record": "experiment",
+        "value": {
+          "schemaVersion": "experiment-record-v1",
+          "subject": {
+            "kind": "requirement",
+            "id": "FR-001",
+            "sourceRevision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          "recordedAt": "2026-01-01T00:00:00Z",
+          "hypothesis": "the adapter reads real output",
+          "design": {
+            "timeBox": "1d",
+            "corpusRefs": [],
+            "comparisonMethod": "A/B",
+            "decisionRule": "p<0.05"
+          },
+          "result": {
+            "status": "supported",
+            "summary": "it did",
+            "evidenceRefs": ["runs/SUITE-A"]
+          },
+          "producerProvenance": {
+            "schemaVersion": "producer-provenance-v1",
+            "identity": "quoin",
+            "version": "0.1.0",
+            "sourceRevision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceState": "clean",
+            "executableDigest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+            "configurationDigest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+            "capabilities": ["record"],
+            "artifacts": [
+              {
+                "name": "report.json",
+                "digest": "sha256:3333333333333333333333333333333333333333333333333333333333333333"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "assurance-experiment-duplicate-corpus-refs",
+      "kind": "assurance",
+      "input": {
+        "record": "experiment",
+        "value": {
+          "schemaVersion": "experiment-record-v1",
+          "subject": {
+            "kind": "requirement",
+            "id": "FR-001",
+            "sourceRevision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          "recordedAt": "2026-01-01T00:00:00Z",
+          "hypothesis": "the adapter reads real output",
+          "design": {
+            "timeBox": "1d",
+            "corpusRefs": ["a", "a"],
+            "comparisonMethod": "A/B",
+            "decisionRule": "p<0.05"
+          },
+          "result": {
+            "status": "supported",
+            "summary": "it did",
+            "evidenceRefs": ["runs/SUITE-A"]
+          },
+          "producerProvenance": {
+            "schemaVersion": "producer-provenance-v1",
+            "identity": "quoin",
+            "version": "0.1.0",
+            "sourceRevision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceState": "clean",
+            "executableDigest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+            "configurationDigest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+            "capabilities": ["record"],
+            "artifacts": [
+              {
+                "name": "report.json",
+                "digest": "sha256:3333333333333333333333333333333333333333333333333333333333333333"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "assurance-experiment-bad-recorded-at",
+      "kind": "assurance",
+      "input": {
+        "record": "experiment",
+        "value": {
+          "schemaVersion": "experiment-record-v1",
+          "subject": {
+            "kind": "requirement",
+            "id": "FR-001",
+            "sourceRevision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          "recordedAt": "2026-01-01",
+          "hypothesis": "the adapter reads real output",
+          "design": {
+            "timeBox": "1d",
+            "corpusRefs": ["corpus/a"],
+            "comparisonMethod": "A/B",
+            "decisionRule": "p<0.05"
+          },
+          "result": {
+            "status": "supported",
+            "summary": "it did",
+            "evidenceRefs": ["runs/SUITE-A"]
+          },
+          "producerProvenance": {
+            "schemaVersion": "producer-provenance-v1",
+            "identity": "quoin",
+            "version": "0.1.0",
+            "sourceRevision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceState": "clean",
+            "executableDigest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+            "configurationDigest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+            "capabilities": ["record"],
+            "artifacts": [
+              {
+                "name": "report.json",
+                "digest": "sha256:3333333333333333333333333333333333333333333333333333333333333333"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "assurance-experiment-bad-digest",
+      "kind": "assurance",
+      "input": {
+        "record": "experiment",
+        "value": {
+          "schemaVersion": "experiment-record-v1",
+          "subject": {
+            "kind": "requirement",
+            "id": "FR-001",
+            "sourceRevision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          "recordedAt": "2026-01-01T00:00:00Z",
+          "hypothesis": "the adapter reads real output",
+          "design": {
+            "timeBox": "1d",
+            "corpusRefs": ["corpus/a"],
+            "comparisonMethod": "A/B",
+            "decisionRule": "p<0.05"
+          },
+          "result": {
+            "status": "supported",
+            "summary": "it did",
+            "evidenceRefs": ["runs/SUITE-A"]
+          },
+          "producerProvenance": {
+            "schemaVersion": "producer-provenance-v1",
+            "identity": "quoin",
+            "version": "0.1.0",
+            "sourceRevision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceState": "clean",
+            "executableDigest": "sha256:zz",
+            "configurationDigest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+            "capabilities": ["record"],
+            "artifacts": [
+              {
+                "name": "report.json",
+                "digest": "sha256:3333333333333333333333333333333333333333333333333333333333333333"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "assurance-experiment-not-an-object",
+      "kind": "assurance",
+      "input": {
+        "record": "experiment",
+        "value": "experiment-record-v1"
+      }
+    },
+    {
+      "name": "assurance-operational-valid",
+      "kind": "assurance",
+      "input": {
+        "record": "operational",
+        "value": {
+          "schemaVersion": "operational-evidence-record-v1",
+          "subject": {
+            "kind": "service",
+            "id": "quoin-core",
+            "sourceRevision": "cccccccccccccccccccccccccccccccccccccccc"
+          },
+          "recordedAt": "2026-01-01T00:00:00Z",
+          "window": {
+            "startedAt": "2026-01-01T00:00:00Z",
+            "endedAt": "2026-01-02T00:00:00Z"
+          },
+          "environment": "production",
+          "observations": [
+            {
+              "signal": "latency",
+              "value": "12",
+              "unit": "ms",
+              "interpretation": "within bounds",
+              "evidenceRefs": ["metrics/1"]
+            }
+          ],
+          "outcome": "within_bounds",
+          "producerProvenance": {
+            "schemaVersion": "producer-provenance-v1",
+            "identity": "quoin",
+            "version": "0.1.0",
+            "sourceRevision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceState": "clean",
+            "executableDigest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+            "configurationDigest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+            "capabilities": ["record"],
+            "artifacts": [
+              {
+                "name": "report.json",
+                "digest": "sha256:3333333333333333333333333333333333333333333333333333333333333333"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "assurance-operational-window-inverted",
+      "kind": "assurance",
+      "input": {
+        "record": "operational",
+        "value": {
+          "schemaVersion": "operational-evidence-record-v1",
+          "subject": {
+            "kind": "service",
+            "id": "quoin-core",
+            "sourceRevision": "cccccccccccccccccccccccccccccccccccccccc"
+          },
+          "recordedAt": "2026-01-01T00:00:00Z",
+          "window": {
+            "startedAt": "2026-01-01T00:00:00Z",
+            "endedAt": "2025-12-31T00:00:00Z"
+          },
+          "environment": "production",
+          "observations": [
+            {
+              "signal": "latency",
+              "value": "12",
+              "unit": "ms",
+              "interpretation": "within bounds",
+              "evidenceRefs": ["metrics/1"]
+            }
+          ],
+          "outcome": "within_bounds",
+          "producerProvenance": {
+            "schemaVersion": "producer-provenance-v1",
+            "identity": "quoin",
+            "version": "0.1.0",
+            "sourceRevision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceState": "clean",
+            "executableDigest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+            "configurationDigest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+            "capabilities": ["record"],
+            "artifacts": [
+              {
+                "name": "report.json",
+                "digest": "sha256:3333333333333333333333333333333333333333333333333333333333333333"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "assurance-operational-no-observations",
+      "kind": "assurance",
+      "input": {
+        "record": "operational",
+        "value": {
+          "schemaVersion": "operational-evidence-record-v1",
+          "subject": {
+            "kind": "service",
+            "id": "quoin-core",
+            "sourceRevision": "cccccccccccccccccccccccccccccccccccccccc"
+          },
+          "recordedAt": "2026-01-01T00:00:00Z",
+          "window": {
+            "startedAt": "2026-01-01T00:00:00Z",
+            "endedAt": "2026-01-02T00:00:00Z"
+          },
+          "environment": "production",
+          "observations": [],
+          "outcome": "within_bounds",
+          "producerProvenance": {
+            "schemaVersion": "producer-provenance-v1",
+            "identity": "quoin",
+            "version": "0.1.0",
+            "sourceRevision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceState": "clean",
+            "executableDigest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+            "configurationDigest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+            "capabilities": ["record"],
+            "artifacts": [
+              {
+                "name": "report.json",
+                "digest": "sha256:3333333333333333333333333333333333333333333333333333333333333333"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "assurance-operational-observation-without-unit",
+      "kind": "assurance",
+      "input": {
+        "record": "operational",
+        "value": {
+          "schemaVersion": "operational-evidence-record-v1",
+          "subject": {
+            "kind": "service",
+            "id": "quoin-core",
+            "sourceRevision": "cccccccccccccccccccccccccccccccccccccccc"
+          },
+          "recordedAt": "2026-01-01T00:00:00Z",
+          "window": {
+            "startedAt": "2026-01-01T00:00:00Z",
+            "endedAt": "2026-01-02T00:00:00Z"
+          },
+          "environment": "production",
+          "observations": [
+            {
+              "signal": "latency",
+              "value": "12",
+              "interpretation": "within bounds",
+              "evidenceRefs": ["metrics/1"]
+            }
+          ],
+          "outcome": "within_bounds",
+          "producerProvenance": {
+            "schemaVersion": "producer-provenance-v1",
+            "identity": "quoin",
+            "version": "0.1.0",
+            "sourceRevision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceState": "clean",
+            "executableDigest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+            "configurationDigest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+            "capabilities": ["record"],
+            "artifacts": [
+              {
+                "name": "report.json",
+                "digest": "sha256:3333333333333333333333333333333333333333333333333333333333333333"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "assurance-operational-bad-outcome",
+      "kind": "assurance",
+      "input": {
+        "record": "operational",
+        "value": {
+          "schemaVersion": "operational-evidence-record-v1",
+          "subject": {
+            "kind": "service",
+            "id": "quoin-core",
+            "sourceRevision": "cccccccccccccccccccccccccccccccccccccccc"
+          },
+          "recordedAt": "2026-01-01T00:00:00Z",
+          "window": {
+            "startedAt": "2026-01-01T00:00:00Z",
+            "endedAt": "2026-01-02T00:00:00Z"
+          },
+          "environment": "production",
+          "observations": [
+            {
+              "signal": "latency",
+              "value": "12",
+              "unit": "ms",
+              "interpretation": "within bounds",
+              "evidenceRefs": ["metrics/1"]
+            }
+          ],
+          "outcome": "fine",
+          "producerProvenance": {
+            "schemaVersion": "producer-provenance-v1",
+            "identity": "quoin",
+            "version": "0.1.0",
+            "sourceRevision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceState": "clean",
+            "executableDigest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+            "configurationDigest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+            "capabilities": ["record"],
+            "artifacts": [
+              {
+                "name": "report.json",
+                "digest": "sha256:3333333333333333333333333333333333333333333333333333333333333333"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "assurance-operational-unknown-observation-field",
+      "kind": "assurance",
+      "input": {
+        "record": "operational",
+        "value": {
+          "schemaVersion": "operational-evidence-record-v1",
+          "subject": {
+            "kind": "service",
+            "id": "quoin-core",
+            "sourceRevision": "cccccccccccccccccccccccccccccccccccccccc"
+          },
+          "recordedAt": "2026-01-01T00:00:00Z",
+          "window": {
+            "startedAt": "2026-01-01T00:00:00Z",
+            "endedAt": "2026-01-02T00:00:00Z"
+          },
+          "environment": "production",
+          "observations": [
+            {
+              "signal": "latency",
+              "value": "12",
+              "unit": "ms",
+              "interpretation": "within bounds",
+              "evidenceRefs": ["metrics/1"],
+              "extra": "x"
+            }
+          ],
+          "outcome": "within_bounds",
+          "producerProvenance": {
+            "schemaVersion": "producer-provenance-v1",
+            "identity": "quoin",
+            "version": "0.1.0",
+            "sourceRevision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceState": "clean",
+            "executableDigest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+            "configurationDigest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+            "capabilities": ["record"],
+            "artifacts": [
+              {
+                "name": "report.json",
+                "digest": "sha256:3333333333333333333333333333333333333333333333333333333333333333"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "mock-rust-test-file",
+      "kind": "mock",
+      "input": {
+        "suite": "SUITE-A",
+        "files": {
+          "src/lib.rs": "#[cfg(test)]\nmod tests {\n    use super::*;\n\n    #[test]\n    fn tc_001_uses_a_stand_in() {\n        let clock = MockClock::new();\n        assert!(Confirmation::allow());\n    }\n\n    #[test]\n    fn tc_002_uses_the_real_thing() {\n        let clock = SystemClock::new();\n    }\n}\n"
+        }
+      }
+    },
+    {
+      "name": "mock-python-test-file",
+      "kind": "mock",
+      "input": {
+        "suite": "SUITE-A",
+        "files": {
+          "tests/test_gate.py": "def test_allows():\n    gate = FakeGate.build()\n    assert Policy.approve()\n\n\ndef test_plain():\n    assert True\n"
+        }
+      }
+    },
+    {
+      "name": "mock-typescript-test-file",
+      "kind": "mock",
+      "input": {
+        "suite": "SUITE-A",
+        "files": {
+          "tests/gate.test.ts": "test(\"uses a stub\", () => {\n  const store = StubStore.create();\n  expect(Gate.bypass()).toBe(true);\n});\n\nit(\"is honest\", () => {\n  expect(Real.compute()).toBe(1);\n});\n"
+        }
+      }
+    },
+    {
+      "name": "mock-all-three-languages",
+      "kind": "mock",
+      "input": {
+        "suite": "SUITE-A",
+        "files": {
+          "src/lib.rs": "#[cfg(test)]\nmod tests {\n    use super::*;\n\n    #[test]\n    fn tc_001_uses_a_stand_in() {\n        let clock = MockClock::new();\n        assert!(Confirmation::allow());\n    }\n\n    #[test]\n    fn tc_002_uses_the_real_thing() {\n        let clock = SystemClock::new();\n    }\n}\n",
+          "tests/test_gate.py": "def test_allows():\n    gate = FakeGate.build()\n    assert Policy.approve()\n\n\ndef test_plain():\n    assert True\n",
+          "tests/gate.test.ts": "test(\"uses a stub\", () => {\n  const store = StubStore.create();\n  expect(Gate.bypass()).toBe(true);\n});\n\nit(\"is honest\", () => {\n  expect(Real.compute()).toBe(1);\n});\n"
+        }
+      }
+    },
+    {
+      "name": "mock-no-test-markers",
+      "kind": "mock",
+      "input": {
+        "suite": "SUITE-A",
+        "files": {
+          "src/lib.rs": "fn main() { let c = MockClock::new(); }\n"
+        }
+      }
+    },
+    {
+      "name": "mock-excluded-directory",
+      "kind": "mock",
+      "input": {
+        "suite": "SUITE-A",
+        "files": {
+          "node_modules/x.ts": "test(\"uses a stub\", () => {\n  const store = StubStore.create();\n  expect(Gate.bypass()).toBe(true);\n});\n\nit(\"is honest\", () => {\n  expect(Real.compute()).toBe(1);\n});\n"
+        }
+      }
+    },
+    {
+      "name": "mock-unreadable-extension",
+      "kind": "mock",
+      "input": {
+        "suite": "SUITE-A",
+        "files": {
+          "README.md": "MockClock::new()\n"
+        }
+      }
+    }
+  ]
+}

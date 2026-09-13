@@ -60,13 +60,29 @@ use serde::Deserialize;
 /// seven — not even `document`, which a reader might reasonably expect a view
 /// to cite, and does not.
 ///
-/// Both fields here are required, for the reason in the module header: they
-/// are read unconditionally, so their absence must be an error rather than a
-/// silent empty.
+/// The three required fields here are required for the reason in the module
+/// header: they are read unconditionally, so their absence must be an error
+/// rather than a silent empty. `statement_hash` joined the set when the
+/// evidence store arrived (agent-ix/quoin#456): a binding stamps it, and a
+/// default would make every binding agree with every statement.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 pub struct Obligation {
     /// The obligation id, e.g. `FR-001-AC-1` or `NFR-010-M-2`.
     pub id: String,
     /// The criterion's statement, in the spec's own words.
     pub statement: String,
+    /// quire's hash of the statement, as it stands at the read.
+    ///
+    /// quoin never computes this and only ever compares it: suspect detection
+    /// is `stamped != current`, so a hash quoin derived itself would compare
+    /// equal to itself and detect nothing.
+    pub statement_hash: String,
+    /// Test-case ids the criterion's method cell names, when it names any.
+    ///
+    /// The indirection an agent-eval report and every other Test-Matrix-keyed
+    /// tool arrives on: the tool reports `TC-EV-057`, the row says that test
+    /// case verifies this criterion, and quire-rs FR-053-AC-11 carries the join
+    /// here rather than making quoin re-parse the table (agent-ix/quoin#144).
+    #[serde(default)]
+    pub target_ids: Option<Vec<String>>,
 }

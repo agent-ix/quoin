@@ -142,11 +142,27 @@ pub enum DigestDomain {
     /// Over the complete bytes of a file on disk, under SHA-256, as
     /// measurement records and contract pins reference them.
     RawFileSha256,
+    /// Over the evidence store's canonical JSON text of a record, under
+    /// SHA-256: the identity an assurance record carries as its own
+    /// `recordId` and is named by on disk.
+    ///
+    /// A different domain from [`Self::RawFileSha256`] even though both are
+    /// SHA-256 and both are stored `sha256:`-prefixed. That one answers "what
+    /// bytes are in this file"; this one answers "what value is this record",
+    /// over bytes recomputed from the value rather than copied. Substituting
+    /// one for the other crosses exactly the boundary
+    /// `FR-201-canonical-identity-domain` forbids.
+    AssuranceRecordSha256,
 }
 
 impl DigestDomain {
     /// Every domain, in declaration order.
-    pub const ALL: [Self; 3] = [Self::RawBytes, Self::CanonicalJcs, Self::RawFileSha256];
+    pub const ALL: [Self; 4] = [
+        Self::RawBytes,
+        Self::CanonicalJcs,
+        Self::RawFileSha256,
+        Self::AssuranceRecordSha256,
+    ];
 
     /// Whether values in this domain are copied exactly rather than recomputed
     /// from a canonical form.
@@ -154,7 +170,7 @@ impl DigestDomain {
     pub const fn is_opaque_bytes(self) -> bool {
         match self {
             Self::RawBytes | Self::RawFileSha256 => true,
-            Self::CanonicalJcs => false,
+            Self::CanonicalJcs | Self::AssuranceRecordSha256 => false,
         }
     }
 
@@ -165,6 +181,7 @@ impl DigestDomain {
             Self::RawBytes => "quoin.raw-artifact-bytes",
             Self::CanonicalJcs => "quoin.canonical-jcs",
             Self::RawFileSha256 => "quoin.raw-file-sha256",
+            Self::AssuranceRecordSha256 => "quoin.assurance-record-sha256",
         }
     }
 
@@ -177,6 +194,11 @@ impl DigestDomain {
             Self::RawBytes => "blake3",
             Self::CanonicalJcs => "blake3-jcs",
             Self::RawFileSha256 => "sha256",
+            // Distinct from `RawFileSha256`'s label on purpose: the two are
+            // both SHA-256 and both STORED as `sha256:` (which `to_stored`
+            // hardcodes, and NFR-025 freezes), so the label is the only place
+            // the difference can be said out loud.
+            Self::AssuranceRecordSha256 => "sha256-canonical",
         }
     }
 }
@@ -357,6 +379,80 @@ impl fmt::Display for RawFileSha256Digest {
     }
 }
 
+/// An assurance record's own identity: SHA-256 over the evidence store's
+/// canonical JSON text of the record without its `recordId`.
+///
+/// Minted only by [`digest_assurance_record`]. This is the domain
+/// `src/evidence/assurance-records.ts` computes as
+/// `createHash("sha256").update(canonicalJson(input))`, stores as
+/// `record.recordId`, checks back on read, and names the file
+/// `sha256-<64 hex>.json` from. The canonical text includes its trailing
+/// newline, because that is what the retained implementation hashes — dropping
+/// it would rename every record in every store (NFR-025).
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
+pub struct AssuranceRecordId(String);
+
+impl AssuranceRecordId {
+    /// This value's domain. Always [`DigestDomain::AssuranceRecordSha256`].
+    pub const DOMAIN: DigestDomain = DigestDomain::AssuranceRecordSha256;
+
+    /// Read a stored id, which carries its `sha256:` prefix.
+    ///
+    /// # Errors
+    ///
+    /// Refuses a value that does not carry the `sha256:` prefix, and one whose
+    /// remainder is not exactly 64 lowercase hexadecimal characters.
+    pub fn parse_stored(value: &str) -> Result<Self, StoreError> {
+        let Some(hex) = value.strip_prefix("sha256:") else {
+            return Err(StoreError::DigestMalformed {
+                value: value.to_owned(),
+            });
+        };
+        parse_stored_hex(hex).map(Self)
+    }
+
+    /// The bare hex, without the prefix — what the file name carries.
+    #[must_use]
+    pub fn as_hex(&self) -> &str {
+        &self.0
+    }
+
+    /// The stored spelling, `sha256:` prefix included.
+    #[must_use]
+    pub fn to_stored(&self) -> String {
+        format!("sha256:{}", self.0)
+    }
+
+    /// This value's domain.
+    #[must_use]
+    pub const fn domain(&self) -> DigestDomain {
+        Self::DOMAIN
+    }
+}
+
+impl fmt::Display for AssuranceRecordId {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter.write_str(&self.to_stored())
+    }
+}
+
+/// Compute an assurance record's identity from the value it will be stored as.
+///
+/// Hashes [`canonical_json`](crate::json::pretty::canonical_json) — the
+/// two-space, key-sorted, newline-terminated form the evidence store writes —
+/// under SHA-256. Pass the record WITHOUT its `recordId` member: the id is
+/// taken over the record's content, and including it would make the identity
+/// depend on itself.
+///
+/// # Errors
+///
+/// As [`canonical_json`](crate::json::pretty::canonical_json): a value with no
+/// canonical spelling has no identity either.
+pub fn digest_assurance_record(value: &JsonValue) -> Result<AssuranceRecordId, StoreError> {
+    crate::json::pretty::canonical_json(value)
+        .map(|text| AssuranceRecordId(sha256_hex(text.as_bytes())))
+}
+
 /// Digest a file's complete bytes under SHA-256, with the guards a digest over
 /// a path needs and the TypeScript does not have.
 ///
@@ -486,8 +582,9 @@ mod tests {
         reason = "in a test, a panic IS the failure report; the production lints stand"
     )]
     use super::{
-        CanonicalDigest, DigestDomain, RawBytesDigest, RawFileSha256Digest, digest_canonical_value,
-        digest_file_sha256, digest_raw_bytes, digest_record, verify_record_digest,
+        AssuranceRecordId, CanonicalDigest, DigestDomain, RawBytesDigest, RawFileSha256Digest,
+        digest_assurance_record, digest_canonical_value, digest_file_sha256, digest_raw_bytes,
+        digest_record, verify_record_digest,
     };
     use crate::error::StoreErrorCode;
     use crate::json::jcs::canonical_bytes;
@@ -507,6 +604,42 @@ mod tests {
         assert!(DigestDomain::RawBytes.is_opaque_bytes());
         assert!(DigestDomain::RawFileSha256.is_opaque_bytes());
         assert!(!DigestDomain::CanonicalJcs.is_opaque_bytes());
+        assert!(!DigestDomain::AssuranceRecordSha256.is_opaque_bytes());
+    }
+
+    /// An assurance record's id is SHA-256 over the store's canonical JSON
+    /// text — the two-space, key-sorted, newline-terminated form — and not
+    /// over the RFC 8785 bytes the blake3 canonical domain uses.
+    ///
+    /// The literal below is the digest `src/evidence/assurance-records.ts`
+    /// computes for the same value, so a change to either serializer or to the
+    /// trailing newline renames every record in every store (NFR-025).
+    ///
+    /// Trace: FR-048-AC-1, FR-100-CON-4
+    #[test]
+    fn tc_456_assurance_record_ids_hash_the_canonical_json_text() {
+        let value = parse_strict_json_str(r#"{"b":1,"a":[true,null]}"#).unwrap();
+        let id = digest_assurance_record(&value).unwrap();
+        let text = crate::json::pretty::canonical_json(&value).unwrap();
+        assert_eq!(
+            text,
+            "{\n  \"a\": [\n    true,\n    null\n  ],\n  \"b\": 1\n}\n"
+        );
+        assert_eq!(
+            id.to_stored(),
+            format!("sha256:{}", super::sha256_hex(text.as_bytes()))
+        );
+        assert_eq!(id.domain(), DigestDomain::AssuranceRecordSha256);
+        // Not the JCS bytes: a different question, and a different answer.
+        assert_ne!(
+            id.as_hex(),
+            super::sha256_hex(&canonical_bytes(&value).unwrap())
+        );
+        assert_eq!(
+            AssuranceRecordId::parse_stored(&id.to_stored()).unwrap(),
+            id
+        );
+        assert!(AssuranceRecordId::parse_stored(id.as_hex()).is_err());
     }
 
     /// The sha256 domain carries its prefix in the stored spelling and the

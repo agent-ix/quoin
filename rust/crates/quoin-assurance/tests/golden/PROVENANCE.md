@@ -56,9 +56,24 @@ gate.
 ### Corpus bytes
 
 ```
-94f672d8c7ced7c05d567e3e091858115a38ce6d5438f89240b5003022b86c40  tests/golden/cases.json
+31f3197002639d2f7f5f9ed52c0c67b1fc1206f2211b753fa7817731b4224346  tests/golden/cases.json
 96e7be27a29be0b9e56ae5f3c300c4296bc55e098d349c69930872e8e27e88db  tests/golden/expected.json
 ```
+
+### One later edit to `cases.json`
+
+agent-ix/quoin#456 completed `quoin_quire_types::Obligation` with the
+`statement_hash` quire has always emitted and `src/quire/types.ts` has always
+declared as required, because the evidence store compares it and cannot be
+given a default. The 15 obligation literals in `cases.json` predate the field
+and did not carry it, so they no longer deserialize. Each gained
+`"statement_hash": "sha256:<its id>"` and nothing else.
+
+`expected.json` is **unchanged**, and its digest above is the captured one: no
+assurance code path reads `statement_hash`, so no verdict moved. The one case
+with a non-string obligation id (`build-case/obligation-id-is-not-a-string`) was
+deliberately left incomplete — it is a refusal case, and its refusal is still a
+refusal.
 
 ## Reproducing it
 
