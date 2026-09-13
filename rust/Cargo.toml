@@ -86,7 +86,9 @@ quoin-evidence-types = { path = "crates/quoin-evidence-types" }
 quoin-finding-types = { path = "crates/quoin-finding-types" }
 quoin-jsonschema = { path = "crates/quoin-jsonschema" }
 quoin-measurement = { path = "crates/quoin-measurement" }
+quoin-measurement-graph = { path = "crates/quoin-measurement-graph" }
 quoin-modules = { path = "crates/quoin-modules" }
+quoin-quire = { path = "crates/quoin-quire" }
 quoin-quire-types = { path = "crates/quoin-quire-types" }
 quoin-semantic = { path = "crates/quoin-semantic" }
 quoin-store = { path = "crates/quoin-store" }
