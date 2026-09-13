@@ -1,0 +1,35 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 Agent-IX
+[package]
+name = "quoin-store"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+description = "Canonical JSON (RFC 8785 JCS), blake3 digest domains, and durable evidence-store writes for Quoin"
+publish.workspace = true
+
+[[bin]]
+name = "quoin-store-replay"
+path = "src/bin/quoin-store-replay.rs"
+
+[lints]
+workspace = true
+
+[dependencies]
+thiserror = { workspace = true }
+# Exact pins, for the reason the workspace manifest states: a caret range makes
+# the gate a claim about whatever resolved that morning, `=` makes it a claim
+# about these bytes. These three are used by this crate alone, so they are
+# pinned here rather than added to [workspace.dependencies].
+blake3 = "=1.8.6"
+ryu-js = "=1.0.3"
+# The second algorithm, for the second raw-bytes domain. quoin already holds
+# both: change-assurance digests are blake3, measurement raw-evidence and
+# contract pins are sha256. Modelling only one would not remove the other.
+# Taken from `[workspace.dependencies]` rather than pinned here: quoin-schemas,
+# quoin-quire-types and quoin-semantic all depend on sha2 too, so one pin in one
+# place is the only arrangement `multiple-versions = "deny"` permits.
+sha2 = { workspace = true }

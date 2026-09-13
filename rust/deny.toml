@@ -17,6 +17,9 @@ version = 2
 allow = [
     "MIT",
     "Apache-2.0",
+    # blake3's `arrayref` dependency. Permissive and OSI approved, and the same
+    # licence quire-rs/deny.toml already allows for the same reason.
+    "BSD-2-Clause",
     "Unicode-3.0",
     # Arrive with `jsonschema` (quoin-semantic, quoin#378), which reaches this
     # allow-list for the first time now that quoin-semantic is a workspace
@@ -85,8 +88,14 @@ allow-wildcard-paths = true
 # disappear with it.
 #
 # Ruling: quoin#402. This concession covers the `jsonschema` pair and its four
-# subtrees ONLY. Every other duplicate in this workspace is still resolved by
-# converging a pin.
+# subtrees ONLY.
+#
+# A SECOND concession of the same shape was ruled separately for
+# `cpufeatures@0.2.17` — quoin#438 / quire-rs#430 — and is written out at its
+# entry below. Two granted exceptions do not make a third self-granting: every
+# other duplicate in this workspace is still resolved by converging a pin, and
+# a duplicate that is neither the `jsonschema` family nor `cpufeatures` is
+# escalated, not skipped.
 #
 # ---------------------------------------------------------------------------
 #
@@ -131,6 +140,31 @@ skip = [
     { crate = "getrandom@0.3.4", reason = "ahash -> jsonschema 0.18.3 via quire-rs" },
     { crate = "r-efi@5.3.0", reason = "getrandom 0.3.4 -> ahash -> jsonschema 0.18.3 via quire-rs" },
     { crate = "syn@2.0.119", reason = "strum_macros -> strum -> jsonschema 0.56.0 (quoin-semantic), and icu/idna/url -> jsonschema 0.18.3 (quoin-quire -> quire-rs); syn 3.0.5, where serde/thiserror/schemars land, stays checked" },
+    # --- The cpufeatures entry. quoin#438 / quire-rs#430. ---
+    #
+    # REMOVAL CONDITION: deleted when `quire-rs` advances off `sha2 = "^0.10"`.
+    # `sha2 0.11.0` resolves `cpufeatures 0.3.1` — the same major `blake3 1.8.6`
+    # resolves — so the graph converges on its own once quire-rs allows it.
+    # That is checked, not assumed: `sha2 = "=0.11.0"` was resolved in an empty
+    # crate and its lockfile read. When quire-rs moves, `cargo deny check bans`
+    # MUST pass with this entry deleted. RUN IT. The entry exists precisely to
+    # hide a real duplicate, so the only proof it is no longer needed is the
+    # check passing without it.
+    #
+    # Same class as the five entries below, and conceded for the same reason:
+    # neither side is ours by choice. `cpufeatures 0.2.17` is forced by
+    # `quire-rs 0.46.0` pinning `sha2 = "^0.10"`, where sha2 0.10.9 declares
+    # `cpufeatures = "0.2"` as a hard target-gated dependency rather than an
+    # optional one. `cpufeatures 0.3.1` is forced by `blake3`'s own
+    # target-gated, non-optional edge. No pin we control converges them:
+    # blake3 gained that edge at 1.8.1, so the only convergence available from
+    # here is a DOWNGRADE of quoin-store's digest library to 1.8.0 — refused,
+    # because reverting a hash implementation six patch releases to quiet a
+    # lint is lowering a gate while appearing to satisfy one.
+    #
+    # 0.2.17 is skipped and 0.3.1 is NOT: 0.2.17 is the side that disappears
+    # when quire-rs moves, and 0.3.1 is the side we keep.
+    { crate = "cpufeatures@0.2.17", reason = "quoin#438: 0.2.17 via sha2 0.10.9 <- quire-rs 0.46.0 <- quoin-quire (and the workspace sha2 pin held at 0.10 by that requirement); 0.3.1 via blake3 1.8.6 <- quoin-store, which stays checked" },
     # --- The five quoin#434 / quire-rs#429 entries. Remove together. ---
     { crate = "jsonschema@0.18.3", reason = "quoin#434: 0.18.3 via quoin-quire -> quire-rs 0.46.0 (jsonschema = \"~0.18\"); 0.56.0 via quoin-semantic, which stays checked" },
     { crate = "bit-set@0.5.3", reason = "quoin#434: 0.5.3 via fancy-regex 0.13.0 -> jsonschema 0.18.3 -> quoin-quire -> quire-rs; 0.8.0 via fancy-regex 0.19.1 -> jsonschema 0.56.0 -> quoin-semantic" },

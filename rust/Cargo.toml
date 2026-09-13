@@ -84,6 +84,19 @@ schemars = { version = "=1.2.2", features = ["derive"] }
 # cut.
 serde_json = "=1.0.151"
 # The digest under the FR-097 hash assertion. Exact pin like everything else.
+#
+# 0.10.9 AND NOT 0.11.0, and the reason is an upstream requirement rather than
+# taste: `quire-rs 0.46.0` — linked by quoin-quire — depends on sha2 0.10.9,
+# and `multiple-versions = "deny"` forbids carrying both majors. quoin#380
+# (quoin-store) arrived pinning sha2 at =0.11.0 in its own manifest, which is
+# a duplicate git does not mark because the two pins live in different files;
+# quoin-store now takes this pin instead. Nothing that has landed moved: this
+# line is unchanged, and the unlanded pin converged onto it. Raising the
+# workspace to 0.11.0 would not resolve the duplicate, only swap which side of
+# it we own — verified with `cargo tree -i sha2@0.10.9`, whose only path is
+# `quire-rs <- quoin-quire`. Nothing is lost by converging here: SHA-256 is
+# SHA-256, and 0.11.0 changes the `digest` trait crate beneath it, not the
+# bytes it produces. When quire-rs advances, this pin moves up with it.
 sha2 = "=0.10.9"
 # Raised from =2.0.18 by quoin#378: `saphyr` (the YAML 1.2 core-schema reader
 # quoin-yaml wraps) requires ^2.0.20, and `multiple-versions = "deny"` in

@@ -34,7 +34,7 @@ jsonschema = { workspace = true }
 # a libyaml binding (`serde_yaml`, `serde_norway`, `serde_yml`): those are
 # YAML 1.1 and the difference is verdict-level. See DIVERGENCE.md §6 (D4).
 quoin-yaml = { workspace = true }
-sha2 = "=0.10.9"
+sha2 = { workspace = true }
 hex = "=0.4.3"
 
 [dev-dependencies]
