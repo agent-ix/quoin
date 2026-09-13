@@ -14,7 +14,7 @@
  * transliteration of one implementation would agree with itself.
  */
 
-import { buildCase, requirementOf } from "../assurance/index.js";
+import { buildCase, renderCase, requirementOf } from "../assurance/index.js";
 
 /** Mirrors `quoin_core::protocol::PROTOCOL_VERSION` — deliberately restated,
  * not imported from the generated `./types.js`: this file is the differential
@@ -149,11 +149,15 @@ export function reference(argv: string[], stdin: string): ReferenceOutcome {
   if (op === "assurance.build_case") {
     return assuranceBuildCase(parsed);
   }
+  if (op === "assurance.render_case") {
+    return assuranceRenderCase(parsed);
+  }
   if (op !== "core.ping") {
     return failure(
       3,
       diagnostic("CORE_UNKNOWN_OP", "no such operation in this build", {
-        known: "assurance.build_case, assurance.requirement_of, core.ping",
+        known:
+          "assurance.build_case, assurance.render_case, assurance.requirement_of, core.ping",
         op,
       }),
     );
@@ -420,4 +424,160 @@ function assuranceBuildCase(fields: Record<string, unknown>): ReferenceOutcome {
       : {}),
   });
   return { exitCode: 0, payload: canonicalJson(built), diagnostics: [] };
+}
+
+/**
+ * `assurance.render_case`, answered by the RETAINED implementation.
+ *
+ * The input to this operation is the OUTPUT of `assurance.build_case`, so the
+ * size ceiling is deliberately the same constant: a case that could be built
+ * and then could not be rendered would be a boundary contradicting itself.
+ *
+ * **The validation is parity, not defensiveness** — the same reason it is in
+ * `assuranceBuildCase`, and more of it here because the Rust side deserialises
+ * a deeper structure. `CaseNode.kind` and `CaseNode.status` are CLOSED enums
+ * on the Rust side and legitimately so: unlike `Finding.kind`, they are minted
+ * by `build_case` rather than supplied by a caller, so the set really is
+ * closed. serde refuses an unrecognised one, and the reference must refuse it
+ * too or the two sides disagree on exactly the inputs a malformed pipeline
+ * produces.
+ */
+function assuranceRenderCase(
+  fields: Record<string, unknown>,
+): ReferenceOutcome {
+  const op = "assurance.render_case";
+  const bad = (message: string): ReferenceOutcome =>
+    failure(3, diagnostic("CORE_BAD_REQUEST", message, { op }));
+
+  const size = Buffer.byteLength(JSON.stringify(fields), "utf8");
+  if (size > MAX_BUILD_CASE_BYTES) {
+    return failure(
+      2,
+      diagnostic("CORE_REFUSED", "request exceeds the accepted size", {
+        limit_bytes: String(MAX_BUILD_CASE_BYTES),
+        observed_bytes: String(size),
+        op,
+      }),
+    );
+  }
+
+  const isObject = (v: unknown): v is Record<string, unknown> =>
+    typeof v === "object" && v !== null && !Array.isArray(v);
+  const strings = (v: unknown): boolean =>
+    Array.isArray(v) && v.every((e) => typeof e === "string");
+
+  /** Every named key of `entry` is a string. */
+  const shaped = (
+    entry: unknown,
+    what: string,
+    keys: string[],
+  ): string | null => {
+    if (!isObject(entry)) return `each ${what} must be a JSON object`;
+    for (const key of keys) {
+      if (typeof entry[key] !== "string") return `${what}.${key} must be a string`;
+    }
+    return null;
+  };
+
+  // `CaseNode`, recursively. `children` has no serde default, so it is
+  // required at every depth — an interior node without it is a bad request on
+  // the Rust side and must be one here.
+  const NODE_KINDS = new Set(["goal", "strategy", "solution"]);
+  const NODE_STATUSES = new Set(["supported", "open"]);
+  const node = (entry: unknown, where: string): string | null => {
+    const shapeError = shaped(entry, where, ["id", "statement"]);
+    if (shapeError) return shapeError;
+    const n = entry as Record<string, unknown>;
+    if (typeof n.kind !== "string" || !NODE_KINDS.has(n.kind)) {
+      return `${where}.kind must be goal, strategy or solution`;
+    }
+    if (typeof n.status !== "string" || !NODE_STATUSES.has(n.status)) {
+      return `${where}.status must be supported or open`;
+    }
+    if (n.because !== undefined && typeof n.because !== "string") {
+      return `${where}.because must be a string when present`;
+    }
+    if (!Array.isArray(n.children)) return `${where}.children must be an array`;
+    for (const child of n.children) {
+      const error = node(child, `${where}.children[]`);
+      if (error) return error;
+    }
+    return null;
+  };
+
+  if (!Array.isArray(fields.claims)) return bad("`claims` must be an array");
+  for (const claim of fields.claims) {
+    const error = node(claim, "claim");
+    if (error) return bad(error);
+  }
+  if (fields.reason !== undefined && typeof fields.reason !== "string") {
+    return bad("`reason` must be a string when present");
+  }
+  if (!strings(fields.unreachable)) {
+    return bad("`unreachable` must be an array of strings");
+  }
+  if (!Array.isArray(fields.unreadable)) {
+    return bad("`unreadable` must be an array");
+  }
+  for (const entry of fields.unreadable) {
+    const error = shaped(entry, "unreadable", ["path", "reason"]);
+    if (error) return bad(error);
+  }
+
+  // `producerTrust` is REQUIRED, and `evidenceIndependence` is not, because
+  // the retained renderer reads `assurance.producerTrust.length` directly and
+  // reaches for `evidenceIndependence` through `?.`. The difftest found the
+  // asymmetry: defaulting the first made quoin-core render a case the retained
+  // implementation throws on, which is the port being more permissive than
+  // what it replaces.
+  const trust = fields.producerTrust;
+  {
+    if (!Array.isArray(trust)) return bad("`producerTrust` must be an array");
+    for (const entry of trust) {
+      const error = shaped(entry, "producerTrust", ["id", "useId", "status"]);
+      if (error) return bad(error);
+      const t = entry as Record<string, unknown>;
+      if (!strings(t.triggeredBy)) {
+        return bad("producerTrust.triggeredBy must be an array of strings");
+      }
+      if (!strings(t.limitations)) {
+        return bad("producerTrust.limitations must be an array of strings");
+      }
+    }
+  }
+
+  const independence = fields.evidenceIndependence;
+  if (independence !== undefined && independence !== null) {
+    if (!Array.isArray(independence)) {
+      return bad("`evidenceIndependence` must be an array");
+    }
+    for (const entry of independence) {
+      const error = shaped(entry, "evidenceIndependence", [
+        "profile",
+        "requirement",
+        "obligation",
+        "status",
+        "summary",
+      ]);
+      if (error) return bad(error);
+      const a = entry as Record<string, unknown>;
+      if (!Array.isArray(a.dimensions)) {
+        return bad("evidenceIndependence.dimensions must be an array");
+      }
+      for (const d of a.dimensions) {
+        const dimensionError = shaped(d, "dimension", ["dimension"]);
+        if (dimensionError) return bad(dimensionError);
+        const dim = d as Record<string, unknown>;
+        if (!strings(dim.values)) {
+          return bad("dimension.values must be an array of strings");
+        }
+        if (!strings(dim.missingSuites)) {
+          return bad("dimension.missingSuites must be an array of strings");
+        }
+      }
+    }
+  }
+
+  const rendered = renderCase(fields as never);
+  return { exitCode: 0, payload: canonicalJson({ rendered }), diagnostics: [] };
 }

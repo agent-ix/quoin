@@ -72,7 +72,7 @@ pub enum NodeStatus {
 }
 
 /// One node of the case tree.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CaseNode {
     /// The document or obligation id.
     pub id: String,
@@ -83,7 +83,7 @@ pub struct CaseNode {
     /// Whether this part of the argument holds.
     pub status: NodeStatus,
     /// Why it is open — the auditor's finding, verbatim. Absent when supported.
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(skip_serializing_if = "Option::is_none", default)]
     pub because: Option<String>,
     /// Sub-claims first, then evidence.
     pub children: Vec<CaseNode>,
@@ -107,9 +107,27 @@ pub struct Unreadable {
 /// difftest compares canonical stdout bytes, so a renamed key here is a
 /// difference. The **request** is new surface minted at this boundary, and it
 /// follows the boundary's own convention (`expect_protocol`, `obligation_id`).
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+///
+/// # Why the two assessments are type parameters
+///
+/// Because the same field is opaque to one operation and read field-by-field
+/// by another, and quoin#425 is the ticket that found that out the hard way.
+///
+/// [`build_case`] never inspects producer trust or independence: it sorts each
+/// by one key and re-emits it unchanged, so for that operation they are
+/// `serde_json::Value` and must be — a struct would drop the fields it did not
+/// declare, and the difftest compares canonical bytes.
+///
+/// `render_case` interpolates fourteen of their fields into markdown, so for
+/// that operation they are [`quoin_evidence_types::TrustAssessment`] and
+/// [`quoin_evidence_types::IndependenceAssessment`].
+///
+/// Stating that as two structs would work and would drift. Stating it as two
+/// parameters means the compiler carries the distinction, and a reader asking
+/// "is this field read here?" gets the answer from the signature.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct AssuranceCase {
+pub struct AssuranceCase<Trust = serde_json::Value, Independence = serde_json::Value> {
     /// Top-level claims, one tree each.
     pub claims: Vec<CaseNode>,
     /// Present exactly when `claims` is empty: why there is no case, naming
@@ -118,7 +136,7 @@ pub struct AssuranceCase {
     /// The human renderer already explained this; the JSON payload carried no
     /// equivalent, so a machine consumer could not tell "the assurance case is
     /// clean" from "nothing matched, so nothing was argued" (quoin#170).
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(skip_serializing_if = "Option::is_none", default)]
     pub reason: Option<String>,
     /// Requirements reachable from no claim.
     ///
@@ -129,10 +147,25 @@ pub struct AssuranceCase {
     /// Documents whose frontmatter could not be read.
     pub unreadable: Vec<Unreadable>,
     /// Use-specific producer reliance shown as context, never claim support.
-    pub producer_trust: Vec<serde_json::Value>,
+    ///
+    /// Required on deserialization, with no default, because the retained
+    /// renderer reads `assurance.producerTrust.length` unconditionally and
+    /// throws when it is absent. The difftest found this: a default here made
+    /// `quoin-core` render a case that the retained implementation could not,
+    /// which is the port being MORE permissive than the thing it replaces —
+    /// the same class of divergence as a closed enum being less permissive,
+    /// and just as much a difference.
+    ///
+    /// `evidence_independence` below keeps its default, because there the
+    /// retained code uses `?.` and genuinely tolerates absence. The two fields
+    /// differ because the retained implementation treats them differently.
+    pub producer_trust: Vec<Trust>,
     /// Profile-selected separation results, shown as context.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub evidence_independence: Option<Vec<serde_json::Value>>,
+    // A path rather than bare `default`: the derive would otherwise demand
+    // `Independence: Default`, which is a bound on the ASSESSMENT type for the
+    // sake of an absent list. `Option::default` is `None` for any `T`.
+    #[serde(skip_serializing_if = "Option::is_none", default = "Option::default")]
+    pub evidence_independence: Option<Vec<Independence>>,
 }
 
 /// What the view is given to read.

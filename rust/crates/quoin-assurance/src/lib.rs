@@ -35,8 +35,10 @@
 //! factor of five here (quoin#425).
 
 pub mod case;
+pub mod render;
 
 pub use case::{AssuranceCase, CaseInput, CaseNode, NodeKind, NodeStatus, Unreadable, build_case};
+pub use render::{RenderableCase, render_case};
 
 /// The requirement an obligation belongs to.
 ///

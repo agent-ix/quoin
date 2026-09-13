@@ -110,3 +110,53 @@ pub fn build_case(request: &serde_json::Value) -> Result<Response, CoreError> {
 
     Ok(Response::ok(payload))
 }
+
+/// The payload `assurance.render_case` writes to stdout.
+///
+/// The rendered document is a JSON string field rather than raw markdown on
+/// stdout, because the boundary's rule is that stdout carries a canonical JSON
+/// payload and nothing else. A consumer wanting the file writes the field.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct RenderCasePayload {
+    /// The rendered markdown.
+    pub rendered: String,
+}
+
+/// Answer an `assurance.render_case`.
+///
+/// # Errors
+///
+/// - [`CoreErrorCode::BadRequest`] when stdin is not a [`RenderableCase`].
+/// - [`CoreErrorCode::Refused`] when the request exceeds [`MAX_BUILD_CASE_BYTES`].
+///
+/// [`RenderableCase`]: quoin_assurance::RenderableCase
+pub fn render_case(request: &serde_json::Value) -> Result<Response, CoreError> {
+    // The same ceiling as `build_case`, and deliberately the same constant:
+    // this operation's input IS that operation's output, so a case that could
+    // be built and then could not be rendered would be a boundary that
+    // contradicts itself.
+    let size = serde_json::to_vec(request)
+        .map_err(|e| CoreError::new(CoreErrorCode::Io, e.to_string()))?
+        .len();
+    if size > MAX_BUILD_CASE_BYTES {
+        return Err(
+            CoreError::new(CoreErrorCode::Refused, "request exceeds the accepted size")
+                .with_context("op", "assurance.render_case")
+                .with_context("limit_bytes", MAX_BUILD_CASE_BYTES.to_string())
+                .with_context("observed_bytes", size.to_string()),
+        );
+    }
+
+    let assurance: quoin_assurance::RenderableCase = serde_json::from_value(request.clone())
+        .map_err(|e| {
+            CoreError::new(CoreErrorCode::BadRequest, e.to_string())
+                .with_context("op", "assurance.render_case")
+        })?;
+
+    let payload = serde_json::to_value(RenderCasePayload {
+        rendered: quoin_assurance::render_case(&assurance),
+    })
+    .map_err(|e| CoreError::new(CoreErrorCode::Io, e.to_string()))?;
+
+    Ok(Response::ok(payload))
+}

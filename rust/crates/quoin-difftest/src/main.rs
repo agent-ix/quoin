@@ -400,6 +400,214 @@ const CASES: &[Case] = &[
         op: "assurance.build_case",
         request: Request::Literal("[1,2]"),
     },
+    // ── assurance.render_case (quoin#384) ──
+    //
+    // The renderer, against the retained `src/assurance/render.ts`. This
+    // operation's input is `build_case`'s OUTPUT, and the three assessment
+    // types that were opaque there are read field-by-field here — fourteen
+    // fields across three types `render.ts` never names (quoin#425).
+    Case {
+        name: "assurance/render-no-case-is-not-an-empty-case",
+        op: "assurance.render_case",
+        request: Request::Literal(
+            r#"{"claims":[],"reason":"no document declares itself a top-level claim (searched claim types: StR); declare one or pass --claim-type","unreachable":[],"unreadable":[],"producerTrust":[]}"#,
+        ),
+    },
+    Case {
+        name: "assurance/render-one-supported-claim",
+        op: "assurance.render_case",
+        request: Request::Literal(
+            r#"{"claims":[{"id":"StR-001","kind":"goal","statement":"The system is usable","status":"supported","children":[{"id":"FR-001-AC-1","kind":"solution","statement":"It holds.","status":"supported","children":[]}]}],"unreachable":[],"unreadable":[],"producerTrust":[]}"#,
+        ),
+    },
+    Case {
+        // `because` renders as a nested `↳` line, and open propagates.
+        name: "assurance/render-an-open-branch-carries-its-reason",
+        op: "assurance.render_case",
+        request: Request::Literal(
+            r#"{"claims":[{"id":"StR-001","kind":"goal","statement":"The system is usable","status":"open","children":[{"id":"FR-001-AC-1","kind":"solution","statement":"It holds.","status":"open","because":"undischarged: nothing binds it","children":[]}]}],"unreachable":[],"unreadable":[],"producerTrust":[]}"#,
+        ),
+    },
+    Case {
+        // A claim with nothing under it: `because` on the claim itself, and
+        // depth 0 contributes no bullet because the `##` heading is its line.
+        name: "assurance/render-a-bare-claim-states-why-it-is-open",
+        op: "assurance.render_case",
+        request: Request::Literal(
+            r#"{"claims":[{"id":"StR-001","kind":"goal","statement":"Nothing under it","status":"open","because":"no sub-claim and no obligation traces to this claim","children":[]}],"unreachable":[],"unreadable":[],"producerTrust":[]}"#,
+        ),
+    },
+    Case {
+        // Nesting depth, indentation, and the `([...])` vs `[...]` shapes.
+        name: "assurance/render-nested-goals-indent-and-change-shape",
+        op: "assurance.render_case",
+        request: Request::Literal(
+            r#"{"claims":[{"id":"StR-001","kind":"goal","statement":"Top","status":"open","children":[{"id":"FR-001","kind":"goal","statement":"Middle","status":"open","children":[{"id":"FR-001-AC-1","kind":"solution","statement":"Leaf","status":"open","because":"stale-evidence: old","children":[]}]}]}],"unreachable":[],"unreadable":[],"producerTrust":[]}"#,
+        ),
+    },
+    Case {
+        // Two claims, so the `N claim(s), M with an open branch` count is not
+        // trivially 1 and 1.
+        name: "assurance/render-counts-open-branches-across-claims",
+        op: "assurance.render_case",
+        request: Request::Literal(
+            r#"{"claims":[{"id":"StR-001","kind":"goal","statement":"First","status":"open","because":"no sub-claim and no obligation traces to this claim","children":[]},{"id":"StR-002","kind":"goal","statement":"Second","status":"supported","children":[{"id":"FR-002-AC-1","kind":"solution","statement":"It holds.","status":"supported","children":[]}]}],"unreachable":[],"unreadable":[],"producerTrust":[]}"#,
+        ),
+    },
+    Case {
+        // The three mermaid punctuation rules, all in one statement.
+        name: "assurance/render-mermaid-survives-punctuation",
+        op: "assurance.render_case",
+        request: Request::Literal(
+            r#"{"claims":[{"id":"StR-001","kind":"goal","statement":"Top","status":"open","children":[{"id":"FR-001-AC-1","kind":"solution","statement":"Rejects (bad) input; logs \"why\" and `how`","status":"open","because":"x: y","children":[]}]}],"unreachable":[],"unreadable":[],"producerTrust":[]}"#,
+        ),
+    },
+    Case {
+        // quoin#432, from the Rust side. The retained renderer truncates on a
+        // CODE POINT now; before #433 it counted UTF-16 units and this input
+        // produced a lone high surrogate, which Rust's String cannot hold.
+        // The port could not have matched the old behaviour at all.
+        name: "assurance/render-truncates-on-a-code-point",
+        op: "assurance.render_case",
+        request: Request::Literal(
+            r#"{"claims":[{"id":"StR-001","kind":"goal","statement":"Top","status":"supported","children":[{"id":"FR-001-AC-1","kind":"solution","statement":"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx😀 tail","status":"supported","children":[]}]}],"unreachable":[],"unreadable":[],"producerTrust":[]}"#,
+        ),
+    },
+    Case {
+        // `id.replace(/[^A-Za-z0-9]/g, "_")` matches UTF-16 CODE UNITS, so an
+        // astral character in an id becomes TWO underscores. `chars()` was the
+        // obvious port and would have produced one.
+        name: "assurance/render-node-id-sanitises-per-code-unit",
+        op: "assurance.render_case",
+        request: Request::Literal(
+            r#"{"claims":[{"id":"StR-001","kind":"goal","statement":"Top","status":"supported","children":[{"id":"FR-😀-AC-1","kind":"solution","statement":"Astral in the id","status":"supported","children":[]}]}],"unreachable":[],"unreadable":[],"producerTrust":[]}"#,
+        ),
+    },
+    Case {
+        // A node reached twice is declared once but gets both edges.
+        name: "assurance/render-a-shared-child-is-declared-once",
+        op: "assurance.render_case",
+        request: Request::Literal(
+            r#"{"claims":[{"id":"StR-001","kind":"goal","statement":"Top","status":"open","children":[{"id":"FR-001","kind":"goal","statement":"A","status":"open","children":[{"id":"FR-009-AC-1","kind":"solution","statement":"Shared","status":"open","because":"x: y","children":[]}]},{"id":"FR-002","kind":"goal","statement":"B","status":"open","children":[{"id":"FR-009-AC-1","kind":"solution","statement":"Shared","status":"open","because":"x: y","children":[]}]}]}],"unreachable":[],"unreadable":[],"producerTrust":[]}"#,
+        ),
+    },
+    Case {
+        name: "assurance/render-unreachable-and-unreadable-sections",
+        op: "assurance.render_case",
+        request: Request::Literal(
+            r#"{"claims":[],"reason":"none","unreachable":["FR-009","FR-010"],"unreadable":[{"path":"broken.md","reason":"unterminated frontmatter"}],"producerTrust":[]}"#,
+        ),
+    },
+    Case {
+        // THE TYPE-SUBSET CASE. Five of TrustAssessment's eight fields are
+        // rendered; the other three are present here and must not appear in
+        // the output. `triggeredBy` is a STRING union, so `join(", ")` yields
+        // prose — had it been objects it would render `[object Object]`.
+        name: "assurance/render-producer-trust-fields",
+        op: "assurance.render_case",
+        request: Request::Literal(
+            r#"{"claims":[],"reason":"none","unreachable":[],"unreadable":[],"producerTrust":[{"id":"T-001","useId":"U-1","producer":"vitest","status":"accepted-with-limitations","permittedDecisions":["release"],"limitations":["linux only","x86 only"],"triggeredBy":["producer-version","configuration"],"owner":"qa"},{"id":"T-002","useId":"U-2","producer":"pytest","status":"unobserved","permittedDecisions":[],"limitations":[],"triggeredBy":[],"owner":"qa"}]}"#,
+        ),
+    },
+    Case {
+        // Six of IndependenceAssessment's seven, and all three of the nested
+        // dimension type. `satisfiedBy` is present and must not render.
+        name: "assurance/render-independence-fields",
+        op: "assurance.render_case",
+        request: Request::Literal(
+            r#"{"claims":[],"reason":"none","unreachable":[],"unreadable":[],"producerTrust":[],"evidenceIndependence":[{"profile":"P","requirement":"FR-001","obligation":"FR-001-AC-1","status":"satisfied","dimensions":[{"dimension":"author","values":["a","b"],"missingSuites":[]},{"dimension":"tooling","values":[],"missingSuites":["unit","e2e"]}],"satisfiedBy":["unit","integration"],"summary":"two authors"}]}"#,
+        ),
+    },
+    Case {
+        // `(x?.length ?? 0) > 0`: an EMPTY list skips the heading entirely.
+        // A naive `is_some()` would emit a section with nothing under it.
+        name: "assurance/render-empty-independence-emits-no-heading",
+        op: "assurance.render_case",
+        request: Request::Literal(
+            r#"{"claims":[],"reason":"none","unreachable":[],"unreadable":[],"producerTrust":[],"evidenceIndependence":[]}"#,
+        ),
+    },
+    Case {
+        // `evidenceIndependence` ABSENT rather than empty. The retained
+        // renderer reaches it through `?.`, so absence is legitimate.
+        name: "assurance/render-absent-independence",
+        op: "assurance.render_case",
+        request: Request::Literal(
+            r#"{"claims":[],"reason":"none","unreachable":[],"unreadable":[],"producerTrust":[]}"#,
+        ),
+    },
+    Case {
+        // `producerTrust` absent, which is NOT the same case. The retained
+        // renderer reads `.length` on it directly and throws, so the boundary
+        // must refuse rather than default it to empty — a port that renders
+        // what the retained implementation cannot is as much a difference as
+        // one that refuses what it accepts. The harness found this.
+        name: "assurance/render-invalid-absent-producer-trust",
+        op: "assurance.render_case",
+        request: Request::Literal(
+            r#"{"claims":[],"reason":"none","unreachable":[],"unreadable":[]}"#,
+        ),
+    },
+    Case {
+        // An unknown status string. Same rule as `Finding.kind`: the renderer
+        // interpolates and does not validate, so a closed enum here would
+        // refuse input the retained implementation renders.
+        name: "assurance/render-unknown-trust-status",
+        op: "assurance.render_case",
+        request: Request::Literal(
+            r#"{"claims":[],"reason":"none","unreachable":[],"unreadable":[],"producerTrust":[{"id":"T","useId":"U","status":"status-invented-tomorrow","triggeredBy":["trigger-invented-tomorrow"],"limitations":[]}]}"#,
+        ),
+    },
+    Case {
+        // `kind` and `status` on a CaseNode ARE closed — build_case mints
+        // them, so an unrecognised one is a bad request on both sides.
+        name: "assurance/render-invalid-node-kind",
+        op: "assurance.render_case",
+        request: Request::Literal(
+            r#"{"claims":[{"id":"StR-001","kind":"premise","statement":"Top","status":"open","children":[]}],"unreachable":[],"unreadable":[],"producerTrust":[]}"#,
+        ),
+    },
+    Case {
+        name: "assurance/render-invalid-node-status",
+        op: "assurance.render_case",
+        request: Request::Literal(
+            r#"{"claims":[{"id":"StR-001","kind":"goal","statement":"Top","status":"maybe","children":[]}],"unreachable":[],"unreadable":[],"producerTrust":[]}"#,
+        ),
+    },
+    Case {
+        // `children` carries no serde default, so it is required at depth.
+        name: "assurance/render-invalid-nested-node-missing-children",
+        op: "assurance.render_case",
+        request: Request::Literal(
+            r#"{"claims":[{"id":"StR-001","kind":"goal","statement":"Top","status":"open","children":[{"id":"FR-001","kind":"goal","statement":"No children key","status":"open"}]}],"unreachable":[],"unreadable":[],"producerTrust":[]}"#,
+        ),
+    },
+    Case {
+        name: "assurance/render-invalid-missing-unreachable",
+        op: "assurance.render_case",
+        request: Request::Literal(r#"{"claims":[],"unreadable":[],"producerTrust":[]}"#),
+    },
+    Case {
+        // A rendered field missing from an assessment. `Option` would have
+        // printed a blank row; required makes it a bad request.
+        name: "assurance/render-invalid-trust-missing-use-id",
+        op: "assurance.render_case",
+        request: Request::Literal(
+            r#"{"claims":[],"unreachable":[],"unreadable":[],"producerTrust":[{"id":"T","status":"accepted","triggeredBy":[],"limitations":[]}]}"#,
+        ),
+    },
+    Case {
+        name: "assurance/render-invalid-dimension-missing-missing-suites",
+        op: "assurance.render_case",
+        request: Request::Literal(
+            r#"{"claims":[],"unreachable":[],"unreadable":[],"producerTrust":[],"evidenceIndependence":[{"profile":"P","requirement":"FR-001","obligation":"FR-001-AC-1","status":"satisfied","dimensions":[{"dimension":"author","values":[]}],"summary":"s"}]}"#,
+        ),
+    },
+    Case {
+        name: "assurance/render-invalid-malformed",
+        op: "assurance.render_case",
+        request: Request::Literal("{oops"),
+    },
     Case {
         name: "invalid/unknown-op",
         op: "evidence.record",
