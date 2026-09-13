@@ -1,0 +1,166 @@
+{
+  "bases": [
+    {
+      "document": {
+        "artifacts": [
+          {
+            "artifact_type": "FR",
+            "id": "FR-001",
+            "locator": {
+              "digest": "8eded56e07765b15631d3669393dc4040694597ba244be2b50ade3f017344e62",
+              "line": 1,
+              "path": "FR-001-example.md"
+            }
+          },
+          {
+            "artifact_type": "TestMatrix",
+            "id": "TM-001",
+            "locator": {
+              "digest": "e49af045f61984e233673344e603c611723fa55d9a4ce9d66c23039a1626730a",
+              "line": 1,
+              "path": "TM-001-matrix.md"
+            }
+          }
+        ],
+        "format": "quire-assurance",
+        "format_version": 1,
+        "modules": [
+          {
+            "name": "quoin-quire-fixture",
+            "schemas": [
+              {
+                "archetype": "FR",
+                "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+              },
+              {
+                "archetype": "TestMatrix",
+                "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+              }
+            ],
+            "version": "0.1.0"
+          }
+        ],
+        "obligations": [],
+        "relation_kinds": [
+          {
+            "availability": "available",
+            "kind": "verifies",
+            "sources": [
+              "trace_binding",
+              "observed"
+            ]
+          }
+        ],
+        "relation_observations": [],
+        "relations": [
+          {
+            "form": "rust-trace-attribute",
+            "freshness": "unknown",
+            "kind": "verifies",
+            "locator": {
+              "digest": "652f4cad9108cb15f58977848ad92b513883966fe55cf09e4ed5a9ce2eaeacd7",
+              "line": 12,
+              "path": "lib/backed.rs"
+            },
+            "provenance": "canonical",
+            "source": "11e80781dad7bee4f5069c5f7b21f2cc4bfdf4c631805f257b366580269cd4c3",
+            "target": "TC-001"
+          }
+        ],
+        "source": {
+          "repository": "agent-ix/quoin",
+          "revision": "0000000000000000000000000000000000000000"
+        },
+        "symbols": [
+          {
+            "capabilities": [
+              "verifies"
+            ],
+            "container": null,
+            "id": "11e80781dad7bee4f5069c5f7b21f2cc4bfdf4c631805f257b366580269cd4c3",
+            "kind": "test_function",
+            "language": "rust",
+            "locator": {
+              "digest": "652f4cad9108cb15f58977848ad92b513883966fe55cf09e4ed5a9ce2eaeacd7",
+              "line": 12,
+              "path": "lib/backed.rs"
+            },
+            "qualified_name": "covers_the_round_trip"
+          }
+        ]
+      },
+      "name": "fixture-repo",
+      "origin": "rust/crates/quoin-quire/tests/fixtures/repo"
+    },
+    {
+      "document": {
+        "artifacts": [
+          {
+            "artifact_type": "FR",
+            "id": "FR-001",
+            "locator": {
+              "digest": "8eded56e07765b15631d3669393dc4040694597ba244be2b50ade3f017344e62",
+              "line": 1,
+              "path": "FR-001-example.md"
+            }
+          },
+          {
+            "artifact_type": "TestMatrix",
+            "id": "TM-001",
+            "locator": {
+              "digest": "e49af045f61984e233673344e603c611723fa55d9a4ce9d66c23039a1626730a",
+              "line": 1,
+              "path": "TM-001-matrix.md"
+            }
+          }
+        ],
+        "format": "quire-assurance",
+        "format_version": 1,
+        "modules": [
+          {
+            "name": "quoin-quire-fixture-no-traceability",
+            "schemas": [
+              {
+                "archetype": "FR",
+                "schema_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+              }
+            ],
+            "version": "0.1.0"
+          }
+        ],
+        "obligations": [],
+        "relation_kinds": [],
+        "relation_observations": [],
+        "relations": [],
+        "source": {
+          "repository": "agent-ix/quoin",
+          "revision": "1111111111111111111111111111111111111111"
+        },
+        "symbols": [
+          {
+            "capabilities": [
+              "verifies"
+            ],
+            "container": null,
+            "id": "11e80781dad7bee4f5069c5f7b21f2cc4bfdf4c631805f257b366580269cd4c3",
+            "kind": "test_function",
+            "language": "rust",
+            "locator": {
+              "digest": "652f4cad9108cb15f58977848ad92b513883966fe55cf09e4ed5a9ce2eaeacd7",
+              "line": 12,
+              "path": "lib/backed.rs"
+            },
+            "qualified_name": "covers_the_round_trip"
+          }
+        ]
+      },
+      "name": "fixture-repo-under-a-module-with-no-traceability",
+      "origin": "rust/crates/quoin-quire/tests/fixtures/repo"
+    }
+  ],
+  "provenance": {
+    "engine": "quire-rs = { version = \"=0.46.0\", git = \"https://github.com/agent-ix/quire-rs\", rev = \"85dfe9d5a937c52af6456f2e6aa3a6bc4c82db9f\" }",
+    "producer": "rust/crates/quoin-quire/oracle/capture-assurance-bases.rs",
+    "quoin_revision": "f1c2bd9983bba14f0d87f7a8da4a84703ca13f3d"
+  }
+}

@@ -1,0 +1,225 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agent-ix.github.io/quire-rs/schemas/output/assurance-v1.schema.json",
+  "title": "Quire source-grounded assurance export v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format",
+    "format_version",
+    "source",
+    "modules",
+    "artifacts",
+    "obligations",
+    "symbols",
+    "relation_kinds",
+    "relations",
+    "relation_observations"
+  ],
+  "properties": {
+    "format": { "const": "quire-assurance" },
+    "format_version": { "const": 1 },
+    "source": { "$ref": "#/$defs/sourcePremise" },
+    "modules": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/modulePremise" }
+    },
+    "artifacts": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/artifact" }
+    },
+    "obligations": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/obligation" }
+    },
+    "symbols": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/symbol" }
+    },
+    "relation_kinds": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/relationKind" }
+    },
+    "relations": {
+      "type": "array",
+      "items": {
+        "oneOf": [
+          { "$ref": "#/$defs/corpusRelation" },
+          { "$ref": "#/$defs/verifiesRelation" },
+          { "$ref": "#/$defs/implementsRelation" }
+        ]
+      }
+    },
+    "relation_observations": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/relationObservation" }
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "sourcePremise": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repository", "revision"],
+      "properties": {
+        "repository": { "type": "string", "minLength": 1 },
+        "revision": { "type": "string", "pattern": "^[0-9a-f]{40}$" }
+      }
+    },
+    "schemaPremise": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["archetype", "schema_digest"],
+      "properties": {
+        "archetype": { "type": "string", "minLength": 1 },
+        "schema_digest": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "modulePremise": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version", "schemas"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "version": { "type": "string", "minLength": 1 },
+        "schemas": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/schemaPremise" }
+        }
+      }
+    },
+    "locator": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "line", "digest"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1, "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$)).+$" },
+        "line": { "type": "integer", "minimum": 1 },
+        "digest": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "artifact_type", "locator"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "uuid": { "type": "string", "format": "uuid" },
+        "artifact_type": { "type": "string", "minLength": 1 },
+        "locator": { "$ref": "#/$defs/locator" }
+      }
+    },
+    "obligation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source", "id", "document", "statement", "statement_hash", "target_ids", "locator"],
+      "properties": {
+        "source": { "type": "string", "minLength": 1 },
+        "id": { "type": "string", "minLength": 1 },
+        "document": { "type": "string", "minLength": 1 },
+        "statement": { "type": "string", "minLength": 1 },
+        "statement_hash": { "$ref": "#/$defs/sha256" },
+        "method": { "type": "string", "minLength": 1 },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": { "type": "string" }
+        },
+        "criticality": { "type": "string", "minLength": 1 },
+        "target_ids": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "locator": { "$ref": "#/$defs/locator" }
+      }
+    },
+    "symbol": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "language", "kind", "qualified_name", "container", "capabilities", "locator"],
+      "properties": {
+        "id": { "$ref": "#/$defs/sha256" },
+        "language": { "enum": ["rust", "python", "typescript"] },
+        "kind": { "enum": ["function", "test_function", "container", "benchmark", "fuzz_target"] },
+        "qualified_name": { "type": "string", "minLength": 1 },
+        "container": { "type": ["string", "null"] },
+        "capabilities": {
+          "type": "array",
+          "items": { "enum": ["verifies", "implements"] },
+          "uniqueItems": true
+        },
+        "locator": { "$ref": "#/$defs/locator" }
+      }
+    },
+    "freshness": {
+      "enum": ["current", "suspect", "unknown", "not_applicable"]
+    },
+    "relationKind": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "availability", "sources"],
+      "properties": {
+        "kind": { "type": "string", "minLength": 1 },
+        "availability": { "const": "available" },
+        "sources": {
+          "type": "array",
+          "items": { "enum": ["module_vocabulary", "required_relation", "trace_binding", "observed"] },
+          "minItems": 1,
+          "uniqueItems": true
+        }
+      }
+    },
+    "corpusRelation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "source", "target", "edge_type", "resolution", "locator", "freshness"],
+      "properties": {
+        "kind": { "const": "corpus" },
+        "source": { "type": "string", "minLength": 1 },
+        "target": { "type": "string", "minLength": 1 },
+        "edge_type": { "type": "string", "minLength": 1 },
+        "resolution": { "enum": ["resolved", "dangling"] },
+        "locator": { "$ref": "#/$defs/locator" },
+        "freshness": { "$ref": "#/$defs/freshness" }
+      }
+    },
+    "verifiesRelation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "source", "target", "form", "provenance", "locator", "freshness"],
+      "properties": {
+        "kind": { "const": "verifies" },
+        "source": { "$ref": "#/$defs/sha256" },
+        "target": { "type": "string", "minLength": 1 },
+        "form": { "type": "string", "minLength": 1 },
+        "provenance": { "enum": ["canonical", "legacy"] },
+        "locator": { "$ref": "#/$defs/locator" },
+        "freshness": { "$ref": "#/$defs/freshness" }
+      }
+    },
+    "implementsRelation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "source", "target", "form", "locator", "freshness"],
+      "properties": {
+        "kind": { "const": "implements" },
+        "source": { "$ref": "#/$defs/sha256" },
+        "target": { "type": "string", "minLength": 1 },
+        "form": { "type": "string", "minLength": 1 },
+        "locator": { "$ref": "#/$defs/locator" },
+        "freshness": { "$ref": "#/$defs/freshness" }
+      }
+    },
+    "relationObservation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["declaration", "availability", "freshness"],
+      "properties": {
+        "declaration": { "type": "string", "minLength": 1 },
+        "subject": { "type": "string", "minLength": 1 },
+        "availability": { "enum": ["available", "missing", "not_applicable", "unknown"] },
+        "freshness": { "$ref": "#/$defs/freshness" },
+        "reason": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}

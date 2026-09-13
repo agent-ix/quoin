@@ -66,6 +66,10 @@ pub enum ErrorCode {
     PayloadShape,
     /// The assurance export could not be built or read.
     Assurance,
+    /// A supplied document did not satisfy the published `assurance-v1` schema.
+    AssuranceContract,
+    /// The vendored `assurance-v1` schema did not compile.
+    VendoredSchemaInvalid,
     /// A repository identity was empty.
     RepositoryEmpty,
     /// A revision was not 40 lowercase hexadecimal digits.
@@ -98,6 +102,8 @@ impl ErrorCode {
             Self::PayloadNotJson => "QQ-1051",
             Self::PayloadShape => "QQ-1052",
             Self::Assurance => "QQ-1060",
+            Self::AssuranceContract => "QQ-1063",
+            Self::VendoredSchemaInvalid => "QQ-1064",
             Self::RepositoryEmpty => "QQ-1061",
             Self::RevisionMalformed => "QQ-1062",
             Self::EnginePremise => "QQ-1080",
@@ -130,6 +136,8 @@ impl ErrorCode {
             Self::PayloadNotJson,
             Self::PayloadShape,
             Self::Assurance,
+            Self::AssuranceContract,
+            Self::VendoredSchemaInvalid,
             Self::RepositoryEmpty,
             Self::RevisionMalformed,
             Self::EnginePremise,
@@ -331,6 +339,41 @@ pub enum Error {
     #[error("assurance: {0}")]
     Assurance(#[from] quire_rs::AssuranceError),
 
+    /// A supplied document did not satisfy the published `assurance-v1` schema.
+    ///
+    /// Distinct from [`Self::Assurance`] because the two answer different
+    /// questions about different inputs. `Assurance` is the engine's reader
+    /// refusing an export under the caller's **premises** — which module at
+    /// which version produced it. This is the schema check
+    /// `src/quire/validate.ts:99` performed for a caller that has no premises
+    /// to state, and it says only that the shape is not the published one.
+    ///
+    /// `violations` is the port of `ContractViolation.errors`: one line per
+    /// failing instance path. Its **wording, count and order are not
+    /// contractual** (quoin#403) — only the refusal itself is.
+    #[error(
+        "the document does not satisfy the published assurance-v1 contract \
+         ({} failure(s)). This is a shape drift between the producer of the \
+         export and the contract quoin pins, not a defect in the reader",
+        violations.len()
+    )]
+    AssuranceContract {
+        /// One `<instance path>: <reason>` line per failure. Not contractual.
+        violations: Vec<String>,
+    },
+
+    /// The vendored `assurance-v1` schema did not compile.
+    ///
+    /// A defect in this repository, never ordinary data: the document is a
+    /// committed artifact reached through `include_str!`.
+    #[error("vendored schema {} did not compile: {detail}", path.display())]
+    VendoredSchemaInvalid {
+        /// The committed document.
+        path: PathBuf,
+        /// What the compiler said. Not contractual.
+        detail: String,
+    },
+
     /// A repository identity was empty.
     #[error("repository identity must not be empty")]
     RepositoryEmpty,
@@ -404,6 +447,8 @@ impl Error {
             Self::PayloadNotJson { .. } => ErrorCode::PayloadNotJson,
             Self::PayloadShape { .. } => ErrorCode::PayloadShape,
             Self::Assurance(_) => ErrorCode::Assurance,
+            Self::AssuranceContract { .. } => ErrorCode::AssuranceContract,
+            Self::VendoredSchemaInvalid { .. } => ErrorCode::VendoredSchemaInvalid,
             Self::RepositoryEmpty => ErrorCode::RepositoryEmpty,
             Self::RevisionMalformed { .. } => ErrorCode::RevisionMalformed,
             Self::EnginePremise { .. } => ErrorCode::EnginePremise,
@@ -502,6 +547,13 @@ mod tests {
                 reason: "missing field".into(),
             },
             Error::Assurance(quire_rs::AssuranceError::EmptyRepository),
+            Error::AssuranceContract {
+                violations: vec!["<root>: must have required property 'format'".into()],
+            },
+            Error::VendoredSchemaInvalid {
+                path: PathBuf::from(crate::schema::VENDORED_PATH),
+                detail: "unknown keyword".into(),
+            },
             Error::RepositoryEmpty,
             Error::RevisionMalformed {
                 revision: "abc".into(),
