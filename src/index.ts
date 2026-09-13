@@ -6,15 +6,16 @@ export {
   filamentModulesDir,
   findCatalogEntry,
 } from "./catalog.js";
-export { ensureDefaultModules, defaultModulesManifest } from "./modules.js";
+export {
+  ensureDefaultModules,
+  defaultModulesManifest,
+  installModule,
+  listModules,
+  removeModule,
+  type InstalledModule,
+} from "./core/modules.js";
 export * from "./measurement/index.js";
 export * from "./change-assurance/index.js";
-export {
-  installPlugin,
-  listPlugins,
-  removePlugin,
-  parseSourceArg,
-} from "./plugins.js";
 export {
   createAuthoringPack,
   formatAuthoringPack,
@@ -25,10 +26,10 @@ export { FlowCommand } from "./flow-command.js";
 export {
   resolveOrg,
   originOrg,
-  UNRESOLVED_ORG_MESSAGE,
+  unresolvedOrgMessage,
   type OrgSource,
   type ResolvedOrg,
-} from "./org.js";
+} from "./core/org.js";
 // `ixSchema` is the named export a host's init hook looks for (ix-cli-core
 // FR-014); it must stay reachable from the package main.
 export {

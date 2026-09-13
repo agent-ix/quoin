@@ -2972,10 +2972,14 @@ version = "0.1.0"
 dependencies = [
  "engineering-assurance",
  "quoin-assurance",
+ "quoin-config",
+ "quoin-modules",
+ "quoin-semantic",
  "quoin-validators",
  "schemars",
  "serde",
  "serde_json",
+ "tempfile",
  "thiserror",
 ]
 
@@ -3009,6 +3013,7 @@ name = "quoin-modules"
 version = "0.1.0"
 dependencies = [
  "gix",
+ "schemars",
  "serde",
  "serde_json",
  "serde_yaml_ng",

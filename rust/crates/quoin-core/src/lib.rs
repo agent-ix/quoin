@@ -17,6 +17,7 @@
 //! process; `src/main.rs` is the thin I/O shell over it and
 //! `tests/tc_boundary.rs` proves the two agree.
 
+pub mod capabilities;
 pub mod dispatch;
 pub mod error;
 pub mod ops;

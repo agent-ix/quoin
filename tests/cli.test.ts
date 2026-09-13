@@ -5,11 +5,12 @@ import {
   mkdirSync,
   mkdtempSync,
   readFileSync,
+  readdirSync,
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 import { settings, type Config } from "@oclif/core";
 import { stringify as stringifyYaml } from "yaml";
@@ -20,10 +21,15 @@ import { loadConfig, run } from "@agent-ix/ix-cli-core";
 // committed default-modules.yaml, whose git-subdir sources would hit the
 // network. Stub it to a no-op; tests supply the catalog hermetically through
 // QUOIN_MODULE_PATHS (read by loadCatalog) instead. The command classes import
-// the SAME src/modules module, so this mock applies to them.
-vi.mock("../src/modules", () => ({
+// the SAME src/core/modules module, so this mock applies to them.
+// Partial, and that is load-bearing since quoin#446: `installModule`,
+// `listModules` and `removeModule` now live in this same module rather than in
+// `src/plugins.ts`, and the `module` commands call them for real. A whole-module
+// factory would replace them with nothing and take those commands down.
+vi.mock("../src/core/modules", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../src/core/modules")>()),
   ensureDefaultModules: () => {},
-  defaultModulesManifest: () => ({ schemaVersion: 1, entries: [] }),
+  defaultModulesManifest: () => "schemaVersion: 1\nentries: []\n",
 }));
 
 import {
@@ -200,6 +206,58 @@ afterEach(() => {
   process.exitCode = savedExitCode;
 });
 
+// ---- the built tree's host-resolved assets (quoin#446) ----------------------
+
+/**
+ * Three files quoin reads off its own installation, asserted against `dist/`.
+ *
+ * Every other test in the suite imports `src/`, where these resolve one
+ * directory deeper than they do in a build: the bundler flattens every chunk to
+ * `dist/`, so `src/core/modules.ts` and `src/semantic/contract.ts` are one level
+ * from the package root at runtime and two in the tree the tests read. A path
+ * derived with the wrong number of `dirname`s, or an asset the build forgets to
+ * copy, is therefore invisible to a source-mode suite and fails on the first
+ * real invocation — which is exactly how both of these were found, by running
+ * the commands against a built tree before and after the cutover rather than by
+ * running the suite.
+ *
+ * `beforeAll` above builds `dist/` when it is missing, so these assert the same
+ * artifact the `oclif` dispatch tests below dispatch into.
+ */
+describe("the built package's host-resolved assets", () => {
+  // Trace: FR-019-AC-1
+  test("the default module set is reachable from the built entry", async () => {
+    // Through the BUILT module and not the source one: the property under test
+    // is the path the bundled chunk derives, and importing `src/` would derive
+    // the other one and pass regardless.
+    const built = (await import(
+      pathToFileURL(join(repoRoot, "dist", "index.js")).href
+    )) as { defaultModulesManifest: () => string };
+    expect(built.defaultModulesManifest()).toBe(
+      readFileSync(join(repoRoot, "default-modules.yaml"), "utf8"),
+    );
+  });
+
+  // Trace: FR-070-AC-1
+  test("the vendored semantic contract is copied beside the built chunks", () => {
+    // `quoin-core` is handed this tree as QUOIN_SEMANTIC_ROOT and refuses every
+    // install when a file is missing, so the build copying it is load-bearing
+    // rather than tidy. Derived from the source tree rather than listed, so a
+    // newly vendored schema is covered without editing this test.
+    const from = join(repoRoot, "src", "semantic", "schemas");
+    for (const name of readdirSync(from)) {
+      expect(
+        existsSync(join(repoRoot, "dist", "schemas", name)),
+        `dist/schemas/${name}`,
+      ).toBe(true);
+    }
+    expect(readdirSync(from).length).toBeGreaterThan(0);
+    expect(existsSync(join(repoRoot, "dist", "sweep-report.schema.json"))).toBe(
+      true,
+    );
+  });
+});
+
 // ---- runner / dispatch parity (TC-016, TC-107) -------------------------------
 
 describe("oclif runner dispatch parity", () => {
@@ -350,7 +408,7 @@ function binEntryUrl(): string {
 describe("main dispatch", () => {
   // Asserting via an unknown command rather than a successful one: a real
   // command dispatched through the runner executes from dist/, where the
-  // src/modules mock does not apply and ensureDefaultModules would reach the
+  // src/core/modules mock does not apply and ensureDefaultModules would reach the
   // network. The rejection still proves argv reached the runner.
   // Trace: FR-026-AC-5, FR-026-AC-6
   test("a non-version argv is handed to the runner, whose error propagates", async () => {
@@ -722,7 +780,7 @@ describe("write", () => {
   // FR-025-AC-6, FR-023-AC-4: the --org flag has to survive oclif's own flag
   // parsing into the pack, in both renderings. Driven through the command class
   // rather than main(), matching the rest of this suite: dispatching through
-  // the runner would execute from dist/, where the src/modules mock does not
+  // the runner would execute from dist/, where the src/core/modules mock does not
   // apply and ensureDefaultModules would reach the network.
   // Trace: FR-023-AC-4, FR-025-AC-6
   test("--org reaches the pack in the text rendering", async () => {

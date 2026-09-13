@@ -1,7 +1,7 @@
 import { Args } from "@oclif/core";
 
 import { QuoinCommand } from "../../base.js";
-import { removePlugin } from "../../plugins.js";
+import { removeModule } from "../../core/modules.js";
 
 export default class ModuleRemove extends QuoinCommand {
   static summary = "Remove an installed spec module.";
@@ -15,7 +15,7 @@ export default class ModuleRemove extends QuoinCommand {
     const { args } = await this.parse(ModuleRemove);
     const name = args.name;
     if (!name) throw new Error("module remove requires <name>");
-    removePlugin(name);
+    removeModule(name);
     this.log(`removed ${name}`);
   }
 }

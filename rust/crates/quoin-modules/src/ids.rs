@@ -19,6 +19,7 @@ use crate::error::ModulesError;
 /// check unskippable.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize)]
 #[serde(transparent)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct ModuleName(String);
 
 impl ModuleName {
@@ -74,6 +75,7 @@ impl<'de> Deserialize<'de> for ModuleName {
 /// A resolved git commit id, as forty lowercase hex characters.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize)]
 #[serde(transparent)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct CommitSha(String);
 
 impl CommitSha {

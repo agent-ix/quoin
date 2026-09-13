@@ -2,7 +2,7 @@ import { Flags } from "@oclif/core";
 
 import { QuoinCommand } from "../../base.js";
 import { loadCatalog } from "../../catalog.js";
-import { ensureDefaultModules } from "../../modules.js";
+import { ensureDefaultModules } from "../../core/modules.js";
 
 export default class CatalogValidate extends QuoinCommand {
   static summary = "Validate the active catalog has no duplicate types.";

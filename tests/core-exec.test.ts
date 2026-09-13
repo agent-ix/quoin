@@ -311,6 +311,39 @@ describe("runCoreAllowFailure — non-zero but valid", () => {
       /spelled <domain>\.<op>/,
     );
   });
+
+  it("accepts every operation the boundary actually registers", () => {
+    // The guard is read off `OPERATIONS` rather than a list written here,
+    // because a hand-written copy is the thing that goes stale: the guard
+    // refused `assurance.build_case`, `assurance.parse_argument`,
+    // `config.resolve_org`, `config.unresolved_org_message` and
+    // `modules.ensure_defaults` — five registered names — for want of an
+    // underscore, and no test noticed, because every test named an operation
+    // that happened to have none (quoin#446).
+    const dispatch = readFileSync(
+      new URL("../rust/crates/quoin-core/src/dispatch.rs", import.meta.url),
+      "utf8",
+    );
+    const block = /pub const OPERATIONS: &\[&str\] = &\[([\s\S]*?)\];/.exec(
+      dispatch,
+    );
+    expect(
+      block,
+      "OPERATIONS is no longer declared the way this reads it",
+    ).not.toBeNull();
+    const names = [...(block?.[1] ?? "").matchAll(/"([^"]+)"/g)].map(
+      (m) => m[1],
+    );
+    expect(names).toContain("modules.ensure_defaults");
+
+    const { dir } = fakeCoreDir("echo '{}'");
+    process.env.PATH = `${dir}:${savedPath ?? ""}`;
+    for (const op of names) {
+      expect(() => runCoreAllowFailure(op, {}), op).not.toThrow(
+        /spelled <domain>\.<op>/,
+      );
+    }
+  });
 });
 
 describe("the exit taxonomy", () => {

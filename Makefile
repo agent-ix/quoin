@@ -326,7 +326,9 @@ rust-e2e: rust-build
 	  QUOIN_DISK_FINDINGS=$(CARGO_TARGET)/debug/quoin-disk-findings \
 	  $(PNPM) exec vitest run \
 	    tests/core-exec-e2e.test.ts \
-	    tests/core-snapshot-differential.test.ts
+	    tests/core-snapshot-differential.test.ts \
+	    tests/core-org.test.ts \
+	    tests/core-modules.test.ts
 
 # The Rust gate, in the order a failure is cheapest to read: format and lint
 # first (seconds), then the supply-chain check, then the suites, then the

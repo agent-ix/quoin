@@ -7,7 +7,11 @@ import {
   findCatalogEntry,
 } from "./catalog.js";
 import { LEGACY_MIGRATION_EXAMPLE } from "./semantic/sweep.js";
-import { UNRESOLVED_ORG_MESSAGE, type OrgSource, resolveOrg } from "./org.js";
+import {
+  type OrgSource,
+  resolveOrg,
+  unresolvedOrgMessage,
+} from "./core/org.js";
 
 /** How each org source is named in the rendered pack. */
 const ORG_SOURCE_LABEL: Record<OrgSource, string> = {
@@ -99,7 +103,7 @@ export function formatAuthoringPack(pack: AuthoringPack): string {
     `Repo: ${pack.repoRoot}`,
     pack.org
       ? `Org: ${pack.org} (from ${ORG_SOURCE_LABEL[pack.orgSource]})`
-      : `Org: unresolved — ${UNRESOLVED_ORG_MESSAGE}`,
+      : `Org: unresolved — ${unresolvedOrgMessage()}`,
     "",
     "Authoring contracts:",
   ];

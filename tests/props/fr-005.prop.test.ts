@@ -22,9 +22,12 @@ import { loadConfig, run } from "@agent-ix/ix-cli-core";
 
 // The catalog/write handlers call ensureDefaultModules() internally, whose
 // git-subdir sources would hit the network. Same stub the CLI suite uses.
-vi.mock("../../src/modules", () => ({
+// Partial: `installModule`/`listModules`/`removeModule` live in this module too
+// since quoin#446, and the `module` commands call them for real.
+vi.mock("../../src/core/modules", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../../src/core/modules")>()),
   ensureDefaultModules: () => {},
-  defaultModulesManifest: () => ({ schemaVersion: 1, entries: [] }),
+  defaultModulesManifest: () => "schemaVersion: 1\nentries: []\n",
 }));
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..", "..");

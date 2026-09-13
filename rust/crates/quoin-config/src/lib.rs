@@ -48,8 +48,8 @@ pub mod service;
 pub use error::{ConfigError, ConfigErrorCode, ConfigIssue};
 pub use ids::{OrgName, PackageName, PluginId};
 pub use org::{
-    OrgOptions, OrgSource, ResolvedOrg, UNRESOLVED_ORG_MESSAGE, org_from_git_config, origin_org,
-    resolve_org,
+    MAX_GIT_CONFIG_BYTES, OrgOptions, OrgSource, ResolvedOrg, UNRESOLVED_ORG_MESSAGE,
+    org_from_git_config, origin_org, resolve_org, resolve_org_from_documents,
 };
 pub use paths::{
     Environment, FixedEnvironment, ProcessEnvironment, RuntimeContext, cache_root, config_path_for,
@@ -62,4 +62,7 @@ pub use schema::{
     IxSchema, PluginConfigSchema, QUOIN_ENV_BINDINGS, QUOIN_PACKAGE_NAME, QUOIN_PLUGIN_ID,
     QuoinConfig,
 };
-pub use service::{ConfigIncident, ConfigService, DoctorEntry, DoctorStatus, IncidentLog};
+pub use service::{
+    ConfigIncident, ConfigService, DoctorEntry, DoctorStatus, IncidentLog, Resolved,
+    resolve_documents,
+};

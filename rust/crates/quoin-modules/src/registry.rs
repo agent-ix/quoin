@@ -29,6 +29,7 @@ pub const MAX_REGISTRY_BYTES: u64 = 8 << 20;
 /// One installed module's registry record.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct InstalledModule {
     /// The module's declared name; also its directory name.
     pub name: ModuleName,

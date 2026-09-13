@@ -28,9 +28,28 @@
  * reinstalling, so a developer's existing modules are left alone.
  */
 
-import { ensureDefaultModules } from "../src/modules.js";
+import { quoinCoreExecutable } from "../src/core/exec.js";
+import { ensureDefaultModules } from "../src/core/modules.js";
 
 export default async function setup(): Promise<void> {
+  // Since quoin#446 the reconcile runs inside `quoin-core`, so the suite now
+  // needs the binary. Checked here, and reported as a build instruction rather
+  // than left to surface as a spawn failure inside an unrelated test — and
+  // deliberately NOT a skip: a suite that quietly stopped materialising modules
+  // would take the command-level tests down exactly the way the CI failure this
+  // file was written for did.
+  try {
+    quoinCoreExecutable();
+  } catch (cause) {
+    const reason = cause instanceof Error ? cause.message : String(cause);
+    throw new Error(
+      `the quoin-core boundary is not reachable, so the default module set ` +
+        `cannot be materialized: ${reason}. Run \`make rust-build\` and set ` +
+        `QUOIN_CORE to <repo>/rust/target/debug/quoin-core, or put quoin-core ` +
+        `on PATH.`,
+    );
+  }
+
   try {
     ensureDefaultModules();
   } catch (cause) {

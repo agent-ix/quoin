@@ -182,6 +182,65 @@ pub fn resolve_org(
     ResolvedOrg::unresolved()
 }
 
+/// Resolve the authoring organization from documents that have **already been
+/// read**, with no filesystem access at all.
+///
+/// The filesystem-free half of [`resolve_org`], and the entry point the
+/// `quoin-core` boundary uses (quoin#446): `ops/` acquires no host capability,
+/// so the caller reads the two config layers and `.git/config` and this decides
+/// over them. [`resolve_org`] is the same decision with the reads in front of it,
+/// and `tc_446_*` pins the two against each other over a real temporary tree so
+/// the pure path cannot drift away from the one the CLI takes.
+///
+/// Precedence is [`resolve_org`]'s, unchanged: `--org` flag, then the stored
+/// config with `QUOIN_ORG` layered over it by the declared env binding, then the
+/// `origin` remote. Returns the schema issues a broken layer produced, so the
+/// boundary can report a degraded read as a diagnostic instead of losing it.
+#[must_use]
+pub fn resolve_org_from_documents(
+    options: &OrgOptions<'_>,
+    env: &dyn Environment,
+    user_config: Option<&str>,
+    project_config: Option<&str>,
+    git_config: Option<&str>,
+) -> (ResolvedOrg, Vec<crate::error::ConfigIssue>) {
+    if let Some(flag) = options.flag.and_then(OrgName::parse_opt) {
+        return (ResolvedOrg::found(flag, OrgSource::Flag), Vec::new());
+    }
+
+    let (resolved, issues) =
+        crate::service::resolve_documents::<QuoinConfig>(&[user_config, project_config], env);
+
+    if let Some(stored) = resolved
+        .value
+        .org
+        .as_ref()
+        .and_then(|org| OrgName::parse_opt(org.as_str()))
+    {
+        // `QUOIN_ORG` is layered over the file by the env binding, so a value
+        // here came from whichever of the two won. Report which.
+        let from_env = env
+            .var("QUOIN_ORG")
+            .and_then(|raw| OrgName::parse_opt(&raw))
+            .is_some_and(|e| e == stored);
+        let source = if from_env {
+            OrgSource::Env
+        } else {
+            OrgSource::Config
+        };
+        return (ResolvedOrg::found(stored, source), issues);
+    }
+
+    // A git config over the byte ceiling never reaches here: the caller that
+    // read it applies `MAX_GIT_CONFIG_BYTES` the same way `org_from_git_config`
+    // does, and an over-limit file is "no org here" on both paths.
+    if let Some(from_git) = git_config.and_then(origin_org) {
+        return (ResolvedOrg::found(from_git, OrgSource::Git), issues);
+    }
+
+    (ResolvedOrg::unresolved(), issues)
+}
+
 /// Read the organization from the `origin` remote in `<repo_root>`'s git config.
 ///
 /// An unreadable config, an absent `origin`, or an unparsable url yields `None`

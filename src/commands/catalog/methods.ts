@@ -2,7 +2,7 @@ import { Flags } from "@oclif/core";
 
 import { QuoinCommand } from "../../base.js";
 import { loadMethodCatalog, methodClasses } from "../../advisor/index.js";
-import { ensureDefaultModules } from "../../modules.js";
+import { ensureDefaultModules } from "../../core/modules.js";
 
 export default class CatalogMethods extends QuoinCommand {
   static summary = "List the merged verification-method catalog.";

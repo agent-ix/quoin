@@ -16,6 +16,7 @@ use crate::error::{ModulesError, SourceFieldRule};
 /// Where a module's content comes from.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "kebab-case", deny_unknown_fields)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub enum Source {
     /// A GitHub repository whose module root is the repository root.
     Github {
