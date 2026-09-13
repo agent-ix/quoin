@@ -44,7 +44,7 @@ function badGate(root: string): void {
 }
 
 describe("gate capability validator (agent-ix/quoin#224)", () => {
-  it("TC-1067 joins a gate claim, wiring, and an unasserted count at an exact locus", () => {
+  it("joins a gate claim, wiring, and an unasserted count at an exact locus", () => {
     const root = workspace();
     badGate(root);
     expect(inspectEmptyGates(root)).toEqual([
@@ -64,14 +64,14 @@ describe("gate capability validator (agent-ix/quoin#224)", () => {
     );
   });
 
-  it("TC-1068 ignores an unwired report with identical shell text", () => {
+  it("ignores an unwired report with identical shell text", () => {
     const root = workspace();
     badGate(root);
     write(root, "Makefile", "report:\n\t@echo report only\n");
     expect(inspectEmptyGates(root)).toEqual([]);
   });
 
-  it("TC-1069 keeps a wired gate with an explicit failure path silent", () => {
+  it("keeps a wired gate with an explicit failure path silent", () => {
     const root = workspace();
     write(root, "Makefile", "gate:\n\t./scripts/check_unwrap.sh\n");
     write(
@@ -89,7 +89,7 @@ describe("gate capability validator (agent-ix/quoin#224)", () => {
     expect(inspectEmptyGates(root)).toEqual([]);
   });
 
-  it("TC-1070 ignores a wired count script that makes no gate claim", () => {
+  it("ignores a wired count script that makes no gate claim", () => {
     const root = workspace();
     write(root, "Makefile", "report:\n\t./scripts/count_unwrap.sh\n");
     write(
@@ -100,7 +100,7 @@ describe("gate capability validator (agent-ix/quoin#224)", () => {
     expect(inspectEmptyGates(root)).toEqual([]);
   });
 
-  it("TC-1071 reports the same finding through the shipped quoin validate command", async () => {
+  it("reports the same finding through the shipped quoin validate command", async () => {
     const root = workspace();
     badGate(root);
     const lines: string[] = [];

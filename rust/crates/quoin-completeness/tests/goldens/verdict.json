@@ -1,0 +1,369 @@
+{
+  "provenance": {
+    "producer": "scripts/capture-semantic-goldens.mjs",
+    "oracle": "agent-ix/quoin src/semantic + src/completeness (TypeScript)",
+    "quoinRevision": "dc834a22f45cea52275595ebc2857baa17484229",
+    "ajvVersion": "8.20.0",
+    "note": "Captured once from the TypeScript implementation. The Rust crates read these files; they never invoke Node. Regenerate by re-running the producer, never by hand-editing."
+  },
+  "source": "src/completeness/assess.ts verdictFor()",
+  "counts": {
+    "total": 24
+  },
+  "cases": [
+    {
+      "id": "v0-advisory-none",
+      "vocabulariesChecked": 0,
+      "strict": false,
+      "findings": [],
+      "verdict": "UNCHECKED"
+    },
+    {
+      "id": "v0-advisory-medium-only",
+      "vocabulariesChecked": 0,
+      "strict": false,
+      "findings": [
+        {
+          "vocabulary": "v",
+          "value": "a",
+          "kind": "unowned",
+          "severity": "medium",
+          "message": "m"
+        }
+      ],
+      "verdict": "UNCHECKED"
+    },
+    {
+      "id": "v0-advisory-high",
+      "vocabulariesChecked": 0,
+      "strict": false,
+      "findings": [
+        {
+          "vocabulary": "v",
+          "value": "a",
+          "kind": "unjustified-exclusion",
+          "severity": "high",
+          "message": "m"
+        }
+      ],
+      "verdict": "UNCHECKED"
+    },
+    {
+      "id": "v0-advisory-mixed",
+      "vocabulariesChecked": 0,
+      "strict": false,
+      "findings": [
+        {
+          "vocabulary": "v",
+          "value": "a",
+          "kind": "unowned",
+          "severity": "medium",
+          "message": "m"
+        },
+        {
+          "vocabulary": "v",
+          "value": "b",
+          "kind": "undeclared-exclusion",
+          "severity": "high",
+          "message": "m"
+        }
+      ],
+      "verdict": "UNCHECKED"
+    },
+    {
+      "id": "v0-strict-none",
+      "vocabulariesChecked": 0,
+      "strict": true,
+      "findings": [],
+      "verdict": "UNCHECKED"
+    },
+    {
+      "id": "v0-strict-medium-only",
+      "vocabulariesChecked": 0,
+      "strict": true,
+      "findings": [
+        {
+          "vocabulary": "v",
+          "value": "a",
+          "kind": "unowned",
+          "severity": "medium",
+          "message": "m"
+        }
+      ],
+      "verdict": "UNCHECKED"
+    },
+    {
+      "id": "v0-strict-high",
+      "vocabulariesChecked": 0,
+      "strict": true,
+      "findings": [
+        {
+          "vocabulary": "v",
+          "value": "a",
+          "kind": "unjustified-exclusion",
+          "severity": "high",
+          "message": "m"
+        }
+      ],
+      "verdict": "UNCHECKED"
+    },
+    {
+      "id": "v0-strict-mixed",
+      "vocabulariesChecked": 0,
+      "strict": true,
+      "findings": [
+        {
+          "vocabulary": "v",
+          "value": "a",
+          "kind": "unowned",
+          "severity": "medium",
+          "message": "m"
+        },
+        {
+          "vocabulary": "v",
+          "value": "b",
+          "kind": "undeclared-exclusion",
+          "severity": "high",
+          "message": "m"
+        }
+      ],
+      "verdict": "UNCHECKED"
+    },
+    {
+      "id": "v1-advisory-none",
+      "vocabulariesChecked": 1,
+      "strict": false,
+      "findings": [],
+      "verdict": "PASS"
+    },
+    {
+      "id": "v1-advisory-medium-only",
+      "vocabulariesChecked": 1,
+      "strict": false,
+      "findings": [
+        {
+          "vocabulary": "v",
+          "value": "a",
+          "kind": "unowned",
+          "severity": "medium",
+          "message": "m"
+        }
+      ],
+      "verdict": "CONDITIONAL"
+    },
+    {
+      "id": "v1-advisory-high",
+      "vocabulariesChecked": 1,
+      "strict": false,
+      "findings": [
+        {
+          "vocabulary": "v",
+          "value": "a",
+          "kind": "unjustified-exclusion",
+          "severity": "high",
+          "message": "m"
+        }
+      ],
+      "verdict": "FAIL"
+    },
+    {
+      "id": "v1-advisory-mixed",
+      "vocabulariesChecked": 1,
+      "strict": false,
+      "findings": [
+        {
+          "vocabulary": "v",
+          "value": "a",
+          "kind": "unowned",
+          "severity": "medium",
+          "message": "m"
+        },
+        {
+          "vocabulary": "v",
+          "value": "b",
+          "kind": "undeclared-exclusion",
+          "severity": "high",
+          "message": "m"
+        }
+      ],
+      "verdict": "FAIL"
+    },
+    {
+      "id": "v1-strict-none",
+      "vocabulariesChecked": 1,
+      "strict": true,
+      "findings": [],
+      "verdict": "PASS"
+    },
+    {
+      "id": "v1-strict-medium-only",
+      "vocabulariesChecked": 1,
+      "strict": true,
+      "findings": [
+        {
+          "vocabulary": "v",
+          "value": "a",
+          "kind": "unowned",
+          "severity": "medium",
+          "message": "m"
+        }
+      ],
+      "verdict": "FAIL"
+    },
+    {
+      "id": "v1-strict-high",
+      "vocabulariesChecked": 1,
+      "strict": true,
+      "findings": [
+        {
+          "vocabulary": "v",
+          "value": "a",
+          "kind": "unjustified-exclusion",
+          "severity": "high",
+          "message": "m"
+        }
+      ],
+      "verdict": "FAIL"
+    },
+    {
+      "id": "v1-strict-mixed",
+      "vocabulariesChecked": 1,
+      "strict": true,
+      "findings": [
+        {
+          "vocabulary": "v",
+          "value": "a",
+          "kind": "unowned",
+          "severity": "medium",
+          "message": "m"
+        },
+        {
+          "vocabulary": "v",
+          "value": "b",
+          "kind": "undeclared-exclusion",
+          "severity": "high",
+          "message": "m"
+        }
+      ],
+      "verdict": "FAIL"
+    },
+    {
+      "id": "v3-advisory-none",
+      "vocabulariesChecked": 3,
+      "strict": false,
+      "findings": [],
+      "verdict": "PASS"
+    },
+    {
+      "id": "v3-advisory-medium-only",
+      "vocabulariesChecked": 3,
+      "strict": false,
+      "findings": [
+        {
+          "vocabulary": "v",
+          "value": "a",
+          "kind": "unowned",
+          "severity": "medium",
+          "message": "m"
+        }
+      ],
+      "verdict": "CONDITIONAL"
+    },
+    {
+      "id": "v3-advisory-high",
+      "vocabulariesChecked": 3,
+      "strict": false,
+      "findings": [
+        {
+          "vocabulary": "v",
+          "value": "a",
+          "kind": "unjustified-exclusion",
+          "severity": "high",
+          "message": "m"
+        }
+      ],
+      "verdict": "FAIL"
+    },
+    {
+      "id": "v3-advisory-mixed",
+      "vocabulariesChecked": 3,
+      "strict": false,
+      "findings": [
+        {
+          "vocabulary": "v",
+          "value": "a",
+          "kind": "unowned",
+          "severity": "medium",
+          "message": "m"
+        },
+        {
+          "vocabulary": "v",
+          "value": "b",
+          "kind": "undeclared-exclusion",
+          "severity": "high",
+          "message": "m"
+        }
+      ],
+      "verdict": "FAIL"
+    },
+    {
+      "id": "v3-strict-none",
+      "vocabulariesChecked": 3,
+      "strict": true,
+      "findings": [],
+      "verdict": "PASS"
+    },
+    {
+      "id": "v3-strict-medium-only",
+      "vocabulariesChecked": 3,
+      "strict": true,
+      "findings": [
+        {
+          "vocabulary": "v",
+          "value": "a",
+          "kind": "unowned",
+          "severity": "medium",
+          "message": "m"
+        }
+      ],
+      "verdict": "FAIL"
+    },
+    {
+      "id": "v3-strict-high",
+      "vocabulariesChecked": 3,
+      "strict": true,
+      "findings": [
+        {
+          "vocabulary": "v",
+          "value": "a",
+          "kind": "unjustified-exclusion",
+          "severity": "high",
+          "message": "m"
+        }
+      ],
+      "verdict": "FAIL"
+    },
+    {
+      "id": "v3-strict-mixed",
+      "vocabulariesChecked": 3,
+      "strict": true,
+      "findings": [
+        {
+          "vocabulary": "v",
+          "value": "a",
+          "kind": "unowned",
+          "severity": "medium",
+          "message": "m"
+        },
+        {
+          "vocabulary": "v",
+          "value": "b",
+          "kind": "undeclared-exclusion",
+          "severity": "high",
+          "message": "m"
+        }
+      ],
+      "verdict": "FAIL"
+    }
+  ]
+}

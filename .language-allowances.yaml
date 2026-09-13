@@ -1,0 +1,167 @@
+# Language-boundary exception manifest — governed by NFR-024.
+#
+# THE RULE: every file in this repository that runs code should be Rust.
+#
+# Applied literally that rule is wrong — it would flag the lint config and the
+# test fixtures, neither of which is engine logic and neither of which anyone
+# intends to convert. So the rule ships with a named list of exceptions, and
+# this file is that list.
+#
+# A non-Rust file that runs code is a VIOLATION unless it matches exactly one
+# category below. Matching two is an authoring error, not a stronger claim.
+#
+# THE CATEGORIES ARE NFR-024's AND ONLY NFR-024's: `ui`, `generated`, `inert`,
+# `thin-host`, `owner-disposition`. A category this file invents is not an
+# exception — it is an unbacked classification, and NFR-024-AC-14 fails the run
+# for it. That criterion exists because this manifest previously declared eight
+# categories against NFR-024's five, and the three it invented covered 23,527
+# lines that left the population without any requirement admitting them.
+#
+# STAGED-PORT RETENTION IS DELIBERATELY ABSENT. It is not a sixth category and
+# must not be added as one. A retained path is a tracked row in the burn-down
+# matrix at docs/rust-burndown/executable-path-matrix.md, carrying a successor
+# ticket and an expiry, because retention is a debt being counted down rather
+# than an exception being granted. NFR-024 states this; it is repeated here
+# because the absence otherwise reads as an omission and invites a sixth entry.
+#
+# THIS FILE IS MEANT TO BE COPIED. The categories are NFR-024's and hold in any
+# repository; only `paths` is repo-specific.
+
+version: 1
+repo: agent-ix/quoin
+governed_by: NFR-024
+
+categories:
+  - id: ui
+    rule: >
+      User-interface code. Standing-approved as a target language, not debt.
+    owner: quoin-maintainers
+    paths: []
+    note: quoin ships no UI. Retained so a copy of this file starts complete.
+
+  - id: generated
+    rule: >
+      Code emitted by a generator, identified by generator provenance — the
+      generator's identity and the digest of the source it was generated from.
+    owner: quoin-maintainers
+    requires: [generator_identity, source_digest]
+    forfeits_if: >
+      Hand-edited. A hand-edit makes the file source, and source is governed.
+      This is why the category keys on provenance and not on a directory named
+      "generated" — a directory name is a claim, a digest is a check.
+    paths: []
+    note: >
+      Nothing in quoin can claim this today, and one path is waiting on it:
+      skills/**/workflow-assets/** is a RETAINED ROW in the burn-down matrix,
+      not an entry here, until #374 records its generator identity and source
+      digest. FR-099 states the rule — the bundle claims the generated
+      allowance only once provenance is recorded, and is treated as first-party
+      source until then. tests/props/*.prop.test.ts names a generator but
+      records no source digest and is hand-maintainable, so it is governed as
+      ordinary source.
+
+  - id: inert
+    rule: >
+      Data and fixtures that determine no assertion, including foreign-language
+      sample inputs and test corpora.
+    owner: quoin-maintainers
+    test: >
+      Would changing this file's LOGIC (not its data) change a pass/fail
+      result? If yes it is not inert.
+    paths:
+      - path: corpus/cases/**
+        owner: quoin-maintainers
+        note: >
+          Foreign-language sample inputs in the qa-corpus submodule — .rs 906 /
+          .ts 613 / .py 525 / .sh 36 across 162 files.
+      - path: corpus/**
+        owner: quoin-maintainers
+        note: >
+          Owner ruling 2026-09-12: qa-corpus is a test corpus and is out of
+          scope in full. bounds.py, verify.py and corpus/scripts/*.py stay
+          Python indefinitely and no conversion row is opened against them,
+          even though quoin's own gate executes bounds.py. A test corpus
+          written in the languages it tests is the corpus working correctly.
+      - path: skills/**/*.md
+        owner: quoin-maintainers
+        note: >
+          Skill bodies are prose an agent host reads. They carry no executable
+          extension and contribute nothing to the metric population; declared
+          so the skills tree is not silently half-covered. The EXECUTABLES
+          under skills/**/workflow-assets/** are NOT covered by this entry —
+          their specInvariants decide whether a review, matrix or plan flow
+          passes, which is an assertion, so the inert test refuses them. They
+          are a retained matrix row.
+
+  - id: thin-host
+    rule: >
+      A shim that hands control to the real implementation and does nothing
+      else, under a declared line and branch ceiling.
+    owner: quoin-maintainers
+    ceiling:
+      lines: 40
+      branches: 2
+    paths:
+      - path: bin/quoin.js
+        owner: quoin-maintainers
+        lines: 21
+        note: npm entrypoint declared in package.json `bin`.
+      - path: src/hooks/command-not-found.ts
+        owner: quoin-maintainers
+        lines: 31
+        note: >
+          oclif `command_not_found` hook declared in package.json
+          `oclif.hooks`. Removing it is a published-extension contract change.
+
+  - id: owner-disposition
+    rule: >
+      A path retained by a dated owner decision that fits no other category.
+    owner: quoin-maintainers
+    requires: [date, deciding_owner]
+    paths:
+      - path: vite.config.ts
+        owner: quoin-maintainers
+        date: 2026-09-12
+        deciding_owner: kreneskyp
+        note: >
+          Build, lint and eval-harness configuration is written in whatever the
+          tool reads. It configures the build; it is not the thing being built.
+          Recorded as a dated disposition rather than a new category, because a
+          category this manifest invents is what NFR-024-AC-14 now fails on.
+      - path: eslint.config.js
+        owner: quoin-maintainers
+        date: 2026-09-12
+        deciding_owner: kreneskyp
+      - path: cli-agent-evals.config.mjs
+        owner: quoin-maintainers
+        date: 2026-09-12
+        deciding_owner: kreneskyp
+      - path: templates/semantic-module/{{cookiecutter.repo_name}}/typespec/main.tsp
+        owner: quoin-maintainers
+        date: 2026-09-12
+        deciding_owner: kreneskyp
+        note: >
+          Owner ruling: schemas are data. Recorded here rather than under
+          `inert` deliberately — the inert test is "determines no assertion",
+          and this file compiles to the JSON Schemas the rendered module's
+          Python tests then assert against, two hops downstream. Stretching
+          `inert` to cover it is the move that put 23,164 asserting lines
+          outside the population once already. Move it to `inert` only if the
+          owner rules the two-hop chain does not count.
+
+# --------------------------------------------------------------------------
+# Enforcement requirements (quire-research LR08, #64; NFR-024-AC-5/7/8/12/14)
+#
+#   - Walk paths with no governed extension: Makefile recipes and
+#     .github/workflows/** `run:` blocks. quoin has 36 such executable paths.
+#   - Carry a BYPASS PROBE. A planted non-Rust semantic file in a non-allowed
+#     path must fail, and a planted hand-edit of a `generated` file must fail
+#     that category. Without the probe the check passes over an empty
+#     population, which is not evidence.
+#   - A run classifying an empty population is INCONCLUSIVE, never zero
+#     violations.
+#   - Fail on a manifest entry whose category NFR-024 does not admit, and on a
+#     path carrying both a manifest entry and a retention row.
+#   - Emit the burn-down matrix as a byproduct of the check, not as a separate
+#     script.
+# --------------------------------------------------------------------------

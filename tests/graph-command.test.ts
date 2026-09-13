@@ -216,7 +216,7 @@ describe("FR-062 graph command", () => {
     });
   });
 
-  it("TC-1257 fails required paths before rows and reports an unreadable retained store", () => {
+  it("fails required paths before rows and reports an unreadable retained store", () => {
     const paths = fixture();
     const missing = join(paths.root, "inputs", "missing.json");
     const noExport = loadGraphAnalysisInput({
@@ -287,7 +287,7 @@ describe("FR-062 graph command", () => {
   });
 
   // Trace: FR-062-AC-11
-  it("TC-1259 keeps producers, writes, frontmatter, and a second graph outside every view", () => {
+  it("keeps producers, writes, frontmatter, and a second graph outside every view", () => {
     const paths = [
       "src/commands/graph/common.ts",
       "src/commands/graph/index.ts",

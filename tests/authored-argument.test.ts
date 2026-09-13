@@ -1,4 +1,4 @@
-/** FR-047 — authored assurance arguments (TC-1131..TC-1136). */
+/** FR-047 — authored assurance arguments (TC-1131..TC-1136, TC-1712). */
 
 import { describe, expect, it } from "vitest";
 
@@ -83,7 +83,6 @@ const decision: SufficiencyDecision = {
 
 describe("authored assurance arguments", () => {
   // Trace: FR-047-AC-1
-  // TC-1131
   it("preserves the authored claim, authority, and independence", () => {
     const view = buildAuthoredArgumentView({
       argument,
@@ -100,7 +99,6 @@ describe("authored assurance arguments", () => {
   });
 
   // Trace: FR-047-AC-2
-  // TC-1132
   it("leaves an undecided criterion open instead of inferring from evidence", () => {
     const view = buildAuthoredArgumentView({
       argument,
@@ -115,7 +113,6 @@ describe("authored assurance arguments", () => {
   });
 
   // Trace: FR-047-AC-3
-  // TC-1133
   it("reopens expired decisions and assumptions due for review", () => {
     const view = buildAuthoredArgumentView({
       argument: {
@@ -133,7 +130,6 @@ describe("authored assurance arguments", () => {
   });
 
   // Trace: FR-047-AC-4
-  // TC-1134
   it("requires resolution evidence and a current expiry for accepted risk", () => {
     const view = buildAuthoredArgumentView({
       argument: {
@@ -156,7 +152,6 @@ describe("authored assurance arguments", () => {
   });
 
   // Trace: FR-047-AC-5
-  // TC-1135
   it("validates the closed authored contract and rejects duplicate decisions", () => {
     expect(parseAssuranceArgument(argument)).toEqual(argument);
     expect(() =>
@@ -203,7 +198,6 @@ describe("authored assurance arguments", () => {
   });
 
   // Trace: FR-047-AC-6
-  // TC-1136
   it("renders open reasons and explicit decision state deterministically", () => {
     const view = buildAuthoredArgumentView({
       argument,
@@ -215,5 +209,59 @@ describe("authored assurance arguments", () => {
     expect(first).toContain("OPEN");
     expect(first).toContain("no sufficiency decision");
     expect(first).toContain("Participants and authority");
+  });
+
+  // Trace: FR-047-AC-7 (TC-1712)
+  it("refuses an instant naming a day or hour that does not exist", () => {
+    // `Date.parse` rolls rather than rejects, so each of these WAS accepted and
+    // became a different instant (quoin#436).
+    for (const reviewBy of [
+      "2026-02-30T00:00:00.000Z",
+      "2026-06-31T00:00:00.000Z",
+      "2025-02-29T00:00:00.000Z",
+      "2026-08-15T24:00:00.000Z",
+    ]) {
+      expect(() =>
+        buildAuthoredArgumentView({
+          argument: {
+            ...argument,
+            assumptions: [{ ...argument.assumptions[0], review_by: reviewBy }],
+          },
+          decisions: [decision],
+          asOf: "2026-08-15T00:00:00.000Z",
+        }),
+      ).toThrow("review_by must be an ISO-8601 instant");
+    }
+
+    // The reason this is not only an acceptance question. February 30 rolls
+    // forward to March 2, which is AFTER this `asOf` — so the assumption used
+    // to read as not yet due, and the argument reported a status derived from a
+    // date nobody can have authored.
+    expect(() =>
+      buildAuthoredArgumentView({
+        argument: {
+          ...argument,
+          assumptions: [
+            {
+              ...argument.assumptions[0],
+              review_by: "2026-02-30T00:00:00.000Z",
+            },
+          ],
+        },
+        decisions: [decision],
+        asOf: "2026-03-01T00:00:00.000Z",
+      }),
+    ).toThrow("review_by must be an ISO-8601 instant");
+
+    // The leap year the other way, and a real February 29, which must stay
+    // accepted: the fix tightens impossible dates, not unusual ones.
+    expect(() =>
+      parseAssuranceArgument({
+        ...argument,
+        assumptions: [
+          { ...argument.assumptions[0], review_by: "2028-02-29T00:00:00.000Z" },
+        ],
+      }),
+    ).not.toThrow();
   });
 });

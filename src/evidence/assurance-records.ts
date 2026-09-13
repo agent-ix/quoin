@@ -19,7 +19,8 @@ import {
 } from "node:fs";
 import { dirname, join } from "node:path";
 
-import { canonicalJson, storeRoot } from "./store.js";
+import { canonicalJson } from "../store/canonical.js";
+import { storeRoot } from "../store/paths.js";
 
 export const EXPERIMENTS_DIR = "experiments";
 export const OPERATIONAL_EVIDENCE_DIR = "operational";

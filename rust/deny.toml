@@ -1,10 +1,12 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # Copyright (C) 2026 Agent-IX
 #
-# Modelled on quire-rs/deny.toml. Two deliberate differences: this workspace
-# has no git source at all (so `allow-git` stays empty and `unknown-git =
-# "deny"` has full teeth), and `multiple-versions` is "deny": a duplicate
+# Modelled on quire-rs/deny.toml. `multiple-versions` is "deny": a duplicate
 # version is resolved, not conceded.
+#
+# quoin#379 added the workspace's first and only git source — the `rev`-pinned
+# quire-rs engine. Both the git allowance and the AGPL exception below are
+# scoped to that one crate; nothing else in the graph gains either.
 
 [licenses]
 version = 2
@@ -15,18 +17,32 @@ version = 2
 allow = [
     "MIT",
     "Apache-2.0",
+    # blake3's `arrayref` dependency. Permissive and OSI approved, and the same
+    # licence quire-rs/deny.toml already allows for the same reason.
+    "BSD-2-Clause",
     "Unicode-3.0",
+    # Arrive with `jsonschema` (quoin-semantic, quoin#378), which reaches this
+    # allow-list for the first time now that quoin-semantic is a workspace
+    # member: MIT-0 via borrow-or-share <- fluent-uri <- referencing, and Zlib
+    # via foldhash <- hashbrown <- referencing. Both are permissive, OSI
+    # approved, and impose no obligation on an AGPL distribution.
+    "MIT-0",
     # Arrived with `gix` (quoin#381). Every one is permissive and adds no
     # obligation beyond attribution:
     #   ISC                  rustls-webpki, untrusted, and the ISC halves of
     #                        aws-lc-rs / aws-lc-sys
     #   BSD-3-Clause         subtle, and the BSD-3-Clause half of encoding_rs
-    #   Zlib                 foldhash, zlib-rs
     #   CDLA-Permissive-2.0  webpki-root-certs
     "ISC",
     "BSD-3-Clause",
-    "Zlib",
     "CDLA-Permissive-2.0",
+    # Zlib reaches the workspace by three independent paths, and all three are
+    # recorded so that removing one crate does not read as licence to drop the
+    # line: foldhash 0.2.0 <- hashbrown 0.17.1 <- referencing <- jsonschema
+    # (quoin-semantic); the same hashbrown pulled by `quire-rs 0.46.0` as a
+    # NORMAL dependency of quoin-quire via `indexmap`/`serde_yaml`; and
+    # foldhash/zlib-rs under `gix` (quoin#381).
+    "Zlib",
 ]
 
 # quoin's own crates are AGPL-3.0-or-later (the repository license). Every one
@@ -35,6 +51,15 @@ allow = [
 # allow-list above stays permissive-only.
 private = { ignore = true }
 confidence-threshold = 0.9
+
+# The linked engine. quire-rs is AGPL-3.0-or-later — the same licence quoin
+# itself carries — and quoin#379 links it rather than shelling out to it. The
+# exception is named per crate ON PURPOSE: the `allow` list above stays
+# permissive-only, so AGPL is admitted for this one dependency and cannot
+# arrive unnoticed in another.
+[[licenses.exceptions]]
+crate = "quire-rs"
+allow = ["AGPL-3.0-or-later"]
 
 # `uluru` (an LRU cache, reached through gix-worktree) is MPL-2.0, which is
 # weak copyleft and therefore a different kind of thing from everything in
@@ -53,43 +78,162 @@ allow = ["MPL-2.0"]
 
 [bans]
 multiple-versions = "deny"
-# The rule this list follows, and the only rule: for a duplicated crate, the
-# skipped side is the one reachable *solely* through `gix`. A version any of
-# our own crates reaches by a path that does not pass through `gix` is ours,
-# stays counted, and must be resolved rather than skipped — a skip there would
-# hide our own problem. Every chain below was read off
-#
-#   cargo +1.98.1 tree --manifest-path rust/Cargo.toml --locked \
-#       -i <crate>@<version> --target all --edges normal,build --prefix depth
-#
-# and the skips are exact versions, so a bump re-opens the question instead of
-# inheriting the answer.
-skip = [
-    # hashbrown 0.17.1 is OURS — quoin-config reaches it through
-    # serde_yaml_ng -> indexmap — so it is the side that stays counted. The two
-    # older majors are gix-only:
-    #   0.14.5  dashmap -> gix-tempfile -> gix -> quoin-modules
-    #   0.16.1  clru -> gix-pack -> gix -> quoin-modules
-    { crate = "hashbrown@0.14.5", reason = "gix-only: dashmap -> gix-tempfile -> gix -> quoin-modules" },
-    { crate = "hashbrown@0.16.1", reason = "gix-only: clru -> gix-pack -> gix -> quoin-modules" },
-    # base64 is the one pair where BOTH sides are gix-only, so either could be
-    # skipped; we skip the narrower one. 0.22.1 is reached by two gix paths
-    # (gix-transport directly, and hyper-util under reqwest), 0.23.1 by one.
-    # The asymmetry is the point: skipping the narrower path and leaving the
-    # broader one counted keeps the most of the graph under the gate.
-    # syn 2.x became gix-only ONLY after the `serde` and `thiserror` bumps in
-    # rust/Cargo.toml; before them `serde_derive` and then `thiserror-impl`
-    # reached it from our own crates. Revert either pin and this skip's premise
-    # is gone. syn@3.0.5 stays counted — it is the side quoin-config reaches
-    # through schemars.
-    { crate = "syn@2.0.119", reason = "gix-only, by all five remaining paths: gix-macros -> gix-protocol -> gix -> quoin-modules; jiff-static -> jiff -> gix-date -> gix; jni-macros -> jni -> rustls-platform-verifier -> reqwest -> gix-transport -> gix; jni-sys-macros -> jni-sys -> jni (same tail); synstructure/yoke-derive/zerofrom-derive -> yoke/zerofrom -> icu_* -> idna -> url -> reqwest (and tower-http -> reqwest) -> gix-transport -> gix. gix pins these itself, so unlike hashbrown and syn@3.0.5 this duplicate cannot be resolved from here" },
-    { crate = "base64@0.23.1", reason = "gix-only: reqwest -> gix-transport -> gix -> quoin-modules; the other side, 0.22.1, is also gix-only but more widely shared, so it is the one left counted" },
-]
 wildcards = "deny"
 # An in-workspace `path` dependency has no version to pin and is not the kind
 # of wildcard this check exists to catch — the bytes are in this tree. Only
 # registry wildcards are refused.
 allow-wildcard-paths = true
+
+# REMOVAL CONDITION for the five `jsonschema`-family entries marked below.
+#
+# All five are deleted — not bumped, not re-scoped — the moment `quire-rs`
+# moves off `jsonschema = "~0.18"`. Tracked as agent-ix/quoin#434 (the quoin
+# side: drop these entries and re-pin quire-rs) and agent-ix/quire-rs#429 (the
+# engine side: advance the jsonschema requirement). When that lands,
+# `cargo deny check bans` MUST pass with the five entries removed. RUN IT.
+# Do not assume it: the whole point of these entries is that they hide a real
+# duplicate, so the only proof they are no longer needed is the check passing
+# without them.
+#
+# Why a skip here at all, when this file's header says "a duplicate version is
+# resolved, not conceded": neither side of the `jsonschema` pair is ours to
+# move.
+#
+#   * `jsonschema 0.18.3` is pulled by `quoin-quire -> quire-rs 0.46.0`, which
+#     declares `jsonschema = "~0.18"`. No revision of quire-rs resolves it.
+#   * `jsonschema 0.56.0` is pulled by `quoin-semantic`, and that pin is load
+#     bearing: `quoin-semantic/DIVERGENCE.md` §1 records that 0.18.3 is NOT
+#     conformant on draft 2020-12 — it accepts `[1]` against a `$dynamicRef`
+#     schema that ajv, 0.56.0 and the specification all reject. Moving our pin
+#     down to meet quire-rs would trade a correctness property for a lint
+#     result.
+#
+# The other four pairs are subtrees of that one: each is a transitive
+# dependency of `jsonschema`, one version per `jsonschema` major. They
+# disappear with it.
+#
+# Ruling: quoin#402. This concession covers the `jsonschema` pair and its four
+# subtrees ONLY.
+#
+# A SECOND concession of the same shape was ruled separately for
+# `cpufeatures@0.2.17` — quoin#438 / quire-rs#430 — and is written out at its
+# entry below.
+#
+# A THIRD group, the `gix` entries at the end of the array, came in with
+# quoin#381 and was ruled on there. It is the same test against a different
+# upstream: `gix` pins its own transitive graph, so a version reachable solely
+# through it is not ours to converge.
+#
+# Three granted exceptions do not make a fourth self-granting. Every other
+# duplicate in this workspace is resolved by converging a pin, and a duplicate
+# outside these three groups is escalated, not skipped.
+#
+# ---------------------------------------------------------------------------
+#
+# The `getrandom` / `r-efi` / `syn` entries below predate that ruling and stand
+# on their own reasoning: each is forced by `quire-rs`'s `jsonschema 0.18.3`
+# subtree, whose `url`/`getrandom`/`icu` chain carries older majors than the
+# rest of the graph resolves. Provenance verified with
+# `cargo tree -i --target all --edges normal,build`, recorded per entry.
+#
+# For each pair the SKIPPED side is the one reachable only through third-party
+# subtrees; the side our own root pins land on stays checked. That matters most
+# for `syn`, and the ruling there CHANGED when this branch met main:
+#
+#   syn 3.0.5   <- serde_derive 1.0.229   <- serde        (ours: a root pin)
+#               <- thiserror-impl 2.0.20  <- thiserror    (ours: a root pin)
+#               <- schemars_derive 1.2.2  <- schemars     (ours: a root pin)
+#               <- displaydoc, ref-cast-impl, zerovec-derive
+#   syn 2.0.119 <- strum_macros 0.28.0 <- strum <- jsonschema 0.56.0
+#               <- synstructure/yoke-derive/zerofrom-derive <- icu <- idna
+#                  <- url <- jsonschema 0.18.3 <- quire-rs
+#               <- zerocopy-derive
+#
+# In the COMBINED graph every one of our three root pins lands on 3.0.5, and
+# 2.0.119 is reachable only through third-party macro subtrees inside the two
+# `jsonschema` versions. So `syn@2.0.119` is the skipped side and `syn@3.0.5`
+# is NOT skipped: skipping 3.0.5 would exempt exactly the side this check
+# exists to police. (An earlier revision of this file skipped 3.0.5, correctly,
+# back when `serde` was pinned at `=1.0.228` and therefore on syn 2. The pin
+# moved up; the ruling moved with it.)
+#
+# `strum_macros` has no release on syn 3 — checked with `cargo info
+# strum_macros`: latest published is 0.28.0 and its manifest declares
+# `[dependencies.syn] version = "2.0"`. That is a claim about what a crate has
+# not yet published, so RE-VERIFY it; when strum_macros ships a syn 3 release,
+# drop the entry rather than bumping the version in it.
+#
+# Every entry is an EXACT version, so a new duplicate — or a different version
+# of the same crate — still fails. This concedes these resolutions, not the
+# check.
+skip = [
+    { crate = "getrandom@0.2.17", reason = "jsonschema 0.18.3 via quire-rs" },
+    { crate = "getrandom@0.3.4", reason = "ahash -> jsonschema 0.18.3 via quire-rs" },
+    { crate = "r-efi@5.3.0", reason = "getrandom 0.3.4 -> ahash -> jsonschema 0.18.3 via quire-rs" },
+    { crate = "syn@2.0.119", reason = "third-party macro subtrees only, by every path: strum_macros -> strum -> jsonschema 0.56.0 (quoin-semantic); synstructure/yoke-derive/zerofrom-derive -> icu -> idna -> url -> jsonschema 0.18.3 (quoin-quire -> quire-rs) and the same tail under reqwest -> gix-transport -> gix (quoin-modules); gix-macros -> gix-protocol -> gix; jiff-static -> jiff -> gix-date -> gix; jni-macros/jni-sys-macros -> jni -> rustls-platform-verifier -> reqwest -> gix; zerocopy-derive. syn 3.0.5 -- where serde_derive 1.0.229, thiserror-impl 2.0.20 and schemars_derive 1.2.2, all three our own root pins, land -- stays checked" },
+    # --- The cpufeatures entry. quoin#438 / quire-rs#430. ---
+    #
+    # REMOVAL CONDITION: deleted when `quire-rs` advances off `sha2 = "^0.10"`.
+    # `sha2 0.11.0` resolves `cpufeatures 0.3.1` — the same major `blake3 1.8.6`
+    # resolves — so the graph converges on its own once quire-rs allows it.
+    # That is checked, not assumed: `sha2 = "=0.11.0"` was resolved in an empty
+    # crate and its lockfile read. When quire-rs moves, `cargo deny check bans`
+    # MUST pass with this entry deleted. RUN IT. The entry exists precisely to
+    # hide a real duplicate, so the only proof it is no longer needed is the
+    # check passing without it.
+    #
+    # Same class as the five entries below, and conceded for the same reason:
+    # neither side is ours by choice. `cpufeatures 0.2.17` is forced by
+    # `quire-rs 0.46.0` pinning `sha2 = "^0.10"`, where sha2 0.10.9 declares
+    # `cpufeatures = "0.2"` as a hard target-gated dependency rather than an
+    # optional one. `cpufeatures 0.3.1` is forced by `blake3`'s own
+    # target-gated, non-optional edge. No pin we control converges them:
+    # blake3 gained that edge at 1.8.1, so the only convergence available from
+    # here is a DOWNGRADE of quoin-store's digest library to 1.8.0 — refused,
+    # because reverting a hash implementation six patch releases to quiet a
+    # lint is lowering a gate while appearing to satisfy one.
+    #
+    # 0.2.17 is skipped and 0.3.1 is NOT: 0.2.17 is the side that disappears
+    # when quire-rs moves, and 0.3.1 is the side we keep.
+    { crate = "cpufeatures@0.2.17", reason = "quoin#438: 0.2.17 via sha2 0.10.9 <- quire-rs 0.46.0 <- quoin-quire (and the workspace sha2 pin held at 0.10 by that requirement); 0.3.1 via blake3 1.8.6 <- quoin-store, which stays checked" },
+    # --- The five quoin#434 / quire-rs#429 entries. Remove together. ---
+    { crate = "jsonschema@0.18.3", reason = "quoin#434: 0.18.3 via quoin-quire -> quire-rs 0.46.0 (jsonschema = \"~0.18\"); 0.56.0 via quoin-semantic, which stays checked" },
+    { crate = "bit-set@0.5.3", reason = "quoin#434: 0.5.3 via fancy-regex 0.13.0 -> jsonschema 0.18.3 -> quoin-quire -> quire-rs; 0.8.0 via fancy-regex 0.19.1 -> jsonschema 0.56.0 -> quoin-semantic" },
+    { crate = "bit-vec@0.6.3", reason = "quoin#434: 0.6.3 via bit-set 0.5.3 -> fancy-regex 0.13.0 -> jsonschema 0.18.3 -> quoin-quire -> quire-rs; 0.8.0 via bit-set 0.8.0 -> fancy-regex 0.19.1 -> jsonschema 0.56.0 -> quoin-semantic" },
+    { crate = "fancy-regex@0.13.0", reason = "quoin#434: 0.13.0 via jsonschema 0.18.3 -> quoin-quire -> quire-rs; 0.19.1 via jsonschema 0.56.0 -> quoin-semantic" },
+    { crate = "fraction@0.15.4", reason = "quoin#434: 0.15.4 via jsonschema 0.18.3 -> quoin-quire -> quire-rs; 0.17.0 via jsonschema 0.56.0 (and jsonschema-value 0.56.0) -> quoin-semantic" },
+    # --- The gix entries (quoin#381). ---
+    #
+    # These predate the two rulings above and stand on the same test, applied
+    # to a different upstream: for a duplicated crate, the skipped side is the
+    # one reachable SOLELY through `gix`, which `quoin-modules` links and which
+    # pins its own transitive graph. A version any of our crates reaches by a
+    # path that does NOT pass through gix stays counted, because a skip there
+    # would hide our own problem. Every chain below was re-read in the COMBINED
+    # graph after this merge, with
+    #
+    #   cargo tree -i <crate>@<version> --target all --edges normal,build
+    #
+    # because merging quoin-quire, quoin-semantic and quoin-store changed who
+    # reaches what. One reason did change and is rewritten: base64 0.22.1 is no
+    # longer gix-only.
+    #
+    # hashbrown 0.17.1 is OURS and stays counted, now by six crates rather than
+    # the one the original entry named: quoin-config (serde_yaml_ng ->
+    # indexmap), quoin-yaml, quoin-completeness, quoin-semantic and quoin-quire
+    # (indexmap, hashlink and referencing), plus gix-hashtable under
+    # quoin-modules. The two older majors are gix-only and gix pins them itself,
+    # so neither is resolvable from here.
+    { crate = "hashbrown@0.14.5", reason = "quoin#381, gix-only: dashmap 6.2.1 -> gix-tempfile -> gix -> quoin-modules. 0.17.1, which six of our crates reach through indexmap/hashlink/referencing, stays checked" },
+    { crate = "hashbrown@0.16.1", reason = "quoin#381, gix-only: clru 0.6.3 -> gix-pack -> gix -> quoin-modules, and gix-status -> gix. 0.17.1 stays checked" },
+    # base64: the original entry said both sides were gix-only and skipped the
+    # narrower one. That is no longer true after this merge, and the rewritten
+    # reason is stronger rather than weaker: 0.22.1 is now reached OUTSIDE gix,
+    # by jsonschema 0.18.3 <- quire-rs <- quoin-quire, so it is the side that
+    # must stay counted. 0.23.1 remains reachable only through reqwest under
+    # gix-transport. Same entry, better justified.
+    { crate = "base64@0.23.1", reason = "quoin#381, gix-only: reqwest 0.13.5 -> gix-transport -> gix -> quoin-modules. 0.22.1 stays checked -- it is reached outside gix, by jsonschema 0.18.3 -> quire-rs -> quoin-quire, as well as by gix-transport and hyper-util" },
+]
 
 [advisories]
 version = 2
@@ -97,8 +241,20 @@ version = 2
 [sources]
 unknown-registry = "deny"
 unknown-git = "deny"
-# Empty on purpose. quoin#373: "no crates.io, no public npmjs" governs where
-# quoin PUBLISHES; dependencies are consumed from crates.io exactly as
-# quire-corpus and quire-rs consume theirs. When quoin-core gains a git
-# dependency it is listed here, or `unknown-git = "deny"` refuses it.
-allow-git = []
+# quoin#373: "no crates.io, no public npmjs" governs where quoin PUBLISHES;
+# dependencies are consumed from crates.io exactly as quire-corpus and quire-rs
+# consume theirs. Two git sources are admitted, each named by REPOSITORY:
+#
+#   * quire-rs — the engine quoin-quire links (quoin#379).
+#   * engineering-assurance — library containment (quoin#416), the pattern
+#     quire-cli already proves against quire-rs.
+#
+# Both are pinned by an exact `rev` in rust/Cargo.toml, so allowing the
+# repository here does not weaken the revision pin: `unknown-git = "deny"`
+# still refuses every other git source, and any other revision of these two
+# still fails resolution. A third git dependency is listed here in the commit
+# that adds it, or this check refuses it.
+allow-git = [
+    "https://github.com/agent-ix/quire-rs",
+    "https://github.com/agent-ix/engineering-assurance",
+]

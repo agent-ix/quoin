@@ -1,0 +1,33 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 Agent-IX
+#
+# quoin-validators — Stage 2 of the Rust burn-down (quoin#377, parent quoin#373).
+#
+# A member of the workspace root at `rust/Cargo.toml` (quoin#375). Every shared
+# field and every shared dependency is inherited rather than restated, so the
+# gate this crate is measured by is the workspace's gate and cannot drift from
+# it. Dependencies the root does not declare are pinned exactly here, for the
+# same reason the root pins: a caret range makes the gate a claim about whatever
+# resolved that morning, `=` makes it a claim about these bytes.
+[package]
+name = "quoin-validators"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+description = "Deterministic repository QA-gate validators for quoin."
+publish.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+regex = "=1.13.1"
+serde = { workspace = true }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+serde_json = { workspace = true }
+tempfile = "=3.27.0"

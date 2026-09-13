@@ -147,7 +147,7 @@ describe("operational evidence", () => {
   }
 
   // Trace: FR-059-AC-1 (TC-1223)
-  test("TC-1223 requires the complete operational envelope", () => {
+  test("requires the complete operational envelope", () => {
     const value = capability(repo());
     expect(() => validateOperationalRecord(value)).not.toThrow();
     for (const key of [
@@ -192,7 +192,7 @@ describe("operational evidence", () => {
   });
 
   // Trace: FR-059-AC-2 (TC-1224)
-  test("TC-1224 admits exactly the declared control vocabulary", () => {
+  test("admits exactly the declared control vocabulary", () => {
     const kinds: OperationalControlKind[] = [
       "release",
       "feature_flag",

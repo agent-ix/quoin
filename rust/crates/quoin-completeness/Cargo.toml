@@ -1,0 +1,35 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 Agent-IX
+[package]
+name = "quoin-completeness"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+description = "Declared-vocabulary completeness and its verdict policy (quoin FR-037, ADR-0011)."
+publish.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+# The one YAML reader on the boundary. It resolves scalars under the YAML 1.2
+# core schema, matching the `yaml` npm package the oracle uses. Do NOT swap in
+# a libyaml binding (`serde_yaml`, `serde_norway`, `serde_yml`): those are
+# YAML 1.1 and the difference is verdict-level. See
+# ../quoin-semantic/DIVERGENCE.md §6 (D4).
+quoin-yaml = { workspace = true }
+
+[dev-dependencies]
+# Raised from =3.24.0 on the merge with main. `quoin-validators` (quoin#377,
+# already on main) pins `tempfile = "=3.27.0"`, and cargo cannot resolve two
+# exact pins of one crate in one workspace graph — a conflict git does not mark
+# because the two pins live in different files. Converged UPWARD, per the rule
+# that a pin moves up and never down; 3.27.0 is API-compatible for the
+# `TempDir`/`NamedTempFile` use here.
+tempfile = "=3.27.0"

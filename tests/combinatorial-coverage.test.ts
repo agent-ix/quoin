@@ -1,5 +1,5 @@
 /**
- * FR-035 — t-way coverage over a declared configuration space (TC-180..TC-186).
+ * FR-035 — t-way coverage over a declared configuration space.
  */
 
 import { describe, expect, it } from "vitest";
@@ -141,7 +141,7 @@ describe("the auditor over a combinatorial obligation", () => {
     })),
   });
 
-  // Trace: FR-035-AC-9
+  // Trace: FR-035-AC-9, FR-035-CON-3
   it("reports the missing combinations by name", () => {
     const report = audit({
       obligations: [obligation],

@@ -16,7 +16,7 @@ import { fileURLToPath } from "node:url";
 const repo = dirname(dirname(fileURLToPath(import.meta.url)));
 const sources = [
   join(repo, "src", "quire", "schemas"),
-  join(repo, "src", "change-assurance", "schemas"),
+  join(repo, "src", "store", "schemas"),
   join(repo, "src", "measurement", "schemas"),
 ];
 const to = join(repo, "dist", "schemas");

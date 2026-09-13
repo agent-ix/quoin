@@ -1,11 +1,19 @@
 /**
  * The quoin↔quoin-core boundary (quoin#373 FR-096).
  *
- * One import site for the subprocess contract. Nothing else lives here yet:
- * Stage 0 ports no domain logic, and `src/core/types.ts` — the schema-sourced
- * response types — is generated from `rust/crates/quoin-schemas`, not written
- * by hand (FR-097).
+ * One import site for the subprocess contract. `./types.js` is GENERATED from
+ * the Rust boundary types by `make types` and re-exported here (FR-097); it is
+ * never hand-written, and `quoin-schemas` fails `make rust-gate` if the file
+ * and the Rust types disagree.
  */
+
+export {
+  CORE_TYPES_PROVENANCE,
+  PROTOCOL_VERSION,
+  type Diagnostic,
+  type PingPayload,
+  type PingRequest,
+} from "./types.js";
 
 export {
   CORE_EXIT,

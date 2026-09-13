@@ -11,7 +11,7 @@ export {
   methodClasses,
   type MethodCatalog,
   type VerificationMethod,
-} from "./methods.js";
+} from "../method-catalog.js";
 
 export {
   advise,

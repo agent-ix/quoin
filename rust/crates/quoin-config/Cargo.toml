@@ -19,7 +19,11 @@ thiserror = { workspace = true }
 # Not declared at the root: pinned exactly here, for the same reason the root
 # pins exactly — the gate is a claim about these bytes, not about whatever
 # resolved this morning.
-schemars = "=1.2.2"
+# Taken from `[workspace.dependencies]`, which pins the same =1.2.2, rather
+# than repeated here: quoin-schemas depends on schemars too, and two exact pins
+# of one crate in two manifests is the conflict git does not mark. One pin in
+# one place is the only arrangement `multiple-versions = "deny"` permits.
+schemars = { workspace = true }
 serde_yaml_ng = "=0.10.0"
 
 [dev-dependencies]

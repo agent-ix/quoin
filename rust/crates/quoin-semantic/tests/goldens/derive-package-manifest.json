@@ -1,0 +1,521 @@
+{
+  "provenance": {
+    "producer": "scripts/capture-semantic-goldens.mjs",
+    "oracle": "agent-ix/quoin src/semantic + src/completeness (TypeScript)",
+    "quoinRevision": "dc834a22f45cea52275595ebc2857baa17484229",
+    "ajvVersion": "8.20.0",
+    "note": "Captured once from the TypeScript implementation. The Rust crates read these files; they never invoke Node. Regenerate by re-running the producer, never by hand-editing."
+  },
+  "source": "src/semantic/package-manifest.ts derivePackageManifest()",
+  "counts": {
+    "total": 7
+  },
+  "cases": [
+    {
+      "id": "empty",
+      "module": {
+        "name": "a",
+        "version": "0.1.0",
+        "block": {
+          "contract_version": "1.0.0",
+          "semantic_core": "0.1.0",
+          "package": "agent-ix/a",
+          "exports": [],
+          "imports": {},
+          "targets": [],
+          "mappings": [],
+          "compatibility_posture": "additive",
+          "legacy_forms": "warning"
+        }
+      },
+      "derived": {
+        "contractVersion": "1.0.0",
+        "package": {
+          "identity": "agent-ix/a",
+          "version": "0.1.0"
+        },
+        "schemaDialect": "https://json-schema.org/draft/2020-12/schema",
+        "sourceRoots": [
+          "schemas/"
+        ],
+        "imports": [
+          {
+            "packageIdentity": "agent-ix/semantic-core",
+            "versionConstraint": "=0.1.0",
+            "exports": [],
+            "capabilities": []
+          }
+        ],
+        "exports": [],
+        "profiles": [
+          {
+            "name": "default",
+            "version": "0.1.0",
+            "exports": [],
+            "targets": [],
+            "mappings": [],
+            "options": {},
+            "compatibilityPosture": "additive"
+          }
+        ],
+        "targets": [],
+        "mappings": [],
+        "extensions": []
+      },
+      "validAgainstSchema": true,
+      "registryPin": {
+        "package": "agent-ix/a",
+        "semanticCore": "0.1.0",
+        "exports": {}
+      }
+    },
+    {
+      "id": "exports-sorted",
+      "module": {
+        "name": "a",
+        "version": "0.1.0",
+        "block": {
+          "contract_version": "1.0.0",
+          "semantic_core": "0.1.0",
+          "package": "agent-ix/a",
+          "exports": [
+            "zeta",
+            "alpha",
+            "mid"
+          ],
+          "imports": {},
+          "targets": [],
+          "mappings": [],
+          "compatibility_posture": "additive",
+          "legacy_forms": "warning"
+        }
+      },
+      "derived": {
+        "contractVersion": "1.0.0",
+        "package": {
+          "identity": "agent-ix/a",
+          "version": "0.1.0"
+        },
+        "schemaDialect": "https://json-schema.org/draft/2020-12/schema",
+        "sourceRoots": [
+          "schemas/"
+        ],
+        "imports": [
+          {
+            "packageIdentity": "agent-ix/semantic-core",
+            "versionConstraint": "=0.1.0",
+            "exports": [],
+            "capabilities": []
+          }
+        ],
+        "exports": [
+          {
+            "name": "alpha",
+            "typeIdentity": "ix://agent-ix/a/type/alpha",
+            "visibility": "public"
+          },
+          {
+            "name": "mid",
+            "typeIdentity": "ix://agent-ix/a/type/mid",
+            "visibility": "public"
+          },
+          {
+            "name": "zeta",
+            "typeIdentity": "ix://agent-ix/a/type/zeta",
+            "visibility": "public"
+          }
+        ],
+        "profiles": [
+          {
+            "name": "default",
+            "version": "0.1.0",
+            "exports": [
+              "alpha",
+              "mid",
+              "zeta"
+            ],
+            "targets": [],
+            "mappings": [],
+            "options": {},
+            "compatibilityPosture": "additive"
+          }
+        ],
+        "targets": [],
+        "mappings": [],
+        "extensions": []
+      },
+      "validAgainstSchema": true,
+      "registryPin": {
+        "package": "agent-ix/a",
+        "semanticCore": "0.1.0",
+        "exports": {}
+      }
+    },
+    {
+      "id": "mappings-sorted",
+      "module": {
+        "name": "a",
+        "version": "0.1.0",
+        "block": {
+          "contract_version": "1.0.0",
+          "semantic_core": "0.1.0",
+          "package": "agent-ix/a",
+          "exports": [],
+          "imports": {},
+          "targets": [],
+          "mappings": [
+            "z",
+            "a"
+          ],
+          "compatibility_posture": "additive",
+          "legacy_forms": "warning"
+        }
+      },
+      "derived": {
+        "contractVersion": "1.0.0",
+        "package": {
+          "identity": "agent-ix/a",
+          "version": "0.1.0"
+        },
+        "schemaDialect": "https://json-schema.org/draft/2020-12/schema",
+        "sourceRoots": [
+          "schemas/"
+        ],
+        "imports": [
+          {
+            "packageIdentity": "agent-ix/semantic-core",
+            "versionConstraint": "=0.1.0",
+            "exports": [],
+            "capabilities": []
+          }
+        ],
+        "exports": [],
+        "profiles": [
+          {
+            "name": "default",
+            "version": "0.1.0",
+            "exports": [],
+            "targets": [],
+            "mappings": [
+              "ix://agent-ix/a/mapping/a",
+              "ix://agent-ix/a/mapping/z"
+            ],
+            "options": {},
+            "compatibilityPosture": "additive"
+          }
+        ],
+        "targets": [],
+        "mappings": [
+          "ix://agent-ix/a/mapping/a",
+          "ix://agent-ix/a/mapping/z"
+        ],
+        "extensions": []
+      },
+      "validAgainstSchema": true,
+      "registryPin": {
+        "package": "agent-ix/a",
+        "semanticCore": "0.1.0",
+        "exports": {}
+      }
+    },
+    {
+      "id": "imports-sorted",
+      "module": {
+        "name": "a",
+        "version": "0.2.0",
+        "block": {
+          "contract_version": "1.0.0",
+          "semantic_core": "0.1.0",
+          "package": "agent-ix/a",
+          "exports": [],
+          "imports": {
+            "agent-ix/z": "1.0.0",
+            "agent-ix/a": "2.0.0"
+          },
+          "targets": [],
+          "mappings": [],
+          "compatibility_posture": "additive",
+          "legacy_forms": "warning"
+        }
+      },
+      "derived": {
+        "contractVersion": "1.0.0",
+        "package": {
+          "identity": "agent-ix/a",
+          "version": "0.2.0"
+        },
+        "schemaDialect": "https://json-schema.org/draft/2020-12/schema",
+        "sourceRoots": [
+          "schemas/"
+        ],
+        "imports": [
+          {
+            "packageIdentity": "agent-ix/semantic-core",
+            "versionConstraint": "=0.1.0",
+            "exports": [],
+            "capabilities": []
+          },
+          {
+            "packageIdentity": "agent-ix/a",
+            "versionConstraint": "=2.0.0",
+            "exports": [],
+            "capabilities": []
+          },
+          {
+            "packageIdentity": "agent-ix/z",
+            "versionConstraint": "=1.0.0",
+            "exports": [],
+            "capabilities": []
+          }
+        ],
+        "exports": [],
+        "profiles": [
+          {
+            "name": "default",
+            "version": "0.2.0",
+            "exports": [],
+            "targets": [],
+            "mappings": [],
+            "options": {},
+            "compatibilityPosture": "additive"
+          }
+        ],
+        "targets": [],
+        "mappings": [],
+        "extensions": []
+      },
+      "validAgainstSchema": true,
+      "registryPin": {
+        "package": "agent-ix/a",
+        "semanticCore": "0.1.0",
+        "exports": {}
+      }
+    },
+    {
+      "id": "targets-preserved-order",
+      "module": {
+        "name": "a",
+        "version": "0.1.0",
+        "block": {
+          "contract_version": "1.0.0",
+          "semantic_core": "0.1.0",
+          "package": "agent-ix/a",
+          "exports": [],
+          "imports": {},
+          "targets": [
+            "markdown",
+            "json-schema"
+          ],
+          "mappings": [],
+          "compatibility_posture": "additive",
+          "legacy_forms": "warning"
+        }
+      },
+      "derived": {
+        "contractVersion": "1.0.0",
+        "package": {
+          "identity": "agent-ix/a",
+          "version": "0.1.0"
+        },
+        "schemaDialect": "https://json-schema.org/draft/2020-12/schema",
+        "sourceRoots": [
+          "schemas/"
+        ],
+        "imports": [
+          {
+            "packageIdentity": "agent-ix/semantic-core",
+            "versionConstraint": "=0.1.0",
+            "exports": [],
+            "capabilities": []
+          }
+        ],
+        "exports": [],
+        "profiles": [
+          {
+            "name": "default",
+            "version": "0.1.0",
+            "exports": [],
+            "targets": [
+              "markdown",
+              "json-schema"
+            ],
+            "mappings": [],
+            "options": {},
+            "compatibilityPosture": "additive"
+          }
+        ],
+        "targets": [
+          "markdown",
+          "json-schema"
+        ],
+        "mappings": [],
+        "extensions": []
+      },
+      "validAgainstSchema": true,
+      "registryPin": {
+        "package": "agent-ix/a",
+        "semanticCore": "0.1.0",
+        "exports": {}
+      }
+    },
+    {
+      "id": "posture-strict",
+      "module": {
+        "name": "a",
+        "version": "0.1.0",
+        "block": {
+          "contract_version": "1.0.0",
+          "semantic_core": "0.1.0",
+          "package": "agent-ix/a",
+          "exports": [],
+          "imports": {},
+          "targets": [],
+          "mappings": [],
+          "compatibility_posture": "strict",
+          "legacy_forms": "warning"
+        }
+      },
+      "derived": {
+        "contractVersion": "1.0.0",
+        "package": {
+          "identity": "agent-ix/a",
+          "version": "0.1.0"
+        },
+        "schemaDialect": "https://json-schema.org/draft/2020-12/schema",
+        "sourceRoots": [
+          "schemas/"
+        ],
+        "imports": [
+          {
+            "packageIdentity": "agent-ix/semantic-core",
+            "versionConstraint": "=0.1.0",
+            "exports": [],
+            "capabilities": []
+          }
+        ],
+        "exports": [],
+        "profiles": [
+          {
+            "name": "default",
+            "version": "0.1.0",
+            "exports": [],
+            "targets": [],
+            "mappings": [],
+            "options": {},
+            "compatibilityPosture": "strict"
+          }
+        ],
+        "targets": [],
+        "mappings": [],
+        "extensions": []
+      },
+      "validAgainstSchema": true,
+      "registryPin": {
+        "package": "agent-ix/a",
+        "semanticCore": "0.1.0",
+        "exports": {}
+      }
+    },
+    {
+      "id": "full",
+      "module": {
+        "name": "a",
+        "version": "1.2.3",
+        "block": {
+          "contract_version": "1.0.0",
+          "semantic_core": "0.1.0",
+          "package": "agent-ix/a",
+          "exports": [
+            "b",
+            "a"
+          ],
+          "imports": {
+            "agent-ix/other": "0.9.0"
+          },
+          "targets": [
+            "rust",
+            "typescript"
+          ],
+          "mappings": [
+            "m2",
+            "m1"
+          ],
+          "compatibility_posture": "declared-lossy",
+          "legacy_forms": "warning"
+        }
+      },
+      "derived": {
+        "contractVersion": "1.0.0",
+        "package": {
+          "identity": "agent-ix/a",
+          "version": "1.2.3"
+        },
+        "schemaDialect": "https://json-schema.org/draft/2020-12/schema",
+        "sourceRoots": [
+          "schemas/"
+        ],
+        "imports": [
+          {
+            "packageIdentity": "agent-ix/semantic-core",
+            "versionConstraint": "=0.1.0",
+            "exports": [],
+            "capabilities": []
+          },
+          {
+            "packageIdentity": "agent-ix/other",
+            "versionConstraint": "=0.9.0",
+            "exports": [],
+            "capabilities": []
+          }
+        ],
+        "exports": [
+          {
+            "name": "a",
+            "typeIdentity": "ix://agent-ix/a/type/a",
+            "visibility": "public"
+          },
+          {
+            "name": "b",
+            "typeIdentity": "ix://agent-ix/a/type/b",
+            "visibility": "public"
+          }
+        ],
+        "profiles": [
+          {
+            "name": "default",
+            "version": "1.2.3",
+            "exports": [
+              "a",
+              "b"
+            ],
+            "targets": [
+              "rust",
+              "typescript"
+            ],
+            "mappings": [
+              "ix://agent-ix/a/mapping/m1",
+              "ix://agent-ix/a/mapping/m2"
+            ],
+            "options": {},
+            "compatibilityPosture": "declared-lossy"
+          }
+        ],
+        "targets": [
+          "rust",
+          "typescript"
+        ],
+        "mappings": [
+          "ix://agent-ix/a/mapping/m1",
+          "ix://agent-ix/a/mapping/m2"
+        ],
+        "extensions": []
+      },
+      "validAgainstSchema": true,
+      "registryPin": {
+        "package": "agent-ix/a",
+        "semanticCore": "0.1.0",
+        "exports": {}
+      }
+    }
+  ]
+}
