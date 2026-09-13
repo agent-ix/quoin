@@ -474,7 +474,8 @@ function assuranceRenderCase(
   ): string | null => {
     if (!isObject(entry)) return `each ${what} must be a JSON object`;
     for (const key of keys) {
-      if (typeof entry[key] !== "string") return `${what}.${key} must be a string`;
+      if (typeof entry[key] !== "string")
+        return `${what}.${key} must be a string`;
     }
     return null;
   };
