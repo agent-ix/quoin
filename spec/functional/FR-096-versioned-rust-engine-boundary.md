@@ -45,11 +45,10 @@ distinguishes every non-success state, and admits no Node runtime type.
 - `quoin-core` SHALL expose only command-shaped operations `<domain>.<op>`, and
   SHALL NOT expose a primitive function such as canonical-JSON serialization as
   its own boundary operation.
-- `quoin-core` SHALL exit 0 for success, 1 for a refusal carrying a valid result
-  payload, 2 for a malformed or unsupported request, 3 for an unavailable
-  required host or resource, and 4 for an internal fault, and a caller SHALL be
-  able to distinguish a non-zero status that carries a valid payload from one
-  that carries none.
+- `quoin-core` SHALL exit 0 for success, 1 for a partial result carrying a valid
+  payload, 2 for a refusal, 3 for a malformed or unsupported request, and 4 for
+  an internal fault, and a caller SHALL be able to distinguish a non-zero status
+  that carries a valid payload from one that carries none.
 - The TypeScript caller SHALL resolve the `quoin-core` executable through its
   real path.
 - If the executable's bytes do not match `QUOIN_EXPECTED_CORE_SHA256`, or that
