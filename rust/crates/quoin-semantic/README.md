@@ -34,6 +34,12 @@ diagnostic to `tests/goldens/`, each file naming the quoin revision and the ajv
 version it was captured at. The tests read those files; nothing in the test lane
 invokes Node.
 
+**The oracle and the capture script are gone.** quoin#452 deleted
+`src/semantic/`'s TypeScript and `scripts/capture-semantic-goldens.mjs`
+together, because FR-101-AC-5 forbids a live non-Rust oracle after cutover. The
+goldens stay, and they are no longer reproducible: treat them as pinned
+evidence, not as a cache.
+
 - **Verdict parity is exact and contractual** over 171 golden documents.
 - **Diagnostic parity is normalized** on `(instance location, keyword)` as a
   multiset.

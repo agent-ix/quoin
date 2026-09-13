@@ -36,7 +36,8 @@ duplication FR-037 exists to avoid. The caller supplies the roots.
 
 ## Parity
 
-Captured once from the TypeScript by `scripts/capture-semantic-goldens.mjs`;
+Captured once from the TypeScript by `scripts/capture-semantic-goldens.mjs`
+(deleted with the TypeScript at the quoin#452 cutover, per FR-101-AC-5);
 goldens live in `tests/goldens/` and name the revision they came from. Verdicts,
 finding kinds, severities and rollup counts are compared exactly. Message text is
 not.

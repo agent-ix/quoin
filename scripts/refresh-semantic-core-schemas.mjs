@@ -8,10 +8,16 @@
  *   node scripts/refresh-semantic-core-schemas.mjs [--source <filament-core-data checkout>]
  *
  * Files are read from the git objects named by `SEMANTIC_CONTRACT` in
- * `src/semantic/contract.ts`. The bundle digest is recomputed exactly as
- * filament-core-data's `packages/semantic-core/scripts/generate.mjs` does and
- * must equal the recorded `bundleDigest`; the two schemas must hash to their
- * recorded `sha256`. Bump the contract first; this script refuses drift.
+ * `rust/crates/quoin-semantic/src/contract.rs`. The bundle digest is recomputed
+ * exactly as filament-core-data's `packages/semantic-core/scripts/generate.mjs`
+ * does and must equal the recorded `bundle_digest`; the two schemas must hash
+ * to their recorded `sha256`. Bump the contract first; this script refuses
+ * drift.
+ *
+ * The provenance moved from `src/semantic/contract.ts` at the quoin#452
+ * cutover, which deleted that file. The vendored schemas themselves did not
+ * move: they are DATA the npm package ships, and they stay under
+ * `src/semantic/schemas/`.
  */
 
 import { execFileSync } from "node:child_process";
@@ -22,7 +28,14 @@ import { fileURLToPath } from "node:url";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repo = resolve(here, "..");
-const contractFile = join(repo, "src", "semantic", "contract.ts");
+const contractFile = join(
+  repo,
+  "rust",
+  "crates",
+  "quoin-semantic",
+  "src",
+  "contract.rs",
+);
 const bundleDir = join(repo, "src", "semantic", "schemas", "semantic-core");
 const coreDataDir = join(
   repo,
@@ -40,7 +53,9 @@ function arg(name, fallback) {
 function field(block, name, pattern) {
   const value = new RegExp(`${name}:\\s*"(${pattern})"`).exec(block)?.[1];
   if (!value) {
-    console.error(`could not read ${name} from src/semantic/contract.ts`);
+    console.error(
+      `could not read ${name} from rust/crates/quoin-semantic/src/contract.rs`,
+    );
     process.exit(1);
   }
   return value;
@@ -48,10 +63,12 @@ function field(block, name, pattern) {
 
 const source = resolve(arg("--source", join(repo, "..", "filament-core-data")));
 const contract = readFileSync(contractFile, "utf8");
-const core = /semanticCore:\s*\{([\s\S]*?)\}/.exec(contract)?.[1] ?? "";
-const revision = field(core, "sourceRevision", "[0-9a-f]{40}");
-const path = field(core, "sourcePath", '[^"]+');
-const expectedBundle = field(core, "bundleDigest", "sha256:[0-9a-f]{64}");
+// `semantic_core: VendoredBundle { ... }` — the struct name sits between the
+// field and its brace, and the fields are snake_case.
+const core = /semantic_core:\s*\w*\s*\{([\s\S]*?)\}/.exec(contract)?.[1] ?? "";
+const revision = field(core, "source_revision", "[0-9a-f]{40}");
+const path = field(core, "source_path", '[^"]+');
+const expectedBundle = field(core, "bundle_digest", "sha256:[0-9a-f]{64}");
 
 function show(objectPath) {
   return execFileSync("git", [
@@ -93,10 +110,11 @@ if (!toolchain.toString("utf8").includes(expectedBundle)) {
 }
 
 const schemas = [];
-for (const key of ["packageManifestSchema", "commonSchema"]) {
+for (const key of ["package_manifest_schema", "common_schema"]) {
   const block =
-    new RegExp(`${key}:\\s*\\{([\\s\\S]*?)\\}`).exec(contract)?.[1] ?? "";
-  const schemaPath = field(block, "sourcePath", '[^"]+');
+    new RegExp(`${key}:\\s*\\w*\\s*\\{([\\s\\S]*?)\\}`).exec(contract)?.[1] ??
+    "";
+  const schemaPath = field(block, "source_path", '[^"]+');
   const expected = field(block, "sha256", "sha256:[0-9a-f]{64}");
   const bytes = show(schemaPath);
   const actual = `sha256:${createHash("sha256").update(bytes).digest("hex")}`;
