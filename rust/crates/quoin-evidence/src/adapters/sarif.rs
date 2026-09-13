@@ -278,8 +278,13 @@ fn warning_kind_order(raw: &str, parsed: &serde_json::Map<String, Value>) -> Vec
 mod tests {
     use super::{parse_cargo_audit, parse_sarif};
 
+    /// A SARIF run carrying no result is a scan that HAPPENED, and a driver
+    /// declaring `rules: []` reported ZERO rules rather than saying nothing.
+    ///
+    /// Trace: FR-034-AC-1, FR-034-AC-20
+    /// Provenance: quoin#458
     #[test]
-    fn a_run_with_no_results_is_a_clean_scan_and_not_a_refusal() {
+    fn tc_458_200_a_run_with_no_results_is_a_clean_scan_and_not_a_refusal() {
         let result = parse_sarif(
             r#"{"runs":[{"tool":{"driver":{"name":"semgrep","version":"1.2.3","rules":[]}},"results":[]}]}"#,
         )
@@ -291,16 +296,26 @@ mod tests {
         assert_eq!(result.rules_evaluated, Some(0));
     }
 
+    /// A driver that names no ruleset leaves the count unset: the question
+    /// cannot be asked, so the record says nothing rather than something wrong.
+    ///
+    /// Trace: FR-034-AC-20
+    /// Provenance: quoin#458
     #[test]
-    fn rules_evaluated_stays_absent_until_a_driver_declares_rules() {
+    fn tc_458_201_rules_evaluated_stays_absent_until_a_driver_declares_rules() {
         let result =
             parse_sarif(r#"{"runs":[{"tool":{"driver":{"name":"x"}},"results":[]}]}"#).unwrap();
         assert_eq!(result.rules_evaluated, None);
         assert_eq!(result.tool.as_deref(), Some("x"));
     }
 
+    /// Rule id, level, message and location are read; the nested `rule.id`
+    /// form is accepted and a result naming no rule at all is skipped.
+    ///
+    /// Trace: FR-034-AC-3, FR-034-AC-4
+    /// Provenance: quoin#458
     #[test]
-    fn reads_rule_id_severity_message_path_and_line() {
+    fn tc_458_202_reads_rule_id_severity_message_path_and_line() {
         let result = parse_sarif(
             r#"{"runs":[{"tool":{"driver":{"name":"t"}},"results":[
                 {"ruleId":"r1","level":"error","message":{"text":"m"},
@@ -318,8 +333,13 @@ mod tests {
         assert_eq!(result.findings[1].rule_id, "r2");
     }
 
+    /// A log with no run proves nothing executed, and text that is not JSON is
+    /// named as such rather than read as an empty scan.
+    ///
+    /// Trace: FR-034-AC-2, FR-034-AC-5
+    /// Provenance: quoin#458
     #[test]
-    fn refuses_a_log_with_no_run() {
+    fn tc_458_203_refuses_a_log_with_no_run_and_text_that_is_not_json() {
         assert_eq!(
             parse_sarif(r#"{"runs":[]}"#).unwrap_err().to_string(),
             "sarif: `runs` is empty — a log with no run proves no scan executed"
@@ -328,10 +348,22 @@ mod tests {
             parse_sarif("{}").unwrap_err().to_string(),
             "sarif: no `runs` array — expected a SARIF 2.1.0 log"
         );
+        assert!(
+            parse_sarif("{")
+                .unwrap_err()
+                .to_string()
+                .contains("not JSON"),
+            "a malformed document must be named as malformed"
+        );
     }
 
+    /// `unsound`, `unmaintained` and `yanked` are distinctions cargo-audit
+    /// drew; collapsing them would discard what the tool produced.
+    ///
+    /// Trace: FR-034-AC-7, FR-034-CON-2
+    /// Provenance: quoin#458
     #[test]
-    fn cargo_audit_keeps_each_warning_kind_as_its_own_severity() {
+    fn tc_458_204_cargo_audit_keeps_each_warning_kind_as_its_own_severity() {
         let result = parse_cargo_audit(
             r#"{"database":{"advisory-count":700},
                 "vulnerabilities":{"found":true,"list":[
@@ -353,11 +385,21 @@ mod tests {
         assert_eq!(result.findings[2].path, None);
     }
 
+    /// Output that is not cargo-audit's, and text that is not JSON at all.
+    ///
+    /// Trace: FR-034-AC-8
+    /// Provenance: quoin#458
     #[test]
-    fn refuses_a_report_with_no_vulnerabilities_object() {
+    fn tc_458_205_refuses_output_that_is_not_cargo_audits() {
         assert_eq!(
             parse_cargo_audit("{}").unwrap_err().to_string(),
             "cargo-audit: no `vulnerabilities` object — expected `cargo audit --json` output"
+        );
+        assert!(
+            parse_cargo_audit("{")
+                .unwrap_err()
+                .to_string()
+                .contains("not JSON")
         );
     }
 }

@@ -79,6 +79,14 @@ After quoin#458 retires `src/evidence/`, restore the oracle at the revision
 named above before recapturing. Capturing against the port would ask the port
 whether the port is right.
 
+**The capture tooling is gone as of quoin#458.** FR-101-AC-5 forbids a non-Rust
+test oracle after a cutover, so `tools/` was deleted in the same commit that
+deleted `src/evidence/`. Nothing in the tree can re-derive these bytes any
+more; they are a frozen record of what the retained TypeScript answered, and
+the Rust replays assert against them directly. To recapture, restore both the
+tools and their subject from the revision named above — `git show <rev>:<path>`
+— never from the port.
+
 ## Population
 
 82 cases. **Both halves are non-empty**, which the capture script asserts and

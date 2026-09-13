@@ -348,8 +348,12 @@ describe("a profile selection assigns no finding severity", () => {
     // The only shapes a profile reaches the auditor through are
     // `IndependencePolicy` and `IndependenceRequirement`. Neither may carry a
     // severity, because a field is how it would get there.
+    //
+    // Read from `src/core/types.ts` since quoin#458: the shapes are declared by
+    // `quoin-evidence` and generated here, so this is the wire shape the
+    // auditor actually receives rather than a hand-written restatement of it.
     const evidenceTypes = readFileSync(
-      join(repoRoot, "src", "evidence", "types.ts"),
+      join(repoRoot, "src", "core", "types.ts"),
       "utf8",
     );
     for (const shape of ["IndependencePolicy", "IndependenceRequirement"]) {

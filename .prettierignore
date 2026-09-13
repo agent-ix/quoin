@@ -148,16 +148,15 @@ rust/crates/quoin-validators/tests/golden/expected.json
 # `cases.json` beside it is hand-authored input and IS formatted.
 rust/crates/quoin-assurance/tests/golden/expected.json
 
-# The quoin#456 adapter golden oracle (rust/crates/quoin-evidence), on the same
-# rule as the quoin#377 one above: `expected.json` is captured output, and
-# `tools/generate-adapter-oracle.mts` compares the bytes it re-derives from the
-# retained `src/evidence/adapters/` against this file exactly, so a formatter
-# that re-indents it makes the reproduction check fail against a file nothing
-# produced. `cases.json` beside it is hand-authored input and IS formatted.
+# The quoin#456 adapter and store golden oracles (rust/crates/quoin-evidence),
+# on the same rule as the quoin#447 one above, subject and generator both gone:
+# `expected.json` and `store-expected.json` were captured from
+# `src/evidence/` by `tools/generate-adapter-oracle.mts` and
+# `tools/generate-store-oracle.mts`, and all four were deleted at the quoin#458
+# cutover per FR-101-AC-5. Nothing here can re-derive these bytes any more, so a
+# re-indent would silently rewrite the only surviving record of what the
+# TypeScript answered. See PROVENANCE.md and STORE-PROVENANCE.md beside them for
+# the revision to restore from. `cases.json` and `store-cases.json` are
+# hand-authored input and ARE formatted.
 rust/crates/quoin-evidence/tests/golden/expected.json
-
-# The quoin#456 store golden oracle, same rule again: `store-expected.json` is
-# captured output that `tools/generate-store-oracle.mts` re-derives and compares
-# byte for byte. `store-cases.json` beside it is hand-authored input and IS
-# formatted, as is `STORE-PROVENANCE.md`.
 rust/crates/quoin-evidence/tests/golden/store-expected.json

@@ -366,8 +366,13 @@ fn tc_456_004_remaining_run_adapters_parity() {
 /// script, and `cargo audit --json`, including the `None`-versus-`Some(0)`
 /// `rulesEvaluated` distinction FR-034 turns on.
 ///
-/// Trace: FR-033-AC-1, FR-033-AC-3
-/// Provenance: quoin#456
+/// The real captured outputs matter to two criteria by name: FR-034-AC-6 asks
+/// for `cargo audit --json` as the tool actually emits it, and FR-036-AC-1 for
+/// a real all-passing architecture-conformance run read as rules that ran and
+/// found nothing.
+///
+/// Trace: FR-033-AC-1, FR-033-AC-3, FR-034-AC-6, FR-036-AC-1
+/// Provenance: quoin#456, quoin#458
 #[test]
 fn tc_456_005_finding_adapters_parity() {
     assert_both_halves(

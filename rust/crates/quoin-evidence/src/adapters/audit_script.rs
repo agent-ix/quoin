@@ -116,8 +116,14 @@ pub fn parse_audit_script(raw: &str) -> Result<FindingResult, EvidenceError> {
 mod tests {
     use super::parse_audit_script;
 
+    /// A FAIL line becomes a finding carrying the criterion the script itself
+    /// printed, and OK lines count as rules evaluated — so a fully passing run
+    /// is a result rather than a vacuous one.
+    ///
+    /// Trace: FR-036-AC-2, FR-036-AC-3
+    /// Provenance: quoin#458
     #[test]
-    fn counts_ok_lines_as_rules_that_ran_and_passed() {
+    fn tc_458_210_counts_ok_lines_as_rules_that_ran_and_passed() {
         let result = parse_audit_script(
             "check_a: OK\ncheck_b: FAIL — boundary crossed (quire-rs FR-003-AC-4).\nnoise\n",
         )
@@ -132,8 +138,10 @@ mod tests {
         );
     }
 
+    /// Trace: FR-036-AC-2
+    /// Provenance: quoin#458
     #[test]
-    fn reads_a_criterion_through_trailing_punctuation() {
+    fn tc_458_211_reads_a_criterion_through_trailing_punctuation() {
         // The incident: an end-of-line anchor found nothing, and the finding
         // lost the criterion that makes it a discharge rather than a complaint.
         for tail in ["(TC-9)", "(TC-9).", "(TC-9). ", "(TC-9)  "] {
@@ -153,11 +161,22 @@ mod tests {
         assert_eq!(result.findings[0].trace_ids, None);
     }
 
+    /// No recognised line means no audit ran; recording it would manufacture
+    /// conformance evidence from a file that proves nothing.
+    ///
+    /// Trace: FR-036-AC-4
+    /// Provenance: quoin#458
     #[test]
-    fn refuses_output_with_no_recognised_line() {
+    fn tc_458_212_refuses_output_with_no_recognised_line() {
         assert_eq!(
             parse_audit_script("all good\n").unwrap_err().to_string(),
             "audit-script: no `<name>: OK` or `<name>: FAIL` line found — is this audit-script output?"
+        );
+        assert!(
+            parse_audit_script("Compiling quire-rs v0.33.0\nFinished")
+                .unwrap_err()
+                .to_string()
+                .contains("audit-script output")
         );
     }
 }

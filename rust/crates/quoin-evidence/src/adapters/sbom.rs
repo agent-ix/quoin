@@ -187,8 +187,14 @@ fn unrecognised(root: &Value) -> EvidenceError {
 mod tests {
     use super::parse_sbom;
 
+    /// One entry per component, keyed on the purl where the document carries
+    /// one — and a component with no identity at all is dropped rather than
+    /// given a fabricated symbol that binds to nothing.
+    ///
+    /// Trace: FR-041-AC-1, FR-041-AC-5, FR-041-CON-4
+    /// Provenance: quoin#458
     #[test]
-    fn cyclonedx_prefers_purl_then_name_at_version_then_name() {
+    fn tc_458_230_cyclonedx_prefers_purl_then_name_at_version_then_name() {
         let result = parse_sbom(
             r#"{"bomFormat":"CycloneDX","components":[
                 {"purl":"pkg:npm/a@1","name":"a","version":"1"},
@@ -200,10 +206,20 @@ mod tests {
         .unwrap();
         let symbols: Vec<&str> = result.entries.iter().map(|e| e.symbol.as_str()).collect();
         assert_eq!(symbols, ["pkg:npm/a@1", "b@2", "c"]);
+        // The catalog and the suite registry carry the evidence-kind
+        // vocabulary; an adapter that minted a fourth copy would be declaring
+        // what only the consumer can say.
+        assert!(result.evidence_kind.is_none());
     }
 
+    /// SPDX puts the purl in `externalRefs`, not in a top-level field: reading
+    /// `name` alone would give the same component a different identity
+    /// depending on which format produced it.
+    ///
+    /// Trace: FR-041-AC-2
+    /// Provenance: quoin#458
     #[test]
-    fn spdx_reads_the_purl_external_ref() {
+    fn tc_458_231_spdx_reads_the_purl_external_ref() {
         let result = parse_sbom(
             r#"{"spdxVersion":"SPDX-2.3","packages":[
                 {"name":"a","versionInfo":"1","externalRefs":[
@@ -217,16 +233,23 @@ mod tests {
         assert_eq!(symbols, ["pkg:cargo/a@1", "b@2"]);
     }
 
+    /// Trace: FR-041-AC-3
+    /// Provenance: quoin#458
     #[test]
-    fn an_empty_inventory_is_entries_zero_and_not_a_refusal() {
+    fn tc_458_232_an_empty_inventory_is_entries_zero_and_not_a_refusal() {
         // The distinction the record type exists to make: a tool that ran and
         // listed nothing is a finding about the build, not an unreadable file.
         let result = parse_sbom(r#"{"bomFormat":"CycloneDX","components":[]}"#).unwrap();
         assert!(result.entries.is_empty());
     }
 
+    /// Zero entries is a real finding about the consumer's build; a file the
+    /// adapter simply could not read must not masquerade as one.
+    ///
+    /// Trace: FR-041-AC-4
+    /// Provenance: quoin#458
     #[test]
-    fn an_unrecognised_document_names_its_first_six_keys() {
+    fn tc_458_233_an_unrecognised_document_names_its_first_six_keys() {
         let error = parse_sbom(r#"{"a":1,"b":2,"c":3,"d":4,"e":5,"f":6,"g":7}"#).unwrap_err();
         assert_eq!(
             error.to_string(),
@@ -234,5 +257,11 @@ mod tests {
         );
         let empty = parse_sbom("{}").unwrap_err();
         assert!(empty.to_string().ends_with("top-level keys: (none)"));
+        assert!(
+            parse_sbom("not json at all")
+                .unwrap_err()
+                .to_string()
+                .contains("not JSON")
+        );
     }
 }

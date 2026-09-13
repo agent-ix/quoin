@@ -21,7 +21,7 @@ import {
   type AuditInput,
 } from "../src/auditor/index.js";
 import type { MethodCatalog } from "../src/advisor/index.js";
-import type { Binding, RunRecord } from "../src/evidence/index.js";
+import type { Binding, RunRecord } from "../src/core/evidence.js";
 import type { Obligation } from "../src/quire/index.js";
 
 const HASH_A = "a".repeat(64);

@@ -1,5 +1,12 @@
 /**
- * Quoin #323 — campaign-native result adapters (FR-069).
+ * Quoin #323 — campaign-native result adapters (FR-069), where the command
+ * reaches them.
+ *
+ * The adapters themselves are `quoin-evidence`'s, asserted by its golden
+ * corpus and by `tests/adapter_purity.rs` (quoin#458). What is stated here is
+ * what only this tree can see: that an unrepresented result is reported to the
+ * reader in both output modes and stored as no fifth outcome, and that the
+ * inventory dispositions every format #323 named.
  */
 
 import {
@@ -15,28 +22,14 @@ import { fileURLToPath } from "node:url";
 
 import { loadConfig } from "@agent-ix/ix-cli-core";
 import type { Config } from "@oclif/core";
-import fc from "fast-check";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 
 import EvidenceRecord from "../src/commands/evidence/record.js";
 
-import {
-  ADAPTER_NAMES,
-  AdapterError,
-  contractConformanceAdapter,
-  differentialReportAdapter,
-  selectAdapter,
-} from "../src/evidence/index.js";
-
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 const fixtures = join(repoRoot, "tests/fixtures/evidence");
-const adapterRoot = join(repoRoot, "src/evidence/adapters");
 const inventory = join(repoRoot, "docs/campaign-native-result-inventory.md");
 
-const conformance = readFileSync(
-  join(fixtures, "contract-conformance-real.jsonl"),
-  "utf8",
-);
 const differential = readFileSync(
   join(fixtures, "differential-report-real.json"),
   "utf8",
@@ -59,261 +52,6 @@ function repository(): string {
   );
   return root;
 }
-
-describe("FR-069 contract conformance", () => {
-  it("transcribes a real conformance run, keyed by corpus, operation, and fixture", () => {
-    const rows = conformance.split("\n").filter((line) => line.trim() !== "");
-    const result = contractConformanceAdapter.parse(conformance);
-
-    expect(result.entries).toHaveLength(rows.length);
-    for (const [index, line] of rows.entries()) {
-      const row = JSON.parse(line) as {
-        corpus_id: string;
-        operation: string;
-        fixture_id: string;
-        status: string;
-      };
-      expect(result.entries[index].symbol).toBe(
-        `${row.corpus_id}::${row.operation}::${row.fixture_id}`,
-      );
-      expect(result.entries[index].outcome).toBe(
-        row.status === "match" ? "pass" : "fail",
-      );
-    }
-
-    // Distinct identities: the same fixture id under two operations must not
-    // collapse into one entry that overwrites the other.
-    expect(new Set(result.entries.map((entry) => entry.symbol)).size).toBe(
-      rows.length,
-    );
-
-    // The real sample is real: it spans every operation the runner emits, and
-    // it carries both a valid and an invalid fixture.
-    const operations = new Set(
-      rows.map((line) => (JSON.parse(line) as { operation: string }).operation),
-    );
-    expect([...operations].sort()).toEqual([
-      "coverage",
-      "expression",
-      "migration",
-      "package",
-    ]);
-    // Not every operation reports validity — coverage and migration rows
-    // report other shapes — so this asserts over the rows that do.
-    const validity = new Set(
-      rows
-        .map(
-          (line) =>
-            (JSON.parse(line) as { actual?: { valid?: boolean } }).actual
-              ?.valid,
-        )
-        .filter((valid) => valid !== undefined),
-    );
-    expect(validity).toEqual(new Set([true, false]));
-  });
-
-  it("transcribes a real differential report, one entry per compared case", () => {
-    const report = JSON.parse(differential) as {
-      schemaVersion: string;
-      cases: { id: string; status: string }[];
-    };
-    const result = differentialReportAdapter.parse(differential);
-
-    expect(report.schemaVersion).toBe("tl-mltl.differential-summary/v1");
-    const agreements = report.cases.filter((c) => c.status === "agreement");
-    expect(result.entries).toHaveLength(agreements.length);
-    expect(result.entries.map((entry) => entry.symbol)).toEqual(
-      agreements.map((c) => c.id),
-    );
-    expect(new Set(result.entries.map((entry) => entry.outcome))).toEqual(
-      new Set(["pass"]),
-    );
-  });
-
-  it("names an unsupported case rather than transcribing it as another state", () => {
-    const report = JSON.parse(differential) as {
-      cases: { id: string; status: string }[];
-    };
-    const unsupported = report.cases.filter((c) => c.status === "unsupported");
-    expect(unsupported.length).toBeGreaterThan(0);
-
-    const result = differentialReportAdapter.parse(differential);
-    expect(result.unrepresented).toHaveLength(unsupported.length);
-    for (const [index, entry] of unsupported.entries()) {
-      expect(result.unrepresented?.[index]).toMatchObject({
-        symbol: entry.id,
-        state: "unsupported",
-      });
-      expect(result.unrepresented?.[index].reason).toMatch(
-        /neither a skip nor an error/,
-      );
-    }
-
-    // It appears in no other guise: not as an entry, and not as any outcome.
-    const symbols = result.entries.map((entry) => entry.symbol);
-    for (const entry of unsupported) expect(symbols).not.toContain(entry.id);
-
-    // A report with nothing unrepresentable omits the field rather than
-    // asserting an empty list, so a present-but-empty list can never mean
-    // "the adapter did not look".
-    const clean = JSON.stringify({
-      schemaVersion: "tl-mltl.differential-summary/v1",
-      cases: [{ id: "a", status: "agreement" }],
-    });
-    expect(
-      differentialReportAdapter.parse(clean).unrepresented,
-    ).toBeUndefined();
-  });
-
-  it("refuses every malformed, unknown, and empty input by line or case", () => {
-    const row = conformance.split("\n")[0];
-    const parsed = JSON.parse(row) as Record<string, unknown>;
-
-    const conformanceRefusals: [string, RegExp][] = [
-      ["", /no conformance rows/],
-      ["   \n\n", /no conformance rows/],
-      ["{not json", /line 1 is not JSON/],
-      [
-        JSON.stringify({
-          ...parsed,
-          protocol: "quire.contract.conformance-jsonl/v2",
-        }),
-        /declares protocol .*expected/,
-      ],
-      [JSON.stringify({ ...parsed, status: "partial" }), /unknown status/],
-      [JSON.stringify({ ...parsed, fixture_id: "" }), /has no fixture_id/],
-      [
-        `${row}\n${JSON.stringify({ ...parsed, operation: undefined })}`,
-        /line 2 has no operation/,
-      ],
-    ];
-    for (const [input, message] of conformanceRefusals) {
-      expect(
-        () => contractConformanceAdapter.parse(input),
-        input.slice(0, 40),
-      ).toThrow(AdapterError);
-      expect(() => contractConformanceAdapter.parse(input)).toThrow(message);
-    }
-
-    const differentialRefusals: [string, RegExp][] = [
-      ["{not json", /not JSON/],
-      [JSON.stringify({ cases: [] }), /unknown schemaVersion/],
-      [
-        JSON.stringify({
-          schemaVersion: "tl-mltl.differential-summary/v2",
-          cases: [],
-        }),
-        /unknown schemaVersion/,
-      ],
-      [
-        JSON.stringify({ schemaVersion: "tl-mltl.differential-summary/v1" }),
-        /no cases array/,
-      ],
-      [
-        JSON.stringify({
-          schemaVersion: "tl-mltl.differential-summary/v1",
-          cases: [],
-        }),
-        /examined nothing/,
-      ],
-      [
-        JSON.stringify({
-          schemaVersion: "tl-mltl.differential-summary/v1",
-          cases: [{ id: "a", status: "partial" }],
-        }),
-        /unknown status/,
-      ],
-      [
-        JSON.stringify({
-          schemaVersion: "tl-mltl.differential-summary/v1",
-          cases: [{ status: "agreement" }],
-        }),
-        /has no id/,
-      ],
-    ];
-    for (const [input, message] of differentialRefusals) {
-      expect(() => differentialReportAdapter.parse(input)).toThrow(
-        AdapterError,
-      );
-      expect(() => differentialReportAdapter.parse(input)).toThrow(message);
-    }
-
-    // The inherited property names an object literal would have resolved.
-    // CI found this with the counterexample "valueOf" after a local run of the
-    // same property passed on a different seed — the reason the property is
-    // here rather than a fixed list of statuses I thought of.
-    for (const inherited of [
-      "valueOf",
-      "toString",
-      "constructor",
-      "hasOwnProperty",
-      "__proto__",
-    ]) {
-      expect(
-        () =>
-          differentialReportAdapter.parse(
-            JSON.stringify({
-              schemaVersion: "tl-mltl.differential-summary/v1",
-              cases: [{ id: "case", status: inherited }],
-            }),
-          ),
-        inherited,
-      ).toThrow(AdapterError);
-      expect(
-        () =>
-          contractConformanceAdapter.parse(
-            JSON.stringify({ ...parsed, status: inherited }),
-          ),
-        inherited,
-      ).toThrow(AdapterError);
-    }
-
-    // No status outside the declared vocabularies is ever accepted, however
-    // plausible it looks.
-    fc.assert(
-      fc.property(
-        fc
-          .string({ minLength: 1 })
-          .filter(
-            (status) =>
-              !["agreement", "mismatch", "tool-error", "unsupported"].includes(
-                status,
-              ),
-          ),
-        (status) => {
-          expect(() =>
-            differentialReportAdapter.parse(
-              JSON.stringify({
-                schemaVersion: "tl-mltl.differential-summary/v1",
-                cases: [{ id: "case", status }],
-              }),
-            ),
-          ).toThrow(AdapterError);
-        },
-      ),
-      { numRuns: 40 },
-    );
-  });
-
-  it("registers both adapters by name and by declared tool", () => {
-    expect(ADAPTER_NAMES).toContain("contract-conformance");
-    expect(ADAPTER_NAMES).toContain("differential-report");
-
-    expect(selectAdapter({ adapter: "contract-conformance" }).name).toBe(
-      "contract-conformance",
-    );
-    expect(selectAdapter({ adapter: "differential-report" }).name).toBe(
-      "differential-report",
-    );
-    expect(
-      selectAdapter({ tool: "quire-contract-conformance 0.1.0" }).name,
-    ).toBe("contract-conformance");
-    expect(selectAdapter({ tool: "tl-mltl 0.1.0" }).name).toBe(
-      "differential-report",
-    );
-  });
-});
-
 describe("FR-069 recording", () => {
   it("prints every unrepresented result in human and JSON output", async () => {
     const root = repository();
@@ -415,27 +153,5 @@ describe("FR-069 inventory and boundaries", () => {
 
     // The out-of-scope rule is stated, not implied.
     expect(text).toMatch(/stdout or stderr scraping is out of\nscope/);
-  });
-
-  it("executes nothing and scrapes no console text for a verdict", () => {
-    for (const name of ["contract-conformance.ts", "differential-report.ts"]) {
-      const text = readFileSync(join(adapterRoot, name), "utf8");
-      for (const forbidden of [
-        "child_process",
-        "execSync",
-        "spawnSync",
-        "spawn(",
-        "fetch(",
-        "readFileSync",
-        "https://",
-      ]) {
-        expect(text, `${name} must not reach for ${forbidden}`).not.toContain(
-          forbidden,
-        );
-      }
-      // Both readers are pure over text and declare what they accept, so a
-      // format that does not say what it is cannot be read by accident.
-      expect(text).toMatch(/PROTOCOL|SCHEMA/);
-    }
   });
 });

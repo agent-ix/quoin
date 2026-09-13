@@ -111,8 +111,15 @@ mod tests {
     use super::parse_agent_eval;
     use crate::types::Outcome;
 
+    /// One entry per scenario, keyed on the scenario id, which is its own
+    /// trace id — and the harness's own verdict is taken rather than recomputed
+    /// from the pass rate, which is kept because "flaky" and "failing" are
+    /// different facts.
+    ///
+    /// Trace: FR-042-AC-1, FR-042-AC-2, FR-042-AC-3, FR-042-CON-2
+    /// Provenance: quoin#458
     #[test]
-    fn keys_each_entry_on_the_scenario_id_and_traces_it_to_itself() {
+    fn tc_458_220_keys_each_entry_on_the_scenario_id_and_traces_it_to_itself() {
         let result = parse_agent_eval(
             r#"{"results":[
                 {"id":"TC-EV-054","ok":true,"passRate":"3/3"},
@@ -142,8 +149,13 @@ mod tests {
         assert_eq!(result.entries[0].outcome, Outcome::Fail);
     }
 
+    /// A suite that ran nothing. Recording it would manufacture evidence from
+    /// a file proving only that the harness started.
+    ///
+    /// Trace: FR-042-AC-4
+    /// Provenance: quoin#458
     #[test]
-    fn refuses_a_report_with_no_results() {
+    fn tc_458_221_refuses_a_report_with_no_results() {
         assert_eq!(
             parse_agent_eval(r#"{"results":[]}"#)
                 .unwrap_err()
@@ -153,6 +165,12 @@ mod tests {
         assert_eq!(
             parse_agent_eval("{}").unwrap_err().to_string(),
             "agent-eval: expected a cli-agent-evals report with a \"results\" array"
+        );
+        assert!(
+            parse_agent_eval("{{")
+                .unwrap_err()
+                .to_string()
+                .contains("not JSON")
         );
     }
 }

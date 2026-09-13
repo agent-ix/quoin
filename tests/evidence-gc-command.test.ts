@@ -19,8 +19,11 @@ import { loadConfig } from "@agent-ix/ix-cli-core";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 
 import EvidenceGc from "../src/commands/evidence/gc";
-import { runPath, writeRun } from "../src/evidence/index.js";
-import { STORE_SCHEMA_VERSION } from "../src/evidence/types.js";
+import {
+  STORE_SCHEMA_VERSION,
+  runPath,
+  writeRun,
+} from "./support/evidence-store.js";
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 
