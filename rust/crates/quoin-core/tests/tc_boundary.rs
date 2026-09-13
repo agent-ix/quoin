@@ -26,6 +26,16 @@ struct Run {
 }
 
 fn run(args: &[&str], stdin: &str) -> Run {
+    run_bytes(args, stdin.as_bytes())
+}
+
+/// The same run, over BYTES.
+///
+/// stdin is a byte stream and the transport bound is stated in bytes, so a
+/// helper that can only send `&str` cannot reach the two cases at the ceiling
+/// that matter: a request whose cut lands mid-character, and a request that is
+/// not UTF-8 at all.
+fn run_bytes(args: &[&str], stdin: &[u8]) -> Run {
     let mut child = Command::new(env!("CARGO_BIN_EXE_quoin-core"))
         .args(args)
         .stdin(Stdio::piped())
@@ -33,12 +43,7 @@ fn run(args: &[&str], stdin: &str) -> Run {
         .stderr(Stdio::piped())
         .spawn()
         .unwrap();
-    child
-        .stdin
-        .as_mut()
-        .unwrap()
-        .write_all(stdin.as_bytes())
-        .unwrap();
+    child.stdin.as_mut().unwrap().write_all(stdin).unwrap();
     let out = child.wait_with_output().unwrap();
     Run {
         stdout: String::from_utf8(out.stdout).unwrap(),
@@ -261,4 +266,77 @@ fn tc_445_103_a_request_past_an_operation_bound_is_the_operations_refusal() {
         "a domain refusal is not a stream refusal: {}",
         result.stderr
     );
+}
+
+/// An oversized request whose cut lands MID-CHARACTER is still the transport's
+/// refusal, not an internal fault.
+///
+/// `take(MAX + 1)` stops at a BYTE offset, and that offset can fall inside a
+/// multi-byte character. Reading the truncated stream straight into a `String`
+/// validated UTF-8 before the size was ever compared, so a request one
+/// character wider than ASCII exited **4** with `CORE_IO` and the message
+/// "stream did not contain valid UTF-8" — false twice over: the stream DID
+/// contain valid UTF-8, and an oversized request is a caller refusal (2),
+/// which `src/core/exec.ts` distinguishes from the crash it reads 4 as.
+/// `tc_445_100` could not see it because its filler is ASCII, so the cut always
+/// landed on a character boundary. rust-style names exactly this hazard: a
+/// bound whose behaviour depends on the caller's alphabet.
+///
+/// The size is therefore compared on BYTES, before any decode.
+///
+/// Trace: FR-096, NFR-024
+/// Provenance: agent-ix/quoin#445, agent-ix/quoin#447
+#[test]
+fn tc_445_104_an_oversized_request_cut_mid_character_is_still_refused() {
+    let limit = quoin_core::protocol::MAX_REQUEST_BYTES;
+    // `{"echo":"` is 9 bytes, so the euro sign occupies bytes `limit - 1`
+    // through `limit + 1` and straddles the cut `take(limit + 1)` makes.
+    let mut oversize = Vec::new();
+    oversize.extend_from_slice(br#"{"echo":""#);
+    oversize.extend(std::iter::repeat_n(b'x', limit - 10));
+    oversize.extend_from_slice("\u{20ac}".as_bytes());
+    oversize.extend(std::iter::repeat_n(b'x', 100));
+    oversize.extend_from_slice(br#""}"#);
+    assert!(oversize.len() > limit);
+    assert!(
+        std::str::from_utf8(&oversize).is_ok(),
+        "the payload itself is valid UTF-8, or this test proves nothing"
+    );
+    assert!(
+        std::str::from_utf8(&oversize[..=limit]).is_err(),
+        "the cut must land inside the multi-byte character"
+    );
+
+    let result = run_bytes(&["core.ping"], &oversize);
+    assert_eq!(result.status, 2, "{}", result.stderr);
+    assert_eq!(result.stdout, "");
+    let diagnostics: serde_json::Value = serde_json::from_str(&result.stderr).unwrap();
+    assert_eq!(diagnostics[0]["code"], "CORE_REFUSED");
+    assert_eq!(diagnostics[0]["context"]["limit_bytes"], limit.to_string());
+    assert_eq!(diagnostics[0]["context"]["stream"], "stdin");
+}
+
+/// A request the transport ACCEPTS that is not UTF-8 is still `CORE_IO`.
+///
+/// The counterpart to `tc_445_104`: comparing the size first must not swallow a
+/// genuine encoding error into the refusal. A lone `0x80` well inside the bound
+/// is a stream that cannot be decoded, which is what `CORE_IO` says and what
+/// this pins.
+///
+/// Trace: FR-096
+/// Provenance: agent-ix/quoin#445, agent-ix/quoin#447
+#[test]
+fn tc_445_105_an_undecodable_request_within_the_bound_is_an_io_fault() {
+    let mut request = Vec::new();
+    request.extend_from_slice(br#"{"echo":""#);
+    request.push(0x80);
+    request.extend_from_slice(br#""}"#);
+    assert!(request.len() < quoin_core::protocol::MAX_REQUEST_BYTES);
+
+    let result = run_bytes(&["core.ping"], &request);
+    assert_eq!(result.status, 4, "{}", result.stderr);
+    assert_eq!(result.stdout, "");
+    let diagnostics: serde_json::Value = serde_json::from_str(&result.stderr).unwrap();
+    assert_eq!(diagnostics[0]["code"], "CORE_IO");
+    assert_eq!(diagnostics[0]["context"]["stream"], "stdin");
 }

@@ -148,20 +148,25 @@ pub fn read_request(reader: impl Read) -> Result<serde_json::Value, CoreError> {
     let ceiling = u64::try_from(MAX_REQUEST_BYTES)
         .unwrap_or(u64::MAX)
         .saturating_add(1);
-    let mut text = String::new();
-    let read = reader
-        .take(ceiling)
-        .read_to_string(&mut text)
-        .map_err(|e| {
-            // Invalid UTF-8 arrives here as an `InvalidData` error. It is a
-            // malformed request, not a failing stream.
-            let code = if e.kind() == std::io::ErrorKind::InvalidData {
-                CoreErrorCode::BadJson
-            } else {
-                CoreErrorCode::Io
-            };
-            CoreError::new(code, e.to_string()).with_context("stream", "stdin")
-        })?;
+    // Read BYTES, compare BYTES, decode LAST.
+    //
+    // `take` cuts at a byte offset, and that offset can fall inside a
+    // multi-byte character. Decoding during the read therefore made the
+    // classification of an oversized request depend on the CALLER'S ALPHABET:
+    // an all-ASCII request one byte over the ceiling was `CORE_REFUSED` (exit
+    // 2), while the same request from a caller whose text happened to put a
+    // `€` across the cut was `CORE_BAD_JSON` (exit 3) — reported as malformed
+    // when it was merely too large, and the message was false besides, because
+    // the stream did contain valid UTF-8. `src/core/exec.ts` branches on those
+    // statuses, so this is a behaviour difference and not a wording one.
+    //
+    // Deciding the size first removes the dependency: the length test cannot
+    // see an encoding, and the decode below only ever runs on bytes already
+    // known to be within the bound (agent-ix/quoin#447; tc_445_104, tc_445_105).
+    let mut bytes = Vec::new();
+    let read = reader.take(ceiling).read_to_end(&mut bytes).map_err(|e| {
+        CoreError::new(CoreErrorCode::Io, e.to_string()).with_context("stream", "stdin")
+    })?;
 
     if read > MAX_REQUEST_BYTES {
         return Err(
@@ -173,6 +178,12 @@ pub fn read_request(reader: impl Read) -> Result<serde_json::Value, CoreError> {
                 .with_context("read_bytes", read.to_string()),
         );
     }
+
+    // Within the bound and undecodable is a GENUINE encoding fault, and keeps
+    // the malformed-request classification the size test must not borrow.
+    let text = String::from_utf8(bytes).map_err(|e| {
+        CoreError::new(CoreErrorCode::BadJson, e.to_string()).with_context("stream", "stdin")
+    })?;
 
     parse_request(&text)
 }

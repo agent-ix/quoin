@@ -279,12 +279,22 @@ fn tc_1614_no_hand_written_declaration_shadows_a_generated_boundary_type() {
             (name, fields)
         })
         .collect();
-    // The literal is the sanity pin on the SCANNER, not on the surface: it is
-    // what makes a scanner that has stopped reading fail loudly instead of
-    // reporting clean over everything. It moves when the boundary grows, and
-    // moving it is a deliberate act. The newtype and unit-enum aliases the
-    // surface also publishes are `export type` and not interfaces, so they are
-    // outside what this scanner reads.
+    // Sixty-seven interfaces: `Diagnostic`, the two `core.ping` shapes, the two
+    // `validators.run` shapes, the request and payload types of the
+    // `config.*` and `modules.*` operations with the documents they nest, the
+    // six `Source*` variants of the internally tagged module source, and the
+    // request, payload and nested document types of the eight `completeness.*`
+    // and `assurance.*` operations. The enum and newtype aliases the surface
+    // also publishes are `export type` and not interfaces, so they are outside
+    // what this scanner reads — a hand written `type ObligationId = string`
+    // shadows nothing structural; nor are the externally tagged unions, whose
+    // arms are rendered inline.
+    //
+    // The literal is the sanity pin on the SCANNER, not on the surface: being a
+    // COUNT, it moves whenever the surface does and cannot be satisfied by a
+    // scanner that has silently stopped reading. Moving it is a deliberate act.
+    // It does not, on its own, say which Rust type owns which name — `tc_1615`
+    // below does that.
     assert_eq!(
         generated.len(),
         67,

@@ -32,10 +32,13 @@ import {
   accessSync,
   chmodSync,
   constants,
+  lstatSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
   readdirSync,
+  statSync,
+  symlinkSync,
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
@@ -61,11 +64,19 @@ const BROKEN = "level1/level2/level3/broken.md";
  * noticing: three levels of nesting with a document at each, a document whose
  * frontmatter does not parse, a file that is not markdown, a file whose
  * extension is markdown in the WRONG case, a filename holding a space, a
- * filename holding a non-ASCII character, a document the OS will not open, and
- * a directory holding nothing at all.
+ * filename holding a non-ASCII character, a document the OS will not open, a
+ * directory holding nothing at all, a directory NAMED `*.md`, and the three
+ * symlink shapes — one resolving to a markdown file outside the bundle, one
+ * resolving to a directory, and one resolving to nothing.
+ *
+ * The bundle root is NESTED inside the temp dir so `shared/` can sit beside it:
+ * a symlink whose target lives inside the bundle would be found by the walk
+ * anyway and could not show a walk that loses the link.
  */
 function bundle(): string {
-  const root = mkdtempSync(join(tmpdir(), "quoin-bundle-snapshot-"));
+  const temp = mkdtempSync(join(tmpdir(), "quoin-bundle-snapshot-"));
+  const root = join(temp, "bundle");
+  mkdirSync(root, { recursive: true });
   const write = (relative: string, contents: string): void => {
     const target = join(root, relative);
     mkdirSync(dirname(target), { recursive: true });
@@ -111,7 +122,86 @@ function bundle(): string {
   mkdirSync(join(root, "level1/notes.md"), { recursive: true });
   writeFileSync(join(root, "level1/notes.md/inner.txt"), "not a document\n");
 
+  // SYMLINKS, the one narrowing axis nothing here covered. `Dirent.isFile()` is
+  // FALSE for a symlink entry, so a filter written on it alone drops a document
+  // the direct disk reader on the other side of the boundary reads — and a
+  // dropped document is not merely missing from the request, it is missing from
+  // the VERDICT: the value it owned reads `unowned` and a finding appears that
+  // no reader of the same tree produces. `spec/FR-042.md` symlinked into a
+  // shared spec directory is the ordinary monorepo layout, not an exotic shape.
+  const shared = join(temp, "shared");
+  mkdirSync(join(shared, "nested"), { recursive: true });
+  writeFileSync(join(shared, "FR-042.md"), document("Shared FR-042"));
+  // Only ever reachable THROUGH a symlink, so a walk that descended one would
+  // show up as this extra document.
+  writeFileSync(join(shared, "nested/unreachable.md"), document("Unreachable"));
+
+  // Resolves to a FILE: a document.
+  symlinkSync(join(shared, "FR-042.md"), join(root, "level1/shared.md"));
+  // Resolves to a DIRECTORY, and named `*.md`: not a document, not descended.
+  symlinkSync(join(shared, "nested"), join(root, "level1/linked-dir.md"));
+  // Resolves to NOTHING: not a document. There are no bytes to read, and
+  // recording it `unreadable` would invent an entry the bundle does not hold —
+  // the same class of defect as the `EISDIR` one above.
+  symlinkSync(join(shared, "gone.md"), join(root, "level1/dangling.md"));
+
+  assertShapes(root);
   return root;
+}
+
+/**
+ * Every shape {@link bundle} claims, asserted to be on disk.
+ *
+ * Without this the differential passes over whatever tree it happens to get: a
+ * fixture that silently stopped materialising the symlinks — a path that
+ * drifted, a `symlinkSync` that moved above an early return — would leave both
+ * descriptions agreeing about a smaller tree and the axis uncovered again,
+ * which is exactly how agent-ix/quoin#448 stayed green.
+ */
+function assertShapes(root: string): void {
+  const file = (relative: string): void => {
+    expect(
+      lstatSync(join(root, relative)).isFile(),
+      `fixture shape '${relative}' is no longer a plain file`,
+    ).toBe(true);
+  };
+  const directory = (relative: string): void => {
+    expect(
+      lstatSync(join(root, relative)).isDirectory(),
+      `fixture shape '${relative}' is no longer a directory`,
+    ).toBe(true);
+  };
+  const link = (relative: string, resolvesTo: "file" | "dir" | "nothing") => {
+    expect(
+      lstatSync(join(root, relative)).isSymbolicLink(),
+      `fixture shape '${relative}' is no longer a symlink`,
+    ).toBe(true);
+    let resolved: "file" | "dir" | "nothing" | "other";
+    try {
+      const stat = statSync(join(root, relative));
+      resolved = stat.isFile() ? "file" : stat.isDirectory() ? "dir" : "other";
+    } catch {
+      resolved = "nothing";
+    }
+    expect(
+      resolved,
+      `fixture shape '${relative}' no longer resolves as claimed`,
+    ).toBe(resolvesTo);
+  };
+
+  file("index.md");
+  file("level1/level2/level3/c.md");
+  file(BROKEN);
+  file("level1/notes.txt");
+  file("level1/UPPER.MD");
+  file("level1/with space.md");
+  file("level1/café.md");
+  file("level1/locked.md");
+  directory("level1/empty");
+  directory("level1/notes.md");
+  link("level1/shared.md", "file");
+  link("level1/linked-dir.md", "dir");
+  link("level1/dangling.md", "nothing");
 }
 
 /**
@@ -120,6 +210,16 @@ function bundle(): string {
  * Written here rather than imported: the whole point is that two INDEPENDENT
  * descriptions of one tree agree. Reusing `snapshot.ts`'s walk would make the
  * test agree with itself no matter what the walk did.
+ *
+ * Independence has to hold per AXIS, not per file. This classified with
+ * `Dirent.isDirectory()`-else-`.md` — which follows a symlink where the walk
+ * under test drops it — so on that one axis the two descriptions were never
+ * comparable, they simply disagreed by construction over a fixture that
+ * materialised no symlink. It now asks the filesystem directly and with two
+ * different calls: `lstatSync` never follows, so only a REAL directory is
+ * descended and a symlinked one cannot loop the walk out of the tree;
+ * `statSync` always follows, so a link is a document exactly when it resolves
+ * to a file, and a broken one resolves to nothing.
  */
 function independentWalk(root: string): {
   documents: { path: string; raw: string }[];
@@ -127,12 +227,19 @@ function independentWalk(root: string): {
 } {
   const paths: string[] = [];
   const descend = (prefix: string): void => {
-    for (const entry of readdirSync(join(root, prefix), {
-      withFileTypes: true,
-    })) {
-      const relative = prefix ? `${prefix}/${entry.name}` : entry.name;
-      if (entry.isDirectory()) descend(relative);
-      else if (relative.endsWith(".md")) paths.push(relative);
+    for (const name of readdirSync(join(root, prefix))) {
+      const relative = prefix ? `${prefix}/${name}` : name;
+      const absolute = join(root, relative);
+      if (lstatSync(absolute).isDirectory()) {
+        descend(relative);
+        continue;
+      }
+      if (!relative.endsWith(".md")) continue;
+      try {
+        if (statSync(absolute).isFile()) paths.push(relative);
+      } catch {
+        // Resolves to nothing: a broken link is not a document.
+      }
     }
   };
   descend("");
@@ -189,6 +296,32 @@ describe("bundleSnapshot (quoin#445)", () => {
     expect(crossed.length).toBeGreaterThanOrEqual(8);
     expect(crossed).toContain("level1/level2/level3/c.md");
     expect(crossed).toContain(BROKEN);
+  });
+
+  // Trace: FR-096, FR-037
+  it("sends a symlink exactly when it resolves to a file", () => {
+    // The equality above catches a disagreement between the two descriptions,
+    // but not a decision both got wrong in the same direction — and this
+    // decision is verdict-changing on its own. `Dirent.isFile()` is false for
+    // every symlink, so the walk used to drop `spec/FR-042.md` symlinked into a
+    // shared spec directory: its claims never reached the far side, the value
+    // it owned was reported `unowned`, and the verdict moved.
+    const root = bundle();
+    const crossed = [
+      ...bundleSnapshot(root).documents,
+      ...bundleSnapshot(root).unreadable,
+    ].map((entry) => entry.path);
+
+    expect(crossed).toContain("level1/shared.md");
+    // A directory, reached through a link and named `*.md`: not a document, and
+    // not recorded `unreadable` either — that would invent an EISDIR entry.
+    expect(crossed).not.toContain("level1/linked-dir.md");
+    // No bytes to read, so neither a document nor an unreadable one.
+    expect(crossed).not.toContain("level1/dangling.md");
+    // And a symlinked directory is not descended.
+    expect(crossed.filter((path) => path.includes("unreachable.md"))).toEqual(
+      [],
+    );
   });
 });
 

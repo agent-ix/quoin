@@ -11,6 +11,7 @@
 use serde::{Deserialize, Serialize};
 
 use crate::error::{CoreError, CoreErrorCode};
+use crate::ops::{refusal, request_size};
 use crate::protocol::Response;
 
 /// The largest obligation id this domain will accept, in bytes.
@@ -87,22 +88,15 @@ pub fn build_case(request: &serde_json::Value) -> Result<Response, CoreError> {
     // Measured on the parsed value rather than on raw stdin: the dispatcher
     // has already read and parsed the stream, so this is the honest place to
     // state a size the DOMAIN refuses, distinct from any transport ceiling.
-    let size = serde_json::to_vec(request)
-        .map_err(|e| CoreError::new(CoreErrorCode::Io, e.to_string()))?
-        .len();
+    let op = "assurance.build_case";
+    let size = request_size(request)?;
     if size > MAX_BUILD_CASE_BYTES {
-        return Err(
-            CoreError::new(CoreErrorCode::Refused, "request exceeds the accepted size")
-                .with_context("op", "assurance.build_case")
-                .with_context("limit_bytes", MAX_BUILD_CASE_BYTES.to_string())
-                .with_context("observed_bytes", size.to_string()),
-        );
+        return Err(refusal(op, MAX_BUILD_CASE_BYTES, size));
     }
 
     let input: quoin_assurance::CaseInput =
         serde_json::from_value(request.clone()).map_err(|e| {
-            CoreError::new(CoreErrorCode::BadRequest, e.to_string())
-                .with_context("op", "assurance.build_case")
+            CoreError::new(CoreErrorCode::BadRequest, e.to_string()).with_context("op", op)
         })?;
 
     let payload = serde_json::to_value(quoin_assurance::build_case(&input))
@@ -135,22 +129,15 @@ pub fn render_case(request: &serde_json::Value) -> Result<Response, CoreError> {
     // this operation's input IS that operation's output, so a case that could
     // be built and then could not be rendered would be a boundary that
     // contradicts itself.
-    let size = serde_json::to_vec(request)
-        .map_err(|e| CoreError::new(CoreErrorCode::Io, e.to_string()))?
-        .len();
+    let op = "assurance.render_case";
+    let size = request_size(request)?;
     if size > MAX_BUILD_CASE_BYTES {
-        return Err(
-            CoreError::new(CoreErrorCode::Refused, "request exceeds the accepted size")
-                .with_context("op", "assurance.render_case")
-                .with_context("limit_bytes", MAX_BUILD_CASE_BYTES.to_string())
-                .with_context("observed_bytes", size.to_string()),
-        );
+        return Err(refusal(op, MAX_BUILD_CASE_BYTES, size));
     }
 
     let assurance: quoin_assurance::RenderableCase = serde_json::from_value(request.clone())
         .map_err(|e| {
-            CoreError::new(CoreErrorCode::BadRequest, e.to_string())
-                .with_context("op", "assurance.render_case")
+            CoreError::new(CoreErrorCode::BadRequest, e.to_string()).with_context("op", op)
         })?;
 
     let payload = serde_json::to_value(RenderCasePayload {
@@ -178,21 +165,14 @@ pub fn parse_argument(request: &serde_json::Value) -> Result<Response, CoreError
     // The same ceiling as the two operations above. An authored argument is
     // far smaller than a built case, but a THIRD constant would be a third
     // thing to keep in agreement with the reference for no behaviour gained.
-    let size = serde_json::to_vec(request)
-        .map_err(|e| CoreError::new(CoreErrorCode::Io, e.to_string()))?
-        .len();
+    let op = "assurance.parse_argument";
+    let size = request_size(request)?;
     if size > MAX_BUILD_CASE_BYTES {
-        return Err(
-            CoreError::new(CoreErrorCode::Refused, "request exceeds the accepted size")
-                .with_context("op", "assurance.parse_argument")
-                .with_context("limit_bytes", MAX_BUILD_CASE_BYTES.to_string())
-                .with_context("observed_bytes", size.to_string()),
-        );
+        return Err(refusal(op, MAX_BUILD_CASE_BYTES, size));
     }
 
     let argument = quoin_assurance::parse_assurance_argument(request).map_err(|e| {
-        CoreError::new(CoreErrorCode::BadRequest, e.to_string())
-            .with_context("op", "assurance.parse_argument")
+        CoreError::new(CoreErrorCode::BadRequest, e.to_string()).with_context("op", op)
     })?;
 
     let payload = serde_json::to_value(argument)
@@ -236,7 +216,7 @@ pub fn build_authored_argument(request: &serde_json::Value) -> Result<Response, 
     let op = "assurance.build_authored_argument";
     let size = request_size(request)?;
     if size > MAX_BUILD_CASE_BYTES {
-        return Err(refusal(op, size));
+        return Err(refusal(op, MAX_BUILD_CASE_BYTES, size));
     }
 
     let input: quoin_assurance::BuildAuthoredArgumentRequest =
@@ -272,7 +252,7 @@ pub fn render_authored_argument(request: &serde_json::Value) -> Result<Response,
     let op = "assurance.render_authored_argument";
     let size = request_size(request)?;
     if size > MAX_BUILD_CASE_BYTES {
-        return Err(refusal(op, size));
+        return Err(refusal(op, MAX_BUILD_CASE_BYTES, size));
     }
 
     let view: quoin_assurance::AuthoredArgumentView = serde_json::from_value(request.clone())
@@ -304,7 +284,7 @@ pub fn build_discharge(request: &serde_json::Value) -> Result<Response, CoreErro
     let op = "assurance.build_discharge";
     let size = request_size(request)?;
     if size > MAX_BUILD_CASE_BYTES {
-        return Err(refusal(op, size));
+        return Err(refusal(op, MAX_BUILD_CASE_BYTES, size));
     }
 
     let input: quoin_assurance::BuildDischargeRequest = serde_json::from_value(request.clone())
@@ -335,7 +315,7 @@ pub fn render_discharge(request: &serde_json::Value) -> Result<Response, CoreErr
     let op = "assurance.render_discharge";
     let size = request_size(request)?;
     if size > MAX_BUILD_CASE_BYTES {
-        return Err(refusal(op, size));
+        return Err(refusal(op, MAX_BUILD_CASE_BYTES, size));
     }
 
     let report: quoin_assurance::DischargeReport = serde_json::from_value(request.clone())
@@ -349,21 +329,6 @@ pub fn render_discharge(request: &serde_json::Value) -> Result<Response, CoreErr
     .map_err(|e| CoreError::new(CoreErrorCode::Io, e.to_string()))?;
 
     Ok(Response::ok(payload))
-}
-
-/// The size of a request as it would be written back out.
-fn request_size(request: &serde_json::Value) -> Result<usize, CoreError> {
-    Ok(serde_json::to_vec(request)
-        .map_err(|e| CoreError::new(CoreErrorCode::Io, e.to_string()))?
-        .len())
-}
-
-/// The one refusal shape the case-sized operations share.
-fn refusal(op: &'static str, size: usize) -> CoreError {
-    CoreError::new(CoreErrorCode::Refused, "request exceeds the accepted size")
-        .with_context("op", op)
-        .with_context("limit_bytes", MAX_BUILD_CASE_BYTES.to_string())
-        .with_context("observed_bytes", size.to_string())
 }
 
 #[cfg(test)]
@@ -463,14 +428,57 @@ mod tests {
         );
     }
 
-    /// Both retained error types are single-message classes today. A second
-    /// variant on either would need a deliberate `CoreErrorCode` mapping, and
-    /// this assertion is what makes adding one visible.
+    /// Both retained error classes leave this seam as `CORE_BAD_REQUEST`.
+    ///
+    /// **Why this is not the pinned-count shape**
+    /// `a_third_completeness_error_code_would_need_a_mapping` (`ops::completeness`)
+    /// counts `CompletenessErrorCode::all()`, which exists because that type is
+    /// an enum with an enumerated set. [`quoin_assurance::ArgumentError`] and
+    /// [`quoin_assurance::DischargeError`] are one-field tuple structs — the
+    /// crate documents the choice: seventeen predicates leave the boundary as
+    /// one code because the retained `parseAssuranceArgument` throws one
+    /// `Error`, so "there is one discriminant, and it is spelled `Err`". There
+    /// is no set to count, and no `all()` to call.
+    ///
+    /// What this replaces was `ArgumentError("x").to_string() == "x"`, which
+    /// only restated the `Display` impl. The guard the doc comment claimed — a
+    /// second variant becoming visible — is delivered by the construction below
+    /// failing to COMPILE if either type stops being a one-field tuple struct,
+    /// not by any assertion.
+    ///
+    /// So what is asserted instead is the thing that could silently change and
+    /// that no compiler checks: the CODE each class is mapped to. Each error is
+    /// obtained from the retained function by type, not by its prose, and then
+    /// the same request is put through the handler.
     #[test]
-    fn tc_447_324_the_retained_error_types_carry_one_class_each() {
-        let argument = quoin_assurance::ArgumentError("x".to_owned());
-        let discharge = quoin_assurance::DischargeError("x".to_owned());
-        assert_eq!(argument.to_string(), "x");
-        assert_eq!(discharge.to_string(), "x");
+    fn tc_447_324_both_retained_error_classes_map_to_bad_request() {
+        let argument_request = serde_json::json!({
+            "argument": {},
+            "decisions": [],
+            "asOf": "2026-01-01T00:00:00Z",
+        });
+        let input: quoin_assurance::BuildAuthoredArgumentRequest =
+            serde_json::from_value(argument_request.clone()).unwrap();
+        let raised: quoin_assurance::ArgumentError =
+            quoin_assurance::build_authored_argument_view(&input).unwrap_err();
+        // Named so the class is identified by its type rather than its message.
+        let quoin_assurance::ArgumentError(_) = raised;
+        let mapped = build_authored_argument(&argument_request).unwrap_err();
+        assert_eq!(mapped.code, CoreErrorCode::BadRequest);
+        assert_eq!(mapped.code.outcome(), Outcome::Invalid);
+
+        let discharge_request = serde_json::json!({
+            "binding": binding(),
+            "facts": [],
+            "asOf": "not-an-instant",
+        });
+        let input: quoin_assurance::BuildDischargeRequest =
+            serde_json::from_value(discharge_request.clone()).unwrap();
+        let raised: quoin_assurance::DischargeError =
+            quoin_assurance::build_discharge_report(&input).unwrap_err();
+        let quoin_assurance::DischargeError(_) = raised;
+        let mapped = build_discharge(&discharge_request).unwrap_err();
+        assert_eq!(mapped.code, CoreErrorCode::BadRequest);
+        assert_eq!(mapped.code.outcome(), Outcome::Invalid);
     }
 }

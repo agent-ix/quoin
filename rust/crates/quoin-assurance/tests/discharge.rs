@@ -36,10 +36,16 @@
 )]
 
 use quoin_assurance::discharge::{
-    BuildDischargeRequest, DischargeState, FactKind, UnusedFactReason, build_discharge_report,
-    render_discharge_report,
+    BuildDischargeRequest, DischargeState, DispositionDecision, FactKind, UnusedFactReason,
+    build_discharge_report, render_discharge_report,
 };
 use quoin_quire_types::ClauseBindingReport;
+
+/// The emitted `clause-discharge-v1` document for [`every_state_report`].
+///
+/// Written out rather than re-derived: a test that serialises the report a
+/// second time agrees with itself no matter what the wire spellings say.
+const EVERY_STATE_DOCUMENT: &str = r#"{"schemaVersion":"clause-discharge-v1","clauseSet":{"authority":"example.invalid","id":"synthetic-widget-rules","version":"1.0.0"},"clauseSetDigest":"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","context":{"deployment":"test","product":"widget"},"asOf":"2026-08-15T00:00:00.000Z","binding":{"direct":[{"clauseId":"SYN-001","force":"mandatory","state":"direct","expectedOutputs":["test-result"],"fact":{"kind":"direct","clauseId":"SYN-001","evidenceRefs":["evidence://run/one"],"attestation":{"attestedBy":"reviewer-1","authority":"quality-lead","attestedAt":"2026-08-01T00:00:00.000Z","expiresAt":"2026-09-01T00:00:00.000Z","sourceRevision":"0123456789abcdef","evidenceDigest":"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}}}],"dispositions":[{"clauseId":"SYN-002","force":"recommended","state":"disposition","expectedOutputs":["review-record"],"fact":{"kind":"disposition","clauseId":"SYN-002","decision":"temporary_exception","rationale":"Synthetic decision for the bounded test window.","approvalRef":"decision://synthetic/temporary_exception","attestation":{"attestedBy":"reviewer-1","authority":"quality-lead","attestedAt":"2026-08-01T00:00:00.000Z","expiresAt":"2026-09-01T00:00:00.000Z","sourceRevision":"0123456789abcdef","evidenceDigest":"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}}},{"clauseId":"SYN-003","force":"mandatory","state":"disposition","expectedOutputs":["decision-record"],"fact":{"kind":"disposition","clauseId":"SYN-003","decision":"accepted_risk","rationale":"Synthetic decision for the bounded test window.","approvalRef":"decision://synthetic/accepted_risk","attestation":{"attestedBy":"reviewer-1","authority":"quality-lead","attestedAt":"2026-08-01T00:00:00.000Z","expiresAt":"2026-09-01T00:00:00.000Z","sourceRevision":"0123456789abcdef","evidenceDigest":"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}}},{"clauseId":"SYN-006","force":"permitted","state":"disposition","expectedOutputs":["delegation-record"],"fact":{"kind":"disposition","clauseId":"SYN-006","decision":"delegated","rationale":"Synthetic decision for the bounded test window.","approvalRef":"decision://synthetic/delegated","attestation":{"attestedBy":"reviewer-1","authority":"quality-lead","attestedAt":"2026-08-01T00:00:00.000Z","expiresAt":"2026-09-01T00:00:00.000Z","sourceRevision":"0123456789abcdef","evidenceDigest":"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}}}],"open":[{"clauseId":"SYN-007","force":"mandatory","state":"open","expectedOutputs":["open-record"],"reason":"no discharge fact"}]},"unresolved":[{"clauseId":"SYN-004","force":"mandatory","state":"unresolved","expectedOutputs":["environment-record"],"reason":"environment is not known"}],"notBinding":[{"clauseId":"SYN-005","force":"permitted","state":"not_binding","expectedOutputs":[]}],"unusedFacts":[{"clauseId":"SYN-004","kind":"direct","reason":"unresolved"},{"clauseId":"SYN-005","kind":"direct","reason":"not_binding"},{"clauseId":"SYN-999","kind":"direct","reason":"unknown_clause"}]}"#;
 
 fn digest() -> String {
     format!("sha256:{}", "a".repeat(64))
@@ -415,4 +421,287 @@ fn tc_1130_every_population_renders_deterministically_and_without_a_score() {
     assert!(
         render_discharge_report(&with_unused).contains("- `SYN-999` (direct): unknown_clause\n")
     );
+}
+
+/// A report the port actually computed still reads back.
+///
+/// The refusal below is only worth having if the validating door is the one a
+/// legitimate `build_discharge` → `render_discharge` hop goes through, which
+/// is the hop `quoin-core` makes over two invocations.
+///
+/// Trace: FR-046-AC-5, FR-046-AC-6
+/// Provenance: agent-ix/quoin#447
+#[test]
+fn tc_447_451_a_computed_discharge_report_round_trips_through_the_validating_door() {
+    let report = build_discharge_report(&request(vec![direct(), disposition()]))
+        .expect("both facts are well formed");
+    let payload = serde_json::to_value(&report).expect("it serialises");
+    let read_back: quoin_assurance::DischargeReport =
+        serde_json::from_value(payload).expect("the emitted document reads back");
+    assert_eq!(read_back, report);
+}
+
+/// Accept and emit spell every closed vocabulary the same way.
+///
+/// `parse_fact`'s membership tables are built from `as_str()`, and this pins
+/// `as_str()` against what `#[serde(rename_all)]` writes — in BOTH directions,
+/// so neither half can move alone. Flipping `DischargeState` to `camelCase`
+/// passed every test in this crate before quoin#447; it fails here.
+///
+/// Trace: FR-046-AC-5, FR-046-AC-6
+/// Provenance: agent-ix/quoin#447
+#[test]
+fn tc_447_452_the_wire_spelling_of_every_closed_vocabulary_has_one_source() {
+    for kind in FactKind::all() {
+        assert_eq!(
+            serde_json::to_value(kind).unwrap(),
+            serde_json::json!(kind.as_str())
+        );
+        assert_eq!(
+            serde_json::from_value::<FactKind>(serde_json::json!(kind.as_str())).unwrap(),
+            *kind
+        );
+    }
+    for decision in DispositionDecision::all() {
+        assert_eq!(
+            serde_json::to_value(decision).unwrap(),
+            serde_json::json!(decision.as_str())
+        );
+        assert_eq!(
+            serde_json::from_value::<DispositionDecision>(serde_json::json!(decision.as_str()))
+                .unwrap(),
+            *decision
+        );
+    }
+    for state in DischargeState::all() {
+        assert_eq!(
+            serde_json::to_value(state).unwrap(),
+            serde_json::json!(state.as_str())
+        );
+        assert_eq!(
+            serde_json::from_value::<DischargeState>(serde_json::json!(state.as_str())).unwrap(),
+            *state
+        );
+    }
+    for reason in UnusedFactReason::all() {
+        assert_eq!(
+            serde_json::to_value(reason).unwrap(),
+            serde_json::json!(reason.as_str())
+        );
+        assert_eq!(
+            serde_json::from_value::<UnusedFactReason>(serde_json::json!(reason.as_str())).unwrap(),
+            *reason
+        );
+    }
+    // The set is closed as well as spelled: the accept side names exactly the
+    // variants `all()` lists, in that order.
+    let mut renamed = disposition();
+    renamed["decision"] = serde_json::json!("temporaryException");
+    assert_eq!(
+        build_discharge_report(&request(vec![renamed]))
+            .expect_err("an unlisted decision is refused")
+            .0,
+        "decision must be one of accepted_risk, temporary_exception, delegated"
+    );
+}
+
+/// A clause set that reaches every state, every decision and every unused
+/// reason — including `accepted_risk` and `delegated`, which no other fixture
+/// in this crate constructs.
+fn every_state_binding() -> ClauseBindingReport {
+    serde_json::from_value(serde_json::json!({
+        "schemaVersion": "clause-binding-v1",
+        "clauseSet": {
+            "authority": "example.invalid",
+            "id": "synthetic-widget-rules",
+            "version": "1.0.0"
+        },
+        "clauseSetDigest": digest(),
+        "context": { "product": "widget", "deployment": "test" },
+        "clauses": [
+            {"clauseId": "SYN-001", "force": "mandatory", "outcome": "binding",
+             "reasons": [], "expectedOutputs": ["test-result"]},
+            {"clauseId": "SYN-002", "force": "recommended", "outcome": "binding",
+             "reasons": [], "expectedOutputs": ["review-record"]},
+            {"clauseId": "SYN-003", "force": "mandatory", "outcome": "binding",
+             "reasons": [], "expectedOutputs": ["decision-record"]},
+            {"clauseId": "SYN-004", "force": "mandatory", "outcome": "unresolved",
+             "reasons": [{"code": "missing-context", "dimension": "environment",
+                          "message": "environment is not known"}],
+             "expectedOutputs": ["environment-record"]},
+            {"clauseId": "SYN-005", "force": "permitted", "outcome": "not_binding",
+             "reasons": [], "expectedOutputs": []},
+            {"clauseId": "SYN-006", "force": "permitted", "outcome": "binding",
+             "reasons": [], "expectedOutputs": ["delegation-record"]},
+            {"clauseId": "SYN-007", "force": "mandatory", "outcome": "binding",
+             "reasons": [], "expectedOutputs": ["open-record"]}
+        ]
+    }))
+    .expect("the fixture matches the pinned wire shape")
+}
+
+/// One disposition fact, for a named decision.
+fn disposition_of(clause_id: &str, decision: &str) -> serde_json::Value {
+    serde_json::json!({
+        "kind": "disposition",
+        "clauseId": clause_id,
+        "decision": decision,
+        "rationale": "Synthetic decision for the bounded test window.",
+        "approvalRef": format!("decision://synthetic/{decision}"),
+        "attestation": attestation()
+    })
+}
+
+/// The report every state, decision and unused reason appears in.
+fn every_state_report() -> quoin_assurance::DischargeReport {
+    let mut unresolved_fact = direct();
+    unresolved_fact["clauseId"] = serde_json::json!("SYN-004");
+    let mut not_binding_fact = direct();
+    not_binding_fact["clauseId"] = serde_json::json!("SYN-005");
+    let mut unknown_fact = direct();
+    unknown_fact["clauseId"] = serde_json::json!("SYN-999");
+
+    build_discharge_report(&BuildDischargeRequest {
+        binding: every_state_binding(),
+        facts: vec![
+            direct(),
+            disposition_of("SYN-002", "temporary_exception"),
+            disposition_of("SYN-003", "accepted_risk"),
+            disposition_of("SYN-006", "delegated"),
+            unresolved_fact,
+            not_binding_fact,
+            unknown_fact,
+        ],
+        as_of: "2026-08-15T00:00:00.000Z".to_owned(),
+    })
+    .expect("every fact is well formed")
+}
+
+/// The whole emitted `clause-discharge-v1` document, pinned as one literal.
+///
+/// The Markdown render has been pinned byte for byte since quoin#384; the JSON
+/// was asserted only structurally — key presence and enum equality — so a
+/// changed `#[serde(rename_all)]` moved the emitted document without moving a
+/// test, and a consumer matching `not_binding` would have seen zero
+/// not-binding clauses. Every state, every disposition decision and every
+/// unused reason appears here, so the pin covers the whole vocabulary rather
+/// than the two spellings the other fixtures happen to reach.
+///
+/// Trace: FR-046-AC-2, FR-046-AC-6
+/// Provenance: agent-ix/quoin#447
+#[test]
+fn tc_447_453_the_emitted_json_document_is_pinned_byte_for_byte() {
+    let report = every_state_report();
+    assert_eq!(
+        serde_json::to_string(&report).expect("it serialises"),
+        EVERY_STATE_DOCUMENT
+    );
+    // The pinned bytes are also what the validating door accepts back, so the
+    // literal is a statement about the document a consumer receives and not
+    // only about this process's output.
+    let read_back: quoin_assurance::DischargeReport =
+        serde_json::from_str(EVERY_STATE_DOCUMENT).expect("the pinned document reads back");
+    assert_eq!(read_back, report);
+}
+
+/// Every reader in the emitted document refuses a field it does not know, at
+/// every depth. `assurance.render_discharge` reads a whole
+/// `clause-discharge-v1` document off untrusted stdin, so a key silently
+/// dropped here is a key the caller believes quoin honoured.
+///
+/// The unknown key is injected where it is REACHABLE rather than each struct
+/// being read standalone: an isolated struct refusing it says nothing about
+/// the path a caller actually reaches it by.
+///
+/// Trace: FR-046-AC-1, FR-046-AC-5
+/// Provenance: agent-ix/quoin#447
+#[test]
+fn tc_447_442_every_reachable_discharge_type_refuses_an_unknown_field() {
+    let document: serde_json::Value =
+        serde_json::from_str(EVERY_STATE_DOCUMENT).expect("the pinned document parses as JSON");
+
+    for pointer in [
+        "",
+        "/clauseSet",
+        "/binding",
+        "/binding/direct/0",
+        "/binding/direct/0/fact",
+        "/binding/direct/0/fact/attestation",
+        "/binding/dispositions/0",
+        "/binding/dispositions/0/fact",
+        "/binding/open/0",
+        "/unresolved/0",
+        "/notBinding/0",
+        "/unusedFacts/0",
+    ] {
+        let mut forged = document.clone();
+        let target = if pointer.is_empty() {
+            &mut forged
+        } else {
+            forged
+                .pointer_mut(pointer)
+                .unwrap_or_else(|| panic!("{pointer} is a path this document has"))
+        };
+        target
+            .as_object_mut()
+            .unwrap_or_else(|| panic!("{pointer} names an object"))
+            .insert("inventedField".to_owned(), serde_json::json!(1));
+
+        assert!(
+            serde_json::from_value::<quoin_assurance::DischargeReport>(forged).is_err(),
+            "an unknown field at {pointer} must be refused"
+        );
+    }
+}
+
+/// The forged discharge report quoin#447's review demonstrated, replayed.
+///
+/// Trace: FR-046-AC-5
+/// Provenance: agent-ix/quoin#447
+#[test]
+fn tc_447_450_a_forged_discharge_report_is_refused_by_the_deserialiser() {
+    assert!(
+        serde_json::from_value::<quoin_assurance::DischargeReport>(forged_report()).is_err(),
+        "a report whose fact never went through parseFact must not deserialise"
+    );
+}
+
+/// A `clause-discharge-v1` document nothing computed: the attestation carries
+/// an empty `authority`, an `attestedAt` that is not an instant, an expiry
+/// before it, an `evidenceDigest` that is not one, and no evidence at all.
+fn forged_report() -> serde_json::Value {
+    serde_json::json!({
+        "schemaVersion": "clause-discharge-v1",
+        "clauseSet": {"authority": "example.invalid", "id": "synthetic-widget-rules",
+                      "version": "1.0.0"},
+        "clauseSetDigest": digest(),
+        "context": {},
+        "asOf": "2026-08-15T00:00:00.000Z",
+        "binding": {
+            "direct": [{
+                "clauseId": "SYN-001",
+                "force": "mandatory",
+                "state": "direct",
+                "expectedOutputs": ["test-result"],
+                "fact": {
+                    "kind": "direct",
+                    "clauseId": "SYN-001",
+                    "evidenceRefs": [],
+                    "attestation": {
+                        "attestedBy": "nobody",
+                        "authority": "",
+                        "attestedAt": "nope",
+                        "expiresAt": "1999-01-01T00:00:00.000Z",
+                        "sourceRevision": "0123456789abcdef",
+                        "evidenceDigest": "not-a-digest"
+                    }
+                }
+            }],
+            "dispositions": [],
+            "open": []
+        },
+        "unresolved": [],
+        "notBinding": [],
+        "unusedFacts": []
+    })
 }

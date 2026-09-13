@@ -270,15 +270,28 @@ pub fn read_bundle_claims(bundle_root: &Path, declaration: &VocabularyDeclaratio
 
 /// Every `*.md` under `root`, recursively, sorted by relative path.
 ///
-/// The TypeScript uses `readdirSync(root, { recursive: true })` and sorts the
-/// **relative** entries, which is not the same order as sorting absolute paths
-/// per directory — `a/b.md` sorts before `a-b.md` one way and after it the
-/// other. Sorting relative paths keeps the reported order identical.
+/// The TypeScript recurses per directory and sorts the **relative** entries,
+/// which is not the same order as sorting absolute paths per directory —
+/// `a/b.md` sorts before `a-b.md` one way and after it the other. Sorting
+/// relative paths keeps the reported order identical.
 fn markdown_under(root: &Path) -> Vec<PathBuf> {
     let mut relative: Vec<String> = Vec::new();
     collect(root, Path::new(""), &mut relative);
     relative.sort();
     relative.into_iter().map(|entry| root.join(entry)).collect()
+}
+
+/// Is this relative path a markdown document by NAME?
+///
+/// Case-sensitive on purpose: the TypeScript filters `entry.endsWith(".md")`,
+/// and a case-insensitive match here would read documents the oracle never saw.
+#[allow(
+    clippy::case_sensitive_file_extension_comparisons,
+    reason = "the oracle's `endsWith('.md')` is case-sensitive; matching case-insensitively here \
+              would admit documents the shell never puts on the wire"
+)]
+fn is_markdown_name(relative: &str) -> bool {
+    relative.ends_with(".md")
 }
 
 fn collect(root: &Path, prefix: &Path, out: &mut Vec<String>) {
@@ -288,20 +301,48 @@ fn collect(root: &Path, prefix: &Path, out: &mut Vec<String>) {
     for entry in entries.flatten() {
         let name = entry.file_name();
         let relative = prefix.join(&name);
-        match entry.file_type() {
-            Ok(file_type) if file_type.is_dir() => collect(root, &relative, out),
-            Ok(_) => {
-                let text = relative.to_string_lossy().replace('\\', "/");
-                // Case-sensitive on purpose: the TypeScript filters
-                // `entry.endsWith(".md")`, and a case-insensitive match here
-                // would read documents the oracle never saw.
-                #[allow(clippy::case_sensitive_file_extension_comparisons)]
-                let is_markdown = text.ends_with(".md");
-                if is_markdown {
-                    out.push(text);
-                }
-            }
-            Err(_) => {}
+        let Ok(file_type) = entry.file_type() else {
+            continue;
+        };
+        // `read_dir` reports the LINK's own type, never its target's — so a
+        // real directory is descended and a symlinked one is not, which is what
+        // keeps the walk from following a cycle out of the bundle.
+        if file_type.is_dir() {
+            collect(root, &relative, out);
+            continue;
+        }
+        let text = relative.to_string_lossy().replace('\\', "/");
+        if !is_markdown_name(&text) {
+            continue;
+        }
+        // A symlink is a document exactly when it RESOLVES to a file. That is
+        // the deliberate decision at this seam, and the two sides state it
+        // identically (`src/core/snapshot.ts` asks `statSync(...).isFile()`):
+        //
+        // - resolving to a FILE: a document. `spec/FR-042.md` symlinked into a
+        //   shared spec directory is the normal monorepo layout, and dropping
+        //   it loses that document's claims from the verdict entirely — the
+        //   value it owned is reported `unowned` and a finding appears that a
+        //   direct disk read never produces.
+        // - resolving to a DIRECTORY: not a document, and not descended. A
+        //   directory may be named `notes.md`; opening it invents an `EISDIR`
+        //   entry for a file the bundle does not hold.
+        // - resolving to NOTHING (a broken link): not a document. There are no
+        //   bytes to read, and reporting it `unreadable` would be a document
+        //   the tree does not contain.
+        //
+        // This differs from `quoin-validators`' repository walk, which drops
+        // symlinks outright — that walk scans an arbitrary repository for build
+        // wiring, where a link is far likelier to be an escape than content. A
+        // completeness bundle is a curated document set whose links are the
+        // point.
+        let resolved_to_file = if file_type.is_symlink() {
+            std::fs::metadata(root.join(&relative)).is_ok_and(|meta| meta.is_file())
+        } else {
+            file_type.is_file()
+        };
+        if resolved_to_file {
+            out.push(text);
         }
     }
 }

@@ -23,9 +23,19 @@ use crate::declarations::VocabularyDeclaration;
 use crate::ids::{VocabularyName, VocabularyValue};
 
 /// What kind of gap a finding records.
+///
+/// The schema name is spelled out rather than taken from the Rust name.
+/// `quoin-validators` owns a `FindingKind` too, and `schemars` resolves a
+/// collision by appending a digit to whichever type it generated SECOND — so
+/// the bare name would belong to whichever crate `boundary_schema()` happened
+/// to register first, and reordering those calls would silently re-point an
+/// exported TypeScript type at the other crate's union. `FindingKind2` says
+/// nothing about which domain it describes; this says it. `tc_1617` pins the
+/// name to this union's members so a future collision cannot take it back.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, serde::Serialize)]
 #[serde(rename_all = "kebab-case")]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[cfg_attr(feature = "schema", schemars(rename = "CompletenessFindingKind"))]
 pub enum FindingKind {
     /// No document claims the value and nothing excuses it.
     Unowned,

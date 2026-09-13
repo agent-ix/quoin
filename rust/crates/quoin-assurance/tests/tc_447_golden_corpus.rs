@@ -29,6 +29,7 @@
     clippy::unwrap_used,
     clippy::expect_used,
     clippy::indexing_slicing,
+    clippy::panic,
     reason = "integration-test bodies: a panic here is a failing test, which is the intended signal"
 )]
 
@@ -172,7 +173,31 @@ fn tc_447_500_the_port_reproduces_every_captured_typescript_verdict() {
                     "{}: the request schema accepted an input it refuses",
                     case.name
                 ),
-                _ => {}
+                // `RequirementOfRequest` is `quoin-core`'s type and this
+                // crate cannot reach it, so what is asserted here is the
+                // PROPERTY that makes the refusal inevitable: the request is
+                // not the closed object `{ obligation_id: <string> }`. The
+                // refusal itself is `quoin-core`'s boundary test. Asserting
+                // nothing would make these two cases pass for free.
+                "requirement_of" => {
+                    let object = request
+                        .as_object()
+                        .unwrap_or_else(|| panic!("{}: the request is an object", case.name));
+                    let closed_and_typed = object.len() == 1
+                        && object
+                            .get("obligation_id")
+                            .is_some_and(serde_json::Value::is_string);
+                    assert!(
+                        !closed_and_typed,
+                        "{}: nothing about this request makes the schema refuse it",
+                        case.name
+                    );
+                }
+                // Not a fallthrough: an op that reaches this arm would run no
+                // assertion at all, and a case that asserts nothing passes for
+                // free. Adding a refused case for a new op must fail here
+                // until it is given something to assert.
+                other => panic!("{}: no refusal assertion for op {other}", case.name),
             }
             continue;
         }

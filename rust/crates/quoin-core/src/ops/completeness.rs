@@ -30,6 +30,7 @@
 use serde::{Deserialize, Serialize};
 
 use crate::error::{CoreError, CoreErrorCode};
+use crate::ops::{refusal, request_size};
 use crate::protocol::Response;
 
 /// The largest module manifest this domain will accept, in bytes.
@@ -120,7 +121,11 @@ pub struct ReadFrontmatterRequest {
 pub fn read_frontmatter(request: &serde_json::Value) -> Result<Response, CoreError> {
     let size = request_size(request)?;
     if size > MAX_ASSESS_BUNDLE_BYTES {
-        return Err(refusal("completeness.read_frontmatter", size));
+        return Err(refusal(
+            "completeness.read_frontmatter",
+            MAX_ASSESS_BUNDLE_BYTES,
+            size,
+        ));
     }
 
     let request: ReadFrontmatterRequest = serde_json::from_value(request.clone()).map_err(|e| {
@@ -166,7 +171,11 @@ pub const MAX_ASSESS_BUNDLE_BYTES: usize = 16 * 1024 * 1024;
 pub fn assess_bundle(request: &serde_json::Value) -> Result<Response, CoreError> {
     let size = request_size(request)?;
     if size > MAX_ASSESS_BUNDLE_BYTES {
-        return Err(refusal("completeness.assess_bundle", size));
+        return Err(refusal(
+            "completeness.assess_bundle",
+            MAX_ASSESS_BUNDLE_BYTES,
+            size,
+        ));
     }
 
     let input: quoin_completeness::AssessInput =
@@ -179,25 +188,6 @@ pub fn assess_bundle(request: &serde_json::Value) -> Result<Response, CoreError>
         .map_err(|e| CoreError::new(CoreErrorCode::Io, e.to_string()))?;
 
     Ok(Response::ok(payload))
-}
-
-/// The request's size in bytes, measured on the parsed value.
-///
-/// The dispatcher has already read and parsed the stream, so this is the honest
-/// place to state a size the DOMAIN refuses, distinct from any transport
-/// ceiling.
-fn request_size(request: &serde_json::Value) -> Result<usize, CoreError> {
-    Ok(serde_json::to_vec(request)
-        .map_err(|e| CoreError::new(CoreErrorCode::Io, e.to_string()))?
-        .len())
-}
-
-/// The one refusal shape both bundle-sized operations use.
-fn refusal(op: &'static str, size: usize) -> CoreError {
-    CoreError::new(CoreErrorCode::Refused, "request exceeds the accepted size")
-        .with_context("op", op)
-        .with_context("limit_bytes", MAX_ASSESS_BUNDLE_BYTES.to_string())
-        .with_context("observed_bytes", size.to_string())
 }
 
 #[cfg(test)]

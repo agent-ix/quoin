@@ -459,7 +459,7 @@ pub fn render_type(schema: &Value, pointer: &str) -> Result<String, RenderRefusa
         } else {
             Err(refuse(
                 pointer,
-                "a `false` schema admits no value at all; nothing on the wire                  can satisfy it",
+                "a `false` schema admits no value at all; nothing on the wire can satisfy it",
             ))
         };
     }
@@ -739,10 +739,16 @@ mod tests {
         assert_eq!(rendered, "Record<string, unknown>");
     }
 
+    /// The refusal reaches a human verbatim, so the WHOLE sentence is asserted
+    /// and not a fragment of it. A `contains("no value at all")` left the
+    /// second half unasserted, and it shipped with an 18-space run inside it.
     #[test]
     fn a_false_schema_is_refused_rather_than_rendered() {
         let error = render_type(&json!(false), "#/a").unwrap_err();
-        assert!(error.reason.contains("no value at all"), "{}", error.reason);
+        assert_eq!(
+            error.reason,
+            "a `false` schema admits no value at all; nothing on the wire can satisfy it"
+        );
     }
 
     /// A Rust unit enum reaches the wire as a closed set of strings, and a

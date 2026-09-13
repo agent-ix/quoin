@@ -8,7 +8,7 @@
 //! path rather than two that agree by inspection.
 
 use std::collections::BTreeSet;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use crate::assess::{
     CompletenessFinding, Verdict, VocabularyRollup, assess_vocabulary, verdict_for,
@@ -96,12 +96,7 @@ pub fn assess_bundle(options: &AssessOptions) -> BundleAssessment {
     // passes — and NFR-011-M-2 states the budget as one pass per invocation.
     let bundle = read_bundle_frontmatter(&options.bundle_root);
     let loaded = load_vocabulary_coverage(&options.module_roots);
-    assess(
-        &options.bundle_root.to_string_lossy(),
-        options.strict,
-        &bundle,
-        &loaded,
-    )
+    assess(&options.bundle_root, options.strict, &bundle, &loaded)
 }
 
 /// Assess a bundle from content the CALLER read.
@@ -114,11 +109,16 @@ pub fn assess_bundle(options: &AssessOptions) -> BundleAssessment {
 pub fn assess_sources(input: &AssessInput) -> BundleAssessment {
     let bundle = crate::bundle::frontmatter_from_sources(&input.documents, &input.unreadable);
     let loaded = crate::declarations::declarations_from_sources(&input.modules);
-    assess(&input.bundle_root, input.strict, &bundle, &loaded)
+    assess(
+        Path::new(&input.bundle_root),
+        input.strict,
+        &bundle,
+        &loaded,
+    )
 }
 
 fn assess(
-    bundle_root: &str,
+    bundle_root: &Path,
     strict: bool,
     bundle: &crate::bundle::FrontmatterRead,
     loaded: &crate::declarations::VocabularyDeclarations,
@@ -154,7 +154,12 @@ fn assess(
     let verdict = verdict_for(&findings, strict, loaded.declarations.len());
 
     BundleAssessment {
-        bundle_root: PathBuf::from(bundle_root),
+        // `to_path_buf`, never `PathBuf::from(to_string_lossy())`: a bundle
+        // root holding a non-UTF-8 byte — a latin-1 filename out of an imported
+        // archive — would otherwise print back with U+FFFD replacement
+        // characters, and "the command prints the root it looked in, so an
+        // absent bundle stays legible" fails exactly where legibility matters.
+        bundle_root: bundle_root.to_path_buf(),
         vocabularies: loaded.declarations.iter().map(|d| d.name.clone()).collect(),
         unresolved: loaded.unresolved.clone(),
         unreadable,
@@ -193,5 +198,34 @@ mod tests {
         });
         assert!(assessment.unreadable.is_empty());
         assert_eq!(assessment.verdict, Verdict::Unchecked);
+    }
+
+    /// The root is echoed BYTE-EXACT, never through `to_string_lossy`.
+    ///
+    /// A latin-1 filename out of an imported archive is a perfectly good path
+    /// on Linux and is not valid UTF-8. A lossy round trip prints U+FFFD where
+    /// the user's path was, which breaks "the command prints the root it looked
+    /// in, so an absent bundle stays legible" at the one moment it matters —
+    /// the bundle is absent and the printed root is all the user has.
+    ///
+    /// Trace: FR-037
+    /// Provenance: quoin#445
+    #[cfg(unix)]
+    #[test]
+    fn tc_378_242_a_non_utf8_bundle_root_is_echoed_byte_for_byte() {
+        use std::ffi::OsStr;
+        use std::os::unix::ffi::OsStrExt;
+
+        const RAW: &[u8] = b"/definitely/not/here/caf\xe9";
+        let root = PathBuf::from(OsStr::from_bytes(RAW));
+
+        let assessment = assess_bundle(&AssessOptions {
+            bundle_root: root.clone(),
+            strict: false,
+            module_roots: Vec::new(),
+        });
+
+        assert_eq!(assessment.bundle_root, root);
+        assert_eq!(assessment.bundle_root.as_os_str().as_bytes(), RAW);
     }
 }

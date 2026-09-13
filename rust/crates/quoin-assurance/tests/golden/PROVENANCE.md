@@ -182,6 +182,20 @@ port.
    reason those cases carry `"boundary": "refused"` — their TypeScript verdict
    is still captured so the difference stays visible in the bytes.
 
+   **This divergence widened, and the corpus did not move (quoin#447).** When
+   these bytes were captured, `deny_unknown_fields` stood on the four top-level
+   request types only; nested readers reached through them — `CaseNode`,
+   `Unreadable`, the `clause-binding-v1` and `clause-discharge-v1` documents,
+   and every view under `AuthoredArgumentView` — still dropped an unknown key
+   silently. They no longer do, so the paragraph above is now true at every
+   depth rather than only at the request's first level. The eight cases are
+   unchanged: re-running this corpus against the widened schema reproduces all
+   128 captured verdicts, and the refused count is still 13. The two
+   `requirement_of` refusals are the ones this file's replay cannot assert
+   directly — `RequirementOfRequest` is `quoin-core`'s type — so the replay
+   asserts the property that makes the refusal inevitable and `quoin-core`'s
+   boundary test asserts the refusal.
+
 2. **`build_case` carries assessments `render_case` will not read (2 cases).**
    `producer_trust` and `evidence_independence` are OPAQUE to `build_case` on
    both sides — the retained implementation copies them unread and the port

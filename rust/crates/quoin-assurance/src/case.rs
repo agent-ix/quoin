@@ -73,6 +73,7 @@ pub enum NodeStatus {
 
 /// One node of the case tree.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct CaseNode {
     /// The document or obligation id.
     pub id: String,
@@ -91,6 +92,7 @@ pub struct CaseNode {
 
 /// A document whose frontmatter could not be read.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Unreadable {
     /// Path, relative to the bundle root.
     pub path: String,
@@ -126,7 +128,7 @@ pub struct Unreadable {
 /// parameters means the compiler carries the distinction, and a reader asking
 /// "is this field read here?" gets the answer from the signature.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(deny_unknown_fields, rename_all = "camelCase")]
 pub struct AssuranceCase<Trust = serde_json::Value, Independence = serde_json::Value> {
     /// Top-level claims, one tree each.
     pub claims: Vec<CaseNode>,
@@ -534,5 +536,75 @@ fn string_of(value: &serde_json::Value) -> String {
         // one ever arrived — which is the outcome we want over a silent
         // agreement on a value neither side should see.
         other => other.to_string(),
+    }
+}
+
+#[cfg(test)]
+#[allow(
+    clippy::expect_used,
+    clippy::indexing_slicing,
+    clippy::panic,
+    clippy::unwrap_used,
+    reason = "in a test, a panic IS the failure report; the production lints stand"
+)]
+mod tests {
+    use super::AssuranceCase;
+
+    /// A complete case payload, in the shape [`AssuranceCase`] serialises.
+    fn case() -> serde_json::Value {
+        serde_json::json!({
+            "claims": [{
+                "id": "StR-001",
+                "kind": "goal",
+                "statement": "The bounded synthetic change is acceptable.",
+                "status": "open",
+                "children": [{
+                    "id": "FR-001-AC-1",
+                    "kind": "solution",
+                    "statement": "It holds.",
+                    "status": "open",
+                    "because": "nothing discharges it",
+                    "children": []
+                }]
+            }],
+            "unreachable": ["FR-009"],
+            "unreadable": [{ "path": "docs/broken.md", "reason": "no frontmatter" }],
+            "producerTrust": [],
+            "evidenceIndependence": []
+        })
+    }
+
+    /// `assurance.render_case` reads a whole `AssuranceCase` off untrusted
+    /// stdin, so every reader it reaches must refuse a field it does not know:
+    /// a field the boundary silently drops is a field the caller believes it
+    /// sent, and here that field would be a claim, a reason or a status the
+    /// rendered case never shows.
+    ///
+    /// The key is injected where it is REACHABLE rather than each struct being
+    /// read standalone: an isolated struct refusing it says nothing about the
+    /// path a caller actually reaches it by.
+    #[test]
+    fn every_reachable_case_type_refuses_an_unknown_field() {
+        serde_json::from_value::<AssuranceCase>(case()).expect("the fixture reads");
+
+        for pointer in ["", "/claims/0", "/claims/0/children/0", "/unreadable/0"] {
+            let mut forged = case();
+            let target = if pointer.is_empty() {
+                &mut forged
+            } else {
+                forged
+                    .pointer_mut(pointer)
+                    .unwrap_or_else(|| panic!("{pointer} is a path this case has"))
+            };
+            target
+                .as_object_mut()
+                .unwrap_or_else(|| panic!("{pointer} names an object"))
+                .insert("inventedField".to_owned(), serde_json::json!(1));
+
+            assert!(
+                serde_json::from_value::<AssuranceCase>(forged).is_err(),
+                "an unknown field at {pointer} must be refused"
+            );
+        }
     }
 }

@@ -18,6 +18,16 @@
 //! of output structs whose only job was to spell the same five fields again —
 //! which is the drift surface this crate exists to remove.
 //!
+//! # Why every reader here denies unknown fields
+//!
+//! `clause-binding-v1` arrives on untrusted stdin as the `binding` half of an
+//! `assurance.build_discharge` request, so rust-style's rule applies: a field
+//! the boundary silently drops is a field the caller believes it sent. It is
+//! not a bet against quire evolving the format —
+//! [`ClauseBindingSchemaVersion`] is closed to `clause-binding-v1`, so a new
+//! field IS a new version, and a `clause-binding-v2` payload already has to
+//! fail to read rather than be read with v1 semantics.
+//!
 //! # `context` is a `BTreeMap`, not a `HashMap`
 //!
 //! `clause-discharge-v1` is canonical JSON on the way out (rust-style, the
@@ -33,6 +43,7 @@ use serde::{Deserialize, Serialize};
 /// Exact identity of a module-supplied clause set (quire-rs FR-067).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[serde(deny_unknown_fields)]
 pub struct ClauseSetKey {
     /// The authority that publishes the clause set.
     pub authority: String,
@@ -92,7 +103,7 @@ pub enum ClauseBindingOutcome {
 /// Why the binder reached the outcome it did.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
-#[serde(rename_all = "camelCase")]
+#[serde(deny_unknown_fields, rename_all = "camelCase")]
 pub struct ClauseBindingReason {
     /// A stable machine code for the reason.
     pub code: String,
@@ -107,7 +118,7 @@ pub struct ClauseBindingReason {
 /// One clause and the binder's verdict on it.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
-#[serde(rename_all = "camelCase")]
+#[serde(deny_unknown_fields, rename_all = "camelCase")]
 pub struct ClauseBinding {
     /// The clause's id within its clause set.
     pub clause_id: String,
@@ -139,6 +150,7 @@ pub struct ClauseBinding {
 /// looks at it — so there is no blank row for an absence to produce.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[serde(deny_unknown_fields)]
 pub struct EngineProvenance {
     /// The executable that ran.
     pub cli: String,
@@ -163,7 +175,7 @@ pub enum ClauseBindingSchemaVersion {
 /// Validated output of `quire clauses evaluate --format json`.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
-#[serde(rename_all = "camelCase")]
+#[serde(deny_unknown_fields, rename_all = "camelCase")]
 pub struct ClauseBindingReport {
     /// Always `clause-binding-v1`.
     pub schema_version: ClauseBindingSchemaVersion,
@@ -187,6 +199,7 @@ pub struct ClauseBindingReport {
 #[allow(
     clippy::expect_used,
     clippy::indexing_slicing,
+    clippy::panic,
     clippy::unwrap_used,
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
@@ -263,5 +276,45 @@ mod tests {
         let mut value = wire();
         value["schemaVersion"] = serde_json::json!("clause-binding-v2");
         assert!(serde_json::from_value::<ClauseBindingReport>(value).is_err());
+    }
+
+    /// Every reader in `clause-binding-v1` refuses a field it does not know,
+    /// at every depth. The report arrives on untrusted stdin as the `binding`
+    /// half of an `assurance.build_discharge` request, so a key silently
+    /// dropped here is a clause, a force or a reason the caller believes quoin
+    /// weighed.
+    ///
+    /// The key is injected where it is REACHABLE rather than each struct being
+    /// read standalone: an isolated struct refusing it says nothing about the
+    /// path a caller actually reaches it by.
+    #[test]
+    fn every_reachable_clause_binding_type_refuses_an_unknown_field() {
+        serde_json::from_value::<ClauseBindingReport>(wire()).expect("the fixture reads");
+
+        for pointer in [
+            "",
+            "/clauseSet",
+            "/clauses/0",
+            "/clauses/0/reasons/0",
+            "/engine",
+        ] {
+            let mut forged = wire();
+            let target = if pointer.is_empty() {
+                &mut forged
+            } else {
+                forged
+                    .pointer_mut(pointer)
+                    .unwrap_or_else(|| panic!("{pointer} is a path this report has"))
+            };
+            target
+                .as_object_mut()
+                .unwrap_or_else(|| panic!("{pointer} names an object"))
+                .insert("inventedField".to_owned(), serde_json::json!(1));
+
+            assert!(
+                serde_json::from_value::<ClauseBindingReport>(forged).is_err(),
+                "an unknown field at {pointer} must be refused"
+            );
+        }
     }
 }

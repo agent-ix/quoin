@@ -208,25 +208,48 @@ pub fn schema_refs_of(manifest: &str) -> Vec<String> {
     };
     let mut refs: Vec<String> = Vec::new();
     for raw in entries {
-        let from = string_at(raw, "from");
-        let Some(types) = manifest.get("artifact_types").and_then(Value::as_array) else {
+        // The SAME resolver `enum_for` uses, deliberately. These two are one
+        // fact — "which schema does this artifact type's frontmatter live in" —
+        // and when they were two copies, teaching one a fallback (a module-level
+        // default ref, case-insensitive type matching) would leave the other
+        // naming no file: the shell reads nothing, `enum_for` then finds no
+        // content for the ref it did resolve, and every such declaration turns
+        // `unresolved`. Both paths break identically, so the parity tests stay
+        // green while the coverage silently empties.
+        let Ok(reference) = schema_ref_for(&manifest, &string_at(raw, "from")) else {
             continue;
         };
-        let Some(declared) = types
-            .iter()
-            .find(|t| t.get("name").and_then(Value::as_str).unwrap_or_default() == from)
-        else {
-            continue;
-        };
-        if let Some(reference) = declared
-            .get("frontmatter_schema_ref")
-            .and_then(Value::as_str)
-            && !refs.iter().any(|seen| seen == reference)
-        {
-            refs.push(reference.to_owned());
+        if !refs.iter().any(|seen| seen == &reference) {
+            refs.push(reference);
         }
     }
     refs
+}
+
+/// The `frontmatter_schema_ref` a manifest declares for one artifact type, or
+/// the reason it declares none.
+///
+/// The single source of truth for that lookup: [`schema_refs_of`] uses it to
+/// decide which files a caller with no filesystem must read, and [`enum_for`]
+/// uses it to decide which of those files the vocabulary came out of. A second
+/// copy would let the file that is READ and the file that is LOOKED FOR drift
+/// apart, and a declaration whose schema is absent is `unresolved` either way —
+/// so neither the golden parity run nor the snapshot equivalence would see it.
+fn schema_ref_for(manifest: &Value, artifact_type: &str) -> Result<String, String> {
+    let Some(types) = manifest.get("artifact_types").and_then(Value::as_array) else {
+        return Err("module declares no artifact_types".to_owned());
+    };
+    let Some(declared) = types
+        .iter()
+        .find(|t| t.get("name").and_then(Value::as_str).unwrap_or_default() == artifact_type)
+    else {
+        return Err(format!("no artifact type '{artifact_type}' in this module"));
+    };
+    declared
+        .get("frontmatter_schema_ref")
+        .and_then(Value::as_str)
+        .map(str::to_owned)
+        .ok_or_else(|| format!("artifact type '{artifact_type}' declares no frontmatter schema"))
 }
 
 /// Resolve declared vocabulary coverage from module text the CALLER read.
@@ -311,23 +334,8 @@ fn enum_for(
     artifact_type: &str,
     field: &str,
 ) -> Result<Vec<String>, String> {
-    let Some(types) = manifest.get("artifact_types").and_then(Value::as_array) else {
-        return Err("module declares no artifact_types".to_owned());
-    };
-    let Some(declared) = types
-        .iter()
-        .find(|t| t.get("name").and_then(Value::as_str).unwrap_or_default() == artifact_type)
-    else {
-        return Err(format!("no artifact type '{artifact_type}' in this module"));
-    };
-    let Some(reference) = declared
-        .get("frontmatter_schema_ref")
-        .and_then(Value::as_str)
-    else {
-        return Err(format!(
-            "artifact type '{artifact_type}' declares no frontmatter schema"
-        ));
-    };
+    let reference = schema_ref_for(manifest, artifact_type)?;
+    let reference = reference.as_str();
 
     let schema: Value = match schemas.get(reference) {
         Some(SchemaSource::Text(text)) => match serde_json::from_str(text) {
@@ -527,5 +535,65 @@ mod tests {
             vec!["module declares no artifact_types"],
             "{loaded:?}"
         );
+    }
+
+    /// The files the shell is TOLD to read are the files the resolver LOOKS
+    /// for.
+    ///
+    /// `schema_refs_of` and `enum_for` answer one question — which schema holds
+    /// this artifact type's frontmatter — and the boundary is sound only while
+    /// they answer it the same way. When they were two copies, teaching one a
+    /// fallback and not the other left the shell reading nothing and the
+    /// resolver reporting "the caller supplied no content for it" for every
+    /// such declaration; both halves break together, so a parity run over a
+    /// corpus where the fallback never fires stays green.
+    ///
+    /// The assertion is therefore not that the two return equal strings — that
+    /// would restate the implementation — but that a caller which reads EXACTLY
+    /// what `schema_refs_of` names can resolve every declaration.
+    ///
+    /// Trace: FR-037-AC-2
+    /// Provenance: agent-ix/quoin#445
+    #[test]
+    fn tc_445_232_the_refs_the_shell_reads_are_the_refs_the_resolver_looks_for() {
+        let manifest = concat!(
+            "name: m\n",
+            "artifact_types:\n",
+            "- name: NFR\n",
+            "  frontmatter_schema_ref: schemas/nfr.json\n",
+            "- name: FR\n",
+            "  frontmatter_schema_ref: schemas/fr.json\n",
+            "traceability:\n",
+            "  vocabulary_coverage:\n",
+            "  - name: quality\n",
+            "    from: NFR\n",
+            "    field: characteristic\n",
+            "  - name: kind\n",
+            "    from: FR\n",
+            "    field: characteristic\n",
+        );
+
+        // A shell with no filesystem knowledge: it reads what it is named, and
+        // nothing else reaches the map.
+        let schema = r#"{"properties":{"characteristic":{"enum":["a","b"]}}}"#;
+        let refs = schema_refs_of(manifest);
+        assert_eq!(refs.len(), 2, "{refs:?}");
+        let schemas: std::collections::BTreeMap<String, SchemaSource> = refs
+            .into_iter()
+            .map(|reference| (reference, SchemaSource::Text(schema.to_owned())))
+            .collect();
+
+        let loaded = declarations_from_sources(&[ModuleSource {
+            label: "m".to_owned(),
+            manifest: manifest.to_owned(),
+            schemas,
+        }]);
+
+        assert!(
+            loaded.unresolved.is_empty(),
+            "a declaration went unresolved over a map holding exactly what \
+             `schema_refs_of` named: {loaded:?}"
+        );
+        assert_eq!(loaded.declarations.len(), 2, "{loaded:?}");
     }
 }

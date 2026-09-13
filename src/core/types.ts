@@ -32,7 +32,7 @@ export const CORE_TYPES_PROVENANCE = {
   generator: "quoin-schemas/quoin-schemas-gen",
   generatorVersion: "0.1.0",
   sourceSchemaSha256:
-    "23b299fc1170709d85286283ad9a04b084c81dab639d57dd9644c8964ef93df9",
+    "497d00461f8d66ceecd99a7738b0b9b68b8d0220cc50533c6e88c56055508086",
 } as const;
 
 /**
@@ -530,7 +530,7 @@ export interface CompletenessFinding {
   /**
    * What kind of gap it is.
    */
-  kind: FindingKind;
+  kind: CompletenessFindingKind;
   /**
    * Human-readable detail. Not contractual.
    */
@@ -548,6 +548,21 @@ export interface CompletenessFinding {
    */
   vocabulary: VocabularyName;
 }
+
+/**
+ * What kind of gap a finding records.
+ *
+ * The schema name is spelled out rather than taken from the Rust name.
+ * `quoin-validators` owns a `FindingKind` too, and `schemars` resolves a
+ * collision by appending a digit to whichever type it generated SECOND — so
+ * the bare name would belong to whichever crate `boundary_schema()` happened
+ * to register first, and reordering those calls would silently re-point an
+ * exported TypeScript type at the other crate's union. `FindingKind2` says
+ * nothing about which domain it describes; this says it. `tc_1617` pins the
+ * name to this union's members so a future collision cannot take it back.
+ */
+export type CompletenessFindingKind =
+  "unowned" | "unjustified-exclusion" | "undeclared-exclusion";
 
 /**
  * One authored criterion, as decided or not decided.
@@ -607,6 +622,10 @@ export interface Diagnostic {
 
 /**
  * Evidence that a clause's expected output exists.
+ *
+ * `Serialize` only: it is reachable from the wire exclusively as the payload
+ * of a `DischargeFact`, whose one door is `parse_fact`. A derived
+ * `Deserialize` here would be that second, permissive door one level down.
  */
 export interface DirectDischargeFact {
   /**
@@ -625,6 +644,11 @@ export interface DirectDischargeFact {
 
 /**
  * Who attested to a discharge, under what authority, and for how long.
+ *
+ * Deserialised through `parse_attestation` and never by a derived reader —
+ * see the module header. The wire form is the permissive
+ * `Value`; the predicates decide whether it becomes one of
+ * these.
  */
 export interface DischargeAttestation {
   /**
@@ -701,6 +725,15 @@ export interface DischargeFactDisposition {
  * A struct with a `kind` field would have reproduced the JSON too, at the
  * cost of making `evidenceRefs` and `approvalRef` simultaneously optional in
  * the type — which is the invariant the union exists to state.
+ *
+ * # Why the READER is hand-written and not derived
+ *
+ * The tagged representation above describes what this type EMITS. What it
+ * ACCEPTS is `parse_fact`, reached through the hand-written
+ * `Deserialize` below, so the predicates a
+ * `build_discharge` request goes through are the same ones a
+ * `render_discharge` request goes through. See the module header for the
+ * forged report that made the difference observable.
  */
 export type DischargeFact = DischargeFactDirect | DischargeFactDisposition;
 
@@ -780,6 +813,8 @@ export type DispositionDecision =
  * FR-046's constraint, restated where the type is: a disposition is evidence
  * of an authorised decision, **not** evidence that the clause's expected
  * output exists. That is why it never joins the `direct` population.
+ *
+ * `Serialize` only, for the reason `DirectDischargeFact` states.
  */
 export interface DispositionFact {
   /**
@@ -841,7 +876,7 @@ export interface EmptyGateFinding {
   /**
    * Always `GateThatGatesNothing` today.
    */
-  kind: FindingKind2;
+  kind: FindingKind;
   /**
    * The 1-based line of the unasserted count.
    */
@@ -959,19 +994,13 @@ export interface EnsureDefaultsRequest {
 export type FactKind = "direct" | "disposition";
 
 /**
- * What kind of gap a finding records.
- */
-export type FindingKind =
-  "unowned" | "unjustified-exclusion" | "undeclared-exclusion";
-
-/**
  * The class of defect a finding reports.
  *
  * One variant today. It is an enum and not a `&'static str` because the kind is
  * the payload's discriminant: a second validator adds a variant here and every
  * `match` on it becomes a compiler-checked edit site.
  */
-export type FindingKind2 = "gate-that-gates-nothing";
+export type FindingKind = "gate-that-gates-nothing";
 
 /**
  * Every document under a bundle root that carries parseable frontmatter.

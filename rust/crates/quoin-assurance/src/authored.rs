@@ -40,7 +40,7 @@ use crate::discharge::DischargeReport;
 /// What a participant decided about one sufficiency criterion.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
-#[serde(rename_all = "camelCase")]
+#[serde(deny_unknown_fields, rename_all = "camelCase")]
 pub struct SufficiencyDecision {
     /// The reasoning step whose criterion this decides.
     pub reasoning_id: String,
@@ -111,7 +111,7 @@ pub enum ChallengeViewStatus {
 /// One authored criterion, as decided or not decided.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
-#[serde(rename_all = "camelCase")]
+#[serde(deny_unknown_fields, rename_all = "camelCase")]
 pub struct CriterionView {
     /// The authored criterion text.
     pub criterion: String,
@@ -130,7 +130,7 @@ pub struct CriterionView {
 /// One reasoning step and its criteria.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
-#[serde(rename_all = "camelCase")]
+#[serde(deny_unknown_fields, rename_all = "camelCase")]
 pub struct ReasoningView {
     /// The step's id.
     pub id: String,
@@ -147,7 +147,7 @@ pub struct ReasoningView {
 /// One assumption, as it reads at the stated instant.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
-#[serde(rename_all = "camelCase")]
+#[serde(deny_unknown_fields, rename_all = "camelCase")]
 pub struct AssumptionView {
     /// The assumption's id.
     pub id: String,
@@ -170,7 +170,7 @@ pub struct AssumptionView {
 /// One challenge, as it reads at the stated instant.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
-#[serde(rename_all = "camelCase")]
+#[serde(deny_unknown_fields, rename_all = "camelCase")]
 pub struct ChallengeView {
     /// The challenge's id.
     pub id: String,
@@ -200,7 +200,7 @@ pub struct ChallengeView {
 /// The argument's identity, without its body.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
-#[serde(rename_all = "camelCase")]
+#[serde(deny_unknown_fields, rename_all = "camelCase")]
 pub struct ArgumentSummary {
     /// `AA-<digits>`.
     pub id: String,
@@ -217,7 +217,7 @@ pub struct ArgumentSummary {
 /// The top claim, with the reasons it is not supported.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
-#[serde(rename_all = "camelCase")]
+#[serde(deny_unknown_fields, rename_all = "camelCase")]
 pub struct TopClaimView {
     /// The claim's id.
     pub id: String,
@@ -240,7 +240,7 @@ pub struct TopClaimView {
 /// decider did not think they were deciding.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
-#[serde(rename_all = "camelCase")]
+#[serde(deny_unknown_fields, rename_all = "camelCase")]
 pub struct UnusedDecision {
     /// The reasoning id the decision named.
     pub reasoning_id: String,
@@ -260,7 +260,7 @@ pub enum ViewSchemaVersion {
 /// The complete authored view, as JSON.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
-#[serde(rename_all = "camelCase")]
+#[serde(deny_unknown_fields, rename_all = "camelCase")]
 pub struct AuthoredArgumentView {
     /// Always [`ViewSchemaVersion::V1`].
     pub schema_version: ViewSchemaVersion,
@@ -925,6 +925,7 @@ fn current_decision(
 #[allow(
     clippy::expect_used,
     clippy::indexing_slicing,
+    clippy::panic,
     clippy::unwrap_used,
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
@@ -1664,5 +1665,61 @@ mod tests {
             view.top_claim.reasons,
             vec!["argument status is proposed".to_owned()]
         );
+    }
+
+    /// Every reader in the view refuses a field it does not know, at every
+    /// depth — a field the boundary silently drops is a field the caller
+    /// believes it sent, and `assurance.render_authored_argument` reads this
+    /// whole document off untrusted stdin.
+    ///
+    /// The paths are walked rather than each type being read standalone: what
+    /// matters is that the unknown key is refused where it is REACHABLE, not
+    /// merely that an isolated struct would have refused it.
+    ///
+    /// Trace: FR-047-AC-5
+    /// Provenance: agent-ix/quoin#447
+    #[test]
+    fn tc_447_441_every_reachable_view_type_refuses_an_unknown_field() {
+        let mut unused = decision();
+        unused["criterion"] = serde_json::json!("Nobody authored this criterion.");
+        let view = build(argument(), vec![decision(), unused], AS_OF);
+        let document = json(&view);
+        serde_json::from_value::<AuthoredArgumentView>(document.clone())
+            .expect("the computed view reads back");
+
+        for pointer in [
+            "",
+            "/argument",
+            "/topClaim",
+            "/reasoning/0",
+            "/reasoning/0/criteria/0",
+            "/reasoning/0/criteria/0/decision",
+            "/assumptions/0",
+            "/participants/0",
+            "/challenges/0",
+            "/relationships/0",
+            "/unusedDecisions/0",
+        ] {
+            let mut forged = document.clone();
+            let target = if pointer.is_empty() {
+                &mut forged
+            } else {
+                forged
+                    .pointer_mut(pointer)
+                    .unwrap_or_else(|| panic!("{pointer} is a path this view has"))
+            };
+            target
+                .as_object_mut()
+                .unwrap_or_else(|| panic!("{pointer} names an object"))
+                .insert("inventedField".to_owned(), serde_json::json!(1));
+
+            let error = serde_json::from_value::<AuthoredArgumentView>(forged).err();
+            let error =
+                error.unwrap_or_else(|| panic!("an unknown field at {pointer} must be refused"));
+            assert!(
+                error.to_string().contains("unknown field"),
+                "{pointer} was refused for the wrong reason: {error}"
+            );
+        }
     }
 }

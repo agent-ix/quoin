@@ -32,6 +32,16 @@
 //! to the pure path is built by [`independent_snapshot`] below — a plain
 //! recursive read written in this file — and deliberately NOT by calling the
 //! crate's own walker, which would make the test agree with itself.
+//!
+//! Independence is a per-AXIS property, not a property of the file. This
+//! differential was blind to SYMLINKS for exactly that reason: both arms
+//! classified with `file_type().is_dir()`-else-file, so both followed a link
+//! and both agreed, while the TypeScript shell on the other side of the same
+//! boundary asked `Dirent.isFile()` — false for every symlink — and dropped it.
+//! [`descend`] now classifies from `symlink_metadata`/`metadata` instead, which
+//! is a genuinely different question, and [`assert_shapes`] fails if the
+//! fixture ever stops materialising a shape it claims to cover — a tree that
+//! quietly shrinks would otherwise pass this file over less than it names.
 
 use std::fs;
 use std::path::Path;
@@ -44,17 +54,32 @@ fn document(title: &str) -> String {
     format!("---\ntitle: {title}\nquality_attribute: security\n---\n\n# {title}\n")
 }
 
+/// The bundle root, inside the fixture's temp dir.
+///
+/// Nested rather than being the temp dir itself so that `shared/` can sit
+/// BESIDE it: a symlink whose target lives inside the bundle would be found by
+/// the walk anyway, and could not show a walk that loses the link.
+const BUNDLE: &str = "bundle";
+
+/// The bundle root of a fixture built by [`bundle`].
+fn root_of(temp: &TempDir) -> std::path::PathBuf {
+    temp.path().join(BUNDLE)
+}
+
 /// Materialise the tree both paths are asked about.
 ///
 /// Every shape here is one a walker could lose without any rule-enumerating
 /// test noticing: depth (three levels of nesting), a document at every level, a
 /// document whose frontmatter does not parse, a file that is not markdown, a
 /// file whose extension is markdown in the WRONG case, a filename holding a
-/// space, a filename holding a non-ASCII character, and a directory holding
-/// nothing at all.
+/// space, a filename holding a non-ASCII character, a directory holding nothing
+/// at all, a directory NAMED `*.md`, and — on unix — the three symlink shapes:
+/// one resolving to a markdown file outside the bundle, one resolving to a
+/// directory, and one resolving to nothing.
 fn bundle() -> TempDir {
     let temp = TempDir::new().unwrap();
-    let root = temp.path();
+    let root = &temp.path().join(BUNDLE);
+    fs::create_dir_all(root).unwrap();
 
     let write = |relative: &str, contents: &str| {
         let target = root.join(relative);
@@ -100,7 +125,107 @@ fn bundle() -> TempDir {
     fs::create_dir_all(root.join("level1/notes.md")).unwrap();
     fs::write(root.join("level1/notes.md/inner.txt"), "not a document\n").unwrap();
 
+    materialise_symlinks(temp.path());
+    assert_shapes(root);
     temp
+}
+
+/// The three symlink shapes, beside the bundle rather than inside it.
+///
+/// `spec/FR-042.md` symlinked into a shared spec directory is the ordinary
+/// monorepo layout, and it is the axis this differential was blind to: both
+/// arms used to classify with `file_type().is_dir()`-else-file, so both
+/// followed the link and agreed, while the shell across the boundary asked
+/// `Dirent.isFile()` — false for every symlink — and dropped the document
+/// entirely. A document that does not cross is not merely missing from the
+/// request, it is missing from the VERDICT: the value it owned reads `unowned`
+/// and a finding appears that this disk reader never produces.
+#[cfg(unix)]
+fn materialise_symlinks(temp: &Path) {
+    let shared = temp.join("shared");
+    fs::create_dir_all(shared.join("nested")).unwrap();
+    fs::write(shared.join("FR-042.md"), document("Shared FR-042")).unwrap();
+    // Inside a directory that is only ever reached THROUGH a symlink, so a walk
+    // that descended one would show up as this extra document.
+    fs::write(
+        shared.join("nested/unreachable.md"),
+        document("Unreachable"),
+    )
+    .unwrap();
+
+    let root = temp.join(BUNDLE);
+    // Resolves to a FILE: a document.
+    std::os::unix::fs::symlink(shared.join("FR-042.md"), root.join("level1/shared.md")).unwrap();
+    // Resolves to a DIRECTORY, and named `*.md`: not a document, not descended.
+    std::os::unix::fs::symlink(shared.join("nested"), root.join("level1/linked-dir.md")).unwrap();
+    // Resolves to NOTHING: not a document. There are no bytes to read, and
+    // reporting it `unreadable` would invent an entry the bundle does not hold.
+    std::os::unix::fs::symlink(shared.join("gone.md"), root.join("level1/dangling.md")).unwrap();
+}
+
+#[cfg(not(unix))]
+fn materialise_symlinks(_temp: &Path) {}
+
+/// Every shape [`bundle`]'s doc comment claims, asserted to be on disk.
+///
+/// Without this the differential passes over whatever tree it happens to get: a
+/// fixture that silently stopped materialising the symlinks — a `create_dir_all`
+/// that moved, a target path that drifted — would leave both arms agreeing
+/// about a smaller tree and the axis uncovered again, which is precisely how
+/// agent-ix/quoin#448 stayed green.
+fn assert_shapes(root: &Path) {
+    let file = |relative: &str| {
+        let meta = fs::symlink_metadata(root.join(relative))
+            .unwrap_or_else(|cause| panic!("fixture shape '{relative}' is missing: {cause}"));
+        assert!(
+            meta.file_type().is_file(),
+            "fixture shape '{relative}' is no longer a plain file"
+        );
+    };
+    let directory = |relative: &str| {
+        let meta = fs::symlink_metadata(root.join(relative))
+            .unwrap_or_else(|cause| panic!("fixture shape '{relative}' is missing: {cause}"));
+        assert!(
+            meta.file_type().is_dir(),
+            "fixture shape '{relative}' is no longer a directory"
+        );
+    };
+
+    file("index.md");
+    file("level1/level2/level3/c.md");
+    file("level1/level2/level3/broken.md");
+    file("level1/notes.txt");
+    file("level1/UPPER.MD");
+    file("level1/with space.md");
+    file("level1/caf\u{e9}.md");
+    directory("level1/empty");
+    directory("level1/notes.md");
+
+    #[cfg(unix)]
+    {
+        let link = |relative: &str, resolves_to_file: bool, resolves_to_dir: bool| {
+            let meta = fs::symlink_metadata(root.join(relative))
+                .unwrap_or_else(|cause| panic!("fixture shape '{relative}' is missing: {cause}"));
+            assert!(
+                meta.file_type().is_symlink(),
+                "fixture shape '{relative}' is no longer a symlink"
+            );
+            let resolved = fs::metadata(root.join(relative));
+            assert_eq!(
+                resolved.as_ref().is_ok_and(std::fs::Metadata::is_file),
+                resolves_to_file,
+                "fixture shape '{relative}' no longer resolves to a file as claimed"
+            );
+            assert_eq!(
+                resolved.as_ref().is_ok_and(std::fs::Metadata::is_dir),
+                resolves_to_dir,
+                "fixture shape '{relative}' no longer resolves to a directory as claimed"
+            );
+        };
+        link("level1/shared.md", true, false);
+        link("level1/linked-dir.md", false, true);
+        link("level1/dangling.md", false, false);
+    }
 }
 
 /// Every `*.md` under `root`, read from the filesystem, sorted by relative path.
@@ -122,7 +247,18 @@ fn descend(root: &Path, prefix: &Path, out: &mut Vec<(String, String)>) {
     for entry in entries {
         let entry = entry.unwrap();
         let relative = prefix.join(entry.file_name());
-        if entry.file_type().unwrap().is_dir() {
+        let absolute = root.join(&relative);
+
+        // Classified from the FILESYSTEM, with two calls that ask two different
+        // questions — not from `DirEntry::file_type()`, which is what the crate
+        // under test uses. Independence has to hold per AXIS: while both arms
+        // classified with `is_dir()`-else-file they agreed about symlinks no
+        // matter what either did, and the divergence lived across the boundary
+        // where nothing here could see it.
+        //
+        // `symlink_metadata` never follows, so only a REAL directory is
+        // descended and a symlinked one cannot loop the walk out of the tree.
+        if fs::symlink_metadata(&absolute).unwrap().is_dir() {
             descend(root, &relative, out);
             continue;
         }
@@ -136,9 +272,16 @@ fn descend(root: &Path, prefix: &Path, out: &mut Vec<(String, String)>) {
             reason = "the wrong-case extension is a fixture shape under test"
         )]
         let is_markdown = path.ends_with(".md");
-        if is_markdown {
-            out.push((path, fs::read_to_string(root.join(&relative)).unwrap()));
+        if !is_markdown {
+            continue;
         }
+        // `metadata` always follows, so a link is a document exactly when it
+        // RESOLVES to a file: a shared spec document is one, a directory named
+        // `*.md` is not, and a broken link resolves to nothing.
+        if !fs::metadata(&absolute).is_ok_and(|meta| meta.is_file()) {
+            continue;
+        }
+        out.push((path, fs::read_to_string(&absolute).unwrap()));
     }
 }
 
@@ -147,7 +290,7 @@ fn descend(root: &Path, prefix: &Path, out: &mut Vec<(String, String)>) {
 #[test]
 fn tc_445_320_the_disk_reader_and_the_snapshot_reader_agree_on_one_real_tree() {
     let temp = bundle();
-    let root = temp.path();
+    let root = &root_of(&temp);
 
     let from_disk = read_bundle_frontmatter(root);
     let from_snapshot = frontmatter_from_sources(&independent_snapshot(root), &[]);
@@ -165,7 +308,7 @@ fn tc_445_321_the_tree_under_test_is_actually_populated() {
     // are also equal, so without this a walker that lost the whole tree would
     // pass the differential.
     let temp = bundle();
-    let root = temp.path();
+    let root = &root_of(&temp);
 
     let snapshot = independent_snapshot(root);
     assert!(
@@ -197,5 +340,50 @@ fn tc_445_321_the_tree_under_test_is_actually_populated() {
             .iter()
             .map(|document| &document.path)
             .collect::<Vec<_>>()
+    );
+}
+
+/// A symlink is a document exactly when it RESOLVES to a file.
+///
+/// The equivalence above would catch a disagreement between the two arms, but
+/// not a decision both arms got wrong in the same direction — and the decision
+/// is verdict-changing on its own: `spec/FR-042.md` symlinked into a shared
+/// spec directory is the ordinary monorepo layout, so dropping it silently
+/// removes that document's claims and reports the value it owned `unowned`.
+/// This states the chosen behaviour outright, in all three directions.
+///
+/// Trace: FR-037, FR-096
+/// Provenance: quoin#445, agent-ix/quoin#448
+#[cfg(unix)]
+#[test]
+fn tc_445_322_a_symlink_is_a_document_only_when_it_resolves_to_a_file() {
+    let temp = bundle();
+    let root = &root_of(&temp);
+
+    let read = read_bundle_frontmatter(root);
+    let paths: Vec<&str> = read
+        .documents
+        .iter()
+        .map(|document| document.path.as_str())
+        .chain(read.unreadable.iter().map(|entry| entry.path.as_str()))
+        .collect();
+
+    assert!(
+        paths.contains(&"level1/shared.md"),
+        "a symlink resolving to a markdown file is a document; {paths:?}"
+    );
+    assert!(
+        !paths.contains(&"level1/linked-dir.md"),
+        "a symlink resolving to a directory is not a document, and must not be \
+         reported unreadable either; {paths:?}"
+    );
+    assert!(
+        !paths.contains(&"level1/dangling.md"),
+        "a broken symlink has no bytes, so it is neither a document nor an \
+         unreadable one; {paths:?}"
+    );
+    assert!(
+        !paths.iter().any(|path| path.contains("unreachable.md")),
+        "a symlinked directory must not be descended; {paths:?}"
     );
 }

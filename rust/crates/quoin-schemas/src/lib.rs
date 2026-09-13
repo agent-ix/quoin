@@ -80,11 +80,11 @@ pub const BOUNDARY_SCHEMA_ID: &str = "https://agent-ix.dev/quoin/core-boundary-v
 // --- The two checked-in digests. `make types` rewrites both; nothing else may.
 /// SHA-256 of the canonical JSON of [`boundary_schema`] at generation time.
 pub const SOURCE_SCHEMA_SHA256: &str =
-    "23b299fc1170709d85286283ad9a04b084c81dab639d57dd9644c8964ef93df9";
+    "497d00461f8d66ceecd99a7738b0b9b68b8d0220cc50533c6e88c56055508086";
 
 /// SHA-256 of the committed `src/core/types.ts`.
 pub const GENERATED_TYPES_SHA256: &str =
-    "fe6417e9142db8e61a93a3ebb7b8fd698e814b513538d68a0bb2129cc1a4d2fd";
+    "2eca724205094f831e71ac55846f0dddefcfdb1f1f13910a53eb622a4faac39e";
 
 /// The JSON Schema of every type that crosses the `quoin-core` boundary.
 ///

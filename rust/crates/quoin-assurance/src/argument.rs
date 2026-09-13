@@ -181,6 +181,11 @@ pub struct Assumption {
 /// A named actor and the authority they hold.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+// Reachable as a REQUEST: `AuthoredArgumentView` carries participants through
+// unchanged, and `assurance.render_authored_argument` reads that view off
+// untrusted stdin. A field the boundary silently drops is a field the caller
+// believes it sent (rust-style, untrusted input).
+#[serde(deny_unknown_fields)]
 pub struct Participant {
     /// This participant's id, referenced by sufficiency decisions.
     pub id: String,
@@ -236,6 +241,8 @@ pub struct Challenge {
 /// An edge to a document outside this argument.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+// Reachable as a request for the same reason [`Participant`] is.
+#[serde(deny_unknown_fields)]
 pub struct Relationship {
     /// An `ix://` reference.
     pub target: String,

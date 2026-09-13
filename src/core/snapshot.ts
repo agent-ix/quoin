@@ -20,7 +20,7 @@
  *   "the classifier said no" there as well (quoin#448 FND-001).
  */
 
-import { readFileSync, readdirSync } from "node:fs";
+import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 
 import { locateModuleRoot } from "../catalog.js";
@@ -166,28 +166,71 @@ export function bundleSnapshot(bundleRoot: string): {
   const documents: DocumentSource[] = [];
   const unreadable: UnreadableDocument[] = [];
 
-  // `withFileTypes`, because a recursive listing yields DIRECTORIES too and a
-  // directory may be named `notes.md`. Filtering on the extension alone put
-  // one in `unreadable` with `EISDIR`, which is an invented document: the
-  // bundle contains no such file, and `quoin-completeness`' own disk reader —
-  // which matches on the file type first — reports nothing there. A snapshot
-  // that adds an entry the tree does not hold is the same class of defect as
-  // one that drops an entry it does, and `tests/core-bundle-snapshot.test.ts`
-  // pins both directions against an independent walk.
-  let entries: { parentPath: string; name: string; isFile(): boolean }[];
-  try {
-    entries = readdirSync(bundleRoot, { recursive: true, withFileTypes: true });
-  } catch {
-    return { documents, unreadable };
-  }
+  // Recursion written out rather than `readdirSync(…, { recursive: true })`,
+  // because which entries a recursive listing yields is Node's decision and the
+  // far side's is `quoin-completeness`'. Node descends a SYMLINKED directory;
+  // the Rust walk, reading `DirEntry::file_type()`, does not — so a bundle
+  // holding one link put documents on the wire that no reader of the same tree
+  // finds, and the two sides disagreed about the size of the bundle. Descent is
+  // therefore decided here, in the same three cases the disk reader states:
+  //
+  // - a REAL directory is descended. `withFileTypes`, because a directory may
+  //   be named `notes.md`: filtering on the extension alone opened one and
+  //   recorded `EISDIR` as an unreadable document the bundle does not contain,
+  //   and a snapshot that ADDS an entry the tree does not hold is the same
+  //   class of defect as one that drops an entry it does.
+  // - a SYMLINK is a document exactly when it RESOLVES to a file. `Dirent`
+  //   reports the link's own type, so `isFile()` alone is false for every
+  //   symlink and drops one silently — and `spec/FR-042.md` symlinked into a
+  //   shared spec directory is the ordinary monorepo layout. A document that
+  //   does not cross is not merely absent from the request, it is absent from
+  //   the VERDICT: the value it owned reads `unowned` and a finding appears
+  //   that a direct disk read never produces. A link resolving to a DIRECTORY
+  //   is neither a document nor descended, which is also what keeps a cycle
+  //   from leaving the bundle; a BROKEN one resolves to nothing and has no
+  //   bytes, so recording it `unreadable` would invent an entry too.
+  // - anything else (a fifo, a socket) is not a document.
+  //
+  // `tests/core-bundle-snapshot.test.ts` pins every direction of this against
+  // an independent walk of one real tree.
+  const found: string[] = [];
+  const walk = (prefix: string): void => {
+    let entries;
+    try {
+      entries = readdirSync(join(bundleRoot, prefix), { withFileTypes: true });
+    } catch {
+      // A directory that cannot be listed contributes nothing and stops
+      // nothing, as the disk reader's `read_dir` does — an unreadable subtree
+      // must not turn the rest of the bundle into an empty one.
+      return;
+    }
+    for (const entry of entries) {
+      const relativePath = prefix ? `${prefix}/${entry.name}` : entry.name;
+      if (entry.isDirectory()) {
+        walk(relativePath);
+        continue;
+      }
+      if (!entry.name.endsWith(".md")) continue;
+      if (entry.isFile()) {
+        found.push(relativePath);
+        continue;
+      }
+      if (!entry.isSymbolicLink()) continue;
+      try {
+        if (statSync(join(bundleRoot, relativePath)).isFile()) {
+          found.push(relativePath);
+        }
+      } catch {
+        // Resolves to nothing: a broken link is not a document.
+      }
+    }
+  };
+  walk("");
 
-  // Sorted, and sorted on the joined path exactly as the retained reader
-  // sorted: `readdirSync` order is filesystem order, and a report whose
-  // document order depends on the inode layout is one whose diff is noise.
-  const found = entries
-    .filter((e) => e.isFile() && e.name.endsWith(".md"))
-    .map((e) => relative(bundleRoot, join(e.parentPath, e.name)))
-    .sort();
+  // Sorted, and sorted on the relative path exactly as the retained reader
+  // sorted: directory order is filesystem order, and a report whose document
+  // order depends on the inode layout is one whose diff is noise.
+  found.sort();
   for (const entry of found) {
     const path = join(bundleRoot, entry);
     const relativePath = portable(entry);

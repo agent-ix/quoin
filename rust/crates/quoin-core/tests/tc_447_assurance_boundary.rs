@@ -254,7 +254,9 @@ fn tc_447_511_the_corpus_reaches_all_four_retired_operations() {
 /// is the port declining to reproduce a defect, and `quoin-evidence-types`'
 /// own `TrustAssessment` docs say as much. Asserting the split pins both
 /// halves: a refusal must come from the renderer's request schema and nowhere
-/// else, and the population that DOES round-trip must stay the larger one.
+/// else, and the divergent population must stay exactly the two cases recorded
+/// here — a count, not "fewer than the other one", which 2 against 27 satisfies
+/// as comfortably as 13 against 14 would.
 ///
 /// Trace: FR-040, FR-101
 /// Provenance: quoin#447
@@ -263,11 +265,13 @@ fn tc_447_512_a_built_case_is_a_renderable_case_unless_its_assessments_are_untyp
     let corpus: Corpus = read("cases.json");
     let mut rendered = 0_usize;
     let mut refused = 0_usize;
+    let mut eligible = 0_usize;
 
     for case in &corpus.cases {
         if case.op != "build_case" || case.boundary.is_some() {
             continue;
         }
+        eligible += 1;
         let input = case.input.clone().unwrap();
         let built = run("assurance.build_case", &input.to_string());
         assert_eq!(built.status, 0, "{}: {}", case.name, built.stderr);
@@ -304,9 +308,27 @@ fn tc_447_512_a_built_case_is_a_renderable_case_unless_its_assessments_are_untyp
         rendered >= 25,
         "only {rendered} built cases were re-rendered; the loop is not reaching the corpus"
     );
-    assert!(
-        refused < rendered,
-        "{refused} of the built cases no longer render; the renderer's request schema \
-         has narrowed past the assessments"
+    // Every eligible case ended in one population or the other. Without this a
+    // `continue` added to the loop would shrink both counts and still satisfy
+    // the thresholds.
+    assert_eq!(
+        rendered + refused,
+        eligible,
+        "{eligible} eligible build_case cases, but {rendered} rendered and {refused} \
+         refused; some case reached neither outcome"
+    );
+    // The divergence population is PINNED, not merely bounded below the other
+    // one. `refused < rendered` held at 2 against 27 and would have held at 13
+    // against 14, so it carried almost nothing beside the threshold above it.
+    // Two cases diverge today — the ones whose opaque `producer_trust` /
+    // `evidence_independence` the retained renderer interpolates as
+    // `[object Object]` and the port's typed request schema refuses. A third
+    // is a new divergence class and must be read and decided, not absorbed.
+    assert_eq!(
+        refused, 2,
+        "the recorded renderer divergence is 2 cases; it is now {refused}. \
+         Read the new one: either the renderer's request schema has narrowed \
+         past the assessments, or the corpus gained a case that needs its own \
+         entry in tests/golden/PROVENANCE.md"
     );
 }

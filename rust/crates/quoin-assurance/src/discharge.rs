@@ -24,9 +24,34 @@
 //! is the port, the same decision [`crate::argument`] records for the same
 //! reason.
 //!
-//! [`DischargeFact`] is therefore `Serialize` only: it is what `parseFact`
-//! *produces*, and a derived `Deserialize` would be a second, permissive door
-//! into the same struct that skips every predicate below.
+//! # There is exactly one door into [`DischargeFact`], and it validates
+//!
+//! [`DischargeFact`] is what `parseFact` *produces*, so a DERIVED
+//! `Deserialize` would be a second, permissive door into the same struct that
+//! skips every predicate below — and that door was open. It was not
+//! theoretical: [`ClauseDischarge::fact`] carries a [`DischargeFact`] into
+//! [`DischargeBinding`] and so into [`DischargeReport`], which `quoin-core`
+//! reads straight off untrusted stdin for `assurance.render_discharge` and as
+//! the `discharge` field of `assurance.build_authored_argument`. A report
+//! nothing computed — empty `authority`, an `attestedAt` that is not an
+//! instant, an expiry before it, an `evidenceDigest` that is not one, no
+//! evidence at all — was accepted whole, echoed into the emitted view, and
+//! reported `supported`, because `openReasons` only asks whether the `open`
+//! and `unresolved` populations are empty.
+//!
+//! Deleting the derive would only have moved the rule to call-site discipline.
+//! So [`DischargeFact`] and [`DischargeAttestation`] carry
+//! a hand-written [`Deserialize`] instead: it reads the permissive wire value
+//! and hands it to [`parse_fact`] / [`parse_attestation`], which are the SAME
+//! predicates a request goes through. Hand-written and not
+//! `#[serde(try_from = "serde_json::Value")]`, which reads identically but
+//! also tells `schemars` to publish both types as `unknown`, emptying the
+//! boundary schema of the shape it exists to state. [`DirectDischargeFact`] and [`DispositionFact`] carry no
+//! `Deserialize` at all — they exist only as the payload of a
+//! [`DischargeFact`], and a standalone derive on either would be the second
+//! door again, one level down.
+//!
+//! `tc_447_450` replays the forged report and asserts the refusal.
 //!
 //! # The three helpers this module does not own
 //!
@@ -76,7 +101,12 @@ fn reject<T>(message: impl Into<String>) -> Checked<T> {
 }
 
 /// Who attested to a discharge, under what authority, and for how long.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+///
+/// Deserialised through [`parse_attestation`] and never by a derived reader —
+/// see the module header. The wire form is the permissive
+/// [`serde_json::Value`]; the predicates decide whether it becomes one of
+/// these.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(rename_all = "camelCase")]
 pub struct DischargeAttestation {
@@ -95,6 +125,29 @@ pub struct DischargeAttestation {
     pub evidence_digest: String,
 }
 
+/// The one door: every read of an attestation runs [`parse_attestation`].
+///
+/// Hand-written rather than `#[serde(try_from = "serde_json::Value")]`, which
+/// says the same thing to `serde` and a DIFFERENT thing to `schemars`: that
+/// attribute also replaces the generated `$defs` entry with the schema of
+/// `serde_json::Value`, so the boundary schema — and the TypeScript generated
+/// from it — would describe this type as `unknown`. The reader is the same
+/// predicate either way; only the published shape differs.
+impl<'de> Deserialize<'de> for DischargeAttestation {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        let value = serde_json::Value::deserialize(deserializer)?;
+        Self::try_from(value).map_err(|error| serde::de::Error::custom(error.0))
+    }
+}
+
+impl TryFrom<serde_json::Value> for DischargeAttestation {
+    type Error = DischargeError;
+
+    fn try_from(value: serde_json::Value) -> Checked<Self> {
+        parse_attestation(Some(&value))
+    }
+}
+
 /// Which of the two fact shapes this is.
 ///
 /// Separate from [`DischargeFact`] because the retained
@@ -110,6 +163,26 @@ pub enum FactKind {
     Disposition,
 }
 
+impl FactKind {
+    /// Every variant, in the order the retained `oneOf` table listed them —
+    /// which is the order the refusal message names them in.
+    #[must_use]
+    pub fn all() -> &'static [Self] {
+        &[Self::Direct, Self::Disposition]
+    }
+
+    /// The wire spelling. The ONE source of it: `parse_fact`'s membership
+    /// table is built from this, and `tc_447_452` pins it against what
+    /// `#[serde(rename_all)]` emits.
+    #[must_use]
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Direct => "direct",
+            Self::Disposition => "disposition",
+        }
+    }
+}
+
 /// What an approved disposition decided.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
@@ -123,8 +196,34 @@ pub enum DispositionDecision {
     Delegated,
 }
 
+impl DispositionDecision {
+    /// Every variant, in the retained `oneOf` table's order.
+    #[must_use]
+    pub fn all() -> &'static [Self] {
+        &[
+            Self::AcceptedRisk,
+            Self::TemporaryException,
+            Self::Delegated,
+        ]
+    }
+
+    /// The wire spelling, and the one source of it. See [`FactKind::as_str`].
+    #[must_use]
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::AcceptedRisk => "accepted_risk",
+            Self::TemporaryException => "temporary_exception",
+            Self::Delegated => "delegated",
+        }
+    }
+}
+
 /// Evidence that a clause's expected output exists.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+///
+/// `Serialize` only: it is reachable from the wire exclusively as the payload
+/// of a [`DischargeFact`], whose one door is [`parse_fact`]. A derived
+/// `Deserialize` here would be that second, permissive door one level down.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(rename_all = "camelCase")]
 pub struct DirectDischargeFact {
@@ -141,7 +240,9 @@ pub struct DirectDischargeFact {
 /// FR-046's constraint, restated where the type is: a disposition is evidence
 /// of an authorised decision, **not** evidence that the clause's expected
 /// output exists. That is why it never joins the `direct` population.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+///
+/// `Serialize` only, for the reason [`DirectDischargeFact`] states.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(rename_all = "camelCase")]
 pub struct DispositionFact {
@@ -171,7 +272,16 @@ pub struct DispositionFact {
 /// A struct with a `kind` field would have reproduced the JSON too, at the
 /// cost of making `evidenceRefs` and `approvalRef` simultaneously optional in
 /// the type — which is the invariant the union exists to state.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+///
+/// # Why the READER is hand-written and not derived
+///
+/// The tagged representation above describes what this type EMITS. What it
+/// ACCEPTS is [`parse_fact`], reached through the hand-written
+/// [`Deserialize`] below, so the predicates a
+/// `build_discharge` request goes through are the same ones a
+/// `render_discharge` request goes through. See the module header for the
+/// forged report that made the difference observable.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(tag = "kind", rename_all = "lowercase")]
 pub enum DischargeFact {
@@ -179,6 +289,25 @@ pub enum DischargeFact {
     Direct(DirectDischargeFact),
     /// A decision.
     Disposition(DispositionFact),
+}
+
+/// The one door: every read of a fact runs [`parse_fact`].
+///
+/// Hand-written for the reason [`DischargeAttestation`]'s reader gives — the
+/// `try_from` attribute would have published this union as `unknown`.
+impl<'de> Deserialize<'de> for DischargeFact {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        let value = serde_json::Value::deserialize(deserializer)?;
+        Self::try_from(value).map_err(|error| serde::de::Error::custom(error.0))
+    }
+}
+
+impl TryFrom<serde_json::Value> for DischargeFact {
+    type Error = DischargeError;
+
+    fn try_from(value: serde_json::Value) -> Checked<Self> {
+        parse_fact(&value)
+    }
 }
 
 impl DischargeFact {
@@ -227,10 +356,36 @@ pub enum DischargeState {
     NotBinding,
 }
 
+impl DischargeState {
+    /// Every variant, so a test can walk the whole set.
+    #[must_use]
+    pub fn all() -> &'static [Self] {
+        &[
+            Self::Direct,
+            Self::Disposition,
+            Self::Open,
+            Self::Unresolved,
+            Self::NotBinding,
+        ]
+    }
+
+    /// The wire spelling, and the one source of it. See [`FactKind::as_str`].
+    #[must_use]
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Direct => "direct",
+            Self::Disposition => "disposition",
+            Self::Open => "open",
+            Self::Unresolved => "unresolved",
+            Self::NotBinding => "not_binding",
+        }
+    }
+}
+
 /// One clause, with the state the accounting put it in.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
-#[serde(rename_all = "camelCase")]
+#[serde(deny_unknown_fields, rename_all = "camelCase")]
 pub struct ClauseDischarge {
     /// The clause's id.
     pub clause_id: String,
@@ -262,10 +417,28 @@ pub enum UnusedFactReason {
     Unresolved,
 }
 
+impl UnusedFactReason {
+    /// Every variant, so a test can walk the whole set.
+    #[must_use]
+    pub fn all() -> &'static [Self] {
+        &[Self::UnknownClause, Self::NotBinding, Self::Unresolved]
+    }
+
+    /// The wire spelling, and the one source of it. See [`FactKind::as_str`].
+    #[must_use]
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::UnknownClause => "unknown_clause",
+            Self::NotBinding => "not_binding",
+            Self::Unresolved => "unresolved",
+        }
+    }
+}
+
 /// A fact that was supplied and not spent.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
-#[serde(rename_all = "camelCase")]
+#[serde(deny_unknown_fields, rename_all = "camelCase")]
 pub struct UnusedDischargeFact {
     /// The clause the fact named.
     pub clause_id: String,
@@ -278,6 +451,7 @@ pub struct UnusedDischargeFact {
 /// The binding population, partitioned three ways.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[serde(deny_unknown_fields)]
 pub struct DischargeBinding {
     /// Discharged by evidence.
     pub direct: Vec<ClauseDischarge>,
@@ -304,7 +478,7 @@ pub enum DischargeSchemaVersion {
 /// measurement of something nobody measured.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
-#[serde(rename_all = "camelCase")]
+#[serde(deny_unknown_fields, rename_all = "camelCase")]
 pub struct DischargeReport {
     /// Always `clause-discharge-v1`.
     pub schema_version: DischargeSchemaVersion,
@@ -510,31 +684,14 @@ pub fn render_discharge_report(report: &DischargeReport) -> String {
             lines.push(format!(
                 "- `{}` ({}): {}",
                 fact.clause_id,
-                fact_kind_str(fact.kind),
-                unused_reason_str(fact.reason)
+                fact.kind.as_str(),
+                fact.reason.as_str()
             ));
         }
         lines.push(String::new());
     }
     let joined = lines.join("\n");
     format!("{}\n", js_trim_end(&joined))
-}
-
-/// The wire spelling of a fact kind, for rendering.
-fn fact_kind_str(kind: FactKind) -> &'static str {
-    match kind {
-        FactKind::Direct => "direct",
-        FactKind::Disposition => "disposition",
-    }
-}
-
-/// The wire spelling of an unused-fact reason, for rendering.
-fn unused_reason_str(reason: UnusedFactReason) -> &'static str {
-    match reason {
-        UnusedFactReason::UnknownClause => "unknown_clause",
-        UnusedFactReason::NotBinding => "not_binding",
-        UnusedFactReason::Unresolved => "unresolved",
-    }
 }
 
 /// One rendered section, `_None._` when the population is empty.
@@ -615,14 +772,7 @@ fn reason_for(clause: &ClauseBinding) -> String {
 /// and an empty `authority` is refused for the authority.
 fn parse_fact(value: &serde_json::Value) -> Checked<DischargeFact> {
     let fact = object("discharge fact", Some(value))?;
-    let kind = one_of(
-        fact.get("kind"),
-        "kind",
-        &[
-            ("direct", FactKind::Direct),
-            ("disposition", FactKind::Disposition),
-        ],
-    )?;
+    let kind = one_of_wire(fact.get("kind"), "kind", FactKind::all(), FactKind::as_str)?;
     let clause_id = string_value("clauseId", fact.get("clauseId"))?;
     let attestation = parse_attestation(fact.get("attestation"))?;
     match kind {
@@ -653,17 +803,11 @@ fn parse_fact(value: &serde_json::Value) -> Checked<DischargeFact> {
             )?;
             Ok(DischargeFact::Disposition(DispositionFact {
                 clause_id,
-                decision: one_of(
+                decision: one_of_wire(
                     fact.get("decision"),
                     "decision",
-                    &[
-                        ("accepted_risk", DispositionDecision::AcceptedRisk),
-                        (
-                            "temporary_exception",
-                            DispositionDecision::TemporaryException,
-                        ),
-                        ("delegated", DispositionDecision::Delegated),
-                    ],
+                    DispositionDecision::all(),
+                    DispositionDecision::as_str,
                 )?,
                 rationale: string_value("rationale", fact.get("rationale"))?,
                 approval_ref: string_value("approvalRef", fact.get("approvalRef"))?,
@@ -839,6 +983,26 @@ fn non_empty_list(name: &str, value: Option<&serde_json::Value>) -> Checked<Vec<
     Ok(values)
 }
 
+/// `oneOf` over a closed enum's OWN spellings.
+///
+/// The membership table is built from `all()` and `as_str()` rather than
+/// restated beside the call. quoin#447 found both tables written out a second
+/// time here: nothing linked them to the `#[serde(rename_all)]` that emits the
+/// same words, so flipping `DispositionDecision` from `snake_case` to
+/// `camelCase` would have left every accept-side test green while the emitted
+/// `clause-discharge-v1` document started saying `temporaryException`. Accept
+/// and emit now read the same function, and `tc_447_452` pins that function
+/// against what serde writes.
+fn one_of_wire<T: Copy>(
+    value: Option<&serde_json::Value>,
+    name: &str,
+    all: &[T],
+    spelling: fn(T) -> &'static str,
+) -> Checked<T> {
+    let allowed: Vec<(&'static str, T)> = all.iter().map(|item| (spelling(*item), *item)).collect();
+    one_of(value, name, &allowed)
+}
+
 /// `oneOf(value, name, allowed)`: membership, checked at run time.
 fn one_of<T: Copy>(
     value: Option<&serde_json::Value>,
@@ -926,8 +1090,10 @@ mod tests {
     /// The literals are `Date.parse`'s own output, read out of node and
     /// written down — a re-derivation would agree with itself no matter what
     /// the code did.
+    /// Trace: FR-046-AC-1, FR-046-AC-4
+    /// Provenance: agent-ix/quoin#447
     #[test]
-    fn instant_returns_the_number_date_parse_returns() {
+    fn tc_447_430_instant_returns_the_number_date_parse_returns() {
         let parsed = |value: &str| instant("asOf", value).expect("a valid instant");
         assert_eq!(parsed("1970-01-01T00:00:00Z"), 0);
         assert_eq!(parsed("2026-08-15T00:00:00.000Z"), 1_786_752_000_000);
@@ -951,8 +1117,10 @@ mod tests {
     }
 
     /// The retained `stringValue` trims only to TEST; it returns the original.
+    /// Trace: FR-046-AC-1, FR-046-AC-5
+    /// Provenance: agent-ix/quoin#447
     #[test]
-    fn string_value_tests_the_trimmed_string_and_returns_the_untrimmed_one() {
+    fn tc_447_431_string_value_tests_the_trimmed_string_and_returns_the_untrimmed_one() {
         let padded = serde_json::json!("  reviewer-1  ");
         assert_eq!(
             string_value("attestedBy", Some(&padded)).expect("padding is not emptiness"),
@@ -971,8 +1139,10 @@ mod tests {
         );
     }
 
+    /// Trace: FR-046-AC-1, FR-046-AC-5
+    /// Provenance: agent-ix/quoin#447
     #[test]
-    fn the_digest_alphabet_is_lowercase_hex_only() {
+    fn tc_447_432_the_digest_alphabet_is_lowercase_hex_only() {
         assert!(is_sha256_digest(&digest()));
         assert!(!is_sha256_digest(&format!("sha256:{}", "A".repeat(64))));
         assert!(!is_sha256_digest(&format!("sha256:{}", "a".repeat(63))));
@@ -981,8 +1151,10 @@ mod tests {
 
     /// The parse loop runs to completion before the duplicate check, so a
     /// malformed later fact beats a duplicate earlier one.
+    /// Trace: FR-046-AC-1, FR-046-AC-5
+    /// Provenance: agent-ix/quoin#447
     #[test]
-    fn a_malformed_fact_is_refused_before_a_duplicate_is_noticed() {
+    fn tc_447_433_a_malformed_fact_is_refused_before_a_duplicate_is_noticed() {
         let mut malformed = direct();
         malformed["kind"] = serde_json::json!("invented");
         let error = build_discharge_report(&request(vec![direct(), direct(), malformed]))
@@ -992,8 +1164,10 @@ mod tests {
 
     /// `parseFact` reads the attestation BEFORE `exact`, so the attestation
     /// message wins when a fact is wrong in both ways.
+    /// Trace: FR-046-AC-5
+    /// Provenance: agent-ix/quoin#447
     #[test]
-    fn the_attestation_is_read_before_the_unknown_field_check() {
+    fn tc_447_434_the_attestation_is_read_before_the_unknown_field_check() {
         let mut fact = direct();
         fact["inventedScore"] = serde_json::json!(100);
         fact["attestation"]["authority"] = serde_json::json!("");
@@ -1002,8 +1176,10 @@ mod tests {
     }
 
     /// `asOf` is echoed verbatim; only the comparison uses the parsed number.
+    /// Trace: FR-046-AC-4, FR-046-AC-6
+    /// Provenance: agent-ix/quoin#447
     #[test]
-    fn as_of_carries_the_original_request_string() {
+    fn tc_447_435_as_of_carries_the_original_request_string() {
         let mut input = request(vec![direct()]);
         input.as_of = "2026-08-15T05:30:00.000+05:30".to_owned();
         let report = build_discharge_report(&input).expect("an offset instant is valid");
@@ -1015,8 +1191,10 @@ mod tests {
 
     /// The retained `entry()` spreads on TRUTHINESS, so an all-empty reason
     /// set omits the key rather than emitting `"reason": ""`.
+    /// Trace: FR-046-AC-3, FR-046-AC-6
+    /// Provenance: agent-ix/quoin#447
     #[test]
-    fn an_empty_joined_reason_omits_the_key_entirely() {
+    fn tc_447_436_an_empty_joined_reason_omits_the_key_entirely() {
         let mut input = request(vec![]);
         input.binding.clauses[0].outcome = quoin_quire_types::ClauseBindingOutcome::Unresolved;
         input.binding.clauses[0].reasons = vec![quoin_quire_types::ClauseBindingReason {
@@ -1037,8 +1215,10 @@ mod tests {
     }
 
     /// `reason` and `fact` are absent keys, never nulls.
+    /// Trace: FR-046-AC-2, FR-046-AC-6
+    /// Provenance: agent-ix/quoin#447
     #[test]
-    fn a_discharged_entry_omits_reason_and_an_undischarged_one_omits_fact() {
+    fn tc_447_437_a_discharged_entry_omits_reason_and_an_undischarged_one_omits_fact() {
         let report = build_discharge_report(&request(vec![direct()])).expect("valid");
         let value = serde_json::to_value(&report).expect("it serialises");
         let discharged = value["binding"]["direct"][0].as_object().unwrap();
@@ -1051,16 +1231,20 @@ mod tests {
 
     /// The internally tagged enum must put `kind` beside the payload, not
     /// around it.
+    /// Trace: FR-046-AC-2, FR-046-AC-6
+    /// Provenance: agent-ix/quoin#447
     #[test]
-    fn a_fact_serialises_with_its_discriminant_flat() {
+    fn tc_447_438_a_fact_serialises_with_its_discriminant_flat() {
         let report = build_discharge_report(&request(vec![direct()])).expect("valid");
         let value = serde_json::to_value(&report).expect("it serialises");
         assert_eq!(value["binding"]["direct"][0]["fact"], direct());
     }
 
     /// Clause-ordered entries first, then fact-ordered ones.
+    /// Trace: FR-046-AC-3, FR-046-AC-6
+    /// Provenance: agent-ix/quoin#447
     #[test]
-    fn unused_facts_are_clause_ordered_then_fact_ordered() {
+    fn tc_447_439_unused_facts_are_clause_ordered_then_fact_ordered() {
         let mut unknown = direct();
         unknown["clauseId"] = serde_json::json!("SYN-999");
         let mut spent_on_not_binding = direct();
@@ -1079,8 +1263,10 @@ mod tests {
     }
 
     /// `context` is a copy, and an ordered one.
+    /// Trace: FR-046-AC-6
+    /// Provenance: agent-ix/quoin#447
     #[test]
-    fn context_is_copied_and_serialises_in_a_stable_order() {
+    fn tc_447_440_context_is_copied_and_serialises_in_a_stable_order() {
         let report = build_discharge_report(&request(vec![])).expect("valid");
         assert_eq!(report.context, binding().context);
         let text = serde_json::to_string(&report.context).expect("it serialises");
