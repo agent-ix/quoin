@@ -3,6 +3,14 @@
 
 # Where this crate and the retained TypeScript differ
 
+This crate was ported in two waves and the two halves diverge from the
+TypeScript for different reasons. §1–§5 are wave 1 (quoin#468: plans,
+collections, validation, the store seam, raw-evidence accounting); §6–§10 are
+wave 2 (quoin#469: the intervention and operational record types and the two
+report renderers).
+
+# Wave 1 — plans, collections, validation, store, raw evidence (quoin#468)
+
 `src/measurement/` is still the oracle: quoin#468 is a **port wave**, not a
 cutover, and no TypeScript was deleted. The cutover is quoin#479.
 
@@ -192,3 +200,113 @@ Two deviations, both additive:
 
 `tests/tc_468_module_sizes.rs` holds the 700/500 ceilings with an empty
 allow-list; no module in this crate is over the soft ceiling.
+
+# Wave 2 — record types and the two report renderers (quoin#469)
+
+`src/measurement/` is still the oracle for this port and is still the shipping
+implementation: quoin#469 deletes nothing. `tests/fixtures/report-oracle.json`
+is a frozen capture of what `buildInterventionReport`,
+`renderInterventionReport`, `buildOperationalReport` and
+`renderOperationalReport` produce at the revision the file names, and every one
+of its 15 cases is reproduced here byte for byte — both the projected entries,
+compared as JSON, and the rendered markdown.
+
+What follows is everything outside that capture where the two trees can be told
+apart. Each entry names the input that separates them.
+
+## §6 — string ordering beyond the Basic Multilingual Plane
+
+Both report builders order records by `(observed_at, record_id)` and order their
+inner lists by string comparison. The TypeScript comparator is
+
+```ts
+a === b ? 0 : a < b ? -1 : 1
+```
+
+and JavaScript's `<` on strings compares **UTF-16 code units**. Rust's `Ord` for
+`str` compares **UTF-8 bytes**, which is code-point order.
+
+The two agree on every string whose characters are all in the Basic
+Multilingual Plane. They disagree only when a supplementary character
+(U+10000 and above, encoded in UTF-16 as a surrogate pair beginning
+0xD800..=0xDBFF) is compared against a character in U+E000..=U+FFFF:
+JavaScript sorts the supplementary character **first**, because 0xD800 < 0xE000;
+this crate sorts it **last**, because its code point is larger.
+
+Separating input: two records whose `record_id`s are `"\u{10000}"` and
+`"\u{e000}"`. The TypeScript orders them `"\u{10000}"`, `"\u{e000}"`; this crate
+orders them `"\u{e000}"`, `"\u{10000}"`.
+
+Not reconciled. No identity in this domain is written in that range — record ids
+are the `p-`/`b-` ASCII namespaces of `intervention.ts:33-45`, metric names and
+arm ids are ASCII, and evidence paths are store-relative paths — and the fix
+would be a second comparator whose only purpose is to reproduce a UTF-16
+artifact. It is recorded here rather than reconciled so that a later wave
+reading these lists does not discover it fresh.
+
+## §7 — a JSON integer beyond what a double can hold
+
+`measured_effects[].baseline_value` and `.treatment_value` are held as
+`serde_json::Number`, which keeps an integer literal exactly. They **render**
+through `js_number_string`, which converts to `f64` first, because that is what
+`JSON.parse` does before `String()` ever sees the value — so the rendered text
+agrees with the TypeScript even for `12345678901234567890`, which both spell
+`12345678901234567000`.
+
+Where the two differ is the record on the way back out. `JSON.parse` has already
+rounded, so the TypeScript re-serializes `12345678901234567000`; this crate
+re-serializes the literal it was handed, `12345678901234567890`.
+
+Separating input: a record whose `baseline_value` is `12345678901234567890`.
+
+Not reconciled, and deliberately: rounding a stored record on a read-write round
+trip is the defect, not the fidelity. `tc_469_reports` asserts the round trip is
+exact for every record in the capture.
+
+## §8 — a numeric field written as a float
+
+`size_bytes`, `sample_size`, `repetitions` and `deadline_seconds` are `u64`.
+TypeScript's `number` admits `12.0`, and `JSON.parse` cannot tell it from `12`;
+this crate refuses it, because serde will not read `12.0` into a `u64`.
+
+Separating input: `"size_bytes": 12.0`.
+
+Not reconciled. The intervention and operational JSON schemas
+(`src/measurement/schemas/`) declare these `integer`, so a record carrying
+`12.0` is one the schema validation of quoin#470 refuses anyway; this crate
+refuses it one step earlier and with a less specific message.
+
+## §9 — `exercise?: never` and `capability?: never` have no counterpart
+
+`operational-types.ts:67,74` keep the two record shapes disjoint by declaring
+the other shape's field as `never`. A record carrying both fields is a
+TypeScript type error but is structurally representable, and nothing at run time
+rejects it — `buildOperationalReport` dispatches on `record_shape` and ignores
+the extra field.
+
+`OperationalEvidenceRecord` is an enum tagged on `record_shape`, so the two
+payload fields are not fields of one type at all. A record carrying both
+deserializes: the tag selects the variant and the other field is ignored,
+exactly as the TypeScript ignores it. The difference is that the ill-formed
+record is unrepresentable *after* it is read, rather than merely unspellable in
+the type checker.
+
+No separating input at the report boundary. Recorded because a reviewer
+comparing the two type declarations will find two fields here with no port.
+
+## §10 — what this wave did not port, and is not pretending to
+
+Three things these four files gesture at are deliberately absent rather than
+approximated, so that no later wave finds a second implementation to unify:
+
+- **No instant grammar.** `observed_at`, `started_at`, `completed_at` and
+  `deadline_at` are `WireInstant`, which holds and does not validate. quoin
+  already carries six hand-rolled instant validators across four crates,
+  accepting three different languages; this crate gets exactly one, in
+  `date_time` (quoin#468), and intake parses through it (quoin#471/#472).
+- **No digest parsing.** `Digest` holds the stored spelling.
+  `quoin_store::RawFileSha256Digest::parse_stored` is the right type and
+  verification is quoin#471/#472; this wave reaches outside the crate for
+  nothing.
+- **No schema validation.** `intervention-schema.ts` and
+  `operational-schema.ts` are quoin#470.

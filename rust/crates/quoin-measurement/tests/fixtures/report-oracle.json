@@ -1,0 +1,2508 @@
+{
+  "produced_by": "src/measurement/intervention-report.ts, src/measurement/operational-report.ts",
+  "produced_from_revision": "a2b5dfc0bff556baec8e1a417678985846fd235d",
+  "capture_script": "rust/crates/quoin-measurement/oracle/capture-report-oracle.mjs",
+  "intervention": [
+    {
+      "name": "empty",
+      "records": [],
+      "entries": [],
+      "rendered": ""
+    },
+    {
+      "name": "single_full",
+      "records": [
+        {
+          "schema_version": 1,
+          "record_type": "intervention_experiment",
+          "record_id": "p-beta",
+          "observed_at": "2026-02-01T00:00:00.000Z",
+          "subject": {
+            "id": "quoin",
+            "revision": "rev-1"
+          },
+          "producer": {
+            "tool_identity": "quoin",
+            "tool_version": "0.9.0",
+            "configuration_digest": "sha256:aa",
+            "source_revision": "rev-1",
+            "environment": {
+              "ci": true,
+              "node": "22.11.0",
+              "workers": 4,
+              "seed": null
+            },
+            "definition_version": "1"
+          },
+          "design": {
+            "kind": "repeated",
+            "repetitions": 3,
+            "assignment": {
+              "method": "deterministic",
+              "seed": "7"
+            },
+            "sampling_conditions": [
+              "cold cache"
+            ]
+          },
+          "baseline": {
+            "id": "baseline",
+            "population": "corpus",
+            "sample_size": 12,
+            "configuration": {
+              "flag": false,
+              "nested": {
+                "n": [
+                  1,
+                  2
+                ]
+              }
+            }
+          },
+          "treatments": [
+            {
+              "id": "t2",
+              "population": "corpus",
+              "sample_size": 12,
+              "configuration": {
+                "flag": false,
+                "nested": {
+                  "n": [
+                    1,
+                    2
+                  ]
+                }
+              }
+            },
+            {
+              "id": "t1",
+              "population": "corpus",
+              "sample_size": 12,
+              "configuration": {
+                "flag": false,
+                "nested": {
+                  "n": [
+                    1,
+                    2
+                  ]
+                }
+              }
+            }
+          ],
+          "changed_variables": [
+            {
+              "name": "model",
+              "treatment_id": "t1",
+              "baseline_value": "small",
+              "treatment_value": "large"
+            }
+          ],
+          "held_constant": [
+            {
+              "name": "corpus",
+              "value": {
+                "revision": "rev-1"
+              }
+            }
+          ],
+          "measured_effects": [
+            {
+              "treatment_id": "t2",
+              "metric": "latency_ms",
+              "baseline_value": 120,
+              "treatment_value": 95.5,
+              "effect": -24.5,
+              "unit": "ms"
+            },
+            {
+              "treatment_id": "t1",
+              "metric": "pass_rate",
+              "baseline_value": 0.5,
+              "treatment_value": 1,
+              "effect": 0.5,
+              "unit": "ratio"
+            },
+            {
+              "treatment_id": "t1",
+              "metric": "flaky",
+              "baseline_value": true,
+              "treatment_value": null,
+              "effect": null,
+              "unit": "boolean"
+            },
+            {
+              "treatment_id": "t1",
+              "metric": "budget",
+              "baseline_value": 1e+21,
+              "treatment_value": 1e-7,
+              "effect": "unquantified",
+              "unit": "usd"
+            }
+          ],
+          "interactions": [
+            {
+              "description": "cache warms across arms",
+              "disposition": "uncontrolled"
+            },
+            {
+              "description": "declared controlled",
+              "disposition": "controlled"
+            },
+            {
+              "description": "unknown coupling",
+              "disposition": "unknown"
+            }
+          ],
+          "confounders": [
+            {
+              "description": "machine load",
+              "disposition": "unknown"
+            },
+            {
+              "description": "pinned seed",
+              "disposition": "not_applicable"
+            }
+          ],
+          "status": "completed",
+          "conclusion": {
+            "kind": "causal_effect_established",
+            "statement": "the larger model lowers latency",
+            "attribution_confidence": "moderate"
+          },
+          "gaps": [
+            "no third arm"
+          ],
+          "owner": "qa",
+          "actions": [
+            "repeat at scale"
+          ],
+          "raw_evidence": [
+            {
+              "path": "b/second.json",
+              "media_type": "application/json",
+              "size_bytes": 2,
+              "digest": "sha256:bb"
+            },
+            {
+              "path": "a/first.json",
+              "media_type": "application/json",
+              "size_bytes": 1,
+              "digest": "sha256:aa"
+            }
+          ]
+        }
+      ],
+      "entries": [
+        {
+          "record_id": "p-beta",
+          "observed_at": "2026-02-01T00:00:00.000Z",
+          "subject": {
+            "id": "quoin",
+            "revision": "rev-1"
+          },
+          "status": "completed",
+          "claims": [
+            "the larger model lowers latency"
+          ],
+          "evidence": {
+            "measured_effects": [
+              {
+                "treatment_id": "t1",
+                "metric": "budget",
+                "baseline_value": 1e+21,
+                "treatment_value": 1e-7,
+                "effect": "unquantified",
+                "unit": "usd"
+              },
+              {
+                "treatment_id": "t1",
+                "metric": "flaky",
+                "baseline_value": true,
+                "treatment_value": null,
+                "effect": null,
+                "unit": "boolean"
+              },
+              {
+                "treatment_id": "t1",
+                "metric": "pass_rate",
+                "baseline_value": 0.5,
+                "treatment_value": 1,
+                "effect": 0.5,
+                "unit": "ratio"
+              },
+              {
+                "treatment_id": "t2",
+                "metric": "latency_ms",
+                "baseline_value": 120,
+                "treatment_value": 95.5,
+                "effect": -24.5,
+                "unit": "ms"
+              }
+            ],
+            "raw_evidence": [
+              {
+                "path": "a/first.json",
+                "media_type": "application/json",
+                "size_bytes": 1,
+                "digest": "sha256:aa"
+              },
+              {
+                "path": "b/second.json",
+                "media_type": "application/json",
+                "size_bytes": 2,
+                "digest": "sha256:bb"
+              }
+            ]
+          },
+          "counterevidence": [
+            {
+              "kind": "confounder",
+              "description": "machine load",
+              "disposition": "unknown"
+            },
+            {
+              "kind": "interaction",
+              "description": "cache warms across arms",
+              "disposition": "uncontrolled"
+            },
+            {
+              "kind": "interaction",
+              "description": "unknown coupling",
+              "disposition": "unknown"
+            }
+          ],
+          "gaps": [
+            "no third arm"
+          ],
+          "owner": "qa",
+          "actions": [
+            "repeat at scale"
+          ],
+          "producer": {
+            "tool_identity": "quoin",
+            "tool_version": "0.9.0",
+            "configuration_digest": "sha256:aa",
+            "source_revision": "rev-1",
+            "environment": {
+              "ci": true,
+              "node": "22.11.0",
+              "workers": 4,
+              "seed": null
+            },
+            "definition_version": "1"
+          }
+        }
+      ],
+      "rendered": "## Intervention experiments\n\n### p-beta\n\n#### Claims\n\n- the larger model lowers latency\n\n#### Evidence\n\n- t1/budget: baseline 1e+21, treatment 1e-7, effect unquantified usd\n- t1/flaky: baseline true, treatment null, effect null boolean\n- t1/pass_rate: baseline 0.5, treatment 1, effect 0.5 ratio\n- t2/latency_ms: baseline 120, treatment 95.5, effect -24.5 ms\n- a/first.json — sha256:aa; 1 bytes; application/json\n- b/second.json — sha256:bb; 2 bytes; application/json\n\n#### Counterevidence\n\n- confounder: machine load (unknown)\n- interaction: cache warms across arms (uncontrolled)\n- interaction: unknown coupling (unknown)\n\n#### Gaps\n\n- no third arm\n\n#### Owner\n\nqa\n\n#### Actions\n\n- repeat at scale\n"
+    },
+    {
+      "name": "single_bare",
+      "records": [
+        {
+          "schema_version": 1,
+          "record_type": "intervention_experiment",
+          "record_id": "p-alpha",
+          "observed_at": "2026-02-01T00:00:00.000Z",
+          "subject": {
+            "id": "quoin",
+            "revision": "rev-1"
+          },
+          "producer": {
+            "tool_identity": "quoin",
+            "tool_version": "0.9.0",
+            "configuration_digest": "sha256:aa",
+            "source_revision": "rev-1",
+            "environment": {
+              "ci": true,
+              "node": "22.11.0",
+              "workers": 4,
+              "seed": null
+            },
+            "definition_version": "1"
+          },
+          "design": {
+            "kind": "repeated",
+            "repetitions": 3,
+            "assignment": {
+              "method": "deterministic",
+              "seed": "7"
+            },
+            "sampling_conditions": [
+              "cold cache"
+            ]
+          },
+          "baseline": {
+            "id": "baseline",
+            "population": "corpus",
+            "sample_size": 12,
+            "configuration": {
+              "flag": false,
+              "nested": {
+                "n": [
+                  1,
+                  2
+                ]
+              }
+            }
+          },
+          "treatments": [
+            {
+              "id": "t2",
+              "population": "corpus",
+              "sample_size": 12,
+              "configuration": {
+                "flag": false,
+                "nested": {
+                  "n": [
+                    1,
+                    2
+                  ]
+                }
+              }
+            },
+            {
+              "id": "t1",
+              "population": "corpus",
+              "sample_size": 12,
+              "configuration": {
+                "flag": false,
+                "nested": {
+                  "n": [
+                    1,
+                    2
+                  ]
+                }
+              }
+            }
+          ],
+          "changed_variables": [
+            {
+              "name": "model",
+              "treatment_id": "t1",
+              "baseline_value": "small",
+              "treatment_value": "large"
+            }
+          ],
+          "held_constant": [
+            {
+              "name": "corpus",
+              "value": {
+                "revision": "rev-1"
+              }
+            }
+          ],
+          "measured_effects": [],
+          "interactions": [],
+          "confounders": [],
+          "status": "inconclusive",
+          "conclusion": {
+            "kind": "cause_not_established",
+            "statement": "nothing was established",
+            "attribution_confidence": "none"
+          },
+          "gaps": [],
+          "owner": "qa",
+          "actions": [],
+          "raw_evidence": []
+        }
+      ],
+      "entries": [
+        {
+          "record_id": "p-alpha",
+          "observed_at": "2026-02-01T00:00:00.000Z",
+          "subject": {
+            "id": "quoin",
+            "revision": "rev-1"
+          },
+          "status": "inconclusive",
+          "claims": [
+            "nothing was established"
+          ],
+          "evidence": {
+            "measured_effects": [],
+            "raw_evidence": []
+          },
+          "counterevidence": [],
+          "gaps": [],
+          "owner": "qa",
+          "actions": [],
+          "producer": {
+            "tool_identity": "quoin",
+            "tool_version": "0.9.0",
+            "configuration_digest": "sha256:aa",
+            "source_revision": "rev-1",
+            "environment": {
+              "ci": true,
+              "node": "22.11.0",
+              "workers": 4,
+              "seed": null
+            },
+            "definition_version": "1"
+          }
+        }
+      ],
+      "rendered": "## Intervention experiments\n\n### p-alpha\n\n#### Claims\n\n- nothing was established\n\n#### Evidence\n\n\n#### Counterevidence\n\nNo declared counterevidence.\n\n#### Gaps\n\nNo declared gaps.\n\n#### Owner\n\nqa\n\n#### Actions\n\n"
+    },
+    {
+      "name": "ordering",
+      "records": [
+        {
+          "schema_version": 1,
+          "record_type": "intervention_experiment",
+          "record_id": "p-beta",
+          "observed_at": "2026-02-01T00:00:00.000Z",
+          "subject": {
+            "id": "quoin",
+            "revision": "rev-1"
+          },
+          "producer": {
+            "tool_identity": "quoin",
+            "tool_version": "0.9.0",
+            "configuration_digest": "sha256:aa",
+            "source_revision": "rev-1",
+            "environment": {
+              "ci": true,
+              "node": "22.11.0",
+              "workers": 4,
+              "seed": null
+            },
+            "definition_version": "1"
+          },
+          "design": {
+            "kind": "repeated",
+            "repetitions": 3,
+            "assignment": {
+              "method": "deterministic",
+              "seed": "7"
+            },
+            "sampling_conditions": [
+              "cold cache"
+            ]
+          },
+          "baseline": {
+            "id": "baseline",
+            "population": "corpus",
+            "sample_size": 12,
+            "configuration": {
+              "flag": false,
+              "nested": {
+                "n": [
+                  1,
+                  2
+                ]
+              }
+            }
+          },
+          "treatments": [
+            {
+              "id": "t2",
+              "population": "corpus",
+              "sample_size": 12,
+              "configuration": {
+                "flag": false,
+                "nested": {
+                  "n": [
+                    1,
+                    2
+                  ]
+                }
+              }
+            },
+            {
+              "id": "t1",
+              "population": "corpus",
+              "sample_size": 12,
+              "configuration": {
+                "flag": false,
+                "nested": {
+                  "n": [
+                    1,
+                    2
+                  ]
+                }
+              }
+            }
+          ],
+          "changed_variables": [
+            {
+              "name": "model",
+              "treatment_id": "t1",
+              "baseline_value": "small",
+              "treatment_value": "large"
+            }
+          ],
+          "held_constant": [
+            {
+              "name": "corpus",
+              "value": {
+                "revision": "rev-1"
+              }
+            }
+          ],
+          "measured_effects": [
+            {
+              "treatment_id": "t2",
+              "metric": "latency_ms",
+              "baseline_value": 120,
+              "treatment_value": 95.5,
+              "effect": -24.5,
+              "unit": "ms"
+            },
+            {
+              "treatment_id": "t1",
+              "metric": "pass_rate",
+              "baseline_value": 0.5,
+              "treatment_value": 1,
+              "effect": 0.5,
+              "unit": "ratio"
+            },
+            {
+              "treatment_id": "t1",
+              "metric": "flaky",
+              "baseline_value": true,
+              "treatment_value": null,
+              "effect": null,
+              "unit": "boolean"
+            },
+            {
+              "treatment_id": "t1",
+              "metric": "budget",
+              "baseline_value": 1e+21,
+              "treatment_value": 1e-7,
+              "effect": "unquantified",
+              "unit": "usd"
+            }
+          ],
+          "interactions": [
+            {
+              "description": "cache warms across arms",
+              "disposition": "uncontrolled"
+            },
+            {
+              "description": "declared controlled",
+              "disposition": "controlled"
+            },
+            {
+              "description": "unknown coupling",
+              "disposition": "unknown"
+            }
+          ],
+          "confounders": [
+            {
+              "description": "machine load",
+              "disposition": "unknown"
+            },
+            {
+              "description": "pinned seed",
+              "disposition": "not_applicable"
+            }
+          ],
+          "status": "completed",
+          "conclusion": {
+            "kind": "causal_effect_established",
+            "statement": "the larger model lowers latency",
+            "attribution_confidence": "moderate"
+          },
+          "gaps": [
+            "no third arm"
+          ],
+          "owner": "qa",
+          "actions": [
+            "repeat at scale"
+          ],
+          "raw_evidence": [
+            {
+              "path": "b/second.json",
+              "media_type": "application/json",
+              "size_bytes": 2,
+              "digest": "sha256:bb"
+            },
+            {
+              "path": "a/first.json",
+              "media_type": "application/json",
+              "size_bytes": 1,
+              "digest": "sha256:aa"
+            }
+          ]
+        },
+        {
+          "schema_version": 1,
+          "record_type": "intervention_experiment",
+          "record_id": "p-alpha",
+          "observed_at": "2026-02-01T00:00:00.000Z",
+          "subject": {
+            "id": "quoin",
+            "revision": "rev-1"
+          },
+          "producer": {
+            "tool_identity": "quoin",
+            "tool_version": "0.9.0",
+            "configuration_digest": "sha256:aa",
+            "source_revision": "rev-1",
+            "environment": {
+              "ci": true,
+              "node": "22.11.0",
+              "workers": 4,
+              "seed": null
+            },
+            "definition_version": "1"
+          },
+          "design": {
+            "kind": "repeated",
+            "repetitions": 3,
+            "assignment": {
+              "method": "deterministic",
+              "seed": "7"
+            },
+            "sampling_conditions": [
+              "cold cache"
+            ]
+          },
+          "baseline": {
+            "id": "baseline",
+            "population": "corpus",
+            "sample_size": 12,
+            "configuration": {
+              "flag": false,
+              "nested": {
+                "n": [
+                  1,
+                  2
+                ]
+              }
+            }
+          },
+          "treatments": [
+            {
+              "id": "t2",
+              "population": "corpus",
+              "sample_size": 12,
+              "configuration": {
+                "flag": false,
+                "nested": {
+                  "n": [
+                    1,
+                    2
+                  ]
+                }
+              }
+            },
+            {
+              "id": "t1",
+              "population": "corpus",
+              "sample_size": 12,
+              "configuration": {
+                "flag": false,
+                "nested": {
+                  "n": [
+                    1,
+                    2
+                  ]
+                }
+              }
+            }
+          ],
+          "changed_variables": [
+            {
+              "name": "model",
+              "treatment_id": "t1",
+              "baseline_value": "small",
+              "treatment_value": "large"
+            }
+          ],
+          "held_constant": [
+            {
+              "name": "corpus",
+              "value": {
+                "revision": "rev-1"
+              }
+            }
+          ],
+          "measured_effects": [],
+          "interactions": [],
+          "confounders": [],
+          "status": "inconclusive",
+          "conclusion": {
+            "kind": "cause_not_established",
+            "statement": "nothing was established",
+            "attribution_confidence": "none"
+          },
+          "gaps": [],
+          "owner": "qa",
+          "actions": [],
+          "raw_evidence": []
+        },
+        {
+          "schema_version": 1,
+          "record_type": "intervention_experiment",
+          "record_id": "p-zulu",
+          "observed_at": "2026-01-01T00:00:00.000Z",
+          "subject": {
+            "id": "quoin",
+            "revision": "rev-1"
+          },
+          "producer": {
+            "tool_identity": "quoin",
+            "tool_version": "0.9.0",
+            "configuration_digest": "sha256:aa",
+            "source_revision": "rev-1",
+            "environment": {
+              "ci": true,
+              "node": "22.11.0",
+              "workers": 4,
+              "seed": null
+            },
+            "definition_version": "1"
+          },
+          "design": {
+            "kind": "repeated",
+            "repetitions": 3,
+            "assignment": {
+              "method": "deterministic",
+              "seed": "7"
+            },
+            "sampling_conditions": [
+              "cold cache"
+            ]
+          },
+          "baseline": {
+            "id": "baseline",
+            "population": "corpus",
+            "sample_size": 12,
+            "configuration": {
+              "flag": false,
+              "nested": {
+                "n": [
+                  1,
+                  2
+                ]
+              }
+            }
+          },
+          "treatments": [
+            {
+              "id": "t2",
+              "population": "corpus",
+              "sample_size": 12,
+              "configuration": {
+                "flag": false,
+                "nested": {
+                  "n": [
+                    1,
+                    2
+                  ]
+                }
+              }
+            },
+            {
+              "id": "t1",
+              "population": "corpus",
+              "sample_size": 12,
+              "configuration": {
+                "flag": false,
+                "nested": {
+                  "n": [
+                    1,
+                    2
+                  ]
+                }
+              }
+            }
+          ],
+          "changed_variables": [
+            {
+              "name": "model",
+              "treatment_id": "t1",
+              "baseline_value": "small",
+              "treatment_value": "large"
+            }
+          ],
+          "held_constant": [
+            {
+              "name": "corpus",
+              "value": {
+                "revision": "rev-1"
+              }
+            }
+          ],
+          "measured_effects": [],
+          "interactions": [],
+          "confounders": [],
+          "status": "failed",
+          "conclusion": {
+            "kind": "cause_not_established",
+            "statement": "nothing was established",
+            "attribution_confidence": "none"
+          },
+          "gaps": [],
+          "owner": "qa",
+          "actions": [],
+          "raw_evidence": []
+        }
+      ],
+      "entries": [
+        {
+          "record_id": "p-zulu",
+          "observed_at": "2026-01-01T00:00:00.000Z",
+          "subject": {
+            "id": "quoin",
+            "revision": "rev-1"
+          },
+          "status": "failed",
+          "claims": [
+            "nothing was established"
+          ],
+          "evidence": {
+            "measured_effects": [],
+            "raw_evidence": []
+          },
+          "counterevidence": [],
+          "gaps": [],
+          "owner": "qa",
+          "actions": [],
+          "producer": {
+            "tool_identity": "quoin",
+            "tool_version": "0.9.0",
+            "configuration_digest": "sha256:aa",
+            "source_revision": "rev-1",
+            "environment": {
+              "ci": true,
+              "node": "22.11.0",
+              "workers": 4,
+              "seed": null
+            },
+            "definition_version": "1"
+          }
+        },
+        {
+          "record_id": "p-alpha",
+          "observed_at": "2026-02-01T00:00:00.000Z",
+          "subject": {
+            "id": "quoin",
+            "revision": "rev-1"
+          },
+          "status": "inconclusive",
+          "claims": [
+            "nothing was established"
+          ],
+          "evidence": {
+            "measured_effects": [],
+            "raw_evidence": []
+          },
+          "counterevidence": [],
+          "gaps": [],
+          "owner": "qa",
+          "actions": [],
+          "producer": {
+            "tool_identity": "quoin",
+            "tool_version": "0.9.0",
+            "configuration_digest": "sha256:aa",
+            "source_revision": "rev-1",
+            "environment": {
+              "ci": true,
+              "node": "22.11.0",
+              "workers": 4,
+              "seed": null
+            },
+            "definition_version": "1"
+          }
+        },
+        {
+          "record_id": "p-beta",
+          "observed_at": "2026-02-01T00:00:00.000Z",
+          "subject": {
+            "id": "quoin",
+            "revision": "rev-1"
+          },
+          "status": "completed",
+          "claims": [
+            "the larger model lowers latency"
+          ],
+          "evidence": {
+            "measured_effects": [
+              {
+                "treatment_id": "t1",
+                "metric": "budget",
+                "baseline_value": 1e+21,
+                "treatment_value": 1e-7,
+                "effect": "unquantified",
+                "unit": "usd"
+              },
+              {
+                "treatment_id": "t1",
+                "metric": "flaky",
+                "baseline_value": true,
+                "treatment_value": null,
+                "effect": null,
+                "unit": "boolean"
+              },
+              {
+                "treatment_id": "t1",
+                "metric": "pass_rate",
+                "baseline_value": 0.5,
+                "treatment_value": 1,
+                "effect": 0.5,
+                "unit": "ratio"
+              },
+              {
+                "treatment_id": "t2",
+                "metric": "latency_ms",
+                "baseline_value": 120,
+                "treatment_value": 95.5,
+                "effect": -24.5,
+                "unit": "ms"
+              }
+            ],
+            "raw_evidence": [
+              {
+                "path": "a/first.json",
+                "media_type": "application/json",
+                "size_bytes": 1,
+                "digest": "sha256:aa"
+              },
+              {
+                "path": "b/second.json",
+                "media_type": "application/json",
+                "size_bytes": 2,
+                "digest": "sha256:bb"
+              }
+            ]
+          },
+          "counterevidence": [
+            {
+              "kind": "confounder",
+              "description": "machine load",
+              "disposition": "unknown"
+            },
+            {
+              "kind": "interaction",
+              "description": "cache warms across arms",
+              "disposition": "uncontrolled"
+            },
+            {
+              "kind": "interaction",
+              "description": "unknown coupling",
+              "disposition": "unknown"
+            }
+          ],
+          "gaps": [
+            "no third arm"
+          ],
+          "owner": "qa",
+          "actions": [
+            "repeat at scale"
+          ],
+          "producer": {
+            "tool_identity": "quoin",
+            "tool_version": "0.9.0",
+            "configuration_digest": "sha256:aa",
+            "source_revision": "rev-1",
+            "environment": {
+              "ci": true,
+              "node": "22.11.0",
+              "workers": 4,
+              "seed": null
+            },
+            "definition_version": "1"
+          }
+        }
+      ],
+      "rendered": "## Intervention experiments\n\n### p-zulu\n\n#### Claims\n\n- nothing was established\n\n#### Evidence\n\n\n#### Counterevidence\n\nNo declared counterevidence.\n\n#### Gaps\n\nNo declared gaps.\n\n#### Owner\n\nqa\n\n#### Actions\n\n\n### p-alpha\n\n#### Claims\n\n- nothing was established\n\n#### Evidence\n\n\n#### Counterevidence\n\nNo declared counterevidence.\n\n#### Gaps\n\nNo declared gaps.\n\n#### Owner\n\nqa\n\n#### Actions\n\n\n### p-beta\n\n#### Claims\n\n- the larger model lowers latency\n\n#### Evidence\n\n- t1/budget: baseline 1e+21, treatment 1e-7, effect unquantified usd\n- t1/flaky: baseline true, treatment null, effect null boolean\n- t1/pass_rate: baseline 0.5, treatment 1, effect 0.5 ratio\n- t2/latency_ms: baseline 120, treatment 95.5, effect -24.5 ms\n- a/first.json — sha256:aa; 1 bytes; application/json\n- b/second.json — sha256:bb; 2 bytes; application/json\n\n#### Counterevidence\n\n- confounder: machine load (unknown)\n- interaction: cache warms across arms (uncontrolled)\n- interaction: unknown coupling (unknown)\n\n#### Gaps\n\n- no third arm\n\n#### Owner\n\nqa\n\n#### Actions\n\n- repeat at scale\n"
+    }
+  ],
+  "operational": [
+    {
+      "name": "empty",
+      "records": [],
+      "entries": [],
+      "rendered": ""
+    },
+    {
+      "name": "capability_available",
+      "records": [
+        {
+          "schema_version": 1,
+          "record_type": "operational_evidence",
+          "observed_at": "2026-03-01T00:00:00.000Z",
+          "control_kind": "release",
+          "subject": {
+            "id": "quoin",
+            "revision": "rev-1"
+          },
+          "producer": {
+            "tool_identity": "quoin",
+            "tool_version": "0.9.0",
+            "configuration_digest": "sha256:aa",
+            "source_revision": "rev-1",
+            "environment": {
+              "ci": true,
+              "node": "22.11.0",
+              "workers": 4,
+              "seed": null
+            },
+            "definition_version": "1"
+          },
+          "scope": {
+            "service": "quoin",
+            "environment": "prod",
+            "population": "all"
+          },
+          "configuration": {
+            "version_pins": [
+              {
+                "kind": "model",
+                "identity": "opus",
+                "revision": "5",
+                "digest": "sha256:cc"
+              }
+            ]
+          },
+          "owner": "release",
+          "gaps": [
+            "one declared gap"
+          ],
+          "actions": [
+            "review"
+          ],
+          "raw_evidence": [
+            {
+              "path": "z/run.json",
+              "media_type": "application/json",
+              "size_bytes": 9,
+              "digest": "sha256:zz"
+            },
+            {
+              "path": "a/workflow.yaml",
+              "media_type": "application/yaml",
+              "size_bytes": 3,
+              "digest": "sha256:aa"
+            }
+          ],
+          "record_shape": "standing_capability",
+          "capability": {
+            "control_id": "release-gate",
+            "status": "available",
+            "surface": "gh workflow",
+            "authorized_roles": [
+              "maintainer"
+            ],
+            "coverage": "all releases",
+            "limitations": [
+              "no rollback"
+            ],
+            "supported_transitions": [
+              "draft->published"
+            ],
+            "clock_support": {
+              "supported": true,
+              "start_event": "workflow_run",
+              "completion_event": "release",
+              "deadline_seconds": 600
+            }
+          },
+          "record_id": "op-available"
+        }
+      ],
+      "entries": [
+        {
+          "record_id": "op-available",
+          "observed_at": "2026-03-01T00:00:00.000Z",
+          "record_shape": "standing_capability",
+          "control_kind": "release",
+          "claims": [
+            "release control release-gate is available for quoin"
+          ],
+          "evidence": [
+            "surface gh workflow; coverage all releases"
+          ],
+          "counterevidence": [],
+          "gaps": [
+            "one declared gap"
+          ],
+          "owner": "release",
+          "actions": [
+            "review"
+          ],
+          "raw_evidence": [
+            {
+              "path": "a/workflow.yaml",
+              "media_type": "application/yaml",
+              "size_bytes": 3,
+              "digest": "sha256:aa"
+            },
+            {
+              "path": "z/run.json",
+              "media_type": "application/json",
+              "size_bytes": 9,
+              "digest": "sha256:zz"
+            }
+          ]
+        }
+      ],
+      "rendered": "## Operational evidence\n\n### op-available\n\n#### Claims\n\n- release control release-gate is available for quoin\n\n#### Evidence\n\n- surface gh workflow; coverage all releases\n- a/workflow.yaml — sha256:aa\n- z/run.json — sha256:zz\n\n#### Counterevidence\n\nNo declared counterevidence.\n\n#### Gaps\n\n- one declared gap\n\n#### Owner\n\nrelease\n\n#### Actions\n\n- review\n"
+    },
+    {
+      "name": "capability_unknown",
+      "records": [
+        {
+          "schema_version": 1,
+          "record_type": "operational_evidence",
+          "observed_at": "2026-03-01T00:00:00.000Z",
+          "control_kind": "release",
+          "subject": {
+            "id": "quoin",
+            "revision": "rev-1"
+          },
+          "producer": {
+            "tool_identity": "quoin",
+            "tool_version": "0.9.0",
+            "configuration_digest": "sha256:aa",
+            "source_revision": "rev-1",
+            "environment": {
+              "ci": true,
+              "node": "22.11.0",
+              "workers": 4,
+              "seed": null
+            },
+            "definition_version": "1"
+          },
+          "scope": {
+            "service": "quoin",
+            "environment": "prod",
+            "population": "all"
+          },
+          "configuration": {
+            "version_pins": [
+              {
+                "kind": "model",
+                "identity": "opus",
+                "revision": "5",
+                "digest": "sha256:cc"
+              }
+            ]
+          },
+          "owner": "release",
+          "gaps": [
+            "one declared gap"
+          ],
+          "actions": [
+            "review"
+          ],
+          "raw_evidence": [
+            {
+              "path": "z/run.json",
+              "media_type": "application/json",
+              "size_bytes": 9,
+              "digest": "sha256:zz"
+            },
+            {
+              "path": "a/workflow.yaml",
+              "media_type": "application/yaml",
+              "size_bytes": 3,
+              "digest": "sha256:aa"
+            }
+          ],
+          "record_shape": "standing_capability",
+          "capability": {
+            "control_id": "release-gate",
+            "status": "unknown",
+            "surface": "gh workflow",
+            "authorized_roles": [
+              "maintainer"
+            ],
+            "coverage": "all releases",
+            "limitations": [
+              "no rollback"
+            ],
+            "supported_transitions": [
+              "draft->published"
+            ],
+            "clock_support": {
+              "supported": true,
+              "start_event": "workflow_run",
+              "completion_event": "release",
+              "deadline_seconds": 600
+            }
+          },
+          "record_id": "op-unknown"
+        }
+      ],
+      "entries": [
+        {
+          "record_id": "op-unknown",
+          "observed_at": "2026-03-01T00:00:00.000Z",
+          "record_shape": "standing_capability",
+          "control_kind": "release",
+          "claims": [],
+          "evidence": [],
+          "counterevidence": [],
+          "gaps": [
+            "one declared gap",
+            "capability state is unknown for release-gate"
+          ],
+          "owner": "release",
+          "actions": [
+            "review"
+          ],
+          "raw_evidence": [
+            {
+              "path": "a/workflow.yaml",
+              "media_type": "application/yaml",
+              "size_bytes": 3,
+              "digest": "sha256:aa"
+            },
+            {
+              "path": "z/run.json",
+              "media_type": "application/json",
+              "size_bytes": 9,
+              "digest": "sha256:zz"
+            }
+          ]
+        }
+      ],
+      "rendered": "## Operational evidence\n\n### op-unknown\n\n#### Claims\n\nNo affirmative claim.\n\n#### Evidence\n\n- a/workflow.yaml — sha256:aa\n- z/run.json — sha256:zz\n\n#### Counterevidence\n\nNo declared counterevidence.\n\n#### Gaps\n\n- one declared gap\n- capability state is unknown for release-gate\n\n#### Owner\n\nrelease\n\n#### Actions\n\n- review\n"
+    },
+    {
+      "name": "capability_unavailable",
+      "records": [
+        {
+          "schema_version": 1,
+          "record_type": "operational_evidence",
+          "observed_at": "2026-03-01T00:00:00.000Z",
+          "control_kind": "release",
+          "subject": {
+            "id": "quoin",
+            "revision": "rev-1"
+          },
+          "producer": {
+            "tool_identity": "quoin",
+            "tool_version": "0.9.0",
+            "configuration_digest": "sha256:aa",
+            "source_revision": "rev-1",
+            "environment": {
+              "ci": true,
+              "node": "22.11.0",
+              "workers": 4,
+              "seed": null
+            },
+            "definition_version": "1"
+          },
+          "scope": {
+            "service": "quoin",
+            "environment": "prod",
+            "population": "all"
+          },
+          "configuration": {
+            "version_pins": [
+              {
+                "kind": "model",
+                "identity": "opus",
+                "revision": "5",
+                "digest": "sha256:cc"
+              }
+            ]
+          },
+          "owner": "release",
+          "gaps": [
+            "one declared gap"
+          ],
+          "actions": [
+            "review"
+          ],
+          "raw_evidence": [
+            {
+              "path": "z/run.json",
+              "media_type": "application/json",
+              "size_bytes": 9,
+              "digest": "sha256:zz"
+            },
+            {
+              "path": "a/workflow.yaml",
+              "media_type": "application/yaml",
+              "size_bytes": 3,
+              "digest": "sha256:aa"
+            }
+          ],
+          "record_shape": "standing_capability",
+          "capability": {
+            "control_id": "release-gate",
+            "status": "unavailable",
+            "surface": "gh workflow",
+            "authorized_roles": [
+              "maintainer"
+            ],
+            "coverage": "all releases",
+            "limitations": [
+              "no rollback"
+            ],
+            "supported_transitions": [
+              "draft->published"
+            ],
+            "clock_support": {
+              "supported": true,
+              "start_event": "workflow_run",
+              "completion_event": "release",
+              "deadline_seconds": 600
+            }
+          },
+          "record_id": "op-unavailable"
+        }
+      ],
+      "entries": [
+        {
+          "record_id": "op-unavailable",
+          "observed_at": "2026-03-01T00:00:00.000Z",
+          "record_shape": "standing_capability",
+          "control_kind": "release",
+          "claims": [],
+          "evidence": [],
+          "counterevidence": [
+            "release-gate capability is unavailable"
+          ],
+          "gaps": [
+            "one declared gap"
+          ],
+          "owner": "release",
+          "actions": [
+            "review"
+          ],
+          "raw_evidence": [
+            {
+              "path": "a/workflow.yaml",
+              "media_type": "application/yaml",
+              "size_bytes": 3,
+              "digest": "sha256:aa"
+            },
+            {
+              "path": "z/run.json",
+              "media_type": "application/json",
+              "size_bytes": 9,
+              "digest": "sha256:zz"
+            }
+          ]
+        }
+      ],
+      "rendered": "## Operational evidence\n\n### op-unavailable\n\n#### Claims\n\nNo affirmative claim.\n\n#### Evidence\n\n- a/workflow.yaml — sha256:aa\n- z/run.json — sha256:zz\n\n#### Counterevidence\n\n- release-gate capability is unavailable\n\n#### Gaps\n\n- one declared gap\n\n#### Owner\n\nrelease\n\n#### Actions\n\n- review\n"
+    },
+    {
+      "name": "capability_not_applicable",
+      "records": [
+        {
+          "schema_version": 1,
+          "record_type": "operational_evidence",
+          "observed_at": "2026-03-01T00:00:00.000Z",
+          "control_kind": "release",
+          "subject": {
+            "id": "quoin",
+            "revision": "rev-1"
+          },
+          "producer": {
+            "tool_identity": "quoin",
+            "tool_version": "0.9.0",
+            "configuration_digest": "sha256:aa",
+            "source_revision": "rev-1",
+            "environment": {
+              "ci": true,
+              "node": "22.11.0",
+              "workers": 4,
+              "seed": null
+            },
+            "definition_version": "1"
+          },
+          "scope": {
+            "service": "quoin",
+            "environment": "prod",
+            "population": "all"
+          },
+          "configuration": {
+            "version_pins": [
+              {
+                "kind": "model",
+                "identity": "opus",
+                "revision": "5",
+                "digest": "sha256:cc"
+              }
+            ]
+          },
+          "owner": "release",
+          "gaps": [
+            "one declared gap"
+          ],
+          "actions": [
+            "review"
+          ],
+          "raw_evidence": [
+            {
+              "path": "z/run.json",
+              "media_type": "application/json",
+              "size_bytes": 9,
+              "digest": "sha256:zz"
+            },
+            {
+              "path": "a/workflow.yaml",
+              "media_type": "application/yaml",
+              "size_bytes": 3,
+              "digest": "sha256:aa"
+            }
+          ],
+          "record_shape": "standing_capability",
+          "capability": {
+            "control_id": "release-gate",
+            "status": "not_applicable",
+            "surface": "gh workflow",
+            "authorized_roles": [
+              "maintainer"
+            ],
+            "coverage": "all releases",
+            "limitations": [
+              "no rollback"
+            ],
+            "supported_transitions": [
+              "draft->published"
+            ],
+            "clock_support": {
+              "supported": true,
+              "start_event": "workflow_run",
+              "completion_event": "release",
+              "deadline_seconds": 600
+            }
+          },
+          "record_id": "op-not-applicable"
+        }
+      ],
+      "entries": [
+        {
+          "record_id": "op-not-applicable",
+          "observed_at": "2026-03-01T00:00:00.000Z",
+          "record_shape": "standing_capability",
+          "control_kind": "release",
+          "claims": [],
+          "evidence": [],
+          "counterevidence": [
+            "release-gate capability is not_applicable"
+          ],
+          "gaps": [
+            "one declared gap"
+          ],
+          "owner": "release",
+          "actions": [
+            "review"
+          ],
+          "raw_evidence": [
+            {
+              "path": "a/workflow.yaml",
+              "media_type": "application/yaml",
+              "size_bytes": 3,
+              "digest": "sha256:aa"
+            },
+            {
+              "path": "z/run.json",
+              "media_type": "application/json",
+              "size_bytes": 9,
+              "digest": "sha256:zz"
+            }
+          ]
+        }
+      ],
+      "rendered": "## Operational evidence\n\n### op-not-applicable\n\n#### Claims\n\nNo affirmative claim.\n\n#### Evidence\n\n- a/workflow.yaml — sha256:aa\n- z/run.json — sha256:zz\n\n#### Counterevidence\n\n- release-gate capability is not_applicable\n\n#### Gaps\n\n- one declared gap\n\n#### Owner\n\nrelease\n\n#### Actions\n\n- review\n"
+    },
+    {
+      "name": "exercise_succeeded_clock_met",
+      "records": [
+        {
+          "schema_version": 1,
+          "record_type": "operational_evidence",
+          "observed_at": "2026-03-01T00:00:00.000Z",
+          "control_kind": "release",
+          "subject": {
+            "id": "quoin",
+            "revision": "rev-1"
+          },
+          "producer": {
+            "tool_identity": "quoin",
+            "tool_version": "0.9.0",
+            "configuration_digest": "sha256:aa",
+            "source_revision": "rev-1",
+            "environment": {
+              "ci": true,
+              "node": "22.11.0",
+              "workers": 4,
+              "seed": null
+            },
+            "definition_version": "1"
+          },
+          "scope": {
+            "service": "quoin",
+            "environment": "prod",
+            "population": "all"
+          },
+          "configuration": {
+            "version_pins": [
+              {
+                "kind": "model",
+                "identity": "opus",
+                "revision": "5",
+                "digest": "sha256:cc"
+              }
+            ]
+          },
+          "owner": "release",
+          "gaps": [
+            "one declared gap"
+          ],
+          "actions": [
+            "review"
+          ],
+          "raw_evidence": [
+            {
+              "path": "z/run.json",
+              "media_type": "application/json",
+              "size_bytes": 9,
+              "digest": "sha256:zz"
+            },
+            {
+              "path": "a/workflow.yaml",
+              "media_type": "application/yaml",
+              "size_bytes": 3,
+              "digest": "sha256:aa"
+            }
+          ],
+          "record_shape": "exercise",
+          "exercise": {
+            "control_id": "release-gate",
+            "capability_record_id": "cap-1",
+            "mode": "actual",
+            "started_at": "2026-03-01T00:00:00.000Z",
+            "completed_at": "2026-03-01T00:05:00.000Z",
+            "actor": "ci",
+            "trigger": "push",
+            "outcome": "succeeded",
+            "state_before": {
+              "published": false
+            },
+            "state_after": {
+              "published": true
+            },
+            "observations": [
+              "clean"
+            ],
+            "clock": {
+              "applicability": "operational_with_clock",
+              "started_at": "2026-03-01T00:00:00.000Z",
+              "deadline_at": "2026-03-01T00:10:00.000Z",
+              "completed_at": "2026-03-01T00:05:00.000Z",
+              "status": "met"
+            }
+          },
+          "record_id": "op-met"
+        }
+      ],
+      "entries": [
+        {
+          "record_id": "op-met",
+          "observed_at": "2026-03-01T00:00:00.000Z",
+          "record_shape": "exercise",
+          "control_kind": "release",
+          "claims": [
+            "release control release-gate was exercised successfully"
+          ],
+          "evidence": [
+            "actual exercise completed 2026-03-01T00:05:00.000Z; clock met"
+          ],
+          "counterevidence": [],
+          "gaps": [
+            "one declared gap"
+          ],
+          "owner": "release",
+          "actions": [
+            "review"
+          ],
+          "raw_evidence": [
+            {
+              "path": "a/workflow.yaml",
+              "media_type": "application/yaml",
+              "size_bytes": 3,
+              "digest": "sha256:aa"
+            },
+            {
+              "path": "z/run.json",
+              "media_type": "application/json",
+              "size_bytes": 9,
+              "digest": "sha256:zz"
+            }
+          ]
+        }
+      ],
+      "rendered": "## Operational evidence\n\n### op-met\n\n#### Claims\n\n- release control release-gate was exercised successfully\n\n#### Evidence\n\n- actual exercise completed 2026-03-01T00:05:00.000Z; clock met\n- a/workflow.yaml — sha256:aa\n- z/run.json — sha256:zz\n\n#### Counterevidence\n\nNo declared counterevidence.\n\n#### Gaps\n\n- one declared gap\n\n#### Owner\n\nrelease\n\n#### Actions\n\n- review\n"
+    },
+    {
+      "name": "exercise_succeeded_clock_not_applicable",
+      "records": [
+        {
+          "schema_version": 1,
+          "record_type": "operational_evidence",
+          "observed_at": "2026-03-01T00:00:00.000Z",
+          "control_kind": "release",
+          "subject": {
+            "id": "quoin",
+            "revision": "rev-1"
+          },
+          "producer": {
+            "tool_identity": "quoin",
+            "tool_version": "0.9.0",
+            "configuration_digest": "sha256:aa",
+            "source_revision": "rev-1",
+            "environment": {
+              "ci": true,
+              "node": "22.11.0",
+              "workers": 4,
+              "seed": null
+            },
+            "definition_version": "1"
+          },
+          "scope": {
+            "service": "quoin",
+            "environment": "prod",
+            "population": "all"
+          },
+          "configuration": {
+            "version_pins": [
+              {
+                "kind": "model",
+                "identity": "opus",
+                "revision": "5",
+                "digest": "sha256:cc"
+              }
+            ]
+          },
+          "owner": "release",
+          "gaps": [
+            "one declared gap"
+          ],
+          "actions": [
+            "review"
+          ],
+          "raw_evidence": [
+            {
+              "path": "z/run.json",
+              "media_type": "application/json",
+              "size_bytes": 9,
+              "digest": "sha256:zz"
+            },
+            {
+              "path": "a/workflow.yaml",
+              "media_type": "application/yaml",
+              "size_bytes": 3,
+              "digest": "sha256:aa"
+            }
+          ],
+          "record_shape": "exercise",
+          "exercise": {
+            "control_id": "release-gate",
+            "capability_record_id": "cap-1",
+            "mode": "actual",
+            "started_at": "2026-03-01T00:00:00.000Z",
+            "completed_at": "2026-03-01T00:05:00.000Z",
+            "actor": "ci",
+            "trigger": "push",
+            "outcome": "succeeded",
+            "state_before": {
+              "published": false
+            },
+            "state_after": {
+              "published": true
+            },
+            "observations": [
+              "clean"
+            ],
+            "clock": {
+              "applicability": "not_applicable",
+              "status": "not_applicable"
+            }
+          },
+          "record_id": "op-na"
+        }
+      ],
+      "entries": [
+        {
+          "record_id": "op-na",
+          "observed_at": "2026-03-01T00:00:00.000Z",
+          "record_shape": "exercise",
+          "control_kind": "release",
+          "claims": [
+            "release control release-gate was exercised successfully"
+          ],
+          "evidence": [
+            "actual exercise completed 2026-03-01T00:05:00.000Z; clock not_applicable"
+          ],
+          "counterevidence": [],
+          "gaps": [
+            "one declared gap"
+          ],
+          "owner": "release",
+          "actions": [
+            "review"
+          ],
+          "raw_evidence": [
+            {
+              "path": "a/workflow.yaml",
+              "media_type": "application/yaml",
+              "size_bytes": 3,
+              "digest": "sha256:aa"
+            },
+            {
+              "path": "z/run.json",
+              "media_type": "application/json",
+              "size_bytes": 9,
+              "digest": "sha256:zz"
+            }
+          ]
+        }
+      ],
+      "rendered": "## Operational evidence\n\n### op-na\n\n#### Claims\n\n- release control release-gate was exercised successfully\n\n#### Evidence\n\n- actual exercise completed 2026-03-01T00:05:00.000Z; clock not_applicable\n- a/workflow.yaml — sha256:aa\n- z/run.json — sha256:zz\n\n#### Counterevidence\n\nNo declared counterevidence.\n\n#### Gaps\n\n- one declared gap\n\n#### Owner\n\nrelease\n\n#### Actions\n\n- review\n"
+    },
+    {
+      "name": "exercise_open",
+      "records": [
+        {
+          "schema_version": 1,
+          "record_type": "operational_evidence",
+          "observed_at": "2026-03-01T00:00:00.000Z",
+          "control_kind": "release",
+          "subject": {
+            "id": "quoin",
+            "revision": "rev-1"
+          },
+          "producer": {
+            "tool_identity": "quoin",
+            "tool_version": "0.9.0",
+            "configuration_digest": "sha256:aa",
+            "source_revision": "rev-1",
+            "environment": {
+              "ci": true,
+              "node": "22.11.0",
+              "workers": 4,
+              "seed": null
+            },
+            "definition_version": "1"
+          },
+          "scope": {
+            "service": "quoin",
+            "environment": "prod",
+            "population": "all"
+          },
+          "configuration": {
+            "version_pins": [
+              {
+                "kind": "model",
+                "identity": "opus",
+                "revision": "5",
+                "digest": "sha256:cc"
+              }
+            ]
+          },
+          "owner": "release",
+          "gaps": [
+            "one declared gap"
+          ],
+          "actions": [
+            "review"
+          ],
+          "raw_evidence": [
+            {
+              "path": "z/run.json",
+              "media_type": "application/json",
+              "size_bytes": 9,
+              "digest": "sha256:zz"
+            },
+            {
+              "path": "a/workflow.yaml",
+              "media_type": "application/yaml",
+              "size_bytes": 3,
+              "digest": "sha256:aa"
+            }
+          ],
+          "record_shape": "exercise",
+          "exercise": {
+            "control_id": "release-gate",
+            "capability_record_id": "cap-1",
+            "mode": "actual",
+            "started_at": "2026-03-01T00:00:00.000Z",
+            "completed_at": "2026-03-01T00:05:00.000Z",
+            "actor": "ci",
+            "trigger": "push",
+            "outcome": "partial",
+            "state_before": {
+              "published": false
+            },
+            "state_after": {
+              "published": true
+            },
+            "observations": [
+              "clean"
+            ],
+            "clock": {
+              "applicability": "operational_with_clock",
+              "started_at": "2026-03-01T00:00:00.000Z",
+              "deadline_at": "2026-03-01T00:10:00.000Z",
+              "status": "open"
+            }
+          },
+          "record_id": "op-open"
+        }
+      ],
+      "entries": [
+        {
+          "record_id": "op-open",
+          "observed_at": "2026-03-01T00:00:00.000Z",
+          "record_shape": "exercise",
+          "control_kind": "release",
+          "claims": [],
+          "evidence": [],
+          "counterevidence": [],
+          "gaps": [
+            "one declared gap",
+            "release-gate exercise is partial; clock open"
+          ],
+          "owner": "release",
+          "actions": [
+            "review"
+          ],
+          "raw_evidence": [
+            {
+              "path": "a/workflow.yaml",
+              "media_type": "application/yaml",
+              "size_bytes": 3,
+              "digest": "sha256:aa"
+            },
+            {
+              "path": "z/run.json",
+              "media_type": "application/json",
+              "size_bytes": 9,
+              "digest": "sha256:zz"
+            }
+          ]
+        }
+      ],
+      "rendered": "## Operational evidence\n\n### op-open\n\n#### Claims\n\nNo affirmative claim.\n\n#### Evidence\n\n- a/workflow.yaml — sha256:aa\n- z/run.json — sha256:zz\n\n#### Counterevidence\n\nNo declared counterevidence.\n\n#### Gaps\n\n- one declared gap\n- release-gate exercise is partial; clock open\n\n#### Owner\n\nrelease\n\n#### Actions\n\n- review\n"
+    },
+    {
+      "name": "exercise_missed",
+      "records": [
+        {
+          "schema_version": 1,
+          "record_type": "operational_evidence",
+          "observed_at": "2026-03-01T00:00:00.000Z",
+          "control_kind": "release",
+          "subject": {
+            "id": "quoin",
+            "revision": "rev-1"
+          },
+          "producer": {
+            "tool_identity": "quoin",
+            "tool_version": "0.9.0",
+            "configuration_digest": "sha256:aa",
+            "source_revision": "rev-1",
+            "environment": {
+              "ci": true,
+              "node": "22.11.0",
+              "workers": 4,
+              "seed": null
+            },
+            "definition_version": "1"
+          },
+          "scope": {
+            "service": "quoin",
+            "environment": "prod",
+            "population": "all"
+          },
+          "configuration": {
+            "version_pins": [
+              {
+                "kind": "model",
+                "identity": "opus",
+                "revision": "5",
+                "digest": "sha256:cc"
+              }
+            ]
+          },
+          "owner": "release",
+          "gaps": [
+            "one declared gap"
+          ],
+          "actions": [
+            "review"
+          ],
+          "raw_evidence": [
+            {
+              "path": "z/run.json",
+              "media_type": "application/json",
+              "size_bytes": 9,
+              "digest": "sha256:zz"
+            },
+            {
+              "path": "a/workflow.yaml",
+              "media_type": "application/yaml",
+              "size_bytes": 3,
+              "digest": "sha256:aa"
+            }
+          ],
+          "record_shape": "exercise",
+          "exercise": {
+            "control_id": "release-gate",
+            "capability_record_id": "cap-1",
+            "mode": "actual",
+            "started_at": "2026-03-01T00:00:00.000Z",
+            "completed_at": "2026-03-01T00:05:00.000Z",
+            "actor": "ci",
+            "trigger": "push",
+            "outcome": "failed",
+            "state_before": {
+              "published": false
+            },
+            "state_after": {
+              "published": true
+            },
+            "observations": [
+              "clean"
+            ],
+            "clock": {
+              "applicability": "operational_with_clock",
+              "started_at": "2026-03-01T00:00:00.000Z",
+              "deadline_at": "2026-03-01T00:10:00.000Z",
+              "completed_at": "2026-03-01T00:05:00.000Z",
+              "status": "missed"
+            }
+          },
+          "record_id": "op-missed"
+        }
+      ],
+      "entries": [
+        {
+          "record_id": "op-missed",
+          "observed_at": "2026-03-01T00:00:00.000Z",
+          "record_shape": "exercise",
+          "control_kind": "release",
+          "claims": [],
+          "evidence": [],
+          "counterevidence": [
+            "release-gate exercise is failed; clock missed"
+          ],
+          "gaps": [
+            "one declared gap"
+          ],
+          "owner": "release",
+          "actions": [
+            "review"
+          ],
+          "raw_evidence": [
+            {
+              "path": "a/workflow.yaml",
+              "media_type": "application/yaml",
+              "size_bytes": 3,
+              "digest": "sha256:aa"
+            },
+            {
+              "path": "z/run.json",
+              "media_type": "application/json",
+              "size_bytes": 9,
+              "digest": "sha256:zz"
+            }
+          ]
+        }
+      ],
+      "rendered": "## Operational evidence\n\n### op-missed\n\n#### Claims\n\nNo affirmative claim.\n\n#### Evidence\n\n- a/workflow.yaml — sha256:aa\n- z/run.json — sha256:zz\n\n#### Counterevidence\n\n- release-gate exercise is failed; clock missed\n\n#### Gaps\n\n- one declared gap\n\n#### Owner\n\nrelease\n\n#### Actions\n\n- review\n"
+    },
+    {
+      "name": "exercise_succeeded_but_clock_missed",
+      "records": [
+        {
+          "schema_version": 1,
+          "record_type": "operational_evidence",
+          "observed_at": "2026-03-01T00:00:00.000Z",
+          "control_kind": "release",
+          "subject": {
+            "id": "quoin",
+            "revision": "rev-1"
+          },
+          "producer": {
+            "tool_identity": "quoin",
+            "tool_version": "0.9.0",
+            "configuration_digest": "sha256:aa",
+            "source_revision": "rev-1",
+            "environment": {
+              "ci": true,
+              "node": "22.11.0",
+              "workers": 4,
+              "seed": null
+            },
+            "definition_version": "1"
+          },
+          "scope": {
+            "service": "quoin",
+            "environment": "prod",
+            "population": "all"
+          },
+          "configuration": {
+            "version_pins": [
+              {
+                "kind": "model",
+                "identity": "opus",
+                "revision": "5",
+                "digest": "sha256:cc"
+              }
+            ]
+          },
+          "owner": "release",
+          "gaps": [
+            "one declared gap"
+          ],
+          "actions": [
+            "review"
+          ],
+          "raw_evidence": [
+            {
+              "path": "z/run.json",
+              "media_type": "application/json",
+              "size_bytes": 9,
+              "digest": "sha256:zz"
+            },
+            {
+              "path": "a/workflow.yaml",
+              "media_type": "application/yaml",
+              "size_bytes": 3,
+              "digest": "sha256:aa"
+            }
+          ],
+          "record_shape": "exercise",
+          "exercise": {
+            "control_id": "release-gate",
+            "capability_record_id": "cap-1",
+            "mode": "actual",
+            "started_at": "2026-03-01T00:00:00.000Z",
+            "completed_at": "2026-03-01T00:05:00.000Z",
+            "actor": "ci",
+            "trigger": "push",
+            "outcome": "succeeded",
+            "state_before": {
+              "published": false
+            },
+            "state_after": {
+              "published": true
+            },
+            "observations": [
+              "clean"
+            ],
+            "clock": {
+              "applicability": "operational_with_clock",
+              "started_at": "2026-03-01T00:00:00.000Z",
+              "deadline_at": "2026-03-01T00:10:00.000Z",
+              "completed_at": "2026-03-01T00:05:00.000Z",
+              "status": "missed"
+            }
+          },
+          "record_id": "op-succeeded-missed"
+        }
+      ],
+      "entries": [
+        {
+          "record_id": "op-succeeded-missed",
+          "observed_at": "2026-03-01T00:00:00.000Z",
+          "record_shape": "exercise",
+          "control_kind": "release",
+          "claims": [],
+          "evidence": [],
+          "counterevidence": [
+            "release-gate exercise is succeeded; clock missed"
+          ],
+          "gaps": [
+            "one declared gap"
+          ],
+          "owner": "release",
+          "actions": [
+            "review"
+          ],
+          "raw_evidence": [
+            {
+              "path": "a/workflow.yaml",
+              "media_type": "application/yaml",
+              "size_bytes": 3,
+              "digest": "sha256:aa"
+            },
+            {
+              "path": "z/run.json",
+              "media_type": "application/json",
+              "size_bytes": 9,
+              "digest": "sha256:zz"
+            }
+          ]
+        }
+      ],
+      "rendered": "## Operational evidence\n\n### op-succeeded-missed\n\n#### Claims\n\nNo affirmative claim.\n\n#### Evidence\n\n- a/workflow.yaml — sha256:aa\n- z/run.json — sha256:zz\n\n#### Counterevidence\n\n- release-gate exercise is succeeded; clock missed\n\n#### Gaps\n\n- one declared gap\n\n#### Owner\n\nrelease\n\n#### Actions\n\n- review\n"
+    },
+    {
+      "name": "ordering",
+      "records": [
+        {
+          "schema_version": 1,
+          "record_type": "operational_evidence",
+          "observed_at": "2026-03-02T00:00:00.000Z",
+          "control_kind": "release",
+          "subject": {
+            "id": "quoin",
+            "revision": "rev-1"
+          },
+          "producer": {
+            "tool_identity": "quoin",
+            "tool_version": "0.9.0",
+            "configuration_digest": "sha256:aa",
+            "source_revision": "rev-1",
+            "environment": {
+              "ci": true,
+              "node": "22.11.0",
+              "workers": 4,
+              "seed": null
+            },
+            "definition_version": "1"
+          },
+          "scope": {
+            "service": "quoin",
+            "environment": "prod",
+            "population": "all"
+          },
+          "configuration": {
+            "version_pins": [
+              {
+                "kind": "model",
+                "identity": "opus",
+                "revision": "5",
+                "digest": "sha256:cc"
+              }
+            ]
+          },
+          "owner": "release",
+          "gaps": [
+            "one declared gap"
+          ],
+          "actions": [
+            "review"
+          ],
+          "raw_evidence": [
+            {
+              "path": "z/run.json",
+              "media_type": "application/json",
+              "size_bytes": 9,
+              "digest": "sha256:zz"
+            },
+            {
+              "path": "a/workflow.yaml",
+              "media_type": "application/yaml",
+              "size_bytes": 3,
+              "digest": "sha256:aa"
+            }
+          ],
+          "record_shape": "exercise",
+          "exercise": {
+            "control_id": "release-gate",
+            "capability_record_id": "cap-1",
+            "mode": "actual",
+            "started_at": "2026-03-01T00:00:00.000Z",
+            "completed_at": "2026-03-01T00:05:00.000Z",
+            "actor": "ci",
+            "trigger": "push",
+            "outcome": "succeeded",
+            "state_before": {
+              "published": false
+            },
+            "state_after": {
+              "published": true
+            },
+            "observations": [
+              "clean"
+            ],
+            "clock": {
+              "applicability": "operational_with_clock",
+              "started_at": "2026-03-01T00:00:00.000Z",
+              "deadline_at": "2026-03-01T00:10:00.000Z",
+              "completed_at": "2026-03-01T00:05:00.000Z",
+              "status": "met"
+            }
+          },
+          "record_id": "op-b"
+        },
+        {
+          "schema_version": 1,
+          "record_type": "operational_evidence",
+          "observed_at": "2026-03-02T00:00:00.000Z",
+          "control_kind": "release",
+          "subject": {
+            "id": "quoin",
+            "revision": "rev-1"
+          },
+          "producer": {
+            "tool_identity": "quoin",
+            "tool_version": "0.9.0",
+            "configuration_digest": "sha256:aa",
+            "source_revision": "rev-1",
+            "environment": {
+              "ci": true,
+              "node": "22.11.0",
+              "workers": 4,
+              "seed": null
+            },
+            "definition_version": "1"
+          },
+          "scope": {
+            "service": "quoin",
+            "environment": "prod",
+            "population": "all"
+          },
+          "configuration": {
+            "version_pins": [
+              {
+                "kind": "model",
+                "identity": "opus",
+                "revision": "5",
+                "digest": "sha256:cc"
+              }
+            ]
+          },
+          "owner": "release",
+          "gaps": [
+            "one declared gap"
+          ],
+          "actions": [
+            "review"
+          ],
+          "raw_evidence": [
+            {
+              "path": "z/run.json",
+              "media_type": "application/json",
+              "size_bytes": 9,
+              "digest": "sha256:zz"
+            },
+            {
+              "path": "a/workflow.yaml",
+              "media_type": "application/yaml",
+              "size_bytes": 3,
+              "digest": "sha256:aa"
+            }
+          ],
+          "record_shape": "standing_capability",
+          "capability": {
+            "control_id": "release-gate",
+            "status": "available",
+            "surface": "gh workflow",
+            "authorized_roles": [
+              "maintainer"
+            ],
+            "coverage": "all releases",
+            "limitations": [
+              "no rollback"
+            ],
+            "supported_transitions": [
+              "draft->published"
+            ],
+            "clock_support": {
+              "supported": true,
+              "start_event": "workflow_run",
+              "completion_event": "release",
+              "deadline_seconds": 600
+            }
+          },
+          "record_id": "op-a"
+        },
+        {
+          "schema_version": 1,
+          "record_type": "operational_evidence",
+          "observed_at": "2026-03-01T00:00:00.000Z",
+          "control_kind": "release",
+          "subject": {
+            "id": "quoin",
+            "revision": "rev-1"
+          },
+          "producer": {
+            "tool_identity": "quoin",
+            "tool_version": "0.9.0",
+            "configuration_digest": "sha256:aa",
+            "source_revision": "rev-1",
+            "environment": {
+              "ci": true,
+              "node": "22.11.0",
+              "workers": 4,
+              "seed": null
+            },
+            "definition_version": "1"
+          },
+          "scope": {
+            "service": "quoin",
+            "environment": "prod",
+            "population": "all"
+          },
+          "configuration": {
+            "version_pins": [
+              {
+                "kind": "model",
+                "identity": "opus",
+                "revision": "5",
+                "digest": "sha256:cc"
+              }
+            ]
+          },
+          "owner": "release",
+          "gaps": [
+            "one declared gap"
+          ],
+          "actions": [
+            "review"
+          ],
+          "raw_evidence": [
+            {
+              "path": "z/run.json",
+              "media_type": "application/json",
+              "size_bytes": 9,
+              "digest": "sha256:zz"
+            },
+            {
+              "path": "a/workflow.yaml",
+              "media_type": "application/yaml",
+              "size_bytes": 3,
+              "digest": "sha256:aa"
+            }
+          ],
+          "record_shape": "exercise",
+          "exercise": {
+            "control_id": "release-gate",
+            "capability_record_id": "cap-1",
+            "mode": "actual",
+            "started_at": "2026-03-01T00:00:00.000Z",
+            "completed_at": "2026-03-01T00:05:00.000Z",
+            "actor": "ci",
+            "trigger": "push",
+            "outcome": "failed",
+            "state_before": {
+              "published": false
+            },
+            "state_after": {
+              "published": true
+            },
+            "observations": [
+              "clean"
+            ],
+            "clock": {
+              "applicability": "operational_with_clock",
+              "started_at": "2026-03-01T00:00:00.000Z",
+              "deadline_at": "2026-03-01T00:10:00.000Z",
+              "completed_at": "2026-03-01T00:05:00.000Z",
+              "status": "missed"
+            }
+          },
+          "record_id": "op-c"
+        }
+      ],
+      "entries": [
+        {
+          "record_id": "op-c",
+          "observed_at": "2026-03-01T00:00:00.000Z",
+          "record_shape": "exercise",
+          "control_kind": "release",
+          "claims": [],
+          "evidence": [],
+          "counterevidence": [
+            "release-gate exercise is failed; clock missed"
+          ],
+          "gaps": [
+            "one declared gap"
+          ],
+          "owner": "release",
+          "actions": [
+            "review"
+          ],
+          "raw_evidence": [
+            {
+              "path": "a/workflow.yaml",
+              "media_type": "application/yaml",
+              "size_bytes": 3,
+              "digest": "sha256:aa"
+            },
+            {
+              "path": "z/run.json",
+              "media_type": "application/json",
+              "size_bytes": 9,
+              "digest": "sha256:zz"
+            }
+          ]
+        },
+        {
+          "record_id": "op-a",
+          "observed_at": "2026-03-02T00:00:00.000Z",
+          "record_shape": "standing_capability",
+          "control_kind": "release",
+          "claims": [
+            "release control release-gate is available for quoin"
+          ],
+          "evidence": [
+            "surface gh workflow; coverage all releases"
+          ],
+          "counterevidence": [],
+          "gaps": [
+            "one declared gap"
+          ],
+          "owner": "release",
+          "actions": [
+            "review"
+          ],
+          "raw_evidence": [
+            {
+              "path": "a/workflow.yaml",
+              "media_type": "application/yaml",
+              "size_bytes": 3,
+              "digest": "sha256:aa"
+            },
+            {
+              "path": "z/run.json",
+              "media_type": "application/json",
+              "size_bytes": 9,
+              "digest": "sha256:zz"
+            }
+          ]
+        },
+        {
+          "record_id": "op-b",
+          "observed_at": "2026-03-02T00:00:00.000Z",
+          "record_shape": "exercise",
+          "control_kind": "release",
+          "claims": [
+            "release control release-gate was exercised successfully"
+          ],
+          "evidence": [
+            "actual exercise completed 2026-03-01T00:05:00.000Z; clock met"
+          ],
+          "counterevidence": [],
+          "gaps": [
+            "one declared gap"
+          ],
+          "owner": "release",
+          "actions": [
+            "review"
+          ],
+          "raw_evidence": [
+            {
+              "path": "a/workflow.yaml",
+              "media_type": "application/yaml",
+              "size_bytes": 3,
+              "digest": "sha256:aa"
+            },
+            {
+              "path": "z/run.json",
+              "media_type": "application/json",
+              "size_bytes": 9,
+              "digest": "sha256:zz"
+            }
+          ]
+        }
+      ],
+      "rendered": "## Operational evidence\n\n### op-c\n\n#### Claims\n\nNo affirmative claim.\n\n#### Evidence\n\n- a/workflow.yaml — sha256:aa\n- z/run.json — sha256:zz\n\n#### Counterevidence\n\n- release-gate exercise is failed; clock missed\n\n#### Gaps\n\n- one declared gap\n\n#### Owner\n\nrelease\n\n#### Actions\n\n- review\n\n### op-a\n\n#### Claims\n\n- release control release-gate is available for quoin\n\n#### Evidence\n\n- surface gh workflow; coverage all releases\n- a/workflow.yaml — sha256:aa\n- z/run.json — sha256:zz\n\n#### Counterevidence\n\nNo declared counterevidence.\n\n#### Gaps\n\n- one declared gap\n\n#### Owner\n\nrelease\n\n#### Actions\n\n- review\n\n### op-b\n\n#### Claims\n\n- release control release-gate was exercised successfully\n\n#### Evidence\n\n- actual exercise completed 2026-03-01T00:05:00.000Z; clock met\n- a/workflow.yaml — sha256:aa\n- z/run.json — sha256:zz\n\n#### Counterevidence\n\nNo declared counterevidence.\n\n#### Gaps\n\n- one declared gap\n\n#### Owner\n\nrelease\n\n#### Actions\n\n- review\n"
+    }
+  ]
+}

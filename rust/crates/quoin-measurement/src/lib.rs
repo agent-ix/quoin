@@ -8,7 +8,9 @@
 //!
 //! Wave 1 of Stage 6 (quoin#468): the eight leaf modules of the measurement
 //! domain that depend on nothing else in it, plus the raw-evidence accounting
-//! lifted out of `intervention.ts`.
+//! lifted out of `intervention.ts`. Wave 2 (quoin#469): the intervention and
+//! operational record declarations and the two pure report renderers over
+//! them.
 //!
 //! | retained TypeScript | here |
 //! | --- | --- |
@@ -20,9 +22,17 @@
 //! | `profiles.ts` | [`profiles`] |
 //! | `store.ts`, `atomic-file.ts` | [`store`] |
 //! | `intervention.ts:115-216` | [`raw_evidence`] |
+//! | `intervention-types.ts` | [`intervention::record`] |
+//! | `intervention-report.ts` | [`intervention::report`] |
+//! | `operational-types.ts` | [`operational::record`] |
+//! | `operational-report.ts` | [`operational::report`] |
+//!
+//! [`common`] holds what those four files declare more than once — the
+//! subject, the producer, the scalar unions — declared once here.
 //!
 //! The TypeScript is retained, not deleted: this is a port wave and the
-//! cutover is quoin#479.
+//! cutover is quoin#479. Intake and the producers are quoin#471 and
+//! quoin#472.
 //!
 //! # What is deliberately absent
 //!
@@ -36,10 +46,13 @@
 //! - **No filesystem outside [`source`] and [`store`].** Everything else takes
 //!   a [`source::MeasurementSource`].
 
+pub mod common;
 pub mod compare;
 pub mod date_time;
 pub mod discovery;
 pub mod error;
+pub mod intervention;
+pub mod operational;
 pub mod plans;
 pub mod profiles;
 pub mod raw_evidence;
