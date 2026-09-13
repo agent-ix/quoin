@@ -35,8 +35,19 @@
 #![forbid(unsafe_code)]
 
 pub mod adapters;
+pub mod assurance_records;
 pub mod error;
+pub mod ids;
+pub mod independence;
+pub mod mock_inspection;
+pub mod paths;
+pub mod record;
+pub mod source;
+pub mod store;
+pub mod trust;
 pub mod types;
 
 pub use error::{EvidenceError, EvidenceErrorCode};
+pub use ids::{Commit, ObligationId, ProfileId, StatementHash, SuiteId, SymbolId, TrustDecisionId};
+pub use source::{DiskEvidence, EvidenceSource, MemoryEvidence};
 pub use types::{Finding, MUTATION_SCORE_METRIC, Outcome, RunEntry, STORE_SCHEMA_VERSION};

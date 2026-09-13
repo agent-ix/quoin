@@ -155,3 +155,9 @@ rust/crates/quoin-assurance/tests/golden/expected.json
 # that re-indents it makes the reproduction check fail against a file nothing
 # produced. `cases.json` beside it is hand-authored input and IS formatted.
 rust/crates/quoin-evidence/tests/golden/expected.json
+
+# The quoin#456 store golden oracle, same rule again: `store-expected.json` is
+# captured output that `tools/generate-store-oracle.mts` re-derives and compares
+# byte for byte. `store-cases.json` beside it is hand-authored input and IS
+# formatted, as is `STORE-PROVENANCE.md`.
+rust/crates/quoin-evidence/tests/golden/store-expected.json

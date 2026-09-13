@@ -24,11 +24,35 @@ pub enum EvidenceErrorCode {
     AdapterInput,
     /// An explicit `--adapter` named an adapter that does not exist.
     AdapterUnknown,
+    /// A store file exists and cannot be read as JSON.
+    StoreRead,
+    /// A store path could not be read, written, listed or removed.
+    StoreIo,
+    /// An identity does not have the shape its position requires.
+    InvalidIdentity,
+    /// A machine-written record does not satisfy its schema.
+    InvalidRecord,
+    /// A policy names an obligation the corpus does not derive.
+    PolicyUnknownObligation,
+    /// A content-addressed record disagrees with its own identity.
+    RecordIntegrity,
+    /// A value has no canonical spelling, so it has no stored form.
+    Canonicalization,
 }
 
 impl EvidenceErrorCode {
     /// Every code, in declaration order. The population a catalogue test walks.
-    pub const ALL: &'static [Self] = &[Self::AdapterInput, Self::AdapterUnknown];
+    pub const ALL: &'static [Self] = &[
+        Self::AdapterInput,
+        Self::AdapterUnknown,
+        Self::StoreRead,
+        Self::StoreIo,
+        Self::InvalidIdentity,
+        Self::InvalidRecord,
+        Self::PolicyUnknownObligation,
+        Self::RecordIntegrity,
+        Self::Canonicalization,
+    ];
 
     /// The code's contractual spelling.
     #[must_use]
@@ -36,6 +60,13 @@ impl EvidenceErrorCode {
         match self {
             Self::AdapterInput => "QE-E001",
             Self::AdapterUnknown => "QE-E002",
+            Self::StoreRead => "QE-E003",
+            Self::StoreIo => "QE-E004",
+            Self::InvalidIdentity => "QE-E005",
+            Self::InvalidRecord => "QE-E006",
+            Self::PolicyUnknownObligation => "QE-E007",
+            Self::RecordIntegrity => "QE-E008",
+            Self::Canonicalization => "QE-E009",
         }
     }
 
@@ -79,6 +110,89 @@ pub enum EvidenceError {
         /// Every registered name, comma separated, in `--help` order.
         available: String,
     },
+    /// A store file exists and is not readable JSON.
+    ///
+    /// `bindings.json` and `baseline.json` are **checked into git**, so a merge
+    /// conflict leaves `<<<<<<< HEAD` in one of them. The retained
+    /// `StoreReadError` exists because every store read used to throw a bare
+    /// `SyntaxError` naming no file (agent-ix/quoin#106); the sentence is
+    /// reproduced here for the same reason.
+    #[error(
+        "{path} exists but is not readable JSON: {detail}. A merge conflict in a checked-in store file is the usual cause — resolve it, or delete the file to start from an empty store."
+    )]
+    StoreRead {
+        /// The store-relative path, as the reader named it.
+        path: String,
+        /// The parser's own words.
+        detail: String,
+    },
+    /// A store path could not be read, written, listed or removed.
+    #[error("cannot {operation} {path}: {detail}")]
+    StoreIo {
+        /// What was being attempted: `read`, `write`, `list`, `remove`.
+        operation: &'static str,
+        /// The store-relative path.
+        path: String,
+        /// The underlying refusal, rendered.
+        detail: String,
+    },
+    /// A trust decision id is not `ETD-<digits>`.
+    #[error("invalid trust decision id '{id}'")]
+    InvalidTrustDecisionId {
+        /// The id as given.
+        id: String,
+    },
+    /// A profile id is not `AP-<digits>`.
+    #[error("invalid profile id '{id}'")]
+    InvalidProfileId {
+        /// The id as given.
+        id: String,
+    },
+    /// A machine-written record does not satisfy its schema.
+    ///
+    /// `label` names the record class and `detail` is the accumulated
+    /// field-level complaint, joined with `; ` — the shape the retained zod
+    /// boundary rendered, so the operator-facing text is unchanged.
+    #[error("invalid {label}: {detail}")]
+    InvalidRecord {
+        /// The record class, for example `trust decision`.
+        label: &'static str,
+        /// One or more `field: complaint` clauses, joined with `; `.
+        detail: String,
+    },
+    /// An independence policy names obligations the corpus does not derive.
+    ///
+    /// Refused rather than silently evaluated over nothing: a policy whose
+    /// obligation was renamed would otherwise report every requirement as
+    /// vacuously assessed.
+    #[error("independence policy names unknown obligation(s): {obligations}")]
+    PolicyUnknownObligations {
+        /// The unknown obligation ids, sorted, comma separated.
+        obligations: String,
+    },
+    /// A content-addressed record disagrees with its own identity.
+    #[error("{what} at {path}{note}")]
+    RecordIntegrity {
+        /// Which disagreement: the id, the digest, or the stored bytes.
+        what: &'static str,
+        /// The path holding the record.
+        path: String,
+        /// What the store did about it, when saying so is load-bearing.
+        ///
+        /// Empty for most refusals. A collision carries
+        /// `"; existing bytes were not overwritten"`, because the first
+        /// question an operator asks on seeing it is whether the record they
+        /// had is still there.
+        note: &'static str,
+    },
+    /// A value has no canonical spelling, so it has no stored form.
+    #[error("cannot canonicalize {what}: {detail}")]
+    Canonicalization {
+        /// What was being serialized.
+        what: &'static str,
+        /// `quoin-store`'s own words.
+        detail: String,
+    },
 }
 
 impl EvidenceError {
@@ -88,6 +202,15 @@ impl EvidenceError {
         match self {
             Self::Adapter { .. } => EvidenceErrorCode::AdapterInput,
             Self::UnknownAdapter { .. } => EvidenceErrorCode::AdapterUnknown,
+            Self::StoreRead { .. } => EvidenceErrorCode::StoreRead,
+            Self::StoreIo { .. } => EvidenceErrorCode::StoreIo,
+            Self::InvalidTrustDecisionId { .. } | Self::InvalidProfileId { .. } => {
+                EvidenceErrorCode::InvalidIdentity
+            }
+            Self::InvalidRecord { .. } => EvidenceErrorCode::InvalidRecord,
+            Self::PolicyUnknownObligations { .. } => EvidenceErrorCode::PolicyUnknownObligation,
+            Self::RecordIntegrity { .. } => EvidenceErrorCode::RecordIntegrity,
+            Self::Canonicalization { .. } => EvidenceErrorCode::Canonicalization,
         }
     }
 
@@ -96,6 +219,14 @@ impl EvidenceError {
         Self::Adapter {
             adapter: adapter.to_owned(),
             message: message.into(),
+        }
+    }
+
+    /// A schema refusal, with its clauses already joined.
+    pub(crate) fn invalid(label: &'static str, detail: impl Into<String>) -> Self {
+        Self::InvalidRecord {
+            label,
+            detail: detail.into(),
         }
     }
 }

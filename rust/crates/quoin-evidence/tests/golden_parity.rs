@@ -118,7 +118,7 @@ fn entry_json(entry: &RunEntry) -> Value {
         "traceIds",
         entry.trace_ids.clone().map(|ids| json!(ids)),
     );
-    insert_opt(&mut map, "config", entry.config.clone());
+    insert_opt(&mut map, "config", entry.config.clone().map(|c| json!(c)));
     Value::Object(map)
 }
 

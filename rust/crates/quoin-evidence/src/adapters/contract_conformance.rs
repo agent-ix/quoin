@@ -173,7 +173,7 @@ mod tests {
     fn a_symbol_carries_corpus_operation_and_fixture() {
         let input = row(r#""corpus_id":"c","operation":"op","fixture_id":"f","status":"match""#);
         let result = parse_contract_conformance(&input).unwrap();
-        assert_eq!(result.entries[0].symbol, "c::op::f");
+        assert_eq!(result.entries[0].symbol.as_str(), "c::op::f");
         assert_eq!(result.entries[0].outcome, Outcome::Pass);
         assert!(result.entries[0].trace_ids.is_none());
     }

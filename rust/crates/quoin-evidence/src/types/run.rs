@@ -1,27 +1,13 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
 
-//! The record vocabulary the evidence store reads and writes.
-//!
-//! Ported from `src/evidence/types.ts`. The on-disk layout is a frozen
-//! compatibility surface (FR-100-AC-2, NFR-025): field names are the
-//! TypeScript's `camelCase` and an optional field is **omitted** rather than
-//! written as `null`, which is what `...(x === undefined ? {} : {x})` did.
-//!
-//! Every optional here is optional in the retained source. Where quoin reads a
-//! field unconditionally it is required, per the doctrine
-//! `quoin_quire_types` states.
+//! Run entries, findings and the two record envelopes built from them.
+
+use std::collections::BTreeMap;
 
 use serde::{Deserialize, Serialize};
 
-/// The store schema version written into every record envelope.
-///
-/// Frozen: FR-100-AC-2 states that reading and re-serializing every store in
-/// the ecosystem returns byte-identical records **and** that this value is
-/// unchanged. `quoin_store::STORE_SCHEMA_VERSION` is the same number for the
-/// change-assurance side; they are restated rather than shared because the two
-/// stores version independently and a single constant would couple them.
-pub const STORE_SCHEMA_VERSION: u32 = 1;
+use crate::ids::{Commit, SuiteId, SymbolId};
 
 /// The metric name `cargo-mutants` scores are recorded under.
 ///
@@ -67,7 +53,7 @@ impl Outcome {
 #[serde(rename_all = "camelCase")]
 pub struct RunEntry {
     /// The producer's own identity for the result.
-    pub symbol: String,
+    pub symbol: SymbolId,
     /// What the producer said.
     pub outcome: Outcome,
     /// A native numeric result, where the format has one.
@@ -79,9 +65,14 @@ pub struct RunEntry {
     /// Obligation or criterion ids the producer named for this result.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub trace_ids: Option<Vec<String>>,
-    /// Producer-supplied configuration, carried opaquely.
+    /// The configuration dimension values this entry was executed under.
+    ///
+    /// `Record<string, string>` in the retained source, and a `BTreeMap` here
+    /// rather than a `Value`: the auditor reads the dimension names to say
+    /// which t-way combinations a run reached, and an opaque `Value` would put
+    /// that cast at every read site.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub config: Option<serde_json::Value>,
+    pub config: Option<BTreeMap<String, String>>,
 }
 
 impl RunEntry {
@@ -89,7 +80,7 @@ impl RunEntry {
     #[must_use]
     pub fn new(symbol: impl Into<String>, outcome: Outcome) -> Self {
         Self {
-            symbol: symbol.into(),
+            symbol: SymbolId::new(symbol),
             outcome,
             score: None,
             metric: None,
@@ -99,44 +90,34 @@ impl RunEntry {
     }
 }
 
-/// One scanner result, transcribed.
+/// One run of ONE suite at ONE commit.
 ///
-/// `severity` is the scanner's own word, never normalized (FR-034-CON-2).
+/// The suite is the atomic unit of evidence: aggregation is a view, and a
+/// partial run must never be able to masquerade as a full one. Re-runs at the
+/// same commit are last-write-wins, latest only — the file name carries the
+/// short commit and nothing distinguishing one attempt from the next.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct Finding {
-    /// The scanner's rule identity.
-    pub rule_id: String,
-    /// The scanner's own severity word.
+pub struct RunRecord {
+    /// Always [`STORE_SCHEMA_VERSION`](super::STORE_SCHEMA_VERSION).
+    pub schema_version: u32,
+    /// The suite this run covered.
+    pub suite: SuiteId,
+    /// Full commit sha the run was performed at.
+    pub commit: Commit,
+    /// Tool and version, as the adapter reported them.
+    pub tool: String,
+    /// The declared `test_type` this run produced, when the caller names one.
+    ///
+    /// Its absence is not an invitation to guess: method conformance once
+    /// inferred "this was a test run" from a non-empty entry list, which is
+    /// true of a transcribed inspection too (agent-ix/quoin#105).
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub severity: Option<String>,
-    /// The scanner's message.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
-    /// The path the finding is about.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub path: Option<String>,
-    /// The line the finding is about.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub line: Option<u64>,
-    /// Criterion ids the scanner named.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub trace_ids: Option<Vec<String>>,
-}
-
-impl Finding {
-    /// A finding carrying only its rule identity.
-    #[must_use]
-    pub fn new(rule_id: impl Into<String>) -> Self {
-        Self {
-            rule_id: rule_id.into(),
-            severity: None,
-            message: None,
-            path: None,
-            line: None,
-            trace_ids: None,
-        }
-    }
+    pub evidence_kind: Option<String>,
+    /// ISO-8601, supplied by the caller — never read from the clock here.
+    pub timestamp: String,
+    /// One entry per symbol the producer reported.
+    pub entries: Vec<RunEntry>,
 }
 
 #[cfg(test)]
@@ -146,7 +127,7 @@ impl Finding {
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 mod tests {
-    use super::{Finding, Outcome, RunEntry};
+    use super::{Outcome, RunEntry};
 
     #[test]
     fn an_absent_optional_is_omitted_and_never_written_as_null() {
@@ -156,10 +137,6 @@ mod tests {
         assert_eq!(
             serde_json::to_string(&entry).unwrap(),
             r#"{"symbol":"tests::tc001","outcome":"pass"}"#
-        );
-        assert_eq!(
-            serde_json::to_string(&Finding::new("no-eval")).unwrap(),
-            r#"{"ruleId":"no-eval"}"#
         );
     }
 

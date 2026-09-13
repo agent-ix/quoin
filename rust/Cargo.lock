@@ -3000,6 +3000,7 @@ dependencies = [
 name = "quoin-evidence"
 version = "0.1.0"
 dependencies = [
+ "quoin-quire-types",
  "quoin-store",
  "regex",
  "serde",

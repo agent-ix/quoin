@@ -27,6 +27,7 @@ publish.workspace = true
 workspace = true
 
 [dependencies]
+quoin-quire-types = { workspace = true }
 quoin-store = { workspace = true }
 regex = "=1.13.1"
 serde = { workspace = true }

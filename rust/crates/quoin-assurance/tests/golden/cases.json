@@ -257,8 +257,16 @@
           }
         ],
         "obligations": [
-          { "id": "FR-001-AC-2", "statement": "second" },
-          { "id": "FR-001-AC-1", "statement": "first" }
+          {
+            "id": "FR-001-AC-2",
+            "statement": "second",
+            "statement_hash": "sha256:FR-001-AC-2"
+          },
+          {
+            "id": "FR-001-AC-1",
+            "statement": "first",
+            "statement_hash": "sha256:FR-001-AC-1"
+          }
         ],
         "findings": []
       }
@@ -306,9 +314,14 @@
         "obligations": [
           {
             "id": "FR-001-AC-1",
-            "statement": "A release without a review is refused."
+            "statement": "A release without a review is refused.",
+            "statement_hash": "sha256:FR-001-AC-1"
           },
-          { "id": "FR-002-AC-1", "statement": "The reviewer is named." }
+          {
+            "id": "FR-002-AC-1",
+            "statement": "The reviewer is named.",
+            "statement_hash": "sha256:FR-002-AC-1"
+          }
         ],
         "findings": []
       }
@@ -341,7 +354,13 @@
             }
           }
         ],
-        "obligations": [{ "id": "FR-001-AC-1", "statement": "first" }],
+        "obligations": [
+          {
+            "id": "FR-001-AC-1",
+            "statement": "first",
+            "statement_hash": "sha256:FR-001-AC-1"
+          }
+        ],
         "findings": [
           {
             "obligation": "FR-001-AC-1",
@@ -386,7 +405,13 @@
             }
           }
         ],
-        "obligations": [{ "id": "FR-002-AC-1", "statement": "the leaf" }],
+        "obligations": [
+          {
+            "id": "FR-002-AC-1",
+            "statement": "the leaf",
+            "statement_hash": "sha256:FR-002-AC-1"
+          }
+        ],
         "findings": [
           {
             "obligation": "FR-002-AC-1",
@@ -422,7 +447,13 @@
             }
           }
         ],
-        "obligations": [{ "id": "FR-001-AC-1", "statement": "first" }],
+        "obligations": [
+          {
+            "id": "FR-001-AC-1",
+            "statement": "first",
+            "statement_hash": "sha256:FR-001-AC-1"
+          }
+        ],
         "findings": [
           {
             "obligation": "FR-001-AC-1",
@@ -458,7 +489,13 @@
             }
           }
         ],
-        "obligations": [{ "id": "FR-001-AC-1", "statement": "first" }],
+        "obligations": [
+          {
+            "id": "FR-001-AC-1",
+            "statement": "first",
+            "statement_hash": "sha256:FR-001-AC-1"
+          }
+        ],
         "findings": [
           {
             "obligation": "FR-001-AC-1",
@@ -503,7 +540,13 @@
             }
           }
         ],
-        "obligations": [{ "id": "FR-001-AC-1", "statement": "first" }],
+        "obligations": [
+          {
+            "id": "FR-001-AC-1",
+            "statement": "first",
+            "statement_hash": "sha256:FR-001-AC-1"
+          }
+        ],
         "findings": []
       }
     },
@@ -575,7 +618,13 @@
             }
           }
         ],
-        "obligations": [{ "id": "FR-002-AC-1", "statement": "on the cycle" }],
+        "obligations": [
+          {
+            "id": "FR-002-AC-1",
+            "statement": "on the cycle",
+            "statement_hash": "sha256:FR-002-AC-1"
+          }
+        ],
         "findings": []
       }
     },
@@ -600,7 +649,13 @@
             "frontmatter": { "id": "FR-009", "type": "FR", "title": "Orphan" }
           }
         ],
-        "obligations": [{ "id": "FR-009-AC-1", "statement": "unreached" }],
+        "obligations": [
+          {
+            "id": "FR-009-AC-1",
+            "statement": "unreached",
+            "statement_hash": "sha256:FR-009-AC-1"
+          }
+        ],
         "findings": []
       }
     },
@@ -630,7 +685,13 @@
             }
           }
         ],
-        "obligations": [{ "id": "FR-001-AC-1", "statement": "first" }],
+        "obligations": [
+          {
+            "id": "FR-001-AC-1",
+            "statement": "first",
+            "statement_hash": "sha256:FR-001-AC-1"
+          }
+        ],
         "findings": []
       }
     },
@@ -780,7 +841,8 @@
         "obligations": [
           {
             "id": "FR-001-AC-1",
-            "statement": "Rejects (bad) input; logs \"why\" and `how`"
+            "statement": "Rejects (bad) input; logs \"why\" and `how`",
+            "statement_hash": "sha256:FR-001-AC-1"
           }
         ],
         "findings": []
@@ -815,7 +877,8 @@
         "obligations": [
           {
             "id": "FR-001-AC-1",
-            "statement": "The system shall refuse every request whose declared payload exceeds the stated ceiling, and shall say so."
+            "statement": "The system shall refuse every request whose declared payload exceeds the stated ceiling, and shall say so.",
+            "statement_hash": "sha256:FR-001-AC-1"
           }
         ],
         "findings": []
@@ -850,7 +913,8 @@
         "obligations": [
           {
             "id": "FR-001-AC-1",
-            "statement": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx😀 tail"
+            "statement": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx😀 tail",
+            "statement_hash": "sha256:FR-001-AC-1"
           }
         ],
         "findings": []
