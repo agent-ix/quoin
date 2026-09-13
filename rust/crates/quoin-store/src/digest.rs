@@ -589,6 +589,33 @@ pub fn digest_file_sha256(path: &std::path::Path) -> Result<RawFileSha256Digest,
     Ok(RawFileSha256Digest(sha256_hex(&bytes)))
 }
 
+/// Hash bytes exactly as supplied, in the raw-file sha256 domain.
+///
+/// The bytes-wise counterpart of [`digest_file_sha256`], for a caller that
+/// already holds the bytes and has no path to hand over — an in-memory
+/// measurement source, or a producer accounting for an attachment it just
+/// assembled (quoin#484).
+///
+/// It routes through the same private `sha256_hex` every other sha256 entry
+/// point here routes through, so the module header's guarantee — one call site
+/// per algorithm — is unchanged by its existence. It is what stops a caller
+/// growing a private `sha2` dependency, which FR-100-CON-4 forbids.
+///
+/// **The domain is the one [`digest_file_sha256`] mints**, deliberately: the
+/// question "what are the bytes of this raw evidence" has one answer whether
+/// the bytes arrived from a file or from memory. It is *not*
+/// [`CanonicalDigest`]'s domain and substituting it for one is the
+/// non-substitutability error this module exists to make unspellable.
+///
+/// Unlike [`digest_file_sha256`] there is no symlink, file-type, size or
+/// short-read guard, because there is no file: the caller already holds the
+/// bytes and the guards have nothing to protect. A caller that has a *path*
+/// must use [`digest_file_sha256`] and keep them.
+#[must_use]
+pub fn digest_bytes_sha256(bytes: &[u8]) -> RawFileSha256Digest {
+    RawFileSha256Digest(sha256_hex(bytes))
+}
+
 /// Hash bytes exactly as supplied.
 #[must_use]
 pub fn digest_raw_bytes(bytes: &[u8]) -> RawBytesDigest {
@@ -659,8 +686,8 @@ mod tests {
     )]
     use super::{
         AssuranceRecordId, CanonicalDigest, DigestDomain, RawBytesDigest, RawFileSha256Digest,
-        digest_assurance_record, digest_canonical_value, digest_file_sha256, digest_raw_bytes,
-        digest_record, verify_record_digest,
+        digest_assurance_record, digest_bytes_sha256, digest_canonical_value, digest_file_sha256,
+        digest_raw_bytes, digest_record, verify_record_digest,
     };
     use crate::error::StoreErrorCode;
     use crate::json::jcs::canonical_bytes;
@@ -762,6 +789,46 @@ mod tests {
             assert_eq!(error.code(), StoreErrorCode::DigestSourceIsSymlink);
         }
         std::fs::remove_dir_all(&dir).ok();
+    }
+
+    /// The bytes-wise sha256 and the file-wise one answer with the same value
+    /// for the same bytes, and both agree with the published NIST vector for
+    /// `"abc"`.
+    ///
+    /// The literal is asserted rather than re-derived: comparing
+    /// `digest_bytes_sha256` only against `digest_file_sha256` would agree with
+    /// itself if `sha256_hex` were wrong, because both route through it.
+    ///
+    /// Trace: FR-098-CON-1, FR-100-CON-4
+    /// Provenance: quoin#484
+    #[test]
+    fn tc_484_the_bytes_wise_sha256_agrees_with_the_file_wise_one() {
+        const NIST_ABC: &str =
+            "sha256:ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad";
+        assert_eq!(digest_bytes_sha256(b"abc").to_stored(), NIST_ABC);
+
+        let dir = std::env::temp_dir().join(format!("quoin-store-bytes-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).expect("dir");
+        let file = dir.join("payload.bin");
+        std::fs::write(&file, b"abc").expect("write");
+        assert_eq!(
+            digest_file_sha256(&file).expect("digests"),
+            digest_bytes_sha256(b"abc")
+        );
+        std::fs::remove_dir_all(&dir).ok();
+
+        // Empty input is a value, not a missing one: the accounting must be
+        // able to state that a zero-byte attachment was seen.
+        assert_eq!(
+            digest_bytes_sha256(b"").to_stored(),
+            "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        );
+        // Same bytes, different algorithm, different answer: the domain is not
+        // decorative.
+        assert_ne!(
+            digest_bytes_sha256(b"abc").as_hex(),
+            digest_raw_bytes(b"abc").as_hex()
+        );
     }
 
     /// The hex is identical across domains for the same bytes; only the type

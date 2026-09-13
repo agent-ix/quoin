@@ -106,14 +106,35 @@ fn tc_468_one_analysis_runs_unchanged_on_disk_and_in_memory() {
     );
 }
 
-/// Trace: FR-100-AC-4
-/// Provenance: quoin#468
+/// The in-memory host accounts for the bytes it holds, through `quoin-store`.
+///
+/// Before quoin#484 this asserted the opposite — a refusal, because
+/// `quoin-store` exposed sha256 only over a path and this crate will not mint a
+/// second implementation. The refusal is now reserved for a path the source was
+/// never given, and the digest is asserted against the published NIST vector
+/// rather than against a second call to the same function.
+///
+/// Trace: FR-100-AC-4, FR-100-CON-4
+/// Provenance: quoin#468, quoin#484
 #[test]
-fn tc_468_a_memory_source_refuses_to_digest_rather_than_minting_a_second_sha256() {
+fn tc_484_a_memory_source_digests_the_bytes_it_holds() {
     use quoin_measurement::{MeasurementErrorCode, RawEvidencePath};
 
-    let memory = MemoryMeasurement::new();
     let path = RawEvidencePath::parse("raw/run.json").expect("a safe path");
-    let error = memory.raw_evidence_file(&path).unwrap_err();
+
+    let stated = MemoryMeasurement::new().with_retained_evidence("raw/run.json", "abc");
+    let accounted = stated.raw_evidence_file(&path).expect("the bytes are held");
+    assert_eq!(accounted.size_bytes, 3);
+    assert_eq!(
+        accounted.digest.to_stored(),
+        "sha256:ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
+    );
+
+    // A path the source was never given is still a refusal, and still the same
+    // code: the host knows nothing about it, which is not the same as it being
+    // empty.
+    let error = MemoryMeasurement::new()
+        .raw_evidence_file(&path)
+        .unwrap_err();
     assert_eq!(error.code(), MeasurementErrorCode::RawEvidenceUnavailable);
 }

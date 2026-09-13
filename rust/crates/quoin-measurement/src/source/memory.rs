@@ -7,6 +7,8 @@
 
 use std::collections::BTreeMap;
 
+use quoin_store::digest_bytes_sha256;
+
 use crate::error::{MeasurementError, MeasurementErrorCode};
 use crate::raw_evidence::RawEvidencePath;
 
@@ -14,8 +16,10 @@ use super::{MeasurementSource, RawEvidenceFile, has_extension};
 
 /// A repository stated in memory.
 ///
-/// Holds no files, so [`MeasurementSource::raw_evidence_file`] refuses; see the
-/// module header for why that is a refusal rather than a second hasher.
+/// Holds no *filesystem*, but it does hold bytes, so since quoin#484
+/// [`MeasurementSource::raw_evidence_file`] accounts for what was stated with
+/// [`with_retained_evidence`](Self::with_retained_evidence) and refuses only
+/// for a path it was never given. See the module header.
 #[derive(Clone, Debug, Default)]
 pub struct MemoryMeasurement {
     documents: BTreeMap<String, String>,
@@ -47,9 +51,9 @@ impl MemoryMeasurement {
 
     /// Add the text of one retained evidence file, at a store-relative path.
     ///
-    /// The file is still not *digestible* from here — see
-    /// [`MeasurementSource::raw_evidence_file`] — so this states content for a
-    /// reader, not evidence for an accounting.
+    /// This is the whole of what an in-memory source knows about a retained
+    /// file: its bytes. Both [`MeasurementSource::retained_evidence_text`] and
+    /// [`MeasurementSource::raw_evidence_file`] answer from it.
     #[must_use]
     pub fn with_retained_evidence(
         mut self,
@@ -129,10 +133,20 @@ impl MeasurementSource for MemoryMeasurement {
         &self,
         path: &RawEvidencePath,
     ) -> Result<RawEvidenceFile, MeasurementError> {
-        Err(MeasurementError::new(
-            MeasurementErrorCode::RawEvidenceUnavailable,
-            format!("this source holds no files, so `{path}` cannot be digested"),
-        ))
+        let text = self.retained.get(path.as_str()).ok_or_else(|| {
+            MeasurementError::new(
+                MeasurementErrorCode::RawEvidenceUnavailable,
+                format!("this source holds no file at `{path}`"),
+            )
+        })?;
+        let bytes = text.as_bytes();
+        Ok(RawEvidenceFile {
+            // The size the retained accounting records is the byte length, not
+            // the UTF-16 length JavaScript's `.length` would give: `"é"` is one
+            // unit and two bytes, and `statSync().size` is bytes on both sides.
+            size_bytes: u64::try_from(bytes.len()).unwrap_or(u64::MAX),
+            digest: digest_bytes_sha256(bytes),
+        })
     }
 
     fn retained_evidence_text(&self, path: &RawEvidencePath) -> Result<String, MeasurementError> {

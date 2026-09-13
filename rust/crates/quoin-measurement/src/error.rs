@@ -48,12 +48,12 @@ pub enum MeasurementErrorCode {
     RawEvidencePathUnsafe,
     /// A raw-evidence reference's size or digest disagreed with the file.
     RawEvidenceMismatch,
-    /// This source cannot digest a retained file.
+    /// This source has no bytes for the named retained file.
     ///
-    /// [`crate::source::MemoryMeasurement`] holds no files, and this crate will
-    /// not mint a second sha256 implementation to hash bytes it holds in
-    /// memory — `quoin-store` has no public bytes-wise sha256 and adding one is
-    /// its ticket, not this port's.
+    /// Raised by [`crate::source::MemoryMeasurement`] for a path it was never
+    /// given. It is deliberately *not* raised merely because the host is
+    /// in-memory: since quoin#484 `quoin-store` exposes a bytes-wise sha256,
+    /// so an in-memory host digests what it holds instead of declining to.
     RawEvidenceUnavailable,
     /// A value was not a date-time this crate's RFC 3339 grammar accepts.
     DateTimeInvalid,
