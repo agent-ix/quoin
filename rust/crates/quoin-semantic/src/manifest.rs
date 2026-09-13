@@ -30,7 +30,9 @@ use crate::ids::{
     ContractVersion, MappingName, ModuleName, ModuleVersion, ObjectTypeName, PackageIdentity,
     SemanticCoreVersion,
 };
-use crate::schema::{SchemaError, SchemaErrorParams, SchemaKeyword, SchemaValidator, read_json};
+use crate::schema::{
+    SchemaError, SchemaErrorParams, SchemaKeyword, SchemaValidator, SchemaValidatorExt, read_json,
+};
 
 /// How a module treats a downstream consumer's additions.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize)]

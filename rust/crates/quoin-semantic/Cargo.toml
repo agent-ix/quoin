@@ -24,11 +24,12 @@ serde = { workspace = true }
 # pass. See DIVERGENCE.md §10.
 serde_json = { workspace = true }
 thiserror = { workspace = true }
-# Exact pin. The error-*kind* enum is the surface the ajv-parity diagnostic
-# mapping is written against, so a minor bump is a reviewable change, not a
-# silent one. See DIVERGENCE.md §1 for why 0.56 rather than the 0.17/0.18 pins
-# elsewhere in the ecosystem.
-jsonschema = { workspace = true }
+# The one ajv-parity validator (quoin#470). `SchemaValidator`, `SchemaError`
+# and `SchemaKeyword` were defined in this crate until the measurement port
+# became their second consumer; `schema.rs` now re-exports them from here, and
+# the exact `jsonschema` pin moved with them — nothing in this crate names that
+# library any more.
+quoin-jsonschema = { workspace = true }
 # The one YAML reader on the boundary. It resolves scalars under the YAML 1.2
 # core schema, matching the `yaml` npm package the oracle uses. Do NOT swap in
 # a libyaml binding (`serde_yaml`, `serde_norway`, `serde_yml`): those are
