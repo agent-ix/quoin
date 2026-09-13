@@ -151,7 +151,7 @@ fn tc_381_234_manifest_refusals_match_the_oracle() {
         // `from_yaml` then correctly refuses a manifest that is in fact legal.
         // That feature is global and unifying — any crate in the workspace
         // turns it on for every other crate — so this bridge is only ever one
-        // dependency edge away from breaking. See quoin#440.
+        // dependency edge away from breaking. See quoin#442.
         let yaml = serde_json::to_string(input).expect("golden serialises");
         let actual_ok = MarketplaceManifest::from_yaml(&yaml).is_ok();
         assert_eq!(actual_ok, expected_ok, "manifest {input}");

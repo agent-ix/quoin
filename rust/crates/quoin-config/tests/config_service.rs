@@ -376,7 +376,7 @@ fn tc_381_130_get_key_reports_declared_unset_and_refuses_undeclared() {
 /// anywhere in the workspace — it is a global, unifying feature, so one
 /// dependency edge turns it on for every crate — a number leaves the serde
 /// data model as the private marker map `{"$serde_json::private::Number": "7"}`
-/// and that is what a non-serde_json serializer writes. See quoin#440.
+/// and that is what a non-serde_json serializer writes. See quoin#442.
 #[derive(Debug, Default, PartialEq, Eq, serde::Serialize)]
 struct ComplexSchema;
 
@@ -420,7 +420,7 @@ fn tc_381_131_set_key_writes_a_complex_value_as_yaml_not_as_a_serde_marker() {
         !text.contains("$serde_json::private::Number"),
         "a number was written as serde_json's private arbitrary-precision \
          marker instead of as a number — the JSON→YAML bridge regressed to \
-         `serde_yaml_ng::to_value`; see quoin#440:\n{text}"
+         `serde_yaml_ng::to_value`; see quoin#442:\n{text}"
     );
     assert!(text.contains("retries: 7"), "body: {text:?}");
     assert!(text.contains("n: 2"), "nested number: {text:?}");

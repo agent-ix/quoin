@@ -346,7 +346,7 @@ impl<'a, S: PluginConfigSchema + Default + serde::Serialize> ConfigService<'a, S
                 // `quoin config set` for every complex value containing a
                 // number. serde_json's own serializer renders the token
                 // correctly, and YAML 1.2 is a superset of JSON, so a text
-                // round-trip is both faithful and immune. See quoin#440.
+                // round-trip is both faithful and immune. See quoin#442.
                 let json =
                     serde_json::to_string(&parsed).map_err(|e| ConfigError::ConfigSetParse {
                         key_path: key_path.to_owned(),
