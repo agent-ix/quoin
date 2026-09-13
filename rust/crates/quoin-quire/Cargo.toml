@@ -34,7 +34,26 @@ workspace = true
 # the only consumer of the quire engine and the pin is the crate's own subject
 # matter; `build.rs` reads THIS line, so the pin is stated once and reported
 # from the same place it is declared.
+# The ONE ajv-parity JSON Schema validator in this workspace (quoin#470). The
+# `jsonschema` pin lives in THAT crate's manifest and nowhere else: a second
+# declaration of it here is how a workspace ends up with two validators that
+# agree by version number rather than by construction.
+quoin-jsonschema = { workspace = true }
 quire-rs = { version = "=0.46.0", git = "https://github.com/agent-ix/quire-rs", rev = "85dfe9d5a937c52af6456f2e6aa3a6bc4c82db9f" }
 serde = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }
+
+# The one-time oracle captures live under `oracle/` rather than `examples/` so
+# they are visibly the thing FR-101-AC-5 deletes at the cutover, not part of the
+# crate's own surface. Cargo needs the path stated because the directory is not
+# the conventional one.
+[[example]]
+name = "capture-assurance-bases"
+path = "oracle/capture-assurance-bases.rs"
+
+[dev-dependencies]
+# The vendored schema's digest is asserted against the one `src/quire/contract.ts`
+# recorded from upstream; hashing it needs a SHA-256 and the workspace already
+# pins one.
+sha2 = { workspace = true }

@@ -14,8 +14,8 @@
 //! | `src/quire/` | here |
 //! |---|---|
 //! | `exec.ts` — executable resolution, `QUOIN_EXPECTED_QUIRE_SHA256` bytes pinning, `maxBuffer`, three-way termination taxonomy | **gone.** A linked crate has no path to resolve, no bytes to pin at runtime, no pipe to overflow and no exit status. The pin is `rev` in `Cargo.toml`; see [`engine`] |
-//! | `contract.ts` — five vendored JSON Schemas, a SHA-256 per file, a source revision, a `minimumCli` floor | **gone.** See [`engine`] for what each of the three guarantees becomes |
-//! | `validate.ts` — ajv compilation and `ContractViolation` | [`payload`], where the type a payload is read into is the engine's own |
+//! | `contract.ts` — five vendored JSON Schemas, a SHA-256 per file, a source revision, a `minimumCli` floor | **four of five gone.** See [`engine`] for what each of the three guarantees becomes, and [`schema`] for the one document that stayed and why |
+//! | `validate.ts` — ajv compilation and `ContractViolation` | [`payload`], where the type a payload is read into is the engine's own — except `validateAssurance`, which has no premises to read an export under and so keeps a schema check ([`schema`], quoin#474) |
 //! | `types.ts` / `assurance.ts` — hand-written mirrors of the payloads | re-exported engine types, plus one hand-written payload the engine deliberately does not serialize (see [`properties`]) |
 //! | `index.ts` — the one import site | this module's re-exports |
 //!
@@ -39,7 +39,8 @@
 //! | criterion classification | [`properties::classify`] | `runQuireAllowFailure(["properties", …])` + `parseProperties` |
 //! | document validation | [`validate::run`] | `runQuireBatch(["validate", …])` |
 //! | clause-set evaluation and diff | [`clauses::evaluate`], [`clauses::diff`] | `parseClauseBinding` |
-//! | assurance export | [`assurance::build`], [`assurance::read`] | `parseAssurance` / `validateAssurance` |
+//! | assurance export | [`assurance::build`], [`assurance::read`] | `parseAssurance` |
+//! | assurance **shape** check, no premises | [`schema::validate_assurance`] | `validateAssurance` |
 //! | payload ingest under a ceiling | [`payload`] | `QUIRE_MAX_BUFFER` + `validate*` |
 //! | instrument identity | [`engine`] | `quireVersion`, `checkVersionPremise`, `QUIRE_CONTRACT` |
 
@@ -56,6 +57,7 @@ pub mod ids;
 pub mod modules;
 pub mod payload;
 pub mod properties;
+pub mod schema;
 pub mod validate;
 
 #[cfg(test)]
@@ -68,6 +70,7 @@ pub use ids::{
 };
 pub use modules::{ModuleSelection, Notice, NoticeKind};
 pub use payload::{ClauseBindingPayload, CoveragePayload, PayloadLimit};
+pub use schema::{ValidAssuranceDocument, validate_assurance};
 
 /// The engine types this crate hands back, re-exported so a consumer needs one
 /// import site — the job `src/quire/index.ts` did.
@@ -75,7 +78,9 @@ pub use payload::{ClauseBindingPayload, CoveragePayload, PayloadLimit};
 /// These are **not** redeclarations. `quoin_quire::model::CoverageReport` *is*
 /// `quire_rs::CoverageReport`; there is no second definition that could drift
 /// from the payload the engine emits, which is the whole point of the Cargo
-/// edge and the reason the vendored-schema machinery does not come across.
+/// edge and the reason the vendored-schema machinery does not come across for
+/// the payloads this crate computes. The one document that did come across,
+/// and the one caller that needs it, are in [`schema`].
 pub mod model {
     pub use quire_rs::assurance::{
         AssuranceArtifact, AssuranceLocator, AssuranceModulePremise, AssuranceObligation,
