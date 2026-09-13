@@ -53,7 +53,10 @@ publish = false
 # Exact pins, matching quire-corpus. A caret range makes the gate a claim about
 # whatever resolved that morning; `=` makes it a claim about these bytes.
 [workspace.dependencies]
+quoin-assurance = { path = "crates/quoin-assurance" }
 quoin-core = { path = "crates/quoin-core" }
+quoin-finding-types = { path = "crates/quoin-finding-types" }
+quoin-quire-types = { path = "crates/quoin-quire-types" }
 quoin-schemas = { path = "crates/quoin-schemas" }
 serde = { version = "=1.0.229", features = ["derive"] }
 # FR-097: the JSON Schema the generated TypeScript surface is derived from.
