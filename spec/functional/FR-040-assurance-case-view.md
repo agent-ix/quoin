@@ -85,6 +85,14 @@ otherwise yields a diagram that **fails to draw** rather than one that draws wro
 sanitised (`FR-001-AC-1` reads as an edge fragment), labels are quoted (a `(` in a statement ends the
 node shape early), and `;` is replaced (it terminates the statement).
 
+A fourth rule governs the label's length rather than its punctuation, and it fails the other way —
+quietly. Labels are truncated on a **code-point** boundary, not on a UTF-16 code unit. Truncating by
+code unit splits a surrogate pair, and the result is a string that is not well-formed UTF-16: it
+draws, and it draws a replacement character. Measured over this repository's own 991 obligations, 835
+labels are truncated and two carry an astral character, the nearest sitting six characters short of
+the boundary — so this was a defect waiting on one spec edit rather than a hypothetical
+(`agent-ix/quoin#432`).
+
 ### Reading the bundle
 
 The upward edges live in each document's frontmatter, and no `quire` surface exposes the bundle graph
@@ -111,6 +119,7 @@ does not expose. `agent-ix/quire-rs#179` is where this stops being necessary.
 | FR-040-AC-12 | A cycle terminates without dropping a legitimately shared child. | Test (TC-238) |
 | FR-040-AC-13 | A case with no claims carries a machine-readable `reason` naming the searched claim types — present exactly when `claims` is empty — so the `--json` consumer can tell a clean case from one where nothing was argued. | Test (TC-261) |
 | FR-040-AC-14 | `--claim-type` is matched case-insensitively against the authored `type:`, and the flag REPLACES the `StR` default rather than adding to it — stated in its help. | Test (TC-262) |
+| FR-040-AC-15 | A mermaid label is truncated on a code-point boundary, so a label whose limit falls inside a surrogate pair stays well-formed rather than ending in a lone surrogate. | Test (TC-1711) |
 
 ## Constraints
 
