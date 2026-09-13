@@ -1,0 +1,23 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 Agent-IX
+[package]
+name = "quoin-measurement-graph"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+description = "The FR-066 versioned adapters that transcribe retained graph evidence into governed measurement collections"
+publish.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+quoin-measurement = { workspace = true }
+quoin-quire = { workspace = true }
+quoin-store = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }

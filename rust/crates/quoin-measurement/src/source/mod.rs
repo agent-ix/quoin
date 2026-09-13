@@ -31,13 +31,18 @@
 //! # `raw_evidence_file` is a host capability, not a hash function
 //!
 //! The retained `rawEvidenceFor` reads the file and hashes the bytes
-//! (`intervention.ts:116-124`). Hashing is `quoin-store`'s, and `quoin-store`
-//! exposes sha256 only over a **path** ([`quoin_store::digest_file_sha256`]) —
-//! there is no public bytes-wise sha256 and this crate will not mint a second
-//! one (FR-100-CON-4, Stage 6 plan §13.2). So the digest is taken by the
-//! source that owns the file, and [`MemoryMeasurement`] refuses with
-//! [`MeasurementErrorCode::RawEvidenceUnavailable`] rather than growing a
-//! private `sha2` dependency. Closing that gap is `quoin-store`'s ticket.
+//! (`intervention.ts:116-124`). Hashing is `quoin-store`'s, and it stays
+//! `quoin-store`'s: the digest is taken by the source that owns the bytes,
+//! through a `quoin-store` entry point, and neither host here grows a private
+//! `sha2` dependency (FR-100-CON-4, Stage 6 plan §13.2).
+//!
+//! [`DiskMeasurement`] has a path and uses [`quoin_store::digest_file_sha256`],
+//! which keeps that function's symlink, file-type, size and short-read guards.
+//! [`MemoryMeasurement`] has only bytes and uses
+//! [`quoin_store::digest_bytes_sha256`] (quoin#484). Until that existed there
+//! was no public bytes-wise sha256 at all and the in-memory host refused with
+//! [`MeasurementErrorCode::RawEvidenceUnavailable`] rather than mint a second
+//! one; it now refuses only for a path it was never given.
 //!
 //! # Why the clock is here too
 //!

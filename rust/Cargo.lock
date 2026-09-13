@@ -3065,6 +3065,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "quoin-measurement-graph"
+version = "0.1.0"
+dependencies = [
+ "quoin-measurement",
+ "quoin-quire",
+ "quoin-store",
+ "serde",
+ "serde_json",
+ "thiserror",
+]
+
+[[package]]
 name = "quoin-modules"
 version = "0.1.0"
 dependencies = [
