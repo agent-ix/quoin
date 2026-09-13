@@ -21,6 +21,7 @@ pub const OPERATIONS: &[&str] = &[
     "assurance.render_case",
     "assurance.requirement_of",
     "core.ping",
+    "validators.run",
 ];
 
 /// Route one request.
@@ -39,6 +40,7 @@ pub fn dispatch(op: &str, request: &serde_json::Value) -> Result<Response, CoreE
         "assurance.render_case" => crate::ops::assurance::render_case(request),
         "assurance.parse_argument" => crate::ops::assurance::parse_argument(request),
         "core.ping" => crate::ops::core::ping(request),
+        "validators.run" => crate::ops::validators::run(request),
         _ => Err(
             CoreError::new(CoreErrorCode::UnknownOp, "no such operation in this build")
                 .with_context("op", op)

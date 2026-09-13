@@ -1055,6 +1055,91 @@ const CASES: &[Case] = &[
         op: "assurance.parse_argument",
         request: Request::Literal("[]"),
     },
+    // `validators.run` (quoin#412). The request carries the repository as a
+    // file map rather than a path, which is what makes this domain
+    // difftestable at all: the harness feeds ONE stdin to two processes, so a
+    // request naming a directory would have compared two different trees.
+    Case {
+        name: "validators/clean-empty-repository",
+        op: "validators.run",
+        request: Request::Literal(r#"{"files":{}}"#),
+    },
+    Case {
+        // The TC-1067 fixture: claim, wiring, and an unasserted count.
+        name: "validators/baseline-bad-gate",
+        op: "validators.run",
+        request: Request::Literal(
+            r##"{"files":{"Makefile":["gate:","\t./scripts/check_unwrap.sh",""],"scripts/check_unwrap.sh":["#!/usr/bin/env bash","# Gate for FR-001-AC-1: no production symbol shall call `unwrap`.","set -euo pipefail","grep -rn \"unwrap()\" src/ | wc -l","exit 0",""]}}"##,
+        ),
+    },
+    Case {
+        // Identical shell text with no wiring is a report, not a gate.
+        name: "validators/unwired-report",
+        op: "validators.run",
+        request: Request::Literal(
+            r##"{"files":{"scripts/check_unwrap.sh":["# Gate for FR-001-AC-1: no unwrap in src","grep -rn \"unwrap()\" src/ | wc -l"]}}"##,
+        ),
+    },
+    Case {
+        // The count is compared, so the gate has a failure path.
+        name: "validators/asserted-count",
+        op: "validators.run",
+        request: Request::Literal(
+            r##"{"files":{"Makefile":["gate:","\t./g.sh"],"g.sh":["# Gate for FR-001: no unwrap in src","[ $(grep -rn \"unwrap()\" src/ | wc -l) -eq 0 ]"]}}"##,
+        ),
+    },
+    Case {
+        // A CRLF body: the lines are split on `\n` alone on the wire, so the
+        // carriage return survives to whichever side handles it.
+        name: "validators/crlf-body",
+        op: "validators.run",
+        request: Request::Literal(
+            r##"{"files":{"Makefile":["gate:\r","\t./g.sh\r"],"g.sh":["# Gate for FR-001: no unwrap in src\r","grep -rn \"unwrap()\" src/ | wc -l\r"]}}"##,
+        ),
+    },
+    Case {
+        // An excluded directory is excluded on both sides: the walk never
+        // descends into `vendor/`, and the analysis re-excludes what arrives.
+        name: "validators/excluded-directory",
+        op: "validators.run",
+        request: Request::Literal(
+            r##"{"files":{"vendor/Makefile":["gate:","\t./vendor/g.sh"],"vendor/g.sh":["# Gate for FR-001: no unwrap in src","grep -rn \"unwrap()\" src/ | wc -l"]}}"##,
+        ),
+    },
+    Case {
+        // A wiring file that merely mentions the basename still wires it.
+        name: "validators/wired-by-bare-basename",
+        op: "validators.run",
+        request: Request::Literal(
+            r##"{"files":{"package.json":["{","  \"scripts\": { \"gate\": \"bash check.sh\" }","}"],"scripts/check.sh":["# Gate for FR-002: never call panic","rg -n 'panic!' . | wc -l"]}}"##,
+        ),
+    },
+    Case {
+        // A root the caller could not list: the caller's mistake, exit 2.
+        name: "validators/unlistable-root",
+        op: "validators.run",
+        request: Request::Literal(r#"{"files":{},"unlistable":[""]}"#),
+    },
+    Case {
+        name: "validators/unknown-field",
+        op: "validators.run",
+        request: Request::Literal(r#"{"files":{},"repo":"."}"#),
+    },
+    Case {
+        name: "validators/files-not-an-object",
+        op: "validators.run",
+        request: Request::Literal(r#"{"files":[]}"#),
+    },
+    Case {
+        name: "validators/malformed",
+        op: "validators.run",
+        request: Request::Literal("{oops"),
+    },
+    Case {
+        name: "validators/not-an-object",
+        op: "validators.run",
+        request: Request::Literal("[]"),
+    },
     Case {
         name: "invalid/unknown-op",
         op: "evidence.record",

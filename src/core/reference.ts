@@ -15,11 +15,22 @@
  */
 
 import {
+  chmodSync,
+  mkdirSync,
+  mkdtempSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
+import { tmpdir } from "node:os";
+import { dirname, join } from "node:path";
+
+import {
   buildCase,
   parseAssuranceArgument,
   renderCase,
   requirementOf,
 } from "../assurance/index.js";
+import { inspectEmptyGates } from "../validators/index.js";
 
 /** Mirrors `quoin_core::protocol::PROTOCOL_VERSION` — deliberately restated,
  * not imported from the generated `./types.js`: this file is the differential
@@ -160,12 +171,15 @@ export function reference(argv: string[], stdin: string): ReferenceOutcome {
   if (op === "assurance.parse_argument") {
     return assuranceParseArgument(parsed);
   }
+  if (op === "validators.run") {
+    return validatorsRun(parsed);
+  }
   if (op !== "core.ping") {
     return failure(
       3,
       diagnostic("CORE_UNKNOWN_OP", "no such operation in this build", {
         known:
-          "assurance.build_case, assurance.parse_argument, assurance.render_case, assurance.requirement_of, core.ping",
+          "assurance.build_case, assurance.parse_argument, assurance.render_case, assurance.requirement_of, core.ping, validators.run",
         op,
       }),
     );
@@ -640,4 +654,130 @@ function assuranceRenderCase(
 
   const rendered = renderCase(fields as never);
   return { exitCode: 0, payload: canonicalJson({ rendered }), diagnostics: [] };
+}
+
+/** The largest `validators.run` request accepted, mirroring Rust. */
+export const MAX_RUN_REQUEST_BYTES = 16 * 1024 * 1024;
+
+/**
+ * `validators.run`, answered by the RETAINED implementation.
+ *
+ * The answer comes from `src/validators/gates.ts` unchanged, which is what
+ * FR-101 requires: the retained implementation IS the oracle, never a
+ * reimplementation of it. Everything here is the boundary's own work — parse
+ * the request, enforce the size bound, MATERIALISE the snapshot the request
+ * carries, and map the refusal the retained function throws onto the envelope.
+ *
+ * The snapshot is written to a real temporary directory because
+ * `inspectEmptyGates` takes a repository path: the request describes a
+ * repository, so producing one is a transport concern and not a second
+ * implementation of the analysis. A `null` body and an unlistable directory
+ * are reproduced with mode 0, which is the only way to make the retained code
+ * take the branch the request describes.
+ */
+function validatorsRun(fields: Record<string, unknown>): ReferenceOutcome {
+  const op = "validators.run";
+  const bad = (message: string): ReferenceOutcome =>
+    failure(3, diagnostic("CORE_BAD_REQUEST", message, { op }));
+
+  const size = Buffer.byteLength(JSON.stringify(fields), "utf8");
+  if (size > MAX_RUN_REQUEST_BYTES) {
+    return failure(
+      2,
+      diagnostic("CORE_REFUSED", "request exceeds the accepted size", {
+        limit_bytes: String(MAX_RUN_REQUEST_BYTES),
+        observed_bytes: String(size),
+        op,
+      }),
+    );
+  }
+  for (const key of Object.keys(fields)) {
+    if (key !== "files" && key !== "unlistable") {
+      return bad(`unknown field \`${key}\``);
+    }
+  }
+  const files = fields.files;
+  if (typeof files !== "object" || files === null || Array.isArray(files)) {
+    return bad("`files` must be an object");
+  }
+  for (const [path, body] of Object.entries(files)) {
+    if (body === null) continue;
+    if (!Array.isArray(body) || body.some((l) => typeof l !== "string")) {
+      return bad(`\`files["${path}"]\` must be an array of strings or null`);
+    }
+  }
+  const unlistable = fields.unlistable ?? [];
+  if (
+    !Array.isArray(unlistable) ||
+    unlistable.some((entry) => typeof entry !== "string")
+  ) {
+    return bad("`unlistable` must be an array of strings");
+  }
+
+  const scratch = mkdtempSync(join(tmpdir(), "quoin-difftest-"));
+  const root = join(scratch, "repo");
+  try {
+    const unlistableSet = new Set(unlistable as string[]);
+    // The root itself: the retained walk meets an unlistable root as a failing
+    // `readdirSync` on the path it was given, so never creating it reproduces
+    // that condition without depending on file modes.
+    if (!unlistableSet.has("")) {
+      mkdirSync(root, { recursive: true });
+      for (const [path, body] of Object.entries(files)) {
+        const target = join(root, path);
+        mkdirSync(dirname(target), { recursive: true });
+        writeFileSync(
+          target,
+          body === null ? "" : (body as string[]).join("\n"),
+        );
+        if (body === null) chmodSync(target, 0o000);
+      }
+      for (const path of unlistableSet) {
+        const target = join(root, path);
+        mkdirSync(target, { recursive: true });
+        chmodSync(target, 0o000);
+      }
+    }
+    const findings = inspectEmptyGates(root);
+    return {
+      exitCode: 0,
+      payload: canonicalJson({ findings }),
+      diagnostics: [],
+    };
+  } catch (cause) {
+    return validatorRefusal(cause as NodeJS.ErrnoException, root);
+  } finally {
+    try {
+      rmSync(scratch, { recursive: true, force: true });
+    } catch {
+      // A temporary directory that outlives the process is not a verdict.
+    }
+  }
+}
+
+/**
+ * Map the retained implementation's refusal onto the boundary envelope.
+ *
+ * The same split `ops::validators::refusal` makes, for the same reason: a root
+ * the caller could not list is the CALLER's mistake and is refused (exit 2);
+ * anything failing inside a tree that was listable is the ENVIRONMENT failing
+ * under us (exit 4). `quoin-validators` names the three conditions QV-E001,
+ * QV-E002 and QV-E003; the retained TypeScript throws Node's raw error, so the
+ * condition is read off `syscall` and the path.
+ */
+function validatorRefusal(
+  cause: NodeJS.ErrnoException,
+  root: string,
+): ReferenceOutcome {
+  const scandir = cause.syscall === "scandir";
+  const atRoot = cause.path === root;
+  const refused = scandir && atRoot;
+  return failure(
+    refused ? 2 : 4,
+    diagnostic(refused ? "CORE_REFUSED" : "CORE_IO", cause.message, {
+      op: "validators.run",
+      path: cause.path ?? root,
+      validator_code: scandir ? (atRoot ? "QV-E001" : "QV-E002") : "QV-E003",
+    }),
+  );
 }

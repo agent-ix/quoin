@@ -82,6 +82,7 @@ quoin-evidence-types = { path = "crates/quoin-evidence-types" }
 quoin-finding-types = { path = "crates/quoin-finding-types" }
 quoin-quire-types = { path = "crates/quoin-quire-types" }
 quoin-schemas = { path = "crates/quoin-schemas" }
+quoin-validators = { path = "crates/quoin-validators" }
 quoin-yaml = { path = "crates/quoin-yaml" }
 # Raised from =1.0.228 by quoin#378: `serde_derive` 1.0.228 builds on `syn` 2
 # while `thiserror-impl` 2.0.20 builds on `syn` 3, and `multiple-versions =

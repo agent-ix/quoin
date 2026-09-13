@@ -1,21 +1,23 @@
+/**
+ * The retained gate-capability validator (agent-ix/quoin#224).
+ *
+ * `quoin validate` no longer calls this code: it asks `quoin-core` for
+ * `validators.run` (quoin#412). What is left here covers the RETAINED
+ * TypeScript while it is still the difftest oracle, and it is retired with it.
+ *
+ * The command-level criteria this file used to carry moved to
+ * `tests/core-exec-e2e.test.ts`, which is the only lane with a built
+ * `quoin-core` to ask; asserting them here would now assert nothing about the
+ * shipped command.
+ */
+
 import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 
-import type { Config } from "@oclif/core";
-import { loadConfig } from "@agent-ix/ix-cli-core";
-import { beforeAll, describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 
-import Validate from "../src/commands/validate.js";
 import { inspectEmptyGates } from "../src/validators/index.js";
-
-const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
-let config: Config;
-
-beforeAll(async () => {
-  config = await loadConfig({ root: repoRoot });
-});
 
 function workspace(): string {
   return mkdtempSync(join(tmpdir(), "quoin-gate-validator-"));
@@ -98,45 +100,5 @@ describe("gate capability validator (agent-ix/quoin#224)", () => {
       '#!/bin/sh\ngrep -rn "unwrap()" src/ | wc -l\n',
     );
     expect(inspectEmptyGates(root)).toEqual([]);
-  });
-
-  it("reports the same finding through the shipped quoin validate command", async () => {
-    const root = workspace();
-    badGate(root);
-    const lines: string[] = [];
-    const spy = vi.spyOn(console, "log").mockImplementation((line) => {
-      lines.push(String(line));
-    });
-    try {
-      await Validate.run(["--repo", root, "--json"], config);
-    } finally {
-      spy.mockRestore();
-    }
-    const payload = JSON.parse(lines.join("\n")) as { findings: unknown[] };
-    expect(payload.findings).toEqual([
-      expect.objectContaining({
-        kind: "gate-that-gates-nothing",
-        line: 4,
-        subject: "gate for FR-001-AC-1",
-        changeTarget: "scripts/check_unwrap.sh:4",
-        remedy: expect.stringContaining("exit non-zero"),
-      }),
-    ]);
-
-    const human: string[] = [];
-    const humanSpy = vi.spyOn(console, "log").mockImplementation((line) => {
-      human.push(String(line));
-    });
-    try {
-      await expect(
-        Validate.run(["--repo", root], config),
-      ).resolves.toBeUndefined();
-      expect(human.join("\n")).toContain("scripts/check_unwrap.sh:4");
-      await expect(
-        Validate.run(["--repo", root, "--strict"], config),
-      ).rejects.toMatchObject({ oclif: { exit: 1 } });
-    } finally {
-      humanSpy.mockRestore();
-    }
   });
 });

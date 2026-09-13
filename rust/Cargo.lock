@@ -2972,6 +2972,7 @@ version = "0.1.0"
 dependencies = [
  "engineering-assurance",
  "quoin-assurance",
+ "quoin-validators",
  "schemars",
  "serde",
  "serde_json",
@@ -3072,6 +3073,7 @@ name = "quoin-validators"
 version = "0.1.0"
 dependencies = [
  "regex",
+ "schemars",
  "serde",
  "serde_json",
  "tempfile",

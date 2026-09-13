@@ -21,6 +21,7 @@ use serde::{Deserialize, Serialize};
 /// author's spelling rather than normalising it: the finding must point at what
 /// the file actually says.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(transparent)]
 pub struct ObligationId(Box<str>);
 
@@ -51,6 +52,7 @@ impl fmt::Display for ObligationId {
 /// display concern — a Windows-shaped `scripts\gate.sh` and a POSIX
 /// `scripts/gate.sh` are the same gate.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(transparent)]
 pub struct RepoPath(Box<str>);
 
@@ -94,6 +96,7 @@ impl fmt::Display for RepoPath {
 /// `NonZeroU64` rather than `usize`: line 0 does not exist, and the payload
 /// crosses a JSON boundary where a 0 would be read as "unknown".
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(transparent)]
 pub struct LineNumber(NonZeroU64);
 
