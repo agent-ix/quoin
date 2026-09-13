@@ -22,8 +22,10 @@ distinguishes every non-success state, and admits no Node runtime type.
 
 - A versioned JSON request document naming one command-shaped operation
   `<domain>.<op>`, supplied on stdin.
-- The caller-selected repository root and configuration root, supplied
-  explicitly in the request.
+- The caller-selected repository content, supplied explicitly in the request:
+  for an operation that analyses a repository, the file map the caller read —
+  not a path for `quoin-core` to walk — together with the directories the caller
+  could not list. For an operation that names a configuration root, that root.
 - The `QUOIN_CORE` executable path and the `QUOIN_EXPECTED_CORE_SHA256` expected
   digest.
 
@@ -67,6 +69,18 @@ distinguishes every non-success state, and admits no Node runtime type.
   outcomes.
 - No Node runtime type, in-process object model, npm runtime value or oclif type
   SHALL appear in a boundary request or result document.
+- For an operation that analyses a repository, the TypeScript caller SHALL
+  supply the repository as content rather than as a path, and the pre-filter it
+  applies when reading that content SHALL admit every path `quoin-core` would
+  classify, so that no path the analysis would act on is dropped before it
+  reaches the boundary. `quoin-core` SHALL re-apply its own classification to
+  every path it receives, so that a caller that sends more than the analysis
+  needs cannot change a verdict either.
+- `quoin-core` SHALL bound the number of bytes it reads from stdin while it is
+  reading them, and SHALL refuse a stream that exceeds that bound without
+  parsing it. That transport bound SHALL be strictly greater than every
+  operation's own request-size bound, so that an operation's refusal remains
+  reachable and names the operation that refused.
 - Quoin SHALL return a changed boundary interface or compatibility promise to
   specification before the implementation continues.
 
@@ -98,6 +112,8 @@ non-success outcome and are never reported as success.
 | FR-096-AC-5 | With `QUOIN_EXPECTED_CORE_SHA256` set and the binary's bytes altered, the caller refuses to invoke it and names the expected and observed digests; with the variable unset the caller refuses rather than invoking unpinned. | Test (TC-1609) |
 | FR-096-AC-6 | A result payload of 67,108,864 bytes is returned to the caller intact under a declared buffer ceiling strictly greater than that size, and process exit, signal termination and spawn failure are reported as three distinct outcomes. | Test (TC-1610) |
 | FR-096-AC-7 | A static check over the generated boundary type surface finds no Node, npm or oclif runtime type, and fails when one is planted. | Test (TC-1611) |
+| FR-096-AC-8 | Over one materialised repository, the verdict reached through the caller's snapshot equals the verdict reached by `quoin-core` reading the same tree from disk, including for a directory the caller's pre-filter does not exclude and for one both sides do; narrowing the caller's pre-filter by one directory fails the comparison. | Test (TC-1713) |
+| FR-096-AC-9 | A stdin stream one byte past the transport bound is refused with the declared refusal status, without the request being parsed and without the stream being read beyond that bound; a stream of exactly the bound is accepted; and the transport bound is strictly greater than every declared per-operation request bound. | Test (TC-1714) |
 
 ## Dependencies
 
