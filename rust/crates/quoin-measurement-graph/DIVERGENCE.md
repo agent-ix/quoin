@@ -64,12 +64,35 @@ partition in the tree carries string `measure`, `dimension` and `key`.
 
 **What it cannot cover:** the non-string case is not in the fixture, because a
 fixture carrying it would have no oracle — the TypeScript throws rather than
-producing bytes to compare against. The census that bounds it instead:
-`spec/evidence/measurements/` holds **581,130 dimension values across 161,421
-observations in 1,522 collection files, and every one of them is a string**;
-17 of those observations are `graph_quality`. That is a fact about the corpus
-at this revision, not a guarantee. An observation that broke it would be
+producing bytes to compare against.
+
+**The census that bounds it instead** is
+`tc_476_024_no_retained_dimension_value_is_a_non_string`, which walks
+`spec/evidence/measurements/` — that directory only, since the repository holds
+several checkouts of itself under `.worktrees/` and a walk that reached them
+would count the same observation many times. At the revision that wrote this
+paragraph it read:
+
+| counted | at this revision |
+| --- | --- |
+| `.json` collection files directly in that directory | 48 |
+| members of their `observations` arrays | 14,644 |
+| observations stating a `dimensions` object | 14,339 |
+| name/value pairs inside those objects | 50,882 |
+| **of those values, non-strings** | **0** |
+
+The test asserts the zero, not the totals: the totals move as the corpus grows,
+so it carries floors an order of magnitude below them and fails if the
+population it reads collapses. It also asserts that some observations state no
+`dimensions` at all, which is the case the fixture *does* cover, above.
+
+Two things this census is **not**. It is not a guarantee: it is a fact about
+the retained corpus at one revision, and an observation that broke it would be
 refused by [`quoin_measurement::validate`] before reaching either projection.
+And it says nothing about `graph_quality` in particular — the retained corpus
+contains **no** `graph_quality` observation at all. The only ones in this
+repository are this wave's own fixtures, and a bound quoting those would be a
+self-fixture claim rather than a measurement.
 
 ## §3 — base64 decoding refuses what `Buffer.from` accepted (quoin#465)
 

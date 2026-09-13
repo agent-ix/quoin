@@ -52,6 +52,27 @@ const RETAINED_EXPORTED_SHAPES: usize = 17;
 /// file says this.
 const RETAINED_ZOD_CONSTRUCTORS: usize = 0;
 
+/// The retained measurement corpus `DIVERGENCE.md` §2 is measured over,
+/// relative to the crate root. Only this directory: the repository holds
+/// several checkouts of itself under `.worktrees/`, and a walk that reached
+/// them would count the same observation many times.
+const RETAINED_MEASUREMENTS: &str = "../../../spec/evidence/measurements";
+
+/// The floors the §2 census is measured against, one order of magnitude below
+/// the figures measured at the revision that wrote them (48 collection files,
+/// 14,644 observations, 50,882 dimension values). The corpus grows; these say
+/// it has not collapsed.
+const RETAINED_COLLECTION_FLOOR: usize = 40;
+
+/// As [`RETAINED_COLLECTION_FLOOR`], for observations.
+const RETAINED_OBSERVATION_FLOOR: usize = 12_000;
+
+/// As [`RETAINED_COLLECTION_FLOOR`], for dimension values.
+const RETAINED_DIMENSION_VALUE_FLOOR: usize = 40_000;
+
+/// How many offending values the §2 census names before it stops collecting.
+const OFFENDER_REPORT_CAP: usize = 10;
+
 /// Below this many source modules the census is not measuring the crate.
 const SOURCE_FLOOR: usize = 10;
 
@@ -272,4 +293,100 @@ fn tc_476_023_the_retained_module_is_measured_not_quoted() {
             "the crate does not re-export {exported}, which the retained module exports"
         );
     }
+}
+
+/// The bound `DIVERGENCE.md` §2 rests on, measured rather than recited.
+///
+/// §2 declares a divergence that **cannot** be put under the golden: a
+/// non-string `dimensions` member throws part-way through the retained
+/// renderer, so there are no TypeScript bytes to compare against. Its only
+/// bound is a census of the retained corpus, and a bound that lives in a
+/// sentence no test evaluates is not a bound — the first draft of that sentence
+/// carried figures inflated eleven-fold by a glob that escaped into
+/// `.worktrees/`, and nothing caught it. This walks the directory the sentence
+/// is about.
+///
+/// Trace: FR-100-AC-4
+/// Trace: FR-101-AC-5
+/// Provenance: quoin#476
+#[test]
+fn tc_476_024_no_retained_dimension_value_is_a_non_string() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join(RETAINED_MEASUREMENTS);
+    let mut files = 0_usize;
+    let mut observations = 0_usize;
+    let mut with_dimensions = 0_usize;
+    let mut values = 0_usize;
+    let mut non_strings = 0_usize;
+    let mut offenders: Vec<String> = Vec::new();
+
+    let mut entries: Vec<PathBuf> = std::fs::read_dir(&root)
+        .unwrap_or_else(|error| panic!("{}: unreadable: {error}", root.display()))
+        .map(|entry| entry.expect("a directory entry").path())
+        .filter(|path| {
+            path.extension()
+                .is_some_and(|extension| extension == "json")
+        })
+        .collect();
+    entries.sort();
+
+    for path in entries {
+        files += 1;
+        let text = std::fs::read_to_string(&path).expect("a collection file");
+        let document: serde_json::Value =
+            serde_json::from_str(&text).unwrap_or_else(|error| panic!("{path:?}: {error}"));
+        let rows = document
+            .get("observations")
+            .and_then(serde_json::Value::as_array)
+            .unwrap_or_else(|| panic!("{path:?}: no observations array"));
+        for row in rows {
+            observations += 1;
+            let Some(dimensions) = row.get("dimensions") else {
+                continue;
+            };
+            let dimensions = dimensions
+                .as_object()
+                .unwrap_or_else(|| panic!("{path:?}: dimensions is not an object"));
+            with_dimensions += 1;
+            for (name, value) in dimensions {
+                values += 1;
+                if !value.is_string() {
+                    // Capped: one offender names the class, and a corpus-wide
+                    // break would otherwise print megabytes before the
+                    // assertion is readable.
+                    non_strings += 1;
+                    if offenders.len() < OFFENDER_REPORT_CAP {
+                        let file = path.file_name().unwrap_or(path.as_os_str());
+                        offenders.push(format!("{}: {name} = {value}", file.to_string_lossy()));
+                    }
+                }
+            }
+        }
+    }
+
+    // Anti-vacuity: a directory that emptied, moved, or stopped being read
+    // would otherwise make every assertion below pass over nothing.
+    assert!(
+        files >= RETAINED_COLLECTION_FLOOR
+            && observations >= RETAINED_OBSERVATION_FLOOR
+            && values >= RETAINED_DIMENSION_VALUE_FLOOR,
+        "the census read {files} files, {observations} observations and {values} \
+         dimension values; the floors are {RETAINED_COLLECTION_FLOOR}, \
+         {RETAINED_OBSERVATION_FLOOR} and {RETAINED_DIMENSION_VALUE_FLOOR}. \
+         DIVERGENCE.md §2 quotes this measurement, so a shrunken population is a \
+         failure rather than a pass"
+    );
+    // Not every observation states `dimensions`, and the fallback §2 is about
+    // is reached for both spellings. If that stopped being true the sentence in
+    // §2 about the absent case would have gone stale too.
+    assert!(
+        with_dimensions < observations,
+        "every retained observation now states dimensions; DIVERGENCE.md §2 says \
+         some do not"
+    );
+    assert_eq!(
+        non_strings, 0,
+        "DIVERGENCE.md §2 bounds a non-fixturable divergence on there being no \
+         non-string dimension value in the retained corpus. {non_strings} of \
+         {values} now are, the first of them: {offenders:?}"
+    );
 }
