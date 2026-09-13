@@ -35,8 +35,34 @@ pub struct AssessOptions {
     pub module_roots: Vec<PathBuf>,
 }
 
+/// What to assess, as content the CALLER read.
+///
+/// The wire form of [`AssessOptions`] (quoin#445). `bundle_root` is a LABEL
+/// here, echoed into the report so the user reads the root the command looked
+/// in; nothing in the library half turns it back into a path.
+#[derive(Debug, Clone, PartialEq, Eq, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+pub struct AssessInput {
+    /// The root the caller walked, echoed into the report unchanged.
+    pub bundle_root: String,
+    /// Promote an admitted gap to a failing verdict.
+    pub strict: bool,
+    /// Every document the caller read.
+    pub documents: Vec<crate::bundle::DocumentSource>,
+    /// Documents the caller could not read, and why. Reported alongside the
+    /// ones whose frontmatter does not parse: a file the walk found and could
+    /// not open is the same kind of gap as one whose YAML is broken, and
+    /// dropping it here would turn a broken bundle into a clean one.
+    #[serde(default)]
+    pub unreadable: Vec<UnreadableDocument>,
+    /// Every module the caller located, with its manifest and schemas.
+    pub modules: Vec<crate::declarations::ModuleSource>,
+}
+
 /// The report the command prints.
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct BundleAssessment {
     /// The root that was read.
     #[serde(rename = "bundleRoot")]
@@ -65,19 +91,46 @@ pub struct BundleAssessment {
 /// human and JSON output.
 #[must_use]
 pub fn assess_bundle(options: &AssessOptions) -> BundleAssessment {
+    // ONE walk, whatever the declaration count. `read_bundle_claims` re-reads
+    // the whole bundle per declaration, so N declarations would mean N full
+    // passes — and NFR-011-M-2 states the budget as one pass per invocation.
+    let bundle = read_bundle_frontmatter(&options.bundle_root);
     let loaded = load_vocabulary_coverage(&options.module_roots);
+    assess(
+        &options.bundle_root.to_string_lossy(),
+        options.strict,
+        &bundle,
+        &loaded,
+    )
+}
+
+/// Assess a bundle from content the CALLER read.
+///
+/// The decidable half of [`assess_bundle`], split out so it can cross the
+/// `quoin-core` boundary without the library half acquiring a filesystem
+/// (quoin#445). Both entry points reach the same [`assess`], so there is one
+/// policy and not two.
+#[must_use]
+pub fn assess_sources(input: &AssessInput) -> BundleAssessment {
+    let bundle = crate::bundle::frontmatter_from_sources(&input.documents, &input.unreadable);
+    let loaded = crate::declarations::declarations_from_sources(&input.modules);
+    assess(&input.bundle_root, input.strict, &bundle, &loaded)
+}
+
+fn assess(
+    bundle_root: &str,
+    strict: bool,
+    bundle: &crate::bundle::FrontmatterRead,
+    loaded: &crate::declarations::VocabularyDeclarations,
+) -> BundleAssessment {
     let mut findings: Vec<CompletenessFinding> = Vec::new();
     let mut rollups: Vec<VocabularyRollup> = Vec::new();
     let mut unreadable: Vec<UnreadableDocument> = Vec::new();
     let mut seen: BTreeSet<String> = BTreeSet::new();
 
-    // ONE walk, whatever the declaration count. `read_bundle_claims` re-reads
-    // the whole bundle per declaration, so N declarations would mean N full
-    // passes — and NFR-011-M-2 states the budget as one pass per invocation.
-    let bundle = read_bundle_frontmatter(&options.bundle_root);
-    for entry in bundle.unreadable {
+    for entry in &bundle.unreadable {
         if seen.insert(entry.path.clone()) {
-            unreadable.push(entry);
+            unreadable.push(entry.clone());
         }
     }
 
@@ -98,12 +151,12 @@ pub fn assess_bundle(options: &AssessOptions) -> BundleAssessment {
             .then_with(|| a.value.as_str().cmp(b.value.as_str()))
     });
 
-    let verdict = verdict_for(&findings, options.strict, loaded.declarations.len());
+    let verdict = verdict_for(&findings, strict, loaded.declarations.len());
 
     BundleAssessment {
-        bundle_root: options.bundle_root.clone(),
+        bundle_root: PathBuf::from(bundle_root),
         vocabularies: loaded.declarations.iter().map(|d| d.name.clone()).collect(),
-        unresolved: loaded.unresolved,
+        unresolved: loaded.unresolved.clone(),
         unreadable,
         rollups,
         findings,

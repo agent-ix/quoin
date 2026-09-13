@@ -23,7 +23,15 @@
 import { readFileSync, readdirSync } from "node:fs";
 import { join, relative } from "node:path";
 
-import type { RunRequest } from "./types.js";
+import { locateModuleRoot } from "../catalog.js";
+
+import type {
+  DocumentSource,
+  ModuleSource,
+  RunRequest,
+  SchemaSource,
+  UnreadableDocument,
+} from "./types.js";
 
 /**
  * Directory names never descended into, at any depth.
@@ -128,4 +136,119 @@ export function repoSnapshot(repo: string): RunRequest {
 
   visit(repo);
   return unlistable.length > 0 ? { files, unlistable } : { files };
+}
+
+/**
+ * Read a bundle into the `documents` / `unreadable` pair the completeness and
+ * assurance operations accept (quoin#445).
+ *
+ * The same shape decision as {@link repoSnapshot} and for the same reason:
+ * `quoin-core`'s library half is audited as a reusable library, so an operation
+ * that took `bundleRoot` and walked it would acquire a host capability the
+ * boundary has said it does not have. The walk is the command shell's job; the
+ * decision crosses as bytes.
+ *
+ * Unlike `repoSnapshot` there is no pre-filter beyond the `.md` extension,
+ * because there is nothing coarser to be: the far side needs the leading `---`
+ * block of every markdown document in the bundle, and "which of these carries
+ * frontmatter" is exactly the question it answers.
+ *
+ * Three states, as the walk genuinely observes three: a document read, a
+ * document found and unreadable (recorded in `unreadable`, with the OS reason),
+ * and a root that could not be listed at all — which reads as an EMPTY bundle
+ * rather than an error, because the retained reader did the same and the
+ * command prints the root it looked in, so an absent bundle stays legible.
+ */
+export function bundleSnapshot(bundleRoot: string): {
+  documents: DocumentSource[];
+  unreadable: UnreadableDocument[];
+} {
+  const documents: DocumentSource[] = [];
+  const unreadable: UnreadableDocument[] = [];
+
+  // `withFileTypes`, because a recursive listing yields DIRECTORIES too and a
+  // directory may be named `notes.md`. Filtering on the extension alone put
+  // one in `unreadable` with `EISDIR`, which is an invented document: the
+  // bundle contains no such file, and `quoin-completeness`' own disk reader —
+  // which matches on the file type first — reports nothing there. A snapshot
+  // that adds an entry the tree does not hold is the same class of defect as
+  // one that drops an entry it does, and `tests/core-bundle-snapshot.test.ts`
+  // pins both directions against an independent walk.
+  let entries: { parentPath: string; name: string; isFile(): boolean }[];
+  try {
+    entries = readdirSync(bundleRoot, { recursive: true, withFileTypes: true });
+  } catch {
+    return { documents, unreadable };
+  }
+
+  // Sorted, and sorted on the joined path exactly as the retained reader
+  // sorted: `readdirSync` order is filesystem order, and a report whose
+  // document order depends on the inode layout is one whose diff is noise.
+  const found = entries
+    .filter((e) => e.isFile() && e.name.endsWith(".md"))
+    .map((e) => relative(bundleRoot, join(e.parentPath, e.name)))
+    .sort();
+  for (const entry of found) {
+    const path = join(bundleRoot, entry);
+    const relativePath = portable(entry);
+    try {
+      documents.push({ path: relativePath, raw: readFileSync(path, "utf8") });
+    } catch (cause) {
+      unreadable.push({ path: relativePath, reason: reasonOf(cause) });
+    }
+  }
+  return { documents, unreadable };
+}
+
+/**
+ * Read every located module into the `modules` list
+ * `completeness.assess_bundle` accepts.
+ *
+ * Two-phase on purpose. The shell cannot know which frontmatter schemas a
+ * manifest needs without understanding the module layout, and that layout is a
+ * rule `quoin-completeness` owns — so it asks: `refsOf(manifest)` is
+ * `completeness.schema_refs`, and only the refs it names are read. A shell that
+ * guessed (`schemas/*.json`, say) would be a second copy of that rule, and the
+ * two would disagree the first time either moved.
+ *
+ * A module whose `manifest.yaml` is unreadable contributes nothing, silently:
+ * that is the retained behaviour, on the retained reasoning that a module which
+ * cannot be parsed declares no coverage. A SCHEMA that cannot be read is
+ * different — it is reported as `{ unreadable }`, because the manifest named it
+ * and its absence is why a declaration cannot be resolved.
+ */
+export function moduleSnapshots(
+  moduleRoots: string[],
+  refsOf: (manifest: string) => string[],
+): ModuleSource[] {
+  const modules: ModuleSource[] = [];
+  const seen = new Set<string>();
+
+  for (const candidate of moduleRoots) {
+    const moduleRoot = locateModuleRoot(candidate);
+    if (!moduleRoot || seen.has(moduleRoot)) continue;
+    seen.add(moduleRoot);
+
+    let manifest: string;
+    try {
+      manifest = readFileSync(join(moduleRoot, "manifest.yaml"), "utf8");
+    } catch {
+      continue;
+    }
+
+    const schemas: Record<string, SchemaSource> = {};
+    for (const ref of refsOf(manifest)) {
+      try {
+        schemas[ref] = { text: readFileSync(join(moduleRoot, ref), "utf8") };
+      } catch (cause) {
+        schemas[ref] = { unreadable: reasonOf(cause) };
+      }
+    }
+    modules.push({ label: moduleRoot, manifest, schemas });
+  }
+  return modules;
+}
+
+function reasonOf(cause: unknown): string {
+  return cause instanceof Error ? cause.message : String(cause);
 }

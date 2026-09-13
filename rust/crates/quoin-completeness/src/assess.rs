@@ -25,6 +25,7 @@ use crate::ids::{VocabularyName, VocabularyValue};
 /// What kind of gap a finding records.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, serde::Serialize)]
 #[serde(rename_all = "kebab-case")]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub enum FindingKind {
     /// No document claims the value and nothing excuses it.
     Unowned,
@@ -55,6 +56,7 @@ impl FindingKind {
 /// have prompted the work.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, serde::Serialize)]
 #[serde(rename_all = "lowercase")]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub enum Severity {
     /// An admitted gap.
     Medium,
@@ -75,6 +77,7 @@ impl Severity {
 
 /// One gap in declared-vocabulary coverage.
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct CompletenessFinding {
     /// Declaration this concerns, e.g. `quality-characteristics`.
     pub vocabulary: VocabularyName,
@@ -93,6 +96,7 @@ pub struct CompletenessFinding {
 
 /// The per-vocabulary tally.
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct VocabularyRollup {
     /// Which declaration.
     pub vocabulary: VocabularyName,
@@ -127,6 +131,7 @@ pub struct DocumentClaims {
 /// the criterion written to forbid it caught it.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, serde::Serialize)]
 #[serde(rename_all = "UPPERCASE")]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub enum Verdict {
     /// Checked, nothing found.
     Pass,

@@ -287,8 +287,8 @@ fn tc_1614_no_hand_written_declaration_shadows_a_generated_boundary_type() {
     // outside what this scanner reads.
     assert_eq!(
         generated.len(),
-        25,
-        "the scanner read {} interfaces out of the generated surface, not 25; \
+        67,
+        "the scanner read {} interfaces out of the generated surface, not 67; \
          it is broken and would report clean over anything",
         generated.len()
     );

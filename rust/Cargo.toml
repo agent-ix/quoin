@@ -77,6 +77,7 @@ publish = false
 # quoin-store merged, not inherited from when the branch was cut.)
 [workspace.dependencies]
 quoin-assurance = { path = "crates/quoin-assurance" }
+quoin-completeness = { path = "crates/quoin-completeness" }
 quoin-config = { path = "crates/quoin-config" }
 quoin-core = { path = "crates/quoin-core" }
 quoin-evidence-types = { path = "crates/quoin-evidence-types" }

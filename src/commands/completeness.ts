@@ -1,11 +1,8 @@
 import { Flags } from "@oclif/core";
 
 import { QuoinCommand } from "../base.js";
-import { assessBundle } from "../completeness/index.js";
-import type {
-  BundleAssessment,
-  CompletenessFinding,
-} from "../completeness/index.js";
+import { assessBundle } from "../core/completeness.js";
+import type { BundleAssessment, CompletenessFinding } from "../core/types.js";
 
 export default class Completeness extends QuoinCommand {
   static summary =

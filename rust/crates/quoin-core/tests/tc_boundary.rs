@@ -202,3 +202,63 @@ fn tc_412_an_oversize_stream_is_refused_by_the_process_not_merely_by_the_library
         (ceiling + 1).to_string()
     );
 }
+
+/// A request AT the ceiling is read and dispatched, so the transport bound is
+/// a ceiling rather than a tighter limit spelled with a larger number.
+///
+/// The refusal that comes back is `core.ping`'s own 4 KiB echo bound, and that
+/// is the assertion: the request crossed the transport and the DOMAIN
+/// answered. A transport that quietly refused everything large would pass a
+/// test that only looked at the exit status.
+///
+/// Trace: FR-096, NFR-024
+/// Provenance: agent-ix/quoin#445, agent-ix/quoin#447
+#[test]
+fn tc_445_101_a_request_at_the_ceiling_reaches_the_operation() {
+    let limit = quoin_core::protocol::MAX_REQUEST_BYTES;
+    // `{"echo":"…"}` is 11 bytes of envelope; the filler is the remainder.
+    let filler = "x".repeat(limit - 11);
+    let at_limit = format!(r#"{{"echo":"{filler}"}}"#);
+    assert_eq!(at_limit.len(), limit);
+
+    let result = run(&["core.ping"], &at_limit);
+    assert_eq!(result.status, 2, "{}", result.stderr);
+    let diagnostics: serde_json::Value = serde_json::from_str(&result.stderr).unwrap();
+    assert_eq!(diagnostics[0]["code"], "CORE_REFUSED");
+    assert_eq!(diagnostics[0]["context"]["op"], "core.ping");
+    assert_eq!(
+        diagnostics[0]["context"]["limit_bytes"],
+        quoin_core::ops::core::MAX_ECHO_BYTES.to_string()
+    );
+}
+
+/// A request past an OPERATION's bound is refused by that operation, with the
+/// size it observed — the transport does not answer for it.
+///
+/// Trace: FR-096, NFR-024
+/// Provenance: agent-ix/quoin#445, agent-ix/quoin#447
+#[test]
+fn tc_445_103_a_request_past_an_operation_bound_is_the_operations_refusal() {
+    let over = "x".repeat(quoin_core::ops::assurance::MAX_OBLIGATION_ID_BYTES + 1);
+    let request = serde_json::json!({ "obligation_id": over }).to_string();
+    assert!(request.len() < quoin_core::protocol::MAX_REQUEST_BYTES);
+
+    let result = run(&["assurance.requirement_of"], &request);
+    assert_eq!(result.status, 2, "{}", result.stderr);
+    let diagnostics: serde_json::Value = serde_json::from_str(&result.stderr).unwrap();
+    assert_eq!(diagnostics[0]["code"], "CORE_REFUSED");
+    assert_eq!(
+        diagnostics[0]["context"]["op"], "assurance.requirement_of",
+        "the transport answered for the domain"
+    );
+    assert!(
+        diagnostics[0]["context"]["observed_bytes"].is_string(),
+        "the domain's refusal must carry the size it observed: {}",
+        result.stderr
+    );
+    assert!(
+        diagnostics[0]["context"]["stream"].is_null(),
+        "a domain refusal is not a stream refusal: {}",
+        result.stderr
+    );
+}

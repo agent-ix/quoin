@@ -40,6 +40,13 @@
 //! two of the nine fields quire emits, so unknown fields are the normal case
 //! and not an error.
 
+pub mod clauses;
+
+pub use clauses::{
+    ClauseBinding, ClauseBindingOutcome, ClauseBindingReason, ClauseBindingReport,
+    ClauseBindingSchemaVersion, ClauseForce, ClauseSetKey, EngineProvenance,
+};
+
 use serde::Deserialize;
 
 /// One obligation, as quoin reads it off `quire coverage --json`.

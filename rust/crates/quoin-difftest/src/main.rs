@@ -74,7 +74,173 @@ enum Request {
     /// lowercase spellings each decide acceptance — and a table of them reads
     /// as a grammar only if the rows are one line each.
     ArgumentReviewBy(&'static str),
+    /// A whole document, with the shared sub-documents spliced in.
+    ///
+    /// Separate from [`Request::Literal`], which promises exactly its bytes:
+    /// the renderer cases need a document carrying a full six-field
+    /// attestation or a ten-field sufficiency decision, and a `const` cannot
+    /// be interpolated into another `const`, so the splice happens here at run
+    /// time instead of six copies happening in the table.
+    Expanded(&'static str),
+    /// An `assurance.build_discharge` request over [`BINDING`].
+    ///
+    /// The binding report is five clauses and identical in every case, so the
+    /// variant carries only what a case is about: the facts spent against it,
+    /// and the instant they are judged at. A fact is roughly 400 bytes, so a
+    /// table of whole requests would be a wall in which the one changed field
+    /// is invisible.
+    BuildDischarge {
+        /// The `facts` array, as raw JSON text.
+        facts: &'static str,
+        /// The `asOf` instant.
+        as_of: &'static str,
+    },
+    /// An `assurance.build_authored_argument` request over [`ARGUMENT`].
+    ///
+    /// `discharge` is raw JSON text and an EMPTY string omits the key, the
+    /// same distinction [`Request::Argument`] draws: the retained builder
+    /// spreads `...(request.discharge ? { discharge } : {})`, so an absent
+    /// report and a supplied one produce different payloads and both must be
+    /// expressible here.
+    BuildAuthoredArgument {
+        /// The `decisions` array, as raw JSON text.
+        decisions: &'static str,
+        /// The `asOf` instant.
+        as_of: &'static str,
+        /// The `discharge` report, or empty to omit the key entirely.
+        discharge: &'static str,
+    },
 }
+
+/// The clause-binding report every `assurance.build_discharge` case starts from.
+///
+/// Every outcome the partition distinguishes appears once — two binding
+/// clauses that a fact can be spent on, a third that stays open, one
+/// `not_binding` and one `unresolved` — because FR-046 keeps unresolved
+/// applicability OUT of the discharge denominator, and a report carrying only
+/// binding clauses could not tell a port that collapsed the two.
+const BINDING: &str = r#"{
+  "schemaVersion": "clause-binding-v1",
+  "clauseSet": { "authority": "iso", "id": "27001", "version": "2022" },
+  "clauseSetDigest":
+    "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+  "context": { "sector": "software" },
+  "clauses": [
+    {
+      "clauseId": "4.1",
+      "force": "mandatory",
+      "outcome": "binding",
+      "reasons": [],
+      "expectedOutputs": ["context-register"]
+    },
+    {
+      "clauseId": "4.2",
+      "force": "recommended",
+      "outcome": "binding",
+      "reasons": [],
+      "expectedOutputs": []
+    },
+    {
+      "clauseId": "4.3",
+      "force": "mandatory",
+      "outcome": "binding",
+      "reasons": [],
+      "expectedOutputs": ["scope-statement"]
+    },
+    {
+      "clauseId": "5.1",
+      "force": "mandatory",
+      "outcome": "not_binding",
+      "reasons": [{ "code": "out-of-scope", "message": "no manufacturing site" }],
+      "expectedOutputs": []
+    },
+    {
+      "clauseId": "6.1",
+      "force": "mandatory",
+      "outcome": "unresolved",
+      "reasons": [
+        {
+          "code": "missing-dimension",
+          "dimension": "jurisdiction",
+          "message": "jurisdiction was not supplied"
+        }
+      ],
+      "expectedOutputs": ["risk-register"]
+    }
+  ]
+}"#;
+
+/// What a `facts` entry writes where [`ATTESTATION`] belongs.
+///
+/// It is spelled as a JSON string so that a request carrying it still parses,
+/// which is what `assurance_requests_are_well_formed` checks before any of it
+/// runs.
+const ATTESTATION_TOKEN: &str = "\"@attestation\"";
+
+/// What a `decisions` entry writes where [`DECISION`] belongs.
+const DECISION_TOKEN: &str = "\"@decision\"";
+
+/// Splice the shared sub-documents into one request.
+fn expand(text: &str) -> String {
+    text.replace(ATTESTATION_TOKEN, ATTESTATION)
+        .replace(DECISION_TOKEN, DECISION)
+}
+
+/// The attestation every discharge fact below carries.
+///
+/// Current at the `2026-01-01` instant the cases judge at: attested in the
+/// past, expiring in the future. A fact's currency is decided separately from
+/// its shape, so a case about the shape must not accidentally be a case about
+/// the clock.
+const ATTESTATION: &str = r#"{
+  "attestedBy": "auditor-900",
+  "authority": "lead auditor",
+  "attestedAt": "2025-06-01T00:00:00Z",
+  "expiresAt": "2026-06-01T00:00:00Z",
+  "sourceRevision": "0123456789abcdef",
+  "evidenceDigest":
+    "sha256:2222222222222222222222222222222222222222222222222222222222222222"
+}"#;
+
+/// The sufficiency decision that answers [`ARGUMENT`]'s one criterion.
+///
+/// `decidedBy` and `authority` match the authored participant exactly, because
+/// the retained builder refuses a decision whose authority differs from the
+/// one the argument declares — so a decision that got either wrong would be a
+/// case about that refusal rather than about the supported path.
+const DECISION: &str = r#"{
+  "reasoningId": "ARG-900",
+  "criterion": "Every binding clause has a disposition.",
+  "state": "satisfied",
+  "evidenceRefs": ["ix://example.invalid/evidence/clause-review"],
+  "decidedBy": "reviewer-900",
+  "authority": "may accept or reject this synthetic release",
+  "decidedAt": "2025-06-01T00:00:00Z",
+  "expiresAt": "2026-06-01T00:00:00Z",
+  "sourceRevision": "0123456789abcdef",
+  "evidenceDigest":
+    "sha256:3333333333333333333333333333333333333333333333333333333333333333"
+}"#;
+
+/// A discharge report with nothing in any partition.
+///
+/// The shortest document `assurance.render_discharge` accepts, and the one a
+/// clause set with no clauses produces. Written out rather than taken from
+/// `assurance.build_discharge`'s output: an input this harness DERIVED from
+/// the port would make the renderer case pass on whatever the builder emitted,
+/// including on a builder that had gone wrong.
+const EMPTY_DISCHARGE: &str = r#"{
+  "schemaVersion": "clause-discharge-v1",
+  "clauseSet": { "authority": "iso", "id": "27001", "version": "2022" },
+  "clauseSetDigest":
+    "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+  "context": {},
+  "asOf": "2026-01-01T00:00:00Z",
+  "binding": { "direct": [], "dispositions": [], "open": [] },
+  "unresolved": [],
+  "notBinding": [],
+  "unusedFacts": []
+}"#;
 
 /// The authored argument every `assurance.parse_argument` case starts from.
 ///
@@ -153,6 +319,24 @@ impl Request {
                 "x".repeat(n.saturating_sub(BUILD_CASE_ENVELOPE.len()))
             ),
             Self::Argument(overrides) => argument_with(overrides),
+            Self::Expanded(text) => expand(text),
+            Self::BuildDischarge { facts, as_of } => expand(&format!(
+                r#"{{"binding":{BINDING},"facts":{facts},"asOf":"{as_of}"}}"#
+            )),
+            Self::BuildAuthoredArgument {
+                decisions,
+                as_of,
+                discharge,
+            } => {
+                let report = if discharge.is_empty() {
+                    String::new()
+                } else {
+                    format!(r#","discharge":{discharge}"#)
+                };
+                expand(&format!(
+                    r#"{{"argument":{ARGUMENT},"decisions":{decisions},"asOf":"{as_of}"{report}}}"#
+                ))
+            }
             Self::ArgumentReviewBy(review_by) => argument_with(&[(
                 "assumptions",
                 &format!(
@@ -162,6 +346,216 @@ impl Request {
         }
     }
 }
+
+/// A discharge report with something in every partition.
+///
+/// Every section the renderer can emit appears once — direct evidence, an
+/// approved disposition, an open binding clause with its reason, unresolved
+/// applicability, a not-binding clause, and an unused fact — because the
+/// renderer prints `_None._` for an empty section and a report that exercised
+/// only the empty path would compare two identical placeholders.
+const FULL_DISCHARGE: &str = r#"{
+  "schemaVersion": "clause-discharge-v1",
+  "clauseSet": { "authority": "iso", "id": "27001", "version": "2022" },
+  "clauseSetDigest":
+    "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+  "context": { "sector": "software" },
+  "asOf": "2026-01-01T00:00:00Z",
+  "binding": {
+    "direct": [
+      {
+        "clauseId": "4.1",
+        "force": "mandatory",
+        "state": "direct",
+        "expectedOutputs": ["context-register"],
+        "fact": {
+          "kind": "direct",
+          "clauseId": "4.1",
+          "evidenceRefs": ["ix://example.invalid/evidence/context-register"],
+          "attestation": "@attestation"
+        }
+      }
+    ],
+    "dispositions": [
+      {
+        "clauseId": "4.2",
+        "force": "recommended",
+        "state": "disposition",
+        "expectedOutputs": [],
+        "fact": {
+          "kind": "disposition",
+          "clauseId": "4.2",
+          "decision": "accepted_risk",
+          "rationale": "the recommendation is knowingly not adopted this cycle",
+          "approvalRef": "ix://example.invalid/decision/DR-900",
+          "attestation": "@attestation"
+        }
+      }
+    ],
+    "open": [
+      {
+        "clauseId": "4.3",
+        "force": "mandatory",
+        "state": "open",
+        "expectedOutputs": ["scope-statement"],
+        "reason": "no discharge fact"
+      }
+    ]
+  },
+  "unresolved": [
+    {
+      "clauseId": "6.1",
+      "force": "mandatory",
+      "state": "unresolved",
+      "expectedOutputs": ["risk-register"],
+      "reason": "jurisdiction was not supplied"
+    }
+  ],
+  "notBinding": [
+    {
+      "clauseId": "5.1",
+      "force": "mandatory",
+      "state": "not_binding",
+      "expectedOutputs": []
+    }
+  ],
+  "unusedFacts": [
+    { "clauseId": "9.9", "kind": "direct", "reason": "unknown_clause" }
+  ]
+}"#;
+
+/// The shortest authored view `assurance.render_authored_argument` accepts.
+///
+/// Written out rather than taken from `assurance.build_authored_argument`'s
+/// output, for the reason [`EMPTY_DISCHARGE`] states: an input this harness
+/// derived from the port would make the renderer agree with whatever the
+/// builder emitted, including a builder that had gone wrong.
+const MINIMAL_VIEW: &str = r#"{
+  "schemaVersion": "authored-assurance-view-v1",
+  "argument": {
+    "id": "AA-900",
+    "title": "Synthetic widget release decision",
+    "status": "active",
+    "owner": "release-owner",
+    "profile": "ix://example.invalid/widget/AP-900"
+  },
+  "asOf": "2026-01-01T00:00:00Z",
+  "topClaim": {
+    "id": "CLAIM-900",
+    "statement": "The bounded synthetic widget change is acceptable.",
+    "subject": "widget revision 0123456789abcdef",
+    "status": "open",
+    "reasons": ["one or more sufficiency criteria are open"]
+  },
+  "reasoning": [
+    {
+      "id": "ARG-900",
+      "statement": "Argue from the explicitly reviewed clause disposition.",
+      "supports": "CLAIM-900",
+      "status": "open",
+      "criteria": [
+        {
+          "criterion": "Every binding clause has a disposition.",
+          "status": "open",
+          "reason": "no sufficiency decision"
+        }
+      ]
+    }
+  ],
+  "assumptions": [],
+  "participants": [
+    {
+      "id": "reviewer-900",
+      "role": "decision reviewer",
+      "authority": "may accept or reject this synthetic release",
+      "independence": "did not produce the implementation evidence"
+    }
+  ],
+  "challenges": [],
+  "relationships": [],
+  "unusedDecisions": []
+}"#;
+
+/// An authored view with every optional section populated.
+///
+/// The renderer emits `_None._` for an empty `assumptions` or `challenges`
+/// block, so [`MINIMAL_VIEW`] alone would compare two placeholders and leave
+/// the tick-mark rules, the em-dash reason suffix and the decision block
+/// unexercised.
+const FULL_VIEW: &str = r#"{
+  "schemaVersion": "authored-assurance-view-v1",
+  "argument": {
+    "id": "AA-900",
+    "title": "Synthetic widget release decision",
+    "status": "active",
+    "owner": "release-owner",
+    "profile": "ix://example.invalid/widget/AP-900"
+  },
+  "asOf": "2026-01-01T00:00:00Z",
+  "topClaim": {
+    "id": "CLAIM-900",
+    "statement": "The bounded synthetic widget change is acceptable.",
+    "subject": "widget revision 0123456789abcdef",
+    "status": "open",
+    "reasons": [
+      "one or more assumptions are open, invalidated, or due for review",
+      "one or more challenges are open or no longer current"
+    ]
+  },
+  "reasoning": [
+    {
+      "id": "ARG-900",
+      "statement": "Argue from the explicitly reviewed clause disposition.",
+      "supports": "CLAIM-900",
+      "status": "supported",
+      "criteria": [
+        {
+          "criterion": "Every binding clause has a disposition.",
+          "status": "supported",
+          "decision": "@decision"
+        }
+      ]
+    }
+  ],
+  "assumptions": [
+    {
+      "id": "ASM-900",
+      "statement": "The reviewed clause set is stable.",
+      "owner": "release-owner",
+      "status": "open",
+      "declaredStatus": "invalidated",
+      "reviewBy": "2026-06-01T00:00:00Z",
+      "reason": "assumption is invalidated"
+    }
+  ],
+  "participants": [
+    {
+      "id": "reviewer-900",
+      "role": "decision reviewer",
+      "authority": "may accept or reject this synthetic release",
+      "independence": "did not produce the implementation evidence"
+    }
+  ],
+  "challenges": [
+    {
+      "id": "CH-900",
+      "target": "CLAIM-900",
+      "statement": "The clause review predates the change.",
+      "owner": "reviewer-900",
+      "status": "open",
+      "declaredStatus": "accepted-risk",
+      "resolutionRefs": ["ix://example.invalid/decision/DR-901"],
+      "expiresAt": "2025-06-01T00:00:00Z",
+      "reason": "accepted risk is expired"
+    }
+  ],
+  "relationships": [
+    { "target": "ix://example.invalid/widget/AP-900", "type": "references" }
+  ],
+  "unusedDecisions": [
+    { "reasoningId": "ARG-900", "criterion": "A criterion nobody authored." }
+  ]
+}"#;
 
 /// The Stage-0 case set: every exit status `core.ping` can reach.
 ///
@@ -1055,6 +1449,371 @@ const CASES: &[Case] = &[
         op: "assurance.parse_argument",
         request: Request::Literal("[]"),
     },
+    // `assurance.build_discharge`. The partition is the capability FR-046
+    // names, and its three facts — applicability, currency, and who attested —
+    // are decided in three different places, so the rows below move one at a
+    // time.
+    Case {
+        name: "assurance/discharge-no-facts-leaves-every-binding-clause-open",
+        op: "assurance.build_discharge",
+        request: Request::BuildDischarge {
+            facts: "[]",
+            as_of: "2026-01-01T00:00:00Z",
+        },
+    },
+    Case {
+        name: "assurance/discharge-direct-evidence-and-an-approved-disposition",
+        op: "assurance.build_discharge",
+        request: Request::BuildDischarge {
+            facts: r#"[{"kind":"direct","clauseId":"4.1","evidenceRefs":["ix://example.invalid/evidence/context-register"],"attestation":"@attestation"},{"kind":"disposition","clauseId":"4.2","decision":"accepted_risk","rationale":"the recommendation is knowingly not adopted this cycle","approvalRef":"ix://example.invalid/decision/DR-900","attestation":"@attestation"}]"#,
+            as_of: "2026-01-01T00:00:00Z",
+        },
+    },
+    Case {
+        // FR-046 keeps the two OUT of the denominator in different ways, so a
+        // port that collapsed `not_binding` and `unresolved` would still pass
+        // a case that only sent one of them.
+        name: "assurance/discharge-a-fact-on-a-not-binding-clause-is-unused",
+        op: "assurance.build_discharge",
+        request: Request::BuildDischarge {
+            facts: r#"[{"kind":"direct","clauseId":"5.1","evidenceRefs":["ix://example.invalid/evidence/unused"],"attestation":"@attestation"}]"#,
+            as_of: "2026-01-01T00:00:00Z",
+        },
+    },
+    Case {
+        name: "assurance/discharge-a-fact-on-an-unresolved-clause-is-unused",
+        op: "assurance.build_discharge",
+        request: Request::BuildDischarge {
+            facts: r#"[{"kind":"direct","clauseId":"6.1","evidenceRefs":["ix://example.invalid/evidence/unused"],"attestation":"@attestation"}]"#,
+            as_of: "2026-01-01T00:00:00Z",
+        },
+    },
+    Case {
+        // Clause-ordered unused entries are listed before fact-ordered ones,
+        // and only a request carrying both can tell.
+        name: "assurance/discharge-a-fact-naming-no-clause-is-unknown",
+        op: "assurance.build_discharge",
+        request: Request::BuildDischarge {
+            facts: r#"[{"kind":"direct","clauseId":"5.1","evidenceRefs":["ix://example.invalid/evidence/unused"],"attestation":"@attestation"},{"kind":"direct","clauseId":"9.9","evidenceRefs":["ix://example.invalid/evidence/nowhere"],"attestation":"@attestation"}]"#,
+            as_of: "2026-01-01T00:00:00Z",
+        },
+    },
+    Case {
+        // Currency is decided against `asOf` and nothing else — this layer
+        // never reads the wall clock — so the fact stays fixed and the instant
+        // moves past its expiry.
+        name: "assurance/discharge-an-expired-fact-reopens-the-clause",
+        op: "assurance.build_discharge",
+        request: Request::BuildDischarge {
+            facts: r#"[{"kind":"direct","clauseId":"4.1","evidenceRefs":["ix://example.invalid/evidence/context-register"],"attestation":"@attestation"}]"#,
+            as_of: "2027-01-01T00:00:00Z",
+        },
+    },
+    Case {
+        name: "assurance/discharge-a-fact-attested-in-the-future-reopens-the-clause",
+        op: "assurance.build_discharge",
+        request: Request::BuildDischarge {
+            facts: r#"[{"kind":"direct","clauseId":"4.1","evidenceRefs":["ix://example.invalid/evidence/context-register"],"attestation":"@attestation"}]"#,
+            as_of: "2025-01-01T00:00:00Z",
+        },
+    },
+    Case {
+        // FR-046-AC-5: two facts naming one clause is a contract failure the
+        // retained code RAISES, not a silent last-one-wins. It is a bad
+        // REQUEST and not a refusal — the caller sent a document that fails
+        // the contract, which is a different fact from a document this process
+        // declined to read.
+        name: "assurance/discharge-refused-two-facts-for-one-clause",
+        op: "assurance.build_discharge",
+        request: Request::BuildDischarge {
+            facts: r#"[{"kind":"direct","clauseId":"4.1","evidenceRefs":["ix://example.invalid/evidence/a"],"attestation":"@attestation"},{"kind":"direct","clauseId":"4.1","evidenceRefs":["ix://example.invalid/evidence/b"],"attestation":"@attestation"}]"#,
+            as_of: "2026-01-01T00:00:00Z",
+        },
+    },
+    Case {
+        name: "assurance/discharge-refused-a-fact-with-a-short-evidence-digest",
+        op: "assurance.build_discharge",
+        request: Request::BuildDischarge {
+            facts: r#"[{"kind":"direct","clauseId":"4.1","evidenceRefs":["ix://example.invalid/evidence/a"],"attestation":{"attestedBy":"auditor-900","authority":"lead auditor","attestedAt":"2025-06-01T00:00:00Z","expiresAt":"2026-06-01T00:00:00Z","sourceRevision":"0123456789abcdef","evidenceDigest":"sha256:abc"}}]"#,
+            as_of: "2026-01-01T00:00:00Z",
+        },
+    },
+    Case {
+        name: "assurance/discharge-invalid-as-of-is-not-an-instant",
+        op: "assurance.build_discharge",
+        request: Request::BuildDischarge {
+            facts: "[]",
+            as_of: "not-an-instant",
+        },
+    },
+    Case {
+        name: "assurance/discharge-invalid-unknown-field",
+        op: "assurance.build_discharge",
+        request: Request::Literal(
+            r#"{"binding":{"schemaVersion":"clause-binding-v1","clauseSet":{"authority":"iso","id":"27001","version":"2022"},"clauseSetDigest":"sha256:11","context":{},"clauses":[]},"facts":[],"asOf":"2026-01-01T00:00:00Z","typo":true}"#,
+        ),
+    },
+    Case {
+        name: "assurance/discharge-invalid-facts-is-not-an-array",
+        op: "assurance.build_discharge",
+        request: Request::Literal(
+            r#"{"binding":{"schemaVersion":"clause-binding-v1","clauseSet":{"authority":"iso","id":"27001","version":"2022"},"clauseSetDigest":"sha256:11","context":{},"clauses":[]},"facts":{},"asOf":"2026-01-01T00:00:00Z"}"#,
+        ),
+    },
+    Case {
+        // `clause-binding-v2` must fail to READ, not be read with v1 semantics
+        // and reported as a clean partition.
+        name: "assurance/discharge-invalid-binding-schema-version",
+        op: "assurance.build_discharge",
+        request: Request::Literal(
+            r#"{"binding":{"schemaVersion":"clause-binding-v2","clauseSet":{"authority":"iso","id":"27001","version":"2022"},"clauseSetDigest":"sha256:11","context":{},"clauses":[]},"facts":[],"asOf":"2026-01-01T00:00:00Z"}"#,
+        ),
+    },
+    Case {
+        name: "assurance/discharge-invalid-clause-force",
+        op: "assurance.build_discharge",
+        request: Request::Literal(
+            r#"{"binding":{"schemaVersion":"clause-binding-v1","clauseSet":{"authority":"iso","id":"27001","version":"2022"},"clauseSetDigest":"sha256:11","context":{},"clauses":[{"clauseId":"4.1","force":"compulsory","outcome":"binding","reasons":[],"expectedOutputs":[]}]},"facts":[],"asOf":"2026-01-01T00:00:00Z"}"#,
+        ),
+    },
+    Case {
+        name: "assurance/discharge-invalid-malformed",
+        op: "assurance.build_discharge",
+        request: Request::Literal("{oops"),
+    },
+    Case {
+        name: "assurance/discharge-invalid-non-object",
+        op: "assurance.build_discharge",
+        request: Request::Literal("[1,2]"),
+    },
+    // `assurance.render_discharge`. Its input is the previous operation's
+    // OUTPUT, so the documents below are written out rather than taken from
+    // it: an input this harness derived from the port would make the renderer
+    // agree with whatever the builder emitted.
+    Case {
+        name: "assurance/render-discharge-empty-partition",
+        op: "assurance.render_discharge",
+        request: Request::Expanded(EMPTY_DISCHARGE),
+    },
+    Case {
+        name: "assurance/render-discharge-every-section",
+        op: "assurance.render_discharge",
+        request: Request::Expanded(FULL_DISCHARGE),
+    },
+    Case {
+        // `DischargeReport` carries no `deny_unknown_fields`, and deliberately
+        // so: it is a payload the boundary itself produced, not a
+        // caller-authored envelope. The case is here to pin that BOTH sides
+        // tolerate the extra key identically — the port by dropping it on
+        // deserialisation, the retained renderer by never reading it — because
+        // an asymmetry there would put a stray key into one rendering only.
+        name: "assurance/render-discharge-unknown-field",
+        op: "assurance.render_discharge",
+        request: Request::Literal(
+            r#"{"schemaVersion":"clause-discharge-v1","clauseSet":{"authority":"iso","id":"27001","version":"2022"},"clauseSetDigest":"sha256:11","context":{},"asOf":"2026-01-01T00:00:00Z","binding":{"direct":[],"dispositions":[],"open":[]},"unresolved":[],"notBinding":[],"unusedFacts":[],"typo":true}"#,
+        ),
+    },
+    Case {
+        name: "assurance/render-discharge-invalid-expected-outputs-not-an-array",
+        op: "assurance.render_discharge",
+        request: Request::Literal(
+            r#"{"schemaVersion":"clause-discharge-v1","clauseSet":{"authority":"iso","id":"27001","version":"2022"},"clauseSetDigest":"sha256:11","context":{},"asOf":"2026-01-01T00:00:00Z","binding":{"direct":[],"dispositions":[],"open":[{"clauseId":"4.3","force":"mandatory","state":"open","expectedOutputs":"scope-statement"}]},"unresolved":[],"notBinding":[],"unusedFacts":[]}"#,
+        ),
+    },
+    Case {
+        name: "assurance/render-discharge-invalid-unknown-state",
+        op: "assurance.render_discharge",
+        request: Request::Literal(
+            r#"{"schemaVersion":"clause-discharge-v1","clauseSet":{"authority":"iso","id":"27001","version":"2022"},"clauseSetDigest":"sha256:11","context":{},"asOf":"2026-01-01T00:00:00Z","binding":{"direct":[],"dispositions":[],"open":[{"clauseId":"4.3","force":"mandatory","state":"discharged","expectedOutputs":[]}]},"unresolved":[],"notBinding":[],"unusedFacts":[]}"#,
+        ),
+    },
+    Case {
+        name: "assurance/render-discharge-invalid-missing-unused-facts",
+        op: "assurance.render_discharge",
+        request: Request::Literal(
+            r#"{"schemaVersion":"clause-discharge-v1","clauseSet":{"authority":"iso","id":"27001","version":"2022"},"clauseSetDigest":"sha256:11","context":{},"asOf":"2026-01-01T00:00:00Z","binding":{"direct":[],"dispositions":[],"open":[]},"unresolved":[],"notBinding":[]}"#,
+        ),
+    },
+    Case {
+        name: "assurance/render-discharge-invalid-malformed",
+        op: "assurance.render_discharge",
+        request: Request::Literal("{oops"),
+    },
+    Case {
+        name: "assurance/render-discharge-invalid-non-object",
+        op: "assurance.render_discharge",
+        request: Request::Literal("[1,2]"),
+    },
+    // `assurance.build_authored_argument`. The view never promotes an evidence
+    // result into a claim, so every row below is about who decided what, and
+    // when.
+    Case {
+        name: "assurance/authored-no-decisions-leaves-the-criterion-open",
+        op: "assurance.build_authored_argument",
+        request: Request::BuildAuthoredArgument {
+            decisions: "[]",
+            as_of: "2026-01-01T00:00:00Z",
+            discharge: "",
+        },
+    },
+    Case {
+        name: "assurance/authored-a-current-decision-supports-the-claim",
+        op: "assurance.build_authored_argument",
+        request: Request::BuildAuthoredArgument {
+            decisions: r#"["@decision"]"#,
+            as_of: "2026-01-01T00:00:00Z",
+            discharge: "",
+        },
+    },
+    Case {
+        // A decision naming a criterion the argument does not carry is
+        // REPORTED, not dropped: usually the criterion text was edited after
+        // the decision was recorded, and a view that discarded it would read
+        // as clean over a population the decider did not think they decided.
+        name: "assurance/authored-an-unmatched-decision-is-reported-unused",
+        op: "assurance.build_authored_argument",
+        request: Request::BuildAuthoredArgument {
+            decisions: r#"[{"reasoningId":"ARG-900","criterion":"A criterion nobody authored.","state":"satisfied","evidenceRefs":["ix://example.invalid/evidence/clause-review"],"decidedBy":"reviewer-900","authority":"may accept or reject this synthetic release","decidedAt":"2025-06-01T00:00:00Z","expiresAt":"2026-06-01T00:00:00Z","sourceRevision":"0123456789abcdef","evidenceDigest":"sha256:3333333333333333333333333333333333333333333333333333333333333333"}]"#,
+            as_of: "2026-01-01T00:00:00Z",
+            discharge: "",
+        },
+    },
+    Case {
+        name: "assurance/authored-an-expired-decision-reopens-the-criterion",
+        op: "assurance.build_authored_argument",
+        request: Request::BuildAuthoredArgument {
+            decisions: r#"["@decision"]"#,
+            as_of: "2027-01-01T00:00:00Z",
+            discharge: "",
+        },
+    },
+    Case {
+        // `state: "open"` is the decider explicitly declining, which is not
+        // the same fact as no decision at all, and the two produce different
+        // reasons.
+        name: "assurance/authored-a-decision-that-declines-is-not-a-missing-decision",
+        op: "assurance.build_authored_argument",
+        request: Request::BuildAuthoredArgument {
+            decisions: r#"[{"reasoningId":"ARG-900","criterion":"Every binding clause has a disposition.","state":"open","evidenceRefs":[],"decidedBy":"reviewer-900","authority":"may accept or reject this synthetic release","decidedAt":"2025-06-01T00:00:00Z","expiresAt":"2026-06-01T00:00:00Z","sourceRevision":"0123456789abcdef","evidenceDigest":"sha256:3333333333333333333333333333333333333333333333333333333333333333","rationale":"the clause review predates the change"}]"#,
+            as_of: "2026-01-01T00:00:00Z",
+            discharge: "",
+        },
+    },
+    Case {
+        // The supplied report is carried into the view verbatim, and the
+        // port's copy travels through a typed round trip, so this is the one
+        // case that compares the two spellings of the same document.
+        name: "assurance/authored-a-supplied-discharge-report-is-carried",
+        op: "assurance.build_authored_argument",
+        request: Request::BuildAuthoredArgument {
+            decisions: r#"["@decision"]"#,
+            as_of: "2026-01-01T00:00:00Z",
+            discharge: FULL_DISCHARGE,
+        },
+    },
+    Case {
+        name: "assurance/authored-refused-an-argument-with-no-id",
+        op: "assurance.build_authored_argument",
+        request: Request::Literal(
+            r#"{"argument":{},"decisions":[],"asOf":"2026-01-01T00:00:00Z"}"#,
+        ),
+    },
+    Case {
+        name: "assurance/authored-refused-a-decider-who-is-not-a-participant",
+        op: "assurance.build_authored_argument",
+        request: Request::BuildAuthoredArgument {
+            decisions: r#"[{"reasoningId":"ARG-900","criterion":"Every binding clause has a disposition.","state":"satisfied","evidenceRefs":["ix://example.invalid/evidence/clause-review"],"decidedBy":"stranger-900","authority":"may accept or reject this synthetic release","decidedAt":"2025-06-01T00:00:00Z","expiresAt":"2026-06-01T00:00:00Z","sourceRevision":"0123456789abcdef","evidenceDigest":"sha256:3333333333333333333333333333333333333333333333333333333333333333"}]"#,
+            as_of: "2026-01-01T00:00:00Z",
+            discharge: "",
+        },
+    },
+    Case {
+        name: "assurance/authored-invalid-unknown-field",
+        op: "assurance.build_authored_argument",
+        request: Request::Literal(
+            r#"{"argument":{},"decisions":[],"asOf":"2026-01-01T00:00:00Z","typo":true}"#,
+        ),
+    },
+    Case {
+        name: "assurance/authored-invalid-decisions-is-not-an-array",
+        op: "assurance.build_authored_argument",
+        request: Request::Literal(
+            r#"{"argument":{},"decisions":{},"asOf":"2026-01-01T00:00:00Z"}"#,
+        ),
+    },
+    Case {
+        name: "assurance/authored-invalid-malformed",
+        op: "assurance.build_authored_argument",
+        request: Request::Literal("{oops"),
+    },
+    Case {
+        name: "assurance/authored-invalid-non-object",
+        op: "assurance.build_authored_argument",
+        request: Request::Literal("[1,2]"),
+    },
+    // `assurance.render_authored_argument`.
+    Case {
+        name: "assurance/render-authored-minimal-open-claim",
+        op: "assurance.render_authored_argument",
+        request: Request::Expanded(MINIMAL_VIEW),
+    },
+    Case {
+        name: "assurance/render-authored-every-section",
+        op: "assurance.render_authored_argument",
+        request: Request::Expanded(FULL_VIEW),
+    },
+    Case {
+        // The same rule as `assurance/render-discharge-unknown-field`:
+        // `AuthoredArgumentView` is a payload the boundary produced, so the
+        // case pins that both sides tolerate a stray key identically rather
+        // than asserting a refusal neither side makes.
+        name: "assurance/render-authored-unknown-field",
+        op: "assurance.render_authored_argument",
+        request: Request::Expanded(
+            r#"{"schemaVersion":"authored-assurance-view-v1","argument":{"id":"AA-900","title":"t","status":"active","owner":"o","profile":"ix://example.invalid/x"},"asOf":"2026-01-01T00:00:00Z","topClaim":{"id":"CLAIM-900","statement":"s","subject":"j","status":"open","reasons":[]},"reasoning":[],"assumptions":[],"participants":[],"challenges":[],"relationships":[],"unusedDecisions":[],"typo":true}"#,
+        ),
+    },
+    Case {
+        name: "assurance/render-authored-invalid-reasons-not-strings",
+        op: "assurance.render_authored_argument",
+        request: Request::Literal(
+            r#"{"schemaVersion":"authored-assurance-view-v1","argument":{"id":"AA-900","title":"t","status":"active","owner":"o","profile":"ix://example.invalid/x"},"asOf":"2026-01-01T00:00:00Z","topClaim":{"id":"CLAIM-900","statement":"s","subject":"j","status":"open","reasons":[7]},"reasoning":[],"assumptions":[],"participants":[],"challenges":[],"relationships":[],"unusedDecisions":[]}"#,
+        ),
+    },
+    Case {
+        name: "assurance/render-authored-invalid-unknown-status",
+        op: "assurance.render_authored_argument",
+        request: Request::Literal(
+            r#"{"schemaVersion":"authored-assurance-view-v1","argument":{"id":"AA-900","title":"t","status":"active","owner":"o","profile":"ix://example.invalid/x"},"asOf":"2026-01-01T00:00:00Z","topClaim":{"id":"CLAIM-900","statement":"s","subject":"j","status":"upheld","reasons":[]},"reasoning":[],"assumptions":[],"participants":[],"challenges":[],"relationships":[],"unusedDecisions":[]}"#,
+        ),
+    },
+    Case {
+        // A challenge answers "resolved", never "supported". The two
+        // vocabularies are separate enums on the port for exactly this reason,
+        // and collapsing them would change the tick mark the renderer prints.
+        name: "assurance/render-authored-invalid-challenge-status",
+        op: "assurance.render_authored_argument",
+        request: Request::Literal(
+            r#"{"schemaVersion":"authored-assurance-view-v1","argument":{"id":"AA-900","title":"t","status":"active","owner":"o","profile":"ix://example.invalid/x"},"asOf":"2026-01-01T00:00:00Z","topClaim":{"id":"CLAIM-900","statement":"s","subject":"j","status":"open","reasons":[]},"reasoning":[],"assumptions":[],"participants":[],"challenges":[{"id":"CH-900","target":"CLAIM-900","statement":"s","owner":"o","status":"supported","declaredStatus":"open","resolutionRefs":[]}],"relationships":[],"unusedDecisions":[]}"#,
+        ),
+    },
+    Case {
+        name: "assurance/render-authored-invalid-missing-participants",
+        op: "assurance.render_authored_argument",
+        request: Request::Literal(
+            r#"{"schemaVersion":"authored-assurance-view-v1","argument":{"id":"AA-900","title":"t","status":"active","owner":"o","profile":"ix://example.invalid/x"},"asOf":"2026-01-01T00:00:00Z","topClaim":{"id":"CLAIM-900","statement":"s","subject":"j","status":"open","reasons":[]},"reasoning":[],"assumptions":[],"challenges":[],"relationships":[],"unusedDecisions":[]}"#,
+        ),
+    },
+    Case {
+        name: "assurance/render-authored-invalid-malformed",
+        op: "assurance.render_authored_argument",
+        request: Request::Literal("{oops"),
+    },
+    Case {
+        name: "assurance/render-authored-invalid-non-object",
+        op: "assurance.render_authored_argument",
+        request: Request::Literal("[1,2]"),
+    },
     Case {
         name: "invalid/unknown-op",
         op: "evidence.record",
@@ -1246,7 +2005,7 @@ fn usage(missing: &str) -> std::process::ExitCode {
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 mod tests {
-    use super::{ARGUMENT, CASES, Request};
+    use super::{ARGUMENT, ATTESTATION_TOKEN, CASES, DECISION_TOKEN, Request};
 
     /// Every `assurance.parse_argument` request is well-formed JSON.
     ///
@@ -1269,6 +2028,39 @@ mod tests {
             assert!(
                 parsed.is_ok_and(|value| value.is_object()),
                 "case {} produced a request that is not a JSON object: {text}",
+                case.name
+            );
+        }
+    }
+
+    /// Every assembled assurance request is a well-formed JSON object.
+    ///
+    /// The same anti-vacuity guard as `argument_requests_are_well_formed`, for
+    /// the three variants that assemble a document instead of quoting one. It
+    /// also asserts that no `@attestation` or `@decision` token SURVIVES
+    /// expansion: a token left in place is still well-formed JSON — a string
+    /// where an object belongs — so both sides would reject the request for
+    /// its shape, and a case meaning to exercise a current attestation would
+    /// quietly become a second copy of the wrong-type case.
+    #[test]
+    fn assurance_requests_are_well_formed() {
+        for case in CASES {
+            let (Request::Expanded(_)
+            | Request::BuildDischarge { .. }
+            | Request::BuildAuthoredArgument { .. }) = case.request
+            else {
+                continue;
+            };
+            let text = case.request.text();
+            let parsed = serde_json::from_str::<serde_json::Value>(&text);
+            assert!(
+                parsed.is_ok_and(|value| value.is_object()),
+                "case {} produced a request that is not a JSON object: {text}",
+                case.name
+            );
+            assert!(
+                !text.contains(ATTESTATION_TOKEN) && !text.contains(DECISION_TOKEN),
+                "case {} left a substitution token unexpanded: {text}",
                 case.name
             );
         }

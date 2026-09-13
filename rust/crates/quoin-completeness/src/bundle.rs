@@ -26,8 +26,28 @@ use serde_json::Value;
 use crate::assess::DocumentClaims;
 use crate::declarations::VocabularyDeclaration;
 
+/// One document as the CALLER read it: a bundle-relative path and raw bytes.
+///
+/// The boundary's reason for existing (quoin#445). `quoin-core`'s library half
+/// is audited as a `ReusableLibrary` by
+/// `quoin-core/tests/tc_library_containment.rs`, so an operation that takes a
+/// path and reads the disk fails the gate. The walk and the reads stay in the
+/// command shell — which is where a CLI's I/O belongs — and the decision
+/// crosses the boundary as bytes.
+#[derive(Debug, Clone, PartialEq, Eq, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+pub struct DocumentSource {
+    /// Path, relative to the bundle root, with `/` separators.
+    pub path: String,
+    /// The whole file, as text.
+    pub raw: String,
+}
+
 /// A document whose frontmatter could not be read, and why.
-#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct UnreadableDocument {
     /// Path, relative to the bundle root, with `/` separators.
     pub path: String,
@@ -36,7 +56,8 @@ pub struct UnreadableDocument {
 }
 
 /// One document's frontmatter and body, as read from the bundle.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct BundleDocument {
     /// Path, relative to the bundle root, with `/` separators.
     pub path: String,
@@ -47,7 +68,8 @@ pub struct BundleDocument {
 }
 
 /// Every document under a bundle root that carries parseable frontmatter.
-#[derive(Debug, Clone, PartialEq, Default)]
+#[derive(Debug, Clone, PartialEq, Default, serde::Serialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct FrontmatterRead {
     /// The documents.
     pub documents: Vec<BundleDocument>,
@@ -116,50 +138,87 @@ pub fn read_bundle_frontmatter(bundle_root: &Path) -> FrontmatterRead {
             .unwrap_or(&path)
             .to_string_lossy()
             .replace('\\', "/");
-        let raw = match std::fs::read_to_string(&path) {
-            Ok(raw) => raw,
-            Err(cause) => {
-                read.unreadable.push(UnreadableDocument {
+        match std::fs::read_to_string(&path) {
+            // Absorbed inside the walk, not collected and parsed afterwards: an
+            // OS read failure and a YAML failure are both `unreadable` entries,
+            // and the order they are reported in is the walk order. Two passes
+            // would group them by kind instead, which is a different list.
+            Ok(raw) => absorb(
+                &mut read,
+                &DocumentSource {
                     path: relative,
-                    reason: cause.to_string(),
-                });
-                continue;
-            }
-        };
-        // No frontmatter is not an error: an index or a README declares nothing.
-        let Some((yaml, body)) = split_frontmatter(&raw) else {
-            continue;
-        };
-        let parsed: Value = match quoin_yaml::from_str(yaml) {
-            Ok(value) => value,
-            Err(cause) => {
-                // Reported, not skipped silently: a document whose frontmatter
-                // does not parse may be the one carrying the exclusion, and
-                // dropping it would turn a broken declaration into a clean
-                // bundle.
-                read.unreadable.push(UnreadableDocument {
-                    path: relative,
-                    reason: cause.to_string(),
-                });
-                continue;
-            }
-        };
-        // `parseYaml(...) ?? {}` — an empty block yields null, which the
-        // TypeScript coerces to an empty object. A scalar or sequence is neither
-        // and contributes nothing.
-        let frontmatter = match parsed {
-            Value::Null => serde_json::Map::new(),
-            Value::Object(map) => map,
-            _ => continue,
-        };
-        read.documents.push(BundleDocument {
-            path: relative,
-            frontmatter,
-            body: body.to_owned(),
-        });
+                    raw,
+                },
+            ),
+            Err(cause) => read.unreadable.push(UnreadableDocument {
+                path: relative,
+                reason: cause.to_string(),
+            }),
+        }
     }
 
     read
+}
+
+/// Parse frontmatter out of documents the CALLER read.
+///
+/// The decidable half of [`read_bundle_frontmatter`], split out so it can cross
+/// the `quoin-core` boundary without the library half acquiring a filesystem
+/// (quoin#445). The filesystem shell above is the only other caller, so there
+/// is one parser and not two.
+///
+/// `unreadable` is what the CALLER could not open. It leads the list because
+/// the filesystem shell interleaves both kinds in walk order and a wire caller
+/// cannot express that interleaving — it can only send what it managed to read.
+/// Dropping it instead would turn a broken bundle into a clean one.
+#[must_use]
+pub fn frontmatter_from_sources(
+    documents: &[DocumentSource],
+    unreadable: &[UnreadableDocument],
+) -> FrontmatterRead {
+    let mut read = FrontmatterRead {
+        documents: Vec::new(),
+        unreadable: unreadable.to_vec(),
+    };
+    for source in documents {
+        absorb(&mut read, source);
+    }
+    read
+}
+
+/// Parse one document into `read`, as either a `BundleDocument` or an
+/// `UnreadableDocument`, or as neither when it carries no frontmatter at all.
+fn absorb(read: &mut FrontmatterRead, source: &DocumentSource) {
+    // No frontmatter is not an error: an index or a README declares nothing.
+    let Some((yaml, body)) = split_frontmatter(&source.raw) else {
+        return;
+    };
+    let parsed: Value = match quoin_yaml::from_str(yaml) {
+        Ok(value) => value,
+        Err(cause) => {
+            // Reported, not skipped silently: a document whose frontmatter does
+            // not parse may be the one carrying the exclusion, and dropping it
+            // would turn a broken declaration into a clean bundle.
+            read.unreadable.push(UnreadableDocument {
+                path: source.path.clone(),
+                reason: cause.to_string(),
+            });
+            return;
+        }
+    };
+    // `parseYaml(...) ?? {}` — an empty block yields null, which the TypeScript
+    // coerces to an empty object. A scalar or sequence is neither and
+    // contributes nothing.
+    let frontmatter = match parsed {
+        Value::Null => serde_json::Map::new(),
+        Value::Object(map) => map,
+        _ => return,
+    };
+    read.documents.push(BundleDocument {
+        path: source.path.clone(),
+        frontmatter,
+        body: body.to_owned(),
+    });
 }
 
 /// Project already-read documents onto one declaration.

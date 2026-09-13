@@ -37,13 +37,14 @@ pub use assess::{
     Verdict, VocabularyRollup, assess_vocabulary, verdict_for, written_reason_for,
 };
 pub use bundle::{
-    BundleDocument, BundleRead, FrontmatterRead, UnreadableDocument, claims_for,
-    read_bundle_claims, read_bundle_frontmatter,
+    BundleDocument, BundleRead, DocumentSource, FrontmatterRead, UnreadableDocument, claims_for,
+    frontmatter_from_sources, read_bundle_claims, read_bundle_frontmatter,
 };
 pub use declarations::{
-    UnresolvedDeclaration, VocabularyDeclaration, VocabularyDeclarations, load_vocabulary_coverage,
-    locate_module_root,
+    ModuleSource, SchemaSource, UnresolvedDeclaration, VocabularyDeclaration,
+    VocabularyDeclarations, declarations_from_sources, load_vocabulary_coverage,
+    locate_module_root, schema_refs_of,
 };
 pub use error::{CompletenessError, CompletenessErrorCode};
 pub use ids::{ArtifactTypeName, FrontmatterField, VocabularyName, VocabularyValue};
-pub use run::{AssessOptions, BundleAssessment, assess_bundle};
+pub use run::{AssessInput, AssessOptions, BundleAssessment, assess_bundle, assess_sources};

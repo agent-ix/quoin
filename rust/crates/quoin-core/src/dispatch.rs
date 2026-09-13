@@ -19,10 +19,17 @@ use crate::protocol::{MAX_REQUEST_BYTES, Response};
 /// Exposed so a caller — and `quoin-difftest` — can enumerate the surface
 /// rather than discover it by trying names.
 pub const OPERATIONS: &[&str] = &[
+    "assurance.build_authored_argument",
     "assurance.build_case",
+    "assurance.build_discharge",
     "assurance.parse_argument",
+    "assurance.render_authored_argument",
     "assurance.render_case",
+    "assurance.render_discharge",
     "assurance.requirement_of",
+    "completeness.assess_bundle",
+    "completeness.read_frontmatter",
+    "completeness.schema_refs",
     "config.resolve_org",
     "config.unresolved_org_message",
     "core.ping",
@@ -61,6 +68,17 @@ pub fn dispatch(
         "assurance.parse_argument" => crate::ops::assurance::parse_argument(request),
         "config.resolve_org" => crate::ops::config::resolve_org(request),
         "config.unresolved_org_message" => crate::ops::config::unresolved_org_message(request),
+        "assurance.build_authored_argument" => {
+            crate::ops::assurance::build_authored_argument(request)
+        }
+        "assurance.render_authored_argument" => {
+            crate::ops::assurance::render_authored_argument(request)
+        }
+        "assurance.build_discharge" => crate::ops::assurance::build_discharge(request),
+        "assurance.render_discharge" => crate::ops::assurance::render_discharge(request),
+        "completeness.assess_bundle" => crate::ops::completeness::assess_bundle(request),
+        "completeness.read_frontmatter" => crate::ops::completeness::read_frontmatter(request),
+        "completeness.schema_refs" => crate::ops::completeness::schema_refs(request),
         "core.ping" => crate::ops::core::ping(request),
         "modules.ensure_defaults" => crate::ops::modules::ensure_defaults(request, capabilities),
         "modules.install" => crate::ops::modules::install(request, capabilities),
@@ -398,7 +416,29 @@ mod tests {
                 "ops::validators::MAX_RUN_REQUEST_BYTES",
                 crate::ops::validators::MAX_RUN_REQUEST_BYTES,
             ),
+            (
+                "ops::assurance::MAX_OBLIGATION_ID_BYTES",
+                crate::ops::assurance::MAX_OBLIGATION_ID_BYTES,
+            ),
+            (
+                "ops::completeness::MAX_MANIFEST_BYTES",
+                crate::ops::completeness::MAX_MANIFEST_BYTES,
+            ),
+            (
+                "ops::completeness::MAX_ASSESS_BUNDLE_BYTES",
+                crate::ops::completeness::MAX_ASSESS_BUNDLE_BYTES,
+            ),
         ];
+        // The count is pinned beside the list because the list is hand-written:
+        // a bound added to an `ops` module and not added here would leave this
+        // test green over a population that no longer includes it, which is the
+        // "agrees with itself" shape quoin#443 records. `ops::mod` declares one
+        // module per domain, so the number moves when a domain does.
+        assert_eq!(
+            domain_bounds.len(),
+            6,
+            "a domain bound was added or removed without this census moving"
+        );
         for (name, bound) in domain_bounds {
             assert!(
                 bound < MAX_REQUEST_BYTES,

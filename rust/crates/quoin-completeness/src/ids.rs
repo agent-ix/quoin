@@ -15,6 +15,7 @@ macro_rules! string_newtype {
         $(#[$meta])*
         #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize)]
         #[serde(transparent)]
+        #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
         pub struct $name(String);
 
         impl $name {

@@ -1,0 +1,2293 @@
+{
+  "argument_base": {
+    "id": "AA-900",
+    "title": "Synthetic widget release decision",
+    "type": "AssuranceArgument",
+    "status": "active",
+    "owner": "release-owner",
+    "profile": "ix://example.invalid/widget/AP-900",
+    "top_claim": {
+      "id": "CLAIM-900",
+      "statement": "The bounded synthetic widget change is acceptable.",
+      "subject": "widget revision 0123456789abcdef"
+    },
+    "reasoning": [
+      {
+        "id": "ARG-900",
+        "statement": "Argue from the explicitly reviewed clause disposition.",
+        "supports": "CLAIM-900",
+        "sufficiency_criteria": ["Every binding clause has a disposition."]
+      }
+    ],
+    "assumptions": [],
+    "participants": [
+      {
+        "id": "reviewer-900",
+        "role": "decision reviewer",
+        "authority": "may accept or reject this synthetic release",
+        "independence": "did not produce the implementation evidence"
+      }
+    ],
+    "challenges": [],
+    "relationships": []
+  },
+  "cases": [
+    {
+      "name": "requirement-of/ac-suffix",
+      "covers": ["FR-040-AC-7"],
+      "op": "requirement_of",
+      "input": { "obligation_id": "FR-001-AC-3" }
+    },
+    {
+      "name": "requirement-of/metric-suffix",
+      "covers": ["FR-040-AC-7"],
+      "op": "requirement_of",
+      "input": { "obligation_id": "NFR-010-M-2" }
+    },
+    {
+      "name": "requirement-of/unknown-suffix-is-still-a-prefix-match",
+      "covers": ["FR-040-AC-7"],
+      "op": "requirement_of",
+      "input": { "obligation_id": "FR-042-QQQ-9" }
+    },
+    {
+      "name": "requirement-of/bare-requirement-id",
+      "covers": ["FR-040-AC-7"],
+      "op": "requirement_of",
+      "input": { "obligation_id": "FR-001" }
+    },
+    {
+      "name": "requirement-of/unrecognised-returns-unchanged",
+      "covers": ["FR-040-AC-7"],
+      "op": "requirement_of",
+      "input": { "obligation_id": "not-an-id" }
+    },
+    {
+      "name": "requirement-of/empty-id",
+      "covers": ["FR-040-AC-7"],
+      "op": "requirement_of",
+      "input": { "obligation_id": "" }
+    },
+    {
+      "name": "requirement-of/non-ascii-falls-to-unchanged",
+      "covers": ["FR-040-AC-7"],
+      "op": "requirement_of",
+      "input": { "obligation_id": "é-001-AC-1" }
+    },
+    {
+      "name": "requirement-of/lowercase-prefix-is-a-prefix",
+      "covers": ["FR-040-AC-7"],
+      "op": "requirement_of",
+      "input": { "obligation_id": "fr-001-ac-1" }
+    },
+    {
+      "name": "requirement-of/mixed-case-prefix-with-a-con-suffix",
+      "covers": ["FR-040-AC-7"],
+      "op": "requirement_of",
+      "input": { "obligation_id": "StR-007-CON-2" }
+    },
+    {
+      "name": "requirement-of/a-digit-only-prefix-is-not-a-requirement",
+      "covers": ["FR-040-AC-7"],
+      "op": "requirement_of",
+      "input": { "obligation_id": "001-AC-1" }
+    },
+    {
+      "name": "requirement-of/a-long-number-is-still-one-number",
+      "covers": ["FR-040-AC-7"],
+      "op": "requirement_of",
+      "input": { "obligation_id": "FR-0001234567890-AC-1" }
+    },
+    {
+      "name": "requirement-of/an-astral-character-falls-to-unchanged",
+      "covers": ["FR-040-AC-7"],
+      "op": "requirement_of",
+      "input": { "obligation_id": "FR-😀-AC-1" }
+    },
+    {
+      "name": "requirement-of/unknown-request-field",
+      "covers": ["FR-040-AC-7", "FR-101"],
+      "op": "requirement_of",
+      "boundary": "refused",
+      "input": { "obligation_id": "FR-001", "extra": 1 }
+    },
+    {
+      "name": "requirement-of/obligation-id-is-not-a-string",
+      "covers": ["FR-040-AC-7", "FR-101"],
+      "op": "requirement_of",
+      "boundary": "refused",
+      "input": { "obligation_id": 7 }
+    },
+
+    {
+      "name": "build-case/no-claim-declares-itself",
+      "covers": ["FR-040-AC-10", "FR-040-AC-13"],
+      "op": "build_case",
+      "input": { "documents": [], "obligations": [], "findings": [] }
+    },
+    {
+      "name": "build-case/searched-types-are-named-back",
+      "covers": ["FR-040-AC-6", "FR-040-AC-13"],
+      "op": "build_case",
+      "input": {
+        "documents": [],
+        "obligations": [],
+        "findings": [],
+        "claim_types": ["Hazard", "Threat"]
+      }
+    },
+    {
+      "name": "build-case/a-claim-with-nothing-under-it-is-open",
+      "covers": ["FR-040-AC-4"],
+      "op": "build_case",
+      "input": {
+        "documents": [
+          {
+            "path": "s.md",
+            "body": "",
+            "frontmatter": {
+              "id": "StR-001",
+              "type": "StR",
+              "title": "The claim"
+            }
+          }
+        ],
+        "obligations": [],
+        "findings": []
+      }
+    },
+    {
+      "name": "build-case/claim-type-is-case-insensitive-lowercase-request",
+      "covers": ["FR-040-AC-14"],
+      "op": "build_case",
+      "input": {
+        "documents": [
+          {
+            "path": "s.md",
+            "body": "",
+            "frontmatter": {
+              "id": "StR-001",
+              "type": "StR",
+              "title": "The claim"
+            }
+          }
+        ],
+        "obligations": [],
+        "findings": [],
+        "claim_types": ["str"]
+      }
+    },
+    {
+      "name": "build-case/claim-type-is-case-insensitive-uppercase-request",
+      "covers": ["FR-040-AC-14"],
+      "op": "build_case",
+      "input": {
+        "documents": [
+          {
+            "path": "s.md",
+            "body": "",
+            "frontmatter": {
+              "id": "StR-001",
+              "type": "str",
+              "title": "The claim"
+            }
+          }
+        ],
+        "obligations": [],
+        "findings": [],
+        "claim_types": ["STR"]
+      }
+    },
+    {
+      "name": "build-case/claim-type-replaces-the-default",
+      "covers": ["FR-040-AC-14"],
+      "op": "build_case",
+      "input": {
+        "documents": [
+          {
+            "path": "s.md",
+            "body": "",
+            "frontmatter": {
+              "id": "StR-001",
+              "type": "StR",
+              "title": "The claim"
+            }
+          },
+          {
+            "path": "h.md",
+            "body": "",
+            "frontmatter": {
+              "id": "HAZ-001",
+              "type": "Hazard",
+              "title": "The hazard"
+            }
+          }
+        ],
+        "obligations": [],
+        "findings": [],
+        "claim_types": ["Hazard"]
+      }
+    },
+    {
+      "name": "build-case/evidence-under-a-traced-requirement",
+      "covers": ["FR-040-AC-1"],
+      "op": "build_case",
+      "input": {
+        "documents": [
+          {
+            "path": "s.md",
+            "body": "",
+            "frontmatter": {
+              "id": "StR-001",
+              "type": "StR",
+              "title": "The claim"
+            }
+          },
+          {
+            "path": "f.md",
+            "body": "",
+            "frontmatter": {
+              "id": "FR-001",
+              "type": "FR",
+              "title": "A requirement",
+              "relationships": [
+                { "type": "traces_to", "target": "ix://org/comp/StR-001" }
+              ]
+            }
+          }
+        ],
+        "obligations": [
+          { "id": "FR-001-AC-2", "statement": "second" },
+          { "id": "FR-001-AC-1", "statement": "first" }
+        ],
+        "findings": []
+      }
+    },
+    {
+      "name": "build-case/a-supported-str-fr-ac-tree",
+      "covers": ["FR-040-AC-1", "FR-040-AC-3"],
+      "op": "build_case",
+      "input": {
+        "documents": [
+          {
+            "path": "s.md",
+            "body": "",
+            "frontmatter": {
+              "id": "StR-001",
+              "type": "StR",
+              "title": "Releases are reviewed"
+            }
+          },
+          {
+            "path": "f1.md",
+            "body": "",
+            "frontmatter": {
+              "id": "FR-001",
+              "type": "FR",
+              "title": "Every release carries a review",
+              "relationships": [
+                { "type": "refines", "target": "ix://org/comp/StR-001" }
+              ]
+            }
+          },
+          {
+            "path": "f2.md",
+            "body": "",
+            "frontmatter": {
+              "id": "FR-002",
+              "type": "FR",
+              "title": "A review names its reviewer",
+              "relationships": [
+                { "type": "refines", "target": "ix://org/comp/FR-001" }
+              ]
+            }
+          }
+        ],
+        "obligations": [
+          {
+            "id": "FR-001-AC-1",
+            "statement": "A release without a review is refused."
+          },
+          { "id": "FR-002-AC-1", "statement": "The reviewer is named." }
+        ],
+        "findings": []
+      }
+    },
+    {
+      "name": "build-case/a-finding-opens-the-whole-path",
+      "covers": ["FR-040-AC-2", "FR-040-AC-3"],
+      "op": "build_case",
+      "input": {
+        "documents": [
+          {
+            "path": "s.md",
+            "body": "",
+            "frontmatter": {
+              "id": "StR-001",
+              "type": "StR",
+              "title": "The claim"
+            }
+          },
+          {
+            "path": "f.md",
+            "body": "",
+            "frontmatter": {
+              "id": "FR-001",
+              "type": "FR",
+              "title": "A requirement",
+              "relationships": [
+                { "type": "traces_to", "target": "ix://org/comp/StR-001" }
+              ]
+            }
+          }
+        ],
+        "obligations": [{ "id": "FR-001-AC-1", "statement": "first" }],
+        "findings": [
+          {
+            "obligation": "FR-001-AC-1",
+            "kind": "undischarged",
+            "summary": "nothing binds it",
+            "severity": "error",
+            "path": "src/x.ts",
+            "line": 7
+          }
+        ]
+      }
+    },
+    {
+      "name": "build-case/a-finding-on-a-leaf-propagates-up-two-levels",
+      "covers": ["FR-040-AC-3"],
+      "op": "build_case",
+      "input": {
+        "documents": [
+          {
+            "path": "s.md",
+            "body": "",
+            "frontmatter": { "id": "StR-001", "type": "StR", "title": "Top" }
+          },
+          {
+            "path": "f1.md",
+            "body": "",
+            "frontmatter": {
+              "id": "FR-001",
+              "type": "FR",
+              "title": "Middle",
+              "relationships": [{ "type": "refines", "target": "StR-001" }]
+            }
+          },
+          {
+            "path": "f2.md",
+            "body": "",
+            "frontmatter": {
+              "id": "FR-002",
+              "type": "FR",
+              "title": "Leaf owner",
+              "relationships": [{ "type": "refines", "target": "FR-001" }]
+            }
+          }
+        ],
+        "obligations": [{ "id": "FR-002-AC-1", "statement": "the leaf" }],
+        "findings": [
+          {
+            "obligation": "FR-002-AC-1",
+            "kind": "stale-evidence",
+            "summary": "recorded before the change"
+          }
+        ]
+      }
+    },
+    {
+      "name": "build-case/unknown-finding-kind",
+      "covers": ["FR-040-AC-2"],
+      "op": "build_case",
+      "input": {
+        "documents": [
+          {
+            "path": "s.md",
+            "body": "",
+            "frontmatter": {
+              "id": "StR-001",
+              "type": "StR",
+              "title": "The claim"
+            }
+          },
+          {
+            "path": "f.md",
+            "body": "",
+            "frontmatter": {
+              "id": "FR-001",
+              "type": "FR",
+              "title": "A requirement",
+              "relationships": [{ "type": "traces_to", "target": "StR-001" }]
+            }
+          }
+        ],
+        "obligations": [{ "id": "FR-001-AC-1", "statement": "first" }],
+        "findings": [
+          {
+            "obligation": "FR-001-AC-1",
+            "kind": "kind-invented-tomorrow",
+            "summary": "s"
+          }
+        ]
+      }
+    },
+    {
+      "name": "build-case/first-finding-per-obligation-wins",
+      "covers": ["FR-040-AC-2"],
+      "op": "build_case",
+      "input": {
+        "documents": [
+          {
+            "path": "s.md",
+            "body": "",
+            "frontmatter": {
+              "id": "StR-001",
+              "type": "StR",
+              "title": "The claim"
+            }
+          },
+          {
+            "path": "f.md",
+            "body": "",
+            "frontmatter": {
+              "id": "FR-001",
+              "type": "FR",
+              "title": "A requirement",
+              "relationships": [{ "type": "traces_to", "target": "StR-001" }]
+            }
+          }
+        ],
+        "obligations": [{ "id": "FR-001-AC-1", "statement": "first" }],
+        "findings": [
+          {
+            "obligation": "FR-001-AC-1",
+            "kind": "undischarged",
+            "summary": "most serious"
+          },
+          {
+            "obligation": "FR-001-AC-1",
+            "kind": "stale-evidence",
+            "summary": "less serious"
+          }
+        ]
+      }
+    },
+    {
+      "name": "build-case/a-requirement-under-two-claims",
+      "covers": ["FR-040-AC-11"],
+      "op": "build_case",
+      "input": {
+        "documents": [
+          {
+            "path": "a.md",
+            "body": "",
+            "frontmatter": { "id": "StR-001", "type": "StR", "title": "First" }
+          },
+          {
+            "path": "b.md",
+            "body": "",
+            "frontmatter": { "id": "StR-002", "type": "StR", "title": "Second" }
+          },
+          {
+            "path": "f.md",
+            "body": "",
+            "frontmatter": {
+              "id": "FR-001",
+              "type": "FR",
+              "title": "Shared",
+              "relationships": [
+                { "type": "refines", "target": "StR-001" },
+                { "type": "refines", "target": "StR-002" }
+              ]
+            }
+          }
+        ],
+        "obligations": [{ "id": "FR-001-AC-1", "statement": "first" }],
+        "findings": []
+      }
+    },
+    {
+      "name": "build-case/a-cycle-terminates",
+      "covers": ["FR-040-AC-12"],
+      "op": "build_case",
+      "input": {
+        "documents": [
+          {
+            "path": "a.md",
+            "body": "",
+            "frontmatter": {
+              "id": "StR-001",
+              "type": "StR",
+              "title": "First",
+              "relationships": [{ "type": "refines", "target": "FR-001" }]
+            }
+          },
+          {
+            "path": "f.md",
+            "body": "",
+            "frontmatter": {
+              "id": "FR-001",
+              "type": "FR",
+              "title": "Cyclic",
+              "relationships": [{ "type": "refines", "target": "StR-001" }]
+            }
+          }
+        ],
+        "obligations": [],
+        "findings": []
+      }
+    },
+    {
+      "name": "build-case/a-three-node-refinement-cycle-terminates",
+      "covers": ["FR-040-AC-12"],
+      "op": "build_case",
+      "input": {
+        "documents": [
+          {
+            "path": "a.md",
+            "body": "",
+            "frontmatter": {
+              "id": "StR-001",
+              "type": "StR",
+              "title": "First",
+              "relationships": [{ "type": "refines", "target": "FR-002" }]
+            }
+          },
+          {
+            "path": "b.md",
+            "body": "",
+            "frontmatter": {
+              "id": "FR-001",
+              "type": "FR",
+              "title": "Second",
+              "relationships": [{ "type": "refines", "target": "StR-001" }]
+            }
+          },
+          {
+            "path": "c.md",
+            "body": "",
+            "frontmatter": {
+              "id": "FR-002",
+              "type": "FR",
+              "title": "Third",
+              "relationships": [{ "type": "refines", "target": "FR-001" }]
+            }
+          }
+        ],
+        "obligations": [{ "id": "FR-002-AC-1", "statement": "on the cycle" }],
+        "findings": []
+      }
+    },
+    {
+      "name": "build-case/unreachable-requirement",
+      "covers": ["FR-040-AC-5"],
+      "op": "build_case",
+      "input": {
+        "documents": [
+          {
+            "path": "s.md",
+            "body": "",
+            "frontmatter": {
+              "id": "StR-001",
+              "type": "StR",
+              "title": "The claim"
+            }
+          },
+          {
+            "path": "f.md",
+            "body": "",
+            "frontmatter": { "id": "FR-009", "type": "FR", "title": "Orphan" }
+          }
+        ],
+        "obligations": [{ "id": "FR-009-AC-1", "statement": "unreached" }],
+        "findings": []
+      }
+    },
+    {
+      "name": "build-case/a-non-downward-edge-is-not-a-child",
+      "covers": ["FR-040-AC-1", "FR-040-AC-5"],
+      "op": "build_case",
+      "input": {
+        "documents": [
+          {
+            "path": "s.md",
+            "body": "",
+            "frontmatter": {
+              "id": "StR-001",
+              "type": "StR",
+              "title": "The claim"
+            }
+          },
+          {
+            "path": "f.md",
+            "body": "",
+            "frontmatter": {
+              "id": "FR-001",
+              "type": "FR",
+              "title": "Merely related",
+              "relationships": [{ "type": "references", "target": "StR-001" }]
+            }
+          }
+        ],
+        "obligations": [{ "id": "FR-001-AC-1", "statement": "first" }],
+        "findings": []
+      }
+    },
+    {
+      "name": "build-case/every-downward-verb-is-a-child",
+      "covers": ["FR-040-AC-1"],
+      "op": "build_case",
+      "input": {
+        "documents": [
+          {
+            "path": "s.md",
+            "body": "",
+            "frontmatter": {
+              "id": "StR-001",
+              "type": "StR",
+              "title": "The claim"
+            }
+          },
+          {
+            "path": "a.md",
+            "body": "",
+            "frontmatter": {
+              "id": "FR-001",
+              "type": "FR",
+              "title": "traces_to",
+              "relationships": [{ "type": "traces_to", "target": "StR-001" }]
+            }
+          },
+          {
+            "path": "b.md",
+            "body": "",
+            "frontmatter": {
+              "id": "FR-002",
+              "type": "FR",
+              "title": "refines",
+              "relationships": [{ "type": "refines", "target": "StR-001" }]
+            }
+          },
+          {
+            "path": "c.md",
+            "body": "",
+            "frontmatter": {
+              "id": "FR-003",
+              "type": "FR",
+              "title": "implements",
+              "relationships": [{ "type": "implements", "target": "StR-001" }]
+            }
+          },
+          {
+            "path": "d.md",
+            "body": "",
+            "frontmatter": {
+              "id": "FR-004",
+              "type": "FR",
+              "title": "derives_from",
+              "relationships": [{ "type": "derives_from", "target": "StR-001" }]
+            }
+          },
+          {
+            "path": "e.md",
+            "body": "",
+            "frontmatter": {
+              "id": "FR-005",
+              "type": "FR",
+              "title": "mitigates",
+              "relationships": [{ "type": "mitigates", "target": "StR-001" }]
+            }
+          },
+          {
+            "path": "g.md",
+            "body": "",
+            "frontmatter": {
+              "id": "FR-006",
+              "type": "FR",
+              "title": "satisfies",
+              "relationships": [{ "type": "satisfies", "target": "StR-001" }]
+            }
+          }
+        ],
+        "obligations": [],
+        "findings": []
+      }
+    },
+    {
+      "name": "build-case/null-title-falls-through-to-the-id",
+      "covers": ["FR-040-AC-1"],
+      "op": "build_case",
+      "input": {
+        "documents": [
+          {
+            "path": "s.md",
+            "body": "",
+            "frontmatter": { "id": "StR-001", "type": "StR", "title": null }
+          }
+        ],
+        "obligations": [],
+        "findings": []
+      }
+    },
+    {
+      "name": "build-case/a-numeric-id-is-not-an-id",
+      "covers": ["FR-040-AC-1"],
+      "op": "build_case",
+      "input": {
+        "documents": [
+          {
+            "path": "s.md",
+            "body": "",
+            "frontmatter": { "id": 7, "type": "StR", "title": "Coerced?" }
+          },
+          {
+            "path": "t.md",
+            "body": "",
+            "frontmatter": { "id": "", "type": "StR", "title": "Empty" }
+          }
+        ],
+        "obligations": [],
+        "findings": []
+      }
+    },
+    {
+      "name": "build-case/a-statement-carrying-paren-semicolon-and-quote",
+      "covers": ["FR-040-AC-9"],
+      "op": "build_case",
+      "input": {
+        "documents": [
+          {
+            "path": "s.md",
+            "body": "",
+            "frontmatter": {
+              "id": "StR-001",
+              "type": "StR",
+              "title": "The claim"
+            }
+          },
+          {
+            "path": "f.md",
+            "body": "",
+            "frontmatter": {
+              "id": "FR-001",
+              "type": "FR",
+              "title": "A requirement",
+              "relationships": [{ "type": "traces_to", "target": "StR-001" }]
+            }
+          }
+        ],
+        "obligations": [
+          {
+            "id": "FR-001-AC-1",
+            "statement": "Rejects (bad) input; logs \"why\" and `how`"
+          }
+        ],
+        "findings": []
+      }
+    },
+    {
+      "name": "build-case/a-label-well-over-eighty-characters",
+      "covers": ["FR-040-AC-15"],
+      "op": "build_case",
+      "input": {
+        "documents": [
+          {
+            "path": "s.md",
+            "body": "",
+            "frontmatter": {
+              "id": "StR-001",
+              "type": "StR",
+              "title": "The claim"
+            }
+          },
+          {
+            "path": "f.md",
+            "body": "",
+            "frontmatter": {
+              "id": "FR-001",
+              "type": "FR",
+              "title": "A requirement",
+              "relationships": [{ "type": "traces_to", "target": "StR-001" }]
+            }
+          }
+        ],
+        "obligations": [
+          {
+            "id": "FR-001-AC-1",
+            "statement": "The system shall refuse every request whose declared payload exceeds the stated ceiling, and shall say so."
+          }
+        ],
+        "findings": []
+      }
+    },
+    {
+      "name": "build-case/a-label-carrying-an-astral-character",
+      "covers": ["FR-040-AC-15"],
+      "op": "build_case",
+      "input": {
+        "documents": [
+          {
+            "path": "s.md",
+            "body": "",
+            "frontmatter": {
+              "id": "StR-001",
+              "type": "StR",
+              "title": "The claim"
+            }
+          },
+          {
+            "path": "f.md",
+            "body": "",
+            "frontmatter": {
+              "id": "FR-001",
+              "type": "FR",
+              "title": "A requirement",
+              "relationships": [{ "type": "traces_to", "target": "StR-001" }]
+            }
+          }
+        ],
+        "obligations": [
+          {
+            "id": "FR-001-AC-1",
+            "statement": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx😀 tail"
+          }
+        ],
+        "findings": []
+      }
+    },
+    {
+      "name": "build-case/assessments-pass-through",
+      "covers": ["FR-040-AC-1"],
+      "op": "build_case",
+      "input": {
+        "documents": [],
+        "obligations": [],
+        "findings": [],
+        "producer_trust": [
+          {
+            "id": "T-002",
+            "useId": "U-2",
+            "producer": "p",
+            "status": "accepted-with-limitations",
+            "permittedDecisions": ["release"],
+            "limitations": ["only on linux"],
+            "triggeredBy": [
+              { "kind": "version-change", "detail": { "from": "1", "to": "2" } }
+            ],
+            "owner": "o"
+          },
+          {
+            "id": "T-001",
+            "useId": "U-1",
+            "producer": "p",
+            "status": "unobserved",
+            "permittedDecisions": [],
+            "limitations": [],
+            "triggeredBy": [],
+            "owner": "o"
+          }
+        ],
+        "evidence_independence": [
+          {
+            "profile": "P",
+            "requirement": "FR-002",
+            "obligation": "FR-002-AC-1",
+            "status": "insufficient",
+            "dimensions": [{ "dimension": "author", "status": "insufficient" }],
+            "summary": "same author"
+          },
+          {
+            "profile": "P",
+            "requirement": "FR-001",
+            "obligation": "FR-001-AC-1",
+            "status": "satisfied",
+            "dimensions": [],
+            "satisfiedBy": ["a", "b"],
+            "summary": "ok"
+          }
+        ]
+      }
+    },
+    {
+      "name": "build-case/an-invalidated-producer-trust-entry-is-carried",
+      "covers": ["FR-040-AC-1"],
+      "op": "build_case",
+      "input": {
+        "documents": [],
+        "obligations": [],
+        "findings": [],
+        "producer_trust": [
+          {
+            "id": "T-010",
+            "useId": "U-10",
+            "producer": "vitest",
+            "status": "invalidated",
+            "permittedDecisions": [],
+            "limitations": ["the producer moved under the recorded use"],
+            "triggeredBy": ["producer-version"],
+            "owner": "qa"
+          }
+        ]
+      }
+    },
+    {
+      "name": "build-case/a-satisfied-independence-entry-is-carried",
+      "covers": ["FR-040-AC-1"],
+      "op": "build_case",
+      "input": {
+        "documents": [],
+        "obligations": [],
+        "findings": [],
+        "evidence_independence": [
+          {
+            "profile": "P",
+            "requirement": "FR-001",
+            "obligation": "FR-001-AC-1",
+            "status": "satisfied",
+            "dimensions": [
+              {
+                "dimension": "author",
+                "values": ["ada", "grace"],
+                "missingSuites": []
+              }
+            ],
+            "satisfiedBy": ["unit", "integration"],
+            "summary": "two authors"
+          }
+        ]
+      }
+    },
+    {
+      "name": "build-case/equal-sort-keys-keep-input-order",
+      "covers": ["FR-040-AC-8"],
+      "op": "build_case",
+      "input": {
+        "documents": [],
+        "obligations": [],
+        "findings": [],
+        "producer_trust": [
+          { "id": "T-001", "marker": "second-in" },
+          { "id": "T-001", "marker": "third-in" },
+          { "id": "T-000", "marker": "first-by-key" }
+        ]
+      }
+    },
+    {
+      "name": "build-case/unreadable-documents-are-carried",
+      "covers": ["FR-040-AC-5"],
+      "op": "build_case",
+      "input": {
+        "documents": [],
+        "obligations": [],
+        "findings": [],
+        "unreadable": [
+          { "path": "broken.md", "reason": "unterminated frontmatter" }
+        ]
+      }
+    },
+    {
+      "name": "build-case/an-empty-claim-types-list-names-nothing-back",
+      "covers": ["FR-040-AC-13"],
+      "op": "build_case",
+      "input": {
+        "documents": [],
+        "obligations": [],
+        "findings": [],
+        "claim_types": []
+      }
+    },
+    {
+      "name": "build-case/unknown-request-field",
+      "covers": ["FR-040", "FR-101"],
+      "op": "build_case",
+      "boundary": "refused",
+      "input": {
+        "documents": [],
+        "obligations": [],
+        "findings": [],
+        "claimTypes": ["StR"]
+      }
+    },
+    {
+      "name": "build-case/missing-findings",
+      "covers": ["FR-040", "FR-101"],
+      "op": "build_case",
+      "boundary": "refused",
+      "input": { "documents": [], "obligations": [] }
+    },
+    {
+      "name": "build-case/obligation-id-is-not-a-string",
+      "covers": ["FR-040", "FR-101"],
+      "op": "build_case",
+      "boundary": "refused",
+      "input": {
+        "documents": [],
+        "obligations": [{ "id": 7, "statement": "s" }],
+        "findings": []
+      }
+    },
+    {
+      "name": "build-case/finding-missing-kind",
+      "covers": ["FR-040", "FR-101"],
+      "op": "build_case",
+      "boundary": "refused",
+      "input": {
+        "documents": [],
+        "obligations": [],
+        "findings": [{ "obligation": "FR-001-AC-1", "summary": "s" }]
+      }
+    },
+
+    {
+      "name": "render-case/no-case-is-not-an-empty-case",
+      "covers": ["FR-040-AC-10"],
+      "op": "render_case",
+      "input": {
+        "claims": [],
+        "reason": "no document declares itself a top-level claim (searched claim types: StR); declare one or pass --claim-type",
+        "unreachable": [],
+        "unreadable": [],
+        "producerTrust": []
+      }
+    },
+    {
+      "name": "render-case/one-supported-claim",
+      "covers": ["FR-040-AC-1", "FR-040-AC-8"],
+      "op": "render_case",
+      "input": {
+        "claims": [
+          {
+            "id": "StR-001",
+            "kind": "goal",
+            "statement": "The system is usable",
+            "status": "supported",
+            "children": [
+              {
+                "id": "FR-001-AC-1",
+                "kind": "solution",
+                "statement": "It holds.",
+                "status": "supported",
+                "children": []
+              }
+            ]
+          }
+        ],
+        "unreachable": [],
+        "unreadable": [],
+        "producerTrust": []
+      }
+    },
+    {
+      "name": "render-case/an-open-branch-carries-its-reason",
+      "covers": ["FR-040-AC-2", "FR-040-AC-3"],
+      "op": "render_case",
+      "input": {
+        "claims": [
+          {
+            "id": "StR-001",
+            "kind": "goal",
+            "statement": "The system is usable",
+            "status": "open",
+            "children": [
+              {
+                "id": "FR-001-AC-1",
+                "kind": "solution",
+                "statement": "It holds.",
+                "status": "open",
+                "because": "undischarged: nothing binds it",
+                "children": []
+              }
+            ]
+          }
+        ],
+        "unreachable": [],
+        "unreadable": [],
+        "producerTrust": []
+      }
+    },
+    {
+      "name": "render-case/a-bare-claim-states-why-it-is-open",
+      "covers": ["FR-040-AC-4"],
+      "op": "render_case",
+      "input": {
+        "claims": [
+          {
+            "id": "StR-001",
+            "kind": "goal",
+            "statement": "Nothing under it",
+            "status": "open",
+            "because": "no sub-claim and no obligation traces to this claim",
+            "children": []
+          }
+        ],
+        "unreachable": [],
+        "unreadable": [],
+        "producerTrust": []
+      }
+    },
+    {
+      "name": "render-case/nested-goals-indent-and-change-shape",
+      "covers": ["FR-040-AC-1"],
+      "op": "render_case",
+      "input": {
+        "claims": [
+          {
+            "id": "StR-001",
+            "kind": "goal",
+            "statement": "Top",
+            "status": "open",
+            "children": [
+              {
+                "id": "FR-001",
+                "kind": "goal",
+                "statement": "Middle",
+                "status": "open",
+                "children": [
+                  {
+                    "id": "FR-001-AC-1",
+                    "kind": "solution",
+                    "statement": "Leaf",
+                    "status": "open",
+                    "because": "stale-evidence: old",
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "unreachable": [],
+        "unreadable": [],
+        "producerTrust": []
+      }
+    },
+    {
+      "name": "render-case/a-strategy-node-renders-as-a-goal-shape",
+      "covers": ["FR-040-AC-1"],
+      "op": "render_case",
+      "input": {
+        "claims": [
+          {
+            "id": "StR-001",
+            "kind": "goal",
+            "statement": "Top",
+            "status": "open",
+            "children": [
+              {
+                "id": "STRAT-1",
+                "kind": "strategy",
+                "statement": "Argue by decomposition",
+                "status": "open",
+                "children": []
+              }
+            ]
+          }
+        ],
+        "unreachable": [],
+        "unreadable": [],
+        "producerTrust": []
+      }
+    },
+    {
+      "name": "render-case/counts-open-branches-across-claims",
+      "covers": ["FR-040-AC-3"],
+      "op": "render_case",
+      "input": {
+        "claims": [
+          {
+            "id": "StR-001",
+            "kind": "goal",
+            "statement": "First",
+            "status": "open",
+            "because": "no sub-claim and no obligation traces to this claim",
+            "children": []
+          },
+          {
+            "id": "StR-002",
+            "kind": "goal",
+            "statement": "Second",
+            "status": "supported",
+            "children": [
+              {
+                "id": "FR-002-AC-1",
+                "kind": "solution",
+                "statement": "It holds.",
+                "status": "supported",
+                "children": []
+              }
+            ]
+          }
+        ],
+        "unreachable": [],
+        "unreadable": [],
+        "producerTrust": []
+      }
+    },
+    {
+      "name": "render-case/mermaid-survives-punctuation",
+      "covers": ["FR-040-AC-9"],
+      "op": "render_case",
+      "input": {
+        "claims": [
+          {
+            "id": "StR-001",
+            "kind": "goal",
+            "statement": "Top",
+            "status": "open",
+            "children": [
+              {
+                "id": "FR-001-AC-1",
+                "kind": "solution",
+                "statement": "Rejects (bad) input; logs \"why\" and `how`",
+                "status": "open",
+                "because": "x: y",
+                "children": []
+              }
+            ]
+          }
+        ],
+        "unreachable": [],
+        "unreadable": [],
+        "producerTrust": []
+      }
+    },
+    {
+      "name": "render-case/punctuation-in-the-claim-statement-itself",
+      "covers": ["FR-040-AC-9"],
+      "op": "render_case",
+      "input": {
+        "claims": [
+          {
+            "id": "StR-001",
+            "kind": "goal",
+            "statement": "Accepts (a; b) and rejects \"c\"",
+            "status": "supported",
+            "children": [
+              {
+                "id": "FR-001-AC-1",
+                "kind": "solution",
+                "statement": "It holds.",
+                "status": "supported",
+                "children": []
+              }
+            ]
+          }
+        ],
+        "unreachable": [],
+        "unreadable": [],
+        "producerTrust": []
+      }
+    },
+    {
+      "name": "render-case/truncates-on-a-code-point",
+      "covers": ["FR-040-AC-15"],
+      "op": "render_case",
+      "input": {
+        "claims": [
+          {
+            "id": "StR-001",
+            "kind": "goal",
+            "statement": "Top",
+            "status": "supported",
+            "children": [
+              {
+                "id": "FR-001-AC-1",
+                "kind": "solution",
+                "statement": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx😀 tail",
+                "status": "supported",
+                "children": []
+              }
+            ]
+          }
+        ],
+        "unreachable": [],
+        "unreadable": [],
+        "producerTrust": []
+      }
+    },
+    {
+      "name": "render-case/a-label-well-over-eighty-characters-is-cut",
+      "covers": ["FR-040-AC-15"],
+      "op": "render_case",
+      "input": {
+        "claims": [
+          {
+            "id": "StR-001",
+            "kind": "goal",
+            "statement": "Top",
+            "status": "supported",
+            "children": [
+              {
+                "id": "FR-001-AC-1",
+                "kind": "solution",
+                "statement": "The system shall refuse every request whose declared payload exceeds the stated ceiling, and shall say so in a diagnostic naming the limit.",
+                "status": "supported",
+                "children": []
+              }
+            ]
+          }
+        ],
+        "unreachable": [],
+        "unreadable": [],
+        "producerTrust": []
+      }
+    },
+    {
+      "name": "render-case/an-astral-character-inside-the-label-budget",
+      "covers": ["FR-040-AC-15"],
+      "op": "render_case",
+      "input": {
+        "claims": [
+          {
+            "id": "StR-001",
+            "kind": "goal",
+            "statement": "Top",
+            "status": "supported",
+            "children": [
+              {
+                "id": "FR-001-AC-1",
+                "kind": "solution",
+                "statement": "😀 leads, and the rest of the label is short",
+                "status": "supported",
+                "children": []
+              }
+            ]
+          }
+        ],
+        "unreachable": [],
+        "unreadable": [],
+        "producerTrust": []
+      }
+    },
+    {
+      "name": "render-case/node-id-sanitises-per-code-unit",
+      "covers": ["FR-040-AC-9"],
+      "op": "render_case",
+      "input": {
+        "claims": [
+          {
+            "id": "StR-001",
+            "kind": "goal",
+            "statement": "Top",
+            "status": "supported",
+            "children": [
+              {
+                "id": "FR-😀-AC-1",
+                "kind": "solution",
+                "statement": "Astral in the id",
+                "status": "supported",
+                "children": []
+              }
+            ]
+          }
+        ],
+        "unreachable": [],
+        "unreadable": [],
+        "producerTrust": []
+      }
+    },
+    {
+      "name": "render-case/a-shared-child-is-declared-once",
+      "covers": ["FR-040-AC-11", "FR-040-AC-12"],
+      "op": "render_case",
+      "input": {
+        "claims": [
+          {
+            "id": "StR-001",
+            "kind": "goal",
+            "statement": "Top",
+            "status": "open",
+            "children": [
+              {
+                "id": "FR-001",
+                "kind": "goal",
+                "statement": "A",
+                "status": "open",
+                "children": [
+                  {
+                    "id": "FR-009-AC-1",
+                    "kind": "solution",
+                    "statement": "Shared",
+                    "status": "open",
+                    "because": "x: y",
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "id": "FR-002",
+                "kind": "goal",
+                "statement": "B",
+                "status": "open",
+                "children": [
+                  {
+                    "id": "FR-009-AC-1",
+                    "kind": "solution",
+                    "statement": "Shared",
+                    "status": "open",
+                    "because": "x: y",
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "unreachable": [],
+        "unreadable": [],
+        "producerTrust": []
+      }
+    },
+    {
+      "name": "render-case/unreachable-and-unreadable-sections",
+      "covers": ["FR-040-AC-5"],
+      "op": "render_case",
+      "input": {
+        "claims": [],
+        "reason": "none",
+        "unreachable": ["FR-009", "FR-010"],
+        "unreadable": [
+          { "path": "broken.md", "reason": "unterminated frontmatter" }
+        ],
+        "producerTrust": []
+      }
+    },
+    {
+      "name": "render-case/producer-trust-fields",
+      "covers": ["FR-040-AC-1"],
+      "op": "render_case",
+      "input": {
+        "claims": [],
+        "reason": "none",
+        "unreachable": [],
+        "unreadable": [],
+        "producerTrust": [
+          {
+            "id": "T-001",
+            "useId": "U-1",
+            "producer": "vitest",
+            "status": "accepted-with-limitations",
+            "permittedDecisions": ["release"],
+            "limitations": ["linux only", "x86 only"],
+            "triggeredBy": ["producer-version", "configuration"],
+            "owner": "qa"
+          },
+          {
+            "id": "T-002",
+            "useId": "U-2",
+            "producer": "pytest",
+            "status": "unobserved",
+            "permittedDecisions": [],
+            "limitations": [],
+            "triggeredBy": [],
+            "owner": "qa"
+          }
+        ]
+      }
+    },
+    {
+      "name": "render-case/an-invalidated-producer-trust-entry",
+      "covers": ["FR-040-AC-1"],
+      "op": "render_case",
+      "input": {
+        "claims": [],
+        "reason": "none",
+        "unreachable": [],
+        "unreadable": [],
+        "producerTrust": [
+          {
+            "id": "T-010",
+            "useId": "U-10",
+            "producer": "vitest",
+            "status": "invalidated",
+            "permittedDecisions": [],
+            "limitations": ["the producer moved under the recorded use"],
+            "triggeredBy": ["producer-version"],
+            "owner": "qa"
+          }
+        ]
+      }
+    },
+    {
+      "name": "render-case/independence-fields",
+      "covers": ["FR-040-AC-1"],
+      "op": "render_case",
+      "input": {
+        "claims": [],
+        "reason": "none",
+        "unreachable": [],
+        "unreadable": [],
+        "producerTrust": [],
+        "evidenceIndependence": [
+          {
+            "profile": "P",
+            "requirement": "FR-001",
+            "obligation": "FR-001-AC-1",
+            "status": "satisfied",
+            "dimensions": [
+              {
+                "dimension": "author",
+                "values": ["a", "b"],
+                "missingSuites": []
+              },
+              {
+                "dimension": "tooling",
+                "values": [],
+                "missingSuites": ["unit", "e2e"]
+              }
+            ],
+            "satisfiedBy": ["unit", "integration"],
+            "summary": "two authors"
+          }
+        ]
+      }
+    },
+    {
+      "name": "render-case/a-satisfied-independence-entry-with-no-dimensions",
+      "covers": ["FR-040-AC-1"],
+      "op": "render_case",
+      "input": {
+        "claims": [],
+        "reason": "none",
+        "unreachable": [],
+        "unreadable": [],
+        "producerTrust": [],
+        "evidenceIndependence": [
+          {
+            "profile": "P",
+            "requirement": "FR-001",
+            "obligation": "FR-001-AC-1",
+            "status": "satisfied",
+            "dimensions": [],
+            "satisfiedBy": ["unit"],
+            "summary": "nothing to separate"
+          }
+        ]
+      }
+    },
+    {
+      "name": "render-case/empty-independence-emits-no-heading",
+      "covers": ["FR-040-AC-1"],
+      "op": "render_case",
+      "input": {
+        "claims": [],
+        "reason": "none",
+        "unreachable": [],
+        "unreadable": [],
+        "producerTrust": [],
+        "evidenceIndependence": []
+      }
+    },
+    {
+      "name": "render-case/absent-independence",
+      "covers": ["FR-040-AC-1"],
+      "op": "render_case",
+      "input": {
+        "claims": [],
+        "reason": "none",
+        "unreachable": [],
+        "unreadable": [],
+        "producerTrust": []
+      }
+    },
+    {
+      "name": "render-case/unknown-trust-status",
+      "covers": ["FR-040-AC-1"],
+      "op": "render_case",
+      "input": {
+        "claims": [],
+        "reason": "none",
+        "unreachable": [],
+        "unreadable": [],
+        "producerTrust": [
+          {
+            "id": "T",
+            "useId": "U",
+            "status": "status-invented-tomorrow",
+            "triggeredBy": ["trigger-invented-tomorrow"],
+            "limitations": []
+          }
+        ]
+      }
+    },
+    {
+      "name": "render-case/absent-producer-trust",
+      "covers": ["FR-040", "FR-101"],
+      "op": "render_case",
+      "boundary": "refused",
+      "input": {
+        "claims": [],
+        "reason": "none",
+        "unreachable": [],
+        "unreadable": []
+      }
+    },
+    {
+      "name": "render-case/unrecognised-node-kind",
+      "covers": ["FR-040", "FR-101"],
+      "op": "render_case",
+      "boundary": "refused",
+      "input": {
+        "claims": [
+          {
+            "id": "StR-001",
+            "kind": "premise",
+            "statement": "Top",
+            "status": "open",
+            "children": []
+          }
+        ],
+        "unreachable": [],
+        "unreadable": [],
+        "producerTrust": []
+      }
+    },
+    {
+      "name": "render-case/unrecognised-node-status",
+      "covers": ["FR-040", "FR-101"],
+      "op": "render_case",
+      "boundary": "refused",
+      "input": {
+        "claims": [
+          {
+            "id": "StR-001",
+            "kind": "goal",
+            "statement": "Top",
+            "status": "maybe",
+            "children": []
+          }
+        ],
+        "unreachable": [],
+        "unreadable": [],
+        "producerTrust": []
+      }
+    },
+    {
+      "name": "render-case/nested-node-missing-children",
+      "covers": ["FR-040", "FR-101"],
+      "op": "render_case",
+      "boundary": "refused",
+      "input": {
+        "claims": [
+          {
+            "id": "StR-001",
+            "kind": "goal",
+            "statement": "Top",
+            "status": "open",
+            "children": [
+              {
+                "id": "FR-001",
+                "kind": "goal",
+                "statement": "No children key",
+                "status": "open"
+              }
+            ]
+          }
+        ],
+        "unreachable": [],
+        "unreadable": [],
+        "producerTrust": []
+      }
+    },
+    {
+      "name": "render-case/missing-unreachable",
+      "covers": ["FR-040", "FR-101"],
+      "op": "render_case",
+      "boundary": "refused",
+      "input": { "claims": [], "unreadable": [], "producerTrust": [] }
+    },
+    {
+      "name": "render-case/trust-missing-use-id",
+      "covers": ["FR-040", "FR-101"],
+      "op": "render_case",
+      "boundary": "refused",
+      "input": {
+        "claims": [],
+        "unreachable": [],
+        "unreadable": [],
+        "producerTrust": [
+          {
+            "id": "T",
+            "status": "accepted",
+            "triggeredBy": [],
+            "limitations": []
+          }
+        ]
+      }
+    },
+    {
+      "name": "render-case/dimension-missing-missing-suites",
+      "covers": ["FR-040", "FR-101"],
+      "op": "render_case",
+      "boundary": "refused",
+      "input": {
+        "claims": [],
+        "unreachable": [],
+        "unreadable": [],
+        "producerTrust": [],
+        "evidenceIndependence": [
+          {
+            "profile": "P",
+            "requirement": "FR-001",
+            "obligation": "FR-001-AC-1",
+            "status": "satisfied",
+            "dimensions": [{ "dimension": "author", "values": [] }],
+            "summary": "s"
+          }
+        ]
+      }
+    },
+
+    {
+      "name": "parse-argument/ok-minimal",
+      "covers": ["FR-047-AC-5"],
+      "op": "parse_argument",
+      "overrides": {}
+    },
+    {
+      "name": "parse-argument/ok-full",
+      "covers": ["FR-047-AC-1", "FR-047-AC-4", "FR-047-AC-5"],
+      "op": "parse_argument",
+      "overrides": {
+        "assumptions": [
+          {
+            "id": "ASM-900",
+            "statement": "The reviewed clause set is stable.",
+            "owner": "release-owner",
+            "status": "accepted",
+            "review_by": "2028-02-29T00:00:00Z"
+          }
+        ],
+        "challenges": [
+          {
+            "id": "CH-900",
+            "target": "ASM-900",
+            "statement": "The clause set moved once before.",
+            "status": "accepted-risk",
+            "owner": "release-owner",
+            "resolution_refs": ["ix://example.invalid/e/EV-1"],
+            "expires_at": "2029-01-01T00:00:00+05:30"
+          }
+        ],
+        "relationships": [
+          { "target": "ix://example.invalid/w/AA-800", "type": "supports" }
+        ]
+      }
+    },
+    {
+      "name": "parse-argument/review-by-impossible-day",
+      "covers": ["FR-047-AC-7"],
+      "op": "parse_argument",
+      "review_by": "2026-02-30T00:00:00Z"
+    },
+    {
+      "name": "parse-argument/review-by-june-31",
+      "covers": ["FR-047-AC-7"],
+      "op": "parse_argument",
+      "review_by": "2026-06-31T00:00:00Z"
+    },
+    {
+      "name": "parse-argument/review-by-non-leap-february-29",
+      "covers": ["FR-047-AC-7"],
+      "op": "parse_argument",
+      "review_by": "2025-02-29T00:00:00Z"
+    },
+    {
+      "name": "parse-argument/review-by-hour-24",
+      "covers": ["FR-047-AC-7"],
+      "op": "parse_argument",
+      "review_by": "2026-08-15T24:00:00Z"
+    },
+    {
+      "name": "parse-argument/review-by-leap-second",
+      "covers": ["FR-047-AC-7"],
+      "op": "parse_argument",
+      "review_by": "2026-08-15T23:59:60Z"
+    },
+    {
+      "name": "parse-argument/review-by-lowercase-t",
+      "covers": ["FR-047-AC-7"],
+      "op": "parse_argument",
+      "review_by": "2026-08-15t00:00:00Z"
+    },
+    {
+      "name": "parse-argument/review-by-lowercase-z",
+      "covers": ["FR-047-AC-7"],
+      "op": "parse_argument",
+      "review_by": "2026-08-15T00:00:00z"
+    },
+    {
+      "name": "parse-argument/review-by-offset-out-of-range",
+      "covers": ["FR-047-AC-7"],
+      "op": "parse_argument",
+      "review_by": "2026-08-15T00:00:00+99:99"
+    },
+    {
+      "name": "parse-argument/review-by-empty-fraction",
+      "covers": ["FR-047-AC-7"],
+      "op": "parse_argument",
+      "review_by": "2026-08-15T00:00:00.Z"
+    },
+    {
+      "name": "parse-argument/review-by-real-leap-day",
+      "covers": ["FR-047-AC-7"],
+      "op": "parse_argument",
+      "review_by": "2028-02-29T00:00:00Z"
+    },
+    {
+      "name": "parse-argument/review-by-offset-and-fraction",
+      "covers": ["FR-047-AC-7"],
+      "op": "parse_argument",
+      "review_by": "2026-08-15T23:59:59.250-11:00"
+    },
+    {
+      "name": "parse-argument/challenge-expires-at-null",
+      "covers": ["FR-047-AC-4", "FR-047-AC-5"],
+      "op": "parse_argument",
+      "overrides": {
+        "challenges": [
+          {
+            "id": "CH-900",
+            "target": "CLAIM-900",
+            "statement": "A bounded recovery case needed review.",
+            "status": "open",
+            "owner": "release-owner",
+            "expires_at": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "parse-argument/challenge-resolution-refs-null",
+      "covers": ["FR-047-AC-4", "FR-047-AC-5"],
+      "op": "parse_argument",
+      "overrides": {
+        "challenges": [
+          {
+            "id": "CH-900",
+            "target": "CLAIM-900",
+            "statement": "A bounded recovery case needed review.",
+            "status": "open",
+            "owner": "release-owner",
+            "resolution_refs": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "parse-argument/challenge-resolution-refs-empty",
+      "covers": ["FR-047-AC-4", "FR-047-AC-5"],
+      "op": "parse_argument",
+      "overrides": {
+        "challenges": [
+          {
+            "id": "CH-900",
+            "target": "CLAIM-900",
+            "statement": "A bounded recovery case needed review.",
+            "status": "open",
+            "owner": "release-owner",
+            "resolution_refs": []
+          }
+        ]
+      }
+    },
+    {
+      "name": "parse-argument/challenge-resolution-refs-duplicated",
+      "covers": ["FR-047-AC-4", "FR-047-AC-5"],
+      "op": "parse_argument",
+      "overrides": {
+        "challenges": [
+          {
+            "id": "CH-900",
+            "target": "CLAIM-900",
+            "statement": "A bounded recovery case needed review.",
+            "status": "open",
+            "owner": "release-owner",
+            "resolution_refs": ["ix://e/1", "ix://e/1"]
+          }
+        ]
+      }
+    },
+    {
+      "name": "parse-argument/challenge-missing-owner",
+      "covers": ["FR-047-AC-5"],
+      "op": "parse_argument",
+      "overrides": {
+        "challenges": [
+          {
+            "id": "CH-900",
+            "target": "CLAIM-900",
+            "statement": "A bounded recovery case needed review.",
+            "status": "open"
+          }
+        ]
+      }
+    },
+    {
+      "name": "parse-argument/challenge-unknown-target",
+      "covers": ["FR-047-AC-5"],
+      "op": "parse_argument",
+      "overrides": {
+        "challenges": [
+          {
+            "id": "CH-900",
+            "target": "NOPE-1",
+            "statement": "A bounded recovery case needed review.",
+            "status": "open",
+            "owner": "release-owner"
+          }
+        ]
+      }
+    },
+    {
+      "name": "parse-argument/owner-byte-order-mark",
+      "covers": ["FR-047-AC-5"],
+      "op": "parse_argument",
+      "overrides": { "owner": "\ufeff" }
+    },
+    {
+      "name": "parse-argument/owner-next-line",
+      "covers": ["FR-047-AC-5"],
+      "op": "parse_argument",
+      "overrides": { "owner": "\u0085" }
+    },
+    {
+      "name": "parse-argument/owner-no-break-space",
+      "covers": ["FR-047-AC-5"],
+      "op": "parse_argument",
+      "overrides": { "owner": "\u00a0" }
+    },
+    {
+      "name": "parse-argument/owner-zero-width-space",
+      "covers": ["FR-047-AC-5"],
+      "op": "parse_argument",
+      "overrides": { "owner": "\u200b" }
+    },
+    {
+      "name": "parse-argument/owner-empty",
+      "covers": ["FR-047-AC-5"],
+      "op": "parse_argument",
+      "overrides": { "owner": "" }
+    },
+    {
+      "name": "parse-argument/status-unlisted",
+      "covers": ["FR-047-AC-5"],
+      "op": "parse_argument",
+      "overrides": { "status": "archived" }
+    },
+    {
+      "name": "parse-argument/type-unlisted",
+      "covers": ["FR-047-AC-5"],
+      "op": "parse_argument",
+      "overrides": { "type": "AssuranceCase" }
+    },
+    {
+      "name": "parse-argument/assumption-status-unlisted",
+      "covers": ["FR-047-AC-5"],
+      "op": "parse_argument",
+      "overrides": {
+        "assumptions": [
+          {
+            "id": "ASM-900",
+            "statement": "The reviewed clause set is stable.",
+            "owner": "release-owner",
+            "status": "withdrawn",
+            "review_by": "2028-02-29T00:00:00Z"
+          }
+        ]
+      }
+    },
+    {
+      "name": "parse-argument/challenge-status-unlisted",
+      "covers": ["FR-047-AC-5"],
+      "op": "parse_argument",
+      "overrides": {
+        "challenges": [
+          {
+            "id": "CH-900",
+            "target": "CLAIM-900",
+            "statement": "A bounded recovery case needed review.",
+            "status": "accepted_risk",
+            "owner": "release-owner"
+          }
+        ]
+      }
+    },
+    {
+      "name": "parse-argument/relationship-type-unlisted",
+      "covers": ["FR-047-AC-5"],
+      "op": "parse_argument",
+      "overrides": {
+        "relationships": [
+          { "target": "ix://example.invalid/w/AA-800", "type": "refutes" }
+        ]
+      }
+    },
+    {
+      "name": "parse-argument/unknown-top-level-key",
+      "covers": ["FR-047-AC-5"],
+      "op": "parse_argument",
+      "overrides": { "schemaVersion": "v1" }
+    },
+    {
+      "name": "parse-argument/top-claim-unknown-key",
+      "covers": ["FR-047-AC-5"],
+      "op": "parse_argument",
+      "overrides": {
+        "top_claim": {
+          "id": "CLAIM-900",
+          "statement": "S",
+          "subject": "widget",
+          "confidence": "high"
+        }
+      }
+    },
+    {
+      "name": "parse-argument/top-claim-missing-subject",
+      "covers": ["FR-047-AC-1", "FR-047-AC-5"],
+      "op": "parse_argument",
+      "overrides": { "top_claim": { "id": "CLAIM-900", "statement": "S" } }
+    },
+    {
+      "name": "parse-argument/top-claim-not-an-object",
+      "covers": ["FR-047-AC-5"],
+      "op": "parse_argument",
+      "overrides": { "top_claim": ["CLAIM-900"] }
+    },
+    {
+      "name": "parse-argument/missing-relationships",
+      "covers": ["FR-047-AC-5"],
+      "op": "parse_argument",
+      "remove": ["relationships"]
+    },
+    {
+      "name": "parse-argument/reasoning-not-an-array",
+      "covers": ["FR-047-AC-5"],
+      "op": "parse_argument",
+      "overrides": { "reasoning": { "id": "ARG-900" } }
+    },
+    {
+      "name": "parse-argument/reasoning-empty",
+      "covers": ["FR-047-AC-5"],
+      "op": "parse_argument",
+      "overrides": { "reasoning": [] }
+    },
+    {
+      "name": "parse-argument/participants-empty",
+      "covers": ["FR-047-AC-1", "FR-047-AC-5"],
+      "op": "parse_argument",
+      "overrides": { "participants": [] }
+    },
+    {
+      "name": "parse-argument/id-not-numbered",
+      "covers": ["FR-047-AC-5"],
+      "op": "parse_argument",
+      "overrides": { "id": "AA-nine-hundred" }
+    },
+    {
+      "name": "parse-argument/id-not-a-string",
+      "covers": ["FR-047-AC-5"],
+      "op": "parse_argument",
+      "overrides": { "id": 900 }
+    },
+    {
+      "name": "parse-argument/profile-not-a-reference",
+      "covers": ["FR-047-AC-5"],
+      "op": "parse_argument",
+      "overrides": { "profile": "https://example.invalid/AP-900" }
+    },
+    {
+      "name": "parse-argument/relationship-target-not-a-reference",
+      "covers": ["FR-047-AC-5"],
+      "op": "parse_argument",
+      "overrides": {
+        "relationships": [{ "target": "AA-800", "type": "supports" }]
+      }
+    },
+    {
+      "name": "parse-argument/criteria-not-strings",
+      "covers": ["FR-047-AC-2", "FR-047-AC-5"],
+      "op": "parse_argument",
+      "overrides": {
+        "reasoning": [
+          {
+            "id": "ARG-900",
+            "statement": "R",
+            "supports": "CLAIM-900",
+            "sufficiency_criteria": [1]
+          }
+        ]
+      }
+    },
+    {
+      "name": "parse-argument/criteria-empty",
+      "covers": ["FR-047-AC-2", "FR-047-AC-5"],
+      "op": "parse_argument",
+      "overrides": {
+        "reasoning": [
+          {
+            "id": "ARG-900",
+            "statement": "R",
+            "supports": "CLAIM-900",
+            "sufficiency_criteria": []
+          }
+        ]
+      }
+    },
+    {
+      "name": "parse-argument/criteria-duplicated",
+      "covers": ["FR-047-AC-2", "FR-047-AC-5"],
+      "op": "parse_argument",
+      "overrides": {
+        "reasoning": [
+          {
+            "id": "ARG-900",
+            "statement": "R",
+            "supports": "CLAIM-900",
+            "sufficiency_criteria": ["c", "c"]
+          }
+        ]
+      }
+    },
+    {
+      "name": "parse-argument/duplicate-reasoning-id",
+      "covers": ["FR-047-AC-5"],
+      "op": "parse_argument",
+      "overrides": {
+        "reasoning": [
+          {
+            "id": "ARG-900",
+            "statement": "R",
+            "supports": "CLAIM-900",
+            "sufficiency_criteria": ["c"]
+          },
+          {
+            "id": "ARG-900",
+            "statement": "R2",
+            "supports": "CLAIM-900",
+            "sufficiency_criteria": ["d"]
+          }
+        ]
+      }
+    },
+    {
+      "name": "parse-argument/assumption-collides-with-top-claim",
+      "covers": ["FR-047-AC-5"],
+      "op": "parse_argument",
+      "overrides": {
+        "assumptions": [
+          {
+            "id": "CLAIM-900",
+            "statement": "The reviewed clause set is stable.",
+            "owner": "release-owner",
+            "status": "accepted",
+            "review_by": "2028-02-29T00:00:00Z"
+          }
+        ]
+      }
+    },
+    {
+      "name": "parse-argument/supports-unknown-target",
+      "covers": ["FR-047-AC-5"],
+      "op": "parse_argument",
+      "overrides": {
+        "reasoning": [
+          {
+            "id": "ARG-900",
+            "statement": "R",
+            "supports": "NOPE-1",
+            "sufficiency_criteria": ["c"]
+          }
+        ]
+      }
+    },
+    {
+      "name": "parse-argument/reasoning-cycle",
+      "covers": ["FR-047-AC-5"],
+      "op": "parse_argument",
+      "overrides": {
+        "reasoning": [
+          {
+            "id": "A",
+            "statement": "a",
+            "supports": "B",
+            "sufficiency_criteria": ["c"]
+          },
+          {
+            "id": "B",
+            "statement": "b",
+            "supports": "A",
+            "sufficiency_criteria": ["d"]
+          }
+        ]
+      }
+    },
+    {
+      "name": "parse-argument/shared-intermediate-step",
+      "covers": ["FR-047-AC-5"],
+      "op": "parse_argument",
+      "overrides": {
+        "reasoning": [
+          {
+            "id": "A",
+            "statement": "a",
+            "supports": "M",
+            "sufficiency_criteria": ["c"]
+          },
+          {
+            "id": "B",
+            "statement": "b",
+            "supports": "M",
+            "sufficiency_criteria": ["d"]
+          },
+          {
+            "id": "M",
+            "statement": "m",
+            "supports": "CLAIM-900",
+            "sufficiency_criteria": ["e"]
+          }
+        ]
+      }
+    },
+    {
+      "name": "parse-argument/not-an-object",
+      "covers": ["FR-047-AC-5"],
+      "op": "parse_argument",
+      "input": []
+    },
+    {
+      "name": "parse-argument/an-accepted-assumption-with-a-past-review",
+      "covers": ["FR-047-AC-3", "FR-047-AC-5"],
+      "op": "parse_argument",
+      "overrides": {
+        "assumptions": [
+          {
+            "id": "ASM-901",
+            "statement": "The reviewed clause set was stable.",
+            "owner": "release-owner",
+            "status": "accepted",
+            "review_by": "2020-01-01T00:00:00Z"
+          }
+        ]
+      }
+    },
+    {
+      "name": "parse-argument/a-resolved-challenge-carrying-resolution-refs",
+      "covers": ["FR-047-AC-4", "FR-047-AC-5"],
+      "op": "parse_argument",
+      "overrides": {
+        "challenges": [
+          {
+            "id": "CH-901",
+            "target": "CLAIM-900",
+            "statement": "The recovery path was unclear.",
+            "status": "resolved",
+            "owner": "release-owner",
+            "resolution_refs": ["ix://example.invalid/e/EV-2"]
+          }
+        ]
+      }
+    }
+  ]
+}

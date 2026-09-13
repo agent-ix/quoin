@@ -26,10 +26,11 @@ use std::collections::BTreeMap;
 use std::path::Path;
 
 use quoin_completeness::{
-    ArtifactTypeName, AssessOptions, CompletenessFinding, DocumentClaims, FindingKind,
-    FrontmatterField, Severity, Verdict, VocabularyDeclaration, VocabularyName, VocabularyValue,
-    assess_bundle, assess_vocabulary, claims_for, load_vocabulary_coverage,
-    read_bundle_frontmatter, verdict_for, written_reason_for,
+    ArtifactTypeName, AssessInput, AssessOptions, CompletenessFinding, DocumentClaims,
+    DocumentSource, FindingKind, FrontmatterField, ModuleSource, SchemaSource, Severity, Verdict,
+    VocabularyDeclaration, VocabularyName, VocabularyValue, assess_bundle, assess_sources,
+    assess_vocabulary, claims_for, load_vocabulary_coverage, locate_module_root,
+    read_bundle_frontmatter, schema_refs_of, verdict_for, written_reason_for,
 };
 use serde_json::Value;
 
@@ -566,4 +567,163 @@ fn tc_378_305_the_goldens_name_the_revision_they_were_captured_from() {
             "{name}: provenance must name a full quoin revision"
         );
     }
+}
+
+/// Every `*.md` under `root`, as the command shell reads them: relative paths
+/// with `/` separators, sorted, content as text.
+///
+/// This is the walk `src/commands/completeness.ts` performs before it calls
+/// `completeness.assess_bundle`. It lives in the test because the library half
+/// must not own it (quoin#445) and the criterion — that moving the walk out
+/// does not move the answer — has to exercise the same order the shell uses.
+fn sources_under(root: &Path) -> Vec<DocumentSource> {
+    fn walk(root: &Path, prefix: &str, out: &mut Vec<String>) {
+        let Ok(entries) = std::fs::read_dir(root.join(prefix)) else {
+            return;
+        };
+        for entry in entries.flatten() {
+            let name = entry.file_name().to_string_lossy().into_owned();
+            let relative = if prefix.is_empty() {
+                name
+            } else {
+                format!("{prefix}/{name}")
+            };
+            // Case-sensitive on purpose, exactly as `markdown_under` and the
+            // TypeScript `entry.endsWith(".md")` filter are: a walk that saw
+            // more documents than the oracle did would not be the same walk.
+            #[allow(
+                clippy::case_sensitive_file_extension_comparisons,
+                reason = "parity with the oracle's own filter is the point"
+            )]
+            let is_markdown = relative.ends_with(".md");
+            match entry.file_type() {
+                Ok(kind) if kind.is_dir() => walk(root, &relative, out),
+                Ok(_) if is_markdown => out.push(relative),
+                _ => {}
+            }
+        }
+    }
+    let mut relative: Vec<String> = Vec::new();
+    walk(root, "", &mut relative);
+    relative.sort();
+    relative
+        .into_iter()
+        .filter_map(|path| {
+            std::fs::read_to_string(root.join(&path))
+                .ok()
+                .map(|raw| DocumentSource { path, raw })
+        })
+        .collect()
+}
+
+/// One module as the command shell reads it: the manifest, plus exactly the
+/// frontmatter schemas the manifest names.
+fn module_under(root: &Path) -> Option<ModuleSource> {
+    let module_root = locate_module_root(root)?;
+    let manifest = std::fs::read_to_string(module_root.join("manifest.yaml")).ok()?;
+    let schemas = schema_refs_of(&manifest)
+        .into_iter()
+        .map(|reference| {
+            let source = match std::fs::read_to_string(module_root.join(&reference)) {
+                Ok(text) => SchemaSource::Text(text),
+                Err(cause) => SchemaSource::Unreadable(cause.to_string()),
+            };
+            (reference, source)
+        })
+        .collect();
+    Some(ModuleSource {
+        label: module_root.to_string_lossy().into_owned(),
+        manifest,
+        schemas,
+    })
+}
+
+/// Trace: FR-037, FR-096
+/// Provenance: agent-ix/quoin#445
+///
+/// The content-in entry point answers what the filesystem entry point answers.
+///
+/// Not a fixture this test invented: the corpus is the one
+/// `scripts/capture-semantic-goldens.mjs` captured from the TypeScript oracle,
+/// and `tc_378_304` has already pinned the filesystem path to the oracle's
+/// answers over it. Agreeing with that path over the same corpus is therefore
+/// agreement with the oracle, which is what makes moving the walk into the
+/// command shell a no-op for the user.
+#[test]
+fn tc_445_310_the_content_in_path_answers_what_the_filesystem_path_answers() {
+    let corpus = golden("assess-bundle.json");
+    let Ok(temp) = tempfile::tempdir() else {
+        panic!("tempdir");
+    };
+    let bundle_root = temp.path().join("bundle");
+    let module_root = temp.path().join("module");
+    materialize(
+        &bundle_root,
+        corpus.get("bundleFiles").unwrap_or(&Value::Null),
+    );
+    materialize(
+        &module_root,
+        corpus.get("moduleFiles").unwrap_or(&Value::Null),
+    );
+
+    let mut cases = 0usize;
+    for case in array(&corpus, "cases") {
+        let id = text(case, "id");
+        let strict = case
+            .get("strict")
+            .and_then(Value::as_bool)
+            .unwrap_or_default();
+        let has_modules = case
+            .get("hasModules")
+            .and_then(Value::as_bool)
+            .unwrap_or_default();
+        let root_exists = case
+            .get("bundleRootExists")
+            .and_then(Value::as_bool)
+            .unwrap_or_default();
+        let root = if root_exists {
+            bundle_root.clone()
+        } else {
+            temp.path().join("does-not-exist")
+        };
+        let module_roots = if has_modules {
+            vec![module_root.clone()]
+        } else {
+            Vec::new()
+        };
+
+        let by_path = assess_bundle(&AssessOptions {
+            bundle_root: root.clone(),
+            strict,
+            module_roots: module_roots.clone(),
+        });
+        let by_content = assess_sources(&AssessInput {
+            bundle_root: root.to_string_lossy().into_owned(),
+            strict,
+            documents: sources_under(&root),
+            unreadable: Vec::new(),
+            modules: module_roots
+                .iter()
+                .filter_map(|r| module_under(r))
+                .collect(),
+        });
+
+        assert_eq!(by_path, by_content, "{id}");
+        cases += 1;
+    }
+
+    // A pass over an empty population proves nothing, and this program has
+    // shipped that four times.
+    assert!(
+        cases >= 4,
+        "the corpus must carry cases; it carried {cases}"
+    );
+    assert!(
+        !sources_under(&bundle_root).is_empty(),
+        "the corpus bundle must carry documents"
+    );
+    assert!(
+        module_under(&module_root).is_some_and(|m| !m.schemas.is_empty()),
+        "the corpus module must name frontmatter schemas"
+    );
 }

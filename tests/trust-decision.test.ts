@@ -1,12 +1,18 @@
 /** FR-093 — use-specific producer trust and invalidation (TC-297..TC-302). */
 
-import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import {
+  accessSync,
+  constants,
+  mkdtempSync,
+  readFileSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-import { buildCase, renderCase } from "../src/assurance/index.js";
+import { buildCase, renderCase } from "../src/core/assurance.js";
 import {
   assessTrust,
   readTrustDecisions,
@@ -123,23 +129,44 @@ describe("trust records are canonical and invalid files stay visible", () => {
   });
 });
 
-describe("assurance renders trust as context", () => {
-  // Trace: FR-093-AC-7
-  it("shows invalidation without changing claim support", () => {
-    const changed = decision();
-    changed.observedContext = context("1.1.0");
-    const assurance = buildCase({
-      documents: [],
-      obligations: [],
-      findings: [],
-      producerTrust: [assessTrust(changed)],
+/**
+ * The assurance case is built by `quoin-core` (quoin#447), so this one block
+ * needs the binary. It follows `tests/core-exec-e2e.test.ts`: `QUOIN_CORE`
+ * names an executable or the block skips, and `make rust-e2e` is the lane that
+ * sets it. Everything else in this file is retained `src/evidence/` and runs
+ * under a plain `vitest run`.
+ */
+function coreBinary(): string | null {
+  const path = process.env.QUOIN_CORE;
+  if (!path) return null;
+  try {
+    accessSync(path, constants.X_OK);
+    return path;
+  } catch {
+    return null;
+  }
+}
+
+describe.skipIf(coreBinary() === null)(
+  "assurance renders trust as context",
+  () => {
+    // Trace: FR-093-AC-7
+    it("shows invalidation without changing claim support", () => {
+      const changed = decision();
+      changed.observedContext = context("1.1.0");
+      const assurance = buildCase({
+        documents: [],
+        obligations: [],
+        findings: [],
+        producer_trust: [assessTrust(changed)],
+      }) as { producerTrust: { status: string }[] };
+      expect(assurance.producerTrust[0].status).toBe("invalidated");
+      expect(renderCase(assurance)).toContain(
+        "invalidated — revalidate: producer-version",
+      );
     });
-    expect(assurance.producerTrust[0].status).toBe("invalidated");
-    expect(renderCase(assurance)).toContain(
-      "invalidated — revalidate: producer-version",
-    );
-  });
-});
+  },
+);
 
 describe("trust validation", () => {
   it("requires validation evidence and the minimum invalidation triggers", () => {

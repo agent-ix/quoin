@@ -38,8 +38,47 @@ pub struct VocabularyDeclaration {
     pub module_name: String,
 }
 
+/// One module's frontmatter schema, as the CALLER read it.
+///
+/// `Unreadable` carries the caller's own message rather than being modelled as
+/// an absent key, because the reason is what the user reads: "frontmatter
+/// schema 'schemas/nfr.json' unreadable: ENOENT …" names the file and the OS
+/// error, and an absent key could only ever produce a generic sentence.
+#[derive(Debug, Clone, PartialEq, Eq, serde::Deserialize)]
+#[serde(deny_unknown_fields, rename_all = "snake_case")]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+pub enum SchemaSource {
+    /// The file's text.
+    Text(String),
+    /// Why the caller could not read it.
+    Unreadable(String),
+}
+
+/// One module's text, as the CALLER read it.
+///
+/// The boundary's reason for existing (quoin#445): `quoin-core`'s library half
+/// may not touch a filesystem, so the command shell locates the module, reads
+/// `manifest.yaml`, asks [`schema_refs_of`] which schemas that manifest needs,
+/// reads those, and sends all of it as bytes.
+#[derive(Debug, Clone, PartialEq, Eq, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+pub struct ModuleSource {
+    /// What to call this module when its manifest declares no `name`. The
+    /// filesystem shell passes the module root; the wire caller passes whatever
+    /// it resolved, and the boundary never turns it back into a path.
+    pub label: String,
+    /// `manifest.yaml`, as text.
+    pub manifest: String,
+    /// Every `frontmatter_schema_ref` this manifest names, keyed by the ref
+    /// exactly as the manifest spells it.
+    pub schemas: std::collections::BTreeMap<String, SchemaSource>,
+}
+
 /// A declaration whose vocabulary could not be resolved, and why.
-#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct UnresolvedDeclaration {
     /// The declaration's name.
     pub name: VocabularyName,
@@ -111,7 +150,7 @@ pub fn locate_module_root(candidate: &Path) -> Option<PathBuf> {
 /// coverage, which is the honest reading here.
 #[must_use]
 pub fn load_vocabulary_coverage(module_roots: &[PathBuf]) -> VocabularyDeclarations {
-    let mut out = VocabularyDeclarations::default();
+    let mut sources: Vec<ModuleSource> = Vec::new();
     let mut seen_roots: BTreeSet<PathBuf> = BTreeSet::new();
 
     for candidate in module_roots {
@@ -121,11 +160,91 @@ pub fn load_vocabulary_coverage(module_roots: &[PathBuf]) -> VocabularyDeclarati
         if !seen_roots.insert(module_root.clone()) {
             continue;
         }
-
-        let Ok(text) = std::fs::read_to_string(module_root.join("manifest.yaml")) else {
+        let Ok(manifest) = std::fs::read_to_string(module_root.join("manifest.yaml")) else {
             continue;
         };
-        let Ok(manifest) = quoin_yaml::from_str(&text) else {
+        // Only the refs this manifest actually names. Reading every JSON file
+        // under the module root would be a cheaper line here and a wider blast
+        // radius on the wire, where the same set has to be sent.
+        let schemas = schema_refs_of(&manifest)
+            .into_iter()
+            .map(|reference| {
+                let text = std::fs::read_to_string(module_root.join(&reference));
+                let source = match text {
+                    Ok(text) => SchemaSource::Text(text),
+                    Err(cause) => SchemaSource::Unreadable(cause.to_string()),
+                };
+                (reference, source)
+            })
+            .collect();
+        sources.push(ModuleSource {
+            label: module_root.to_string_lossy().into_owned(),
+            manifest,
+            schemas,
+        });
+    }
+
+    declarations_from_sources(&sources)
+}
+
+/// Every `frontmatter_schema_ref` a manifest's `vocabulary_coverage` entries
+/// reach for, deduplicated and in manifest order.
+///
+/// Split out so a caller with no filesystem access can be told which files to
+/// read before it asks for an assessment (quoin#445). A manifest that declares
+/// no coverage, or whose entries name no resolvable artifact type, needs none.
+#[must_use]
+pub fn schema_refs_of(manifest: &str) -> Vec<String> {
+    let Ok(manifest) = quoin_yaml::from_str(manifest) else {
+        return Vec::new();
+    };
+    let Some(entries) = manifest
+        .get("traceability")
+        .and_then(Value::as_object)
+        .and_then(|traceability| traceability.get("vocabulary_coverage"))
+        .and_then(Value::as_array)
+    else {
+        return Vec::new();
+    };
+    let mut refs: Vec<String> = Vec::new();
+    for raw in entries {
+        let from = string_at(raw, "from");
+        let Some(types) = manifest.get("artifact_types").and_then(Value::as_array) else {
+            continue;
+        };
+        let Some(declared) = types
+            .iter()
+            .find(|t| t.get("name").and_then(Value::as_str).unwrap_or_default() == from)
+        else {
+            continue;
+        };
+        if let Some(reference) = declared
+            .get("frontmatter_schema_ref")
+            .and_then(Value::as_str)
+            && !refs.iter().any(|seen| seen == reference)
+        {
+            refs.push(reference.to_owned());
+        }
+    }
+    refs
+}
+
+/// Resolve declared vocabulary coverage from module text the CALLER read.
+///
+/// The decidable half of [`load_vocabulary_coverage`], split out so it can cross
+/// the `quoin-core` boundary without the library half acquiring a filesystem
+/// (quoin#445). The filesystem shell above is the only other caller, so there is
+/// one resolver and not two.
+///
+/// A module whose manifest does not parse, or is not a mapping, contributes
+/// nothing — that is the advisor's diagnostic to report, and a module that
+/// cannot be parsed declares no coverage.
+#[must_use]
+pub fn declarations_from_sources(modules: &[ModuleSource]) -> VocabularyDeclarations {
+    let mut out = VocabularyDeclarations::default();
+
+    for module in modules {
+        let Ok(manifest) = quoin_yaml::from_str(&module.manifest) else {
             continue;
         };
         let Some(manifest_map) = manifest.as_object() else {
@@ -135,7 +254,7 @@ pub fn load_vocabulary_coverage(module_roots: &[PathBuf]) -> VocabularyDeclarati
         let module_name = manifest_map
             .get("name")
             .and_then(Value::as_str)
-            .map_or_else(|| module_root.to_string_lossy().into_owned(), str::to_owned);
+            .map_or_else(|| module.label.clone(), str::to_owned);
 
         let Some(entries) = manifest_map
             .get("traceability")
@@ -150,7 +269,7 @@ pub fn load_vocabulary_coverage(module_roots: &[PathBuf]) -> VocabularyDeclarati
             let name = VocabularyName::new(string_at(raw, "name"));
             let from = string_at(raw, "from");
             let field = string_at(raw, "field");
-            match enum_for(&manifest, &module_root, &from, &field) {
+            match enum_for(&manifest, &module.schemas, &from, &field) {
                 Ok(values) => out.declarations.push(VocabularyDeclaration {
                     name,
                     from: ArtifactTypeName::new(from),
@@ -188,7 +307,7 @@ fn string_at(value: &Value, key: &str) -> String {
 /// not a finite question, and reporting one would invent a denominator.
 fn enum_for(
     manifest: &Value,
-    module_root: &Path,
+    schemas: &std::collections::BTreeMap<String, SchemaSource>,
     artifact_type: &str,
     field: &str,
 ) -> Result<Vec<String>, String> {
@@ -210,9 +329,8 @@ fn enum_for(
         ));
     };
 
-    let path = module_root.join(reference);
-    let schema: Value = match std::fs::read_to_string(&path) {
-        Ok(text) => match serde_json::from_str(&text) {
+    let schema: Value = match schemas.get(reference) {
+        Some(SchemaSource::Text(text)) => match serde_json::from_str(text) {
             Ok(value) => value,
             Err(cause) => {
                 return Err(format!(
@@ -220,9 +338,19 @@ fn enum_for(
                 ));
             }
         },
-        Err(cause) => {
+        Some(SchemaSource::Unreadable(cause)) => {
             return Err(format!(
                 "frontmatter schema '{reference}' unreadable: {cause}"
+            ));
+        }
+        // Unreachable through `load_vocabulary_coverage`, which drives its reads
+        // from `schema_refs_of` over the same manifest. Reachable from the wire,
+        // where the caller assembles the map itself — and a silent empty
+        // vocabulary there would report full coverage over a denominator of
+        // zero, which is the failure FR-037 exists to stop.
+        None => {
+            return Err(format!(
+                "frontmatter schema '{reference}' unreadable: the caller supplied no content for it"
             ));
         }
     };
@@ -317,5 +445,87 @@ mod tests {
         let root = temp.path().to_path_buf();
         let loaded = load_vocabulary_coverage(&[root.clone(), root]);
         assert_eq!(loaded.unresolved.len(), 1, "{loaded:?}");
+    }
+
+    /// Every reason a declaration can go unresolved, each said in its own
+    /// words.
+    ///
+    /// FR-037-AC-2 has three branches and the golden corpus exercises two of
+    /// them. The third — an artifact type that EXISTS but names no
+    /// `frontmatter_schema_ref` — is the one a module hits while it is being
+    /// written, and it is the branch a reader most needs told apart from "no
+    /// such artifact type": the first is a module half-declared, the second a
+    /// declaration pointing at nothing. Asserting the three reasons together
+    /// is what makes them distinguishable; asserting only that the count is
+    /// three would pass with one sentence repeated.
+    ///
+    /// Trace: FR-037-AC-2
+    /// Provenance: agent-ix/quoin#445
+    #[test]
+    fn tc_445_230_an_artifact_type_with_no_schema_is_unresolved_in_its_own_words() {
+        let manifest = concat!(
+            "name: m\n",
+            "artifact_types:\n",
+            "- name: NFR\n",
+            "traceability:\n",
+            "  vocabulary_coverage:\n",
+            "  - name: no-schema\n",
+            "    from: NFR\n",
+            "    field: characteristic\n",
+            "  - name: no-such-type\n",
+            "    from: Ghost\n",
+            "    field: characteristic\n",
+        );
+        let loaded = declarations_from_sources(&[ModuleSource {
+            label: "m".to_owned(),
+            manifest: manifest.to_owned(),
+            schemas: std::collections::BTreeMap::new(),
+        }]);
+
+        assert!(loaded.declarations.is_empty(), "{loaded:?}");
+        let reasons: Vec<&str> = loaded
+            .unresolved
+            .iter()
+            .map(|u| u.reason.as_str())
+            .collect();
+        assert_eq!(
+            reasons,
+            vec![
+                "artifact type 'NFR' declares no frontmatter schema",
+                "no artifact type 'Ghost' in this module",
+            ],
+            "{loaded:?}"
+        );
+    }
+
+    /// A manifest with no `artifact_types` at all is a fourth, earlier reason.
+    ///
+    /// Trace: FR-037-AC-2
+    /// Provenance: agent-ix/quoin#445
+    #[test]
+    fn tc_445_231_a_manifest_declaring_no_artifact_types_says_so() {
+        let manifest = concat!(
+            "name: m\n",
+            "traceability:\n",
+            "  vocabulary_coverage:\n",
+            "  - name: v\n",
+            "    from: NFR\n",
+            "    field: characteristic\n",
+        );
+        let loaded = declarations_from_sources(&[ModuleSource {
+            label: "m".to_owned(),
+            manifest: manifest.to_owned(),
+            schemas: std::collections::BTreeMap::new(),
+        }]);
+        let reasons: Vec<&str> = loaded
+            .unresolved
+            .iter()
+            .map(|u| u.reason.as_str())
+            .collect();
+        assert_eq!(
+            reasons,
+            vec!["module declares no artifact_types"],
+            "{loaded:?}"
+        );
     }
 }

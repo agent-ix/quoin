@@ -40,7 +40,7 @@
 //! exactly as much as one that refuses what it accepts. Every deviation below
 //! is annotated with which direction it would have gone.
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 /// A rejection, carrying the retained implementation's own message.
 ///
@@ -71,9 +71,9 @@ impl std::fmt::Display for ArgumentError {
 
 impl std::error::Error for ArgumentError {}
 
-type Checked<T> = Result<T, ArgumentError>;
+pub(crate) type Checked<T> = Result<T, ArgumentError>;
 
-fn reject<T>(message: impl Into<String>) -> Checked<T> {
+pub(crate) fn reject<T>(message: impl Into<String>) -> Checked<T> {
     Err(ArgumentError(message.into()))
 }
 
@@ -85,7 +85,8 @@ fn reject<T>(message: impl Into<String>) -> Checked<T> {
 /// arrives. These go through `literal()`, which checks and **throws**, so
 /// refusing an unlisted value IS the retained behaviour. Same test, different
 /// answer, because the code differs.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(rename_all = "lowercase")]
 pub enum ArgumentStatus {
     /// Authored but not yet in force.
@@ -97,7 +98,8 @@ pub enum ArgumentStatus {
 }
 
 /// An assumption's declared state.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(rename_all = "lowercase")]
 pub enum AssumptionStatus {
     /// Stated and not yet decided.
@@ -109,7 +111,8 @@ pub enum AssumptionStatus {
 }
 
 /// A challenge's declared state.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(rename_all = "kebab-case")]
 pub enum ChallengeStatus {
     /// Raised and unanswered.
@@ -121,7 +124,8 @@ pub enum ChallengeStatus {
 }
 
 /// How a relationship reads.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(rename_all = "lowercase")]
 pub enum RelationshipType {
     /// The target supports this argument.
@@ -133,7 +137,8 @@ pub enum RelationshipType {
 }
 
 /// The claim the whole argument exists to argue.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct TopClaim {
     /// The claim's id, which every reasoning chain must reach.
     pub id: String,
@@ -144,7 +149,8 @@ pub struct TopClaim {
 }
 
 /// One step of reasoning, with the criteria that would make it sufficient.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct Reasoning {
     /// This step's id.
     pub id: String,
@@ -157,7 +163,8 @@ pub struct Reasoning {
 }
 
 /// Something the argument relies on without arguing for it.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct Assumption {
     /// This assumption's id.
     pub id: String,
@@ -172,7 +179,8 @@ pub struct Assumption {
 }
 
 /// A named actor and the authority they hold.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct Participant {
     /// This participant's id, referenced by sufficiency decisions.
     pub id: String,
@@ -204,7 +212,8 @@ pub struct Participant {
 /// places — correct for the second and **more permissive** than the retained
 /// implementation for the first. Nothing about the two declarations says which
 /// is which; only the reading mechanism does.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct Challenge {
     /// This challenge's id.
     pub id: String,
@@ -225,7 +234,8 @@ pub struct Challenge {
 }
 
 /// An edge to a document outside this argument.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct Relationship {
     /// An `ix://` reference.
     pub target: String,
@@ -235,7 +245,8 @@ pub struct Relationship {
 }
 
 /// A validated authored assurance argument.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct AssuranceArgument {
     /// `AA-<digits>`.
     pub id: String,
@@ -266,7 +277,8 @@ pub struct AssuranceArgument {
 }
 
 /// The one-variant `type` discriminator.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub enum ArgumentKind {
     /// The only accepted value.
     AssuranceArgument,
@@ -303,22 +315,34 @@ const ALLOWED: [&str; 12] = [
 /// ZWNBSP and category `Zs`) plus `LineTerminator` (LF, CR, LS, PS). Unicode's
 /// `White_Space` property, which Rust uses, includes `U+0085` and excludes
 /// `U+FEFF`. So the set is transcribed here rather than borrowed.
-fn js_trim_is_empty(value: &str) -> bool {
-    value.chars().all(|c| {
-        matches!(c,
-            '\u{0009}'..='\u{000D}'
-                | '\u{0020}'
-                | '\u{00A0}'
-                | '\u{1680}'
-                | '\u{2000}'..='\u{200A}'
-                | '\u{2028}'
-                | '\u{2029}'
-                | '\u{202F}'
-                | '\u{205F}'
-                | '\u{3000}'
-                | '\u{FEFF}'
-        )
-    })
+pub(crate) fn js_trim_is_empty(value: &str) -> bool {
+    value.chars().all(is_js_whitespace)
+}
+
+/// The ECMA-262 trimmed set, in one place.
+///
+/// Transcribed once and shared, because `renderAuthoredArgument`'s closing
+/// `trimEnd()` has to agree with `trim()` exactly — a second transcription is
+/// a second chance to omit `U+FEFF` or to admit `U+0085`.
+pub(crate) fn is_js_whitespace(c: char) -> bool {
+    matches!(c,
+        '\u{0009}'..='\u{000D}'
+            | '\u{0020}'
+            | '\u{00A0}'
+            | '\u{1680}'
+            | '\u{2000}'..='\u{200A}'
+            | '\u{2028}'
+            | '\u{2029}'
+            | '\u{202F}'
+            | '\u{205F}'
+            | '\u{3000}'
+            | '\u{FEFF}'
+    )
+}
+
+/// `String.prototype.trimEnd`, over the same set as [`js_trim_is_empty`].
+pub(crate) fn js_trim_end(value: &str) -> &str {
+    value.trim_end_matches(is_js_whitespace)
 }
 
 /// One authored instant, validated exactly as the retained `instant()` does.
@@ -340,15 +364,34 @@ fn js_trim_is_empty(value: &str) -> bool {
 /// A leap second (`:60`) is refused, because both sides refuse it. No date
 /// crate's default behaviour matches this combination, which is why it is
 /// written out.
-fn is_instant(value: &str) -> bool {
+pub(crate) fn is_instant(value: &str) -> bool {
+    instant_epoch_millis(value).is_some()
+}
+
+/// The same instant, as the NUMBER the retained `instant()` returns.
+///
+/// The retained `instant()` has one return value and two consumers: the
+/// parser only asks whether it threw, and `buildAuthoredArgumentView` compares
+/// the number against `asOf` to decide whether an assumption is due or an
+/// accepted risk has expired. [`is_instant`] is the first consumer and this is
+/// the second, over ONE grammar — a second parser for the comparison is
+/// exactly the divergence quoin#436 records, where a rolled date decided a
+/// reported status.
+///
+/// Milliseconds since the Unix epoch, matching `Date.parse`, including its
+/// truncation of a sub-millisecond fraction: `Date.parse` reads at most three
+/// fraction digits and discards the rest, so `.0009` and `.0001` are the same
+/// instant on both sides and an ordering built from full precision would not
+/// agree with the oracle at a boundary.
+pub(crate) fn instant_epoch_millis(value: &str) -> Option<i64> {
     // The shape is pure ASCII, so a multi-byte character can only be a
     // rejection — and establishing that up front makes every `get` below a
     // character boundary by construction rather than by argument.
     if !value.is_ascii() {
-        return false;
+        return None;
     }
     let (Some(head), Some(rest)) = (value.get(..19), value.get(19..)) else {
-        return false;
+        return None;
     };
     if head.get(4..5) != Some("-")
         || head.get(7..8) != Some("-")
@@ -356,7 +399,7 @@ fn is_instant(value: &str) -> bool {
         || head.get(13..14) != Some(":")
         || head.get(16..17) != Some(":")
     {
-        return false;
+        return None;
     }
 
     let mut fields = [0u32; 6];
@@ -365,14 +408,12 @@ fn is_instant(value: &str) -> bool {
             .iter_mut()
             .zip([(0, 4), (5, 7), (8, 10), (11, 13), (14, 16), (17, 19)])
     {
-        let Some(text) = head.get(from..to) else {
-            return false;
-        };
+        let text = head.get(from..to)?;
         if !text.bytes().all(|byte| byte.is_ascii_digit()) {
-            return false;
+            return None;
         }
         let Ok(parsed) = text.parse::<u32>() else {
-            return false;
+            return None;
         };
         *slot = parsed;
     }
@@ -380,13 +421,19 @@ fn is_instant(value: &str) -> bool {
 
     // `(?:\.\d+)?` — a dot with no digit after it is not a fraction.
     let mut tail = rest;
+    let mut fraction_millis = 0i64;
     if let Some(fraction) = tail.strip_prefix('.') {
         let digits = fraction.bytes().take_while(u8::is_ascii_digit).count();
-        let Some(remainder) = fraction.get(digits..) else {
-            return false;
+        let (Some(remainder), Some(read)) = (fraction.get(digits..), fraction.get(..digits)) else {
+            return None;
         };
         if digits == 0 {
-            return false;
+            return None;
+        }
+        let mut scale = 100i64;
+        for byte in read.bytes().take(3) {
+            fraction_millis += i64::from(byte - b'0') * scale;
+            scale /= 10;
         }
         tail = remainder;
     }
@@ -394,19 +441,18 @@ fn is_instant(value: &str) -> bool {
     // `Z` or `±HH:MM`, and nothing else. Lowercase `z` is refused: the shared
     // reader admits it and this module never has, so delegating the whole
     // check would have loosened the spelling while tightening the ranges.
+    let mut offset_millis = 0i64;
     if tail != "Z" {
-        let Some(offset) = tail.strip_prefix(['+', '-']) else {
-            return false;
-        };
+        let offset = tail.strip_prefix(['+', '-'])?;
         let (Some(offset_hour), Some(":"), Some(offset_minute)) =
             (offset.get(..2), offset.get(2..3), offset.get(3..))
         else {
-            return false;
+            return None;
         };
         let (Ok(offset_hour), Ok(offset_minute)) =
             (offset_hour.parse::<u32>(), offset_minute.parse::<u32>())
         else {
-            return false;
+            return None;
         };
         // `parse` admits a leading sign and whitespace; the digit check does
         // not, and the pattern is `\d{2}:\d{2}` exactly.
@@ -417,16 +463,47 @@ fn is_instant(value: &str) -> bool {
             || offset_hour > 23
             || offset_minute > 59
         {
-            return false;
+            return None;
         }
+        let magnitude = i64::from(offset_hour) * 3_600_000 + i64::from(offset_minute) * 60_000;
+        // `+05:30` is five and a half hours AHEAD of UTC, so the UTC instant
+        // is that much EARLIER than the digits read.
+        offset_millis = if tail.starts_with('-') {
+            -magnitude
+        } else {
+            magnitude
+        };
     }
 
-    (1..=12).contains(&month)
-        && day >= 1
-        && day <= days_in_month(year, month)
-        && hour <= 23
-        && minute <= 59
-        && second <= 59
+    if !(1..=12).contains(&month)
+        || day < 1
+        || day > days_in_month(year, month)
+        || hour > 23
+        || minute > 59
+        || second > 59
+    {
+        return None;
+    }
+
+    let days = days_from_civil(i64::from(year), i64::from(month), i64::from(day));
+    let seconds =
+        days * 86_400 + i64::from(hour) * 3_600 + i64::from(minute) * 60 + i64::from(second);
+    Some(seconds * 1_000 + fraction_millis - offset_millis)
+}
+
+/// Days between the Unix epoch and a proleptic Gregorian date.
+///
+/// Howard Hinnant's `days_from_civil`, which is exact for every year this
+/// grammar can spell (`0000`–`9999`) and needs no dependency. The alternative
+/// was a date crate, and the workspace adds none for one arithmetic identity.
+fn days_from_civil(year: i64, month: i64, day: i64) -> i64 {
+    let year = if month <= 2 { year - 1 } else { year };
+    let era = if year >= 0 { year } else { year - 399 } / 400;
+    let year_of_era = year - era * 400;
+    let month_index = if month > 2 { month - 3 } else { month + 9 };
+    let day_of_year = (153 * month_index + 2) / 5 + day - 1;
+    let day_of_era = year_of_era * 365 + year_of_era / 4 - year_of_era / 100 + day_of_year;
+    era * 146_097 + day_of_era - 719_468
 }
 
 /// Days in a month, with the full Gregorian leap rule.
@@ -443,7 +520,7 @@ fn days_in_month(year: u32, month: u32) -> u32 {
 }
 
 /// `record(name, value)`: an object, and not an array.
-fn record<'a>(
+pub(crate) fn record<'a>(
     name: &str,
     value: Option<&'a serde_json::Value>,
 ) -> Checked<&'a serde_json::Map<String, serde_json::Value>> {
@@ -465,7 +542,10 @@ fn array_at<'a>(
 }
 
 /// `stringAt(object, key)`: a string, non-empty once trimmed.
-fn string_at(object: &serde_json::Map<String, serde_json::Value>, key: &str) -> Checked<String> {
+pub(crate) fn string_at(
+    object: &serde_json::Map<String, serde_json::Value>,
+    key: &str,
+) -> Checked<String> {
     let Some(value) = object.get(key).and_then(serde_json::Value::as_str) else {
         return reject(format!("{key} must be a string"));
     };
@@ -479,7 +559,7 @@ fn string_at(object: &serde_json::Map<String, serde_json::Value>, key: &str) -> 
 ///
 /// The distinction that matters is `key in object`, not `value != null`: an
 /// explicit `null` reaches [`string_at`] and is refused. See [`Challenge`].
-fn optional_string_at(
+pub(crate) fn optional_string_at(
     object: &serde_json::Map<String, serde_json::Value>,
     key: &str,
 ) -> Checked<Option<String>> {
@@ -491,7 +571,7 @@ fn optional_string_at(
 }
 
 /// `exactKeys(object, name, keys)`: no unknown key, and none missing.
-fn exact_keys(
+pub(crate) fn exact_keys(
     object: &serde_json::Map<String, serde_json::Value>,
     name: &str,
     keys: &[&str],
@@ -511,7 +591,7 @@ fn exact_keys(
 }
 
 /// `stringArray(name, value, requireValue)`: strings, unique, optionally non-empty.
-fn string_array(
+pub(crate) fn string_array(
     name: &str,
     value: Option<&serde_json::Value>,
     require_value: bool,
@@ -546,7 +626,7 @@ fn string_array(
 }
 
 /// `literal(value, name, allowed)`: membership, checked at run time.
-fn literal<T: Copy>(
+pub(crate) fn literal<T: Copy>(
     value: Option<&serde_json::Value>,
     name: &str,
     allowed: &[(&str, T)],

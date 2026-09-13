@@ -35,7 +35,9 @@
 //! factor of five here (quoin#425).
 
 pub mod argument;
+pub mod authored;
 pub mod case;
+pub mod discharge;
 pub mod render;
 
 pub use argument::{
@@ -43,7 +45,19 @@ pub use argument::{
     Challenge, ChallengeStatus, Participant, Reasoning, Relationship, RelationshipType, TopClaim,
     parse_assurance_argument,
 };
+pub use authored::{
+    ArgumentSummary, AssumptionView, AuthoredArgumentView, BuildAuthoredArgumentRequest,
+    ChallengeView, ChallengeViewStatus, CriterionView, DecisionState, ReasoningView,
+    SufficiencyDecision, TopClaimView, UnusedDecision, ViewSchemaVersion, ViewStatus,
+    build_authored_argument_view, render_authored_argument,
+};
 pub use case::{AssuranceCase, CaseInput, CaseNode, NodeKind, NodeStatus, Unreadable, build_case};
+pub use discharge::{
+    BuildDischargeRequest, ClauseDischarge, DirectDischargeFact, DischargeAttestation,
+    DischargeBinding, DischargeError, DischargeFact, DischargeReport, DischargeSchemaVersion,
+    DischargeState, DispositionDecision, DispositionFact, FactKind, UnusedDischargeFact,
+    UnusedFactReason, build_discharge_report, render_discharge_report,
+};
 pub use render::{RenderableCase, render_case};
 
 /// The requirement an obligation belongs to.
@@ -118,23 +132,29 @@ pub fn requirement_of(obligation_id: &str) -> &str {
 mod tests {
     use super::requirement_of;
 
+    /// Trace: FR-040-AC-7
+    /// Provenance: agent-ix/quoin#447, agent-ix/quoin#384
     #[test]
-    fn takes_the_requirement_prefix() {
+    fn tc_447_420_an_obligation_id_names_the_requirement_it_belongs_to() {
         assert_eq!(requirement_of("FR-001-AC-3"), "FR-001");
         assert_eq!(requirement_of("NFR-010-M-2"), "NFR-010");
         assert_eq!(requirement_of("StR-009-VC-1"), "StR-009");
     }
 
+    /// Trace: FR-040-AC-7
+    /// Provenance: agent-ix/quoin#447, agent-ix/quoin#384
     #[test]
-    fn ignores_a_suffix_of_any_spelling() {
+    fn tc_447_421_the_suffix_is_read_by_shape_and_never_by_an_allow_list() {
         // The defect a suffix allow-list produces, asserted directly.
         assert_eq!(requirement_of("NFR-013-M-1"), "NFR-013");
         assert_eq!(requirement_of("FR-042-QQQ-9"), "FR-042");
         assert_eq!(requirement_of("US-024-EX-5"), "US-024");
     }
 
+    /// Trace: FR-040-AC-7
+    /// Provenance: agent-ix/quoin#447, agent-ix/quoin#384
     #[test]
-    fn returns_an_unrecognised_id_unchanged() {
+    fn tc_447_422_an_id_that_is_not_an_obligation_comes_back_unchanged() {
         assert_eq!(requirement_of("not-an-id"), "not-an-id");
         assert_eq!(requirement_of(""), "");
         assert_eq!(requirement_of("123-456"), "123-456");
@@ -142,13 +162,17 @@ mod tests {
         assert_eq!(requirement_of("FR-"), "FR-");
     }
 
+    /// Trace: FR-040-AC-7
+    /// Provenance: agent-ix/quoin#447, agent-ix/quoin#384
     #[test]
-    fn a_bare_requirement_id_is_its_own_requirement() {
+    fn tc_447_423_a_bare_requirement_id_is_its_own_requirement() {
         assert_eq!(requirement_of("FR-001"), "FR-001");
     }
 
+    /// Trace: FR-040-AC-7
+    /// Provenance: agent-ix/quoin#447, agent-ix/quoin#384
     #[test]
-    fn handles_non_ascii_without_slicing_inside_a_character() {
+    fn tc_447_424_a_multi_byte_character_falls_to_unchanged_rather_than_panicking() {
         // The slice above is only safe because every consumed byte is ASCII.
         // A multi-byte character before the pattern must therefore fall to the
         // unchanged path rather than panic.
