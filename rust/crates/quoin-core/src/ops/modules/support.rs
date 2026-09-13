@@ -41,9 +41,11 @@ pub(super) struct FakeHost {
     pub(super) fail_with: Option<ModulesErrorCode>,
     /// An installed module whose manifest no longer satisfies the contract.
     ///
-    /// Set by the reconcile re-validation tests: the whole point of that
-    /// path is a module that was accepted when installed and is not
-    /// acceptable now, which no install-time failure can stand in for.
+    /// Set by `tests::reconciling_revalidates_what_is_installed_and_refuses_a_tampered_module`:
+    /// the whole point of that path is a module that was accepted when
+    /// installed and is not acceptable now, which no install-time failure
+    /// (`fail_with`) can stand in for, because it fails the reconcile itself
+    /// rather than the re-validation after it.
     pub(super) tampered: Option<&'static str>,
     pub(super) calls: RefCell<Vec<String>>,
 }

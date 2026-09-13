@@ -32,6 +32,12 @@ pub enum CoreErrorCode {
     /// The caller's protocol expectation disagrees with this build's. The
     /// payload is still complete and still worth reading; see [`Outcome::Partial`].
     ProtocolSkew,
+    /// An input the operation could not use in full, answered anyway from what
+    /// remained. The payload is the honest answer over a reduced input, not a
+    /// complete one; the diagnostic names what was dropped. Distinct from
+    /// [`Self::ProtocolSkew`], which is about the caller's protocol version
+    /// rather than about the content it sent.
+    Degraded,
     /// An I/O failure on stdin or stdout. Nothing the caller sent caused it.
     Io,
 }
@@ -47,6 +53,7 @@ impl CoreErrorCode {
             Self::BadRequest => "CORE_BAD_REQUEST",
             Self::Refused => "CORE_REFUSED",
             Self::ProtocolSkew => "CORE_PROTOCOL_SKEW",
+            Self::Degraded => "CORE_DEGRADED",
             Self::Io => "CORE_IO",
         }
     }
@@ -61,6 +68,7 @@ impl CoreErrorCode {
             Self::BadRequest,
             Self::Refused,
             Self::ProtocolSkew,
+            Self::Degraded,
             Self::Io,
         ]
     }
@@ -80,7 +88,7 @@ impl CoreErrorCode {
     #[must_use]
     pub const fn outcome(self) -> Outcome {
         match self {
-            Self::ProtocolSkew => Outcome::Partial,
+            Self::ProtocolSkew | Self::Degraded => Outcome::Partial,
             Self::Refused => Outcome::Refused,
             Self::BadUsage | Self::UnknownOp | Self::BadJson | Self::BadRequest => Outcome::Invalid,
             Self::Io => Outcome::Internal,
@@ -168,11 +176,18 @@ mod tests {
     }
 
     #[test]
-    fn protocol_skew_is_the_one_code_that_still_carries_a_payload() {
+    fn the_payload_carrying_codes_are_exactly_the_two_partial_ones() {
+        // Deliberately extended, not widened: `Degraded` joins `ProtocolSkew`
+        // because a partial answer over a reduced input is still an answer the
+        // caller must read. Every other code means "there is nothing to read",
+        // and a third entry appearing here is a design change, not a detail.
         let carrying: Vec<_> = CoreErrorCode::all()
             .iter()
             .filter(|c| c.outcome().carries_payload())
             .collect();
-        assert_eq!(carrying, vec![&CoreErrorCode::ProtocolSkew]);
+        assert_eq!(
+            carrying,
+            vec![&CoreErrorCode::ProtocolSkew, &CoreErrorCode::Degraded]
+        );
     }
 }

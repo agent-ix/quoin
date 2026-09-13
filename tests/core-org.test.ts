@@ -253,6 +253,46 @@ describe.skipIf(!available)("resolveOrg ↔ quoin-core", () => {
     ).toEqual({ org: "from-git", source: "git", degraded: false });
   });
 
+  // Trace: FR-027-AC-5
+  it("degrades past a layer's ceiling instead of dying on it", () => {
+    // The failure this pins: the boundary REFUSES an over-limit field (exit 2)
+    // and `call()` throws on a refusal, so reading an oversized config whole
+    // and shipping it across would turn "a broken config must not stop an
+    // author" into a dead `quoin write`. Over the ceiling the layer is absent
+    // — the answer the in-process `ConfigService`/`org_from_git_config` paths
+    // already give — and resolution carries on to the remote.
+    const path = ConfigService.forPlugin(QUOIN_PLUGIN_ID, QuoinConfigSchema, {
+      envBindings: QUOIN_ENV_BINDINGS,
+    }).filePath();
+    mkdirSync(dirname(path), { recursive: true });
+    // One byte past the 1 MiB layer ceiling, and valid YAML underneath it, so
+    // a failure here is the size rule and not a parse error standing in for it.
+    writeFileSync(path, `org: from-user\n# ${"x".repeat(1 << 20)}\n`);
+
+    expect(resolveOrg(repoWithRemote())).toEqual({
+      org: "from-git",
+      source: "git",
+      degraded: false,
+    });
+  });
+
+  // Trace: FR-027-AC-5
+  it("still sends a layer that sits under the ceiling", () => {
+    // The control on the case above: an oversized layer being dropped proves
+    // nothing unless a merely large one is still read and still decides.
+    const path = ConfigService.forPlugin(QUOIN_PLUGIN_ID, QuoinConfigSchema, {
+      envBindings: QUOIN_ENV_BINDINGS,
+    }).filePath();
+    mkdirSync(dirname(path), { recursive: true });
+    writeFileSync(path, `org: from-user\n# ${"x".repeat(1 << 16)}\n`);
+
+    expect(resolveOrg(repoWithRemote())).toEqual({
+      org: "from-user",
+      source: "config",
+      degraded: false,
+    });
+  });
+
   // Trace: FR-025-AC-4
   it("serves the unresolved-org sentence over the boundary, once", () => {
     // A function rather than the `const` `src/org.ts` exported: reading the

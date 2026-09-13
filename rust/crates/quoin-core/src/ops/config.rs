@@ -30,7 +30,7 @@ use std::collections::BTreeMap;
 use serde::{Deserialize, Serialize};
 
 use quoin_config::{
-    ConfigIssue, FixedEnvironment, OrgOptions, ResolvedOrg, resolve_org_from_documents,
+    FixedEnvironment, OrgDocumentReport, OrgOptions, ResolvedOrg, resolve_org_from_documents,
 };
 
 use crate::error::{CoreError, CoreErrorCode};
@@ -202,7 +202,7 @@ pub fn resolve_org(request: &serde_json::Value) -> Result<Response, CoreError> {
         environment = environment.with_var(name.clone(), value.clone());
     }
 
-    let (resolved, issues) = resolve_org_from_documents(
+    let (resolved, report) = resolve_org_from_documents(
         &OrgOptions {
             flag: request.flag.as_deref(),
         },
@@ -212,7 +212,7 @@ pub fn resolve_org(request: &serde_json::Value) -> Result<Response, CoreError> {
         request.git_config.as_deref(),
     );
 
-    let payload = serde_json::to_value(payload_of(&resolved, &issues))
+    let payload = serde_json::to_value(payload_of(&resolved, &report))
         .map_err(|e| CoreError::new(CoreErrorCode::Io, e.to_string()))?;
 
     // A degraded read is a SUCCESS carrying a diagnostic, not a failure:
@@ -220,16 +220,21 @@ pub fn resolve_org(request: &serde_json::Value) -> Result<Response, CoreError> {
     // preserves (FR-027-AC-5) is that a malformed config never stops an author.
     // Exit 1 is the status that says "complete payload, and something to say"
     // — the case `runCoreAllowFailure` exists to distinguish (quoin#103).
-    if issues.is_empty() {
+    //
+    // The condition is the resolver's own `degraded` flag, not `!issues
+    // .is_empty()`: the flag is what the payload reports, and a payload saying
+    // `degraded: true` with an exit 0 and no diagnostic would be the boundary
+    // stating a problem in a field while its own exit status denied it.
+    if !report.degraded && report.issues.is_empty() {
         Ok(Response::ok(payload))
     } else {
         let mut diagnostic = CoreError::new(
-            CoreErrorCode::ProtocolSkew,
+            CoreErrorCode::Degraded,
             "a config layer did not contribute its content; schema defaults were used",
         )
         .with_context("op", "config.resolve_org")
-        .with_context("issue_count", issues.len().to_string());
-        for (index, issue) in issues.iter().enumerate() {
+        .with_context("issue_count", report.issues.len().to_string());
+        for (index, issue) in report.issues.iter().enumerate() {
             diagnostic = diagnostic.with_context(
                 format!("issue_{index}"),
                 format!(
@@ -249,14 +254,16 @@ pub fn resolve_org(request: &serde_json::Value) -> Result<Response, CoreError> {
 }
 
 /// Build the wire payload from a resolution.
-fn payload_of(resolved: &ResolvedOrg, issues: &[ConfigIssue]) -> ResolveOrgPayload {
+fn payload_of(resolved: &ResolvedOrg, report: &OrgDocumentReport) -> ResolveOrgPayload {
     ResolveOrgPayload {
         org: resolved.org.as_ref().map(|org| org.as_str().to_owned()),
         // `OrgSource::as_str` and not a spelling restated here: these five
         // strings are what `src/write.ts` keys `ORG_SOURCE_LABEL` on, so they
         // have exactly one home.
         source: resolved.source.as_str().to_owned(),
-        degraded: !issues.is_empty(),
+        // The resolver's flag, carried rather than re-derived: see
+        // `quoin_config::OrgDocumentReport`.
+        degraded: report.degraded,
     }
 }
 
@@ -406,7 +413,7 @@ mod tests {
         // resolution, it only removes one source from it.
         assert_eq!(payload(&response)["org"], "o");
         assert_eq!(response.diagnostics.len(), 1);
-        assert_eq!(response.diagnostics[0].code, "CORE_PROTOCOL_SKEW");
+        assert_eq!(response.diagnostics[0].code, "CORE_DEGRADED");
     }
 
     /// A misspelled field is refused by name, not silently dropped.

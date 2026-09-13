@@ -170,6 +170,63 @@ fn the_reconcile_default_is_lazy_and_sync_is_opt_in() {
     assert_eq!(response.payload["updated"], serde_json::json!([]));
 }
 
+/// Reconciling re-judges what is already installed, and a module that no
+/// longer satisfies its contract refuses the whole operation.
+///
+/// The reconcile path is the only one where "accepted at install time" and
+/// "acceptable now" can differ — a module's manifest can be edited on disk
+/// after it was installed, and no install-time failure stands in for that. The
+/// assertion is on the call sequence as well as the refusal: without the
+/// `validate_installed` call, `ensure_defaults` would report a clean reconcile
+/// over a tampered tree, and every other unit test here would stay green.
+#[test]
+fn reconciling_revalidates_what_is_installed_and_refuses_a_tampered_module() {
+    let host = FakeHost {
+        tampered: Some("alpha"),
+        ..FakeHost::default()
+    };
+    let capabilities = Capabilities::with_modules(&host);
+    let error = ensure_defaults(
+        &serde_json::json!({ "manifest": manifest_yaml() }),
+        &capabilities,
+    )
+    .unwrap_err();
+
+    assert_eq!(error.code, CoreErrorCode::Refused);
+    assert_eq!(error.outcome().code(), 2);
+    assert_eq!(
+        error.context["modules_code"],
+        ModulesErrorCode::SemanticContractViolation.as_str()
+    );
+    assert_eq!(error.context["op"], "modules.ensure_defaults");
+
+    let calls = host.calls.borrow();
+    assert!(
+        calls[0].starts_with("ensure_defaults("),
+        "reconcile ran second or not at all: {calls:?}"
+    );
+    assert!(
+        calls[1].starts_with("validate_installed("),
+        "reconcile did not re-validate the installed modules: {calls:?}"
+    );
+}
+
+/// The same path with nothing tampered still re-validates, so the assertion
+/// above is about the refusal and not about the call happening at all.
+#[test]
+fn reconciling_revalidates_even_when_everything_is_clean() {
+    let host = FakeHost::default();
+    let capabilities = Capabilities::with_modules(&host);
+    ensure_defaults(
+        &serde_json::json!({ "manifest": manifest_yaml() }),
+        &capabilities,
+    )
+    .unwrap();
+    let calls = host.calls.borrow();
+    assert_eq!(calls.len(), 2, "{calls:?}");
+    assert!(calls[1].starts_with("validate_installed("), "{calls:?}");
+}
+
 #[test]
 fn a_malformed_manifest_never_reaches_the_host() {
     let host = FakeHost::default();

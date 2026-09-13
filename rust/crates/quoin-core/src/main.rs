@@ -186,17 +186,32 @@ impl ModuleHost for HostModules {
                 ))
             })?;
         let modules_dir = home.modules_dir();
-        for installed in ModuleRegistry::read(&home.registry_path())
-            .map(|registry| registry.plugins)
-            .unwrap_or_default()
-        {
+        // An unreadable registry is NOT an empty registry. `unwrap_or_default`
+        // here would have re-validated a population of zero and reported the
+        // home clean, which is the "check over an empty population" this file's
+        // own doc above refuses to make.
+        let registry = ModuleRegistry::read(&home.registry_path()).map_err(|error| {
+            unavailable(format!(
+                "the installed-module registry at {} could not be read, so installed \
+                 modules cannot be re-validated: {error}",
+                home.registry_path().display()
+            ))
+        })?;
+        for installed in registry.plugins {
             let root = modules_dir.join(installed.name.as_str());
             if !root.join("manifest.yaml").is_file() {
                 continue;
             }
-            let Ok(result) = quoin_semantic::read_module_semantic(&root, &validators) else {
-                continue;
-            };
+            // Same rule one level down: a module whose manifest is present but
+            // unreadable is unjudged, not clean.
+            let result =
+                quoin_semantic::read_module_semantic(&root, &validators).map_err(|error| {
+                    unavailable(format!(
+                        "the semantic contract of installed module `{}` could not be read, \
+                         so it cannot be re-validated: {error}",
+                        installed.name.as_str()
+                    ))
+                })?;
             if quoin_semantic::has_errors(&result.diagnostics) {
                 return Err(ModulesError::SemanticContractViolation {
                     name: installed.name.clone(),
@@ -232,14 +247,25 @@ impl ContractGate {
     /// `installedSemanticModules(home).filter(m => m.name !== installed.name)`
     /// in `src/plugins.ts`, including the sort: the diagnostics name whichever
     /// module is found first, so the order is user-visible.
+    ///
+    /// # Errors
+    /// A description of what could not be read, when the population cannot be
+    /// established. This is deliberately not an empty population: the
+    /// duplicate-package and import-resolution rules are judgements *against*
+    /// this list, so an unreadable registry or an unreadable sibling silently
+    /// turns both rules off and passes a module they would have refused.
     fn others(
         &self,
         validators: &quoin_semantic::manifest::SemanticValidators,
         exclude: &ModuleName,
-    ) -> Vec<quoin_semantic::SemanticModule> {
-        let Ok(registry) = ModuleRegistry::read(&self.registry_path) else {
-            return Vec::new();
-        };
+    ) -> Result<Vec<quoin_semantic::SemanticModule>, String> {
+        let registry = ModuleRegistry::read(&self.registry_path).map_err(|error| {
+            format!(
+                "the installed-module registry at {} could not be read, so a module \
+                 cannot be judged against the modules already installed: {error}",
+                self.registry_path.display()
+            )
+        })?;
         let mut roots: Vec<PathBuf> = registry
             .plugins
             .iter()
@@ -250,28 +276,121 @@ impl ContractGate {
         roots.sort();
         roots
             .iter()
-            .filter_map(|root| {
+            .map(|root| {
                 quoin_semantic::read_module_semantic(root, validators)
-                    .ok()
-                    .and_then(|result| result.module)
+                    .map(|result| result.module)
+                    .map_err(|error| {
+                        format!(
+                            "the semantic contract of installed module at {} could not be \
+                             read, so a new module cannot be judged against it: {error}",
+                            root.display()
+                        )
+                    })
             })
+            // A sibling with no `semantic` block is genuinely not part of this
+            // population — `src/plugins.ts` skipped it too. A sibling that
+            // could not be READ is a different thing, and is the error above.
+            .filter_map(Result::transpose)
             .collect()
     }
 }
 
+/// One error diagnostic, which is what every refusal on this gate is.
+///
+/// A free function rather than a closure inside `inspect` so that the helpers
+/// below refuse in exactly the same shape: a verdict carrying one error and no
+/// pin is what `quoin-modules` reads as "do not install this".
+fn refuse(rule: &str, message: String) -> SemanticVerdict {
+    use quoin_modules::semantic::{Diagnostic as GateDiagnostic, Severity as GateSeverity};
+    SemanticVerdict {
+        diagnostics: vec![GateDiagnostic {
+            severity: GateSeverity::Error,
+            rule: rule.to_owned(),
+            message,
+        }],
+        pin: None,
+    }
+}
+
+/// `quoin_semantic`'s diagnostics in the gate's own vocabulary.
+fn as_gate_diagnostics(
+    diagnostics: &[quoin_semantic::SemanticDiagnostic],
+) -> Vec<quoin_modules::semantic::Diagnostic> {
+    use quoin_modules::semantic::{Diagnostic as GateDiagnostic, Severity as GateSeverity};
+    diagnostics
+        .iter()
+        .map(|d| GateDiagnostic {
+            severity: match d.severity {
+                quoin_semantic::Severity::Error => GateSeverity::Error,
+                quoin_semantic::Severity::Warning => GateSeverity::Warning,
+            },
+            rule: d.code.to_string(),
+            message: format!("{}: {}", d.path, d.message),
+        })
+        .collect()
+}
+
+/// Derive, validate and write the package manifest, then derive the pin.
+///
+/// Order matters and is `installPlugin`'s: the manifest is validated and
+/// written before the pin is offered, so a module whose manifest is invalid
+/// never reaches the registry with a pin recorded for it.
+///
+/// # Errors
+/// The refusal verdict to return, when any step of that sequence fails.
+fn materialise(
+    module: &quoin_semantic::SemanticModule,
+    semantic_root: &Path,
+) -> Result<SemanticPin, SemanticVerdict> {
+    let derived = quoin_semantic::derive_package_manifest(module);
+    match serde_json::to_value(&derived)
+        .map_err(|e| e.to_string())
+        .and_then(|value| {
+            quoin_semantic::validate_package_manifest(semantic_root, &value)
+                .map_err(|e| e.to_string())
+        }) {
+        Ok(Ok(())) => {}
+        Ok(Err(errors)) => {
+            return Err(refuse(
+                "semantic/package-manifest-invalid",
+                format!(
+                    "derived package manifest is invalid: {}",
+                    errors
+                        .iter()
+                        .map(|e| format!("{}: {}", e.instance_path, e.message))
+                        .collect::<Vec<_>>()
+                        .join("; ")
+                ),
+            ));
+        }
+        Err(detail) => {
+            return Err(refuse("semantic/package-manifest-underivable", detail));
+        }
+    }
+
+    if let Err(error) = quoin_semantic::package_manifest::write_package_manifest(module, &derived) {
+        return Err(refuse(
+            "semantic/package-manifest-unwritable",
+            format!("the derived package manifest could not be written: {error}"),
+        ));
+    }
+
+    quoin_semantic::registry_pin(module)
+        .map(|registry_pin| SemanticPin {
+            package: registry_pin.package,
+            semantic_core: registry_pin.semantic_core,
+            exports: registry_pin.exports.into_iter().collect(),
+        })
+        .map_err(|error| {
+            refuse(
+                "semantic/pin-underivable",
+                format!("the registry pin could not be derived: {error}"),
+            )
+        })
+}
+
 impl SemanticGate for ContractGate {
     fn inspect(&self, name: &ModuleName, root: &Path) -> SemanticVerdict {
-        use quoin_modules::semantic::{Diagnostic as GateDiagnostic, Severity as GateSeverity};
-
-        let refuse = |rule: &str, message: String| SemanticVerdict {
-            diagnostics: vec![GateDiagnostic {
-                severity: GateSeverity::Error,
-                rule: rule.to_owned(),
-                message,
-            }],
-            pin: None,
-        };
-
         // No vendored tree means no judgement is possible. REFUSING is the only
         // honest answer: accepting unjudged would install a module the
         // TypeScript path would have rejected, silently, which is exactly the
@@ -304,76 +423,27 @@ impl SemanticGate for ContractGate {
         let mut diagnostics = result.diagnostics.clone();
         let mut pin = None;
         if let Some(module) = result.module.as_ref() {
-            let others = self.others(&validators, name);
+            let others = match self.others(&validators, name) {
+                Ok(others) => others,
+                Err(detail) => {
+                    return refuse("semantic/population-unreadable", detail);
+                }
+            };
             if let Some(duplicate) = quoin_semantic::duplicate_package_diagnostic(module, &others) {
                 diagnostics.push(duplicate);
             }
             diagnostics.extend(quoin_semantic::resolve_imports(module, &others));
 
             if !quoin_semantic::has_errors(&diagnostics) {
-                // The derived manifest is validated and written before the pin
-                // is offered, in that order, exactly as `installPlugin` did.
-                let derived = quoin_semantic::derive_package_manifest(module);
-                match serde_json::to_value(&derived)
-                    .map_err(|e| e.to_string())
-                    .and_then(|value| {
-                        quoin_semantic::validate_package_manifest(semantic_root, &value)
-                            .map_err(|e| e.to_string())
-                    }) {
-                    Ok(Ok(())) => {}
-                    Ok(Err(errors)) => {
-                        return refuse(
-                            "semantic/package-manifest-invalid",
-                            format!(
-                                "derived package manifest is invalid: {}",
-                                errors
-                                    .iter()
-                                    .map(|e| format!("{}: {}", e.instance_path, e.message))
-                                    .collect::<Vec<_>>()
-                                    .join("; ")
-                            ),
-                        );
-                    }
-                    Err(detail) => return refuse("semantic/package-manifest-underivable", detail),
-                }
-                if let Err(error) =
-                    quoin_semantic::package_manifest::write_package_manifest(module, &derived)
-                {
-                    return refuse(
-                        "semantic/package-manifest-unwritable",
-                        format!("the derived package manifest could not be written: {error}"),
-                    );
-                }
-                match quoin_semantic::registry_pin(module) {
-                    Ok(registry_pin) => {
-                        pin = Some(SemanticPin {
-                            package: registry_pin.package,
-                            semantic_core: registry_pin.semantic_core,
-                            exports: registry_pin.exports.into_iter().collect(),
-                        });
-                    }
-                    Err(error) => {
-                        return refuse(
-                            "semantic/pin-underivable",
-                            format!("the registry pin could not be derived: {error}"),
-                        );
-                    }
+                match materialise(module, semantic_root) {
+                    Ok(derived_pin) => pin = Some(derived_pin),
+                    Err(verdict) => return verdict,
                 }
             }
         }
 
         SemanticVerdict {
-            diagnostics: diagnostics
-                .iter()
-                .map(|d| GateDiagnostic {
-                    severity: match d.severity {
-                        quoin_semantic::Severity::Error => GateSeverity::Error,
-                        quoin_semantic::Severity::Warning => GateSeverity::Warning,
-                    },
-                    rule: d.code.to_string(),
-                    message: format!("{}: {}", d.path, d.message),
-                })
-                .collect(),
+            diagnostics: as_gate_diagnostics(&diagnostics),
             pin,
         }
     }

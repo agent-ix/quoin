@@ -88,7 +88,13 @@ pub fn render_definition(
     {
         return render_interface(name, schema, pointer);
     }
+    // `is_empty` first, and deliberately: `all` is vacuously true over an empty
+    // slice, so without it an empty `oneOf` took the tagged-union arm and this
+    // renderer emitted `export type X = ;` — invalid TypeScript, silently, from
+    // a renderer whose whole contract is to refuse rather than degrade. An
+    // empty `oneOf` falls through to `render_type`, which refuses it by name.
     if let Some(members) = object.get("oneOf").and_then(Value::as_array)
+        && !members.is_empty()
         && members
             .iter()
             .all(|member| member.get("properties").is_some())
@@ -863,6 +869,16 @@ mod tests {
     #[test]
     fn an_empty_union_is_refused() {
         let error = render_type(&json!({ "oneOf": [] }), "#/a").unwrap_err();
+        assert!(error.reason.contains("oneOf"), "{}", error.reason);
+    }
+
+    /// The same refusal at the `$defs` entry point, which is the one a real
+    /// schema reaches. `render_definition` has its own `oneOf` arm for tagged
+    /// unions and its guard is an `all()` — vacuously true over an empty slice
+    /// — so the assertion above proves nothing about this path.
+    #[test]
+    fn an_empty_union_is_refused_as_a_definition_too() {
+        let error = render_definition("X", &json!({ "oneOf": [] }), "#/$defs/X").unwrap_err();
         assert!(error.reason.contains("oneOf"), "{}", error.reason);
     }
 

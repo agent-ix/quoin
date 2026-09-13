@@ -24,7 +24,7 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use crate::error::ConfigError;
+use crate::error::{ConfigError, ConfigIssue};
 use crate::ids::OrgName;
 use crate::paths::{Environment, RuntimeContext};
 use crate::schema::QuoinConfig;
@@ -194,8 +194,9 @@ pub fn resolve_org(
 ///
 /// Precedence is [`resolve_org`]'s, unchanged: `--org` flag, then the stored
 /// config with `QUOIN_ORG` layered over it by the declared env binding, then the
-/// `origin` remote. Returns the schema issues a broken layer produced, so the
-/// boundary can report a degraded read as a diagnostic instead of losing it.
+/// `origin` remote. Returns the degradation [`Resolved::degraded`] recorded and
+/// the schema issues behind it, so the boundary can report a degraded read as a
+/// diagnostic instead of losing it.
 #[must_use]
 pub fn resolve_org_from_documents(
     options: &OrgOptions<'_>,
@@ -203,13 +204,24 @@ pub fn resolve_org_from_documents(
     user_config: Option<&str>,
     project_config: Option<&str>,
     git_config: Option<&str>,
-) -> (ResolvedOrg, Vec<crate::error::ConfigIssue>) {
+) -> (ResolvedOrg, OrgDocumentReport) {
     if let Some(flag) = options.flag.and_then(OrgName::parse_opt) {
-        return (ResolvedOrg::found(flag, OrgSource::Flag), Vec::new());
+        return (
+            ResolvedOrg::found(flag, OrgSource::Flag),
+            OrgDocumentReport::clean(),
+        );
     }
 
     let (resolved, issues) =
         crate::service::resolve_documents::<QuoinConfig>(&[user_config, project_config], env);
+    // The flag `resolve_documents` computed, carried rather than re-derived from
+    // `issues`: a schema whose `validate` refuses with an empty issue list still
+    // substituted its defaults, and re-deriving `!issues.is_empty()` out here
+    // would report that substitution as a clean read.
+    let report = OrgDocumentReport {
+        degraded: resolved.degraded,
+        issues,
+    };
 
     if let Some(stored) = resolved
         .value
@@ -228,17 +240,49 @@ pub fn resolve_org_from_documents(
         } else {
             OrgSource::Config
         };
-        return (ResolvedOrg::found(stored, source), issues);
+        return (ResolvedOrg::found(stored, source), report);
     }
 
-    // A git config over the byte ceiling never reaches here: the caller that
-    // read it applies `MAX_GIT_CONFIG_BYTES` the same way `org_from_git_config`
-    // does, and an over-limit file is "no org here" on both paths.
+    // No ceiling is applied here, deliberately: this function is handed bytes
+    // and does not know what they cost to obtain. The ceiling belongs to
+    // whoever reads — `org_from_git_config` below stats before reading, and
+    // `src/core/org.ts`'s `readIfPresent` does the same with the same number,
+    // so an over-limit config is "no org here" on both paths rather than an
+    // error on one of them. The boundary refuses an over-limit *field*
+    // (`ops::config::MAX_GIT_CONFIG_BYTES`) as a separate defence against a
+    // caller that skipped that read rule.
     if let Some(from_git) = git_config.and_then(origin_org) {
-        return (ResolvedOrg::found(from_git, OrgSource::Git), issues);
+        return (ResolvedOrg::found(from_git, OrgSource::Git), report);
     }
 
-    (ResolvedOrg::unresolved(), issues)
+    (ResolvedOrg::unresolved(), report)
+}
+
+/// What reading the configuration layers cost, reported beside the answer.
+///
+/// Two fields rather than one because they are two different facts: `degraded`
+/// is the layer machinery's own verdict that the value handed back is not what
+/// the documents said, and `issues` is the evidence for it. A caller that
+/// derives the first from the second is one schema away from reporting a
+/// substituted default as a clean read — see [`crate::service::resolve_documents`],
+/// which sets `degraded` whenever validation refuses, with or without issues.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct OrgDocumentReport {
+    /// The documents did not fully decide the value handed back.
+    pub degraded: bool,
+    /// What each layer objected to, in the order the layers were read.
+    pub issues: Vec<ConfigIssue>,
+}
+
+impl OrgDocumentReport {
+    /// Nothing was read, so nothing degraded — the `--org` flag's answer.
+    #[must_use]
+    pub const fn clean() -> Self {
+        Self {
+            degraded: false,
+            issues: Vec::new(),
+        }
+    }
 }
 
 /// Read the organization from the `origin` remote in `<repo_root>`'s git config.

@@ -31,8 +31,8 @@ use std::path::{Path, PathBuf};
 use quoin_config::org::resolve_git_dir;
 use quoin_config::paths::{Environment, FixedEnvironment, RuntimeContext};
 use quoin_config::{
-    ConfigService, IncidentLog, OrgOptions, OrgSource, QuoinConfig, ResolvedOrg, resolve_org,
-    resolve_org_from_documents,
+    ConfigService, IncidentLog, OrgDocumentReport, OrgOptions, OrgSource, QuoinConfig, ResolvedOrg,
+    resolve_org, resolve_org_from_documents,
 };
 
 /// A repository with a user config root, a project config root and a git dir.
@@ -106,7 +106,7 @@ impl Tree {
 
     /// What the boundary answers: the reads are out here, exactly as
     /// `src/core/org.ts` does them before calling `quoin-core`.
-    fn through_documents(&self, flag: Option<&str>) -> (ResolvedOrg, usize) {
+    fn through_documents(&self, flag: Option<&str>) -> (ResolvedOrg, OrgDocumentReport) {
         let service = ConfigService::<QuoinConfig>::for_plugin(&self.env, &self.ctx);
         let user = fs::read_to_string(service.file_path()).ok();
         let project = service
@@ -114,14 +114,13 @@ impl Tree {
             .and_then(|path| fs::read_to_string(path).ok());
         let git =
             resolve_git_dir(&self.repo).and_then(|dir| fs::read_to_string(dir.join("config")).ok());
-        let (resolved, issues) = resolve_org_from_documents(
+        resolve_org_from_documents(
             &OrgOptions { flag },
             &self.env,
             user.as_deref(),
             project.as_deref(),
             git.as_deref(),
-        );
-        (resolved, issues.len())
+        )
     }
 
     /// Both halves, over the same tree, and they must agree.
@@ -230,10 +229,15 @@ fn tc_446_027_a_broken_layer_degrades_identically_and_stops_neither_path() {
     // the boundary can report the degraded read instead of swallowing it. A
     // degraded read that reported nothing would be the failure FR-027-AC-5
     // exists to prevent, seen from the other side.
-    let (documents, issue_count) = broken.through_documents(None);
+    let (documents, report) = broken.through_documents(None);
     assert_eq!(documents, filesystem);
     assert!(
-        issue_count > 0,
+        report.degraded,
+        "the broken layer was not reported as a degraded read; the boundary \
+         derives the payload's `degraded` field from exactly this flag"
+    );
+    assert!(
+        !report.issues.is_empty(),
         "the broken layer produced no issue for the boundary to report"
     );
 }
@@ -268,7 +272,7 @@ fn tc_446_028_a_worktree_git_file_resolves_to_the_common_config() {
 
     let dir = resolve_git_dir(&linked).expect("the worktree pointer resolves");
     let git = fs::read_to_string(dir.join("config")).expect("the common config is readable");
-    let (resolved, _) = resolve_org_from_documents(
+    let (resolved, report) = resolve_org_from_documents(
         &OrgOptions::default(),
         &FixedEnvironment::new() as &dyn Environment,
         None,
@@ -277,4 +281,5 @@ fn tc_446_028_a_worktree_git_file_resolves_to_the_common_config() {
     );
     assert_eq!(org_of(&resolved), Some("from-worktree"));
     assert_eq!(resolved.source, OrgSource::Git);
+    assert!(!report.degraded, "no config layer was supplied: {report:?}");
 }

@@ -194,11 +194,15 @@ function documents(
   repoRoot: string,
   options: OrgOptions,
 ): Pick<ResolveOrgRequest, "user_config" | "project_config" | "git_config"> {
-  const user = readIfPresent(userConfigPath());
+  const user = readIfPresent(userConfigPath(), MAX_CONFIG_LAYER_BYTES);
   const projectPath = projectConfigPath(options);
-  const project = projectPath ? readIfPresent(projectPath) : undefined;
+  const project = projectPath
+    ? readIfPresent(projectPath, MAX_CONFIG_LAYER_BYTES)
+    : undefined;
   const gitDir = resolveGitDir(repoRoot);
-  const git = gitDir ? readIfPresent(join(gitDir, "config")) : undefined;
+  const git = gitDir
+    ? readIfPresent(join(gitDir, "config"), MAX_GIT_CONFIG_BYTES)
+    : undefined;
   return {
     ...(user === undefined ? {} : { user_config: user }),
     ...(project === undefined ? {} : { project_config: project }),
@@ -207,14 +211,49 @@ function documents(
 }
 
 /**
- * An absent or unreadable document is absent, never an error.
+ * The largest config layer this side will send, in bytes.
+ *
+ * `quoin_config::service::MAX_CONFIG_FILE_BYTES`, and the same number the
+ * boundary refuses past (`ops::config::MAX_CONFIG_LAYER_BYTES`). Restated here
+ * because it is a ceiling on a *read*, and `tests/core-org.test.ts` pins the
+ * behaviour it produces rather than the constant.
+ */
+const MAX_CONFIG_LAYER_BYTES = 1 << 20;
+
+/**
+ * The largest `.git/config` this side will send, in bytes.
+ *
+ * `quoin_config::org::MAX_GIT_CONFIG_BYTES`, matching the in-process resolver:
+ * `org_from_git_config` stats the file and answers "no org here" past this
+ * number rather than reading it.
+ */
+const MAX_GIT_CONFIG_BYTES = 4 << 20;
+
+/**
+ * An absent, unreadable or oversized document is absent, never an error.
  *
  * "No config here" is a resolution outcome, not a failure — the same tolerance
  * `ConfigService` applies, and the reason a malformed or unreadable file
  * resolves to "no stored org" and carries on to the remote.
+ *
+ * **The size check is here, before the read, and that is the point.** The
+ * retained in-process rule *degrades* past its ceiling — `ConfigService.get`
+ * logs an incident and falls back, `org_from_git_config` returns `None`, and a
+ * broken config must not stop an author writing specs (FR-027-AC-5). The
+ * boundary, correctly, *refuses* an oversized field (`CORE_REFUSED`, exit 2),
+ * and {@link call} throws on a refusal. Reading a 2 MiB config whole and
+ * shipping it across would therefore have turned a degradation into a dead
+ * `quoin write`. Over the ceiling the layer is simply absent, which is the
+ * answer both in-process paths already give. The boundary's refusal stays where
+ * it is, as the defence against a caller that is not this one.
  */
-function readIfPresent(path: string): string | undefined {
+function readIfPresent(path: string, limit: number): string | undefined {
   try {
+    // `statSync` and not `readFileSync(...).length`: a ceiling applied after
+    // the whole file is in memory is a remark about an allocation that already
+    // happened (rust-style §"Untrusted input").
+    const stats = statSync(path);
+    if (stats.isFile() && stats.size > limit) return undefined;
     return readFileSync(path, "utf8");
   } catch {
     return undefined;

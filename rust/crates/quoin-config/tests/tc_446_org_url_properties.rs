@@ -40,7 +40,7 @@ fn git_config(url: &str, section: &str) -> String {
 
 /// `originOrg(config)`: the git remote as the only source in play.
 fn origin_org(config: &str) -> Option<String> {
-    let (resolved, issues) = resolve_org_from_documents(
+    let (resolved, report) = resolve_org_from_documents(
         &OrgOptions::default(),
         &FixedEnvironment::new(),
         None,
@@ -48,8 +48,8 @@ fn origin_org(config: &str) -> Option<String> {
         Some(config),
     );
     assert!(
-        issues.is_empty(),
-        "no config layer was supplied: {issues:?}"
+        !report.degraded && report.issues.is_empty(),
+        "no config layer was supplied: {report:?}"
     );
     resolved.org.map(|org| org.as_str().to_owned())
 }
