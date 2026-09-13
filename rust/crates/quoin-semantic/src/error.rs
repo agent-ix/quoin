@@ -35,6 +35,9 @@ pub enum SemanticErrorCode {
     VendoredSchemaIncomplete,
     /// `QSEM-008` — a corpus root could not be walked.
     CorpusUnreadable,
+    /// `QSEM-009` — no vendored-contract root was supplied, so nothing could
+    /// be judged.
+    ContractRootUnset,
 }
 
 impl SemanticErrorCode {
@@ -50,6 +53,7 @@ impl SemanticErrorCode {
             Self::VendoredSchemaInvalid => "QSEM-006",
             Self::VendoredSchemaIncomplete => "QSEM-007",
             Self::CorpusUnreadable => "QSEM-008",
+            Self::ContractRootUnset => "QSEM-009",
         }
     }
 
@@ -65,6 +69,7 @@ impl SemanticErrorCode {
             Self::VendoredSchemaInvalid,
             Self::VendoredSchemaIncomplete,
             Self::CorpusUnreadable,
+            Self::ContractRootUnset,
         ]
     }
 
@@ -157,6 +162,18 @@ pub enum SemanticError {
         /// The underlying I/O failure.
         source: std::io::Error,
     },
+
+    /// No vendored-contract root was supplied.
+    ///
+    /// The contract tree ships inside the npm package, so only the CALLER knows
+    /// where it is; it arrives as `QUOIN_SEMANTIC_ROOT`. Without it nothing can
+    /// be judged, and the answer is a refusal rather than a clean read of an
+    /// unjudged module — the same choice `quoin_modules::ContractGate` makes
+    /// with `QM021_SEMANTIC_CONTRACT_UNAVAILABLE`.
+    #[error(
+        "QSEM-009: no vendored semantic contract root was supplied (QUOIN_SEMANTIC_ROOT is unset)"
+    )]
+    ContractRootUnset,
 }
 
 impl SemanticError {
@@ -172,6 +189,7 @@ impl SemanticError {
             Self::VendoredSchemaInvalid { .. } => SemanticErrorCode::VendoredSchemaInvalid,
             Self::VendoredSchemaIncomplete { .. } => SemanticErrorCode::VendoredSchemaIncomplete,
             Self::CorpusUnreadable { .. } => SemanticErrorCode::CorpusUnreadable,
+            Self::ContractRootUnset => SemanticErrorCode::ContractRootUnset,
         }
     }
 
@@ -187,6 +205,8 @@ impl SemanticError {
             | Self::VendoredSchemaInvalid { path, .. }
             | Self::VendoredSchemaIncomplete { path, .. }
             | Self::CorpusUnreadable { path, .. } => path,
+            // There is no path: the failure is that nobody named one.
+            Self::ContractRootUnset => Path::new(""),
         }
     }
 }

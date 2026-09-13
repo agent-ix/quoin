@@ -12,6 +12,7 @@ pub mod completeness;
 pub mod config;
 pub mod core;
 pub mod modules;
+pub mod semantic;
 pub mod validators;
 
 use crate::error::{CoreError, CoreErrorCode};

@@ -19,6 +19,13 @@ macro_rules! string_newtype {
         $(#[$meta])*
         #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize)]
         #[serde(transparent)]
+        // `transparent` on the schema too, not just on serde: these are
+        // `string` on the wire, and a `$defs` entry per newtype would put
+        // `ModuleName` in the boundary schema twice — `quoin-modules` already
+        // publishes one, and the two are different types with the same name.
+        // schemars would mint `ModuleName2` for the collision, and shipping an
+        // ordinal as a type name is the failure quoin#449 named.
+        #[cfg_attr(feature = "schema", derive(schemars::JsonSchema), schemars(transparent))]
         pub struct $name(String);
 
         impl $name {

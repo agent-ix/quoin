@@ -23,7 +23,7 @@
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 
-import { locateModuleRoot } from "../catalog.js";
+import { locateModuleRoot } from "../module-roots.js";
 
 import type {
   DocumentSource,

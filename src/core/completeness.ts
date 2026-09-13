@@ -20,7 +20,7 @@ import type {
   SchemaRefsPayload,
 } from "./types.js";
 
-import { defaultModuleRoots } from "../catalog.js";
+import { defaultModuleRoots } from "../module-roots.js";
 
 /**
  * Which frontmatter schemas one module manifest reaches for.

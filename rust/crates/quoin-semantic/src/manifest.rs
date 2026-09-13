@@ -35,6 +35,7 @@ use crate::schema::{SchemaError, SchemaErrorParams, SchemaKeyword, SchemaValidat
 /// How a module treats a downstream consumer's additions.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize)]
 #[serde(rename_all = "kebab-case")]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub enum CompatibilityPosture {
     /// No additions admitted.
     Strict,
@@ -70,6 +71,7 @@ impl CompatibilityPosture {
 /// Severity of legacy Properties forms (FR-074).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize)]
 #[serde(rename_all = "lowercase")]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub enum LegacyForms {
     /// Advisory. The schema's default.
     Warning,
@@ -99,7 +101,8 @@ impl LegacyForms {
 }
 
 /// One module's validated `semantic` block.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct SemanticBlock {
     /// `contract_version`.
     pub contract_version: ContractVersion,

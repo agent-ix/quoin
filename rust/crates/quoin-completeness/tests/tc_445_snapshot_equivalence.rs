@@ -479,7 +479,8 @@ fn module_under(root: &Path) -> Option<ModuleSource> {
 /// The content-in entry point answers what the filesystem entry point answers.
 ///
 /// Not a fixture this test invented: the corpus is the one
-/// `scripts/capture-semantic-goldens.mjs` captured from the TypeScript oracle,
+/// `scripts/capture-semantic-goldens.mjs` captured from the TypeScript oracle
+/// before both were deleted at the quoin#452 cutover (FR-101-AC-5),
 /// and `tc_378_304` has already pinned the filesystem path to the oracle's
 /// answers over it. Agreeing with that path over the same corpus is therefore
 /// agreement with the oracle, which is what makes moving the walk into the

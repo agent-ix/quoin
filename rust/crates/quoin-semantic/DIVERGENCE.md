@@ -108,7 +108,8 @@ port does not touch them.
 
 ## 2. The corpus
 
-Captured once from the TypeScript by `scripts/capture-semantic-goldens.mjs` at
+Captured once from the TypeScript by `scripts/capture-semantic-goldens.mjs`
+(both deleted at the quoin#452 cutover, per FR-101-AC-5) at
 **quoin@4d27dcf1621d8c28da0961a5521a5be7b6d1cd28**, ajv **8.20.0**.
 
 | Schema                                                                | Documents |  Valid | Invalid | Call site                                                      |
@@ -321,7 +322,7 @@ every scalar, not just the string-typed ones.
 and `quoin-completeness`'s frontmatter reader. `serde_norway` is gone from the
 workspace. Adding a second YAML reader re-opens D4.
 
-Corpus: `scripts/capture-semantic-goldens.mjs` now writes `ambiguous/claims.md`
+Corpus: `scripts/capture-semantic-goldens.mjs` wrote `ambiguous/claims.md`
 and `ambiguous/excuse.md` into the bundle corpus, carrying `on`, `no`, `null`,
 `1:30`, `2026-09-12`, `017`, `010` and `0b101` as module and keyword values.
 `tc_378_303` asserts, over the goldens, that the oracle keeps the first five and
@@ -388,18 +389,18 @@ these were all measured rather than assumed:
 
 ## 9. How to re-measure
 
-```bash
-# 1. Rebuild the oracle and recapture the goldens (only when the TypeScript changes).
-pnpm install --frozen-lockfile
-node_modules/.bin/tsc -p tsconfig.json --outDir .oracle \
-  --declaration false --declarationMap false
-cp -r src/semantic/schemas .oracle/semantic/schemas
-cp src/semantic/sweep-report.schema.json .oracle/semantic/
-node scripts/capture-semantic-goldens.mjs
-rm -rf .oracle
+**The capture step is gone and cannot be re-run.** quoin#452 deleted
+`src/semantic/`'s TypeScript and `scripts/capture-semantic-goldens.mjs` in one
+commit, because FR-101-AC-5 forbids a live non-Rust oracle once the port lands.
+The goldens under `tests/goldens/` are the record, frozen at the revision each
+file names; they are evidence, not a cache, and there is no path that rewrites
+them. Standing the oracle back up to refresh one would be the thing the
+criterion prohibits.
 
-# 2. Re-run parity.
-# Both commands run from the repository root. The workspace root is
+What is left to re-measure is this crate against that record:
+
+```bash
+# The command runs from the repository root. The workspace root is
 # rust/Cargo.toml, so --manifest-path is required; without it cargo walks up
 # from the repository root and finds no manifest at all.
 cargo +1.98.1 test --manifest-path rust/Cargo.toml \

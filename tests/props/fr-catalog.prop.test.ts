@@ -18,6 +18,16 @@ import { stringify as stringifyYaml } from "yaml";
 
 import { findCatalogEntry, loadCatalog } from "../../src/catalog";
 
+// A case that loads a catalog with at least one module now spawns `quoin-core`
+// once to read that module's semantic block (quoin#452), where the read used to
+// happen in-process. fast-check runs each property a hundred times, so a
+// property here is a hundred subprocesses, and the default five-second ceiling
+// was written for an in-process read. Nothing about what these properties
+// ASSERT changed — only the wall clock — and the number of runs is deliberately
+// left alone: lowering it to fit the old ceiling would buy the clock back out
+// of the coverage the properties exist for.
+vi.setConfig({ testTimeout: 60_000 });
+
 // Every scratch dir is tracked so the file can remove them all. fast-check runs
 // each property many times; an untracked mkdtemp per case leaks hundreds of
 // directories into /tmp per suite run.

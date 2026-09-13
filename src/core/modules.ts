@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { packageRoot } from "../package-root.js";
-import { SEMANTIC_ROOT } from "../semantic/contract.js";
+import { SEMANTIC_ROOT } from "../semantic/root.js";
 import { carriesPayload, runCoreAllowFailure } from "./exec.js";
 import type {
   EnsureDefaultsPayload,

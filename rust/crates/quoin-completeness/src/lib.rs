@@ -16,7 +16,8 @@
 //! # Parity with the TypeScript it replaces
 //!
 //! The TypeScript is the oracle and was consulted once:
-//! `scripts/capture-semantic-goldens.mjs` recorded its answers into
+//! `scripts/capture-semantic-goldens.mjs` (itself deleted at the quoin#452
+//! cutover, per FR-101-AC-5) recorded its answers into
 //! `tests/goldens/`. The tests read those files and never invoke Node.
 //!
 //! This crate compiles no JSON Schema, so the ajv/`jsonschema` divergence

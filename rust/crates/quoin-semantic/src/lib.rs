@@ -20,6 +20,12 @@
 //! every diagnostic into `tests/goldens/`, with the quoin revision it ran at.
 //! The tests in `tests/` read those files. Nothing here invokes Node.
 //!
+//! Both the oracle and that script were **deleted** at the quoin#452 cutover —
+//! FR-101-AC-5 forbids a live non-Rust oracle once the port lands — so the
+//! captured goldens are now the whole record and cannot be recaptured. They are
+//! pinned evidence: never hand-edit them, and a disagreement with one is a
+//! finding about this crate.
+//!
 //! Schema validation moves from `ajv` to the Rust `jsonschema` crate. Verdicts
 //! are contractual and measured at exact parity over the golden corpus; error
 //! *text* is not, and the two libraries' diagnostic shape, coverage and
@@ -59,5 +65,6 @@ pub use package_manifest::{
 };
 pub use sweep::{
     CorpusRoot, FormFinding, LEGACY_MIGRATION_EXAMPLE, LegacyFormDiagnostic, PropertiesForm,
-    SweepIdentity, SweepReport, TYPED_HEADER, classify_artifact, classify_properties, sweep_corpus,
+    ReportCorpusRoot, SweepCounts, SweepIdentity, SweepReport, TYPED_HEADER, classify_artifact,
+    classify_properties, sweep_corpus,
 };

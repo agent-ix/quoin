@@ -5,8 +5,13 @@
  * Quoin publishes these; quire-rs#388 executes them. What quoin proves here is
  * that every expected output validates against the vendored semantic-core
  * schemas at the recorded version, that the table and fence forms share one
- * expected declaration set, that every expected diagnostic carries a locus, and
- * that quoin's own legacy-form classifier agrees with the expectations.
+ * expected declaration set, and that every expected diagnostic carries a locus.
+ *
+ * The classifier half of this file moved to Rust at the cutover (quoin#452):
+ * `rust/crates/quoin-semantic/tests/tc_452_sweep_criteria.rs` replays the same
+ * `legacy.expected.json` against `classify_artifact`. What is left here is the
+ * part with a JavaScript consumer — the published fixtures and the vendored
+ * schemas they validate against.
  */
 
 import { readFileSync, readdirSync } from "node:fs";
@@ -14,14 +19,31 @@ import { join } from "node:path";
 import Ajv2020 from "ajv/dist/2020.js";
 import { describe, expect, it } from "vitest";
 
-import {
-  SEMANTIC_CONTRACT,
-  semanticCoreDir,
-} from "../src/semantic/contract.js";
-import { classifyArtifact } from "../src/semantic/sweep.js";
-
 const FIXTURES = join("tests", "fixtures", "semantic-module", "mapping");
 type Json = Record<string, unknown>;
+
+// The vendored semantic-core bundle, read straight off the shipped tree. The
+// TypeScript resolver that used to answer this was deleted at the cutover
+// (quoin#452) — the DATA stays exactly where it was, and this test is a
+// JavaScript consumer of it, so it resolves the path itself rather than
+// crossing the quoin-core boundary to ask.
+const SEMANTIC_CORE_DIR = join("src", "semantic", "schemas", "semantic-core");
+
+const SEMANTIC_CORE_VERSION = (() => {
+  const toolchain = JSON.parse(
+    readFileSync(join(SEMANTIC_CORE_DIR, "toolchain.json"), "utf8"),
+  ) as Json;
+  // The bundle records the base URI it was minted under, and every `$id` in it
+  // is relative to that. Reading the version off the base rather than hard-
+  // coding it keeps this test honest across a bundle refresh.
+  const match =
+    /^https:\/\/schemas\.agent-ix\.org\/semantic-core\/([^/]+)\/$/.exec(
+      String(toolchain.base),
+    );
+  if (!match)
+    throw new Error(`unexpected semantic-core base ${String(toolchain.base)}`);
+  return match[1]!;
+})();
 
 // `attribute|ref item <name> : <Type>[<mult>]` with optional brace-delimited
 // constraint text. Built from a string: a regex literal with braces trips the
@@ -40,11 +62,11 @@ function json(name: string): Json {
 
 const ajv = (() => {
   const instance = new Ajv2020({ allErrors: true, strict: true });
-  for (const name of readdirSync(semanticCoreDir()).filter(
+  for (const name of readdirSync(SEMANTIC_CORE_DIR).filter(
     (n) => n.endsWith(".json") && n !== "toolchain.json",
   )) {
     instance.addSchema(
-      JSON.parse(readFileSync(join(semanticCoreDir(), name), "utf8")),
+      JSON.parse(readFileSync(join(SEMANTIC_CORE_DIR, name), "utf8")),
     );
   }
   return instance;
@@ -52,7 +74,7 @@ const ajv = (() => {
 
 function validates(model: string, value: unknown): boolean {
   const validate = ajv.getSchema(
-    `https://schemas.agent-ix.org/semantic-core/${SEMANTIC_CONTRACT.semanticCore.version}/${model}.json`,
+    `https://schemas.agent-ix.org/semantic-core/${SEMANTIC_CORE_VERSION}/${model}.json`,
   );
   if (!validate) throw new Error(`no vendored schema for ${model}`);
   const ok = validate(value) as boolean;
@@ -78,7 +100,7 @@ describe("FR-071 typed Properties table and sysml fence fixtures", () => {
   // Trace: FR-071-AC-1, FR-071-CON-2
   it("has an FR-006 typed-table fixture whose expected FieldDecl[] validates against the vendored FieldDecl.json", () => {
     const expected = json("config-version.expected.json");
-    expect(expected.semanticCore).toBe(SEMANTIC_CONTRACT.semanticCore.version);
+    expect(expected.semanticCore).toBe(SEMANTIC_CORE_VERSION);
     const fields = expected.fields as Json[];
     expect(fields).toHaveLength(7);
     for (const field of fields) validates("FieldDecl", field);
@@ -93,7 +115,6 @@ describe("FR-071 typed Properties table and sysml fence fixtures", () => {
     }
     const table = fixture("config-version.table.md");
     expect(table).toContain("| Field | Type | Multiplicity | Constraints |");
-    expect(classifyArtifact("table", table).form).toBe("typed-table");
   });
 
   // Trace: FR-071-AC-2
@@ -103,7 +124,6 @@ describe("FR-071 typed Properties table and sysml fence fixtures", () => {
     expect(authored["config-version.table.md"]).toBe("table");
     expect(authored["config-version.fence.md"]).toBe("fence");
     const fence = fixture("config-version.fence.md");
-    expect(classifyArtifact("fence", fence).form).toBe("sysml-fence");
     // One expected array serves both artifacts by construction; assert the
     // fence declares exactly the table's rows in the same order.
     const fenceNames = [
@@ -127,7 +147,7 @@ describe("FR-071 typed Properties table and sysml fence fixtures", () => {
       both.split("\n").findIndex((l) => l.startsWith("```sysml")) + 1;
     expect(fenceLine).toBeGreaterThan(tableLine);
     const expected = json("both-forms.expected.json");
-    expect(expected.semanticCore).toBe(SEMANTIC_CONTRACT.semanticCore.version);
+    expect(expected.semanticCore).toBe(SEMANTIC_CORE_VERSION);
     expect(expected.firstForm).toEqual({
       form: "typed-table",
       line: tableLine,
@@ -142,7 +162,7 @@ describe("FR-071 typed Properties table and sysml fence fixtures", () => {
   // Trace: FR-071-AC-4, FR-071-AC-5, FR-071-AC-6, FR-071-AC-7, FR-071-AC-8
   it("records every cell, fence-line, and reader-rule case with a schema-valid expectation or a located diagnostic", () => {
     const cases = json("cell-cases.json");
-    expect(cases.semanticCore).toBe(SEMANTIC_CONTRACT.semanticCore.version);
+    expect(cases.semanticCore).toBe(SEMANTIC_CORE_VERSION);
     const byId = new Map((cases.cases as Json[]).map((c) => [String(c.id), c]));
     for (const id of [
       "type-kernel",
@@ -211,8 +231,10 @@ describe("FR-071 typed Properties table and sysml fence fixtures", () => {
     for (const line of body.trim().split("\n")) {
       expect(line, line).toMatch(FENCE_LINE);
     }
-    const source = readFileSync(join("src", "semantic", "sweep.ts"), "utf8");
-    expect(source).not.toMatch(/parseExpression|evaluate\(/);
+    // The other half of FR-071-CON-1 — that quoin's classifier parses no
+    // expression and evaluates nothing — is asserted over the engine that now
+    // owns it: `tc_452_652` in
+    // `rust/crates/quoin-semantic/tests/tc_452_sweep_criteria.rs`.
   });
 });
 
@@ -220,7 +242,7 @@ describe("FR-072 Invariants and Operations fixtures", () => {
   // Trace: FR-072-AC-1, FR-072-AC-4
   it("ships an operations fixture whose expected ClauseRef[] and OperationDecl[] validate", () => {
     const expected = json("operations.expected.json");
-    expect(expected.semanticCore).toBe(SEMANTIC_CONTRACT.semanticCore.version);
+    expect(expected.semanticCore).toBe(SEMANTIC_CORE_VERSION);
     for (const clause of expected.clauses as Json[])
       validates("ClauseRef", clause);
     for (const operation of expected.operations as Json[])
@@ -285,52 +307,5 @@ describe("FR-072 Invariants and Operations fixtures", () => {
       "semantic.duplicate-clause-authority",
       "error",
     );
-  });
-
-  // Trace: FR-072-CON-1
-  it("contains no clause typechecking or evaluation path in quoin", () => {
-    const dir = join("src", "semantic");
-    for (const name of readdirSync(dir).filter((n) => n.endsWith(".ts"))) {
-      const source = readFileSync(join(dir, name), "utf8");
-      expect(source, name).not.toMatch(/\bocl\b.*(parse|eval)|typecheck/i);
-    }
-  });
-});
-
-describe("FR-074 legacy forms", () => {
-  // Trace: FR-074-AC-1, FR-074-AC-2, FR-074-CON-1
-  it("classifies the pinned FR-006 copy, bullet lists, and mixed sections as the expectations record", () => {
-    const expected = json("legacy.expected.json").cases as Json[];
-    for (const entry of expected) {
-      const path = join(FIXTURES, String(entry.file));
-      const finding = classifyArtifact(
-        String(entry.file),
-        readFileSync(path, "utf8"),
-      );
-      expect(finding.form, String(entry.file)).toBe(entry.form);
-      expect(finding.line, String(entry.file)).toBe(entry.line);
-      if (entry.diagnostic)
-        expect(finding.diagnostic).toEqual(entry.diagnostic);
-      else expect(finding.diagnostic).toBeUndefined();
-    }
-    const pinned = readFileSync(
-      join(
-        FIXTURES,
-        "..",
-        "corpus",
-        "config-service",
-        "FR-006-config-version-entity.md",
-      ),
-      "utf8",
-    );
-    expect(pinned).toContain("| Column | Type | Constraints |");
-    const provenance = JSON.parse(
-      readFileSync(
-        join(FIXTURES, "..", "corpus", "config-service", "PROVENANCE.json"),
-        "utf8",
-      ),
-    ) as Json;
-    expect(provenance.revision).toMatch(/^[0-9a-f]{40}$/);
-    expect(provenance.repository).toBe("agent-ix/config-service");
   });
 });

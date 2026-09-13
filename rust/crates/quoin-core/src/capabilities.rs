@@ -66,6 +66,7 @@ use std::path::Path;
 
 use quoin_modules::{InstallOutcome, InstalledModule, MarketplaceManifest, ModuleName, Source};
 use quoin_modules::{ModulesError, ReconcileMode, ReconcileReport};
+use quoin_semantic::{CorpusRoot, SemanticError, SemanticReadResult, SweepIdentity, SweepReport};
 
 /// Installing, listing and removing spec modules in one `~/.ix` home.
 ///
@@ -128,6 +129,46 @@ pub trait ModuleHost {
     fn validate_installed(&self, home: Option<&Path>) -> Result<(), ModulesError>;
 }
 
+/// Reading the vendored semantic contract, and the trees it judges
+/// (quoin#452, Stage 8).
+///
+/// Granted rather than acquired, for the same reason [`ModuleHost`] is. The
+/// contract is a tree of 35 vendored JSON schemas that ships inside the npm
+/// package; a module's `data_schema` references resolve against files inside
+/// that module; a corpus sweep walks whole repositories. None of that can ride
+/// on stdin, and only the CALLER knows where its own package was installed —
+/// the path arrives as `QUOIN_SEMANTIC_ROOT`. So `main.rs` holds the root and
+/// the compiled validators, and `ops::semantic` decides what to ask and what to
+/// report.
+///
+/// Implemented for real in `main.rs` over `quoin_semantic::SemanticValidators`;
+/// implemented in memory by every unit test in `ops::semantic`.
+pub trait SemanticHost {
+    /// Read and judge one module root's `manifest.yaml` semantic block.
+    ///
+    /// A module whose block violates the contract is NOT an error: it comes
+    /// back as diagnostics inside the result, which is what
+    /// `readSemanticBlock` did and what `loadCatalog` reports.
+    ///
+    /// # Errors
+    /// [`SemanticError::ManifestUnreadable`], [`SemanticError::ManifestNotYaml`],
+    /// [`SemanticError::ManifestNotAMapping`], [`SemanticError::ContractRootUnset`]
+    /// and the `VendoredSchema*` conditions.
+    fn read_module(&self, module_root: &Path) -> Result<SemanticReadResult, SemanticError>;
+
+    /// Walk corpus roots and classify every Markdown artifact's Properties form.
+    ///
+    /// # Errors
+    /// [`SemanticError::CorpusUnreadable`] when a root or one of its files
+    /// cannot be read.
+    fn sweep(
+        &self,
+        roots: &[CorpusRoot],
+        identity: &SweepIdentity,
+        generated_at: &str,
+    ) -> Result<SweepReport, SemanticError>;
+}
+
 /// Everything `main.rs` grants one dispatch.
 ///
 /// A struct rather than a growing argument list so that adding a capability is
@@ -141,6 +182,8 @@ pub struct Capabilities<'a> {
     /// the failure mode `PermissiveGate`'s doc comment in `quoin-modules` warns
     /// about for the same reason.
     pub modules: Option<&'a dyn ModuleHost>,
+    /// The semantic-contract capability, absent when nothing granted one.
+    pub semantic: Option<&'a dyn SemanticHost>,
 }
 
 impl<'a> Capabilities<'a> {
@@ -150,7 +193,10 @@ impl<'a> Capabilities<'a> {
     /// `config.resolve_org` — run with, and what their tests pass.
     #[must_use]
     pub const fn none() -> Self {
-        Self { modules: None }
+        Self {
+            modules: None,
+            semantic: None,
+        }
     }
 
     /// A grant of the module host only.
@@ -158,6 +204,25 @@ impl<'a> Capabilities<'a> {
     pub const fn with_modules(host: &'a dyn ModuleHost) -> Self {
         Self {
             modules: Some(host),
+            semantic: None,
+        }
+    }
+
+    /// A grant of the semantic host only.
+    #[must_use]
+    pub const fn with_semantic(host: &'a dyn SemanticHost) -> Self {
+        Self {
+            modules: None,
+            semantic: Some(host),
+        }
+    }
+
+    /// The full grant `main.rs` hands one dispatch.
+    #[must_use]
+    pub const fn with_hosts(modules: &'a dyn ModuleHost, semantic: &'a dyn SemanticHost) -> Self {
+        Self {
+            modules: Some(modules),
+            semantic: Some(semantic),
         }
     }
 }

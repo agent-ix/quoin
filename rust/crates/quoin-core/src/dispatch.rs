@@ -37,6 +37,9 @@ pub const OPERATIONS: &[&str] = &[
     "modules.install",
     "modules.list",
     "modules.remove",
+    "semantic.migration_example",
+    "semantic.read_blocks",
+    "semantic.sweep_corpus",
     "validators.run",
 ];
 
@@ -84,6 +87,9 @@ pub fn dispatch(
         "modules.install" => crate::ops::modules::install(request, capabilities),
         "modules.list" => crate::ops::modules::list(request, capabilities),
         "modules.remove" => crate::ops::modules::remove(request, capabilities),
+        "semantic.read_blocks" => crate::ops::semantic::read_blocks(request, capabilities),
+        "semantic.sweep_corpus" => crate::ops::semantic::sweep_corpus(request, capabilities),
+        "semantic.migration_example" => crate::ops::semantic::migration_example(request),
         "validators.run" => crate::ops::validators::run(request),
         _ => Err(
             CoreError::new(CoreErrorCode::UnknownOp, "no such operation in this build")
@@ -287,6 +293,26 @@ mod tests {
             "modules",
             "modules/wire.rs",
             include_str!("ops/modules/wire.rs"),
+        ),
+        (
+            "semantic",
+            "semantic/mod.rs",
+            include_str!("ops/semantic/mod.rs"),
+        ),
+        (
+            "semantic",
+            "semantic/taxonomy.rs",
+            include_str!("ops/semantic/taxonomy.rs"),
+        ),
+        (
+            "semantic",
+            "semantic/tests.rs",
+            include_str!("ops/semantic/tests.rs"),
+        ),
+        (
+            "semantic",
+            "semantic/wire.rs",
+            include_str!("ops/semantic/wire.rs"),
         ),
         (
             "validators",
@@ -613,6 +639,18 @@ mod tests {
             (
                 "ops::modules::MAX_SOURCE_ARG_BYTES",
                 crate::ops::modules::MAX_SOURCE_ARG_BYTES,
+            ),
+            (
+                "ops::semantic::MAX_READ_BLOCKS_BYTES",
+                crate::ops::semantic::MAX_READ_BLOCKS_BYTES,
+            ),
+            (
+                "ops::semantic::MAX_SCALAR_BYTES",
+                crate::ops::semantic::MAX_SCALAR_BYTES,
+            ),
+            (
+                "ops::semantic::MAX_SWEEP_CORPUS_BYTES",
+                crate::ops::semantic::MAX_SWEEP_CORPUS_BYTES,
             ),
         ];
         // The census is hand-written, so it is checked against the `ops`
