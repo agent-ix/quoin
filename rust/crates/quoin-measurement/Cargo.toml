@@ -1,0 +1,32 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 Agent-IX
+[package]
+name = "quoin-measurement"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+description = "Measurement plans, collections, comparisons, assurance profiles and raw-evidence accounting (quoin FR-100)."
+publish.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+# The ONLY place canonical JSON, strict JSON parsing, sha256 file digests and
+# durable store writes come from. FR-100-CON-4 forbids a second implementation
+# and `tc_468_boundary` asserts over this crate's own sources that there is not
+# one here. In particular: this crate has no `sha2` dependency, because the one
+# sha256 it needs is `quoin_store::digest_file_sha256`.
+quoin-store = { workspace = true }
+# The one YAML reader on the quoin boundary (quoin#378/#404). MeasurementPlan
+# and AssuranceProfile frontmatter are read with it; nothing else here parses
+# YAML.
+quoin-yaml = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+tempfile = "=3.27.0"
