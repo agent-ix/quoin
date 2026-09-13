@@ -1,0 +1,46 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 Agent-IX
+[package]
+name = "quoin-graph-analysis"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+description = "FR-062 read-only assurance-graph projections: fan-out, churn and change impact."
+publish.workspace = true
+
+[lib]
+name = "quoin_graph_analysis"
+path = "src/lib.rs"
+
+[lints]
+workspace = true
+
+[dependencies]
+# The four auditor types this view joins on live in ONE crate (quoin#384,
+# quoin#385). Not `quoin-auditor`: a leaf view crate has no business linking an
+# 1,800-line engine to name a report.
+quoin-finding-types = { workspace = true }
+# `bindingsPath(repo)` is `join(storeRoot(repo), "bindings.json")`
+# (`src/core/evidence.ts:124`). The store root is `quoin-store`'s and the file
+# name is `quoin-evidence`'s; both are asked of their owner rather than
+# re-spelled here, where they could drift from the store they point at.
+quoin-evidence = { workspace = true }
+# `parseAssurance` (`src/quire/validate.ts:136`) and the export type it returns.
+# The engine owns `AssuranceExport`; a second declaration of it here could only
+# drift from the payload quire emits.
+quoin-quire = { workspace = true }
+# THE canonical JSON, and THE UTF-16 comparator. `renderGraphAnalysisJson` is
+# `canonicalJson` (`src/graph-analysis/render.ts:12`), and every `compare()` in
+# the retained source is JavaScript `<` on strings, which is UTF-16 code-unit
+# order and not Rust's `str: Ord`. Both come from here; neither is rewritten.
+quoin-store = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+
+# The one-time oracle capture lives under `oracle/` rather than `examples/` so
+# it is visibly the thing FR-101-AC-5 deletes at the cutover. It is a `.mjs`
+# run by node, so cargo needs no entry for it; this comment is the pointer.

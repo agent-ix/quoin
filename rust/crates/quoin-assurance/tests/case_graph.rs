@@ -29,6 +29,7 @@ fn finding(obligation_id: &str, kind: &str) -> Finding {
         obligation: obligation_id.to_owned(),
         kind: kind.to_owned(),
         summary: format!("{obligation_id} has a problem"),
+        other: std::collections::BTreeMap::new(),
     }
 }
 

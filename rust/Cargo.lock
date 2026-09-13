@@ -3041,6 +3041,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "quoin-graph-analysis"
+version = "0.1.0"
+dependencies = [
+ "quoin-evidence",
+ "quoin-finding-types",
+ "quoin-quire",
+ "quoin-store",
+ "serde",
+ "serde_json",
+ "thiserror",
+]
+
+[[package]]
 name = "quoin-jsonschema"
 version = "0.1.0"
 dependencies = [
