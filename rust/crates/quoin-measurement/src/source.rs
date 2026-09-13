@@ -38,6 +38,16 @@
 //! source that owns the file, and [`MemoryMeasurement`] refuses with
 //! [`MeasurementErrorCode::RawEvidenceUnavailable`] rather than growing a
 //! private `sha2` dependency. Closing that gap is `quoin-store`'s ticket.
+//!
+//! # Why the clock is here too
+//!
+//! [`Clock`] is the same kind of thing as [`MeasurementSource`]: a host
+//! capability the analysis takes rather than reaches for. The store-wide
+//! operational write lock (`operational.ts:296-318`) spins against
+//! `Date.now() + 10_000`, so a test of its refusal written against the real
+//! clock has to sleep ten seconds to see it. Injected, the deadline is stated
+//! and the test is instant — which is the only way
+//! `tests/tc_472_operational_lock.rs` can assert the deadline at all.
 
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
@@ -46,6 +56,44 @@ use quoin_store::{RawFileSha256Digest, digest_file_sha256, store::store_root};
 
 use crate::error::{MeasurementError, MeasurementErrorCode};
 use crate::raw_evidence::RawEvidencePath;
+
+/// Wall time, and the wait between two attempts at a contended resource.
+///
+/// Two methods because the retained lock needs exactly two things — `Date.now()`
+/// and `Atomics.wait(…, 5)` (`operational.ts:299,313`) — and a trait with a
+/// method nothing calls is a trait that will grow one.
+pub trait Clock {
+    /// Milliseconds since the Unix epoch, as `Date.now()` reports them.
+    fn now_millis(&self) -> i64;
+
+    /// Pause before the next attempt.
+    ///
+    /// A [`SystemClock`] sleeps. A test clock advances its own reading instead,
+    /// so a ten-second deadline is reached in no time at all.
+    fn wait(&self, millis: u32);
+}
+
+/// The host's clock.
+#[derive(Clone, Copy, Debug, Default)]
+pub struct SystemClock;
+
+impl Clock for SystemClock {
+    fn now_millis(&self) -> i64 {
+        // Before 1970 the duration is `Err`, and its magnitude is the answer
+        // negated. A clock set behind the epoch is absurd and is still not a
+        // reason to panic in a library.
+        match std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH) {
+            Ok(since) => i64::try_from(since.as_millis()).unwrap_or(i64::MAX),
+            Err(before) => {
+                i64::try_from(before.duration().as_millis()).map_or(i64::MIN, |millis| -millis)
+            }
+        }
+    }
+
+    fn wait(&self, millis: u32) {
+        std::thread::sleep(std::time::Duration::from_millis(u64::from(millis)));
+    }
+}
 
 /// One retained file, as the raw-evidence accounting sees it.
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -108,6 +156,22 @@ pub trait MeasurementSource {
         &self,
         path: &RawEvidencePath,
     ) -> Result<RawEvidenceFile, MeasurementError>;
+
+    /// The UTF-8 text of one retained raw-evidence file.
+    ///
+    /// `github-release-operational.ts:216-223` reads the three retained
+    /// GitHub exports this way, after accounting for them with
+    /// [`raw_evidence_file`](Self::raw_evidence_file). Separate from that
+    /// method because a producer needs the *content* and the accounting needs
+    /// only the size and the digest, and a 15 MiB export should not be held in
+    /// memory to be measured.
+    ///
+    /// # Errors
+    ///
+    /// [`MeasurementErrorCode::Io`] when the file cannot be read as UTF-8, and
+    /// [`MeasurementErrorCode::RawEvidenceUnavailable`] from a source that
+    /// holds no files.
+    fn retained_evidence_text(&self, path: &RawEvidencePath) -> Result<String, MeasurementError>;
 }
 
 /// A repository on disk.
@@ -260,6 +324,11 @@ impl MeasurementSource for DiskMeasurement {
             digest: digest_file_sha256(&real_target)?,
         })
     }
+
+    fn retained_evidence_text(&self, path: &RawEvidencePath) -> Result<String, MeasurementError> {
+        let target = store_root(&self.repo).join(path.as_str());
+        std::fs::read_to_string(&target).map_err(|error| io(&target, &error))
+    }
 }
 
 /// A repository stated in memory.
@@ -270,6 +339,7 @@ impl MeasurementSource for DiskMeasurement {
 pub struct MemoryMeasurement {
     documents: BTreeMap<String, String>,
     collections: BTreeMap<String, Vec<u8>>,
+    retained: BTreeMap<String, String>,
 }
 
 impl MemoryMeasurement {
@@ -290,6 +360,21 @@ impl MemoryMeasurement {
     #[must_use]
     pub fn with_collection(mut self, name: impl Into<String>, bytes: impl Into<Vec<u8>>) -> Self {
         self.collections.insert(name.into(), bytes.into());
+        self
+    }
+
+    /// Add the text of one retained evidence file, at a store-relative path.
+    ///
+    /// The file is still not *digestible* from here — see
+    /// [`MeasurementSource::raw_evidence_file`] — so this states content for a
+    /// reader, not evidence for an accounting.
+    #[must_use]
+    pub fn with_retained_evidence(
+        mut self,
+        path: impl Into<String>,
+        text: impl Into<String>,
+    ) -> Self {
+        self.retained.insert(path.into(), text.into());
         self
     }
 }
@@ -337,5 +422,14 @@ impl MeasurementSource for MemoryMeasurement {
             MeasurementErrorCode::RawEvidenceUnavailable,
             format!("this source holds no files, so `{path}` cannot be digested"),
         ))
+    }
+
+    fn retained_evidence_text(&self, path: &RawEvidencePath) -> Result<String, MeasurementError> {
+        self.retained.get(path.as_str()).cloned().ok_or_else(|| {
+            MeasurementError::new(
+                MeasurementErrorCode::RawEvidenceUnavailable,
+                format!("this source holds no file at `{path}`"),
+            )
+        })
     }
 }

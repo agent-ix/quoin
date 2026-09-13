@@ -21,6 +21,10 @@ workspace = true
 # one here. In particular: this crate has no `sha2` dependency, because the one
 # sha256 it needs is `quoin_store::digest_file_sha256`.
 quoin-store = { workspace = true }
+# The one JSON Schema validator, carrying the vendored
+# `operational-evidence.v1` document. Operational intake validates against the
+# vendored copy rather than re-vendoring the schema here (quoin#470).
+quoin-jsonschema = { workspace = true }
 # The one YAML reader on the quoin boundary (quoin#378/#404). MeasurementPlan
 # and AssuranceProfile frontmatter are read with it; nothing else here parses
 # YAML.

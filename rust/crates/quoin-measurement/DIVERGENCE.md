@@ -310,3 +310,80 @@ approximated, so that no later wave finds a second implementation to unify:
   nothing.
 - **No schema validation.** `intervention-schema.ts` and
   `operational-schema.ts` are quoin#470.
+
+## §11 — the operational port (quoin#472)
+
+Wave 5 ports `src/measurement/operational.ts` and
+`src/measurement/github-release-operational.ts`. The producer reproduces the one
+retained pair byte for byte (`tests/tc_472_github_release.rs`), so the
+divergences below are all in *how* a refusal or a write happens, never in what
+is written.
+
+### §11.1 — an unreadable store refuses with a code, not a bare `Error`
+
+`operational.ts:139-146` lets a malformed retained record surface as a raw
+`Error` from `JSON.parse`. `read::read_operational_records` maps it to
+`InterventionRefusalCode::InvalidRecord` with `"<path>: unreadable operational
+record: <detail>"`. The retained text is not machine-readable and this is;
+nothing in the retained code branches on the difference.
+
+### §11.2 — the producer's two error shapes
+
+`github-release-operational.ts` throws a bare `Error` for every input-contract
+failure and lets `writeOperationalPair`'s `InterventionIntakeError` propagate.
+Here those are `GitHubReleaseError::Input` and `GitHubReleaseError::Intake` —
+the same two failures, told apart by the type rather than by catching and
+inspecting.
+
+### §11.3 — `linked` compares values, not canonical JSON strings
+
+`operational.ts:280-289` decides whether an exercise matches its capability by
+canonicalising the subject and the scope and comparing the two strings. Here it
+is `==` on `Subject` and `OperationalScope`. Both are exact, and the structural
+comparison cannot fail for a reason canonical JSON would invent (a nesting
+limit, a number spelling); it also does not allocate two strings per candidate.
+
+### §11.4 — findings are sorted in Rust byte order
+
+`operational.ts:324` sorts the accumulated findings with
+`Array.prototype.sort`, which orders by UTF-16 code unit. `validate.rs` uses
+`sort_unstable` + `dedup`, which orders by Unicode scalar. The two disagree only
+for findings containing an astral character above `U+FFFF` next to one in
+`U+E000..U+FFFF`; every finding this code produces is a JSON pointer plus ASCII
+prose. Declared rather than reconciled, because reconciling it would mean a
+second sort comparator in this crate when `quoin_store::json::order::cmp_utf16`
+already exists and is not exported for this.
+
+### §11.5 — schema finding *text* is ajv's message, not quoin's
+
+`quoin_jsonschema` renders `"<instance path or />: <message>"`. The message is
+the validator's own and is not byte-identical to ajv's for every keyword. The
+*set* of refused records is what is contractual; a message is not, and no
+retained record's acceptance depends on one.
+
+### §11.6 — `write_content_addressed` links and fsyncs; the retained code renames
+
+Same strengthening `store.rs` took in quoin#468, and already declared in §4. The
+operational pair path goes through it too: the write is refused rather than
+silently replaced when the retained bytes differ, which is
+`operational.ts:273-278`'s intent stated by the filesystem instead of by an
+`existsSync` that has a window in it.
+
+### §11.7 — the third evidence representation is gone
+
+quoin#468 landed `RawEvidenceClaim` (bare `String`s) alongside
+`RawEvidenceReference`, because quoin#469's serde-read
+`RecordedEvidenceReference` did not exist yet. This wave deleted it:
+`verify_raw_evidence_references` takes the recorded reference directly.
+`tests/tc_472_evidence_representations.rs` fails if a third type describing a
+retained evidence file ever appears. This obligation was also carried on
+quoin#471; it was discharged here.
+
+### §11.8 — the write lock's deadline is on an injected clock
+
+`operational.ts:296-318` spins against `Date.now() + 10_000` with
+`Atomics.wait(…, 5)`. `operational/lock.rs` takes a `Clock`, and
+`source::SystemClock` is what production passes — the same two calls. The
+deadline and the retry interval are unchanged; only their source is injectable,
+so `tests/tc_472_operational_lock.rs` can state the refusal instead of sleeping
+ten seconds for it.

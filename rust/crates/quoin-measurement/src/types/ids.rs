@@ -107,6 +107,68 @@ impl fmt::Display for CollectionId {
     }
 }
 
+/// The largest record identity that may be turned into a file name.
+///
+/// `operational.ts:455` and `intervention.ts:34` both cap the identity at a
+/// leading character plus 127 more. The schema caps identity bytes at 128
+/// ASCII characters for the same reason: either encoding's basename has to
+/// stay under `NAME_MAX`.
+pub const MAX_RECORD_ID_BYTES: usize = 128;
+
+/// A record identity that is safe to derive a file name from.
+///
+/// `^[A-Za-z0-9][A-Za-z0-9._:/-]{0,127}$`, the **shared** first guard of
+/// `operational.ts:455` and `intervention.ts:34`. The two files differ only in
+/// what they do next — operational hashes the identity, intervention encodes
+/// it into `p-`/`b-` namespaces — so the guard is declared once here rather
+/// than twice in `operational/` and `intervention/`.
+///
+/// Holding this type is the proof. Note what it does **not** assert: that the
+/// identity is free of `/` or `:`. Those are admitted by the retained regex
+/// and neither consumer interpolates the identity into a path unencoded.
+#[derive(Clone, Debug, Eq, PartialEq, Hash, PartialOrd, Ord)]
+pub struct SafeRecordId(String);
+
+impl SafeRecordId {
+    /// Read a record identity a file name may be derived from.
+    ///
+    /// # Errors
+    ///
+    /// `code` when the identity is empty, over [`MAX_RECORD_ID_BYTES`], starts
+    /// with anything but an ASCII alphanumeric, or carries a byte outside
+    /// `[A-Za-z0-9._:/-]`.
+    pub fn parse(value: &str, code: MeasurementErrorCode) -> Result<Self, MeasurementError> {
+        let mut bytes = value.bytes();
+        let safe = value.len() <= MAX_RECORD_ID_BYTES
+            && bytes
+                .next()
+                .is_some_and(|byte| byte.is_ascii_alphanumeric())
+            && bytes.all(|byte| {
+                byte.is_ascii_alphanumeric() || matches!(byte, b'.' | b'_' | b':' | b'/' | b'-')
+            });
+        if safe {
+            Ok(Self(value.to_owned()))
+        } else {
+            Err(MeasurementError::new(
+                code,
+                format!("unsafe record id {value:?}"),
+            ))
+        }
+    }
+
+    /// The identity.
+    #[must_use]
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
+}
+
+impl fmt::Display for SafeRecordId {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter.write_str(&self.0)
+    }
+}
+
 /// A full 40-character lowercase git object name.
 ///
 /// `validate.ts:137` checks `^[0-9a-f]{40}$` on every
@@ -159,7 +221,7 @@ impl fmt::Display for FullGitRevision {
 )]
 #[cfg(test)]
 mod tests {
-    use super::{CollectionId, FullGitRevision, NonEmptyText};
+    use super::{CollectionId, FullGitRevision, MAX_RECORD_ID_BYTES, NonEmptyText, SafeRecordId};
     use crate::error::MeasurementErrorCode;
 
     #[test]
@@ -190,6 +252,26 @@ mod tests {
         assert!(FullGitRevision::parse(&"a".repeat(39), code, "s").is_err());
         assert!(FullGitRevision::parse(&"A".repeat(40), code, "s").is_err());
         assert!(FullGitRevision::parse(&"g".repeat(40), code, "s").is_err());
+    }
+
+    /// The cap is 128 bytes inclusive, and it is measured in bytes.
+    #[test]
+    fn a_record_id_is_refused_at_the_byte_the_regex_refuses_it() {
+        let code = MeasurementErrorCode::CollectionInvalid;
+        assert_eq!(MAX_RECORD_ID_BYTES, 128);
+        assert!(SafeRecordId::parse(&"a".repeat(128), code).is_ok());
+        assert!(SafeRecordId::parse(&"a".repeat(129), code).is_err());
+        // The retained regex admits `:` and `/`; the encoding downstream is
+        // what keeps them out of a path.
+        assert!(SafeRecordId::parse("a/b:c-d_e.f", code).is_ok());
+        for refused in [
+            "", "-leading", ".leading", "/leading", "a b", "a+b", "a\\b", "é",
+        ] {
+            assert!(
+                SafeRecordId::parse(refused, code).is_err(),
+                "{refused:?} was accepted"
+            );
+        }
     }
 
     #[test]

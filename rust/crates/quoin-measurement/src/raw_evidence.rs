@@ -20,9 +20,27 @@
 //! the filesystem is. Splitting them that way is what lets
 //! [`crate::source::MemoryMeasurement`] refuse honestly instead of pretending
 //! to hold a file.
+//!
+//! # Two representations of a retained evidence file, and only two
+//!
+//! A pointer at a retained file exists here at exactly **two** trust levels,
+//! and `tests/tc_472_evidence_representations.rs` fails if a third appears:
+//!
+//! | type | trust |
+//! |---|---|
+//! | [`crate::common::recorded_evidence::RecordedEvidenceReference`] | **as recorded** — read by serde off a stored record, unchecked |
+//! | [`RawEvidenceReference`] | **as verified** — minted by [`raw_evidence_for`] from a path that passed the lexical guards and a digest [`quoin_store`] took itself |
+//!
+//! quoin#468 landed a third, `RawEvidenceClaim`, holding bare `String`s for
+//! the same job the recorded reference does, because quoin#469's serde-read
+//! type did not exist yet. This wave is where the records are actually parsed,
+//! so the claim is gone and [`verify_raw_evidence_references`] takes the
+//! recorded reference directly — one fewer conversion at every intake, and one
+//! fewer way to spell the same thing.
 
 use quoin_store::RawFileSha256Digest;
 
+use crate::common::recorded_evidence::RecordedEvidenceReference;
 use crate::error::{MeasurementError, MeasurementErrorCode};
 use crate::source::MeasurementSource;
 use crate::types::ids::NonEmptyText;
@@ -91,21 +109,6 @@ pub struct RawEvidenceReference {
     pub digest: RawFileSha256Digest,
 }
 
-/// One reference as a record claims it, before anything has been checked.
-///
-/// `verifyRawEvidenceReferences` reads three untrusted members off a record and
-/// reports each disagreement separately, so the claim stays untyped until it
-/// has been checked against the file.
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub struct RawEvidenceClaim {
-    /// The path the record claims, unchecked.
-    pub path: String,
-    /// The size the record claims.
-    pub size_bytes: u64,
-    /// The digest the record claims, in `sha256:<64 hex>` spelling, unchecked.
-    pub digest: String,
-}
-
 /// Mint a raw-evidence reference for a retained file.
 ///
 /// # Errors
@@ -146,7 +149,7 @@ pub fn raw_evidence_for<S: MeasurementSource + ?Sized>(
 /// disagreement, when any claim does not hold.
 pub fn verify_raw_evidence_references<S: MeasurementSource + ?Sized>(
     source: &S,
-    references: &[RawEvidenceClaim],
+    references: &[RecordedEvidenceReference],
 ) -> Result<(), MeasurementError> {
     let mut findings = Vec::new();
     for (index, reference) in references.iter().enumerate() {
@@ -159,7 +162,7 @@ pub fn verify_raw_evidence_references<S: MeasurementSource + ?Sized>(
                     ));
                 }
                 let observed = file.digest.to_stored();
-                if observed != reference.digest {
+                if observed != reference.digest.as_str() {
                     findings.push(format!(
                         "/raw_evidence/{index}/digest: expected {}, observed {observed}",
                         reference.digest
@@ -185,9 +188,9 @@ pub fn verify_raw_evidence_references<S: MeasurementSource + ?Sized>(
 
 fn check<S: MeasurementSource + ?Sized>(
     source: &S,
-    reference: &RawEvidenceClaim,
+    reference: &RecordedEvidenceReference,
 ) -> Result<crate::source::RawEvidenceFile, MeasurementError> {
-    source.raw_evidence_file(&RawEvidencePath::parse(&reference.path)?)
+    source.raw_evidence_file(&RawEvidencePath::parse(reference.path.as_str())?)
 }
 
 /// Refuse a definition version no active plan governs.

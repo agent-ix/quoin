@@ -10,7 +10,8 @@
 //! domain that depend on nothing else in it, plus the raw-evidence accounting
 //! lifted out of `intervention.ts`. Wave 2 (quoin#469): the intervention and
 //! operational record declarations and the two pure report renderers over
-//! them.
+//! them. Wave 5 (quoin#472): operational intake, the store-wide write lock,
+//! the discharge question and the GitHub-release producer.
 //!
 //! | retained TypeScript | here |
 //! | --- | --- |
@@ -26,13 +27,20 @@
 //! | `intervention-report.ts` | [`intervention::report`] |
 //! | `operational-types.ts` | [`operational::record`] |
 //! | `operational-report.ts` | [`operational::report`] |
+//! | `operational.ts` | [`operational`]'s nine other modules |
+//! | `github-release-operational.ts` | [`operational::github_release`] |
 //!
 //! [`common`] holds what those four files declare more than once — the
 //! subject, the producer, the scalar unions — declared once here.
 //!
 //! The TypeScript is retained, not deleted: this is a port wave and the
-//! cutover is quoin#479. Intake and the producers are quoin#471 and
-//! quoin#472.
+//! cutover is quoin#479. Intervention intake is quoin#471.
+//!
+//! [`json_bridge`] is the one crossing between [`quoin_store::JsonValue`] —
+//! the store's value, with ECMAScript number semantics and the canonical
+//! writers — and [`serde_json::Value`], which is what the schema validator and
+//! the record types speak. It decides nothing: one direction goes through the
+//! store's own writer and the other is a structural walk.
 //!
 //! # What is deliberately absent
 //!
@@ -52,6 +60,7 @@ pub mod date_time;
 pub mod discovery;
 pub mod error;
 pub mod intervention;
+pub mod json_bridge;
 pub mod operational;
 pub mod plans;
 pub mod profiles;
@@ -67,8 +76,8 @@ pub use error::{MeasurementError, MeasurementErrorCode};
 pub use plans::{PlanLoadOptions, load_measurement_plans};
 pub use profiles::load_active_assurance_profiles;
 pub use raw_evidence::{
-    RawEvidenceClaim, RawEvidencePath, RawEvidenceReference, assert_governing_definition,
-    raw_evidence_for, verify_raw_evidence_references,
+    RawEvidencePath, RawEvidenceReference, assert_governing_definition, raw_evidence_for,
+    verify_raw_evidence_references,
 };
 pub use source::{DiskMeasurement, MeasurementSource, MemoryMeasurement, RawEvidenceFile};
 pub use store::{

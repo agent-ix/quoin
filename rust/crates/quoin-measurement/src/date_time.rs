@@ -242,6 +242,66 @@ fn days_from_civil(year: i64, month: u16, day: u16) -> i64 {
     era * 146_097 + day_of_era - 719_468
 }
 
+/// The civil date `days` after 1970-01-01, Howard Hinnant's `civil_from_days`.
+///
+/// The exact inverse of [`days_from_civil`], and here rather than in a second
+/// module for the reason the module header gives: the calendar arithmetic in
+/// this crate lives in one place, and `tc_468_boundary` asserts it.
+fn civil_from_days(days: i64) -> (i64, i64, i64) {
+    let shifted = days + 719_468;
+    let era = if shifted >= 0 {
+        shifted
+    } else {
+        shifted - 146_096
+    } / 146_097;
+    let day_of_era = shifted - era * 146_097;
+    let year_of_era =
+        (day_of_era - day_of_era / 1_460 + day_of_era / 36_524 - day_of_era / 146_096) / 365;
+    let year = year_of_era + era * 400;
+    let day_of_year = day_of_era - (365 * year_of_era + year_of_era / 4 - year_of_era / 100);
+    let shifted_month = (5 * day_of_year + 2) / 153;
+    let day = day_of_year - (153 * shifted_month + 2) / 5 + 1;
+    let month = shifted_month + if shifted_month < 10 { 3 } else { -9 };
+    (year + i64::from(month <= 2), month, day)
+}
+
+/// Render an instant the way JavaScript's `Date.prototype.toISOString` does.
+///
+/// `github-release-operational.ts:159` writes a computed deadline with
+/// `new Date(deadline).toISOString()`, which **always** emits three fractional
+/// digits and an upper-case `Z` — `2026-08-29T23:21:00.000Z`, not
+/// `2026-08-29T23:21:00Z`. The retained pair under
+/// `spec/evidence/operational/pairs/` carries that exact spelling, so the
+/// milliseconds are not cosmetic: dropping them changes the bytes of every
+/// record this producer writes.
+///
+/// This is the inverse of [`Rfc3339DateTime::parse`] and deliberately not a
+/// second grammar — it produces only the one spelling that grammar's strictest
+/// reader accepts.
+///
+/// # Panics
+///
+/// Never for an instant this crate can parse. A year outside `0000..=9999` has
+/// no `toISOString` spelling in this format and is refused by returning
+/// [`None`] rather than by widening the field.
+#[must_use]
+pub fn to_iso_string(epoch_millis: i64) -> Option<String> {
+    let millis_of_day = epoch_millis.rem_euclid(86_400_000);
+    let days = epoch_millis.div_euclid(86_400_000);
+    let (year, month, day) = civil_from_days(days);
+    if !(0..=9_999).contains(&year) {
+        return None;
+    }
+    let second_of_day = millis_of_day / 1_000;
+    Some(format!(
+        "{year:04}-{month:02}-{day:02}T{:02}:{:02}:{:02}.{:03}Z",
+        second_of_day / 3_600,
+        (second_of_day / 60) % 60,
+        second_of_day % 60,
+        millis_of_day % 1_000,
+    ))
+}
+
 #[allow(
     clippy::unwrap_used,
     clippy::expect_used,
@@ -308,5 +368,38 @@ mod tests {
         assert!(Rfc3339DateTime::parse("2026-01-01T00:00:00Z ").is_err());
         assert!(Rfc3339DateTime::parse("2026-01-01T00:00:00").is_err());
         assert!(Rfc3339DateTime::parse("2026-01-01T00:00:00.Z").is_err());
+    }
+
+    /// `to_iso_string` inverts the parser over the whole calendar it accepts,
+    /// not over a handful of chosen instants.
+    #[test]
+    fn rendering_and_parsing_are_inverses_across_the_calendar() {
+        // Every leap-year boundary, both epoch directions, and the two
+        // spellings `toISOString` fixes: three fractional digits and `Z`.
+        for text in [
+            "1970-01-01T00:00:00.000Z",
+            "1969-12-31T23:59:59.999Z",
+            "1900-03-01T00:00:00.000Z",
+            "2000-02-29T12:34:56.789Z",
+            "2024-02-29T23:59:59.001Z",
+            "2026-08-29T23:21:00.000Z",
+            "9999-12-31T23:59:59.999Z",
+            "0001-01-01T00:00:00.000Z",
+        ] {
+            let parsed = Rfc3339DateTime::parse(text).unwrap();
+            assert_eq!(
+                super::to_iso_string(parsed.epoch_millis()).as_deref(),
+                Some(text),
+                "{text} did not survive the round trip"
+            );
+        }
+    }
+
+    /// A year with no four-digit spelling is refused, not silently widened.
+    #[test]
+    fn an_instant_outside_the_four_digit_years_has_no_iso_spelling() {
+        // 10000-01-01T00:00:00Z, one millisecond past the last renderable day.
+        assert_eq!(super::to_iso_string(253_402_300_800_000), None);
+        assert_eq!(super::to_iso_string(-62_167_219_200_001), None);
     }
 }
