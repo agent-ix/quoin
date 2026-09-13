@@ -17,10 +17,11 @@
 //!
 //! Nothing below recomputes what the retained TypeScript decided. The digests
 //! asserted are read from `tests/fixtures/change-assurance-oracle.json`, which
-//! was extracted from the capture `oracle/capture-change-assurance-oracle.mjs`
-//! took against `src/change-assurance/` — so "the Rust reaches the same digest"
-//! is a comparison against the oracle rather than against this crate's own
-//! output (FR-101 AC-5).
+//! was extracted from the capture taken against `src/change-assurance/` before
+//! quoin#457 deleted it — so "the Rust reaches the same digest" is a comparison
+//! against the oracle rather than against this crate's own output. The capture
+//! script went with the TypeScript it read, which FR-101 AC-5 requires: after a
+//! cutover there is no non-Rust oracle left to run.
 
 #![allow(
     clippy::unwrap_used,
