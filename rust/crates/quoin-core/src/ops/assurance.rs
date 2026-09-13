@@ -160,3 +160,43 @@ pub fn render_case(request: &serde_json::Value) -> Result<Response, CoreError> {
 
     Ok(Response::ok(payload))
 }
+
+/// Answer an `assurance.parse_argument`.
+///
+/// **The request IS the argument**, with no wrapper object. Every other
+/// operation in this domain takes named fields because the retained function
+/// does; this one hands the whole request to a validator whose first act is to
+/// refuse any key outside a closed set of twelve. A wrapper would have added a
+/// thirteenth key that exists on neither side of the retained API.
+///
+/// # Errors
+///
+/// - [`CoreErrorCode::BadRequest`] when the request fails any of the retained
+///   contract's predicates.
+/// - [`CoreErrorCode::Refused`] when the request exceeds [`MAX_BUILD_CASE_BYTES`].
+pub fn parse_argument(request: &serde_json::Value) -> Result<Response, CoreError> {
+    // The same ceiling as the two operations above. An authored argument is
+    // far smaller than a built case, but a THIRD constant would be a third
+    // thing to keep in agreement with the reference for no behaviour gained.
+    let size = serde_json::to_vec(request)
+        .map_err(|e| CoreError::new(CoreErrorCode::Io, e.to_string()))?
+        .len();
+    if size > MAX_BUILD_CASE_BYTES {
+        return Err(
+            CoreError::new(CoreErrorCode::Refused, "request exceeds the accepted size")
+                .with_context("op", "assurance.parse_argument")
+                .with_context("limit_bytes", MAX_BUILD_CASE_BYTES.to_string())
+                .with_context("observed_bytes", size.to_string()),
+        );
+    }
+
+    let argument = quoin_assurance::parse_assurance_argument(request).map_err(|e| {
+        CoreError::new(CoreErrorCode::BadRequest, e.to_string())
+            .with_context("op", "assurance.parse_argument")
+    })?;
+
+    let payload = serde_json::to_value(argument)
+        .map_err(|e| CoreError::new(CoreErrorCode::Io, e.to_string()))?;
+
+    Ok(Response::ok(payload))
+}

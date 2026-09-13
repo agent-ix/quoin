@@ -34,9 +34,15 @@
 //! field subset sizes it from what the code can observe, and those differ by a
 //! factor of five here (quoin#425).
 
+pub mod argument;
 pub mod case;
 pub mod render;
 
+pub use argument::{
+    ArgumentError, ArgumentKind, ArgumentStatus, Assumption, AssumptionStatus, AssuranceArgument,
+    Challenge, ChallengeStatus, Participant, Reasoning, Relationship, RelationshipType, TopClaim,
+    parse_assurance_argument,
+};
 pub use case::{AssuranceCase, CaseInput, CaseNode, NodeKind, NodeStatus, Unreadable, build_case};
 pub use render::{RenderableCase, render_case};
 

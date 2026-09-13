@@ -57,6 +57,82 @@ enum Request {
     /// object keys where `JSON.stringify` preserves insertion order. The two
     /// orderings differ; their byte counts do not, which is why this works.
     BuildCaseOfBytes(usize),
+    /// [`ARGUMENT`] with these top-level keys replaced by raw JSON text.
+    ///
+    /// Overrides rather than whole documents because an authored argument is
+    /// twelve required keys deep and a table of forty full copies would hide
+    /// the one field each case is about. An empty override REMOVES the key,
+    /// which a JSON merge-patch could not express: `null` is itself under
+    /// test here — the retained code treats an explicit `null` differently in
+    /// `expires_at` and in `resolution_refs`, so "set to null" and "delete"
+    /// must stay distinguishable.
+    Argument(&'static [(&'static str, &'static str)]),
+    /// [`ARGUMENT`] carrying one assumption whose `review_by` is this text.
+    ///
+    /// Its own variant because the instant grammar is the densest part of the
+    /// contract — an impossible day, a leap second, a rolled hour and two
+    /// lowercase spellings each decide acceptance — and a table of them reads
+    /// as a grammar only if the rows are one line each.
+    ArgumentReviewBy(&'static str),
+}
+
+/// The authored argument every `assurance.parse_argument` case starts from.
+///
+/// Minimal and ACCEPTED: `assumptions`, `challenges` and `relationships` are
+/// empty, so a case that overrides one of them states its whole subject.
+const ARGUMENT: &str = r#"{
+  "id": "AA-900",
+  "title": "Synthetic widget release decision",
+  "type": "AssuranceArgument",
+  "status": "active",
+  "owner": "release-owner",
+  "profile": "ix://example.invalid/widget/AP-900",
+  "top_claim": {
+    "id": "CLAIM-900",
+    "statement": "The bounded synthetic widget change is acceptable.",
+    "subject": "widget revision 0123456789abcdef"
+  },
+  "reasoning": [
+    {
+      "id": "ARG-900",
+      "statement": "Argue from the explicitly reviewed clause disposition.",
+      "supports": "CLAIM-900",
+      "sufficiency_criteria": ["Every binding clause has a disposition."]
+    }
+  ],
+  "assumptions": [],
+  "participants": [
+    {
+      "id": "reviewer-900",
+      "role": "decision reviewer",
+      "authority": "may accept or reject this synthetic release",
+      "independence": "did not produce the implementation evidence"
+    }
+  ],
+  "challenges": [],
+  "relationships": []
+}"#;
+
+/// Apply top-level overrides to [`ARGUMENT`].
+///
+/// A malformed base or override would make every case that used it a request
+/// both sides reject as bad JSON — agreeing, and proving nothing. `arguments_
+/// are_well_formed` below asserts that cannot happen, so the fallbacks here
+/// are unreachable and exist only to keep the harness panic-free.
+fn argument_with(overrides: &[(&str, &str)]) -> String {
+    let Ok(mut value) = serde_json::from_str::<serde_json::Value>(ARGUMENT) else {
+        return String::from("{\"unparseable base\":true}");
+    };
+    if let Some(object) = value.as_object_mut() {
+        for (key, json) in overrides {
+            if json.is_empty() {
+                object.remove(*key);
+            } else if let Ok(parsed) = serde_json::from_str::<serde_json::Value>(json) {
+                object.insert((*key).to_owned(), parsed);
+            }
+        }
+    }
+    value.to_string()
 }
 
 /// The `assurance.build_case` request [`Request::BuildCaseOfBytes`] pads.
@@ -76,6 +152,13 @@ impl Request {
                 r#"{{"documents":[],"obligations":[{{"id":"FR-001-AC-1","statement":"{}"}}],"findings":[]}}"#,
                 "x".repeat(n.saturating_sub(BUILD_CASE_ENVELOPE.len()))
             ),
+            Self::Argument(overrides) => argument_with(overrides),
+            Self::ArgumentReviewBy(review_by) => argument_with(&[(
+                "assumptions",
+                &format!(
+                    r#"[{{"id":"ASM-900","statement":"The reviewed clause set is stable.","owner":"release-owner","status":"accepted","review_by":"{review_by}"}}]"#
+                ),
+            )]),
         }
     }
 }
@@ -608,6 +691,370 @@ const CASES: &[Case] = &[
         op: "assurance.render_case",
         request: Request::Literal("{oops"),
     },
+    // ---------------------------------------------------------------------
+    // `assurance.parse_argument` (quoin#384).
+    //
+    // These cases were written BEFORE the Rust type, and that ordering found
+    // things review would not have. Three of them - the U+0085 owner, the
+    // U+FEFF owner, and the explicit `null` in `resolution_refs` - are inputs
+    // a reader of either implementation has no reason to think to ask about,
+    // because on both sides the divergence reads as SAFETY: `Option<T>` and
+    // `str::trim` are the obvious spellings, and each is wrong here in the
+    // direction that ACCEPTS what the retained code refuses.
+    // ---------------------------------------------------------------------
+    Case {
+        name: "assurance/argument-ok-minimal",
+        op: "assurance.parse_argument",
+        request: Request::Argument(&[]),
+    },
+    Case {
+        name: "assurance/argument-ok-full",
+        op: "assurance.parse_argument",
+        request: Request::Argument(&[
+            (
+                "assumptions",
+                r#"[{"id":"ASM-900","statement":"The reviewed clause set is stable.","owner":"release-owner","status":"accepted","review_by":"2028-02-29T00:00:00Z"}]"#,
+            ),
+            (
+                "challenges",
+                r#"[{"id":"CH-900","target":"ASM-900","statement":"The clause set moved once before.","status":"accepted-risk","owner":"release-owner","resolution_refs":["ix://example.invalid/e/EV-1"],"expires_at":"2029-01-01T00:00:00+05:30"}]"#,
+            ),
+            (
+                "relationships",
+                r#"[{"target":"ix://example.invalid/w/AA-800","type":"supports"}]"#,
+            ),
+        ]),
+    },
+    // --- the instant grammar ---------------------------------------------
+    Case {
+        // quoin#436: `Date.parse` ROLLED this to March 2, and the rolled
+        // number then decided whether the assumption was due for review.
+        name: "assurance/argument-review-by-impossible-day",
+        op: "assurance.parse_argument",
+        request: Request::ArgumentReviewBy("2026-02-30T00:00:00Z"),
+    },
+    Case {
+        name: "assurance/argument-review-by-june-31",
+        op: "assurance.parse_argument",
+        request: Request::ArgumentReviewBy("2026-06-31T00:00:00Z"),
+    },
+    Case {
+        name: "assurance/argument-review-by-non-leap-february-29",
+        op: "assurance.parse_argument",
+        request: Request::ArgumentReviewBy("2025-02-29T00:00:00Z"),
+    },
+    Case {
+        name: "assurance/argument-review-by-hour-24",
+        op: "assurance.parse_argument",
+        request: Request::ArgumentReviewBy("2026-08-15T24:00:00Z"),
+    },
+    Case {
+        // Refused by both. Named because a date crate would have accepted it.
+        name: "assurance/argument-review-by-leap-second",
+        op: "assurance.parse_argument",
+        request: Request::ArgumentReviewBy("2026-08-15T23:59:60Z"),
+    },
+    Case {
+        // The module's own regex is stricter than RFC 3339 on case, and the
+        // shared strict reader it delegates ranges to is not. Delegating the
+        // WHOLE check would have loosened this while tightening the ranges.
+        name: "assurance/argument-review-by-lowercase-t",
+        op: "assurance.parse_argument",
+        request: Request::ArgumentReviewBy("2026-08-15t00:00:00Z"),
+    },
+    Case {
+        name: "assurance/argument-review-by-lowercase-z",
+        op: "assurance.parse_argument",
+        request: Request::ArgumentReviewBy("2026-08-15T00:00:00z"),
+    },
+    Case {
+        name: "assurance/argument-review-by-offset-out-of-range",
+        op: "assurance.parse_argument",
+        request: Request::ArgumentReviewBy("2026-08-15T00:00:00+99:99"),
+    },
+    Case {
+        name: "assurance/argument-review-by-empty-fraction",
+        op: "assurance.parse_argument",
+        request: Request::ArgumentReviewBy("2026-08-15T00:00:00.Z"),
+    },
+    Case {
+        // Accepted, and the reason the tightening is a rule and not a ban.
+        name: "assurance/argument-review-by-real-leap-day",
+        op: "assurance.parse_argument",
+        request: Request::ArgumentReviewBy("2028-02-29T00:00:00Z"),
+    },
+    Case {
+        name: "assurance/argument-review-by-offset-and-fraction",
+        op: "assurance.parse_argument",
+        request: Request::ArgumentReviewBy("2026-08-15T23:59:59.250-11:00"),
+    },
+    // --- the two optional fields are not optional in the same way ---------
+    Case {
+        // `optionalStringAt` keys off `key in object`, so an explicit null
+        // reaches the string check and THROWS.
+        name: "assurance/argument-challenge-expires-at-null",
+        op: "assurance.parse_argument",
+        request: Request::Argument(&[(
+            "challenges",
+            r#"[{"id":"CH-900","target":"CLAIM-900","statement":"A bounded recovery case needed review.","status":"open","owner":"release-owner","expires_at":null}]"#,
+        )]),
+    },
+    Case {
+        // The sibling field is read through TRUTHINESS, so the identical
+        // explicit null is silently absent. `Option<String>` collapses the
+        // two, which is why this port is written against `Value`.
+        name: "assurance/argument-challenge-resolution-refs-null",
+        op: "assurance.parse_argument",
+        request: Request::Argument(&[(
+            "challenges",
+            r#"[{"id":"CH-900","target":"CLAIM-900","statement":"A bounded recovery case needed review.","status":"open","owner":"release-owner","resolution_refs":null}]"#,
+        )]),
+    },
+    Case {
+        name: "assurance/argument-challenge-resolution-refs-empty",
+        op: "assurance.parse_argument",
+        request: Request::Argument(&[(
+            "challenges",
+            r#"[{"id":"CH-900","target":"CLAIM-900","statement":"A bounded recovery case needed review.","status":"open","owner":"release-owner","resolution_refs":[]}]"#,
+        )]),
+    },
+    Case {
+        name: "assurance/argument-challenge-resolution-refs-duplicated",
+        op: "assurance.parse_argument",
+        request: Request::Argument(&[(
+            "challenges",
+            r#"[{"id":"CH-900","target":"CLAIM-900","statement":"A bounded recovery case needed review.","status":"open","owner":"release-owner","resolution_refs":["ix://e/1","ix://e/1"]}]"#,
+        )]),
+    },
+    Case {
+        name: "assurance/argument-challenge-missing-owner",
+        op: "assurance.parse_argument",
+        request: Request::Argument(&[(
+            "challenges",
+            r#"[{"id":"CH-900","target":"CLAIM-900","statement":"A bounded recovery case needed review.","status":"open"}]"#,
+        )]),
+    },
+    Case {
+        name: "assurance/argument-challenge-unknown-target",
+        op: "assurance.parse_argument",
+        request: Request::Argument(&[(
+            "challenges",
+            r#"[{"id":"CH-900","target":"NOPE-1","statement":"A bounded recovery case needed review.","status":"open","owner":"release-owner"}]"#,
+        )]),
+    },
+    // --- JavaScript's trim set is not Rust's ------------------------------
+    Case {
+        // U+FEFF: JavaScript trims it, `char::is_whitespace` does not. A port
+        // that reached for `str::trim` ACCEPTS this owner; the oracle refuses
+        // it.
+        name: "assurance/argument-owner-byte-order-mark",
+        op: "assurance.parse_argument",
+        request: Request::Argument(&[("owner", r#""\ufeff""#)]),
+    },
+    Case {
+        // U+0085: the same two disagree in the OPPOSITE direction, so the one
+        // wrong call would have been wrong twice. Accepted by the oracle.
+        name: "assurance/argument-owner-next-line",
+        op: "assurance.parse_argument",
+        request: Request::Argument(&[("owner", r#""\u0085""#)]),
+    },
+    Case {
+        // Where the two agree, they agree: refused by both.
+        name: "assurance/argument-owner-no-break-space",
+        op: "assurance.parse_argument",
+        request: Request::Argument(&[("owner", r#""\u00a0""#)]),
+    },
+    Case {
+        // Accepted by both: not whitespace to either.
+        name: "assurance/argument-owner-zero-width-space",
+        op: "assurance.parse_argument",
+        request: Request::Argument(&[("owner", r#""\u200b""#)]),
+    },
+    Case {
+        name: "assurance/argument-owner-empty",
+        op: "assurance.parse_argument",
+        request: Request::Argument(&[("owner", r#""""#)]),
+    },
+    // --- five enumerations, closed because the retained code checks -------
+    Case {
+        name: "assurance/argument-status-unlisted",
+        op: "assurance.parse_argument",
+        request: Request::Argument(&[("status", r#""archived""#)]),
+    },
+    Case {
+        name: "assurance/argument-type-unlisted",
+        op: "assurance.parse_argument",
+        request: Request::Argument(&[("type", r#""AssuranceCase""#)]),
+    },
+    Case {
+        name: "assurance/argument-assumption-status-unlisted",
+        op: "assurance.parse_argument",
+        request: Request::Argument(&[(
+            "assumptions",
+            r#"[{"id":"ASM-900","statement":"The reviewed clause set is stable.","owner":"release-owner","status":"withdrawn","review_by":"2028-02-29T00:00:00Z"}]"#,
+        )]),
+    },
+    Case {
+        name: "assurance/argument-challenge-status-unlisted",
+        op: "assurance.parse_argument",
+        request: Request::Argument(&[(
+            "challenges",
+            r#"[{"id":"CH-900","target":"CLAIM-900","statement":"A bounded recovery case needed review.","status":"accepted_risk","owner":"release-owner"}]"#,
+        )]),
+    },
+    Case {
+        name: "assurance/argument-relationship-type-unlisted",
+        op: "assurance.parse_argument",
+        request: Request::Argument(&[(
+            "relationships",
+            r#"[{"target":"ix://example.invalid/w/AA-800","type":"refutes"}]"#,
+        )]),
+    },
+    // --- closed key sets, at the top level and nested ---------------------
+    Case {
+        name: "assurance/argument-unknown-top-level-key",
+        op: "assurance.parse_argument",
+        request: Request::Argument(&[("schemaVersion", r#""v1""#)]),
+    },
+    Case {
+        name: "assurance/argument-top-claim-unknown-key",
+        op: "assurance.parse_argument",
+        request: Request::Argument(&[(
+            "top_claim",
+            r#"{"id":"CLAIM-900","statement":"S","subject":"widget","confidence":"high"}"#,
+        )]),
+    },
+    Case {
+        name: "assurance/argument-top-claim-missing-subject",
+        op: "assurance.parse_argument",
+        request: Request::Argument(&[("top_claim", r#"{"id":"CLAIM-900","statement":"S"}"#)]),
+    },
+    Case {
+        name: "assurance/argument-top-claim-not-an-object",
+        op: "assurance.parse_argument",
+        request: Request::Argument(&[("top_claim", r#"["CLAIM-900"]"#)]),
+    },
+    Case {
+        name: "assurance/argument-missing-relationships",
+        op: "assurance.parse_argument",
+        request: Request::Argument(&[("relationships", "")]),
+    },
+    Case {
+        name: "assurance/argument-reasoning-not-an-array",
+        op: "assurance.parse_argument",
+        request: Request::Argument(&[("reasoning", r#"{"id":"ARG-900"}"#)]),
+    },
+    Case {
+        name: "assurance/argument-reasoning-empty",
+        op: "assurance.parse_argument",
+        request: Request::Argument(&[("reasoning", "[]")]),
+    },
+    Case {
+        name: "assurance/argument-participants-empty",
+        op: "assurance.parse_argument",
+        request: Request::Argument(&[("participants", "[]")]),
+    },
+    // --- format, uniqueness and the graph ---------------------------------
+    Case {
+        name: "assurance/argument-id-not-numbered",
+        op: "assurance.parse_argument",
+        request: Request::Argument(&[("id", r#""AA-nine-hundred""#)]),
+    },
+    Case {
+        name: "assurance/argument-id-not-a-string",
+        op: "assurance.parse_argument",
+        request: Request::Argument(&[("id", "900")]),
+    },
+    Case {
+        name: "assurance/argument-profile-not-a-reference",
+        op: "assurance.parse_argument",
+        request: Request::Argument(&[("profile", r#""https://example.invalid/AP-900""#)]),
+    },
+    Case {
+        name: "assurance/argument-relationship-target-not-a-reference",
+        op: "assurance.parse_argument",
+        request: Request::Argument(&[(
+            "relationships",
+            r#"[{"target":"AA-800","type":"supports"}]"#,
+        )]),
+    },
+    Case {
+        name: "assurance/argument-criteria-not-strings",
+        op: "assurance.parse_argument",
+        request: Request::Argument(&[(
+            "reasoning",
+            r#"[{"id":"ARG-900","statement":"R","supports":"CLAIM-900","sufficiency_criteria":[1]}]"#,
+        )]),
+    },
+    Case {
+        name: "assurance/argument-criteria-empty",
+        op: "assurance.parse_argument",
+        request: Request::Argument(&[(
+            "reasoning",
+            r#"[{"id":"ARG-900","statement":"R","supports":"CLAIM-900","sufficiency_criteria":[]}]"#,
+        )]),
+    },
+    Case {
+        name: "assurance/argument-criteria-duplicated",
+        op: "assurance.parse_argument",
+        request: Request::Argument(&[(
+            "reasoning",
+            r#"[{"id":"ARG-900","statement":"R","supports":"CLAIM-900","sufficiency_criteria":["c","c"]}]"#,
+        )]),
+    },
+    Case {
+        name: "assurance/argument-duplicate-reasoning-id",
+        op: "assurance.parse_argument",
+        request: Request::Argument(&[(
+            "reasoning",
+            r#"[{"id":"ARG-900","statement":"R","supports":"CLAIM-900","sufficiency_criteria":["c"]},{"id":"ARG-900","statement":"R2","supports":"CLAIM-900","sufficiency_criteria":["d"]}]"#,
+        )]),
+    },
+    Case {
+        name: "assurance/argument-assumption-collides-with-top-claim",
+        op: "assurance.parse_argument",
+        request: Request::Argument(&[(
+            "assumptions",
+            r#"[{"id":"CLAIM-900","statement":"The reviewed clause set is stable.","owner":"release-owner","status":"accepted","review_by":"2028-02-29T00:00:00Z"}]"#,
+        )]),
+    },
+    Case {
+        name: "assurance/argument-supports-unknown-target",
+        op: "assurance.parse_argument",
+        request: Request::Argument(&[(
+            "reasoning",
+            r#"[{"id":"ARG-900","statement":"R","supports":"NOPE-1","sufficiency_criteria":["c"]}]"#,
+        )]),
+    },
+    Case {
+        name: "assurance/argument-reasoning-cycle",
+        op: "assurance.parse_argument",
+        request: Request::Argument(&[(
+            "reasoning",
+            r#"[{"id":"A","statement":"a","supports":"B","sufficiency_criteria":["c"]},{"id":"B","statement":"b","supports":"A","sufficiency_criteria":["d"]}]"#,
+        )]),
+    },
+    Case {
+        // Neither start is a cycle. A GLOBAL visited set would have made the
+        // second walk look like one, which is why the retained code resets it
+        // per start node and this port does too.
+        name: "assurance/argument-shared-intermediate-step",
+        op: "assurance.parse_argument",
+        request: Request::Argument(&[(
+            "reasoning",
+            r#"[{"id":"A","statement":"a","supports":"M","sufficiency_criteria":["c"]},{"id":"B","statement":"b","supports":"M","sufficiency_criteria":["d"]},{"id":"M","statement":"m","supports":"CLAIM-900","sufficiency_criteria":["e"]}]"#,
+        )]),
+    },
+    Case {
+        name: "assurance/argument-malformed",
+        op: "assurance.parse_argument",
+        request: Request::Literal("{oops"),
+    },
+    Case {
+        name: "assurance/argument-not-an-object",
+        op: "assurance.parse_argument",
+        request: Request::Literal("[]"),
+    },
     Case {
         name: "invalid/unknown-op",
         op: "evidence.record",
@@ -791,4 +1238,63 @@ fn usage(missing: &str) -> std::process::ExitCode {
     eprintln!("quoin-difftest: missing {missing}");
     eprintln!("usage: quoin-difftest --core <path> --ts <path> [--node <node>]");
     std::process::ExitCode::from(2)
+}
+
+#[cfg(test)]
+#[expect(
+    clippy::unwrap_used,
+    reason = "in a test, a panic IS the failure report; the production lints stand"
+)]
+mod tests {
+    use super::{ARGUMENT, CASES, Request};
+
+    /// Every `assurance.parse_argument` request is well-formed JSON.
+    ///
+    /// Without this, a typo in an override would produce a request BOTH sides
+    /// reject as bad JSON — a case that passes, proves nothing, and looks
+    /// exactly like one that works. The same vacuity `argument_with`'s
+    /// fallbacks would otherwise hide.
+    #[test]
+    fn argument_requests_are_well_formed() {
+        assert!(
+            serde_json::from_str::<serde_json::Value>(ARGUMENT).is_ok(),
+            "the base argument must parse"
+        );
+        for case in CASES {
+            let (Request::Argument(_) | Request::ArgumentReviewBy(_)) = case.request else {
+                continue;
+            };
+            let text = case.request.text();
+            let parsed = serde_json::from_str::<serde_json::Value>(&text);
+            assert!(
+                parsed.is_ok_and(|value| value.is_object()),
+                "case {} produced a request that is not a JSON object: {text}",
+                case.name
+            );
+        }
+    }
+
+    /// Every override names a key the base argument already carries.
+    ///
+    /// An override spelled `resolution_ref` would silently ADD a thirteenth
+    /// top-level key, and the case would then be testing the closed key set
+    /// rather than the field it is named for. `schemaVersion` is the one case
+    /// that means to do that, so it is listed.
+    #[test]
+    fn argument_overrides_name_existing_keys() {
+        let base = serde_json::from_str::<serde_json::Value>(ARGUMENT).unwrap();
+        let base = base.as_object().unwrap();
+        for case in CASES {
+            let Request::Argument(overrides) = case.request else {
+                continue;
+            };
+            for (key, _) in overrides {
+                assert!(
+                    base.contains_key(*key) || *key == "schemaVersion",
+                    "case {} overrides `{key}`, which the base argument does not carry",
+                    case.name
+                );
+            }
+        }
+    }
 }
