@@ -117,6 +117,16 @@ tests/fixtures/semantic-module/
 # black and ruff — which is where formatting belongs.
 templates/semantic-module/
 
+# The ajv-parity golden corpus (issue #378, EPIC #373 Stage 3). Produced once by
+# scripts/capture-semantic-goldens.mjs from the TypeScript oracle, each file
+# carrying the quoin revision it was captured at. The contract is "regenerate,
+# never hand-edit": a formatter re-indenting them makes the committed bytes
+# differ from what the producer emits, so the next regeneration reads as a
+# change that nobody made. Same rule as the vendored schemas above — these bytes
+# are evidence, not source.
+rust/crates/quoin-semantic/tests/goldens/
+rust/crates/quoin-completeness/tests/goldens/
+
 # The quoin#377 golden oracle (rust/crates/quoin-validators). `expected.json` is
 # captured output, not source: `tools/generate-oracle.mts` compares the bytes it
 # re-derives from the retained TypeScript against this file exactly, so a

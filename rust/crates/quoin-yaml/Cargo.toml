@@ -1,0 +1,26 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 Agent-IX
+[package]
+name = "quoin-yaml"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+description = "The one YAML reader on the quoin boundary: YAML 1.2 core-schema scalar resolution, producing serde_json::Value (quoin#378 DIVERGENCE D4)."
+publish.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+# Exact pin, and NOT a libyaml binding. libyaml implements YAML 1.1 implicit
+# typing; the `yaml` npm package the TypeScript oracle uses implements the
+# YAML 1.2 core schema. Those two resolve `017`, `010` and `0b101` differently,
+# which is a verdict-level divergence, not a cosmetic one. See
+# quoin-semantic/DIVERGENCE.md section 6 (D4). Any replacement must be
+# YAML 1.2 core-schema or the D4 parity tests fail.
+saphyr = { version = "=0.0.12", default-features = false }

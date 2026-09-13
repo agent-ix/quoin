@@ -1,0 +1,161 @@
+{
+  "provenance": {
+    "producer": "scripts/capture-semantic-goldens.mjs",
+    "oracle": "agent-ix/quoin src/semantic + src/completeness (TypeScript)",
+    "quoinRevision": "dc834a22f45cea52275595ebc2857baa17484229",
+    "ajvVersion": "8.20.0",
+    "note": "Captured once from the TypeScript implementation. The Rust crates read these files; they never invoke Node. Regenerate by re-running the producer, never by hand-editing."
+  },
+  "source": "src/completeness/bundle.ts readBundleFrontmatter() / claimsFor()",
+  "files": {
+    "a.md": "---\nid: NFR-001\nquality_attribute: security\n---\n\nBody A\n",
+    "nested/b.md": "---\nid: NFR-002\nquality_attribute:\n  - reliability\n  - safety\n---\n\nBody B\n",
+    "nested/deep/c.md": "---\nid: NFR-003\nquality_attributes_not_applicable: [compliance]\n---\n\n| compliance | not a regulated product |\n",
+    "no-frontmatter.md": "# Index\n\nnothing\n",
+    "broken.md": "---\nid: [unclosed\n---\n\nbody\n",
+    "empty-frontmatter.md": "---\n---\n\nbody\n",
+    "crlf.md": "---\r\nid: NFR-004\r\nquality_attribute: security\r\n---\r\n\r\nBody\r\n",
+    "not-markdown.txt": "---\nquality_attribute: security\n---\n",
+    "scalar-frontmatter.md": "---\njust-a-string\n---\n\nbody\n",
+    "no-trailing-newline.md": "---\nid: NFR-005\nquality_attribute: compliance\n---\nbody",
+    "ambiguous/claims.md": "---\nid: NFR-006\nquality_attribute:\n  - security\n  - on\n  - no\n  - 1:30\n  - 2026-09-12\n  - 017\n  - 010\n  - 0b101\n---\n\nBody F\n",
+    "ambiguous/excuse.md": "---\nid: NFR-007\nquality_attributes_not_applicable:\n  - 017\n  - null\n---\n\n| 017 | out of scope for this bundle |\n"
+  },
+  "documents": [
+    {
+      "path": "a.md",
+      "frontmatter": {
+        "id": "NFR-001",
+        "quality_attribute": "security"
+      },
+      "body": "\nBody A\n"
+    },
+    {
+      "path": "ambiguous/claims.md",
+      "frontmatter": {
+        "id": "NFR-006",
+        "quality_attribute": [
+          "security",
+          "on",
+          "no",
+          "1:30",
+          "2026-09-12",
+          17,
+          10,
+          "0b101"
+        ]
+      },
+      "body": "\nBody F\n"
+    },
+    {
+      "path": "ambiguous/excuse.md",
+      "frontmatter": {
+        "id": "NFR-007",
+        "quality_attributes_not_applicable": [
+          17,
+          null
+        ]
+      },
+      "body": "\n| 017 | out of scope for this bundle |\n"
+    },
+    {
+      "path": "crlf.md",
+      "frontmatter": {
+        "id": "NFR-004",
+        "quality_attribute": "security"
+      },
+      "body": "\r\nBody\r\n"
+    },
+    {
+      "path": "nested/b.md",
+      "frontmatter": {
+        "id": "NFR-002",
+        "quality_attribute": [
+          "reliability",
+          "safety"
+        ]
+      },
+      "body": "\nBody B\n"
+    },
+    {
+      "path": "nested/deep/c.md",
+      "frontmatter": {
+        "id": "NFR-003",
+        "quality_attributes_not_applicable": [
+          "compliance"
+        ]
+      },
+      "body": "\n| compliance | not a regulated product |\n"
+    },
+    {
+      "path": "no-trailing-newline.md",
+      "frontmatter": {
+        "id": "NFR-005",
+        "quality_attribute": "compliance"
+      },
+      "body": "body"
+    }
+  ],
+  "unreadable": [
+    {
+      "path": "broken.md",
+      "reason": "Flow sequence in block collection must be sufficiently indented and end with a ] at line 1, column 14:\n\nid: [unclosed\n             ^\n"
+    }
+  ],
+  "claims": [
+    {
+      "path": "a.md",
+      "claims": [
+        "security"
+      ],
+      "excuses": [],
+      "body": "\nBody A\n"
+    },
+    {
+      "path": "ambiguous/claims.md",
+      "claims": [
+        "security",
+        "on",
+        "no",
+        "1:30",
+        "2026-09-12",
+        "0b101"
+      ],
+      "excuses": [],
+      "body": "\nBody F\n"
+    },
+    {
+      "path": "crlf.md",
+      "claims": [
+        "security"
+      ],
+      "excuses": [],
+      "body": "\r\nBody\r\n"
+    },
+    {
+      "path": "nested/b.md",
+      "claims": [
+        "reliability",
+        "safety"
+      ],
+      "excuses": [],
+      "body": "\nBody B\n"
+    },
+    {
+      "path": "nested/deep/c.md",
+      "claims": [],
+      "excuses": [
+        "compliance"
+      ],
+      "body": "\n| compliance | not a regulated product |\n"
+    },
+    {
+      "path": "no-trailing-newline.md",
+      "claims": [
+        "compliance"
+      ],
+      "excuses": [],
+      "body": "body"
+    }
+  ]
+}

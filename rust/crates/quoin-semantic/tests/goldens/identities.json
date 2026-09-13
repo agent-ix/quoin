@@ -1,0 +1,33 @@
+{
+  "provenance": {
+    "producer": "scripts/capture-semantic-goldens.mjs",
+    "oracle": "agent-ix/quoin src/semantic + src/completeness (TypeScript)",
+    "quoinRevision": "dc834a22f45cea52275595ebc2857baa17484229",
+    "ajvVersion": "8.20.0",
+    "note": "Captured once from the TypeScript implementation. The Rust crates read these files; they never invoke Node. Regenerate by re-running the producer, never by hand-editing."
+  },
+  "source": "src/semantic/package-manifest.ts typeIdentity() / mappingIdentity()",
+  "counts": {
+    "total": 3
+  },
+  "cases": [
+    {
+      "package": "agent-ix/spec-objects",
+      "name": "entity",
+      "typeIdentity": "ix://agent-ix/spec-objects/type/entity",
+      "mappingIdentity": "ix://agent-ix/spec-objects/mapping/entity"
+    },
+    {
+      "package": "a/b",
+      "name": "X",
+      "typeIdentity": "ix://a/b/type/X",
+      "mappingIdentity": "ix://a/b/mapping/X"
+    },
+    {
+      "package": "org.with.dots/repo-name",
+      "name": "Type_1",
+      "typeIdentity": "ix://org.with.dots/repo-name/type/Type_1",
+      "mappingIdentity": "ix://org.with.dots/repo-name/mapping/Type_1"
+    }
+  ]
+}

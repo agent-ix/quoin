@@ -59,6 +59,13 @@ quoin-evidence-types = { path = "crates/quoin-evidence-types" }
 quoin-finding-types = { path = "crates/quoin-finding-types" }
 quoin-quire-types = { path = "crates/quoin-quire-types" }
 quoin-schemas = { path = "crates/quoin-schemas" }
+quoin-yaml = { path = "crates/quoin-yaml" }
+# Raised from =1.0.228 by quoin#378: `serde_derive` 1.0.228 builds on `syn` 2
+# while `thiserror-impl` 2.0.20 builds on `syn` 3, and `multiple-versions =
+# "deny"` forbids carrying both. 1.0.229 moves `serde_derive` to `syn` 3, which
+# resolves the half of that duplicate we own. See the `syn` entry in
+# `deny.toml`'s `[bans] skip` for the half we do not. `engineering-assurance`
+# 0.3.1 (on main) requires exactly 1.0.229, so the two sides already agree.
 serde = { version = "=1.0.229", features = ["derive"] }
 # FR-097: the JSON Schema the generated TypeScript surface is derived from.
 # Exact pin for the same reason as every other line here — the generated file
@@ -69,14 +76,20 @@ serde = { version = "=1.0.229", features = ["derive"] }
 # rather than taste. `schemars_derive` 1.2.2 is on `syn` 3, which is where
 # `serde_derive` 1.0.229 also is; 1.2.1 is on `syn` 2 and would put two `syn`
 # majors in the graph, which `cargo deny` refuses — correctly. `ref-cast` is
-# at 1.0.27 for the same reason. serde is at 1.0.229 because
-# `engineering-assurance` 0.3.1 requires exactly that; the syn-2 pins this
-# file previously carried were correct against serde 1.0.228 and are wrong
-# against 1.0.229, so they moved rather than `deny.toml` being edited.
+# at 1.0.27 for the same reason.
 schemars = { version = "=1.2.2", features = ["derive"] }
+# Raised from =1.0.150 (this branch) to =1.0.151 (main) on merge: main's pin is
+# the higher of the two and a pin moves UP, never down. Nothing on this branch
+# requires 1.0.150 specifically; it was simply the latest when the branch was
+# cut.
 serde_json = "=1.0.151"
 # The digest under the FR-097 hash assertion. Exact pin like everything else.
 sha2 = "=0.10.9"
+# Raised from =2.0.18 by quoin#378: `saphyr` (the YAML 1.2 core-schema reader
+# quoin-yaml wraps) requires ^2.0.20, and `multiple-versions = "deny"` in
+# deny.toml forbids carrying both. `feat/381-config-modules` raises this pin to
+# the same =2.0.20 independently, for an unrelated reason — the two branches
+# converge here; whoever merges second should not read it as drift.
 thiserror = "=2.0.20"
 jsonschema = { version = "=0.56.0", default-features = false }
 engineering-assurance = { version = "=0.3.1", git = "https://github.com/agent-ix/engineering-assurance", rev = "72b0fcd" }
