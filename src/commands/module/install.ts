@@ -1,7 +1,7 @@
 import { Args } from "@oclif/core";
 
 import { QuoinCommand } from "../../base.js";
-import { installPlugin } from "../../plugins.js";
+import { installModule } from "../../core/modules.js";
 
 export default class ModuleInstall extends QuoinCommand {
   static summary = "Install or update a user/community spec module.";
@@ -30,6 +30,6 @@ export default class ModuleInstall extends QuoinCommand {
     const { args } = await this.parse(ModuleInstall);
     const source = args.source;
     if (!source) throw new Error("module install requires <source>");
-    this.log(JSON.stringify(installPlugin(source), null, 2));
+    this.log(JSON.stringify(installModule(source), null, 2));
   }
 }

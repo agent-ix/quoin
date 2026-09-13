@@ -33,6 +33,7 @@ use crate::ids::ModuleName;
 /// because the registry file is shared with the retained TypeScript.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct SemanticPin {
     /// The module's declared semantic package.
     pub package: String,

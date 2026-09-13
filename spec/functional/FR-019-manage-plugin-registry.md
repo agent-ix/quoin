@@ -44,10 +44,10 @@ directory and drop its registry entry.
 
 | ID          | Criteria                                                                                                         | Verification                                       |
 | ----------- | ---------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
-| FR-019-AC-1 | `plugin install <path-source>` materializes the module, records it, and reports it                               | Test (plugins.test.ts, cli.test.ts, index.test.ts) |
-| FR-019-AC-2 | A module name is read from a root or single-nested `manifest.yaml`; a missing or empty name raises an error      | Test (plugins.test.ts)                             |
+| FR-019-AC-1 | `plugin install <path-source>` materializes the module, records it, and reports it                               | Test (install_reconcile.rs, core-modules.test.ts, cli.test.ts, index.test.ts) |
+| FR-019-AC-2 | A module name is read from a root or single-nested `manifest.yaml`; a missing or empty name raises an error      | Test (ts_oracle.rs, install_reconcile.rs)          |
 | FR-019-AC-3 | `plugin list` prints the registry's plugins                                                                      | Test (cli.test.ts)                                 |
-| FR-019-AC-4 | `plugin remove <name>` deletes the module directory and drops its registry entry; a missing name raises an error | Test (plugins.test.ts, cli.test.ts)                |
+| FR-019-AC-4 | `plugin remove <name>` deletes the module directory and drops its registry entry; a missing name raises an error | Test (install_reconcile.rs, cli.test.ts)           |
 
 ## Dependencies
 

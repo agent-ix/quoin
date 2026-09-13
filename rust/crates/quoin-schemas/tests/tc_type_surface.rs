@@ -71,10 +71,39 @@ fn tc_1612_the_committed_source_schema_digest_is_the_current_one() {
 #[test]
 fn tc_1612_the_generated_surface_declares_every_type_that_crosses_the_boundary() {
     let surface = committed_surface();
-    for name in ["Diagnostic", "PingRequest", "PingPayload"] {
+    for name in [
+        "Diagnostic",
+        "PingRequest",
+        "PingPayload",
+        "ResolveOrgRequest",
+        "ResolveOrgPayload",
+        "UnresolvedOrgMessagePayload",
+        "ListRequest",
+        "ListPayload",
+        "InstallRequest",
+        "InstallPayload",
+        "RemoveRequest",
+        "RemovePayload",
+        "EnsureDefaultsRequest",
+        "EnsureDefaultsPayload",
+        "InstalledModule",
+        "SemanticPin",
+    ] {
         assert!(
             surface.contains(&format!("export interface {name} {{")),
             "`{name}` crosses the boundary but is not in the generated surface"
+        );
+    }
+    // A `#[serde(transparent)]` newtype and a unit enum are named types too;
+    // rendering either as a bare `string` at the use site would lose the name.
+    for alias in [
+        "export type ModuleName = string;",
+        "export type CommitSha = string;",
+        "export type Mode = \"lazy\" | \"sync\";",
+    ] {
+        assert!(
+            surface.contains(alias),
+            "`{alias}` is missing from the generated surface"
         );
     }
     assert!(
@@ -250,15 +279,16 @@ fn tc_1614_no_hand_written_declaration_shadows_a_generated_boundary_type() {
             (name, fields)
         })
         .collect();
-    // Six interfaces: `Diagnostic`, the two `core.ping` shapes and the two
-    // `validators.run` shapes, plus the finding they carry. The four newtype
-    // and enum aliases the surface also publishes are `export type` and are
-    // not interfaces, so they are outside what this scanner reads — a hand
-    // written `type ObligationId = string` shadows nothing structural.
+    // The literal is the sanity pin on the SCANNER, not on the surface: it is
+    // what makes a scanner that has stopped reading fail loudly instead of
+    // reporting clean over everything. It moves when the boundary grows, and
+    // moving it is a deliberate act. The newtype and unit-enum aliases the
+    // surface also publishes are `export type` and not interfaces, so they are
+    // outside what this scanner reads.
     assert_eq!(
         generated.len(),
-        6,
-        "the scanner read {} interfaces out of the generated surface, not 6; \
+        25,
+        "the scanner read {} interfaces out of the generated surface, not 25; \
          it is broken and would report clean over anything",
         generated.len()
     );

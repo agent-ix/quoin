@@ -177,9 +177,20 @@ function resolveOnPath(name: string): string {
   });
 }
 
-/** The operation name a caller passed, guarded before it reaches argv. */
+/**
+ * The operation name a caller passed, guarded before it reaches argv.
+ *
+ * Underscores are accepted because the boundary's own registry spells
+ * operations with them — `assurance.build_case`, `config.resolve_org`,
+ * `modules.ensure_defaults` — so a guard that refused them refused five of the
+ * eleven names in `quoin_core::dispatch::OPERATIONS` before a process was ever
+ * spawned, and did it with a message about the `<domain>.<op>` shape, which was
+ * not the disagreement. The guard is still stricter than `parse_operation`,
+ * deliberately: this side is what decides what reaches argv, and a lowercase
+ * two-part name is the whole of what the boundary has ever exposed.
+ */
 function checkOperation(op: string): string {
-  if (!/^[a-z][a-z0-9-]*\.[a-z][a-z0-9-]*$/.test(op)) {
+  if (!/^[a-z][a-z0-9_-]*\.[a-z][a-z0-9_-]*$/.test(op)) {
     throw new Error(
       `quoin-core operations are spelled <domain>.<op>, got ${JSON.stringify(op)}`,
     );

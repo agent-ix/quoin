@@ -66,8 +66,8 @@ stays unresolved rather than falling back to a value
 | FR-023-AC-1 | `--config-root`, then `IX_HOME`, then `~/.ix` select the config root in that precedence | Test (cli.test.ts, catalog.test.ts) |
 | FR-023-AC-2 | `QUOIN_MODULE_PATHS` roots are assembled before the installed store                     | Test (catalog.test.ts)              |
 | FR-023-AC-3 | `IX_SPEC_WORKFLOWS_ROOT` is the first candidate when resolving a workflow skill         | Test (flows.test.ts)                |
-| FR-023-AC-4 | `--org`, then `QUOIN_ORG` select the authoring organization in that precedence, and neither defaults when absent | Test (org.test.ts, cli.test.ts) |
-| FR-023-AC-5 | The stored config file supplies the organization behind `--org`/`QUOIN_ORG` and ahead of the git remote | Test (org.test.ts) |
+| FR-023-AC-4 | `--org`, then `QUOIN_ORG` select the authoring organization in that precedence, and neither defaults when absent | Test (ts_oracle.rs, tc_446_org_parity.rs, cli.test.ts) |
+| FR-023-AC-5 | The stored config file supplies the organization behind `--org`/`QUOIN_ORG` and ahead of the git remote | Test (ts_oracle.rs, tc_446_org_parity.rs, config_service.rs, cli.test.ts) |
 
 ## Dependencies
 

@@ -32,6 +32,12 @@ pub enum CoreErrorCode {
     /// The caller's protocol expectation disagrees with this build's. The
     /// payload is still complete and still worth reading; see [`Outcome::Partial`].
     ProtocolSkew,
+    /// An input the operation could not use in full, answered anyway from what
+    /// remained. The payload is the honest answer over a reduced input, not a
+    /// complete one; the diagnostic names what was dropped. Distinct from
+    /// [`Self::ProtocolSkew`], which is about the caller's protocol version
+    /// rather than about the content it sent.
+    Degraded,
     /// An I/O failure on stdin or stdout. Nothing the caller sent caused it.
     Io,
 }
@@ -47,6 +53,7 @@ impl CoreErrorCode {
             Self::BadRequest => "CORE_BAD_REQUEST",
             Self::Refused => "CORE_REFUSED",
             Self::ProtocolSkew => "CORE_PROTOCOL_SKEW",
+            Self::Degraded => "CORE_DEGRADED",
             Self::Io => "CORE_IO",
         }
     }
@@ -61,6 +68,7 @@ impl CoreErrorCode {
             Self::BadRequest,
             Self::Refused,
             Self::ProtocolSkew,
+            Self::Degraded,
             Self::Io,
         ]
     }
@@ -80,7 +88,7 @@ impl CoreErrorCode {
     #[must_use]
     pub const fn outcome(self) -> Outcome {
         match self {
-            Self::ProtocolSkew => Outcome::Partial,
+            Self::ProtocolSkew | Self::Degraded => Outcome::Partial,
             Self::Refused => Outcome::Refused,
             Self::BadUsage | Self::UnknownOp | Self::BadJson | Self::BadRequest => Outcome::Invalid,
             Self::Io => Outcome::Internal,
@@ -161,6 +169,36 @@ mod tests {
         assert_eq!(seen.len(), count, "two codes share a wire spelling");
     }
 
+    /// `all()` is hand-maintained, so nothing but this makes a variant added
+    /// to the enum and forgotten there a failure.
+    ///
+    /// The count is written out and every code is listed by NAME. A loop over
+    /// `all()` would only re-run `all()` and agree with itself — the quoin#443
+    /// failure mode, and the reason `ModulesErrorCode` is pinned the same way.
+    /// A new code is a deliberate act: add it to `all()`, add it here, raise
+    /// the number.
+    #[test]
+    fn the_catalogue_is_every_variant_of_the_enum() {
+        assert_eq!(
+            CoreErrorCode::all().len(),
+            8,
+            "a code was added to the enum; add it to `all()` too"
+        );
+        assert_eq!(
+            CoreErrorCode::all(),
+            [
+                CoreErrorCode::BadUsage,
+                CoreErrorCode::UnknownOp,
+                CoreErrorCode::BadJson,
+                CoreErrorCode::BadRequest,
+                CoreErrorCode::Refused,
+                CoreErrorCode::ProtocolSkew,
+                CoreErrorCode::Degraded,
+                CoreErrorCode::Io,
+            ]
+        );
+    }
+
     #[test]
     fn an_io_failure_is_internal_not_the_callers_fault() {
         assert_eq!(CoreErrorCode::Io.outcome(), Outcome::Internal);
@@ -168,11 +206,18 @@ mod tests {
     }
 
     #[test]
-    fn protocol_skew_is_the_one_code_that_still_carries_a_payload() {
+    fn the_payload_carrying_codes_are_exactly_the_two_partial_ones() {
+        // Deliberately extended, not widened: `Degraded` joins `ProtocolSkew`
+        // because a partial answer over a reduced input is still an answer the
+        // caller must read. Every other code means "there is nothing to read",
+        // and a third entry appearing here is a design change, not a detail.
         let carrying: Vec<_> = CoreErrorCode::all()
             .iter()
             .filter(|c| c.outcome().carries_payload())
             .collect();
-        assert_eq!(carrying, vec![&CoreErrorCode::ProtocolSkew]);
+        assert_eq!(
+            carrying,
+            vec![&CoreErrorCode::ProtocolSkew, &CoreErrorCode::Degraded]
+        );
     }
 }

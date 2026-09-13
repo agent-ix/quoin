@@ -39,7 +39,8 @@ fn cases(name: &str) -> Vec<Json> {
         .clone()
 }
 
-/// Trace: FR-019-AC-2
+/// Trace: FR-018-AC-1, FR-018-AC-2, FR-018-AC-3, FR-018-AC-4, FR-018-AC-5,
+/// FR-019-AC-2
 #[test]
 fn tc_381_230_parse_source_arg_matches_the_typescript_oracle() {
     let cases = cases("parse_source_arg");

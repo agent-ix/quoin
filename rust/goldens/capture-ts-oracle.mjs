@@ -1,4 +1,16 @@
 // Golden capture for quoin#381 (Stage 7 Rust port). Run once from the TS tree.
+//
+// NO LONGER RUNNABLE AT HEAD, on purpose. quoin#446 deleted `src/org.ts` and
+// `src/plugins.ts`, the two modules the imports below reach for, because the
+// Rust crates now decide everything they decided. The script is kept verbatim
+// rather than deleted because it is the provenance of `ts-oracle.json`: it says
+// exactly which inputs produced each recorded answer, which is the only thing
+// that makes a parity failure adjudicable. To re-run it, check out the revision
+// PROVENANCE.md names (`7c8e18f`), where those modules still exist.
+//
+// Re-running it is also not how a disagreement is settled. The TypeScript is the
+// oracle exactly once; a Rust test that disagrees with a golden is a finding to
+// adjudicate, not a file to regenerate.
 import { mkdirSync, mkdtempSync, writeFileSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";

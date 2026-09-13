@@ -80,11 +80,11 @@ pub const BOUNDARY_SCHEMA_ID: &str = "https://agent-ix.dev/quoin/core-boundary-v
 // --- The two checked-in digests. `make types` rewrites both; nothing else may.
 /// SHA-256 of the canonical JSON of [`boundary_schema`] at generation time.
 pub const SOURCE_SCHEMA_SHA256: &str =
-    "7579931f5172a657e54f65945660187bf844014ead61e25869348a06f95b332c";
+    "9d6a775327486558c05ed7e5d9e120e4c29584505e0ba6820e910b29297b54ee";
 
 /// SHA-256 of the committed `src/core/types.ts`.
 pub const GENERATED_TYPES_SHA256: &str =
-    "11a5b715596916ecf7de7ab754e9e22b9b39a05fae551a70524a088e0d019632";
+    "2cb3796c8a9fe105175ef67340d6c5edb9beefdee366bce2f34db9fa1251b978";
 
 /// The JSON Schema of every type that crosses the `quoin-core` boundary.
 ///
@@ -98,6 +98,17 @@ pub fn boundary_schema() -> Value {
     let _ = generator.subschema_for::<quoin_core::protocol::Diagnostic>();
     let _ = generator.subschema_for::<quoin_core::ops::core::PingRequest>();
     let _ = generator.subschema_for::<quoin_core::ops::core::PingPayload>();
+    let _ = generator.subschema_for::<quoin_core::ops::config::ResolveOrgRequest>();
+    let _ = generator.subschema_for::<quoin_core::ops::config::ResolveOrgPayload>();
+    let _ = generator.subschema_for::<quoin_core::ops::config::UnresolvedOrgMessagePayload>();
+    let _ = generator.subschema_for::<quoin_core::ops::modules::ListRequest>();
+    let _ = generator.subschema_for::<quoin_core::ops::modules::ListPayload>();
+    let _ = generator.subschema_for::<quoin_core::ops::modules::InstallRequest>();
+    let _ = generator.subschema_for::<quoin_core::ops::modules::InstallPayload>();
+    let _ = generator.subschema_for::<quoin_core::ops::modules::RemoveRequest>();
+    let _ = generator.subschema_for::<quoin_core::ops::modules::RemovePayload>();
+    let _ = generator.subschema_for::<quoin_core::ops::modules::EnsureDefaultsRequest>();
+    let _ = generator.subschema_for::<quoin_core::ops::modules::EnsureDefaultsPayload>();
     let _ = generator.subschema_for::<quoin_core::ops::validators::RunRequest>();
     let _ = generator.subschema_for::<quoin_core::ops::validators::RunPayload>();
     json!({
@@ -364,16 +375,33 @@ mod tests {
         assert_eq!(
             names,
             [
+                "CommitSha",
                 "Diagnostic",
                 "EmptyGateFinding",
+                "EnsureDefaultsPayload",
+                "EnsureDefaultsRequest",
                 "FindingKind",
+                "InstallPayload",
+                "InstallRequest",
+                "InstalledModule",
                 "LineNumber",
+                "ListPayload",
+                "ListRequest",
+                "Mode",
+                "ModuleName",
                 "ObligationId",
                 "PingPayload",
                 "PingRequest",
+                "RemovePayload",
+                "RemoveRequest",
                 "RepoPath",
+                "ResolveOrgPayload",
+                "ResolveOrgRequest",
                 "RunPayload",
                 "RunRequest",
+                "SemanticPin",
+                "Source",
+                "UnresolvedOrgMessagePayload",
             ]
         );
     }

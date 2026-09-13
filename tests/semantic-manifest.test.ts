@@ -23,10 +23,10 @@ import { defaultModuleRoots, loadCatalog } from "../src/catalog.js";
 import Ajv2020 from "ajv/dist/2020.js";
 
 import {
-  installPlugin,
-  listPlugins,
-  validateInstalledSemantics,
-} from "../src/plugins.js";
+  ensureDefaultModules,
+  installModule,
+  listModules,
+} from "../src/core/modules.js";
 import { semanticCoreDir } from "../src/semantic/contract.js";
 import {
   readModuleSemantic,
@@ -166,13 +166,13 @@ describe("FR-070 semantic manifest block", () => {
   it("fails to install a second module declaring the same semantic package, naming both", () => {
     const first = moduleCopy("alpha-module");
     const second = moduleCopy("beta-module");
-    installPlugin(`path:${first}`, home);
-    expect(() => installPlugin(`path:${second}`, home)).toThrow(
+    installModule(`path:${first}`, home);
+    expect(() => installModule(`path:${second}`, home)).toThrow(
       /semantic\.duplicate-package/,
     );
     const error = (() => {
       try {
-        installPlugin(`path:${second}`, home);
+        installModule(`path:${second}`, home);
       } catch (e) {
         return String(e);
       }
@@ -180,7 +180,7 @@ describe("FR-070 semantic manifest block", () => {
     })();
     expect(error).toContain("alpha-module");
     expect(error).toContain("beta-module");
-    expect(listPlugins(home).map((p) => p.name)).toEqual(["alpha-module"]);
+    expect(listModules(home).map((p) => p.name)).toEqual(["alpha-module"]);
   });
 
   // Trace: FR-070-AC-7
@@ -211,17 +211,17 @@ describe("FR-070 semantic manifest block", () => {
   // Trace: FR-070-AC-3
   it("restores the previously installed version when a re-install is rejected", () => {
     const good = moduleCopy("stable");
-    installPlugin(`path:${good}`, home);
+    installModule(`path:${good}`, home);
     const bad = join(scratch, "stable-bad");
     cpSync(good, bad, { recursive: true });
     const manifestPath = join(bad, "manifest.yaml");
     const manifest = parseYaml(readFileSync(manifestPath, "utf8")) as Json;
     (manifest.semantic as Json).foo = 1;
     writeFileSync(manifestPath, stringifyYaml(manifest));
-    expect(() => installPlugin(`path:${bad}`, home)).toThrow(
+    expect(() => installModule(`path:${bad}`, home)).toThrow(
       /semantic\.unknown-key/,
     );
-    expect(listPlugins(home).map((p) => p.name)).toEqual(["stable"]);
+    expect(listModules(home).map((p) => p.name)).toEqual(["stable"]);
     const restored = readFileSync(
       join(home, "filament", "modules", "stable", "manifest.yaml"),
       "utf8",
@@ -251,7 +251,7 @@ describe("FR-073 data_schema by path and digest", () => {
   // Trace: FR-073-AC-1
   it("installs a reference-form data_schema and resolves it against the vendored semantic-core bundle", () => {
     const root = moduleCopy("ref-ok");
-    const installed = installPlugin(`path:${root}`, home);
+    const installed = installModule(`path:${root}`, home);
     expect(installed.name).toBe("ref-ok");
     const result = readModuleSemantic(
       join(home, "filament", "modules", "ref-ok"),
@@ -326,8 +326,17 @@ describe("FR-073 data_schema by path and digest", () => {
   // Trace: FR-070-AC-1, NFR-017-AC-1
   it("re-validates installed modules on the reconcile path", () => {
     const root = moduleCopy("reconciled");
-    installPlugin(`path:${root}`, home);
-    expect(() => validateInstalledSemantics(home)).not.toThrow();
+    // Driven through the reconcile itself rather than through the validator it
+    // calls. The old shape of this test called `validateInstalledSemantics`
+    // directly and then asserted that the string
+    // `"validateInstalledSemantics(home)"` appeared in `src/modules.ts` — a
+    // grep standing in for the wiring. A `lazy` reconcile over an empty
+    // manifest touches nothing, so if the re-validation were ever dropped from
+    // the path this call would succeed, which is the failure the grep was
+    // reaching for and this states outright.
+    const EMPTY = "schemaVersion: 1\nentries: []\n";
+    installModule(`path:${root}`, home);
+    expect(() => ensureDefaultModules(home, EMPTY)).not.toThrow();
     const installedManifest = join(
       home,
       "filament",
@@ -338,11 +347,9 @@ describe("FR-073 data_schema by path and digest", () => {
     const manifest = parseYaml(readFileSync(installedManifest, "utf8")) as Json;
     (manifest.semantic as Json).targets = ["go"];
     writeFileSync(installedManifest, stringifyYaml(manifest));
-    expect(() => validateInstalledSemantics(home)).toThrow(
-      /installed module reconciled violates the semantic contract[\s\S]*semantic\.unknown-target/,
+    expect(() => ensureDefaultModules(home, EMPTY)).toThrow(
+      /QM020_SEMANTIC_CONTRACT_VIOLATION[\s\S]*semantic\.unknown-target/,
     );
-    const source = readFileSync(join("src", "modules.ts"), "utf8");
-    expect(source).toContain("validateInstalledSemantics(home)");
   });
 
   // Trace: FR-073-AC-2

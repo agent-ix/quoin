@@ -14,14 +14,15 @@
 //!
 //! The subset is exactly what the boundary declares today: objects with named
 //! properties, string/integer/boolean/null unions, `Record<string, T>` from a
-//! `BTreeMap<String, T>`, arrays, `$ref` into `$defs`, and — since quoin#412 —
-//! the two shapes a Rust **newtype** and a **unit-variant enum** produce: a
-//! `$defs` entry that is not an object at all, and a closed set of string
-//! constants. Those become `export type X = string;` and
-//! `export type X = "a" | "b";` respectively, which is what the Rust side means
-//! and what a TypeScript caller can check. When a boundary type needs more,
-//! this module grows a case and a test in the same commit — which is the point
-//! of refusing rather than degrading.
+//! `BTreeMap<String, T>`, arrays, `$ref` into `$defs`, newtype aliases
+//! (`#[serde(transparent)]`), the closed set of string constants a **unit
+//! enum** produces, and the `oneOf` of tagged objects an **internally tagged
+//! enum** produces. A newtype and a unit enum arrive as a `$defs` entry that is
+//! not an object at all; those become `export type X = string;` and
+//! `export type X = "a" | "b";`, which is what the Rust side means and what a
+//! TypeScript caller can check. When a boundary type needs more, this module
+//! grows a case and a test in the same commit — which is the point of refusing
+//! rather than degrading.
 
 use std::fmt::Write as _;
 
@@ -58,10 +59,11 @@ fn refuse(pointer: &str, reason: impl Into<String>) -> RenderRefusal {
 /// Render one `$defs` entry as a TypeScript declaration.
 ///
 /// An object schema with named properties becomes an `interface`
-/// ([`render_interface`]); anything else becomes a type alias. Both shapes are
-/// produced by the boundary today: `#[serde(transparent)]` newtypes such as
-/// `ObligationId` emit a bare `"type": "string"` definition, and a unit-variant
-/// enum such as `FindingKind` emits a set of string constants.
+/// ([`render_interface`]); a `oneOf` of tagged objects becomes named variant
+/// interfaces plus a union ([`render_tagged_union`]); anything else the
+/// renderer understands becomes a type alias. The alias case is what a
+/// `#[serde(transparent)]` newtype (`ObligationId`, `ModuleName`, `CommitSha`)
+/// and a unit enum (`FindingKind`, `Mode`) arrive as.
 ///
 /// A newtype is deliberately NOT inlined into its uses. `path: RepoPath` and
 /// `subject: string` are the same bytes on the wire and different things in the
@@ -72,7 +74,7 @@ fn refuse(pointer: &str, reason: impl Into<String>) -> RenderRefusal {
 ///
 /// # Errors
 ///
-/// [`RenderRefusal`] when the definition is outside the supported subset.
+/// [`RenderRefusal`] for any construct outside the supported subset.
 pub fn render_definition(
     name: &str,
     schema: &Value,
@@ -82,18 +84,125 @@ pub fn render_definition(
         .as_object()
         .ok_or_else(|| refuse(pointer, "a `$defs` entry must be an object schema"))?;
     if object.get("type").and_then(Value::as_str) == Some("object")
-        || object.contains_key("properties")
+        && object.contains_key("properties")
     {
         return render_interface(name, schema, pointer);
     }
-
+    // `is_empty` first, and deliberately: `all` is vacuously true over an empty
+    // slice, so without it an empty `oneOf` took the tagged-union arm and this
+    // renderer emitted `export type X = ;` — invalid TypeScript, silently, from
+    // a renderer whose whole contract is to refuse rather than degrade. An
+    // empty `oneOf` falls through to `render_type`, which refuses it by name.
+    if let Some(members) = object.get("oneOf").and_then(Value::as_array)
+        && !members.is_empty()
+        && members
+            .iter()
+            .all(|member| member.get("properties").is_some())
+    {
+        return render_tagged_union(name, object, members, pointer);
+    }
     let mut out = String::new();
     if let Some(description) = object.get("description").and_then(Value::as_str) {
         out.push_str(&doc_comment(description, ""));
     }
     let rendered = render_type(schema, pointer)?;
-    let _ = writeln!(out, "export type {name} = {rendered};");
+    out.push_str(&alias_declaration(name, &rendered));
     Ok(out)
+}
+
+/// Render an internally tagged enum as named variant interfaces plus a union.
+///
+/// Each variant is lifted into its own `export interface`, named for the
+/// definition and its discriminant (`Source` + `git-subdir` →
+/// `SourceGitSubdir`). The alternative — a union of anonymous object literals —
+/// would hand a TypeScript reader six shapes with no names to refer to, and
+/// would put the renderer in the business of emitting nested anonymous
+/// interfaces, which [`render_named_type`] refuses everywhere else for the
+/// reason that a shape worth writing down is worth naming.
+fn render_tagged_union(
+    name: &str,
+    object: &serde_json::Map<String, Value>,
+    members: &[Value],
+    pointer: &str,
+) -> Result<String, RenderRefusal> {
+    let mut out = String::new();
+    let mut variants = Vec::with_capacity(members.len());
+    for (index, member) in members.iter().enumerate() {
+        let member_pointer = format!("{pointer}/oneOf/{index}");
+        let discriminant = discriminant_of(member, &member_pointer)?;
+        let variant = format!("{name}{}", pascal_case(&discriminant));
+        out.push_str(&render_interface(&variant, member, &member_pointer)?);
+        out.push('\n');
+        variants.push(variant);
+    }
+    if let Some(description) = object.get("description").and_then(Value::as_str) {
+        out.push_str(&doc_comment(description, ""));
+    }
+    out.push_str(&alias_declaration(name, &variants.join(" | ")));
+    Ok(out)
+}
+
+/// The `const` value of the single literal-valued property of a variant.
+fn discriminant_of(member: &Value, pointer: &str) -> Result<String, RenderRefusal> {
+    let properties = member
+        .get("properties")
+        .and_then(Value::as_object)
+        .ok_or_else(|| refuse(pointer, "a union variant must declare `properties`"))?;
+    let mut found: Option<&str> = None;
+    for property in properties.values() {
+        if let Some(literal) = property.get("const").and_then(Value::as_str) {
+            if found.is_some() {
+                return Err(refuse(
+                    pointer,
+                    "a union variant with two literal-valued properties has no \
+                     single discriminant to name it by",
+                ));
+            }
+            found = Some(literal);
+        }
+    }
+    found.map(ToOwned::to_owned).ok_or_else(|| {
+        refuse(
+            pointer,
+            "a union variant needs a literal-valued property to name it by; an \
+             untagged union is not in the supported subset",
+        )
+    })
+}
+
+fn pascal_case(value: &str) -> String {
+    value
+        .split(['-', '_'])
+        .filter(|part| !part.is_empty())
+        .map(|part| {
+            let mut chars = part.chars();
+            chars.next().map_or_else(String::new, |first| {
+                first.to_uppercase().collect::<String>() + chars.as_str()
+            })
+        })
+        .collect()
+}
+
+/// `export type Name = …;`, wrapped the way `prettier` wraps it.
+///
+/// The generated file is digest-asserted against a fresh render, and `make
+/// types` runs `prettier` over the file it wrote — so a declaration `prettier`
+/// would reflow is a declaration that breaks the assertion. Only a union can
+/// exceed the print width here, and `prettier`'s form for that is one
+/// leading-pipe arm per line.
+fn alias_declaration(name: &str, rendered: &str) -> String {
+    const PRINT_WIDTH: usize = 80;
+    let single = format!("export type {name} = {rendered};");
+    if single.len() <= PRINT_WIDTH || !rendered.contains(" | ") {
+        return single + "\n";
+    }
+    let mut out = format!("export type {name} =\n");
+    for arm in rendered.split(" | ") {
+        let _ = writeln!(out, "  | {arm}");
+    }
+    out.truncate(out.len().saturating_sub(1));
+    out.push_str(";\n");
+    out
 }
 
 /// Render one `$defs` entry as a TypeScript `interface` declaration.
@@ -208,6 +317,21 @@ pub fn render_type(schema: &Value, pointer: &str) -> Result<String, RenderRefusa
         let mut parts = Vec::with_capacity(members.len());
         for (index, member) in members.iter().enumerate() {
             parts.push(string_literal(member, &format!("{pointer}/enum/{index}"))?);
+        }
+        return Ok(union_of(parts));
+    }
+
+    // `anyOf`, which is what `schemars` emits for an `Option<T>` whose inner
+    // type is itself a named `$ref`. Rendered by recursion rather than by the
+    // `const`-only rule above, because these members are types and not
+    // literals; a member outside the subset still refuses, one level down.
+    if let Some(members) = object.get("anyOf").and_then(Value::as_array) {
+        if members.is_empty() {
+            return Err(refuse(pointer, "an empty `anyOf` names no type"));
+        }
+        let mut parts = Vec::with_capacity(members.len());
+        for (index, member) in members.iter().enumerate() {
+            parts.push(render_type(member, &format!("{pointer}/anyOf/{index}"))?);
         }
         return Ok(union_of(parts));
     }
@@ -566,6 +690,243 @@ mod tests {
         )
         .unwrap();
         assert!(rendered.starts_with("export interface T {"), "{rendered}");
+    }
+
+    #[test]
+    fn a_transparent_newtype_stays_a_named_alias() {
+        // `#[serde(transparent)]` on `ModuleName` erases the wrapper on the
+        // wire but not the name in the declaration. Rendering it as bare
+        // `string` at each use site would lose the only signal a TypeScript
+        // reader has that the field is validated.
+        let rendered = render_definition(
+            "ModuleName",
+            &json!({ "type": "string", "description": "A name." }),
+            "#/$defs/ModuleName",
+        )
+        .unwrap();
+        assert!(
+            rendered.contains("export type ModuleName = string;"),
+            "{rendered}"
+        );
+        assert!(rendered.contains("A name."), "{rendered}");
+    }
+
+    #[test]
+    fn a_unit_enum_renders_as_a_union_of_string_literals() {
+        let rendered = render_definition(
+            "Mode",
+            &json!({
+                "oneOf": [
+                    { "const": "lazy", "type": "string" },
+                    { "const": "sync", "type": "string" }
+                ]
+            }),
+            "#/$defs/Mode",
+        )
+        .unwrap();
+        assert_eq!(rendered, "export type Mode = \"lazy\" | \"sync\";\n");
+    }
+
+    #[test]
+    fn an_internally_tagged_enum_renders_as_a_discriminated_union() {
+        let rendered = render_definition(
+            "Source",
+            &json!({
+                "oneOf": [
+                    {
+                        "type": "object",
+                        "properties": {
+                            "type": { "const": "path", "type": "string" },
+                            "path": { "type": "string" }
+                        },
+                        "required": ["type", "path"]
+                    },
+                    {
+                        "type": "object",
+                        "properties": {
+                            "type": { "const": "npm", "type": "string" },
+                            "package": { "type": "string" },
+                            "version": { "type": ["string", "null"] }
+                        },
+                        "required": ["type", "package"]
+                    }
+                ]
+            }),
+            "#/$defs/Source",
+        )
+        .unwrap();
+        // Each variant is a NAMED interface, so a caller can annotate one.
+        assert!(
+            rendered.contains("export interface SourcePath {"),
+            "{rendered}"
+        );
+        assert!(
+            rendered.contains("export interface SourceNpm {"),
+            "{rendered}"
+        );
+        assert!(
+            rendered.contains("export type Source = SourcePath | SourceNpm;"),
+            "{rendered}"
+        );
+        // The discriminant is a literal type on every arm, which is what makes
+        // `source.type === "path"` narrow in TypeScript. A widening to `string`
+        // here would compile and narrow nothing.
+        assert!(rendered.contains(r#"type: "path";"#), "{rendered}");
+        assert!(rendered.contains(r#"type: "npm";"#), "{rendered}");
+        assert!(rendered.contains("version?: string | null;"), "{rendered}");
+    }
+
+    #[test]
+    fn a_variant_name_pascal_cases_its_kebab_discriminant() {
+        let rendered = render_definition(
+            "Source",
+            &json!({
+                "oneOf": [{
+                    "type": "object",
+                    "properties": {
+                        "type": { "const": "git-subdir", "type": "string" },
+                        "url": { "type": "string" }
+                    },
+                    "required": ["type", "url"]
+                }]
+            }),
+            "#/$defs/Source",
+        )
+        .unwrap();
+        assert!(
+            rendered.contains("export interface SourceGitSubdir {"),
+            "{rendered}"
+        );
+    }
+
+    #[test]
+    fn an_untagged_union_variant_is_refused_rather_than_named_by_position() {
+        // `Source1`, `Source2` would compile and mean nothing. A variant with
+        // no discriminant is a shape the renderer cannot name, so it refuses.
+        let error = render_definition(
+            "Thing",
+            &json!({
+                "oneOf": [{
+                    "type": "object",
+                    "properties": { "a": { "type": "string" } },
+                    "required": ["a"]
+                }]
+            }),
+            "#/$defs/Thing",
+        )
+        .unwrap_err();
+        assert!(error.reason.contains("untagged"), "{}", error.reason);
+    }
+
+    #[test]
+    fn a_union_too_long_for_one_line_wraps_the_way_prettier_wraps_it() {
+        // The generated file is digest-asserted against a fresh render and
+        // `make types` runs `prettier` over it, so a declaration `prettier`
+        // would reflow breaks the assertion on the next gate run.
+        let arms = [
+            "SourceGithub",
+            "SourceGitSubdir",
+            "SourceGit",
+            "SourceUrl",
+            "SourcePath",
+            "SourceNpm",
+        ];
+        let rendered = alias_declaration("Source", &arms.join(" | "));
+        assert_eq!(
+            rendered,
+            "export type Source =\n  | SourceGithub\n  | SourceGitSubdir\n  \
+             | SourceGit\n  | SourceUrl\n  | SourcePath\n  | SourceNpm;\n"
+        );
+        assert_eq!(
+            alias_declaration("Narrow", "Alpha | Bravo"),
+            "export type Narrow = Alpha | Bravo;\n"
+        );
+    }
+
+    #[test]
+    fn an_option_of_a_referenced_type_renders_as_a_nullable_reference() {
+        let rendered = render_type(
+            &json!({ "anyOf": [{ "$ref": "#/$defs/SemanticPin" }, { "type": "null" }] }),
+            "#/$defs/InstalledModule/properties/semantic",
+        )
+        .unwrap();
+        assert_eq!(rendered, "SemanticPin | null");
+    }
+
+    #[test]
+    fn an_inline_object_in_a_field_position_is_still_refused() {
+        // The union-member case above is the ONLY place an anonymous object
+        // type is emitted. A nested object in a field position hides a type
+        // that ought to be named, and that refusal must survive the widening.
+        let error = render_type(
+            &json!({ "type": "object", "properties": { "a": { "type": "string" } } }),
+            "#/$defs/T/properties/nested",
+        )
+        .unwrap_err();
+        assert!(error.reason.contains("$defs"), "{}", error.reason);
+    }
+
+    #[test]
+    fn an_empty_union_is_refused() {
+        let error = render_type(&json!({ "oneOf": [] }), "#/a").unwrap_err();
+        assert!(error.reason.contains("oneOf"), "{}", error.reason);
+    }
+
+    /// The same refusal at the `$defs` entry point, which is the one a real
+    /// schema reaches. `render_definition` has its own `oneOf` arm for tagged
+    /// unions and its guard is an `all()` — vacuously true over an empty slice
+    /// — so the assertion above proves nothing about this path.
+    #[test]
+    fn an_empty_union_is_refused_as_a_definition_too() {
+        let error = render_definition("X", &json!({ "oneOf": [] }), "#/$defs/X").unwrap_err();
+        assert!(error.reason.contains("oneOf"), "{}", error.reason);
+    }
+
+    /// The interface arm takes BOTH halves of its condition, and neither half
+    /// alone.
+    ///
+    /// The guard was `type == "object" || contains_key("properties")` and is
+    /// now `&&`. Reverting it to `||` left all 39 tests in this crate green,
+    /// including the committed-digest case — the rule was pinned in neither
+    /// direction (quoin#450 review, finding 6). Both off-diagonal cases are
+    /// asserted here, because the whole content of the change is what happens
+    /// to them:
+    ///
+    /// - `properties` with no `"type": "object"` falls through to
+    ///   [`render_type`], which refuses by name rather than emitting an
+    ///   interface for a schema that never said it was one.
+    /// - `"type": "object"` with no `properties` renders the index signature
+    ///   its `additionalProperties` describes, rather than an empty interface
+    ///   that silently accepts anything.
+    #[test]
+    fn the_interface_arm_needs_the_type_and_the_properties() {
+        let interface = render_definition(
+            "X",
+            &json!({ "type": "object", "properties": { "a": { "type": "string" } } }),
+            "#/$defs/X",
+        )
+        .unwrap();
+        assert!(interface.contains("export interface X"), "{interface}");
+
+        // `properties` alone is not an interface: under `||` this rendered one.
+        let error = render_definition(
+            "X",
+            &json!({ "properties": { "a": { "type": "string" } } }),
+            "#/$defs/X",
+        )
+        .unwrap_err();
+        assert_eq!(error.pointer, "#/$defs/X");
+
+        // `type: object` alone is a map, not an empty interface: under `||`
+        // this rendered `export interface X {}`.
+        let map = render_definition(
+            "X",
+            &json!({ "type": "object", "additionalProperties": { "type": "string" } }),
+            "#/$defs/X",
+        )
+        .unwrap();
+        assert!(map.contains("Record<string, string>"), "{map}");
+        assert!(!map.contains("interface"), "{map}");
     }
 
     #[test]

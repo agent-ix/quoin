@@ -1,5 +1,5 @@
 import { QuoinCommand } from "../../base.js";
-import { listPlugins } from "../../plugins.js";
+import { listModules } from "../../core/modules.js";
 
 export default class ModuleList extends QuoinCommand {
   static summary = "List installed spec modules.";
@@ -11,6 +11,6 @@ modules and any installed modules.`;
 
   async run(): Promise<void> {
     await this.parse(ModuleList);
-    this.log(JSON.stringify({ plugins: listPlugins() }, null, 2));
+    this.log(JSON.stringify({ plugins: listModules() }, null, 2));
   }
 }

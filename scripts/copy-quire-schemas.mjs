@@ -9,7 +9,7 @@
  * with ENOENT — which is exactly how this was found.
  */
 
-import { copyFileSync, mkdirSync, readdirSync } from "node:fs";
+import { copyFileSync, cpSync, mkdirSync, readdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -28,3 +28,22 @@ for (const from of sources) {
     console.log(`dist/schemas/${name}`);
   }
 }
+
+// The vendored semantic contract, which `src/semantic/contract.ts` resolves the
+// same way off `SEMANTIC_ROOT` — its own module directory, so `src/semantic/` in
+// a source run and `dist/` once the chunks are flattened. Copied recursively
+// because it has subdirectories (`semantic-core/`, `filament-core-data/`) rather
+// than a flat file list.
+//
+// Two paths and not one: the schema tree lands under `dist/schemas/`, and
+// `sweep-report.schema.json` sits at the root of the contract beside it. Since
+// quoin#446 the semantic gate runs inside `quoin-core`, which is handed
+// `SEMANTIC_ROOT` as `QUOIN_SEMANTIC_ROOT` and reads both paths from there, so a
+// missing copy is no longer a latent gap — it refuses every install.
+cpSync(join(repo, "src", "semantic", "schemas"), to, { recursive: true });
+console.log("dist/schemas/ (vendored semantic contract)");
+copyFileSync(
+  join(repo, "src", "semantic", "sweep-report.schema.json"),
+  join(repo, "dist", "sweep-report.schema.json"),
+);
+console.log("dist/sweep-report.schema.json");

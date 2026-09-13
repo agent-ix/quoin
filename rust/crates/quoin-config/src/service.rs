@@ -566,6 +566,76 @@ pub fn deep_merge(base: &mut Mapping, overlay: &Mapping) {
     }
 }
 
+/// Resolve a configuration from documents that have **already been read**.
+///
+/// The filesystem-free half of [`ConfigService::get`], and the entry point the
+/// `quoin-core` boundary uses: `ops/` holds no host capability, so the caller
+/// supplies the layer documents and this decides over them. `ConfigService::get`
+/// is the same decision with the reads in front of it.
+///
+/// `layers` are YAML documents lowest-precedence first — the user file, then
+/// the project file — and `None` means "that layer is absent", which is not a
+/// problem. A layer that is present but unparsable, or whose top level is not a
+/// mapping, is recorded in the returned issue list and **skipped**, matching the
+/// totality contract: a broken config file must not stop an author writing
+/// specs (FR-027-AC-5).
+#[must_use]
+pub fn resolve_documents<S: PluginConfigSchema + Default>(
+    layers: &[Option<&str>],
+    env: &dyn Environment,
+) -> (Resolved<S>, Vec<ConfigIssue>) {
+    let mut merged = Mapping::new();
+    let mut degraded = false;
+    let mut issues = Vec::new();
+
+    for layer in layers.iter().copied().flatten() {
+        match parse_mapping(layer) {
+            Ok(Some(map)) => deep_merge(&mut merged, &map),
+            Ok(None) => {}
+            Err(issue) => {
+                degraded = true;
+                issues.push(issue);
+            }
+        }
+    }
+
+    apply_env_layer(&mut merged, S::env_bindings(), env);
+
+    match S::validate(&Yaml::Mapping(merged)) {
+        Ok(value) => (Resolved { value, degraded }, issues),
+        Err(mut schema_issues) => {
+            issues.append(&mut schema_issues);
+            (
+                Resolved {
+                    value: S::default(),
+                    degraded: true,
+                },
+                issues,
+            )
+        }
+    }
+}
+
+/// Parse one config document into a mapping.
+///
+/// `Ok(None)` is an empty or null document, which is "absent", not a problem.
+fn parse_mapping(text: &str) -> Result<Option<Mapping>, ConfigIssue> {
+    let parsed: Yaml = serde_yaml_ng::from_str(text).map_err(|e| ConfigIssue {
+        key_path: String::new(),
+        expected: "valid YAML object".to_owned(),
+        message: e.to_string(),
+    })?;
+    match parsed {
+        Yaml::Null => Ok(None),
+        Yaml::Mapping(map) => Ok(Some(map)),
+        other => Err(ConfigIssue {
+            key_path: String::new(),
+            expected: "valid YAML object".to_owned(),
+            message: format!("top-level value is a {}, not an object", yaml_kind(&other)),
+        }),
+    }
+}
+
 /// Write `value` at a dotted path, creating intermediate mappings.
 pub fn set_at_path(map: &mut Mapping, key_path: &str, value: Yaml) {
     let mut segments = key_path.split('.').peekable();

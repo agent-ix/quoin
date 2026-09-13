@@ -28,7 +28,7 @@ import {
 import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
 
 import SemanticSweep from "../src/commands/semantic/sweep";
-import { installPlugin } from "../src/plugins.js";
+import { installModule } from "../src/core/modules.js";
 import { readModuleSemantic } from "../src/semantic/manifest.js";
 import { sweepCorpus, type SweepReport } from "../src/semantic/sweep.js";
 import { createAuthoringPack, formatAuthoringPack } from "../src/write.js";
@@ -235,7 +235,7 @@ describe("FR-074 sweep report", () => {
     raw.name = "unguarded";
     (raw.semantic as Json).legacy_forms = "error";
     writeFileSync(unguardedManifest, stringifyYaml(raw));
-    expect(() => installPlugin(`path:${unguarded}`, home)).toThrow(
+    expect(() => installModule(`path:${unguarded}`, home)).toThrow(
       /semantic\.sweep-report-required/,
     );
     const module = join(scratch, "no-report");

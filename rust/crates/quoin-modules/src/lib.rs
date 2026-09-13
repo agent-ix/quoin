@@ -21,7 +21,8 @@
 //! | [`git`] | `gix`-backed fetch and tree extraction, with bounds |
 //! | [`install`] | Installing one entry, with rollback |
 //! | [`reconcile`] | Lazy and sync reconciliation of the default set |
-//! | [`semantic`] | The semantic-contract seam Stage 3 fills |
+//! | [`semantic`] | The semantic-contract seam and its verdict vocabulary |
+//! | [`contract_gate`] | The production gate: the vendored semantic contract, enforced |
 //!
 //! # Blocking, by design
 //!
@@ -29,6 +30,7 @@
 //! rather than async with cancellation, because `quoin-core` is a one-shot
 //! subprocess with nothing to overlap.
 
+pub mod contract_gate;
 pub mod error;
 pub mod git;
 pub mod ids;
@@ -41,6 +43,7 @@ pub mod registry;
 pub mod semantic;
 pub mod source;
 
+pub use contract_gate::ContractGate;
 pub use error::{ModulesError, ModulesErrorCode, RollbackOutcome};
 pub use git::{GitLimits, GitResolver, GixResolver, ResolvedGitSource, Revision};
 pub use ids::{CommitSha, ModuleName};

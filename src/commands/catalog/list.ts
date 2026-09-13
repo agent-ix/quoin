@@ -2,7 +2,7 @@ import { Flags } from "@oclif/core";
 
 import { QuoinCommand } from "../../base.js";
 import { loadCatalog } from "../../catalog.js";
-import { ensureDefaultModules } from "../../modules.js";
+import { ensureDefaultModules } from "../../core/modules.js";
 
 export default class CatalogList extends QuoinCommand {
   static summary = "List the active artifact/object catalog modules.";

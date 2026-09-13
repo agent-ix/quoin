@@ -18,7 +18,8 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
 
 import { loadCatalog } from "../src/catalog.js";
-import { installPlugin, listPlugins, semanticPin } from "../src/plugins.js";
+import { installModule, listModules } from "../src/core/modules.js";
+
 import {
   derivePackageManifest,
   exportDigests,
@@ -28,6 +29,22 @@ import {
   typeIdentity,
   validatePackageManifest,
 } from "../src/semantic/index.js";
+
+/**
+ * The semantic pin recorded for an installed module, if any.
+ *
+ * `src/plugins.ts` exported this as a function of its own; it is one field of
+ * the registry record, so reading it off the record the boundary returns keeps
+ * one reader rather than two.
+ */
+function semanticPin(
+  name: string,
+  home: string,
+):
+  | { package?: string; semanticCore?: string; exports: Record<string, string> }
+  | undefined {
+  return listModules(home).find((module) => module.name === name)?.semantic;
+}
 
 const FIXTURE = join("tests", "fixtures", "semantic-module", "module-ok");
 type Json = Record<string, unknown>;
@@ -132,7 +149,7 @@ describe("FR-075 package manifest derivation and registry pins", () => {
       withMappings.mappings,
     );
     // Installing writes it beside the module.
-    installPlugin(`path:${root}`, home);
+    installModule(`path:${root}`, home);
     const written = join(
       home,
       "filament",
@@ -152,7 +169,7 @@ describe("FR-075 package manifest derivation and registry pins", () => {
   // Trace: FR-075-AC-2
   it("pins one digest per exported object type in registry.json and changes when the schema changes", () => {
     const root = moduleCopy("pins");
-    installPlugin(`path:${root}`, home);
+    installModule(`path:${root}`, home);
     const pin = semanticPin("pins", home);
     expect(pin?.package).toBe("agent-ix/spec-objects-fixture");
     expect(pin?.semanticCore).toBe("0.1.0");
@@ -169,7 +186,7 @@ describe("FR-075 package manifest derivation and registry pins", () => {
         },
       );
     });
-    installPlugin(`path:${changed}`, home);
+    installModule(`path:${changed}`, home);
     expect(semanticPin("pins-changed", home)?.exports.entity).not.toBe(
       pin?.exports.entity,
     );
@@ -183,16 +200,16 @@ describe("FR-075 package manifest derivation and registry pins", () => {
     const needy = moduleCopy("needy", (m) => {
       (m.semantic as Json).imports = { "agent-ix/spec-objects-other": "0.2.0" };
     });
-    expect(() => installPlugin(`path:${needy}`, home)).toThrow(
+    expect(() => installModule(`path:${needy}`, home)).toThrow(
       /semantic\.import-unresolved.*agent-ix\/spec-objects-other@0\.2\.0.*installed: none/s,
     );
-    expect(listPlugins(home).map((p) => p.name)).not.toContain("needy");
+    expect(listModules(home).map((p) => p.name)).not.toContain("needy");
     const provider = moduleCopy("provider", (m, moduleRoot) => {
       retarget(m, moduleRoot, "agent-ix/spec-objects-other");
       m.version = "0.1.0";
     });
-    installPlugin(`path:${provider}`, home);
-    expect(() => installPlugin(`path:${needy}`, home)).toThrow(
+    installModule(`path:${provider}`, home);
+    expect(() => installModule(`path:${needy}`, home)).toThrow(
       /installed: 0\.1\.0/,
     );
     // Cycle: candidate imports provider which imports candidate.
@@ -254,7 +271,7 @@ describe("FR-075 package manifest derivation and registry pins", () => {
     const root = moduleCopy("derived-ids", (m) => {
       (m.semantic as Json).mappings = ["typed-table"];
     });
-    installPlugin(`path:${root}`, home);
+    installModule(`path:${root}`, home);
     const text = readFileSync(
       join(
         home,

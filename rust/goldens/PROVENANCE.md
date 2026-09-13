@@ -37,6 +37,19 @@ TypeScript validator produced.
 | `yaml`                    | 2.9.0    |
 | Node                      | v22.15.0 |
 
+## The oracle sources are gone as of quoin#446
+
+`src/org.ts`, `src/plugins.ts` and `src/modules.ts` were deleted by the cutover
+ticket, so `capture-ts-oracle.mjs` no longer runs at `HEAD` and the goldens in
+this directory are **frozen**. That is the intended end state rather than a loss:
+the TypeScript was the oracle exactly once, and `ts-oracle.json` is the record of
+what it answered. Re-running the capture means checking out `7c8e18f` below,
+where those modules still exist.
+
+`src/config-schema.ts` and `src/catalog.ts` are still present, so the
+`config_schema` and `paths` sections could still be re-derived; nothing depends
+on that and it is recorded only so the table below stays readable.
+
 ## How they were captured
 
 `capture-ts-oracle.mjs` in this directory is the capture script, committed
@@ -149,6 +162,31 @@ The conflict with AC-8 is therefore real and is resolved as follows:
   AC-8 — to require the reimplemented surface to match ix-cli-core's _observable
   behaviour_, which is what the goldens already test — is a **named deliverable
   of the cutover ticket**, not a follow-up.
+
+**Status after quoin#446.** AC-8 names `config get`, `set`, `edit` and `doctor`,
+and those four commands still delegate to `@agent-ix/ix-cli-core`: quoin#446 cut
+over org _resolution_ and module management, and left the config command shell
+and `src/config-schema.ts` in place because `ixSchema` carries a zod object into
+another process's plugin registry (ix-cli-core FR-014) and the four handlers
+render through ix-cli-core's Ink components. AC-8 is therefore still **true** of
+the shipping code and was not amended. It becomes false at the stage that
+retires that shell, and the amendment above is inherited by that ticket rather
+than discharged here.
+
+**FR-025-AC-7 was amended, and it is the one that had to be.** It read
+"Resolution executes no subprocess", which quoin#446 makes false: resolving an
+org now calls `quoin-core`. The criterion's purpose was that resolution must not
+shell out to `git` — a `git` invocation per resolution is what it was written
+against — so it now states that property, and names the boundary call as the one
+subprocess, and requires that the call be handed the configuration's _content_
+rather than a path — which is what keeps NFR-004 true. `tests/org-no-subprocess.test.ts`,
+which carried it, is deleted with the module it audited, and the criterion is
+carried instead by two successors: `quoin-config`'s
+`tests/tc_446_org_no_child_program.rs`, where `tc_446_070` audits the resolver
+for a child-program capability and `tc_446_071` is the control proving that
+audit fails when one is named, and `tests/org-one-subprocess.test.ts`, which
+records every `node:child_process` entry point and asserts that resolving an org
+spawns exactly one program, `quoin-core`, and never `git`.
 
 Amending the spec is out of scope for quoin#381 and is not done here: this file
 records the conflict and its resolution so the cutover ticket inherits a written

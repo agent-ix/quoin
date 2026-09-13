@@ -49,7 +49,7 @@ not only the command line.
 | ----------- | ---------------------------------------------------------------------------------------------------- | ---------------------- |
 | FR-024-AC-1 | The package entry point exports the named plugin and catalog operations                              | Test (index.test.ts)   |
 | FR-024-AC-2 | A plugin installed through `installPlugin` is listed by `listPlugins` and assembled by `loadCatalog` | Test (index.test.ts)   |
-| FR-024-AC-3 | A library-performed install/removal targets the same shared store the CLI uses                       | Test (plugins.test.ts) |
+| FR-024-AC-3 | A library-performed install/removal targets the same shared store the CLI uses                       | Test (index.test.ts)   |
 
 ## Dependencies
 

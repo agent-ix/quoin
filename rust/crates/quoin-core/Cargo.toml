@@ -25,6 +25,13 @@ workspace = true
 
 [dependencies]
 quoin-assurance = { workspace = true }
+# quoin#446, the Stage 7 cutover. `quoin-core` uses only the FILESYSTEM-FREE
+# half of these two crates — `resolve_org_from_documents`, `Source`,
+# `MarketplaceManifest`, `ModuleRegistry` — plus the `GitResolver` and
+# `SemanticGate` seams, which `main.rs` supplies. Nothing under `ops/` opens a
+# file; see `src/capabilities.rs`.
+quoin-config = { workspace = true }
+quoin-modules = { workspace = true }
 quoin-validators = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
@@ -40,10 +47,15 @@ schemars = { workspace = true, optional = true }
 # that actually serialise them, rather than off a second declaration of the
 # same shapes. There is no `default` here on purpose: a feature that is on by
 # default is a feature nobody ever proves works when it is off.
-schema = ["dep:schemars", "quoin-validators/schema"]
+schema = ["dep:schemars", "quoin-modules/schema", "quoin-validators/schema"]
 
 [dev-dependencies]
 # quoin does not grow its own syn-based source auditor: `source_audit` is the
 # shared home for "is this library half actually I/O-free" (quire-research
 # implementation-language-policy, "Shared tooling is consumed, not regrown").
 engineering-assurance = { workspace = true }
+# The reconcile re-validation test (quoin#446) drives the real binary against a
+# real `~/.ix` home, because that path exists precisely to catch a module whose
+# manifest changed on DISK after it was installed. Same pin as `quoin-modules`
+# and `quoin-config` use for the same reason.
+tempfile = "=3.27.0"

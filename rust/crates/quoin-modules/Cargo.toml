@@ -13,6 +13,13 @@ publish.workspace = true
 workspace = true
 
 [dependencies]
+# quoin#450, the independent review's finding 3. `contract_gate` is the
+# production `SemanticGate`, and it is stated in THIS crate's vocabulary
+# (`SemanticGate`, `SemanticVerdict`, `ModuleName`, `ModuleRegistry`) over free
+# functions from `quoin-semantic`. It lived in `quoin-core`'s `main.rs`, the one
+# file no containment audit walks and the one file with no unit tests; that is
+# how a silently emptied population passed every gate.
+quoin-semantic = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }
@@ -28,6 +35,15 @@ gix = { version = "=0.87.1", features = [
     "revision",
 ] }
 serde_yaml_ng = "=0.10.0"
+schemars = { workspace = true, optional = true }
+
+[features]
+# FR-097. `quoin-core` turns this on so `quoin-schemas` can read the wire shape
+# of a registry record off `InstalledModule` itself. The alternative — a second
+# declaration of the same record inside `quoin-core` — is exactly the duplicate
+# FR-097 exists to remove. No `default`: a feature that is on by default is a
+# feature nobody ever proves works when it is off.
+schema = ["dep:schemars"]
 
 [dev-dependencies]
 tempfile = "=3.27.0"

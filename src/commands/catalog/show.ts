@@ -2,7 +2,7 @@ import { Args, Flags } from "@oclif/core";
 
 import { QuoinCommand } from "../../base.js";
 import { findCatalogEntry, loadCatalog } from "../../catalog.js";
-import { ensureDefaultModules } from "../../modules.js";
+import { ensureDefaultModules } from "../../core/modules.js";
 
 export default class CatalogShow extends QuoinCommand {
   static summary = "Show a single artifact/object type from the catalog.";

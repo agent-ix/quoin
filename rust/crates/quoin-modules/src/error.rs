@@ -57,6 +57,9 @@ pub enum ModulesErrorCode {
     ModuleNotInstalled,
     /// An installed module violated the semantic contract.
     SemanticContractViolation,
+    /// The semantic contract itself could not be reached, so nothing could be
+    /// judged against it.
+    SemanticContractUnavailable,
 }
 
 impl ModulesErrorCode {
@@ -85,6 +88,7 @@ impl ModulesErrorCode {
             Self::ModuleNotInstalled => "QM019_MODULE_NOT_INSTALLED",
             Self::SemanticContractViolation => "QM020_SEMANTIC_CONTRACT_VIOLATION",
             Self::FetchDeadlineUnavailable => "QM021_FETCH_DEADLINE_UNAVAILABLE",
+            Self::SemanticContractUnavailable => "QM022_SEMANTIC_CONTRACT_UNAVAILABLE",
         }
     }
 
@@ -113,6 +117,7 @@ impl ModulesErrorCode {
             Self::ModuleNotInstalled,
             Self::SemanticContractViolation,
             Self::FetchDeadlineUnavailable,
+            Self::SemanticContractUnavailable,
         ]
     }
 
@@ -336,6 +341,18 @@ pub enum ModulesError {
         name: ModuleName,
     },
 
+    /// The semantic contract could not be reached, so nothing could be judged.
+    ///
+    /// Distinct from [`ModulesError::SemanticContractViolation`] on purpose: a
+    /// module that was never judged is not a module that passed, and a caller
+    /// that conflated the two would report a home clean because the vendored
+    /// schema tree was missing.
+    #[error("{code}: the semantic contract is unavailable: {detail}", code = ModulesErrorCode::SemanticContractUnavailable)]
+    SemanticContractUnavailable {
+        /// Why it could not be reached.
+        detail: String,
+    },
+
     /// An installed module violated the semantic contract.
     #[error("{code}: module {name} rejected: semantic contract violations\n{report}", code = ModulesErrorCode::SemanticContractViolation)]
     SemanticContractViolation {
@@ -355,6 +372,14 @@ pub enum ModulesError {
 /// reading prose.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum RollbackOutcome {
+    /// Nothing was installed, so nothing was undone.
+    ///
+    /// The violation was found by re-reading a module that was **already**
+    /// installed — the reconcile path's re-validation (FR-070, NFR-017) — not
+    /// by judging an install in progress. Saying `RemovedFreshInstall` there
+    /// would tell the author their copy is gone when it is still on disk,
+    /// exactly the confusion this enum exists to prevent.
+    NotAttempted,
     /// There was no previous version; the freshly installed copy was removed.
     RemovedFreshInstall,
     /// The previous version was restored.
@@ -369,6 +394,7 @@ pub enum RollbackOutcome {
 impl std::fmt::Display for RollbackOutcome {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
+            Self::NotAttempted => f.write_str("the installed copy was left untouched"),
             Self::RemovedFreshInstall => f.write_str("the partial install was removed"),
             Self::Restored => f.write_str("the previous version was restored"),
             Self::Failed { detail } => {
@@ -406,6 +432,9 @@ impl ModulesError {
             Self::MaterializeFailed { .. } => ModulesErrorCode::MaterializeFailed,
             Self::ModuleNotInstalled { .. } => ModulesErrorCode::ModuleNotInstalled,
             Self::SemanticContractViolation { .. } => ModulesErrorCode::SemanticContractViolation,
+            Self::SemanticContractUnavailable { .. } => {
+                ModulesErrorCode::SemanticContractUnavailable
+            }
         }
     }
 }

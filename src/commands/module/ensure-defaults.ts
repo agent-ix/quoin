@@ -1,6 +1,5 @@
 import { QuoinCommand } from "../../base.js";
-import { ensureDefaultModules } from "../../modules.js";
-import { listPlugins } from "../../plugins.js";
+import { ensureDefaultModules, listModules } from "../../core/modules.js";
 
 export default class ModuleEnsureDefaults extends QuoinCommand {
   static summary = "Idempotently install the default spec module set.";
@@ -16,7 +15,7 @@ defaults by shelling out here, rather than relying on the side effect of
     ensureDefaultModules();
     this.log(
       JSON.stringify(
-        { ensured: true, plugins: listPlugins().map((p) => p.name) },
+        { ensured: true, plugins: listModules().map((p) => p.name) },
         null,
         2,
       ),

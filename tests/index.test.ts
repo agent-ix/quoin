@@ -19,12 +19,11 @@ import {
   ensureDefaultModules,
   filamentModulesDir,
   findCatalogEntry,
-  installPlugin,
-  listPlugins,
+  installModule,
+  listModules,
   loadCatalog,
   main,
-  parseSourceArg,
-  removePlugin,
+  removeModule,
 } from "../src";
 
 function tmp(prefix: string): string {
@@ -76,8 +75,15 @@ function businessModule(root: string): string {
   );
 }
 
-function defaultSet(root: string): MarketplaceManifest {
-  return {
+/**
+ * A default set, as the YAML text `ensureDefaultModules` now takes.
+ *
+ * Text rather than an object since quoin#446: the manifest is what the request
+ * carries to `quoin-core`, and parsing it here only to re-serialise it would
+ * put the manifest schema in two places.
+ */
+function defaultSet(root: string): string {
+  return stringifyYaml({
     schemaVersion: 1,
     entries: [
       {
@@ -89,7 +95,7 @@ function defaultSet(root: string): MarketplaceManifest {
         source: { type: "path", path: businessModule(root) },
       },
     ],
-  };
+  } satisfies MarketplaceManifest);
 }
 
 // Trace: FR-024-AC-1
@@ -137,9 +143,9 @@ test("creates authoring packs for case-insensitive artifact and object types", (
 test("installs, lists, and removes a plugin from a local path source", () => {
   const home = tmp("plugin-home");
   const mod = businessModule(tmp("plugin-src"));
-  const rec = installPlugin(`path:${mod}`, home);
+  const rec = installModule(`path:${mod}`, home);
   expect(rec.name).toBe("spec-objects-business");
-  expect(listPlugins(home).map((p) => p.name)).toContain(
+  expect(listModules(home).map((p) => p.name)).toContain(
     "spec-objects-business",
   );
   expect(
@@ -148,39 +154,22 @@ test("installs, lists, and removes a plugin from a local path source", () => {
     ),
   ).toBe(true);
 
-  removePlugin("spec-objects-business", home);
-  expect(listPlugins(home)).toHaveLength(0);
+  removeModule("spec-objects-business", home);
+  expect(listModules(home)).toHaveLength(0);
   expect(
     existsSync(join(filamentModulesDir(home), "spec-objects-business")),
   ).toBe(false);
 });
 
-test("parseSourceArg maps CLI prefixes to typed sources", () => {
-  expect(parseSourceArg("path:/a/b")).toEqual({ type: "path", path: "/a/b" });
-  expect(parseSourceArg("github:agent-ix/x@v1")).toEqual({
-    type: "github",
-    repo: "agent-ix/x",
-    ref: "v1",
-  });
-  expect(parseSourceArg("github:agent-ix/x")).toEqual({
-    type: "github",
-    repo: "agent-ix/x",
-  });
-  expect(parseSourceArg("package:foo@1.2.3")).toEqual({
-    type: "npm",
-    package: "foo",
-    version: "1.2.3",
-  });
-  expect(parseSourceArg("package:foo")).toEqual({
-    type: "npm",
-    package: "foo",
-  });
-  expect(parseSourceArg("./bare")).toEqual({ type: "path", path: "./bare" });
-});
+// `parseSourceArg` is no longer a quoin export: the CLI source argument is
+// parsed by `quoin_modules::Source::parse_arg` (quoin#446). The six examples
+// that stood here are pinned against the TypeScript oracle by `tc_381_230`, and
+// the four criteria they sampled are carried over their whole families by
+// `quoin-modules`' `tc_446_062` .. `tc_446_065`.
 
 // Trace: FR-016-AC-1, FR-016-AC-2
 test("ships the committed default module set", () => {
-  const manifest = defaultModulesManifest();
+  const manifest = parseYaml(defaultModulesManifest()) as MarketplaceManifest;
   // Ten with the opt-in engineering-assurance vocabulary (#275). The
   // count is asserted rather than a lower bound so a module arriving in the
   // default set costs a deliberate line here — the set is installed into every

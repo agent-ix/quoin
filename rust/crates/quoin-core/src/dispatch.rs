@@ -10,6 +10,7 @@
 
 use std::io::Read;
 
+use crate::capabilities::Capabilities;
 use crate::error::{CoreError, CoreErrorCode};
 use crate::protocol::{MAX_REQUEST_BYTES, Response};
 
@@ -22,26 +23,49 @@ pub const OPERATIONS: &[&str] = &[
     "assurance.parse_argument",
     "assurance.render_case",
     "assurance.requirement_of",
+    "config.resolve_org",
+    "config.unresolved_org_message",
     "core.ping",
+    "modules.ensure_defaults",
+    "modules.install",
+    "modules.list",
+    "modules.remove",
     "validators.run",
 ];
 
 /// Route one request.
 ///
 /// `op` is the sole command-line argument; `request` is the parsed stdin
-/// document.
+/// document; `capabilities` is what `main.rs` granted this invocation.
+///
+/// `capabilities` is threaded through every arm rather than only the arms that
+/// need one, so the grant is visible at the routing table instead of being
+/// reached for inside an operation. An operation that needs a capability it was
+/// not granted says so as an internal fault (see `ops::modules`), never by
+/// acquiring one itself — `tests/tc_library_containment.rs` is what makes that
+/// a rule rather than a habit.
 ///
 /// # Errors
 ///
 /// [`CoreErrorCode::UnknownOp`] when `op` names nothing this build implements,
 /// or whatever the operation itself returns.
-pub fn dispatch(op: &str, request: &serde_json::Value) -> Result<Response, CoreError> {
+pub fn dispatch(
+    op: &str,
+    request: &serde_json::Value,
+    capabilities: &Capabilities<'_>,
+) -> Result<Response, CoreError> {
     match op {
         "assurance.requirement_of" => crate::ops::assurance::requirement_of(request),
         "assurance.build_case" => crate::ops::assurance::build_case(request),
         "assurance.render_case" => crate::ops::assurance::render_case(request),
         "assurance.parse_argument" => crate::ops::assurance::parse_argument(request),
+        "config.resolve_org" => crate::ops::config::resolve_org(request),
+        "config.unresolved_org_message" => crate::ops::config::unresolved_org_message(request),
         "core.ping" => crate::ops::core::ping(request),
+        "modules.ensure_defaults" => crate::ops::modules::ensure_defaults(request, capabilities),
+        "modules.install" => crate::ops::modules::install(request, capabilities),
+        "modules.list" => crate::ops::modules::list(request, capabilities),
+        "modules.remove" => crate::ops::modules::remove(request, capabilities),
         "validators.run" => crate::ops::validators::run(request),
         _ => Err(
             CoreError::new(CoreErrorCode::UnknownOp, "no such operation in this build")
@@ -242,7 +266,12 @@ mod tests {
 
     #[test]
     fn an_unknown_operation_names_the_ones_that_exist() {
-        let error = dispatch("evidence.record", &serde_json::json!({})).unwrap_err();
+        let error = dispatch(
+            "evidence.record",
+            &serde_json::json!({}),
+            &Capabilities::none(),
+        )
+        .unwrap_err();
         assert_eq!(error.code, CoreErrorCode::UnknownOp);
         assert_eq!(error.outcome().code(), 3);
         assert_eq!(error.context["known"], OPERATIONS.join(","));

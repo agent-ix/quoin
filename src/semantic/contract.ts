@@ -26,6 +26,17 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const here = dirname(fileURLToPath(import.meta.url));
+
+/**
+ * The root of the vendored contract: this directory.
+ *
+ * Named because `quoin-core` needs it as `QUOIN_SEMANTIC_ROOT` — the Rust
+ * semantic gate reads `<root>/schemas/…` and `<root>/sweep-report.schema.json`,
+ * the same two paths spelled below. The tree ships inside this npm package, so
+ * the subprocess cannot find it on its own and is handed it by
+ * `src/core/modules.ts`.
+ */
+export const SEMANTIC_ROOT = here;
 export const SCHEMA_DIR = join(here, "schemas");
 
 /** A vendored file's origin: repository, exact commit, path there, and bytes. */
