@@ -1,0 +1,777 @@
+{
+  "cases": [
+    {
+      "name": "baseline-bad-gate",
+      "findings": [
+        {
+          "kind": "gate-that-gates-nothing",
+          "obligation": "FR-001-AC-1",
+          "path": "scripts/check_unwrap.sh",
+          "line": 4,
+          "wiredBy": "Makefile",
+          "subject": "gate for FR-001-AC-1",
+          "changeTarget": "scripts/check_unwrap.sh:4",
+          "remedy": "compare the count for “unwrap()” to zero or make the match command exit non-zero when forbidden text is present",
+          "summary": "FR-001-AC-1 claims “no production symbol shall call `unwrap`.”, and Makefile wires scripts/check_unwrap.sh, but line 4 only counts matches for “unwrap()” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero."
+        }
+      ],
+      "json": "{\n  \"findings\": [\n    {\n      \"kind\": \"gate-that-gates-nothing\",\n      \"obligation\": \"FR-001-AC-1\",\n      \"path\": \"scripts/check_unwrap.sh\",\n      \"line\": 4,\n      \"wiredBy\": \"Makefile\",\n      \"subject\": \"gate for FR-001-AC-1\",\n      \"changeTarget\": \"scripts/check_unwrap.sh:4\",\n      \"remedy\": \"compare the count for “unwrap()” to zero or make the match command exit non-zero when forbidden text is present\",\n      \"summary\": \"FR-001-AC-1 claims “no production symbol shall call `unwrap`.”, and Makefile wires scripts/check_unwrap.sh, but line 4 only counts matches for “unwrap()” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero.\"\n    }\n  ]\n}",
+      "human": [
+        "[warning] gate-that-gates-nothing: scripts/check_unwrap.sh:4: FR-001-AC-1 claims “no production symbol shall call `unwrap`.”, and Makefile wires scripts/check_unwrap.sh, but line 4 only counts matches for “unwrap()” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero.",
+        "1 gate finding(s)"
+      ],
+      "strictExit": 1
+    },
+    {
+      "name": "unwired-report",
+      "findings": [],
+      "json": "{\n  \"findings\": []\n}",
+      "human": [
+        "repository QA gates: no findings"
+      ],
+      "strictExit": 0
+    },
+    {
+      "name": "explicit-failure-path",
+      "findings": [],
+      "json": "{\n  \"findings\": []\n}",
+      "human": [
+        "repository QA gates: no findings"
+      ],
+      "strictExit": 0
+    },
+    {
+      "name": "no-gate-claim",
+      "findings": [],
+      "json": "{\n  \"findings\": []\n}",
+      "human": [
+        "repository QA gates: no findings"
+      ],
+      "strictExit": 0
+    },
+    {
+      "name": "check-keyword-claim",
+      "findings": [
+        {
+          "kind": "gate-that-gates-nothing",
+          "obligation": "NFR-004",
+          "path": "scripts/todo.sh",
+          "line": 3,
+          "wiredBy": "Makefile",
+          "subject": "gate for NFR-004",
+          "changeTarget": "scripts/todo.sh:3",
+          "remedy": "compare the count for “TODO” to zero or make the match command exit non-zero when forbidden text is present",
+          "summary": "NFR-004 claims “never leave TODO markers in shipped source.”, and Makefile wires scripts/todo.sh, but line 3 only counts matches for “TODO” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero."
+        }
+      ],
+      "json": "{\n  \"findings\": [\n    {\n      \"kind\": \"gate-that-gates-nothing\",\n      \"obligation\": \"NFR-004\",\n      \"path\": \"scripts/todo.sh\",\n      \"line\": 3,\n      \"wiredBy\": \"Makefile\",\n      \"subject\": \"gate for NFR-004\",\n      \"changeTarget\": \"scripts/todo.sh:3\",\n      \"remedy\": \"compare the count for “TODO” to zero or make the match command exit non-zero when forbidden text is present\",\n      \"summary\": \"NFR-004 claims “never leave TODO markers in shipped source.”, and Makefile wires scripts/todo.sh, but line 3 only counts matches for “TODO” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero.\"\n    }\n  ]\n}",
+      "human": [
+        "[warning] gate-that-gates-nothing: scripts/todo.sh:3: NFR-004 claims “never leave TODO markers in shipped source.”, and Makefile wires scripts/todo.sh, but line 3 only counts matches for “TODO” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero.",
+        "1 gate finding(s)"
+      ],
+      "strictExit": 1
+    },
+    {
+      "name": "lowercase-obligation",
+      "findings": [
+        {
+          "kind": "gate-that-gates-nothing",
+          "obligation": "fr-003",
+          "path": "scripts/unwrap.sh",
+          "line": 3,
+          "wiredBy": "Makefile",
+          "subject": "gate for fr-003",
+          "changeTarget": "scripts/unwrap.sh:3",
+          "remedy": "compare the count for “unwrap” to zero or make the match command exit non-zero when forbidden text is present",
+          "summary": "fr-003 claims “no unwrap anywhere in the crate.”, and Makefile wires scripts/unwrap.sh, but line 3 only counts matches for “unwrap” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero."
+        }
+      ],
+      "json": "{\n  \"findings\": [\n    {\n      \"kind\": \"gate-that-gates-nothing\",\n      \"obligation\": \"fr-003\",\n      \"path\": \"scripts/unwrap.sh\",\n      \"line\": 3,\n      \"wiredBy\": \"Makefile\",\n      \"subject\": \"gate for fr-003\",\n      \"changeTarget\": \"scripts/unwrap.sh:3\",\n      \"remedy\": \"compare the count for “unwrap” to zero or make the match command exit non-zero when forbidden text is present\",\n      \"summary\": \"fr-003 claims “no unwrap anywhere in the crate.”, and Makefile wires scripts/unwrap.sh, but line 3 only counts matches for “unwrap” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero.\"\n    }\n  ]\n}",
+      "human": [
+        "[warning] gate-that-gates-nothing: scripts/unwrap.sh:3: fr-003 claims “no unwrap anywhere in the crate.”, and Makefile wires scripts/unwrap.sh, but line 3 only counts matches for “unwrap” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero.",
+        "1 gate finding(s)"
+      ],
+      "strictExit": 1
+    },
+    {
+      "name": "uppercase-claim-keyword",
+      "findings": [
+        {
+          "kind": "gate-that-gates-nothing",
+          "obligation": "FR-012",
+          "path": "scripts/panic.sh",
+          "line": 3,
+          "wiredBy": "Makefile",
+          "subject": "gate for FR-012",
+          "changeTarget": "scripts/panic.sh:3",
+          "remedy": "compare the count for “panic” to zero or make the match command exit non-zero when forbidden text is present",
+          "summary": "FR-012 claims “NO PANIC IN THE WORKER LOOP.”, and Makefile wires scripts/panic.sh, but line 3 only counts matches for “panic” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero."
+        }
+      ],
+      "json": "{\n  \"findings\": [\n    {\n      \"kind\": \"gate-that-gates-nothing\",\n      \"obligation\": \"FR-012\",\n      \"path\": \"scripts/panic.sh\",\n      \"line\": 3,\n      \"wiredBy\": \"Makefile\",\n      \"subject\": \"gate for FR-012\",\n      \"changeTarget\": \"scripts/panic.sh:3\",\n      \"remedy\": \"compare the count for “panic” to zero or make the match command exit non-zero when forbidden text is present\",\n      \"summary\": \"FR-012 claims “NO PANIC IN THE WORKER LOOP.”, and Makefile wires scripts/panic.sh, but line 3 only counts matches for “panic” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero.\"\n    }\n  ]\n}",
+      "human": [
+        "[warning] gate-that-gates-nothing: scripts/panic.sh:3: FR-012 claims “NO PANIC IN THE WORKER LOOP.”, and Makefile wires scripts/panic.sh, but line 3 only counts matches for “panic” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero.",
+        "1 gate finding(s)"
+      ],
+      "strictExit": 1
+    },
+    {
+      "name": "rg-matcher",
+      "findings": [
+        {
+          "kind": "gate-that-gates-nothing",
+          "obligation": "FR-005",
+          "path": "scripts/panic.sh",
+          "line": 3,
+          "wiredBy": "Makefile",
+          "subject": "gate for FR-005",
+          "changeTarget": "scripts/panic.sh:3",
+          "remedy": "compare the count for “panic!” to zero or make the match command exit non-zero when forbidden text is present",
+          "summary": "FR-005 claims “no panic! calls on a request path.”, and Makefile wires scripts/panic.sh, but line 3 only counts matches for “panic!” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero."
+        }
+      ],
+      "json": "{\n  \"findings\": [\n    {\n      \"kind\": \"gate-that-gates-nothing\",\n      \"obligation\": \"FR-005\",\n      \"path\": \"scripts/panic.sh\",\n      \"line\": 3,\n      \"wiredBy\": \"Makefile\",\n      \"subject\": \"gate for FR-005\",\n      \"changeTarget\": \"scripts/panic.sh:3\",\n      \"remedy\": \"compare the count for “panic!” to zero or make the match command exit non-zero when forbidden text is present\",\n      \"summary\": \"FR-005 claims “no panic! calls on a request path.”, and Makefile wires scripts/panic.sh, but line 3 only counts matches for “panic!” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero.\"\n    }\n  ]\n}",
+      "human": [
+        "[warning] gate-that-gates-nothing: scripts/panic.sh:3: FR-005 claims “no panic! calls on a request path.”, and Makefile wires scripts/panic.sh, but line 3 only counts matches for “panic!” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero.",
+        "1 gate finding(s)"
+      ],
+      "strictExit": 1
+    },
+    {
+      "name": "ripgrep-is-not-rg",
+      "findings": [],
+      "json": "{\n  \"findings\": []\n}",
+      "human": [
+        "repository QA gates: no findings"
+      ],
+      "strictExit": 0
+    },
+    {
+      "name": "count-piped-to-grep",
+      "findings": [],
+      "json": "{\n  \"findings\": []\n}",
+      "human": [
+        "repository QA gates: no findings"
+      ],
+      "strictExit": 0
+    },
+    {
+      "name": "count-piped-to-test",
+      "findings": [],
+      "json": "{\n  \"findings\": []\n}",
+      "human": [
+        "repository QA gates: no findings"
+      ],
+      "strictExit": 0
+    },
+    {
+      "name": "count-compared-eq",
+      "findings": [],
+      "json": "{\n  \"findings\": []\n}",
+      "human": [
+        "repository QA gates: no findings"
+      ],
+      "strictExit": 0
+    },
+    {
+      "name": "count-compared-double-equals",
+      "findings": [],
+      "json": "{\n  \"findings\": []\n}",
+      "human": [
+        "repository QA gates: no findings"
+      ],
+      "strictExit": 0
+    },
+    {
+      "name": "control-flow-guards",
+      "findings": [
+        {
+          "kind": "gate-that-gates-nothing",
+          "obligation": "FR-011",
+          "path": "scripts/unwrap.sh",
+          "line": 6,
+          "wiredBy": "Makefile",
+          "subject": "gate for FR-011",
+          "changeTarget": "scripts/unwrap.sh:6",
+          "remedy": "compare the count for “unwrap” to zero or make the match command exit non-zero when forbidden text is present",
+          "summary": "FR-011 claims “no unwrap in src.”, and Makefile wires scripts/unwrap.sh, but line 6 only counts matches for “unwrap” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero."
+        }
+      ],
+      "json": "{\n  \"findings\": [\n    {\n      \"kind\": \"gate-that-gates-nothing\",\n      \"obligation\": \"FR-011\",\n      \"path\": \"scripts/unwrap.sh\",\n      \"line\": 6,\n      \"wiredBy\": \"Makefile\",\n      \"subject\": \"gate for FR-011\",\n      \"changeTarget\": \"scripts/unwrap.sh:6\",\n      \"remedy\": \"compare the count for “unwrap” to zero or make the match command exit non-zero when forbidden text is present\",\n      \"summary\": \"FR-011 claims “no unwrap in src.”, and Makefile wires scripts/unwrap.sh, but line 6 only counts matches for “unwrap” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero.\"\n    }\n  ]\n}",
+      "human": [
+        "[warning] gate-that-gates-nothing: scripts/unwrap.sh:6: FR-011 claims “no unwrap in src.”, and Makefile wires scripts/unwrap.sh, but line 6 only counts matches for “unwrap” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero.",
+        "1 gate finding(s)"
+      ],
+      "strictExit": 1
+    },
+    {
+      "name": "no-quoted-pattern",
+      "findings": [],
+      "json": "{\n  \"findings\": []\n}",
+      "human": [
+        "repository QA gates: no findings"
+      ],
+      "strictExit": 0
+    },
+    {
+      "name": "empty-quoted-pattern",
+      "findings": [],
+      "json": "{\n  \"findings\": []\n}",
+      "human": [
+        "repository QA gates: no findings"
+      ],
+      "strictExit": 0
+    },
+    {
+      "name": "single-quoted-pattern",
+      "findings": [
+        {
+          "kind": "gate-that-gates-nothing",
+          "obligation": "FR-015",
+          "path": "scripts/unwrap.sh",
+          "line": 3,
+          "wiredBy": "Makefile",
+          "subject": "gate for FR-015",
+          "changeTarget": "scripts/unwrap.sh:3",
+          "remedy": "compare the count for “unwrap” to zero or make the match command exit non-zero when forbidden text is present",
+          "summary": "FR-015 claims “no unwrap in src.”, and Makefile wires scripts/unwrap.sh, but line 3 only counts matches for “unwrap” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero."
+        }
+      ],
+      "json": "{\n  \"findings\": [\n    {\n      \"kind\": \"gate-that-gates-nothing\",\n      \"obligation\": \"FR-015\",\n      \"path\": \"scripts/unwrap.sh\",\n      \"line\": 3,\n      \"wiredBy\": \"Makefile\",\n      \"subject\": \"gate for FR-015\",\n      \"changeTarget\": \"scripts/unwrap.sh:3\",\n      \"remedy\": \"compare the count for “unwrap” to zero or make the match command exit non-zero when forbidden text is present\",\n      \"summary\": \"FR-015 claims “no unwrap in src.”, and Makefile wires scripts/unwrap.sh, but line 3 only counts matches for “unwrap” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero.\"\n    }\n  ]\n}",
+      "human": [
+        "[warning] gate-that-gates-nothing: scripts/unwrap.sh:3: FR-015 claims “no unwrap in src.”, and Makefile wires scripts/unwrap.sh, but line 3 only counts matches for “unwrap” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero.",
+        "1 gate finding(s)"
+      ],
+      "strictExit": 1
+    },
+    {
+      "name": "pattern-word-too-short",
+      "findings": [],
+      "json": "{\n  \"findings\": []\n}",
+      "human": [
+        "repository QA gates: no findings"
+      ],
+      "strictExit": 0
+    },
+    {
+      "name": "claim-and-pattern-disjoint",
+      "findings": [],
+      "json": "{\n  \"findings\": []\n}",
+      "human": [
+        "repository QA gates: no findings"
+      ],
+      "strictExit": 0
+    },
+    {
+      "name": "wc-l-without-dash",
+      "findings": [
+        {
+          "kind": "gate-that-gates-nothing",
+          "obligation": "FR-018",
+          "path": "scripts/unwrap.sh",
+          "line": 3,
+          "wiredBy": "Makefile",
+          "subject": "gate for FR-018",
+          "changeTarget": "scripts/unwrap.sh:3",
+          "remedy": "compare the count for “unwrap” to zero or make the match command exit non-zero when forbidden text is present",
+          "summary": "FR-018 claims “no unwrap in src.”, and Makefile wires scripts/unwrap.sh, but line 3 only counts matches for “unwrap” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero."
+        }
+      ],
+      "json": "{\n  \"findings\": [\n    {\n      \"kind\": \"gate-that-gates-nothing\",\n      \"obligation\": \"FR-018\",\n      \"path\": \"scripts/unwrap.sh\",\n      \"line\": 3,\n      \"wiredBy\": \"Makefile\",\n      \"subject\": \"gate for FR-018\",\n      \"changeTarget\": \"scripts/unwrap.sh:3\",\n      \"remedy\": \"compare the count for “unwrap” to zero or make the match command exit non-zero when forbidden text is present\",\n      \"summary\": \"FR-018 claims “no unwrap in src.”, and Makefile wires scripts/unwrap.sh, but line 3 only counts matches for “unwrap” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero.\"\n    }\n  ]\n}",
+      "human": [
+        "[warning] gate-that-gates-nothing: scripts/unwrap.sh:3: FR-018 claims “no unwrap in src.”, and Makefile wires scripts/unwrap.sh, but line 3 only counts matches for “unwrap” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero.",
+        "1 gate finding(s)"
+      ],
+      "strictExit": 1
+    },
+    {
+      "name": "wc-lc-is-not-a-counter",
+      "findings": [],
+      "json": "{\n  \"findings\": []\n}",
+      "human": [
+        "repository QA gates: no findings"
+      ],
+      "strictExit": 0
+    },
+    {
+      "name": "negative-word-must-be-whole-word",
+      "findings": [],
+      "json": "{\n  \"findings\": []\n}",
+      "human": [
+        "repository QA gates: no findings"
+      ],
+      "strictExit": 0
+    },
+    {
+      "name": "negative-word-variants",
+      "findings": [
+        {
+          "kind": "gate-that-gates-nothing",
+          "obligation": "FR-021",
+          "path": "scripts/a_forbids.sh",
+          "line": 3,
+          "wiredBy": "Makefile",
+          "subject": "gate for FR-021",
+          "changeTarget": "scripts/a_forbids.sh:3",
+          "remedy": "compare the count for “unwrap” to zero or make the match command exit non-zero when forbidden text is present",
+          "summary": "FR-021 claims “the policy forbids unwrap in src.”, and Makefile wires scripts/a_forbids.sh, but line 3 only counts matches for “unwrap” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero."
+        },
+        {
+          "kind": "gate-that-gates-nothing",
+          "obligation": "FR-022",
+          "path": "scripts/b_forbidden.sh",
+          "line": 3,
+          "wiredBy": "Makefile",
+          "subject": "gate for FR-022",
+          "changeTarget": "scripts/b_forbidden.sh:3",
+          "remedy": "compare the count for “unwrap” to zero or make the match command exit non-zero when forbidden text is present",
+          "summary": "FR-022 claims “unwrap is forbidden in src.”, and Makefile wires scripts/b_forbidden.sh, but line 3 only counts matches for “unwrap” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero."
+        },
+        {
+          "kind": "gate-that-gates-nothing",
+          "obligation": "FR-023",
+          "path": "scripts/c_without.sh",
+          "line": 3,
+          "wiredBy": "Makefile",
+          "subject": "gate for FR-023",
+          "changeTarget": "scripts/c_without.sh:3",
+          "remedy": "compare the count for “unwrap” to zero or make the match command exit non-zero when forbidden text is present",
+          "summary": "FR-023 claims “src ships without unwrap.”, and Makefile wires scripts/c_without.sh, but line 3 only counts matches for “unwrap” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero."
+        }
+      ],
+      "json": "{\n  \"findings\": [\n    {\n      \"kind\": \"gate-that-gates-nothing\",\n      \"obligation\": \"FR-021\",\n      \"path\": \"scripts/a_forbids.sh\",\n      \"line\": 3,\n      \"wiredBy\": \"Makefile\",\n      \"subject\": \"gate for FR-021\",\n      \"changeTarget\": \"scripts/a_forbids.sh:3\",\n      \"remedy\": \"compare the count for “unwrap” to zero or make the match command exit non-zero when forbidden text is present\",\n      \"summary\": \"FR-021 claims “the policy forbids unwrap in src.”, and Makefile wires scripts/a_forbids.sh, but line 3 only counts matches for “unwrap” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero.\"\n    },\n    {\n      \"kind\": \"gate-that-gates-nothing\",\n      \"obligation\": \"FR-022\",\n      \"path\": \"scripts/b_forbidden.sh\",\n      \"line\": 3,\n      \"wiredBy\": \"Makefile\",\n      \"subject\": \"gate for FR-022\",\n      \"changeTarget\": \"scripts/b_forbidden.sh:3\",\n      \"remedy\": \"compare the count for “unwrap” to zero or make the match command exit non-zero when forbidden text is present\",\n      \"summary\": \"FR-022 claims “unwrap is forbidden in src.”, and Makefile wires scripts/b_forbidden.sh, but line 3 only counts matches for “unwrap” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero.\"\n    },\n    {\n      \"kind\": \"gate-that-gates-nothing\",\n      \"obligation\": \"FR-023\",\n      \"path\": \"scripts/c_without.sh\",\n      \"line\": 3,\n      \"wiredBy\": \"Makefile\",\n      \"subject\": \"gate for FR-023\",\n      \"changeTarget\": \"scripts/c_without.sh:3\",\n      \"remedy\": \"compare the count for “unwrap” to zero or make the match command exit non-zero when forbidden text is present\",\n      \"summary\": \"FR-023 claims “src ships without unwrap.”, and Makefile wires scripts/c_without.sh, but line 3 only counts matches for “unwrap” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero.\"\n    }\n  ]\n}",
+      "human": [
+        "[warning] gate-that-gates-nothing: scripts/a_forbids.sh:3: FR-021 claims “the policy forbids unwrap in src.”, and Makefile wires scripts/a_forbids.sh, but line 3 only counts matches for “unwrap” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero.",
+        "[warning] gate-that-gates-nothing: scripts/b_forbidden.sh:3: FR-022 claims “unwrap is forbidden in src.”, and Makefile wires scripts/b_forbidden.sh, but line 3 only counts matches for “unwrap” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero.",
+        "[warning] gate-that-gates-nothing: scripts/c_without.sh:3: FR-023 claims “src ships without unwrap.”, and Makefile wires scripts/c_without.sh, but line 3 only counts matches for “unwrap” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero.",
+        "3 gate finding(s)"
+      ],
+      "strictExit": 1
+    },
+    {
+      "name": "non-negative-claim",
+      "findings": [],
+      "json": "{\n  \"findings\": []\n}",
+      "human": [
+        "repository QA gates: no findings"
+      ],
+      "strictExit": 0
+    },
+    {
+      "name": "first-claim-wins",
+      "findings": [],
+      "json": "{\n  \"findings\": []\n}",
+      "human": [
+        "repository QA gates: no findings"
+      ],
+      "strictExit": 0
+    },
+    {
+      "name": "claim-deep-in-file",
+      "findings": [
+        {
+          "kind": "gate-that-gates-nothing",
+          "obligation": "FR-025",
+          "path": "scripts/unwrap.sh",
+          "line": 6,
+          "wiredBy": "Makefile",
+          "subject": "gate for FR-025",
+          "changeTarget": "scripts/unwrap.sh:6",
+          "remedy": "compare the count for “unwrap” to zero or make the match command exit non-zero when forbidden text is present",
+          "summary": "FR-025 claims “no unwrap in src.”, and Makefile wires scripts/unwrap.sh, but line 6 only counts matches for “unwrap” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero."
+        }
+      ],
+      "json": "{\n  \"findings\": [\n    {\n      \"kind\": \"gate-that-gates-nothing\",\n      \"obligation\": \"FR-025\",\n      \"path\": \"scripts/unwrap.sh\",\n      \"line\": 6,\n      \"wiredBy\": \"Makefile\",\n      \"subject\": \"gate for FR-025\",\n      \"changeTarget\": \"scripts/unwrap.sh:6\",\n      \"remedy\": \"compare the count for “unwrap” to zero or make the match command exit non-zero when forbidden text is present\",\n      \"summary\": \"FR-025 claims “no unwrap in src.”, and Makefile wires scripts/unwrap.sh, but line 6 only counts matches for “unwrap” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero.\"\n    }\n  ]\n}",
+      "human": [
+        "[warning] gate-that-gates-nothing: scripts/unwrap.sh:6: FR-025 claims “no unwrap in src.”, and Makefile wires scripts/unwrap.sh, but line 6 only counts matches for “unwrap” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero.",
+        "1 gate finding(s)"
+      ],
+      "strictExit": 1
+    },
+    {
+      "name": "multiple-findings-one-file",
+      "findings": [
+        {
+          "kind": "gate-that-gates-nothing",
+          "obligation": "FR-026",
+          "path": "scripts/unwrap.sh",
+          "line": 3,
+          "wiredBy": "Makefile",
+          "subject": "gate for FR-026",
+          "changeTarget": "scripts/unwrap.sh:3",
+          "remedy": "compare the count for “unwrap” to zero or make the match command exit non-zero when forbidden text is present",
+          "summary": "FR-026 claims “no unwrap and no expect in src.”, and Makefile wires scripts/unwrap.sh, but line 3 only counts matches for “unwrap” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero."
+        },
+        {
+          "kind": "gate-that-gates-nothing",
+          "obligation": "FR-026",
+          "path": "scripts/unwrap.sh",
+          "line": 5,
+          "wiredBy": "Makefile",
+          "subject": "gate for FR-026",
+          "changeTarget": "scripts/unwrap.sh:5",
+          "remedy": "compare the count for “expect” to zero or make the match command exit non-zero when forbidden text is present",
+          "summary": "FR-026 claims “no unwrap and no expect in src.”, and Makefile wires scripts/unwrap.sh, but line 5 only counts matches for “expect” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero."
+        }
+      ],
+      "json": "{\n  \"findings\": [\n    {\n      \"kind\": \"gate-that-gates-nothing\",\n      \"obligation\": \"FR-026\",\n      \"path\": \"scripts/unwrap.sh\",\n      \"line\": 3,\n      \"wiredBy\": \"Makefile\",\n      \"subject\": \"gate for FR-026\",\n      \"changeTarget\": \"scripts/unwrap.sh:3\",\n      \"remedy\": \"compare the count for “unwrap” to zero or make the match command exit non-zero when forbidden text is present\",\n      \"summary\": \"FR-026 claims “no unwrap and no expect in src.”, and Makefile wires scripts/unwrap.sh, but line 3 only counts matches for “unwrap” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero.\"\n    },\n    {\n      \"kind\": \"gate-that-gates-nothing\",\n      \"obligation\": \"FR-026\",\n      \"path\": \"scripts/unwrap.sh\",\n      \"line\": 5,\n      \"wiredBy\": \"Makefile\",\n      \"subject\": \"gate for FR-026\",\n      \"changeTarget\": \"scripts/unwrap.sh:5\",\n      \"remedy\": \"compare the count for “expect” to zero or make the match command exit non-zero when forbidden text is present\",\n      \"summary\": \"FR-026 claims “no unwrap and no expect in src.”, and Makefile wires scripts/unwrap.sh, but line 5 only counts matches for “expect” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero.\"\n    }\n  ]\n}",
+      "human": [
+        "[warning] gate-that-gates-nothing: scripts/unwrap.sh:3: FR-026 claims “no unwrap and no expect in src.”, and Makefile wires scripts/unwrap.sh, but line 3 only counts matches for “unwrap” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero.",
+        "[warning] gate-that-gates-nothing: scripts/unwrap.sh:5: FR-026 claims “no unwrap and no expect in src.”, and Makefile wires scripts/unwrap.sh, but line 5 only counts matches for “expect” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero.",
+        "2 gate finding(s)"
+      ],
+      "strictExit": 1
+    },
+    {
+      "name": "multiple-files-sorted",
+      "findings": [
+        {
+          "kind": "gate-that-gates-nothing",
+          "obligation": "FR-028",
+          "path": "scripts/a_first.sh",
+          "line": 3,
+          "wiredBy": "Makefile",
+          "subject": "gate for FR-028",
+          "changeTarget": "scripts/a_first.sh:3",
+          "remedy": "compare the count for “unwrap” to zero or make the match command exit non-zero when forbidden text is present",
+          "summary": "FR-028 claims “no unwrap in src.”, and Makefile wires scripts/a_first.sh, but line 3 only counts matches for “unwrap” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero."
+        },
+        {
+          "kind": "gate-that-gates-nothing",
+          "obligation": "FR-027",
+          "path": "scripts/b_second.sh",
+          "line": 3,
+          "wiredBy": "Makefile",
+          "subject": "gate for FR-027",
+          "changeTarget": "scripts/b_second.sh:3",
+          "remedy": "compare the count for “expect” to zero or make the match command exit non-zero when forbidden text is present",
+          "summary": "FR-027 claims “no expect in src.”, and Makefile wires scripts/b_second.sh, but line 3 only counts matches for “expect” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero."
+        }
+      ],
+      "json": "{\n  \"findings\": [\n    {\n      \"kind\": \"gate-that-gates-nothing\",\n      \"obligation\": \"FR-028\",\n      \"path\": \"scripts/a_first.sh\",\n      \"line\": 3,\n      \"wiredBy\": \"Makefile\",\n      \"subject\": \"gate for FR-028\",\n      \"changeTarget\": \"scripts/a_first.sh:3\",\n      \"remedy\": \"compare the count for “unwrap” to zero or make the match command exit non-zero when forbidden text is present\",\n      \"summary\": \"FR-028 claims “no unwrap in src.”, and Makefile wires scripts/a_first.sh, but line 3 only counts matches for “unwrap” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero.\"\n    },\n    {\n      \"kind\": \"gate-that-gates-nothing\",\n      \"obligation\": \"FR-027\",\n      \"path\": \"scripts/b_second.sh\",\n      \"line\": 3,\n      \"wiredBy\": \"Makefile\",\n      \"subject\": \"gate for FR-027\",\n      \"changeTarget\": \"scripts/b_second.sh:3\",\n      \"remedy\": \"compare the count for “expect” to zero or make the match command exit non-zero when forbidden text is present\",\n      \"summary\": \"FR-027 claims “no expect in src.”, and Makefile wires scripts/b_second.sh, but line 3 only counts matches for “expect” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero.\"\n    }\n  ]\n}",
+      "human": [
+        "[warning] gate-that-gates-nothing: scripts/a_first.sh:3: FR-028 claims “no unwrap in src.”, and Makefile wires scripts/a_first.sh, but line 3 only counts matches for “unwrap” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero.",
+        "[warning] gate-that-gates-nothing: scripts/b_second.sh:3: FR-027 claims “no expect in src.”, and Makefile wires scripts/b_second.sh, but line 3 only counts matches for “expect” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero.",
+        "2 gate finding(s)"
+      ],
+      "strictExit": 1
+    },
+    {
+      "name": "wiring-first-in-sort-order",
+      "findings": [
+        {
+          "kind": "gate-that-gates-nothing",
+          "obligation": "FR-029",
+          "path": "scripts/check_unwrap.sh",
+          "line": 3,
+          "wiredBy": ".github/workflows/ci.yml",
+          "subject": "gate for FR-029",
+          "changeTarget": "scripts/check_unwrap.sh:3",
+          "remedy": "compare the count for “unwrap” to zero or make the match command exit non-zero when forbidden text is present",
+          "summary": "FR-029 claims “no unwrap in src.”, and .github/workflows/ci.yml wires scripts/check_unwrap.sh, but line 3 only counts matches for “unwrap” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero."
+        }
+      ],
+      "json": "{\n  \"findings\": [\n    {\n      \"kind\": \"gate-that-gates-nothing\",\n      \"obligation\": \"FR-029\",\n      \"path\": \"scripts/check_unwrap.sh\",\n      \"line\": 3,\n      \"wiredBy\": \".github/workflows/ci.yml\",\n      \"subject\": \"gate for FR-029\",\n      \"changeTarget\": \"scripts/check_unwrap.sh:3\",\n      \"remedy\": \"compare the count for “unwrap” to zero or make the match command exit non-zero when forbidden text is present\",\n      \"summary\": \"FR-029 claims “no unwrap in src.”, and .github/workflows/ci.yml wires scripts/check_unwrap.sh, but line 3 only counts matches for “unwrap” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero.\"\n    }\n  ]\n}",
+      "human": [
+        "[warning] gate-that-gates-nothing: scripts/check_unwrap.sh:3: FR-029 claims “no unwrap in src.”, and .github/workflows/ci.yml wires scripts/check_unwrap.sh, but line 3 only counts matches for “unwrap” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero.",
+        "1 gate finding(s)"
+      ],
+      "strictExit": 1
+    },
+    {
+      "name": "justfile-wiring",
+      "findings": [
+        {
+          "kind": "gate-that-gates-nothing",
+          "obligation": "FR-030",
+          "path": "scripts/check_unwrap.sh",
+          "line": 3,
+          "wiredBy": "justfile",
+          "subject": "gate for FR-030",
+          "changeTarget": "scripts/check_unwrap.sh:3",
+          "remedy": "compare the count for “unwrap” to zero or make the match command exit non-zero when forbidden text is present",
+          "summary": "FR-030 claims “no unwrap in src.”, and justfile wires scripts/check_unwrap.sh, but line 3 only counts matches for “unwrap” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero."
+        }
+      ],
+      "json": "{\n  \"findings\": [\n    {\n      \"kind\": \"gate-that-gates-nothing\",\n      \"obligation\": \"FR-030\",\n      \"path\": \"scripts/check_unwrap.sh\",\n      \"line\": 3,\n      \"wiredBy\": \"justfile\",\n      \"subject\": \"gate for FR-030\",\n      \"changeTarget\": \"scripts/check_unwrap.sh:3\",\n      \"remedy\": \"compare the count for “unwrap” to zero or make the match command exit non-zero when forbidden text is present\",\n      \"summary\": \"FR-030 claims “no unwrap in src.”, and justfile wires scripts/check_unwrap.sh, but line 3 only counts matches for “unwrap” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero.\"\n    }\n  ]\n}",
+      "human": [
+        "[warning] gate-that-gates-nothing: scripts/check_unwrap.sh:3: FR-030 claims “no unwrap in src.”, and justfile wires scripts/check_unwrap.sh, but line 3 only counts matches for “unwrap” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero.",
+        "1 gate finding(s)"
+      ],
+      "strictExit": 1
+    },
+    {
+      "name": "package-json-wiring",
+      "findings": [
+        {
+          "kind": "gate-that-gates-nothing",
+          "obligation": "FR-031",
+          "path": "scripts/check_unwrap.sh",
+          "line": 3,
+          "wiredBy": "package.json",
+          "subject": "gate for FR-031",
+          "changeTarget": "scripts/check_unwrap.sh:3",
+          "remedy": "compare the count for “unwrap” to zero or make the match command exit non-zero when forbidden text is present",
+          "summary": "FR-031 claims “no unwrap in src.”, and package.json wires scripts/check_unwrap.sh, but line 3 only counts matches for “unwrap” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero."
+        }
+      ],
+      "json": "{\n  \"findings\": [\n    {\n      \"kind\": \"gate-that-gates-nothing\",\n      \"obligation\": \"FR-031\",\n      \"path\": \"scripts/check_unwrap.sh\",\n      \"line\": 3,\n      \"wiredBy\": \"package.json\",\n      \"subject\": \"gate for FR-031\",\n      \"changeTarget\": \"scripts/check_unwrap.sh:3\",\n      \"remedy\": \"compare the count for “unwrap” to zero or make the match command exit non-zero when forbidden text is present\",\n      \"summary\": \"FR-031 claims “no unwrap in src.”, and package.json wires scripts/check_unwrap.sh, but line 3 only counts matches for “unwrap” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero.\"\n    }\n  ]\n}",
+      "human": [
+        "[warning] gate-that-gates-nothing: scripts/check_unwrap.sh:3: FR-031 claims “no unwrap in src.”, and package.json wires scripts/check_unwrap.sh, but line 3 only counts matches for “unwrap” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero.",
+        "1 gate finding(s)"
+      ],
+      "strictExit": 1
+    },
+    {
+      "name": "taskfile-wiring",
+      "findings": [
+        {
+          "kind": "gate-that-gates-nothing",
+          "obligation": "FR-032",
+          "path": "scripts/check_unwrap.sh",
+          "line": 3,
+          "wiredBy": "Taskfile.yaml",
+          "subject": "gate for FR-032",
+          "changeTarget": "scripts/check_unwrap.sh:3",
+          "remedy": "compare the count for “unwrap” to zero or make the match command exit non-zero when forbidden text is present",
+          "summary": "FR-032 claims “no unwrap in src.”, and Taskfile.yaml wires scripts/check_unwrap.sh, but line 3 only counts matches for “unwrap” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero."
+        }
+      ],
+      "json": "{\n  \"findings\": [\n    {\n      \"kind\": \"gate-that-gates-nothing\",\n      \"obligation\": \"FR-032\",\n      \"path\": \"scripts/check_unwrap.sh\",\n      \"line\": 3,\n      \"wiredBy\": \"Taskfile.yaml\",\n      \"subject\": \"gate for FR-032\",\n      \"changeTarget\": \"scripts/check_unwrap.sh:3\",\n      \"remedy\": \"compare the count for “unwrap” to zero or make the match command exit non-zero when forbidden text is present\",\n      \"summary\": \"FR-032 claims “no unwrap in src.”, and Taskfile.yaml wires scripts/check_unwrap.sh, but line 3 only counts matches for “unwrap” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero.\"\n    }\n  ]\n}",
+      "human": [
+        "[warning] gate-that-gates-nothing: scripts/check_unwrap.sh:3: FR-032 claims “no unwrap in src.”, and Taskfile.yaml wires scripts/check_unwrap.sh, but line 3 only counts matches for “unwrap” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero.",
+        "1 gate finding(s)"
+      ],
+      "strictExit": 1
+    },
+    {
+      "name": "makefile-suffix-wiring",
+      "findings": [
+        {
+          "kind": "gate-that-gates-nothing",
+          "obligation": "FR-033",
+          "path": "scripts/check_unwrap.sh",
+          "line": 3,
+          "wiredBy": "Makefile.ci",
+          "subject": "gate for FR-033",
+          "changeTarget": "scripts/check_unwrap.sh:3",
+          "remedy": "compare the count for “unwrap” to zero or make the match command exit non-zero when forbidden text is present",
+          "summary": "FR-033 claims “no unwrap in src.”, and Makefile.ci wires scripts/check_unwrap.sh, but line 3 only counts matches for “unwrap” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero."
+        }
+      ],
+      "json": "{\n  \"findings\": [\n    {\n      \"kind\": \"gate-that-gates-nothing\",\n      \"obligation\": \"FR-033\",\n      \"path\": \"scripts/check_unwrap.sh\",\n      \"line\": 3,\n      \"wiredBy\": \"Makefile.ci\",\n      \"subject\": \"gate for FR-033\",\n      \"changeTarget\": \"scripts/check_unwrap.sh:3\",\n      \"remedy\": \"compare the count for “unwrap” to zero or make the match command exit non-zero when forbidden text is present\",\n      \"summary\": \"FR-033 claims “no unwrap in src.”, and Makefile.ci wires scripts/check_unwrap.sh, but line 3 only counts matches for “unwrap” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero.\"\n    }\n  ]\n}",
+      "human": [
+        "[warning] gate-that-gates-nothing: scripts/check_unwrap.sh:3: FR-033 claims “no unwrap in src.”, and Makefile.ci wires scripts/check_unwrap.sh, but line 3 only counts matches for “unwrap” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero.",
+        "1 gate finding(s)"
+      ],
+      "strictExit": 1
+    },
+    {
+      "name": "workflow-outside-github-is-not-wiring",
+      "findings": [],
+      "json": "{\n  \"findings\": []\n}",
+      "human": [
+        "repository QA gates: no findings"
+      ],
+      "strictExit": 0
+    },
+    {
+      "name": "uppercase-workflow-extension-is-not-wiring",
+      "findings": [],
+      "json": "{\n  \"findings\": []\n}",
+      "human": [
+        "repository QA gates: no findings"
+      ],
+      "strictExit": 0
+    },
+    {
+      "name": "uppercase-sh-extension-is-not-a-script",
+      "findings": [],
+      "json": "{\n  \"findings\": []\n}",
+      "human": [
+        "repository QA gates: no findings"
+      ],
+      "strictExit": 0
+    },
+    {
+      "name": "wiring-by-basename",
+      "findings": [
+        {
+          "kind": "gate-that-gates-nothing",
+          "obligation": "FR-035",
+          "path": "scripts/check_unwrap.sh",
+          "line": 3,
+          "wiredBy": "Makefile",
+          "subject": "gate for FR-035",
+          "changeTarget": "scripts/check_unwrap.sh:3",
+          "remedy": "compare the count for “unwrap” to zero or make the match command exit non-zero when forbidden text is present",
+          "summary": "FR-035 claims “no unwrap in src.”, and Makefile wires scripts/check_unwrap.sh, but line 3 only counts matches for “unwrap” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero."
+        }
+      ],
+      "json": "{\n  \"findings\": [\n    {\n      \"kind\": \"gate-that-gates-nothing\",\n      \"obligation\": \"FR-035\",\n      \"path\": \"scripts/check_unwrap.sh\",\n      \"line\": 3,\n      \"wiredBy\": \"Makefile\",\n      \"subject\": \"gate for FR-035\",\n      \"changeTarget\": \"scripts/check_unwrap.sh:3\",\n      \"remedy\": \"compare the count for “unwrap” to zero or make the match command exit non-zero when forbidden text is present\",\n      \"summary\": \"FR-035 claims “no unwrap in src.”, and Makefile wires scripts/check_unwrap.sh, but line 3 only counts matches for “unwrap” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero.\"\n    }\n  ]\n}",
+      "human": [
+        "[warning] gate-that-gates-nothing: scripts/check_unwrap.sh:3: FR-035 claims “no unwrap in src.”, and Makefile wires scripts/check_unwrap.sh, but line 3 only counts matches for “unwrap” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero.",
+        "1 gate finding(s)"
+      ],
+      "strictExit": 1
+    },
+    {
+      "name": "excluded-directories",
+      "findings": [
+        {
+          "kind": "gate-that-gates-nothing",
+          "obligation": "FR-036",
+          "path": "scripts/check_unwrap.sh",
+          "line": 3,
+          "wiredBy": "Makefile",
+          "subject": "gate for FR-036",
+          "changeTarget": "scripts/check_unwrap.sh:3",
+          "remedy": "compare the count for “unwrap” to zero or make the match command exit non-zero when forbidden text is present",
+          "summary": "FR-036 claims “no unwrap in src.”, and Makefile wires scripts/check_unwrap.sh, but line 3 only counts matches for “unwrap” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero."
+        }
+      ],
+      "json": "{\n  \"findings\": [\n    {\n      \"kind\": \"gate-that-gates-nothing\",\n      \"obligation\": \"FR-036\",\n      \"path\": \"scripts/check_unwrap.sh\",\n      \"line\": 3,\n      \"wiredBy\": \"Makefile\",\n      \"subject\": \"gate for FR-036\",\n      \"changeTarget\": \"scripts/check_unwrap.sh:3\",\n      \"remedy\": \"compare the count for “unwrap” to zero or make the match command exit non-zero when forbidden text is present\",\n      \"summary\": \"FR-036 claims “no unwrap in src.”, and Makefile wires scripts/check_unwrap.sh, but line 3 only counts matches for “unwrap” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero.\"\n    }\n  ]\n}",
+      "human": [
+        "[warning] gate-that-gates-nothing: scripts/check_unwrap.sh:3: FR-036 claims “no unwrap in src.”, and Makefile wires scripts/check_unwrap.sh, but line 3 only counts matches for “unwrap” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero.",
+        "1 gate finding(s)"
+      ],
+      "strictExit": 1
+    },
+    {
+      "name": "nested-and-hidden-directories",
+      "findings": [
+        {
+          "kind": "gate-that-gates-nothing",
+          "obligation": "FR-037",
+          "path": ".ci/deep/nested/check_unwrap.sh",
+          "line": 3,
+          "wiredBy": "Makefile",
+          "subject": "gate for FR-037",
+          "changeTarget": ".ci/deep/nested/check_unwrap.sh:3",
+          "remedy": "compare the count for “unwrap” to zero or make the match command exit non-zero when forbidden text is present",
+          "summary": "FR-037 claims “no unwrap in src.”, and Makefile wires .ci/deep/nested/check_unwrap.sh, but line 3 only counts matches for “unwrap” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero."
+        }
+      ],
+      "json": "{\n  \"findings\": [\n    {\n      \"kind\": \"gate-that-gates-nothing\",\n      \"obligation\": \"FR-037\",\n      \"path\": \".ci/deep/nested/check_unwrap.sh\",\n      \"line\": 3,\n      \"wiredBy\": \"Makefile\",\n      \"subject\": \"gate for FR-037\",\n      \"changeTarget\": \".ci/deep/nested/check_unwrap.sh:3\",\n      \"remedy\": \"compare the count for “unwrap” to zero or make the match command exit non-zero when forbidden text is present\",\n      \"summary\": \"FR-037 claims “no unwrap in src.”, and Makefile wires .ci/deep/nested/check_unwrap.sh, but line 3 only counts matches for “unwrap” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero.\"\n    }\n  ]\n}",
+      "human": [
+        "[warning] gate-that-gates-nothing: .ci/deep/nested/check_unwrap.sh:3: FR-037 claims “no unwrap in src.”, and Makefile wires .ci/deep/nested/check_unwrap.sh, but line 3 only counts matches for “unwrap” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero.",
+        "1 gate finding(s)"
+      ],
+      "strictExit": 1
+    },
+    {
+      "name": "crlf-line-endings",
+      "findings": [
+        {
+          "kind": "gate-that-gates-nothing",
+          "obligation": "FR-038",
+          "path": "scripts/check_unwrap.sh",
+          "line": 4,
+          "wiredBy": "Makefile",
+          "subject": "gate for FR-038",
+          "changeTarget": "scripts/check_unwrap.sh:4",
+          "remedy": "compare the count for “unwrap” to zero or make the match command exit non-zero when forbidden text is present",
+          "summary": "FR-038 claims “no unwrap in src.”, and Makefile wires scripts/check_unwrap.sh, but line 4 only counts matches for “unwrap” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero."
+        }
+      ],
+      "json": "{\n  \"findings\": [\n    {\n      \"kind\": \"gate-that-gates-nothing\",\n      \"obligation\": \"FR-038\",\n      \"path\": \"scripts/check_unwrap.sh\",\n      \"line\": 4,\n      \"wiredBy\": \"Makefile\",\n      \"subject\": \"gate for FR-038\",\n      \"changeTarget\": \"scripts/check_unwrap.sh:4\",\n      \"remedy\": \"compare the count for “unwrap” to zero or make the match command exit non-zero when forbidden text is present\",\n      \"summary\": \"FR-038 claims “no unwrap in src.”, and Makefile wires scripts/check_unwrap.sh, but line 4 only counts matches for “unwrap” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero.\"\n    }\n  ]\n}",
+      "human": [
+        "[warning] gate-that-gates-nothing: scripts/check_unwrap.sh:4: FR-038 claims “no unwrap in src.”, and Makefile wires scripts/check_unwrap.sh, but line 4 only counts matches for “unwrap” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero.",
+        "1 gate finding(s)"
+      ],
+      "strictExit": 1
+    },
+    {
+      "name": "no-trailing-newline",
+      "findings": [
+        {
+          "kind": "gate-that-gates-nothing",
+          "obligation": "FR-039",
+          "path": "scripts/check_unwrap.sh",
+          "line": 3,
+          "wiredBy": "Makefile",
+          "subject": "gate for FR-039",
+          "changeTarget": "scripts/check_unwrap.sh:3",
+          "remedy": "compare the count for “unwrap” to zero or make the match command exit non-zero when forbidden text is present",
+          "summary": "FR-039 claims “no unwrap in src.”, and Makefile wires scripts/check_unwrap.sh, but line 3 only counts matches for “unwrap” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero."
+        }
+      ],
+      "json": "{\n  \"findings\": [\n    {\n      \"kind\": \"gate-that-gates-nothing\",\n      \"obligation\": \"FR-039\",\n      \"path\": \"scripts/check_unwrap.sh\",\n      \"line\": 3,\n      \"wiredBy\": \"Makefile\",\n      \"subject\": \"gate for FR-039\",\n      \"changeTarget\": \"scripts/check_unwrap.sh:3\",\n      \"remedy\": \"compare the count for “unwrap” to zero or make the match command exit non-zero when forbidden text is present\",\n      \"summary\": \"FR-039 claims “no unwrap in src.”, and Makefile wires scripts/check_unwrap.sh, but line 3 only counts matches for “unwrap” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero.\"\n    }\n  ]\n}",
+      "human": [
+        "[warning] gate-that-gates-nothing: scripts/check_unwrap.sh:3: FR-039 claims “no unwrap in src.”, and Makefile wires scripts/check_unwrap.sh, but line 3 only counts matches for “unwrap” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero.",
+        "1 gate finding(s)"
+      ],
+      "strictExit": 1
+    },
+    {
+      "name": "non-sh-extension",
+      "findings": [],
+      "json": "{\n  \"findings\": []\n}",
+      "human": [
+        "repository QA gates: no findings"
+      ],
+      "strictExit": 0
+    },
+    {
+      "name": "dotfile-named-sh",
+      "findings": [],
+      "json": "{\n  \"findings\": []\n}",
+      "human": [
+        "repository QA gates: no findings"
+      ],
+      "strictExit": 0
+    },
+    {
+      "name": "empty-repository",
+      "findings": [],
+      "json": "{\n  \"findings\": []\n}",
+      "human": [
+        "repository QA gates: no findings"
+      ],
+      "strictExit": 0
+    },
+    {
+      "name": "wiring-only-no-scripts",
+      "findings": [],
+      "json": "{\n  \"findings\": []\n}",
+      "human": [
+        "repository QA gates: no findings"
+      ],
+      "strictExit": 0
+    },
+    {
+      "name": "realistic-mixed-repo",
+      "findings": [
+        {
+          "kind": "gate-that-gates-nothing",
+          "obligation": "FR-101",
+          "path": "scripts/no_todo.sh",
+          "line": 3,
+          "wiredBy": "Makefile",
+          "subject": "gate for FR-101",
+          "changeTarget": "scripts/no_todo.sh:3",
+          "remedy": "compare the count for “TODO” to zero or make the match command exit non-zero when forbidden text is present",
+          "summary": "FR-101 claims “source shall carry no TODO markers.”, and Makefile wires scripts/no_todo.sh, but line 3 only counts matches for “TODO” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero."
+        },
+        {
+          "kind": "gate-that-gates-nothing",
+          "obligation": "FR-100-AC-1",
+          "path": "scripts/no_unwrap.sh",
+          "line": 4,
+          "wiredBy": "Makefile",
+          "subject": "gate for FR-100-AC-1",
+          "changeTarget": "scripts/no_unwrap.sh:4",
+          "remedy": "compare the count for “unwrap()” to zero or make the match command exit non-zero when forbidden text is present",
+          "summary": "FR-100-AC-1 claims “no production symbol shall call `unwrap`.”, and Makefile wires scripts/no_unwrap.sh, but line 4 only counts matches for “unwrap()” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero."
+        }
+      ],
+      "json": "{\n  \"findings\": [\n    {\n      \"kind\": \"gate-that-gates-nothing\",\n      \"obligation\": \"FR-101\",\n      \"path\": \"scripts/no_todo.sh\",\n      \"line\": 3,\n      \"wiredBy\": \"Makefile\",\n      \"subject\": \"gate for FR-101\",\n      \"changeTarget\": \"scripts/no_todo.sh:3\",\n      \"remedy\": \"compare the count for “TODO” to zero or make the match command exit non-zero when forbidden text is present\",\n      \"summary\": \"FR-101 claims “source shall carry no TODO markers.”, and Makefile wires scripts/no_todo.sh, but line 3 only counts matches for “TODO” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero.\"\n    },\n    {\n      \"kind\": \"gate-that-gates-nothing\",\n      \"obligation\": \"FR-100-AC-1\",\n      \"path\": \"scripts/no_unwrap.sh\",\n      \"line\": 4,\n      \"wiredBy\": \"Makefile\",\n      \"subject\": \"gate for FR-100-AC-1\",\n      \"changeTarget\": \"scripts/no_unwrap.sh:4\",\n      \"remedy\": \"compare the count for “unwrap()” to zero or make the match command exit non-zero when forbidden text is present\",\n      \"summary\": \"FR-100-AC-1 claims “no production symbol shall call `unwrap`.”, and Makefile wires scripts/no_unwrap.sh, but line 4 only counts matches for “unwrap()” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero.\"\n    }\n  ]\n}",
+      "human": [
+        "[warning] gate-that-gates-nothing: scripts/no_todo.sh:3: FR-101 claims “source shall carry no TODO markers.”, and Makefile wires scripts/no_todo.sh, but line 3 only counts matches for “TODO” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero.",
+        "[warning] gate-that-gates-nothing: scripts/no_unwrap.sh:4: FR-100-AC-1 claims “no production symbol shall call `unwrap`.”, and Makefile wires scripts/no_unwrap.sh, but line 4 only counts matches for “unwrap()” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero.",
+        "2 gate finding(s)"
+      ],
+      "strictExit": 1
+    }
+  ]
+}

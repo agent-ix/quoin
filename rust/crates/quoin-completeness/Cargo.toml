@@ -26,4 +26,10 @@ thiserror = { workspace = true }
 quoin-yaml = { workspace = true }
 
 [dev-dependencies]
-tempfile = "=3.24.0"
+# Raised from =3.24.0 on the merge with main. `quoin-validators` (quoin#377,
+# already on main) pins `tempfile = "=3.27.0"`, and cargo cannot resolve two
+# exact pins of one crate in one workspace graph — a conflict git does not mark
+# because the two pins live in different files. Converged UPWARD, per the rule
+# that a pin moves up and never down; 3.27.0 is API-compatible for the
+# `TempDir`/`NamedTempFile` use here.
+tempfile = "=3.27.0"

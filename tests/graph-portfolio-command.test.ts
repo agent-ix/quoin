@@ -106,7 +106,7 @@ function fixture() {
   return { root, exportPath, premisesPath, auditPath };
 }
 
-test("TC-1311 report embeds the exact standalone structural report objects", async () => {
+test("report embeds the exact standalone structural report objects", async () => {
   const paths = fixture();
   const loaded = loadGraphAnalysisInput({
     repo: paths.root,
@@ -144,7 +144,7 @@ test("TC-1311 report embeds the exact standalone structural report objects", asy
   ]);
 });
 
-test("TC-1311 partial triples are incompatible before a missing export is read", async () => {
+test("partial triples are incompatible before a missing export is read", async () => {
   const paths = fixture();
   const lines: string[] = [];
   vi.spyOn(console, "log").mockImplementation((line) =>

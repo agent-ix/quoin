@@ -1,6 +1,6 @@
 /** Deterministic human and JSON projections of the same FR-062 report. */
 
-import { canonicalJson } from "../evidence/index.js";
+import { canonicalJson } from "../store/canonical.js";
 import type {
   ChangeImpactAnalysis,
   ChurnAnalysis,

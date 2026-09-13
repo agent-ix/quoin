@@ -1,0 +1,40 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 Agent-IX
+[package]
+name = "quoin-quire"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+description = "quoin's quire edge as a linked crate: coverage, properties, validation, clause sets and assurance, without a subprocess."
+# EPIC quoin#373: no crates.io, no public npmjs. This crate is consumed inside
+# the quoin repository and published nowhere. `publish = false` is stated once
+# in `[workspace.package]` and inherited here.
+publish.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+# THE PIN. Exactly what `quire-cli` HEAD pins, and that is the whole argument:
+# quire-cli is the governed producer of the payloads quoin reads today, so
+# linking its engine byte-for-byte makes `quoin-quire` and the `quire` binary
+# one candidate revision (EPIC #373 FR-101), not two things that agree by
+# version number.
+#
+# `rev`, never a tag or branch: a moving ref makes the gate a claim about
+# whatever resolved that morning. `version = "="` alongside it because the
+# rev's manifest says 0.46.0 while `git describe` says v0.45.0-123 — the two
+# disagree, and a build that resolved a different 0.46.0 would be a silent
+# substitution. Both must match or the resolution fails.
+#
+# Declared here rather than in `[workspace.dependencies]` because this crate is
+# the only consumer of the quire engine and the pin is the crate's own subject
+# matter; `build.rs` reads THIS line, so the pin is stated once and reported
+# from the same place it is declared.
+quire-rs = { version = "=0.46.0", git = "https://github.com/agent-ix/quire-rs", rev = "85dfe9d5a937c52af6456f2e6aa3a6bc4c82db9f" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }

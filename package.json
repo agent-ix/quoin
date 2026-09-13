@@ -63,7 +63,7 @@
     "test:coverage": "vitest run --coverage",
     "test:json": "vitest run --reporter=json --outputFile=report.json || true",
     "test:evals": "node evals/run.mjs",
-    "lint": "pnpm run typecheck && eslint \"src/**/*.{ts,tsx,js,jsx}\" \"tests/**/*.{ts,tsx,js,jsx}\" && pnpm run format:check",
+    "lint": "pnpm run typecheck && node scripts/check-import-cycles.mjs && eslint \"src/**/*.{ts,tsx,js,jsx}\" \"tests/**/*.{ts,tsx,js,jsx}\" && pnpm run format:check",
     "validate": "quire validate \"spec/**/*.md\" \"plan/**/*.md\" \"reviews/*.md\"",
     "format": "prettier --write .",
     "format:check": "prettier --check .",

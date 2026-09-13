@@ -1,4 +1,4 @@
-import { blake3Hex, digestValue } from "./integrity.js";
+import { blake3Hex, digestValue } from "../store/integrity.js";
 import {
   array,
   compareUtf16,

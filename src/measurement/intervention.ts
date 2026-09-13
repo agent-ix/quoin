@@ -11,7 +11,8 @@ import { isAbsolute, join, posix, relative, resolve } from "node:path";
 
 import { Ajv2020 } from "ajv/dist/2020.js";
 
-import { canonicalJson, storeRoot } from "../evidence/store.js";
+import { canonicalJson } from "../store/canonical.js";
+import { storeRoot } from "../store/paths.js";
 import { writeFileAtomicNoReplace } from "./atomic-file.js";
 import { interventionExperimentSchema } from "./intervention-schema.js";
 import type { InterventionExperimentRecord } from "./intervention-types.js";

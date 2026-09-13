@@ -1,6 +1,5 @@
 /**
- * FR-036 — architecture conformance as a declared verification method
- * (TC-197..TC-201 the adapter, TC-204/TC-205 the advisor).
+ * FR-036 — architecture conformance as a declared verification method.
  *
  * The boundary checks this method exists to make possible live in
  * `arch-boundaries.test.ts` (TC-202, TC-203).
@@ -126,7 +125,7 @@ function archCatalog(): MethodCatalog {
 }
 
 describe("advising architecture conformance", () => {
-  // Trace: FR-036-AC-6
+  // Trace: FR-036-AC-6, FR-036-CON-3
   it("mints both characteristics the catalog's rule is keyed on", () => {
     // `module-boundary` was declared by the catalog and minted by nothing, so
     // half of this method's applicability rule could never match. A census of

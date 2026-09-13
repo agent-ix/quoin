@@ -30,6 +30,7 @@ pub const MAX_ECHO_BYTES: usize = 4 * 1024;
 /// than silently ignored — a field the boundary drops is a field the caller
 /// believes it sent.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct PingRequest {
     /// An opaque token returned unchanged, for correlating a call with its
@@ -47,6 +48,7 @@ pub struct PingRequest {
 
 /// The payload `core.ping` writes to stdout.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct PingPayload {
     /// The protocol revision this build speaks.
     pub protocol_version: u32,
@@ -80,14 +82,14 @@ pub fn ping(request: &serde_json::Value) -> Result<Response, CoreError> {
     }
 
     let payload = serde_json::to_value(PingPayload {
-        protocol_version: quoin_schemas::PROTOCOL_VERSION,
+        protocol_version: crate::protocol::PROTOCOL_VERSION,
         core_version: env!("CARGO_PKG_VERSION"),
         echo: request.echo,
     })
     .map_err(|e| CoreError::new(CoreErrorCode::Io, e.to_string()))?;
 
     match request.expect_protocol {
-        Some(expected) if expected != quoin_schemas::PROTOCOL_VERSION => Ok(Response::partial(
+        Some(expected) if expected != crate::protocol::PROTOCOL_VERSION => Ok(Response::partial(
             payload,
             &CoreError::new(
                 CoreErrorCode::ProtocolSkew,
@@ -96,7 +98,7 @@ pub fn ping(request: &serde_json::Value) -> Result<Response, CoreError> {
             )
             .with_context("op", "core.ping")
             .with_context("expected", expected.to_string())
-            .with_context("actual", quoin_schemas::PROTOCOL_VERSION.to_string()),
+            .with_context("actual", crate::protocol::PROTOCOL_VERSION.to_string()),
         )),
         _ => Ok(Response::ok(payload)),
     }

@@ -31,6 +31,8 @@ import { createHash } from "node:crypto";
 import { accessSync, constants, readFileSync, realpathSync } from "node:fs";
 import { delimiter, isAbsolute, join } from "node:path";
 
+import type { Diagnostic } from "./types.js";
+
 /**
  * Node's default `maxBuffer` is 1 MiB, and a real corpus already exceeds it:
  * filament-ide-rs (268 spec files, 1,107 obligations) emits 1,090,714 bytes of
@@ -84,15 +86,17 @@ export function carriesPayload(exitCode: number): boolean {
   return exitCode === CORE_EXIT.OK || exitCode === CORE_EXIT.PARTIAL;
 }
 
-/** One entry of quoin-core's stderr array. */
-export interface CoreDiagnostic {
-  /** A stable code from quoin-core's catalogue, e.g. `CORE_UNKNOWN_OP`. */
-  code: string;
-  /** A sentence for an operator. Never parsed to decide what happened. */
-  message: string;
-  /** Ordered context. */
-  context: Record<string, string>;
-}
+/**
+ * One entry of quoin-core's stderr array.
+ *
+ * An alias of the GENERATED {@link Diagnostic}, not a second declaration of
+ * it. The three fields were hand-written here and happened to match
+ * `quoin_core::protocol::Diagnostic` — which is exactly the duplicate FR-097
+ * forbids, because a type that agrees by coincidence drifts the first time the
+ * Rust struct gains a field and nothing reports it. The name is kept because
+ * it is the spelling callers import.
+ */
+export type CoreDiagnostic = Diagnostic;
 
 /** What one `quoin-core` invocation produced. */
 export interface CoreResult {

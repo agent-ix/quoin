@@ -8,10 +8,18 @@ rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
 authors.workspace = true
-description = "Placeholder for the schema-sourced type surface of quoin-core (FR-097)."
+description = "Emits the JSON Schema of the quoin-core boundary and generates src/core/types.ts from it (FR-097)."
 publish.workspace = true
 
 [lints]
 workspace = true
 
+[[bin]]
+name = "quoin-schemas-gen"
+path = "src/bin/gen.rs"
+
 [dependencies]
+quoin-core = { workspace = true, features = ["schema"] }
+schemars = { workspace = true }
+serde_json = { workspace = true }
+sha2 = { workspace = true }

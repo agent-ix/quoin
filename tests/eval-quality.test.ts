@@ -28,8 +28,8 @@ const labels = [
 ];
 
 describe("finding precision and recall", () => {
-  it("TC-946 scores by location when both sides name one", () => {
-    // TC-946
+  it("scores by location when both sides name one", () => {
+    // Trace: FR-043-AC-2, FR-043-AC-7
     // The failure SR-014 FND-001 describes: two defects of ONE family seeded
     // at different places, and a tool reporting the right family twice at the
     // SAME place. Matching on family alone scored both true -- precision 1.00
@@ -95,8 +95,8 @@ describe("finding precision and recall", () => {
     expect(fileOnly.families[0].truePositives).toBe(1);
   });
 
-  it("TC-952 declared collateral is set aside, reported, and spent once", () => {
-    // TC-952
+  it("declared collateral is set aside, reported, and spent once", () => {
+    // Trace: FR-043-AC-2
     // The behaviour, not the declaration's shape (TC-950 covers that). A
     // seeded `hollow-denominator` necessarily also produces `no-symbol-bound`,
     // and the engine cannot separate the two causes — `coverage.backed` is the
@@ -179,8 +179,8 @@ describe("finding precision and recall", () => {
     ).toBe(1);
   });
 
-  it("TC-967 a declaration on one case cannot absorb another case's finding", () => {
-    // TC-967
+  it("a declaration on one case cannot absorb another case's finding", () => {
+    // Trace: FR-043-AC-7
     // agent-ix/quoin#238. Spending a declaration ONCE (TC-952) was not enough:
     // the pairing was on family and reason only, so a collateral declaration
     // on case A consumed a correct finding from case B and that finding
@@ -244,8 +244,8 @@ describe("finding precision and recall", () => {
     expect(hollow?.recall).toBe(1);
   });
 
-  it("TC-941 is reported per family, because an average hides a hole", () => {
-    // TC-941
+  it("is reported per family, because an average hides a hole", () => {
+    // Trace: FR-043-AC-2
     // A tool that finds every marker mismatch and no vacuous suite has a
     // respectable average — and the average is exactly what hides it.
     const { families } = scoreFindings(
@@ -258,8 +258,8 @@ describe("finding precision and recall", () => {
     expect(byFamily["vacuous-under-guard"].misses).toBe(1);
   });
 
-  it("TC-942 counts a finding matching no label as a false positive", () => {
-    // TC-942
+  it("counts a finding matching no label as a false positive", () => {
+    // Trace: FR-043-AC-2
     const { families } = scoreFindings(
       [
         { family: "marker-form-mismatch", rowId: "TC-001" },
@@ -284,8 +284,8 @@ describe("finding precision and recall", () => {
     );
   });
 
-  it("TC-982 a SCOPED ruling governs only the declaration it names", () => {
-    // TC-982
+  it("a SCOPED ruling governs only the declaration it names", () => {
+    // Trace: FR-043-AC-16
     // THE FABRICATED NUMBER THIS STOPS. `agent-ix/quire-rs#304` made
     // `archetype-matches-nothing` fire for several declarations at once, so on
     // a three-file fixture it fires correctly for `inspection`, `suite`,
@@ -322,8 +322,8 @@ describe("finding precision and recall", () => {
     expect(adv.precision).toBe(0);
   });
 
-  it("TC-983 an UNSCOPED ruling governs every firing of its family on that case", () => {
-    // TC-983
+  it("an UNSCOPED ruling governs every firing of its family on that case", () => {
+    // Trace: FR-043-AC-16
     // The counterpart to TC-982: a fixture that writes the bare token means the
     // whole family, and scoping the match by declaration must not quietly turn
     // that into a ruling on nothing.
@@ -342,8 +342,8 @@ describe("finding precision and recall", () => {
     expect(adv.precision_basis!.unadjudicated).toBe(0);
   });
 
-  it("TC-1001 a STANDING ruling covers only the declarations it names", () => {
-    // TC-1001
+  it("a STANDING ruling covers only the declarations it names", () => {
+    // Trace: FR-043-AC-16
     // The first measurement of `unadjudicated` read 316 of 319 for
     // `archetype-matches-nothing`, and the obvious way to move that number is
     // wrong: adding the token to seventy-six `expect.yaml` files would be 300
@@ -382,8 +382,8 @@ describe("finding precision and recall", () => {
     expect(adv.precision_basis!.unadjudicated).toBe(1);
   });
 
-  it("TC-1002 a standing ruling is counted separately from a per-case one", () => {
-    // TC-1002
+  it("a standing ruling is counted separately from a per-case one", () => {
+    // Trace: FR-043-AC-36
     // Different strengths of evidence. The first run after
     // `archetype-matches-nothing` gained a standing ruling read precision 1.00
     // over 323 firings — of which 3 were the fixtures' own `expect.yaml` and
@@ -411,8 +411,8 @@ describe("finding precision and recall", () => {
     expect(basis.byStanding).toBe(1);
   });
 
-  it("TC-987 a firing nobody ruled on is counted and published, never folded into the null", () => {
-    // TC-987
+  it("a firing nobody ruled on is counted and published, never folded into the null", () => {
+    // Trace: FR-043-AC-16
     // What #234 shipped was a bare `null`, which reads as "nothing to see". The
     // state it was actually describing is 316 firings on which this benchmark
     // holds no opinion. Not-measured and zero are different claims, and so are
@@ -432,7 +432,7 @@ describe("finding precision and recall", () => {
     expect(adv.precision_basis!.rulings).toBe(0);
   });
 
-  it("TC-1098 exact retained rulings score only compatible finding envelopes", () => {
+  it("exact retained rulings score only compatible finding envelopes", () => {
     const ruled = normalizeQuireFinding(
       {
         reason: "catch-all-universal",
@@ -505,8 +505,8 @@ describe("finding precision and recall", () => {
     expect(disputed.ambiguous).toEqual([id]);
   });
 
-  it("TC-943 reports null, not zero, when a family has no denominator", () => {
-    // TC-943
+  it("reports null, not zero, when a family has no denominator", () => {
+    // Trace: FR-043-AC-2
     // 0/0 is not 0%. A precision of 0 claims the run was wrong; null says it
     // emitted nothing to be right or wrong about.
     const { families } = scoreFindings([], labels);
@@ -517,8 +517,8 @@ describe("finding precision and recall", () => {
 });
 
 describe("actionability", () => {
-  it("TC-944 counts findings that name where, which is what 15 of 496 measured", () => {
-    // TC-944
+  it("counts findings that name where, which is what 15 of 496 measured", () => {
+    // Trace: FR-043-AC-4
     // Pass 2: 481 findings named neither the row they came from nor a line
     // that distinguished them. A finding you cannot act on is a finding nobody
     // acts on, whatever its precision.
@@ -542,7 +542,7 @@ describe("actionability", () => {
 describe("span grounding", () => {
   const span = (text: string) => ({ start: 0, end: text.length, text });
 
-  it("TC-1084 separates present, missing, unavailable, malformed, and not-applicable spans", () => {
+  it("separates present, missing, unavailable, malformed, and not-applicable spans", () => {
     const scored = scoreSpanGrounding([
       {
         case: "grounding",
@@ -611,7 +611,7 @@ describe("span grounding", () => {
     ]);
   });
 
-  it("TC-1085 names malformed producer payloads and scoreScenario consumes the same scorer", () => {
+  it("names malformed producer payloads and scoreScenario consumes the same scorer", () => {
     const properties = [{ case: "broken", payload: { documents: null } }];
     const direct = scoreSpanGrounding(properties);
     expect(direct).toMatchObject({
@@ -625,7 +625,7 @@ describe("span grounding", () => {
 });
 
 describe("labeled span grounding v2", () => {
-  it("TC-1110 counts exact spans and justified refusals without requiring an invented precondition", () => {
+  it("counts exact spans and justified refusals without requiring an invented precondition", () => {
     const exactStatement =
       "Every normalizer applied twice gives the same result as applying it once";
     const span = (statement: string, text: string) => {
@@ -711,7 +711,7 @@ describe("labeled span grounding v2", () => {
     });
   });
 
-  it("TC-1111 fails closed when the labeled multiplicity shrinks", () => {
+  it("fails closed when the labeled multiplicity shrinks", () => {
     const scored = scoreSpanGroundingV2([], {
       definitionVersion: "property.span-grounding-v2",
       rules: [
@@ -735,7 +735,7 @@ describe("labeled span grounding v2", () => {
 });
 
 describe("grounding correctness and safe refusal", () => {
-  it("TC-1092 keeps presence, exact correctness, and justified refusal distinct", () => {
+  it("keeps presence, exact correctness, and justified refusal distinct", () => {
     const statement = "A finding defaults to warning";
     const span = (text: string, start = statement.indexOf(text)) => ({
       start,
@@ -855,8 +855,8 @@ describe("grounding correctness and safe refusal", () => {
 });
 
 describe("cost per confirmed insight", () => {
-  it("TC-945 reports tokens AND tool calls, which are different costs", () => {
-    // TC-945
+  it("reports tokens AND tool calls, which are different costs", () => {
+    // Trace: FR-043-AC-5
     // Tokens are the context budget; tool calls are wall-clock and blast
     // radius. A run that reads the corpus once and one that greps it forty
     // times can spend the same tokens.
@@ -879,8 +879,8 @@ describe("cost per confirmed insight", () => {
     expect(dearAndRight.tokensPer).toBeLessThan(cheapAndWrong.tokensPer!);
   });
 
-  it("TC-994 an absent cost is null, never 0, and the half it knows is still reported", () => {
-    // TC-994
+  it("an absent cost is null, never 0, and the half it knows is still reported", () => {
+    // Trace: FR-043-AC-5
     // `?? 0` published "0 tokens" for tier 1, which calls no model at all — a
     // measurement claiming the run was free. And an all-or-nothing return threw
     // away the half it COULD report: tier 1 knows its subprocess count exactly.

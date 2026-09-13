@@ -109,9 +109,8 @@ function auditInput(
   };
 }
 
-describe("TC-303 strict lineage and policy boundaries", () => {
-  // Trace: FR-094-AC-1
-  // Trace: FR-094-AC-2
+describe("strict lineage and policy boundaries", () => {
+  // Trace: FR-094-AC-1, FR-094-AC-2
   it("accepts stated dimensions and rejects empty or invented dimensions", () => {
     expect(validateEvidenceLineage(lineageA)).toEqual(lineageA);
     expect(() => validateEvidenceLineage({})).toThrow(/at least one/);
@@ -188,8 +187,8 @@ describe("TC-303 strict lineage and policy boundaries", () => {
   });
 });
 
-describe("TC-304..TC-307 relationship independence", () => {
-  // Trace: FR-094-AC-3
+describe("relationship independence", () => {
+  // Trace: FR-094-AC-3, FR-094-CON-2
   it("requires two distinct evidence relationships that differ on every selected dimension", () => {
     const one = assessIndependence("AP-001", policy().requirements[0], [
       binding("SUITE-A", lineageA),
@@ -306,7 +305,7 @@ describe("TC-304..TC-307 relationship independence", () => {
   });
 });
 
-describe("TC-308 lineage persistence and TC-309 assurance context", () => {
+describe("lineage persistence and TC-309 assurance context", () => {
   // Trace: FR-094-AC-7
   it("records lineage on the binding and clears old lineage when a later run omits it", () => {
     const repo = mkdtempSync(join(tmpdir(), "quoin-lineage-"));
