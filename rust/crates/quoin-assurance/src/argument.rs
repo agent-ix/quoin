@@ -28,6 +28,11 @@
 //! - An instant naming a day that does not exist must be refused, which
 //!   `Date.parse` did not do until quoin#436 fixed the retained code.
 //!
+//! For the same reason the payload types are `Serialize` only. A derived
+//! `Deserialize` on [`AssuranceArgument`] would be a second, permissive door
+//! into the same struct that bypasses all seventeen predicates, and it would
+//! read as harmless because deriving both is the habit.
+//!
 //! # Permissiveness runs both ways
 //!
 //! Recorded on quoin#384 and worth repeating where the code is: a port that
@@ -35,13 +40,26 @@
 //! exactly as much as one that refuses what it accepts. Every deviation below
 //! is annotated with which direction it would have gone.
 
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 
 /// A rejection, carrying the retained implementation's own message.
 ///
 /// The message is reproduced because it costs nothing and helps a human, but
 /// it is deliberately **not** a contract: `quoin-difftest` compares the
 /// diagnostic's `(code, context keys)` and never its prose (quoin#373).
+///
+/// # Why one variant and not seventeen
+///
+/// rust-review §0b warns that an error whose payload is a string, built from a
+/// different literal at each site, has moved the discriminant into prose. The
+/// test it gives is whether a caller must distinguish the conditions. Here no
+/// caller can: every one of the seventeen predicates this module checks leaves
+/// the boundary as the single code `CORE_BAD_REQUEST`, because that is what
+/// the retained `parseAssuranceArgument` does — it throws one `Error` — and
+/// FR-101 parity is the whole point of the port. Seventeen typed variants
+/// would be public API that nothing branches on (§3), and the first caller
+/// that wanted one would be asking for a distinction the oracle does not make.
+/// There is one discriminant, and it is spelled `Err`.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ArgumentError(pub String);
 
@@ -67,7 +85,7 @@ fn reject<T>(message: impl Into<String>) -> Checked<T> {
 /// arrives. These go through `literal()`, which checks and **throws**, so
 /// refusing an unlisted value IS the retained behaviour. Same test, different
 /// answer, because the code differs.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum ArgumentStatus {
     /// Authored but not yet in force.
@@ -79,7 +97,7 @@ pub enum ArgumentStatus {
 }
 
 /// An assumption's declared state.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum AssumptionStatus {
     /// Stated and not yet decided.
@@ -91,7 +109,7 @@ pub enum AssumptionStatus {
 }
 
 /// A challenge's declared state.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum ChallengeStatus {
     /// Raised and unanswered.
@@ -103,7 +121,7 @@ pub enum ChallengeStatus {
 }
 
 /// How a relationship reads.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum RelationshipType {
     /// The target supports this argument.
@@ -115,7 +133,7 @@ pub enum RelationshipType {
 }
 
 /// The claim the whole argument exists to argue.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct TopClaim {
     /// The claim's id, which every reasoning chain must reach.
     pub id: String,
@@ -126,7 +144,7 @@ pub struct TopClaim {
 }
 
 /// One step of reasoning, with the criteria that would make it sufficient.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct Reasoning {
     /// This step's id.
     pub id: String,
@@ -139,7 +157,7 @@ pub struct Reasoning {
 }
 
 /// Something the argument relies on without arguing for it.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct Assumption {
     /// This assumption's id.
     pub id: String,
@@ -154,7 +172,7 @@ pub struct Assumption {
 }
 
 /// A named actor and the authority they hold.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct Participant {
     /// This participant's id, referenced by sufficiency decisions.
     pub id: String,
@@ -186,7 +204,7 @@ pub struct Participant {
 /// places — correct for the second and **more permissive** than the retained
 /// implementation for the first. Nothing about the two declarations says which
 /// is which; only the reading mechanism does.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct Challenge {
     /// This challenge's id.
     pub id: String,
@@ -207,7 +225,7 @@ pub struct Challenge {
 }
 
 /// An edge to a document outside this argument.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct Relationship {
     /// An `ix://` reference.
     pub target: String,
@@ -217,7 +235,7 @@ pub struct Relationship {
 }
 
 /// A validated authored assurance argument.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct AssuranceArgument {
     /// `AA-<digits>`.
     pub id: String,
@@ -248,7 +266,7 @@ pub struct AssuranceArgument {
 }
 
 /// The one-variant `type` discriminator.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 pub enum ArgumentKind {
     /// The only accepted value.
     AssuranceArgument,
@@ -860,7 +878,7 @@ pub fn parse_assurance_argument(value: &serde_json::Value) -> Checked<AssuranceA
 }
 
 #[cfg(test)]
-#[expect(
+#[allow(
     clippy::expect_used,
     clippy::indexing_slicing,
     clippy::unwrap_used,
