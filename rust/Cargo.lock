@@ -2945,6 +2945,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "quoin-change-assurance"
+version = "0.1.0"
+dependencies = [
+ "quoin-store",
+ "sha2 0.10.9",
+ "tempfile",
+ "thiserror",
+]
+
+[[package]]
 name = "quoin-completeness"
 version = "0.1.0"
 dependencies = [
