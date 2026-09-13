@@ -234,63 +234,153 @@ pub fn parse_operation(args: &[String]) -> Result<&str, CoreError> {
 mod tests {
     use super::*;
 
-    /// Every `ops` module's source, keyed by the name `ops/mod.rs` declares.
+    /// Every `ops` source file, as `(domain, path, source)`.
     ///
-    /// `include_str!` takes a literal path, so this list is hand-written too —
-    /// but it is checked against `ops/mod.rs` by
-    /// [`the_bound_census_can_see_every_ops_module`], which is a different
-    /// file, so the two cannot go stale together.
-    const OPS_SOURCES: &[(&str, &str)] = &[
-        ("assurance", include_str!("ops/assurance.rs")),
-        ("completeness", include_str!("ops/completeness.rs")),
-        ("core", include_str!("ops/core.rs")),
-        ("validators", include_str!("ops/validators.rs")),
+    /// A domain is one file (`ops/core.rs`) or a directory whose `mod.rs`
+    /// re-exports its parts (`ops/modules/`), so the domain is named beside the
+    /// path rather than derived from it: `ops/modules/wire.rs` declares bounds
+    /// that a caller reaches as `ops::modules::MAX_*`.
+    ///
+    /// `include_str!` takes a literal path, so this list is hand-written — but
+    /// it is checked against `ops/mod.rs` and against each directory's own
+    /// `mod.rs` by [`the_bound_census_can_see_every_ops_module`], which are
+    /// different files, so the two cannot go stale together.
+    const OPS_SOURCES: &[(&str, &str, &str)] = &[
+        (
+            "assurance",
+            "assurance.rs",
+            include_str!("ops/assurance.rs"),
+        ),
+        (
+            "completeness",
+            "completeness.rs",
+            include_str!("ops/completeness.rs"),
+        ),
+        ("config", "config/mod.rs", include_str!("ops/config/mod.rs")),
+        (
+            "config",
+            "config/taxonomy.rs",
+            include_str!("ops/config/taxonomy.rs"),
+        ),
+        ("core", "core.rs", include_str!("ops/core.rs")),
+        (
+            "modules",
+            "modules/mod.rs",
+            include_str!("ops/modules/mod.rs"),
+        ),
+        (
+            "modules",
+            "modules/support.rs",
+            include_str!("ops/modules/support.rs"),
+        ),
+        (
+            "modules",
+            "modules/taxonomy.rs",
+            include_str!("ops/modules/taxonomy.rs"),
+        ),
+        (
+            "modules",
+            "modules/tests.rs",
+            include_str!("ops/modules/tests.rs"),
+        ),
+        (
+            "modules",
+            "modules/wire.rs",
+            include_str!("ops/modules/wire.rs"),
+        ),
+        (
+            "validators",
+            "validators.rs",
+            include_str!("ops/validators.rs"),
+        ),
     ];
 
-    /// The modules `ops/mod.rs` declares, in its own spelling.
-    fn declared_ops_modules() -> Vec<String> {
-        include_str!("ops/mod.rs")
+    /// The `mod` names a source declares, whatever the visibility or `cfg`.
+    fn declared_modules(source: &str) -> Vec<String> {
+        source
             .lines()
-            .filter_map(|line| line.trim().strip_prefix("pub mod "))
+            .map(str::trim)
+            .filter_map(|line| {
+                line.strip_prefix("pub mod ")
+                    .or_else(|| line.strip_prefix("mod "))
+            })
             .filter_map(|rest| rest.split_once(';'))
             .map(|(name, _)| name.to_owned())
             .collect()
     }
 
-    /// Every `pub const MAX_*_BYTES` an `ops` module declares, fully qualified.
+    /// The domains `ops/mod.rs` declares, in its own spelling.
+    fn declared_ops_modules() -> Vec<String> {
+        declared_modules(include_str!("ops/mod.rs"))
+    }
+
+    /// Every `pub const MAX_*_BYTES` an `ops` source declares, qualified by the
+    /// domain that re-exports it.
     fn declared_domain_bounds() -> Vec<String> {
         OPS_SOURCES
             .iter()
-            .flat_map(|(module, source)| {
+            .flat_map(|(domain, _, source)| {
                 source
                     .lines()
                     .filter_map(|line| line.trim().strip_prefix("pub const "))
                     .filter_map(|rest| rest.split_once(':'))
                     .map(|(name, _)| name.trim())
                     .filter(|name| name.starts_with("MAX_") && name.ends_with("_BYTES"))
-                    .map(move |name| format!("ops::{module}::{name}"))
+                    .map(move |name| format!("ops::{domain}::{name}"))
             })
             .collect()
     }
 
-    /// Without this, a rename of `pub const` or of the `pub mod` spelling turns
-    /// the census check into a comparison of two empty lists, which passes.
+    /// Without this, a rename of `pub const` or of the `mod` spelling turns the
+    /// census check into a comparison of two empty lists, which passes.
+    ///
+    /// Two levels are checked, because a domain has two shapes: `ops/mod.rs`
+    /// against the domains listed, and each directory domain's `mod.rs` against
+    /// the files listed under it. Checking only the first would let a bound
+    /// added to a new `ops/modules/<new>.rs` go uncensused.
     #[test]
     fn the_bound_census_can_see_every_ops_module() {
         let mut declared = declared_ops_modules();
         declared.sort();
         let mut included: Vec<String> = OPS_SOURCES
             .iter()
-            .map(|(name, _)| (*name).to_owned())
+            .map(|(domain, _, _)| (*domain).to_owned())
             .collect();
         included.sort();
+        included.dedup();
         assert_eq!(
             declared, included,
-            "`ops/mod.rs` and `OPS_SOURCES` disagree about which domains exist;              a module missing from `OPS_SOURCES` has its size bounds uncensused"
+            "`ops/mod.rs` and `OPS_SOURCES` disagree about which domains exist; \
+             a domain missing from `OPS_SOURCES` has its size bounds uncensused"
         );
+
+        for (domain, path, source) in OPS_SOURCES {
+            if !path.ends_with("/mod.rs") {
+                continue;
+            }
+            let mut expected: Vec<String> = declared_modules(source)
+                .into_iter()
+                .map(|name| format!("{domain}/{name}.rs"))
+                .chain(std::iter::once((*path).to_owned()))
+                .collect();
+            expected.sort();
+            let mut listed: Vec<String> = OPS_SOURCES
+                .iter()
+                .filter(|(other, _, _)| other == domain)
+                .map(|(_, other, _)| (*other).to_owned())
+                .collect();
+            listed.sort();
+            assert_eq!(
+                expected, listed,
+                "`{path}` and `OPS_SOURCES` disagree about which files make up \
+                 `ops::{domain}`; a file missing from `OPS_SOURCES` has its size \
+                 bounds uncensused"
+            );
+        }
+
         assert!(
             declared_domain_bounds().len() >= 4,
-            "the source scan found {} bound(s); it has stopped reading the              `ops` modules",
+            "the source scan found {} bound(s); it has stopped reading the `ops` sources",
             declared_domain_bounds().len()
         );
     }
@@ -499,6 +589,30 @@ mod tests {
             (
                 "ops::completeness::MAX_ASSESS_BUNDLE_BYTES",
                 crate::ops::completeness::MAX_ASSESS_BUNDLE_BYTES,
+            ),
+            (
+                "ops::config::MAX_GIT_CONFIG_BYTES",
+                crate::ops::config::MAX_GIT_CONFIG_BYTES,
+            ),
+            (
+                "ops::config::MAX_CONFIG_LAYER_BYTES",
+                crate::ops::config::MAX_CONFIG_LAYER_BYTES,
+            ),
+            (
+                "ops::config::MAX_SCALAR_BYTES",
+                crate::ops::config::MAX_SCALAR_BYTES,
+            ),
+            (
+                "ops::modules::MAX_MANIFEST_BYTES",
+                crate::ops::modules::MAX_MANIFEST_BYTES,
+            ),
+            (
+                "ops::modules::MAX_SCALAR_BYTES",
+                crate::ops::modules::MAX_SCALAR_BYTES,
+            ),
+            (
+                "ops::modules::MAX_SOURCE_ARG_BYTES",
+                crate::ops::modules::MAX_SOURCE_ARG_BYTES,
             ),
         ];
         // The census is hand-written, so it is checked against the `ops`

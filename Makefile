@@ -340,7 +340,7 @@ rust-e2e: rust-build
 	    tests/core-snapshot-differential.test.ts \
 	    tests/core-org.test.ts \
 	    tests/core-modules.test.ts \
-	    tests/org-one-subprocess.test.ts
+	    tests/org-one-subprocess.test.ts \
 	    tests/completeness-cli.test.ts \
 	    tests/core-bundle-snapshot.test.ts \
 	    tests/independence.test.ts \

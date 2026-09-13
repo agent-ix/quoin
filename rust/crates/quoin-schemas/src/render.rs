@@ -173,7 +173,10 @@ fn render_union(
         ));
     }
     if objects == members.len() {
-        let tagged = members.iter().filter(|member| has_discriminant(member)).count();
+        let tagged = members
+            .iter()
+            .filter(|member| has_discriminant(member))
+            .count();
         if tagged == members.len() {
             return render_tagged_union(name, object, members, pointer);
         }
@@ -353,7 +356,12 @@ fn render_object_literal(
     let properties = object
         .get("properties")
         .and_then(Value::as_object)
-        .ok_or_else(|| refuse(pointer, "a `oneOf` object variant must declare `properties`"))?;
+        .ok_or_else(|| {
+            refuse(
+                pointer,
+                "a `oneOf` object variant must declare `properties`",
+            )
+        })?;
     let required: Vec<&str> = object
         .get("required")
         .and_then(Value::as_array)
