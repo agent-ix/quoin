@@ -1,0 +1,36 @@
+[package]
+name = "quoin-config"
+description = "Quoin's persistent configuration, plugin-schema registration and authoring-organization resolution (Rust port, quoin#381)."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+# Not declared at the root: pinned exactly here, for the same reason the root
+# pins exactly — the gate is a claim about these bytes, not about whatever
+# resolved this morning.
+# Taken from `[workspace.dependencies]`, which pins the same =1.2.2, rather
+# than repeated here: quoin-schemas depends on schemars too, and two exact pins
+# of one crate in two manifests is the conflict git does not mark. One pin in
+# one place is the only arrangement `multiple-versions = "deny"` permits.
+schemars = { workspace = true }
+serde_yaml_ng = "=0.10.0"
+
+[dev-dependencies]
+# For the test-local `PluginConfigSchema` in `tests/config_service.rs`: the
+# trait's `json_schema` names `schemars::Schema` in return position, so an
+# integration test cannot implement it without the crate in scope. Same
+# workspace pin as the runtime dependency above, so no second version enters
+# the graph that `multiple-versions = "deny"` would then reject.
+schemars = { workspace = true }
+tempfile = "=3.27.0"

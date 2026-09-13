@@ -27,14 +27,24 @@ allow = [
     # via foldhash <- hashbrown <- referencing. Both are permissive, OSI
     # approved, and impose no obligation on an AGPL distribution.
     "MIT-0",
-    # Zlib reaches the workspace by a second, independent path as well:
-    # foldhash 0.2.0 <- hashbrown 0.17.1, which `quire-rs 0.46.0` pulls in as a
-    # NORMAL dependency of quoin-quire via `indexmap`/`serde_yaml`. Before
-    # quoin-quire it was present only behind quoin-core's dev-dependency on
-    # engineering-assurance. Either path alone would justify the line; both are
-    # recorded so removing one crate does not read as licence to drop it.
+    # Arrived with `gix` (quoin#381). Every one is permissive and adds no
+    # obligation beyond attribution:
+    #   ISC                  rustls-webpki, untrusted, and the ISC halves of
+    #                        aws-lc-rs / aws-lc-sys
+    #   BSD-3-Clause         subtle, and the BSD-3-Clause half of encoding_rs
+    #   CDLA-Permissive-2.0  webpki-root-certs
+    "ISC",
+    "BSD-3-Clause",
+    "CDLA-Permissive-2.0",
+    # Zlib reaches the workspace by three independent paths, and all three are
+    # recorded so that removing one crate does not read as licence to drop the
+    # line: foldhash 0.2.0 <- hashbrown 0.17.1 <- referencing <- jsonschema
+    # (quoin-semantic); the same hashbrown pulled by `quire-rs 0.46.0` as a
+    # NORMAL dependency of quoin-quire via `indexmap`/`serde_yaml`; and
+    # foldhash/zlib-rs under `gix` (quoin#381).
     "Zlib",
 ]
+
 # quoin's own crates are AGPL-3.0-or-later (the repository license). Every one
 # of them is `publish = false`, so ignoring private crates covers them all
 # permanently WITHOUT admitting AGPL into the third-party graph — the
@@ -50,6 +60,21 @@ confidence-threshold = 0.9
 [[licenses.exceptions]]
 crate = "quire-rs"
 allow = ["AGPL-3.0-or-later"]
+
+# `uluru` (an LRU cache, reached through gix-worktree) is MPL-2.0, which is
+# weak copyleft and therefore a different kind of thing from everything in
+# `allow` above. It gets a named per-crate exception rather than an allow-list
+# entry, so that MPL cannot arrive unnoticed in some future dependency.
+#
+# This is a policy exception to a permissive-only list, not a legal exposure:
+# MPL-2.0 s3.3 is explicitly compatible with the GPL/AGPL family, and quoin is
+# AGPL-3.0-or-later, so there is no licence conflict in either direction. MPL's
+# obligations attach per-file to *modified* MPL source; we consume `uluru`
+# unmodified, so s3.2 — distribution in a larger work under our own terms — is
+# satisfied by shipping the crate's own source and notice unchanged.
+[[licenses.exceptions]]
+crate = "uluru"
+allow = ["MPL-2.0"]
 
 [bans]
 multiple-versions = "deny"
@@ -92,10 +117,16 @@ allow-wildcard-paths = true
 #
 # A SECOND concession of the same shape was ruled separately for
 # `cpufeatures@0.2.17` — quoin#438 / quire-rs#430 — and is written out at its
-# entry below. Two granted exceptions do not make a third self-granting: every
-# other duplicate in this workspace is still resolved by converging a pin, and
-# a duplicate that is neither the `jsonschema` family nor `cpufeatures` is
-# escalated, not skipped.
+# entry below.
+#
+# A THIRD group, the `gix` entries at the end of the array, came in with
+# quoin#381 and was ruled on there. It is the same test against a different
+# upstream: `gix` pins its own transitive graph, so a version reachable solely
+# through it is not ours to converge.
+#
+# Three granted exceptions do not make a fourth self-granting. Every other
+# duplicate in this workspace is resolved by converging a pin, and a duplicate
+# outside these three groups is escalated, not skipped.
 #
 # ---------------------------------------------------------------------------
 #
@@ -139,7 +170,7 @@ skip = [
     { crate = "getrandom@0.2.17", reason = "jsonschema 0.18.3 via quire-rs" },
     { crate = "getrandom@0.3.4", reason = "ahash -> jsonschema 0.18.3 via quire-rs" },
     { crate = "r-efi@5.3.0", reason = "getrandom 0.3.4 -> ahash -> jsonschema 0.18.3 via quire-rs" },
-    { crate = "syn@2.0.119", reason = "strum_macros -> strum -> jsonschema 0.56.0 (quoin-semantic), and icu/idna/url -> jsonschema 0.18.3 (quoin-quire -> quire-rs); syn 3.0.5, where serde/thiserror/schemars land, stays checked" },
+    { crate = "syn@2.0.119", reason = "third-party macro subtrees only, by every path: strum_macros -> strum -> jsonschema 0.56.0 (quoin-semantic); synstructure/yoke-derive/zerofrom-derive -> icu -> idna -> url -> jsonschema 0.18.3 (quoin-quire -> quire-rs) and the same tail under reqwest -> gix-transport -> gix (quoin-modules); gix-macros -> gix-protocol -> gix; jiff-static -> jiff -> gix-date -> gix; jni-macros/jni-sys-macros -> jni -> rustls-platform-verifier -> reqwest -> gix; zerocopy-derive. syn 3.0.5 -- where serde_derive 1.0.229, thiserror-impl 2.0.20 and schemars_derive 1.2.2, all three our own root pins, land -- stays checked" },
     # --- The cpufeatures entry. quoin#438 / quire-rs#430. ---
     #
     # REMOVAL CONDITION: deleted when `quire-rs` advances off `sha2 = "^0.10"`.
@@ -171,6 +202,37 @@ skip = [
     { crate = "bit-vec@0.6.3", reason = "quoin#434: 0.6.3 via bit-set 0.5.3 -> fancy-regex 0.13.0 -> jsonschema 0.18.3 -> quoin-quire -> quire-rs; 0.8.0 via bit-set 0.8.0 -> fancy-regex 0.19.1 -> jsonschema 0.56.0 -> quoin-semantic" },
     { crate = "fancy-regex@0.13.0", reason = "quoin#434: 0.13.0 via jsonschema 0.18.3 -> quoin-quire -> quire-rs; 0.19.1 via jsonschema 0.56.0 -> quoin-semantic" },
     { crate = "fraction@0.15.4", reason = "quoin#434: 0.15.4 via jsonschema 0.18.3 -> quoin-quire -> quire-rs; 0.17.0 via jsonschema 0.56.0 (and jsonschema-value 0.56.0) -> quoin-semantic" },
+    # --- The gix entries (quoin#381). ---
+    #
+    # These predate the two rulings above and stand on the same test, applied
+    # to a different upstream: for a duplicated crate, the skipped side is the
+    # one reachable SOLELY through `gix`, which `quoin-modules` links and which
+    # pins its own transitive graph. A version any of our crates reaches by a
+    # path that does NOT pass through gix stays counted, because a skip there
+    # would hide our own problem. Every chain below was re-read in the COMBINED
+    # graph after this merge, with
+    #
+    #   cargo tree -i <crate>@<version> --target all --edges normal,build
+    #
+    # because merging quoin-quire, quoin-semantic and quoin-store changed who
+    # reaches what. One reason did change and is rewritten: base64 0.22.1 is no
+    # longer gix-only.
+    #
+    # hashbrown 0.17.1 is OURS and stays counted, now by six crates rather than
+    # the one the original entry named: quoin-config (serde_yaml_ng ->
+    # indexmap), quoin-yaml, quoin-completeness, quoin-semantic and quoin-quire
+    # (indexmap, hashlink and referencing), plus gix-hashtable under
+    # quoin-modules. The two older majors are gix-only and gix pins them itself,
+    # so neither is resolvable from here.
+    { crate = "hashbrown@0.14.5", reason = "quoin#381, gix-only: dashmap 6.2.1 -> gix-tempfile -> gix -> quoin-modules. 0.17.1, which six of our crates reach through indexmap/hashlink/referencing, stays checked" },
+    { crate = "hashbrown@0.16.1", reason = "quoin#381, gix-only: clru 0.6.3 -> gix-pack -> gix -> quoin-modules, and gix-status -> gix. 0.17.1 stays checked" },
+    # base64: the original entry said both sides were gix-only and skipped the
+    # narrower one. That is no longer true after this merge, and the rewritten
+    # reason is stronger rather than weaker: 0.22.1 is now reached OUTSIDE gix,
+    # by jsonschema 0.18.3 <- quire-rs <- quoin-quire, so it is the side that
+    # must stay counted. 0.23.1 remains reachable only through reqwest under
+    # gix-transport. Same entry, better justified.
+    { crate = "base64@0.23.1", reason = "quoin#381, gix-only: reqwest 0.13.5 -> gix-transport -> gix -> quoin-modules. 0.22.1 stays checked -- it is reached outside gix, by jsonschema 0.18.3 -> quire-rs -> quoin-quire, as well as by gix-transport and hyper-util" },
 ]
 
 [advisories]

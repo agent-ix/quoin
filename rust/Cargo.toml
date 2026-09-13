@@ -52,6 +52,29 @@ publish = false
 
 # Exact pins, matching quire-corpus. A caret range makes the gate a claim about
 # whatever resolved that morning; `=` makes it a claim about these bytes.
+#
+# One deliberate divergence: `serde` is one patch ahead of quire-corpus, which
+# pins `=1.0.228`. `schemars = "=1.2.2"` pulls `syn 3.x` through
+# `schemars_derive` and `ref-cast-impl`, while `serde_derive 1.0.228` pulls
+# `syn 2.x`. Both paths are ours, so the duplicate was ours to resolve rather
+# than skip, and `serde 1.0.229` moves `serde_derive` off the `syn 2.x` side.
+# quire-corpus has no `schemars` dependency, so it does not have this duplicate
+# and is not wrong today; it should follow when it next revises its pins.
+#
+# `thiserror` diverges from quire-corpus's `=2.0.18` for the same reason and in
+# the same direction: `thiserror 2.0.20` uses `syn 3.x`. quoin#378 raised it
+# independently, for an unrelated reason — `saphyr`, the YAML 1.2 reader
+# quoin-yaml wraps, requires ^2.0.20 — and the two branches converged on the
+# same value.
+#
+# Together these three pins — `serde 1.0.229`, `thiserror 2.0.20`,
+# `schemars 1.2.2` — put every root pin we own on `syn 3.0.5`, which is the
+# premise the `syn@2.0.119` skip in `deny.toml` rests on. Revert any of them
+# and the premise is gone and that skip is hiding a duplicate we could resolve.
+# (What is left on the `syn 2.x` side is third-party macro subtrees only: gix's
+# own pins, both `jsonschema` majors, `jni` and `jiff`. The entry's `reason`
+# lists every path. This was re-measured after quoin-quire, quoin-semantic and
+# quoin-store merged, not inherited from when the branch was cut.)
 [workspace.dependencies]
 quoin-assurance = { path = "crates/quoin-assurance" }
 quoin-core = { path = "crates/quoin-core" }

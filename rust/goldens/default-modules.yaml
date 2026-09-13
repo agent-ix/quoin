@@ -1,0 +1,107 @@
+# Default Filament module set shipped with quoin.
+#
+# Lazily installed into ~/.ix/filament/modules on first catalog access (see
+# src/modules.ts). Each entry sparse-checks out one module's data subdir from its
+# canonical repo at a pinned tag — the same git tag the Python wheel is built
+# from. This file is the canonical-ready source of truth for the module set +
+# pins (a future generator can derive the backend pyproject pins / activation
+# list from it).
+schemaVersion: 1
+name: quoin-default-modules
+entries:
+  # Assurance artifacts are available by default but remain opt-in: installing
+  # their vocabulary does not require a repository to author any assurance
+  # document. Pin an exact reachable revision until a release tag carrying the
+  # module exists (agent-ix/quire-rs#275). The first-integration pin 2a66359
+  # was orphaned when upstream history was rebuilt — upload-pack refuses it, so
+  # clean-room installs failed while already-installed dev machines stayed
+  # green (agent-ix/quoin#308, caught by the v0.22.1 release run).
+  - name: engineering-assurance
+    version: "0.2.0+4e6522f"
+    defaultEnabled: true
+    source:
+      type: git-subdir
+      url: agent-ix/engineering-assurance
+      path: engineering_assurance
+      ref: 4e6522fc32f82cac82a3489a4192e17a94f539c3
+
+  - name: spec-artifacts-iso
+    version: "0.18.0"
+    defaultEnabled: true
+    source:
+      type: git-subdir
+      url: agent-ix/spec-artifacts-iso
+      path: spec_artifacts_iso
+      ref: v0.18.0
+
+  - name: spec-artifacts-app
+    version: "0.5.0"
+    defaultEnabled: true
+    source:
+      type: git-subdir
+      url: agent-ix/spec-artifacts-app
+      path: spec_artifacts_app
+      ref: v0.5.0
+
+  - name: spec-artifacts-process
+    version: "0.24.0+d605caa"
+    defaultEnabled: true
+    source:
+      type: git-subdir
+      url: agent-ix/spec-artifacts-process
+      path: spec_artifacts_process
+      ref: d605caad70a8c09884ef22525d532e01330f763f
+
+  - name: spec-objects-business
+    version: "0.6.0"
+    defaultEnabled: true
+    source:
+      type: git-subdir
+      url: agent-ix/spec-objects-business
+      path: spec_objects_business
+      ref: v0.6.0
+
+  - name: spec-objects-architecture
+    version: "0.6.0"
+    defaultEnabled: true
+    source:
+      type: git-subdir
+      url: agent-ix/spec-objects-architecture
+      path: spec_objects_architecture
+      ref: v0.6.0
+
+  - name: spec-objects-enterprise
+    version: "0.5.0"
+    defaultEnabled: true
+    source:
+      type: git-subdir
+      url: agent-ix/spec-objects-enterprise
+      path: spec_objects_enterprise
+      ref: v0.5.0
+
+  - name: spec-objects-operational
+    version: "0.6.0"
+    defaultEnabled: true
+    source:
+      type: git-subdir
+      url: agent-ix/spec-objects-operational
+      path: spec_objects_operational
+      ref: v0.6.0
+
+  - name: spec-objects-security
+    version: "0.7.0"
+    defaultEnabled: true
+    source:
+      type: git-subdir
+      url: agent-ix/spec-objects-security
+      path: spec_objects_security
+      ref: v0.7.0
+
+  - name: spec-objects-safety
+    version: "0.4.0"
+    defaultEnabled: true
+    source:
+      type: git-subdir
+      url: agent-ix/spec-objects-safety
+      path: spec_objects_safety
+      ref: v0.4.0
