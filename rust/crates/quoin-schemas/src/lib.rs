@@ -80,11 +80,11 @@ pub const BOUNDARY_SCHEMA_ID: &str = "https://agent-ix.dev/quoin/core-boundary-v
 // --- The two checked-in digests. `make types` rewrites both; nothing else may.
 /// SHA-256 of the canonical JSON of [`boundary_schema`] at generation time.
 pub const SOURCE_SCHEMA_SHA256: &str =
-    "eecd4353aa98673bdf373a274c1037dbff46a87b8caee975cf50438dc4915920";
+    "7579931f5172a657e54f65945660187bf844014ead61e25869348a06f95b332c";
 
 /// SHA-256 of the committed `src/core/types.ts`.
 pub const GENERATED_TYPES_SHA256: &str =
-    "782c3a54e0e3d9fce94048514c61e315fb6a6bfb8c624eb05c16f047c16dda1f";
+    "11a5b715596916ecf7de7ab754e9e22b9b39a05fae551a70524a088e0d019632";
 
 /// The JSON Schema of every type that crosses the `quoin-core` boundary.
 ///
@@ -98,6 +98,8 @@ pub fn boundary_schema() -> Value {
     let _ = generator.subschema_for::<quoin_core::protocol::Diagnostic>();
     let _ = generator.subschema_for::<quoin_core::ops::core::PingRequest>();
     let _ = generator.subschema_for::<quoin_core::ops::core::PingPayload>();
+    let _ = generator.subschema_for::<quoin_core::ops::validators::RunRequest>();
+    let _ = generator.subschema_for::<quoin_core::ops::validators::RunPayload>();
     json!({
         "$schema": "https://json-schema.org/draft/2020-12/schema",
         "$id": BOUNDARY_SCHEMA_ID,
@@ -166,7 +168,7 @@ pub fn typescript_source() -> Result<String, RenderRefusal> {
     out.push_str(&provenance_record(&digest));
     for (name, definition) in defs {
         out.push('\n');
-        out.push_str(&render::render_interface(
+        out.push_str(&render::render_definition(
             name,
             definition,
             &format!("#/$defs/{name}"),
@@ -188,7 +190,8 @@ fn header() -> String {
          \x20*\n\
          \x20* Written by `{GENERATOR_IDENTITY}` from the JSON Schema `schemars`\n\
          \x20* reads off the canonical Rust declarations in\n\
-         \x20* `rust/crates/quoin-core/src/protocol.rs` and `.../src/ops/core.rs`.\n\
+         \x20* `rust/crates/quoin-core/src/protocol.rs`, `.../src/ops/` and the\n\
+         \x20* domain crates those operations answer from.\n\
          \x20* Rust is the source of truth: where this file and a Rust type\n\
          \x20* disagree, the Rust type is right and this file is stale.\n\
          \x20*\n\
@@ -358,7 +361,21 @@ mod tests {
         let defs = schema["$defs"].as_object().unwrap();
         let mut names: Vec<&String> = defs.keys().collect();
         names.sort();
-        assert_eq!(names, ["Diagnostic", "PingPayload", "PingRequest"]);
+        assert_eq!(
+            names,
+            [
+                "Diagnostic",
+                "EmptyGateFinding",
+                "FindingKind",
+                "LineNumber",
+                "ObligationId",
+                "PingPayload",
+                "PingRequest",
+                "RepoPath",
+                "RunPayload",
+                "RunRequest",
+            ]
+        );
     }
 
     #[test]

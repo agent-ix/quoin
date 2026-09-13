@@ -20,6 +20,7 @@ use crate::ids::{LineNumber, ObligationId, RepoPath};
 /// the payload's discriminant: a second validator adds a variant here and every
 /// `match` on it becomes a compiler-checked edit site.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(rename_all = "kebab-case")]
 #[non_exhaustive]
 pub enum FindingKind {
@@ -51,6 +52,7 @@ impl fmt::Display for FindingKind {
 /// wiredBy)`; the prose is reproduced faithfully because it is part of the
 /// emitted payload, not because its wording is contractual.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct EmptyGateFinding {
     /// Always [`FindingKind::GateThatGatesNothing`] today.

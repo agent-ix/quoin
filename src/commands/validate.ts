@@ -1,7 +1,9 @@
 import { Flags } from "@oclif/core";
 
 import { QuoinCommand } from "../base.js";
-import { inspectEmptyGates } from "../validators/index.js";
+import { carriesPayload, runCoreAllowFailure } from "../core/exec.js";
+import { repoSnapshot } from "../core/snapshot.js";
+import type { RunPayload } from "../core/types.js";
 
 export default class Validate extends QuoinCommand {
   static summary = "Validate repository QA gates and report located defects.";
@@ -25,7 +27,27 @@ Findings are advisory by default. Pass --strict in CI to exit non-zero.`;
 
   async run(): Promise<void> {
     const { flags } = await this.parse(Validate);
-    const findings = inspectEmptyGates(flags.repo);
+    // The first of 54 commands on the `quoin-core` boundary (quoin#412). The
+    // analysis is `quoin_validators::inspect_empty_gates_in`; everything left
+    // here is the command's own opinions — how to print, and what `--strict`
+    // means — which is the split `GateReport::verdict(strict)` already makes on
+    // the far side.
+    const result = runCoreAllowFailure(
+      "validators.run",
+      repoSnapshot(flags.repo),
+    );
+    if (!carriesPayload(result.exitCode)) {
+      const detail = result.diagnostics
+        .map((d) => `${d.code}: ${d.message}`)
+        .join("\n");
+      this.error(
+        `quoin-core validators.run exited ${result.exitCode}` +
+          (detail ? `:\n${detail}` : " with no diagnostic on stderr."),
+        { exit: result.exitCode },
+      );
+    }
+    const { findings } = result.payload as RunPayload;
+
     if (flags.json) {
       this.log(JSON.stringify({ findings }, null, 2));
     } else if (findings.length === 0) {

@@ -25,6 +25,7 @@ workspace = true
 
 [dependencies]
 quoin-assurance = { workspace = true }
+quoin-validators = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }
@@ -39,7 +40,7 @@ schemars = { workspace = true, optional = true }
 # that actually serialise them, rather than off a second declaration of the
 # same shapes. There is no `default` here on purpose: a feature that is on by
 # default is a feature nobody ever proves works when it is off.
-schema = ["dep:schemars"]
+schema = ["dep:schemars", "quoin-validators/schema"]
 
 [dev-dependencies]
 # quoin does not grow its own syn-based source auditor: `source_audit` is the

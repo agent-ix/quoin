@@ -9,3 +9,4 @@
 
 pub mod assurance;
 pub mod core;
+pub mod validators;
