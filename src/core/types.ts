@@ -32,8 +32,87 @@ export const CORE_TYPES_PROVENANCE = {
   generator: "quoin-schemas/quoin-schemas-gen",
   generatorVersion: "0.1.0",
   sourceSchemaSha256:
-    "7411cd37687c4ef3f222e53e64ba85a39e444f02b2df3f3e92bcb33e9d358f26",
+    "ef37841d38a3a230241ce8338bbaef1a19d3d307faa0b34482ad2dda110deeb6",
 } as const;
+
+/**
+ * The payload `evidence.affirm` writes to stdout.
+ */
+export interface AffirmPayload {
+  /**
+   * The commit, echoed.
+   */
+  commit: string;
+  /**
+   * Whether any binding matched. Nothing is written when none did.
+   */
+  found: boolean;
+  /**
+   * The obligation, echoed.
+   */
+  obligation: string;
+  /**
+   * The statement hash now stamped on the binding.
+   */
+  statement_hash: string;
+  /**
+   * Who affirmed, echoed.
+   */
+  who: string;
+}
+
+/**
+ * The request accepted by `evidence.affirm`.
+ */
+export interface AffirmRequest {
+  /**
+   * The commit the affirmation is made at.
+   */
+  commit: string;
+  /**
+   * Why the evidence still holds, when they said.
+   */
+  note?: string | null;
+  /**
+   * The obligation whose binding is re-affirmed.
+   */
+  obligation: string;
+  /**
+   * The repository root.
+   */
+  repo: string;
+  /**
+   * The statement hash as quire derives it **today**.
+   */
+  statement_hash: string;
+  /**
+   * One suite, when the reviewer means only one.
+   */
+  suite?: string | null;
+  /**
+   * Who is affirming. Recorded verbatim.
+   */
+  who: string;
+}
+
+/**
+ * Someone re-affirming a binding after the statement it was made against
+ * changed.
+ */
+export interface Affirmation {
+  /**
+   * The commit they affirmed at.
+   */
+  commit: Commit;
+  /**
+   * Why, when they said.
+   */
+  note?: string | null;
+  /**
+   * Who affirmed.
+   */
+  who: string;
+}
 
 /**
  * The argument's lifecycle state. Closed, because the retained code validates.
@@ -147,6 +226,117 @@ export interface AssumptionView {
 }
 
 /**
+ * The payload `evidence.record_experiment` and `evidence.record_operational`
+ * write to stdout.
+ *
+ * The record itself is an opaque value rather than the typed shape: the
+ * caller prints it and reads `recordId` off it, and the two record families
+ * have different bodies under one operation shape.
+ */
+export interface AssuranceRecordPayload {
+  /**
+   * Whether this call created it, or found identical bytes already there.
+   */
+  created: boolean;
+  /**
+   * Where it was written, as an **absolute** path.
+   */
+  path: string;
+  /**
+   * The stored record, including the identity derived from its content.
+   */
+  record: unknown;
+}
+
+/**
+ * The request accepted by `evidence.record_experiment` and
+ * `evidence.record_operational`.
+ */
+export interface AssuranceRecordRequest {
+  /**
+   * The record as its producer published it.
+   */
+  document: unknown;
+  /**
+   * The repository root.
+   */
+  repo: string;
+}
+
+/**
+ * The payload `evidence.audit_inputs` writes to stdout.
+ *
+ * Everything the pure auditor needs from the store, in one call. One
+ * subprocess per obligation is what a per-question operation would have cost,
+ * and the auditor asks two of its questions — scan vacuity and profile
+ * independence — inside per-obligation loops.
+ */
+export interface AuditInputsPayload {
+  /**
+   * The binding graph.
+   */
+  bindings: Binding[];
+  /**
+   * One assessment per policy requirement, over that requirement's
+   * obligation's bindings. Empty when no policy was given.
+   */
+  independence: IndependenceAssessment[];
+  /**
+   * Mock injections recorded at exactly `head_commit`.
+   */
+  injections: MockInjection[];
+  /**
+   * The suites that have an inspection record at exactly `head_commit`.
+   *
+   * Distinct from `injections`: an empty completed inspection means "looked
+   * and found none", no record at all means "nobody looked".
+   */
+  mock_inspection_suites: SuiteId[];
+  /**
+   * The newest run per recorded suite, by timestamp.
+   */
+  runs: RunRecord[];
+  /**
+   * The newest finding-shaped scan per recorded suite, by timestamp.
+   */
+  scans: FindingRecord[];
+  /**
+   * Store paths that would not parse, named rather than counted.
+   */
+  skipped: string[];
+  /**
+   * Suites whose newest scan evaluated no rules.
+   *
+   * Answered here rather than asked per obligation. `None` — the tool
+   * reported no rule count — is not in this list, which is the same silence
+   * `scan_is_vacuous` returns for it.
+   */
+  vacuous_scan_suites: SuiteId[];
+}
+
+/**
+ * The request accepted by `evidence.audit_inputs`.
+ */
+export interface AuditInputsRequest {
+  /**
+   * HEAD, when the caller could resolve one.
+   *
+   * `None` is not an error: a repository with no git history still has a
+   * store, and the mock-inspection input is then empty because only records
+   * **at that commit** count.
+   */
+  head_commit?: string | null;
+  /**
+   * The profile-selected independence policy, when one was given.
+   */
+  independence_policy?: IndependencePolicy | null;
+  /**
+   * The repository root.
+   */
+  repo: string;
+}
+
+/**
  * The complete authored view, as JSON.
  */
 export interface AuthoredArgumentView {
@@ -195,6 +385,69 @@ export interface AuthoredArgumentView {
    * In the order the decisions were supplied.
    */
   unusedDecisions: UnusedDecision[];
+}
+
+/**
+ * The accepted violation set a ratchet compares against.
+ *
+ * `accepted` holds `<kind>:<obligation>` keys for *every*
+ * finding kind. The original shape carried two named buckets, so five other
+ * kinds could never appear in a baseline and `--ratchet` reported the whole
+ * existing backlog for them — the outcome the mode exists to prevent
+ * (agent-ix/quoin#105).
+ */
+export interface BaselineFile {
+  /**
+   * Accepted findings as `<kind>:<obligation>`, sorted.
+   */
+  accepted: string[];
+  /**
+   * The commit the baseline was accepted at.
+   */
+  commit: Commit;
+  /**
+   * Always `STORE_SCHEMA_VERSION`(super::STORE_SCHEMA_VERSION).
+   */
+  schemaVersion: number;
+}
+
+/**
+ * One obligation bound to the evidence that discharges it.
+ *
+ * `statement_hash_at_binding` is the entire suspect mechanism:
+ * suspect detection is `current != statement_hash_at_binding` against the
+ * obligation quire re-derives today. quire computes the hash; quoin only ever
+ * compares.
+ */
+export interface Binding {
+  /**
+   * Re-affirmations recorded after a statement changed.
+   */
+  affirmations?: Affirmation[] | null;
+  /**
+   * The commit of the run that first discharged it.
+   */
+  commit: Commit;
+  /**
+   * Separation facts, for profile-selected independence checks.
+   */
+  lineage?: EvidenceLineage | null;
+  /**
+   * The obligation id the matrix keys on.
+   */
+  obligation: EvidenceObligationId;
+  /**
+   * The statement hash as it stood when the binding was first made.
+   */
+  statementHashAtBinding: StatementHash;
+  /**
+   * The suite that discharged it.
+   */
+  suite: SuiteId;
+  /**
+   * Symbols within that suite carrying the obligation's trace id.
+   */
+  symbols: SymbolId[];
 }
 
 /**
@@ -513,6 +766,15 @@ export interface ClauseSetKey {
    */
   version: string;
 }
+
+/**
+ * A full commit sha, as the caller reported it.
+ *
+ * Not validated as hexadecimal: the retained store accepts whatever the
+ * caller's CI reports, and refusing here would refuse records that already
+ * exist on disk.
+ */
+export type Commit = string;
 
 /**
  * A resolved git commit id, as forty lowercase hex characters.
@@ -995,6 +1257,41 @@ export interface EnsureDefaultsRequest {
 }
 
 /**
+ * Separation facts carried by one evidence relationship.
+ *
+ * Every field is optional and the absence of one stays visible: a policy that
+ * asks for a dimension nothing records reports the suites that are missing it,
+ * rather than inferring a value (FR-094).
+ */
+export interface EvidenceLineage {
+  /**
+   * Who produced the evidence.
+   */
+  actor?: string | null;
+  /**
+   * Where the inputs came from.
+   */
+  dataSource?: string | null;
+  /**
+   * The toolchain the implementation under test was built with.
+   */
+  implementationToolchain?: string | null;
+  /**
+   * The review path the result travelled.
+   */
+  reviewPath?: string | null;
+  /**
+   * The verification technique used.
+   */
+  technique?: string | null;
+}
+
+/**
+ * A obligation id, the join the matrix keys on.
+ */
+export type EvidenceObligationId = string;
+
+/**
  * Which of the two fact shapes this is.
  *
  * Separate from `DischargeFact` because the retained
@@ -1004,6 +1301,38 @@ export interface EnsureDefaultsRequest {
 export type FactKind = "direct" | "disposition";
 
 /**
+ * One scanner result, transcribed.
+ *
+ * `severity` is the scanner's own word, never normalized (FR-034-CON-2).
+ */
+export interface Finding {
+  /**
+   * The line the finding is about.
+   */
+  line?: number | null;
+  /**
+   * The scanner's message.
+   */
+  message?: string | null;
+  /**
+   * The path the finding is about.
+   */
+  path?: string | null;
+  /**
+   * The scanner's rule identity.
+   */
+  ruleId: string;
+  /**
+   * The scanner's own severity word.
+   */
+  severity?: string | null;
+  /**
+   * Criterion ids the scanner named.
+   */
+  traceIds?: string[] | null;
+}
+
+/**
  * The class of defect a finding reports.
  *
  * One variant today. It is an enum and not a `&'static str` because the kind is
@@ -1011,6 +1340,51 @@ export type FactKind = "direct" | "disposition";
  * `match` on it becomes a compiler-checked edit site.
  */
 export type FindingKind = "gate-that-gates-nothing";
+
+/**
+ * One finding-shaped scan of ONE suite at ONE commit.
+ */
+export interface FindingRecord {
+  /**
+   * Full commit sha the scan was performed at.
+   */
+  commit: Commit;
+  /**
+   * The declared `test_type` this scan produced, when the caller names one.
+   */
+  evidenceKind?: string | null;
+  /**
+   * One entry per finding the scanner reported.
+   */
+  findings: Finding[];
+  /**
+   * Number of rules the scan actually evaluated, when the tool reports it.
+   */
+  rulesEvaluated?: number | null;
+  /**
+   * What the scan covered, as the tool reported it.
+   *
+   * Load-bearing for vacuity: a scan that ran with no rules enabled also
+   * reports zero findings and cannot be told apart by the findings alone.
+   */
+  ruleset?: string | null;
+  /**
+   * Always `STORE_SCHEMA_VERSION`(super::STORE_SCHEMA_VERSION).
+   */
+  schemaVersion: number;
+  /**
+   * The suite this scan covered.
+   */
+  suite: SuiteId;
+  /**
+   * ISO-8601, supplied by the caller — never read from the clock here.
+   */
+  timestamp: string;
+  /**
+   * Tool and version, as the adapter reported them.
+   */
+  tool: string;
+}
 
 /**
  * One classified artifact.
@@ -1046,6 +1420,187 @@ export interface FrontmatterRead {
    * Documents whose frontmatter could not be parsed.
    */
   unreadable: UnreadableDocument[];
+}
+
+/**
+ * The payload `evidence.gc` writes to stdout.
+ */
+export interface GcPayload {
+  /**
+   * The collected records, as **absolute** paths, sorted.
+   *
+   * Every path this domain reports is absolute, and none of the ones
+   * `quoin_evidence` returns are: a library that names no host capability
+   * cannot know the root. The join is `absolute`, against the root
+   * `store_root` reports.
+   */
+  deleted: string[];
+}
+
+/**
+ * The request accepted by `evidence.gc`.
+ */
+export interface GcRequest {
+  /**
+   * Report what would be collected and remove nothing.
+   */
+  dry_run?: boolean;
+  /**
+   * The repository root.
+   */
+  repo: string;
+}
+
+/**
+ * Explainable result for one requested obligation, successful or not.
+ */
+export interface IndependenceAssessment {
+  /**
+   * One entry per requested dimension, in the requested order.
+   */
+  dimensions: IndependenceDimensionAssessment[];
+  /**
+   * The obligation it applies to.
+   */
+  obligation: EvidenceObligationId;
+  /**
+   * The profile that asked.
+   */
+  profile: ProfileId;
+  /**
+   * The requirement's id.
+   */
+  requirement: string;
+  /**
+   * The two suites that satisfied it, when one pair did.
+   */
+  satisfiedBy?: [SuiteId, SuiteId] | null;
+  /**
+   * The verdict.
+   */
+  status: IndependenceStatus;
+  /**
+   * A sentence naming what was found or what was missing.
+   */
+  summary: string;
+}
+
+/**
+ * One separation axis a profile can ask two evidence lines to differ on.
+ */
+export type IndependenceDimension =
+  | "actor"
+  | "implementation-toolchain"
+  | "technique"
+  | "data-source"
+  | "review-path";
+
+/**
+ * What one dimension looked like across the bound suites.
+ */
+export interface IndependenceDimensionAssessment {
+  /**
+   * The dimension.
+   */
+  dimension: IndependenceDimension;
+  /**
+   * The suites whose lineage records nothing for it, sorted.
+   */
+  missingSuites: SuiteId[];
+  /**
+   * The distinct recorded values, sorted and deduplicated.
+   */
+  values: string[];
+}
+
+/**
+ * Normalized projection of profile-selected independence requirements.
+ */
+export interface IndependencePolicy {
+  /**
+   * `AP-<digits>`.
+   */
+  profile: ProfileId;
+  /**
+   * The requirements, as the profile declared them.
+   */
+  requirements: IndependenceRequirement[];
+  /**
+   * Always `1`.
+   */
+  schemaVersion: number;
+}
+
+/**
+ * One exact obligation for which a profile requests two separated lines.
+ */
+export interface IndependenceRequirement {
+  /**
+   * The dimensions two lines must both differ on.
+   */
+  dimensions: IndependenceDimension[];
+  /**
+   * The requirement's own id, unique within the policy.
+   */
+  id: string;
+  /**
+   * The obligation it applies to, named at most once in the policy.
+   */
+  obligation: EvidenceObligationId;
+  /**
+   * Why the profile asks for it.
+   */
+  rationale: string;
+}
+
+/**
+ * Whether two separated lines were found.
+ */
+export type IndependenceStatus = "satisfied" | "insufficient";
+
+/**
+ * The payload `evidence.inspect_mocks` writes to stdout.
+ */
+export interface InspectMocksPayload {
+  /**
+   * One entry per substituting symbol, sorted.
+   */
+  injections: MockInjection[];
+  /**
+   * Where the record was written as an **absolute** path, or `null` on a
+   * dry run.
+   */
+  path?: string | null;
+}
+
+/**
+ * The request accepted by `evidence.inspect_mocks`.
+ */
+export interface InspectMocksRequest {
+  /**
+   * Full commit sha whose source is inspected.
+   */
+  commit: string;
+  /**
+   * Inspect and report, writing no observation record.
+   */
+  dry_run?: boolean;
+  /**
+   * The repository root.
+   */
+  repo: string;
+  /**
+   * The suite whose test source is inspected.
+   */
+  suite: string;
+  /**
+   * ISO-8601 inspection time.
+   */
+  timestamp: string;
+  /**
+   * The inspecting tool and its version.
+   */
+  tool: string;
 }
 
 /**
@@ -1232,6 +1787,32 @@ export interface MigrationExamplePayload {
 }
 
 /**
+ * One test symbol observed substituting a stand-in for real behaviour.
+ */
+export interface MockInjection {
+  /**
+   * Identifiers substituted for real behaviour, sorted and deduplicated.
+   */
+  injects: string[];
+  /**
+   * The line the call was seen on.
+   */
+  line?: number | null;
+  /**
+   * Repo-relative source location, when the inspection can name one.
+   */
+  path?: string | null;
+  /**
+   * The suite whose source was inspected.
+   */
+  suite: SuiteId;
+  /**
+   * The test symbol containing the substitution.
+   */
+  symbol: SymbolId;
+}
+
+/**
  * How hard a reconcile should look, in the wire spelling.
  */
 export type Mode = "lazy" | "sync";
@@ -1313,6 +1894,52 @@ export type ModuleVersion = string;
 export type ObjectTypeName = string;
 
 /**
+ * One obligation, as quoin reads it off `quire coverage --json`.
+ *
+ * # Two fields of nine
+ *
+ * quire emits `source`, `id`, `document`, `statement`, `statement_hash`,
+ * `method`, `parameters`, `criticality` and `target_ids`. The assurance view
+ * reads `id` (to derive the owning requirement, and as the solution node's
+ * id) and `statement` (as the node's statement). It reads none of the other
+ * seven — not even `document`, which a reader might reasonably expect a view
+ * to cite, and does not.
+ *
+ * The three required fields here are required for the reason in the module
+ * header: they are read unconditionally, so their absence must be an error
+ * rather than a silent empty. `statement_hash` joined the set when the
+ * evidence store arrived (agent-ix/quoin#456): a binding stamps it, and a
+ * default would make every binding agree with every statement.
+ */
+export interface Obligation {
+  /**
+   * The obligation id, e.g. `FR-001-AC-1` or `NFR-010-M-2`.
+   */
+  id: string;
+  /**
+   * The criterion's statement, in the spec's own words.
+   */
+  statement: string;
+  /**
+   * quire's hash of the statement, as it stands at the read.
+   *
+   * quoin never computes this and only ever compares it: suspect detection
+   * is `stamped != current`, so a hash quoin derived itself would compare
+   * equal to itself and detect nothing.
+   */
+  statement_hash: string;
+  /**
+   * Test-case ids the criterion's method cell names, when it names any.
+   *
+   * The indirection an agent-eval report and every other Test-Matrix-keyed
+   * tool arrives on: the tool reports `TC-EV-057`, the row says that test
+   * case verifies this criterion, and quire-rs FR-053-AC-11 carries the join
+   * here rather than making quoin re-parse the table (agent-ix/quoin#144).
+   */
+  target_ids?: string[] | null;
+}
+
+/**
  * A requirement obligation as it was written in the gate comment, e.g.
  * `FR-001-AC-1`.
  *
@@ -1323,10 +1950,138 @@ export type ObjectTypeName = string;
 export type ObligationId = string;
 
 /**
+ * What a producer said about one symbol.
+ *
+ * A closed enum here and not a `String`, unlike
+ * `kind`: the retained TypeScript's union is
+ * enforced at every construction site inside `src/evidence/`, every adapter
+ * picks from these four, and the store's readers branch on all four.
+ */
+export type Outcome = "pass" | "fail" | "skip" | "error";
+
+/**
  * A semantic package's IR identity, `<org>/<repo>` — never a URL and never
  * an `ix://` identity (FR-070).
  */
 export type PackageIdentity = string;
+
+/**
+ * The payload `evidence.parse_lineage` writes to stdout.
+ */
+export interface ParseLineagePayload {
+  /**
+   * The validated lineage.
+   */
+  lineage: EvidenceLineage;
+}
+
+/**
+ * The request accepted by `evidence.parse_lineage`.
+ */
+export interface ParseLineageRequest {
+  /**
+   * The lineage document's text, as the caller read it.
+   */
+  text: string;
+}
+
+/**
+ * The payload `evidence.parse_policy` writes to stdout.
+ */
+export interface ParsePolicyPayload {
+  /**
+   * The validated policy.
+   */
+  policy: IndependencePolicy;
+}
+
+/**
+ * The request accepted by `evidence.parse_policy`.
+ */
+export interface ParsePolicyRequest {
+  /**
+   * Every obligation id the corpus derives today.
+   *
+   * Sent with the document rather than checked in a second call: a policy
+   * naming an obligation nothing derives reports every requirement as
+   * vacuously assessed, and the two questions have one answer.
+   */
+  known_obligations?: string[];
+  /**
+   * The policy document's text, as the caller read it.
+   */
+  text: string;
+}
+
+/**
+ * A run-shaped adapter's transcript.
+ */
+export interface ParseResultsPayloadRun {
+  /**
+   * The transcribed results.
+   */
+  entries: RunEntry[];
+  /**
+   * The evidence kind, when the FORMAT ITSELF determines it.
+   */
+  evidence_kind?: string | null;
+  kind: "run";
+  /**
+   * Results the producer reported that no run outcome represents.
+   */
+  unrepresented?: UnrepresentedView[] | null;
+}
+
+/**
+ * A finding-shaped adapter's transcript.
+ */
+export interface ParseResultsPayloadFinding {
+  /**
+   * The transcribed findings. Empty is meaningful.
+   */
+  findings: Finding[];
+  kind: "finding";
+  /**
+   * How many rules the scanner reported evaluating.
+   */
+  rules_evaluated?: number | null;
+  /**
+   * The ruleset, where the document names it.
+   */
+  ruleset?: string | null;
+  /**
+   * The scanner, where the document names it.
+   */
+  tool?: string | null;
+}
+
+/**
+ * The payload `evidence.parse_results` writes to stdout.
+ *
+ * Tagged, because the two adapter registries produce different record types
+ * and the caller must be able to tell which it received without inferring it
+ * from which fields are present.
+ */
+export type ParseResultsPayload =
+  ParseResultsPayloadRun | ParseResultsPayloadFinding;
+
+/**
+ * The request accepted by `evidence.parse_results`.
+ */
+export interface ParseResultsRequest {
+  /**
+   * An explicit adapter name. An unknown one is an error, never a fall back.
+   */
+  adapter?: string | null;
+  /**
+   * The producer document's text, as the caller read it.
+   */
+  text: string;
+  /**
+   * The suite's declared tool, which selects an adapter when none is named.
+   */
+  tool?: string | null;
+}
 
 /**
  * A named actor and the authority they hold.
@@ -1392,10 +2147,33 @@ export interface PingRequest {
 }
 
 /**
+ * An assurance profile id, `AP-<digits>`.
+ */
+export type ProfileId = string;
+
+/**
  * The four shapes a `## Properties` section can take, plus its absence.
  */
 export type PropertiesForm =
   "typed-table" | "free-column-table" | "bullet-list" | "sysml-fence" | "none";
+
+/**
+ * The payload `evidence.read_baseline` writes to stdout.
+ */
+export interface ReadBaselinePayload {
+  /**
+   * The baseline, or `null` when none has been accepted.
+   *
+   * `null` is the fact `--ratchet` turns on: a missing baseline degrades the
+   * run to a full report, and labelling that full report "new violations
+   * only" told a day-one reader their whole backlog was new (#169).
+   */
+  baseline?: BaselineFile | null;
+  /**
+   * Where it would be, as an **absolute** path, for the notice that names it.
+   */
+  path: string;
+}
 
 /**
  * The payload `semantic.read_blocks` writes to stdout.
@@ -1513,6 +2291,129 @@ export interface ReceiptRequest {
 }
 
 /**
+ * A run record was written.
+ */
+export interface RecordPayloadRun {
+  /**
+   * Obligations bound for the first time, sorted.
+   */
+  bound: EvidenceObligationId[];
+  kind: "run";
+  /**
+   * Where it was written, as an **absolute** path.
+   */
+  run_path: string;
+  /**
+   * Obligations whose statement changed since they were bound, sorted.
+   */
+  suspect: EvidenceObligationId[];
+  /**
+   * Trace ids matching no derived obligation, sorted.
+   */
+  unmatched: string[];
+  /**
+   * Results no run outcome represents.
+   */
+  unrepresented?: UnrepresentedView[] | null;
+}
+
+/**
+ * A finding-shaped scan record was written.
+ */
+export interface RecordPayloadScan {
+  /**
+   * Obligations newly bound by the scan, sorted.
+   */
+  bound: string[];
+  /**
+   * The transcribed findings.
+   */
+  findings: Finding[];
+  kind: "scan";
+  /**
+   * How many rules the scanner reported evaluating.
+   */
+  rules_evaluated?: number | null;
+  /**
+   * Where it was written, as an **absolute** path.
+   */
+  scan_path: string;
+  /**
+   * Named `--discharges` ids no obligation states, sorted.
+   */
+  unknown: string[];
+  /**
+   * Whether the scan evaluated no rules, and so bound nothing.
+   */
+  vacuous: boolean;
+}
+
+/**
+ * The payload `evidence.record` writes to stdout.
+ */
+export type RecordPayload = RecordPayloadRun | RecordPayloadScan;
+
+/**
+ * The request accepted by `evidence.record`.
+ *
+ * One request for both record types on purpose. The choice between a run
+ * record and a finding-shaped scan record is made by the ADAPTER REGISTRY
+ * before anything is parsed, and splitting it into two operations would move
+ * that choice to the caller — which is exactly how a scan ends up in `runs/`
+ * with the clean-versus-unrun distinction lost at the point of intake
+ * (FR-034).
+ */
+export interface RecordRequest {
+  /**
+   * An explicit adapter name.
+   */
+  adapter?: string | null;
+  /**
+   * The commit it ran at.
+   */
+  commit: string;
+  /**
+   * Obligation ids a finding-shaped scan was run to check.
+   *
+   * Ignored on the run path, where the obligations discharged are derived
+   * from the trace ids the entries carry.
+   */
+  discharges?: string[];
+  /**
+   * The declared evidence kind, when the caller names one.
+   */
+  kind?: string | null;
+  /**
+   * Separation facts for every binding this record creates.
+   */
+  lineage?: EvidenceLineage | null;
+  /**
+   * The obligations as quire derives them today.
+   */
+  obligations?: Obligation[];
+  /**
+   * The repository root.
+   */
+  repo: string;
+  /**
+   * The producer document's text, as the caller read it.
+   */
+  results: string;
+  /**
+   * The suite that ran.
+   */
+  suite: string;
+  /**
+   * ISO-8601. Supplied, never read from the clock here.
+   */
+  timestamp: string;
+  /**
+   * Tool and version, as it identifies itself.
+   */
+  tool: string;
+}
+
+/**
  * The payload `change_assurance.recover` writes to stdout.
  */
 export interface RecoverPayload {
@@ -1610,6 +2511,16 @@ export interface RenderDischargePayload {
 export type RepoPath = string;
 
 /**
+ * A request naming only the repository whose store is read.
+ */
+export interface RepoRequest {
+  /**
+   * The repository root. The store is `<repo>/spec/evidence`.
+   */
+  repo: string;
+}
+
+/**
  * A corpus root as it appears in the report.
  */
 export interface ReportCorpusRoot {
@@ -1687,6 +2598,41 @@ export interface ResolveOrgRequest {
 }
 
 /**
+ * One producer result, transcribed.
+ */
+export interface RunEntry {
+  /**
+   * The configuration dimension values this entry was executed under.
+   *
+   * `Record<string, string>` in the retained source, and a `BTreeMap` here
+   * rather than a `Value`: the auditor reads the dimension names to say
+   * which t-way combinations a run reached, and an opaque `Value` would put
+   * that cast at every read site.
+   */
+  config?: Record<string, string> | null;
+  /**
+   * What `score` measures. See `MUTATION_SCORE_METRIC`.
+   */
+  metric?: string | null;
+  /**
+   * What the producer said.
+   */
+  outcome: Outcome;
+  /**
+   * A native numeric result, where the format has one.
+   */
+  score?: number | null;
+  /**
+   * The producer's own identity for the result.
+   */
+  symbol: SymbolId;
+  /**
+   * Obligation or criterion ids the producer named for this result.
+   */
+  traceIds?: string[] | null;
+}
+
+/**
  * The payload `validators.run` writes to stdout.
  *
  * One field, named `findings`, because that is the byte shape
@@ -1698,6 +2644,49 @@ export interface RunPayload {
    * Every finding, ordered by `(path, line, obligation)`.
    */
   findings: EmptyGateFinding[];
+}
+
+/**
+ * One run of ONE suite at ONE commit.
+ *
+ * The suite is the atomic unit of evidence: aggregation is a view, and a
+ * partial run must never be able to masquerade as a full one. Re-runs at the
+ * same commit are last-write-wins, latest only — the file name carries the
+ * short commit and nothing distinguishing one attempt from the next.
+ */
+export interface RunRecord {
+  /**
+   * Full commit sha the run was performed at.
+   */
+  commit: Commit;
+  /**
+   * One entry per symbol the producer reported.
+   */
+  entries: RunEntry[];
+  /**
+   * The declared `test_type` this run produced, when the caller names one.
+   *
+   * Its absence is not an invitation to guess: method conformance once
+   * inferred "this was a test run" from a non-empty entry list, which is
+   * true of a transcribed inspection too (agent-ix/quoin#105).
+   */
+  evidenceKind?: string | null;
+  /**
+   * Always `STORE_SCHEMA_VERSION`(super::STORE_SCHEMA_VERSION).
+   */
+  schemaVersion: number;
+  /**
+   * The suite this run covered.
+   */
+  suite: SuiteId;
+  /**
+   * ISO-8601, supplied by the caller — never read from the clock here.
+   */
+  timestamp: string;
+  /**
+   * Tool and version, as the adapter reported them.
+   */
+  tool: string;
 }
 
 /**
@@ -2085,6 +3074,59 @@ export type Source =
   | SourceNpm;
 
 /**
+ * A statement hash as quire computed it; quoin only ever compares these.
+ */
+export type StatementHash = string;
+
+/**
+ * The payload `evidence.store_facts` writes to stdout.
+ *
+ * The constants the TypeScript command layer needs *before* it can build a
+ * request at all — the adapter names an `--adapter` flag offers, the metric a
+ * mutation score is recorded under, the schema version, and where the two
+ * checked-in store files live. They are served rather than restated so that
+ * `src/core/evidence.ts` has one pinned copy instead of a second declaration.
+ */
+export interface StoreFactsPayload {
+  /**
+   * Every adapter name, run-shaped then finding-shaped, in `--help` order.
+   */
+  adapter_names: string[];
+  /**
+   * Store-relative path of the ratchet baseline.
+   */
+  baseline_path: string;
+  /**
+   * Store-relative path of the binding graph.
+   */
+  bindings_path: string;
+  /**
+   * The family directories `evidence.gc` collects.
+   */
+  collected_families: string[];
+  /**
+   * Store-relative path of the authored inspection register.
+   */
+  inspections_path: string;
+  /**
+   * The metric name a `cargo-mutants` score is recorded under.
+   */
+  mutation_score_metric: string;
+  /**
+   * The revalidation triggers every trust decision must declare.
+   */
+  required_triggers: TrustTrigger[];
+  /**
+   * The version stamped into every record envelope.
+   */
+  store_schema_version: number;
+  /**
+   * Store-relative path of the authored suite registry.
+   */
+  suites_path: string;
+}
+
+/**
  * What a participant decided about one sufficiency criterion.
  */
 export interface SufficiencyDecision {
@@ -2133,6 +3175,11 @@ export interface SufficiencyDecision {
    */
   state: DecisionState;
 }
+
+/**
+ * A suite identity, as the suite registry declares it.
+ */
+export type SuiteId = string;
 
 /**
  * The payload `semantic.sweep_corpus` writes to stdout.
@@ -2238,6 +3285,11 @@ export interface SweepRootRequest {
 }
 
 /**
+ * A FR-051 stable symbol identity.
+ */
+export type SymbolId = string;
+
+/**
  * The top claim, with the reasons it is not supported.
  */
 export interface TopClaimView {
@@ -2265,6 +3317,119 @@ export interface TopClaimView {
 }
 
 /**
+ * The explainable result of comparing one decision against what is observed.
+ */
+export interface TrustAssessment {
+  /**
+   * The decision's id.
+   */
+  id: TrustDecisionId;
+  /**
+   * Stated limits on the reliance.
+   */
+  limitations: string[];
+  /**
+   * Who is accountable.
+   */
+  owner: string;
+  /**
+   * The decisions this use is permitted to support.
+   */
+  permittedDecisions: string[];
+  /**
+   * The producer's name.
+   */
+  producer: string;
+  /**
+   * The verdict.
+   */
+  status: TrustStatus;
+  /**
+   * The triggers that differed, empty unless the status is `invalidated`.
+   */
+  triggeredBy: TrustTrigger[];
+  /**
+   * The bounded use's id.
+   */
+  useId: string;
+}
+
+/**
+ * The payload `evidence.trust_assessments` writes to stdout.
+ */
+export interface TrustAssessmentsPayload {
+  /**
+   * One assessment per readable decision, in file-name order.
+   */
+  assessments: TrustAssessment[];
+  /**
+   * Paths of decisions that would not parse or would not validate.
+   *
+   * Named, not counted, and not fatal: one malformed decision must not hide
+   * every other reliance judgement in the store.
+   */
+  unreadable: string[];
+}
+
+/**
+ * A trust decision id, `ETD-<digits>`.
+ *
+ * Validated at construction because it becomes a file name: the retained
+ * `trustDecisionPath` refuses anything else rather than letting an id escape
+ * the `trust/` directory.
+ */
+export type TrustDecisionId = string;
+
+/**
+ * The payload `evidence.trust_decision` writes to stdout.
+ */
+export interface TrustDecisionPayload {
+  /**
+   * Its effective state, as compared against the observed context.
+   */
+  assessment: TrustAssessment;
+  /**
+   * Where the decision was written, as an **absolute** path.
+   */
+  path: string;
+}
+
+/**
+ * The request accepted by `evidence.trust_decision`.
+ */
+export interface TrustDecisionRequest {
+  /**
+   * The decision document, as the caller read it.
+   */
+  decision: unknown;
+  /**
+   * The repository root.
+   */
+  repo: string;
+}
+
+/**
+ * What a decision says about the context currently observed.
+ */
+export type TrustStatus =
+  | "accepted"
+  | "accepted-with-limitations"
+  | "invalidated"
+  | "not-accepted"
+  | "unobserved";
+
+/**
+ * A fact about a producer context whose change can invalidate a decision.
+ */
+export type TrustTrigger =
+  | "producer-version"
+  | "configuration"
+  | "adapter"
+  | "validation-corpus"
+  | "input-contract"
+  | "environment";
+
+/**
  * A document whose frontmatter could not be read, and why.
  */
 export interface UnreadableDocument {
@@ -2276,6 +3441,28 @@ export interface UnreadableDocument {
    * Why it could not be read.
    */
   reason: string;
+}
+
+/**
+ * One producer result the run-entry vocabulary cannot carry.
+ *
+ * Declared here rather than re-used from `quoin_evidence::adapters` because
+ * that type is not `Serialize`: it is an internal shape, and a `derive` added
+ * to it there would put a wire contract on a type nothing wires.
+ */
+export interface UnrepresentedView {
+  /**
+   * Why no run-entry outcome carries it.
+   */
+  reason: string;
+  /**
+   * The producer's own state name, verbatim.
+   */
+  state: string;
+  /**
+   * The producer's own identity for the result.
+   */
+  symbol: string;
 }
 
 /**
@@ -2423,6 +3610,34 @@ export interface VocabularyRollup {
  * One value inside a declared vocabulary, e.g. `safety`.
  */
 export type VocabularyValue = string;
+
+/**
+ * The payload `evidence.write_baseline` writes to stdout.
+ */
+export interface WriteBaselinePayload {
+  /**
+   * Where it was written, as an **absolute** path.
+   */
+  path: string;
+}
+
+/**
+ * The request accepted by `evidence.write_baseline`.
+ */
+export interface WriteBaselineRequest {
+  /**
+   * The accepted findings as `<kind>:<obligation>`.
+   */
+  accepted: string[];
+  /**
+   * The commit the baseline is accepted at.
+   */
+  commit: string;
+  /**
+   * The repository root.
+   */
+  repo: string;
+}
 
 /** The IPC protocol revision this build of the boundary speaks. */
 export const PROTOCOL_VERSION = 1;

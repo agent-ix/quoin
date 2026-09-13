@@ -1,4 +1,5 @@
 import { execFileSync } from "node:child_process";
+import { readFileSync } from "node:fs";
 
 import { Flags } from "@oclif/core";
 
@@ -6,15 +7,11 @@ import { QuoinCommand } from "../../base.js";
 import { loadMethodCatalog } from "../../advisor/index.js";
 import { audit, ratchet } from "../../auditor/index.js";
 import {
+  auditInputs,
   baselinePath,
-  latestRuns,
-  latestScans,
-  mockInspectionInput,
-  readIndependencePolicy,
+  parsePolicy,
   readBaseline,
-  readBindings,
-  requireKnownPolicyObligations,
-} from "../../evidence/index.js";
+} from "../../core/evidence.js";
 import {
   checkVersionPremise,
   parseCoverage,
@@ -106,28 +103,33 @@ a week. Write that baseline with: quoin evidence baseline`;
     const obligations = parsed.value.obligations ?? [];
     let independencePolicy;
     try {
+      // Validated AND checked against today's obligations in one call: a
+      // policy naming an obligation nothing derives reports every requirement
+      // as vacuously assessed, so the two questions have one answer.
       independencePolicy = flags["independence-policy"]
-        ? readIndependencePolicy(flags["independence-policy"])
+        ? parsePolicy(
+            readFileSync(flags["independence-policy"], "utf8"),
+            obligations.map((obligation) => obligation.id),
+          )
         : undefined;
-      if (independencePolicy) {
-        requireKnownPolicyObligations(
-          independencePolicy,
-          obligations.map((obligation) => obligation.id),
-        );
-      }
     } catch (cause) {
       this.error((cause as Error).message, { exit: 2 });
     }
 
     const head = headCommit(flags.repo);
-    const mockInspections = mockInspectionInput(flags.repo, head);
+    // One call, not eight. The auditor asks two of its questions — scan
+    // vacuity and profile independence — inside per-obligation loops, so a
+    // per-question operation would have cost one subprocess per obligation.
+    const store = auditInputs(flags.repo, head, independencePolicy);
     const report = audit({
       obligations,
-      bindings: readBindings(flags.repo).bindings,
-      runs: latestRuns(flags.repo),
-      scans: latestScans(flags.repo),
-      injections: mockInspections.injections,
-      mockInspectionSuites: mockInspections.suites,
+      bindings: store.bindings,
+      runs: store.runs,
+      scans: store.scans,
+      injections: store.injections,
+      mockInspectionSuites: store.mock_inspection_suites,
+      vacuousScanSuites: store.vacuous_scan_suites,
+      independence: store.independence,
       // The SAME module the coverage call above used. Defaulting to the
       // installed roots meant `--module <dir>` derived obligations from one
       // catalog and checked conformance against another — the exact disagreement
@@ -147,7 +149,7 @@ a week. Write that baseline with: quoin evidence baseline`;
       independencePolicy,
     });
 
-    const baseline = flags.ratchet ? readBaseline(flags.repo) : null;
+    const baseline = flags.ratchet ? readBaseline(flags.repo).baseline : null;
     // Whether ratcheting was ACTUALLY applied — `flags.ratchet` is only what
     // was asked for. A missing baseline degrades the run to a full report, and
     // labelling that full report "(new violations only)" told a day-one reader

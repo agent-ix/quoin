@@ -138,8 +138,12 @@ const CASES: &[Case] = &[
         request: Request::Literal("[1,2]"),
     },
     Case {
+        // A spelling no stage will ever claim. A not-yet-ported operation here
+        // stops being an unknown op the moment its stage lands — quoin#458
+        // broke this case with `evidence.record` — and what the case is for is
+        // the unknown-op path, not the inventory of what exists today.
         name: "invalid/unknown-op",
-        op: "evidence.record",
+        op: "core.no_such_operation",
         request: Request::Literal("{}"),
     },
 ];

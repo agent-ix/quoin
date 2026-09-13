@@ -66,6 +66,7 @@ use serde::Deserialize;
 /// evidence store arrived (agent-ix/quoin#456): a binding stamps it, and a
 /// default would make every binding agree with every statement.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct Obligation {
     /// The obligation id, e.g. `FR-001-AC-1` or `NFR-010-M-2`.
     pub id: String,

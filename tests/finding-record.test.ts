@@ -255,11 +255,18 @@ describe("the auditor over finding-shaped scans", () => {
 
   // Trace: FR-034-AC-10
   it("reports a scan that evaluated no rules as vacuous", () => {
+    // `rulesEvaluated: 0` means vacuous is decided by `quoin-evidence` and
+    // reaches the auditor as `vacuousScanSuites` (quoin#458). That half of the
+    // criterion is asserted against the real binary by
+    // `tc_458_150_audit_inputs_names_the_scans_that_evaluated_no_rules`; this
+    // half is what the auditor does with the answer. The scan still carries
+    // the count so the two halves are stated over the same record.
     const report = audit({
       obligations: [obligation],
       bindings: [binding],
       runs: [],
       scans: [scan({ rulesEvaluated: 0 })],
+      vacuousScanSuites: ["SUITE-SCAN"],
     });
     const vacuous = report.findings.find((f) => f.kind === "vacuous-evidence");
     expect(vacuous?.severity).toBe("high");

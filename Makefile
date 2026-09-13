@@ -343,6 +343,7 @@ rust-e2e: rust-build
 	    tests/org-one-subprocess.test.ts \
 	    tests/completeness-cli.test.ts \
 	    tests/core-bundle-snapshot.test.ts \
+	    tests/core-evidence.test.ts \
 	    tests/independence.test.ts \
 	    tests/trust-decision.test.ts
 

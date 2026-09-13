@@ -1,11 +1,7 @@
 import { Flags } from "@oclif/core";
 
 import { QuoinCommand } from "../../base.js";
-import {
-  STORE_SCHEMA_VERSION,
-  inspectMockInjections,
-  writeMockInspection,
-} from "../../evidence/index.js";
+import { inspectMocks } from "../../core/evidence.js";
 import { packageVersion } from "../../version.js";
 
 export default class EvidenceInspectMocks extends QuoinCommand {
@@ -44,17 +40,14 @@ found no relevant injections" from "nobody looked" (agent-ix/quoin#204).`;
 
   async run(): Promise<void> {
     const { flags } = await this.parse(EvidenceInspectMocks);
-    const injections = inspectMockInjections(flags.repo, flags.suite);
-    const path = flags["dry-run"]
-      ? null
-      : writeMockInspection(flags.repo, {
-          schemaVersion: STORE_SCHEMA_VERSION,
-          suite: flags.suite,
-          commit: flags.commit,
-          tool: `quoin mock-inspection ${packageVersion()}`,
-          timestamp: flags.timestamp ?? new Date().toISOString(),
-          injections,
-        });
+    const { path, injections } = inspectMocks({
+      repo: flags.repo,
+      suite: flags.suite,
+      commit: flags.commit,
+      tool: `quoin mock-inspection ${packageVersion()}`,
+      timestamp: flags.timestamp ?? new Date().toISOString(),
+      dry_run: Boolean(flags["dry-run"]),
+    });
 
     if (flags.json) {
       this.log(JSON.stringify({ path, injections }, null, 2));

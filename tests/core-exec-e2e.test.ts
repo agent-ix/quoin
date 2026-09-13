@@ -84,7 +84,13 @@ describe.skipIf(!available)("src/core/exec.ts ↔ quoin-core", () => {
   });
 
   it("throws on an operation quoin-core does not implement", () => {
-    expect(() => runCore("evidence.record", {})).toThrow(/CORE_UNKNOWN_OP/);
+    // A spelling no stage will ever claim. Naming a not-yet-ported operation
+    // here makes the case expire the moment that stage lands (quoin#458 broke
+    // it with `evidence.record`), and what is under test is the unknown-op
+    // path, not which operations exist today.
+    expect(() => runCore("core.no_such_operation", {})).toThrow(
+      /CORE_UNKNOWN_OP/,
+    );
   });
 
   it("accepts the real binary under its own pinned digest", () => {

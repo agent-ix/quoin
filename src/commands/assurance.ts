@@ -15,17 +15,10 @@ import {
 import { readBundleFrontmatter } from "../core/completeness.js";
 import type { DischargeReport } from "../core/types.js";
 import {
-  latestRun,
-  latestScan,
-  listRecordedSuites,
-  mockInspectionInput,
-  readIndependencePolicy,
-  readBindings,
-  readTrustDecisions,
-  requireKnownPolicyObligations,
-  assessTrust,
-} from "../evidence/index.js";
-import type { FindingRecord, RunRecord } from "../evidence/index.js";
+  auditInputs,
+  parsePolicy,
+  trustAssessments,
+} from "../core/evidence.js";
 import {
   checkVersionPremise,
   parseCoverage,
@@ -158,14 +151,11 @@ that quietly narrows to what it can prove reads exactly like a complete one.`;
     let independencePolicy;
     try {
       independencePolicy = flags["independence-policy"]
-        ? readIndependencePolicy(flags["independence-policy"])
+        ? parsePolicy(
+            readFileSync(flags["independence-policy"], "utf8"),
+            obligations.map((obligation) => obligation.id),
+          )
         : undefined;
-      if (independencePolicy) {
-        requireKnownPolicyObligations(
-          independencePolicy,
-          obligations.map((obligation) => obligation.id),
-        );
-      }
     } catch (cause) {
       this.error((cause as Error).message, { exit: 2 });
     }
@@ -175,23 +165,24 @@ that quietly narrows to what it can prove reads exactly like a complete one.`;
     // FR-032 already answers, and the two would disagree the first time either
     // changed.
     const head = headCommit(flags.repo);
-    const mockInspections = mockInspectionInput(flags.repo, head);
+    const store = auditInputs(flags.repo, head, independencePolicy);
     const report = audit({
       obligations,
-      bindings: readBindings(flags.repo).bindings,
-      runs: latestRuns(flags.repo),
-      scans: latestScans(flags.repo),
-      injections: mockInspections.injections,
-      mockInspectionSuites: mockInspections.suites,
+      bindings: store.bindings,
+      runs: store.runs,
+      scans: store.scans,
+      injections: store.injections,
+      mockInspectionSuites: store.mock_inspection_suites,
+      vacuousScanSuites: store.vacuous_scan_suites,
+      independence: store.independence,
       catalog: loadMethodCatalog(flags.module ? [flags.module] : undefined),
       independencePolicy,
     });
 
     const bundle = readBundleFrontmatter(`${flags.repo}/spec`);
-    const trustUnreadable: string[] = [];
-    const producerTrust = readTrustDecisions(flags.repo, trustUnreadable).map(
-      assessTrust,
-    );
+    const trust = trustAssessments(flags.repo);
+    const trustUnreadable = trust.unreadable;
+    const producerTrust = trust.assessments;
     const assurance = buildCase({
       // The whole `BundleDocument`, not its frontmatter: `build_case` reads
       // `doc.frontmatter.id` and `doc.frontmatter.relationships`, so the
@@ -237,16 +228,4 @@ function headCommit(repo: string): string | undefined {
   } catch {
     return undefined;
   }
-}
-
-function latestScans(repo: string): FindingRecord[] {
-  return listRecordedSuites(repo)
-    .map((suite) => latestScan(repo, suite))
-    .filter((s): s is FindingRecord => s !== null);
-}
-
-function latestRuns(repo: string): RunRecord[] {
-  return listRecordedSuites(repo)
-    .map((suite) => latestRun(repo, suite))
-    .filter((r): r is RunRecord => r !== null);
 }

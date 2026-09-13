@@ -12,6 +12,7 @@ use serde::{Deserialize, Serialize};
 /// One artifact a producer emitted, with its digest.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct ProvenanceArtifact {
     /// The artifact's name.
     pub name: String,
@@ -22,6 +23,7 @@ pub struct ProvenanceArtifact {
 /// Who produced a record, from what source, with what capability.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct ProducerProvenance {
     /// Always `producer-provenance-v1`.
     pub schema_version: String,
@@ -46,6 +48,7 @@ pub struct ProducerProvenance {
 /// Whether a producer's source tree carried uncommitted changes.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub enum SourceState {
     /// No uncommitted changes.
     Clean,
@@ -56,6 +59,7 @@ pub enum SourceState {
 /// What a record is about.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct EvidenceSubject {
     /// The subject's kind.
     pub kind: String,
@@ -68,6 +72,7 @@ pub struct EvidenceSubject {
 /// How an experiment was set up.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct ExperimentDesign {
     /// The time box it ran in.
     pub time_box: String,
@@ -82,6 +87,7 @@ pub struct ExperimentDesign {
 /// Whether an experiment supported its hypothesis.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub enum ExperimentStatus {
     /// The hypothesis was supported.
     Supported,
@@ -94,6 +100,7 @@ pub enum ExperimentStatus {
 /// What an experiment concluded.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct ExperimentResult {
     /// The verdict.
     pub status: ExperimentStatus,
@@ -106,6 +113,7 @@ pub struct ExperimentResult {
 /// An experiment record as its producer supplied it, before identification.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct ExperimentRecordInput {
     /// Always `experiment-record-v1`.
     pub schema_version: String,
@@ -130,6 +138,7 @@ pub struct ExperimentRecordInput {
 /// exactly that reason: a nested input would change every stored byte.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct ExperimentRecord {
     /// `sha256:<64 lowercase hex>` over the canonical JSON of the input.
     pub record_id: String,
@@ -141,6 +150,7 @@ pub struct ExperimentRecord {
 /// The window an operational observation covers.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct ObservationWindow {
     /// ISO-8601 instant.
     pub started_at: String,
@@ -151,6 +161,7 @@ pub struct ObservationWindow {
 /// One signal observed in operation.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct Observation {
     /// What was measured.
     pub signal: String,
@@ -168,6 +179,7 @@ pub struct Observation {
 /// Whether operation stayed inside its declared bounds.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub enum OperationalOutcome {
     /// It did.
     WithinBounds,
@@ -180,6 +192,7 @@ pub enum OperationalOutcome {
 /// An operational evidence record as its producer supplied it.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct OperationalEvidenceRecordInput {
     /// Always `operational-evidence-record-v1`.
     pub schema_version: String,
@@ -202,6 +215,7 @@ pub struct OperationalEvidenceRecordInput {
 /// An identified operational evidence record, as it is written to disk.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct OperationalEvidenceRecord {
     /// `sha256:<64 lowercase hex>` over the canonical JSON of the input.
     pub record_id: String,

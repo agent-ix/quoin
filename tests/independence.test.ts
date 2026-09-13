@@ -14,6 +14,7 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 import { buildCase, renderCase } from "../src/core/assurance.js";
+import { auditInputs, record } from "../src/core/evidence.js";
 import { audit } from "../src/auditor/index.js";
 import {
   assessIndependence,
@@ -281,34 +282,6 @@ describe("relationship independence", () => {
       unevaluated: [],
     });
   });
-
-  // Trace: FR-094-AC-6
-  it("opens the obligation when selected separation is absent and clears with diverse lineage", () => {
-    const shared = { ...lineageB, actor: lineageA.actor };
-    const insufficient = audit(
-      auditInput(
-        [binding("SUITE-A", lineageA), binding("SUITE-B", shared)],
-        policy(),
-      ),
-    );
-    expect(insufficient.findings.map((item) => item.kind)).toEqual([
-      "insufficient-independence",
-    ]);
-    expect(insufficient.independence?.[0].dimensions[0]).toMatchObject({
-      dimension: "actor",
-      values: ["reviewer-a"],
-    });
-
-    const satisfied = audit(
-      auditInput(
-        [binding("SUITE-A", lineageA), binding("SUITE-B", lineageB)],
-        policy(),
-      ),
-    );
-    expect(satisfied.findings).toEqual([]);
-    expect(satisfied.healthy).toEqual([OBLIGATION]);
-    expect(satisfied.independence?.[0].status).toBe("satisfied");
-  });
 });
 
 describe("lineage persistence", () => {
@@ -352,16 +325,23 @@ describe("lineage persistence", () => {
       "utf8",
     );
     expect(command).toContain("lineage: Flags.string");
-    expect(command).toContain("readEvidenceLineage(flags.lineage)");
+    // The flag still reaches the validator, which is now `quoin-evidence`
+    // behind `evidence.parse_lineage` (quoin#458). Asserted on the command
+    // source because what this criterion is about is the WIRING: a `--lineage`
+    // the command accepts and never passes on would leave every other
+    // assertion in this file green.
+    expect(command).toContain(
+      'parseLineage(readFileSync(flags.lineage, "utf8"))',
+    );
   });
 });
 
 /**
- * The assurance case is built by `quoin-core` (quoin#447), so these two cases
- * need the binary. They follow `tests/core-exec-e2e.test.ts`: `QUOIN_CORE`
- * names an executable or the block skips, and `make rust-e2e` is the lane that
- * sets it. Everything else in this file is retained `src/evidence/` and
- * `src/auditor/` and runs under a plain `vitest run`.
+ * The assurance case is built by `quoin-core` (quoin#447) and the evidence
+ * store by `quoin-evidence` (quoin#458), so the blocks below need the binary.
+ * They follow `tests/core-exec-e2e.test.ts`: `QUOIN_CORE` names an executable
+ * or the block skips, and `make rust-e2e` is the lane that sets it. Everything
+ * above runs under a plain `vitest run`.
  */
 function coreBinary(): string | null {
   const path = process.env.QUOIN_CORE;
@@ -373,6 +353,99 @@ function coreBinary(): string | null {
     return null;
   }
 }
+
+describe.skipIf(coreBinary() === null)("profile-selected independence", () => {
+  /**
+   * One suite recorded into a real store, with its lineage.
+   *
+   * Through `evidence.record` rather than by writing `bindings.json`: the
+   * binding, its lineage and the run behind it are what the assessment reads,
+   * and a test that wrote the binding file itself would be asserting against
+   * its own fixture rather than against what recording a run produces.
+   */
+  function recorded(repo: string, suite: string, lineage: EvidenceLineage) {
+    record({
+      repo,
+      suite,
+      commit: COMMIT,
+      tool: lineage.implementationToolchain ?? "fixture",
+      timestamp: "2026-08-21T20:00:00Z",
+      adapter: "entries",
+      lineage,
+      results: JSON.stringify({
+        entries: [
+          {
+            symbol: `tests::${suite.toLowerCase()}`,
+            outcome: "pass",
+            traceIds: [OBLIGATION],
+          },
+        ],
+      }),
+      obligations: [
+        {
+          source: "acceptance-criterion",
+          id: OBLIGATION,
+          document: "spec/functional/FR-001.md",
+          statement: "The parser rejects malformed input.",
+          statement_hash: HASH,
+        },
+      ],
+    });
+  }
+
+  /** The auditor over a real store, with the policy selected. */
+  function auditRecorded(lineages: Record<string, EvidenceLineage>) {
+    const repo = mkdtempSync(join(tmpdir(), "quoin-independence-store-"));
+    for (const [suite, lineage] of Object.entries(lineages)) {
+      recorded(repo, suite, lineage);
+    }
+    const selected = policy();
+    const inputs = auditInputs(repo, undefined, selected);
+    return audit({
+      obligations: [
+        {
+          source: "acceptance-criterion" as const,
+          id: OBLIGATION,
+          document: "spec/functional/FR-001.md",
+          statement: "The parser rejects malformed input.",
+          statement_hash: HASH,
+        },
+      ],
+      bindings: inputs.bindings,
+      runs: inputs.runs,
+      scans: inputs.scans,
+      independence: inputs.independence,
+      // As above: #204's check reports the obligation unevaluated until each
+      // suite carries a current mock inspection, and this file is about
+      // independence.
+      mockInspectionSuites: inputs.bindings.map((item) => item.suite),
+      independencePolicy: selected,
+    });
+  }
+
+  // Trace: FR-094-AC-6
+  it("opens the obligation when selected separation is absent and clears with diverse lineage", () => {
+    const insufficient = auditRecorded({
+      "SUITE-A": lineageA,
+      "SUITE-B": { ...lineageB, actor: lineageA.actor },
+    });
+    expect(insufficient.findings.map((item) => item.kind)).toEqual([
+      "insufficient-independence",
+    ]);
+    expect(insufficient.independence?.[0].dimensions[0]).toMatchObject({
+      dimension: "actor",
+      values: ["reviewer-a"],
+    });
+
+    const satisfied = auditRecorded({
+      "SUITE-A": lineageA,
+      "SUITE-B": lineageB,
+    });
+    expect(satisfied.findings).toEqual([]);
+    expect(satisfied.healthy).toEqual([OBLIGATION]);
+    expect(satisfied.independence?.[0].status).toBe("satisfied");
+  });
+});
 
 describe.skipIf(coreBinary() === null)("TC-309 assurance context", () => {
   // Trace: FR-094-AC-8

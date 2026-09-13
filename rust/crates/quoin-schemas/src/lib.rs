@@ -80,11 +80,11 @@ pub const BOUNDARY_SCHEMA_ID: &str = "https://agent-ix.dev/quoin/core-boundary-v
 // --- The two checked-in digests. `make types` rewrites both; nothing else may.
 /// SHA-256 of the canonical JSON of [`boundary_schema`] at generation time.
 pub const SOURCE_SCHEMA_SHA256: &str =
-    "7411cd37687c4ef3f222e53e64ba85a39e444f02b2df3f3e92bcb33e9d358f26";
+    "ef37841d38a3a230241ce8338bbaef1a19d3d307faa0b34482ad2dda110deeb6";
 
 /// SHA-256 of the committed `src/core/types.ts`.
 pub const GENERATED_TYPES_SHA256: &str =
-    "3223187bbbab767ee368eeebf45c227e5fe89d1c3e3b6c8980064e30d6e7d26f";
+    "06deb57a975612ca9ace23b84324710320abfc44931a3e23af04778f32028ce4";
 
 /// The JSON Schema of every type that crosses the `quoin-core` boundary.
 ///
@@ -139,6 +139,32 @@ pub fn boundary_schema() -> Value {
     let _ = generator.subschema_for::<quoin_core::ops::change_assurance::ReceiptPayload>();
     let _ = generator.subschema_for::<quoin_core::ops::change_assurance::VerifyReceiptRequest>();
     let _ = generator.subschema_for::<quoin_core::ops::change_assurance::VerifyReceiptPayload>();
+    let _ = generator.subschema_for::<quoin_core::ops::evidence::StoreFactsPayload>();
+    let _ = generator.subschema_for::<quoin_core::ops::evidence::RepoRequest>();
+    let _ = generator.subschema_for::<quoin_core::ops::evidence::GcRequest>();
+    let _ = generator.subschema_for::<quoin_core::ops::evidence::GcPayload>();
+    let _ = generator.subschema_for::<quoin_core::ops::evidence::AffirmRequest>();
+    let _ = generator.subschema_for::<quoin_core::ops::evidence::AffirmPayload>();
+    let _ = generator.subschema_for::<quoin_core::ops::evidence::ParseLineageRequest>();
+    let _ = generator.subschema_for::<quoin_core::ops::evidence::ParseLineagePayload>();
+    let _ = generator.subschema_for::<quoin_core::ops::evidence::ParsePolicyRequest>();
+    let _ = generator.subschema_for::<quoin_core::ops::evidence::ParsePolicyPayload>();
+    let _ = generator.subschema_for::<quoin_core::ops::evidence::ParseResultsRequest>();
+    let _ = generator.subschema_for::<quoin_core::ops::evidence::ParseResultsPayload>();
+    let _ = generator.subschema_for::<quoin_core::ops::evidence::RecordRequest>();
+    let _ = generator.subschema_for::<quoin_core::ops::evidence::RecordPayload>();
+    let _ = generator.subschema_for::<quoin_core::ops::evidence::TrustDecisionRequest>();
+    let _ = generator.subschema_for::<quoin_core::ops::evidence::TrustDecisionPayload>();
+    let _ = generator.subschema_for::<quoin_core::ops::evidence::TrustAssessmentsPayload>();
+    let _ = generator.subschema_for::<quoin_core::ops::evidence::InspectMocksRequest>();
+    let _ = generator.subschema_for::<quoin_core::ops::evidence::InspectMocksPayload>();
+    let _ = generator.subschema_for::<quoin_core::ops::evidence::AssuranceRecordRequest>();
+    let _ = generator.subschema_for::<quoin_core::ops::evidence::AssuranceRecordPayload>();
+    let _ = generator.subschema_for::<quoin_core::ops::evidence::AuditInputsRequest>();
+    let _ = generator.subschema_for::<quoin_core::ops::evidence::AuditInputsPayload>();
+    let _ = generator.subschema_for::<quoin_core::ops::evidence::ReadBaselinePayload>();
+    let _ = generator.subschema_for::<quoin_core::ops::evidence::WriteBaselineRequest>();
+    let _ = generator.subschema_for::<quoin_core::ops::evidence::WriteBaselinePayload>();
     let _ = generator.subschema_for::<quoin_core::ops::validators::RunRequest>();
     let _ = generator.subschema_for::<quoin_core::ops::validators::RunPayload>();
     json!({
@@ -401,13 +427,22 @@ mod tests {
     /// A list and not a count: a count moves when a type is renamed and says
     /// nothing about WHICH names crossed, and the names are what TypeScript
     /// imports.
-    const BOUNDARY_TYPES: [&str; 127] = [
+    const BOUNDARY_TYPES: [&str; 181] = [
+        "AffirmPayload",
+        "AffirmRequest",
+        "Affirmation",
         "ArgumentStatus",
         "ArgumentSummary",
         "AssessInput",
         "AssumptionStatus",
         "AssumptionView",
+        "AssuranceRecordPayload",
+        "AssuranceRecordRequest",
+        "AuditInputsPayload",
+        "AuditInputsRequest",
         "AuthoredArgumentView",
+        "BaselineFile",
+        "Binding",
         "BuildAuthoredArgumentRequest",
         "BuildDischargeRequest",
         "BundleAssessment",
@@ -423,6 +458,7 @@ mod tests {
         "ClauseDischarge",
         "ClauseForce",
         "ClauseSetKey",
+        "Commit",
         "CommitSha",
         "CompatibilityPosture",
         "CompletenessFinding",
@@ -445,10 +481,24 @@ mod tests {
         "EngineProvenance",
         "EnsureDefaultsPayload",
         "EnsureDefaultsRequest",
+        "EvidenceLineage",
+        "EvidenceObligationId",
         "FactKind",
+        "Finding",
         "FindingKind",
+        "FindingRecord",
         "FormFinding",
         "FrontmatterRead",
+        "GcPayload",
+        "GcRequest",
+        "IndependenceAssessment",
+        "IndependenceDimension",
+        "IndependenceDimensionAssessment",
+        "IndependencePolicy",
+        "IndependenceRequirement",
+        "IndependenceStatus",
+        "InspectMocksPayload",
+        "InspectMocksRequest",
         "InstallPayload",
         "InstallRequest",
         "InstalledModule",
@@ -461,24 +511,37 @@ mod tests {
         "ListRequest",
         "MappingName",
         "MigrationExamplePayload",
+        "MockInjection",
         "Mode",
         "ModuleName",
         "ModuleSemanticView",
         "ModuleSource",
         "ModuleVersion",
         "ObjectTypeName",
+        "Obligation",
         "ObligationId",
+        "Outcome",
         "PackageIdentity",
+        "ParseLineagePayload",
+        "ParseLineageRequest",
+        "ParsePolicyPayload",
+        "ParsePolicyRequest",
+        "ParseResultsPayload",
+        "ParseResultsRequest",
         "Participant",
         "PingPayload",
         "PingRequest",
+        "ProfileId",
         "PropertiesForm",
+        "ReadBaselinePayload",
         "ReadBlocksPayload",
         "ReadBlocksRequest",
         "ReadFrontmatterRequest",
         "ReasoningView",
         "ReceiptPayload",
         "ReceiptRequest",
+        "RecordPayload",
+        "RecordRequest",
         "RecoverPayload",
         "RecoverRequest",
         "Relationship",
@@ -488,10 +551,13 @@ mod tests {
         "RenderAuthoredArgumentPayload",
         "RenderDischargePayload",
         "RepoPath",
+        "RepoRequest",
         "ReportCorpusRoot",
         "ResolveOrgPayload",
         "ResolveOrgRequest",
+        "RunEntry",
         "RunPayload",
+        "RunRecord",
         "RunRequest",
         "SchemaRefsPayload",
         "SchemaRefsRequest",
@@ -508,14 +574,26 @@ mod tests {
         "SemanticSeverity",
         "Severity",
         "Source",
+        "StatementHash",
+        "StoreFactsPayload",
         "SufficiencyDecision",
+        "SuiteId",
         "SweepCorpusPayload",
         "SweepCorpusRequest",
         "SweepCounts",
         "SweepReport",
         "SweepRootRequest",
+        "SymbolId",
         "TopClaimView",
+        "TrustAssessment",
+        "TrustAssessmentsPayload",
+        "TrustDecisionId",
+        "TrustDecisionPayload",
+        "TrustDecisionRequest",
+        "TrustStatus",
+        "TrustTrigger",
         "UnreadableDocument",
+        "UnrepresentedView",
         "UnresolvedDeclaration",
         "UnresolvedOrgMessagePayload",
         "UnusedDecision",
@@ -529,6 +607,8 @@ mod tests {
         "VocabularyName",
         "VocabularyRollup",
         "VocabularyValue",
+        "WriteBaselinePayload",
+        "WriteBaselineRequest",
     ];
 
     #[test]

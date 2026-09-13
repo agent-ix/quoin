@@ -4,8 +4,8 @@ import { existsSync, readFileSync } from "node:fs";
 
 import { z } from "zod";
 
-import { bindingsPath, STORE_SCHEMA_VERSION } from "../evidence/index.js";
-import type { Binding } from "../evidence/index.js";
+import { bindingsPath, STORE_SCHEMA_VERSION } from "../core/evidence.js";
+import type { Binding } from "../core/evidence.js";
 import { parseAssurance } from "../quire/index.js";
 import type { GraphAnalysisInput } from "./analysis.js";
 import {
@@ -136,7 +136,7 @@ function canonicalizeBindings(bindings: Binding[]): Binding[] {
     .map((item) => ({
       ...item,
       symbols: [...item.symbols].sort(compare),
-      ...(item.affirmations === undefined
+      ...(item.affirmations == null
         ? {}
         : {
             affirmations: item.affirmations

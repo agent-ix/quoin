@@ -45,10 +45,13 @@ use std::path::{Path, PathBuf};
 
 use quoin_change_assurance::EvidenceStore;
 use quoin_change_assurance::intake::disk::DiskEvidenceStore;
-use quoin_core::capabilities::{Capabilities, ChangeAssuranceHost, ModuleHost, SemanticHost};
+use quoin_core::capabilities::{
+    Capabilities, ChangeAssuranceHost, EvidenceHost, ModuleHost, SemanticHost,
+};
 use quoin_core::dispatch::{dispatch, parse_operation, read_request};
 use quoin_core::error::CoreError;
 use quoin_core::protocol::{Diagnostic, Response, canonical_json};
+use quoin_evidence::{DiskEvidence, EvidenceSource};
 use quoin_modules::{
     ContractGate, GixResolver, InstallOutcome, InstallPaths, InstalledModule, IxHome,
     MarketplaceManifest, ModuleInstaller, ModuleName, ModulesError, ReconcileMode, ReconcileReport,
@@ -84,7 +87,8 @@ fn run(args: &[String]) -> Result<Response, CoreError> {
     let modules = HostModules::new();
     let semantic = HostSemantic::new();
     let change_assurance = HostChangeAssurance;
-    let capabilities = Capabilities::with_hosts(&modules, &semantic, &change_assurance);
+    let evidence = HostEvidence;
+    let capabilities = Capabilities::with_hosts(&modules, &semantic, &change_assurance, &evidence);
     dispatch(op, &request, &capabilities)
 }
 
@@ -274,6 +278,35 @@ struct HostChangeAssurance;
 impl ChangeAssuranceHost for HostChangeAssurance {
     fn store<'a>(&'a self, repo: &Path) -> Box<dyn EvidenceStore + 'a> {
         Box::new(DiskEvidenceStore::new(repo))
+    }
+}
+
+/// The production [`EvidenceHost`]: the evidence store on disk, rooted at
+/// `<repo>/spec/evidence` (quoin#458).
+///
+/// Stateless, because there is nothing to resolve from the environment: the
+/// repository root arrives in the request, and the store's own location under
+/// it is `quoin_store`'s to decide. `ops::evidence` is handed this and never
+/// constructs one; its unit tests substitute a `MemoryEvidence`-backed host and
+/// touch no disk at all.
+///
+/// The store is opened for the length of ONE action and dropped. A handle that
+/// outlived the operation would be a second way to reach the filesystem, and
+/// the seam exists precisely so there is only the one.
+struct HostEvidence;
+
+impl EvidenceHost for HostEvidence {
+    fn with_store(
+        &self,
+        repo: &Path,
+        action: &mut dyn FnMut(&mut dyn EvidenceSource) -> Result<serde_json::Value, CoreError>,
+    ) -> Result<serde_json::Value, CoreError> {
+        let mut store = DiskEvidence::new(repo);
+        action(&mut store)
+    }
+
+    fn store_root(&self, repo: &Path) -> PathBuf {
+        DiskEvidence::new(repo).root().to_path_buf()
     }
 }
 

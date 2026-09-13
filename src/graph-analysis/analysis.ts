@@ -5,7 +5,7 @@ import type {
   Finding,
   UnevaluatedCheck,
 } from "../auditor/index.js";
-import type { Binding } from "../evidence/index.js";
+import type { Binding } from "../core/evidence.js";
 import type {
   AcceptedAssurancePremises,
   AssuranceCorpusRelation,
@@ -233,7 +233,7 @@ export function analyzeChurn(input: GraphAnalysisInput): ChurnAnalysis {
         byKey.set(key, {
           who: affirmation.who,
           commit: affirmation.commit,
-          ...(affirmation.note === undefined ? {} : { note: affirmation.note }),
+          ...(affirmation.note == null ? {} : { note: affirmation.note }),
           suites: [binding.suite],
         });
       }

@@ -10,6 +10,7 @@ use crate::ids::{Commit, SuiteId, SymbolId};
 /// One test symbol observed substituting a stand-in for real behaviour.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct MockInjection {
     /// The suite whose source was inspected.
     pub suite: SuiteId,
@@ -32,6 +33,7 @@ pub struct MockInjection {
 /// all means "nobody looked" (agent-ix/quoin#204).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct MockInspectionRecord {
     /// Always [`STORE_SCHEMA_VERSION`](super::STORE_SCHEMA_VERSION).
     pub schema_version: u32,

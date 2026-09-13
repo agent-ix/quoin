@@ -14,6 +14,7 @@ use crate::ids::{Commit, ObligationId, StatementHash, SuiteId, SymbolId};
 /// rather than inferring a value (FR-094).
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct EvidenceLineage {
     /// Who produced the evidence.
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -52,6 +53,7 @@ impl EvidenceLineage {
 /// changed.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct Affirmation {
     /// Who affirmed.
     pub who: String,
@@ -70,6 +72,7 @@ pub struct Affirmation {
 /// compares.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct Binding {
     /// The obligation id the matrix keys on.
     pub obligation: ObligationId,
@@ -95,6 +98,7 @@ pub struct Binding {
 /// obligation can be discharged by a unit test and a benchmark.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct BindingsFile {
     /// Always [`STORE_SCHEMA_VERSION`](super::STORE_SCHEMA_VERSION).
     pub schema_version: u32,
@@ -111,6 +115,7 @@ pub struct BindingsFile {
 /// (agent-ix/quoin#105).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct BaselineFile {
     /// Always [`STORE_SCHEMA_VERSION`](super::STORE_SCHEMA_VERSION).
     pub schema_version: u32,
