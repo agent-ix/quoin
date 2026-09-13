@@ -11,6 +11,10 @@
 //! `src/` tree here, with a floor underneath it: a census that stopped finding
 //! files would otherwise pass by finding nothing.
 //!
+//! Both waves that landed in this crate are measured by this one test: quoin#475
+//! created it and quoin#476 extended its reach rather than adding a
+//! `tc_476_module_sizes.rs` beside it.
+//!
 //! This is the crate's **one** census — `quoin-quire` and `quoin-jsonschema`
 //! each carry the same test for their own tree, and a second one here would be
 //! a copy rather than a measurement.
@@ -18,7 +22,7 @@
 //! This census carries no `Trace:` tag: it is an engineering criterion from
 //! quoin#464, not an obligation any requirement states.
 //!
-//! Provenance: quoin#475
+//! Provenance: quoin#475, quoin#476
 
 #![allow(
     clippy::unwrap_used,
@@ -44,10 +48,11 @@ const ALLOWED_ABOVE_HARD_CEILING: &[(&str, &str)] = &[];
 
 /// The modules currently over [`SOFT_CEILING`].
 ///
-/// Empty. The 763 retained TypeScript lines became a tree of small modules
-/// rather than one file of the same size: the largest here is under half the
-/// soft ceiling. A name appearing in this list is a deliberate act that has to
-/// be argued for.
+/// Empty. The 763 retained lines of `graph-adapters.ts` (quoin#475) and the
+/// 881 of `graph-portfolio.ts` (quoin#476) became a tree of small modules
+/// rather than two files of the same size: the largest here is `render_json.rs`,
+/// still under the soft ceiling. A name appearing in this list is a deliberate
+/// act that has to be argued for.
 const OVER_SOFT_CEILING: &[&str] = &[];
 
 /// The count below which this census is not measuring the crate at all.

@@ -3,7 +3,17 @@
 //! The one error this crate surfaces, and its stable code catalogue.
 //!
 //! Ports `GraphAdapterError` and `GraphAdapterErrorCode`
-//! (`src/measurement/graph-adapters.ts:24-40`).
+//! (`src/measurement/graph-adapters.ts:24-40`) and
+//! `GraphPortfolioMappingError` / `GraphPortfolioMappingErrorCode`
+//! (`src/measurement/graph-portfolio.ts:66-82`).
+//!
+//! # One enum, two retained classes
+//!
+//! The retained tree raises two error classes at this boundary — the adapters'
+//! eight codes and the governed portfolio's four. They are refusals of one
+//! crate, so there is **one** catalogue here rather than two: the variant set
+//! is the API, and a caller that wants to know which half refused reads the
+//! code, not the class (quoin#475, quoin#476).
 //!
 //! # Two spellings, and why both are kept
 //!
@@ -58,13 +68,28 @@ pub enum GraphAdapterErrorCode {
     /// distinct code here keeps that refusal distinguishable from this crate's
     /// own.
     CollectionRefused,
+    /// A `<repository>=<value>` mapping was malformed, or named a repository
+    /// that is not in the portfolio. `graph-portfolio.ts:66`.
+    InvalidRepositoryMapping,
+    /// One repository was mapped to two different graph exports.
+    DuplicateGraphExport,
+    /// One repository was mapped to two different premises documents.
+    DuplicateGraphPremises,
+    /// One repository was mapped to two different audit documents.
+    DuplicateGraphAudit,
+    /// A refusal raised by `quoin-measurement` and passed through unchanged.
+    ///
+    /// Port-only: the governed portfolio renders the ungoverned portfolio
+    /// report (`graph-portfolio.ts:335`) and crosses the JSON bridge, and both
+    /// belong to that crate.
+    Measurement,
     /// A refusal raised by `quoin-store` and passed through unchanged.
     Store,
 }
 
 impl GraphAdapterErrorCode {
     /// Every code, in declaration order.
-    pub const ALL: [Self; 11] = [
+    pub const ALL: [Self; 16] = [
         Self::UnknownAdapter,
         Self::InvalidPremise,
         Self::InvalidObservation,
@@ -75,6 +100,11 @@ impl GraphAdapterErrorCode {
         Self::DuplicatePartition,
         Self::AttachmentEncodingInvalid,
         Self::CollectionRefused,
+        Self::InvalidRepositoryMapping,
+        Self::DuplicateGraphExport,
+        Self::DuplicateGraphPremises,
+        Self::DuplicateGraphAudit,
+        Self::Measurement,
         Self::Store,
     ];
 
@@ -92,6 +122,11 @@ impl GraphAdapterErrorCode {
             Self::DuplicatePartition => "QMG-DUPLICATE-PARTITION",
             Self::AttachmentEncodingInvalid => "QMG-ATTACHMENT-ENCODING-INVALID",
             Self::CollectionRefused => "QMG-COLLECTION-REFUSED",
+            Self::InvalidRepositoryMapping => "QMG-INVALID-REPOSITORY-MAPPING",
+            Self::DuplicateGraphExport => "QMG-DUPLICATE-GRAPH-EXPORT",
+            Self::DuplicateGraphPremises => "QMG-DUPLICATE-GRAPH-PREMISES",
+            Self::DuplicateGraphAudit => "QMG-DUPLICATE-GRAPH-AUDIT",
+            Self::Measurement => "QMG-MEASUREMENT",
             Self::Store => "QMG-STORE",
         }
     }
@@ -109,7 +144,14 @@ impl GraphAdapterErrorCode {
             Self::AttachmentDigestMismatch => Some("attachment_digest_mismatch"),
             Self::InactivePlan => Some("inactive_plan"),
             Self::DuplicatePartition => Some("duplicate_partition"),
-            Self::AttachmentEncodingInvalid | Self::CollectionRefused | Self::Store => None,
+            Self::InvalidRepositoryMapping => Some("invalid_repository_mapping"),
+            Self::DuplicateGraphExport => Some("duplicate_graph_export"),
+            Self::DuplicateGraphPremises => Some("duplicate_graph_premises"),
+            Self::DuplicateGraphAudit => Some("duplicate_graph_audit"),
+            Self::AttachmentEncodingInvalid
+            | Self::CollectionRefused
+            | Self::Measurement
+            | Self::Store => None,
         }
     }
 
@@ -160,6 +202,12 @@ impl GraphAdapterError {
     }
 }
 
+impl From<quoin_measurement::MeasurementError> for GraphAdapterError {
+    fn from(source: quoin_measurement::MeasurementError) -> Self {
+        Self::new(GraphAdapterErrorCode::Measurement, source.to_string())
+    }
+}
+
 impl From<quoin_store::StoreError> for GraphAdapterError {
     fn from(source: quoin_store::StoreError) -> Self {
         Self::new(GraphAdapterErrorCode::Store, source.to_string())
@@ -191,7 +239,8 @@ mod tests {
         assert_eq!(seen.len(), GraphAdapterErrorCode::ALL.len());
     }
 
-    /// The eight retained spellings are distinct and are the retained union.
+    /// The twelve retained spellings are distinct and are the retained union
+    /// of both classes this crate replaces.
     #[test]
     fn tc_475_002_the_retained_spellings_are_the_retained_union() {
         let retained: BTreeSet<&str> = GraphAdapterErrorCode::ALL
@@ -209,8 +258,13 @@ mod tests {
                 "invalid_observation",
                 "invalid_premise",
                 "unknown_adapter",
+                // graph-portfolio.ts:66-70, the second retained class.
+                "duplicate_graph_audit",
+                "duplicate_graph_export",
+                "duplicate_graph_premises",
+                "invalid_repository_mapping",
             ]),
-            "graph-adapters.ts:25-33 declares exactly these eight"
+            "graph-adapters.ts:25-33 declares eight and graph-portfolio.ts:66-70 four"
         );
     }
 }

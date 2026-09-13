@@ -375,9 +375,9 @@ fn run(case: &Case) -> Outcome {
             Outcome::accepted(Value::String(base64::encode(&bytes(&case.input["bytes"]))))
         }
         "base64Decode" => match base64::decode(case.input["text"].as_str().expect("text")) {
-            Ok(decoded) => Outcome::accepted(Value::Array(
-                decoded.into_iter().map(Value::from).collect(),
-            )),
+            Ok(decoded) => {
+                Outcome::accepted(Value::Array(decoded.into_iter().map(Value::from).collect()))
+            }
             Err(error) => Outcome::refused(&error),
         },
         other => panic!("the capture carries an unhandled function `{other}`"),
@@ -385,6 +385,15 @@ fn run(case: &Case) -> Outcome {
 }
 
 /// Both implementations reach the same verdict, except where declared.
+/// The refusal codes `graph-portfolio.ts` raises rather than
+/// `graph-adapters.ts`. Covered by `tc_476_graph_portfolio.rs` (quoin#476).
+const MAPPING_CODES: [&str; 4] = [
+    "invalid_repository_mapping",
+    "duplicate_graph_export",
+    "duplicate_graph_premises",
+    "duplicate_graph_audit",
+];
+
 #[test]
 fn tc_475_050_the_two_implementations_agree_on_every_captured_case() {
     let corpus = corpus();
@@ -531,10 +540,23 @@ fn tc_475_052_the_corpus_carries_both_verdicts_for_every_entry_point() {
         .iter()
         .filter_map(|case| case.code.as_deref())
         .collect();
+    // The four mapping codes are `graph-portfolio.ts`'s, not
+    // `graph-adapters.ts`'s: they are raised by
+    // `parseGraphPortfolioMappings`, which this corpus does not and should not
+    // reach. Their captured cases live in
+    // `tests/goldens/graph-portfolio-oracle.json` and are asserted by
+    // `tc_476_graph_portfolio.rs` (quoin#476). Removing one from this list
+    // without covering it there would leave a refusal no measurement covers.
+    let elsewhere: BTreeSet<&str> = MAPPING_CODES.iter().copied().collect();
     let retained: BTreeSet<&str> = GraphAdapterErrorCode::ALL
         .into_iter()
         .filter_map(GraphAdapterErrorCode::retained_spelling)
+        .filter(|code| !elsewhere.contains(code))
         .collect();
+    assert!(
+        elsewhere.len() == MAPPING_CODES.len() && !elsewhere.is_empty(),
+        "the mapping codes must be named once each"
+    );
     assert_eq!(
         codes, retained,
         "the corpus exercises every retained refusal code exactly once over, and no other. A \

@@ -55,9 +55,14 @@ impl<'a> PortfolioReportWire<'a> {
 }
 
 /// `portfolio.ts:46-63`.
+///
+/// `pub` because the governed graph portfolio (`quoin-measurement-graph`,
+/// quoin#476) **spreads this object** — `graph-portfolio.ts:452-457` returns
+/// `{ ...portfolio, graphQuality, graph, gaps }` — so its wire view flattens
+/// this one rather than transcribing eleven members a second time.
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
-struct RepositoryWire<'a> {
+pub struct RepositoryWire<'a> {
     name: &'a str,
     root: &'a str,
     status: &'static str,
@@ -77,7 +82,11 @@ struct RepositoryWire<'a> {
 
 impl<'a> RepositoryWire<'a> {
     /// The wire view of one repository entry.
-    fn of(repository: &'a PortfolioRepositoryReport) -> Result<Self, MeasurementError> {
+    ///
+    /// # Errors
+    ///
+    /// As [`crate::report::render_measurement_report_json`].
+    pub fn of(repository: &'a PortfolioRepositoryReport) -> Result<Self, MeasurementError> {
         Ok(Self {
             name: &repository.name,
             root: &repository.root,

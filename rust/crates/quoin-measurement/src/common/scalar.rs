@@ -119,11 +119,15 @@ pub fn js_number_string(number: &serde_json::Number) -> String {
 
 /// [`js_number_string`] for a value already reduced to a double.
 ///
-/// `pub(crate)` because the report renderers interpolate an `Option<f64>` read
+/// `pub` because the report renderers interpolate an `Option<f64>` read
 /// from a stored observation — `${observation.value}` (`report.ts:130`) — and
 /// a second number formatter for that is exactly what FR-100-CON-4 refuses.
+/// The governed graph portfolio (`quoin-measurement-graph`, quoin#476)
+/// interpolates the same stored value and the same computed delta
+/// (`graph-portfolio.ts:357,382,399`), so it reads this one across the crate
+/// boundary rather than minting the second formatter.
 #[must_use]
-pub(crate) fn js_f64_string(value: f64) -> String {
+pub fn js_f64_string(value: f64) -> String {
     if value.is_nan() {
         return "NaN".to_owned();
     }
