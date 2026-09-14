@@ -3,7 +3,7 @@
   "repositories": {
     "quoin": {
       "remote": "https://github.com/agent-ix/quoin",
-      "revision": "034312f3283f58a0f10d70637417e6c8c970a033"
+      "revision": "a2db579cebdbec9e350cbf6d59cd1d2e75d6ab3e"
     },
     "quire": {
       "remote": "https://github.com/agent-ix/quire-rs",
@@ -84,7 +84,7 @@
     "pnpm-lock.yaml": "sha256:12f2579ce0697073e6d6d806d9d9856b7d7c838ce06acd712f0da55941c34bc8",
     "Makefile": "sha256:921f27a9184cfa6ace984c536da91e422f888634ba4771a6b028c916c5489f82",
     ".github/workflows/build-test.yml": "sha256:df2f1f6fa1ac1670e6f54b4e9f415a62f0eae28e63bcc4f16cc9e0b42852a9c5",
-    "scripts/check-tool-drift.mjs": "sha256:3d88c53bccb8ce9aeb647ad160906259e702eef4726a8a9e9e4882fc72705974",
+    "scripts/check-tool-drift.mjs": "sha256:b82d5b988f5bd300257d80afc4ddc91fc730e6f2bfe0760f5e2003b98a596ebf",
     "scripts/check-tool-drift-selftest.mjs": "sha256:b44a83d103b0fa6aaac7122873a16d73402a5738109fa1d834e07b67b84082fc",
     "scripts/verification-stack.mjs": "sha256:9882cfd3aa6390d1b31386f145f6e9eb5ef81ad6c2e2a4f8b581b6fdb3b031c7",
     "scripts/verification-stack-selftest.mjs": "sha256:c0def043b0e8eb8b8e25b070ad89c3f081d6f216383035ab5928779c7b7162b9",
