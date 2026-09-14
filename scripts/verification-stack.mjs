@@ -1015,13 +1015,15 @@ async function main() {
       if (requestedShard && !plan) {
         throw new Error("--test-shard requires --state-dir");
       }
-      const testShards = requestedShard ? [Number(requestedShard)] : [1, 2, 3];
+      const testShards = requestedShard
+        ? [Number(requestedShard)]
+        : Array.from({ length: 20 }, (_, index) => index + 1);
       if (
         testShards.some(
-          (shard) => !Number.isInteger(shard) || shard < 1 || shard > 3,
+          (shard) => !Number.isInteger(shard) || shard < 1 || shard > 20,
         )
       ) {
-        throw new Error("--test-shard must be one of 1, 2, or 3");
+        throw new Error("--test-shard must be an integer from 1 through 20");
       }
       if (plan && requestedShard && testShards[0] > 1) {
         readStateRecord(
@@ -1052,7 +1054,7 @@ async function main() {
           [
             "test-with-quire",
             `QUIRE=${binary}`,
-            `VITEST_ARGS=--shard=${shard}/3`,
+            `VITEST_ARGS=--shard=${shard}/20`,
           ],
           {
             cwd: ROOT,
@@ -1067,14 +1069,15 @@ async function main() {
           });
         }
       }
-      if (plan && (!requestedShard || testShards[0] === 3)) {
-        for (const shard of [1, 2, 3]) {
+      if (plan && (!requestedShard || testShards[0] === 20)) {
+        for (const shard of Array.from(
+          { length: 20 },
+          (_, index) => index + 1,
+        )) {
           readStateRecord(scratch, `test-${shard}`, currentLockDigest);
         }
         writeStateRecord(scratch, "test", { lockDigest: currentLockDigest });
       }
-      if (plan)
-        writeStateRecord(scratch, "test", { lockDigest: currentLockDigest });
     }
     if (stageEnds(plan, "test")) return;
     if (plan && plan.start > STAGES.indexOf("test")) {
