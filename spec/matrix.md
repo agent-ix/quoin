@@ -197,7 +197,7 @@ cannot hold, and are kept for that reason.
 Criteria absent here are verified by a method that produces no test — see
 "Tracking-tag coverage".
 
-| Functional Req | Acceptance Criteria | Test Cases | Status |
+| Functional Req | Acceptance Criteria | Test Cases | Coverage Status |
 | --- | --- | --- | --- |
 | FR-001 | FR-001-AC-1, FR-001-AC-2, FR-001-AC-3, FR-001-AC-4 | TC-001, TC-002, TC-003, TC-004 | ✅ Covered |
 | FR-002 | FR-002-AC-1, FR-002-AC-2, FR-002-AC-3, FR-002-AC-4 | TC-005, TC-006, TC-007, TC-008 | ✅ Covered |
@@ -1258,7 +1258,7 @@ inspection rather than by a unit test — so these rows carry no tracking tag by
 design (see "Tracking-tag coverage"). Added in response to SR-003 FND-002, which
 found the stakeholder layer had no rows here at all.
 
-| Stakeholder Req | Trace to US/FR         | Test/Validation                                                                                       | Status |
+| Stakeholder Req | Trace to US/FR         | Test/Validation                                                                                       | Coverage Status |
 | --------------- | ---------------------- | ----------------------------------------------------------------------------------------------------- | --------------- |
 | StR-001-VC-1    | US-009; FR-004, FR-023 | Demonstration — TC-EV-001…TC-EV-013 run the real CLI from an isolated `IX_HOME`; NFR-004 inspects the deps    | ✅ Covered      |
 | StR-002-VC-1    | US-003; FR-018, FR-019 | Demonstration — TC-EV-003/TC-EV-009/TC-EV-010/TC-EV-020 install from local, GitHub and subdir sources              | ✅ Covered      |
