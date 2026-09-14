@@ -535,6 +535,23 @@ function buildCli(cliRoot, scratch) {
   return snapshot;
 }
 
+function buildQuoinCore(scratch) {
+  const target = resolve(
+    process.env.QUOIN_CORE_CARGO_TARGET_DIR ??
+      join(scratch, "quoin-core-cargo-target"),
+  );
+  run(
+    "cargo",
+    ["build", "-p", "quoin-core", "--locked", "--target-dir", target],
+    { cwd: join(ROOT, "rust"), timeout: 900_000, stdio: "inherit" },
+  );
+  const executable = join(target, "debug", "quoin-core");
+  if (!existsSync(executable) || !lstatSync(executable).isFile()) {
+    throw new Error("Cargo did not produce the quoin-core executable");
+  }
+  return executable;
+}
+
 function buildExternalQuoin(lock, scratch) {
   const cohort = lock.cohorts.qaExternalQuoin;
   const checkout = join(scratch, "qa-external-quoin");
@@ -968,6 +985,7 @@ async function main() {
       readStateRecord(scratch, "lint", currentLockDigest);
     }
     if (stageRuns(plan, "test")) {
+      const quoinCore = buildQuoinCore(scratch);
       const testEnv = { ...env };
       // Do not let an inherited explicit-set override change either replay mode.
       delete testEnv.QUOIN_VERIFICATION_DECLARATIONS;
@@ -979,6 +997,7 @@ async function main() {
       // override it without inheriting a digest that belongs to another file.
       delete testEnv.QUOIN_QUIRE;
       delete testEnv.QUOIN_EXPECTED_QUIRE_SHA256;
+      testEnv.QUOIN_CORE = quoinCore;
       run("make", ["test-with-quire", `QUIRE=${binary}`], {
         cwd: ROOT,
         env: testEnv,
