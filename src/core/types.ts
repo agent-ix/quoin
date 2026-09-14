@@ -32,7 +32,7 @@ export const CORE_TYPES_PROVENANCE = {
   generator: "quoin-schemas/quoin-schemas-gen",
   generatorVersion: "0.1.0",
   sourceSchemaSha256:
-    "ef37841d38a3a230241ce8338bbaef1a19d3d307faa0b34482ad2dda110deeb6",
+    "092980780b2ec6d229fda7a8da4f2f9d76513d1be3732a194f04899c4a4057a1",
 } as const;
 
 /**
@@ -1913,9 +1913,43 @@ export type ObjectTypeName = string;
  */
 export interface Obligation {
   /**
+   * The obligation's declared criticality, verbatim (`P0`, `high`, …).
+   *
+   * Carried, never interpreted. CR-008 deleted a hardcoded `["P0"]`
+   * precisely so the engine does not decide which values count as high.
+   */
+  criticality?: string | null;
+  /**
    * The obligation id, e.g. `FR-001-AC-1` or `NFR-010-M-2`.
    */
   id: string;
+  /**
+   * The authored `Verification` cell, verbatim.
+   *
+   * # Why the three below are `Option` when the header says fields quoin reads are required
+   *
+   * The rule in the module header is about **drift**: a field quoin reads
+   * unconditionally must fail loudly if quire renames it, rather than read
+   * as an empty string. These three are not read unconditionally — quire
+   * emits them as `method?: string | null`, `parameters?` and
+   * `criticality?: string | null`, and every reader here branches on the
+   * absence first. `unknownMethodFinding` returns `null` without a method;
+   * `multiplicityFinding` and `mutationFinding` return `null` without a
+   * criticality. An absence is an answer, so it must be representable.
+   *
+   * `null` and the missing key both read as `None`, which is what the
+   * retained `!obligation.method` guard does with either.
+   */
+  method?: string | null;
+  /**
+   * The obligation's structured parameters, as quire emits them —
+   * `{"target": "< 4 min", "threshold": "< 5 min"}` on an NFR row.
+   *
+   * A `BTreeMap` and not a `Value`: the advisor asks whether the keys
+   * `target` or `threshold` are present, which an opaque value would put a
+   * cast in front of at the one read site.
+   */
+  parameters?: Record<string, string> | null;
   /**
    * The criterion's statement, in the spec's own words.
    */

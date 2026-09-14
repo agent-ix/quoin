@@ -25,11 +25,22 @@ mod fixtures;
 use crate::fixtures::{bundle, doc, input, obligation};
 
 fn finding(obligation_id: &str, kind: &str) -> Finding {
+    // The three fields `build_case` reads. `Finding` grew the producer's other
+    // nine when quoin#383 ported the auditor into this workspace; a view
+    // fixture states none of them, which is the shape the corpus holds.
     Finding {
         obligation: obligation_id.to_owned(),
         kind: kind.to_owned(),
         summary: format!("{obligation_id} has a problem"),
-        other: std::collections::BTreeMap::new(),
+        severity: None,
+        path: None,
+        line: None,
+        symbol: None,
+        subject: None,
+        change_target: None,
+        remedy: None,
+        next_diagnostic_step: None,
+        other: quoin_finding_types::OtherMembers::new(),
     }
 }
 

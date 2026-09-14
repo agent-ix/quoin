@@ -63,6 +63,12 @@ fn obligation(id: &str, hash: &str) -> Obligation {
         statement: format!("the system shall {id}"),
         statement_hash: hash.to_owned(),
         target_ids: None,
+        // The three fields quoin#383 added for the auditor. Absent here, which
+        // is what an obligation with no `Verification` cell, no criticality and
+        // no parameters looks like.
+        method: None,
+        criticality: None,
+        parameters: None,
     }
 }
 

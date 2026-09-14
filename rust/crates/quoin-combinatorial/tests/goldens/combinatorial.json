@@ -1,0 +1,1747 @@
+{
+  "cases": [
+    {
+      "name": "prose-is-not-a-space",
+      "statement": "The system shall do the thing.",
+      "configs": [],
+      "space": null,
+      "demanded": null,
+      "coveredBy": null,
+      "coverage": null
+    },
+    {
+      "name": "header-is-anchored",
+      "statement": "see: 2-way over a(1|2) b(3|4)",
+      "configs": [],
+      "space": null,
+      "demanded": null,
+      "coveredBy": null,
+      "coverage": null
+    },
+    {
+      "name": "header-needs-whitespace-after-over",
+      "statement": "2-way overa(1|2) b(3|4)",
+      "configs": [],
+      "space": null,
+      "demanded": null,
+      "coveredBy": null,
+      "coverage": null
+    },
+    {
+      "name": "strength-zero-is-refused",
+      "statement": "0-way over a(1|2) b(3|4)",
+      "configs": [],
+      "space": null,
+      "demanded": null,
+      "coveredBy": null,
+      "coverage": null
+    },
+    {
+      "name": "one-dimension-is-not-a-space",
+      "statement": "2-way over a(1|2)",
+      "configs": [],
+      "space": null,
+      "demanded": null,
+      "coveredBy": null,
+      "coverage": null
+    },
+    {
+      "name": "an-infinite-strength-is-not-a-space",
+      "statement": "9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999-way over a(1|2) b(3|4)",
+      "configs": [],
+      "space": null,
+      "demanded": null,
+      "coveredBy": null,
+      "coverage": null
+    },
+    {
+      "name": "single-value-dimensions-do-not-count-toward-two",
+      "statement": "2-way over a(1|2) b(only)",
+      "configs": [],
+      "space": null,
+      "demanded": null,
+      "coveredBy": null,
+      "coverage": null
+    },
+    {
+      "name": "empty-parens-are-not-a-dimension",
+      "statement": "2-way over a() b() c(1|2)",
+      "configs": [],
+      "space": null,
+      "demanded": null,
+      "coveredBy": null,
+      "coverage": null
+    },
+    {
+      "name": "leading-zeros-are-decimal",
+      "statement": "007-way over a(1|2) b(3|4) c(5|6) d(7|8) e(9|0) f(a|b) g(c|d)",
+      "configs": [],
+      "space": {
+        "strength": 7,
+        "dimensions": [
+          {
+            "name": "a",
+            "values": [
+              "1",
+              "2"
+            ]
+          },
+          {
+            "name": "b",
+            "values": [
+              "3",
+              "4"
+            ]
+          },
+          {
+            "name": "c",
+            "values": [
+              "5",
+              "6"
+            ]
+          },
+          {
+            "name": "d",
+            "values": [
+              "7",
+              "8"
+            ]
+          },
+          {
+            "name": "e",
+            "values": [
+              "9",
+              "0"
+            ]
+          },
+          {
+            "name": "f",
+            "values": [
+              "a",
+              "b"
+            ]
+          },
+          {
+            "name": "g",
+            "values": [
+              "c",
+              "d"
+            ]
+          }
+        ],
+        "exclusions": []
+      },
+      "demanded": [
+        "a=1 & b=3 & c=5 & d=7 & e=0 & f=a & g=c",
+        "a=1 & b=3 & c=5 & d=7 & e=0 & f=a & g=d",
+        "a=1 & b=3 & c=5 & d=7 & e=0 & f=b & g=c",
+        "a=1 & b=3 & c=5 & d=7 & e=0 & f=b & g=d",
+        "a=1 & b=3 & c=5 & d=7 & e=9 & f=a & g=c",
+        "a=1 & b=3 & c=5 & d=7 & e=9 & f=a & g=d",
+        "a=1 & b=3 & c=5 & d=7 & e=9 & f=b & g=c",
+        "a=1 & b=3 & c=5 & d=7 & e=9 & f=b & g=d",
+        "a=1 & b=3 & c=5 & d=8 & e=0 & f=a & g=c",
+        "a=1 & b=3 & c=5 & d=8 & e=0 & f=a & g=d",
+        "a=1 & b=3 & c=5 & d=8 & e=0 & f=b & g=c",
+        "a=1 & b=3 & c=5 & d=8 & e=0 & f=b & g=d",
+        "a=1 & b=3 & c=5 & d=8 & e=9 & f=a & g=c",
+        "a=1 & b=3 & c=5 & d=8 & e=9 & f=a & g=d",
+        "a=1 & b=3 & c=5 & d=8 & e=9 & f=b & g=c",
+        "a=1 & b=3 & c=5 & d=8 & e=9 & f=b & g=d",
+        "a=1 & b=3 & c=6 & d=7 & e=0 & f=a & g=c",
+        "a=1 & b=3 & c=6 & d=7 & e=0 & f=a & g=d",
+        "a=1 & b=3 & c=6 & d=7 & e=0 & f=b & g=c",
+        "a=1 & b=3 & c=6 & d=7 & e=0 & f=b & g=d",
+        "a=1 & b=3 & c=6 & d=7 & e=9 & f=a & g=c",
+        "a=1 & b=3 & c=6 & d=7 & e=9 & f=a & g=d",
+        "a=1 & b=3 & c=6 & d=7 & e=9 & f=b & g=c",
+        "a=1 & b=3 & c=6 & d=7 & e=9 & f=b & g=d",
+        "a=1 & b=3 & c=6 & d=8 & e=0 & f=a & g=c",
+        "a=1 & b=3 & c=6 & d=8 & e=0 & f=a & g=d",
+        "a=1 & b=3 & c=6 & d=8 & e=0 & f=b & g=c",
+        "a=1 & b=3 & c=6 & d=8 & e=0 & f=b & g=d",
+        "a=1 & b=3 & c=6 & d=8 & e=9 & f=a & g=c",
+        "a=1 & b=3 & c=6 & d=8 & e=9 & f=a & g=d",
+        "a=1 & b=3 & c=6 & d=8 & e=9 & f=b & g=c",
+        "a=1 & b=3 & c=6 & d=8 & e=9 & f=b & g=d",
+        "a=1 & b=4 & c=5 & d=7 & e=0 & f=a & g=c",
+        "a=1 & b=4 & c=5 & d=7 & e=0 & f=a & g=d",
+        "a=1 & b=4 & c=5 & d=7 & e=0 & f=b & g=c",
+        "a=1 & b=4 & c=5 & d=7 & e=0 & f=b & g=d",
+        "a=1 & b=4 & c=5 & d=7 & e=9 & f=a & g=c",
+        "a=1 & b=4 & c=5 & d=7 & e=9 & f=a & g=d",
+        "a=1 & b=4 & c=5 & d=7 & e=9 & f=b & g=c",
+        "a=1 & b=4 & c=5 & d=7 & e=9 & f=b & g=d",
+        "a=1 & b=4 & c=5 & d=8 & e=0 & f=a & g=c",
+        "a=1 & b=4 & c=5 & d=8 & e=0 & f=a & g=d",
+        "a=1 & b=4 & c=5 & d=8 & e=0 & f=b & g=c",
+        "a=1 & b=4 & c=5 & d=8 & e=0 & f=b & g=d",
+        "a=1 & b=4 & c=5 & d=8 & e=9 & f=a & g=c",
+        "a=1 & b=4 & c=5 & d=8 & e=9 & f=a & g=d",
+        "a=1 & b=4 & c=5 & d=8 & e=9 & f=b & g=c",
+        "a=1 & b=4 & c=5 & d=8 & e=9 & f=b & g=d",
+        "a=1 & b=4 & c=6 & d=7 & e=0 & f=a & g=c",
+        "a=1 & b=4 & c=6 & d=7 & e=0 & f=a & g=d",
+        "a=1 & b=4 & c=6 & d=7 & e=0 & f=b & g=c",
+        "a=1 & b=4 & c=6 & d=7 & e=0 & f=b & g=d",
+        "a=1 & b=4 & c=6 & d=7 & e=9 & f=a & g=c",
+        "a=1 & b=4 & c=6 & d=7 & e=9 & f=a & g=d",
+        "a=1 & b=4 & c=6 & d=7 & e=9 & f=b & g=c",
+        "a=1 & b=4 & c=6 & d=7 & e=9 & f=b & g=d",
+        "a=1 & b=4 & c=6 & d=8 & e=0 & f=a & g=c",
+        "a=1 & b=4 & c=6 & d=8 & e=0 & f=a & g=d",
+        "a=1 & b=4 & c=6 & d=8 & e=0 & f=b & g=c",
+        "a=1 & b=4 & c=6 & d=8 & e=0 & f=b & g=d",
+        "a=1 & b=4 & c=6 & d=8 & e=9 & f=a & g=c",
+        "a=1 & b=4 & c=6 & d=8 & e=9 & f=a & g=d",
+        "a=1 & b=4 & c=6 & d=8 & e=9 & f=b & g=c",
+        "a=1 & b=4 & c=6 & d=8 & e=9 & f=b & g=d",
+        "a=2 & b=3 & c=5 & d=7 & e=0 & f=a & g=c",
+        "a=2 & b=3 & c=5 & d=7 & e=0 & f=a & g=d",
+        "a=2 & b=3 & c=5 & d=7 & e=0 & f=b & g=c",
+        "a=2 & b=3 & c=5 & d=7 & e=0 & f=b & g=d",
+        "a=2 & b=3 & c=5 & d=7 & e=9 & f=a & g=c",
+        "a=2 & b=3 & c=5 & d=7 & e=9 & f=a & g=d",
+        "a=2 & b=3 & c=5 & d=7 & e=9 & f=b & g=c",
+        "a=2 & b=3 & c=5 & d=7 & e=9 & f=b & g=d",
+        "a=2 & b=3 & c=5 & d=8 & e=0 & f=a & g=c",
+        "a=2 & b=3 & c=5 & d=8 & e=0 & f=a & g=d",
+        "a=2 & b=3 & c=5 & d=8 & e=0 & f=b & g=c",
+        "a=2 & b=3 & c=5 & d=8 & e=0 & f=b & g=d",
+        "a=2 & b=3 & c=5 & d=8 & e=9 & f=a & g=c",
+        "a=2 & b=3 & c=5 & d=8 & e=9 & f=a & g=d",
+        "a=2 & b=3 & c=5 & d=8 & e=9 & f=b & g=c",
+        "a=2 & b=3 & c=5 & d=8 & e=9 & f=b & g=d",
+        "a=2 & b=3 & c=6 & d=7 & e=0 & f=a & g=c",
+        "a=2 & b=3 & c=6 & d=7 & e=0 & f=a & g=d",
+        "a=2 & b=3 & c=6 & d=7 & e=0 & f=b & g=c",
+        "a=2 & b=3 & c=6 & d=7 & e=0 & f=b & g=d",
+        "a=2 & b=3 & c=6 & d=7 & e=9 & f=a & g=c",
+        "a=2 & b=3 & c=6 & d=7 & e=9 & f=a & g=d",
+        "a=2 & b=3 & c=6 & d=7 & e=9 & f=b & g=c",
+        "a=2 & b=3 & c=6 & d=7 & e=9 & f=b & g=d",
+        "a=2 & b=3 & c=6 & d=8 & e=0 & f=a & g=c",
+        "a=2 & b=3 & c=6 & d=8 & e=0 & f=a & g=d",
+        "a=2 & b=3 & c=6 & d=8 & e=0 & f=b & g=c",
+        "a=2 & b=3 & c=6 & d=8 & e=0 & f=b & g=d",
+        "a=2 & b=3 & c=6 & d=8 & e=9 & f=a & g=c",
+        "a=2 & b=3 & c=6 & d=8 & e=9 & f=a & g=d",
+        "a=2 & b=3 & c=6 & d=8 & e=9 & f=b & g=c",
+        "a=2 & b=3 & c=6 & d=8 & e=9 & f=b & g=d",
+        "a=2 & b=4 & c=5 & d=7 & e=0 & f=a & g=c",
+        "a=2 & b=4 & c=5 & d=7 & e=0 & f=a & g=d",
+        "a=2 & b=4 & c=5 & d=7 & e=0 & f=b & g=c",
+        "a=2 & b=4 & c=5 & d=7 & e=0 & f=b & g=d",
+        "a=2 & b=4 & c=5 & d=7 & e=9 & f=a & g=c",
+        "a=2 & b=4 & c=5 & d=7 & e=9 & f=a & g=d",
+        "a=2 & b=4 & c=5 & d=7 & e=9 & f=b & g=c",
+        "a=2 & b=4 & c=5 & d=7 & e=9 & f=b & g=d",
+        "a=2 & b=4 & c=5 & d=8 & e=0 & f=a & g=c",
+        "a=2 & b=4 & c=5 & d=8 & e=0 & f=a & g=d",
+        "a=2 & b=4 & c=5 & d=8 & e=0 & f=b & g=c",
+        "a=2 & b=4 & c=5 & d=8 & e=0 & f=b & g=d",
+        "a=2 & b=4 & c=5 & d=8 & e=9 & f=a & g=c",
+        "a=2 & b=4 & c=5 & d=8 & e=9 & f=a & g=d",
+        "a=2 & b=4 & c=5 & d=8 & e=9 & f=b & g=c",
+        "a=2 & b=4 & c=5 & d=8 & e=9 & f=b & g=d",
+        "a=2 & b=4 & c=6 & d=7 & e=0 & f=a & g=c",
+        "a=2 & b=4 & c=6 & d=7 & e=0 & f=a & g=d",
+        "a=2 & b=4 & c=6 & d=7 & e=0 & f=b & g=c",
+        "a=2 & b=4 & c=6 & d=7 & e=0 & f=b & g=d",
+        "a=2 & b=4 & c=6 & d=7 & e=9 & f=a & g=c",
+        "a=2 & b=4 & c=6 & d=7 & e=9 & f=a & g=d",
+        "a=2 & b=4 & c=6 & d=7 & e=9 & f=b & g=c",
+        "a=2 & b=4 & c=6 & d=7 & e=9 & f=b & g=d",
+        "a=2 & b=4 & c=6 & d=8 & e=0 & f=a & g=c",
+        "a=2 & b=4 & c=6 & d=8 & e=0 & f=a & g=d",
+        "a=2 & b=4 & c=6 & d=8 & e=0 & f=b & g=c",
+        "a=2 & b=4 & c=6 & d=8 & e=0 & f=b & g=d",
+        "a=2 & b=4 & c=6 & d=8 & e=9 & f=a & g=c",
+        "a=2 & b=4 & c=6 & d=8 & e=9 & f=a & g=d",
+        "a=2 & b=4 & c=6 & d=8 & e=9 & f=b & g=c",
+        "a=2 & b=4 & c=6 & d=8 & e=9 & f=b & g=d"
+      ],
+      "coveredBy": [],
+      "coverage": {
+        "strength": 7,
+        "demanded": 128,
+        "covered": 0,
+        "gaps": [
+          "a=1 & b=3 & c=5 & d=7 & e=0 & f=a & g=c",
+          "a=1 & b=3 & c=5 & d=7 & e=0 & f=a & g=d",
+          "a=1 & b=3 & c=5 & d=7 & e=0 & f=b & g=c",
+          "a=1 & b=3 & c=5 & d=7 & e=0 & f=b & g=d",
+          "a=1 & b=3 & c=5 & d=7 & e=9 & f=a & g=c",
+          "a=1 & b=3 & c=5 & d=7 & e=9 & f=a & g=d",
+          "a=1 & b=3 & c=5 & d=7 & e=9 & f=b & g=c",
+          "a=1 & b=3 & c=5 & d=7 & e=9 & f=b & g=d",
+          "a=1 & b=3 & c=5 & d=8 & e=0 & f=a & g=c",
+          "a=1 & b=3 & c=5 & d=8 & e=0 & f=a & g=d",
+          "a=1 & b=3 & c=5 & d=8 & e=0 & f=b & g=c",
+          "a=1 & b=3 & c=5 & d=8 & e=0 & f=b & g=d",
+          "a=1 & b=3 & c=5 & d=8 & e=9 & f=a & g=c",
+          "a=1 & b=3 & c=5 & d=8 & e=9 & f=a & g=d",
+          "a=1 & b=3 & c=5 & d=8 & e=9 & f=b & g=c",
+          "a=1 & b=3 & c=5 & d=8 & e=9 & f=b & g=d",
+          "a=1 & b=3 & c=6 & d=7 & e=0 & f=a & g=c",
+          "a=1 & b=3 & c=6 & d=7 & e=0 & f=a & g=d",
+          "a=1 & b=3 & c=6 & d=7 & e=0 & f=b & g=c",
+          "a=1 & b=3 & c=6 & d=7 & e=0 & f=b & g=d",
+          "a=1 & b=3 & c=6 & d=7 & e=9 & f=a & g=c",
+          "a=1 & b=3 & c=6 & d=7 & e=9 & f=a & g=d",
+          "a=1 & b=3 & c=6 & d=7 & e=9 & f=b & g=c",
+          "a=1 & b=3 & c=6 & d=7 & e=9 & f=b & g=d",
+          "a=1 & b=3 & c=6 & d=8 & e=0 & f=a & g=c",
+          "a=1 & b=3 & c=6 & d=8 & e=0 & f=a & g=d",
+          "a=1 & b=3 & c=6 & d=8 & e=0 & f=b & g=c",
+          "a=1 & b=3 & c=6 & d=8 & e=0 & f=b & g=d",
+          "a=1 & b=3 & c=6 & d=8 & e=9 & f=a & g=c",
+          "a=1 & b=3 & c=6 & d=8 & e=9 & f=a & g=d",
+          "a=1 & b=3 & c=6 & d=8 & e=9 & f=b & g=c",
+          "a=1 & b=3 & c=6 & d=8 & e=9 & f=b & g=d",
+          "a=1 & b=4 & c=5 & d=7 & e=0 & f=a & g=c",
+          "a=1 & b=4 & c=5 & d=7 & e=0 & f=a & g=d",
+          "a=1 & b=4 & c=5 & d=7 & e=0 & f=b & g=c",
+          "a=1 & b=4 & c=5 & d=7 & e=0 & f=b & g=d",
+          "a=1 & b=4 & c=5 & d=7 & e=9 & f=a & g=c",
+          "a=1 & b=4 & c=5 & d=7 & e=9 & f=a & g=d",
+          "a=1 & b=4 & c=5 & d=7 & e=9 & f=b & g=c",
+          "a=1 & b=4 & c=5 & d=7 & e=9 & f=b & g=d",
+          "a=1 & b=4 & c=5 & d=8 & e=0 & f=a & g=c",
+          "a=1 & b=4 & c=5 & d=8 & e=0 & f=a & g=d",
+          "a=1 & b=4 & c=5 & d=8 & e=0 & f=b & g=c",
+          "a=1 & b=4 & c=5 & d=8 & e=0 & f=b & g=d",
+          "a=1 & b=4 & c=5 & d=8 & e=9 & f=a & g=c",
+          "a=1 & b=4 & c=5 & d=8 & e=9 & f=a & g=d",
+          "a=1 & b=4 & c=5 & d=8 & e=9 & f=b & g=c",
+          "a=1 & b=4 & c=5 & d=8 & e=9 & f=b & g=d",
+          "a=1 & b=4 & c=6 & d=7 & e=0 & f=a & g=c",
+          "a=1 & b=4 & c=6 & d=7 & e=0 & f=a & g=d",
+          "a=1 & b=4 & c=6 & d=7 & e=0 & f=b & g=c",
+          "a=1 & b=4 & c=6 & d=7 & e=0 & f=b & g=d",
+          "a=1 & b=4 & c=6 & d=7 & e=9 & f=a & g=c",
+          "a=1 & b=4 & c=6 & d=7 & e=9 & f=a & g=d",
+          "a=1 & b=4 & c=6 & d=7 & e=9 & f=b & g=c",
+          "a=1 & b=4 & c=6 & d=7 & e=9 & f=b & g=d",
+          "a=1 & b=4 & c=6 & d=8 & e=0 & f=a & g=c",
+          "a=1 & b=4 & c=6 & d=8 & e=0 & f=a & g=d",
+          "a=1 & b=4 & c=6 & d=8 & e=0 & f=b & g=c",
+          "a=1 & b=4 & c=6 & d=8 & e=0 & f=b & g=d",
+          "a=1 & b=4 & c=6 & d=8 & e=9 & f=a & g=c",
+          "a=1 & b=4 & c=6 & d=8 & e=9 & f=a & g=d",
+          "a=1 & b=4 & c=6 & d=8 & e=9 & f=b & g=c",
+          "a=1 & b=4 & c=6 & d=8 & e=9 & f=b & g=d",
+          "a=2 & b=3 & c=5 & d=7 & e=0 & f=a & g=c",
+          "a=2 & b=3 & c=5 & d=7 & e=0 & f=a & g=d",
+          "a=2 & b=3 & c=5 & d=7 & e=0 & f=b & g=c",
+          "a=2 & b=3 & c=5 & d=7 & e=0 & f=b & g=d",
+          "a=2 & b=3 & c=5 & d=7 & e=9 & f=a & g=c",
+          "a=2 & b=3 & c=5 & d=7 & e=9 & f=a & g=d",
+          "a=2 & b=3 & c=5 & d=7 & e=9 & f=b & g=c",
+          "a=2 & b=3 & c=5 & d=7 & e=9 & f=b & g=d",
+          "a=2 & b=3 & c=5 & d=8 & e=0 & f=a & g=c",
+          "a=2 & b=3 & c=5 & d=8 & e=0 & f=a & g=d",
+          "a=2 & b=3 & c=5 & d=8 & e=0 & f=b & g=c",
+          "a=2 & b=3 & c=5 & d=8 & e=0 & f=b & g=d",
+          "a=2 & b=3 & c=5 & d=8 & e=9 & f=a & g=c",
+          "a=2 & b=3 & c=5 & d=8 & e=9 & f=a & g=d",
+          "a=2 & b=3 & c=5 & d=8 & e=9 & f=b & g=c",
+          "a=2 & b=3 & c=5 & d=8 & e=9 & f=b & g=d",
+          "a=2 & b=3 & c=6 & d=7 & e=0 & f=a & g=c",
+          "a=2 & b=3 & c=6 & d=7 & e=0 & f=a & g=d",
+          "a=2 & b=3 & c=6 & d=7 & e=0 & f=b & g=c",
+          "a=2 & b=3 & c=6 & d=7 & e=0 & f=b & g=d",
+          "a=2 & b=3 & c=6 & d=7 & e=9 & f=a & g=c",
+          "a=2 & b=3 & c=6 & d=7 & e=9 & f=a & g=d",
+          "a=2 & b=3 & c=6 & d=7 & e=9 & f=b & g=c",
+          "a=2 & b=3 & c=6 & d=7 & e=9 & f=b & g=d",
+          "a=2 & b=3 & c=6 & d=8 & e=0 & f=a & g=c",
+          "a=2 & b=3 & c=6 & d=8 & e=0 & f=a & g=d",
+          "a=2 & b=3 & c=6 & d=8 & e=0 & f=b & g=c",
+          "a=2 & b=3 & c=6 & d=8 & e=0 & f=b & g=d",
+          "a=2 & b=3 & c=6 & d=8 & e=9 & f=a & g=c",
+          "a=2 & b=3 & c=6 & d=8 & e=9 & f=a & g=d",
+          "a=2 & b=3 & c=6 & d=8 & e=9 & f=b & g=c",
+          "a=2 & b=3 & c=6 & d=8 & e=9 & f=b & g=d",
+          "a=2 & b=4 & c=5 & d=7 & e=0 & f=a & g=c",
+          "a=2 & b=4 & c=5 & d=7 & e=0 & f=a & g=d",
+          "a=2 & b=4 & c=5 & d=7 & e=0 & f=b & g=c",
+          "a=2 & b=4 & c=5 & d=7 & e=0 & f=b & g=d",
+          "a=2 & b=4 & c=5 & d=7 & e=9 & f=a & g=c",
+          "a=2 & b=4 & c=5 & d=7 & e=9 & f=a & g=d",
+          "a=2 & b=4 & c=5 & d=7 & e=9 & f=b & g=c",
+          "a=2 & b=4 & c=5 & d=7 & e=9 & f=b & g=d",
+          "a=2 & b=4 & c=5 & d=8 & e=0 & f=a & g=c",
+          "a=2 & b=4 & c=5 & d=8 & e=0 & f=a & g=d",
+          "a=2 & b=4 & c=5 & d=8 & e=0 & f=b & g=c",
+          "a=2 & b=4 & c=5 & d=8 & e=0 & f=b & g=d",
+          "a=2 & b=4 & c=5 & d=8 & e=9 & f=a & g=c",
+          "a=2 & b=4 & c=5 & d=8 & e=9 & f=a & g=d",
+          "a=2 & b=4 & c=5 & d=8 & e=9 & f=b & g=c",
+          "a=2 & b=4 & c=5 & d=8 & e=9 & f=b & g=d",
+          "a=2 & b=4 & c=6 & d=7 & e=0 & f=a & g=c",
+          "a=2 & b=4 & c=6 & d=7 & e=0 & f=a & g=d",
+          "a=2 & b=4 & c=6 & d=7 & e=0 & f=b & g=c",
+          "a=2 & b=4 & c=6 & d=7 & e=0 & f=b & g=d",
+          "a=2 & b=4 & c=6 & d=7 & e=9 & f=a & g=c",
+          "a=2 & b=4 & c=6 & d=7 & e=9 & f=a & g=d",
+          "a=2 & b=4 & c=6 & d=7 & e=9 & f=b & g=c",
+          "a=2 & b=4 & c=6 & d=7 & e=9 & f=b & g=d",
+          "a=2 & b=4 & c=6 & d=8 & e=0 & f=a & g=c",
+          "a=2 & b=4 & c=6 & d=8 & e=0 & f=a & g=d",
+          "a=2 & b=4 & c=6 & d=8 & e=0 & f=b & g=c",
+          "a=2 & b=4 & c=6 & d=8 & e=0 & f=b & g=d",
+          "a=2 & b=4 & c=6 & d=8 & e=9 & f=a & g=c",
+          "a=2 & b=4 & c=6 & d=8 & e=9 & f=a & g=d",
+          "a=2 & b=4 & c=6 & d=8 & e=9 & f=b & g=c",
+          "a=2 & b=4 & c=6 & d=8 & e=9 & f=b & g=d"
+        ]
+      }
+    },
+    {
+      "name": "a-single-value-dimension-is-skipped-not-fatal",
+      "statement": "2-way over a(1|2) b(3|4) c(only)",
+      "configs": [
+        {
+          "a": "1",
+          "b": "3",
+          "c": "only"
+        }
+      ],
+      "space": {
+        "strength": 2,
+        "dimensions": [
+          {
+            "name": "a",
+            "values": [
+              "1",
+              "2"
+            ]
+          },
+          {
+            "name": "b",
+            "values": [
+              "3",
+              "4"
+            ]
+          }
+        ],
+        "exclusions": []
+      },
+      "demanded": [
+        "a=1 & b=3",
+        "a=1 & b=4",
+        "a=2 & b=3",
+        "a=2 & b=4"
+      ],
+      "coveredBy": [
+        [
+          "a=1 & b=3"
+        ]
+      ],
+      "coverage": {
+        "strength": 2,
+        "demanded": 4,
+        "covered": 1,
+        "gaps": [
+          "a=1 & b=4",
+          "a=2 & b=3",
+          "a=2 & b=4"
+        ]
+      }
+    },
+    {
+      "name": "values-are-trimmed-and-empties-dropped",
+      "statement": "2-way over a( 1 | | 2 ) b(\t3\t| 4 )",
+      "configs": [
+        {
+          "a": "1",
+          "b": "3"
+        }
+      ],
+      "space": {
+        "strength": 2,
+        "dimensions": [
+          {
+            "name": "a",
+            "values": [
+              "1",
+              "2"
+            ]
+          },
+          {
+            "name": "b",
+            "values": [
+              "3",
+              "4"
+            ]
+          }
+        ],
+        "exclusions": []
+      },
+      "demanded": [
+        "a=1 & b=3",
+        "a=1 & b=4",
+        "a=2 & b=3",
+        "a=2 & b=4"
+      ],
+      "coveredBy": [
+        [
+          "a=1 & b=3"
+        ]
+      ],
+      "coverage": {
+        "strength": 2,
+        "demanded": 4,
+        "covered": 1,
+        "gaps": [
+          "a=1 & b=4",
+          "a=2 & b=3",
+          "a=2 & b=4"
+        ]
+      }
+    },
+    {
+      "name": "a-byte-order-mark-is-whitespace-to-trim",
+      "statement": "2-way over a(﻿1﻿|2) b(3|4)",
+      "configs": [
+        {
+          "a": "1",
+          "b": "3"
+        }
+      ],
+      "space": {
+        "strength": 2,
+        "dimensions": [
+          {
+            "name": "a",
+            "values": [
+              "1",
+              "2"
+            ]
+          },
+          {
+            "name": "b",
+            "values": [
+              "3",
+              "4"
+            ]
+          }
+        ],
+        "exclusions": []
+      },
+      "demanded": [
+        "a=1 & b=3",
+        "a=1 & b=4",
+        "a=2 & b=3",
+        "a=2 & b=4"
+      ],
+      "coveredBy": [
+        [
+          "a=1 & b=3"
+        ]
+      ],
+      "coverage": {
+        "strength": 2,
+        "demanded": 4,
+        "covered": 1,
+        "gaps": [
+          "a=1 & b=4",
+          "a=2 & b=3",
+          "a=2 & b=4"
+        ]
+      }
+    },
+    {
+      "name": "an-exclusion-is-never-read-as-a-dimension",
+      "statement": "2-way over a(1|2) b(3|4) excluding[a=1,b=3]",
+      "configs": [],
+      "space": {
+        "strength": 2,
+        "dimensions": [
+          {
+            "name": "a",
+            "values": [
+              "1",
+              "2"
+            ]
+          },
+          {
+            "name": "b",
+            "values": [
+              "3",
+              "4"
+            ]
+          }
+        ],
+        "exclusions": [
+          {
+            "assignments": [
+              [
+                "a",
+                "1"
+              ],
+              [
+                "b",
+                "3"
+              ]
+            ]
+          }
+        ]
+      },
+      "demanded": [
+        "a=1 & b=4",
+        "a=2 & b=3",
+        "a=2 & b=4"
+      ],
+      "coveredBy": [],
+      "coverage": {
+        "strength": 2,
+        "demanded": 3,
+        "covered": 0,
+        "gaps": [
+          "a=1 & b=4",
+          "a=2 & b=3",
+          "a=2 & b=4"
+        ]
+      }
+    },
+    {
+      "name": "a-one-clause-exclusion-is-dropped",
+      "statement": "2-way over a(1|2) b(3|4) excluding[a=1]",
+      "configs": [],
+      "space": {
+        "strength": 2,
+        "dimensions": [
+          {
+            "name": "a",
+            "values": [
+              "1",
+              "2"
+            ]
+          },
+          {
+            "name": "b",
+            "values": [
+              "3",
+              "4"
+            ]
+          }
+        ],
+        "exclusions": []
+      },
+      "demanded": [
+        "a=1 & b=3",
+        "a=1 & b=4",
+        "a=2 & b=3",
+        "a=2 & b=4"
+      ],
+      "coveredBy": [],
+      "coverage": {
+        "strength": 2,
+        "demanded": 4,
+        "covered": 0,
+        "gaps": [
+          "a=1 & b=3",
+          "a=1 & b=4",
+          "a=2 & b=3",
+          "a=2 & b=4"
+        ]
+      }
+    },
+    {
+      "name": "a-clause-without-equals-is-dropped",
+      "statement": "2-way over a(1|2) b(3|4) excluding[a=1,nonsense,b=3]",
+      "configs": [],
+      "space": {
+        "strength": 2,
+        "dimensions": [
+          {
+            "name": "a",
+            "values": [
+              "1",
+              "2"
+            ]
+          },
+          {
+            "name": "b",
+            "values": [
+              "3",
+              "4"
+            ]
+          }
+        ],
+        "exclusions": [
+          {
+            "assignments": [
+              [
+                "a",
+                "1"
+              ],
+              [
+                "b",
+                "3"
+              ]
+            ]
+          }
+        ]
+      },
+      "demanded": [
+        "a=1 & b=4",
+        "a=2 & b=3",
+        "a=2 & b=4"
+      ],
+      "coveredBy": [],
+      "coverage": {
+        "strength": 2,
+        "demanded": 3,
+        "covered": 0,
+        "gaps": [
+          "a=1 & b=4",
+          "a=2 & b=3",
+          "a=2 & b=4"
+        ]
+      }
+    },
+    {
+      "name": "a-value-may-contain-equals",
+      "statement": "2-way over a(x=y|2) b(3|4) excluding[a=x=y,b=3]",
+      "configs": [
+        {
+          "a": "x=y",
+          "b": "3"
+        }
+      ],
+      "space": {
+        "strength": 2,
+        "dimensions": [
+          {
+            "name": "a",
+            "values": [
+              "x=y",
+              "2"
+            ]
+          },
+          {
+            "name": "b",
+            "values": [
+              "3",
+              "4"
+            ]
+          }
+        ],
+        "exclusions": [
+          {
+            "assignments": [
+              [
+                "a",
+                "x=y"
+              ],
+              [
+                "b",
+                "3"
+              ]
+            ]
+          }
+        ]
+      },
+      "demanded": [
+        "a=2 & b=3",
+        "a=2 & b=4",
+        "a=x=y & b=4"
+      ],
+      "coveredBy": [
+        [
+          "a=x=y & b=3"
+        ]
+      ],
+      "coverage": {
+        "strength": 2,
+        "demanded": 3,
+        "covered": 0,
+        "gaps": [
+          "a=2 & b=3",
+          "a=2 & b=4",
+          "a=x=y & b=4"
+        ]
+      }
+    },
+    {
+      "name": "two-exclusion-clauses-both-apply",
+      "statement": "2-way over a(1|2) b(3|4) c(5|6) excluding[a=1,b=3] excluding[b=4,c=6]",
+      "configs": [
+        {
+          "a": "1",
+          "b": "4",
+          "c": "5"
+        }
+      ],
+      "space": {
+        "strength": 2,
+        "dimensions": [
+          {
+            "name": "a",
+            "values": [
+              "1",
+              "2"
+            ]
+          },
+          {
+            "name": "b",
+            "values": [
+              "3",
+              "4"
+            ]
+          },
+          {
+            "name": "c",
+            "values": [
+              "5",
+              "6"
+            ]
+          }
+        ],
+        "exclusions": [
+          {
+            "assignments": [
+              [
+                "a",
+                "1"
+              ],
+              [
+                "b",
+                "3"
+              ]
+            ]
+          },
+          {
+            "assignments": [
+              [
+                "b",
+                "4"
+              ],
+              [
+                "c",
+                "6"
+              ]
+            ]
+          }
+        ]
+      },
+      "demanded": [
+        "a=1 & b=4",
+        "a=1 & c=5",
+        "a=1 & c=6",
+        "a=2 & b=3",
+        "a=2 & b=4",
+        "a=2 & c=5",
+        "a=2 & c=6",
+        "b=3 & c=5",
+        "b=3 & c=6",
+        "b=4 & c=5"
+      ],
+      "coveredBy": [
+        [
+          "a=1 & b=4",
+          "a=1 & c=5",
+          "b=4 & c=5"
+        ]
+      ],
+      "coverage": {
+        "strength": 2,
+        "demanded": 10,
+        "covered": 3,
+        "gaps": [
+          "a=1 & c=6",
+          "a=2 & b=3",
+          "a=2 & b=4",
+          "a=2 & c=5",
+          "a=2 & c=6",
+          "b=3 & c=5",
+          "b=3 & c=6"
+        ]
+      }
+    },
+    {
+      "name": "a-three-clause-exclusion-cannot-forbid-a-pair",
+      "statement": "2-way over a(1|2) b(3|4) c(5|6) excluding[a=1,b=3,c=5]",
+      "configs": [],
+      "space": {
+        "strength": 2,
+        "dimensions": [
+          {
+            "name": "a",
+            "values": [
+              "1",
+              "2"
+            ]
+          },
+          {
+            "name": "b",
+            "values": [
+              "3",
+              "4"
+            ]
+          },
+          {
+            "name": "c",
+            "values": [
+              "5",
+              "6"
+            ]
+          }
+        ],
+        "exclusions": [
+          {
+            "assignments": [
+              [
+                "a",
+                "1"
+              ],
+              [
+                "b",
+                "3"
+              ],
+              [
+                "c",
+                "5"
+              ]
+            ]
+          }
+        ]
+      },
+      "demanded": [
+        "a=1 & b=3",
+        "a=1 & b=4",
+        "a=1 & c=5",
+        "a=1 & c=6",
+        "a=2 & b=3",
+        "a=2 & b=4",
+        "a=2 & c=5",
+        "a=2 & c=6",
+        "b=3 & c=5",
+        "b=3 & c=6",
+        "b=4 & c=5",
+        "b=4 & c=6"
+      ],
+      "coveredBy": [],
+      "coverage": {
+        "strength": 2,
+        "demanded": 12,
+        "covered": 0,
+        "gaps": [
+          "a=1 & b=3",
+          "a=1 & b=4",
+          "a=1 & c=5",
+          "a=1 & c=6",
+          "a=2 & b=3",
+          "a=2 & b=4",
+          "a=2 & c=5",
+          "a=2 & c=6",
+          "b=3 & c=5",
+          "b=3 & c=6",
+          "b=4 & c=5",
+          "b=4 & c=6"
+        ]
+      }
+    },
+    {
+      "name": "a-full-two-way-array-leaves-no-gap",
+      "statement": "2-way over os(linux|mac) arch(x64|arm64)",
+      "configs": [
+        {
+          "os": "linux",
+          "arch": "x64"
+        },
+        {
+          "os": "linux",
+          "arch": "arm64"
+        },
+        {
+          "os": "mac",
+          "arch": "x64"
+        },
+        {
+          "os": "mac",
+          "arch": "arm64"
+        }
+      ],
+      "space": {
+        "strength": 2,
+        "dimensions": [
+          {
+            "name": "os",
+            "values": [
+              "linux",
+              "mac"
+            ]
+          },
+          {
+            "name": "arch",
+            "values": [
+              "x64",
+              "arm64"
+            ]
+          }
+        ],
+        "exclusions": []
+      },
+      "demanded": [
+        "arch=arm64 & os=linux",
+        "arch=arm64 & os=mac",
+        "arch=x64 & os=linux",
+        "arch=x64 & os=mac"
+      ],
+      "coveredBy": [
+        [
+          "arch=x64 & os=linux"
+        ],
+        [
+          "arch=arm64 & os=linux"
+        ],
+        [
+          "arch=x64 & os=mac"
+        ],
+        [
+          "arch=arm64 & os=mac"
+        ]
+      ],
+      "coverage": {
+        "strength": 2,
+        "demanded": 4,
+        "covered": 4,
+        "gaps": []
+      }
+    },
+    {
+      "name": "no-configuration-covers-nothing",
+      "statement": "2-way over os(linux|mac) arch(x64|arm64)",
+      "configs": [],
+      "space": {
+        "strength": 2,
+        "dimensions": [
+          {
+            "name": "os",
+            "values": [
+              "linux",
+              "mac"
+            ]
+          },
+          {
+            "name": "arch",
+            "values": [
+              "x64",
+              "arm64"
+            ]
+          }
+        ],
+        "exclusions": []
+      },
+      "demanded": [
+        "arch=arm64 & os=linux",
+        "arch=arm64 & os=mac",
+        "arch=x64 & os=linux",
+        "arch=x64 & os=mac"
+      ],
+      "coveredBy": [],
+      "coverage": {
+        "strength": 2,
+        "demanded": 4,
+        "covered": 0,
+        "gaps": [
+          "arch=arm64 & os=linux",
+          "arch=arm64 & os=mac",
+          "arch=x64 & os=linux",
+          "arch=x64 & os=mac"
+        ]
+      }
+    },
+    {
+      "name": "an-undeclared-value-covers-nothing",
+      "statement": "2-way over os(linux|mac) arch(x64|arm64)",
+      "configs": [
+        {
+          "os": "plan9",
+          "arch": "riscv"
+        }
+      ],
+      "space": {
+        "strength": 2,
+        "dimensions": [
+          {
+            "name": "os",
+            "values": [
+              "linux",
+              "mac"
+            ]
+          },
+          {
+            "name": "arch",
+            "values": [
+              "x64",
+              "arm64"
+            ]
+          }
+        ],
+        "exclusions": []
+      },
+      "demanded": [
+        "arch=arm64 & os=linux",
+        "arch=arm64 & os=mac",
+        "arch=x64 & os=linux",
+        "arch=x64 & os=mac"
+      ],
+      "coveredBy": [
+        []
+      ],
+      "coverage": {
+        "strength": 2,
+        "demanded": 4,
+        "covered": 0,
+        "gaps": [
+          "arch=arm64 & os=linux",
+          "arch=arm64 & os=mac",
+          "arch=x64 & os=linux",
+          "arch=x64 & os=mac"
+        ]
+      }
+    },
+    {
+      "name": "a-partial-configuration-covers-only-what-it-names",
+      "statement": "3-way over a(1|2) b(3|4) c(5|6)",
+      "configs": [
+        {
+          "a": "1",
+          "b": "3"
+        }
+      ],
+      "space": {
+        "strength": 3,
+        "dimensions": [
+          {
+            "name": "a",
+            "values": [
+              "1",
+              "2"
+            ]
+          },
+          {
+            "name": "b",
+            "values": [
+              "3",
+              "4"
+            ]
+          },
+          {
+            "name": "c",
+            "values": [
+              "5",
+              "6"
+            ]
+          }
+        ],
+        "exclusions": []
+      },
+      "demanded": [
+        "a=1 & b=3 & c=5",
+        "a=1 & b=3 & c=6",
+        "a=1 & b=4 & c=5",
+        "a=1 & b=4 & c=6",
+        "a=2 & b=3 & c=5",
+        "a=2 & b=3 & c=6",
+        "a=2 & b=4 & c=5",
+        "a=2 & b=4 & c=6"
+      ],
+      "coveredBy": [
+        []
+      ],
+      "coverage": {
+        "strength": 3,
+        "demanded": 8,
+        "covered": 0,
+        "gaps": [
+          "a=1 & b=3 & c=5",
+          "a=1 & b=3 & c=6",
+          "a=1 & b=4 & c=5",
+          "a=1 & b=4 & c=6",
+          "a=2 & b=3 & c=5",
+          "a=2 & b=3 & c=6",
+          "a=2 & b=4 & c=5",
+          "a=2 & b=4 & c=6"
+        ]
+      }
+    },
+    {
+      "name": "three-way-over-four-dimensions",
+      "statement": "3-way over a(1|2) b(3|4) c(5|6) d(7|8)",
+      "configs": [
+        {
+          "a": "1",
+          "b": "3",
+          "c": "5",
+          "d": "7"
+        },
+        {
+          "a": "2",
+          "b": "4",
+          "c": "6",
+          "d": "8"
+        },
+        {
+          "a": "1",
+          "b": "4",
+          "c": "5",
+          "d": "8"
+        }
+      ],
+      "space": {
+        "strength": 3,
+        "dimensions": [
+          {
+            "name": "a",
+            "values": [
+              "1",
+              "2"
+            ]
+          },
+          {
+            "name": "b",
+            "values": [
+              "3",
+              "4"
+            ]
+          },
+          {
+            "name": "c",
+            "values": [
+              "5",
+              "6"
+            ]
+          },
+          {
+            "name": "d",
+            "values": [
+              "7",
+              "8"
+            ]
+          }
+        ],
+        "exclusions": []
+      },
+      "demanded": [
+        "a=1 & b=3 & c=5",
+        "a=1 & b=3 & c=6",
+        "a=1 & b=3 & d=7",
+        "a=1 & b=3 & d=8",
+        "a=1 & b=4 & c=5",
+        "a=1 & b=4 & c=6",
+        "a=1 & b=4 & d=7",
+        "a=1 & b=4 & d=8",
+        "a=1 & c=5 & d=7",
+        "a=1 & c=5 & d=8",
+        "a=1 & c=6 & d=7",
+        "a=1 & c=6 & d=8",
+        "a=2 & b=3 & c=5",
+        "a=2 & b=3 & c=6",
+        "a=2 & b=3 & d=7",
+        "a=2 & b=3 & d=8",
+        "a=2 & b=4 & c=5",
+        "a=2 & b=4 & c=6",
+        "a=2 & b=4 & d=7",
+        "a=2 & b=4 & d=8",
+        "a=2 & c=5 & d=7",
+        "a=2 & c=5 & d=8",
+        "a=2 & c=6 & d=7",
+        "a=2 & c=6 & d=8",
+        "b=3 & c=5 & d=7",
+        "b=3 & c=5 & d=8",
+        "b=3 & c=6 & d=7",
+        "b=3 & c=6 & d=8",
+        "b=4 & c=5 & d=7",
+        "b=4 & c=5 & d=8",
+        "b=4 & c=6 & d=7",
+        "b=4 & c=6 & d=8"
+      ],
+      "coveredBy": [
+        [
+          "a=1 & b=3 & c=5",
+          "a=1 & b=3 & d=7",
+          "a=1 & c=5 & d=7",
+          "b=3 & c=5 & d=7"
+        ],
+        [
+          "a=2 & b=4 & c=6",
+          "a=2 & b=4 & d=8",
+          "a=2 & c=6 & d=8",
+          "b=4 & c=6 & d=8"
+        ],
+        [
+          "a=1 & b=4 & c=5",
+          "a=1 & b=4 & d=8",
+          "a=1 & c=5 & d=8",
+          "b=4 & c=5 & d=8"
+        ]
+      ],
+      "coverage": {
+        "strength": 3,
+        "demanded": 32,
+        "covered": 12,
+        "gaps": [
+          "a=1 & b=3 & c=6",
+          "a=1 & b=3 & d=8",
+          "a=1 & b=4 & c=6",
+          "a=1 & b=4 & d=7",
+          "a=1 & c=6 & d=7",
+          "a=1 & c=6 & d=8",
+          "a=2 & b=3 & c=5",
+          "a=2 & b=3 & c=6",
+          "a=2 & b=3 & d=7",
+          "a=2 & b=3 & d=8",
+          "a=2 & b=4 & c=5",
+          "a=2 & b=4 & d=7",
+          "a=2 & c=5 & d=7",
+          "a=2 & c=5 & d=8",
+          "a=2 & c=6 & d=7",
+          "b=3 & c=5 & d=8",
+          "b=3 & c=6 & d=7",
+          "b=3 & c=6 & d=8",
+          "b=4 & c=5 & d=7",
+          "b=4 & c=6 & d=7"
+        ]
+      }
+    },
+    {
+      "name": "an-excluded-tuple-is-neither-demanded-nor-a-gap",
+      "statement": "2-way over a(1|2) b(3|4) excluding[a=1,b=3]",
+      "configs": [
+        {
+          "a": "1",
+          "b": "3"
+        }
+      ],
+      "space": {
+        "strength": 2,
+        "dimensions": [
+          {
+            "name": "a",
+            "values": [
+              "1",
+              "2"
+            ]
+          },
+          {
+            "name": "b",
+            "values": [
+              "3",
+              "4"
+            ]
+          }
+        ],
+        "exclusions": [
+          {
+            "assignments": [
+              [
+                "a",
+                "1"
+              ],
+              [
+                "b",
+                "3"
+              ]
+            ]
+          }
+        ]
+      },
+      "demanded": [
+        "a=1 & b=4",
+        "a=2 & b=3",
+        "a=2 & b=4"
+      ],
+      "coveredBy": [
+        [
+          "a=1 & b=3"
+        ]
+      ],
+      "coverage": {
+        "strength": 2,
+        "demanded": 3,
+        "covered": 0,
+        "gaps": [
+          "a=1 & b=4",
+          "a=2 & b=3",
+          "a=2 & b=4"
+        ]
+      }
+    },
+    {
+      "name": "a-run-covering-an-excluded-tuple-raises-nothing",
+      "statement": "2-way over a(1|2) b(3|4) c(5|6) excluding[a=1,b=3]",
+      "configs": [
+        {
+          "a": "1",
+          "b": "3",
+          "c": "5"
+        }
+      ],
+      "space": {
+        "strength": 2,
+        "dimensions": [
+          {
+            "name": "a",
+            "values": [
+              "1",
+              "2"
+            ]
+          },
+          {
+            "name": "b",
+            "values": [
+              "3",
+              "4"
+            ]
+          },
+          {
+            "name": "c",
+            "values": [
+              "5",
+              "6"
+            ]
+          }
+        ],
+        "exclusions": [
+          {
+            "assignments": [
+              [
+                "a",
+                "1"
+              ],
+              [
+                "b",
+                "3"
+              ]
+            ]
+          }
+        ]
+      },
+      "demanded": [
+        "a=1 & b=4",
+        "a=1 & c=5",
+        "a=1 & c=6",
+        "a=2 & b=3",
+        "a=2 & b=4",
+        "a=2 & c=5",
+        "a=2 & c=6",
+        "b=3 & c=5",
+        "b=3 & c=6",
+        "b=4 & c=5",
+        "b=4 & c=6"
+      ],
+      "coveredBy": [
+        [
+          "a=1 & b=3",
+          "a=1 & c=5",
+          "b=3 & c=5"
+        ]
+      ],
+      "coverage": {
+        "strength": 2,
+        "demanded": 11,
+        "covered": 2,
+        "gaps": [
+          "a=1 & b=4",
+          "a=1 & c=6",
+          "a=2 & b=3",
+          "a=2 & b=4",
+          "a=2 & c=5",
+          "a=2 & c=6",
+          "b=3 & c=6",
+          "b=4 & c=5",
+          "b=4 & c=6"
+        ]
+      }
+    },
+    {
+      "name": "the-key-sorts-dimensions-by-name-not-by-position",
+      "statement": "2-way over zeta(1|2) alpha(3|4)",
+      "configs": [],
+      "space": {
+        "strength": 2,
+        "dimensions": [
+          {
+            "name": "zeta",
+            "values": [
+              "1",
+              "2"
+            ]
+          },
+          {
+            "name": "alpha",
+            "values": [
+              "3",
+              "4"
+            ]
+          }
+        ],
+        "exclusions": []
+      },
+      "demanded": [
+        "alpha=3 & zeta=1",
+        "alpha=3 & zeta=2",
+        "alpha=4 & zeta=1",
+        "alpha=4 & zeta=2"
+      ],
+      "coveredBy": [],
+      "coverage": {
+        "strength": 2,
+        "demanded": 4,
+        "covered": 0,
+        "gaps": [
+          "alpha=3 & zeta=1",
+          "alpha=3 & zeta=2",
+          "alpha=4 & zeta=1",
+          "alpha=4 & zeta=2"
+        ]
+      }
+    },
+    {
+      "name": "gaps-sort-by-utf16-code-unit-not-scalar-value",
+      "statement": "2-way over a(𐀀|�) b(3|4)",
+      "configs": [],
+      "space": {
+        "strength": 2,
+        "dimensions": [
+          {
+            "name": "a",
+            "values": [
+              "𐀀",
+              "�"
+            ]
+          },
+          {
+            "name": "b",
+            "values": [
+              "3",
+              "4"
+            ]
+          }
+        ],
+        "exclusions": []
+      },
+      "demanded": [
+        "a=𐀀 & b=3",
+        "a=𐀀 & b=4",
+        "a=� & b=3",
+        "a=� & b=4"
+      ],
+      "coveredBy": [],
+      "coverage": {
+        "strength": 2,
+        "demanded": 4,
+        "covered": 0,
+        "gaps": [
+          "a=𐀀 & b=3",
+          "a=𐀀 & b=4",
+          "a=� & b=3",
+          "a=� & b=4"
+        ]
+      }
+    },
+    {
+      "name": "ascii-punctuation-sorts-before-letters",
+      "statement": "2-way over a(-|Z|a) b(3|4)",
+      "configs": [],
+      "space": {
+        "strength": 2,
+        "dimensions": [
+          {
+            "name": "a",
+            "values": [
+              "-",
+              "Z",
+              "a"
+            ]
+          },
+          {
+            "name": "b",
+            "values": [
+              "3",
+              "4"
+            ]
+          }
+        ],
+        "exclusions": []
+      },
+      "demanded": [
+        "a=- & b=3",
+        "a=- & b=4",
+        "a=Z & b=3",
+        "a=Z & b=4",
+        "a=a & b=3",
+        "a=a & b=4"
+      ],
+      "coveredBy": [],
+      "coverage": {
+        "strength": 2,
+        "demanded": 6,
+        "covered": 0,
+        "gaps": [
+          "a=- & b=3",
+          "a=- & b=4",
+          "a=Z & b=3",
+          "a=Z & b=4",
+          "a=a & b=3",
+          "a=a & b=4"
+        ]
+      }
+    },
+    {
+      "name": "a-dimension-named-constructor-covers-nothing-it-did-not-run",
+      "statement": "2-way over constructor(1|2) b(3|4)",
+      "configs": [
+        {
+          "b": "3"
+        }
+      ],
+      "space": {
+        "strength": 2,
+        "dimensions": [
+          {
+            "name": "constructor",
+            "values": [
+              "1",
+              "2"
+            ]
+          },
+          {
+            "name": "b",
+            "values": [
+              "3",
+              "4"
+            ]
+          }
+        ],
+        "exclusions": []
+      },
+      "demanded": [
+        "b=3 & constructor=1",
+        "b=3 & constructor=2",
+        "b=4 & constructor=1",
+        "b=4 & constructor=2"
+      ],
+      "coveredBy": [
+        []
+      ],
+      "coverage": {
+        "strength": 2,
+        "demanded": 4,
+        "covered": 0,
+        "gaps": [
+          "b=3 & constructor=1",
+          "b=3 & constructor=2",
+          "b=4 & constructor=1",
+          "b=4 & constructor=2"
+        ]
+      }
+    },
+    {
+      "name": "a-dimension-named-proto-behaves-like-any-other",
+      "statement": "2-way over __proto__(1|2) b(3|4)",
+      "configs": [
+        {
+          "__proto__": "1",
+          "b": "3"
+        }
+      ],
+      "space": {
+        "strength": 2,
+        "dimensions": [
+          {
+            "name": "__proto__",
+            "values": [
+              "1",
+              "2"
+            ]
+          },
+          {
+            "name": "b",
+            "values": [
+              "3",
+              "4"
+            ]
+          }
+        ],
+        "exclusions": []
+      },
+      "demanded": [
+        "__proto__=1 & b=3",
+        "__proto__=1 & b=4",
+        "__proto__=2 & b=3",
+        "__proto__=2 & b=4"
+      ],
+      "coveredBy": [
+        [
+          "__proto__=1 & b=3"
+        ]
+      ],
+      "coverage": {
+        "strength": 2,
+        "demanded": 4,
+        "covered": 1,
+        "gaps": [
+          "__proto__=1 & b=4",
+          "__proto__=2 & b=3",
+          "__proto__=2 & b=4"
+        ]
+      }
+    },
+    {
+      "name": "two-dimensions-may-share-a-name",
+      "statement": "2-way over a(1|2) a(3|4)",
+      "configs": [
+        {
+          "a": "1"
+        }
+      ],
+      "space": {
+        "strength": 2,
+        "dimensions": [
+          {
+            "name": "a",
+            "values": [
+              "1",
+              "2"
+            ]
+          },
+          {
+            "name": "a",
+            "values": [
+              "3",
+              "4"
+            ]
+          }
+        ],
+        "exclusions": []
+      },
+      "demanded": [
+        "a=1 & a=3",
+        "a=1 & a=4",
+        "a=2 & a=3",
+        "a=2 & a=4"
+      ],
+      "coveredBy": [
+        []
+      ],
+      "coverage": {
+        "strength": 2,
+        "demanded": 4,
+        "covered": 0,
+        "gaps": [
+          "a=1 & a=3",
+          "a=1 & a=4",
+          "a=2 & a=3",
+          "a=2 & a=4"
+        ]
+      }
+    }
+  ]
+}
