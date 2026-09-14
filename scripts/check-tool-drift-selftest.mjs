@@ -244,7 +244,11 @@ const mutations = [
   [
     "canonical stack re-enters bare test",
     "scripts/verification-stack.mjs",
-    (s) => s.replace('["test-with-quire", `QUIRE=${binary}`]', '["test"]'),
+    (s) =>
+      s.replace(
+        '["test-with-quire", `QUIRE=${binary}`, ...invocation]',
+        '["test"]',
+      ),
     /canonical campaign must enter the explicit Quire test gate/,
   ],
   [
@@ -278,7 +282,7 @@ const mutations = [
   [
     "shared-workspace Tier-1 runtime",
     "scripts/verification-stack.mjs",
-    (s) => s.replace('"--quoin",\n      isolatedQuoin,', ""),
+    (s) => s.replace('"--quoin",\n        isolatedQuoin,', ""),
     /deploy and select a frozen isolated Quoin runtime/,
   ],
   [

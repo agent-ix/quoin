@@ -53,7 +53,9 @@ export function auditToolDrift(files) {
     errors.push("Makefile may not discover or default Quire through PATH");
   }
   if (
-    !/^test:\n\tnode scripts\/verification-stack\.mjs$/m.test(files["Makefile"])
+    !/^test:\n\tnode scripts\/verification-stack\.mjs(?: \$\(VERIFICATION_STACK_ARGS\))?$/m.test(
+      files["Makefile"],
+    )
   ) {
     errors.push("bare make test must run the canonical verification stack");
   }
@@ -75,7 +77,7 @@ export function auditToolDrift(files) {
     errors.push("the explicit Quire path must be executable and named quire");
   }
   if (
-    !/PATH="\$\(dir \$\(QUIRE\)\):\$\$PATH" QUIRE="\$\(QUIRE\)" \$\(PNPM\) run test/.test(
+    !/PATH="\$\(dir \$\(QUIRE\)\):\$\$PATH" QUIRE="\$\(QUIRE\)" \$\(PNPM\) (?:run test|exec vitest run)/.test(
       files["Makefile"],
     )
   ) {
@@ -208,13 +210,13 @@ export function auditToolDrift(files) {
       "vendored Quire contract source revision must equal the locked contract revision",
     );
   }
+  const stackRunner = files["scripts/verification-stack.mjs"];
+  const tierOneArgs = stackRunner.slice(stackRunner.indexOf("const benchmarkArgs"));
   if (
-    !files["scripts/verification-stack.mjs"].includes(
-      '"deploy",\n        "--prod",\n        "--legacy",\n        "--frozen-lockfile"',
+    !/"deploy",\s*"--prod",\s*"--legacy",\s*"--frozen-lockfile"/.test(
+      stackRunner,
     ) ||
-    !files["scripts/verification-stack.mjs"].includes(
-      '"--quoin",\n      isolatedQuoin',
-    )
+    !/"--quoin",\s*isolatedQuoin/.test(tierOneArgs)
   ) {
     errors.push(
       "canonical Tier-1 must deploy and select a frozen isolated Quoin runtime",
@@ -312,7 +314,7 @@ export function auditToolDrift(files) {
   }
   if (
     !files["scripts/verification-stack.mjs"].includes(
-      '["test-with-quire", `QUIRE=${binary}`]',
+      '["test-with-quire", `QUIRE=${binary}`, ...invocation]',
     )
   ) {
     errors.push("canonical campaign must enter the explicit Quire test gate");
