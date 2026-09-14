@@ -161,6 +161,16 @@ pub trait MeasurementSource {
     /// [`MeasurementErrorCode::Io`] when the file cannot be read.
     fn collection_bytes(&self, name: &str) -> Result<Vec<u8>, MeasurementError>;
 
+    /// How one stored collection is named in a message a person reads.
+    ///
+    /// `store.ts:84` builds every read result's `path` as
+    /// `join(measurementsRoot(repo), name)`, and `store.ts:63` renders that
+    /// whole path when a collection is unreadable. A source that is not a
+    /// directory has no such path to render, so the seam is asked rather than
+    /// assumed: a disk source answers with the joined path and an in-memory
+    /// one answers with the name it was given (quoin#477).
+    fn collection_location(&self, name: &str) -> String;
+
     /// The `.json` file names directly inside the interventions directory,
     /// sorted.
     ///

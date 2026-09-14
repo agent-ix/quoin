@@ -160,6 +160,18 @@ refusal directly in `DECLARED_DIVERGENCES`
 (`quality/timestamp/date-only`, `…/v8-heuristic-slashes`,
 `…/v8-heuristic-words`), each of which must fire.
 
+**quoin#477 widens this entry rather than adding a second.** The loader has a
+*second* reader of the same grammar: `graph-portfolio-load.ts:35` refuses a
+collection whose timestamp `!Number.isFinite(Date.parse(…))`, and
+[`loader::readable_or_undated`] reads it with the same
+[`quoin_measurement::Rfc3339DateTime`]. The consequence differs from the
+ordering one above: there, a V8-heuristic timestamp reorders history; here it
+turns a collection the retained loader *reads* into one this loader refuses
+with `…: collection timestamp is not a valid instant`. Same grammar, same
+inputs, one more place it is applied. The refusal sentence itself is
+byte-identical and `tests/tc_477_graph_loader.rs` compares it as such, over
+`graph-loader-tree/echo`, whose `e-undated.json` both grammars refuse.
+
 ## §5 — the golden compares after one path substitution
 
 The governed portfolio's JSON and Markdown both carry absolute repository
@@ -239,3 +251,81 @@ self-fixture tautology. But it means **the loader itself is not covered by this
 wave** — `loadGovernedGraphPortfolio`'s own behaviour (which repositories it
 discovers, which refusals it synthesises) belongs to whichever wave ports
 `graph-portfolio-load.ts`, not to this one.
+
+That wave is quoin#477, and it did not extend this golden. It captured its own,
+`tests/goldens/graph-loader-oracle.json`, from `graph-portfolio-load.ts` over
+its own tree `tests/fixtures/graph-loader-tree/` — a second tree rather than
+more repositories in this one, so that a change to the loader's fixtures cannot
+move this projection's captured bytes. §9 states what that golden compares.
+
+## §9 — a graph refusal's *verdict* is compared; its *sentence* is not
+
+`loadStructuralGraph` (`graph-portfolio-load.ts:113-124`) answers a failed
+graph load with three things: an availability, a path, and a reason. The first
+two are this port's own and are compared byte for byte. The third is written by
+whoever refused, and for two of the three refusal classes that is not either
+tree:
+
+| refusal | retained sentence | here |
+| --- | --- | --- |
+| the file is absent | `cannot read export input <p>: ENOENT: no such file or directory, open '<p>'` | `cannot read export input <p>: No such file or directory (os error 2)` |
+| the document is not an assurance export | zod's issue prose | this workspace's sentences (quoin#403) |
+| the mapping was refused | `no graph export, premises, or audit mapping was supplied` | the same, byte for byte |
+
+Neither side can be made to write the other's. The first quotes an operating
+system through two different runtimes; the second quotes two different schema
+validators, and quoin#403 already declared that difference where it lives, in
+`quoin-graph-analysis`. Restating it as prose to be matched would mean this
+crate carrying a copy of another crate's error text.
+
+**What is therefore compared, and where.** `tests/tc_477_graph_loader.rs`
+splits the golden into two case lists rather than exempting a field inside one:
+
+- `tc_477_010_byte_identical_report` runs over `alpha`, `bravo` and `echo` —
+  a graph that loads, a mapping with no documents, and a collection no instant
+  grammar reads — and compares the **whole** canonical JSON and the **whole**
+  rendered Markdown. Every sentence in those, including the two refusals this
+  loader synthesises itself, is byte-identical.
+- `tc_477_011_graph_refusal_verdicts` runs over `charlie` (an export that is
+  not there) and `delta` (an export that is not an assurance export) and
+  compares availability and path only, with an anti-vacuity assertion that the
+  two verdicts differ from each other.
+
+An exception inside a byte gate is not a byte gate; two gates with stated
+scopes are.
+
+**The distinction itself is not prose-matched.** `graph-portfolio-load.ts:117`
+separates `missing` from `unreadable` with
+`/ENOENT|no such file/i.test(loaded.error.message)`, a regular expression over
+whichever sentence node happened to produce. [`structural::RecordingReader`]
+keeps the [`std::io::ErrorKind`] the [`quoin_graph_analysis::GraphInputReader`]
+seam already reported, so the same decision is read off a type. The two agree
+on every input except one that cannot arise here: a refusal that is *not* a
+`NotFound` and whose message nevertheless contains `no such file` — for
+instance a permissions error whose text quoted a missing path. There, the
+retained loader says `missing` and this one says `unreadable`. No such input
+exists in the fixture tree and none can be constructed through the seam without
+a reader that lies about its own `ErrorKind`.
+
+## §10 — `portfolio omitted resolved repository` is unreachable, not declared
+
+`graph-portfolio-load.ts:74-77` throws
+`portfolio omitted resolved repository ${root}` when the ungoverned portfolio
+report has no entry for a root the mapping parser resolved. It cannot fire, on
+either side, and the reason is structural rather than incidental:
+
+1. Every root handed to `buildPortfolioReportFromCollections` comes from the
+   same `mappings` list that is then iterated — [`loader`] builds both from one
+   `parse_graph_portfolio_mappings` result.
+2. Both sides resolve a root exactly once, with the same function
+   ([`quoin_measurement::portfolio::location::resolve_against`]), so the string
+   looked up is the string stored.
+3. `build_portfolio_report_from_collections` emits one entry per snapshot it is
+   given and drops none.
+
+Following §7's rule, it is **not** declared as a divergence: a declaration that
+cannot fire is a licence rather than a measurement. It is also not `unwrap`ed
+away — [`loader::repository_input`] returns
+[`crate::GraphAdapterErrorCode::Measurement`] with the retained sentence — because
+a library that panics on an impossible state has still panicked. The refusal is
+an unreachable arm carrying the retained words, not a live divergence.

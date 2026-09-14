@@ -75,7 +75,10 @@ pub fn read_measurement_collections<S: MeasurementSource + ?Sized>(
             Err(error) => {
                 return Err(MeasurementError::with_findings(
                     MeasurementErrorCode::CollectionUnreadable,
-                    format!("{}: unreadable measurement collection", result.path),
+                    format!(
+                        "{}: unreadable measurement collection",
+                        source.collection_location(&result.path)
+                    ),
                     vec![error.to_string()],
                 ));
             }

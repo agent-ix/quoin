@@ -101,6 +101,12 @@ impl MeasurementSource for MemoryMeasurement {
             .collect())
     }
 
+    fn collection_location(&self, name: &str) -> String {
+        // An in-memory store has no directory to join against, so the name it
+        // was registered under is the whole of what can be said about it.
+        name.to_owned()
+    }
+
     fn collection_bytes(&self, name: &str) -> Result<Vec<u8>, MeasurementError> {
         self.collections.get(name).cloned().ok_or_else(|| {
             MeasurementError::new(MeasurementErrorCode::Io, format!("{name}: absent"))

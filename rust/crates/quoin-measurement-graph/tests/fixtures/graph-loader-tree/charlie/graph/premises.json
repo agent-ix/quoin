@@ -1,0 +1,25 @@
+{
+  "format": "quire-assurance",
+  "format_version": 1,
+  "modules": [
+    {
+      "name": "another",
+      "version": "0.2.0",
+      "schemas": []
+    },
+    {
+      "name": "example",
+      "version": "1.0.0",
+      "schemas": [
+        {
+          "archetype": "AC",
+          "schema_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        {
+          "archetype": "FR",
+          "schema_digest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        }
+      ]
+    }
+  ]
+}

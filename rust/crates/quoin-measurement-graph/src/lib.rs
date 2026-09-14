@@ -4,7 +4,9 @@
 //! Retained graph evidence: the FR-066 versioned adapters that admit it
 //! (`src/measurement/graph-adapters.ts`, quoin#475) and the FR-067 governed
 //! portfolio projection that reports it
-//! (`src/measurement/graph-portfolio.ts`, quoin#476).
+//! (`src/measurement/graph-portfolio.ts`, quoin#476), with the filesystem
+//! boundary that feeds the projection
+//! (`src/measurement/graph-portfolio-load.ts`, quoin#477).
 //!
 //! # What an adapter is for
 //!
@@ -59,6 +61,24 @@
 //! | `compare`, `compareInstants` | [`order`] |
 //! | `markdownCell`, `inlineText` | [`text`] |
 //! | `asRecord`, `stringField` | [`fields`] |
+//!
+//! # The loader (FR-067, quoin#477)
+//!
+//! [`build`] is a pure projection over inputs somebody hands it. [`loader`] is
+//! the only module that decides *which bytes* those are, and [`structural`] is
+//! the only one that turns a resolved mapping into an FR-062 result. Together
+//! they are `graph-portfolio-load.ts`, and they read nothing themselves: the
+//! collections are [`quoin_measurement::read_measurement_collection_results`]'s,
+//! the plans [`quoin_measurement::load_measurement_plans`]'s, the ungoverned
+//! entry [`quoin_measurement::portfolio::build_portfolio_report_from_collections`]'s
+//! and the three graph documents [`quoin_graph_analysis`]'s behind its one
+//! [`quoin_graph_analysis::GraphInputReader`] seam.
+//!
+//! | retained TypeScript | here |
+//! | --- | --- |
+//! | `graph-portfolio-load.ts:20-93`, `buildGovernedGraphPortfolio` | [`loader`] |
+//! | `graph-portfolio-load.ts:95-149`, `loadStructuralGraph` | [`structural`] |
+//! | `graph-portfolio-load.ts:151-161`, `pathFor` | [`structural`] |
 //!
 //! ## What the portfolio refuses to do
 //!
@@ -115,6 +135,13 @@
 //! instead: every member name an admissible record may carry is schema-fixed
 //! ASCII, and `tests/tc_475_parity.rs` measures that over the corpus.
 //!
+//! quoin#477 adds one more of each. Declared: the sentence a graph refusal
+//! carries when an operating system or a schema validator wrote it
+//! (`DIVERGENCE.md` §9), which `tests/tc_477_graph_loader.rs` compares by
+//! verdict rather than by byte. Proved unreachable rather than declared: the
+//! `portfolio omitted resolved repository` refusal `graph-portfolio-load.ts:74`
+//! throws (`DIVERGENCE.md` §10).
+//!
 //! # The TypeScript is retained
 //!
 //! This is a port wave. `src/measurement/graph-adapters.ts` is untouched, and
@@ -134,6 +161,7 @@ pub mod error;
 pub mod fields;
 pub mod history;
 pub mod input;
+pub mod loader;
 pub mod mapping;
 pub mod order;
 pub mod quality;
@@ -143,6 +171,7 @@ pub mod render_json;
 pub mod report;
 pub mod scalars;
 pub mod scorer;
+pub mod structural;
 pub mod text;
 pub mod wire;
 
@@ -164,7 +193,9 @@ pub use input::{
     GraphCollectionRead, GraphPortfolioGap, GraphPortfolioRepositoryInput, InjectedStructuralGraph,
     NormalizedStructuralGraph,
 };
+pub use loader::build_governed_graph_portfolio;
 pub use mapping::{GraphPortfolioMappingOptions, ResolvedMapping, parse_graph_portfolio_mappings};
 pub use render::render_governed_graph_portfolio;
 pub use render_json::{canonical_graph_portfolio_json, canonical_graph_portfolio_json_bytes};
 pub use report::{GovernedGraphPortfolioReport, GovernedGraphRepositoryReport};
+pub use structural::{load_structural_graph, load_structural_graph_with};

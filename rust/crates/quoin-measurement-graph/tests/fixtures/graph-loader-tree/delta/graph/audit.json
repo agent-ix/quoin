@@ -1,0 +1,88 @@
+{
+  "format": "quoin-audit-envelope",
+  "format_version": 1,
+  "source": {
+    "repository": "agent-ix/example",
+    "revision": "0000000000000000000000000000000000000000"
+  },
+  "export": {
+    "format": "quire-assurance",
+    "format_version": 1,
+    "modules": [
+      {
+        "name": "another",
+        "version": "0.2.0",
+        "schemas": []
+      },
+      {
+        "name": "example",
+        "version": "1.0.0",
+        "schemas": [
+          {
+            "archetype": "AC",
+            "schema_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "archetype": "FR",
+            "schema_digest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ]
+      }
+    ]
+  },
+  "report": {
+    "findings": [
+      {
+        "obligation": "FR-002-AC-1",
+        "kind": "undischarged",
+        "severity": "high",
+        "summary": "no evidence binds this criterion",
+        "path": "src/cli.ts",
+        "line": 42,
+        "symbol": "parseArgs",
+        "subject": "the criterion",
+        "changeTarget": "tests/cli.test.ts",
+        "remedy": "bind a test"
+      },
+      {
+        "obligation": "FR-001-AC-1",
+        "kind": "stale-evidence",
+        "severity": "low",
+        "summary": "the statement moved"
+      },
+      {
+        "obligation": "FR-001-AC-1",
+        "kind": "suspect-link",
+        "severity": "medium",
+        "summary": "the hash no longer matches",
+        "nextDiagnosticStep": "re-run the suite"
+      }
+    ],
+    "healthy": [
+      "SHARED-AC-1",
+      "FR-004-AC-1",
+      "SHARED-AC-1"
+    ],
+    "unevaluated": [
+      {
+        "check": "mocked-confirmation",
+        "obligation": "FR-003-AC-1",
+        "suites": [
+          "unit",
+          "integration",
+          "contract"
+        ],
+        "reason": "no inspection has run",
+        "inspectedAt": null
+      }
+    ],
+    "independence": [
+      {
+        "obligation": "FR-001-AC-1",
+        "axes": [
+          "author"
+        ]
+      }
+    ]
+  }
+}

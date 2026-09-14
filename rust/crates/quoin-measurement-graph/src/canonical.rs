@@ -38,7 +38,18 @@ use serde_json::Value;
 
 use crate::error::{GraphAdapterError, GraphAdapterErrorCode, Result};
 
-fn store_value(value: &Value) -> Result<quoin_store::JsonValue> {
+/// Cross one [`Value`] into the store's own value type.
+///
+/// The crate's single crossing, and it is [`quoin_measurement::json_bridge`]'s
+/// rather than a second one. `pub` because the loader (quoin#477) carries
+/// opaque FR-062 analyses across it on their way into
+/// [`crate::input::InjectedStructuralGraph`].
+///
+/// # Errors
+///
+/// [`GraphAdapterErrorCode::Store`] for a value the store cannot hold, which
+/// is a number no IEEE-754 double can express.
+pub fn store_value(value: &Value) -> Result<quoin_store::JsonValue> {
     json_bridge::from_serde(value)
         .map_err(|error| GraphAdapterError::new(GraphAdapterErrorCode::Store, error.to_string()))
 }
