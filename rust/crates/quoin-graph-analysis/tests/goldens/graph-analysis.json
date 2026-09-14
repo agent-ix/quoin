@@ -1,7 +1,7 @@
 {
   "provenance": {
-    "producer": "rust/crates/quoin-graph-analysis/oracle/capture-graph-analysis.mjs",
-    "oracle": "src/graph-analysis/{analysis,input,load,render}.ts",
+    "producer": "6ac2b49f86ece258db2f8837914b35ff30783717:rust/crates/quoin-graph-analysis/oracle/capture-graph-analysis.mjs",
+    "oracle": "c55d2561a88ddb8f01c3cce83f5efa11d0f8eb46:src/graph-analysis/{analysis,input,load,render}.ts",
     "node_version": "v22.15.0",
     "quoin_revision": "c55d2561a88ddb8f01c3cce83f5efa11d0f8eb46"
   },

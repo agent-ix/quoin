@@ -66,6 +66,7 @@ use std::path::{Path, PathBuf};
 
 use quoin_change_assurance::EvidenceStore;
 use quoin_evidence::EvidenceSource;
+use quoin_graph_analysis::GraphInputReader;
 use quoin_modules::{InstallOutcome, InstalledModule, MarketplaceManifest, ModuleName, Source};
 use quoin_modules::{ModulesError, ReconcileMode, ReconcileReport};
 use quoin_semantic::{CorpusRoot, SemanticError, SemanticReadResult, SweepIdentity, SweepReport};
@@ -261,6 +262,14 @@ pub struct Capabilities<'a> {
     pub change_assurance: Option<&'a dyn ChangeAssuranceHost>,
     /// The evidence-store capability, absent when nothing granted one.
     pub evidence: Option<&'a dyn EvidenceHost>,
+    /// The graph-analysis input reader, absent when nothing granted one.
+    ///
+    /// The seam is `quoin-graph-analysis`' own [`GraphInputReader`] rather than
+    /// a second trait restating it, for the reason [`ChangeAssuranceHost`]
+    /// gives about [`EvidenceStore`]: that crate already says "where the four
+    /// declared inputs come from" once, with one method, and a parallel
+    /// declaration here would be a shape nobody checks against it.
+    pub graph: Option<&'a dyn GraphInputReader>,
 }
 
 impl<'a> Capabilities<'a> {
@@ -275,6 +284,7 @@ impl<'a> Capabilities<'a> {
             semantic: None,
             change_assurance: None,
             evidence: None,
+            graph: None,
         }
     }
 
@@ -286,6 +296,7 @@ impl<'a> Capabilities<'a> {
             semantic: None,
             change_assurance: None,
             evidence: None,
+            graph: None,
         }
     }
 
@@ -297,6 +308,7 @@ impl<'a> Capabilities<'a> {
             semantic: Some(host),
             change_assurance: None,
             evidence: None,
+            graph: None,
         }
     }
 
@@ -308,6 +320,7 @@ impl<'a> Capabilities<'a> {
             semantic: None,
             change_assurance: Some(host),
             evidence: None,
+            graph: None,
         }
     }
 
@@ -319,6 +332,19 @@ impl<'a> Capabilities<'a> {
             semantic: None,
             change_assurance: None,
             evidence: Some(host),
+            graph: None,
+        }
+    }
+
+    /// A grant of the graph input reader only.
+    #[must_use]
+    pub const fn with_graph(reader: &'a dyn GraphInputReader) -> Self {
+        Self {
+            modules: None,
+            semantic: None,
+            change_assurance: None,
+            evidence: None,
+            graph: Some(reader),
         }
     }
 
@@ -329,12 +355,14 @@ impl<'a> Capabilities<'a> {
         semantic: &'a dyn SemanticHost,
         change_assurance: &'a dyn ChangeAssuranceHost,
         evidence: &'a dyn EvidenceHost,
+        graph: &'a dyn GraphInputReader,
     ) -> Self {
         Self {
             modules: Some(modules),
             semantic: Some(semantic),
             change_assurance: Some(change_assurance),
             evidence: Some(evidence),
+            graph: Some(graph),
         }
     }
 }

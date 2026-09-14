@@ -13,15 +13,30 @@ import GraphFanOut from "../src/commands/graph/fan-out.js";
 import GraphChangeImpact from "../src/commands/graph/change-impact.js";
 import GraphChurn from "../src/commands/graph/churn.js";
 import {
-  bindingsPath,
   STORE_SCHEMA_VERSION,
   writeBindings,
 } from "./support/evidence-store.js";
-import {
-  DEFAULT_RELATION_KINDS,
-  analyzeFanOut,
-  loadGraphAnalysisInput,
-} from "../src/graph-analysis/index.js";
+
+/**
+ * The relationship vocabulary an export has to declare for the walk to run.
+ *
+ * Inlined rather than imported: `src/graph-analysis/` is gone (quoin#500) and
+ * the constant it exported is now `quoin_graph_analysis::DEFAULT_RELATION_KINDS`,
+ * on the far side of the `quoin-core` boundary. This is fixture data for a
+ * command test, and the command tests here assert nothing about its contents —
+ * that the two lists agree is `quoin-graph-analysis`'s own
+ * `tc_500_restated_criteria.rs`, not this file's.
+ */
+const DEFAULT_RELATION_KINDS = [
+  "depends_on",
+  "derives_from",
+  "implements",
+  "mitigates",
+  "refines",
+  "requires",
+  "satisfies",
+  "traces_to",
+];
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 const digest = "a".repeat(64);
@@ -216,87 +231,19 @@ describe("FR-062 graph command", () => {
     });
   });
 
-  it("fails required paths before rows and reports an unreadable retained store", () => {
-    const paths = fixture();
-    const missing = join(paths.root, "inputs", "missing.json");
-    const noExport = loadGraphAnalysisInput({
-      repo: paths.root,
-      exportPath: missing,
-      premisesPath: paths.premisesPath,
-      auditPath: paths.auditPath,
-    });
-    const noPremises = loadGraphAnalysisInput({
-      repo: paths.root,
-      exportPath: paths.exportPath,
-      premisesPath: missing,
-      auditPath: paths.auditPath,
-    });
-    const noAudit = loadGraphAnalysisInput({
-      repo: paths.root,
-      exportPath: paths.exportPath,
-      premisesPath: paths.premisesPath,
-      auditPath: missing,
-    });
-    expect(noExport).toMatchObject({ ok: false, error: { input: "export" } });
-    expect(noPremises).toMatchObject({
-      ok: false,
-      error: { input: "premises" },
-    });
-    expect(noAudit).toMatchObject({ ok: false, error: { input: "audit" } });
-
-    writeFileSync(bindingsPath(paths.root), "not JSON");
-    const invalidJson = loadGraphAnalysisInput({
-      repo: paths.root,
-      exportPath: paths.exportPath,
-      premisesPath: paths.premisesPath,
-      auditPath: paths.auditPath,
-    });
-    expect(invalidJson).toMatchObject({
-      ok: true,
-      value: { bindings: { availability: "unreadable" } },
-    });
-
-    writeFileSync(bindingsPath(paths.root), "{}");
-    const malformed = loadGraphAnalysisInput({
-      repo: paths.root,
-      exportPath: paths.exportPath,
-      premisesPath: paths.premisesPath,
-      auditPath: paths.auditPath,
-    });
-    expect(malformed).toMatchObject({
-      ok: true,
-      value: { bindings: { availability: "unreadable" } },
-    });
-    if (!malformed.ok) throw new Error("unreachable");
-    expect(analyzeFanOut(malformed.value)).toMatchObject({
-      state: "not_computed",
-      rows: [],
-    });
-
-    writeFileSync(bindingsPath(paths.root), "null");
-    const nullStore = loadGraphAnalysisInput({
-      repo: paths.root,
-      exportPath: paths.exportPath,
-      premisesPath: paths.premisesPath,
-      auditPath: paths.auditPath,
-    });
-    expect(nullStore).toMatchObject({
-      ok: true,
-      value: { bindings: { availability: "unreadable" } },
-    });
-  });
-
   // Trace: FR-062-AC-11
   it("keeps producers, writes, frontmatter, and a second graph outside every view", () => {
+    // The analysis half of this criterion moved to `quoin-graph-analysis`
+    // (quoin#500) and is censused there by `tc_500_restated_criteria.rs` ::
+    // `tc_500_047`, over that crate's whole `src/` tree rather than a list.
+    // What is left here is the command half: the five files that ask
+    // `quoin-core` for a report and print it.
     const paths = [
       "src/commands/graph/common.ts",
       "src/commands/graph/index.ts",
       "src/commands/graph/fan-out.ts",
       "src/commands/graph/change-impact.ts",
       "src/commands/graph/churn.ts",
-      "src/graph-analysis/analysis.ts",
-      "src/graph-analysis/input.ts",
-      "src/graph-analysis/load.ts",
     ];
     const sourceText = paths
       .map((path) => readFileSync(join(repoRoot, path), "utf8"))

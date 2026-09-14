@@ -14,13 +14,21 @@ import {
   STORE_SCHEMA_VERSION,
   writeBindings,
 } from "./support/evidence-store.js";
-import {
-  analyzeChangeImpact,
-  analyzeChurn,
-  analyzeFanOut,
-  DEFAULT_RELATION_KINDS,
-  loadGraphAnalysisInput,
-} from "../src/graph-analysis/index.js";
+
+/**
+ * The relationship vocabulary an export has to declare, inlined for the same
+ * reason as in `graph-command.test.ts` (quoin#500).
+ */
+const DEFAULT_RELATION_KINDS = [
+  "depends_on",
+  "derives_from",
+  "implements",
+  "mitigates",
+  "refines",
+  "requires",
+  "satisfies",
+  "traces_to",
+];
 
 const projectRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 const digest = "a".repeat(64);
@@ -109,43 +117,14 @@ function fixture() {
   return { root, exportPath, premisesPath, auditPath };
 }
 
-test("report embeds the exact standalone structural report objects", async () => {
-  const paths = fixture();
-  const loaded = loadGraphAnalysisInput({
-    repo: paths.root,
-    exportPath: paths.exportPath,
-    premisesPath: paths.premisesPath,
-    auditPath: paths.auditPath,
-  });
-  if (!loaded.ok) throw new Error(loaded.error.message);
-  const lines: string[] = [];
-  vi.spyOn(console, "log").mockImplementation((line) =>
-    lines.push(String(line)),
-  );
-  await ReportCommand.run(
-    [
-      "--portfolio",
-      paths.root,
-      "--graph-export",
-      `${paths.root}=${paths.exportPath}`,
-      "--graph-premises",
-      `${paths.root}=${paths.premisesPath}`,
-      "--graph-audit",
-      `${paths.root}=${paths.auditPath}`,
-      "--changed",
-      `${paths.root}=FR-001`,
-      "--format",
-      "json",
-    ],
-    config,
-  );
-  const graph = JSON.parse(lines.join("\n")).repositories[0].graph;
-  expect(graph.fanOut).toEqual(analyzeFanOut(loaded.value));
-  expect(graph.churn).toEqual(analyzeChurn(loaded.value));
-  expect(graph.changeImpact).toEqual([
-    analyzeChangeImpact(loaded.value, ["FR-001"]),
-  ]);
-});
+// The byte-for-byte embedding half of TC-1311 used the retained TypeScript as
+// its own oracle, so it could not survive that TypeScript's deletion (quoin#500)
+// and could not be restated in terms of it either. Its criterion already has a
+// Rust home that does not compare an implementation with itself:
+// `quoin-measurement-graph` `tc_480_fr067_criteria.rs` :: `tc_480_043`, which
+// asserts the embedded objects against the portfolio's own contract. What is
+// left here is the half that is genuinely about this command: the argument
+// check that runs before any read.
 
 test("partial triples are incompatible before a missing export is read", async () => {
   const paths = fixture();

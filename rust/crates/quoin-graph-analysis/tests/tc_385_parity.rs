@@ -2,10 +2,11 @@
 // Copyright (C) 2026 Agent-IX
 //! What `src/graph-analysis/` computed, this crate computes.
 //!
-//! The corpus in `tests/goldens/graph-analysis.json` was captured **once**,
-//! by `oracle/capture-graph-analysis.mjs`, from the retained TypeScript at the
-//! revision the capture records. It is committed, and the TypeScript is never
-//! run here: FR-101-AC-5 forbids leaving an oracle in the loop, and a test
+//! The corpus in `tests/goldens/graph-analysis.json` was captured **once**, by
+//! a script run against the retained TypeScript. Both are deleted at HEAD
+//! (quoin#500) and the corpus records where each lived, as `<revision>:<path>`,
+//! in its `provenance` block. It is the committed bytes that are read here and
+//! nothing else: FR-101-AC-5 forbids leaving an oracle in the loop, and a test
 //! that shelled out to node would be exactly that.
 //!
 //! # What is compared, and how exactly
@@ -413,7 +414,19 @@ fn tc_385_014_the_corpus_carries_more_than_one_answer() {
 
 /// The capture says what it ran, and at which revision.
 ///
+/// # Why the two paths are revision-qualified
+///
+/// `producer` and `oracle` name files that no longer exist at HEAD: quoin#500
+/// deleted both the capture script and the TypeScript it read. A bare path to a
+/// deleted file is a provenance pointer that resolves to nothing, which is the
+/// defect quoin#508 exists to stop repeating — so each is spelled
+/// `<revision>:<path>`, the argument `git show` takes, and this test refuses
+/// any other shape. It does not run git: what it pins is that the recorded
+/// origin is still ADDRESSABLE, so that a reader who wants the bytes has
+/// somewhere to look.
+///
 /// Trace: FR-101-AC-11
+/// Provenance: quoin#385, quoin#500
 #[test]
 fn tc_385_015_the_capture_records_its_provenance() {
     let corpus = support::corpus();
@@ -423,6 +436,24 @@ fn tc_385_015_the_capture_records_its_provenance() {
             value.is_some_and(|text| !text.is_empty()),
             "the capture must record {key}; a golden whose origin is unrecorded cannot be \
              re-derived"
+        );
+    }
+
+    for key in ["producer", "oracle"] {
+        let value = corpus["provenance"][key].as_str().expect("recorded above");
+        let (revision, path) = value.split_once(':').unwrap_or_else(|| {
+            panic!(
+                "provenance.{key} is `{value}`, a bare path. The file it names is deleted at \
+                 HEAD, so it must be spelled `<revision>:<path>` — what `git show` takes."
+            )
+        });
+        assert!(
+            revision.len() == 40 && revision.chars().all(|c| c.is_ascii_hexdigit()),
+            "provenance.{key} names `{revision}`, which is not a 40-digit git revision"
+        );
+        assert!(
+            !path.is_empty(),
+            "provenance.{key} names revision `{revision}` and no path"
         );
     }
 }

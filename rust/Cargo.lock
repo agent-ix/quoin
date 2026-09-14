@@ -3046,6 +3046,7 @@ dependencies = [
  "quoin-completeness",
  "quoin-config",
  "quoin-evidence",
+ "quoin-graph-analysis",
  "quoin-measurement",
  "quoin-measurement-graph",
  "quoin-modules",

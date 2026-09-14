@@ -40,7 +40,3 @@ quoin-store = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }
-
-# The one-time oracle capture lives under `oracle/` rather than `examples/` so
-# it is visibly the thing FR-101-AC-5 deletes at the cutover. It is a `.mjs`
-# run by node, so cargo needs no entry for it; this comment is the pointer.
