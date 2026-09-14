@@ -3,18 +3,18 @@ import { existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { settings, type Config } from "@oclif/core";
+import { Config, settings } from "@oclif/core";
 
-import { loadConfig, listCorePlugins } from "@agent-ix/ix-cli-core";
 
 // ===========================================================================
 // FR-026-AC-7 — preinstalled core-plugin discovery
 //
 // quoin declares `@agent-ix/filament-plan-sync` in its package.json
-// `oclif.plugins` array AND as a dependency. ix-cli-core's runner (via
-// @oclif/core's Config loader) discovers that package as a *core* plugin and
-// surfaces its `sync` command with NO runtime install step. This test asserts
-// the discovery wiring end-to-end against the built command graph.
+// `oclif.plugins` array AND as a dependency. oclif's own Config loader
+// discovers that package as a *core* plugin and surfaces its `sync` command
+// with NO runtime install step. This test deliberately avoids ix-cli-core: it
+// remains the successor proof when the Stage 9 shell retirement deletes that
+// package (quoin#396).
 // ===========================================================================
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -29,16 +29,15 @@ beforeAll(async () => {
   if (!existsSync(join(repoRoot, "dist", "commands", "update.js"))) {
     execSync("corepack pnpm run build", { cwd: repoRoot, stdio: "inherit" });
   }
-  // A single loadConfig() — there is deliberately NO install/link step here:
+  // A single Config.load() — there is deliberately NO install/link step here:
   // the plugin must already be discoverable because it ships as a dependency.
-  config = await loadConfig({ root: repoRoot });
+  config = await Config.load({ root: repoRoot });
 });
 
 describe("core-plugin discovery (FR-026-AC-7)", () => {
   // Trace: FR-026-AC-7
   test("filament-plan-sync is discovered as a CORE plugin contributing `sync`", () => {
-    const corePlugins = listCorePlugins(config);
-    const plugin = corePlugins.find((p) => p.name === SYNC_PLUGIN);
+    const plugin = config.plugins.get(SYNC_PLUGIN);
     expect(plugin).toBeDefined();
     expect(plugin?.type).toBe("core");
     expect(plugin?.commandIDs).toContain("sync");
