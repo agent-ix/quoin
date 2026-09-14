@@ -8,6 +8,8 @@
 //! touches a store, so none of them takes a host: the containment audit in
 //! `tests/tc_library_containment.rs` is what keeps that true.
 
+use std::path::Path;
+
 use quoin_evidence::MUTATION_SCORE_METRIC;
 use quoin_evidence::adapters::{AdapterSelection, select_adapter, select_finding_adapter};
 use quoin_evidence::independence::{
@@ -58,6 +60,12 @@ pub fn store_facts(request: &serde_json::Value) -> Result<Response, CoreError> {
             .collect(),
         mutation_score_metric: MUTATION_SCORE_METRIC.to_owned(),
         store_schema_version: STORE_SCHEMA_VERSION,
+        // Through `store_root` itself rather than spelled out, so the layout
+        // has one statement: an empty root makes it answer with the relative
+        // part and nothing else.
+        store_root_path: quoin_store::store::store_root(Path::new(""))
+            .display()
+            .to_string(),
         bindings_path: bindings_path(),
         baseline_path: baseline_path(),
         suites_path: suites_path(),

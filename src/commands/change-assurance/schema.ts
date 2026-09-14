@@ -1,22 +1,20 @@
-import { readFileSync } from "node:fs";
-
 import { Flags } from "@oclif/core";
 
 import { QuoinCommand } from "../../base.js";
 import {
   CHANGE_ASSURANCE_SCHEMA_NAMES,
-  changeAssuranceSchemaPath,
+  readChangeAssuranceSchemaText,
   type ChangeAssuranceSchemaName,
-} from "../../store/schema-assets.js";
+} from "../../core/change-assurance-schemas.js";
 import { canonicalOutput, jsonFlag, messageOf } from "./common.js";
 
 export default class ChangeAssuranceSchema extends QuoinCommand {
   protected skipUpdateNudge = true;
   static summary = "Emit a packaged change-assurance JSON Schema asset.";
   static description = `Prints one of the three normative, versioned schema assets shipped with this
-build, byte-for-byte as packaged, so a consumer validates against the same file
-the sealing and verification code was written against rather than a copy that
-has drifted.
+build, byte-for-byte as the engine carries them, so a consumer validates
+against the same file the sealing and verification code was written against
+rather than a copy that has drifted.
 
 Without --name the three asset names are listed. An unknown name is refused.`;
 
@@ -50,7 +48,7 @@ Without --name the three asset names are listed. An unknown name is refused.`;
     const name = flags.name as ChangeAssuranceSchemaName;
     let text: string;
     try {
-      text = readFileSync(changeAssuranceSchemaPath(name), "utf8");
+      text = readChangeAssuranceSchemaText(name);
     } catch (error) {
       this.error(`cannot read schema ${name}: ${messageOf(error)}`, {
         exit: 2,

@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { Flags } from "@oclif/core";
 
 import { carriesPayload, runCoreAllowFailure } from "../../core/exec.js";
-import { canonicalizeJcs } from "../../store/integrity.js";
+import { canonicalizeJcs } from "../../integrity.js";
 
 /** Repository root holding the evidence store. */
 export const repoFlag = Flags.string({

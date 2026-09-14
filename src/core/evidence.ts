@@ -32,11 +32,17 @@
  * {@link ./modules.ts} — state it locally, pin it against the authority — and
  * the test is what reports a drift, rather than a silent disagreement about
  * where `bindings.json` lives.
+ *
+ * {@link storeRoot} joined the same arrangement in quoin#503. It used to live
+ * in `src/store/paths.ts`, which the store cutover deletes; it is the same
+ * kind of value as the four file names — a statement of the layout, needed
+ * before a request can name anything — so it is stated here and pinned against
+ * `store_facts.store_root_path`, which `quoin-store::store::store_root`
+ * answers.
  */
 
 import { join } from "node:path";
 
-import { storeRoot } from "../store/paths.js";
 import { carriesPayload, runCoreAllowFailure } from "./exec.js";
 import type {
   AffirmPayload,
@@ -116,6 +122,19 @@ export const ADAPTER_NAMES: readonly string[] = [
 
 /** The metric a `cargo-mutants` score is recorded under. */
 export const MUTATION_SCORE_METRIC = "mutation-score";
+
+/**
+ * The evidence store root for a repository.
+ *
+ * Under `spec/`, not at the repository root: quire-rs CR-045 bounds the
+ * document walk to `<scope>/spec`, so the authored half of the store —
+ * `suites.md` and `inspections.md` — is only a validated corpus document if it
+ * lives there, and the machine-written half sits beside it so the whole store
+ * is one directory rather than two halves in different places.
+ */
+export function storeRoot(repo: string): string {
+  return join(repo, "spec", "evidence");
+}
 
 /** The schema version stamped into every record envelope. */
 export const STORE_SCHEMA_VERSION = 1;

@@ -107,8 +107,18 @@ use crate::json::value::{JsonObject, JsonValue};
 /// The member name a sealed record carries its own digest under.
 pub const DIGEST_MEMBER: &str = "digest";
 
-/// The one blake3 call site. Private on purpose.
-fn blake3_hex(bytes: &[u8]) -> String {
+/// Lowercase hex of the blake3 hash of `bytes`. The one blake3 call site.
+///
+/// Public, and the one exception to "a digest is taken through a typed
+/// wrapper". `@agent-ix/quoin` exports `blake3Hex` from its package root, so a
+/// library consumer can hash bytes of its own choosing without claiming they
+/// are a record, an attestation or a canonicalized value — and the port may
+/// not quietly drop a published export (quoin#503). Everything inside this
+/// crate goes through [`RawBytesDigest`], [`CanonicalDigest`] and the
+/// `digest_*` functions, which is what keeps a domain from being applied to
+/// the wrong bytes.
+#[must_use]
+pub fn blake3_hex(bytes: &[u8]) -> String {
     blake3::hash(bytes).to_hex().to_string()
 }
 

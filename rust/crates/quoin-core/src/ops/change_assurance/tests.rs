@@ -40,9 +40,9 @@ use quoin_store::CanonicalDigest;
 use serde_json::{Value, json};
 
 use super::{
-    MAX_INTAKE_BYTES, MAX_RECEIPT_BYTES, MAX_RECOVER_BYTES, MAX_SEAL_ATTESTATION_BYTES,
-    MAX_SEAL_RECORD_BYTES, MAX_VERIFY_RECEIPT_BYTES, intake, receipt, recover, seal_attestation,
-    seal_record, verify_receipt,
+    MAX_INTAKE_BYTES, MAX_RECEIPT_BYTES, MAX_RECOVER_BYTES, MAX_SCHEMA_BYTES,
+    MAX_SEAL_ATTESTATION_BYTES, MAX_SEAL_RECORD_BYTES, MAX_VERIFY_RECEIPT_BYTES, intake, receipt,
+    recover, schema, seal_attestation, seal_record, verify_receipt,
 };
 use crate::capabilities::{Capabilities, ChangeAssuranceHost};
 use crate::error::CoreErrorCode;
@@ -217,6 +217,7 @@ fn every_operation_refuses_a_request_past_its_own_ceiling() {
             "verify_receipt",
             verify_receipt(&filler(MAX_VERIFY_RECEIPT_BYTES)).unwrap_err(),
         ),
+        ("schema", schema(&filler(MAX_SCHEMA_BYTES)).unwrap_err()),
     ] {
         assert_eq!(error.code, CoreErrorCode::Refused, "{name}");
         assert_eq!(error.outcome().code(), 2, "{name}");
@@ -691,5 +692,66 @@ fn verify_receipt_refuses_an_edited_verdict() {
     assert_eq!(
         error.context["change_assurance_code"],
         "QCA-RECEIPT-INVALID"
+    );
+}
+
+/// Trace: FR-068-AC-8
+/// Provenance: quoin#503
+///
+/// Asked for nothing in particular, the operation answers with the vocabulary
+/// and no asset. That is the `quoin change-assurance schema` listing, and it
+/// is what tells a caller which names the flag will accept.
+#[test]
+fn tc_503_the_vocabulary_comes_back_without_an_asset() {
+    let response = schema(&json!({})).expect("listing needs no capability");
+    let payload = &response.payload;
+    assert_eq!(
+        payload["schemas"],
+        json!([
+            "change-assurance-record-v1.schema.json",
+            "proof-attestation-v1.schema.json",
+            "verification-receipt-v1.schema.json"
+        ])
+    );
+    assert_eq!(payload["schema"], Value::Null);
+}
+
+/// Trace: FR-068-AC-8
+/// Provenance: quoin#503
+///
+/// A named asset comes back as the exact text compiled into
+/// `quoin-change-assurance`, trailing newline included. Byte-for-byte is the
+/// contract: a consumer validates against the same file the sealing code was
+/// written against.
+#[test]
+fn tc_503_a_named_asset_comes_back_byte_for_byte() {
+    let response = schema(&json!({ "name": "proof-attestation-v1.schema.json" }))
+        .expect("a known name resolves");
+    assert_eq!(
+        response.payload["schema"],
+        json!(quoin_change_assurance::schemas::PROOF_ATTESTATION_V1)
+    );
+}
+
+/// Trace: FR-068-AC-8
+/// Provenance: quoin#503
+///
+/// An unknown name is a caller mistake reported as one, naming what this build
+/// does ship. Answering with some other schema would validate a document
+/// against a contract nobody asked for.
+#[test]
+fn tc_503_an_unknown_asset_name_is_refused_naming_the_known_ones() {
+    let error = schema(&json!({ "name": "change-assurance-record-v2.schema.json" }))
+        .expect_err("an unknown name is refused");
+    assert_eq!(error.code, CoreErrorCode::BadRequest);
+    assert_eq!(error.context["op"], "change_assurance.schema");
+    assert_eq!(
+        error.context["name"],
+        "change-assurance-record-v2.schema.json"
+    );
+    assert!(
+        error.context["known"].contains("change-assurance-record-v1.schema.json"),
+        "the refusal must name what this build ships, said {}",
+        error.context["known"]
     );
 }

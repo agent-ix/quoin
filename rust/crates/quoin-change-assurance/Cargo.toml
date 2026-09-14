@@ -26,4 +26,10 @@ sha2 = { workspace = true }
 thiserror = { workspace = true }
 
 [dev-dependencies]
+# `tests/tc_503_schema_assets.rs` validates documents this crate sealed against
+# the schema assets this crate owns. The validator and the JSON reader are
+# dev-only on purpose: `tests/tc_455_boundary.rs` censuses `src/` to keep both
+# out of the library, where a schema check would become a second validator.
+quoin-jsonschema = { workspace = true }
+serde_json = { workspace = true }
 tempfile = "=3.27.0"

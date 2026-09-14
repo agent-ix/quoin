@@ -73,6 +73,13 @@ pub const MAX_RECEIPT_BYTES: usize = 32 * 1024 * 1024;
 /// decide over, in bytes.
 pub const MAX_VERIFY_RECEIPT_BYTES: usize = 4 * 1024 * 1024;
 
+/// The largest `change_assurance.schema` request this domain will decide over,
+/// in bytes.
+///
+/// An asset name and nothing else. The assets themselves are compiled in, so
+/// nothing about their size bears on what may arrive.
+pub const MAX_SCHEMA_BYTES: usize = 8 * 1024;
+
 /// The largest single path, digest or identity string this domain will accept,
 /// in bytes.
 ///
@@ -279,4 +286,32 @@ pub struct VerifyReceiptRequest {
 pub struct VerifyReceiptPayload {
     /// The receipt as re-read and re-verified, in full.
     pub receipt: serde_json::Value,
+}
+
+/// The request accepted by `change_assurance.schema`.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize)]
+#[serde(deny_unknown_fields)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+pub struct SchemaAssetRequest {
+    /// Which asset to emit, or absent to ask only for the vocabulary.
+    ///
+    /// Absent and "emit nothing" are the same answer here because the
+    /// vocabulary rides on every response: a caller listing the assets and a
+    /// caller fetching one both learn what the build ships.
+    #[serde(default)]
+    pub name: Option<String>,
+}
+
+/// The payload `change_assurance.schema` writes to stdout.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+pub struct SchemaAssetPayload {
+    /// Every asset name this build ships, in the order the vocabulary declares.
+    pub schemas: Vec<String>,
+    /// The requested asset's exact bytes, or `null` when none was requested.
+    ///
+    /// The text as compiled in, trailing newline included — a consumer
+    /// validates against the same bytes the sealing code was written against,
+    /// and a re-serialization here would defeat that.
+    pub schema: Option<String>,
 }
