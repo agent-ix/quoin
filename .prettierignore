@@ -52,13 +52,13 @@ spec/
 # which reported it clean.
 corpus/
 
-# Vendored quire output schemas (FR-029). These are copies of quire-rs's
-# published artifacts and must match them BYTE FOR BYTE — their SHA-256 is
-# recorded in src/quire/contract.ts and asserted on every test run. Formatting
-# them locally rewrites the bytes and breaks the provenance check, which is
-# exactly how a vendored contract drifts by default. Refresh them with
-# scripts/refresh-quire-schemas.mjs, never with prettier.
-src/quire/schemas/
+# The vendored quire output schema (FR-029). A copy of quire-rs's published
+# artifact, which must match it BYTE FOR BYTE — its SHA-256 is recorded in
+# rust/crates/quoin-quire/src/schema.rs and asserted on every test run.
+# Formatting it locally rewrites the bytes and breaks the provenance check,
+# which is exactly how a vendored contract drifts by default. Copy it from the
+# pinned quire-rs git object, never through prettier.
+rust/crates/quoin-quire/schemas/
 
 # Real tool output, captured unedited (agent-ix/quoin#115). The ticket asked
 # for the format decisions to be made "by reading real output from each tool,

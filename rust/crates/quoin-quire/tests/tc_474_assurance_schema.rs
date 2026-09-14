@@ -3,21 +3,23 @@
 //! The vendored `assurance-v1` document is the retained one, and it is
 //! compiled with the `format` policy the retained ajv actually had (quoin#474).
 //!
-//! # Three anchors, not one
+//! # Two anchors, not one
 //!
-//! 1. The vendored bytes equal `src/quire/schemas/assurance-v1.schema.json`.
-//! 2. Those bytes hash to the SHA-256 `src/quire/contract.ts` recorded when the
-//!    file was copied out of the pinned `quire-rs` git object. Byte-equality
-//!    alone would pass if somebody edited **both** copies; the recorded hash
-//!    was derived from upstream and is not editable from either side.
-//! 3. The document reaches the validator through `include_str!`. A schema read
+//! 1. The vendored bytes hash to [`schema::VENDORED_SHA256`], the digest taken when the
+//!    file was copied out of the pinned `quire-rs` git object. Until quoin#502
+//!    there was a second anchor — byte-equality with the retained
+//!    `src/quire/schemas/assurance-v1.schema.json` — and it was the weaker of
+//!    the two: it would pass if somebody edited **both** copies. The retained
+//!    tree is gone; the digest, derived from upstream and editable from
+//!    neither side, is the one that was carrying the weight.
+//! 2. The document reaches the validator through `include_str!`. A schema read
 //!    with `std::fs` at run time is a schema that can differ from the one these
-//!    tests measured, so the test that reads the retained copy off disk reads
-//!    the *retained* one — the vendored side is always the compiled-in constant.
+//!    tests measured, so the vendored side is always the compiled-in constant.
 //!
 //! # The `format` policy is asserted from both sides
 //!
-//! `src/quire/validate.ts:99` registers no format check, so `format: "uuid"` on
+//! The retained `src/quire/validate.ts` registered no format check (quoin#502
+//! deleted it), so `format: "uuid"` on
 //! `artifact.uuid` is an annotation and `"not-a-uuid"` is accepted. ajv says so
 //! out loud when the capture runs: *unknown format "uuid" ignored in schema at
 //! path "#/properties/uuid"*.
@@ -35,23 +37,12 @@
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use quoin_jsonschema::{FormatCheck, SchemaValidator};
 use quoin_quire::schema;
 use serde_json::Value;
 use sha2::{Digest, Sha256};
-
-/// The SHA-256 `src/quire/contract.ts` records for this document, copied from
-/// the pinned `quire-rs` object by `scripts/refresh-quire-schemas.mjs`.
-const RECORDED_SHA256: &str = "441e1b8324fe64e234a007216b11867ec937ac4779fcebcdd84b30fa064367e5";
-
-fn repository_root() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("..")
-        .join("..")
-        .join("..")
-}
 
 fn corpus() -> Value {
     let path = Path::new(env!("CARGO_MANIFEST_DIR"))
@@ -70,26 +61,7 @@ fn a_valid_document() -> Value {
     corpus()["bases"][0]["document"].clone()
 }
 
-/// The vendored document is the retained document, byte for byte.
-///
-/// Trace: FR-099-AC-2
-/// Provenance: quoin#474
-#[test]
-fn tc_474_010_the_vendored_schema_is_byte_equal_to_the_retained_one() {
-    let retained_path = repository_root().join(schema::RETAINED_PATH);
-    let retained = std::fs::read_to_string(&retained_path)
-        .unwrap_or_else(|e| panic!("{} is readable: {e}", retained_path.display()));
-    assert_eq!(
-        schema::SOURCE,
-        retained,
-        "{} and {} have drifted apart. The vendored copy is not a place to edit a \
-         schema: refresh the retained one from upstream and copy it across.",
-        schema::VENDORED_PATH,
-        schema::RETAINED_PATH
-    );
-}
-
-/// The vendored bytes hash to what `contract.ts` recorded from upstream.
+/// The vendored bytes hash to what was recorded from upstream.
 ///
 /// Trace: FR-099-AC-2
 /// Provenance: quoin#474
@@ -97,11 +69,13 @@ fn tc_474_010_the_vendored_schema_is_byte_equal_to_the_retained_one() {
 fn tc_474_011_the_vendored_schema_hashes_to_the_recorded_upstream_digest() {
     let observed = hex(&Sha256::digest(schema::SOURCE.as_bytes()));
     assert_eq!(
-        observed, RECORDED_SHA256,
-        "the vendored assurance-v1 document does not hash to the digest \
-         src/quire/contract.ts recorded when it was copied out of the pinned quire-rs \
-         object. Byte-equality with the retained copy is not enough here: this catches \
-         an edit made to BOTH copies."
+        observed,
+        schema::VENDORED_SHA256,
+        "the vendored assurance-v1 document does not hash to the digest recorded \
+         when it was copied out of quire-rs. Re-derive it from \
+         `schemas/output/assurance-v1.schema.json` at \
+         schema::VENDORED_SOURCE_REVISION rather than re-recording what is on \
+         disk here."
     );
 }
 

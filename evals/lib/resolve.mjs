@@ -105,14 +105,15 @@ function onPath(name) {
 }
 
 /**
- * The quire CLI floor this harness needs, mirroring `QUIRE_CONTRACT.minimumCli`
- * (src/quire/contract.ts, FR-029).
+ * The quire CLI floor this harness needs (FR-029).
  *
- * Restated here rather than imported because the harness runs against sources,
- * not against `dist/`, and a build step between "run the evals" and "know which
- * quire you need" is a step that gets skipped. `assertQuirePremise` is checked
- * by a unit test against the TypeScript constant, so the two cannot drift
- * silently.
+ * It used to mirror `QUIRE_CONTRACT.minimumCli` in `src/quire/contract.ts`,
+ * with a unit test asserting the two agreed. quoin#502 linked the engine into
+ * `quoin-core` and deleted that file, and quoin itself no longer spawns a
+ * `quire` binary at all — so this is not a mirror any more, it is the only
+ * statement of the floor, and it belongs to the harness that still does spawn
+ * one. The revision that harness is expected to meet is pinned separately, as
+ * `contracts["quire-cli"]` in `quality/verification-stack-lock.json`.
  */
 export const HARNESS_MIN_QUIRE = "0.21.0";
 

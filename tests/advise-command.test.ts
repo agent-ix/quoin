@@ -25,7 +25,6 @@ import Advise from "../src/commands/advise";
 import { advise } from "../src/core/auditor.js";
 import type { CoverageDiagnostic, MethodCatalog } from "../src/core/types.js";
 import { loadMethodCatalog } from "../src/method-catalog.js";
-import { runQuireAllowFailure, validateCoverage } from "../src/quire/index.js";
 import { coreDouble } from "./support/core-double.js";
 
 const CATALOG: MethodCatalog = {
@@ -116,20 +115,6 @@ describe("the advisor is reachable from a command (FR-031-AC-10, AC-11)", () => 
     expect(advice.recommended.map((r) => r.method)).toEqual([
       "fault-injection",
     ]);
-  });
-
-  it("a run that exits non-zero still yields its payload", () => {
-    // `quire properties` exits 1 when ANY input document fails to resolve while
-    // still writing a complete payload for the rest. Treating that as total
-    // failure cost the whole property-shape axis over two untyped asset files:
-    // 359 of 583 obligations read "inconclusive" that should not have (#103).
-    const result = runQuireAllowFailure([
-      "--this-flag-does-not-exist-and-never-will",
-    ]);
-    expect(result.ok).toBe(false);
-    // The point is that it RETURNS rather than throwing, so the caller decides.
-    expect(typeof result.stdout).toBe("string");
-    expect(typeof result.stderr).toBe("string");
   });
 
   it("reports an unreadable module instead of throwing", () => {
@@ -298,12 +283,6 @@ describe("the battle-test oracle: real uncatalogued values are not mismatches (F
   afterEach(() => {
     process.env.QUOIN_CORE = savedCore;
     vi.restoreAllMocks();
-  });
-
-  // Trace: FR-031-AC-22, FR-031-AC-24
-  it("the vendored contract accepts the CR-091 payload carrying diagnostic values", () => {
-    const result = validateCoverage(battlePayload({ diagnosticValues: true }));
-    expect(result.ok, JSON.stringify(result)).toBe(true);
   });
 
   // Trace: FR-031-AC-22, FR-031-AC-24

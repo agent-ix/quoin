@@ -9,6 +9,12 @@ const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 const EXACT_VERSION = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/;
 const FULL_SHA = /^[0-9a-f]{40}$/;
 const OCI = /@sha256:[0-9a-f]{64}$/;
+// Since quoin#502 the vendored Quire contract lives in the crate that vendors
+// it; `src/quire/` is gone, and with it four of the five schemas, which
+// described payloads only the deleted TypeScript read.
+const CONTRACT_SOURCE = "rust/crates/quoin-quire/src/schema.rs";
+const VENDORED_SCHEMA =
+  "rust/crates/quoin-quire/schemas/assurance-v1.schema.json";
 
 export function auditToolDrift(files) {
   const errors = [];
@@ -81,7 +87,6 @@ export function auditToolDrift(files) {
     "battletest",
     "battletest-update",
     "bench-tier1-experimental",
-    "evidence-audit",
     "validate",
   ]) {
     if (
@@ -92,12 +97,10 @@ export function auditToolDrift(files) {
       errors.push(`${target} must fail closed without an explicit Quire path`);
     }
   }
-  if (
-    !/QUOIN_QUIRE="\$\(QUIRE\)" node bin\/quoin\.js evidence audit/.test(
-      files["Makefile"],
-    )
-  ) {
-    errors.push("evidence-audit must pass its explicit Quire path to Quoin");
+  if (/QUOIN_QUIRE/.test(files["Makefile"])) {
+    errors.push(
+      "the Makefile may not hand Quoin a Quire path: the engine is linked, not spawned",
+    );
   }
 
   const pnpmLock = parseYaml(files["pnpm-lock.yaml"]);
@@ -143,25 +146,37 @@ export function auditToolDrift(files) {
       "build-test must use the explicit non-recursive Quire test gate",
     );
   }
-  // The CI checkout tracks the CONSUMER CLI — `contract.cliSourceRevision`,
+  // The CI checkout tracks the CONSUMER CLI — `contracts["quire-cli"]`,
   // asserted below — and not `stackLock.repositories["quire-cli"]`, which names
   // the historical benchmark producer. The two are deliberately separate pins:
   // coupling CI to the benchmark cohort would either pin CI to whatever last
   // produced measurements, or force that evidence to be relabelled every time
   // the consumer contract advances.
-  const contractSource = /sourceRevision:\s*"([0-9a-f]{40})"/.exec(
-    files["src/quire/contract.ts"],
-  )?.[1];
-  const contractCliSource = /cliSourceRevision:\s*"([0-9a-f]{40})"/.exec(
-    files["src/quire/contract.ts"],
-  )?.[1];
+  const contractSource =
+    /^pub const VENDORED_SOURCE_REVISION: &str = "([0-9a-f]{40})";$/m.exec(
+      files[CONTRACT_SOURCE],
+    )?.[1];
+  // Since quoin#502 the consumer CLI pin has no TypeScript to live in: the
+  // engine is linked, not spawned, so nothing in `src/` names a quire binary.
+  // The lock is its home now, and the assertion is unchanged in substance —
+  // CI's governed checkout must equal the pin, and the pin is not the
+  // benchmark cohort's.
+  const contractCliSource = stackLock.contracts?.["quire-cli"]?.revision;
   if (!contractSource) {
     errors.push(
       "vendored Quire contract source revision must be an exact commit",
     );
   }
-  if (!contractCliSource) {
+  if (!/^[0-9a-f]{40}$/.test(contractCliSource ?? "")) {
     errors.push("vendored Quire contract CLI revision must be an exact commit");
+  }
+  if (
+    stackLock.contracts?.["quire-cli"]?.remote !==
+    stackLock.repositories["quire-cli"].remote
+  ) {
+    errors.push(
+      "vendored Quire contract CLI remote must equal the locked quire-cli remote",
+    );
   }
   if (governedCliCheckout?.with?.ref !== contractCliSource) {
     errors.push(
@@ -187,9 +202,7 @@ export function auditToolDrift(files) {
   }
   if (
     !/^[0-9a-f]{40}$/.test(quireContract?.revision ?? "") ||
-    !files["src/quire/contract.ts"].includes(
-      `sourceRevision: "${quireContract?.revision}"`,
-    )
+    contractSource !== quireContract?.revision
   ) {
     errors.push(
       "vendored Quire contract source revision must equal the locked contract revision",
@@ -280,7 +293,7 @@ export function auditToolDrift(files) {
     );
   }
   for (const path of [
-    "src/quire/schemas/assurance-v1.schema.json",
+    VENDORED_SCHEMA,
     "scripts/verify-span-breadth.mjs",
     "scripts/verification-stack-selftest.mjs",
     "scripts/battletest.mjs",
@@ -402,14 +415,17 @@ export function auditToolDrift(files) {
       errors.push(`pnpm dlx package is not exact: ${match[1]}`);
     }
   }
-  if (!/QUOIN_QUIRE/.test(files["src/quire/exec.ts"])) {
+  // The subprocess boundary this guarded used to be `src/quire/exec.ts`.
+  // quoin#502 deleted it: quoin spawns `quoin-core`, which LINKS the engine.
+  // The two guarantees are the same two, on the one boundary that is left.
+  if (!/QUOIN_CORE/.test(files["src/core/exec.ts"])) {
     errors.push(
-      "Quoin's Quire subprocess boundary has no explicit binary selector",
+      "Quoin's engine subprocess boundary has no explicit binary selector",
     );
   }
-  if (!/QUOIN_EXPECTED_QUIRE_SHA256/.test(files["src/quire/exec.ts"])) {
+  if (!/QUOIN_EXPECTED_CORE_SHA256/.test(files["src/core/exec.ts"])) {
     errors.push(
-      "Quoin's Quire subprocess boundary has no executable digest guard",
+      "Quoin's engine subprocess boundary has no executable digest guard",
     );
   }
   return errors;
@@ -427,8 +443,8 @@ export function repositoryFiles(root = ROOT) {
     "smoke/Dockerfile",
     "smoke/run.sh",
     "smoke/entrypoint.sh",
-    "src/quire/exec.ts",
-    "src/quire/contract.ts",
+    "src/core/exec.ts",
+    CONTRACT_SOURCE,
     "scripts/verification-stack.mjs",
     "scripts/bench-tier1.mjs",
     "scripts/verify-span-breadth.mjs",

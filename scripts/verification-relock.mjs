@@ -11,7 +11,6 @@ import {
 import { tmpdir } from "node:os";
 import { dirname, isAbsolute, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import ts from "typescript";
 import {
   committedTree,
   describeModule,
@@ -33,11 +32,16 @@ import {
 
 const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 export const SOURCE_NAMES = V1_SOURCES;
-const SCHEMAS = [
-  "assurance-v1.schema.json",
-  "coverage-v1.schema.json",
-  "properties-v1.schema.json",
-];
+// The one vendored Quire schema quoin still carries. quoin#502 linked the
+// engine into `quoin-core` and deleted `src/quire/`, which took the other four
+// with it: `coverage-v1`, `properties-v1`, `clause-binding-v1` and
+// `clause-diff-v1` were read by the TypeScript that no longer exists, and the
+// shapes they described are now Rust types the engine and quoin share by
+// linking rather than by copying. `assurance-v1` survives because it describes
+// a document that arrives from OUTSIDE — see `quoin-quire/src/schema.rs`.
+const SCHEMAS = ["assurance-v1.schema.json"];
+const CONTRACT_SOURCE = "rust/crates/quoin-quire/src/schema.rs";
+const SCHEMA_DIR = "rust/crates/quoin-quire/schemas";
 const RELOCK_ARTIFACTS = [
   "scripts/verification-relock.mjs",
   "scripts/verification-relock-selftest.mjs",
@@ -130,84 +134,39 @@ export function committedInventory(root, revision, timeout) {
   }
 }
 
-/** Read the exported literal, not comments or executed TypeScript code. */
+/**
+ * Read the vendored contract's provenance constants.
+ *
+ * Until quoin#502 this parsed the `QUIRE_CONTRACT` object literal out of
+ * `src/quire/contract.ts` with the TypeScript AST, because the value sat in
+ * executable TypeScript beside functions that read it. The constants now live
+ * in `rust/crates/quoin-quire/src/schema.rs` as `pub const` string literals
+ * with nothing else on the declaration, so a literal match is exact and a
+ * second parser is not worth carrying. The whitespace between `=` and the
+ * literal is permissive only because rustfmt wraps the 64-character digest
+ * onto its own line; the literal itself is still matched exactly, and the
+ * declaration must still be the only thing on the line it starts.
+ */
 export function parseContract(source) {
-  const file = ts.createSourceFile(
-    "contract.ts",
-    source,
-    ts.ScriptTarget.Latest,
-    true,
-    ts.ScriptKind.TS,
-  );
-  if (file.parseDiagnostics.length)
-    throw new Error("vendored contract contains invalid TypeScript");
-  const declarations = file.statements
-    .filter(
-      (statement) =>
-        ts.isVariableStatement(statement) &&
-        statement.modifiers?.some(
-          (modifier) => modifier.kind === ts.SyntaxKind.ExportKeyword,
-        ),
-    )
-    .flatMap((statement) =>
-      statement.declarationList.declarations
-        .filter(
-          (declaration) =>
-            ts.isIdentifier(declaration.name) &&
-            declaration.name.text === "QUIRE_CONTRACT",
-        )
-        .map((declaration) => ({
-          declaration,
-          constant: Boolean(
-            statement.declarationList.flags & ts.NodeFlags.Const,
-          ),
-        })),
-    );
-  if (declarations.length !== 1 || !declarations[0].constant)
-    throw new Error("expected one direct exported const QUIRE_CONTRACT");
-  function object(node) {
-    while (
-      node &&
-      (ts.isAsExpression(node) || ts.isParenthesizedExpression(node))
-    )
-      node = node.expression;
-    if (!node || !ts.isObjectLiteralExpression(node))
-      throw new Error("QUIRE_CONTRACT requires literal objects");
-    const properties = new Map();
-    for (const property of node.properties) {
-      if (
-        !ts.isPropertyAssignment(property) ||
-        !(ts.isIdentifier(property.name) || ts.isStringLiteral(property.name))
-      )
-        throw new Error("QUIRE_CONTRACT has an ambiguous property");
-      const name = property.name.text;
-      if (properties.has(name))
-        throw new Error(`duplicate QUIRE_CONTRACT property ${name}`);
-      properties.set(name, property.initializer);
+  const constant = (name, pattern) => {
+    const matches = [
+      ...source.matchAll(
+        new RegExp(`^pub const ${name}: &str =\\s+"(${pattern})";$`, "gm"),
+      ),
+    ];
+    if (matches.length !== 1) {
+      throw new Error(
+        `expected one exact literal ${name} in ${CONTRACT_SOURCE}`,
+      );
     }
-    return properties;
-  }
-  const properties = object(declarations[0].declaration.initializer);
-  const revision = properties.get("sourceRevision");
-  if (
-    !revision ||
-    !ts.isStringLiteral(revision) ||
-    !/^[0-9a-f]{40}$/.test(revision.text)
-  )
-    throw new Error("vendored contract has no exact literal sourceRevision");
-  const hashes = object(properties.get("hashes"));
-  const result = {};
-  for (const name of SCHEMAS) {
-    const value = hashes.get(name);
-    if (
-      !value ||
-      !ts.isStringLiteral(value) ||
-      !/^[0-9a-f]{64}$/.test(value.text)
-    )
-      throw new Error(`vendored schema has no exact literal hash: ${name}`);
-    result[name] = value.text;
-  }
-  return { revision: revision.text, hashes: result };
+    return matches[0][1];
+  };
+  return {
+    revision: constant("VENDORED_SOURCE_REVISION", "[0-9a-f]{40}"),
+    hashes: {
+      "assurance-v1.schema.json": constant("VENDORED_SHA256", "[0-9a-f]{64}"),
+    },
+  };
 }
 
 // TC-1589 / FR-043-AC-32: candidate preparation is not evidence promotion.
@@ -275,7 +234,7 @@ export function prepareCandidate(base, roots) {
     committedBytes(
       quoin,
       candidate.repositories.quoin.revision,
-      "src/quire/contract.ts",
+      CONTRACT_SOURCE,
     ).toString(),
   );
   assertRemoteRevision("vendored Quire contract", engine, revision);
@@ -283,7 +242,7 @@ export function prepareCandidate(base, roots) {
     const bytes = committedBytes(
       quoin,
       candidate.repositories.quoin.revision,
-      `src/quire/schemas/${name}`,
+      `${SCHEMA_DIR}/${name}`,
     );
     if (sha256(bytes) !== `sha256:${hashes[name]}`) {
       throw new Error(`vendored schema hash drift: ${name}`);

@@ -5,7 +5,8 @@
  * trimming, and the per-line refusals for every malformed spelling — is
  * `quoin-evidence`'s and is asserted by its golden corpus (quoin#458). What
  * stays here is the path only this tree has: the real producer ids through
- * `quire coverage` targets, into bindings, in the store.
+ * `quire.coverage` targets, into bindings, in the store. Since quoin#502 that
+ * derivation is asked of `quoin-core` rather than of a spawned `quire`.
  */
 import { createHash } from "node:crypto";
 import {
@@ -26,7 +27,7 @@ import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 import EvidenceRecord from "../src/commands/evidence/record.js";
 import { auditInputs, parseResults } from "../src/core/evidence.js";
-import { parseCoverage, runQuire } from "../src/quire/index.js";
+import { coverage } from "../src/core/quire.js";
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 const fixtureRoot = join(repoRoot, "tests/fixtures/evidence");
@@ -109,12 +110,8 @@ async function record(
 describe("FR-069 conformance traces", () => {
   it("records and binds the real producer ids through Quire targets", async () => {
     const root = repository();
-    const coverage = parseCoverage(
-      runQuire(["coverage", "--scope", root, "--json"]),
-    );
-    expect(coverage.ok).toBe(true);
-    if (!coverage.ok) throw new Error(coverage.error.message);
-    expect(coverage.value.obligations?.map((item) => item.target_ids)).toEqual([
+    const derived = coverage(root);
+    expect(derived.obligations?.map((item) => item.target_ids)).toEqual([
       ["TC-015"],
       ["TC-017"],
       ["TC-018"],

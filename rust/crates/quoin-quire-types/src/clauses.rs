@@ -37,8 +37,88 @@
 //! implementation fail intermittently rather than never.
 
 use std::collections::BTreeMap;
+use std::fmt;
 
 use serde::{Deserialize, Serialize};
+
+/// The digest of the clause set a report was evaluated against.
+///
+/// A newtype rather than a `String` because the stored spelling is the only
+/// thing quoin can check about this value: it cannot recompute the digest, it
+/// has no copy of the clause set, and it copies the value verbatim into the
+/// `clause-discharge-v1` document it emits. The retained
+/// `parseClauseBinding` (`src/quire/validate.ts`) enforced the format through
+/// the vendored `clause-binding-v1` schema's
+/// `"pattern": "^sha256:[0-9a-f]{64}$"`; with the schema gone (quoin#502) the
+/// refusal lives on the type that deserialises the report, which is the same
+/// place, expressed once.
+///
+/// Trace: FR-046-AC-1
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[serde(transparent)]
+pub struct ClauseSetDigest(String);
+
+impl ClauseSetDigest {
+    /// Read a stored digest reference, `sha256:` prefix included.
+    ///
+    /// # Errors
+    ///
+    /// Refuses a value without the `sha256:` prefix, and one whose remainder
+    /// is not exactly 64 lowercase hexadecimal characters. Uppercase hex is
+    /// refused rather than folded: two spellings of one digest would make the
+    /// emitted discharge document's bytes depend on how the producer wrote it.
+    pub fn parse_stored(value: &str) -> Result<Self, MalformedClauseSetDigest> {
+        let hex = value
+            .strip_prefix("sha256:")
+            .ok_or_else(|| MalformedClauseSetDigest(value.to_owned()))?;
+        let well_formed = hex.len() == 64
+            && hex
+                .bytes()
+                .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte));
+        if well_formed {
+            Ok(Self(value.to_owned()))
+        } else {
+            Err(MalformedClauseSetDigest(value.to_owned()))
+        }
+    }
+
+    /// The stored spelling, exactly as it will be re-emitted.
+    #[must_use]
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
+}
+
+impl fmt::Display for ClauseSetDigest {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter.write_str(&self.0)
+    }
+}
+
+impl<'de> Deserialize<'de> for ClauseSetDigest {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        let text = String::deserialize(deserializer)?;
+        Self::parse_stored(&text).map_err(serde::de::Error::custom)
+    }
+}
+
+/// A `clauseSetDigest` that is not `sha256:` followed by 64 lowercase hex
+/// characters.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MalformedClauseSetDigest(String);
+
+impl fmt::Display for MalformedClauseSetDigest {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            formatter,
+            "clauseSetDigest must be sha256: followed by 64 lowercase hex characters, not {:?}",
+            self.0
+        )
+    }
+}
+
+impl std::error::Error for MalformedClauseSetDigest {}
 
 /// Exact identity of a module-supplied clause set (quire-rs FR-067).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -137,17 +217,18 @@ pub struct ClauseBinding {
 ///
 /// # Why a struct and not a `serde_json::Value`
 ///
-/// `src/quire/types.ts` declares `EngineProvenance` with three concrete
-/// fields — `cli`, `engine`, `capabilities` — so a struct is the honest
-/// model: it says what the format is, and the crate's rule is that a reader
-/// spells quire's field names exactly. A `Value` would have been the honest
-/// choice only if the shape were open or undeclared, and it is neither.
+/// quire declares `EngineProvenance` with three concrete fields — `cli`,
+/// `engine`, `capabilities` — so a struct is the honest model: it says what
+/// the format is, and the crate's rule is that a reader spells quire's field
+/// names exactly. A `Value` would have been the honest choice only if the
+/// shape were open or undeclared, and it is neither.
 ///
 /// The field is `Option` on [`ClauseBindingReport`] rather than required
-/// because the retained type declares it `engine?:`. That is the one
-/// documented exception to the crate header's "fields quoin reads are
-/// required": quoin does not read it at all — `buildDischargeReport` never
-/// looks at it — so there is no blank row for an absence to produce.
+/// because the retained `src/quire/types.ts` declared it `engine?:` (deleted
+/// in quoin#502). That is the one documented exception to the crate header's
+/// "fields quoin reads are required": quoin does not read it at all —
+/// `buildDischargeReport` never looks at it — so there is no blank row for an
+/// absence to produce.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
@@ -182,7 +263,7 @@ pub struct ClauseBindingReport {
     /// Which clause set was evaluated.
     pub clause_set: ClauseSetKey,
     /// The digest of the clause set that produced these verdicts.
-    pub clause_set_digest: String,
+    pub clause_set_digest: ClauseSetDigest,
     /// The evaluated context, verbatim. Ordered, so the discharge report that
     /// copies it serialises to stable bytes.
     pub context: BTreeMap<String, String>,
@@ -204,7 +285,7 @@ pub struct ClauseBindingReport {
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 mod tests {
-    use super::{ClauseBindingOutcome, ClauseBindingReport, ClauseForce};
+    use super::{ClauseBindingOutcome, ClauseBindingReport, ClauseForce, ClauseSetDigest};
 
     fn wire() -> serde_json::Value {
         serde_json::json!({
@@ -316,5 +397,55 @@ mod tests {
                 "an unknown field at {pointer} must be refused"
             );
         }
+    }
+
+    /// The clause-set digest is read as a format, not as free text.
+    ///
+    /// This is the criterion `tests/discharge.test.ts` carried against the
+    /// retained `parseClauseBinding` before quoin#502 deleted it: a report
+    /// whose `clauseSetDigest` is not the stored spelling is refused, and the
+    /// otherwise identical well-formed report is accepted. Both halves are
+    /// asserted, because a reader that refused everything would satisfy the
+    /// first on its own.
+    ///
+    /// Trace: FR-046-AC-1
+    /// Provenance: quoin#502
+    #[test]
+    fn tc_502_020_a_malformed_clause_set_digest_is_refused() {
+        let accepted = serde_json::from_value::<ClauseBindingReport>(wire());
+        assert!(accepted.is_ok(), "{accepted:?}");
+
+        for malformed in [
+            "not-a-digest",
+            &"a".repeat(64),
+            &format!("sha256:{}", "a".repeat(63)),
+            &format!("sha256:{}", "a".repeat(65)),
+            &format!("sha256:{}", "A".repeat(64)),
+            &format!("sha256:{}{}", "g", "a".repeat(63)),
+        ] {
+            let mut value = wire();
+            value["clauseSetDigest"] = serde_json::json!(malformed);
+            assert!(
+                serde_json::from_value::<ClauseBindingReport>(value).is_err(),
+                "{malformed} must not read as a clause-set digest"
+            );
+        }
+    }
+
+    /// A digest re-emits exactly the bytes it was read from: the discharge
+    /// document copies this value rather than recomputing it.
+    ///
+    /// Trace: FR-046-AC-1
+    /// Provenance: quoin#502
+    #[test]
+    fn tc_502_021_a_clause_set_digest_round_trips_its_stored_spelling() {
+        let stored = format!("sha256:{}", "0123456789abcdef".repeat(4));
+        let digest = ClauseSetDigest::parse_stored(&stored).unwrap();
+        assert_eq!(digest.as_str(), stored);
+        assert_eq!(digest.to_string(), stored);
+        assert_eq!(
+            serde_json::to_value(&digest).unwrap(),
+            serde_json::json!(stored)
+        );
     }
 }

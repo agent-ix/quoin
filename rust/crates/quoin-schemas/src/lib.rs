@@ -80,11 +80,11 @@ pub const BOUNDARY_SCHEMA_ID: &str = "https://agent-ix.dev/quoin/core-boundary-v
 // --- The two checked-in digests. `make types` rewrites both; nothing else may.
 /// SHA-256 of the canonical JSON of [`boundary_schema`] at generation time.
 pub const SOURCE_SCHEMA_SHA256: &str =
-    "40b14a0b65ab9f29cfeb660aef9f97ab8e31d53335c1a63aee164a1f012def09";
+    "a34da8a3581303889b4e07c19fe833124de06f6c81bf14d234d2a0be3546a11c";
 
 /// SHA-256 of the committed `src/core/types.ts`.
 pub const GENERATED_TYPES_SHA256: &str =
-    "cc464e7a6240bcb4acc59b0fb72e2ee4c2a46e5388b99f75474dca6ab90a9205";
+    "0d551a4b54d78078ec611a87197d9994bfad46c82b686e5c6e28451c10f840b7";
 
 /// The JSON Schema of every type that crosses the `quoin-core` boundary.
 ///
@@ -447,7 +447,7 @@ mod tests {
     /// A list and not a count: a count moves when a type is renamed and says
     /// nothing about WHICH names crossed, and the names are what TypeScript
     /// imports.
-    const BOUNDARY_TYPES: [&str; 206] = [
+    const BOUNDARY_TYPES: [&str; 207] = [
         "Advice",
         "AdvisePayload",
         "AdviseRequest",
@@ -488,6 +488,7 @@ mod tests {
         "ClauseBindingSchemaVersion",
         "ClauseDischarge",
         "ClauseForce",
+        "ClauseSetDigest",
         "ClauseSetKey",
         "Commit",
         "CommitSha",

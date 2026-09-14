@@ -32,7 +32,7 @@ export const CORE_TYPES_PROVENANCE = {
   generator: "quoin-schemas/quoin-schemas-gen",
   generatorVersion: "0.1.0",
   sourceSchemaSha256:
-    "40b14a0b65ab9f29cfeb660aef9f97ab8e31d53335c1a63aee164a1f012def09",
+    "a34da8a3581303889b4e07c19fe833124de06f6c81bf14d234d2a0be3546a11c",
 } as const;
 
 /**
@@ -1077,7 +1077,7 @@ export interface ClauseBindingReport {
   /**
    * The digest of the clause set that produced these verdicts.
    */
-  clauseSetDigest: string;
+  clauseSetDigest: ClauseSetDigest;
   /**
    * Every clause the set declares, in the set's own order. That order is
    * significant downstream: FR-046's `unusedFacts` lists clause-ordered
@@ -1146,6 +1146,23 @@ export interface ClauseDischarge {
  * so refusing an unlisted value IS the retained behaviour.
  */
 export type ClauseForce = "mandatory" | "recommended" | "permitted";
+
+/**
+ * The digest of the clause set a report was evaluated against.
+ *
+ * A newtype rather than a `String` because the stored spelling is the only
+ * thing quoin can check about this value: it cannot recompute the digest, it
+ * has no copy of the clause set, and it copies the value verbatim into the
+ * `clause-discharge-v1` document it emits. The retained
+ * `parseClauseBinding` (`src/quire/validate.ts`) enforced the format through
+ * the vendored `clause-binding-v1` schema's
+ * `"pattern": "^sha256:[0-9a-f]{64}$"`; with the schema gone (quoin#502) the
+ * refusal lives on the type that deserialises the report, which is the same
+ * place, expressed once.
+ *
+ * Trace: FR-046-AC-1
+ */
+export type ClauseSetDigest = string;
 
 /**
  * Exact identity of a module-supplied clause set (quire-rs FR-067).
@@ -1662,17 +1679,18 @@ export interface EmptyGateFinding {
  *
  * # Why a struct and not a `serde_json::Value`
  *
- * `src/quire/types.ts` declares `EngineProvenance` with three concrete
- * fields — `cli`, `engine`, `capabilities` — so a struct is the honest
- * model: it says what the format is, and the crate's rule is that a reader
- * spells quire's field names exactly. A `Value` would have been the honest
- * choice only if the shape were open or undeclared, and it is neither.
+ * quire declares `EngineProvenance` with three concrete fields — `cli`,
+ * `engine`, `capabilities` — so a struct is the honest model: it says what
+ * the format is, and the crate's rule is that a reader spells quire's field
+ * names exactly. A `Value` would have been the honest choice only if the
+ * shape were open or undeclared, and it is neither.
  *
  * The field is `Option` on `ClauseBindingReport` rather than required
- * because the retained type declares it `engine?:`. That is the one
- * documented exception to the crate header's "fields quoin reads are
- * required": quoin does not read it at all — `buildDischargeReport` never
- * looks at it — so there is no blank row for an absence to produce.
+ * because the retained `src/quire/types.ts` declared it `engine?:` (deleted
+ * in quoin#502). That is the one documented exception to the crate header's
+ * "fields quoin reads are required": quoin does not read it at all —
+ * `buildDischargeReport` never looks at it — so there is no blank row for an
+ * absence to produce.
  */
 export interface EngineProvenance {
   /**
