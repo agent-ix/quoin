@@ -14,6 +14,7 @@ use crate::finding::Finding;
 /// looked", never "nothing was mocked", and folding it into either bucket
 /// would hand a caller a clean bill it never earned (agent-ix/quoin#204).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(rename_all = "camelCase")]
 pub struct UnevaluatedCheck {
     /// Which check could not run.
@@ -49,6 +50,7 @@ impl UnevaluatedCheck {
 /// Same reader posture as [`Finding`]: this deserialises whatever the auditor
 /// wrote, including fields a later version adds.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(rename_all = "camelCase")]
 pub struct AuditReport {
     /// Every finding, sorted by obligation then kind.

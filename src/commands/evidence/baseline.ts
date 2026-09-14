@@ -3,13 +3,13 @@ import { execFileSync } from "node:child_process";
 import { Flags } from "@oclif/core";
 
 import { QuoinCommand } from "../../base.js";
-import { loadMethodCatalog } from "../../advisor/index.js";
-import { audit, findingKey } from "../../auditor/index.js";
+import { baselineKeys } from "../../core/auditor.js";
 import {
   auditInputs,
   baselinePath,
   writeBaseline,
 } from "../../core/evidence.js";
+import { loadMethodCatalog } from "../../method-catalog.js";
 import {
   checkVersionPremise,
   parseCoverage,
@@ -60,7 +60,11 @@ releases is the gate quietly being disabled one entry at a time.`;
 
     const head = headCommit(flags.repo);
     const store = auditInputs(flags.repo, head);
-    const report = audit({
+    // One call, and the keying is the engine's. `findingKey` used to be
+    // applied here, which meant the spelling a baseline was WRITTEN with lived
+    // in the command and the spelling it was RATCHETED against lived in the
+    // auditor — two definitions of the same key, one boundary apart.
+    const accepted = baselineKeys({
       obligations: parsed.value.obligations ?? [],
       bindings: store.bindings,
       runs: store.runs,
@@ -70,8 +74,6 @@ releases is the gate quietly being disabled one entry at a time.`;
       catalog: loadMethodCatalog(flags.module ? [flags.module] : undefined),
       headCommit: head,
     });
-
-    const accepted = report.findings.map(findingKey).sort();
     const commit = head ?? "";
 
     if (!flags["dry-run"]) {

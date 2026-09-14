@@ -22,12 +22,9 @@ import { loadConfig } from "@agent-ix/ix-cli-core";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 import Advise from "../src/commands/advise";
-import {
-  advise,
-  loadMethodCatalog,
-  uncataloguedAuthoredMethods,
-} from "../src/advisor/index.js";
-import type { MethodCatalog } from "../src/advisor/index.js";
+import { advise } from "../src/core/auditor.js";
+import type { CoverageDiagnostic, MethodCatalog } from "../src/core/types.js";
+import { loadMethodCatalog } from "../src/method-catalog.js";
 import { runQuireAllowFailure, validateCoverage } from "../src/quire/index.js";
 
 const CATALOG: MethodCatalog = {
@@ -78,12 +75,16 @@ describe("the advisor is reachable from a command (FR-031-AC-10, AC-11)", () => 
     // The axis most catalog entries are keyed on. Without it `round-trip`
     // never reaches property-based testing, and the advice collapses to
     // statement text — which reads as "no rule matched" and is not.
-    const withShape = advise(CATALOG, {
+    const roundTrip = {
       id: "FR-001-AC-1",
       statement: "Every parsed document serializes back to its input.",
-      propertyShape: "round-trip",
-      archetype: "FR",
-    });
+      statement_hash: "a".repeat(64),
+    };
+    const withShape = advise({
+      catalog: CATALOG,
+      obligations: [roundTrip],
+      shapes: { "FR-001-AC-1": { archetype: "FR", property: "round-trip" } },
+    }).advice[0];
     expect(withShape.recommended.map((r) => r.method)).toEqual([
       "property-based-testing",
     ]);
@@ -91,24 +92,26 @@ describe("the advisor is reachable from a command (FR-031-AC-10, AC-11)", () => 
       { rule: "property_shapes", value: "round-trip" },
     ]);
 
-    const withoutShape = advise(CATALOG, {
-      id: "FR-001-AC-1",
-      statement: "Every parsed document serializes back to its input.",
-      propertyShape: null,
-      archetype: "FR",
-    });
+    const withoutShape = advise({
+      catalog: CATALOG,
+      obligations: [roundTrip],
+    }).advice[0];
     expect(withoutShape.inconclusive).toBe(true);
   });
 
   it("still advises an NFR metric row, which has no property shape", () => {
     // An NFR `Measurement and Evaluation` row is an obligation and not a
     // criterion, so no classifier ran on it. It is advised from its statement.
-    const advice = advise(CATALOG, {
-      id: "NFR-011-M-2",
-      statement: "The parser shall recover from a malformed token.",
-      propertyShape: null,
-      archetype: "NFR",
-    });
+    const advice = advise({
+      catalog: CATALOG,
+      obligations: [
+        {
+          id: "NFR-011-M-2",
+          statement: "The parser shall recover from a malformed token.",
+          statement_hash: "a".repeat(64),
+        },
+      ],
+    }).advice[0];
     expect(advice.recommended.map((r) => r.method)).toEqual([
       "fault-injection",
     ]);
@@ -359,25 +362,44 @@ describe("an engine predating CR-091 degrades to two states, and says so (FR-031
 
   // Trace: FR-031-AC-23
   it("reads the join off the diagnostics, and reports a value-less payload as degraded", () => {
-    const classified = uncataloguedAuthoredMethods(
-      battlePayload({ diagnosticValues: true }).diagnostics as never,
-    );
-    expect([...classified.values].sort()).toEqual([...BATTLE_STRINGS].sort());
+    // Asserted through the advice the join feeds rather than on the join
+    // itself: the classification is not a value the boundary answers, and a
+    // set nothing consumed would be a set nothing proved.
+    const advised = (diagnosticValues: boolean) =>
+      advise({
+        catalog: CATALOG,
+        obligations: BATTLE_STRINGS.map((method, i) => ({
+          id: `FR-00${i + 1}-AC-1`,
+          statement: RELIABILITY,
+          statement_hash: "a".repeat(64),
+          method,
+        })),
+        diagnostics: battlePayload({ diagnosticValues })
+          .diagnostics as CoverageDiagnostic[],
+      });
+
+    const classified = advised(true);
+    expect(
+      classified.advice
+        .filter((a) => a.uncatalogued)
+        .map((a) => a.authored)
+        .sort(),
+    ).toEqual([...BATTLE_STRINGS].sort());
     expect(classified.degraded).toBe(false);
 
-    const degraded = uncataloguedAuthoredMethods(
-      battlePayload({ diagnosticValues: false }).diagnostics as never,
-    );
-    expect(degraded.values.size).toBe(0);
+    const degraded = advised(false);
+    expect(degraded.advice.some((a) => a.uncatalogued)).toBe(false);
     expect(degraded.degraded).toBe(true);
 
     // No diagnostics at all is NOT degraded: under an engine of either
     // vintage it means every authored value is catalogued.
-    expect(uncataloguedAuthoredMethods(undefined).degraded).toBe(false);
+    expect(advise({ catalog: CATALOG, obligations: [] }).degraded).toBe(false);
     expect(
-      uncataloguedAuthoredMethods([
-        { declaration: "d", reason: "archetype-matches-nothing", message: "m" },
-      ]).degraded,
+      advise({
+        catalog: CATALOG,
+        obligations: [],
+        diagnostics: [{ reason: "archetype-matches-nothing" }],
+      }).degraded,
     ).toBe(false);
   });
 

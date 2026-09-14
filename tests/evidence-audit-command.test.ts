@@ -372,3 +372,52 @@ describe("mocked-confirmation production command path (agent-ix/quoin#204)", () 
     ]);
   });
 });
+
+// ── `--mutation-floor`, carried over from `tests/auditor.test.ts` ──────────
+//
+// `parseMutationFloor` stays in `src/commands/evidence/audit.ts`: it reads a
+// CLI flag, which is the host's job and not the engine's, so it did not move to
+// `quoin-auditor` at the quoin#501 cutover and its criteria stay here rather
+// than being restated on a Rust test that does not carry them.
+
+describe("--mutation-floor is parsed, and a bad one is refused", () => {
+  /** The command's own `this.error`, as a throw the test can read. */
+  const fail = (message: string): never => {
+    throw new Error(message);
+  };
+
+  // Trace: FR-039-AC-8, FR-039-AC-9
+  it("reads <criticality>=<ratio> pairs", async () => {
+    const { parseMutationFloor } =
+      await import("../src/commands/evidence/audit.js");
+    expect(parseMutationFloor(["P0=0.8", "P1=0.6"], fail)).toEqual({
+      P0: 0.8,
+      P1: 0.6,
+    });
+    expect(parseMutationFloor(undefined, fail)).toBeUndefined();
+    expect(parseMutationFloor([], fail)).toBeUndefined();
+  });
+
+  // Trace: FR-039-AC-9
+  it("refuses a percentage, which would fail every obligation forever", async () => {
+    // `--mutation-floor P0=80` is the natural thing to type and is a floor
+    // nothing can reach. Silently accepting it reports every P0 as failing and
+    // reads like a real finding.
+    const { parseMutationFloor } =
+      await import("../src/commands/evidence/audit.js");
+    expect(() => parseMutationFloor(["P0=80"], fail)).toThrow(
+      /ratio in \[0, 1\]/,
+    );
+  });
+
+  // Trace: FR-039-AC-9
+  it("refuses a malformed entry rather than ignoring it", async () => {
+    // Ignoring means the operator asked for a threshold and gets a clean report
+    // saying nothing was below it. A floor that silently does not apply reads
+    // as a passing gate.
+    const { parseMutationFloor } =
+      await import("../src/commands/evidence/audit.js");
+    expect(() => parseMutationFloor(["P0"], fail)).toThrow(/expects/);
+    expect(() => parseMutationFloor(["P0=high"], fail)).toThrow(/expects/);
+  });
+});

@@ -19,6 +19,7 @@ use crate::catalog::MethodCatalog;
 
 /// Everything one audit reads.
 #[derive(Debug, Clone, Default, PartialEq, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(rename_all = "camelCase")]
 pub struct AuditInput {
     /// Obligations as quire derives them today.

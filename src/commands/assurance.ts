@@ -4,8 +4,8 @@ import { readFileSync } from "node:fs";
 import { Flags } from "@oclif/core";
 
 import { QuoinCommand } from "../base.js";
-import { loadMethodCatalog } from "../advisor/index.js";
-import { audit } from "../auditor/index.js";
+import { loadMethodCatalog } from "../method-catalog.js";
+import { audit } from "../core/auditor.js";
 import {
   buildAuthoredArgumentView,
   buildCase,
@@ -166,7 +166,7 @@ that quietly narrows to what it can prove reads exactly like a complete one.`;
     // changed.
     const head = headCommit(flags.repo);
     const store = auditInputs(flags.repo, head, independencePolicy);
-    const report = audit({
+    const audited = audit({
       obligations,
       bindings: store.bindings,
       runs: store.runs,
@@ -178,6 +178,7 @@ that quietly narrows to what it can prove reads exactly like a complete one.`;
       catalog: loadMethodCatalog(flags.module ? [flags.module] : undefined),
       independencePolicy,
     });
+    const report = audited.report;
 
     const bundle = readBundleFrontmatter(`${flags.repo}/spec`);
     const trust = trustAssessments(flags.repo);
@@ -201,7 +202,7 @@ that quietly narrows to what it can prove reads exactly like a complete one.`;
         })),
       ],
       producer_trust: producerTrust,
-      evidence_independence: report.independence,
+      evidence_independence: audited.independence ?? undefined,
     });
 
     this.log(

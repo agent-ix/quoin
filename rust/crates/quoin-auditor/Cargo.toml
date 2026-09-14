@@ -19,6 +19,10 @@ path = "src/lib.rs"
 workspace = true
 
 [dependencies]
+# FR-097. Optional, and turned on by `quoin-schemas` rather than here: the
+# `auditor.*` wire shapes are this crate's types, and a schema nobody generates
+# is a contract nobody checks.
+schemars = { workspace = true, optional = true }
 # The t-way algebra, extracted first (quoin#382). Also the home of the
 # ECMAScript primitives both halves of this crate need: `js::compare` is the
 # locale-independent order `src/auditor/audit.ts:578` and
@@ -54,3 +58,14 @@ proptest = { workspace = true }
 # Pinned to match `quoin-completeness`: `multiple-versions = "deny"` forbids
 # two majors, and this workspace already carries =3.27.0.
 tempfile = "=3.27.0"
+
+
+[features]
+# FR-097. Off by default on purpose: a feature that is on by default is a
+# feature nobody ever proves works when it is off.
+schema = [
+    "dep:schemars",
+    "quoin-evidence/schema",
+    "quoin-finding-types/schema",
+    "quoin-quire-types/schema",
+]

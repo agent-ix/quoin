@@ -10,6 +10,7 @@ use serde::{Deserialize, Serialize};
 
 /// One catalog entry, as the module declared it.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(rename_all = "camelCase")]
 pub struct VerificationMethod {
     /// The method id, unique in the merged catalog (first module wins).
@@ -44,6 +45,7 @@ pub struct VerificationMethod {
 
 /// A method id more than one module declared, in first-wins order.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(rename_all = "camelCase")]
 pub struct DuplicateMethod {
     /// The contested id.
@@ -58,6 +60,7 @@ pub struct DuplicateMethod {
 /// still worth having, and the command that would have crashed is the one an
 /// operator runs *to diagnose* the module (agent-ix/quoin#106).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(rename_all = "camelCase")]
 pub struct UnreadableModule {
     /// The resolved module root.
@@ -72,6 +75,7 @@ pub struct UnreadableModule {
 /// the two disagreed, the advisor would recommend from one catalog while the
 /// auditor checked conformance against another.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(rename_all = "camelCase")]
 pub struct MethodCatalog {
     /// Every method, sorted by id.

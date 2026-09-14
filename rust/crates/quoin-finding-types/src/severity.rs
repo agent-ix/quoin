@@ -30,6 +30,10 @@ use serde::{Deserialize, Serialize};
 /// wins. [`Severity::LOW`], [`Severity::MEDIUM`] and [`Severity::HIGH`] name
 /// the three the auditor itself mints; everything else round-trips unchanged.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+// Domain-qualified for the same reason as `AuditFinding`: `Severity` is
+// already taken at the boundary, and `Severity2` names nothing.
+#[cfg_attr(feature = "schema", schemars(rename = "AuditSeverity"))]
 #[serde(transparent)]
 pub struct Severity(Box<str>);
 

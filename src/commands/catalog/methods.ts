@@ -1,7 +1,7 @@
 import { Flags } from "@oclif/core";
 
 import { QuoinCommand } from "../../base.js";
-import { loadMethodCatalog, methodClasses } from "../../advisor/index.js";
+import { loadMethodCatalog, methodClasses } from "../../method-catalog.js";
 import { ensureDefaultModules } from "../../core/modules.js";
 
 export default class CatalogMethods extends QuoinCommand {
@@ -57,7 +57,10 @@ markdown file that no manifest declared and no code read.`;
       const kind = method.evidenceKind ? ` → ${method.evidenceKind}` : "";
       this.log(`${method.id}  [${method.class}]${kind}`);
       this.log(`    ${method.name} — ${method.definition.trim()}`);
-      for (const [rule, values] of Object.entries(method.applicability)) {
+      // `applicability` is optional on the boundary type — a module may
+      // declare a method with no rules — and `loadMethodCatalog` normalizes an
+      // absent block to `{}`, so the fallback is never the reported case.
+      for (const [rule, values] of Object.entries(method.applicability ?? {})) {
         this.log(`    when ${rule}: ${values.join(", ")}`);
       }
     }

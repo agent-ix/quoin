@@ -80,11 +80,11 @@ pub const BOUNDARY_SCHEMA_ID: &str = "https://agent-ix.dev/quoin/core-boundary-v
 // --- The two checked-in digests. `make types` rewrites both; nothing else may.
 /// SHA-256 of the canonical JSON of [`boundary_schema`] at generation time.
 pub const SOURCE_SCHEMA_SHA256: &str =
-    "092980780b2ec6d229fda7a8da4f2f9d76513d1be3732a194f04899c4a4057a1";
+    "4e08492820ab92f494468b42bfbeb65cdcab78cde657d8b98df9744bea287980";
 
 /// SHA-256 of the committed `src/core/types.ts`.
 pub const GENERATED_TYPES_SHA256: &str =
-    "19022d6d15aee997cbd432c7eff7cce69b8d9df9ca55a4efa49e58c06d9bc1a2";
+    "50c609e55dce10c54042a972932f8fc333acb506d116ce21346a0fa4b826da99";
 
 /// The JSON Schema of every type that crosses the `quoin-core` boundary.
 ///
@@ -109,6 +109,17 @@ pub fn boundary_schema() -> Value {
     let _ = generator.subschema_for::<quoin_core::ops::modules::RemovePayload>();
     let _ = generator.subschema_for::<quoin_core::ops::modules::EnsureDefaultsRequest>();
     let _ = generator.subschema_for::<quoin_core::ops::modules::EnsureDefaultsPayload>();
+    // quoin#501, the `auditor` domain. The three operations that replaced
+    // `src/auditor/` and `src/advisor/`; their payloads carry the report and
+    // advice vocabularies, so `AuditReport`, `Finding` and `Advice` reach
+    // `src/core/types.ts` through them rather than being restated by hand.
+    let _ = generator.subschema_for::<quoin_core::ops::auditor::AuditRequest>();
+    let _ = generator.subschema_for::<quoin_core::ops::auditor::AuditPayload>();
+    let _ = generator.subschema_for::<quoin_core::ops::auditor::BaselineRequest>();
+    let _ = generator.subschema_for::<quoin_core::ops::auditor::BaselinePayload>();
+    let _ = generator.subschema_for::<quoin_core::ops::auditor::AdviseRequest>();
+    let _ = generator.subschema_for::<quoin_core::ops::auditor::AdvisePayload>();
+    let _ = generator.subschema_for::<quoin_core::ops::auditor::VocabularyPayload>();
     let _ = generator.subschema_for::<quoin_core::ops::assurance::RenderAuthoredArgumentPayload>();
     let _ = generator.subschema_for::<quoin_core::ops::assurance::RenderDischargePayload>();
     let _ = generator.subschema_for::<quoin_assurance::BuildAuthoredArgumentRequest>();
@@ -427,7 +438,10 @@ mod tests {
     /// A list and not a count: a count moves when a type is renamed and says
     /// nothing about WHICH names crossed, and the names are what TypeScript
     /// imports.
-    const BOUNDARY_TYPES: [&str; 181] = [
+    const BOUNDARY_TYPES: [&str; 202] = [
+        "Advice",
+        "AdvisePayload",
+        "AdviseRequest",
         "AffirmPayload",
         "AffirmRequest",
         "Affirmation",
@@ -438,10 +452,18 @@ mod tests {
         "AssumptionView",
         "AssuranceRecordPayload",
         "AssuranceRecordRequest",
+        "AuditFinding",
+        "AuditInput",
         "AuditInputsPayload",
         "AuditInputsRequest",
+        "AuditPayload",
+        "AuditReport",
+        "AuditRequest",
+        "AuditSeverity",
         "AuthoredArgumentView",
         "BaselineFile",
+        "BaselinePayload",
+        "BaselineRequest",
         "Binding",
         "BuildAuthoredArgumentRequest",
         "BuildDischargeRequest",
@@ -464,6 +486,7 @@ mod tests {
         "CompletenessFinding",
         "CompletenessFindingKind",
         "ContractVersion",
+        "CoverageDiagnostic",
         "CriterionView",
         "DecisionState",
         "Diagnostic",
@@ -477,6 +500,7 @@ mod tests {
         "DispositionDecision",
         "DispositionFact",
         "DocumentSource",
+        "DuplicateMethod",
         "EmptyGateFinding",
         "EngineProvenance",
         "EnsureDefaultsPayload",
@@ -510,6 +534,8 @@ mod tests {
         "ListPayload",
         "ListRequest",
         "MappingName",
+        "MatchReason",
+        "MethodCatalog",
         "MigrationExamplePayload",
         "MockInjection",
         "Mode",
@@ -533,6 +559,7 @@ mod tests {
         "PingRequest",
         "ProfileId",
         "PropertiesForm",
+        "PropertyShape",
         "ReadBaselinePayload",
         "ReadBlocksPayload",
         "ReadBlocksRequest",
@@ -540,6 +567,7 @@ mod tests {
         "ReasoningView",
         "ReceiptPayload",
         "ReceiptRequest",
+        "Recommendation",
         "RecordPayload",
         "RecordRequest",
         "RecoverPayload",
@@ -592,7 +620,9 @@ mod tests {
         "TrustDecisionRequest",
         "TrustStatus",
         "TrustTrigger",
+        "UnevaluatedCheck",
         "UnreadableDocument",
+        "UnreadableModule",
         "UnrepresentedView",
         "UnresolvedDeclaration",
         "UnresolvedOrgMessagePayload",
@@ -600,11 +630,13 @@ mod tests {
         "UnusedDischargeFact",
         "UnusedFactReason",
         "Verdict",
+        "VerificationMethod",
         "VerifyReceiptPayload",
         "VerifyReceiptRequest",
         "ViewSchemaVersion",
         "ViewStatus",
         "VocabularyName",
+        "VocabularyPayload",
         "VocabularyRollup",
         "VocabularyValue",
         "WriteBaselinePayload",

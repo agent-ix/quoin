@@ -25,3 +25,12 @@ serde = { workspace = true }
 # and does not declare; `serde_json` moved from dev-dependencies for that
 # (quoin#385).
 serde_json = { workspace = true }
+# FR-097. Optional, and turned on by `quoin-schemas` rather than here: the wire
+# shapes `auditor.audit` answers with are these types, and a schema nobody
+# generates is a contract nobody checks.
+schemars = { workspace = true, optional = true }
+
+[features]
+# FR-097. Off by default on purpose: a feature that is on by default is a
+# feature nobody ever proves works when it is off.
+schema = ["dep:schemars", "quoin-evidence/schema"]
