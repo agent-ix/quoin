@@ -34,14 +34,12 @@ import ChangeAssuranceSchema from "../src/commands/change-assurance/schema.js";
 import ChangeAssuranceSealAttestation from "../src/commands/change-assurance/seal-attestation.js";
 import ChangeAssuranceSealRecord from "../src/commands/change-assurance/seal-record.js";
 import ChangeAssuranceVerifyReceipt from "../src/commands/change-assurance/verify-receipt.js";
-import {
-  CHANGE_ASSURANCE_SCHEMA_NAMES,
-  changeAssuranceSchemaPath,
-} from "../src/store/schema-assets.js";
+import { CHANGE_ASSURANCE_SCHEMA_NAMES } from "../src/core/change-assurance-schemas.js";
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 const commandRoot = join(repoRoot, "src/commands/change-assurance");
 const goldenRoot = join(repoRoot, "tests/fixtures/change-assurance-cli");
+const assetRoot = join(repoRoot, "rust/crates/quoin-change-assurance/schemas");
 const OUTPUT = new TextEncoder().encode("ok\n");
 /** The one sentence permitted to name what these commands do NOT establish. */
 const DISCLAIMER =
@@ -294,12 +292,14 @@ describe("FR-068 packaged schemas", () => {
    * byte-identically to the packaged asset; an unknown name is refused with
    * exit 2.
    *
-   * This command needs no engine and gained none: the assets are DATA shipped
-   * in the npm package, read by `src/store/schema-assets.ts`, and a
-   * re-serialization would no longer be the file consumers validate against.
+   * The assets are DATA, and since quoin#503 they are data the engine carries:
+   * compiled into `quoin-change-assurance` with `include_str!` and emitted
+   * verbatim, so what a consumer validates against is the same file the
+   * sealing tests run over. Compared here against the crate's own bytes rather
+   * than against a copy, which is the drift the move removed.
    *
    * Trace: FR-068-AC-8
-   * Provenance: agent-ix/quoin#457
+   * Provenance: agent-ix/quoin#457, agent-ix/quoin#503
    */
   it("lists and emits the packaged assets and refuses an unknown name", async () => {
     await ChangeAssuranceSchema.run(["--json"], config);
@@ -311,7 +311,7 @@ describe("FR-068 packaged schemas", () => {
       lines.length = 0;
       await ChangeAssuranceSchema.run(["--name", name], config);
       expect(`${lines.join("\n")}\n`).toBe(
-        readFileSync(changeAssuranceSchemaPath(name), "utf8"),
+        readFileSync(join(assetRoot, name), "utf8"),
       );
     }
 

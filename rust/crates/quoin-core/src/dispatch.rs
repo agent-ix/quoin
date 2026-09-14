@@ -34,6 +34,7 @@ pub const OPERATIONS: &[&str] = &[
     "change_assurance.intake",
     "change_assurance.receipt",
     "change_assurance.recover",
+    "change_assurance.schema",
     "change_assurance.seal_attestation",
     "change_assurance.seal_record",
     "change_assurance.verify_receipt",
@@ -124,6 +125,7 @@ pub fn dispatch(
         "change_assurance.intake" => crate::ops::change_assurance::intake(request, capabilities),
         "change_assurance.receipt" => crate::ops::change_assurance::receipt(request, capabilities),
         "change_assurance.recover" => crate::ops::change_assurance::recover(request, capabilities),
+        "change_assurance.schema" => crate::ops::change_assurance::schema(request),
         "change_assurance.seal_attestation" => {
             crate::ops::change_assurance::seal_attestation(request)
         }
@@ -870,6 +872,10 @@ mod tests {
         (
             "ops::change_assurance::MAX_SCALAR_BYTES",
             crate::ops::change_assurance::MAX_SCALAR_BYTES,
+        ),
+        (
+            "ops::change_assurance::MAX_SCHEMA_BYTES",
+            crate::ops::change_assurance::MAX_SCHEMA_BYTES,
         ),
         (
             "ops::change_assurance::MAX_SEAL_ATTESTATION_BYTES",

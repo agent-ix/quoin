@@ -32,7 +32,7 @@ export const CORE_TYPES_PROVENANCE = {
   generator: "quoin-schemas/quoin-schemas-gen",
   generatorVersion: "0.1.0",
   sourceSchemaSha256:
-    "a34da8a3581303889b4e07c19fe833124de06f6c81bf14d234d2a0be3546a11c",
+    "c17512e7282b18a0fc8a8b6737e758f964c6bf4bb689b49b95f9e6d042cc4cc6",
 } as const;
 
 /**
@@ -3383,6 +3383,38 @@ export interface RunRequest {
 }
 
 /**
+ * The payload `change_assurance.schema` writes to stdout.
+ */
+export interface SchemaAssetPayload {
+  /**
+   * The requested asset's exact bytes, or `null` when none was requested.
+   *
+   * The text as compiled in, trailing newline included — a consumer
+   * validates against the same bytes the sealing code was written against,
+   * and a re-serialization here would defeat that.
+   */
+  schema?: string | null;
+  /**
+   * Every asset name this build ships, in the order the vocabulary declares.
+   */
+  schemas: string[];
+}
+
+/**
+ * The request accepted by `change_assurance.schema`.
+ */
+export interface SchemaAssetRequest {
+  /**
+   * Which asset to emit, or absent to ask only for the vocabulary.
+   *
+   * Absent and "emit nothing" are the same answer here because the
+   * vocabulary rides on every response: a caller listing the assets and a
+   * caller fetching one both learn what the build ships.
+   */
+  name?: string | null;
+}
+
+/**
  * The payload `completeness.schema_refs` writes to stdout.
  */
 export interface SchemaRefsPayload {
@@ -3774,6 +3806,15 @@ export interface StoreFactsPayload {
    * The revalidation triggers every trust decision must declare.
    */
   required_triggers: TrustTrigger[];
+  /**
+   * The store root itself, relative to the repository root.
+   *
+   * Repo-relative rather than absolute because this operation is handed no
+   * repository: it states the layout, and the caller joins it to whichever
+   * root it is asking about. The other four paths below are relative to
+   * THIS one, not to the repository.
+   */
+  store_root_path: string;
   /**
    * The version stamped into every record envelope.
    */

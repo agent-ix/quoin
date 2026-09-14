@@ -1,7 +1,7 @@
 import { Flags } from "@oclif/core";
 
 import { QuoinCommand } from "../base.js";
-import { canonicalJson } from "../store/canonical.js";
+import { canonicalJson } from "../canonical-output.js";
 import { askCore, stringMember } from "./measurement/core.js";
 
 /**

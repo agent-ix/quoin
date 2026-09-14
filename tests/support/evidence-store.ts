@@ -19,14 +19,14 @@ import {
   STORE_SCHEMA_VERSION,
   bindingsPath,
   baselinePath,
+  storeRoot,
   type BaselineFile,
   type Binding,
   type RunRecord,
 } from "../../src/core/evidence.js";
-import { writeCanonical } from "../../src/store/canonical.js";
-import { storeRoot } from "../../src/store/paths.js";
+import { writeCanonical } from "../../src/canonical-output.js";
 
-export { STORE_SCHEMA_VERSION, bindingsPath, baselinePath };
+export { STORE_SCHEMA_VERSION, bindingsPath, baselinePath, storeRoot };
 export type { BaselineFile, Binding, RunRecord };
 
 /** `runs/<suite>/<commit12>.json` — one file is one run of one suite. */

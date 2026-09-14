@@ -26,13 +26,13 @@ export {
   canonicalizeJcs,
   digestValue,
   parseStrictJson,
-} from "./store/integrity.js";
+} from "./integrity.js";
 export {
   CHANGE_ASSURANCE_SCHEMA_NAMES,
   changeAssuranceSchemaPath,
   readChangeAssuranceSchema,
   type ChangeAssuranceSchemaName,
-} from "./store/schema-assets.js";
+} from "./core/change-assurance-schemas.js";
 export {
   createAuthoringPack,
   formatAuthoringPack,

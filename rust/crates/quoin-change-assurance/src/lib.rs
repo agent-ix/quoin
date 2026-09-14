@@ -48,6 +48,7 @@ pub mod ids;
 pub mod intake;
 pub mod model;
 pub mod records;
+pub mod schemas;
 pub mod verify;
 
 pub use crate::error::{

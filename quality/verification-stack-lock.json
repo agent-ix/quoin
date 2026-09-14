@@ -84,7 +84,7 @@
     "scripts/check-tool-drift-selftest.mjs": "sha256:6b317db32637c038686125817e2375be4f8ee99db59a0403bc5c49520434e8e0",
     "scripts/verification-stack.mjs": "sha256:8a9a4251e402673a15debf39467d44c077d3e7c9da1099cd3ccbaebc833e147b",
     "scripts/verification-stack-selftest.mjs": "sha256:1878043067ddb8334f9576299587fce54b0f7f6fa45b0f977f2d84054e2bb306",
-    "scripts/copy-schemas.mjs": "sha256:b5aba5db31229b3cd04f69352d1a0aa38ad427b7911ab370eb3bfaf70f2b651e",
+    "scripts/copy-schemas.mjs": "sha256:99a960974e18612c0e6c50cbdf3a1c979c30f7ab3fd024cd84891c1419ac4818",
     "scripts/verify-span-breadth.mjs": "sha256:4ab0f359688e093c48414bdfec6e4d3915f8580ee652a31f796e4cc7c81e8869",
     "scripts/bench-tier1.mjs": "sha256:fe6356a91e94b6fca311dfc7995459b91f21e240c5e55017dfca6f7e6c6e0388",
     "scripts/battletest.mjs": "sha256:3737ea8c096ede3dd19cf22bdac6d52ac6d36d772e5a0045541be2dbb6caab61",

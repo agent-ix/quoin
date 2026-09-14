@@ -145,6 +145,13 @@ pub struct StoreFactsPayload {
     pub mutation_score_metric: String,
     /// The version stamped into every record envelope.
     pub store_schema_version: u32,
+    /// The store root itself, relative to the repository root.
+    ///
+    /// Repo-relative rather than absolute because this operation is handed no
+    /// repository: it states the layout, and the caller joins it to whichever
+    /// root it is asking about. The other four paths below are relative to
+    /// THIS one, not to the repository.
+    pub store_root_path: String,
     /// Store-relative path of the binding graph.
     pub bindings_path: String,
     /// Store-relative path of the ratchet baseline.

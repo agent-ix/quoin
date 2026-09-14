@@ -78,7 +78,6 @@ fn tc_455_only_the_disk_store_names_a_host_capability() {
         "std::net",
         "std::time",
         "Command::new",
-        "include_str!",
     ];
     let mut named = 0_usize;
     for (name, contents) in &sources {
@@ -96,6 +95,37 @@ fn tc_455_only_the_disk_store_names_a_host_capability() {
     assert!(
         named >= 2,
         "anti-vacuity floor: the disk store must actually name a capability, saw {named}"
+    );
+}
+
+/// Trace: FR-100-AC-8
+/// Provenance: quoin#503
+///
+/// `include_str!` is bounded too, but to a different module and for a
+/// different reason. It is not a host capability: it reads nothing at run
+/// time, so a module using it is still a pure function of what it was handed.
+/// What it *is* is the one way a file enters the binary, and the crate's
+/// answer to "which file, and asserted how" has to stay a single answer —
+/// `schemas.rs`, whose three assets `tests/tc_503_schema_assets.rs` validates
+/// sealed documents against. A second module embedding a second file would be
+/// a second contract with no test pointing at it.
+#[test]
+fn tc_503_only_the_asset_module_embeds_a_file() {
+    let sources = sources();
+    let mut embedded = 0_usize;
+    for (name, contents) in &sources {
+        if contents.contains("include_str!") {
+            assert_eq!(
+                name, "schemas.rs",
+                "`include_str!` appears in {name}, which is not the one module allowed to embed \
+                 a file"
+            );
+            embedded += 1;
+        }
+    }
+    assert_eq!(
+        embedded, 1,
+        "anti-vacuity floor: the asset module must actually embed its assets, saw {embedded}"
     );
 }
 

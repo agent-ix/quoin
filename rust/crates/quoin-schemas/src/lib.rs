@@ -80,11 +80,11 @@ pub const BOUNDARY_SCHEMA_ID: &str = "https://agent-ix.dev/quoin/core-boundary-v
 // --- The two checked-in digests. `make types` rewrites both; nothing else may.
 /// SHA-256 of the canonical JSON of [`boundary_schema`] at generation time.
 pub const SOURCE_SCHEMA_SHA256: &str =
-    "a34da8a3581303889b4e07c19fe833124de06f6c81bf14d234d2a0be3546a11c";
+    "c17512e7282b18a0fc8a8b6737e758f964c6bf4bb689b49b95f9e6d042cc4cc6";
 
 /// SHA-256 of the committed `src/core/types.ts`.
 pub const GENERATED_TYPES_SHA256: &str =
-    "0d551a4b54d78078ec611a87197d9994bfad46c82b686e5c6e28451c10f840b7";
+    "ad3ed6614d6d80d7d0ca4f475682f8a395c447f01de59141fce50eaf03c0e77b";
 
 /// The JSON Schema of every type that crosses the `quoin-core` boundary.
 ///
@@ -159,6 +159,8 @@ pub fn boundary_schema() -> Value {
     let _ = generator.subschema_for::<quoin_core::ops::change_assurance::ReceiptPayload>();
     let _ = generator.subschema_for::<quoin_core::ops::change_assurance::VerifyReceiptRequest>();
     let _ = generator.subschema_for::<quoin_core::ops::change_assurance::VerifyReceiptPayload>();
+    let _ = generator.subschema_for::<quoin_core::ops::change_assurance::SchemaAssetRequest>();
+    let _ = generator.subschema_for::<quoin_core::ops::change_assurance::SchemaAssetPayload>();
     let _ = generator.subschema_for::<quoin_core::ops::evidence::StoreFactsPayload>();
     let _ = generator.subschema_for::<quoin_core::ops::evidence::RepoRequest>();
     let _ = generator.subschema_for::<quoin_core::ops::evidence::GcRequest>();
@@ -447,7 +449,7 @@ mod tests {
     /// A list and not a count: a count moves when a type is renamed and says
     /// nothing about WHICH names crossed, and the names are what TypeScript
     /// imports.
-    const BOUNDARY_TYPES: [&str; 207] = [
+    const BOUNDARY_TYPES: [&str; 209] = [
         "Advice",
         "AdvisePayload",
         "AdviseRequest",
@@ -601,6 +603,8 @@ mod tests {
         "RunPayload",
         "RunRecord",
         "RunRequest",
+        "SchemaAssetPayload",
+        "SchemaAssetRequest",
         "SchemaRefsPayload",
         "SchemaRefsRequest",
         "SchemaSource",

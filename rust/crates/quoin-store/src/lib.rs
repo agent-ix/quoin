@@ -73,7 +73,7 @@ pub mod store;
 
 pub use digest::{
     AssuranceRecordId, CanonicalDigest, DigestDomain, MAX_DIGESTED_FILE_BYTES, RawBytesDigest,
-    RawFileSha256Digest, RecordFileName, digest_assurance_record, digest_bytes_sha256,
+    RawFileSha256Digest, RecordFileName, blake3_hex, digest_assurance_record, digest_bytes_sha256,
     digest_canonical_value, digest_file_sha256, digest_raw_bytes, digest_record,
     digest_record_file_name, digest_record_pair_file_name, verify_record_digest,
 };

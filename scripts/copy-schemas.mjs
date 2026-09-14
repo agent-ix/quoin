@@ -11,6 +11,13 @@
  * The quire schemas left this list in quoin#502: the engine is linked into
  * `quoin-core`, and the one schema still vendored is compiled into that binary
  * with `include_str!` rather than read off disk.
+ *
+ * The three change-assurance assets are read from `rust/` since quoin#503.
+ * They are compiled into `quoin-core` as well, and `quoin change-assurance
+ * schema` prints them from there, so this copy exists for the packaged
+ * `changeAssuranceSchemaPath` alone — an installed consumer that wants the
+ * file rather than the bytes. `rust/` is not in the package's `files:` list,
+ * which is why the copy cannot be dropped along with the read.
  */
 
 import { copyFileSync, cpSync, mkdirSync, readdirSync } from "node:fs";
@@ -18,7 +25,9 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const repo = dirname(dirname(fileURLToPath(import.meta.url)));
-const sources = [join(repo, "src", "store", "schemas")];
+const sources = [
+  join(repo, "rust", "crates", "quoin-change-assurance", "schemas"),
+];
 const to = join(repo, "dist", "schemas");
 
 mkdirSync(to, { recursive: true });

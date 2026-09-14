@@ -32,7 +32,7 @@
 //! The domain is split the way it reads: [`wire`] holds the request and payload
 //! shapes together with the ceilings they are read under, [`taxonomy`] holds
 //! the one place a `ChangeAssuranceError` becomes an exit status, [`support`]
-//! holds what the operations share, and this file holds the six operations
+//! holds what the operations share, and this file holds the seven operations
 //! themselves.
 
 mod support;
@@ -44,6 +44,7 @@ mod tests;
 
 use std::path::Path;
 
+use quoin_change_assurance::schemas;
 use quoin_change_assurance::verify::{RetainedAttestation, Selection};
 use quoin_change_assurance::{
     Published, VerificationInput, attestations, intake_attestation, read_attestation, records,
@@ -53,7 +54,7 @@ use quoin_store::store::{attestation_path, record_path};
 use quoin_store::{JsonValue, parse_strict_json};
 
 use crate::capabilities::Capabilities;
-use crate::error::CoreError;
+use crate::error::{CoreError, CoreErrorCode};
 use crate::ops::{refusal, request_size};
 use crate::protocol::Response;
 
@@ -64,10 +65,11 @@ use self::support::{
 use self::taxonomy::map_error;
 pub use self::wire::{
     IntakePayload, IntakeRequest, MAX_INTAKE_BYTES, MAX_RECEIPT_BYTES, MAX_RECOVER_BYTES,
-    MAX_SCALAR_BYTES, MAX_SEAL_ATTESTATION_BYTES, MAX_SEAL_RECORD_BYTES, MAX_VERIFY_RECEIPT_BYTES,
-    ReceiptPayload, ReceiptRequest, RecoverPayload, RecoverRequest, SealAttestationPayload,
-    SealAttestationRequest, SealRecordPayload, SealRecordRequest, SelectionRequest,
-    VerifyReceiptPayload, VerifyReceiptRequest,
+    MAX_SCALAR_BYTES, MAX_SCHEMA_BYTES, MAX_SEAL_ATTESTATION_BYTES, MAX_SEAL_RECORD_BYTES,
+    MAX_VERIFY_RECEIPT_BYTES, ReceiptPayload, ReceiptRequest, RecoverPayload, RecoverRequest,
+    SchemaAssetPayload, SchemaAssetRequest, SealAttestationPayload, SealAttestationRequest,
+    SealRecordPayload, SealRecordRequest, SelectionRequest, VerifyReceiptPayload,
+    VerifyReceiptRequest,
 };
 
 /// Answer a `change_assurance.seal_record`.
@@ -375,5 +377,51 @@ pub fn verify_receipt(request: &serde_json::Value) -> Result<Response, CoreError
     let verified = verify::verify_receipt(&document).map_err(|e| map_error(&e, OP))?;
     ok(&VerifyReceiptPayload {
         receipt: to_serde(&verified.to_json().map_err(|e| map_error(&e, OP))?, OP)?,
+    })
+}
+
+/// Answer a `change_assurance.schema`.
+///
+/// The three normative assets are compiled into `quoin-change-assurance` and
+/// emitted from there, so the schema a consumer validates against and the
+/// schema the sealing code is tested against are one file (quoin#503). It
+/// needs no capability: nothing is read from disk and nothing is written.
+///
+/// # Errors
+///
+/// - [`CoreErrorCode::BadRequest`] when stdin is not a [`SchemaAssetRequest`], or
+///   when it names an asset this build does not ship.
+/// - [`CoreErrorCode::Refused`] when the request exceeds its ceiling.
+pub fn schema(request: &serde_json::Value) -> Result<Response, CoreError> {
+    const OP: &str = "change_assurance.schema";
+    let size = request_size(request)?;
+    if size > MAX_SCHEMA_BYTES {
+        return Err(refusal(OP, MAX_SCHEMA_BYTES, size));
+    }
+    let request: SchemaAssetRequest = parse(request, OP)?;
+    let names: Vec<String> = schemas::ASSET_NAMES.iter().map(|&n| n.to_owned()).collect();
+    let asset = match request.name {
+        None => None,
+        Some(name) => {
+            check_bound(OP, "name", &name, MAX_SCALAR_BYTES)?;
+            // Named rather than defaulted: a caller holding a name this build
+            // does not ship is told so, because answering with some other
+            // schema would validate its document against a contract nobody
+            // asked for.
+            let Some(text) = schemas::asset(&name) else {
+                return Err(CoreError::new(
+                    CoreErrorCode::BadRequest,
+                    format!("{OP}: no schema asset named {name}"),
+                )
+                .with_context("op", OP)
+                .with_context("name", name)
+                .with_context("known", names.join(",")));
+            };
+            Some(text.to_owned())
+        }
+    };
+    ok(&SchemaAssetPayload {
+        schemas: names,
+        schema: asset,
     })
 }

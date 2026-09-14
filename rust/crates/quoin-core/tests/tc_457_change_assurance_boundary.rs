@@ -692,3 +692,48 @@ fn tc_457_608_a_malformed_digest_inside_a_receipt_is_refused_not_thrown() {
         result.stdout, result.stderr
     );
 }
+
+/// `change_assurance.schema` emits the three normative assets from the binary
+/// itself, and refuses a name this build does not ship.
+///
+/// The assets are compiled into `quoin-change-assurance` (quoin#503), so what
+/// this asserts is that the bytes a consumer validates against reach it across
+/// the boundary unchanged — parsed back here only to compare against the same
+/// constant the sealing tests use.
+///
+/// Trace: FR-068-AC-8
+/// Provenance: agent-ix/quoin#503
+#[test]
+fn tc_503_610_schema_emits_the_shipped_assets_and_refuses_any_other_name() {
+    let listed = ok(&run("change_assurance.schema", &json!({})));
+    assert_eq!(
+        listed["schemas"],
+        json!([
+            "change-assurance-record-v1.schema.json",
+            "proof-attestation-v1.schema.json",
+            "verification-receipt-v1.schema.json"
+        ])
+    );
+    assert_eq!(listed["schema"], Value::Null);
+
+    for name in [
+        "change-assurance-record-v1.schema.json",
+        "proof-attestation-v1.schema.json",
+        "verification-receipt-v1.schema.json",
+    ] {
+        let payload = ok(&run("change_assurance.schema", &json!({ "name": name })));
+        let text = payload["schema"].as_str().expect("the asset is a string");
+        let document: Value = serde_json::from_str(text).expect("the asset is JSON");
+        assert_eq!(
+            document["$id"].as_str().unwrap().rsplit('/').next(),
+            Some(name),
+            "{name} came back declaring another identity",
+        );
+    }
+
+    let refused = run(
+        "change_assurance.schema",
+        &json!({ "name": "verification-receipt-v2.schema.json" }),
+    );
+    failed(&refused, 3);
+}

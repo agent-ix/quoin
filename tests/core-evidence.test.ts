@@ -26,9 +26,9 @@ import {
   bindingsPath,
   inspectionsPath,
   storeFacts,
+  storeRoot,
   suitesPath,
 } from "../src/core/evidence.js";
-import { storeRoot } from "../src/store/paths.js";
 
 function coreBinary(): string | null {
   const path = process.env.QUOIN_CORE;
@@ -57,6 +57,9 @@ describe.skipIf(coreBinary() === null)("src/core/evidence.ts constants", () => {
     const facts = storeFacts();
     const repo = "/repo";
     const root = storeRoot(repo);
+    // The root itself is the boundary's too: `store_root_path` is stated
+    // relative to the repository, and the four names below are relative to it.
+    expect(root).toBe(join(repo, facts.store_root_path));
     expect(bindingsPath(repo)).toBe(join(root, facts.bindings_path));
     expect(baselinePath(repo)).toBe(join(root, facts.baseline_path));
     expect(suitesPath(repo)).toBe(join(root, facts.suites_path));

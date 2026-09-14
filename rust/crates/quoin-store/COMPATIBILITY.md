@@ -279,6 +279,32 @@ documentation of `json::MAX_NESTING_DEPTH`; the refusal is asserted by
 `tc_380_nesting_at_the_budget_is_accepted`, and
 `tc_380_both_writers_refuse_past_the_budget_they_share_with_the_parser`.
 
+## Known divergence: `assertValidUnicode` has no counterpart
+
+`src/store/integrity.ts:211` exports `assertValidUnicode(value: string)`, which
+walks a string's UTF-16 code units and throws `IntegrityError` on a lone high or
+lone low surrogate. **This crate has no such function, and will not grow one.**
+
+The reason is that the condition it checks cannot be constructed here. A
+JavaScript string is a sequence of UTF-16 code units with no well-formedness
+requirement, so `"\uD800"` is an ordinary value that any code path may hold and
+hand to a serializer; the check exists because that is true. A Rust `String` is
+guaranteed well-formed UTF-8, and an unpaired surrogate has no UTF-8 encoding,
+so no `JsonValue::String` can carry one and no serializer needs to be defended
+against one. A function taking `&str` and looking for a lone surrogate would be
+a check over an empty population — the failure FR-101 AC-7 names by name.
+
+The refusal has not been dropped, it has moved to where the condition can
+actually occur: the **parser**, reading `\uD800` in the source text, where
+`json::parse` refuses it. That is stated in `src/json/value.rs`, which records
+both removed-by-construction refusals (non-finite numbers and lone surrogates)
+in the same place.
+
+The consequence for the published npm surface is that `assertValidUnicode` is a
+TypeScript-only export with no engine operation behind it. It is not a decision
+the boundary can be asked to take, because the boundary carries documents as
+bytes and the strict parser already refuses the escape.
+
 ---
 
 ## The fixtures are frozen; they are not regenerated
