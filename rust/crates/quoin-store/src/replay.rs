@@ -161,7 +161,8 @@ pub struct Oracle {
 }
 
 impl Oracle {
-    /// Read a capture produced by `oracle/capture-store-oracle.mjs`.
+    /// Read a capture produced by `capture-store-oracle.mjs` (deleted at
+    /// cutover; see `COMPATIBILITY.md` for how to recover it from git history).
     ///
     /// The capture is newline-delimited JSON: one record per line, each tagged
     /// `"file"` or `"raw"`. It is a stream because a single document holding

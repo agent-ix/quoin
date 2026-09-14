@@ -37,36 +37,61 @@ TypeScript validator produced.
 | `yaml`                    | 2.9.0    |
 | Node                      | v22.15.0 |
 
-## The oracle sources are gone as of quoin#446
+## Convention: the goldens are frozen and the capture script is deleted
 
 `src/org.ts`, `src/plugins.ts` and `src/modules.ts` were deleted by the cutover
-ticket, so `capture-ts-oracle.mjs` no longer runs at `HEAD` and the goldens in
-this directory are **frozen**. That is the intended end state rather than a loss:
-the TypeScript was the oracle exactly once, and `ts-oracle.json` is the record of
-what it answered. Re-running the capture means checking out `7c8e18f` below,
-where those modules still exist.
+ticket quoin#446. `capture-ts-oracle.mjs` was deleted from this directory by
+quoin#508, at the cutover convention every port now follows: **a capture script
+is deleted together with the TypeScript it captured.** A script whose sources no
+longer exist cannot regenerate anything, and keeping it at `HEAD` advertises a
+recipe that cannot run.
 
-`src/config-schema.ts` and `src/catalog.ts` are still present, so the
-`config_schema` and `paths` sections could still be re-derived; nothing depends
-on that and it is recorded only so the table below stays readable.
+The goldens in this directory are therefore **frozen**. That is the intended end
+state, not a loss: the TypeScript was the oracle exactly once, and
+`ts-oracle.json` is the record of what it answered. A test that disagrees with a
+golden is a parity finding to adjudicate, never a file to regenerate.
 
-## How they were captured
+## Provenance, and how to verify it without the script
 
-`capture-ts-oracle.mjs` in this directory is the capture script, committed
-verbatim. It imports the real `src/` modules and the real `@agent-ix/ts-plugin-kit`
-exports and records their answers. It was run as a Vitest test file, because the
-`src/` modules use `.js`-suffixed ESM specifiers that plain `node
---experimental-strip-types` will not resolve:
+Provenance is carried by the artifact, not by the script:
+
+- **the revision** the capture was taken at —
+  `7c8e18f873b6295f528b4d694647a10d82cfb59c`, recorded in the table above; and
+- **the oracle sources** at that revision, which are what the goldens describe.
+
+Both are independently checkable in a bare clone, with no Node, no
+`node_modules` and no capture script:
 
 ```bash
-# from a checkout of agent-ix/quoin at the revision above, with pnpm install run
-cp rust/goldens/capture-ts-oracle.mjs tests/.capture-381.test.ts
-#   …then adjust the four `../src/*.ts` specifiers to drop the `.ts` suffix and
-#   replace the trailing `writeFileSync(process.argv[2], …)` line with
-#   `test("capture", () => { writeFileSync(process.env.QUOIN_381_OUT, …); });`
-QUOIN_381_OUT=rust/goldens/ts-oracle.json npx vitest run tests/.capture-381.test.ts
-rm tests/.capture-381.test.ts
+# the oracle sources the goldens were captured from still exist at that revision
+git show 7c8e18f873b6295f528b4d694647a10d82cfb59c:src/org.ts | sha256sum
+git show 7c8e18f873b6295f528b4d694647a10d82cfb59c:src/plugins.ts | sha256sum
+git show 7c8e18f873b6295f528b4d694647a10d82cfb59c:src/modules.ts | sha256sum
 ```
+
+Goldens elsewhere in this repository record the digest alongside the revision —
+`produced_from_revision` plus `produced_by_digest` — and for those the same
+command _reproduces the stated digest_, which is the machine-checkable form of
+this claim. Where a golden names a `capture_script`, it names it as
+`<revision>:<path>`, which `git show` resolves directly.
+
+## Recovering the capture script
+
+`capture-ts-oracle.mjs` is permanently in git history. "Deleted from `HEAD`" is
+not "lost":
+
+```bash
+git show eb0ca08419fa2f05a1522c5bf2d108a818645c1f:rust/goldens/capture-ts-oracle.mjs
+```
+
+It imported the real `src/` modules and the real `@agent-ix/ts-plugin-kit`
+exports and recorded their answers, and was run as a Vitest test file because the
+`src/` modules use `.js`-suffixed ESM specifiers that plain `node
+--experimental-strip-types` will not resolve. Running it again requires a
+checkout of `7c8e18f873b6295f528b4d694647a10d82cfb59c` with `pnpm install` done,
+because that is the last revision where its inputs exist. Nothing in this
+repository does that, and nothing should: no Rust test in `rust/` shells out to
+Node, to `tsx`, or to `vitest` (EPIC #373 AC-5).
 
 ## What is in `ts-oracle.json`
 
