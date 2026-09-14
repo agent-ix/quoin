@@ -9,7 +9,9 @@
 //! and the attestation/retained-output pairing had no production instance to
 //! replay against.
 //!
-//! `oracle/build-change-assurance-fixture.mjs` writes one through the shipped
+//! `build-change-assurance-fixture.mjs` (deleted at cutover; recoverable with
+//! `git show eb0ca08419fa2f05a1522c5bf2d108a818645c1f:rust/crates/quoin-store/oracle/build-change-assurance-fixture.mjs`)
+//! wrote one through the shipped
 //! TypeScript writers — `sealChangeRecord`, `writeChangeRecord`,
 //! `sealAttestation`, `intakeAttestation` — and the result is committed at
 //! `tests/fixtures/change-assurance-store/`. Every byte, filename and digest in

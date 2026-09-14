@@ -3,7 +3,7 @@
   "produced_by_digest": "sha256:a2cea5ae769af67264fdc2c7a28de58a68914c0d87eacd11212e6c8a8755f7e7",
   "produced_from_revision": "d2b81a88a8c2c6d84fb5ddf98deffad51636fda3",
   "produced_by_node": "v22.15.0",
-  "capture_script": "rust/crates/quoin-measurement-graph/oracle/capture-graph-loader-oracle.mjs",
+  "capture_script": "6ac2b49f86ece258db2f8837914b35ff30783717:rust/crates/quoin-measurement-graph/oracle/capture-graph-loader-oracle.mjs",
   "fixture_tree": "rust/crates/quoin-measurement-graph/tests/fixtures/graph-loader-tree",
   "tree_token": "@@TREE@@",
   "byte_identical": {

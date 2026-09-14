@@ -3,9 +3,11 @@
 //! The Rust half of the cutover gate.
 //!
 //! ```text
-//! node --loader ts-node/esm oracle/capture-store-oracle.mjs --out /tmp/o.json <repo>...
 //! quoin-store-replay --oracle /tmp/o.json <repo>...
 //! ```
+//!
+//! The oracle capture is produced by `capture-store-oracle.mjs`, deleted at
+//! cutover; `COMPATIBILITY.md` says how to recover it from git history.
 //!
 //! Exit status is the gate: `0` only when the two implementations agreed on
 //! every digest and every sealed record verified against itself. Anything else

@@ -1,6 +1,6 @@
 {
   "provenance": {
-    "captured_by": "rust/crates/quoin-measurement-graph/oracle/capture-graph-adapter-verdicts.mjs",
+    "captured_by": "6ac2b49f86ece258db2f8837914b35ff30783717:rust/crates/quoin-measurement-graph/oracle/capture-graph-adapter-verdicts.mjs",
     "module": "src/measurement/graph-adapters.ts",
     "module_digest": "sha256:961ecad4aa9e112a669502de11b3906ca9654098bf1eb0c25adebd9ee65ac01a",
     "node": "v22.15.0",

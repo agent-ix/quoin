@@ -38,15 +38,26 @@ is not asserted, it says so rather than implying otherwise.
 **No cutover may depend on this crate until every digest in every reachable
 store has been replayed through both implementations with zero mismatches.**
 
-```bash
-# TypeScript half — the oracle. Streams newline-delimited JSON.
-node --loader ts-node/esm oracle/capture-store-oracle.mjs \
-  --out /tmp/store-oracle.ndjson <repo> [<repo> ...]
+The gate was run and cleared on 2026-09-12; the recorded artifact is
+`oracle/GATE-RESULT.md`. The Rust half still runs at `HEAD`:
 
+```bash
 # Rust half — the comparison. Exit status is the gate.
 cargo run --release --bin quoin-store-replay -- \
-  --oracle /tmp/store-oracle.ndjson <repo> [<repo> ...]
+  --oracle <oracle.ndjson> <repo> [<repo> ...]
 ```
+
+The TypeScript half is **not** reproducible at `HEAD` and is not meant to be.
+`oracle/capture-store-oracle.mjs` was deleted by quoin#508 under the cutover
+convention (see _Regenerating the fixtures_ below); it is recoverable from git
+history with
+
+```bash
+git show eb0ca08419fa2f05a1522c5bf2d108a818645c1f:rust/crates/quoin-store/oracle/capture-store-oracle.mjs
+```
+
+and it needs a checkout of that revision with `node_modules` installed to run at
+all.
 
 The gate is the _number_, not the tool: a run reports digests replayed and
 mismatches, and only `mismatches = 0` clears it. A mismatch is never reconciled
@@ -102,7 +113,9 @@ Two results need stating rather than summarising:
   findings. This supersedes an earlier statement in this document that no
   reachable repository held one. The committed fixture at
   `tests/fixtures/change-assurance-store/`, built by
-  `oracle/build-change-assurance-fixture.mjs` and replayed by
+  `oracle/build-change-assurance-fixture.mjs`
+  (`git show eb0ca08419fa2f05a1522c5bf2d108a818645c1f:rust/crates/quoin-store/oracle/build-change-assurance-fixture.mjs`)
+  and replayed by
   `tc_change_assurance_store.rs`, remains the hermetic test of the same shape.
 
 ---
@@ -268,17 +281,44 @@ documentation of `json::MAX_NESTING_DEPTH`; the refusal is asserted by
 
 ---
 
-## Regenerating the fixtures
+## The fixtures are frozen; they are not regenerated
 
-Both capture scripts need a checkout with `node_modules` installed; a bare git
-worktree has none. `QUOIN_SRC_ROOT` points them at one.
+The captured fixtures — `tests/fixtures/jcs-oracle.json` and
+`tests/fixtures/change-assurance-store/` — are committed so **no TypeScript runs
+as a test oracle** (EPIC #373 AC-5). They are **frozen**. A test that disagrees
+with one is a parity finding to adjudicate, never a fixture to regenerate.
+
+The capture scripts that produced them —
+`oracle/capture-cases.mjs` and `oracle/build-change-assurance-fixture.mjs` —
+were deleted from `HEAD` by quoin#508. This is the convention, not an omission:
+**a capture script is deleted together with the TypeScript it captured.** Once
+its sources are gone it can regenerate nothing, so keeping it at `HEAD`
+advertises a recipe that cannot run.
+
+`oracle/cases.mjs` is kept. It is not a capture script: it is the authored
+adversarial case corpus, pure data with no imports, and it is the statement of
+intent that `tests/tc_jcs_adversarial.rs` reads the captured answers against.
+
+**Provenance without the script.** A golden's provenance is the pair it carries —
+`produced_by_digest` (a SHA-256 of the captured source) and
+`produced_from_revision` (a git SHA) — and that pair is verifiable in a bare
+clone, with no Node and no capture script:
 
 ```bash
-QUOIN_SRC_ROOT=/path/to/quoin node --loader ts-node/esm oracle/capture-cases.mjs
-QUOIN_SRC_ROOT=/path/to/quoin node --loader ts-node/esm \
-  oracle/build-change-assurance-fixture.mjs <dir>
+git show <produced_from_revision>:<produced_by> | sha256sum   # == produced_by_digest
 ```
 
-The captured fixtures are committed so **no TypeScript runs as a test oracle**
-(EPIC #373 AC-5). These scripts exist to regenerate them when the case list
-grows, not to run in CI.
+Where a golden names a `capture_script` it names it as `<revision>:<path>`, which
+`git show` resolves directly.
+
+**Recovering the scripts.** Deleted from `HEAD` is not lost. Both lived at
+`eb0ca08419fa2f05a1522c5bf2d108a818645c1f`:
+
+```bash
+git show eb0ca08419fa2f05a1522c5bf2d108a818645c1f:rust/crates/quoin-store/oracle/capture-cases.mjs
+git show eb0ca08419fa2f05a1522c5bf2d108a818645c1f:rust/crates/quoin-store/oracle/build-change-assurance-fixture.mjs
+```
+
+Either one needs a checkout with `node_modules` installed — a bare git worktree
+has none — and `QUOIN_SRC_ROOT` pointed at it. Nothing in this repository runs
+them, and nothing should.
