@@ -238,7 +238,7 @@ pub fn find_entry<'a>(catalog: &'a Catalog, name: &str) -> Option<&'a SpecCatalo
     catalog
         .entries
         .iter()
-        .find(|entry| entry.name.eq_ignore_ascii_case(name))
+        .find(|entry| entry.name.to_lowercase() == name.to_lowercase())
 }
 
 fn named_entries(value: Option<&Value>) -> Vec<&serde_json::Map<String, Value>> {
@@ -297,16 +297,28 @@ fn skeleton_path(root: &str, type_name: &str, names: &[String]) -> Option<String
 }
 
 fn find_duplicates(entries: &[SpecCatalogEntry]) -> Vec<Duplicate> {
-    let mut grouped: BTreeMap<(EntryKind, String), BTreeSet<String>> = BTreeMap::new();
+    // A `BTreeMap` would make output deterministic, but not compatible: the
+    // TypeScript implementation used a `Map`, so duplicate groups were emitted
+    // in the order their first type declaration appeared. Keep that observable
+    // declaration order while sorting only the MODULE names, as it did.
+    let mut grouped: Vec<(EntryKind, String, BTreeSet<String>)> = Vec::new();
     for entry in entries {
-        grouped
-            .entry((entry.kind, entry.name.clone()))
-            .or_default()
-            .insert(entry.module_name.clone());
+        if let Some((_, _, modules)) = grouped
+            .iter_mut()
+            .find(|(kind, name, _)| *kind == entry.kind && *name == entry.name)
+        {
+            modules.insert(entry.module_name.clone());
+        } else {
+            grouped.push((
+                entry.kind,
+                entry.name.clone(),
+                BTreeSet::from([entry.module_name.clone()]),
+            ));
+        }
     }
     grouped
         .into_iter()
-        .filter_map(|((kind, name), modules)| {
+        .filter_map(|(kind, name, modules)| {
             (modules.len() > 1).then(|| Duplicate {
                 kind,
                 name,
@@ -379,6 +391,34 @@ mod tests {
         assert_eq!(
             find_entry(&catalog, "fr").map(|entry| entry.module_name.as_str()),
             Some("one")
+        );
+    }
+
+    /// Trace: FR-101
+    #[test]
+    fn tc_373_catalog_duplicate_groups_keep_first_declaration_order() {
+        let document = |root: &str, name: &str, types: &str| ModuleDocument {
+            root: root.to_owned(),
+            manifest: format!("name: {name}\n{types}"),
+            skeleton_names: Vec::new(),
+        };
+        let catalog = build(
+            &[
+                document("/a", "a", "object_types: [{name: domain}]\n"),
+                document("/b", "b", "artifact_types: [{name: FR}]\n"),
+                document("/c", "c", "object_types: [{name: domain}]\n"),
+                document("/d", "d", "artifact_types: [{name: FR}]\n"),
+            ],
+            &[],
+        )
+        .expect("valid manifests");
+        assert_eq!(
+            catalog
+                .duplicates
+                .iter()
+                .map(|duplicate| (duplicate.kind, duplicate.name.as_str()))
+                .collect::<Vec<_>>(),
+            vec![(EntryKind::Object, "domain"), (EntryKind::Artifact, "FR")]
         );
     }
 }
