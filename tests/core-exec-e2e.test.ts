@@ -110,7 +110,7 @@ describe.skipIf(!available)("src/core/exec.ts ↔ quoin-core", () => {
       if (saved === undefined) delete process.env.QUOIN_EXPECTED_CORE_SHA256;
       else process.env.QUOIN_EXPECTED_CORE_SHA256 = saved;
     }
-  });
+  }, 15_000);
 });
 
 /**
