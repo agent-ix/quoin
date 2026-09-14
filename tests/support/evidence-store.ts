@@ -13,7 +13,8 @@
  * drifted from the layout would fail the test that uses it, which is the point.
  */
 
-import { join } from "node:path";
+import { mkdirSync, writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
 
 import {
   STORE_SCHEMA_VERSION,
@@ -24,10 +25,24 @@ import {
   type Binding,
   type RunRecord,
 } from "../../src/core/evidence.js";
-import { writeCanonical } from "../../src/canonical-output.js";
+import { canonicalJson } from "../../src/canonical-output.js";
 
 export { STORE_SCHEMA_VERSION, bindingsPath, baselinePath, storeRoot };
 export type { BaselineFile, Binding, RunRecord };
+
+/**
+ * Write one canonical document, creating its directory.
+ *
+ * It lives here rather than in `src/` because this is its only caller: the
+ * retained `writeCanonical` was a store writer, and the store writer is
+ * `quoin_store::store::write_canonical` now (quoin#504). What is left is a
+ * fixture helper, and a fixture helper in `src/` is shipped code pretending to
+ * be test support.
+ */
+function writeCanonical(path: string, value: unknown): void {
+  mkdirSync(dirname(path), { recursive: true });
+  writeFileSync(path, canonicalJson(value), "utf8");
+}
 
 /** `runs/<suite>/<commit12>.json` — one file is one run of one suite. */
 export function runPath(repo: string, suite: string, commit: string): string {
