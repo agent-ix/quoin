@@ -30,7 +30,7 @@ import {
 } from "vitest";
 
 import EvidenceAudit from "../src/commands/evidence/audit.js";
-import * as advisor from "../src/advisor/index.js";
+import * as methodCatalog from "../src/method-catalog.js";
 import { quireExecutable } from "../src/quire/exec.js";
 
 let config: Config;
@@ -173,7 +173,7 @@ describe("ordered audit module transport", () => {
   // Trace: FR-032-AC-12
   it("forwards both roots in caller order and excludes the ambient catalog", async () => {
     const calls = transportDouble();
-    const catalog = vi.spyOn(advisor, "loadMethodCatalog");
+    const catalog = vi.spyOn(methodCatalog, "loadMethodCatalog");
     const result = await report([beta, alpha]);
     expect(catalog).toHaveBeenCalledExactlyOnceWith([beta, alpha]);
     expect(calls()).toEqual([

@@ -1,20 +1,10 @@
 import { Flags } from "@oclif/core";
 
 import { QuoinCommand } from "../base.js";
-import {
-  advise,
-  loadMethodCatalog,
-  uncataloguedAuthoredMethods,
-} from "../advisor/index.js";
-import type {
-  Advice,
-  ObligationEvidence,
-  ObligationFacts,
-  UncataloguedMethods,
-} from "../advisor/index.js";
-import { scoresFor } from "../auditor/index.js";
+import { advise } from "../core/auditor.js";
+import type { Advice, PropertyShape } from "../core/auditor.js";
 import { auditInputs } from "../core/evidence.js";
-import type { Binding, RunRecord } from "../core/evidence.js";
+import { loadMethodCatalog } from "../method-catalog.js";
 import {
   checkVersionPremise,
   parseCoverage,
@@ -23,7 +13,7 @@ import {
   runQuire,
   runQuireAllowFailure,
 } from "../quire/index.js";
-import type { Obligation, PropertiesReport } from "../quire/index.js";
+import type { PropertiesReport } from "../quire/index.js";
 
 export default class Advise extends QuoinCommand {
   static summary =
@@ -113,20 +103,29 @@ residue afterwards — labelled as judgement (the FR-042 / ADR-0010 discipline).
       );
     }
 
-    // The store is read ONCE, here, and handed in. `advise` performs no I/O —
-    // an advisor that could reach the filesystem could also disagree with the
-    // auditor about what it found (ADR-0011).
+    // The store is read ONCE, here, and handed in. The advisor performs no
+    // I/O — an advisor that could reach the filesystem could also disagree
+    // with the auditor about what it found (ADR-0011).
     const store = auditInputs(flags.repo);
-    const bindings = store.bindings;
-    const runs = store.runs;
 
-    // The uncatalogued-method join (quoin#168): quire's own diagnosis of which
-    // authored values the catalog never declared, keyed by the `value` field
-    // that is byte-equal to `Obligation.method` (quire-rs CR-091).
-    const uncatalogued = uncataloguedAuthoredMethods(
-      coverage.value.diagnostics,
-    );
-    if (uncatalogued.degraded) {
+    // ONE request for the whole population. The retained command built each
+    // obligation's facts itself and called `advise` per obligation, which is
+    // fine inside one process and wrong across a boundary: the unit of IPC is
+    // a command-shaped operation, so this is one round trip and not N.
+    //
+    // The uncatalogued-method join (quoin#168) went with it: quire's own
+    // diagnosis of which authored values the catalog never declared, keyed by
+    // the `value` field byte-equal to `Obligation.method` (quire-rs CR-091).
+    const advised = advise({
+      catalog,
+      obligations,
+      shapes: Object.fromEntries(shapes),
+      bindings: store.bindings,
+      runs: store.runs,
+      diagnostics: coverage.value.diagnostics,
+    });
+    const advice = advised.advice;
+    if (advised.degraded) {
       this.warn(
         "engine predates vocabulary classification: this quire's " +
           "`uncatalogued-verification-method` diagnostics carry no `value`, " +
@@ -137,17 +136,6 @@ residue afterwards — labelled as judgement (the FR-042 / ADR-0010 discipline).
       );
     }
 
-    const advice = obligations.map((o) =>
-      advise(
-        catalog,
-        factsFor(
-          o,
-          shapes.get(o.id),
-          evidenceFor(o.id, bindings, runs),
-          uncatalogued,
-        ),
-      ),
-    );
     // `--*-only` flags combine as a UNION. Intersection made the pair
     // `--mismatch-only --inconclusive-only` a guaranteed zero rows (a mismatch
     // requires recommendations, inconclusive means none), which read as "all
@@ -213,11 +201,9 @@ residue afterwards — labelled as judgement (the FR-042 / ADR-0010 discipline).
  * entry here and is advised from its statement alone. That is a real limit, not
  * a gap to paper over: no classifier ran on it.
  */
-function propertyShapes(
-  repo: string,
-): Map<string, { property: string; archetype: string }> {
+function propertyShapes(repo: string): Map<string, PropertyShape> {
   const args = ["properties", "spec/**/*.md", "--scope", repo, "--json"];
-  const out = new Map<string, { property: string; archetype: string }>();
+  const out = new Map<string, PropertyShape>();
   // `properties` exits 1 when ANY input document fails to resolve — an asset
   // with no `type:`, say — while still writing a complete payload for every
   // document that did. Two untyped files must not cost the whole shape axis.
@@ -232,54 +218,4 @@ function propertyShapes(
     }
   }
   return out;
-}
-
-/**
- * What the store records about one obligation.
- *
- * `scoresFor` is the auditor's, reused rather than reimplemented: one
- * definition of what a fault-detection score is, so the auditor's finding and
- * the advisor's recommendation cannot disagree about the same run.
- */
-function evidenceFor(
-  id: string,
-  bindings: Binding[],
-  runs: RunRecord[],
-): ObligationEvidence {
-  const mine = bindings.filter((b) => b.obligation === id);
-  return {
-    bound: mine.length > 0,
-    faultDetectionScores: scoresFor(mine, runs),
-  };
-}
-
-function factsFor(
-  obligation: Obligation,
-  shape: { property: string; archetype: string } | undefined,
-  evidence: ObligationEvidence,
-  uncatalogued: UncataloguedMethods,
-): ObligationFacts {
-  return {
-    id: obligation.id,
-    statement: obligation.statement,
-    authoredMethod: obligation.method ?? null,
-    // Byte equality, deliberately: CR-091 guarantees the diagnostic's `value`
-    // is the identical string, so any normalization here could only disagree.
-    uncataloguedMethod:
-      obligation.method != null && uncatalogued.values.has(obligation.method),
-    propertyShape: shape?.property ?? null,
-    archetype: shape?.archetype ?? archetypeOf(obligation.id),
-    criticality: obligation.criticality ?? null,
-    // The one STRUCTURED signal quire emits about an obligation. It was typed
-    // and parsed and then dropped on this exact seam, so the advisor guessed
-    // from prose while `{"target": "< 4 min"}` sat unread in the record (#166).
-    parameters: obligation.parameters,
-    evidence,
-  };
-}
-
-/** `NFR-006-M-2` → `NFR`. The id prefix is the archetype for every ISO id. */
-function archetypeOf(id: string): string | null {
-  const prefix = id.split("-")[0];
-  return prefix.length > 0 ? prefix : null;
 }

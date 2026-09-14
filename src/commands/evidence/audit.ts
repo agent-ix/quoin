@@ -4,14 +4,14 @@ import { readFileSync } from "node:fs";
 import { Flags } from "@oclif/core";
 
 import { QuoinCommand } from "../../base.js";
-import { loadMethodCatalog } from "../../advisor/index.js";
-import { audit, ratchet } from "../../auditor/index.js";
+import { audit } from "../../core/auditor.js";
 import {
   auditInputs,
   baselinePath,
   parsePolicy,
   readBaseline,
 } from "../../core/evidence.js";
+import { loadMethodCatalog } from "../../method-catalog.js";
 import {
   checkVersionPremise,
   parseCoverage,
@@ -121,41 +121,48 @@ a week. Write that baseline with: quoin evidence baseline`;
     // vacuity and profile independence — inside per-obligation loops, so a
     // per-question operation would have cost one subprocess per obligation.
     const store = auditInputs(flags.repo, head, independencePolicy);
-    const report = audit({
-      obligations,
-      bindings: store.bindings,
-      runs: store.runs,
-      scans: store.scans,
-      injections: store.injections,
-      mockInspectionSuites: store.mock_inspection_suites,
-      vacuousScanSuites: store.vacuous_scan_suites,
-      independence: store.independence,
-      // The SAME module the coverage call above used. Defaulting to the
-      // installed roots meant `--module <dir>` derived obligations from one
-      // catalog and checked conformance against another — the exact disagreement
-      // `src/advisor/methods.ts` opens by warning about (agent-ix/quoin#105).
-      catalog: loadMethodCatalog(modules.length > 0 ? modules : undefined),
-      headCommit: head,
-      // Deliberately unset. No obligation source in the ecosystem declares a
-      // `criticality_column` — measured: 2,304 of 2,304 `Acceptance Criteria`
-      // tables are `ID | Criteria | Verification` and carry no priority
-      // (spec-artifacts-process CR-005) — so a hardcoded `["P0"]` was a rule
-      // that could never fire, and would have fired on *everything* the moment
-      // a column appeared. `--multiplicity-requires` makes it a choice.
-      multiplicityRequires: flags["multiplicity-requires"],
-      mutationFloor: parseMutationFloor(flags["mutation-floor"], (message) =>
-        this.error(message, { exit: 2 }),
-      ),
-      independencePolicy,
-    });
-
-    const baseline = flags.ratchet ? readBaseline(flags.repo).baseline : null;
-    // Whether ratcheting was ACTUALLY applied — `flags.ratchet` is only what
-    // was asked for. A missing baseline degrades the run to a full report, and
-    // labelling that full report "(new violations only)" told a day-one reader
-    // their whole backlog was new violations (#169).
-    const ratcheted = baseline !== null;
-    const reported = baseline ? ratchet(report, baseline) : report.findings;
+    const baseline = flags.ratchet
+      ? (readBaseline(flags.repo).baseline?.accepted ?? null)
+      : null;
+    const audited = audit(
+      {
+        obligations,
+        bindings: store.bindings,
+        runs: store.runs,
+        scans: store.scans,
+        injections: store.injections,
+        mockInspectionSuites: store.mock_inspection_suites,
+        vacuousScanSuites: store.vacuous_scan_suites,
+        independence: store.independence,
+        // The SAME module the coverage call above used. Defaulting to the
+        // installed roots meant `--module <dir>` derived obligations from one
+        // catalog and checked conformance against another — the exact disagreement
+        // `src/advisor/methods.ts` opens by warning about (agent-ix/quoin#105).
+        catalog: loadMethodCatalog(modules.length > 0 ? modules : undefined),
+        headCommit: head,
+        // Deliberately unset. No obligation source in the ecosystem declares a
+        // `criticality_column` — measured: 2,304 of 2,304 `Acceptance Criteria`
+        // tables are `ID | Criteria | Verification` and carry no priority
+        // (spec-artifacts-process CR-005) — so a hardcoded `["P0"]` was a rule
+        // that could never fire, and would have fired on *everything* the moment
+        // a column appeared. `--multiplicity-requires` makes it a choice.
+        multiplicityRequires: flags["multiplicity-requires"],
+        mutationFloor: parseMutationFloor(flags["mutation-floor"], (message) =>
+          this.error(message, { exit: 2 }),
+        ),
+        independencePolicy,
+      },
+      // `undefined`, never `[]`, when no baseline was read. The boundary keeps
+      // the two apart so the payload can answer whether ratcheting was
+      // ACTUALLY applied rather than only whether it was asked for.
+      baseline ?? undefined,
+    );
+    const report = audited.report;
+    // A missing baseline degrades the run to a full report, and labelling that
+    // full report "(new violations only)" told a day-one reader their whole
+    // backlog was new violations (#169).
+    const ratcheted = audited.reported != null;
+    const reported = audited.reported ?? report.findings;
 
     if (flags.ratchet && !ratcheted && !flags.json) {
       this.log(missingBaselineNotice(flags.repo));
@@ -169,8 +176,8 @@ a week. Write that baseline with: quoin evidence baseline`;
             healthy: report.healthy,
             unevaluated: report.unevaluated,
             ratchet: ratcheted,
-            ...(report.independence
-              ? { independence: report.independence }
+            ...(audited.independence
+              ? { independence: audited.independence }
               : {}),
           },
           null,
@@ -198,10 +205,10 @@ a week. Write that baseline with: quoin evidence baseline`;
       );
     }
 
-    if (!flags.json && report.independence) {
+    if (!flags.json && audited.independence) {
       this.log("");
       this.log("Profile-selected evidence independence:");
-      for (const assessment of report.independence) {
+      for (const assessment of audited.independence) {
         this.log(
           `  [${assessment.status}] ${assessment.obligation}: ${assessment.summary}`,
         );

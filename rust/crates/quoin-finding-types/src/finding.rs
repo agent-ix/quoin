@@ -29,6 +29,12 @@ use crate::severity::Severity;
 /// There is no `deny_unknown_fields`. The caller hands this type the auditor's
 /// own output verbatim, and a future field is not a parse error.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+// `Finding` is already taken at the boundary by the evidence store's scan
+// finding, and schemars answers a collision by minting `Finding2` — a name
+// that tells a TypeScript reader nothing about which finding it holds. Named
+// for the report it belongs to, the way `SemanticSeverity` is.
+#[cfg_attr(feature = "schema", schemars(rename = "AuditFinding"))]
 #[serde(rename_all = "camelCase")]
 pub struct Finding {
     /// What kind of finding it is.

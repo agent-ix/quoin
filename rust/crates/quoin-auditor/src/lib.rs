@@ -46,9 +46,10 @@ pub mod inert;
 pub mod jsvalue;
 
 pub use advise::{
-    Advice, MatchReason, ObligationEvidence, ObligationFacts, Recommendation,
-    UNCATALOGUED_METHOD_REASON, UncataloguedMethods, advise, characteristics_of,
-    mintable_characteristics, uncatalogued_authored_methods,
+    Advice, MatchReason, ObligationEvidence, ObligationFacts, PropertyShape, Recommendation,
+    UNCATALOGUED_METHOD_REASON, UncataloguedMethods, advise, advise_all, archetype_of,
+    characteristics_of, evidence_for, facts_for, mintable_characteristics,
+    uncatalogued_authored_methods,
 };
 pub use audit::{
     AuditInput, Delta, MOCK_SUBJECT_FLOOR, audit, delta, finding_key, ratchet, scores_for,

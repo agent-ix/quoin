@@ -18,6 +18,7 @@
 pub mod characteristics;
 pub mod compound;
 pub mod facts;
+pub mod pipeline;
 pub mod table;
 pub mod uncatalogued;
 
@@ -28,6 +29,7 @@ use quoin_combinatorial::js;
 pub use characteristics::{characteristics_of, mintable_characteristics};
 pub use compound::{matches_outside_compound, prose};
 pub use facts::{Advice, MatchReason, ObligationEvidence, ObligationFacts, Recommendation};
+pub use pipeline::{PropertyShape, advise_all, archetype_of, evidence_for, facts_for};
 pub use table::STATEMENT_CHARACTERISTICS;
 pub use uncatalogued::{
     UNCATALOGUED_METHOD_REASON, UncataloguedMethods, uncatalogued_authored_methods,

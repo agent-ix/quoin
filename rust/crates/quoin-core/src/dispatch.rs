@@ -27,6 +27,9 @@ pub const OPERATIONS: &[&str] = &[
     "assurance.render_case",
     "assurance.render_discharge",
     "assurance.requirement_of",
+    "auditor.advise",
+    "auditor.audit",
+    "auditor.baseline",
     "change_assurance.intake",
     "change_assurance.receipt",
     "change_assurance.recover",
@@ -164,6 +167,9 @@ pub fn dispatch(
         "measurement.build_series" => crate::ops::measurement::build_series(request),
         "measurement.build_portfolio" => crate::ops::measurement::build_portfolio(request),
         "measurement.render_portfolio" => crate::ops::measurement::render_portfolio(request),
+        "auditor.audit" => crate::ops::auditor::audit(request),
+        "auditor.baseline" => crate::ops::auditor::baseline(request),
+        "auditor.advise" => crate::ops::auditor::advise(request),
         "graph.fan_out" => crate::ops::graph::fan_out(request, capabilities),
         "graph.churn" => crate::ops::graph::churn(request, capabilities),
         "graph.change_impact" => crate::ops::graph::change_impact(request, capabilities),
@@ -346,6 +352,26 @@ mod tests {
             "assurance",
             "assurance.rs",
             include_str!("ops/assurance.rs"),
+        ),
+        (
+            "auditor",
+            "auditor/mod.rs",
+            include_str!("ops/auditor/mod.rs"),
+        ),
+        (
+            "auditor",
+            "auditor/taxonomy.rs",
+            include_str!("ops/auditor/taxonomy.rs"),
+        ),
+        (
+            "auditor",
+            "auditor/tests.rs",
+            include_str!("ops/auditor/tests.rs"),
+        ),
+        (
+            "auditor",
+            "auditor/wire.rs",
+            include_str!("ops/auditor/wire.rs"),
         ),
         (
             "change_assurance",
@@ -782,106 +808,108 @@ mod tests {
     /// Every domain bound outside `ops::evidence`, named one by one: a scan
     /// would find whatever it found, and find nothing once the constants are
     /// renamed.
-    fn census_of_the_older_domains() -> Vec<(&'static str, usize)> {
-        vec![
-            (
-                "ops::core::MAX_ECHO_BYTES",
-                crate::ops::core::MAX_ECHO_BYTES,
-            ),
-            (
-                "ops::assurance::MAX_BUILD_CASE_BYTES",
-                crate::ops::assurance::MAX_BUILD_CASE_BYTES,
-            ),
-            (
-                "ops::validators::MAX_RUN_REQUEST_BYTES",
-                crate::ops::validators::MAX_RUN_REQUEST_BYTES,
-            ),
-            (
-                "ops::assurance::MAX_OBLIGATION_ID_BYTES",
-                crate::ops::assurance::MAX_OBLIGATION_ID_BYTES,
-            ),
-            (
-                "ops::graph::MAX_GRAPH_REQUEST_BYTES",
-                crate::ops::graph::MAX_GRAPH_REQUEST_BYTES,
-            ),
-            (
-                "ops::graph::MAX_SCALAR_BYTES",
-                crate::ops::graph::MAX_SCALAR_BYTES,
-            ),
-            (
-                "ops::change_assurance::MAX_INTAKE_BYTES",
-                crate::ops::change_assurance::MAX_INTAKE_BYTES,
-            ),
-            (
-                "ops::change_assurance::MAX_RECEIPT_BYTES",
-                crate::ops::change_assurance::MAX_RECEIPT_BYTES,
-            ),
-            (
-                "ops::change_assurance::MAX_RECOVER_BYTES",
-                crate::ops::change_assurance::MAX_RECOVER_BYTES,
-            ),
-            (
-                "ops::change_assurance::MAX_SCALAR_BYTES",
-                crate::ops::change_assurance::MAX_SCALAR_BYTES,
-            ),
-            (
-                "ops::change_assurance::MAX_SEAL_ATTESTATION_BYTES",
-                crate::ops::change_assurance::MAX_SEAL_ATTESTATION_BYTES,
-            ),
-            (
-                "ops::change_assurance::MAX_SEAL_RECORD_BYTES",
-                crate::ops::change_assurance::MAX_SEAL_RECORD_BYTES,
-            ),
-            (
-                "ops::change_assurance::MAX_VERIFY_RECEIPT_BYTES",
-                crate::ops::change_assurance::MAX_VERIFY_RECEIPT_BYTES,
-            ),
-            (
-                "ops::completeness::MAX_MANIFEST_BYTES",
-                crate::ops::completeness::MAX_MANIFEST_BYTES,
-            ),
-            (
-                "ops::completeness::MAX_ASSESS_BUNDLE_BYTES",
-                crate::ops::completeness::MAX_ASSESS_BUNDLE_BYTES,
-            ),
-            (
-                "ops::config::MAX_GIT_CONFIG_BYTES",
-                crate::ops::config::MAX_GIT_CONFIG_BYTES,
-            ),
-            (
-                "ops::config::MAX_CONFIG_LAYER_BYTES",
-                crate::ops::config::MAX_CONFIG_LAYER_BYTES,
-            ),
-            (
-                "ops::config::MAX_SCALAR_BYTES",
-                crate::ops::config::MAX_SCALAR_BYTES,
-            ),
-            (
-                "ops::modules::MAX_MANIFEST_BYTES",
-                crate::ops::modules::MAX_MANIFEST_BYTES,
-            ),
-            (
-                "ops::modules::MAX_SCALAR_BYTES",
-                crate::ops::modules::MAX_SCALAR_BYTES,
-            ),
-            (
-                "ops::modules::MAX_SOURCE_ARG_BYTES",
-                crate::ops::modules::MAX_SOURCE_ARG_BYTES,
-            ),
-            (
-                "ops::semantic::MAX_READ_BLOCKS_BYTES",
-                crate::ops::semantic::MAX_READ_BLOCKS_BYTES,
-            ),
-            (
-                "ops::semantic::MAX_SCALAR_BYTES",
-                crate::ops::semantic::MAX_SCALAR_BYTES,
-            ),
-            (
-                "ops::semantic::MAX_SWEEP_CORPUS_BYTES",
-                crate::ops::semantic::MAX_SWEEP_CORPUS_BYTES,
-            ),
-        ]
-    }
+    const CENSUS_OF_THE_OLDER_DOMAINS: &[(&str, usize)] = &[
+        (
+            "ops::core::MAX_ECHO_BYTES",
+            crate::ops::core::MAX_ECHO_BYTES,
+        ),
+        (
+            "ops::assurance::MAX_BUILD_CASE_BYTES",
+            crate::ops::assurance::MAX_BUILD_CASE_BYTES,
+        ),
+        (
+            "ops::validators::MAX_RUN_REQUEST_BYTES",
+            crate::ops::validators::MAX_RUN_REQUEST_BYTES,
+        ),
+        (
+            "ops::assurance::MAX_OBLIGATION_ID_BYTES",
+            crate::ops::assurance::MAX_OBLIGATION_ID_BYTES,
+        ),
+        (
+            "ops::auditor::MAX_AUDITOR_REQUEST_BYTES",
+            crate::ops::auditor::MAX_AUDITOR_REQUEST_BYTES,
+        ),
+        (
+            "ops::graph::MAX_GRAPH_REQUEST_BYTES",
+            crate::ops::graph::MAX_GRAPH_REQUEST_BYTES,
+        ),
+        (
+            "ops::graph::MAX_SCALAR_BYTES",
+            crate::ops::graph::MAX_SCALAR_BYTES,
+        ),
+        (
+            "ops::change_assurance::MAX_INTAKE_BYTES",
+            crate::ops::change_assurance::MAX_INTAKE_BYTES,
+        ),
+        (
+            "ops::change_assurance::MAX_RECEIPT_BYTES",
+            crate::ops::change_assurance::MAX_RECEIPT_BYTES,
+        ),
+        (
+            "ops::change_assurance::MAX_RECOVER_BYTES",
+            crate::ops::change_assurance::MAX_RECOVER_BYTES,
+        ),
+        (
+            "ops::change_assurance::MAX_SCALAR_BYTES",
+            crate::ops::change_assurance::MAX_SCALAR_BYTES,
+        ),
+        (
+            "ops::change_assurance::MAX_SEAL_ATTESTATION_BYTES",
+            crate::ops::change_assurance::MAX_SEAL_ATTESTATION_BYTES,
+        ),
+        (
+            "ops::change_assurance::MAX_SEAL_RECORD_BYTES",
+            crate::ops::change_assurance::MAX_SEAL_RECORD_BYTES,
+        ),
+        (
+            "ops::change_assurance::MAX_VERIFY_RECEIPT_BYTES",
+            crate::ops::change_assurance::MAX_VERIFY_RECEIPT_BYTES,
+        ),
+        (
+            "ops::completeness::MAX_MANIFEST_BYTES",
+            crate::ops::completeness::MAX_MANIFEST_BYTES,
+        ),
+        (
+            "ops::completeness::MAX_ASSESS_BUNDLE_BYTES",
+            crate::ops::completeness::MAX_ASSESS_BUNDLE_BYTES,
+        ),
+        (
+            "ops::config::MAX_GIT_CONFIG_BYTES",
+            crate::ops::config::MAX_GIT_CONFIG_BYTES,
+        ),
+        (
+            "ops::config::MAX_CONFIG_LAYER_BYTES",
+            crate::ops::config::MAX_CONFIG_LAYER_BYTES,
+        ),
+        (
+            "ops::config::MAX_SCALAR_BYTES",
+            crate::ops::config::MAX_SCALAR_BYTES,
+        ),
+        (
+            "ops::modules::MAX_MANIFEST_BYTES",
+            crate::ops::modules::MAX_MANIFEST_BYTES,
+        ),
+        (
+            "ops::modules::MAX_SCALAR_BYTES",
+            crate::ops::modules::MAX_SCALAR_BYTES,
+        ),
+        (
+            "ops::modules::MAX_SOURCE_ARG_BYTES",
+            crate::ops::modules::MAX_SOURCE_ARG_BYTES,
+        ),
+        (
+            "ops::semantic::MAX_READ_BLOCKS_BYTES",
+            crate::ops::semantic::MAX_READ_BLOCKS_BYTES,
+        ),
+        (
+            "ops::semantic::MAX_SCALAR_BYTES",
+            crate::ops::semantic::MAX_SCALAR_BYTES,
+        ),
+        (
+            "ops::semantic::MAX_SWEEP_CORPUS_BYTES",
+            crate::ops::semantic::MAX_SWEEP_CORPUS_BYTES,
+        ),
+    ];
 
     /// Every `ops::evidence` bound, named one by one (quoin#458). Its own
     /// function only because the two together exceed the length lint; the two
@@ -1031,8 +1059,9 @@ mod tests {
     /// measured on something unbounded.
     #[test]
     fn tc_412_the_transport_ceiling_stays_above_every_domain_bound() {
-        let domain_bounds: Vec<(&str, usize)> = census_of_the_older_domains()
-            .into_iter()
+        let domain_bounds: Vec<(&str, usize)> = CENSUS_OF_THE_OLDER_DOMAINS
+            .iter()
+            .copied()
             .chain(census_of_the_evidence_domain())
             .chain(census_of_the_measurement_domain())
             .collect();

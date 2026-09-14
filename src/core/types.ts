@@ -32,8 +32,101 @@ export const CORE_TYPES_PROVENANCE = {
   generator: "quoin-schemas/quoin-schemas-gen",
   generatorVersion: "0.1.0",
   sourceSchemaSha256:
-    "092980780b2ec6d229fda7a8da4f2f9d76513d1be3732a194f04899c4a4057a1",
+    "040b5a0a1a89fea9d036395b34edb6ff15e7c10cb75494fc1b2e4185f4de5b39",
 } as const;
+
+/**
+ * The advisor's verdict for one obligation.
+ */
+export interface Advice {
+  /**
+   * The authored method, normalized.
+   */
+  authored?: string | null;
+  /**
+   * True when no rule matched anything. The honest outcome — an advisor
+   * that recommends `Test` because it found nothing is the habit this
+   * replaces.
+   */
+  inconclusive: boolean;
+  /**
+   * A genuine disagreement — *did you mean to inspect this rather than test
+   * it?* Set when the authored method **is a declared method or class**, is
+   * not among the recommendations, AND the advisor had rules to go on.
+   *
+   * Never set for an uncatalogued value (agent-ix/quoin#168): a word the
+   * catalog has never heard of is a vocabulary problem, not a choice the
+   * advisor disagrees with.
+   */
+  mismatch: boolean;
+  /**
+   * The obligation the verdict is about.
+   */
+  obligation: string;
+  /**
+   * Deterministic recommendations, strongest (most rules matched) first.
+   */
+  recommended: Recommendation[];
+  /**
+   * The authored value is in neither the catalog's method set nor its class
+   * set, per the engine's own `uncatalogued-verification-method` diagnostic.
+   *
+   * Orthogonal to `inconclusive`: the vocabulary fact does not disappear
+   * because the advisor was silent.
+   */
+  uncatalogued: boolean;
+}
+
+/**
+ * One advice row per obligation, plus what the vocabulary join could tell.
+ */
+export interface AdvisePayload {
+  /**
+   * Advice, in the order the obligations arrived.
+   */
+  advice: Advice[];
+  /**
+   * True when the engine emitted the diagnostic without a `value`.
+   *
+   * The caller warns on it. It is carried separately from the advice
+   * because it is a fact about the ENGINE, not about any obligation: every
+   * row still got an answer, and the answer is two-state rather than three.
+   */
+  degraded: boolean;
+}
+
+/**
+ * What `quoin advise` sends: one request for every obligation, not one each.
+ */
+export interface AdviseRequest {
+  /**
+   * The binding graph from the store.
+   */
+  bindings?: Binding[];
+  /**
+   * The merged verification-method catalog.
+   */
+  catalog: MethodCatalog;
+  /**
+   * The coverage payload's diagnostics, for the uncatalogued-method join.
+   */
+  diagnostics?: CoverageDiagnostic[];
+  /**
+   * The obligations the coverage payload carried, in its order.
+   */
+  obligations: Obligation[];
+  /**
+   * Every run record the store holds.
+   */
+  runs?: RunRecord[];
+  /**
+   * Obligation id → what `quire properties` classified the criterion as.
+   *
+   * A second engine call the caller makes, because the coverage payload
+   * carries neither field and this domain spawns nothing.
+   */
+  shapes?: Record<string, PropertyShape>;
+}
 
 /**
  * The payload `evidence.affirm` writes to stdout.
@@ -264,6 +357,186 @@ export interface AssuranceRecordRequest {
 }
 
 /**
+ * One thing wrong with the evidence for one obligation.
+ *
+ * # Three fields are read by the assurance view; twelve are written
+ *
+ * This type began (quoin#384) as the assurance view's *reader*: `build_case`
+ * keys findings by `obligation` and renders `` `{kind}: {summary}` ``, and
+ * nothing else. quoin#383 ports the producer into the same workspace, and the
+ * producer writes all twelve. One home, not two — a second `Finding` would be
+ * two declarations of one wire shape, and the pair would drift.
+ *
+ * The nine that only the producer writes are `Option` with
+ * `skip_serializing_if`, so a finding the view constructs still serialises to
+ * the same three keys it always did. The retained source spreads
+ * `...(located.path ? { path: located.path } : {})` at every construction
+ * site; a `null` on the wire would be a byte the store has never held.
+ *
+ * # Unknown fields are accepted, and must be
+ *
+ * There is no `deny_unknown_fields`. The caller hands this type the auditor's
+ * own output verbatim, and a future field is not a parse error.
+ */
+export interface AuditFinding {
+  /**
+   * Where to make the change.
+   */
+  changeTarget?: string | null;
+  /**
+   * What kind of finding it is.
+   *
+   * # Why this is a `String` and not an enum
+   *
+   * The retained type declares twelve spellings in a closed union, and it
+   * is tempting to mirror that here — the spellings *are* observable,
+   * because `because` interpolates this value into the payload.
+   *
+   * But a TypeScript union is erased at run time. `buildCase` performs no
+   * validation: it interpolates whatever string arrives. A closed Rust enum
+   * would therefore **refuse input the retained implementation accepts**,
+   * turning a payload into a `BadRequest` — a behavioural difference, in
+   * the direction of the port being stricter than the thing it replaces.
+   *
+   * This is the same defect class as the suffix enumeration in
+   * `quoin_assurance::requirement_of`: writing the type from what the
+   * declaration *says* rather than from what the code *does*. There the
+   * enumeration dropped every `-M-` obligation; here it would drop every
+   * finding kind added after this file was written. The difftest case
+   * `assurance/build-case-unknown-finding-kind` holds the property.
+   *
+   * The twelve the auditor mints today are named by
+   * `FindingKind`(crate::FindingKind), for the reader's benefit and not
+   * as a constraint.
+   */
+  kind: string;
+  /**
+   * The line within `path`.
+   */
+  line?: number | null;
+  /**
+   * The safe next step, when no fix is known.
+   */
+  nextDiagnosticStep?: string | null;
+  /**
+   * The obligation the finding is against. The view's join key.
+   */
+  obligation: string;
+  /**
+   * Repo-relative source locus, when the producer names one.
+   */
+  path?: string | null;
+  /**
+   * The fix, when one is known.
+   */
+  remedy?: string | null;
+  /**
+   * How serious it is, when the producer said.
+   *
+   * Optional because the assurance corpus holds findings without one: four
+   * of the six findings in `quoin-assurance/tests/golden/cases.json` omit
+   * the key entirely, and the view has always rendered them. The auditor
+   * itself always writes one — `new` takes it by value, so a
+   * finding minted through the constructor cannot lack it.
+   */
+  severity?: AuditSeverity | null;
+  /**
+   * What the structured action is about.
+   *
+   * The JSON finding contract requires a target and exactly one remedy or
+   * safe diagnostic step whenever this is present.
+   */
+  subject?: string | null;
+  /**
+   * The finding's one-line summary, rendered verbatim into `because`.
+   */
+  summary: string;
+  /**
+   * The symbol the finding is about.
+   */
+  symbol?: string | null;
+}
+
+/**
+ * Everything one audit reads.
+ */
+export interface AuditInput {
+  /**
+   * The binding graph from the store.
+   */
+  bindings?: Binding[];
+  /**
+   * The merged verification-method catalog, for method conformance.
+   */
+  catalog?: MethodCatalog | null;
+  /**
+   * Commit being audited, for freshness.
+   */
+  headCommit?: string | null;
+  /**
+   * One assessment per policy requirement, already made against the
+   * bindings.
+   *
+   * Supplied rather than computed for the same reason as `injections`: the
+   * assessment is the store's judgement over the binding graph, and the
+   * auditor reads.
+   */
+  independence?: IndependenceAssessment[] | null;
+  /**
+   * Exact obligations and separation axes selected by an `AssuranceProfile`.
+   */
+  independencePolicy?: IndependencePolicy | null;
+  /**
+   * What each suite's tests INJECT in place of real behaviour (#204).
+   *
+   * Supplied by the caller because the auditor reads the store, not source.
+   * An absent list means "nobody looked", never "nothing was mocked": the
+   * result is recorded under `unevaluated`, not counted as healthy.
+   */
+  injections?: MockInjection[] | null;
+  /**
+   * Suites with a current completed inspection, including clean inspections.
+   */
+  mockInspectionSuites?: string[] | null;
+  /**
+   * Criticality values that demand two independent methods.
+   */
+  multiplicityRequires?: string[] | null;
+  /**
+   * Criticality value → the mutation score its obligations must reach.
+   *
+   * **Unset by default**, for the reason CR-008 removed the hardcoded
+   * `multiplicityRequires: ["P0"]`: a built-in floor is a rule that fires on
+   * everything the moment a criticality column appears, and nobody chose it.
+   */
+  mutationFloor?: Record<string, number> | null;
+  /**
+   * Obligations as quire derives them today.
+   */
+  obligations?: Obligation[];
+  /**
+   * Every run record the store holds, newest per suite.
+   */
+  runs?: RunRecord[];
+  /**
+   * Every finding-shaped scan record the store holds, newest per suite.
+   *
+   * Separate from `runs` because the two answer different questions. A scan
+   * has no symbols and no pass/fail, so every check that reasons over
+   * `entries` is meaningless against it.
+   */
+  scans?: FindingRecord[] | null;
+  /**
+   * Suites whose newest finding-shaped scan evaluated no rules (FR-034).
+   *
+   * Answered by the store rather than recomputed here, and answered as a
+   * closed list: a tool that reported no rule count is NOT in it. An absent
+   * list means nothing was asked, never that nothing was vacuous.
+   */
+  vacuousScanSuites?: string[] | null;
+}
+
+/**
  * The payload `evidence.audit_inputs` writes to stdout.
  *
  * Everything the pure auditor needs from the store, in one call. One
@@ -335,6 +608,111 @@ export interface AuditInputsRequest {
    */
   repo: string;
 }
+
+/**
+ * What an audit answered.
+ */
+export interface AuditPayload {
+  /**
+   * Profile-selected evidence independence, when a policy was given.
+   *
+   * # Why this is lifted out of the report
+   *
+   * `quoin-auditor` writes it into `AuditReport`'s passthrough map, and
+   * that ruling is about READING retained store bytes wider than the
+   * declared type (quoin#383/#385): a captured corpus holds an
+   * `independence` member that is not an assessment at all, so the retained
+   * type cannot declare one.
+   *
+   * The boundary is not reading retained bytes. It is answering a request
+   * it just computed, and it knows exactly what it put there — so the
+   * member is MOVED here and typed, rather than copied. Copied would be the
+   * same list encoded twice, the shape FR-097 forbids, and left in place it
+   * would reach TypeScript as an undeclared key no generated type carries.
+   */
+  independence?: IndependenceAssessment[] | null;
+  /**
+   * The whole report: findings, healthy, unevaluated.
+   */
+  report: AuditReport;
+  /**
+   * The findings that survived the ratchet, when one was applied.
+   *
+   * `None` when the request carried no baseline — the caller then reports
+   * `report.findings`. Present-and-equal would be the same list encoded
+   * twice, which is the shape FR-097 forbids.
+   */
+  reported?: AuditFinding[] | null;
+}
+
+/**
+ * The audit result, ordered so the same input yields the same report.
+ *
+ * # Unknown fields are accepted
+ *
+ * Same reader posture as `Finding`: this deserialises whatever the auditor
+ * wrote, including fields a later version adds.
+ */
+export interface AuditReport {
+  /**
+   * Every finding, sorted by obligation then kind.
+   */
+  findings: AuditFinding[];
+  /**
+   * Obligations with a binding whose hash still matches, sorted.
+   */
+  healthy: string[];
+  /**
+   * Checks that could not run, sorted by obligation then check.
+   */
+  unevaluated: UnevaluatedCheck[];
+}
+
+/**
+ * What `quoin assurance` and `quoin evidence audit` send.
+ */
+export interface AuditRequest {
+  /**
+   * The accepted-finding keys a `--ratchet` run was given.
+   *
+   * `None` is not `Some([])`. Absent means no baseline was read and the
+   * full report is the answer; an empty baseline means one was read and
+   * accepted nothing, so every finding is new. Labelling the first case
+   * "new violations only" told a day-one reader their whole backlog was new
+   * (agent-ix/quoin#169), so the two stay distinguishable on the wire.
+   */
+  accepted?: string[] | null;
+  /**
+   * Everything the audit reads, assembled by the caller.
+   */
+  input: AuditInput;
+}
+
+/**
+ * How serious one finding is.
+ *
+ * # Why this is a newtype and not a closed enum
+ *
+ * `src/auditor/audit.ts:34` declares `type Severity = "low" | "medium" |
+ * "high"`, and mirroring that as a three-variant Rust enum is the obvious
+ * move. It is also the one this workspace has already paid for once: PR #492
+ * declared exactly that enum for the graph-analysis port, and the workspace
+ * gate then refused a finding `build_case` has always accepted, because
+ * `quoin-assurance`'s captured corpus carries `severity: "error"`.
+ *
+ * **A TypeScript type is not a runtime check.** The union is erased before
+ * any value reaches the wire, nothing between the producer and here validates
+ * it, and the retained corpora are wider than the declaration. Grepped across
+ * `rust/`, `corpus/` and `tests/` before this type was written, the severities
+ * actually retained are `error`, `medium`, `warning`, `high`, `advisory`,
+ * `violation`, `yanked`, `unmaintained`, `vulnerability` and `unsound` — ten
+ * spellings, of which the declaration admits two.
+ *
+ * Where the retained data is wider than the declared type, the retained data
+ * wins. `LOW`, `MEDIUM` and `HIGH` name
+ * the three the auditor itself mints; everything else round-trips unchanged.
+ */
+export type AuditSeverity = string;
 
 /**
  * The complete authored view, as JSON.
@@ -409,6 +787,26 @@ export interface BaselineFile {
    * Always `STORE_SCHEMA_VERSION`(super::STORE_SCHEMA_VERSION).
    */
   schemaVersion: number;
+}
+
+/**
+ * The keys a baseline would accept.
+ */
+export interface BaselinePayload {
+  /**
+   * Every finding's key, sorted, as the baseline file records them.
+   */
+  accepted: string[];
+}
+
+/**
+ * What `quoin evidence baseline` sends: the same audit, a different question.
+ */
+export interface BaselineRequest {
+  /**
+   * Everything the audit reads, assembled by the caller.
+   */
+  input: AuditInput;
 }
 
 /**
@@ -837,6 +1235,34 @@ export type CompletenessFindingKind =
 export type ContractVersion = string;
 
 /**
+ * One coverage diagnostic, restricted to the two fields the advisor joins on.
+ *
+ * # Two fields of seven
+ *
+ * quire emits `declaration`, `reason`, `message`, `path`, `line`, `value` and
+ * a subject field. The advisor reads `reason` — to select
+ * `uncatalogued-verification-method` — and `value`, which quire-rs CR-091
+ * guarantees is byte-equal to the `method` it is about. It
+ * renders none of the rest, so none of the rest is declared.
+ *
+ * `value` is the one `Option` that carries meaning by
+ * being absent: an engine predating CR-091 emits the reason with no value,
+ * and the advisor must degrade to two-state behaviour rather than misread
+ * silence as "every authored method is catalogued".
+ */
+export interface CoverageDiagnostic {
+  /**
+   * The open machine vocabulary quire classifies the diagnostic under
+   * (quire-rs FR-055 leaves it open, so this is a `String`).
+   */
+  reason: string;
+  /**
+   * The catalog or vocabulary value the diagnostic is about, verbatim.
+   */
+  value?: string | null;
+}
+
+/**
  * One authored criterion, as decided or not decided.
  */
 export interface CriterionView {
@@ -1130,6 +1556,20 @@ export interface DocumentSource {
    * The whole file, as text.
    */
   raw: string;
+}
+
+/**
+ * A method id more than one module declared, in first-wins order.
+ */
+export interface DuplicateMethod {
+  /**
+   * The contested id.
+   */
+  id: string;
+  /**
+   * The modules that declared it, the winner first.
+   */
+  modules: string[];
 }
 
 /**
@@ -1777,6 +2217,42 @@ export interface ListRequest {
 export type MappingName = string;
 
 /**
+ * Why a method was recommended — the rule and the value that matched.
+ */
+export interface MatchReason {
+  /**
+   * The applicability axis.
+   */
+  rule: string;
+  /**
+   * The value on that axis the obligation carries.
+   */
+  value: string;
+}
+
+/**
+ * The merged catalog plus what the merge could not use.
+ *
+ * Merge is **first-wins by method id**, matching quire-rs FR-054 exactly. If
+ * the two disagreed, the advisor would recommend from one catalog while the
+ * auditor checked conformance against another.
+ */
+export interface MethodCatalog {
+  /**
+   * Contested ids, sorted by id.
+   */
+  duplicates: DuplicateMethod[];
+  /**
+   * Every method, sorted by id.
+   */
+  methods: VerificationMethod[];
+  /**
+   * Unreadable module roots, sorted by root.
+   */
+  unreadable: UnreadableModule[];
+}
+
+/**
  * The payload `semantic.migration_example` writes to stdout.
  */
 export interface MigrationExamplePayload {
@@ -2192,6 +2668,24 @@ export type PropertiesForm =
   "typed-table" | "free-column-table" | "bullet-list" | "sysml-fence" | "none";
 
 /**
+ * What quire's `properties` view classified one criterion as.
+ *
+ * Read from a second engine call rather than from the coverage payload, which
+ * carries neither field. The caller supplies the map because that call spawns
+ * a process and this module does no I/O.
+ */
+export interface PropertyShape {
+  /**
+   * The owning document's archetype, e.g. `FR`.
+   */
+  archetype: string;
+  /**
+   * The FR-052 property shape, e.g. `round-trip`.
+   */
+  property: string;
+}
+
+/**
  * The payload `evidence.read_baseline` writes to stdout.
  */
 export interface ReadBaselinePayload {
@@ -2322,6 +2816,28 @@ export interface ReceiptRequest {
    * Which attestation is offered for which obligation. Only these are read.
    */
   selections: SelectionRequest[];
+}
+
+/**
+ * One recommendation for one obligation.
+ */
+export interface Recommendation {
+  /**
+   * Its IADT class.
+   */
+  class: string;
+  /**
+   * The evidence kind it produces, when the module declared one.
+   */
+  evidenceKind?: string | null;
+  /**
+   * The recommended method's id.
+   */
+  method: string;
+  /**
+   * Every rule that matched, sorted by rule then value.
+   */
+  reasons: MatchReason[];
 }
 
 /**
@@ -3464,6 +3980,37 @@ export type TrustTrigger =
   | "environment";
 
 /**
+ * A check that could not be run, separate from both findings and clean results.
+ *
+ * The distinction is the whole point: an absent mock inspection means "nobody
+ * looked", never "nothing was mocked", and folding it into either bucket
+ * would hand a caller a clean bill it never earned (agent-ix/quoin#204).
+ */
+export interface UnevaluatedCheck {
+  /**
+   * Which check could not run.
+   *
+   * A `String` for the same reason as `kind`: the retained
+   * declaration is a one-member union, erased before it reaches the wire,
+   * and a second member added upstream must read here rather than fail.
+   * `MOCKED_CONFIRMATION` is the one it holds today.
+   */
+  check: string;
+  /**
+   * The obligation the check was about.
+   */
+  obligation: string;
+  /**
+   * Why, in one sentence, including what to run.
+   */
+  reason: string;
+  /**
+   * The suites that could not be answered for, sorted.
+   */
+  suites: string[];
+}
+
+/**
  * A document whose frontmatter could not be read, and why.
  */
 export interface UnreadableDocument {
@@ -3473,6 +4020,24 @@ export interface UnreadableDocument {
   path: string;
   /**
    * Why it could not be read.
+   */
+  reason: string;
+}
+
+/**
+ * A module root whose `manifest.yaml` could not be read or parsed.
+ *
+ * Reported rather than thrown: a catalog missing one module's entries is
+ * still worth having, and the command that would have crashed is the one an
+ * operator runs *to diagnose* the module (agent-ix/quoin#106).
+ */
+export interface UnreadableModule {
+  /**
+   * The resolved module root.
+   */
+  moduleRoot: string;
+  /**
+   * The reader's own message. See `DIVERGENCE.md` §4.
    */
   reason: string;
 }
@@ -3578,6 +4143,53 @@ export type UnusedFactReason = "unknown_clause" | "not_binding" | "unresolved";
  * the criterion written to forbid it caught it.
  */
 export type Verdict = "PASS" | "CONDITIONAL" | "FAIL" | "UNCHECKED";
+
+/**
+ * One catalog entry, as the module declared it.
+ */
+export interface VerificationMethod {
+  /**
+   * Rule name → values.
+   *
+   * **Never interpreted structurally** — the advisor matches values, and
+   * which axes exist is the declaring module's business (quire-rs
+   * FR-054-CON-2). A rule naming an axis the advisor cannot observe is
+   * skipped, not failed.
+   */
+  applicability?: Record<string, string[]>;
+  /**
+   * IADT in practice; a free string to the engine, so a free string here.
+   */
+  class: string;
+  /**
+   * What discharging the method means.
+   */
+  definition: string;
+  /**
+   * The evidence kind the method produces, when the module declares one.
+   *
+   * Its absence makes method conformance **unanswerable** rather than
+   * failed: a run of an undeclared kind is not a mismatch
+   * (agent-ix/quoin#105).
+   */
+  evidenceKind?: string | null;
+  /**
+   * The method id, unique in the merged catalog (first module wins).
+   */
+  id: string;
+  /**
+   * The module that contributed this entry.
+   */
+  moduleName: string;
+  /**
+   * The human name.
+   */
+  name: string;
+  /**
+   * Tools the module names for the method.
+   */
+  tooling?: string[];
+}
 
 /**
  * The payload `change_assurance.verify_receipt` writes to stdout.

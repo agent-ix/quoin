@@ -1,7 +1,7 @@
 import { Flags } from "@oclif/core";
 
 import { QuoinCommand } from "../../base.js";
-import { loadMethodCatalog, methodClasses } from "../../advisor/index.js";
+import { loadMethodCatalog, methodClasses } from "../../method-catalog.js";
 import { ensureDefaultModules } from "../../core/modules.js";
 
 export default class CatalogMethods extends QuoinCommand {

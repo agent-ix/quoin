@@ -8,6 +8,7 @@
 //! [`crate::dispatch`].
 
 pub mod assurance;
+pub mod auditor;
 pub mod change_assurance;
 pub mod completeness;
 pub mod config;

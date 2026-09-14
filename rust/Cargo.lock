@@ -2983,6 +2983,7 @@ dependencies = [
  "quoin-store",
  "quoin-yaml",
  "regex",
+ "schemars",
  "serde",
  "serde_json",
  "tempfile",
@@ -3042,10 +3043,12 @@ version = "0.1.0"
 dependencies = [
  "engineering-assurance",
  "quoin-assurance",
+ "quoin-auditor",
  "quoin-change-assurance",
  "quoin-completeness",
  "quoin-config",
  "quoin-evidence",
+ "quoin-finding-types",
  "quoin-graph-analysis",
  "quoin-measurement",
  "quoin-measurement-graph",
@@ -3097,6 +3100,7 @@ name = "quoin-finding-types"
 version = "0.1.0"
 dependencies = [
  "quoin-evidence",
+ "schemars",
  "serde",
  "serde_json",
 ]

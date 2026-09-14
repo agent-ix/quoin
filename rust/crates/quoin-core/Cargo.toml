@@ -25,6 +25,16 @@ workspace = true
 
 [dependencies]
 quoin-assurance = { workspace = true }
+# quoin#501, the Stage 7 cutover of `src/auditor/` and `src/advisor/`. The
+# crate is `Inert` by construction — no handle, no path, no command reaches
+# any function in it — so unlike the graph and modules domains this one is
+# granted no host capability at all. The whole evidence store arrives on
+# stdin as data the caller already read; see `ops/auditor/`.
+quoin-auditor = { workspace = true }
+# The report shapes `auditor.audit` writes back. Depended on directly rather
+# than reached through `quoin-auditor`'s re-exports so that the wire types in
+# `ops/auditor/wire.rs` name their own crate, as every other domain does.
+quoin-finding-types = { workspace = true }
 # quoin#457, the Stage 9 cutover. `quoin-core` uses only the DECIDING half —
 # sealing, verifying, lineage and the verification itself, all of which are
 # pure functions over documents. The evidence STORE is the
@@ -92,6 +102,7 @@ schemars = { workspace = true, optional = true }
 schema = [
     "dep:schemars",
     "quoin-assurance/schema",
+    "quoin-auditor/schema",
     "quoin-completeness/schema",
     "quoin-evidence/schema",
     "quoin-modules/schema",

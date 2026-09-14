@@ -12,6 +12,7 @@ use serde::{Deserialize, Serialize};
 /// Only what the advisor needs to answer a single question: has anything
 /// measured that this obligation's tests would catch a fault?
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(rename_all = "camelCase")]
 pub struct ObligationEvidence {
     /// True when at least one binding names this obligation.
@@ -31,6 +32,7 @@ pub struct ObligationEvidence {
 /// command opens the store and hands the answer in, which is what makes the
 /// whole advisor [`Inert`](crate::Inert).
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(rename_all = "camelCase")]
 pub struct ObligationFacts {
     /// The obligation id.
@@ -82,6 +84,7 @@ pub struct ObligationFacts {
 
 /// Why a method was recommended — the rule and the value that matched.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct MatchReason {
     /// The applicability axis.
     pub rule: String,
@@ -91,6 +94,7 @@ pub struct MatchReason {
 
 /// One recommendation for one obligation.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(rename_all = "camelCase")]
 pub struct Recommendation {
     /// The recommended method's id.
@@ -106,6 +110,7 @@ pub struct Recommendation {
 
 /// The advisor's verdict for one obligation.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct Advice {
     /// The obligation the verdict is about.
     pub obligation: String,

@@ -276,7 +276,7 @@ fn tc_1614_no_hand_written_declaration_shadows_a_generated_boundary_type() {
     /// A literal, and deliberately so: it is the sanity pin on the SCANNER
     /// rather than on the surface, so it moves whenever the surface does and
     /// cannot be satisfied by a scanner that has silently stopped reading.
-    const INTERFACE_COUNT: usize = 138;
+    const INTERFACE_COUNT: usize = 157;
 
     let core_dir = repo_root().join("src/core");
     let generated: Vec<(String, Vec<String>)> = interfaces(&committed_surface())
@@ -296,7 +296,8 @@ fn tc_1614_no_hand_written_declaration_shadows_a_generated_boundary_type() {
     // thirteen request, payload and selection types of the six
     // `change_assurance.*` operations (quoin#457), and the request, payload and
     // nested document types of the fifteen `evidence.*` operations with the
-    // store records they carry (quoin#458). The enum and newtype aliases the
+    // store records they carry (quoin#458), and the request, payload, report
+    // and advice types of the three `auditor.*` operations (quoin#501). The enum and newtype aliases the
     // surface also publishes are `export type` and not interfaces, so they are
     // outside what this scanner reads — a hand written
     // `type ObligationId = string` shadows nothing structural; nor are the
