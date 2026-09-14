@@ -243,6 +243,54 @@ pub trait EvidenceHost {
     fn store_root(&self, repo: &Path) -> PathBuf;
 }
 
+/// Running the quire engine over a repository (quoin#502, Stage 7).
+///
+/// Granted rather than acquired, for the shape-2 reason in this module's
+/// header. A coverage run walks a whole repository's `spec/` tree, its trace
+/// tags and every installed module's manifest; a classification run reads each
+/// Markdown document it is pointed at. Those bytes cannot ride on stdin, and
+/// `ScopeRoot::open` canonicalizes a path — a filesystem call — so even naming
+/// the scope is something only the granting half may do.
+///
+/// The seam takes **plain paths and returns the engine's own outcome**. The
+/// projection from a `quire_rs` report to the wire shape is a decision, so it
+/// stays in `ops::quire` where it is unit-tested against an in-memory host;
+/// the host does the one thing the library half may not, which is touch the
+/// disk.
+///
+/// Implemented for real in `main.rs` over `quoin_quire::coverage::compute` and
+/// `quoin_quire::properties::classify`.
+pub trait QuireHost {
+    /// The coverage report for one scope, under a closed or ambient module set.
+    ///
+    /// `modules` empty means ambient discovery — the resolution order
+    /// `quire coverage` takes with no `--module`, made explicit by
+    /// [`quoin_quire::ModuleSelection`].
+    ///
+    /// # Errors
+    /// Whatever the engine returns: a scope that is not a directory, a missing
+    /// `spec/` root, a module set that does not load, or no declared
+    /// traceability model.
+    fn coverage(
+        &self,
+        scope: &Path,
+        modules: &[PathBuf],
+    ) -> Result<quoin_quire::coverage::Outcome, quoin_quire::Error>;
+
+    /// Classify every document `documents` names, relative to the scope.
+    ///
+    /// # Errors
+    /// The same resolution failures as [`QuireHost::coverage`]. A document that
+    /// resolves to no archetype is **not** one of them: it comes back inside
+    /// the outcome, which is the distinction `quire properties`' exit 1 loses.
+    fn properties(
+        &self,
+        scope: &Path,
+        modules: &[PathBuf],
+        documents: &[String],
+    ) -> Result<quoin_quire::properties::Outcome, quoin_quire::Error>;
+}
+
 /// Everything `main.rs` grants one dispatch.
 ///
 /// A struct rather than a growing argument list so that adding a capability is
@@ -270,6 +318,8 @@ pub struct Capabilities<'a> {
     /// declared inputs come from" once, with one method, and a parallel
     /// declaration here would be a shape nobody checks against it.
     pub graph: Option<&'a dyn GraphInputReader>,
+    /// The quire engine, absent when nothing granted one.
+    pub quire: Option<&'a dyn QuireHost>,
 }
 
 impl<'a> Capabilities<'a> {
@@ -285,70 +335,75 @@ impl<'a> Capabilities<'a> {
             change_assurance: None,
             evidence: None,
             graph: None,
+            quire: None,
         }
     }
 
+    // Each single grant is `none()` with one field set, rather than a struct
+    // literal listing every capability. Six literals restating all of them is
+    // how a seventh capability becomes seven edits in one file, and how one of
+    // those edits silently grants a host a test did not mean to grant.
+    // `const` is given up to say it once; nothing constructs these at compile
+    // time.
+
     /// A grant of the module host only.
     #[must_use]
-    pub const fn with_modules(host: &'a dyn ModuleHost) -> Self {
+    pub fn with_modules(host: &'a dyn ModuleHost) -> Self {
         Self {
             modules: Some(host),
-            semantic: None,
-            change_assurance: None,
-            evidence: None,
-            graph: None,
+            ..Self::none()
         }
     }
 
     /// A grant of the semantic host only.
     #[must_use]
-    pub const fn with_semantic(host: &'a dyn SemanticHost) -> Self {
+    pub fn with_semantic(host: &'a dyn SemanticHost) -> Self {
         Self {
-            modules: None,
             semantic: Some(host),
-            change_assurance: None,
-            evidence: None,
-            graph: None,
+            ..Self::none()
         }
     }
 
     /// A grant of the change-assurance store only.
     #[must_use]
-    pub const fn with_change_assurance(host: &'a dyn ChangeAssuranceHost) -> Self {
+    pub fn with_change_assurance(host: &'a dyn ChangeAssuranceHost) -> Self {
         Self {
-            modules: None,
-            semantic: None,
             change_assurance: Some(host),
-            evidence: None,
-            graph: None,
+            ..Self::none()
         }
     }
 
     /// A grant of the evidence host only.
     #[must_use]
-    pub const fn with_evidence(host: &'a dyn EvidenceHost) -> Self {
+    pub fn with_evidence(host: &'a dyn EvidenceHost) -> Self {
         Self {
-            modules: None,
-            semantic: None,
-            change_assurance: None,
             evidence: Some(host),
-            graph: None,
+            ..Self::none()
         }
     }
 
     /// A grant of the graph input reader only.
     #[must_use]
-    pub const fn with_graph(reader: &'a dyn GraphInputReader) -> Self {
+    pub fn with_graph(reader: &'a dyn GraphInputReader) -> Self {
         Self {
-            modules: None,
-            semantic: None,
-            change_assurance: None,
-            evidence: None,
             graph: Some(reader),
+            ..Self::none()
+        }
+    }
+
+    /// A grant of the quire engine only.
+    #[must_use]
+    pub fn with_quire(host: &'a dyn QuireHost) -> Self {
+        Self {
+            quire: Some(host),
+            ..Self::none()
         }
     }
 
     /// The full grant `main.rs` hands one dispatch.
+    ///
+    /// The one place that names every capability, deliberately: adding one
+    /// must fail to compile here until `main.rs` decides what to pass.
     #[must_use]
     pub const fn with_hosts(
         modules: &'a dyn ModuleHost,
@@ -356,6 +411,7 @@ impl<'a> Capabilities<'a> {
         change_assurance: &'a dyn ChangeAssuranceHost,
         evidence: &'a dyn EvidenceHost,
         graph: &'a dyn GraphInputReader,
+        quire: &'a dyn QuireHost,
     ) -> Self {
         Self {
             modules: Some(modules),
@@ -363,6 +419,7 @@ impl<'a> Capabilities<'a> {
             change_assurance: Some(change_assurance),
             evidence: Some(evidence),
             graph: Some(graph),
+            quire: Some(quire),
         }
     }
 }

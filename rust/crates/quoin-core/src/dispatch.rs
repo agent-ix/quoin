@@ -77,6 +77,8 @@ pub const OPERATIONS: &[&str] = &[
     "modules.install",
     "modules.list",
     "modules.remove",
+    "quire.coverage",
+    "quire.properties",
     "semantic.migration_example",
     "semantic.read_blocks",
     "semantic.sweep_corpus",
@@ -133,6 +135,8 @@ pub fn dispatch(
         "completeness.read_frontmatter" => crate::ops::completeness::read_frontmatter(request),
         "completeness.schema_refs" => crate::ops::completeness::schema_refs(request),
         "core.ping" => crate::ops::core::ping(request),
+        "quire.coverage" => crate::ops::quire::coverage(request, capabilities),
+        "quire.properties" => crate::ops::quire::properties(request, capabilities),
         "evidence.store_facts" => crate::ops::evidence::store_facts(request),
         "evidence.parse_results" => crate::ops::evidence::parse_results(request),
         "evidence.parse_lineage" => crate::ops::evidence::parse_lineage(request),
@@ -524,6 +528,18 @@ mod tests {
             "modules/wire.rs",
             include_str!("ops/modules/wire.rs"),
         ),
+        ("quire", "quire/mod.rs", include_str!("ops/quire/mod.rs")),
+        (
+            "quire",
+            "quire/taxonomy.rs",
+            include_str!("ops/quire/taxonomy.rs"),
+        ),
+        (
+            "quire",
+            "quire/tests.rs",
+            include_str!("ops/quire/tests.rs"),
+        ),
+        ("quire", "quire/wire.rs", include_str!("ops/quire/wire.rs")),
         (
             "semantic",
             "semantic/mod.rs",
@@ -898,6 +914,14 @@ mod tests {
         (
             "ops::modules::MAX_SOURCE_ARG_BYTES",
             crate::ops::modules::MAX_SOURCE_ARG_BYTES,
+        ),
+        (
+            "ops::quire::MAX_REQUEST_BYTES",
+            crate::ops::quire::MAX_REQUEST_BYTES,
+        ),
+        (
+            "ops::quire::MAX_SCALAR_BYTES",
+            crate::ops::quire::MAX_SCALAR_BYTES,
         ),
         (
             "ops::semantic::MAX_READ_BLOCKS_BYTES",

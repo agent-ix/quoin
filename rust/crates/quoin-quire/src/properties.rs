@@ -196,6 +196,50 @@ pub enum PropertyShape {
     Unclassified,
 }
 
+impl PropertyShape {
+    /// The wire token, identical to the `serde` spelling.
+    ///
+    /// Declared rather than reached for through `serde_json`, because a
+    /// consumer that needs the label as a string — `quoin-core`'s
+    /// `quire.properties`, which keys the advisor's shape map on it — should
+    /// not have to serialize a value to read its own name. The
+    /// `every_shape_token_matches_its_serde_spelling` test is what keeps the
+    /// two from drifting: `rename_all = "kebab-case"` is the definition and
+    /// this is an accessor to it, not a second one.
+    #[must_use]
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::RoundTrip => "round-trip",
+            Self::Idempotence => "idempotence",
+            Self::Ordering => "ordering",
+            Self::Invariant => "invariant",
+            Self::ErrorCase => "error-case",
+            Self::Lifecycle => "lifecycle",
+            Self::Concurrency => "concurrency",
+            Self::Universal => "universal",
+            Self::Example => "example",
+            Self::Unclassified => "unclassified",
+        }
+    }
+
+    /// Every variant, in declaration order.
+    #[must_use]
+    pub const fn all() -> &'static [Self] {
+        &[
+            Self::RoundTrip,
+            Self::Idempotence,
+            Self::Ordering,
+            Self::Invariant,
+            Self::ErrorCase,
+            Self::Lifecycle,
+            Self::Concurrency,
+            Self::Universal,
+            Self::Example,
+            Self::Unclassified,
+        ]
+    }
+}
+
 impl From<quire_rs::PropertyShape> for PropertyShape {
     fn from(shape: quire_rs::PropertyShape) -> Self {
         match shape {
@@ -549,5 +593,29 @@ mod tests {
         .expect("serializes");
         assert_eq!(unknown["reason"], "archetype-unknown");
         assert_eq!(unknown["archetype"], "Nope");
+    }
+
+    /// `as_str` is an accessor to the `serde` spelling, not a second one, so
+    /// every variant must round-trip through it. A variant added upstream
+    /// reaches this test through `all()` and fails here before it can reach a
+    /// consumer as the wrong label.
+    ///
+    /// Trace: FR-052-CON-3
+    /// Provenance: quoin#502
+    #[test]
+    fn tc_502_001_every_shape_token_matches_its_serde_spelling() {
+        assert_eq!(
+            PropertyShape::all().len(),
+            10,
+            "FR-052-CON-3 closes the axis; a variant was added or removed"
+        );
+        for shape in PropertyShape::all() {
+            let serialized = serde_json::to_value(shape).expect("serializes");
+            assert_eq!(
+                serialized.as_str(),
+                Some(shape.as_str()),
+                "{shape:?} spells itself two ways"
+            );
+        }
     }
 }

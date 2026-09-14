@@ -19,12 +19,7 @@ import {
   parsePolicy,
   trustAssessments,
 } from "../core/evidence.js";
-import {
-  checkVersionPremise,
-  parseCoverage,
-  quireVersion,
-  runQuire,
-} from "../quire/index.js";
+import { coverage } from "../core/quire.js";
 
 export default class Assurance extends QuoinCommand {
   static summary =
@@ -140,14 +135,11 @@ that quietly narrows to what it can prove reads exactly like a complete one.`;
       }
     }
 
-    const premise = checkVersionPremise(quireVersion());
-    if (premise) this.error(premise.message, { exit: 2 });
-
-    const args = ["coverage", "--scope", flags.repo, "--json"];
-    if (flags.module) args.push("--module", flags.module);
-    const parsed = parseCoverage(runQuire(args));
-    if (!parsed.ok) this.error(parsed.error.message, { exit: 2 });
-    const obligations = parsed.value.obligations ?? [];
+    const derived = coverage(
+      flags.repo,
+      flags.module ? [flags.module] : undefined,
+    );
+    const obligations = derived.obligations;
     let independencePolicy;
     try {
       independencePolicy = flags["independence-policy"]

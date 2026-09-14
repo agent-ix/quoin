@@ -46,7 +46,7 @@ use std::path::{Path, PathBuf};
 use quoin_change_assurance::EvidenceStore;
 use quoin_change_assurance::intake::disk::DiskEvidenceStore;
 use quoin_core::capabilities::{
-    Capabilities, ChangeAssuranceHost, EvidenceHost, ModuleHost, SemanticHost,
+    Capabilities, ChangeAssuranceHost, EvidenceHost, ModuleHost, QuireHost, SemanticHost,
 };
 use quoin_core::dispatch::{dispatch, parse_operation, read_request};
 use quoin_core::error::CoreError;
@@ -58,6 +58,7 @@ use quoin_modules::{
     MarketplaceManifest, ModuleInstaller, ModuleName, ModulesError, ReconcileMode, ReconcileReport,
     Source,
 };
+use quoin_quire::{ModuleRoot, ModuleSelection, ScopeRoot};
 use quoin_semantic::{
     CorpusRoot, SemanticError, SemanticReadResult, SweepIdentity, SweepReport,
     manifest::SemanticValidators,
@@ -94,8 +95,15 @@ fn run(args: &[String]) -> Result<Response, CoreError> {
     // crate states what it reads, and this file states only that production
     // reads it from the real filesystem.
     let graph = OsGraphInputReader;
-    let capabilities =
-        Capabilities::with_hosts(&modules, &semantic, &change_assurance, &evidence, &graph);
+    let quire = HostQuire;
+    let capabilities = Capabilities::with_hosts(
+        &modules,
+        &semantic,
+        &change_assurance,
+        &evidence,
+        &graph,
+        &quire,
+    );
     dispatch(op, &request, &capabilities)
 }
 
@@ -314,6 +322,77 @@ impl EvidenceHost for HostEvidence {
 
     fn store_root(&self, repo: &Path) -> PathBuf {
         DiskEvidence::new(repo).root().to_path_buf()
+    }
+}
+
+/// The production [`QuireHost`]: the linked engine, walking the real
+/// repository (quoin#502).
+///
+/// Stateless. Everything a run needs — the scope, the module roots, the
+/// documents — arrives in the request, so there is nothing to resolve from the
+/// environment and nothing to cache between operations. What this host adds is
+/// the three filesystem acts `ops::quire` may not perform: canonicalizing the
+/// scope, canonicalizing each module root, and — when the caller named no
+/// documents — the `spec/**/*.md` walk that `quoin advise` used to pass as a
+/// glob for `quire` to expand.
+struct HostQuire;
+
+impl HostQuire {
+    /// The module set a request's roots name.
+    ///
+    /// An empty list is **not** an empty set: it is `ScopeOrAmbient`, the
+    /// resolution `quire coverage` performs with no `--module`, which is what
+    /// all seven retained commands relied on. `Closed` replaces ambient
+    /// discovery rather than adding to it (quire-rs#405).
+    fn selection(modules: &[PathBuf]) -> Result<ModuleSelection, quoin_quire::Error> {
+        if modules.is_empty() {
+            return Ok(ModuleSelection::ScopeOrAmbient);
+        }
+        modules
+            .iter()
+            .map(ModuleRoot::open)
+            .collect::<Result<Vec<_>, _>>()
+            .map(ModuleSelection::Closed)
+    }
+}
+
+impl QuireHost for HostQuire {
+    fn coverage(
+        &self,
+        scope: &Path,
+        modules: &[PathBuf],
+    ) -> Result<quoin_quire::coverage::Outcome, quoin_quire::Error> {
+        quoin_quire::coverage::compute(&quoin_quire::coverage::Request {
+            scope: ScopeRoot::open(scope)?,
+            modules: Self::selection(modules)?,
+        })
+    }
+
+    fn properties(
+        &self,
+        scope: &Path,
+        modules: &[PathBuf],
+        documents: &[String],
+    ) -> Result<quoin_quire::properties::Outcome, quoin_quire::Error> {
+        let scope = ScopeRoot::open(scope)?;
+        // The engine classifies a NAMED list; `spec/**/*.md` was a glob the
+        // shell expanded for the subprocess. An empty list asks for the same
+        // set that glob named, and the walk that answers it is a filesystem
+        // act, which is why it is here and not in `ops::quire`.
+        let named = if documents.is_empty() {
+            quoin_quire::properties::documents_under_spec(&scope)?
+        } else {
+            documents.iter().map(PathBuf::from).collect()
+        };
+        quoin_quire::properties::classify(&quoin_quire::properties::Request {
+            scope,
+            modules: Self::selection(modules)?,
+            documents: named,
+            // Never overridden: the retained `propertyShapes` passed no
+            // `--archetype`, and reading frontmatter `type` is what makes an
+            // untyped asset an `Unresolved` rather than a hard failure.
+            archetype: None,
+        })
     }
 }
 

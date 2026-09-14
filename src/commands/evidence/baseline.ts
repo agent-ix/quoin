@@ -10,12 +10,7 @@ import {
   writeBaseline,
 } from "../../core/evidence.js";
 import { loadMethodCatalog } from "../../method-catalog.js";
-import {
-  checkVersionPremise,
-  parseCoverage,
-  quireVersion,
-  runQuire,
-} from "../../quire/index.js";
+import { coverage } from "../../core/quire.js";
 
 export default class EvidenceBaseline extends QuoinCommand {
   static summary = "Accept the current findings as the ratchet baseline.";
@@ -50,13 +45,10 @@ releases is the gate quietly being disabled one entry at a time.`;
   async run(): Promise<void> {
     const { flags } = await this.parse(EvidenceBaseline);
 
-    const premise = checkVersionPremise(quireVersion());
-    if (premise) this.error(premise.message, { exit: 2 });
-
-    const args = ["coverage", "--scope", flags.repo, "--json"];
-    if (flags.module) args.push("--module", flags.module);
-    const parsed = parseCoverage(runQuire(args));
-    if (!parsed.ok) this.error(parsed.error.message, { exit: 2 });
+    const derived = coverage(
+      flags.repo,
+      flags.module ? [flags.module] : undefined,
+    );
 
     const head = headCommit(flags.repo);
     const store = auditInputs(flags.repo, head);
@@ -65,7 +57,7 @@ releases is the gate quietly being disabled one entry at a time.`;
     // in the command and the spelling it was RATCHETED against lived in the
     // auditor — two definitions of the same key, one boundary apart.
     const accepted = baselineKeys({
-      obligations: parsed.value.obligations ?? [],
+      obligations: derived.obligations,
       bindings: store.bindings,
       runs: store.runs,
       injections: store.injections,

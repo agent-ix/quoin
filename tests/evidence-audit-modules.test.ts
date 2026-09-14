@@ -1,11 +1,17 @@
 /**
  * #350 B1: ordered audit module selection, banked before implementation.
- * Transport doubles below test argv only. The native section executes the real
- * selected Quire against authored criteria; it never fabricates suite results.
+ *
+ * The transport doubles below test the REQUEST only. Since quoin#502 the
+ * engine is linked into `quoin-core` rather than spawned as `quire`, so the
+ * ordered selection no longer travels as repeated `--module` argv: it is the
+ * `modules` array of one `quire.coverage` request. The double therefore stands
+ * in for `quoin-core` and delegates every other operation to the real binary,
+ * because `evidence audit` asks it four more questions in the same run.
+ *
+ * The native section runs that real binary against authored criteria; it never
+ * fabricates suite results.
  */
-import { execFileSync } from "node:child_process";
 import {
-  chmodSync,
   existsSync,
   mkdirSync,
   mkdtempSync,
@@ -31,10 +37,9 @@ import {
 
 import EvidenceAudit from "../src/commands/evidence/audit.js";
 import * as methodCatalog from "../src/method-catalog.js";
-import { quireExecutable } from "../src/quire/exec.js";
+import { coreDouble } from "./support/core-double.js";
 
 let config: Config;
-let nativeQuire: string;
 let scratch: string;
 let repo: string;
 let alpha: string;
@@ -44,9 +49,6 @@ beforeAll(async () => {
   config = await loadConfig({
     root: join(dirname(fileURLToPath(import.meta.url)), ".."),
   });
-  // The normal make test-with-quire gate selects this on PATH. Direct focused
-  // runs can use QUOIN_QUIRE; absence is a failed prerequisite, not a skip.
-  nativeQuire = quireExecutable();
 });
 
 function moduleAt(root: string, name: string, type: string): string {
@@ -94,7 +96,7 @@ beforeEach(() => {
   vi.stubEnv("IX_HOME", join(scratch, "home"));
   vi.stubEnv("QUOIN_MODULE_PATHS", installed);
   vi.stubEnv("IX_FILAMENT_MODULES_PATH", installed);
-  vi.stubEnv("QUOIN_EXPECTED_QUIRE_SHA256", "");
+  vi.stubEnv("QUOIN_EXPECTED_CORE_SHA256", "");
 });
 
 afterEach(() => {
@@ -103,17 +105,12 @@ afterEach(() => {
   rmSync(scratch, { recursive: true, force: true });
 });
 
+/** One `quire.coverage` payload, as the boundary shapes it. */
 function payload(methods = ["alpha", "beta", "poison"]): object {
   return {
-    unbacked_rows: [],
-    status_lies: [],
-    untracked_symbols: [],
-    groups: [],
-    totals: { backed: 0, total: methods.length },
+    diagnostics: [],
     obligations: methods.map((method, index) => ({
-      source: "controlled-criterion",
       id: `FR-001-AC-${index + 1}`,
-      document: "spec/FR-001.md",
       statement: `The fixture shall verify ${method}.`,
       statement_hash: "a".repeat(64),
       method,
@@ -121,31 +118,27 @@ function payload(methods = ["alpha", "beta", "poison"]): object {
   };
 }
 
-function transportDouble(refuse = false): () => string[][] {
-  const executable = join(scratch, "quire-transport-double");
-  const log = join(scratch, "arguments.jsonl");
-  writeFileSync(
-    executable,
-    `#!${process.execPath}
-const fs = require("node:fs");
-const args = process.argv.slice(2);
-if (args[0] === "--version") { console.log("quire 0.31.0"); process.exit(0); }
-fs.appendFileSync(${JSON.stringify(log)}, JSON.stringify(args) + "\\n");
-if (${JSON.stringify(refuse)}) {
-  console.error("controlled older producer: repeated --module is unsupported");
-  process.exit(2);
-}
-console.log(${JSON.stringify(JSON.stringify(payload()))});
-`,
+function transportDouble(refuse = false): () => object[] {
+  const log = join(scratch, "requests.jsonl");
+  vi.stubEnv(
+    "QUOIN_CORE",
+    coreDouble({
+      answers: { "quire.coverage": JSON.stringify(payload()) },
+      requestLog: log,
+      ...(refuse
+        ? {
+            refuseWith:
+              "controlled older producer: a closed module set is unsupported",
+          }
+        : {}),
+    }),
   );
-  chmodSync(executable, 0o755);
-  vi.stubEnv("QUOIN_QUIRE", executable);
   return () =>
     existsSync(log)
       ? readFileSync(log, "utf8")
           .trim()
           .split("\n")
-          .map((line) => JSON.parse(line))
+          .map((line) => JSON.parse(line) as object)
       : [];
 }
 
@@ -176,18 +169,7 @@ describe("ordered audit module transport", () => {
     const catalog = vi.spyOn(methodCatalog, "loadMethodCatalog");
     const result = await report([beta, alpha]);
     expect(catalog).toHaveBeenCalledExactlyOnceWith([beta, alpha]);
-    expect(calls()).toEqual([
-      [
-        "coverage",
-        "--scope",
-        repo,
-        "--json",
-        "--module",
-        beta,
-        "--module",
-        alpha,
-      ],
-    ]);
+    expect(calls()).toEqual([{ scope: repo, modules: [beta, alpha] }]);
     expect(
       result.findings.filter((item) => item.kind === "unknown-method"),
     ).toEqual([expect.objectContaining({ obligation: "FR-001-AC-3" })]);
@@ -200,9 +182,7 @@ describe("ordered audit module transport", () => {
   it("preserves single-root catalog and coverage selection", async () => {
     const calls = transportDouble();
     const result = await report([alpha]);
-    expect(calls()).toEqual([
-      ["coverage", "--scope", repo, "--json", "--module", alpha],
-    ]);
+    expect(calls()).toEqual([{ scope: repo, modules: [alpha] }]);
     expect(
       result.findings
         .filter((item) => item.kind === "unknown-method")
@@ -214,7 +194,9 @@ describe("ordered audit module transport", () => {
   it("preserves ordinary discovery when no module was supplied", async () => {
     const calls = transportDouble();
     const result = await report();
-    expect(calls()).toEqual([["coverage", "--scope", repo, "--json"]]);
+    // Ambient discovery is the ABSENCE of the key, not an empty array: an
+    // empty closed set would be "no modules" and derive nothing.
+    expect(calls()).toEqual([{ scope: repo }]);
     expect(
       result.findings
         .filter((item) => item.kind === "unknown-method")
@@ -228,24 +210,12 @@ describe("ordered audit module transport", () => {
     await expect(report([alpha, beta])).rejects.toThrow(
       "controlled older producer",
     );
-    expect(calls()).toEqual([
-      [
-        "coverage",
-        "--scope",
-        repo,
-        "--json",
-        "--module",
-        alpha,
-        "--module",
-        beta,
-      ],
-    ]);
+    expect(calls()).toEqual([{ scope: repo, modules: [alpha, beta] }]);
   });
 });
 
 describe("native controlled audit module join", () => {
   function nativeFixture(): void {
-    vi.stubEnv("QUOIN_QUIRE", nativeQuire);
     mkdirSync(join(repo, "spec"));
     for (const [type, method] of [
       ["FR", "alpha"],
@@ -275,26 +245,10 @@ title: Controlled ${method} criterion
   // Trace: FR-032-AC-12
   it("derives both real populations and consults both catalogs without adding ambient criteria", async () => {
     nativeFixture();
-    const native = JSON.parse(
-      execFileSync(
-        nativeQuire,
-        [
-          "coverage",
-          "--scope",
-          repo,
-          "--json",
-          "--module",
-          beta,
-          "--module",
-          alpha,
-        ],
-        { encoding: "utf8" },
-      ),
-    );
-    expect(
-      native.obligations.map((item: { id: string }) => item.id).sort(),
-    ).toEqual(["FR-001-AC-1", "NFR-001-AC-1"]);
     const result = await report([beta, alpha]);
+    // The population is the ANTI-VACUITY floor: the fixture authors three
+    // criteria and the closed set admits two of them, so a run that derived
+    // nothing would report no findings and read as a clean audit.
     expect(result.findings.map((item) => [item.obligation, item.kind])).toEqual(
       [
         ["FR-001-AC-1", "undischarged"],

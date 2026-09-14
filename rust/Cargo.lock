@@ -3053,6 +3053,7 @@ dependencies = [
  "quoin-measurement",
  "quoin-measurement-graph",
  "quoin-modules",
+ "quoin-quire",
  "quoin-quire-types",
  "quoin-semantic",
  "quoin-store",

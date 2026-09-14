@@ -17,6 +17,7 @@ pub mod evidence;
 pub mod graph;
 pub mod measurement;
 pub mod modules;
+pub mod quire;
 pub mod semantic;
 pub mod validators;
 

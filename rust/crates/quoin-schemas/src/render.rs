@@ -720,6 +720,12 @@ fn doc_comment(description: &str, indent: &str) -> String {
     for line in description.lines() {
         let line = flatten_intra_doc_links(line);
         let line = line.trim_end();
+        // A doc comment is free to contain `*/` — a glob like `spec/**/*.md`
+        // does — and pasting it into a `JSDoc` block closes the block early,
+        // which turns the REST of the generated file into syntax errors.
+        // Escaped rather than reworded: the Rust text is the authored one, and
+        // `*\/` is how `JSDoc` spells the sequence.
+        let line = line.replace("*/", "*\\/");
         if line.is_empty() {
             let _ = writeln!(out, "{indent} *");
         } else {
@@ -1076,6 +1082,31 @@ mod tests {
     }
 
     /// A `#[serde(transparent)]` newtype emits a `$defs` entry that is not an
+    /// A `*/` inside a description is escaped, not emitted raw.
+    ///
+    /// `PropertiesRequest.documents` documents the `spec/**/*.md` glob it
+    /// replaced, and the unescaped sequence closed the `JSDoc` block three
+    /// lines early — which made every remaining declaration in the generated
+    /// file a syntax error, thousands of lines from the type that caused it.
+    #[test]
+    fn a_close_comment_sequence_in_a_description_cannot_end_the_block() {
+        let rendered = render_definition(
+            "Globbed",
+            &json!({ "description": "Reads spec/**/*.md under the scope.", "type": "string" }),
+            "#/$defs/Globbed",
+        )
+        .unwrap();
+        assert!(
+            rendered.starts_with("/**\n * Reads spec/**\\/*.md"),
+            "the sequence must be escaped where it appears: {rendered}"
+        );
+        assert_eq!(
+            rendered.matches("*/").count(),
+            1,
+            "exactly one close-comment, the one this function writes: {rendered}"
+        );
+    }
+
     /// object, which `render_interface` refuses by design. It becomes an alias
     /// rather than being inlined, so `path: RepoPath` still reads as a path on
     /// the TypeScript side.

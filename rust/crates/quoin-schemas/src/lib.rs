@@ -80,11 +80,11 @@ pub const BOUNDARY_SCHEMA_ID: &str = "https://agent-ix.dev/quoin/core-boundary-v
 // --- The two checked-in digests. `make types` rewrites both; nothing else may.
 /// SHA-256 of the canonical JSON of [`boundary_schema`] at generation time.
 pub const SOURCE_SCHEMA_SHA256: &str =
-    "4e08492820ab92f494468b42bfbeb65cdcab78cde657d8b98df9744bea287980";
+    "40b14a0b65ab9f29cfeb660aef9f97ab8e31d53335c1a63aee164a1f012def09";
 
 /// SHA-256 of the committed `src/core/types.ts`.
 pub const GENERATED_TYPES_SHA256: &str =
-    "50c609e55dce10c54042a972932f8fc333acb506d116ce21346a0fa4b826da99";
+    "cc464e7a6240bcb4acc59b0fb72e2ee4c2a46e5388b99f75474dca6ab90a9205";
 
 /// The JSON Schema of every type that crosses the `quoin-core` boundary.
 ///
@@ -109,6 +109,15 @@ pub fn boundary_schema() -> Value {
     let _ = generator.subschema_for::<quoin_core::ops::modules::RemovePayload>();
     let _ = generator.subschema_for::<quoin_core::ops::modules::EnsureDefaultsRequest>();
     let _ = generator.subschema_for::<quoin_core::ops::modules::EnsureDefaultsPayload>();
+    // quoin#502, the `quire` domain. The two operations that replaced
+    // `src/quire/`. Their payloads restate nothing: `Obligation`,
+    // `CoverageDiagnostic` and `PropertyShape` are already on this surface
+    // because `auditor.audit` and `auditor.advise` carry them, which is what
+    // makes the obligation one operation emits the same type the next reads.
+    let _ = generator.subschema_for::<quoin_core::ops::quire::CoverageRequest>();
+    let _ = generator.subschema_for::<quoin_core::ops::quire::CoveragePayload>();
+    let _ = generator.subschema_for::<quoin_core::ops::quire::PropertiesRequest>();
+    let _ = generator.subschema_for::<quoin_core::ops::quire::PropertiesPayload>();
     // quoin#501, the `auditor` domain. The three operations that replaced
     // `src/auditor/` and `src/advisor/`; their payloads carry the report and
     // advice vocabularies, so `AuditReport`, `Finding` and `Advice` reach
@@ -438,7 +447,7 @@ mod tests {
     /// A list and not a count: a count moves when a type is renamed and says
     /// nothing about WHICH names crossed, and the names are what TypeScript
     /// imports.
-    const BOUNDARY_TYPES: [&str; 202] = [
+    const BOUNDARY_TYPES: [&str; 206] = [
         "Advice",
         "AdvisePayload",
         "AdviseRequest",
@@ -487,6 +496,8 @@ mod tests {
         "CompletenessFindingKind",
         "ContractVersion",
         "CoverageDiagnostic",
+        "CoveragePayload",
+        "CoverageRequest",
         "CriterionView",
         "DecisionState",
         "Diagnostic",
@@ -559,6 +570,8 @@ mod tests {
         "PingRequest",
         "ProfileId",
         "PropertiesForm",
+        "PropertiesPayload",
+        "PropertiesRequest",
         "PropertyShape",
         "ReadBaselinePayload",
         "ReadBlocksPayload",

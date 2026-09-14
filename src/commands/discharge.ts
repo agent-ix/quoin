@@ -7,7 +7,7 @@ import {
   buildDischargeReport,
   renderDischargeReport,
 } from "../core/assurance.js";
-import { parseClauseBinding } from "../quire/index.js";
+import type { ClauseBindingReport } from "../core/types.js";
 
 export default class Discharge extends QuoinCommand {
   static summary =
@@ -38,9 +38,17 @@ outside the binding partition, and no aggregate score is emitted.`;
       this.error("--binding and --facts cannot both read stdin", { exit: 2 });
     }
 
-    const parsedBinding = parseClauseBinding(read(flags.binding));
-    if (!parsedBinding.ok) {
-      this.error(parsedBinding.error.message, { exit: 2 });
+    // The clause-binding report is handed to the boundary as it was read.
+    // Validating it here against a vendored copy of quire's schema was the
+    // second half of a contract that no longer has two sides: `quoin-core`
+    // links the engine that emits this shape, so the reader that accepts it
+    // is the one that defined it.
+    let binding: unknown;
+    try {
+      binding = JSON.parse(read(flags.binding)) as unknown;
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : String(error);
+      this.error(`clause binding is not JSON: ${detail}`, { exit: 2 });
     }
 
     let facts: unknown;
@@ -56,7 +64,7 @@ outside the binding partition, and no aggregate score is emitted.`;
 
     try {
       const report = buildDischargeReport({
-        binding: parsedBinding.value,
+        binding: binding as ClauseBindingReport,
         facts,
         asOf: flags["as-of"],
       });

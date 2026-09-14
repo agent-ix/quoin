@@ -73,6 +73,12 @@ quoin-modules = { workspace = true }
 # derive obligations — quire does, and the command layer passes them in — but
 # the shape has to be the same one `quoin-evidence` matches on.
 quoin-quire-types = { workspace = true }
+# quoin#502, the Stage 7 cutover of `src/quire/`. The LINKED engine, replacing
+# the `quire` subprocess six commands shelled out to. `quoin-core` names only
+# `quoin_quire::model` and the two run functions; the walk itself is reached
+# through the `QuireHost` capability `main.rs` constructs, so the library half
+# still touches no disk.
+quoin-quire = { workspace = true }
 # quoin#452, the Stage 8 cutover. `quoin-core` uses only the DECIDING half —
 # the diagnostics, the block shape and the sweep report; the reading of the
 # vendored contract tree and of the corpus is the `SemanticHost` seam, which

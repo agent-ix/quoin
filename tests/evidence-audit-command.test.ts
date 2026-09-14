@@ -7,19 +7,14 @@
  * backlog printed under "(new violations only)" and concluded either that the
  * ratchet was broken or that they had just introduced 33 problems.
  *
- * quire is faked on PATH (the tests/quire-exec.test.ts pattern): the command
- * needs a version answer and one coverage payload, and what is under test is
- * the reporting, not the engine.
+ * The coverage answer is controlled by a `quoin-core` double (quoin#502): the
+ * command needs one fixed payload, and what is under test is the reporting,
+ * not the engine. Every other operation the run makes reaches the real
+ * boundary, so the evidence store and the auditor are the production ones.
  */
 
 import { execFileSync } from "node:child_process";
-import {
-  chmodSync,
-  mkdirSync,
-  mkdtempSync,
-  readFileSync,
-  writeFileSync,
-} from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -37,6 +32,7 @@ import {
   writeBindings,
   writeRun,
 } from "./support/evidence-store.js";
+import { coreDouble } from "./support/core-double.js";
 import { packageVersion } from "../src/version.js";
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -49,38 +45,22 @@ beforeAll(async () => {
 
 /** One obligation, no bindings: the audit reports it undischarged. */
 const COVERAGE_PAYLOAD = JSON.stringify({
-  unbacked_rows: [],
-  status_lies: [],
-  untracked_symbols: [],
-  groups: [],
-  totals: { backed: 0, total: 1 },
+  diagnostics: [],
   obligations: [
     {
-      source: "acceptance-criteria",
       id: "FR-001-AC-1",
-      document: "spec/functional/FR-001.md",
       statement: "Every finding defaults to warning.",
       statement_hash: "a".repeat(64),
     },
   ],
 });
 
-/** A fake `quire` answering `--version` and `coverage --json`, first on PATH. */
-function fakeQuireDir(payload: string = COVERAGE_PAYLOAD): string {
-  const dir = mkdtempSync(join(tmpdir(), "quoin-fake-quire-"));
-  const bin = join(dir, "quire");
-  writeFileSync(
-    bin,
-    [
-      "#!/bin/sh",
-      'if [ "$1" = "--version" ]; then echo "quire 0.41.0"; exit 0; fi',
-      `cat <<'PAYLOAD'`,
-      payload,
-      "PAYLOAD",
-    ].join("\n"),
-  );
-  chmodSync(bin, 0o755);
-  return dir;
+/** Install a `quoin-core` answering `quire.coverage` from `payload`. */
+function fakeCoverage(payload: string = COVERAGE_PAYLOAD): void {
+  process.env.QUOIN_CORE = coreDouble({
+    answers: { "quire.coverage": payload },
+  });
+  delete process.env.QUOIN_EXPECTED_CORE_SHA256;
 }
 
 function captureLog(): { lines: string[]; restore: () => void } {
@@ -92,13 +72,13 @@ function captureLog(): { lines: string[]; restore: () => void } {
 }
 
 describe("evidence audit --ratchet with and without a baseline (FR-032-AC-13)", () => {
-  const savedPath = process.env.PATH;
+  const savedCore = process.env.QUOIN_CORE;
   afterEach(() => {
-    process.env.PATH = savedPath;
+    process.env.QUOIN_CORE = savedCore;
   });
 
   function workspace(): string {
-    process.env.PATH = `${fakeQuireDir()}:${savedPath}`;
+    fakeCoverage();
     return mkdtempSync(join(tmpdir(), "quoin-audit-"));
   }
 
@@ -180,9 +160,9 @@ describe("evidence audit --ratchet with and without a baseline (FR-032-AC-13)", 
 });
 
 describe("audit reports uncatalogued methods with no evidence store at all (FR-032-AC-14)", () => {
-  const savedPath = process.env.PATH;
+  const savedCore = process.env.QUOIN_CORE;
   afterEach(() => {
-    process.env.PATH = savedPath;
+    process.env.QUOIN_CORE = savedCore;
   });
 
   /** The day-one shape (#165): a Verification value in no catalog, no store. */
@@ -194,9 +174,7 @@ describe("audit reports uncatalogued methods with no evidence store at all (FR-0
     totals: { backed: 0, total: 1 },
     obligations: [
       {
-        source: "acceptance-criteria",
         id: "NFR-022-M-12",
-        document: "spec/non-functional/NFR-022.md",
         statement: "PR-tier CI wall clock stays under budget.",
         statement_hash: "a".repeat(64),
         method: "CI Measurement",
@@ -229,7 +207,7 @@ describe("audit reports uncatalogued methods with no evidence store at all (FR-0
     // Before #165 this run reported the obligation ONLY as undischarged: the
     // unknown-method check lived past the binding guard, so the one check
     // that pays off before any evidence exists required evidence to run.
-    process.env.PATH = `${fakeQuireDir(UNCATALOGUED_PAYLOAD)}:${savedPath}`;
+    fakeCoverage(UNCATALOGUED_PAYLOAD);
     const root = mkdtempSync(join(tmpdir(), "quoin-audit-"));
     const { lines, restore } = captureLog();
     try {
@@ -248,14 +226,14 @@ describe("audit reports uncatalogued methods with no evidence store at all (FR-0
 });
 
 describe("mocked-confirmation production command path (agent-ix/quoin#204)", () => {
-  const savedPath = process.env.PATH;
+  const savedCore = process.env.QUOIN_CORE;
   afterEach(() => {
-    process.env.PATH = savedPath;
+    process.env.QUOIN_CORE = savedCore;
   });
 
   it("inspect-mocks records its version and audit reports a located finding", async () => {
     // Trace: FR-030-AC-16, FR-030-AC-17, FR-032-AC-16
-    process.env.PATH = `${fakeQuireDir(
+    fakeCoverage(
       JSON.stringify({
         unbacked_rows: [],
         status_lies: [],
@@ -264,16 +242,14 @@ describe("mocked-confirmation production command path (agent-ix/quoin#204)", () 
         totals: { backed: 1, total: 1 },
         obligations: [
           {
-            source: "acceptance-criteria",
             id: "FR-001-AC-1",
-            document: "spec/FR-001.md",
             statement:
               "The shell shall obtain the user's confirmation before granting a root.",
             statement_hash: "a".repeat(64),
           },
         ],
       }),
-    )}:${savedPath}`;
+    );
     const root = mkdtempSync(join(tmpdir(), "quoin-mock-command-"));
     mkdirSync(join(root, "src"), { recursive: true });
     writeFileSync(
