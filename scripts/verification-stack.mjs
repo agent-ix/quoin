@@ -485,7 +485,13 @@ function assertCliSelectsEngine(cliRoot, engineRevision, engineRemote) {
 }
 
 function buildCli(cliRoot, scratch) {
-  const target = join(scratch, "cargo-target");
+  // A caller may retain a Cargo target directory for a constrained host whose
+  // linker cannot reliably create a fresh release link. Cargo still validates
+  // the exact checkout and lockfile below; the copied executable is then
+  // authenticated by its embedded provenance before it can run the campaign.
+  const target = resolve(
+    process.env.QUIRE_CARGO_TARGET_DIR ?? join(scratch, "cargo-target"),
+  );
   const output = run(
     "cargo",
     [
