@@ -32,9 +32,9 @@ fn repo_root() -> PathBuf {
 }
 
 /// Run one catalog operation against the binary's real host grant.
-fn run(request: &Value) -> (i32, String, String) {
+fn run(op: &str, request: &Value) -> (i32, String, String) {
     let mut child = Command::new(env!("CARGO_BIN_EXE_quoin-core"))
-        .arg("catalog.load")
+        .arg(op)
         .env("QUOIN_SEMANTIC_ROOT", repo_root().join("src/semantic"))
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
@@ -71,7 +71,7 @@ fn tc_373_catalog_load_discovers_a_nested_module_through_the_real_boundary() {
     .expect("manifest writes");
     fs::write(module.join("skeletons/FR.md"), "# FR\n").expect("skeleton writes");
 
-    let (status, stdout, stderr) = run(&json!({ "roots": [parent] }));
+    let (status, stdout, stderr) = run("catalog.load", &json!({ "roots": [parent] }));
     assert_eq!(status, 0, "{stderr}");
     assert_eq!(stderr, "");
     let payload: Value = serde_json::from_str(&stdout).expect("catalog payload");
