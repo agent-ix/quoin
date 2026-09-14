@@ -5,7 +5,6 @@ import { fileURLToPath } from "node:url";
 
 import { Config, settings } from "@oclif/core";
 
-
 // ===========================================================================
 // FR-026-AC-7 — preinstalled core-plugin discovery
 //
