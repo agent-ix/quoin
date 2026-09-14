@@ -3,7 +3,7 @@
   "repositories": {
     "quoin": {
       "remote": "https://github.com/agent-ix/quoin",
-      "revision": "3fb01b4af013a3fa6a8db5f429aa0576370e7efb"
+      "revision": "aa50925a69ad0827b47600c756fd989f91a924d8"
     },
     "quire": {
       "remote": "https://github.com/agent-ix/quire-rs",
@@ -86,7 +86,7 @@
     ".github/workflows/build-test.yml": "sha256:df2f1f6fa1ac1670e6f54b4e9f415a62f0eae28e63bcc4f16cc9e0b42852a9c5",
     "scripts/check-tool-drift.mjs": "sha256:bea47cdcb071b08af9465caddcf8352eccec17f28c0b15f461850f461e4d088b",
     "scripts/check-tool-drift-selftest.mjs": "sha256:7fccc2e588b1f7aa8897cdce337ea9c0c0aa73f2b4687923d01731dea26ca448",
-    "scripts/verification-stack.mjs": "sha256:a040c0c824c0e84deca6d641bc1023b61b4899480e84e711a4a5d517c38444d4",
+    "scripts/verification-stack.mjs": "sha256:d0fc37a603691916038ba05f85498ec8062d834afeda0b4b042c4a691ac5cff1",
     "scripts/verification-stack-selftest.mjs": "sha256:1878043067ddb8334f9576299587fce54b0f7f6fa45b0f977f2d84054e2bb306",
     "scripts/copy-schemas.mjs": "sha256:99a960974e18612c0e6c50cbdf3a1c979c30f7ab3fd024cd84891c1419ac4818",
     "scripts/verify-span-breadth.mjs": "sha256:4ab0f359688e093c48414bdfec6e4d3915f8580ee652a31f796e4cc7c81e8869",
@@ -108,7 +108,7 @@
     "corpus/config/external-channel.json": "sha256:74103cf74e7eceb69d3bb993074a7929025e7cff0cff4c993be3c7e4873050b5",
     "scripts/verification-relock.mjs": "sha256:5ff0482cf082991a9ff8a6428ee3916e3b34629a3aa56daae75da0d973a15a99",
     "scripts/verification-relock-selftest.mjs": "sha256:22e3faabb992a4e2b0dd11c1b0d1973603bf9d77c674590713411eae6183cff3",
-    "scripts/verification-declarations.mjs": "sha256:aeafeba201e72db525c854f380680add1197f856f0174ab391aabc23385c577e",
+    "scripts/verification-declarations.mjs": "sha256:5dad3d7168f6b311789496f76824dc3d73074cf1ddb90409906d8cfe726f0748",
     "scripts/verification-declarations-selftest.mjs": "sha256:ea689a5d3785487fc81084429706ca0d19b7e50cf15b2e3f9fead1a9b58b1213",
     "scripts/verification-object-integrity-selftest.mjs": "sha256:0033792fd5ba2760fe84fae0627ec493cb70732ba99245e6dbba432ab591b63d",
     "scripts/workspace-policy-selftest.mjs": "sha256:cf5f40c996f6107619f54563cc504132e20858182c7b86f9fbeb3adc1ba65214"
