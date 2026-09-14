@@ -78,6 +78,7 @@ publish = false
 [workspace.dependencies]
 quoin-assurance = { path = "crates/quoin-assurance" }
 quoin-change-assurance = { path = "crates/quoin-change-assurance" }
+quoin-catalog = { path = "crates/quoin-catalog" }
 quoin-combinatorial = { path = "crates/quoin-combinatorial" }
 quoin-completeness = { path = "crates/quoin-completeness" }
 quoin-auditor = { path = "crates/quoin-auditor" }

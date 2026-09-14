@@ -43,10 +43,12 @@
 use std::io::Write as _;
 use std::path::{Path, PathBuf};
 
+use quoin_catalog::ModuleDocument;
 use quoin_change_assurance::EvidenceStore;
 use quoin_change_assurance::intake::disk::DiskEvidenceStore;
 use quoin_core::capabilities::{
-    Capabilities, ChangeAssuranceHost, EvidenceHost, ModuleHost, QuireHost, SemanticHost,
+    Capabilities, CatalogHost, ChangeAssuranceHost, EvidenceHost, ModuleHost, QuireHost,
+    SemanticHost,
 };
 use quoin_core::dispatch::{dispatch, parse_operation, read_request};
 use quoin_core::error::CoreError;
@@ -87,6 +89,7 @@ fn run(args: &[String]) -> Result<Response, CoreError> {
 
     // The grant is built once, here, and nothing downstream can widen it.
     let modules = HostModules::new();
+    let catalog = HostCatalog::new();
     let semantic = HostSemantic::new();
     let change_assurance = HostChangeAssurance;
     let evidence = HostEvidence;
@@ -98,6 +101,7 @@ fn run(args: &[String]) -> Result<Response, CoreError> {
     let quire = HostQuire;
     let capabilities = Capabilities::with_hosts(
         &modules,
+        &catalog,
         &semantic,
         &change_assurance,
         &evidence,
@@ -105,6 +109,100 @@ fn run(args: &[String]) -> Result<Response, CoreError> {
         &quire,
     );
     dispatch(op, &request, &capabilities)
+}
+
+/// The production [`CatalogHost`]: explicit or default candidate discovery and
+/// the bounded filesystem reads the pure `quoin-catalog` projection needs.
+///
+/// Discovery reproduces `src/module-roots.ts`: `$QUOIN_MODULE_PATHS` leads the
+/// candidate sequence, installed `$IX_HOME/filament/modules/*` follows, a
+/// candidate may be a module root or a directory containing roots, and missing
+/// candidates are ignored. The projection itself does not see `std::fs`.
+struct HostCatalog {
+    /// `$IX_HOME`, or `<home>/.ix`, resolved once for default discovery.
+    default_home: IxHome,
+    /// Explicit module candidates supplied by the process environment.
+    env_roots: Vec<PathBuf>,
+}
+
+impl HostCatalog {
+    fn new() -> Self {
+        let default_home = IxHome::resolve(
+            std::env::var("IX_HOME").ok().as_deref(),
+            std::env::home_dir().as_deref(),
+        );
+        let env_roots = std::env::var_os("QUOIN_MODULE_PATHS")
+            .map(|value| {
+                std::env::split_paths(&value)
+                    .filter(|path| !path.as_os_str().is_empty())
+                    .collect()
+            })
+            .unwrap_or_default();
+        Self {
+            default_home,
+            env_roots,
+        }
+    }
+
+    fn default_candidates(&self) -> std::io::Result<Vec<PathBuf>> {
+        let mut candidates = self.env_roots.clone();
+        let installed = self.default_home.as_path().join("filament").join("modules");
+        if installed.exists() {
+            for entry in std::fs::read_dir(installed)? {
+                candidates.push(entry?.path());
+            }
+        }
+        Ok(candidates)
+    }
+
+    fn locate(candidate: &Path) -> std::io::Result<Option<PathBuf>> {
+        if !candidate.exists() {
+            return Ok(None);
+        }
+        if candidate.join("manifest.yaml").exists() {
+            return Ok(Some(std::fs::canonicalize(candidate)?));
+        }
+        if !candidate.is_dir() {
+            return Ok(None);
+        }
+        for child in std::fs::read_dir(candidate)? {
+            let child = child?.path();
+            if child.join("manifest.yaml").exists() {
+                return std::fs::canonicalize(child).map(Some);
+            }
+        }
+        Ok(None)
+    }
+}
+
+impl CatalogHost for HostCatalog {
+    fn read_modules(&self, roots: Option<&[PathBuf]>) -> std::io::Result<Vec<ModuleDocument>> {
+        let candidates =
+            roots.map_or_else(|| self.default_candidates(), |roots| Ok(roots.to_vec()))?;
+        let mut documents = Vec::new();
+        for candidate in candidates {
+            let Some(root) = Self::locate(&candidate)? else {
+                continue;
+            };
+            let manifest = std::fs::read_to_string(root.join("manifest.yaml"))?;
+            let skeletons = root.join("skeletons");
+            let skeleton_names = std::fs::read_dir(skeletons).map_or_else(
+                |_| Vec::new(),
+                |entries| {
+                    entries
+                        .filter_map(Result::ok)
+                        .filter_map(|entry| entry.file_name().into_string().ok())
+                        .collect()
+                },
+            );
+            documents.push(ModuleDocument {
+                root: root.to_string_lossy().into_owned(),
+                manifest,
+                skeleton_names,
+            });
+        }
+        Ok(documents)
+    }
 }
 
 /// The production [`ModuleHost`]: a `gix` resolver, the semantic gate and the

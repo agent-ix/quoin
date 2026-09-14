@@ -31,6 +31,7 @@ quoin-assurance = { workspace = true }
 # granted no host capability at all. The whole evidence store arrives on
 # stdin as data the caller already read; see `ops/auditor/`.
 quoin-auditor = { workspace = true }
+quoin-catalog = { workspace = true }
 # The report shapes `auditor.audit` writes back. Depended on directly rather
 # than reached through `quoin-auditor`'s re-exports so that the wire types in
 # `ops/auditor/wire.rs` name their own crate, as every other domain does.
