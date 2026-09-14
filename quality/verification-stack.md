@@ -77,6 +77,10 @@ order: `audit-pre`, `tool-drift`, `stack-selftest`, `lint`, `core`, `test`, `run
 the intentional deferral in update mode; `final-audit` performs it only after
 the refreshed Tier-1 and Tier-2 records are present. State is not evidence and
 is never committed. Remove its exact directory after a successful campaign.
+The `test` stage has three required bounded runs: invoke it successively with
+`--test-shard 1`, `--test-shard 2`, and `--test-shard 3`; the third invocation
+refuses unless the first two authenticated shard records exist and only then
+marks the complete test stage successful.
 
 This slice changes Quoin's own static validation only. Tier-1 case declarations,
 Tier-2 historical declaration sets and external producer feature support are

@@ -1011,6 +1011,25 @@ async function main() {
     }
     if (stageRuns(plan, "test")) {
       quoinCore ??= buildQuoinCore(scratch);
+      const requestedShard = valueOf("--test-shard");
+      if (requestedShard && !plan) {
+        throw new Error("--test-shard requires --state-dir");
+      }
+      const testShards = requestedShard ? [Number(requestedShard)] : [1, 2, 3];
+      if (
+        testShards.some(
+          (shard) => !Number.isInteger(shard) || shard < 1 || shard > 3,
+        )
+      ) {
+        throw new Error("--test-shard must be one of 1, 2, or 3");
+      }
+      if (plan && requestedShard && testShards[0] > 1) {
+        readStateRecord(
+          scratch,
+          `test-${testShards[0] - 1}`,
+          currentLockDigest,
+        );
+      }
       const testEnv = { ...env };
       // Do not let an inherited explicit-set override change either replay mode.
       delete testEnv.QUOIN_VERIFICATION_DECLARATIONS;
@@ -1027,7 +1046,7 @@ async function main() {
       // subprocess beneath constrained-host command lifetimes. A stage record
       // is written only after every shard, including its build/validation
       // prerequisites, has completed.
-      for (let shard = 1; shard <= 3; shard += 1) {
+      for (const shard of testShards) {
         run(
           "make",
           [
@@ -1042,6 +1061,17 @@ async function main() {
             stdio: "inherit",
           },
         );
+        if (plan) {
+          writeStateRecord(scratch, `test-${shard}`, {
+            lockDigest: currentLockDigest,
+          });
+        }
+      }
+      if (plan && (!requestedShard || testShards[0] === 3)) {
+        for (const shard of [1, 2, 3]) {
+          readStateRecord(scratch, `test-${shard}`, currentLockDigest);
+        }
+        writeStateRecord(scratch, "test", { lockDigest: currentLockDigest });
       }
       if (plan)
         writeStateRecord(scratch, "test", { lockDigest: currentLockDigest });
