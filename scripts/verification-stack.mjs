@@ -1016,7 +1016,10 @@ async function main() {
       if (requestedShard && !plan) {
         throw new Error("--test-shard requires --state-dir");
       }
-      if (requestedTemplateGroup && (!requestedShard || Number(requestedShard) !== 2)) {
+      if (
+        requestedTemplateGroup &&
+        (!requestedShard || Number(requestedShard) !== 2)
+      ) {
         throw new Error("--template-group requires --test-shard 2");
       }
       const templateGroup = requestedTemplateGroup
@@ -1024,7 +1027,9 @@ async function main() {
         : null;
       if (
         templateGroup !== null &&
-        (!Number.isInteger(templateGroup) || templateGroup < 1 || templateGroup > 9)
+        (!Number.isInteger(templateGroup) ||
+          templateGroup < 1 ||
+          templateGroup > 9)
       ) {
         throw new Error("--template-group must be an integer from 1 through 9");
       }
@@ -1062,7 +1067,12 @@ async function main() {
       // is written only after every shard, including its build/validation
       // prerequisites, has completed.
       for (const shard of testShards) {
-        if (plan && shard === 2 && templateGroup !== null && templateGroup > 1) {
+        if (
+          plan &&
+          shard === 2 &&
+          templateGroup !== null &&
+          templateGroup > 1
+        ) {
           readStateRecord(
             scratch,
             `test-2-group-${templateGroup - 1}`,
@@ -1081,10 +1091,14 @@ async function main() {
                 "the template depends on shared tooling rather than copying it",
                 "the conformance contract tracks the maintained repositories",
                 "the rendered suite carries the rows the template gate executes",
-              ].filter((_, index) => !templateGroup || index + 1 === templateGroup).map((name) => [
-                `VITEST_FILE=tests/semantic-module-template.test.ts`,
-                `VITEST_NAME=^${name}`,
-              ])
+              ]
+                .filter(
+                  (_, index) => !templateGroup || index + 1 === templateGroup,
+                )
+                .map((name) => [
+                  `VITEST_FILE=tests/semantic-module-template.test.ts`,
+                  `VITEST_NAME=^${name}`,
+                ])
             : [[`VITEST_ARGS=--shard=${shard}/20`]];
         for (const invocation of invocations) {
           run("make", ["test-with-quire", `QUIRE=${binary}`, ...invocation], {
@@ -1099,10 +1113,19 @@ async function main() {
             lockDigest: currentLockDigest,
           });
           if (templateGroup === 9) {
-            for (const group of Array.from({ length: 9 }, (_, index) => index + 1)) {
-              readStateRecord(scratch, `test-2-group-${group}`, currentLockDigest);
+            for (const group of Array.from(
+              { length: 9 },
+              (_, index) => index + 1,
+            )) {
+              readStateRecord(
+                scratch,
+                `test-2-group-${group}`,
+                currentLockDigest,
+              );
             }
-            writeStateRecord(scratch, "test-2", { lockDigest: currentLockDigest });
+            writeStateRecord(scratch, "test-2", {
+              lockDigest: currentLockDigest,
+            });
           }
         } else if (plan) {
           writeStateRecord(scratch, `test-${shard}`, {
