@@ -70,18 +70,18 @@
   ],
   "toolchains": {
     "node": "22.15.0",
-    "rust": "1.94.1",
+    "rust": "1.98.1",
     "python": "3.10.12"
   },
   "artifacts": {
     ".node-version": "sha256:e1677620f62097e30fac6695180333d8eb9ead4fe5b1d1d6e01b76e049780059",
     ".npmrc": "sha256:cde76ca04e048c3eba070a2c0dfcf5b723cf6014eab177157096b924f24ec4ca",
     "package.json": "sha256:4496d70e053a3df6d70ef237d93e5a3a0e6af0566e2b50aac6973f642ff55a36",
-    "pnpm-lock.yaml": "sha256:225ef64824639d7c9174805082f39c646fab37c25a8f038c015e7a085c5f09ab",
+    "pnpm-lock.yaml": "sha256:12f2579ce0697073e6d6d806d9d9856b7d7c838ce06acd712f0da55941c34bc8",
     "Makefile": "sha256:db01d1505a8eeda913268844cbfb68e5f837e7e341121d93f5b7810237ae4308",
-    ".github/workflows/build-test.yml": "sha256:63b38d79f1d6ee325bde892b5b9afd9639dd10d061b9be950c3c88f1897a9850",
+    ".github/workflows/build-test.yml": "sha256:df2f1f6fa1ac1670e6f54b4e9f415a62f0eae28e63bcc4f16cc9e0b42852a9c5",
     "scripts/check-tool-drift.mjs": "sha256:bea47cdcb071b08af9465caddcf8352eccec17f28c0b15f461850f461e4d088b",
-    "scripts/check-tool-drift-selftest.mjs": "sha256:6b317db32637c038686125817e2375be4f8ee99db59a0403bc5c49520434e8e0",
+    "scripts/check-tool-drift-selftest.mjs": "sha256:7fccc2e588b1f7aa8897cdce337ea9c0c0aa73f2b4687923d01731dea26ca448",
     "scripts/verification-stack.mjs": "sha256:8a9a4251e402673a15debf39467d44c077d3e7c9da1099cd3ccbaebc833e147b",
     "scripts/verification-stack-selftest.mjs": "sha256:1878043067ddb8334f9576299587fce54b0f7f6fa45b0f977f2d84054e2bb306",
     "scripts/copy-schemas.mjs": "sha256:99a960974e18612c0e6c50cbdf3a1c979c30f7ab3fd024cd84891c1419ac4818",
