@@ -1049,20 +1049,31 @@ async function main() {
       // is written only after every shard, including its build/validation
       // prerequisites, has completed.
       for (const shard of testShards) {
-        run(
-          "make",
-          [
-            "test-with-quire",
-            `QUIRE=${binary}`,
-            `VITEST_ARGS=--shard=${shard}/20`,
-          ],
-          {
+        const invocations =
+          shard === 2
+            ? [
+                "the renderer is present",
+                "variants render from one core",
+                "an invalid input is refused, naming the value",
+                "the rendered tree conforms and carries no residue",
+                "the rendered repository is public-ready",
+                "the rendered governance tree validates as rendered",
+                "the template depends on shared tooling rather than copying it",
+                "the conformance contract tracks the maintained repositories",
+                "the rendered suite carries the rows the template gate executes",
+              ].map((name) => [
+                `VITEST_FILE=tests/semantic-module-template.test.ts`,
+                `VITEST_NAME=^${name}`,
+              ])
+            : [[`VITEST_ARGS=--shard=${shard}/20`]];
+        for (const invocation of invocations) {
+          run("make", ["test-with-quire", `QUIRE=${binary}`, ...invocation], {
             cwd: ROOT,
             env: testEnv,
             timeout: lock.timeouts.quoinMilliseconds,
             stdio: "inherit",
-          },
-        );
+          });
+        }
         if (plan) {
           writeStateRecord(scratch, `test-${shard}`, {
             lockDigest: currentLockDigest,

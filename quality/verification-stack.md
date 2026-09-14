@@ -80,7 +80,9 @@ is never committed. Remove its exact directory after a successful campaign.
 The `test` stage has twenty required bounded runs: invoke it successively with
 `--test-shard 1` through `--test-shard 20`; each invocation refuses unless its
 predecessor authenticated record exists, and only the twentieth marks the complete
-test stage successful.
+test stage successful. The historical second file shard is the large semantic
+module template suite; it is replayed as its nine top-level describe groups,
+each selected by its anchored describe prefix, so no criterion is skipped.
 
 This slice changes Quoin's own static validation only. Tier-1 case declarations,
 Tier-2 historical declaration sets and external producer feature support are
