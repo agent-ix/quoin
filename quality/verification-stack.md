@@ -72,7 +72,7 @@ make bench-tier1-update
 ```
 
 Then advance `--start-at` and `--stop-after` one stage at a time, in this exact
-order: `audit-pre`, `tool-drift`, `stack-selftest`, `lint`, `test`, `runtime`,
+order: `audit-pre`, `tool-drift`, `stack-selftest`, `lint`, `core`, `test`, `runtime`,
 `span`, `qa`, `guidance`, `tier1`, `tier2`, `final-audit`. `audit-pre` records
 the intentional deferral in update mode; `final-audit` performs it only after
 the refreshed Tier-1 and Tier-2 records are present. State is not evidence and

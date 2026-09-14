@@ -656,6 +656,7 @@ const STAGES = [
   "tool-drift",
   "stack-selftest",
   "lint",
+  "core",
   "test",
   "runtime",
   "span",
@@ -984,8 +985,32 @@ async function main() {
     if (plan && plan.start > STAGES.indexOf("lint")) {
       readStateRecord(scratch, "lint", currentLockDigest);
     }
+    let quoinCore;
+    if (stageRuns(plan, "core")) {
+      quoinCore = buildQuoinCore(scratch);
+      if (plan) {
+        writeStateRecord(scratch, "core", {
+          lockDigest: currentLockDigest,
+          executable: quoinCore,
+          executableDigest: sha256(readFileSync(quoinCore)),
+        });
+      }
+    }
+    if (stageEnds(plan, "core")) return;
+    if (plan && plan.start > STAGES.indexOf("core")) {
+      const coreRecord = readStateRecord(scratch, "core", currentLockDigest);
+      quoinCore = resolve(coreRecord.executable ?? "");
+      if (
+        !existsSync(quoinCore) ||
+        sha256(readFileSync(quoinCore)) !== coreRecord.executableDigest
+      ) {
+        throw new Error(
+          "verification state quoin-core executable does not match core record",
+        );
+      }
+    }
     if (stageRuns(plan, "test")) {
-      const quoinCore = buildQuoinCore(scratch);
+      quoinCore ??= buildQuoinCore(scratch);
       const testEnv = { ...env };
       // Do not let an inherited explicit-set override change either replay mode.
       delete testEnv.QUOIN_VERIFICATION_DECLARATIONS;
