@@ -14,19 +14,13 @@ export {
   removeModule,
   type InstalledModule,
 } from "./core/modules.js";
-// `src/change-assurance/` was deleted at quoin#457: the FR-063..FR-065
-// contracts are decided by `quoin-change-assurance` behind `quoin-core`. What
-// that barrel re-exported from modules that SURVIVE is named here, so no
-// library consumer loses an export to the cutover.
-export {
-  IntegrityError,
-  assertDigest,
-  blake3Hex,
-  canonicalBytes,
-  canonicalizeJcs,
-  digestValue,
-  parseStrictJson,
-} from "./integrity.js";
+// The seven integrity symbols this barrel published — `IntegrityError`,
+// `assertDigest`, `blake3Hex`, `canonicalBytes`, `canonicalizeJcs`,
+// `digestValue`, `parseStrictJson` — are gone at quoin#504, by owner ruling:
+// no TypeScript is retained for the sole purpose of keeping an export alive.
+// They are decided by `quoin-store` now, and a consumer that wanted them is a
+// consumer with a porting ticket of its own rather than a reason to keep a
+// second implementation. Nothing in the ecosystem imported them.
 export {
   CHANGE_ASSURANCE_SCHEMA_NAMES,
   changeAssuranceSchemaPath,
