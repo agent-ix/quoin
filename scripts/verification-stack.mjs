@@ -809,12 +809,12 @@ async function main() {
       env,
       stdio: "inherit",
     });
-    run("corepack", ["pnpm", "run", "lint"], {
+    const lintOutput = run("corepack", ["pnpm", "run", "lint"], {
       cwd: ROOT,
       env,
       timeout: lock.timeouts.quoinMilliseconds,
-      stdio: "inherit",
     });
+    process.stdout.write(lintOutput);
     const testEnv = { ...env };
     // Do not let an inherited explicit-set override change either replay mode.
     delete testEnv.QUOIN_VERIFICATION_DECLARATIONS;
