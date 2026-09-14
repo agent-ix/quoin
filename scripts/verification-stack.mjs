@@ -629,6 +629,7 @@ export function lockDigest(lockPath) {
 async function main() {
   const lockPath = resolve(valueOf("--lock") ?? DEFAULT_LOCK);
   const lock = validateLockShape(JSON.parse(readFileSync(lockPath, "utf8")));
+  const update = process.argv.includes("--update");
   const roots = {
     quoin: ROOT,
     quire: resolve(process.env.QUIRE_ROOT ?? join(ROOT, "..", "quire-rs")),
@@ -780,11 +781,18 @@ async function main() {
       QUOIN_LOCKED_SOURCE_REVISION: lock.repositories.quoin.revision,
     };
     console.error("verification-stack: Quoin gates");
-    run("corepack", ["pnpm", "run", "audit:tool-drift"], {
-      cwd: ROOT,
-      env,
-      stdio: "inherit",
-    });
+    // An evidence refresh starts from evidence whose producer pin is
+    // deliberately stale.  Running the provenance audit before that refresh
+    // makes `make bench-tier1-update` impossible.  The update route therefore
+    // replays the evidence below and runs this exact audit after the replay;
+    // ordinary verification continues to fail before doing any work.
+    if (!update) {
+      run("corepack", ["pnpm", "run", "audit:tool-drift"], {
+        cwd: ROOT,
+        env,
+        stdio: "inherit",
+      });
+    }
     run("corepack", ["pnpm", "run", "test:tool-drift"], {
       cwd: ROOT,
       env,
@@ -874,6 +882,28 @@ async function main() {
         `isolated Quoin ${isolatedVersion} does not equal built source ${sourceVersion}`,
       );
     }
+    if (update) {
+      console.error("verification-stack: refresh reviewed span evidence");
+      run(
+        process.execPath,
+        [join(isolatedQuoinCheckout, "scripts", "freeze-span-breadth.mjs")],
+        {
+          cwd: isolatedQuoinCheckout,
+          env: {
+            ...env,
+            QUIRE: binary,
+            QUIRE_ROOT: roots.quire,
+            FILAMENT_IDE_RS_ROOT: roots["filament-ide-rs"],
+            QUOIN_LABEL_REVISION: lock.repositories.quoin.revision,
+          },
+          stdio: "inherit",
+        },
+      );
+      copyFileSync(
+        join(isolatedQuoinCheckout, "bench", "span-breadth-v1-labels.json"),
+        join(ROOT, "bench", "span-breadth-v1-labels.json"),
+      );
+    }
     console.error("verification-stack: broad span-grounding gate");
     const spanResult = run(
       process.execPath,
@@ -924,7 +954,42 @@ async function main() {
       "--span-breadth",
       spanResultPath,
     ];
-    if (process.argv.includes("--update")) {
+    if (update) {
+      const guidanceCandidate = join(scratch, "guidance-candidate.json");
+      console.error("verification-stack: refresh reviewed guidance evidence");
+      run(
+        process.execPath,
+        [
+          join(ROOT, "scripts", "bench-tier1.mjs"),
+          "--experimental",
+          "--quire",
+          binary,
+          "--quoin",
+          isolatedQuoin,
+          "--guidance-candidate-out",
+          guidanceCandidate,
+          "--guidance-candidate-only",
+        ],
+        {
+          cwd: ROOT,
+          env,
+          timeout: lock.timeouts.tier1Milliseconds,
+          stdio: "inherit",
+        },
+      );
+      run(
+        process.execPath,
+        [
+          join(ROOT, "scripts", "freeze-guidance-review.mjs"),
+          "--candidate",
+          guidanceCandidate,
+        ],
+        {
+          cwd: ROOT,
+          env,
+          stdio: "inherit",
+        },
+      );
       benchmarkArgs.push(
         "--update",
         "--recall-baseline-out",
@@ -949,13 +1014,21 @@ async function main() {
       "--declaration-repo",
       `agent-ix/spec-artifacts-iso=${roots["spec-artifacts-iso"]}`,
     ];
-    if (process.argv.includes("--update")) tier2Args.push("--update");
+    if (update) tier2Args.push("--update");
     run(process.execPath, tier2Args, {
       cwd: ROOT,
       env,
       timeout: lock.timeouts.tier2Milliseconds,
       stdio: "inherit",
     });
+    if (update) {
+      console.error("verification-stack: refreshed evidence provenance audit");
+      run("corepack", ["pnpm", "run", "audit:tool-drift"], {
+        cwd: ROOT,
+        env,
+        stdio: "inherit",
+      });
+    }
     const output = valueOf("--evidence-out");
     if (output)
       writeFileSync(

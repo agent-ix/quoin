@@ -16,8 +16,17 @@ if (!process.env.QUIRE || !QUIRE.startsWith("/")) {
 }
 const repositories = [
   { name: "quoin", root: ROOT, revision: process.env.QUOIN_LABEL_REVISION },
-  { name: "quire-rs", root: resolve(ROOT, "..", "quire-rs") },
-  { name: "filament-ide-rs", root: resolve(ROOT, "..", "filament-ide-rs") },
+  {
+    name: "quire-rs",
+    root: resolve(process.env.QUIRE_ROOT ?? resolve(ROOT, "..", "quire-rs")),
+  },
+  {
+    name: "filament-ide-rs",
+    root: resolve(
+      process.env.FILAMENT_IDE_RS_ROOT ??
+        resolve(ROOT, "..", "filament-ide-rs"),
+    ),
+  },
 ];
 
 function run(command, args, cwd) {

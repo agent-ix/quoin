@@ -153,40 +153,16 @@ export function committedTree(root, revision, path = "", timeout = 120_000) {
     })
     .sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0));
   if (!entries.length) throw new Error("committed snapshot tree is empty");
-  const objects = execFileSync(
-    "git",
-    ["--no-replace-objects", "-C", root, "cat-file", "--batch"],
-    {
-      input: entries.map((entry) => entry.object).join("\n") + "\n",
-      timeout,
-      maxBuffer: 128 * 1024 * 1024,
-      stdio: ["pipe", "pipe", "pipe"],
-    },
-  );
-  let offset = 0;
-  const files = entries.map((entry) => {
-    const end = objects.indexOf(10, offset);
-    const [object, kind, sizeText] = objects
-      .subarray(offset, end)
-      .toString()
-      .split(" ");
-    const size = Number(sizeText);
-    if (
-      end < 0 ||
-      object !== entry.object ||
-      kind !== "blob" ||
-      !Number.isSafeInteger(size) ||
-      size < 0 ||
-      end + size + 1 >= objects.length ||
-      objects[end + size + 1] !== 10
-    )
-      throw new Error("malformed Git object snapshot batch");
-    const bytes = objects.subarray(end + 1, end + size + 1);
-    offset = end + size + 2;
-    return { path: entry.path, mode: entry.mode, bytes };
-  });
-  if (offset !== objects.length)
-    throw new Error("unexpected trailing Git snapshot bytes");
+  // Node 22 does not close the stdin pipe of synchronous `git cat-file
+  // --batch` invocations, leaving Git to time out after it has emitted every
+  // requested object. Read each immutable object directly instead: this keeps
+  // the literal-Git boundary while avoiding a producer process whose EOF is
+  // runtime-dependent.
+  const files = entries.map((entry) => ({
+    path: entry.path,
+    mode: entry.mode,
+    bytes: literalGit(root, ["cat-file", "blob", entry.object], timeout),
+  }));
   return { tree, files };
 }
 
