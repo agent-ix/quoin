@@ -915,6 +915,7 @@ async function main() {
       QUOIN_EXPECTED_QUIRE_SHA256: attestation.executableDigest,
       QUOIN_EXPECTED_CLI_REVISION: lock.repositories["quire-cli"].revision,
       QUOIN_EXPECTED_ENGINE_REVISION: lock.repositories.quire.revision,
+      QUIRE_RS_ROOT: roots.quire,
       QA_EXPECTED_CLI_REVISION: lock.repositories["quire-cli"].revision,
       QA_EXPECTED_ENGINE_REVISION: lock.repositories.quire.revision,
       QUOIN_TIER1_CASE_TIMEOUT_MS: String(lock.timeouts.caseMilliseconds),
