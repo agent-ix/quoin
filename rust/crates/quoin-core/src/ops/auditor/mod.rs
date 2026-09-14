@@ -42,7 +42,8 @@ mod tests;
 use serde::{Deserialize, Serialize};
 
 use quoin_auditor::{
-    advise_all, audit as run_audit, finding_key, ratchet, uncatalogued_authored_methods,
+    advise_all, audit as run_audit, finding_key, mintable_characteristics, ratchet,
+    uncatalogued_authored_methods,
 };
 use quoin_evidence::types::IndependenceAssessment;
 
@@ -53,7 +54,7 @@ use crate::protocol::Response;
 use self::taxonomy::map_error;
 pub use self::wire::{
     AdvisePayload, AdviseRequest, AuditPayload, AuditRequest, BaselinePayload, BaselineRequest,
-    MAX_AUDITOR_REQUEST_BYTES,
+    MAX_AUDITOR_REQUEST_BYTES, VocabularyPayload,
 };
 
 /// Answer an `auditor.audit`: every FR-032 finding over the store, ratcheted
@@ -113,6 +114,19 @@ pub fn baseline(request: &serde_json::Value) -> Result<Response, CoreError> {
     let mut accepted: Vec<String> = report.findings.iter().map(finding_key).collect();
     accepted.sort();
     ok(&BaselinePayload { accepted })
+}
+
+/// Answer an `auditor.vocabulary`: what the fact set can ever mint.
+///
+/// # Errors
+///
+/// Only if the payload will not serialise. There is nothing to parse — the
+/// request carries no members, because the answer is a property of this build
+/// and not of anything a caller could ask about.
+pub fn vocabulary(_request: &serde_json::Value) -> Result<Response, CoreError> {
+    ok(&VocabularyPayload {
+        mintable_characteristics: mintable_characteristics().into_iter().collect(),
+    })
 }
 
 /// Answer an `auditor.advise`: one FR-054 recommendation per obligation.

@@ -24,10 +24,8 @@
 
 import { describe, expect, it } from "vitest";
 
-import {
-  loadMethodCatalog,
-  mintableCharacteristics,
-} from "../src/advisor/index.js";
+import { vocabulary } from "../src/core/auditor.js";
+import { loadMethodCatalog } from "../src/method-catalog.js";
 
 /**
  * Values the catalog may declare that no statement is expected to produce,
@@ -104,7 +102,7 @@ describe("the catalog and the fact set agree", () => {
   // Trace: FR-031-AC-12
   it("declares no characteristic that nothing can produce", () => {
     const catalog = loadMethodCatalog();
-    const mintable = mintableCharacteristics();
+    const mintable = new Set(vocabulary());
 
     const asked = new Map<string, string[]>();
     for (const method of catalog.methods) {
@@ -156,7 +154,7 @@ describe("the catalog and the fact set agree", () => {
     // METHODS the advisor is incapable of recommending, which is what an author
     // actually loses.
     const catalog = loadMethodCatalog();
-    const mintable = mintableCharacteristics();
+    const mintable = new Set(vocabulary());
 
     const unreachable = catalog.methods
       .filter((m) => {

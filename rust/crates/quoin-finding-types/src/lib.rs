@@ -57,6 +57,14 @@
 //!
 //! The checks. `quoin-auditor` owns every rule that decides *whether* a
 //! finding exists; this crate owns only what one looks like once it does.
+//!
+//! # Where the cited TypeScript went
+//!
+//! Every `src/auditor/...` and `src/advisor/...` path this crate cites names
+//! the retained TypeScript it replaced, deleted at the quoin#501 cutover. The
+//! last revision carrying it is `cef9b208b926c076ef626c9d5c9c97c9e5122c68`,
+//! so a citation reads back with
+//! `git show cef9b208b926c076ef626c9d5c9c97c9e5122c68:src/auditor/audit.ts`.
 
 #![forbid(unsafe_code)]
 

@@ -17,7 +17,7 @@ import { describe, expect, it } from "vitest";
 
 import { buildCase, renderCase } from "../src/core/assurance.js";
 import { auditInputs, record } from "../src/core/evidence.js";
-import { audit } from "../src/auditor/index.js";
+import { audit } from "../src/core/auditor.js";
 import type {
   Binding,
   EvidenceLineage,
@@ -112,12 +112,13 @@ function auditInput(
 describe("the auditor without a policy", () => {
   // Trace: FR-094-AC-5
   it("does nothing when no profile requests independence", () => {
-    const report = audit(auditInput([binding("SUITE-A", lineageA)]));
-    expect(report).toEqual({
+    const answer = audit(auditInput([binding("SUITE-A", lineageA)]));
+    expect(answer.report).toEqual({
       findings: [],
       healthy: [OBLIGATION],
       unevaluated: [],
     });
+    expect(answer.independence).toBeUndefined();
   });
 });
 
@@ -242,7 +243,7 @@ describe.skipIf(coreBinary() === null)("profile-selected independence", () => {
       "SUITE-A": lineageA,
       "SUITE-B": { ...lineageB, actor: lineageA.actor },
     });
-    expect(insufficient.findings.map((item) => item.kind)).toEqual([
+    expect(insufficient.report.findings.map((item) => item.kind)).toEqual([
       "insufficient-independence",
     ]);
     expect(insufficient.independence?.[0].dimensions[0]).toMatchObject({
@@ -254,8 +255,8 @@ describe.skipIf(coreBinary() === null)("profile-selected independence", () => {
       "SUITE-A": lineageA,
       "SUITE-B": lineageB,
     });
-    expect(satisfied.findings).toEqual([]);
-    expect(satisfied.healthy).toEqual([OBLIGATION]);
+    expect(satisfied.report.findings).toEqual([]);
+    expect(satisfied.report.healthy).toEqual([OBLIGATION]);
     expect(satisfied.independence?.[0].status).toBe("satisfied");
   });
 });

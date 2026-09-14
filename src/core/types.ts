@@ -32,7 +32,7 @@ export const CORE_TYPES_PROVENANCE = {
   generator: "quoin-schemas/quoin-schemas-gen",
   generatorVersion: "0.1.0",
   sourceSchemaSha256:
-    "040b5a0a1a89fea9d036395b34edb6ff15e7c10cb75494fc1b2e4185f4de5b39",
+    "4e08492820ab92f494468b42bfbeb65cdcab78cde657d8b98df9744bea287980",
 } as const;
 
 /**
@@ -4225,6 +4225,30 @@ export type ViewStatus = "supported" | "open";
  * A declaration's own name, e.g. `quality-characteristics`.
  */
 export type VocabularyName = string;
+
+/**
+ * What the advisor's fact set can ever produce.
+ *
+ * # Why an engine fact is an operation at all
+ *
+ * Same shape as `evidence.store_facts`: not a function over a request, but
+ * the boundary stating a constant OF ITSELF. `quoin catalog methods` renders
+ * a catalog, and the only way to know whether an entry is reachable is to ask
+ * the engine what values it can mint — the catalog declares the values that
+ * trigger a method, and this is the set that can ever match them.
+ *
+ * Nothing compared the two once, and the failure was silent in both
+ * directions: `match_rules` skips an unknown *axis* by design, an unknown
+ * *value* on a known axis simply never matches, and `inconclusive` is already
+ * a legitimate outcome. Measured then: 60 values declared, 20 producible, 7
+ * methods no statement could ever reach (agent-ix/quoin#128).
+ */
+export interface VocabularyPayload {
+  /**
+   * Every characteristic value the fact set can mint, sorted.
+   */
+  mintableCharacteristics: string[];
+}
 
 /**
  * The per-vocabulary tally.

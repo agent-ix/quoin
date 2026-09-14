@@ -154,3 +154,33 @@ fn tc_501_602_advise_answers_one_row_per_obligation_through_the_binary() {
     assert_eq!(advice[0]["obligation"], "FR-001-AC-1");
     assert_eq!(advice[1]["obligation"], "FR-002-AC-1");
 }
+
+/// `auditor.vocabulary` states what the fact set can mint, non-empty and sorted.
+///
+/// The floor is the point: an empty vocabulary would make the catalog↔fact-set
+/// census (agent-ix/quoin#128) pass over nothing, which is the vacuity FR-101
+/// names. It is a floor and not an equality — the set grows as rules are added,
+/// and pinning it exactly would make every new rule a test edit.
+///
+/// Trace: FR-096-AC-1, FR-054
+/// Provenance: agent-ix/quoin#128, agent-ix/quoin#501
+#[test]
+fn tc_501_603_vocabulary_states_what_the_fact_set_can_mint() {
+    let payload = payload(&run("auditor.vocabulary", "{}"));
+    let minted: Vec<String> =
+        serde_json::from_value(payload["mintableCharacteristics"].clone()).unwrap();
+    assert!(minted.len() >= 20, "{minted:?}");
+    let mut sorted = minted.clone();
+    sorted.sort();
+    assert_eq!(minted, sorted, "the vocabulary is not sorted");
+    // Three values nothing lexical produces: they are read from the
+    // obligation's criticality and from the evidence store, and a fact set
+    // that dropped them would still look like a full vocabulary.
+    for expected in [
+        "fault-detection-failed",
+        "fault-detection-unmeasured",
+        "high-criticality",
+    ] {
+        assert!(minted.iter().any(|v| v == expected), "missing {expected}");
+    }
+}

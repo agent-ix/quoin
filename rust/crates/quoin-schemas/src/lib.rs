@@ -80,11 +80,11 @@ pub const BOUNDARY_SCHEMA_ID: &str = "https://agent-ix.dev/quoin/core-boundary-v
 // --- The two checked-in digests. `make types` rewrites both; nothing else may.
 /// SHA-256 of the canonical JSON of [`boundary_schema`] at generation time.
 pub const SOURCE_SCHEMA_SHA256: &str =
-    "040b5a0a1a89fea9d036395b34edb6ff15e7c10cb75494fc1b2e4185f4de5b39";
+    "4e08492820ab92f494468b42bfbeb65cdcab78cde657d8b98df9744bea287980";
 
 /// SHA-256 of the committed `src/core/types.ts`.
 pub const GENERATED_TYPES_SHA256: &str =
-    "7e2933bb19c3f7dc30bb36092a90026339289b2bfded0cdee318f6428f708c80";
+    "50c609e55dce10c54042a972932f8fc333acb506d116ce21346a0fa4b826da99";
 
 /// The JSON Schema of every type that crosses the `quoin-core` boundary.
 ///
@@ -119,6 +119,7 @@ pub fn boundary_schema() -> Value {
     let _ = generator.subschema_for::<quoin_core::ops::auditor::BaselinePayload>();
     let _ = generator.subschema_for::<quoin_core::ops::auditor::AdviseRequest>();
     let _ = generator.subschema_for::<quoin_core::ops::auditor::AdvisePayload>();
+    let _ = generator.subschema_for::<quoin_core::ops::auditor::VocabularyPayload>();
     let _ = generator.subschema_for::<quoin_core::ops::assurance::RenderAuthoredArgumentPayload>();
     let _ = generator.subschema_for::<quoin_core::ops::assurance::RenderDischargePayload>();
     let _ = generator.subschema_for::<quoin_assurance::BuildAuthoredArgumentRequest>();
@@ -437,7 +438,7 @@ mod tests {
     /// A list and not a count: a count moves when a type is renamed and says
     /// nothing about WHICH names crossed, and the names are what TypeScript
     /// imports.
-    const BOUNDARY_TYPES: [&str; 201] = [
+    const BOUNDARY_TYPES: [&str; 202] = [
         "Advice",
         "AdvisePayload",
         "AdviseRequest",
@@ -635,6 +636,7 @@ mod tests {
         "ViewSchemaVersion",
         "ViewStatus",
         "VocabularyName",
+        "VocabularyPayload",
         "VocabularyRollup",
         "VocabularyValue",
         "WriteBaselinePayload",

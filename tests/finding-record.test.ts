@@ -25,7 +25,7 @@ import { beforeAll, describe, expect, it } from "vitest";
 
 import EvidenceRecord from "../src/commands/evidence/record";
 
-import { audit } from "../src/auditor/index.js";
+import { audit } from "../src/core/auditor.js";
 import { auditInputs, gc, type FindingRecord } from "../src/core/evidence.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -121,7 +121,7 @@ describe("the auditor over finding-shaped scans", () => {
     // Zero findings with rules evaluated is a RESULT. Reporting it as
     // undischarged would be the defect this record type exists to prevent,
     // wearing the opposite hat.
-    const report = audit({
+    const { report } = audit({
       obligations: [obligation],
       bindings: [binding],
       runs: [],
@@ -141,7 +141,7 @@ describe("the auditor over finding-shaped scans", () => {
     // `tc_458_150_audit_inputs_names_the_scans_that_evaluated_no_rules`; this
     // half is what the auditor does with the answer. The scan still carries
     // the count so the two halves are stated over the same record.
-    const report = audit({
+    const { report } = audit({
       obligations: [obligation],
       bindings: [binding],
       runs: [],
@@ -158,7 +158,7 @@ describe("the auditor over finding-shaped scans", () => {
     // The question cannot be asked, so the check says nothing rather than
     // something wrong — the posture method conformance takes for an absent
     // evidence kind (agent-ix/quoin#105).
-    const report = audit({
+    const { report } = audit({
       obligations: [obligation],
       bindings: [binding],
       runs: [],
@@ -175,7 +175,7 @@ describe("the auditor over finding-shaped scans", () => {
     // bindings, so any check indexing the full binding list would pair a
     // binding with another suite's run as soon as one binding is scan-backed.
     // Silent until scans existed, wrong from the moment they did.
-    const report = audit({
+    const { report } = audit({
       obligations: [obligation],
       bindings: [
         { ...binding, suite: "SUITE-SCAN" },

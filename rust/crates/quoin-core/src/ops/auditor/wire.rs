@@ -139,3 +139,26 @@ pub struct AdvisePayload {
     /// row still got an answer, and the answer is two-state rather than three.
     pub degraded: bool,
 }
+
+/// What the advisor's fact set can ever produce.
+///
+/// # Why an engine fact is an operation at all
+///
+/// Same shape as `evidence.store_facts`: not a function over a request, but
+/// the boundary stating a constant OF ITSELF. `quoin catalog methods` renders
+/// a catalog, and the only way to know whether an entry is reachable is to ask
+/// the engine what values it can mint — the catalog declares the values that
+/// trigger a method, and this is the set that can ever match them.
+///
+/// Nothing compared the two once, and the failure was silent in both
+/// directions: `match_rules` skips an unknown *axis* by design, an unknown
+/// *value* on a known axis simply never matches, and `inconclusive` is already
+/// a legitimate outcome. Measured then: 60 values declared, 20 producible, 7
+/// methods no statement could ever reach (agent-ix/quoin#128).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[serde(rename_all = "camelCase")]
+pub struct VocabularyPayload {
+    /// Every characteristic value the fact set can mint, sorted.
+    pub mintable_characteristics: Vec<String>,
+}

@@ -1,8 +1,8 @@
 /**
  * The `auditor` domain at the boundary (quoin#501, FR-096).
  *
- * Replaces `src/auditor/` and `src/advisor/` with three calls into
- * `quoin-core`. There are three and not six because the unit of IPC is a
+ * Replaces `src/auditor/` and `src/advisor/` with four calls into
+ * `quoin-core`. There are four and not six because the unit of IPC is a
  * command-shaped operation, never a function: `ratchet`, `findingKey` and
  * `scoresFor` were helpers *inside* a command's work, so they ride inside the
  * operation that needed them rather than each becoming a round trip.
@@ -24,6 +24,7 @@ import type {
   AuditInput,
   AuditPayload,
   BaselinePayload,
+  VocabularyPayload,
 } from "./types.js";
 
 export type {
@@ -93,4 +94,18 @@ export function baselineKeys(input: AuditInput): string[] {
  */
 export function advise(request: AdviseRequest): AdvisePayload {
   return call<AdvisePayload>("auditor.advise", request);
+}
+
+/**
+ * Every characteristic value the advisor's fact set can ever mint, sorted.
+ *
+ * Not a function over a request — the boundary stating a constant of itself,
+ * the same shape as `evidence.store_facts`. The catalog declares the values
+ * that trigger each method; this is the set that can ever match them, and
+ * nothing compared the two until 7 of 33 methods turned out to be unreachable
+ * by any statement ever written (agent-ix/quoin#128).
+ */
+export function vocabulary(): string[] {
+  return call<VocabularyPayload>("auditor.vocabulary", {})
+    .mintableCharacteristics;
 }

@@ -5,7 +5,11 @@
 //!
 //! Trace: quoin#383-AC-3 — execution is unrepresentable in the auditor's
 //! inputs, not merely unused by its code.
-//! Provenance: quoin#383
+//! Trace: FR-032-CON-2 — the auditor reads no clock, walks no filesystem and
+//! spawns no subprocess. Carried over from `tests/arch-boundaries.test.ts`,
+//! deleted with `src/auditor/` at cutover (quoin#501); the Rust form is the
+//! stronger one, since an impure input cannot be `Inert` at all.
+//! Provenance: quoin#383, quoin#501
 //!
 //! # The type-system half
 //!

@@ -147,6 +147,18 @@ fn canonical_of<T: serde::Serialize>(value: &T) -> String {
 
 // ── the audit ladder ───────────────────────────────────────────────────────
 
+/// The audit ladder, replayed over the captured corpus. The criteria the
+/// deleted `tests/auditor.test.ts` carried are restated here, each on the
+/// golden case that decides it (quoin#501).
+///
+/// Trace: FR-032-AC-1, FR-032-AC-2, FR-032-AC-3, FR-032-AC-4, FR-032-AC-5
+/// Trace: FR-032-AC-6, FR-032-AC-7, FR-032-AC-9, FR-032-AC-10, FR-032-AC-11
+/// Trace: FR-032-AC-14, FR-032-AC-15, FR-032-AC-16, FR-032-CON-3
+/// Trace: FR-039-AC-1, FR-039-AC-2, FR-039-AC-3, FR-039-AC-4, FR-039-AC-5
+/// Trace: FR-039-AC-6, FR-039-AC-7, FR-039-AC-10, FR-039-AC-11, FR-039-AC-12
+/// Trace: FR-039-CON-2, FR-039-CON-3
+/// Trace: FR-035-AC-9, FR-035-AC-10, FR-035-AC-11, FR-035-CON-3
+/// Provenance: quoin#383, quoin#501
 #[test]
 fn tc_383_001_every_audit_case_matches_the_retained_report() {
     let golden = golden();
@@ -238,6 +250,12 @@ fn tc_383_002_the_case_the_retained_code_throws_on_pairs_correctly_here() {
 
 // ── the advisor ────────────────────────────────────────────────────────────
 
+/// The advice, replayed over the captured corpus.
+///
+/// Trace: FR-031-AC-2, FR-031-AC-3, FR-031-AC-4, FR-031-AC-5, FR-031-AC-6
+/// Trace: FR-031-AC-7, FR-031-AC-8, FR-031-AC-18, FR-031-AC-19, FR-031-AC-22
+/// Trace: FR-054-CON-2
+/// Provenance: quoin#383, quoin#501
 #[test]
 fn tc_383_003_every_advise_case_matches_the_retained_advice() {
     let golden = golden();
@@ -294,6 +312,13 @@ fn tc_383_003_every_advise_case_matches_the_retained_advice() {
     );
 }
 
+/// What a statement mints, replayed over the captured corpus.
+///
+/// Trace: FR-031-AC-14, FR-031-AC-15, FR-031-AC-17, FR-031-AC-19
+/// Trace: FR-031-AC-20, FR-031-AC-21, FR-035-AC-12
+/// Trace: FR-001-AC-9, FR-005-AC-1, FR-005-AC-2, FR-015-AC-3, FR-015-AC-4
+/// Trace: FR-015-AC-6, NFR-006-AC-1, NFR-009-AC-1, NFR-022-M-12
+/// Provenance: quoin#383, quoin#501
 #[test]
 fn tc_383_004_every_characteristic_case_matches() {
     let golden = golden();
@@ -350,6 +375,10 @@ fn tc_383_005_the_mintable_set_is_the_retained_one() {
 
 // ── the catalog reader ─────────────────────────────────────────────────────
 
+/// The merged catalog, replayed over the captured corpus.
+///
+/// Trace: FR-031-AC-1, FR-031-AC-5, FR-031-AC-9, FR-032-AC-12
+/// Provenance: quoin#383, quoin#501
 #[test]
 fn tc_383_006_every_catalog_case_matches_the_retained_merge() {
     let golden = golden();
@@ -503,6 +532,10 @@ fn tc_383_007_the_unreadable_reason_is_a_declared_divergence_that_fires() {
 
 // ── the ratchet, the delta and the leaves ──────────────────────────────────
 
+/// The ratchet, replayed over the captured corpus.
+///
+/// Trace: FR-032-AC-8
+/// Provenance: quoin#383, quoin#501
 #[test]
 fn tc_383_008_every_ratchet_case_matches() {
     let golden = golden();
@@ -549,6 +582,10 @@ fn tc_383_009_the_delta_matches() {
     );
 }
 
+/// The uncatalogued-method join, replayed over the captured corpus.
+///
+/// Trace: FR-031-AC-22, FR-031-AC-23
+/// Provenance: quoin#383, quoin#501
 #[test]
 fn tc_383_010_the_uncatalogued_join_matches() {
     let golden = golden();
@@ -573,6 +610,10 @@ fn tc_383_010_the_uncatalogued_join_matches() {
     );
 }
 
+/// The fault-detection score filter, replayed over the captured corpus.
+///
+/// Trace: FR-031-AC-18, FR-039-AC-10
+/// Provenance: quoin#383, quoin#501
 #[test]
 fn tc_383_011_the_score_filter_matches() {
     let golden = golden();

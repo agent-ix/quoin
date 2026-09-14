@@ -349,8 +349,8 @@ describe("a profile selection assigns no finding severity", () => {
     expect(summary, "AssuranceProfileSummary not found").not.toBeNull();
     expect(summary?.[1]).not.toMatch(/\bseverity\b/);
 
-    // The auditor DOES read a profile — `input.independencePolicy.profile`
-    // at src/auditor/audit.ts:372 and :536 — and that is correct: FR-094 has a
+    // The auditor DOES read a profile — `input.independence_policy.profile`
+    // in `quoin-auditor` — and that is correct: FR-094 has a
     // profile select which obligations need independent evidence. So "the
     // auditor never sees a profile" is the wrong assertion and it fails
     // honestly; the right one is that severity cannot travel along that path.

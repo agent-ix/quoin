@@ -13,12 +13,11 @@ import { join } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
+import { advise } from "../src/core/auditor.js";
 import {
-  advise,
-  characteristicsOf,
   loadMethodCatalog,
   type MethodCatalog,
-} from "../src/advisor/index.js";
+} from "../src/method-catalog.js";
 
 /**
  * The catalog's real `architecture-conformance` entry, verbatim from
@@ -57,13 +56,23 @@ describe("advising architecture conformance", () => {
     // the shipped catalog found 41 of its 60 declared characteristics in that
     // state and 7 methods unreachable outright (agent-ix/quoin#128); this pins
     // the one FR-036 depends on.
+    //
+    // Asserted through the advice rather than on a mint function, because
+    // minting is not the thing that matters: a characteristic nothing consumes
+    // recommends nothing, and `reasons` is where the two halves meet.
+    const catalog = archCatalog();
+    const reasons = (statement: string) =>
+      advise({
+        catalog,
+        obligations: [
+          { id: "FR-036-AC-6", statement, statement_hash: "0".repeat(64) },
+        ],
+      }).advice[0].recommended.flatMap((r) => r.reasons.map((x) => x.value));
+    expect(reasons("The engine SHALL NOT depend on the CLI crate.")).toContain(
+      "layering",
+    );
     expect(
-      characteristicsOf("The engine SHALL NOT depend on the CLI crate."),
-    ).toContain("layering");
-    expect(
-      characteristicsOf(
-        "Internals of the store SHALL NOT cross the module boundary.",
-      ),
+      reasons("Internals of the store SHALL NOT cross the module boundary."),
     ).toContain("module-boundary");
   });
 
@@ -71,11 +80,17 @@ describe("advising architecture conformance", () => {
   it("recommends the method for an architectural statement, end to end", () => {
     // Through the real loader and the real advisor — not `characteristicsOf`
     // alone. A characteristic nothing consumes recommends nothing.
-    const advice = advise(archCatalog(), {
-      id: "FR-036-AC-7",
-      statement:
-        "No library module SHALL depend on src/commands/; commands are leaves at the module boundary.",
-    });
+    const advice = advise({
+      catalog: archCatalog(),
+      obligations: [
+        {
+          id: "FR-036-AC-7",
+          statement:
+            "No library module SHALL depend on src/commands/; commands are leaves at the module boundary.",
+          statement_hash: "0".repeat(64),
+        },
+      ],
+    }).advice[0];
     expect(advice.inconclusive).toBe(false);
     expect(advice.recommended[0].method).toBe("architecture-conformance");
     expect(advice.recommended[0].evidenceKind).toBe("Static");

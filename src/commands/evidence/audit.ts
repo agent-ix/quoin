@@ -137,7 +137,8 @@ a week. Write that baseline with: quoin evidence baseline`;
         // The SAME module the coverage call above used. Defaulting to the
         // installed roots meant `--module <dir>` derived obligations from one
         // catalog and checked conformance against another — the exact disagreement
-        // `src/advisor/methods.ts` opens by warning about (agent-ix/quoin#105).
+        // `quoin-auditor`'s catalog module opens by warning about
+        // (agent-ix/quoin#105).
         catalog: loadMethodCatalog(modules.length > 0 ? modules : undefined),
         headCommit: head,
         // Deliberately unset. No obligation source in the ecosystem declares a

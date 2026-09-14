@@ -22,7 +22,7 @@
  *
  * `MUTATION_SCORE_METRIC`, `STORE_SCHEMA_VERSION` and the four store file names
  * are declared here as plain values, not fetched. They are needed in pure code
- * — `src/auditor/audit.ts` compares a metric name inside a loop, and the
+ * — `quoin-auditor` compares a metric name inside a loop, and the
  * auditor must never spawn a subprocess — and a constant that costs a process
  * to read is a constant callers will copy instead.
  *

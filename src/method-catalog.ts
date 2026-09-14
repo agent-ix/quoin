@@ -19,39 +19,9 @@ import { join } from "node:path";
 import { parse as parseYaml } from "yaml";
 
 import { defaultModuleRoots, locateModuleRoot } from "./catalog.js";
+import type { MethodCatalog, VerificationMethod } from "./core/types.js";
 
-/** One catalog entry, as the module declared it. */
-export interface VerificationMethod {
-  id: string;
-  name: string;
-  /** IADT here; a free string to the engine, so a free string here. */
-  class: string;
-  definition: string;
-  evidenceKind?: string;
-  /**
-   * Rule name → values. **Never interpreted structurally** — the advisor
-   * matches values, and which axes exist is the declaring module's business
-   * (quire-rs FR-054-CON-2).
-   */
-  applicability: Record<string, string[]>;
-  tooling: string[];
-  /** Module that contributed this entry (first-wins). */
-  moduleName: string;
-}
-
-/** The merged catalog plus what the merge could not use. */
-export interface MethodCatalog {
-  methods: VerificationMethod[];
-  /** Method ids more than one module declared, in first-wins order. */
-  duplicates: Array<{ id: string; modules: string[] }>;
-  /**
-   * Module roots whose `manifest.yaml` could not be read or parsed. Reported
-   * rather than thrown: a catalog missing one module's entries is still worth
-   * having, and the command that would have crashed is the one an operator runs
-   * to diagnose the module (agent-ix/quoin#106).
-   */
-  unreadable: Array<{ moduleRoot: string; reason: string }>;
-}
+export type { MethodCatalog, VerificationMethod } from "./core/types.js";
 
 /**
  * Load and merge every module's `verification_catalog`.
