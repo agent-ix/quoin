@@ -33,7 +33,7 @@ use quoin_measurement::portfolio::{
     build_portfolio_report_from_collections,
 };
 use quoin_measurement::source::DiskMeasurement;
-use quoin_measurement::store::{collection_order, measurements_root};
+use quoin_measurement::store::collection_order;
 use quoin_measurement::types::collection::MeasurementCollection;
 use quoin_measurement::{PlanLoadOptions, Rfc3339DateTime, load_measurement_plans};
 
@@ -173,11 +173,10 @@ fn collection_reads(root: &Path) -> Vec<GraphCollectionRead> {
         .into_iter()
         .map(|result| {
             // `readMeasurementCollectionResults` names each read by its whole
-            // path (`store.ts:84`), and this projection renders that name.
-            let path = measurements_root(root)
-                .join(&result.path)
-                .to_string_lossy()
-                .into_owned();
+            // path (`store.ts:84`) and this projection renders that name. The
+            // join is the seam's, not this module's: `result.path` is already
+            // `MeasurementSource::collection_location`'s answer.
+            let path = result.path;
             match result.collection {
                 Err(error) => GraphCollectionRead::refused(
                     path,
