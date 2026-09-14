@@ -1370,6 +1370,8 @@ async function main() {
     }
     if (stageEnds(plan, "qa")) return;
     if (stageRuns(plan, "guidance")) {
+      env.QUOIN_CORE = quoinCore;
+      env.PATH = `${dirname(quoinCore)}:${env.PATH ?? process.env.PATH ?? ""}`;
       if (update) {
         const guidanceCandidate = join(scratch, "guidance-candidate.json");
         console.error("verification-stack: refresh reviewed guidance evidence");
