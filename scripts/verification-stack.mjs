@@ -386,7 +386,12 @@ function assertToolchains(lock) {
   const declaredNode = readFileSync(join(ROOT, ".node-version"), "utf8").trim();
   if (declaredNode !== node)
     throw new Error(`.node-version ${declaredNode} does not match ${node}`);
-  const rust = run("rustc", ["--version"]).trim().split(/\s+/)[1];
+  // Rustup resolves the pinned toolchain from the working directory.  Quoin's
+  // pin lives in rust/rust-toolchain.toml, so running from the repository root
+  // would silently measure the caller's default toolchain instead.
+  const rust = run("rustc", ["--version"], { cwd: join(ROOT, "rust") })
+    .trim()
+    .split(/\s+/)[1];
   if (rust !== lock.toolchains.rust) {
     throw new Error(
       `Rust drift: expected ${lock.toolchains.rust}, observed ${rust}`,
