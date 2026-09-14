@@ -1,0 +1,33 @@
+# The module and the repository the `quire.*` route tests run against (quoin#502).
+#
+# It is BOTH: `scope` and `module` point at this directory, which is the
+# `ScopeOrAmbient` shape a real repository carrying its own module has. Kept
+# here rather than borrowed from `quoin-quire/tests/fixtures/repo`, because
+# that one declares no `obligations:` source — and an obligation census over an
+# empty population is the vacuity FR-101 refuses. This module declares one, so
+# `quire.coverage` answers with a row that exists.
+name: quoin-core-quire-fixture
+version: 0.1.0
+description: Fixture module and repository for the quoin-core quire routes
+artifact_types:
+  - name: FR
+    grammar_ref: iso-spec-core
+    defaults:
+      id_pattern: FR-{next:03d}
+traceability:
+  trace_targets:
+    - name: acceptance-criterion
+      archetype: FR
+      section: Acceptance Criteria
+      id_column: ID
+  obligations:
+    - name: acceptance-criterion
+      target: acceptance-criterion
+      statement_column: Criteria
+      method_column: Verification
+  trace_tags:
+    markers:
+      - name: rust-trace-attribute
+        language: rust
+        pattern: '#\[trace\(([^)]*)\)\]'
+        template: "#[trace({ids})]"

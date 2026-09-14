@@ -12,7 +12,7 @@
  * `properties` run still yields the property-shape axis.
  */
 
-import { chmodSync, mkdtempSync, writeFileSync } from "node:fs";
+import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -25,7 +25,7 @@ import Advise from "../src/commands/advise";
 import { advise } from "../src/core/auditor.js";
 import type { CoverageDiagnostic, MethodCatalog } from "../src/core/types.js";
 import { loadMethodCatalog } from "../src/method-catalog.js";
-import { runQuireAllowFailure, validateCoverage } from "../src/quire/index.js";
+import { coreDouble } from "./support/core-double.js";
 
 const CATALOG: MethodCatalog = {
   methods: [
@@ -117,20 +117,6 @@ describe("the advisor is reachable from a command (FR-031-AC-10, AC-11)", () => 
     ]);
   });
 
-  it("a run that exits non-zero still yields its payload", () => {
-    // `quire properties` exits 1 when ANY input document fails to resolve while
-    // still writing a complete payload for the rest. Treating that as total
-    // failure cost the whole property-shape axis over two untyped asset files:
-    // 359 of 583 obligations read "inconclusive" that should not have (#103).
-    const result = runQuireAllowFailure([
-      "--this-flag-does-not-exist-and-never-will",
-    ]);
-    expect(result.ok).toBe(false);
-    // The point is that it RETURNS rather than throwing, so the caller decides.
-    expect(typeof result.stdout).toBe("string");
-    expect(typeof result.stderr).toBe("string");
-  });
-
   it("reports an unreadable module instead of throwing", () => {
     // `loadMethodCatalog` is called on the command path, so a broken module
     // must not take down the advisor.
@@ -141,9 +127,10 @@ describe("the advisor is reachable from a command (FR-031-AC-10, AC-11)", () => 
 
 // ── The three-state split, end to end (quoin#168; TC-274..TC-276) ──────────
 //
-// quire is faked on PATH (the tests/quire-exec.test.ts pattern): the command
-// needs a version answer, one coverage payload and one properties payload, and
-// what is under test is the classification and the reporting, not the engine.
+// The two `quire.*` routes are answered by a `quoin-core` double: the command
+// needs one coverage payload and one properties payload, and what is under
+// test is the classification and the reporting, not the engine. Every other
+// operation the run makes reaches the real boundary.
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -224,23 +211,17 @@ function battlePayload(opts: { diagnosticValues: boolean }): {
   };
 }
 
-/** A fake `quire` answering `--version`, `coverage` and `properties`. */
-function fakeQuireDir(payload: Record<string, unknown>): string {
-  const dir = mkdtempSync(join(tmpdir(), "quoin-fake-quire-"));
-  const bin = join(dir, "quire");
-  writeFileSync(
-    bin,
-    [
-      "#!/bin/sh",
-      'if [ "$1" = "--version" ]; then echo "quire 0.41.0"; exit 0; fi',
-      'if [ "$1" = "properties" ]; then echo \'{"documents": []}\'; exit 0; fi',
-      "cat <<'PAYLOAD'",
-      JSON.stringify(payload),
-      "PAYLOAD",
-    ].join("\n"),
-  );
-  chmodSync(bin, 0o755);
-  return dir;
+/** A `quoin-core` answering both `quire.*` routes; everything else is real. */
+function fakeEngine(payload: Record<string, unknown>): string {
+  return coreDouble({
+    answers: {
+      "quire.coverage": JSON.stringify(payload),
+      // No shapes: this file is about the uncatalogued/mismatch split, which
+      // is decided from the diagnostics, and an empty shape map is the state
+      // the command must warn about rather than fail on.
+      "quire.properties": JSON.stringify({ shapes: {}, unresolved: [] }),
+    },
+  });
 }
 
 /** A module whose catalog recommends fault-injection for RELIABILITY. */
@@ -269,16 +250,17 @@ function moduleDir(): string {
 /**
  * Run the real command against a faked quire, capturing log and warn.
  *
- * The fake serving `payload` goes FIRST on PATH here, from the same argument
- * the assertions reason about — callers previously faked PATH themselves and
+ * The double serving `payload` is installed here, from the same argument the
+ * assertions reason about — callers previously faked the engine themselves and
  * passed the payload in as well, leaving the parameter dead and the two free
- * to diverge silently. Each describe's `afterEach` restores PATH.
+ * to diverge silently. Each describe's `afterEach` restores `QUOIN_CORE`.
  */
 async function runAdvise(
   payload: Record<string, unknown>,
   extraArgs: string[] = [],
 ): Promise<{ logged: string[]; warned: string[] }> {
-  process.env.PATH = `${fakeQuireDir(payload)}:${process.env.PATH}`;
+  process.env.QUOIN_CORE = fakeEngine(payload);
+  delete process.env.QUOIN_EXPECTED_CORE_SHA256;
   const logged: string[] = [];
   const warned: string[] = [];
   vi.spyOn(Advise.prototype, "log").mockImplementation((m?: string) => {
@@ -297,16 +279,10 @@ async function runAdvise(
 }
 
 describe("the battle-test oracle: real uncatalogued values are not mismatches (FR-031-AC-22)", () => {
-  const savedPath = process.env.PATH;
+  const savedCore = process.env.QUOIN_CORE;
   afterEach(() => {
-    process.env.PATH = savedPath;
+    process.env.QUOIN_CORE = savedCore;
     vi.restoreAllMocks();
-  });
-
-  // Trace: FR-031-AC-22, FR-031-AC-24
-  it("the vendored contract accepts the CR-091 payload carrying diagnostic values", () => {
-    const result = validateCoverage(battlePayload({ diagnosticValues: true }));
-    expect(result.ok, JSON.stringify(result)).toBe(true);
   });
 
   // Trace: FR-031-AC-22, FR-031-AC-24
@@ -354,9 +330,9 @@ describe("the battle-test oracle: real uncatalogued values are not mismatches (F
 });
 
 describe("an engine predating CR-091 degrades to two states, and says so (FR-031-AC-23)", () => {
-  const savedPath = process.env.PATH;
+  const savedCore = process.env.QUOIN_CORE;
   afterEach(() => {
-    process.env.PATH = savedPath;
+    process.env.QUOIN_CORE = savedCore;
     vi.restoreAllMocks();
   });
 
@@ -425,9 +401,9 @@ describe("an engine predating CR-091 degrades to two states, and says so (FR-031
 });
 
 describe("combined --*-only filters union, and the footer tallies the full population (FR-031-AC-24)", () => {
-  const savedPath = process.env.PATH;
+  const savedCore = process.env.QUOIN_CORE;
   afterEach(() => {
-    process.env.PATH = savedPath;
+    process.env.QUOIN_CORE = savedCore;
     vi.restoreAllMocks();
   });
 

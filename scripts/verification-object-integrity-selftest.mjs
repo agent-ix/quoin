@@ -143,7 +143,7 @@ check("candidate schema reads ignore blob replacements", (scratch) => {
   const root = roots.quire;
   const blob = git(root, [
     "rev-parse",
-    "HEAD:schemas/output/coverage-v1.schema.json",
+    "HEAD:schemas/output/assurance-v1.schema.json",
   ]);
   const replacement = git(
     root,

@@ -377,6 +377,35 @@ mod tests {
         );
     }
 
+    /// A clause-set digest that is not the stored spelling is refused at the
+    /// boundary, as a bad REQUEST.
+    ///
+    /// The retained `parseClauseBinding` validated this against the vendored
+    /// `clause-binding-v1` schema's pattern; quoin#502 deleted that reader, so
+    /// the refusal is asserted here on the route that still accepts the
+    /// report. The well-formed [`binding`] above is the accepting control —
+    /// `tc_447_320` drives it to a different failure, so without this pair a
+    /// reader that refused every binding would look identical.
+    ///
+    /// Trace: FR-046-AC-1
+    /// Provenance: quoin#502
+    #[test]
+    fn tc_502_022_a_malformed_clause_set_digest_is_a_bad_request() {
+        let mut binding = binding();
+        binding["clauseSetDigest"] = serde_json::json!("sha256:not-a-digest");
+        let error = build_discharge(&serde_json::json!({
+            "binding": binding,
+            "facts": [],
+            "asOf": "2026-08-15T00:00:00.000Z",
+        }))
+        .unwrap_err();
+        assert_eq!(error.code, CoreErrorCode::BadRequest);
+        assert_eq!(
+            error.context.get("op").map(String::as_str),
+            Some("assurance.build_discharge")
+        );
+    }
+
     /// An unknown key is refused rather than ignored: `deny_unknown_fields` on
     /// the request is what stops a caller's typo reading as a default.
     #[test]

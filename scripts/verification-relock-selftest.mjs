@@ -50,11 +50,8 @@ export function fixture(scratch) {
     put(root, "source.txt", `${name}\n`);
     roots[name] = root;
   }
-  const schemas = [
-    "assurance-v1.schema.json",
-    "coverage-v1.schema.json",
-    "properties-v1.schema.json",
-  ];
+  // One schema, since quoin#502: see `SCHEMAS` in verification-relock.mjs.
+  const schemas = ["assurance-v1.schema.json"];
   const bytes = '{"fixture":true}\n';
   for (const name of schemas) put(roots.quire, `schemas/output/${name}`, bytes);
   const engine = commit(roots.quire);
@@ -102,11 +99,11 @@ export function fixture(scratch) {
   );
   put(
     roots.quoin,
-    "src/quire/contract.ts",
-    `export const QUIRE_CONTRACT = { sourceRevision: "${engine}",\nhashes: {${schemas.map((name) => `"${name}": "${sha256(bytes).slice(7)}"`).join(",")}}} as const;\n`,
+    "rust/crates/quoin-quire/src/schema.rs",
+    `pub const VENDORED_SOURCE_REVISION: &str = "${engine}";\npub const VENDORED_SHA256: &str = "${sha256(bytes).slice(7)}";\n`,
   );
   for (const name of schemas)
-    put(roots.quoin, `src/quire/schemas/${name}`, bytes);
+    put(roots.quoin, `rust/crates/quoin-quire/schemas/${name}`, bytes);
   for (const name of [
     "verification-relock.mjs",
     "verification-relock-selftest.mjs",
@@ -248,7 +245,11 @@ for (const [name, mutate, expected] of [
   [
     "vendored hash drift",
     ({ roots }) => {
-      put(roots.quoin, "src/quire/schemas/coverage-v1.schema.json", "{}\n");
+      put(
+        roots.quoin,
+        "rust/crates/quoin-quire/schemas/assurance-v1.schema.json",
+        "{}\n",
+      );
       commit(roots.quoin);
     },
     /vendored schema hash drift/,
@@ -256,14 +257,14 @@ for (const [name, mutate, expected] of [
   [
     "contract comment cannot impersonate exported source revision",
     ({ roots, base }) => {
-      const path = join(roots.quoin, "src/quire/contract.ts");
+      const path = join(roots.quoin, "rust/crates/quoin-quire/src/schema.rs");
       const source = readFileSync(path, "utf8").replace(
         base.repositories.quire.revision,
         "b".repeat(40),
       );
       writeFileSync(
         path,
-        `// prior sourceRevision: "${base.repositories.quire.revision}"\n${source}`,
+        `// prior VENDORED_SOURCE_REVISION: "${base.repositories.quire.revision}"\n${source}`,
       );
       commit(roots.quoin);
     },
@@ -272,10 +273,13 @@ for (const [name, mutate, expected] of [
   [
     "contract comment cannot impersonate an exported schema hash",
     ({ roots }) => {
-      const path = join(roots.quoin, "src/quire/contract.ts");
+      const path = join(roots.quoin, "rust/crates/quoin-quire/src/schema.rs");
       const hash = sha256(
         readFileSync(
-          join(roots.quoin, "src/quire/schemas/assurance-v1.schema.json"),
+          join(
+            roots.quoin,
+            "rust/crates/quoin-quire/schemas/assurance-v1.schema.json",
+          ),
         ),
       ).slice(7);
       const source = readFileSync(path, "utf8").replace(hash, "b".repeat(64));
@@ -290,7 +294,7 @@ for (const [name, mutate, expected] of [
   [
     "git-object schema drift",
     ({ roots }) => {
-      put(roots.quire, "schemas/output/coverage-v1.schema.json", "{}\n");
+      put(roots.quire, "schemas/output/assurance-v1.schema.json", "{}\n");
       const next = commit(roots.quire);
       for (const file of ["Cargo.toml", "Cargo.lock"]) {
         const path = join(roots["quire-cli"], file);
@@ -495,33 +499,43 @@ assert.throws(
 );
 
 check(
-  "unchanged assume-unchanged files remain valid; contract AST rejects ambiguity",
+  "unchanged assume-unchanged files remain valid; contract parse rejects ambiguity",
   ({ roots, base }) => {
     git(roots.quoin, "update-index", "--assume-unchanged", "source.txt");
     prepareCandidate(base, roots);
     const source = readFileSync(
-      join(roots.quoin, "src/quire/contract.ts"),
+      join(roots.quoin, "rust/crates/quoin-quire/src/schema.rs"),
       "utf8",
     );
     for (const invalid of [
-      source.replace("export const", "export let"),
-      source.replace("sourceRevision:", "['sourceRevision']:"),
-      source.replace("sourceRevision:", "...{}, sourceRevision:"),
+      // No declaration at all.
+      source.replace("pub const VENDORED_SOURCE_REVISION", "const OTHER"),
+      // A value that is not an exact commit, and one that is not a digest.
+      source.replace(base.repositories.quire.revision, "HEAD"),
       source.replace(
-        "sourceRevision:",
-        `sourceRevision: "${"b".repeat(40)}", sourceRevision:`,
+        /VENDORED_SHA256: &str = "[0-9a-f]{64}"/,
+        'VENDORED_SHA256: &str = "bad"',
       ),
-      source.replace(
-        "hashes: {",
-        'hashes: { ["coverage-v1.schema.json"]: "bad", ',
-      ),
+      // Two declarations of the same constant: neither is authoritative.
       source + source,
     ])
       assert.throws(() => parseContract(invalid));
+    // A comment naming the constant is not the constant.
     const actual = parseContract(
-      `// sourceRevision: "${"b".repeat(40)}"\n${source}`,
+      `// pub const VENDORED_SOURCE_REVISION: &str = "${"b".repeat(40)}";\n${source}`,
     );
     assert.equal(actual.revision, base.repositories.quire.revision);
+    // rustfmt wraps the 64-character digest onto its own line, and that is the
+    // spelling the real `schema.rs` carries. The fixture writes the unwrapped
+    // form, so without this the parser could stop reading the actual file and
+    // every digest check would fail open on a throw nobody expected.
+    const wrapped = parseContract(
+      source.replace(
+        /VENDORED_SHA256: &str = ("[0-9a-f]{64}")/,
+        "VENDORED_SHA256: &str =\n    $1",
+      ),
+    );
+    assert.deepEqual(wrapped, actual);
   },
 );
 check(

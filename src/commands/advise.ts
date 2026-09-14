@@ -2,18 +2,10 @@ import { Flags } from "@oclif/core";
 
 import { QuoinCommand } from "../base.js";
 import { advise } from "../core/auditor.js";
-import type { Advice, PropertyShape } from "../core/auditor.js";
+import type { Advice } from "../core/auditor.js";
 import { auditInputs } from "../core/evidence.js";
 import { loadMethodCatalog } from "../method-catalog.js";
-import {
-  checkVersionPremise,
-  parseCoverage,
-  parseProperties,
-  quireVersion,
-  runQuire,
-  runQuireAllowFailure,
-} from "../quire/index.js";
-import type { PropertiesReport } from "../quire/index.js";
+import { coverage, propertyShapes } from "../core/quire.js";
 
 export default class Advise extends QuoinCommand {
   static summary =
@@ -61,17 +53,10 @@ residue afterwards — labelled as judgement (the FR-042 / ADR-0010 discipline).
   async run(): Promise<void> {
     const { flags } = await this.parse(Advise);
 
-    const premise = checkVersionPremise(quireVersion());
-    if (premise) this.error(premise.message, { exit: 2 });
-
-    const scoped = (verb: string) => {
-      const args = [verb, "--scope", flags.repo, "--json"];
-      if (flags.module) args.push("--module", flags.module);
-      return args;
-    };
-
-    const coverage = parseCoverage(runQuire(scoped("coverage")));
-    if (!coverage.ok) this.error(coverage.error.message, { exit: 2 });
+    const derived = coverage(
+      flags.repo,
+      flags.module ? [flags.module] : undefined,
+    );
 
     const catalog = loadMethodCatalog(
       flags.module ? [flags.module] : undefined,
@@ -88,9 +73,15 @@ residue afterwards — labelled as judgement (the FR-042 / ADR-0010 discipline).
       this.warn(`skipped ${bad.moduleRoot}: ${bad.reason}`);
     }
 
-    const shapes = propertyShapes(flags.repo);
-    const obligations = coverage.value.obligations ?? [];
-    if (obligations.length > 0 && shapes.size === 0) {
+    const { shapes, unresolved } = propertyShapes(flags.repo);
+    for (const document of unresolved) {
+      // Named, not counted. A document that resolved to no archetype is a
+      // criterion nothing classified, and the advice over it rests on
+      // statement text alone.
+      this.warn(`no archetype resolved for ${document}; not classified.`);
+    }
+    const obligations = derived.obligations;
+    if (obligations.length > 0 && Object.keys(shapes).length === 0) {
       // Said out loud rather than degraded silently. `property_shapes` is the
       // axis most catalog entries are keyed on, so without it `round-trip`
       // never reaches property-based or metamorphic testing and the advice is
@@ -119,10 +110,10 @@ residue afterwards — labelled as judgement (the FR-042 / ADR-0010 discipline).
     const advised = advise({
       catalog,
       obligations,
-      shapes: Object.fromEntries(shapes),
+      shapes,
       bindings: store.bindings,
       runs: store.runs,
-      diagnostics: coverage.value.diagnostics,
+      diagnostics: derived.diagnostics,
     });
     const advice = advised.advice;
     if (advised.degraded) {
@@ -181,41 +172,4 @@ residue afterwards — labelled as judgement (the FR-042 / ADR-0010 discipline).
         `Recommendations, not verdicts: confirm the method in spec review.`,
     );
   }
-}
-
-/**
- * The FR-052 property shape and archetype of each criterion, by row id.
- *
- * Read from `properties --json` because the coverage payload carries neither,
- * and `property_shapes` is the axis most catalog entries are keyed on — without
- * it, `round-trip` would never reach property-based or metamorphic testing.
- *
- * **Deliberately scoped, never `--module`.** `--module` selects the *one*
- * module supplying the traceability model, and classification needs the
- * archetype the document's `type:` names — which usually lives in a different
- * module. Passing `--module <process>` here resolves no `FR` archetype at all
- * and yields zero criteria, silently. Scoped discovery loads the whole
- * installed set, which is what classification requires.
- *
- * An NFR measurement row is an obligation and not a criterion, so it has no
- * entry here and is advised from its statement alone. That is a real limit, not
- * a gap to paper over: no classifier ran on it.
- */
-function propertyShapes(repo: string): Map<string, PropertyShape> {
-  const args = ["properties", "spec/**/*.md", "--scope", repo, "--json"];
-  const out = new Map<string, PropertyShape>();
-  // `properties` exits 1 when ANY input document fails to resolve — an asset
-  // with no `type:`, say — while still writing a complete payload for every
-  // document that did. Two untyped files must not cost the whole shape axis.
-  const result = runQuireAllowFailure(args);
-  if (!result.stdout.trim()) return out;
-  const parsed = parseProperties(result.stdout);
-  if (!parsed.ok) return out;
-  for (const doc of (parsed.value as PropertiesReport).documents) {
-    for (const c of doc.criteria) {
-      if (c.row_id)
-        out.set(c.row_id, { property: c.property, archetype: doc.archetype });
-    }
-  }
-  return out;
 }

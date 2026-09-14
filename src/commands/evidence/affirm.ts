@@ -4,12 +4,7 @@ import { Flags } from "@oclif/core";
 
 import { QuoinCommand } from "../../base.js";
 import { affirm } from "../../core/evidence.js";
-import {
-  checkVersionPremise,
-  parseCoverage,
-  quireVersion,
-  runQuire,
-} from "../../quire/index.js";
+import { coverage } from "../../core/quire.js";
 
 export default class EvidenceAffirm extends QuoinCommand {
   static summary =
@@ -55,17 +50,12 @@ clear itself on the next CI run and the detector would never fire.`;
   async run(): Promise<void> {
     const { flags } = await this.parse(EvidenceAffirm);
 
-    const premise = checkVersionPremise(quireVersion());
-    if (premise) this.error(premise.message, { exit: 2 });
-
-    const args = ["coverage", "--scope", flags.repo, "--json"];
-    if (flags.module) args.push("--module", flags.module);
-    const parsed = parseCoverage(runQuire(args));
-    if (!parsed.ok) this.error(parsed.error.message, { exit: 2 });
-
-    const current = (parsed.value.obligations ?? []).find(
-      (o) => o.id === flags.obligation,
+    const derived = coverage(
+      flags.repo,
+      flags.module ? [flags.module] : undefined,
     );
+
+    const current = derived.obligations.find((o) => o.id === flags.obligation);
     if (!current) {
       // Affirming an obligation the spec no longer states would write a record
       // about nothing — the failure this store exists to make impossible.

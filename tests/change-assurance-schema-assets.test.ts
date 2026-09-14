@@ -46,7 +46,7 @@ describe("change-assurance JSON Schema assets", () => {
   });
 
   it("copies every normative schema into the published dist asset directory", () => {
-    execFileSync("node", ["scripts/copy-quire-schemas.mjs"]);
+    execFileSync("node", ["scripts/copy-schemas.mjs"]);
     for (const name of CHANGE_ASSURANCE_SCHEMA_NAMES) {
       expect(readFileSync(join("dist", "schemas", name))).toEqual(
         readFileSync(changeAssuranceSchemaPath(name)),

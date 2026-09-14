@@ -177,9 +177,13 @@ gate: test template-gate
 template-gate:
 	node scripts/template-gate.mjs
 
+# No `require-quire`: since quoin#502 the engine is LINKED into `quoin-core`
+# rather than spawned, so this target has no quire binary to be handed. The
+# targets that still depend on `require-quire` are the ones that run the quire
+# CLI themselves.
 .PHONY: evidence-audit
-evidence-audit: require-quire
-	QUOIN_QUIRE="$(QUIRE)" node bin/quoin.js evidence audit --repo . --module $(EVIDENCE_MODULE) --ratchet
+evidence-audit:
+	node bin/quoin.js evidence audit --repo . --module $(EVIDENCE_MODULE) --ratchet
 
 # Re-transcribe this repository's own suite run into the store.
 .PHONY: evidence-record
@@ -352,9 +356,11 @@ rust-e2e: rust-build
 # FR-097: `src/core/types.ts` is GENERATED from the Rust boundary types, never
 # hand-written. This target is the only thing that may write it, and it rewrites
 # the two digests in `quoin-schemas/src/lib.rs` in the same run — the artefact
-# and the assertion about it cannot be updated apart. `scripts/refresh-quire-
-# schemas.mjs` does the same for the vendored quire schemas; this is that
-# pattern with a `schemars` render in place of a pinned git object.
+# and the assertion about it cannot be updated apart. It is the same pattern the
+# retired `scripts/refresh-quire-schemas.mjs` used for the vendored quire
+# schemas (quoin#502), with a `schemars` render in place of a pinned git
+# object; the one schema still vendored is pinned by
+# `quoin_quire::schema::VENDORED_SHA256` instead.
 #
 # The assertion is NOT in this recipe. It is in `quoin-schemas`' tests, so a
 # generated file that disagrees with the Rust types fails `make rust-gate`

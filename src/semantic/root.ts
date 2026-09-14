@@ -13,7 +13,7 @@ import { fileURLToPath } from "node:url";
  *
  * Its own module directory, and not `packageRoot()`: the bundler flattens every
  * chunk into `dist/`, so this file sits two directories down in the source tree
- * and one directory down when shipped, and `scripts/copy-quire-schemas.mjs`
+ * and one directory down when shipped, and `scripts/copy-schemas.mjs`
  * copies the contract to `dist/` for exactly that reason. `import.meta.url` is
  * right in both trees; a `dirname` count is right in neither.
  */

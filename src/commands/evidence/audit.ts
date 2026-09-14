@@ -12,12 +12,7 @@ import {
   readBaseline,
 } from "../../core/evidence.js";
 import { loadMethodCatalog } from "../../method-catalog.js";
-import {
-  checkVersionPremise,
-  parseCoverage,
-  quireVersion,
-  runQuire,
-} from "../../quire/index.js";
+import { coverage } from "../../core/quire.js";
 
 export default class EvidenceAudit extends QuoinCommand {
   static summary =
@@ -88,19 +83,12 @@ a week. Write that baseline with: quoin evidence baseline`;
   async run(): Promise<void> {
     const { flags } = await this.parse(EvidenceAudit);
 
-    const premise = checkVersionPremise(quireVersion());
-    if (premise) this.error(premise.message, { exit: 2 });
-
     // One selection, used twice. A repeated flag is a closed, ordered set:
     // the same roots in the same order reach the engine deriving obligations
     // and the catalog checking them, because deriving from one catalog and
     // checking against another is the disagreement quoin#105 warns about.
     const modules = flags.module ?? [];
-    const args = ["coverage", "--scope", flags.repo, "--json"];
-    for (const root of modules) args.push("--module", root);
-    const parsed = parseCoverage(runQuire(args));
-    if (!parsed.ok) this.error(parsed.error.message, { exit: 2 });
-    const obligations = parsed.value.obligations ?? [];
+    const obligations = coverage(flags.repo, modules).obligations;
     let independencePolicy;
     try {
       // Validated AND checked against today's obligations in one call: a

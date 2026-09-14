@@ -60,8 +60,23 @@ use crate::error::{Error, Result};
 /// The committed document's path, relative to the repository root.
 pub const VENDORED_PATH: &str = "rust/crates/quoin-quire/schemas/assurance-v1.schema.json";
 
-/// The retained copy this one is asserted byte-equal to.
-pub const RETAINED_PATH: &str = "src/quire/schemas/assurance-v1.schema.json";
+/// The `quire-rs` revision these bytes were copied out of.
+///
+/// Not the revision `Cargo.toml` links, and deliberately so: the linked engine
+/// may be newer while emitting the same schema, which is the case the retained
+/// relock stated as *"a newer engine with unchanged schemas may retain the
+/// older, exact contract source"*. The two numbers are the whole provenance
+/// the deleted `src/quire/contract.ts` carried for this document (quoin#502);
+/// they live here because this crate is now the only thing that vendors it.
+pub const VENDORED_SOURCE_REVISION: &str = "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f";
+
+/// SHA-256 of [`SOURCE`] at [`VENDORED_SOURCE_REVISION`].
+///
+/// Derived from the upstream git object, never from this working tree: an edit
+/// here without a matching upstream refresh fails `tc_474_011` rather than
+/// quietly teaching quoin a contract quire does not emit.
+pub const VENDORED_SHA256: &str =
+    "441e1b8324fe64e234a007216b11867ec937ac4779fcebcdd84b30fa064367e5";
 
 /// The committed schema bytes.
 ///

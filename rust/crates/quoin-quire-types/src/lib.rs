@@ -39,15 +39,32 @@
 //! There is deliberately **no** `deny_unknown_fields`: [`Obligation`] reads
 //! two of the nine fields quire emits, so unknown fields are the normal case
 //! and not an error.
+//!
+//! # Readers that are also the wire shape (quoin#502)
+//!
+//! [`Obligation`] and [`CoverageDiagnostic`] are `Serialize` as well as
+//! `Deserialize`, and that is a widening of this crate's job worth stating.
+//! Since the `src/quire/` cutover, quire is no longer a subprocess quoin's
+//! TypeScript reads: `quoin-core` links the engine and re-emits what it read,
+//! so these types are the shape a `quire.coverage` payload is WRITTEN in as
+//! well as the shape `auditor.audit` reads it back in. One declaration serves
+//! both directions, deliberately — a second struct for the outbound side would
+//! be the hand-written duplicate FR-097-CON-1 forbids, and nothing would
+//! compare the two.
+//!
+//! It does NOT make this crate a definition. `skip_serializing_if` mirrors
+//! quire's own emitter field for field, so a payload written here is the shape
+//! quire would have written, minus the fields quoin never read.
 
 pub mod clauses;
 
 pub use clauses::{
     ClauseBinding, ClauseBindingOutcome, ClauseBindingReason, ClauseBindingReport,
-    ClauseBindingSchemaVersion, ClauseForce, ClauseSetKey, EngineProvenance,
+    ClauseBindingSchemaVersion, ClauseForce, ClauseSetDigest, ClauseSetKey, EngineProvenance,
+    MalformedClauseSetDigest,
 };
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 /// One obligation, as quoin reads it off `quire coverage --json`.
 ///
@@ -65,7 +82,7 @@ use serde::Deserialize;
 /// rather than a silent empty. `statement_hash` joined the set when the
 /// evidence store arrived (agent-ix/quoin#456): a binding stamps it, and a
 /// default would make every binding agree with every statement.
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct Obligation {
     /// The obligation id, e.g. `FR-001-AC-1` or `NFR-010-M-2`.
@@ -84,7 +101,7 @@ pub struct Obligation {
     /// tool arrives on: the tool reports `TC-EV-057`, the row says that test
     /// case verifies this criterion, and quire-rs FR-053-AC-11 carries the join
     /// here rather than making quoin re-parse the table (agent-ix/quoin#144).
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target_ids: Option<Vec<String>>,
     /// The authored `Verification` cell, verbatim.
     ///
@@ -101,13 +118,13 @@ pub struct Obligation {
     ///
     /// `null` and the missing key both read as [`None`], which is what the
     /// retained `!obligation.method` guard does with either.
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub method: Option<String>,
     /// The obligation's declared criticality, verbatim (`P0`, `high`, …).
     ///
     /// Carried, never interpreted. CR-008 deleted a hardcoded `["P0"]`
     /// precisely so the engine does not decide which values count as high.
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub criticality: Option<String>,
     /// The obligation's structured parameters, as quire emits them —
     /// `{"target": "< 4 min", "threshold": "< 5 min"}` on an NFR row.
@@ -115,7 +132,7 @@ pub struct Obligation {
     /// A `BTreeMap` and not a `Value`: the advisor asks whether the keys
     /// `target` or `threshold` are present, which an opaque value would put a
     /// cast in front of at the one read site.
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub parameters: Option<std::collections::BTreeMap<String, String>>,
 }
 
@@ -133,13 +150,13 @@ pub struct Obligation {
 /// being absent: an engine predating CR-091 emits the reason with no value,
 /// and the advisor must degrade to two-state behaviour rather than misread
 /// silence as "every authored method is catalogued".
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct CoverageDiagnostic {
     /// The open machine vocabulary quire classifies the diagnostic under
     /// (quire-rs FR-055 leaves it open, so this is a `String`).
     pub reason: String,
     /// The catalog or vocabulary value the diagnostic is about, verbatim.
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
 }

@@ -140,7 +140,7 @@ pub fn build_discharge_report(request: &BuildDischargeRequest) -> Checked<Discha
     Ok(DischargeReport {
         schema_version: DischargeSchemaVersion::V1,
         clause_set: request.binding.clause_set.clone(),
-        clause_set_digest: request.binding.clause_set_digest.clone(),
+        clause_set_digest: request.binding.clause_set_digest.to_string(),
         context: request.binding.context.clone(),
         as_of: request.as_of.clone(),
         binding: DischargeBinding {

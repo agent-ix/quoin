@@ -4,12 +4,7 @@ import { Flags } from "@oclif/core";
 
 import { QuoinCommand } from "../../base.js";
 import { ADAPTER_NAMES, parseLineage, record } from "../../core/evidence.js";
-import {
-  checkVersionPremise,
-  parseCoverage,
-  quireVersion,
-  runQuire,
-} from "../../quire/index.js";
+import { coverage } from "../../core/quire.js";
 
 export default class EvidenceRecord extends QuoinCommand {
   static summary = "Transcribe one suite run into the evidence store.";
@@ -111,25 +106,13 @@ runs nothing and judges nothing.`;
       this.error((cause as Error).message, { exit: 2 });
     }
 
-    // The premise first: an older quire does not fail, it emits an older shape
-    // that this command would misread. By the time a parse failed, the wrong
-    // obligations would already have been bound.
-    const premise = checkVersionPremise(quireVersion());
-    if (premise) this.error(premise.message, { exit: 2 });
-
     // Obligations first, for BOTH paths. A scan discharges obligations too,
     // so deriving them only on the run path is what left the scan branch with
     // nothing to bind against (SR-005 FND-001).
-    const coverageArgs = ["coverage", "--scope", flags.repo, "--json"];
-    if (flags.module) coverageArgs.push("--module", flags.module);
-    const raw = runQuire(coverageArgs);
-    const parsed = parseCoverage(raw);
-    if (!parsed.ok) {
-      this.error(
-        `${parsed.error.message}\n${parsed.error.errors.slice(0, 10).join("\n")}`,
-        { exit: 2 },
-      );
-    }
+    const derived = coverage(
+      flags.repo,
+      flags.module ? [flags.module] : undefined,
+    );
 
     // One call for both record types. The choice between a run record and a
     // finding-shaped scan is made by the ADAPTER REGISTRY before anything is
@@ -158,7 +141,7 @@ runs nothing and judges nothing.`;
           .split(",")
           .map((id) => id.trim())
           .filter((id) => id !== ""),
-        obligations: parsed.value.obligations ?? [],
+        obligations: derived.obligations,
       });
     } catch (cause) {
       this.error((cause as Error).message, { exit: 2 });

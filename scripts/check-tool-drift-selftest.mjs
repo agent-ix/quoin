@@ -61,14 +61,14 @@ const mutations = [
     /inner test gate must default Quoin and contract tests to one Quire binary/,
   ],
   [
-    "evidence audit drops explicit Quire",
+    "evidence audit reintroduces a Quire path Quoin no longer spawns",
     "Makefile",
     (s) =>
       s.replace(
-        'evidence-audit: require-quire\n\tQUOIN_QUIRE="$(QUIRE)" ',
-        "evidence-audit: require-quire\n\t",
+        "evidence-audit:\n\t",
+        'evidence-audit:\n\tQUOIN_QUIRE="$(QUIRE)" ',
       ),
-    /evidence-audit must pass its explicit Quire path/,
+    /may not hand Quoin a Quire path/,
   ],
   [
     "moving action",
@@ -118,22 +118,22 @@ const mutations = [
   ],
   [
     "vendored contract provenance disagreement",
-    "src/quire/contract.ts",
+    "rust/crates/quoin-quire/src/schema.rs",
     (s) =>
       s.replace(
-        /sourceRevision: "[0-9a-f]{40}"/,
-        'sourceRevision: "not-a-revision"',
+        /VENDORED_SOURCE_REVISION: &str = "[0-9a-f]{40}"/,
+        'VENDORED_SOURCE_REVISION: &str = "not-a-revision"',
       ),
     /vendored Quire contract source revision must equal the locked contract revision/,
     /vendored Quire contract source revision must be an exact commit/,
   ],
   [
     "vendored contract CLI provenance disagreement",
-    "src/quire/contract.ts",
+    "quality/verification-stack-lock.json",
     (s) =>
       s.replace(
-        /cliSourceRevision: "[0-9a-f]{40}"/,
-        'cliSourceRevision: "not-a-revision"',
+        /"quire-cli": \{\n      "remote": "https:\/\/github.com\/agent-ix\/quire-cli",\n      "revision": "[0-9a-f]{40}"\n    \}\n  \},\n  "cohorts"/,
+        '"quire-cli": {\n      "remote": "https://github.com/agent-ix/quire-cli",\n      "revision": "not-a-revision"\n    }\n  },\n  "cohorts"',
       ),
     /vendored Quire contract CLI revision must be an exact commit/,
   ],
@@ -307,14 +307,14 @@ const mutations = [
   ],
   [
     "PATH-only producer",
-    "src/quire/exec.ts",
-    (s) => s.replaceAll("QUOIN_QUIRE", "UNGUARDED_SELECTOR"),
+    "src/core/exec.ts",
+    (s) => s.replaceAll("QUOIN_CORE", "UNGUARDED_SELECTOR"),
     /no explicit binary selector/,
   ],
   [
     "unhashed producer",
-    "src/quire/exec.ts",
-    (s) => s.replaceAll("QUOIN_EXPECTED_QUIRE_SHA256", "UNGUARDED_DIGEST"),
+    "src/core/exec.ts",
+    (s) => s.replaceAll("QUOIN_EXPECTED_CORE_SHA256", "UNGUARDED_DIGEST"),
     /no executable digest guard/,
   ],
 ];

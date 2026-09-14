@@ -110,12 +110,17 @@ The bound is 178 × 60000; one millisecond below it is refused. This is a maximu
 allowed run budget, not measured runtime or permission to change expected
 producer results. The accepted lock is not edited by this instruction.
 
-Vendored output schemas must equal the bytes at both
-`QUIRE_CONTRACT.sourceRevision` and the selected engine revision. A newer engine
-with unchanged schemas may retain the older, exact contract source. Otherwise
-update `src/quire/contract.ts` deliberately and run
-`node scripts/refresh-quire-schemas.mjs --source /absolute/quire-rs`, then review
-and commit the schema and consumer-test changes before relocking.
+The vendored output schema must equal the bytes at both
+`quoin_quire::schema::VENDORED_SOURCE_REVISION` and the selected engine
+revision. A newer engine with unchanged schemas may retain the older, exact
+contract source. Otherwise copy
+`schemas/output/assurance-v1.schema.json` out of the pinned `quire-rs` git
+object into `rust/crates/quoin-quire/schemas/`, update
+`VENDORED_SOURCE_REVISION` and `VENDORED_SHA256` in
+`rust/crates/quoin-quire/src/schema.rs` deliberately, then review and commit
+the schema and consumer-test changes before relocking. Since quoin#502 only
+this one schema is vendored: the four the deleted `src/quire/` read describe
+shapes that now travel as linked Rust types.
 
 ## Replay and promotion
 

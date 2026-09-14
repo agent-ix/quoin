@@ -1,16 +1,15 @@
 /**
  * Running the `quoin-core` subprocess (quoin#373 FR-096, Stage 0 = quoin#375).
  *
- * A deliberate copy-edit of {@link ../quire/exec.ts}, carrying `QUOIN_CORE` /
- * `QUOIN_EXPECTED_CORE_SHA256` where that file carries the QUIRE names. It is
- * a copy rather than a shared generic because the two are on opposite sides of
- * a retirement: `src/quire/exec.ts` is deleted at Stage 8 and this file becomes
- * the only subprocess caller quoin has. Factoring them together now would make
- * that deletion a refactor of live code.
+ * The only subprocess caller quoin has. It began as a copy-edit of the retired
+ * `src/quire/exec.ts`, carrying `QUOIN_CORE` / `QUOIN_EXPECTED_CORE_SHA256`
+ * where that file carried the QUIRE names; quoin#502 linked the engine into
+ * `quoin-core` and deleted it, so there is no longer a second copy to factor
+ * against.
  *
  * Four production incidents are encoded here. Every one of them is a property
  * of running ANY subprocess from Node, not of running quire, so every one
- * recurs at this boundary and is ported rather than rediscovered:
+ * recurs at this boundary and was ported rather than rediscovered:
  *
  * 1. **Executable realpath resolution** — the binary is resolved once, to an
  *    absolute real path, before it is executed.
@@ -37,7 +36,7 @@ import type { Diagnostic } from "./types.js";
  * Node's default `maxBuffer` is 1 MiB, and a real corpus already exceeds it:
  * filament-ide-rs (268 spec files, 1,107 obligations) emits 1,090,714 bytes of
  * `quire coverage --json` — 4% over the default — which killed all six
- * commands that shelled out through `src/quire/exec.ts` (#164).
+ * commands that shelled out to the quire CLI (#164).
  *
  * The number is inherited rather than re-derived because the ceiling is a
  * property of the payloads, not of the producer: quoin-core will be asked for
@@ -239,14 +238,13 @@ export function runCore(op: string, request: unknown): unknown {
  */
 export function runCoreAllowFailure(op: string, request: unknown): CoreResult {
   checkOperation(op);
-  // Resolved BEFORE the try, deliberately. `src/quire/exec.ts` calls
-  // `quireExecutable()` inside the try, so a resolution failure — a digest
-  // mismatch, a non-absolute QUOIN_QUIRE — lands in the catch, where it has no
-  // `status`, no `signal` and no `code`, and is reported as
+  // Resolved BEFORE the try, deliberately. The retired `src/quire/exec.ts`
+  // resolved its executable INSIDE the try, so a resolution failure — a digest
+  // mismatch, a non-absolute path — landed in the catch, where it has no
+  // `status`, no `signal` and no `code`, and was reported as
   // "could not be run (undefined)". The bytes-pinning diagnostic, which names
   // the expected and observed digests, is lost exactly when it is needed.
-  // Caught by tests/core-exec-e2e.test.ts against the real binary; the same
-  // shape is latent in src/quire/exec.ts and is not this ticket's to change.
+  // Caught by tests/core-exec-e2e.test.ts against the real binary.
   const executable = quoinCoreExecutable();
   const input = JSON.stringify(request ?? {});
   let stdout: string;

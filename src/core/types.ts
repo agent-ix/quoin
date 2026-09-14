@@ -32,7 +32,7 @@ export const CORE_TYPES_PROVENANCE = {
   generator: "quoin-schemas/quoin-schemas-gen",
   generatorVersion: "0.1.0",
   sourceSchemaSha256:
-    "4e08492820ab92f494468b42bfbeb65cdcab78cde657d8b98df9744bea287980",
+    "a34da8a3581303889b4e07c19fe833124de06f6c81bf14d234d2a0be3546a11c",
 } as const;
 
 /**
@@ -1077,7 +1077,7 @@ export interface ClauseBindingReport {
   /**
    * The digest of the clause set that produced these verdicts.
    */
-  clauseSetDigest: string;
+  clauseSetDigest: ClauseSetDigest;
   /**
    * Every clause the set declares, in the set's own order. That order is
    * significant downstream: FR-046's `unusedFacts` lists clause-ordered
@@ -1146,6 +1146,23 @@ export interface ClauseDischarge {
  * so refusing an unlisted value IS the retained behaviour.
  */
 export type ClauseForce = "mandatory" | "recommended" | "permitted";
+
+/**
+ * The digest of the clause set a report was evaluated against.
+ *
+ * A newtype rather than a `String` because the stored spelling is the only
+ * thing quoin can check about this value: it cannot recompute the digest, it
+ * has no copy of the clause set, and it copies the value verbatim into the
+ * `clause-discharge-v1` document it emits. The retained
+ * `parseClauseBinding` (`src/quire/validate.ts`) enforced the format through
+ * the vendored `clause-binding-v1` schema's
+ * `"pattern": "^sha256:[0-9a-f]{64}$"`; with the schema gone (quoin#502) the
+ * refusal lives on the type that deserialises the report, which is the same
+ * place, expressed once.
+ *
+ * Trace: FR-046-AC-1
+ */
+export type ClauseSetDigest = string;
 
 /**
  * Exact identity of a module-supplied clause set (quire-rs FR-067).
@@ -1260,6 +1277,44 @@ export interface CoverageDiagnostic {
    * The catalog or vocabulary value the diagnostic is about, verbatim.
    */
   value?: string | null;
+}
+
+/**
+ * The payload `quire.coverage` writes to stdout.
+ *
+ * Two fields of the engine's report, and that is the whole of what the
+ * retained TypeScript read: six commands parsed `quire coverage --json` and
+ * between them touched `obligations` and `diagnostics` and nothing else. The
+ * rest of `CoverageReport` — totals, rows, symbols, the status census — is
+ * rendered by `quire` itself and was never quoin's to carry.
+ */
+export interface CoveragePayload {
+  /**
+   * The run's diagnostics, in the engine's order.
+   */
+  diagnostics: CoverageDiagnostic[];
+  /**
+   * The obligations the run derived, in the engine's order.
+   */
+  obligations: Obligation[];
+}
+
+/**
+ * The request accepted by `quire.coverage`.
+ */
+export interface CoverageRequest {
+  /**
+   * Module roots supplying the traceability model, in the order given.
+   *
+   * Empty is not "no modules": it is ambient discovery, the resolution
+   * `quire coverage` performs with no `--module`. A closed set replaces
+   * discovery rather than adding to it (quire-rs#405).
+   */
+  modules?: string[];
+  /**
+   * The repository root to derive obligations from.
+   */
+  scope: string;
 }
 
 /**
@@ -1624,17 +1679,18 @@ export interface EmptyGateFinding {
  *
  * # Why a struct and not a `serde_json::Value`
  *
- * `src/quire/types.ts` declares `EngineProvenance` with three concrete
- * fields — `cli`, `engine`, `capabilities` — so a struct is the honest
- * model: it says what the format is, and the crate's rule is that a reader
- * spells quire's field names exactly. A `Value` would have been the honest
- * choice only if the shape were open or undeclared, and it is neither.
+ * quire declares `EngineProvenance` with three concrete fields — `cli`,
+ * `engine`, `capabilities` — so a struct is the honest model: it says what
+ * the format is, and the crate's rule is that a reader spells quire's field
+ * names exactly. A `Value` would have been the honest choice only if the
+ * shape were open or undeclared, and it is neither.
  *
  * The field is `Option` on `ClauseBindingReport` rather than required
- * because the retained type declares it `engine?:`. That is the one
- * documented exception to the crate header's "fields quoin reads are
- * required": quoin does not read it at all — `buildDischargeReport` never
- * looks at it — so there is no blank row for an absence to produce.
+ * because the retained `src/quire/types.ts` declared it `engine?:` (deleted
+ * in quoin#502). That is the one documented exception to the crate header's
+ * "fields quoin reads are required": quoin does not read it at all —
+ * `buildDischargeReport` never looks at it — so there is no blank row for an
+ * absence to produce.
  */
 export interface EngineProvenance {
   /**
@@ -2666,6 +2722,58 @@ export type ProfileId = string;
  */
 export type PropertiesForm =
   "typed-table" | "free-column-table" | "bullet-list" | "sysml-fence" | "none";
+
+/**
+ * The payload `quire.properties` writes to stdout.
+ *
+ * The **shape map**, not the classification report. `quoin advise` was the one
+ * caller, and it walked every document and every criterion to build
+ * `Map<row_id, {property, archetype}>` — so the map is the answer, and
+ * `PropertiesReport`, `Document`, `Criterion`, `AcShape`, `Extraction` and
+ * `Span` never needed to cross at all. `shapes` is keyed by obligation id and
+ * feeds `auditor.advise`'s `shapes` field unchanged.
+ */
+export interface PropertiesPayload {
+  /**
+   * Obligation id → what the classifier made of that criterion.
+   */
+  shapes: Record<string, PropertyShape>;
+  /**
+   * Documents that resolved to no archetype, scope-relative.
+   *
+   * Reported rather than raised: `quire properties` exits 1 when ANY
+   * document fails to resolve while still classifying every one that did,
+   * and the retained `propertyShapes` swallowed that exit deliberately so
+   * two untyped assets could not cost the whole shape axis. Here the
+   * partial result and the list of what was skipped are one answer, which
+   * is what an exit status could not say.
+   */
+  unresolved: string[];
+}
+
+/**
+ * The request accepted by `quire.properties`.
+ */
+export interface PropertiesRequest {
+  /**
+   * Documents to classify, scope-relative.
+   *
+   * Named by the caller rather than discovered here, because a glob is a
+   * filesystem walk and this half performs none. `quoin_quire::properties::
+   * documents_under_spec` is the host's way to answer the `spec/**\/*.md`
+   * the retained `quoin advise` passed; an empty list asks for exactly that.
+   */
+  documents?: string[];
+  /**
+   * Module roots supplying the archetypes and the `property_idioms`
+   * registry. Empty means ambient discovery, as in `CoverageRequest`.
+   */
+  modules?: string[];
+  /**
+   * The repository root documents resolve and report relative to.
+   */
+  scope: string;
+}
 
 /**
  * What quire's `properties` view classified one criterion as.

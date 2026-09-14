@@ -90,7 +90,7 @@ describe("quoin's declared boundaries", () => {
   });
 
   // Trace: FR-036-AC-8, FR-036-CON-1
-  it("executes only git, quire and ix-flow", () => {
+  it("executes only git, ix-flow and quoin-core", () => {
     // ADR-0011 invariant 1 made mechanical: quoin transcribes, the consumer's CI
     // executes. A run record's claim is "this ran in your CI" — true only while
     // quoin is not the one running it. NFR-007 names `quire` and `ix-flow`;
@@ -100,12 +100,13 @@ describe("quoin's declared boundaries", () => {
     // fails by default. A membership test would pass until someone remembered
     // to extend it, which is the failure mode of every denylist.
     //
-    // `quoin-core` joined the set in quoin#375. It does not weaken invariant 1
-    // — quoin still transcribes rather than executes the consumer's CI —
-    // because quoin-core IS quoin: the burn-down (#373) moves quoin's own
-    // engine logic behind a subprocess, and at the final stage `quoin-core`
-    // becomes `quoin`. A binary that is not quoin, quire, ix-flow or git still
-    // fails here.
+    // `quoin-core` joined the set in quoin#375 and `quire` left it in
+    // quoin#502, which linked the engine into `quoin-core` instead of spawning
+    // it. `quoin-core` does not weaken invariant 1 — quoin still transcribes
+    // rather than executes the consumer's CI — because quoin-core IS quoin:
+    // the burn-down (#373) moves quoin's own engine logic behind a subprocess,
+    // and at the final stage `quoin-core` becomes `quoin`. A binary that is
+    // not quoin-core, ix-flow or git still fails here.
     const executed = new Set<string>();
     const unreadable: string[] = [];
 
@@ -162,22 +163,15 @@ describe("quoin's declared boundaries", () => {
         fileRel: string,
         resolver: string,
       ): string | null => {
-        if (fileRel === "src/quire/exec.ts" && resolver === "quireExecutable") {
-          // Quire is resolved once to an absolute, real path and can be
-          // digest-locked by QUOIN_EXPECTED_QUIRE_SHA256. Keep this narrow:
-          // no other computed executable or call site is admitted.
-          return "quire";
-        }
         if (
           fileRel === "src/core/exec.ts" &&
           resolver === "quoinCoreExecutable"
         ) {
-          // The same allowance, and only the same allowance, for the Rust
-          // boundary (quoin#373, #375): `quoin-core` is resolved once to an
-          // absolute real path and can be digest-locked by
-          // QUOIN_EXPECTED_CORE_SHA256. It is a fourth EXECUTED binary and not
-          // a fourth exception — when `src/quire/exec.ts` is deleted at Stage
-          // 8, the first branch goes with it and this one remains.
+          // The ONE allowance, since quoin#502 deleted `src/quire/exec.ts`
+          // and its `quireExecutable` twin: `quoin-core` is resolved once to
+          // an absolute real path and can be digest-locked by
+          // QUOIN_EXPECTED_CORE_SHA256 (quoin#373, #375). Keep it narrow — no
+          // other computed executable or call site is admitted.
           return "quoin-core";
         }
         return null;
@@ -223,11 +217,6 @@ describe("quoin's declared boundaries", () => {
     }
 
     expect(unreadable).toEqual([]);
-    expect([...executed].sort()).toEqual([
-      "git",
-      "ix-flow",
-      "quire",
-      "quoin-core",
-    ]);
+    expect([...executed].sort()).toEqual(["git", "ix-flow", "quoin-core"]);
   });
 });
