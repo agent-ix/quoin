@@ -5,20 +5,22 @@
   "producer": {
     "schemaVersion": "quire-tool-provenance-v1",
     "cli": {
-      "version": "0.30.2",
-      "sourceRevision": "bcface2714a958a328f3427714650ab2df71030f",
+      "version": "0.32.0",
+      "sourceRevision": "813019d872af7fc6d2469b5afad52f86f16915b4",
       "sourceState": "clean"
     },
     "engine": {
       "version": "0.46.0",
-      "sourceRevision": "ca7362d4dacecb96f01d74d1d971327118c25917",
+      "sourceRevision": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
       "sourceState": "clean"
     },
     "capabilities": [
       "action_guidance.structured",
+      "assurance_export.v1",
       "binding_census",
       "binding_census.self_named",
       "binding_census.tagged",
+      "clause_sets",
       "declaration_origins",
       "metrics_envelope",
       "minted_targets",
@@ -31,11 +33,11 @@
   },
   "repositories": {
     "quoin": {
-      "revision": "8a94487074251cdba84b8f8756a15a9f54a5c23f",
+      "revision": "c67f0548980eb6e16491ac675c5bfd8b667aba9d",
       "remote": "https://github.com/agent-ix/quoin"
     },
     "quire-rs": {
-      "revision": "ca7362d4dacecb96f01d74d1d971327118c25917",
+      "revision": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
       "remote": "https://github.com/agent-ix/quire-rs"
     },
     "filament-ide-rs": {
@@ -293,6 +295,37 @@
       }
     },
     {
+      "id": "quoin-NFR-023-AC-4-7fa2bc4a1d",
+      "repository": "quoin",
+      "document": "spec/non-functional/NFR-023-figures-carry-their-provenance.md",
+      "rowId": "NFR-023-AC-4",
+      "property": "invariant",
+      "statement": "A planted figure with no binding fails the check: a printed numeric figure whose observation names no collection, and a printed rate with no unit or no population identifier, are each reported rather than passed over. A run that finds no figure to check is reported as inconclusive, never as zero unbound figures.",
+      "normalizedStatement": "a planted figure with no binding fails the check: a printed numeric figure whose observation names no collection, and a printed rate with no unit or no population identifier, are each reported rather than passed over. a run that finds no figure to check is reported as inconclusive, never as zero unbound figures.",
+      "challenge": "coordinated",
+      "expectedSpans": {
+        "domain": {
+          "end": 16,
+          "start": 2,
+          "text": "planted figure"
+        },
+        "precondition": {
+          "end": 92,
+          "start": 17,
+          "text": "with no binding fails the check: a printed numeric figure whose observation"
+        },
+        "oracle": {
+          "end": 313,
+          "start": 93,
+          "text": "names no collection, and a printed rate with no unit or no population identifier, are each reported rather than passed over. A run that finds no figure to check is reported as inconclusive, never as zero unbound figures."
+        }
+      },
+      "review": {
+        "outcome": "pass",
+        "rationale": "Each retained boundary is a statement-relative exact substring and names the criterion's subject, condition, and required result without crossing into a neighboring clause."
+      }
+    },
+    {
       "id": "quoin-FR-028-AC-8-d2d3238c64",
       "repository": "quoin",
       "document": "spec/functional/FR-028-generate-property-tests-from-criteria.md",
@@ -316,37 +349,6 @@
           "end": 102,
           "start": 57,
           "text": "be cited yields a recorded reason and no test"
-        }
-      },
-      "review": {
-        "outcome": "pass",
-        "rationale": "Each retained boundary is a statement-relative exact substring and names the criterion's subject, condition, and required result without crossing into a neighboring clause."
-      }
-    },
-    {
-      "id": "quoin-FR-031-AC-2-9533368264",
-      "repository": "quoin",
-      "document": "spec/functional/FR-031-catalog-driven-advisor.md",
-      "rowId": "FR-031-AC-2",
-      "property": "universal",
-      "statement": "An obligation whose spec declares an `attack_surface` object is recommended DAST, SAST and negative/abuse testing rather than defaulting to Test.",
-      "normalizedStatement": "an obligation whose spec declares an `attack_surface` object is recommended dast, sast and negative/abuse testing rather than defaulting to test.",
-      "challenge": "coordinated",
-      "expectedSpans": {
-        "domain": {
-          "end": 13,
-          "start": 3,
-          "text": "obligation"
-        },
-        "precondition": {
-          "end": 60,
-          "start": 14,
-          "text": "whose spec declares an `attack_surface` object"
-        },
-        "oracle": {
-          "end": 145,
-          "start": 61,
-          "text": "is recommended DAST, SAST and negative/abuse testing rather than defaulting to Test."
         }
       },
       "review": {
@@ -400,6 +402,21 @@
       }
     },
     {
+      "id": "quoin-FR-052-AC-5-31fdf1fc5b",
+      "repository": "quoin",
+      "document": "spec/functional/FR-052-inventory-default-module-corpus.md",
+      "rowId": "FR-052-AC-5",
+      "property": "lifecycle",
+      "statement": "Parsed documents record their declared type, stable document identity when present, and definition/occurrence signals including run, result, evidence, timestamp, lifecycle, relationship, and provenance fields.",
+      "normalizedStatement": "parsed documents record their declared type, stable document identity when present, and definition/occurrence signals including run, result, evidence, timestamp, lifecycle, relationship, and provenance fields.",
+      "challenge": "justified-refusal",
+      "expectedRefusal": "span:refused-no-explicit-domain",
+      "review": {
+        "outcome": "pass",
+        "rationale": "The statement does not expose all three boundaries without inventing an unstated subject or condition; explicit refusal is safer than a guessed span."
+      }
+    },
+    {
       "id": "quoin-FR-013-AC-4-f0f645ad39",
       "repository": "quoin",
       "document": "spec/functional/FR-013-resolve-requested-types.md",
@@ -409,6 +426,21 @@
       "normalizedStatement": "an unknown type raises an error listing available types in sorted order",
       "challenge": "justified-refusal",
       "expectedRefusal": "span:refused-weak-boundary",
+      "review": {
+        "outcome": "pass",
+        "rationale": "The statement does not expose all three boundaries without inventing an unstated subject or condition; explicit refusal is safer than a guessed span."
+      }
+    },
+    {
+      "id": "quoin-FR-053-AC-6-1f126c0730",
+      "repository": "quoin",
+      "document": "spec/functional/FR-053-score-semantic-type-fit.md",
+      "rowId": "FR-053-AC-6",
+      "property": "round-trip",
+      "statement": "Schema-encoded JSON/string blobs and free-form Markdown fields are evaluated for lost structure, identity, relationships, and round-trip ambiguity.",
+      "normalizedStatement": "schema-encoded json/string blobs and free-form markdown fields are evaluated for lost structure, identity, relationships, and round-trip ambiguity.",
+      "challenge": "justified-refusal",
+      "expectedRefusal": "span:refused-no-explicit-domain",
       "review": {
         "outcome": "pass",
         "rationale": "The statement does not expose all three boundaries without inventing an unstated subject or condition; explicit refusal is safer than a guessed span."
@@ -445,6 +477,21 @@
       }
     },
     {
+      "id": "quoin-FR-048-AC-2-20af68ffdb",
+      "repository": "quoin",
+      "document": "spec/functional/FR-048-append-only-assurance-evidence.md",
+      "rowId": "FR-048-AC-2",
+      "property": "idempotence",
+      "statement": "Canonical content determines the record id; identical publication is idempotent and byte-stable.",
+      "normalizedStatement": "canonical content determines the record id; identical publication is idempotent and byte-stable.",
+      "challenge": "justified-refusal",
+      "expectedRefusal": "span:refused-no-explicit-domain",
+      "review": {
+        "outcome": "pass",
+        "rationale": "The statement does not expose all three boundaries without inventing an unstated subject or condition; explicit refusal is safer than a guessed span."
+      }
+    },
+    {
       "id": "quoin-FR-030-AC-8-8154829c83",
       "repository": "quoin",
       "document": "spec/functional/FR-030-evidence-store.md",
@@ -452,51 +499,6 @@
       "property": "invariant",
       "statement": "`gc` deletes only runs that are neither the latest for their suite nor referenced by a binding, and `--dry-run` deletes nothing. The command declares no `--module` — gc never invokes quire and never loads a catalog — and its help says why.",
       "normalizedStatement": "`gc` deletes only runs that are neither the latest for their suite nor referenced by a binding, and `--dry-run` deletes nothing. the command declares no `--module` — gc never invokes quire and never loads a catalog — and its help says why.",
-      "challenge": "justified-refusal",
-      "expectedRefusal": "span:refused-no-explicit-domain",
-      "review": {
-        "outcome": "pass",
-        "rationale": "The statement does not expose all three boundaries without inventing an unstated subject or condition; explicit refusal is safer than a guessed span."
-      }
-    },
-    {
-      "id": "quoin-FR-031-AC-1-b104dfa07d",
-      "repository": "quoin",
-      "document": "spec/functional/FR-031-catalog-driven-advisor.md",
-      "rowId": "FR-031-AC-1",
-      "property": "ordering",
-      "statement": "The merged catalog carries every declared method with its applicability rules intact, merges first-wins, reports a colliding id, and treats an undeclared catalog as empty.",
-      "normalizedStatement": "the merged catalog carries every declared method with its applicability rules intact, merges first-wins, reports a colliding id, and treats an undeclared catalog as empty.",
-      "challenge": "justified-refusal",
-      "expectedRefusal": "span:refused-no-explicit-domain",
-      "review": {
-        "outcome": "pass",
-        "rationale": "The statement does not expose all three boundaries without inventing an unstated subject or condition; explicit refusal is safer than a guessed span."
-      }
-    },
-    {
-      "id": "quoin-FR-005-AC-2-70b01685d8",
-      "repository": "quoin",
-      "document": "spec/functional/FR-005-reject-unknown-commands.md",
-      "rowId": "FR-005-AC-2",
-      "property": "error-case",
-      "statement": "An unknown `catalog` subcommand raises an error",
-      "normalizedStatement": "an unknown `catalog` subcommand raises an error",
-      "challenge": "justified-refusal",
-      "expectedRefusal": "span:refused-weak-boundary",
-      "review": {
-        "outcome": "pass",
-        "rationale": "The statement does not expose all three boundaries without inventing an unstated subject or condition; explicit refusal is safer than a guessed span."
-      }
-    },
-    {
-      "id": "quoin-FR-030-AC-12-d6dcb241a8",
-      "repository": "quoin",
-      "document": "spec/functional/FR-030-evidence-store.md",
-      "rowId": "FR-030-AC-12",
-      "property": "invariant",
-      "statement": "The **latest** run of a suite is the newest by `timestamp`, never the lexicographically last filename: a run filename is a commit prefix, which carries no time. `gc` retains that run, and the auditor reads it. Two runs sharing a timestamp order by commit, so a tie resolves the same way on every machine.",
-      "normalizedStatement": "the **latest** run of a suite is the newest by `timestamp`, never the lexicographically last filename: a run filename is a commit prefix, which carries no time. `gc` retains that run, and the auditor reads it. two runs sharing a timestamp order by commit, so a tie resolves the same way on every machine.",
       "challenge": "justified-refusal",
       "expectedRefusal": "span:refused-no-explicit-domain",
       "review": {
