@@ -1013,6 +1013,7 @@ async function main() {
       quoinCore ??= buildQuoinCore(scratch);
       const requestedShard = valueOf("--test-shard");
       const requestedTemplateGroup = valueOf("--template-group");
+      const requestedShardPart = valueOf("--shard-part");
       if (requestedShard && !plan) {
         throw new Error("--test-shard requires --state-dir");
       }
@@ -1021,6 +1022,12 @@ async function main() {
         (!requestedShard || Number(requestedShard) !== 2)
       ) {
         throw new Error("--template-group requires --test-shard 2");
+      }
+      if (
+        requestedShardPart &&
+        (!requestedShard || Number(requestedShard) !== 6)
+      ) {
+        throw new Error("--shard-part requires --test-shard 6");
       }
       const templateGroup = requestedTemplateGroup
         ? Number(requestedTemplateGroup)
@@ -1032,6 +1039,13 @@ async function main() {
           templateGroup > 9)
       ) {
         throw new Error("--template-group must be an integer from 1 through 9");
+      }
+      const shardPart = requestedShardPart ? Number(requestedShardPart) : null;
+      if (
+        shardPart !== null &&
+        (!Number.isInteger(shardPart) || shardPart < 1 || shardPart > 4)
+      ) {
+        throw new Error("--shard-part must be an integer from 1 through 4");
       }
       const testShards = requestedShard
         ? [Number(requestedShard)]
@@ -1079,6 +1093,13 @@ async function main() {
             currentLockDigest,
           );
         }
+        if (plan && shard === 6 && shardPart !== null && shardPart > 1) {
+          readStateRecord(
+            scratch,
+            `test-6-part-${shardPart - 1}`,
+            currentLockDigest,
+          );
+        }
         const invocations =
           shard === 2
             ? [
@@ -1100,6 +1121,18 @@ async function main() {
                   `VITEST_NAME=^${name}`,
                 ])
             : [[`VITEST_ARGS=--shard=${shard}/20`]];
+        if (shard === 6 && shardPart !== null) {
+          invocations.splice(0, invocations.length, [
+            `VITEST_FILE=${
+              [
+                "tests/props/fr-catalog.prop.test.ts",
+                "tests/core-org.test.ts",
+                "tests/tier1-modules.test.ts",
+                "tests/evidence-gc-command.test.ts",
+              ][shardPart - 1]
+            }`,
+          ]);
+        }
         for (const invocation of invocations) {
           run("make", ["test-with-quire", `QUIRE=${binary}`, ...invocation], {
             cwd: ROOT,
@@ -1124,6 +1157,22 @@ async function main() {
               );
             }
             writeStateRecord(scratch, "test-2", {
+              lockDigest: currentLockDigest,
+            });
+          }
+        } else if (plan && shard === 6 && shardPart !== null) {
+          writeStateRecord(scratch, `test-6-part-${shardPart}`, {
+            lockDigest: currentLockDigest,
+          });
+          if (shardPart === 4) {
+            for (const part of [1, 2, 3, 4]) {
+              readStateRecord(
+                scratch,
+                `test-6-part-${part}`,
+                currentLockDigest,
+              );
+            }
+            writeStateRecord(scratch, "test-6", {
               lockDigest: currentLockDigest,
             });
           }
