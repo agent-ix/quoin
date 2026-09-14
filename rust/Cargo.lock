@@ -3147,6 +3147,7 @@ dependencies = [
  "quoin-store",
  "serde",
  "serde_json",
+ "tempfile",
  "thiserror",
 ]
 
