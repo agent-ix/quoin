@@ -52,6 +52,7 @@ use quoin_core::dispatch::{dispatch, parse_operation, read_request};
 use quoin_core::error::CoreError;
 use quoin_core::protocol::{Diagnostic, Response, canonical_json};
 use quoin_evidence::{DiskEvidence, EvidenceSource};
+use quoin_graph_analysis::OsGraphInputReader;
 use quoin_modules::{
     ContractGate, GixResolver, InstallOutcome, InstallPaths, InstalledModule, IxHome,
     MarketplaceManifest, ModuleInstaller, ModuleName, ModulesError, ReconcileMode, ReconcileReport,
@@ -88,7 +89,13 @@ fn run(args: &[String]) -> Result<Response, CoreError> {
     let semantic = HostSemantic::new();
     let change_assurance = HostChangeAssurance;
     let evidence = HostEvidence;
-    let capabilities = Capabilities::with_hosts(&modules, &semantic, &change_assurance, &evidence);
+    // The production graph reader is `quoin-graph-analysis`' own four-line
+    // `std::fs` implementation, named here rather than re-implemented: the
+    // crate states what it reads, and this file states only that production
+    // reads it from the real filesystem.
+    let graph = OsGraphInputReader;
+    let capabilities =
+        Capabilities::with_hosts(&modules, &semantic, &change_assurance, &evidence, &graph);
     dispatch(op, &request, &capabilities)
 }
 

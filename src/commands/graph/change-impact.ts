@@ -1,8 +1,7 @@
 import { Flags } from "@oclif/core";
 
 import { QuoinCommand } from "../../base.js";
-import { analyzeChangeImpact } from "../../graph-analysis/index.js";
-import { graphInputFlags, graphOutput, loadGraphFlags } from "./common.js";
+import { askGraph, graphInputFlags, graphRequest } from "./common.js";
 
 export default class GraphChangeImpact extends QuoinCommand {
   protected skipUpdateNudge = true;
@@ -24,13 +23,21 @@ export default class GraphChangeImpact extends QuoinCommand {
 
   async run(): Promise<void> {
     const { flags } = await this.parse(GraphChangeImpact);
-    const loaded = loadGraphFlags(flags);
-    if (!loaded.ok) this.error(loaded.error.message, { exit: 2 });
-    const report = analyzeChangeImpact(
-      loaded.value,
-      flags.requirement,
-      flags.relation,
+    this.log(
+      askGraph(
+        "graph.change_impact",
+        {
+          ...graphRequest(flags),
+          requirements: flags.requirement,
+          // Absent and empty are different walks — the eight defaults, and no
+          // edges at all — so an unsupplied `--relation` stays absent on the
+          // wire rather than being normalised to `[]`.
+          ...(flags.relation === undefined
+            ? {}
+            : { relations: flags.relation }),
+        },
+        (message) => this.error(message, { exit: 2 }),
+      ),
     );
-    this.log(graphOutput(report, flags.json));
   }
 }

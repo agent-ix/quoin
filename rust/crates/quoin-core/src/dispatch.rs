@@ -54,6 +54,9 @@ pub const OPERATIONS: &[&str] = &[
     "evidence.trust_assessments",
     "evidence.trust_decision",
     "evidence.write_baseline",
+    "graph.change_impact",
+    "graph.churn",
+    "graph.fan_out",
     "measurement.build_comparison",
     "measurement.build_graph_portfolio",
     "measurement.build_portfolio",
@@ -161,6 +164,9 @@ pub fn dispatch(
         "measurement.build_series" => crate::ops::measurement::build_series(request),
         "measurement.build_portfolio" => crate::ops::measurement::build_portfolio(request),
         "measurement.render_portfolio" => crate::ops::measurement::render_portfolio(request),
+        "graph.fan_out" => crate::ops::graph::fan_out(request, capabilities),
+        "graph.churn" => crate::ops::graph::churn(request, capabilities),
+        "graph.change_impact" => crate::ops::graph::change_impact(request, capabilities),
         "measurement.build_graph_portfolio" => {
             crate::ops::measurement::build_graph_portfolio(request)
         }
@@ -413,6 +419,18 @@ mod tests {
             "evidence/wire.rs",
             include_str!("ops/evidence/wire.rs"),
         ),
+        ("graph", "graph/mod.rs", include_str!("ops/graph/mod.rs")),
+        (
+            "graph",
+            "graph/taxonomy.rs",
+            include_str!("ops/graph/taxonomy.rs"),
+        ),
+        (
+            "graph",
+            "graph/tests.rs",
+            include_str!("ops/graph/tests.rs"),
+        ),
+        ("graph", "graph/wire.rs", include_str!("ops/graph/wire.rs")),
         (
             "measurement",
             "measurement/mod.rs",
@@ -781,6 +799,14 @@ mod tests {
             (
                 "ops::assurance::MAX_OBLIGATION_ID_BYTES",
                 crate::ops::assurance::MAX_OBLIGATION_ID_BYTES,
+            ),
+            (
+                "ops::graph::MAX_GRAPH_REQUEST_BYTES",
+                crate::ops::graph::MAX_GRAPH_REQUEST_BYTES,
+            ),
+            (
+                "ops::graph::MAX_SCALAR_BYTES",
+                crate::ops::graph::MAX_SCALAR_BYTES,
             ),
             (
                 "ops::change_assurance::MAX_INTAKE_BYTES",

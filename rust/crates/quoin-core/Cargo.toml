@@ -43,6 +43,12 @@ quoin-config = { workspace = true }
 # (`DiskEvidence`) is constructed in `main.rs`. Nothing under `ops/` opens a
 # file; see `src/capabilities.rs`.
 quoin-evidence = { workspace = true }
+# quoin#500, the Stage 7 cutover of `src/graph-analysis/`. `quoin-core` uses the
+# whole crate: the three projections are pure functions over one in-memory
+# input, and the ONE filesystem seam is the crate's own `GraphInputReader`,
+# whose production implementation (`OsGraphInputReader`) is constructed in
+# `main.rs`. Nothing under `ops/graph/` opens a file; see `src/capabilities.rs`.
+quoin-graph-analysis = { workspace = true }
 # quoin#478, the Stage 6 wiring. Unlike the four domains above, `measurement`
 # takes NO host trait: every one of its twelve routes opens a measurement
 # store, and these two crates already own the seams that open it
