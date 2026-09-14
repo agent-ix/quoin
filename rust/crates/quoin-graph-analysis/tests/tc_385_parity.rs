@@ -2,10 +2,11 @@
 // Copyright (C) 2026 Agent-IX
 //! What `src/graph-analysis/` computed, this crate computes.
 //!
-//! The corpus in `tests/goldens/graph-analysis.json` was captured **once**,
-//! by `oracle/capture-graph-analysis.mjs`, from the retained TypeScript at the
-//! revision the capture records. It is committed, and the TypeScript is never
-//! run here: FR-101-AC-5 forbids leaving an oracle in the loop, and a test
+//! The corpus in `tests/goldens/graph-analysis.json` was captured **once**, by
+//! a script run against the retained TypeScript. Both are deleted at HEAD
+//! (quoin#500) and the corpus records where each lived, as `<revision>:<path>`,
+//! in its `provenance` block. It is the committed bytes that are read here and
+//! nothing else: FR-101-AC-5 forbids leaving an oracle in the loop, and a test
 //! that shelled out to node would be exactly that.
 //!
 //! # What is compared, and how exactly
