@@ -1,21 +1,21 @@
 {
-  "schemaVersion": "quoin-verification-stack-lock-v1",
+  "schemaVersion": "quoin-verification-stack-lock-v2",
   "repositories": {
     "quoin": {
       "remote": "https://github.com/agent-ix/quoin",
-      "revision": "8a94487074251cdba84b8f8756a15a9f54a5c23f"
+      "revision": "578746e59a51330e2dab149785db5fd1d8618b78"
     },
     "quire": {
       "remote": "https://github.com/agent-ix/quire-rs",
-      "revision": "ca7362d4dacecb96f01d74d1d971327118c25917"
+      "revision": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f"
     },
     "quire-cli": {
       "remote": "https://github.com/agent-ix/quire-cli",
-      "revision": "bcface2714a958a328f3427714650ab2df71030f"
+      "revision": "813019d872af7fc6d2469b5afad52f86f16915b4"
     },
     "qa-corpus": {
       "remote": "https://github.com/agent-ix/qa-corpus",
-      "revision": "7b81343ee05b3ef3a618839f64a5997fa16efd5c"
+      "revision": "7442f2770880a4ade303fb23d725804bdef454db"
     },
     "filament-ide-rs": {
       "remote": "https://github.com/agent-ix/filament-ide-rs",
@@ -28,6 +28,10 @@
     "spec-artifacts-iso": {
       "remote": "https://github.com/agent-ix/spec-artifacts-iso",
       "revision": "a6b1c70be8c22e9f7cb432e4410b7a3a280d0217"
+    },
+    "engineering-assurance": {
+      "remote": "https://github.com/agent-ix/engineering-assurance",
+      "revision": "8ea16ce240934aa2c31c1cc3f781b7eb0f8c73ba"
     }
   },
   "contracts": {
@@ -49,9 +53,9 @@
       "version": "0.21.9-76-gd3ed56a"
     },
     "qaCorpus": {
-      "executableCases": 164,
+      "executableCases": 178,
       "reportingCases": 11,
-      "totalCases": 175
+      "totalCases": 189
     }
   },
   "requiredCapabilities": [
@@ -100,7 +104,7 @@
     "bench/answer-key.json": "sha256:ece1a7f5d254623cf79beff1113021f4f71359ac9a3c703d07cff0f8a45e9532",
     "bench/advisory-adjudication-v1.json": "sha256:87c575b6ca0c0886d874f609144f907f3ac270e08c2091bb2bb1ead725713e43",
     "corpus/config/metrics.json": "sha256:69ab8e5b8fc14e07408e034f0b791c3dd3356c9db78e1ac0dc961bcc0b47c0d7",
-    "corpus/config/duplicate-census.json": "sha256:f03ddf12b1e166a680ff74c9bde3d66563b006901b91134945846823a7953a1e",
+    "corpus/config/duplicate-census.json": "sha256:c239628c3332baec64c72a9e3d66494d2a6d42dd05e27ac6b33ad49e82a4f38e",
     "corpus/config/external-channel.json": "sha256:74103cf74e7eceb69d3bb993074a7929025e7cff0cff4c993be3c7e4873050b5",
     "scripts/verification-relock.mjs": "sha256:5ff0482cf082991a9ff8a6428ee3916e3b34629a3aa56daae75da0d973a15a99",
     "scripts/verification-relock-selftest.mjs": "sha256:22e3faabb992a4e2b0dd11c1b0d1973603bf9d77c674590713411eae6183cff3",
@@ -112,10 +116,500 @@
   "timeouts": {
     "caseMilliseconds": 60000,
     "corpusMilliseconds": 1800000,
-    "tier1Milliseconds": 10200000,
+    "tier1Milliseconds": 10680000,
     "tier2Milliseconds": 1800000,
     "installMilliseconds": 600000,
     "quoinMilliseconds": 600000,
     "spanMilliseconds": 300000
+  },
+  "declarations": {
+    "quoinValidation": [
+      {
+        "repository": "spec-artifacts-process",
+        "path": "spec_artifacts_process",
+        "tree": "a15b99f8839f2323bcfd6ef4531b63aa20438c99",
+        "files": [
+          {
+            "path": "__init__.py",
+            "mode": "100644",
+            "digest": "sha256:ec721599f2fdfc43d23817f873e5b2b5ba62208720db07f7a188510dc1d311fb"
+          },
+          {
+            "path": "examples/feedback.md",
+            "mode": "100644",
+            "digest": "sha256:c1b08eece43d0a44034d328da9e625623fb7e4fd1e6aa481d55ea9d6a4be9e4f"
+          },
+          {
+            "path": "examples/spec-review.md",
+            "mode": "100644",
+            "digest": "sha256:63023e768fcd34e881205cfe86e0a1824bdcbadf3c89f4c8f15433ad59d54d91"
+          },
+          {
+            "path": "manifest.yaml",
+            "mode": "100644",
+            "digest": "sha256:a6137609d7855ce7b434e55bb81be429419c1656de884d4dba8357a9bb1006e8"
+          },
+          {
+            "path": "schemas/adr-frontmatter.schema.json",
+            "mode": "100644",
+            "digest": "sha256:000e6471ac8ea9621b4ce3fad05b58bfd8f9a3738040f9eaf3d21dd47780fb10"
+          },
+          {
+            "path": "schemas/feedback-frontmatter.schema.json",
+            "mode": "100644",
+            "digest": "sha256:cde702a5e60ae0fb322121158df20f12946e5ab99a0fb1caacae0aa4defe4ee7"
+          },
+          {
+            "path": "schemas/finding-frontmatter.schema.json",
+            "mode": "100644",
+            "digest": "sha256:d71cf28cc494357f1f8348e0a4c363e5898088e7c0e320d911d1019b8d4b7657"
+          },
+          {
+            "path": "schemas/inspections-frontmatter.schema.json",
+            "mode": "100644",
+            "digest": "sha256:cfbda4492ae9ecc4e547d2e5332fa5e69e3a95ced741cac738b93b7fe5123ec7"
+          },
+          {
+            "path": "schemas/plan-frontmatter.schema.json",
+            "mode": "100644",
+            "digest": "sha256:6dea716e628c4d7022003ed121f2bed4d77b4591ff10deea9840bc231a5b5a2b"
+          },
+          {
+            "path": "schemas/review-frontmatter.schema.json",
+            "mode": "100644",
+            "digest": "sha256:469e6263cfc0b329103b6f802302165f4aff3113c149f1a05798e9bdba33029d"
+          },
+          {
+            "path": "schemas/spec-review-frontmatter.schema.json",
+            "mode": "100644",
+            "digest": "sha256:d52d83c7983315209c45ea2038cf88f8fa26787f7359a4416747cbabb1b31778"
+          },
+          {
+            "path": "schemas/standard-frontmatter.schema.json",
+            "mode": "100644",
+            "digest": "sha256:d48e37c9bac5e210fd76520b564e07b99db0a2efc965368f6a2f2c65168705ba"
+          },
+          {
+            "path": "schemas/suite-registry-frontmatter.schema.json",
+            "mode": "100644",
+            "digest": "sha256:bfff2828f0d3b633c4ac566ee968811d9b7082d004cd046f49059107c6efa9fa"
+          },
+          {
+            "path": "schemas/task-frontmatter.schema.json",
+            "mode": "100644",
+            "digest": "sha256:851a6ae3440a42279cf78d8e44b5395455416a30d4969553d883899f302cc84b"
+          },
+          {
+            "path": "schemas/testmatrix-frontmatter.schema.json",
+            "mode": "100644",
+            "digest": "sha256:b65c079b247ef7118f42ba55bc69bffd1c22901b5fa07ee245f0a05a4501c20b"
+          },
+          {
+            "path": "schemas/testmatrix-index-frontmatter.schema.json",
+            "mode": "100644",
+            "digest": "sha256:ff43332dfaa34f908c22786ebf5c231e29d2749eeb610e59e4ad897bacbc3af3"
+          },
+          {
+            "path": "skeletons/Feedback.md",
+            "mode": "100644",
+            "digest": "sha256:5d0acb90da9f78aaa40388422a92f4b7ddeb050f9cb684909ff5c74249bd3916"
+          },
+          {
+            "path": "skeletons/Inspections.md",
+            "mode": "100644",
+            "digest": "sha256:15972a88c0d23b4b6f99ae3640a9e6535396176df661b74a18cc882aeda16c5b"
+          },
+          {
+            "path": "skeletons/SpecReview.md",
+            "mode": "100644",
+            "digest": "sha256:eb58bcce60859d9a8f516bd3a5e5f7ebdc838149e6729762766c20928ef0f9db"
+          },
+          {
+            "path": "skeletons/SuiteRegistry.md",
+            "mode": "100644",
+            "digest": "sha256:d4964672a948995ab3e4ef6b9a3326c4c7002388e80295b03d1c003685cde10d"
+          }
+        ]
+      },
+      {
+        "repository": "spec-artifacts-iso",
+        "path": "spec_artifacts_iso",
+        "tree": "d4dc05687ae0aef4632cf312a2a0ae54eaec32ea",
+        "files": [
+          {
+            "path": "__init__.py",
+            "mode": "100644",
+            "digest": "sha256:5fa68a86a7c07ab4cbd5e6cfa0131c2c0a6493907a6ac7bd794b08b413056f77"
+          },
+          {
+            "path": "manifest.yaml",
+            "mode": "100644",
+            "digest": "sha256:f88971dfd4fa86e873c1216a8f607beee79258d2e88e78631a591050580249f0"
+          },
+          {
+            "path": "module-manifest.schema.json",
+            "mode": "100644",
+            "digest": "sha256:bb559b937f0e9e3f6bde39da6a1a7a1c5483a7fba5fc7b91da59c209d8ab3355"
+          },
+          {
+            "path": "schemas/fr-frontmatter.schema.json",
+            "mode": "100644",
+            "digest": "sha256:204c082028043e593a319b5074c474898a0f445eadfae42804cb99019c9594bd"
+          },
+          {
+            "path": "schemas/glossary-frontmatter.schema.json",
+            "mode": "100644",
+            "digest": "sha256:9863bbbf2bf350cc6c1f89a2937ef469d78434aa41dcaddb533a9cbd1c197367"
+          },
+          {
+            "path": "schemas/index-frontmatter.schema.json",
+            "mode": "100644",
+            "digest": "sha256:d844838ff8421dd7caee64d42a94afc4b887d1d5fcc3abef8bd3832455c9c8a2"
+          },
+          {
+            "path": "schemas/it-frontmatter.schema.json",
+            "mode": "100644",
+            "digest": "sha256:f294f187417f8196697de8e32b1c2c6f1b25e794b2cf03d0d0fadf899ac73165"
+          },
+          {
+            "path": "schemas/log-frontmatter.schema.json",
+            "mode": "100644",
+            "digest": "sha256:1246cd0e6740852f8d506120af815e9a7043f672855b9c988b5bd06edc9fe3d7"
+          },
+          {
+            "path": "schemas/master-requirements-frontmatter.schema.json",
+            "mode": "100644",
+            "digest": "sha256:0463c2e7e548102b700723db9e10484717ca5160968c781cae6aa2f6c1acfc9c"
+          },
+          {
+            "path": "schemas/nfr-frontmatter.schema.json",
+            "mode": "100644",
+            "digest": "sha256:58b2fd2702b6e36f3714120e416d8cef1b81d53d1a254a29521b4d26e1df84aa"
+          },
+          {
+            "path": "schemas/str-frontmatter.schema.json",
+            "mode": "100644",
+            "digest": "sha256:8d3dc6efc618c29bdad6b8de8a991d4f09a873b0b747c0c590617fef0f0a775e"
+          },
+          {
+            "path": "schemas/tc-frontmatter.schema.json",
+            "mode": "100644",
+            "digest": "sha256:0ce7549a2fbaf5abdd65f91fc3cf90535b1046e87e430faf12e99fa4ad62c243"
+          },
+          {
+            "path": "schemas/us-frontmatter.schema.json",
+            "mode": "100644",
+            "digest": "sha256:34e9159eb6b192fc1ee76865ed283df0a2f048db4521b7d0a1220b06e9af5ba9"
+          },
+          {
+            "path": "skeletons/fr.md",
+            "mode": "100644",
+            "digest": "sha256:d12a3c2674778f56ee2b1e529902fdb3a6753d0eb632b9f84ffc703b44af03d9"
+          },
+          {
+            "path": "skeletons/glossary.md",
+            "mode": "100644",
+            "digest": "sha256:fb127b0a946ce49dc375b4dec44973207ab0cbbe821c2d972cc9c71de37edc02"
+          },
+          {
+            "path": "skeletons/index.md",
+            "mode": "100644",
+            "digest": "sha256:9972afe51b656a24fcd4e78976125db3d10006c37c5e9af5db5d0e513e87a497"
+          },
+          {
+            "path": "skeletons/it.md",
+            "mode": "100644",
+            "digest": "sha256:0e123f80ae7a8ef26a10f1fd61386984ac221027e7e3e3cb883ded80dbdd0f9a"
+          },
+          {
+            "path": "skeletons/log.md",
+            "mode": "100644",
+            "digest": "sha256:5d583ebae2710bceea6db458e7bf0a2fc5e1d96156e27ad889d894dec4129e91"
+          },
+          {
+            "path": "skeletons/nfr.md",
+            "mode": "100644",
+            "digest": "sha256:36c40384c3b5e22a8d4ad489f5f3beb9ff63108ab379f8bb210b8b5c59649d56"
+          },
+          {
+            "path": "skeletons/spec.md",
+            "mode": "100644",
+            "digest": "sha256:ce7cc2a47b122b9f9e4d97981b6884a2672f9e564ad9eb48f26b76b27a383f1a"
+          },
+          {
+            "path": "skeletons/str.md",
+            "mode": "100644",
+            "digest": "sha256:6b70b42360ab329b2018db7b9188ed00fbcc2fed56a425bd4421262284873dd0"
+          },
+          {
+            "path": "skeletons/tc.md",
+            "mode": "100644",
+            "digest": "sha256:89c949f950c849c5a3991e8632102358786fa5e576ce0dc30b3599b011c86de3"
+          },
+          {
+            "path": "skeletons/us.md",
+            "mode": "100644",
+            "digest": "sha256:22161b99003c9e1d74e41c02d2a78c3b6bf5a514a02b861fdb0c173234f0e978"
+          }
+        ]
+      },
+      {
+        "repository": "engineering-assurance",
+        "path": "engineering_assurance",
+        "tree": "ffdf53cd70d37b73c3839e20792ebb43571ce6c4",
+        "files": [
+          {
+            "path": "INSTALL.md",
+            "mode": "100644",
+            "digest": "sha256:442ae38cc86f12facab01d9ddf5d47c64d804b0fddc134f1c669cf57a290ef6a"
+          },
+          {
+            "path": "__init__.py",
+            "mode": "100644",
+            "digest": "sha256:0cdbe2a9639785e1a0afc2aeb67e585e39457b3835e05ef98407dfecc21b8198"
+          },
+          {
+            "path": "compatibility-matrix.json",
+            "mode": "100644",
+            "digest": "sha256:8e16ecca41ceb3fbe74a3fd56459ac64d9cba29d31c7b8cd85889740a3ac349b"
+          },
+          {
+            "path": "compatibility.py",
+            "mode": "100644",
+            "digest": "sha256:62829251d7697d279364eeb2395a1e86a81ef116703c4b89ec754f701475f654"
+          },
+          {
+            "path": "compatibility_corpus.py",
+            "mode": "100644",
+            "digest": "sha256:700221dd0cbcb15c4ba6c53a1ccc4148c9a90d15de44f57159f514fd5fa77892"
+          },
+          {
+            "path": "contracts/verification-semantics-ownership-v1.json",
+            "mode": "100644",
+            "digest": "sha256:863b5df434680561e7565a4676635816e6553a38a63c6c228a6a40f14c414a2e"
+          },
+          {
+            "path": "discovery.py",
+            "mode": "100644",
+            "digest": "sha256:480ab83d412f14098b647b60f1418d9d9139639fe4fc9025c98e3da97a4fcd4f"
+          },
+          {
+            "path": "eval_reports.py",
+            "mode": "100644",
+            "digest": "sha256:e77818d5ac18f7438013d156edf3eac7a82d57a88b463a273829b8570bb203a5"
+          },
+          {
+            "path": "evaluation.py",
+            "mode": "100644",
+            "digest": "sha256:a0dd30aad22277ade32e87c0062fc9c6fe0e022de3e9f30a27a7eb8541d0e1f6"
+          },
+          {
+            "path": "evidence.py",
+            "mode": "100644",
+            "digest": "sha256:f28678f83073093670bd971fcac644baa1cabe2746fee35aa7507037e97ca7dd"
+          },
+          {
+            "path": "fixture_codegen.py",
+            "mode": "100644",
+            "digest": "sha256:4fb0a86e829863330d07e4200d9a2021e4ceedf41be2eee6aa87ce93732e8efb"
+          },
+          {
+            "path": "fixtures/verification-semantics/canonical-references.json",
+            "mode": "100644",
+            "digest": "sha256:b11ed75c6cad7f45d3fa271269b9d8590eea905b21501d13130afb3f58e5419f"
+          },
+          {
+            "path": "fixtures/verification-semantics/generated/canonical_references.py",
+            "mode": "100644",
+            "digest": "sha256:5e85e06b0e3c34c8676f73c1043a39b3e2c1e06e252fae6e677742addc4dd9f3"
+          },
+          {
+            "path": "fixtures/verification-semantics/generated/canonical_references.rs",
+            "mode": "100644",
+            "digest": "sha256:fda615bae612a30f64f19ba84c39715be561c9cd3d60b358ad1432161aa3a678"
+          },
+          {
+            "path": "fixtures/verification-semantics/generated/canonical_references.ts",
+            "mode": "100644",
+            "digest": "sha256:9d00af28b88ca3a02ab270487959496d77c9379249416a0b3529c06df660d78b"
+          },
+          {
+            "path": "fixtures/verification-semantics/generated/compatibility_cases.py",
+            "mode": "100644",
+            "digest": "sha256:4c76b2153653bb62ec3b0c6c13514dbeca732c011239b269edd01558bfa175d5"
+          },
+          {
+            "path": "fixtures/verification-semantics/generated/compatibility_cases.rs",
+            "mode": "100644",
+            "digest": "sha256:1698ac1f4f017ce180c5fb870484b3993014a1f1e3f24e3ef028db0d77fb426b"
+          },
+          {
+            "path": "fixtures/verification-semantics/generated/compatibility_cases.ts",
+            "mode": "100644",
+            "digest": "sha256:0c1f4a5c383f7f0d7bb9d36939830e82dfa2651e0c89c11d99dbf23c60204a2f"
+          },
+          {
+            "path": "fixtures/verification-semantics/generated/non_success_states.py",
+            "mode": "100644",
+            "digest": "sha256:4cff665ed0dbbafa0825625f60a2d90a648f822799046f9ada42b8dbcd96761f"
+          },
+          {
+            "path": "fixtures/verification-semantics/generated/non_success_states.rs",
+            "mode": "100644",
+            "digest": "sha256:2e081891f749656eed85d8af8f545737ed4478be32f6245d008e46b5c5b409ac"
+          },
+          {
+            "path": "fixtures/verification-semantics/generated/non_success_states.ts",
+            "mode": "100644",
+            "digest": "sha256:fbc6b4424f6c65b67b68435e4efdf085cae469bb72c80972d2d24ba432b6cd7f"
+          },
+          {
+            "path": "fixtures/verification-semantics/non-success-states.json",
+            "mode": "100644",
+            "digest": "sha256:d4bdb30d94e4174490e9576670023daf9f1c60976e3258ca26170585fcc287f3"
+          },
+          {
+            "path": "fixtures/verification-semantics/pgm01-v1.json",
+            "mode": "100644",
+            "digest": "sha256:ab20a39d307a0d3e7d2eda9d50e295ba43de34b527c8f514484cd48af6b7b7f5"
+          },
+          {
+            "path": "fixtures/verification-semantics/pgm01-v2.json",
+            "mode": "100644",
+            "digest": "sha256:947baf2f16a11809ca488935cb8b89fb75015eae2204293eac049b5789bd17bc"
+          },
+          {
+            "path": "fixtures/verification-semantics/report-projection.json",
+            "mode": "100644",
+            "digest": "sha256:2bfb61d4a852ceb41512aff7ec4d504c7ac2cf0a0948af275468e99ffbc49df4"
+          },
+          {
+            "path": "manifest.yaml",
+            "mode": "100644",
+            "digest": "sha256:80e4f2c8753bf541c5049272eada8d5b4792888bc128193b383a903c5fc31f72"
+          },
+          {
+            "path": "onboarding.py",
+            "mode": "100644",
+            "digest": "sha256:94a9e14703e732530de14c6a342672b8941ac712cca039a34c42c8b8202176a9"
+          },
+          {
+            "path": "schemas/architecture-description-frontmatter.schema.json",
+            "mode": "100644",
+            "digest": "sha256:2221c25c835f000b154f1894e7902acb1a2df371ae1885a63ce13742f8b5f42e"
+          },
+          {
+            "path": "schemas/assurance-argument-frontmatter.schema.json",
+            "mode": "100644",
+            "digest": "sha256:341316377a75f2a23111552b9ef969296a2afca7939a1a89d4192ab24c31ff89"
+          },
+          {
+            "path": "schemas/assurance-profile-frontmatter.schema.json",
+            "mode": "100644",
+            "digest": "sha256:070f8802e62b8c38701b03445f86a008f77191baa8c0c4358147fb5126cf3535"
+          },
+          {
+            "path": "schemas/assurance-report-projection-v1.schema.json",
+            "mode": "100644",
+            "digest": "sha256:34ea5a24d2672a42ac6e3734f89e1e5c010f4a7e328c4fda6fe7cf02e64a515e"
+          },
+          {
+            "path": "schemas/component-assurance-contract-frontmatter.schema.json",
+            "mode": "100644",
+            "digest": "sha256:0d081f2ee3942513ed46bedfa174b9cfd3e8c3c1ef89198448a4c263231172d4"
+          },
+          {
+            "path": "schemas/measurement-plan-frontmatter.schema.json",
+            "mode": "100644",
+            "digest": "sha256:aae266f2cefd706548dd25d7c232f0cf5d1ac04fe99ad540244be5f72bcfd05a"
+          },
+          {
+            "path": "schemas/pgm01-compatibility-view-v1.schema.json",
+            "mode": "100644",
+            "digest": "sha256:317294d04e430f26612a6c7cbde937e06d9e655585a59de1f1e4a0dd66855ca6"
+          },
+          {
+            "path": "schemas/semantic-reference-v1.schema.json",
+            "mode": "100644",
+            "digest": "sha256:c72e7b8e4fe2dd9b845cdc90e210fb47bc36653c3bb96aee23bf24058e08e927"
+          },
+          {
+            "path": "schemas/verification-semantics-fixture-v1.schema.json",
+            "mode": "100644",
+            "digest": "sha256:a8f469ceb0185b29f25fc226a72cc80dfbe7f1d65c8c197ce9cadf82b520898c"
+          },
+          {
+            "path": "schemas/verification-semantics-ownership-v1.schema.json",
+            "mode": "100644",
+            "digest": "sha256:a1674b7be43ee4e00a51a84bc384f5090ee71ed58a807429dd1023667c4dd3a5"
+          },
+          {
+            "path": "skeletons/ArchitectureDescription.md",
+            "mode": "100644",
+            "digest": "sha256:40027633119e86cf3c4629d3eec77f9314a28f78e90f3948f5de1c28bc245e6b"
+          },
+          {
+            "path": "skeletons/AssuranceArgument.md",
+            "mode": "100644",
+            "digest": "sha256:fc6be336b7af336023823d8fb032a23a18fb82ed044263b312eac9774d949cef"
+          },
+          {
+            "path": "skeletons/AssuranceProfile.md",
+            "mode": "100644",
+            "digest": "sha256:d7e007c878355f359abdd83c991d9424a59c050442d9a292ff7f67d891effd46"
+          },
+          {
+            "path": "skeletons/ComponentAssuranceContract.md",
+            "mode": "100644",
+            "digest": "sha256:1d58c688cb54489f337f5d9986d9436276b6edcfb4d36eb7f1f2617338f97054"
+          },
+          {
+            "path": "skeletons/MeasurementPlan.md",
+            "mode": "100644",
+            "digest": "sha256:2a4358d5616ca3c6d363819b9fbea2e26d3b82a8d2050a19ba26a75c3ba65a99"
+          },
+          {
+            "path": "skills/assurance-onboarding/SKILL.md",
+            "mode": "100644",
+            "digest": "sha256:d98920b02e6e2fcca37066155b53650b87acee29dab33f4bf65cc3a7c994e307"
+          },
+          {
+            "path": "skills/assurance-onboarding/scripts/invariants.js",
+            "mode": "100644",
+            "digest": "sha256:d6a1fc01a8b90618978d3d2cc420557d81a9c5c120739f938f68ddf3a93a872d"
+          },
+          {
+            "path": "skills/assurance-onboarding/workflows/architecture-evaluation/def.yaml",
+            "mode": "100644",
+            "digest": "sha256:dffeebe69f6fdc169b2bd4e889d35aaa756f1b03eea9f83f9e7672425fede8cf"
+          },
+          {
+            "path": "skills/assurance-onboarding/workflows/assurance-intake/def.yaml",
+            "mode": "100644",
+            "digest": "sha256:33afb706d4f5b1c61dc54ec36f3bd62cc2f5b965d2a8c76ab68621a8d6e6b411"
+          },
+          {
+            "path": "skills/assurance-onboarding/workflows/change-assurance/def.yaml",
+            "mode": "100644",
+            "digest": "sha256:746931eadc1bf4055bc443139e3c1b4ee5ec18099ad3fd4007b9f58bf437d1be"
+          },
+          {
+            "path": "skills/assurance-onboarding/workflows/measurement-promotion/def.yaml",
+            "mode": "100644",
+            "digest": "sha256:800cdfc12551dbe665676319e3837cb404dd69ced150fbcdcc8dd08372cd3f91"
+          },
+          {
+            "path": "verification_semantics.py",
+            "mode": "100644",
+            "digest": "sha256:af9f92fcec60463fe3e9398a5ce0c1acde76b738816b10baf1b94e123c9b50bc"
+          },
+          {
+            "path": "workflow.py",
+            "mode": "100644",
+            "digest": "sha256:bb8ad65625cfa5897f36c1f17c71aded12af18c2c8056748cb34626a85859981"
+          }
+        ]
+      }
+    ]
   }
 }
