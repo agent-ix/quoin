@@ -100,7 +100,8 @@ operational wave's to take, with its own measurement.
 ## §3 — These two are the only differences, and that is asserted
 
 `intervention-schema.ts` is a program, not a document, so the vendored artifact
-cannot be reviewed against it by eye. `oracle/capture-intervention-schema.mjs`
+cannot be reviewed against it by eye. `oracle/capture-intervention-schema.mjs` (deleted at cutover, recoverable from
+the revision the capture records)
 ran it once and serialized the result with the repository's own `canonicalJson`
 into `tests/goldens/intervention-experiment-v1.captured.json`, committed with
 the revision it ran at.

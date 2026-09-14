@@ -1,7 +1,7 @@
 {
   "produced_by": "src/measurement/intervention-report.ts, src/measurement/operational-report.ts",
   "produced_from_revision": "a2b5dfc0bff556baec8e1a417678985846fd235d",
-  "capture_script": "rust/crates/quoin-measurement/oracle/capture-report-oracle.mjs",
+  "capture_script": "eb0ca08419fa2f05a1522c5bf2d108a818645c1f:rust/crates/quoin-measurement/oracle/capture-report-oracle.mjs",
   "intervention": [
     {
       "name": "empty",

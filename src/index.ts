@@ -14,7 +14,6 @@ export {
   removeModule,
   type InstalledModule,
 } from "./core/modules.js";
-export * from "./measurement/index.js";
 // `src/change-assurance/` was deleted at quoin#457: the FR-063..FR-065
 // contracts are decided by `quoin-change-assurance` behind `quoin-core`. What
 // that barrel re-exported from modules that SURVIVE is named here, so no

@@ -1,0 +1,7 @@
+{
+  "captured_from": "src/measurement/schemas/operational-evidence-v1.schema.json",
+  "exported_binding": "(none; the retained artefact was already a JSON document, so the file itself is the export)",
+  "producer": "eb0ca08419fa2f05a1522c5bf2d108a818645c1f:src/measurement/schemas/operational-evidence-v1.schema.json",
+  "quoin_revision": "eb0ca08419fa2f05a1522c5bf2d108a818645c1f",
+  "serializer": "(none; copied byte for byte, no serializer ran)"
+}

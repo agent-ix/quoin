@@ -329,11 +329,21 @@ describe("a profile selection assigns no finding severity", () => {
     // Two halves, because either alone is satisfiable while the criterion is
     // broken: the type a selection yields carries no severity field, AND no
     // module that computes severity reads a profile.
+    // `src/measurement/profiles.ts` was deleted at quoin#479; the type a
+    // profile selection yields is now the Rust one, so that is what is read.
     const profilesSrc = readFileSync(
-      join(repoRoot, "src", "measurement", "profiles.ts"),
+      join(
+        repoRoot,
+        "rust",
+        "crates",
+        "quoin-measurement",
+        "src",
+        "types",
+        "profile.rs",
+      ),
       "utf8",
     );
-    const summary = /export interface AssuranceProfileSummary \{([^}]*)\}/.exec(
+    const summary = /pub struct AssuranceProfileSummary \{([^}]*)\}/.exec(
       profilesSrc,
     );
     expect(summary, "AssuranceProfileSummary not found").not.toBeNull();

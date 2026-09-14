@@ -1,7 +1,7 @@
 {
   "captured_from": "src/measurement/intervention-schema.ts",
   "exported_binding": "interventionExperimentSchema",
-  "producer": "rust/crates/quoin-jsonschema/oracle/capture-intervention-schema.mjs",
+  "producer": "eb0ca08419fa2f05a1522c5bf2d108a818645c1f:rust/crates/quoin-jsonschema/oracle/capture-intervention-schema.mjs",
   "quoin_revision": "055f5b3d6bdf2488f9669d4bd810f1b258f7a73b",
   "serializer": "src/store/canonical.ts canonicalJson"
 }

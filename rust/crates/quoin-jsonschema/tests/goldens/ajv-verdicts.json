@@ -15256,7 +15256,7 @@
     "ajv_version": "8.20.0",
     "intervention_config": "src/measurement/intervention.ts:22-27",
     "operational_config": "src/measurement/operational.ts:30-35",
-    "producer": "rust/crates/quoin-jsonschema/oracle/capture-ajv-verdicts.mjs",
+    "producer": "eb0ca08419fa2f05a1522c5bf2d108a818645c1f:rust/crates/quoin-jsonschema/oracle/capture-ajv-verdicts.mjs",
     "quoin_revision": "055f5b3d6bdf2488f9669d4bd810f1b258f7a73b"
   }
 }

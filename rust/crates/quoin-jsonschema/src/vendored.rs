@@ -5,23 +5,30 @@
 //!
 //! # Two documents, two provenances
 //!
-//! | schema | retained source | how it got here |
+//! | schema | retained source (deleted in quoin#479) | how it got here |
 //! |---|---|---|
 //! | [`VendoredSchema::OperationalEvidenceV1`] | `src/measurement/schemas/operational-evidence-v1.schema.json` | copied byte-for-byte |
 //! | [`VendoredSchema::InterventionExperimentV1`] | `src/measurement/intervention-schema.ts` | captured, then two recorded deltas |
 //!
+//! The retained TypeScript no longer exists: quoin#479 deleted `src/measurement/`
+//! after this port took over its routes. Both documents are therefore measured
+//! against **committed captures** under `tests/goldens/`, each with a
+//! `.provenance.json` naming the file, binding, serializer, producer and
+//! revision it came from. FR-101-AC-5 forbids a live non-Rust runtime oracle
+//! after cutover; a committed byte sequence is not one.
+//!
 //! The operational schema was already a JSON document, so it is vendored
-//! verbatim and `tests/tc_470_vendored_schemas.rs` fails if either copy moves.
+//! verbatim and `tests/tc_470_vendored_schemas.rs` fails if the vendored copy
+//! and the capture ever disagree.
 //!
 //! The intervention schema was not a document at all: `intervention-schema.ts`
-//! is a *program* that builds an object out of shared fragments. It was run
-//! once (`oracle/capture-intervention-schema.mjs`), serialized with the
-//! repository's own `canonicalJson`, and the capture is committed beside the
-//! vendored document as `tests/goldens/intervention-experiment-v1.captured.json`
-//! with its producing revision. The vendored document then differs from that
-//! capture by **exactly two deltas**, both rulings recorded in `DIVERGENCE.md`,
-//! and the test enumerates the difference set rather than asserting that one
-//! exists.
+//! was a *program* that built an object out of shared fragments. It was run
+//! once, serialized with the repository's own `canonicalJson`, and the capture
+//! is committed beside the vendored document as
+//! `tests/goldens/intervention-experiment-v1.captured.json` with its producing
+//! revision. The vendored document then differs from that capture by **exactly
+//! two deltas**, both rulings recorded in `DIVERGENCE.md`, and the test
+//! enumerates the difference set rather than asserting that one exists.
 //!
 //! # Nothing here reads the filesystem
 //!
