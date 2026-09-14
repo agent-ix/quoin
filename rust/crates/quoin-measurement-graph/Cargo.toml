@@ -15,6 +15,7 @@ publish.workspace = true
 workspace = true
 
 [dependencies]
+quoin-graph-analysis = { workspace = true }
 quoin-measurement = { workspace = true }
 quoin-quire = { workspace = true }
 quoin-store = { workspace = true }

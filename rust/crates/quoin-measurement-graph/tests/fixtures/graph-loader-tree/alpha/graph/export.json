@@ -1,0 +1,395 @@
+{
+  "format": "quire-assurance",
+  "format_version": 1,
+  "source": {
+    "repository": "agent-ix/example",
+    "revision": "0000000000000000000000000000000000000000"
+  },
+  "modules": [
+    {
+      "name": "another",
+      "version": "0.2.0",
+      "schemas": []
+    },
+    {
+      "name": "example",
+      "version": "1.0.0",
+      "schemas": [
+        {
+          "archetype": "AC",
+          "schema_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        {
+          "archetype": "FR",
+          "schema_digest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        }
+      ]
+    }
+  ],
+  "artifacts": [
+    {
+      "id": "FR-001",
+      "artifact_type": "FR",
+      "locator": {
+        "path": "spec/FR-001.md",
+        "line": 1,
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      }
+    },
+    {
+      "id": "FR-002",
+      "artifact_type": "FR",
+      "locator": {
+        "path": "spec/FR-002.md",
+        "line": 1,
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      }
+    },
+    {
+      "id": "FR-003",
+      "artifact_type": "FR",
+      "locator": {
+        "path": "spec/FR-003.md",
+        "line": 1,
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      }
+    },
+    {
+      "id": "FR-004",
+      "artifact_type": "FR",
+      "locator": {
+        "path": "spec/FR-004.md",
+        "line": 1,
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      }
+    },
+    {
+      "id": "NFR-001",
+      "artifact_type": "NFR",
+      "locator": {
+        "path": "spec/NFR-001.md",
+        "line": 1,
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      }
+    },
+    {
+      "id": "IT-001",
+      "artifact_type": "IT",
+      "locator": {
+        "path": "spec/IT-001.md",
+        "line": 1,
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      }
+    },
+    {
+      "id": "US-001",
+      "artifact_type": "US",
+      "locator": {
+        "path": "spec/shared.md",
+        "line": 1,
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      }
+    },
+    {
+      "id": "StR-001",
+      "artifact_type": "StR",
+      "locator": {
+        "path": "spec/shared.md",
+        "line": 1,
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      }
+    }
+  ],
+  "obligations": [
+    {
+      "source": "acceptance-criterion",
+      "id": "FR-001-AC-1",
+      "document": "spec/FR-001.md",
+      "statement": "FR-001-AC-1 statement",
+      "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "target_ids": [
+        "TC-FR-001-AC-1"
+      ],
+      "locator": {
+        "path": "spec/FR-001.md",
+        "line": 20,
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      }
+    },
+    {
+      "source": "acceptance-criterion",
+      "id": "FR-002-AC-1",
+      "document": "spec/FR-002.md",
+      "statement": "FR-002-AC-1 statement",
+      "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "target_ids": [
+        "TC-FR-002-AC-1"
+      ],
+      "locator": {
+        "path": "spec/FR-002.md",
+        "line": 20,
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      }
+    },
+    {
+      "source": "acceptance-criterion",
+      "id": "FR-003-AC-1",
+      "document": "spec/FR-003.md",
+      "statement": "FR-003-AC-1 statement",
+      "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "target_ids": [
+        "TC-FR-003-AC-1"
+      ],
+      "locator": {
+        "path": "spec/FR-003.md",
+        "line": 20,
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      }
+    },
+    {
+      "source": "acceptance-criterion",
+      "id": "FR-004-AC-1",
+      "document": "spec/FR-004.md",
+      "statement": "FR-004-AC-1 statement",
+      "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "target_ids": [
+        "TC-FR-004-AC-1"
+      ],
+      "locator": {
+        "path": "spec/FR-004.md",
+        "line": 20,
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      }
+    },
+    {
+      "source": "acceptance-criterion",
+      "id": "NFR-001-AC-1",
+      "document": "spec/NFR-001.md",
+      "statement": "NFR-001-AC-1 statement",
+      "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "target_ids": [
+        "TC-NFR-001-AC-1"
+      ],
+      "locator": {
+        "path": "spec/NFR-001.md",
+        "line": 20,
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      }
+    },
+    {
+      "source": "acceptance-criterion",
+      "id": "SHARED-AC-1",
+      "document": "spec/shared.md",
+      "statement": "SHARED-AC-1 statement",
+      "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "target_ids": [
+        "TC-SHARED-AC-1"
+      ],
+      "locator": {
+        "path": "spec/shared.md",
+        "line": 20,
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      }
+    },
+    {
+      "source": "acceptance-criterion",
+      "id": "ORPHAN-AC-1",
+      "document": "spec/nowhere.md",
+      "statement": "ORPHAN-AC-1 statement",
+      "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "target_ids": [
+        "TC-ORPHAN-AC-1"
+      ],
+      "locator": {
+        "path": "spec/nowhere.md",
+        "line": 20,
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      }
+    }
+  ],
+  "symbols": [],
+  "relation_kinds": [
+    {
+      "kind": "depends_on",
+      "availability": "available",
+      "sources": [
+        "module_vocabulary"
+      ]
+    },
+    {
+      "kind": "derives_from",
+      "availability": "available",
+      "sources": [
+        "module_vocabulary"
+      ]
+    },
+    {
+      "kind": "implements",
+      "availability": "available",
+      "sources": [
+        "module_vocabulary"
+      ]
+    },
+    {
+      "kind": "mitigates",
+      "availability": "available",
+      "sources": [
+        "module_vocabulary"
+      ]
+    },
+    {
+      "kind": "refines",
+      "availability": "available",
+      "sources": [
+        "module_vocabulary"
+      ]
+    },
+    {
+      "kind": "requires",
+      "availability": "available",
+      "sources": [
+        "module_vocabulary"
+      ]
+    },
+    {
+      "kind": "satisfies",
+      "availability": "available",
+      "sources": [
+        "module_vocabulary"
+      ]
+    },
+    {
+      "kind": "traces_to",
+      "availability": "available",
+      "sources": [
+        "module_vocabulary"
+      ]
+    }
+  ],
+  "relations": [
+    {
+      "kind": "corpus",
+      "source": "FR-002",
+      "target": "FR-001",
+      "edge_type": "depends_on",
+      "resolution": "resolved",
+      "locator": {
+        "path": "spec/FR-002.md",
+        "line": 5,
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "freshness": "not_applicable"
+    },
+    {
+      "kind": "corpus",
+      "source": "FR-003",
+      "target": "FR-002",
+      "edge_type": "refines",
+      "resolution": "resolved",
+      "locator": {
+        "path": "spec/FR-003.md",
+        "line": 5,
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "freshness": "not_applicable"
+    },
+    {
+      "kind": "corpus",
+      "source": "FR-004",
+      "target": "FR-001",
+      "edge_type": "satisfies",
+      "resolution": "resolved",
+      "locator": {
+        "path": "spec/FR-004.md",
+        "line": 5,
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "freshness": "not_applicable"
+    },
+    {
+      "kind": "corpus",
+      "source": "FR-004",
+      "target": "FR-001",
+      "edge_type": "requires",
+      "resolution": "resolved",
+      "locator": {
+        "path": "spec/FR-004.md",
+        "line": 5,
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "freshness": "not_applicable"
+    },
+    {
+      "kind": "corpus",
+      "source": "FR-001",
+      "target": "FR-003",
+      "edge_type": "traces_to",
+      "resolution": "resolved",
+      "locator": {
+        "path": "spec/FR-001.md",
+        "line": 5,
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "freshness": "not_applicable"
+    },
+    {
+      "kind": "corpus",
+      "source": "IT-001",
+      "target": "FR-001",
+      "edge_type": "traces_to",
+      "resolution": "resolved",
+      "locator": {
+        "path": "spec/IT-001.md",
+        "line": 5,
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "freshness": "not_applicable"
+    },
+    {
+      "kind": "corpus",
+      "source": "FR-009",
+      "target": "FR-001",
+      "edge_type": "depends_on",
+      "resolution": "dangling",
+      "locator": {
+        "path": "spec/FR-009.md",
+        "line": 5,
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "freshness": "not_applicable"
+    },
+    {
+      "kind": "corpus",
+      "source": "NFR-001",
+      "target": "FR-001",
+      "edge_type": "constrains",
+      "resolution": "resolved",
+      "locator": {
+        "path": "spec/NFR-001.md",
+        "line": 5,
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "freshness": "not_applicable"
+    }
+  ],
+  "relation_observations": [
+    {
+      "declaration": "FR-001 requires a mitigation",
+      "subject": "FR-001",
+      "availability": "available",
+      "freshness": "current"
+    },
+    {
+      "declaration": "FR-002 requires a mitigation",
+      "availability": "missing",
+      "freshness": "unknown"
+    },
+    {
+      "declaration": "FR-003 requires a mitigation",
+      "subject": "FR-003",
+      "availability": "unknown",
+      "freshness": "unknown",
+      "reason": "the module vocabulary does not declare it"
+    }
+  ]
+}

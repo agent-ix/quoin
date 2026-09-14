@@ -157,6 +157,13 @@ impl MeasurementSource for DiskMeasurement {
         json_names(&crate::store::measurements_root(&self.repo))
     }
 
+    fn collection_location(&self, name: &str) -> String {
+        crate::store::measurements_root(&self.repo)
+            .join(name)
+            .to_string_lossy()
+            .into_owned()
+    }
+
     fn collection_bytes(&self, name: &str) -> Result<Vec<u8>, MeasurementError> {
         let path = crate::store::measurements_root(&self.repo).join(name);
         std::fs::read(&path).map_err(|error| io(&path, &error))

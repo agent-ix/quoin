@@ -237,11 +237,8 @@ fn reads_of(injected: &Injected, name: &str) -> Vec<GraphCollectionRead> {
         .unwrap_or_else(|error| panic!("{name}: store is unreadable: {error}"))
         .into_iter()
         .map(|result| {
-            let path = root
-                .join("spec/evidence/measurements")
-                .join(&result.path)
-                .to_string_lossy()
-                .into_owned();
+            // `result.path` is already the whole path the seam names.
+            let path = result.path;
             match result.collection {
                 Ok(collection) => GraphCollectionRead::read(path, collection),
                 Err(error) => GraphCollectionRead::refused(

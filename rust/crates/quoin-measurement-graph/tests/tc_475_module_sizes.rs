@@ -56,7 +56,11 @@ const ALLOWED_ABOVE_HARD_CEILING: &[(&str, &str)] = &[];
 const OVER_SOFT_CEILING: &[&str] = &[];
 
 /// The count below which this census is not measuring the crate at all.
-const SOURCE_FLOOR: usize = 10;
+///
+/// Raised from 10 to 30 by quoin#477, which added `loader.rs` and
+/// `structural.rs`. A floor that never moves stops being a floor: it has to
+/// keep describing the crate the census is actually walking.
+const SOURCE_FLOOR: usize = 30;
 
 /// Every `.rs` file under `src/`, as `(relative path, line count)`.
 fn modules() -> Vec<(String, usize)> {

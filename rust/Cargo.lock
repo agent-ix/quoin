@@ -3081,6 +3081,7 @@ dependencies = [
 name = "quoin-measurement-graph"
 version = "0.1.0"
 dependencies = [
+ "quoin-graph-analysis",
  "quoin-measurement",
  "quoin-quire",
  "quoin-store",

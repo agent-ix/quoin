@@ -27,7 +27,15 @@ use crate::validate::stored_measurement_collection;
 /// One attempt to read one retained collection.
 #[derive(Clone, Debug)]
 pub struct MeasurementCollectionReadResult {
-    /// The file name that was read, as [`MeasurementSource`] names it.
+    /// Where the collection was read from, as [`MeasurementSource`] names the
+    /// location.
+    ///
+    /// This is `store.ts:84`'s `join(measurementsRoot(repo), name)` for a disk
+    /// source — the whole path, which is what `store.ts:63` renders when a
+    /// collection is unreadable and what every consumer of this result reports.
+    /// A source that is not a directory has no such path, so the seam answers
+    /// for itself through [`MeasurementSource::collection_location`] rather
+    /// than every caller joining (quoin#477).
     pub path: String,
     /// The collection, or why it could not be read.
     pub collection: Result<MeasurementCollection, MeasurementError>,
@@ -46,12 +54,15 @@ pub fn read_measurement_collection_results<S: MeasurementSource + ?Sized>(
     source: &S,
 ) -> Result<Vec<MeasurementCollectionReadResult>, MeasurementError> {
     let mut out = Vec::new();
-    for path in source.collection_names()? {
+    for name in source.collection_names()? {
         let collection = source
-            .collection_bytes(&path)
+            .collection_bytes(&name)
             .and_then(|bytes| Ok(parse_strict_json(&bytes)?))
             .and_then(|value| stored_measurement_collection(&value));
-        out.push(MeasurementCollectionReadResult { path, collection });
+        out.push(MeasurementCollectionReadResult {
+            path: source.collection_location(&name),
+            collection,
+        });
     }
     Ok(out)
 }
