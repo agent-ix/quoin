@@ -362,15 +362,11 @@ export function auditToolDrift(files) {
         `${path} Quire repository must equal verification-stack lock`,
       );
     }
-    if (
-      reviewed.repositories &&
-      reviewed.repositories?.quoin?.revision !==
-        stackLock.repositories.quoin.revision
-    ) {
-      errors.push(
-        `${path} Quoin repository must equal verification-stack lock`,
-      );
-    }
+    // `repositories.quoin` records the source that produced the reviewed
+    // evidence. It must not be coupled to the current candidate: doing so
+    // would relabel historical evidence whenever Quoin itself changes. The
+    // current candidate is pinned independently by the stack lock; the
+    // producer's CLI and engine identities above remain exact checks.
   }
   for (const step of buildSteps.filter((candidate) =>
     String(candidate?.uses ?? "").startsWith("actions/setup-node@"),
