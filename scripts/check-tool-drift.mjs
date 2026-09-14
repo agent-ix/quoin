@@ -211,7 +211,9 @@ export function auditToolDrift(files) {
     );
   }
   const stackRunner = files["scripts/verification-stack.mjs"];
-  const tierOneArgs = stackRunner.slice(stackRunner.indexOf("const benchmarkArgs"));
+  const tierOneArgs = stackRunner.slice(
+    stackRunner.indexOf("const benchmarkArgs"),
+  );
   if (
     !/"deploy",\s*"--prod",\s*"--legacy",\s*"--frozen-lockfile"/.test(
       stackRunner,
