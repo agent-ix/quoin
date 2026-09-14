@@ -113,17 +113,15 @@ fn tc_375_the_pinned_channel_and_the_declared_msrv_agree() {
         .collect();
     rust_pins.sort_unstable();
     // Sorted, not positional: the assertion is about WHICH toolchains the
-    // workflow pins, and reordering jobs is not a defect. The two 1.98.1 pins
-    // are quoin's own Rust and difftest jobs. The 1.94.1 is the `test` job
-    // building agent-ix/quire-cli from source — another repository's
-    // toolchain, deliberately left alone, and named here so a reader does not
-    // "fix" it into agreement.
+    // workflow pins, and reordering jobs is not a defect. The quire-cli test
+    // job was raised to the governed 1.98.1 pin in quoin#518, so all three
+    // workflow jobs now exercise the same compiler the workspace declares.
     assert_eq!(
         rust_pins,
         vec![
-            "toolchain: 1.94.1",
             "toolchain: 1.98.1",
-            "toolchain: 1.98.1"
+            "toolchain: 1.98.1",
+            "toolchain: 1.98.1",
         ]
     );
 }
