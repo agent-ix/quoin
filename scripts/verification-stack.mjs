@@ -7,8 +7,10 @@ import {
   copyFileSync,
   existsSync,
   lstatSync,
+  mkdirSync,
   mkdtempSync,
   readFileSync,
+  renameSync,
   readlinkSync,
   rmSync,
   writeFileSync,
@@ -632,10 +634,93 @@ export function lockDigest(lockPath) {
   return sha256(readFileSync(lockPath));
 }
 
+const STAGES = [
+  "audit-pre",
+  "tool-drift",
+  "stack-selftest",
+  "lint",
+  "test",
+  "runtime",
+  "span",
+  "qa",
+  "guidance",
+  "tier1",
+  "tier2",
+  "final-audit",
+];
+
+function stagePlan() {
+  const startAt = valueOf("--start-at") ?? "audit-pre";
+  const stopAfter = valueOf("--stop-after") ?? "final-audit";
+  const stateDir = valueOf("--state-dir");
+  const start = STAGES.indexOf(startAt);
+  const stop = STAGES.indexOf(stopAfter);
+  if (
+    !stateDir &&
+    (process.argv.includes("--start-at") ||
+      process.argv.includes("--stop-after"))
+  ) {
+    throw new Error("--start-at and --stop-after require --state-dir");
+  }
+  if (!stateDir) return null;
+  if (start < 0 || stop < 0 || start > stop) {
+    throw new Error(
+      `staged verification requires ordered stages: ${STAGES.join(", ")}`,
+    );
+  }
+  if (process.argv.includes("--preflight")) {
+    throw new Error("--preflight cannot use a persistent verification state");
+  }
+  return { start, stop, stateDir: resolve(stateDir) };
+}
+
+function stageRuns(plan, stage) {
+  if (!plan) return true;
+  const index = STAGES.indexOf(stage);
+  return index >= plan.start && index <= plan.stop;
+}
+
+function stageEnds(plan, stage) {
+  return Boolean(plan && plan.stop === STAGES.indexOf(stage));
+}
+
+function stateRecordPath(root, name) {
+  return join(root, `${name}.json`);
+}
+
+function writeStateRecord(root, name, value) {
+  const temporary = `${stateRecordPath(root, name)}.next`;
+  writeFileSync(temporary, `${JSON.stringify(value, null, 2)}\n`);
+  renameSync(temporary, stateRecordPath(root, name));
+}
+
+function readStateRecord(root, name, expectedLockDigest) {
+  const path = stateRecordPath(root, name);
+  if (!existsSync(path)) {
+    throw new Error(
+      `verification state lacks the completed ${name} stage; run that stage first`,
+    );
+  }
+  let record;
+  try {
+    record = JSON.parse(readFileSync(path, "utf8"));
+  } catch {
+    throw new Error(`verification state ${name} record is not valid JSON`);
+  }
+  if (record.lockDigest !== expectedLockDigest) {
+    throw new Error(
+      `verification state ${name} record belongs to a different verification lock`,
+    );
+  }
+  return record;
+}
+
 async function main() {
+  const plan = stagePlan();
   const lockPath = resolve(valueOf("--lock") ?? DEFAULT_LOCK);
   const lock = validateLockShape(JSON.parse(readFileSync(lockPath, "utf8")));
   const update = process.argv.includes("--update");
+  const currentLockDigest = lockDigest(lockPath);
   const roots = {
     quoin: ROOT,
     quire: resolve(process.env.QUIRE_ROOT ?? join(ROOT, "..", "quire-rs")),
@@ -716,7 +801,18 @@ async function main() {
     lock.repositories.quire.remote,
   );
 
-  const scratch = mkdtempSync(join(tmpdir(), "quoin-stack-"));
+  if (plan && !existsSync(plan.stateDir)) {
+    if (plan.start !== 0) {
+      throw new Error(
+        `verification state ${plan.stateDir} does not exist; begin at gates`,
+      );
+    }
+    mkdirSync(plan.stateDir, { recursive: false, mode: 0o700 });
+  }
+  const scratch = plan?.stateDir ?? mkdtempSync(join(tmpdir(), "quoin-stack-"));
+  const transient = plan
+    ? mkdtempSync(join(tmpdir(), "quoin-stack-stage-"))
+    : scratch;
   let externalQuoin = null;
   let isolatedQuoinCheckout = null;
   try {
@@ -725,17 +821,31 @@ async function main() {
         ? materializeDeclarations(
             lock,
             roots,
-            join(scratch, "validation-modules"),
+            join(transient, "validation-modules"),
           )
         : null;
-    const declarationManifest = join(scratch, "validation-module-roots.json");
+    const declarationManifest = join(transient, "validation-module-roots.json");
     if (declarationRoots)
       writeFileSync(
         declarationManifest,
         `${JSON.stringify(declarationRoots)}\n`,
         { flag: "wx" },
       );
-    const binary = buildCli(roots["quire-cli"], scratch);
+    let binary;
+    if (plan && plan.start > 0) {
+      const prepared = readStateRecord(scratch, "prepared", currentLockDigest);
+      binary = join(scratch, "quire");
+      if (
+        !existsSync(binary) ||
+        sha256(readFileSync(binary)) !== prepared.executableDigest
+      ) {
+        throw new Error(
+          "verification state Quire executable does not match preparation record",
+        );
+      }
+    } else {
+      binary = buildCli(roots["quire-cli"], scratch);
+    }
     const provenance = assertToolProvenance(binary, lock);
     assertRemoteRevision(
       "quireBenchmarkQuoin",
@@ -759,7 +869,7 @@ async function main() {
     };
     const attestation = {
       schemaVersion: "verification-stack-attestation-v1",
-      lockDigest: lockDigest(lockPath),
+      lockDigest: currentLockDigest,
       executableDigest: sha256(readFileSync(binary)),
       buildProfile: "release",
       toolchains: structuredClone(lock.toolchains),
@@ -769,6 +879,12 @@ async function main() {
     };
     const attestationPath = join(scratch, "attestation.json");
     writeFileSync(attestationPath, `${JSON.stringify(attestation, null, 2)}\n`);
+    if (plan && plan.start === 0) {
+      writeStateRecord(scratch, "prepared", {
+        lockDigest: currentLockDigest,
+        executableDigest: attestation.executableDigest,
+      });
+    }
     if (process.argv.includes("--preflight")) {
       console.log(JSON.stringify(attestation, null, 2));
       return;
@@ -786,253 +902,382 @@ async function main() {
       QUOIN_TIER1_CASE_TIMEOUT_MS: String(lock.timeouts.caseMilliseconds),
       QUOIN_LOCKED_SOURCE_REVISION: lock.repositories.quoin.revision,
     };
-    console.error("verification-stack: Quoin gates");
     // An evidence refresh starts from evidence whose producer pin is
-    // deliberately stale.  Running the provenance audit before that refresh
-    // makes `make bench-tier1-update` impossible.  The update route therefore
-    // replays the evidence below and runs this exact audit after the replay;
-    // ordinary verification continues to fail before doing any work.
-    if (!update) {
+    // deliberately stale. Running the provenance audit before that refresh
+    // makes `make bench-tier1-update` impossible. The update route therefore
+    // records this intentionally deferred gate and replays it at final-audit.
+    if (stageRuns(plan, "audit-pre")) {
+      if (!update) {
+        run("corepack", ["pnpm", "run", "audit:tool-drift"], {
+          cwd: ROOT,
+          env,
+          stdio: "inherit",
+        });
+      }
+      if (plan)
+        writeStateRecord(scratch, "audit-pre", {
+          lockDigest: currentLockDigest,
+        });
+    }
+    if (stageEnds(plan, "audit-pre")) return;
+    if (plan && plan.start > STAGES.indexOf("audit-pre")) {
+      readStateRecord(scratch, "audit-pre", currentLockDigest);
+    }
+    if (stageRuns(plan, "tool-drift")) {
+      run("corepack", ["pnpm", "run", "test:tool-drift"], {
+        cwd: ROOT,
+        env,
+        stdio: "inherit",
+      });
+      if (plan)
+        writeStateRecord(scratch, "tool-drift", {
+          lockDigest: currentLockDigest,
+        });
+    }
+    if (stageEnds(plan, "tool-drift")) return;
+    if (plan && plan.start > STAGES.indexOf("tool-drift")) {
+      readStateRecord(scratch, "tool-drift", currentLockDigest);
+    }
+    if (stageRuns(plan, "stack-selftest")) {
+      run("corepack", ["pnpm", "run", "test:verification-stack"], {
+        cwd: ROOT,
+        env,
+        stdio: "inherit",
+      });
+      if (plan)
+        writeStateRecord(scratch, "stack-selftest", {
+          lockDigest: currentLockDigest,
+        });
+    }
+    if (stageEnds(plan, "stack-selftest")) return;
+    if (plan && plan.start > STAGES.indexOf("stack-selftest")) {
+      readStateRecord(scratch, "stack-selftest", currentLockDigest);
+    }
+    if (stageRuns(plan, "lint")) {
+      const lintOutput = run("corepack", ["pnpm", "run", "lint"], {
+        cwd: ROOT,
+        env,
+        timeout: lock.timeouts.quoinMilliseconds,
+      });
+      process.stdout.write(lintOutput);
+      if (plan)
+        writeStateRecord(scratch, "lint", { lockDigest: currentLockDigest });
+    }
+    if (stageEnds(plan, "lint")) return;
+    if (plan && plan.start > STAGES.indexOf("lint")) {
+      readStateRecord(scratch, "lint", currentLockDigest);
+    }
+    if (stageRuns(plan, "test")) {
+      const testEnv = { ...env };
+      // Do not let an inherited explicit-set override change either replay mode.
+      delete testEnv.QUOIN_VERIFICATION_DECLARATIONS;
+      if (declarationRoots)
+        testEnv.QUOIN_VERIFICATION_DECLARATIONS = declarationManifest;
+      // The suite deliberately substitutes fake `quire` executables through
+      // PATH to grade subprocess failures. The Make target prepends the exact,
+      // already-hashed binary as the default; individual fixtures may still
+      // override it without inheriting a digest that belongs to another file.
+      delete testEnv.QUOIN_QUIRE;
+      delete testEnv.QUOIN_EXPECTED_QUIRE_SHA256;
+      run("make", ["test-with-quire", `QUIRE=${binary}`], {
+        cwd: ROOT,
+        env: testEnv,
+        timeout: lock.timeouts.quoinMilliseconds,
+        stdio: "inherit",
+      });
+      if (plan)
+        writeStateRecord(scratch, "test", { lockDigest: currentLockDigest });
+    }
+    if (stageEnds(plan, "test")) return;
+    if (plan && plan.start > STAGES.indexOf("test")) {
+      readStateRecord(scratch, "test", currentLockDigest);
+    }
+
+    let isolatedQuoin;
+    const runtimeRecord =
+      plan && plan.start > STAGES.indexOf("runtime")
+        ? readStateRecord(scratch, "runtime", currentLockDigest)
+        : null;
+    if (runtimeRecord) {
+      isolatedQuoinCheckout = join(scratch, "quoin-runtime-source");
+      isolatedQuoin = join(scratch, "quoin-runtime", "bin", "quoin.js");
+      if (
+        !existsSync(isolatedQuoin) ||
+        sha256(readFileSync(isolatedQuoin)) !== runtimeRecord.executableDigest
+      ) {
+        throw new Error(
+          "verification state Quoin runtime does not match runtime record",
+        );
+      }
+      assertRepository(
+        "verification state Quoin runtime source",
+        isolatedQuoinCheckout,
+        lock.repositories.quoin,
+      );
+    }
+    if (stageRuns(plan, "runtime")) {
+      isolatedQuoinCheckout = join(scratch, "quoin-runtime-source");
+      run("git", [
+        "-C",
+        ROOT,
+        "worktree",
+        "add",
+        "--detach",
+        isolatedQuoinCheckout,
+        lock.repositories.quoin.revision,
+      ]);
+      run("corepack", ["pnpm", "install", "--frozen-lockfile"], {
+        cwd: isolatedQuoinCheckout,
+        env,
+        timeout: lock.timeouts.installMilliseconds,
+        stdio: "inherit",
+      });
+      run("corepack", ["pnpm", "run", "build"], {
+        cwd: isolatedQuoinCheckout,
+        env,
+        timeout: lock.timeouts.quoinMilliseconds,
+        stdio: "inherit",
+      });
+      const quoinRuntime = join(scratch, "quoin-runtime");
+      run(
+        "corepack",
+        [
+          "pnpm",
+          "--filter",
+          "@agent-ix/quoin",
+          "deploy",
+          "--prod",
+          "--legacy",
+          "--frozen-lockfile",
+          quoinRuntime,
+        ],
+        {
+          cwd: isolatedQuoinCheckout,
+          env,
+          timeout: lock.timeouts.installMilliseconds,
+          stdio: "inherit",
+        },
+      );
+      isolatedQuoin = join(quoinRuntime, "bin", "quoin.js");
+      const sourceVersion = run(process.execPath, [
+        join(ROOT, "bin", "quoin.js"),
+        "--version",
+      ]).trim();
+      const isolatedVersion = run(process.execPath, [
+        isolatedQuoin,
+        "--version",
+      ]).trim();
+      if (isolatedVersion !== sourceVersion) {
+        throw new Error(
+          `isolated Quoin ${isolatedVersion} does not equal built source ${sourceVersion}`,
+        );
+      }
+      if (plan) {
+        writeStateRecord(scratch, "runtime", {
+          lockDigest: currentLockDigest,
+          executableDigest: sha256(readFileSync(isolatedQuoin)),
+        });
+      }
+    }
+    if (stageEnds(plan, "runtime")) return;
+    let spanResultPath = join(scratch, "span-breadth.json");
+    if (stageRuns(plan, "span")) {
+      if (update) {
+        console.error("verification-stack: refresh reviewed span evidence");
+        run(
+          process.execPath,
+          [join(isolatedQuoinCheckout, "scripts", "freeze-span-breadth.mjs")],
+          {
+            cwd: isolatedQuoinCheckout,
+            env: {
+              ...env,
+              QUIRE: binary,
+              QUIRE_ROOT: roots.quire,
+              FILAMENT_IDE_RS_ROOT: roots["filament-ide-rs"],
+              QUOIN_LABEL_REVISION: lock.repositories.quoin.revision,
+            },
+            stdio: "inherit",
+          },
+        );
+        copyFileSync(
+          join(isolatedQuoinCheckout, "bench", "span-breadth-v1-labels.json"),
+          join(ROOT, "bench", "span-breadth-v1-labels.json"),
+        );
+      }
+      console.error("verification-stack: broad span-grounding gate");
+      const spanResult = run(
+        process.execPath,
+        [
+          join(ROOT, "scripts", "verify-span-breadth.mjs"),
+          "--quire",
+          binary,
+          "--json",
+        ],
+        { cwd: ROOT, env, timeout: lock.timeouts.spanMilliseconds },
+      );
+      writeFileSync(spanResultPath, `${spanResult}\n`);
+      if (plan) {
+        writeStateRecord(scratch, "span", {
+          lockDigest: currentLockDigest,
+          digest: sha256(readFileSync(spanResultPath)),
+        });
+      }
+    } else if (plan && plan.start > STAGES.indexOf("span")) {
+      const spanRecord = readStateRecord(scratch, "span", currentLockDigest);
+      if (
+        !existsSync(spanResultPath) ||
+        sha256(readFileSync(spanResultPath)) !== spanRecord.digest
+      ) {
+        throw new Error(
+          "verification state span result does not match span record",
+        );
+      }
+    }
+    if (stageEnds(plan, "span")) return;
+    if (stageRuns(plan, "qa")) {
+      console.error(
+        "verification-stack: build the historical QA external producer cohort",
+      );
+      externalQuoin = buildExternalQuoin(lock, scratch);
+      const qaEnv = {
+        ...env,
+        PATH: `${dirname(binary)}:${process.env.PATH ?? ""}`,
+      };
+      console.error("verification-stack: qa-corpus canonical CI");
+      run(
+        "make",
+        ["ci", `QUIRE=${binary}`, `QUOIN=${externalQuoin.executable}`],
+        {
+          cwd: roots["qa-corpus"],
+          env: qaEnv,
+          timeout: lock.timeouts.corpusMilliseconds,
+          stdio: "inherit",
+        },
+      );
+      const qaCounts = assertQaCorpusCounts(lock, roots["qa-corpus"]);
+      console.error(
+        `verification-stack: locked QA inventory ` +
+          `${qaCounts.executableCases} executable + ` +
+          `${qaCounts.reportingCases} reporting = ${qaCounts.totalCases}`,
+      );
+      if (plan)
+        writeStateRecord(scratch, "qa", { lockDigest: currentLockDigest });
+    }
+    if (stageEnds(plan, "qa")) return;
+    if (stageRuns(plan, "guidance")) {
+      if (update) {
+        const guidanceCandidate = join(scratch, "guidance-candidate.json");
+        console.error("verification-stack: refresh reviewed guidance evidence");
+        run(
+          process.execPath,
+          [
+            join(ROOT, "scripts", "bench-tier1.mjs"),
+            "--experimental",
+            "--quire",
+            binary,
+            "--quoin",
+            isolatedQuoin,
+            "--guidance-candidate-out",
+            guidanceCandidate,
+            "--guidance-candidate-only",
+          ],
+          {
+            cwd: ROOT,
+            env,
+            timeout: lock.timeouts.tier1Milliseconds,
+            stdio: "inherit",
+          },
+        );
+        run(
+          process.execPath,
+          [
+            join(ROOT, "scripts", "freeze-guidance-review.mjs"),
+            "--candidate",
+            guidanceCandidate,
+          ],
+          { cwd: ROOT, env, stdio: "inherit" },
+        );
+      }
+      if (plan)
+        writeStateRecord(scratch, "guidance", {
+          lockDigest: currentLockDigest,
+        });
+    }
+    if (stageEnds(plan, "guidance")) return;
+
+    if (plan && update && plan.start > STAGES.indexOf("guidance")) {
+      readStateRecord(scratch, "guidance", currentLockDigest);
+    }
+    if (stageRuns(plan, "tier1")) {
+      console.error("verification-stack: Quoin Tier-1 canonical gate");
+      const benchmarkArgs = [
+        join(ROOT, "scripts", "bench-tier1.mjs"),
+        "--quire",
+        binary,
+        "--quoin",
+        isolatedQuoin,
+        "--attestation",
+        attestationPath,
+        "--span-breadth",
+        spanResultPath,
+      ];
+      if (update) {
+        benchmarkArgs.push(
+          "--update",
+          "--recall-baseline-out",
+          join(scratch, "qa-recall-baseline.json"),
+        );
+      }
+      run(process.execPath, benchmarkArgs, {
+        cwd: ROOT,
+        env,
+        timeout: lock.timeouts.tier1Milliseconds,
+        stdio: "inherit",
+      });
+      if (plan)
+        writeStateRecord(scratch, "tier1", { lockDigest: currentLockDigest });
+    }
+    if (stageEnds(plan, "tier1")) return;
+    if (stageRuns(plan, "tier2")) {
+      console.error("verification-stack: Tier-2 immutable cohort gate");
+      const tier2Args = [
+        join(ROOT, "scripts", "battletest.mjs"),
+        "--quire",
+        binary,
+        "--corpus",
+        roots["filament-ide-rs"],
+        "--declaration-repo",
+        `agent-ix/spec-artifacts-process=${roots["spec-artifacts-process"]}`,
+        "--declaration-repo",
+        `agent-ix/spec-artifacts-iso=${roots["spec-artifacts-iso"]}`,
+      ];
+      if (update) tier2Args.push("--update");
+      run(process.execPath, tier2Args, {
+        cwd: ROOT,
+        env,
+        timeout: lock.timeouts.tier2Milliseconds,
+        stdio: "inherit",
+      });
+      if (plan)
+        writeStateRecord(scratch, "tier2", { lockDigest: currentLockDigest });
+    }
+    if (stageEnds(plan, "tier2")) return;
+    if (stageRuns(plan, "final-audit") && update) {
+      if (plan) {
+        for (const name of ["tier1", "tier2"]) {
+          readStateRecord(scratch, name, currentLockDigest);
+        }
+      }
+      console.error("verification-stack: refreshed evidence provenance audit");
       run("corepack", ["pnpm", "run", "audit:tool-drift"], {
         cwd: ROOT,
         env,
         stdio: "inherit",
       });
     }
-    run("corepack", ["pnpm", "run", "test:tool-drift"], {
-      cwd: ROOT,
-      env,
-      stdio: "inherit",
-    });
-    run("corepack", ["pnpm", "run", "test:verification-stack"], {
-      cwd: ROOT,
-      env,
-      stdio: "inherit",
-    });
-    const lintOutput = run("corepack", ["pnpm", "run", "lint"], {
-      cwd: ROOT,
-      env,
-      timeout: lock.timeouts.quoinMilliseconds,
-    });
-    process.stdout.write(lintOutput);
-    const testEnv = { ...env };
-    // Do not let an inherited explicit-set override change either replay mode.
-    delete testEnv.QUOIN_VERIFICATION_DECLARATIONS;
-    if (declarationRoots)
-      testEnv.QUOIN_VERIFICATION_DECLARATIONS = declarationManifest;
-    // The suite deliberately substitutes fake `quire` executables through
-    // PATH to grade subprocess failures. The Make target prepends the exact,
-    // already-hashed binary as the default; individual fixtures may still
-    // override it without inheriting a digest that belongs to another file.
-    delete testEnv.QUOIN_QUIRE;
-    delete testEnv.QUOIN_EXPECTED_QUIRE_SHA256;
-    run("make", ["test-with-quire", `QUIRE=${binary}`], {
-      cwd: ROOT,
-      env: testEnv,
-      timeout: lock.timeouts.quoinMilliseconds,
-      stdio: "inherit",
-    });
-    isolatedQuoinCheckout = join(scratch, "quoin-runtime-source");
-    run("git", [
-      "-C",
-      ROOT,
-      "worktree",
-      "add",
-      "--detach",
-      isolatedQuoinCheckout,
-      lock.repositories.quoin.revision,
-    ]);
-    run("corepack", ["pnpm", "install", "--frozen-lockfile"], {
-      cwd: isolatedQuoinCheckout,
-      env,
-      timeout: lock.timeouts.installMilliseconds,
-      stdio: "inherit",
-    });
-    run("corepack", ["pnpm", "run", "build"], {
-      cwd: isolatedQuoinCheckout,
-      env,
-      timeout: lock.timeouts.quoinMilliseconds,
-      stdio: "inherit",
-    });
-    const quoinRuntime = join(scratch, "quoin-runtime");
-    run(
-      "corepack",
-      [
-        "pnpm",
-        "--filter",
-        "@agent-ix/quoin",
-        "deploy",
-        "--prod",
-        "--legacy",
-        "--frozen-lockfile",
-        quoinRuntime,
-      ],
-      {
-        cwd: isolatedQuoinCheckout,
-        env,
-        timeout: lock.timeouts.installMilliseconds,
-        stdio: "inherit",
-      },
-    );
-    const isolatedQuoin = join(quoinRuntime, "bin", "quoin.js");
-    const sourceVersion = run(process.execPath, [
-      join(ROOT, "bin", "quoin.js"),
-      "--version",
-    ]).trim();
-    const isolatedVersion = run(process.execPath, [
-      isolatedQuoin,
-      "--version",
-    ]).trim();
-    if (isolatedVersion !== sourceVersion) {
-      throw new Error(
-        `isolated Quoin ${isolatedVersion} does not equal built source ${sourceVersion}`,
-      );
-    }
-    if (update) {
-      console.error("verification-stack: refresh reviewed span evidence");
-      run(
-        process.execPath,
-        [join(isolatedQuoinCheckout, "scripts", "freeze-span-breadth.mjs")],
-        {
-          cwd: isolatedQuoinCheckout,
-          env: {
-            ...env,
-            QUIRE: binary,
-            QUIRE_ROOT: roots.quire,
-            FILAMENT_IDE_RS_ROOT: roots["filament-ide-rs"],
-            QUOIN_LABEL_REVISION: lock.repositories.quoin.revision,
-          },
-          stdio: "inherit",
-        },
-      );
-      copyFileSync(
-        join(isolatedQuoinCheckout, "bench", "span-breadth-v1-labels.json"),
-        join(ROOT, "bench", "span-breadth-v1-labels.json"),
-      );
-    }
-    console.error("verification-stack: broad span-grounding gate");
-    const spanResult = run(
-      process.execPath,
-      [
-        join(ROOT, "scripts", "verify-span-breadth.mjs"),
-        "--quire",
-        binary,
-        "--json",
-      ],
-      { cwd: ROOT, env, timeout: lock.timeouts.spanMilliseconds },
-    );
-    const spanResultPath = join(scratch, "span-breadth.json");
-    writeFileSync(spanResultPath, `${spanResult}\n`);
-    console.error(
-      "verification-stack: build the historical QA external producer cohort",
-    );
-    externalQuoin = buildExternalQuoin(lock, scratch);
-    const qaEnv = {
-      ...env,
-      PATH: `${dirname(binary)}:${process.env.PATH ?? ""}`,
-    };
-    console.error("verification-stack: qa-corpus canonical CI");
-    run(
-      "make",
-      ["ci", `QUIRE=${binary}`, `QUOIN=${externalQuoin.executable}`],
-      {
-        cwd: roots["qa-corpus"],
-        env: qaEnv,
-        timeout: lock.timeouts.corpusMilliseconds,
-        stdio: "inherit",
-      },
-    );
-    const qaCounts = assertQaCorpusCounts(lock, roots["qa-corpus"]);
-    console.error(
-      `verification-stack: locked QA inventory ` +
-        `${qaCounts.executableCases} executable + ` +
-        `${qaCounts.reportingCases} reporting = ${qaCounts.totalCases}`,
-    );
-    console.error("verification-stack: Quoin Tier-1 canonical gate");
-    const benchmarkArgs = [
-      join(ROOT, "scripts", "bench-tier1.mjs"),
-      "--quire",
-      binary,
-      "--quoin",
-      isolatedQuoin,
-      "--attestation",
-      attestationPath,
-      "--span-breadth",
-      spanResultPath,
-    ];
-    if (update) {
-      const guidanceCandidate = join(scratch, "guidance-candidate.json");
-      console.error("verification-stack: refresh reviewed guidance evidence");
-      run(
-        process.execPath,
-        [
-          join(ROOT, "scripts", "bench-tier1.mjs"),
-          "--experimental",
-          "--quire",
-          binary,
-          "--quoin",
-          isolatedQuoin,
-          "--guidance-candidate-out",
-          guidanceCandidate,
-          "--guidance-candidate-only",
-        ],
-        {
-          cwd: ROOT,
-          env,
-          timeout: lock.timeouts.tier1Milliseconds,
-          stdio: "inherit",
-        },
-      );
-      run(
-        process.execPath,
-        [
-          join(ROOT, "scripts", "freeze-guidance-review.mjs"),
-          "--candidate",
-          guidanceCandidate,
-        ],
-        {
-          cwd: ROOT,
-          env,
-          stdio: "inherit",
-        },
-      );
-      benchmarkArgs.push(
-        "--update",
-        "--recall-baseline-out",
-        join(scratch, "qa-recall-baseline.json"),
-      );
-    }
-    run(process.execPath, benchmarkArgs, {
-      cwd: ROOT,
-      env,
-      timeout: lock.timeouts.tier1Milliseconds,
-      stdio: "inherit",
-    });
-    console.error("verification-stack: Tier-2 immutable cohort gate");
-    const tier2Args = [
-      join(ROOT, "scripts", "battletest.mjs"),
-      "--quire",
-      binary,
-      "--corpus",
-      roots["filament-ide-rs"],
-      "--declaration-repo",
-      `agent-ix/spec-artifacts-process=${roots["spec-artifacts-process"]}`,
-      "--declaration-repo",
-      `agent-ix/spec-artifacts-iso=${roots["spec-artifacts-iso"]}`,
-    ];
-    if (update) tier2Args.push("--update");
-    run(process.execPath, tier2Args, {
-      cwd: ROOT,
-      env,
-      timeout: lock.timeouts.tier2Milliseconds,
-      stdio: "inherit",
-    });
-    if (update) {
-      console.error("verification-stack: refreshed evidence provenance audit");
-      run("corepack", ["pnpm", "run", "audit:tool-drift"], {
-        cwd: ROOT,
-        env,
-        stdio: "inherit",
+    if (plan && stageRuns(plan, "final-audit")) {
+      writeStateRecord(scratch, "final-audit", {
+        lockDigest: currentLockDigest,
       });
     }
     const output = valueOf("--evidence-out");
@@ -1042,7 +1287,7 @@ async function main() {
         `${JSON.stringify(attestation, null, 2)}\n`,
       );
   } finally {
-    if (isolatedQuoinCheckout && existsSync(isolatedQuoinCheckout)) {
+    if (!plan && isolatedQuoinCheckout && existsSync(isolatedQuoinCheckout)) {
       try {
         run("git", [
           "-C",
@@ -1072,7 +1317,8 @@ async function main() {
         // can discard metadata if the process was interrupted mid-cleanup.
       }
     }
-    rmSync(scratch, { recursive: true, force: true });
+    if (plan) rmSync(transient, { recursive: true, force: true });
+    else rmSync(scratch, { recursive: true, force: true });
   }
 }
 

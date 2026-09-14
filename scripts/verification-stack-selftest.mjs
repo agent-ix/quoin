@@ -3,6 +3,7 @@
 import { spawnSync } from "node:child_process";
 import {
   copyFileSync,
+  existsSync,
   mkdirSync,
   mkdtempSync,
   rmSync,
@@ -255,6 +256,32 @@ try {
     throw new Error(
       "clean bootstrap did not reach source checks before loading development dependencies",
     );
+  passed += 1;
+
+  const invalidStage = spawnSync(
+    process.execPath,
+    [
+      join(bootstrap, "scripts/verification-stack.mjs"),
+      "--state-dir",
+      join(bootstrap, "state"),
+      "--start-at",
+      "not-a-stage",
+      "--stop-after",
+      "not-a-stage",
+    ],
+    { encoding: "utf8" },
+  );
+  if (
+    invalidStage.status === 0 ||
+    !invalidStage.stderr.includes(
+      "staged verification requires ordered stages",
+    ) ||
+    existsSync(join(bootstrap, "state"))
+  ) {
+    throw new Error(
+      "invalid staged campaign was not refused before state creation",
+    );
+  }
   passed += 1;
 } finally {
   rmSync(bootstrap, { recursive: true, force: true });

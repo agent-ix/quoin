@@ -57,6 +57,27 @@ isolated `IX_HOME` and no module discovery environment. It does not call
 validation without this explicit manifest retains its existing default installer
 behavior. The manifest is internal invocation data, not accepted evidence.
 
+## Resuming a constrained campaign
+
+The ordinary `make test` and `make bench-tier1-update` invocation remains the
+canonical one-shot gate. On a host that enforces a command lifetime shorter than
+the governed campaign, use a fresh private state directory and run consecutive
+stages through the same verifier. A later stage revalidates every locked source,
+toolchain, artifact digest, Quire provenance and the hash-bound prerequisite
+records before it can use a retained executable or runtime.
+
+```sh
+export VERIFICATION_STACK_ARGS='--state-dir /tmp/quoin-verification-state --start-at audit-pre --stop-after audit-pre'
+make bench-tier1-update
+```
+
+Then advance `--start-at` and `--stop-after` one stage at a time, in this exact
+order: `audit-pre`, `tool-drift`, `stack-selftest`, `lint`, `test`, `runtime`,
+`span`, `qa`, `guidance`, `tier1`, `tier2`, `final-audit`. `audit-pre` records
+the intentional deferral in update mode; `final-audit` performs it only after
+the refreshed Tier-1 and Tier-2 records are present. State is not evidence and
+is never committed. Remove its exact directory after a successful campaign.
+
 This slice changes Quoin's own static validation only. Tier-1 case declarations,
 Tier-2 historical declaration sets and external producer feature support are
 unchanged; their explicit repeated-module join is a separate reviewed slice.

@@ -4,6 +4,7 @@
 # pnpm can have the same-looking version while resolving through a different
 # installation/state path; Corepack selects the declared distribution.
 PNPM := corepack pnpm
+VERIFICATION_STACK_ARGS ?=
 # quoin Makefile
 # =============================================================================
 # This Makefile provides backwards compatibility by delegating to pnpm scripts.
@@ -26,7 +27,7 @@ build:
 # inner target below.
 .PHONY: test
 test:
-	node scripts/verification-stack.mjs
+	node scripts/verification-stack.mjs $(VERIFICATION_STACK_ARGS)
 
 .PHONY: require-quire
 require-quire:
@@ -129,11 +130,11 @@ battletest-update: require-quire
 MODULES ?=
 .PHONY: bench-tier1
 bench-tier1:
-	node scripts/verification-stack.mjs
+	node scripts/verification-stack.mjs $(VERIFICATION_STACK_ARGS)
 
 .PHONY: bench-tier1-update
 bench-tier1-update:
-	node scripts/verification-stack.mjs --update
+	node scripts/verification-stack.mjs --update $(VERIFICATION_STACK_ARGS)
 
 .PHONY: bench-tier1-experimental
 bench-tier1-experimental: require-quire
