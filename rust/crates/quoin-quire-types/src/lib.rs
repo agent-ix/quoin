@@ -86,4 +86,60 @@ pub struct Obligation {
     /// here rather than making quoin re-parse the table (agent-ix/quoin#144).
     #[serde(default)]
     pub target_ids: Option<Vec<String>>,
+    /// The authored `Verification` cell, verbatim.
+    ///
+    /// # Why the three below are `Option` when the header says fields quoin reads are required
+    ///
+    /// The rule in the module header is about **drift**: a field quoin reads
+    /// unconditionally must fail loudly if quire renames it, rather than read
+    /// as an empty string. These three are not read unconditionally — quire
+    /// emits them as `method?: string | null`, `parameters?` and
+    /// `criticality?: string | null`, and every reader here branches on the
+    /// absence first. `unknownMethodFinding` returns `null` without a method;
+    /// `multiplicityFinding` and `mutationFinding` return `null` without a
+    /// criticality. An absence is an answer, so it must be representable.
+    ///
+    /// `null` and the missing key both read as [`None`], which is what the
+    /// retained `!obligation.method` guard does with either.
+    #[serde(default)]
+    pub method: Option<String>,
+    /// The obligation's declared criticality, verbatim (`P0`, `high`, …).
+    ///
+    /// Carried, never interpreted. CR-008 deleted a hardcoded `["P0"]`
+    /// precisely so the engine does not decide which values count as high.
+    #[serde(default)]
+    pub criticality: Option<String>,
+    /// The obligation's structured parameters, as quire emits them —
+    /// `{"target": "< 4 min", "threshold": "< 5 min"}` on an NFR row.
+    ///
+    /// A `BTreeMap` and not a `Value`: the advisor asks whether the keys
+    /// `target` or `threshold` are present, which an opaque value would put a
+    /// cast in front of at the one read site.
+    #[serde(default)]
+    pub parameters: Option<std::collections::BTreeMap<String, String>>,
+}
+
+/// One coverage diagnostic, restricted to the two fields the advisor joins on.
+///
+/// # Two fields of seven
+///
+/// quire emits `declaration`, `reason`, `message`, `path`, `line`, `value` and
+/// a subject field. The advisor reads `reason` — to select
+/// `uncatalogued-verification-method` — and `value`, which quire-rs CR-091
+/// guarantees is byte-equal to the [`Obligation::method`] it is about. It
+/// renders none of the rest, so none of the rest is declared.
+///
+/// [`CoverageDiagnostic::value`] is the one `Option` that carries meaning by
+/// being absent: an engine predating CR-091 emits the reason with no value,
+/// and the advisor must degrade to two-state behaviour rather than misread
+/// silence as "every authored method is catalogued".
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+pub struct CoverageDiagnostic {
+    /// The open machine vocabulary quire classifies the diagnostic under
+    /// (quire-rs FR-055 leaves it open, so this is a `String`).
+    pub reason: String,
+    /// The catalog or vocabulary value the diagnostic is about, verbatim.
+    #[serde(default)]
+    pub value: Option<String>,
 }

@@ -80,6 +80,7 @@ quoin-assurance = { path = "crates/quoin-assurance" }
 quoin-change-assurance = { path = "crates/quoin-change-assurance" }
 quoin-combinatorial = { path = "crates/quoin-combinatorial" }
 quoin-completeness = { path = "crates/quoin-completeness" }
+quoin-auditor = { path = "crates/quoin-auditor" }
 quoin-config = { path = "crates/quoin-config" }
 quoin-core = { path = "crates/quoin-core" }
 quoin-evidence = { path = "crates/quoin-evidence" }

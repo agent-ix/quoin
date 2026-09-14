@@ -1,0 +1,56 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 Agent-IX
+[package]
+name = "quoin-auditor"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+description = "The evidence auditor and the verification-method advisor (FR-032, FR-031)."
+publish.workspace = true
+
+[lib]
+name = "quoin_auditor"
+path = "src/lib.rs"
+
+[lints]
+workspace = true
+
+[dependencies]
+# The t-way algebra, extracted first (quoin#382). Also the home of the
+# ECMAScript primitives both halves of this crate need: `js::compare` is the
+# locale-independent order `src/auditor/audit.ts:578` and
+# `src/advisor/advise.ts:682` each declare a copy of, and
+# `js::JS_WHITESPACE_CLASS` is what `\s` means to a JavaScript RegExp.
+quoin-combinatorial = { workspace = true }
+# `Binding`, `RunRecord`, `MockInjection`, `IndependenceAssessment`,
+# `IndependencePolicy`, `FindingRecord` and `MUTATION_SCORE_METRIC`.
+quoin-evidence = { workspace = true }
+# `Finding`, `Severity`, `UnevaluatedCheck`, `AuditReport` — one home for the
+# report vocabulary, shared with the assurance view that reads it.
+quoin-finding-types = { workspace = true }
+# `Obligation` and `CoverageDiagnostic`, as quire emits them.
+quoin-quire-types = { workspace = true }
+# `json::order::cmp_utf16` and `json::number::format_number`. Nothing in this
+# crate formats a number or orders a string any other way.
+quoin-store = { workspace = true }
+# The one YAML reader on the quoin boundary (quoin#378). A module manifest is
+# read through this or not at all.
+quoin-yaml = { workspace = true }
+regex = "=1.13.1"
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+# `json_bridge` is the one `serde_json::Value` <-> `quoin_store::JsonValue`
+# crossing in the workspace, and the parity test compares canonical bytes.
+quoin-measurement = { workspace = true }
+# The ratchet's one-way property and the advisor's compound guard are
+# statements about ALL inputs, which no fixture of any size makes.
+proptest = { workspace = true }
+# Pinned to match `quoin-completeness`: `multiple-versions = "deny"` forbids
+# two majors, and this workspace already carries =3.27.0.
+tempfile = "=3.27.0"

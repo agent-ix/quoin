@@ -2971,6 +2971,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "quoin-auditor"
+version = "0.1.0"
+dependencies = [
+ "proptest",
+ "quoin-combinatorial",
+ "quoin-evidence",
+ "quoin-finding-types",
+ "quoin-measurement",
+ "quoin-quire-types",
+ "quoin-store",
+ "quoin-yaml",
+ "regex",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "thiserror",
+]
+
+[[package]]
 name = "quoin-change-assurance"
 version = "0.1.0"
 dependencies = [
@@ -3074,6 +3093,7 @@ dependencies = [
 name = "quoin-finding-types"
 version = "0.1.0"
 dependencies = [
+ "quoin-evidence",
  "serde",
  "serde_json",
 ]

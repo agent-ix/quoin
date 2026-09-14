@@ -1,0 +1,3045 @@
+{
+  "mockSubjectFloor": 0.5,
+  "mintableCharacteristics": [
+    "agent-behaviour",
+    "complexity",
+    "concurrent",
+    "configuration-matrix",
+    "consistency",
+    "cross-component",
+    "degradation",
+    "deserializer",
+    "distributed",
+    "fault-detection-failed",
+    "fault-detection-unmeasured",
+    "fault-tolerance",
+    "feature-flags",
+    "high-criticality",
+    "injection-risk",
+    "input-validation",
+    "invariance",
+    "io-boundary",
+    "latency",
+    "layering",
+    "licence",
+    "liveness",
+    "magic-value-comparison",
+    "maintainability",
+    "memory-safety",
+    "module-boundary",
+    "network-exposed",
+    "no-executable-oracle",
+    "non-deterministic-subject",
+    "parser",
+    "precondition-bearing",
+    "protocol",
+    "published-interface",
+    "quantified-threshold",
+    "reference-equivalence",
+    "reliability",
+    "requirement-set",
+    "safety",
+    "secret-dependent-branch",
+    "security",
+    "serialization",
+    "single-component",
+    "stable-output",
+    "stakeholder-acceptance",
+    "stakeholder-facing",
+    "state-machine",
+    "structured-input",
+    "supply-chain",
+    "temporal",
+    "third-party-dependency",
+    "throughput",
+    "undefined-behaviour",
+    "universally-quantified",
+    "untrusted-input",
+    "user-visible",
+    "workflow"
+  ],
+  "catalogCases": [
+    {
+      "name": "one-module-is-read-and-coerced",
+      "modules": {
+        "mod-core": "name: core\nverification_catalog:\n  unit-testing:\n    name: Unit testing\n    class: Test\n    definition: Exercise the unit.\n    evidence_kind: unit\n    applicability:\n      characteristics: [state-transition]\n      broken_rule: not-a-list\n    tooling: [jest, 1]\n"
+      },
+      "roots": [
+        "mod-core"
+      ],
+      "catalog": {
+        "methods": [
+          {
+            "id": "unit-testing",
+            "name": "Unit testing",
+            "class": "Test",
+            "definition": "Exercise the unit.",
+            "evidenceKind": "unit",
+            "applicability": {
+              "characteristics": [
+                "state-transition"
+              ]
+            },
+            "tooling": [
+              "jest",
+              "1"
+            ],
+            "moduleName": "core"
+          }
+        ],
+        "duplicates": [],
+        "unreadable": []
+      },
+      "classes": [
+        "Test"
+      ]
+    },
+    {
+      "name": "first-module-wins-and-the-collision-is-reported",
+      "modules": {
+        "mod-core": "name: core\nverification_catalog:\n  unit-testing:\n    name: Unit testing\n    class: Test\n    definition: Exercise the unit.\n    evidence_kind: unit\n    applicability:\n      characteristics: [state-transition]\n      broken_rule: not-a-list\n    tooling: [jest, 1]\n",
+        "mod-extra": "name: extra\nverification_catalog:\n  unit-testing:\n    name: Unit testing, again\n    class: Analysis\n    definition: A collision.\n  inspection:\n    name: Inspection\n    class: Inspection\n    definition: Read it.\n"
+      },
+      "roots": [
+        "mod-core",
+        "mod-extra"
+      ],
+      "catalog": {
+        "methods": [
+          {
+            "id": "inspection",
+            "name": "Inspection",
+            "class": "Inspection",
+            "definition": "Read it.",
+            "applicability": {},
+            "tooling": [],
+            "moduleName": "extra"
+          },
+          {
+            "id": "unit-testing",
+            "name": "Unit testing",
+            "class": "Test",
+            "definition": "Exercise the unit.",
+            "evidenceKind": "unit",
+            "applicability": {
+              "characteristics": [
+                "state-transition"
+              ]
+            },
+            "tooling": [
+              "jest",
+              "1"
+            ],
+            "moduleName": "core"
+          }
+        ],
+        "duplicates": [
+          {
+            "id": "unit-testing",
+            "modules": [
+              "core",
+              "extra"
+            ]
+          }
+        ],
+        "unreadable": []
+      },
+      "classes": [
+        "Inspection",
+        "Test"
+      ]
+    },
+    {
+      "name": "root-order-decides-the-winner",
+      "modules": {
+        "mod-core": "name: core\nverification_catalog:\n  unit-testing:\n    name: Unit testing\n    class: Test\n    definition: Exercise the unit.\n    evidence_kind: unit\n    applicability:\n      characteristics: [state-transition]\n      broken_rule: not-a-list\n    tooling: [jest, 1]\n",
+        "mod-extra": "name: extra\nverification_catalog:\n  unit-testing:\n    name: Unit testing, again\n    class: Analysis\n    definition: A collision.\n  inspection:\n    name: Inspection\n    class: Inspection\n    definition: Read it.\n"
+      },
+      "roots": [
+        "mod-extra",
+        "mod-core"
+      ],
+      "catalog": {
+        "methods": [
+          {
+            "id": "inspection",
+            "name": "Inspection",
+            "class": "Inspection",
+            "definition": "Read it.",
+            "applicability": {},
+            "tooling": [],
+            "moduleName": "extra"
+          },
+          {
+            "id": "unit-testing",
+            "name": "Unit testing, again",
+            "class": "Analysis",
+            "definition": "A collision.",
+            "applicability": {},
+            "tooling": [],
+            "moduleName": "extra"
+          }
+        ],
+        "duplicates": [
+          {
+            "id": "unit-testing",
+            "modules": [
+              "extra",
+              "core"
+            ]
+          }
+        ],
+        "unreadable": []
+      },
+      "classes": [
+        "Analysis",
+        "Inspection"
+      ]
+    },
+    {
+      "name": "a-repeated-root-is-read-once",
+      "modules": {
+        "mod-core": "name: core\nverification_catalog:\n  unit-testing:\n    name: Unit testing\n    class: Test\n    definition: Exercise the unit.\n    evidence_kind: unit\n    applicability:\n      characteristics: [state-transition]\n      broken_rule: not-a-list\n    tooling: [jest, 1]\n"
+      },
+      "roots": [
+        "mod-core",
+        "mod-core"
+      ],
+      "catalog": {
+        "methods": [
+          {
+            "id": "unit-testing",
+            "name": "Unit testing",
+            "class": "Test",
+            "definition": "Exercise the unit.",
+            "evidenceKind": "unit",
+            "applicability": {
+              "characteristics": [
+                "state-transition"
+              ]
+            },
+            "tooling": [
+              "jest",
+              "1"
+            ],
+            "moduleName": "core"
+          }
+        ],
+        "duplicates": [],
+        "unreadable": []
+      },
+      "classes": [
+        "Test"
+      ]
+    },
+    {
+      "name": "every-field-is-string-coerced-the-way-javascript-does",
+      "modules": {
+        "mod-odd": "name: 1.0\nverification_catalog:\n  odd:\n    name: true\n    class: 2\n    definition:\n    evidence_kind: 7\n    tooling: [1, 2]\n"
+      },
+      "roots": [
+        "mod-odd"
+      ],
+      "catalog": {
+        "methods": [
+          {
+            "id": "odd",
+            "name": "true",
+            "class": "2",
+            "definition": "",
+            "applicability": {},
+            "tooling": [
+              "1",
+              "2"
+            ],
+            "moduleName": "1"
+          }
+        ],
+        "duplicates": [],
+        "unreadable": []
+      },
+      "classes": [
+        "2"
+      ]
+    },
+    {
+      "name": "a-manifest-without-a-catalog-contributes-nothing",
+      "modules": {
+        "mod-empty": "name: empty\n"
+      },
+      "roots": [
+        "mod-empty"
+      ],
+      "catalog": {
+        "methods": [],
+        "duplicates": [],
+        "unreadable": []
+      },
+      "classes": []
+    },
+    {
+      "name": "a-malformed-manifest-is-reported-not-thrown",
+      "modules": {
+        "mod-broken": "name: broken\nverification_catalog: [\n"
+      },
+      "roots": [
+        "mod-broken"
+      ],
+      "catalog": {
+        "methods": [],
+        "duplicates": [],
+        "unreadable": [
+          {
+            "moduleRoot": "/modules/mod-broken",
+            "reason": "Flow sequence in block collection must be sufficiently indented and end with a ] at line 3, column 1:\n\nverification_catalog: [\n\n^\n"
+          }
+        ]
+      },
+      "classes": []
+    },
+    {
+      "name": "a-root-that-does-not-exist-is-skipped",
+      "modules": {},
+      "roots": [
+        "mod-absent"
+      ],
+      "catalog": {
+        "methods": [],
+        "duplicates": [],
+        "unreadable": []
+      },
+      "classes": []
+    },
+    {
+      "name": "a-parent-directory-resolves-to-its-one-module-child",
+      "modules": {
+        "parent/mod-core": "name: core\nverification_catalog:\n  unit-testing:\n    name: Unit testing\n    class: Test\n    definition: Exercise the unit.\n    evidence_kind: unit\n    applicability:\n      characteristics: [state-transition]\n      broken_rule: not-a-list\n    tooling: [jest, 1]\n"
+      },
+      "roots": [
+        "parent"
+      ],
+      "catalog": {
+        "methods": [
+          {
+            "id": "unit-testing",
+            "name": "Unit testing",
+            "class": "Test",
+            "definition": "Exercise the unit.",
+            "evidenceKind": "unit",
+            "applicability": {
+              "characteristics": [
+                "state-transition"
+              ]
+            },
+            "tooling": [
+              "jest",
+              "1"
+            ],
+            "moduleName": "core"
+          }
+        ],
+        "duplicates": [],
+        "unreadable": []
+      },
+      "classes": [
+        "Test"
+      ]
+    }
+  ],
+  "auditCases": [
+    {
+      "name": "an-obligation-with-no-binding-is-undischarged",
+      "input": {
+        "obligations": [
+          {
+            "source": "spec/fr.md",
+            "document": "FR-001",
+            "id": "FR-001-AC-1",
+            "statement": "The system shall record the result.",
+            "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "bindings": [],
+        "runs": []
+      },
+      "report": {
+        "findings": [
+          {
+            "kind": "undischarged",
+            "obligation": "FR-001-AC-1",
+            "severity": "medium",
+            "summary": "no evidence is bound to FR-001-AC-1"
+          }
+        ],
+        "healthy": [],
+        "unevaluated": []
+      },
+      "threw": null
+    },
+    {
+      "name": "a-clean-obligation-is-healthy-and-silent",
+      "input": {
+        "obligations": [
+          {
+            "source": "spec/fr.md",
+            "document": "FR-001",
+            "id": "FR-001-AC-1",
+            "statement": "The system shall record the result.",
+            "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "bindings": [
+          {
+            "obligation": "FR-001-AC-1",
+            "suite": "unit",
+            "symbols": [
+              "test_records"
+            ],
+            "commit": "cccccccccccccccccccccccccccccccccccccccc",
+            "statementHashAtBinding": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "runs": [
+          {
+            "schemaVersion": 1,
+            "suite": "unit",
+            "commit": "cccccccccccccccccccccccccccccccccccccccc",
+            "timestamp": "2026-01-01T00:00:00Z",
+            "tool": "jest@30",
+            "entries": [
+              {
+                "symbol": "test_records",
+                "outcome": "pass"
+              }
+            ]
+          }
+        ]
+      },
+      "report": {
+        "findings": [],
+        "healthy": [],
+        "unevaluated": [
+          {
+            "check": "mocked-confirmation",
+            "obligation": "FR-001-AC-1",
+            "suites": [
+              "unit"
+            ],
+            "reason": "no current mock inspection exists for unit. Run quoin evidence inspect-mocks for each suite at HEAD."
+          }
+        ]
+      },
+      "threw": null
+    },
+    {
+      "name": "unknown-method-fires-before-the-binding-guard",
+      "input": {
+        "obligations": [
+          {
+            "source": "spec/fr.md",
+            "document": "FR-001",
+            "id": "FR-001-AC-1",
+            "statement": "The system shall record the result.",
+            "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "method": "Vibes"
+          }
+        ],
+        "bindings": [],
+        "runs": [],
+        "catalog": {
+          "methods": [
+            {
+              "id": "unit-testing",
+              "name": "Unit testing",
+              "class": "Test",
+              "definition": "Exercise the unit.",
+              "evidenceKind": "unit",
+              "applicability": {
+                "characteristics": [
+                  "state-machine"
+                ]
+              },
+              "tooling": [
+                "jest"
+              ],
+              "moduleName": "core"
+            },
+            {
+              "id": "inspection",
+              "name": "Inspection",
+              "class": "Inspection",
+              "definition": "Read it.",
+              "applicability": {
+                "archetypes": [
+                  "StR"
+                ]
+              },
+              "tooling": [],
+              "moduleName": "core"
+            },
+            {
+              "id": "mutation-testing",
+              "name": "Mutation testing",
+              "class": "Test",
+              "definition": "Kill the mutants.",
+              "evidenceKind": "mutation",
+              "applicability": {
+                "characteristics": [
+                  "high-criticality",
+                  "fault-detection-failed"
+                ]
+              },
+              "tooling": [
+                "cargo-mutants"
+              ],
+              "moduleName": "extra"
+            }
+          ],
+          "duplicates": [],
+          "unreadable": []
+        }
+      },
+      "report": {
+        "findings": [
+          {
+            "kind": "undischarged",
+            "obligation": "FR-001-AC-1",
+            "severity": "medium",
+            "summary": "no evidence is bound to FR-001-AC-1"
+          },
+          {
+            "kind": "unknown-method",
+            "obligation": "FR-001-AC-1",
+            "severity": "medium",
+            "summary": "FR-001-AC-1 declares `Vibes`, which is neither a catalog method id nor a catalog class. Nothing can say what discharging it means, so no conformance check can run against it."
+          }
+        ],
+        "healthy": [],
+        "unevaluated": []
+      },
+      "threw": null
+    },
+    {
+      "name": "a-catalogued-class-is-not-an-unknown-method",
+      "input": {
+        "obligations": [
+          {
+            "source": "spec/fr.md",
+            "document": "FR-001",
+            "id": "FR-001-AC-1",
+            "statement": "The system shall record the result.",
+            "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "method": "Inspection"
+          }
+        ],
+        "bindings": [
+          {
+            "obligation": "FR-001-AC-1",
+            "suite": "unit",
+            "symbols": [
+              "test_records"
+            ],
+            "commit": "cccccccccccccccccccccccccccccccccccccccc",
+            "statementHashAtBinding": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "runs": [
+          {
+            "schemaVersion": 1,
+            "suite": "unit",
+            "commit": "cccccccccccccccccccccccccccccccccccccccc",
+            "timestamp": "2026-01-01T00:00:00Z",
+            "tool": "jest@30",
+            "entries": [
+              {
+                "symbol": "test_records",
+                "outcome": "pass"
+              }
+            ]
+          }
+        ],
+        "catalog": {
+          "methods": [
+            {
+              "id": "unit-testing",
+              "name": "Unit testing",
+              "class": "Test",
+              "definition": "Exercise the unit.",
+              "evidenceKind": "unit",
+              "applicability": {
+                "characteristics": [
+                  "state-machine"
+                ]
+              },
+              "tooling": [
+                "jest"
+              ],
+              "moduleName": "core"
+            },
+            {
+              "id": "inspection",
+              "name": "Inspection",
+              "class": "Inspection",
+              "definition": "Read it.",
+              "applicability": {
+                "archetypes": [
+                  "StR"
+                ]
+              },
+              "tooling": [],
+              "moduleName": "core"
+            },
+            {
+              "id": "mutation-testing",
+              "name": "Mutation testing",
+              "class": "Test",
+              "definition": "Kill the mutants.",
+              "evidenceKind": "mutation",
+              "applicability": {
+                "characteristics": [
+                  "high-criticality",
+                  "fault-detection-failed"
+                ]
+              },
+              "tooling": [
+                "cargo-mutants"
+              ],
+              "moduleName": "extra"
+            }
+          ],
+          "duplicates": [],
+          "unreadable": []
+        }
+      },
+      "report": {
+        "findings": [],
+        "healthy": [],
+        "unevaluated": [
+          {
+            "check": "mocked-confirmation",
+            "obligation": "FR-001-AC-1",
+            "suites": [
+              "unit"
+            ],
+            "reason": "no current mock inspection exists for unit. Run quoin evidence inspect-mocks for each suite at HEAD."
+          }
+        ]
+      },
+      "threw": null
+    },
+    {
+      "name": "a-reworded-statement-makes-one-binding-suspect",
+      "input": {
+        "obligations": [
+          {
+            "source": "spec/fr.md",
+            "document": "FR-001",
+            "id": "FR-001-AC-1",
+            "statement": "The system shall record the result.",
+            "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "bindings": [
+          {
+            "obligation": "FR-001-AC-1",
+            "suite": "unit",
+            "symbols": [
+              "test_records"
+            ],
+            "commit": "cccccccccccccccccccccccccccccccccccccccc",
+            "statementHashAtBinding": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "obligation": "FR-001-AC-1",
+            "suite": "zebra",
+            "symbols": [
+              "test_records"
+            ],
+            "commit": "cccccccccccccccccccccccccccccccccccccccc",
+            "statementHashAtBinding": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "runs": [
+          {
+            "schemaVersion": 1,
+            "suite": "unit",
+            "commit": "cccccccccccccccccccccccccccccccccccccccc",
+            "timestamp": "2026-01-01T00:00:00Z",
+            "tool": "jest@30",
+            "entries": [
+              {
+                "symbol": "test_records",
+                "outcome": "pass"
+              }
+            ]
+          },
+          {
+            "schemaVersion": 1,
+            "suite": "zebra",
+            "commit": "cccccccccccccccccccccccccccccccccccccccc",
+            "timestamp": "2026-01-01T00:00:00Z",
+            "tool": "jest@30",
+            "entries": [
+              {
+                "symbol": "test_records",
+                "outcome": "pass"
+              }
+            ]
+          }
+        ]
+      },
+      "report": {
+        "findings": [
+          {
+            "kind": "suspect-link",
+            "obligation": "FR-001-AC-1",
+            "severity": "high",
+            "summary": "FR-001-AC-1 was reworded after its evidence was bound in unit (bound against bbbbbbbbbbbb…, now aaaaaaaaaaaa…). Re-affirm or re-verify."
+          }
+        ],
+        "healthy": [],
+        "unevaluated": []
+      },
+      "threw": null
+    },
+    {
+      "name": "a-binding-with-no-record-at-all-is-stale",
+      "input": {
+        "obligations": [
+          {
+            "source": "spec/fr.md",
+            "document": "FR-001",
+            "id": "FR-001-AC-1",
+            "statement": "The system shall record the result.",
+            "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "bindings": [
+          {
+            "obligation": "FR-001-AC-1",
+            "suite": "unit",
+            "symbols": [
+              "test_records"
+            ],
+            "commit": "cccccccccccccccccccccccccccccccccccccccc",
+            "statementHashAtBinding": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "runs": []
+      },
+      "report": {
+        "findings": [
+          {
+            "kind": "stale-evidence",
+            "obligation": "FR-001-AC-1",
+            "severity": "high",
+            "summary": "FR-001-AC-1 is bound to unit, which has no recorded run. The binding claims evidence that is not in the store."
+          }
+        ],
+        "healthy": [],
+        "unevaluated": []
+      },
+      "threw": null
+    },
+    {
+      "name": "a-scan-backed-binding-is-not-stale",
+      "input": {
+        "obligations": [
+          {
+            "source": "spec/fr.md",
+            "document": "FR-001",
+            "id": "FR-001-AC-1",
+            "statement": "The system shall record the result.",
+            "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "bindings": [
+          {
+            "obligation": "FR-001-AC-1",
+            "suite": "scan",
+            "symbols": [],
+            "commit": "cccccccccccccccccccccccccccccccccccccccc",
+            "statementHashAtBinding": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "runs": [],
+        "scans": [
+          {
+            "schemaVersion": 1,
+            "suite": "scan",
+            "commit": "cccccccccccccccccccccccccccccccccccccccc",
+            "timestamp": "2026-01-01T00:00:00Z",
+            "tool": "semgrep@1",
+            "findings": []
+          }
+        ],
+        "vacuousScanSuites": []
+      },
+      "report": {
+        "findings": [],
+        "healthy": [],
+        "unevaluated": []
+      },
+      "threw": null
+    },
+    {
+      "name": "a-scan-that-evaluated-no-rules-is-vacuous",
+      "input": {
+        "obligations": [
+          {
+            "source": "spec/fr.md",
+            "document": "FR-001",
+            "id": "FR-001-AC-1",
+            "statement": "The system shall record the result.",
+            "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "bindings": [
+          {
+            "obligation": "FR-001-AC-1",
+            "suite": "scan",
+            "symbols": [],
+            "commit": "cccccccccccccccccccccccccccccccccccccccc",
+            "statementHashAtBinding": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "runs": [],
+        "scans": [
+          {
+            "schemaVersion": 1,
+            "suite": "scan",
+            "commit": "cccccccccccccccccccccccccccccccccccccccc",
+            "timestamp": "2026-01-01T00:00:00Z",
+            "tool": "semgrep@1",
+            "findings": [],
+            "rulesEvaluated": 0
+          }
+        ],
+        "vacuousScanSuites": [
+          "scan"
+        ]
+      },
+      "report": {
+        "findings": [
+          {
+            "kind": "vacuous-evidence",
+            "obligation": "FR-001-AC-1",
+            "severity": "high",
+            "summary": "FR-001-AC-1 rests on a scan that evaluated no rules: scan (semgrep@1). It reported no finding because it looked for nothing."
+          }
+        ],
+        "healthy": [],
+        "unevaluated": []
+      },
+      "threw": null
+    },
+    {
+      "name": "an-uninspected-run-suite-is-unevaluated-not-healthy",
+      "input": {
+        "obligations": [
+          {
+            "source": "spec/fr.md",
+            "document": "FR-001",
+            "id": "FR-001-AC-1",
+            "statement": "The system shall record the result.",
+            "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "bindings": [
+          {
+            "obligation": "FR-001-AC-1",
+            "suite": "unit",
+            "symbols": [
+              "test_records"
+            ],
+            "commit": "cccccccccccccccccccccccccccccccccccccccc",
+            "statementHashAtBinding": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "runs": [
+          {
+            "schemaVersion": 1,
+            "suite": "unit",
+            "commit": "cccccccccccccccccccccccccccccccccccccccc",
+            "timestamp": "2026-01-01T00:00:00Z",
+            "tool": "jest@30",
+            "entries": [
+              {
+                "symbol": "test_records",
+                "outcome": "pass"
+              }
+            ]
+          }
+        ],
+        "injections": [],
+        "mockInspectionSuites": []
+      },
+      "report": {
+        "findings": [],
+        "healthy": [],
+        "unevaluated": [
+          {
+            "check": "mocked-confirmation",
+            "obligation": "FR-001-AC-1",
+            "suites": [
+              "unit"
+            ],
+            "reason": "no current mock inspection exists for unit. Run quoin evidence inspect-mocks for each suite at HEAD."
+          }
+        ]
+      },
+      "threw": null
+    },
+    {
+      "name": "every-binding-mocked-is-a-finding",
+      "input": {
+        "obligations": [
+          {
+            "source": "spec/fr.md",
+            "document": "FR-001",
+            "id": "FR-001-AC-1",
+            "statement": "The system shall record the result.",
+            "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "bindings": [
+          {
+            "obligation": "FR-001-AC-1",
+            "suite": "unit",
+            "symbols": [
+              "test_records"
+            ],
+            "commit": "cccccccccccccccccccccccccccccccccccccccc",
+            "statementHashAtBinding": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "runs": [
+          {
+            "schemaVersion": 1,
+            "suite": "unit",
+            "commit": "cccccccccccccccccccccccccccccccccccccccc",
+            "timestamp": "2026-01-01T00:00:00Z",
+            "tool": "jest@30",
+            "entries": [
+              {
+                "symbol": "test_records",
+                "outcome": "pass"
+              }
+            ]
+          }
+        ],
+        "injections": [
+          {
+            "suite": "unit",
+            "symbol": "test_records",
+            "injects": [
+              "record",
+              "result",
+              "system"
+            ]
+          }
+        ],
+        "mockInspectionSuites": [
+          "unit"
+        ]
+      },
+      "report": {
+        "findings": [
+          {
+            "kind": "mocked-confirmation",
+            "obligation": "FR-001-AC-1",
+            "severity": "medium",
+            "symbol": "test_records",
+            "subject": "FR-001-AC-1 evidence",
+            "changeTarget": "test_records",
+            "nextDiagnosticStep": "inspect whether the real behaviour for FR-001-AC-1 exists; add or bind an independent test that exercises it without substituting the behaviour under verification",
+            "summary": "FR-001-AC-1 is discharged only by tests that inject a stand-in for the behaviour it verifies: test_records injects record, result, system. A test that substitutes the behaviour under verification passes whether or not that behaviour exists."
+          }
+        ],
+        "healthy": [],
+        "unevaluated": []
+      },
+      "threw": null
+    },
+    {
+      "name": "one-real-suite-beside-a-mocked-one-is-ordinary-test-design",
+      "input": {
+        "obligations": [
+          {
+            "source": "spec/fr.md",
+            "document": "FR-001",
+            "id": "FR-001-AC-1",
+            "statement": "The system shall record the result.",
+            "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "bindings": [
+          {
+            "obligation": "FR-001-AC-1",
+            "suite": "unit",
+            "symbols": [
+              "test_records"
+            ],
+            "commit": "cccccccccccccccccccccccccccccccccccccccc",
+            "statementHashAtBinding": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "obligation": "FR-001-AC-1",
+            "suite": "integration",
+            "symbols": [
+              "it_records"
+            ],
+            "commit": "cccccccccccccccccccccccccccccccccccccccc",
+            "statementHashAtBinding": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "runs": [
+          {
+            "schemaVersion": 1,
+            "suite": "unit",
+            "commit": "cccccccccccccccccccccccccccccccccccccccc",
+            "timestamp": "2026-01-01T00:00:00Z",
+            "tool": "jest@30",
+            "entries": [
+              {
+                "symbol": "test_records",
+                "outcome": "pass"
+              }
+            ]
+          },
+          {
+            "schemaVersion": 1,
+            "suite": "integration",
+            "commit": "cccccccccccccccccccccccccccccccccccccccc",
+            "timestamp": "2026-01-01T00:00:00Z",
+            "tool": "jest@30",
+            "entries": [
+              {
+                "symbol": "it_records",
+                "outcome": "pass"
+              }
+            ]
+          }
+        ],
+        "injections": [
+          {
+            "suite": "unit",
+            "symbol": "test_records",
+            "injects": [
+              "record",
+              "result",
+              "system"
+            ]
+          }
+        ],
+        "mockInspectionSuites": [
+          "unit",
+          "integration"
+        ]
+      },
+      "report": {
+        "findings": [],
+        "healthy": [
+          "FR-001-AC-1"
+        ],
+        "unevaluated": []
+      },
+      "threw": null
+    },
+    {
+      "name": "every-bound-symbol-skipped-is-vacuous",
+      "input": {
+        "obligations": [
+          {
+            "source": "spec/fr.md",
+            "document": "FR-001",
+            "id": "FR-001-AC-1",
+            "statement": "The system shall record the result.",
+            "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "bindings": [
+          {
+            "obligation": "FR-001-AC-1",
+            "suite": "unit",
+            "symbols": [
+              "test_records"
+            ],
+            "commit": "cccccccccccccccccccccccccccccccccccccccc",
+            "statementHashAtBinding": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "runs": [
+          {
+            "schemaVersion": 1,
+            "suite": "unit",
+            "commit": "cccccccccccccccccccccccccccccccccccccccc",
+            "timestamp": "2026-01-01T00:00:00Z",
+            "tool": "jest@30",
+            "entries": [
+              {
+                "symbol": "test_records",
+                "outcome": "skip"
+              }
+            ]
+          }
+        ],
+        "mockInspectionSuites": [
+          "unit"
+        ]
+      },
+      "report": {
+        "findings": [
+          {
+            "kind": "vacuous-evidence",
+            "obligation": "FR-001-AC-1",
+            "severity": "high",
+            "summary": "every symbol bound to FR-001-AC-1 was skipped or absent from its run: unit:test_records. The row reads as covered and nothing was verified."
+          }
+        ],
+        "healthy": [],
+        "unevaluated": []
+      },
+      "threw": null
+    },
+    {
+      "name": "one-skipped-symbol-among-two-is-not-vacuous",
+      "input": {
+        "obligations": [
+          {
+            "source": "spec/fr.md",
+            "document": "FR-001",
+            "id": "FR-001-AC-1",
+            "statement": "The system shall record the result.",
+            "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "bindings": [
+          {
+            "obligation": "FR-001-AC-1",
+            "suite": "unit",
+            "symbols": [
+              "test_records",
+              "test_other"
+            ],
+            "commit": "cccccccccccccccccccccccccccccccccccccccc",
+            "statementHashAtBinding": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "runs": [
+          {
+            "schemaVersion": 1,
+            "suite": "unit",
+            "commit": "cccccccccccccccccccccccccccccccccccccccc",
+            "timestamp": "2026-01-01T00:00:00Z",
+            "tool": "jest@30",
+            "entries": [
+              {
+                "symbol": "test_records",
+                "outcome": "skip"
+              },
+              {
+                "symbol": "test_other",
+                "outcome": "pass"
+              }
+            ]
+          }
+        ],
+        "mockInspectionSuites": [
+          "unit"
+        ]
+      },
+      "report": {
+        "findings": [],
+        "healthy": [
+          "FR-001-AC-1"
+        ],
+        "unevaluated": []
+      },
+      "threw": null
+    },
+    {
+      "name": "a-run-behind-head-is-reported-and-does-not-stop-the-ladder",
+      "input": {
+        "obligations": [
+          {
+            "source": "spec/fr.md",
+            "document": "FR-001",
+            "id": "FR-001-AC-1",
+            "statement": "The system shall record the result.",
+            "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "bindings": [
+          {
+            "obligation": "FR-001-AC-1",
+            "suite": "unit",
+            "symbols": [
+              "test_records"
+            ],
+            "commit": "cccccccccccccccccccccccccccccccccccccccc",
+            "statementHashAtBinding": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "runs": [
+          {
+            "schemaVersion": 1,
+            "suite": "unit",
+            "commit": "dddddddddddddddddddddddddddddddddddddddd",
+            "timestamp": "2026-01-01T00:00:00Z",
+            "tool": "jest@30",
+            "entries": [
+              {
+                "symbol": "test_records",
+                "outcome": "pass"
+              }
+            ]
+          }
+        ],
+        "headCommit": "cccccccccccccccccccccccccccccccccccccccc",
+        "mockInspectionSuites": [
+          "unit"
+        ]
+      },
+      "report": {
+        "findings": [
+          {
+            "kind": "stale-evidence",
+            "obligation": "FR-001-AC-1",
+            "severity": "medium",
+            "summary": "FR-001-AC-1 rests on a unit run at dddddddddddd, not at HEAD (cccccccccccc)."
+          }
+        ],
+        "healthy": [],
+        "unevaluated": []
+      },
+      "threw": null
+    },
+    {
+      "name": "a-scan-only-binding-beside-a-run-throws-in-the-retained-code",
+      "input": {
+        "obligations": [
+          {
+            "source": "spec/fr.md",
+            "document": "FR-001",
+            "id": "FR-001-AC-1",
+            "statement": "The system shall record the result.",
+            "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "bindings": [
+          {
+            "obligation": "FR-001-AC-1",
+            "suite": "aaa-scan",
+            "symbols": [],
+            "commit": "cccccccccccccccccccccccccccccccccccccccc",
+            "statementHashAtBinding": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "obligation": "FR-001-AC-1",
+            "suite": "unit",
+            "symbols": [
+              "test_records"
+            ],
+            "commit": "cccccccccccccccccccccccccccccccccccccccc",
+            "statementHashAtBinding": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "runs": [
+          {
+            "schemaVersion": 1,
+            "suite": "unit",
+            "commit": "dddddddddddddddddddddddddddddddddddddddd",
+            "timestamp": "2026-01-01T00:00:00Z",
+            "tool": "jest@30",
+            "entries": [
+              {
+                "symbol": "test_records",
+                "outcome": "pass"
+              }
+            ]
+          }
+        ],
+        "scans": [
+          {
+            "schemaVersion": 1,
+            "suite": "aaa-scan",
+            "commit": "cccccccccccccccccccccccccccccccccccccccc",
+            "timestamp": "2026-01-01T00:00:00Z",
+            "tool": "semgrep@1",
+            "findings": []
+          }
+        ],
+        "vacuousScanSuites": [],
+        "headCommit": "cccccccccccccccccccccccccccccccccccccccc",
+        "mockInspectionSuites": [
+          "unit"
+        ]
+      },
+      "report": null,
+      "threw": "Cannot read properties of undefined (reading 'commit')"
+    },
+    {
+      "name": "a-combinatorial-statement-reports-the-gaps-it-never-ran",
+      "input": {
+        "obligations": [
+          {
+            "source": "spec/fr.md",
+            "document": "FR-001",
+            "id": "FR-001-AC-1",
+            "statement": "2-way over os(linux|mac) arch(x64|arm64)",
+            "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "bindings": [
+          {
+            "obligation": "FR-001-AC-1",
+            "suite": "unit",
+            "symbols": [
+              "test_records"
+            ],
+            "commit": "cccccccccccccccccccccccccccccccccccccccc",
+            "statementHashAtBinding": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "runs": [
+          {
+            "schemaVersion": 1,
+            "suite": "unit",
+            "commit": "cccccccccccccccccccccccccccccccccccccccc",
+            "timestamp": "2026-01-01T00:00:00Z",
+            "tool": "jest@30",
+            "entries": [
+              {
+                "symbol": "test_records",
+                "outcome": "pass",
+                "config": {
+                  "os": "linux",
+                  "arch": "x64"
+                }
+              }
+            ]
+          }
+        ],
+        "mockInspectionSuites": [
+          "unit"
+        ]
+      },
+      "report": {
+        "findings": [
+          {
+            "kind": "combinatorial-gap",
+            "obligation": "FR-001-AC-1",
+            "severity": "medium",
+            "summary": "FR-001-AC-1 demands 4 2-way combinations and its runs reached 1. Never run: arch=arm64 & os=linux; arch=arm64 & os=mac; arch=x64 & os=mac"
+          }
+        ],
+        "healthy": [],
+        "unevaluated": []
+      },
+      "threw": null
+    },
+    {
+      "name": "a-full-covering-array-raises-no-combinatorial-gap",
+      "input": {
+        "obligations": [
+          {
+            "source": "spec/fr.md",
+            "document": "FR-001",
+            "id": "FR-001-AC-1",
+            "statement": "2-way over os(linux|mac) arch(x64|arm64)",
+            "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "bindings": [
+          {
+            "obligation": "FR-001-AC-1",
+            "suite": "unit",
+            "symbols": [
+              "a",
+              "b",
+              "c",
+              "d"
+            ],
+            "commit": "cccccccccccccccccccccccccccccccccccccccc",
+            "statementHashAtBinding": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "runs": [
+          {
+            "schemaVersion": 1,
+            "suite": "unit",
+            "commit": "cccccccccccccccccccccccccccccccccccccccc",
+            "timestamp": "2026-01-01T00:00:00Z",
+            "tool": "jest@30",
+            "entries": [
+              {
+                "symbol": "a",
+                "outcome": "pass",
+                "config": {
+                  "os": "linux",
+                  "arch": "x64"
+                }
+              },
+              {
+                "symbol": "b",
+                "outcome": "pass",
+                "config": {
+                  "os": "linux",
+                  "arch": "arm64"
+                }
+              },
+              {
+                "symbol": "c",
+                "outcome": "pass",
+                "config": {
+                  "os": "mac",
+                  "arch": "x64"
+                }
+              },
+              {
+                "symbol": "d",
+                "outcome": "pass",
+                "config": {
+                  "os": "mac",
+                  "arch": "arm64"
+                }
+              }
+            ]
+          }
+        ],
+        "mockInspectionSuites": [
+          "unit"
+        ]
+      },
+      "report": {
+        "findings": [],
+        "healthy": [
+          "FR-001-AC-1"
+        ],
+        "unevaluated": []
+      },
+      "threw": null
+    },
+    {
+      "name": "an-evidence-kind-that-contradicts-the-method-is-a-conformance-finding",
+      "input": {
+        "obligations": [
+          {
+            "source": "spec/fr.md",
+            "document": "FR-001",
+            "id": "FR-001-AC-1",
+            "statement": "The system shall record the result.",
+            "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "method": "unit-testing"
+          }
+        ],
+        "bindings": [
+          {
+            "obligation": "FR-001-AC-1",
+            "suite": "unit",
+            "symbols": [
+              "test_records"
+            ],
+            "commit": "cccccccccccccccccccccccccccccccccccccccc",
+            "statementHashAtBinding": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "runs": [
+          {
+            "schemaVersion": 1,
+            "suite": "unit",
+            "commit": "cccccccccccccccccccccccccccccccccccccccc",
+            "timestamp": "2026-01-01T00:00:00Z",
+            "tool": "jest@30",
+            "entries": [
+              {
+                "symbol": "test_records",
+                "outcome": "pass"
+              }
+            ],
+            "evidenceKind": "mutation"
+          }
+        ],
+        "catalog": {
+          "methods": [
+            {
+              "id": "unit-testing",
+              "name": "Unit testing",
+              "class": "Test",
+              "definition": "Exercise the unit.",
+              "evidenceKind": "unit",
+              "applicability": {
+                "characteristics": [
+                  "state-machine"
+                ]
+              },
+              "tooling": [
+                "jest"
+              ],
+              "moduleName": "core"
+            },
+            {
+              "id": "inspection",
+              "name": "Inspection",
+              "class": "Inspection",
+              "definition": "Read it.",
+              "applicability": {
+                "archetypes": [
+                  "StR"
+                ]
+              },
+              "tooling": [],
+              "moduleName": "core"
+            },
+            {
+              "id": "mutation-testing",
+              "name": "Mutation testing",
+              "class": "Test",
+              "definition": "Kill the mutants.",
+              "evidenceKind": "mutation",
+              "applicability": {
+                "characteristics": [
+                  "high-criticality",
+                  "fault-detection-failed"
+                ]
+              },
+              "tooling": [
+                "cargo-mutants"
+              ],
+              "moduleName": "extra"
+            }
+          ],
+          "duplicates": [],
+          "unreadable": []
+        },
+        "mockInspectionSuites": [
+          "unit"
+        ]
+      },
+      "report": {
+        "findings": [
+          {
+            "kind": "method-conformance",
+            "obligation": "FR-001-AC-1",
+            "severity": "medium",
+            "summary": "FR-001-AC-1 declares `unit-testing`, whose evidence kind is unit, but is discharged by a mutation run in unit. A method is not discharged by evidence of another kind."
+          }
+        ],
+        "healthy": [],
+        "unevaluated": []
+      },
+      "threw": null
+    },
+    {
+      "name": "an-undeclared-evidence-kind-makes-conformance-unanswerable-not-failed",
+      "input": {
+        "obligations": [
+          {
+            "source": "spec/fr.md",
+            "document": "FR-001",
+            "id": "FR-001-AC-1",
+            "statement": "The system shall record the result.",
+            "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "method": "Inspection"
+          }
+        ],
+        "bindings": [
+          {
+            "obligation": "FR-001-AC-1",
+            "suite": "unit",
+            "symbols": [
+              "test_records"
+            ],
+            "commit": "cccccccccccccccccccccccccccccccccccccccc",
+            "statementHashAtBinding": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "runs": [
+          {
+            "schemaVersion": 1,
+            "suite": "unit",
+            "commit": "cccccccccccccccccccccccccccccccccccccccc",
+            "timestamp": "2026-01-01T00:00:00Z",
+            "tool": "jest@30",
+            "entries": [
+              {
+                "symbol": "test_records",
+                "outcome": "pass"
+              }
+            ],
+            "evidenceKind": "unit"
+          }
+        ],
+        "catalog": {
+          "methods": [
+            {
+              "id": "unit-testing",
+              "name": "Unit testing",
+              "class": "Test",
+              "definition": "Exercise the unit.",
+              "evidenceKind": "unit",
+              "applicability": {
+                "characteristics": [
+                  "state-machine"
+                ]
+              },
+              "tooling": [
+                "jest"
+              ],
+              "moduleName": "core"
+            },
+            {
+              "id": "inspection",
+              "name": "Inspection",
+              "class": "Inspection",
+              "definition": "Read it.",
+              "applicability": {
+                "archetypes": [
+                  "StR"
+                ]
+              },
+              "tooling": [],
+              "moduleName": "core"
+            },
+            {
+              "id": "mutation-testing",
+              "name": "Mutation testing",
+              "class": "Test",
+              "definition": "Kill the mutants.",
+              "evidenceKind": "mutation",
+              "applicability": {
+                "characteristics": [
+                  "high-criticality",
+                  "fault-detection-failed"
+                ]
+              },
+              "tooling": [
+                "cargo-mutants"
+              ],
+              "moduleName": "extra"
+            }
+          ],
+          "duplicates": [],
+          "unreadable": []
+        },
+        "mockInspectionSuites": [
+          "unit"
+        ]
+      },
+      "report": {
+        "findings": [],
+        "healthy": [
+          "FR-001-AC-1"
+        ],
+        "unevaluated": []
+      },
+      "threw": null
+    },
+    {
+      "name": "one-method-where-criticality-demands-two-is-insufficient-multiplicity",
+      "input": {
+        "obligations": [
+          {
+            "source": "spec/fr.md",
+            "document": "FR-001",
+            "id": "FR-001-AC-1",
+            "statement": "The system shall record the result.",
+            "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "criticality": "P0",
+            "method": "unit-testing"
+          }
+        ],
+        "bindings": [
+          {
+            "obligation": "FR-001-AC-1",
+            "suite": "unit",
+            "symbols": [
+              "test_records"
+            ],
+            "commit": "cccccccccccccccccccccccccccccccccccccccc",
+            "statementHashAtBinding": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "runs": [
+          {
+            "schemaVersion": 1,
+            "suite": "unit",
+            "commit": "cccccccccccccccccccccccccccccccccccccccc",
+            "timestamp": "2026-01-01T00:00:00Z",
+            "tool": "jest@30",
+            "entries": [
+              {
+                "symbol": "test_records",
+                "outcome": "pass"
+              }
+            ],
+            "evidenceKind": "unit"
+          }
+        ],
+        "catalog": {
+          "methods": [
+            {
+              "id": "unit-testing",
+              "name": "Unit testing",
+              "class": "Test",
+              "definition": "Exercise the unit.",
+              "evidenceKind": "unit",
+              "applicability": {
+                "characteristics": [
+                  "state-machine"
+                ]
+              },
+              "tooling": [
+                "jest"
+              ],
+              "moduleName": "core"
+            },
+            {
+              "id": "inspection",
+              "name": "Inspection",
+              "class": "Inspection",
+              "definition": "Read it.",
+              "applicability": {
+                "archetypes": [
+                  "StR"
+                ]
+              },
+              "tooling": [],
+              "moduleName": "core"
+            },
+            {
+              "id": "mutation-testing",
+              "name": "Mutation testing",
+              "class": "Test",
+              "definition": "Kill the mutants.",
+              "evidenceKind": "mutation",
+              "applicability": {
+                "characteristics": [
+                  "high-criticality",
+                  "fault-detection-failed"
+                ]
+              },
+              "tooling": [
+                "cargo-mutants"
+              ],
+              "moduleName": "extra"
+            }
+          ],
+          "duplicates": [],
+          "unreadable": []
+        },
+        "multiplicityRequires": [
+          "P0"
+        ],
+        "mockInspectionSuites": [
+          "unit"
+        ]
+      },
+      "report": {
+        "findings": [
+          {
+            "kind": "insufficient-multiplicity",
+            "obligation": "FR-001-AC-1",
+            "severity": "medium",
+            "summary": "FR-001-AC-1 is criticality P0, which requires two independent methods, but all its evidence comes from unit."
+          }
+        ],
+        "healthy": [],
+        "unevaluated": []
+      },
+      "threw": null
+    },
+    {
+      "name": "a-mutation-score-below-the-floor-is-a-finding",
+      "input": {
+        "obligations": [
+          {
+            "source": "spec/fr.md",
+            "document": "FR-001",
+            "id": "FR-001-AC-1",
+            "statement": "The system shall record the result.",
+            "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "criticality": "P0"
+          }
+        ],
+        "bindings": [
+          {
+            "obligation": "FR-001-AC-1",
+            "suite": "unit",
+            "symbols": [
+              "test_records"
+            ],
+            "commit": "cccccccccccccccccccccccccccccccccccccccc",
+            "statementHashAtBinding": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "runs": [
+          {
+            "schemaVersion": 1,
+            "suite": "unit",
+            "commit": "cccccccccccccccccccccccccccccccccccccccc",
+            "timestamp": "2026-01-01T00:00:00Z",
+            "tool": "jest@30",
+            "entries": [
+              {
+                "symbol": "test_records",
+                "outcome": "pass",
+                "score": 0.4,
+                "metric": "mutation-score"
+              }
+            ]
+          }
+        ],
+        "mutationFloor": {
+          "P0": 0.8
+        },
+        "mockInspectionSuites": [
+          "unit"
+        ]
+      },
+      "report": {
+        "findings": [
+          {
+            "kind": "insufficient-mutation-score",
+            "obligation": "FR-001-AC-1",
+            "severity": "medium",
+            "summary": "FR-001-AC-1 is criticality P0, which demands a mutation score of at least 0.8; its weakest bound symbol scores 0.4."
+          }
+        ],
+        "healthy": [],
+        "unevaluated": []
+      },
+      "threw": null
+    },
+    {
+      "name": "a-score-without-the-mutation-metric-is-not-a-mutation-score",
+      "input": {
+        "obligations": [
+          {
+            "source": "spec/fr.md",
+            "document": "FR-001",
+            "id": "FR-001-AC-1",
+            "statement": "The system shall record the result.",
+            "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "criticality": "P0"
+          }
+        ],
+        "bindings": [
+          {
+            "obligation": "FR-001-AC-1",
+            "suite": "unit",
+            "symbols": [
+              "test_records"
+            ],
+            "commit": "cccccccccccccccccccccccccccccccccccccccc",
+            "statementHashAtBinding": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "runs": [
+          {
+            "schemaVersion": 1,
+            "suite": "unit",
+            "commit": "cccccccccccccccccccccccccccccccccccccccc",
+            "timestamp": "2026-01-01T00:00:00Z",
+            "tool": "jest@30",
+            "entries": [
+              {
+                "symbol": "test_records",
+                "outcome": "pass",
+                "score": 0.4,
+                "metric": "coverage"
+              }
+            ]
+          }
+        ],
+        "mutationFloor": {
+          "P0": 0.8
+        },
+        "mockInspectionSuites": [
+          "unit"
+        ]
+      },
+      "report": {
+        "findings": [
+          {
+            "kind": "unmeasured-mutation-score",
+            "obligation": "FR-001-AC-1",
+            "severity": "medium",
+            "summary": "FR-001-AC-1 is criticality P0, which demands a mutation score of at least 0.8, and no run bound to it records one."
+          }
+        ],
+        "healthy": [],
+        "unevaluated": []
+      },
+      "threw": null
+    },
+    {
+      "name": "insufficient-independence-stops-the-ladder-and-is-reported",
+      "input": {
+        "obligations": [
+          {
+            "source": "spec/fr.md",
+            "document": "FR-001",
+            "id": "FR-001-AC-1",
+            "statement": "The system shall record the result.",
+            "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "bindings": [
+          {
+            "obligation": "FR-001-AC-1",
+            "suite": "unit",
+            "symbols": [
+              "test_records"
+            ],
+            "commit": "cccccccccccccccccccccccccccccccccccccccc",
+            "statementHashAtBinding": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "runs": [
+          {
+            "schemaVersion": 1,
+            "suite": "unit",
+            "commit": "cccccccccccccccccccccccccccccccccccccccc",
+            "timestamp": "2026-01-01T00:00:00Z",
+            "tool": "jest@30",
+            "entries": [
+              {
+                "symbol": "test_records",
+                "outcome": "pass"
+              }
+            ]
+          }
+        ],
+        "mockInspectionSuites": [
+          "unit"
+        ],
+        "independencePolicy": {
+          "schemaVersion": 1,
+          "profile": "AP-001",
+          "requirements": [
+            {
+              "id": "IR-1",
+              "obligation": "FR-001-AC-1",
+              "dimensions": [
+                "actor",
+                "technique"
+              ],
+              "rationale": "two lines"
+            }
+          ]
+        },
+        "independence": [
+          {
+            "profile": "AP-001",
+            "requirement": "IR-1",
+            "obligation": "FR-001-AC-1",
+            "status": "insufficient",
+            "dimensions": [
+              {
+                "dimension": "actor",
+                "values": [
+                  "a"
+                ],
+                "missingSuites": []
+              },
+              {
+                "dimension": "technique",
+                "values": [
+                  "t"
+                ],
+                "missingSuites": []
+              }
+            ],
+            "summary": "no pair of suites differs on every requested dimension"
+          }
+        ]
+      },
+      "report": {
+        "findings": [
+          {
+            "kind": "insufficient-independence",
+            "obligation": "FR-001-AC-1",
+            "severity": "medium",
+            "summary": "no pair of suites differs on every requested dimension"
+          }
+        ],
+        "healthy": [],
+        "unevaluated": [],
+        "independence": [
+          {
+            "profile": "AP-001",
+            "requirement": "IR-1",
+            "obligation": "FR-001-AC-1",
+            "status": "insufficient",
+            "dimensions": [
+              {
+                "dimension": "actor",
+                "values": [
+                  "a"
+                ],
+                "missingSuites": []
+              },
+              {
+                "dimension": "technique",
+                "values": [
+                  "t"
+                ],
+                "missingSuites": []
+              }
+            ],
+            "summary": "no pair of suites differs on every requested dimension"
+          }
+        ]
+      },
+      "threw": null
+    },
+    {
+      "name": "a-requirement-no-obligation-loop-reached-still-appears-in-the-report",
+      "input": {
+        "obligations": [],
+        "bindings": [],
+        "runs": [],
+        "independencePolicy": {
+          "schemaVersion": 1,
+          "profile": "AP-001",
+          "requirements": [
+            {
+              "id": "IR-1",
+              "obligation": "FR-999-AC-1",
+              "dimensions": [
+                "actor"
+              ],
+              "rationale": "two lines"
+            }
+          ]
+        },
+        "independence": [
+          {
+            "profile": "AP-001",
+            "requirement": "IR-1",
+            "obligation": "FR-999-AC-1",
+            "status": "satisfied",
+            "dimensions": [
+              {
+                "dimension": "actor",
+                "values": [
+                  "a",
+                  "b"
+                ],
+                "missingSuites": []
+              }
+            ],
+            "satisfiedBy": [
+              "unit",
+              "integration"
+            ],
+            "summary": "unit and integration differ on actor"
+          }
+        ]
+      },
+      "report": {
+        "findings": [],
+        "healthy": [],
+        "unevaluated": [],
+        "independence": [
+          {
+            "profile": "AP-001",
+            "requirement": "IR-1",
+            "obligation": "FR-999-AC-1",
+            "status": "satisfied",
+            "dimensions": [
+              {
+                "dimension": "actor",
+                "values": [
+                  "a",
+                  "b"
+                ],
+                "missingSuites": []
+              }
+            ],
+            "satisfiedBy": [
+              "unit",
+              "integration"
+            ],
+            "summary": "unit and integration differ on actor"
+          }
+        ]
+      },
+      "threw": null
+    },
+    {
+      "name": "obligations-and-findings-sort-by-code-unit-not-by-locale",
+      "input": {
+        "obligations": [
+          {
+            "source": "spec/fr.md",
+            "document": "FR-001",
+            "id": "𐀀",
+            "statement": "The system shall record the result.",
+            "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "source": "spec/fr.md",
+            "document": "FR-001",
+            "id": "�",
+            "statement": "The system shall record the result.",
+            "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "source": "spec/fr.md",
+            "document": "FR-001",
+            "id": "FR-001-AC-1",
+            "statement": "The system shall record the result.",
+            "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "bindings": [],
+        "runs": []
+      },
+      "report": {
+        "findings": [
+          {
+            "kind": "undischarged",
+            "obligation": "FR-001-AC-1",
+            "severity": "medium",
+            "summary": "no evidence is bound to FR-001-AC-1"
+          },
+          {
+            "kind": "undischarged",
+            "obligation": "𐀀",
+            "severity": "medium",
+            "summary": "no evidence is bound to 𐀀"
+          },
+          {
+            "kind": "undischarged",
+            "obligation": "�",
+            "severity": "medium",
+            "summary": "no evidence is bound to �"
+          }
+        ],
+        "healthy": [],
+        "unevaluated": []
+      },
+      "threw": null
+    }
+  ],
+  "adviseCatalog": {
+    "methods": [
+      {
+        "id": "unit-testing",
+        "name": "Unit testing",
+        "class": "Test",
+        "definition": "Exercise the unit.",
+        "evidenceKind": "unit",
+        "applicability": {
+          "characteristics": [
+            "state-machine"
+          ]
+        },
+        "tooling": [
+          "jest"
+        ],
+        "moduleName": "core"
+      },
+      {
+        "id": "inspection",
+        "name": "Inspection",
+        "class": "Inspection",
+        "definition": "Read it.",
+        "applicability": {
+          "archetypes": [
+            "StR"
+          ]
+        },
+        "tooling": [],
+        "moduleName": "core"
+      },
+      {
+        "id": "mutation-testing",
+        "name": "Mutation testing",
+        "class": "Test",
+        "definition": "Kill the mutants.",
+        "evidenceKind": "mutation",
+        "applicability": {
+          "characteristics": [
+            "high-criticality",
+            "fault-detection-failed"
+          ]
+        },
+        "tooling": [
+          "cargo-mutants"
+        ],
+        "moduleName": "extra"
+      },
+      {
+        "id": "type-inspection",
+        "name": "Type inspection",
+        "class": "Inspection",
+        "definition": "Read the types.",
+        "applicability": {
+          "object_types": [
+            "Order"
+          ],
+          "property_shapes": [
+            "round-trip"
+          ]
+        },
+        "tooling": [],
+        "moduleName": "extra"
+      },
+      {
+        "id": "dual-axis",
+        "name": "Two axes at once",
+        "class": "Analysis",
+        "definition": "Matches on two rules, so it outranks a one-rule match.",
+        "applicability": {
+          "characteristics": [
+            "state-machine"
+          ],
+          "archetypes": [
+            "FR"
+          ]
+        },
+        "tooling": [],
+        "moduleName": "extra"
+      },
+      {
+        "id": "unobservable-axis",
+        "name": "Unobservable axis",
+        "class": "Analysis",
+        "definition": "Names an axis the advisor cannot observe.",
+        "applicability": {
+          "phase_of_the_moon": [
+            "waxing"
+          ]
+        },
+        "tooling": [],
+        "moduleName": "extra"
+      }
+    ],
+    "duplicates": [],
+    "unreadable": []
+  },
+  "adviseCases": [
+    {
+      "name": "nothing-matches-and-the-advisor-says-so",
+      "facts": {
+        "id": "FR-001-AC-1",
+        "statement": "The system shall exist."
+      },
+      "advice": {
+        "obligation": "FR-001-AC-1",
+        "recommended": [],
+        "authored": null,
+        "mismatch": false,
+        "uncatalogued": false,
+        "inconclusive": true
+      }
+    },
+    {
+      "name": "a-characteristic-recommends-the-method-that-declares-it",
+      "facts": {
+        "id": "FR-001-AC-2",
+        "statement": "When the door opens the lock shall transition to unlocked."
+      },
+      "advice": {
+        "obligation": "FR-001-AC-2",
+        "recommended": [
+          {
+            "method": "dual-axis",
+            "class": "Analysis",
+            "reasons": [
+              {
+                "rule": "characteristics",
+                "value": "state-machine"
+              }
+            ]
+          },
+          {
+            "method": "unit-testing",
+            "class": "Test",
+            "evidenceKind": "unit",
+            "reasons": [
+              {
+                "rule": "characteristics",
+                "value": "state-machine"
+              }
+            ]
+          }
+        ],
+        "authored": null,
+        "mismatch": false,
+        "uncatalogued": false,
+        "inconclusive": false
+      }
+    },
+    {
+      "name": "a-hyphen-compound-does-not-match-the-bare-word",
+      "facts": {
+        "id": "FR-001-AC-3",
+        "statement": "The state-machine-free path shall hold."
+      },
+      "advice": {
+        "obligation": "FR-001-AC-3",
+        "recommended": [],
+        "authored": null,
+        "mismatch": false,
+        "uncatalogued": false,
+        "inconclusive": true
+      }
+    },
+    {
+      "name": "an-archetype-alone-recommends-inspection",
+      "facts": {
+        "id": "StR-001-AC-1",
+        "statement": "The stakeholder wants it.",
+        "archetype": "StR"
+      },
+      "advice": {
+        "obligation": "StR-001-AC-1",
+        "recommended": [
+          {
+            "method": "inspection",
+            "class": "Inspection",
+            "reasons": [
+              {
+                "rule": "archetypes",
+                "value": "StR"
+              }
+            ]
+          }
+        ],
+        "authored": null,
+        "mismatch": false,
+        "uncatalogued": false,
+        "inconclusive": false
+      }
+    },
+    {
+      "name": "high-criticality-is-read-from-the-field-not-from-the-prose",
+      "facts": {
+        "id": "FR-002-AC-1",
+        "statement": "The system shall exist.",
+        "criticality": "P0"
+      },
+      "advice": {
+        "obligation": "FR-002-AC-1",
+        "recommended": [
+          {
+            "method": "mutation-testing",
+            "class": "Test",
+            "evidenceKind": "mutation",
+            "reasons": [
+              {
+                "rule": "characteristics",
+                "value": "high-criticality"
+              }
+            ]
+          }
+        ],
+        "authored": null,
+        "mismatch": false,
+        "uncatalogued": false,
+        "inconclusive": false
+      }
+    },
+    {
+      "name": "an-authored-method-outside-the-recommendations-is-a-mismatch",
+      "facts": {
+        "id": "FR-001-AC-4",
+        "statement": "When the door opens the lock shall transition to unlocked.",
+        "authoredMethod": "Inspection"
+      },
+      "advice": {
+        "obligation": "FR-001-AC-4",
+        "recommended": [
+          {
+            "method": "dual-axis",
+            "class": "Analysis",
+            "reasons": [
+              {
+                "rule": "characteristics",
+                "value": "state-machine"
+              }
+            ]
+          },
+          {
+            "method": "unit-testing",
+            "class": "Test",
+            "evidenceKind": "unit",
+            "reasons": [
+              {
+                "rule": "characteristics",
+                "value": "state-machine"
+              }
+            ]
+          }
+        ],
+        "authored": "Inspection",
+        "mismatch": true,
+        "uncatalogued": false,
+        "inconclusive": false
+      }
+    },
+    {
+      "name": "an-uncatalogued-authored-method-is-never-a-mismatch",
+      "facts": {
+        "id": "FR-001-AC-5",
+        "statement": "When the door opens the lock shall transition to unlocked.",
+        "authoredMethod": "Vibes",
+        "uncataloguedMethod": true
+      },
+      "advice": {
+        "obligation": "FR-001-AC-5",
+        "recommended": [
+          {
+            "method": "dual-axis",
+            "class": "Analysis",
+            "reasons": [
+              {
+                "rule": "characteristics",
+                "value": "state-machine"
+              }
+            ]
+          },
+          {
+            "method": "unit-testing",
+            "class": "Test",
+            "evidenceKind": "unit",
+            "reasons": [
+              {
+                "rule": "characteristics",
+                "value": "state-machine"
+              }
+            ]
+          }
+        ],
+        "authored": "Vibes",
+        "mismatch": false,
+        "uncatalogued": true,
+        "inconclusive": false
+      }
+    },
+    {
+      "name": "an-unmeasured-fault-detection-is-not-a-failed-one",
+      "facts": {
+        "id": "FR-003-AC-1",
+        "statement": "The system shall exist.",
+        "evidence": {
+          "bound": true,
+          "faultDetectionScores": []
+        }
+      },
+      "advice": {
+        "obligation": "FR-003-AC-1",
+        "recommended": [],
+        "authored": null,
+        "mismatch": false,
+        "uncatalogued": false,
+        "inconclusive": true
+      }
+    },
+    {
+      "name": "a-failing-fault-detection-score-mints-the-failed-characteristic",
+      "facts": {
+        "id": "FR-003-AC-2",
+        "statement": "The system shall exist.",
+        "evidence": {
+          "bound": true,
+          "faultDetectionScores": [
+            0.2,
+            0.9
+          ]
+        }
+      },
+      "advice": {
+        "obligation": "FR-003-AC-2",
+        "recommended": [
+          {
+            "method": "mutation-testing",
+            "class": "Test",
+            "evidenceKind": "mutation",
+            "reasons": [
+              {
+                "rule": "characteristics",
+                "value": "fault-detection-failed"
+              }
+            ]
+          }
+        ],
+        "authored": null,
+        "mismatch": false,
+        "uncatalogued": false,
+        "inconclusive": false
+      }
+    },
+    {
+      "name": "structured-parameters-are-read-and-not-re-derived-from-prose",
+      "facts": {
+        "id": "NFR-001-M-1",
+        "statement": "The system shall be fast.",
+        "parameters": {
+          "target": "< 4 min",
+          "threshold": "< 5 min"
+        }
+      },
+      "advice": {
+        "obligation": "NFR-001-M-1",
+        "recommended": [],
+        "authored": null,
+        "mismatch": false,
+        "uncatalogued": false,
+        "inconclusive": true
+      }
+    },
+    {
+      "name": "two-matching-rules-outrank-one-and-the-id-breaks-a-tie",
+      "facts": {
+        "id": "FR-006-AC-1",
+        "statement": "When the door opens the lock shall transition to unlocked.",
+        "archetype": "FR"
+      },
+      "advice": {
+        "obligation": "FR-006-AC-1",
+        "recommended": [
+          {
+            "method": "dual-axis",
+            "class": "Analysis",
+            "reasons": [
+              {
+                "rule": "archetypes",
+                "value": "FR"
+              },
+              {
+                "rule": "characteristics",
+                "value": "state-machine"
+              }
+            ]
+          },
+          {
+            "method": "unit-testing",
+            "class": "Test",
+            "evidenceKind": "unit",
+            "reasons": [
+              {
+                "rule": "characteristics",
+                "value": "state-machine"
+              }
+            ]
+          }
+        ],
+        "authored": null,
+        "mismatch": false,
+        "uncatalogued": false,
+        "inconclusive": false
+      }
+    },
+    {
+      "name": "an-object-type-is-an-axis-of-its-own",
+      "facts": {
+        "id": "FR-004-AC-1",
+        "statement": "The system shall exist.",
+        "objectTypes": [
+          "Order"
+        ]
+      },
+      "advice": {
+        "obligation": "FR-004-AC-1",
+        "recommended": [
+          {
+            "method": "type-inspection",
+            "class": "Inspection",
+            "reasons": [
+              {
+                "rule": "object_types",
+                "value": "Order"
+              }
+            ]
+          }
+        ],
+        "authored": null,
+        "mismatch": false,
+        "uncatalogued": false,
+        "inconclusive": false
+      }
+    },
+    {
+      "name": "a-property-shape-is-an-axis-of-its-own",
+      "facts": {
+        "id": "FR-005-AC-1",
+        "statement": "The system shall exist.",
+        "propertyShape": "round-trip"
+      },
+      "advice": {
+        "obligation": "FR-005-AC-1",
+        "recommended": [
+          {
+            "method": "type-inspection",
+            "class": "Inspection",
+            "reasons": [
+              {
+                "rule": "property_shapes",
+                "value": "round-trip"
+              }
+            ]
+          }
+        ],
+        "authored": null,
+        "mismatch": false,
+        "uncatalogued": false,
+        "inconclusive": false
+      }
+    }
+  ],
+  "characteristicCases": [
+    {
+      "name": "plain-prose-matches-nothing",
+      "statement": "The system shall exist.",
+      "criticality": null,
+      "evidence": null,
+      "parameters": null,
+      "characteristics": []
+    },
+    {
+      "name": "a-markdown-link-target-is-not-prose",
+      "statement": "See [the guide](docs/invariant-and-user-rules.md).",
+      "criticality": null,
+      "evidence": null,
+      "parameters": null,
+      "characteristics": []
+    },
+    {
+      "name": "a-hyphen-compound-on-the-left-does-not-count",
+      "statement": "The non-user path shall hold.",
+      "criticality": null,
+      "evidence": null,
+      "parameters": null,
+      "characteristics": []
+    },
+    {
+      "name": "a-hyphen-compound-on-the-right-does-not-count",
+      "statement": "The user-free path shall hold.",
+      "criticality": null,
+      "evidence": null,
+      "parameters": null,
+      "characteristics": []
+    },
+    {
+      "name": "a-non-ascii-neighbour-is-not-a-word-character-to-a-unicode-less-regexp",
+      "statement": "The é-user path shall hold.",
+      "criticality": null,
+      "evidence": null,
+      "parameters": null,
+      "characteristics": [
+        "user-visible"
+      ]
+    },
+    {
+      "name": "latency-mixes-unicode-whitespace-with-ascii-word-boundaries",
+      "statement": "Response latency shall be ≤ 200 ms.",
+      "criticality": null,
+      "evidence": null,
+      "parameters": null,
+      "characteristics": [
+        "latency",
+        "quantified-threshold"
+      ]
+    },
+    {
+      "name": "a-quantified-threshold-is-recognised-with-a-unicode-comparator",
+      "statement": "Throughput shall be ≥ 1000 requests per second.",
+      "criticality": null,
+      "evidence": null,
+      "parameters": null,
+      "characteristics": [
+        "quantified-threshold",
+        "throughput"
+      ]
+    },
+    {
+      "name": "degradation-is-recognised-across-components",
+      "statement": "On partial failure the service shall degrade gracefully.",
+      "criticality": null,
+      "evidence": null,
+      "parameters": null,
+      "characteristics": [
+        "degradation",
+        "reliability"
+      ]
+    },
+    {
+      "name": "a-configuration-space-mints-configuration-matrix",
+      "statement": "2-way over os(linux|mac) arch(x64|arm64)",
+      "criticality": null,
+      "evidence": null,
+      "parameters": null,
+      "characteristics": [
+        "configuration-matrix"
+      ]
+    },
+    {
+      "name": "criticality-is-taken-verbatim-and-case-insensitively",
+      "statement": "The system shall exist.",
+      "criticality": "HIGH",
+      "evidence": null,
+      "parameters": null,
+      "characteristics": [
+        "high-criticality"
+      ]
+    },
+    {
+      "name": "a-criticality-outside-the-three-words-mints-nothing",
+      "statement": "The system shall exist.",
+      "criticality": "P1",
+      "evidence": null,
+      "parameters": null,
+      "characteristics": []
+    },
+    {
+      "name": "an-unbound-obligation-mints-no-fault-detection-characteristic",
+      "statement": "The system shall exist.",
+      "criticality": null,
+      "evidence": {
+        "bound": false,
+        "faultDetectionScores": []
+      },
+      "parameters": null,
+      "characteristics": []
+    },
+    {
+      "name": "a-nan-score-propagates-through-the-minimum",
+      "statement": "The system shall exist.",
+      "criticality": null,
+      "evidence": {
+        "bound": true,
+        "faultDetectionScores": [
+          0.9,
+          0.95
+        ]
+      },
+      "parameters": null,
+      "characteristics": [
+        "fault-detection-failed"
+      ]
+    },
+    {
+      "name": "a-threshold-parameter-alone-is-enough",
+      "statement": "The system shall exist.",
+      "criticality": null,
+      "evidence": null,
+      "parameters": {
+        "threshold": "< 5 min"
+      },
+      "characteristics": [
+        "quantified-threshold"
+      ]
+    }
+  ],
+  "ratchetCases": [
+    {
+      "name": "an-empty-baseline-accepts-nothing",
+      "report": {
+        "findings": [
+          {
+            "kind": "undischarged",
+            "obligation": "FR-001-AC-1",
+            "severity": "medium",
+            "summary": "a"
+          },
+          {
+            "kind": "suspect-link",
+            "obligation": "FR-002-AC-1",
+            "severity": "high",
+            "summary": "b"
+          }
+        ],
+        "healthy": [],
+        "unevaluated": []
+      },
+      "accepted": [],
+      "remaining": [
+        {
+          "kind": "undischarged",
+          "obligation": "FR-001-AC-1",
+          "severity": "medium",
+          "summary": "a"
+        },
+        {
+          "kind": "suspect-link",
+          "obligation": "FR-002-AC-1",
+          "severity": "high",
+          "summary": "b"
+        }
+      ]
+    },
+    {
+      "name": "a-baselined-key-is-filtered",
+      "report": {
+        "findings": [
+          {
+            "kind": "undischarged",
+            "obligation": "FR-001-AC-1",
+            "severity": "medium",
+            "summary": "a"
+          },
+          {
+            "kind": "suspect-link",
+            "obligation": "FR-002-AC-1",
+            "severity": "high",
+            "summary": "b"
+          }
+        ],
+        "healthy": [],
+        "unevaluated": []
+      },
+      "accepted": [
+        "undischarged:FR-001-AC-1"
+      ],
+      "remaining": [
+        {
+          "kind": "suspect-link",
+          "obligation": "FR-002-AC-1",
+          "severity": "high",
+          "summary": "b"
+        }
+      ]
+    },
+    {
+      "name": "a-baseline-key-for-another-kind-does-not-filter",
+      "report": {
+        "findings": [
+          {
+            "kind": "undischarged",
+            "obligation": "FR-001-AC-1",
+            "severity": "medium",
+            "summary": "a"
+          },
+          {
+            "kind": "suspect-link",
+            "obligation": "FR-002-AC-1",
+            "severity": "high",
+            "summary": "b"
+          }
+        ],
+        "healthy": [],
+        "unevaluated": []
+      },
+      "accepted": [
+        "stale-evidence:FR-001-AC-1"
+      ],
+      "remaining": [
+        {
+          "kind": "undischarged",
+          "obligation": "FR-001-AC-1",
+          "severity": "medium",
+          "summary": "a"
+        },
+        {
+          "kind": "suspect-link",
+          "obligation": "FR-002-AC-1",
+          "severity": "high",
+          "summary": "b"
+        }
+      ]
+    },
+    {
+      "name": "every-key-baselined-leaves-nothing",
+      "report": {
+        "findings": [
+          {
+            "kind": "undischarged",
+            "obligation": "FR-001-AC-1",
+            "severity": "medium",
+            "summary": "a"
+          },
+          {
+            "kind": "suspect-link",
+            "obligation": "FR-002-AC-1",
+            "severity": "high",
+            "summary": "b"
+          }
+        ],
+        "healthy": [],
+        "unevaluated": []
+      },
+      "accepted": [
+        "undischarged:FR-001-AC-1",
+        "suspect-link:FR-002-AC-1"
+      ],
+      "remaining": []
+    }
+  ],
+  "delta": {
+    "before": {
+      "findings": [
+        {
+          "kind": "undischarged",
+          "obligation": "FR-001-AC-1",
+          "severity": "medium",
+          "summary": "a"
+        },
+        {
+          "kind": "suspect-link",
+          "obligation": "FR-002-AC-1",
+          "severity": "high",
+          "summary": "b"
+        }
+      ],
+      "healthy": [],
+      "unevaluated": []
+    },
+    "after": {
+      "findings": [
+        {
+          "kind": "suspect-link",
+          "obligation": "FR-002-AC-1",
+          "severity": "high",
+          "summary": "b"
+        },
+        {
+          "kind": "stale-evidence",
+          "obligation": "FR-003-AC-1",
+          "severity": "high",
+          "summary": "c"
+        }
+      ],
+      "healthy": [],
+      "unevaluated": []
+    },
+    "added": [
+      {
+        "kind": "stale-evidence",
+        "obligation": "FR-003-AC-1",
+        "severity": "high",
+        "summary": "c"
+      }
+    ],
+    "resolved": [
+      {
+        "kind": "undischarged",
+        "obligation": "FR-001-AC-1",
+        "severity": "medium",
+        "summary": "a"
+      }
+    ]
+  },
+  "uncataloguedCases": [
+    {
+      "name": "no-diagnostics",
+      "diagnostics": [],
+      "values": [],
+      "degraded": false
+    },
+    {
+      "name": "a-valued-diagnostic-lands-in-the-set",
+      "diagnostics": [
+        {
+          "reason": "uncatalogued-verification-method",
+          "value": "Vibes"
+        }
+      ],
+      "values": [
+        "Vibes"
+      ],
+      "degraded": false
+    },
+    {
+      "name": "a-valueless-diagnostic-degrades",
+      "diagnostics": [
+        {
+          "reason": "uncatalogued-verification-method"
+        }
+      ],
+      "values": [],
+      "degraded": true
+    },
+    {
+      "name": "another-reason-is-ignored",
+      "diagnostics": [
+        {
+          "reason": "something-else",
+          "value": "Vibes"
+        }
+      ],
+      "values": [],
+      "degraded": false
+    }
+  ],
+  "scoresCases": [
+    {
+      "name": "a-skipped-entry-contributes-no-score",
+      "bindings": [
+        {
+          "obligation": "FR-001-AC-1",
+          "suite": "unit",
+          "symbols": [
+            "test_records"
+          ],
+          "commit": "cccccccccccccccccccccccccccccccccccccccc",
+          "statementHashAtBinding": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      ],
+      "runs": [
+        {
+          "schemaVersion": 1,
+          "suite": "unit",
+          "commit": "cccccccccccccccccccccccccccccccccccccccc",
+          "timestamp": "2026-01-01T00:00:00Z",
+          "tool": "jest@30",
+          "entries": [
+            {
+              "symbol": "test_records",
+              "outcome": "skip",
+              "score": 0.9,
+              "metric": "mutation-score"
+            }
+          ]
+        }
+      ],
+      "scores": []
+    },
+    {
+      "name": "only-the-mutation-metric-counts",
+      "bindings": [
+        {
+          "obligation": "FR-001-AC-1",
+          "suite": "unit",
+          "symbols": [
+            "a",
+            "b"
+          ],
+          "commit": "cccccccccccccccccccccccccccccccccccccccc",
+          "statementHashAtBinding": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      ],
+      "runs": [
+        {
+          "schemaVersion": 1,
+          "suite": "unit",
+          "commit": "cccccccccccccccccccccccccccccccccccccccc",
+          "timestamp": "2026-01-01T00:00:00Z",
+          "tool": "jest@30",
+          "entries": [
+            {
+              "symbol": "a",
+              "outcome": "pass",
+              "score": 0.5,
+              "metric": "mutation-score"
+            },
+            {
+              "symbol": "b",
+              "outcome": "pass",
+              "score": 0.9,
+              "metric": "coverage"
+            }
+          ]
+        }
+      ],
+      "scores": [
+        0.5
+      ]
+    }
+  ]
+}

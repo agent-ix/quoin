@@ -79,6 +79,11 @@ pub(crate) fn obligation(id: &str, statement: &str) -> Obligation {
         // past the required fields quire always emits.
         statement_hash: format!("sha256:{id}"),
         target_ids: None,
+        // The three fields quoin#383 added for the auditor. The assurance view
+        // reads none of them either.
+        method: None,
+        criticality: None,
+        parameters: None,
     }
 }
 
