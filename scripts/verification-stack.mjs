@@ -1012,8 +1012,21 @@ async function main() {
     if (stageRuns(plan, "test")) {
       quoinCore ??= buildQuoinCore(scratch);
       const requestedShard = valueOf("--test-shard");
+      const requestedTemplateGroup = valueOf("--template-group");
       if (requestedShard && !plan) {
         throw new Error("--test-shard requires --state-dir");
+      }
+      if (requestedTemplateGroup && (!requestedShard || Number(requestedShard) !== 2)) {
+        throw new Error("--template-group requires --test-shard 2");
+      }
+      const templateGroup = requestedTemplateGroup
+        ? Number(requestedTemplateGroup)
+        : null;
+      if (
+        templateGroup !== null &&
+        (!Number.isInteger(templateGroup) || templateGroup < 1 || templateGroup > 9)
+      ) {
+        throw new Error("--template-group must be an integer from 1 through 9");
       }
       const testShards = requestedShard
         ? [Number(requestedShard)]
@@ -1049,6 +1062,13 @@ async function main() {
       // is written only after every shard, including its build/validation
       // prerequisites, has completed.
       for (const shard of testShards) {
+        if (plan && shard === 2 && templateGroup !== null && templateGroup > 1) {
+          readStateRecord(
+            scratch,
+            `test-2-group-${templateGroup - 1}`,
+            currentLockDigest,
+          );
+        }
         const invocations =
           shard === 2
             ? [
@@ -1061,7 +1081,7 @@ async function main() {
                 "the template depends on shared tooling rather than copying it",
                 "the conformance contract tracks the maintained repositories",
                 "the rendered suite carries the rows the template gate executes",
-              ].map((name) => [
+              ].filter((_, index) => !templateGroup || index + 1 === templateGroup).map((name) => [
                 `VITEST_FILE=tests/semantic-module-template.test.ts`,
                 `VITEST_NAME=^${name}`,
               ])
@@ -1074,7 +1094,17 @@ async function main() {
             stdio: "inherit",
           });
         }
-        if (plan) {
+        if (plan && shard === 2 && templateGroup !== null) {
+          writeStateRecord(scratch, `test-2-group-${templateGroup}`, {
+            lockDigest: currentLockDigest,
+          });
+          if (templateGroup === 9) {
+            for (const group of Array.from({ length: 9 }, (_, index) => index + 1)) {
+              readStateRecord(scratch, `test-2-group-${group}`, currentLockDigest);
+            }
+            writeStateRecord(scratch, "test-2", { lockDigest: currentLockDigest });
+          }
+        } else if (plan) {
           writeStateRecord(scratch, `test-${shard}`, {
             lockDigest: currentLockDigest,
           });
