@@ -1,25 +1,27 @@
 {
   "schemaVersion": "guidance-evaluator-contract-v1",
   "populationSource": {
-    "corpusRevision": "7b81343ee05b3ef3a618839f64a5997fa16efd5c",
-    "corpusInputDigest": "sha256:c3bc935cf5a5208be4b66769386ae731400907b7a04e307de8a8e63b396d399d",
+    "corpusRevision": "7442f2770880a4ade303fb23d725804bdef454db",
+    "corpusInputDigest": "sha256:4a806b0807eaf4c5a866ee478335c243856b5f98e701be2f9164c0c01cf271b8",
     "producer": {
       "schemaVersion": "quire-tool-provenance-v1",
       "cli": {
-        "version": "0.30.2",
-        "sourceRevision": "bcface2714a958a328f3427714650ab2df71030f",
+        "version": "0.32.0",
+        "sourceRevision": "813019d872af7fc6d2469b5afad52f86f16915b4",
         "sourceState": "clean"
       },
       "engine": {
         "version": "0.46.0",
-        "sourceRevision": "ca7362d4dacecb96f01d74d1d971327118c25917",
+        "sourceRevision": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
         "sourceState": "clean"
       },
       "capabilities": [
         "action_guidance.structured",
+        "assurance_export.v1",
         "binding_census",
         "binding_census.self_named",
         "binding_census.tagged",
+        "clause_sets",
         "declaration_origins",
         "metrics_envelope",
         "minted_targets",
@@ -50,8 +52,8 @@
   "partitions": [
     {
       "id": "quire/quire/coverage.diagnostics/archetype-matches-nothing",
-      "denominator": 314,
-      "populationDigest": "sha256:f8407293c1fa04005ed817d98704939749c01d6a38cf3a2eca10f48262b0e397",
+      "denominator": 318,
+      "populationDigest": "sha256:4a9cc2cecaaa9dc3aa555a4c6821f1a6438697ebb249f145b7df19caf8a57353",
       "templateDigests": [
         "sha256:f6780e65ca1c31ffe03286b158e27dd9c7de051e9c7d0316a8b646bd1976af7b"
       ],
@@ -189,12 +191,17 @@
     },
     {
       "id": "quire/quire/coverage.diagnostics/status-column-matches-nothing",
-      "denominator": 1,
-      "populationDigest": "sha256:eb61e03d04c3d6a7b8baad22632f9eebd1e39cb28722db3a80b130699673c991",
+      "denominator": 7,
+      "populationDigest": "sha256:6df23bd3961f3fdab2b511197cea46241469ab251c0d59cd9e0ec82ccad36b2a",
       "templateDigests": [
         "sha256:101c3afc4871ec307a44e7433e77373e361bf3acb8b89f0c03f24f6ac3097f56"
       ],
       "selectedRecordIds": [
+        "sha256:039387c110c2e6cd7fe82581a123b22d52e839c55eaffa58e8268e893b2ab2bf",
+        "sha256:05ba77ddf45efd539057f676e9a231be613eaf1af8a23c6b98975344c8551c28",
+        "sha256:1659a9339d3730c6bb5ba7cf4154e698ae3858ca3450713940879863be129efc",
+        "sha256:30205b43b82f94a8b9b3b559a475260268aea3fe0cc22af9965b09b59fb41206",
+        "sha256:8c9e5f618c760fedf378bfdf65b57689eed4139097e5ec00c1da275df05333f1",
         "sha256:e75fcbeb3a693eb35a12b6d3005cb4f4533cdfd7c5727ec2df76f2abe68edb1d"
       ]
     },

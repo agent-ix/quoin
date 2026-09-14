@@ -16,13 +16,13 @@
     "declaration_repository_digest": "sha256:d5369c02d4134006bc614517b13cf7e5c6b3effa810ecffe34ff027502b6ff24",
     "tools": {
       "quire": {
-        "version": "quire 0.30.2 (cli bcface27, engine 0.46.0@ca7362d4)",
-        "digest": "sha256:29f6e742bfed80bc584fb6115f5ce0c035eddb25f3f0c7da0989edac363e634a"
+        "version": "quire 0.32.0 (cli 813019d8, engine 0.46.0@42326bbd)",
+        "digest": "sha256:f9384d09c7dad33aa5920abb33269cc20ef57daccf87b0f1b14e0a7335079a59"
       },
       "quoin": {
-        "version": "0.21.9-181-gac60f4a",
-        "revision": "ac60f4a9bebd39708d42e5b67209bcefddca5da8",
-        "digest": "sha256:1bdc7e245ce42fa42667d81ca33c0ac043b97072eade2cfb986bb11d92c90835"
+        "version": "0.23.1-122-g7ced73f",
+        "revision": "7ced73f050415350247c827543f00ada92966c6f",
+        "digest": "sha256:f3f8615f30d4c819717be3b77ce5efd1729ab5212c590bb1eb3169e231cf48a8"
       }
     },
     "environment": { "node": "v22.15.0", "platform": "linux", "arch": "x64" }
@@ -75284,13 +75284,15 @@
               "specific_shaped": 73
             },
             "engine": {
-              "cli": "0.30.2",
-              "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+              "cli": "0.32.0",
+              "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
               "capabilities": [
                 "action_guidance.structured",
+                "assurance_export.v1",
                 "binding_census",
                 "binding_census.self_named",
                 "binding_census.tagged",
+                "clause_sets",
                 "declaration_origins",
                 "metrics_envelope",
                 "minted_targets",
@@ -91579,7 +91581,7 @@
               }
             ]
           },
-          "digest": "sha256:e6fa241ec72807f8d2b64bdf9325b4728402bec97d9ada4b94a4cee20f86bf54"
+          "digest": "sha256:03f8558624d1d1ab1bd57926b2c629e0a511c48c2c8850fcc1c1f7115f00fd39"
         },
         "quoin.validate": {
           "state": "evaluated",
@@ -91593,7 +91595,7 @@
           "digest": "sha256:00c0f4cca2bf6302ffb788e8866edf7f57b6f840a2b3a1f59768afeb3f8ebf6f"
         }
       },
-      "source_digest": "sha256:3caf7f070ab15a7f62c92bc7dfc1100a41c1e8112ed7351300707b4d3c3cd350"
+      "source_digest": "sha256:fa532fc7763f769b1cb2733c1395a4d63650e4bfbc3ebef56c550cc60444704f"
     },
     "pass2-global-control": {
       "provenance": {
@@ -152292,13 +152294,15 @@
               "specific_shaped": 73
             },
             "engine": {
-              "cli": "0.30.2",
-              "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+              "cli": "0.32.0",
+              "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
               "capabilities": [
                 "action_guidance.structured",
+                "assurance_export.v1",
                 "binding_census",
                 "binding_census.self_named",
                 "binding_census.tagged",
+                "clause_sets",
                 "declaration_origins",
                 "metrics_envelope",
                 "minted_targets",
@@ -167878,10 +167882,10 @@
               }
             ]
           },
-          "digest": "sha256:546a38fe1678dc4e0e39ae289fbf38776c9ebca393a1a4048fe4dabcb84a0fb2"
+          "digest": "sha256:c12416278587ea03ee55ad53398493232a0caa63b111c4b6e4d74c0cbf310105"
         }
       },
-      "source_digest": "sha256:cd0665435344b7fbb433afb69fb7dd56984bfe84e8cf4ef53386316d69f18594"
+      "source_digest": "sha256:daf021bc29506e0e65b50a0286fb42e2194d8a44c7af792fdad20260c038422e"
     },
     "semantic-review-control": {
       "provenance": {
@@ -222219,13 +222223,15 @@
             ],
             "totals": { "backed": 1555, "total": 2749 },
             "engine": {
-              "cli": "0.30.2",
-              "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+              "cli": "0.32.0",
+              "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
               "capabilities": [
                 "action_guidance.structured",
+                "assurance_export.v1",
                 "binding_census",
                 "binding_census.self_named",
                 "binding_census.tagged",
+                "clause_sets",
                 "declaration_origins",
                 "metrics_envelope",
                 "minted_targets",
@@ -231055,10 +231061,10 @@
               }
             ]
           },
-          "digest": "sha256:c43d43e00b2f836d5844265bd399b4442d2b6dcbd5db3d63ea170fb48704699f"
+          "digest": "sha256:f7cd76815feef1b899b0f82c45f3526c0441f250da660ee13b5f9dc89563dd63"
         }
       },
-      "source_digest": "sha256:165d0495fef96aa49f84036c0d96908d01dbdac2f61e98c64b5aa897a311d8c3"
+      "source_digest": "sha256:c2774c14a335ded19aa64f5325ed05eab6e5f3c0d0b81add780cb01c0c75b106"
     },
     "semantic-review-defect": {
       "provenance": {
@@ -285386,13 +285392,15 @@
             ],
             "totals": { "backed": 1554, "total": 2749 },
             "engine": {
-              "cli": "0.30.2",
-              "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+              "cli": "0.32.0",
+              "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
               "capabilities": [
                 "action_guidance.structured",
+                "assurance_export.v1",
                 "binding_census",
                 "binding_census.self_named",
                 "binding_census.tagged",
+                "clause_sets",
                 "declaration_origins",
                 "metrics_envelope",
                 "minted_targets",
@@ -294270,7 +294278,7 @@
               }
             ]
           },
-          "digest": "sha256:7c2e5e39846f20525bf07c591b8e8fbc8edc81c77ce07415d98d580abcd6070d"
+          "digest": "sha256:3547a7f32415e7724740c8df65829e3b2fc402798f22d7d7c7327e664bfdbcaa"
         },
         "quoin.evidence-audit": {
           "state": "unavailable",
@@ -294298,7 +294306,7 @@
           "digest": "sha256:33c63fb38cfeaf5517a17dd111a6307528cf9bc66784105c86933fcef55547ff"
         }
       },
-      "source_digest": "sha256:758a90da54f8caada649b6077d12c0e6c9077245f7517bc5e5ea384b8a061009"
+      "source_digest": "sha256:6daaf22927938a3ad1c282e4f91d390222b3fe9a42eaacc97036a54ff87ff93e"
     }
   },
   "score": {
@@ -294323,5 +294331,5 @@
     "notEvaluated": [],
     "recall": 1
   },
-  "cohort_digest": "sha256:c5d0e733b16a5d5dfc88dd7922d782d7fb4c55989094223b843ee91ec176007a"
+  "cohort_digest": "sha256:57531cf7f6d2696d387bf5ae3a020ff60fb0a9a4b16cd5cd8242f3f188048643"
 }
