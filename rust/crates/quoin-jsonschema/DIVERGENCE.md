@@ -24,11 +24,11 @@ is accepted. The rest are shape differences between `ajv` and the Rust
 
 The retained tree has two RFC 3339 grammars and they disagree:
 
-| implementation | separator | zulu | used by |
-|---|---|---|---|
-| `src/measurement/date-time.ts:2` | `[Tt]` | `[Zz]` | the operational schema's `format: "date-time"` |
-| `src/measurement/intervention.ts:349` | `T` | `Z` | the intervention schema's `format: "date-time"` |
-| `src/measurement/intervention-schema.ts:14-16` | `T` | `Z` | the intervention schema's `observed_at` **pattern** |
+| implementation                                 | separator | zulu   | used by                                             |
+| ---------------------------------------------- | --------- | ------ | --------------------------------------------------- |
+| `src/measurement/date-time.ts:2`               | `[Tt]`    | `[Zz]` | the operational schema's `format: "date-time"`      |
+| `src/measurement/intervention.ts:349`          | `T`       | `Z`    | the intervention schema's `format: "date-time"`     |
+| `src/measurement/intervention-schema.ts:14-16` | `T`       | `Z`    | the intervention schema's `observed_at` **pattern** |
 
 So that value is a valid `observed_at` in an operational record and an invalid
 one in an intervention record, today, on `main`.
@@ -74,14 +74,14 @@ refuses.
 `intervention-schema.ts:6-16` admits
 `(sha256|blake3):[a-f0-9]{64}` in `immutableVersion`. Measured on `main`:
 
-* the only digest producer in `src/measurement/` writes `sha256:` and nothing
+- the only digest producer in `src/measurement/` writes `sha256:` and nothing
   else (`intervention.ts:123`, `:158`);
-* `git grep "blake3:"` returns eight hits and **none is data** — five doc
+- `git grep "blake3:"` returns eight hits and **none is data** — five doc
   comments in `quoin-store/src/digest.rs`, one negative source guard, one
-  *rejection* fixture, one `blake3::hash` call;
-* no `blake3:`-prefixed value exists in `spec/evidence/`, `tests/fixtures/` or
+  _rejection_ fixture, one `blake3::hash` call;
+- no `blake3:`-prefixed value exists in `spec/evidence/`, `tests/fixtures/` or
   `corpus/`;
-* `quoin_store::DigestDomain` mints no prefixed blake3 value at all —
+- `quoin_store::DigestDomain` mints no prefixed blake3 value at all —
   `RawBytesDigest::to_labelled` produces one and its own doc says it is never
   the stored form.
 
@@ -120,10 +120,10 @@ other way round: under Draft 2020-12 `format` is annotation-only until
 
 The two constructors keep that distinction rather than papering over it:
 
-| constructor | registers | asserts | used by |
-|---|---|---|---|
-| `SchemaValidator::compile_vendored` | nothing | nothing | `quoin-semantic`, whose goldens were captured against an ajv with no format registered |
-| `SchemaValidator::compile_with_formats` | the named checks | yes | both measurement schemas, whose ajv instances registered `date-time` |
+| constructor                             | registers        | asserts | used by                                                                                |
+| --------------------------------------- | ---------------- | ------- | -------------------------------------------------------------------------------------- |
+| `SchemaValidator::compile_vendored`     | nothing          | nothing | `quoin-semantic`, whose goldens were captured against an ajv with no format registered |
+| `SchemaValidator::compile_with_formats` | the named checks | yes     | both measurement schemas, whose ajv instances registered `date-time`                   |
 
 A straight transliteration that skipped `should_validate_formats(true)` would
 compile cleanly, pass every structural test, and silently accept

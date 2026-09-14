@@ -42,7 +42,14 @@ const sha256 = (bytes) =>
 
 const bases = JSON.parse(
   readFileSync(
-    join(crateRoot, "..", "quoin-quire", "tests", "goldens", "assurance-bases.json"),
+    join(
+      crateRoot,
+      "..",
+      "quoin-quire",
+      "tests",
+      "goldens",
+      "assurance-bases.json",
+    ),
     "utf8",
   ),
 ).bases;
@@ -82,7 +89,13 @@ const measuredResults = {
   unresolved: [{ dimension: "overall", key: "unresolved", count: 3 }],
   ambiguous: [{ dimension: "resolver_tier", key: "tier-2", count: 1 }],
   recall: [
-    { dimension: "overall", key: "all", recovered: 9, expected: 10, ratio: 0.9 },
+    {
+      dimension: "overall",
+      key: "all",
+      recovered: 9,
+      expected: 10,
+      ratio: 0.9,
+    },
   ],
 };
 
@@ -199,7 +212,12 @@ const plan = {
   definitionVersion: "quire-code.graph-quality-v1",
   path: "spec/assurance/MP-001-graph-quality.md",
 };
-const otherPlan = { ...plan, id: "MP-900", metric: "coverage", stage: "observe" };
+const otherPlan = {
+  ...plan,
+  id: "MP-900",
+  metric: "coverage",
+  stage: "observe",
+};
 
 const qualityInput = (overrides = {}) => ({
   record: clone(measuredRecord),
@@ -229,7 +247,11 @@ add("identity/empty-record", "graphQualityObservationId", {
 add("identity/non-object", "graphQualityObservationId", { value: 7 });
 add("identity/array", "graphQualityObservationId", { value: [1, "two"] });
 add("identity/nested-sorted", "graphQualityObservationId", {
-  value: { b: { d: 1, c: [{ z: 1, a: 2 }] }, a: "x", observation_id: "dropped" },
+  value: {
+    b: { d: 1, c: [{ z: 1, a: 2 }] },
+    a: "x",
+    observation_id: "dropped",
+  },
 });
 
 const assuranceCase = (name, document, premises = acceptedPremises) =>
@@ -322,10 +344,14 @@ add("quality/no-scope", "adaptGraphQualityObservation", {
 {
   const broken = clone(measuredRecord);
   broken.population.supported_files = 0;
-  add("quality/measured-without-supported-files", "adaptGraphQualityObservation", {
-    ...qualityInput(),
-    record: broken,
-  });
+  add(
+    "quality/measured-without-supported-files",
+    "adaptGraphQualityObservation",
+    {
+      ...qualityInput(),
+      record: broken,
+    },
+  );
 }
 {
   const broken = clone(emptyRecord);
@@ -353,7 +379,10 @@ add("quality/no-scope", "adaptGraphQualityObservation", {
 }
 {
   const broken = clone(measuredRecord);
-  broken.results.confusion_matrices = broken.results.confusion_matrices.slice(0, 3);
+  broken.results.confusion_matrices = broken.results.confusion_matrices.slice(
+    0,
+    3,
+  );
   add("quality/too-few-matrices", "adaptGraphQualityObservation", {
     ...qualityInput(),
     record: broken,
@@ -391,7 +420,10 @@ for (const [name, plans] of [
   ["only-other-metric", [clone(otherPlan)]],
   ["proposed", [{ ...clone(plan), status: "proposed" }]],
   ["two-active", [clone(plan), { ...clone(plan), id: "MP-002" }]],
-  ["wrong-definition", [{ ...clone(plan), definitionVersion: "quire-code.graph-quality-v2" }]],
+  [
+    "wrong-definition",
+    [{ ...clone(plan), definitionVersion: "quire-code.graph-quality-v2" }],
+  ],
 ])
   add(`quality/plans/${name}`, "adaptGraphQualityObservation", {
     ...qualityInput(),
@@ -484,7 +516,9 @@ const run = (entry) => {
       return { output: graphQualityObservationId(clone(input.value)) };
     case "adaptQuireAssurance":
       return {
-        output: canonicalJson(adaptQuireAssurance(input.document, input.accepted)),
+        output: canonicalJson(
+          adaptQuireAssurance(input.document, input.accepted),
+        ),
       };
     case "adaptGraphQualityObservation":
       return {
@@ -527,7 +561,8 @@ const captured = cases.map((entry) => {
 
 const golden = {
   provenance: {
-    captured_by: "rust/crates/quoin-measurement-graph/oracle/capture-graph-adapter-verdicts.mjs",
+    captured_by:
+      "rust/crates/quoin-measurement-graph/oracle/capture-graph-adapter-verdicts.mjs",
     module: "src/measurement/graph-adapters.ts",
     module_digest: sha256(readFileSync(modulePath)),
     node: process.version,
@@ -544,7 +579,9 @@ const golden = {
 };
 const out = join(crateRoot, "tests", "goldens", "graph-adapter-verdicts.json");
 writeFileSync(out, `${JSON.stringify(golden, null, 2)}\n`);
-const accepted = captured.filter((entry) => entry.verdict === "accepted").length;
+const accepted = captured.filter(
+  (entry) => entry.verdict === "accepted",
+).length;
 console.log(
   `${captured.length} cases -> ${out} (${accepted} accepted, ${captured.length - accepted} refused)`,
 );

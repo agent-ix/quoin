@@ -148,7 +148,9 @@ const revision = execFileSync("git", ["rev-parse", "HEAD"], {
   encoding: "utf8",
 }).trim();
 const digestOf = (path) =>
-  `sha256:${createHash("sha256").update(readFileSync(join(repoRoot, path))).digest("hex")}`;
+  `sha256:${createHash("sha256")
+    .update(readFileSync(join(repoRoot, path)))
+    .digest("hex")}`;
 
 const capture = {
   produced_by: "src/measurement/graph-portfolio-load.ts",

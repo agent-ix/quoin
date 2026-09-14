@@ -30,15 +30,28 @@ const revision = execFileSync("git", ["-C", repo, "rev-parse", "HEAD"], {
   encoding: "utf8",
 }).trim();
 
-const out = join(here, "..", "tests", "goldens", "intervention-experiment-v1.captured.json");
+const out = join(
+  here,
+  "..",
+  "tests",
+  "goldens",
+  "intervention-experiment-v1.captured.json",
+);
 writeFileSync(out, canonicalJson(interventionExperimentSchema), "utf8");
 writeFileSync(
-  join(here, "..", "tests", "goldens", "intervention-experiment-v1.captured.provenance.json"),
+  join(
+    here,
+    "..",
+    "tests",
+    "goldens",
+    "intervention-experiment-v1.captured.provenance.json",
+  ),
   canonicalJson({
     captured_from: "src/measurement/intervention-schema.ts",
     exported_binding: "interventionExperimentSchema",
     serializer: "src/store/canonical.ts canonicalJson",
-    producer: "rust/crates/quoin-jsonschema/oracle/capture-intervention-schema.mjs",
+    producer:
+      "rust/crates/quoin-jsonschema/oracle/capture-intervention-schema.mjs",
     quoin_revision: revision,
   }),
   "utf8",

@@ -27,8 +27,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(
   process.env.QUOIN_SRC_ROOT ?? join(here, "..", "..", "..", ".."),
 );
-const load = (path) =>
-  import(pathToFileURL(join(repoRoot, "src", path)).href);
+const load = (path) => import(pathToFileURL(join(repoRoot, "src", path)).href);
 
 const { buildInterventionReport, renderInterventionReport } = await load(
   "measurement/intervention-report.js",
@@ -306,9 +305,7 @@ const operationalCases = [
   },
   {
     name: "capability_not_applicable",
-    records: [
-      capability("not_applicable", { record_id: "op-not-applicable" }),
-    ],
+    records: [capability("not_applicable", { record_id: "op-not-applicable" })],
   },
   {
     name: "exercise_succeeded_clock_met",
@@ -359,16 +356,28 @@ const revision = execFileSync("git", ["rev-parse", "HEAD"], {
 }).trim();
 
 const capture = {
-  produced_by: "src/measurement/intervention-report.ts, src/measurement/operational-report.ts",
+  produced_by:
+    "src/measurement/intervention-report.ts, src/measurement/operational-report.ts",
   produced_from_revision: revision,
-  capture_script: "rust/crates/quoin-measurement/oracle/capture-report-oracle.mjs",
+  capture_script:
+    "rust/crates/quoin-measurement/oracle/capture-report-oracle.mjs",
   intervention: interventionCases.map(({ name, records }) => {
     const entries = buildInterventionReport(records);
-    return { name, records, entries, rendered: renderInterventionReport(entries) };
+    return {
+      name,
+      records,
+      entries,
+      rendered: renderInterventionReport(entries),
+    };
   }),
   operational: operationalCases.map(({ name, records }) => {
     const entries = buildOperationalReport(records);
-    return { name, records, entries, rendered: renderOperationalReport(entries) };
+    return {
+      name,
+      records,
+      entries,
+      rendered: renderOperationalReport(entries),
+    };
   }),
 };
 

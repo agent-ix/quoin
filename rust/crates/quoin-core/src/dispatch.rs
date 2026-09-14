@@ -54,6 +54,18 @@ pub const OPERATIONS: &[&str] = &[
     "evidence.trust_assessments",
     "evidence.trust_decision",
     "evidence.write_baseline",
+    "measurement.build_comparison",
+    "measurement.build_graph_portfolio",
+    "measurement.build_portfolio",
+    "measurement.build_report",
+    "measurement.build_series",
+    "measurement.produce_agent_eval_intervention",
+    "measurement.produce_github_release_operational",
+    "measurement.record",
+    "measurement.render_comparison",
+    "measurement.render_graph_portfolio",
+    "measurement.render_portfolio",
+    "measurement.render_report",
     "modules.ensure_defaults",
     "modules.install",
     "modules.list",
@@ -135,6 +147,26 @@ pub fn dispatch(
         "evidence.audit_inputs" => crate::ops::evidence::audit_inputs(request, capabilities),
         "evidence.read_baseline" => crate::ops::evidence::read_baseline(request, capabilities),
         "evidence.write_baseline" => crate::ops::evidence::write_baseline(request, capabilities),
+        "measurement.record" => crate::ops::measurement::record(request),
+        "measurement.produce_agent_eval_intervention" => {
+            crate::ops::measurement::produce_agent_eval_intervention(request)
+        }
+        "measurement.produce_github_release_operational" => {
+            crate::ops::measurement::produce_github_release_operational(request)
+        }
+        "measurement.build_report" => crate::ops::measurement::build_report(request),
+        "measurement.render_report" => crate::ops::measurement::render_report(request),
+        "measurement.build_comparison" => crate::ops::measurement::build_comparison(request),
+        "measurement.render_comparison" => crate::ops::measurement::render_comparison(request),
+        "measurement.build_series" => crate::ops::measurement::build_series(request),
+        "measurement.build_portfolio" => crate::ops::measurement::build_portfolio(request),
+        "measurement.render_portfolio" => crate::ops::measurement::render_portfolio(request),
+        "measurement.build_graph_portfolio" => {
+            crate::ops::measurement::build_graph_portfolio(request)
+        }
+        "measurement.render_graph_portfolio" => {
+            crate::ops::measurement::render_graph_portfolio(request)
+        }
         "modules.ensure_defaults" => crate::ops::modules::ensure_defaults(request, capabilities),
         "modules.install" => crate::ops::modules::install(request, capabilities),
         "modules.list" => crate::ops::modules::list(request, capabilities),
@@ -380,6 +412,46 @@ mod tests {
             "evidence",
             "evidence/wire.rs",
             include_str!("ops/evidence/wire.rs"),
+        ),
+        (
+            "measurement",
+            "measurement/mod.rs",
+            include_str!("ops/measurement/mod.rs"),
+        ),
+        (
+            "measurement",
+            "measurement/portfolio.rs",
+            include_str!("ops/measurement/portfolio.rs"),
+        ),
+        (
+            "measurement",
+            "measurement/produce.rs",
+            include_str!("ops/measurement/produce.rs"),
+        ),
+        (
+            "measurement",
+            "measurement/record.rs",
+            include_str!("ops/measurement/record.rs"),
+        ),
+        (
+            "measurement",
+            "measurement/report.rs",
+            include_str!("ops/measurement/report.rs"),
+        ),
+        (
+            "measurement",
+            "measurement/taxonomy.rs",
+            include_str!("ops/measurement/taxonomy.rs"),
+        ),
+        (
+            "measurement",
+            "measurement/tests.rs",
+            include_str!("ops/measurement/tests.rs"),
+        ),
+        (
+            "measurement",
+            "measurement/wire.rs",
+            include_str!("ops/measurement/wire.rs"),
         ),
         (
             "modules",
@@ -854,6 +926,69 @@ mod tests {
         ]
     }
 
+    /// Every `ops::measurement` bound, named one by one (quoin#478). Its own
+    /// function for the same reason the evidence census is: the three together
+    /// exceed the length lint, and all three are concatenated below and
+    /// compared against `declared_domain_bounds()` as ONE population, so a
+    /// bound listed in none of them still fails.
+    ///
+    /// `quoin_store::MAX_DIGESTED_FILE_BYTES` is deliberately absent: it is a
+    /// FILE bound in `quoin-store`, not an `ops::*` request bound, and
+    /// `tc_412` compares this census against a scan of the `ops` sources only.
+    /// Listing it here would make the two disagree by construction.
+    fn census_of_the_measurement_domain() -> Vec<(&'static str, usize)> {
+        vec![
+            (
+                "ops::measurement::MAX_ASSURANCE_DOCUMENT_BYTES",
+                crate::ops::measurement::MAX_ASSURANCE_DOCUMENT_BYTES,
+            ),
+            (
+                "ops::measurement::MAX_COLLECTION_BYTES",
+                crate::ops::measurement::MAX_COLLECTION_BYTES,
+            ),
+            (
+                "ops::measurement::MAX_GRAPH_MAPPING_BYTES",
+                crate::ops::measurement::MAX_GRAPH_MAPPING_BYTES,
+            ),
+            (
+                "ops::measurement::MAX_INTERVENTION_RECORD_BYTES",
+                crate::ops::measurement::MAX_INTERVENTION_RECORD_BYTES,
+            ),
+            (
+                "ops::measurement::MAX_METRIC_NAME_BYTES",
+                crate::ops::measurement::MAX_METRIC_NAME_BYTES,
+            ),
+            (
+                "ops::measurement::MAX_OPERATIONAL_RECORD_BYTES",
+                crate::ops::measurement::MAX_OPERATIONAL_RECORD_BYTES,
+            ),
+            (
+                "ops::measurement::MAX_PORTFOLIO_ROOTS_BYTES",
+                crate::ops::measurement::MAX_PORTFOLIO_ROOTS_BYTES,
+            ),
+            (
+                "ops::measurement::MAX_PRODUCER_DEFINITION_BYTES",
+                crate::ops::measurement::MAX_PRODUCER_DEFINITION_BYTES,
+            ),
+            (
+                "ops::measurement::MAX_RECORD_ID_BYTES",
+                crate::ops::measurement::MAX_RECORD_ID_BYTES,
+            ),
+            (
+                "ops::measurement::MAX_RETAINED_EXPORT_BYTES",
+                crate::ops::measurement::MAX_RETAINED_EXPORT_BYTES,
+            ),
+            (
+                "ops::measurement::MAX_REVISION_BYTES",
+                crate::ops::measurement::MAX_REVISION_BYTES,
+            ),
+            (
+                "ops::measurement::MAX_WORKFLOW_YAML_BYTES",
+                crate::ops::measurement::MAX_WORKFLOW_YAML_BYTES,
+            ),
+        ]
+    }
+
     /// The transport ceiling stays strictly above every domain bound.
     ///
     /// Each `ops::*` bound refuses with the `op` that refused and the quantity
@@ -873,6 +1008,7 @@ mod tests {
         let domain_bounds: Vec<(&str, usize)> = census_of_the_older_domains()
             .into_iter()
             .chain(census_of_the_evidence_domain())
+            .chain(census_of_the_measurement_domain())
             .collect();
         // The census is hand-written, so it is checked against the `ops`
         // sources rather than against itself. A literal count (`len() == 6`)

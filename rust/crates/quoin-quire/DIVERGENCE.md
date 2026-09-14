@@ -40,14 +40,14 @@ diagnostic aid, not an interface.
 `src/quire/validate.ts:99` builds `new Ajv2020({ allErrors: true, strict:
 false })` and registers **no** format checks. `assurance-v1` declares one
 `format` — `uuid`, on `artifact.uuid` — and under that ajv it is an annotation:
-ajv logs *unknown format "uuid" ignored in schema at path "#/properties/uuid"*
+ajv logs _unknown format "uuid" ignored in schema at path "#/properties/uuid"_
 and accepts `"not-a-uuid"`.
 
 So this crate compiles with `SchemaValidator::compile_vendored`, which registers
 nothing and asserts nothing — **not** `compile_with_formats`, which the two
-*measurement* schemas need because their ajv instances each register `date-time`
+_measurement_ schemas need because their ajv instances each register `date-time`
 (see `quoin-jsonschema/DIVERGENCE.md` §4). Reaching for the asserting
-constructor because the schema *has* a format would refuse documents the oracle
+constructor because the schema _has_ a format would refuse documents the oracle
 accepts. That is a verdict difference, which is a defect and not a nuance.
 
 The choice is measured from both sides in
@@ -64,7 +64,7 @@ Schema validator in this workspace (quoin#470) and this crate calls it. The
 
 Its `ValidDocument` is not reused, because it is indexed by `VendoredSchema` —
 the closed enum of the two **measurement** documents, whose `compile()`
-hardcodes a `date-time` `FormatCheck`. `assurance-v1` is a quire *output*
+hardcodes a `date-time` `FormatCheck`. `assurance-v1` is a quire _output_
 contract owned by this crate; widening that enum would file it under the
 measurement crate's namespace and hand it exactly the format policy §2 says it
 must not have. Only the ~15-line proof token is local.
@@ -89,7 +89,7 @@ not pass as agreement.
 A caller that can state its premises wants `assurance::read`, which is
 `quire_rs::read_assurance_export` — fail-closed, and it also checks the caller's
 module set and schema digests. `validate_assurance` answers the one question a
-caller with no premises can ask: *is this the published shape?* That caller is
+caller with no premises can ask: _is this the published shape?_ That caller is
 `src/measurement/graph-adapters.ts` and `src/graph-analysis/load.ts`, reading
 exports that arrived from other repositories, and it is why one vendored schema
 survived here when the other four did not (see `src/payload.rs`).

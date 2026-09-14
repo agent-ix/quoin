@@ -41,7 +41,7 @@ if (input.headCommit) {
 `runs`, the last index is out of range, `runs[i]` is `undefined`, and reading
 `.commit` throws a `TypeError` — for every obligation in the report, not just
 that one, because the throw escapes `audit()` entirely. Before the last index
-it is worse than a crash: binding *i* is compared against a run that belongs to
+it is worse than a crash: binding _i_ is compared against a run that belongs to
 a different suite, so a finding can name the wrong suite.
 
 This is **the same defect that was found and fixed in the block immediately
@@ -70,8 +70,8 @@ malformed. The corpus case is `a-malformed-manifest-is-reported-not-thrown`.
 
 `src/method-catalog.ts` records `cause.message` from whatever threw. Under Node
 that is `ENOENT: no such file or directory, open '…'` for a missing file and
-the `yaml` package's own sentence — *"Flow sequence in block collection must be
-sufficiently indented and end with a ] at line 3, column 1"* — for a malformed
+the `yaml` package's own sentence — _"Flow sequence in block collection must be
+sufficiently indented and end with a ] at line 3, column 1"_ — for a malformed
 one. This crate records `std::io::Error`'s message and `quoin_yaml`'s, which
 are different sentences for the same two facts.
 
@@ -91,7 +91,7 @@ deleted rather than left standing as a divergence that no longer exists.
 
 ## §3 — `readdir` order is sorted here
 
-**Input that separates them:** a module root that is a *parent* directory
+**Input that separates them:** a module root that is a _parent_ directory
 holding more than one child with a `manifest.yaml`, or an `IX_HOME` whose
 `filament/modules` holds several.
 
@@ -162,36 +162,36 @@ that started firing on ordinary input would fail there.
 
 ## What is NOT divergent
 
-* **The ladder order**, including the two checks that deliberately do not stop
+- **The ladder order**, including the two checks that deliberately do not stop
   it: the pre-guard `unknown-method` check and the `headCommit` staleness check.
   An unbound obligation with an uncatalogued method is BOTH undischarged AND
   unknown-method (quoin#165), and the corpus asserts both findings appear.
-* **`healthy`.** The retained source pushes it as the last statement of the loop
+- **`healthy`.** The retained source pushes it as the last statement of the loop
   body, so the one silent `continue` — `runBindings.length === 0` at
   `audit.ts:413` — leaves an obligation neither healthy nor found. `Pass` here
   carries a `completed` flag for that exact reason, and
   `a-scan-backed-binding-is-not-stale` is the corpus case that holds it in
   place. Inferring "healthy" from "no finding" reports a stronger result than
   the retained code does.
-* **String ordering.** `js::compare` is UTF-16 code-unit order, which is what
+- **String ordering.** `js::compare` is UTF-16 code-unit order, which is what
   `Array.prototype.sort` and `<` give in JavaScript, and it is not Rust's
   `str: Ord`. The corpus case
   `obligations-and-findings-sort-by-code-unit-not-by-locale` separates the two.
-* **`String(...)` coercion** of eight manifest fields. A YAML author writing
+- **`String(...)` coercion** of eight manifest fields. A YAML author writing
   `name: 1.0` gets `"1"` on both sides. See `src/jsvalue.rs`.
-* **The regex table.** Every retained `/…/i` without the `u` flag is compiled
+- **The regex table.** Every retained `/…/i` without the `u` flag is compiled
   with a `(?i-u)` prefix, so `\b`, `\w`, `\d` and case folding are ASCII exactly
   as in JavaScript. The three patterns that also carry `\s` or `≤`/`≥` are
   assembled with `(?i-u:…)` around the ASCII parts only, with
   `quoin_combinatorial::js::JS_WHITESPACE_CLASS` in place of `\s`, preserving
   match extents. `a-non-ascii-neighbour-is-not-a-word-character-to-a-unicode-less-regexp`
   is the corpus case that separates ASCII `\w` from Unicode `\w`.
-* **`Severity`.** An open newtype, not a closed enum, and `Finding.severity` is
+- **`Severity`.** An open newtype, not a closed enum, and `Finding.severity` is
   `Option`. `quoin-assurance`'s captured corpus carries `severity: "error"` and
   findings with no `severity` key at all, and a TypeScript union is not a
   runtime check: where the retained data is wider than the declared type, the
   retained data wins.
-* **`report.independence`.** The producer writes it as a list of
+- **`report.independence`.** The producer writes it as a list of
   `IndependenceAssessment`s and this port does too, but it is carried in
   `quoin_finding_types::AuditReport::other` rather than declared as a typed
   field. Declaring it made the workspace gate refuse

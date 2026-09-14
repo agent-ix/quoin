@@ -76,7 +76,9 @@ for (let index = 0; index < argv.length; index += 1) {
 if (out === null) throw new Error("usage: --out <file>");
 
 const TREE_TOKEN = "@@TREE@@";
-const tree = resolve(join(crateRoot, "tests", "fixtures", "graph-portfolio-tree"));
+const tree = resolve(
+  join(crateRoot, "tests", "fixtures", "graph-portfolio-tree"),
+);
 const normalise = (text) => text.split(tree).join(TREE_TOKEN);
 const repo = (name) => join(tree, name);
 
@@ -194,7 +196,10 @@ const mappingCases = [
 ].map((entry) => {
   const serialisable = JSON.parse(normalise(JSON.stringify(entry)));
   try {
-    const mappings = parseGraphPortfolioMappings(entry.locations, entry.options);
+    const mappings = parseGraphPortfolioMappings(
+      entry.locations,
+      entry.options,
+    );
     return {
       ...serialisable,
       verdict: "accepted",
@@ -234,7 +239,11 @@ const collectionsOf = (reads) =>
     .sort(
       (a, b) =>
         Date.parse(a.timestamp) - Date.parse(b.timestamp) ||
-        (a.collectionId < b.collectionId ? -1 : a.collectionId > b.collectionId ? 1 : 0),
+        (a.collectionId < b.collectionId
+          ? -1
+          : a.collectionId > b.collectionId
+            ? 1
+            : 0),
     );
 
 const names = injected.repositories;
@@ -300,7 +309,9 @@ const revision = execFileSync("git", ["rev-parse", "HEAD"], {
   encoding: "utf8",
 }).trim();
 const digestOf = (path) =>
-  `sha256:${createHash("sha256").update(readFileSync(join(repoRoot, path))).digest("hex")}`;
+  `sha256:${createHash("sha256")
+    .update(readFileSync(join(repoRoot, path)))
+    .digest("hex")}`;
 
 const capture = {
   produced_by: "src/measurement/graph-portfolio.ts",

@@ -315,14 +315,18 @@ function scenarios() {
 
   {
     const input = base();
-    input.bindings = { availability: "absent", reason: "bindings.json is absent" };
+    input.bindings = {
+      availability: "absent",
+      reason: "bindings.json is absent",
+    };
     add("bindings/absent", input, seeds, undefined);
   }
   {
     const input = base();
     input.bindings = {
       availability: "unreadable",
-      reason: "bindings.json is valid JSON but does not match the retained bindings schema",
+      reason:
+        "bindings.json is valid JSON but does not match the retained bindings schema",
     };
     add("bindings/unreadable", input, seeds, undefined);
   }
@@ -627,7 +631,13 @@ function contractCases() {
       "premises/short-digest",
       JSON.stringify({
         ...premises,
-        modules: [{ name: "m", version: "1", schemas: [{ archetype: "FR", schema_digest: "abc" }] }],
+        modules: [
+          {
+            name: "m",
+            version: "1",
+            schemas: [{ archetype: "FR", schema_digest: "abc" }],
+          },
+        ],
       }),
     ],
     [
@@ -833,7 +843,11 @@ function contractCases() {
       },
       true,
     ],
-    ["match/premises-missing-module", { ...premises, modules: [MODULES[0]] }, false],
+    [
+      "match/premises-missing-module",
+      { ...premises, modules: [MODULES[0]] },
+      false,
+    ],
     [
       "match/premises-different-digest",
       {
@@ -930,7 +944,11 @@ function loadCases() {
     const repo = join(root, `repo-${name}`);
     mkdirSync(join(repo, "spec", "evidence"), { recursive: true });
     if (bindingsText !== undefined) {
-      writeFileSync(join(repo, "spec", "evidence", "bindings.json"), bindingsText, "utf8");
+      writeFileSync(
+        join(repo, "spec", "evidence", "bindings.json"),
+        bindingsText,
+        "utf8",
+      );
     }
     return repo;
   };
@@ -981,7 +999,10 @@ function loadCases() {
     },
     {
       id: "load/ok-bindings-wrong-schema-version",
-      repo: repoWith("version", JSON.stringify({ schemaVersion: 2, bindings: [] })),
+      repo: repoWith(
+        "version",
+        JSON.stringify({ schemaVersion: 2, bindings: [] }),
+      ),
       export: exportText,
       premises: premisesText,
       audit: auditText,
@@ -1084,7 +1105,8 @@ const revision = execFileSync("git", ["rev-parse", "HEAD"], {
 
 const goldens = {
   provenance: {
-    producer: "rust/crates/quoin-graph-analysis/oracle/capture-graph-analysis.mjs",
+    producer:
+      "rust/crates/quoin-graph-analysis/oracle/capture-graph-analysis.mjs",
     oracle: "src/graph-analysis/{analysis,input,load,render}.ts",
     node_version: process.version,
     quoin_revision: revision,

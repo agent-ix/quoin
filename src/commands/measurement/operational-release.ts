@@ -3,10 +3,7 @@ import { readFileSync } from "node:fs";
 import { Flags } from "@oclif/core";
 
 import { QuoinCommand } from "../../base.js";
-import {
-  produceGitHubReleaseOperational,
-  type GitHubReleaseProducerDefinition,
-} from "../../measurement/index.js";
+import { askCore, stringMember } from "./core.js";
 
 export default class OperationalRelease extends QuoinCommand {
   static summary =
@@ -23,14 +20,17 @@ network request, workflow dispatch, release publication, or process execution.`;
 
   async run(): Promise<void> {
     const { flags } = await this.parse(OperationalRelease);
+    const op = "measurement.produce_github_release_operational";
+    const fail = (message: string): never => this.error(message, { exit: 2 });
+    let definition: unknown;
     try {
-      const definition = JSON.parse(
+      definition = JSON.parse(
         readFileSync(flags.definition, "utf8"),
-      ) as GitHubReleaseProducerDefinition;
-      this.log(produceGitHubReleaseOperational(flags.repo, definition).path);
+      ) as unknown;
     } catch (error) {
-      const detail = error instanceof Error ? error.message : String(error);
-      this.error(detail, { exit: 2 });
+      fail(error instanceof Error ? error.message : String(error));
     }
+    const payload = askCore(op, { repo: flags.repo, definition }, fail);
+    this.log(stringMember(payload, "path", op, fail));
   }
 }

@@ -51,7 +51,10 @@ const here = dirname(fileURLToPath(import.meta.url));
 const repo = join(here, "..", "..", "..", "..");
 
 const captured = JSON.parse(
-  readFileSync(join(here, "..", "tests", "goldens", "assurance-bases.json"), "utf8"),
+  readFileSync(
+    join(here, "..", "tests", "goldens", "assurance-bases.json"),
+    "utf8",
+  ),
 );
 
 function clone(value) {
@@ -109,14 +112,28 @@ function ladder(base) {
   push("set/format_version=string", (d) => setAt(d, ["format_version"], "1"));
 
   // The source premise: `revision` is the 40-hex pattern.
-  push("remove/source.repository", (d) => removeAt(d, ["source", "repository"]));
+  push("remove/source.repository", (d) =>
+    removeAt(d, ["source", "repository"]),
+  );
   push("remove/source.revision", (d) => removeAt(d, ["source", "revision"]));
-  push("add/source.unknown-key", (d) => setAt(d, ["source", "quoin_unknown"], 1));
-  push("set/source.repository=empty", (d) => setAt(d, ["source", "repository"], ""));
-  push("set/source.revision=39-hex", (d) => setAt(d, ["source", "revision"], "a".repeat(39)));
-  push("set/source.revision=41-hex", (d) => setAt(d, ["source", "revision"], "a".repeat(41)));
-  push("set/source.revision=uppercase", (d) => setAt(d, ["source", "revision"], "A".repeat(40)));
-  push("set/source.revision=sha256", (d) => setAt(d, ["source", "revision"], HEX64));
+  push("add/source.unknown-key", (d) =>
+    setAt(d, ["source", "quoin_unknown"], 1),
+  );
+  push("set/source.repository=empty", (d) =>
+    setAt(d, ["source", "repository"], ""),
+  );
+  push("set/source.revision=39-hex", (d) =>
+    setAt(d, ["source", "revision"], "a".repeat(39)),
+  );
+  push("set/source.revision=41-hex", (d) =>
+    setAt(d, ["source", "revision"], "a".repeat(41)),
+  );
+  push("set/source.revision=uppercase", (d) =>
+    setAt(d, ["source", "revision"], "A".repeat(40)),
+  );
+  push("set/source.revision=sha256", (d) =>
+    setAt(d, ["source", "revision"], HEX64),
+  );
 
   for (const collection of COLLECTIONS) {
     push(`set/${collection}=object`, (d) => setAt(d, [collection], {}));
@@ -129,8 +146,12 @@ function ladder(base) {
     const first = base[collection]?.[0];
     if (first && typeof first === "object") {
       for (const key of Object.keys(first).sort()) {
-        push(`remove/${collection}.0.${key}`, (d) => removeAt(d, [collection, "0", key]));
-        push(`set/${collection}.0.${key}=null`, (d) => setAt(d, [collection, "0", key], null));
+        push(`remove/${collection}.0.${key}`, (d) =>
+          removeAt(d, [collection, "0", key]),
+        );
+        push(`set/${collection}.0.${key}=null`, (d) =>
+          setAt(d, [collection, "0", key], null),
+        );
       }
     }
   }
@@ -187,15 +208,23 @@ function ladder(base) {
     ["valid", "3f2504e0-4f89-11d3-9a0c-0305e82c3301"],
     ["number", 7],
   ]) {
-    push(`set/artifacts.0.uuid=${name}`, (d) => setAt(d, ["artifacts", "0", "uuid"], value));
+    push(`set/artifacts.0.uuid=${name}`, (d) =>
+      setAt(d, ["artifacts", "0", "uuid"], value),
+    );
   }
 
-  push("set/modules.0.schemas=object", (d) => setAt(d, ["modules", "0", "schemas"], {}));
-  push("set/modules.0.version=empty", (d) => setAt(d, ["modules", "0", "version"], ""));
+  push("set/modules.0.schemas=object", (d) =>
+    setAt(d, ["modules", "0", "schemas"], {}),
+  );
+  push("set/modules.0.version=empty", (d) =>
+    setAt(d, ["modules", "0", "version"], ""),
+  );
   push("set/symbols.0.capabilities=string", (d) =>
     setAt(d, ["symbols", "0", "capabilities"], "verifies"),
   );
-  push("set/relations.0.kind=unknown", (d) => setAt(d, ["relations", "0", "kind"], "quoin-made-up"));
+  push("set/relations.0.kind=unknown", (d) =>
+    setAt(d, ["relations", "0", "kind"], "quoin-made-up"),
+  );
 
   return rungs;
 }
@@ -243,7 +272,10 @@ writeFileSync(
       producer: "rust/crates/quoin-quire/oracle/capture-assurance-verdicts.mjs",
       oracle: "src/quire/validate.ts:99 validateAssurance",
       ajv_version: JSON.parse(
-        readFileSync(createRequire(import.meta.url).resolve("ajv/package.json"), "utf8"),
+        readFileSync(
+          createRequire(import.meta.url).resolve("ajv/package.json"),
+          "utf8",
+        ),
       ).version,
       node_version: process.version,
       bases: "rust/crates/quoin-quire/tests/goldens/assurance-bases.json",

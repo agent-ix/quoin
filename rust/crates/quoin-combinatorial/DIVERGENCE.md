@@ -25,7 +25,7 @@ dimensions at `30-way`, which demands 2^30.
 The retained `demandedTuples` accumulates into an unbounded `Set<string>`. On
 such a statement the process allocates roughly a billion strings and dies: there
 is no diagnostic, no partial report, and no way for a caller to tell heap
-exhaustion from any other crash. That is not an *answer* the retained side
+exhaustion from any other crash. That is not an _answer_ the retained side
 gives; it is the absence of one.
 
 This crate refuses by name instead, with `QCB-DEMAND-TOO-LARGE`. Two guards
@@ -47,7 +47,7 @@ every space below the ceiling the two sides agree exactly, and the golden corpus
 is the evidence.
 
 **Must-have-fired:** `tc_382_002_a_demand_past_the_ceiling_is_refused_where_the_retained_side_exhausts_the_heap`
-asserts the refusal *and* its code, and then asserts that a space under the
+asserts the refusal _and_ its code, and then asserts that a space under the
 ceiling still computes. If the ceiling were ever removed, the first assertion
 fails and this section stops being true out loud rather than quietly.
 
@@ -71,8 +71,8 @@ statement text.
 
 Note what is **not** a divergence here. The retained guard is
 `!Number.isFinite(strength) || strength < 1`, and both halves matter: a 400-digit
-header parses to `Infinity` and is therefore *not a combinatorial obligation at
-all*. This crate reproduces that exactly by reading the digits as an `f64`
+header parses to `Infinity` and is therefore _not a combinatorial obligation at
+all_. This crate reproduces that exactly by reading the digits as an `f64`
 first — Rust and ECMAScript both round decimal to the nearest double — rather
 than approximating the boundary with a digit count. The golden corpus carries
 the case (`an-infinite-strength-is-not-a-space`).
@@ -103,7 +103,7 @@ rather than left to be rediscovered the next time someone considers "simplifying
 the filter.
 
 The same reasoning covers `__proto__`, with one wrinkle that belongs to the
-capture script rather than to the algebra: an object *literal* spelling
+capture script rather than to the algebra: an object _literal_ spelling
 `__proto__: "1"` invokes the prototype setter and creates no own property, while
 `JSON.parse` uses `CreateDataProperty` and does. The production path reads
 configurations out of a parsed run record, so the oracle captures the parsed
@@ -135,7 +135,7 @@ retained side holds the number as a double. Both are handled as declared
 divergences with must-have-fired assertions above. Widening the fixture until
 those looked covered would have produced a corpus that agrees with itself.
 
-What no fixture of any size can cover is a statement about *all* spaces — that a
+What no fixture of any size can cover is a statement about _all_ spaces — that a
 full factorial run always closes every gap, that adding a configuration never
 removes coverage, that no excluded combination is ever demanded. Those are in
 `tests/tc_382_properties.rs` as `proptest` properties, each with an anti-vacuity

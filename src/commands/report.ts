@@ -2,21 +2,17 @@ import { Flags } from "@oclif/core";
 
 import { QuoinCommand } from "../base.js";
 import { canonicalJson } from "../store/canonical.js";
-import {
-  buildMeasurementReport,
-  buildGovernedGraphPortfolio,
-  buildPortfolioReport,
-  comparisonFor,
-  renderPortfolioReport,
-  renderPortfolioReportJson,
-  renderMeasurementComparison,
-  renderMeasurementReport,
-  renderMeasurementReportJson,
-  renderGovernedGraphPortfolio,
-  canonicalGraphPortfolioJson,
-  seriesFor,
-} from "../measurement/index.js";
+import { askCore, stringMember } from "./measurement/core.js";
 
+/**
+ * Every branch below asks `quoin-core` one question (quoin#478). The `build_*`
+ * routes answer with the document this command's `--format json` prints, and
+ * the `render_*` routes with the markdown its `human` format prints; which of
+ * the two is asked is the format flag, so no report crosses the boundary twice.
+ *
+ * `renderSeries` stays here: there is no `measurement.render_series` route —
+ * porting this helper is the cutover's work (#479), not this wave's wiring.
+ */
 export default class Report extends QuoinCommand {
   static summary = "Render QA plans and measurements from the evidence store.";
   static description = `A deterministic store view. It accepts no typed values and runs no
@@ -66,79 +62,87 @@ measurement producer. Plans with no records remain visible as not_computed.`;
 
   async run(): Promise<void> {
     const { flags } = await this.parse(Report);
+    const fail = (message: string): never => this.error(message, { exit: 2 });
     if (flags.since && flags.series) {
-      this.error("--since and --series are mutually exclusive", { exit: 2 });
+      fail("--since and --series are mutually exclusive");
     }
-    try {
-      const graphSelected = Boolean(
-        flags["graph-export"]?.length ||
-        flags["graph-premises"]?.length ||
-        flags["graph-audit"]?.length ||
-        flags.changed?.length,
-      );
-      if (graphSelected && !flags.portfolio?.length) {
-        this.error("graph portfolio mappings require --portfolio", { exit: 2 });
-      }
-      if (flags.portfolio?.length) {
-        if (flags.since || flags.series) {
-          this.error(
-            "--portfolio cannot be combined with --since or --series",
-            { exit: 2 },
-          );
-        }
-        if (graphSelected) {
-          const portfolio = buildGovernedGraphPortfolio(flags.portfolio, {
-            graphExports: flags["graph-export"],
-            graphPremises: flags["graph-premises"],
-            graphAudits: flags["graph-audit"],
-            changed: flags.changed,
-          });
-          this.log(
-            flags.format === "json"
-              ? canonicalGraphPortfolioJson(portfolio).trimEnd()
-              : renderGovernedGraphPortfolio(portfolio),
-          );
-          return;
-        }
-        const portfolio = buildPortfolioReport(flags.portfolio);
-        this.log(
-          flags.format === "json"
-            ? renderPortfolioReportJson(portfolio).trimEnd()
-            : renderPortfolioReport(portfolio),
-        );
-        return;
-      }
-      if (flags.series) {
-        const value = seriesFor(flags.repo, flags.series);
-        this.log(
-          flags.format === "json"
-            ? canonicalJson(value).trimEnd()
-            : renderSeries(
-                flags.series,
-                value as Array<Record<string, unknown>>,
-              ),
-        );
-        return;
-      }
-      if (flags.since) {
-        const comparison = comparisonFor(flags.repo, flags.since);
-        this.log(
-          flags.format === "json"
-            ? canonicalJson(comparison).trimEnd()
-            : renderMeasurementComparison(comparison),
-        );
-        return;
-      }
-      const report = buildMeasurementReport(flags.repo);
+    const json = flags.format === "json";
+    /** Ask for the document, or for the markdown, and print what came back. */
+    const answer = (build: string, render: string, request: unknown): void => {
+      const op = json ? build : render;
+      const payload = askCore(op, request, fail);
       this.log(
-        flags.format === "json"
-          ? renderMeasurementReportJson(report).trimEnd()
-          : renderMeasurementReport(report),
+        json
+          ? canonicalJson(payload).trimEnd()
+          : stringMember(payload, "rendered", op, fail),
       );
-    } catch (error) {
-      const detail = error instanceof Error ? error.message : String(error);
-      this.error(detail, { exit: 2 });
+    };
+
+    const graphSelected = Boolean(
+      flags["graph-export"]?.length ||
+      flags["graph-premises"]?.length ||
+      flags["graph-audit"]?.length ||
+      flags.changed?.length,
+    );
+    if (graphSelected && !flags.portfolio?.length) {
+      fail("graph portfolio mappings require --portfolio");
     }
+    if (flags.portfolio?.length) {
+      if (flags.since || flags.series) {
+        fail("--portfolio cannot be combined with --since or --series");
+      }
+      if (graphSelected) {
+        answer(
+          "measurement.build_graph_portfolio",
+          "measurement.render_graph_portfolio",
+          {
+            locations: flags.portfolio,
+            graph_exports: flags["graph-export"] ?? [],
+            graph_premises: flags["graph-premises"] ?? [],
+            graph_audits: flags["graph-audit"] ?? [],
+            changed: flags.changed ?? [],
+            // The mappings name documents relative to where the operator ran
+            // the command, which the subprocess does not inherit as a meaning.
+            cwd: process.cwd(),
+          },
+        );
+        return;
+      }
+      answer("measurement.build_portfolio", "measurement.render_portfolio", {
+        locations: flags.portfolio,
+      });
+      return;
+    }
+    if (flags.series) {
+      const op = "measurement.build_series";
+      const payload = askCore(
+        op,
+        {
+          repo: flags.repo,
+          metric: flags.series,
+        },
+        fail,
+      );
+      this.log(
+        json
+          ? canonicalJson(payload).trimEnd()
+          : renderSeries(
+              flags.series,
+              payload as Array<Record<string, unknown>>,
+            ),
+      );
+      return;
+    }
+    if (flags.since) {
+      answer("measurement.build_comparison", "measurement.render_comparison", {
+        repo: flags.repo,
+        before_revision: flags.since,
+      });
+      return;
+    }
+    answer("measurement.build_report", "measurement.render_report", {
+      repo: flags.repo,
+    });
   }
 }
 

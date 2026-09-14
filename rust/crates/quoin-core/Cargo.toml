@@ -43,6 +43,15 @@ quoin-config = { workspace = true }
 # (`DiskEvidence`) is constructed in `main.rs`. Nothing under `ops/` opens a
 # file; see `src/capabilities.rs`.
 quoin-evidence = { workspace = true }
+# quoin#478, the Stage 6 wiring. Unlike the four domains above, `measurement`
+# takes NO host trait: every one of its twelve routes opens a measurement
+# store, and these two crates already own the seams that open it
+# (`MeasurementSource`, `Clock`), unit-tested in-crate against
+# `MemoryMeasurement`. A pass-through host here would be a second copy of the
+# routing table. Nothing under `ops/measurement/` names a path API beyond
+# `std::path`; see that module's header and `tests/tc_library_containment.rs`.
+quoin-measurement = { workspace = true }
+quoin-measurement-graph = { workspace = true }
 quoin-modules = { workspace = true }
 # The obligation vocabulary `evidence.record` binds against. quoin-core does not
 # derive obligations — quire does, and the command layer passes them in — but
