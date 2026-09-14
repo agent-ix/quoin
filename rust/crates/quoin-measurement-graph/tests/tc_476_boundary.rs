@@ -18,13 +18,13 @@
 //! duplicated and did not: the base64 decoder W8 landed (quoin#465), the SHA-256
 //! the scorer-integrity check needs, and the JSON-value bridge.
 //!
-//! # The retained declaration census
+//! # The ported surface census
 //!
-//! quoin#476 states "107 zod declarations" in `graph-portfolio.ts`. That number
-//! matches no measurement of that file: it declares **no zod at all** — it is
-//! pure TypeScript types over values other modules validated. What it does
-//! declare is counted here from both sides, so a lost export is a failing test
-//! rather than a silent omission.
+//! The retained `graph-portfolio.ts` was deleted by quoin#480, so the surface
+//! it exported can no longer be counted from it. What survives the deletion is
+//! the obligation that every one of those five entry points still has a Rust
+//! home: the census below reads `src/lib.rs` and names them, so dropping one on
+//! a later refactor is a failing test rather than a silent omission.
 
 #![allow(
     clippy::unwrap_used,
@@ -36,21 +36,15 @@
 
 use std::path::{Path, PathBuf};
 
-/// The retained module this wave ports, relative to the crate root.
-const RETAINED: &str = "../../../src/measurement/graph-portfolio.ts";
-
-/// `export function` declarations in the retained module.
-const RETAINED_EXPORTED_FUNCTIONS: usize = 5;
-
-/// Module-private `function` declarations in the retained module.
-const RETAINED_PRIVATE_FUNCTIONS: usize = 22;
-
-/// `export type` and `export interface` declarations in the retained module.
-const RETAINED_EXPORTED_SHAPES: usize = 17;
-
-/// `z.` constructor calls in the retained module. The ticket says 107; the
-/// file says this.
-const RETAINED_ZOD_CONSTRUCTORS: usize = 0;
+/// The entry points `src/measurement/graph-portfolio.ts` exported before
+/// quoin#480 deleted it, each of which this crate must still re-export.
+const PORTED_ENTRY_POINTS: [&str; 5] = [
+    "parse_graph_portfolio_mappings",
+    "build_governed_graph_portfolio_from",
+    "compare_graph_quality_collections",
+    "canonical_graph_portfolio_json",
+    "render_governed_graph_portfolio",
+];
 
 /// The retained measurement corpus `DIVERGENCE.md` §2 is measured over,
 /// relative to the crate root. Only this directory: the repository holds
@@ -240,59 +234,27 @@ fn tc_476_022_no_test_runs_the_retained_typescript() {
     );
 }
 
-/// What `graph-portfolio.ts` actually declares, counted rather than believed.
+/// Every entry point the deleted module exported still has a Rust home.
 ///
 /// Trace: FR-100-AC-4
 /// Provenance: quoin#476
 #[test]
-fn tc_476_023_the_retained_module_is_measured_not_quoted() {
-    let path = Path::new(env!("CARGO_MANIFEST_DIR")).join(RETAINED);
-    let retained = std::fs::read_to_string(&path)
-        .unwrap_or_else(|error| panic!("{}: unreadable: {error}", path.display()));
-    let starting = |prefix: &str| {
-        retained
-            .lines()
-            .filter(|line| line.starts_with(prefix))
-            .count()
-    };
-
-    assert_eq!(
-        starting("export function "),
-        RETAINED_EXPORTED_FUNCTIONS,
-        "the retained module's exported surface changed"
-    );
-    assert_eq!(
-        starting("function "),
-        RETAINED_PRIVATE_FUNCTIONS,
-        "the retained module's private surface changed"
-    );
-    assert_eq!(
-        starting("export type ") + starting("export interface "),
-        RETAINED_EXPORTED_SHAPES,
-        "the retained module's exported shapes changed"
-    );
-    assert_eq!(
-        retained.matches("z.").count(),
-        RETAINED_ZOD_CONSTRUCTORS,
-        "quoin#476 says the module holds 107 zod declarations; it holds none, and \
-         the census asserts what is there rather than what the ticket says is there"
-    );
-
-    // The five exports are the five this crate re-exports, by name.
-    let lib = std::fs::read_to_string(Path::new(env!("CARGO_MANIFEST_DIR")).join("src/lib.rs"))
-        .expect("lib.rs is readable");
-    for exported in [
-        "parse_graph_portfolio_mappings",
-        "build_governed_graph_portfolio_from",
-        "compare_graph_quality_collections",
-        "canonical_graph_portfolio_json",
-        "render_governed_graph_portfolio",
-    ] {
+fn tc_476_023_every_ported_entry_point_is_still_exported() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let lib = std::fs::read_to_string(root.join("src/lib.rs")).expect("lib.rs is readable");
+    for exported in PORTED_ENTRY_POINTS {
         assert!(
             lib.contains(exported),
-            "the crate does not re-export {exported}, which the retained module exports"
+            "the crate does not re-export {exported}, which the ported module exported"
         );
     }
+    assert!(
+        !root
+            .join("../../../src/measurement/graph-portfolio.ts")
+            .exists(),
+        "src/measurement/graph-portfolio.ts is back; this census is written for a tree in \
+         which it is deleted (quoin#480)"
+    );
 }
 
 /// The bound `DIVERGENCE.md` §2 rests on, measured rather than recited.
