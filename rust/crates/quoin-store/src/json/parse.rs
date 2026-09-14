@@ -491,6 +491,123 @@ mod tests {
         crate::json::pretty::canonical_json(&value).expect("both writers reach the same budget");
     }
 
+    /// The four decisions this module exists to take, each on the input that
+    /// provokes it.
+    ///
+    /// They are the reason a strict reader replaced `JSON.parse`, and they are
+    /// what the retained `parseStrictJson` was deleted for having (quoin#504).
+    /// Until this test they were stated in the module doc and implemented, but
+    /// asserted nowhere — a criterion backed by nothing, which is exactly the
+    /// deletion FR-101 AC-7 forbids. A permissive reader passes every one of
+    /// these inputs, silently: last member wins, the BOM becomes whitespace,
+    /// the number becomes an infinity, the trailing bytes are ignored.
+    ///
+    /// Trace: FR-098-AC-9
+    /// Provenance: quoin#504
+    #[test]
+    fn tc_504_010_the_four_strict_refusals_are_taken_on_the_input_that_provokes_them() {
+        for (input, code, decision) in [
+            (
+                "{\"a\":1,\"a\":2}",
+                StoreErrorCode::JsonDuplicateName,
+                "a duplicate member name, where a permissive reader keeps the last",
+            ),
+            (
+                "\u{feff}{}",
+                StoreErrorCode::JsonByteOrderMark,
+                "a leading byte-order mark",
+            ),
+            (
+                "1e400",
+                StoreErrorCode::JsonNumberNotFinite,
+                "a number outside the I-JSON range, which parses to an infinity",
+            ),
+            (
+                "{} {}",
+                StoreErrorCode::JsonTrailingContent,
+                "content after the top-level value",
+            ),
+        ] {
+            let error = parse_strict_json_str(input)
+                .expect_err(&format!("{decision} must be refused: {input:?}"));
+            assert_eq!(error.code(), code, "{decision}");
+        }
+    }
+
+    /// The accepting half of the same boundary: each refusal is a decision
+    /// about ONE property, not a reader that rejects everything nearby.
+    ///
+    /// Without this the test above passes over a parser that refuses all four
+    /// inputs for the wrong reason, or refuses every document.
+    ///
+    /// Trace: FR-098-AC-9
+    /// Provenance: quoin#504
+    #[test]
+    fn tc_504_011_the_neighbouring_documents_those_four_refusals_bound_are_accepted() {
+        for input in [
+            // Distinct names, so duplicate detection is not "two members".
+            "{\"a\":1,\"b\":2}",
+            // U+FEFF inside a string is data; only a LEADING one is refused.
+            "{\"a\":\"\u{feff}\"}",
+            // The largest finite double, so the refusal is about finiteness.
+            "1e308",
+            // One top-level value with the whitespace a trailing check must
+            // still skip.
+            "{} \n",
+        ] {
+            parse_strict_json_str(input)
+                .expect("the document next to a refusal is still a document");
+        }
+    }
+
+    /// An unpaired surrogate escape is refused here, which is the whole reason
+    /// there is no `assert_valid_unicode` anywhere in this crate.
+    ///
+    /// `quoin-store/COMPATIBILITY.md` records the divergence: a JS string is
+    /// UTF-16 code units with no well-formedness requirement, so the retained
+    /// `assertValidUnicode` had a population to check; a Rust `String` is
+    /// well-formed UTF-8, so a function looking for a lone surrogate would
+    /// check an empty one. The refusal survives by moving to the only place a
+    /// lone surrogate can still be expressed — an escape in SOURCE TEXT,
+    /// before a `String` exists. That claim was written down by quoin#503 and
+    /// asserted by nothing until this test.
+    ///
+    /// Trace: FR-098-AC-9
+    /// Provenance: quoin#504
+    #[test]
+    fn tc_504_012_an_unpaired_surrogate_escape_is_refused_where_one_can_still_be_written() {
+        for (input, code, shape) in [
+            (
+                r#""\uD800""#,
+                StoreErrorCode::JsonLoneHighSurrogate,
+                "a high surrogate with nothing after it",
+            ),
+            (
+                r#""\uD800a""#,
+                StoreErrorCode::JsonLoneHighSurrogate,
+                "a high surrogate followed by a non-surrogate",
+            ),
+            (
+                r#""\uDC00""#,
+                StoreErrorCode::JsonLoneLowSurrogate,
+                "a low surrogate with no high surrogate before it",
+            ),
+        ] {
+            let error = parse_strict_json_str(input)
+                .expect_err(&format!("{shape} is not a Unicode scalar value"));
+            assert_eq!(error.code(), code, "{shape}");
+        }
+
+        // The pair those three bound: a well-formed surrogate pair is one
+        // astral character and is accepted, so the refusal is about pairing
+        // rather than about the escape syntax.
+        let paired = parse_strict_json_str(r#""😀""#).expect("a paired surrogate is a character");
+        assert_eq!(
+            crate::json::jcs::canonicalize_jcs(&paired).expect("canonicalizes"),
+            "\"\u{1F600}\"",
+        );
+    }
+
     /// Both canonical writers carry the same budget as the parser, so no value
     /// the parser accepts can overflow a writer.
     #[test]
