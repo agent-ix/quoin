@@ -1023,12 +1023,26 @@ async function main() {
       delete testEnv.QUOIN_QUIRE;
       delete testEnv.QUOIN_EXPECTED_QUIRE_SHA256;
       testEnv.QUOIN_CORE = quoinCore;
-      run("make", ["test-with-quire", `QUIRE=${binary}`], {
-        cwd: ROOT,
-        env: testEnv,
-        timeout: lock.timeouts.quoinMilliseconds,
-        stdio: "inherit",
-      });
+      // The test suite is unchanged; controlled shards keep each real
+      // subprocess beneath constrained-host command lifetimes. A stage record
+      // is written only after every shard, including its build/validation
+      // prerequisites, has completed.
+      for (let shard = 1; shard <= 3; shard += 1) {
+        run(
+          "make",
+          [
+            "test-with-quire",
+            `QUIRE=${binary}`,
+            `VITEST_ARGS=--shard=${shard}/3`,
+          ],
+          {
+            cwd: ROOT,
+            env: testEnv,
+            timeout: lock.timeouts.quoinMilliseconds,
+            stdio: "inherit",
+          },
+        );
+      }
       if (plan)
         writeStateRecord(scratch, "test", { lockDigest: currentLockDigest });
     }

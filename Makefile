@@ -5,6 +5,7 @@
 # installation/state path; Corepack selects the declared distribution.
 PNPM := corepack pnpm
 VERIFICATION_STACK_ARGS ?=
+VITEST_ARGS ?=
 # quoin Makefile
 # =============================================================================
 # This Makefile provides backwards compatibility by delegating to pnpm scripts.
@@ -48,7 +49,7 @@ require-quire:
 # it — the source has no baked version to disagree with package.json.
 .PHONY: test-with-quire
 test-with-quire: require-quire build validate check-version
-	PATH="$(dir $(QUIRE)):$$PATH" QUIRE="$(QUIRE)" $(PNPM) run test
+	PATH="$(dir $(QUIRE)):$$PATH" QUIRE="$(QUIRE)" $(PNPM) run test -- $(VITEST_ARGS)
 
 # Every surface that reports a version reports the same one, and a clean tag
 # reports itself (quoin#196). The class of defect this catches shipped once
