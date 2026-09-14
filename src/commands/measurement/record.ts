@@ -3,12 +3,14 @@ import { readFileSync } from "node:fs";
 import { Flags } from "@oclif/core";
 
 import { QuoinCommand } from "../../base.js";
-import {
-  writeInterventionRecord,
-  writeMeasurementCollection,
-  writeOperationalRecord,
-} from "../../measurement/index.js";
+import { askCore, stringMember } from "./core.js";
 
+/**
+ * Which of the three intakes accepts the candidate is no longer decided here:
+ * `measurement.record` reads the document's own `record_type` and publishes it
+ * through the intake that member names (quoin#478). The branch moved with the
+ * operation rather than being copied on both sides of the boundary.
+ */
 export default class MeasurementRecord extends QuoinCommand {
   static summary = "Atomically record one plan-validated producer invocation.";
   static flags = {
@@ -32,21 +34,9 @@ export default class MeasurementRecord extends QuoinCommand {
       const detail = error instanceof Error ? error.message : String(error);
       this.error(`measurement input is not JSON: ${detail}`, { exit: 2 });
     }
-    try {
-      const recordType =
-        value !== null && typeof value === "object" && !Array.isArray(value)
-          ? (value as Record<string, unknown>).record_type
-          : undefined;
-      this.log(
-        recordType === "intervention_experiment"
-          ? writeInterventionRecord(flags.repo, value)
-          : recordType === "operational_evidence"
-            ? writeOperationalRecord(flags.repo, value)
-            : writeMeasurementCollection(flags.repo, value),
-      );
-    } catch (error) {
-      const detail = error instanceof Error ? error.message : String(error);
-      this.error(detail, { exit: 2 });
-    }
+    const op = "measurement.record";
+    const fail = (message: string): never => this.error(message, { exit: 2 });
+    const payload = askCore(op, { repo: flags.repo, record: value }, fail);
+    this.log(stringMember(payload, "path", op, fail));
   }
 }

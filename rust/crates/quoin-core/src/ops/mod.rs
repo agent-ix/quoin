@@ -13,6 +13,7 @@ pub mod completeness;
 pub mod config;
 pub mod core;
 pub mod evidence;
+pub mod measurement;
 pub mod modules;
 pub mod semantic;
 pub mod validators;

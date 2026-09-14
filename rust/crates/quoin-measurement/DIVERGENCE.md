@@ -83,10 +83,10 @@ way to disk and no unmodelled member can be dropped.
 
 The two retained grammars disagree:
 
-| | separator | zulu |
-| --- | --- | --- |
-| `date-time.ts:1-2` | `[Tt]` | `[Zz]` |
-| `intervention.ts:348-350` | `T` | `Z` |
+|                           | separator | zulu   |
+| ------------------------- | --------- | ------ |
+| `date-time.ts:1-2`        | `[Tt]`    | `[Zz]` |
+| `intervention.ts:348-350` | `T`       | `Z`    |
 
 On `2026-01-01t00:00:00z` the first says yes and the second says no. Per the
 owner ruling in the Stage 6 plan §5 they unify on the **permissive** one: RFC
@@ -127,7 +127,7 @@ instant.
 `validate.ts:185-191` keys an observation on
 `` `${metric}\0${JSON.stringify(sortedDimensionEntries)}` ``. Here `dimensions`
 is a `BTreeMap` and `JsonValue` is `PartialEq`, so the duplicate scan compares
-the values themselves. Two observations whose dimension *values* differ only in
+the values themselves. Two observations whose dimension _values_ differ only in
 object member order are duplicates here and distinct there. No retained
 collection has dimension values that are objects.
 
@@ -168,7 +168,7 @@ The retained tree raises two shapes for one domain:
 `InterventionIntakeError` carries a code plus a list of JSON-pointer findings
 and builds its sentence from them. This crate keeps the structured half for
 both: every refusal carries a `MeasurementErrorCode` and renders its sentence
-from the code, the subject and the findings. Message *text* therefore differs in
+from the code, the subject and the findings. Message _text_ therefore differs in
 places; no consumer may match on it, and the codes are the API.
 
 ### §3.5 — signatures that take what they need
@@ -228,7 +228,7 @@ Both report builders order records by `(observed_at, record_id)` and order their
 inner lists by string comparison. The TypeScript comparator is
 
 ```ts
-a === b ? 0 : a < b ? -1 : 1
+a === b ? 0 : a < b ? -1 : 1;
 ```
 
 and JavaScript's `<` on strings compares **UTF-16 code units**. Rust's `Ord` for
@@ -296,7 +296,7 @@ the extra field.
 payload fields are not fields of one type at all. A record carrying both
 deserializes: the tag selects the variant and the other field is ignored,
 exactly as the TypeScript ignores it. The difference is that the ill-formed
-record is unrepresentable *after* it is read, rather than merely unspellable in
+record is unrepresentable _after_ it is read, rather than merely unspellable in
 the type checker.
 
 No separating input at the report boundary. Recorded because a reviewer
@@ -324,7 +324,7 @@ approximated, so that no later wave finds a second implementation to unify:
 Wave 5 ports `src/measurement/operational.ts` and
 `src/measurement/github-release-operational.ts`. The producer reproduces the one
 retained pair byte for byte (`tests/tc_472_github_release.rs`), so the
-divergences below are all in *how* a refusal or a write happens, never in what
+divergences below are all in _how_ a refusal or a write happens, never in what
 is written.
 
 ### §11.1 — an unreadable store refuses with a code, not a bare `Error`
@@ -362,11 +362,11 @@ prose. Declared rather than reconciled, because reconciling it would mean a
 second sort comparator in this crate when `quoin_store::json::order::cmp_utf16`
 already exists and is not exported for this.
 
-### §11.5 — schema finding *text* is ajv's message, not quoin's
+### §11.5 — schema finding _text_ is ajv's message, not quoin's
 
 `quoin_jsonschema` renders `"<instance path or />: <message>"`. The message is
 the validator's own and is not byte-identical to ajv's for every keyword. The
-*set* of refused records is what is contractual; a message is not, and no
+_set_ of refused records is what is contractual; a message is not, and no
 retained record's acceptance depends on one.
 
 ### §11.6 — `write_content_addressed` links and fsyncs; the retained code renames
@@ -479,7 +479,7 @@ first and refuses three things the retained reader accepts:
 - a file that shrinks between the stat and the read (a short read).
 
 **The symlink case, honestly:** quoin#407 is filed as a symlink divergence, and
-`digest_file_sha256` does refuse a symlink. On *this* path it never sees one.
+`digest_file_sha256` does refuse a symlink. On _this_ path it never sees one.
 `DiskMeasurement::resolve_raw_evidence` canonicalises before digesting — it has
 to, because that canonicalisation is how `resolveRawPath`'s escape check is
 performed — so a symlink that stays inside the evidence store is followed by
@@ -506,7 +506,7 @@ by either implementation writes a second file beside it rather than over it.
 
 Filed as **quoin#486** against the retained store, not absorbed here.
 `tc_471_the_producer_reproduces_the_retained_record` asserts the produced path
-is the `p-` one *and* that the unprefixed name is no longer what the writer
+is the `p-` one _and_ that the unprefixed name is no longer what the writer
 chooses, so renaming the retained file fails this test and points at this
 paragraph.
 

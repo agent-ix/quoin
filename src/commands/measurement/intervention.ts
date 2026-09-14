@@ -3,10 +3,7 @@ import { readFileSync } from "node:fs";
 import { Flags } from "@oclif/core";
 
 import { QuoinCommand } from "../../base.js";
-import {
-  produceAgentEvalIntervention,
-  type AgentEvalInterventionDefinition,
-} from "../../measurement/index.js";
+import { askCore, stringMember } from "./core.js";
 
 export default class MeasurementIntervention extends QuoinCommand {
   static summary =
@@ -23,14 +20,17 @@ evaluation harness, producer process, or network client.`;
 
   async run(): Promise<void> {
     const { flags } = await this.parse(MeasurementIntervention);
+    const op = "measurement.produce_agent_eval_intervention";
+    const fail = (message: string): never => this.error(message, { exit: 2 });
+    let definition: unknown;
     try {
-      const definition = JSON.parse(
+      definition = JSON.parse(
         readFileSync(flags.definition, "utf8"),
-      ) as AgentEvalInterventionDefinition;
-      this.log(produceAgentEvalIntervention(flags.repo, definition).path);
+      ) as unknown;
     } catch (error) {
-      const detail = error instanceof Error ? error.message : String(error);
-      this.error(detail, { exit: 2 });
+      fail(error instanceof Error ? error.message : String(error));
     }
+    const payload = askCore(op, { repo: flags.repo, definition }, fail);
+    this.log(stringMember(payload, "path", op, fail));
   }
 }

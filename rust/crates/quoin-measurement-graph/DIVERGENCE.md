@@ -9,10 +9,10 @@ Provenance: quoin#475, quoin#476, quoin#465
 
 This crate ports two retained modules:
 
-| retained TypeScript | wave | ticket |
-| --- | --- | --- |
-| `src/measurement/graph-adapters.ts` (763 lines) | W8 | quoin#475 |
-| `src/measurement/graph-portfolio.ts` (881 lines) | W9 | quoin#476 |
+| retained TypeScript                              | wave | ticket    |
+| ------------------------------------------------ | ---- | --------- |
+| `src/measurement/graph-adapters.ts` (763 lines)  | W8   | quoin#475 |
+| `src/measurement/graph-portfolio.ts` (881 lines) | W9   | quoin#476 |
 
 Both are gated on byte-identity against a TypeScript oracle captured once and
 committed (`tests/corpus/` for W8, `tests/goldens/graph-portfolio-oracle.json`
@@ -21,7 +21,7 @@ asserts that as a census over the test directory.
 
 **A divergence is a place where the two implementations would answer
 differently.** It is declared here only when it can actually be reached. Where
-a difference cannot be reached, it is *proved* unreachable (§7) rather than
+a difference cannot be reached, it is _proved_ unreachable (§7) rather than
 declared, because a declaration that cannot fire is a licence rather than a
 measurement. Where it can be reached, this file says what the fixture covers
 **and what it cannot**, rather than widening the fixture until everything looks
@@ -46,7 +46,7 @@ later rendered by `markdownCell`, which calls `.replace` on it and throws.
 [`history::partition_identity`] reads through
 [`quoin_store::JsonValue::as_str`] and falls back to `"unknown"` for a
 non-string member, exactly as it does for an absent one. A number here would be
-a *different measure name* in the partition key, not merely a different
+a _different measure name_ in the partition key, not merely a different
 rendering, so this deliberately does **not** route through
 [`quoin_measurement::common::scalar::js_string`] — stringifying it would invent
 a partition that neither implementation names.
@@ -73,18 +73,18 @@ several checkouts of itself under `.worktrees/` and a walk that reached them
 would count the same observation many times. At the revision that wrote this
 paragraph it read:
 
-| counted | at this revision |
-| --- | --- |
-| `.json` collection files directly in that directory | 48 |
-| members of their `observations` arrays | 14,644 |
-| observations stating a `dimensions` object | 14,339 |
-| name/value pairs inside those objects | 50,882 |
-| **of those values, non-strings** | **0** |
+| counted                                             | at this revision |
+| --------------------------------------------------- | ---------------- |
+| `.json` collection files directly in that directory | 48               |
+| members of their `observations` arrays              | 14,644           |
+| observations stating a `dimensions` object          | 14,339           |
+| name/value pairs inside those objects               | 50,882           |
+| **of those values, non-strings**                    | **0**            |
 
 The test asserts the zero, not the totals: the totals move as the corpus grows,
 so it carries floors an order of magnitude below them and fails if the
 population it reads collapses. It also asserts that some observations state no
-`dimensions` at all, which is the case the fixture *does* cover, above.
+`dimensions` at all, which is the case the fixture _does_ cover, above.
 
 Two things this census is **not**. It is not a guarantee: it is a fact about
 the retained corpus at one revision, and an observation that broke it would be
@@ -112,7 +112,7 @@ is no second decoder in this crate, and
 `tc_476_021_there_is_no_second_codec_digest_or_bridge` asserts the RFC 4648 §4
 alphabet appears in exactly one module.
 
-The consequence at *this* call site: where the retained code would decode
+The consequence at _this_ call site: where the retained code would decode
 corrupt base64 into plausible bytes and then report a **digest mismatch**, this
 one reports `unreadable — retained scorer bytes are not base64: <reason>`. Both
 verdicts are `unreadable` and both stop the reading; the sentence differs.
@@ -135,7 +135,7 @@ agreement that does not exist.
 `Date.parse(a) - Date.parse(b) || compare(a, b)`. `Date.parse` is ECMA-262's
 implementation-defined heuristic: beyond the Date Time String Format it accepts
 whatever V8 accepts (`2026/01/02 10:00`, `Jan 1 2026`, a bare
-`2026-01-01T00:00:00` read as *local* time). [`order::compare_instants`] reads
+`2026-01-01T00:00:00` read as _local_ time). [`order::compare_instants`] reads
 with [`quoin_measurement::Rfc3339DateTime`], this workspace's single instant
 grammar (unified by quoin#440; the Stage 6 plan §5 forbids a second).
 
@@ -161,12 +161,12 @@ refusal directly in `DECLARED_DIVERGENCES`
 `…/v8-heuristic-words`), each of which must fire.
 
 **quoin#477 widens this entry rather than adding a second.** The loader has a
-*second* reader of the same grammar: `graph-portfolio-load.ts:35` refuses a
+_second_ reader of the same grammar: `graph-portfolio-load.ts:35` refuses a
 collection whose timestamp `!Number.isFinite(Date.parse(…))`, and
 [`loader::readable_or_undated`] reads it with the same
 [`quoin_measurement::Rfc3339DateTime`]. The consequence differs from the
 ordering one above: there, a V8-heuristic timestamp reorders history; here it
-turns a collection the retained loader *reads* into one this loader refuses
+turns a collection the retained loader _reads_ into one this loader refuses
 with `…: collection timestamp is not a valid instant`. Same grammar, same
 inputs, one more place it is applied. The refusal sentence itself is
 byte-identical and `tests/tc_477_graph_loader.rs` compares it as such, over
@@ -245,8 +245,8 @@ refusals a loader would synthesise — are committed data in
 `tests/fixtures/graph-portfolio-tree/graph-inputs.json`, read identically by
 the oracle and by the test.
 
-This matters for what the golden proves. The *inputs* are shared data; the
-*outputs* come from the retained TypeScript, so the comparison is not a
+This matters for what the golden proves. The _inputs_ are shared data; the
+_outputs_ come from the retained TypeScript, so the comparison is not a
 self-fixture tautology. But it means **the loader itself is not covered by this
 wave** — `loadGovernedGraphPortfolio`'s own behaviour (which repositories it
 discovers, which refusals it synthesises) belongs to whichever wave ports
@@ -258,7 +258,7 @@ its own tree `tests/fixtures/graph-loader-tree/` — a second tree rather than
 more repositories in this one, so that a change to the loader's fixtures cannot
 move this projection's captured bytes. §9 states what that golden compares.
 
-## §9 — a graph refusal's *verdict* is compared; its *sentence* is not
+## §9 — a graph refusal's _verdict_ is compared; its _sentence_ is not
 
 `loadStructuralGraph` (`graph-portfolio-load.ts:113-124`) answers a failed
 graph load with three things: an availability, a path, and a reason. The first
@@ -266,11 +266,11 @@ two are this port's own and are compared byte for byte. The third is written by
 whoever refused, and for two of the three refusal classes that is not either
 tree:
 
-| refusal | retained sentence | here |
-| --- | --- | --- |
-| the file is absent | `cannot read export input <p>: ENOENT: no such file or directory, open '<p>'` | `cannot read export input <p>: No such file or directory (os error 2)` |
-| the document is not an assurance export | zod's issue prose | this workspace's sentences (quoin#403) |
-| the mapping was refused | `no graph export, premises, or audit mapping was supplied` | the same, byte for byte |
+| refusal                                 | retained sentence                                                             | here                                                                   |
+| --------------------------------------- | ----------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| the file is absent                      | `cannot read export input <p>: ENOENT: no such file or directory, open '<p>'` | `cannot read export input <p>: No such file or directory (os error 2)` |
+| the document is not an assurance export | zod's issue prose                                                             | this workspace's sentences (quoin#403)                                 |
+| the mapping was refused                 | `no graph export, premises, or audit mapping was supplied`                    | the same, byte for byte                                                |
 
 Neither side can be made to write the other's. The first quotes an operating
 system through two different runtimes; the second quotes two different schema
@@ -300,7 +300,7 @@ separates `missing` from `unreadable` with
 whichever sentence node happened to produce. [`structural::RecordingReader`]
 keeps the [`std::io::ErrorKind`] the [`quoin_graph_analysis::GraphInputReader`]
 seam already reported, so the same decision is read off a type. The two agree
-on every input except one that cannot arise here: a refusal that is *not* a
+on every input except one that cannot arise here: a refusal that is _not_ a
 `NotFound` and whose message nevertheless contains `no such file` — for
 instance a permissions error whose text quoted a missing path. There, the
 retained loader says `missing` and this one says `unreadable`. No such input

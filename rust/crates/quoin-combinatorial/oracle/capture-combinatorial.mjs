@@ -29,11 +29,31 @@ import {
 /** @type {Array<{name: string, statement: string, configs: Array<Record<string, string>>}>} */
 const CASES = [
   // --- parseSpace says "not one of these" -----------------------------------
-  { name: "prose-is-not-a-space", statement: "The system shall do the thing.", configs: [] },
-  { name: "header-is-anchored", statement: "see: 2-way over a(1|2) b(3|4)", configs: [] },
-  { name: "header-needs-whitespace-after-over", statement: "2-way overa(1|2) b(3|4)", configs: [] },
-  { name: "strength-zero-is-refused", statement: "0-way over a(1|2) b(3|4)", configs: [] },
-  { name: "one-dimension-is-not-a-space", statement: "2-way over a(1|2)", configs: [] },
+  {
+    name: "prose-is-not-a-space",
+    statement: "The system shall do the thing.",
+    configs: [],
+  },
+  {
+    name: "header-is-anchored",
+    statement: "see: 2-way over a(1|2) b(3|4)",
+    configs: [],
+  },
+  {
+    name: "header-needs-whitespace-after-over",
+    statement: "2-way overa(1|2) b(3|4)",
+    configs: [],
+  },
+  {
+    name: "strength-zero-is-refused",
+    statement: "0-way over a(1|2) b(3|4)",
+    configs: [],
+  },
+  {
+    name: "one-dimension-is-not-a-space",
+    statement: "2-way over a(1|2)",
+    configs: [],
+  },
   {
     name: "an-infinite-strength-is-not-a-space",
     // `Number.parseInt` of 400 nines is `Infinity`, and the retained
@@ -47,7 +67,11 @@ const CASES = [
     statement: "2-way over a(1|2) b(only)",
     configs: [],
   },
-  { name: "empty-parens-are-not-a-dimension", statement: "2-way over a() b() c(1|2)", configs: [] },
+  {
+    name: "empty-parens-are-not-a-dimension",
+    statement: "2-way over a() b() c(1|2)",
+    configs: [],
+  },
 
   // --- parseSpace shapes ----------------------------------------------------
   {
@@ -94,7 +118,8 @@ const CASES = [
   },
   {
     name: "two-exclusion-clauses-both-apply",
-    statement: "2-way over a(1|2) b(3|4) c(5|6) excluding[a=1,b=3] excluding[b=4,c=6]",
+    statement:
+      "2-way over a(1|2) b(3|4) c(5|6) excluding[a=1,b=3] excluding[b=4,c=6]",
     configs: [{ a: "1", b: "4", c: "5" }],
   },
   {
@@ -201,7 +226,15 @@ const CASES = [
 const cases = CASES.map(({ name, statement, configs }) => {
   const space = parseSpace(statement);
   if (space === null) {
-    return { name, statement, configs, space: null, demanded: null, coveredBy: null, coverage: null };
+    return {
+      name,
+      statement,
+      configs,
+      space: null,
+      demanded: null,
+      coveredBy: null,
+      coverage: null,
+    };
   }
   return {
     name,

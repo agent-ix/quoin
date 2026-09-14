@@ -85,7 +85,9 @@ const interventionAjv = new Ajv2020({
   strict: false,
   formats: { "date-time": isRfc3339DateTime },
 });
-const validateIntervention = interventionAjv.compile(interventionExperimentSchema);
+const validateIntervention = interventionAjv.compile(
+  interventionExperimentSchema,
+);
 
 // `src/measurement/operational.ts:30-35`.
 const operationalAjv = new Ajv2020({ allErrors: true, strict: false });
@@ -204,7 +206,8 @@ function ladder(base) {
   });
   rungs.push({
     name: "set/producer.configuration_digest=bare-hex",
-    apply: (d) => setAt(d, ["producer", "configuration_digest"], "e".repeat(64)),
+    apply: (d) =>
+      setAt(d, ["producer", "configuration_digest"], "e".repeat(64)),
   });
   rungs.push({
     name: "set/raw_evidence=[]",
@@ -254,7 +257,9 @@ const entries = corpus.map((entry) => {
   const valid = validate(entry.document);
   const identities = (validate.errors ?? [])
     .map((error) => [error.instancePath, error.keyword])
-    .sort((a, b) => (a[0] === b[0] ? a[1].localeCompare(b[1]) : a[0].localeCompare(b[0])));
+    .sort((a, b) =>
+      a[0] === b[0] ? a[1].localeCompare(b[1]) : a[0].localeCompare(b[0]),
+    );
   return { ...entry, ajv_valid: valid, ajv_error_identities: identities };
 });
 

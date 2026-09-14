@@ -30,14 +30,22 @@ import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-const DIST = process.env.QUOIN_TS_DIST ?? new URL("../../../../dist-oracle/", import.meta.url).pathname;
+const DIST =
+  process.env.QUOIN_TS_DIST ??
+  new URL("../../../../dist-oracle/", import.meta.url).pathname;
 
 const { audit, ratchet, delta, scoresFor, MOCK_SUBJECT_FLOOR } = await import(
   join(DIST, "auditor/audit.js")
 );
-const { advise, characteristicsOf, mintableCharacteristics, uncataloguedAuthoredMethods } =
-  await import(join(DIST, "advisor/advise.js"));
-const { loadMethodCatalog, methodClasses } = await import(join(DIST, "method-catalog.js"));
+const {
+  advise,
+  characteristicsOf,
+  mintableCharacteristics,
+  uncataloguedAuthoredMethods,
+} = await import(join(DIST, "advisor/advise.js"));
+const { loadMethodCatalog, methodClasses } = await import(
+  join(DIST, "method-catalog.js")
+);
 
 // ── helpers ────────────────────────────────────────────────────────────────
 
@@ -132,7 +140,11 @@ const AUDIT_CASES = [
   },
   {
     name: "a-clean-obligation-is-healthy-and-silent",
-    input: { obligations: [obligation()], bindings: [binding()], runs: [run()] },
+    input: {
+      obligations: [obligation()],
+      bindings: [binding()],
+      runs: [run()],
+    },
   },
   {
     name: "unknown-method-fires-before-the-binding-guard",
@@ -207,7 +219,11 @@ const AUDIT_CASES = [
       bindings: [binding()],
       runs: [run()],
       injections: [
-        { suite: "unit", symbol: "test_records", injects: ["record", "result", "system"] },
+        {
+          suite: "unit",
+          symbol: "test_records",
+          injects: ["record", "result", "system"],
+        },
       ],
       mockInspectionSuites: ["unit"],
     },
@@ -216,10 +232,23 @@ const AUDIT_CASES = [
     name: "one-real-suite-beside-a-mocked-one-is-ordinary-test-design",
     input: {
       obligations: [obligation()],
-      bindings: [binding(), binding({ suite: "integration", symbols: ["it_records"] })],
-      runs: [run(), run({ suite: "integration", entries: [{ symbol: "it_records", outcome: "pass" }] })],
+      bindings: [
+        binding(),
+        binding({ suite: "integration", symbols: ["it_records"] }),
+      ],
+      runs: [
+        run(),
+        run({
+          suite: "integration",
+          entries: [{ symbol: "it_records", outcome: "pass" }],
+        }),
+      ],
       injections: [
-        { suite: "unit", symbol: "test_records", injects: ["record", "result", "system"] },
+        {
+          suite: "unit",
+          symbol: "test_records",
+          injects: ["record", "result", "system"],
+        },
       ],
       mockInspectionSuites: ["unit", "integration"],
     },
@@ -290,7 +319,11 @@ const AUDIT_CASES = [
       runs: [
         run({
           entries: [
-            { symbol: "test_records", outcome: "pass", config: { os: "linux", arch: "x64" } },
+            {
+              symbol: "test_records",
+              outcome: "pass",
+              config: { os: "linux", arch: "x64" },
+            },
           ],
         }),
       ],
@@ -309,10 +342,26 @@ const AUDIT_CASES = [
       runs: [
         run({
           entries: [
-            { symbol: "a", outcome: "pass", config: { os: "linux", arch: "x64" } },
-            { symbol: "b", outcome: "pass", config: { os: "linux", arch: "arm64" } },
-            { symbol: "c", outcome: "pass", config: { os: "mac", arch: "x64" } },
-            { symbol: "d", outcome: "pass", config: { os: "mac", arch: "arm64" } },
+            {
+              symbol: "a",
+              outcome: "pass",
+              config: { os: "linux", arch: "x64" },
+            },
+            {
+              symbol: "b",
+              outcome: "pass",
+              config: { os: "linux", arch: "arm64" },
+            },
+            {
+              symbol: "c",
+              outcome: "pass",
+              config: { os: "mac", arch: "x64" },
+            },
+            {
+              symbol: "d",
+              outcome: "pass",
+              config: { os: "mac", arch: "arm64" },
+            },
           ],
         }),
       ],
@@ -358,7 +407,12 @@ const AUDIT_CASES = [
       runs: [
         run({
           entries: [
-            { symbol: "test_records", outcome: "pass", score: 0.4, metric: "mutation-score" },
+            {
+              symbol: "test_records",
+              outcome: "pass",
+              score: 0.4,
+              metric: "mutation-score",
+            },
           ],
         }),
       ],
@@ -374,7 +428,12 @@ const AUDIT_CASES = [
       runs: [
         run({
           entries: [
-            { symbol: "test_records", outcome: "pass", score: 0.4, metric: "coverage" },
+            {
+              symbol: "test_records",
+              outcome: "pass",
+              score: 0.4,
+              metric: "coverage",
+            },
           ],
         }),
       ],
@@ -440,7 +499,9 @@ const AUDIT_CASES = [
           requirement: "IR-1",
           obligation: "FR-999-AC-1",
           status: "satisfied",
-          dimensions: [{ dimension: "actor", values: ["a", "b"], missingSuites: [] }],
+          dimensions: [
+            { dimension: "actor", values: ["a", "b"], missingSuites: [] },
+          ],
           satisfiedBy: ["unit", "integration"],
           summary: "unit and integration differ on actor",
         },
@@ -479,11 +540,18 @@ const ADVISE_CASES = [
   },
   {
     name: "a-hyphen-compound-does-not-match-the-bare-word",
-    facts: { id: "FR-001-AC-3", statement: "The state-machine-free path shall hold." },
+    facts: {
+      id: "FR-001-AC-3",
+      statement: "The state-machine-free path shall hold.",
+    },
   },
   {
     name: "an-archetype-alone-recommends-inspection",
-    facts: { id: "StR-001-AC-1", statement: "The stakeholder wants it.", archetype: "StR" },
+    facts: {
+      id: "StR-001-AC-1",
+      statement: "The stakeholder wants it.",
+      archetype: "StR",
+    },
   },
   {
     name: "high-criticality-is-read-from-the-field-not-from-the-prose",
@@ -569,7 +637,10 @@ const AXIS_CATALOG = {
       name: "Type inspection",
       class: "Inspection",
       definition: "Read the types.",
-      applicability: { object_types: ["Order"], property_shapes: ["round-trip"] },
+      applicability: {
+        object_types: ["Order"],
+        property_shapes: ["round-trip"],
+      },
       tooling: [],
       moduleName: "extra",
     },
@@ -664,16 +735,36 @@ const CHARACTERISTIC_CASES = [
 
 const REPORT_A = {
   findings: [
-    { kind: "undischarged", obligation: "FR-001-AC-1", severity: "medium", summary: "a" },
-    { kind: "suspect-link", obligation: "FR-002-AC-1", severity: "high", summary: "b" },
+    {
+      kind: "undischarged",
+      obligation: "FR-001-AC-1",
+      severity: "medium",
+      summary: "a",
+    },
+    {
+      kind: "suspect-link",
+      obligation: "FR-002-AC-1",
+      severity: "high",
+      summary: "b",
+    },
   ],
   healthy: [],
   unevaluated: [],
 };
 const REPORT_B = {
   findings: [
-    { kind: "suspect-link", obligation: "FR-002-AC-1", severity: "high", summary: "b" },
-    { kind: "stale-evidence", obligation: "FR-003-AC-1", severity: "high", summary: "c" },
+    {
+      kind: "suspect-link",
+      obligation: "FR-002-AC-1",
+      severity: "high",
+      summary: "b",
+    },
+    {
+      kind: "stale-evidence",
+      obligation: "FR-003-AC-1",
+      severity: "high",
+      summary: "c",
+    },
   ],
   healthy: [],
   unevaluated: [],
@@ -839,7 +930,12 @@ const characteristicCases = CHARACTERISTIC_CASES.map(
     criticality: criticality ?? null,
     evidence: evidence ?? null,
     parameters: parameters ?? null,
-    characteristics: characteristicsOf(statement, criticality, evidence, parameters),
+    characteristics: characteristicsOf(
+      statement,
+      criticality,
+      evidence,
+      parameters,
+    ),
   }),
 );
 
@@ -856,7 +952,9 @@ const uncataloguedCases = [
   { name: "no-diagnostics", diagnostics: [] },
   {
     name: "a-valued-diagnostic-lands-in-the-set",
-    diagnostics: [{ reason: "uncatalogued-verification-method", value: "Vibes" }],
+    diagnostics: [
+      { reason: "uncatalogued-verification-method", value: "Vibes" },
+    ],
   },
   {
     name: "a-valueless-diagnostic-degrades",
@@ -868,7 +966,12 @@ const uncataloguedCases = [
   },
 ].map(({ name, diagnostics }) => {
   const result = uncataloguedAuthoredMethods(diagnostics);
-  return { name, diagnostics, values: [...result.values].sort(), degraded: result.degraded };
+  return {
+    name,
+    diagnostics,
+    values: [...result.values].sort(),
+    degraded: result.degraded,
+  };
 });
 
 const scoresCases = [
@@ -878,7 +981,12 @@ const scoresCases = [
     runs: [
       run({
         entries: [
-          { symbol: "test_records", outcome: "skip", score: 0.9, metric: "mutation-score" },
+          {
+            symbol: "test_records",
+            outcome: "skip",
+            score: 0.9,
+            metric: "mutation-score",
+          },
         ],
       }),
     ],
@@ -889,7 +997,12 @@ const scoresCases = [
     runs: [
       run({
         entries: [
-          { symbol: "a", outcome: "pass", score: 0.5, metric: "mutation-score" },
+          {
+            symbol: "a",
+            outcome: "pass",
+            score: 0.5,
+            metric: "mutation-score",
+          },
           { symbol: "b", outcome: "pass", score: 0.9, metric: "coverage" },
         ],
       }),
@@ -913,7 +1026,12 @@ process.stdout.write(
       adviseCases,
       characteristicCases,
       ratchetCases,
-      delta: { before: REPORT_A, after: REPORT_B, added: deltaResult.added, resolved: deltaResult.resolved },
+      delta: {
+        before: REPORT_A,
+        after: REPORT_B,
+        added: deltaResult.added,
+        resolved: deltaResult.resolved,
+      },
       uncataloguedCases,
       scoresCases,
     },

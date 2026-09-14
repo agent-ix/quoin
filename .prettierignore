@@ -160,3 +160,28 @@ rust/crates/quoin-assurance/tests/golden/expected.json
 # hand-authored input and ARE formatted.
 rust/crates/quoin-evidence/tests/golden/expected.json
 rust/crates/quoin-evidence/tests/golden/store-expected.json
+
+# The Stage 6 port's remaining captured oracles, fixtures and vendored schemas
+# (quoin#382, #383, #469, #470, #476, #477), on the same rule as every golden named above:
+# `tests/goldens/` and `tests/fixtures/` are bytes a capture script or a
+# retained TypeScript oracle produced and a Rust replay asserts against, and
+# `schemas/` are vendored copies that must match their upstream byte for byte.
+# One of the fixtures — graph-loader-tree/delta/graph/export.json — is a
+# deliberately truncated document, an opening brace and nothing else, so that
+# `tc_477_011_graph_refusal_verdicts` can measure the verdict the loader gives
+# an export a schema validator rejects. Prettier cannot parse that one at all,
+# so `prettier --check .` ERRORED rather than reporting a diff and `make lint`
+# was red for the whole repository from PR #494 onward; the twenty-seven
+# siblings listed with it were reported as unformatted by the same run. The
+# `oracle/` capture scripts and the `DIVERGENCE.md` beside them are source and
+# prose, are formatted, and are deliberately not named here.
+rust/crates/quoin-auditor/tests/goldens/
+rust/crates/quoin-combinatorial/tests/goldens/
+rust/crates/quoin-graph-analysis/tests/goldens/
+rust/crates/quoin-jsonschema/schemas/
+rust/crates/quoin-jsonschema/tests/goldens/
+rust/crates/quoin-measurement/tests/fixtures/
+rust/crates/quoin-measurement-graph/tests/fixtures/
+rust/crates/quoin-measurement-graph/tests/goldens/
+rust/crates/quoin-quire/schemas/
+rust/crates/quoin-quire/tests/goldens/
