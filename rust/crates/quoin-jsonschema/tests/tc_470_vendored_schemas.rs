@@ -6,7 +6,12 @@
 //!
 //! `operational-evidence-v1.schema.json` was already a JSON document in the
 //! retained tree, so the obligation is **byte equality**. Nothing was decided
-//! about it and nothing may drift in either copy.
+//! about it and nothing may drift in either copy. The retained TypeScript was
+//! deleted in quoin#479, so its bytes were committed unchanged to
+//! `tests/goldens/operational-evidence-v1.captured.json` beforehand; that
+//! capture, not a live TypeScript tree, is now the comparand. FR-101-AC-5
+//! forbids a non-Rust runtime oracle after cutover, and a committed document is
+//! not one.
 //!
 //! `intervention-schema.ts` was not a document: it is a program that assembles
 //! an object out of shared fragments (`identity`, `digest`, `immutableVersion`,
@@ -16,8 +21,8 @@
 //! then applied to the vendored document, each an owner ruling:
 //!
 //! 1. **RFC 3339 case widening** (quoin#440). The retained `pattern` accepts
-//!    only uppercase `T`/`Z`, while `src/measurement/date-time.ts:2` — the
-//!    grammar the *operational* schema validates against — accepts both cases.
+//!    only uppercase `T`/`Z`, while the retained `date-time.ts` grammar — the
+//!    one the *operational* schema validates against — accepts both cases.
 //!    RFC 3339 §5.6 permits lowercase, so the strict spelling was narrower than
 //!    the standard it names, and widening is the only direction that cannot
 //!    invalidate an already-retained record.
@@ -33,7 +38,8 @@
 //! equals the two deltas, with the exact before and after text. A third,
 //! unrecorded difference fails.
 //!
-//! Trace: FR-100-AC-4, FR-098
+//! Trace: FR-100-AC-4, FR-098-AC-11
+//! Provenance: quoin#479
 
 #![allow(
     clippy::unwrap_used,
@@ -59,11 +65,11 @@ struct Difference {
     vendored: String,
 }
 
-fn repo() -> PathBuf {
+/// The directory holding the committed captures this crate is measured against.
+fn goldens() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("..")
-        .join("..")
-        .join("..")
+        .join("tests")
+        .join("goldens")
 }
 
 fn read(path: &Path) -> String {
@@ -107,38 +113,30 @@ fn differences(pointer: &str, left: &Value, right: &Value, into: &mut Vec<Differ
     }
 }
 
-/// The vendored operational schema is byte-identical to the retained one.
+/// The vendored operational schema is byte-identical to the committed capture.
 ///
-/// Trace: FR-100-AC-4
+/// Trace: FR-100-AC-4, FR-101-AC-5
+/// Provenance: quoin#479
 #[test]
 fn tc_470_the_operational_schema_is_vendored_byte_for_byte() {
-    let retained = read(
-        &repo()
-            .join("src")
-            .join("measurement")
-            .join("schemas")
-            .join("operational-evidence-v1.schema.json"),
-    );
+    let captured = read(&goldens().join("operational-evidence-v1.captured.json"));
     assert_eq!(
         VendoredSchema::OperationalEvidenceV1.source(),
-        retained,
-        "the vendored operational schema and \
-         src/measurement/schemas/operational-evidence-v1.schema.json have diverged. Neither copy \
-         may move: this schema is vendored verbatim and no ruling applies to it."
+        captured,
+        "the vendored operational schema and the committed capture in \
+         tests/goldens/operational-evidence-v1.captured.json have diverged. Neither copy may \
+         move: this schema is vendored verbatim and no ruling applies to it."
     );
 }
 
 /// The vendored intervention schema differs from the capture by exactly two
 /// recorded deltas.
 ///
-/// Trace: FR-100-AC-4, FR-098
+/// Trace: FR-100-AC-4, FR-098-AC-11
 #[test]
 fn tc_470_the_intervention_schema_carries_exactly_the_two_recorded_deltas() {
     let captured: Value = serde_json::from_str(&read(
-        &Path::new(env!("CARGO_MANIFEST_DIR"))
-            .join("tests")
-            .join("goldens")
-            .join("intervention-experiment-v1.captured.json"),
+        &goldens().join("intervention-experiment-v1.captured.json"),
     ))
     .expect("the capture is JSON");
     let vendored = VendoredSchema::InterventionExperimentV1
@@ -175,31 +173,41 @@ fn tc_470_the_intervention_schema_carries_exactly_the_two_recorded_deltas() {
     );
 }
 
-/// The capture that the delta set is measured against names where it came from.
+/// Every capture the delta sets are measured against names where it came from.
+///
+/// Both vendored documents are now measured against committed captures rather
+/// than against a live TypeScript tree, so both must carry provenance.
 ///
 /// Trace: FR-101-AC-11
+/// Provenance: quoin#479
 #[test]
 fn tc_470_the_capture_records_its_producer_and_revision() {
-    let provenance: Value = serde_json::from_str(&read(
-        &Path::new(env!("CARGO_MANIFEST_DIR"))
-            .join("tests")
-            .join("goldens")
-            .join("intervention-experiment-v1.captured.provenance.json"),
-    ))
-    .expect("the provenance is JSON");
-    for key in [
-        "captured_from",
-        "exported_binding",
-        "serializer",
-        "producer",
-        "quoin_revision",
-    ] {
-        let value = provenance.get(key).and_then(Value::as_str).unwrap_or("");
-        assert!(
-            !value.is_empty(),
-            "the capture provenance must name {key}; a golden without its producing revision \
-             cannot be re-derived or audited"
-        );
+    let captures = [
+        "intervention-experiment-v1.captured.provenance.json",
+        "operational-evidence-v1.captured.provenance.json",
+    ];
+    assert_eq!(
+        captures.len(),
+        VendoredSchema::ALL.len(),
+        "anti-vacuity floor: one committed capture per vendored schema"
+    );
+    for capture in captures {
+        let provenance: Value = serde_json::from_str(&read(&goldens().join(capture)))
+            .unwrap_or_else(|e| panic!("{capture} is JSON: {e}"));
+        for key in [
+            "captured_from",
+            "exported_binding",
+            "serializer",
+            "producer",
+            "quoin_revision",
+        ] {
+            let value = provenance.get(key).and_then(Value::as_str).unwrap_or("");
+            assert!(
+                !value.is_empty(),
+                "{capture} must name {key}; a golden without its producing revision cannot be \
+                 re-derived or audited"
+            );
+        }
     }
 }
 

@@ -11,7 +11,8 @@
 //! # The oracle is a file, not a runtime
 //!
 //! `tests/fixtures/portfolio-oracle.json` was captured once, by
-//! `oracle/capture-portfolio-oracle.mjs`, at the revision the file records
+//! `oracle/capture-portfolio-oracle.mjs` (deleted at cutover, recoverable from
+//! the revision the fixture records), at the revision the file records
 //! (FR-101-AC-11). It is committed and frozen. Nothing here spawns node:
 //! FR-101-AC-5 forbids a live TypeScript runtime as a test-time oracle, and the
 //! suite has to keep running once the TypeScript is deleted at cutover.

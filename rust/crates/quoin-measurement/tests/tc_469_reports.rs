@@ -5,7 +5,8 @@
 //! # The oracle is a file, not a runtime
 //!
 //! `tests/fixtures/report-oracle.json` was captured once, by
-//! `oracle/capture-report-oracle.mjs`, running the real
+//! `oracle/capture-report-oracle.mjs` (deleted at cutover, recoverable
+//! from the revision the fixture records), running the real
 //! `buildInterventionReport` / `renderInterventionReport` and
 //! `buildOperationalReport` / `renderOperationalReport` at the revision the file
 //! records (FR-101-AC-11). It is committed and frozen. Nothing here spawns

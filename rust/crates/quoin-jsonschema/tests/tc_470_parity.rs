@@ -5,7 +5,8 @@
 //! # The corpus, and how it was chosen
 //!
 //! `tests/goldens/ajv-verdicts.json` was captured once by
-//! `oracle/capture-ajv-verdicts.mjs` under the two ajv configurations the
+//! `oracle/capture-ajv-verdicts.mjs` (deleted at cutover, recoverable from the
+//! revision the golden records) under the two ajv configurations the
 //! retained code uses verbatim (`intervention.ts:22-27`,
 //! `operational.ts:30-35`). The corpus is **retained records × a fixed mutation
 //! ladder**:

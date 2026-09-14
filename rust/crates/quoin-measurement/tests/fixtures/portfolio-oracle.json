@@ -2,7 +2,7 @@
   "produced_by": "src/measurement/report.ts, src/measurement/portfolio.ts",
   "produced_from_revision": "9e7c33eb0d4891fe9718c76860d5f8ecfe6e3cb0",
   "produced_by_node": "v22.15.0",
-  "capture_script": "rust/crates/quoin-measurement/oracle/capture-portfolio-oracle.mjs",
+  "capture_script": "eb0ca08419fa2f05a1522c5bf2d108a818645c1f:rust/crates/quoin-measurement/oracle/capture-portfolio-oracle.mjs",
   "fixture_tree": "rust/crates/quoin-measurement/tests/fixtures/portfolio-tree",
   "tree_token": "@@TREE@@",
   "reports": [
