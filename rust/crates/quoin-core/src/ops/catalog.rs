@@ -208,10 +208,13 @@ mod tests {
             },
         )
         .expect("catalog loads");
-        assert_eq!(response.payload["modules"][0]["name"], "example");
         assert_eq!(
-            response.payload["entries"][0]["skeletonPath"],
-            "/modules/example/skeletons/FR.md"
+            response.payload.pointer("/modules/0/name"),
+            Some(&json!("example"))
+        );
+        assert_eq!(
+            response.payload.pointer("/entries/0/skeletonPath"),
+            Some(&json!("/modules/example/skeletons/FR.md"))
         );
     }
 }

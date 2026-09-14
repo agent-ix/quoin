@@ -352,20 +352,23 @@ mod tests {
             &[],
         )
         .expect("valid manifest");
-        assert_eq!(catalog.modules[0].artifact_types, ["FR"]);
+        let [module] = catalog.modules.as_slice() else {
+            panic!("the single manifest produces one module");
+        };
+        let [artifact, object] = catalog.entries.as_slice() else {
+            panic!("the manifest produces one artifact and one object entry");
+        };
+        assert_eq!(module.artifact_types, ["FR"]);
         assert_eq!(
-            catalog.entries[0].schema_path.as_deref(),
+            artifact.schema_path.as_deref(),
             Some("/modules/alpha/schemas/fr.json")
         );
         assert_eq!(
-            catalog.entries[0].skeleton_path.as_deref(),
+            artifact.skeleton_path.as_deref(),
             Some("/modules/alpha/skeletons/FR.md")
         );
-        assert_eq!(
-            catalog.entries[1].data_schema,
-            Some(json!({"type": "object"}))
-        );
-        assert_eq!(catalog.entries[1].kind, EntryKind::Object);
+        assert_eq!(object.data_schema, Some(json!({"type": "object"})));
+        assert_eq!(object.kind, EntryKind::Object);
     }
 
     /// Trace: FR-101
@@ -387,7 +390,10 @@ mod tests {
         )
         .expect("valid manifests");
         assert_eq!(catalog.modules.len(), 2);
-        assert_eq!(catalog.duplicates[0].modules, ["one", "two"]);
+        let [duplicate] = catalog.duplicates.as_slice() else {
+            panic!("one duplicated artifact type is reported");
+        };
+        assert_eq!(duplicate.modules, ["one", "two"]);
         assert_eq!(
             find_entry(&catalog, "fr").map(|entry| entry.module_name.as_str()),
             Some("one")
