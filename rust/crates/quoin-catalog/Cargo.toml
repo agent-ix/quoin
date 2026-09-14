@@ -20,3 +20,7 @@ quoin-yaml = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }
+schemars = { workspace = true, optional = true }
+
+[features]
+schema = ["dep:schemars", "quoin-semantic/schema"]

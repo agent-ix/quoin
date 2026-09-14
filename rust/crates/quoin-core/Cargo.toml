@@ -110,6 +110,7 @@ schema = [
     "dep:schemars",
     "quoin-assurance/schema",
     "quoin-auditor/schema",
+    "quoin-catalog/schema",
     "quoin-completeness/schema",
     "quoin-evidence/schema",
     "quoin-modules/schema",

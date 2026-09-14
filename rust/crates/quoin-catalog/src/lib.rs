@@ -41,6 +41,7 @@ pub struct SemanticView {
 
 /// The complete catalog projection.
 #[derive(Debug, Clone, PartialEq, Serialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(rename_all = "camelCase")]
 pub struct Catalog {
     /// The active modules, in candidate-root order after duplicate suppression.
@@ -53,6 +54,7 @@ pub struct Catalog {
 
 /// One module represented by the catalog.
 #[derive(Debug, Clone, PartialEq, Serialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(rename_all = "camelCase")]
 pub struct SpecModule {
     /// Manifest name, or the root basename when it is absent/non-string.
@@ -76,6 +78,7 @@ pub struct SpecModule {
 
 /// One artifact or object type supplied by a module.
 #[derive(Debug, Clone, PartialEq, Serialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(rename_all = "camelCase")]
 pub struct SpecCatalogEntry {
     /// The artifact/object name.
@@ -102,6 +105,7 @@ pub struct SpecCatalogEntry {
 
 /// The two catalog namespaces.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(rename_all = "lowercase")]
 pub enum EntryKind {
     /// A Markdown artifact type.
@@ -112,6 +116,7 @@ pub enum EntryKind {
 
 /// A type name supplied by multiple modules.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(rename_all = "camelCase")]
 pub struct Duplicate {
     /// The namespace in which the collision occurred.

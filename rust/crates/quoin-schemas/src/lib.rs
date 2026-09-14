@@ -80,11 +80,11 @@ pub const BOUNDARY_SCHEMA_ID: &str = "https://agent-ix.dev/quoin/core-boundary-v
 // --- The two checked-in digests. `make types` rewrites both; nothing else may.
 /// SHA-256 of the canonical JSON of [`boundary_schema`] at generation time.
 pub const SOURCE_SCHEMA_SHA256: &str =
-    "c17512e7282b18a0fc8a8b6737e758f964c6bf4bb689b49b95f9e6d042cc4cc6";
+    "ee3e514907f97891b0ff799b6fc649ad69a9d58352bfad8cb932731c2808f2ed";
 
 /// SHA-256 of the committed `src/core/types.ts`.
 pub const GENERATED_TYPES_SHA256: &str =
-    "ad3ed6614d6d80d7d0ca4f475682f8a395c447f01de59141fce50eaf03c0e77b";
+    "a90f92d36990c8b1dfabd3d292e45e410ebcc814cc212fee2f3c72e52a235737";
 
 /// The JSON Schema of every type that crosses the `quoin-core` boundary.
 ///
@@ -101,6 +101,8 @@ pub fn boundary_schema() -> Value {
     let _ = generator.subschema_for::<quoin_core::ops::config::ResolveOrgRequest>();
     let _ = generator.subschema_for::<quoin_core::ops::config::ResolveOrgPayload>();
     let _ = generator.subschema_for::<quoin_core::ops::config::UnresolvedOrgMessagePayload>();
+    let _ = generator.subschema_for::<quoin_core::ops::catalog::LoadRequest>();
+    let _ = generator.subschema_for::<quoin_catalog::Catalog>();
     let _ = generator.subschema_for::<quoin_core::ops::modules::ListRequest>();
     let _ = generator.subschema_for::<quoin_core::ops::modules::ListPayload>();
     let _ = generator.subschema_for::<quoin_core::ops::modules::InstallRequest>();
@@ -449,7 +451,7 @@ mod tests {
     /// A list and not a count: a count moves when a type is renamed and says
     /// nothing about WHICH names crossed, and the names are what TypeScript
     /// imports.
-    const BOUNDARY_TYPES: [&str; 209] = [
+    const BOUNDARY_TYPES: [&str; 215] = [
         "Advice",
         "AdvisePayload",
         "AdviseRequest",
@@ -480,6 +482,7 @@ mod tests {
         "BuildDischargeRequest",
         "BundleAssessment",
         "BundleDocument",
+        "Catalog",
         "ChallengeStatus",
         "ChallengeView",
         "ChallengeViewStatus",
@@ -514,11 +517,13 @@ mod tests {
         "DispositionDecision",
         "DispositionFact",
         "DocumentSource",
+        "Duplicate",
         "DuplicateMethod",
         "EmptyGateFinding",
         "EngineProvenance",
         "EnsureDefaultsPayload",
         "EnsureDefaultsRequest",
+        "EntryKind",
         "EvidenceLineage",
         "EvidenceObligationId",
         "FactKind",
@@ -547,6 +552,7 @@ mod tests {
         "LineNumber",
         "ListPayload",
         "ListRequest",
+        "LoadRequest",
         "MappingName",
         "MatchReason",
         "MethodCatalog",
@@ -620,6 +626,8 @@ mod tests {
         "SemanticSeverity",
         "Severity",
         "Source",
+        "SpecCatalogEntry",
+        "SpecModule",
         "StatementHash",
         "StoreFactsPayload",
         "SufficiencyDecision",

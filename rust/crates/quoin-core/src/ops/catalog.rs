@@ -27,6 +27,7 @@ pub const MAX_ROOT_BYTES: usize = 4 * 1024;
 /// Request accepted by `catalog.load`.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize)]
 #[serde(deny_unknown_fields)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct LoadRequest {
     /// Explicit module candidates, or absent for the host's default discovery.
     #[serde(default)]

@@ -32,7 +32,7 @@ export const CORE_TYPES_PROVENANCE = {
   generator: "quoin-schemas/quoin-schemas-gen",
   generatorVersion: "0.1.0",
   sourceSchemaSha256:
-    "c17512e7282b18a0fc8a8b6737e758f964c6bf4bb689b49b95f9e6d042cc4cc6",
+    "ee3e514907f97891b0ff799b6fc649ad69a9d58352bfad8cb932731c2808f2ed",
 } as const;
 
 /**
@@ -952,6 +952,24 @@ export interface BundleDocument {
 }
 
 /**
+ * The complete catalog projection.
+ */
+export interface Catalog {
+  /**
+   * Type names supplied by more than one module.
+   */
+  duplicates: Duplicate[];
+  /**
+   * Artifact and object entries, in manifest order.
+   */
+  entries: SpecCatalogEntry[];
+  /**
+   * The active modules, in candidate-root order after duplicate suppression.
+   */
+  modules: SpecModule[];
+}
+
+/**
  * A challenge's declared state.
  */
 export type ChallengeStatus = "open" | "resolved" | "accepted-risk";
@@ -1614,6 +1632,24 @@ export interface DocumentSource {
 }
 
 /**
+ * A type name supplied by multiple modules.
+ */
+export interface Duplicate {
+  /**
+   * The namespace in which the collision occurred.
+   */
+  kind: EntryKind;
+  /**
+   * Module names that supplied it, sorted as TypeScript did.
+   */
+  modules: string[];
+  /**
+   * The duplicate name, preserving its first declaration spelling.
+   */
+  name: string;
+}
+
+/**
  * A method id more than one module declared, in first-wins order.
  */
 export interface DuplicateMethod {
@@ -1751,6 +1787,11 @@ export interface EnsureDefaultsRequest {
    */
   mode?: Mode;
 }
+
+/**
+ * The two catalog namespaces.
+ */
+export type EntryKind = "artifact" | "object";
 
 /**
  * Separation facts carried by one evidence relationship.
@@ -2265,6 +2306,16 @@ export interface ListRequest {
    * The `~/.ix` home to read, or absent for the one the host resolves.
    */
   home?: string | null;
+}
+
+/**
+ * Request accepted by `catalog.load`.
+ */
+export interface LoadRequest {
+  /**
+   * Explicit module candidates, or absent for the host's default discovery.
+   */
+  roots?: string[] | null;
 }
 
 /**
@@ -3762,6 +3813,78 @@ export type Source =
   | SourceUrl
   | SourcePath
   | SourceNpm;
+
+/**
+ * One artifact or object type supplied by a module.
+ */
+export interface SpecCatalogEntry {
+  /**
+   * The raw object `data_schema` value, preserving inline JSON and refs.
+   */
+  dataSchema?: unknown;
+  /**
+   * Which kind of type this entry is.
+   */
+  kind: EntryKind;
+  /**
+   * The module declaring this entry.
+   */
+  moduleName: string;
+  /**
+   * The declaring module root.
+   */
+  moduleRoot: string;
+  /**
+   * The artifact/object name.
+   */
+  name: string;
+  /**
+   * The artifact schema path, derived from `schema_ref`.
+   */
+  schemaPath?: string | null;
+  /**
+   * The artifact frontmatter schema reference.
+   */
+  schemaRef?: string | null;
+  /**
+   * A real skeleton filename with disk-accurate casing, when supplied.
+   */
+  skeletonPath?: string | null;
+}
+
+/**
+ * One module represented by the catalog.
+ */
+export interface SpecModule {
+  /**
+   * Declared artifact-type names.
+   */
+  artifactTypes: string[];
+  /**
+   * Manifest name, or the root basename when it is absent/non-string.
+   */
+  name: string;
+  /**
+   * Declared object-type names.
+   */
+  objectTypes: string[];
+  /**
+   * The resolved module root.
+   */
+  root: string;
+  /**
+   * The parsed semantic block, when one passed semantic validation.
+   */
+  semantic?: SemanticBlock | null;
+  /**
+   * Semantic diagnostics observed while loading this module.
+   */
+  semanticDiagnostics?: SemanticDiagnostic[] | null;
+  /**
+   * Manifest version when it is a string.
+   */
+  version?: string | null;
+}
 
 /**
  * A statement hash as quire computed it; quoin only ever compares these.

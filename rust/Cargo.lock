@@ -2996,6 +2996,7 @@ version = "0.1.0"
 dependencies = [
  "quoin-semantic",
  "quoin-yaml",
+ "schemars",
  "serde",
  "serde_json",
  "thiserror",
@@ -3212,6 +3213,7 @@ name = "quoin-schemas"
 version = "0.1.0"
 dependencies = [
  "quoin-assurance",
+ "quoin-catalog",
  "quoin-completeness",
  "quoin-core",
  "schemars",

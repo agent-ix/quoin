@@ -276,7 +276,7 @@ fn tc_1614_no_hand_written_declaration_shadows_a_generated_boundary_type() {
     /// A literal, and deliberately so: it is the sanity pin on the SCANNER
     /// rather than on the surface, so it moves whenever the surface does and
     /// cannot be satisfied by a scanner that has silently stopped reading.
-    const INTERFACE_COUNT: usize = 164;
+    const INTERFACE_COUNT: usize = 169;
 
     let core_dir = repo_root().join("src/core");
     let generated: Vec<(String, Vec<String>)> = interfaces(&committed_surface())

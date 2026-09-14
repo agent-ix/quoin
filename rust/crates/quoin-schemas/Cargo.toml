@@ -20,6 +20,7 @@ path = "src/bin/gen.rs"
 
 [dependencies]
 quoin-assurance = { workspace = true, features = ["schema"] }
+quoin-catalog = { workspace = true, features = ["schema"] }
 quoin-completeness = { workspace = true, features = ["schema"] }
 quoin-core = { workspace = true, features = ["schema"] }
 schemars = { workspace = true }
