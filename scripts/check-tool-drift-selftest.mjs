@@ -113,7 +113,7 @@ const mutations = [
   [
     "workflow Rust disagreement",
     ".github/workflows/build-test.yml",
-    (s) => s.replace("toolchain: 1.94.1", "toolchain: 1.93.1"),
+    (s) => s.replace("toolchain: 1.98.1", "toolchain: 1.97.1"),
     /Rust version must equal/,
   ],
   [
