@@ -12,7 +12,9 @@
 //! `tests/goldens/graph-loader-oracle.json` was captured **once** from
 //! `src/measurement/graph-portfolio-load.ts` by
 //! `oracle/capture-graph-loader-oracle.mjs`, over the committed fixture tree
-//! under `tests/fixtures/graph-loader-tree/`. This test runs
+//! under `tests/fixtures/graph-loader-tree/`. Both the source and the capture
+//! script were deleted at the quoin#480 cutover; the golden is what survives.
+//! This test runs
 //! [`build_governed_graph_portfolio`] over the same tree and compares. No node
 //! process is spawned here, and `tc_476_boundary.rs` asserts none can be.
 //!

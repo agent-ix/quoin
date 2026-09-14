@@ -12,7 +12,9 @@
 //! `tests/goldens/graph-portfolio-oracle.json` was captured **once** from
 //! `src/measurement/graph-portfolio.ts` by
 //! `oracle/capture-graph-portfolio-oracle.mjs`, over the committed fixture tree
-//! under `tests/fixtures/graph-portfolio-tree/`. This test runs the Rust over
+//! under `tests/fixtures/graph-portfolio-tree/`. Both the source and the capture
+//! script were deleted at the quoin#480 cutover; the golden is what survives.
+//! This test runs the Rust over
 //! the same tree and compares bytes. No node process is spawned here, and
 //! `tc_476_boundary.rs` asserts none can be.
 //!
