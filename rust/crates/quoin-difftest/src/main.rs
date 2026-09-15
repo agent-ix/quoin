@@ -165,6 +165,7 @@ struct CommandCase {
     name: String,
     capability: String,
     args: Vec<String>,
+    environment: Vec<(String, String)>,
 }
 
 /// What one command-line implementation emitted, without protocol rewriting.
@@ -253,6 +254,8 @@ fn main() -> std::process::ExitCode {
 /// `rust/` (quoin#424).
 fn repository_root(corpus: &Path) -> Option<std::path::PathBuf> {
     corpus
+        .canonicalize()
+        .ok()?
         .ancestors()
         .find(|candidate| candidate.join(".git").exists())
         .map(Path::to_path_buf)
@@ -344,6 +347,24 @@ fn command_case(value: &serde_json::Value, index: usize) -> Result<CommandCase, 
             })
         })
         .collect::<Result<Vec<_>, _>>()?;
+    let environment = object.get("environment").map_or_else(
+        || Ok(Vec::new()),
+        |value| {
+            value
+                .as_object()
+                .ok_or_else(|| format!("command corpus case {index} environment is not an object"))?
+                .iter()
+                .map(|(key, value)| {
+                    value
+                        .as_str()
+                        .map(|value| (key.clone(), value.to_owned()))
+                        .ok_or_else(|| {
+                            format!("command corpus case {index} environment {key} is not a string")
+                        })
+                })
+                .collect()
+        },
+    )?;
     if args.is_empty() {
         return Err(format!(
             "command corpus case {index} has no command arguments"
@@ -353,6 +374,7 @@ fn command_case(value: &serde_json::Value, index: usize) -> Result<CommandCase, 
         name: text("name")?,
         capability: text("capability")?,
         args,
+        environment,
     })
 }
 
@@ -372,13 +394,21 @@ fn run_command_cases(
             .iter()
             .map(|argument| argument.replace("${REPO_ROOT}", &root))
             .collect::<Vec<_>>();
-        let native = observe_command(Command::new(native_cli).args(&arguments));
-        let retained = observe_command(
-            Command::new(node)
-                .arg(ts_cli)
-                .args(&arguments)
-                .env("QUOIN_CORE", core),
-        );
+        let environment = case
+            .environment
+            .iter()
+            .map(|(key, value)| (key.clone(), value.replace("${REPO_ROOT}", &root)))
+            .collect::<Vec<_>>();
+        let mut native_command = Command::new(native_cli);
+        native_command.args(&arguments).envs(environment.clone());
+        let native = observe_command(&mut native_command);
+        let mut retained_command = Command::new(node);
+        retained_command
+            .arg(ts_cli)
+            .args(&arguments)
+            .env("QUOIN_CORE", core)
+            .envs(environment);
+        let retained = observe_command(&mut retained_command);
         match (native, retained) {
             (Ok(native), Ok(retained)) => {
                 let differences = compare_command(&native, &retained);

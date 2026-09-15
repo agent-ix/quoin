@@ -103,6 +103,31 @@
         "--requirement",
         "FR-001"
       ]
+    },
+    {
+      "name": "catalog/list/json",
+      "capability": "catalog.list",
+      "environment": {
+        "IX_HOME": "${REPO_ROOT}/rust/crates/quoin-difftest/fixtures/catalog/ix-home",
+        "QUOIN_SEMANTIC_ROOT": "${REPO_ROOT}/dist"
+      },
+      "args": [
+        "catalog",
+        "list",
+        "--json"
+      ]
+    },
+    {
+      "name": "catalog/list/human",
+      "capability": "catalog.list",
+      "environment": {
+        "IX_HOME": "${REPO_ROOT}/rust/crates/quoin-difftest/fixtures/catalog/ix-home",
+        "QUOIN_SEMANTIC_ROOT": "${REPO_ROOT}/dist"
+      },
+      "args": [
+        "catalog",
+        "list"
+      ]
     }
   ]
 }

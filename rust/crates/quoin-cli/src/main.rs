@@ -432,13 +432,18 @@ fn emit(response: &Response) -> std::process::ExitCode {
             .get("renderedStream")
             .and_then(serde_json::Value::as_str)
             .unwrap_or("stdout");
-        let write = if stream == "stderr" {
-            writeln!(std::io::stderr(), "{rendered}")
-        } else {
-            writeln!(std::io::stdout(), "{rendered}")
-        };
-        if write.is_err() {
-            return std::process::ExitCode::from(EXIT_INTERNAL);
+        // Oclif's `this.log()` is not called for an empty listing, so an empty
+        // human catalog has no terminal bytes. `writeln!` would manufacture a
+        // newline and turn "no modules" into a distinct command contract.
+        if !rendered.is_empty() {
+            let write = if stream == "stderr" {
+                writeln!(std::io::stderr(), "{rendered}")
+            } else {
+                writeln!(std::io::stdout(), "{rendered}")
+            };
+            if write.is_err() {
+                return std::process::ExitCode::from(EXIT_INTERNAL);
+            }
         }
     }
     if !response.diagnostics.is_empty() {
