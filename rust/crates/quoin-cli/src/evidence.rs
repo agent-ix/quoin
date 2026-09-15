@@ -58,6 +58,17 @@ pub(crate) fn command() -> Command {
                 )
                 .arg(json_arg()),
         )
+        .subcommand(
+            Command::new("affirm")
+                .about("Re-affirm a binding after its statement changed")
+                .arg(Arg::new("obligation").long("obligation").required(true))
+                .arg(Arg::new("who").long("who").required(true))
+                .arg(Arg::new("note").long("note"))
+                .arg(Arg::new("commit").long("commit"))
+                .arg(repo_arg())
+                .arg(Arg::new("module").long("module"))
+                .arg(json_arg()),
+        )
 }
 
 fn record_command(name: &'static str, help: &'static str) -> Command {
@@ -79,8 +90,79 @@ pub(crate) fn run(matches: &ArgMatches) -> Result<Response, String> {
         "record-experiment" => record(arguments, "evidence.record_experiment"),
         "record-operational" => record(arguments, "evidence.record_operational"),
         "inspect-mocks" => inspect_mocks(arguments),
+        "affirm" => affirm(arguments),
         _ => Err("an unknown evidence command reached dispatch".to_owned()),
     }
+}
+
+fn affirm(arguments: &ArgMatches) -> Result<Response, String> {
+    let repo = required(arguments, "repo")?;
+    let modules = arguments
+        .get_one::<String>("module")
+        .map_or_else(Vec::new, |module| vec![module.clone()]);
+    let coverage = invoke(
+        "quire.coverage",
+        &serde_json::json!({ "scope": repo, "modules": modules }),
+    )?;
+    if !coverage.outcome.carries_payload() {
+        return Ok(coverage);
+    }
+    let obligation = required(arguments, "obligation")?;
+    let current = coverage
+        .payload
+        .get("obligations")
+        .and_then(serde_json::Value::as_array)
+        .and_then(|items| {
+            items.iter().find(|item| {
+                item.get("id").and_then(serde_json::Value::as_str) == Some(obligation.as_str())
+            })
+        })
+        .ok_or_else(|| {
+            format!("no obligation `{obligation}` is derived from this specification today")
+        })?;
+    let statement_hash = current
+        .get("statement_hash")
+        .and_then(serde_json::Value::as_str)
+        .ok_or_else(|| format!("obligation `{obligation}` has no statement_hash"))?;
+    let commit = arguments
+        .get_one::<String>("commit")
+        .cloned()
+        .unwrap_or_else(|| revision(&repo));
+    let response = invoke(
+        "evidence.affirm",
+        &serde_json::json!({ "repo": repo, "obligation": obligation, "statement_hash": statement_hash, "who": required(arguments, "who")?, "commit": commit, "note": arguments.get_one::<String>("note") }),
+    )?;
+    render(response, |payload| {
+        if !payload
+            .get("found")
+            .and_then(serde_json::Value::as_bool)
+            .unwrap_or(false)
+        {
+            return Err(format!(
+                "no binding exists for `{obligation}`, so there is nothing to affirm"
+            ));
+        }
+        if arguments.get_flag("json") {
+            return serde_json::to_string(&serde_json::json!({ "obligation": obligation, "who": required(arguments, "who")?, "commit": commit, "statementHash": statement_hash })).map_err(|error| error.to_string());
+        }
+        Ok(format!(
+            "affirmed {obligation} by {} at {} (hash {}…)",
+            required(arguments, "who")?,
+            commit.get(..12).unwrap_or(&commit),
+            statement_hash.get(..12).unwrap_or(statement_hash)
+        ))
+    })
+}
+
+fn revision(repo: &str) -> String {
+    std::process::Command::new("git")
+        .args(["-C", repo, "rev-parse", "HEAD"])
+        .output()
+        .ok()
+        .filter(|output| output.status.success())
+        .and_then(|output| String::from_utf8(output.stdout).ok())
+        .map(|value| value.trim().to_owned())
+        .unwrap_or_default()
 }
 
 fn inspect_mocks(arguments: &ArgMatches) -> Result<Response, String> {
