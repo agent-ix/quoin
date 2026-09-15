@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
 
-//! The two `quire.*` routes, each driven through the real binary.
+//! The two `quire.*` routes, each driven through the production runtime.
 //!
-//! # Why by name, through the process
+//! # Why by name, through the runtime
 //!
 //! `src/ops/quire/tests.rs` proves what the domain DECIDES, against an
 //! in-memory host. It cannot prove that the wire name `quire.coverage` reaches
@@ -30,13 +30,13 @@
     reason = "integration-test bodies: a panic here is a failing test, which is the intended signal"
 )]
 
-use std::io::Write as _;
 use std::path::PathBuf;
-use std::process::{Command, Stdio};
 
+use quoin_core::protocol::{Diagnostic, Response, canonical_json};
+use quoin_core::runtime::{RuntimeSettings, dispatch};
 use serde_json::{Value, json};
 
-/// One invocation of the boundary binary.
+/// One invocation of the production runtime.
 struct Run {
     stdout: String,
     stderr: String,
@@ -44,24 +44,27 @@ struct Run {
 }
 
 fn run(op: &str, stdin: &str) -> Run {
-    let mut child = Command::new(env!("CARGO_BIN_EXE_quoin-core"))
-        .arg(op)
-        .stdin(Stdio::piped())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .spawn()
-        .unwrap();
-    child
-        .stdin
-        .as_mut()
-        .unwrap()
-        .write_all(stdin.as_bytes())
-        .unwrap();
-    let out = child.wait_with_output().unwrap();
+    let request: Value = serde_json::from_str(stdin).unwrap();
+    let response =
+        dispatch(op, &request, &RuntimeSettings::default()).unwrap_or_else(|error| Response {
+            payload: Value::Null,
+            diagnostics: vec![Diagnostic::from(&error)],
+            outcome: error.outcome(),
+        });
+    let stdout = if response.outcome.carries_payload() {
+        canonical_json(&response.payload).unwrap()
+    } else {
+        String::new()
+    };
+    let stderr = if response.diagnostics.is_empty() {
+        String::new()
+    } else {
+        canonical_json(&response.diagnostics).unwrap()
+    };
     Run {
-        stdout: String::from_utf8(out.stdout).unwrap(),
-        stderr: String::from_utf8(out.stderr).unwrap(),
-        status: out.status.code().unwrap(),
+        stdout,
+        stderr,
+        status: i32::from(response.outcome.code()),
     }
 }
 
