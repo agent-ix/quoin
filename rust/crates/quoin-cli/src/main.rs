@@ -10,6 +10,7 @@
 //! oclif shell remains published during the staged cutover.
 
 mod advise;
+mod assurance;
 mod catalog;
 mod change_assurance;
 mod completeness;
@@ -52,6 +53,9 @@ fn run(args: impl IntoIterator<Item = OsString>) -> Result<Response, String> {
     }
     if let Some(("advise", advise)) = matches.subcommand() {
         return advise::run(advise);
+    }
+    if let Some(("assurance", assurance)) = matches.subcommand() {
+        return assurance::run(assurance);
     }
     if let Some(("config", config)) = matches.subcommand() {
         return config::run(config);
@@ -109,6 +113,7 @@ fn command() -> Command {
         .arg_required_else_help(true)
         .subcommand(catalog::command())
         .subcommand(advise::command())
+        .subcommand(assurance::command())
         .subcommand(config::command())
         .subcommand(completeness::command())
         .subcommand(change_assurance::command())

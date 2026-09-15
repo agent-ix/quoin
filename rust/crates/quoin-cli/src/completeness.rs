@@ -70,6 +70,15 @@ pub(crate) fn run(arguments: &ArgMatches) -> Result<Response, String> {
     })
 }
 
+/// Read bundle frontmatter through the sole parser shared with assurance.
+pub(crate) fn read_frontmatter(root: &Path) -> Result<Response, String> {
+    let (documents, unreadable) = bundle_snapshot(root);
+    invoke(
+        "completeness.read_frontmatter",
+        &serde_json::json!({ "documents": documents, "unreadable": unreadable }),
+    )
+}
+
 fn bundle_snapshot(root: &Path) -> (Vec<serde_json::Value>, Vec<serde_json::Value>) {
     let mut files = Vec::new();
     walk(root, &mut files);
