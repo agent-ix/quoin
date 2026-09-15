@@ -3015,6 +3015,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "quoin-cli"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "quoin-core",
+ "quoin-graph-analysis",
+ "serde_json",
+]
+
+[[package]]
 name = "quoin-combinatorial"
 version = "0.1.0"
 dependencies = [

@@ -1,0 +1,27 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 Agent-IX
+
+[package]
+name = "quoin-cli"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+description = "The Rust command surface for Quoin."
+publish.workspace = true
+default-run = "quoin"
+
+[[bin]]
+name = "quoin"
+path = "src/main.rs"
+
+[lints]
+workspace = true
+
+[dependencies]
+clap = { workspace = true }
+quoin-core = { workspace = true }
+quoin-graph-analysis = { workspace = true }
+serde_json = { workspace = true }
