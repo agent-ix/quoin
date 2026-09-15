@@ -20,6 +20,7 @@ mod discharge;
 mod evidence;
 mod flow;
 mod invocation;
+mod measurement;
 mod module;
 mod plugin;
 mod report;
@@ -139,6 +140,9 @@ fn dispatch(matches: &ArgMatches) -> Result<Response, String> {
     if let Some(("module", module)) = matches.subcommand() {
         return module::run(module);
     }
+    if let Some(("measurement", measurement)) = matches.subcommand() {
+        return measurement::run(measurement);
+    }
     if let Some(("plugin", plugin)) = matches.subcommand() {
         return plugin::run(plugin);
     }
@@ -208,6 +212,7 @@ fn command() -> Command {
         .subcommand(evidence::command())
         .subcommand(discharge::command())
         .subcommand(module::command())
+        .subcommand(measurement::command())
         .subcommand(plugin::command())
         .subcommand(report::command())
         .subcommand(semantic::command())
