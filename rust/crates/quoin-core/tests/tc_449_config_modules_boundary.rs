@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
 
-//! The remaining `config` operations reached by their wire names.
+//! The remaining `config` operations reached through the shared native runtime.
 //!
 //! `tc_447_600_every_operation_is_invoked_by_name_by_some_test` requires every
 //! entry in `OPERATIONS` to be handed to the real binary, spelled, by some
@@ -21,46 +21,19 @@
     reason = "integration-test bodies: a panic here is a failing test, which is the intended signal"
 )]
 
-use std::io::Write as _;
-use std::process::{Command, Stdio};
-
+use quoin_core::protocol::{Outcome, Response};
+use quoin_core::runtime::{RuntimeSettings, dispatch};
 use serde_json::{Value, json};
 
-struct Run {
-    stdout: String,
-    stderr: String,
-    status: i32,
-}
-
-/// Invoke the binary with `op` on argv and `request` on stdin.
-fn run(op: &str, request: &Value) -> Run {
-    let mut command = Command::new(env!("CARGO_BIN_EXE_quoin-core"));
-    command.arg(op);
-    let mut child = command
-        .stdin(Stdio::piped())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .spawn()
-        .unwrap();
-    child
-        .stdin
-        .as_mut()
-        .unwrap()
-        .write_all(request.to_string().as_bytes())
-        .unwrap();
-    let out = child.wait_with_output().unwrap();
-    Run {
-        stdout: String::from_utf8(out.stdout).unwrap(),
-        stderr: String::from_utf8(out.stderr).unwrap(),
-        status: out.status.code().unwrap(),
-    }
+fn run(op: &str, request: &Value) -> Response {
+    dispatch(op, request, &RuntimeSettings::default()).expect("native runtime accepts the route")
 }
 
 /// The payload of a run that must have succeeded outright.
-fn ok(result: &Run) -> Value {
-    assert_eq!(result.status, 0, "{}", result.stderr);
-    assert_eq!(result.stderr, "");
-    serde_json::from_str(&result.stdout).unwrap()
+fn ok(result: Response) -> Value {
+    assert_eq!(result.outcome, Outcome::Ok, "{:?}", result.diagnostics);
+    assert!(result.diagnostics.is_empty());
+    result.payload
 }
 
 /// Trace: FR-096-AC-1, NFR-024-AC-1
@@ -69,7 +42,7 @@ fn ok(result: &Run) -> Value {
 fn tc_449_612_config_resolve_org_reports_the_source_that_won() {
     // The flag outranks everything, and `source` names it. Two cases rather
     // than one: a handler returning a constant payload satisfies either alone.
-    let by_flag = ok(&run(
+    let by_flag = ok(run(
         "config.resolve_org",
         &json!({ "flag": "agent-ix", "git_config": "[remote \"origin\"]\n\turl = git@github.com:other-org/quoin.git\n" }),
     ));
@@ -77,7 +50,7 @@ fn tc_449_612_config_resolve_org_reports_the_source_that_won() {
     assert_eq!(by_flag["source"], json!("flag"));
     assert_eq!(by_flag["degraded"], json!(false));
 
-    let by_git = ok(&run(
+    let by_git = ok(run(
         "config.resolve_org",
         &json!({ "git_config": "[remote \"origin\"]\n\turl = git@github.com:other-org/quoin.git\n" }),
     ));
@@ -89,7 +62,7 @@ fn tc_449_612_config_resolve_org_reports_the_source_that_won() {
 /// Provenance: agent-ix/quoin#449, routing quoin#450's operations
 #[test]
 fn tc_449_613_config_unresolved_org_message_is_the_sentence_the_shell_prints() {
-    let payload = ok(&run("config.unresolved_org_message", &json!({})));
+    let payload = ok(run("config.unresolved_org_message", &json!({})));
     let message = payload["message"].as_str().unwrap();
     // The advice half, which is what makes the sentence actionable and what a
     // truncation or a wrong arm would lose.
