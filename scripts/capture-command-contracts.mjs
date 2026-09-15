@@ -101,6 +101,8 @@ const SHELL_CASES = [
   ["catalog", "not-a-command", "--format", "json"],
   ["graph"],
   ["graph", "fan-out"],
+  ["graph", "churn"],
+  ["graph", "change-impact"],
   ["write"],
 ];
 

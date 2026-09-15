@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "captured_by": "scripts/capture-command-contracts.mjs",
-  "captured_revision": "48ccae5b6d0712a36b193ba9592e57aacc222b45",
+  "captured_revision": "d71c8cfb6128688f4ff3c377781cebb3ba3a4407",
   "normalization": "@agent-ix/quoin/<VERSION> replaces retained build/platform text; <VERSION> replaces bare SemVer output",
   "cases": [
     {
@@ -700,6 +700,26 @@
       "exit": 2,
       "stdout": "",
       "stderr": " ›   Error: The following errors occurred:\n ›     Missing required flag audit\n ›     Missing required flag export\n ›     Missing required flag premises\n ›   See more help with --help\n"
+    },
+    {
+      "kind": "shell",
+      "argv": [
+        "graph",
+        "churn"
+      ],
+      "exit": 2,
+      "stdout": "",
+      "stderr": " ›   Error: The following errors occurred:\n ›     Missing required flag audit\n ›     Missing required flag export\n ›     Missing required flag premises\n ›   See more help with --help\n"
+    },
+    {
+      "kind": "shell",
+      "argv": [
+        "graph",
+        "change-impact"
+      ],
+      "exit": 2,
+      "stdout": "",
+      "stderr": " ›   Error: The following errors occurred:\n ›     Missing required flag audit\n ›     Missing required flag export\n ›     Missing required flag premises\n ›     Missing required flag requirement\n ›   See more help with --help\n"
     },
     {
       "kind": "shell",
