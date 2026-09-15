@@ -405,6 +405,91 @@ fn emit(response: &Response) -> std::process::ExitCode {
 mod tests {
     use super::*;
 
+    /// Every native-owned route retained from `src/commands/`.
+    ///
+    /// This is deliberately a route census rather than a list of only root
+    /// topics.  The Stage 8 cutover needs a reviewable answer to "which
+    /// command paths does the native parser own?" before individual argument,
+    /// rendering, and exit-status fixtures can make that answer executable.
+    /// The external `sync` extension is intentionally absent: #522 owns its
+    /// Rust successor and it must not be made to look complete by this test.
+    const NATIVE_OWNED_ROUTES: &[&str] = &[
+        "quoin advise",
+        "quoin assurance",
+        "quoin catalog",
+        "quoin catalog list",
+        "quoin catalog methods",
+        "quoin catalog show",
+        "quoin catalog validate",
+        "quoin change-assurance",
+        "quoin change-assurance intake",
+        "quoin change-assurance receipt",
+        "quoin change-assurance recover",
+        "quoin change-assurance schema",
+        "quoin change-assurance seal-attestation",
+        "quoin change-assurance seal-record",
+        "quoin change-assurance verify-receipt",
+        "quoin completeness",
+        "quoin config",
+        "quoin config doctor",
+        "quoin config edit",
+        "quoin config get",
+        "quoin config set",
+        "quoin discharge",
+        "quoin evidence",
+        "quoin evidence affirm",
+        "quoin evidence audit",
+        "quoin evidence baseline",
+        "quoin evidence gc",
+        "quoin evidence inspect-mocks",
+        "quoin evidence record",
+        "quoin evidence record-experiment",
+        "quoin evidence record-operational",
+        "quoin evidence trust",
+        "quoin graph",
+        "quoin graph change-impact",
+        "quoin graph churn",
+        "quoin graph fan-out",
+        "quoin matrix",
+        "quoin measurement",
+        "quoin measurement intervention",
+        "quoin measurement operational-release",
+        "quoin measurement record",
+        "quoin module",
+        "quoin module ensure-defaults",
+        "quoin module install",
+        "quoin module list",
+        "quoin module remove",
+        "quoin plugin",
+        "quoin plugin ensure-defaults",
+        "quoin plugin install",
+        "quoin plugin list",
+        "quoin plugin remove",
+        "quoin report",
+        "quoin review",
+        "quoin semantic",
+        "quoin semantic sweep",
+        "quoin to-plan",
+        "quoin update",
+        "quoin validate",
+        "quoin write",
+    ];
+
+    fn command_routes(command: &Command) -> Vec<String> {
+        fn visit(command: &Command, prefix: &str, routes: &mut Vec<String>) {
+            for child in command.get_subcommands() {
+                let route = format!("{prefix} {}", child.get_name());
+                routes.push(route.clone());
+                visit(child, &route, routes);
+            }
+        }
+
+        let mut routes = Vec::new();
+        visit(command, "quoin", &mut routes);
+        routes.sort_unstable();
+        routes
+    }
+
     /// Trace: FR-062, FR-102
     #[test]
     fn tc_373_graph_without_a_view_keeps_the_retained_description() {
@@ -548,6 +633,16 @@ mod tests {
                 "write",
             ]
         );
+    }
+
+    /// Trace: FR-062, FR-102, TC-1650
+    #[test]
+    fn tc_1650_native_shell_route_census_matches_the_retained_owned_surface() {
+        let expected = NATIVE_OWNED_ROUTES
+            .iter()
+            .map(ToString::to_string)
+            .collect::<Vec<_>>();
+        assert_eq!(command_routes(&command()), expected);
     }
 
     /// Trace: FR-005, FR-062
