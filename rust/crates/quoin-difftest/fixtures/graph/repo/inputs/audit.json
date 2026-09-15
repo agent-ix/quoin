@@ -1,0 +1,29 @@
+{
+  "format": "quoin-audit-envelope",
+  "format_version": 1,
+  "source": {
+    "repository": "agent-ix/example",
+    "revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+  },
+  "export": {
+    "format": "quire-assurance",
+    "format_version": 1,
+    "modules": [
+      {
+        "name": "example",
+        "version": "1.0.0",
+        "schemas": [
+          {
+            "archetype": "FR",
+            "schema_digest": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+          }
+        ]
+      }
+    ]
+  },
+  "report": {
+    "findings": [],
+    "healthy": ["FR-001-AC-1"],
+    "unevaluated": []
+  }
+}

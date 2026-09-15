@@ -1,0 +1,59 @@
+{
+  "format": "quire-assurance",
+  "format_version": 1,
+  "modules": [
+    {
+      "name": "example",
+      "version": "1.0.0",
+      "schemas": [
+        {
+          "archetype": "FR",
+          "schema_digest": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+        }
+      ]
+    }
+  ],
+  "source": {
+    "repository": "agent-ix/example",
+    "revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+  },
+  "artifacts": [
+    {
+      "id": "FR-001",
+      "artifact_type": "FR",
+      "locator": {
+        "path": "spec/FR-001.md",
+        "line": 1,
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      }
+    }
+  ],
+  "obligations": [
+    {
+      "source": "acceptance-criterion",
+      "id": "FR-001-AC-1",
+      "document": "spec/FR-001.md",
+      "statement": "The command reports fan-out.",
+      "statement_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "target_ids": ["TC-1249"],
+      "locator": {
+        "path": "spec/FR-001.md",
+        "line": 20,
+        "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      }
+    }
+  ],
+  "symbols": [],
+  "relation_kinds": [
+    {"kind": "depends_on", "availability": "available", "sources": ["module_vocabulary"]},
+    {"kind": "derives_from", "availability": "available", "sources": ["module_vocabulary"]},
+    {"kind": "implements", "availability": "available", "sources": ["module_vocabulary"]},
+    {"kind": "mitigates", "availability": "available", "sources": ["module_vocabulary"]},
+    {"kind": "refines", "availability": "available", "sources": ["module_vocabulary"]},
+    {"kind": "requires", "availability": "available", "sources": ["module_vocabulary"]},
+    {"kind": "satisfies", "availability": "available", "sources": ["module_vocabulary"]},
+    {"kind": "traces_to", "availability": "available", "sources": ["module_vocabulary"]}
+  ],
+  "relations": [],
+  "relation_observations": []
+}

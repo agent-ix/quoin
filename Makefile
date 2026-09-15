@@ -308,16 +308,19 @@ rust-deny:
 rust-test:
 	cd $(RUST_DIR) && cargo test --workspace --locked $(CARGO_TARGET_FLAG)
 
-# The FR-101 differential harness: the retained TypeScript and quoin-core, one
-# request, one verdict. It needs BOTH trees built, and it depends on `build`
-# rather than assuming a `dist/` is present, because the TypeScript side runs
-# from `dist/core/reference.js` — comparing a built artifact against a source
-# tree would be comparing two revisions.
+# The FR-101 differential harness: the retained TypeScript command path, its
+# Stage-0 protocol oracle, and native Rust at one candidate revision. It needs
+# BOTH trees built. `bin/quoin.js` loads `dist/commands`, while the native
+# command is taken from the same named Cargo target; comparing source to one
+# side's stale build would be no parity evidence at all.
 .PHONY: rust-difftest
 rust-difftest: build rust-build
 	$(CARGO_TARGET)/debug/quoin-difftest \
 	  --core $(CARGO_TARGET)/debug/quoin-core \
-	  --ts $(CURDIR)/scripts/core-reference.mjs
+	  --ts $(CURDIR)/scripts/core-reference.mjs \
+	  --native-cli $(CARGO_TARGET)/debug/quoin \
+	  --ts-cli $(CURDIR)/bin/quoin.js \
+	  --command-cases $(CURDIR)/rust/crates/quoin-difftest/fixtures/command-cases.json
 
 # `src/core/exec.ts` and every criterion stated over a command that now asks
 # quoin-core, against the real binary. Those cases skip when QUOIN_CORE is

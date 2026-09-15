@@ -1,0 +1,108 @@
+{
+  "schema_version": 1,
+  "cases": [
+    {
+      "name": "graph/fan-out/json",
+      "capability": "graph.fan-out",
+      "args": [
+        "graph",
+        "fan-out",
+        "--repo",
+        "${REPO_ROOT}/rust/crates/quoin-difftest/fixtures/graph/repo",
+        "--export",
+        "${REPO_ROOT}/rust/crates/quoin-difftest/fixtures/graph/repo/inputs/assurance.json",
+        "--premises",
+        "${REPO_ROOT}/rust/crates/quoin-difftest/fixtures/graph/repo/inputs/premises.json",
+        "--audit",
+        "${REPO_ROOT}/rust/crates/quoin-difftest/fixtures/graph/repo/inputs/audit.json",
+        "--json"
+      ]
+    },
+    {
+      "name": "graph/fan-out/human",
+      "capability": "graph.fan-out",
+      "args": [
+        "graph",
+        "fan-out",
+        "--repo",
+        "${REPO_ROOT}/rust/crates/quoin-difftest/fixtures/graph/repo",
+        "--export",
+        "${REPO_ROOT}/rust/crates/quoin-difftest/fixtures/graph/repo/inputs/assurance.json",
+        "--premises",
+        "${REPO_ROOT}/rust/crates/quoin-difftest/fixtures/graph/repo/inputs/premises.json",
+        "--audit",
+        "${REPO_ROOT}/rust/crates/quoin-difftest/fixtures/graph/repo/inputs/audit.json"
+      ]
+    },
+    {
+      "name": "graph/churn/json",
+      "capability": "graph.churn",
+      "args": [
+        "graph",
+        "churn",
+        "--repo",
+        "${REPO_ROOT}/rust/crates/quoin-difftest/fixtures/graph/repo",
+        "--export",
+        "${REPO_ROOT}/rust/crates/quoin-difftest/fixtures/graph/repo/inputs/assurance.json",
+        "--premises",
+        "${REPO_ROOT}/rust/crates/quoin-difftest/fixtures/graph/repo/inputs/premises.json",
+        "--audit",
+        "${REPO_ROOT}/rust/crates/quoin-difftest/fixtures/graph/repo/inputs/audit.json",
+        "--json"
+      ]
+    },
+    {
+      "name": "graph/churn/human",
+      "capability": "graph.churn",
+      "args": [
+        "graph",
+        "churn",
+        "--repo",
+        "${REPO_ROOT}/rust/crates/quoin-difftest/fixtures/graph/repo",
+        "--export",
+        "${REPO_ROOT}/rust/crates/quoin-difftest/fixtures/graph/repo/inputs/assurance.json",
+        "--premises",
+        "${REPO_ROOT}/rust/crates/quoin-difftest/fixtures/graph/repo/inputs/premises.json",
+        "--audit",
+        "${REPO_ROOT}/rust/crates/quoin-difftest/fixtures/graph/repo/inputs/audit.json"
+      ]
+    },
+    {
+      "name": "graph/change-impact/json",
+      "capability": "graph.change-impact",
+      "args": [
+        "graph",
+        "change-impact",
+        "--repo",
+        "${REPO_ROOT}/rust/crates/quoin-difftest/fixtures/graph/repo",
+        "--export",
+        "${REPO_ROOT}/rust/crates/quoin-difftest/fixtures/graph/repo/inputs/assurance.json",
+        "--premises",
+        "${REPO_ROOT}/rust/crates/quoin-difftest/fixtures/graph/repo/inputs/premises.json",
+        "--audit",
+        "${REPO_ROOT}/rust/crates/quoin-difftest/fixtures/graph/repo/inputs/audit.json",
+        "--requirement",
+        "FR-001",
+        "--json"
+      ]
+    },
+    {
+      "name": "graph/change-impact/human",
+      "capability": "graph.change-impact",
+      "args": [
+        "graph",
+        "change-impact",
+        "--repo",
+        "${REPO_ROOT}/rust/crates/quoin-difftest/fixtures/graph/repo",
+        "--export",
+        "${REPO_ROOT}/rust/crates/quoin-difftest/fixtures/graph/repo/inputs/assurance.json",
+        "--premises",
+        "${REPO_ROOT}/rust/crates/quoin-difftest/fixtures/graph/repo/inputs/premises.json",
+        "--audit",
+        "${REPO_ROOT}/rust/crates/quoin-difftest/fixtures/graph/repo/inputs/audit.json",
+        "--requirement",
+        "FR-001"
+      ]
+    }
+  ]
+}

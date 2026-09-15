@@ -209,11 +209,33 @@ fn dispatch(matches: &ArgMatches) -> Result<Response, String> {
             "an unknown graph view reached command dispatch",
         )),
     };
-    Ok(response.unwrap_or_else(|error| Response {
-        payload: serde_json::Value::Null,
-        diagnostics: vec![Diagnostic::from(&error)],
-        outcome: error.outcome(),
-    }))
+    Ok(trim_graph_rendering(response.unwrap_or_else(|error| {
+        Response {
+            payload: serde_json::Value::Null,
+            diagnostics: vec![Diagnostic::from(&error)],
+            outcome: error.outcome(),
+        }
+    })))
+}
+
+/// Match the retained graph command's `askGraph(...).trimEnd()` boundary.
+///
+/// The graph engine owns a complete rendered document and terminates that
+/// document with a newline. Oclif's `this.log` then supplies the command-line
+/// newline after trimming the engine's terminator. Without this adapter the
+/// native shell wrote both terminators, leaving every human and JSON graph
+/// report one blank line longer than the still-retained command (quoin#424).
+fn trim_graph_rendering(mut response: Response) -> Response {
+    if let Some(payload) = response.payload.as_object_mut()
+        && let Some(rendered) = payload
+            .get("rendered")
+            .and_then(serde_json::Value::as_str)
+            .map(str::trim_end)
+            .map(str::to_owned)
+    {
+        payload.insert("rendered".to_owned(), serde_json::Value::String(rendered));
+    }
+    response
 }
 
 fn command() -> Command {
