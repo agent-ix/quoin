@@ -69,6 +69,22 @@ pub(crate) fn command() -> Command {
                 .arg(Arg::new("module").long("module"))
                 .arg(json_arg()),
         )
+        .subcommand(
+            Command::new("record")
+                .about("Transcribe one suite run into the evidence store")
+                .arg(Arg::new("suite").long("suite").required(true))
+                .arg(Arg::new("commit").long("commit").required(true))
+                .arg(Arg::new("tool").long("tool").required(true))
+                .arg(Arg::new("kind").long("kind"))
+                .arg(Arg::new("lineage").long("lineage"))
+                .arg(Arg::new("discharges").long("discharges"))
+                .arg(Arg::new("adapter").long("adapter"))
+                .arg(Arg::new("results").long("results").required(true))
+                .arg(repo_arg())
+                .arg(Arg::new("module").long("module"))
+                .arg(Arg::new("timestamp").long("timestamp"))
+                .arg(json_arg()),
+        )
 }
 
 fn record_command(name: &'static str, help: &'static str) -> Command {
@@ -91,8 +107,84 @@ pub(crate) fn run(matches: &ArgMatches) -> Result<Response, String> {
         "record-operational" => record(arguments, "evidence.record_operational"),
         "inspect-mocks" => inspect_mocks(arguments),
         "affirm" => affirm(arguments),
+        "record" => record_run(arguments),
         _ => Err("an unknown evidence command reached dispatch".to_owned()),
     }
+}
+
+fn record_run(arguments: &ArgMatches) -> Result<Response, String> {
+    let repo = required(arguments, "repo")?;
+    let modules = arguments
+        .get_one::<String>("module")
+        .map_or_else(Vec::new, |module| vec![module.clone()]);
+    let coverage = invoke(
+        "quire.coverage",
+        &serde_json::json!({ "scope": repo, "modules": modules }),
+    )?;
+    if !coverage.outcome.carries_payload() {
+        return Ok(coverage);
+    }
+    let results = String::from_utf8(input(&required(arguments, "results")?)?)
+        .map_err(|error| format!("results are not UTF-8: {error}"))?;
+    let lineage = arguments
+        .get_one::<String>("lineage")
+        .map(|source| json_input(source))
+        .transpose()?;
+    let timestamp = arguments
+        .get_one::<String>("timestamp")
+        .cloned()
+        .map_or_else(
+            || {
+                OffsetDateTime::now_utc()
+                    .format(&Rfc3339)
+                    .map_err(|error| error.to_string())
+            },
+            Ok,
+        )?;
+    let discharges = arguments
+        .get_one::<String>("discharges")
+        .map_or_else(Vec::new, |value| {
+            value
+                .split(',')
+                .map(str::trim)
+                .filter(|id| !id.is_empty())
+                .map(str::to_owned)
+                .collect()
+        });
+    let response = invoke(
+        "evidence.record",
+        &serde_json::json!({
+            "repo": repo, "suite": required(arguments, "suite")?, "commit": required(arguments, "commit")?, "tool": required(arguments, "tool")?,
+            "kind": arguments.get_one::<String>("kind"), "lineage": lineage, "timestamp": timestamp, "adapter": arguments.get_one::<String>("adapter"),
+            "results": results, "discharges": discharges, "obligations": coverage.payload.get("obligations").cloned().unwrap_or_else(|| serde_json::json!([])),
+        }),
+    )?;
+    render(response, |payload| {
+        if arguments.get_flag("json") {
+            return serde_json::to_string(payload).map_err(|error| error.to_string());
+        }
+        match payload.get("kind").and_then(serde_json::Value::as_str) {
+            Some("scan") => Ok(format!(
+                "recorded scan {} @ {} → {}",
+                required(arguments, "suite")?,
+                required(arguments, "commit")?.get(..12).unwrap_or(""),
+                payload
+                    .get("scan_path")
+                    .and_then(serde_json::Value::as_str)
+                    .unwrap_or("")
+            )),
+            Some("run") => Ok(format!(
+                "recorded {} @ {} → {}",
+                required(arguments, "suite")?,
+                required(arguments, "commit")?.get(..12).unwrap_or(""),
+                payload
+                    .get("run_path")
+                    .and_then(serde_json::Value::as_str)
+                    .unwrap_or("")
+            )),
+            _ => Err("evidence.record returned an unknown payload kind".to_owned()),
+        }
+    })
 }
 
 fn affirm(arguments: &ArgMatches) -> Result<Response, String> {
