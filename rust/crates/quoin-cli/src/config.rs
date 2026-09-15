@@ -18,6 +18,8 @@ pub(crate) fn command() -> Command {
                 .arg(Arg::new("key").required(true))
                 .arg(Arg::new("value").required(true)),
         )
+        .subcommand(Command::new("doctor"))
+        .subcommand(Command::new("edit"))
 }
 
 pub(crate) fn run(matches: &ArgMatches) -> Result<Response, String> {
@@ -27,6 +29,8 @@ pub(crate) fn run(matches: &ArgMatches) -> Result<Response, String> {
     match name {
         "get" => get(&required(arguments, "key")?),
         "set" => set(&required(arguments, "key")?, &required(arguments, "value")?),
+        "doctor" => Ok(doctor()),
+        "edit" => edit(),
         _ => Err("an unknown config command reached dispatch".to_owned()),
     }
 }
@@ -58,6 +62,50 @@ fn set(key: &str, value: &str) -> Result<Response, String> {
         .map_err(|error| format!("cannot write {}: {error}", path.display()))?;
     Ok(Response::ok(
         serde_json::json!({ "rendered": format!("Set quoin.org in {}.", path.display()) }),
+    ))
+}
+
+fn doctor() -> Response {
+    let path = path();
+    let rendered = match read_org() {
+        Ok(_) => format!("quoin valid ({})", path.display()),
+        Err(error) => format!("quoin invalid ({})\n{error}", path.display()),
+    };
+    let outcome = if rendered.starts_with("quoin invalid") {
+        quoin_core::protocol::Outcome::Partial
+    } else {
+        quoin_core::protocol::Outcome::Ok
+    };
+    Response {
+        payload: serde_json::json!({ "rendered": rendered }),
+        diagnostics: Vec::new(),
+        outcome,
+    }
+}
+
+fn edit() -> Result<Response, String> {
+    let path = path();
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent)
+            .map_err(|error| format!("cannot create config directory: {error}"))?;
+    }
+    if !path.exists() {
+        std::fs::write(&path, "{}\n")
+            .map_err(|error| format!("cannot initialize {}: {error}", path.display()))?;
+    }
+    let editor = std::env::var("VISUAL")
+        .or_else(|_| std::env::var("EDITOR"))
+        .unwrap_or_else(|_| "vi".to_owned());
+    let status = std::process::Command::new(&editor)
+        .arg(&path)
+        .status()
+        .map_err(|error| format!("cannot start {editor}: {error}"))?;
+    if !status.success() {
+        return Err(format!("editor exited non-zero: {status}"));
+    }
+    read_org()?;
+    Ok(Response::ok(
+        serde_json::json!({ "rendered": format!("edited {}", path.display()) }),
     ))
 }
 
