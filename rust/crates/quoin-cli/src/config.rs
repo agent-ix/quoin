@@ -8,6 +8,8 @@ use std::path::PathBuf;
 use clap::{Arg, ArgMatches, Command};
 use quoin_core::protocol::Response;
 
+use crate::invocation;
+
 pub(crate) fn command() -> Command {
     Command::new("config")
         .about("Read and write Quoin configuration")
@@ -129,6 +131,15 @@ fn read_org() -> Result<Option<String>, String> {
 }
 
 fn path() -> PathBuf {
+    let invocation_root = invocation::current().config_root().cloned();
+    let explicit_root = invocation_root.or_else(|| {
+        std::env::var_os("IX_CONFIG_ROOT")
+            .filter(|root| !root.is_empty())
+            .map(PathBuf::from)
+    });
+    if let Some(root) = explicit_root {
+        return root.join("config.d").join("quoin.yaml");
+    }
     let root = std::env::var_os("XDG_CONFIG_HOME")
         .map(PathBuf::from)
         .or_else(|| std::env::var_os("HOME").map(|home| PathBuf::from(home).join(".config")))
@@ -148,4 +159,27 @@ fn required(arguments: &ArgMatches, name: &str) -> Result<String, String> {
         .get_one::<String>(name)
         .cloned()
         .ok_or_else(|| format!("{name} is required"))
+}
+
+#[cfg(test)]
+#[allow(clippy::expect_used, reason = "test assertions report failures")]
+mod tests {
+    use std::path::Path;
+
+    use clap::{Arg, Command};
+
+    use super::path;
+    use crate::invocation::{Invocation, with_current};
+
+    /// Trace: FR-027, FR-062
+    #[test]
+    fn tc_373_config_root_selects_the_retained_user_config_location() {
+        let matches = Command::new("quoin")
+            .arg(Arg::new("config_root").long("config-root"))
+            .try_get_matches_from(["quoin", "--config-root", "/tmp/ix-home"])
+            .expect("config root parses");
+        with_current(Invocation::from_matches(&matches), || {
+            assert_eq!(path(), Path::new("/tmp/ix-home/config.d/quoin.yaml"));
+        });
+    }
 }

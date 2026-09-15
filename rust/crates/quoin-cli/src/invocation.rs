@@ -26,8 +26,17 @@ thread_local! {
 impl Invocation {
     pub(crate) fn from_matches(matches: &ArgMatches) -> Self {
         Self {
-            config_root: matches.get_one::<String>("config_root").map(PathBuf::from),
-            no_project_config: matches.get_flag("no_project_config"),
+            config_root: matches
+                .try_get_one::<String>("config_root")
+                .ok()
+                .flatten()
+                .map(PathBuf::from),
+            no_project_config: matches
+                .try_get_one::<bool>("no_project_config")
+                .ok()
+                .flatten()
+                .copied()
+                .unwrap_or(false),
         }
     }
 
