@@ -3057,10 +3057,12 @@ dependencies = [
  "quoin-core",
  "quoin-delivery",
  "quoin-graph-analysis",
+ "quoin-validators",
  "quoin-yaml",
  "semver",
  "serde",
  "serde_json",
+ "tempfile",
  "time",
 ]
 

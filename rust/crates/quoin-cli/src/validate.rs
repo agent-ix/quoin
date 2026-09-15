@@ -153,7 +153,62 @@ fn number(value: &serde_json::Value, name: &str) -> u64 {
 #[cfg(test)]
 #[allow(clippy::expect_used, reason = "test fixtures may panic")]
 mod tests {
-    use super::command;
+    use std::fs::{create_dir_all, write};
+
+    use super::{command, snapshot};
+
+    fn gate(obligation: &str) -> String {
+        format!(
+            "#!/bin/sh\n# Gate for {obligation}: no production symbol shall call `unwrap`.\ngrep -rn \"unwrap()\" src/ | wc -l\n"
+        )
+    }
+
+    fn materialize(root: &std::path::Path) {
+        let tree = [
+            (
+                "Makefile",
+                "gate:\n\t./scripts/check_unwrap.sh\n\t./third_party/gate.sh\n".to_owned(),
+            ),
+            ("Makefile.ci", "ci:\n\t./tools/ci_gate.sh\n".to_owned()),
+            (
+                "Taskfile.yaml",
+                "version: '3'\ntasks:\n  gate:\n    cmds:\n      - deep/nested/verify.sh\n"
+                    .to_owned(),
+            ),
+            ("justfile", "audit:\n\t./ops/audit.sh\n".to_owned()),
+            (
+                "makefile.sh",
+                "#!/bin/sh\n./ops/wired_by_a_script.sh\n".to_owned(),
+            ),
+            (
+                ".github/workflows/nested/ci.yaml",
+                "jobs:\n  gate:\n    steps:\n      - run: ./ci/workflow_gate.sh\n".to_owned(),
+            ),
+            ("scripts/check_unwrap.sh", gate("FR-001-AC-1")),
+            ("third_party/gate.sh", gate("FR-002-AC-1")),
+            ("tools/ci_gate.sh", gate("FR-003-AC-1")),
+            ("deep/nested/verify.sh", gate("FR-004-AC-1")),
+            ("ops/audit.sh", gate("FR-005-AC-1")),
+            ("ops/wired_by_a_script.sh", gate("FR-006-AC-1")),
+            ("ci/workflow_gate.sh", gate("FR-007-AC-1")),
+            ("vendor/Makefile", "gate:\n\t./vendor/gate.sh\n".to_owned()),
+            ("vendor/gate.sh", gate("FR-900-AC-1")),
+            (
+                "node_modules/pkg/Makefile",
+                "gate:\n\t./node_modules/pkg/gate.sh\n".to_owned(),
+            ),
+            ("node_modules/pkg/gate.sh", gate("FR-901-AC-1")),
+            ("README.md", "# fixture\n".to_owned()),
+            ("package-lock.json", "{}\n".to_owned()),
+            ("src/index.ts", "export {};\n".to_owned()),
+        ];
+        for (relative, content) in tree {
+            let path = root.join(relative);
+            create_dir_all(path.parent().expect("fixture path has a parent"))
+                .expect("fixture parent is created");
+            write(path, content).expect("fixture file is written");
+        }
+    }
 
     /// Trace: FR-096, FR-062
     #[test]
@@ -167,5 +222,61 @@ mod tests {
         );
         assert!(matches.get_flag("strict"));
         assert!(matches.get_flag("json"));
+    }
+
+    /// The native snapshot walker is a transport optimisation only: it must
+    /// reach every gate the independent on-disk validator would classify.
+    ///
+    /// Trace: FR-096, FR-101, TC-1650
+    #[test]
+    fn tc_1650_native_validate_snapshot_matches_the_independent_disk_reader() {
+        let scratch = tempfile::tempdir().expect("scratch tree is created");
+        materialize(scratch.path());
+
+        let response = quoin_core::ops::validators::run(&snapshot(scratch.path()))
+            .expect("the native snapshot is accepted");
+        let through_native = response
+            .payload
+            .get("findings")
+            .and_then(serde_json::Value::as_array)
+            .expect("validators.run returns findings");
+        let through_disk = quoin_validators::inspect_empty_gates(scratch.path())
+            .expect("the independent disk reader succeeds");
+
+        assert!(
+            through_native.len() >= 7,
+            "snapshot population is non-vacuous"
+        );
+        assert!(
+            through_native
+                .iter()
+                .filter_map(|finding| finding.get("wiredBy").and_then(serde_json::Value::as_str))
+                .collect::<std::collections::BTreeSet<_>>()
+                .len()
+                >= 4,
+            "snapshot exercises multiple wiring shapes"
+        );
+        assert_eq!(
+            serde_json::to_value(through_disk).expect("disk findings serialize"),
+            serde_json::Value::Array(through_native.clone())
+        );
+        assert!(
+            through_native.iter().any(|finding| {
+                finding.get("path").and_then(serde_json::Value::as_str)
+                    == Some("third_party/gate.sh")
+            }),
+            "a non-excluded directory remains visible"
+        );
+        assert!(
+            through_native.iter().all(|finding| {
+                !finding
+                    .get("path")
+                    .and_then(serde_json::Value::as_str)
+                    .is_some_and(|path| {
+                        path.starts_with("vendor/") || path.starts_with("node_modules/")
+                    })
+            }),
+            "excluded directories remain invisible"
+        );
     }
 }
