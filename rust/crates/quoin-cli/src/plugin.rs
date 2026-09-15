@@ -19,6 +19,7 @@ pub(crate) fn command() -> Command {
     module::command()
         .name("plugin")
         .about("Deprecated alias for specification module commands")
+        .hide(true)
 }
 
 /// Run an alias command and attach its required deprecation warning.
@@ -58,5 +59,11 @@ mod tests {
                 .try_get_matches_from(["plugin", "remove"])
                 .is_err()
         );
+    }
+
+    /// Trace: FR-017, FR-102
+    #[test]
+    fn tc_373_plugin_alias_is_not_advertised_as_a_root_command() {
+        assert!(command().is_hide_set());
     }
 }
