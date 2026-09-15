@@ -12,6 +12,7 @@ authors.workspace = true
 description = "The Rust command surface for Quoin."
 publish.workspace = true
 default-run = "quoin"
+build = "build.rs"
 
 [[bin]]
 name = "quoin"

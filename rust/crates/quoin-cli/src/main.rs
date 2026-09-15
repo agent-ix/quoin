@@ -39,7 +39,11 @@ const EXIT_INVALID: u8 = Outcome::Invalid.code();
 const EXIT_INTERNAL: u8 = Outcome::Internal.code();
 
 fn main() -> std::process::ExitCode {
-    match run(std::env::args_os()) {
+    let arguments = std::env::args_os().collect::<Vec<_>>();
+    if is_version_request(&arguments) {
+        return emit_version();
+    }
+    match run(arguments) {
         Ok(response) => emit(&response),
         Err(message) => {
             let _ = writeln!(std::io::stderr(), "{message}");
@@ -49,10 +53,6 @@ fn main() -> std::process::ExitCode {
 }
 
 fn run(args: impl IntoIterator<Item = OsString>) -> Result<Response, String> {
-    let mut args = args.into_iter().collect::<Vec<_>>();
-    if let Some(argument) = args.get_mut(1).filter(|argument| *argument == "version") {
-        *argument = OsString::from("--version");
-    }
     let matches = command()
         .try_get_matches_from(args)
         .map_err(|error| error.to_string())?;
@@ -131,7 +131,7 @@ fn run(args: impl IntoIterator<Item = OsString>) -> Result<Response, String> {
 fn command() -> Command {
     Command::new("quoin")
         .about("Quoin assurance tooling")
-        .version(env!("CARGO_PKG_VERSION"))
+        .version(build_version())
         .subcommand_required(true)
         .arg_required_else_help(true)
         .subcommand(catalog::command())
@@ -177,6 +177,24 @@ fn command() -> Command {
                         ),
                 ),
         )
+}
+
+fn build_version() -> &'static str {
+    env!("QUOIN_VERSION")
+}
+
+fn is_version_request(arguments: &[OsString]) -> bool {
+    arguments
+        .get(1)
+        .is_some_and(|argument| matches!(argument.to_str(), Some("--version" | "-v" | "version")))
+}
+
+fn emit_version() -> std::process::ExitCode {
+    if writeln!(std::io::stdout(), "{}", build_version()).is_ok() {
+        std::process::ExitCode::SUCCESS
+    } else {
+        std::process::ExitCode::from(EXIT_INTERNAL)
+    }
 }
 
 fn graph_view(name: &'static str) -> Command {
@@ -372,14 +390,20 @@ mod tests {
 
     /// Trace: FR-016, FR-062
     #[test]
-    fn tc_373_version_command_is_normalized_to_the_builtin_version_flag() {
-        let result = run([OsString::from("quoin"), OsString::from("version")]);
-        assert!(result.is_err(), "clap exits after rendering the version");
+    fn tc_373_version_requests_keep_the_bare_native_version_surface() {
+        for argument in ["--version", "-v", "version"] {
+            assert!(is_version_request(&[
+                OsString::from("quoin"),
+                OsString::from(argument)
+            ]));
+        }
+        assert!(!is_version_request(&[
+            OsString::from("quoin"),
+            OsString::from("validate")
+        ]));
         assert!(
-            result
-                .expect_err("version exits")
-                .contains(env!("CARGO_PKG_VERSION")),
-            "the retained spelling reaches clap's version renderer"
+            !build_version().is_empty(),
+            "the native version is always present"
         );
     }
 
