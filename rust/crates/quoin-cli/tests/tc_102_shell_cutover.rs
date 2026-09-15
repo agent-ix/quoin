@@ -50,6 +50,7 @@ fn tc_1654_the_native_binary_has_no_oclif_or_typescript_shell() {
         "src/flow-command.ts",
         "src/hooks",
         "scripts",
+        "smoke",
         "vite.config.ts",
     ] {
         assert!(
