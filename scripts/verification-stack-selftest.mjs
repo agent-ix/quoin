@@ -22,7 +22,7 @@ import {
   assertRemoteRevision,
   cliSelectsEngine,
   parseSubmoduleRevision,
-  promoteRecallBaselineCandidate,
+  retainRecallBaselineCandidate,
   qaCorpusCounts,
   validateLockShape,
 } from "./verification-stack.mjs";
@@ -231,15 +231,15 @@ try {
   const recallBaseline = join(bootstrap, "quoin.json");
   writeFileSync(recallCandidate, "measured recall\n");
   if (
-    !promoteRecallBaselineCandidate(recallCandidate, recallBaseline) ||
+    !retainRecallBaselineCandidate(recallCandidate, recallBaseline) ||
     readFileSync(recallBaseline, "utf8") !== "measured recall\n" ||
-    promoteRecallBaselineCandidate(
+    retainRecallBaselineCandidate(
       join(bootstrap, "missing.json"),
       recallBaseline,
     )
   ) {
     throw new Error(
-      "recall-baseline candidate promotion did not preserve the baseline",
+      "recall-baseline candidate retention did not preserve the candidate",
     );
   }
   passed += 1;

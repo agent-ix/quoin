@@ -651,10 +651,10 @@ export function lockDigest(lockPath) {
   return sha256(readFileSync(lockPath));
 }
 
-/** Promote a measured recall ratchet only after the complete refresh succeeds. */
-export function promoteRecallBaselineCandidate(candidate, baseline) {
+/** Retain a measured qa-corpus recall-baseline candidate after final audit. */
+export function retainRecallBaselineCandidate(candidate, output) {
   if (!existsSync(candidate)) return false;
-  copyFileSync(candidate, baseline);
+  copyFileSync(candidate, output);
   return true;
 }
 
@@ -801,7 +801,7 @@ async function main() {
       "spec/evidence/measurements",
       "bench/tier1-baseline.json",
       "bench/battletest-baseline.json",
-      "corpus/baselines/quoin.json",
+      "bench/qa-recall-baseline-candidate.json",
     ],
   });
   if (submoduleRevision() !== lock.repositories["qa-corpus"].revision) {
@@ -1490,13 +1490,13 @@ async function main() {
         stdio: "inherit",
       });
       if (
-        promoteRecallBaselineCandidate(
+        retainRecallBaselineCandidate(
           recallBaselineCandidate,
-          join(ROOT, "corpus", "baselines", "quoin.json"),
+          join(ROOT, "bench", "qa-recall-baseline-candidate.json"),
         )
       ) {
         console.error(
-          "verification-stack: promoted the refreshed recall baseline after final audit",
+          "verification-stack: retained the refreshed qa-corpus recall-baseline candidate after final audit",
         );
       }
     }
