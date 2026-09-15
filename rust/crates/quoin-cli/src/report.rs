@@ -11,7 +11,7 @@
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use quoin_core::protocol::{Response, canonical_json};
 
-use crate::core_bridge::invoke;
+use crate::core_runtime::invoke;
 
 /// The `report` command and its retained flags.
 pub(crate) fn command() -> Command {

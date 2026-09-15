@@ -9,7 +9,7 @@ use std::path::Path;
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use quoin_core::protocol::{Outcome, Response};
 
-use crate::core_bridge::invoke;
+use crate::core_runtime::invoke;
 
 pub(crate) fn command() -> Command {
     Command::new("validate")

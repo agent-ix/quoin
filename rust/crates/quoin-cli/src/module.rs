@@ -4,13 +4,13 @@
 //! The Rust `quoin module` command family (quoin#373, Stage 8).
 //!
 //! Module discovery, reconciliation, installation, and removal stay in the
-//! capability-owning core process. This adapter preserves the oclif grammar
-//! and presentation while Stage 9 folds that process into `quoin`.
+//! capability-owning core runtime. This adapter preserves the oclif grammar
+//! and presentation while the published shell remains in the staged cutover.
 
 use clap::{Arg, ArgMatches, Command};
 use quoin_core::protocol::{Outcome, Response};
 
-use crate::core_bridge::invoke;
+use crate::core_runtime::invoke;
 
 const DEFAULT_MODULES: &str = include_str!("../../../../default-modules.yaml");
 const RECORD_KEYS: &[&str] = &[

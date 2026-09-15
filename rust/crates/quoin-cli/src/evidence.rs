@@ -10,7 +10,7 @@ use quoin_core::protocol::Response;
 use time::OffsetDateTime;
 use time::format_description::well_known::Rfc3339;
 
-use crate::core_bridge::invoke;
+use crate::core_runtime::invoke;
 
 mod audit;
 mod baseline;

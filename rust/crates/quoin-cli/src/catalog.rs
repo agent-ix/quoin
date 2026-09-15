@@ -9,7 +9,7 @@
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use quoin_core::protocol::{Outcome, Response};
 
-use crate::core_bridge::invoke;
+use crate::core_runtime::invoke;
 
 const DEFAULT_MODULES: &str = include_str!("../../../../default-modules.yaml");
 

@@ -3,7 +3,7 @@
 
 //! Rust adapters for `quoin change-assurance` (quoin#373, Stage 8).
 //!
-//! The core process owns strict document parsing, digest decisions, evidence
+//! The core runtime owns strict document parsing, digest decisions, evidence
 //! storage, and schema assets. This module owns only the retained command
 //! grammar and presentation.
 
@@ -13,7 +13,7 @@ use std::io::Read as _;
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use quoin_core::protocol::Response;
 
-use crate::core_bridge::invoke;
+use crate::core_runtime::invoke;
 
 const DESCRIPTION: &str = "Producer-facing surface over the FR-063 record, FR-064 proof attestation,\nretained-output intake, and FR-065 verification receipt contracts (FR-068).\n\nThese commands transcribe and verify what a producer supplies. None of them\nruns the command an attestation describes, invokes Git, or performs a network\nrequest. The only process any of them starts is the quoin-core engine that\ndecides the FR-063..FR-065 contracts (FR-096). Digests establish content integrity and recorded\nactor labels are attribution only; nothing here establishes authorization or\nnon-repudiation, and no output is a certification.\n\nSubcommands:\n  quoin change-assurance seal-record\n  quoin change-assurance seal-attestation\n  quoin change-assurance intake\n  quoin change-assurance receipt\n  quoin change-assurance verify-receipt\n  quoin change-assurance schema\n  quoin change-assurance recover\n\nExit status: 0 for a valid receipt, 1 for an invalid or incomplete one, and 2\nfor a usage, parse, or integrity error.";
 

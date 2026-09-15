@@ -8,7 +8,7 @@ use std::io::Read as _;
 use clap::{Arg, ArgMatches, Command};
 use quoin_core::protocol::Response;
 
-use crate::core_bridge::invoke;
+use crate::core_runtime::invoke;
 
 const DESCRIPTION: &str = "Measurement collections connect raw producer output to active\nMeasurementPlans. Use `quoin measurement record` to persist one complete producer\ninvocation; use `quoin report` for current state, comparisons, and series.";
 

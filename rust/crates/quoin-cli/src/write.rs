@@ -8,7 +8,7 @@ use std::path::{Path, PathBuf};
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use quoin_core::protocol::Response;
 
-use crate::core_bridge::invoke;
+use crate::core_runtime::invoke;
 use crate::invocation;
 
 const DEFAULT_MODULES: &str = include_str!("../../../../default-modules.yaml");

@@ -9,7 +9,7 @@ use clap::{Arg, ArgAction, ArgMatches, Command};
 use quoin_core::protocol::Response;
 
 use super::{json_arg, repo_arg, required, revision};
-use crate::core_bridge::invoke;
+use crate::core_runtime::invoke;
 
 pub(super) fn command() -> Command {
     Command::new("baseline")

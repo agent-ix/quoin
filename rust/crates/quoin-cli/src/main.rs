@@ -15,7 +15,7 @@ mod catalog;
 mod change_assurance;
 mod completeness;
 mod config;
-mod core_bridge;
+mod core_runtime;
 mod discharge;
 mod evidence;
 mod flow;
