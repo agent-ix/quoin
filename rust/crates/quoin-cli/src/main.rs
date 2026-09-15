@@ -49,6 +49,10 @@ fn main() -> std::process::ExitCode {
 }
 
 fn run(args: impl IntoIterator<Item = OsString>) -> Result<Response, String> {
+    let mut args = args.into_iter().collect::<Vec<_>>();
+    if let Some(argument) = args.get_mut(1).filter(|argument| *argument == "version") {
+        *argument = OsString::from("--version");
+    }
     let matches = command()
         .try_get_matches_from(args)
         .map_err(|error| error.to_string())?;
@@ -127,6 +131,7 @@ fn run(args: impl IntoIterator<Item = OsString>) -> Result<Response, String> {
 fn command() -> Command {
     Command::new("quoin")
         .about("Quoin assurance tooling")
+        .version(env!("CARGO_PKG_VERSION"))
         .subcommand_required(true)
         .arg_required_else_help(true)
         .subcommand(catalog::command())
@@ -363,6 +368,19 @@ mod tests {
             "premises.json",
         ]);
         assert!(error.is_err());
+    }
+
+    /// Trace: FR-016, FR-062
+    #[test]
+    fn tc_373_version_command_is_normalized_to_the_builtin_version_flag() {
+        let result = run([OsString::from("quoin"), OsString::from("version")]);
+        assert!(result.is_err(), "clap exits after rendering the version");
+        assert!(
+            result
+                .expect_err("version exits")
+                .contains(env!("CARGO_PKG_VERSION")),
+            "the retained spelling reaches clap's version renderer"
+        );
     }
 
     /// Tracing: FR-062, FR-102, TC-1650
