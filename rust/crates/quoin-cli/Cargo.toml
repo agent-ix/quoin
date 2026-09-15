@@ -24,6 +24,7 @@ workspace = true
 [dependencies]
 clap = { workspace = true }
 quoin-core = { workspace = true }
+quoin-config = { workspace = true }
 quoin-graph-analysis = { workspace = true }
 quoin-yaml = { workspace = true }
 serde_json = { workspace = true }
