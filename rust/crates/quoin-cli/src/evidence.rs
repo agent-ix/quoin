@@ -12,6 +12,7 @@ use time::format_description::well_known::Rfc3339;
 
 use crate::core_bridge::invoke;
 
+mod audit;
 mod baseline;
 
 /// The evidence commands whose inputs need no Quire-derived obligation set.
@@ -88,6 +89,7 @@ pub(crate) fn command() -> Command {
                 .arg(json_arg()),
         )
         .subcommand(baseline::command())
+        .subcommand(audit::command())
 }
 
 fn record_command(name: &'static str, help: &'static str) -> Command {
@@ -112,6 +114,7 @@ pub(crate) fn run(matches: &ArgMatches) -> Result<Response, String> {
         "affirm" => affirm(arguments),
         "record" => record_run(arguments),
         "baseline" => baseline::run(arguments),
+        "audit" => audit::run(arguments),
         _ => Err("an unknown evidence command reached dispatch".to_owned()),
     }
 }
@@ -487,6 +490,20 @@ mod tests {
         assert!(
             command()
                 .try_get_matches_from(["evidence", "baseline", "--dry-run"])
+                .is_ok()
+        );
+        assert!(
+            command()
+                .try_get_matches_from([
+                    "evidence",
+                    "audit",
+                    "--module",
+                    "first",
+                    "--module",
+                    "second",
+                    "--ratchet",
+                    "--strict",
+                ])
                 .is_ok()
         );
     }
