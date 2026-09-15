@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
 
-//! The four retired `assurance.*` operations across a real pipe, over the
-//! captured TypeScript verdicts (quoin#447).
+//! The four retired `assurance.*` operations through the production runtime,
+//! over the captured TypeScript verdicts (quoin#447).
 //!
 //! # Why this test remains after cutover
 //!
@@ -13,10 +13,11 @@
 //! That gate is this one. `quoin-assurance`' golden corpus was captured from
 //! `src/assurance/` and is checked in; driving the real `quoin-core` binary
 //! over it asserts that the operator-visible answer still matches the
-//! TypeScript's, at the boundary rather than in the library, for as long as
-//! the corpus is kept. `quoin-assurance`'s own `tc_447_500` runs the same
-//! corpus through the library; this one runs it through the request shape, so
-//! the two together say the seam did not change the answer.
+//! TypeScript's, at the runtime boundary rather than in the library, for as
+//! long as the corpus is kept. `quoin-assurance`'s own `tc_447_500` runs the
+//! same corpus through the library; this one runs it through the request
+//! shape, so the two together say the runtime seam did not change the answer
+//! without retaining the temporary `quoin-core` executable.
 //!
 //! Error PROSE is never asserted here. The native fixture suite states the rule the
 //! corpus inherits: the verdict is contractual and the message text is not, so
@@ -29,10 +30,10 @@
     reason = "integration-test bodies: a panic here is a failing test, which is the intended signal"
 )]
 
-use std::io::Write as _;
 use std::path::Path;
-use std::process::{Command, Stdio};
 
+use quoin_core::protocol::{Diagnostic, Response, canonical_json};
+use quoin_core::runtime::{RuntimeSettings, dispatch};
 use serde::Deserialize;
 use serde_json::{Map, Value};
 
@@ -96,24 +97,25 @@ struct Run {
 }
 
 fn run(op: &str, stdin: &str) -> Run {
-    let mut child = Command::new(env!("CARGO_BIN_EXE_quoin-core"))
-        .arg(op)
-        .stdin(Stdio::piped())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .spawn()
-        .unwrap();
-    child
-        .stdin
-        .as_mut()
-        .unwrap()
-        .write_all(stdin.as_bytes())
-        .unwrap();
-    let out = child.wait_with_output().unwrap();
+    let request: Value = serde_json::from_str(stdin).unwrap();
+    let response =
+        dispatch(op, &request, &RuntimeSettings::default()).unwrap_or_else(|error| Response {
+            payload: Value::Null,
+            diagnostics: vec![Diagnostic::from(&error)],
+            outcome: error.outcome(),
+        });
+    let stdout = response
+        .outcome
+        .carries_payload()
+        .then(|| canonical_json(&response.payload).unwrap())
+        .unwrap_or_default();
+    let stderr = (!response.diagnostics.is_empty())
+        .then(|| canonical_json(&response.diagnostics).unwrap())
+        .unwrap_or_default();
     Run {
-        stdout: String::from_utf8(out.stdout).unwrap(),
-        stderr: String::from_utf8(out.stderr).unwrap(),
-        status: out.status.code().unwrap(),
+        stdout,
+        stderr,
+        status: i32::from(response.outcome.code()),
     }
 }
 
@@ -145,8 +147,7 @@ fn request_for(corpus: &Corpus, case: &Case) -> Value {
     Value::Object(argument)
 }
 
-/// Every captured TypeScript verdict, reproduced by the real binary over a
-/// pipe.
+/// Every captured TypeScript verdict, reproduced by the production runtime.
 ///
 /// Trace: FR-040, FR-047, FR-101
 /// Provenance: quoin#447
