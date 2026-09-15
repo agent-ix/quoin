@@ -686,6 +686,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "da7c62ceae207dd37ea5b845da6a0696c799f85e97da1ab5b7910be3c1c80223"
 
 [[package]]
+name = "filament-plan-sync"
+version = "0.1.0"
+source = "git+https://github.com/agent-ix/filament-ide-rs?rev=5cec770999736c2fcc7276b597a3d06b7fc45fba#5cec770999736c2fcc7276b597a3d06b7fc45fba"
+dependencies = [
+ "quire-rs 0.21.0",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
+ "thiserror",
+]
+
+[[package]]
 name = "filetime"
 version = "0.2.29"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2940,6 +2952,26 @@ dependencies = [
 
 [[package]]
 name = "quire-rs"
+version = "0.21.0"
+source = "git+https://github.com/agent-ix/quire-rs?tag=v0.21.0#cfee56dac516f4793a0dad71b7832ebeba3e2622"
+dependencies = [
+ "globset",
+ "ignore",
+ "indexmap",
+ "jsonschema 0.18.3",
+ "loom",
+ "rayon",
+ "regex",
+ "serde",
+ "serde_json",
+ "serde_yaml",
+ "sha2 0.10.9",
+ "thiserror",
+ "uuid",
+]
+
+[[package]]
+name = "quire-rs"
 version = "0.46.0"
 source = "git+https://github.com/agent-ix/quire-rs?rev=85dfe9d5a937c52af6456f2e6aa3a6bc4c82db9f#85dfe9d5a937c52af6456f2e6aa3a6bc4c82db9f"
 dependencies = [
@@ -3020,6 +3052,7 @@ name = "quoin-cli"
 version = "0.9.0"
 dependencies = [
  "clap",
+ "filament-plan-sync",
  "quoin-config",
  "quoin-core",
  "quoin-delivery",
@@ -3223,7 +3256,7 @@ dependencies = [
 name = "quoin-quire"
 version = "0.9.0"
 dependencies = [
- "quire-rs",
+ "quire-rs 0.46.0",
  "quoin-jsonschema",
  "serde",
  "serde_json",

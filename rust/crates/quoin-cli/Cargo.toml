@@ -23,6 +23,7 @@ workspace = true
 
 [dependencies]
 clap = { workspace = true }
+filament-plan-sync = { git = "https://github.com/agent-ix/filament-ide-rs", rev = "5cec770999736c2fcc7276b597a3d06b7fc45fba" }
 quoin-core = { workspace = true }
 quoin-config = { workspace = true }
 quoin-delivery = { workspace = true }

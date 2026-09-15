@@ -25,6 +25,7 @@ mod module;
 mod plugin;
 mod report;
 mod semantic;
+mod sync;
 mod update;
 mod validate;
 mod write;
@@ -124,6 +125,9 @@ fn dispatch(matches: &ArgMatches) -> Result<Response, String> {
     if let Some(("semantic", semantic)) = matches.subcommand() {
         return semantic::run(semantic);
     }
+    if let Some(("sync", sync)) = matches.subcommand() {
+        return sync::run(sync);
+    }
     if let Some(("validate", validate)) = matches.subcommand() {
         return validate::run(validate);
     }
@@ -219,6 +223,7 @@ fn command() -> Command {
         .subcommand(plugin::command())
         .subcommand(report::command())
         .subcommand(semantic::command())
+        .subcommand(sync::command())
         .subcommand(validate::command())
         .subcommand(write::command())
         .subcommand(update::command())
@@ -469,6 +474,7 @@ mod tests {
         "quoin review",
         "quoin semantic",
         "quoin semantic sweep",
+        "quoin sync",
         "quoin to-plan",
         "quoin update",
         "quoin validate",
@@ -627,6 +633,7 @@ mod tests {
                 "report",
                 "review",
                 "semantic",
+                "sync",
                 "to-plan",
                 "update",
                 "validate",
