@@ -44,13 +44,13 @@ entries:
       ref: v0.5.0
 
   - name: spec-artifacts-process
-    version: "0.24.0+375fc2a"
+    version: "0.24.0+83d9c50"
     defaultEnabled: true
     source:
       type: git-subdir
       url: agent-ix/spec-artifacts-process
       path: spec_artifacts_process
-      ref: 375fc2a9c49c37cce0f43384878b8ede16b162a3
+      ref: 83d9c50a7493420c33cece02a97b5a6f196e7ff9
 
   - name: spec-objects-business
     version: "0.6.0"
