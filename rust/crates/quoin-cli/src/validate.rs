@@ -31,7 +31,7 @@ pub(crate) fn run(arguments: &ArgMatches) -> Result<Response, String> {
         .and_then(serde_json::Value::as_array)
         .ok_or_else(|| "validators.run did not return findings".to_owned())?;
     let rendered = if arguments.get_flag("json") {
-        serde_json::to_string(&serde_json::json!({ "findings": findings }))
+        serde_json::to_string_pretty(&serde_json::json!({ "findings": findings }))
             .map_err(|error| error.to_string())?
     } else if findings.is_empty() {
         "repository QA gates: no findings".to_owned()

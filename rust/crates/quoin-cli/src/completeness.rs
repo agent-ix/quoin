@@ -41,7 +41,7 @@ pub(crate) fn run(arguments: &ArgMatches) -> Result<Response, String> {
     }
     let (rendered, warning) = if arguments.get_flag("json") {
         (
-            serde_json::to_string(&response.payload).map_err(|error| error.to_string())?,
+            serde_json::to_string_pretty(&response.payload).map_err(|error| error.to_string())?,
             None,
         )
     } else {

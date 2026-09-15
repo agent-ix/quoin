@@ -168,7 +168,7 @@ fn record_run(arguments: &ArgMatches) -> Result<Response, String> {
     )?;
     render(response, |payload| {
         if arguments.get_flag("json") {
-            return serde_json::to_string(payload).map_err(|error| error.to_string());
+            return serde_json::to_string_pretty(payload).map_err(|error| error.to_string());
         }
         match payload.get("kind").and_then(serde_json::Value::as_str) {
             Some("scan") => Ok(format!(
@@ -242,7 +242,7 @@ fn affirm(arguments: &ArgMatches) -> Result<Response, String> {
             ));
         }
         if arguments.get_flag("json") {
-            return serde_json::to_string(&serde_json::json!({ "obligation": obligation, "who": required(arguments, "who")?, "commit": commit, "statementHash": statement_hash })).map_err(|error| error.to_string());
+            return serde_json::to_string_pretty(&serde_json::json!({ "obligation": obligation, "who": required(arguments, "who")?, "commit": commit, "statementHash": statement_hash })).map_err(|error| error.to_string());
         }
         Ok(format!(
             "affirmed {obligation} by {} at {} (hash {}…)",
@@ -297,7 +297,7 @@ fn inspect_mocks(arguments: &ArgMatches) -> Result<Response, String> {
             .cloned()
             .ok_or_else(|| "evidence.inspect_mocks did not return injections".to_owned())?;
         if arguments.get_flag("json") {
-            return serde_json::to_string(
+            return serde_json::to_string_pretty(
                 &serde_json::json!({ "path": path, "injections": injections }),
             )
             .map_err(|error| error.to_string());
@@ -331,7 +331,7 @@ fn gc(arguments: &ArgMatches) -> Result<Response, String> {
             .and_then(serde_json::Value::as_array)
             .ok_or_else(|| "evidence.gc did not return deleted".to_owned())?;
         if arguments.get_flag("json") {
-            return serde_json::to_string(
+            return serde_json::to_string_pretty(
                 &serde_json::json!({ "deleted": deleted, "dryRun": dry_run }),
             )
             .map_err(|error| error.to_string());
@@ -361,7 +361,7 @@ fn trust(arguments: &ArgMatches) -> Result<Response, String> {
     )?;
     render(response, |payload| {
         if arguments.get_flag("json") {
-            return serde_json::to_string(payload).map_err(|error| error.to_string());
+            return serde_json::to_string_pretty(payload).map_err(|error| error.to_string());
         }
         let path = payload
             .get("path")
@@ -395,7 +395,7 @@ fn record(arguments: &ArgMatches, operation: &str) -> Result<Response, String> {
     )?;
     render(response, |payload| {
         if arguments.get_flag("json") {
-            return serde_json::to_string(payload).map_err(|error| error.to_string());
+            return serde_json::to_string_pretty(payload).map_err(|error| error.to_string());
         }
         let record = payload
             .get("record")

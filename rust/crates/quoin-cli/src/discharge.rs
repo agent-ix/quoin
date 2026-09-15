@@ -53,7 +53,7 @@ fn render_json(response: Response) -> Response {
     if !response.outcome.carries_payload() {
         return response;
     }
-    match serde_json::to_string(&response.payload) {
+    match serde_json::to_string_pretty(&response.payload) {
         Ok(rendered) => Response {
             payload: serde_json::json!({ "rendered": rendered }),
             diagnostics: response.diagnostics,

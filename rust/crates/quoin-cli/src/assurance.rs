@@ -188,7 +188,7 @@ fn derived(arguments: &ArgMatches) -> Result<Response, String> {
 
 fn present(operation: &str, value: &serde_json::Value, json: bool) -> Result<Response, String> {
     let rendered = if json {
-        serde_json::to_string(&value).map_err(|error| error.to_string())?
+        serde_json::to_string_pretty(&value).map_err(|error| error.to_string())?
     } else {
         let response = invoke(operation, value)?;
         if !response.outcome.carries_payload() {

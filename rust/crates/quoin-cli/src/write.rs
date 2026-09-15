@@ -82,7 +82,7 @@ pub(crate) fn run(arguments: &ArgMatches) -> Result<Response, String> {
     pack.insert("validation".to_owned(), serde_json::json!({ "command": format!("quire validate --scope {} \"spec/**/*.md\"", quote(&root.to_string_lossy())), "scope": root, "globs": ["spec/**/*.md"] }));
     let pack = serde_json::Value::Object(pack);
     let rendered = if arguments.get_flag("json") {
-        serde_json::to_string(&pack).map_err(|error| error.to_string())?
+        serde_json::to_string_pretty(&pack).map_err(|error| error.to_string())?
     } else {
         render(&pack, &contracts)
     };

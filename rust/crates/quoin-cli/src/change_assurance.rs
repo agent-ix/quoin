@@ -124,7 +124,7 @@ fn recover(arguments: &ArgMatches) -> Result<Response, String> {
             .ok_or_else(|| "change_assurance.recover did not return removed".to_owned())?;
         if arguments.get_flag("json") {
             Ok(
-                serde_json::to_string(&serde_json::json!({ "removed": removed }))
+                serde_json::to_string_pretty(&serde_json::json!({ "removed": removed }))
                     .map_err(|error| error.to_string())?,
             )
         } else {
@@ -155,7 +155,7 @@ fn schema(arguments: &ArgMatches) -> Result<Response, String> {
             .and_then(serde_json::Value::as_array)
             .ok_or_else(|| "change_assurance.schema did not return schemas".to_owned())?;
         if arguments.get_flag("json") {
-            return serde_json::to_string(&serde_json::json!({ "schemas": schemas }))
+            return serde_json::to_string_pretty(&serde_json::json!({ "schemas": schemas }))
                 .map_err(|error| error.to_string());
         }
         Ok(schemas
@@ -195,7 +195,7 @@ fn seal_record(arguments: &ArgMatches) -> Result<Response, String> {
             .and_then(serde_json::Value::as_str)
             .ok_or_else(|| "change_assurance.seal_record did not return path".to_owned())?;
         if arguments.get_flag("json") {
-            return serde_json::to_string(&serde_json::json!({
+            return serde_json::to_string_pretty(&serde_json::json!({
                 "digest": digest, "path": path, "record_id": record_id, "revision": revision,
             }))
             .map_err(|error| error.to_string());
@@ -217,7 +217,7 @@ fn seal_attestation(arguments: &ArgMatches) -> Result<Response, String> {
         }),
     )?;
     render(response, true, |payload| {
-        serde_json::to_string(payload.get("attestation").ok_or_else(|| {
+        serde_json::to_string_pretty(payload.get("attestation").ok_or_else(|| {
             "change_assurance.seal_attestation did not return attestation".to_owned()
         })?)
         .map_err(|error| error.to_string())
@@ -244,7 +244,7 @@ fn intake(arguments: &ArgMatches) -> Result<Response, String> {
             .and_then(serde_json::Value::as_u64)
             .ok_or_else(|| "change_assurance.intake did not return size_bytes".to_owned())?;
         if arguments.get_flag("json") {
-            serde_json::to_string(
+            serde_json::to_string_pretty(
                 &serde_json::json!({ "directory": directory, "size_bytes": size }),
             )
             .map_err(|error| error.to_string())
@@ -346,7 +346,7 @@ fn receipt_response(response: Response, json: bool, verified: bool) -> Result<Re
                     output.insert(field.to_owned(), value.clone());
                 }
             }
-            serde_json::to_string(&output).map_err(|error| error.to_string())?
+            serde_json::to_string_pretty(&output).map_err(|error| error.to_string())?
         } else {
             serde_json::to_string(receipt).map_err(|error| error.to_string())?
         }

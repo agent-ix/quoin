@@ -100,7 +100,7 @@ pub(crate) fn run(arguments: &ArgMatches) -> Result<Response, String> {
         .cloned()
         .collect::<Vec<_>>();
     let rendered = if arguments.get_flag("json") {
-        serde_json::to_string(&serde_json::json!({ "advice": shown }))
+        serde_json::to_string_pretty(&serde_json::json!({ "advice": shown }))
             .map_err(|error| error.to_string())?
     } else {
         render(&shown, all.as_array().map_or(&[], Vec::as_slice))?

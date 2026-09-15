@@ -99,7 +99,7 @@ pub(super) fn run(arguments: &ArgMatches) -> Result<Response, String> {
         .map_or(0, Vec::len);
     let findings = reported.as_array().map_or(0, Vec::len);
     let rendered = if arguments.get_flag("json") {
-        serde_json::to_string(&serde_json::json!({
+        serde_json::to_string_pretty(&serde_json::json!({
             "findings": reported,
             "healthy": report.get("healthy"),
             "unevaluated": report.get("unevaluated"),
