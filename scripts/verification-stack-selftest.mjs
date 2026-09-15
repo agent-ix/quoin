@@ -6,6 +6,7 @@ import {
   existsSync,
   mkdirSync,
   mkdtempSync,
+  readFileSync,
   rmSync,
   writeFileSync,
 } from "node:fs";
@@ -21,6 +22,7 @@ import {
   assertRemoteRevision,
   cliSelectsEngine,
   parseSubmoduleRevision,
+  promoteRecallBaselineCandidate,
   qaCorpusCounts,
   validateLockShape,
 } from "./verification-stack.mjs";
@@ -225,6 +227,22 @@ for (const marker of ["+", "-"]) {
 
 const bootstrap = mkdtempSync(join(tmpdir(), "quoin-stack-bootstrap-"));
 try {
+  const recallCandidate = join(bootstrap, "qa-recall-baseline.json");
+  const recallBaseline = join(bootstrap, "quoin.json");
+  writeFileSync(recallCandidate, "measured recall\n");
+  if (
+    !promoteRecallBaselineCandidate(recallCandidate, recallBaseline) ||
+    readFileSync(recallBaseline, "utf8") !== "measured recall\n" ||
+    promoteRecallBaselineCandidate(
+      join(bootstrap, "missing.json"),
+      recallBaseline,
+    )
+  ) {
+    throw new Error(
+      "recall-baseline candidate promotion did not preserve the baseline",
+    );
+  }
+  passed += 1;
   mkdirSync(join(bootstrap, "scripts"));
   copyFileSync(
     new URL("./verification-stack.mjs", import.meta.url),

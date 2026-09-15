@@ -651,6 +651,13 @@ export function lockDigest(lockPath) {
   return sha256(readFileSync(lockPath));
 }
 
+/** Promote a measured recall ratchet only after the complete refresh succeeds. */
+export function promoteRecallBaselineCandidate(candidate, baseline) {
+  if (!existsSync(candidate)) return false;
+  copyFileSync(candidate, baseline);
+  return true;
+}
+
 const STAGES = [
   "audit-pre",
   "tool-drift",
@@ -828,6 +835,7 @@ async function main() {
     mkdirSync(plan.stateDir, { recursive: false, mode: 0o700 });
   }
   const scratch = plan?.stateDir ?? mkdtempSync(join(tmpdir(), "quoin-stack-"));
+  const recallBaselineCandidate = join(scratch, "qa-recall-baseline.json");
   const transient = plan
     ? mkdtempSync(join(tmpdir(), "quoin-stack-stage-"))
     : scratch;
@@ -1432,7 +1440,7 @@ async function main() {
         benchmarkArgs.push(
           "--update",
           "--recall-baseline-out",
-          join(scratch, "qa-recall-baseline.json"),
+          recallBaselineCandidate,
         );
       }
       run(process.execPath, benchmarkArgs, {
@@ -1481,6 +1489,16 @@ async function main() {
         env,
         stdio: "inherit",
       });
+      if (
+        promoteRecallBaselineCandidate(
+          recallBaselineCandidate,
+          join(ROOT, "corpus", "baselines", "quoin.json"),
+        )
+      ) {
+        console.error(
+          "verification-stack: promoted the refreshed recall baseline after final audit",
+        );
+      }
     }
     if (plan && stageRuns(plan, "final-audit")) {
       writeStateRecord(scratch, "final-audit", {
