@@ -293,7 +293,13 @@ fn join(root: &str, child: &str) -> String {
         match part {
             "" | "." => {}
             ".." => {
-                let _ = parts.pop();
+                if parts.last().is_some_and(|previous| *previous != "..") {
+                    let _ = parts.pop();
+                } else if !absolute {
+                    // `path.join` retains parents that remain above a
+                    // relative root (`path.join("a", "../../x") == "../x"`).
+                    parts.push(part);
+                }
             }
             part => parts.push(part),
         }
@@ -420,6 +426,25 @@ mod tests {
         assert_eq!(
             entry.skeleton_path.as_deref(),
             Some("/modules/alpha/skeletons/Foo.md")
+        );
+
+        let relative = build(
+            &[ModuleDocument {
+                root: "alpha".to_owned(),
+                manifest: "artifact_types: [{name: Relative, frontmatter_schema_ref: ../../schema.json}]\n"
+                    .to_owned(),
+                skeleton_names: Vec::new(),
+            }],
+            &[],
+        )
+        .expect("valid relative-root manifest");
+        let [entry] = relative.entries.as_slice() else {
+            panic!("one relative artifact is projected");
+        };
+        assert_eq!(
+            entry.schema_path.as_deref(),
+            Some("../schema.json"),
+            "Node path.join retains parents above a relative root"
         );
     }
 
