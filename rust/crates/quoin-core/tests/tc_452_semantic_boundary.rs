@@ -1,17 +1,17 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
 
-//! The `semantic` operations, reached by their wire names (quoin#452).
+//! The `semantic` operations, reached through the production runtime (quoin#452).
 //!
 //! `tc_447_600_every_operation_is_invoked_by_name_by_some_test` requires every
-//! entry in `OPERATIONS` to be handed to the real binary, spelled, by some
+//! entry in `OPERATIONS` to be handed to the production runtime, spelled, by some
 //! integration test — because a swapped match arm leaves the drift guard, the
 //! unit tests and native fixture replays all green and breaks only for a user. This
 //! file is that route coverage for `semantic.read_blocks`,
 //! `semantic.sweep_corpus` and `semantic.migration_example`, and it is also the
 //! one place the whole crossing is exercised end to end: the real vendored
 //! contract tree, the real `QUOIN_SEMANTIC_ROOT` publication, the real
-//! subprocess, canonical JSON on stdout.
+//! runtime capability grant, canonical JSON response payloads.
 //!
 //! Each test asserts something only its own handler could have written. A
 //! payload shape shared with a sibling operation would satisfy the census while
@@ -25,10 +25,10 @@
 )]
 
 use std::fs;
-use std::io::Write as _;
 use std::path::PathBuf;
-use std::process::{Command, Stdio};
 
+use quoin_core::protocol::{Diagnostic, Response, canonical_json};
+use quoin_core::runtime::{RuntimeSettings, dispatch};
 use serde_json::{Value, json};
 
 struct Run {
@@ -37,38 +37,31 @@ struct Run {
     status: i32,
 }
 
-/// Invoke the binary with `op` on argv and `request` on stdin.
-///
-/// `QUOIN_SEMANTIC_ROOT` is published exactly as `src/core/semantic.ts`
-/// publishes it, because the vendored contract tree ships inside the npm
-/// package and only the caller knows where its own package was installed.
+/// Invoke the runtime with the explicit vendored-contract capability.
 fn run(op: &str, request: &Value, contract: bool) -> Run {
-    let mut command = Command::new(env!("CARGO_BIN_EXE_quoin-core"));
-    command.arg(op);
-    // Removed rather than left alone when `contract` is false: the developer's
-    // own environment may carry one, and a test of "no contract was supplied"
-    // that silently found one would assert nothing.
-    command.env_remove("QUOIN_SEMANTIC_ROOT");
-    if contract {
-        command.env("QUOIN_SEMANTIC_ROOT", semantic_root());
-    }
-    let mut child = command
-        .stdin(Stdio::piped())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .spawn()
-        .unwrap();
-    child
-        .stdin
-        .as_mut()
-        .unwrap()
-        .write_all(request.to_string().as_bytes())
-        .unwrap();
-    let out = child.wait_with_output().unwrap();
+    let settings = RuntimeSettings {
+        ix_home: None,
+        semantic_root: contract.then(semantic_root),
+    };
+    let response = dispatch(op, request, &settings).unwrap_or_else(|error| Response {
+        payload: Value::Null,
+        diagnostics: vec![Diagnostic::from(&error)],
+        outcome: error.outcome(),
+    });
+    let stdout = if response.outcome.carries_payload() {
+        canonical_json(&response.payload).unwrap()
+    } else {
+        String::new()
+    };
+    let stderr = if response.diagnostics.is_empty() {
+        String::new()
+    } else {
+        canonical_json(&response.diagnostics).unwrap()
+    };
     Run {
-        stdout: String::from_utf8(out.stdout).unwrap(),
-        stderr: String::from_utf8(out.stderr).unwrap(),
-        status: out.status.code().unwrap(),
+        stdout,
+        stderr,
+        status: i32::from(response.outcome.code()),
     }
 }
 
