@@ -19,8 +19,16 @@ use quoin_core::protocol::{Diagnostic, Outcome, Response, canonical_json};
 /// use resolves the core binary by its stable name on `PATH`.
 pub(crate) fn invoke(operation: &str, request: &serde_json::Value) -> Result<Response, String> {
     let executable = std::env::var_os("QUOIN_CORE").unwrap_or_else(|| "quoin-core".into());
-    let mut child = Command::new(executable)
-        .arg(operation)
+    let mut command = Command::new(executable);
+    command.arg(operation);
+    if std::env::var_os("QUOIN_SEMANTIC_ROOT").is_none() {
+        let vendored =
+            std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../../src/semantic");
+        if vendored.is_dir() {
+            command.env("QUOIN_SEMANTIC_ROOT", vendored);
+        }
+    }
+    let mut child = command
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
