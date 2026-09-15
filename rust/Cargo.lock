@@ -3021,6 +3021,7 @@ dependencies = [
  "clap",
  "quoin-core",
  "quoin-graph-analysis",
+ "quoin-yaml",
  "serde_json",
  "time",
 ]
