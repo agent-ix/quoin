@@ -73,7 +73,11 @@ fn run(args: impl IntoIterator<Item = OsString>) -> Result<Response, ShellError>
     let matches = command()
         .try_get_matches_from(args)
         .map_err(|error| ShellError {
-            message: error.to_string(),
+            message: if error.kind() == ErrorKind::InvalidSubcommand {
+                format!("{}\n{}", error, root_usage())
+            } else {
+                error.to_string()
+            },
             exit: if error.kind() == ErrorKind::InvalidSubcommand {
                 EXIT_UNKNOWN_COMMAND
             } else {
@@ -82,6 +86,20 @@ fn run(args: impl IntoIterator<Item = OsString>) -> Result<Response, ShellError>
         })?;
     let invocation = invocation::Invocation::from_matches(&matches);
     invocation::with_current(invocation, || dispatch(&matches)).map_err(ShellError::invalid)
+}
+
+fn root_usage() -> String {
+    let root = command();
+    let mut topics = root
+        .get_subcommands()
+        .filter(|command| !command.is_hide_set())
+        .map(Command::get_name)
+        .collect::<Vec<_>>();
+    topics.sort_unstable();
+    format!(
+        "Usage: quoin <command> [options]\n\nCommands: {}\n\nRun `quoin <command> --help` for details.",
+        topics.join(", ")
+    )
 }
 
 fn dispatch(matches: &ArgMatches) -> Result<Response, String> {
@@ -478,6 +496,16 @@ mod tests {
             .expect_err("unknown command is refused");
         assert_eq!(error.exit, EXIT_UNKNOWN_COMMAND);
         assert!(error.message.contains("bogus"));
+        assert!(error.message.contains("Usage: quoin <command> [options]"));
+        assert!(
+            error
+                .message
+                .contains("Commands: advise, assurance, catalog")
+        );
+        assert!(
+            !error.message.contains("plugin,"),
+            "the hidden compatibility alias is not advertised"
+        );
     }
 
     /// Trace: FR-062, FR-102, TC-1650
