@@ -18,6 +18,7 @@ mod config;
 mod core_bridge;
 mod discharge;
 mod evidence;
+mod flow;
 mod module;
 mod plugin;
 mod semantic;
@@ -69,6 +70,11 @@ fn run(args: impl IntoIterator<Item = OsString>) -> Result<Response, String> {
     }
     if let Some(("validate", validate)) = matches.subcommand() {
         return validate::run(validate);
+    }
+    if let Some((name, flow_arguments)) = matches.subcommand()
+        && matches!(name, "review" | "matrix" | "to-plan")
+    {
+        return flow::run(name, flow_arguments);
     }
     if let Some(("module", module)) = matches.subcommand() {
         return module::run(module);
@@ -127,6 +133,9 @@ fn command() -> Command {
         .subcommand(plugin::command())
         .subcommand(semantic::command())
         .subcommand(validate::command())
+        .subcommand(flow::command("review"))
+        .subcommand(flow::command("matrix"))
+        .subcommand(flow::command("to-plan"))
         .subcommand(
             Command::new("graph")
                 .about("Read-only evidence graph views")
