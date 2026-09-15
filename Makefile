@@ -186,15 +186,15 @@ template-gate:
 # targets that still depend on `require-quire` are the ones that run the quire
 # CLI themselves.
 .PHONY: evidence-audit
-evidence-audit:
-	node bin/quoin.js evidence audit --repo . --module $(EVIDENCE_MODULE) --ratchet
+evidence-audit: rust-build
+	$(CARGO_TARGET)/debug/quoin evidence audit --repo . --module $(EVIDENCE_MODULE) --ratchet
 
 # Re-transcribe this repository's own suite run into the store.
 .PHONY: evidence-record
-evidence-record:
+evidence-record: rust-build
 	mkdir -p reports
 	$(PNPM) exec vitest run --reporter=junit --outputFile=reports/junit.xml
-	node bin/quoin.js evidence record --suite SUITE-001 \
+	$(CARGO_TARGET)/debug/quoin evidence record --suite SUITE-001 \
 	  --commit "$$(git rev-parse HEAD)" --tool "vitest $$($(PNPM) exec vitest --version)" --adapter junit \
 	  --results reports/junit.xml --kind Unit --repo . --module $(EVIDENCE_MODULE)
 
