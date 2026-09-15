@@ -25,3 +25,4 @@ clap = { workspace = true }
 quoin-core = { workspace = true }
 quoin-graph-analysis = { workspace = true }
 serde_json = { workspace = true }
+time = { workspace = true }

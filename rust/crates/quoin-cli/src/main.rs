@@ -11,6 +11,7 @@
 
 mod catalog;
 mod core_bridge;
+mod semantic;
 
 use std::ffi::OsString;
 use std::io::Write as _;
@@ -40,6 +41,9 @@ fn run(args: impl IntoIterator<Item = OsString>) -> Result<Response, String> {
         .map_err(|error| error.to_string())?;
     if let Some(("catalog", catalog)) = matches.subcommand() {
         return catalog::run(catalog);
+    }
+    if let Some(("semantic", semantic)) = matches.subcommand() {
+        return semantic::run(semantic);
     }
     let graph = matches
         .subcommand_matches("graph")
@@ -72,6 +76,7 @@ fn command() -> Command {
         .subcommand_required(true)
         .arg_required_else_help(true)
         .subcommand(catalog::command())
+        .subcommand(semantic::command())
         .subcommand(
             Command::new("graph")
                 .about("Read-only evidence graph views")
