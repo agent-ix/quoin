@@ -27,7 +27,7 @@ these SHALL be run rather than assumed.
 ## Scope
 
 - Applies to: every crate in the `rust/` Cargo workspace, including
-  `quoin-core`, `quoin-difftest` and each domain crate, and to their public
+  `quoin-core` and each domain crate, and to their public
   library surfaces.
 - Operational context: every candidate revision, in continuous integration and
   in a pre-push run on a maintainer's machine.

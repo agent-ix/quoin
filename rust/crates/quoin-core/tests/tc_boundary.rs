@@ -71,7 +71,7 @@ fn tc_375_a_ping_round_trips_payload_on_stdout_and_nothing_on_stderr() {
 fn tc_375_stdout_is_canonical_json_one_line() {
     let result = run(&["core.ping"], r#"{"echo":"a"}"#);
     assert_eq!(result.stdout.lines().count(), 1);
-    // Keys sorted, no insignificant whitespace: the property `quoin-difftest`
+    // Keys sorted, no insignificant whitespace: the native fixture property
     // compares on. Written out literally rather than re-derived, so a change
     // to the canonicaliser fails here instead of agreeing with itself.
     assert_eq!(

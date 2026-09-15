@@ -4,13 +4,11 @@
 //! The four retired `assurance.*` operations across a real pipe, over the
 //! captured TypeScript verdicts (quoin#447).
 //!
-//! # Why this test exists after the difftest already passed
+//! # Why this test remains after cutover
 //!
-//! `quoin-difftest` compares the binary against the RETAINED TypeScript, and
-//! this ticket deletes that TypeScript — so the difftest's `assurance/*` cases
-//! are retired in the same commit as the code they oracle. FR-101 is satisfied
-//! at the cutover revision by construction, and what remains afterwards must
-//! be a gate that does not need Node.
+//! The retired differential harness compared the binary against retained
+//! TypeScript. Its captured `assurance/*` cases now replay natively, so the
+//! cutover gate needs no Node runtime.
 //!
 //! That gate is this one. `quoin-assurance`' golden corpus was captured from
 //! `src/assurance/` and is checked in; driving the real `quoin-core` binary
@@ -20,7 +18,7 @@
 //! corpus through the library; this one runs it through the request shape, so
 //! the two together say the seam did not change the answer.
 //!
-//! Error PROSE is never asserted here. `quoin-difftest` states the rule the
+//! Error PROSE is never asserted here. The native fixture suite states the rule the
 //! corpus inherits: the verdict is contractual and the message text is not, so
 //! a refusal asserts its exit class and its diagnostic code and stops there.
 

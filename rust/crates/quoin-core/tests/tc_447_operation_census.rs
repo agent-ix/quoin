@@ -17,7 +17,7 @@
 //!
 //! — and the strings are unchanged, so the drift guard is satisfied, the
 //! library's own unit tests still pass (they call the handler functions
-//! directly and never the wire name), `quoin-difftest` passes, and
+//! directly and never the wire name), native fixture replay passes, and
 //! `make rust-gate` is green. The first thing that breaks is
 //! `quoin completeness`, for a user.
 //!

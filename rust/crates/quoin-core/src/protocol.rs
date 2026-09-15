@@ -192,7 +192,7 @@ impl Response {
 /// Serialise to canonical JSON: object keys sorted, no insignificant
 /// whitespace.
 ///
-/// Canonical on the way OUT, so `quoin-difftest` compares two byte strings
+/// Canonical on the way OUT, so the native fixture suite compares two byte strings
 /// rather than two opinions about field order. `serde_json::Map` is a
 /// `BTreeMap` in this build (the `preserve_order` feature is deliberately not
 /// enabled), so routing a value through [`serde_json::Value`] sorts it.

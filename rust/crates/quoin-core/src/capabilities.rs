@@ -12,7 +12,7 @@
 //! `std::net` path anywhere in the library half is a `ForbiddenCapability`
 //! finding. That is not a formality to route around: it is what makes the
 //! boundary's decisions unit-testable with no disk, which is the property
-//! `src/core/exec.ts` and `quoin-difftest` both rest on.
+//! `src/core/exec.ts` and the native fixture suite both rest on.
 //!
 //! Stage 7 is the first stage where that rule bites, because config and modules
 //! are inherently I/O-heavy — two config files, `.git/config`, a JSON registry,

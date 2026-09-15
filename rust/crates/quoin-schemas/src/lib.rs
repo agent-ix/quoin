@@ -84,7 +84,7 @@ pub const SOURCE_SCHEMA_SHA256: &str =
 
 /// SHA-256 of the committed `src/core/types.ts`.
 pub const GENERATED_TYPES_SHA256: &str =
-    "a90f92d36990c8b1dfabd3d292e45e410ebcc814cc212fee2f3c72e52a235737";
+    "06c9d17c10855037264b842cbb329e2239f33a298b0d62b418aa7d8821a03590";
 
 /// The JSON Schema of every type that crosses the `quoin-core` boundary.
 ///

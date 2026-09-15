@@ -4,13 +4,11 @@
 //! `validators.run` across a real pipe, over the captured TypeScript verdicts
 //! (quoin#412).
 //!
-//! # Why this test exists after the difftest already passed
+//! # Why this test remains after cutover
 //!
-//! `quoin-difftest` compares the binary against the RETAINED TypeScript, and
-//! this ticket deletes that TypeScript — so the difftest's `validators.run`
-//! cases are retired in the same commit as the code they oracle. FR-101 is
-//! satisfied at the cutover revision by construction, and what remains
-//! afterwards must be a gate that does not need Node.
+//! The retired differential harness compared the binary against retained
+//! TypeScript. Its captured `validators.run` cases now replay natively, so the
+//! cutover gate needs no Node runtime.
 //!
 //! That gate is this one. `quoin-validators`' golden corpus was captured from
 //! `src/validators/` at quoin `4d27dcf` and is checked in; driving the real

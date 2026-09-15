@@ -27,7 +27,7 @@ fn copy_tree(source: &Path, destination: &Path) -> std::io::Result<()> {
 }
 
 fn retained_home() -> std::path::PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR")).join("../quoin-difftest/fixtures/catalog/ix-home")
+    Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/retained-catalog/ix-home")
 }
 
 fn repository_root() -> &'static Path {

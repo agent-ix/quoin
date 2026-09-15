@@ -3,14 +3,12 @@
 
 //! The frozen golden corpus, replayed through the library (quoin#447).
 //!
-//! # Why a checked-in corpus rather than the difftest
+//! # Why a checked-in corpus rather than a live oracle
 //!
-//! `quoin-difftest` runs one request through the retained `src/assurance/` and
-//! through `quoin-core` and compares the two. That works only while the
-//! TypeScript is there to answer, and quoin#447 deletes it. FR-101 AC-5 is
-//! explicit that no live Node runtime may remain in the Rust test path after
-//! the cutover, so the oracle has to stop being a process and start being
-//! bytes.
+//! The retired differential harness ran one request through retained
+//! `src/assurance/` and through `quoin-core`. FR-101 AC-5 forbids a live Node
+//! runtime in the Rust test path after cutover, so the oracle is committed
+//! bytes instead.
 //!
 //! `tests/golden/cases.json` holds hand-authored inputs and
 //! `tests/golden/expected.json` holds the verdicts CAPTURED from the retained

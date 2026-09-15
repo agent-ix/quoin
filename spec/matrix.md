@@ -1155,7 +1155,7 @@ generated tests under `tests/props/` and `Unit` for the rest.
 | TC-1615 | Hand edit of a generated artefact fails the gate even though the artefact's path is unchanged. | Unit | P0 | FR-097-AC-4 | 🚧 |
 | TC-1616 | Generated artefact whose recorded source-schema digest is stale is refused rather than used. | Unit | P0 | FR-097-AC-5 | 🚧 |
 | TC-1617 | Gate reports no finding against user-interface TypeScript or against an imported `filament-core-data`-published type. | Unit | P0 | FR-097-AC-6 | 🚧 |
-| TC-1618 | `cargo test -p quoin-difftest` compares retained and Rust results over the golden corpora and reports the compared | Unit | P0 | FR-098-AC-1 | 🚧 |
+| TC-1618 | Native Rust fixture tests replay retained expected results over the golden corpora and report the compared | Unit | P0 | FR-098-AC-1 | 🚧 |
 | TC-1619 | For every schema in the corpus, retained and Rust validation return the identical verdict, and their diagnostics | Property | P0 | FR-098-AC-2 | 🚧 |
 | TC-1620 | Replaying every digest in every reachable store through both implementations yields zero mismatches, and a planted | Unit | P0 | FR-098-AC-3 | 🚧 |
 | TC-1621 | JCS canonicalization produces identical bytes for adversarial Unicode, number-format and key-order inputs in both | Property | P0 | FR-098-AC-4 | 🚧 |
@@ -1232,7 +1232,7 @@ generated tests under `tests/props/` and `Unit` for the rest.
 | TC-1692 | Validation asserts no `format` keyword in either implementation, and the compared diagnostic set excludes | Unit | P0 | FR-098-AC-8 | 🚧 |
 | TC-1693 | Document the retained strict JSON parser refuses — byte-order mark, non-fatal UTF-8, trailing content — is refused by | Unit | P0 | FR-098-AC-9 | 🚧 |
 | TC-1694 | `sha256:<hex>` record identifiers and `sha256-<hex>.json` file names produced by the Rust implementation are | Unit | P0 | FR-098-AC-10 | 🚧 |
-| TC-1695 | After a capability cuts over, `quoin-difftest` spawns no retained implementation for that capability and compares | Unit | P0 | FR-098-AC-11 | 🚧 |
+| TC-1695 | After a capability cuts over, native fixture tests spawn no retained implementation for that capability and compare | Unit | P0 | FR-098-AC-11 | 🚧 |
 | TC-1696 | Ix-flow child process is spawned through the same hardened path as `quoin-core`: real-path resolution | Unit | P0 | FR-099-AC-10 | 🚧 |
 | TC-1697 | Partially materialized module root is refused rather than served, so an interrupted checkout cannot satisfy the | Unit | P0 | FR-099-AC-11 | 🚧 |
 | TC-1698 | Duplicate type detection folds case under the same rule the resolver uses, so no two declarations are distinct to the | Unit | P0 | FR-099-AC-12 | 🚧 |

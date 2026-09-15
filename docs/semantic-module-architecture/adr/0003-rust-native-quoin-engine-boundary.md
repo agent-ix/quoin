@@ -128,7 +128,7 @@ One Cargo workspace in-repo at `rust/`, beside the retained `src/`:
 | ------------------------------------------------------------------------------ | --------------------------------------------------------------- | ----- |
 | `quoin-schemas`                                                                | vendored and `schemars`-generated schemas, one hash-pinned home | 0     |
 | `quoin-core`                                                                   | the boundary binary: dispatch only, no domain logic             | 0     |
-| `quoin-difftest`                                                               | dev-only differential harness and golden corpora                | 0     |
+| native fixture tests                                                            | retained golden corpora replayed without a Node runtime         | 8     |
 | `quoin-quire`                                                                  | facade over `quire-rs`                                          | 1     |
 | `quoin-validators`                                                             | validators                                                      | 2     |
 | `quoin-semantic`, `quoin-completeness`                                         | semantic and completeness leaves                                | 3     |

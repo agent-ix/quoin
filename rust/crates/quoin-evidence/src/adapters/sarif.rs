@@ -190,7 +190,7 @@ pub fn parse_cargo_audit(raw: &str) -> Result<FindingResult, EvidenceError> {
     // order of the findings this adapter writes into the store. A
     // `serde_json::Map` is a `BTreeMap` — the `preserve_order` feature is off
     // workspace-wide because enabling it breaks the canonical-JSON comparison
-    // `quoin-difftest` performs — so the order is recovered from the raw text
+    // the native fixture suite performs — so the order is recovered from the raw text
     // by `warning_kind_order` rather than taken from the parsed value. Without
     // this the record's `findings` array would be re-ordered for any report
     // whose warning kinds are not already in byte order, which NFR-025 forbids.

@@ -30,7 +30,7 @@
  */
 export const CORE_TYPES_PROVENANCE = {
   generator: "quoin-schemas/quoin-schemas-gen",
-  generatorVersion: "0.1.0",
+  generatorVersion: "0.9.0",
   sourceSchemaSha256:
     "ee3e514907f97891b0ff799b6fc649ad69a9d58352bfad8cb932731c2808f2ed",
 } as const;

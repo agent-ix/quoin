@@ -6,7 +6,7 @@
 //! `tc_447_600_every_operation_is_invoked_by_name_by_some_test` requires every
 //! entry in `OPERATIONS` to be handed to the real binary, spelled, by some
 //! integration test — because a swapped match arm leaves the drift guard, the
-//! unit tests and `quoin-difftest` all green and breaks only for a user. This
+//! unit tests and native fixture replays all green and breaks only for a user. This
 //! file is that route coverage for `semantic.read_blocks`,
 //! `semantic.sweep_corpus` and `semantic.migration_example`, and it is also the
 //! one place the whole crossing is exercised end to end: the real vendored

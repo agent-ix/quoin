@@ -308,20 +308,6 @@ rust-deny:
 rust-test:
 	cd $(RUST_DIR) && cargo test --workspace --locked $(CARGO_TARGET_FLAG)
 
-# The FR-101 differential harness: the retained TypeScript command path, its
-# Stage-0 protocol oracle, and native Rust at one candidate revision. It needs
-# BOTH trees built. `bin/quoin.js` loads `dist/commands`, while the native
-# command is taken from the same named Cargo target; comparing source to one
-# side's stale build would be no parity evidence at all.
-.PHONY: rust-difftest
-rust-difftest: build rust-build
-	$(CARGO_TARGET)/debug/quoin-difftest \
-	  --core $(CARGO_TARGET)/debug/quoin-core \
-	  --ts $(CURDIR)/scripts/core-reference.mjs \
-	  --native-cli $(CARGO_TARGET)/debug/quoin \
-	  --ts-cli $(CURDIR)/bin/quoin.js \
-	  --command-cases $(CURDIR)/rust/crates/quoin-difftest/fixtures/command-cases.json
-
 # `src/core/exec.ts` and every criterion stated over a command that now asks
 # quoin-core, against the real binary. Those cases skip when QUOIN_CORE is
 # unset, which is every ordinary `vitest run`; this target is the lane that
@@ -352,7 +338,7 @@ rust-e2e: rust-build
 
 # The Rust gate, in the order a failure is cheapest to read: format and lint
 # first (seconds), then the supply-chain check, then the suites, then the
-# cross-language comparison that needs both trees built.
+# end-to-end shell tests.
 # FR-097: `src/core/types.ts` is GENERATED from the Rust boundary types, never
 # hand-written. This target is the only thing that may write it, and it rewrites
 # the two digests in `quoin-schemas/src/lib.rs` in the same run — the artefact
@@ -372,8 +358,8 @@ types:
 	$(PNPM) exec prettier --write $(CURDIR)/src/core/types.ts
 
 .PHONY: rust-gate
-rust-gate: rust-lint rust-deny rust-test rust-e2e rust-difftest
-	@echo "rust-gate: fmt, clippy -D warnings, cargo deny, tests, the end-to-end caller and the differential harness passed"
+rust-gate: rust-lint rust-deny rust-test rust-e2e
+	@echo "rust-gate: fmt, clippy -D warnings, cargo deny, tests and end-to-end caller checks passed"
 
 .PHONY: audit-tool-drift
 audit-tool-drift:
@@ -517,7 +503,7 @@ help:
 	@echo ""
 	@echo "Common targets:"
 	@echo "  make build              - Build TypeScript"
-	@echo "  make rust-gate          - Rust fmt, clippy, deny, tests and difftest"
+	@echo "  make rust-gate          - Rust fmt, clippy, deny, tests and end-to-end checks"
 	@echo "  make types              - regenerate src/core/types.ts from the Rust types"
 	@echo "  make test               - Run the exact-source canonical verification stack"
 	@echo "  make test-with-quire QUIRE=/absolute/path - Run the explicit inner test gate"

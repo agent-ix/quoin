@@ -3150,14 +3150,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "quoin-difftest"
-version = "0.9.0"
-dependencies = [
- "quoin-core",
- "serde_json",
-]
-
-[[package]]
 name = "quoin-evidence"
 version = "0.9.0"
 dependencies = [

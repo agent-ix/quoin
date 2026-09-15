@@ -317,30 +317,12 @@ fn tc_1614_no_hand_written_declaration_shadows_a_generated_boundary_type() {
         generated.len()
     );
 
-    let mut exempt_seen = Vec::new();
     let mut duplicates = Vec::new();
     for entry in std::fs::read_dir(&core_dir).unwrap() {
         let path = entry.unwrap().path();
         if path.file_name().is_some_and(|n| n == "types.ts")
             || path.extension().is_none_or(|e| e != "ts")
         {
-            continue;
-        }
-        // ONE exemption, named here rather than skipped silently.
-        //
-        // `reference.ts` is the differential harness's TypeScript oracle
-        // (FR-101). Its whole value is that it was written against the
-        // documented contract and NOT against the Rust source: if it imported
-        // the generated types, the harness would be comparing quoin-core to a
-        // transliteration of itself, and `tc_375`'s twelve comparisons would
-        // prove that two things written the same week agree. FR-097 governs
-        // the CUTOVER surface — where quoin's own TypeScript calls the
-        // boundary — which is `exec.ts` and `index.ts`.
-        //
-        // The assertion below pins the exemption list to exactly this file, so
-        // a second file cannot join it by being added to a `continue`.
-        if path.file_name().is_some_and(|n| n == "reference.ts") {
-            exempt_seen.push("reference.ts");
             continue;
         }
         let text = std::fs::read_to_string(&path).unwrap();
@@ -358,9 +340,4 @@ fn tc_1614_no_hand_written_declaration_shadows_a_generated_boundary_type() {
         }
     }
     assert_eq!(duplicates, Vec::<String>::new());
-    assert_eq!(
-        exempt_seen,
-        vec!["reference.ts"],
-        "the harness-oracle exemption must apply to exactly one file that exists"
-    );
 }

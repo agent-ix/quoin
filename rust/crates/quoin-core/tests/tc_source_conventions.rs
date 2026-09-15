@@ -113,15 +113,9 @@ fn tc_375_the_pinned_channel_and_the_declared_msrv_agree() {
         .collect();
     rust_pins.sort_unstable();
     // Sorted, not positional: the assertion is about WHICH toolchains the
-    // workflow pins, and reordering jobs is not a defect. The quire-cli test
-    // job was raised to the governed 1.98.1 pin in quoin#518, so all three
-    // workflow jobs now exercise the same compiler the workspace declares.
-    assert_eq!(
-        rust_pins,
-        vec![
-            "toolchain: 1.98.1",
-            "toolchain: 1.98.1",
-            "toolchain: 1.98.1",
-        ]
-    );
+    // workflow pins, and reordering jobs is not a defect. The retained Rust
+    // build and test jobs must both exercise the compiler the workspace
+    // declares. The former differential job was retired with its TypeScript
+    // oracle, so it is intentionally no longer part of this census.
+    assert_eq!(rust_pins, vec!["toolchain: 1.98.1", "toolchain: 1.98.1",]);
 }

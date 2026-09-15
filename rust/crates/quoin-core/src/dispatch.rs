@@ -16,7 +16,7 @@ use crate::protocol::{MAX_REQUEST_BYTES, Response};
 
 /// Every operation this build answers, in the wire spelling.
 ///
-/// Exposed so a caller — and `quoin-difftest` — can enumerate the surface
+/// Exposed so a caller — and the native fixture suite — can enumerate the surface
 /// rather than discover it by trying names.
 pub const OPERATIONS: &[&str] = &[
     "assurance.build_authored_argument",
@@ -706,7 +706,7 @@ mod tests {
             declared,
             routed_operations(),
             "`OPERATIONS` and `dispatch`'s match disagree. Whichever was edited, \
-             edit the other: the const is what a caller and `quoin-difftest` \
+             edit the other: the const is what a caller and the native fixture suite \
              enumerate, and the unknown-op error reports it to the user."
         );
     }

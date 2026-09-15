@@ -6,7 +6,7 @@
 //! `tc_447_600_every_operation_is_invoked_by_name_by_some_test` requires every
 //! entry in `OPERATIONS` to be handed to the REAL BINARY, spelled, by an
 //! integration test — because a swapped match arm leaves the source-scanning
-//! drift guard, the unit tests and `quoin-difftest` all green and breaks only
+//! drift guard, the unit tests and native fixture replays all green and breaks only
 //! for a user. Route coverage is not handler coverage (quoin#443, quoin#447),
 //! and this file is the route coverage for all six change-assurance
 //! operations. Each test asserts a payload member only its own handler writes.
@@ -660,7 +660,7 @@ fn tc_457_607_every_oracle_case_reproduces_the_typescripts_receipt() {
 /// `null` for the member it cannot read and returns a receipt, exit 0.
 ///
 /// It is accepted and it is an exit-code change, so it is asserted here rather
-/// than left for a harness to discover. `quoin-difftest` covers only
+/// than left for a harness to discover. Native fixture tests cover only
 /// `core.ping`, so there is no live difftest case to declare it in.
 ///
 /// Trace: FR-068-AC-7, FR-101

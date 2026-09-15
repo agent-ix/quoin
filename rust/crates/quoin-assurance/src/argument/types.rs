@@ -12,7 +12,7 @@ use serde::{Deserialize, Serialize};
 /// A rejection, carrying the retained implementation's own message.
 ///
 /// The message is reproduced because it costs nothing and helps a human, but
-/// it is deliberately **not** a contract: `quoin-difftest` compares the
+/// it is deliberately **not** a contract: the native fixture suite compares the
 /// diagnostic's `(code, context keys)` and never its prose (quoin#373).
 ///
 /// # Why one variant and not seventeen

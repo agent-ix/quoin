@@ -9,11 +9,10 @@ Copyright (C) 2026 Agent-IX
 crate executes TypeScript at test time; a Rust test that shells out to Node to
 decide whether it passed is not a port (quoin#373, FR-101 AC-5).
 
-This corpus exists because `src/assurance/` is being deleted. Until now it was
-the difftest's oracle for roughly a hundred `assurance/*` cases, reached through
-`src/core/reference.ts`. Those cases retire with the module; what replaces them
-is this: hand-authored inputs, verdicts captured once from the retained
-implementation, and a replay that reads bytes.
+This corpus exists because `src/assurance/` was deleted. It replaces the retired
+differential oracle for roughly a hundred `assurance/*` cases: hand-authored
+inputs, verdicts captured once from the retained implementation, and a replay
+that reads bytes.
 
 ## What produced it
 
@@ -25,11 +24,11 @@ implementation, and a replay that reads bytes.
 | Runtime         | node v22.15.0, vitest 4.1.10                                                                    |
 | Oracle entry    | `src/assurance/index.ts` — `requirementOf`, `buildCase`, `renderCase`, `parseAssuranceArgument` |
 
-`src/core/reference.ts` is deliberately **not** the oracle. Its assurance
-handlers are a hand-written mirror of the Rust request schema, written so the
-difftest could compare malformed input; capturing from them would be capturing
-the port's own schema back from a second copy of itself. The capture imports the
-retained library directly, and nothing from `dist/` or from `rust/`.
+The retired `src/core/reference.ts` was deliberately **not** the oracle. Its
+assurance handlers were a hand-written mirror of the Rust request schema;
+capturing from them would have captured the port's own schema back from a
+second copy of itself. The capture imported the retained library directly, and
+nothing from `dist/` or from `rust/`.
 
 ### Oracle bytes
 
@@ -126,7 +125,7 @@ reconstruction is duplicated in three places on purpose, so a change to one
 cannot silently move the corpus under the other two.
 
 The captured `error` text is recorded **for a reader and never asserted**.
-`quoin-difftest` states the rule this corpus inherits: the verdict is
+The retired differential harness states the rule this corpus inherits: the verdict is
 contractual and the message prose is not, so a refusal is asserted by its exit
 class and its diagnostic code and nothing else.
 
@@ -135,9 +134,9 @@ hand-authored; every expected value in `expected.json` came out of the
 TypeScript. The Rust assertions can fail, and two of them did on first run —
 see the divergences below.
 
-### What the corpus covers that the difftest did not
+### What the corpus covers beyond the retired differential harness
 
-Beyond every input shape `quoin-difftest` already exercised: a supported
+Beyond every input shape the retired harness already exercised: a supported
 StR→FR→AC tree; a finding opening a leaf and propagating up two levels; a bare
 claim with nothing under it; an unreachable requirement; a requirement traced
 from two claims; a two-node and a three-node refinement cycle; caller-supplied

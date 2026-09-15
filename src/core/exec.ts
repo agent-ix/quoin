@@ -52,7 +52,7 @@ export const QUOIN_CORE_MAX_BUFFER = 64 * 1024 * 1024;
  * The exit taxonomy `quoin-core` terminates with.
  *
  * Mirrors `rust/crates/quoin-core/src/protocol.rs`; the two are asserted equal
- * by the differential harness (`quoin-difftest`). The load-bearing member is
+ * by the retired differential harness. The load-bearing member is
  * `PARTIAL`: a non-zero status whose stdout is nevertheless a complete, valid
  * payload.
  */
