@@ -9,6 +9,9 @@
 //! shell cannot acquire a second interpretation of graph inputs while the
 //! oclif shell remains published during the staged cutover.
 
+mod catalog;
+mod core_bridge;
+
 use std::ffi::OsString;
 use std::io::Write as _;
 
@@ -35,6 +38,9 @@ fn run(args: impl IntoIterator<Item = OsString>) -> Result<Response, String> {
     let matches = command()
         .try_get_matches_from(args)
         .map_err(|error| error.to_string())?;
+    if let Some(("catalog", catalog)) = matches.subcommand() {
+        return catalog::run(catalog);
+    }
     let graph = matches
         .subcommand_matches("graph")
         .ok_or_else(|| "a graph subcommand is required".to_owned())?;
@@ -65,6 +71,7 @@ fn command() -> Command {
         .about("Quoin assurance tooling")
         .subcommand_required(true)
         .arg_required_else_help(true)
+        .subcommand(catalog::command())
         .subcommand(
             Command::new("graph")
                 .about("Read-only evidence graph views")
@@ -187,7 +194,17 @@ fn emit(response: &Response) -> std::process::ExitCode {
             );
             return std::process::ExitCode::from(EXIT_INTERNAL);
         };
-        if writeln!(std::io::stdout(), "{rendered}").is_err() {
+        let stream = response
+            .payload
+            .get("renderedStream")
+            .and_then(serde_json::Value::as_str)
+            .unwrap_or("stdout");
+        let write = if stream == "stderr" {
+            writeln!(std::io::stderr(), "{rendered}")
+        } else {
+            writeln!(std::io::stdout(), "{rendered}")
+        };
+        if write.is_err() {
             return std::process::ExitCode::from(EXIT_INTERNAL);
         }
     }
