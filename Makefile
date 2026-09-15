@@ -226,11 +226,11 @@ check-version: build
 # a populated `~/.ix` passed. Installing them with the CLI the repo just built
 # also means a module set is never validated against a stale host binary.
 .PHONY: validate
-validate: require-quire build
+validate: require-quire rust-build
 ifneq ($(strip $(QUOIN_VERIFICATION_DECLARATIONS)),)
 	node scripts/verification-declarations.mjs "$(QUIRE)" "$(QUOIN_VERIFICATION_DECLARATIONS)"
 else
-	node bin/quoin.js module ensure-defaults
+	$(CARGO_TARGET)/debug/quoin module ensure-defaults
 	$(QUIRE) validate "spec/**/*.md" "plan/**/*.md" "reviews/*.md"
 endif
 
