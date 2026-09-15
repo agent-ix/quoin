@@ -11,6 +11,7 @@
 
 mod catalog;
 mod core_bridge;
+mod module;
 mod semantic;
 
 use std::ffi::OsString;
@@ -45,6 +46,9 @@ fn run(args: impl IntoIterator<Item = OsString>) -> Result<Response, String> {
     if let Some(("semantic", semantic)) = matches.subcommand() {
         return semantic::run(semantic);
     }
+    if let Some(("module", module)) = matches.subcommand() {
+        return module::run(module);
+    }
     let graph = matches
         .subcommand_matches("graph")
         .ok_or_else(|| "a graph subcommand is required".to_owned())?;
@@ -76,6 +80,7 @@ fn command() -> Command {
         .subcommand_required(true)
         .arg_required_else_help(true)
         .subcommand(catalog::command())
+        .subcommand(module::command())
         .subcommand(semantic::command())
         .subcommand(
             Command::new("graph")
