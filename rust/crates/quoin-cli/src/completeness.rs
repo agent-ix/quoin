@@ -289,6 +289,10 @@ fn number(payload: &serde_json::Value, key: &str) -> u64 {
 }
 
 #[cfg(test)]
+#[allow(
+    clippy::expect_used,
+    reason = "test fixtures use expect to report malformed local test data"
+)]
 mod tests {
     use super::{command, render};
 

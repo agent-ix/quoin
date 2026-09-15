@@ -60,14 +60,14 @@ pub(crate) fn run(arguments: &ArgMatches) -> Result<Response, String> {
         if since.is_some() || series.is_some() {
             return Err("--portfolio cannot be combined with --since or --series".to_owned());
         }
-        let request = serde_json::json!({
-            "locations": portfolio,
-            "graph_exports": graph_exports,
-            "graph_premises": graph_premises,
-            "graph_audits": graph_audits,
-            "changed": changed,
-            "cwd": std::env::current_dir().map_err(|error| format!("cannot read current directory: {error}"))?,
-        });
+        let request = portfolio_request(
+            &portfolio,
+            &graph_exports,
+            &graph_premises,
+            &graph_audits,
+            &changed,
+            graph_selected,
+        )?;
         return present(
             if graph_selected {
                 "measurement.build_graph_portfolio"
@@ -105,6 +105,33 @@ pub(crate) fn run(arguments: &ArgMatches) -> Result<Response, String> {
         &serde_json::json!({ "repo": repo }),
         json(arguments),
     )
+}
+
+/// Shape the core request for a regular or graph-enriched portfolio view.
+///
+/// `PortfolioRequest` intentionally denies unknown fields. Graph mapping
+/// fields consequently belong only on the graph operation's distinct request
+/// shape; sending empty graph fields to a regular portfolio was rejected by
+/// the core boundary (quoin#373 Stage 8).
+fn portfolio_request(
+    portfolio: &[String],
+    graph_exports: &[String],
+    graph_premises: &[String],
+    graph_audits: &[String],
+    changed: &[String],
+    graph_selected: bool,
+) -> Result<serde_json::Value, String> {
+    if !graph_selected {
+        return Ok(serde_json::json!({ "locations": portfolio }));
+    }
+    Ok(serde_json::json!({
+        "locations": portfolio,
+        "graph_exports": graph_exports,
+        "graph_premises": graph_premises,
+        "graph_audits": graph_audits,
+        "changed": changed,
+        "cwd": std::env::current_dir().map_err(|error| format!("cannot read current directory: {error}"))?,
+    }))
 }
 
 fn present(
@@ -218,9 +245,13 @@ fn json(arguments: &ArgMatches) -> bool {
 }
 
 #[cfg(test)]
-#[allow(clippy::expect_used, reason = "test assertions report failures")]
+#[allow(
+    clippy::expect_used,
+    clippy::indexing_slicing,
+    reason = "test assertions report failures"
+)]
 mod tests {
-    use super::command;
+    use super::{command, portfolio_request};
 
     /// Trace: FR-062, FR-102
     #[test]
@@ -251,5 +282,31 @@ mod tests {
                 ])
                 .is_ok()
         );
+    }
+
+    /// Trace: FR-062, FR-102
+    #[test]
+    fn tc_373_plain_portfolio_uses_its_strict_core_request_shape() {
+        let portfolio = vec!["one".to_owned(), "two".to_owned()];
+        let empty = Vec::new();
+        let request = portfolio_request(&portfolio, &empty, &empty, &empty, &empty, false)
+            .expect("current directory is available");
+        assert_eq!(request, serde_json::json!({ "locations": ["one", "two"] }));
+    }
+
+    /// Trace: FR-062, FR-102
+    #[test]
+    fn tc_373_graph_portfolio_carries_only_the_graph_operation_fields() {
+        let portfolio = vec!["one".to_owned()];
+        let export = vec!["one=export.json".to_owned()];
+        let empty = Vec::new();
+        let request = portfolio_request(&portfolio, &export, &empty, &empty, &empty, true)
+            .expect("current directory is available");
+        assert_eq!(request["locations"], serde_json::json!(["one"]));
+        assert_eq!(
+            request["graph_exports"],
+            serde_json::json!(["one=export.json"])
+        );
+        assert!(request.get("cwd").is_some());
     }
 }
