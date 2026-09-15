@@ -23,6 +23,7 @@ mod module;
 mod plugin;
 mod semantic;
 mod validate;
+mod write;
 
 use std::ffi::OsString;
 use std::io::Write as _;
@@ -70,6 +71,9 @@ fn run(args: impl IntoIterator<Item = OsString>) -> Result<Response, String> {
     }
     if let Some(("validate", validate)) = matches.subcommand() {
         return validate::run(validate);
+    }
+    if let Some(("write", write)) = matches.subcommand() {
+        return write::run(write);
     }
     if let Some((name, flow_arguments)) = matches.subcommand()
         && matches!(name, "review" | "matrix" | "to-plan")
@@ -133,6 +137,7 @@ fn command() -> Command {
         .subcommand(plugin::command())
         .subcommand(semantic::command())
         .subcommand(validate::command())
+        .subcommand(write::command())
         .subcommand(flow::command("review"))
         .subcommand(flow::command("matrix"))
         .subcommand(flow::command("to-plan"))
