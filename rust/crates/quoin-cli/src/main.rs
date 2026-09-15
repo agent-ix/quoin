@@ -74,7 +74,14 @@ fn main() -> std::process::ExitCode {
         return emit_version();
     }
     if is_root_help_request(&arguments) {
-        let _ = writeln!(std::io::stdout(), "{}", root_usage());
+        // Oclif terminates the root help page with its final blank line.  The
+        // root renderer owns that page rather than Clap, so preserve that byte
+        // contract here as well (quoin#520).
+        let _ = writeln!(std::io::stdout(), "{}\n", root_usage());
+        return std::process::ExitCode::SUCCESS;
+    }
+    if let Some(rendered) = help::retained_help(&arguments, build_version()) {
+        let _ = write!(std::io::stdout(), "{rendered}");
         return std::process::ExitCode::SUCCESS;
     }
     match run(arguments) {

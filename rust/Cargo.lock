@@ -3059,6 +3059,7 @@ dependencies = [
  "quoin-graph-analysis",
  "quoin-yaml",
  "semver",
+ "serde",
  "serde_json",
  "time",
 ]

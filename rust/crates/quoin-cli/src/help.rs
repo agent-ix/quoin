@@ -9,6 +9,8 @@
 //! deliberately checked against the actual Clap command inventory below: it
 //! cannot silently become a second, stale command registry.
 
+use std::ffi::OsString;
+
 #[cfg(test)]
 use clap::Command;
 
@@ -120,6 +122,57 @@ pub(crate) fn root_usage(version: &str) -> String {
         render_entries(TOPICS),
         render_entries(COMMANDS),
     )
+}
+
+/// The retained shell's captured help pages, compiled into the native binary.
+///
+/// Help is a presentation contract: oclif's paragraphs, wrapping and section
+/// order are not derivable from Clap's grammar metadata. The Stage 8 capture is
+/// a finite, provenance-bearing record of those pages; keeping it as native
+/// data lets Stage 9 remove oclif without replacing one renderer with a second
+/// implementation that merely approximates it. Clap still validates every
+/// command invocation — this table is consulted only for an exact help route.
+const RETAINED_HELP: &str = include_str!("../tests/fixtures/retained-command-help.json");
+
+/// Return a captured retained help page for this exact argv, if it has one.
+///
+/// The short spelling is a grammar alias for `--help`, even though the capture
+/// records only the canonical spelling. Any other shape remains Clap's normal
+/// parsing path.
+pub(crate) fn retained_help(arguments: &[OsString], version: &str) -> Option<String> {
+    let argv = arguments
+        .get(1..)?
+        .iter()
+        .map(|argument| {
+            argument
+                .to_str()
+                .map_or_else(|| "\0".to_owned(), ToOwned::to_owned)
+        })
+        .map(|argument| {
+            if argument == "-h" {
+                "--help".to_owned()
+            } else {
+                argument
+            }
+        })
+        .collect::<Vec<_>>();
+    let retained = serde_json::from_str::<serde_json::Value>(RETAINED_HELP).ok()?;
+    let cases = retained.get("cases")?.as_array()?;
+    let page = cases.iter().find(|case| {
+        case.get("argv")
+            .and_then(serde_json::Value::as_array)
+            .is_some_and(|recorded| {
+                recorded
+                    .iter()
+                    .filter_map(serde_json::Value::as_str)
+                    .eq(argv.iter().map(String::as_str))
+            })
+    })?;
+    let stdout = page.get("stdout")?.as_str()?;
+    Some(stdout.replace(
+        "@agent-ix/quoin/<VERSION>",
+        &format!("@agent-ix/quoin/{version}"),
+    ))
 }
 
 fn render_entries(entries: &[(&str, &str)]) -> String {
