@@ -64,6 +64,26 @@ jobs:
             (cd rust/target/release && zip -q "../../../release/$NAME" "$BINARY")
           fi
           test -f "release/$NAME"
+      - name: Smoke the packaged native executable
+        shell: bash
+        env:
+          TARGET: ${{ matrix.target }}
+          EXTENSION: ${{ matrix.extension }}
+          BINARY: ${{ matrix.binary }}
+          TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          VERSION="${TAG#v}"
+          NAME="quoin-v${VERSION}-${TARGET}.${EXTENSION}"
+          mkdir release-smoke
+          if [ "$EXTENSION" = tar.gz ]; then
+            tar -C release-smoke -xzf "release/$NAME"
+          else
+            unzip -q "release/$NAME" -d release-smoke
+          fi
+          test "$(find release-smoke -type f | wc -l | tr -d ' ')" = 1
+          test -f "release-smoke/$BINARY"
+          "./release-smoke/$BINARY" --version
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: quoin-${{ matrix.target }}
