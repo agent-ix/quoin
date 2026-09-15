@@ -416,8 +416,8 @@ mod tests {
     /// topics.  The Stage 8 cutover needs a reviewable answer to "which
     /// command paths does the native parser own?" before individual argument,
     /// rendering, and exit-status fixtures can make that answer executable.
-    /// The external `sync` extension is intentionally absent: #522 owns its
-    /// Rust successor and it must not be made to look complete by this test.
+    /// `sync` is included because #522's native compatibility slice is now
+    /// linked to the Rust plan-sync engine and has its own grammar tests.
     const NATIVE_OWNED_ROUTES: &[&str] = &[
         "quoin advise",
         "quoin assurance",
