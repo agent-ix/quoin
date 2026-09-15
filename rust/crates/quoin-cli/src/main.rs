@@ -630,6 +630,22 @@ mod tests {
         }
     }
 
+    /// Trace: FR-003, FR-102, TC-1650
+    #[test]
+    fn tc_1650_every_native_command_path_accepts_help_before_required_inputs() {
+        for route in NATIVE_OWNED_ROUTES {
+            let arguments = route
+                .split_whitespace()
+                .map(OsString::from)
+                .chain(std::iter::once(OsString::from("--help")));
+            let help = run(arguments)
+                .expect_err("every retained route renders help before validating required inputs");
+            assert_eq!(help.exit, 0, "{route}");
+            assert_eq!(help.stream, ShellOutput::Stdout, "{route}");
+            assert!(!help.message.trim().is_empty(), "{route}");
+        }
+    }
+
     /// Trace: FR-016, FR-062
     #[test]
     fn tc_373_global_config_flags_are_accepted_after_a_command_path() {
