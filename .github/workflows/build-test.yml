@@ -59,7 +59,9 @@ jobs:
       - name: Install pinned default modules
         run: |
           make build
-          node bin/quoin.js module ensure-defaults
+          cd rust
+          cargo build --locked --release -p quoin-cli --bin quoin
+          ./target/release/quoin module ensure-defaults
       # battletest's declaration-route guard demands exact https://github.com/
       # routes; leaving the credential rewrite active fails it by design.
       - name: Drop the credential rewrite before governed tests
