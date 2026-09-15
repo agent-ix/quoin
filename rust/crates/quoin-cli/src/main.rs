@@ -21,6 +21,7 @@ mod evidence;
 mod module;
 mod plugin;
 mod semantic;
+mod validate;
 
 use std::ffi::OsString;
 use std::io::Write as _;
@@ -65,6 +66,9 @@ fn run(args: impl IntoIterator<Item = OsString>) -> Result<Response, String> {
     }
     if let Some(("semantic", semantic)) = matches.subcommand() {
         return semantic::run(semantic);
+    }
+    if let Some(("validate", validate)) = matches.subcommand() {
+        return validate::run(validate);
     }
     if let Some(("module", module)) = matches.subcommand() {
         return module::run(module);
@@ -122,6 +126,7 @@ fn command() -> Command {
         .subcommand(module::command())
         .subcommand(plugin::command())
         .subcommand(semantic::command())
+        .subcommand(validate::command())
         .subcommand(
             Command::new("graph")
                 .about("Read-only evidence graph views")
