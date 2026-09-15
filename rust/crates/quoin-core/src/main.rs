@@ -41,7 +41,7 @@
 //! (quoin#450 review, findings 2 and 3).
 
 use std::io::Write as _;
-use std::path::{Path, PathBuf};
+use std::path::{Component, Path, PathBuf};
 
 use quoin_catalog::ModuleDocument;
 use quoin_change_assurance::EvidenceStore;
@@ -156,11 +156,12 @@ impl HostCatalog {
     }
 
     fn locate(candidate: &Path) -> std::io::Result<Option<PathBuf>> {
+        let candidate = lexical_absolute(candidate)?;
         if !candidate.exists() {
             return Ok(None);
         }
         if candidate.join("manifest.yaml").exists() {
-            return Ok(Some(std::fs::canonicalize(candidate)?));
+            return Ok(Some(candidate));
         }
         if !candidate.is_dir() {
             return Ok(None);
@@ -168,11 +169,34 @@ impl HostCatalog {
         for child in std::fs::read_dir(candidate)? {
             let child = child?.path();
             if child.join("manifest.yaml").exists() {
-                return std::fs::canonicalize(child).map(Some);
+                return Ok(Some(child));
             }
         }
         Ok(None)
     }
+}
+
+/// Make a candidate absolute while retaining its lexical identity for the
+/// catalog's visible paths. In particular, do not canonicalize symlinks: the
+/// TypeScript compatibility surface exposed the supplied spelling.
+fn lexical_absolute(candidate: &Path) -> std::io::Result<PathBuf> {
+    let candidate = if candidate.is_absolute() {
+        candidate.to_path_buf()
+    } else {
+        std::env::current_dir()?.join(candidate)
+    };
+    let mut normalized = PathBuf::new();
+    for component in candidate.components() {
+        match component {
+            Component::CurDir => {}
+            Component::ParentDir => {
+                let _ = normalized.pop();
+            }
+            Component::Normal(part) => normalized.push(part),
+            Component::RootDir | Component::Prefix(_) => normalized.push(component.as_os_str()),
+        }
+    }
+    Ok(normalized)
 }
 
 impl CatalogHost for HostCatalog {

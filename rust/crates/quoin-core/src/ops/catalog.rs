@@ -9,6 +9,7 @@
 //! pairing. It opens no file: a [`CatalogHost`] locates and reads module roots,
 //! while [`SemanticHost`] judges their optional semantic blocks in one batch.
 
+use std::collections::BTreeSet;
 use std::path::{Path, PathBuf};
 
 use quoin_catalog::{Catalog, CatalogError, SemanticView};
@@ -82,9 +83,21 @@ pub fn load(
             CoreError::new(CoreErrorCode::Io, error.to_string()).with_context("op", "catalog.load")
         })?;
 
+    // The legacy client suppressed duplicate roots and module names before it
+    // touched semantic input. Preserve that observable failure boundary: an
+    // ignored duplicate must not make an otherwise valid catalog fail.
+    let retained = quoin_catalog::build(&documents, &[]).map_err(map_catalog_error)?;
+    let retained_roots: BTreeSet<&str> = retained
+        .modules
+        .iter()
+        .map(|module| module.root.as_str())
+        .collect();
     let semantic_host = semantic_host(capabilities)?;
     let mut semantics = Vec::with_capacity(documents.len());
     for document in &documents {
+        if !retained_roots.contains(document.root.as_str()) {
+            continue;
+        }
         let result = semantic_host
             .read_module(Path::new(&document.root))
             .map_err(|error| {
@@ -190,6 +203,46 @@ mod tests {
         }
     }
 
+    struct DuplicateCatalogFixture;
+
+    impl CatalogHost for DuplicateCatalogFixture {
+        fn read_modules(&self, _roots: Option<&[PathBuf]>) -> std::io::Result<Vec<ModuleDocument>> {
+            Ok(vec![
+                ModuleDocument {
+                    root: "/modules/kept".to_owned(),
+                    manifest: "name: shared\nartifact_types: [{name: FR}]\n".to_owned(),
+                    skeleton_names: Vec::new(),
+                },
+                ModuleDocument {
+                    root: "/modules/ignored".to_owned(),
+                    manifest: "name: shared\nartifact_types: [{name: Invalid}]\n".to_owned(),
+                    skeleton_names: Vec::new(),
+                },
+            ])
+        }
+    }
+
+    struct RejectIgnoredSemanticFixture;
+
+    impl SemanticHost for RejectIgnoredSemanticFixture {
+        fn read_module(&self, module_root: &Path) -> Result<SemanticReadResult, SemanticError> {
+            assert_ne!(module_root, Path::new("/modules/ignored"));
+            Ok(SemanticReadResult {
+                module: None,
+                diagnostics: Vec::new(),
+            })
+        }
+
+        fn sweep(
+            &self,
+            _roots: &[quoin_semantic::CorpusRoot],
+            _identity: &quoin_semantic::SweepIdentity,
+            _generated_at: &str,
+        ) -> Result<quoin_semantic::SweepReport, SemanticError> {
+            unreachable!("catalog does not sweep corpora")
+        }
+    }
+
     /// Trace: FR-101
     #[test]
     fn tc_373_catalog_load_is_a_single_boundary_projection() {
@@ -215,6 +268,30 @@ mod tests {
         assert_eq!(
             response.payload.pointer("/entries/0/skeletonPath"),
             Some(&json!("/modules/example/skeletons/FR.md"))
+        );
+    }
+
+    /// Trace: FR-101
+    #[test]
+    fn tc_373_catalog_does_not_semantically_read_suppressed_duplicates() {
+        let catalog = DuplicateCatalogFixture;
+        let semantic = RejectIgnoredSemanticFixture;
+        let response = load(
+            &json!({}),
+            &Capabilities {
+                modules: None,
+                catalog: Some(&catalog),
+                semantic: Some(&semantic),
+                change_assurance: None,
+                evidence: None,
+                graph: None,
+                quire: None,
+            },
+        )
+        .expect("the duplicate module is ignored before semantic reading");
+        assert_eq!(
+            response.payload.pointer("/modules/0/root"),
+            Some(&json!("/modules/kept"))
         );
     }
 }

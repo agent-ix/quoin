@@ -280,10 +280,29 @@ fn basename(root: &str) -> String {
 }
 
 fn join(root: &str, child: &str) -> String {
-    if root.ends_with('/') || root.ends_with('\\') {
-        format!("{root}{child}")
+    // Node's `path.join` both retains the parent for an absolute-looking
+    // child and normalizes lexical `.` / `..` components.  Catalog paths are
+    // intentionally display paths, so this must not resolve symlinks.
+    let absolute = root.starts_with(['/', '\\']);
+    let mut parts = Vec::new();
+    for part in root
+        .trim_matches(['/', '\\'])
+        .split(['/', '\\'])
+        .chain(child.trim_matches(['/', '\\']).split(['/', '\\']))
+    {
+        match part {
+            "" | "." => {}
+            ".." => {
+                let _ = parts.pop();
+            }
+            part => parts.push(part),
+        }
+    }
+    let joined = parts.join("/");
+    if absolute {
+        format!("/{joined}")
     } else {
-        format!("{root}/{child}")
+        joined
     }
 }
 
@@ -292,7 +311,8 @@ fn skeleton_path(root: &str, type_name: &str, names: &[String]) -> Option<String
     let lower = format!("{}.md", type_name.to_lowercase());
     names
         .iter()
-        .find(|name| **name == exact || **name == lower)
+        .find(|name| **name == exact)
+        .or_else(|| names.iter().find(|name| **name == lower))
         .map(|name| join(&join(root, "skeletons"), name))
 }
 
@@ -301,28 +321,33 @@ fn find_duplicates(entries: &[SpecCatalogEntry]) -> Vec<Duplicate> {
     // TypeScript implementation used a `Map`, so duplicate groups were emitted
     // in the order their first type declaration appeared. Keep that observable
     // declaration order while sorting only the MODULE names, as it did.
-    let mut grouped: Vec<(EntryKind, String, BTreeSet<String>)> = Vec::new();
+    let mut grouped: Vec<(EntryKind, String, Vec<String>)> = Vec::new();
     for entry in entries {
         if let Some((_, _, modules)) = grouped
             .iter_mut()
             .find(|(kind, name, _)| *kind == entry.kind && *name == entry.name)
         {
-            modules.insert(entry.module_name.clone());
+            if !modules.contains(&entry.module_name) {
+                modules.push(entry.module_name.clone());
+            }
         } else {
             grouped.push((
                 entry.kind,
                 entry.name.clone(),
-                BTreeSet::from([entry.module_name.clone()]),
+                vec![entry.module_name.clone()],
             ));
         }
     }
     grouped
         .into_iter()
-        .filter_map(|(kind, name, modules)| {
-            (modules.len() > 1).then(|| Duplicate {
-                kind,
-                name,
-                modules: modules.into_iter().collect(),
+        .filter_map(|(kind, name, mut modules)| {
+            (modules.len() > 1).then(|| {
+                modules.sort_by(|left, right| left.encode_utf16().cmp(right.encode_utf16()));
+                Duplicate {
+                    kind,
+                    name,
+                    modules,
+                }
             })
         })
         .collect()
@@ -369,6 +394,33 @@ mod tests {
         );
         assert_eq!(object.data_schema, Some(json!({"type": "object"})));
         assert_eq!(object.kind, EntryKind::Object);
+    }
+
+    /// Trace: FR-101
+    #[test]
+    fn tc_373_catalog_matches_node_path_and_skeleton_precedence() {
+        let catalog = build(
+            &[ModuleDocument {
+                root: "/modules/alpha".to_owned(),
+                manifest:
+                    "artifact_types: [{name: Foo, frontmatter_schema_ref: ./schemas/../foo.json}]\n"
+                        .to_owned(),
+                skeleton_names: vec!["foo.md".to_owned(), "Foo.md".to_owned()],
+            }],
+            &[],
+        )
+        .expect("valid manifest");
+        let Some(entry) = catalog.entries.first() else {
+            panic!("the declared artifact is projected");
+        };
+        assert_eq!(
+            entry.schema_path.as_deref(),
+            Some("/modules/alpha/foo.json")
+        );
+        assert_eq!(
+            entry.skeleton_path.as_deref(),
+            Some("/modules/alpha/skeletons/Foo.md")
+        );
     }
 
     /// Trace: FR-101
@@ -426,5 +478,24 @@ mod tests {
                 .collect::<Vec<_>>(),
             vec![(EntryKind::Object, "domain"), (EntryKind::Artifact, "FR")]
         );
+    }
+
+    /// Trace: FR-101
+    #[test]
+    fn tc_373_catalog_sorts_duplicate_module_names_as_javascript_does() {
+        let document = |root: &str, name: &str| ModuleDocument {
+            root: root.to_owned(),
+            manifest: format!("name: {name}\nartifact_types: [{{name: FR}}]\n"),
+            skeleton_names: Vec::new(),
+        };
+        let catalog = build(
+            &[document("/one", "\u{e000}"), document("/two", "\u{10000}")],
+            &[],
+        )
+        .expect("valid manifests");
+        let [duplicate] = catalog.duplicates.as_slice() else {
+            panic!("the shared artifact is reported once");
+        };
+        assert_eq!(duplicate.modules, ["\u{10000}", "\u{e000}"]);
     }
 }

@@ -87,3 +87,26 @@ fn tc_373_catalog_load_discovers_a_nested_module_through_the_real_boundary() {
         json!({ "type": "object" })
     );
 }
+
+/// Trace: FR-096, FR-101
+/// Provenance: quoin#373
+#[cfg(unix)]
+#[test]
+fn tc_373_catalog_load_retains_a_symlink_candidates_lexical_path() {
+    use std::os::unix::fs::symlink;
+
+    let temporary = tempfile::tempdir().expect("temporary root");
+    let target = temporary.path().join("actual-module");
+    fs::create_dir_all(&target).expect("target module directory");
+    fs::write(target.join("manifest.yaml"), "name: linked\n").expect("manifest writes");
+    let candidate = temporary.path().join("visible-module");
+    symlink(&target, &candidate).expect("candidate symlink");
+
+    let (status, stdout, stderr) = run("catalog.load", &json!({ "roots": [candidate] }));
+    assert_eq!(status, 0, "{stderr}");
+    let payload: Value = serde_json::from_str(&stdout).expect("catalog payload");
+    assert_eq!(
+        payload.pointer("/modules/0/root"),
+        Some(&json!(candidate.to_string_lossy()))
+    );
+}
