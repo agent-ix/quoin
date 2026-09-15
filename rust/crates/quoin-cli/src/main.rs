@@ -10,6 +10,7 @@
 //! oclif shell remains published during the staged cutover.
 
 mod catalog;
+mod change_assurance;
 mod core_bridge;
 mod module;
 mod plugin;
@@ -53,6 +54,9 @@ fn run(args: impl IntoIterator<Item = OsString>) -> Result<Response, String> {
     if let Some(("plugin", plugin)) = matches.subcommand() {
         return plugin::run(plugin);
     }
+    if let Some(("change-assurance", change_assurance)) = matches.subcommand() {
+        return change_assurance::run(change_assurance);
+    }
     let graph = matches
         .subcommand_matches("graph")
         .ok_or_else(|| "a graph subcommand is required".to_owned())?;
@@ -84,6 +88,7 @@ fn command() -> Command {
         .subcommand_required(true)
         .arg_required_else_help(true)
         .subcommand(catalog::command())
+        .subcommand(change_assurance::command())
         .subcommand(module::command())
         .subcommand(plugin::command())
         .subcommand(semantic::command())
