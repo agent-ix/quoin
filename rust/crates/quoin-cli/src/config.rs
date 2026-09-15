@@ -159,5 +159,46 @@ fn required(arguments: &ArgMatches, name: &str) -> Result<String, String> {
 #[cfg(test)]
 #[allow(clippy::expect_used, reason = "test assertions report failures")]
 mod tests {
-    // Service-level path and layering parity are covered by quoin-config.
+    use std::path::PathBuf;
+
+    use clap::{Arg, ArgAction, Command};
+    use quoin_config::{ConfigService, ProcessEnvironment, QuoinConfig};
+
+    use super::context;
+    use crate::invocation::{Invocation, with_current};
+
+    /// Trace: FR-016, FR-062
+    #[test]
+    fn tc_373_config_flags_reach_the_native_config_service() {
+        let matches = Command::new("quoin")
+            .arg(Arg::new("config_root").long("config-root"))
+            .arg(
+                Arg::new("no_project_config")
+                    .long("no-project-config")
+                    .action(ArgAction::SetTrue),
+            )
+            .try_get_matches_from([
+                "quoin",
+                "--config-root",
+                "/tmp/quoin-config-root",
+                "--no-project-config",
+            ])
+            .expect("global config grammar parses");
+        let invocation = Invocation::from_matches(&matches);
+
+        with_current(invocation, || {
+            let context = context().expect("CLI creates a configuration context");
+            let environment = ProcessEnvironment;
+            let service = ConfigService::<QuoinConfig>::for_plugin(&environment, &context);
+
+            assert_eq!(
+                service.file_path(),
+                PathBuf::from("/tmp/quoin-config-root/config.d/quoin.yaml")
+            );
+            assert!(
+                service.project_file_path().is_none(),
+                "--no-project-config excludes the project layer"
+            );
+        });
+    }
 }
