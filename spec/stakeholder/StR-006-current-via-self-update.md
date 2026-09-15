@@ -41,5 +41,6 @@ maintainers are an affected party who publishes the versions the command resolve
 ## Dependencies
 
 **Downstream**: the self-update functional requirement
-([FR-022](../functional/FR-022-self-update.md)). The version comparison and
-install are delegated to `@agent-ix/ix-cli-core`.
+([FR-022](../functional/FR-022-self-update.md)). The native delivery library
+owns version comparison and safe artifact installation; the existing npm shell
+remains until its separate final-cutover disposition.

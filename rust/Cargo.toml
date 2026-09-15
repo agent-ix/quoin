@@ -85,6 +85,7 @@ quoin-completeness = { path = "crates/quoin-completeness" }
 quoin-auditor = { path = "crates/quoin-auditor" }
 quoin-config = { path = "crates/quoin-config" }
 quoin-core = { path = "crates/quoin-core" }
+quoin-delivery = { path = "crates/quoin-delivery" }
 quoin-evidence = { path = "crates/quoin-evidence" }
 quoin-evidence-types = { path = "crates/quoin-evidence-types" }
 quoin-finding-types = { path = "crates/quoin-finding-types" }
@@ -160,6 +161,13 @@ proptest = { version = "=1.9.0", default-features = false, features = ["std", "b
 jsonschema = { version = "=0.56.0", default-features = false }
 engineering-assurance = { version = "=0.3.1", git = "https://github.com/agent-ix/engineering-assurance", rev = "72b0fcd" }
 clap = { version = "=4.5.47", default-features = false, features = ["std", "help", "usage", "error-context"] }
+flate2 = "=1.1.10"
+reqwest = { version = "=0.13.5", default-features = false, features = ["blocking", "rustls"] }
+semver = "=1.0.28"
+tar = "=0.4.46"
+tempfile = "=3.27.0"
+url = "=2.5.8"
+zip = { version = "=8.6.0", default-features = false, features = ["deflate"] }
 
 [profile.release]
 lto = "thin"
