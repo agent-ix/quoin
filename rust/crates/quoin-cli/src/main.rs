@@ -22,6 +22,7 @@ mod flow;
 mod module;
 mod plugin;
 mod semantic;
+mod update;
 mod validate;
 mod write;
 
@@ -74,6 +75,9 @@ fn run(args: impl IntoIterator<Item = OsString>) -> Result<Response, String> {
     }
     if let Some(("write", write)) = matches.subcommand() {
         return write::run(write);
+    }
+    if let Some(("update", update)) = matches.subcommand() {
+        return update::run(update);
     }
     if let Some((name, flow_arguments)) = matches.subcommand()
         && matches!(name, "review" | "matrix" | "to-plan")
@@ -138,6 +142,7 @@ fn command() -> Command {
         .subcommand(semantic::command())
         .subcommand(validate::command())
         .subcommand(write::command())
+        .subcommand(update::command())
         .subcommand(flow::command("review"))
         .subcommand(flow::command("matrix"))
         .subcommand(flow::command("to-plan"))
