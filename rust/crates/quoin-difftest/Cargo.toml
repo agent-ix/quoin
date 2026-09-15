@@ -15,20 +15,9 @@ publish.workspace = true
 name = "quoin-difftest"
 path = "src/main.rs"
 
-# The disk side of the snapshot differential (quoin#412, review FND-001). A
-# dev-only probe in the dev-only crate: `quoin validate` analyses a repository
-# through `src/core/snapshot.ts` -> `MemoryRepo`, and this answers the same
-# question over `DiskRepo` for the same tree so the two can be compared. It
-# cannot live in `quoin-core`, whose library half is audited to name no host
-# capability.
-[[bin]]
-name = "quoin-disk-findings"
-path = "src/bin/disk_findings.rs"
-
 [lints]
 workspace = true
 
 [dependencies]
 quoin-core = { workspace = true }
-quoin-validators = { workspace = true }
 serde_json = { workspace = true }

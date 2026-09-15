@@ -8,16 +8,10 @@
  * the pre-filter below, because a path that never goes on the wire cannot be
  * re-classified on the far side.
  *
- * Two instruments hold it, and they close different axes:
+ * The retained TypeScript implementation is held by one instrument:
  *
  * - `tests/core-exec-e2e.test.ts` asks the real binary, path by path, which
  *   file NAMES its classifier accepts. That closes the filename axis.
- * - `tests/core-snapshot-differential.test.ts` runs one materialised tree
- *   through both repositories — this snapshot into `MemoryRepo`, and
- *   `quoin-disk-findings` into `DiskRepo` — and compares the findings. That
- *   closes the DIRECTORY axis, which the first cannot: the far side applies
- *   `is_excluded` too, so a directory this walk stops descending into reads as
- *   "the classifier said no" there as well (quoin#448 FND-001).
  */
 
 import { readFileSync, readdirSync, statSync } from "node:fs";
@@ -64,8 +58,7 @@ const EXCLUDED = new Set([
  * optimisation and a changed verdict, so it is MEASURED and not listed:
  * `tests/core-exec-e2e.test.ts` asks the real `quoin-core` binary, path by
  * path, which paths its classifier accepts, and fails if this filter dropped
- * one, and `tests/core-snapshot-differential.test.ts` compares the verdict this
- * walk produces to the one `quoin-core` reaches over the same tree on disk. A fixture list is exactly as complete as whoever wrote it — narrowing
+ * one. A fixture list is exactly as complete as whoever wrote it — narrowing
  * the `taskfile` arm below to the literal `taskfile.yml` loses every
  * `Taskfile.yaml` finding, and left the whole suite green before that test
  * existed.

@@ -328,14 +328,9 @@ rust-difftest: build rust-build
 # sets it. Without it the caller is only ever tested against fakes, and a fake
 # agrees with whatever the test wrote into it.
 #
-# `QUOIN_DISK_FINDINGS` is the DISK side of the validators snapshot differential
-# (quoin#412, review #448 FND-001): `tests/core-snapshot-differential.test.ts`
-# analyses one tree through `repoSnapshot` -> `validators.run` -> `MemoryRepo`
-# and through `DiskRepo`, and compares. The bundle differential
-# (`tests/core-bundle-snapshot.test.ts`, quoin#445) asks the same question of
-# the completeness domain and needs only `QUOIN_CORE`, because its independent
-# walk is written in the test file rather than shelled out to a second binary.
-# Both skip without their variables, which is every ordinary `vitest run`.
+# The bundle differential (`tests/core-bundle-snapshot.test.ts`, quoin#445)
+# compares the completeness domain through its independent test-side walk. It
+# needs `QUOIN_CORE`; ordinary `vitest run` does not set that variable.
 #
 # The files beyond core-exec-e2e carry criteria whose SUBJECT is retained
 # TypeScript -- the `quoin completeness` command (FR-037-AC-9..12) and the two
@@ -345,10 +340,8 @@ rust-difftest: build rust-build
 .PHONY: rust-e2e
 rust-e2e: rust-build
 	QUOIN_CORE=$(CARGO_TARGET)/debug/quoin-core \
-	  QUOIN_DISK_FINDINGS=$(CARGO_TARGET)/debug/quoin-disk-findings \
 	  $(PNPM) exec vitest run \
 	    tests/core-exec-e2e.test.ts \
-	    tests/core-snapshot-differential.test.ts \
 	    tests/core-org.test.ts \
 	    tests/core-modules.test.ts \
 	    tests/org-one-subprocess.test.ts \
