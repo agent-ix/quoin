@@ -24,5 +24,14 @@ not candidates for ordinary updates.
 
 `quoin update --registry <url>` retains its legacy role as an explicit custom
 update source, but the URL now names a manifest rather than an npm registry.
-The existing npm package remains the staged installer until the separate #396
-oclif/plugin disposition is made.
+## Initial installation
+
+Download the archive for the host target from the stable GitHub Release, verify
+it against `quoin-update-manifest.json`, extract its sole executable, and place
+that executable on `PATH`. The native `quoin update` command then manages later
+updates from the same manifest contract. The release workflow smokes the
+extracted archive on every supported target before publishing it.
+
+The existing npm package is retained only through the #521 final shell cutover;
+it is not the native delivery path and will not remain as a Node/oclif escape
+hatch after that cutover.
