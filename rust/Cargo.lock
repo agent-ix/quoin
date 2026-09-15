@@ -3019,6 +3019,7 @@ name = "quoin-cli"
 version = "0.9.0"
 dependencies = [
  "clap",
+ "quoin-config",
  "quoin-core",
  "quoin-graph-analysis",
  "quoin-yaml",
