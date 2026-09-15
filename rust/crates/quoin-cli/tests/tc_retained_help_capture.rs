@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
 
-//! Frozen retained-shell help contracts for Stage 8 (quoin#520).
+//! Frozen retained-shell contracts for Stage 8 (quoin#520).
 //!
 //! The capture was produced once by `scripts/capture-command-contracts.mjs`
 //! before the oclif shell is retired. These tests never execute Node: Rust
@@ -18,7 +18,8 @@ use std::process::{Command, Output};
 use serde::Deserialize;
 
 const CAPTURE: &str = include_str!("fixtures/retained-command-help.json");
-const MIN_ROUTE_COUNT: usize = 61;
+const MIN_HELP_ROUTE_COUNT: usize = 61;
+const MIN_SHELL_CASE_COUNT: usize = 5;
 
 #[derive(Debug, Deserialize)]
 struct Capture {
@@ -31,6 +32,7 @@ struct Capture {
 
 #[derive(Debug, Deserialize)]
 struct CaptureCase {
+    kind: String,
     argv: Vec<String>,
     exit: i32,
     stdout: String,
@@ -52,11 +54,11 @@ fn text(bytes: &[u8]) -> String {
     String::from_utf8(bytes.to_vec()).expect("the native shell emits UTF-8")
 }
 
-/// Preserve the only intentional capture normalization: release and platform
-/// identifiers vary across build hosts, while the surrounding help bytes do
-/// not. No whitespace or command text is normalized.
+/// Preserve the only intentional capture normalizations: release identifiers
+/// vary across build hosts, while command text and whitespace do not.
 fn normalize_version(text: &str) -> String {
-    text.split_inclusive('\n')
+    let normalized_help = text
+        .split_inclusive('\n')
         .map(|line| {
             let (body, newline) = line
                 .strip_suffix('\n')
@@ -71,7 +73,18 @@ fn normalize_version(text: &str) -> String {
                 line.to_owned()
             }
         })
-        .collect()
+        .collect::<String>();
+    let bare = normalized_help.trim_end_matches('\n');
+    if bare.starts_with(|character: char| character.is_ascii_digit())
+        && bare
+            .chars()
+            .all(|character| character.is_ascii_alphanumeric() || matches!(character, '.' | '-'))
+        && bare.matches('.').count() >= 2
+    {
+        normalized_help.replacen(bare, "<VERSION>", 1)
+    } else {
+        normalized_help
+    }
 }
 
 /// The fixture is a non-vacuous retained capture, with enough provenance to
@@ -91,10 +104,24 @@ fn tc_1650_retained_help_capture_is_provenanced_and_covers_every_native_route() 
             .all(|byte| byte.is_ascii_hexdigit())
     );
     assert!(capture.normalization.contains("@agent-ix/quoin/<VERSION>"));
+    assert!(capture.normalization.contains("<VERSION>"));
+    let help_count = capture
+        .cases
+        .iter()
+        .filter(|case| case.kind == "help")
+        .count();
     assert!(
-        capture.cases.len() >= MIN_ROUTE_COUNT,
-        "anti-vacuity: expected at least {MIN_ROUTE_COUNT} retained help routes, got {}",
-        capture.cases.len()
+        help_count >= MIN_HELP_ROUTE_COUNT,
+        "anti-vacuity: expected at least {MIN_HELP_ROUTE_COUNT} retained help routes, got {help_count}",
+    );
+    let shell_count = capture
+        .cases
+        .iter()
+        .filter(|case| case.kind == "shell")
+        .count();
+    assert!(
+        shell_count >= MIN_SHELL_CASE_COUNT,
+        "anti-vacuity: expected at least {MIN_SHELL_CASE_COUNT} retained shell cases, got {shell_count}",
     );
     let mut seen = std::collections::BTreeSet::new();
     for case in &capture.cases {
@@ -102,17 +129,20 @@ fn tc_1650_retained_help_capture_is_provenanced_and_covers_every_native_route() 
             seen.insert(&case.argv),
             "duplicate argv in retained capture"
         );
-        assert_eq!(case.exit, 0, "{:?} must be successful help", case.argv);
-        assert!(
-            case.stderr.is_empty(),
-            "{:?} wrote retained stderr",
-            case.argv
-        );
-        assert!(
-            !case.stdout.is_empty(),
-            "{:?} has empty retained help",
-            case.argv
-        );
+        assert!(matches!(case.kind.as_str(), "help" | "shell"));
+        if case.kind == "help" {
+            assert_eq!(case.exit, 0, "{:?} must be successful help", case.argv);
+            assert!(
+                case.stderr.is_empty(),
+                "{:?} wrote retained stderr",
+                case.argv
+            );
+            assert!(
+                !case.stdout.is_empty(),
+                "{:?} has empty retained help",
+                case.argv
+            );
+        }
     }
 }
 
@@ -127,7 +157,7 @@ fn tc_1650_native_root_help_matches_the_retained_capture() {
     let root = capture
         .cases
         .iter()
-        .find(|case| case.argv == ["--help"])
+        .find(|case| case.kind == "help" && case.argv == ["--help"])
         .expect("the retained capture contains root --help");
     let output = invoke(&root.argv);
     assert_eq!(output.status.code(), Some(root.exit));
@@ -142,7 +172,11 @@ fn tc_1650_native_root_help_matches_the_retained_capture() {
 /// Trace: FR-003, FR-101, FR-102, TC-1650
 #[test]
 fn tc_1650_native_help_replays_every_retained_command_contract() {
-    for case in capture().cases {
+    for case in capture()
+        .cases
+        .into_iter()
+        .filter(|case| case.kind == "help")
+    {
         let output = invoke(&case.argv);
         assert_eq!(output.status.code(), Some(case.exit), "{:?}", case.argv);
         assert_eq!(
@@ -153,6 +187,34 @@ fn tc_1650_native_help_replays_every_retained_command_contract() {
         );
         assert_eq!(
             text(&output.stderr),
+            case.stderr,
+            "stderr for {:?}",
+            case.argv
+        );
+    }
+}
+
+/// The frozen non-help cases prove shell-level stream and status behavior that
+/// route-help replay cannot exercise, without invoking the retained CLI.
+///
+/// Trace: FR-005, FR-101, FR-102, TC-1650
+#[test]
+fn tc_1650_native_shell_replays_the_retained_offline_contracts() {
+    for case in capture()
+        .cases
+        .into_iter()
+        .filter(|case| case.kind == "shell")
+    {
+        let output = invoke(&case.argv);
+        assert_eq!(output.status.code(), Some(case.exit), "{:?}", case.argv);
+        assert_eq!(
+            normalize_version(&text(&output.stdout)),
+            case.stdout,
+            "stdout for {:?}",
+            case.argv
+        );
+        assert_eq!(
+            normalize_version(&text(&output.stderr)),
             case.stderr,
             "stderr for {:?}",
             case.argv

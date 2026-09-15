@@ -159,14 +159,18 @@ pub(crate) fn retained_help(arguments: &[OsString], version: &str) -> Option<Str
     let retained = serde_json::from_str::<serde_json::Value>(RETAINED_HELP).ok()?;
     let cases = retained.get("cases")?.as_array()?;
     let page = cases.iter().find(|case| {
-        case.get("argv")
-            .and_then(serde_json::Value::as_array)
-            .is_some_and(|recorded| {
-                recorded
-                    .iter()
-                    .filter_map(serde_json::Value::as_str)
-                    .eq(argv.iter().map(String::as_str))
-            })
+        case.get("kind")
+            .and_then(serde_json::Value::as_str)
+            .is_some_and(|kind| kind == "help")
+            && case
+                .get("argv")
+                .and_then(serde_json::Value::as_array)
+                .is_some_and(|recorded| {
+                    recorded
+                        .iter()
+                        .filter_map(serde_json::Value::as_str)
+                        .eq(argv.iter().map(String::as_str))
+                })
     })?;
     let stdout = page.get("stdout")?.as_str()?;
     Some(stdout.replace(
@@ -180,6 +184,31 @@ pub(crate) fn unknown_command(name: &str) -> String {
     format!(
         " ›   Error: command {name} not found\n ›\n ›   Usage: quoin <command> [options]\n ›\n ›   Commands: advise, assurance, catalog, change-assurance, completeness, \n ›   config, discharge, evidence, graph, matrix, measurement, module, report, \n ›   review, semantic, sync, to-plan, update, validate, write\n ›\n ›   Run `quoin <command> --help` for details."
     )
+}
+
+/// Render oclif's aggregate missing-flag refusal from Clap's listed options.
+///
+/// Clap already determines which required flags are absent; this function owns
+/// only the retained shell presentation and stable alphabetical ordering.
+pub(crate) fn missing_required_flags(clap_error: &str) -> Option<String> {
+    let mut flags = clap_error
+        .lines()
+        .filter_map(|line| line.trim_start().strip_prefix("--"))
+        .filter_map(|flag| flag.split_whitespace().next())
+        .map(ToOwned::to_owned)
+        .collect::<Vec<_>>();
+    flags.sort_unstable();
+    flags.dedup();
+    (!flags.is_empty()).then(|| {
+        format!(
+            " ›   Error: The following errors occurred:\n{}\n ›   See more help with --help",
+            flags
+                .iter()
+                .map(|flag| format!(" ›     Missing required flag {flag}"))
+                .collect::<Vec<_>>()
+                .join("\n"),
+        )
+    })
 }
 
 fn render_entries(entries: &[(&str, &str)]) -> String {
@@ -227,5 +256,16 @@ mod tests {
         assert!(rendered.contains("TOPICS\n  assurance"));
         assert!(rendered.contains("COMMANDS\n  advise"));
         assert!(rendered.contains("Synchronize the local plan tree with an external tracker"));
+    }
+
+    #[test]
+    fn tc_1650_missing_flags_use_the_retained_aggregate_refusal() {
+        let clap = "error: the following required arguments were not provided:\n  --export <JSON>\n  --premises <JSON>\n  --audit <JSON>\n";
+        assert_eq!(
+            missing_required_flags(clap),
+            Some(
+                " ›   Error: The following errors occurred:\n ›     Missing required flag audit\n ›     Missing required flag export\n ›     Missing required flag premises\n ›   See more help with --help".to_owned()
+            )
+        );
     }
 }

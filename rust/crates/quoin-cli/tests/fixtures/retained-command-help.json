@@ -1,10 +1,11 @@
 {
   "schema_version": 1,
   "captured_by": "scripts/capture-command-contracts.mjs",
-  "captured_revision": "e6a8a37e2907174d2899b2495b35c8b6ca1e3fad",
-  "normalization": "@agent-ix/quoin/<VERSION> replaces retained build and platform version text",
+  "captured_revision": "c7058289df9f9fc583f39186d70bd9578147fff3",
+  "normalization": "@agent-ix/quoin/<VERSION> replaces retained build/platform text; <VERSION> replaces bare SemVer output",
   "cases": [
     {
+      "kind": "help",
       "argv": [
         "--help"
       ],
@@ -13,6 +14,7 @@
       "stderr": ""
     },
     {
+      "kind": "help",
       "argv": [
         "advise",
         "--help"
@@ -22,6 +24,7 @@
       "stderr": ""
     },
     {
+      "kind": "help",
       "argv": [
         "assurance",
         "--help"
@@ -31,6 +34,7 @@
       "stderr": ""
     },
     {
+      "kind": "help",
       "argv": [
         "catalog",
         "--help"
@@ -40,6 +44,7 @@
       "stderr": ""
     },
     {
+      "kind": "help",
       "argv": [
         "catalog",
         "list",
@@ -50,6 +55,7 @@
       "stderr": ""
     },
     {
+      "kind": "help",
       "argv": [
         "catalog",
         "methods",
@@ -60,6 +66,7 @@
       "stderr": ""
     },
     {
+      "kind": "help",
       "argv": [
         "catalog",
         "show",
@@ -70,6 +77,7 @@
       "stderr": ""
     },
     {
+      "kind": "help",
       "argv": [
         "catalog",
         "validate",
@@ -80,6 +88,7 @@
       "stderr": ""
     },
     {
+      "kind": "help",
       "argv": [
         "change-assurance",
         "--help"
@@ -89,6 +98,7 @@
       "stderr": ""
     },
     {
+      "kind": "help",
       "argv": [
         "change-assurance",
         "intake",
@@ -99,6 +109,7 @@
       "stderr": ""
     },
     {
+      "kind": "help",
       "argv": [
         "change-assurance",
         "receipt",
@@ -109,6 +120,7 @@
       "stderr": ""
     },
     {
+      "kind": "help",
       "argv": [
         "change-assurance",
         "recover",
@@ -119,6 +131,7 @@
       "stderr": ""
     },
     {
+      "kind": "help",
       "argv": [
         "change-assurance",
         "schema",
@@ -129,6 +142,7 @@
       "stderr": ""
     },
     {
+      "kind": "help",
       "argv": [
         "change-assurance",
         "seal-attestation",
@@ -139,6 +153,7 @@
       "stderr": ""
     },
     {
+      "kind": "help",
       "argv": [
         "change-assurance",
         "seal-record",
@@ -149,6 +164,7 @@
       "stderr": ""
     },
     {
+      "kind": "help",
       "argv": [
         "change-assurance",
         "verify-receipt",
@@ -159,6 +175,7 @@
       "stderr": ""
     },
     {
+      "kind": "help",
       "argv": [
         "completeness",
         "--help"
@@ -168,6 +185,7 @@
       "stderr": ""
     },
     {
+      "kind": "help",
       "argv": [
         "config",
         "--help"
@@ -177,6 +195,7 @@
       "stderr": ""
     },
     {
+      "kind": "help",
       "argv": [
         "config",
         "doctor",
@@ -187,6 +206,7 @@
       "stderr": ""
     },
     {
+      "kind": "help",
       "argv": [
         "config",
         "edit",
@@ -197,6 +217,7 @@
       "stderr": ""
     },
     {
+      "kind": "help",
       "argv": [
         "config",
         "get",
@@ -207,6 +228,7 @@
       "stderr": ""
     },
     {
+      "kind": "help",
       "argv": [
         "config",
         "set",
@@ -217,6 +239,7 @@
       "stderr": ""
     },
     {
+      "kind": "help",
       "argv": [
         "discharge",
         "--help"
@@ -226,6 +249,7 @@
       "stderr": ""
     },
     {
+      "kind": "help",
       "argv": [
         "evidence",
         "--help"
@@ -235,6 +259,7 @@
       "stderr": ""
     },
     {
+      "kind": "help",
       "argv": [
         "evidence",
         "affirm",
@@ -245,6 +270,7 @@
       "stderr": ""
     },
     {
+      "kind": "help",
       "argv": [
         "evidence",
         "audit",
@@ -255,6 +281,7 @@
       "stderr": ""
     },
     {
+      "kind": "help",
       "argv": [
         "evidence",
         "baseline",
@@ -265,6 +292,7 @@
       "stderr": ""
     },
     {
+      "kind": "help",
       "argv": [
         "evidence",
         "gc",
@@ -275,6 +303,7 @@
       "stderr": ""
     },
     {
+      "kind": "help",
       "argv": [
         "evidence",
         "inspect-mocks",
@@ -285,6 +314,7 @@
       "stderr": ""
     },
     {
+      "kind": "help",
       "argv": [
         "evidence",
         "record",
@@ -295,6 +325,7 @@
       "stderr": ""
     },
     {
+      "kind": "help",
       "argv": [
         "evidence",
         "record-experiment",
@@ -305,6 +336,7 @@
       "stderr": ""
     },
     {
+      "kind": "help",
       "argv": [
         "evidence",
         "record-operational",
@@ -315,6 +347,7 @@
       "stderr": ""
     },
     {
+      "kind": "help",
       "argv": [
         "evidence",
         "trust",
@@ -325,6 +358,7 @@
       "stderr": ""
     },
     {
+      "kind": "help",
       "argv": [
         "graph",
         "--help"
@@ -334,6 +368,7 @@
       "stderr": ""
     },
     {
+      "kind": "help",
       "argv": [
         "graph",
         "change-impact",
@@ -344,6 +379,7 @@
       "stderr": ""
     },
     {
+      "kind": "help",
       "argv": [
         "graph",
         "churn",
@@ -354,6 +390,7 @@
       "stderr": ""
     },
     {
+      "kind": "help",
       "argv": [
         "graph",
         "fan-out",
@@ -364,6 +401,7 @@
       "stderr": ""
     },
     {
+      "kind": "help",
       "argv": [
         "matrix",
         "--help"
@@ -373,6 +411,7 @@
       "stderr": ""
     },
     {
+      "kind": "help",
       "argv": [
         "measurement",
         "--help"
@@ -382,6 +421,7 @@
       "stderr": ""
     },
     {
+      "kind": "help",
       "argv": [
         "measurement",
         "intervention",
@@ -392,6 +432,7 @@
       "stderr": ""
     },
     {
+      "kind": "help",
       "argv": [
         "measurement",
         "operational-release",
@@ -402,6 +443,7 @@
       "stderr": ""
     },
     {
+      "kind": "help",
       "argv": [
         "measurement",
         "record",
@@ -412,6 +454,7 @@
       "stderr": ""
     },
     {
+      "kind": "help",
       "argv": [
         "module",
         "--help"
@@ -421,6 +464,7 @@
       "stderr": ""
     },
     {
+      "kind": "help",
       "argv": [
         "module",
         "ensure-defaults",
@@ -431,6 +475,7 @@
       "stderr": ""
     },
     {
+      "kind": "help",
       "argv": [
         "module",
         "install",
@@ -441,6 +486,7 @@
       "stderr": ""
     },
     {
+      "kind": "help",
       "argv": [
         "module",
         "list",
@@ -451,6 +497,7 @@
       "stderr": ""
     },
     {
+      "kind": "help",
       "argv": [
         "module",
         "remove",
@@ -461,6 +508,7 @@
       "stderr": ""
     },
     {
+      "kind": "help",
       "argv": [
         "plugin",
         "--help"
@@ -470,6 +518,7 @@
       "stderr": ""
     },
     {
+      "kind": "help",
       "argv": [
         "plugin",
         "ensure-defaults",
@@ -480,6 +529,7 @@
       "stderr": ""
     },
     {
+      "kind": "help",
       "argv": [
         "plugin",
         "install",
@@ -490,6 +540,7 @@
       "stderr": ""
     },
     {
+      "kind": "help",
       "argv": [
         "plugin",
         "list",
@@ -500,6 +551,7 @@
       "stderr": ""
     },
     {
+      "kind": "help",
       "argv": [
         "plugin",
         "remove",
@@ -510,6 +562,7 @@
       "stderr": ""
     },
     {
+      "kind": "help",
       "argv": [
         "report",
         "--help"
@@ -519,6 +572,7 @@
       "stderr": ""
     },
     {
+      "kind": "help",
       "argv": [
         "review",
         "--help"
@@ -528,6 +582,7 @@
       "stderr": ""
     },
     {
+      "kind": "help",
       "argv": [
         "semantic",
         "--help"
@@ -537,6 +592,7 @@
       "stderr": ""
     },
     {
+      "kind": "help",
       "argv": [
         "semantic",
         "sweep",
@@ -547,6 +603,7 @@
       "stderr": ""
     },
     {
+      "kind": "help",
       "argv": [
         "sync",
         "--help"
@@ -556,6 +613,7 @@
       "stderr": ""
     },
     {
+      "kind": "help",
       "argv": [
         "to-plan",
         "--help"
@@ -565,6 +623,7 @@
       "stderr": ""
     },
     {
+      "kind": "help",
       "argv": [
         "update",
         "--help"
@@ -574,6 +633,7 @@
       "stderr": ""
     },
     {
+      "kind": "help",
       "argv": [
         "validate",
         "--help"
@@ -583,6 +643,7 @@
       "stderr": ""
     },
     {
+      "kind": "help",
       "argv": [
         "write",
         "--help"
@@ -590,6 +651,55 @@
       "exit": 0,
       "stdout": "Build an authoring pack for spec files an agent is about to create or edit.\n\nUSAGE\n  $ quoin write [REPO_DIR] [--config-root <value>]\n    [--no-project-config] [--types <value>...] [--org <value>] [--json]\n\nARGUMENTS\n  [REPO_DIR]  Target repository directory.\n\nFLAGS\n  --json              Emit the authoring pack as JSON.\n  --org=<value>       Authoring organization. Overrides QUOIN_ORG and the repo's\n                      origin remote.\n  --types=<value>...  Artifact/object type(s), comma-separated or repeated.\n\nGLOBAL FLAGS\n  --config-root=<value>  [env: IX_CONFIG_ROOT] Override the user-level config\n                         root for this invocation.\n  --no-project-config    Disable project-local .ix config layering.\n\nDESCRIPTION\n  Build an authoring pack for spec files an agent is about to create or edit.\n\n  Pass the target repository and the artifact/object types involved in the work.\n  quoin resolves those types from the active catalog and returns the local\n  skeletons, schemas, module roots, and Quire validation command for the repo.\n\n  Notes:\n  - Type lookup is case-insensitive; FR and fr are the same type.\n  - Types can be artifacts or objects from the default module set or modules.\n  - Use the returned skeletons and schemas as the authoring contract.\n  - Run the returned Quire command after editing spec files.\n  - The org is resolved from --org, else QUOIN_ORG, else the repo's origin\n  remote. It is never defaulted: put the reported org in the frontmatter\n  \"org:\" field rather than copying a value from a skeleton.\n\nEXAMPLES\n  $ quoin write . --types FR\n\n  $ quoin write . --types FR,domain,entity\n\n  $ quoin write ../my-service --types fr,DOMAIN --json\n\n  $ quoin write . --types Spec --org acme\n\n",
       "stderr": ""
+    },
+    {
+      "kind": "shell",
+      "argv": [
+        "--version"
+      ],
+      "exit": 0,
+      "stdout": "<VERSION>\n",
+      "stderr": ""
+    },
+    {
+      "kind": "shell",
+      "argv": [
+        "not-a-command"
+      ],
+      "exit": 2,
+      "stdout": "",
+      "stderr": " ›   Error: command not-a-command not found\n ›\n ›   Usage: quoin <command> [options]\n ›\n ›   Commands: advise, assurance, catalog, change-assurance, completeness, \n ›   config, discharge, evidence, graph, matrix, measurement, module, report, \n ›   review, semantic, sync, to-plan, update, validate, write\n ›\n ›   Run `quoin <command> --help` for details.\n"
+    },
+    {
+      "kind": "shell",
+      "argv": [
+        "catalog",
+        "not-a-command",
+        "--format",
+        "json"
+      ],
+      "exit": 2,
+      "stdout": "",
+      "stderr": " ›   Error: command catalog:not-a-command not found\n ›\n ›   Usage: quoin <command> [options]\n ›\n ›   Commands: advise, assurance, catalog, change-assurance, completeness, \n ›   config, discharge, evidence, graph, matrix, measurement, module, report, \n ›   review, semantic, sync, to-plan, update, validate, write\n ›\n ›   Run `quoin <command> --help` for details.\n"
+    },
+    {
+      "kind": "shell",
+      "argv": [
+        "graph"
+      ],
+      "exit": 0,
+      "stdout": "Analyze an existing, accepted Quire assurance export together with retained\nQuoin evidence and an existing FR-032 audit. These commands run no producer,\nsuite, Quire, Git, or network operation and write nothing.\n\nSubcommands:\n  quoin graph fan-out\n  quoin graph change-impact\n  quoin graph churn\n",
+      "stderr": ""
+    },
+    {
+      "kind": "shell",
+      "argv": [
+        "graph",
+        "fan-out"
+      ],
+      "exit": 2,
+      "stdout": "",
+      "stderr": " ›   Error: The following errors occurred:\n ›     Missing required flag audit\n ›     Missing required flag export\n ›     Missing required flag premises\n ›   See more help with --help\n"
     }
   ]
 }

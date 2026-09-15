@@ -2,7 +2,7 @@
 // Copyright (C) 2026 Agent-IX
 
 /**
- * One-time Stage 8 capture of retained oclif help contracts (quoin#520).
+ * One-time Stage 8 capture of retained oclif shell contracts (quoin#520).
  *
  * Run after `pnpm build`, while `bin/quoin.js` is still the published shell:
  *
@@ -92,6 +92,17 @@ const ROUTES = [
   ["write"],
 ];
 
+// These are deterministic, offline shell boundaries that complement the help
+// census. They deliberately avoid commands that read project configuration,
+// run a core subprocess, or contact an update source.
+const SHELL_CASES = [
+  ["--version"],
+  ["not-a-command"],
+  ["catalog", "not-a-command", "--format", "json"],
+  ["graph"],
+  ["graph", "fan-out"],
+];
+
 function gitRevision() {
   const result = spawnSync("git", ["rev-parse", "HEAD"], {
     cwd: root,
@@ -104,32 +115,37 @@ function gitRevision() {
 function normalize(text) {
   return text
     .replace(/@agent-ix\/quoin\/[^\s]+ [^\n]+/g, "@agent-ix/quoin/<VERSION>")
-    .replace(/@agent-ix\/quoin\/[^\s]+/g, "@agent-ix/quoin/<VERSION>");
+    .replace(/@agent-ix\/quoin\/[^\s]+/g, "@agent-ix/quoin/<VERSION>")
+    .replace(/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/gm, "<VERSION>");
 }
 
-const cases = ROUTES.map((route) => {
-  const result = spawnSync(process.execPath, ["bin/quoin.js", ...route, "--help"], {
+function capture(argv, kind) {
+  const result = spawnSync(process.execPath, ["bin/quoin.js", ...argv], {
     cwd: root,
     encoding: "utf8",
   });
   if (result.error || result.status === null) {
-    throw new Error(`${route.join(" ") || "<root>"}: ${result.error?.message ?? "terminated"}`);
+    throw new Error(`${argv.join(" ") || "<root>"}: ${result.error?.message ?? "terminated"}`);
   }
-  const stdout = normalize(result.stdout);
-  const stderr = normalize(result.stderr);
   return {
-    argv: [...route, "--help"],
+    kind,
+    argv,
     exit: result.status,
-    stdout,
-    stderr,
+    stdout: normalize(result.stdout),
+    stderr: normalize(result.stderr),
   };
-});
+}
+
+const cases = [
+  ...ROUTES.map((route) => capture([...route, "--help"], "help")),
+  ...SHELL_CASES.map((argv) => capture(argv, "shell")),
+];
 
 const fixture = {
   schema_version: 1,
   captured_by: "scripts/capture-command-contracts.mjs",
   captured_revision: gitRevision(),
-  normalization: "@agent-ix/quoin/<VERSION> replaces retained build and platform version text",
+  normalization: "@agent-ix/quoin/<VERSION> replaces retained build/platform text; <VERSION> replaces bare SemVer output",
   cases,
 };
 mkdirSync(dirname(output), { recursive: true });

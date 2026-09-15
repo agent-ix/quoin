@@ -107,20 +107,24 @@ fn is_root_help_request(arguments: &[OsString]) -> bool {
 fn run(args: impl IntoIterator<Item = OsString>) -> Result<Response, ShellError> {
     let args = args.into_iter().collect::<Vec<_>>();
     let matches = command().try_get_matches_from(&args).map_err(|error| {
+        let rendered_error = error.to_string();
         let is_help = matches!(
             error.kind(),
             ErrorKind::DisplayHelp | ErrorKind::DisplayVersion
         );
         let invalid_subcommand = error.kind() == ErrorKind::InvalidSubcommand;
+        let missing_required = error.kind() == ErrorKind::MissingRequiredArgument;
         ShellError {
             message: if invalid_subcommand {
                 help::unknown_command(&unknown_command_path(&args))
+            } else if missing_required {
+                help::missing_required_flags(&rendered_error).unwrap_or(rendered_error)
             } else {
-                error.to_string()
+                rendered_error
             },
             exit: if is_help {
                 0
-            } else if invalid_subcommand {
+            } else if invalid_subcommand || missing_required {
                 EXIT_UNKNOWN_COMMAND
             } else {
                 EXIT_INVALID
