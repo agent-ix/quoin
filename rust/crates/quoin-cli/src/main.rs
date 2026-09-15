@@ -12,6 +12,7 @@
 mod catalog;
 mod change_assurance;
 mod core_bridge;
+mod discharge;
 mod evidence;
 mod module;
 mod plugin;
@@ -61,6 +62,9 @@ fn run(args: impl IntoIterator<Item = OsString>) -> Result<Response, String> {
     if let Some(("evidence", evidence)) = matches.subcommand() {
         return evidence::run(evidence);
     }
+    if let Some(("discharge", discharge)) = matches.subcommand() {
+        return discharge::run(discharge);
+    }
     let graph = matches
         .subcommand_matches("graph")
         .ok_or_else(|| "a graph subcommand is required".to_owned())?;
@@ -94,6 +98,7 @@ fn command() -> Command {
         .subcommand(catalog::command())
         .subcommand(change_assurance::command())
         .subcommand(evidence::command())
+        .subcommand(discharge::command())
         .subcommand(module::command())
         .subcommand(plugin::command())
         .subcommand(semantic::command())
