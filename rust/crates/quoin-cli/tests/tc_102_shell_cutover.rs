@@ -18,12 +18,14 @@ fn repository_root() -> PathBuf {
         .to_path_buf()
 }
 
-fn typescript_files(path: &Path, found: &mut Vec<PathBuf>) {
+fn node_sources(path: &Path, found: &mut Vec<PathBuf>) {
     for entry in std::fs::read_dir(path).expect("the source directory is readable") {
         let path = entry.expect("a directory entry").path();
         if path.is_dir() {
-            typescript_files(&path, found);
-        } else if path.extension().is_some_and(|extension| extension == "ts") {
+            node_sources(&path, found);
+        } else if path.extension().is_some_and(|extension| {
+            matches!(extension.to_str(), Some("ts" | "js" | "mjs" | "mts"))
+        }) {
             found.push(path);
         }
     }
@@ -38,6 +40,8 @@ fn tc_1654_the_native_binary_has_no_oclif_or_typescript_shell() {
         "bin/quoin.js",
         "package.json",
         "pnpm-lock.yaml",
+        "cli-agent-evals.config.mjs",
+        "evals",
         "rust/crates/quoin-schemas",
         "src/base.ts",
         "src/cli.ts",
@@ -45,6 +49,7 @@ fn tc_1654_the_native_binary_has_no_oclif_or_typescript_shell() {
         "src/core",
         "src/flow-command.ts",
         "src/hooks",
+        "scripts",
         "vite.config.ts",
     ] {
         assert!(
@@ -53,13 +58,15 @@ fn tc_1654_the_native_binary_has_no_oclif_or_typescript_shell() {
         );
     }
 
-    let source = root.join("src");
-    let mut typescript = Vec::new();
-    if source.exists() {
-        typescript_files(&source, &mut typescript);
+    let mut sources = Vec::new();
+    for directory in ["src", "tests"] {
+        let directory = root.join(directory);
+        if directory.exists() {
+            node_sources(&directory, &mut sources);
+        }
     }
     assert!(
-        typescript.is_empty(),
-        "retired TypeScript sources: {typescript:?}"
+        sources.is_empty(),
+        "retired Node/TypeScript sources: {sources:?}"
     );
 }
