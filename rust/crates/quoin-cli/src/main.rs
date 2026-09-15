@@ -19,6 +19,7 @@ mod core_bridge;
 mod discharge;
 mod evidence;
 mod flow;
+mod invocation;
 mod module;
 mod plugin;
 mod semantic;
@@ -56,6 +57,11 @@ fn run(args: impl IntoIterator<Item = OsString>) -> Result<Response, String> {
     let matches = command()
         .try_get_matches_from(args)
         .map_err(|error| error.to_string())?;
+    let invocation = invocation::Invocation::from_matches(&matches);
+    invocation::with_current(invocation, || dispatch(&matches))
+}
+
+fn dispatch(matches: &ArgMatches) -> Result<Response, String> {
     if let Some(("catalog", catalog)) = matches.subcommand() {
         return catalog::run(catalog);
     }
@@ -132,6 +138,20 @@ fn command() -> Command {
     Command::new("quoin")
         .about("Quoin assurance tooling")
         .version(build_version())
+        .arg(
+            Arg::new("config_root")
+                .long("config-root")
+                .value_name("DIR")
+                .global(true)
+                .help("Override the IX configuration and module home"),
+        )
+        .arg(
+            Arg::new("no_project_config")
+                .long("no-project-config")
+                .global(true)
+                .action(ArgAction::SetTrue)
+                .help("Ignore the project-local .ix configuration layer"),
+        )
         .subcommand_required(true)
         .arg_required_else_help(true)
         .subcommand(catalog::command())
@@ -405,6 +425,27 @@ mod tests {
             !build_version().is_empty(),
             "the native version is always present"
         );
+    }
+
+    /// Trace: FR-016, FR-062
+    #[test]
+    fn tc_373_global_config_flags_are_accepted_after_a_command_path() {
+        let matches = command()
+            .try_get_matches_from([
+                "quoin",
+                "catalog",
+                "list",
+                "--config-root",
+                "/tmp/ix",
+                "--no-project-config",
+            ])
+            .expect("retained global flags parse after subcommands");
+        let invocation = invocation::Invocation::from_matches(&matches);
+        assert_eq!(
+            invocation.config_root().map(std::path::PathBuf::as_path),
+            Some(std::path::Path::new("/tmp/ix"))
+        );
+        assert!(invocation.no_project_config());
     }
 
     /// Tracing: FR-062, FR-102, TC-1650

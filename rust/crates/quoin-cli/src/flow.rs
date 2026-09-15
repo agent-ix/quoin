@@ -9,6 +9,8 @@ use std::process::Command as ProcessCommand;
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use quoin_core::protocol::Response;
 
+use crate::invocation;
+
 const FLOWS: [(&str, &str, &str); 3] = [
     ("review", "spec-review", "review"),
     ("matrix", "spec-matrix", "matrix"),
@@ -100,6 +102,9 @@ fn skill_path(package_skill: &str, runtime_skill: &str) -> Result<PathBuf, Strin
 }
 
 fn ix_home() -> PathBuf {
+    if let Some(root) = invocation::current().config_root() {
+        return root.clone();
+    }
     std::env::var_os("IX_HOME")
         .filter(|home| !home.is_empty())
         .map_or_else(

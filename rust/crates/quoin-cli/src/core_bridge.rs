@@ -13,6 +13,8 @@ use std::process::{Command, Stdio};
 
 use quoin_core::protocol::{Diagnostic, Outcome, Response, canonical_json};
 
+use crate::invocation;
+
 /// Invoke one command-shaped core operation through the governed executable.
 ///
 /// `QUOIN_CORE` selects an explicit candidate in verification; ordinary local
@@ -21,6 +23,9 @@ pub(crate) fn invoke(operation: &str, request: &serde_json::Value) -> Result<Res
     let executable = std::env::var_os("QUOIN_CORE").unwrap_or_else(|| "quoin-core".into());
     let mut command = Command::new(executable);
     command.arg(operation);
+    if let Some(root) = invocation::current().config_root() {
+        command.env("IX_HOME", root);
+    }
     if std::env::var_os("QUOIN_SEMANTIC_ROOT").is_none() {
         let vendored =
             std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../../src/semantic");

@@ -9,6 +9,7 @@ use clap::{Arg, ArgAction, ArgMatches, Command};
 use quoin_core::protocol::Response;
 
 use crate::core_bridge::invoke;
+use crate::invocation;
 
 const DEFAULT_MODULES: &str = include_str!("../../../../default-modules.yaml");
 
@@ -93,17 +94,29 @@ pub(crate) fn run(arguments: &ArgMatches) -> Result<Response, String> {
 }
 
 fn resolve_org(flag: Option<&String>, root: &Path) -> Result<Response, String> {
-    let user = std::env::var_os("XDG_CONFIG_HOME")
+    let invocation = invocation::current();
+    let configured_root = invocation.config_root().cloned().or_else(|| {
+        std::env::var_os("IX_CONFIG_ROOT")
+            .filter(|root| !root.is_empty())
+            .map(PathBuf::from)
+    });
+    let default_root = std::env::var_os("XDG_CONFIG_HOME")
         .map(PathBuf::from)
         .or_else(|| std::env::var_os("HOME").map(|home| PathBuf::from(home).join(".config")))
-        .map(|root| root.join("ix/config.d/quoin.yaml"))
+        .map(|root| root.join("ix"));
+    let user = configured_root
+        .or(default_root)
+        .map(|root| root.join("config.d/quoin.yaml"))
+        .and_then(|path| read_if_present(&path));
+    let project = (!invocation.no_project_config())
+        .then(|| root.join(".ix/config.d/quoin.yaml"))
         .and_then(|path| read_if_present(&path));
     let git = git_dir(root)
         .map(|directory| directory.join("config"))
         .and_then(|path| read_if_present(&path));
     invoke(
         "config.resolve_org",
-        &serde_json::json!({ "flag": flag, "env": std::env::var("QUOIN_ORG").ok().map(|value| serde_json::json!({ "QUOIN_ORG": value })).unwrap_or_default(), "user_config": user, "git_config": git }),
+        &serde_json::json!({ "flag": flag, "env": std::env::var("QUOIN_ORG").ok().map(|value| serde_json::json!({ "QUOIN_ORG": value })).unwrap_or_default(), "user_config": user, "project_config": project, "git_config": git }),
     )
 }
 fn read_if_present(path: &Path) -> Option<String> {
