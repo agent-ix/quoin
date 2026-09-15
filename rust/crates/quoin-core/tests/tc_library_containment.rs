@@ -23,9 +23,10 @@ use engineering_assurance::source_audit::{
     RustSourceAuditRole, RustSourceFindingCategory, audit_rust_source,
 };
 
-/// The one file in this crate allowed to hold a host capability: the I/O
-/// shell. Everything else under `src/` is the library half.
-const IO_SHELL: &str = "main.rs";
+/// The protocol I/O shell and its explicit production host constructor are
+/// capability-bearing boundary code. Everything else under `src/` is the
+/// reusable, filesystem-free engine.
+const BOUNDARY_SOURCES: &[&str] = &["main.rs", "runtime.rs"];
 
 fn crate_root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).to_path_buf()
@@ -43,7 +44,9 @@ fn library_sources(dir: &Path, out: &mut Vec<PathBuf>) -> std::io::Result<()> {
         if path.is_dir() {
             library_sources(&path, out)?;
         } else if path.extension().is_some_and(|ext| ext == "rs")
-            && path.file_name().is_some_and(|name| name != IO_SHELL)
+            && path
+                .file_name()
+                .is_some_and(|name| !BOUNDARY_SOURCES.contains(&name.to_str().unwrap_or_default()))
         {
             out.push(path);
         }
@@ -99,7 +102,7 @@ fn tc_373_the_library_half_names_no_host_capability() {
     assert_eq!(
         offences,
         Vec::<String>::new(),
-        "the library half acquired a host capability; move it into main.rs or \
+        "the library half acquired a host capability; move it into runtime.rs or \
          state why the boundary now needs it"
     );
 }

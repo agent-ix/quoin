@@ -1,8 +1,9 @@
 # Native Quoin release contract
 
-The native release artifact is named **`quoin`**. It is independent of the
-temporary `quoin-core` boundary executable and of the Rust crate name
-`quoin-cli`.
+The native release artifact is named **`quoin`**. The CLI calls the governed
+Rust runtime in-process; the temporary `quoin-core` protocol executable is
+retained only for wire-parity evidence until the Stage 9 deletion cutover.
+The artifact contract is independent of the Rust crate name `quoin-cli`.
 
 Every stable GitHub Release carries `quoin-update-manifest.json` and one asset
 per supported target:
