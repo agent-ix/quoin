@@ -48,6 +48,13 @@ const GRAPH_DESCRIPTION: &str = "Analyze an existing, accepted Quire assurance e
 struct ShellError {
     message: String,
     exit: u8,
+    stream: ShellOutput,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum ShellOutput {
+    Stdout,
+    Stderr,
 }
 
 impl ShellError {
@@ -55,6 +62,7 @@ impl ShellError {
         Self {
             message: message.into(),
             exit: EXIT_INVALID,
+            stream: ShellOutput::Stderr,
         }
     }
 }
@@ -67,27 +75,46 @@ fn main() -> std::process::ExitCode {
     match run(arguments) {
         Ok(response) => emit(&response),
         Err(error) => {
-            let _ = writeln!(std::io::stderr(), "{}", error.message);
+            match error.stream {
+                ShellOutput::Stdout => {
+                    let _ = writeln!(std::io::stdout(), "{}", error.message);
+                }
+                ShellOutput::Stderr => {
+                    let _ = writeln!(std::io::stderr(), "{}", error.message);
+                }
+            }
             std::process::ExitCode::from(error.exit)
         }
     }
 }
 
 fn run(args: impl IntoIterator<Item = OsString>) -> Result<Response, ShellError> {
-    let matches = command()
-        .try_get_matches_from(args)
-        .map_err(|error| ShellError {
-            message: if error.kind() == ErrorKind::InvalidSubcommand {
+    let matches = command().try_get_matches_from(args).map_err(|error| {
+        let is_help = matches!(
+            error.kind(),
+            ErrorKind::DisplayHelp | ErrorKind::DisplayVersion
+        );
+        let invalid_subcommand = error.kind() == ErrorKind::InvalidSubcommand;
+        ShellError {
+            message: if invalid_subcommand {
                 format!("{}\n{}", error, root_usage())
             } else {
                 error.to_string()
             },
-            exit: if error.kind() == ErrorKind::InvalidSubcommand {
+            exit: if is_help {
+                0
+            } else if invalid_subcommand {
                 EXIT_UNKNOWN_COMMAND
             } else {
                 EXIT_INVALID
             },
-        })?;
+            stream: if is_help {
+                ShellOutput::Stdout
+            } else {
+                ShellOutput::Stderr
+            },
+        }
+    })?;
     let invocation = invocation::Invocation::from_matches(&matches);
     invocation::with_current(invocation, || dispatch(&matches)).map_err(ShellError::invalid)
 }
@@ -582,6 +609,25 @@ mod tests {
             !build_version().is_empty(),
             "the native version is always present"
         );
+    }
+
+    /// Trace: FR-003, FR-102, TC-1650
+    #[test]
+    fn tc_1650_help_is_a_successful_stdout_response_not_a_parse_failure() {
+        for arguments in [
+            vec![OsString::from("quoin"), OsString::from("--help")],
+            vec![
+                OsString::from("quoin"),
+                OsString::from("config"),
+                OsString::from("get"),
+                OsString::from("--help"),
+            ],
+        ] {
+            let help = run(arguments).expect_err("clap returns a display response");
+            assert_eq!(help.exit, 0);
+            assert_eq!(help.stream, ShellOutput::Stdout);
+            assert!(help.message.contains("Usage:"));
+        }
     }
 
     /// Trace: FR-016, FR-062
