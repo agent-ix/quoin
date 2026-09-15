@@ -8,17 +8,12 @@ rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
 authors.workspace = true
-description = "The quoin engine boundary: one subprocess, JSON in on stdin, JSON out on stdout."
+description = "The shared Rust runtime behind the native quoin executable."
 publish.workspace = true
-default-run = "quoin-core"
 
 [lib]
 name = "quoin_core"
 path = "src/lib.rs"
-
-[[bin]]
-name = "quoin-core"
-path = "src/main.rs"
 
 [lints]
 workspace = true

@@ -4,10 +4,9 @@
 //! The library half of `quoin-core` holds no host capability, checked by the
 //! shared Engineering Assurance auditor rather than by a local one.
 //!
-//! `.claude/skills/rust-style/SKILL.md` states the rule in prose: "`main.rs`
-//! does four things — argv, stdin, dispatch, two writes and an exit — and must
-//! keep doing only four. Everything decidable lives in the library so it is
-//! unit-testable without spawning a process." Prose is not a gate. A single
+//! The boundary rule is that [`crate::runtime`] is the sole host-capability
+//! construction surface. Everything decidable lives in the library so it is
+//! unit-testable without spawning a process. Prose is not a gate. A single
 //! `std::fs::read_to_string` added to `ops/` would pass every existing test,
 //! pass clippy, and quietly make the boundary untestable without a filesystem.
 //!
@@ -23,10 +22,9 @@ use engineering_assurance::source_audit::{
     RustSourceAuditRole, RustSourceFindingCategory, audit_rust_source,
 };
 
-/// The protocol I/O shell and its explicit production host constructor are
-/// capability-bearing boundary code. Everything else under `src/` is the
-/// reusable, filesystem-free engine.
-const BOUNDARY_SOURCES: &[&str] = &["main.rs", "runtime.rs"];
+/// The explicit production host constructor is capability-bearing boundary
+/// code. Everything else under `src/` is the reusable, filesystem-free engine.
+const BOUNDARY_SOURCES: &[&str] = &["runtime.rs"];
 
 fn crate_root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).to_path_buf()

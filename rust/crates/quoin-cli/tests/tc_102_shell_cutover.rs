@@ -70,4 +70,16 @@ fn tc_1654_the_native_binary_has_no_oclif_or_typescript_shell() {
         sources.is_empty(),
         "retired Node/TypeScript sources: {sources:?}"
     );
+
+    let core = root.join("rust/crates/quoin-core");
+    let core_manifest = std::fs::read_to_string(core.join("Cargo.toml"))
+        .expect("the shared runtime manifest is readable");
+    assert!(
+        !core_manifest.contains("[[bin]]") && !core_manifest.contains("default-run"),
+        "quoin-core must remain a library, not a second executable target"
+    );
+    assert!(
+        !core.join("src/main.rs").exists(),
+        "the retired quoin-core executable source remains"
+    );
 }
