@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
 
-//! The `evidence` operations, reached by their wire names (quoin#458).
+//! The `evidence` operations, reached through the production runtime (quoin#458).
 //!
 //! `tc_447_600_every_operation_is_invoked_by_name_by_some_test` requires every
-//! entry in `OPERATIONS` to be handed to the REAL BINARY, spelled, by some
+//! entry in `OPERATIONS` to be handed to the production runtime, spelled, by some
 //! integration test — because a swapped match arm leaves the drift guard, the
 //! unit tests and native fixture replays all green and breaks only for a user. A unit
 //! test that calls the handler function directly cannot see that swap at all.
@@ -15,8 +15,8 @@
 //! the discriminating key, never on the shared one.
 //!
 //! This file is also the one place the whole crossing runs end to end: a real
-//! evidence store on a real temporary repository, a real subprocess, canonical
-//! JSON on stdout and the exit taxonomy on the status.
+//! evidence store on a real temporary repository, canonical JSON response
+//! payloads and the same exit taxonomy.
 
 #![allow(
     clippy::unwrap_used,
@@ -26,10 +26,10 @@
 )]
 
 use std::fs;
-use std::io::Write as _;
 use std::path::{Path, PathBuf};
-use std::process::{Command, Stdio};
 
+use quoin_core::protocol::{Diagnostic, Response, canonical_json};
+use quoin_core::runtime::{RuntimeSettings, dispatch};
 use serde_json::{Value, json};
 
 struct Run {
@@ -38,26 +38,28 @@ struct Run {
     status: i32,
 }
 
-/// Invoke the binary with `op` on argv and `request` on stdin.
+/// Invoke the runtime with the operation and request.
 fn run(op: &str, request: &Value) -> Run {
-    let mut child = Command::new(env!("CARGO_BIN_EXE_quoin-core"))
-        .arg(op)
-        .stdin(Stdio::piped())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .spawn()
-        .unwrap();
-    child
-        .stdin
-        .as_mut()
-        .unwrap()
-        .write_all(request.to_string().as_bytes())
-        .unwrap();
-    let out = child.wait_with_output().unwrap();
+    let response =
+        dispatch(op, request, &RuntimeSettings::default()).unwrap_or_else(|error| Response {
+            payload: Value::Null,
+            diagnostics: vec![Diagnostic::from(&error)],
+            outcome: error.outcome(),
+        });
+    let stdout = if response.outcome.carries_payload() {
+        canonical_json(&response.payload).unwrap()
+    } else {
+        String::new()
+    };
+    let stderr = if response.diagnostics.is_empty() {
+        String::new()
+    } else {
+        canonical_json(&response.diagnostics).unwrap()
+    };
     Run {
-        stdout: String::from_utf8(out.stdout).unwrap(),
-        stderr: String::from_utf8(out.stderr).unwrap(),
-        status: out.status.code().unwrap(),
+        stdout,
+        stderr,
+        status: i32::from(response.outcome.code()),
     }
 }
 
