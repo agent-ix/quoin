@@ -116,9 +116,22 @@ fn resolve_org(flag: Option<&String>, root: &Path) -> Result<Response, String> {
         .and_then(|path| read_if_present(&path));
     invoke(
         "config.resolve_org",
-        &serde_json::json!({ "flag": flag, "env": std::env::var("QUOIN_ORG").ok().map(|value| serde_json::json!({ "QUOIN_ORG": value })).unwrap_or_default(), "user_config": user, "project_config": project, "git_config": git }),
+        &serde_json::json!({ "flag": flag, "env": org_environment(std::env::var("QUOIN_ORG").ok()), "user_config": user, "project_config": project, "git_config": git }),
     )
 }
+
+/// Build the declared environment object consumed by `config.resolve_org`.
+///
+/// The core request schema deliberately requires a map. `Value::default()` is
+/// JSON `null`, so an unset `QUOIN_ORG` must become `{}` rather than the
+/// default JSON value.
+fn org_environment(org: Option<String>) -> serde_json::Value {
+    org.map_or_else(
+        || serde_json::json!({}),
+        |value| serde_json::json!({ "QUOIN_ORG": value }),
+    )
+}
+
 fn read_if_present(path: &Path) -> Option<String> {
     std::fs::metadata(path)
         .ok()
@@ -286,7 +299,7 @@ fn quote(value: &str) -> String {
 #[cfg(test)]
 #[allow(clippy::expect_used, reason = "test fixtures may panic")]
 mod tests {
-    use super::{command, quote, types};
+    use super::{command, org_environment, quote, types};
 
     /// Trace: FR-025, FR-062
     #[test]
@@ -321,5 +334,18 @@ mod tests {
     fn tc_373_744_quotes_validation_scopes_for_a_posix_shell() {
         assert_eq!(quote("/tmp/my repo"), "'/tmp/my repo'");
         assert_eq!(quote("/tmp/plain"), "/tmp/plain");
+    }
+
+    /// Trace: FR-025
+    /// Provenance: quoin#525
+    /// The normal, unset environment must still cross the core boundary as the
+    /// required object, not JSON `null`.
+    #[test]
+    fn tc_525_001_unset_org_environment_is_an_empty_object() {
+        assert_eq!(org_environment(None), serde_json::json!({}));
+        assert_eq!(
+            org_environment(Some("agent-ix".to_owned())),
+            serde_json::json!({ "QUOIN_ORG": "agent-ix" })
+        );
     }
 }
