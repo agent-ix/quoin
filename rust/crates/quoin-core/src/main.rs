@@ -43,6 +43,10 @@
 use std::io::Write as _;
 use std::path::{Component, Path, PathBuf};
 
+use quoin_auditor::catalog::load_method_catalog_from;
+use quoin_auditor::{
+    DiskModuleCatalogSource, ModuleRoot as AuditorModuleRoot, load_method_catalog,
+};
 use quoin_catalog::ModuleDocument;
 use quoin_change_assurance::EvidenceStore;
 use quoin_change_assurance::intake::disk::DiskEvidenceStore;
@@ -123,6 +127,9 @@ struct HostCatalog {
     default_home: IxHome,
     /// Explicit module candidates supplied by the process environment.
     env_roots: Vec<PathBuf>,
+    /// Original module search path for the method-catalog source. The source
+    /// owns this compatibility grammar; the artifact catalog owns its own.
+    module_paths: Option<String>,
 }
 
 impl HostCatalog {
@@ -131,6 +138,9 @@ impl HostCatalog {
             std::env::var("IX_HOME").ok().as_deref(),
             std::env::home_dir().as_deref(),
         );
+        let module_paths = std::env::var("QUOIN_MODULE_PATHS")
+            .ok()
+            .filter(|value| !value.is_empty());
         let env_roots = std::env::var_os("QUOIN_MODULE_PATHS")
             .map(|value| {
                 std::env::split_paths(&value)
@@ -141,6 +151,7 @@ impl HostCatalog {
         Self {
             default_home,
             env_roots,
+            module_paths,
         }
     }
 
@@ -226,6 +237,21 @@ impl CatalogHost for HostCatalog {
             });
         }
         Ok(documents)
+    }
+
+    fn load_method_catalog(&self, roots: Option<&[PathBuf]>) -> quoin_auditor::MethodCatalog {
+        let source =
+            DiskModuleCatalogSource::new(self.default_home.as_path(), self.module_paths.clone());
+        roots.map_or_else(
+            || load_method_catalog(&source),
+            |roots| {
+                let candidates = roots
+                    .iter()
+                    .map(|root| AuditorModuleRoot::candidate(root.to_string_lossy()))
+                    .collect::<Vec<_>>();
+                load_method_catalog_from(&source, &candidates)
+            },
+        )
     }
 }
 

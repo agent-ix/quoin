@@ -64,6 +64,7 @@
 
 use std::path::{Path, PathBuf};
 
+use quoin_auditor::MethodCatalog;
 use quoin_catalog::ModuleDocument;
 use quoin_change_assurance::EvidenceStore;
 use quoin_evidence::EvidenceSource;
@@ -150,6 +151,13 @@ pub trait CatalogHost {
     /// The first filesystem failure that prevents an otherwise located module
     /// from being represented.
     fn read_modules(&self, roots: Option<&[PathBuf]>) -> std::io::Result<Vec<ModuleDocument>>;
+
+    /// Merge the verification-method declarations from the located modules.
+    ///
+    /// A malformed or unreadable manifest is report data, not an operation
+    /// failure: `quoin catalog methods` is the diagnostic an operator uses to
+    /// see precisely those module problems (quoin#106).
+    fn load_method_catalog(&self, roots: Option<&[PathBuf]>) -> MethodCatalog;
 }
 
 /// Reading the vendored semantic contract, and the trees it judges

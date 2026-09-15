@@ -115,6 +115,52 @@ pub fn load(
     ok(&catalog)
 }
 
+/// Answer `catalog.methods`.
+///
+/// This is deliberately a separate command-shaped operation rather than a
+/// client-side reimplementation of the method merge. The auditor and the
+/// command must consume the same first-wins catalog (quire-rs FR-054).
+///
+/// # Errors
+/// Returns a request/refusal/internal [`CoreError`] when the request is
+/// malformed or oversized, a root exceeds its byte ceiling, or no catalog host
+/// was granted.
+pub fn methods(
+    request: &serde_json::Value,
+    capabilities: &Capabilities<'_>,
+) -> Result<Response, CoreError> {
+    let size = request_size(request)?;
+    if size > MAX_LOAD_BYTES {
+        return Err(refusal("catalog.methods", MAX_LOAD_BYTES, size));
+    }
+    let request: LoadRequest = serde_json::from_value(request.clone()).map_err(|error| {
+        CoreError::new(CoreErrorCode::BadRequest, error.to_string())
+            .with_context("op", "catalog.methods")
+    })?;
+    if let Some(roots) = &request.roots {
+        for root in roots {
+            if root.len() > MAX_ROOT_BYTES {
+                return Err(CoreError::new(
+                    CoreErrorCode::Refused,
+                    "catalog root exceeds the accepted size",
+                )
+                .with_context("op", "catalog.methods")
+                .with_context("field", "roots")
+                .with_context("limit_bytes", MAX_ROOT_BYTES.to_string())
+                .with_context("observed_bytes", root.len().to_string()));
+            }
+        }
+    }
+    let roots: Option<Vec<PathBuf>> = request
+        .roots
+        .as_ref()
+        .map(|roots| roots.iter().map(PathBuf::from).collect());
+    let catalog = catalog_host(capabilities)?.load_method_catalog(roots.as_deref());
+    serde_json::to_value(catalog)
+        .map(Response::ok)
+        .map_err(|error| CoreError::new(CoreErrorCode::Io, error.to_string()))
+}
+
 fn catalog_host<'a>(capabilities: &'a Capabilities<'a>) -> Result<&'a dyn CatalogHost, CoreError> {
     capabilities.catalog.ok_or_else(|| {
         CoreError::new(
@@ -163,11 +209,12 @@ fn ok(catalog: &Catalog) -> Result<Response, CoreError> {
 mod tests {
     use std::path::{Path, PathBuf};
 
+    use quoin_auditor::MethodCatalog;
     use quoin_catalog::ModuleDocument;
     use quoin_semantic::{SemanticError, SemanticReadResult};
     use serde_json::json;
 
-    use super::load;
+    use super::{load, methods};
     use crate::capabilities::{Capabilities, CatalogHost, SemanticHost};
 
     struct CatalogFixture;
@@ -180,6 +227,11 @@ mod tests {
                 manifest: "name: example\nartifact_types: [{name: FR}]\n".to_owned(),
                 skeleton_names: vec!["FR.md".to_owned()],
             }])
+        }
+
+        fn load_method_catalog(&self, roots: Option<&[PathBuf]>) -> MethodCatalog {
+            assert!(roots.is_none());
+            MethodCatalog::default()
         }
     }
 
@@ -220,9 +272,39 @@ mod tests {
                 },
             ])
         }
+
+        fn load_method_catalog(&self, _roots: Option<&[PathBuf]>) -> MethodCatalog {
+            MethodCatalog::default()
+        }
     }
 
     struct RejectIgnoredSemanticFixture;
+
+    struct MethodCatalogFixture;
+
+    impl CatalogHost for MethodCatalogFixture {
+        fn read_modules(&self, _roots: Option<&[PathBuf]>) -> std::io::Result<Vec<ModuleDocument>> {
+            Ok(Vec::new())
+        }
+
+        fn load_method_catalog(&self, roots: Option<&[PathBuf]>) -> MethodCatalog {
+            assert!(roots.is_none());
+            serde_json::from_value(json!({
+                "methods": [{
+                    "id": "analysis",
+                    "name": "Analysis",
+                    "class": "Analysis",
+                    "definition": "inspect",
+                    "applicability": {},
+                    "tooling": [],
+                    "moduleName": "fixture"
+                }],
+                "duplicates": [],
+                "unreadable": []
+            }))
+            .expect("fixture is a method catalog")
+        }
+    }
 
     impl SemanticHost for RejectIgnoredSemanticFixture {
         fn read_module(&self, module_root: &Path) -> Result<SemanticReadResult, SemanticError> {
@@ -241,6 +323,30 @@ mod tests {
         ) -> Result<quoin_semantic::SweepReport, SemanticError> {
             unreachable!("catalog does not sweep corpora")
         }
+    }
+
+    /// Trace: FR-101
+    #[test]
+    fn tc_373_catalog_methods_uses_the_granted_first_wins_projection() {
+        let catalog = MethodCatalogFixture;
+        let response = methods(&json!({}), &Capabilities::with_catalog(&catalog))
+            .expect("method catalog loads");
+        assert_eq!(
+            response.payload,
+            json!({
+                "methods": [{
+                    "id": "analysis",
+                    "name": "Analysis",
+                    "class": "Analysis",
+                    "definition": "inspect",
+                    "applicability": {},
+                    "tooling": [],
+                    "moduleName": "fixture"
+                }],
+                "duplicates": [],
+                "unreadable": []
+            })
+        );
     }
 
     /// Trace: FR-101

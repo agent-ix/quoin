@@ -110,3 +110,38 @@ fn tc_373_catalog_load_retains_a_symlink_candidates_lexical_path() {
         Some(&json!(candidate.to_string_lossy()))
     );
 }
+
+/// Trace: FR-096, FR-101
+/// Provenance: quoin#373
+#[test]
+fn tc_373_catalog_methods_preserves_first_wins_method_catalog_data() {
+    let temporary = tempfile::tempdir().expect("temporary root");
+    let parent = temporary.path().join("candidates");
+    let first = parent.join("first");
+    let second = parent.join("second");
+    fs::create_dir_all(&first).expect("first module directory");
+    fs::create_dir_all(&second).expect("second module directory");
+    fs::write(
+        first.join("manifest.yaml"),
+        "name: first\nverification_catalog:\n  analysis:\n    name: First analysis\n    class: Analysis\n    definition: inspect\n",
+    )
+    .expect("first manifest writes");
+    fs::write(
+        second.join("manifest.yaml"),
+        "name: second\nverification_catalog:\n  analysis:\n    name: Second analysis\n    class: Test\n    definition: execute\n",
+    )
+    .expect("second manifest writes");
+
+    let (status, stdout, stderr) = run("catalog.methods", &json!({ "roots": [first, second] }));
+    assert_eq!(status, 0, "{stderr}");
+    assert_eq!(stderr, "");
+    let payload: Value = serde_json::from_str(&stdout).expect("method catalog payload");
+    assert_eq!(
+        payload.pointer("/methods/0/name"),
+        Some(&json!("First analysis"))
+    );
+    assert_eq!(
+        payload.pointer("/duplicates/0/modules"),
+        Some(&json!(["first", "second"]))
+    );
+}
