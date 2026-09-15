@@ -3,7 +3,7 @@
   "repositories": {
     "quoin": {
       "remote": "https://github.com/agent-ix/quoin",
-      "revision": "94ef695a077f81c504a2e9452e3858aa836f2d43"
+      "revision": "69718640f2f0f172d2a6978718fd3fb5da506e5e"
     },
     "quire": {
       "remote": "https://github.com/agent-ix/quire-rs",
@@ -86,8 +86,8 @@
     ".github/workflows/build-test.yml": "sha256:df2f1f6fa1ac1670e6f54b4e9f415a62f0eae28e63bcc4f16cc9e0b42852a9c5",
     "scripts/check-tool-drift.mjs": "sha256:ff988d31a5f8708107d6166eb1a1bc311fd21a91ea44875ca08cd74a62e25d56",
     "scripts/check-tool-drift-selftest.mjs": "sha256:b44a83d103b0fa6aaac7122873a16d73402a5738109fa1d834e07b67b84082fc",
-    "scripts/verification-stack.mjs": "sha256:6226a3ed12677e2ea728c144ffdcf6c1c21c0cfd992e48b90acc59b591ef76b8",
-    "scripts/verification-stack-selftest.mjs": "sha256:e6c6693e8d2a8879d92516a240228a34892b6540e68a3db081847fd5f37b9d3c",
+    "scripts/verification-stack.mjs": "sha256:497cc28a8074932e92c2955dc5f7ca33b81d927f0af6fd6382bbb509bba76108",
+    "scripts/verification-stack-selftest.mjs": "sha256:636e7110568f510189d17881842ed11efae8d00efb1496f901888f5cc77904a8",
     "scripts/copy-schemas.mjs": "sha256:99a960974e18612c0e6c50cbdf3a1c979c30f7ab3fd024cd84891c1419ac4818",
     "scripts/verify-span-breadth.mjs": "sha256:4ab0f359688e093c48414bdfec6e4d3915f8580ee652a31f796e4cc7c81e8869",
     "scripts/bench-tier1.mjs": "sha256:fe6356a91e94b6fca311dfc7995459b91f21e240c5e55017dfca6f7e6c6e0388",
