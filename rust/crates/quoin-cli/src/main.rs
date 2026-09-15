@@ -19,6 +19,7 @@ mod core_runtime;
 mod discharge;
 mod evidence;
 mod flow;
+mod help;
 mod invocation;
 mod measurement;
 mod module;
@@ -128,17 +129,7 @@ fn run(args: impl IntoIterator<Item = OsString>) -> Result<Response, ShellError>
 }
 
 fn root_usage() -> String {
-    let root = command();
-    let mut topics = root
-        .get_subcommands()
-        .filter(|command| !command.is_hide_set())
-        .map(Command::get_name)
-        .collect::<Vec<_>>();
-    topics.sort_unstable();
-    format!(
-        "Usage: quoin <command> [options]\n\nCommands: {}\n\nRun `quoin <command> --help` for details.",
-        topics.join(", ")
-    )
+    help::root_usage(build_version())
 }
 
 fn dispatch(matches: &ArgMatches) -> Result<Response, String> {
@@ -633,7 +624,8 @@ mod tests {
             OsString::from("catalog"),
             OsString::from("--help"),
         ]));
-        assert!(root_usage().contains("Usage: quoin <command> [options]"));
+        help::assert_catalogue_matches(&command());
+        assert!(root_usage().contains("USAGE\n  $ quoin [COMMAND]"));
     }
 
     /// Trace: FR-003, FR-102, TC-1650
@@ -746,14 +738,14 @@ mod tests {
             .expect_err("unknown command is refused");
         assert_eq!(error.exit, EXIT_UNKNOWN_COMMAND);
         assert!(error.message.contains("bogus"));
-        assert!(error.message.contains("Usage: quoin <command> [options]"));
+        assert!(error.message.contains("USAGE\n  $ quoin [COMMAND]"));
         assert!(
             error
                 .message
-                .contains("Commands: advise, assurance, catalog")
+                .contains("COMMANDS\n  advise            Recommend a verification method")
         );
         assert!(
-            !error.message.contains("plugin,"),
+            !error.message.contains("  plugin            "),
             "the hidden compatibility alias is not advertised"
         );
     }
