@@ -30,7 +30,7 @@ mod write;
 use std::ffi::OsString;
 use std::io::Write as _;
 
-use clap::{Arg, ArgAction, ArgMatches, Command};
+use clap::{Arg, ArgAction, ArgMatches, Command, error::ErrorKind};
 use quoin_core::capabilities::Capabilities;
 use quoin_core::ops::graph::{change_impact, churn, fan_out};
 use quoin_core::protocol::{Diagnostic, Outcome, Response, canonical_json};
@@ -38,6 +38,22 @@ use quoin_graph_analysis::OsGraphInputReader;
 
 const EXIT_INVALID: u8 = Outcome::Invalid.code();
 const EXIT_INTERNAL: u8 = Outcome::Internal.code();
+const EXIT_UNKNOWN_COMMAND: u8 = Outcome::Refused.code();
+
+#[derive(Debug)]
+struct ShellError {
+    message: String,
+    exit: u8,
+}
+
+impl ShellError {
+    fn invalid(message: impl Into<String>) -> Self {
+        Self {
+            message: message.into(),
+            exit: EXIT_INVALID,
+        }
+    }
+}
 
 fn main() -> std::process::ExitCode {
     let arguments = std::env::args_os().collect::<Vec<_>>();
@@ -46,19 +62,26 @@ fn main() -> std::process::ExitCode {
     }
     match run(arguments) {
         Ok(response) => emit(&response),
-        Err(message) => {
-            let _ = writeln!(std::io::stderr(), "{message}");
-            std::process::ExitCode::from(EXIT_INVALID)
+        Err(error) => {
+            let _ = writeln!(std::io::stderr(), "{}", error.message);
+            std::process::ExitCode::from(error.exit)
         }
     }
 }
 
-fn run(args: impl IntoIterator<Item = OsString>) -> Result<Response, String> {
+fn run(args: impl IntoIterator<Item = OsString>) -> Result<Response, ShellError> {
     let matches = command()
         .try_get_matches_from(args)
-        .map_err(|error| error.to_string())?;
+        .map_err(|error| ShellError {
+            message: error.to_string(),
+            exit: if error.kind() == ErrorKind::InvalidSubcommand {
+                EXIT_UNKNOWN_COMMAND
+            } else {
+                EXIT_INVALID
+            },
+        })?;
     let invocation = invocation::Invocation::from_matches(&matches);
-    invocation::with_current(invocation, || dispatch(&matches))
+    invocation::with_current(invocation, || dispatch(&matches)).map_err(ShellError::invalid)
 }
 
 fn dispatch(matches: &ArgMatches) -> Result<Response, String> {
@@ -446,6 +469,15 @@ mod tests {
             Some(std::path::Path::new("/tmp/ix"))
         );
         assert!(invocation.no_project_config());
+    }
+
+    /// Trace: FR-005, FR-062
+    #[test]
+    fn tc_373_unknown_commands_name_the_input_and_keep_the_refusal_status() {
+        let error = run([OsString::from("quoin"), OsString::from("bogus")])
+            .expect_err("unknown command is refused");
+        assert_eq!(error.exit, EXIT_UNKNOWN_COMMAND);
+        assert!(error.message.contains("bogus"));
     }
 
     /// Tracing: FR-062, FR-102, TC-1650
