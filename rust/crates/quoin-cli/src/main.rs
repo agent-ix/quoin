@@ -105,7 +105,8 @@ fn is_root_help_request(arguments: &[OsString]) -> bool {
 }
 
 fn run(args: impl IntoIterator<Item = OsString>) -> Result<Response, ShellError> {
-    let matches = command().try_get_matches_from(args).map_err(|error| {
+    let args = args.into_iter().collect::<Vec<_>>();
+    let matches = command().try_get_matches_from(&args).map_err(|error| {
         let is_help = matches!(
             error.kind(),
             ErrorKind::DisplayHelp | ErrorKind::DisplayVersion
@@ -113,7 +114,7 @@ fn run(args: impl IntoIterator<Item = OsString>) -> Result<Response, ShellError>
         let invalid_subcommand = error.kind() == ErrorKind::InvalidSubcommand;
         ShellError {
             message: if invalid_subcommand {
-                format!("{}\n{}", error, root_usage())
+                help::unknown_command(&unknown_command_path(&args))
             } else {
                 error.to_string()
             },
@@ -133,6 +134,22 @@ fn run(args: impl IntoIterator<Item = OsString>) -> Result<Response, ShellError>
     })?;
     let invocation = invocation::Invocation::from_matches(&matches);
     invocation::with_current(invocation, || dispatch(&matches)).map_err(ShellError::invalid)
+}
+
+/// Preserve oclif's colon-separated command identity for an unresolved path.
+/// Options belong to invocation syntax, not the missing command identifier.
+fn unknown_command_path(arguments: &[OsString]) -> String {
+    let path = arguments
+        .iter()
+        .skip(1)
+        .take_while(|argument| !argument.to_string_lossy().starts_with('-'))
+        .map(|argument| argument.to_string_lossy().into_owned())
+        .collect::<Vec<_>>();
+    if path.is_empty() {
+        "<non-UTF-8 command>".to_owned()
+    } else {
+        path.join(":")
+    }
 }
 
 fn root_usage() -> String {
@@ -771,16 +788,9 @@ mod tests {
         let error = run([OsString::from("quoin"), OsString::from("bogus")])
             .expect_err("unknown command is refused");
         assert_eq!(error.exit, EXIT_UNKNOWN_COMMAND);
-        assert!(error.message.contains("bogus"));
-        assert!(error.message.contains("USAGE\n  $ quoin [COMMAND]"));
-        assert!(
-            error
-                .message
-                .contains("COMMANDS\n  advise            Recommend a verification method")
-        );
-        assert!(
-            !error.message.contains("  plugin            "),
-            "the hidden compatibility alias is not advertised"
+        assert_eq!(
+            error.message,
+            " ›   Error: command bogus not found\n ›\n ›   Usage: quoin <command> [options]\n ›\n ›   Commands: advise, assurance, catalog, change-assurance, completeness, \n ›   config, discharge, evidence, graph, matrix, measurement, module, report, \n ›   review, semantic, sync, to-plan, update, validate, write\n ›\n ›   Run `quoin <command> --help` for details."
         );
     }
 

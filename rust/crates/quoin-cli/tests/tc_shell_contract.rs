@@ -49,7 +49,23 @@ fn tc_1650_unknown_command_is_a_stderr_refusal_with_the_root_catalogue() {
     assert_eq!(output.status.code(), Some(2));
     assert!(output.stdout.is_empty());
     let stderr = text(&output.stderr);
-    assert!(stderr.contains("not-a-command"));
-    assert!(stderr.contains("USAGE\n  $ quoin [COMMAND]"));
-    assert!(stderr.contains("COMMANDS\n  advise"));
+    assert_eq!(
+        stderr,
+        " ›   Error: command not-a-command not found\n ›\n ›   Usage: quoin <command> [options]\n ›\n ›   Commands: advise, assurance, catalog, change-assurance, completeness, \n ›   config, discharge, evidence, graph, matrix, measurement, module, report, \n ›   review, semantic, sync, to-plan, update, validate, write\n ›\n ›   Run `quoin <command> --help` for details.\n"
+    );
+}
+
+/// Oclif reports the entire unresolved command path with colon separators,
+/// while excluding flags from that identity.
+///
+/// Trace: FR-005, FR-102, TC-1650
+#[test]
+fn tc_1650_nested_unknown_command_keeps_the_oclif_path_identity() {
+    let output = invoke(&["catalog", "not-a-command", "--format", "json"]);
+    assert_eq!(output.status.code(), Some(2));
+    assert!(output.stdout.is_empty());
+    assert_eq!(
+        text(&output.stderr),
+        " ›   Error: command catalog:not-a-command not found\n ›\n ›   Usage: quoin <command> [options]\n ›\n ›   Commands: advise, assurance, catalog, change-assurance, completeness, \n ›   config, discharge, evidence, graph, matrix, measurement, module, report, \n ›   review, semantic, sync, to-plan, update, validate, write\n ›\n ›   Run `quoin <command> --help` for details.\n"
+    );
 }
