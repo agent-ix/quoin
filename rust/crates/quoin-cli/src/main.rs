@@ -499,6 +499,42 @@ mod tests {
         assert!(invocation.no_project_config());
     }
 
+    /// Trace: FR-102, TC-1650
+    #[test]
+    fn tc_1650_native_shell_exposes_every_retained_top_level_command_family() {
+        let root = command();
+        let mut visible = root
+            .get_subcommands()
+            .filter(|subcommand| !subcommand.is_hide_set())
+            .map(Command::get_name)
+            .collect::<Vec<_>>();
+        visible.sort_unstable();
+        assert_eq!(
+            visible,
+            [
+                "advise",
+                "assurance",
+                "catalog",
+                "change-assurance",
+                "completeness",
+                "config",
+                "discharge",
+                "evidence",
+                "graph",
+                "matrix",
+                "measurement",
+                "module",
+                "report",
+                "review",
+                "semantic",
+                "to-plan",
+                "update",
+                "validate",
+                "write",
+            ]
+        );
+    }
+
     /// Trace: FR-005, FR-062
     #[test]
     fn tc_373_unknown_commands_name_the_input_and_keep_the_refusal_status() {
