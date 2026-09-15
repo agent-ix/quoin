@@ -12,6 +12,7 @@
 mod advise;
 mod catalog;
 mod change_assurance;
+mod config;
 mod core_bridge;
 mod discharge;
 mod evidence;
@@ -50,6 +51,9 @@ fn run(args: impl IntoIterator<Item = OsString>) -> Result<Response, String> {
     }
     if let Some(("advise", advise)) = matches.subcommand() {
         return advise::run(advise);
+    }
+    if let Some(("config", config)) = matches.subcommand() {
+        return config::run(config);
     }
     if let Some(("semantic", semantic)) = matches.subcommand() {
         return semantic::run(semantic);
@@ -101,6 +105,7 @@ fn command() -> Command {
         .arg_required_else_help(true)
         .subcommand(catalog::command())
         .subcommand(advise::command())
+        .subcommand(config::command())
         .subcommand(change_assurance::command())
         .subcommand(evidence::command())
         .subcommand(discharge::command())

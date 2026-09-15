@@ -24,5 +24,6 @@ workspace = true
 clap = { workspace = true }
 quoin-core = { workspace = true }
 quoin-graph-analysis = { workspace = true }
+quoin-yaml = { workspace = true }
 serde_json = { workspace = true }
 time = { workspace = true }
