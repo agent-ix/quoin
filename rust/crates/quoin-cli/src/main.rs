@@ -9,6 +9,7 @@
 //! shell cannot acquire a second interpretation of graph inputs while the
 //! oclif shell remains published during the staged cutover.
 
+mod advise;
 mod catalog;
 mod change_assurance;
 mod core_bridge;
@@ -46,6 +47,9 @@ fn run(args: impl IntoIterator<Item = OsString>) -> Result<Response, String> {
         .map_err(|error| error.to_string())?;
     if let Some(("catalog", catalog)) = matches.subcommand() {
         return catalog::run(catalog);
+    }
+    if let Some(("advise", advise)) = matches.subcommand() {
+        return advise::run(advise);
     }
     if let Some(("semantic", semantic)) = matches.subcommand() {
         return semantic::run(semantic);
@@ -96,6 +100,7 @@ fn command() -> Command {
         .subcommand_required(true)
         .arg_required_else_help(true)
         .subcommand(catalog::command())
+        .subcommand(advise::command())
         .subcommand(change_assurance::command())
         .subcommand(evidence::command())
         .subcommand(discharge::command())
