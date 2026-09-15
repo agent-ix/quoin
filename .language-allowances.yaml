@@ -101,17 +101,7 @@ categories:
     ceiling:
       lines: 40
       branches: 2
-    paths:
-      - path: bin/quoin.js
-        owner: quoin-maintainers
-        lines: 21
-        note: npm entrypoint declared in package.json `bin`.
-      - path: src/hooks/command-not-found.ts
-        owner: quoin-maintainers
-        lines: 31
-        note: >
-          oclif `command_not_found` hook declared in package.json
-          `oclif.hooks`. Removing it is a published-extension contract change.
+    paths: []
 
   - id: owner-disposition
     rule: >
@@ -119,23 +109,6 @@ categories:
     owner: quoin-maintainers
     requires: [date, deciding_owner]
     paths:
-      - path: vite.config.ts
-        owner: quoin-maintainers
-        date: 2026-09-12
-        deciding_owner: kreneskyp
-        note: >
-          Build, lint and eval-harness configuration is written in whatever the
-          tool reads. It configures the build; it is not the thing being built.
-          Recorded as a dated disposition rather than a new category, because a
-          category this manifest invents is what NFR-024-AC-14 now fails on.
-      - path: eslint.config.js
-        owner: quoin-maintainers
-        date: 2026-09-12
-        deciding_owner: kreneskyp
-      - path: cli-agent-evals.config.mjs
-        owner: quoin-maintainers
-        date: 2026-09-12
-        deciding_owner: kreneskyp
       - path: templates/semantic-module/{{cookiecutter.repo_name}}/typespec/main.tsp
         owner: quoin-maintainers
         date: 2026-09-12
