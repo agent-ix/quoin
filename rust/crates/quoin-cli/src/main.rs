@@ -12,6 +12,7 @@
 mod catalog;
 mod core_bridge;
 mod module;
+mod plugin;
 mod semantic;
 
 use std::ffi::OsString;
@@ -49,6 +50,9 @@ fn run(args: impl IntoIterator<Item = OsString>) -> Result<Response, String> {
     if let Some(("module", module)) = matches.subcommand() {
         return module::run(module);
     }
+    if let Some(("plugin", plugin)) = matches.subcommand() {
+        return plugin::run(plugin);
+    }
     let graph = matches
         .subcommand_matches("graph")
         .ok_or_else(|| "a graph subcommand is required".to_owned())?;
@@ -81,6 +85,7 @@ fn command() -> Command {
         .arg_required_else_help(true)
         .subcommand(catalog::command())
         .subcommand(module::command())
+        .subcommand(plugin::command())
         .subcommand(semantic::command())
         .subcommand(
             Command::new("graph")
@@ -192,6 +197,14 @@ fn request(arguments: &ArgMatches, view: &str) -> Result<serde_json::Value, Stri
 }
 
 fn emit(response: &Response) -> std::process::ExitCode {
+    if let Some(warning) = response
+        .payload
+        .get("warning")
+        .and_then(serde_json::Value::as_str)
+        && writeln!(std::io::stderr(), "{warning}").is_err()
+    {
+        return std::process::ExitCode::from(EXIT_INTERNAL);
+    }
     if response.outcome.carries_payload() {
         let Some(rendered) = response
             .payload
