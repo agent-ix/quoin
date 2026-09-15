@@ -1191,7 +1191,7 @@ generated tests under `tests/props/` and `Unit` for the rest.
 | TC-1651 | Dated owner disposition exists for the `plugins` array, the `command_not_found` hook and | Unit | P0 | FR-102-AC-3 | 🚧 |
 | TC-1652 | Where the disposition is retain, a declared plugin command resolves through `quoin-cli` and an unrecognised command | Unit | P0 | FR-102-AC-4 | 🚧 |
 | TC-1653 | Unrecognised command that no extension resolves exits non-zero and names the command. | Unit | P0 | FR-102-AC-5 | 🚧 |
-| TC-1654 | After the replacement, the repository contains no `@oclif/core` dependency, no `src/quire/exec.ts` and no | Unit | P0 | FR-102-AC-6 | 🚧 |
+| TC-1654 | Native cutover test refuses any remaining Node/oclif shell or generated TypeScript boundary source, and the binary is named `quoin`. | Unit | P0 | FR-102-AC-6 | ✅ |
 | TC-1655 | Every Quoin-side corpus module carries one recorded disposition, and the gate fails when one is unclassified. | Unit | P0 | FR-103-AC-1 | 🚧 |
 | TC-1656 | Accepted-corpus digest computed before consolidation equals the digest computed after it, over a named non-empty | Unit | P0 | FR-103-AC-2 | 🚧 |
 | TC-1657 | Measurement run resolves exactly one corpus source, and a planted second source is refused. | Unit | P0 | FR-103-AC-3 | 🚧 |

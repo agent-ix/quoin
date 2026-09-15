@@ -3269,19 +3269,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "quoin-schemas"
-version = "0.9.0"
-dependencies = [
- "quoin-assurance",
- "quoin-catalog",
- "quoin-completeness",
- "quoin-core",
- "schemars",
- "serde_json",
- "sha2 0.10.9",
-]
-
-[[package]]
 name = "quoin-semantic"
 version = "0.9.0"
 dependencies = [

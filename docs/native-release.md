@@ -1,8 +1,7 @@
 # Native Quoin release contract
 
 The native release artifact is named **`quoin`**. The CLI calls the governed
-Rust runtime in-process; the temporary `quoin-core` protocol executable is
-retained only for wire-parity evidence until the Stage 9 deletion cutover.
+Rust runtime in-process.
 The artifact contract is independent of the Rust crate name `quoin-cli`.
 
 Every stable GitHub Release carries `quoin-update-manifest.json` and one asset
@@ -32,6 +31,4 @@ that executable on `PATH`. The native `quoin update` command then manages later
 updates from the same manifest contract. The release workflow smokes the
 extracted archive on every supported target before publishing it.
 
-The existing npm package is retained only through the #521 final shell cutover;
-it is not the native delivery path and will not remain as a Node/oclif escape
-hatch after that cutover.
+There is no npm or Node/oclif delivery fallback.

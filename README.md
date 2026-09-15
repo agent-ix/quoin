@@ -125,20 +125,13 @@ Anthropic API key is required — your existing agent subscription is used.
 **1. Install the CLIs** (`quoin` plus `ix-flow`, which runs the workflow lifecycle commands):
 
 ```bash
-# Temporary, until the first stable native release:
-npm install -g @agent-ix/quoin@latest @agent-ix/ix-flow@latest
-
-# After the first stable native release: download the archive for your host,
-# verify it with quoin-update-manifest.json, extract `quoin`, then place it on PATH.
-npm install -g @agent-ix/ix-flow@latest
+# Download the archive for your host from the stable GitHub Release, verify it
+# with quoin-update-manifest.json, extract `quoin`, then place it on PATH.
 npm install -g @agent-ix/ix-flow@latest
 ```
 
 Supported native targets and archive names are listed in the [native release
-contract](./docs/native-release.md). Until that first stable release is
-published, the existing npm CLI remains the temporary installation path during
-the staged shell cutover; it will not remain as a Node/oclif escape hatch after
-the cutover.
+contract](./docs/native-release.md).
 
 **2. Add the plugin to your coding agent:**
 
@@ -241,10 +234,9 @@ expiry behavior, and the boundary that leaves existing run records unchanged.
 ## Development
 
 ```bash
-pnpm install
-pnpm run build
-pnpm test
-pnpm run lint
+make rust-build
+make rust-test
+make rust-lint
 ```
 
 ### Specification
