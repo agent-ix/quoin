@@ -16,7 +16,7 @@ use crate::protocol::{MAX_REQUEST_BYTES, Response};
 
 /// Every operation this build answers, in the wire spelling.
 ///
-/// Exposed so a caller — and `quoin-difftest` — can enumerate the surface
+/// Exposed so a caller — and the native fixture suite — can enumerate the surface
 /// rather than discover it by trying names.
 pub const OPERATIONS: &[&str] = &[
     "assurance.build_authored_argument",
@@ -31,6 +31,8 @@ pub const OPERATIONS: &[&str] = &[
     "auditor.audit",
     "auditor.baseline",
     "auditor.vocabulary",
+    "catalog.load",
+    "catalog.methods",
     "change_assurance.intake",
     "change_assurance.receipt",
     "change_assurance.recover",
@@ -178,6 +180,8 @@ pub fn dispatch(
         "auditor.baseline" => crate::ops::auditor::baseline(request),
         "auditor.advise" => crate::ops::auditor::advise(request),
         "auditor.vocabulary" => crate::ops::auditor::vocabulary(request),
+        "catalog.load" => crate::ops::catalog::load(request, capabilities),
+        "catalog.methods" => crate::ops::catalog::methods(request, capabilities),
         "graph.fan_out" => crate::ops::graph::fan_out(request, capabilities),
         "graph.churn" => crate::ops::graph::churn(request, capabilities),
         "graph.change_impact" => crate::ops::graph::change_impact(request, capabilities),
@@ -381,6 +385,7 @@ mod tests {
             "auditor/wire.rs",
             include_str!("ops/auditor/wire.rs"),
         ),
+        ("catalog", "catalog.rs", include_str!("ops/catalog.rs")),
         (
             "change_assurance",
             "change_assurance/mod.rs",
@@ -701,7 +706,7 @@ mod tests {
             declared,
             routed_operations(),
             "`OPERATIONS` and `dispatch`'s match disagree. Whichever was edited, \
-             edit the other: the const is what a caller and `quoin-difftest` \
+             edit the other: the const is what a caller and the native fixture suite \
              enumerate, and the unknown-op error reports it to the user."
         );
     }
@@ -848,6 +853,14 @@ mod tests {
         (
             "ops::auditor::MAX_AUDITOR_REQUEST_BYTES",
             crate::ops::auditor::MAX_AUDITOR_REQUEST_BYTES,
+        ),
+        (
+            "ops::catalog::MAX_LOAD_BYTES",
+            crate::ops::catalog::MAX_LOAD_BYTES,
+        ),
+        (
+            "ops::catalog::MAX_ROOT_BYTES",
+            crate::ops::catalog::MAX_ROOT_BYTES,
         ),
         (
             "ops::graph::MAX_GRAPH_REQUEST_BYTES",

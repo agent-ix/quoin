@@ -7,8 +7,8 @@
 //! carried these against `installModule`. The criteria are about *a module
 //! joining a population* — a package another module already claims, a rejected
 //! re-install, the manifest and the pin an accepted install leaves behind — so
-//! they are restated where that composition actually happens: the real binary,
-//! a real temporary `~/.ix`, the real vendored contract.
+//! they are restated where that composition actually happens: the production
+//! runtime, a real temporary `~/.ix`, the real vendored contract.
 //!
 //! A unit test against `ContractGate` proves the rule and not the wiring, and
 //! the wiring is what these criteria are about. The reconcile half of the same
@@ -24,10 +24,10 @@
 )]
 
 use std::fs;
-use std::io::Write as _;
 use std::path::{Path, PathBuf};
-use std::process::{Command, Stdio};
 
+use quoin_core::protocol::{Diagnostic, Response, canonical_json};
+use quoin_core::runtime::{RuntimeSettings, dispatch};
 use serde_json::{Value, json};
 
 struct Run {
@@ -56,25 +56,27 @@ impl Run {
 }
 
 fn run(op: &str, request: &Value) -> Run {
-    let mut child = Command::new(env!("CARGO_BIN_EXE_quoin-core"))
-        .arg(op)
-        .env("QUOIN_SEMANTIC_ROOT", semantic_root())
-        .stdin(Stdio::piped())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .spawn()
-        .unwrap();
-    child
-        .stdin
-        .as_mut()
-        .unwrap()
-        .write_all(request.to_string().as_bytes())
-        .unwrap();
-    let out = child.wait_with_output().unwrap();
+    let settings = RuntimeSettings {
+        ix_home: None,
+        semantic_root: Some(semantic_root()),
+    };
+    let response = dispatch(op, request, &settings).unwrap_or_else(|error| Response {
+        payload: Value::Null,
+        diagnostics: vec![Diagnostic::from(&error)],
+        outcome: error.outcome(),
+    });
+    let stdout = response
+        .outcome
+        .carries_payload()
+        .then(|| canonical_json(&response.payload).unwrap())
+        .unwrap_or_default();
+    let stderr = (!response.diagnostics.is_empty())
+        .then(|| canonical_json(&response.diagnostics).unwrap())
+        .unwrap_or_default();
     Run {
-        stdout: String::from_utf8(out.stdout).unwrap(),
-        stderr: String::from_utf8(out.stderr).unwrap(),
-        status: out.status.code().unwrap(),
+        stdout,
+        stderr,
+        status: i32::from(response.outcome.code()),
     }
 }
 

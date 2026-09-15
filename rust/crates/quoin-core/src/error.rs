@@ -74,7 +74,7 @@ impl CoreErrorCode {
     }
 
     /// Parse a wire spelling back to a code, for the TypeScript-side tests and
-    /// for `quoin-difftest`'s normalised diagnostic comparison.
+    /// for the native fixture suite's normalised diagnostic comparison.
     #[must_use]
     pub fn from_code(code: &str) -> Option<Self> {
         Self::all().iter().copied().find(|c| c.as_str() == code)
@@ -105,7 +105,7 @@ impl std::fmt::Display for CoreErrorCode {
 /// A code, a human sentence, and ordered context.
 ///
 /// `BTreeMap` rather than `HashMap` so the serialised context is byte-stable —
-/// `quoin-difftest` compares canonical JSON, and a map that reorders per run
+/// The native fixture suite compares canonical JSON, and a map that reorders per run
 /// makes that comparison report noise as a difference.
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
 #[error("{code}: {message}")]

@@ -13,13 +13,11 @@ relationships:
 
 ## Description
 
-The CLI SHALL expose an `update` command that upgrades `quoin` to the latest
-published `@agent-ix/quoin` by delegating to `ix-cli-core`'s self-update
-(querying the registry, comparing against the running version, and installing
-globally), supporting a `--check` mode that reports availability without
-installing and a `--registry <url>` option that selects the registry; with no
-`--registry`, the command defaults to the public npm registry
-(`https://registry.npmjs.org/`), where `@agent-ix/quoin` is published.
+The CLI SHALL expose an `update` command that upgrades the native `quoin`
+artifact from the latest stable GitHub Release manifest, supporting a `--check`
+mode that reports availability without installing and a `--registry <url>`
+option that selects an explicit manifest endpoint. With no `--registry`, the
+command defaults to the public GitHub latest-release manifest.
 
 ## Inputs
 
@@ -31,24 +29,23 @@ installing and a `--registry <url>` option that selects the registry; with no
 
 ## Behavior
 
-- The CLI SHALL delegate to `ix-cli-core`'s self-update with the `@agent-ix/quoin`
-  package coordinates and the running version (see
-  [FR-002](./FR-002-print-package-version.md)).
+- The CLI SHALL compare the running version (see
+  [FR-002](./FR-002-print-package-version.md)) against a stable native release
+  manifest and safely stage its target-specific artifact before replacement.
 - The CLI SHALL report availability without installing when `--check` is given.
-- The CLI SHALL pass a `--registry` value through, and SHALL otherwise default to
-  the public npm registry (`https://registry.npmjs.org/`).
+- The CLI SHALL pass a `--registry` manifest endpoint through, and SHALL
+  otherwise default to GitHub's stable latest-release manifest.
 
 ## Acceptance Criteria
 
 | ID          | Criteria                                                                                                              | Verification          |
 | ----------- | --------------------------------------------------------------------------------------------------------------------- | --------------------- |
-| FR-022-AC-1 | `update` delegates to the self-update with `@agent-ix/quoin`, the running version, and the `quoin update` header      | Test (update.test.ts) |
-| FR-022-AC-2 | `--check` is passed through to report availability without installing                                                 | Test (update.test.ts) |
-| FR-022-AC-3 | `--registry <url>` is passed through; its absence defaults to the public npm registry (`https://registry.npmjs.org/`) | Test (update.test.ts) |
+| FR-022-AC-1 | `update` selects the running host's native artifact from a stable manifest and verifies it before replacement | Test (Rust delivery tests) |
+| FR-022-AC-2 | `--check` reports availability without downloading an archive or mutating the installation | Test (Rust delivery tests) |
+| FR-022-AC-3 | `--registry <url>` selects an explicit manifest endpoint; its absence uses the GitHub latest-release manifest | Test (Rust CLI tests) |
 
 ## Dependencies
 
-- **Upstream**: [StR-006](../stakeholder/StR-006-current-via-self-update.md). The
-  version comparison and install are provided by `@agent-ix/ix-cli-core`.
-- **Downstream**: external-process invocation is constrained by
-  [NFR-007](../non-functional/NFR-007-external-tool-invocation.md).
+- **Upstream**: [StR-006](../stakeholder/StR-006-current-via-self-update.md).
+- **Downstream**: the release producer publishes the documented artifact and
+  manifest convention in `docs/native-release.md`.

@@ -1,0 +1,734 @@
+{
+  "schema_version": 1,
+  "captured_by": "scripts/capture-command-contracts.mjs",
+  "captured_revision": "d71c8cfb6128688f4ff3c377781cebb3ba3a4407",
+  "normalization": "@agent-ix/quoin/<VERSION> replaces retained build/platform text; <VERSION> replaces bare SemVer output",
+  "cases": [
+    {
+      "kind": "help",
+      "argv": [
+        "--help"
+      ],
+      "exit": 0,
+      "stdout": "Spec-driven development for Claude Code — author validated, ISO/IEC/IEEE 29148-aligned specs, then plan and build against them.\n\nVERSION\n  @agent-ix/quoin/<VERSION>\n\nUSAGE\n  $ quoin [COMMAND]\n\nTOPICS\n  assurance         Render the assurance case: claim → argument → evidence, from\n                    the store.\n  catalog           Inspect the active artifact/object catalog (list, show,\n                    validate).\n  change-assurance  Form, retain, and verify change-assurance evidence from\n                    explicit inputs.\n  config            Read and store quoin configuration (get, set, edit, doctor).\n  evidence          The evidence store — what actually ran, and against which\n                    statement (record, affirm, gc).\n  graph             Read-only evidence-graph analysis views.\n  measurement       Record plan-validated QA measurements as atomic producer\n                    collections.\n  module            Install and manage user/community spec modules (list,\n                    install, remove, ensure-defaults).\n  semantic          Classify every Markdown artifact's Properties form across\n                    corpus roots (FR-074).\n\nCOMMANDS\n  advise            Recommend a verification method for each obligation, from\n                    the catalog.\n  assurance         Render the assurance case: claim → argument → evidence, from\n                    the store.\n  catalog           List the active artifact/object catalog modules.\n  change-assurance  Form, retain, and verify change-assurance evidence from\n                    explicit inputs.\n  completeness      Report which declared vocabulary values no requirement owns,\n                    and judge the excuses.\n  config            Read a stored quoin config value.\n  discharge         Partition binding clauses into direct evidence,\n                    dispositions, and open work.\n  evidence          The evidence store — what actually ran, and against which\n                    statement.\n  graph             Read-only evidence-graph analysis views.\n  matrix            Build or update a requirements test matrix.\n  measurement       Record and inspect versioned QA measurements.\n  module            List installed spec modules.\n  report            Render QA plans and measurements from the evidence store.\n  review            Run a composite spec review workflow.\n  sync              Synchronize the local plan tree with an external tracker\n                    target.\n  to-plan           Convert accepted requirements into an implementation plan.\n  update            Check for and install the latest published quoin.\n  validate          Validate repository QA gates and report located defects.\n  write             Build an authoring pack for spec files an agent is about to\n                    create or edit.\n\n",
+      "stderr": ""
+    },
+    {
+      "kind": "help",
+      "argv": [
+        "advise",
+        "--help"
+      ],
+      "exit": 0,
+      "stdout": "Recommend a verification method for each obligation, from the catalog.\n\nUSAGE\n  $ quoin advise [--config-root <value>] [--no-project-config]\n    [--repo <value>] [--module <value>] [--mismatch-only] [--inconclusive-only]\n    [--json]\n\nFLAGS\n  --inconclusive-only  Only obligations no rule matched. Combines with\n                       --mismatch-only as a union.\n  --json               Emit the advice as JSON.\n  --mismatch-only      Only genuine disagreements: the authored method is a\n                       declared method or class and is not among the\n                       recommendations. Uncatalogued values are not mismatches.\n                       Combines with --inconclusive-only as a union.\n  --module=<value>     Module directory supplying the traceability model.\n  --repo=<value>       [default: .] Repository root.\n\nGLOBAL FLAGS\n  --config-root=<value>  [env: IX_CONFIG_ROOT] Override the user-level config\n                         root for this invocation.\n  --no-project-config    Disable project-local .ix config layering.\n\nDESCRIPTION\n  Recommend a verification method for each obligation, from the catalog.\n\n  The deterministic half of the test-plan advisor (FR-031). Rules match or they\n  do\n  not; where they are inconclusive it says so and stops, rather than guessing.\n\n  Before this, the method table was skill-local prose and `Verification` columns\n  defaulted to Test by habit — nothing ever advised DAST for an attack surface,\n  monitors for a temporal property, or fault injection for a reliability NFR.\n\n  Obligations come from quire (coverage --json), and each criterion's FR-052\n  property shape from quire (properties --json), so the advice is over what the\n  spec actually states rather than over a document somebody pasted in.\n\n  Read the output as a recommendation, never a verdict. An LLM may judge the\n  residue afterwards — labelled as judgement (the FR-042 / ADR-0010 discipline).\n\nEXAMPLES\n  $ quoin advise\n\n  $ quoin advise --mismatch-only\n\n  $ quoin advise --json\n\n",
+      "stderr": ""
+    },
+    {
+      "kind": "help",
+      "argv": [
+        "assurance",
+        "--help"
+      ],
+      "exit": 0,
+      "stdout": "Render the assurance case: claim → argument → evidence, from the store.\n\nUSAGE\n  $ quoin assurance [--config-root <value>] [--no-project-config]\n    [--repo <value>] [--module <value>] [--claim-type <value>...]\n    [--independence-policy <value>] [--argument <value>] [--decisions <value>]\n    [--discharge <value>] [--as-of <value>] [--json]\n\nFLAGS\n  --argument=<value>\n      Render the authored AssuranceArgument with this frontmatter id. Requires\n      --decisions and --as-of; cannot be combined with --claim-type.\n\n  --as-of=<value>\n      Explicit ISO-8601 instant for authored argument evaluation.\n\n  --claim-type=<value>...\n      Artifact type that is a top-level claim. Repeatable; matched\n      case-insensitively. REPLACES the StR default rather than adding to it — pass\n      --claim-type StR as well if StRs should stay claims. A safety or security\n      bundle argues from a declared hazard or threat.\n\n  --decisions=<value>\n      JSON array of explicit sufficiency decisions.\n\n  --discharge=<value>\n      Optional clause-discharge-v1 report JSON path.\n\n  --independence-policy=<value>\n      Normalized JSON projection of exact obligation/dimension requirements\n      selected by an AssuranceProfile.\n\n  --json\n      Emit the case as JSON.\n\n  --module=<value>\n      Module directory supplying the traceability model.\n\n  --repo=<value>\n      [default: .] Repository root.\n\nGLOBAL FLAGS\n  --config-root=<value>  [env: IX_CONFIG_ROOT] Override the user-level config\n                         root for this invocation.\n  --no-project-config    Disable project-local .ix config layering.\n\nDESCRIPTION\n  Render the assurance case: claim → argument → evidence, from the store.\n\n  A pile of green evidence is not an argument (FR-040). This view makes the\n  reasoning reviewable: this claim holds BECAUSE these sub-claims hold, EACH\n  verified by a stated method, WITH evidence that is fresh.\n\n  Strictly a view. It runs nothing, collects nothing and writes nothing to the\n  store — where the case cannot be built, the missing data is a finding against\n  the spec, not something this fabricates.\n\n  Gaps render as OPEN nodes (◇), not as omissions. An undischarged obligation, a\n  suspect binding or a claim nothing traces to stays in the tree, because a case\n  that quietly narrows to what it can prove reads exactly like a complete one.\n\nEXAMPLES\n  $ quoin assurance\n\n  $ quoin assurance --claim-type StR --claim-type hazard\n\n  $ quoin assurance > docs/assurance.md\n\n",
+      "stderr": ""
+    },
+    {
+      "kind": "help",
+      "argv": [
+        "catalog",
+        "--help"
+      ],
+      "exit": 0,
+      "stdout": "List the active artifact/object catalog modules.\n\nUSAGE\n  $ quoin catalog [--config-root <value>] [--no-project-config]\n    [--json]\n\nFLAGS\n  --json  Emit the full catalog as JSON.\n\nGLOBAL FLAGS\n  --config-root=<value>  [env: IX_CONFIG_ROOT] Override the user-level config\n                         root for this invocation.\n  --no-project-config    Disable project-local .ix config layering.\n\nDESCRIPTION\n  List the active artifact/object catalog modules.\n\n  The catalog is assembled from, in order:\n  1. QUOIN_MODULE_PATHS\n  2. modules installed under ~/.ix/filament/modules\n\n  The default module set is installed there automatically on first catalog\n  access,\n  and updated by \"quoin module install\". The same directory is read by quire-rs.\n\nEXAMPLES\n  $ quoin catalog list\n\n  $ quoin catalog list --json\n\nCOMMANDS\n  catalog list      List the active artifact/object catalog modules.\n  catalog methods   List the merged verification-method catalog.\n  catalog show      Show a single artifact/object type from the catalog.\n  catalog validate  Validate the active catalog has no duplicate types.\n\n",
+      "stderr": ""
+    },
+    {
+      "kind": "help",
+      "argv": [
+        "catalog",
+        "list",
+        "--help"
+      ],
+      "exit": 0,
+      "stdout": "List the active artifact/object catalog modules.\n\nUSAGE\n  $ quoin catalog list [--config-root <value>] [--no-project-config]\n    [--json]\n\nFLAGS\n  --json  Emit the full catalog as JSON.\n\nGLOBAL FLAGS\n  --config-root=<value>  [env: IX_CONFIG_ROOT] Override the user-level config\n                         root for this invocation.\n  --no-project-config    Disable project-local .ix config layering.\n\nDESCRIPTION\n  List the active artifact/object catalog modules.\n\n  The catalog is assembled from, in order:\n  1. QUOIN_MODULE_PATHS\n  2. modules installed under ~/.ix/filament/modules\n\n  The default module set is installed there automatically on first catalog\n  access,\n  and updated by \"quoin module install\". The same directory is read by quire-rs.\n\nEXAMPLES\n  $ quoin catalog list\n\n  $ quoin catalog list --json\n\n",
+      "stderr": ""
+    },
+    {
+      "kind": "help",
+      "argv": [
+        "catalog",
+        "methods",
+        "--help"
+      ],
+      "exit": 0,
+      "stdout": "List the merged verification-method catalog.\n\nUSAGE\n  $ quoin catalog methods [--config-root <value>] [--no-project-config]\n    [--json] [--class <value>]\n\nFLAGS\n  --class=<value>  Only methods of this class (e.g. Test, Analysis).\n  --json           Emit the merged catalog as JSON.\n\nGLOBAL FLAGS\n  --config-root=<value>  [env: IX_CONFIG_ROOT] Override the user-level config\n                         root for this invocation.\n  --no-project-config    Disable project-local .ix config layering.\n\nDESCRIPTION\n  List the merged verification-method catalog.\n\n  The 29119-4-shaped answer to \"how should this requirement be verified\"\n  (quire-rs FR-054), merged first-wins across the active modules exactly as the\n  engine merges it — so the advisor recommends from the same catalog the auditor\n  checks conformance against.\n\n  Before this catalog existed the knowledge was prose: IADT lived in two lint\n  rules, techniques in a traceability vocabulary, and the method table in a\n  skill\n  markdown file that no manifest declared and no code read.\n\nEXAMPLES\n  $ quoin catalog methods\n\n  $ quoin catalog methods --json\n\n  $ quoin catalog methods --class Analysis\n\n",
+      "stderr": ""
+    },
+    {
+      "kind": "help",
+      "argv": [
+        "catalog",
+        "show",
+        "--help"
+      ],
+      "exit": 0,
+      "stdout": "Show a single artifact/object type from the catalog.\n\nUSAGE\n  $ quoin catalog show [TYPE] [--config-root <value>]\n    [--no-project-config] [--json]\n\nARGUMENTS\n  [TYPE]  Artifact or object type name.\n\nFLAGS\n  --json  Emit the entry as JSON.\n\nGLOBAL FLAGS\n  --config-root=<value>  [env: IX_CONFIG_ROOT] Override the user-level config\n                         root for this invocation.\n  --no-project-config    Disable project-local .ix config layering.\n\nEXAMPLES\n  $ quoin catalog show FR\n\n  $ quoin catalog show entity\n\n  $ quoin catalog show FR --json\n\n",
+      "stderr": ""
+    },
+    {
+      "kind": "help",
+      "argv": [
+        "catalog",
+        "validate",
+        "--help"
+      ],
+      "exit": 0,
+      "stdout": "Validate the active catalog has no duplicate types.\n\nUSAGE\n  $ quoin catalog validate [--config-root <value>] [--no-project-config]\n    [--json]\n\nFLAGS\n  --json  Emit the result as JSON.\n\nGLOBAL FLAGS\n  --config-root=<value>  [env: IX_CONFIG_ROOT] Override the user-level config\n                         root for this invocation.\n  --no-project-config    Disable project-local .ix config layering.\n\nEXAMPLES\n  $ quoin catalog validate\n\n  $ quoin catalog validate --json\n\n",
+      "stderr": ""
+    },
+    {
+      "kind": "help",
+      "argv": [
+        "change-assurance",
+        "--help"
+      ],
+      "exit": 0,
+      "stdout": "Form, retain, and verify change-assurance evidence from explicit inputs.\n\nUSAGE\n  $ quoin change-assurance [--config-root <value>] [--no-project-config]\n\nGLOBAL FLAGS\n  --config-root=<value>  [env: IX_CONFIG_ROOT] Override the user-level config\n                         root for this invocation.\n  --no-project-config    Disable project-local .ix config layering.\n\nDESCRIPTION\n  Form, retain, and verify change-assurance evidence from explicit inputs.\n\n  Producer-facing surface over the FR-063 record, FR-064 proof attestation,\n  retained-output intake, and FR-065 verification receipt contracts (FR-068).\n\n  These commands transcribe and verify what a producer supplies. None of them\n  runs the command an attestation describes, invokes Git, or performs a network\n  request. The only process any of them starts is the quoin-core engine that\n  decides the FR-063..FR-065 contracts (FR-096). Digests establish content\n  integrity and recorded\n  actor labels are attribution only; nothing here establishes authorization or\n  non-repudiation, and no output is a certification.\n\n  Subcommands:\n  quoin change-assurance seal-record\n  quoin change-assurance seal-attestation\n  quoin change-assurance intake\n  quoin change-assurance receipt\n  quoin change-assurance verify-receipt\n  quoin change-assurance schema\n  quoin change-assurance recover\n\n  Exit status: 0 for a valid receipt, 1 for an invalid or incomplete one, and 2\n  for a usage, parse, or integrity error.\n\nCOMMANDS\n  change-assurance intake            Retain an exact sealed attestation and its\n                                     exact output bytes.\n  change-assurance receipt           Verify a candidate from retained inputs and\n                                     emit its receipt.\n  change-assurance recover           Remove staging directories left by an\n                                     interrupted intake.\n  change-assurance schema            Emit a packaged change-assurance JSON\n                                     Schema asset.\n  change-assurance seal-attestation  Seal a proof attestation over an existing\n                                     retained result file.\n  change-assurance seal-record       Seal an explicit change-assurance record\n                                     and retain it.\n  change-assurance verify-receipt    Re-verify a sealed verification receipt.\n\n",
+      "stderr": ""
+    },
+    {
+      "kind": "help",
+      "argv": [
+        "change-assurance",
+        "intake",
+        "--help"
+      ],
+      "exit": 0,
+      "stdout": "Retain an exact sealed attestation and its exact output bytes.\n\nUSAGE\n  $ quoin change-assurance intake --attestation <value> --output <value>\n    [--config-root <value>] [--no-project-config] [--repo <value>] [--json]\n\nFLAGS\n  --attestation=<value>  (required) Exact sealed attestation JSON. `-` reads\n                         stdin.\n  --json                 Emit canonical JSON.\n  --output=<value>       (required) Exact retained result file the attestation\n                         names. Its bytes are retained and re-hashed; it is\n                         never executed.\n  --repo=<value>         [default: .] Repository root for retained Quoin state.\n\nGLOBAL FLAGS\n  --config-root=<value>  [env: IX_CONFIG_ROOT] Override the user-level config\n                         root for this invocation.\n  --no-project-config    Disable project-local .ix config layering.\n\nDESCRIPTION\n  Retain an exact sealed attestation and its exact output bytes.\n\n  Verifies ONE sealed attestation against the bytes it claims and retains the\n  pair atomically: either both the attestation JSON and the output file become\n  visible together, or neither does.\n\n  The retained attestation is the canonical form of what was supplied and the\n  retained output is byte-for-byte the file named by --output. A recorded digest\n  or size that contradicts those bytes is refused and nothing is retained.\n\n  Re-running with byte-identical inputs succeeds and retains nothing new. The\n  same digest with different bytes is a collision and is refused.\n\n  An interrupted intake leaves an invisible staging directory that is never read\n  as an attestation; `quoin change-assurance recover` removes it.\n\nEXAMPLES\n  $ quoin change-assurance intake --attestation attestation.json --output junit.xml --json\n\n",
+      "stderr": ""
+    },
+    {
+      "kind": "help",
+      "argv": [
+        "change-assurance",
+        "receipt",
+        "--help"
+      ],
+      "exit": 0,
+      "stdout": "Verify a candidate from retained inputs and emit its receipt.\n\nUSAGE\n  $ quoin change-assurance receipt --record <value> --candidate-revision <value>\n    --decisions <value> [--config-root <value>] [--no-project-config] [--parent\n    <value>...] [--select <value>...] [--audits <value>] [--repo <value>]\n    [--json]\n\nFLAGS\n  --audits=<value>              Retained FR-032 audit reports as a JSON array.\n                                Absent means no audit was retained, which stays\n                                distinct from an audit with no findings.\n  --candidate-revision=<value>  (required) Candidate revision the selected\n                                attestations must be bound to.\n  --decisions=<value>           (required) Retained ix-flow decision history\n                                JSON (`run_id` plus its exact event chain). `-`\n                                reads stdin.\n  --json                        Emit canonical JSON.\n  --parent=<value>...           [default: ] Digest of a stored parent record,\n                                repeated for each earlier revision. Named rather\n                                than walked, so a missing ancestor is a stated\n                                gap instead of a silently shortened chain.\n  --record=<value>              (required) Digest of the stored change-assurance\n                                record to verify.\n  --repo=<value>                [default: .] Repository root for retained Quoin\n                                state.\n  --select=<value>...           [default: ] Explicit\n                                `<proof-id>=<attestation-digest>` selection,\n                                repeated per proof. Only selected attestations\n                                are read.\n\nGLOBAL FLAGS\n  --config-root=<value>  [env: IX_CONFIG_ROOT] Override the user-level config\n                         root for this invocation.\n  --no-project-config    Disable project-local .ix config layering.\n\nDESCRIPTION\n  Verify a candidate from retained inputs and emit its receipt.\n\n  Assembles the FR-065 verification input from what the caller names — the\n  stored record, its parents, the explicitly selected attestations and their\n  retained outputs, the retained ix-flow decision history, and any retained\n  FR-032 audit reports — and emits the resulting receipt.\n\n  Nothing is discovered. A stored attestation that is not named by --select has\n  no effect on the receipt, so a stray upload cannot discharge a proof.\n\n  No proof, suite, tool, workflow, Git, or network operation runs, and nothing\n  is\n  written. Missing evidence stays missing: `unavailable`, `not_computed`, and\n  absent attestations remain their own outcomes and reasons and are never turned\n  into a pass or a failure.\n\n  Exit status is 0 for a `valid` receipt and 1 for an `invalid` or\n  `incomplete` one. The receipt is emitted either way; a usage, parse, or\n  integrity error exits 2 instead and emits none.\n\nEXAMPLES\n  $ quoin change-assurance receipt --record <record-digest> --candidate-revision <sha> --select PROOF-1=<attestation-digest> --decisions decisions.json --json\n\n",
+      "stderr": ""
+    },
+    {
+      "kind": "help",
+      "argv": [
+        "change-assurance",
+        "recover",
+        "--help"
+      ],
+      "exit": 0,
+      "stdout": "Remove staging directories left by an interrupted intake.\n\nUSAGE\n  $ quoin change-assurance recover [--config-root <value>] [--no-project-config]\n    [--repo <value>] [--json]\n\nFLAGS\n  --json          Emit canonical JSON.\n  --repo=<value>  [default: .] Repository root for retained Quoin state.\n\nGLOBAL FLAGS\n  --config-root=<value>  [env: IX_CONFIG_ROOT] Override the user-level config\n                         root for this invocation.\n  --no-project-config    Disable project-local .ix config layering.\n\nDESCRIPTION\n  Remove staging directories left by an interrupted intake.\n\n  Intake makes an attestation and its output visible with a single rename. If it\n  is interrupted before that rename, the half-written pair stays in a staging\n  directory that is never read as an attestation — invisible, but not free.\n\n  This removes exactly those staging directories and reports how many it\n  removed.\n  Retained records, attestations, and outputs are left untouched, and nothing\n  here re-runs, re-hashes, or re-verifies anything.\n\nEXAMPLES\n  $ quoin change-assurance recover --repo . --json\n\n",
+      "stderr": ""
+    },
+    {
+      "kind": "help",
+      "argv": [
+        "change-assurance",
+        "schema",
+        "--help"
+      ],
+      "exit": 0,
+      "stdout": "Emit a packaged change-assurance JSON Schema asset.\n\nUSAGE\n  $ quoin change-assurance schema [--config-root <value>] [--no-project-config]\n    [--name change-assurance-record-v1.schema.json|proof-attestation-v1.schema.j\n    son|verification-receipt-v1.schema.json] [--json]\n\nFLAGS\n  --json           Emit canonical JSON.\n  --name=<option>  Schema asset to emit.\n                   <options: change-assurance-record-v1.schema.json|proof-attest\n                   ation-v1.schema.json|verification-receipt-v1.schema.json>\n\nGLOBAL FLAGS\n  --config-root=<value>  [env: IX_CONFIG_ROOT] Override the user-level config\n                         root for this invocation.\n  --no-project-config    Disable project-local .ix config layering.\n\nDESCRIPTION\n  Emit a packaged change-assurance JSON Schema asset.\n\n  Prints one of the three normative, versioned schema assets shipped with this\n  build, byte-for-byte as the engine carries them, so a consumer validates\n  against the same file the sealing and verification code was written against\n  rather than a copy that has drifted.\n\n  Without --name the three asset names are listed. An unknown name is refused.\n\nEXAMPLES\n  $ quoin change-assurance schema\n\n  $ quoin change-assurance schema --name proof-attestation-v1.schema.json\n\n",
+      "stderr": ""
+    },
+    {
+      "kind": "help",
+      "argv": [
+        "change-assurance",
+        "seal-attestation",
+        "--help"
+      ],
+      "exit": 0,
+      "stdout": "Seal a proof attestation over an existing retained result file.\n\nUSAGE\n  $ quoin change-assurance seal-attestation --input <value> --output <value> --media-type\n    <value> [--config-root <value>] [--no-project-config] [--json]\n\nFLAGS\n  --input=<value>       (required) Proof-attestation body as JSON, without\n                        `digest` and without `retained_output`. `-` reads stdin.\n  --json                Emit canonical JSON.\n  --media-type=<value>  (required) Declared media type of the retained result\n                        file. Stated by the caller rather than sniffed, so a\n                        producer's own content type is preserved exactly.\n  --output=<value>      (required) Path of the retained result file this\n                        attestation describes. Its bytes are hashed and\n                        measured; it is never executed.\n\nGLOBAL FLAGS\n  --config-root=<value>  [env: IX_CONFIG_ROOT] Override the user-level config\n                         root for this invocation.\n  --no-project-config    Disable project-local .ix config layering.\n\nDESCRIPTION\n  Seal a proof attestation over an existing retained result file.\n\n  Binds ONE already-produced result file to the reviewed record, candidate\n  revision, proof obligation, command, tool, configuration, environment, and\n  result the caller states (FR-064), and emits the sealed attestation JSON.\n\n  The ONLY fields derived here are `retained_output.digest` and\n  `retained_output.size_bytes`, read from the bytes of --output, plus the\n  `media_type` the caller declares. Everything else is the caller's: this\n  command does not run the proof command, re-read the tool, inspect the\n  repository, or infer a result from the file it hashes. A body supplying\n  `retained_output` or `digest` is refused.\n\n  The attestation is emitted, not retained. `quoin change-assurance intake`\n  is the retention step, and it re-checks this binding against the same bytes.\n\nEXAMPLES\n  $ quoin change-assurance seal-attestation --input attestation.json --output junit.xml --media-type application/xml\n\n",
+      "stderr": ""
+    },
+    {
+      "kind": "help",
+      "argv": [
+        "change-assurance",
+        "seal-record",
+        "--help"
+      ],
+      "exit": 0,
+      "stdout": "Seal an explicit change-assurance record and retain it.\n\nUSAGE\n  $ quoin change-assurance seal-record --input <value> [--config-root <value>]\n    [--no-project-config] [--repo <value>] [--json]\n\nFLAGS\n  --input=<value>  (required) Change-assurance record body as JSON, without\n                   `digest`. `-` reads stdin.\n  --json           Emit canonical JSON.\n  --repo=<value>   [default: .] Repository root for retained Quoin state.\n\nGLOBAL FLAGS\n  --config-root=<value>  [env: IX_CONFIG_ROOT] Override the user-level config\n                         root for this invocation.\n  --no-project-config    Disable project-local .ix config layering.\n\nDESCRIPTION\n  Seal an explicit change-assurance record and retain it.\n\n  Seals ONE reviewed change definition the caller supplies in full (FR-063) and\n  retains it under its own digest.\n\n  The body is the record without its `digest`: the digest is computed from the\n  canonical bytes of everything else, so supplying one is refused rather than\n  overwritten. Nothing in the body is inferred, defaulted, or discovered — a\n  field the caller did not state is a validation failure, not a blank.\n\n  This command runs no producer and reads no repository state beyond the store\n  it writes into.\n\nEXAMPLES\n  $ quoin change-assurance seal-record --input record.json --json\n\n  cat record.json | quoin change-assurance seal-record --input -\n\n",
+      "stderr": ""
+    },
+    {
+      "kind": "help",
+      "argv": [
+        "change-assurance",
+        "verify-receipt",
+        "--help"
+      ],
+      "exit": 0,
+      "stdout": "Re-verify a sealed verification receipt.\n\nUSAGE\n  $ quoin change-assurance verify-receipt --input <value> [--config-root <value>]\n    [--no-project-config] [--json]\n\nFLAGS\n  --input=<value>  (required) Sealed verification receipt JSON. `-` reads stdin.\n  --json           Emit canonical JSON.\n\nGLOBAL FLAGS\n  --config-root=<value>  [env: IX_CONFIG_ROOT] Override the user-level config\n                         root for this invocation.\n  --no-project-config    Disable project-local .ix config layering.\n\nDESCRIPTION\n  Re-verify a sealed verification receipt.\n\n  Checks that a receipt still has the shape FR-065 declares and still hashes to\n  its own digest, so an edited outcome, reason, proof row, or check is refused\n  rather than read back as fact.\n\n  This re-verifies the receipt document. It does not re-run verification: the\n  underlying record, attestations, and decisions are not consulted, and no proof\n  command is executed.\n\n  Exit status is 0 when the verified receipt is `valid`, 1 when it is\n  `invalid` or `incomplete`, and 2 when the document itself is refused.\n\nEXAMPLES\n  $ quoin change-assurance verify-receipt --input receipt.json --json\n\n",
+      "stderr": ""
+    },
+    {
+      "kind": "help",
+      "argv": [
+        "completeness",
+        "--help"
+      ],
+      "exit": 0,
+      "stdout": "Report which declared vocabulary values no requirement owns, and judge the excuses.\n\nUSAGE\n  $ quoin completeness [--config-root <value>] [--no-project-config]\n    [--repo <value>] [--bundle <value>] [--module <value>] [--strict] [--json]\n\nFLAGS\n  --bundle=<value>  Bundle root to read. Defaults to <repo>/spec, the directory\n                    quire treats as the bundle.\n  --json            Emit the report as JSON.\n  --module=<value>  Module directory supplying the vocabulary declarations.\n  --repo=<value>    [default: .] Repository root.\n  --strict          Exit non-zero when any value is unowned, not only on a high\n                    finding.\n\nGLOBAL FLAGS\n  --config-root=<value>  [env: IX_CONFIG_ROOT] Override the user-level config\n                         root for this invocation.\n  --no-project-config    Disable project-local .ix config layering.\n\nDESCRIPTION\n  Report which declared vocabulary values no requirement owns, and judge the\n  excuses.\n\n  The verdict half of declared-vocabulary coverage (FR-037). quire-rs FR-059\n  computes which declared values no document claims — a deterministic fact about\n  the spec. This decides what a gap is worth, and whether an exclusion was\n  earned.\n\n  The first vocabulary is ISO 25010: a bundle can be 100% AC-covered and still\n  have no requirement anywhere for reliability, security or maintainability. The\n  characteristic list is module data (12 values, not the 9 the ticket assumed),\n  so\n  nothing here is hardcoded — it is read from the same declaration the engine\n  reads.\n\n  A value may be excused. \"This is a CLI that controls no physical process, so\n  it\n  has no safety characteristic\" is an answer, and a check that cannot accept one\n  forces either a permanent false finding or a requirement fabricated to silence\n  it. But the engine accepts a bare list: adding one frontmatter line took this\n  repository from 7 findings to 5 with no reason written anywhere. So an\n  exclusion\n  must carry a written reason, in the same document, in a table row naming the\n  value.\n\n  Severities are deliberately asymmetric. An unowned characteristic is medium —\n  an admitted gap a reader can see. An unjustified exclusion is high: an\n  assertion\n  of completeness with nothing behind it, which also removes the finding that\n  would have prompted the work.\n\n  Advisory by default. --strict makes an admitted gap fail too; it does not\n  invent\n  one.\n\nEXAMPLES\n  $ quoin completeness\n\n  $ quoin completeness --strict\n\n  $ quoin completeness --json\n\n  $ quoin completeness --repo ../other-repo\n\n",
+      "stderr": ""
+    },
+    {
+      "kind": "help",
+      "argv": [
+        "config",
+        "--help"
+      ],
+      "exit": 0,
+      "stdout": "Read a stored quoin config value.\n\nUSAGE\n  $ quoin config KEY [--config-root <value>] [--no-project-config]\n\nARGUMENTS\n  KEY  Config key path.\n\nGLOBAL FLAGS\n  --config-root=<value>  [env: IX_CONFIG_ROOT] Override the user-level config\n                         root for this invocation.\n  --no-project-config    Disable project-local .ix config layering.\n\nDESCRIPTION\n  Read a stored quoin config value.\n\n  Values are read from ~/.config/ix/config.d/quoin.yaml, with any project-local\n  .ix config and a bound environment variable layered over it.\n\nEXAMPLES\n  $ quoin config get org\n\nCOMMANDS\n  config doctor  Report config files that failed to parse or validate.\n  config edit    Open quoin's config file in $EDITOR.\n  config get     Read a stored quoin config value.\n  config set     Store a quoin config value.\n\n",
+      "stderr": ""
+    },
+    {
+      "kind": "help",
+      "argv": [
+        "config",
+        "doctor",
+        "--help"
+      ],
+      "exit": 0,
+      "stdout": "Report config files that failed to parse or validate.\n\nUSAGE\n  $ quoin config doctor [--config-root <value>] [--no-project-config]\n\nGLOBAL FLAGS\n  --config-root=<value>  [env: IX_CONFIG_ROOT] Override the user-level config\n                         root for this invocation.\n  --no-project-config    Disable project-local .ix config layering.\n\nDESCRIPTION\n  Report config files that failed to parse or validate.\n\n  A malformed config never blocks a command -- schema defaults are used and the\n  problem is recorded instead. This is where those records surface.\n\n",
+      "stderr": ""
+    },
+    {
+      "kind": "help",
+      "argv": [
+        "config",
+        "edit",
+        "--help"
+      ],
+      "exit": 0,
+      "stdout": "Open quoin's config file in $EDITOR.\n\nUSAGE\n  $ quoin config edit [--config-root <value>] [--no-project-config]\n\nGLOBAL FLAGS\n  --config-root=<value>  [env: IX_CONFIG_ROOT] Override the user-level config\n                         root for this invocation.\n  --no-project-config    Disable project-local .ix config layering.\n\nEXAMPLES\n  $ quoin config edit\n\n",
+      "stderr": ""
+    },
+    {
+      "kind": "help",
+      "argv": [
+        "config",
+        "get",
+        "--help"
+      ],
+      "exit": 0,
+      "stdout": "Read a stored quoin config value.\n\nUSAGE\n  $ quoin config get KEY [--config-root <value>] [--no-project-config]\n\nARGUMENTS\n  KEY  Config key path.\n\nGLOBAL FLAGS\n  --config-root=<value>  [env: IX_CONFIG_ROOT] Override the user-level config\n                         root for this invocation.\n  --no-project-config    Disable project-local .ix config layering.\n\nDESCRIPTION\n  Read a stored quoin config value.\n\n  Values are read from ~/.config/ix/config.d/quoin.yaml, with any project-local\n  .ix config and a bound environment variable layered over it.\n\nEXAMPLES\n  $ quoin config get org\n\n",
+      "stderr": ""
+    },
+    {
+      "kind": "help",
+      "argv": [
+        "config",
+        "set",
+        "--help"
+      ],
+      "exit": 0,
+      "stdout": "Store a quoin config value.\n\nUSAGE\n  $ quoin config set KEY VALUE [--config-root <value>]\n    [--no-project-config]\n\nARGUMENTS\n  KEY    Config key path.\n  VALUE  Value to store.\n\nGLOBAL FLAGS\n  --config-root=<value>  [env: IX_CONFIG_ROOT] Override the user-level config\n                         root for this invocation.\n  --no-project-config    Disable project-local .ix config layering.\n\nDESCRIPTION\n  Store a quoin config value.\n\n  Writes to ~/.config/ix/config.d/quoin.yaml. Scalars are coerced through the\n  schema; an unknown key is rejected rather than silently written.\n\n  Storing an org is what makes it persist: --org lasts one invocation and\n  QUOIN_ORG one shell, but a stored value is read on every run.\n\nEXAMPLES\n  $ quoin config set org acme\n\n",
+      "stderr": ""
+    },
+    {
+      "kind": "help",
+      "argv": [
+        "discharge",
+        "--help"
+      ],
+      "exit": 0,
+      "stdout": "Partition binding clauses into direct evidence, dispositions, and open work.\n\nUSAGE\n  $ quoin discharge --binding <value> --facts <value> --as-of <value>\n    [--config-root <value>] [--no-project-config] [--json]\n\nFLAGS\n  --as-of=<value>    (required) Explicit ISO-8601 evaluation instant.\n  --binding=<value>  (required) Quire clause-binding-v1 JSON path, or - for\n                     stdin.\n  --facts=<value>    (required) JSON array of discharge facts.\n  --json             Emit the complete report as JSON.\n\nGLOBAL FLAGS\n  --config-root=<value>  [env: IX_CONFIG_ROOT] Override the user-level config\n                         root for this invocation.\n  --no-project-config    Disable project-local .ix config layering.\n\nDESCRIPTION\n  Partition binding clauses into direct evidence, dispositions, and open work.\n\n  Consumes a validated Quire clause-binding report and explicit discharge facts.\n  Applicability and discharge remain separate: unresolved applicability is shown\n  outside the binding partition, and no aggregate score is emitted.\n\n",
+      "stderr": ""
+    },
+    {
+      "kind": "help",
+      "argv": [
+        "evidence",
+        "--help"
+      ],
+      "exit": 0,
+      "stdout": "The evidence store — what actually ran, and against which statement.\n\nUSAGE\n  $ quoin evidence [--config-root <value>] [--no-project-config]\n\nGLOBAL FLAGS\n  --config-root=<value>  [env: IX_CONFIG_ROOT] Override the user-level config\n                         root for this invocation.\n  --no-project-config    Disable project-local .ix config layering.\n\nDESCRIPTION\n  The evidence store — what actually ran, and against which statement.\n\n  The artifact of record for verification (FR-030). quoin TRANSCRIBES; the\n  consumer's CI executes — nothing here runs a test.\n\n  Layout, under spec/evidence/:\n\n  suites.md        authored suite registry     (validated corpus document)\n  inspections.md   authored inspection acts    (validated corpus document)\n  bindings.json    obligation -> hash-at-binding -> evidence\n  baseline.json    the accepted violation set the ratchet compares against\n  runs/<SUITE-N>/<commit12>.json   one file = one run of one suite\n  experiments/sha256-<digest>.json content-addressed experiment records\n  operational/sha256-<digest>.json content-addressed operational evidence\n\n  Subcommands:\n  quoin evidence record     transcribe a suite run\n  quoin evidence trust      record a use-specific producer trust decision\n  quoin evidence record-experiment  publish an immutable experiment record\n  quoin evidence record-operational publish immutable operational evidence\n  quoin evidence affirm     re-affirm a binding after its statement changed\n  quoin evidence audit      read the store and report\n  quoin evidence baseline   accept the current findings as the ratchet baseline\n  quoin evidence gc         drop run records nothing references\n\nEXAMPLES\n  $ quoin evidence record --suite SUITE-001 --commit $(git rev-parse HEAD) --tool 'cargo test' --results run.json\n\n  $ quoin evidence trust --decision trust-decision.json\n\n  $ quoin evidence affirm --obligation FR-001-AC-1 --who @reviewer\n\n  $ quoin evidence audit --ratchet --strict\n\n  $ quoin evidence baseline\n\n  $ quoin evidence gc --dry-run\n\nCOMMANDS\n  evidence affirm              Re-affirm a binding after the statement it was\n                               made against changed.\n  evidence audit               Audit the evidence store: suspect links,\n                               staleness, vacuity.\n  evidence baseline            Accept the current findings as the ratchet\n                               baseline.\n  evidence gc                  Drop run records nothing references.\n  evidence inspect-mocks       Inspect test source and record explicit mock\n                               substitutions.\n  evidence record              Transcribe one suite run into the evidence store.\n  evidence record-experiment   Publish one content-addressed experiment record.\n  evidence record-operational  Publish one content-addressed operational\n                               evidence record.\n  evidence trust               Record a use-specific evidence-producer trust\n                               decision.\n\n",
+      "stderr": ""
+    },
+    {
+      "kind": "help",
+      "argv": [
+        "evidence",
+        "affirm",
+        "--help"
+      ],
+      "exit": 0,
+      "stdout": "Re-affirm a binding after the statement it was made against changed.\n\nUSAGE\n  $ quoin evidence affirm --obligation <value> --who <value> [--config-root\n    <value>] [--no-project-config] [--note <value>] [--commit <value>] [--repo\n    <value>] [--module <value>] [--json]\n\nFLAGS\n  --commit=<value>      Commit of the affirmation. Defaults to HEAD.\n  --json                Emit the outcome as JSON.\n  --module=<value>      Module directory supplying the traceability model.\n  --note=<value>        Why the evidence still holds.\n  --obligation=<value>  (required) Obligation id whose binding is being\n                        re-affirmed.\n  --repo=<value>        [default: .] Repository root.\n  --who=<value>         (required) Who is affirming. Recorded verbatim.\n\nGLOBAL FLAGS\n  --config-root=<value>  [env: IX_CONFIG_ROOT] Override the user-level config\n                         root for this invocation.\n  --no-project-config    Disable project-local .ix config layering.\n\nDESCRIPTION\n  Re-affirm a binding after the statement it was made against changed.\n\n  A reworded acceptance criterion changes its content hash, which makes every\n  binding on it SUSPECT until somebody says the evidence still discharges the\n  new\n  wording. This is that act.\n\n  Auto-bind, explicit affirmation: first discharge binds without asking, because\n  requiring a signature on something the evidence already proves puts a gate in\n  front of the common case and teaches people to click through it.\n  Re-affirmation\n  is the judgement call, so it stays explicit — and it is recorded with who, at\n  which commit, and optionally why.\n\n  Re-running the test does NOT clear suspicion. If it did, the suspect state\n  would\n  clear itself on the next CI run and the detector would never fire.\n\nEXAMPLES\n  $ quoin evidence affirm --obligation FR-001-AC-1 --who @reviewer\n\n  $ quoin evidence affirm --obligation NFR-006-M-2 --who @reviewer --note 'threshold widened deliberately'\n\n",
+      "stderr": ""
+    },
+    {
+      "kind": "help",
+      "argv": [
+        "evidence",
+        "audit",
+        "--help"
+      ],
+      "exit": 0,
+      "stdout": "Audit the evidence store: suspect links, staleness, vacuity.\n\nUSAGE\n  $ quoin evidence audit [--config-root <value>] [--no-project-config]\n    [--repo <value>] [--module <value>...] [--ratchet] [--strict] [--json]\n    [--multiplicity-requires <value>...] [--mutation-floor <value>...]\n    [--independence-policy <value>]\n\nFLAGS\n  --independence-policy=<value>       Normalized JSON projection of exact\n                                      obligation/dimension requirements selected\n                                      by an AssuranceProfile. Unset means no\n                                      independence policy.\n  --json                              Emit the report as JSON.\n  --module=<value>...                 Module directory supplying the\n                                      traceability model. Repeatable; roots are\n                                      used in the order given and replace\n                                      ambient discovery entirely rather than\n                                      adding to it.\n  --multiplicity-requires=<value>...  Criticality values demanding two\n                                      independent suites. Repeatable. Unset by\n                                      default: no obligation source in the\n                                      ecosystem declares a criticality column,\n                                      so a built-in default could never fire.\n  --mutation-floor=<value>...         Minimum mutation score per criticality, as\n                                      <criticality>=<0..1>. Repeatable. Unset by\n                                      default, for the same reason as\n                                      --multiplicity-requires: a built-in floor\n                                      is a rule nobody chose.\n  --ratchet                           Report only violations absent from the\n                                      baseline.\n  --repo=<value>                      [default: .] Repository root.\n  --strict                            Exit 1 when any reported finding remains.\n\nGLOBAL FLAGS\n  --config-root=<value>  [env: IX_CONFIG_ROOT] Override the user-level config\n                         root for this invocation.\n  --no-project-config    Disable project-local .ix config layering.\n\nDESCRIPTION\n  Audit the evidence store: suspect links, staleness, vacuity.\n\n  Reads the store and reports. RUNS NOTHING (ADR-0011 invariant 1) — the\n  consumer's CI refreshes evidence, and an auditor that could re-run a suite\n  could\n  also make a finding disappear by re-running it.\n\n  Checks:\n  suspect-link      the statement changed after the evidence was bound\n  stale-evidence    bound to a missing run, or to a run behind HEAD\n  vacuous-evidence  every bound symbol was skipped or absent from the run\n  undischarged      no evidence is bound at all\n  method-conformance   evidence of a kind the declared method does not produce\n  unknown-method       the declared method is in no catalog\n  insufficient-multiplicity   criticality demands two independent suites\n  insufficient-mutation-score criticality demands a mutation score it misses\n  unmeasured-mutation-score   a demanded mutation score, with none recorded\n  insufficient-independence  profile-selected evidence separation is absent\n\n  --ratchet compares against spec/evidence/baseline.json and fails only on NEW\n  violations. A gate that fails on the whole existing backlog gets disabled\n  within\n  a week. Write that baseline with: quoin evidence baseline\n\nEXAMPLES\n  $ quoin evidence audit\n\n  $ quoin evidence audit --ratchet --strict\n\n  $ quoin evidence audit --json\n\n",
+      "stderr": ""
+    },
+    {
+      "kind": "help",
+      "argv": [
+        "evidence",
+        "baseline",
+        "--help"
+      ],
+      "exit": 0,
+      "stdout": "Accept the current findings as the ratchet baseline.\n\nUSAGE\n  $ quoin evidence baseline [--config-root <value>] [--no-project-config]\n    [--repo <value>] [--module <value>] [--dry-run] [--json]\n\nFLAGS\n  --dry-run         Print what would be accepted and write nothing.\n  --json            Emit the outcome as JSON.\n  --module=<value>  Module directory supplying the traceability model.\n  --repo=<value>    [default: .] Repository root.\n\nGLOBAL FLAGS\n  --config-root=<value>  [env: IX_CONFIG_ROOT] Override the user-level config\n                         root for this invocation.\n  --no-project-config    Disable project-local .ix config layering.\n\nDESCRIPTION\n  Accept the current findings as the ratchet baseline.\n\n  Writes spec/evidence/baseline.json: every finding the audit reports right now,\n  as <kind>:<obligation>, plus the commit it was accepted at.\n\n  `--ratchet` reads this file and fails only on findings NOT in it. Without it,\n  a first run of the gate reports the entire existing backlog and gets switched\n  off within a week — so accepting a baseline is the deliberate act that makes\n  the ratchet usable, and its diff is the record of what was accepted and by\n  whom.\n\n  Re-run this at a release to move the ratchet forward. Never run it to make a\n  new failure go away: the diff is reviewed, and a baseline that grows between\n  releases is the gate quietly being disabled one entry at a time.\n\nEXAMPLES\n  $ quoin evidence baseline\n\n  $ quoin evidence baseline --dry-run\n\n",
+      "stderr": ""
+    },
+    {
+      "kind": "help",
+      "argv": [
+        "evidence",
+        "gc",
+        "--help"
+      ],
+      "exit": 0,
+      "stdout": "Drop run records nothing references.\n\nUSAGE\n  $ quoin evidence gc [--config-root <value>] [--no-project-config]\n    [--repo <value>] [--dry-run] [--json]\n\nFLAGS\n  --dry-run       List what would be deleted without deleting it.\n  --json          Emit the deleted paths as JSON.\n  --repo=<value>  [default: .] Repository root.\n\nGLOBAL FLAGS\n  --config-root=<value>  [env: IX_CONFIG_ROOT] Override the user-level config\n                         root for this invocation.\n  --no-project-config    Disable project-local .ix config layering.\n\nDESCRIPTION\n  Drop run records nothing references.\n\n  Retention policy: the latest run per suite, plus anything a binding points at.\n\n  Dir-per-suite is what makes this local — a policy change for one expensive\n  suite\n  (mutation, DAST, fuzz) touches one directory, and a .gitignore decision can be\n  made per suite rather than for the whole store.\n\n  Takes no --module, deliberately, though every sibling command does: --module\n  supplies the traceability model to quire, and gc never invokes quire and never\n  loads a catalog. It is a repo-scoped store operation — it walks runs/ and\n  scans/ under spec/evidence/ and decides from timestamps and bindings alone,\n  none of which carry catalog semantics. Should retention ever become\n  module-policy-driven, the flag stops being a no-op and gets added then (#171).\n\nEXAMPLES\n  $ quoin evidence gc --dry-run\n\n  $ quoin evidence gc\n\n",
+      "stderr": ""
+    },
+    {
+      "kind": "help",
+      "argv": [
+        "evidence",
+        "inspect-mocks",
+        "--help"
+      ],
+      "exit": 0,
+      "stdout": "Inspect test source and record explicit mock substitutions.\n\nUSAGE\n  $ quoin evidence inspect-mocks --suite <value> --commit <value> [--config-root\n    <value>] [--no-project-config] [--repo <value>] [--timestamp <value>]\n    [--dry-run] [--json]\n\nFLAGS\n  --commit=<value>     (required) Full commit sha whose source is being\n                       inspected.\n  --dry-run            Inspect and report without writing an observation record.\n  --json               Emit the record outcome as JSON.\n  --repo=<value>       [default: .] Repository root.\n  --suite=<value>      (required) Suite id whose test source is being inspected.\n  --timestamp=<value>  ISO-8601 inspection time. Defaults to now.\n\nGLOBAL FLAGS\n  --config-root=<value>  [env: IX_CONFIG_ROOT] Override the user-level config\n                         root for this invocation.\n  --no-project-config    Disable project-local .ix config layering.\n\nDESCRIPTION\n  Inspect test source and record explicit mock substitutions.\n\n  Scans source for explicit stand-in constructors used by test symbols and\n  records\n  the observation for one suite at one commit. It runs no test and assigns no\n  verdict: evidence audit independently decides whether an injected identifier\n  overlaps the behaviour an obligation claims to verify.\n\n  Record an empty inspection too. That is how audit distinguishes \"looked and\n  found no relevant injections\" from \"nobody looked\" (agent-ix/quoin#204).\n\nEXAMPLES\n  $ quoin evidence inspect-mocks --suite SUITE-001 --commit $(git rev-parse HEAD)\n\n",
+      "stderr": ""
+    },
+    {
+      "kind": "help",
+      "argv": [
+        "evidence",
+        "record",
+        "--help"
+      ],
+      "exit": 0,
+      "stdout": "Transcribe one suite run into the evidence store.\n\nUSAGE\n  $ quoin evidence record --suite <value> --commit <value> --tool <value>\n    --results <value> [--config-root <value>] [--no-project-config] [--kind\n    <value>] [--lineage <value>] [--discharges <value>] [--adapter\n    entries|junit|cargo-mutants|sbom|agent-eval|contract-conformance|differentia\n    l-report|sarif|audit-script|cargo-audit] [--repo <value>] [--module <value>]\n    [--timestamp <value>] [--json]\n\nFLAGS\n  --adapter=<option>\n      Format reader for --results (entries, junit, cargo-mutants, sbom,\n      agent-eval, contract-conformance, differential-report, sarif, audit-script,\n      cargo-audit). Defaults to the adapter claiming --tool, else the normalized\n      shape. An unknown name is an error rather than a silent fall back, so a typo\n      reports itself instead of failing later as a JSON-shape complaint.\n      <options: entries|junit|cargo-mutants|sbom|agent-eval|contract-conformance|d\n      ifferential-report|sarif|audit-script|cargo-audit>\n\n  --commit=<value>\n      (required) Full commit sha the run was performed at.\n\n  --discharges=<value>\n      Obligation ids this scan discharges, comma-separated. Finding-shaped only. A\n      CLEAN scan is the strongest evidence a scanner produces and carries no\n      finding to bind from, so the obligations it was run to check are stated\n      rather than inferred. A scan that evaluated no rules binds nothing\n      regardless.\n\n  --json\n      Emit the outcome as JSON.\n\n  --kind=<value>\n      Evidence kind this run produced (Unit, Property, Static, Manual, …) — the\n      vocabulary the catalog's `evidence_kind` and the suite registry's `Evidence\n      Kind` column use. Method conformance compares kind to kind; without it the\n      check stays silent rather than guessing.\n\n  --lineage=<value>\n      JSON file naming profile-relevant evidence lineage: actor,\n      implementationToolchain, technique, dataSource, and/or reviewPath. These are\n      relationship facts, not an independence verdict.\n\n  --module=<value>\n      Module directory supplying the traceability model.\n\n  --repo=<value>\n      [default: .] Repository root. Defaults to the working directory.\n\n  --results=<value>\n      (required) Normalized run entries as JSON. `-` reads stdin.\n\n  --suite=<value>\n      (required) Suite id from spec/evidence/suites.md (e.g. SUITE-001).\n\n  --timestamp=<value>\n      ISO-8601 run time. Defaults to now.\n\n  --tool=<value>\n      (required) Tool and version, as it identifies itself.\n\nGLOBAL FLAGS\n  --config-root=<value>  [env: IX_CONFIG_ROOT] Override the user-level config\n                         root for this invocation.\n  --no-project-config    Disable project-local .ix config layering.\n\nDESCRIPTION\n  Transcribe one suite run into the evidence store.\n\n  Records ONE run of ONE suite at ONE commit, then binds every obligation that\n  run discharged, stamping the statement hash as it stands now.\n\n  quoin transcribes; the consumer's CI executes (ADR-0011 invariant 1). This\n  command runs no test and judges no result — recording a FAILING run is as\n  legitimate as recording a passing one, and more useful, because a suite that\n  stopped passing is exactly what a freshness check needs to see.\n\n  --results takes normalized entries:\n\n  {\"entries\": [{\"symbol\": \"tests::tc001\", \"outcome\": \"pass\", \"traceIds\":\n  [\"FR-001-AC-1\"]}]}\n\n  --adapter selects a format reader. Without it the suite's --tool picks one,\n  and\n  failing that the normalized shape above is assumed. An adapter transcribes; it\n  runs nothing and judges nothing.\n\nEXAMPLES\n  $ quoin evidence record --suite SUITE-001 --commit $(git rev-parse HEAD) --tool 'cargo test 1.94.1' --results run.json\n\n",
+      "stderr": ""
+    },
+    {
+      "kind": "help",
+      "argv": [
+        "evidence",
+        "record-experiment",
+        "--help"
+      ],
+      "exit": 0,
+      "stdout": "Publish one content-addressed experiment record.\n\nUSAGE\n  $ quoin evidence record-experiment --input <value> [--config-root <value>]\n    [--no-project-config] [--repo <value>] [--json]\n\nFLAGS\n  --input=<value>  (required) experiment-record-v1 JSON path, or - for stdin.\n  --json           Emit the stored result as JSON.\n  --repo=<value>   [default: .] Repository root.\n\nGLOBAL FLAGS\n  --config-root=<value>  [env: IX_CONFIG_ROOT] Override the user-level config\n                         root for this invocation.\n  --no-project-config    Disable project-local .ix config layering.\n\n",
+      "stderr": ""
+    },
+    {
+      "kind": "help",
+      "argv": [
+        "evidence",
+        "record-operational",
+        "--help"
+      ],
+      "exit": 0,
+      "stdout": "Publish one content-addressed operational evidence record.\n\nUSAGE\n  $ quoin evidence record-operational --input <value> [--config-root <value>]\n    [--no-project-config] [--repo <value>] [--json]\n\nFLAGS\n  --input=<value>  (required) operational-evidence-record-v1 JSON path, or - for\n                   stdin.\n  --json           Emit the stored result as JSON.\n  --repo=<value>   [default: .] Repository root.\n\nGLOBAL FLAGS\n  --config-root=<value>  [env: IX_CONFIG_ROOT] Override the user-level config\n                         root for this invocation.\n  --no-project-config    Disable project-local .ix config layering.\n\n",
+      "stderr": ""
+    },
+    {
+      "kind": "help",
+      "argv": [
+        "evidence",
+        "trust",
+        "--help"
+      ],
+      "exit": 0,
+      "stdout": "Record a use-specific evidence-producer trust decision.\n\nUSAGE\n  $ quoin evidence trust --decision <value> [--config-root <value>]\n    [--no-project-config] [--repo <value>] [--json]\n\nFLAGS\n  --decision=<value>  (required) Completed trust-decision JSON; `-` reads stdin.\n  --json              Emit the assessment as JSON.\n  --repo=<value>      [default: .] Repository root.\n\nGLOBAL FLAGS\n  --config-root=<value>  [env: IX_CONFIG_ROOT] Override the user-level config\n                         root for this invocation.\n  --no-project-config    Disable project-local .ix config layering.\n\nDESCRIPTION\n  Record a use-specific evidence-producer trust decision.\n\n  Transcribes an accountable decision from JSON and reports its effective state.\n  The decision applies to one producer use, not to the tool globally. Accepted\n  and observed\n  contexts are compared using declared revalidation triggers; mismatch is\n  recorded and shown\n  as invalidated rather than silently falling back to trusted.\n\nEXAMPLES\n  $ quoin evidence trust --decision trust-decision.json\n\n  $ quoin evidence trust --decision trust-decision.json --json\n\n",
+      "stderr": ""
+    },
+    {
+      "kind": "help",
+      "argv": [
+        "graph",
+        "--help"
+      ],
+      "exit": 0,
+      "stdout": "Read-only evidence-graph analysis views.\n\nUSAGE\n  $ quoin graph [--config-root <value>] [--no-project-config]\n\nGLOBAL FLAGS\n  --config-root=<value>  [env: IX_CONFIG_ROOT] Override the user-level config\n                         root for this invocation.\n  --no-project-config    Disable project-local .ix config layering.\n\nDESCRIPTION\n  Read-only evidence-graph analysis views.\n\n  Analyze an existing, accepted Quire assurance export together with retained\n  Quoin evidence and an existing FR-032 audit. These commands run no producer,\n  suite, Quire, Git, or network operation and write nothing.\n\n  Subcommands:\n  quoin graph fan-out\n  quoin graph change-impact\n  quoin graph churn\n\nCOMMANDS\n  graph change-impact  Report reverse dependency exposure from requirement\n                       changes.\n  graph churn          Report retained obligation reaffirmation history.\n  graph fan-out        Report distinct live obligations per evidence suite.\n\n",
+      "stderr": ""
+    },
+    {
+      "kind": "help",
+      "argv": [
+        "graph",
+        "change-impact",
+        "--help"
+      ],
+      "exit": 0,
+      "stdout": "Report reverse dependency exposure from requirement changes.\n\nUSAGE\n  $ quoin graph change-impact --export <value> --premises <value> --audit <value>\n    --requirement <value>... [--config-root <value>] [--no-project-config]\n    [--repo <value>] [--json] [--relation <value>...]\n\nFLAGS\n  --audit=<value>           (required) Source-bound FR-032 audit-envelope JSON.\n  --export=<value>          (required) Existing Quire assurance-v1 JSON\n                            artifact.\n  --json                    Emit canonical JSON.\n  --premises=<value>        (required) Accepted assurance format/module/schema\n                            premises JSON.\n  --relation=<value>...     Relationship kind replacing the default selection.\n                            Repeatable.\n  --repo=<value>            [default: .] Repository root for retained Quoin\n                            state.\n  --requirement=<value>...  (required) Changed requirement id. Repeatable.\n\nGLOBAL FLAGS\n  --config-root=<value>  [env: IX_CONFIG_ROOT] Override the user-level config\n                         root for this invocation.\n  --no-project-config    Disable project-local .ix config layering.\n\n",
+      "stderr": ""
+    },
+    {
+      "kind": "help",
+      "argv": [
+        "graph",
+        "churn",
+        "--help"
+      ],
+      "exit": 0,
+      "stdout": "Report retained obligation reaffirmation history.\n\nUSAGE\n  $ quoin graph churn --export <value> --premises <value> --audit <value>\n    [--config-root <value>] [--no-project-config] [--repo <value>] [--json]\n\nFLAGS\n  --audit=<value>     (required) Source-bound FR-032 audit-envelope JSON.\n  --export=<value>    (required) Existing Quire assurance-v1 JSON artifact.\n  --json              Emit canonical JSON.\n  --premises=<value>  (required) Accepted assurance format/module/schema\n                      premises JSON.\n  --repo=<value>      [default: .] Repository root for retained Quoin state.\n\nGLOBAL FLAGS\n  --config-root=<value>  [env: IX_CONFIG_ROOT] Override the user-level config\n                         root for this invocation.\n  --no-project-config    Disable project-local .ix config layering.\n\n",
+      "stderr": ""
+    },
+    {
+      "kind": "help",
+      "argv": [
+        "graph",
+        "fan-out",
+        "--help"
+      ],
+      "exit": 0,
+      "stdout": "Report distinct live obligations per evidence suite.\n\nUSAGE\n  $ quoin graph fan-out --export <value> --premises <value> --audit <value>\n    [--config-root <value>] [--no-project-config] [--repo <value>] [--json]\n\nFLAGS\n  --audit=<value>     (required) Source-bound FR-032 audit-envelope JSON.\n  --export=<value>    (required) Existing Quire assurance-v1 JSON artifact.\n  --json              Emit canonical JSON.\n  --premises=<value>  (required) Accepted assurance format/module/schema\n                      premises JSON.\n  --repo=<value>      [default: .] Repository root for retained Quoin state.\n\nGLOBAL FLAGS\n  --config-root=<value>  [env: IX_CONFIG_ROOT] Override the user-level config\n                         root for this invocation.\n  --no-project-config    Disable project-local .ix config layering.\n\n",
+      "stderr": ""
+    },
+    {
+      "kind": "help",
+      "argv": [
+        "matrix",
+        "--help"
+      ],
+      "exit": 0,
+      "stdout": "Build or update a requirements test matrix.\n\nUSAGE\n  $ quoin matrix [--target <value>...] [--json] [--id <value>]\n\nFLAGS\n  --id=<value>         Explicit workflow run id.\n  --json               Forward --json to ix-flow.\n  --target=<value>...  Spec target ref to feed the workflow (repeatable).\n\nDESCRIPTION\n  Build or update a requirements test matrix.\n\n  Starts the bundled matrix workflow run in ~/.ix/flows. Use ix-flow to inspect,\n  resume, advance phases, and acknowledge human gates.\n\nEXAMPLES\n  $ quoin matrix --target spec/\n\n  ix-flow status <run-id>\n\n",
+      "stderr": ""
+    },
+    {
+      "kind": "help",
+      "argv": [
+        "measurement",
+        "--help"
+      ],
+      "exit": 0,
+      "stdout": "Record and inspect versioned QA measurements.\n\nUSAGE\n  $ quoin measurement [--config-root <value>] [--no-project-config]\n\nGLOBAL FLAGS\n  --config-root=<value>  [env: IX_CONFIG_ROOT] Override the user-level config\n                         root for this invocation.\n  --no-project-config    Disable project-local .ix config layering.\n\nDESCRIPTION\n  Record and inspect versioned QA measurements.\n\n  Measurement collections connect raw producer output to active\n  MeasurementPlans. Use `quoin measurement record` to persist one complete\n  producer\n  invocation; use `quoin report` for current state, comparisons, and series.\n\nCOMMANDS\n  measurement intervention         Record an intervention from two retained\n                                   agent-eval reports.\n  measurement operational-release  Record operational evidence from retained\n                                   GitHub release exports.\n  measurement record               Atomically record one plan-validated producer\n                                   invocation.\n\n",
+      "stderr": ""
+    },
+    {
+      "kind": "help",
+      "argv": [
+        "measurement",
+        "intervention",
+        "--help"
+      ],
+      "exit": 0,
+      "stdout": "Record an intervention from two retained agent-eval reports.\n\nUSAGE\n  $ quoin measurement intervention --definition <value> [--config-root <value>]\n    [--no-project-config] [--repo <value>]\n\nFLAGS\n  --definition=<value>  (required) Versioned producer-definition JSON path.\n  --repo=<value>        [default: .] Repository root.\n\nGLOBAL FLAGS\n  --config-root=<value>  [env: IX_CONFIG_ROOT] Override the user-level config\n                         root for this invocation.\n  --no-project-config    Disable project-local .ix config layering.\n\nDESCRIPTION\n  Record an intervention from two retained agent-eval reports.\n\n  Consumes retained reports only. It never invokes an agent,\n  evaluation harness, producer process, or network client.\n\n",
+      "stderr": ""
+    },
+    {
+      "kind": "help",
+      "argv": [
+        "measurement",
+        "operational-release",
+        "--help"
+      ],
+      "exit": 0,
+      "stdout": "Record operational evidence from retained GitHub release exports.\n\nUSAGE\n  $ quoin measurement operational-release --definition <value> [--config-root <value>]\n    [--no-project-config] [--repo <value>]\n\nFLAGS\n  --definition=<value>  (required) Versioned release-producer definition JSON\n                        path.\n  --repo=<value>        [default: .] Repository root.\n\nGLOBAL FLAGS\n  --config-root=<value>  [env: IX_CONFIG_ROOT] Override the user-level config\n                         root for this invocation.\n  --no-project-config    Disable project-local .ix config layering.\n\nDESCRIPTION\n  Record operational evidence from retained GitHub release exports.\n\n  Consumes retained workflow and API files only. It performs no\n  network request, workflow dispatch, release publication, or process execution.\n\n",
+      "stderr": ""
+    },
+    {
+      "kind": "help",
+      "argv": [
+        "measurement",
+        "record",
+        "--help"
+      ],
+      "exit": 0,
+      "stdout": "Atomically record one plan-validated producer invocation.\n\nUSAGE\n  $ quoin measurement record --input <value> [--config-root <value>]\n    [--no-project-config] [--repo <value>]\n\nFLAGS\n  --input=<value>  (required) Collection JSON path, or - for stdin.\n  --repo=<value>   [default: .] Repository root.\n\nGLOBAL FLAGS\n  --config-root=<value>  [env: IX_CONFIG_ROOT] Override the user-level config\n                         root for this invocation.\n  --no-project-config    Disable project-local .ix config layering.\n\n",
+      "stderr": ""
+    },
+    {
+      "kind": "help",
+      "argv": [
+        "module",
+        "--help"
+      ],
+      "exit": 0,
+      "stdout": "List installed spec modules.\n\nUSAGE\n  $ quoin module [--config-root <value>] [--no-project-config]\n\nGLOBAL FLAGS\n  --config-root=<value>  [env: IX_CONFIG_ROOT] Override the user-level config\n                         root for this invocation.\n  --no-project-config    Disable project-local .ix config layering.\n\nDESCRIPTION\n  List installed spec modules.\n\n  Spec modules add or override artifact/object types under\n  ~/.ix/filament/modules.\n  Use \"quoin catalog list\" to see the full active catalog, including default\n  modules and any installed modules.\n\nEXAMPLES\n  $ quoin module list\n\nCOMMANDS\n  module ensure-defaults  Idempotently install the default spec module set.\n  module install          Install or update a user/community spec module.\n  module list             List installed spec modules.\n  module remove           Remove an installed spec module.\n\n",
+      "stderr": ""
+    },
+    {
+      "kind": "help",
+      "argv": [
+        "module",
+        "ensure-defaults",
+        "--help"
+      ],
+      "exit": 0,
+      "stdout": "Idempotently install the default spec module set.\n\nUSAGE\n  $ quoin module ensure-defaults [--config-root <value>] [--no-project-config]\n\nGLOBAL FLAGS\n  --config-root=<value>  [env: IX_CONFIG_ROOT] Override the user-level config\n                         root for this invocation.\n  --no-project-config    Disable project-local .ix config layering.\n\nDESCRIPTION\n  Idempotently install the default spec module set.\n\n  Materializes the default module set into ~/.ix/filament/modules. Exposed as an\n  explicit command so other tools (notably \"quire validate\") can lazy-install\n  the\n  defaults by shelling out here, rather than relying on the side effect of\n  \"quoin catalog list\".\n\nEXAMPLES\n  $ quoin module ensure-defaults\n\n",
+      "stderr": ""
+    },
+    {
+      "kind": "help",
+      "argv": [
+        "module",
+        "install",
+        "--help"
+      ],
+      "exit": 0,
+      "stdout": "Install or update a user/community spec module.\n\nUSAGE\n  $ quoin module install [SOURCE] [--config-root <value>]\n    [--no-project-config]\n\nARGUMENTS\n  [SOURCE]  Install source (path:..., github:..., or package:...).\n\nGLOBAL FLAGS\n  --config-root=<value>  [env: IX_CONFIG_ROOT] Override the user-level config\n                         root for this invocation.\n  --no-project-config    Disable project-local .ix config layering.\n\nDESCRIPTION\n  Install or update a user/community spec module.\n\n  Supported install sources:\n  path:<dir>                        Use a local directory containing\n  manifest.yaml\n  github:<owner>/<repo>             Clone a GitHub repository (manifest at root)\n  github:<owner>/<repo>@<ref>       Pin to a tag, branch, or sha\n  github:<owner>/<repo>//<subdir>   Manifest in a monorepo subdirectory (@<ref>\n  ok)\n  package:<name>                    Install a module from an npm package\n  (manifest at root)\n  package:<name>@<version>          Pin to an npm version\n\nEXAMPLES\n  $ quoin module install path:../spec-objects-custom\n\n  $ quoin module install github:agent-ix/spec-objects-custom\n\n  $ quoin module install github:agent-ix/spec-objects-security//spec_objects_security@v0.1.1\n\n  $ quoin module install package:@agent-ix/spec-objects-security@0.4.0\n\n",
+      "stderr": ""
+    },
+    {
+      "kind": "help",
+      "argv": [
+        "module",
+        "list",
+        "--help"
+      ],
+      "exit": 0,
+      "stdout": "List installed spec modules.\n\nUSAGE\n  $ quoin module list [--config-root <value>] [--no-project-config]\n\nGLOBAL FLAGS\n  --config-root=<value>  [env: IX_CONFIG_ROOT] Override the user-level config\n                         root for this invocation.\n  --no-project-config    Disable project-local .ix config layering.\n\nDESCRIPTION\n  List installed spec modules.\n\n  Spec modules add or override artifact/object types under\n  ~/.ix/filament/modules.\n  Use \"quoin catalog list\" to see the full active catalog, including default\n  modules and any installed modules.\n\nEXAMPLES\n  $ quoin module list\n\n",
+      "stderr": ""
+    },
+    {
+      "kind": "help",
+      "argv": [
+        "module",
+        "remove",
+        "--help"
+      ],
+      "exit": 0,
+      "stdout": "Remove an installed spec module.\n\nUSAGE\n  $ quoin module remove [NAME] [--config-root <value>] [--no-project-config]\n\nARGUMENTS\n  [NAME]  Installed module name.\n\nGLOBAL FLAGS\n  --config-root=<value>  [env: IX_CONFIG_ROOT] Override the user-level config\n                         root for this invocation.\n  --no-project-config    Disable project-local .ix config layering.\n\nEXAMPLES\n  $ quoin module remove spec-objects-custom\n\n",
+      "stderr": ""
+    },
+    {
+      "kind": "help",
+      "argv": [
+        "plugin",
+        "--help"
+      ],
+      "exit": 0,
+      "stdout": "[DEPRECATED] Alias for `quoin module list`.\n\nUSAGE\n  $ quoin plugin\n\nDESCRIPTION\n  [DEPRECATED] Alias for `quoin module list`.\n\n  Spec modules add or override artifact/object types under\n  ~/.ix/filament/modules.\n  Use \"quoin catalog list\" to see the full active catalog, including default\n  modules and any installed modules.\n\nEXAMPLES\n  $ quoin module list\n\n",
+      "stderr": ""
+    },
+    {
+      "kind": "help",
+      "argv": [
+        "plugin",
+        "ensure-defaults",
+        "--help"
+      ],
+      "exit": 0,
+      "stdout": "[DEPRECATED] Alias for `quoin module ensure-defaults`.\n\nUSAGE\n  $ quoin plugin ensure-defaults\n\nDESCRIPTION\n  [DEPRECATED] Alias for `quoin module ensure-defaults`.\n\n  Materializes the default module set into ~/.ix/filament/modules. Exposed as an\n  explicit command so other tools (notably \"quire validate\") can lazy-install\n  the\n  defaults by shelling out here, rather than relying on the side effect of\n  \"quoin catalog list\".\n\nEXAMPLES\n  $ quoin module ensure-defaults\n\n",
+      "stderr": ""
+    },
+    {
+      "kind": "help",
+      "argv": [
+        "plugin",
+        "install",
+        "--help"
+      ],
+      "exit": 0,
+      "stdout": "[DEPRECATED] Alias for `quoin module install`.\n\nUSAGE\n  $ quoin plugin install [SOURCE]\n\nARGUMENTS\n  [SOURCE]  Install source (path:..., github:..., or package:...).\n\nDESCRIPTION\n  [DEPRECATED] Alias for `quoin module install`.\n\n  Supported install sources:\n  path:<dir>                        Use a local directory containing\n  manifest.yaml\n  github:<owner>/<repo>             Clone a GitHub repository (manifest at root)\n  github:<owner>/<repo>@<ref>       Pin to a tag, branch, or sha\n  github:<owner>/<repo>//<subdir>   Manifest in a monorepo subdirectory (@<ref>\n  ok)\n  package:<name>                    Install a module from an npm package\n  (manifest at root)\n  package:<name>@<version>          Pin to an npm version\n\nEXAMPLES\n  $ quoin module install path:../spec-objects-custom\n\n  $ quoin module install github:agent-ix/spec-objects-custom\n\n  $ quoin module install github:agent-ix/spec-objects-security//spec_objects_security@v0.1.1\n\n  $ quoin module install package:@agent-ix/spec-objects-security@0.4.0\n\n",
+      "stderr": ""
+    },
+    {
+      "kind": "help",
+      "argv": [
+        "plugin",
+        "list",
+        "--help"
+      ],
+      "exit": 0,
+      "stdout": "[DEPRECATED] Alias for `quoin module list`.\n\nUSAGE\n  $ quoin plugin list\n\nDESCRIPTION\n  [DEPRECATED] Alias for `quoin module list`.\n\n  Spec modules add or override artifact/object types under\n  ~/.ix/filament/modules.\n  Use \"quoin catalog list\" to see the full active catalog, including default\n  modules and any installed modules.\n\nEXAMPLES\n  $ quoin module list\n\n",
+      "stderr": ""
+    },
+    {
+      "kind": "help",
+      "argv": [
+        "plugin",
+        "remove",
+        "--help"
+      ],
+      "exit": 0,
+      "stdout": "[DEPRECATED] Alias for `quoin module remove`.\n\nUSAGE\n  $ quoin plugin remove [NAME]\n\nARGUMENTS\n  [NAME]  Installed module name.\n\nEXAMPLES\n  $ quoin module remove spec-objects-custom\n\n",
+      "stderr": ""
+    },
+    {
+      "kind": "help",
+      "argv": [
+        "report",
+        "--help"
+      ],
+      "exit": 0,
+      "stdout": "Render QA plans and measurements from the evidence store.\n\nUSAGE\n  $ quoin report [--config-root <value>] [--no-project-config]\n    [--repo <value>] [--portfolio <value>...] [--graph-export <value>...]\n    [--graph-premises <value>...] [--graph-audit <value>...] [--changed\n    <value>...] [--since <value>] [--series <value>] [--format human|json]\n\nFLAGS\n  --changed=<value>...         Repository=requirement mapping for graph\n                               change-impact; repeatable.\n  --format=<option>            [default: human] Output format.\n                               <options: human|json>\n  --graph-audit=<value>...     Repository=path mapping for a source-bound audit\n                               envelope; repeatable.\n  --graph-export=<value>...    Repository=path mapping for an existing Quire\n                               assurance export; repeatable.\n  --graph-premises=<value>...  Repository=path mapping for accepted graph\n                               premises; repeatable.\n  --portfolio=<value>...       Repository root to include; repeat for a\n                               portfolio view.\n  --repo=<value>               [default: .] Repository root.\n  --series=<value>             Render the history of one metric.\n  --since=<value>              Compare the named source revision to latest.\n\nGLOBAL FLAGS\n  --config-root=<value>  [env: IX_CONFIG_ROOT] Override the user-level config\n                         root for this invocation.\n  --no-project-config    Disable project-local .ix config layering.\n\nDESCRIPTION\n  Render QA plans and measurements from the evidence store.\n\n  A deterministic store view. It accepts no typed values and runs no\n  measurement producer. Plans with no records remain visible as not_computed.\n\nEXAMPLES\n  $ quoin report\n\n  $ quoin report --since abc123 --format json\n\n  $ quoin report --series finding_recall --format json\n\n  $ quoin report --portfolio ../quoin --portfolio ../quire-rs\n\n",
+      "stderr": ""
+    },
+    {
+      "kind": "help",
+      "argv": [
+        "review",
+        "--help"
+      ],
+      "exit": 0,
+      "stdout": "Run a composite spec review workflow.\n\nUSAGE\n  $ quoin review [--target <value>...] [--json] [--id <value>]\n\nFLAGS\n  --id=<value>         Explicit workflow run id.\n  --json               Forward --json to ix-flow.\n  --target=<value>...  Spec target ref to feed the workflow (repeatable).\n\nDESCRIPTION\n  Run a composite spec review workflow.\n\n  Starts the bundled review workflow run in ~/.ix/flows. Use ix-flow to inspect,\n  resume, advance phases, and acknowledge human gates.\n\nEXAMPLES\n  $ quoin review --target spec/\n\n  ix-flow status <run-id>\n\n",
+      "stderr": ""
+    },
+    {
+      "kind": "help",
+      "argv": [
+        "semantic",
+        "--help"
+      ],
+      "exit": 0,
+      "stdout": "Classify every Markdown artifact's Properties form across corpus roots (FR-074).\n\nUSAGE\n  $ quoin semantic COMMAND\n\nCOMMANDS\n  semantic sweep  Classify every Markdown artifact's Properties form across\n                  corpus roots (FR-074).\n\n",
+      "stderr": ""
+    },
+    {
+      "kind": "help",
+      "argv": [
+        "semantic",
+        "sweep",
+        "--help"
+      ],
+      "exit": 0,
+      "stdout": "Classify every Markdown artifact's Properties form across corpus roots (FR-074).\n\nUSAGE\n  $ quoin semantic sweep ROOTS... --package <value> --module-version <value>\n    [--config-root <value>] [--no-project-config] [--out <value>]\n\nARGUMENTS\n  ROOTS...  Corpus roots to walk (one or more directories).\n\nFLAGS\n  --module-version=<value>  (required) Module version the report is for.\n  --out=<value>             Write the report here instead of stdout.\n  --package=<value>         (required) Semantic package identity (<org>/<repo>)\n                            the report is for.\n\nGLOBAL FLAGS\n  --config-root=<value>  [env: IX_CONFIG_ROOT] Override the user-level config\n                         root for this invocation.\n  --no-project-config    Disable project-local .ix config layering.\n\nDESCRIPTION\n  Classify every Markdown artifact's Properties form across corpus roots\n  (FR-074).\n\n  Walks each root, reads Markdown as text (never rewriting it), and reports how\n  many artifacts use the typed `Field | Type | Multiplicity | Constraints`\n  table,\n  a `sysml` fence, or a legacy form (bullet list, free-column table). A module\n  may\n  cite the report via `semantic.sweep_report` before promoting\n  `semantic.legacy_forms` from warning to error. The advisory sweep of quoin#291\n  runs this over the corpus.\n\nEXAMPLES\n  $ quoin semantic sweep --package agent-ix/spec-objects-business --module-version 0.3.0 ../config-service ../quire-rs\n\n  $ quoin semantic sweep --package agent-ix/spec-objects-business --module-version 0.3.0 --out semantic/sweep.json .\n\n",
+      "stderr": ""
+    },
+    {
+      "kind": "help",
+      "argv": [
+        "sync",
+        "--help"
+      ],
+      "exit": 0,
+      "stdout": "Synchronize the local plan tree with an external tracker target.\n\nUSAGE\n  $ quoin sync -t <value> [--config-root <value>]\n    [--no-project-config] [-m full|lazy] [-s <value>]\n\nFLAGS\n  -m, --mode=<option>   [default: full] sync mode\n                        <options: full|lazy>\n  -s, --scope=<value>   comma-separated node ids to limit the sync scope\n                        (default: all)\n  -t, --target=<value>  (required) tracker target id, e.g. \"jira/PROJ\" or\n                        \"gh/owner/repo\"\n\nGLOBAL FLAGS\n  --config-root=<value>  [env: IX_CONFIG_ROOT] Override the user-level config\n                         root for this invocation.\n  --no-project-config    Disable project-local .ix config layering.\n\nDESCRIPTION\n  Synchronize the local plan tree with an external tracker target.\n\n",
+      "stderr": ""
+    },
+    {
+      "kind": "help",
+      "argv": [
+        "to-plan",
+        "--help"
+      ],
+      "exit": 0,
+      "stdout": "Convert accepted requirements into an implementation plan.\n\nUSAGE\n  $ quoin to-plan [--target <value>...] [--json] [--id <value>]\n\nFLAGS\n  --id=<value>         Explicit workflow run id.\n  --json               Forward --json to ix-flow.\n  --target=<value>...  Spec target ref to feed the workflow (repeatable).\n\nDESCRIPTION\n  Convert accepted requirements into an implementation plan.\n\n  Starts the bundled to-plan workflow run in ~/.ix/flows. Use ix-flow to\n  inspect,\n  resume, advance phases, and acknowledge human gates.\n\nEXAMPLES\n  $ quoin to-plan --target spec/\n\n  ix-flow status <run-id>\n\n",
+      "stderr": ""
+    },
+    {
+      "kind": "help",
+      "argv": [
+        "update",
+        "--help"
+      ],
+      "exit": 0,
+      "stdout": "Check for and install the latest published quoin.\n\nUSAGE\n  $ quoin update [--config-root <value>] [--no-project-config]\n    [--check] [--registry <value>]\n\nFLAGS\n  --check             Report whether an update is available; do not install.\n  --registry=<value>  Force an npm registry to query/install from. Defaults to\n                      the public npm registry (https://registry.npmjs.org/),\n                      where @agent-ix/quoin is published. Pass http://npm.ix/\n                      for local dev snapshots.\n\nGLOBAL FLAGS\n  --config-root=<value>  [env: IX_CONFIG_ROOT] Override the user-level config\n                         root for this invocation.\n  --no-project-config    Disable project-local .ix config layering.\n\nDESCRIPTION\n  Check for and install the latest published quoin.\n\n  quoin is distributed on the public npm registry as @agent-ix/quoin. This\n  command\n  queries the registry for the latest version, compares it to the running\n  version,\n  and (unless --check) runs npm install -g to upgrade in place.\n\nEXAMPLES\n  $ quoin update\n\n  $ quoin update --check\n\n  $ quoin update --registry http://npm.ix/\n\n",
+      "stderr": ""
+    },
+    {
+      "kind": "help",
+      "argv": [
+        "validate",
+        "--help"
+      ],
+      "exit": 0,
+      "stdout": "Validate repository QA gates and report located defects.\n\nUSAGE\n  $ quoin validate [--config-root <value>] [--no-project-config]\n    [--repo <value>] [--strict] [--json]\n\nFLAGS\n  --json          Emit findings as JSON.\n  --repo=<value>  [default: .] Repository root.\n  --strict        Exit 1 when a finding remains.\n\nGLOBAL FLAGS\n  --config-root=<value>  [env: IX_CONFIG_ROOT] Override the user-level config\n                         root for this invocation.\n  --no-project-config    Disable project-local .ix config layering.\n\nDESCRIPTION\n  Validate repository QA gates and report located defects.\n\n  Runs deterministic repository validators. The gate-capability check joins an\n  explicit shell-gate claim, build/CI wiring, and the command that is supposed\n  to\n  enforce it; report scripts are not treated as gates from their text alone.\n\n  Findings are advisory by default. Pass --strict in CI to exit non-zero.\n\nEXAMPLES\n  $ quoin validate\n\n  $ quoin validate --strict\n\n  $ quoin validate --json\n\n",
+      "stderr": ""
+    },
+    {
+      "kind": "help",
+      "argv": [
+        "write",
+        "--help"
+      ],
+      "exit": 0,
+      "stdout": "Build an authoring pack for spec files an agent is about to create or edit.\n\nUSAGE\n  $ quoin write [REPO_DIR] [--config-root <value>]\n    [--no-project-config] [--types <value>...] [--org <value>] [--json]\n\nARGUMENTS\n  [REPO_DIR]  Target repository directory.\n\nFLAGS\n  --json              Emit the authoring pack as JSON.\n  --org=<value>       Authoring organization. Overrides QUOIN_ORG and the repo's\n                      origin remote.\n  --types=<value>...  Artifact/object type(s), comma-separated or repeated.\n\nGLOBAL FLAGS\n  --config-root=<value>  [env: IX_CONFIG_ROOT] Override the user-level config\n                         root for this invocation.\n  --no-project-config    Disable project-local .ix config layering.\n\nDESCRIPTION\n  Build an authoring pack for spec files an agent is about to create or edit.\n\n  Pass the target repository and the artifact/object types involved in the work.\n  quoin resolves those types from the active catalog and returns the local\n  skeletons, schemas, module roots, and Quire validation command for the repo.\n\n  Notes:\n  - Type lookup is case-insensitive; FR and fr are the same type.\n  - Types can be artifacts or objects from the default module set or modules.\n  - Use the returned skeletons and schemas as the authoring contract.\n  - Run the returned Quire command after editing spec files.\n  - The org is resolved from --org, else QUOIN_ORG, else the repo's origin\n  remote. It is never defaulted: put the reported org in the frontmatter\n  \"org:\" field rather than copying a value from a skeleton.\n\nEXAMPLES\n  $ quoin write . --types FR\n\n  $ quoin write . --types FR,domain,entity\n\n  $ quoin write ../my-service --types fr,DOMAIN --json\n\n  $ quoin write . --types Spec --org acme\n\n",
+      "stderr": ""
+    },
+    {
+      "kind": "shell",
+      "argv": [
+        "--version"
+      ],
+      "exit": 0,
+      "stdout": "<VERSION>\n",
+      "stderr": ""
+    },
+    {
+      "kind": "shell",
+      "argv": [
+        "not-a-command"
+      ],
+      "exit": 2,
+      "stdout": "",
+      "stderr": " ›   Error: command not-a-command not found\n ›\n ›   Usage: quoin <command> [options]\n ›\n ›   Commands: advise, assurance, catalog, change-assurance, completeness, \n ›   config, discharge, evidence, graph, matrix, measurement, module, report, \n ›   review, semantic, sync, to-plan, update, validate, write\n ›\n ›   Run `quoin <command> --help` for details.\n"
+    },
+    {
+      "kind": "shell",
+      "argv": [
+        "catalog",
+        "not-a-command",
+        "--format",
+        "json"
+      ],
+      "exit": 2,
+      "stdout": "",
+      "stderr": " ›   Error: command catalog:not-a-command not found\n ›\n ›   Usage: quoin <command> [options]\n ›\n ›   Commands: advise, assurance, catalog, change-assurance, completeness, \n ›   config, discharge, evidence, graph, matrix, measurement, module, report, \n ›   review, semantic, sync, to-plan, update, validate, write\n ›\n ›   Run `quoin <command> --help` for details.\n"
+    },
+    {
+      "kind": "shell",
+      "argv": [
+        "graph"
+      ],
+      "exit": 0,
+      "stdout": "Analyze an existing, accepted Quire assurance export together with retained\nQuoin evidence and an existing FR-032 audit. These commands run no producer,\nsuite, Quire, Git, or network operation and write nothing.\n\nSubcommands:\n  quoin graph fan-out\n  quoin graph change-impact\n  quoin graph churn\n",
+      "stderr": ""
+    },
+    {
+      "kind": "shell",
+      "argv": [
+        "graph",
+        "fan-out"
+      ],
+      "exit": 2,
+      "stdout": "",
+      "stderr": " ›   Error: The following errors occurred:\n ›     Missing required flag audit\n ›     Missing required flag export\n ›     Missing required flag premises\n ›   See more help with --help\n"
+    },
+    {
+      "kind": "shell",
+      "argv": [
+        "graph",
+        "churn"
+      ],
+      "exit": 2,
+      "stdout": "",
+      "stderr": " ›   Error: The following errors occurred:\n ›     Missing required flag audit\n ›     Missing required flag export\n ›     Missing required flag premises\n ›   See more help with --help\n"
+    },
+    {
+      "kind": "shell",
+      "argv": [
+        "graph",
+        "change-impact"
+      ],
+      "exit": 2,
+      "stdout": "",
+      "stderr": " ›   Error: The following errors occurred:\n ›     Missing required flag audit\n ›     Missing required flag export\n ›     Missing required flag premises\n ›     Missing required flag requirement\n ›   See more help with --help\n"
+    },
+    {
+      "kind": "shell",
+      "argv": [
+        "write"
+      ],
+      "exit": 1,
+      "stdout": "",
+      "stderr": "    Error: write requires <repo_dir>\n"
+    }
+  ]
+}

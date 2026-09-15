@@ -4,10 +4,9 @@
 //! The library half of `quoin-core` holds no host capability, checked by the
 //! shared Engineering Assurance auditor rather than by a local one.
 //!
-//! `.claude/skills/rust-style/SKILL.md` states the rule in prose: "`main.rs`
-//! does four things — argv, stdin, dispatch, two writes and an exit — and must
-//! keep doing only four. Everything decidable lives in the library so it is
-//! unit-testable without spawning a process." Prose is not a gate. A single
+//! The boundary rule is that [`crate::runtime`] is the sole host-capability
+//! construction surface. Everything decidable lives in the library so it is
+//! unit-testable without spawning a process. Prose is not a gate. A single
 //! `std::fs::read_to_string` added to `ops/` would pass every existing test,
 //! pass clippy, and quietly make the boundary untestable without a filesystem.
 //!
@@ -23,9 +22,9 @@ use engineering_assurance::source_audit::{
     RustSourceAuditRole, RustSourceFindingCategory, audit_rust_source,
 };
 
-/// The one file in this crate allowed to hold a host capability: the I/O
-/// shell. Everything else under `src/` is the library half.
-const IO_SHELL: &str = "main.rs";
+/// The explicit production host constructor is capability-bearing boundary
+/// code. Everything else under `src/` is the reusable, filesystem-free engine.
+const BOUNDARY_SOURCES: &[&str] = &["runtime.rs"];
 
 fn crate_root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).to_path_buf()
@@ -43,7 +42,9 @@ fn library_sources(dir: &Path, out: &mut Vec<PathBuf>) -> std::io::Result<()> {
         if path.is_dir() {
             library_sources(&path, out)?;
         } else if path.extension().is_some_and(|ext| ext == "rs")
-            && path.file_name().is_some_and(|name| name != IO_SHELL)
+            && path
+                .file_name()
+                .is_some_and(|name| !BOUNDARY_SOURCES.contains(&name.to_str().unwrap_or_default()))
         {
             out.push(path);
         }
@@ -99,7 +100,7 @@ fn tc_373_the_library_half_names_no_host_capability() {
     assert_eq!(
         offences,
         Vec::<String>::new(),
-        "the library half acquired a host capability; move it into main.rs or \
+        "the library half acquired a host capability; move it into runtime.rs or \
          state why the boundary now needs it"
     );
 }

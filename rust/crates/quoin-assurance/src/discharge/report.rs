@@ -21,7 +21,7 @@ use super::parse::{parse_attestation, parse_fact};
 /// reason: the retained `buildDischargeReport` throws one `Error` for all
 /// eleven predicates below, every one of them leaves the boundary as
 /// `CORE_BAD_REQUEST`, and no caller can branch on which fired. The message is
-/// reproduced because it costs nothing and helps a human, but `quoin-difftest`
+/// reproduced because it costs nothing and helps a human, but the native fixture suite
 /// compares `(code, context keys)` and never the prose (quoin#373).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DischargeError(pub String);

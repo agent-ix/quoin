@@ -117,7 +117,7 @@ The default module set defines the spec archetypes and domain-object vocabulary.
 
 ## Install
 
-Installing quoin is **two steps**: the CLI (from public npm) and a plugin that adds the
+Installing quoin is **two steps**: the native CLI (from a GitHub Release) and a plugin that adds the
 [skills](#agent-skills) and workflows to your coding agent. The same skill bundle installs
 into **Claude Code, OpenAI Codex, opencode, and GitHub Copilot** — pick your agent below. No
 Anthropic API key is required — your existing agent subscription is used.
@@ -125,8 +125,13 @@ Anthropic API key is required — your existing agent subscription is used.
 **1. Install the CLIs** (`quoin` plus `ix-flow`, which runs the workflow lifecycle commands):
 
 ```bash
-npm install -g @agent-ix/quoin@latest @agent-ix/ix-flow@latest
+# Download the archive for your host from the stable GitHub Release, verify it
+# with quoin-update-manifest.json, extract `quoin`, then place it on PATH.
+npm install -g @agent-ix/ix-flow@latest
 ```
+
+Supported native targets and archive names are listed in the [native release
+contract](./docs/native-release.md).
 
 **2. Add the plugin to your coding agent:**
 
@@ -229,10 +234,9 @@ expiry behavior, and the boundary that leaves existing run records unchanged.
 ## Development
 
 ```bash
-pnpm install
-pnpm run build
-pnpm test
-pnpm run lint
+make rust-build
+make rust-test
+make rust-lint
 ```
 
 ### Specification
@@ -240,57 +244,8 @@ pnpm run lint
 The technical specification for this library was itself authored with the `spec-artifacts-iso` module — see
 [spec/spec.md](spec/spec.md).
 
-### Evals
-
-Eval scenarios live in [spec/evals.md](spec/evals.md) and run through the shared
-[`@agent-ix/cli-agent-evals`](../cli-agent-evals) toolkit. The suite definition is
-[`cli-agent-evals.config.mjs`](cli-agent-evals.config.mjs); quoin-specific fixtures,
-module seeding, prompts, and assertions remain under [`evals/`](evals/).
-
-Live runs profile a **real** agent running the skills/workflows and record token,
-tool, and latency metrics from the available transcript. Unit tests cover the
-mechanical CLI behavior.
-
-```bash
-make evals
-make evals-all
-node ../cli-agent-evals/bin/cli-evals.js run \
-  --suite ./cli-agent-evals.config.mjs \
-  --canary \
-  --agent claude \
-  --model sonnet
-```
-
-Agent plugin setup for authoring/running evals from an agent:
-
-```bash
-claude plugin marketplace add agent-ix/cli-agent-evals
-claude plugin install cli-agent-evals
-
-codex plugin marketplace add agent-ix/cli-agent-evals
-codex plugin add cli-agent-evals
-
-gh skill install agent-ix/cli-agent-evals --all --scope user --agent opencode
-gh skill install agent-ix/cli-agent-evals --all --scope user --agent github-copilot
-```
-
-Minimal integration pattern:
-
-```js
-import { defineSuite } from "../cli-agent-evals/dist/index.js";
-import { SCENARIOS } from "./evals/scenarios/index.mjs";
-
-export default defineSuite({
-  name: "quoin",
-  rootDir: import.meta.dirname,
-  scenarios: SCENARIOS,
-});
-```
-
 ## About
 
 quoin is part of the Agent-IX ecosystem built on these core libraries:
 
 - [quire-cli](https://github.com/agent-ix/quire-cli), the static-binary CLI wrapping the Quire engine
-- [ix-cli-core](https://github.com/agent-ix/ix-cli-core), the generic CLI framework
-  for Agent IX.

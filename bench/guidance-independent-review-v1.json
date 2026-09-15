@@ -1,25 +1,27 @@
 {
   "schemaVersion": "guidance-independent-review-v1",
   "populationSource": {
-    "corpusRevision": "7b81343ee05b3ef3a618839f64a5997fa16efd5c",
-    "corpusInputDigest": "sha256:c3bc935cf5a5208be4b66769386ae731400907b7a04e307de8a8e63b396d399d",
+    "corpusRevision": "7442f2770880a4ade303fb23d725804bdef454db",
+    "corpusInputDigest": "sha256:4a806b0807eaf4c5a866ee478335c243856b5f98e701be2f9164c0c01cf271b8",
     "producer": {
       "schemaVersion": "quire-tool-provenance-v1",
       "cli": {
-        "version": "0.30.2",
-        "sourceRevision": "bcface2714a958a328f3427714650ab2df71030f",
+        "version": "0.32.0",
+        "sourceRevision": "813019d872af7fc6d2469b5afad52f86f16915b4",
         "sourceState": "clean"
       },
       "engine": {
         "version": "0.46.0",
-        "sourceRevision": "ca7362d4dacecb96f01d74d1d971327118c25917",
+        "sourceRevision": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
         "sourceState": "clean"
       },
       "capabilities": [
         "action_guidance.structured",
+        "assurance_export.v1",
         "binding_census",
         "binding_census.self_named",
         "binding_census.tagged",
+        "clause_sets",
         "declaration_origins",
         "metrics_envelope",
         "minted_targets",
@@ -222,14 +224,42 @@
         "method": "The controlled corpus replays the defective fixture and its language-matched repaired control; the expected family is present only before repair while corpus verification remains green.",
         "retainedFinding": {
           "kind": "ValidationError",
-          "message": "/home/peter/dev/quoin/corpus/cases/minting/wrong-type-cell/typescript/input/spec/tests.md: line 10: [TestMatrix] 'test_cases': TC-001: column 'Type' cell 'Telepathy' is not one of [\"Unit\", \"Integration\", \"E2E\", \"Property\", \"Fuzz\", \"Benchmark\", \"Static\", \"Compile\", \"Snapshot\", \"Manual\", \"Eval\", \"Inspection\", \"Analysis\", \"Demonstration\"] [assert]",
+          "message": "corpus/cases/minting/wrong-type-cell/typescript/input/spec/tests.md: line 10: [TestMatrix] 'test_cases': TC-001: column 'Type' cell 'Telepathy' is not one of [\"Unit\", \"Integration\", \"E2E\", \"Property\", \"Fuzz\", \"Benchmark\", \"Static\", \"Compile\", \"Snapshot\", \"Manual\", \"Eval\", \"Inspection\", \"Analysis\", \"Demonstration\"] [assert]",
           "severity": "error",
           "reason": "assert",
-          "path": "/home/peter/dev/quoin/corpus/cases/minting/wrong-type-cell/typescript/input/spec/tests.md",
+          "path": "corpus/cases/minting/wrong-type-cell/typescript/input/spec/tests.md",
           "line": 10,
-          "subject": "document validation of /home/peter/dev/quoin/corpus/cases/minting/wrong-type-cell/typescript/input/spec/tests.md",
-          "change_target": "/home/peter/dev/quoin/corpus/cases/minting/wrong-type-cell/typescript/input/spec/tests.md:10",
+          "subject": "document validation of corpus/cases/minting/wrong-type-cell/typescript/input/spec/tests.md",
+          "change_target": "corpus/cases/minting/wrong-type-cell/typescript/input/spec/tests.md:10",
           "remedy": "change the cited value or structure so it satisfies the named archetype assertion"
+        }
+      }
+    },
+    {
+      "recordId": "sha256:039387c110c2e6cd7fe82581a123b22d52e839c55eaffa58e8268e893b2ab2bf",
+      "partition": "quire/quire/coverage.diagnostics/status-column-matches-nothing",
+      "identity": {
+        "family": "status-column-matches-nothing",
+        "case": "reference-status-column-rust",
+        "language": "rust",
+        "declaration": "alternate-status"
+      },
+      "templateDigest": "sha256:101c3afc4871ec307a44e7433e77373e361bf3acb8b89f0c03f24f6ac3097f56",
+      "correctness": "pass",
+      "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
+      "executableProof": {
+        "kind": "diagnostic",
+        "outcome": "pass",
+        "method": "The canonical producer replay emits the cited causal channel and its controlled comparison retains the evidence needed to distinguish the named causes.",
+        "retainedFinding": {
+          "declaration": "alternate-status",
+          "reason": "status-column-matches-nothing",
+          "message": "declaration 'alternate-status' uses configured status column 'Status', which the table under 'Alternate' in spec/tests.md does not have — the columns it has are 'ID', 'Tests', 'Coverage Status'. Status classification was skipped, so complete-but-unbacked rows could not be checked. Align `traceability.status.column` with the authored header or rename the document column; the engine will not guess between those change targets",
+          "path": "spec/tests.md",
+          "line": 14,
+          "subject": "declaration `alternate-status`",
+          "change_target": "spec/tests.md:14",
+          "next_diagnostic_step": "compare the configured status column with the observed table headers; rename the document column or change the configuration, and do not guess when both are plausible"
         }
       }
     },
@@ -253,11 +283,39 @@
           "declaration": "nfr-acceptance-criterion",
           "reason": "archetype-matches-nothing",
           "message": "declaration 'nfr-acceptance-criterion' declares archetype 'NFR', which no document in the corpus has — it scans nothing and mints no rows",
-          "path": "/home/peter/dev/quoin/corpus/modules/ecosystem/spec-artifacts-process/manifest.yaml",
+          "path": "corpus/modules/ecosystem/spec-artifacts-process/manifest.yaml",
           "line": 685,
           "subject": "declaration `nfr-acceptance-criterion`",
           "change_target": "the trace-target archetype in the module manifest",
           "next_diagnostic_step": "confirm whether the missing document is intentional; otherwise add the document or correct the declared archetype"
+        }
+      }
+    },
+    {
+      "recordId": "sha256:05ba77ddf45efd539057f676e9a231be613eaf1af8a23c6b98975344c8551c28",
+      "partition": "quire/quire/coverage.diagnostics/status-column-matches-nothing",
+      "identity": {
+        "family": "status-column-matches-nothing",
+        "case": "reference-status-column-explicit-python",
+        "language": "python",
+        "declaration": "alternate-status"
+      },
+      "templateDigest": "sha256:101c3afc4871ec307a44e7433e77373e361bf3acb8b89f0c03f24f6ac3097f56",
+      "correctness": "pass",
+      "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
+      "executableProof": {
+        "kind": "diagnostic",
+        "outcome": "pass",
+        "method": "The canonical producer replay emits the cited causal channel and its controlled comparison retains the evidence needed to distinguish the named causes.",
+        "retainedFinding": {
+          "declaration": "alternate-status",
+          "reason": "status-column-matches-nothing",
+          "message": "declaration 'alternate-status' uses configured status column 'Coverage Status', which the table under 'Alternate' in spec/tests.md does not have — the columns it has are 'ID', 'Tests', 'Status'. Status classification was skipped, so complete-but-unbacked rows could not be checked. Align `traceability.document_references[].status_column` with the authored header or rename the document column; the engine will not guess between those change targets",
+          "path": "spec/tests.md",
+          "line": 14,
+          "subject": "declaration `alternate-status`",
+          "change_target": "spec/tests.md:14",
+          "next_diagnostic_step": "compare the configured status column with the observed table headers; rename the document column or change the configuration, and do not guess when both are plausible"
         }
       }
     },
@@ -306,15 +364,15 @@
         "outcome": "pass",
         "method": "The controlled corpus replays the defective fixture and its language-matched repaired control; the expected family is present only before repair while corpus verification remains green.",
         "retainedFinding": {
+          "changeTarget": "scripts/check_dangerous_eval.sh:4",
           "kind": "gate-that-gates-nothing",
+          "line": 4,
           "obligation": "FR-001-AC-1",
           "path": "scripts/check_dangerous_eval.sh",
-          "line": 4,
-          "wiredBy": "Makefile",
-          "subject": "gate for FR-001-AC-1",
-          "changeTarget": "scripts/check_dangerous_eval.sh:4",
           "remedy": "compare the count for “dangerous_eval” to zero or make the match command exit non-zero when forbidden text is present",
-          "summary": "FR-001-AC-1 claims “no production symbol shall call `dangerous_eval`.”, and Makefile wires scripts/check_dangerous_eval.sh, but line 4 only counts matches for “dangerous_eval” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero."
+          "subject": "gate for FR-001-AC-1",
+          "summary": "FR-001-AC-1 claims “no production symbol shall call `dangerous_eval`.”, and Makefile wires scripts/check_dangerous_eval.sh, but line 4 only counts matches for “dangerous_eval” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero.",
+          "wiredBy": "Makefile"
         }
       }
     },
@@ -367,11 +425,39 @@
           "declaration": "nfr-acceptance-criterion",
           "reason": "archetype-matches-nothing",
           "message": "declaration 'nfr-acceptance-criterion' declares archetype 'NFR', which no document in the corpus has — it scans nothing and mints no rows",
-          "path": "/home/peter/dev/quoin/corpus/modules/ecosystem/spec-artifacts-process/manifest.yaml",
+          "path": "corpus/modules/ecosystem/spec-artifacts-process/manifest.yaml",
           "line": 685,
           "subject": "declaration `nfr-acceptance-criterion`",
           "change_target": "the trace-target archetype in the module manifest",
           "next_diagnostic_step": "confirm whether the missing document is intentional; otherwise add the document or correct the declared archetype"
+        }
+      }
+    },
+    {
+      "recordId": "sha256:1659a9339d3730c6bb5ba7cf4154e698ae3858ca3450713940879863be129efc",
+      "partition": "quire/quire/coverage.diagnostics/status-column-matches-nothing",
+      "identity": {
+        "family": "status-column-matches-nothing",
+        "case": "reference-status-column-typescript",
+        "language": "typescript",
+        "declaration": "alternate-status"
+      },
+      "templateDigest": "sha256:101c3afc4871ec307a44e7433e77373e361bf3acb8b89f0c03f24f6ac3097f56",
+      "correctness": "pass",
+      "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
+      "executableProof": {
+        "kind": "diagnostic",
+        "outcome": "pass",
+        "method": "The canonical producer replay emits the cited causal channel and its controlled comparison retains the evidence needed to distinguish the named causes.",
+        "retainedFinding": {
+          "declaration": "alternate-status",
+          "reason": "status-column-matches-nothing",
+          "message": "declaration 'alternate-status' uses configured status column 'Status', which the table under 'Alternate' in spec/tests.md does not have — the columns it has are 'ID', 'Tests', 'Coverage Status'. Status classification was skipped, so complete-but-unbacked rows could not be checked. Align `traceability.status.column` with the authored header or rename the document column; the engine will not guess between those change targets",
+          "path": "spec/tests.md",
+          "line": 14,
+          "subject": "declaration `alternate-status`",
+          "change_target": "spec/tests.md:14",
+          "next_diagnostic_step": "compare the configured status column with the observed table headers; rename the document column or change the configuration, and do not guess when both are plausible"
         }
       }
     },
@@ -419,16 +505,16 @@
         "outcome": "pass",
         "method": "The canonical producer replay emits the cited causal channel and its controlled comparison retains the evidence needed to distinguish the named causes.",
         "retainedFinding": {
-          "kind": "mocked-confirmation",
-          "obligation": "FR-001-AC-1",
-          "severity": "medium",
-          "path": "src/shell.test.ts",
-          "line": 13,
-          "symbol": "covers",
-          "subject": "FR-001-AC-1 evidence",
           "changeTarget": "src/shell.test.ts:13 in covers",
+          "kind": "mocked-confirmation",
+          "line": 13,
           "nextDiagnosticStep": "inspect whether the real behaviour for FR-001-AC-1 exists; add or bind an independent test that exercises it without substituting the behaviour under verification",
-          "summary": "FR-001-AC-1 is discharged only by tests that inject a stand-in for the behaviour it verifies: src/shell.test.ts:13 covers injects Confirmation.allow. A test that substitutes the behaviour under verification passes whether or not that behaviour exists."
+          "obligation": "FR-001-AC-1",
+          "path": "src/shell.test.ts",
+          "severity": "medium",
+          "subject": "FR-001-AC-1 evidence",
+          "summary": "FR-001-AC-1 is discharged only by tests that inject a stand-in for the behaviour it verifies: src/shell.test.ts:13 covers injects Confirmation.allow. A test that substitutes the behaviour under verification passes whether or not that behaviour exists.",
+          "symbol": "covers"
         }
       }
     },
@@ -449,13 +535,13 @@
         "method": "The controlled corpus replays the defective fixture and its language-matched repaired control; the expected family is present only before repair while corpus verification remains green.",
         "retainedFinding": {
           "kind": "ValidationError",
-          "message": "/home/peter/dev/quoin/corpus/cases/minting/wrong-type-cell/python/input/spec/tests.md: line 10: [TestMatrix] 'test_cases': TC-001: column 'Type' cell 'Telepathy' is not one of [\"Unit\", \"Integration\", \"E2E\", \"Property\", \"Fuzz\", \"Benchmark\", \"Static\", \"Compile\", \"Snapshot\", \"Manual\", \"Eval\", \"Inspection\", \"Analysis\", \"Demonstration\"] [assert]",
+          "message": "corpus/cases/minting/wrong-type-cell/python/input/spec/tests.md: line 10: [TestMatrix] 'test_cases': TC-001: column 'Type' cell 'Telepathy' is not one of [\"Unit\", \"Integration\", \"E2E\", \"Property\", \"Fuzz\", \"Benchmark\", \"Static\", \"Compile\", \"Snapshot\", \"Manual\", \"Eval\", \"Inspection\", \"Analysis\", \"Demonstration\"] [assert]",
           "severity": "error",
           "reason": "assert",
-          "path": "/home/peter/dev/quoin/corpus/cases/minting/wrong-type-cell/python/input/spec/tests.md",
+          "path": "corpus/cases/minting/wrong-type-cell/python/input/spec/tests.md",
           "line": 10,
-          "subject": "document validation of /home/peter/dev/quoin/corpus/cases/minting/wrong-type-cell/python/input/spec/tests.md",
-          "change_target": "/home/peter/dev/quoin/corpus/cases/minting/wrong-type-cell/python/input/spec/tests.md:10",
+          "subject": "document validation of corpus/cases/minting/wrong-type-cell/python/input/spec/tests.md",
+          "change_target": "corpus/cases/minting/wrong-type-cell/python/input/spec/tests.md:10",
           "remedy": "change the cited value or structure so it satisfies the named archetype assertion"
         }
       }
@@ -598,6 +684,34 @@
       }
     },
     {
+      "recordId": "sha256:30205b43b82f94a8b9b3b559a475260268aea3fe0cc22af9965b09b59fb41206",
+      "partition": "quire/quire/coverage.diagnostics/status-column-matches-nothing",
+      "identity": {
+        "family": "status-column-matches-nothing",
+        "case": "reference-status-column-python",
+        "language": "python",
+        "declaration": "alternate-status"
+      },
+      "templateDigest": "sha256:101c3afc4871ec307a44e7433e77373e361bf3acb8b89f0c03f24f6ac3097f56",
+      "correctness": "pass",
+      "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
+      "executableProof": {
+        "kind": "diagnostic",
+        "outcome": "pass",
+        "method": "The canonical producer replay emits the cited causal channel and its controlled comparison retains the evidence needed to distinguish the named causes.",
+        "retainedFinding": {
+          "declaration": "alternate-status",
+          "reason": "status-column-matches-nothing",
+          "message": "declaration 'alternate-status' uses configured status column 'Status', which the table under 'Alternate' in spec/tests.md does not have — the columns it has are 'ID', 'Tests', 'Coverage Status'. Status classification was skipped, so complete-but-unbacked rows could not be checked. Align `traceability.status.column` with the authored header or rename the document column; the engine will not guess between those change targets",
+          "path": "spec/tests.md",
+          "line": 14,
+          "subject": "declaration `alternate-status`",
+          "change_target": "spec/tests.md:14",
+          "next_diagnostic_step": "compare the configured status column with the observed table headers; rename the document column or change the configuration, and do not guess when both are plausible"
+        }
+      }
+    },
+    {
       "recordId": "sha256:33902fe450554cd9068ac343ae96447a3f1bc6448aed3adfc848f859df808f92",
       "partition": "quire/quire/coverage.diagnostics/catch-all-universal",
       "identity": {
@@ -642,15 +756,15 @@
         "outcome": "pass",
         "method": "The controlled corpus replays the defective fixture and its language-matched repaired control; the expected family is present only before repair while corpus verification remains green.",
         "retainedFinding": {
+          "changeTarget": "scripts/check_unwrap.sh:4",
           "kind": "gate-that-gates-nothing",
+          "line": 4,
           "obligation": "FR-001-AC-1",
           "path": "scripts/check_unwrap.sh",
-          "line": 4,
-          "wiredBy": "Makefile",
-          "subject": "gate for FR-001-AC-1",
-          "changeTarget": "scripts/check_unwrap.sh:4",
           "remedy": "compare the count for “unwrap()” to zero or make the match command exit non-zero when forbidden text is present",
-          "summary": "FR-001-AC-1 claims “no production `unwrap`.”, and Makefile wires scripts/check_unwrap.sh, but line 4 only counts matches for “unwrap()” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero."
+          "subject": "gate for FR-001-AC-1",
+          "summary": "FR-001-AC-1 claims “no production `unwrap`.”, and Makefile wires scripts/check_unwrap.sh, but line 4 only counts matches for “unwrap()” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero.",
+          "wiredBy": "Makefile"
         }
       }
     },
@@ -703,7 +817,7 @@
           "declaration": "quality-characteristics",
           "reason": "undeclared-coverage-vocabulary",
           "message": "vocabulary_coverage 'quality-characteristics' reads 'missing_quality_attribute' on archetype 'NFR', which declares no such enum — the check can never report anything",
-          "path": "/home/peter/dev/quoin/corpus/modules/variants/dead-coverage-vocabulary/manifest.yaml",
+          "path": "corpus/modules/variants/dead-coverage-vocabulary/manifest.yaml",
           "line": 15,
           "subject": "declaration `quality-characteristics`",
           "change_target": "the vocabulary_coverage field/archetype declaration in the module manifest",
@@ -731,7 +845,7 @@
           "declaration": "nfr-acceptance-criterion",
           "reason": "archetype-matches-nothing",
           "message": "declaration 'nfr-acceptance-criterion' declares archetype 'NFR', which no document in the corpus has — it scans nothing and mints no rows",
-          "path": "/home/peter/dev/quoin/corpus/modules/ecosystem/spec-artifacts-process/manifest.yaml",
+          "path": "corpus/modules/ecosystem/spec-artifacts-process/manifest.yaml",
           "line": 685,
           "subject": "declaration `nfr-acceptance-criterion`",
           "change_target": "the trace-target archetype in the module manifest",
@@ -788,7 +902,7 @@
           "declaration": "stakeholder-validation-criterion",
           "reason": "archetype-matches-nothing",
           "message": "declaration 'stakeholder-validation-criterion' declares archetype 'StR', which no document in the corpus has — it scans nothing and mints no rows",
-          "path": "/home/peter/dev/quoin/corpus/modules/ecosystem/spec-artifacts-process/manifest.yaml",
+          "path": "corpus/modules/ecosystem/spec-artifacts-process/manifest.yaml",
           "line": 723,
           "subject": "declaration `stakeholder-validation-criterion`",
           "change_target": "the trace-target archetype in the module manifest",
@@ -874,7 +988,7 @@
           "declaration": "traceability",
           "reason": "model-mints-nothing",
           "message": "the declared traceability model has no trace_targets, so it mints no ids and every count is over an empty denominator",
-          "path": "/home/peter/dev/quoin/corpus/modules/variants/no-trace-targets/manifest.yaml",
+          "path": "corpus/modules/variants/no-trace-targets/manifest.yaml",
           "line": 6,
           "subject": "the traceability model",
           "change_target": "traceability.trace_targets in the module manifest",
@@ -1067,13 +1181,13 @@
         "method": "The controlled corpus replays the defective fixture and its language-matched repaired control; the expected family is present only before repair while corpus verification remains green.",
         "retainedFinding": {
           "kind": "ValidationError",
-          "message": "/home/peter/dev/quoin/corpus/cases/minting/wrong-type-cell/rust/input/spec/tests.md: line 10: [TestMatrix] 'test_cases': TC-001: column 'Type' cell 'Telepathy' is not one of [\"Unit\", \"Integration\", \"E2E\", \"Property\", \"Fuzz\", \"Benchmark\", \"Static\", \"Compile\", \"Snapshot\", \"Manual\", \"Eval\", \"Inspection\", \"Analysis\", \"Demonstration\"] [assert]",
+          "message": "corpus/cases/minting/wrong-type-cell/rust/input/spec/tests.md: line 10: [TestMatrix] 'test_cases': TC-001: column 'Type' cell 'Telepathy' is not one of [\"Unit\", \"Integration\", \"E2E\", \"Property\", \"Fuzz\", \"Benchmark\", \"Static\", \"Compile\", \"Snapshot\", \"Manual\", \"Eval\", \"Inspection\", \"Analysis\", \"Demonstration\"] [assert]",
           "severity": "error",
           "reason": "assert",
-          "path": "/home/peter/dev/quoin/corpus/cases/minting/wrong-type-cell/rust/input/spec/tests.md",
+          "path": "corpus/cases/minting/wrong-type-cell/rust/input/spec/tests.md",
           "line": 10,
-          "subject": "document validation of /home/peter/dev/quoin/corpus/cases/minting/wrong-type-cell/rust/input/spec/tests.md",
-          "change_target": "/home/peter/dev/quoin/corpus/cases/minting/wrong-type-cell/rust/input/spec/tests.md:10",
+          "subject": "document validation of corpus/cases/minting/wrong-type-cell/rust/input/spec/tests.md",
+          "change_target": "corpus/cases/minting/wrong-type-cell/rust/input/spec/tests.md:10",
           "remedy": "change the cited value or structure so it satisfies the named archetype assertion"
         }
       }
@@ -1251,6 +1365,34 @@
       }
     },
     {
+      "recordId": "sha256:8c9e5f618c760fedf378bfdf65b57689eed4139097e5ec00c1da275df05333f1",
+      "partition": "quire/quire/coverage.diagnostics/status-column-matches-nothing",
+      "identity": {
+        "family": "status-column-matches-nothing",
+        "case": "reference-status-column-explicit-rust",
+        "language": "rust",
+        "declaration": "alternate-status"
+      },
+      "templateDigest": "sha256:101c3afc4871ec307a44e7433e77373e361bf3acb8b89f0c03f24f6ac3097f56",
+      "correctness": "pass",
+      "rationale": "The recommended next move follows from the retained causal evidence and names the same subject and change target; no stronger conclusion is asserted than the evidence supports.",
+      "executableProof": {
+        "kind": "diagnostic",
+        "outcome": "pass",
+        "method": "The canonical producer replay emits the cited causal channel and its controlled comparison retains the evidence needed to distinguish the named causes.",
+        "retainedFinding": {
+          "declaration": "alternate-status",
+          "reason": "status-column-matches-nothing",
+          "message": "declaration 'alternate-status' uses configured status column 'Coverage Status', which the table under 'Alternate' in spec/tests.md does not have — the columns it has are 'ID', 'Tests', 'Status'. Status classification was skipped, so complete-but-unbacked rows could not be checked. Align `traceability.document_references[].status_column` with the authored header or rename the document column; the engine will not guess between those change targets",
+          "path": "spec/tests.md",
+          "line": 14,
+          "subject": "declaration `alternate-status`",
+          "change_target": "spec/tests.md:14",
+          "next_diagnostic_step": "compare the configured status column with the observed table headers; rename the document column or change the configuration, and do not guess when both are plausible"
+        }
+      }
+    },
+    {
       "recordId": "sha256:8e0df7cc227bc74b5d8db6dd2b8c9ae09301569a89a5b4e36834d42b9a077372",
       "partition": "quire/quire/coverage.suspicions/oracle-is-code-copy",
       "identity": {
@@ -1294,16 +1436,16 @@
         "outcome": "pass",
         "method": "The canonical producer replay emits the cited causal channel and its controlled comparison retains the evidence needed to distinguish the named causes.",
         "retainedFinding": {
-          "kind": "mocked-confirmation",
-          "obligation": "FR-001-AC-1",
-          "severity": "medium",
-          "path": "src/lib.rs",
-          "line": 22,
-          "symbol": "covers",
-          "subject": "FR-001-AC-1 evidence",
           "changeTarget": "src/lib.rs:22 in covers",
+          "kind": "mocked-confirmation",
+          "line": 22,
           "nextDiagnosticStep": "inspect whether the real behaviour for FR-001-AC-1 exists; add or bind an independent test that exercises it without substituting the behaviour under verification",
-          "summary": "FR-001-AC-1 is discharged only by tests that inject a stand-in for the behaviour it verifies: src/lib.rs:22 covers injects Confirmation::allow. A test that substitutes the behaviour under verification passes whether or not that behaviour exists."
+          "obligation": "FR-001-AC-1",
+          "path": "src/lib.rs",
+          "severity": "medium",
+          "subject": "FR-001-AC-1 evidence",
+          "summary": "FR-001-AC-1 is discharged only by tests that inject a stand-in for the behaviour it verifies: src/lib.rs:22 covers injects Confirmation::allow. A test that substitutes the behaviour under verification passes whether or not that behaviour exists.",
+          "symbol": "covers"
         }
       }
     },
@@ -1323,15 +1465,15 @@
         "outcome": "pass",
         "method": "The controlled corpus replays the defective fixture and its language-matched repaired control; the expected family is present only before repair while corpus verification remains green.",
         "retainedFinding": {
+          "changeTarget": "scripts/check_dangerous_eval.sh:4",
           "kind": "gate-that-gates-nothing",
+          "line": 4,
           "obligation": "FR-001-AC-1",
           "path": "scripts/check_dangerous_eval.sh",
-          "line": 4,
-          "wiredBy": "Makefile",
-          "subject": "gate for FR-001-AC-1",
-          "changeTarget": "scripts/check_dangerous_eval.sh:4",
           "remedy": "compare the count for “dangerousEval” to zero or make the match command exit non-zero when forbidden text is present",
-          "summary": "FR-001-AC-1 claims “no production symbol shall call `dangerousEval`.”, and Makefile wires scripts/check_dangerous_eval.sh, but line 4 only counts matches for “dangerousEval” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero."
+          "subject": "gate for FR-001-AC-1",
+          "summary": "FR-001-AC-1 claims “no production symbol shall call `dangerousEval`.”, and Makefile wires scripts/check_dangerous_eval.sh, but line 4 only counts matches for “dangerousEval” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero.",
+          "wiredBy": "Makefile"
         }
       }
     },
@@ -1724,7 +1866,7 @@
           "declaration": "nfr-acceptance-criterion",
           "reason": "archetype-matches-nothing",
           "message": "declaration 'nfr-acceptance-criterion' declares archetype 'NFR', which no document in the corpus has — it scans nothing and mints no rows",
-          "path": "/home/peter/dev/quoin/corpus/modules/ecosystem/spec-artifacts-process/manifest.yaml",
+          "path": "corpus/modules/ecosystem/spec-artifacts-process/manifest.yaml",
           "line": 685,
           "subject": "declaration `nfr-acceptance-criterion`",
           "change_target": "the trace-target archetype in the module manifest",
@@ -1862,7 +2004,7 @@
           "declaration": "nfr-acceptance-criterion",
           "reason": "archetype-matches-nothing",
           "message": "declaration 'nfr-acceptance-criterion' declares archetype 'NFR', which no document in the corpus has — it scans nothing and mints no rows",
-          "path": "/home/peter/dev/quoin/corpus/modules/ecosystem/spec-artifacts-process/manifest.yaml",
+          "path": "corpus/modules/ecosystem/spec-artifacts-process/manifest.yaml",
           "line": 685,
           "subject": "declaration `nfr-acceptance-criterion`",
           "change_target": "the trace-target archetype in the module manifest",
@@ -1886,16 +2028,16 @@
         "outcome": "pass",
         "method": "The canonical producer replay emits the cited causal channel and its controlled comparison retains the evidence needed to distinguish the named causes.",
         "retainedFinding": {
-          "kind": "mocked-confirmation",
-          "obligation": "FR-001-AC-1",
-          "severity": "medium",
-          "path": "src/test_shell.py",
-          "line": 13,
-          "symbol": "test_covers",
-          "subject": "FR-001-AC-1 evidence",
           "changeTarget": "src/test_shell.py:13 in test_covers",
+          "kind": "mocked-confirmation",
+          "line": 13,
           "nextDiagnosticStep": "inspect whether the real behaviour for FR-001-AC-1 exists; add or bind an independent test that exercises it without substituting the behaviour under verification",
-          "summary": "FR-001-AC-1 is discharged only by tests that inject a stand-in for the behaviour it verifies: src/test_shell.py:13 test_covers injects Confirmation.allow. A test that substitutes the behaviour under verification passes whether or not that behaviour exists."
+          "obligation": "FR-001-AC-1",
+          "path": "src/test_shell.py",
+          "severity": "medium",
+          "subject": "FR-001-AC-1 evidence",
+          "summary": "FR-001-AC-1 is discharged only by tests that inject a stand-in for the behaviour it verifies: src/test_shell.py:13 test_covers injects Confirmation.allow. A test that substitutes the behaviour under verification passes whether or not that behaviour exists.",
+          "symbol": "test_covers"
         }
       }
     },

@@ -13,11 +13,12 @@
 //! that manifest, and the criterion would have been dropped by the port rather
 //! than carried.
 //!
-//! Driven through the real binary rather than a fake host on purpose: the whole
-//! condition is a file on disk that no request can describe, so a test that
-//! wrote its own in-memory module would be a check over a population it
-//! invented. The module here is installed BY the boundary, through
-//! `modules.install`, and then tampered with on disk.
+//! Driven through the production runtime rather than a fake host on purpose:
+//! the whole condition is a file on disk that no request can describe, so a
+//! test that wrote its own in-memory module would be a check over a population
+//! it invented. The module here is installed BY the runtime, through
+//! `modules.install`, and then tampered with on disk. This preserves the real
+//! capability boundary without retaining the temporary `quoin-core` executable.
 
 #![allow(
     clippy::unwrap_used,
@@ -26,9 +27,10 @@
 )]
 
 use std::fs;
-use std::io::Write as _;
 use std::path::{Path, PathBuf};
-use std::process::{Command, Stdio};
+
+use quoin_core::protocol::{Diagnostic, Response, canonical_json};
+use quoin_core::runtime::{RuntimeSettings, dispatch};
 
 struct Run {
     stdout: String,
@@ -37,26 +39,27 @@ struct Run {
 }
 
 fn run(op: &str, request: &serde_json::Value, home: &Path, semantic_root: &Path) -> Run {
-    let mut child = Command::new(env!("CARGO_BIN_EXE_quoin-core"))
-        .arg(op)
-        .env("QUOIN_SEMANTIC_ROOT", semantic_root)
-        .env("IX_HOME", home)
-        .stdin(Stdio::piped())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .spawn()
-        .unwrap();
-    child
-        .stdin
-        .as_mut()
-        .unwrap()
-        .write_all(request.to_string().as_bytes())
-        .unwrap();
-    let out = child.wait_with_output().unwrap();
+    let settings = RuntimeSettings {
+        ix_home: Some(home.to_path_buf()),
+        semantic_root: Some(semantic_root.to_path_buf()),
+    };
+    let response = dispatch(op, request, &settings).unwrap_or_else(|error| Response {
+        payload: serde_json::Value::Null,
+        diagnostics: vec![Diagnostic::from(&error)],
+        outcome: error.outcome(),
+    });
+    let stdout = response
+        .outcome
+        .carries_payload()
+        .then(|| canonical_json(&response.payload).unwrap())
+        .unwrap_or_default();
+    let stderr = (!response.diagnostics.is_empty())
+        .then(|| canonical_json(&response.diagnostics).unwrap())
+        .unwrap_or_default();
     Run {
-        stdout: String::from_utf8(out.stdout).unwrap(),
-        stderr: String::from_utf8(out.stderr).unwrap(),
-        status: out.status.code().unwrap(),
+        stdout,
+        stderr,
+        status: i32::from(response.outcome.code()),
     }
 }
 

@@ -12,7 +12,7 @@
 //! `std::net` path anywhere in the library half is a `ForbiddenCapability`
 //! finding. That is not a formality to route around: it is what makes the
 //! boundary's decisions unit-testable with no disk, which is the property
-//! `src/core/exec.ts` and `quoin-difftest` both rest on.
+//! `src/core/exec.ts` and the native fixture suite both rest on.
 //!
 //! Stage 7 is the first stage where that rule bites, because config and modules
 //! are inherently I/O-heavy — two config files, `.git/config`, a JSON registry,
@@ -64,6 +64,8 @@
 
 use std::path::{Path, PathBuf};
 
+use quoin_auditor::MethodCatalog;
+use quoin_catalog::ModuleDocument;
 use quoin_change_assurance::EvidenceStore;
 use quoin_evidence::EvidenceSource;
 use quoin_graph_analysis::GraphInputReader;
@@ -132,6 +134,30 @@ pub trait ModuleHost {
     /// [`quoin_modules::RollbackOutcome::NotAttempted`], since nothing was installed here and
     /// the offending copy is left where it is.
     fn validate_installed(&self, home: Option<&Path>) -> Result<(), ModulesError>;
+}
+
+/// Locating module roots and reading their catalog inputs (quoin#373, Stage 8).
+///
+/// The catalog projection itself is pure and lives in `quoin-catalog`; this
+/// trait is deliberately only the filesystem grant that turns candidate paths
+/// into [`ModuleDocument`] values. `None` means the host's default candidate
+/// roots (`QUOIN_MODULE_PATHS` followed by the installed modules directory),
+/// while `Some` is the explicit list a caller supplied for a reproducible
+/// catalog view.
+pub trait CatalogHost {
+    /// Locate candidates, read their manifests, and list skeleton filenames.
+    ///
+    /// # Errors
+    /// The first filesystem failure that prevents an otherwise located module
+    /// from being represented.
+    fn read_modules(&self, roots: Option<&[PathBuf]>) -> std::io::Result<Vec<ModuleDocument>>;
+
+    /// Merge the verification-method declarations from the located modules.
+    ///
+    /// A malformed or unreadable manifest is report data, not an operation
+    /// failure: `quoin catalog methods` is the diagnostic an operator uses to
+    /// see precisely those module problems (quoin#106).
+    fn load_method_catalog(&self, roots: Option<&[PathBuf]>) -> MethodCatalog;
 }
 
 /// Reading the vendored semantic contract, and the trees it judges
@@ -304,6 +330,8 @@ pub struct Capabilities<'a> {
     /// the failure mode `PermissiveGate`'s doc comment in `quoin-modules` warns
     /// about for the same reason.
     pub modules: Option<&'a dyn ModuleHost>,
+    /// The catalog-input capability, absent when nothing granted one.
+    pub catalog: Option<&'a dyn CatalogHost>,
     /// The semantic-contract capability, absent when nothing granted one.
     pub semantic: Option<&'a dyn SemanticHost>,
     /// The change-assurance evidence store, absent when nothing granted one.
@@ -331,6 +359,7 @@ impl<'a> Capabilities<'a> {
     pub const fn none() -> Self {
         Self {
             modules: None,
+            catalog: None,
             semantic: None,
             change_assurance: None,
             evidence: None,
@@ -351,6 +380,15 @@ impl<'a> Capabilities<'a> {
     pub fn with_modules(host: &'a dyn ModuleHost) -> Self {
         Self {
             modules: Some(host),
+            ..Self::none()
+        }
+    }
+
+    /// A grant of the catalog host only.
+    #[must_use]
+    pub fn with_catalog(host: &'a dyn CatalogHost) -> Self {
+        Self {
+            catalog: Some(host),
             ..Self::none()
         }
     }
@@ -405,8 +443,13 @@ impl<'a> Capabilities<'a> {
     /// The one place that names every capability, deliberately: adding one
     /// must fail to compile here until `main.rs` decides what to pass.
     #[must_use]
+    #[allow(
+        clippy::too_many_arguments,
+        reason = "the explicit argument list is the audited capability census; a bag would hide a grant"
+    )]
     pub const fn with_hosts(
         modules: &'a dyn ModuleHost,
+        catalog: &'a dyn CatalogHost,
         semantic: &'a dyn SemanticHost,
         change_assurance: &'a dyn ChangeAssuranceHost,
         evidence: &'a dyn EvidenceHost,
@@ -415,6 +458,7 @@ impl<'a> Capabilities<'a> {
     ) -> Self {
         Self {
             modules: Some(modules),
+            catalog: Some(catalog),
             semantic: Some(semantic),
             change_assurance: Some(change_assurance),
             evidence: Some(evidence),

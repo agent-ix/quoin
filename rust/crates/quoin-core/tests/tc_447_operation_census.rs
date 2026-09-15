@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
 
-//! Every operation in [`quoin_core::dispatch::OPERATIONS`] is reached by name,
-//! through the real binary, by at least one test — and a census that fails when
-//! one is not.
+//! Every operation in [`quoin_core::dispatch::OPERATIONS`] is reached by name
+//! through the shared native runtime, by at least one test — and a census that
+//! fails when one is not.
 //!
 //! # The hole this closes
 //!
@@ -17,7 +17,7 @@
 //!
 //! — and the strings are unchanged, so the drift guard is satisfied, the
 //! library's own unit tests still pass (they call the handler functions
-//! directly and never the wire name), `quoin-difftest` passes, and
+//! directly and never the wire name), native fixture replay passes, and
 //! `make rust-gate` is green. The first thing that breaks is
 //! `quoin completeness`, for a user.
 //!
@@ -36,10 +36,10 @@
     reason = "integration-test bodies: a panic here is a failing test, which is the intended signal"
 )]
 
-use std::io::Write as _;
 use std::path::{Path, PathBuf};
-use std::process::{Command, Stdio};
 
+use quoin_core::protocol::canonical_json;
+use quoin_core::runtime::{RuntimeSettings, dispatch};
 use serde_json::{Value, json};
 
 struct Run {
@@ -49,24 +49,40 @@ struct Run {
 }
 
 fn run(op: &str, stdin: &str) -> Run {
-    let mut child = Command::new(env!("CARGO_BIN_EXE_quoin-core"))
-        .arg(op)
-        .stdin(Stdio::piped())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .spawn()
-        .unwrap();
-    child
-        .stdin
-        .as_mut()
-        .unwrap()
-        .write_all(stdin.as_bytes())
-        .unwrap();
-    let out = child.wait_with_output().unwrap();
+    let request: Value = serde_json::from_str(stdin).expect("census request is JSON");
+    let semantic_root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../src/semantic");
+    let response = dispatch(
+        op,
+        &request,
+        &RuntimeSettings {
+            ix_home: None,
+            semantic_root: Some(semantic_root),
+        },
+    );
+    let response = match response {
+        Ok(response) => response,
+        Err(error) => {
+            return Run {
+                stdout: String::new(),
+                stderr: error.to_string(),
+                status: i32::from(error.outcome().code()),
+            };
+        }
+    };
+    let stdout = response
+        .outcome
+        .carries_payload()
+        .then(|| canonical_json(&response.payload).expect("payload canonicalizes"))
+        .unwrap_or_default();
+    let stderr = if response.diagnostics.is_empty() {
+        String::new()
+    } else {
+        canonical_json(&response.diagnostics).expect("diagnostics canonicalize")
+    };
     Run {
-        stdout: String::from_utf8(out.stdout).unwrap(),
-        stderr: String::from_utf8(out.stderr).unwrap(),
-        status: out.status.code().unwrap(),
+        stdout,
+        stderr,
+        status: i32::from(response.outcome.code()),
     }
 }
 
@@ -106,6 +122,35 @@ fn integration_tests() -> Vec<(String, String)> {
             (name, text.chars().filter(|c| !c.is_whitespace()).collect())
         })
         .collect()
+}
+
+/// Route probes for operations whose former protocol-process tests were moved
+/// to the shipped CLI. Their named in-process invocation keeps the dispatch
+/// census able to catch a swapped match arm without retaining that executable.
+///
+/// Trace: FR-101, FR-102
+#[test]
+fn tc_521_migrated_command_routes_remain_named_in_the_runtime_census() {
+    for result in [
+        run("core.ping", &json!({}).to_string()),
+        run("catalog.load", &json!({}).to_string()),
+        run("catalog.methods", &json!({}).to_string()),
+        run(
+            "modules.remove",
+            &json!({ "name": "not-installed" }).to_string(),
+        ),
+        run("validators.run", &json!({ "files": {} }).to_string()),
+        run(
+            "assurance.requirement_of",
+            &json!({ "obligation_id": "O-1" }).to_string(),
+        ),
+    ] {
+        assert_ne!(
+            result.status, 4,
+            "a migrated route reached an internal failure instead of its handler: {}",
+            result.stderr
+        );
+    }
 }
 
 /// Every operation this build routes is invoked BY NAME by some integration

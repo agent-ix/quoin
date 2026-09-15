@@ -686,6 +686,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "da7c62ceae207dd37ea5b845da6a0696c799f85e97da1ab5b7910be3c1c80223"
 
 [[package]]
+name = "filament-plan-sync"
+version = "0.1.0"
+source = "git+https://github.com/agent-ix/filament-ide-rs?rev=5cec770999736c2fcc7276b597a3d06b7fc45fba#5cec770999736c2fcc7276b597a3d06b7fc45fba"
+dependencies = [
+ "quire-rs 0.21.0",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
+ "thiserror",
+]
+
+[[package]]
 name = "filetime"
 version = "0.2.29"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -709,6 +721,7 @@ checksum = "6e634e2e0ebac1ee034020da1ca582e17ffe4e0f5e985823721e168928136dcb"
 dependencies = [
  "crc32fast",
  "miniz_oxide",
+ "zlib-rs",
 ]
 
 [[package]]
@@ -2939,6 +2952,26 @@ dependencies = [
 
 [[package]]
 name = "quire-rs"
+version = "0.21.0"
+source = "git+https://github.com/agent-ix/quire-rs?tag=v0.21.0#cfee56dac516f4793a0dad71b7832ebeba3e2622"
+dependencies = [
+ "globset",
+ "ignore",
+ "indexmap",
+ "jsonschema 0.18.3",
+ "loom",
+ "rayon",
+ "regex",
+ "serde",
+ "serde_json",
+ "serde_yaml",
+ "sha2 0.10.9",
+ "thiserror",
+ "uuid",
+]
+
+[[package]]
+name = "quire-rs"
 version = "0.46.0"
 source = "git+https://github.com/agent-ix/quire-rs?rev=85dfe9d5a937c52af6456f2e6aa3a6bc4c82db9f#85dfe9d5a937c52af6456f2e6aa3a6bc4c82db9f"
 dependencies = [
@@ -2960,7 +2993,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-assurance"
-version = "0.1.0"
+version = "0.9.0"
 dependencies = [
  "quoin-evidence-types",
  "quoin-finding-types",
@@ -2972,7 +3005,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-auditor"
-version = "0.1.0"
+version = "0.9.0"
 dependencies = [
  "proptest",
  "quoin-combinatorial",
@@ -2991,8 +3024,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "quoin-catalog"
+version = "0.9.0"
+dependencies = [
+ "quoin-semantic",
+ "quoin-yaml",
+ "schemars",
+ "serde",
+ "serde_json",
+ "thiserror",
+]
+
+[[package]]
 name = "quoin-change-assurance"
-version = "0.1.0"
+version = "0.9.0"
 dependencies = [
  "quoin-jsonschema",
  "quoin-store",
@@ -3003,8 +3048,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "quoin-cli"
+version = "0.9.0"
+dependencies = [
+ "clap",
+ "filament-plan-sync",
+ "quoin-config",
+ "quoin-core",
+ "quoin-delivery",
+ "quoin-graph-analysis",
+ "quoin-validators",
+ "quoin-yaml",
+ "semver",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "time",
+]
+
+[[package]]
 name = "quoin-combinatorial"
-version = "0.1.0"
+version = "0.9.0"
 dependencies = [
  "proptest",
  "quoin-store",
@@ -3016,7 +3080,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-completeness"
-version = "0.1.0"
+version = "0.9.0"
 dependencies = [
  "quoin-yaml",
  "schemars",
@@ -3028,7 +3092,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-config"
-version = "0.1.0"
+version = "0.9.0"
 dependencies = [
  "engineering-assurance",
  "schemars",
@@ -3041,11 +3105,12 @@ dependencies = [
 
 [[package]]
 name = "quoin-core"
-version = "0.1.0"
+version = "0.9.0"
 dependencies = [
  "engineering-assurance",
  "quoin-assurance",
  "quoin-auditor",
+ "quoin-catalog",
  "quoin-change-assurance",
  "quoin-completeness",
  "quoin-config",
@@ -3068,17 +3133,25 @@ dependencies = [
 ]
 
 [[package]]
-name = "quoin-difftest"
-version = "0.1.0"
+name = "quoin-delivery"
+version = "0.9.0"
 dependencies = [
- "quoin-core",
- "quoin-validators",
+ "flate2",
+ "reqwest",
+ "semver",
+ "serde",
  "serde_json",
+ "sha2 0.10.9",
+ "tar",
+ "tempfile",
+ "thiserror",
+ "url",
+ "zip",
 ]
 
 [[package]]
 name = "quoin-evidence"
-version = "0.1.0"
+version = "0.9.0"
 dependencies = [
  "quoin-quire-types",
  "quoin-store",
@@ -3092,7 +3165,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-evidence-types"
-version = "0.1.0"
+version = "0.9.0"
 dependencies = [
  "serde",
  "serde_json",
@@ -3100,7 +3173,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-finding-types"
-version = "0.1.0"
+version = "0.9.0"
 dependencies = [
  "quoin-evidence",
  "schemars",
@@ -3110,7 +3183,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-graph-analysis"
-version = "0.1.0"
+version = "0.9.0"
 dependencies = [
  "quoin-evidence",
  "quoin-finding-types",
@@ -3123,7 +3196,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-jsonschema"
-version = "0.1.0"
+version = "0.9.0"
 dependencies = [
  "jsonschema 0.56.0",
  "quoin-measurement",
@@ -3133,7 +3206,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-measurement"
-version = "0.1.0"
+version = "0.9.0"
 dependencies = [
  "quoin-evidence",
  "quoin-jsonschema",
@@ -3147,7 +3220,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-measurement-graph"
-version = "0.1.0"
+version = "0.9.0"
 dependencies = [
  "quoin-graph-analysis",
  "quoin-measurement",
@@ -3161,7 +3234,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-modules"
-version = "0.1.0"
+version = "0.9.0"
 dependencies = [
  "gix",
  "quoin-semantic",
@@ -3175,9 +3248,9 @@ dependencies = [
 
 [[package]]
 name = "quoin-quire"
-version = "0.1.0"
+version = "0.9.0"
 dependencies = [
- "quire-rs",
+ "quire-rs 0.46.0",
  "quoin-jsonschema",
  "serde",
  "serde_json",
@@ -3187,7 +3260,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-quire-types"
-version = "0.1.0"
+version = "0.9.0"
 dependencies = [
  "schemars",
  "serde",
@@ -3196,20 +3269,8 @@ dependencies = [
 ]
 
 [[package]]
-name = "quoin-schemas"
-version = "0.1.0"
-dependencies = [
- "quoin-assurance",
- "quoin-completeness",
- "quoin-core",
- "schemars",
- "serde_json",
- "sha2 0.10.9",
-]
-
-[[package]]
 name = "quoin-semantic"
-version = "0.1.0"
+version = "0.9.0"
 dependencies = [
  "hex",
  "quoin-jsonschema",
@@ -3224,7 +3285,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-store"
-version = "0.1.0"
+version = "0.9.0"
 dependencies = [
  "blake3",
  "ryu-js",
@@ -3234,7 +3295,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-validators"
-version = "0.1.0"
+version = "0.9.0"
 dependencies = [
  "regex",
  "schemars",
@@ -3246,7 +3307,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-yaml"
-version = "0.1.0"
+version = "0.9.0"
 dependencies = [
  "saphyr",
  "serde_json",
@@ -3527,9 +3588,9 @@ dependencies = [
 
 [[package]]
 name = "rustls"
-version = "0.23.44"
+version = "0.23.45"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6725596c3f2c3a0aef021139e145d4eafe314a6623e4680ca83852b2c67ab2ba"
+checksum = "0d41d731c7d2f962d1ccc364cec258de3c0e93b38c2fb3ba97ac74513048d634"
 dependencies = [
  "aws-lc-rs",
  "once_cell",
@@ -4020,6 +4081,7 @@ checksum = "3f6221d9a6003c78398e3b239969f352578258df48c8eb051caadae0015bc840"
 dependencies = [
  "filetime",
  "libc",
+ "xattr",
 ]
 
 [[package]]
@@ -4029,7 +4091,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "32497e9a4c7b38532efcdebeef879707aa9f794296a4f0244f6f69e9bc8574bd"
 dependencies = [
  "fastrand",
- "getrandom 0.4.3",
+ "getrandom 0.3.4",
  "once_cell",
  "rustix",
  "windows-sys 0.61.2",
@@ -4739,6 +4801,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3ad82d2a33cdc9674dc7465672f271e096168fcdbe0f799d9e6db8c5892679dc"
 
 [[package]]
+name = "xattr"
+version = "1.6.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "32e45ad4206f6d2479085147f02bc2ef834ac85886624a23575ae137c8aa8156"
+dependencies = [
+ "libc",
+ "rustix",
+]
+
+[[package]]
 name = "yaml_serde"
 version = "0.10.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4865,6 +4937,7 @@ dependencies = [
  "indexmap",
  "memchr",
  "typed-path",
+ "zopfli",
 ]
 
 [[package]]
@@ -4878,3 +4951,15 @@ name = "zmij"
 version = "1.0.23"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "29666d0abbfad1e3dc4dcf6144730dd3a3ab225bbbdac83319345b1b44ccfc1b"
+
+[[package]]
+name = "zopfli"
+version = "0.8.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f05cd8797d63865425ff89b5c4a48804f35ba0ce8d125800027ad6017d2b5249"
+dependencies = [
+ "bumpalo",
+ "crc32fast",
+ "log",
+ "simd-adler32",
+]

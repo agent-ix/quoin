@@ -8,17 +8,12 @@ rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
 authors.workspace = true
-description = "The quoin engine boundary: one subprocess, JSON in on stdin, JSON out on stdout."
+description = "The shared Rust runtime behind the native quoin executable."
 publish.workspace = true
-default-run = "quoin-core"
 
 [lib]
 name = "quoin_core"
 path = "src/lib.rs"
-
-[[bin]]
-name = "quoin-core"
-path = "src/main.rs"
 
 [lints]
 workspace = true
@@ -31,6 +26,7 @@ quoin-assurance = { workspace = true }
 # granted no host capability at all. The whole evidence store arrives on
 # stdin as data the caller already read; see `ops/auditor/`.
 quoin-auditor = { workspace = true }
+quoin-catalog = { workspace = true }
 # The report shapes `auditor.audit` writes back. Depended on directly rather
 # than reached through `quoin-auditor`'s re-exports so that the wire types in
 # `ops/auditor/wire.rs` name their own crate, as every other domain does.
@@ -109,6 +105,7 @@ schema = [
     "dep:schemars",
     "quoin-assurance/schema",
     "quoin-auditor/schema",
+    "quoin-catalog/schema",
     "quoin-completeness/schema",
     "quoin-evidence/schema",
     "quoin-modules/schema",

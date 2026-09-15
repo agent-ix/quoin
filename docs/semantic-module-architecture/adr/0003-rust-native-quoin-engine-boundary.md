@@ -1,7 +1,7 @@
 ---
 id: ARCH-SM-ADR-0003
 title: "Rust-native Quoin engine boundary"
-status: proposed
+status: accepted
 date: 2026-09-12
 requirements:
   - StR-009
@@ -128,7 +128,7 @@ One Cargo workspace in-repo at `rust/`, beside the retained `src/`:
 | ------------------------------------------------------------------------------ | --------------------------------------------------------------- | ----- |
 | `quoin-schemas`                                                                | vendored and `schemars`-generated schemas, one hash-pinned home | 0     |
 | `quoin-core`                                                                   | the boundary binary: dispatch only, no domain logic             | 0     |
-| `quoin-difftest`                                                               | dev-only differential harness and golden corpora                | 0     |
+| native fixture tests                                                            | retained golden corpora replayed without a Node runtime         | 8     |
 | `quoin-quire`                                                                  | facade over `quire-rs`                                          | 1     |
 | `quoin-validators`                                                             | validators                                                      | 2     |
 | `quoin-semantic`, `quoin-completeness`                                         | semantic and completeness leaves                                | 3     |
@@ -179,10 +179,13 @@ imports `storeRoot` from `../evidence/store.js`; and `auditor` depends on
 
 ## Decision
 
-Quoin's first-party engine, production and qualification behaviour converges on
-one in-repository Cargo workspace at `rust/`, reached from the retained
-TypeScript through one versioned subprocess boundary to the `quoin-core` binary,
-and is delivered in the three normative stages the policy amendment names.
+Quoin's first-party engine, production and qualification behaviour is delivered
+by one in-repository Cargo workspace at `rust/` and the `quoin` binary built
+from `quoin-cli`. The temporary `quoin-core` subprocess boundary is no longer
+on the production path: `quoin-cli` invokes its runtime in-process. Its
+remaining development-only executable target is explicitly tracked for deletion
+by #521 before promotion. No first-party TypeScript runtime, command shell,
+test oracle, evaluation harness, release, or install-smoke path remains.
 
 The Rust workspace adopts the **`/rust-review` skill**
 (`agent-ix` marketplace, `skills/rust-review/SKILL.md`) as its standing review
@@ -209,9 +212,10 @@ delivery stages sit inside them.
    parallel and independently.
 2. **Reduce the TypeScript surface to a thin caller of that boundary.** Delivery
    stage 8: command residue, and deletion of `src/quire/exec.ts`.
-3. **Retire the oclif command shell and `@oclif/core`.** Delivery stage 9, only
-   after every logic capability behind it is Rust-native and demonstrated at one
-   candidate revision.
+3. **Retire the oclif command shell and `@oclif/core`.** Delivery stage 9,
+   completed in `33ca665` after native fixture replay. The resulting executable
+   is `quoin`; the plugin and hook were withdrawn under #396 and `quoin sync`
+   is native.
 
 Each delivery stage ends in two tickets that are never merged together: a
 reversible cutover, and a deletion of the retained TypeScript together with its
@@ -248,15 +252,12 @@ publication carries this restriction.
 
 - The repository gains an in-tree Rust workspace while retaining its schemas,
   skills, specifications, corpora and fixtures as data.
-- TypeScript and Rust coexist during each staged cutover. That coexistence is
-  bounded by [NFR-024](../../../spec/non-functional/NFR-024-bounded-staged-coexistence.md)
-  and is never reportable as completed remediation.
-- The retained TypeScript test suite — 105 `*.test.ts` files under `tests/` at
-  `e718d45`, of which seven are `fast-check` property suites — is the parity
-  oracle, not debt, until its
-  capability cuts over; each criterion a retired test carried is restated on a
-  tracking-tagged Rust test, and tests are deleted in the same commit as the code
-  they cover.
+- TypeScript and Rust coexisted only during staged cutovers. The final Stage 9
+  deletion removed the retained runtime and Node test/oracle harnesses; native
+  checked-in fixtures are now the parity evidence.
+- The baseline TypeScript suite was a temporary oracle, not debt. Each retained
+  behaviour is now covered by tracking-tagged Rust tests or native fixture
+  replay, and the old tests were deleted with their implementation.
 - Evidence bytes and accepted-corpus bytes do not change
   ([NFR-025](../../../spec/non-functional/NFR-025-immutable-evidence-and-corpus-bytes.md)).
 - No second catalog, evidence model, runner or measurement model is created.
@@ -278,9 +279,8 @@ incompatibilities.
 ## Open questions for the owner
 
 - The `@agent-ix/filament-plan-sync` oclif plugin and the `command_not_found`
-  hook are a published extension contract. Their disposition — port, escape
-  hatch, or drop — is decided before delivery stage 8 ends and is recorded here
-  as a dated amendment.
+  hook were withdrawn at Stage 9 under #396; native `quoin sync` is their
+  documented successor. This is no longer an open question.
 - `filament-core-data` and `quire-rs` pin Rust 1.94.1 today, not 1.98.1. See
   [NFR-026](../../../spec/non-functional/NFR-026-rust-toolchain-floor.md).
 - The `corpus/` submodule points at `agent-ix/qa-corpus`, a repository this
@@ -293,9 +293,9 @@ incompatibilities.
   given that the same argument excludes the `corpus/` submodule. Until that
   ruling, the bundle is governed as first-party source and only the 139-line
   invariant shim is treated as hand-written logic.
-- `@agent-ix/quoin` publishes to public npmjs today (`publishConfig.registry`).
-  The registries rule here forbids that; whether the already-published package is
-  unpublished, deprecated or exempted is an owner decision, not a manifest edit.
+- The prior npm package was removed at Stage 9. Native GitHub Release delivery
+  is now the only executable publication route; the first tagged-release smoke
+  remains a promotion/release operation.
 - Whether `engineering-assurance` is a build dependency of this workspace or a
   reference only. This ADR's crate topology says reference;
   [FR-100](../../../spec/functional/FR-100-rust-evidence-measurement-change-assurance.md)

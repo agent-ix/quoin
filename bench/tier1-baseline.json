@@ -1,23 +1,25 @@
 {
   "provenance": {
-    "engine": "quire 0.30.2 (cli bcface27, engine 0.46.0@ca7362d4)",
+    "engine": "quire 0.32.0 (cli 813019d8, engine 0.46.0@42326bbd)",
     "tool": {
       "schemaVersion": "quire-tool-provenance-v1",
       "cli": {
-        "version": "0.30.2",
-        "sourceRevision": "bcface2714a958a328f3427714650ab2df71030f",
+        "version": "0.32.0",
+        "sourceRevision": "813019d872af7fc6d2469b5afad52f86f16915b4",
         "sourceState": "clean"
       },
       "engine": {
         "version": "0.46.0",
-        "sourceRevision": "ca7362d4dacecb96f01d74d1d971327118c25917",
+        "sourceRevision": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
         "sourceState": "clean"
       },
       "capabilities": [
         "action_guidance.structured",
+        "assurance_export.v1",
         "binding_census",
         "binding_census.self_named",
         "binding_census.tagged",
+        "clause_sets",
         "declaration_origins",
         "metrics_envelope",
         "minted_targets",
@@ -30,27 +32,27 @@
     },
     "verification_stack": {
       "schemaVersion": "verification-stack-attestation-v1",
-      "lockDigest": "sha256:4704beaa88ea314867b5e6200a661fc3d30be8b168604423b105c31b92fbeef2",
-      "executableDigest": "sha256:29f6e742bfed80bc584fb6115f5ce0c035eddb25f3f0c7da0989edac363e634a",
+      "lockDigest": "sha256:e5164dacf5bdf95c68f992750e90dd68911d9d310d9a72293eeeba28c65fefd8",
+      "executableDigest": "sha256:f9384d09c7dad33aa5920abb33269cc20ef57daccf87b0f1b14e0a7335079a59",
       "buildProfile": "release",
       "toolchains": {
         "node": "22.15.0",
-        "rust": "1.94.1",
+        "rust": "1.98.1",
         "python": "3.10.12"
       },
       "sources": {
         "quire": {
-          "revision": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "revision": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "sourceState": "clean",
           "remote": "https://github.com/agent-ix/quire-rs"
         },
         "quire-cli": {
-          "revision": "bcface2714a958a328f3427714650ab2df71030f",
+          "revision": "813019d872af7fc6d2469b5afad52f86f16915b4",
           "sourceState": "clean",
           "remote": "https://github.com/agent-ix/quire-cli"
         },
         "qa-corpus": {
-          "revision": "7b81343ee05b3ef3a618839f64a5997fa16efd5c",
+          "revision": "7442f2770880a4ade303fb23d725804bdef454db",
           "sourceState": "clean",
           "remote": "https://github.com/agent-ix/qa-corpus"
         },
@@ -69,8 +71,13 @@
           "sourceState": "clean",
           "remote": "https://github.com/agent-ix/spec-artifacts-iso"
         },
+        "engineering-assurance": {
+          "revision": "8ea16ce240934aa2c31c1cc3f781b7eb0f8c73ba",
+          "sourceState": "clean",
+          "remote": "https://github.com/agent-ix/engineering-assurance"
+        },
         "quoin": {
-          "revision": "ac60f4a9bebd39708d42e5b67209bcefddca5da8",
+          "revision": "7ced73f050415350247c827543f00ada92966c6f",
           "sourceState": "clean",
           "remote": "https://github.com/agent-ix/quoin"
         },
@@ -87,9 +94,11 @@
       },
       "capabilities": [
         "action_guidance.structured",
+        "assurance_export.v1",
         "binding_census",
         "binding_census.self_named",
         "binding_census.tagged",
+        "clause_sets",
         "declaration_origins",
         "metrics_envelope",
         "minted_targets",
@@ -102,40 +111,45 @@
       "artifacts": {
         ".node-version": "sha256:e1677620f62097e30fac6695180333d8eb9ead4fe5b1d1d6e01b76e049780059",
         ".npmrc": "sha256:cde76ca04e048c3eba070a2c0dfcf5b723cf6014eab177157096b924f24ec4ca",
-        "package.json": "sha256:d664e658d594d71614fae6b435c0c1b6e4306bdb616a658550afbc1ad66001f3",
-        "pnpm-lock.yaml": "sha256:7b8e18508dc953412732112931b9010d0d27f76cff111cb77df1ee7c96ed4b42",
-        "Makefile": "sha256:f41e84676f1c556f17f89a455274d6598e19b398e66199c0d219be5e957f421b",
-        ".github/workflows/build-test.yml": "sha256:742eb39d5c36c833a761d999428ccc42cc50b8fcea68dda0f00797bcd7df648c",
-        "scripts/check-tool-drift.mjs": "sha256:7a56b1e11d82921b3d25a0fcaed30077cfd0161a56ad2c77605b5184209231b6",
-        "scripts/check-tool-drift-selftest.mjs": "sha256:7332dc465cdf1727d7eca63b39e211693b189c52dbdfd66dc3ed48eba15e5baa",
-        "scripts/verification-stack.mjs": "sha256:188000f40ce8a5db2c8186444f602816ab3cc9f0fd96d6792e99a1db7e648c4a",
-        "scripts/verification-stack-selftest.mjs": "sha256:5429a7289c807b53f6c075a17fb1db0fe8e297d122dd7d873cdd058be31a0e59",
+        "package.json": "sha256:4496d70e053a3df6d70ef237d93e5a3a0e6af0566e2b50aac6973f642ff55a36",
+        "pnpm-lock.yaml": "sha256:12f2579ce0697073e6d6d806d9d9856b7d7c838ce06acd712f0da55941c34bc8",
+        "Makefile": "sha256:921f27a9184cfa6ace984c536da91e422f888634ba4771a6b028c916c5489f82",
+        ".github/workflows/build-test.yml": "sha256:df2f1f6fa1ac1670e6f54b4e9f415a62f0eae28e63bcc4f16cc9e0b42852a9c5",
+        "scripts/check-tool-drift.mjs": "sha256:bea47cdcb071b08af9465caddcf8352eccec17f28c0b15f461850f461e4d088b",
+        "scripts/check-tool-drift-selftest.mjs": "sha256:7fccc2e588b1f7aa8897cdce337ea9c0c0aa73f2b4687923d01731dea26ca448",
+        "scripts/verification-stack.mjs": "sha256:9882cfd3aa6390d1b31386f145f6e9eb5ef81ad6c2e2a4f8b581b6fdb3b031c7",
+        "scripts/verification-stack-selftest.mjs": "sha256:c0def043b0e8eb8b8e25b070ad89c3f081d6f216383035ab5928779c7b7162b9",
+        "scripts/copy-schemas.mjs": "sha256:99a960974e18612c0e6c50cbdf3a1c979c30f7ab3fd024cd84891c1419ac4818",
         "scripts/verify-span-breadth.mjs": "sha256:4ab0f359688e093c48414bdfec6e4d3915f8580ee652a31f796e4cc7c81e8869",
         "scripts/bench-tier1.mjs": "sha256:fe6356a91e94b6fca311dfc7995459b91f21e240c5e55017dfca6f7e6c6e0388",
         "scripts/battletest.mjs": "sha256:3737ea8c096ede3dd19cf22bdac6d52ac6d36d772e5a0045541be2dbb6caab61",
         "scripts/lib/tier2-baseline.mjs": "sha256:5331db28179a1d14da68ed9213664cce3188432ca5b77bdd85b9fedfaeedf8ee",
-        "src/quire/contract.ts": "sha256:01ed528cb1837a36af09f71113b8da7719486b09badaeced85d8c156bfecb28a",
-        "src/quire/schemas/coverage-v1.schema.json": "sha256:f0cdbb9457ca7ca76b642c11fd5b6f41273909c894458c31f58c9c50fdbcdb38",
-        "src/quire/schemas/properties-v1.schema.json": "sha256:cc687773c35b3e71e82fc336e887ecc688a28b03e970e349b2921b8624e4d11c",
+        "rust/crates/quoin-quire/schemas/assurance-v1.schema.json": "sha256:441e1b8324fe64e234a007216b11867ec937ac4779fcebcdd84b30fa064367e5",
         "bench/metrics.json": "sha256:5876512767852fd9ee5a848de90e34c9626926bb768db87c2eaf28deb2d05764",
         "bench/tier1-mapping.json": "sha256:186e282f4197894f96e51e2dfe9fc6420f222512159abfd84be8be7c5c6ea90a",
         "bench/guidance-evaluator-contract-v1.json": "sha256:5fe64c0ff4594d8ae3a30795601f62e84764621c2005a174f0698ba75b52ce48",
         "bench/guidance-independent-review-v1.json": "sha256:69213dc1d6ce937e85d77d58b493667a0fa07a69943138270b9e96367e91f9f8",
         "bench/span-grounding-labels.json": "sha256:897ef28979f5a3f607fdb27e740f1508b736ae5d9ce3dd91c7813f09f841c000",
         "bench/span-grounding-v2-labels.json": "sha256:4e10f34488c87439e7253668ea34773adb432b16bce574b1cc93fbf0343e2650",
-        "bench/span-breadth-v1-labels.json": "sha256:734b655f5cd69f6c8603fc4f17b425fedcd87753e692a542fb645bb76922e483",
+        "bench/span-breadth-v1-labels.json": "sha256:c9075193691de2dab3672cf89d313658c289fb526f7e19dc150c902eac3abf0d",
         "bench/answer-key.json": "sha256:ece1a7f5d254623cf79beff1113021f4f71359ac9a3c703d07cff0f8a45e9532",
         "bench/advisory-adjudication-v1.json": "sha256:87c575b6ca0c0886d874f609144f907f3ac270e08c2091bb2bb1ead725713e43",
         "corpus/config/metrics.json": "sha256:69ab8e5b8fc14e07408e034f0b791c3dd3356c9db78e1ac0dc961bcc0b47c0d7",
-        "corpus/config/duplicate-census.json": "sha256:f03ddf12b1e166a680ff74c9bde3d66563b006901b91134945846823a7953a1e",
-        "corpus/config/external-channel.json": "sha256:74103cf74e7eceb69d3bb993074a7929025e7cff0cff4c993be3c7e4873050b5"
+        "corpus/config/duplicate-census.json": "sha256:c239628c3332baec64c72a9e3d66494d2a6d42dd05e27ac6b33ad49e82a4f38e",
+        "corpus/config/external-channel.json": "sha256:74103cf74e7eceb69d3bb993074a7929025e7cff0cff4c993be3c7e4873050b5",
+        "scripts/verification-relock.mjs": "sha256:5ff0482cf082991a9ff8a6428ee3916e3b34629a3aa56daae75da0d973a15a99",
+        "scripts/verification-relock-selftest.mjs": "sha256:22e3faabb992a4e2b0dd11c1b0d1973603bf9d77c674590713411eae6183cff3",
+        "scripts/verification-declarations.mjs": "sha256:5dad3d7168f6b311789496f76824dc3d73074cf1ddb90409906d8cfe726f0748",
+        "scripts/verification-declarations-selftest.mjs": "sha256:ea689a5d3785487fc81084429706ca0d19b7e50cf15b2e3f9fead1a9b58b1213",
+        "scripts/verification-object-integrity-selftest.mjs": "sha256:0033792fd5ba2760fe84fae0627ec493cb70732ba99245e6dbba432ab591b63d",
+        "scripts/workspace-policy-selftest.mjs": "sha256:cf5f40c996f6107619f54563cc504132e20858182c7b86f9fbeb3adc1ba65214"
       }
     },
-    "corpus": "7b81343ee05b3ef3a618839f64a5997fa16efd5c",
-    "corpus_input": "sha256:117f28c48d98ad226c3f23b8a935daf0b42091f199cdb88718727f5b45b1b4cf",
+    "corpus": "7442f2770880a4ade303fb23d725804bdef454db",
+    "corpus_input": "sha256:4a806b0807eaf4c5a866ee478335c243856b5f98e701be2f9164c0c01cf271b8",
     "declaration": {
       "root": "corpus/modules",
-      "digest": "sha256:3bc7c9ef24937e81e02286e8724755fe5596a30d1d14296b446fa2bd64fc3d3b",
+      "digest": "sha256:9d71672f25c3df799536d090a72f22a85a6d51c6fc269af7cd241aef99319591",
       "modules": {
         "ecosystem": "sha256:1e4ac802a01f9923033e1f63ecdf5c48e0f8ba477cbe168914230f03630dff97",
         "variants/dead-coverage-vocabulary": "sha256:02b809f935173c9caf70736a238313e242a713bf9003894cd55a93d2f70034cf",
@@ -144,7 +158,9 @@
         "variants/no-trace-targets": "sha256:7327dd6ee367cad8c000be26ba5bd99a5495d7a014693e6f40cce113ee593ba0",
         "variants/one-trace-target": "sha256:cbbce295481d128c68ec4637435843634ca3e2ff1dd0f248445a245379176ebf",
         "variants/optional-target-section": "sha256:1a801dd51c8af35c159216eeeb166fd4d602c4e9a64c8ff13a77067c0cd5b20f",
-        "variants/reference-postures": "sha256:d8b3e219d7e93bf8149807c3316a4ca87e56212e4fe36103db83d363fca0f3cb"
+        "variants/reference-postures": "sha256:d8b3e219d7e93bf8149807c3316a4ca87e56212e4fe36103db83d363fca0f3cb",
+        "variants/reference-status-column": "sha256:462f6cb713ee474e1769222e05e0a4524f7b5b00648227e5623b29d252b349a8",
+        "variants/reference-status-column-explicit": "sha256:90f3322462e35e1f070169911bd43d8e6c25be6b3807b6a44beeb2756a7d9048"
       },
       "sources": {
         "spec-artifacts-process": "995288d609a47ab5a25f300ac0fa600d390b348c",
@@ -154,11 +170,65 @@
   },
   "bounds": {
     "gap_count": 0,
-    "covered_count": 89,
+    "covered_count": 90,
     "covered_pending_count": 0,
-    "out_of_scope_count": 22,
-    "declared_cells": 111,
+    "out_of_scope_count": 30,
+    "declared_cells": 120,
     "matrix": [
+      {
+        "mode": "minting",
+        "case": "reference-status-column-explicit",
+        "source": "agent-ix/quire-rs#409 — explicit selectors never fall back to the model default",
+        "cells": {
+          "rust": {
+            "state": "out-of-scope",
+            "reason": "`reference-status-column-explicit-rust` tests variant declaration `variants/reference-status-column-explicit`: Explicit reference selector must not fall back to the global status header."
+          },
+          "python": {
+            "state": "out-of-scope",
+            "reason": "`reference-status-column-explicit-python` tests variant declaration `variants/reference-status-column-explicit`: Explicit reference selector must not fall back to the global status header."
+          },
+          "typescript": {
+            "state": "out-of-scope",
+            "reason": "`reference-status-column-explicit-typescript` tests variant declaration `variants/reference-status-column-explicit`: Explicit reference selector must not fall back to the global status header."
+          }
+        }
+      },
+      {
+        "mode": "minting",
+        "case": "reference-status-column",
+        "source": "agent-ix/quire-rs#409 — mixed authored status columns require an explicit per-reference selector",
+        "cells": {
+          "rust": {
+            "state": "out-of-scope",
+            "reason": "`reference-status-column-rust` tests variant declaration `variants/reference-status-column`: One explicit global status selector cannot describe two authored headers; missing selection must remain a diagnostic."
+          },
+          "python": {
+            "state": "out-of-scope",
+            "reason": "`reference-status-column-python` tests variant declaration `variants/reference-status-column`: One explicit global status selector cannot describe two authored headers; missing selection must remain a diagnostic."
+          },
+          "typescript": {
+            "state": "out-of-scope",
+            "reason": "`reference-status-column-typescript` tests variant declaration `variants/reference-status-column`: One explicit global status selector cannot describe two authored headers; missing selection must remain a diagnostic."
+          }
+        }
+      },
+      {
+        "mode": "parser",
+        "case": "unittest-testcase",
+        "source": "agent-ix/quire-rs#407 — native unittest.TestCase methods lost on non-Test-prefixed classes",
+        "cells": {
+          "python": { "state": "covered" },
+          "rust": {
+            "state": "out-of-scope",
+            "reason": "Python unittest inheritance and import aliases do not exist in Rust's attribute-based test model."
+          },
+          "typescript": {
+            "state": "out-of-scope",
+            "reason": "Python unittest inheritance and import aliases do not exist in TypeScript's registration-based test model."
+          }
+        }
+      },
       {
         "mode": "minting",
         "case": "status-column-mismatch",
@@ -2193,6 +2263,42 @@
     {
       "mode": "minting",
       "language": "python",
+      "family": "status-column-matches-nothing",
+      "level": "L1",
+      "reached": 2,
+      "population": 2,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": [],
+      "exclusions": []
+    },
+    {
+      "mode": "minting",
+      "language": "python",
+      "family": "status-column-matches-nothing",
+      "level": "L2",
+      "reached": 2,
+      "population": 2,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": [],
+      "exclusions": []
+    },
+    {
+      "mode": "minting",
+      "language": "python",
+      "family": "status-column-matches-nothing",
+      "level": "L3",
+      "reached": 2,
+      "population": 2,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": [],
+      "exclusions": []
+    },
+    {
+      "mode": "minting",
+      "language": "python",
       "family": "undeclared-type-value",
       "level": "L1",
       "reached": 1,
@@ -2424,6 +2530,42 @@
     {
       "mode": "minting",
       "language": "rust",
+      "family": "status-column-matches-nothing",
+      "level": "L1",
+      "reached": 2,
+      "population": 2,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": [],
+      "exclusions": []
+    },
+    {
+      "mode": "minting",
+      "language": "rust",
+      "family": "status-column-matches-nothing",
+      "level": "L2",
+      "reached": 2,
+      "population": 2,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": [],
+      "exclusions": []
+    },
+    {
+      "mode": "minting",
+      "language": "rust",
+      "family": "status-column-matches-nothing",
+      "level": "L3",
+      "reached": 2,
+      "population": 2,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": [],
+      "exclusions": []
+    },
+    {
+      "mode": "minting",
+      "language": "rust",
       "family": "undeclared-type-value",
       "level": "L1",
       "reached": 1,
@@ -2644,6 +2786,42 @@
       "mode": "minting",
       "language": "typescript",
       "family": "section-matches-nothing",
+      "level": "L3",
+      "reached": 2,
+      "population": 2,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": [],
+      "exclusions": []
+    },
+    {
+      "mode": "minting",
+      "language": "typescript",
+      "family": "status-column-matches-nothing",
+      "level": "L1",
+      "reached": 2,
+      "population": 2,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": [],
+      "exclusions": []
+    },
+    {
+      "mode": "minting",
+      "language": "typescript",
+      "family": "status-column-matches-nothing",
+      "level": "L2",
+      "reached": 2,
+      "population": 2,
+      "rate": 1,
+      "gap_count": 0,
+      "misses": [],
+      "exclusions": []
+    },
+    {
+      "mode": "minting",
+      "language": "typescript",
+      "family": "status-column-matches-nothing",
       "level": "L3",
       "reached": 2,
       "population": 2,
@@ -3177,7 +3355,7 @@
     {
       "family": "archetype-matches-nothing",
       "truePositives": 3,
-      "falsePositives": 311,
+      "falsePositives": 315,
       "misses": 0,
       "precision": 1,
       "shape": "advisory",
@@ -3185,10 +3363,10 @@
       "precision_basis": {
         "metricVersion": "finding.precision.advisory-v1",
         "precision": 1,
-        "truePositives": 310,
+        "truePositives": 314,
         "falsePositives": 0,
         "unadjudicated": 4,
-        "byStanding": 307,
+        "byStanding": 311,
         "retainedRulings": 0,
         "ambiguous": [],
         "unresolved": [],
@@ -3198,7 +3376,7 @@
           "sha256:5dff42b3ac6f6c657e84f17f6d272265528d194dd4925b8bf64a1a45d58656fd",
           "sha256:a1bbcb18a9f8b9815441de8881624e737bf76f40754c4c11069cc9bd19615dfb"
         ],
-        "rulings": 829
+        "rulings": 899
       }
     },
     {
@@ -3433,7 +3611,7 @@
     },
     {
       "family": "status-column-matches-nothing",
-      "truePositives": 1,
+      "truePositives": 7,
       "falsePositives": 0,
       "misses": 0,
       "precision": 1,
@@ -3560,28 +3738,28 @@
     { "family": "marker-form-mismatch", "reason": "no-symbol-bound" },
     { "family": "marker-form-mismatch", "reason": "no-symbol-bound" }
   ],
-  "positional": 60,
-  "finding_localisation_rate": 0.952,
+  "positional": 66,
+  "finding_localisation_rate": 0.957,
   "minting.section_hit_rate": {
-    "rate": 0.981,
-    "matched": 304,
-    "examined": 310,
-    "cases_reporting": 163
+    "rate": 0.982,
+    "matched": 320,
+    "examined": 326,
+    "cases_reporting": 177
   },
   "actionability_v1": {
     "definitionVersion": "finding.actionability-v1",
-    "numerator": 470,
-    "denominator": 497,
+    "numerator": 480,
+    "denominator": 507,
     "exclusions": [],
     "namedMisses": [],
-    "actionable": 470,
-    "total": 497,
-    "rate": 0.946
+    "actionable": 480,
+    "total": 507,
+    "rate": 0.947
   },
   "actionability_v2": {
     "definitionVersion": "finding.actionability-v2",
-    "numerator": 497,
-    "denominator": 497,
+    "numerator": 507,
+    "denominator": 507,
     "exclusions": [],
     "namedMisses": [],
     "partitions": [
@@ -3593,8 +3771,8 @@
           "channel": "coverage.diagnostics"
         },
         "family": "archetype-matches-nothing",
-        "numerator": 314,
-        "denominator": 314,
+        "numerator": 318,
+        "denominator": 318,
         "exclusions": [],
         "namedMisses": [],
         "rate": 1
@@ -3733,8 +3911,8 @@
           "channel": "coverage.diagnostics"
         },
         "family": "status-column-matches-nothing",
-        "numerator": 1,
-        "denominator": 1,
+        "numerator": 7,
+        "denominator": 7,
         "exclusions": [],
         "namedMisses": [],
         "rate": 1
@@ -3883,13 +4061,13 @@
     "rate": 1
   },
   "guidance_quality": {
-    "contractDigest": "sha256:69099026af6a09a03f09113ab91574d80ba61d861fc30dfd9aaf0543bf93a039",
-    "evidenceDigest": "sha256:b3c675f9431816e9f5b63c641c248e1eb37230db8946c5ac623c2453d08f7ddf",
-    "selectedRecords": 67,
+    "contractDigest": "sha256:4c7cdecc3be4da71c9a7b9ade09ed61d2e7dffc993a79305f82b142ed1dcc350",
+    "evidenceDigest": "sha256:c180e7949607743ba253c0b19e5bba4792a6c9c1574920faf31b13b1eba1025d",
+    "selectedRecords": 72,
     "correctness": {
       "definitionVersion": "guidance.correctness-v1",
-      "numerator": 67,
-      "denominator": 67,
+      "numerator": 72,
+      "denominator": 72,
       "rate": 1,
       "namedMisses": []
     },
@@ -3902,8 +4080,8 @@
     },
     "diagnosticYield": {
       "definitionVersion": "guidance.diagnostic-yield-v1",
-      "numerator": 34,
-      "denominator": 34,
+      "numerator": 39,
+      "denominator": 39,
       "rate": 1,
       "namedMisses": []
     }
@@ -4747,6 +4925,16 @@
         "id": "triple-quote-scope-desync:corpus/cases/parser/triple-quote-scope-desync/input/spec/FR-001.md:FR-001-AC-1",
         "state": "not_applicable",
         "reason": "property \"universal\" is outside the specific-shape population"
+      },
+      {
+        "id": "unittest-testcase:corpus/cases/parser/unittest-testcase/input/spec/FR-001.md:FR-001-AC-1",
+        "state": "not_applicable",
+        "reason": "property \"example\" is outside the specific-shape population"
+      },
+      {
+        "id": "unittest-testcase-control:corpus/cases/parser/unittest-testcase-control/input/spec/FR-001.md:FR-001-AC-1",
+        "state": "not_applicable",
+        "reason": "property \"example\" is outside the specific-shape population"
       },
       {
         "id": "hollow-metric-python:corpus/cases/provenance/hollow-metric/python/input/spec/FR-001.md:FR-001-AC-1",
@@ -5764,7 +5952,7 @@
       }
     },
     "producerVersions": [
-      "0.30.2 (engine ca7362d4dacecb96f01d74d1d971327118c25917)"
+      "0.32.0 (engine 42326bbdf8f6641203eebf7a5faaa2b22bc19b0f)"
     ],
     "rate": 0
   },
@@ -5792,7 +5980,7 @@
       }
     ],
     "producerVersions": [
-      "0.30.2 (engine ca7362d4dacecb96f01d74d1d971327118c25917)"
+      "0.32.0 (engine 42326bbdf8f6641203eebf7a5faaa2b22bc19b0f)"
     ]
   },
   "span_breadth": {
@@ -5869,13 +6057,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -5932,13 +6122,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -5995,13 +6187,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -6058,13 +6252,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -6121,13 +6317,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -6184,13 +6382,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -6247,13 +6447,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -6333,13 +6535,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -6419,13 +6623,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -6509,13 +6715,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -6599,13 +6807,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -6689,13 +6899,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -6779,13 +6991,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -6842,13 +7056,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -6905,13 +7121,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -6968,13 +7186,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -7031,13 +7251,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -7094,13 +7316,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -7157,13 +7381,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -7247,13 +7473,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -7337,13 +7565,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -7427,13 +7657,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -7517,13 +7749,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -7607,13 +7841,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -7697,13 +7933,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -7787,13 +8025,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -7877,13 +8117,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -7940,13 +8182,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -8003,13 +8247,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -8066,13 +8312,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -8129,13 +8377,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -8192,13 +8442,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -8255,13 +8507,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -8341,13 +8595,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -8427,13 +8683,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -8513,13 +8771,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -8603,13 +8863,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -8689,13 +8951,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -8752,13 +9016,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -8815,13 +9081,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -8845,13 +9113,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -8875,13 +9145,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -8905,13 +9177,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -8955,13 +9229,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -9018,13 +9294,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -9081,13 +9359,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -9144,13 +9424,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -9207,13 +9489,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -9270,13 +9554,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -9333,13 +9619,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -9396,13 +9684,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -9459,13 +9749,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -9522,13 +9814,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -9572,13 +9866,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -9622,13 +9918,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -9652,13 +9950,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -9682,13 +9982,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -9745,13 +10047,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -9808,13 +10112,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -9871,13 +10177,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -9934,13 +10242,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -9997,13 +10307,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -10060,13 +10372,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -10150,13 +10464,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -10240,13 +10556,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -10330,13 +10648,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -10420,13 +10740,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -10510,13 +10832,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -10600,13 +10924,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -10690,13 +11016,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -10780,13 +11108,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -10870,13 +11200,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -10960,13 +11292,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -11050,13 +11384,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -11140,13 +11476,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -11230,13 +11568,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -11320,13 +11660,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -11410,13 +11752,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -11500,13 +11844,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -11590,13 +11936,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -11680,13 +12028,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -11770,13 +12120,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -11860,13 +12212,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -11950,13 +12304,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -12040,13 +12396,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -12130,13 +12488,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -12220,13 +12580,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -12283,13 +12645,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -12346,13 +12710,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -12409,13 +12775,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -12472,13 +12840,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -12535,13 +12905,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -12598,13 +12970,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -12680,13 +13054,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -12762,13 +13138,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -12844,13 +13222,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -12926,13 +13306,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -13008,13 +13390,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -13090,13 +13474,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -13148,13 +13534,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -13206,13 +13594,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -13264,13 +13654,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -13294,13 +13686,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -13324,13 +13718,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -13354,13 +13750,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -13384,13 +13782,399 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
+            "declaration_origins",
+            "metrics_envelope",
+            "minted_targets",
+            "property_spans.safe_refusal",
+            "reference_only_targets",
+            "specific_shaped",
+            "suspicions",
+            "unmatched_tags"
+          ]
+        }
+      }
+    },
+    {
+      "case": "reference-status-column-control-python",
+      "payload": {
+        "documents": [
+          {
+            "archetype": "Matrix409",
+            "criteria": [],
+            "document": "corpus/cases/minting/reference-status-column-control-python/input/spec/tests.md"
+          }
+        ],
+        "engine": {
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
+          "capabilities": [
+            "action_guidance.structured",
+            "assurance_export.v1",
+            "binding_census",
+            "binding_census.self_named",
+            "binding_census.tagged",
+            "clause_sets",
+            "declaration_origins",
+            "metrics_envelope",
+            "minted_targets",
+            "property_spans.safe_refusal",
+            "reference_only_targets",
+            "specific_shaped",
+            "suspicions",
+            "unmatched_tags"
+          ]
+        }
+      }
+    },
+    {
+      "case": "reference-status-column-control-rust",
+      "payload": {
+        "documents": [
+          {
+            "archetype": "Matrix409",
+            "criteria": [],
+            "document": "corpus/cases/minting/reference-status-column-control-rust/input/spec/tests.md"
+          }
+        ],
+        "engine": {
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
+          "capabilities": [
+            "action_guidance.structured",
+            "assurance_export.v1",
+            "binding_census",
+            "binding_census.self_named",
+            "binding_census.tagged",
+            "clause_sets",
+            "declaration_origins",
+            "metrics_envelope",
+            "minted_targets",
+            "property_spans.safe_refusal",
+            "reference_only_targets",
+            "specific_shaped",
+            "suspicions",
+            "unmatched_tags"
+          ]
+        }
+      }
+    },
+    {
+      "case": "reference-status-column-control-typescript",
+      "payload": {
+        "documents": [
+          {
+            "archetype": "Matrix409",
+            "criteria": [],
+            "document": "corpus/cases/minting/reference-status-column-control-typescript/input/spec/tests.md"
+          }
+        ],
+        "engine": {
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
+          "capabilities": [
+            "action_guidance.structured",
+            "assurance_export.v1",
+            "binding_census",
+            "binding_census.self_named",
+            "binding_census.tagged",
+            "clause_sets",
+            "declaration_origins",
+            "metrics_envelope",
+            "minted_targets",
+            "property_spans.safe_refusal",
+            "reference_only_targets",
+            "specific_shaped",
+            "suspicions",
+            "unmatched_tags"
+          ]
+        }
+      }
+    },
+    {
+      "case": "reference-status-column-explicit-control-python",
+      "payload": {
+        "documents": [
+          {
+            "archetype": "Matrix409",
+            "criteria": [],
+            "document": "corpus/cases/minting/reference-status-column-explicit-control-python/input/spec/tests.md"
+          }
+        ],
+        "engine": {
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
+          "capabilities": [
+            "action_guidance.structured",
+            "assurance_export.v1",
+            "binding_census",
+            "binding_census.self_named",
+            "binding_census.tagged",
+            "clause_sets",
+            "declaration_origins",
+            "metrics_envelope",
+            "minted_targets",
+            "property_spans.safe_refusal",
+            "reference_only_targets",
+            "specific_shaped",
+            "suspicions",
+            "unmatched_tags"
+          ]
+        }
+      }
+    },
+    {
+      "case": "reference-status-column-explicit-control-rust",
+      "payload": {
+        "documents": [
+          {
+            "archetype": "Matrix409",
+            "criteria": [],
+            "document": "corpus/cases/minting/reference-status-column-explicit-control-rust/input/spec/tests.md"
+          }
+        ],
+        "engine": {
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
+          "capabilities": [
+            "action_guidance.structured",
+            "assurance_export.v1",
+            "binding_census",
+            "binding_census.self_named",
+            "binding_census.tagged",
+            "clause_sets",
+            "declaration_origins",
+            "metrics_envelope",
+            "minted_targets",
+            "property_spans.safe_refusal",
+            "reference_only_targets",
+            "specific_shaped",
+            "suspicions",
+            "unmatched_tags"
+          ]
+        }
+      }
+    },
+    {
+      "case": "reference-status-column-explicit-control-typescript",
+      "payload": {
+        "documents": [
+          {
+            "archetype": "Matrix409",
+            "criteria": [],
+            "document": "corpus/cases/minting/reference-status-column-explicit-control-typescript/input/spec/tests.md"
+          }
+        ],
+        "engine": {
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
+          "capabilities": [
+            "action_guidance.structured",
+            "assurance_export.v1",
+            "binding_census",
+            "binding_census.self_named",
+            "binding_census.tagged",
+            "clause_sets",
+            "declaration_origins",
+            "metrics_envelope",
+            "minted_targets",
+            "property_spans.safe_refusal",
+            "reference_only_targets",
+            "specific_shaped",
+            "suspicions",
+            "unmatched_tags"
+          ]
+        }
+      }
+    },
+    {
+      "case": "reference-status-column-explicit-python",
+      "payload": {
+        "documents": [
+          {
+            "archetype": "Matrix409",
+            "criteria": [],
+            "document": "corpus/cases/minting/reference-status-column-explicit-python/input/spec/tests.md"
+          }
+        ],
+        "engine": {
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
+          "capabilities": [
+            "action_guidance.structured",
+            "assurance_export.v1",
+            "binding_census",
+            "binding_census.self_named",
+            "binding_census.tagged",
+            "clause_sets",
+            "declaration_origins",
+            "metrics_envelope",
+            "minted_targets",
+            "property_spans.safe_refusal",
+            "reference_only_targets",
+            "specific_shaped",
+            "suspicions",
+            "unmatched_tags"
+          ]
+        }
+      }
+    },
+    {
+      "case": "reference-status-column-explicit-rust",
+      "payload": {
+        "documents": [
+          {
+            "archetype": "Matrix409",
+            "criteria": [],
+            "document": "corpus/cases/minting/reference-status-column-explicit-rust/input/spec/tests.md"
+          }
+        ],
+        "engine": {
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
+          "capabilities": [
+            "action_guidance.structured",
+            "assurance_export.v1",
+            "binding_census",
+            "binding_census.self_named",
+            "binding_census.tagged",
+            "clause_sets",
+            "declaration_origins",
+            "metrics_envelope",
+            "minted_targets",
+            "property_spans.safe_refusal",
+            "reference_only_targets",
+            "specific_shaped",
+            "suspicions",
+            "unmatched_tags"
+          ]
+        }
+      }
+    },
+    {
+      "case": "reference-status-column-explicit-typescript",
+      "payload": {
+        "documents": [
+          {
+            "archetype": "Matrix409",
+            "criteria": [],
+            "document": "corpus/cases/minting/reference-status-column-explicit-typescript/input/spec/tests.md"
+          }
+        ],
+        "engine": {
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
+          "capabilities": [
+            "action_guidance.structured",
+            "assurance_export.v1",
+            "binding_census",
+            "binding_census.self_named",
+            "binding_census.tagged",
+            "clause_sets",
+            "declaration_origins",
+            "metrics_envelope",
+            "minted_targets",
+            "property_spans.safe_refusal",
+            "reference_only_targets",
+            "specific_shaped",
+            "suspicions",
+            "unmatched_tags"
+          ]
+        }
+      }
+    },
+    {
+      "case": "reference-status-column-python",
+      "payload": {
+        "documents": [
+          {
+            "archetype": "Matrix409",
+            "criteria": [],
+            "document": "corpus/cases/minting/reference-status-column-python/input/spec/tests.md"
+          }
+        ],
+        "engine": {
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
+          "capabilities": [
+            "action_guidance.structured",
+            "assurance_export.v1",
+            "binding_census",
+            "binding_census.self_named",
+            "binding_census.tagged",
+            "clause_sets",
+            "declaration_origins",
+            "metrics_envelope",
+            "minted_targets",
+            "property_spans.safe_refusal",
+            "reference_only_targets",
+            "specific_shaped",
+            "suspicions",
+            "unmatched_tags"
+          ]
+        }
+      }
+    },
+    {
+      "case": "reference-status-column-rust",
+      "payload": {
+        "documents": [
+          {
+            "archetype": "Matrix409",
+            "criteria": [],
+            "document": "corpus/cases/minting/reference-status-column-rust/input/spec/tests.md"
+          }
+        ],
+        "engine": {
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
+          "capabilities": [
+            "action_guidance.structured",
+            "assurance_export.v1",
+            "binding_census",
+            "binding_census.self_named",
+            "binding_census.tagged",
+            "clause_sets",
+            "declaration_origins",
+            "metrics_envelope",
+            "minted_targets",
+            "property_spans.safe_refusal",
+            "reference_only_targets",
+            "specific_shaped",
+            "suspicions",
+            "unmatched_tags"
+          ]
+        }
+      }
+    },
+    {
+      "case": "reference-status-column-typescript",
+      "payload": {
+        "documents": [
+          {
+            "archetype": "Matrix409",
+            "criteria": [],
+            "document": "corpus/cases/minting/reference-status-column-typescript/input/spec/tests.md"
+          }
+        ],
+        "engine": {
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
+          "capabilities": [
+            "action_guidance.structured",
+            "assurance_export.v1",
+            "binding_census",
+            "binding_census.self_named",
+            "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -13447,13 +14231,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -13510,13 +14296,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -13573,13 +14361,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -13636,13 +14426,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -13699,13 +14491,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -13762,13 +14556,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -13825,13 +14621,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -13888,13 +14686,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -13951,13 +14751,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -14014,13 +14816,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -14077,13 +14881,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -14140,13 +14946,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -14203,13 +15011,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -14266,13 +15076,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -14329,13 +15141,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -14392,13 +15206,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -14455,13 +15271,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -14518,13 +15336,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -14581,13 +15401,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -14644,13 +15466,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -14730,13 +15554,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -14816,13 +15642,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -14902,13 +15730,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -14988,13 +15818,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -15074,13 +15906,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -15160,13 +15994,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -15223,13 +16059,129 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
+            "declaration_origins",
+            "metrics_envelope",
+            "minted_targets",
+            "property_spans.safe_refusal",
+            "reference_only_targets",
+            "specific_shaped",
+            "suspicions",
+            "unmatched_tags"
+          ]
+        }
+      }
+    },
+    {
+      "case": "unittest-testcase",
+      "payload": {
+        "documents": [
+          {
+            "archetype": "FR",
+            "criteria": [
+              {
+                "domain": null,
+                "extractable": false,
+                "extraction": "not-extractable",
+                "line": 10,
+                "obligation": {
+                  "criticality": null,
+                  "method": "Test",
+                  "source": "acceptance-criterion",
+                  "statement_hash": "aa45dc1957e9a2d06118584242b5e4bcf79996d8b17b68b8fc869ba2f63d5b0e"
+                },
+                "oracle": null,
+                "precondition": null,
+                "property": "example",
+                "row_id": "FR-001-AC-1",
+                "shape": "assertion",
+                "signals": ["example:specific-scenario"],
+                "statement": "The runner records the asserted result."
+              }
+            ],
+            "document": "corpus/cases/parser/unittest-testcase/input/spec/FR-001.md"
+          },
+          {
+            "archetype": "TestMatrix",
+            "criteria": [],
+            "document": "corpus/cases/parser/unittest-testcase/input/spec/tests.md"
+          }
+        ],
+        "engine": {
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
+          "capabilities": [
+            "action_guidance.structured",
+            "assurance_export.v1",
+            "binding_census",
+            "binding_census.self_named",
+            "binding_census.tagged",
+            "clause_sets",
+            "declaration_origins",
+            "metrics_envelope",
+            "minted_targets",
+            "property_spans.safe_refusal",
+            "reference_only_targets",
+            "specific_shaped",
+            "suspicions",
+            "unmatched_tags"
+          ]
+        }
+      }
+    },
+    {
+      "case": "unittest-testcase-control",
+      "payload": {
+        "documents": [
+          {
+            "archetype": "FR",
+            "criteria": [
+              {
+                "domain": null,
+                "extractable": false,
+                "extraction": "not-extractable",
+                "line": 10,
+                "obligation": {
+                  "criticality": null,
+                  "method": "Test",
+                  "source": "acceptance-criterion",
+                  "statement_hash": "aa45dc1957e9a2d06118584242b5e4bcf79996d8b17b68b8fc869ba2f63d5b0e"
+                },
+                "oracle": null,
+                "precondition": null,
+                "property": "example",
+                "row_id": "FR-001-AC-1",
+                "shape": "assertion",
+                "signals": ["example:specific-scenario"],
+                "statement": "The runner records the asserted result."
+              }
+            ],
+            "document": "corpus/cases/parser/unittest-testcase-control/input/spec/FR-001.md"
+          },
+          {
+            "archetype": "TestMatrix",
+            "criteria": [],
+            "document": "corpus/cases/parser/unittest-testcase-control/input/spec/tests.md"
+          }
+        ],
+        "engine": {
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
+          "capabilities": [
+            "action_guidance.structured",
+            "assurance_export.v1",
+            "binding_census",
+            "binding_census.self_named",
+            "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -15309,13 +16261,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -15395,13 +16349,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -15481,13 +16437,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -15567,13 +16525,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -15653,13 +16613,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -15739,13 +16701,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -15797,13 +16761,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -15855,13 +16821,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -15913,13 +16881,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -16003,13 +16973,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -16093,13 +17065,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -16183,13 +17157,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -16273,13 +17249,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -16363,13 +17341,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -16453,13 +17433,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -16531,13 +17513,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -16609,13 +17593,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -16687,13 +17673,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -16765,13 +17753,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -16843,13 +17833,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -16921,13 +17913,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -17007,13 +18001,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -17093,13 +18089,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -17179,13 +18177,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -17265,13 +18265,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -17351,13 +18353,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -17437,13 +18441,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -17492,13 +18498,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -17547,13 +18555,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -17633,13 +18643,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -17719,13 +18731,15 @@
           }
         ],
         "engine": {
-          "cli": "0.30.2",
-          "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+          "cli": "0.32.0",
+          "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
           "capabilities": [
             "action_guidance.structured",
+            "assurance_export.v1",
             "binding_census",
             "binding_census.self_named",
             "binding_census.tagged",
+            "clause_sets",
             "declaration_origins",
             "metrics_envelope",
             "minted_targets",
@@ -17796,7 +18810,7 @@
     },
     "malformed": [],
     "producerVersions": [
-      "0.30.2 (engine ca7362d4dacecb96f01d74d1d971327118c25917)"
+      "0.32.0 (engine 42326bbdf8f6641203eebf7a5faaa2b22bc19b0f)"
     ]
   },
   "grounding_quality_payload": {
@@ -17942,13 +18956,15 @@
       }
     ],
     "engine": {
-      "cli": "0.30.2",
-      "engine": "ca7362d4dacecb96f01d74d1d971327118c25917",
+      "cli": "0.32.0",
+      "engine": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
       "capabilities": [
         "action_guidance.structured",
+        "assurance_export.v1",
         "binding_census",
         "binding_census.self_named",
         "binding_census.tagged",
+        "clause_sets",
         "declaration_origins",
         "metrics_envelope",
         "minted_targets",
@@ -17962,10 +18978,10 @@
   },
   "cost_per_confirmed_insight": {
     "tokens": null,
-    "toolCalls": 1980,
-    "truePositives": 63,
+    "toolCalls": 2148,
+    "truePositives": 69,
     "tokensPer": null,
-    "toolCallsPer": 31.43
+    "toolCallsPer": 31.13
   },
   "sentinel.silent_zero": {
     "count": 0,
@@ -18120,7 +19136,7 @@
       }
     ]
   },
-  "corpora": 164,
+  "corpora": 178,
   "by_language": [
     {
       "language": "n/a",
@@ -18150,7 +19166,7 @@
               "sha256:5dff42b3ac6f6c657e84f17f6d272265528d194dd4925b8bf64a1a45d58656fd",
               "sha256:a1bbcb18a9f8b9815441de8881624e737bf76f40754c4c11069cc9bd19615dfb"
             ],
-            "rulings": 829
+            "rulings": 899
           }
         },
         {
@@ -18227,12 +19243,12 @@
     },
     {
       "language": "python",
-      "corpora": 44,
+      "corpora": 50,
       "families": [
         {
           "family": "archetype-matches-nothing",
           "truePositives": 1,
-          "falsePositives": 86,
+          "falsePositives": 90,
           "misses": 0,
           "precision": 1,
           "shape": "advisory",
@@ -18240,15 +19256,15 @@
           "precision_basis": {
             "metricVersion": "finding.precision.advisory-v1",
             "precision": 1,
-            "truePositives": 87,
+            "truePositives": 91,
             "falsePositives": 0,
             "unadjudicated": 0,
-            "byStanding": 86,
+            "byStanding": 90,
             "retainedRulings": 0,
             "ambiguous": [],
             "unresolved": [],
             "unadjudicatedFindingIds": [],
-            "rulings": 829
+            "rulings": 899
           }
         },
         {
@@ -18379,6 +19395,15 @@
           "recall": 1
         },
         {
+          "family": "status-column-matches-nothing",
+          "truePositives": 2,
+          "falsePositives": 0,
+          "misses": 0,
+          "precision": 1,
+          "shape": "defect",
+          "recall": 1
+        },
+        {
           "family": "tag-on-non-binding-symbol",
           "truePositives": 2,
           "falsePositives": 0,
@@ -18409,7 +19434,7 @@
     },
     {
       "language": "rust",
-      "corpora": 58,
+      "corpora": 62,
       "families": [
         {
           "family": "archetype-matches-nothing",
@@ -18430,7 +19455,7 @@
             "ambiguous": [],
             "unresolved": [],
             "unadjudicatedFindingIds": [],
-            "rulings": 829
+            "rulings": 899
           }
         },
         {
@@ -18576,6 +19601,15 @@
           "recall": 1
         },
         {
+          "family": "status-column-matches-nothing",
+          "truePositives": 2,
+          "falsePositives": 0,
+          "misses": 0,
+          "precision": 1,
+          "shape": "defect",
+          "recall": 1
+        },
+        {
           "family": "tag-on-non-binding-symbol",
           "truePositives": 1,
           "falsePositives": 0,
@@ -18624,7 +19658,7 @@
     },
     {
       "language": "typescript",
-      "corpora": 48,
+      "corpora": 52,
       "families": [
         {
           "family": "archetype-matches-nothing",
@@ -18645,7 +19679,7 @@
             "ambiguous": [],
             "unresolved": [],
             "unadjudicatedFindingIds": [],
-            "rulings": 829
+            "rulings": 899
           }
         },
         {
@@ -18780,6 +19814,15 @@
           "recall": 1
         },
         {
+          "family": "status-column-matches-nothing",
+          "truePositives": 2,
+          "falsePositives": 0,
+          "misses": 0,
+          "precision": 1,
+          "shape": "defect",
+          "recall": 1
+        },
+        {
           "family": "tag-on-non-binding-symbol",
           "truePositives": 3,
           "falsePositives": 0,
@@ -18810,7 +19853,7 @@
     }
   ],
   "pending": [],
-  "findings": 497,
+  "findings": 507,
   "finding_records": [
     {
       "schemaVersion": "finding-envelope-v2",
@@ -35417,6 +36460,282 @@
         "producer": "quire",
         "channel": "coverage.diagnostics"
       },
+      "kind": "status-column-matches-nothing",
+      "identity": {
+        "family": "status-column-matches-nothing",
+        "case": "reference-status-column-explicit-python",
+        "language": "python",
+        "declaration": "alternate-status"
+      },
+      "evaluation": {},
+      "subject": {
+        "state": "available",
+        "value": "declaration `alternate-status`"
+      },
+      "locus": {
+        "state": "available",
+        "value": { "path": "spec/tests.md", "line": 14 }
+      },
+      "causalEvidence": {
+        "state": "available",
+        "value": "declaration 'alternate-status' uses configured status column 'Coverage Status', which the table under 'Alternate' in spec/tests.md does not have — the columns it has are 'ID', 'Tests', 'Status'. Status classification was skipped, so complete-but-unbacked rows could not be checked. Align `traceability.document_references[].status_column` with the authored header or rename the document column; the engine will not guess between those change targets"
+      },
+      "changeTarget": { "state": "available", "value": "spec/tests.md:14" },
+      "nextMove": {
+        "state": "available",
+        "value": {
+          "kind": "diagnostic",
+          "text": "compare the configured status column with the observed table headers; rename the document column or change the configuration, and do not guess when both are plausible"
+        }
+      },
+      "raw": {
+        "declaration": "alternate-status",
+        "reason": "status-column-matches-nothing",
+        "message": "declaration 'alternate-status' uses configured status column 'Coverage Status', which the table under 'Alternate' in spec/tests.md does not have — the columns it has are 'ID', 'Tests', 'Status'. Status classification was skipped, so complete-but-unbacked rows could not be checked. Align `traceability.document_references[].status_column` with the authored header or rename the document column; the engine will not guess between those change targets",
+        "path": "spec/tests.md",
+        "line": 14,
+        "subject": "declaration `alternate-status`",
+        "change_target": "spec/tests.md:14",
+        "next_diagnostic_step": "compare the configured status column with the observed table headers; rename the document column or change the configuration, and do not guess when both are plausible"
+      }
+    },
+    {
+      "schemaVersion": "finding-envelope-v2",
+      "source": {
+        "class": "quire",
+        "producer": "quire",
+        "channel": "coverage.diagnostics"
+      },
+      "kind": "status-column-matches-nothing",
+      "identity": {
+        "family": "status-column-matches-nothing",
+        "case": "reference-status-column-explicit-rust",
+        "language": "rust",
+        "declaration": "alternate-status"
+      },
+      "evaluation": {},
+      "subject": {
+        "state": "available",
+        "value": "declaration `alternate-status`"
+      },
+      "locus": {
+        "state": "available",
+        "value": { "path": "spec/tests.md", "line": 14 }
+      },
+      "causalEvidence": {
+        "state": "available",
+        "value": "declaration 'alternate-status' uses configured status column 'Coverage Status', which the table under 'Alternate' in spec/tests.md does not have — the columns it has are 'ID', 'Tests', 'Status'. Status classification was skipped, so complete-but-unbacked rows could not be checked. Align `traceability.document_references[].status_column` with the authored header or rename the document column; the engine will not guess between those change targets"
+      },
+      "changeTarget": { "state": "available", "value": "spec/tests.md:14" },
+      "nextMove": {
+        "state": "available",
+        "value": {
+          "kind": "diagnostic",
+          "text": "compare the configured status column with the observed table headers; rename the document column or change the configuration, and do not guess when both are plausible"
+        }
+      },
+      "raw": {
+        "declaration": "alternate-status",
+        "reason": "status-column-matches-nothing",
+        "message": "declaration 'alternate-status' uses configured status column 'Coverage Status', which the table under 'Alternate' in spec/tests.md does not have — the columns it has are 'ID', 'Tests', 'Status'. Status classification was skipped, so complete-but-unbacked rows could not be checked. Align `traceability.document_references[].status_column` with the authored header or rename the document column; the engine will not guess between those change targets",
+        "path": "spec/tests.md",
+        "line": 14,
+        "subject": "declaration `alternate-status`",
+        "change_target": "spec/tests.md:14",
+        "next_diagnostic_step": "compare the configured status column with the observed table headers; rename the document column or change the configuration, and do not guess when both are plausible"
+      }
+    },
+    {
+      "schemaVersion": "finding-envelope-v2",
+      "source": {
+        "class": "quire",
+        "producer": "quire",
+        "channel": "coverage.diagnostics"
+      },
+      "kind": "status-column-matches-nothing",
+      "identity": {
+        "family": "status-column-matches-nothing",
+        "case": "reference-status-column-explicit-typescript",
+        "language": "typescript",
+        "declaration": "alternate-status"
+      },
+      "evaluation": {},
+      "subject": {
+        "state": "available",
+        "value": "declaration `alternate-status`"
+      },
+      "locus": {
+        "state": "available",
+        "value": { "path": "spec/tests.md", "line": 14 }
+      },
+      "causalEvidence": {
+        "state": "available",
+        "value": "declaration 'alternate-status' uses configured status column 'Coverage Status', which the table under 'Alternate' in spec/tests.md does not have — the columns it has are 'ID', 'Tests', 'Status'. Status classification was skipped, so complete-but-unbacked rows could not be checked. Align `traceability.document_references[].status_column` with the authored header or rename the document column; the engine will not guess between those change targets"
+      },
+      "changeTarget": { "state": "available", "value": "spec/tests.md:14" },
+      "nextMove": {
+        "state": "available",
+        "value": {
+          "kind": "diagnostic",
+          "text": "compare the configured status column with the observed table headers; rename the document column or change the configuration, and do not guess when both are plausible"
+        }
+      },
+      "raw": {
+        "declaration": "alternate-status",
+        "reason": "status-column-matches-nothing",
+        "message": "declaration 'alternate-status' uses configured status column 'Coverage Status', which the table under 'Alternate' in spec/tests.md does not have — the columns it has are 'ID', 'Tests', 'Status'. Status classification was skipped, so complete-but-unbacked rows could not be checked. Align `traceability.document_references[].status_column` with the authored header or rename the document column; the engine will not guess between those change targets",
+        "path": "spec/tests.md",
+        "line": 14,
+        "subject": "declaration `alternate-status`",
+        "change_target": "spec/tests.md:14",
+        "next_diagnostic_step": "compare the configured status column with the observed table headers; rename the document column or change the configuration, and do not guess when both are plausible"
+      }
+    },
+    {
+      "schemaVersion": "finding-envelope-v2",
+      "source": {
+        "class": "quire",
+        "producer": "quire",
+        "channel": "coverage.diagnostics"
+      },
+      "kind": "status-column-matches-nothing",
+      "identity": {
+        "family": "status-column-matches-nothing",
+        "case": "reference-status-column-python",
+        "language": "python",
+        "declaration": "alternate-status"
+      },
+      "evaluation": {},
+      "subject": {
+        "state": "available",
+        "value": "declaration `alternate-status`"
+      },
+      "locus": {
+        "state": "available",
+        "value": { "path": "spec/tests.md", "line": 14 }
+      },
+      "causalEvidence": {
+        "state": "available",
+        "value": "declaration 'alternate-status' uses configured status column 'Status', which the table under 'Alternate' in spec/tests.md does not have — the columns it has are 'ID', 'Tests', 'Coverage Status'. Status classification was skipped, so complete-but-unbacked rows could not be checked. Align `traceability.status.column` with the authored header or rename the document column; the engine will not guess between those change targets"
+      },
+      "changeTarget": { "state": "available", "value": "spec/tests.md:14" },
+      "nextMove": {
+        "state": "available",
+        "value": {
+          "kind": "diagnostic",
+          "text": "compare the configured status column with the observed table headers; rename the document column or change the configuration, and do not guess when both are plausible"
+        }
+      },
+      "raw": {
+        "declaration": "alternate-status",
+        "reason": "status-column-matches-nothing",
+        "message": "declaration 'alternate-status' uses configured status column 'Status', which the table under 'Alternate' in spec/tests.md does not have — the columns it has are 'ID', 'Tests', 'Coverage Status'. Status classification was skipped, so complete-but-unbacked rows could not be checked. Align `traceability.status.column` with the authored header or rename the document column; the engine will not guess between those change targets",
+        "path": "spec/tests.md",
+        "line": 14,
+        "subject": "declaration `alternate-status`",
+        "change_target": "spec/tests.md:14",
+        "next_diagnostic_step": "compare the configured status column with the observed table headers; rename the document column or change the configuration, and do not guess when both are plausible"
+      }
+    },
+    {
+      "schemaVersion": "finding-envelope-v2",
+      "source": {
+        "class": "quire",
+        "producer": "quire",
+        "channel": "coverage.diagnostics"
+      },
+      "kind": "status-column-matches-nothing",
+      "identity": {
+        "family": "status-column-matches-nothing",
+        "case": "reference-status-column-rust",
+        "language": "rust",
+        "declaration": "alternate-status"
+      },
+      "evaluation": {},
+      "subject": {
+        "state": "available",
+        "value": "declaration `alternate-status`"
+      },
+      "locus": {
+        "state": "available",
+        "value": { "path": "spec/tests.md", "line": 14 }
+      },
+      "causalEvidence": {
+        "state": "available",
+        "value": "declaration 'alternate-status' uses configured status column 'Status', which the table under 'Alternate' in spec/tests.md does not have — the columns it has are 'ID', 'Tests', 'Coverage Status'. Status classification was skipped, so complete-but-unbacked rows could not be checked. Align `traceability.status.column` with the authored header or rename the document column; the engine will not guess between those change targets"
+      },
+      "changeTarget": { "state": "available", "value": "spec/tests.md:14" },
+      "nextMove": {
+        "state": "available",
+        "value": {
+          "kind": "diagnostic",
+          "text": "compare the configured status column with the observed table headers; rename the document column or change the configuration, and do not guess when both are plausible"
+        }
+      },
+      "raw": {
+        "declaration": "alternate-status",
+        "reason": "status-column-matches-nothing",
+        "message": "declaration 'alternate-status' uses configured status column 'Status', which the table under 'Alternate' in spec/tests.md does not have — the columns it has are 'ID', 'Tests', 'Coverage Status'. Status classification was skipped, so complete-but-unbacked rows could not be checked. Align `traceability.status.column` with the authored header or rename the document column; the engine will not guess between those change targets",
+        "path": "spec/tests.md",
+        "line": 14,
+        "subject": "declaration `alternate-status`",
+        "change_target": "spec/tests.md:14",
+        "next_diagnostic_step": "compare the configured status column with the observed table headers; rename the document column or change the configuration, and do not guess when both are plausible"
+      }
+    },
+    {
+      "schemaVersion": "finding-envelope-v2",
+      "source": {
+        "class": "quire",
+        "producer": "quire",
+        "channel": "coverage.diagnostics"
+      },
+      "kind": "status-column-matches-nothing",
+      "identity": {
+        "family": "status-column-matches-nothing",
+        "case": "reference-status-column-typescript",
+        "language": "typescript",
+        "declaration": "alternate-status"
+      },
+      "evaluation": {},
+      "subject": {
+        "state": "available",
+        "value": "declaration `alternate-status`"
+      },
+      "locus": {
+        "state": "available",
+        "value": { "path": "spec/tests.md", "line": 14 }
+      },
+      "causalEvidence": {
+        "state": "available",
+        "value": "declaration 'alternate-status' uses configured status column 'Status', which the table under 'Alternate' in spec/tests.md does not have — the columns it has are 'ID', 'Tests', 'Coverage Status'. Status classification was skipped, so complete-but-unbacked rows could not be checked. Align `traceability.status.column` with the authored header or rename the document column; the engine will not guess between those change targets"
+      },
+      "changeTarget": { "state": "available", "value": "spec/tests.md:14" },
+      "nextMove": {
+        "state": "available",
+        "value": {
+          "kind": "diagnostic",
+          "text": "compare the configured status column with the observed table headers; rename the document column or change the configuration, and do not guess when both are plausible"
+        }
+      },
+      "raw": {
+        "declaration": "alternate-status",
+        "reason": "status-column-matches-nothing",
+        "message": "declaration 'alternate-status' uses configured status column 'Status', which the table under 'Alternate' in spec/tests.md does not have — the columns it has are 'ID', 'Tests', 'Coverage Status'. Status classification was skipped, so complete-but-unbacked rows could not be checked. Align `traceability.status.column` with the authored header or rename the document column; the engine will not guess between those change targets",
+        "path": "spec/tests.md",
+        "line": 14,
+        "subject": "declaration `alternate-status`",
+        "change_target": "spec/tests.md:14",
+        "next_diagnostic_step": "compare the configured status column with the observed table headers; rename the document column or change the configuration, and do not guess when both are plausible"
+      }
+    },
+    {
+      "schemaVersion": "finding-envelope-v2",
+      "source": {
+        "class": "quire",
+        "producer": "quire",
+        "channel": "coverage.diagnostics"
+      },
       "kind": "catch-all-universal",
       "identity": {
         "family": "catch-all-universal",
@@ -39762,6 +41081,214 @@
         "producer": "quire",
         "channel": "coverage.diagnostics"
       },
+      "kind": "archetype-matches-nothing",
+      "identity": {
+        "family": "archetype-matches-nothing",
+        "case": "unittest-testcase",
+        "language": "python",
+        "declaration": "nfr-acceptance-criterion"
+      },
+      "evaluation": {},
+      "subject": {
+        "state": "available",
+        "value": "declaration `nfr-acceptance-criterion`"
+      },
+      "locus": {
+        "state": "available",
+        "value": {
+          "path": "corpus/modules/ecosystem/spec-artifacts-process/manifest.yaml",
+          "line": 685
+        }
+      },
+      "causalEvidence": {
+        "state": "available",
+        "value": "declaration 'nfr-acceptance-criterion' declares archetype 'NFR', which no document in the corpus has — it scans nothing and mints no rows"
+      },
+      "changeTarget": {
+        "state": "available",
+        "value": "the trace-target archetype in the module manifest"
+      },
+      "nextMove": {
+        "state": "available",
+        "value": {
+          "kind": "diagnostic",
+          "text": "confirm whether the missing document is intentional; otherwise add the document or correct the declared archetype"
+        }
+      },
+      "raw": {
+        "declaration": "nfr-acceptance-criterion",
+        "reason": "archetype-matches-nothing",
+        "message": "declaration 'nfr-acceptance-criterion' declares archetype 'NFR', which no document in the corpus has — it scans nothing and mints no rows",
+        "path": "corpus/modules/ecosystem/spec-artifacts-process/manifest.yaml",
+        "line": 685,
+        "subject": "declaration `nfr-acceptance-criterion`",
+        "change_target": "the trace-target archetype in the module manifest",
+        "next_diagnostic_step": "confirm whether the missing document is intentional; otherwise add the document or correct the declared archetype"
+      }
+    },
+    {
+      "schemaVersion": "finding-envelope-v2",
+      "source": {
+        "class": "quire",
+        "producer": "quire",
+        "channel": "coverage.diagnostics"
+      },
+      "kind": "archetype-matches-nothing",
+      "identity": {
+        "family": "archetype-matches-nothing",
+        "case": "unittest-testcase",
+        "language": "python",
+        "declaration": "stakeholder-validation-criterion"
+      },
+      "evaluation": {},
+      "subject": {
+        "state": "available",
+        "value": "declaration `stakeholder-validation-criterion`"
+      },
+      "locus": {
+        "state": "available",
+        "value": {
+          "path": "corpus/modules/ecosystem/spec-artifacts-process/manifest.yaml",
+          "line": 723
+        }
+      },
+      "causalEvidence": {
+        "state": "available",
+        "value": "declaration 'stakeholder-validation-criterion' declares archetype 'StR', which no document in the corpus has — it scans nothing and mints no rows"
+      },
+      "changeTarget": {
+        "state": "available",
+        "value": "the trace-target archetype in the module manifest"
+      },
+      "nextMove": {
+        "state": "available",
+        "value": {
+          "kind": "diagnostic",
+          "text": "confirm whether the missing document is intentional; otherwise add the document or correct the declared archetype"
+        }
+      },
+      "raw": {
+        "declaration": "stakeholder-validation-criterion",
+        "reason": "archetype-matches-nothing",
+        "message": "declaration 'stakeholder-validation-criterion' declares archetype 'StR', which no document in the corpus has — it scans nothing and mints no rows",
+        "path": "corpus/modules/ecosystem/spec-artifacts-process/manifest.yaml",
+        "line": 723,
+        "subject": "declaration `stakeholder-validation-criterion`",
+        "change_target": "the trace-target archetype in the module manifest",
+        "next_diagnostic_step": "confirm whether the missing document is intentional; otherwise add the document or correct the declared archetype"
+      }
+    },
+    {
+      "schemaVersion": "finding-envelope-v2",
+      "source": {
+        "class": "quire",
+        "producer": "quire",
+        "channel": "coverage.diagnostics"
+      },
+      "kind": "archetype-matches-nothing",
+      "identity": {
+        "family": "archetype-matches-nothing",
+        "case": "unittest-testcase-control",
+        "language": "python",
+        "declaration": "nfr-acceptance-criterion"
+      },
+      "evaluation": {},
+      "subject": {
+        "state": "available",
+        "value": "declaration `nfr-acceptance-criterion`"
+      },
+      "locus": {
+        "state": "available",
+        "value": {
+          "path": "corpus/modules/ecosystem/spec-artifacts-process/manifest.yaml",
+          "line": 685
+        }
+      },
+      "causalEvidence": {
+        "state": "available",
+        "value": "declaration 'nfr-acceptance-criterion' declares archetype 'NFR', which no document in the corpus has — it scans nothing and mints no rows"
+      },
+      "changeTarget": {
+        "state": "available",
+        "value": "the trace-target archetype in the module manifest"
+      },
+      "nextMove": {
+        "state": "available",
+        "value": {
+          "kind": "diagnostic",
+          "text": "confirm whether the missing document is intentional; otherwise add the document or correct the declared archetype"
+        }
+      },
+      "raw": {
+        "declaration": "nfr-acceptance-criterion",
+        "reason": "archetype-matches-nothing",
+        "message": "declaration 'nfr-acceptance-criterion' declares archetype 'NFR', which no document in the corpus has — it scans nothing and mints no rows",
+        "path": "corpus/modules/ecosystem/spec-artifacts-process/manifest.yaml",
+        "line": 685,
+        "subject": "declaration `nfr-acceptance-criterion`",
+        "change_target": "the trace-target archetype in the module manifest",
+        "next_diagnostic_step": "confirm whether the missing document is intentional; otherwise add the document or correct the declared archetype"
+      }
+    },
+    {
+      "schemaVersion": "finding-envelope-v2",
+      "source": {
+        "class": "quire",
+        "producer": "quire",
+        "channel": "coverage.diagnostics"
+      },
+      "kind": "archetype-matches-nothing",
+      "identity": {
+        "family": "archetype-matches-nothing",
+        "case": "unittest-testcase-control",
+        "language": "python",
+        "declaration": "stakeholder-validation-criterion"
+      },
+      "evaluation": {},
+      "subject": {
+        "state": "available",
+        "value": "declaration `stakeholder-validation-criterion`"
+      },
+      "locus": {
+        "state": "available",
+        "value": {
+          "path": "corpus/modules/ecosystem/spec-artifacts-process/manifest.yaml",
+          "line": 723
+        }
+      },
+      "causalEvidence": {
+        "state": "available",
+        "value": "declaration 'stakeholder-validation-criterion' declares archetype 'StR', which no document in the corpus has — it scans nothing and mints no rows"
+      },
+      "changeTarget": {
+        "state": "available",
+        "value": "the trace-target archetype in the module manifest"
+      },
+      "nextMove": {
+        "state": "available",
+        "value": {
+          "kind": "diagnostic",
+          "text": "confirm whether the missing document is intentional; otherwise add the document or correct the declared archetype"
+        }
+      },
+      "raw": {
+        "declaration": "stakeholder-validation-criterion",
+        "reason": "archetype-matches-nothing",
+        "message": "declaration 'stakeholder-validation-criterion' declares archetype 'StR', which no document in the corpus has — it scans nothing and mints no rows",
+        "path": "corpus/modules/ecosystem/spec-artifacts-process/manifest.yaml",
+        "line": 723,
+        "subject": "declaration `stakeholder-validation-criterion`",
+        "change_target": "the trace-target archetype in the module manifest",
+        "next_diagnostic_step": "confirm whether the missing document is intentional; otherwise add the document or correct the declared archetype"
+      }
+    },
+    {
+      "schemaVersion": "finding-envelope-v2",
+      "source": {
+        "class": "quire",
+        "producer": "quire",
+        "channel": "coverage.diagnostics"
+      },
       "kind": "no-symbol-bound",
       "identity": {
         "family": "marker-form-mismatch",
@@ -40941,15 +42468,15 @@
         }
       },
       "raw": {
+        "changeTarget": "scripts/check_dangerous_eval.sh:4",
         "kind": "gate-that-gates-nothing",
+        "line": 4,
         "obligation": "FR-001-AC-1",
         "path": "scripts/check_dangerous_eval.sh",
-        "line": 4,
-        "wiredBy": "Makefile",
-        "subject": "gate for FR-001-AC-1",
-        "changeTarget": "scripts/check_dangerous_eval.sh:4",
         "remedy": "compare the count for “dangerous_eval” to zero or make the match command exit non-zero when forbidden text is present",
-        "summary": "FR-001-AC-1 claims “no production symbol shall call `dangerous_eval`.”, and Makefile wires scripts/check_dangerous_eval.sh, but line 4 only counts matches for “dangerous_eval” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero."
+        "subject": "gate for FR-001-AC-1",
+        "summary": "FR-001-AC-1 claims “no production symbol shall call `dangerous_eval`.”, and Makefile wires scripts/check_dangerous_eval.sh, but line 4 only counts matches for “dangerous_eval” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero.",
+        "wiredBy": "Makefile"
       }
     },
     {
@@ -41091,15 +42618,15 @@
         }
       },
       "raw": {
+        "changeTarget": "scripts/check_unwrap.sh:4",
         "kind": "gate-that-gates-nothing",
+        "line": 4,
         "obligation": "FR-001-AC-1",
         "path": "scripts/check_unwrap.sh",
-        "line": 4,
-        "wiredBy": "Makefile",
-        "subject": "gate for FR-001-AC-1",
-        "changeTarget": "scripts/check_unwrap.sh:4",
         "remedy": "compare the count for “unwrap()” to zero or make the match command exit non-zero when forbidden text is present",
-        "summary": "FR-001-AC-1 claims “no production `unwrap`.”, and Makefile wires scripts/check_unwrap.sh, but line 4 only counts matches for “unwrap()” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero."
+        "subject": "gate for FR-001-AC-1",
+        "summary": "FR-001-AC-1 claims “no production `unwrap`.”, and Makefile wires scripts/check_unwrap.sh, but line 4 only counts matches for “unwrap()” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero.",
+        "wiredBy": "Makefile"
       }
     },
     {
@@ -41241,15 +42768,15 @@
         }
       },
       "raw": {
+        "changeTarget": "scripts/check_dangerous_eval.sh:4",
         "kind": "gate-that-gates-nothing",
+        "line": 4,
         "obligation": "FR-001-AC-1",
         "path": "scripts/check_dangerous_eval.sh",
-        "line": 4,
-        "wiredBy": "Makefile",
-        "subject": "gate for FR-001-AC-1",
-        "changeTarget": "scripts/check_dangerous_eval.sh:4",
         "remedy": "compare the count for “dangerousEval” to zero or make the match command exit non-zero when forbidden text is present",
-        "summary": "FR-001-AC-1 claims “no production symbol shall call `dangerousEval`.”, and Makefile wires scripts/check_dangerous_eval.sh, but line 4 only counts matches for “dangerousEval” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero."
+        "subject": "gate for FR-001-AC-1",
+        "summary": "FR-001-AC-1 claims “no production symbol shall call `dangerousEval`.”, and Makefile wires scripts/check_dangerous_eval.sh, but line 4 only counts matches for “dangerousEval” without asserting zero. The gate succeeds when the forbidden text is present; compare the count to zero or make a match exit non-zero.",
+        "wiredBy": "Makefile"
       }
     },
     {
@@ -41703,16 +43230,16 @@
         }
       },
       "raw": {
-        "kind": "mocked-confirmation",
-        "obligation": "FR-001-AC-1",
-        "severity": "medium",
-        "path": "src/test_shell.py",
-        "line": 13,
-        "symbol": "test_covers",
-        "subject": "FR-001-AC-1 evidence",
         "changeTarget": "src/test_shell.py:13 in test_covers",
+        "kind": "mocked-confirmation",
+        "line": 13,
         "nextDiagnosticStep": "inspect whether the real behaviour for FR-001-AC-1 exists; add or bind an independent test that exercises it without substituting the behaviour under verification",
-        "summary": "FR-001-AC-1 is discharged only by tests that inject a stand-in for the behaviour it verifies: src/test_shell.py:13 test_covers injects Confirmation.allow. A test that substitutes the behaviour under verification passes whether or not that behaviour exists."
+        "obligation": "FR-001-AC-1",
+        "path": "src/test_shell.py",
+        "severity": "medium",
+        "subject": "FR-001-AC-1 evidence",
+        "summary": "FR-001-AC-1 is discharged only by tests that inject a stand-in for the behaviour it verifies: src/test_shell.py:13 test_covers injects Confirmation.allow. A test that substitutes the behaviour under verification passes whether or not that behaviour exists.",
+        "symbol": "test_covers"
       }
     },
     {
@@ -41854,16 +43381,16 @@
         }
       },
       "raw": {
-        "kind": "mocked-confirmation",
-        "obligation": "FR-001-AC-1",
-        "severity": "medium",
-        "path": "src/lib.rs",
-        "line": 22,
-        "symbol": "covers",
-        "subject": "FR-001-AC-1 evidence",
         "changeTarget": "src/lib.rs:22 in covers",
+        "kind": "mocked-confirmation",
+        "line": 22,
         "nextDiagnosticStep": "inspect whether the real behaviour for FR-001-AC-1 exists; add or bind an independent test that exercises it without substituting the behaviour under verification",
-        "summary": "FR-001-AC-1 is discharged only by tests that inject a stand-in for the behaviour it verifies: src/lib.rs:22 covers injects Confirmation::allow. A test that substitutes the behaviour under verification passes whether or not that behaviour exists."
+        "obligation": "FR-001-AC-1",
+        "path": "src/lib.rs",
+        "severity": "medium",
+        "subject": "FR-001-AC-1 evidence",
+        "summary": "FR-001-AC-1 is discharged only by tests that inject a stand-in for the behaviour it verifies: src/lib.rs:22 covers injects Confirmation::allow. A test that substitutes the behaviour under verification passes whether or not that behaviour exists.",
+        "symbol": "covers"
       }
     },
     {
@@ -42005,16 +43532,16 @@
         }
       },
       "raw": {
-        "kind": "mocked-confirmation",
-        "obligation": "FR-001-AC-1",
-        "severity": "medium",
-        "path": "src/shell.test.ts",
-        "line": 13,
-        "symbol": "covers",
-        "subject": "FR-001-AC-1 evidence",
         "changeTarget": "src/shell.test.ts:13 in covers",
+        "kind": "mocked-confirmation",
+        "line": 13,
         "nextDiagnosticStep": "inspect whether the real behaviour for FR-001-AC-1 exists; add or bind an independent test that exercises it without substituting the behaviour under verification",
-        "summary": "FR-001-AC-1 is discharged only by tests that inject a stand-in for the behaviour it verifies: src/shell.test.ts:13 covers injects Confirmation.allow. A test that substitutes the behaviour under verification passes whether or not that behaviour exists."
+        "obligation": "FR-001-AC-1",
+        "path": "src/shell.test.ts",
+        "severity": "medium",
+        "subject": "FR-001-AC-1 evidence",
+        "summary": "FR-001-AC-1 is discharged only by tests that inject a stand-in for the behaviour it verifies: src/shell.test.ts:13 covers injects Confirmation.allow. A test that substitutes the behaviour under verification passes whether or not that behaviour exists.",
+        "symbol": "covers"
       }
     },
     {

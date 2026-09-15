@@ -18,8 +18,8 @@
 //! capability to the one file allowed to hold it, but `main.rs` does four
 //! things — argv, stdin, dispatch, two writes and an exit — and must keep doing
 //! only four; and a request that depends on the filesystem cannot be
-//! difftested, because `quoin-difftest` feeds **the same stdin to two
-//! processes** and its `Request` enum has no filesystem variant. So the request
+//! fixture-replayed, because the native suite feeds captured input to Rust and
+//! its `Request` enum has no filesystem variant. So the request
 //! carries the file map, which is also the shape the golden corpus already uses
 //! (`quoin-validators/tests/golden/cases.json`).
 //!

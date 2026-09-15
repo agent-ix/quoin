@@ -147,12 +147,12 @@ Coverage is mapped requirement → test as `file :: "test name"`:
 | FR-091      | ⛔ Withdrawn | Withdrawn 2026-09-12 under [#388](https://github.com/agent-ix/quoin/issues/388). Gate [#291](https://github.com/agent-ix/quoin/issues/291) (advisory, report only) is closed; the measurement ran once on 2026-09-05 and its results are retained at `analysis/corpus-measurement/`. The implementing code was disposed of rather than ported — its capability class is corpus accounting, which the implementation-language policy places in `engineering-assurance`. Deliberately **not** restated as EA-consumed while [engineering-assurance#98](https://github.com/agent-ix/engineering-assurance/issues/98) is open. |
 | FR-092      | ⛔ Withdrawn | Withdrawn 2026-09-12 under [#388](https://github.com/agent-ix/quoin/issues/388). Gate [#291](https://github.com/agent-ix/quoin/issues/291) (advisory, report only) is closed; the measurement ran once on 2026-09-05 and its results are retained at `analysis/corpus-measurement/`. The implementing code was disposed of rather than ported — its capability class is corpus accounting, which the implementation-language policy places in `engineering-assurance`. Deliberately **not** restated as EA-consumed while [engineering-assurance#98](https://github.com/agent-ix/engineering-assurance/issues/98) is open. |
 | FR-096 | 🚧 Partially implemented | TC-1605..TC-1611, TC-1713, TC-1714 — the versioned `quoin-core` boundary — subprocess and JSON over stdin/stdout, command-shaped operations, the 0/1/2/3/4 exit taxonomy with a non-zero-but-valid payload distinguishable, and no Node type crossing. The boundary exists and carries two operations (`core.ping` since [#375](https://github.com/agent-ix/quoin/issues/375), `validators.run` since [#412](https://github.com/agent-ix/quoin/issues/412)); the caller-supplied-tree obligation (AC-8) and the bounded stdin read (AC-9) were added by [#448](https://github.com/agent-ix/quoin/pull/448)'s review and are implemented and tested. The remaining criteria await the operations that exercise them. |
-| FR-097 | 🚧 Partially implemented | TC-1612..TC-1617, TC-1691 — the schema-sourced type surface — `schemars` emits JSON Schema, a build step generates `src/core/types.ts` hash-asserted, and a hand-written duplicate of a published type is refused. `quoin-schemas` renders the surface, `make types` regenerates it under an asserted digest, and [#412](https://github.com/agent-ix/quoin/issues/412) registered the `validators.run` request and payload types through it. The "none implemented" reading this row used to carry was stale before [#448](https://github.com/agent-ix/quoin/pull/448) and is corrected here. |
+| FR-097 | ⛔ Withdrawn | Stage 9 native cutover (`33ca665`) deleted the temporary `quoin-core` subprocess boundary, `quoin-schemas`, and generated `src/core/types.ts`. The criterion was about that transitional TypeScript surface, so it is withdrawn rather than falsely shown as unfinished. Native schema provenance remains in the owning Rust crates; native executable delivery is now FR-102. |
 | FR-098 | ⚠️ Spec-ahead-of-code | TC-1618..TC-1624, TC-1692..TC-1695 — semantic and identity parity — canonical JSON, JCS, sha256 record identity and blake3 digests unchanged, every refusal path preserved, and the replay gate over every digest in every reachable store. 14 criteria, none implemented: the port has not started. Spec-ahead-of-code by design (#373). |
 | FR-099 | ⚠️ Spec-ahead-of-code | TC-1625..TC-1632, TC-1683, TC-1696..TC-1698 — Rust catalog and validation capability, and the boundary's own first crate. 15 criteria, none implemented: the port has not started. Spec-ahead-of-code by design (#373). |
 | FR-100 | ⚠️ Spec-ahead-of-code | TC-1633..TC-1640, TC-1699 — Rust evidence, measurement and change-assurance capability, with `quoin-store` owning serialization and digests for every other crate. 13 criteria, none implemented: the port has not started. Spec-ahead-of-code by design (#373). |
 | FR-101 | 🚧 Partially implemented | TC-1641..TC-1648, TC-1690, TC-1700..TC-1702 — retiring replaced executable paths — retain until parity at one candidate revision, a reversible cutover, deletion last, and expected fixtures captured from the retained implementation before it goes. **The first retirement has happened**: [#412](https://github.com/agent-ix/quoin/issues/412) deleted `src/validators/` and `tests/gate-validator.test.ts` after the Rust port reproduced the retained implementation's verdicts over a corpus captured from it (`rust/crates/quoin-validators/tests/golden/`), with the deletion as its own revertible commit. The criteria about the enforcement machinery (TC-1644 among them) remain unimplemented, which is why this row is not ✅. |
-| FR-102 | ⚠️ Spec-ahead-of-code | TC-1649..TC-1654, TC-1703 — the command surface and oclif retirement, including the published plugin contract. 10 criteria, none implemented: the port has not started. Spec-ahead-of-code by design (#373). |
+| FR-102 | 🚧 Partially implemented | The native shell cutover is in `33ca665`; `quoin-cli` owns the shipped `quoin` binary. Retained help fixtures, native grammar, `sync`, unknown-command refusal, and the no-Node-shell boundary are exercised in `tc_retained_help_capture.rs`, `sync.rs`, `tc_shell_contract.rs`, and TC-1654. The final temporary `quoin-core` executable and its 16 wire suites were retired after their named native CLI or in-process runtime successors landed (`2b6a92c` through the one-binary deletion cutover). `quoin-delivery` plus `native-release.yml` own GitHub Release delivery. Remaining: promotion and a real tagged-release smoke after release authority. |
 | FR-103 | ⚠️ Spec-ahead-of-code | TC-1655..TC-1659, TC-1684..TC-1685 — corpus consolidation with quire-corpus. 11 criteria, none implemented: the port has not started. Spec-ahead-of-code by design (#373). |
 
 ## Non-Functional Requirements
@@ -197,7 +197,7 @@ cannot hold, and are kept for that reason.
 Criteria absent here are verified by a method that produces no test — see
 "Tracking-tag coverage".
 
-| Functional Req | Acceptance Criteria | Test Cases | Status |
+| Functional Req | Acceptance Criteria | Test Cases | Coverage Status |
 | --- | --- | --- | --- |
 | FR-001 | FR-001-AC-1, FR-001-AC-2, FR-001-AC-3, FR-001-AC-4 | TC-001, TC-002, TC-003, TC-004 | ✅ Covered |
 | FR-002 | FR-002-AC-1, FR-002-AC-2, FR-002-AC-3, FR-002-AC-4 | TC-005, TC-006, TC-007, TC-008 | ✅ Covered |
@@ -1149,13 +1149,13 @@ generated tests under `tests/props/` and `Unit` for the rest.
 | TC-1609 | With `QUOIN_EXPECTED_CORE_SHA256` set and the binary's bytes altered, the caller refuses to invoke it and names the | Unit | P0 | FR-096-AC-5 | 🚧 |
 | TC-1610 | Result payload of 67,108,864 bytes is returned to the caller intact under a declared buffer ceiling strictly greater | Unit | P0 | FR-096-AC-6 | 🚧 |
 | TC-1611 | Static check over the generated boundary type surface finds no Node, npm or oclif runtime type, and fails when one is | Unit | P0 | FR-096-AC-7 | 🚧 |
-| TC-1612 | `make types` regenerates `src/core/types.ts` from `quoin-schemas` and the build fails when the committed file's | Unit | P0 | FR-097-AC-1 | 🚧 |
-| TC-1613 | Every generated artefact carries a provenance record naming generator identity, generator version and source-schema | Unit | P0 | FR-097-AC-2 | 🚧 |
-| TC-1614 | Planted hand-written declaration of a `filament-core-data`-published type is refused, naming the type and the | Unit | P0 | FR-097-AC-3 | 🚧 |
-| TC-1615 | Hand edit of a generated artefact fails the gate even though the artefact's path is unchanged. | Unit | P0 | FR-097-AC-4 | 🚧 |
-| TC-1616 | Generated artefact whose recorded source-schema digest is stale is refused rather than used. | Unit | P0 | FR-097-AC-5 | 🚧 |
-| TC-1617 | Gate reports no finding against user-interface TypeScript or against an imported `filament-core-data`-published type. | Unit | P0 | FR-097-AC-6 | 🚧 |
-| TC-1618 | `cargo test -p quoin-difftest` compares retained and Rust results over the golden corpora and reports the compared | Unit | P0 | FR-098-AC-1 | 🚧 |
+| TC-1612 | Withdrawn with FR-097: the native cutover deleted `quoin-schemas` and generated `src/core/types.ts`; this is not a live gate. | Unit | P0 | FR-097-AC-1 | ⛔ |
+| TC-1613 | Withdrawn with FR-097: no generated TypeScript boundary artefact remains. | Unit | P0 | FR-097-AC-2 | ⛔ |
+| TC-1614 | Withdrawn with FR-097: no first-party TypeScript type boundary remains to audit. | Unit | P0 | FR-097-AC-3 | ⛔ |
+| TC-1615 | Withdrawn with FR-097: no generated TypeScript boundary artefact remains. | Unit | P0 | FR-097-AC-4 | ⛔ |
+| TC-1616 | Withdrawn with FR-097: no generated TypeScript boundary artefact remains. | Unit | P0 | FR-097-AC-5 | ⛔ |
+| TC-1617 | Withdrawn with FR-097: standing target-language exceptions are not Quoin runtime. | Unit | P0 | FR-097-AC-6 | ⛔ |
+| TC-1618 | Native Rust fixture tests replay retained expected results over the golden corpora and report the compared | Unit | P0 | FR-098-AC-1 | 🚧 |
 | TC-1619 | For every schema in the corpus, retained and Rust validation return the identical verdict, and their diagnostics | Property | P0 | FR-098-AC-2 | 🚧 |
 | TC-1620 | Replaying every digest in every reachable store through both implementations yields zero mismatches, and a planted | Unit | P0 | FR-098-AC-3 | 🚧 |
 | TC-1621 | JCS canonicalization produces identical bytes for adversarial Unicode, number-format and key-order inputs in both | Property | P0 | FR-098-AC-4 | 🚧 |
@@ -1186,12 +1186,12 @@ generated tests under `tests/props/` and `Unit` for the rest.
 | TC-1646 | `quoin-core lint.removal` refuses a removal justified by a check whose reported population is zero, or by a test | Unit | P0 | FR-101-AC-6 | 🚧 |
 | TC-1647 | `make lint` and `make test` pass at the candidate revision with no observable behaviour change recorded by the | Unit | P0 | FR-101-AC-7 | 🚧 |
 | TC-1648 | Final inventory and `quoin-core lint.language` report no unapproved first-party non-Rust engine, production | Unit | P0 | FR-101-AC-8 | 🚧 |
-| TC-1649 | `make test` reports the command-entries and CLI-usage snapshots unchanged at every candidate revision before the | Unit | P0 | FR-102-AC-1 | 🚧 |
-| TC-1650 | `quoin-cli` accepts every command name, argument and flag the retained shell accepted, and the two produce the same | Property | P0 | FR-102-AC-2 | 🚧 |
-| TC-1651 | Dated owner disposition exists for the `plugins` array, the `command_not_found` hook and | Unit | P0 | FR-102-AC-3 | 🚧 |
-| TC-1652 | Where the disposition is retain, a declared plugin command resolves through `quoin-cli` and an unrecognised command | Unit | P0 | FR-102-AC-4 | 🚧 |
-| TC-1653 | Unrecognised command that no extension resolves exits non-zero and names the command. | Unit | P0 | FR-102-AC-5 | 🚧 |
-| TC-1654 | After the replacement, the repository contains no `@oclif/core` dependency, no `src/quire/exec.ts` and no | Unit | P0 | FR-102-AC-6 | 🚧 |
+| TC-1649 | Native retained-help fixture replay in `quoin-cli/tests/tc_retained_help_capture.rs` preserves the captured command contracts. | Unit | P0 | FR-102-AC-1 | ✅ |
+| TC-1650 | Native Clap grammar and retained command fixtures cover the command surface; `sync.rs` and `tc_shell_contract.rs` cover the extension successor and refusal grammar. | Property | P0 | FR-102-AC-2 | ✅ |
+| TC-1651 | The #396 disposition ports `quoin sync` natively and withdraws the oclif plugin and hook at cutover (`33ca665`). | Unit | P0 | FR-102-AC-3 | ✅ |
+| TC-1652 | `quoin-cli/src/sync.rs::tc_1650_sync_keeps_the_extension_grammar_and_empty_composition_result` exercises native `quoin sync` without a Node extension runtime. | Unit | P0 | FR-102-AC-4 | ✅ |
+| TC-1653 | `quoin-cli/tests/tc_shell_contract.rs` asserts unknown root and nested commands exit 2 and name the unresolved path. | Unit | P0 | FR-102-AC-5 | ✅ |
+| TC-1654 | Native cutover test refuses any remaining Node/oclif shell or generated TypeScript boundary source, and the binary is named `quoin`. | Unit | P0 | FR-102-AC-6 | ✅ |
 | TC-1655 | Every Quoin-side corpus module carries one recorded disposition, and the gate fails when one is unclassified. | Unit | P0 | FR-103-AC-1 | 🚧 |
 | TC-1656 | Accepted-corpus digest computed before consolidation equals the digest computed after it, over a named non-empty | Unit | P0 | FR-103-AC-2 | 🚧 |
 | TC-1657 | Measurement run resolves exactly one corpus source, and a planted second source is refused. | Unit | P0 | FR-103-AC-3 | 🚧 |
@@ -1228,11 +1228,11 @@ generated tests under `tests/props/` and `Unit` for the rest.
 | TC-1688 | Every `thin-host` entry declares a line ceiling and a branch ceiling, and a covered file exceeding either is reported | Unit | P0 | NFR-024-AC-8 | 🚧 |
 | TC-1689 | Path classified as allowed with no backing entry in the manifest fails the run. | Unit | P0 | NFR-024-AC-9 | 🚧 |
 | TC-1690 | Run against the baseline revision `e718d45`, the path inventory reports 105,814 physical lines across 364 | Unit | P0 | FR-101-AC-9 | 🚧 |
-| TC-1691 | `rust/Cargo.toml` and `package.json` declare no crates.io registry source and no public npmjs registry source for a | Unit | P0 | FR-097-AC-7 | 🚧 |
+| TC-1691 | Withdrawn with FR-097: the `package.json` publication condition disappeared with the TypeScript boundary. Rust publication is governed by FR-102. | Unit | P0 | FR-097-AC-7 | ⛔ |
 | TC-1692 | Validation asserts no `format` keyword in either implementation, and the compared diagnostic set excludes | Unit | P0 | FR-098-AC-8 | 🚧 |
 | TC-1693 | Document the retained strict JSON parser refuses — byte-order mark, non-fatal UTF-8, trailing content — is refused by | Unit | P0 | FR-098-AC-9 | 🚧 |
 | TC-1694 | `sha256:<hex>` record identifiers and `sha256-<hex>.json` file names produced by the Rust implementation are | Unit | P0 | FR-098-AC-10 | 🚧 |
-| TC-1695 | After a capability cuts over, `quoin-difftest` spawns no retained implementation for that capability and compares | Unit | P0 | FR-098-AC-11 | 🚧 |
+| TC-1695 | After a capability cuts over, native fixture tests spawn no retained implementation for that capability and compare | Unit | P0 | FR-098-AC-11 | 🚧 |
 | TC-1696 | Ix-flow child process is spawned through the same hardened path as `quoin-core`: real-path resolution | Unit | P0 | FR-099-AC-10 | 🚧 |
 | TC-1697 | Partially materialized module root is refused rather than served, so an interrupted checkout cannot satisfy the | Unit | P0 | FR-099-AC-11 | 🚧 |
 | TC-1698 | Duplicate type detection folds case under the same rule the resolver uses, so no two declarations are distinct to the | Unit | P0 | FR-099-AC-12 | 🚧 |
@@ -1240,7 +1240,7 @@ generated tests under `tests/props/` and `Unit` for the rest.
 | TC-1700 | Inventory population includes executable paths with no governed extension — Makefile recipes and `run:` blocks under | Unit | P0 | FR-101-AC-10 | 🚧 |
 | TC-1701 | Each committed expected fixture records its producing implementation, that implementation's revision and the request | Unit | P0 | FR-101-AC-11 | 🚧 |
 | TC-1702 | Retained path is identified by a stable identity that survives a rename, so moving a file does not silently drop its | Unit | P0 | FR-101-AC-12 | 🚧 |
-| TC-1703 | `package.json` declares the publication registry the owner disposition records and no first-party crate declares a | Unit | P0 | FR-102-AC-7 | 🚧 |
+| TC-1703 | `rust/Cargo.toml` inherits `publish = false` for every workspace crate; `.github/workflows/native-release.yml` is the only executable delivery path. A real tagged-release smoke remains pending promotion. | Unit | P0 | FR-102-AC-7 | 🚧 |
 | TC-1704 | For the same input, a record newly written by the Rust implementation is byte-identical to the record the retained | Unit | P0 | NFR-025-AC-6 | 🚧 |
 | TC-1705 | Retention naming `quoin#373 Stage N` rather than a stage issue is reported as provisional, distinctly from valid and | Unit | P0 | NFR-024-AC-10 | 🚧 |
 | TC-1706 | Path carrying both a manifest entry and a retention row fails the run, and two equally specific overlapping globs | Unit | P0 | NFR-024-AC-11 | 🚧 |
@@ -1258,7 +1258,7 @@ inspection rather than by a unit test — so these rows carry no tracking tag by
 design (see "Tracking-tag coverage"). Added in response to SR-003 FND-002, which
 found the stakeholder layer had no rows here at all.
 
-| Stakeholder Req | Trace to US/FR         | Test/Validation                                                                                       | Status |
+| Stakeholder Req | Trace to US/FR         | Test/Validation                                                                                       | Coverage Status |
 | --------------- | ---------------------- | ----------------------------------------------------------------------------------------------------- | --------------- |
 | StR-001-VC-1    | US-009; FR-004, FR-023 | Demonstration — TC-EV-001…TC-EV-013 run the real CLI from an isolated `IX_HOME`; NFR-004 inspects the deps    | ✅ Covered      |
 | StR-002-VC-1    | US-003; FR-018, FR-019 | Demonstration — TC-EV-003/TC-EV-009/TC-EV-010/TC-EV-020 install from local, GitHub and subdir sources              | ✅ Covered      |

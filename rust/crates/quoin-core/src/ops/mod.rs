@@ -9,6 +9,7 @@
 
 pub mod assurance;
 pub mod auditor;
+pub mod catalog;
 pub mod change_assurance;
 pub mod completeness;
 pub mod config;

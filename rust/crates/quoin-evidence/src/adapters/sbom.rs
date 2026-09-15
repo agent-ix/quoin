@@ -145,7 +145,7 @@ fn symbol(locator: Option<&str>, name: Option<&str>, version: Option<&str>) -> O
 /// `Object.keys(root).slice(0, 6)` lists the document's own member order;
 /// `serde_json::Map` is a `BTreeMap` (the `preserve_order` feature is
 /// deliberately off workspace-wide, because enabling it silently breaks the
-/// canonical-JSON comparison `quoin-difftest` performs), so this lists the
+/// canonical-JSON comparison the native fixture suite performs), so this lists the
 /// first six member names in byte order instead. The set of names is the same
 /// for a document with six or fewer members; for a larger one the six named
 /// may differ. Nothing but this diagnostic reads them, and no record byte

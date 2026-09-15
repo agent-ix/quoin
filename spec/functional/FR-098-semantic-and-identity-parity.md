@@ -35,17 +35,18 @@ the implementation it replaces.
 
 ## Outputs
 
-- A differential report per candidate revision comparing canonical stdout, exit
-  status and normalized diagnostic shape.
+- A native fixture replay report per candidate revision comparing canonical
+  stdout, exit status and normalized diagnostic shape.
 - A digest replay report naming the population replayed and the count of
   mismatches.
 - A parity refusal naming the first differing input.
 
 ## Behavior
 
-- `quoin-difftest` SHALL feed one request document to both the retained
-  TypeScript entry point and the `quoin-core` operation and SHALL compare the
-  canonical-JSON result, the exit status and the normalized diagnostic shape.
+- The native fixture suite SHALL replay every retained request against the
+  `quoin-core` operation and compare its canonical-JSON result, exit status
+  and normalized diagnostic shape with the committed expected fixture captured
+  from the retained implementation before cutover.
 - Quoin SHALL treat a validation verdict as contractual and SHALL treat
   diagnostic message text as non-contractual, comparing diagnostics as the
   normalized tuple of instance location, schema keyword and schema path.
@@ -62,14 +63,14 @@ the implementation it replaces.
   refusal of a UTF-8 byte-order mark, of non-fatal UTF-8 and of trailing content
   — and SHALL compare those refusals as part of parity, because they guard
   canonicalization rather than following it.
-- Before a store-backed capability cuts over, Quoin SHALL replay every digest in
-  every reachable store through the retained and the Rust implementation, and
-  SHALL refuse the cutover if any digest differs.
+- Before a store-backed capability cuts over, Quoin SHALL capture every digest
+  in every reachable store as retained expected output, replay that corpus
+  through Rust, and SHALL refuse the cutover if any digest differs.
 - Quoin SHALL test JCS canonicalization separately from digest computation over
   adversarial Unicode, number-format and key-order inputs.
 - Quoin SHALL port each `fast-check` property suite under `tests/props` to a
   `proptest` suite asserting the same property.
-- If the retained and Rust implementations disagree on any golden input, then
+- If Rust disagrees with a retained expected fixture on any golden input, then
   Quoin SHALL refuse the cutover and SHALL name the differing input, the
   operation and both results.
 - Quoin SHALL resolve the JSON Schema validator version used across the
@@ -80,9 +81,9 @@ the implementation it replaces.
 - Quoin SHALL exclude the retained validator's schema-authoring strict-mode
   diagnostics from the compared diagnostic set, because they analyse the schema
   rather than the instance and have no counterpart in the Rust validator.
-- When a capability cuts over, `quoin-difftest` SHALL stop executing the
-  retained implementation and SHALL compare against the committed expected
-  fixtures instead.
+- After a capability cuts over, the native fixture suite SHALL execute no
+  retained implementation and SHALL compare against committed expected
+  fixtures only.
 
 ## Error Conditions
 
@@ -102,9 +103,9 @@ differential run whose compared population is empty each block cutover.
 
 | ID | Criteria | Verification |
 |----|----------|--------------|
-| FR-098-AC-1 | `cargo test -p quoin-difftest` compares retained and Rust results over the golden corpora and reports the compared population count with each run. | Test (TC-1618) |
-| FR-098-AC-2 | For every schema in the corpus, retained and Rust validation return the identical verdict, and their diagnostics agree as normalized instance-location, keyword and schema-path tuples. | Property (TC-1619) |
-| FR-098-AC-3 | Replaying every digest in every reachable store through both implementations yields zero mismatches, and a planted single-byte canonicalization change makes the replay fail. | Test (TC-1620) |
+| FR-098-AC-1 | Native Rust tests replay retained expected fixtures over the golden corpora and report the compared population count with each run. | Test (TC-1618) |
+| FR-098-AC-2 | For every schema in the corpus, Rust returns the retained expected verdict, and diagnostics agree as normalized instance-location, keyword and schema-path tuples. | Property (TC-1619) |
+| FR-098-AC-3 | Replaying every captured digest in every reachable store through Rust yields zero mismatches, and a planted single-byte canonicalization change makes the replay fail. | Test (TC-1620) |
 | FR-098-AC-4 | JCS canonicalization produces identical bytes for adversarial Unicode, number-format and key-order inputs in both implementations. | Property (TC-1621) |
 | FR-098-AC-5 | Each ported refusal path returns the same non-success classification from the Rust implementation as from the retained one. | Property (TC-1622) |
 | FR-098-AC-6 | Every `tests/props` property has a `proptest` counterpart asserting the same property, and a property holding in TypeScript and violated in Rust fails the run. | Test (TC-1623) |
@@ -112,7 +113,7 @@ differential run whose compared population is empty each block cutover.
 | FR-098-AC-8 | Validation asserts no `format` keyword in either implementation, and the compared diagnostic set excludes schema-authoring strict-mode diagnostics. | Test (TC-1692) |
 | FR-098-AC-9 | A document the retained strict JSON parser refuses — byte-order mark, non-fatal UTF-8, trailing content — is refused by the Rust implementation with the same classification, before canonicalization runs. | Test (TC-1693) |
 | FR-098-AC-10 | `sha256:<hex>` record identifiers and `sha256-<hex>.json` file names produced by the Rust implementation are byte-identical to the retained ones for the same record. | Test (TC-1694) |
-| FR-098-AC-11 | After a capability cuts over, `quoin-difftest` spawns no retained implementation for that capability and compares against committed fixtures. | Test (TC-1695) |
+| FR-098-AC-11 | After a capability cuts over, the native fixture suite spawns no retained implementation for that capability and compares against committed fixtures. | Test (TC-1695) |
 
 ## Dependencies
 
