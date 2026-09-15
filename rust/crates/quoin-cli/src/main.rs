@@ -72,6 +72,10 @@ fn main() -> std::process::ExitCode {
     if is_version_request(&arguments) {
         return emit_version();
     }
+    if is_root_help_request(&arguments) {
+        let _ = writeln!(std::io::stdout(), "{}", root_usage());
+        return std::process::ExitCode::SUCCESS;
+    }
     match run(arguments) {
         Ok(response) => emit(&response),
         Err(error) => {
@@ -86,6 +90,10 @@ fn main() -> std::process::ExitCode {
             std::process::ExitCode::from(error.exit)
         }
     }
+}
+
+fn is_root_help_request(arguments: &[OsString]) -> bool {
+    matches!(arguments, [_, flag] if flag == "--help" || flag == "-h")
 }
 
 fn run(args: impl IntoIterator<Item = OsString>) -> Result<Response, ShellError> {
@@ -612,6 +620,20 @@ mod tests {
             !build_version().is_empty(),
             "the native version is always present"
         );
+    }
+
+    #[test]
+    fn tc_1650_root_help_uses_the_native_command_inventory() {
+        assert!(is_root_help_request(&[
+            OsString::from("quoin"),
+            OsString::from("--help")
+        ]));
+        assert!(!is_root_help_request(&[
+            OsString::from("quoin"),
+            OsString::from("catalog"),
+            OsString::from("--help"),
+        ]));
+        assert!(root_usage().contains("Usage: quoin <command> [options]"));
     }
 
     /// Trace: FR-003, FR-102, TC-1650
