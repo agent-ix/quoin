@@ -22,6 +22,7 @@ mod flow;
 mod invocation;
 mod module;
 mod plugin;
+mod report;
 mod semantic;
 mod update;
 mod validate;
@@ -141,6 +142,9 @@ fn dispatch(matches: &ArgMatches) -> Result<Response, String> {
     if let Some(("plugin", plugin)) = matches.subcommand() {
         return plugin::run(plugin);
     }
+    if let Some(("report", report)) = matches.subcommand() {
+        return report::run(report);
+    }
     if let Some(("change-assurance", change_assurance)) = matches.subcommand() {
         return change_assurance::run(change_assurance);
     }
@@ -205,6 +209,7 @@ fn command() -> Command {
         .subcommand(discharge::command())
         .subcommand(module::command())
         .subcommand(plugin::command())
+        .subcommand(report::command())
         .subcommand(semantic::command())
         .subcommand(validate::command())
         .subcommand(write::command())
