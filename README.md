@@ -117,7 +117,7 @@ The default module set defines the spec archetypes and domain-object vocabulary.
 
 ## Install
 
-Installing quoin is **two steps**: the CLI (from public npm) and a plugin that adds the
+Installing quoin is **two steps**: the native CLI (from a GitHub Release) and a plugin that adds the
 [skills](#agent-skills) and workflows to your coding agent. The same skill bundle installs
 into **Claude Code, OpenAI Codex, opencode, and GitHub Copilot** — pick your agent below. No
 Anthropic API key is required — your existing agent subscription is used.
@@ -125,8 +125,15 @@ Anthropic API key is required — your existing agent subscription is used.
 **1. Install the CLIs** (`quoin` plus `ix-flow`, which runs the workflow lifecycle commands):
 
 ```bash
-npm install -g @agent-ix/quoin@latest @agent-ix/ix-flow@latest
+# Download the archive for your host from the latest Quoin GitHub Release,
+# verify it with quoin-update-manifest.json, extract `quoin`, then place it on PATH.
+quoin --version
+npm install -g @agent-ix/ix-flow@latest
 ```
+
+Supported native targets and archive names are listed in the [native release
+contract](./docs/native-release.md). The historical npm CLI remains only during
+the staged shell cutover; new installations should use the native release.
 
 **2. Add the plugin to your coding agent:**
 
