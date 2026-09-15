@@ -15,12 +15,12 @@ use quoin_core::protocol::Response;
 
 use crate::core_bridge::invoke;
 
+const DESCRIPTION: &str = "Producer-facing surface over the FR-063 record, FR-064 proof attestation,\nretained-output intake, and FR-065 verification receipt contracts (FR-068).\n\nThese commands transcribe and verify what a producer supplies. None of them\nruns the command an attestation describes, invokes Git, or performs a network\nrequest. The only process any of them starts is the quoin-core engine that\ndecides the FR-063..FR-065 contracts (FR-096). Digests establish content integrity and recorded\nactor labels are attribution only; nothing here establishes authorization or\nnon-repudiation, and no output is a certification.\n\nSubcommands:\n  quoin change-assurance seal-record\n  quoin change-assurance seal-attestation\n  quoin change-assurance intake\n  quoin change-assurance receipt\n  quoin change-assurance verify-receipt\n  quoin change-assurance schema\n  quoin change-assurance recover\n\nExit status: 0 for a valid receipt, 1 for an invalid or incomplete one, and 2\nfor a usage, parse, or integrity error.";
+
 /// The change-assurance command grammar.
 pub(crate) fn command() -> Command {
     Command::new("change-assurance")
         .about("Form, retain, and verify explicit change-assurance evidence")
-        .subcommand_required(true)
-        .arg_required_else_help(true)
         .subcommand(
             Command::new("recover")
                 .about("Remove interrupted intake staging directories")
@@ -82,9 +82,9 @@ pub(crate) fn command() -> Command {
 
 /// Execute a parsed change-assurance command.
 pub(crate) fn run(matches: &ArgMatches) -> Result<Response, String> {
-    let (subcommand, arguments) = matches
-        .subcommand()
-        .ok_or_else(|| "a change-assurance subcommand is required".to_owned())?;
+    let Some((subcommand, arguments)) = matches.subcommand() else {
+        return Ok(Response::ok(serde_json::json!({ "rendered": DESCRIPTION })));
+    };
     match subcommand {
         "recover" => recover(arguments),
         "schema" => schema(arguments),
@@ -468,7 +468,23 @@ fn hex_of(bytes: &[u8]) -> String {
     reason = "test fixtures may panic"
 )]
 mod tests {
-    use super::command;
+    use super::{DESCRIPTION, command, run};
+
+    /// Trace: FR-062, FR-068, FR-102
+    #[test]
+    fn tc_373_change_assurance_without_a_subcommand_keeps_its_description() {
+        let matches = command()
+            .try_get_matches_from(["change-assurance"])
+            .expect("the retained parent command parses");
+        let response = run(&matches).expect("the parent description renders");
+        assert_eq!(
+            response
+                .payload
+                .get("rendered")
+                .and_then(serde_json::Value::as_str),
+            Some(DESCRIPTION)
+        );
+    }
 
     /// Trace: FR-068, FR-101
     #[test]

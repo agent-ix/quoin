@@ -15,12 +15,12 @@ use crate::core_bridge::invoke;
 mod audit;
 mod baseline;
 
+const DESCRIPTION: &str = "The artifact of record for verification (FR-030). quoin TRANSCRIBES; the\nconsumer's CI executes — nothing here runs a test.\n\nLayout, under spec/evidence/:\n\n  suites.md        authored suite registry     (validated corpus document)\n  inspections.md   authored inspection acts    (validated corpus document)\n  bindings.json    obligation -> hash-at-binding -> evidence\n  baseline.json    the accepted violation set the ratchet compares against\n  runs/<SUITE-N>/<commit12>.json   one file = one run of one suite\n  experiments/sha256-<digest>.json content-addressed experiment records\n  operational/sha256-<digest>.json content-addressed operational evidence\n\nSubcommands:\n  quoin evidence record     transcribe a suite run\n  quoin evidence trust      record a use-specific producer trust decision\n  quoin evidence record-experiment  publish an immutable experiment record\n  quoin evidence record-operational publish immutable operational evidence\n  quoin evidence affirm     re-affirm a binding after its statement changed\n  quoin evidence audit      read the store and report\n  quoin evidence baseline   accept the current findings as the ratchet baseline\n  quoin evidence gc         drop run records nothing references";
+
 /// The evidence commands whose inputs need no Quire-derived obligation set.
 pub(crate) fn command() -> Command {
     Command::new("evidence")
         .about("Record and maintain verification evidence")
-        .subcommand_required(true)
-        .arg_required_else_help(true)
         .subcommand(
             Command::new("gc")
                 .about("Drop unreferenced run records")
@@ -102,9 +102,9 @@ fn record_command(name: &'static str, help: &'static str) -> Command {
 
 /// Execute a parsed evidence command.
 pub(crate) fn run(matches: &ArgMatches) -> Result<Response, String> {
-    let (name, arguments) = matches
-        .subcommand()
-        .ok_or_else(|| "an evidence subcommand is required".to_owned())?;
+    let Some((name, arguments)) = matches.subcommand() else {
+        return Ok(Response::ok(serde_json::json!({ "rendered": DESCRIPTION })));
+    };
     match name {
         "gc" => gc(arguments),
         "trust" => trust(arguments),
@@ -468,7 +468,24 @@ fn render(
     reason = "test fixtures may panic"
 )]
 mod tests {
-    use super::command;
+    use super::{DESCRIPTION, command, run};
+
+    /// Trace: FR-030, FR-062, FR-102
+    #[test]
+    fn tc_373_evidence_without_a_subcommand_keeps_the_retained_description() {
+        let matches = command()
+            .try_get_matches_from(["evidence"])
+            .expect("the retained parent command parses");
+        let response = run(&matches).expect("the parent description renders");
+        assert_eq!(
+            response
+                .payload
+                .get("rendered")
+                .and_then(serde_json::Value::as_str),
+            Some(DESCRIPTION)
+        );
+    }
+
     /// Trace: FR-030, FR-101
     #[test]
     fn tc_373_evidence_store_command_grammar_is_retained() {

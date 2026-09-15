@@ -41,6 +41,7 @@ use quoin_graph_analysis::OsGraphInputReader;
 const EXIT_INVALID: u8 = Outcome::Invalid.code();
 const EXIT_INTERNAL: u8 = Outcome::Internal.code();
 const EXIT_UNKNOWN_COMMAND: u8 = Outcome::Refused.code();
+const GRAPH_DESCRIPTION: &str = "Analyze an existing, accepted Quire assurance export together with retained\nQuoin evidence and an existing FR-032 audit. These commands run no producer,\nsuite, Quire, Git, or network operation and write nothing.\n\nSubcommands:\n  quoin graph fan-out\n  quoin graph change-impact\n  quoin graph churn";
 
 #[derive(Debug)]
 struct ShellError {
@@ -160,10 +161,12 @@ fn dispatch(matches: &ArgMatches) -> Result<Response, String> {
     }
     let graph = matches
         .subcommand_matches("graph")
-        .ok_or_else(|| "a graph subcommand is required".to_owned())?;
-    let (view, arguments) = graph
-        .subcommand()
-        .ok_or_else(|| "a graph view is required".to_owned())?;
+        .ok_or_else(|| "an unknown command reached dispatch".to_owned())?;
+    let Some((view, arguments)) = graph.subcommand() else {
+        return Ok(Response::ok(serde_json::json!({
+            "rendered": GRAPH_DESCRIPTION
+        })));
+    };
     let request = request(arguments, view)?;
     let reader = OsGraphInputReader;
     let capabilities = Capabilities::with_graph(&reader);
@@ -225,8 +228,6 @@ fn command() -> Command {
         .subcommand(
             Command::new("graph")
                 .about("Read-only evidence graph views")
-                .subcommand_required(true)
-                .arg_required_else_help(true)
                 .subcommand(graph_view("fan-out"))
                 .subcommand(graph_view("churn"))
                 .subcommand(
@@ -403,6 +404,20 @@ fn emit(response: &Response) -> std::process::ExitCode {
 )]
 mod tests {
     use super::*;
+
+    /// Trace: FR-062, FR-102
+    #[test]
+    fn tc_373_graph_without_a_view_keeps_the_retained_description() {
+        let response = run([OsString::from("quoin"), OsString::from("graph")])
+            .expect("the retained parent command renders");
+        assert_eq!(
+            response
+                .payload
+                .get("rendered")
+                .and_then(serde_json::Value::as_str),
+            Some(GRAPH_DESCRIPTION)
+        );
+    }
 
     /// Trace: FR-062, FR-102, TC-1650
     #[test]
