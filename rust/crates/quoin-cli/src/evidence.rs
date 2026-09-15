@@ -7,6 +7,8 @@ use std::io::Read as _;
 
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use quoin_core::protocol::Response;
+use time::OffsetDateTime;
+use time::format_description::well_known::Rfc3339;
 
 use crate::core_bridge::invoke;
 
@@ -42,6 +44,20 @@ pub(crate) fn command() -> Command {
             "record-operational",
             "operational-evidence-record-v1 JSON path",
         ))
+        .subcommand(
+            Command::new("inspect-mocks")
+                .about("Inspect test source and record explicit mock substitutions")
+                .arg(Arg::new("suite").long("suite").required(true))
+                .arg(Arg::new("commit").long("commit").required(true))
+                .arg(repo_arg())
+                .arg(Arg::new("timestamp").long("timestamp"))
+                .arg(
+                    Arg::new("dry-run")
+                        .long("dry-run")
+                        .action(ArgAction::SetTrue),
+                )
+                .arg(json_arg()),
+        )
 }
 
 fn record_command(name: &'static str, help: &'static str) -> Command {
@@ -62,8 +78,64 @@ pub(crate) fn run(matches: &ArgMatches) -> Result<Response, String> {
         "trust" => trust(arguments),
         "record-experiment" => record(arguments, "evidence.record_experiment"),
         "record-operational" => record(arguments, "evidence.record_operational"),
+        "inspect-mocks" => inspect_mocks(arguments),
         _ => Err("an unknown evidence command reached dispatch".to_owned()),
     }
+}
+
+fn inspect_mocks(arguments: &ArgMatches) -> Result<Response, String> {
+    let timestamp = arguments
+        .get_one::<String>("timestamp")
+        .cloned()
+        .map_or_else(
+            || {
+                OffsetDateTime::now_utc()
+                    .format(&Rfc3339)
+                    .map_err(|error| error.to_string())
+            },
+            Ok,
+        )?;
+    let suite = required(arguments, "suite")?;
+    let commit = required(arguments, "commit")?;
+    let dry_run = arguments.get_flag("dry-run");
+    let response = invoke(
+        "evidence.inspect_mocks",
+        &serde_json::json!({
+            "repo": required(arguments, "repo")?, "suite": suite, "commit": commit,
+            "tool": concat!("quoin mock-inspection ", env!("CARGO_PKG_VERSION")),
+            "timestamp": timestamp, "dry_run": dry_run,
+        }),
+    )?;
+    render(response, |payload| {
+        let path = payload
+            .get("path")
+            .cloned()
+            .unwrap_or(serde_json::Value::Null);
+        let injections = payload
+            .get("injections")
+            .cloned()
+            .ok_or_else(|| "evidence.inspect_mocks did not return injections".to_owned())?;
+        if arguments.get_flag("json") {
+            return serde_json::to_string(
+                &serde_json::json!({ "path": path, "injections": injections }),
+            )
+            .map_err(|error| error.to_string());
+        }
+        let count = injections.as_array().map_or(0, Vec::len);
+        Ok(format!(
+            "{} {suite} @ {}{}\n  injections: {count}",
+            if dry_run {
+                "inspected"
+            } else {
+                "recorded mock inspection"
+            },
+            commit.get(..12).unwrap_or(&commit),
+            path.as_str().map_or_else(
+                || " (dry run; wrote nothing)".to_owned(),
+                |path| format!(" -> {path}")
+            )
+        ))
+    })
 }
 
 fn gc(arguments: &ArgMatches) -> Result<Response, String> {
