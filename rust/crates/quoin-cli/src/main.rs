@@ -480,7 +480,7 @@ mod tests {
         assert!(error.message.contains("bogus"));
     }
 
-    /// Tracing: FR-062, FR-102, TC-1650
+    /// Trace: FR-062, FR-102, TC-1650
     #[test]
     fn tc_1650_graph_refusals_keep_the_core_exit_taxonomy() {
         let response = run([

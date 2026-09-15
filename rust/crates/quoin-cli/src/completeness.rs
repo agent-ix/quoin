@@ -292,7 +292,7 @@ fn number(payload: &serde_json::Value, key: &str) -> u64 {
 mod tests {
     use super::{command, render};
 
-    /// Tracing: FR-037, FR-062
+    /// Trace: FR-037, FR-062
     #[test]
     fn tc_445_742_renders_the_complete_assessment_and_warns_separately() {
         let payload = serde_json::json!({
@@ -322,7 +322,7 @@ mod tests {
         );
     }
 
-    /// Tracing: FR-037, FR-062
+    /// Trace: FR-037, FR-062
     #[test]
     fn tc_445_743_preserves_the_retained_completeness_grammar() {
         let matches = command()

@@ -155,7 +155,7 @@ fn number(value: &serde_json::Value, name: &str) -> u64 {
 mod tests {
     use super::command;
 
-    /// Tracing: FR-096, FR-062
+    /// Trace: FR-096, FR-062
     #[test]
     fn tc_412_742_preserves_the_validate_grammar() {
         let matches = command()
