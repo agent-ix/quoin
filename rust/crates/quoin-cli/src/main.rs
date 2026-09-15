@@ -376,7 +376,7 @@ fn emit(response: &Response) -> std::process::ExitCode {
 mod tests {
     use super::*;
 
-    /// Tracing: FR-062, FR-102, TC-1650
+    /// Trace: FR-062, FR-102, TC-1650
     #[test]
     fn tc_1650_graph_grammar_preserves_the_required_and_repeatable_flags() {
         let matches = command()
@@ -416,7 +416,7 @@ mod tests {
         );
     }
 
-    /// Tracing: FR-062, FR-102, TC-1650
+    /// Trace: FR-062, FR-102, TC-1650
     #[test]
     fn tc_1650_missing_a_required_graph_input_is_refused_by_the_shell() {
         let error = command().try_get_matches_from([
