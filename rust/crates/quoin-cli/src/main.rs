@@ -220,6 +220,9 @@ fn dispatch(matches: &ArgMatches) -> Result<Response, String> {
 fn command() -> Command {
     Command::new("quoin")
         .about("Quoin assurance tooling")
+        // Oclif accepts `--help` but does not add a synthetic `help` command
+        // to Quoin's published command inventory.
+        .disable_help_subcommand(true)
         .version(build_version())
         .arg(
             Arg::new("config_root")
