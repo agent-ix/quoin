@@ -103,7 +103,7 @@ pub(crate) fn run(arguments: &ArgMatches) -> Result<Response, String> {
         serde_json::to_string(&serde_json::json!({ "advice": shown }))
             .map_err(|error| error.to_string())?
     } else {
-        render(&shown, all.as_array().map_or(&[], Vec::as_slice))
+        render(&shown, all.as_array().map_or(&[], Vec::as_slice))?
     };
     Ok(Response::ok(serde_json::json!({ "rendered": rendered })))
 }
@@ -120,50 +120,49 @@ fn required(arguments: &ArgMatches, name: &str) -> Result<String, String> {
         .cloned()
         .ok_or_else(|| format!("--{name} is required"))
 }
-fn render(shown: &[serde_json::Value], all: &[serde_json::Value]) -> String {
-    let mut lines = shown
-        .iter()
-        .map(|advice| {
-            format!(
-                "{}  authored={}  {}{}{}",
-                advice
-                    .get("obligation")
-                    .and_then(serde_json::Value::as_str)
-                    .unwrap_or(""),
-                advice
-                    .get("authored")
-                    .and_then(serde_json::Value::as_str)
-                    .unwrap_or("—"),
-                if advice
-                    .get("inconclusive")
-                    .and_then(serde_json::Value::as_bool)
-                    .unwrap_or(false)
-                {
-                    "inconclusive"
-                } else {
-                    "recommendations available"
-                },
-                if advice
-                    .get("mismatch")
-                    .and_then(serde_json::Value::as_bool)
-                    .unwrap_or(false)
-                {
-                    "  ⚠ mismatch"
-                } else {
-                    ""
-                },
-                if advice
-                    .get("uncatalogued")
-                    .and_then(serde_json::Value::as_bool)
-                    .unwrap_or(false)
-                {
-                    "  ⚠ uncatalogued"
-                } else {
-                    ""
-                }
-            )
-        })
-        .collect::<Vec<_>>();
+fn render(shown: &[serde_json::Value], all: &[serde_json::Value]) -> Result<String, String> {
+    let mut lines = Vec::with_capacity(shown.len() + 2);
+    for advice in shown {
+        let inconclusive = advice
+            .get("inconclusive")
+            .and_then(serde_json::Value::as_bool)
+            .unwrap_or(false);
+        let conclusion = if inconclusive {
+            "inconclusive".to_owned()
+        } else {
+            format!("recommend: {}", recommendations(advice)?)
+        };
+        lines.push(format!(
+            "{}  authored={}  {}{}{}",
+            advice
+                .get("obligation")
+                .and_then(serde_json::Value::as_str)
+                .unwrap_or(""),
+            advice
+                .get("authored")
+                .and_then(serde_json::Value::as_str)
+                .unwrap_or("—"),
+            conclusion,
+            if advice
+                .get("mismatch")
+                .and_then(serde_json::Value::as_bool)
+                .unwrap_or(false)
+            {
+                "  ⚠ mismatch"
+            } else {
+                ""
+            },
+            if advice
+                .get("uncatalogued")
+                .and_then(serde_json::Value::as_bool)
+                .unwrap_or(false)
+            {
+                "  ⚠ uncatalogued"
+            } else {
+                ""
+            }
+        ));
+    }
     let count = |field: &str| {
         all.iter()
             .filter(|advice| {
@@ -176,5 +175,78 @@ fn render(shown: &[serde_json::Value], all: &[serde_json::Value]) -> String {
     };
     lines.push(String::new());
     lines.push(format!("{} of {} obligation(s) shown. Of all {}: {} mismatch, {} uncatalogued, {} inconclusive. Recommendations, not verdicts: confirm the method in spec review.", shown.len(), all.len(), all.len(), count("mismatch"), count("uncatalogued"), count("inconclusive")));
-    lines.join("\n")
+    Ok(lines.join("\n"))
+}
+
+/// Render the first three recommendation rows exactly as the retained shell.
+fn recommendations(advice: &serde_json::Value) -> Result<String, String> {
+    let rows = advice
+        .get("recommended")
+        .and_then(serde_json::Value::as_array)
+        .ok_or_else(|| "auditor.advise entry did not return recommendations".to_owned())?;
+    rows.iter()
+        .take(3)
+        .map(|row| {
+            let method = row
+                .get("method")
+                .and_then(serde_json::Value::as_str)
+                .ok_or_else(|| "advice recommendation did not return method".to_owned())?;
+            let reasons = row
+                .get("reasons")
+                .and_then(serde_json::Value::as_array)
+                .ok_or_else(|| "advice recommendation did not return reasons".to_owned())?
+                .iter()
+                .map(|reason| {
+                    reason
+                        .get("value")
+                        .and_then(serde_json::Value::as_str)
+                        .ok_or_else(|| {
+                            "advice recommendation reason did not return value".to_owned()
+                        })
+                })
+                .collect::<Result<Vec<_>, _>>()?;
+            Ok(format!("{method} ({})", reasons.join(", ")))
+        })
+        .collect::<Result<Vec<_>, String>>()
+        .map(|rows| rows.join("; "))
+}
+
+#[cfg(test)]
+#[allow(clippy::expect_used, reason = "test fixtures may panic")]
+mod tests {
+    use super::render;
+
+    /// Trace: FR-031, FR-062, FR-102
+    #[test]
+    fn tc_373_advice_human_output_keeps_methods_reasons_and_the_three_row_limit() {
+        let rows = serde_json::json!([
+            {
+                "obligation": "FR-001-AC-1",
+                "authored": "Test",
+                "inconclusive": false,
+                "mismatch": true,
+                "uncatalogued": false,
+                "recommended": [
+                    { "method": "Analysis", "reasons": [{ "value": "characteristic" }, { "value": "property" }] },
+                    { "method": "Test", "reasons": [{ "value": "risk" }] },
+                    { "method": "Inspection", "reasons": [{ "value": "review" }] },
+                    { "method": "Demonstration", "reasons": [{ "value": "ignored" }] }
+                ]
+            },
+            {
+                "obligation": "NFR-001",
+                "authored": null,
+                "inconclusive": true,
+                "mismatch": false,
+                "uncatalogued": true,
+                "recommended": []
+            }
+        ]);
+        let rows = rows.as_array().expect("fixture is an advice array");
+
+        assert_eq!(
+            render(rows, rows).expect("valid advice renders"),
+            "FR-001-AC-1  authored=Test  recommend: Analysis (characteristic, property); Test (risk); Inspection (review)  ⚠ mismatch\nNFR-001  authored=—  inconclusive  ⚠ uncatalogued\n\n2 of 2 obligation(s) shown. Of all 2: 1 mismatch, 1 uncatalogued, 1 inconclusive. Recommendations, not verdicts: confirm the method in spec review."
+        );
+    }
 }
