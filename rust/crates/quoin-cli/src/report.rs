@@ -221,7 +221,21 @@ fn stringify(value: &serde_json::Value) -> String {
         serde_json::Value::Bool(value) => value.to_string(),
         serde_json::Value::Number(value) => value.to_string(),
         serde_json::Value::String(value) => value.clone(),
-        serde_json::Value::Array(_) | serde_json::Value::Object(_) => "[object Object]".to_owned(),
+        serde_json::Value::Array(values) => values
+            .iter()
+            .map(stringify_array_member)
+            .collect::<Vec<_>>()
+            .join(","),
+        serde_json::Value::Object(_) => "[object Object]".to_owned(),
+    }
+}
+
+/// Match JavaScript's `Array#toString`: null array members join as empty text.
+fn stringify_array_member(value: &serde_json::Value) -> String {
+    if value.is_null() {
+        String::new()
+    } else {
+        stringify(value)
     }
 }
 
@@ -251,7 +265,7 @@ fn json(arguments: &ArgMatches) -> bool {
     reason = "test assertions report failures"
 )]
 mod tests {
-    use super::{command, portfolio_request};
+    use super::{command, portfolio_request, render_series};
 
     /// Trace: FR-062, FR-102
     #[test]
@@ -308,5 +322,29 @@ mod tests {
             serde_json::json!(["one=export.json"])
         );
         assert!(request.get("cwd").is_some());
+    }
+
+    /// Trace: FR-062, FR-102
+    #[test]
+    fn tc_373_series_human_output_matches_javascript_string_coercion() {
+        let payload = serde_json::json!([{
+            "timestamp": ["2026", "09"],
+            "sourceRevision": { "hash": "abc" },
+            "toolIdentity": "quoin",
+            "toolVersion": [1, null, ["x", { "nested": true }]],
+            "corpusRevision": null,
+            "corpusGaps": ["gap", null],
+            "configDigest": "cfg",
+            "observation": {
+                "state": { "kind": "observed" },
+                "value": [1, null, ["nested", "value"]],
+                "unit": "percent"
+            }
+        }]);
+
+        assert_eq!(
+            render_series("coverage", &payload).expect("series payload renders"),
+            "# coverage series\n\n- 2026,09 [object Object] 1,,nested,value percent (source [object Object], tool quoin 1,,x,[object Object], corpus null, gaps gap,, config cfg)\n"
+        );
     }
 }
