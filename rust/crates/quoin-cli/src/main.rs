@@ -43,6 +43,7 @@ use quoin_graph_analysis::OsGraphInputReader;
 const EXIT_INVALID: u8 = Outcome::Invalid.code();
 const EXIT_INTERNAL: u8 = Outcome::Internal.code();
 const EXIT_UNKNOWN_COMMAND: u8 = Outcome::Refused.code();
+const EXIT_COMMAND_FAILURE: u8 = 1;
 const GRAPH_DESCRIPTION: &str = "Analyze an existing, accepted Quire assurance export together with retained\nQuoin evidence and an existing FR-032 audit. These commands run no producer,\nsuite, Quire, Git, or network operation and write nothing.\n\nSubcommands:\n  quoin graph fan-out\n  quoin graph change-impact\n  quoin graph churn";
 
 #[derive(Debug)]
@@ -59,10 +60,13 @@ enum ShellOutput {
 }
 
 impl ShellError {
-    fn invalid(message: impl Into<String>) -> Self {
+    /// Retained command implementations surface their own validation and
+    /// operational errors as oclif command failures, distinct from parser
+    /// rejections produced before a command is selected.
+    fn command(message: impl Into<String>) -> Self {
         Self {
-            message: message.into(),
-            exit: EXIT_INVALID,
+            message: format!("    Error: {}", message.into()),
+            exit: EXIT_COMMAND_FAILURE,
             stream: ShellOutput::Stderr,
         }
     }
@@ -137,7 +141,7 @@ fn run(args: impl IntoIterator<Item = OsString>) -> Result<Response, ShellError>
         }
     })?;
     let invocation = invocation::Invocation::from_matches(&matches);
-    invocation::with_current(invocation, || dispatch(&matches)).map_err(ShellError::invalid)
+    invocation::with_current(invocation, || dispatch(&matches)).map_err(ShellError::command)
 }
 
 /// Preserve oclif's colon-separated command identity for an unresolved path.
@@ -796,6 +800,15 @@ mod tests {
             error.message,
             " ›   Error: command bogus not found\n ›\n ›   Usage: quoin <command> [options]\n ›\n ›   Commands: advise, assurance, catalog, change-assurance, completeness, \n ›   config, discharge, evidence, graph, matrix, measurement, module, report, \n ›   review, semantic, sync, to-plan, update, validate, write\n ›\n ›   Run `quoin <command> --help` for details."
         );
+    }
+
+    /// Trace: FR-005, FR-102, TC-1650
+    #[test]
+    fn tc_1650_command_failures_keep_the_retained_error_envelope() {
+        let error = ShellError::command("write requires <repo_dir>");
+        assert_eq!(error.exit, EXIT_COMMAND_FAILURE);
+        assert_eq!(error.stream, ShellOutput::Stderr);
+        assert_eq!(error.message, "    Error: write requires <repo_dir>");
     }
 
     /// Trace: FR-062, FR-102, TC-1650

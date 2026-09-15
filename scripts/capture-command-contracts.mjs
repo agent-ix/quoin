@@ -101,6 +101,7 @@ const SHELL_CASES = [
   ["catalog", "not-a-command", "--format", "json"],
   ["graph"],
   ["graph", "fan-out"],
+  ["write"],
 ];
 
 function gitRevision() {

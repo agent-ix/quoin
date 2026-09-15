@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "captured_by": "scripts/capture-command-contracts.mjs",
-  "captured_revision": "c7058289df9f9fc583f39186d70bd9578147fff3",
+  "captured_revision": "48ccae5b6d0712a36b193ba9592e57aacc222b45",
   "normalization": "@agent-ix/quoin/<VERSION> replaces retained build/platform text; <VERSION> replaces bare SemVer output",
   "cases": [
     {
@@ -700,6 +700,15 @@
       "exit": 2,
       "stdout": "",
       "stderr": " ›   Error: The following errors occurred:\n ›     Missing required flag audit\n ›     Missing required flag export\n ›     Missing required flag premises\n ›   See more help with --help\n"
+    },
+    {
+      "kind": "shell",
+      "argv": [
+        "write"
+      ],
+      "exit": 1,
+      "stdout": "",
+      "stderr": "    Error: write requires <repo_dir>\n"
     }
   ]
 }
