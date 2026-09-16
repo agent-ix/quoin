@@ -37,6 +37,7 @@
 pub mod contract;
 pub mod data_schema;
 pub mod diagnostic;
+pub mod embedded;
 pub mod error;
 pub mod ids;
 pub mod manifest;
@@ -49,6 +50,7 @@ pub use data_schema::{
     DataSchemaForm, ResolveContext, ResolvedDataSchema, classify_data_schema, resolve_data_schema,
 };
 pub use diagnostic::{DiagnosticCode, SemanticDiagnostic, Severity};
+pub use embedded::materialize_embedded_contract;
 pub use error::{SemanticError, SemanticErrorCode};
 pub use ids::{
     ContractVersion, MappingName, ModuleName, ModuleVersion, ObjectTypeName, PackageIdentity,

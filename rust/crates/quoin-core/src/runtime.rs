@@ -276,7 +276,7 @@ impl HostModules {
         let home = self.home(home);
         let paths = InstallPaths::for_home(&home);
         let resolver = GixResolver::new(paths.cache_root.clone());
-        let gate = self.gate(&home);
+        let gate = self.gate(&home)?;
         work(&ModuleInstaller::new(paths, &resolver, &gate))
     }
 
@@ -285,8 +285,22 @@ impl HostModules {
     /// The rules it enforces are `quoin_modules::ContractGate`'s and are unit
     /// tested there. This file only says WHERE the vendored contract is, which
     /// is the one part of it that is host state.
-    fn gate(&self, home: &IxHome) -> ContractGate {
-        ContractGate::for_home(home, self.semantic_root.clone())
+    fn gate(&self, home: &IxHome) -> Result<ContractGate, ModulesError> {
+        let semantic_root = self.semantic_root.clone().map_or_else(
+            || {
+                let root = home.as_path().join("cache/quoin-semantic/v1");
+                quoin_semantic::materialize_embedded_contract(&root).map_err(|error| {
+                    ModulesError::SemanticContractUnavailable {
+                        detail: format!(
+                            "the embedded semantic contract could not be prepared: {error}"
+                        ),
+                    }
+                })?;
+                Ok(root)
+            },
+            Ok,
+        )?;
+        Ok(ContractGate::for_home(home, Some(semantic_root)))
     }
 }
 
@@ -329,7 +343,7 @@ impl ModuleHost for HostModules {
     }
 
     fn validate_installed(&self, home: Option<&Path>) -> Result<(), ModulesError> {
-        self.gate(&self.home(home)).validate_installed()
+        self.gate(&self.home(home))?.validate_installed()
     }
 }
 
@@ -355,6 +369,8 @@ struct HostSemantic {
     /// answer is [`SemanticError::ContractRootUnset`] rather than a clean read
     /// of an unjudged module.
     semantic_root: Option<PathBuf>,
+    /// `$IX_HOME`, used for the self-contained native contract cache.
+    default_home: IxHome,
     /// The compiled validators, built on first use.
     validators: std::cell::OnceCell<SemanticValidators>,
 }
@@ -362,6 +378,15 @@ struct HostSemantic {
 impl HostSemantic {
     fn new(settings: &RuntimeSettings) -> Self {
         Self {
+            default_home: settings.ix_home.clone().map_or_else(
+                || {
+                    IxHome::resolve(
+                        std::env::var("IX_HOME").ok().as_deref(),
+                        std::env::home_dir().as_deref(),
+                    )
+                },
+                IxHome::new,
+            ),
             semantic_root: settings
                 .semantic_root
                 .clone()
@@ -379,11 +404,15 @@ impl HostSemantic {
         if let Some(ready) = self.validators.get() {
             return Ok(ready);
         }
-        let root = self
-            .semantic_root
-            .as_deref()
-            .ok_or(SemanticError::ContractRootUnset)?;
-        let loaded = SemanticValidators::load(root)?;
+        let root = self.semantic_root.clone().map_or_else(
+            || {
+                let root = self.default_home.as_path().join("cache/quoin-semantic/v1");
+                quoin_semantic::materialize_embedded_contract(&root)?;
+                Ok(root)
+            },
+            Ok,
+        )?;
+        let loaded = SemanticValidators::load(&root)?;
         Ok(self.validators.get_or_init(|| loaded))
     }
 }

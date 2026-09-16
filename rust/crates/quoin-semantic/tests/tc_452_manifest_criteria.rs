@@ -186,6 +186,30 @@ fn tc_452_613_an_export_must_name_a_declared_type_that_ships_a_referenced_schema
     );
 }
 
+/// Artifact declarations are public semantic types too: the default process
+/// module exports authored document types such as `SpecReview`, not only its
+/// internal object types.
+///
+/// Trace: FR-070-AC-4
+/// Provenance: quoin#537
+#[test]
+fn tc_537_001_an_export_may_name_an_artifact_type_with_a_pinned_schema() {
+    let validators = validators();
+    let scratch = Scratch::new();
+    let artifact = scratch.module_copy("artifact-export", |manifest, root| {
+        manifest["object_types"] = json!([]);
+        manifest["artifact_types"] = json!([{
+            "name": "SpecReview",
+            "data_schema": {
+                "schema": "schemas/Entity.json",
+                "digest": digest_of(&root.join("schemas/Entity.json")),
+            },
+        }]);
+        manifest["semantic"]["exports"] = json!(["SpecReview"]);
+    });
+    assert_eq!(errors(&artifact, &validators), Vec::<String>::new());
+}
+
 /// An unsupported `contract_version` is refused BEFORE any other key is read.
 ///
 /// The "before" is the criterion and it is what the second defect in the same
