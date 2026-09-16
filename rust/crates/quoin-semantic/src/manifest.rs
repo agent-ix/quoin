@@ -352,12 +352,17 @@ pub fn read_semantic_block(
         };
     }
 
-    let object_types: Vec<&serde_json::Map<String, Value>> = manifest_map
-        .get("object_types")
-        .and_then(Value::as_array)
-        .map(|entries| entries.iter().filter_map(Value::as_object).collect())
-        .unwrap_or_default();
-    let object_names: std::collections::BTreeSet<String> = object_types
+    // A semantic export is a public type, not specifically an `object_types`
+    // declaration. Process modules publish document-facing `artifact_types`
+    // (ADR, Plan, SpecReview, …) with the same pinned schema form. Treating
+    // that second declaration family as invisible made the shipped default
+    // module impossible to install (quoin#537).
+    let declared_types: Vec<&serde_json::Map<String, Value>> = ["object_types", "artifact_types"]
+        .into_iter()
+        .filter_map(|key| manifest_map.get(key).and_then(Value::as_array))
+        .flat_map(|entries| entries.iter().filter_map(Value::as_object))
+        .collect();
+    let declared_names: std::collections::BTreeSet<String> = declared_types
         .iter()
         .map(|entry| entry.get("name").map_or_else(String::new, stringify))
         .collect();
@@ -368,11 +373,13 @@ pub fn read_semantic_block(
         .collect();
 
     for name in &exports {
-        if !object_names.contains(name.as_str()) {
+        if !declared_names.contains(name.as_str()) {
             diagnostics.push(SemanticDiagnostic::error(
                 DiagnosticCode::UnknownExport,
                 format!("semantic.exports.{name}"),
-                format!("semantic.exports names {name}, which object_types does not declare"),
+                format!(
+                    "semantic.exports names {name}, which neither object_types nor artifact_types declares"
+                ),
             ));
         }
     }
@@ -455,7 +462,7 @@ pub fn read_semantic_block(
     }
 
     let mut data_schemas: BTreeMap<ObjectTypeName, ResolvedDataSchema> = BTreeMap::new();
-    for entry in &object_types {
+    for entry in &declared_types {
         let name = ObjectTypeName::new(entry.get("name").map_or_else(String::new, stringify));
         let Some(value) = entry.get("data_schema") else {
             continue;

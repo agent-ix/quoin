@@ -38,6 +38,8 @@ pub enum SemanticErrorCode {
     /// `QSEM-009` — no vendored-contract root was supplied, so nothing could
     /// be judged.
     ContractRootUnset,
+    /// `QSEM-010` — the binary's embedded contract could not be materialized.
+    EmbeddedContractWrite,
 }
 
 impl SemanticErrorCode {
@@ -54,6 +56,7 @@ impl SemanticErrorCode {
             Self::VendoredSchemaIncomplete => "QSEM-007",
             Self::CorpusUnreadable => "QSEM-008",
             Self::ContractRootUnset => "QSEM-009",
+            Self::EmbeddedContractWrite => "QSEM-010",
         }
     }
 
@@ -70,6 +73,7 @@ impl SemanticErrorCode {
             Self::VendoredSchemaIncomplete,
             Self::CorpusUnreadable,
             Self::ContractRootUnset,
+            Self::EmbeddedContractWrite,
         ]
     }
 
@@ -174,6 +178,16 @@ pub enum SemanticError {
         "QSEM-009: no vendored semantic contract root was supplied (QUOIN_SEMANTIC_ROOT is unset)"
     )]
     ContractRootUnset,
+
+    /// The executable's embedded schema bytes could not be written to its
+    /// private IX cache.
+    #[error("QSEM-010: embedded semantic contract could not be written at {path}: {source}")]
+    EmbeddedContractWrite {
+        /// The cache path whose materialization failed.
+        path: PathBuf,
+        /// The filesystem cause.
+        source: std::io::Error,
+    },
 }
 
 impl SemanticError {
@@ -190,6 +204,7 @@ impl SemanticError {
             Self::VendoredSchemaIncomplete { .. } => SemanticErrorCode::VendoredSchemaIncomplete,
             Self::CorpusUnreadable { .. } => SemanticErrorCode::CorpusUnreadable,
             Self::ContractRootUnset => SemanticErrorCode::ContractRootUnset,
+            Self::EmbeddedContractWrite { .. } => SemanticErrorCode::EmbeddedContractWrite,
         }
     }
 
@@ -204,7 +219,8 @@ impl SemanticError {
             | Self::VendoredSchemaNotJson { path, .. }
             | Self::VendoredSchemaInvalid { path, .. }
             | Self::VendoredSchemaIncomplete { path, .. }
-            | Self::CorpusUnreadable { path, .. } => path,
+            | Self::CorpusUnreadable { path, .. }
+            | Self::EmbeddedContractWrite { path, .. } => path,
             // There is no path: the failure is that nobody named one.
             Self::ContractRootUnset => Path::new(""),
         }

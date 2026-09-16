@@ -45,6 +45,15 @@ fn invoke(home: &Path, arguments: &[&str]) -> Output {
         .expect("the native quoin binary runs")
 }
 
+fn invoke_without_semantic_root(home: &Path, arguments: &[&str]) -> Output {
+    Command::new(env!("CARGO_BIN_EXE_quoin"))
+        .args(arguments)
+        .env("IX_HOME", home)
+        .env_remove("QUOIN_SEMANTIC_ROOT")
+        .output()
+        .expect("the native quoin binary runs")
+}
+
 fn output_text(output: &Output) -> String {
     String::from_utf8(output.stdout.clone()).expect("the native command emits UTF-8")
 }
@@ -83,5 +92,31 @@ fn tc_521_module_install_list_and_remove_use_the_shipped_binary() {
     assert!(
         output_text(&empty).contains("\"plugins\": []"),
         "the registry removal must be observed through a subsequent list"
+    );
+}
+
+/// A release executable owns its semantic contract; it must not rely on the
+/// source checkout that happened to build it.
+///
+/// Trace: FR-070, FR-101
+/// Provenance: quoin#527, quoin#531, quoin#533
+#[test]
+fn tc_527_001_native_module_install_bootstraps_without_a_semantic_root_env() {
+    let scratch = tempfile::tempdir().expect("scratch root is created");
+    let home = scratch.path().join("ix-home");
+    let source = scratch.path().join("module-source");
+    copy_tree(
+        &repository_root().join("tests/fixtures/semantic-module/module-ok"),
+        &source,
+    )
+    .expect("module fixture is copied");
+
+    let source_argument = format!("path:{}", source.display());
+    let output = invoke_without_semantic_root(&home, &["module", "install", &source_argument]);
+    assert!(output.status.success(), "{output:?}");
+    assert!(
+        home.join("cache/quoin-semantic/v1/schemas/module-manifest.schema.json")
+            .is_file(),
+        "the shipped contract is materialized under the selected IX home"
     );
 }

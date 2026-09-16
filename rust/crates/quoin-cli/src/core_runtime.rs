@@ -14,13 +14,10 @@ use crate::invocation;
 
 /// Invoke one command-shaped core operation through the governed runtime.
 pub(crate) fn invoke(operation: &str, request: &serde_json::Value) -> Result<Response, String> {
-    let semantic_root = std::env::var_os("QUOIN_SEMANTIC_ROOT")
-        .map(std::path::PathBuf::from)
-        .or_else(|| {
-            let vendored =
-                std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../../src/semantic");
-            vendored.is_dir().then_some(vendored)
-        });
+    // An explicit root remains a developer override. Release binaries instead
+    // materialize their compiled contract under IX_HOME; `CARGO_MANIFEST_DIR`
+    // points at a build checkout and is invalid after installation (#527).
+    let semantic_root = std::env::var_os("QUOIN_SEMANTIC_ROOT").map(std::path::PathBuf::from);
     let settings = RuntimeSettings {
         ix_home: invocation::current().config_root().cloned(),
         semantic_root,
