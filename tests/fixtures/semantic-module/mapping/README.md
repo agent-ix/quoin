@@ -9,7 +9,7 @@ expected `FieldDecl[]`, and that every expected diagnostic carries a locus.
 
 | File | Requirement | Hand-off |
 |---|---|---|
-| `config-version.table.md`, `config-version.fence.md`, `config-version.expected.json` | FR-071-AC-1, AC-2 | #388 extracts both to the expected array (normalized) |
+| `config-version.table.md`, `config-version.fence.md`, `config-version.expected.json` (semantic-core `0.1.0`) | FR-071-AC-1, AC-2, FR-072-AC-7 | Quire extracts both to the expected array (normalized) and carries the `ocl` clause with the listed advisory and lossy availability |
 | `both-forms.md` | FR-071-AC-3 | #388 fails at the second form's locus |
 | `cell-cases.json` | FR-071-AC-4..AC-8 | #388 executes each cell/fence-line case |
 | `operations.md`, `operations.expected.json`, `operations-cases.json` (semantic-core `0.2.0`) | FR-072-AC-1..AC-7 | Quire extracts clauses/operations, emits the listed diagnostics, and reports the listed availability |

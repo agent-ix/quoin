@@ -32,7 +32,8 @@ Duplicating a clause inline and externally creates two authorities.
 - If a clause heading's text is not an `Identifier`, then validation SHALL fail at the heading.
 - The golden fixtures SHALL pin semantic-core `0.2.0` and author every checked invariant in a `quire` fence.
 - When a fence under `## Invariants` is tagged `quire`, Quire SHALL extract the clause with no finding and report the clauses kind available and not lossy.
-- When a fence under `## Invariants` is tagged `ocl`, `sysml`, `fretish`, or a namespaced `<ns>:<name>`, Quire SHALL carry the clause text verbatim, emit the advisory finding `semantic.clause-language-unchecked` at the fence, and report the clauses kind available and lossy.
+- When a fence under `## Invariants` is tagged `ocl`, `sysml`, `fretish`, or a namespaced `<ns>:<name>`, Quire SHALL carry the clause text verbatim, emit the advisory finding `semantic.clause-language-unchecked` at the fence, and report the clauses kind available and lossy, under every semantic-core version.
+- If a fence under `## Invariants` is tagged `quire` in a module pinning semantic-core `0.1.0`, then validation SHALL fail at the fence with `semantic.clause-language-invalid`; a `0.1.0` module has no checked clause language.
 - If a fence under `## Invariants` carries no language, or a language outside the `ClauseLanguage` pattern, then validation SHALL fail at the fence.
 - If two clauses in one artifact share a `clauseId`, including across `## Invariants` and `## Operations` subsections, then validation SHALL fail at the second.
 - Each `### <name>` subsection under `## Operations` SHALL map to one `OperationDecl` whose `name` is the heading (an `Identifier`), whose `params` come from a typed table with header `Param | Type | Multiplicity | Constraints` using the FR-071 cell grammars, whose `returns` comes from a `Returns:` line (`<Type>[<mult>]`), and whose `pre`/`post` come from `Requires:`/`Ensures:` lines listing clause ids.
@@ -57,7 +58,7 @@ Duplicating a clause inline and externally creates two authorities.
 | FR-072-AC-4 | An `## Operations` subsection `### archive` with a two-row param table, `Returns: ConfigVersion[1]`, `Requires: notArchived`, `Ensures: archived` has the expected `OperationDecl` fixture. | Test |
 | FR-072-AC-5 | `Ensures: missing` has an expected failure at that line. | Test |
 | FR-072-AC-6 | A clause declared by a fence and by `Clause: ./clauses.md#immutable` has an expected failure at the second occurrence. | Test |
-| FR-072-AC-7 | Under semantic-core `0.2.0`, an `ocl` fence under `### immutable` has an expected `ClauseRef { language: ocl, clauseId: immutable }`, the body carried verbatim, exactly one `semantic.clause-language-unchecked` advisory at the fence, and the clauses kind available and lossy. | Test |
+| FR-072-AC-7 | An `ocl` fence under `### immutable` has an expected `ClauseRef { language: ocl, clauseId: immutable }`, the body carried verbatim, exactly one `semantic.clause-language-unchecked` advisory at the fence, and the clauses kind available and lossy, both under semantic-core `0.2.0` (`operations-cases.json` `fence-ocl-carried`) and under `0.1.0` (`config-version.expected.json`). | Test |
 
 ## Dependencies
 

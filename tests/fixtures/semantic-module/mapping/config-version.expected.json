@@ -112,5 +112,19 @@
   },
   "clauseText": {
     "immutable": "context ConfigVersion inv immutable: self.versionNumber = self.versionNumber@pre and self.data = self.data@pre and self.hash = self.hash@pre"
-  }
+  },
+  "availability": {
+    "clauses": {
+      "state": "available",
+      "lossy": true
+    }
+  },
+  "diagnostics": [
+    {
+      "code": "semantic.clause-language-unchecked",
+      "line": 34,
+      "message": "clause immutable: language ocl is carried unchecked",
+      "severity": "advisory"
+    }
+  ]
 }
