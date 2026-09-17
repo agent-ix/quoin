@@ -1,29 +1,115 @@
 {
   "semanticCore": "0.2.0",
   "context": {
-    "$comment": "The loaded-module and bundle facts the extraction reads (FR-104 Inputs). edgeTypes are the spec-artifacts-iso 0.2.0 FR-040 registry entries for the verbs used; allowedLinks is the spec-objects-business entity allowed_links.",
-    "mappings": ["typed-table", "relationships"],
+    "$comment": "The loaded-module and bundle facts the extraction reads (FR-104 Inputs), pinned by `sources`.",
+    "sources": {
+      "edgeTypes": {
+        "repository": "agent-ix/spec-artifacts-iso",
+        "revision": "8a7d9ef84a650d286107b55d0dfde9b978107ac3",
+        "path": "spec_artifacts_iso/manifest.yaml",
+        "note": "contains, composes, depends_on, owns, references"
+      },
+      "objectTypes": {
+        "repository": "agent-ix/spec-objects-business",
+        "revision": "f7fdfda39293654424969ced57590b7a1a17c652",
+        "path": "spec_objects_business/manifest.yaml",
+        "note": "edge_types.specializes; entity and nested_entity roles and allowed_links"
+      }
+    },
+    "mappings": [
+      "typed-table",
+      "relationships"
+    ],
     "objectType": "entity",
     "edgeTypes": {
-      "contains": { "category": "structural", "inverse": "part_of" },
-      "owns": { "category": "dependency" },
-      "references": { "category": "traceability" }
+      "composes": {
+        "category": "structural",
+        "inverse": "composed_by"
+      },
+      "contains": {
+        "category": "structural",
+        "inverse": "part_of"
+      },
+      "depends_on": {
+        "category": "dependency"
+      },
+      "owns": {
+        "category": "dependency"
+      },
+      "references": {
+        "category": "traceability"
+      },
+      "specializes": {
+        "category": "structural",
+        "inverse": "generalizes"
+      }
+    },
+    "roles": {
+      "entity": [
+        "domain-object",
+        "persistable"
+      ],
+      "nested_entity": [
+        "domain-object"
+      ]
     },
     "allowedLinks": {
       "entity": {
-        "contains": ["nested_entity", "value_object"],
-        "owns": ["state_machine"],
-        "references": ["entity", "aggregate_root", "enumeration"]
+        "specializes": [
+          "entity"
+        ],
+        "contains": [
+          "nested_entity",
+          "value_object"
+        ],
+        "owns": [
+          "state_machine"
+        ],
+        "references": [
+          "entity",
+          "aggregate_root",
+          "enumeration"
+        ]
+      },
+      "nested_entity": {
+        "specializes": [
+          "nested_entity"
+        ],
+        "contains": [
+          "value_object"
+        ],
+        "references": [
+          "enumeration"
+        ]
       }
     },
     "bundle": {
       "package": "agent-ix/config-service",
       "artifacts": [
-        { "id": "FR-005", "title": "ConfigOverlay", "object": "entity" },
-        { "id": "FR-006", "title": "ConfigVersion", "object": "entity" },
-        { "id": "FR-007", "title": "ConfigEntry", "object": "nested_entity" }
+        {
+          "id": "FR-005",
+          "title": "ConfigOverlay",
+          "object": "entity"
+        },
+        {
+          "id": "FR-006",
+          "title": "ConfigVersion",
+          "object": "entity"
+        },
+        {
+          "id": "FR-007",
+          "title": "ConfigEntry",
+          "object": "nested_entity"
+        },
+        {
+          "id": "FR-010",
+          "title": "Archive a config version",
+          "object": null
+        }
       ],
-      "imports": ["agent-ix/spec-artifacts-iso"]
+      "imports": [
+        "agent-ix/spec-artifacts-iso"
+      ]
     },
     "sourceIdentity": "ix://agent-ix/config-service/spec"
   },

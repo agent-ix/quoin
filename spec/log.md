@@ -19,6 +19,15 @@ description: "Chronological log of structural changes to this bundle."
   semantic-core `0.2.0`. Matrix rows TC-1717..TC-1726 are delegated to
   quire-rs#418.
 
+  Review round: the table is forward-only (quire-rs FR-041, ADR-0008) with an
+  `inverse-verb` refusal; targets are checked against `allowed_links` with
+  FR-040 `target_satisfies`; the table is the one authority for domain
+  relationships, with frontmatter duplicates and `specializes` refused
+  (filament-core-data#156); the FR-075 refusal rule and diagnostic shape apply;
+  `relationSources` is the `0.2.0` carrier until filament-core-data#155 ships;
+  the fixture context pins spec-artifacts-iso `8a7d9ef` and
+  spec-objects-business `f7fdfda`.
+
 * **2026-09-12** — **NFR-021 and NFR-022 withdrawn; NFR-023 retained with a
   named population** (agent-ix/quoin#388, under the Rust burn-down #373). All
   three belonged to the closed gate #291 alongside FR-084..FR-092 and US-022,
