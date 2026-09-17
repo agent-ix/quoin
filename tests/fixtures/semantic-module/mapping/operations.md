@@ -17,14 +17,14 @@ type: FR
 
 ### notArchived
 
-```ocl
-context Artifact inv notArchived: self.summary <> 'archived'
+```quire
+not (summary = "archived")
 ```
 
 ### archived
 
-```ocl
-context Artifact::archive() post: result.summary = 'archived'
+```quire
+result.summary = "archived"
 ```
 
 ## Operations

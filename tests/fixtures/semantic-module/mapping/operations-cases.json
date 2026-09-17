@@ -1,5 +1,5 @@
 {
-  "semanticCore": "0.1.0",
+  "semanticCore": "0.2.0",
   "cases": [
     {
       "id": "fence-no-language",
@@ -57,8 +57,34 @@
       ]
     },
     {
+      "id": "fence-ocl-carried",
+      "invariants": "### immutable\n\n```ocl\nx\n```\n",
+      "diagnostics": [
+        {
+          "code": "semantic.clause-language-unchecked",
+          "severity": "advisory",
+          "locus": "fence"
+        }
+      ],
+      "clauses": [
+        {
+          "language": "ocl",
+          "clauseId": "immutable"
+        }
+      ],
+      "clauseText": {
+        "immutable": "x"
+      },
+      "availability": {
+        "clauses": {
+          "state": "available",
+          "lossy": true
+        }
+      }
+    },
+    {
       "id": "duplicate-clause-id",
-      "invariants": "### immutable\n\n```ocl\na\n```\n\n### immutable\n\n```ocl\nb\n```\n",
+      "invariants": "### immutable\n\n```quire\na\n```\n\n### immutable\n\n```quire\nb\n```\n",
       "diagnostics": [
         {
           "code": "semantic.duplicate-clause-id",
@@ -69,7 +95,7 @@
     },
     {
       "id": "clause-id-not-identifier",
-      "invariants": "### not-archived\n\n```ocl\na\n```\n",
+      "invariants": "### not-archived\n\n```quire\na\n```\n",
       "diagnostics": [
         {
           "code": "semantic.clause-id-not-identifier",
@@ -102,7 +128,7 @@
     },
     {
       "id": "inline-and-external",
-      "invariants": "### immutable\n\n```ocl\na\n```\n\nClause: ./clauses.md#immutable\n",
+      "invariants": "### immutable\n\n```quire\na\n```\n\nClause: ./clauses.md#immutable\n",
       "diagnostics": [
         {
           "code": "semantic.duplicate-clause-authority",
