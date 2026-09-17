@@ -1,0 +1,26 @@
+{
+  "semanticCore": "0.1.0",
+  "cases": [
+    {
+      "id": "fence-quire-invalid",
+      "invariants": "### immutable\n\n```quire\nx\n```\n",
+      "diagnostics": [
+        {
+          "code": "semantic.clause-language-invalid",
+          "severity": "error",
+          "locus": "fence",
+          "column": 1,
+          "message": "clause immutable: language \"quire\" is outside the ClauseLanguage pattern"
+        }
+      ],
+      "clauseText": {},
+      "availability": {
+        "clauses": {
+          "state": "unavailable",
+          "reason": "entry-errors: lines 8",
+          "lossy": false
+        }
+      }
+    }
+  ]
+}

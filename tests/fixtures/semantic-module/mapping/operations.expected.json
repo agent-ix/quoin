@@ -1,8 +1,8 @@
 {
-  "semanticCore": "0.1.0",
+  "semanticCore": "0.2.0",
   "clauses": [
     {
-      "language": "ocl",
+      "language": "quire",
       "clauseId": "notArchived",
       "sourceSpan": {
         "sourceIdentity": "ix://agent-ix/config-service/spec",
@@ -14,7 +14,7 @@
       }
     },
     {
-      "language": "ocl",
+      "language": "quire",
       "clauseId": "archived",
       "sourceSpan": {
         "sourceIdentity": "ix://agent-ix/config-service/spec",
@@ -66,20 +66,31 @@
       },
       "pre": [
         {
-          "language": "ocl",
+          "language": "quire",
           "clauseId": "notArchived"
         }
       ],
       "post": [
         {
-          "language": "ocl",
+          "language": "quire",
           "clauseId": "archived"
         }
       ]
     }
   ],
   "clauseText": {
-    "notArchived": "context Artifact inv notArchived: self.summary <> 'archived'",
-    "archived": "context Artifact::archive() post: result.summary = 'archived'"
-  }
+    "notArchived": "not (self.summary = \"archived\")",
+    "archived": "result.summary = \"archived\""
+  },
+  "availability": {
+    "clauses": {
+      "state": "available",
+      "lossy": false
+    },
+    "operations": {
+      "state": "available",
+      "lossy": false
+    }
+  },
+  "diagnostics": []
 }
