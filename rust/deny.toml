@@ -275,11 +275,16 @@ unknown-git = "deny"
 #   * filament-ide-rs — the source of `filament-plan-sync`, the plan-sync
 #     engine quoin-cli links (quoin#560).
 #
-# All three are pinned by an exact `rev` in rust/Cargo.toml, so allowing the
-# repository here does not weaken the revision pin: `unknown-git = "deny"`
-# still refuses every other git source, and any other revision of these
-# three still fails resolution. A fourth git dependency is listed here in the
-# commit that adds it, or this check refuses it.
+# quire-rs and engineering-assurance are each pinned by an exact `rev` in
+# rust/Cargo.toml. filament-plan-sync is pinned by an exact `rev` in
+# rust/crates/quoin-cli/Cargo.toml; its own manifest in turn pins ITS quire-rs
+# dependency by `tag = "v0.21.0"` rather than a rev — not a pin this repository
+# controls, and the reason quire-rs@0.21.0 is a named `bans.skip` above rather
+# than a resolvable duplicate. Allowing a repository here does not weaken any
+# of these pins: `unknown-git = "deny"` still refuses every other git source,
+# and any other revision of these three still fails resolution. A fourth git
+# dependency is listed here in the commit that adds it, or this check refuses
+# it.
 allow-git = [
     "https://github.com/agent-ix/quire-rs",
     "https://github.com/agent-ix/engineering-assurance",

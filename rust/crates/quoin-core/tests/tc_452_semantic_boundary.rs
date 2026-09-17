@@ -37,13 +37,13 @@ struct Run {
     status: i32,
 }
 
-/// Invoke the runtime with the explicit vendored-contract capability.
-fn run(op: &str, request: &Value, contract: bool) -> Run {
-    let settings = RuntimeSettings {
-        ix_home: None,
-        semantic_root: contract.then(semantic_root),
-    };
-    let response = dispatch(op, request, &settings).unwrap_or_else(|error| Response {
+/// Dispatch one request under `settings` and reduce the response to a [`Run`].
+///
+/// The shared tail of [`run`] and [`run_isolated`]: everything above this line
+/// decides which capabilities the runtime is granted, and this is the one
+/// place a [`Response`] becomes stdout, stderr and a status.
+fn invoke(op: &str, request: &Value, settings: &RuntimeSettings) -> Run {
+    let response = dispatch(op, request, settings).unwrap_or_else(|error| Response {
         payload: Value::Null,
         diagnostics: vec![Diagnostic::from(&error)],
         outcome: error.outcome(),
@@ -63,6 +63,43 @@ fn run(op: &str, request: &Value, contract: bool) -> Run {
         stderr,
         status: i32::from(response.outcome.code()),
     }
+}
+
+/// Invoke the runtime with the explicit vendored-contract capability.
+fn run(op: &str, request: &Value, contract: bool) -> Run {
+    let settings = RuntimeSettings {
+        ix_home: None,
+        semantic_root: contract.then(semantic_root),
+    };
+    invoke(op, request, &settings)
+}
+
+/// Invoke the runtime with neither a vendored contract root nor the ambient
+/// `IX_HOME`: `ix_home` is an isolated directory this test owns, so the
+/// embedded-contract fallback this exercises materialises under a path the
+/// test controls rather than whatever the developer's or CI's real `IX_HOME`
+/// happens to hold.
+///
+/// `QUOIN_SEMANTIC_ROOT` cannot be cleared the same way: `std::env::remove_var`
+/// is `unsafe fn` on this toolchain, and the workspace lint policy forbids
+/// `unsafe_code` outright (see `rust-style`'s lints section) — the same reason
+/// `quoin-config`'s `Environment` trait reads ambient state through an
+/// injectable seam instead of mutating the process environment in tests. This
+/// operation has no such seam, so the precondition is asserted instead of
+/// silently overridden: a caller who has actually exported
+/// `QUOIN_SEMANTIC_ROOT` gets a named failure, not a test that passed by
+/// accident against a root it never meant to exercise.
+fn run_isolated(op: &str, request: &Value, ix_home: &std::path::Path) -> Run {
+    assert!(
+        std::env::var_os("QUOIN_SEMANTIC_ROOT").is_none(),
+        "this test exercises the embedded-contract fallback and needs no \
+         QUOIN_SEMANTIC_ROOT set in the ambient environment; unset it and rerun"
+    );
+    let settings = RuntimeSettings {
+        ix_home: Some(ix_home.to_path_buf()),
+        semantic_root: None,
+    };
+    invoke(op, request, &settings)
 }
 
 /// The payload of a run that must have succeeded outright.
@@ -164,21 +201,34 @@ fn tc_452_602_a_module_root_with_no_manifest_is_refused_not_reported_empty() {
 }
 
 /// With no vendored contract root supplied, the boundary falls back to its
-/// embedded contract (quoin-semantic's `embedded` module, #539) rather than
-/// refusing: a release executable owns its own contract and must not depend
-/// on `QUOIN_SEMANTIC_ROOT` being set. The read answers the same as
-/// `tc_452_601`'s explicit-root read.
+/// embedded contract (quoin-semantic's `embedded` module, designed in #527 and
+/// wired into this boundary in #539) rather than refusing: a release
+/// executable owns its own contract and must not depend on
+/// `QUOIN_SEMANTIC_ROOT` being set. The read answers the same as
+/// `tc_452_601`'s explicit-root read, and the fallback's own side effect — the
+/// contract materialised under this run's `IX_HOME` cache — is asserted
+/// directly rather than only inferred from the read succeeding.
 ///
 /// Trace: FR-070-AC-1, FR-096
-/// Provenance: agent-ix/quoin#452, agent-ix/quoin#539
+/// Provenance: agent-ix/quoin#452, agent-ix/quoin#527, agent-ix/quoin#539
 #[test]
 fn tc_452_603_without_a_contract_root_the_embedded_contract_answers() {
+    let home = tempfile::tempdir().unwrap();
     let request = json!({ "roots": [fixture().to_string_lossy()] });
-    let payload = ok(&run("semantic.read_blocks", &request, false));
+    let payload = ok(&run_isolated("semantic.read_blocks", &request, home.path()));
     let modules = payload["modules"].as_array().unwrap();
     assert_eq!(
         modules[0]["block"]["package"],
         "agent-ix/spec-objects-fixture"
+    );
+
+    let materialized = home.path().join("cache/quoin-semantic/v1");
+    assert!(
+        materialized
+            .join("schemas/module-manifest.schema.json")
+            .is_file(),
+        "the embedded contract is written under the isolated IX_HOME's cache at {}",
+        materialized.display()
     );
 }
 
