@@ -37,5 +37,5 @@ context Artifact::archive() post: result.summary = 'archived'
 | delay | Duration [ms] | 0..1 | |
 
 Returns: ConfigVersion[1]
-Pre: notArchived
-Post: archived
+Requires: notArchived
+Ensures: archived
