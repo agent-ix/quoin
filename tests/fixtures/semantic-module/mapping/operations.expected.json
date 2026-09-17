@@ -79,7 +79,7 @@
     }
   ],
   "clauseText": {
-    "notArchived": "not (summary = \"archived\")",
+    "notArchived": "not (self.summary = \"archived\")",
     "archived": "result.summary = \"archived\""
   },
   "availability": {

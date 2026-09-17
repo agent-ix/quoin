@@ -63,7 +63,9 @@
         {
           "code": "semantic.clause-language-unchecked",
           "severity": "advisory",
-          "locus": "fence"
+          "locus": "fence",
+          "column": 1,
+          "message": "clause immutable: language ocl is carried unchecked"
         }
       ],
       "clauses": [

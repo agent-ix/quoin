@@ -30,7 +30,7 @@ Duplicating a clause inline and externally creates two authorities.
 - Each language-tagged fence under `## Invariants` SHALL map to one `ClauseRef` with `language` = the fence info string, `clauseId` = the text of the nearest preceding `### <clauseId>` heading, and `sourceSpan` = a semantic-core `SourceLocus` (`sourceIdentity`, `path`, `startLine`, `startColumn`, `endLine`, `endColumn`) covering the fence.
 - A `clauseId` SHALL be an `Identifier` (`^[A-Za-z_][A-Za-z0-9_]*$`).
 - If a clause heading's text is not an `Identifier`, then validation SHALL fail at the heading.
-- The golden fixtures SHALL pin semantic-core `0.2.0` and author every checked invariant in a `quire` fence.
+- The FR-072 operations goldens (`operations.md`, `operations.expected.json`, `operations-cases.json`) SHALL pin semantic-core `0.2.0` and author every checked invariant in a `quire` fence; the `config-version` goldens pin `0.1.0` and carry their invariant as `ocl` until quoin ships semantic-core `0.2.0` ([#549](https://github.com/agent-ix/quoin/issues/549)).
 - When a fence under `## Invariants` is tagged `quire`, Quire SHALL extract the clause with no finding and report the clauses kind available and not lossy.
 - When a fence under `## Invariants` is tagged `ocl`, `sysml`, `fretish`, or a namespaced `<ns>:<name>`, Quire SHALL carry the clause text verbatim, emit the advisory finding `semantic.clause-language-unchecked` at the fence, and report the clauses kind available and lossy, under every semantic-core version.
 - If a fence under `## Invariants` is tagged `quire` in a module pinning semantic-core `0.1.0`, then validation SHALL fail at the fence with `semantic.clause-language-invalid`; a `0.1.0` module has no checked clause language.
@@ -59,6 +59,7 @@ Duplicating a clause inline and externally creates two authorities.
 | FR-072-AC-5 | `Ensures: missing` has an expected failure at that line. | Test |
 | FR-072-AC-6 | A clause declared by a fence and by `Clause: ./clauses.md#immutable` has an expected failure at the second occurrence. | Test |
 | FR-072-AC-7 | An `ocl` fence under `### immutable` has an expected `ClauseRef { language: ocl, clauseId: immutable }`, the body carried verbatim, exactly one `semantic.clause-language-unchecked` advisory at the fence, and the clauses kind available and lossy, both under semantic-core `0.2.0` (`operations-cases.json` `fence-ocl-carried`) and under `0.1.0` (`config-version.expected.json`). | Test |
+| FR-072-AC-8 | Under semantic-core `0.1.0`, a `quire` fence under `### immutable` has an expected `semantic.clause-language-invalid` error at the fence (column 1), no clause text, and the clauses kind unavailable with an `entry-errors` reason (`clause-language-0.1.0-cases.json` `fence-quire-invalid`). | Test |
 
 ## Dependencies
 

@@ -122,6 +122,7 @@
   "diagnostics": [
     {
       "code": "semantic.clause-language-unchecked",
+      "column": 1,
       "line": 34,
       "message": "clause immutable: language ocl is carried unchecked",
       "severity": "advisory"

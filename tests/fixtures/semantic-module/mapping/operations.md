@@ -18,7 +18,7 @@ type: FR
 ### notArchived
 
 ```quire
-not (summary = "archived")
+not (self.summary = "archived")
 ```
 
 ### archived
