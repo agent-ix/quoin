@@ -8,6 +8,18 @@ description: "Chronological log of structural changes to this bundle."
 
 ## History
 
+* **2026-09-16** — **FR-104: mixed-row advisories and `no-bundle-package`**
+  (agent-ix/quoin#556, from quire-rs FR-076). If any row errs, no row carries
+  the `no-bundle-index` advisory (case `no-bundle-index-mixed-rows`). A surface
+  that knows no bundle package (no bundle package and no `ix://` source
+  identity) reports `availability.relations` `unavailable`
+  (`no-bundle-package`) with one heading advisory, never qualifying targets
+  under the module's package; a shape error wins (cases `no-bundle-package`,
+  `no-bundle-package-second-table`, case field `withoutBundlePackage`). Adds
+  FR-104-AC-11, AC-12 and TC-1729, TC-1730. TC-1717..TC-1728 now point at the
+  agent-ix/quire-rs `tests/semantic_relations.rs` tests that execute them at
+  `44df254`. The quoin-quire caller is agent-ix/quoin#557.
+
 * **2026-09-16** — **FR-104 rulings R1..R4** (agent-ix/quoin#554, from the
   agent-ix/quire-rs#436 review). A surface with no relation vocabulary reports
   `availability.relations` `unavailable` (`no-relation-vocabulary`) with one
