@@ -835,8 +835,8 @@ generated tests under `tests/props/` and `Unit` for the rest.
 | TC-1353 | One `ocl` fence under `### immutable` extracts to the expected `ClauseRef` and verbatim text | Unit | P0 | FR-072-AC-1 | ✅ Complete |
 | TC-1354 | No language or `tla` fails at the fence; `sysml`, `fretish`, `acme:tla` yield `semantic.clause-language-unchecked` | Unit | P0 | FR-072-AC-2 | ✅ Complete |
 | TC-1355 | Two `### immutable` clauses fail at the second; `### not-archived` fails at the heading | Unit | P0 | FR-072-AC-3 | ✅ Complete |
-| TC-1356 | `### archive` with param table, `Returns: ConfigVersion[1]`, `Pre: notArchived`, `Post: archived` yields the expected `OperationDecl` | Unit | P0 | FR-072-AC-4 | ✅ Complete |
-| TC-1357 | `Post: missing` fails at that line | Unit | P0 | FR-072-AC-5 | ✅ Complete |
+| TC-1356 | `### archive` with param table, `Returns: ConfigVersion[1]`, `Requires: notArchived`, `Ensures: archived` yields the expected `OperationDecl` | Unit | P0 | FR-072-AC-4 | ✅ Complete |
+| TC-1357 | `Ensures: missing` fails at that line | Unit | P0 | FR-072-AC-5 | ✅ Complete |
 | TC-1358 | A clause declared by a fence and by `Clause: ./clauses.md#immutable` fails at the second occurrence | Unit | P0 | FR-072-AC-6 | ✅ Complete |
 | TC-1359 | No clause typechecking or evaluation code path exists in Quoin | Static | P0 | FR-072-CON-1 | ✅ Complete |
 | TC-1360 | `data_schema: { schema, digest }` installs; the fixture's declaration set validates against `FieldDecl.json` and its record against `Entity.json` | Unit | P0 | FR-073-AC-1, US-020-EX-3 | ✅ Complete |

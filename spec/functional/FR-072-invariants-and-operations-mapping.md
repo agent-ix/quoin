@@ -32,9 +32,9 @@ creates two authorities.
 - Quire SHALL accept the `language` value `ocl` without a finding, and `sysml`, `fretish`, or a namespaced `<ns>:<name>` with the advisory finding `semantic.clause-language-unchecked` until a frontend exists for it.
 - If a fence under `## Invariants` carries no language, or a language outside the `ClauseLanguage` pattern, then validation SHALL fail at the fence.
 - If two clauses in one artifact share a `clauseId`, including across `## Invariants` and `## Operations` subsections, then validation SHALL fail at the second.
-- Each `### <name>` subsection under `## Operations` SHALL map to one `OperationDecl` whose `name` is the heading (an `Identifier`), whose `params` come from a typed table with header `Param | Type | Multiplicity | Constraints` using the FR-071 cell grammars, whose `returns` comes from a `Returns:` line (`<Type>[<mult>]`), and whose `pre`/`post` come from `Pre:`/`Post:` lines listing clause ids.
+- Each `### <name>` subsection under `## Operations` SHALL map to one `OperationDecl` whose `name` is the heading (an `Identifier`), whose `params` come from a typed table with header `Param | Type | Multiplicity | Constraints` using the FR-071 cell grammars, whose `returns` comes from a `Returns:` line (`<Type>[<mult>]`), and whose `pre`/`post` come from `Requires:`/`Ensures:` lines listing clause ids.
 - If two `### <name>` subsections under `## Operations` share a name, then validation SHALL fail at the second.
-- If a `Pre:`/`Post:` line names a clause id declared nowhere in the artifact, then validation SHALL fail at that line.
+- If a `Requires:`/`Ensures:` line names a clause id declared nowhere in the artifact, then validation SHALL fail at that line.
 - Quire SHALL extract fence text verbatim into the clause-text map without parsing, normalizing, or evaluating it.
 - If the same `clauseId` is declared both by a fence and by an external reference line `Clause: <relative path>#<clauseId>`, then validation SHALL fail at the second occurrence.
 
@@ -51,8 +51,8 @@ creates two authorities.
 | FR-072-AC-1 | An `## Invariants` section with one `ocl` fence under `### immutable` has an expected `ClauseRef { language: ocl, clauseId: immutable, sourceSpan }` fixture and the fence text verbatim. | Test |
 | FR-072-AC-2 | A fence without a language, or tagged `tla`, has an expected failure at the fence; `sysml`, `fretish`, and `acme:tla` have an expected `semantic.clause-language-unchecked` advisory. | Test |
 | FR-072-AC-3 | Two `### immutable` clauses, and a `### not-archived` heading, have expected failures at the second clause and at the heading. | Test |
-| FR-072-AC-4 | An `## Operations` subsection `### archive` with a two-row param table, `Returns: ConfigVersion[1]`, `Pre: notArchived`, `Post: archived` has the expected `OperationDecl` fixture. | Test |
-| FR-072-AC-5 | `Post: missing` has an expected failure at that line. | Test |
+| FR-072-AC-4 | An `## Operations` subsection `### archive` with a two-row param table, `Returns: ConfigVersion[1]`, `Requires: notArchived`, `Ensures: archived` has the expected `OperationDecl` fixture. | Test |
+| FR-072-AC-5 | `Ensures: missing` has an expected failure at that line. | Test |
 | FR-072-AC-6 | A clause declared by a fence and by `Clause: ./clauses.md#immutable` has an expected failure at the second occurrence. | Test |
 
 ## Dependencies
