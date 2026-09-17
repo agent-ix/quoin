@@ -37,5 +37,5 @@ result.summary = "archived"
 | delay | Duration [ms] | 0..1 | |
 
 Returns: ConfigVersion[1]
-Requires: notArchived
-Ensures: archived
+Pre: notArchived
+Post: archived
