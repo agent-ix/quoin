@@ -20,7 +20,12 @@ description: "Chronological log of structural changes to this bundle."
   refusal covers a list or fence after the table. New cases:
   `token-table-other-section`, `token-preamble-table`, `prose-only-section`,
   `no-relation-vocabulary`, `no-bundle-index`, `no-bundle-index-title-target`,
-  `no-bundle-index-own-package-identity`. With no bundle index only the
+  `no-bundle-index-own-package-identity`, `list-after-table`,
+  `no-relation-vocabulary-second-table`, `no-bundle-index-bad-multiplicity`.
+  Shape errors win over a missing vocabulary; the `no-bundle-index` advisory
+  is emitted only for a row that lowers, which is not lossy because its target
+  is a real identity; a prose-only section stays `not_applicable`, departing
+  from FR-070/FR-072 because it declares nothing. With no bundle index only the
   existence and `allowed_links` checks are skipped; the id-alphabet check
   stays, and an own-package `ix://` target follows the bare-id rule. Adds FR-104-AC-9, AC-10 and
   TC-1727, TC-1728, delegated to agent-ix/quire-rs#418.

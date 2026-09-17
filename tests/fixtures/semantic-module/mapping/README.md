@@ -31,8 +31,9 @@ Each case in `cases[]` has these fields:
 | `artifact` | A full artifact used verbatim, in place of `artifactHead` + `relationships`. |
 | `mappings` | Replaces `context.mappings` for this case. |
 | `withoutRelationVocabulary` | When `true`, the extraction runs with no relation vocabulary: no `edgeTypes`, `roles`, or `allowedLinks` (FR-104 `no-relation-vocabulary`). |
-| `withoutBundleIndex` | When `true`, the extraction runs with no bundle index: no `bundle.artifacts`; `bundle.package` and `bundle.imports` stay (FR-104 `no-bundle-index`). |
+| `withoutBundleIndex` | When `true`, the extraction runs with no bundle index: no `bundle.artifacts`; `bundle.package` and `bundle.imports` stay (FR-104 `no-bundle-index`). An absent `bundle.artifacts` and an empty one are equivalent: both are the no-index state. |
 | `diagnostics[]` | Expected diagnostics: `code`, `severity`, `locus`, `line`, `section`, `reason`, and optionally `messageContains`. |
+| `diagnostics[].locus` | Where the diagnostic sits: `row`, `second-row`, `header`, `second-header`, `heading`, `second-heading`, or `list`. |
 | `diagnostics[].messageContains` | Substrings the diagnostic `message` must contain. |
 | `exactDiagnostics` | The exact number of diagnostics the extraction emits; a row that fails several checks yields one (FR-104 refusal order). |
 | `relations`, `relationSources` | Expected outputs; `relations: null` means neither is emitted. |
