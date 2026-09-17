@@ -27,8 +27,9 @@ use crate::error::{CoreError, CoreErrorCode};
 ///
 /// - **`Refused` (2)** — the request was understood and the world declined it:
 ///   a module root with no readable `manifest.yaml`, a manifest that is not
-///   YAML or not a mapping, a corpus root that cannot be walked, or no
-///   vendored contract to judge against. Fixing it means changing the world,
+///   YAML or not a mapping, a corpus root that cannot be walked, no
+///   vendored contract to judge against, or the embedded contract's private
+///   cache path could not be written. Fixing it means changing the world,
 ///   not the request.
 /// - **`Io` → Internal (4)** — quoin's own shipped data is broken: a vendored
 ///   schema that will not read, will not parse, will not compile, or lacks the
@@ -72,7 +73,8 @@ const fn core_code(code: SemanticErrorCode) -> Option<CoreErrorCode> {
         | SemanticErrorCode::ManifestNotYaml
         | SemanticErrorCode::ManifestNotAMapping
         | SemanticErrorCode::CorpusUnreadable
-        | SemanticErrorCode::ContractRootUnset => CoreErrorCode::Refused,
+        | SemanticErrorCode::ContractRootUnset
+        | SemanticErrorCode::EmbeddedContractWrite => CoreErrorCode::Refused,
 
         SemanticErrorCode::VendoredSchemaUnreadable
         | SemanticErrorCode::VendoredSchemaNotJson
@@ -111,7 +113,7 @@ mod tests {
     fn the_error_mapping_covers_every_semantic_code() {
         assert_eq!(
             SemanticErrorCode::all().len(),
-            9,
+            10,
             "quoin-semantic gained or lost an error code; map it in map_error deliberately"
         );
 
@@ -121,6 +123,7 @@ mod tests {
             SemanticErrorCode::ManifestNotAMapping,
             SemanticErrorCode::CorpusUnreadable,
             SemanticErrorCode::ContractRootUnset,
+            SemanticErrorCode::EmbeddedContractWrite,
         ];
         let internal = [
             SemanticErrorCode::VendoredSchemaUnreadable,

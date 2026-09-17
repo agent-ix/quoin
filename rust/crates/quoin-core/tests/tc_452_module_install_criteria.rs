@@ -65,14 +65,16 @@ fn run(op: &str, request: &Value) -> Run {
         diagnostics: vec![Diagnostic::from(&error)],
         outcome: error.outcome(),
     });
-    let stdout = response
-        .outcome
-        .carries_payload()
-        .then(|| canonical_json(&response.payload).unwrap())
-        .unwrap_or_default();
-    let stderr = (!response.diagnostics.is_empty())
-        .then(|| canonical_json(&response.diagnostics).unwrap())
-        .unwrap_or_default();
+    let stdout = if response.outcome.carries_payload() {
+        canonical_json(&response.payload).unwrap()
+    } else {
+        String::new()
+    };
+    let stderr = if response.diagnostics.is_empty() {
+        String::new()
+    } else {
+        canonical_json(&response.diagnostics).unwrap()
+    };
     Run {
         stdout,
         stderr,

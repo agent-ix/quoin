@@ -193,10 +193,11 @@ fn tc_452_652_the_fence_subset_is_declarations_only_and_nothing_evaluates_them()
 #[test]
 fn tc_452_653_no_source_in_the_crate_typechecks_or_evaluates_a_clause() {
     const LIB: &str = include_str!("../src/lib.rs");
-    const SOURCES: [(&str, &str); 9] = [
+    const SOURCES: [(&str, &str); 10] = [
         ("contract", include_str!("../src/contract.rs")),
         ("data_schema", include_str!("../src/data_schema.rs")),
         ("diagnostic", include_str!("../src/diagnostic.rs")),
+        ("embedded", include_str!("../src/embedded.rs")),
         ("error", include_str!("../src/error.rs")),
         ("ids", include_str!("../src/ids.rs")),
         ("manifest", include_str!("../src/manifest.rs")),

@@ -43,10 +43,10 @@ fn invoke(home: &Path, arguments: &[&str]) -> Output {
 
 fn invoke_with_modules(home: &Path, modules: Option<&Path>, arguments: &[&str]) -> Output {
     let mut command = Command::new(env!("CARGO_BIN_EXE_quoin"));
-    command
-        .args(arguments)
-        .env("IX_HOME", home)
-        .env("QUOIN_SEMANTIC_ROOT", repository_root().join("dist"));
+    command.args(arguments).env("IX_HOME", home).env(
+        "QUOIN_SEMANTIC_ROOT",
+        repository_root().join("src/semantic"),
+    );
     if let Some(modules) = modules {
         command.env("QUOIN_MODULE_PATHS", modules);
     }

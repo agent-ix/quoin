@@ -163,18 +163,23 @@ fn tc_452_602_a_module_root_with_no_manifest_is_refused_not_reported_empty() {
     assert_eq!(diagnostics[0]["context"]["op"], "semantic.read_blocks");
 }
 
-/// With no vendored contract published, nothing is judged and the boundary
-/// says so rather than reporting a clean read of an unjudged module.
+/// With no vendored contract root supplied, the boundary falls back to its
+/// embedded contract (quoin-semantic's `embedded` module, #539) rather than
+/// refusing: a release executable owns its own contract and must not depend
+/// on `QUOIN_SEMANTIC_ROOT` being set. The read answers the same as
+/// `tc_452_601`'s explicit-root read.
 ///
 /// Trace: FR-070-AC-1, FR-096
-/// Provenance: agent-ix/quoin#452
+/// Provenance: agent-ix/quoin#452, agent-ix/quoin#539
 #[test]
-fn tc_452_603_without_a_contract_root_the_answer_is_a_refusal() {
+fn tc_452_603_without_a_contract_root_the_embedded_contract_answers() {
     let request = json!({ "roots": [fixture().to_string_lossy()] });
-    let result = run("semantic.read_blocks", &request, false);
-    assert_eq!(result.status, 2, "{}", result.stderr);
-    let diagnostics: Value = serde_json::from_str(&result.stderr).unwrap();
-    assert_eq!(diagnostics[0]["context"]["semantic_code"], "QSEM-009");
+    let payload = ok(&run("semantic.read_blocks", &request, false));
+    let modules = payload["modules"].as_array().unwrap();
+    assert_eq!(
+        modules[0]["block"]["package"],
+        "agent-ix/spec-objects-fixture"
+    );
 }
 
 /// `semantic.sweep_corpus` walks a real tree and classifies what it finds.
