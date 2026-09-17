@@ -8,6 +8,17 @@ description: "Chronological log of structural changes to this bundle."
 
 ## History
 
+* **2026-09-16** — **FR-104: the `## Relationships` typed table maps to
+  `RelationDecl[]`** (agent-ix/quoin#552, refs agent-ix/quire-rs#418). A
+  `Name | Verb | Target | Multiplicity` table, gated by the `relationships`
+  mapping token, maps each row to one semantic-core `RelationDecl` with a
+  `relationSources` locus. The verb comes from the FR-040 `edge_types` registry
+  and the object type's `allowed_links`, the target is an artifact `id`, and
+  the multiplicity uses the FR-071 grammar. The goldens `relationships.md`,
+  `relationships.expected.json`, and `relationships-cases.json` pin
+  semantic-core `0.2.0`. Matrix rows TC-1717..TC-1726 are delegated to
+  quire-rs#418.
+
 * **2026-09-12** — **NFR-021 and NFR-022 withdrawn; NFR-023 retained with a
   named population** (agent-ix/quoin#388, under the Rust burn-down #373). All
   three belonged to the closed gate #291 alongside FR-084..FR-092 and US-022,

@@ -1,0 +1,103 @@
+{
+  "semanticCore": "0.2.0",
+  "context": {
+    "$comment": "The loaded-module and bundle facts the extraction reads (FR-104 Inputs). edgeTypes are the spec-artifacts-iso 0.2.0 FR-040 registry entries for the verbs used; allowedLinks is the spec-objects-business entity allowed_links.",
+    "mappings": ["typed-table", "relationships"],
+    "objectType": "entity",
+    "edgeTypes": {
+      "contains": { "category": "structural", "inverse": "part_of" },
+      "owns": { "category": "dependency" },
+      "references": { "category": "traceability" }
+    },
+    "allowedLinks": {
+      "entity": {
+        "contains": ["nested_entity", "value_object"],
+        "owns": ["state_machine"],
+        "references": ["entity", "aggregate_root", "enumeration"]
+      }
+    },
+    "bundle": {
+      "package": "agent-ix/config-service",
+      "artifacts": [
+        { "id": "FR-005", "title": "ConfigOverlay", "object": "entity" },
+        { "id": "FR-006", "title": "ConfigVersion", "object": "entity" },
+        { "id": "FR-007", "title": "ConfigEntry", "object": "nested_entity" }
+      ],
+      "imports": ["agent-ix/spec-artifacts-iso"]
+    },
+    "sourceIdentity": "ix://agent-ix/config-service/spec"
+  },
+  "relations": [
+    {
+      "verb": "references",
+      "category": "traceability",
+      "composite": false,
+      "target": "ix://agent-ix/config-service/FR-005",
+      "multiplicity": {
+        "lower": 1,
+        "upper": 1
+      }
+    },
+    {
+      "verb": "contains",
+      "category": "structural",
+      "composite": true,
+      "target": "ix://agent-ix/config-service/FR-007",
+      "multiplicity": {
+        "lower": 0
+      }
+    },
+    {
+      "verb": "references",
+      "category": "traceability",
+      "composite": false,
+      "target": "ix://agent-ix/config-service/FR-006",
+      "multiplicity": {
+        "lower": 0,
+        "upper": 1
+      }
+    }
+  ],
+  "relationSources": [
+    {
+      "name": "overlay",
+      "sourceSpan": {
+        "sourceIdentity": "ix://agent-ix/config-service/spec",
+        "path": "relationships.md",
+        "startLine": 20,
+        "startColumn": 1,
+        "endLine": 20,
+        "endColumn": 41
+      }
+    },
+    {
+      "name": "entries",
+      "sourceSpan": {
+        "sourceIdentity": "ix://agent-ix/config-service/spec",
+        "path": "relationships.md",
+        "startLine": 21,
+        "startColumn": 1,
+        "endLine": 21,
+        "endColumn": 39
+      }
+    },
+    {
+      "name": "predecessor",
+      "sourceSpan": {
+        "sourceIdentity": "ix://agent-ix/config-service/spec",
+        "path": "relationships.md",
+        "startLine": 22,
+        "startColumn": 1,
+        "endLine": 22,
+        "endColumn": 45
+      }
+    }
+  ],
+  "availability": {
+    "relations": {
+      "state": "available",
+      "lossy": false
+    }
+  },
+  "diagnostics": []
+}

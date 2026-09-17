@@ -115,3 +115,4 @@ description: "Index of functional requirements (FR) for quoin."
 - [FR-101: Retire replaced Quoin executable paths](./FR-101-retire-replaced-executable-paths.md)
 - [FR-102: Preserve the command surface and retire the oclif shell last](./FR-102-command-surface-and-oclif-retirement.md)
 - [FR-103: Consolidate the Quoin side of corpus tooling](./FR-103-corpus-consolidation.md)
+- [FR-104: Relationships typed table mapping to RelationDecl](./FR-104-relationships-mapping.md)

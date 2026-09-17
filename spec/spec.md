@@ -245,6 +245,7 @@ index; the files are authoritative.
 - [FR-070](./functional/FR-070-semantic-module-manifest-extension.md) — optional, versioned `semantic` manifest block.
 - [FR-071](./functional/FR-071-typed-properties-mapping.md) — typed Properties table and SysML fence map to one `FieldDecl[]`.
 - [FR-072](./functional/FR-072-invariants-and-operations-mapping.md) — Invariants and Operations map to `ClauseRef[]` and `OperationDecl[]`.
+- [FR-104](./functional/FR-104-relationships-mapping.md) — the Relationships typed table maps to `RelationDecl[]` with a locus per row.
 - [FR-073](./functional/FR-073-data-schema-by-path-and-digest.md) — `data_schema` by emitted-schema path and digest.
 - [FR-074](./functional/FR-074-legacy-authoring-forms.md) — legacy authoring forms at `warning` with a declared migration.
 - [FR-075](./functional/FR-075-semantic-package-exports-and-locks.md) — package exports, imports, locks, and generated coordinates.
