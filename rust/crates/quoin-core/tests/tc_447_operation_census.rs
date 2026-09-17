@@ -69,11 +69,11 @@ fn run(op: &str, stdin: &str) -> Run {
             };
         }
     };
-    let stdout = response
-        .outcome
-        .carries_payload()
-        .then(|| canonical_json(&response.payload).expect("payload canonicalizes"))
-        .unwrap_or_default();
+    let stdout = if response.outcome.carries_payload() {
+        canonical_json(&response.payload).expect("payload canonicalizes")
+    } else {
+        String::new()
+    };
     let stderr = if response.diagnostics.is_empty() {
         String::new()
     } else {

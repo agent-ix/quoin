@@ -107,13 +107,13 @@
       ]
     },
     {
-      "id": "dangling-ensures",
-      "operations": "### archive\n\nReturns: ConfigVersion[1]\nEnsures: missing\n",
+      "id": "dangling-post",
+      "operations": "### archive\n\nReturns: ConfigVersion[1]\nPost: missing\n",
       "diagnostics": [
         {
           "code": "semantic.dangling-clause-ref",
           "severity": "error",
-          "locus": "ensures-line"
+          "locus": "post-line"
         }
       ]
     },

@@ -688,7 +688,7 @@ checksum = "da7c62ceae207dd37ea5b845da6a0696c799f85e97da1ab5b7910be3c1c80223"
 [[package]]
 name = "filament-plan-sync"
 version = "0.1.0"
-source = "git+https://github.com/agent-ix/filament-ide-rs?rev=5cec770999736c2fcc7276b597a3d06b7fc45fba#5cec770999736c2fcc7276b597a3d06b7fc45fba"
+source = "git+https://github.com/agent-ix/filament-ide-rs?rev=81e441be0f1e7f6724810021af3f2dac099f35c9#81e441be0f1e7f6724810021af3f2dac099f35c9"
 dependencies = [
  "quire-rs 0.21.0",
  "serde",

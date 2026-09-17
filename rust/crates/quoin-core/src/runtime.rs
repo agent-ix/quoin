@@ -365,9 +365,11 @@ struct HostSemantic {
     /// `$QUOIN_SEMANTIC_ROOT`: the vendored schema tree inside the npm package.
     ///
     /// Supplied by the caller because only the caller knows where its own
-    /// package was installed. Absent means nothing can be judged, and the
-    /// answer is [`SemanticError::ContractRootUnset`] rather than a clean read
-    /// of an unjudged module.
+    /// package was installed. Absent falls back to the embedded contract:
+    /// [`Self::validators`] materialises `quoin-semantic`'s embedded contract
+    /// (designed in quoin#527) under `default_home`'s cache directory (wired
+    /// into this boundary in quoin#539) — a release executable owns its own
+    /// contract and must not depend on this variable being set.
     semantic_root: Option<PathBuf>,
     /// `$IX_HOME`, used for the self-contained native contract cache.
     default_home: IxHome,
