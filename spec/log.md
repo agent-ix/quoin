@@ -19,7 +19,10 @@ description: "Chronological log of structural changes to this bundle."
   `semantic.relationships-no-block` and stays `not_applicable`. The block
   refusal covers a list or fence after the table. New cases:
   `token-table-other-section`, `token-preamble-table`, `prose-only-section`,
-  `no-relation-vocabulary`, `no-bundle-index`. Adds FR-104-AC-9, AC-10 and
+  `no-relation-vocabulary`, `no-bundle-index`, `no-bundle-index-title-target`,
+  `no-bundle-index-own-package-identity`. With no bundle index only the
+  existence and `allowed_links` checks are skipped; the id-alphabet check
+  stays, and an own-package `ix://` target follows the bare-id rule. Adds FR-104-AC-9, AC-10 and
   TC-1727, TC-1728, delegated to agent-ix/quire-rs#418.
 
 * **2026-09-16** — **FR-104: the `## Relationships` typed table maps to

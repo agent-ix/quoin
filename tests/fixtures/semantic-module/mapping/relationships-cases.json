@@ -995,6 +995,80 @@
           "lossy": false
         }
       }
+    },
+    {
+      "id": "no-bundle-index-title-target",
+      "withoutBundleIndex": true,
+      "relationships": "| Name | Verb | Target | Multiplicity |\n|---|---|---|---|\n| overlay | references | Config Overlay | 1..1 |\n",
+      "diagnostics": [
+        {
+          "code": "semantic.invalid-model-cell",
+          "severity": "error",
+          "locus": "row",
+          "line": 20,
+          "section": "Relationships",
+          "reason": "target-not-id"
+        }
+      ],
+      "exactDiagnostics": 1,
+      "relations": null,
+      "availability": {
+        "relations": {
+          "state": "unavailable",
+          "reason": "entry-errors: lines 20",
+          "lossy": false
+        }
+      }
+    },
+    {
+      "id": "no-bundle-index-own-package-identity",
+      "withoutBundleIndex": true,
+      "relationships": "| Name | Verb | Target | Multiplicity |\n|---|---|---|---|\n| overlay | references | ix://agent-ix/config-service/FR-005 | 1..1 |\n",
+      "diagnostics": [
+        {
+          "code": "semantic.unresolved-target",
+          "severity": "advisory",
+          "locus": "row",
+          "line": 20,
+          "section": "Relationships",
+          "reason": "no-bundle-index",
+          "messageContains": [
+            "ix://agent-ix/config-service/FR-005"
+          ]
+        }
+      ],
+      "exactDiagnostics": 1,
+      "relations": [
+        {
+          "verb": "references",
+          "category": "traceability",
+          "composite": false,
+          "target": "ix://agent-ix/config-service/FR-005",
+          "multiplicity": {
+            "lower": 1,
+            "upper": 1
+          }
+        }
+      ],
+      "relationSources": [
+        {
+          "name": "overlay",
+          "sourceSpan": {
+            "sourceIdentity": "ix://agent-ix/config-service/spec",
+            "path": "case.md",
+            "startLine": 20,
+            "startColumn": 1,
+            "endLine": 20,
+            "endColumn": 70
+          }
+        }
+      ],
+      "availability": {
+        "relations": {
+          "state": "available",
+          "lossy": false
+        }
+      }
     }
   ]
 }
