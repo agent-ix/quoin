@@ -1,6 +1,6 @@
 {
   "semanticCore": "0.2.0",
-  "$comment": "FR-104 cases. A case with `relationships` builds its artifact as artifactHead + that body (body line 1 is artifact line 18); a case with `artifact` uses it verbatim. Every `line` is exact in that artifact. A case `mappings` replaces context.mappings. `relations: null` means no relations and no relationSources are emitted. `messageContains` lists substrings the diagnostic message must contain. `availability: {}` means no availability.relations key. `exactDiagnostics` is the exact number of diagnostics the extraction emits for the case, so a row that fails several checks pins one diagnostic (FR-104 refusal order). The fields are documented in README.md.",
+  "$comment": "FR-104 cases. A case with `relationships` builds its artifact as artifactHead + that body (body line 1 is artifact line 18); a case with `artifact` uses it verbatim. Every `line` is exact in that artifact. A case `mappings` replaces context.mappings. `withoutRelationVocabulary: true` extracts with no edge registry, roles, or allowed_links; `withoutBundleIndex: true` extracts with no bundle artifacts (the package identity stays). `relations: null` means no relations and no relationSources are emitted. `messageContains` lists substrings the diagnostic message must contain. `availability: {}` means no availability.relations key. `exactDiagnostics` is the exact number of diagnostics the extraction emits for the case, so a row that fails several checks pins one diagnostic (FR-104 refusal order). The fields are documented in README.md.",
   "artifactHead": "---\nid: FR-006\ntitle: ConfigVersion\nobject: entity\ntype: FR\n---\n\n# FR-006: ConfigVersion\n\n## Properties\n\n| Field | Type | Multiplicity | Constraints |\n|-------|------|--------------|-------------|\n| id | UUID | 1 | identity |\n\n## Relationships\n\n",
   "context": {
     "sources": {
@@ -734,6 +734,29 @@
       }
     },
     {
+      "id": "list-after-table",
+      "relationships": "| Name | Verb | Target | Multiplicity |\n|---|---|---|---|\n| overlay | references | FR-005 | 1..1 |\n\n- entries: contains FR-007 (0..*)\n",
+      "diagnostics": [
+        {
+          "code": "semantic.feature-not-extractable",
+          "severity": "error",
+          "locus": "list",
+          "line": 22,
+          "section": "Relationships",
+          "reason": "relationships"
+        }
+      ],
+      "exactDiagnostics": 1,
+      "relations": null,
+      "availability": {
+        "relations": {
+          "state": "unavailable",
+          "reason": "entry-errors: lines 22",
+          "lossy": false
+        }
+      }
+    },
+    {
       "id": "section-absent",
       "artifact": "---\nid: FR-006\ntitle: ConfigVersion\nobject: entity\ntype: FR\n---\n\n# FR-006: ConfigVersion\n\n## Properties\n\n| Field | Type | Multiplicity | Constraints |\n|-------|------|--------------|-------------|\n| id | UUID | 1 | identity |\n\n",
       "diagnostics": [],
@@ -832,6 +855,291 @@
       "diagnostics": [],
       "exactDiagnostics": 0,
       "availability": {}
+    },
+    {
+      "id": "token-table-other-section",
+      "artifact": "---\nid: FR-006\ntitle: ConfigVersion\nobject: entity\ntype: FR\n---\n\n# FR-006: ConfigVersion\n\n## Properties\n\n| Field | Type | Multiplicity | Constraints |\n|-------|------|--------------|-------------|\n| id | UUID | 1 | identity |\n\n## Associations\n\n| Name | Verb | Target | Multiplicity |\n|---|---|---|---|\n| overlay | references | FR-005 | 1..1 |\n",
+      "diagnostics": [
+        {
+          "code": "semantic.feature-not-extractable",
+          "severity": "error",
+          "locus": "header",
+          "line": 18,
+          "section": "Associations",
+          "reason": "relationships"
+        }
+      ],
+      "exactDiagnostics": 1,
+      "relations": null,
+      "availability": {
+        "relations": {
+          "state": "unavailable",
+          "reason": "entry-errors: lines 18",
+          "lossy": false
+        }
+      }
+    },
+    {
+      "id": "token-preamble-table",
+      "artifact": "---\nid: FR-006\ntitle: ConfigVersion\nobject: entity\ntype: FR\n---\n\n# FR-006: ConfigVersion\n\n| Name | Verb | Target | Multiplicity |\n|---|---|---|---|\n| overlay | references | FR-005 | 1..1 |\n\n## Properties\n\n| Field | Type | Multiplicity | Constraints |\n|-------|------|--------------|-------------|\n| id | UUID | 1 | identity |\n\n## Relationships\n\n| Name | Verb | Target | Multiplicity |\n|---|---|---|---|\n| entries | contains | FR-007 | 0..* |\n",
+      "diagnostics": [
+        {
+          "code": "semantic.feature-not-extractable",
+          "severity": "error",
+          "locus": "header",
+          "line": 10,
+          "section": "preamble",
+          "reason": "relationships"
+        }
+      ],
+      "exactDiagnostics": 1,
+      "relations": null,
+      "availability": {
+        "relations": {
+          "state": "unavailable",
+          "reason": "entry-errors: lines 10",
+          "lossy": false
+        }
+      }
+    },
+    {
+      "id": "prose-only-section",
+      "relationships": "Overlay and entry relationships are described in the design notes.\n",
+      "diagnostics": [
+        {
+          "code": "semantic.relationships-no-block",
+          "severity": "warning",
+          "locus": "heading",
+          "line": 16,
+          "section": "Relationships",
+          "reason": "no-block"
+        }
+      ],
+      "exactDiagnostics": 1,
+      "relations": null,
+      "availability": {
+        "relations": {
+          "state": "not_applicable",
+          "lossy": false
+        }
+      }
+    },
+    {
+      "id": "no-relation-vocabulary",
+      "withoutRelationVocabulary": true,
+      "relationships": "| Name | Verb | Target | Multiplicity |\n|---|---|---|---|\n| overlay | belongs_to | FR-005 | 1..1 |\n| entries | contains | FR-007 | many |\n",
+      "diagnostics": [
+        {
+          "code": "semantic.relationships-no-vocabulary",
+          "severity": "advisory",
+          "locus": "heading",
+          "line": 16,
+          "section": "Relationships",
+          "reason": "no-relation-vocabulary"
+        }
+      ],
+      "exactDiagnostics": 1,
+      "relations": null,
+      "availability": {
+        "relations": {
+          "state": "unavailable",
+          "reason": "no-relation-vocabulary",
+          "lossy": false
+        }
+      }
+    },
+    {
+      "id": "no-bundle-index",
+      "withoutBundleIndex": true,
+      "relationships": "| Name | Verb | Target | Multiplicity |\n|---|---|---|---|\n| overlay | references | FR-005 | 1..1 |\n| predecessor | references | FR-006 | 0..1 |\n",
+      "diagnostics": [
+        {
+          "code": "semantic.unresolved-target",
+          "severity": "advisory",
+          "locus": "row",
+          "line": 20,
+          "section": "Relationships",
+          "reason": "no-bundle-index",
+          "messageContains": [
+            "FR-005"
+          ]
+        }
+      ],
+      "exactDiagnostics": 1,
+      "relations": [
+        {
+          "verb": "references",
+          "category": "traceability",
+          "composite": false,
+          "target": "ix://agent-ix/config-service/FR-005",
+          "multiplicity": {
+            "lower": 1,
+            "upper": 1
+          }
+        },
+        {
+          "verb": "references",
+          "category": "traceability",
+          "composite": false,
+          "target": "ix://agent-ix/config-service/FR-006",
+          "multiplicity": {
+            "lower": 0,
+            "upper": 1
+          }
+        }
+      ],
+      "relationSources": [
+        {
+          "name": "overlay",
+          "sourceSpan": {
+            "sourceIdentity": "ix://agent-ix/config-service/spec",
+            "path": "case.md",
+            "startLine": 20,
+            "startColumn": 1,
+            "endLine": 20,
+            "endColumn": 41
+          }
+        },
+        {
+          "name": "predecessor",
+          "sourceSpan": {
+            "sourceIdentity": "ix://agent-ix/config-service/spec",
+            "path": "case.md",
+            "startLine": 21,
+            "startColumn": 1,
+            "endLine": 21,
+            "endColumn": 45
+          }
+        }
+      ],
+      "availability": {
+        "relations": {
+          "state": "available",
+          "lossy": false
+        }
+      }
+    },
+    {
+      "id": "no-bundle-index-title-target",
+      "withoutBundleIndex": true,
+      "relationships": "| Name | Verb | Target | Multiplicity |\n|---|---|---|---|\n| overlay | references | Config Overlay | 1..1 |\n",
+      "diagnostics": [
+        {
+          "code": "semantic.invalid-model-cell",
+          "severity": "error",
+          "locus": "row",
+          "line": 20,
+          "section": "Relationships",
+          "reason": "target-not-id"
+        }
+      ],
+      "exactDiagnostics": 1,
+      "relations": null,
+      "availability": {
+        "relations": {
+          "state": "unavailable",
+          "reason": "entry-errors: lines 20",
+          "lossy": false
+        }
+      }
+    },
+    {
+      "id": "no-bundle-index-own-package-identity",
+      "withoutBundleIndex": true,
+      "relationships": "| Name | Verb | Target | Multiplicity |\n|---|---|---|---|\n| overlay | references | ix://agent-ix/config-service/FR-005 | 1..1 |\n",
+      "diagnostics": [
+        {
+          "code": "semantic.unresolved-target",
+          "severity": "advisory",
+          "locus": "row",
+          "line": 20,
+          "section": "Relationships",
+          "reason": "no-bundle-index",
+          "messageContains": [
+            "ix://agent-ix/config-service/FR-005"
+          ]
+        }
+      ],
+      "exactDiagnostics": 1,
+      "relations": [
+        {
+          "verb": "references",
+          "category": "traceability",
+          "composite": false,
+          "target": "ix://agent-ix/config-service/FR-005",
+          "multiplicity": {
+            "lower": 1,
+            "upper": 1
+          }
+        }
+      ],
+      "relationSources": [
+        {
+          "name": "overlay",
+          "sourceSpan": {
+            "sourceIdentity": "ix://agent-ix/config-service/spec",
+            "path": "case.md",
+            "startLine": 20,
+            "startColumn": 1,
+            "endLine": 20,
+            "endColumn": 70
+          }
+        }
+      ],
+      "availability": {
+        "relations": {
+          "state": "available",
+          "lossy": false
+        }
+      }
+    },
+    {
+      "id": "no-relation-vocabulary-second-table",
+      "withoutRelationVocabulary": true,
+      "relationships": "| Name | Verb | Target | Multiplicity |\n|---|---|---|---|\n| overlay | references | FR-005 | 1..1 |\n\n| Name | Verb | Target | Multiplicity |\n|---|---|---|---|\n| entries | contains | FR-007 | 0..* |\n",
+      "diagnostics": [
+        {
+          "code": "semantic.duplicate-section",
+          "severity": "error",
+          "locus": "second-header",
+          "line": 22,
+          "section": "Relationships",
+          "reason": "second-table"
+        }
+      ],
+      "exactDiagnostics": 1,
+      "relations": null,
+      "availability": {
+        "relations": {
+          "state": "unavailable",
+          "reason": "entry-errors: lines 22",
+          "lossy": false
+        }
+      }
+    },
+    {
+      "id": "no-bundle-index-bad-multiplicity",
+      "withoutBundleIndex": true,
+      "relationships": "| Name | Verb | Target | Multiplicity |\n|---|---|---|---|\n| overlay | references | FR-005 | many |\n",
+      "diagnostics": [
+        {
+          "code": "semantic.invalid-model-cell",
+          "severity": "error",
+          "locus": "row",
+          "line": 20,
+          "section": "Relationships",
+          "reason": "multiplicity"
+        }
+      ],
+      "exactDiagnostics": 1,
+      "relations": null,
+      "availability": {
+        "relations": {
+          "state": "unavailable",
+          "reason": "entry-errors: lines 20",
+          "lossy": false
+        }
+      }
     }
   ]
 }

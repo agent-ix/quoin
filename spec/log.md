@@ -8,6 +8,28 @@ description: "Chronological log of structural changes to this bundle."
 
 ## History
 
+* **2026-09-16** — **FR-104 rulings R1..R4** (agent-ix/quoin#554, from the
+  agent-ix/quire-rs#436 review). A surface with no relation vocabulary reports
+  `availability.relations` `unavailable` (`no-relation-vocabulary`) with one
+  heading advisory and no row diagnostics. With no bundle index, a bare target
+  other than the artifact's own `id` lowers under the artifact's package with
+  the advisory `semantic.unresolved-target` (`no-bundle-index`). Under the
+  token, a relationship-shaped table outside `## Relationships` is refused as
+  FR-075 refuses it without the token. A prose-only section warns
+  `semantic.relationships-no-block` and stays `not_applicable`. The block
+  refusal covers a list or fence after the table. New cases:
+  `token-table-other-section`, `token-preamble-table`, `prose-only-section`,
+  `no-relation-vocabulary`, `no-bundle-index`, `no-bundle-index-title-target`,
+  `no-bundle-index-own-package-identity`, `list-after-table`,
+  `no-relation-vocabulary-second-table`, `no-bundle-index-bad-multiplicity`.
+  Shape errors win over a missing vocabulary; the `no-bundle-index` advisory
+  is emitted only for a row that lowers, which is not lossy because its target
+  is a real identity; a prose-only section stays `not_applicable`, departing
+  from FR-070/FR-072 because it declares nothing. With no bundle index only the
+  existence and `allowed_links` checks are skipped; the id-alphabet check
+  stays, and an own-package `ix://` target follows the bare-id rule. Adds FR-104-AC-9, AC-10 and
+  TC-1727, TC-1728, delegated to agent-ix/quire-rs#418.
+
 * **2026-09-16** — **FR-104: the `## Relationships` typed table maps to
   `RelationDecl[]`** (agent-ix/quoin#552, refs agent-ix/quire-rs#418). A
   `Name | Verb | Target | Multiplicity` table, gated by the `relationships`
