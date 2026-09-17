@@ -1,6 +1,6 @@
 {
   "semanticCore": "0.2.0",
-  "$comment": "FR-104 cases. A case with `relationships` builds its artifact as artifactHead + that body (body line 1 is artifact line 18); a case with `artifact` uses it verbatim. Every `line` is exact in that artifact. A case `mappings` replaces context.mappings. `relations: null` means no relations and no relationSources are emitted. `messageContains` lists substrings the diagnostic message must contain. `availability: {}` means no availability.relations key.",
+  "$comment": "FR-104 cases. A case with `relationships` builds its artifact as artifactHead + that body (body line 1 is artifact line 18); a case with `artifact` uses it verbatim. Every `line` is exact in that artifact. A case `mappings` replaces context.mappings. `relations: null` means no relations and no relationSources are emitted. `messageContains` lists substrings the diagnostic message must contain. `availability: {}` means no availability.relations key. `exactDiagnostics` is the exact number of diagnostics the extraction emits for the case, so a row that fails several checks pins one diagnostic (FR-104 refusal order). The fields are documented in README.md.",
   "artifactHead": "---\nid: FR-006\ntitle: ConfigVersion\nobject: entity\ntype: FR\n---\n\n# FR-006: ConfigVersion\n\n## Properties\n\n| Field | Type | Multiplicity | Constraints |\n|-------|------|--------------|-------------|\n| id | UUID | 1 | identity |\n\n## Relationships\n\n",
   "context": {
     "sources": {
@@ -128,6 +128,7 @@
           "reason": "unknown-verb"
         }
       ],
+      "exactDiagnostics": 1,
       "relations": null,
       "availability": {
         "relations": {
@@ -154,6 +155,7 @@
           ]
         }
       ],
+      "exactDiagnostics": 1,
       "relations": null,
       "availability": {
         "relations": {
@@ -176,6 +178,7 @@
           "reason": "verb-not-allowed"
         }
       ],
+      "exactDiagnostics": 1,
       "relations": null,
       "availability": {
         "relations": {
@@ -202,6 +205,7 @@
           ]
         }
       ],
+      "exactDiagnostics": 1,
       "relations": null,
       "availability": {
         "relations": {
@@ -224,6 +228,7 @@
           "reason": "target-not-id"
         }
       ],
+      "exactDiagnostics": 1,
       "relations": null,
       "availability": {
         "relations": {
@@ -246,6 +251,7 @@
           "reason": "target-not-id"
         }
       ],
+      "exactDiagnostics": 1,
       "relations": null,
       "availability": {
         "relations": {
@@ -268,6 +274,7 @@
           "reason": "target-not-id"
         }
       ],
+      "exactDiagnostics": 1,
       "relations": null,
       "availability": {
         "relations": {
@@ -290,6 +297,7 @@
           "reason": "target-not-id"
         }
       ],
+      "exactDiagnostics": 1,
       "relations": null,
       "availability": {
         "relations": {
@@ -312,6 +320,7 @@
           "reason": "target-not-allowed"
         }
       ],
+      "exactDiagnostics": 1,
       "relations": null,
       "availability": {
         "relations": {
@@ -334,6 +343,7 @@
           "reason": "target-not-allowed"
         }
       ],
+      "exactDiagnostics": 1,
       "relations": null,
       "availability": {
         "relations": {
@@ -347,6 +357,7 @@
       "id": "target-qualified-import",
       "relationships": "| Name | Verb | Target | Multiplicity |\n|---|---|---|---|\n| requirement | references | ix://agent-ix/spec-artifacts-iso/FR-001 | 0..* |\n",
       "diagnostics": [],
+      "exactDiagnostics": 0,
       "relations": [
         {
           "verb": "references",
@@ -391,6 +402,7 @@
           "reason": "multiplicity"
         }
       ],
+      "exactDiagnostics": 1,
       "relations": null,
       "availability": {
         "relations": {
@@ -413,6 +425,7 @@
           "reason": "multiplicity"
         }
       ],
+      "exactDiagnostics": 1,
       "relations": null,
       "availability": {
         "relations": {
@@ -435,6 +448,7 @@
           "reason": "multiplicity"
         }
       ],
+      "exactDiagnostics": 1,
       "relations": null,
       "availability": {
         "relations": {
@@ -457,6 +471,7 @@
           "reason": "name-not-identifier"
         }
       ],
+      "exactDiagnostics": 1,
       "relations": null,
       "availability": {
         "relations": {
@@ -479,6 +494,7 @@
           "reason": "duplicate-name"
         }
       ],
+      "exactDiagnostics": 1,
       "relations": null,
       "availability": {
         "relations": {
@@ -501,6 +517,7 @@
           "reason": "declared-in-frontmatter"
         }
       ],
+      "exactDiagnostics": 1,
       "relations": null,
       "availability": {
         "relations": {
@@ -523,6 +540,7 @@
           "reason": "multiplicity"
         }
       ],
+      "exactDiagnostics": 1,
       "relations": null,
       "availability": {
         "relations": {
@@ -553,11 +571,35 @@
           "reason": "multiplicity"
         }
       ],
+      "exactDiagnostics": 2,
       "relations": null,
       "availability": {
         "relations": {
           "state": "unavailable",
           "reason": "entry-errors: lines 20, 21",
+          "lossy": false
+        }
+      }
+    },
+    {
+      "id": "first-failing-check-only",
+      "relationships": "| Name | Verb | Target | Multiplicity |\n|---|---|---|---|\n| owner | composed_by | ConfigOverlay | one |\n",
+      "diagnostics": [
+        {
+          "code": "semantic.invalid-model-cell",
+          "severity": "error",
+          "locus": "row",
+          "line": 20,
+          "section": "Relationships",
+          "reason": "inverse-verb"
+        }
+      ],
+      "exactDiagnostics": 1,
+      "relations": null,
+      "availability": {
+        "relations": {
+          "state": "unavailable",
+          "reason": "entry-errors: lines 20",
           "lossy": false
         }
       }
@@ -575,6 +617,7 @@
           "reason": "relationships"
         }
       ],
+      "exactDiagnostics": 1,
       "relations": null,
       "availability": {
         "relations": {
@@ -597,6 +640,7 @@
           "reason": "relationships"
         }
       ],
+      "exactDiagnostics": 1,
       "relations": null,
       "availability": {
         "relations": {
@@ -610,6 +654,7 @@
       "id": "header-only",
       "relationships": "| Name | Verb | Target | Multiplicity |\n|---|---|---|---|\n",
       "diagnostics": [],
+      "exactDiagnostics": 0,
       "relations": [],
       "relationSources": [],
       "availability": {
@@ -632,6 +677,7 @@
           "reason": "relationships"
         }
       ],
+      "exactDiagnostics": 1,
       "relations": null,
       "availability": {
         "relations": {
@@ -654,6 +700,7 @@
           "reason": "second-table"
         }
       ],
+      "exactDiagnostics": 1,
       "relations": null,
       "availability": {
         "relations": {
@@ -676,6 +723,7 @@
           "reason": "second-section"
         }
       ],
+      "exactDiagnostics": 1,
       "relations": null,
       "availability": {
         "relations": {
@@ -689,6 +737,7 @@
       "id": "section-absent",
       "artifact": "---\nid: FR-006\ntitle: ConfigVersion\nobject: entity\ntype: FR\n---\n\n# FR-006: ConfigVersion\n\n## Properties\n\n| Field | Type | Multiplicity | Constraints |\n|-------|------|--------------|-------------|\n| id | UUID | 1 | identity |\n\n",
       "diagnostics": [],
+      "exactDiagnostics": 0,
       "availability": {
         "relations": {
           "state": "not_applicable",
@@ -712,6 +761,7 @@
           "reason": "relationships"
         }
       ],
+      "exactDiagnostics": 1,
       "relations": null,
       "availability": {
         "relations": {
@@ -737,6 +787,7 @@
           "reason": "relationships"
         }
       ],
+      "exactDiagnostics": 1,
       "relations": null,
       "availability": {
         "relations": {
@@ -762,6 +813,7 @@
           "reason": "relationships"
         }
       ],
+      "exactDiagnostics": 1,
       "relations": null,
       "availability": {
         "relations": {
@@ -778,6 +830,7 @@
       ],
       "relationships": "- `overlay`: belongs_to → ConfigOverlay (FR-005)\n",
       "diagnostics": [],
+      "exactDiagnostics": 0,
       "availability": {}
     }
   ]

@@ -76,7 +76,7 @@ lowering frontmatter edges (`agent-ix/filament-core-data#156`).
 - The table SHALL have exactly the header `Name | Verb | Target | Multiplicity`, in that order.
 - If the table under `## Relationships` omits, reorders, or adds a column, then Quire SHALL emit the error `semantic.feature-not-extractable` at the header line with `reason` `relationships`.
 - If the section holds a bullet list, a fence, or a diagram in place of the table, then Quire SHALL emit the error `semantic.feature-not-extractable` at the block's first line with `reason` `relationships`.
-- Bullet-form and diagram-form `## Relationships` sections in the corpus are out of scope for this requirement; converting them is owned by the corpus tickets `agent-ix/catalog-service#6`, `agent-ix/config-overlay#4`, and `agent-ix/config-service#5`.
+- Bullet-form and diagram-form `## Relationships` sections in the corpus are out of scope for this requirement. Converting them is owned by the corpus tickets, whose bodies list the artifacts: `agent-ix/config-service#5` (FR-005, FR-006, bullet lists), `agent-ix/catalog-service#6` (FR-017..FR-025, mermaid diagrams), and `agent-ix/config-overlay#4` (no `## Relationships` section).
 - If the section holds a second table, then Quire SHALL emit the error `semantic.duplicate-section` at the second header line with `reason` `second-table`.
 - If the artifact holds a second `## Relationships` section, then Quire SHALL emit the error `semantic.duplicate-section` at the second heading line with `reason` `second-section`.
 
@@ -93,11 +93,14 @@ lowering frontmatter edges (`agent-ix/filament-core-data#156`).
 - An `ix://` target whose `<org>/<repo>` is not the bundle's package SHALL name a package in `semantic.imports`.
 - A bundle target SHALL satisfy the verb's `allowed_links` entry under quire-rs FR-040 `target_satisfies`: the token is `*`, the target's object type, or a role of that object type.
 - Quire SHALL skip the `allowed_links` target check for a target in an imported package, as quire-rs FR-040 Tier 2 does.
+- A bundle target whose artifact declares no object type SHALL satisfy only the `allowed_links` token `*`. This departs from quire-rs FR-040 Tier 2, which skips the check for an untyped target: a domain relationship names a declaration, so an untyped target (a behavioural requirement, for example) is refused rather than passed.
 - A row MAY target its own artifact.
 - The `Multiplicity` cell SHALL use the FR-071 multiplicity grammar (`1`, `0..1`, `1..1`, `0..*`, `1..*`, `n..m` with `m >= n`, and the `ordered`/`unique` flags only on a collection) and map to `RelationDecl.multiplicity`, with an absent upper bound for `*`.
 
 ### Refusals
 
+- Quire SHALL apply the row checks in this order: `Name` (`name-not-identifier`, then `duplicate-name`), `inverse-verb`, `generalization`, `unknown-verb`, `verb-not-allowed`, the target checks (`target-not-id`, then `target-not-allowed`), `multiplicity`, and `declared-in-frontmatter`.
+- Quire SHALL report only the first failing check for a row, so each failing row yields exactly one diagnostic.
 - If a row's `Name` is not an `Identifier`, then Quire SHALL emit `semantic.invalid-model-cell` at the row with `reason` `name-not-identifier`.
 - If a second row repeats a `Name`, then Quire SHALL emit `semantic.duplicate-model-entry` at the second row with `reason` `duplicate-name`.
 - If a row's `Verb` is registered only as another entry's `inverse` label, then Quire SHALL emit `semantic.invalid-model-cell` at the row with `reason` `inverse-verb`.
@@ -112,7 +115,7 @@ lowering frontmatter edges (`agent-ix/filament-core-data#156`).
 
 ### Diagnostics and availability
 
-- Every diagnostic this requirement emits (`semantic.feature-not-extractable`, `semantic.invalid-model-cell`, `semantic.duplicate-model-entry`, `semantic.duplicate-section`) SHALL carry `section` and `reason`.
+- Every diagnostic this requirement emits (`semantic.feature-not-extractable`, `semantic.invalid-model-cell`, `semantic.duplicate-model-entry`, `semantic.duplicate-section`) SHALL carry `section` and `reason`. quire-rs FR-075 defines that shape for `semantic.feature-not-extractable`; this requirement extends it to the other three codes.
 - `section` SHALL be `Relationships` for a diagnostic inside a `## Relationships` section, `preamble` for the preamble, and the heading text of any other section (quire-rs FR-075).
 - Every diagnostic message SHALL name the artifact path, the section, and the feature `relationships` (quire-rs FR-075).
 - Every `sourceSpan` SHALL cover the declaring line: `startLine` and `endLine` that line, `startColumn` 1, and `endColumn` one past the line's byte length.
@@ -120,7 +123,7 @@ lowering frontmatter edges (`agent-ix/filament-core-data#156`).
 - When `semantic.mappings` names `relationships` and the table has a header and no rows, Quire SHALL report `availability.relations` `available`, not lossy, with empty `relations` and `relationSources` (quire-rs FR-070 empty typed table).
 - When every row maps without error, Quire SHALL report `availability.relations` `available` and not lossy.
 - If any row, header, block, or section of the relationships feature carries an error, then Quire SHALL report `availability.relations` `unavailable` with reason `entry-errors: lines <lines>`, with no `relations` and no `relationSources`.
-- `<lines>` SHALL be the error lines, sorted ascending, deduplicated, and joined with `, ` (quire-rs FR-075).
+- `<lines>` SHALL be the error lines, sorted ascending, deduplicated, and joined with `, ` (a comma and one space), for example `entry-errors: lines 20, 21`.
 
 ## Constraints
 
@@ -140,7 +143,7 @@ lowering frontmatter edges (`agent-ix/filament-core-data#156`).
 | FR-104-AC-5 | `name-not-identifier` has `reason` `name-not-identifier`; `duplicate-name` has `semantic.duplicate-model-entry` `reason` `duplicate-name` at line 21; `declared-in-frontmatter` has `semantic.duplicate-model-entry` `reason` `declared-in-frontmatter` at the table row. | Test |
 | FR-104-AC-6 | `column-missing`, `column-extra`, and `bullet-list` have `semantic.feature-not-extractable` with `section` `Relationships` and `reason` `relationships`; `second-table` has `semantic.duplicate-section` `reason` `second-table` and `second-section` has `reason` `second-section`, each with `availability.relations` `unavailable`. | Test |
 | FR-104-AC-7 | Under `mappings: [typed-table]`, `mapping-not-declared` has `semantic.feature-not-extractable` at the header with `section` `Relationships`, `subset-header-unowned-section` (`Name \| Target` under `## Associations`) has it with `section` `Associations`, `preamble-table` has it with `section` `preamble`, and `prose-without-mapping` has no diagnostic and no `availability.relations`. | Test |
-| FR-104-AC-8 | `good-and-bad-rows` has no `relations` and `availability.relations` `unavailable` with reason `entry-errors: lines 21`; `two-error-lines` has reason `entry-errors: lines 20, 21`; `header-only` is `available` with empty `relations`; `section-absent` is `not_applicable`. | Test |
+| FR-104-AC-8 | `good-and-bad-rows` has no `relations` and `availability.relations` `unavailable` with reason `entry-errors: lines 21`; `two-error-lines` has reason `entry-errors: lines 20, 21`; `header-only` is `available` with empty `relations`; `section-absent` is `not_applicable`; `first-failing-check-only` (a row failing the verb, target, and multiplicity checks) has exactly one diagnostic, `inverse-verb`. | Test |
 
 ## Dependencies
 

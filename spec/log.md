@@ -28,6 +28,12 @@ description: "Chronological log of structural changes to this bundle."
   the fixture context pins spec-artifacts-iso `8a7d9ef` and
   spec-objects-business `f7fdfda`.
 
+  Re-review: the refusal order is stated with one diagnostic per row
+  (`exactDiagnostics` in the cases); untyped bundle targets satisfy only `*`,
+  departing from FR-040 Tier 2; FR-104 extends the FR-075 section/reason shape
+  to the other three codes; the corpus ticket bodies list their
+  `## Relationships` artifacts.
+
 * **2026-09-12** — **NFR-021 and NFR-022 withdrawn; NFR-023 retained with a
   named population** (agent-ix/quoin#388, under the Rust burn-down #373). All
   three belonged to the closed gate #291 alongside FR-084..FR-092 and US-022,
