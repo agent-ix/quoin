@@ -128,6 +128,7 @@ fn is_root_help_request(arguments: &[OsString]) -> bool {
 
 fn run(args: impl IntoIterator<Item = OsString>) -> Result<Response, ShellError> {
     let args = args.into_iter().collect::<Vec<_>>();
+    let change_assurance = routed_family(&args).as_deref() == Some("change-assurance");
     let matches = command().try_get_matches_from(&args).map_err(|error| {
         let rendered_error = error.to_string();
         let is_help = matches!(
@@ -148,6 +149,12 @@ fn run(args: impl IntoIterator<Item = OsString>) -> Result<Response, ShellError>
                 0
             } else if invalid_subcommand || missing_required {
                 EXIT_UNKNOWN_COMMAND
+            } else if change_assurance {
+                // A malformed flag is the "usage error" arm of FR-068's
+                // grammar, and it is refused here rather than at dispatch.
+                // Without this the surface answered 2 for everything the
+                // engine refused and 3 for everything the parser did.
+                EXIT_DOCUMENT_REFUSED
             } else {
                 EXIT_INVALID
             },
@@ -159,12 +166,30 @@ fn run(args: impl IntoIterator<Item = OsString>) -> Result<Response, ShellError>
         }
     })?;
     let invocation = invocation::Invocation::from_matches(&matches);
-    let failure = if matches.subcommand_name() == Some("change-assurance") {
+    let failure = if change_assurance {
         ShellError::document_refused
     } else {
         ShellError::command
     };
     invocation::with_current(invocation, || dispatch(&matches)).map_err(failure)
+}
+
+/// The command family an invocation names, answered even when the invocation
+/// does not parse.
+///
+/// FR-068's 0/1/2 grammar is a property of the change-assurance surface, so
+/// which family was named has to be known before the parser's own refusal is
+/// given a status. Clap's error-tolerant pass answers that without a second,
+/// hand-rolled argv grammar: a scan for the first non-flag token disagrees
+/// with the real parser about global flags and their values, and would read
+/// `--config-root change-assurance` as the change-assurance surface.
+fn routed_family(args: &[OsString]) -> Option<String> {
+    command()
+        .ignore_errors(true)
+        .try_get_matches_from(args)
+        .ok()?
+        .subcommand_name()
+        .map(str::to_owned)
 }
 
 /// Preserve oclif's colon-separated command identity for an unresolved path.

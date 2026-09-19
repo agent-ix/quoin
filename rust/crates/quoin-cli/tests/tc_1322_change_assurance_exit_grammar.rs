@@ -14,7 +14,6 @@
 
 #![allow(
     clippy::expect_used,
-    clippy::unwrap_used,
     clippy::indexing_slicing,
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
@@ -96,6 +95,7 @@ fn text(bytes: &[u8]) -> String {
 /// result.
 ///
 /// Trace: FR-068-AC-6, FR-068-AC-7, TC-1322, TC-1323
+/// Provenance: quoin#543
 #[test]
 fn tc_1322_a_sealed_valid_receipt_exits_zero() {
     let output = verify(&receipt());
@@ -114,6 +114,7 @@ fn tc_1322_a_sealed_valid_receipt_exits_zero() {
 /// `incomplete`. The document is intact; the verdict it carries is not a pass.
 ///
 /// Trace: FR-068-AC-6, TC-1322
+/// Provenance: quoin#543
 #[test]
 fn tc_1322_an_intact_receipt_with_a_failing_outcome_exits_one() {
     for (outcome, check, reason) in [
@@ -149,6 +150,7 @@ fn tc_1322_an_intact_receipt_with_a_failing_outcome_exits_one() {
 /// grammar's exit 1 (quoin#543).
 ///
 /// Trace: FR-068-AC-6, FR-068-AC-7, TC-1322, TC-1323
+/// Provenance: quoin#543
 #[test]
 fn tc_1322_an_edited_receipt_exits_two_on_both_refusal_paths() {
     let mut precedence = receipt();
@@ -180,6 +182,7 @@ fn tc_1322_an_edited_receipt_exits_two_on_both_refusal_paths() {
 /// caller supplied, not command failures: both exit 2.
 ///
 /// Trace: FR-068-AC-6, FR-068-AC-8, TC-1322, TC-1324
+/// Provenance: quoin#543
 #[test]
 fn tc_1324_unparseable_input_and_an_unknown_schema_name_exit_two() {
     let output = verify(&serde_json::json!("not a receipt"));
@@ -195,4 +198,41 @@ fn tc_1324_unparseable_input_and_an_unknown_schema_name_exit_two() {
         .output()
         .expect("the native quoin binary runs");
     assert_eq!(output.status.code(), Some(2));
+}
+
+/// A usage error on this surface exits 2 as well. FR-068 groups usage with
+/// parse and integrity errors, but the parser refuses an invocation before
+/// dispatch ever sees which family it named, so this arm reached the root
+/// shell's exit 3 until quoin#543.
+///
+/// Trace: FR-068-AC-6, TC-1322
+/// Provenance: quoin#543
+#[test]
+fn tc_1322_a_usage_error_on_the_surface_exits_two() {
+    for argv in [
+        vec![
+            "change-assurance",
+            "verify-receipt",
+            "--input",
+            "-",
+            "--bogus",
+        ],
+        vec!["change-assurance", "verify-receipt", "--input"],
+        vec!["change-assurance", "verify-receipt"],
+        vec!["change-assurance", "not-a-subcommand"],
+    ] {
+        let output = Command::new(env!("CARGO_BIN_EXE_quoin"))
+            .args(&argv)
+            .output()
+            .expect("the native quoin binary runs");
+        assert_eq!(output.status.code(), Some(2), "{argv:?}");
+    }
+
+    // The same malformed flag on another surface keeps the root shell's exit
+    // 3: FR-068's grammar is this family's, not a new global meaning for 2.
+    let output = Command::new(env!("CARGO_BIN_EXE_quoin"))
+        .args(["catalog", "list", "--bogus"])
+        .output()
+        .expect("the native quoin binary runs");
+    assert_eq!(output.status.code(), Some(3));
 }
