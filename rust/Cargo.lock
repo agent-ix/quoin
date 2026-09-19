@@ -3057,6 +3057,7 @@ dependencies = [
  "quoin-core",
  "quoin-delivery",
  "quoin-graph-analysis",
+ "quoin-store",
  "quoin-validators",
  "quoin-yaml",
  "semver",

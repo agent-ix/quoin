@@ -44,6 +44,11 @@ const EXIT_INVALID: u8 = Outcome::Invalid.code();
 const EXIT_INTERNAL: u8 = Outcome::Internal.code();
 const EXIT_UNKNOWN_COMMAND: u8 = Outcome::Refused.code();
 const EXIT_COMMAND_FAILURE: u8 = 1;
+/// FR-068 reserves exit 1 on the change-assurance surface for a receipt that
+/// verified `invalid` or `incomplete`. A document the surface refuses — a
+/// usage, parse, or integrity error — exits 2, so a consumer can tell a
+/// refused document from a verified-and-rejected one.
+const EXIT_DOCUMENT_REFUSED: u8 = Outcome::Refused.code();
 const GRAPH_DESCRIPTION: &str = "Analyze an existing, accepted Quire assurance export together with retained\nQuoin evidence and an existing FR-032 audit. These commands run no producer,\nsuite, Quire, Git, or network operation and write nothing.\n\nSubcommands:\n  quoin graph fan-out\n  quoin graph change-impact\n  quoin graph churn";
 
 #[derive(Debug)]
@@ -67,6 +72,19 @@ impl ShellError {
         Self {
             message: format!("    Error: {}", message.into()),
             exit: EXIT_COMMAND_FAILURE,
+            stream: ShellOutput::Stderr,
+        }
+    }
+
+    /// A change-assurance document the surface refused (FR-068).
+    ///
+    /// Identical to [`Self::command`] apart from the status: the message text
+    /// is the refusal the engine stated, and only the exit number carries the
+    /// distinction between a refused document and a rejected receipt.
+    fn document_refused(message: impl Into<String>) -> Self {
+        Self {
+            message: format!("    Error: {}", message.into()),
+            exit: EXIT_DOCUMENT_REFUSED,
             stream: ShellOutput::Stderr,
         }
     }
@@ -110,6 +128,7 @@ fn is_root_help_request(arguments: &[OsString]) -> bool {
 
 fn run(args: impl IntoIterator<Item = OsString>) -> Result<Response, ShellError> {
     let args = args.into_iter().collect::<Vec<_>>();
+    let change_assurance = routed_family(&args).as_deref() == Some("change-assurance");
     let matches = command().try_get_matches_from(&args).map_err(|error| {
         let rendered_error = error.to_string();
         let is_help = matches!(
@@ -130,6 +149,12 @@ fn run(args: impl IntoIterator<Item = OsString>) -> Result<Response, ShellError>
                 0
             } else if invalid_subcommand || missing_required {
                 EXIT_UNKNOWN_COMMAND
+            } else if change_assurance {
+                // A malformed flag is the "usage error" arm of FR-068's
+                // grammar, and it is refused here rather than at dispatch.
+                // Without this the surface answered 2 for everything the
+                // engine refused and 3 for everything the parser did.
+                EXIT_DOCUMENT_REFUSED
             } else {
                 EXIT_INVALID
             },
@@ -141,7 +166,30 @@ fn run(args: impl IntoIterator<Item = OsString>) -> Result<Response, ShellError>
         }
     })?;
     let invocation = invocation::Invocation::from_matches(&matches);
-    invocation::with_current(invocation, || dispatch(&matches)).map_err(ShellError::command)
+    let failure = if change_assurance {
+        ShellError::document_refused
+    } else {
+        ShellError::command
+    };
+    invocation::with_current(invocation, || dispatch(&matches)).map_err(failure)
+}
+
+/// The command family an invocation names, answered even when the invocation
+/// does not parse.
+///
+/// FR-068's 0/1/2 grammar is a property of the change-assurance surface, so
+/// which family was named has to be known before the parser's own refusal is
+/// given a status. Clap's error-tolerant pass answers that without a second,
+/// hand-rolled argv grammar: a scan for the first non-flag token disagrees
+/// with the real parser about global flags and their values, and would read
+/// `--config-root change-assurance` as the change-assurance surface.
+fn routed_family(args: &[OsString]) -> Option<String> {
+    command()
+        .ignore_errors(true)
+        .try_get_matches_from(args)
+        .ok()?
+        .subcommand_name()
+        .map(str::to_owned)
 }
 
 /// Preserve oclif's colon-separated command identity for an unresolved path.

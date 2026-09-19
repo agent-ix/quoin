@@ -14,11 +14,12 @@
 //!
 //! It is also where the criteria that `tests/change-assurance-command.test.ts`
 //! carried before quoin#457 deleted it are restated against the engine. The
-//! criteria that remain properties of the COMMAND rather than of the engine —
-//! the 0/1/2 exit grammar, the packaged schema assets, and the static
-//! boundaries over `src/commands/change-assurance/` — are restated in
-//! `tests/change-assurance-command-surface.test.ts`, which is the side that
-//! still owns them.
+//! criteria that remain properties of the COMMAND rather than of the engine
+//! were restated in `tests/change-assurance-command-surface.test.ts` until the
+//! native cutover deleted it. The 0/1/2 exit grammar moved to `quoin-cli`'s
+//! `tc_1322_change_assurance_exit_grammar.rs` at quoin#543; the packaged
+//! schema assets and the static boundaries have no native replacement and the
+//! matrix records them unbacked.
 //!
 //! Nothing here recomputes what the Rust decided and compares it with itself.
 //! `tests/fixtures/change-assurance-oracle.json` is an extract of the capture

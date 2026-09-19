@@ -7,7 +7,7 @@ evidence:
   - kind: test_case
     ref: rust/crates/quoin-core/tests/tc_457_change_assurance_boundary.rs
   - kind: test_case
-    ref: tests/change-assurance-command-surface.test.ts
+    ref: rust/crates/quoin-cli/tests/tc_1322_change_assurance_exit_grammar.rs
 relationships:
   - target: "ix://agent-ix/quoin/StR-001"
     type: "satisfies"
