@@ -8,6 +8,32 @@ description: "Chronological log of structural changes to this bundle."
 
 ## History
 
+* **2026-09-18** — **FR-068: the change-assurance exit grammar, restored**
+  (agent-ix/quoin#543). Every refusal on the `quoin change-assurance` surface
+  exited **1** rather than the documented **2** after the TypeScript-to-Rust
+  port (#455, #457, #524): `core_runtime::invoke` flattens a typed `CoreError`
+  into a `String`, and `main.rs` gave every command failure the shell's generic
+  `EXIT_COMMAND_FAILURE`. Nothing was ever accepted — a tampered receipt was
+  refused correctly in both paths — but "the document is refused" and "the
+  receipt verified `invalid`" became indistinguishable by status, which is the
+  one thing FR-068's grammar exists to separate. `agent-ix/tl-mltl` and
+  `agent-ix/quire-contract-runtime#32` both assert exit 2 and both went red.
+  The change-assurance route now maps a command failure to
+  `EXIT_DOCUMENT_REFUSED`; the message text is unchanged, and a receipt that
+  verified `invalid` or `incomplete` still returns through `Outcome::Partial`
+  at 1. No requirement changed: the behaviour is what FR-068 already states.
+
+  **The regression shipped because its test was deleted, not because it was
+  never written.** `tests/change-assurance-command-surface.test.ts` carried
+  TC-1322, TC-1324, TC-1326 and TC-1327 and was removed in the cutover with no
+  native replacement, while the matrix kept reading ✅ against a file that no
+  longer existed. `quoin-cli`'s `tc_1322_change_assurance_exit_grammar.rs`
+  restores TC-1322 and the refusal half of TC-1324 against the real binary,
+  covering 0, 1 and both refusal paths at 2 — the precedence disagreement and
+  the pure digest mismatch, which a fix to either one alone would have left
+  half-wrong. TC-1326, TC-1327 and the byte-identical half of TC-1324 are now
+  recorded as what they are: unbacked.
+
 * **2026-09-16** — **FR-104: mixed-row advisories and `no-bundle-package`**
   (agent-ix/quoin#556, from quire-rs FR-076). If any row errs, no row carries
   the `no-bundle-index` advisory (case `no-bundle-index-mixed-rows`). A surface
