@@ -1,0 +1,22 @@
+name: CLA Assistant Lite
+
+# Enforces the Agent IX CLA (see CLA.md) on external pull requests. The actual
+# logic lives once in agent-ix/.github so it can be fixed in one place; this
+# file only wires the triggers and hands over the signature-store token.
+on:
+  pull_request_target:
+    types: [opened, synchronize, closed]
+  issue_comment:
+    types: [created]
+
+permissions:
+  actions: write
+  pull-requests: write
+  statuses: write
+  contents: read
+
+jobs:
+  cla:
+    uses: agent-ix/.github/.github/workflows/cla-assistant-lite.yml@main
+    secrets:
+      SIGNATURE_STORE_TOKEN: ${{ secrets.CLA_SIGNATURE_STORE_TOKEN }}
