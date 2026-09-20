@@ -31,3 +31,8 @@ quoin-semantic-module-*/
 # here, which is how a measurement gets attributed to a build that is four
 # days old (see the bench-tier1 note in the Makefile).
 rust/target/
+
+target/
+*-target/
+target-*/
+.worktrees/
