@@ -164,6 +164,7 @@ fn ensure_defaults(home: &Path) -> Run {
 /// Trace: FR-070-AC-1, NFR-017-AC-1
 /// Provenance: quoin#446
 #[test]
+#[ignore = "PLAT-887: blocked on filament-core-data publishing schema/semantic/v1/module-manifest.schema.json"]
 fn tc_446_040_a_clean_home_reconciles_without_complaint() {
     // The positive control. Without it, the refusal below would be consistent
     // with `ensure_defaults` refusing every home it is ever shown.
@@ -177,6 +178,7 @@ fn tc_446_040_a_clean_home_reconciles_without_complaint() {
 /// Trace: FR-070-AC-1, NFR-017-AC-1
 /// Provenance: quoin#446
 #[test]
+#[ignore = "PLAT-887: blocked on filament-core-data publishing schema/semantic/v1/module-manifest.schema.json"]
 fn tc_446_041_a_tampered_installed_module_is_refused_on_the_reconcile_path() {
     let fixture = install_fixture();
     let manifest = fs::read_to_string(&fixture.manifest).unwrap();
@@ -211,6 +213,7 @@ fn tc_446_041_a_tampered_installed_module_is_refused_on_the_reconcile_path() {
 /// Trace: FR-070-AC-1, NFR-017-AC-1
 /// Provenance: quoin#446
 #[test]
+#[ignore = "PLAT-887: blocked on filament-core-data publishing schema/semantic/v1/module-manifest.schema.json"]
 fn tc_446_042_an_unavailable_contract_refuses_rather_than_reporting_clean() {
     // Unjudged is not clean. `ContractGate` refuses an install it cannot judge;
     // the re-validation refuses for the same reason, under its own code, so a

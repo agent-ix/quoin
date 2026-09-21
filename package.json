@@ -2,9 +2,11 @@
   "name": "@agent-ix/quoin-workflow-assets",
   "version": "0.0.0",
   "private": true,
-  "description": "Pulls in the ix-flow specification workflows quoin-cli launches (`quoin review`, `quoin matrix`, `quoin to-plan`), so the workflow definitions and their compiled invariants live in node_modules rather than as bytes vendored into this repository (PLAT-157).",
+  "description": "Pulls in published packages quoin depends on instead of vendoring: the ix-flow specification workflows quoin-cli launches (`quoin review`, `quoin matrix`, `quoin to-plan`, PLAT-157), and the semantic-core JSON Schema bundle quoin-semantic embeds into native releases (PLAT-887).",
   "license": "AGPL-3.0-or-later",
   "dependencies": {
-    "@agent-ix/ix-spec-workflows": ">=0.1.3"
+    "@agent-ix/filament-core-data": "0.1.0",
+    "@agent-ix/ix-spec-workflows": ">=0.1.3",
+    "@agent-ix/semantic-core": "0.1.0"
   }
 }

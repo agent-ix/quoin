@@ -42,8 +42,17 @@ const SWEEP_SOURCE: &str = include_str!("../src/sweep.rs");
 /// declares, and the edit that spoils the report it ships.
 type Case = (&'static str, Option<&'static str>, Box<dyn Fn(&mut Value)>);
 
-/// The corpus the deleted TypeScript swept: four mapping fixtures and the
-/// pinned FR-006 copy, under one root.
+/// The corpus the deleted TypeScript swept: five mapping fixtures, all
+/// authored by quoin, under one root.
+///
+/// `legacy-free-column-table.md` used to be a pinned copy of
+/// `agent-ix/config-service`'s real `FR-006-config-version-entity.md`, first
+/// as a byte copy with recorded provenance, then as a git submodule. Neither
+/// survived PLAT-887's de-vendoring: config-service publishes no artifact a
+/// build can depend on, so the only compliant answer was an authored fixture
+/// quoin owns outright. It keeps the same shape (a `free-column-table` legacy
+/// properties table, header at line 17) the classifier needs to exercise,
+/// invented rather than copied.
 fn corpus(scratch: &Scratch) -> PathBuf {
     let root = scratch.path().join("corpus");
     let dir = root.join("spec").join("functional");
@@ -53,20 +62,10 @@ fn corpus(scratch: &Scratch) -> PathBuf {
         "legacy-bullets.md",
         "legacy-mixed.md",
         "config-version.fence.md",
+        "legacy-free-column-table.md",
     ] {
         fs::copy(mapping_dir().join(name), dir.join(name)).unwrap();
     }
-    fs::copy(
-        mapping_dir()
-            .join("..")
-            .join("corpus")
-            .join("config-service")
-            .join("spec")
-            .join("functional")
-            .join("FR-006-config-version-entity.md"),
-        dir.join("FR-006.md"),
-    )
-    .unwrap();
     root
 }
 
@@ -263,24 +262,10 @@ fn tc_452_654_the_classifier_answers_every_recorded_legacy_expectation() {
             None => assert_eq!(reported, Value::Null, "{file} is an authored form"),
         }
     }
-
-    // FR-006 is read from the `agent-ix/config-service` git submodule
-    // (`tests/fixtures/semantic-module/corpus/config-service`), not a copy: a
-    // legacy classification over a document the test wrote would prove
-    // nothing about the corpus this contract is about, and the submodule's
-    // pinned commit — not a `PROVENANCE.json` beside a copy — is the record of
-    // where it came from (`git submodule status` at that path).
-    let corpus_dir = mapping_dir()
-        .join("..")
-        .join("corpus")
-        .join("config-service")
-        .join("spec")
-        .join("functional");
-    let pinned = fs::read_to_string(corpus_dir.join("FR-006-config-version-entity.md")).unwrap();
-    assert!(
-        pinned.contains("| Column | Type | Constraints |"),
-        "{pinned:.0}"
-    );
+    // `legacy-free-column-table.md` (PLAT-887: replaces what used to be a
+    // pinned copy, then a submodule, of config-service's real FR-006 spec) is
+    // one of `cases` above like any other fixture; there is nothing left to
+    // assert about it beyond that loop.
 }
 
 /// Build a module declaring `legacy_forms: error`, with `report` written to
@@ -337,6 +322,7 @@ fn report(root: &Path) -> Value {
 /// Trace: FR-074-AC-3
 /// Provenance: agent-ix/quoin#452
 #[test]
+#[ignore = "PLAT-887: blocked on filament-core-data publishing schema/semantic/v1/module-manifest.schema.json"]
 fn tc_452_655_legacy_forms_error_needs_a_matching_schema_valid_sweep_report() {
     let validators = validators();
     let scratch = Scratch::new();

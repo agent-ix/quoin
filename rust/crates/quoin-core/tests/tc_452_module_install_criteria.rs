@@ -191,6 +191,7 @@ fn scratch() -> (tempfile::TempDir, PathBuf) {
 /// Trace: FR-070-AC-6
 /// Provenance: agent-ix/quoin#452
 #[test]
+#[ignore = "PLAT-887: blocked on filament-core-data publishing schema/semantic/v1/module-manifest.schema.json"]
 fn tc_452_660_a_second_module_claiming_an_installed_package_is_refused_naming_both() {
     let (dir, home) = scratch();
     let alpha = module_copy(dir.path(), "alpha-module", "");
@@ -209,6 +210,7 @@ fn tc_452_660_a_second_module_claiming_an_installed_package_is_refused_naming_bo
 /// Trace: FR-070-AC-3
 /// Provenance: agent-ix/quoin#452
 #[test]
+#[ignore = "PLAT-887: blocked on filament-core-data publishing schema/semantic/v1/module-manifest.schema.json"]
 fn tc_452_661_a_rejected_reinstall_restores_the_installed_version() {
     let (dir, home) = scratch();
     let good = module_copy(dir.path(), "stable", "");
@@ -240,6 +242,7 @@ fn tc_452_661_a_rejected_reinstall_restores_the_installed_version() {
 /// Trace: FR-075-AC-1, FR-075-AC-2
 /// Provenance: agent-ix/quoin#452
 #[test]
+#[ignore = "PLAT-887: blocked on filament-core-data publishing schema/semantic/v1/module-manifest.schema.json"]
 fn tc_452_662_installing_writes_the_derived_manifest_and_pins_every_export() {
     let (dir, home) = scratch();
     let root = module_copy(dir.path(), "derive", "");
@@ -280,6 +283,7 @@ fn tc_452_662_installing_writes_the_derived_manifest_and_pins_every_export() {
 /// Trace: FR-074-AC-3
 /// Provenance: agent-ix/quoin#452
 #[test]
+#[ignore = "PLAT-887: blocked on filament-core-data publishing schema/semantic/v1/module-manifest.schema.json"]
 fn tc_452_663_legacy_forms_error_without_a_sweep_report_refuses_the_install() {
     let (dir, home) = scratch();
     let root = module_copy(dir.path(), "unguarded", "  legacy_forms: error\n");

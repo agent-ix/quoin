@@ -5,27 +5,28 @@
 //! FR-075; issue #293).
 //!
 //! Port of `src/semantic/contract.ts`. One family of schema is quoin's own
-//! (`sweep-report.schema.json`); the other two are `agent-ix/filament-core-service`'s
-//! module-manifest schema and `agent-ix/filament-core-data`'s package-manifest,
-//! common and semantic-core schemas -- real dependency edges, not copies,
-//! resolved through the `external/filament-core-service` and
-//! `external/filament-core-data` git submodules this repository pins
-//! (PLAT-887 de-vendoring). `build.rs` embeds the submodules' checked-out
+//! (`sweep-report.schema.json`); the other two are `agent-ix/filament-core-data`'s
+//! module-manifest, package-manifest, common and semantic-core schemas --
+//! real dependency edges, not copies, resolved through the published npm
+//! packages `@agent-ix/filament-core-data` and `@agent-ix/semantic-core` in
+//! this repository's own `node_modules` (PLAT-887 de-vendoring; see
+//! `build.rs` for why module-manifest/package-manifest/common are still
+//! blocked on that package publishing `schema/semantic/v1/`, and why that is
+//! reported rather than bridged). `build.rs` embeds the installed packages'
 //! bytes into the compiled binary at their own paths, under the internal
 //! names the path helpers below expect, so a release built from this crate
-//! stays self-contained with no runtime dependency on `external/` existing.
+//! stays self-contained with no runtime dependency on `node_modules` existing.
 //!
 //! [`schema_dir`] and its siblings locate the *embedded* tree, materialized
 //! at runtime by [`crate::materialize_embedded_contract`] -- not a directory
 //! this crate reads off disk directly. `SEMANTIC_CONTRACT`'s `sha256` and
 //! `bundle_digest` fields are compiled assertions: every test in this crate
 //! that reads a schema re-derives its digest from the live embedded bytes and
-//! compares it here. `source_revision` is not re-derived the same way --
-//! it names the submodule commit the bytes were embedded from, for humans
-//! reading a diagnostic, and the tests only check its shape (40 hex
-//! characters). The submodule pin under `external/` is the actual source of
-//! truth for which commit is in use; keep this field in step with it by hand
-//! when the pin moves, the same as any other human-readable provenance note.
+//! compares it here -- that is the actual gate. `source_revision` is not
+//! re-derived the same way -- it names the published package version the
+//! bytes were embedded from, for humans reading a diagnostic, and the tests
+//! only check its shape. For the three still blocked on publish it is a
+//! placeholder (see below), because there is no real version to name yet.
 
 use std::path::{Path, PathBuf};
 
@@ -34,12 +35,16 @@ use sha2::{Digest, Sha256};
 use crate::error::SemanticError;
 use crate::ids::{ContractVersion, SemanticCoreVersion};
 
-/// A vendored file's origin: repository, exact commit, path there, and bytes.
+/// A vendored file's origin: repository, identifying revision, path there,
+/// and bytes.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct VendoredSource {
     /// Owning repository, `<org>/<repo>`.
     pub repository: &'static str,
-    /// The exact commit the bytes were taken from.
+    /// Informational only -- the compiled assertion is `sha256`. A 40-hex
+    /// identifier for the source the bytes came from: the published npm
+    /// tarball's SHA-1 shasum where one exists, or 40 zeros as an explicit
+    /// placeholder while the source is not yet published (see `build.rs`).
     pub source_revision: &'static str,
     /// The path within that repository.
     pub source_path: &'static str,
@@ -52,7 +57,8 @@ pub struct VendoredSource {
 pub struct VendoredBundle {
     /// Owning repository, `<org>/<repo>`.
     pub repository: &'static str,
-    /// The exact commit the bytes were taken from.
+    /// Informational only -- the compiled assertion is `bundle_digest`. The
+    /// published npm tarball's SHA-1 shasum.
     pub source_revision: &'static str,
     /// The path within that repository.
     pub source_path: &'static str,
@@ -111,30 +117,39 @@ pub const SEMANTIC_CONTRACT: SemanticContract = SemanticContract {
         "legacy_forms",
         "sweep_report",
     ],
+    // BLOCKED (PLAT-887): filament-core-data has not yet published
+    // `schema/semantic/v1/module-manifest.schema.json` -- see `build.rs`.
+    // `source_revision` and `sha256` are explicit 40/64-zero placeholders,
+    // not a guess: `SemanticValidators::load` refuses at runtime with
+    // `SemanticError::VendoredSchemaUnreadable` until the real file is
+    // embedded, and every test that needs its real bytes is `#[ignore]`d
+    // with this same reason. Fill in the real values once published.
     module_manifest_schema: VendoredSource {
-        repository: "agent-ix/filament-core-service",
-        source_revision: "a77f31efc757f3578ad80d8c7e619897aa3b2513",
-        source_path: "filament_core_service/schemas/module-manifest.schema.json",
-        sha256: "sha256:69cf9738600e7d8daa45ed5cd7231b17ca8dc58d068bd36af9b0d2c9b69dcbbc",
+        repository: "agent-ix/filament-core-data",
+        source_revision: "0000000000000000000000000000000000000000",
+        source_path: "schema/semantic/v1/module-manifest.schema.json",
+        sha256: "sha256:0000000000000000000000000000000000000000000000000000000000000000",
     },
     semantic_core: VendoredBundle {
         repository: "agent-ix/filament-core-data",
-        source_revision: "c433df9f289acc57a6bf40e4977a973836afbd73",
+        source_revision: "03ddad89553e449b645fafc7ce47acaba4504590",
         source_path: "packages/semantic-core/generated/json-schema",
         version: "0.1.0",
         bundle_digest: "sha256:dd33c886f70e908b14507c35e078d163b76308c3d170d2b54ddf933d1a4ebb52",
     },
+    // BLOCKED (PLAT-887): see module_manifest_schema above.
     package_manifest_schema: VendoredSource {
         repository: "agent-ix/filament-core-data",
-        source_revision: "c433df9f289acc57a6bf40e4977a973836afbd73",
+        source_revision: "0000000000000000000000000000000000000000",
         source_path: "schema/semantic/v1/package-manifest.schema.json",
-        sha256: "sha256:d6e696577f58abd59c36588803c019ad3a43f9a7078c873ad41a0aec41031ffd",
+        sha256: "sha256:0000000000000000000000000000000000000000000000000000000000000000",
     },
+    // BLOCKED (PLAT-887): see module_manifest_schema above.
     common_schema: VendoredSource {
         repository: "agent-ix/filament-core-data",
-        source_revision: "c433df9f289acc57a6bf40e4977a973836afbd73",
+        source_revision: "0000000000000000000000000000000000000000",
         source_path: "schema/semantic/v1/common.schema.json",
-        sha256: "sha256:1de370f344b099b511960c32ddc98d512218183c13b03350201627bdcba7710a",
+        sha256: "sha256:0000000000000000000000000000000000000000000000000000000000000000",
     },
 };
 

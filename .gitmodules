@@ -1,12 +1,3 @@
 [submodule "corpus"]
 	path = corpus
 	url = https://github.com/agent-ix/qa-corpus
-[submodule "tests/fixtures/semantic-module/corpus/config-service"]
-	path = tests/fixtures/semantic-module/corpus/config-service
-	url = https://github.com/agent-ix/config-service.git
-[submodule "external/filament-core-data"]
-	path = external/filament-core-data
-	url = https://github.com/agent-ix/filament-core-data.git
-[submodule "external/filament-core-service"]
-	path = external/filament-core-service
-	url = https://github.com/agent-ix/filament-core-service.git
