@@ -30,11 +30,23 @@ fn retained_home() -> std::path::PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/retained-catalog/ix-home")
 }
 
-fn repository_root() -> &'static Path {
-    Path::new(env!("CARGO_MANIFEST_DIR"))
-        .ancestors()
-        .nth(3)
-        .expect("the CLI crate is nested below the repository root")
+/// A real, on-disk semantic contract root for `QUOIN_SEMANTIC_ROOT`, so these
+/// tests exercise the override path deliberately rather than always falling
+/// through to the binary's own per-`IX_HOME` auto-materialization. Built once
+/// per test process from the same embedded bytes `quoin-semantic`'s `build.rs`
+/// compiles in (PLAT-887 de-vendoring) -- not read from a source-tree
+/// `src/semantic`, which no longer exists.
+fn semantic_root() -> &'static Path {
+    static ROOT: std::sync::OnceLock<std::path::PathBuf> = std::sync::OnceLock::new();
+    ROOT.get_or_init(|| {
+        let root = std::env::temp_dir().join(format!(
+            "quoin-cli-tc-catalog-semantic-{}",
+            std::process::id()
+        ));
+        quoin_semantic::materialize_embedded_contract(&root)
+            .expect("the embedded semantic contract materializes");
+        root
+    })
 }
 
 fn invoke(home: &Path, arguments: &[&str]) -> Output {
@@ -43,10 +55,10 @@ fn invoke(home: &Path, arguments: &[&str]) -> Output {
 
 fn invoke_with_modules(home: &Path, modules: Option<&Path>, arguments: &[&str]) -> Output {
     let mut command = Command::new(env!("CARGO_BIN_EXE_quoin"));
-    command.args(arguments).env("IX_HOME", home).env(
-        "QUOIN_SEMANTIC_ROOT",
-        repository_root().join("src/semantic"),
-    );
+    command
+        .args(arguments)
+        .env("IX_HOME", home)
+        .env("QUOIN_SEMANTIC_ROOT", semantic_root());
     if let Some(modules) = modules {
         command.env("QUOIN_MODULE_PATHS", modules);
     }

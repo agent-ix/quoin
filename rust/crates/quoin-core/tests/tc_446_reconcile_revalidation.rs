@@ -74,10 +74,21 @@ fn repo_root() -> PathBuf {
     root
 }
 
-/// The vendored semantic contract the npm package ships, and the same tree
-/// `src/core/modules.ts` publishes as `QUOIN_SEMANTIC_ROOT`.
+/// The real semantic contract `QUOIN_SEMANTIC_ROOT` publishes in production.
+/// Materialized once per process from the embedded bytes `quoin-semantic`'s
+/// `build.rs` compiles in (PLAT-887 de-vendoring), not read from a
+/// source-tree `src/semantic`, which no longer holds a schema tree.
 fn semantic_root() -> PathBuf {
-    repo_root().join("src").join("semantic")
+    static ROOT: std::sync::OnceLock<PathBuf> = std::sync::OnceLock::new();
+    ROOT.get_or_init(|| {
+        let root = std::env::temp_dir().join(format!(
+            "quoin-core-tc-446-reconcile-semantic-{}",
+            std::process::id()
+        ));
+        quoin_semantic::materialize_embedded_contract(&root).unwrap();
+        root
+    })
+    .clone()
 }
 
 /// The `module-ok` fixture `tests/semantic-manifest.test.ts` installs.
