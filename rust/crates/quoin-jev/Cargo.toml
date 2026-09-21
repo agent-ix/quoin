@@ -19,6 +19,14 @@ path = "src/lib.rs"
 [lints]
 workspace = true
 
+[features]
+# Off by default, and must stay off: `make rust-gate` runs unattended and the
+# crate invariant in `lib.rs` is that no test in the default path opens a
+# socket or reads the real `TYPESAFE_API_KEY`. Turning this on runs
+# `tests/live_criterion_strength.rs`, which spends real tokens against
+# `api.typesafe.ai` (PLAT-917).
+live-api = []
+
 [dependencies]
 quoin-modules = { workspace = true }
 serde = { workspace = true }
