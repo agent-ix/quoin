@@ -88,7 +88,7 @@ allow = ["MPL-2.0"]
 # `quire-code-parse` (agent-ix/quire-code-rs) is AGPL-3.0-or-later, the same
 # licence quoin and quire-rs itself carry. Reached transitively for the first
 # time by PLAT-850's bump: quire-rs 456f73f (PLAT-843, an ancestor of the
-# pinned acd1be6) ports rust.rs symbol extraction onto tree-sitter via
+# pinned 523e47f) ports rust.rs symbol extraction onto tree-sitter via
 # `quire-rust-extraction`, which depends on this crate. Named per crate for
 # the same reason as the `quire-rs` exception above: the `allow` list stays
 # permissive-only.
@@ -333,7 +333,7 @@ unknown-git = "deny"
 #     engine quoin-cli links (quoin#560).
 #   * quire-code-rs — the source of `quire-code-parse` (PLAT-850), pulled in
 #     transitively through the quire-rs pin above: quire-rs 456f73f (PLAT-843,
-#     an ancestor of the pin's current `acd1be6`) ports rust.rs symbol
+#     an ancestor of the pin's current `523e47f`) ports rust.rs symbol
 #     extraction onto tree-sitter via this crate.
 #
 # quire-rs and engineering-assurance are each pinned by an exact `rev` in
