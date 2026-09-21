@@ -1,20 +1,19 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
-//! The vendored `assurance-v1` document is the retained one, and it is
-//! compiled with the `format` policy the retained ajv actually had (quoin#474).
+//! `assurance-v1` is compiled with the `format` policy the retained ajv
+//! actually had (quoin#474).
 //!
-//! # Two anchors, not one
+//! # No drift check here any more
 //!
-//! 1. The vendored bytes hash to [`schema::VENDORED_SHA256`], the digest taken when the
-//!    file was copied out of the pinned `quire-rs` git object. Until quoin#502
-//!    there was a second anchor — byte-equality with the retained
-//!    `src/quire/schemas/assurance-v1.schema.json` — and it was the weaker of
-//!    the two: it would pass if somebody edited **both** copies. The retained
-//!    tree is gone; the digest, derived from upstream and editable from
-//!    neither side, is the one that was carrying the weight.
-//! 2. The document reaches the validator through `include_str!`. A schema read
-//!    with `std::fs` at run time is a schema that can differ from the one these
-//!    tests measured, so the vendored side is always the compiled-in constant.
+//! Until this crate consumed [`quire_rs::assurance::ASSURANCE_V1_SCHEMA`]
+//! directly, `schema::SOURCE` was a second copy of the document, hand-copied
+//! out of a pinned `quire-rs` git object, and a test here (`tc_474_011`)
+//! hashed it against a digest recorded at copy time so an un-refreshed edit on
+//! either side would fail loud. That copy is gone: `schema::SOURCE` **is**
+//! `quire_rs::assurance::ASSURANCE_V1_SCHEMA` now, so there is nothing left
+//! for a digest comparison to catch — the two sides cannot drift because they
+//! are the same constant. The test was deleted with the copy it existed to
+//! guard, not to make a diff pass.
 //!
 //! # The `format` policy is asserted from both sides
 //!
@@ -42,7 +41,6 @@ use std::path::Path;
 use quoin_jsonschema::{FormatCheck, SchemaValidator};
 use quoin_quire::schema;
 use serde_json::Value;
-use sha2::{Digest, Sha256};
 
 fn corpus() -> Value {
     let path = Path::new(env!("CARGO_MANIFEST_DIR"))
@@ -59,32 +57,6 @@ fn corpus() -> Value {
 /// One base export the engine actually produced, to compile against.
 fn a_valid_document() -> Value {
     corpus()["bases"][0]["document"].clone()
-}
-
-/// The vendored bytes hash to what was recorded from upstream.
-///
-/// Trace: FR-099-AC-2
-/// Provenance: quoin#474
-#[test]
-fn tc_474_011_the_vendored_schema_hashes_to_the_recorded_upstream_digest() {
-    let observed = hex(&Sha256::digest(schema::SOURCE.as_bytes()));
-    assert_eq!(
-        observed,
-        schema::VENDORED_SHA256,
-        "the vendored assurance-v1 document does not hash to the digest recorded \
-         when it was copied out of quire-rs. Re-derive it from \
-         `schemas/output/assurance-v1.schema.json` at \
-         schema::VENDORED_SOURCE_REVISION rather than re-recording what is on \
-         disk here."
-    );
-}
-
-fn hex(bytes: &[u8]) -> String {
-    bytes.iter().fold(String::new(), |mut out, byte| {
-        use std::fmt::Write as _;
-        let _ = write!(out, "{byte:02x}");
-        out
-    })
 }
 
 /// `format` is an annotation here, exactly as it is under the retained ajv.
