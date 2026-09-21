@@ -109,8 +109,12 @@ mod tests {
     }
 
     /// Provenance: PLAT-837. End to end with NO network and NO key beyond a
-    /// fixed test value: the mock transport answers, and the classifier
-    /// recorded is the concrete model version the mocked response carried.
+    /// fixed test value: the mock transport answers, the classifier recorded
+    /// is the concrete model version the mocked response carried, and the
+    /// scripted `noul` values are carried all the way through to the
+    /// produced finding (PLAT-837 review finding 5: a mutation to
+    /// `QuestionSet::noul_key` that drops the `noul` wiring must fail this
+    /// test, not just a lower-level unit test).
     #[tokio::test]
     async fn the_lens_runs_end_to_end_against_the_mock_transport() {
         let env = Fixed::new(&[("TYPESAFE_API_KEY", "sk_test_key")]);
@@ -125,8 +129,8 @@ mod tests {
                 "FR-900-AC-1::restates_requirement": {"type": "noul", "noul": 0.05},
                 "FR-900-AC-1::implementation_coupled": {"type": "noul", "noul": 0.02},
                 "FR-900-AC-1::weakness_kind": {
-                    "type": "choice", "choice": "sound", "confidence": 0.92,
-                    "probabilities": {"sound": 0.92, "unfalsifiable": 0.05}
+                    "type": "choice", "choice": "happy_path_only", "confidence": 0.92,
+                    "probabilities": {"happy_path_only": 0.92, "sound": 0.05}
                 },
                 "adverse_case_coverage": {
                     "type": "score", "score": 1.0, "confidence": 0.8,
@@ -142,8 +146,21 @@ mod tests {
             .await
             .expect("mocked 200");
         assert_eq!(verdict.classifier, "jev-1.13.0");
-        assert!(verdict.findings.is_empty(), "sound produces no finding");
-        assert_eq!(verdict.sound, vec!["FR-900-AC-1".to_owned()]);
+        assert!(
+            verdict.sound.is_empty(),
+            "happy_path_only is a finding, not sound"
+        );
+        assert_eq!(
+            verdict.findings.len(),
+            1,
+            "happy_path_only maps to exactly one Low finding"
+        );
+        let noul = &verdict.findings[0].noul.values;
+        assert!(
+            noul.iter()
+                .any(|(id, value)| id == "falsifiable" && (*value - 0.9).abs() < f64::EPSILON),
+            "the scripted noul value is carried through to the finding: {noul:?}"
+        );
         assert_eq!(mock.attempts(), 1);
     }
 

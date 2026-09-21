@@ -70,16 +70,22 @@ impl Severity {
     /// the mapping in `SKILL.md` ever changes, this table changes with it in
     /// the same review -- it is not a second source of truth so much as the
     /// executable form of the one `SKILL.md` states in prose.
+    ///
+    /// This function is only ever reached, from [`extract`], for a label
+    /// [`extract`] has already checked is one of `question-set.json`'s six
+    /// documented `answer_space` members -- so the `_` arm below is reached
+    /// only by `"sound"` in practice. It stays a wildcard (rather than
+    /// listing `"sound"` explicitly) because this function is also unit
+    /// tested directly, and a caller handing it an arbitrary string should
+    /// get `None`, not a panic; [`extract`] is what gives an out-of-band
+    /// label its own outcome (see [`FrVerdict::unrecognized`]) rather than
+    /// ever letting it reach this match and read as `"sound"`.
     #[must_use]
     pub fn for_weakness_kind(kind: &str) -> Option<Self> {
         match kind {
             "unfalsifiable" => Some(Self::High),
             "implementation_coupled" | "unmeasurable_threshold" => Some(Self::Medium),
             "restates_requirement" | "happy_path_only" => Some(Self::Low),
-            // "sound" (the documented sixth label: no finding) and any label
-            // this crate does not recognise -- a Jev version skew inventing a
-            // seventh label is not this function's business to guess a
-            // severity for -- both produce no finding.
             _ => None,
         }
     }
@@ -155,6 +161,21 @@ pub struct FrVerdict {
     pub findings: Vec<Finding>,
     /// AC ids Jev answered `sound` for, and so produced no finding.
     pub sound: Vec<String>,
+    /// AC ids whose `weakness_kind` answer was a string outside
+    /// `question-set.json`'s declared `answer_space` -- a Jev version skew,
+    /// or a malformed response. This is its own outcome and never folds into
+    /// [`Self::sound`]: an unrecognised label is evidence of *something*
+    /// gone wrong, the opposite of a confirmed-sound row, and conflating the
+    /// two would silently misreport "not sure what this means" as "checked
+    /// and fine". Pairs each AC id with the raw label Jev actually returned.
+    pub unrecognized: Vec<(String, String)>,
+    /// AC ids Jev never answered a `weakness_kind` choice for at all (the key
+    /// was missing from the response, or answered with the wrong answer
+    /// type). Distinct from [`Self::unrecognized`]: this is "no verdict",
+    /// not "a verdict this crate doesn't understand". Tracked explicitly
+    /// rather than silently dropped, so a reader can tell "every AC row was
+    /// reviewed" from "some rows were never reviewed at all".
+    pub unanswered: Vec<String>,
     /// The FR's `adverse_case_coverage` verdict, when the response answered it.
     pub coverage: Option<CoverageVerdict>,
 }
@@ -172,9 +193,11 @@ pub struct FrVerdict {
 /// this crate's own report names that as an open item rather than silently
 /// picking a number.
 ///
-/// Never fails: a missing or wrongly-typed answer for an AC row is skipped
-/// (that AC row contributes neither a finding nor a `sound` entry) rather
-/// than panicking or refusing the whole FR over one row.
+/// Never fails: a missing or wrongly-typed `weakness_kind` answer for an AC
+/// row is tracked in [`FrVerdict::unanswered`] rather than panicking or
+/// refusing the whole FR over one row; a label outside `question-set.json`'s
+/// `answer_space` is tracked in [`FrVerdict::unrecognized`], also never
+/// silently dropped and never folded into [`FrVerdict::sound`].
 #[must_use]
 pub fn extract(
     response: &SystemOneResponse,
@@ -184,6 +207,8 @@ pub fn extract(
 ) -> FrVerdict {
     let mut findings = Vec::new();
     let mut sound = Vec::new();
+    let mut unrecognized = Vec::new();
+    let mut unanswered = Vec::new();
 
     for ac_id in ac_ids {
         let noul_values: Vec<(String, f64)> = question_set
@@ -200,8 +225,24 @@ pub fn extract(
 
         let weakness_key = question_set.weakness_kind_key(ac_id);
         let Some(Answer::Choice(choice)) = response.answer(&weakness_key) else {
+            unanswered.push(ac_id.clone());
             continue;
         };
+
+        // Validate against the closed answer space *before* consulting the
+        // severity table: `Severity::for_weakness_kind`'s wildcard arm alone
+        // cannot tell "sound" (the documented sixth label) apart from a
+        // label a version-skewed Jev invented, and conflating the two would
+        // silently count an unrecognised verdict as a confirmed-sound one.
+        let is_recognized = question_set
+            .choice
+            .answer_space
+            .iter()
+            .any(|label| label == &choice.choice);
+        if !is_recognized {
+            unrecognized.push((ac_id.clone(), choice.choice.clone()));
+            continue;
+        }
 
         match Severity::for_weakness_kind(&choice.choice) {
             None => sound.push(ac_id.clone()),
@@ -235,6 +276,8 @@ pub fn extract(
         usage_output_tokens: response.usage.output_tokens,
         findings,
         sound,
+        unrecognized,
+        unanswered,
         coverage,
     }
 }
@@ -399,6 +442,63 @@ mod tests {
         let verdict = extract(&response, &set, &["FR-001-AC-1".to_owned()], 0.5);
         assert!(verdict.findings.is_empty());
         assert_eq!(verdict.sound, vec!["FR-001-AC-1".to_owned()]);
+    }
+
+    /// Provenance: PLAT-837 review, finding 1. A `weakness_kind` label
+    /// outside `question-set.json`'s declared `answer_space` (a version-skewed
+    /// Jev inventing a seventh label, or a malformed response) must get its
+    /// own outcome -- `unrecognized` -- and must NEVER be counted as `sound`.
+    /// `Severity::for_weakness_kind`'s wildcard arm alone cannot make this
+    /// distinction; `extract` must validate against `answer_space` first.
+    #[test]
+    fn an_unrecognized_weakness_kind_label_is_never_counted_as_sound() {
+        let set = QuestionSet::parse(ASSET).expect("parses");
+        let body = serde_json::json!({
+            "model": "jev-1.13.0",
+            "answers": {
+                "FR-001-AC-1::falsifiable": {"type": "noul", "noul": 0.5},
+                "FR-001-AC-1::states_observable_outcome": {"type": "noul", "noul": 0.5},
+                "FR-001-AC-1::threshold_present": {"type": "noul", "noul": 0.5},
+                "FR-001-AC-1::restates_requirement": {"type": "noul", "noul": 0.5},
+                "FR-001-AC-1::implementation_coupled": {"type": "noul", "noul": 0.5},
+                "FR-001-AC-1::weakness_kind": {
+                    "type": "choice", "choice": "quantum_uncertainty", "confidence": 0.9,
+                    "probabilities": {"quantum_uncertainty": 0.9}
+                },
+                "adverse_case_coverage": {
+                    "type": "score", "score": 3.0, "confidence": 0.9,
+                    "legend": {}, "probabilities": {}
+                }
+            },
+            "usage": {"input_tokens": 50, "output_tokens": 0}
+        });
+        let response: typesafe_sdk_answers::SystemOneResponse =
+            serde_json::from_value(body).expect("well-formed");
+        let verdict = extract(&response, &set, &["FR-001-AC-1".to_owned()], 0.5);
+        assert!(verdict.sound.is_empty(), "must never land in sound");
+        assert!(verdict.findings.is_empty(), "not a mapped finding either");
+        assert_eq!(
+            verdict.unrecognized,
+            vec![("FR-001-AC-1".to_owned(), "quantum_uncertainty".to_owned())]
+        );
+    }
+
+    /// Provenance: PLAT-837 review, finding 2. An AC row Jev never answered a
+    /// `weakness_kind` choice for at all is tracked as `unanswered` -- not
+    /// silently dropped from both `findings` and `sound`.
+    #[test]
+    fn an_unanswered_ac_row_is_tracked_not_dropped() {
+        let set = QuestionSet::parse(ASSET).expect("parses");
+        let response = response_fixture(0.9); // only answers FR-001-AC-1
+        let verdict = extract(
+            &response,
+            &set,
+            &["FR-001-AC-1".to_owned(), "FR-001-AC-2".to_owned()],
+            0.5,
+        );
+        assert_eq!(verdict.unanswered, vec!["FR-001-AC-2".to_owned()]);
+        assert!(!verdict.sound.contains(&"FR-001-AC-2".to_owned()));
+        assert!(!verdict.findings.iter().any(|f| f.ac_id == "FR-001-AC-2"));
     }
 
     /// Provenance: PLAT-837. A score outside the rubric's `[0, 3]` range --

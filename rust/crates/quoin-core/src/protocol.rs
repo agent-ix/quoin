@@ -193,9 +193,12 @@ impl Response {
 /// whitespace.
 ///
 /// Canonical on the way OUT, so the native fixture suite compares two byte strings
-/// rather than two opinions about field order. `serde_json::Map` is a
-/// `BTreeMap` in this build (the `preserve_order` feature is deliberately not
-/// enabled), so routing a value through [`serde_json::Value`] sorts it.
+/// rather than two opinions about field order. `serde_json::Map`'s backing
+/// depends on whether `preserve_order` is active anywhere in the build --
+/// see [`sort_object_keys`]'s doc for why this build cannot assume it is
+/// off (it is on: the five `typesafe-sdk-*` crates PLAT-837 added each
+/// request it directly) -- so this function sorts explicitly rather than
+/// relying on `serde_json::Map`'s default ordering.
 ///
 /// # Errors
 ///
@@ -293,6 +296,19 @@ mod tests {
         assert_eq!(
             canonical_json(&value).unwrap(),
             r#"{"a":{"b":3,"y":2},"z":1}"#
+        );
+    }
+
+    /// Provenance: PLAT-837 review. `sort_object_keys`'s `Array` branch was
+    /// untested -- it recurses into array elements but was never asserted to.
+    /// An object nested inside an array element must come out sorted exactly
+    /// like a top-level or nested-object one does.
+    #[test]
+    fn canonical_json_sorts_keys_inside_array_elements() {
+        let value = serde_json::json!({ "z": [ { "b": 1, "a": 2 }, { "d": 3, "c": 4 } ] });
+        assert_eq!(
+            canonical_json(&value).unwrap(),
+            r#"{"z":[{"a":2,"b":1},{"c":4,"d":3}]}"#
         );
     }
 }

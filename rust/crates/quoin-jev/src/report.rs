@@ -56,8 +56,15 @@ pub fn render(reports: &[FrReport<'_>]) -> String {
 
     let total_ac = reports
         .iter()
-        .map(|r| r.verdict.findings.len() + r.verdict.sound.len())
+        .map(|r| {
+            r.verdict.findings.len()
+                + r.verdict.sound.len()
+                + r.verdict.unrecognized.len()
+                + r.verdict.unanswered.len()
+        })
         .sum::<usize>();
+    let unrecognized_count: usize = reports.iter().map(|r| r.verdict.unrecognized.len()).sum();
+    let unanswered_count: usize = reports.iter().map(|r| r.verdict.unanswered.len()).sum();
     let classifier_line = classifiers.into_iter().collect::<Vec<_>>().join(", ");
     let coverage_lines: Vec<String> = reports
         .iter()
@@ -69,12 +76,24 @@ pub fn render(reports: &[FrReport<'_>]) -> String {
         })
         .collect();
 
+    let mut unreviewed_tail = String::new();
+    if unrecognized_count > 0 {
+        let _ = write!(
+            unreviewed_tail,
+            ", {unrecognized_count} unrecognized label{}",
+            if unrecognized_count == 1 { "" } else { "s" },
+        );
+    }
+    if unanswered_count > 0 {
+        let _ = write!(unreviewed_tail, ", {unanswered_count} unanswered");
+    }
+
     let mut body = String::new();
     body.push_str("## Summary\n\n");
     let _ = write!(
         body,
         "Criterion-strength analysis over {} FR{}, {total_ac} acceptance-criteria row{} \
-         reviewed: {} weak, {sound_count} sound. Classifier: {classifier_line}.\n\n",
+         reviewed: {} weak, {sound_count} sound{unreviewed_tail}. Classifier: {classifier_line}.\n\n",
         reports.len(),
         if reports.len() == 1 { "" } else { "s" },
         if total_ac == 1 { "" } else { "s" },
@@ -116,10 +135,26 @@ fn summary_line(finding: &crate::verdict::Finding) -> String {
         "{} classified {} (confidence {:.2})",
         finding.ac_id, finding.weakness_kind, finding.confidence
     );
-    if finding.unconfirmed {
+    let base = if finding.unconfirmed {
         format!("{base} -- unconfirmed, below the confidence threshold")
     } else {
         base
+    };
+    // The five raw `noul` values are carried into the summary as supporting
+    // evidence, explicitly labelled uncalibrated (see `verdict.rs`'s module
+    // doc: there is no confidence field on a `noul` answer to threshold on,
+    // so this is context for a reader, never a gate).
+    if finding.noul.values.is_empty() {
+        base
+    } else {
+        let noul = finding
+            .noul
+            .values
+            .iter()
+            .map(|(id, value)| format!("{id}={value:.2}"))
+            .collect::<Vec<_>>()
+            .join(", ");
+        format!("{base} [noul, uncalibrated: {noul}]")
     }
 }
 
@@ -169,6 +204,8 @@ mod tests {
             usage_output_tokens: 0,
             findings: vec![finding(false)],
             sound: vec![],
+            unrecognized: vec![],
+            unanswered: vec![],
             coverage: None,
         };
         let body = render(&[FrReport {
@@ -190,6 +227,8 @@ mod tests {
             usage_output_tokens: 0,
             findings: vec![finding(true)],
             sound: vec![],
+            unrecognized: vec![],
+            unanswered: vec![],
             coverage: None,
         };
         let body = render(&[FrReport {
@@ -210,6 +249,8 @@ mod tests {
             usage_output_tokens: 0,
             findings: vec![],
             sound: vec!["FR-001-AC-1".to_owned()],
+            unrecognized: vec![],
+            unanswered: vec![],
             coverage: None,
         };
         let body = render(&[FrReport {
@@ -231,6 +272,8 @@ mod tests {
             usage_output_tokens: 0,
             findings: vec![],
             sound: vec!["FR-001-AC-1".to_owned(), "FR-001-AC-2".to_owned()],
+            unrecognized: vec![],
+            unanswered: vec![],
             coverage: None,
         };
         let body = render(&[FrReport {
@@ -254,6 +297,8 @@ mod tests {
             usage_output_tokens: 0,
             findings: vec![],
             sound: vec!["FR-001-AC-1".to_owned()],
+            unrecognized: vec![],
+            unanswered: vec![],
             coverage: Some(CoverageVerdict {
                 score: 0.0,
                 label: Some("happy path only".to_owned()),
@@ -270,5 +315,64 @@ mod tests {
             .expect("both sections render");
         assert!(summary.contains("adverse_case_coverage"));
         assert!(!findings.contains("adverse_case_coverage"));
+    }
+
+    /// Provenance: PLAT-837 review, finding 2. `unanswered` AC rows are
+    /// surfaced in the rendered Summary, not silently absent from it --
+    /// otherwise a reader has no way to tell "every AC row was reviewed"
+    /// from "some rows were never reviewed at all".
+    #[test]
+    fn unanswered_and_unrecognized_rows_are_surfaced_in_the_summary() {
+        let verdict = FrVerdict {
+            classifier: "jev-1.13.0".to_owned(),
+            usage_input_tokens: 0,
+            usage_output_tokens: 0,
+            findings: vec![],
+            sound: vec!["FR-001-AC-1".to_owned()],
+            unrecognized: vec![("FR-001-AC-2".to_owned(), "quantum_uncertainty".to_owned())],
+            unanswered: vec!["FR-001-AC-3".to_owned()],
+            coverage: None,
+        };
+        let body = render(&[FrReport {
+            fr_id: "FR-001",
+            verdict: &verdict,
+        }]);
+        let (summary, _) = body
+            .split_once("## Findings")
+            .expect("both sections render");
+        assert!(summary.contains("1 unrecognized label"));
+        assert!(summary.contains("1 unanswered"));
+        assert!(summary.contains("3 acceptance-criteria rows"));
+    }
+
+    /// Provenance: PLAT-837 review, finding 6a. A finding's rendered summary
+    /// carries the raw `noul` values, explicitly labelled uncalibrated --
+    /// the PR's own stated claim, proven rather than merely asserted in
+    /// prose.
+    #[test]
+    fn a_findings_summary_carries_its_noul_values_labelled_uncalibrated() {
+        let mut f = finding(false);
+        f.noul = NoulSignals {
+            values: vec![
+                ("falsifiable".to_owned(), 0.9),
+                ("threshold_present".to_owned(), 0.1),
+            ],
+        };
+        let verdict = FrVerdict {
+            classifier: "jev-1.13.0".to_owned(),
+            usage_input_tokens: 0,
+            usage_output_tokens: 0,
+            findings: vec![f],
+            sound: vec![],
+            unrecognized: vec![],
+            unanswered: vec![],
+            coverage: None,
+        };
+        let body = render(&[FrReport {
+            fr_id: "FR-001",
+            verdict: &verdict,
+        }]);
+        assert!(body.contains("uncalibrated"));
+        assert!(body.contains("falsifiable=0.90"));
     }
 }
