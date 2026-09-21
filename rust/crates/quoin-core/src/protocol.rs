@@ -193,9 +193,12 @@ impl Response {
 /// whitespace.
 ///
 /// Canonical on the way OUT, so the native fixture suite compares two byte strings
-/// rather than two opinions about field order. `serde_json::Map` is a
-/// `BTreeMap` in this build (the `preserve_order` feature is deliberately not
-/// enabled), so routing a value through [`serde_json::Value`] sorts it.
+/// rather than two opinions about field order. `serde_json::Map`'s backing
+/// depends on whether `preserve_order` is active anywhere in the build --
+/// see [`sort_object_keys`]'s doc for why this build cannot assume it is
+/// off (it is on: the five `typesafe-sdk-*` crates PLAT-837 added each
+/// request it directly) -- so this function sorts explicitly rather than
+/// relying on `serde_json::Map`'s default ordering.
 ///
 /// # Errors
 ///
@@ -205,8 +208,40 @@ pub fn canonical_json<T: serde::Serialize>(value: &T) -> Result<String, crate::e
     let as_value = serde_json::to_value(value).map_err(|e| {
         crate::error::CoreError::new(crate::error::CoreErrorCode::Io, e.to_string())
     })?;
-    serde_json::to_string(&as_value)
+    let sorted = sort_object_keys(as_value);
+    serde_json::to_string(&sorted)
         .map_err(|e| crate::error::CoreError::new(crate::error::CoreErrorCode::Io, e.to_string()))
+}
+
+/// Recursively sorts every object's keys, so the emitted JSON is
+/// lexicographic regardless of whether `serde_json`'s `preserve_order`
+/// feature happens to be active elsewhere in the build.
+///
+/// This function used to rely on `serde_json::Map`'s default backing
+/// (`BTreeMap`, sorted) for that ordering implicitly -- correct only as long
+/// as nothing in the dependency graph requested `preserve_order`, which
+/// switches the backing to an insertion-ordered `IndexMap` instead. That
+/// assumption held by accident, not by design: `preserve_order` is additive
+/// and workspace-wide once requested, because Cargo unifies a crate's
+/// features across every consumer that resolves the same version -- ANY
+/// crate anywhere in the graph mandating it (a third-party SDK's own
+/// `serde_json` dependency, for one; PLAT-837's `quoin-jev` is what exposed
+/// this) turns it on for this function too, with no `cfg` this file can react
+/// to. Sorting explicitly here removes the dependency on that accident.
+fn sort_object_keys(value: serde_json::Value) -> serde_json::Value {
+    match value {
+        serde_json::Value::Object(map) => {
+            let sorted: BTreeMap<String, serde_json::Value> = map
+                .into_iter()
+                .map(|(key, entry)| (key, sort_object_keys(entry)))
+                .collect();
+            serde_json::Value::Object(sorted.into_iter().collect())
+        }
+        serde_json::Value::Array(items) => {
+            serde_json::Value::Array(items.into_iter().map(sort_object_keys).collect())
+        }
+        scalar => scalar,
+    }
 }
 
 #[cfg(test)]
@@ -261,6 +296,19 @@ mod tests {
         assert_eq!(
             canonical_json(&value).unwrap(),
             r#"{"a":{"b":3,"y":2},"z":1}"#
+        );
+    }
+
+    /// Provenance: PLAT-837 review. `sort_object_keys`'s `Array` branch was
+    /// untested -- it recurses into array elements but was never asserted to.
+    /// An object nested inside an array element must come out sorted exactly
+    /// like a top-level or nested-object one does.
+    #[test]
+    fn canonical_json_sorts_keys_inside_array_elements() {
+        let value = serde_json::json!({ "z": [ { "b": 1, "a": 2 }, { "d": 3, "c": 4 } ] });
+        assert_eq!(
+            canonical_json(&value).unwrap(),
+            r#"{"z":[{"a":2,"b":1},{"c":4,"d":3}]}"#
         );
     }
 }

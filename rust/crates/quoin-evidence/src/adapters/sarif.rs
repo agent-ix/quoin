@@ -187,13 +187,17 @@ pub fn parse_cargo_audit(raw: &str) -> Result<FindingResult, EvidenceError> {
     //
     // The KINDS are walked in the order the document declares them, which is
     // what `Object.entries` gives the retained reader and what decides the
-    // order of the findings this adapter writes into the store. A
-    // `serde_json::Map` is a `BTreeMap` — the `preserve_order` feature is off
-    // workspace-wide because enabling it breaks the canonical-JSON comparison
-    // the native fixture suite performs — so the order is recovered from the raw text
-    // by `warning_kind_order` rather than taken from the parsed value. Without
-    // this the record's `findings` array would be re-ordered for any report
-    // whose warning kinds are not already in byte order, which NFR-025 forbids.
+    // order of the findings this adapter writes into the store. `serde_json::Map`'s
+    // backing (`BTreeMap`, sorted, or an insertion-ordered `IndexMap` under
+    // `preserve_order` -- ON in this workspace since PLAT-837, whose five
+    // `typesafe-sdk-*` dependencies request it directly; see `quoin-core/src/protocol.rs`'s
+    // `canonical_json` doc) is not something this code depends on either way: the
+    // order is recovered from the raw text by `warning_kind_order`, which
+    // deserializes straight from `raw` through `MapAccess` (document order,
+    // independent of `Map`'s backing) rather than reading it from the parsed
+    // value. Without this the record's `findings` array would be re-ordered for
+    // any report whose warning kinds are not already in byte order, which
+    // NFR-025 forbids.
     if let Some(warnings) = report.get("warnings").and_then(Value::as_object) {
         for kind in warning_kind_order(raw, warnings) {
             let Some(entries) = warnings.get(&kind) else {

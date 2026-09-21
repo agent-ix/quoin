@@ -179,11 +179,15 @@ fn exact(
     name: &str,
     fields: &[&str],
 ) -> Checked<()> {
-    // `serde_json::Map` is a `BTreeMap` here (`preserve_order` is deliberately
-    // off, rust-style), so two unknown keys are reported in sorted order where
-    // the retained code reports them in insertion order. The ACCEPTANCE
-    // decision is identical; only which of several bad keys is named differs,
-    // and quoin#373 records that verdicts are contractual and prose is not.
+    // `serde_json::Map`'s backing decides the order two-or-more unknown keys are
+    // reported in: `BTreeMap` (sorted) when `preserve_order` is off, or an
+    // insertion-ordered `IndexMap` when it is on -- ON in this workspace since
+    // PLAT-837, whose five `typesafe-sdk-*` dependencies request it directly;
+    // see `quoin-core/src/protocol.rs`'s `canonical_json` doc. Either way this
+    // can differ from the retained code's own insertion-order report, but the
+    // ACCEPTANCE decision is identical regardless of which order names the
+    // field: only which of several bad keys is named differs, and quoin#373
+    // records that verdicts are contractual and prose is not.
     for key in value.keys() {
         if !fields.contains(&key.as_str()) {
             return reject(format!("{name} has unknown field {key}"));

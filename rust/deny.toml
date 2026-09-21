@@ -268,6 +268,52 @@ skip = [
     # 0.21.0 is skipped and 0.46.0 is NOT: 0.21.0 is the side reachable solely
     # through filament-plan-sync's own pin, and 0.46.0 is the side we keep.
     { crate = "quire-rs@0.21.0", reason = "quoin#560: 0.21.0 via filament-plan-sync's own tag=v0.21.0 pin <- quoin-cli. 0.46.0, which quoin-core/quoin-graph-analysis/quoin-measurement-graph reach via quoin-quire, stays checked" },
+
+    # --- The typesafe-sdk entries (PLAT-837, criterion-strength lens). ---
+    #
+    # `typesafe-sdk-client = "=0.6.2"` is an exact-pinned, already-approved
+    # dependency (quoin-jev) whose own manifest is not ours to edit: its
+    # `typesafe-sdk-http` sub-crate declares `reqwest = "0.12"` with
+    # `rustls-tls` and no other TLS feature, which reqwest 0.12 resolves to
+    # the `ring` crypto provider. The workspace's own root pin,
+    # `reqwest = "=0.13.5"` (quoin-delivery, and quoin-modules via
+    # `gix-transport`), does not pull `ring` on its own -- it only starts
+    # pulling `ring`/`windows-sys@0.52.0` once cargo unifies the shared
+    # `hyper`/`hyper-rustls` instance across BOTH reqwest majors in one build,
+    # which typesafe-sdk-http's `reqwest 0.12` requirement is what forces.
+    # Neither side is ours to converge: our pin cannot drop to 0.12 (gix's own
+    # `reqwest = "=0.13.5"`-compatible transport requirement), and
+    # typesafe-sdk-http's pin is a third-party crate inside an exact,
+    # already-approved dependency.
+    #
+    # Provenance (`cargo tree -i <crate>@<version> --target all --edges
+    # normal,build`):
+    #   reqwest 0.12.28     <- typesafe-sdk-http 0.6.2 <- typesafe-sdk-client
+    #                          0.6.2 <- quoin-jev (ONLY path)
+    #   reqwest 0.13.5      <- gix-transport 0.59.2 <- gix 0.87.1 <-
+    #                          quoin-modules; and quoin-delivery directly.
+    #                          Stays checked.
+    #   windows-sys 0.52.0  <- ring 0.17.14 <- rustls 0.23.45 <- hyper-rustls
+    #                          0.27.10, the shared hyper-rustls instance both
+    #                          reqwest majors resolve to once typesafe-sdk-http
+    #                          forces `ring` into the graph.
+    #   windows-sys 0.61.2  <- errno 0.3.14 <- rustix 1.1.4 <- gix-index 0.55.0
+    #                          <- gix 0.87.1 <- quoin-modules. Reachable this
+    #                          way BEFORE this change (gix's own normal edge);
+    #                          stays checked.
+    # (windows-sys 0.59.0 and 0.60.2 are reachable only through dev
+    # dependencies -- engineering-assurance's `cap-std` -- so cargo-deny's
+    # default `multiple-versions-include-dev = false` does not count them; no
+    # entry needed for either.)
+    #
+    # REMOVAL CONDITION: both entries are deleted together, the moment
+    # typesafe-sdk-http advances past `reqwest = "0.12"` to a requirement that
+    # resolves the same major as the workspace's own `reqwest = "=0.13.5"` pin
+    # (or drops the `ring` provider default). `cargo deny check bans` MUST
+    # pass with both entries removed at that point -- RUN IT rather than
+    # assuming it.
+    { crate = "reqwest@0.12.28", reason = "PLAT-837: typesafe-sdk-http 0.6.2 (an exact-pinned, already-approved dependency) declares reqwest = \"0.12\"; reqwest@0.13.5, the workspace's own root pin used by quoin-delivery and (via gix-transport) quoin-modules, stays checked" },
+    { crate = "windows-sys@0.52.0", reason = "PLAT-837: reachable only via ring 0.17.14 <- rustls <- hyper-rustls 0.27.10, the shared hyper-rustls instance typesafe-sdk-http's reqwest 0.12 pin forces into the graph; windows-sys@0.61.2, reachable via gix's own normal errno/rustix edge independent of this change, stays checked" },
 ]
 
 [advisories]

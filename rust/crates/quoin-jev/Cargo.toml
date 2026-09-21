@@ -1,0 +1,47 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 Agent-IX
+
+[package]
+name = "quoin-jev"
+description = "The criterion-strength lens's Jev (typesafe.ai System One) client wiring (PLAT-837)."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+publish.workspace = true
+
+[lib]
+name = "quoin_jev"
+path = "src/lib.rs"
+
+[lints]
+workspace = true
+
+[dependencies]
+quoin-modules = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+typesafe-sdk-answers = "=0.6.2"
+typesafe-sdk-client = "=0.6.2"
+typesafe-sdk-config = "=0.6.2"
+typesafe-sdk-env = "=0.6.2"
+typesafe-sdk-error = "=0.6.2"
+typesafe-sdk-http = "=0.6.2"
+typesafe-sdk-questions = "=0.6.2"
+
+[dev-dependencies]
+# Only for `#[tokio::test]` driving this crate's own async functions in the
+# integration suite; no production code in this crate builds a runtime (see
+# `lib.rs`'s module doc: the async/blocking bridge is a future CLI caller's
+# concern, not this library's).
+tokio = { version = "=1.48.0", default-features = false, features = ["rt", "macros"] }
+# typesafe-sdk-http's own mock transport (`typesafe_sdk_http::Mock`/`Exchange`)
+# is the seam used for every test here -- see `client.rs`'s module doc for why
+# the unrelated `typesafe-sdk` (0.1.2, a different crate by a different author
+# despite the name) is NOT used. `typesafe-sdk-headers` is needed directly only
+# to build `Headers` values in error-classification tests.
+typesafe-sdk-headers = "=0.6.2"
+tempfile = { workspace = true }
