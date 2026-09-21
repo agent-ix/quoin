@@ -143,13 +143,15 @@ fn symbol(locator: Option<&str>, name: Option<&str>, version: Option<&str>) -> O
 /// # Divergence from the retained TypeScript, in the refusal text only
 ///
 /// `Object.keys(root).slice(0, 6)` lists the document's own member order;
-/// `serde_json::Map` is a `BTreeMap` (the `preserve_order` feature is
-/// deliberately off workspace-wide, because enabling it silently breaks the
-/// canonical-JSON comparison the native fixture suite performs), so this lists the
-/// first six member names in byte order instead. The set of names is the same
-/// for a document with six or fewer members; for a larger one the six named
-/// may differ. Nothing but this diagnostic reads them, and no record byte
-/// changes. Recorded in quoin#456.
+/// `serde_json::Map`'s backing decides what this adapter lists instead:
+/// `BTreeMap` (byte order) when `preserve_order` is off, or an
+/// insertion-ordered `IndexMap` when it is on -- ON in this workspace since
+/// PLAT-837, whose five `typesafe-sdk-*` dependencies request it directly
+/// (`canonical_json` in `quoin-core/src/protocol.rs` sorts explicitly rather
+/// than relying on either). The set of names is the same for a document with
+/// six or fewer members; for a larger one the six named may differ from the
+/// retained reader's own list. Nothing but this diagnostic reads them, and no
+/// record byte changes. Recorded in quoin#456.
 ///
 /// Rejected rather than returning zero entries. Zero entries means "the SBOM
 /// listed nothing", which `vacuous-evidence` reports as a real finding about
