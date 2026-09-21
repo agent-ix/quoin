@@ -85,6 +85,16 @@ allow = ["AGPL-3.0-or-later"]
 crate = "uluru"
 allow = ["MPL-2.0"]
 
+# `quire-code-parse` (agent-ix/quire-code-rs) is AGPL-3.0-or-later, the same
+# licence quoin and quire-rs itself carry. Reached transitively for the first
+# time by PLAT-850's bump: quire-rs 456f73f (PLAT-843) ports rust.rs symbol
+# extraction onto tree-sitter via `quire-rust-extraction`, which depends on
+# this crate. Named per crate for the same reason as the `quire-rs` exception
+# above: the `allow` list stays permissive-only.
+[[licenses.exceptions]]
+crate = "quire-code-parse"
+allow = ["AGPL-3.0-or-later"]
+
 [bans]
 multiple-versions = "deny"
 wildcards = "deny"
@@ -289,4 +299,8 @@ allow-git = [
     "https://github.com/agent-ix/quire-rs",
     "https://github.com/agent-ix/engineering-assurance",
     "https://github.com/agent-ix/filament-ide-rs",
+    # PLAT-850: quire-rs 456f73f (PLAT-843) ports rust.rs symbol extraction to
+    # tree-sitter via quire-code-parse, pulling this repo in transitively
+    # through the pin above.
+    "https://github.com/agent-ix/quire-code-rs",
 ]

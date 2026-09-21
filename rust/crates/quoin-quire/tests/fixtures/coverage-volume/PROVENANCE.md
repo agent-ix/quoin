@@ -58,7 +58,8 @@ than only in the name of `tc_379_103`.
 `src/engine.rs` sets `MINIMUM_STORED_ENGINE = ENGINE_VERSION` and, for an
 artifact whose provenance is a 40-hex **revision**, requires equality with
 `ENGINE_REVISION`. This build links
-`85dfe9d5a937c52af6456f2e6aa3a6bc4c82db9f`. The payload above was produced at
+`acd1be633a1a89cf5e21bc1abb9a91b7e2493838` (PLAT-850, bumped from
+`85dfe9d5a937c52af6456f2e6aa3a6bc4c82db9f`). The payload above was produced at
 `a874fb641cb70da83c8c8b23f9fea0a44255b88a`.
 
 **Therefore every coverage, clause-binding and assurance artifact already in an
