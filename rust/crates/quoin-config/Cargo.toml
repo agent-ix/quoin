@@ -37,5 +37,5 @@ schemars = { workspace = true }
 # FR-025-AC-7. The same auditor `quoin-core`'s `tc_library_containment.rs`
 # consumes, at the same workspace pin, rather than a second syn-based source
 # auditor grown here.
-engineering-assurance = { workspace = true }
+engineering-assurance = { workspace = true, features = ["source-audit"] }
 tempfile = "=3.27.0"
