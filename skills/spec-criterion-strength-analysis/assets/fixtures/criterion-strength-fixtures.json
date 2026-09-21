@@ -1,0 +1,309 @@
+{
+  "$comment": "Labelled adverse-case fixture corpus for the criterion-strength lens (PLAT-837). Every fixture is a real acceptance criterion (or, for adverse_case_coverage fixtures, a real FR's whole AC set) drawn from a spec already checked into this org's repositories as of 2026-09-20 — none are constructed. Each carries a human label, a confidence tier ('clean' = the label is not seriously contested; 'ambiguous' = the lens is expected to find this hard, per PLAT-837's explicit requirement not to submit only clean positives/negatives), and a rationale citing the criterion's own text. This corpus is data for M2 (accuracy) once the Jev client lands; it has not been run through any classifier yet — see the lens SKILL.md 'What is not done yet' section.",
+  "source_ticket": "PLAT-837",
+  "excluded_by_design": "The TC-145 ParsedFile/Sync fixture recorded in PLAT-839's comments (quire-code-rs PR #22) is intentionally NOT reproduced here. It is a test-vs-requirement divergence fixture for PLAT-839's gap-analysis semantic lens, not a criterion-strength fixture — this lens judges an AC's own text in isolation from spec text only, never against test code.",
+  "weakness_kind_fixtures": [
+    {
+      "fixture_id": "CS-FIX-001",
+      "confidence": "clean",
+      "source": {
+        "repo": "quoin",
+        "path": "spec/non-functional/NFR-027-rust-implementation-idioms-and-gates.md",
+        "criterion_id": "NFR-027-AC-3",
+        "ix_uri": "ix://agent-ix/quoin/NFR-027-AC-3"
+      },
+      "criterion_text": "`cargo fmt --check` and `cargo clippy --workspace --all-targets --all-features -- -D warnings` both exit zero, and their output is recorded with the run.",
+      "labels": {
+        "falsifiable": true,
+        "states_observable_outcome": true,
+        "threshold_present": true,
+        "restates_requirement": false,
+        "implementation_coupled": false,
+        "weakness_kind": "sound"
+      },
+      "rationale": "Names two commands and an exit-code contract (0), which is a concrete, externally observable outcome (the run's exit status), not an internal symbol or private field. The command names are the public tool surface being gated, not an implementation detail of the system under spec, so `implementation_coupled` reads false even though the text names tools. A non-zero exit from either command falsifies it. Threshold ('exit zero') is stated, not implied."
+    },
+    {
+      "fixture_id": "CS-FIX-002",
+      "confidence": "clean",
+      "source": {
+        "repo": "quire-rs",
+        "path": "spec/non-functional/NFR-002-parse-latency.md",
+        "criterion_id": "NFR-002-AC-1",
+        "ix_uri": "ix://agent-ix/quire-rs/NFR-002-AC-1"
+      },
+      "criterion_text": "A criterion benchmark `bench_parse_5mb` loads a synthetic 5 MB document (real markdown content with ~5000 headings) and measures `parse_document`; median below 500 ms.",
+      "labels": {
+        "falsifiable": true,
+        "states_observable_outcome": true,
+        "threshold_present": true,
+        "restates_requirement": false,
+        "implementation_coupled": false,
+        "weakness_kind": "sound"
+      },
+      "rationale": "The number is stated inline ('below 500 ms'), against a named fixture size and shape, so `threshold_present` is unambiguously true. `parse_document` is the function under specification (the public API this NFR constrains), not a private helper the AC over-specifies against — the whole requirement exists to bound that call's latency, so naming it is not over-specification the way naming an internal helper it calls would be."
+    },
+    {
+      "fixture_id": "CS-FIX-003",
+      "confidence": "clean",
+      "source": {
+        "repo": "quire-rs",
+        "path": "spec/functional/FR-013-archetype-loader.md",
+        "criterion_id": "FR-013-AC-14",
+        "ix_uri": "ix://agent-ix/quire-rs/FR-013-AC-14"
+      },
+      "criterion_text": "`Diagnostic::PathTraversal { argument, path, reason }` is a defined variant of the (internal) `Diagnostic` enum. A unit test constructs the variant and asserts both human (`Display`) and JSON (`to_json`) renderings carry the variant name, argument, path, and reason discriminator, covering all three `PathTraversalReason` values.",
+      "labels": {
+        "falsifiable": true,
+        "states_observable_outcome": false,
+        "threshold_present": false,
+        "restates_requirement": false,
+        "implementation_coupled": true,
+        "weakness_kind": "implementation_coupled"
+      },
+      "rationale": "The criterion's own text parenthetically self-identifies the target as internal: '(internal) `Diagnostic` enum'. The assertion is that one specific internal enum variant exists and that its `Display`/`to_json` renderings carry specific fields — satisfiable by exactly one internal representation, and it stops discriminating the moment that representation is chosen. A refactor that kept the same observable diagnostic text but restructured the enum would break this AC for a reason a user could never observe, which is PLAT-837's stated symptom of this defect class."
+    },
+    {
+      "fixture_id": "CS-FIX-004",
+      "confidence": "clean",
+      "source": {
+        "repo": "spec-hierarchy",
+        "path": "spec/functional/FR-006-error-handling.md",
+        "criterion_id": "FR-006-AC-2",
+        "ix_uri": "ix://agent-ix/spec-hierarchy/FR-006-AC-2"
+      },
+      "criterion_text": "Tree remains functional after node failure",
+      "labels": {
+        "falsifiable": false,
+        "states_observable_outcome": false,
+        "threshold_present": false,
+        "restates_requirement": false,
+        "implementation_coupled": false,
+        "weakness_kind": "unfalsifiable"
+      },
+      "rationale": "'Remains functional' names no concrete, checkable system behaviour — no interaction is specified (click a sibling node? re-render? scroll?), and no failure mode of 'functional' is stated, so no system behaviour could be pointed to as making it false. Contrast with the sibling row FR-006-AC-1 ('Node failure displays fallback'), which is falsifiable because it names an observable render outcome; AC-2 was written to generalise past that into an unfalsifiable claim about the whole tree."
+    },
+    {
+      "fixture_id": "CS-FIX-005",
+      "confidence": "clean",
+      "source": {
+        "repo": "spec-hierarchy",
+        "path": "spec/functional/FR-002-hierarchy-nodes.md",
+        "criterion_id": "FR-002-AC-3",
+        "ix_uri": "ix://agent-ix/spec-hierarchy/FR-002-AC-3",
+        "fr_behavior_bullet": "The system SHALL implement an Error Boundary per node to prevent partial failures from crashing the entire tree."
+      },
+      "criterion_text": "Node render failure is contained (Error Boundary)",
+      "labels": {
+        "falsifiable": true,
+        "states_observable_outcome": true,
+        "threshold_present": false,
+        "restates_requirement": true,
+        "implementation_coupled": true,
+        "weakness_kind": "restates_requirement"
+      },
+      "rationale": "The AC is FR-002's own Behavior bullet ('The system SHALL implement an Error Boundary per node to prevent partial failures from crashing the entire tree') with `shall` swapped for 'is' and the mechanism kept: same claim, same named mechanism, no added specificity (no example failure, no assertion about sibling nodes, no assertion about what 'contained' means beyond the FR's own wording). Both `restates_requirement` and `implementation_coupled` fire true on this row — 'Error Boundary' is a React-specific mechanism named directly in the criterion rather than an observable outcome (e.g. 'sibling nodes keep rendering when one node throws') — and `weakness_kind` is recorded as the ticket's more specific label, `restates_requirement`, since the row's primary defect is that it adds nothing beyond transcribing the FR sentence."
+    },
+    {
+      "fixture_id": "CS-FIX-006",
+      "confidence": "clean",
+      "source": {
+        "repo": "quoin",
+        "path": "spec/functional/FR-079-generated-skeletons-and-fixtures.md",
+        "criterion_id": "FR-079-AC-7",
+        "ix_uri": "ix://agent-ix/quoin/FR-079-AC-7"
+      },
+      "criterion_text": "No rendered skeleton contains a placeholder body; each section's content is substantive.",
+      "labels": {
+        "falsifiable": true,
+        "states_observable_outcome": true,
+        "threshold_present": false,
+        "restates_requirement": false,
+        "implementation_coupled": false,
+        "weakness_kind": "unmeasurable_threshold"
+      },
+      "rationale": "The row asserts a quantity-shaped claim ('substantive content') with no number, length, or structural rule stated for what counts as substantive versus placeholder-adjacent thin content. The first clause ('no placeholder body') is independently falsifiable against a known placeholder-string list, which keeps the row overall falsifiable and prevents `unfalsifiable`; but the binding constraint — 'substantive' — states a quantity without stating it, which is exactly PLAT-837's `threshold_present` question answered false."
+    },
+    {
+      "fixture_id": "CS-FIX-007",
+      "confidence": "ambiguous",
+      "source": {
+        "repo": "quire-rs",
+        "path": "spec/functional/FR-025-spec-corpus-model.md",
+        "criterion_id": "FR-025-AC-1",
+        "ix_uri": "ix://agent-ix/quire-rs/FR-025-AC-1"
+      },
+      "criterion_text": "`Spec::from_path(spec_dir)` over a fixture spec returns a corpus whose `len()` equals the number of parsed markdown artifacts under the directory.",
+      "labels": {
+        "falsifiable": true,
+        "states_observable_outcome": true,
+        "threshold_present": true,
+        "restates_requirement": false,
+        "implementation_coupled": null,
+        "weakness_kind": "sound",
+        "weakness_kind_contested": ["sound", "implementation_coupled"],
+        "confidence_note": "0.5-ish split expected, per PLAT-837's own worked example of a contested pair"
+      },
+      "rationale": "This is the genuinely hard case PLAT-837 asks for, not a constructed one: `Spec::from_path` and `.len()` are named symbols in the criterion text, which the naive reading of `implementation_coupled` ('does it name an internal symbol') would flag. But `Spec::from_path` is quire-rs's own public constructor and the FR under test (FR-025, 'whole-spec corpus model') exists specifically to specify that API's contract — the symbol named IS the requirement's subject, not a private helper it happens to call along the way, so the over-specification harm PLAT-837 names ('satisfiable by exactly one implementation ... breaks on a refactor a user never observes') does not apply: any implementation with a `Spec::from_path` constructor and a `len()` that counts parsed artifacts satisfies this, and a refactor that changed the internal representation while preserving that public contract would not break it. Recorded here as the label the lens is expected to get right most of the time (`sound`) while flagging that a naive symbol-name heuristic would call it `implementation_coupled` — the distinction the lens has to make is public-API-under-test versus private-call-sequence, and this row is the boundary case that tests it."
+    },
+    {
+      "fixture_id": "CS-FIX-008",
+      "confidence": "ambiguous",
+      "source": {
+        "repo": "spec-hierarchy",
+        "path": "spec/functional/FR-001-hierarchy-tree.md",
+        "criterion_id": "FR-001-AC-1",
+        "ix_uri": "ix://agent-ix/spec-hierarchy/FR-001-AC-1",
+        "verification_column": "Storybook"
+      },
+      "criterion_text": "Tree renders correct nesting",
+      "labels": {
+        "falsifiable": null,
+        "states_observable_outcome": true,
+        "threshold_present": false,
+        "restates_requirement": false,
+        "implementation_coupled": false,
+        "weakness_kind": "unfalsifiable",
+        "weakness_kind_contested": ["unfalsifiable", "sound"],
+        "confidence_note": "correct answer depends on whether Verification-column context is admissible input"
+      },
+      "rationale": "Read on its own — the text the lens is specified to judge, per PLAT-837's 'reads spec text only' scope — 'correct nesting' defines no expected structure: no fixture input, no example tree, no statement of what indentation/depth relationship counts as correct, so there is no stated system behaviour a reader could point to as making it false. That argues `unfalsifiable`. The harder question, and the reason this is filed as ambiguous rather than clean: the row's Verification column names 'Storybook', which in this repo's convention means the criterion is checked against a golden visual snapshot — an externally fixed, falsifiable baseline that simply is not written into the AC's own prose. Whether a criterion that borrows its falsifiability from an out-of-band fixture (rather than stating it inline) should score `unfalsifiable` or `sound` is exactly the kind of judgment call PLAT-837 wants the lens graded on, not a case with one obviously correct answer. Labelled `unfalsifiable` here as the primary answer, matching the lens's stated scope of spec text only, with the contested alternative recorded rather than hidden."
+    },
+    {
+      "fixture_id": "CS-FIX-009",
+      "confidence": "ambiguous",
+      "source": {
+        "repo": "quoin",
+        "path": "spec/functional/FR-003-print-usage-and-help.md",
+        "criterion_id": "FR-003-AC-1",
+        "ix_uri": "ix://agent-ix/quoin/FR-003-AC-1",
+        "fr_behavior_bullet": "With no command, the CLI SHALL print the root usage describing the command surface, the default module set, and the global flags."
+      },
+      "criterion_text": "No command prints the root usage",
+      "labels": {
+        "falsifiable": true,
+        "states_observable_outcome": true,
+        "threshold_present": false,
+        "restates_requirement": true,
+        "implementation_coupled": false,
+        "weakness_kind": "sound",
+        "weakness_kind_contested": ["sound", "restates_requirement"],
+        "confidence_note": "falsifiable and tested, yet is also close to a literal shall-swap of its own FR's Behavior bullet"
+      },
+      "rationale": "`restates_requirement` reads true almost mechanically: FR-003's Behavior bullet is 'With no command, the CLI SHALL print the root usage describing the command surface, the default module set, and the global flags,' and the AC is that sentence's subject and verb transposed with the trailing detail dropped — a near-literal shall-swap. What makes this genuinely contested rather than a clean tautology like CS-FIX-005: the criterion is still concretely falsifiable (stdout either contains the root usage text or it does not), it is backed by a real test (cli.test.ts), and — unlike CS-FIX-005's Error Boundary row — it names no implementation mechanism, only an observable output. PLAT-837 does not resolve whether 'adds no information beyond the FR sentence' is disqualifying when the restated sentence is itself small, concrete, and cheap to keep in sync; this fixture is recorded as `sound` (the criterion does what an AC needs to do: state a falsifiable, observable, threshold-free claim) with `restates_requirement` recorded as the seriously contested alternative, precisely because a lens that always resolves 'is it a shall-swap' to `restates_requirement` regardless of size would flag every one-line AC in this repository."
+    },
+    {
+      "fixture_id": "CS-FIX-010",
+      "confidence": "ambiguous",
+      "source": {
+        "repo": "quoin",
+        "path": "spec/functional/FR-079-generated-skeletons-and-fixtures.md",
+        "criterion_id": "FR-079-AC-4",
+        "ix_uri": "ix://agent-ix/quoin/FR-079-AC-4",
+        "prior_finding": {
+          "review": "spec/reviews/module-cookiecutter-failure-domain.md",
+          "finding_id": "FND-010",
+          "quote": "FR-079-AC-4 requires each negative fixture be refused \"for its own distinct reason,\" but no requirement defines a canonical identifier or registry for a declared failure mode; distinctness depends on comparing free-text diagnostic strings, so two authors of two rendered variants could label one violation two different ways, or two distinct violations could coincidentally emit the same diagnostic, with no structural check for either case."
+        }
+      },
+      "criterion_text": "Every rendered negative fixture is refused, and each is refused for its own distinct reason.",
+      "labels": {
+        "falsifiable": null,
+        "states_observable_outcome": true,
+        "threshold_present": false,
+        "restates_requirement": false,
+        "implementation_coupled": false,
+        "weakness_kind": "sound",
+        "weakness_kind_contested": ["sound", "unfalsifiable"],
+        "confidence_note": "a real, prior, independent review (FND-010) already contested this row's checkability; not resolved here or there"
+      },
+      "rationale": "'Every rendered negative fixture is refused' is cleanly falsifiable and tested (TC-1424). 'Each ... for its own distinct reason' is where this gets hard, and it is not this lens inventing the difficulty: a prior `spec-failure-domain-analysis` run on this same repository already filed FND-010 against this exact row, for exactly this reason — 'distinctness' has no canonical definition (no failure-mode registry, no structural comparison, only free-text diagnostic strings), so two genuinely different violations could coincidentally share a diagnostic and the AC gives no way to say whether that would count as passing or failing. Labelled `sound` here on the strength of the row being backed by a real test that does compare diagnostics today, with `unfalsifiable` recorded as the live, independently-sourced contested alternative — this is the clearest 'the lens is expected to find this hard' fixture in the set because a second, independent human reviewer already found it hard."
+    },
+    {
+      "fixture_id": "CS-FIX-014",
+      "confidence": "ambiguous",
+      "source": {
+        "repo": "spec-hierarchy",
+        "path": "spec/functional/FR-004-traceability.md",
+        "criterion_id": "FR-004-AC-2",
+        "ix_uri": "ix://agent-ix/spec-hierarchy/FR-004-AC-2",
+        "fr_description": "The system SHALL display traceability links between artifacts.",
+        "fr_behavior": "The system SHALL render links (e.g., \"Parent of\", \"Satisfies\"). Links SHALL be clickable to navigate to the target artifact."
+      },
+      "criterion_text": "Clicking a rendered traceability link navigates to the target artifact it names",
+      "labels": {
+        "falsifiable": true,
+        "states_observable_outcome": true,
+        "threshold_present": false,
+        "restates_requirement": false,
+        "implementation_coupled": false,
+        "weakness_kind": "happy_path_only",
+        "weakness_kind_contested": ["happy_path_only", "sound"],
+        "confidence_note": "every noul question the ticket lists answers cleanly on this row's own terms, yet the enum's sixth member is defined by what the row (and its FR context) never mentions"
+      },
+      "rationale": "This is the fixture that exposes a real design gap rather than an ambiguity in the AC's own wording. On the five `noul` questions alone this row is clean: falsifiable (click it, check navigation), observable (an outside caller sees the navigation happen), no quantity to threshold, not a shall-swap of anything (the FR states two behaviours across two bullets; this AC covers one), not coupled to an internal symbol. A lens that only ever composed `weakness_kind` from the five booleans would have to call this `sound`. But PLAT-837's `weakness_kind` enum carries a sixth member, `happy_path_only`, that no `noul` question tests for, and per PLAT-837's request shape the FR's Description/Behaviour ships alongside the row — and neither ever raises a dangling target, an unresolvable id, or a link whose named artifact was deleted, for an artifact-linking feature where all three are ordinary occurrences (see CS-FIX-011, this FR's own AC set scored `adverse_case_coverage: 0` for exactly this reason). Labelled `happy_path_only` here, on the FR-context reading, with `sound` recorded as the contested alternative a strictly row-local, noul-only reading would produce. Recording this explicitly because it is a fact about the lens's own design, not just about this AC: `weakness_kind` is not a deterministic function of the five `noul` answers, and the later API-integration task needs to decide, rather than discover by accident, whether `happy_path_only` is judged against the single row or against the row read beside its FR's full Behaviour."
+    }
+  ],
+  "adverse_case_coverage_fixtures": [
+    {
+      "fixture_id": "CS-FIX-011",
+      "confidence": "clean",
+      "source": {
+        "repo": "spec-hierarchy",
+        "path": "spec/functional/FR-004-traceability.md",
+        "fr_id": "FR-004",
+        "ix_uri": "ix://agent-ix/spec-hierarchy/FR-004"
+      },
+      "ac_set": [
+        { "id": "FR-004-AC-1", "text": "Links render with correct relationship type" },
+        { "id": "FR-004-AC-2", "text": "Clicking a rendered traceability link navigates to the target artifact it names" }
+      ],
+      "labels": {
+        "adverse_case_coverage": 0
+      },
+      "rationale": "Both rows describe the same successful path (a link renders; a link is clicked and navigates). Neither AC, nor the FR's Behavior bullets ('The system SHALL render links'; 'Links SHALL be clickable to navigate'), states what happens for a dangling reference, an unresolvable target, or a link whose relationship type is unknown — all plausible adverse cases for a traceability renderer, none covered. This is the rubric's level 0: happy path only."
+    },
+    {
+      "fixture_id": "CS-FIX-012",
+      "confidence": "clean",
+      "source": {
+        "repo": "quoin",
+        "path": "spec/non-functional/NFR-027-rust-implementation-idioms-and-gates.md",
+        "fr_id": "NFR-027",
+        "ix_uri": "ix://agent-ix/quoin/NFR-027"
+      },
+      "ac_set": [
+        { "id": "NFR-027-AC-1", "text": "Every crate root declares `#![forbid(unsafe_code)]`, and a planted `unsafe` block fails the build." },
+        { "id": "NFR-027-AC-5", "text": "No public library signature returns `Box<dyn Error>` or an `anyhow` error, and a planted one fails the gate." },
+        { "id": "NFR-027-AC-9", "text": "Each of the source and test checks reports the population it scanned, and a check that scanned nothing is reported as inconclusive rather than as passing." }
+      ],
+      "labels": {
+        "adverse_case_coverage": 3
+      },
+      "rationale": "Happy path: the positive conformance clause of every row (e.g. AC-1's 'every crate root declares forbid(unsafe_code)'). Explicit negative case: nearly every row pairs its happy clause with 'and a planted <violation> fails the gate' — AC-1, AC-2, AC-4, AC-5, AC-6, AC-7, AC-8 all state a deliberately-introduced violation and require the gate to catch it, which is the rubric's level-3 marker verbatim ('explicit negative case'). Edge case: AC-9 covers the degenerate input a mutation-style suite tends to miss — a check that scanned zero files must report `inconclusive`, not a false pass — distinct from both the happy and the negative-case rows. Filed `clean` at level 3, though see CS-FIX-013 for why 'error case' as a rubric level distinct from 'explicit negative case' does not cleanly apply to this FR — the two are hard to tell apart when every row is itself a mutation test."
+    },
+    {
+      "fixture_id": "CS-FIX-013",
+      "confidence": "ambiguous",
+      "source": {
+        "repo": "spec-hierarchy",
+        "path": "spec/functional/FR-003-hierarchy-search.md",
+        "fr_id": "FR-003",
+        "ix_uri": "ix://agent-ix/spec-hierarchy/FR-003"
+      },
+      "ac_set": [
+        { "id": "FR-003-AC-1", "text": "Input filters the tree in-place" },
+        { "id": "FR-003-AC-2", "text": "\"No Results\" message shown when empty" },
+        { "id": "FR-003-AC-3", "text": "Data source remains immutable" },
+        { "id": "FR-003-AC-4", "text": "Ancestor nodes of matches remain visible" },
+        { "id": "FR-003-AC-5", "text": "Clearing search restores the full tree" }
+      ],
+      "labels": {
+        "adverse_case_coverage": 1,
+        "adverse_case_coverage_contested": [1, 2],
+        "confidence_note": "the FR has a real edge case (AC-2) and no distinct error case; the rubric's ladder assumes error comes before edge"
+      },
+      "rationale": "Happy path: AC-1, AC-4, AC-5 (filters, keeps ancestors visible, restores on clear). Edge case: AC-2, the empty-result-set state, is a genuine boundary condition on the input domain, not an error. AC-3 ('data source remains immutable') is an invariant asserted across all cases, not a distinct case. What this FR has none of is an *error* case in the ordinary sense (malformed query, exceeded input length, search-index failure) — nothing here can throw or fail; filtering a string against a tree has no error path to cover. The rubric's four levels read as cumulative ('happy + one error case', then 'happy + errors + edge'), which presumes error-case coverage is a prerequisite for edge-case coverage to count. This FR breaks that assumption: it has edge-case coverage (level-2-shaped) with zero error-case coverage (level-1-shaped), and the rubric does not say what a set shaped like that scores. Recorded as 1 (crediting the edge case as satisfying the spirit of 'past happy-path-only' without over-crediting a ladder level FR-003 didn't earn), with 2 recorded as the contested alternative a literal edge-case-present reading would give. This is exactly the kind of FR the rubric needs to be tested against before the lens ships, because 'no error path exists for this feature' and 'the author forgot to write the error case' produce the identical AC set and the rubric alone cannot tell them apart."
+    }
+  ]
+}

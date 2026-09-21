@@ -1,0 +1,63 @@
+{
+  "$comment": "Serialisable Jev question set for the criterion-strength lens (PLAT-837). Verbatim from the ticket: ids, question text, enum members and rubric levels are transcribed, not paraphrased, so the later API-integration task can hand this document to the Jev client unchanged. One request per FR, one question block per AC row, per PLAT-837's 'Question set' section.",
+  "source_ticket": "PLAT-837",
+  "request_shape": "One request per FR, one question block per AC row. State: the FR statement, the AC row, the FR's Description/Behaviour/Constraints.",
+  "noul": [
+    {
+      "id": "falsifiable",
+      "question": "Is there a concrete system behaviour that would make this criterion false?",
+      "primitive": "noul",
+      "note": "The core check."
+    },
+    {
+      "id": "states_observable_outcome",
+      "question": "Does it name something observable from outside, rather than a property of the implementation?",
+      "primitive": "noul"
+    },
+    {
+      "id": "threshold_present",
+      "question": "If it asserts a quantity, is the number actually stated?",
+      "primitive": "noul"
+    },
+    {
+      "id": "restates_requirement",
+      "question": "Is this the FR sentence with `shall` swapped out?",
+      "primitive": "noul"
+    },
+    {
+      "id": "implementation_coupled",
+      "question": "Does it name an internal symbol, private field, or call sequence?",
+      "primitive": "noul",
+      "note": "The subtle one: an AC naming an internal function is satisfiable by exactly one implementation and passes forever after it is written. That is over-specification, a distinct defect from vagueness, and it is why ACs survive refactors that should have broken them."
+    }
+  ],
+  "choice": {
+    "id": "weakness_kind",
+    "primitive": "choice",
+    "answer_space": [
+      "sound",
+      "unfalsifiable",
+      "unmeasurable_threshold",
+      "restates_requirement",
+      "implementation_coupled",
+      "happy_path_only"
+    ]
+  },
+  "score": {
+    "id": "adverse_case_coverage",
+    "primitive": "score",
+    "scope": "per FR (aggregate over the FR's AC set), not per AC row",
+    "rubric": [
+      { "level": 0, "label": "happy path only" },
+      { "level": 1, "label": "happy + one error case" },
+      { "level": 2, "label": "happy + errors + edge" },
+      { "level": 3, "label": "happy + errors + edge + explicit negative case" }
+    ],
+    "note": "`specify` already instructs authors to cover happy/error/edge and negative cases. Nothing currently measures whether they complied. This rubric makes that instruction countable."
+  },
+  "authority": {
+    "findings_only": true,
+    "note": "Findings only. This lens never edits an AC, never authors a requirement, never changes a matrix row. Its only write is the SpecReview artifact.",
+    "low_confidence": "annotated, not suppressed — the finding still appears in the table marked unconfirmed."
+  }
+}
