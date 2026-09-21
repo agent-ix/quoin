@@ -1,3 +1,6 @@
 [submodule "corpus"]
 	path = corpus
 	url = https://github.com/agent-ix/qa-corpus
+[submodule "tests/fixtures/semantic-module/corpus/config-service"]
+	path = tests/fixtures/semantic-module/corpus/config-service
+	url = https://github.com/agent-ix/config-service.git

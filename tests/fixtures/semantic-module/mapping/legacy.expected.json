@@ -2,7 +2,7 @@
   "semanticCore": "0.1.0",
   "cases": [
     {
-      "file": "../corpus/config-service/FR-006-config-version-entity.md",
+      "file": "../corpus/config-service/spec/functional/FR-006-config-version-entity.md",
       "form": "free-column-table",
       "line": 17,
       "diagnostic": {

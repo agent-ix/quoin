@@ -61,6 +61,8 @@ fn corpus(scratch: &Scratch) -> PathBuf {
             .join("..")
             .join("corpus")
             .join("config-service")
+            .join("spec")
+            .join("functional")
             .join("FR-006-config-version-entity.md"),
         dir.join("FR-006.md"),
     )
@@ -262,24 +264,23 @@ fn tc_452_654_the_classifier_answers_every_recorded_legacy_expectation() {
         }
     }
 
-    // The pinned FR-006 copy is a real corpus artifact, recorded with its
-    // provenance: a legacy classification over a document the test wrote would
-    // prove nothing about the corpus this contract is about.
+    // FR-006 is read from the `agent-ix/config-service` git submodule
+    // (`tests/fixtures/semantic-module/corpus/config-service`), not a copy: a
+    // legacy classification over a document the test wrote would prove
+    // nothing about the corpus this contract is about, and the submodule's
+    // pinned commit — not a `PROVENANCE.json` beside a copy — is the record of
+    // where it came from (`git submodule status` at that path).
     let corpus_dir = mapping_dir()
         .join("..")
         .join("corpus")
-        .join("config-service");
+        .join("config-service")
+        .join("spec")
+        .join("functional");
     let pinned = fs::read_to_string(corpus_dir.join("FR-006-config-version-entity.md")).unwrap();
     assert!(
         pinned.contains("| Column | Type | Constraints |"),
         "{pinned:.0}"
     );
-    let provenance: Value =
-        serde_json::from_str(&fs::read_to_string(corpus_dir.join("PROVENANCE.json")).unwrap())
-            .unwrap();
-    assert_eq!(provenance["repository"], "agent-ix/config-service");
-    let revision = provenance["revision"].as_str().unwrap();
-    assert_eq!(revision.len(), 40, "{revision}");
 }
 
 /// Build a module declaring `legacy_forms: error`, with `report` written to
