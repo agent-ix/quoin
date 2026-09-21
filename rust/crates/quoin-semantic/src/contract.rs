@@ -4,15 +4,28 @@
 //! The semantic-module contract quoin was written against (FR-070, FR-073,
 //! FR-075; issue #293).
 //!
-//! Port of `src/semantic/contract.ts`. Three families of schema are vendored
-//! under `src/semantic/schemas/`, each with recorded provenance, because there
-//! is no dependency edge along which the files could travel and quoin performs
-//! no network read on a command path.
+//! Port of `src/semantic/contract.ts`. One family of schema is quoin's own
+//! (`sweep-report.schema.json`); the other two are `agent-ix/filament-core-service`'s
+//! module-manifest schema and `agent-ix/filament-core-data`'s package-manifest,
+//! common and semantic-core schemas -- real dependency edges, not copies,
+//! resolved through the `external/filament-core-service` and
+//! `external/filament-core-data` git submodules this repository pins
+//! (PLAT-887 de-vendoring). `build.rs` embeds the submodules' checked-out
+//! bytes into the compiled binary at their own paths, under the internal
+//! names the path helpers below expect, so a release built from this crate
+//! stays self-contained with no runtime dependency on `external/` existing.
 //!
-//! The vendored tree is **not duplicated into this crate**. It stays where the
-//! TypeScript keeps it, and [`schema_dir`] locates it, so the two
-//! implementations cannot drift onto different bytes during the coexistence
-//! window NFR-024 bounds.
+//! [`schema_dir`] and its siblings locate the *embedded* tree, materialized
+//! at runtime by [`crate::materialize_embedded_contract`] -- not a directory
+//! this crate reads off disk directly. `SEMANTIC_CONTRACT`'s `sha256` and
+//! `bundle_digest` fields are compiled assertions: every test in this crate
+//! that reads a schema re-derives its digest from the live embedded bytes and
+//! compares it here. `source_revision` is not re-derived the same way --
+//! it names the submodule commit the bytes were embedded from, for humans
+//! reading a diagnostic, and the tests only check its shape (40 hex
+//! characters). The submodule pin under `external/` is the actual source of
+//! truth for which commit is in use; keep this field in step with it by hand
+//! when the pin moves, the same as any other human-readable provenance note.
 
 use std::path::{Path, PathBuf};
 
@@ -106,20 +119,20 @@ pub const SEMANTIC_CONTRACT: SemanticContract = SemanticContract {
     },
     semantic_core: VendoredBundle {
         repository: "agent-ix/filament-core-data",
-        source_revision: "d48b8da7ae5e40b8b3d465d45b2bd3e24b994dbb",
+        source_revision: "c433df9f289acc57a6bf40e4977a973836afbd73",
         source_path: "packages/semantic-core/generated/json-schema",
         version: "0.1.0",
         bundle_digest: "sha256:dd33c886f70e908b14507c35e078d163b76308c3d170d2b54ddf933d1a4ebb52",
     },
     package_manifest_schema: VendoredSource {
         repository: "agent-ix/filament-core-data",
-        source_revision: "d48b8da7ae5e40b8b3d465d45b2bd3e24b994dbb",
+        source_revision: "c433df9f289acc57a6bf40e4977a973836afbd73",
         source_path: "schema/semantic/v1/package-manifest.schema.json",
         sha256: "sha256:d6e696577f58abd59c36588803c019ad3a43f9a7078c873ad41a0aec41031ffd",
     },
     common_schema: VendoredSource {
         repository: "agent-ix/filament-core-data",
-        source_revision: "d48b8da7ae5e40b8b3d465d45b2bd3e24b994dbb",
+        source_revision: "c433df9f289acc57a6bf40e4977a973836afbd73",
         source_path: "schema/semantic/v1/common.schema.json",
         sha256: "sha256:1de370f344b099b511960c32ddc98d512218183c13b03350201627bdcba7710a",
     },

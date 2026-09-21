@@ -54,13 +54,28 @@ use quoin_semantic::{
 };
 use serde_json::Value;
 
-/// The vendored `src/semantic/` tree the TypeScript also reads.
+/// The semantic contract's root, materialized from the same embedded bytes
+/// `build.rs` compiled into this test binary (PLAT-887): quoin's own
+/// `sweep-report.schema.json`, plus the module-manifest and semantic-core
+/// schemas depended on from the `external/filament-core-service` and
+/// `external/filament-core-data` submodules rather than copied into
+/// `src/semantic/`.
 ///
-/// The port does not copy the schemas: one tree, so the two implementations
-/// cannot drift onto different bytes during the coexistence window NFR-024
-/// bounds.
+/// One directory per process (a `OnceLock` over a `std::process::id()`-named
+/// scratch dir), not `OUT_DIR`: `OUT_DIR` is shared across every test binary
+/// this package builds, and cargo runs them as concurrent processes, so two
+/// materializing into it at once can race on the same nested directories.
 fn semantic_root() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../src/semantic")
+    static ROOT: std::sync::OnceLock<PathBuf> = std::sync::OnceLock::new();
+    ROOT.get_or_init(|| {
+        let root =
+            std::env::temp_dir().join(format!("quoin-semantic-contract-{}", std::process::id()));
+        if let Err(error) = quoin_semantic::materialize_embedded_contract(&root) {
+            panic!("the embedded semantic contract materializes: {error}");
+        }
+        root
+    })
+    .clone()
 }
 
 fn golden(name: &str) -> Value {
