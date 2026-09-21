@@ -47,6 +47,7 @@
     "id": "adverse_case_coverage",
     "primitive": "score",
     "scope": "per FR (aggregate over the FR's AC set), not per AC row",
+    "scope_provenance": "derived, not verbatim ticket text. PLAT-837 states adverse_case_coverage as a `score` without spelling out its aggregation unit in so many words; this field is this skill's inference from the rubric's own shape (a single AC row cannot by itself carry 'happy + errors + edge + negative case' — that vocabulary only makes sense read across an FR's whole AC set) and from PLAT-837's Question set section, which states one Jev request per FR (not per AC row) for this dimension. Kept in its own field, explicitly marked derived, rather than folded into the `noul`/`choice` items PLAT-837 does state verbatim, per PR #570 review.",
     "rubric": [
       { "level": 0, "label": "happy path only" },
       { "level": 1, "label": "happy + one error case" },

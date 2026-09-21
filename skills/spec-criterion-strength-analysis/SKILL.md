@@ -24,15 +24,16 @@ requirement, not AC vs. itself).
 **Do not run this skill yet.** Two things it depends on are being built by
 other agents in parallel, and this skill must not paper over either:
 
-1. **The `analysis: criterion-strength` schema value.** The installed
-   `SpecReview.analysis` enum
-   (`corpus/modules/ecosystem/spec-artifacts-process/schemas/spec-review-frontmatter.schema.json`)
-   does not yet carry `criterion-strength` as of this writing. Per
-   `spec-review`'s own rule: *"a selected analysis absent from the installed
-   `SpecReview.analysis` schema is an unavailable dependency, not permission to
-   emit an invalid review document."* Check the schema before every run; if
-   `criterion-strength` is absent, stop and say so rather than writing a
-   `spec/reviews/criterion-strength.md` that fails `quire validate`.
+1. **The `analysis: criterion-strength` schema value**, owned by another
+   agent, not this skill. Per `spec-review`'s own rule: *"a selected analysis
+   absent from the installed `SpecReview.analysis` schema is an unavailable
+   dependency, not permission to emit an invalid review document."* **Check
+   the installed `SpecReview.analysis` enum at run time, every run** — do not
+   trust a point-in-time record of whether `criterion-strength` has landed,
+   since that fact changes the moment the owning change merges and a stale
+   note would silently stop being true. If `criterion-strength` is absent,
+   stop and say so rather than writing a `spec/reviews/criterion-strength.md`
+   that fails `quire validate`.
 2. **The Jev client.** This skill has no HTTP client and adds no third-party
    dependency — that is a separate, later task, gated on its own approval. Step
    2 below cannot execute until that task lands.
@@ -104,9 +105,20 @@ how it happens to sort in the enum:
 - `unmeasurable_threshold` -> **medium** (asserts a quantity it never states).
 - `restates_requirement` -> **low** (adds no discriminating power beyond the
   FR sentence, but is not itself false).
-- `happy_path_only` -> reported against `adverse_case_coverage`, not as its
-  own finding severity — see the FR-level score.
+- `happy_path_only` -> **low**, as its own per-AC finding.
 - `sound` -> no finding.
+
+`happy_path_only` is **both** a per-AC `weakness_kind` finding at `low` and an
+input to the FR-level `adverse_case_coverage` score — the two are not
+alternatives (an earlier draft of this skill treated them as one-or-the-other
+and disagreed with the fixture corpus, which already carried a `low`-shaped
+per-AC `happy_path_only` verdict; fixed to match). A row labelled
+`happy_path_only` files a finding at the row, the same as any other
+`weakness_kind`, and it also contributes to whatever `adverse_case_coverage`
+score the skill computes once per FR over the whole AC set — see
+`CS-FIX-011`/`CS-FIX-014` in the fixture corpus for a worked example of the
+same underlying gap observed at both granularities, and the `entangled_with`
+note on each explaining why that is one piece of evidence, not two.
 
 A low-confidence verdict in any category is reported at its mapped severity
 and marked unconfirmed, never silently dropped to `low`.
@@ -118,13 +130,28 @@ criteria drawn from specs already in this org's repositories (`quoin`,
 `quire-rs`, `spec-hierarchy`), each with a human label and a rationale citing
 the criterion's own text — never constructed examples. It carries:
 
-- 11 `weakness_kind` fixtures, one for every enum member including `sound`.
-- 3 `adverse_case_coverage` fixtures (FR-level, scores 0, 1, and 3).
-- 6 of the 14 fixtures marked `confidence: "ambiguous"` — cases the lens is
-  expected to find hard, including one (`CS-FIX-010`) independently confirmed
-  hard by a prior, unrelated `spec-failure-domain-analysis` finding
-  (`FND-010` in `spec/reviews/module-cookiecutter-failure-domain.md`) against
-  the same AC row.
+- 11 `weakness_kind` fixtures, covering 5 of the enum's 6 members with a
+  primary label. `unmeasurable_threshold` has **no** clean exemplar in this
+  corpus — searched across 20 repos in this org and none was found (see the
+  file's top-level `unmeasurable_threshold_exemplar_search` note); declared as
+  a gap rather than filled with a mislabelled placeholder.
+- 4 `adverse_case_coverage` fixtures (FR-level): a clean 0, a clean 2, a
+  contested 1 (alternate 2), and a contested 2 (alternate 3) — covering the
+  rubric's full 0–3 range, including both of its disputed boundaries with an
+  unambiguous level-2 exemplar sitting between them.
+- 9 of the 15 fixtures marked `confidence: "ambiguous"` — cases the lens is
+  expected to find hard, not clean positives and negatives.
+
+**Disagreements are recorded, not resolved.** A second, independent reader
+re-derived every label in this corpus and disputed 5 of the original 14 (see
+the file's top-level `governing_ruling_on_disagreement` field). Every fixture
+where the two readings differ carries a `weakness_kind_contested` or
+`adverse_case_coverage_contested` array naming both, plus a `confidence_note`
+identifying the disagreement's source — never a silent pick of one reading
+over the other. An answer key with a written-down disagreement is worth more
+than one reader's confident labels, because the corpus exists to grade a
+classifier, and grading against a label that was contestable but nobody
+contested is the failure mode this convention exists to catch.
 
 This corpus is **not** the TC-145 `ParsedFile`/`Sync` fixture recorded in
 PLAT-839's comments. That fixture is a test-vs-requirement divergence case for
