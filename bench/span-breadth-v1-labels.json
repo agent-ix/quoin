@@ -39,10 +39,6 @@
     "quire-rs": {
       "revision": "42326bbdf8f6641203eebf7a5faaa2b22bc19b0f",
       "remote": "https://github.com/agent-ix/quire-rs"
-    },
-    "filament-ide-rs": {
-      "revision": "546e7943ee5a8fe552242cbb19d12aa902536652",
-      "remote": "https://github.com/agent-ix/filament-ide-rs"
     }
   },
   "labels": [
@@ -52,8 +48,8 @@
       "document": "spec/functional/FR-029-consume-the-quire-json-contract.md",
       "rowId": "FR-029-AC-12",
       "property": "invariant",
-      "statement": "A child that never exited on its own — killed on a buffer overrun, killed by a signal, or never spawned — is reported by its cause (`ENOBUFS` naming the byte limit, the signal name, the spawn error code), reports no exit status, and appends no child stderr.",
-      "normalizedStatement": "a child that never exited on its own — killed on a buffer overrun, killed by a signal, or never spawned — is reported by its cause (`enobufs` naming the byte limit, the signal name, the spawn error code), reports no exit status, and appends no child stderr.",
+      "statement": "A child that never exited on its own \u2014 killed on a buffer overrun, killed by a signal, or never spawned \u2014 is reported by its cause (`ENOBUFS` naming the byte limit, the signal name, the spawn error code), reports no exit status, and appends no child stderr.",
+      "normalizedStatement": "a child that never exited on its own \u2014 killed on a buffer overrun, killed by a signal, or never spawned \u2014 is reported by its cause (`enobufs` naming the byte limit, the signal name, the spawn error code), reports no exit status, and appends no child stderr.",
       "challenge": "nested",
       "expectedSpans": {
         "domain": {
@@ -64,12 +60,12 @@
         "precondition": {
           "end": 40,
           "start": 8,
-          "text": "that never exited on its own —"
+          "text": "that never exited on its own \u2014"
         },
         "oracle": {
           "end": 261,
           "start": 41,
-          "text": "killed on a buffer overrun, killed by a signal, or never spawned — is reported by its cause (`ENOBUFS` naming the byte limit, the signal name, the spawn error code), reports no exit status, and appends no child stderr."
+          "text": "killed on a buffer overrun, killed by a signal, or never spawned \u2014 is reported by its cause (`ENOBUFS` naming the byte limit, the signal name, the spawn error code), reports no exit status, and appends no child stderr."
         }
       },
       "review": {
@@ -238,8 +234,8 @@
       "document": "spec/functional/FR-031-catalog-driven-advisor.md",
       "rowId": "FR-031-AC-23",
       "property": "invariant",
-      "statement": "A payload whose `uncatalogued-verification-method` diagnostics carry no `value` — an engine predating quire-rs CR-091 — degrades the advisor to the two-state behaviour with an explicit \"engine predates vocabulary classification\" note, never a misclassification; a payload carrying no such diagnostics at all is not degraded, because under an engine of either vintage it means every authored value is catalogued.",
-      "normalizedStatement": "a payload whose `uncatalogued-verification-method` diagnostics carry no `value` — an engine predating quire-rs cr-091 — degrades the advisor to the two-state behaviour with an explicit \"engine predates vocabulary classification\" note, never a misclassification; a payload carrying no such diagnostics at all is not degraded, because under an engine of either vintage it means every authored value is catalogued.",
+      "statement": "A payload whose `uncatalogued-verification-method` diagnostics carry no `value` \u2014 an engine predating quire-rs CR-091 \u2014 degrades the advisor to the two-state behaviour with an explicit \"engine predates vocabulary classification\" note, never a misclassification; a payload carrying no such diagnostics at all is not degraded, because under an engine of either vintage it means every authored value is catalogued.",
+      "normalizedStatement": "a payload whose `uncatalogued-verification-method` diagnostics carry no `value` \u2014 an engine predating quire-rs cr-091 \u2014 degrades the advisor to the two-state behaviour with an explicit \"engine predates vocabulary classification\" note, never a misclassification; a payload carrying no such diagnostics at all is not degraded, because under an engine of either vintage it means every authored value is catalogued.",
       "challenge": "hyphenated",
       "expectedSpans": {
         "domain": {
@@ -250,12 +246,12 @@
         "precondition": {
           "end": 93,
           "start": 10,
-          "text": "whose `uncatalogued-verification-method` diagnostics carry no `value` — an engine"
+          "text": "whose `uncatalogued-verification-method` diagnostics carry no `value` \u2014 an engine"
         },
         "oracle": {
           "end": 415,
           "start": 94,
-          "text": "predating quire-rs CR-091 — degrades the advisor to the two-state behaviour with an explicit \"engine predates vocabulary classification\" note, never a misclassification; a payload carrying no such diagnostics at all is not degraded, because under an engine of either vintage it means every authored value is catalogued."
+          "text": "predating quire-rs CR-091 \u2014 degrades the advisor to the two-state behaviour with an explicit \"engine predates vocabulary classification\" note, never a misclassification; a payload carrying no such diagnostics at all is not degraded, because under an engine of either vintage it means every authored value is catalogued."
         }
       },
       "review": {
@@ -497,8 +493,8 @@
       "document": "spec/functional/FR-030-evidence-store.md",
       "rowId": "FR-030-AC-8",
       "property": "invariant",
-      "statement": "`gc` deletes only runs that are neither the latest for their suite nor referenced by a binding, and `--dry-run` deletes nothing. The command declares no `--module` — gc never invokes quire and never loads a catalog — and its help says why.",
-      "normalizedStatement": "`gc` deletes only runs that are neither the latest for their suite nor referenced by a binding, and `--dry-run` deletes nothing. the command declares no `--module` — gc never invokes quire and never loads a catalog — and its help says why.",
+      "statement": "`gc` deletes only runs that are neither the latest for their suite nor referenced by a binding, and `--dry-run` deletes nothing. The command declares no `--module` \u2014 gc never invokes quire and never loads a catalog \u2014 and its help says why.",
+      "normalizedStatement": "`gc` deletes only runs that are neither the latest for their suite nor referenced by a binding, and `--dry-run` deletes nothing. the command declares no `--module` \u2014 gc never invokes quire and never loads a catalog \u2014 and its help says why.",
       "challenge": "justified-refusal",
       "expectedRefusal": "span:refused-no-explicit-domain",
       "review": {
@@ -512,8 +508,8 @@
       "document": "spec/functional/FR-050-declarative-coverage-computation.md",
       "rowId": "FR-050-AC-14",
       "property": "invariant",
-      "statement": "A declared model that mints zero trace targets is reported distinctly from full coverage — never as `100%` — and `quire coverage --strict` exits non-zero on it.",
-      "normalizedStatement": "a declared model that mints zero trace targets is reported distinctly from full coverage — never as `100%` — and `quire coverage --strict` exits non-zero on it.",
+      "statement": "A declared model that mints zero trace targets is reported distinctly from full coverage \u2014 never as `100%` \u2014 and `quire coverage --strict` exits non-zero on it.",
+      "normalizedStatement": "a declared model that mints zero trace targets is reported distinctly from full coverage \u2014 never as `100%` \u2014 and `quire coverage --strict` exits non-zero on it.",
       "challenge": "hyphenated",
       "expectedSpans": {
         "domain": {
@@ -529,7 +525,7 @@
         "oracle": {
           "end": 164,
           "start": 47,
-          "text": "is reported distinctly from full coverage — never as `100%` — and `quire coverage --strict` exits non-zero on it."
+          "text": "is reported distinctly from full coverage \u2014 never as `100%` \u2014 and `quire coverage --strict` exits non-zero on it."
         }
       },
       "review": {
@@ -574,8 +570,8 @@
       "document": "spec/functional/FR-002-schema-validation-pipeline.md",
       "rowId": "FR-002-AC-2",
       "property": "universal",
-      "statement": "Given a current with `title: \"valid\"` and a patch `{ \"title\": \"\" }` against a schema requiring `title` `minLength: 1`, the merged-validated call returns `SchemaViolation` with field path `title` — caught because the merge produced an invalid `title`, even though the patch alone has the field set.",
-      "normalizedStatement": "given a current with `title: \"valid\"` and a patch `{ \"title\": \"\" }` against a schema requiring `title` `minlength: 1`, the merged-validated call returns `schemaviolation` with field path `title` — caught because the merge produced an invalid `title`, even though the patch alone has the field set.",
+      "statement": "Given a current with `title: \"valid\"` and a patch `{ \"title\": \"\" }` against a schema requiring `title` `minLength: 1`, the merged-validated call returns `SchemaViolation` with field path `title` \u2014 caught because the merge produced an invalid `title`, even though the patch alone has the field set.",
+      "normalizedStatement": "given a current with `title: \"valid\"` and a patch `{ \"title\": \"\" }` against a schema requiring `title` `minlength: 1`, the merged-validated call returns `schemaviolation` with field path `title` \u2014 caught because the merge produced an invalid `title`, even though the patch alone has the field set.",
       "challenge": "hyphenated",
       "expectedSpans": {
         "domain": {
@@ -591,7 +587,7 @@
         "oracle": {
           "end": 299,
           "start": 145,
-          "text": "returns `SchemaViolation` with field path `title` — caught because the merge produced an invalid `title`, even though the patch alone has the field set."
+          "text": "returns `SchemaViolation` with field path `title` \u2014 caught because the merge produced an invalid `title`, even though the patch alone has the field set."
         }
       },
       "review": {
@@ -667,8 +663,8 @@
       "document": "spec/functional/FR-050-declarative-coverage-computation.md",
       "rowId": "FR-050-AC-19",
       "property": "invariant",
-      "statement": "A declaration that selects nothing is reported in `CoverageReport.diagnostics` and as a `quire validate` warning, never in silence: a declared `archetype:` no corpus document has is reported when the model minted no id at all, and a model declaring no `trace_targets` is reported as minting nothing. `quire coverage` and `quire validate` report the same machine token for the same finding. The list is empty — and the key absent — for a model whose declarations select, so FR-050-AC-7 byte-identity holds (CR-054, amended CR-059, narrowed CR-062).",
-      "normalizedStatement": "a declaration that selects nothing is reported in `coveragereport.diagnostics` and as a `quire validate` warning, never in silence: a declared `archetype:` no corpus document has is reported when the model minted no id at all, and a model declaring no `trace_targets` is reported as minting nothing. `quire coverage` and `quire validate` report the same machine token for the same finding. the list is empty — and the key absent — for a model whose declarations select, so fr-050-ac-7 byte-identity holds (cr-054, amended cr-059, narrowed cr-062).",
+      "statement": "A declaration that selects nothing is reported in `CoverageReport.diagnostics` and as a `quire validate` warning, never in silence: a declared `archetype:` no corpus document has is reported when the model minted no id at all, and a model declaring no `trace_targets` is reported as minting nothing. `quire coverage` and `quire validate` report the same machine token for the same finding. The list is empty \u2014 and the key absent \u2014 for a model whose declarations select, so FR-050-AC-7 byte-identity holds (CR-054, amended CR-059, narrowed CR-062).",
+      "normalizedStatement": "a declaration that selects nothing is reported in `coveragereport.diagnostics` and as a `quire validate` warning, never in silence: a declared `archetype:` no corpus document has is reported when the model minted no id at all, and a model declaring no `trace_targets` is reported as minting nothing. `quire coverage` and `quire validate` report the same machine token for the same finding. the list is empty \u2014 and the key absent \u2014 for a model whose declarations select, so fr-050-ac-7 byte-identity holds (cr-054, amended cr-059, narrowed cr-062).",
       "challenge": "hyphenated",
       "expectedSpans": {
         "domain": {
@@ -684,7 +680,7 @@
         "oracle": {
           "end": 551,
           "start": 35,
-          "text": "is reported in `CoverageReport.diagnostics` and as a `quire validate` warning, never in silence: a declared `archetype:` no corpus document has is reported when the model minted no id at all, and a model declaring no `trace_targets` is reported as minting nothing. `quire coverage` and `quire validate` report the same machine token for the same finding. The list is empty — and the key absent — for a model whose declarations select, so FR-050-AC-7 byte-identity holds (CR-054, amended CR-059, narrowed CR-062)."
+          "text": "is reported in `CoverageReport.diagnostics` and as a `quire validate` warning, never in silence: a declared `archetype:` no corpus document has is reported when the model minted no id at all, and a model declaring no `trace_targets` is reported as minting nothing. `quire coverage` and `quire validate` report the same machine token for the same finding. The list is empty \u2014 and the key absent \u2014 for a model whose declarations select, so FR-050-AC-7 byte-identity holds (CR-054, amended CR-059, narrowed CR-062)."
         }
       },
       "review": {
@@ -729,8 +725,8 @@
       "document": "spec/functional/FR-050-declarative-coverage-computation.md",
       "rowId": "FR-050-AC-23",
       "property": "invariant",
-      "statement": "A trace id that is the row id of a **status-carrying** reference row and is bound by more than one distinct source symbol — distinctness is the `(path, symbol)` pair — is reported in `CoverageReport.shared_trace_ids` with the id and every binding symbol, deterministically ordered by id and inside each record by `(path, symbol)`. An id whose rows carry no status (an acceptance criterion verified by several tests) is never reported. A corpus whose every status-row id is uniquely bound reports an empty list, the key is absent from the JSON, and the payload is byte-identical to a report from an engine predating the field. The list does not affect `totals`, and `--strict` does not gate on it (CR-087).",
-      "normalizedStatement": "a trace id that is the row id of a **status-carrying** reference row and is bound by more than one distinct source symbol — distinctness is the `(path, symbol)` pair — is reported in `coveragereport.shared_trace_ids` with the id and every binding symbol, deterministically ordered by id and inside each record by `(path, symbol)`. an id whose rows carry no status (an acceptance criterion verified by several tests) is never reported. a corpus whose every status-row id is uniquely bound reports an empty list, the key is absent from the json, and the payload is byte-identical to a report from an engine predating the field. the list does not affect `totals`, and `--strict` does not gate on it (cr-087).",
+      "statement": "A trace id that is the row id of a **status-carrying** reference row and is bound by more than one distinct source symbol \u2014 distinctness is the `(path, symbol)` pair \u2014 is reported in `CoverageReport.shared_trace_ids` with the id and every binding symbol, deterministically ordered by id and inside each record by `(path, symbol)`. An id whose rows carry no status (an acceptance criterion verified by several tests) is never reported. A corpus whose every status-row id is uniquely bound reports an empty list, the key is absent from the JSON, and the payload is byte-identical to a report from an engine predating the field. The list does not affect `totals`, and `--strict` does not gate on it (CR-087).",
+      "normalizedStatement": "a trace id that is the row id of a **status-carrying** reference row and is bound by more than one distinct source symbol \u2014 distinctness is the `(path, symbol)` pair \u2014 is reported in `coveragereport.shared_trace_ids` with the id and every binding symbol, deterministically ordered by id and inside each record by `(path, symbol)`. an id whose rows carry no status (an acceptance criterion verified by several tests) is never reported. a corpus whose every status-row id is uniquely bound reports an empty list, the key is absent from the json, and the payload is byte-identical to a report from an engine predating the field. the list does not affect `totals`, and `--strict` does not gate on it (cr-087).",
       "challenge": "hyphenated",
       "expectedSpans": {
         "domain": {
@@ -746,7 +742,7 @@
         "oracle": {
           "end": 709,
           "start": 73,
-          "text": "is bound by more than one distinct source symbol — distinctness is the `(path, symbol)` pair — is reported in `CoverageReport.shared_trace_ids` with the id and every binding symbol, deterministically ordered by id and inside each record by `(path, symbol)`. An id whose rows carry no status (an acceptance criterion verified by several tests) is never reported. A corpus whose every status-row id is uniquely bound reports an empty list, the key is absent from the JSON, and the payload is byte-identical to a report from an engine predating the field. The list does not affect `totals`, and `--strict` does not gate on it (CR-087)."
+          "text": "is bound by more than one distinct source symbol \u2014 distinctness is the `(path, symbol)` pair \u2014 is reported in `CoverageReport.shared_trace_ids` with the id and every binding symbol, deterministically ordered by id and inside each record by `(path, symbol)`. An id whose rows carry no status (an acceptance criterion verified by several tests) is never reported. A corpus whose every status-row id is uniquely bound reports an empty list, the key is absent from the JSON, and the payload is byte-identical to a report from an engine predating the field. The list does not affect `totals`, and `--strict` does not gate on it (CR-087)."
         }
       },
       "review": {
@@ -837,8 +833,8 @@
       "document": "spec/functional/FR-039-unlinked-reference-detection.md",
       "rowId": "FR-039-AC-5",
       "property": "idempotence",
-      "statement": "A token already inside a Markdown link — as link text `[FR-008](./FR-008-….md)` or inside an [FR-008](./FR-008-byte-exact-slicing.md) destination — yields no finding; re-running `unlinked_references` after applying all `AutoFix` suggestions yields no `AutoFix` finding for the converted tokens (idempotence).",
-      "normalizedStatement": "a token already inside a markdown link — as link text `[fr-008](./fr-008-....md)` or inside an [fr-008](./fr-008-byte-exact-slicing.md) destination — yields no finding; re-running `unlinked_references` after applying all `autofix` suggestions yields no `autofix` finding for the converted tokens (idempotence).",
+      "statement": "A token already inside a Markdown link \u2014 as link text `[FR-008](./FR-008-\u2026.md)` or inside an [FR-008](./FR-008-byte-exact-slicing.md) destination \u2014 yields no finding; re-running `unlinked_references` after applying all `AutoFix` suggestions yields no `AutoFix` finding for the converted tokens (idempotence).",
+      "normalizedStatement": "a token already inside a markdown link \u2014 as link text `[fr-008](./fr-008-....md)` or inside an [fr-008](./fr-008-byte-exact-slicing.md) destination \u2014 yields no finding; re-running `unlinked_references` after applying all `autofix` suggestions yields no `autofix` finding for the converted tokens (idempotence).",
       "challenge": "justified-refusal",
       "expectedRefusal": "span:refused-weak-boundary",
       "review": {
@@ -852,8 +848,8 @@
       "document": "spec/functional/FR-002-schema-validation-pipeline.md",
       "rowId": "FR-002-AC-4",
       "property": "invariant",
-      "statement": "A proptest fuzzes patches across all archetypes in the test corpus and confirms `apply_patch` returns a valid `Value` (per schema) or a typed error — never a panic.",
-      "normalizedStatement": "a proptest fuzzes patches across all archetypes in the test corpus and confirms `apply_patch` returns a valid `value` (per schema) or a typed error — never a panic.",
+      "statement": "A proptest fuzzes patches across all archetypes in the test corpus and confirms `apply_patch` returns a valid `Value` (per schema) or a typed error \u2014 never a panic.",
+      "normalizedStatement": "a proptest fuzzes patches across all archetypes in the test corpus and confirms `apply_patch` returns a valid `value` (per schema) or a typed error \u2014 never a panic.",
       "challenge": "justified-refusal",
       "expectedRefusal": "span:refused-weak-boundary",
       "review": {
@@ -882,8 +878,8 @@
       "document": "spec/functional/FR-011-body-extraction-dsl.md",
       "rowId": "FR-011-AC-21",
       "property": "ordering",
-      "statement": "(CR-006) A locator with `multiple: true` yields every resolved value as a JSON array, in document order — a `code_block(mermaid under Workflow)` locator against a section holding two mermaid blocks yields both. Without the flag the same locator yields only the first (unchanged first-wins contract). In a fallback chain the flag is read from the hit primitive; under multi-yield each iteration unit keeps its own full list.",
-      "normalizedStatement": "(cr-006) a locator with `multiple: true` yields every resolved value as a json array, in document order — a `code_block(mermaid under workflow)` locator against a section holding two mermaid blocks yields both. without the flag the same locator yields only the first (unchanged first-wins contract). in a fallback chain the flag is read from the hit primitive; under multi-yield each iteration unit keeps its own full list.",
+      "statement": "(CR-006) A locator with `multiple: true` yields every resolved value as a JSON array, in document order \u2014 a `code_block(mermaid under Workflow)` locator against a section holding two mermaid blocks yields both. Without the flag the same locator yields only the first (unchanged first-wins contract). In a fallback chain the flag is read from the hit primitive; under multi-yield each iteration unit keeps its own full list.",
+      "normalizedStatement": "(cr-006) a locator with `multiple: true` yields every resolved value as a json array, in document order \u2014 a `code_block(mermaid under workflow)` locator against a section holding two mermaid blocks yields both. without the flag the same locator yields only the first (unchanged first-wins contract). in a fallback chain the flag is read from the hit primitive; under multi-yield each iteration unit keeps its own full list.",
       "challenge": "justified-refusal",
       "expectedRefusal": "span:refused-no-explicit-domain",
       "review": {
@@ -897,8 +893,8 @@
       "document": "spec/functional/FR-022-writeback-primitives.md",
       "rowId": "FR-022-AC-6",
       "property": "round-trip",
-      "statement": "Replacing a section's content with **its own current content** returns the document byte-identical, for every section including an **empty** one — a heading immediately followed by the next heading, or by end of file. A speculative rewrite is therefore a no-op rather than a source of churn.",
-      "normalizedStatement": "replacing a section's content with **its own current content** returns the document byte-identical, for every section including an **empty** one — a heading immediately followed by the next heading, or by end of file. a speculative rewrite is therefore a no-op rather than a source of churn.",
+      "statement": "Replacing a section's content with **its own current content** returns the document byte-identical, for every section including an **empty** one \u2014 a heading immediately followed by the next heading, or by end of file. A speculative rewrite is therefore a no-op rather than a source of churn.",
+      "normalizedStatement": "replacing a section's content with **its own current content** returns the document byte-identical, for every section including an **empty** one \u2014 a heading immediately followed by the next heading, or by end of file. a speculative rewrite is therefore a no-op rather than a source of churn.",
       "challenge": "justified-refusal",
       "expectedRefusal": "span:refused-no-explicit-domain",
       "review": {
@@ -961,466 +957,6 @@
       "normalizedStatement": "loading two paths each containing a different `spec-artifacts-*` module produces a registry whose `module_names()` iterator yields both module names in deterministic order (sorted by load order).",
       "challenge": "justified-refusal",
       "expectedRefusal": "span:refused-no-explicit-domain",
-      "review": {
-        "outcome": "pass",
-        "rationale": "The statement does not expose all three boundaries without inventing an unstated subject or condition; explicit refusal is safer than a guessed span."
-      }
-    },
-    {
-      "id": "filament-ide-rs-FR-095-AC-6-858285860e",
-      "repository": "filament-ide-rs",
-      "document": "spec/core/functional/FR-095-projection-container-binding.md",
-      "rowId": "FR-095-AC-6",
-      "property": "concurrency",
-      "statement": "A binding whose container record does not yet exist creates it and serves the caller without a prior index run, and two callers creating the same container concurrently converge on one record",
-      "normalizedStatement": "a binding whose container record does not yet exist creates it and serves the caller without a prior index run, and two callers creating the same container concurrently converge on one record",
-      "challenge": "coordinated",
-      "expectedSpans": {
-        "domain": {
-          "end": 9,
-          "start": 2,
-          "text": "binding"
-        },
-        "precondition": {
-          "end": 51,
-          "start": 10,
-          "text": "whose container record does not yet exist"
-        },
-        "oracle": {
-          "end": 191,
-          "start": 52,
-          "text": "creates it and serves the caller without a prior index run, and two callers creating the same container concurrently converge on one record"
-        }
-      },
-      "review": {
-        "outcome": "pass",
-        "rationale": "Each retained boundary is a statement-relative exact substring and names the criterion's subject, condition, and required result without crossing into a neighboring clause."
-      }
-    },
-    {
-      "id": "filament-ide-rs-FR-049-AC-6-11d5ab089c",
-      "repository": "filament-ide-rs",
-      "document": "spec/plan-sync/functional/FR-049-target-driver-trait.md",
-      "rowId": "FR-049-AC-6",
-      "property": "error-case",
-      "statement": "A pull that cannot enumerate its scope completely returns an error and the engine aborts the run before merge, emitting no tombstone for the unenumerated nodes",
-      "normalizedStatement": "a pull that cannot enumerate its scope completely returns an error and the engine aborts the run before merge, emitting no tombstone for the unenumerated nodes",
-      "challenge": "coordinated",
-      "expectedSpans": {
-        "domain": {
-          "end": 6,
-          "start": 2,
-          "text": "pull"
-        },
-        "precondition": {
-          "end": 28,
-          "start": 7,
-          "text": "that cannot enumerate"
-        },
-        "oracle": {
-          "end": 159,
-          "start": 29,
-          "text": "its scope completely returns an error and the engine aborts the run before merge, emitting no tombstone for the unenumerated nodes"
-        }
-      },
-      "review": {
-        "outcome": "pass",
-        "rationale": "Each retained boundary is a statement-relative exact substring and names the criterion's subject, condition, and required result without crossing into a neighboring clause."
-      }
-    },
-    {
-      "id": "filament-ide-rs-FR-098-AC-10-4aa24e7173",
-      "repository": "filament-ide-rs",
-      "document": "spec/backend/functional/FR-098-deployment-and-discovery.md",
-      "rowId": "FR-098-AC-10",
-      "property": "invariant",
-      "statement": "An unhealthy owner that does not release the endpoint within the bounded wait is refused to, with an error naming its pid; it is never `SIGKILL`ed",
-      "normalizedStatement": "an unhealthy owner that does not release the endpoint within the bounded wait is refused to, with an error naming its pid; it is never `sigkill`ed",
-      "challenge": "wrong-subject",
-      "expectedSpans": {
-        "domain": {
-          "end": 18,
-          "start": 3,
-          "text": "unhealthy owner"
-        },
-        "precondition": {
-          "end": 77,
-          "start": 19,
-          "text": "that does not release the endpoint within the bounded wait"
-        },
-        "oracle": {
-          "end": 146,
-          "start": 78,
-          "text": "is refused to, with an error naming its pid; it is never `SIGKILL`ed"
-        }
-      },
-      "review": {
-        "outcome": "pass",
-        "rationale": "Each retained boundary is a statement-relative exact substring and names the criterion's subject, condition, and required result without crossing into a neighboring clause."
-      }
-    },
-    {
-      "id": "filament-ide-rs-FR-080-AC-19-79ca7ff6dc",
-      "repository": "filament-ide-rs",
-      "document": "spec/platform-shell/functional/FR-080-bounded-neighborhood-graph-rendering.md",
-      "rowId": "FR-080-AC-19",
-      "property": "ordering",
-      "statement": "An object type absent from the sorted vocabulary, or whose swatch token resolves empty, is drawn in the themed default accent, never unstyled or blank",
-      "normalizedStatement": "an object type absent from the sorted vocabulary, or whose swatch token resolves empty, is drawn in the themed default accent, never unstyled or blank",
-      "challenge": "coordinated",
-      "expectedSpans": {
-        "domain": {
-          "end": 14,
-          "start": 3,
-          "text": "object type"
-        },
-        "precondition": {
-          "end": 86,
-          "start": 15,
-          "text": "absent from the sorted vocabulary, or whose swatch token resolves empty"
-        },
-        "oracle": {
-          "end": 150,
-          "start": 88,
-          "text": "is drawn in the themed default accent, never unstyled or blank"
-        }
-      },
-      "review": {
-        "outcome": "pass",
-        "rationale": "Each retained boundary is a statement-relative exact substring and names the criterion's subject, condition, and required result without crossing into a neighboring clause."
-      }
-    },
-    {
-      "id": "filament-ide-rs-FR-098-AC-4-d2eeb9a33c",
-      "repository": "filament-ide-rs",
-      "document": "spec/backend/functional/FR-098-deployment-and-discovery.md",
-      "rowId": "FR-098-AC-4",
-      "property": "universal",
-      "statement": "An endpoint with nothing behind it is refused with `SVC_BACKEND_UNAVAILABLE`",
-      "normalizedStatement": "an endpoint with nothing behind it is refused with `svc_backend_unavailable`",
-      "challenge": "overbroad",
-      "expectedSpans": {
-        "domain": {
-          "end": 11,
-          "start": 3,
-          "text": "endpoint"
-        },
-        "precondition": {
-          "end": 37,
-          "start": 12,
-          "text": "with nothing behind it is"
-        },
-        "oracle": {
-          "end": 76,
-          "start": 38,
-          "text": "refused with `SVC_BACKEND_UNAVAILABLE`"
-        }
-      },
-      "review": {
-        "outcome": "pass",
-        "rationale": "Each retained boundary is a statement-relative exact substring and names the criterion's subject, condition, and required result without crossing into a neighboring clause."
-      }
-    },
-    {
-      "id": "filament-ide-rs-FR-025-AC-9-9607c5a219",
-      "repository": "filament-ide-rs",
-      "document": "spec/data/functional/FR-025-index-run-consistency.md",
-      "rowId": "FR-025-AC-9",
-      "property": "invariant",
-      "statement": "A `running` row whose liveness heartbeat is older than the stale lease is reclaimed by the next run start — the orphan marked `interrupted`, the new run proceeding — while a row heartbeating within the lease is never stolen (the contender waits and surfaces the scope diagnostic)",
-      "normalizedStatement": "a `running` row whose liveness heartbeat is older than the stale lease is reclaimed by the next run start — the orphan marked `interrupted`, the new run proceeding — while a row heartbeating within the lease is never stolen (the contender waits and surfaces the scope diagnostic)",
-      "challenge": "nested",
-      "expectedSpans": {
-        "domain": {
-          "end": 15,
-          "start": 2,
-          "text": "`running` row"
-        },
-        "precondition": {
-          "end": 40,
-          "start": 16,
-          "text": "whose liveness heartbeat"
-        },
-        "oracle": {
-          "end": 283,
-          "start": 41,
-          "text": "is older than the stale lease is reclaimed by the next run start — the orphan marked `interrupted`, the new run proceeding — while a row heartbeating within the lease is never stolen (the contender waits and surfaces the scope diagnostic)"
-        }
-      },
-      "review": {
-        "outcome": "pass",
-        "rationale": "Each retained boundary is a statement-relative exact substring and names the criterion's subject, condition, and required result without crossing into a neighboring clause."
-      }
-    },
-    {
-      "id": "filament-ide-rs-FR-104-AC-4-1fee549214",
-      "repository": "filament-ide-rs",
-      "document": "spec/backend/functional/FR-104-daemon-work-dir-registry.md",
-      "rowId": "FR-104-AC-4",
-      "property": "universal",
-      "statement": "A persisted legacy `dev_dir` with no `workspace_roots` list is read as the single-entry registry containing it, matching the FR-070 migration",
-      "normalizedStatement": "a persisted legacy `dev_dir` with no `workspace_roots` list is read as the single-entry registry containing it, matching the fr-070 migration",
-      "challenge": "hyphenated",
-      "expectedSpans": {
-        "domain": {
-          "end": 28,
-          "start": 2,
-          "text": "persisted legacy `dev_dir`"
-        },
-        "precondition": {
-          "end": 62,
-          "start": 29,
-          "text": "with no `workspace_roots` list is"
-        },
-        "oracle": {
-          "end": 141,
-          "start": 63,
-          "text": "read as the single-entry registry containing it, matching the FR-070 migration"
-        }
-      },
-      "review": {
-        "outcome": "pass",
-        "rationale": "Each retained boundary is a statement-relative exact substring and names the criterion's subject, condition, and required result without crossing into a neighboring clause."
-      }
-    },
-    {
-      "id": "filament-ide-rs-FR-056-AC-9-c01965daea",
-      "repository": "filament-ide-rs",
-      "document": "spec/plan-sync/functional/FR-056-github-issues-driver.md",
-      "rowId": "FR-056-AC-9",
-      "property": "invariant",
-      "statement": "A mapped issue whose body yields no well-formed marker block is quarantined with an open integrity conflict, excluded from remote-deletion inference, and never tombstoned by absence",
-      "normalizedStatement": "a mapped issue whose body yields no well-formed marker block is quarantined with an open integrity conflict, excluded from remote-deletion inference, and never tombstoned by absence",
-      "challenge": "hyphenated",
-      "expectedSpans": {
-        "domain": {
-          "end": 14,
-          "start": 2,
-          "text": "mapped issue"
-        },
-        "precondition": {
-          "end": 60,
-          "start": 15,
-          "text": "whose body yields no well-formed marker block"
-        },
-        "oracle": {
-          "end": 181,
-          "start": 61,
-          "text": "is quarantined with an open integrity conflict, excluded from remote-deletion inference, and never tombstoned by absence"
-        }
-      },
-      "review": {
-        "outcome": "pass",
-        "rationale": "Each retained boundary is a statement-relative exact substring and names the criterion's subject, condition, and required result without crossing into a neighboring clause."
-      }
-    },
-    {
-      "id": "filament-ide-rs-FR-105-AC-6-f25c949184",
-      "repository": "filament-ide-rs",
-      "document": "spec/backend/functional/FR-105-always-served-work-dirs.md",
-      "rowId": "FR-105-AC-6",
-      "property": "universal",
-      "statement": "A project whose watch cannot be established is recorded with a stable error code in the watcher status while the remaining projects stay watched",
-      "normalizedStatement": "a project whose watch cannot be established is recorded with a stable error code in the watcher status while the remaining projects stay watched",
-      "challenge": "wrong-subject",
-      "expectedSpans": {
-        "domain": {
-          "end": 9,
-          "start": 2,
-          "text": "project"
-        },
-        "precondition": {
-          "end": 28,
-          "start": 10,
-          "text": "whose watch cannot"
-        },
-        "oracle": {
-          "end": 144,
-          "start": 29,
-          "text": "be established is recorded with a stable error code in the watcher status while the remaining projects stay watched"
-        }
-      },
-      "review": {
-        "outcome": "pass",
-        "rationale": "Each retained boundary is a statement-relative exact substring and names the criterion's subject, condition, and required result without crossing into a neighboring clause."
-      }
-    },
-    {
-      "id": "filament-ide-rs-FR-068-AC-11-3257b3915d",
-      "repository": "filament-ide-rs",
-      "document": "spec/platform-shell/functional/FR-068-unified-workspace-graph-indexing.md",
-      "rowId": "FR-068-AC-11",
-      "property": "invariant",
-      "statement": "A link whose target cannot be resolved to a projection node is recorded as an unresolved-edge entry surfaced through the reindex summary — never silently dropped and never guessed onto a same-code artifact in a repository the link did not name — and a later run in which the target becomes resolvable produces the edge and clears the record without re-extracting the source",
-      "normalizedStatement": "a link whose target cannot be resolved to a projection node is recorded as an unresolved-edge entry surfaced through the reindex summary — never silently dropped and never guessed onto a same-code artifact in a repository the link did not name — and a later run in which the target becomes resolvable produces the edge and clears the record without re-extracting the source",
-      "challenge": "hyphenated",
-      "expectedSpans": {
-        "domain": {
-          "end": 6,
-          "start": 2,
-          "text": "link"
-        },
-        "precondition": {
-          "end": 26,
-          "start": 7,
-          "text": "whose target cannot"
-        },
-        "oracle": {
-          "end": 377,
-          "start": 27,
-          "text": "be resolved to a projection node is recorded as an unresolved-edge entry surfaced through the reindex summary — never silently dropped and never guessed onto a same-code artifact in a repository the link did not name — and a later run in which the target becomes resolvable produces the edge and clears the record without re-extracting the source"
-        }
-      },
-      "review": {
-        "outcome": "pass",
-        "rationale": "Each retained boundary is a statement-relative exact substring and names the criterion's subject, condition, and required result without crossing into a neighboring clause."
-      }
-    },
-    {
-      "id": "filament-ide-rs-FR-038-AC-2-090a028d99",
-      "repository": "filament-ide-rs",
-      "document": "spec/cli-mcp-agent/functional/FR-038-mcp-server-tool-surface.md",
-      "rowId": "FR-038-AC-2",
-      "property": "error-case",
-      "statement": "With markup granted, the `markup` tool is enumerated and serves FR-014 markup operations; with markup not granted, it is absent from enumeration and calling it returns an error without any service dispatch",
-      "normalizedStatement": "with markup granted, the `markup` tool is enumerated and serves fr-014 markup operations; with markup not granted, it is absent from enumeration and calling it returns an error without any service dispatch",
-      "challenge": "justified-refusal",
-      "expectedRefusal": "span:refused-no-explicit-domain",
-      "review": {
-        "outcome": "pass",
-        "rationale": "The statement does not expose all three boundaries without inventing an unstated subject or condition; explicit refusal is safer than a guessed span."
-      }
-    },
-    {
-      "id": "filament-ide-rs-FR-021-AC-1-0cb87764ef",
-      "repository": "filament-ide-rs",
-      "document": "spec/core/functional/FR-021-identity-and-scope-primitives.md",
-      "rowId": "FR-021-AC-1",
-      "property": "idempotence",
-      "statement": "Opening the same project root twice, including via differently spelled but equivalent paths, yields equal project scopes with the same `scope_id`",
-      "normalizedStatement": "opening the same project root twice, including via differently spelled but equivalent paths, yields equal project scopes with the same `scope_id`",
-      "challenge": "justified-refusal",
-      "expectedRefusal": "span:refused-no-explicit-domain",
-      "review": {
-        "outcome": "pass",
-        "rationale": "The statement does not expose all three boundaries without inventing an unstated subject or condition; explicit refusal is safer than a guessed span."
-      }
-    },
-    {
-      "id": "filament-ide-rs-FR-099-AC-7-61dbdbda37",
-      "repository": "filament-ide-rs",
-      "document": "spec/backend/functional/FR-099-admin-operations.md",
-      "rowId": "FR-099-AC-7",
-      "property": "invariant",
-      "statement": "Health reports a reachable database as reachable with no detail, and an unreachable one as unreachable with a leading diagnostic-code detail — never free text with a connection string at its head",
-      "normalizedStatement": "health reports a reachable database as reachable with no detail, and an unreachable one as unreachable with a leading diagnostic-code detail — never free text with a connection string at its head",
-      "challenge": "justified-refusal",
-      "expectedRefusal": "span:refused-no-explicit-domain",
-      "review": {
-        "outcome": "pass",
-        "rationale": "The statement does not expose all three boundaries without inventing an unstated subject or condition; explicit refusal is safer than a guessed span."
-      }
-    },
-    {
-      "id": "filament-ide-rs-FR-002-AC-7-5bc65d58e0",
-      "repository": "filament-ide-rs",
-      "document": "spec/data/functional/FR-002-persist-core-projection.md",
-      "rowId": "FR-002-AC-7",
-      "property": "lifecycle",
-      "statement": "Every reindex records an index-run row that reaches a terminal lifecycle state",
-      "normalizedStatement": "every reindex records an index-run row that reaches a terminal lifecycle state",
-      "challenge": "justified-refusal",
-      "expectedRefusal": "span:refused-weak-boundary",
-      "review": {
-        "outcome": "pass",
-        "rationale": "The statement does not expose all three boundaries without inventing an unstated subject or condition; explicit refusal is safer than a guessed span."
-      }
-    },
-    {
-      "id": "filament-ide-rs-FR-096-AC-1-1178c1e47a",
-      "repository": "filament-ide-rs",
-      "document": "spec/backend/functional/FR-096-backend-contract.md",
-      "rowId": "FR-096-AC-1",
-      "property": "round-trip",
-      "statement": "Every operation round-trips: a serialized envelope deserializes to an equal value",
-      "normalizedStatement": "every operation round-trips: a serialized envelope deserializes to an equal value",
-      "challenge": "justified-refusal",
-      "expectedRefusal": "span:refused-weak-boundary",
-      "review": {
-        "outcome": "pass",
-        "rationale": "The statement does not expose all three boundaries without inventing an unstated subject or condition; explicit refusal is safer than a guessed span."
-      }
-    },
-    {
-      "id": "filament-ide-rs-FR-096-AC-6-41c61ac8ee",
-      "repository": "filament-ide-rs",
-      "document": "spec/backend/functional/FR-096-backend-contract.md",
-      "rowId": "FR-096-AC-6",
-      "property": "universal",
-      "statement": "A client and backend at different contract revisions refuse at handshake rather than coercing",
-      "normalizedStatement": "a client and backend at different contract revisions refuse at handshake rather than coercing",
-      "challenge": "justified-refusal",
-      "expectedRefusal": "span:refused-weak-boundary",
-      "review": {
-        "outcome": "pass",
-        "rationale": "The statement does not expose all three boundaries without inventing an unstated subject or condition; explicit refusal is safer than a guessed span."
-      }
-    },
-    {
-      "id": "filament-ide-rs-FR-010-AC-1-d033d8034b",
-      "repository": "filament-ide-rs",
-      "document": "spec/markups/functional/FR-010-legacy-feedback-import.md",
-      "rowId": "FR-010-AC-1",
-      "property": "idempotence",
-      "statement": "Import is idempotent for unchanged legacy sources, reconciling per [FR-027](./FR-027-import-reconciliation-semantics.md)",
-      "normalizedStatement": "import is idempotent for unchanged legacy sources, reconciling per [fr-027](./fr-027-import-reconciliation-semantics.md)",
-      "challenge": "justified-refusal",
-      "expectedRefusal": "span:refused-no-explicit-domain",
-      "review": {
-        "outcome": "pass",
-        "rationale": "The statement does not expose all three boundaries without inventing an unstated subject or condition; explicit refusal is safer than a guessed span."
-      }
-    },
-    {
-      "id": "filament-ide-rs-FR-105-AC-1-3fab81346d",
-      "repository": "filament-ide-rs",
-      "document": "spec/backend/functional/FR-105-always-served-work-dirs.md",
-      "rowId": "FR-105-AC-1",
-      "property": "invariant",
-      "statement": "With a daemon serving and no client ever connected, editing a Markdown artifact under a configured root results in a completed workspace reindex whose graph reflects the edit, observable by a CLI query afterward — the desktop application never runs",
-      "normalizedStatement": "with a daemon serving and no client ever connected, editing a markdown artifact under a configured root results in a completed workspace reindex whose graph reflects the edit, observable by a cli query afterward — the desktop application never runs",
-      "challenge": "justified-refusal",
-      "expectedRefusal": "span:refused-no-explicit-domain",
-      "review": {
-        "outcome": "pass",
-        "rationale": "The statement does not expose all three boundaries without inventing an unstated subject or condition; explicit refusal is safer than a guessed span."
-      }
-    },
-    {
-      "id": "filament-ide-rs-FR-036-AC-6-2650e597e7",
-      "repository": "filament-ide-rs",
-      "document": "spec/distribution/functional/FR-036-postgres-sidecar-lifecycle.md",
-      "rowId": "FR-036-AC-6",
-      "property": "lifecycle",
-      "statement": "An injected startup failure emits a stable error code, message, and remedy — a `DIST_` registry code for sidecar lifecycle failures, or the Data module's `DATA_MIGRATION_` code surfaced unchanged for migration failures",
-      "normalizedStatement": "an injected startup failure emits a stable error code, message, and remedy — a `dist_` registry code for sidecar lifecycle failures, or the data module's `data_migration_` code surfaced unchanged for migration failures",
-      "challenge": "justified-refusal",
-      "expectedRefusal": "span:refused-weak-boundary",
-      "review": {
-        "outcome": "pass",
-        "rationale": "The statement does not expose all three boundaries without inventing an unstated subject or condition; explicit refusal is safer than a guessed span."
-      }
-    },
-    {
-      "id": "filament-ide-rs-FR-040-AC-1-0fc3b314c5",
-      "repository": "filament-ide-rs",
-      "document": "spec/cli-mcp-agent/functional/FR-040-agent-session-runtime.md",
-      "rowId": "FR-040-AC-1",
-      "property": "round-trip",
-      "statement": "A launch yields a `created` session; attach transitions it to `attached`; a typed input round-trips through the PTY and returns as a typed output event",
-      "normalizedStatement": "a launch yields a `created` session; attach transitions it to `attached`; a typed input round-trips through the pty and returns as a typed output event",
-      "challenge": "justified-refusal",
-      "expectedRefusal": "span:refused-weak-boundary",
       "review": {
         "outcome": "pass",
         "rationale": "The statement does not expose all three boundaries without inventing an unstated subject or condition; explicit refusal is safer than a guessed span."

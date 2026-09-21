@@ -7,7 +7,7 @@ Baseline for the **FP-NRX** metric (AC-7).
   The first measurement in this document was taken at `e718d45`; every figure below
   is a re-measurement at `22db1d7` and says so where it matters.
 - **Measured:** 2026-09-12. **Owner rulings applied:** 2026-09-12.
-- **Governing policy:** [`quire-research/implementation-language-policy.md`](https://github.com/agent-ix/quire-research/blob/main/implementation-language-policy.md),
+- **Governing policy:** the campaign implementation language policy owned by [`agent-ix/quire-research`](https://github.com/agent-ix/quire-research),
   Amendment 1 (2026-09-12).
 - **Exception manifest:** [`quoin/.language-allowances.yaml`](../../.language-allowances.yaml).
 

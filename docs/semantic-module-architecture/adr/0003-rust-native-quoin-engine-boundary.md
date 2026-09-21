@@ -38,11 +38,10 @@ It is another repository's tree and is not counted in the in-repository
 baseline. Whether it is in this programme's scope at all is an open owner
 ruling.
 
-The campaign
-[implementation language policy](https://github.com/agent-ix/quire-research/blob/main/implementation-language-policy.md)
+The campaign implementation language policy, owned by
+[`agent-ix/quire-research`](https://github.com/agent-ix/quire-research),
 requires first-party production and qualification-path implementation to be
-Rust. Its 2026-09-07 text deferred Quoin ("Quoin is retained, no wholesale
-port"). **Amendment 1, owner directive 2026-09-12 (quire-research@8d86f64),
+Rust. Its earlier text deferred Quoin. **An owner directive of 2026-09-12
 withdraws that deferral** and directs a staged port. `engineering-assurance`
 completed the same transition and is the reference: ADR-002, StR-003, FR-014
 through FR-019, NFR-005.
@@ -200,8 +199,8 @@ criterion in this set names a command rather than an intent.
 
 ## Port and cutover order — three normative stages
 
-The implementation language policy states three ordered stages. This ADR's ten
-delivery stages sit inside them.
+Quoin's port runs in three ordered stages. This ADR's ten delivery stages sit
+inside them.
 
 1. **Extract deterministic domain logic into Rust crates behind one stable,
    versioned boundary.** Delivery stages 0 through 7: workspace and boundary
