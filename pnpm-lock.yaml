@@ -1,0 +1,44 @@
+lockfileVersion: '9.0'
+
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+
+importers:
+
+  .:
+    dependencies:
+      '@agent-ix/ix-spec-workflows':
+        specifier: '>=0.1.3'
+        version: 0.1.3
+
+packages:
+
+  '@agent-ix/ix-spec-workflows@0.1.3':
+    resolution: {integrity: sha512-XEV7il1jwVd3wN4VeZITwW4ryB25o7NRMsuxKDj0kJKeogsvDoCyvKEDsr/MG6QXxUSnrH96dtODfZ9JCUF8ug==, tarball: http://npm.ix/@agent-ix/ix-spec-workflows/-/1b264a8f796318c5c8e023b70a7e53e7fe2683a7}
+
+  '@agent-ix/workflow-core@0.1.6':
+    resolution: {integrity: sha512-sVMNt9RwBOt2bw5WNVrqdpaHv81L+A36H2jsSc+nIA1a7xpLodudngYfgydERASdeU2bw+n3iVRd3OnRK+RAew==, tarball: http://npm.ix/@agent-ix/workflow-core/-/0693441d3e94b827244733b2bed6f44b05a60e4e}
+
+  yaml@2.9.0:
+    resolution: {integrity: sha512-2AvhNX3mb8zd6Zy7INTtSpl1F15HW6Wnqj0srWlkKLcpYl/gMIMJiyuGq2KeI2YFxUPjdlB+3Lc10seMLtL4cA==}
+    engines: {node: '>= 14.6'}
+    hasBin: true
+
+  zod@4.6.2:
+    resolution: {integrity: sha512-lh5RCAGFa1Cm2hjtNwLQhSs/AsqdWnTQaBER9fEwN/88pSh7KOtJavtBx/0VlkN/uFd61SwYmljLMDAsHlvzBQ==}
+
+snapshots:
+
+  '@agent-ix/ix-spec-workflows@0.1.3':
+    dependencies:
+      '@agent-ix/workflow-core': 0.1.6
+
+  '@agent-ix/workflow-core@0.1.6':
+    dependencies:
+      yaml: 2.9.0
+      zod: 4.6.2
+
+  yaml@2.9.0: {}
+
+  zod@4.6.2: {}

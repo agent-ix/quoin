@@ -9,9 +9,16 @@ RUST_DIR := $(CURDIR)/rust
 CARGO_TARGET := $(RUST_DIR)/target
 CARGO_TARGET_FLAG := --target-dir $(CARGO_TARGET)
 
-.PHONY: build test lint format clean rust-build rust-fmt rust-lint rust-deny rust-test rust-gate help
+.PHONY: build test lint format clean rust-build rust-fmt rust-lint rust-deny rust-test rust-gate workflow-assets help
 
 build: rust-build
+
+# `quoin review`, `quoin matrix` and `quoin to-plan` (rust/crates/quoin-cli/src/flow.rs)
+# launch the workflows @agent-ix/ix-spec-workflows publishes; nothing here vendors a
+# copy of that package (PLAT-157). `--frozen-lockfile` fails loud on a lockfile that
+# does not match package.json rather than silently re-resolving.
+workflow-assets:
+	pnpm install --frozen-lockfile
 
 test: rust-gate
 

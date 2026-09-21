@@ -1,0 +1,10 @@
+{
+  "name": "@agent-ix/quoin-workflow-assets",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Pulls in the ix-flow specification workflows quoin-cli launches (`quoin review`, `quoin matrix`, `quoin to-plan`), so the workflow definitions and their compiled invariants live in node_modules rather than as bytes vendored into this repository (PLAT-157).",
+  "license": "AGPL-3.0-or-later",
+  "dependencies": {
+    "@agent-ix/ix-spec-workflows": ">=0.1.3"
+  }
+}
