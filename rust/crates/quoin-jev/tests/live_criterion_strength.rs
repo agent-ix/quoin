@@ -50,6 +50,48 @@
 //!
 //! Both are pre-registered here, before the first live number was taken,
 //! which is the discipline PLAT-838's M7 states and this lens needs equally.
+//!
+//! # Pre-registration, round two (PLAT-917) -- written before any round-two call
+//!
+//! Round one sent the corpus's own fields only. `statement` went out empty on
+//! 10 of 11 criteria and 5 carried no FR prose at all, so Jev judged
+//! sentences in an isolation the human readers never had. Round one's result
+//! (46.7% agreement, `sound` returned 0 of 5 times) is therefore a lower
+//! bound, not a verdict. Round two gives the lens a fair shot, under bars
+//! fixed here first.
+//!
+//! **Variants.** Selected with `JEV_VARIANT`; the default is `v1`.
+//!
+//! | id | FR context | `weakness_kind` question |
+//! | --- | --- | --- |
+//! | `v0` | corpus fields only (round one, re-run under the corrected grader) | shipped: "Classify this acceptance criterion's weakness, if any." |
+//! | `v1` | full: statement, Description, Behavior, Constraints, verbatim from the cited spec file (`criterion-strength-fr-context.json`) | shipped |
+//! | `v2` | full | [`V2_CHOICE_QUESTION`]: neutral, and defines `sound` |
+//!
+//! `v2` is the one extra variant allowed. It targets round one's dominant
+//! failure: the shipped question asks for a weakness before it offers
+//! `sound`, and defines none of the six labels. `v2` changes that one string
+//! and nothing else. All three variants are reported whatever they score.
+//!
+//! **Bars.** A variant passes when all three hold on one graded pass:
+//!
+//! 1. agreement > the best constant predictor, one constant per family
+//!    ([`support::trivial_baseline`]);
+//! 2. defect recall > 0 over the criteria no reader called `sound`;
+//! 3. **`sound` returned on at least 3 of the 5 criteria whose primary
+//!    reading is `sound`** -- a false-positive rate on sound criteria below
+//!    50%. Below that, a flag from this lens on a criterion is more likely
+//!    noise than signal, and PLAT-837's M2 names false positives as the
+//!    headline cost because each one costs a human read.
+//!
+//! **GO** requires one variant to pass all three bars on the gate run *and*
+//! in at least 3 of 5 repeated runs (`JEV_RUNS=5`). Fifteen fixtures and one
+//! run can pass by luck; a variant that fails most repeats is not a result.
+//!
+//! **Grader corrections made before round two, both in the lens's favour
+//! until fixed:** the constant predictor now picks one constant per family
+//! (round one's single-label form scored it at 60%, understating the bar),
+//! and coverage rows no longer count as free "found" defects in recall.
 
 #![cfg(feature = "live-api")]
 #![allow(
@@ -69,7 +111,7 @@ use typesafe_sdk_env::Process;
 use quoin_jev::{FrContext, FrVerdict, JevErrorCode, QuestionSet};
 use support::{
     Graded, Verdict, corpus, defect_recall, disagreement, grade_coverage, grade_weakness, report,
-    tally, trivial_baseline,
+    sound_recall, tally, trivial_baseline,
 };
 
 /// The confidence cutoff passed to `verdict::extract`.
@@ -84,6 +126,115 @@ const CONFIDENCE_THRESHOLD: f64 = 0.7;
 /// drift -- the same discipline `question_set.rs` and `lens.rs` already hold.
 const QUESTION_SET: &str =
     include_str!("../../../../skills/spec-criterion-strength-analysis/assets/question-set.json");
+
+/// The `weakness_kind` question `v2` sends instead of the shipped one.
+///
+/// Neutral about whether a weakness exists, and states what `sound` means in
+/// the terms the five `noul` questions already use.
+const V2_CHOICE_QUESTION: &str = "Which one label best describes this acceptance criterion as \
+written? Answer `sound` when it is falsifiable, names an outcome observable from outside, states \
+any threshold it relies on, and says more than the FR sentence it belongs to. Otherwise pick the \
+weakness that applies.";
+
+/// Which pre-registered variant this run measures. See the module doc.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Variant {
+    /// Corpus fields only, shipped question.
+    V0,
+    /// Full FR context, shipped question.
+    V1,
+    /// Full FR context, neutral question.
+    V2,
+}
+
+impl Variant {
+    /// Reads `JEV_VARIANT`. Panics on anything but the three ids, so a typo
+    /// cannot silently measure the default.
+    fn from_env() -> Self {
+        match std::env::var("JEV_VARIANT").as_deref() {
+            Err(_) | Ok("v1") => Self::V1,
+            Ok("v0") => Self::V0,
+            Ok("v2") => Self::V2,
+            Ok(other) => panic!("JEV_VARIANT must be v0, v1 or v2; got {other:?}"),
+        }
+    }
+
+    fn full_context(self) -> bool {
+        self != Self::V0
+    }
+
+    fn questions(self) -> QuestionSet {
+        let mut set = QuestionSet::parse(QUESTION_SET).expect("the shipped question set parses");
+        if self == Self::V2 {
+            V2_CHOICE_QUESTION.clone_into(&mut set.choice.question);
+        }
+        set
+    }
+}
+
+/// The three pre-registered bars, evaluated on one graded pass.
+struct Bars {
+    agreement: f64,
+    baseline_label: String,
+    baseline: f64,
+    defect_recall: f64,
+    sound_cleared: usize,
+    sound_total: usize,
+}
+
+/// The pre-registered floor for bar 3.
+const SOUND_CLEARED_FLOOR: usize = 3;
+
+impl Bars {
+    fn of(graded: &[Graded]) -> Self {
+        let (baseline_label, baseline) = trivial_baseline(graded);
+        let (sound_cleared, sound_total) = sound_recall(graded).expect("the corpus has sound criteria");
+        Self {
+            agreement: tally(graded).agreement().expect("rows graded"),
+            baseline_label,
+            baseline,
+            defect_recall: defect_recall(graded).expect("the corpus holds unambiguous defects"),
+            sound_cleared,
+            sound_total,
+        }
+    }
+
+    fn beats_baseline(&self) -> bool {
+        self.agreement > self.baseline
+    }
+
+    fn finds_defects(&self) -> bool {
+        self.defect_recall > 0.0
+    }
+
+    fn clears_sound(&self) -> bool {
+        self.sound_cleared >= SOUND_CLEARED_FLOOR
+    }
+
+    fn all(&self) -> bool {
+        self.beats_baseline() && self.finds_defects() && self.clears_sound()
+    }
+
+    fn line(&self) -> String {
+        format!(
+            "agreement {:.1}% vs constant ({}) {:.1}% [{}] | defect recall {:.1}% [{}] | \
+             sound {}/{} (floor {SOUND_CLEARED_FLOOR}) [{}]",
+            self.agreement,
+            self.baseline_label,
+            self.baseline,
+            pass(self.beats_baseline()),
+            self.defect_recall,
+            pass(self.finds_defects()),
+            self.sound_cleared,
+            self.sound_total,
+            pass(self.clears_sound()),
+        )
+    }
+}
+
+fn pass(ok: bool) -> &'static str {
+    if ok { "PASS" } else { "FAIL" }
+}
 
 /// One pass over the corpus: 15 requests, graded, with the cost and timing
 /// the M5 measure needs.
@@ -146,7 +297,7 @@ async fn call(
 }
 
 /// Runs every fixture once, sequentially.
-async fn run_once(client: &Client, questions: &QuestionSet) -> Pass {
+async fn run_once(client: &Client, questions: &QuestionSet, variant: Variant) -> Pass {
     let corpus = corpus();
     let mut pass = Pass {
         graded: Vec::with_capacity(15),
@@ -158,16 +309,24 @@ async fn run_once(client: &Client, questions: &QuestionSet) -> Pass {
     let started = Instant::now();
 
     for fixture in &corpus.weakness_kind_fixtures {
-        let (verdict, latency) =
-            call(client, &fixture.context(), questions, &fixture.fixture_id).await;
+        let context = if variant.full_context() {
+            fixture.context_full()
+        } else {
+            fixture.context()
+        };
+        let (verdict, latency) = call(client, &context, questions, &fixture.fixture_id).await;
         pass.input_tokens += verdict.usage_input_tokens;
         pass.output_tokens += verdict.usage_output_tokens;
         pass.latencies.push(latency);
         pass.graded.push(grade_weakness(fixture, &verdict));
     }
     for fixture in &corpus.adverse_case_coverage_fixtures {
-        let (verdict, latency) =
-            call(client, &fixture.context(), questions, &fixture.fixture_id).await;
+        let context = if variant.full_context() {
+            fixture.context_full()
+        } else {
+            fixture.context()
+        };
+        let (verdict, latency) = call(client, &context, questions, &fixture.fixture_id).await;
         pass.input_tokens += verdict.usage_input_tokens;
         pass.output_tokens += verdict.usage_output_tokens;
         pass.latencies.push(latency);
@@ -187,12 +346,16 @@ async fn run_once(client: &Client, questions: &QuestionSet) -> Pass {
 #[tokio::test]
 async fn the_lens_beats_the_do_nothing_baseline() {
     let client = live_client();
-    let questions = QuestionSet::parse(QUESTION_SET).expect("the shipped question set parses");
-    let pass = run_once(&client, &questions).await;
+    let variant = Variant::from_env();
+    let questions = variant.questions();
+    let pass = run_once(&client, &questions, variant).await;
 
     println!(
         "{}",
-        report("criterion-strength vs. the labelled corpus", &pass.graded)
+        report(
+            &format!("criterion-strength vs. the labelled corpus, variant {variant:?}"),
+            &pass.graded
+        )
     );
 
     // The call worked and the crate understood the answer. These come first:
@@ -224,28 +387,15 @@ async fn the_lens_beats_the_do_nothing_baseline() {
         "a pass that consumed no input tokens never reached the service"
     );
 
-    // Bar 1: beat the best constant predictor this corpus admits.
-    let agreement = tally(&pass.graded).agreement().expect("15 rows graded");
-    let (baseline_label, baseline) = trivial_baseline(&pass.graded);
-    println!(
-        "**GATE 1** agreement {agreement:.1}% vs. best constant predictor \
-         (`{baseline_label}` everywhere) {baseline:.1}%"
-    );
+    // The three pre-registered bars. Evaluated together and reported
+    // together before any assertion, so a failure on bar 1 cannot hide what
+    // bars 2 and 3 would have said.
+    let bars = Bars::of(&pass.graded);
+    println!("**GATE {variant:?}** {}", bars.line());
     assert!(
-        agreement > baseline,
-        "the lens scored {agreement:.1}%, no better than answering `{baseline_label}` \
-         to everything ({baseline:.1}%). An agreement score at or below the \
-         do-nothing baseline is not evidence the lens works."
-    );
-
-    // Bar 2: it has to find the defects, not just score well.
-    let recall = defect_recall(&pass.graded).expect("the corpus holds unambiguous defects");
-    println!("**GATE 2** defect recall {recall:.1}% (rows no reader called `sound`)");
-    assert!(
-        recall > 0.0,
-        "the lens flagged none of the criteria every reader agreed were defective. \
-         It can score well on this corpus by never firing; that is the failure \
-         this bar exists to catch."
+        bars.all(),
+        "{variant:?} does not clear the pre-registered bars: {}",
+        bars.line()
     );
 }
 
@@ -258,8 +408,10 @@ async fn the_lens_beats_the_do_nothing_baseline() {
 #[tokio::test]
 async fn benchmark_latency_and_throughput() {
     let client = live_client();
-    let questions = QuestionSet::parse(QUESTION_SET).expect("parses");
-    let pass = run_once(&client, &questions).await;
+    let variant = Variant::from_env();
+    let questions = variant.questions();
+    let pass = run_once(&client, &questions, variant).await;
+    println!("\nvariant {variant:?}");
 
     let count = pass.latencies.len() as f64;
     let total = pass.elapsed.as_secs_f64();
@@ -287,7 +439,11 @@ async fn benchmark_latency_and_throughput() {
     // extrapolated to a whole repo would overstate the cost by whatever
     // concurrency the service actually allows.
     let corpus = corpus();
-    let context = corpus.weakness_kind_fixtures[0].context();
+    let context = if variant.full_context() {
+        corpus.weakness_kind_fixtures[0].context_full()
+    } else {
+        corpus.weakness_kind_fixtures[0].context()
+    };
     let id = &corpus.weakness_kind_fixtures[0].fixture_id;
     let started = Instant::now();
     let burst = tokio::join!(
@@ -336,11 +492,23 @@ async fn repeated_runs_report_a_disagreement_rate() {
     assert!(runs >= 2, "a disagreement rate needs at least two runs");
 
     let client = live_client();
-    let questions = QuestionSet::parse(QUESTION_SET).expect("parses");
+    let variant = Variant::from_env();
+    let questions = variant.questions();
     let mut passes = Vec::with_capacity(runs);
-    for _ in 0..runs {
-        passes.push(run_once(&client, &questions).await.graded);
+    let mut cleared = 0;
+    for run in 1..=runs {
+        let graded = run_once(&client, &questions, variant).await.graded;
+        let bars = Bars::of(&graded);
+        println!("run {run} ({variant:?}): {}", bars.line());
+        if bars.all() {
+            cleared += 1;
+        }
+        passes.push(graded);
     }
+    println!(
+        "\n**Bars cleared** in {cleared} of {runs} run(s) for {variant:?} \
+         (GO needs at least 3 of 5).\n"
+    );
 
     let mut rates = Vec::new();
     for left in 0..passes.len() {

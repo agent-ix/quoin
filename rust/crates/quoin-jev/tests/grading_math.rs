@@ -23,7 +23,8 @@ mod support;
 
 use support::{
     Graded, Tier, Verdict, calibration, class_stats, corpus, defect_recall, disagreement,
-    expected_calibration_error, grade_weakness, tally, trivial_baseline,
+    expected_calibration_error, full_context, grade_weakness, sound_recall, tally,
+    trivial_baseline,
 };
 
 use quoin_jev::FrVerdict;
@@ -106,6 +107,99 @@ fn defect_recall_credits_a_mislabelled_weakness_but_never_a_sound_verdict() {
         Some(50.0),
         "two rows are unambiguous defects; the lens flagged one of them"
     );
+}
+
+/// Provenance: PLAT-917. Every fixture has the FR context its label was made
+/// against, and none of it is empty -- the precondition for the full-context
+/// variant meaning anything. The corpus alone left `statement` empty on 10 of
+/// the 11 criteria.
+#[test]
+fn every_fixture_has_a_non_empty_full_fr_context() {
+    let corpus = corpus();
+    let ids = corpus
+        .weakness_kind_fixtures
+        .iter()
+        .map(|fixture| (fixture.fixture_id.clone(), fixture.context_full()))
+        .chain(
+            corpus
+                .adverse_case_coverage_fixtures
+                .iter()
+                .map(|fixture| (fixture.fixture_id.clone(), fixture.context_full())),
+        );
+    let mut count = 0;
+    for (id, context) in ids {
+        assert!(!context.statement.trim().is_empty(), "{id}: empty statement");
+        assert!(
+            context.description.as_deref().is_some_and(|text| !text.trim().is_empty()),
+            "{id}: empty description"
+        );
+        assert!(!full_context(&id).extracted_from_commit.is_empty(), "{id}: no provenance");
+        count += 1;
+    }
+    assert_eq!(count, 15);
+}
+
+/// Provenance: PLAT-917. The constant predictor picks one constant *per
+/// family*. Over the whole corpus that is `sound` on the criteria and one
+/// level on the FRs -- a higher bar than `sound` alone, which the first
+/// version of `trivial_baseline` used and which scored 60%.
+#[test]
+fn the_constant_predictor_answers_one_constant_per_family() {
+    let corpus = corpus();
+    let mut rows: Vec<Graded> = corpus
+        .weakness_kind_fixtures
+        .iter()
+        .map(|fixture| graded(&fixture.fixture_id, fixture.confidence, "x", "x", Verdict::Wrong, None))
+        .collect();
+    // Re-key the rows to their real recorded readings.
+    for (row, fixture) in rows.iter_mut().zip(&corpus.weakness_kind_fixtures) {
+        row.expected = fixture.labels.weakness_kind.clone();
+        row.contested = fixture
+            .labels
+            .weakness_kind_contested
+            .clone()
+            .unwrap_or_else(|| vec![row.expected.clone()]);
+    }
+    for fixture in &corpus.adverse_case_coverage_fixtures {
+        let expected = fixture.labels.adverse_case_coverage.to_string();
+        let mut row = graded(&fixture.fixture_id, fixture.confidence, &expected, "0", Verdict::Wrong, None);
+        row.contested = fixture
+            .labels
+            .adverse_case_coverage_contested
+            .clone()
+            .map_or_else(|| vec![expected.clone()], |all| all.iter().map(ToString::to_string).collect());
+        rows.push(row);
+    }
+    let (label, rate) = trivial_baseline(&rows);
+    assert!(label.starts_with("sound + level "), "got {label}");
+    assert!(
+        rate > 60.0,
+        "one constant per family must beat `sound` everywhere (60.0%); got {rate:.1}%"
+    );
+}
+
+/// Provenance: PLAT-917. Coverage rows are never `sound`, so counting them as
+/// defects made every one of them a free "found".
+#[test]
+fn defect_recall_ignores_coverage_rows() {
+    let rows = vec![
+        graded("A", Tier::Clean, "unfalsifiable", "sound", Verdict::Wrong, None),
+        graded("COV", Tier::Clean, "2", "2", Verdict::Primary, None),
+    ];
+    assert_eq!(defect_recall(&rows), Some(0.0));
+}
+
+/// Provenance: PLAT-917. `sound_recall` counts only criteria whose primary
+/// reading is `sound`, and only an exact `sound` answer clears one.
+#[test]
+fn sound_recall_counts_cleared_sound_criteria() {
+    let rows = vec![
+        graded("A", Tier::Clean, "sound", "sound", Verdict::Primary, None),
+        graded("B", Tier::Clean, "sound", "restates_requirement", Verdict::Wrong, None),
+        graded("C", Tier::Clean, "unfalsifiable", "sound", Verdict::Wrong, None),
+        graded("COV", Tier::Clean, "0", "0", Verdict::Primary, None),
+    ];
+    assert_eq!(sound_recall(&rows), Some((1, 2)));
 }
 
 fn graded(fixture_id: &str, tier: Tier, expected: &str, actual: &str, verdict: Verdict, confidence: Option<f64>) -> Graded {
