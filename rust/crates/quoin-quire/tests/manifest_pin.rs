@@ -26,7 +26,7 @@ fn tc_379_026_the_pin_parses_out_of_this_crates_own_manifest() {
     assert_eq!(field(line, "version").as_deref(), Some("=0.46.0"));
     assert_eq!(
         field(line, "rev").as_deref(),
-        Some("85dfe9d5a937c52af6456f2e6aa3a6bc4c82db9f")
+        Some("acd1be633a1a89cf5e21bc1abb9a91b7e2493838")
     );
 }
 

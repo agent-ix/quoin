@@ -85,6 +85,17 @@ allow = ["AGPL-3.0-or-later"]
 crate = "uluru"
 allow = ["MPL-2.0"]
 
+# `quire-code-parse` (agent-ix/quire-code-rs) is AGPL-3.0-or-later, the same
+# licence quoin and quire-rs itself carry. Reached transitively for the first
+# time by PLAT-850's bump: quire-rs 456f73f (PLAT-843, an ancestor of the
+# pinned acd1be6) ports rust.rs symbol extraction onto tree-sitter via
+# `quire-rust-extraction`, which depends on this crate. Named per crate for
+# the same reason as the `quire-rs` exception above: the `allow` list stays
+# permissive-only.
+[[licenses.exceptions]]
+crate = "quire-code-parse"
+allow = ["AGPL-3.0-or-later"]
+
 [bans]
 multiple-versions = "deny"
 wildcards = "deny"
@@ -267,26 +278,32 @@ unknown-registry = "deny"
 unknown-git = "deny"
 # quoin#373: "no crates.io, no public npmjs" governs where quoin PUBLISHES;
 # dependencies are consumed from crates.io exactly as quire-corpus and quire-rs
-# consume theirs. Two git sources are admitted, each named by REPOSITORY:
+# consume theirs. Four git sources are admitted, each named by REPOSITORY:
 #
 #   * quire-rs — the engine quoin-quire links (quoin#379).
 #   * engineering-assurance — library containment (quoin#416), the pattern
 #     quire-cli already proves against quire-rs.
 #   * filament-ide-rs — the source of `filament-plan-sync`, the plan-sync
 #     engine quoin-cli links (quoin#560).
+#   * quire-code-rs — the source of `quire-code-parse` (PLAT-850), pulled in
+#     transitively through the quire-rs pin above: quire-rs 456f73f (PLAT-843,
+#     an ancestor of the pin's current `acd1be6`) ports rust.rs symbol
+#     extraction onto tree-sitter via this crate.
 #
 # quire-rs and engineering-assurance are each pinned by an exact `rev` in
 # rust/Cargo.toml. filament-plan-sync is pinned by an exact `rev` in
 # rust/crates/quoin-cli/Cargo.toml; its own manifest in turn pins ITS quire-rs
 # dependency by `tag = "v0.21.0"` rather than a rev — not a pin this repository
 # controls, and the reason quire-rs@0.21.0 is a named `bans.skip` above rather
-# than a resolvable duplicate. Allowing a repository here does not weaken any
-# of these pins: `unknown-git = "deny"` still refuses every other git source,
-# and any other revision of these three still fails resolution. A fourth git
-# dependency is listed here in the commit that adds it, or this check refuses
-# it.
+# than a resolvable duplicate. quire-code-rs is pinned by an exact `rev` in
+# quire-rs's own manifest, not one this repository states directly. Allowing a
+# repository here does not weaken any of these pins: `unknown-git = "deny"`
+# still refuses every other git source, and any other revision of these four
+# still fails resolution. A fifth git dependency is listed here in the commit
+# that adds it, or this check refuses it.
 allow-git = [
     "https://github.com/agent-ix/quire-rs",
     "https://github.com/agent-ix/engineering-assurance",
     "https://github.com/agent-ix/filament-ide-rs",
+    "https://github.com/agent-ix/quire-code-rs",
 ]
