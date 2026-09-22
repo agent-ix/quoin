@@ -52,7 +52,7 @@
 use std::collections::BTreeMap;
 use std::path::Path;
 
-use quoin_jsonschema::{VendoredSchema, VendoredValidator};
+use quoin_jsonschema::{MeasurementSchema, MeasurementValidator};
 use quoin_measurement::date_time::Rfc3339DateTime;
 use serde_json::Value;
 
@@ -111,17 +111,17 @@ fn goldens() -> Value {
     .expect("the captured verdicts are JSON")
 }
 
-fn validators() -> BTreeMap<&'static str, VendoredValidator> {
+fn validators() -> BTreeMap<&'static str, MeasurementValidator> {
     let mut out = BTreeMap::new();
     out.insert(
         "intervention_experiment_v1",
-        VendoredSchema::InterventionExperimentV1
+        MeasurementSchema::InterventionExperimentV1
             .compile(is_rfc3339_date_time)
             .expect("the vendored intervention schema compiles"),
     );
     out.insert(
         "operational_evidence_v1",
-        VendoredSchema::OperationalEvidenceV1
+        MeasurementSchema::OperationalEvidenceV1
             .compile(is_rfc3339_date_time)
             .expect("the vendored operational schema compiles"),
     );

@@ -426,12 +426,23 @@ mod tests {
         root
     }
 
-    /// The vendored contract `src/core/modules.ts` publishes as
-    /// `QUOIN_SEMANTIC_ROOT`. The real tree, not a fixture this test wrote: a
-    /// gate judged against a contract of the test's own invention agrees with
-    /// whatever the test put there.
+    /// The real semantic contract `QUOIN_SEMANTIC_ROOT` publishes in
+    /// production, not a fixture this test wrote: a gate judged against a
+    /// contract of the test's own invention agrees with whatever the test put
+    /// there. Materialized once per process from the same embedded bytes
+    /// `quoin-semantic`'s `build.rs` compiles in (PLAT-887 de-vendoring).
     fn semantic_root() -> PathBuf {
-        repo_root().join("src").join("semantic")
+        static ROOT: std::sync::OnceLock<PathBuf> = std::sync::OnceLock::new();
+        ROOT.get_or_init(|| {
+            let root = std::env::temp_dir().join(format!(
+                "quoin-modules-contract-gate-{}",
+                std::process::id()
+            ));
+            quoin_semantic::materialize_embedded_contract(&root)
+                .expect("the embedded semantic contract materializes");
+            root
+        })
+        .clone()
     }
 
     /// The `module-ok` fixture, which declares a valid `semantic` block.
@@ -637,7 +648,7 @@ mod tests {
         let manifest = fs::read_to_string(home.root("alpha").join("manifest.yaml")).unwrap();
         fs::write(
             home.root("alpha").join("manifest.yaml"),
-            manifest.replace("semantic_core: 0.1.0", "semantic_core: 9.9.9"),
+            manifest.replace("semantic_core: 0.3.0", "semantic_core: 9.9.9"),
         )
         .unwrap();
         let error = home.gate().validate_installed().unwrap_err();

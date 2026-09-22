@@ -8,7 +8,7 @@
 //! three crates, accepting three different languages, and §5's whole ruling
 //! exists because the measurement domain carried two more. The one grammar is
 //! `quoin_measurement::date_time`, and this crate sits *below* it: the
-//! `date-time` check is a parameter of `VendoredSchema::compile` precisely so
+//! `date-time` check is a parameter of `MeasurementSchema::compile` precisely so
 //! that a second one is never written here.
 //!
 //! A rule enforced only by review is enforced only when someone is looking, so
@@ -112,7 +112,7 @@ fn tc_470_no_module_reads_a_schema_from_the_filesystem() {
         .collect();
     assert_eq!(
         including,
-        vec!["vendored.rs".to_owned()],
+        vec!["measurement_schemas.rs".to_owned()],
         "exactly one module may embed the vendored documents"
     );
     for (name, text) in sources() {

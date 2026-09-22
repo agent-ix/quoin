@@ -1,7 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
 
-//! Rust launchers for the bundled ix-flow specification workflows.
+//! Rust launchers for the `ix-flow` specification workflows shipped by the
+//! published `@agent-ix/ix-spec-workflows` npm package (PLAT-157). Nothing
+//! here bundles a copy of that package: `skill_path` resolves into an
+//! installed `node_modules/@agent-ix/ix-spec-workflows`, which
+//! `package.json` at the repository root declares as a dependency.
 
 use std::path::{Path, PathBuf};
 use std::process::Command as ProcessCommand;
@@ -11,18 +15,19 @@ use quoin_core::protocol::Response;
 
 use crate::invocation;
 
-const FLOWS: [(&str, &str, &str); 3] = [
-    ("review", "spec-review", "review"),
-    ("matrix", "spec-matrix", "matrix"),
-    ("to-plan", "spec-to-plan", "to-plan"),
+/// `(quoin subcommand, @agent-ix/ix-spec-workflows `spec/` directory name)`.
+const FLOWS: [(&str, &str); 3] = [
+    ("review", "review"),
+    ("matrix", "matrix"),
+    ("to-plan", "to-plan"),
 ];
 
 pub(crate) fn run(name: &str, arguments: &ArgMatches) -> Result<Response, String> {
-    let (_, package_skill, runtime_skill) = FLOWS
+    let (_, runtime_skill) = FLOWS
         .iter()
-        .find(|(candidate, _, _)| *candidate == name)
+        .find(|(candidate, _)| *candidate == name)
         .ok_or_else(|| "an unknown flow command reached dispatch".to_owned())?;
-    let path = skill_path(package_skill, runtime_skill)?;
+    let path = skill_path(runtime_skill)?;
     let home = ix_home();
     let mut command = ProcessCommand::new("ix-flow");
     command
@@ -72,31 +77,36 @@ pub(crate) fn command(name: &'static str) -> Command {
         .arg(Arg::new("id").long("id"))
 }
 
-fn skill_path(package_skill: &str, runtime_skill: &str) -> Result<PathBuf, String> {
+fn skill_path(runtime_skill: &str) -> Result<PathBuf, String> {
     let mut roots = Vec::new();
     if let Some(root) = std::env::var_os("IX_SPEC_WORKFLOWS_ROOT") {
         roots.push(PathBuf::from(root));
     }
-    roots.push(Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../skills"));
-    if let Ok(cwd) = std::env::current_dir()
-        && let Some(parent) = cwd.parent()
-    {
-        roots.push(parent.join("ix-spec-workflows"));
+    // `@agent-ix/ix-spec-workflows` (PLAT-157): quoin depends on the published
+    // package rather than carrying a copy of its `dist/` bundle and its
+    // `SKILL.md`/`workflows/`/`scripts/` sources under `skills/*/workflow-assets/`.
+    // `package.json` at the repository root names the one dependency, so a plain
+    // `node_modules/@agent-ix/ix-spec-workflows` lookup is enough -- there is no
+    // second dependency that could get it hoisted somewhere else.
+    roots.push(
+        Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../../node_modules/@agent-ix/ix-spec-workflows/spec"),
+    );
+    if let Ok(cwd) = std::env::current_dir() {
+        roots.push(cwd.join("node_modules/@agent-ix/ix-spec-workflows/spec"));
     }
     if let Some(home) = std::env::var_os("HOME") {
-        roots.push(PathBuf::from(home).join(".ix/plugins/ix-spec-workflows"));
+        roots.push(PathBuf::from(home).join(".ix/plugins/ix-spec-workflows/spec"));
     }
     roots
         .into_iter()
-        .map(|root| {
-            root.join(package_skill)
-                .join("workflow-assets/skills")
-                .join(runtime_skill)
-        })
+        .map(|root| root.join(runtime_skill))
         .find(|candidate| candidate.is_dir())
         .ok_or_else(|| {
             format!(
-                "could not find ix-spec workflow skill {runtime_skill}; set IX_SPEC_WORKFLOWS_ROOT"
+                "could not find the {runtime_skill} workflow from @agent-ix/ix-spec-workflows; \
+                 run `pnpm install` at the repository root, or set IX_SPEC_WORKFLOWS_ROOT to a \
+                 checkout of agent-ix/ix-spec-workflows's `spec/` directory"
             )
         })
 }

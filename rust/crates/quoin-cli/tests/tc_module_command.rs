@@ -33,14 +33,31 @@ fn copy_tree(source: &Path, destination: &Path) -> std::io::Result<()> {
     Ok(())
 }
 
+/// A real, on-disk semantic contract root for `QUOIN_SEMANTIC_ROOT`, so
+/// `invoke` exercises the override path deliberately rather than always
+/// falling through to the binary's own per-`IX_HOME` auto-materialization
+/// that [`tc_527_001_native_module_install_bootstraps_without_a_semantic_root_env`]
+/// covers separately. Built once per test process from the same embedded
+/// bytes `quoin-semantic`'s `build.rs` compiles in (PLAT-887 de-vendoring) --
+/// not read from a source-tree `src/semantic`, which no longer exists.
+fn semantic_root() -> &'static Path {
+    static ROOT: std::sync::OnceLock<PathBuf> = std::sync::OnceLock::new();
+    ROOT.get_or_init(|| {
+        let root = std::env::temp_dir().join(format!(
+            "quoin-cli-tc-module-semantic-{}",
+            std::process::id()
+        ));
+        quoin_semantic::materialize_embedded_contract(&root)
+            .expect("the embedded semantic contract materializes");
+        root
+    })
+}
+
 fn invoke(home: &Path, arguments: &[&str]) -> Output {
     Command::new(env!("CARGO_BIN_EXE_quoin"))
         .args(arguments)
         .env("IX_HOME", home)
-        .env(
-            "QUOIN_SEMANTIC_ROOT",
-            repository_root().join("src/semantic"),
-        )
+        .env("QUOIN_SEMANTIC_ROOT", semantic_root())
         .output()
         .expect("the native quoin binary runs")
 }

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
-//! The vendored schema documents are the retained ones, minus two named deltas.
+//! The committed schema documents are the retained ones, minus two named deltas.
 //!
 //! # Two documents, two different obligations
 //!
@@ -51,7 +51,7 @@
 
 use std::path::{Path, PathBuf};
 
-use quoin_jsonschema::VendoredSchema;
+use quoin_jsonschema::MeasurementSchema;
 use serde_json::Value;
 
 /// One place two JSON documents disagree.
@@ -61,8 +61,8 @@ struct Difference {
     pointer: String,
     /// The captured TypeScript value, rendered as compact JSON.
     captured: String,
-    /// The vendored value, rendered as compact JSON.
-    vendored: String,
+    /// The committed value, rendered as compact JSON.
+    committed: String,
 }
 
 /// The directory holding the committed captures this crate is measured against.
@@ -94,7 +94,7 @@ fn differences(pointer: &str, left: &Value, right: &Value, into: &mut Vec<Differ
                     (a, b) => into.push(Difference {
                         pointer: child,
                         captured: a.map_or_else(|| "<absent>".to_owned(), ToString::to_string),
-                        vendored: b.map_or_else(|| "<absent>".to_owned(), ToString::to_string),
+                        committed: b.map_or_else(|| "<absent>".to_owned(), ToString::to_string),
                     }),
                 }
             }
@@ -108,7 +108,7 @@ fn differences(pointer: &str, left: &Value, right: &Value, into: &mut Vec<Differ
         (a, b) => into.push(Difference {
             pointer: pointer.to_owned(),
             captured: a.to_string(),
-            vendored: b.to_string(),
+            committed: b.to_string(),
         }),
     }
 }
@@ -121,7 +121,7 @@ fn differences(pointer: &str, left: &Value, right: &Value, into: &mut Vec<Differ
 fn tc_470_the_operational_schema_is_vendored_byte_for_byte() {
     let captured = read(&goldens().join("operational-evidence-v1.captured.json"));
     assert_eq!(
-        VendoredSchema::OperationalEvidenceV1.source(),
+        MeasurementSchema::OperationalEvidenceV1.source(),
         captured,
         "the vendored operational schema and the committed capture in \
          tests/goldens/operational-evidence-v1.captured.json have diverged. Neither copy may \
@@ -139,7 +139,7 @@ fn tc_470_the_intervention_schema_carries_exactly_the_two_recorded_deltas() {
         &goldens().join("intervention-experiment-v1.captured.json"),
     ))
     .expect("the capture is JSON");
-    let vendored = VendoredSchema::InterventionExperimentV1
+    let vendored = MeasurementSchema::InterventionExperimentV1
         .document()
         .expect("the vendored schema is JSON");
 
@@ -152,13 +152,13 @@ fn tc_470_the_intervention_schema_carries_exactly_the_two_recorded_deltas() {
         Difference {
             pointer: "/properties/producer/properties/tool_version/pattern".to_owned(),
             captured: "\"^(v?[0-9]+[.][0-9]+[.][0-9]+([-+][0-9A-Za-z.-]+)?|[a-f0-9]{40}|(sha256|blake3):[a-f0-9]{64})$\"".to_owned(),
-            vendored: "\"^(v?[0-9]+[.][0-9]+[.][0-9]+([-+][0-9A-Za-z.-]+)?|[a-f0-9]{40}|sha256:[a-f0-9]{64})$\"".to_owned(),
+            committed: "\"^(v?[0-9]+[.][0-9]+[.][0-9]+([-+][0-9A-Za-z.-]+)?|[a-f0-9]{40}|sha256:[a-f0-9]{64})$\"".to_owned(),
         },
         // Delta 1 — quoin#440: RFC 3339 §5.6 permits lowercase `t` and `z`.
         Difference {
             pointer: "/properties/observed_at/pattern".to_owned(),
             captured: "\"^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:[.][0-9]+)?(?:Z|[+-][0-9]{2}:[0-9]{2})$\"".to_owned(),
-            vendored: "\"^[0-9]{4}-[0-9]{2}-[0-9]{2}[Tt][0-9]{2}:[0-9]{2}:[0-9]{2}(?:[.][0-9]+)?(?:[Zz]|[+-][0-9]{2}:[0-9]{2})$\"".to_owned(),
+            committed: "\"^[0-9]{4}-[0-9]{2}-[0-9]{2}[Tt][0-9]{2}:[0-9]{2}:[0-9]{2}(?:[.][0-9]+)?(?:[Zz]|[+-][0-9]{2}:[0-9]{2})$\"".to_owned(),
         },
     ];
     let mut expected = expected;
@@ -188,7 +188,7 @@ fn tc_470_the_capture_records_its_producer_and_revision() {
     ];
     assert_eq!(
         captures.len(),
-        VendoredSchema::ALL.len(),
+        MeasurementSchema::ALL.len(),
         "anti-vacuity floor: one committed capture per vendored schema"
     );
     for capture in captures {
@@ -217,11 +217,11 @@ fn tc_470_the_capture_records_its_producer_and_revision() {
 #[test]
 fn tc_470_every_vendored_schema_parses() {
     assert_eq!(
-        VendoredSchema::ALL.len(),
+        MeasurementSchema::ALL.len(),
         2,
         "anti-vacuity floor: two schemas are vendored here"
     );
-    for schema in VendoredSchema::ALL {
+    for schema in MeasurementSchema::ALL {
         let document = schema
             .document()
             .unwrap_or_else(|e| panic!("{schema} must parse: {e}"));

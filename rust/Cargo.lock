@@ -2981,6 +2981,7 @@ dependencies = [
  "quoin-core",
  "quoin-delivery",
  "quoin-graph-analysis",
+ "quoin-semantic",
  "quoin-store",
  "quoin-validators",
  "quoin-yaml",
@@ -3199,7 +3200,6 @@ dependencies = [
  "quoin-jsonschema",
  "serde",
  "serde_json",
- "sha2",
  "thiserror",
 ]
 

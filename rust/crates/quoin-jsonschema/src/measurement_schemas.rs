@@ -7,8 +7,8 @@
 //!
 //! | schema | retained source (deleted in quoin#479) | how it got here |
 //! |---|---|---|
-//! | [`VendoredSchema::OperationalEvidenceV1`] | `src/measurement/schemas/operational-evidence-v1.schema.json` | copied byte-for-byte |
-//! | [`VendoredSchema::InterventionExperimentV1`] | `src/measurement/intervention-schema.ts` | captured, then two recorded deltas |
+//! | [`MeasurementSchema::OperationalEvidenceV1`] | `src/measurement/schemas/operational-evidence-v1.schema.json` | copied byte-for-byte |
+//! | [`MeasurementSchema::InterventionExperimentV1`] | `src/measurement/intervention-schema.ts` | captured, then two recorded deltas |
 //!
 //! The retained TypeScript no longer exists: quoin#479 deleted `src/measurement/`
 //! after this port took over its routes. Both documents are therefore measured
@@ -17,16 +17,16 @@
 //! revision it came from. FR-101-AC-5 forbids a live non-Rust runtime oracle
 //! after cutover; a committed byte sequence is not one.
 //!
-//! The operational schema was already a JSON document, so it is vendored
-//! verbatim and `tests/tc_470_vendored_schemas.rs` fails if the vendored copy
-//! and the capture ever disagree.
+//! The operational schema was already a JSON document, so it is carried over
+//! verbatim and `tests/tc_470_measurement_schemas.rs` fails if the committed
+//! document and the capture ever disagree.
 //!
 //! The intervention schema was not a document at all: `intervention-schema.ts`
 //! was a *program* that built an object out of shared fragments. It was run
 //! once, serialized with the repository's own `canonicalJson`, and the capture
-//! is committed beside the vendored document as
+//! is committed beside the retained document as
 //! `tests/goldens/intervention-experiment-v1.captured.json` with its producing
-//! revision. The vendored document then differs from that capture by **exactly
+//! revision. The retained document then differs from that capture by **exactly
 //! two deltas**, both rulings recorded in `DIVERGENCE.md`, and the test
 //! enumerates the difference set rather than asserting that one exists.
 //!
@@ -45,15 +45,15 @@ use crate::validator::{FormatCheck, SchemaError, SchemaValidator};
 /// The committed schema documents this crate ships.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[non_exhaustive]
-pub enum VendoredSchema {
+pub enum MeasurementSchema {
     /// FR-100 intervention-experiment records.
     InterventionExperimentV1,
     /// FR-059 operational-evidence records.
     OperationalEvidenceV1,
 }
 
-impl VendoredSchema {
-    /// Every vendored schema, for the censuses that must not measure nothing.
+impl MeasurementSchema {
+    /// Every committed schema, for the censuses that must not measure nothing.
     pub const ALL: &'static [Self] = &[Self::InterventionExperimentV1, Self::OperationalEvidenceV1];
 
     /// The schema's `$id`, which is also how it names itself in a refusal.
@@ -127,7 +127,7 @@ impl VendoredSchema {
     pub fn compile(
         self,
         date_time: fn(&str) -> bool,
-    ) -> Result<VendoredValidator, JsonSchemaError> {
+    ) -> Result<MeasurementValidator, JsonSchemaError> {
         let document = self.document()?;
         let validator = SchemaValidator::compile_with_formats(
             Path::new(self.vendored_path()),
@@ -138,30 +138,30 @@ impl VendoredSchema {
                 check: date_time,
             }],
         )?;
-        Ok(VendoredValidator {
+        Ok(MeasurementValidator {
             schema: self,
             validator,
         })
     }
 }
 
-impl std::fmt::Display for VendoredSchema {
+impl std::fmt::Display for MeasurementSchema {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(self.id())
     }
 }
 
-/// A compiled validator over one vendored schema.
+/// A compiled validator over one committed schema.
 #[derive(Debug)]
-pub struct VendoredValidator {
-    schema: VendoredSchema,
+pub struct MeasurementValidator {
+    schema: MeasurementSchema,
     validator: SchemaValidator,
 }
 
-impl VendoredValidator {
+impl MeasurementValidator {
     /// Which schema this validator carries.
     #[must_use]
-    pub const fn schema(&self) -> VendoredSchema {
+    pub const fn schema(&self) -> MeasurementSchema {
         self.schema
     }
 
@@ -211,14 +211,14 @@ impl VendoredValidator {
 /// value *is* the proof, so it is constructed here and nowhere else.
 #[derive(Debug, Clone, PartialEq)]
 pub struct ValidDocument {
-    schema: VendoredSchema,
+    schema: MeasurementSchema,
     value: Value,
 }
 
 impl ValidDocument {
     /// The schema that accepted it.
     #[must_use]
-    pub const fn schema(&self) -> VendoredSchema {
+    pub const fn schema(&self) -> MeasurementSchema {
         self.schema
     }
 

@@ -34,7 +34,7 @@
 use std::path::Path;
 
 use quoin_jsonschema::{
-    JsonSchemaError, JsonSchemaErrorCode, SchemaKeyword, SchemaValidator, VendoredSchema,
+    JsonSchemaError, JsonSchemaErrorCode, MeasurementSchema, SchemaKeyword, SchemaValidator,
 };
 use quoin_measurement::date_time::Rfc3339DateTime;
 use serde_json::{Value, json};
@@ -48,10 +48,10 @@ fn is_rfc3339_date_time(value: &str) -> bool {
 /// The probe is a document that actually occurs with one field changed, not a
 /// stub: a hand-built object would be refused by a dozen structural keywords
 /// and `format` would never be the thing under test.
-fn retained_base(schema: VendoredSchema) -> Value {
+fn retained_base(schema: MeasurementSchema) -> Value {
     let name = match schema {
-        VendoredSchema::InterventionExperimentV1 => "intervention_experiment_v1",
-        VendoredSchema::OperationalEvidenceV1 => "operational_evidence_v1",
+        MeasurementSchema::InterventionExperimentV1 => "intervention_experiment_v1",
+        MeasurementSchema::OperationalEvidenceV1 => "operational_evidence_v1",
         other => panic!("no retained base recorded for {other}"),
     };
     let goldens: Value = serde_json::from_str(
@@ -78,7 +78,7 @@ fn retained_base(schema: VendoredSchema) -> Value {
     entry["document"].clone()
 }
 
-fn with_observed_at(schema: VendoredSchema, value: &str) -> Value {
+fn with_observed_at(schema: MeasurementSchema, value: &str) -> Value {
     let mut document = retained_base(schema);
     document
         .as_object_mut()
@@ -87,7 +87,7 @@ fn with_observed_at(schema: VendoredSchema, value: &str) -> Value {
     document
 }
 
-fn asserted(schema: VendoredSchema) -> SchemaValidator {
+fn asserted(schema: MeasurementSchema) -> SchemaValidator {
     SchemaValidator::compile_with_formats(
         Path::new(schema.vendored_path()),
         &schema.document().expect("the vendored schema parses"),
@@ -100,7 +100,7 @@ fn asserted(schema: VendoredSchema) -> SchemaValidator {
     .expect("compiles with formats")
 }
 
-fn annotated(schema: VendoredSchema) -> SchemaValidator {
+fn annotated(schema: MeasurementSchema) -> SchemaValidator {
     SchemaValidator::compile_vendored(
         Path::new(schema.vendored_path()),
         &schema.document().expect("the vendored schema parses"),
@@ -119,7 +119,7 @@ fn tc_470_date_time_is_asserted_on_both_schemas_and_annotation_only_without_it()
     // operational schema carries no pattern on any of its nine `date-time`
     // fields, so in both cases the only thing that can refuse it is the
     // registered check.
-    for schema in VendoredSchema::ALL {
+    for schema in MeasurementSchema::ALL {
         let impossible = with_observed_at(*schema, "2026-02-30T00:00:00Z");
 
         let errors = asserted(*schema).errors(&impossible);
@@ -151,7 +151,7 @@ fn tc_470_date_time_is_asserted_on_both_schemas_and_annotation_only_without_it()
 /// Trace: FR-098
 #[test]
 fn tc_470_the_widened_lowercase_form_is_accepted_by_pattern_and_by_format() {
-    for schema in VendoredSchema::ALL {
+    for schema in MeasurementSchema::ALL {
         let validator = asserted(*schema);
         for value in [
             "2026-01-01t00:00:00z",
@@ -183,7 +183,7 @@ fn tc_470_the_widened_lowercase_form_is_accepted_by_pattern_and_by_format() {
 /// Trace: FR-100-AC-4
 #[test]
 fn tc_470_parsing_returns_the_document_or_the_refusal() {
-    let validator = VendoredSchema::InterventionExperimentV1
+    let validator = MeasurementSchema::InterventionExperimentV1
         .compile(is_rfc3339_date_time)
         .expect("compiles");
 
@@ -197,7 +197,7 @@ fn tc_470_parsing_returns_the_document_or_the_refusal() {
     );
     match &refusal {
         JsonSchemaError::DocumentRefused { schema, .. } => {
-            assert_eq!(*schema, VendoredSchema::InterventionExperimentV1);
+            assert_eq!(*schema, MeasurementSchema::InterventionExperimentV1);
         }
         other => panic!("expected a refusal, got {other:?}"),
     }
@@ -216,7 +216,7 @@ fn tc_470_parsing_returns_the_document_or_the_refusal() {
     let parsed = validator
         .parse(retained.clone())
         .expect("the retained record satisfies the schema it was written against");
-    assert_eq!(parsed.schema(), VendoredSchema::InterventionExperimentV1);
+    assert_eq!(parsed.schema(), MeasurementSchema::InterventionExperimentV1);
     assert_eq!(parsed.value(), &retained);
     assert_eq!(parsed.into_value(), retained);
 }

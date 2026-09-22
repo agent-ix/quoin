@@ -77,14 +77,14 @@ fn tc_452_611_a_minimal_block_is_read_with_the_documented_defaults() {
     let root = scratch.module_copy("minimal", |manifest, _| {
         manifest["semantic"] = json!({
             "contract_version": "1.0.0",
-            "semantic_core": "0.1.0",
+            "semantic_core": "0.3.0",
             "package": "agent-ix/spec-objects-fixture",
         });
     });
     assert_eq!(errors(&root, &validators), Vec::<String>::new());
     let block = read(&root, &validators).module.expect("a module").block;
     assert_eq!(block.contract_version.as_str(), "1.0.0");
-    assert_eq!(block.semantic_core.as_str(), "0.1.0");
+    assert_eq!(block.semantic_core.as_str(), "0.3.0");
     assert_eq!(block.package.as_str(), "agent-ix/spec-objects-fixture");
     assert_eq!(block.compatibility_posture, CompatibilityPosture::Additive);
     assert_eq!(block.legacy_forms, LegacyForms::Warning);
@@ -119,7 +119,7 @@ fn tc_452_612_an_unknown_key_is_refused_by_name_and_every_admitted_key_is_accept
 
     let admitted = json!({
         "contract_version": "1.0.0",
-        "semantic_core": "0.1.0",
+        "semantic_core": "0.3.0",
         "package": "agent-ix/spec-objects-fixture",
         "exports": ["entity"],
         "imports": { "agent-ix/spec-artifacts-iso": "0.4.0" },
