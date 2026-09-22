@@ -59,7 +59,9 @@ QUIRE_MISSING = (
 SEMANTIC_CORE_MISSING = (
     "@agent-ix/semantic-core is not installed, so `$ref`s to the grammar cannot "
     "resolve and a record test would validate against nothing. Run "
-    "`make semantic-install`. `@agent-ix` resolves from the user-level npm "
+    "`make bootstrap` (a fresh clone has no committed `package-lock.json` yet, "
+    "so `make semantic-install`'s `npm ci` needs `make install`'s `npm install` "
+    "to produce one first). `@agent-ix` resolves from the user-level npm "
     "configuration; this repository ships no .npmrc."
 )
 

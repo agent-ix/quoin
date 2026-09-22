@@ -59,6 +59,11 @@ turning a semantic row green in the one environment where it never ran.
 the `internal-pypi` Poetry source (see `pyproject.toml`); `make semantic-install`
 resolves the pinned TypeSpec toolchain and `@agent-ix/semantic-core`.
 
+**Commit `package-lock.json` after the first `make bootstrap`, before the
+first CI run.** `make bootstrap` runs `npm install`, which writes the
+lockfile from `package.json`; CI runs `make semantic-install`, which is
+`npm ci` and requires that lockfile to already be committed.
+
 `toolchain.yaml` records every external command this repository invokes and the
 version it must be at or above.
 

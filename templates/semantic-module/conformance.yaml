@@ -91,16 +91,16 @@ residue:
     reason: "a credential in a public repository is a disclosure"
 
 # The private-registry class is defined over PUBLICATION configuration, not over
-# every mention of a private host. A rendered repository names no dev-only
-# mirror at all: the Quire engine resolves from the `internal-pypi` Poetry
-# source (`tool.poetry.source`, a `publication_keys` entry below) and the
-# schema toolchain resolves from the user-level npm configuration. The forbid
-# is unconditional — there is no allowed occurrence.
+# every mention of a private host. `internal-pypi`
+# (us-west1-python.pkg.dev) is the sanctioned index a rendered repository
+# depends on and publishes to — that is exactly what `tool.poetry.source` and
+# `extra_index_url` below name, and pkg.dev is not forbidden. Only pypi.ix and
+# npm.ix, the dev-only mirrors, are: a rendered repository names neither, and
+# the forbid is unconditional — there is no allowed occurrence.
 private_registry:
   hosts:
     - "pypi.ix"
     - "npm.ix"
-    - "pkg.dev"
   publication_keys:
     - "publishConfig"
     - "tool.poetry.source"

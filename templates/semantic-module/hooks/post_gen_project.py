@@ -100,6 +100,10 @@ def main():
         "internal-pypi source, and `make semantic-install` resolves the\n"
         "TypeSpec toolchain and semantic-core.\n"
         "\n"
+        "Commit package-lock.json (written by `make bootstrap`'s `npm install`)\n"
+        "before the first CI run: CI's `make semantic-install` is `npm ci`,\n"
+        "which needs that lockfile already committed.\n"
+        "\n"
         "docs/catalog-entry.md names the steps to add this module to the Quoin\n"
         "default catalog and to the tracking project.\n"
         "\n" % (REPO_NAME, MODULE_KIND)

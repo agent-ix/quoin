@@ -31,7 +31,7 @@ any drift between the source and the committed bytes.
 - The emit command SHALL record the compiler, emitter and semantic-core versions it used, together with a digest over the emitted bytes.
 - Where the emit command runs in check mode, it SHALL exit non-zero listing every difference from the committed output, writing no file.
 - If the schema toolchain is not installed, then the emit command SHALL fail naming the install command.
-- The module SHALL declare no dependency on the Quire engine in its package metadata.
+- The module SHALL declare the Quire engine only as a dev dependency in its package metadata, never as a runtime dependency of the module it publishes.
 - The repository SHALL carry no `.npmrc`.
 
 ## Acceptance Criteria
@@ -44,7 +44,7 @@ any drift between the source and the committed bytes.
 | FR-002-AC-4 | `toolchain.json` records the compiler, emitter, semantic-core, base, file list and overall digest. | Test |
 | FR-002-AC-5 | Check mode exits zero against the committed output. | Test |
 | FR-002-AC-6 | Check mode exits non-zero, naming the file, after one emitted byte changes. | Test |
-| FR-002-AC-7 | The package metadata declares no dependency on the engine. | Test |
+| FR-002-AC-7 | The package metadata declares the engine only as a dev dependency, never a runtime one. | Test |
 | FR-002-AC-8 | No `.npmrc` exists at any depth of the repository. | Test |
 
 ## Dependencies

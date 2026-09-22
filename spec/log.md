@@ -8,6 +8,23 @@ description: "Chronological log of structural changes to this bundle."
 
 ## History
 
+* **2026-09-22** — **FR-080, NFR-018, US-021: the spec now states the
+  semantic-module template's real dependency story** (PLAT-951 review
+  follow-up). `agent-ix/quire-rs#392` closed and the template stopped
+  provisioning the Quire engine with a `make dev-quire` command reaching a
+  dev-only `pypi.ix` mirror; FR-080, NFR-018 and US-021-EX-2 still described
+  that retired design. FR-080's behavior, constraints (CON-2) and acceptance
+  criteria (AC-1, AC-4) now state that the rendered repository declares the
+  engine as a dev dependency sourced from the `internal-pypi` Poetry source,
+  resolved by `poetry install`, and that `make semantic-install` (`npm ci`)
+  resolves the schema toolchain; a missing engine still fails the suite rather
+  than skipping it, naming `poetry install`. NFR-018's private-registry
+  paragraph and the template's own `conformance.yaml` no longer forbid
+  `pkg.dev` — `internal-pypi` (`us-west1-python.pkg.dev`) is the sanctioned
+  index the rendered `pyproject.toml` and `ci.yml` name; only `pypi.ix` and
+  `npm.ix`, the dev-only mirrors, remain forbidden. TC-1428, TC-1430
+  re-pointed at the current behavior.
+
 * **2026-09-22** — **FR-044-AC-7..AC-9: a plan's minimum population and
   repetitions are enforced, and its ground-truth kind is reported**
   (PLAT-960). Intake read
