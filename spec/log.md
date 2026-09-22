@@ -8,6 +8,22 @@ description: "Chronological log of structural changes to this bundle."
 
 ## History
 
+* **2026-09-22** — **FR-044-AC-6: an artifact label is admitted, never silently**
+  (PLAT-969, owner's ruling). A `verificationStack.artifacts` name with no
+  local filesystem entry stays a label — quoin does not require every
+  declared artifact to be locally reachable — but the write now records every
+  such name, sorted, as the collection's `verificationStack.unverifiedArtifacts`;
+  a digested name never appears there, and a collection with nothing
+  unverified states no such member at all. `quoin report` states each
+  unverified artifact beside the collection's provenance, in the rendered text
+  and the JSON view alike. Separately, only the artifact name's final path
+  component was checked for a symlink; a symlinked directory earlier in the
+  path was followed, so `dist -> /elsewhere` could digest a file outside the
+  repository and `dist -> /missing` could pass as a label. Every path
+  component is now checked, left to right, and a symlink at any of them
+  refuses the write as `QM-ARTIFACT-UNREADABLE`, naming the component.
+  TC-1732, TC-1734.
+
 * **2026-09-22** — **FR-044-AC-6: local artifact verification never skips**
   (PLAT-969). `write_measurement_collection` tried each
   `verificationStack.artifacts` name as a repository-relative path but skipped

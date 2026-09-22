@@ -156,6 +156,21 @@ fn value_text(value: Option<f64>) -> String {
     value.map_or_else(|| "null".to_owned(), js_f64_string)
 }
 
+/// The provenance bullet's trailing clause naming every artifact this
+/// repository could not verify locally, or nothing (PLAT-969's ruling: a
+/// label is admitted, but the report states it beside the collection it came
+/// from rather than staying silent).
+///
+/// `pub(crate)` because [`crate::portfolio::render`] shares the same clause on
+/// its own "Provenance:" line rather than spelling it a second way.
+pub(crate) fn unverified_artifacts_suffix(names: &[String]) -> String {
+    if names.is_empty() {
+        String::new()
+    } else {
+        format!("; digest not checked: {}", names.join(", "))
+    }
+}
+
 /// Render the report.
 ///
 /// `renderMeasurementReport` (`report.ts:105-200`). There is no trailing
@@ -216,13 +231,14 @@ pub fn render_measurement_report(report: &MeasurementReport) -> Result<String, M
         }
         seen.push(&collection.collection_id);
         lines.push(format!(
-            "- {} — {} {}; source {}; corpus {}; config {}",
+            "- {} — {} {}; source {}; corpus {}; config {}{}",
             collection.timestamp,
             collection.tool_identity,
             collection.tool_version,
             collection.source_revision,
             collection.corpus_revision.as_deref().unwrap_or("n/a"),
-            collection.config_digest
+            collection.config_digest,
+            unverified_artifacts_suffix(&collection.unverified_artifacts),
         ));
     }
     if seen.is_empty() {

@@ -108,6 +108,18 @@ pub struct VerificationStackAttestation {
     pub capabilities: Vec<NonEmptyText>,
     /// Every produced artifact and its digest, non-empty.
     pub artifacts: BTreeMap<String, RawFileSha256Digest>,
+    /// Names from `artifacts` this repository holds no filesystem entry for,
+    /// sorted.
+    ///
+    /// The owner's ruling on PLAT-969: a `verificationStack.artifacts` name
+    /// with no local entry stays admitted as a label — it is not, and never
+    /// was, this crate's place to require every producer's declared artifact
+    /// to be locally reachable — but admission must never be silent. Intake
+    /// ([`crate::store::publish`]) computes this list itself at write time and
+    /// merges it into the stored bytes; a stored collection this crate did not
+    /// write (historical evidence, or one authored directly) carries whatever
+    /// it happened to state here, or nothing.
+    pub unverified_artifacts: Vec<String>,
 }
 
 /// One producer invocation. All observations land atomically as this unit.

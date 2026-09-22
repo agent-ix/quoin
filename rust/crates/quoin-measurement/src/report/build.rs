@@ -57,6 +57,12 @@ pub struct CollectionSummary {
     pub corpus_revision: Option<String>,
     /// The collection's path, as [`measurement_path`] spells it.
     pub path: String,
+    /// `verificationStack.artifacts` names the collection states with no
+    /// local filesystem entry, sorted; empty when the collection states none
+    /// or carries no verification stack at all (PLAT-969's ruling — a label
+    /// is admitted, and the report says so next to the collection's
+    /// provenance rather than staying silent about it).
+    pub unverified_artifacts: Vec<String>,
 }
 
 /// One row of the "what this repository measures" table.
@@ -219,6 +225,11 @@ fn summary_of(
         source_revision: collection.source_revision.as_str().to_owned(),
         corpus_revision: collection.corpus_revision.clone(),
         path: measurement_path(repo, &id).to_string_lossy().into_owned(),
+        unverified_artifacts: collection
+            .verification_stack
+            .as_ref()
+            .map(|stack| stack.unverified_artifacts.clone())
+            .unwrap_or_default(),
     })
 }
 

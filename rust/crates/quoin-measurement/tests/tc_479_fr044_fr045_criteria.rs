@@ -75,7 +75,7 @@ use quoin_measurement::report::comparison::{
 };
 use quoin_measurement::report::{
     build_measurement_report, comparison_for, render_measurement_comparison,
-    render_measurement_report,
+    render_measurement_report, render_measurement_report_json,
 };
 use quoin_measurement::source::DiskMeasurement;
 use quoin_measurement::store::{
@@ -1175,6 +1175,107 @@ fn tc_969_004_a_symlinked_path_component_refuses_before_digest_or_label() {
     );
 
     assert_eq!(stored_collections(root), Vec::<String>::new());
+}
+
+/// The owner's ruling on PLAT-969: a `verificationStack.artifacts` name with
+/// no local filesystem entry stays admitted as a label — quoin does not
+/// require every declared artifact to be locally reachable — but the write
+/// never leaves that fact unstated. Every label lands in the stored
+/// collection's `unverifiedArtifacts`, sorted; a digested name never does;
+/// and a collection with nothing unverified states nothing, not an empty
+/// array.
+///
+/// Trace: FR-044-AC-6
+/// Provenance: PLAT-969
+#[test]
+fn tc_969_005_a_label_lands_in_unverified_artifacts_and_a_digested_name_does_not() {
+    let temporary = planned_repository();
+    let root = temporary.path();
+    std::fs::create_dir_all(root.join("dist")).expect("the artifact dir");
+    std::fs::write(root.join("dist/quoin"), b"artifact bytes").expect("the digested artifact");
+
+    let path = publish_with_artifacts(
+        root,
+        json!({
+            "dist/quoin": "sha256:4659fc0570122b0e0aa14f4ff7c261b1fe51795a01ba79963f462ebf40d7520d",
+            "no-such-file": format!("sha256:{}", "9".repeat(64)),
+            "another-label": format!("sha256:{}", "8".repeat(64)),
+        }),
+    )
+    .expect("a digested artifact beside two labels is admitted");
+
+    let stored: Value = serde_json::from_str(
+        &std::fs::read_to_string(&path).expect("the published collection is readable"),
+    )
+    .expect("the published collection is JSON");
+    assert_eq!(
+        stored["verificationStack"]["unverifiedArtifacts"],
+        json!(["another-label", "no-such-file"]),
+        "unverifiedArtifacts must hold every label, sorted, and never a digested name \
+         (`dist/quoin` here); got {stored}"
+    );
+
+    // A second collection with nothing unverified states nothing: not an
+    // empty `unverifiedArtifacts` array, an absent member.
+    let mut all_digested = new_collection_json();
+    all_digested["collectionId"] = json!("run-002");
+    all_digested["verificationStack"]["artifacts"] = json!({
+        "dist/quoin": "sha256:4659fc0570122b0e0aa14f4ff7c261b1fe51795a01ba79963f462ebf40d7520d",
+    });
+    let path = write_measurement_collection(
+        root,
+        &from_serde(&all_digested).expect("the all-digested case crosses the bridge"),
+    )
+    .expect("an all-digested collection is admitted");
+    let stored: Value = serde_json::from_str(
+        &std::fs::read_to_string(&path).expect("the second collection is readable"),
+    )
+    .expect("the second collection is JSON");
+    assert!(
+        stored["verificationStack"]
+            .as_object()
+            .expect("verificationStack is an object")
+            .get("unverifiedArtifacts")
+            .is_none(),
+        "a collection with nothing unverified must state nothing, not an empty array; got {stored}"
+    );
+}
+
+/// `quoin report` shows every artifact a collection's owner ruling admitted
+/// but could not verify, beside that collection's provenance — in the
+/// rendered text and in the JSON view alike (PLAT-969).
+///
+/// Trace: FR-044-AC-6
+/// Provenance: PLAT-969
+#[test]
+fn tc_969_006_the_report_shows_an_unverified_artifact_next_to_its_provenance() {
+    let temporary = planned_repository();
+    let root = temporary.path();
+    publish_with_artifacts(
+        root,
+        json!({ "no-such-file": format!("sha256:{}", "9".repeat(64)) }),
+    )
+    .expect("a label-only artifact is admitted");
+
+    let source = DiskMeasurement::new(root);
+    let report = build_measurement_report(&source, root).expect("the report builds");
+
+    let rendered = render_measurement_report(&report).expect("the report renders");
+    assert!(
+        rendered.contains("digest not checked: no-such-file"),
+        "the rendered report must show the unverified artifact next to the collection's \
+         provenance; it rendered:\n{rendered}"
+    );
+
+    let json_text = render_measurement_report_json(&report).expect("the JSON report renders");
+    let parsed: Value = serde_json::from_str(&json_text).expect("the JSON view is JSON");
+    let unverified = parsed["current"]
+        .as_array()
+        .expect("current is an array")
+        .iter()
+        .find_map(|row| row["collection"]["unverifiedArtifacts"].as_array())
+        .unwrap_or_else(|| panic!("no row's collection states unverifiedArtifacts in {parsed}"));
+    assert_eq!(unverified, &vec![json!("no-such-file")]);
 }
 
 /// A publish whose every artifact is a readable local file with a matching

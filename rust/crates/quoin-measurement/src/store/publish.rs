@@ -17,6 +17,18 @@
 //! rather than renames, `fsync`s the file and the directory, and refuses with
 //! `ContentCollision`. Two declared divergences follow, both strengthenings:
 //! `store.ts`'s rename becomes a link, and durability is added.
+//!
+//! # One computed member, merged into the caller's own bytes
+//!
+//! [`write_measurement_collection`] writes the **caller's** JSON, canonicalised
+//! — not a re-serialisation of the parsed collection — so that members this
+//! crate does not model are never dropped on the way to disk. PLAT-969's
+//! ruling adds exactly one exception: `verificationStack.unverifiedArtifacts`,
+//! the sorted list of `artifacts` names with no local filesystem entry, is
+//! something no caller can state honestly for itself (only this repository
+//! knows what it holds), so intake computes it and merges it into a clone of
+//! the candidate before canonicalising. Nothing else about the candidate is
+//! touched.
 
 use std::error::Error as _;
 use std::io::ErrorKind;
@@ -62,21 +74,59 @@ pub fn write_measurement_collection(
     let source = DiskMeasurement::new(repo);
     let plans = load_measurement_plans(&source, PlanLoadOptions::default())?;
     let collection = validate::measurement_collection(candidate, &plans)?;
-    verify_local_artifacts(repo, &collection)?;
+    let unverified = verify_local_artifacts(repo, &collection)?;
     let id = CollectionId::parse(collection.collection_id.as_str())?;
     let path = measurement_path(repo, &id);
     // The **caller's** value is what is written, canonicalised — not a
     // re-serialisation of the parsed collection. `store.ts:40` does the same,
     // and it is what keeps members this crate does not model from being
-    // dropped on the way to disk.
-    let bytes = canonical_json_bytes(candidate)?;
+    // dropped on the way to disk. `unverifiedArtifacts` is the one computed
+    // exception (PLAT-969): see this module's header.
+    let written = with_unverified_artifacts(candidate, &unverified);
+    let bytes = canonical_json_bytes(&written)?;
     write_content_addressed(&path, &bytes)?;
     Ok(path)
+}
+
+/// Merge the computed `unverifiedArtifacts` list into a clone of the
+/// candidate's own `verificationStack`, replacing whatever the caller may
+/// have stated there.
+///
+/// Sets the member when `names` is non-empty and removes it otherwise, so a
+/// collection with nothing unverified states nothing rather than an empty
+/// array — the same "absent, not empty" rule the read side
+/// (`validate::stack::unverified_artifacts`) applies back.
+///
+/// `write_measurement_collection` only reaches this after
+/// `validate::measurement_collection` has already confirmed `verificationStack`
+/// is an object (a schemaVersion-2 collection always carries one); if it is
+/// somehow not, the candidate is returned unchanged rather than losing
+/// whatever the caller actually sent.
+fn with_unverified_artifacts(candidate: &JsonValue, names: &[String]) -> JsonValue {
+    let mut written = candidate.clone();
+    let JsonValue::Object(root) = &mut written else {
+        return written;
+    };
+    let Some(JsonValue::Object(mut stack)) = root.get("verificationStack").cloned() else {
+        return written;
+    };
+    if names.is_empty() {
+        stack.remove("unverifiedArtifacts");
+    } else {
+        let array = JsonValue::Array(names.iter().cloned().map(JsonValue::string).collect());
+        stack.set("unverifiedArtifacts", array);
+    }
+    root.set("verificationStack", JsonValue::Object(stack));
+    written
 }
 
 /// Truth-check the digests intake can verify for itself, refusing a record
 /// whose submitted digest disagrees with the bytes it names (PLAT-931), and
 /// refusing one whose named artifact cannot be checked at all (PLAT-969).
+/// Returns the sorted names that turned out to be labels — nothing under
+/// `repo` at all — for [`write_measurement_collection`] to record honestly
+/// rather than pass over in silence (PLAT-969's ruling: a label stays
+/// admitted, but it is never unstated).
 ///
 /// `verificationStack.lockDigest`, `.executableDigest` and `.configDigest`
 /// carry no name or path in the candidate at all — only `quoin measurement
@@ -92,10 +142,14 @@ pub fn write_measurement_collection(
 fn verify_local_artifacts(
     repo: &Path,
     collection: &MeasurementCollection,
-) -> Result<(), MeasurementError> {
+) -> Result<Vec<String>, MeasurementError> {
     let Some(stack) = collection.verification_stack.as_ref() else {
-        return Ok(());
+        return Ok(Vec::new());
     };
+    // `stack.artifacts` is a `BTreeMap`, so iterating it already visits names
+    // in sorted order — nothing further to sort before this is stored as
+    // `unverifiedArtifacts`.
+    let mut unverified = Vec::new();
     for (name, submitted) in &stack.artifacts {
         match reach_local_artifact(repo, name)? {
             LocalArtifact::Digested(computed) if computed == *submitted => {}
@@ -112,11 +166,12 @@ fn verify_local_artifacts(
             }
             // A label, not a file this repository holds: the fixture
             // collections' own `config` is one. Its digest was checked for
-            // shape by `validate::stack` and nothing here can check more.
-            LocalArtifact::Label => {}
+            // shape by `validate::stack` and nothing here can check more, so
+            // it is recorded as unverified rather than checked further.
+            LocalArtifact::Label => unverified.push(name.clone()),
         }
     }
-    Ok(())
+    Ok(unverified)
 }
 
 /// What one `verificationStack.artifacts` name is, locally.
