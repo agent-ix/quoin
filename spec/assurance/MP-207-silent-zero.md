@@ -7,6 +7,18 @@ owner: quoin-maintainers
 stage: gate
 metric: sentinel.silent_zero
 definition_version: benchmark.silent-zero-v1
+ground_truth_kind: mechanical
+subject_identity:
+  name: quoin bench-tier1 benchmark instrument
+  version: v0.23.1
+statistical_design:
+  population: every ratio metric emitted by every completed producer in a benchmark run, excluding count metrics and genuinely empty populations
+  sampling: exhaustive over every ratio metric in the run; no subsampling
+  repetitions: 1
+  estimator: count of metrics with non-zero examined, zero matched, and no diagnostic
+  error_model: none -- deterministic recomputation from the same raw payload reproduces the same count
+  uncertainty: none -- an exact count, not a statistical estimate
+  decision_rule: gate at exactly zero; any non-zero count or missing capability is a refusal
 relationships: []
 ---
 
@@ -20,7 +32,10 @@ none of a non-empty population without saying so.
 ## Population
 
 Include all ratio metrics emitted by every completed producer in a benchmark
-run. Exclude count metrics and genuinely empty populations.
+run. Exclude count metrics and genuinely empty populations. This measure does
+not set `statistical_design.minimum_population`: the exclusion above already
+rules out an empty population, and no smaller-than-N threshold beyond that is
+meaningful for an instrument-integrity sentinel.
 
 ## Measure Definition
 
@@ -45,3 +60,11 @@ This proves a narrow instrument-integrity property, not finding correctness.
 
 Gate at exactly zero. Incomplete producers or missing capabilities are refusals,
 not passing zeros.
+
+## Composition
+
+This gate decides from a single mechanical metric, so `relationships` stays
+empty here. A gate that instead needs several metrics to succeed together
+expresses that composition as one `references` relationship entry per
+constituent metric's MeasurementPlan, not as a fabricated composite `metric`
+id or as untested prose.

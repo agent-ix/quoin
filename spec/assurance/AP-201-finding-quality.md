@@ -4,7 +4,7 @@ title: Quoin finding quality and measurement reporting profile
 type: AssuranceProfile
 status: active
 owner: quoin-maintainers
-profile_version: 0.2
+schema_version: 0.2
 profile_kind: general
 scope: finding scoring, measurement persistence, comparison, gates, and report rendering
 impact_assessments:
