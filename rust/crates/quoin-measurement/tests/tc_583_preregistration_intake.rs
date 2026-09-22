@@ -24,7 +24,6 @@
 //! in [`quoin_measurement::types::plan::PlanPreregistration`] and are not
 //! claimed to be closed by anything below.
 //!
-//! Trace: FR-044-AC-1
 //! Provenance: PLAT-936
 
 #![allow(
@@ -142,7 +141,6 @@ fn new_collection_json() -> Value {
 /// A digest matching the bar text as it reads today admits the collection —
 /// the block being present at all costs nothing when nothing has drifted.
 ///
-/// Trace: FR-044-AC-1
 /// Provenance: PLAT-936
 #[test]
 fn tc_583_a_matching_preregistered_bar_is_admitted() {
@@ -162,7 +160,6 @@ fn tc_583_a_matching_preregistered_bar_is_admitted() {
 /// PLAT-936 exists to catch. The collection is refused, and the refusal names
 /// both the plan and the fact that the bar text moved.
 ///
-/// Trace: FR-044-AC-1
 /// Provenance: PLAT-936
 #[test]
 fn tc_583_a_bar_edited_after_capture_is_refused() {
@@ -185,11 +182,47 @@ fn tc_583_a_bar_edited_after_capture_is_refused() {
     );
 }
 
+/// Two observations against the same gate plan (different dimensions) share
+/// one `preregistration` block, so a stale digest is named exactly once, not
+/// once per observation (review finding #3 on quoin#583).
+///
+/// Provenance: PLAT-936
+#[test]
+fn tc_583_a_stale_bar_shared_by_two_observations_is_named_once() {
+    let repository = planned_repository(BAR_DIGEST, "Pass when agreement exceeds 0.99.");
+    let plans = authored_plans(repository.path());
+    let mut candidate = new_collection_json();
+    let mut second = candidate["observations"][0].clone();
+    second["dimensions"] = json!({ "variant": "b" });
+    candidate["observations"]
+        .as_array_mut()
+        .expect("observations is an array")
+        .push(second);
+
+    let refusal = validate::measurement_collection(
+        &from_serde(&candidate).expect("the candidate crosses the bridge"),
+        &plans,
+    )
+    .expect_err("a stale bar digest still refuses the collection");
+    assert_eq!(refusal.code(), MeasurementErrorCode::CollectionInvalid);
+    let mismatches: Vec<&String> = refusal
+        .findings()
+        .iter()
+        .filter(|finding| finding.contains("MP-900") && finding.contains("pre-registered"))
+        .collect();
+    assert_eq!(
+        mismatches.len(),
+        1,
+        "two observations against the same plan must produce exactly one \
+         pre-registration finding, got {:?}",
+        refusal.findings()
+    );
+}
+
 /// A plan with no `preregistration` block at all is unaffected — the check is
 /// additive, and every plan predating PLAT-936 keeps validating exactly as it
 /// did before this landed.
 ///
-/// Trace: FR-044-AC-1
 /// Provenance: PLAT-936
 #[test]
 fn tc_583_a_plan_without_preregistration_is_unaffected() {
