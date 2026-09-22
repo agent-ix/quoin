@@ -25,6 +25,7 @@
 //! of the parsed value (`store.ts:40` canonicalizes `candidate`). Nothing here
 //! is a lossy round trip, because nothing here round-trips.
 
+mod population;
 pub(crate) mod read;
 mod stack;
 
@@ -189,6 +190,16 @@ fn parse_stored_measurement_collection(
 /// other than [`MEASUREMENT_SCHEMA_VERSION`], a build profile other than
 /// release, absent toolchains, and any observation whose metric has no active
 /// plan at the observation's own definition version.
+///
+/// Every finding is accumulated into one refusal. Its code is
+/// [`MeasurementErrorCode::CollectionInvalid`], except when every finding is
+/// one population refusal kind (PLAT-960), in which case the refusal carries
+/// that kind's own code — [`MeasurementErrorCode::PopulationBelowMinimum`],
+/// [`MeasurementErrorCode::PopulationUnstated`],
+/// [`MeasurementErrorCode::RepetitionsShort`] or
+/// [`MeasurementErrorCode::PopulationMalformed`]. A population finding inside a
+/// mixed refusal still names its code as the finding's first word, so the
+/// typed reason survives the accumulation.
 pub fn measurement_collection(
     value: &JsonValue,
     plans: &[MeasurementPlan],
@@ -204,6 +215,10 @@ pub fn measurement_collection(
     // `?`-ed away, so e.g. a bad digest and an unplanned metric are both
     // named in the same refusal (review finding #5(a) on quoin#580).
     let mut findings = Vec::new();
+    // The code of each finding that has one of its own, pushed alongside it.
+    // Only the population checks (PLAT-960) are typed today; see this
+    // function's `# Errors` for how the refusal's own code is chosen.
+    let mut typed: Vec<MeasurementErrorCode> = Vec::new();
 
     if collection.schema_version != MEASUREMENT_SCHEMA_VERSION {
         findings.push(format!(
@@ -246,33 +261,28 @@ pub fn measurement_collection(
         .iter()
         .map(|plan| (plan.metric.as_str(), plan))
         .collect();
-    for observation in &collection.observations {
-        let metric = observation.metric.as_str();
-        let Some(plan) = by_metric.get(metric) else {
-            findings.push(format!(
-                "metric `{metric}` has no MeasurementPlan under spec/assurance or assurance; \
-                 record refused"
-            ));
-            continue;
-        };
-        if plan.status != LifecycleStatus::Active {
-            findings.push(format!(
-                "metric `{metric}` plan {} is {}, not active",
-                plan.id,
-                plan.status.as_str()
-            ));
-        }
-        if observation.plan_id != plan.id {
-            findings.push(format!(
-                "metric `{metric}` names plan {}; active plan is {}",
-                observation.plan_id, plan.id
-            ));
-        }
-        if observation.definition_version != plan.definition_version {
-            findings.push(format!(
-                "metric `{metric}` definition {} does not match {}",
-                observation.definition_version, plan.definition_version
-            ));
+    // The parse admitted every observation in order, so the stored array and
+    // `collection.observations` pair up by position; the population checks
+    // read the stored member, because a malformed value is exactly what the
+    // parsed model cannot show (PLAT-960).
+    let raw_observations: &[JsonValue] = match value
+        .as_object()
+        .ok()
+        .and_then(|object| object.get("observations"))
+    {
+        Some(JsonValue::Array(raw)) => raw,
+        _ => &[],
+    };
+    for (index, observation) in collection.observations.iter().enumerate() {
+        let plan = by_metric.get(observation.metric.as_str()).copied();
+        findings.extend(plan_findings(observation, plan));
+        let raw_population = raw_observations
+            .get(index)
+            .and_then(|raw| raw.as_object().ok())
+            .and_then(|raw| raw.get("population"));
+        for (code, finding) in population::findings(observation, raw_population, plan) {
+            typed.push(code);
+            findings.push(format!("{code}: {finding}"));
         }
     }
 
@@ -316,12 +326,63 @@ pub fn measurement_collection(
     if findings.is_empty() {
         Ok(collection)
     } else {
-        Err(MeasurementError::with_findings(
-            CODE,
-            "measurement collection failed intake validation",
-            findings,
-        ))
+        Err(intake_refusal(findings, &typed))
     }
+}
+
+/// The untyped findings tying one observation to its plan: none governs it,
+/// or the one that does is inactive, differently named, or at another
+/// definition version.
+fn plan_findings(
+    observation: &MeasurementObservation,
+    plan: Option<&MeasurementPlan>,
+) -> Vec<String> {
+    let metric = observation.metric.as_str();
+    let Some(plan) = plan else {
+        return vec![format!(
+            "metric `{metric}` has no MeasurementPlan under spec/assurance or assurance; \
+             record refused"
+        )];
+    };
+    let mut out = Vec::new();
+    if plan.status != LifecycleStatus::Active {
+        out.push(format!(
+            "metric `{metric}` plan {} is {}, not active",
+            plan.id,
+            plan.status.as_str()
+        ));
+    }
+    if observation.plan_id != plan.id {
+        out.push(format!(
+            "metric `{metric}` names plan {}; active plan is {}",
+            observation.plan_id, plan.id
+        ));
+    }
+    if observation.definition_version != plan.definition_version {
+        out.push(format!(
+            "metric `{metric}` definition {} does not match {}",
+            observation.definition_version, plan.definition_version
+        ));
+    }
+    out
+}
+
+/// One refusal carrying every accumulated finding, under the code chosen as
+/// [`measurement_collection`]'s `# Errors` states: the shared code of the
+/// typed findings when every finding is typed and they agree, and
+/// [`MeasurementErrorCode::CollectionInvalid`] otherwise.
+fn intake_refusal(findings: Vec<String>, typed: &[MeasurementErrorCode]) -> MeasurementError {
+    let code = match typed.first() {
+        Some(first) if typed.len() == findings.len() && typed.iter().all(|code| code == first) => {
+            *first
+        }
+        _ => CODE,
+    };
+    MeasurementError::with_findings(
+        code,
+        "measurement collection failed intake validation",
+        findings,
+    )
 }
 
 /// The schema version, refusing anything but the current one and the retained
@@ -402,6 +463,7 @@ fn population(object: &JsonObject) -> Option<MeasurementPopulation> {
         examined: read::number(population, "examined"),
         matched: read::number(population, "matched"),
         complete: read::boolean(population, "complete"),
+        repetitions: population.get("repetitions").cloned(),
         identity: population.get("identity").cloned(),
         // Kept rather than dropped: see `MeasurementPopulation`'s header for
         // the two retained call sites that see every stored member.

@@ -123,6 +123,23 @@ pub(crate) fn row_label(row: &CurrentRow) -> Result<String, MeasurementError> {
     }
 }
 
+/// The `Plan` cell: `id (path)`, with the plan's ground-truth kind inside the
+/// parentheses when it states one (PLAT-960).
+///
+/// `pub(crate)` because [`crate::portfolio::render`] quotes the plan the same
+/// way. A plan that states no kind renders the bytes it did before PLAT-960.
+pub(crate) fn plan_cell(row: &CurrentRow) -> String {
+    match row.plan_ground_truth_kind {
+        Some(kind) => format!(
+            "{} ({}; ground truth: {})",
+            row.plan_id,
+            row.plan_path,
+            kind.as_str()
+        ),
+        None => format!("{} ({})", row.plan_id, row.plan_path),
+    }
+}
+
 /// The four-way `Current` cell.
 ///
 /// `report.ts:125-133` and `portfolio.ts:189-196` differ only in the two
@@ -195,10 +212,9 @@ pub fn render_measurement_report(report: &MeasurementReport) -> Result<String, M
         lines.push("| --- | --- | --- | --- |".to_owned());
         for row in &report.current {
             lines.push(format!(
-                "| {} | {} ({}) | {} | {} |",
+                "| {} | {} | {} | {} |",
                 row_label(row)?,
-                row.plan_id,
-                row.plan_path,
+                plan_cell(row),
                 row.stage.as_str(),
                 observation_cell(
                     row,

@@ -16,7 +16,7 @@ use crate::common::scalar::js_f64_string;
 use crate::error::MeasurementError;
 use crate::portfolio::types::{PortfolioReport, PortfolioRepositoryReport};
 use crate::report::render::{
-    metric_label, observation_cell, row_label, unverified_artifacts_suffix,
+    metric_label, observation_cell, plan_cell, row_label, unverified_artifacts_suffix,
 };
 
 /// Render the portfolio as markdown.
@@ -108,15 +108,14 @@ fn readable(repository: &PortfolioRepositoryReport) -> Result<Vec<String>, Measu
     } else {
         for row in rows {
             lines.push(format!(
-                "| {} | {} | {} ({}) | {} |",
+                "| {} | {} | {} | {} |",
                 row_label(row)?,
                 observation_cell(
                     row,
                     "producer supplied no reason",
                     "not_computed: no collection"
                 ),
-                row.plan_id,
-                row.plan_path,
+                plan_cell(row),
                 row.collection.as_ref().map_or_else(
                     || "n/a".to_owned(),
                     |collection| format!("{} ({})", collection.collection_id, collection.path)

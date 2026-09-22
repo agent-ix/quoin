@@ -8,6 +8,26 @@ description: "Chronological log of structural changes to this bundle."
 
 ## History
 
+* **2026-09-22** — **FR-044-AC-7..AC-9: a plan's minimum population and
+  repetitions are enforced, and its ground-truth kind is reported**
+  (PLAT-960). Intake read
+  none of a `MeasurementPlan`'s `statistical_design` or `ground_truth_kind`,
+  so a collection examining two items was admitted under a plan requiring
+  more. A declared `minimum_population` now refuses a smaller measured
+  population as `QM-POPULATION-BELOW-MINIMUM` and an unstated one as
+  `QM-POPULATION-UNSTATED`, accumulating with every other intake finding.
+  `quoin report` states the plan's `ground_truth_kind` beside it in text and
+  JSON. FR-044-AC-9: an observation's `population` may now state
+  `repetitions`, the runs actually performed (following MP-225's "N is stated
+  with every observation"); a count short of the plan's
+  `statistical_design.repetitions` is refused as `QM-REPETITIONS-SHORT`, and
+  an unstated one as `QM-POPULATION-UNSTATED` when the plan requires more than
+  one. A stated count that is not a whole number (a stated `examined` under a
+  minimum, or any stated `repetitions`) is refused as
+  `QM-POPULATION-MALFORMED` rather than coerced or read as absent, and the
+  JSON report keeps a stored `repetitions` exactly as stored.
+  TC-1740..TC-1755.
+
 * **2026-09-22** — **FR-044-AC-6: an artifact label is admitted, never silently**
   (PLAT-969, owner's ruling). A `verificationStack.artifacts` name with no
   local filesystem entry stays a label — quoin does not require every

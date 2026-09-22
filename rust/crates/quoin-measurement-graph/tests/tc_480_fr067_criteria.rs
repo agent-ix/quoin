@@ -95,6 +95,8 @@ fn plan() -> MeasurementPlan {
         owner: Some("assurance-team".to_owned()),
         action: Some("repair retained evidence".to_owned()),
         preregistration: None,
+        ground_truth_kind: None,
+        statistical_design: None,
     }
 }
 
@@ -968,6 +970,8 @@ fn adapted_producer_evidence() -> (MeasurementCollection, MeasurementPlan, Strin
         owner: Some("assurance-team".to_owned()),
         action: Some("repair retained evidence".to_owned()),
         preregistration: None,
+        ground_truth_kind: None,
+        statistical_design: None,
     };
     let scorer_bytes: Vec<u8> = input["scorerBytes"]
         .as_array()

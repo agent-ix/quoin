@@ -34,7 +34,7 @@ use crate::store::read::read_measurement_collections;
 use crate::types::collection::MeasurementCollection;
 use crate::types::ids::CollectionId;
 use crate::types::observation::MeasurementObservation;
-use crate::types::plan::{LifecycleStatus, MeasurementPlan, MeasurementStage};
+use crate::types::plan::{GroundTruthKind, LifecycleStatus, MeasurementPlan, MeasurementStage};
 
 /// The collection members a report row quotes, and where the record lives.
 ///
@@ -81,6 +81,9 @@ pub struct CurrentRow {
     pub plan_definition_version: String,
     /// How far along the measurement ladder the plan sits.
     pub stage: MeasurementStage,
+    /// How the governing plan's ground truth was produced, when it says
+    /// (PLAT-960).
+    pub plan_ground_truth_kind: Option<GroundTruthKind>,
     /// The observation, when one was computed.
     pub observation: Option<MeasurementObservation>,
     /// The collection it was computed in, when there is one.
@@ -183,6 +186,7 @@ pub fn build_measurement_report_from(
             plan_path: plan.path.clone(),
             plan_definition_version: plan.definition_version.as_str().to_owned(),
             stage: plan.stage,
+            plan_ground_truth_kind: plan.ground_truth_kind,
             observation: observation.cloned(),
             collection: summary.clone(),
         };

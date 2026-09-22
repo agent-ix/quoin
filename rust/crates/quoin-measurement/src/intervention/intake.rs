@@ -131,7 +131,14 @@ impl From<MeasurementError> for InterventionIntakeError {
             // than falling back to a catch-all the next code added would
             // silently absorb.
             | MeasurementErrorCode::ArtifactNameUnsafe
-            | MeasurementErrorCode::ArtifactUnreadable => InterventionRefusalCode::InvalidRecord,
+            | MeasurementErrorCode::ArtifactUnreadable
+            // Raised only by `validate::measurement_collection` (PLAT-960),
+            // which intervention intake does not call; kept for the same
+            // exhaustiveness reason as the two arms above.
+            | MeasurementErrorCode::PopulationBelowMinimum
+            | MeasurementErrorCode::PopulationUnstated
+            | MeasurementErrorCode::RepetitionsShort
+            | MeasurementErrorCode::PopulationMalformed => InterventionRefusalCode::InvalidRecord,
         };
         let findings = if error.findings().is_empty() {
             vec![error.to_string()]

@@ -18,6 +18,19 @@
 //! question (does this bar still read the way it was pre-registered to?) and
 //! is answered once per plan actually referenced by a collection, under
 //! [`crate::error::MeasurementErrorCode::CollectionInvalid`], not here.
+//!
+//! # `ground_truth_kind` and `statistical_design` (PLAT-960)
+//!
+//! Both are optional. A document that states neither loads exactly as it did
+//! before PLAT-960. A document that states one with an unacceptable value —
+//! a `ground_truth_kind` outside its three spellings, a `statistical_design`
+//! that is not an object, or a `minimum_population` or `repetitions` that is
+//! not a whole number from 1 to 4,294,967,295 — refuses the plan load with
+//! [`MeasurementErrorCode::PlanInvalid`], the same as `preregistration`.
+//! Enforcing `minimum_population` and `repetitions` against a collection is
+//! [`crate::validate::measurement_collection`]'s job, not this module's.
+
+mod design;
 
 use crate::discovery;
 use crate::error::{MeasurementError, MeasurementErrorCode};
@@ -115,6 +128,8 @@ fn plan_from(
         }
     };
     let preregistration = preregistration_from(path, value, text)?;
+    let ground_truth_kind = design::ground_truth_kind_from(path, value)?;
+    let statistical_design = design::statistical_design_from(path, value)?;
     Ok(MeasurementPlan {
         id,
         title,
@@ -126,6 +141,8 @@ fn plan_from(
         owner: governance("owner"),
         action: governance("action"),
         preregistration,
+        ground_truth_kind,
+        statistical_design,
     })
 }
 

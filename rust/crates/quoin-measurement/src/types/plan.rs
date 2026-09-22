@@ -6,6 +6,7 @@
 //! `src/measurement/plans.ts:7-15,57-68` checks against.
 
 use std::fmt;
+use std::num::NonZeroU32;
 
 use quoin_store::{RawFileSha256Digest, digest_bytes_sha256};
 
@@ -99,6 +100,62 @@ impl MeasurementStage {
     }
 }
 
+/// How the correct answers a plan grades against were produced (PLAT-960).
+///
+/// The engineering-assurance `MeasurementPlan` schema's `ground_truth_kind`,
+/// with its three spellings. Carried into `quoin report` beside the plan so a
+/// reader can tell a gate graded against people's labels from one graded
+/// against another agent's.
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
+pub enum GroundTruthKind {
+    /// Labelled by a person.
+    HumanLabelled,
+    /// Labelled by another AI agent.
+    AgentLabelled,
+    /// Derived mechanically, e.g. by a deterministic oracle or a replay.
+    Mechanical,
+}
+
+impl GroundTruthKind {
+    /// Every kind, in declaration order.
+    pub const ALL: [Self; 3] = [Self::HumanLabelled, Self::AgentLabelled, Self::Mechanical];
+
+    /// The stable wire spelling.
+    #[must_use]
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::HumanLabelled => "human-labelled",
+            Self::AgentLabelled => "agent-labelled",
+            Self::Mechanical => "mechanical",
+        }
+    }
+
+    /// Recover a kind from its wire spelling.
+    #[must_use]
+    pub fn from_wire(value: &str) -> Option<Self> {
+        Self::ALL.into_iter().find(|known| known.as_str() == value)
+    }
+}
+
+/// The members of a plan's `statistical_design` block this crate reads
+/// (PLAT-960).
+///
+/// The engineering-assurance schema requires seven members of this block;
+/// the prose ones (`population`, `sampling`, `estimator`, `error_model`,
+/// `uncertainty`, `decision_rule`) are that schema's to validate and are not
+/// read here. Each member below is optional so a plan without it loads exactly
+/// as it did before PLAT-960.
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
+pub struct StatisticalDesign {
+    /// The smallest `population.examined` a measured observation may carry
+    /// before intake refuses it.
+    pub minimum_population: Option<NonZeroU32>,
+    /// How many repeat runs the plan requires before a result counts,
+    /// checked at intake against each measured observation's
+    /// `population.repetitions`.
+    pub repetitions: Option<NonZeroU32>,
+}
+
 /// One measurement plan, as read from an assurance document's frontmatter.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct MeasurementPlan {
@@ -123,6 +180,12 @@ pub struct MeasurementPlan {
     /// The plan's own tamper-evidence attestation over its "Comparison and
     /// Enforcement" section (PLAT-936), when the document declares one.
     pub preregistration: Option<PlanPreregistration>,
+    /// How the plan's ground truth was produced, when the document says
+    /// (PLAT-960).
+    pub ground_truth_kind: Option<GroundTruthKind>,
+    /// The `statistical_design` members this crate reads, when the document
+    /// declares the block (PLAT-960).
+    pub statistical_design: Option<StatisticalDesign>,
 }
 
 impl MeasurementPlan {

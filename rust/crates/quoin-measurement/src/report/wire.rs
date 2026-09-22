@@ -40,7 +40,7 @@ use crate::json_bridge::{from_serde, to_serde};
 use crate::report::build::{CollectionSummary, CurrentRow, MeasurementReport};
 use crate::types::comparison::MeasurementComparison;
 use crate::types::observation::{MeasurementObservation, MeasurementPopulation};
-use crate::types::plan::MeasurementPlan;
+use crate::types::plan::{GroundTruthKind, MeasurementPlan};
 
 /// `canonicalJson(value)` (`src/store/canonical.ts:19`), for a wire view.
 ///
@@ -79,6 +79,10 @@ pub struct PlanWire<'a> {
     /// As `owner`.
     #[serde(skip_serializing_if = "Option::is_none")]
     action: Option<&'a str>,
+    /// Absent when the plan states none, so a plan without it serialises to
+    /// the same bytes it did before PLAT-960.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    ground_truth_kind: Option<&'static str>,
 }
 
 impl<'a> PlanWire<'a> {
@@ -95,6 +99,7 @@ impl<'a> PlanWire<'a> {
             path: &plan.path,
             owner: plan.owner.as_deref(),
             action: plan.action.as_deref(),
+            ground_truth_kind: plan.ground_truth_kind.map(GroundTruthKind::as_str),
         }
     }
 }
@@ -108,6 +113,10 @@ pub(crate) struct PopulationWire {
     matched: Option<f64>,
     #[serde(skip_serializing_if = "Option::is_none")]
     complete: Option<bool>,
+    /// Absent when not stated, so a population without it serialises to the
+    /// same bytes it did before PLAT-960.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    repetitions: Option<Value>,
     #[serde(skip_serializing_if = "Option::is_none")]
     identity: Option<Value>,
     /// Everything else the record stated, kept as it was stored.
@@ -126,6 +135,7 @@ impl PopulationWire {
             examined: population.examined,
             matched: population.matched,
             complete: population.complete,
+            repetitions: population.repetitions.as_ref().map(to_serde).transpose()?,
             identity: population.identity.as_ref().map(to_serde).transpose()?,
             unmodelled: analysis_map(&population.unmodelled)?,
         })

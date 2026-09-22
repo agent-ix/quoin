@@ -301,6 +301,8 @@ fn plan(value: &Value) -> MeasurementPlan {
         owner: None,
         action: None,
         preregistration: None,
+        ground_truth_kind: None,
+        statistical_design: None,
     }
 }
 
