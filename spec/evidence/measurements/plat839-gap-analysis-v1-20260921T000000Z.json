@@ -1,0 +1,140 @@
+{
+  "schemaVersion": 2,
+  "collectionId": "plat839-gap-analysis-v1-20260921T000000Z",
+  "subject": "Jev gap-analysis semantic lens evaluation (PLAT-839)",
+  "scope": {
+    "lens": "gap-analysis",
+    "corpus": "rust/crates/quoin-jev/tests/fixtures/gap-semantic-corpus.json",
+    "variants": ["solo", "full-battery"]
+  },
+  "toolIdentity": "quoin-jev tests/live_gap_semantic.rs (the_lens_beats_doing_nothing)",
+  "toolVersion": "quoin-jev 0.9.0",
+  "configDigest": "sha256:c51df1c1379bda19437128dc5bf0fec088f7f9aef735a63a0d1044e59e7b48f6",
+  "timestamp": "2026-09-21T00:00:00Z",
+  "sourceRevision": "8ec0d4ad02021df63b567e8c8daa58b9798adc37",
+  "corpusRevision": "quoin@8ec0d4ad02021df63b567e8c8daa58b9798adc37",
+  "environment": {
+    "runner": "manual single-session live-api run, not CI",
+    "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)"
+  },
+  "verificationStack": {
+    "schemaVersion": "verification-stack-attestation-v1",
+    "lockDigest": "sha256:5cf81a7ab30857807647d528efe45be8a9944514f2e20df0db44e7f0865afe65",
+    "executableDigest": "sha256:b8d8d79c2df5b3613de551f79907fdeac61bbfc2e247e616d2036e1a80a56e3e",
+    "buildProfile": "release",
+    "toolchains": {
+      "node": "n/a -- this evaluation is a pure-Rust measurement path (quoin-jev's own live-api test binary); no Node toolchain was invoked",
+      "python": "n/a -- no Python toolchain was invoked",
+      "rust": "1.94.1"
+    },
+    "sources": {
+      "quoin": {
+        "remote": "https://github.com/agent-ix/quoin",
+        "revision": "8ec0d4ad02021df63b567e8c8daa58b9798adc37",
+        "sourceState": "clean"
+      }
+    },
+    "capabilities": ["network:api.typesafe.ai"],
+    "artifacts": {
+      "gap-semantic-corpus.json": "sha256:a47ec78e68e4242fe99d075aba4751d360dd30f78b4dcc420493091174d5fb8e"
+    }
+  },
+  "observations": [
+    {
+      "planId": "MP-222",
+      "metric": "jev.constant_predictor_margin",
+      "definitionVersion": "jev.constant-margin-v1",
+      "dimensions": { "lens": "gap-analysis", "variant": "solo" },
+      "shape": "scalar",
+      "state": "measured",
+      "unit": "percentage points",
+      "value": 4.3,
+      "population": { "complete": true, "examined": 23, "matched": 21 }
+    },
+    {
+      "planId": "MP-222",
+      "metric": "jev.constant_predictor_margin",
+      "definitionVersion": "jev.constant-margin-v1",
+      "dimensions": { "lens": "gap-analysis", "variant": "full-battery" },
+      "shape": "scalar",
+      "state": "measured",
+      "unit": "percentage points",
+      "value": 4.3,
+      "population": { "complete": true, "examined": 23, "matched": 21 }
+    },
+    {
+      "planId": "MP-223",
+      "metric": "jev.defect_recall",
+      "definitionVersion": "jev.defect-recall-v1",
+      "dimensions": { "lens": "gap-analysis", "variant": "solo" },
+      "shape": "ratio",
+      "state": "measured",
+      "unit": "fraction of mutation-confirmed-vacuous tests found",
+      "value": 0.6666666666666666,
+      "population": { "complete": true, "examined": 3, "matched": 2 }
+    },
+    {
+      "planId": "MP-223",
+      "metric": "jev.defect_recall",
+      "definitionVersion": "jev.defect-recall-v1",
+      "dimensions": { "lens": "gap-analysis", "variant": "full-battery" },
+      "shape": "ratio",
+      "state": "measured",
+      "unit": "fraction of mutation-confirmed-vacuous tests found",
+      "value": 0.6666666666666666,
+      "population": { "complete": true, "examined": 3, "matched": 2 }
+    },
+    {
+      "planId": "MP-224",
+      "metric": "jev.no_defect_recall",
+      "definitionVersion": "jev.no-defect-recall-v1",
+      "dimensions": { "lens": "gap-analysis", "variant": "solo" },
+      "shape": "ratio",
+      "state": "measured",
+      "unit": "fraction of mutation-confirmed-not-vacuous tests correctly cleared",
+      "value": 0.95,
+      "population": { "complete": true, "examined": 20, "matched": 19 }
+    },
+    {
+      "planId": "MP-224",
+      "metric": "jev.no_defect_recall",
+      "definitionVersion": "jev.no-defect-recall-v1",
+      "dimensions": { "lens": "gap-analysis", "variant": "full-battery" },
+      "shape": "ratio",
+      "state": "measured",
+      "unit": "fraction of mutation-confirmed-not-vacuous tests correctly cleared",
+      "value": 0.95,
+      "population": { "complete": true, "examined": 20, "matched": 19 }
+    }
+  ],
+  "rawEvidence": {
+    "note": "Full per-triple tables and console report are in the PLAT-839 PR description and rust/crates/quoin-jev/tests/live_gap_semantic.rs's own printed output; not re-transcribed here.",
+    "m1_disagreement_under_repetition": {
+      "n_runs": 5,
+      "pairs": 10,
+      "mean_percent": 1.7,
+      "min_percent": 0.0,
+      "max_percent": 4.3
+    },
+    "m6_severity_verdict_stability": {
+      "n_runs": 5,
+      "pairs": 10,
+      "mean_percent": 8.7,
+      "min_percent": 4.3,
+      "max_percent": 17.4,
+      "note": "per-triple PASS/CONDITIONAL/FAIL proxy from the severity score's rubric mapping, not the real whole-audit Verdict"
+    },
+    "m3_expected_calibration_error": {
+      "solo": 0.1704,
+      "full_battery": 0.203
+    },
+    "m5_cost_latency": {
+      "requests": 29,
+      "wall_clock_seconds": 3.01,
+      "input_tokens": 38318,
+      "output_tokens": 6170,
+      "tokens_per_request": 1534,
+      "estimated_cost_usd": 0.0016
+    }
+  }
+}
