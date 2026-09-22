@@ -112,6 +112,35 @@
 //! (`CS-FIX-003`, `CS-FIX-005`), so it barely constrains anything on this
 //! corpus. Latency is not a concern: p50 about 0.12 s per request, about
 //! 8 requests/s sequential and 22-25 concurrent.
+//!
+//! # `v3`, pre-registered before its first call -- follow-up (PLAT-917)
+//!
+//! `v0`/`v1`/`v2` all ask Jev to pick `weakness_kind` directly from six
+//! labels in one shot. PLAT-839's gap-analysis lens (a sibling evaluation,
+//! same corpus of tickets) passed its own gate asking narrow yes/no
+//! questions graded against mechanical ground truth -- the opposite shape
+//! from an open 6-way pick. `v3` tests whether that pattern holds here: send
+//! the identical `v0` request (corpus-only context, shipped question set --
+//! `weakness_kind` is still asked, so the request shape does not change),
+//! but derive the label from the five `noul` answers the response already
+//! carries for every AC row, via [`derive_weakness_kind`], instead of using
+//! Jev's own `choice` answer. Because it is the same request as `v0`, each
+//! call is graded two ways from one response: `v3-direct` (Jev's own
+//! `weakness_kind` choice -- a fresh, independent `v0` sample) and
+//! `v3-derived` (this function's rule). Comparing the two from the same
+//! calls removes day-to-day service variance as a confound between them.
+//!
+//! [`derive_weakness_kind`]'s priority order is read off
+//! `question-set.json`'s own question text and its `falsifiable` note ("the
+//! core check"), not fit to the fifteen fixtures' answer key -- a rule fit to
+//! the corpus it is graded against would make any margin meaningless.
+//! **Stated blind spot, before running:** no combination of the five `noul`
+//! answers can express `happy_path_only`, since none of them test coverage
+//! breadth. A fixture whose primary reading is `happy_path_only`
+//! (`CS-FIX-014`) cannot be reached by this rule.
+//!
+//! Bars: identical to `v0`/`v1`/`v2` -- agreement beats the constant
+//! predictor, defect recall > 0, `sound` cleared >= 3 of 5.
 
 #![cfg(feature = "live-api")]
 #![allow(
@@ -197,6 +226,70 @@ impl Variant {
             V2_CHOICE_QUESTION.clone_into(&mut set.choice.question);
         }
         set
+    }
+}
+
+/// `v3`'s derivation rule. See this file's module doc for why the priority
+/// order is fixed before any call, and why `happy_path_only` cannot be
+/// reached.
+fn derive_weakness_kind(noul: &[(String, f64)]) -> String {
+    let value = |id: &str| -> f64 {
+        noul.iter()
+            .find(|(key, _)| key == id)
+            .map_or(0.5, |(_, value)| *value)
+    };
+    if value("falsifiable") < 0.5 {
+        "unfalsifiable"
+    } else if value("restates_requirement") >= 0.5 {
+        "restates_requirement"
+    } else if value("implementation_coupled") >= 0.5 {
+        "implementation_coupled"
+    } else if value("threshold_present") < 0.5 {
+        "unmeasurable_threshold"
+    } else {
+        "sound"
+    }
+    .to_owned()
+}
+
+/// Builds a synthetic [`FrVerdict`] carrying only `label` for `ac_id`, so
+/// [`grade_weakness`] can score a derived label exactly as it scores Jev's
+/// own `choice` answer -- same grader, same contested-label handling, no
+/// second scoring path to keep in sync with the first.
+fn synthetic_verdict(ac_id: &str, label: &str, noul_values: Vec<(String, f64)>) -> FrVerdict {
+    if label == "sound" {
+        return FrVerdict {
+            classifier: "derived-from-noul".to_owned(),
+            usage_input_tokens: 0,
+            usage_output_tokens: 0,
+            findings: Vec::new(),
+            sound: vec![ac_id.to_owned()],
+            unrecognized: Vec::new(),
+            unanswered: Vec::new(),
+            coverage: None,
+        };
+    }
+    let severity = quoin_jev::Severity::for_weakness_kind(label)
+        .expect("derive_weakness_kind only returns labels with a severity, or `sound` above");
+    FrVerdict {
+        classifier: "derived-from-noul".to_owned(),
+        usage_input_tokens: 0,
+        usage_output_tokens: 0,
+        findings: vec![quoin_jev::Finding {
+            ac_id: ac_id.to_owned(),
+            weakness_kind: label.to_owned(),
+            severity,
+            confidence: 1.0,
+            unconfirmed: false,
+            probabilities: Vec::new(),
+            noul: quoin_jev::verdict::NoulSignals {
+                values: noul_values,
+            },
+        }],
+        sound: Vec::new(),
+        unrecognized: Vec::new(),
+        unanswered: Vec::new(),
+        coverage: None,
     }
 }
 
@@ -581,5 +674,119 @@ async fn repeated_runs_report_a_disagreement_rate() {
     assert!(
         (0.0..=100.0).contains(&mean),
         "a rate outside 0-100% means the comparator is wrong, not the service"
+    );
+}
+
+/// Provenance: PLAT-917 follow-up. **`v3`, pre-registered before its first
+/// call.** See this file's module doc for the hypothesis, the derivation
+/// rule and its stated blind spot. Reports `v3-direct` and `v3-derived`
+/// side by side from the same live calls, and gates only on `v3-derived`.
+#[tokio::test]
+async fn the_lens_with_noul_derived_labels_v3() {
+    let client = live_client();
+    let questions = QuestionSet::parse(QUESTION_SET).expect("the shipped question set parses");
+    let corpus = corpus();
+
+    let mut direct_graded = Vec::with_capacity(15);
+    let mut derived_graded = Vec::with_capacity(15);
+    let mut input_tokens = 0u64;
+    let mut output_tokens = 0u64;
+
+    for fixture in &corpus.weakness_kind_fixtures {
+        // Corpus-only context, matching `v0` -- isolates the
+        // derivation-strategy variable from the context variable `v1`
+        // already showed hurts on this corpus.
+        let context = fixture.context();
+        let ac_ids = context.ac_ids();
+        let request = quoin_jev::lens::build_request(&context, &questions);
+        let response = client
+            .system_one(request)
+            .await
+            .map_err(|error| quoin_jev::error::classify(&error))
+            .unwrap_or_else(|error| {
+                panic!(
+                    "{}: {} — {}",
+                    fixture.fixture_id,
+                    error.code.as_str(),
+                    error.message
+                )
+            });
+        input_tokens += response.usage.input_tokens;
+        output_tokens += response.usage.output_tokens;
+
+        // v3-direct: Jev's own `weakness_kind` choice from this same
+        // response -- a fresh, independent v0 sample.
+        let direct_verdict =
+            quoin_jev::verdict::extract(&response, &questions, &ac_ids, CONFIDENCE_THRESHOLD);
+        direct_graded.push(grade_weakness(fixture, &direct_verdict));
+
+        // v3-derived: the five `noul` answers from the same response, run
+        // through `derive_weakness_kind` instead.
+        let ac_id = &ac_ids[0];
+        let noul_values: Vec<(String, f64)> = questions
+            .noul
+            .iter()
+            .filter_map(|entry| {
+                let key = QuestionSet::noul_key(ac_id, entry);
+                match response.answer(&key) {
+                    Some(typesafe_sdk_answers::Answer::Noul(answer)) => {
+                        Some((entry.id.clone(), answer.noul))
+                    }
+                    _ => None,
+                }
+            })
+            .collect();
+        let label = derive_weakness_kind(&noul_values);
+        let derived_verdict = synthetic_verdict(ac_id, &label, noul_values);
+        derived_graded.push(grade_weakness(fixture, &derived_verdict));
+    }
+
+    // Coverage rows are outside this hypothesis (a `score` question, not
+    // `choice`) -- computed once and shared by both columns, so the
+    // comparison below isolates only the weakness_kind change.
+    let mut coverage_graded = Vec::with_capacity(4);
+    for fixture in &corpus.adverse_case_coverage_fixtures {
+        let context = fixture.context();
+        let verdict = quoin_jev::lens::run(&client, &context, &questions, CONFIDENCE_THRESHOLD)
+            .await
+            .unwrap_or_else(|error| {
+                panic!("{}: {} — {}", fixture.fixture_id, error.code.as_str(), error.message)
+            });
+        input_tokens += verdict.usage_input_tokens;
+        output_tokens += verdict.usage_output_tokens;
+        coverage_graded.push(grade_coverage(fixture, &verdict));
+    }
+    direct_graded.extend(coverage_graded.clone());
+    derived_graded.extend(coverage_graded);
+
+    println!(
+        "{}",
+        report(
+            "criterion-strength v3-direct (fresh v0 sample, same calls as v3-derived)",
+            &direct_graded
+        )
+    );
+    let direct_bars = Bars::of(&direct_graded);
+    println!("**GATE v3-direct** {}", direct_bars.line());
+
+    println!(
+        "{}",
+        report("criterion-strength v3-derived (from noul answers)", &derived_graded)
+    );
+    let derived_bars = Bars::of(&derived_graded);
+    println!("**GATE v3-derived** {}", derived_bars.line());
+    println!("tokens: {input_tokens} in, {output_tokens} out (one call per weakness fixture, shared by both columns)");
+
+    assert_eq!(direct_graded.len(), 15, "every fixture was graded (direct)");
+    assert_eq!(derived_graded.len(), 15, "every fixture was graded (derived)");
+    assert!(
+        input_tokens > 0,
+        "a pass that consumed no input tokens never reached the service"
+    );
+
+    assert!(
+        derived_bars.all(),
+        "v3-derived does not clear the pre-registered bars: {}",
+        derived_bars.line()
     );
 }
