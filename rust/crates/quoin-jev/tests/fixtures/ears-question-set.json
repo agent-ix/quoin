@@ -1,0 +1,53 @@
+{
+  "$comment": "PLAT-838's own question set, transcribed verbatim (ids, answer_space members, noul question text) so this evaluation harness sends exactly what the ticket specifies. Not installed under skills/spec-ears-analysis/assets/ -- per the standing ruling for this ticket, nothing here is wired into any skill; this asset exists only for this crate's tests/support/ears.rs to read.",
+  "source_ticket": "PLAT-838",
+  "request_shape": "One request per requirement-bearing statement (FR Description/Behavior/Constraints, NFR Statement, StR Stakeholder Need).",
+  "choice": {
+    "id": "ears_pattern_actual",
+    "primitive": "choice",
+    "answer_space": [
+      "ubiquitous",
+      "event_driven",
+      "state_driven",
+      "unwanted_behaviour",
+      "optional_feature",
+      "complex"
+    ]
+  },
+  "noul": [
+    {
+      "id": "response_measurable",
+      "question": "Is the response measurable?",
+      "primitive": "noul",
+      "note": "Matters because `vague-response` is a denylist (support/handle/manage/process/provide/enable/be able to). Denylists catch yesterday's phrasing; \"shall be robust\" sails through."
+    },
+    {
+      "id": "trigger_is_momentary",
+      "question": "Is the trigger an instantaneous event rather than a sustained condition?",
+      "primitive": "noul",
+      "note": "Disambiguates When/While."
+    },
+    {
+      "id": "condition_is_unwanted",
+      "question": "Does the condition describe an undesired situation?",
+      "primitive": "noul",
+      "note": "Disambiguates When/If."
+    }
+  ],
+  "score": {
+    "id": "build_impact_severity",
+    "primitive": "score",
+    "scope": "per statement",
+    "scope_provenance": "derived, not verbatim ticket text. PLAT-838 states the severity rubric in prose (\"raise to high any statement whose ambiguity changes what gets built\") without naming a question id; this field is this evaluation's translation of that rubric level into a `score` question, the same derivation discipline PLAT-837's `adverse_case_coverage.scope_provenance` used for an analogous gap.",
+    "rubric": [
+      { "level": 0, "label": "low: cosmetic, does not change what gets built" },
+      { "level": 1, "label": "medium: degrades traceability or verifiability but the build intent is still clear" },
+      { "level": 2, "label": "high: the ambiguity changes what gets built" }
+    ]
+  },
+  "authority": {
+    "findings_only": true,
+    "note": "This evaluation harness never edits a spec, never authors a requirement, and is not called from any skill. Its only output is the measurement report and the evidence this ticket asks for.",
+    "low_confidence": "annotated, not suppressed -- carried through to the report marked unconfirmed, same rule as PLAT-837."
+  }
+}

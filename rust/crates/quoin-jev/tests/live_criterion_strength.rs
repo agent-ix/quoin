@@ -56,7 +56,20 @@
     clippy::unwrap_used,
     clippy::expect_used,
     clippy::indexing_slicing,
+    clippy::panic,
     reason = "in a test, a panic IS the failure report; the production lints stand"
+)]
+#![allow(
+    clippy::cast_precision_loss,
+    clippy::cast_sign_loss,
+    clippy::cast_possible_truncation,
+    reason = "every cast in this file converts a request/latency/token count (never \
+              realistically exceeding a few thousand) to or from f64 for a printed ratio or a \
+              percentile index -- none crosses a wire or persistence boundary, which is what \
+              this workspace's cast lints exist to guard. PLAT-838 found these had never \
+              actually been checked under `make rust-lint`'s `--all-features`, since `live-api` \
+              has no default-gate coverage; fixed here rather than left for the next live-api \
+              change to trip over."
 )]
 
 mod support;
@@ -192,7 +205,11 @@ async fn the_lens_beats_the_do_nothing_baseline() {
 
     println!(
         "{}",
-        report("criterion-strength vs. the labelled corpus", &pass.graded)
+        report(
+            "criterion-strength vs. the labelled corpus",
+            &pass.graded,
+            "sound"
+        )
     );
 
     // The call worked and the crate understood the answer. These come first:
@@ -239,7 +256,8 @@ async fn the_lens_beats_the_do_nothing_baseline() {
     );
 
     // Bar 2: it has to find the defects, not just score well.
-    let recall = defect_recall(&pass.graded).expect("the corpus holds unambiguous defects");
+    let recall =
+        defect_recall(&pass.graded, "sound").expect("the corpus holds unambiguous defects");
     println!("**GATE 2** defect recall {recall:.1}% (rows no reader called `sound`)");
     assert!(
         recall > 0.0,
@@ -263,7 +281,12 @@ async fn benchmark_latency_and_throughput() {
 
     let count = pass.latencies.len() as f64;
     let total = pass.elapsed.as_secs_f64();
-    let mean = pass.latencies.iter().map(Duration::as_secs_f64).sum::<f64>() / count;
+    let mean = pass
+        .latencies
+        .iter()
+        .map(Duration::as_secs_f64)
+        .sum::<f64>()
+        / count;
     let tokens = pass.input_tokens + pass.output_tokens;
 
     println!("\n## Benchmark — one sequential pass, 15 requests\n");
@@ -272,10 +295,22 @@ async fn benchmark_latency_and_throughput() {
     println!("| requests | {} |", pass.latencies.len());
     println!("| wall clock | {total:.2}s |");
     println!("| latency mean | {mean:.2}s |");
-    println!("| latency min | {:.2}s |", pass.percentile(0.0).as_secs_f64());
-    println!("| latency p50 | {:.2}s |", pass.percentile(0.5).as_secs_f64());
-    println!("| latency p90 | {:.2}s |", pass.percentile(0.9).as_secs_f64());
-    println!("| latency max | {:.2}s |", pass.percentile(1.0).as_secs_f64());
+    println!(
+        "| latency min | {:.2}s |",
+        pass.percentile(0.0).as_secs_f64()
+    );
+    println!(
+        "| latency p50 | {:.2}s |",
+        pass.percentile(0.5).as_secs_f64()
+    );
+    println!(
+        "| latency p90 | {:.2}s |",
+        pass.percentile(0.9).as_secs_f64()
+    );
+    println!(
+        "| latency max | {:.2}s |",
+        pass.percentile(1.0).as_secs_f64()
+    );
     println!("| throughput (sequential) | {:.2} req/s |", count / total);
     println!("| input tokens | {} |", pass.input_tokens);
     println!("| output tokens | {} |", pass.output_tokens);
@@ -303,7 +338,10 @@ async fn benchmark_latency_and_throughput() {
         .max()
         .unwrap()
         .as_secs_f64();
-    println!("| throughput (5 concurrent) | {:.2} req/s |", 5.0 / burst_elapsed);
+    println!(
+        "| throughput (5 concurrent) | {:.2} req/s |",
+        5.0 / burst_elapsed
+    );
     println!("| 5-concurrent wall clock | {burst_elapsed:.2}s (slowest single {slowest:.2}s) |");
     println!(
         "\n5 concurrent requests took {burst_elapsed:.2}s against {:.2}s if run one \
@@ -314,7 +352,9 @@ async fn benchmark_latency_and_throughput() {
 
     assert!(total > 0.0, "a pass that took no time did not happen");
     assert!(
-        pass.latencies.iter().all(|latency| *latency > Duration::ZERO),
+        pass.latencies
+            .iter()
+            .all(|latency| *latency > Duration::ZERO),
         "a request that took no time did not reach the network"
     );
 }

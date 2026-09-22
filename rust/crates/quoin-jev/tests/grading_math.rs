@@ -75,7 +75,7 @@ fn the_do_nothing_lens_scores_over_eighty_percent_so_agreement_cannot_be_the_gat
 
     // And it found nothing at all. That is what the gate has to catch.
     assert_eq!(
-        defect_recall(&graded),
+        defect_recall(&graded, "sound"),
         Some(0.0),
         "a lens answering `sound` everywhere has found none of the defects"
     );
@@ -94,21 +94,42 @@ fn defect_recall_credits_a_mislabelled_weakness_but_never_a_sound_verdict() {
     let rows = vec![
         // Reader said `unfalsifiable`; lens said `implementation_coupled`.
         // Wrong label, but it refused to wave the row through.
-        graded("A", Tier::Clean, "unfalsifiable", "implementation_coupled", Verdict::Wrong, None),
+        graded(
+            "A",
+            Tier::Clean,
+            "unfalsifiable",
+            "implementation_coupled",
+            Verdict::Wrong,
+            None,
+        ),
         // Reader said `restates_requirement`; lens said `sound`. Missed.
-        graded("B", Tier::Clean, "restates_requirement", "sound", Verdict::Wrong, None),
+        graded(
+            "B",
+            Tier::Clean,
+            "restates_requirement",
+            "sound",
+            Verdict::Wrong,
+            None,
+        ),
         // `sound` was an acceptable reading here, so this row is not a defect
         // and is outside the denominator entirely.
         contested_row("C", "unfalsifiable", "sound", "sound", Verdict::Contested),
     ];
     assert_eq!(
-        defect_recall(&rows),
+        defect_recall(&rows, "sound"),
         Some(50.0),
         "two rows are unambiguous defects; the lens flagged one of them"
     );
 }
 
-fn graded(fixture_id: &str, tier: Tier, expected: &str, actual: &str, verdict: Verdict, confidence: Option<f64>) -> Graded {
+fn graded(
+    fixture_id: &str,
+    tier: Tier,
+    expected: &str,
+    actual: &str,
+    verdict: Verdict,
+    confidence: Option<f64>,
+) -> Graded {
     Graded {
         fixture_id: fixture_id.to_owned(),
         tier,
@@ -122,7 +143,13 @@ fn graded(fixture_id: &str, tier: Tier, expected: &str, actual: &str, verdict: V
 }
 
 /// A row the corpus recorded two readings for.
-fn contested_row(fixture_id: &str, expected: &str, alternate: &str, actual: &str, verdict: Verdict) -> Graded {
+fn contested_row(
+    fixture_id: &str,
+    expected: &str,
+    alternate: &str,
+    actual: &str,
+    verdict: Verdict,
+) -> Graded {
     Graded {
         fixture_id: fixture_id.to_owned(),
         tier: Tier::Ambiguous,
@@ -226,9 +253,30 @@ fn every_fixture_builds_a_context_carrying_its_own_criterion_text() {
 #[test]
 fn a_contested_match_counts_as_agreement_and_is_still_reported_separately() {
     let rows = vec![
-        graded("A", Tier::Clean, "sound", "sound", Verdict::Primary, Some(0.9)),
-        graded("B", Tier::Ambiguous, "unfalsifiable", "sound", Verdict::Contested, Some(0.6)),
-        graded("C", Tier::Ambiguous, "sound", "happy_path_only", Verdict::Wrong, Some(0.8)),
+        graded(
+            "A",
+            Tier::Clean,
+            "sound",
+            "sound",
+            Verdict::Primary,
+            Some(0.9),
+        ),
+        graded(
+            "B",
+            Tier::Ambiguous,
+            "unfalsifiable",
+            "sound",
+            Verdict::Contested,
+            Some(0.6),
+        ),
+        graded(
+            "C",
+            Tier::Ambiguous,
+            "sound",
+            "happy_path_only",
+            Verdict::Wrong,
+            Some(0.8),
+        ),
     ];
     let tally = tally(&rows);
     assert_eq!(tally.agreed(), 2);
@@ -244,9 +292,30 @@ fn a_contested_match_counts_as_agreement_and_is_still_reported_separately() {
 #[test]
 fn unanswered_and_unrecognized_rows_are_counted_against_the_agreement_rate() {
     let rows = vec![
-        graded("A", Tier::Clean, "sound", "sound", Verdict::Primary, Some(0.9)),
-        graded("B", Tier::Clean, "sound", "quantum_uncertainty", Verdict::Unrecognized, None),
-        graded("C", Tier::Clean, "sound", "<unanswered>", Verdict::Unanswered, None),
+        graded(
+            "A",
+            Tier::Clean,
+            "sound",
+            "sound",
+            Verdict::Primary,
+            Some(0.9),
+        ),
+        graded(
+            "B",
+            Tier::Clean,
+            "sound",
+            "quantum_uncertainty",
+            Verdict::Unrecognized,
+            None,
+        ),
+        graded(
+            "C",
+            Tier::Clean,
+            "sound",
+            "<unanswered>",
+            Verdict::Unanswered,
+            None,
+        ),
     ];
     let tally = tally(&rows);
     assert_eq!(tally.total(), 3);
@@ -264,9 +333,30 @@ fn per_class_precision_and_recall_separate_a_flag_everything_lens_from_a_good_on
     // A lens that answered `unfalsifiable` for all three rows, when only one
     // reader said so: perfect recall on that class, 33% precision.
     let rows = vec![
-        graded("A", Tier::Clean, "unfalsifiable", "unfalsifiable", Verdict::Primary, Some(0.9)),
-        graded("B", Tier::Clean, "sound", "unfalsifiable", Verdict::Wrong, Some(0.9)),
-        graded("C", Tier::Clean, "sound", "unfalsifiable", Verdict::Wrong, Some(0.9)),
+        graded(
+            "A",
+            Tier::Clean,
+            "unfalsifiable",
+            "unfalsifiable",
+            Verdict::Primary,
+            Some(0.9),
+        ),
+        graded(
+            "B",
+            Tier::Clean,
+            "sound",
+            "unfalsifiable",
+            Verdict::Wrong,
+            Some(0.9),
+        ),
+        graded(
+            "C",
+            Tier::Clean,
+            "sound",
+            "unfalsifiable",
+            Verdict::Wrong,
+            Some(0.9),
+        ),
     ];
     let stats = class_stats(&rows);
     let unfalsifiable = &stats["unfalsifiable"];
@@ -281,7 +371,10 @@ fn per_class_precision_and_recall_separate_a_flag_everything_lens_from_a_good_on
     assert_eq!(sound.expected, 2);
     assert_eq!(sound.correct, 0);
     assert!((sound.recall().unwrap() - 0.0).abs() < 1e-9);
-    assert!(sound.precision().is_none(), "the lens never returned `sound`");
+    assert!(
+        sound.precision().is_none(),
+        "the lens never returned `sound`"
+    );
 }
 
 /// Provenance: PLAT-917. A row carrying no confidence is excluded from the
@@ -291,8 +384,22 @@ fn per_class_precision_and_recall_separate_a_flag_everything_lens_from_a_good_on
 fn rows_without_a_confidence_are_excluded_from_calibration_and_counted() {
     let rows = vec![
         graded("A", Tier::Clean, "sound", "sound", Verdict::Primary, None),
-        graded("B", Tier::Clean, "unfalsifiable", "unfalsifiable", Verdict::Primary, Some(0.95)),
-        graded("C", Tier::Clean, "sound", "happy_path_only", Verdict::Wrong, Some(0.95)),
+        graded(
+            "B",
+            Tier::Clean,
+            "unfalsifiable",
+            "unfalsifiable",
+            Verdict::Primary,
+            Some(0.95),
+        ),
+        graded(
+            "C",
+            Tier::Clean,
+            "sound",
+            "happy_path_only",
+            Verdict::Wrong,
+            Some(0.95),
+        ),
     ];
     let (buckets, without) = calibration(&rows);
     assert_eq!(without, 1, "the `sound` row carries no confidence");
@@ -338,7 +445,14 @@ fn disagreement_counts_a_row_present_in_only_one_run_as_a_change() {
     ];
     let second = vec![
         graded("A", Tier::Clean, "sound", "sound", Verdict::Primary, None),
-        graded("C", Tier::Clean, "sound", "unfalsifiable", Verdict::Wrong, None),
+        graded(
+            "C",
+            Tier::Clean,
+            "sound",
+            "unfalsifiable",
+            Verdict::Wrong,
+            None,
+        ),
     ];
     // ids A, B, C: A agrees, B missing from the right, C missing from the left.
     let rate = disagreement(&first, &second).unwrap();
@@ -355,8 +469,22 @@ fn disagreement_counts_a_row_present_in_only_one_run_as_a_change() {
 #[test]
 fn two_identical_runs_disagree_on_nothing() {
     let run = vec![
-        graded("A", Tier::Clean, "sound", "sound", Verdict::Primary, Some(0.9)),
-        graded("B", Tier::Ambiguous, "unfalsifiable", "sound", Verdict::Contested, Some(0.6)),
+        graded(
+            "A",
+            Tier::Clean,
+            "sound",
+            "sound",
+            Verdict::Primary,
+            Some(0.9),
+        ),
+        graded(
+            "B",
+            Tier::Ambiguous,
+            "unfalsifiable",
+            "sound",
+            Verdict::Contested,
+            Some(0.6),
+        ),
     ];
     assert!((disagreement(&run, &run).unwrap() - 0.0).abs() < 1e-9);
 }

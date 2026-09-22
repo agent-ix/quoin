@@ -1,0 +1,265 @@
+{
+  "$comment": "PLAT-838 M2 labelled corpus. AGENT-LABELLED, NOT HUMAN GROUND TRUTH: every `labels` block below was assigned by the agent authoring this evaluation harness, reading each statement the same way the skill's step 2 asks a human to. No second human reader adjudicated these. `engine_naive_pattern` is this agent's mechanical application of FR-042's documented EARS keyword rule (When->event_driven, While->state_driven, If...then->unwanted_behaviour, Where->optional_feature, no trigger->ubiquitous, a non-canonical trigger word canonicalised to the pattern it would imply once reworded) -- these are synthetic statements written for this corpus, not real spec files, so `quire validate` was not run against them; `engine_naive_pattern_method` states this per row. Fixtures 002 and 003/016 satisfy PLAT-838's acceptance criteria: a When that is really a While (002, 007-as-If), and a statement passing the vague-verb denylist but unmeasurable (003).",
+  "fixtures": [
+    {
+      "fixture_id": "EARS-FIX-001",
+      "confidence": "clean",
+      "statement_id": "SYN-001",
+      "statement_type": "FR",
+      "statement_text": "When the user submits the login form, the system SHALL authenticate the credentials within 2 seconds.",
+      "engine_naive_pattern": "event_driven",
+      "engine_naive_pattern_method": "mechanical: When -> event_driven",
+      "labels": {
+        "true_pattern": "event_driven",
+        "response_measurable": true,
+        "has_defect": false,
+        "defect_kind": null,
+        "note": "Sound event pattern, concrete threshold (2 seconds)."
+      }
+    },
+    {
+      "fixture_id": "EARS-FIX-002",
+      "confidence": "clean",
+      "statement_id": "SYN-002",
+      "statement_type": "NFR",
+      "statement_text": "When the system is under heavy load, the system SHALL degrade gracefully by disabling non-critical background jobs.",
+      "engine_naive_pattern": "event_driven",
+      "engine_naive_pattern_method": "mechanical: When -> event_driven",
+      "labels": {
+        "true_pattern": "state_driven",
+        "response_measurable": true,
+        "has_defect": true,
+        "defect_kind": "when_is_really_while",
+        "note": "PLAT-838 acceptance case: 'is under heavy load' names a sustained condition, not a momentary event -- this is really a While. Engine parses it as a grammatically clean When statement and has no way to see this."
+      }
+    },
+    {
+      "fixture_id": "EARS-FIX-003",
+      "confidence": "clean",
+      "statement_id": "SYN-003",
+      "statement_type": "NFR",
+      "statement_text": "The system SHALL be robust to malformed input files.",
+      "engine_naive_pattern": "ubiquitous",
+      "engine_naive_pattern_method": "mechanical: no trigger -> ubiquitous",
+      "labels": {
+        "true_pattern": "ubiquitous",
+        "response_measurable": false,
+        "has_defect": true,
+        "defect_kind": "unmeasurable_response",
+        "note": "PLAT-838 acceptance case: 'robust' is not in the vague-response denylist (support/handle/manage/process/provide/enable/be able to), so the engine's denylist check does not fire, yet the response names no observable, falsifiable behaviour."
+      }
+    },
+    {
+      "fixture_id": "EARS-FIX-004",
+      "confidence": "clean",
+      "statement_id": "SYN-004",
+      "statement_type": "FR",
+      "statement_text": "The system SHALL persist every configuration change to disk before acknowledging the write request.",
+      "engine_naive_pattern": "ubiquitous",
+      "engine_naive_pattern_method": "mechanical: no trigger -> ubiquitous",
+      "labels": {
+        "true_pattern": "ubiquitous",
+        "response_measurable": true,
+        "has_defect": false,
+        "defect_kind": null,
+        "note": "Sound ubiquitous requirement with an observable, falsifiable outcome."
+      }
+    },
+    {
+      "fixture_id": "EARS-FIX-005",
+      "confidence": "clean",
+      "statement_id": "SYN-005",
+      "statement_type": "FR",
+      "statement_text": "While the export job is running, the system SHALL reject new export requests with a 409 status.",
+      "engine_naive_pattern": "state_driven",
+      "engine_naive_pattern_method": "mechanical: While -> state_driven",
+      "labels": {
+        "true_pattern": "state_driven",
+        "response_measurable": true,
+        "has_defect": false,
+        "defect_kind": null,
+        "note": "Sound state pattern; the sustained condition and the measurable response both match the While reading."
+      }
+    },
+    {
+      "fixture_id": "EARS-FIX-006",
+      "confidence": "clean",
+      "statement_id": "SYN-006",
+      "statement_type": "FR",
+      "statement_text": "If the checksum verification fails, then the system SHALL abort the write and roll back the partial file.",
+      "engine_naive_pattern": "unwanted_behaviour",
+      "engine_naive_pattern_method": "mechanical: If...then -> unwanted_behaviour",
+      "labels": {
+        "true_pattern": "unwanted_behaviour",
+        "response_measurable": true,
+        "has_defect": false,
+        "defect_kind": null,
+        "note": "Sound unwanted-behaviour pattern: the condition is genuinely undesired and phrased canonically."
+      }
+    },
+    {
+      "fixture_id": "EARS-FIX-007",
+      "confidence": "clean",
+      "statement_id": "SYN-007",
+      "statement_type": "FR",
+      "statement_text": "When the disk quota is exceeded, the system SHALL refuse further writes and emit a QUOTA_EXCEEDED error.",
+      "engine_naive_pattern": "event_driven",
+      "engine_naive_pattern_method": "mechanical: When -> event_driven",
+      "labels": {
+        "true_pattern": "unwanted_behaviour",
+        "response_measurable": true,
+        "has_defect": true,
+        "defect_kind": "when_is_really_if",
+        "note": "The third judgment step 2 names: 'the disk quota is exceeded' is an undesired condition stated with When instead of If...then. Engine parses it as a clean event statement."
+      }
+    },
+    {
+      "fixture_id": "EARS-FIX-008",
+      "confidence": "clean",
+      "statement_id": "SYN-008",
+      "statement_type": "FR",
+      "statement_text": "Where telemetry is enabled, the system SHALL emit a heartbeat event every 30 seconds.",
+      "engine_naive_pattern": "optional_feature",
+      "engine_naive_pattern_method": "mechanical: Where -> optional_feature",
+      "labels": {
+        "true_pattern": "optional_feature",
+        "response_measurable": true,
+        "has_defect": false,
+        "defect_kind": null,
+        "note": "Sound optional-feature pattern with a concrete interval."
+      }
+    },
+    {
+      "fixture_id": "EARS-FIX-009",
+      "confidence": "clean",
+      "statement_id": "SYN-009",
+      "statement_type": "FR",
+      "statement_text": "While the cluster is in maintenance mode, when a new deployment is requested, the system SHALL queue the request until maintenance ends.",
+      "engine_naive_pattern": "complex",
+      "engine_naive_pattern_method": "mechanical: state trigger + event trigger combined -> complex",
+      "labels": {
+        "true_pattern": "complex",
+        "response_measurable": true,
+        "has_defect": false,
+        "defect_kind": null,
+        "note": "A genuine compound pattern (sustained state gating a discrete event); complex is the right EARS reading, not a defect."
+      }
+    },
+    {
+      "fixture_id": "EARS-FIX-010",
+      "confidence": "clean",
+      "statement_id": "SYN-010",
+      "statement_type": "FR",
+      "statement_text": "Upon completion of the nightly backup, the system SHALL send a summary email to the operations distribution list.",
+      "engine_naive_pattern": "event_driven",
+      "engine_naive_pattern_method": "mechanical: 'Upon' canonicalises to 'When' -> event_driven (the engine itself flags this row's wording as ears:non-canonical-trigger; this fixture asks whether Jev's semantic reading is nonetheless correct)",
+      "labels": {
+        "true_pattern": "event_driven",
+        "response_measurable": true,
+        "has_defect": false,
+        "defect_kind": null,
+        "note": "The engine's non-canonical-trigger finding is a wording defect it already catches; the underlying pattern this lens judges is genuinely event-driven, so this is a no-defect row for the SEMANTIC layer even though the engine's own grammar pass is not clean on this line."
+      }
+    },
+    {
+      "fixture_id": "EARS-FIX-011",
+      "confidence": "ambiguous",
+      "statement_id": "SYN-011",
+      "statement_type": "FR",
+      "statement_text": "When the queue backs up, the system SHALL shed the lowest-priority 10% of pending jobs.",
+      "engine_naive_pattern": "event_driven",
+      "engine_naive_pattern_method": "mechanical: When -> event_driven",
+      "labels": {
+        "true_pattern": "event_driven",
+        "true_pattern_contested": ["event_driven", "state_driven"],
+        "response_measurable": true,
+        "has_defect": false,
+        "has_defect_contested": [false, true],
+        "defect_kind": null,
+        "note": "Genuinely ambiguous: 'backs up' can read as a threshold-crossing instant (sound When) or an ongoing backlog condition (really a While). Recorded both ways rather than resolved, per this ticket's own instruction to include cases the lens is expected to find hard."
+      }
+    },
+    {
+      "fixture_id": "EARS-FIX-012",
+      "confidence": "ambiguous",
+      "statement_id": "SYN-012",
+      "statement_type": "NFR",
+      "statement_text": "The system SHALL be available during business hours.",
+      "engine_naive_pattern": "ubiquitous",
+      "engine_naive_pattern_method": "mechanical: no trigger -> ubiquitous",
+      "labels": {
+        "true_pattern": "ubiquitous",
+        "response_measurable": false,
+        "response_measurable_contested": [false, true],
+        "has_defect": true,
+        "has_defect_contested": [true, false],
+        "defect_kind": "unmeasurable_response",
+        "note": "'Available' with no stated threshold or SLA is unmeasurable on the strict reading; a lenient reading treats it as a binary health-check pass. Recorded both ways."
+      }
+    },
+    {
+      "fixture_id": "EARS-FIX-013",
+      "confidence": "clean",
+      "statement_id": "SYN-013",
+      "statement_type": "FR",
+      "statement_text": "When the API receives a webhook payload with an invalid signature, the system SHALL respond with HTTP 401 and log the request id.",
+      "engine_naive_pattern": "event_driven",
+      "engine_naive_pattern_method": "mechanical: When -> event_driven",
+      "labels": {
+        "true_pattern": "event_driven",
+        "response_measurable": true,
+        "has_defect": false,
+        "defect_kind": null,
+        "note": "Sound event pattern, concrete measurable response (a specific status code and a logging side effect)."
+      }
+    },
+    {
+      "fixture_id": "EARS-FIX-014",
+      "confidence": "clean",
+      "statement_id": "SYN-014",
+      "statement_type": "NFR",
+      "statement_text": "Parsing SHALL complete in under 200 milliseconds for documents up to 10,000 lines.",
+      "engine_naive_pattern": "ubiquitous",
+      "engine_naive_pattern_method": "mechanical: no trigger -> ubiquitous",
+      "labels": {
+        "true_pattern": "ubiquitous",
+        "response_measurable": true,
+        "has_defect": false,
+        "defect_kind": null,
+        "note": "Per-archetype dialect: an NFR with no trigger is fine (SKILL.md's own Notes section) -- this is a control row confirming Jev does not manufacture a trigger-based finding where the engine's own dialect rule says there is none to find."
+      }
+    },
+    {
+      "fixture_id": "EARS-FIX-015",
+      "confidence": "clean",
+      "statement_id": "SYN-015",
+      "statement_type": "StR",
+      "statement_text": "The platform operator SHALL have a single dashboard showing the health of every registered service.",
+      "engine_naive_pattern": "ubiquitous",
+      "engine_naive_pattern_method": "mechanical: no trigger -> ubiquitous",
+      "labels": {
+        "true_pattern": "ubiquitous",
+        "response_measurable": true,
+        "has_defect": false,
+        "defect_kind": null,
+        "note": "Per-archetype dialect: StR may use a stakeholder subject (SKILL.md's own Notes section) -- a control row confirming Jev does not flag the stakeholder-subject phrasing itself as a defect."
+      }
+    },
+    {
+      "fixture_id": "EARS-FIX-016",
+      "confidence": "clean",
+      "statement_id": "SYN-016",
+      "statement_type": "FR",
+      "statement_text": "The system SHALL provide meaningful error messages to the user.",
+      "engine_naive_pattern": "ubiquitous",
+      "engine_naive_pattern_method": "mechanical: no trigger -> ubiquitous",
+      "labels": {
+        "true_pattern": "ubiquitous",
+        "response_measurable": false,
+        "has_defect": true,
+        "defect_kind": "unmeasurable_response",
+        "note": "Control row: the engine's own vague-response denylist already catches 'provide', so this is not a delta case -- included to confirm Jev's independent unmeasurability judgment agrees with the engine on an easy one, not to claim credit for a defect the engine already finds."
+      }
+    }
+  ]
+}
