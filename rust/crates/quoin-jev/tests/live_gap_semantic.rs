@@ -61,6 +61,21 @@
 //! All three are asserted in [`the_lens_beats_doing_nothing`] for BOTH
 //! variants; a variant that fails any bar is reported as failing, not
 //! silently excluded.
+//!
+//! # Measured (both bars fixed first; see the PR description for the full report)
+//!
+//! Both variants passed all three bars, and gave nearly identical numbers --
+//! asking `assertion_vacuous` alongside the other six questions did not move
+//! its answer. On the 23-row mutated subset: **91.3% agreement** vs. an
+//! **87.0%** constant-predictor baseline (`always not-vacuous`); vacuous-class
+//! precision/recall **66.7%/66.7%** (TP=2, FP=1, FN=1 -- `GAP-12`'s `ratchet`
+//! stub was missed); not-vacuous recall **95.0%** (Jev does say "not vacuous",
+//! unlike the sibling PLAT-917 finding); ECE **0.174-0.178**. M1 disagreement
+//! (5 runs, 10 pairs, `assertion_vacuous` thresholded at 0.5): **0.0%**. M6
+//! per-triple severity-verdict proxy stability: mean **7.0%** (range 0-13%).
+//! M5, one `FullBattery` pass over all 29 triples: **29 requests, 3.54s wall
+//! clock, 44,494 total tokens, ~$0.0016** at the ticket's stated $42/B input
+//! rate.
 
 #![cfg(feature = "live-api")]
 #![allow(
