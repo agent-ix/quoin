@@ -7,6 +7,7 @@ owner: quoin-maintainers
 stage: gate
 metric: jev.gap_analysis_gate_verdict
 definition_version: jev.gap-analysis-gate-v1
+ground_truth_kind: mechanical
 relationships: []
 ---
 
