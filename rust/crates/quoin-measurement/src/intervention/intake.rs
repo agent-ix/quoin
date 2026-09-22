@@ -136,7 +136,8 @@ impl From<MeasurementError> for InterventionIntakeError {
             // which intervention intake does not call; kept for the same
             // exhaustiveness reason as the two arms above.
             | MeasurementErrorCode::PopulationBelowMinimum
-            | MeasurementErrorCode::PopulationUnstated => InterventionRefusalCode::InvalidRecord,
+            | MeasurementErrorCode::PopulationUnstated
+            | MeasurementErrorCode::RepetitionsShort => InterventionRefusalCode::InvalidRecord,
         };
         let findings = if error.findings().is_empty() {
             vec![error.to_string()]

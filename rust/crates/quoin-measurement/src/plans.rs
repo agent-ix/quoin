@@ -27,7 +27,7 @@
 //! that is not an object, or a `minimum_population` or `repetitions` that is
 //! not a whole number from 1 to 4,294,967,295 — refuses the plan load with
 //! [`MeasurementErrorCode::PlanInvalid`], the same as `preregistration`.
-//! Enforcing `minimum_population` against a collection is
+//! Enforcing `minimum_population` and `repetitions` against a collection is
 //! [`crate::validate::measurement_collection`]'s job, not this module's.
 
 use crate::discovery;

@@ -113,6 +113,10 @@ pub(crate) struct PopulationWire {
     matched: Option<f64>,
     #[serde(skip_serializing_if = "Option::is_none")]
     complete: Option<bool>,
+    /// Absent when not stated, so a population without it serialises to the
+    /// same bytes it did before PLAT-960.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    repetitions: Option<f64>,
     #[serde(skip_serializing_if = "Option::is_none")]
     identity: Option<Value>,
     /// Everything else the record stated, kept as it was stored.
@@ -131,6 +135,7 @@ impl PopulationWire {
             examined: population.examined,
             matched: population.matched,
             complete: population.complete,
+            repetitions: population.repetitions,
             identity: population.identity.as_ref().map(to_serde).transpose()?,
             unmodelled: analysis_map(&population.unmodelled)?,
         })

@@ -96,6 +96,10 @@ pub struct MeasurementPopulation {
     pub matched: Option<f64>,
     /// Whether the producer considers the population complete.
     pub complete: Option<bool>,
+    /// How many repeated runs produced the observation (PLAT-960), checked
+    /// against the plan's `statistical_design.repetitions`. Read like
+    /// `examined`: a non-numeric value reads as absent.
+    pub repetitions: Option<f64>,
     /// A producer-defined identity for the population.
     pub identity: Option<JsonValue>,
     /// Every other member of the stored object, kept as it was stored.
@@ -105,7 +109,8 @@ pub struct MeasurementPopulation {
 impl MeasurementPopulation {
     /// The members this type reads by name; everything else is
     /// [`unmodelled`](Self::unmodelled).
-    pub const MODELLED: [&'static str; 4] = ["examined", "matched", "complete", "identity"];
+    pub const MODELLED: [&'static str; 5] =
+        ["examined", "matched", "complete", "repetitions", "identity"];
 
     /// A population that declares nothing.
     ///
@@ -115,6 +120,7 @@ impl MeasurementPopulation {
         examined: None,
         matched: None,
         complete: None,
+        repetitions: None,
         identity: None,
         unmodelled: BTreeMap::new(),
     };

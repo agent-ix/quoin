@@ -10,10 +10,10 @@
 //! assurance document on disk and loads it through `load_measurement_plans`,
 //! so the frontmatter parse is exercised along with the check.
 //!
-//! `statistical_design.repetitions` is parsed but not enforced: no member of
-//! a measurement collection records how many repetitions were performed, so
-//! there is nothing to compare it against. That gap is PLAT-960's to decide,
-//! and no test here pretends otherwise.
+//! `statistical_design.repetitions` is held against each measured
+//! observation's `population.repetitions`, the per-observation count of runs
+//! actually performed (the coordinator's PLAT-960 ruling, following MP-225's
+//! "N is stated with every observation").
 //!
 //! Provenance: PLAT-960
 
@@ -60,15 +60,26 @@ fn plan_document(extra: &str) -> String {
 }
 
 /// The frontmatter lines a plan requiring at least `minimum` examined items
-/// carries, with the schema's other required design members beside it.
+/// carries, with the schema's other required design members beside it and a
+/// single required repetition, so only the minimum is in play.
 fn design_with_minimum(minimum: &str) -> String {
+    design(&format!("\x20\x20minimum_population: {minimum}\n"), "1")
+}
+
+/// A design block requiring `repetitions` runs and no minimum population.
+fn design_with_repetitions(repetitions: &str) -> String {
+    design("", repetitions)
+}
+
+/// A full `statistical_design` block, `extra` spliced in verbatim.
+fn design(extra: &str, repetitions: &str) -> String {
     format!(
         "ground_truth_kind: human-labelled\n\
          statistical_design:\n\
          \x20\x20population: every labelled case\n\
-         \x20\x20minimum_population: {minimum}\n\
+         {extra}\
          \x20\x20sampling: exhaustive\n\
-         \x20\x20repetitions: 5\n\
+         \x20\x20repetitions: {repetitions}\n\
          \x20\x20estimator: fraction correct\n\
          \x20\x20error_model: binomial\n\
          \x20\x20uncertainty: wilson interval\n\
@@ -140,6 +151,12 @@ fn collection(observations: &[Value]) -> Value {
         "observations": observations,
         "rawEvidence": { "payload": [1, 2] },
     })
+}
+
+/// `observation` with `population.repetitions` stated as `performed`.
+fn with_repetitions(mut observation: Value, performed: u32) -> Value {
+    observation["population"]["repetitions"] = json!(performed);
+    observation
 }
 
 fn intake(
@@ -346,7 +363,10 @@ fn tc_960_006_the_report_states_the_plans_ground_truth_kind() {
 /// Provenance: PLAT-960
 #[test]
 fn tc_960_007_the_design_members_are_parsed_into_the_plan() {
-    let repository = repository_with(&plan_document(&design_with_minimum("10")));
+    let repository = repository_with(&plan_document(&design(
+        "\x20\x20minimum_population: 10\n",
+        "5",
+    )));
     let plan = authored_plans(repository.path()).remove(0);
     let design = plan.statistical_design.expect("the block is parsed");
     assert_eq!(
@@ -420,4 +440,133 @@ fn tc_960_008_a_malformed_design_member_refuses_the_plan_load() {
             "{extra:?} must be refused naming `{expected}`, got {refusal}"
         );
     }
+}
+
+/// A stated `population.repetitions` below the plan's
+/// `statistical_design.repetitions` is refused with its own code, naming the
+/// metric, the plan, what ran and what was required.
+///
+/// Trace: FR-044-AC-9
+/// Provenance: PLAT-960
+#[test]
+fn tc_960_009_repetitions_short_of_the_plan_are_refused_with_their_own_code() {
+    let repository = repository_with(&plan_document(&design_with_repetitions("3")));
+    let plans = authored_plans(repository.path());
+
+    let refusal = intake(
+        &plans,
+        &collection(&[with_repetitions(observation(Some(40)), 2)]),
+    )
+    .expect_err("two repetitions under a plan of three is refused");
+    assert_eq!(refusal.code(), MeasurementErrorCode::RepetitionsShort);
+    assert_eq!(
+        refusal.findings(),
+        [
+            "QM-REPETITIONS-SHORT: metric `quality.gate` ran 2 repetitions but plan MP-900 requires 3"
+        ]
+    );
+}
+
+/// Running exactly the plan's repetitions is enough, and running more is too.
+///
+/// Trace: FR-044-AC-9
+/// Provenance: PLAT-960
+#[test]
+fn tc_960_010_repetitions_at_or_above_the_plan_are_admitted() {
+    let repository = repository_with(&plan_document(&design_with_repetitions("3")));
+    let plans = authored_plans(repository.path());
+
+    for performed in [3, 4] {
+        assert_eq!(
+            intake(
+                &plans,
+                &collection(&[with_repetitions(observation(Some(40)), performed)])
+            )
+            .unwrap_or_else(|refusal| panic!("{performed} repetitions were refused: {refusal}")),
+            "run-960"
+        );
+    }
+}
+
+/// Under a plan requiring more than one repetition, a measured observation
+/// that states no `population.repetitions` is refused as
+/// `QM-POPULATION-UNSTATED`, the finding naming the repetitions member; a
+/// `not_computed` observation is exempt.
+///
+/// Trace: FR-044-AC-9
+/// Provenance: PLAT-960
+#[test]
+fn tc_960_011_unstated_repetitions_under_a_plan_of_more_than_one_are_refused() {
+    let repository = repository_with(&plan_document(&design_with_repetitions("3")));
+    let plans = authored_plans(repository.path());
+
+    let refusal = intake(&plans, &collection(&[observation(Some(40))]))
+        .expect_err("an unstated repetition count under a plan of three is refused");
+    assert_eq!(refusal.code(), MeasurementErrorCode::PopulationUnstated);
+    assert_eq!(
+        refusal.findings(),
+        [
+            "QM-POPULATION-UNSTATED: metric `quality.gate` states no population.repetitions; \
+             plan MP-900 requires 3 repetitions"
+        ]
+    );
+
+    let mut not_computed = observation(None);
+    not_computed["state"] = json!("not_computed");
+    not_computed["value"] = Value::Null;
+    not_computed["reason"] = json!("producer crashed");
+    assert_eq!(
+        intake(&plans, &collection(&[not_computed])).expect("not_computed is exempt"),
+        "run-960"
+    );
+}
+
+/// Under a plan requiring one repetition, an unstated count is admitted, as
+/// every collection predating `population.repetitions` already is.
+///
+/// Trace: FR-044-AC-9
+/// Provenance: PLAT-960
+#[test]
+fn tc_960_012_unstated_repetitions_under_a_plan_of_one_are_admitted() {
+    let repository = repository_with(&plan_document(&design_with_repetitions("1")));
+    let plans = authored_plans(repository.path());
+
+    assert_eq!(
+        intake(&plans, &collection(&[observation(Some(40))]))
+            .expect("a plan of one needs no stated count"),
+        "run-960"
+    );
+    assert_eq!(
+        intake(&plans, &collection(&[observation(None)])).expect("nor a stated population at all"),
+        "run-960"
+    );
+}
+
+/// A stated `population.repetitions` is carried into the JSON report beside
+/// the rest of the population; a population without it states no such
+/// member, so its bytes are unchanged.
+///
+/// Trace: FR-044-AC-9
+/// Provenance: PLAT-960
+#[test]
+fn tc_960_013_the_json_report_carries_a_stated_repetition_count() {
+    let repository = repository_with(&plan_document(&design_with_repetitions("3")));
+    let root = repository.path();
+    write_measurement_collection(
+        root,
+        &from_serde(&collection(&[with_repetitions(observation(Some(40)), 3)]))
+            .expect("the candidate crosses"),
+    )
+    .expect("three repetitions meet a plan of three");
+
+    let report =
+        build_measurement_report(&DiskMeasurement::new(root), root).expect("the report builds");
+    let parsed: Value = serde_json::from_str(
+        &render_measurement_report_json(&report).expect("the JSON report renders"),
+    )
+    .expect("the JSON view is JSON");
+    assert_eq!(
+        parsed["current"][0]["observation"]["population"],
+        json!({ "examined": 40, "matched": 1, "repetitions": 3 })
+    );
 }

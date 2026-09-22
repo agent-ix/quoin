@@ -150,11 +150,9 @@ pub struct StatisticalDesign {
     /// The smallest `population.examined` a measured observation may carry
     /// before intake refuses it.
     pub minimum_population: Option<NonZeroU32>,
-    /// How many repeat runs the plan requires before a result counts.
-    ///
-    /// Read and carried, never enforced: no member of a measurement
-    /// collection records how many repetitions were actually performed, so
-    /// intake has nothing to compare this against (PLAT-960).
+    /// How many repeat runs the plan requires before a result counts,
+    /// checked at intake against each measured observation's
+    /// `population.repetitions`.
     pub repetitions: Option<NonZeroU32>,
 }
 

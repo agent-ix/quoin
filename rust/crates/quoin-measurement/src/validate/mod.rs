@@ -194,8 +194,9 @@ fn parse_stored_measurement_collection(
 /// Every finding is accumulated into one refusal. Its code is
 /// [`MeasurementErrorCode::CollectionInvalid`], except when every finding is
 /// one population refusal kind (PLAT-960), in which case the refusal carries
-/// that kind's own code — [`MeasurementErrorCode::PopulationBelowMinimum`] or
-/// [`MeasurementErrorCode::PopulationUnstated`]. A population finding inside a
+/// that kind's own code — [`MeasurementErrorCode::PopulationBelowMinimum`],
+/// [`MeasurementErrorCode::PopulationUnstated`] or
+/// [`MeasurementErrorCode::RepetitionsShort`]. A population finding inside a
 /// mixed refusal still names its code as the finding's first word, so the
 /// typed reason survives the accumulation.
 pub fn measurement_collection(
@@ -287,7 +288,7 @@ pub fn measurement_collection(
                 observation.definition_version, plan.definition_version
             ));
         }
-        if let Some((code, finding)) = population::finding(observation, plan) {
+        for (code, finding) in population::findings(observation, plan) {
             typed.push(code);
             findings.push(format!("{code}: {finding}"));
         }
@@ -433,6 +434,7 @@ fn population(object: &JsonObject) -> Option<MeasurementPopulation> {
         examined: read::number(population, "examined"),
         matched: read::number(population, "matched"),
         complete: read::boolean(population, "complete"),
+        repetitions: read::number(population, "repetitions"),
         identity: population.get("identity").cloned(),
         // Kept rather than dropped: see `MeasurementPopulation`'s header for
         // the two retained call sites that see every stored member.

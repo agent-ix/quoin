@@ -8,17 +8,21 @@ description: "Chronological log of structural changes to this bundle."
 
 ## History
 
-* **2026-09-22** — **FR-044-AC-7, FR-044-AC-8: a plan's minimum population is
-  enforced, and its ground-truth kind is reported** (PLAT-960). Intake read
+* **2026-09-22** — **FR-044-AC-7..AC-9: a plan's minimum population and
+  repetitions are enforced, and its ground-truth kind is reported**
+  (PLAT-960). Intake read
   none of a `MeasurementPlan`'s `statistical_design` or `ground_truth_kind`,
   so a collection examining two items was admitted under a plan requiring
   more. A declared `minimum_population` now refuses a smaller measured
   population as `QM-POPULATION-BELOW-MINIMUM` and an unstated one as
   `QM-POPULATION-UNSTATED`, accumulating with every other intake finding.
   `quoin report` states the plan's `ground_truth_kind` beside it in text and
-  JSON. `statistical_design.repetitions` is read into the plan; no
-  collection member records the repetitions performed, so intake has nothing
-  to hold it against. TC-1740..TC-1746.
+  JSON. FR-044-AC-9: an observation's `population` may now state
+  `repetitions`, the runs actually performed (following MP-225's "N is stated
+  with every observation"); a count short of the plan's
+  `statistical_design.repetitions` is refused as `QM-REPETITIONS-SHORT`, and
+  an unstated one as `QM-POPULATION-UNSTATED` when the plan requires more than
+  one. TC-1740..TC-1751.
 
 * **2026-09-22** — **FR-044-AC-6: an artifact label is admitted, never silently**
   (PLAT-969, owner's ruling). A `verificationStack.artifacts` name with no

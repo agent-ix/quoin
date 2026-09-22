@@ -82,14 +82,18 @@ pub enum MeasurementErrorCode {
     /// `statistical_design.minimum_population` (PLAT-960).
     PopulationBelowMinimum,
     /// A measured observation states no numeric `population.examined`, but
-    /// its plan declares a `statistical_design.minimum_population`, so intake
-    /// cannot tell whether the minimum was met (PLAT-960).
+    /// its plan declares a `statistical_design.minimum_population`, or states
+    /// no `population.repetitions` while its plan requires more than one, so
+    /// intake cannot tell whether the plan was met (PLAT-960).
     PopulationUnstated,
+    /// A measured observation's `population.repetitions` is below its plan's
+    /// `statistical_design.repetitions` (PLAT-960).
+    RepetitionsShort,
 }
 
 impl MeasurementErrorCode {
     /// Every code, in declaration order.
-    pub const ALL: [Self; 20] = [
+    pub const ALL: [Self; 21] = [
         Self::CollectionInvalid,
         Self::CollectionIdUnsafe,
         Self::CollectionIdCollision,
@@ -110,6 +114,7 @@ impl MeasurementErrorCode {
         Self::ArtifactUnreadable,
         Self::PopulationBelowMinimum,
         Self::PopulationUnstated,
+        Self::RepetitionsShort,
     ];
 
     /// The stable wire spelling of this code.
@@ -136,6 +141,7 @@ impl MeasurementErrorCode {
             Self::ArtifactUnreadable => "QM-ARTIFACT-UNREADABLE",
             Self::PopulationBelowMinimum => "QM-POPULATION-BELOW-MINIMUM",
             Self::PopulationUnstated => "QM-POPULATION-UNSTATED",
+            Self::RepetitionsShort => "QM-REPETITIONS-SHORT",
         }
     }
 
