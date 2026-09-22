@@ -7,6 +7,7 @@ owner: quoin-maintainers
 stage: gate
 metric: jev.criterion_strength.gate
 definition_version: jev.criterion-strength-gate-v1
+ground_truth_kind: agent-labelled
 relationships: []
 ---
 
@@ -19,10 +20,15 @@ Decide GO or NO-GO for wiring the criterion-strength lens (PLAT-837) into the
 
 ## Population
 
-The fifteen human-labelled fixtures in
+The fifteen fixtures in
 `skills/spec-criterion-strength-analysis/assets/fixtures/criterion-strength-fixtures.json`:
 eleven `weakness_kind` criteria and four `adverse_case_coverage` FRs. Nine carry
-a second reader's contested reading. Ground truth is human-labelled.
+a second reader's contested reading. Ground truth is agent-labelled, not
+human: the corpus's own `governing_ruling_on_disagreement` field and
+`SKILL.md` claim "a human label" and "a second, independent reader," but
+`gh pr view agent-ix/quoin#570 --json reviews,comments,commits` shows zero
+GitHub reviews, zero comments, and both authoring commits by `claude` — the
+"second reader" was another Claude Code session, not a person.
 
 ## Measure Definition
 
