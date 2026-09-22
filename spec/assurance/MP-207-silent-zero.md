@@ -10,10 +10,9 @@ definition_version: benchmark.silent-zero-v1
 ground_truth_kind: mechanical
 subject_identity:
   name: quoin bench-tier1 benchmark instrument
-  version: 0.23.1-94-g0128ed4
+  version: v0.23.1
 statistical_design:
   population: every ratio metric emitted by every completed producer in a benchmark run, excluding count metrics and genuinely empty populations
-  minimum_population: 1
   sampling: exhaustive over every ratio metric in the run; no subsampling
   repetitions: 1
   estimator: count of metrics with non-zero examined, zero matched, and no diagnostic
@@ -33,7 +32,10 @@ none of a non-empty population without saying so.
 ## Population
 
 Include all ratio metrics emitted by every completed producer in a benchmark
-run. Exclude count metrics and genuinely empty populations.
+run. Exclude count metrics and genuinely empty populations. This measure does
+not set `statistical_design.minimum_population`: the exclusion above already
+rules out an empty population, and no smaller-than-N threshold beyond that is
+meaningful for an instrument-integrity sentinel.
 
 ## Measure Definition
 
