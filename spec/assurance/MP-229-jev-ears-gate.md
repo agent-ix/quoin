@@ -7,6 +7,7 @@ owner: quoin-maintainers
 stage: gate
 metric: jev.ears_gate_verdict
 definition_version: jev.ears-gate-v1
+ground_truth_kind: agent-labelled
 relationships: []
 ---
 
