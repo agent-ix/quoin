@@ -121,7 +121,9 @@ impl From<MeasurementError> for InterventionIntakeError {
             | MeasurementErrorCode::DateTimeInvalid
             | MeasurementErrorCode::Yaml
             | MeasurementErrorCode::Io
-            | MeasurementErrorCode::Store => InterventionRefusalCode::InvalidRecord,
+            | MeasurementErrorCode::Store
+            | MeasurementErrorCode::ArtifactNameUnsafe
+            | MeasurementErrorCode::ArtifactUnreadable => InterventionRefusalCode::InvalidRecord,
         };
         let findings = if error.findings().is_empty() {
             vec![error.to_string()]

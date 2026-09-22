@@ -128,20 +128,22 @@ const fn measurement_code(code: MeasurementErrorCode) -> Option<CoreErrorCode> {
     Some(match code {
         // The caller's own document: a candidate that does not satisfy the
         // stored envelope, an id that does not name a file, a definition
-        // version no active plan governs, an unsafe raw-evidence reference, or
-        // a value that is not a date-time.
+        // version no active plan governs, an unsafe raw-evidence reference or
+        // artifact name, or a value that is not a date-time.
         Code::CollectionInvalid
         | Code::CollectionIdUnsafe
         | Code::DefinitionMismatch
         | Code::RawEvidencePathUnsafe
+        | Code::ArtifactNameUnsafe
         | Code::DateTimeInvalid => CoreErrorCode::BadRequest,
 
         // The repository declined: retained bytes that differ, a document that
         // cannot be read back, a plan or profile that is present and
         // unacceptable, no active plan at all, a raw-evidence file that
-        // disagrees with its digest or is absent, unreadable YAML, and every
-        // filesystem and store refusal. Fixing any of these means changing the
-        // repository, not the request.
+        // disagrees with its digest or is absent, a named artifact the
+        // repository holds in a form that cannot be digested, unreadable YAML,
+        // and every filesystem and store refusal. Fixing any of these means
+        // changing the repository, not the request.
         Code::CollectionIdCollision
         | Code::CollectionUnreadable
         | Code::RecordUnreadable
@@ -150,6 +152,7 @@ const fn measurement_code(code: MeasurementErrorCode) -> Option<CoreErrorCode> {
         | Code::GoverningPlanAbsent
         | Code::RawEvidenceMismatch
         | Code::RawEvidenceUnavailable
+        | Code::ArtifactUnreadable
         | Code::Yaml
         | Code::Io
         | Code::Store => CoreErrorCode::Refused,
@@ -239,7 +242,7 @@ mod tests {
     fn the_measurement_mapping_covers_every_code() {
         assert_eq!(
             MeasurementErrorCode::ALL.len(),
-            16,
+            18,
             "quoin-measurement gained or lost an error code; map it deliberately"
         );
 
@@ -248,6 +251,7 @@ mod tests {
             Code::CollectionIdUnsafe,
             Code::DefinitionMismatch,
             Code::RawEvidencePathUnsafe,
+            Code::ArtifactNameUnsafe,
             Code::DateTimeInvalid,
         ];
         let refused = [
@@ -259,6 +263,7 @@ mod tests {
             Code::GoverningPlanAbsent,
             Code::RawEvidenceMismatch,
             Code::RawEvidenceUnavailable,
+            Code::ArtifactUnreadable,
             Code::Yaml,
             Code::Io,
             Code::Store,

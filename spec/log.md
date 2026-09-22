@@ -8,6 +8,18 @@ description: "Chronological log of structural changes to this bundle."
 
 ## History
 
+* **2026-09-22** — **FR-044-AC-6: local artifact verification never skips**
+  (PLAT-969). `write_measurement_collection` tried each
+  `verificationStack.artifacts` name as a repository-relative path but skipped
+  a name that was not a safe relative path, and a name whose entry could not
+  be digested, so a record naming `../outside` or a directory was admitted
+  with its digest unchecked. Both now refuse the write with their own codes,
+  `QM-ARTIFACT-NAME-UNSAFE` and `QM-ARTIFACT-UNREADABLE`, naming the artifact.
+  A name with no filesystem entry at all remains an artifact label admitted on
+  shape: the collections' own fixture artifact `config` is one, and
+  `quoin measurement record --digest-from-file` exists for artifacts stored
+  under a name other than their path. TC-1731..TC-1733.
+
 * **2026-09-18** — **FR-068: the change-assurance exit grammar, restored**
   (agent-ix/quoin#543). Every refusal on the `quoin change-assurance` surface
   exited **1** rather than the documented **2** after the TypeScript-to-Rust

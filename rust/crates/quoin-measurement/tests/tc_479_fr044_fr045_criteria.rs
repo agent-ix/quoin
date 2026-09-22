@@ -5,7 +5,7 @@
 //! restated against this crate, plus the FR-067-AC-8 assertion that
 //! `tests/measurement-store-results.test.ts` holds.
 //!
-//! Trace: FR-044-AC-1, FR-044-AC-2, FR-044-AC-3, FR-044-AC-4
+//! Trace: FR-044-AC-1, FR-044-AC-2, FR-044-AC-3, FR-044-AC-4, FR-044-AC-6
 //! Trace: FR-045-AC-1, FR-045-AC-2, FR-045-AC-3, FR-045-AC-4
 //! Trace: FR-067-AC-8
 //! Provenance: quoin#479
@@ -901,7 +901,7 @@ fn tc_479_005_a_collection_lands_atomically_and_an_identical_rewrite_is_idempote
 /// every caller of `measurement.record` goes through, so this is the real
 /// path, not the CLI convenience layered on top of it.
 ///
-/// Trace: FR-044-AC-1
+/// Trace: FR-044-AC-1, FR-044-AC-6
 /// Provenance: PLAT-931
 #[test]
 fn tc_479_023_a_locally_reachable_artifact_digest_is_verified_automatically() {
@@ -939,9 +939,9 @@ fn tc_479_023_a_locally_reachable_artifact_digest_is_verified_automatically() {
         "the refusal must name the artifact; it said {refusal}"
     );
 
-    // A name the record does not carry a matching local file for is not
-    // verifiable here, so the submitted digest is still only checked for
-    // shape, exactly as before this check existed.
+    // A name with no filesystem entry under the repository is an artifact
+    // label, not a local file (FR-044-AC-6): the fixture's own `config` is
+    // one. Its submitted digest is checked for shape only.
     let mut unreachable = new_collection_json();
     unreachable["collectionId"] = json!("run-003");
     unreachable["verificationStack"]["artifacts"] =
@@ -950,7 +950,138 @@ fn tc_479_023_a_locally_reachable_artifact_digest_is_verified_automatically() {
         root,
         &from_serde(&unreachable).expect("the unreachable case crosses the bridge"),
     )
-    .expect("an artifact name with no local file is trusted on shape alone, as before");
+    .expect("an artifact name with no local entry is a label, admitted on shape");
+}
+
+/// Write `artifacts` into an otherwise admissible collection under `root`.
+fn publish_with_artifacts(
+    root: &Path,
+    artifacts: Value,
+) -> Result<PathBuf, quoin_measurement::MeasurementError> {
+    let mut candidate = new_collection_json();
+    candidate["verificationStack"]["artifacts"] = artifacts;
+    write_measurement_collection(
+        root,
+        &from_serde(&candidate).expect("the candidate crosses the bridge"),
+    )
+}
+
+/// Every collection file the store holds under `root`.
+fn stored_collections(root: &Path) -> Vec<String> {
+    let store = measurements_root(root);
+    if !store.exists() {
+        return Vec::new();
+    }
+    std::fs::read_dir(store)
+        .expect("the store is readable")
+        .map(|entry| {
+            entry
+                .expect("a store entry")
+                .file_name()
+                .to_string_lossy()
+                .into_owned()
+        })
+        .collect()
+}
+
+/// An artifact name that is not a safe repository-relative path refuses the
+/// publish, naming the artifact, and leaves no collection behind. Before
+/// PLAT-969 each of these was skipped and the record was admitted with its
+/// digest unchecked.
+///
+/// Trace: FR-044-AC-6
+/// Provenance: PLAT-969
+#[test]
+fn tc_969_001_an_unsafe_artifact_name_refuses_the_publish_naming_it() {
+    let temporary = planned_repository();
+    let root = temporary.path();
+    let digest = format!("sha256:{}", "9".repeat(64));
+    for name in [
+        "../outside",
+        "/etc/hostname",
+        "dist//quoin",
+        "dist\\quoin",
+        "./dist",
+    ] {
+        let refusal = publish_with_artifacts(root, json!({ name: digest }))
+            .expect_err("an unsafe artifact name is refused");
+        assert_eq!(
+            refusal.code(),
+            MeasurementErrorCode::ArtifactNameUnsafe,
+            "{name}: {refusal}"
+        );
+        assert!(
+            refusal
+                .to_string()
+                .contains(&format!("verificationStack.artifacts.{name}")),
+            "the refusal must name the artifact; it said {refusal}"
+        );
+    }
+    assert_eq!(stored_collections(root), Vec::<String>::new());
+}
+
+/// A name that resolves to an entry under the repository which cannot be
+/// digested refuses the publish, naming the artifact and the path. A
+/// directory and a symlink are both entries `digest_file_sha256` declines;
+/// before PLAT-969 each was skipped and the record admitted unchecked.
+///
+/// Trace: FR-044-AC-6
+/// Provenance: PLAT-969
+#[test]
+fn tc_969_002_an_artifact_that_exists_but_cannot_be_digested_refuses_the_publish() {
+    let temporary = planned_repository();
+    let root = temporary.path();
+    let digest = format!("sha256:{}", "9".repeat(64));
+    std::fs::create_dir_all(root.join("dist/quoin")).expect("the directory fixture");
+    std::fs::write(root.join("target.bin"), b"artifact bytes").expect("the link target");
+    std::os::unix::fs::symlink(root.join("target.bin"), root.join("linked.bin"))
+        .expect("the symlink fixture");
+
+    for name in ["dist/quoin", "linked.bin"] {
+        let refusal = publish_with_artifacts(root, json!({ name: digest }))
+            .expect_err("an entry that cannot be digested is refused");
+        assert_eq!(
+            refusal.code(),
+            MeasurementErrorCode::ArtifactUnreadable,
+            "{name}: {refusal}"
+        );
+        let said = refusal.to_string();
+        assert!(
+            said.contains(&format!("verificationStack.artifacts.{name}")),
+            "the refusal must name the artifact; it said {said}"
+        );
+        assert!(
+            said.contains(&root.join(name).display().to_string()),
+            "the refusal must name the path; it said {said}"
+        );
+    }
+    assert_eq!(stored_collections(root), Vec::<String>::new());
+}
+
+/// A publish whose every artifact is a readable local file with a matching
+/// digest, beside a label with no local entry, is admitted and lands.
+///
+/// Trace: FR-044-AC-6
+/// Provenance: PLAT-969
+#[test]
+fn tc_969_003_a_publish_whose_every_local_artifact_is_readable_is_admitted() {
+    let temporary = planned_repository();
+    let root = temporary.path();
+    std::fs::create_dir_all(root.join("dist")).expect("the artifact dir");
+    std::fs::write(root.join("dist/quoin"), b"artifact bytes").expect("the first artifact");
+    std::fs::write(root.join("Makefile"), b"").expect("the second artifact");
+
+    let written = publish_with_artifacts(
+        root,
+        json!({
+            "dist/quoin": "sha256:4659fc0570122b0e0aa14f4ff7c261b1fe51795a01ba79963f462ebf40d7520d",
+            "Makefile": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "config": format!("sha256:{}", "3".repeat(64)),
+        }),
+    )
+    .expect("readable, matching artifacts are admitted");
+    assert!(written.is_file(), "{} was not written", written.display());
+    assert_eq!(stored_collections(root), vec!["run-001.json".to_owned()]);
 }
 
 /// `configDigest` is not a member of `verificationStack` itself, but it is

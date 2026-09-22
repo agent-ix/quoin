@@ -18,9 +18,13 @@
 //! `ContentCollision`. Two declared divergences follow, both strengthenings:
 //! `store.ts`'s rename becomes a link, and durability is added.
 
+use std::error::Error as _;
+use std::io::ErrorKind;
 use std::path::{Path, PathBuf};
 
-use quoin_store::{JsonValue, canonical_json_bytes, store::write_content_addressed};
+use quoin_store::{
+    JsonValue, RawFileSha256Digest, canonical_json_bytes, store::write_content_addressed,
+};
 
 use crate::error::{MeasurementError, MeasurementErrorCode};
 use crate::plans::{PlanLoadOptions, load_measurement_plans};
@@ -44,9 +48,13 @@ use crate::validate;
 /// [`crate::error::MeasurementErrorCode::CollectionIdCollision`] when the id is
 /// already retained holding different bytes, and
 /// [`crate::error::MeasurementErrorCode::PlanInvalid`] from the plan load the
-/// admission check needs, and [`crate::error::MeasurementErrorCode::CollectionInvalid`]
+/// admission check needs, [`crate::error::MeasurementErrorCode::CollectionInvalid`]
 /// when a named `verificationStack.artifacts` entry is reachable under `repo`
-/// and its bytes do not match the digest the candidate submitted (PLAT-931).
+/// and its bytes do not match the digest the candidate submitted (PLAT-931),
+/// [`crate::error::MeasurementErrorCode::ArtifactNameUnsafe`] when an artifact
+/// name is not a safe relative path, and
+/// [`crate::error::MeasurementErrorCode::ArtifactUnreadable`] when it names an
+/// entry under `repo` that cannot be digested (PLAT-969).
 pub fn write_measurement_collection(
     repo: &Path,
     candidate: &JsonValue,
@@ -67,20 +75,20 @@ pub fn write_measurement_collection(
 }
 
 /// Truth-check the digests intake can verify for itself, refusing a record
-/// whose submitted digest disagrees with the bytes it names (PLAT-931).
+/// whose submitted digest disagrees with the bytes it names (PLAT-931), and
+/// refusing one whose named artifact cannot be checked at all (PLAT-969).
 ///
 /// `verificationStack.lockDigest`, `.executableDigest` and `.configDigest`
 /// carry no name or path in the candidate at all — only `quoin measurement
 /// record --digest-from-file` (or the producer's own care) can ever check
-/// those. `artifacts`, though, is a name-keyed map, and a name is
-/// deliberately tried here as a `repo`-relative path: where it resolves to a
-/// real, safely-named local file (the same safety rule
-/// [`crate::raw_evidence::RawEvidencePath`] already applies to raw evidence),
-/// the artifact **is** locally reachable at record time, and trusting the
-/// submitted digest on shape alone — the PLAT-931 gap — is no longer
-/// necessary. An artifact whose name is unsafe, or that does not resolve to a
-/// local file, is not reachable this way; its submitted digest is trusted
-/// exactly as it was before this check existed.
+/// those. `artifacts`, though, is a name-keyed map, and every name is tried
+/// here as a `repo`-relative path under the same safety rule
+/// [`crate::raw_evidence::RawEvidencePath`] applies to raw evidence. Each name
+/// lands in exactly one [`LocalArtifact`] or refuses the write (FR-044-AC-6).
+///
+/// Until PLAT-969 an unsafe name and an entry that could not be digested were
+/// both skipped with a bare `continue`, so a record naming `../outside` or a
+/// directory was admitted with its digest never checked.
 fn verify_local_artifacts(
     repo: &Path,
     collection: &MeasurementCollection,
@@ -89,23 +97,81 @@ fn verify_local_artifacts(
         return Ok(());
     };
     for (name, submitted) in &stack.artifacts {
-        let Ok(relative) = RawEvidencePath::parse(name) else {
-            continue;
-        };
-        let Ok(computed) = quoin_store::digest_file_sha256(&repo.join(relative.as_str())) else {
-            continue;
-        };
-        if computed != *submitted {
-            return Err(MeasurementError::new(
-                MeasurementErrorCode::CollectionInvalid,
-                format!(
-                    "verificationStack.artifacts.{name} does not match the local file: the \
-                     record says {}, the file digests to {}",
-                    submitted.to_stored(),
-                    computed.to_stored(),
-                ),
-            ));
+        match reach_local_artifact(repo, name)? {
+            LocalArtifact::Digested(computed) if computed == *submitted => {}
+            LocalArtifact::Digested(computed) => {
+                return Err(MeasurementError::new(
+                    MeasurementErrorCode::CollectionInvalid,
+                    format!(
+                        "verificationStack.artifacts.{name} does not match the local file: the \
+                         record says {}, the file digests to {}",
+                        submitted.to_stored(),
+                        computed.to_stored(),
+                    ),
+                ));
+            }
+            // A label, not a file this repository holds: the fixture
+            // collections' own `config` is one. Its digest was checked for
+            // shape by `validate::stack` and nothing here can check more.
+            LocalArtifact::Label => {}
         }
     }
     Ok(())
+}
+
+/// What one `verificationStack.artifacts` name is, locally.
+#[derive(Debug)]
+enum LocalArtifact {
+    /// The name is a regular file under the repository, digested here.
+    Digested(RawFileSha256Digest),
+    /// Nothing exists at the name under the repository: it labels an artifact
+    /// the repository does not hold, and its digest is admitted on shape.
+    Label,
+}
+
+/// Resolve one artifact name under `repo`.
+///
+/// Only a name with **no filesystem entry at all** is a [`LocalArtifact::Label`].
+/// An entry that exists and cannot be digested — a directory, a symlink, an
+/// unreadable or oversized file — is refused, because the record names a
+/// local thing whose bytes intake then cannot see.
+///
+/// # Errors
+///
+/// [`MeasurementErrorCode::ArtifactNameUnsafe`] when the name is not a safe
+/// relative path, and [`MeasurementErrorCode::ArtifactUnreadable`] when it
+/// resolves to an entry that cannot be digested. Both name the artifact.
+fn reach_local_artifact(repo: &Path, name: &str) -> Result<LocalArtifact, MeasurementError> {
+    let relative = RawEvidencePath::parse(name).map_err(|error| {
+        MeasurementError::new(
+            MeasurementErrorCode::ArtifactNameUnsafe,
+            format!(
+                "verificationStack.artifacts.{name} is not a safe repository-relative path, so \
+                 it cannot be checked against a local file: {}",
+                error.subject()
+            ),
+        )
+    })?;
+    let path = repo.join(relative.as_str());
+    // Only absence makes a label. Any other answer — an entry, or a stat that
+    // failed for another reason — goes to the digest, which refuses what it
+    // cannot read and says why.
+    if std::fs::symlink_metadata(&path).is_err_and(|error| error.kind() == ErrorKind::NotFound) {
+        return Ok(LocalArtifact::Label);
+    }
+    quoin_store::digest_file_sha256(&path)
+        .map(LocalArtifact::Digested)
+        .map_err(|error| {
+            let cause = error
+                .source()
+                .map_or_else(String::new, |source| format!(": {source}"));
+            MeasurementError::new(
+                MeasurementErrorCode::ArtifactUnreadable,
+                format!(
+                    "verificationStack.artifacts.{name} names {} but it cannot be digested: \
+                     {error}{cause}",
+                    path.display()
+                ),
+            )
+        })
 }
