@@ -8,6 +8,26 @@ description: "Chronological log of structural changes to this bundle."
 
 ## History
 
+* **2026-09-22** — **FR-107 (new FR): ratchet and target stage verdicts in
+  `quoin report`** (PLAT-958, part 1). Plans named `ratchet` and `target`
+  stages and nothing applied them. A `MeasurementPlan`'s optional `objective`
+  (engineering-assurance FR-020, parsed into EA's own `Objective`) now decides
+  a `ratchet` row as `held` or `regressed` against the best earlier value for
+  the same plan, slice and `definition_version`, where best follows the
+  direction (max, min, closest to zero, closest to the bound). Missing
+  evidence is never green: a first collection, a missing value, another
+  definition, or an incomplete or empty population is `inconclusive` with a
+  reason code. A `target` row reports its distance to the bound and whether
+  it is reached, as information rather than a verdict. Text, JSON and
+  portfolio views carry it; a plan with no objective renders the same bytes
+  as before. Collection comparison stays verdict-free and `gate` is left to
+  a later change. Review fixes: a newest value under another plan id
+  (`plan_mismatch`) or with no population (`population_unstated`) is
+  `inconclusive`; a slice the newest collection drops is reported rather
+  than silently skipped; a target's distance is the distance still to go,
+  its JSON outcome is `progress`, and a negative `zero` bound is refused at
+  plan load. FR-107-AC-1..AC-6; Matrix: TC-1760..TC-1777.
+
 * **2026-09-22** — **FR-080, NFR-018, US-021: the spec now states the
   semantic-module template's real dependency story** (PLAT-951 review
   follow-up). quire 0.47.1 is published to `internal-pypi`, and the template stopped

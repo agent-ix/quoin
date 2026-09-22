@@ -18,6 +18,7 @@ use crate::portfolio::types::{PortfolioReport, PortfolioRepositoryReport};
 use crate::report::render::{
     metric_label, observation_cell, plan_cell, row_label, unverified_artifacts_suffix,
 };
+use crate::report::verdict_render::stage_verdict_table;
 
 /// Render the portfolio as markdown.
 ///
@@ -124,6 +125,16 @@ fn readable(repository: &PortfolioRepositoryReport) -> Result<Vec<String>, Measu
         }
     }
     lines.push(String::new());
+    // Present only when a plan carries a `ratchet`/`target` objective
+    // (PLAT-958); a repository with none renders the bytes it did before.
+    let vanished = measurements
+        .map(|report| report.vanished_slices.as_slice())
+        .unwrap_or_default();
+    let verdicts = stage_verdict_table(rows, vanished)?;
+    if !verdicts.is_empty() {
+        lines.extend(verdicts);
+        lines.push(String::new());
+    }
     lines.extend(comparison(repository)?);
     Ok(lines)
 }

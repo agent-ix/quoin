@@ -31,6 +31,7 @@
 
 use std::collections::BTreeMap;
 
+use engineering_assurance::measurement::Objective;
 use quoin_store::{JsonValue, canonical_json};
 use serde::Serialize;
 use serde_json::Value;
@@ -38,6 +39,7 @@ use serde_json::Value;
 use crate::error::{MeasurementError, MeasurementErrorCode};
 use crate::json_bridge::{from_serde, to_serde};
 use crate::report::build::{CollectionSummary, CurrentRow, MeasurementReport};
+use crate::report::verdict_wire::{StageVerdictWire, VanishedSliceWire};
 use crate::types::comparison::MeasurementComparison;
 use crate::types::observation::{MeasurementObservation, MeasurementPopulation};
 use crate::types::plan::{GroundTruthKind, MeasurementPlan};
@@ -83,6 +85,11 @@ pub struct PlanWire<'a> {
     /// the same bytes it did before PLAT-960.
     #[serde(skip_serializing_if = "Option::is_none")]
     ground_truth_kind: Option<&'static str>,
+    /// Engineering-assurance's own `{direction, bound?}` shape (PLAT-958).
+    /// Absent when the plan states none, so such a plan serialises to the
+    /// same bytes it did before.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    objective: Option<Objective>,
 }
 
 impl<'a> PlanWire<'a> {
@@ -100,6 +107,7 @@ impl<'a> PlanWire<'a> {
             owner: plan.owner.as_deref(),
             action: plan.action.as_deref(),
             ground_truth_kind: plan.ground_truth_kind.map(GroundTruthKind::as_str),
+            objective: plan.objective,
         }
     }
 }
@@ -242,6 +250,10 @@ pub(crate) struct CurrentRowWire<'a> {
     observation: Option<ObservationWire>,
     /// As `observation`.
     collection: Option<CollectionSummaryWire<'a>>,
+    /// Absent unless the plan carries a `ratchet`/`target` objective
+    /// (PLAT-958), so every other row serialises to the bytes it did before.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    stage_verdict: Option<StageVerdictWire<'a>>,
 }
 
 impl<'a> CurrentRowWire<'a> {
@@ -263,6 +275,7 @@ impl<'a> CurrentRowWire<'a> {
                 .map(ObservationWire::of)
                 .transpose()?,
             collection: row.collection.as_ref().map(CollectionSummaryWire::of),
+            stage_verdict: row.stage_verdict.as_ref().map(StageVerdictWire::of),
         })
     }
 }
@@ -273,6 +286,10 @@ impl<'a> CurrentRowWire<'a> {
 pub(crate) struct MeasurementReportWire<'a> {
     plans: Vec<PlanWire<'a>>,
     current: Vec<CurrentRowWire<'a>>,
+    /// Absent unless a ratchet plan lost a slice (PLAT-958), so every other
+    /// report serialises to the bytes it did before.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    vanished_slices: Vec<VanishedSliceWire<'a>>,
     corpus_gaps: Option<f64>,
     /// Already `snake_case` on the wire (`intervention-report.ts:3-22`), so it
     /// crosses as its own `serde` view rather than being restated here.
@@ -295,6 +312,11 @@ impl<'a> MeasurementReportWire<'a> {
                 .iter()
                 .map(CurrentRowWire::of)
                 .collect::<Result<Vec<_>, MeasurementError>>()?,
+            vanished_slices: report
+                .vanished_slices
+                .iter()
+                .map(VanishedSliceWire::of)
+                .collect::<Result<Vec<_>, MeasurementError>>()?,
             corpus_gaps: report.corpus_gaps,
             interventions: analysis_value(&report.interventions)?,
             operational: analysis_value(&report.operational)?,
@@ -313,7 +335,7 @@ fn analysis_value<T: Serialize>(value: &T) -> Result<Value, MeasurementError> {
 }
 
 /// A map of stored values, crossed to the analysis value once.
-fn analysis_map(
+pub(crate) fn analysis_map(
     stored: &BTreeMap<String, JsonValue>,
 ) -> Result<BTreeMap<String, Value>, MeasurementError> {
     stored

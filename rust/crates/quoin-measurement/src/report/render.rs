@@ -24,7 +24,10 @@ use crate::intervention::report::render_intervention_report;
 use crate::json_bridge::to_serde;
 use crate::operational::report::render_operational_report;
 use crate::report::build::{CurrentRow, MeasurementReport};
+use crate::report::verdict::{RatchetOutcome, StageVerdict};
+use crate::report::verdict_render::stage_verdict_table;
 use crate::types::observation::{Dimensions, MeasurementObservation, MeasurementState};
+use crate::types::plan::GroundTruthKind;
 
 /// The metrics that carry a factual attention sentence of their own.
 ///
@@ -129,14 +132,14 @@ pub(crate) fn row_label(row: &CurrentRow) -> Result<String, MeasurementError> {
 /// `pub(crate)` because [`crate::portfolio::render`] quotes the plan the same
 /// way. A plan that states no kind renders the bytes it did before PLAT-960.
 pub(crate) fn plan_cell(row: &CurrentRow) -> String {
-    match row.plan_ground_truth_kind {
-        Some(kind) => format!(
-            "{} ({}; ground truth: {})",
-            row.plan_id,
-            row.plan_path,
-            kind.as_str()
-        ),
-        None => format!("{} ({})", row.plan_id, row.plan_path),
+    plan_cell_of(&row.plan_id, &row.plan_path, row.plan_ground_truth_kind)
+}
+
+/// [`plan_cell`] from its three parts, for a row that is not a [`CurrentRow`].
+pub(crate) fn plan_cell_of(id: &str, path: &str, kind: Option<GroundTruthKind>) -> String {
+    match kind {
+        Some(kind) => format!("{id} ({path}; ground truth: {})", kind.as_str()),
+        None => format!("{id} ({path})"),
     }
 }
 
@@ -224,6 +227,13 @@ pub fn render_measurement_report(report: &MeasurementReport) -> Result<String, M
             ));
         }
         lines.push(String::new());
+        let verdicts = stage_verdict_table(&report.current, &report.vanished_slices)?;
+        if !verdicts.is_empty() {
+            lines.push("## Stage verdicts".to_owned());
+            lines.push(String::new());
+            lines.extend(verdicts);
+            lines.push(String::new());
+        }
     }
 
     lines.push("## Current evidence".to_owned());
@@ -305,6 +315,32 @@ fn attention(report: &MeasurementReport) -> Result<Vec<String>, MeasurementError
         if let Some(item) = attention_for(row, observation, &name) {
             out.push(item);
         }
+        if let Some(StageVerdict::Ratchet {
+            outcome:
+                RatchetOutcome::Regressed {
+                    current,
+                    best_prior,
+                },
+            ..
+        }) = &row.stage_verdict
+        {
+            out.push(format!(
+                "{name}: regressed to {} from the best prior {} ({}); plan {} does not hold its \
+                 ratchet.",
+                js_f64_string(*current),
+                js_f64_string(best_prior.value),
+                best_prior.collection_id,
+                row.plan_id
+            ));
+        }
+    }
+    for slice in &report.vanished_slices {
+        out.push(format!(
+            "{}: measured by an earlier collection but absent from the newest; plan {} cannot \
+             hold its ratchet.",
+            metric_label(&slice.metric, &slice.dimensions)?,
+            slice.plan_id
+        ));
     }
     Ok(out)
 }
