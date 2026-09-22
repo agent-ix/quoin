@@ -141,6 +141,54 @@
 //!
 //! Bars: identical to `v0`/`v1`/`v2` -- agreement beats the constant
 //! predictor, defect recall > 0, `sound` cleared >= 3 of 5.
+//!
+//! # `v3` result, 2026-09-21: NO-GO, and the hypothesis is refuted
+//!
+//! MEASURED against `jev-latest`, N=5 (five full passes; every pass returned
+//! the identical score, so the spread is zero -- this corpus is not where
+//! service variance lives).
+//!
+//! | variant | agreement | margin | defect recall | `sound` cleared |
+//! | --- | --- | --- | --- | --- |
+//! | `v0` (round two) | 46.7% | -33.3 pp | 2/2 | 0/5 |
+//! | `v1` | 33.3% | -46.7 pp | 2/2 | 0/5 |
+//! | `v2` | 60.0-66.7% | -13.3 pp | 1/2 | 4/5 |
+//! | `v3-direct` (fresh `v0` sample) | 46.7-53.3% | -26.7 pp | 2/2 | 0/5 |
+//! | **`v3-derived`** | **33.3%** | **-46.7 pp** | 2/2 | 0/5 |
+//!
+//! Deriving the label made it **worse**, not better -- `v3-derived` ties
+//! `v1` for the lowest score any variant has scored, and never answers
+//! `sound` on any row. Eight of the eleven criteria derive to
+//! `unmeasurable_threshold`, a label no fixture carries, because Jev answers
+//! `threshold_present` false on most of them.
+//!
+//! ## Why, and why no further derivation rule will fix it
+//!
+//! [`the_noul_answers_are_reported_per_question`] scores each `noul`
+//! question on its own against the corpus's recorded answer for it. MEASURED
+//! on the same corpus:
+//!
+//! | question | compared | agreement | best constant |
+//! | --- | --- | --- | --- |
+//! | `falsifiable` | 9 | 88.9% | 88.9% |
+//! | `implementation_coupled` | 10 | 80.0% | 80.0% |
+//! | `restates_requirement` | 11 | 81.8% | 81.8% |
+//! | `states_observable_outcome` | 11 | 63.6% | 81.8% |
+//! | `threshold_present` | 11 | 72.7% | 72.7% |
+//!
+//! **Not one of the five yes/no questions beats its own constant
+//! predictor.** Three of them *are* constants: Jev answered `falsifiable`
+//! true on all 9 rows it was compared on, `restates_requirement` false on
+//! all 11, and `implementation_coupled` true on exactly the 2 rows the
+//! reader did. The other two vary and score below the constant.
+//!
+//! This refutes the hypothesis at its root. `v3` was built on the reading
+//! that PLAT-839 passed because it asked narrow yes/no questions, so asking
+//! this lens's label out of its yes/no sub-answers should help. It does not,
+//! because the sub-answers carry no information over the constant either. A
+//! different decision rule composes the same non-signal differently. The
+//! corpus said as much before the run, on `CS-FIX-014`: "`weakness_kind` is
+//! not a deterministic function of the five `noul` answers".
 
 #![cfg(feature = "live-api")]
 #![allow(
