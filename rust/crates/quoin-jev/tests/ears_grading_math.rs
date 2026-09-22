@@ -86,7 +86,10 @@ fn the_m2_corpus_holds_the_tickets_named_acceptance_fixtures() {
         .iter()
         .filter(|f| f.provenance == "real")
         .count();
-    assert_eq!(real, 31, "31 rows are verbatim statements from real spec trees");
+    assert_eq!(
+        real, 31,
+        "31 rows are verbatim statements from real spec trees"
+    );
     for fixture in corpus.fixtures.iter().filter(|f| f.provenance == "real") {
         assert!(
             fixture.source_repo.is_some()
@@ -177,7 +180,12 @@ fn the_v3_rule_fires_only_on_its_three_documented_branches() {
     );
     // The stated blind spot: the same answers on any other engine pattern
     // raise nothing.
-    for pattern in ["state_driven", "unwanted_behaviour", "optional_feature", "ubiquitous"] {
+    for pattern in [
+        "state_driven",
+        "unwanted_behaviour",
+        "optional_feature",
+        "ubiquitous",
+    ] {
         assert_eq!(
             derive_defect_from_noul(pattern, &noul(Some(0.9), Some(0.1), Some(0.9))),
             NO_DEFECT,

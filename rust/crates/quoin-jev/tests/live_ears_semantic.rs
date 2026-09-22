@@ -67,7 +67,6 @@ use support::grading::{
     trivial_baseline,
 };
 
-
 /// PLAT-838's stated floor: "M1 disagreement (N=5 minimum, state N)". This
 /// default is intentionally the floor, not the ticket's own N>=20 (300
 /// requests) -- that larger N is opt-in via `JEV_RUNS`, matching
@@ -668,6 +667,44 @@ fn defect_recall_over(graded: &[Graded], ids: &[String]) -> Option<f64> {
 /// halves are printed. The gate is MP-229's bar on the **whole**
 /// population; the split exists so nobody reads an overall number without
 /// seeing where it comes from.
+///
+/// # Result, 2026-09-22: all four bars clear — GO, as advisory
+///
+/// MEASURED, N=3 passes over 59 fixtures plus one 45-statement M6 pass, 222
+/// requests. Record:
+/// `spec/evidence/measurements/plat838-ears-v3-20260922T0420Z.json`.
+///
+/// | bar | metric | value |
+/// | --- | --- | --- |
+/// | 1 | MP-222 margin over `clean` (69.5%) | **+13.6 pp** (agreement 83.1%) |
+/// | 2 | MP-223 defect recall | **61.1%** (11/18) |
+/// | 3 | MP-224 no-defect recall | **90.0%** (36/40) |
+/// | 4 | MP-231 `v3` forward delta vs MP-225 0.0% | **30.0%** (6/20) |
+///
+/// The shipped six-way rule, graded from the same responses, scores
+/// **-13.6 pp** on bar 1. MP-225 was 0.0% across all three pairs: every
+/// pass returned an identical `v3` score. Zero rows had an unanswered
+/// consulted noul, so the `condition_is_unwanted` default-fires defect
+/// noted on [`support::ears::derive_defect_from_noul`] touched nothing here.
+///
+/// **The number that changed most is defect recall, and it fell.** The
+/// 16-fixture run reported 100%; this one reports 61.1%, split 76.9% (10/13)
+/// on reachable defects and 20.0% (1/5) on the five the rule structurally
+/// cannot see. That is the blind spot's cost, measured for the first time.
+/// It is not a regression in the lens -- the same rule, the same service, a
+/// corpus that can finally see the gap.
+///
+/// MP-231's inverse delta is 88.0% under `v3` against 12.0% under `v1`.
+/// That is **not** an engine false-positive rate: `v3` has no question that
+/// could corroborate `ears:missing-subject`, `ears:non-singular` or
+/// `ears:unclassifiable`, which is what the flagged pool is flagged under.
+/// MP-231 bars nothing in that direction and MP-229 quotes neither.
+///
+/// Calibration is poor: ECE 0.3551, and the 0.9-1.0 confidence bucket
+/// agreed on only 53.8% of its 13 rows. MP-229's M7 bound is 0.15, so this
+/// blocks a later promotion to a hard `quire validate --strict` gate. It
+/// does not touch the ship-as-advisory verdict, which is what this test
+/// gates.
 #[tokio::test]
 async fn the_ears_lens_gate_mp_229_v3() {
     let client = live_client();
@@ -826,8 +863,12 @@ async fn the_ears_lens_gate_mp_229_v3() {
     assert!(m6_tokens > 0, "the M6 pass never reached the service");
 
     let rate = |answered: &[bool], want: bool| {
-        (!answered.is_empty())
-            .then(|| percent(answered.iter().filter(|f| **f == want).count(), answered.len()))
+        (!answered.is_empty()).then(|| {
+            percent(
+                answered.iter().filter(|f| **f == want).count(),
+                answered.len(),
+            )
+        })
     };
     let forward_delta = rate(&forward_v3, true);
     let inverse_delta = rate(&inverse_v3, false);
@@ -847,8 +888,7 @@ async fn the_ears_lens_gate_mp_229_v3() {
         rate(&forward_v1, true).map_or_else(|| "not_computed".to_owned(), |v| format!("{v:.1}%")),
         forward_v1.len(),
         m6.clean.len(),
-        rate(&inverse_v1, false)
-            .map_or_else(|| "not_computed".to_owned(), |v| format!("{v:.1}%")),
+        rate(&inverse_v1, false).map_or_else(|| "not_computed".to_owned(), |v| format!("{v:.1}%")),
         inverse_v1.len(),
         m6.flagged.len(),
     );

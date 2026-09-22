@@ -113,3 +113,56 @@ PLAT-838's M7:**
 These three numbers are chosen judgment calls, not derived quantities, stated
 before any of them is measured so the promotion decision cannot be fitted to
 a result after the fact.
+
+## Measured outcome -- GO (ship as advisory), 2026-09-22
+
+MEASURED by `the_ears_lens_gate_mp_229_v3` at `variant: v3`, N=3 passes over
+the 59-fixture M2 revision plus one pass over the 45-statement M6 corpus, 222
+requests. Full record:
+`spec/evidence/measurements/plat838-ears-v3-20260922T0420Z.json`.
+
+| bar | metric | value | met |
+| --- | --- | --- | --- |
+| 1 | MP-222 margin over the best constant predictor (`clean`, 69.5%) | **+13.6 pp** (agreement 83.1%) | yes |
+| 2 | MP-223 defect recall | **61.1%** (11/18) | yes |
+| 3 | MP-224 no-defect recall | **90.0%** (36/40) | yes |
+| 4 | MP-231 `jev.ears-delta-v3` forward delta vs MP-225 0.0% | **30.0%** (6/20) | yes |
+
+Every bar reads the same `v3` classification rule, which is what the first
+`v3` run did not do. The shipped six-way-choice rule, graded from the
+identical responses, scores **-13.6 pp** on bar 1 -- it fails, and deleting
+the six-way term is what carries this verdict.
+
+**What the verdict is, exactly.** GO to wire the lens into
+`skills/spec-ears-analysis` as an **advisory** finding source, per
+**Interpretation** above. It is not permission to make EARS findings a hard
+`quire validate --strict` gate; the M7 bounds below govern that, and two of
+the three are not met (ECE 0.3551 against a 0.15 bound, and MP-225's 0.0% is
+measured at N=3 against a stated N>=20 floor). The false-positive bound is
+met at 10.0%.
+
+**Three facts a reader of this GO must carry with it.**
+
+1. **Defect recall fell from 100% to 61.1% the moment the corpus could
+   measure the v3 rule's stated blind spot.** On the 13 defects the rule can
+   reach it scores 76.9%; on the five it structurally cannot
+   (`while_is_really_when`, `if_is_really_when`, `where_is_really_if`,
+   `where_is_really_while`, `missing_trigger`) it scores 20.0%. The 100% the
+   16-fixture run reported was a fact about that corpus, not about the rule.
+   An advisory lens that cannot see a `While` that should be a `When` is
+   still worth shipping; one advertised as covering EARS pattern confusion
+   generally is not.
+2. **MP-231's inverse delta is 88.0% under `v3`, against 12.0% under `v1` on
+   the same responses.** This is not evidence that the engine raises 88%
+   false positives. The `v3` rule reads measurability and the two
+   When-disambiguators only, so it has no question that could corroborate
+   `ears:missing-subject`, `ears:non-singular` or `ears:unclassifiable` --
+   the codes this pool is flagged under. MP-231 assigns no bar in this
+   direction, and this number must not be quoted as an engine defect rate.
+3. **The lens is most wrong where it is most confident.** Of 13 rows in the
+   0.9-1.0 confidence bucket, 53.8% agreed, against 100% in the 0.4-0.5
+   bucket. Confidence must not be surfaced to a user as a reliability
+   signal until MP-226 clears its bound.
+
+Every label in the M2 corpus is agent-labelled, not human ground truth. A
+restatement of this verdict that drops that sentence is a misreport.

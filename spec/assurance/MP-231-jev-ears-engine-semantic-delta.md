@@ -110,6 +110,36 @@ directions; a lens that only ever disagrees in the engine's favor (zero
 inverse delta) is indistinguishable from a lens with no independent judgment
 of its own.
 
+## Measured values, 2026-09-22
+
+MEASURED at `variant: v3`, one pass over the 45-statement M6 corpus, graded
+both ways from the identical responses. Record:
+`spec/evidence/measurements/plat838-ears-v3-20260922T0420Z.json`.
+
+| direction | `jev.ears-delta-v3` | `jev.ears-delta-v1` | denominator |
+| --- | --- | --- | --- |
+| forward (engine-clean, Jev flags) | **30.0%** (6/20) | 45.0% (9/20) | 20/20 answered |
+| inverse (engine-flagged, Jev calls clean) | **88.0%** (22/25) | 12.0% (3/25) | 25/25 answered |
+
+The forward drop from 45.0% to 30.0% is the asymmetry this plan stated
+before running, not a change in the lens: `v3` cannot raise a
+pattern-confusion flag outside an engine-`event_driven` reading.
+
+The inverse figure inverts between the two versions, and the `v3` value
+carries a reading this plan's **Interpretation** does not otherwise supply:
+88.0% is **not** a candidate-engine-false-positive rate. The `v3` rule has no
+question that could corroborate `ears:missing-subject`, `ears:non-singular`,
+`ears:unclassifiable` or `ears:non-canonical-trigger`, which are the codes
+this pool is flagged under, so it calls those statements clean because it
+cannot see what the engine saw -- not because the engine was wrong. Quoting
+this number as an engine defect rate is a misreport. It remains barred, per
+**Comparison and Enforcement**.
+
+An earlier `v1`-only measurement of this metric is recorded at
+`spec/evidence/measurements/plat838-ears-v1-20260922T011531Z.json` (forward
+40.0% over a 20-statement pool). It was fed into a `v3` verdict, which
+MP-229 now forbids.
+
 ## Comparison and Enforcement
 
 This plan assigns no verdict. MP-229 (the EARS gate plan) states the bar on
