@@ -153,24 +153,37 @@ pub fn measurement_collection(
     plans: &[MeasurementPlan],
 ) -> Result<MeasurementCollection, MeasurementError> {
     let collection = stored_measurement_collection(value)?;
+
+    // Every check below runs regardless of an earlier one's outcome, and every
+    // failure is accumulated rather than returned immediately, so a caller
+    // sees every problem with the candidate in one refusal instead of fixing
+    // them one round trip at a time (PLAT-929).
+    let mut findings = Vec::new();
+
     if collection.schema_version != MEASUREMENT_SCHEMA_VERSION {
-        return Err(refuse(format!(
-            "new collections must use schemaVersion {MEASUREMENT_SCHEMA_VERSION}; v1 is read-only \
-             historical evidence"
-        )));
-    }
-    let stack = collection.verification_stack.as_ref().ok_or_else(|| {
-        refuse("verificationStack.buildProfile must be release for new collections")
-    })?;
-    if stack.build_profile != Some(BuildProfile::Release) {
-        return Err(refuse(
-            "verificationStack.buildProfile must be release for new collections",
+        findings.push(format!(
+            "schemaVersion: new collections must use schemaVersion {MEASUREMENT_SCHEMA_VERSION}; \
+             v1 is read-only historical evidence"
         ));
     }
-    if stack.toolchains.is_none() {
-        return Err(refuse(
-            "verificationStack.toolchains must pin node, rust, and python",
-        ));
+
+    match collection.verification_stack.as_ref() {
+        None => findings
+            .push("verificationStack.buildProfile must be release for new collections".to_owned()),
+        Some(stack) => {
+            if stack.build_profile != Some(BuildProfile::Release) {
+                findings.push(
+                    "verificationStack.buildProfile must be release for new collections".to_owned(),
+                );
+            }
+            if stack.toolchains.is_none() {
+                findings.push(
+                    "verificationStack.toolchains must be present; mark a language not used as \
+                     absent or null rather than omitting the whole member"
+                        .to_owned(),
+                );
+            }
+        }
     }
 
     let by_metric: BTreeMap<&str, &MeasurementPlan> = plans
@@ -180,32 +193,42 @@ pub fn measurement_collection(
     for observation in &collection.observations {
         let metric = observation.metric.as_str();
         let Some(plan) = by_metric.get(metric) else {
-            return Err(refuse(format!(
+            findings.push(format!(
                 "metric `{metric}` has no MeasurementPlan under spec/assurance or assurance; \
                  record refused"
-            )));
+            ));
+            continue;
         };
         if plan.status != LifecycleStatus::Active {
-            return Err(refuse(format!(
+            findings.push(format!(
                 "metric `{metric}` plan {} is {}, not active",
                 plan.id,
                 plan.status.as_str()
-            )));
+            ));
         }
         if observation.plan_id != plan.id {
-            return Err(refuse(format!(
+            findings.push(format!(
                 "metric `{metric}` names plan {}; active plan is {}",
                 observation.plan_id, plan.id
-            )));
+            ));
         }
         if observation.definition_version != plan.definition_version {
-            return Err(refuse(format!(
+            findings.push(format!(
                 "metric `{metric}` definition {} does not match {}",
                 observation.definition_version, plan.definition_version
-            )));
+            ));
         }
     }
-    Ok(collection)
+
+    if findings.is_empty() {
+        Ok(collection)
+    } else {
+        Err(MeasurementError::with_findings(
+            CODE,
+            "measurement collection failed intake validation",
+            findings,
+        ))
+    }
 }
 
 /// The schema version, refusing anything but the current one and the retained

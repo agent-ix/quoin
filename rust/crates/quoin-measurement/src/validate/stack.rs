@@ -45,6 +45,28 @@ pub(crate) fn verification_stack(
     if read::string(object, "schemaVersion") != Some(VERIFICATION_STACK_SCHEMA_VERSION) {
         return Err(refuse("verificationStack has unsupported schemaVersion"));
     }
+
+    // Every member is checked, even after an earlier one fails, so a caller
+    // sees every problem with the attestation in one refusal rather than
+    // fixing them one round trip at a time (PLAT-929).
+    let mut findings = Vec::new();
+    note(&mut findings, digest(object, "lockDigest"));
+    note(&mut findings, digest(object, "executableDigest"));
+    note(&mut findings, build_profile(object));
+    note(&mut findings, toolchains(object));
+    note(&mut findings, sources(object));
+    note(&mut findings, capabilities(object));
+    note(&mut findings, artifacts(object));
+    if !findings.is_empty() {
+        return Err(MeasurementError::with_findings(
+            CODE,
+            "verificationStack is invalid",
+            findings,
+        ));
+    }
+
+    // Every member above is now known individually valid, so re-reading each
+    // to assemble the struct cannot fail here.
     Ok(VerificationStackAttestation {
         lock_digest: digest(object, "lockDigest")?,
         executable_digest: digest(object, "executableDigest")?,
@@ -54,6 +76,15 @@ pub(crate) fn verification_stack(
         capabilities: capabilities(object)?,
         artifacts: artifacts(object)?,
     })
+}
+
+/// Record a member check's failure as a finding; the checked value itself is
+/// discarded either way, since the first pass over `verificationStack` exists
+/// only to decide whether every member is individually valid.
+fn note<T>(findings: &mut Vec<String>, result: Result<T, MeasurementError>) {
+    if let Err(error) = result {
+        findings.push(error.subject().to_owned());
+    }
 }
 
 /// One `sha256:<64 hex>` member, read as `quoin-store`'s own digest type.
@@ -86,21 +117,35 @@ fn toolchains(object: &JsonObject) -> Result<Option<Toolchains>, MeasurementErro
     let Some(value) = object.get("toolchains") else {
         return Ok(None);
     };
-    let pinned = "verificationStack.toolchains must pin node, rust, and python";
-    let toolchains = read::object(value, CODE, pinned)?;
-    let read_one = |name: &str| -> Result<NonEmptyText, MeasurementError> {
-        read::string(toolchains, name)
-            .filter(|text| !text.is_empty())
-            .map_or_else(
-                || Err(refuse(pinned)),
-                |text| NonEmptyText::parse(text, CODE, name),
-            )
-    };
+    let toolchains = read::object(
+        value,
+        CODE,
+        "verificationStack.toolchains must be an object",
+    )?;
     Ok(Some(Toolchains {
-        node: read_one(TOOLCHAIN_NAMES[0])?,
-        rust: read_one(TOOLCHAIN_NAMES[1])?,
-        python: read_one(TOOLCHAIN_NAMES[2])?,
+        node: toolchain_identity(toolchains, TOOLCHAIN_NAMES[0])?,
+        rust: toolchain_identity(toolchains, TOOLCHAIN_NAMES[1])?,
+        python: toolchain_identity(toolchains, TOOLCHAIN_NAMES[2])?,
     }))
+}
+
+/// One toolchain identity (PLAT-930): absent or explicit `null` means "not
+/// applicable" for this language, and anything else must be a non-empty
+/// string. Only the malformed shapes refuse — an empty string, or a value
+/// that is neither a string nor `null`.
+fn toolchain_identity(
+    toolchains: &JsonObject,
+    name: &str,
+) -> Result<Option<NonEmptyText>, MeasurementError> {
+    match toolchains.get(name) {
+        None | Some(JsonValue::Null) => Ok(None),
+        Some(JsonValue::String(text)) if !text.is_empty() => {
+            NonEmptyText::parse(text, CODE, name).map(Some)
+        }
+        _ => Err(refuse(format!(
+            "verificationStack.toolchains.{name} must be a non-empty string, null, or absent"
+        ))),
+    }
 }
 
 fn sources(object: &JsonObject) -> Result<BTreeMap<String, SourceAttestation>, MeasurementError> {

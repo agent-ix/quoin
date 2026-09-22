@@ -33,13 +33,16 @@ quoin-core = { workspace = true }
 quoin-config = { workspace = true }
 quoin-delivery = { workspace = true }
 quoin-graph-analysis = { workspace = true }
+# `--digest-from-file` (PLAT-931) computes a `measurement.record` digest from a
+# local file with the store's own `digest_file_sha256`, rather than a caller
+# pasting a `sha256:<64 hex>` string by hand and this crate trusting its shape.
+quoin-store = { workspace = true }
 quoin-yaml = { workspace = true }
 serde_json = { workspace = true }
 semver = { workspace = true }
 time = { workspace = true }
 
 [dev-dependencies]
-quoin-store = { workspace = true }
 quoin-semantic = { workspace = true }
 quoin-validators = { workspace = true }
 serde = { workspace = true }
