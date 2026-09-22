@@ -112,10 +112,17 @@ def test_the_package_metadata_declares_the_engine_only_as_a_dev_dependency(repo_
         "this module should not also pull in the toolchain that generates it — "
         "quire belongs in the dev dependency group, never here."
     )
-    assert "quire" in dev_section, (
+    quire_lines = [
+        line for line in dev_section.splitlines() if line.strip().startswith("quire ")
+    ]
+    assert len(quire_lines) == 1, (
         "the engine is not declared as a dev dependency. It should be resolved "
         "from the `internal-pypi` Poetry source (see pyproject.toml's "
         "[[tool.poetry.source]])."
+    )
+    assert 'source = "internal-pypi"' in quire_lines[0], (
+        "the quire dev dependency names no `internal-pypi` source, so Poetry "
+        "could resolve the unrelated `quire` package on public PyPI."
     )
 
 

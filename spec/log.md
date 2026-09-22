@@ -10,7 +10,7 @@ description: "Chronological log of structural changes to this bundle."
 
 * **2026-09-22** — **FR-080, NFR-018, US-021: the spec now states the
   semantic-module template's real dependency story** (PLAT-951 review
-  follow-up). `agent-ix/quire-rs#392` closed and the template stopped
+  follow-up). quire 0.47.1 is published to `internal-pypi`, and the template stopped
   provisioning the Quire engine with a `make dev-quire` command reaching a
   dev-only `pypi.ix` mirror; FR-080, NFR-018 and US-021-EX-2 still described
   that retired design. FR-080's behavior, constraints (CON-2) and acceptance
