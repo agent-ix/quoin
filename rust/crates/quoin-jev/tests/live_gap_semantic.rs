@@ -163,14 +163,24 @@ async fn the_lens_beats_doing_nothing() {
 
     for variant in [Variant::Solo, Variant::FullBattery] {
         let pass = run_pass(&client, &mutated, variant).await;
-        println!("{}", report(&format!("gap-analysis assertion_vacuous — {variant:?}"), &pass.graded));
+        println!(
+            "{}",
+            report(
+                &format!("gap-analysis assertion_vacuous — {variant:?}"),
+                &pass.graded
+            )
+        );
 
         assert!(
             pass.ungraded.is_empty(),
             "{variant:?}: rows the response never answered assertion_vacuous for: {:?}",
             pass.ungraded
         );
-        assert_eq!(pass.graded.len(), mutated.len(), "{variant:?}: every mutated row graded");
+        assert_eq!(
+            pass.graded.len(),
+            mutated.len(),
+            "{variant:?}: every mutated row graded"
+        );
 
         let stats = tally(&pass.graded);
         let (baseline_label, baseline) = constant_baseline(&pass.graded);
@@ -229,7 +239,11 @@ async fn repeated_runs_report_disagreement_and_verdict_stability() {
     let mutated = mutated_corpus();
     let mut passes = Vec::with_capacity(runs);
     for _ in 0..runs {
-        passes.push(run_pass(&client, &mutated, Variant::FullBattery).await.graded);
+        passes.push(
+            run_pass(&client, &mutated, Variant::FullBattery)
+                .await
+                .graded,
+        );
     }
 
     let mut predicted_rates = Vec::new();
@@ -255,8 +269,14 @@ async fn repeated_runs_report_disagreement_and_verdict_stability() {
         predicted_rates.len(),
         mutated.len(),
         mean(&predicted_rates),
-        predicted_rates.iter().copied().fold(f64::INFINITY, f64::min),
-        predicted_rates.iter().copied().fold(f64::NEG_INFINITY, f64::max),
+        predicted_rates
+            .iter()
+            .copied()
+            .fold(f64::INFINITY, f64::min),
+        predicted_rates
+            .iter()
+            .copied()
+            .fold(f64::NEG_INFINITY, f64::max),
     );
     println!(
         "**M6 per-triple severity-verdict stability** (PASS/CONDITIONAL/FAIL proxy, \
@@ -264,11 +284,16 @@ async fn repeated_runs_report_disagreement_and_verdict_stability() {
          mean {:.1}%, range {:.1}%-{:.1}%.\n",
         mean(&verdict_rates),
         verdict_rates.iter().copied().fold(f64::INFINITY, f64::min),
-        verdict_rates.iter().copied().fold(f64::NEG_INFINITY, f64::max),
+        verdict_rates
+            .iter()
+            .copied()
+            .fold(f64::NEG_INFINITY, f64::max),
     );
 
     assert!(
-        predicted_rates.iter().all(|rate| (0.0..=100.0).contains(rate)),
+        predicted_rates
+            .iter()
+            .all(|rate| (0.0..=100.0).contains(rate)),
         "a rate outside 0-100% means the comparator is wrong, not the service"
     );
 }
@@ -283,7 +308,12 @@ async fn benchmark_cost_and_latency() {
     let pass = run_pass(&client, &all, Variant::FullBattery).await;
 
     let count = f64::from(u32::try_from(pass.latencies.len()).unwrap_or(u32::MAX));
-    let mean = pass.latencies.iter().map(Duration::as_secs_f64).sum::<f64>() / count;
+    let mean = pass
+        .latencies
+        .iter()
+        .map(Duration::as_secs_f64)
+        .sum::<f64>()
+        / count;
     let mut sorted = pass.latencies.clone();
     sorted.sort_unstable();
     let p50 = sorted[(sorted.len() / 2).min(sorted.len() - 1)];
@@ -291,7 +321,10 @@ async fn benchmark_cost_and_latency() {
     // percentile index over a small, exactly-known length.
     let p90 = sorted[(sorted.len() * 9 / 10).min(sorted.len() - 1)];
 
-    println!("\n## M5 benchmark — one sequential pass, {} triples, FullBattery\n", all.len());
+    println!(
+        "\n## M5 benchmark — one sequential pass, {} triples, FullBattery\n",
+        all.len()
+    );
     println!("| Measure | Value |");
     println!("| --- | --- |");
     println!("| requests | {} |", pass.latencies.len());
@@ -308,9 +341,12 @@ async fn benchmark_cost_and_latency() {
     );
     // $42/billion input tokens, output free -- the ticket's own stated
     // pricing (`## Cost`), not independently priced here.
-    let cost = f64::from(u32::try_from(pass.input_tokens).unwrap_or(u32::MAX)) / 1_000_000_000.0
-        * 42.0;
+    let cost =
+        f64::from(u32::try_from(pass.input_tokens).unwrap_or(u32::MAX)) / 1_000_000_000.0 * 42.0;
     println!("| estimated cost (ticket's stated $42/B input, output free) | ${cost:.4} |");
 
-    assert!(pass.elapsed > Duration::ZERO, "a pass that took no time did not happen");
+    assert!(
+        pass.elapsed > Duration::ZERO,
+        "a pass that took no time did not happen"
+    );
 }

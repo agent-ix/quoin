@@ -426,7 +426,10 @@ pub(crate) fn disagreement(left: &[Graded], right: &[Graded]) -> Option<f64> {
     if ids.is_empty() {
         return None;
     }
-    let changed = ids.iter().filter(|id| left.get(**id) != right.get(**id)).count();
+    let changed = ids
+        .iter()
+        .filter(|id| left.get(**id) != right.get(**id))
+        .count();
     Some(percent(changed, ids.len()))
 }
 
@@ -447,7 +450,10 @@ pub(crate) fn verdict_disagreement(left: &[Graded], right: &[Graded]) -> Option<
     if ids.is_empty() {
         return None;
     }
-    let changed = ids.iter().filter(|id| left.get(**id) != right.get(**id)).count();
+    let changed = ids
+        .iter()
+        .filter(|id| left.get(**id) != right.get(**id))
+        .count();
     Some(percent(changed, ids.len()))
 }
 
@@ -467,7 +473,10 @@ fn percent(part: usize, whole: usize) -> f64 {
 pub(crate) fn report(title: &str, graded: &[Graded]) -> String {
     let mut out = String::new();
     let _ = writeln!(out, "\n## {title}\n");
-    let _ = writeln!(out, "| Triple | Truth (vacuous?) | P(vacuous) | Predicted | Correct |");
+    let _ = writeln!(
+        out,
+        "| Triple | Truth (vacuous?) | P(vacuous) | Predicted | Correct |"
+    );
     let _ = writeln!(out, "| --- | --- | --- | --- | --- |");
     for row in graded {
         let _ = writeln!(
@@ -483,27 +492,42 @@ pub(crate) fn report(title: &str, graded: &[Graded]) -> String {
 
     let stats = tally(graded);
     let (baseline_label, baseline) = constant_baseline(graded);
-    let _ = writeln!(out, "\n**M7 — assertion_vacuous vs. mutation truth** ({} rows):\n", graded.len());
+    let _ = writeln!(
+        out,
+        "\n**M7 — assertion_vacuous vs. mutation truth** ({} rows):\n",
+        graded.len()
+    );
     let _ = writeln!(
         out,
         "- agreement: {}",
-        stats.accuracy().map_or_else(|| "n/a".to_owned(), |v| format!("{v:.1}%"))
+        stats
+            .accuracy()
+            .map_or_else(|| "n/a".to_owned(), |v| format!("{v:.1}%"))
     );
-    let _ = writeln!(out, "- constant-predictor baseline: `{baseline_label}` scores {baseline:.1}%");
+    let _ = writeln!(
+        out,
+        "- constant-predictor baseline: `{baseline_label}` scores {baseline:.1}%"
+    );
     let _ = writeln!(
         out,
         "- vacuous-class precision: {}",
-        stats.precision().map_or_else(|| "n/a".to_owned(), |v| format!("{v:.1}%"))
+        stats
+            .precision()
+            .map_or_else(|| "n/a".to_owned(), |v| format!("{v:.1}%"))
     );
     let _ = writeln!(
         out,
         "- vacuous-class recall (defect recall): {}",
-        stats.recall().map_or_else(|| "n/a".to_owned(), |v| format!("{v:.1}%"))
+        stats
+            .recall()
+            .map_or_else(|| "n/a".to_owned(), |v| format!("{v:.1}%"))
     );
     let _ = writeln!(
         out,
         "- not-vacuous-class recall (no-defect recall): {}",
-        stats.no_defect_recall().map_or_else(|| "n/a".to_owned(), |v| format!("{v:.1}%"))
+        stats
+            .no_defect_recall()
+            .map_or_else(|| "n/a".to_owned(), |v| format!("{v:.1}%"))
     );
     let _ = writeln!(
         out,
