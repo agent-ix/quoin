@@ -457,7 +457,7 @@ pub(crate) fn verdict_disagreement(left: &[Graded], right: &[Graded]) -> Option<
     Some(percent(changed, ids.len()))
 }
 
-fn percent(part: usize, whole: usize) -> f64 {
+pub(crate) fn percent(part: usize, whole: usize) -> f64 {
     if whole == 0 {
         return 0.0;
     }
