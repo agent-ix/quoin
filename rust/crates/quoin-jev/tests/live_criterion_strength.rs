@@ -799,7 +799,12 @@ async fn the_lens_with_noul_derived_labels_v3() {
         let verdict = quoin_jev::lens::run(&client, &context, &questions, CONFIDENCE_THRESHOLD)
             .await
             .unwrap_or_else(|error| {
-                panic!("{}: {} — {}", fixture.fixture_id, error.code.as_str(), error.message)
+                panic!(
+                    "{}: {} — {}",
+                    fixture.fixture_id,
+                    error.code.as_str(),
+                    error.message
+                )
             });
         input_tokens += verdict.usage_input_tokens;
         output_tokens += verdict.usage_output_tokens;
@@ -820,14 +825,23 @@ async fn the_lens_with_noul_derived_labels_v3() {
 
     println!(
         "{}",
-        report("criterion-strength v3-derived (from noul answers)", &derived_graded)
+        report(
+            "criterion-strength v3-derived (from noul answers)",
+            &derived_graded
+        )
     );
     let derived_bars = Bars::of(&derived_graded);
     println!("**GATE v3-derived** {}", derived_bars.line());
-    println!("tokens: {input_tokens} in, {output_tokens} out (one call per weakness fixture, shared by both columns)");
+    println!(
+        "tokens: {input_tokens} in, {output_tokens} out (one call per weakness fixture, shared by both columns)"
+    );
 
     assert_eq!(direct_graded.len(), 15, "every fixture was graded (direct)");
-    assert_eq!(derived_graded.len(), 15, "every fixture was graded (derived)");
+    assert_eq!(
+        derived_graded.len(),
+        15,
+        "every fixture was graded (derived)"
+    );
     assert!(
         input_tokens > 0,
         "a pass that consumed no input tokens never reached the service"
@@ -905,7 +919,9 @@ async fn the_noul_answers_are_reported_per_question() {
     }
 
     println!("\n## noul answers, per question (M2 diagnostic, reported only)\n");
-    println!("| question | compared | agreed | agreement | Jev said true | reader said true | best constant |");
+    println!(
+        "| question | compared | agreed | agreement | Jev said true | reader said true | best constant |"
+    );
     println!("| --- | --- | --- | --- | --- | --- | --- |");
     for (id, (agreed, compared, jev_true, reader_true)) in &per_question {
         let total = f64::from(*compared);
@@ -917,8 +933,13 @@ async fn the_noul_answers_are_reported_per_question() {
     }
 
     assert!(
-        per_question.values().all(|(_, compared, _, _)| *compared > 0),
+        per_question
+            .values()
+            .all(|(_, compared, _, _)| *compared > 0),
         "a question with nothing compared means the key or the corpus changed, not that Jev agreed"
     );
-    assert!(!per_question.is_empty(), "no noul answer was compared at all");
+    assert!(
+        !per_question.is_empty(),
+        "no noul answer was compared at all"
+    );
 }
