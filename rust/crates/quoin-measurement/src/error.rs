@@ -78,11 +78,18 @@ pub enum MeasurementErrorCode {
     /// unreadable or oversized file — so its submitted digest cannot be
     /// checked (PLAT-969).
     ArtifactUnreadable,
+    /// A measured observation's `population.examined` is below its plan's
+    /// `statistical_design.minimum_population` (PLAT-960).
+    PopulationBelowMinimum,
+    /// A measured observation states no numeric `population.examined`, but
+    /// its plan declares a `statistical_design.minimum_population`, so intake
+    /// cannot tell whether the minimum was met (PLAT-960).
+    PopulationUnstated,
 }
 
 impl MeasurementErrorCode {
     /// Every code, in declaration order.
-    pub const ALL: [Self; 18] = [
+    pub const ALL: [Self; 20] = [
         Self::CollectionInvalid,
         Self::CollectionIdUnsafe,
         Self::CollectionIdCollision,
@@ -101,6 +108,8 @@ impl MeasurementErrorCode {
         Self::Store,
         Self::ArtifactNameUnsafe,
         Self::ArtifactUnreadable,
+        Self::PopulationBelowMinimum,
+        Self::PopulationUnstated,
     ];
 
     /// The stable wire spelling of this code.
@@ -125,6 +134,8 @@ impl MeasurementErrorCode {
             Self::Store => "QM-STORE",
             Self::ArtifactNameUnsafe => "QM-ARTIFACT-NAME-UNSAFE",
             Self::ArtifactUnreadable => "QM-ARTIFACT-UNREADABLE",
+            Self::PopulationBelowMinimum => "QM-POPULATION-BELOW-MINIMUM",
+            Self::PopulationUnstated => "QM-POPULATION-UNSTATED",
         }
     }
 

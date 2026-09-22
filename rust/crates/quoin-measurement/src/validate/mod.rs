@@ -25,6 +25,7 @@
 //! of the parsed value (`store.ts:40` canonicalizes `candidate`). Nothing here
 //! is a lossy round trip, because nothing here round-trips.
 
+mod population;
 pub(crate) mod read;
 mod stack;
 
@@ -189,6 +190,14 @@ fn parse_stored_measurement_collection(
 /// other than [`MEASUREMENT_SCHEMA_VERSION`], a build profile other than
 /// release, absent toolchains, and any observation whose metric has no active
 /// plan at the observation's own definition version.
+///
+/// Every finding is accumulated into one refusal. Its code is
+/// [`MeasurementErrorCode::CollectionInvalid`], except when every finding is
+/// one population refusal kind (PLAT-960), in which case the refusal carries
+/// that kind's own code — [`MeasurementErrorCode::PopulationBelowMinimum`] or
+/// [`MeasurementErrorCode::PopulationUnstated`]. A population finding inside a
+/// mixed refusal still names its code as the finding's first word, so the
+/// typed reason survives the accumulation.
 pub fn measurement_collection(
     value: &JsonValue,
     plans: &[MeasurementPlan],
@@ -204,6 +213,10 @@ pub fn measurement_collection(
     // `?`-ed away, so e.g. a bad digest and an unplanned metric are both
     // named in the same refusal (review finding #5(a) on quoin#580).
     let mut findings = Vec::new();
+    // The code of each finding that has one of its own, pushed alongside it.
+    // Only the population checks (PLAT-960) are typed today; see this
+    // function's `# Errors` for how the refusal's own code is chosen.
+    let mut typed: Vec<MeasurementErrorCode> = Vec::new();
 
     if collection.schema_version != MEASUREMENT_SCHEMA_VERSION {
         findings.push(format!(
@@ -274,6 +287,10 @@ pub fn measurement_collection(
                 observation.definition_version, plan.definition_version
             ));
         }
+        if let Some((code, finding)) = population::finding(observation, plan) {
+            typed.push(code);
+            findings.push(format!("{code}: {finding}"));
+        }
     }
 
     // PLAT-936: tamper evidence, not an ordering proof. A plan that declares a
@@ -316,12 +333,26 @@ pub fn measurement_collection(
     if findings.is_empty() {
         Ok(collection)
     } else {
-        Err(MeasurementError::with_findings(
-            CODE,
-            "measurement collection failed intake validation",
-            findings,
-        ))
+        Err(intake_refusal(findings, &typed))
     }
+}
+
+/// One refusal carrying every accumulated finding, under the code chosen as
+/// [`measurement_collection`]'s `# Errors` states: the shared code of the
+/// typed findings when every finding is typed and they agree, and
+/// [`MeasurementErrorCode::CollectionInvalid`] otherwise.
+fn intake_refusal(findings: Vec<String>, typed: &[MeasurementErrorCode]) -> MeasurementError {
+    let code = match typed.first() {
+        Some(first) if typed.len() == findings.len() && typed.iter().all(|code| code == first) => {
+            *first
+        }
+        _ => CODE,
+    };
+    MeasurementError::with_findings(
+        code,
+        "measurement collection failed intake validation",
+        findings,
+    )
 }
 
 /// The schema version, refusing anything but the current one and the retained

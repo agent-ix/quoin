@@ -129,13 +129,16 @@ const fn measurement_code(code: MeasurementErrorCode) -> Option<CoreErrorCode> {
         // The caller's own document: a candidate that does not satisfy the
         // stored envelope, an id that does not name a file, a definition
         // version no active plan governs, an unsafe raw-evidence reference or
-        // artifact name, or a value that is not a date-time.
+        // artifact name, a value that is not a date-time, or an observation
+        // whose population is below, or does not state, its plan's minimum.
         Code::CollectionInvalid
         | Code::CollectionIdUnsafe
         | Code::DefinitionMismatch
         | Code::RawEvidencePathUnsafe
         | Code::ArtifactNameUnsafe
-        | Code::DateTimeInvalid => CoreErrorCode::BadRequest,
+        | Code::DateTimeInvalid
+        | Code::PopulationBelowMinimum
+        | Code::PopulationUnstated => CoreErrorCode::BadRequest,
 
         // The repository declined: retained bytes that differ, a document that
         // cannot be read back, a plan or profile that is present and
@@ -242,7 +245,7 @@ mod tests {
     fn the_measurement_mapping_covers_every_code() {
         assert_eq!(
             MeasurementErrorCode::ALL.len(),
-            18,
+            20,
             "quoin-measurement gained or lost an error code; map it deliberately"
         );
 
@@ -253,6 +256,8 @@ mod tests {
             Code::RawEvidencePathUnsafe,
             Code::ArtifactNameUnsafe,
             Code::DateTimeInvalid,
+            Code::PopulationBelowMinimum,
+            Code::PopulationUnstated,
         ];
         let refused = [
             Code::CollectionIdCollision,
