@@ -143,7 +143,7 @@ the criterion's own text — never constructed examples. It carries:
   expected to find hard, not clean positives and negatives.
 
 **Disagreements are recorded, not resolved.** A second, independent reader
-re-derived every label in this corpus and disputed 5 of the original 14 (see
+re-derived every label in this corpus and disputed 9 of the 15 (agreed 6; see
 the file's top-level `governing_ruling_on_disagreement` field). Every fixture
 where the two readings differ carries a `weakness_kind_contested` or
 `adverse_case_coverage_contested` array naming both, plus a `confidence_note`
@@ -152,6 +152,19 @@ over the other. An answer key with a written-down disagreement is worth more
 than one reader's confident labels, because the corpus exists to grade a
 classifier, and grading against a label that was contestable but nobody
 contested is the failure mode this convention exists to catch.
+
+**Keep this count checkable, not just stated (PLAT-933).** This same prose
+once said "disputed 5 of 14" while the fixtures held 9 of 15 — a mismatch
+nobody caught until a live evaluation was already mid-run.
+`quoin_jev::corpus_check::check_stated_counts` derives the actual counts from
+the fixture data itself and fails a test if this file's own prose drifts from
+them again; `check_required_fields` does the same for a lens-declared
+required input (the FR statement was empty on 10 of 11 fixtures in round one,
+also only discovered mid-run). **Any lens adding its own fixture corpus
+should add one `#[test]` in its crate's default-gate suite calling both**
+(see `rust/crates/quoin-jev/tests/corpus_adequacy.rs` for the pattern against
+this corpus) — the functions are generic over `serde_json::Value` and do not
+need to know a lens's Rust types.
 
 This corpus is **not** the TC-145 `ParsedFile`/`Sync` fixture recorded in
 PLAT-839's comments. That fixture is a test-vs-requirement divergence case for

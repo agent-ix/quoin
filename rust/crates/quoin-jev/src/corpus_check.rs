@@ -42,7 +42,10 @@ impl std::fmt::Display for AdequacyFinding {
 }
 
 /// Matches the English phrasing that stated the stale count in the real
-/// incident: `"disputed 5 of 14"`.
+/// incident: `"disputed 5 of 14"`. Capture 1 is the claimed *contested*
+/// count (`5`, "disputed N"); capture 2 is the claimed *total* (`14`, "of
+/// M"). The two are checked against different actual counts -- see
+/// [`check_stated_counts`] -- never pooled into one set either could match.
 #[allow(
     clippy::expect_used,
     reason = "a fixed, hand-written literal: a bad pattern here is a compile-time-discoverable \
@@ -51,7 +54,9 @@ impl std::fmt::Display for AdequacyFinding {
 static OF_CLAIM: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"\b(\d+)\s+of\s+(\d+)\b").expect("static pattern compiles"));
 
-/// Matches the companion claim the same sentence made: `"(agreed 9)"`.
+/// Matches the companion claim the same sentence made: `"(agreed 9)"`. Its
+/// one capture is the claimed *agreed* (non-contested) count, checked only
+/// against the actual agreed count.
 #[allow(
     clippy::expect_used,
     reason = "a fixed, hand-written literal: a bad pattern here is a compile-time-discoverable \
@@ -84,15 +89,31 @@ fn entries(value: &Value) -> Vec<(String, &Value)> {
     }
 }
 
+/// Whether a JSON value counts as *present*, for both [`is_contested`] and
+/// [`check_required_fields`]: not `null`, and not an empty string (after
+/// trimming), empty array, or empty object. A `false` or a `0` is a real,
+/// meaningful answer -- only `null` and emptiness read as "nothing was
+/// recorded here".
+fn is_present(value: &Value) -> bool {
+    match value {
+        Value::Null => false,
+        Value::String(text) => !text.trim().is_empty(),
+        Value::Array(items) => !items.is_empty(),
+        Value::Object(fields) => !fields.is_empty(),
+        Value::Bool(_) | Value::Number(_) => true,
+    }
+}
+
 /// Whether a fixture entry carries a recorded second reading -- any key
-/// ending in `_contested` whose value is present and not `null`, at any
-/// depth. Recursive because the real corpus nests these under a `labels`
-/// object (`fixture.labels.weakness_kind_contested`), not at the fixture's
-/// own top level.
+/// ending in `_contested` whose value [`is_present`], at any depth.
+/// Recursive because the real corpus nests these under a `labels` object
+/// (`fixture.labels.weakness_kind_contested`), not at the fixture's own top
+/// level. An empty `_contested` array (present as a key but recording no
+/// second reading) does not count -- only a genuinely present value does.
 fn is_contested(item: &Value) -> bool {
     match item {
         Value::Object(fields) => fields.iter().any(|(key, value)| {
-            (key.ends_with("_contested") && !value.is_null()) || is_contested(value)
+            (key.ends_with("_contested") && is_present(value)) || is_contested(value)
         }),
         Value::Array(items) => items.iter().any(is_contested),
         Value::Null | Value::Bool(_) | Value::Number(_) | Value::String(_) => false,
@@ -122,11 +143,7 @@ pub fn check_required_fields(fixtures: &Value, required: &[&str]) -> Vec<Adequac
     let mut findings = Vec::new();
     for (id, entry) in &items {
         for field in required {
-            let present = entry.get(*field).is_some_and(|value| match value {
-                Value::Null => false,
-                Value::String(text) => !text.trim().is_empty(),
-                Value::Bool(_) | Value::Number(_) | Value::Array(_) | Value::Object(_) => true,
-            });
+            let present = entry.get(*field).is_some_and(is_present);
             if !present {
                 findings.push(AdequacyFinding(format!(
                     "{id}: required field `{field}` is missing, null, or empty"
@@ -137,15 +154,31 @@ pub fn check_required_fields(fixtures: &Value, required: &[&str]) -> Vec<Adequac
     findings
 }
 
+/// The counts a corpus's own data actually holds, derived once and then
+/// checked field-by-field against a prose claim -- never pooled into one set
+/// a claim for any field could match. Pooling them was PLAT-933 review's
+/// finding: a stale "agreed 9" passed because 9 happened to equal the actual
+/// *contested* count, not because it was a correct agreed count.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+struct ActualCounts {
+    /// Every fixture, across all `*_fixtures` arrays.
+    total: usize,
+    /// Fixtures [`is_contested`] finds a recorded second reading on.
+    contested: usize,
+    /// `total - contested`: fixtures with a single, uncontested reading.
+    agreed: usize,
+}
+
 /// Fails one finding per number a corpus's own top-level prose claims that
-/// matches none of the counts the corpus actually holds.
+/// does not match the actual count that claim is about.
 ///
-/// Derives the actual total, contested, and agreed (non-contested) fixture
-/// counts from every top-level array field whose key ends in `_fixtures`
-/// ([`is_contested`] decides which items count as contested), then scans
-/// every top-level *string* field for a claim in the two forms the real
-/// incident used (`"N of M"`, `"agreed N"`) and flags any captured number
-/// that is none of the three actual counts.
+/// Derives [`ActualCounts`] from every top-level array field whose key ends
+/// in `_fixtures` ([`is_contested`] decides which items count as
+/// contested), then scans every top-level *string* field for a claim in the
+/// two forms the real incident used and checks each capture against the one
+/// actual count it claims to be: [`OF_CLAIM`]'s first capture ("disputed
+/// N") against `contested`, its second ("of M") against `total`, and
+/// [`AGREED_CLAIM`]'s capture ("agreed N") against `agreed`.
 ///
 /// Deliberately not a general prose parser: it reads only metadata fields at
 /// the corpus root, never fixture content (`criterion_text`, `rationale`),
@@ -153,7 +186,10 @@ pub fn check_required_fields(fixtures: &Value, required: &[&str]) -> Vec<Adequac
 ///
 /// PLAT-933: this is what would have caught the corpus's own
 /// `governing_ruling_on_disagreement` saying "disputed 5 of 14 (agreed 9)"
-/// while the fixtures held 9 of 15 contested.
+/// while the fixtures held 9 of 15 contested (agreed 6) -- all three of 5,
+/// 14 and 9 are wrong, and checking each against its own actual count
+/// catches all three, including the 9 that happened to equal a *different*
+/// actual count.
 #[must_use]
 pub fn check_stated_counts(corpus: &Value) -> Vec<AdequacyFinding> {
     let Value::Object(root) = corpus else {
@@ -185,8 +221,11 @@ pub fn check_stated_counts(corpus: &Value) -> Vec<AdequacyFinding> {
         .flat_map(|items| items.iter())
         .filter(|item| is_contested(item))
         .count();
-    let agreed = total.saturating_sub(contested);
-    let plausible = [total, contested, agreed];
+    let actual = ActualCounts {
+        total,
+        contested,
+        agreed: total.saturating_sub(contested),
+    };
 
     let mut findings = Vec::new();
     for (field, value) in root {
@@ -194,35 +233,56 @@ pub fn check_stated_counts(corpus: &Value) -> Vec<AdequacyFinding> {
             continue;
         };
         for capture in OF_CLAIM.captures_iter(text) {
-            check_claim(&capture[1], field, text, &plausible, &mut findings);
-            check_claim(&capture[2], field, text, &plausible, &mut findings);
+            check_claim(
+                &capture[1],
+                "contested",
+                actual.contested,
+                field,
+                text,
+                &mut findings,
+            );
+            check_claim(
+                &capture[2],
+                "total",
+                actual.total,
+                field,
+                text,
+                &mut findings,
+            );
         }
         for capture in AGREED_CLAIM.captures_iter(text) {
-            check_claim(&capture[1], field, text, &plausible, &mut findings);
+            check_claim(
+                &capture[1],
+                "agreed",
+                actual.agreed,
+                field,
+                text,
+                &mut findings,
+            );
         }
     }
     findings
 }
 
-/// Flags one captured number when it matches none of the corpus's actual
-/// counts. Silently ignores a capture that does not parse as `usize` --
+/// Flags one captured number against the single actual count it claims to
+/// be. Silently ignores a capture that does not parse as `usize` --
 /// [`OF_CLAIM`] and [`AGREED_CLAIM`] only ever capture digit runs, so this is
 /// unreachable rather than a validation this function needs to report.
 fn check_claim(
     captured: &str,
+    kind: &str,
+    actual: usize,
     field: &str,
     text: &str,
-    plausible: &[usize; 3],
     findings: &mut Vec<AdequacyFinding>,
 ) {
     let Ok(claimed) = captured.parse::<usize>() else {
         return;
     };
-    if !plausible.contains(&claimed) {
+    if claimed != actual {
         findings.push(AdequacyFinding(format!(
-            "{field}: claims {claimed}, which matches none of the corpus's actual counts \
-             (total {}, contested {}, agreed {}) -- text: {text:?}",
-            plausible[0], plausible[1], plausible[2]
+            "{field}: claims {kind} {claimed}, but the corpus actually holds {kind} {actual} \
+             -- text: {text:?}"
         )));
     }
 }
@@ -241,8 +301,11 @@ mod tests {
 
     /// Provenance: PLAT-933. Reproduces the real incident's exact phrasing
     /// ("disputed 5 of 14 (agreed 9)") over data shaped like the real
-    /// corpus (9 of 15 actually contested) and asserts both stale numbers
-    /// are flagged.
+    /// corpus (9 of 15 actually contested, agreed 6) and asserts all three
+    /// stale numbers are flagged -- including "agreed 9", which review
+    /// found the first version of this check silently passed because 9
+    /// happens to equal the corpus's actual *contested* count, not because
+    /// 9 is a correct agreed count (it is not: actual agreed is 6).
     #[test]
     fn a_stale_prose_count_is_flagged_against_the_real_incidents_own_numbers() {
         let mut weakness = Vec::new();
@@ -271,17 +334,23 @@ mod tests {
 
         let findings = check_stated_counts(&corpus);
         let messages: Vec<String> = findings.iter().map(ToString::to_string).collect();
+        assert_eq!(
+            messages.len(),
+            3,
+            "expected all three stale numbers (5, 14, 9) flagged, got: {messages:?}"
+        );
         assert!(
-            messages.iter().any(|m| m.contains("claims 14")),
+            messages.iter().any(|m| m.contains("claims contested 5")),
+            "expected the stale contested count (5) to be flagged, got: {messages:?}"
+        );
+        assert!(
+            messages.iter().any(|m| m.contains("claims total 14")),
             "expected the stale total (14) to be flagged, got: {messages:?}"
         );
         assert!(
-            messages.iter().any(|m| m.contains("claims 5")),
-            "expected the stale disputed count (5) to be flagged, got: {messages:?}"
-        );
-        assert!(
-            !messages.iter().any(|m| m.contains("claims 9")),
-            "9 is the corpus's actual contested count and must not be flagged, got: {messages:?}"
+            messages.iter().any(|m| m.contains("claims agreed 9")),
+            "expected the stale agreed count (9) to be flagged even though 9 equals the \
+             actual *contested* count, got: {messages:?}"
         );
     }
 
@@ -300,6 +369,26 @@ mod tests {
         assert_eq!(check_stated_counts(&corpus), Vec::new());
     }
 
+    /// Provenance: PLAT-933 review. The exact regression the pooled-set
+    /// design missed: total 3, contested 2, agreed 1, but the prose claims
+    /// "agreed 2" -- 2 is a real count in this corpus (it's `contested`),
+    /// so a pooled "matches any actual count" check passed it. Checked
+    /// against `agreed` specifically, it must fail.
+    #[test]
+    fn an_agreed_claim_matching_a_different_fields_actual_count_is_still_flagged() {
+        let corpus = json!({
+            "governing_ruling_on_disagreement": "disputed 2 of 3 (agreed 2)",
+            "weakness_kind_fixtures": [
+                { "fixture_id": "A", "weakness_kind_contested": ["x", "y"] },
+                { "fixture_id": "B", "weakness_kind_contested": ["x", "y"] },
+                { "fixture_id": "C" },
+            ],
+        });
+        let findings = check_stated_counts(&corpus);
+        assert_eq!(findings.len(), 1, "got: {findings:?}");
+        assert!(findings[0].0.contains("claims agreed 2"));
+    }
+
     /// Provenance: PLAT-933. A corpus with no recognizable fixture array is
     /// itself a finding rather than a silent no-op -- a typo in a corpus's
     /// own key should not pass this check by accident.
@@ -307,6 +396,23 @@ mod tests {
     fn a_corpus_with_no_fixture_array_is_flagged_rather_than_skipped() {
         let corpus = json!({ "$comment": "nothing here" });
         assert_eq!(check_stated_counts(&corpus).len(), 1);
+    }
+
+    /// Provenance: PLAT-933 review. An empty `_contested` array is a key
+    /// that exists but records no second reading -- it must not count as
+    /// contested, or a fixture that merely carries the key (perhaps written
+    /// defensively, or left over from a prior edit) would inflate the
+    /// actual contested count against real, non-empty ones.
+    #[test]
+    fn an_empty_contested_array_does_not_count_as_contested() {
+        let corpus = json!({
+            "governing_ruling_on_disagreement": "disputed 0 of 2 (agreed 2)",
+            "weakness_kind_fixtures": [
+                { "fixture_id": "A", "weakness_kind_contested": [] },
+                { "fixture_id": "B" },
+            ],
+        });
+        assert_eq!(check_stated_counts(&corpus), Vec::new());
     }
 
     /// Provenance: PLAT-933. Reproduces the real incident: a required field
@@ -336,6 +442,26 @@ mod tests {
         assert!(ids.contains(&"CS-FIX-003"));
         assert!(ids.contains(&"CS-FIX-004"));
         assert!(!ids.contains(&"CS-FIX-001"));
+    }
+
+    /// Provenance: PLAT-933 review. An empty array or object is as absent
+    /// as an empty string -- `acceptance_criteria: []` is not a populated
+    /// required field any more than `statement: ""` is.
+    #[test]
+    fn empty_array_and_object_required_fields_are_flagged_too() {
+        let fixtures = json!({
+            "A": { "acceptance_criteria": [] },
+            "B": { "acceptance_criteria": {} },
+            "C": { "acceptance_criteria": ["FR-001-AC-1"] },
+        });
+        let findings = check_required_fields(&fixtures, &["acceptance_criteria"]);
+        let ids: Vec<&str> = findings
+            .iter()
+            .map(|f| f.0.split(':').next().unwrap())
+            .collect();
+        assert_eq!(ids.len(), 2, "got: {findings:?}");
+        assert!(ids.contains(&"A"));
+        assert!(ids.contains(&"B"));
     }
 
     /// Provenance: PLAT-933. The array shape (`fixture_id` per entry) is
