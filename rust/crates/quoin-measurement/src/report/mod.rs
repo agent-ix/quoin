@@ -12,6 +12,7 @@
 //! | `report.ts:202-204` | [`render_json`] |
 //! | `report.ts:206-221` | [`series`] |
 //! | `report.ts:223-330` | [`comparison`] |
+//! | — (PLAT-958, no retained counterpart) | [`verdict`] |
 //!
 //! # Why the renderers return a `Result`
 //!
@@ -35,6 +36,8 @@ pub mod comparison;
 pub mod render;
 pub mod render_json;
 pub mod series;
+pub mod verdict;
+mod verdict_wire;
 pub mod wire;
 
 pub use build::{
@@ -48,3 +51,6 @@ pub use comparison::{
 pub use render::render_measurement_report;
 pub use render_json::render_measurement_report_json;
 pub use series::{SeriesPoint, render_series_json, series_for};
+pub use verdict::{
+    BestPrior, InconclusiveReason, RatchetOutcome, StageVerdict, TargetOutcome, stage_verdict,
+};

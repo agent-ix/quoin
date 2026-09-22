@@ -1,11 +1,15 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
-//! A plan's `ground_truth_kind` and `statistical_design` members (PLAT-960).
+//! A plan's `ground_truth_kind` and `statistical_design` members (PLAT-960),
+//! and its `objective` block (PLAT-958).
 //!
 //! Split from [`super`] so the plan walk stays under this crate's module-size
 //! ceiling. See [`super`]'s module header for what a malformed member does.
 
 use std::num::NonZeroU32;
+
+use engineering_assurance::measurement::Objective;
+use serde::Deserialize;
 
 use crate::error::MeasurementError;
 use crate::types::plan::{GroundTruthKind, StatisticalDesign};
@@ -89,4 +93,31 @@ pub(super) fn statistical_design_from(
         minimum_population: count("minimum_population")?,
         repetitions: count("repetitions")?,
     }))
+}
+
+/// Read the optional `objective` block, or `None` when the document states
+/// none.
+///
+/// The block is engineering-assurance's (FR-020): its shape and its rules —
+/// a closed `{direction, bound?}` object, a finite `bound`, and a `bound`
+/// required by `direction: target` — are enforced by deserializing into
+/// [`Objective`] itself, so this crate states none of them a second time.
+///
+/// # Errors
+///
+/// [`crate::error::MeasurementErrorCode::PlanInvalid`] when the block is
+/// present and [`Objective`] refuses it, carrying EA's own reason.
+pub(super) fn objective_from(
+    path: &str,
+    value: &serde_json::Value,
+) -> Result<Option<Objective>, MeasurementError> {
+    let Some(stated) = value.get("objective") else {
+        return Ok(None);
+    };
+    Objective::deserialize(stated).map(Some).map_err(|error| {
+        MeasurementError::new(
+            CODE,
+            format!("{path}: objective is invalid: {error}; found {stated}"),
+        )
+    })
 }

@@ -556,7 +556,7 @@ dependencies = [
 [[package]]
 name = "engineering-assurance"
 version = "0.3.1"
-source = "git+https://github.com/agent-ix/engineering-assurance?rev=8971a334e0d09d02ee89e1f6000857f49529765c#8971a334e0d09d02ee89e1f6000857f49529765c"
+source = "git+https://github.com/agent-ix/engineering-assurance?rev=dff929ba59f7acf88cdcdcfa316890329df24f6a#dff929ba59f7acf88cdcdcfa316890329df24f6a"
 dependencies = [
  "serde",
  "syn 3.0.5",
@@ -3155,6 +3155,7 @@ dependencies = [
 name = "quoin-measurement"
 version = "0.9.0"
 dependencies = [
+ "engineering-assurance",
  "quoin-evidence",
  "quoin-jsonschema",
  "quoin-store",

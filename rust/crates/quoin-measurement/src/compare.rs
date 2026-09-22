@@ -154,7 +154,7 @@ fn compare_one(
 ///
 /// `compare.ts:78-88`: a declared `complete` decides on its own; otherwise a
 /// ratio that matched none of a non-empty examined population is incomplete.
-fn incomplete(observation: &MeasurementObservation) -> bool {
+pub(crate) fn incomplete(observation: &MeasurementObservation) -> bool {
     let population = observation
         .population
         .as_ref()

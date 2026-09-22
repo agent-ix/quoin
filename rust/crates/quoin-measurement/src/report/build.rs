@@ -28,6 +28,7 @@ use crate::operational::read::read_operational_records;
 use crate::operational::record::OperationalEvidenceRecord;
 use crate::operational::report::{OperationalReportEntry, build_operational_report};
 use crate::plans::{PlanLoadOptions, load_measurement_plans};
+use crate::report::verdict::{StageVerdict, stage_verdict};
 use crate::source::MeasurementSource;
 use crate::store::paths::measurement_path;
 use crate::store::read::read_measurement_collections;
@@ -88,6 +89,10 @@ pub struct CurrentRow {
     pub observation: Option<MeasurementObservation>,
     /// The collection it was computed in, when there is one.
     pub collection: Option<CollectionSummary>,
+    /// What the plan's stage and `objective` say about this row, when the
+    /// plan states an objective at the `ratchet` or `target` stage
+    /// (PLAT-958).
+    pub stage_verdict: Option<StageVerdict>,
 }
 
 /// Everything the per-repository views render.
@@ -162,10 +167,17 @@ pub fn build_measurement_report_from(
     for plan in &plans {
         // `[...collections].reverse().find(…)` — the newest collection that
         // computed this metric at all, not the newest collection.
-        let collection = collections
+        let newest = collections
             .iter()
+            .enumerate()
             .rev()
-            .find(|candidate| observes(candidate, plan.metric.as_str()));
+            .find(|(_, candidate)| observes(candidate, plan.metric.as_str()));
+        let collection = newest.map(|(_, found)| found);
+        // A ratchet holds against collections older than the one the row
+        // quotes, never against that collection itself.
+        let earlier = newest
+            .and_then(|(index, _)| collections.get(..index))
+            .unwrap_or_default();
         let summary = collection
             .map(|found| summary_of(repo, found))
             .transpose()?;
@@ -189,6 +201,7 @@ pub fn build_measurement_report_from(
             plan_ground_truth_kind: plan.ground_truth_kind,
             observation: observation.cloned(),
             collection: summary.clone(),
+            stage_verdict: stage_verdict(plan, observation, earlier),
         };
         if observations.is_empty() {
             current.push(row(None));

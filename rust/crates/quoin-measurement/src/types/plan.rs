@@ -8,6 +8,7 @@
 use std::fmt;
 use std::num::NonZeroU32;
 
+use engineering_assurance::measurement::Objective;
 use quoin_store::{RawFileSha256Digest, digest_bytes_sha256};
 
 use crate::types::ids::NonEmptyText;
@@ -157,7 +158,9 @@ pub struct StatisticalDesign {
 }
 
 /// One measurement plan, as read from an assurance document's frontmatter.
-#[derive(Clone, Debug, Eq, PartialEq)]
+///
+/// `PartialEq` only, not `Eq`: [`Objective`]'s bound is an `f64`.
+#[derive(Clone, Debug, PartialEq)]
 pub struct MeasurementPlan {
     /// The plan's identity.
     pub id: NonEmptyText,
@@ -186,6 +189,10 @@ pub struct MeasurementPlan {
     /// The `statistical_design` members this crate reads, when the document
     /// declares the block (PLAT-960).
     pub statistical_design: Option<StatisticalDesign>,
+    /// Which way the metric should move, and the informational goal, when the
+    /// document states an `objective` (PLAT-958). The type is
+    /// engineering-assurance's: EA owns the block's schema and validation.
+    pub objective: Option<Objective>,
 }
 
 impl MeasurementPlan {

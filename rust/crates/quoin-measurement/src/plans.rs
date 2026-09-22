@@ -29,6 +29,14 @@
 //! [`MeasurementErrorCode::PlanInvalid`], the same as `preregistration`.
 //! Enforcing `minimum_population` and `repetitions` against a collection is
 //! [`crate::validate::measurement_collection`]'s job, not this module's.
+//!
+//! # `objective` (PLAT-958)
+//!
+//! Optional, and parsed into engineering-assurance's own
+//! [`engineering_assurance::measurement::Objective`]. A block EA refuses — an
+//! unknown `direction`, an unknown member, a non-numeric or non-finite
+//! `bound`, or a `target` with no `bound` — refuses the plan load with
+//! [`MeasurementErrorCode::PlanInvalid`].
 
 mod design;
 
@@ -130,6 +138,7 @@ fn plan_from(
     let preregistration = preregistration_from(path, value, text)?;
     let ground_truth_kind = design::ground_truth_kind_from(path, value)?;
     let statistical_design = design::statistical_design_from(path, value)?;
+    let objective = design::objective_from(path, value)?;
     Ok(MeasurementPlan {
         id,
         title,
@@ -143,6 +152,7 @@ fn plan_from(
         preregistration,
         ground_truth_kind,
         statistical_design,
+        objective,
     })
 }
 

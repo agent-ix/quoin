@@ -24,6 +24,7 @@ use crate::intervention::report::render_intervention_report;
 use crate::json_bridge::to_serde;
 use crate::operational::report::render_operational_report;
 use crate::report::build::{CurrentRow, MeasurementReport};
+use crate::report::verdict::{RatchetOutcome, StageVerdict, TargetOutcome};
 use crate::types::observation::{Dimensions, MeasurementObservation, MeasurementState};
 
 /// The metrics that carry a factual attention sentence of their own.
@@ -224,6 +225,13 @@ pub fn render_measurement_report(report: &MeasurementReport) -> Result<String, M
             ));
         }
         lines.push(String::new());
+        let verdicts = stage_verdict_table(&report.current)?;
+        if !verdicts.is_empty() {
+            lines.push("## Stage verdicts".to_owned());
+            lines.push(String::new());
+            lines.extend(verdicts);
+            lines.push(String::new());
+        }
     }
 
     lines.push("## Current evidence".to_owned());
@@ -305,6 +313,24 @@ fn attention(report: &MeasurementReport) -> Result<Vec<String>, MeasurementError
         if let Some(item) = attention_for(row, observation, &name) {
             out.push(item);
         }
+        if let Some(StageVerdict::Ratchet {
+            outcome:
+                RatchetOutcome::Regressed {
+                    current,
+                    best_prior,
+                },
+            ..
+        }) = &row.stage_verdict
+        {
+            out.push(format!(
+                "{name}: regressed to {} from the best prior {} ({}); plan {} does not hold its \
+                 ratchet.",
+                js_f64_string(*current),
+                js_f64_string(best_prior.value),
+                best_prior.collection_id,
+                row.plan_id
+            ));
+        }
     }
     Ok(out)
 }
@@ -363,5 +389,93 @@ fn attention_for(
                 js_f64_string(examined)
             ))
         }
+    }
+}
+
+/// The stage-verdict table, one row per report row whose plan carries a
+/// verdict (PLAT-958), or nothing at all when none does — so a report with no
+/// `ratchet`/`target` objective renders the bytes it did before.
+///
+/// `pub(crate)` because [`crate::portfolio::render`] prints the same table
+/// under each repository.
+///
+/// # Errors
+///
+/// As [`dimension_suffix`].
+pub(crate) fn stage_verdict_table(rows: &[CurrentRow]) -> Result<Vec<String>, MeasurementError> {
+    let mut lines = Vec::new();
+    for row in rows {
+        let Some(verdict) = &row.stage_verdict else {
+            continue;
+        };
+        if lines.is_empty() {
+            lines.push("| Metric | Plan | Stage | Objective | Verdict | Detail |".to_owned());
+            lines.push("| --- | --- | --- | --- | --- | --- |".to_owned());
+        }
+        lines.push(format!(
+            "| {} | {} | {} | {} | {} | {} |",
+            row_label(row)?,
+            plan_cell(row),
+            verdict.stage().as_str(),
+            objective_cell(verdict),
+            verdict.as_str(),
+            verdict_detail(verdict)
+        ));
+    }
+    Ok(lines)
+}
+
+/// `higher`, or `higher; bound 0.9` when the objective states a bound.
+fn objective_cell(verdict: &StageVerdict) -> String {
+    let objective = verdict.objective();
+    match objective.bound() {
+        Some(bound) => format!("{}; bound {}", objective.direction(), js_f64_string(bound)),
+        None => objective.direction().to_string(),
+    }
+}
+
+/// The numbers behind a verdict, or the reason there is none.
+fn verdict_detail(verdict: &StageVerdict) -> String {
+    match verdict {
+        StageVerdict::Ratchet {
+            outcome:
+                RatchetOutcome::Held {
+                    current,
+                    best_prior,
+                }
+                | RatchetOutcome::Regressed {
+                    current,
+                    best_prior,
+                },
+            ..
+        } => format!(
+            "current {}; best prior {} ({})",
+            js_f64_string(*current),
+            js_f64_string(best_prior.value),
+            best_prior.collection_id
+        ),
+        StageVerdict::Target {
+            outcome:
+                TargetOutcome::Measured {
+                    current,
+                    bound,
+                    distance,
+                    ..
+                },
+            ..
+        } => format!(
+            "current {}; bound {}; distance {}",
+            js_f64_string(*current),
+            js_f64_string(*bound),
+            js_f64_string(*distance)
+        ),
+        StageVerdict::Ratchet {
+            outcome: RatchetOutcome::Inconclusive(reason),
+            ..
+        }
+        | StageVerdict::Target {
+            outcome: TargetOutcome::Inconclusive(reason),
+            ..
+        } => format!("{}: {}", reason.as_str(), reason.sentence()),
     }
 }
