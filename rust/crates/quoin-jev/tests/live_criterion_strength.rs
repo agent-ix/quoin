@@ -243,6 +243,50 @@
 //! predictor, defect recall > 0, `sound` cleared >= 3 of 5. `JEV_RUNS`
 //! (default 1) repeats the pass; GO would need the bars cleared on the gate
 //! pass and in at least 3 of 5 repeats.
+//!
+//! # `v4` result, 2026-09-21: NO-GO
+//!
+//! MEASURED against `jev-latest`, N=5 (five full passes; every pass returned
+//! the identical score to one decimal place -- as with `v3`, this corpus is
+//! not where service variance lives).
+//!
+//! | variant | agreement | margin | defect recall | `sound` cleared |
+//! | --- | --- | --- | --- | --- |
+//! | `v0` | 46.7% | -33.3 pp | 2/2 | 0/5 |
+//! | `v1` | 33.3% | -46.7 pp | 2/2 | 0/5 |
+//! | `v2` | 60.0-66.7% | -13.3 pp | 1/2 | 4/5 |
+//! | `v3-derived` | 33.3% | -46.7 pp | 2/2 | 0/5 |
+//! | **`v4`** | **60.0%** | **-20.0 pp** | **5/5** | **0/5** |
+//!
+//! Two of three bars fail, identically on the gate pass and all 5 repeats:
+//! `sound` cleared 0 of 5 every time, tying `v0`/`v1`/`v3` at the floor
+//! `v2` alone escaped, despite `v2`'s only change being question wording, not
+//! the request primitive. Bar 1 (agreement) improves on every bare-`choice_of`
+//! variant (`v0`, `v1`) but still trails the 80.0% constant by 20 points.
+//!
+//! **Where the described criteria helped and where they did not.** Defect
+//! recall goes to 5/5 (from 2/2 -- a larger denominator this pass, not a rate
+//! comparison) because `restates_requirement` is now over-predicted: 5 of 15
+//! rows, against 1 fixture whose primary reading is that label (20% precision,
+//! 4 false positives). Given a described criterion for it, Jev applies
+//! `restates_requirement` more readily than before, including to three of the
+//! five `sound` fixtures. Description disambiguated the label from the
+//! model's own confusion enough to raise its recall, but not enough to raise
+//! precision -- the same jaggedness the vendor's own notes name, now visible
+//! per-label rather than as a single distractor effect.
+//!
+//! **This settles the instrument-defect hypothesis, in the negative.** `v4`
+//! isolated the one variable `v0`-`v3` left untested -- the bare `choice_of`
+//! primitive -- and reproduced `v0`'s exact `sound`-cleared failure (0/5)
+//! under a request built the way the vendor's own docs say `choice` should be
+//! used. The wrong primitive is not what explains 917: `v2`, still on
+//! `choice_of`, is the only variant across five that ever recovers `sound`,
+//! by changing the question's wording rather than its wire shape. The
+//! remaining lever this ticket has not isolated is `v2`'s wording change
+//! combined with described criteria together; nothing tried here tests that
+//! combination, and the confound this pre-registration deliberately avoided
+//! (context + criteria together) is a different, already-ruled-out
+//! combination.
 
 #![cfg(feature = "live-api")]
 #![allow(
