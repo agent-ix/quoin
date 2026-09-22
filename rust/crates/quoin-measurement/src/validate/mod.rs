@@ -49,6 +49,21 @@ fn refuse(message: impl Into<String>) -> MeasurementError {
     MeasurementError::new(CODE, message.into())
 }
 
+/// [`parse_stored_measurement_collection`]'s result: the parsed envelope, plus
+/// the verification stack's own outcome kept separate from the rest of the
+/// parse.
+///
+/// Keeping the stack's `Result` apart from `collection.verification_stack`
+/// (which is `None` either way when the stack fails) is what lets
+/// [`measurement_collection`] see every other collection-level problem even
+/// when the stack itself is the broken part (PLAT-929) — `?`-ing on the stack
+/// the way [`stored_measurement_collection`] still does would stop the parse
+/// before the observations below it are ever read.
+struct ParsedCollection {
+    collection: MeasurementCollection,
+    stack_error: Option<MeasurementError>,
+}
+
 /// Validate a historical stored envelope without rewriting it to the current
 /// plan.
 ///
@@ -59,6 +74,19 @@ fn refuse(message: impl Into<String>) -> MeasurementError {
 pub fn stored_measurement_collection(
     value: &JsonValue,
 ) -> Result<MeasurementCollection, MeasurementError> {
+    let parsed = parse_stored_measurement_collection(value)?;
+    match parsed.stack_error {
+        Some(error) => Err(error),
+        None => Ok(parsed.collection),
+    }
+}
+
+/// The shared parse behind [`stored_measurement_collection`] and
+/// [`measurement_collection`]. See [`ParsedCollection`] for why the stack's
+/// outcome is not simply folded into the returned `Err`.
+fn parse_stored_measurement_collection(
+    value: &JsonValue,
+) -> Result<ParsedCollection, MeasurementError> {
     let object = read::object(value, CODE, "collection must be an object")?;
 
     let schema_version = schema_version(object)?;
@@ -93,10 +121,17 @@ pub fn stored_measurement_collection(
     if !read::present(object, "rawEvidence") {
         return Err(refuse("collection requires attached `rawEvidence`"));
     }
-    let verification_stack = if schema_version == MEASUREMENT_SCHEMA_VERSION {
-        Some(stack::verification_stack(object.get("verificationStack"))?)
+    // The stack's own failure is kept alongside the parse instead of `?`-ing
+    // immediately, so a caller checking further collection-level rules can
+    // still see the observations read below (PLAT-929, review finding #5(a)
+    // on quoin#580).
+    let (verification_stack, stack_error) = if schema_version == MEASUREMENT_SCHEMA_VERSION {
+        match stack::verification_stack(object.get("verificationStack")) {
+            Ok(stack) => (Some(stack), None),
+            Err(error) => (None, Some(error)),
+        }
     } else {
-        None
+        (None, None)
     };
 
     let mut observations: Vec<MeasurementObservation> = Vec::with_capacity(raw_observations.len());
@@ -119,24 +154,27 @@ pub fn stored_measurement_collection(
         observations.push(observation);
     }
 
-    Ok(MeasurementCollection {
-        schema_version,
-        collection_id,
-        subject,
-        scope: object.get("scope").cloned().unwrap_or(JsonValue::Null),
-        tool_identity,
-        tool_version,
-        config_digest,
-        timestamp,
-        source_revision,
-        corpus_revision: read::string(object, "corpusRevision").map(str::to_owned),
-        environment,
-        verification_stack,
-        observations,
-        raw_evidence: object
-            .get("rawEvidence")
-            .cloned()
-            .unwrap_or(JsonValue::Null),
+    Ok(ParsedCollection {
+        collection: MeasurementCollection {
+            schema_version,
+            collection_id,
+            subject,
+            scope: object.get("scope").cloned().unwrap_or(JsonValue::Null),
+            tool_identity,
+            tool_version,
+            config_digest,
+            timestamp,
+            source_revision,
+            corpus_revision: read::string(object, "corpusRevision").map(str::to_owned),
+            environment,
+            verification_stack,
+            observations,
+            raw_evidence: object
+                .get("rawEvidence")
+                .cloned()
+                .unwrap_or(JsonValue::Null),
+        },
+        stack_error,
     })
 }
 
@@ -152,12 +190,16 @@ pub fn measurement_collection(
     value: &JsonValue,
     plans: &[MeasurementPlan],
 ) -> Result<MeasurementCollection, MeasurementError> {
-    let collection = stored_measurement_collection(value)?;
+    let parsed = parse_stored_measurement_collection(value)?;
+    let collection = parsed.collection;
 
     // Every check below runs regardless of an earlier one's outcome, and every
     // failure is accumulated rather than returned immediately, so a caller
     // sees every problem with the candidate in one refusal instead of fixing
-    // them one round trip at a time (PLAT-929).
+    // them one round trip at a time (PLAT-929). That includes the
+    // verification stack itself: its failure is folded in here rather than
+    // `?`-ed away, so e.g. a bad digest and an unplanned metric are both
+    // named in the same refusal (review finding #5(a) on quoin#580).
     let mut findings = Vec::new();
 
     if collection.schema_version != MEASUREMENT_SCHEMA_VERSION {
@@ -167,23 +209,34 @@ pub fn measurement_collection(
         ));
     }
 
-    match collection.verification_stack.as_ref() {
-        None => findings
-            .push("verificationStack.buildProfile must be release for new collections".to_owned()),
-        Some(stack) => {
-            if stack.build_profile != Some(BuildProfile::Release) {
-                findings.push(
-                    "verificationStack.buildProfile must be release for new collections".to_owned(),
-                );
+    match &parsed.stack_error {
+        Some(error) if error.findings().is_empty() => findings.push(error.subject().to_owned()),
+        Some(error) => findings.extend(error.findings().iter().cloned()),
+        None => match collection.verification_stack.as_ref() {
+            None => findings.push(
+                "verificationStack.buildProfile must be release for new collections".to_owned(),
+            ),
+            Some(stack) => {
+                if stack.build_profile != Some(BuildProfile::Release) {
+                    findings.push(
+                        "verificationStack.buildProfile must be release for new collections"
+                            .to_owned(),
+                    );
+                }
+                if stack.toolchains.is_none() {
+                    findings.push(
+                        "verificationStack.toolchains must be present; mark a language not \
+                         used as absent or null rather than omitting the whole member"
+                            .to_owned(),
+                    );
+                }
+                // `stack::verification_stack` already refuses a `toolchains`
+                // object present with every language absent, so this check
+                // (an omitted `toolchains` member entirely) is no longer
+                // vacuous the way it was before that refusal existed (review
+                // finding #3 on quoin#580).
             }
-            if stack.toolchains.is_none() {
-                findings.push(
-                    "verificationStack.toolchains must be present; mark a language not used as \
-                     absent or null rather than omitting the whole member"
-                        .to_owned(),
-                );
-            }
-        }
+        },
     }
 
     let by_metric: BTreeMap<&str, &MeasurementPlan> = plans

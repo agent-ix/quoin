@@ -32,7 +32,13 @@ pub(crate) fn command() -> Command {
                              pasting one by hand. FIELD is lockDigest, executableDigest, \
                              configDigest, or artifacts.<name>; repeatable. When the input \
                              already names a digest for FIELD, it must match the file's \
-                             computed digest or the record is refused.",
+                             computed digest or the record is refused. A named \
+                             verificationStack.artifacts entry that already resolves to a real \
+                             file under --repo is truth-checked automatically without this \
+                             flag; it is most useful for lockDigest, executableDigest and \
+                             configDigest, which carry no path of their own to check \
+                             automatically, and for an artifact reachable at a path other than \
+                             its own name.",
                         ),
                 ),
         )
@@ -90,6 +96,14 @@ fn record(arguments: &ArgMatches) -> Result<Response, String> {
 /// caller also pasted a digest by hand, refuse before this record is
 /// submitted if the two disagree. Hand-pasted digests were previously
 /// checked for shape alone and never against the bytes they claim to name.
+///
+/// This is a convenience on top of, not a substitute for, the server-side
+/// check: `quoin_measurement::store::write_measurement_collection` truth-checks
+/// every `verificationStack.artifacts` entry whose name already resolves to a
+/// real file under `--repo`, whether or not this flag is ever passed. This
+/// flag exists for the fields that check cannot reach — `lockDigest`,
+/// `executableDigest` and `configDigest` carry no path of their own — and for
+/// an artifact reachable at a path other than the name it is stored under.
 fn apply_digest_from_file(record: &mut Value, spec: &str) -> Result<(), String> {
     let Some((field, path)) = spec.split_once('=') else {
         return Err(format!(
@@ -259,6 +273,7 @@ mod tests {
     /// `--digest-from-file` is repeatable and parses alongside `record`'s
     /// existing flags.
     ///
+    /// Trace: FR-102
     /// Provenance: PLAT-931
     #[test]
     fn tc_931_record_accepts_repeated_digest_from_file_flags() {
@@ -288,6 +303,7 @@ mod tests {
     /// Every field `--digest-from-file` documents resolves; anything else is
     /// named and refused rather than silently ignored.
     ///
+    /// Trace: FR-102
     /// Provenance: PLAT-931
     #[test]
     fn tc_931_digest_field_path_names_the_documented_surfaces() {
@@ -314,14 +330,16 @@ mod tests {
     /// An absent digest is filled in from the file, so a caller need not paste
     /// one by hand at all.
     ///
+    /// Trace: FR-102
     /// Provenance: PLAT-931
     #[test]
     fn tc_931_apply_digest_from_file_fills_an_absent_digest() {
+        // The literal sha256 of `b"artifact bytes"`, not the re-derivation
+        // `digest_file_sha256` would compute — asserting the function under
+        // test's own output back at itself would prove nothing.
+        let expected = "sha256:4659fc0570122b0e0aa14f4ff7c261b1fe51795a01ba79963f462ebf40d7520d";
         let file = tempfile::NamedTempFile::new().expect("a temporary file");
         std::fs::write(file.path(), b"artifact bytes").expect("the file is writable");
-        let expected = quoin_store::digest_file_sha256(file.path())
-            .expect("the file digests")
-            .to_stored();
 
         let mut record = serde_json::json!({ "collectionId": "run-001" });
         apply_digest_from_file(
@@ -333,21 +351,22 @@ mod tests {
             record
                 .pointer("/verificationStack/lockDigest")
                 .and_then(serde_json::Value::as_str),
-            Some(expected.as_str())
+            Some(expected)
         );
     }
 
     /// A hand-pasted digest that agrees with the file's real bytes is left
     /// alone.
     ///
+    /// Trace: FR-102
     /// Provenance: PLAT-931
     #[test]
     fn tc_931_apply_digest_from_file_accepts_a_matching_hand_pasted_digest() {
+        // The literal sha256 of `b"artifact bytes"` — see the sibling test
+        // above for why this is not `digest_file_sha256`'s own output.
+        let expected = "sha256:4659fc0570122b0e0aa14f4ff7c261b1fe51795a01ba79963f462ebf40d7520d";
         let file = tempfile::NamedTempFile::new().expect("a temporary file");
         std::fs::write(file.path(), b"artifact bytes").expect("the file is writable");
-        let expected = quoin_store::digest_file_sha256(file.path())
-            .expect("the file digests")
-            .to_stored();
 
         let mut record = serde_json::json!({ "configDigest": expected });
         apply_digest_from_file(
@@ -359,7 +378,7 @@ mod tests {
             record
                 .pointer("/configDigest")
                 .and_then(serde_json::Value::as_str),
-            Some(expected.as_str())
+            Some(expected)
         );
     }
 
@@ -367,6 +386,7 @@ mod tests {
     /// refused before the record is ever submitted — closing the gap where a
     /// wrong-but-well-formed digest previously passed silently.
     ///
+    /// Trace: FR-102
     /// Provenance: PLAT-931
     #[test]
     fn tc_931_apply_digest_from_file_refuses_a_mismatched_hand_pasted_digest() {

@@ -460,7 +460,7 @@ fn tc_479_002_every_member_the_criterion_names_is_required() {
 /// Trace: FR-044-AC-1
 /// Provenance: quoin#479, PLAT-930
 #[test]
-fn tc_479_003_a_schema_v2_attestation_with_no_toolchains_is_refused() {
+fn tc_479_003_a_new_collection_requires_toolchains_and_a_release_build_but_not_every_language() {
     let temporary = planned_repository();
     let plans = authored_plans(temporary.path());
 
@@ -687,6 +687,81 @@ fn tc_479_020_a_bad_build_profile_and_an_unplanned_metric_are_both_named_in_one_
     );
 }
 
+/// An empty `toolchains` object satisfies "the member is present" but names
+/// no language, which would let an attestation claim zero pinned toolchains —
+/// exactly the gap PLAT-930's optional fields opened. It is refused, the same
+/// as an omitted `toolchains` member.
+///
+/// Trace: FR-044-AC-1
+/// Provenance: PLAT-930
+#[test]
+fn tc_479_021_an_empty_toolchains_object_names_no_language_and_is_refused() {
+    let temporary = planned_repository();
+    let plans = authored_plans(temporary.path());
+
+    let mut candidate = new_collection_json();
+    candidate["verificationStack"]["toolchains"] = json!({});
+    let refusal = validate::measurement_collection(
+        &from_serde(&candidate).expect("the candidate crosses the bridge"),
+        &plans,
+    )
+    .expect_err("a toolchains object naming no language is refused, not treated as present");
+    assert_eq!(refusal.code(), MeasurementErrorCode::CollectionInvalid);
+    assert!(
+        refusal
+            .to_string()
+            .contains("verificationStack.toolchains must name at least one language"),
+        "the refusal must say no language was named; it said {refusal}"
+    );
+}
+
+/// A `verificationStack` defect that fails the stack's own parse (as opposed
+/// to one merely holding a wrong-but-well-formed value, `tc_479_020`'s case)
+/// must not swallow every collection-level check below it.
+///
+/// PLAT-929: an evaluator who fixed a malformed `lockDigest` (which refuses
+/// inside `stack::verification_stack` itself, not merely inside
+/// `measurement_collection`'s own checks) and resubmitted, only to be told an
+/// unplanned metric was ALSO wrong, is the exact two-round-trip failure this
+/// closes — the outer collection-vs-stack boundary accumulates too, not just
+/// each side of it on its own (review finding #5(a) on quoin#580).
+///
+/// Trace: FR-044-AC-1
+/// Provenance: PLAT-929
+#[test]
+fn tc_479_022_a_stack_parse_defect_and_an_unplanned_metric_are_both_named_in_one_refusal() {
+    let temporary = planned_repository();
+    let plans = authored_plans(temporary.path());
+
+    let mut candidate = new_collection_json();
+    candidate["verificationStack"]["lockDigest"] = json!("not-a-digest");
+    candidate["observations"][0]["metric"] = json!("quality.unplanned");
+    let refusal = validate::measurement_collection(
+        &from_serde(&candidate).expect("the candidate crosses the bridge"),
+        &plans,
+    )
+    .expect_err("a malformed lockDigest and an unplanned metric are each refused");
+    assert_eq!(refusal.code(), MeasurementErrorCode::CollectionInvalid);
+    assert!(
+        refusal
+            .findings()
+            .iter()
+            .any(|finding| finding.contains("lockDigest")),
+        "the one refusal must name the stack's own defect, got {:?}",
+        refusal.findings()
+    );
+    assert!(
+        refusal
+            .findings()
+            .iter()
+            .any(|finding| finding.contains("quality.unplanned")
+                && finding.contains("has no MeasurementPlan")),
+        "the SAME refusal must also name the unplanned metric, not just the stack defect; \
+         got {:?}",
+        refusal.findings()
+    );
+}
+
 /// Historical evidence stays readable after the attestation grew members it
 /// does not carry, while intake still requires them.
 ///
@@ -815,6 +890,67 @@ fn tc_479_005_a_collection_lands_atomically_and_an_identical_rewrite_is_idempote
         vec!["run-001.json".to_owned()],
         "a refused invocation must leave no partial collection; the store holds {names:?}"
     );
+}
+
+/// A named `verificationStack.artifacts` entry that resolves to a real local
+/// file under `repo` is truth-checked automatically, not merely trusted
+/// because it has the right shape.
+///
+/// PLAT-931: server-side verification is not opt-in — no `--digest-from-file`
+/// flag is passed here at all. `write_measurement_collection` is the intake
+/// every caller of `measurement.record` goes through, so this is the real
+/// path, not the CLI convenience layered on top of it.
+///
+/// Trace: FR-044-AC-1
+/// Provenance: PLAT-931
+#[test]
+fn tc_479_023_a_locally_reachable_artifact_digest_is_verified_automatically() {
+    let temporary = planned_repository();
+    let root = temporary.path();
+    let matching = "sha256:4659fc0570122b0e0aa14f4ff7c261b1fe51795a01ba79963f462ebf40d7520d";
+    std::fs::create_dir_all(root.join("dist"))
+        .unwrap_or_else(|error| panic!("cannot create the local artifact fixture dir: {error}"));
+    std::fs::write(root.join("dist/quoin"), b"artifact bytes")
+        .unwrap_or_else(|error| panic!("cannot write the local artifact fixture: {error}"));
+
+    // A submitted digest that matches the local bytes is admitted.
+    let mut agreeing = new_collection_json();
+    agreeing["verificationStack"]["artifacts"] = json!({ "dist/quoin": matching });
+    write_measurement_collection(
+        root,
+        &from_serde(&agreeing).expect("the agreeing case crosses the bridge"),
+    )
+    .expect("a submitted digest matching the local file is admitted");
+
+    // A submitted digest that disagrees with the local bytes is refused,
+    // without ever being told to check by a flag.
+    let mut disagreeing = new_collection_json();
+    disagreeing["collectionId"] = json!("run-002");
+    disagreeing["verificationStack"]["artifacts"] =
+        json!({ "dist/quoin": format!("sha256:{}", "9".repeat(64)) });
+    let refusal = write_measurement_collection(
+        root,
+        &from_serde(&disagreeing).expect("the disagreeing case crosses the bridge"),
+    )
+    .expect_err("a submitted digest that disagrees with the local file is refused");
+    assert_eq!(refusal.code(), MeasurementErrorCode::CollectionInvalid);
+    assert!(
+        refusal.to_string().contains("artifacts.dist/quoin"),
+        "the refusal must name the artifact; it said {refusal}"
+    );
+
+    // A name the record does not carry a matching local file for is not
+    // verifiable here, so the submitted digest is still only checked for
+    // shape, exactly as before this check existed.
+    let mut unreachable = new_collection_json();
+    unreachable["collectionId"] = json!("run-003");
+    unreachable["verificationStack"]["artifacts"] =
+        json!({ "no-such-file": format!("sha256:{}", "9".repeat(64)) });
+    write_measurement_collection(
+        root,
+        &from_serde(&unreachable).expect("the unreachable case crosses the bridge"),
+    )
+    .expect("an artifact name with no local file is trusted on shape alone, as before");
 }
 
 /// A moved definition and a moved producer configuration each block the delta,
