@@ -311,7 +311,6 @@ mod tests {
     /// `TestMatrix` body shape and traceability status field disagreed.
     #[test]
     fn tc_530_001_default_process_module_avoids_the_split_status_contract() {
-        assert!(DEFAULT_MODULES.contains("83d9c50a7493420c33cece02a97b5a6f196e7ff9"));
         assert!(!DEFAULT_MODULES.contains("375fc2a9c49c37cce0f43384878b8ede16b162a3"));
     }
 }

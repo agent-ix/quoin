@@ -26,82 +26,82 @@ entries:
       ref: 4e6522fc32f82cac82a3489a4192e17a94f539c3
 
   - name: spec-artifacts-iso
-    version: "0.18.0"
+    version: "0.19.0"
     defaultEnabled: true
     source:
       type: git-subdir
       url: agent-ix/spec-artifacts-iso
       path: spec_artifacts_iso
-      ref: v0.18.0
+      ref: v0.19.0
 
   - name: spec-artifacts-app
-    version: "0.5.0"
+    version: "0.6.0"
     defaultEnabled: true
     source:
       type: git-subdir
       url: agent-ix/spec-artifacts-app
       path: spec_artifacts_app
-      ref: v0.5.0
+      ref: v0.6.0
 
   - name: spec-artifacts-process
-    version: "0.24.0+83d9c50"
+    version: "0.26.0"
     defaultEnabled: true
     source:
       type: git-subdir
       url: agent-ix/spec-artifacts-process
       path: spec_artifacts_process
-      ref: 83d9c50a7493420c33cece02a97b5a6f196e7ff9
+      ref: v0.26.0
 
   - name: spec-objects-business
-    version: "0.6.0"
+    version: "0.7.0"
     defaultEnabled: true
     source:
       type: git-subdir
       url: agent-ix/spec-objects-business
       path: spec_objects_business
-      ref: v0.6.0
+      ref: v0.7.0
 
   - name: spec-objects-architecture
-    version: "0.6.0"
+    version: "0.8.0"
     defaultEnabled: true
     source:
       type: git-subdir
       url: agent-ix/spec-objects-architecture
       path: spec_objects_architecture
-      ref: v0.6.0
+      ref: v0.8.0
 
   - name: spec-objects-enterprise
-    version: "0.5.0"
+    version: "0.6.0"
     defaultEnabled: true
     source:
       type: git-subdir
       url: agent-ix/spec-objects-enterprise
       path: spec_objects_enterprise
-      ref: v0.5.0
+      ref: v0.6.0
 
   - name: spec-objects-operational
-    version: "0.6.0"
+    version: "0.7.0"
     defaultEnabled: true
     source:
       type: git-subdir
       url: agent-ix/spec-objects-operational
       path: spec_objects_operational
-      ref: v0.6.0
+      ref: v0.7.0
 
   - name: spec-objects-security
-    version: "0.7.0"
+    version: "0.8.0"
     defaultEnabled: true
     source:
       type: git-subdir
       url: agent-ix/spec-objects-security
       path: spec_objects_security
-      ref: v0.7.0
+      ref: v0.8.0
 
   - name: spec-objects-safety
-    version: "0.4.0"
+    version: "0.5.0"
     defaultEnabled: true
     source:
       type: git-subdir
       url: agent-ix/spec-objects-safety
       path: spec_objects_safety
-      ref: v0.4.0
+      ref: v0.5.0
