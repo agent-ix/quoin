@@ -196,7 +196,7 @@ fn new_collection_json() -> Value {
         "scope": { "cases": 1 },
         "toolIdentity": "fixture producer",
         "toolVersion": "fixture 1 (engine a1)",
-        "configDigest": "sha256:config-a",
+        "configDigest": format!("sha256:{}", "a".repeat(64)),
         "timestamp": "2026-08-26T00:00:00.000Z",
         "sourceRevision": "aaaaaaaaaaaaaaaa",
         "corpusRevision": "cccccccccccccccc",
@@ -953,6 +953,103 @@ fn tc_479_023_a_locally_reachable_artifact_digest_is_verified_automatically() {
     .expect("an artifact name with no local file is trusted on shape alone, as before");
 }
 
+/// `configDigest` is not a member of `verificationStack` itself, but it is
+/// checked for sha256 shape at the same schemaVersion-2 gate as `lockDigest`
+/// and `executableDigest`, and it joins the same accumulation rather than
+/// hiding behind whichever defect the code happens to check first.
+///
+/// PLAT-939: `configDigest` was accepted on any non-empty string, unlike its
+/// two `verificationStack` siblings, which already required a full sha256
+/// digest (PLAT-929/930/931). Closing that gap, without starting to enforce
+/// it retroactively on schemaVersion 1's historical evidence, is this test.
+///
+/// Trace: FR-044-AC-1
+/// Provenance: PLAT-939
+#[test]
+fn tc_479_024_config_digest_must_be_a_full_sha256_digest() {
+    let temporary = planned_repository();
+    let plans = authored_plans(temporary.path());
+
+    let mut malformed = new_collection_json();
+    malformed["configDigest"] = json!("not-a-digest");
+    let refusal = validate::measurement_collection(
+        &from_serde(&malformed).expect("the malformed case crosses the bridge"),
+        &plans,
+    )
+    .expect_err("a configDigest that is not a full sha256 digest is refused");
+    assert_eq!(refusal.code(), MeasurementErrorCode::CollectionInvalid);
+    assert!(
+        refusal
+            .findings()
+            .iter()
+            .any(|finding| finding.contains("configDigest")),
+        "the refusal must name `configDigest`, got {:?}",
+        refusal.findings()
+    );
+
+    // It joins the same accumulation as its `verificationStack` siblings
+    // (PLAT-929's rule, extended to this member), rather than only the first
+    // defect surfacing.
+    let mut two_defects = new_collection_json();
+    two_defects["configDigest"] = json!("not-a-digest");
+    two_defects["verificationStack"]["lockDigest"] = json!("also-not-a-digest");
+    let refusal = validate::measurement_collection(
+        &from_serde(&two_defects).expect("the two-defect case crosses the bridge"),
+        &plans,
+    )
+    .expect_err("a malformed configDigest and a malformed lockDigest are both refused");
+    assert!(
+        refusal
+            .findings()
+            .iter()
+            .any(|finding| finding.contains("configDigest")),
+        "the one refusal must name `configDigest`, got {:?}",
+        refusal.findings()
+    );
+    assert!(
+        refusal
+            .findings()
+            .iter()
+            .any(|finding| finding.contains("lockDigest")),
+        "the SAME refusal must also name `lockDigest`, not just the first defect found; got {:?}",
+        refusal.findings()
+    );
+
+    // schemaVersion 1 is historical, read-only evidence: it never required
+    // `verificationStack`, and this fix does not start requiring
+    // `configDigest`'s shape there either — only new (schemaVersion 2)
+    // collections are checked, exactly as `lockDigest` and `executableDigest`
+    // already are.
+    let historical = json!({
+        "schemaVersion": 1,
+        "collectionId": "historical-001",
+        "subject": "fixture",
+        "scope": {},
+        "toolIdentity": "fixture producer",
+        "toolVersion": "fixture 1",
+        "configDigest": "not-a-digest",
+        "timestamp": "2026-01-01T00:00:00.000Z",
+        "sourceRevision": "aaaaaaaaaaaaaaaa",
+        "environment": {},
+        "rawEvidence": [],
+        "observations": [
+            {
+                "metric": "quality.example",
+                "planId": "MP-001",
+                "definitionVersion": "quality.example-v1",
+                "state": "measured",
+                "value": 0.5,
+                "unit": "fraction",
+                "shape": "ratio",
+            },
+        ],
+    });
+    validate::stored_measurement_collection(
+        &from_serde(&historical).expect("the historical case crosses the bridge"),
+    )
+    .expect("a schemaVersion-1 collection keeps accepting any non-empty configDigest");
+}
+
 /// A moved definition and a moved producer configuration each block the delta,
 /// and the refusal names both.
 ///
@@ -966,7 +1063,7 @@ fn tc_479_006_a_moved_definition_and_configuration_refuse_a_delta_and_name_both(
     let before = admit(&new_collection_json());
     let mut after_json = new_collection_json();
     after_json["collectionId"] = json!("run-002");
-    after_json["configDigest"] = json!("sha256:config-b");
+    after_json["configDigest"] = json!(format!("sha256:{}", "b".repeat(64)));
     after_json["observations"][0]["definitionVersion"] = json!("quality.example-v2");
     after_json["observations"][0]["value"] = json!(0.75);
     let after = admit(&after_json);
@@ -1222,7 +1319,8 @@ fn tc_479_009_the_report_is_deterministic_and_keeps_an_unmeasured_plan_visible()
         "finding_recall [language=rust, tier=2] | ap-recall (spec/assurance/10-recall.md) | observe | 1e+21 ratio |",
         "unmeasured_metric | ap-unmeasured (spec/assurance/50-unmeasured.md) | gate | not_computed: no record |",
         "Corpus gaps: 3",
-        "2026-03-01T00:00:00.000Z — quoin 0.9.1; source revision-three; corpus n/a; config sha256:cfg-b",
+        "2026-03-01T00:00:00.000Z — quoin 0.9.1; source revision-three; corpus n/a; config \
+         sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
         "- unmeasured_metric: no collection has computed this authored plan.",
     ] {
         assert!(

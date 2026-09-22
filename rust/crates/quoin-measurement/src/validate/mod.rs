@@ -124,9 +124,12 @@ fn parse_stored_measurement_collection(
     // The stack's own failure is kept alongside the parse instead of `?`-ing
     // immediately, so a caller checking further collection-level rules can
     // still see the observations read below (PLAT-929, review finding #5(a)
-    // on quoin#580).
+    // on quoin#580). `configDigest`'s shape rides along in the same call
+    // (PLAT-939): it is a collection-envelope member, not a `verificationStack`
+    // one, but it is checked at the same schemaVersion-2 gate as `lockDigest`
+    // and `executableDigest`.
     let (verification_stack, stack_error) = if schema_version == MEASUREMENT_SCHEMA_VERSION {
-        match stack::verification_stack(object.get("verificationStack")) {
+        match stack::verification_stack(object.get("verificationStack"), config_digest.as_str()) {
             Ok(stack) => (Some(stack), None),
             Err(error) => (None, Some(error)),
         }
