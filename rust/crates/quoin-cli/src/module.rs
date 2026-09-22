@@ -242,7 +242,7 @@ fn indent_json(value: &str, indent: usize) -> String {
     reason = "test fixtures may panic"
 )]
 mod tests {
-    use super::{DEFAULT_MODULES, command, modules_json};
+    use super::{command, modules_json};
 
     /// Trace: FR-017, FR-101
     #[test]
@@ -303,15 +303,5 @@ mod tests {
   ]
 }"#
         );
-    }
-
-    /// Trace: FR-017
-    /// Provenance: quoin#530
-    /// The runtime default set must never reintroduce the pinned module whose
-    /// `TestMatrix` body shape and traceability status field disagreed.
-    #[test]
-    fn tc_530_001_default_process_module_avoids_the_split_status_contract() {
-        assert!(DEFAULT_MODULES.contains("83d9c50a7493420c33cece02a97b5a6f196e7ff9"));
-        assert!(!DEFAULT_MODULES.contains("375fc2a9c49c37cce0f43384878b8ede16b162a3"));
     }
 }

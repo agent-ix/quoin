@@ -1,12 +1,14 @@
 name: CI
 
-# Manual dispatch only, matching the rest of the module fleet: the suite needs a
-# Quire wheel no index a repository may depend on serves yet
-# (agent-ix/quire-rs#392), so an automatic push trigger would go red on every
-# commit for a reason nobody in the pull request can fix.
+# Manual dispatch only, matching the rest of the module fleet.
 on:
   workflow_dispatch:
 
 jobs:
   ci:
-    uses: agent-ix/python-service-actions/.github/workflows/lib-ci.yml@main
+    uses: agent-ix/python-service-actions/.github/workflows/semantic-module-ci.yml@main
+    with:
+      extra_index_url: https://${{ vars.GCP_REGION }}-python.pkg.dev/${{ vars.GCP_PROJECT_NAME }}/${{ vars.GCP_PYPI }}/simple/
+    secrets:
+      GCP_KEY: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
+      REGISTRY_TOKEN: ${{ secrets.REGISTRY_TOKEN }}

@@ -11,9 +11,9 @@ POE = $(POETRY) run poe
 .PHONY: help
 help:
 	@echo "Setup"
-	@echo "  make bootstrap      - install the toolchain and emit schemas/ + manifest digests"
-	@echo "  make install        - install Python and Node dependencies"
-	@echo "  make dev-quire      - install the Quire wheel the semantic tests need"
+	@echo "  make bootstrap        - install the toolchain and emit schemas/ + manifest digests"
+	@echo "  make install          - install Python and Node dependencies"
+	@echo "  make semantic-install - npm ci for the pinned TypeSpec toolchain and semantic-core"
 	@echo ""
 	@echo "Gate"
 	@echo "  make gate           - validate, lint, schema drift check, tests (the green bar)"
@@ -39,6 +39,13 @@ install:
 	$(POETRY) install
 	npm install
 
+# npm ci for the pinned TypeSpec toolchain and semantic-core, from the
+# committed lockfile rather than `install`'s resolving `npm install` — the
+# form CI and other module repositories use.
+.PHONY: semantic-install
+semantic-install:
+	npm ci
+
 # One command from a fresh clone to a repository whose gate can pass. The emit
 # step is here rather than in the cookiecutter hook because emitting needs
 # `@agent-ix/semantic-core` from a registry, and a template that reached the
@@ -46,15 +53,7 @@ install:
 .PHONY: bootstrap
 bootstrap: install schemas
 	@echo ""
-	@echo "Bootstrapped. `make dev-quire` next, then `make gate`."
-
-# The semantic rows need the Quire wheel exposing `extract_semantic`. It is not
-# a declared dependency: no index this repository may commit against serves it
-# (agent-ix/quire-rs#392). The suite FAILS without it — it never skips, because
-# a skipped row is not coverage.
-.PHONY: dev-quire
-dev-quire:
-	$(POE) dev-quire
+	@echo "Bootstrapped. `make gate` next."
 
 # =============================================================================
 # Gate

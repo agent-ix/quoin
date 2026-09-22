@@ -62,12 +62,14 @@ declared pattern in the template's conformance contract, beside the required
 surfaces, so that "a credential" and "a private-registry publication default"
 are comparisons against a reviewable list rather than a judgement call made in a
 test body. The private-registry class is defined over publication configuration
-— the npm `publishConfig` registry, any Poetry package source, any workflow
-publish target — and not over every mention of a private host: the rendered
-`dev-quire` provisioning command names one, deliberately and with the tracking
-issue beside it, because no index the repository may depend on serves the engine
-(`agent-ix/quire-rs#392`). That one exemption is declared in the contract and
-asserted to be the only one.
+— the npm `publishConfig` registry, a Poetry package source, any workflow
+publish target — and forbids the dev-only mirrors, `pypi.ix` and `npm.ix`, that
+a rendered repository must never depend on. It does not forbid every mention of
+a private host: `internal-pypi` (`us-west1-python.pkg.dev`) is the sanctioned
+index quire and the schema toolchain resolve from, and a rendered repository
+names it in `pyproject.toml`'s `[[tool.poetry.source]]` and in `ci.yml`'s
+`extra_index_url`. The forbid on `pypi.ix`/`npm.ix` is unconditional; there is
+no allowed occurrence.
 
 ## Dependencies
 
