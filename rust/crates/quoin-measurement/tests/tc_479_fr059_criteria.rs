@@ -54,7 +54,7 @@ mod paths;
 use copy::copy_tree;
 use paths::repo_root;
 
-use quoin_jsonschema::VendoredSchema;
+use quoin_jsonschema::MeasurementSchema;
 
 use quoin_measurement::intervention::intake::{InterventionIntakeError, InterventionRefusalCode};
 use quoin_measurement::operational::intake::write_operational_record;
@@ -292,7 +292,7 @@ fn tc_479_300_the_envelope_requires_every_declared_member() {
     let authored: Value =
         serde_json::from_str(authored_text).expect("the authored schema block is JSON");
     assert_eq!(
-        VendoredSchema::OperationalEvidenceV1
+        MeasurementSchema::OperationalEvidenceV1
             .document()
             .expect("the vendored schema parses"),
         authored,

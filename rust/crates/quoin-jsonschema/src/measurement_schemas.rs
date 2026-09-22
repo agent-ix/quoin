@@ -7,8 +7,8 @@
 //!
 //! | schema | retained source (deleted in quoin#479) | how it got here |
 //! |---|---|---|
-//! | [`VendoredSchema::OperationalEvidenceV1`] | `src/measurement/schemas/operational-evidence-v1.schema.json` | copied byte-for-byte |
-//! | [`VendoredSchema::InterventionExperimentV1`] | `src/measurement/intervention-schema.ts` | captured, then two recorded deltas |
+//! | [`MeasurementSchema::OperationalEvidenceV1`] | `src/measurement/schemas/operational-evidence-v1.schema.json` | copied byte-for-byte |
+//! | [`MeasurementSchema::InterventionExperimentV1`] | `src/measurement/intervention-schema.ts` | captured, then two recorded deltas |
 //!
 //! The retained TypeScript no longer exists: quoin#479 deleted `src/measurement/`
 //! after this port took over its routes. Both documents are therefore measured
@@ -45,14 +45,14 @@ use crate::validator::{FormatCheck, SchemaError, SchemaValidator};
 /// The committed schema documents this crate ships.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[non_exhaustive]
-pub enum VendoredSchema {
+pub enum MeasurementSchema {
     /// FR-100 intervention-experiment records.
     InterventionExperimentV1,
     /// FR-059 operational-evidence records.
     OperationalEvidenceV1,
 }
 
-impl VendoredSchema {
+impl MeasurementSchema {
     /// Every committed schema, for the censuses that must not measure nothing.
     pub const ALL: &'static [Self] = &[Self::InterventionExperimentV1, Self::OperationalEvidenceV1];
 
@@ -127,7 +127,7 @@ impl VendoredSchema {
     pub fn compile(
         self,
         date_time: fn(&str) -> bool,
-    ) -> Result<VendoredValidator, JsonSchemaError> {
+    ) -> Result<MeasurementValidator, JsonSchemaError> {
         let document = self.document()?;
         let validator = SchemaValidator::compile_with_formats(
             Path::new(self.vendored_path()),
@@ -138,14 +138,14 @@ impl VendoredSchema {
                 check: date_time,
             }],
         )?;
-        Ok(VendoredValidator {
+        Ok(MeasurementValidator {
             schema: self,
             validator,
         })
     }
 }
 
-impl std::fmt::Display for VendoredSchema {
+impl std::fmt::Display for MeasurementSchema {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(self.id())
     }
@@ -153,15 +153,15 @@ impl std::fmt::Display for VendoredSchema {
 
 /// A compiled validator over one committed schema.
 #[derive(Debug)]
-pub struct VendoredValidator {
-    schema: VendoredSchema,
+pub struct MeasurementValidator {
+    schema: MeasurementSchema,
     validator: SchemaValidator,
 }
 
-impl VendoredValidator {
+impl MeasurementValidator {
     /// Which schema this validator carries.
     #[must_use]
-    pub const fn schema(&self) -> VendoredSchema {
+    pub const fn schema(&self) -> MeasurementSchema {
         self.schema
     }
 
@@ -211,14 +211,14 @@ impl VendoredValidator {
 /// value *is* the proof, so it is constructed here and nowhere else.
 #[derive(Debug, Clone, PartialEq)]
 pub struct ValidDocument {
-    schema: VendoredSchema,
+    schema: MeasurementSchema,
     value: Value,
 }
 
 impl ValidDocument {
     /// The schema that accepted it.
     #[must_use]
-    pub const fn schema(&self) -> VendoredSchema {
+    pub const fn schema(&self) -> MeasurementSchema {
         self.schema
     }
 

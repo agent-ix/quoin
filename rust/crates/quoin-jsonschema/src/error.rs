@@ -20,7 +20,7 @@
 
 use std::path::PathBuf;
 
-use crate::measurement_schemas::VendoredSchema;
+use crate::measurement_schemas::MeasurementSchema;
 use crate::validator::SchemaError;
 
 /// The stable code an error reports itself under.
@@ -75,7 +75,7 @@ pub enum JsonSchemaError {
     #[error("{schema} refused the document: {} failure(s)", errors.len())]
     DocumentRefused {
         /// The schema that refused.
-        schema: VendoredSchema,
+        schema: MeasurementSchema,
         /// Every failure, in `(instance location, keyword)` order.
         errors: Vec<SchemaError>,
     },

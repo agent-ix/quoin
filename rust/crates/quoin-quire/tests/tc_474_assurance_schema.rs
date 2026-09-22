@@ -84,7 +84,7 @@ fn tc_474_012_format_is_annotated_here_because_the_retained_ajv_annotated_it() {
     let schema_document: Value =
         serde_json::from_str(schema::SOURCE).expect("the vendored document is JSON");
     let asserting = SchemaValidator::compile_with_formats(
-        Path::new(schema::VENDORED_PATH),
+        Path::new(schema::SOURCE_PATH),
         &schema_document,
         &[],
         &[FormatCheck {

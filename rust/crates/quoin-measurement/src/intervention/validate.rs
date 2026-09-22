@@ -25,14 +25,14 @@
 //! # The schema is compiled once
 //!
 //! `intervention.ts:22-27` compiles at module load. Here it is a [`OnceLock`]
-//! over [`VendoredSchema::InterventionExperimentV1`], which is quoin#470's
+//! over [`MeasurementSchema::InterventionExperimentV1`], which is quoin#470's
 //! vendored document — this crate does not carry a second copy of it, and the
 //! `date-time` format is registered with this crate's one RFC 3339 grammar
 //! rather than a private second one.
 
 use std::sync::OnceLock;
 
-use quoin_jsonschema::{JsonSchemaError, VendoredSchema, VendoredValidator};
+use quoin_jsonschema::{JsonSchemaError, MeasurementSchema, MeasurementValidator};
 use serde_json::Value;
 
 use crate::common::schema::{findings as schema_findings, sorted_unique};
@@ -42,11 +42,11 @@ use crate::intervention::record::InterventionExperimentRecord;
 use crate::intervention::semantics::semantic_findings;
 
 /// The compiled intervention-experiment validator, built once per process.
-fn validator() -> Result<&'static VendoredValidator, &'static JsonSchemaError> {
-    static COMPILED: OnceLock<Result<VendoredValidator, JsonSchemaError>> = OnceLock::new();
+fn validator() -> Result<&'static MeasurementValidator, &'static JsonSchemaError> {
+    static COMPILED: OnceLock<Result<MeasurementValidator, JsonSchemaError>> = OnceLock::new();
     COMPILED
         .get_or_init(|| {
-            VendoredSchema::InterventionExperimentV1
+            MeasurementSchema::InterventionExperimentV1
                 .compile(|value| Rfc3339DateTime::parse(value).is_ok())
         })
         .as_ref()

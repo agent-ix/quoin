@@ -55,7 +55,7 @@ use paths::repo_root;
 
 use std::path::Path;
 
-use quoin_jsonschema::VendoredSchema;
+use quoin_jsonschema::MeasurementSchema;
 use quoin_measurement::common::scalar::{EffectValue, ScalarValue};
 use quoin_measurement::intervention::record::{
     InterventionConclusionKind, InterventionDisposition, InterventionExperimentRecord,
@@ -213,7 +213,7 @@ fn tc_479_100_the_envelope_and_producer_tuple_are_required() {
 
     // The versioned identity the record family is pinned to. The literal, not
     // whatever the vendored document happens to say today.
-    let document = VendoredSchema::InterventionExperimentV1
+    let document = MeasurementSchema::InterventionExperimentV1
         .document()
         .expect("the vendored intervention schema is readable");
     assert_eq!(

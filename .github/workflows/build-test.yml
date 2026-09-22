@@ -14,6 +14,13 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+        with:
+          version: 11.20.0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22.15.0
+          cache: pnpm
       - uses: dtolnay/rust-toolchain@4360b52568e2003a75bf9bc1d59f33a8e3fc893c # stable action
         with:
           toolchain: 1.98.1
@@ -24,6 +31,13 @@ jobs:
         run: test -n "$REGISTRY_TOKEN" || { echo "::error::REGISTRY_TOKEN must read private Rust dependencies"; exit 1; }
       - name: Authenticate private Cargo sources
         run: git config --global url."https://x-access-token:${{ secrets.REGISTRY_TOKEN }}@github.com/".insteadOf "https://github.com/"
+      # rust/crates/quoin-semantic/build.rs embeds the semantic contract out of
+      # node_modules/@agent-ix/* (PLAT-887's de-vendoring); `make rust-lint`,
+      # `make rust-build` and `make rust-test` all depend on `workflow-assets`,
+      # but installing it as its own step here keeps it visible and cacheable
+      # rather than hidden inside the first Make target that happens to need it.
+      - name: Install frozen dependency graph
+        run: make workflow-assets
       - name: Format and lint
         run: make rust-lint
       - name: Build

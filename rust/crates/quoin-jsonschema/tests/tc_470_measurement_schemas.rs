@@ -51,7 +51,7 @@
 
 use std::path::{Path, PathBuf};
 
-use quoin_jsonschema::VendoredSchema;
+use quoin_jsonschema::MeasurementSchema;
 use serde_json::Value;
 
 /// One place two JSON documents disagree.
@@ -121,7 +121,7 @@ fn differences(pointer: &str, left: &Value, right: &Value, into: &mut Vec<Differ
 fn tc_470_the_operational_schema_is_vendored_byte_for_byte() {
     let captured = read(&goldens().join("operational-evidence-v1.captured.json"));
     assert_eq!(
-        VendoredSchema::OperationalEvidenceV1.source(),
+        MeasurementSchema::OperationalEvidenceV1.source(),
         captured,
         "the vendored operational schema and the committed capture in \
          tests/goldens/operational-evidence-v1.captured.json have diverged. Neither copy may \
@@ -139,7 +139,7 @@ fn tc_470_the_intervention_schema_carries_exactly_the_two_recorded_deltas() {
         &goldens().join("intervention-experiment-v1.captured.json"),
     ))
     .expect("the capture is JSON");
-    let vendored = VendoredSchema::InterventionExperimentV1
+    let vendored = MeasurementSchema::InterventionExperimentV1
         .document()
         .expect("the vendored schema is JSON");
 
@@ -188,7 +188,7 @@ fn tc_470_the_capture_records_its_producer_and_revision() {
     ];
     assert_eq!(
         captures.len(),
-        VendoredSchema::ALL.len(),
+        MeasurementSchema::ALL.len(),
         "anti-vacuity floor: one committed capture per vendored schema"
     );
     for capture in captures {
@@ -217,11 +217,11 @@ fn tc_470_the_capture_records_its_producer_and_revision() {
 #[test]
 fn tc_470_every_vendored_schema_parses() {
     assert_eq!(
-        VendoredSchema::ALL.len(),
+        MeasurementSchema::ALL.len(),
         2,
         "anti-vacuity floor: two schemas are vendored here"
     );
-    for schema in VendoredSchema::ALL {
+    for schema in MeasurementSchema::ALL {
         let document = schema
             .document()
             .unwrap_or_else(|e| panic!("{schema} must parse: {e}"));

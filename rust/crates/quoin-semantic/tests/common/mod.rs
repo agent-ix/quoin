@@ -48,8 +48,9 @@ pub fn repo_root() -> PathBuf {
 
 /// The semantic contract's root: quoin's own `sweep-report.schema.json` plus
 /// the module-manifest and semantic-core schemas quoin depends on from
-/// `agent-ix/filament-core-service` and `agent-ix/filament-core-data`
-/// (`external/`, git submodules -- quoin#452, and PLAT-887's de-vendoring).
+/// `agent-ix/filament-core-data`'s published `@agent-ix/semantic-schema` and
+/// `@agent-ix/semantic-core` packages, read out of `node_modules` (PLAT-887's
+/// de-vendoring) -- not git submodules.
 ///
 /// Materialized from [`quoin_semantic::materialize_embedded_contract`] --
 /// the exact bytes `build.rs` embedded into this test binary -- rather than

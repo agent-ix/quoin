@@ -70,7 +70,7 @@ use crate::error::{Error, Result};
 /// A name for the schema's origin, for a compile failure to cite. Not a path
 /// in this working tree: the schema comes from the linked `quire-rs` crate,
 /// not from a file quoin ships.
-pub const VENDORED_PATH: &str = "quire_rs::assurance::ASSURANCE_V1_SCHEMA";
+pub const SOURCE_PATH: &str = "quire_rs::assurance::ASSURANCE_V1_SCHEMA";
 
 /// The schema bytes, straight from the linked `quire-rs` engine.
 ///
@@ -92,7 +92,7 @@ pub const SOURCE: &str = quire_rs::assurance::ASSURANCE_V1_SCHEMA;
 /// caller re-checks what it was handed.
 ///
 /// It is a distinct type rather than a reuse of [`quoin_jsonschema::ValidDocument`]
-/// because that one is indexed by `quoin_jsonschema::VendoredSchema`, the
+/// because that one is indexed by `quoin_jsonschema::MeasurementSchema`, the
 /// closed enum of the two **measurement** documents. `assurance-v1` is a quire
 /// output contract owned by this crate; widening that enum would put it in the
 /// measurement crate's namespace and hand it that enum's format policy, which
@@ -129,12 +129,12 @@ fn validator() -> Result<&'static SchemaValidator> {
         .get_or_init(|| {
             let document: Value = serde_json::from_str(SOURCE)
                 .map_err(|source| format!("the vendored document is not JSON: {source}"))?;
-            SchemaValidator::compile_vendored(Path::new(VENDORED_PATH), &document, &[])
+            SchemaValidator::compile_vendored(Path::new(SOURCE_PATH), &document, &[])
                 .map_err(|source| source.to_string())
         })
         .as_ref()
         .map_err(|detail| Error::VendoredSchemaInvalid {
-            path: Path::new(VENDORED_PATH).to_path_buf(),
+            path: Path::new(SOURCE_PATH).to_path_buf(),
             detail: detail.clone(),
         })
 }

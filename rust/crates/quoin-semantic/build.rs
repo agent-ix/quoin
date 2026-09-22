@@ -58,7 +58,14 @@ fn semantic_core_members(
 ) -> Result<(), Box<dyn std::error::Error>> {
     let json_schema_dir = semantic_core_pkg.join("generated/json-schema");
     let mut names = Vec::new();
-    for entry in fs::read_dir(&json_schema_dir)? {
+    let entries = fs::read_dir(&json_schema_dir).map_err(|source| {
+        format!(
+            "quoin-semantic's build.rs expected {} to exist; run `pnpm install` at the \
+             repository root (or `make workflow-assets`) to populate node_modules ({source})",
+            json_schema_dir.display()
+        )
+    })?;
+    for entry in entries {
         let entry = entry?;
         let name = entry.file_name().to_string_lossy().into_owned();
         if Path::new(&name)

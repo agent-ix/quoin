@@ -17,7 +17,7 @@
 //! module, because the schema it compiles is the one thing about the pass that
 //! genuinely differs.
 
-use quoin_jsonschema::VendoredValidator;
+use quoin_jsonschema::MeasurementValidator;
 use serde_json::Value;
 
 /// The root pointer's spelling when an error carries no instance path.
@@ -30,7 +30,7 @@ const ROOT: &str = "/";
 ///
 /// Emission order, not sorted: [`sorted_unique`] is what orders a refusal, and
 /// it runs after the semantic findings have been merged in.
-pub(crate) fn findings(validator: &VendoredValidator, candidate: &Value) -> Vec<String> {
+pub(crate) fn findings(validator: &MeasurementValidator, candidate: &Value) -> Vec<String> {
     validator
         .errors(candidate)
         .into_iter()

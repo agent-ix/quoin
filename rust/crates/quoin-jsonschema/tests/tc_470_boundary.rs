@@ -8,7 +8,7 @@
 //! three crates, accepting three different languages, and §5's whole ruling
 //! exists because the measurement domain carried two more. The one grammar is
 //! `quoin_measurement::date_time`, and this crate sits *below* it: the
-//! `date-time` check is a parameter of `VendoredSchema::compile` precisely so
+//! `date-time` check is a parameter of `MeasurementSchema::compile` precisely so
 //! that a second one is never written here.
 //!
 //! A rule enforced only by review is enforced only when someone is looking, so
