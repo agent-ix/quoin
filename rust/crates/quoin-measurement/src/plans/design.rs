@@ -6,9 +6,10 @@
 //! Split from [`super`] so the plan walk stays under this crate's module-size
 //! ceiling. See [`super`]'s module header for what a malformed member does.
 
+use std::cmp::Ordering;
 use std::num::NonZeroU32;
 
-use engineering_assurance::measurement::Objective;
+use engineering_assurance::measurement::{Direction, Objective};
 use serde::Deserialize;
 
 use crate::error::MeasurementError;
@@ -114,10 +115,27 @@ pub(super) fn objective_from(
     let Some(stated) = value.get("objective") else {
         return Ok(None);
     };
-    Objective::deserialize(stated).map(Some).map_err(|error| {
+    let objective = Objective::deserialize(stated).map_err(|error| {
         MeasurementError::new(
             CODE,
             format!("{path}: objective is invalid: {error}; found {stated}"),
         )
-    })
+    })?;
+    // EA admits any finite bound. A `zero` objective's bound is a tolerance
+    // around zero, and a negative tolerance means nothing — so it is refused
+    // here rather than read through `abs()` as some other tolerance.
+    if objective.direction() == Direction::Zero
+        && objective
+            .bound()
+            .is_some_and(|bound| bound.partial_cmp(&0.0) == Some(Ordering::Less))
+    {
+        return Err(MeasurementError::new(
+            CODE,
+            format!(
+                "{path}: objective is invalid: a `zero` objective's bound is a tolerance and \
+                 must not be negative; found {stated}"
+            ),
+        ));
+    }
+    Ok(Some(objective))
 }

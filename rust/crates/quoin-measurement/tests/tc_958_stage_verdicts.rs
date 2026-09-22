@@ -71,8 +71,8 @@ fn plans(document: &str) -> Vec<MeasurementPlan> {
     load_measurement_plans(&source, PlanLoadOptions::default()).expect("the plan loads")
 }
 
-/// A measured observation of `value` under `definition`, with `population`
-/// stated when given.
+/// A measured observation of `value` under `definition`, over `population`,
+/// or over ten examined items when none is given.
 fn observation(value: f64, definition: &str, population: Option<Value>) -> Value {
     let mut observation = json!({
         "metric": "quality.score",
@@ -83,9 +83,24 @@ fn observation(value: f64, definition: &str, population: Option<Value>) -> Value
         "unit": "fraction",
         "shape": "scalar",
     });
-    if let Some(population) = population {
-        observation["population"] = population;
-    }
+    observation["population"] = population.unwrap_or_else(|| json!({ "examined": 10 }));
+    observation
+}
+
+/// `observation` for the slice `family=<family>`.
+fn sliced(value: f64, family: &str) -> Value {
+    let mut observation = observation(value, "v1", None);
+    observation["dimensions"] = json!({ "family": family });
+    observation
+}
+
+/// `observation` with no `population` member at all.
+fn unstated(value: f64) -> Value {
+    let mut observation = observation(value, "v1", None);
+    observation
+        .as_object_mut()
+        .expect("an object")
+        .remove("population");
     observation
 }
 
@@ -125,11 +140,20 @@ fn collection_json(id: &str, timestamp: &str, observations: &[Value]) -> Value {
 
 /// Collection `index` (for the id and timestamp), admitted under `plans`.
 fn admitted(plans: &[MeasurementPlan], index: u8, observation: Value) -> MeasurementCollection {
+    admitted_many(plans, index, &[observation])
+}
+
+/// As [`admitted`], with several observations.
+fn admitted_many(
+    plans: &[MeasurementPlan],
+    index: u8,
+    observations: &[Value],
+) -> MeasurementCollection {
     validate::measurement_collection(
         &from_serde(&collection_json(
             &format!("run-{index}"),
             &format!("2026-09-{:02}T00:00:00.000Z", index + 1),
-            &[observation],
+            observations,
         ))
         .expect("the candidate crosses the bridge"),
         plans,
@@ -431,7 +455,7 @@ fn tc_958_008_a_target_plan_reports_distance_to_the_bound_and_whether_it_is_reac
         TargetOutcome::Measured {
             current: 1.0,
             bound: 0.75,
-            distance: 0.25,
+            distance: 0.0,
             reached: true
         }
     );
@@ -455,7 +479,7 @@ fn tc_958_008_a_target_plan_reports_distance_to_the_bound_and_whether_it_is_reac
         TargetOutcome::Measured {
             current: 3.0,
             bound: 4.0,
-            distance: 1.0,
+            distance: 0.0,
             reached: true
         }
     );
@@ -470,7 +494,7 @@ fn tc_958_008_a_target_plan_reports_distance_to_the_bound_and_whether_it_is_reac
         TargetOutcome::Measured {
             current: -0.5,
             bound: 1.0,
-            distance: 0.5,
+            distance: 0.0,
             reached: true
         }
     );
@@ -696,7 +720,7 @@ fn tc_958_011_inconclusive_and_target_verdicts_render_with_reason_and_numbers() 
         json!({
             "stage": "target",
             "objective": { "direction": "lower", "bound": 4 },
-            "verdict": "not_reached",
+            "progress": "not_reached",
             "reason": null,
             "current": 6,
             "distance": 2,
@@ -736,6 +760,7 @@ fn tc_958_012_the_objective_is_parsed_and_a_malformed_one_refuses_the_plan() {
         objective("higher", Some("\"high\"")),
         "objective:\n  direction: higher\n  goal: 1\n".to_owned(),
         "objective: higher\n".to_owned(),
+        objective("zero", Some("-1")),
     ] {
         let source = MemoryMeasurement::new().with_document(
             "spec/assurance/MP-958.md",
@@ -754,4 +779,256 @@ fn tc_958_012_the_objective_is_parsed_and_a_malformed_one_refuses_the_plan() {
             error.subject()
         );
     }
+}
+
+/// The verdict of the one row whose dimensions are `family=<family>`.
+fn slice_verdict(report: &MeasurementReport, family: &str) -> Option<StageVerdict> {
+    report
+        .current
+        .iter()
+        .find(|row| {
+            row.observation.as_ref().is_some_and(|observation| {
+                observation.dimensions.entries().get("family")
+                    == Some(&quoin_store::JsonValue::string(family.to_owned()))
+            })
+        })
+        .and_then(|row| row.stage_verdict.clone())
+}
+
+fn held(plans: &[MeasurementPlan], current: f64, best_prior: BestPrior) -> StageVerdict {
+    StageVerdict::Ratchet {
+        objective: plans[0].objective.expect("an objective"),
+        outcome: RatchetOutcome::Held {
+            current,
+            best_prior,
+        },
+    }
+}
+
+/// A ratchet holds each slice against that slice's own history: a better
+/// earlier value in another slice, under another plan id, or under another
+/// metric never becomes the best.
+///
+/// Trace: FR-107-AC-2
+/// Provenance: PLAT-958
+#[test]
+fn tc_958_013_the_best_prior_is_taken_from_the_same_slice_plan_and_metric_only() {
+    let plans = plans(&plan_document("ratchet", "v1", &objective("higher", None)));
+    let first = admitted_many(&plans, 0, &[sliced(0.5, "a"), sliced(0.95, "b")]);
+    let newest = admitted_many(&plans, 3, &[sliced(0.6, "a"), sliced(0.96, "b")]);
+    let report_ab = report(&plans, &[first.clone(), newest.clone()]);
+    assert_eq!(
+        slice_verdict(&report_ab, "a"),
+        Some(held(&plans, 0.6, best(0.5, "run-0")))
+    );
+    assert_eq!(
+        slice_verdict(&report_ab, "b"),
+        Some(held(&plans, 0.96, best(0.95, "run-0")))
+    );
+
+    // A better earlier value of slice `a` under another plan id. Intake cannot
+    // admit that, so the admitted record is edited after the fact.
+    let mut other_plan = admitted_many(&plans, 1, &[sliced(0.99, "a")]);
+    other_plan.observations[0].plan_id = quoin_measurement::types::ids::NonEmptyText::parse(
+        "MP-OTHER",
+        MeasurementErrorCode::PlanInvalid,
+        "planId",
+    )
+    .expect("a plan id");
+    // A better earlier value of slice `a` under another metric.
+    let mut other_metric = admitted_many(&plans, 2, &[sliced(0.99, "a")]);
+    other_metric.observations[0].metric = quoin_measurement::types::ids::NonEmptyText::parse(
+        "quality.other",
+        MeasurementErrorCode::PlanInvalid,
+        "metric",
+    )
+    .expect("a metric");
+    let report_all = report(&plans, &[first, other_plan, other_metric, newest]);
+    assert_eq!(
+        slice_verdict(&report_all, "a"),
+        Some(held(&plans, 0.6, best(0.5, "run-0")))
+    );
+}
+
+/// Equal best values name the earliest collection that reached them.
+///
+/// Trace: FR-107-AC-2
+/// Provenance: PLAT-958
+#[test]
+fn tc_958_014_a_tie_for_the_best_prior_names_the_earliest_collection() {
+    let plans = plans(&plan_document("ratchet", "v1", &objective("higher", None)));
+    assert_eq!(
+        ratchet_over(&plans, &[0.8, 0.8, 0.7, 0.9]),
+        RatchetOutcome::Held {
+            current: 0.9,
+            best_prior: best(0.8, "run-0")
+        }
+    );
+}
+
+/// A newest value naming another plan is `inconclusive` (`plan_mismatch`).
+///
+/// Trace: FR-107-AC-3
+/// Provenance: PLAT-958
+#[test]
+fn tc_958_015_a_newest_value_under_another_plan_id_is_inconclusive() {
+    let plans = plans(&plan_document("ratchet", "v1", &objective("higher", None)));
+    let first = admitted(&plans, 0, observation(0.5, "v1", None));
+    let mut newest = admitted(&plans, 1, observation(0.9, "v1", None));
+    newest.observations[0].plan_id = quoin_measurement::types::ids::NonEmptyText::parse(
+        "MP-OTHER",
+        MeasurementErrorCode::PlanInvalid,
+        "planId",
+    )
+    .expect("a plan id");
+    assert_eq!(
+        report(&plans, &[first, newest]).current[0]
+            .stage_verdict
+            .as_ref()
+            .and_then(StageVerdict::inconclusive_reason),
+        Some(InconclusiveReason::PlanMismatch)
+    );
+}
+
+/// A slice with a usable earlier value that the newest collection omits is
+/// reported `inconclusive` (`no_current_value`) and named as an attention
+/// item, so a slice cannot regress by being dropped.
+///
+/// Trace: FR-107-AC-3, FR-107-AC-5
+/// Provenance: PLAT-958
+#[test]
+fn tc_958_016_a_slice_the_newest_collection_drops_is_reported_inconclusive() {
+    let plans = plans(&plan_document("ratchet", "v1", &objective("higher", None)));
+    let first = admitted_many(&plans, 0, &[sliced(0.5, "a"), sliced(0.6, "b")]);
+    let newest = admitted_many(&plans, 1, &[sliced(0.7, "a")]);
+    let report = report(&plans, &[first, newest]);
+    assert_eq!(report.vanished_slices.len(), 1);
+    assert_eq!(
+        report.vanished_slices[0]
+            .stage_verdict
+            .inconclusive_reason(),
+        Some(InconclusiveReason::NoCurrentValue)
+    );
+
+    let text = render_measurement_report(&report).expect("the report renders");
+    assert!(
+        text.contains(
+            "| quality.score [family=a] | MP-958 (spec/assurance/MP-958.md) | ratchet | higher \
+             | held | current 0.7; best prior 0.5 (run-0) |\n\
+             | quality.score [family=b] | MP-958 (spec/assurance/MP-958.md) | ratchet | higher \
+             | inconclusive | no_current_value: no measured value in the newest collection |"
+        ),
+        "{text}"
+    );
+    assert!(
+        text.contains(
+            "- quality.score [family=b]: measured by an earlier collection but absent from the \
+             newest; plan MP-958 cannot hold its ratchet."
+        ),
+        "{text}"
+    );
+    let parsed: Value =
+        serde_json::from_str(&render_measurement_report_json(&report).expect("the JSON renders"))
+            .expect("JSON");
+    assert_eq!(
+        parsed["vanishedSlices"],
+        json!([{
+            "metric": "quality.score",
+            "planId": "MP-958",
+            "planPath": "spec/assurance/MP-958.md",
+            "dimensions": { "family": "b" },
+            "stageVerdict": {
+                "stage": "ratchet",
+                "objective": { "direction": "higher" },
+                "verdict": "inconclusive",
+                "reason": "no_current_value",
+                "current": null,
+                "bestPrior": null,
+            },
+        }])
+    );
+
+    // Nothing dropped: no such member, and no such attention item.
+    let steady = steady_report(&plans);
+    assert!(steady.vanished_slices.is_empty());
+    let json_text = render_measurement_report_json(&steady).expect("the JSON renders");
+    assert!(!json_text.contains("vanishedSlices"), "{json_text}");
+}
+
+/// Two collections that both measure slice `a`.
+fn steady_report(plans: &[MeasurementPlan]) -> MeasurementReport {
+    let first = admitted_many(plans, 0, &[sliced(0.5, "a")]);
+    let newest = admitted_many(plans, 1, &[sliced(0.7, "a")]);
+    report(plans, &[first, newest])
+}
+
+/// An observation stating no `population` is `inconclusive`
+/// (`population_unstated`) for a ratchet and a target alike, and an earlier
+/// one never sets a ratchet's best.
+///
+/// Trace: FR-107-AC-3, FR-107-AC-4
+/// Provenance: PLAT-958
+#[test]
+fn tc_958_017_an_unstated_population_is_inconclusive_for_ratchet_and_target() {
+    let ratchet = plans(&plan_document("ratchet", "v1", &objective("higher", None)));
+    let first = admitted(&ratchet, 0, observation(0.5, "v1", None));
+    let newest = admitted(&ratchet, 1, unstated(0.9));
+    assert_eq!(
+        report(&ratchet, &[first.clone(), newest]).current[0]
+            .stage_verdict
+            .as_ref()
+            .and_then(StageVerdict::inconclusive_reason),
+        Some(InconclusiveReason::PopulationUnstated)
+    );
+    let better_unstated = admitted(&ratchet, 1, unstated(0.99));
+    let newest = admitted(&ratchet, 2, observation(0.6, "v1", None));
+    assert_eq!(
+        report(&ratchet, &[first, better_unstated, newest]).current[0].stage_verdict,
+        Some(held(&ratchet, 0.6, best(0.5, "run-0")))
+    );
+
+    let target = plans(&plan_document(
+        "target",
+        "v1",
+        &objective("higher", Some("0.5")),
+    ));
+    assert_eq!(
+        report(&target, &[admitted(&target, 0, unstated(0.9))]).current[0]
+            .stage_verdict
+            .as_ref()
+            .and_then(StageVerdict::inconclusive_reason),
+        Some(InconclusiveReason::PopulationUnstated)
+    );
+}
+
+/// A `target`-direction target is reached only on exact IEEE equality, with
+/// no tolerance, and its distance is `0` there.
+///
+/// Trace: FR-107-AC-4
+/// Provenance: PLAT-958
+#[test]
+fn tc_958_018_a_target_direction_is_reached_only_on_exact_equality() {
+    let exact = plans(&plan_document(
+        "target",
+        "v1",
+        &objective("target", Some("10")),
+    ));
+    assert_eq!(
+        target_over(&exact, &[10.0]),
+        TargetOutcome::Measured {
+            current: 10.0,
+            bound: 10.0,
+            distance: 0.0,
+            reached: true
+        }
+    );
+    assert_eq!(
+        target_over(&exact, &[9.5]),
+        TargetOutcome::Measured {
+            current: 9.5,
+            bound: 10.0,
+            distance: 0.5,
+            reached: false
+        }
+    );
 }

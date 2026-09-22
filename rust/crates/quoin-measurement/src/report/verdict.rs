@@ -20,9 +20,11 @@
 //!
 //! # Never green on missing evidence
 //!
-//! No newest value, a value measured under another definition, and an
-//! incomplete or empty population all give `inconclusive`, never `held` or
-//! `reached`. So does a ratchet with nothing earlier to hold against: the first
+//! No newest value, a value naming another plan or measured under another
+//! definition, and an unstated, incomplete or empty population all give
+//! `inconclusive`, never `held` or `reached`. A slice an earlier collection
+//! measured that the newest one drops is reported too — see
+//! [`crate::report::vanished::VanishedSlice`] — so a slice cannot regress by being left out. So does a ratchet with nothing earlier to hold against: the first
 //! collection a ratchet ever sees has no floor yet, and calling that `held`
 //! would be a green verdict with no comparison behind it — the failure quoin's
 //! `--ratchet` with no baseline once had (CR-029, agent-ix/quoin#169). The
@@ -30,8 +32,10 @@
 //! that is incomplete, empty or under another definition is not one.
 
 use std::cmp::Ordering;
+use std::collections::BTreeMap;
 
 use engineering_assurance::measurement::{Direction, Objective};
+use quoin_store::JsonValue;
 
 use crate::compare::incomplete;
 use crate::types::collection::MeasurementCollection;
@@ -43,9 +47,14 @@ use crate::types::plan::{MeasurementPlan, MeasurementStage};
 pub enum InconclusiveReason {
     /// The newest collection holds no measured value for the plan's slice.
     NoCurrentValue,
+    /// The newest value names a different `planId` than the plan's.
+    PlanMismatch,
     /// The newest value was measured under a different `definition_version`
     /// than the plan's.
     DefinitionMismatch,
+    /// The newest value states no `population`, so nothing says what it was
+    /// measured over.
+    PopulationUnstated,
     /// The newest value's population is incomplete.
     IncompletePopulation,
     /// The newest value's population examined nothing.
@@ -53,15 +62,20 @@ pub enum InconclusiveReason {
     /// No earlier collection measured the plan's slice under the plan's
     /// `definition_version`, so a ratchet has no best value to hold against.
     NoPrior,
-    /// The objective states no bound where the verdict needs one.
+    /// A `target` plan's objective states no bound to measure progress
+    /// against. A ratchet never reports it: engineering-assurance's
+    /// `Objective` requires a bound for `direction: target`, the one
+    /// direction whose ratchet needs one.
     NoBound,
 }
 
 impl InconclusiveReason {
     /// Every reason, in declaration order.
-    pub const ALL: [Self; 6] = [
+    pub const ALL: [Self; 8] = [
         Self::NoCurrentValue,
+        Self::PlanMismatch,
         Self::DefinitionMismatch,
+        Self::PopulationUnstated,
         Self::IncompletePopulation,
         Self::EmptyPopulation,
         Self::NoPrior,
@@ -73,7 +87,9 @@ impl InconclusiveReason {
     pub const fn as_str(self) -> &'static str {
         match self {
             Self::NoCurrentValue => "no_current_value",
+            Self::PlanMismatch => "plan_mismatch",
             Self::DefinitionMismatch => "definition_mismatch",
+            Self::PopulationUnstated => "population_unstated",
             Self::IncompletePopulation => "incomplete_population",
             Self::EmptyPopulation => "empty_population",
             Self::NoPrior => "no_prior",
@@ -93,6 +109,8 @@ impl InconclusiveReason {
     pub const fn sentence(self) -> &'static str {
         match self {
             Self::NoCurrentValue => "no measured value in the newest collection",
+            Self::PlanMismatch => "the newest value names another plan",
+            Self::PopulationUnstated => "the newest value states no population",
             Self::DefinitionMismatch => {
                 "the newest value was measured under another definition version"
             }
@@ -157,8 +175,7 @@ pub enum TargetOutcome {
         current: f64,
         /// The objective's bound.
         bound: f64,
-        /// How far `current` is from `bound`, never negative — see
-        /// `target_progress`.
+        /// The distance still to go: `0` once `reached`, positive otherwise.
         distance: f64,
         /// Whether `current` has reached `bound` in the objective's direction.
         reached: bool,
@@ -286,13 +303,21 @@ fn badness(objective: Objective, value: f64) -> Option<f64> {
     }
 }
 
-/// The value `observation` may contribute to a verdict under `plan`, or why
-/// it may not.
-fn usable(
+/// The observation and value `observation` may contribute to a verdict
+/// under `plan`, or why it may not.
+///
+/// The one place "usable evidence" is decided, for the newest value and for
+/// every earlier value alike: it names the plan, is measured under the plan's
+/// definition, carries a value, and states a population that is neither
+/// incomplete nor empty.
+pub(super) fn usable<'a>(
     plan: &MeasurementPlan,
-    observation: Option<&MeasurementObservation>,
-) -> Result<f64, InconclusiveReason> {
+    observation: Option<&'a MeasurementObservation>,
+) -> Result<(&'a MeasurementObservation, f64), InconclusiveReason> {
     let observation = observation.ok_or(InconclusiveReason::NoCurrentValue)?;
+    if observation.plan_id.as_str() != plan.id.as_str() {
+        return Err(InconclusiveReason::PlanMismatch);
+    }
     if observation.definition_version.as_str() != plan.definition_version.as_str() {
         return Err(InconclusiveReason::DefinitionMismatch);
     }
@@ -302,18 +327,40 @@ fn usable(
             return Err(InconclusiveReason::NoCurrentValue);
         }
     };
+    let population = observation
+        .population
+        .as_ref()
+        .ok_or(InconclusiveReason::PopulationUnstated)?;
     if incomplete(observation) {
         return Err(InconclusiveReason::IncompletePopulation);
     }
-    let examined_nothing = observation
-        .population
-        .as_ref()
-        .and_then(|population| population.examined)
-        .is_some_and(|examined| examined.partial_cmp(&0.0) == Some(Ordering::Equal));
-    if examined_nothing {
+    if population
+        .examined
+        .is_some_and(|examined| examined.partial_cmp(&0.0) == Some(Ordering::Equal))
+    {
         return Err(InconclusiveReason::EmptyPopulation);
     }
-    Ok(value)
+    Ok((observation, value))
+}
+
+/// Every usable earlier value of `plan`'s slice `slice`, oldest first, with
+/// the collection that measured it.
+fn earlier_values<'a>(
+    plan: &'a MeasurementPlan,
+    slice: &'a BTreeMap<String, JsonValue>,
+    earlier: &'a [MeasurementCollection],
+) -> impl Iterator<Item = (f64, &'a MeasurementCollection)> + 'a {
+    earlier.iter().flat_map(move |collection| {
+        collection
+            .observations
+            .iter()
+            .filter(move |candidate| {
+                candidate.metric.as_str() == plan.metric.as_str()
+                    && candidate.dimensions.entries() == slice
+            })
+            .filter_map(move |candidate| usable(plan, Some(candidate)).ok())
+            .map(move |(_, value)| (value, collection))
+    })
 }
 
 /// A `ratchet` plan's verdict on `observation`.
@@ -323,28 +370,15 @@ fn ratchet(
     observation: Option<&MeasurementObservation>,
     earlier: &[MeasurementCollection],
 ) -> RatchetOutcome {
-    let current = match usable(plan, observation) {
-        Ok(value) => value,
+    let (observation, current) = match usable(plan, observation) {
+        Ok(found) => found,
         Err(reason) => return RatchetOutcome::Inconclusive(reason),
     };
     let Some(current_badness) = badness(objective, current) else {
         return RatchetOutcome::Inconclusive(InconclusiveReason::NoBound);
     };
-    let slice = observation.map(|found| found.dimensions.entries());
-    let best = earlier
-        .iter()
-        .flat_map(|collection| {
-            collection
-                .observations
-                .iter()
-                .filter(|candidate| {
-                    candidate.metric.as_str() == plan.metric.as_str()
-                        && candidate.plan_id.as_str() == plan.id.as_str()
-                        && Some(candidate.dimensions.entries()) == slice
-                })
-                .filter_map(|candidate| usable(plan, Some(candidate)).ok())
-                .filter_map(move |value| Some((badness(objective, value)?, value, collection)))
-        })
+    let best = earlier_values(plan, observation.dimensions.entries(), earlier)
+        .filter_map(|(value, collection)| Some((badness(objective, value)?, value, collection)))
         // `min_by` keeps the first of equal minima, so a tie names the
         // earliest collection that reached the best value.
         .min_by(|left, right| left.0.total_cmp(&right.0));
@@ -370,11 +404,12 @@ fn ratchet(
 
 /// A `target` plan's progress towards its objective's bound.
 ///
-/// `distance` is `|current - bound|` for `higher`, `lower` and `target`, and
-/// `||current| - |bound||` for `zero`, whose bound is a tolerance around zero.
 /// `reached` is `current >= bound` for `higher`, `current <= bound` for
-/// `lower`, `current == bound` for `target`, and `|current| <= |bound|` for
-/// `zero`.
+/// `lower`, `|current| <= bound` for `zero` (whose bound plan intake has
+/// already required to be non-negative), and exact IEEE equality
+/// `current == bound` for `target`, with no tolerance. `distance` is the
+/// distance still to go: `0` once reached, otherwise `bound - current`,
+/// `current - bound`, `|current| - bound` or `|current - bound|` respectively.
 fn target_progress(
     plan: &MeasurementPlan,
     objective: Objective,
@@ -384,28 +419,20 @@ fn target_progress(
         return TargetOutcome::Inconclusive(InconclusiveReason::NoBound);
     };
     let current = match usable(plan, observation) {
-        Ok(value) => value,
+        Ok((_, value)) => value,
         Err(reason) => return TargetOutcome::Inconclusive(reason),
     };
-    let (distance, reached) = match objective.direction() {
-        Direction::Higher => ((current - bound).abs(), current >= bound),
-        Direction::Lower => ((current - bound).abs(), current <= bound),
-        Direction::Target => {
-            let distance = (current - bound).abs();
-            (
-                distance,
-                distance.partial_cmp(&0.0) == Some(Ordering::Equal),
-            )
-        }
-        Direction::Zero => (
-            (current.abs() - bound.abs()).abs(),
-            current.abs() <= bound.abs(),
-        ),
+    let shortfall = match objective.direction() {
+        Direction::Higher => bound - current,
+        Direction::Lower => current - bound,
+        Direction::Zero => current.abs() - bound,
+        Direction::Target => (current - bound).abs(),
     };
+    let reached = shortfall.partial_cmp(&0.0) != Some(Ordering::Greater);
     TargetOutcome::Measured {
         current,
         bound,
-        distance,
+        distance: if reached { 0.0 } else { shortfall },
         reached,
     }
 }

@@ -39,7 +39,7 @@ use serde_json::Value;
 use crate::error::{MeasurementError, MeasurementErrorCode};
 use crate::json_bridge::{from_serde, to_serde};
 use crate::report::build::{CollectionSummary, CurrentRow, MeasurementReport};
-use crate::report::verdict_wire::StageVerdictWire;
+use crate::report::verdict_wire::{StageVerdictWire, VanishedSliceWire};
 use crate::types::comparison::MeasurementComparison;
 use crate::types::observation::{MeasurementObservation, MeasurementPopulation};
 use crate::types::plan::{GroundTruthKind, MeasurementPlan};
@@ -286,6 +286,10 @@ impl<'a> CurrentRowWire<'a> {
 pub(crate) struct MeasurementReportWire<'a> {
     plans: Vec<PlanWire<'a>>,
     current: Vec<CurrentRowWire<'a>>,
+    /// Absent unless a ratchet plan lost a slice (PLAT-958), so every other
+    /// report serialises to the bytes it did before.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    vanished_slices: Vec<VanishedSliceWire<'a>>,
     corpus_gaps: Option<f64>,
     /// Already `snake_case` on the wire (`intervention-report.ts:3-22`), so it
     /// crosses as its own `serde` view rather than being restated here.
@@ -308,6 +312,11 @@ impl<'a> MeasurementReportWire<'a> {
                 .iter()
                 .map(CurrentRowWire::of)
                 .collect::<Result<Vec<_>, MeasurementError>>()?,
+            vanished_slices: report
+                .vanished_slices
+                .iter()
+                .map(VanishedSliceWire::of)
+                .collect::<Result<Vec<_>, MeasurementError>>()?,
             corpus_gaps: report.corpus_gaps,
             interventions: analysis_value(&report.interventions)?,
             operational: analysis_value(&report.operational)?,
@@ -326,7 +335,7 @@ fn analysis_value<T: Serialize>(value: &T) -> Result<Value, MeasurementError> {
 }
 
 /// A map of stored values, crossed to the analysis value once.
-fn analysis_map(
+pub(crate) fn analysis_map(
     stored: &BTreeMap<String, JsonValue>,
 ) -> Result<BTreeMap<String, Value>, MeasurementError> {
     stored

@@ -12,7 +12,7 @@
 //! | `report.ts:202-204` | [`render_json`] |
 //! | `report.ts:206-221` | [`series`] |
 //! | `report.ts:223-330` | [`comparison`] |
-//! | — (PLAT-958, no retained counterpart) | [`verdict`] |
+//! | — (PLAT-958, no retained counterpart) | [`verdict`], [`vanished`] |
 //!
 //! # Why the renderers return a `Result`
 //!
@@ -36,7 +36,9 @@ pub mod comparison;
 pub mod render;
 pub mod render_json;
 pub mod series;
+pub mod vanished;
 pub mod verdict;
+pub(crate) mod verdict_render;
 mod verdict_wire;
 pub mod wire;
 
@@ -51,6 +53,7 @@ pub use comparison::{
 pub use render::render_measurement_report;
 pub use render_json::render_measurement_report_json;
 pub use series::{SeriesPoint, render_series_json, series_for};
+pub use vanished::{VanishedSlice, vanished_slices};
 pub use verdict::{
     BestPrior, InconclusiveReason, RatchetOutcome, StageVerdict, TargetOutcome, stage_verdict,
 };

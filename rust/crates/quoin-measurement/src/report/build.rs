@@ -28,6 +28,7 @@ use crate::operational::read::read_operational_records;
 use crate::operational::record::OperationalEvidenceRecord;
 use crate::operational::report::{OperationalReportEntry, build_operational_report};
 use crate::plans::{PlanLoadOptions, load_measurement_plans};
+use crate::report::vanished::{VanishedSlice, vanished_slices};
 use crate::report::verdict::{StageVerdict, stage_verdict};
 use crate::source::MeasurementSource;
 use crate::store::paths::measurement_path;
@@ -104,6 +105,9 @@ pub struct MeasurementReport {
     pub plans: Vec<MeasurementPlan>,
     /// One row per active plan and computed observation.
     pub current: Vec<CurrentRow>,
+    /// Slices a `ratchet` plan measured earlier that its newest collection
+    /// dropped (PLAT-958); empty unless a plan carries a ratchet objective.
+    pub vanished_slices: Vec<VanishedSlice>,
     /// The newest stated `bounds.gap_count`, when any collection states one.
     pub corpus_gaps: Option<f64>,
     /// The intervention experiments, projected.
@@ -164,6 +168,7 @@ pub fn build_measurement_report_from(
         .collect();
 
     let mut current = Vec::new();
+    let mut vanished = Vec::new();
     for plan in &plans {
         // `[...collections].reverse().find(…)` — the newest collection that
         // computed this metric at all, not the newest collection.
@@ -178,6 +183,7 @@ pub fn build_measurement_report_from(
         let earlier = newest
             .and_then(|(index, _)| collections.get(..index))
             .unwrap_or_default();
+        vanished.extend(vanished_slices(plan, collection, earlier));
         let summary = collection
             .map(|found| summary_of(repo, found))
             .transpose()?;
@@ -213,6 +219,7 @@ pub fn build_measurement_report_from(
     Ok(MeasurementReport {
         plans,
         current,
+        vanished_slices: vanished,
         corpus_gaps: latest_gap_count(collections),
         interventions: build_intervention_report(interventions),
         operational: build_operational_report(operational),

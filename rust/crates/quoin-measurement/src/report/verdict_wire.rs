@@ -10,7 +10,14 @@
 use engineering_assurance::measurement::Objective;
 use serde::Serialize;
 
+use std::collections::BTreeMap;
+
+use serde_json::Value;
+
+use crate::error::MeasurementError;
+use crate::report::vanished::VanishedSlice;
 use crate::report::verdict::{InconclusiveReason, RatchetOutcome, StageVerdict, TargetOutcome};
+use crate::report::wire::analysis_map;
 
 /// A row's stage verdict (PLAT-958). Each stage states every one of its own
 /// members, `null` where the verdict has no such number.
@@ -51,8 +58,9 @@ pub(crate) struct BestPriorWire<'a> {
 pub(crate) struct TargetWire {
     stage: &'static str,
     objective: Objective,
-    /// `reached`, `not_reached` or `inconclusive`.
-    verdict: &'static str,
+    /// `reached`, `not_reached` or `inconclusive` — progress, deliberately
+    /// not named `verdict`: a target is information, not pass/fail.
+    progress: &'static str,
     /// As [`RatchetWire`]'s.
     reason: Option<&'static str>,
     current: Option<f64>,
@@ -108,7 +116,7 @@ impl<'a> StageVerdictWire<'a> {
                 Self::Target(TargetWire {
                     stage,
                     objective: *objective,
-                    verdict: outcome.as_str(),
+                    progress: outcome.as_str(),
                     reason,
                     current,
                     distance,
@@ -116,5 +124,33 @@ impl<'a> StageVerdictWire<'a> {
                 })
             }
         }
+    }
+}
+
+/// A slice a ratchet plan measured earlier that its newest collection dropped.
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct VanishedSliceWire<'a> {
+    metric: &'a str,
+    plan_id: &'a str,
+    plan_path: &'a str,
+    dimensions: BTreeMap<String, Value>,
+    stage_verdict: StageVerdictWire<'a>,
+}
+
+impl<'a> VanishedSliceWire<'a> {
+    /// The wire view of one vanished slice.
+    ///
+    /// # Errors
+    ///
+    /// As [`crate::report::wire::canonical_json_of`].
+    pub(crate) fn of(slice: &'a VanishedSlice) -> Result<Self, MeasurementError> {
+        Ok(Self {
+            metric: &slice.metric,
+            plan_id: &slice.plan_id,
+            plan_path: &slice.plan_path,
+            dimensions: analysis_map(&slice.dimensions)?,
+            stage_verdict: StageVerdictWire::of(&slice.stage_verdict),
+        })
     }
 }
